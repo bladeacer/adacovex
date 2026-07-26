@@ -1,4 +1,5 @@
 with Adacovex.Types;
+--  SPDX-License-Identifier: Apache-2.0
 
 --  Markdown report renderer.
 --  Generates VERIFICATION.md (coverage, proof, test, compliance tables)

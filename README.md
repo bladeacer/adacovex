@@ -9,19 +9,19 @@ test-result parsing, DO-178C DAL compliance assessment, and interactive dashboar
 
 ## Features
 
-- **Source scanning** — walks `.ads` files, extracts subprogram declarations, docstring
+- **Source scanning** -- walks `.ads` files, extracts subprogram declarations, docstring
   annotations (`@param`, `@return`, `@field`, `@formal`), and HLR traceability tags
-- **Proof analysis** — parses GNATprove `gnatprove.out` summaries per check category
+- **Proof analysis** -- parses GNATprove `gnatprove.out` summaries per check category
   (flow, run-time, assertions, contracts, termination)
-- **Test parsing** — reads AUnit test-result markdown or stdout for pass/fail counts
-- **DAL compliance** — assesses DO-178C DAL A–E criteria (HLR coverage, orphan tags,
+- **Test parsing** -- reads AUnit test-result markdown or stdout for pass/fail counts
+- **DAL compliance** -- assesses DO-178C DAL A-E criteria (HLR coverage, orphan tags,
   test status, minimum SPARK proof level)
 - **Multiple outputs**:
   - ANSI terminal report
-  - SVG badges (Shields.io style) — SPARK level, test status, DO-178C status
-  - Markdown reports — `VERIFICATION.md` + `TRACE.md`
+  - SVG badges (Shields.io style) -- SPARK level, test status, DO-178C status
+  - Markdown reports -- `VERIFICATION.md` + `TRACE.md`
   - HTML dashboard + JSON API via built-in HTTP server
-- **Zero dynamic allocation** — all storage is bounded at compile time
+- **Zero dynamic allocation** -- all storage is bounded at compile time
 
 ## Quick start
 
@@ -104,8 +104,8 @@ adacovex --target=../Ada_CRDT --serve --port=9090
 ```
 
 Then open http://localhost:8080/ in a browser:
-- Dashboard: `GET /` — full HTML page with coverage, proof, test, and compliance cards
-- API: `GET /api/metrics` — JSON object with key metrics
+- Dashboard: `GET /` -- full HTML page with coverage, proof, test, and compliance cards
+- API: `GET /api/metrics` -- JSON object with key metrics
 - Badges: `GET /badge/spark.svg`, `/badge/tests.svg`, `/badge/do178c.svg`
 
 ### API response
@@ -142,43 +142,43 @@ GET /api/metrics
 
 ```
 src/
-├── adacovex.ads
-├── adacovex_main.adb
-├── core/
-│   ├── adacovex-types.ads/.adb
-│   └── adacovex-config.ads/.adb
-├── parsers/
-│   ├── adacovex-parsers-source.ads/.adb
-│   ├── adacovex-parsers-gnatprove.ads/.adb
-│   ├── adacovex-parsers-tests.ads/.adb
-│   └── adacovex-parsers-do178c.ads/.adb
-├── compliance/
-│   ├── adacovex-compliance-dal.ads/.adb
-├── renderers/
-│   ├── adacovex-renderers-ansi.ads/.adb
-│   ├── adacovex-renderers-markdown.ads/.adb
-│   ├── adacovex-renderers-svg.ads/.adb
-│   └── adacovex-renderers-html.ads/.adb
-└── server/
-    ├── adacovex-server-http.ads/.adb
+|-- adacovex.ads
+|-- adacovex_main.adb
+|-- core/
+|   |-- adacovex-types.ads/.adb
+|   `-- adacovex-config.ads/.adb
+|-- parsers/
+|   |-- adacovex-parsers-source.ads/.adb
+|   |-- adacovex-parsers-gnatprove.ads/.adb
+|   |-- adacovex-parsers-tests.ads/.adb
+|   `-- adacovex-parsers-do178c.ads/.adb
+|-- compliance/
+|   |-- adacovex-compliance-dal.ads/.adb
+|-- renderers/
+|   |-- adacovex-renderers-ansi.ads/.adb
+|   |-- adacovex-renderers-markdown.ads/.adb
+|   |-- adacovex-renderers-svg.ads/.adb
+|   `-- adacovex-renderers-html.ads/.adb
+`-- server/
+    |-- adacovex-server-http.ads/.adb
 ```
 
 ## DO-178C / DAL-C
 
 adacovex can assess a target project against DO-178C DAL-C criteria:
 
-1. **All HLRs traced** — each HLR-XXXX tag in `HLR.md` must appear as `-- HLR-XXXX`
+1. **All HLRs traced** -- each HLR-XXXX tag in `HLR.md` must appear as `-- HLR-XXXX`
    in at least one `.ads` source file  
-2. **No orphan tags** — every in-source HLR tag must correspond to a defined HLR  
-3. **All tests passing** — the target project must report 0 failures  
-4. **Minimum SPARK Level ≥ Bronze** — the target must pass flow analysis
+2. **No orphan tags** -- every in-source HLR tag must correspond to a defined HLR  
+3. **All tests passing** -- the target project must report 0 failures  
+4. **Minimum SPARK Level >= Bronze** -- the target must pass flow analysis
 
 When running against itself (`adacovex --target=.`), the tool verifies its own
 compliance documentation.
 
 ## Requirements
 
-- **Alire** ≥ 2.0 (for building)
+- **Alire** >= 2.0 (for building)
 - **GNAT** Ada compiler (toolchain provided by `alr setup`)
 - **GNATprove** (optional, for proof targets)
 - **gnatpp** (optional, for `make fmt`)
@@ -186,4 +186,4 @@ compliance documentation.
 
 ## License
 
-Apache-2.0 — see [LICENSE](LICENSE) for details.
+Apache-2.0 -- see [LICENSE](LICENSE) for details.

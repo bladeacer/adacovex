@@ -1,4 +1,5 @@
 with Adacovex.Types;
+--  SPDX-License-Identifier: Apache-2.0
 
 --  Parser for DO-178C requirements documents.
 --  Reads HLR.md and LLR.md markdown files, extracts HLR/LLR identifiers
@@ -28,7 +29,7 @@ package Adacovex.Parsers.DO178C is
 
    type LLR_Array is array (1 .. Types.Max_Llrs) of LLR_Info;
 
-   --  Parse an HLR.md file, extracting HLR-XXXX entries and descriptions.
+   --  Parse an HLR.md file, extracting HLR entries and descriptions.
    procedure Parse_HLR_MD
      (File_Path : String;
       HLRs      : out HLR_Array;

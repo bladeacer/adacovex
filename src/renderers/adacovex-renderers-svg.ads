@@ -1,4 +1,5 @@
 with Adacovex.Types;
+--  SPDX-License-Identifier: Apache-2.0
 
 --  SVG badge renderer.
 --  Generates Shields.io-style SVG badges for SPARK level, test status,

@@ -1,4 +1,5 @@
 with Adacovex.Types;
+--  SPDX-License-Identifier: Apache-2.0
 with Adacovex.Parsers.DO178C;
 with Adacovex.Parsers.Source;
 

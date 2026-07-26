@@ -1,4 +1,5 @@
 --  All domain types used across the adacovex tool chain.
+--  SPDX-License-Identifier: Apache-2.0
 --  Every type is bounded at compile time; no heap allocation is used.
 --  HLR-METRICS: Docstring_Metrics type
 --  HLR-PROOF: Proof_Summary type
@@ -154,7 +155,7 @@ package Adacovex.Types is
 
    --  Convert a SPARK_Level to its human-readable name.
    function To_String (L : SPARK_Level) return String;
-   --  Convert a DAL_Level to its single-letter code (A–E).
+   --  Convert a DAL_Level to its single-letter code (A-E).
    function To_String (L : DAL_Level) return String;
    --  Parse a single-letter DAL code string into a DAL_Level.
    --  Accepts both upper and lower case; defaults to DAL_C on parse failure.

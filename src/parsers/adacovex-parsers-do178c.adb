@@ -1,4 +1,5 @@
 with Ada.Text_IO;
+--  SPDX-License-Identifier: Apache-2.0
 
 package body Adacovex.Parsers.DO178C is
 
@@ -26,7 +27,7 @@ package body Adacovex.Parsers.DO178C is
       while not End_Of_File (F) loop
          Get_Line (F, Line, Last);
 
-         -- Look for lines matching "- HLR-XXXX: description"
+         -- Look for lines matching "- HLR-X: description"
          if Last > 6 then
             declare
                H_Start : Natural := 0;
@@ -120,7 +121,7 @@ package body Adacovex.Parsers.DO178C is
       while not End_Of_File (F) loop
          Get_Line (F, Line, Last);
 
-         -- Look for lines matching "- LLR-XXXX: description [HLR-XXXX]"
+         -- Look for lines matching "- LLR-X: description [HLR-X]"
          if Last > 6 then
             declare
                L_Start : Natural := 0;

@@ -1,4 +1,5 @@
 with Ada.Text_IO;
+--  SPDX-License-Identifier: Apache-2.0
 
 package body Adacovex.Renderers.Markdown is
 

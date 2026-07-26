@@ -1,4 +1,5 @@
 with Ada.Command_Line;
+--  SPDX-License-Identifier: Apache-2.0
 with Ada.Text_IO;
 
 package body Adacovex.Config is

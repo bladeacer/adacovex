@@ -1,4 +1,5 @@
 package body Adacovex.Types is
+--  SPDX-License-Identifier: Apache-2.0
 
    function To_String (L : SPARK_Level) return String is
    begin
