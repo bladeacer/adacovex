@@ -1,0 +1,22 @@
+project Adacovex is
+   for Languages use ("Ada");
+   for Source_Dirs use ("src", "src/core", "src/parsers", "src/compliance",
+                        "src/renderers", "src/server", "src/tests");
+   for Object_Dir use "obj";
+   for Exec_Dir use "bin";
+   for Main use ("adacovex_main.adb");
+
+   package Compiler is
+      for Default_Switches ("Ada") use
+        ("-gnatwa", "-gnat12", "-gnata", "-gnatwF", "-gnatwsh",
+         "-gnatW8", "-gnatyM120");
+   end Compiler;
+
+   package Builder is
+      for Default_Switches ("Ada") use ("-g");
+   end Builder;
+
+   package Binder is
+      for Default_Switches ("Ada") use ("-E");
+   end Binder;
+end Adacovex;
