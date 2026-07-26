@@ -1,6 +1,9 @@
 with Adacovex.Types;
 with Adacovex.Config;
 
+--  Lightweight HTTP/1.1 server built on GNAT.Sockets.
+--  Serves the web dashboard, JSON API, and SVG badge endpoints.
+
 package Adacovex.Server.HTTP is
 
    type Server_State is record
@@ -14,6 +17,7 @@ package Adacovex.Server.HTTP is
       Running     : Boolean := False;
    end record;
 
+   --  Start the HTTP server loop (blocks until error or Ctrl+C).
    procedure Start (State : Server_State);
 
 end Adacovex.Server.HTTP;

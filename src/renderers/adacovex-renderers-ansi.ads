@@ -1,7 +1,12 @@
 with Adacovex.Types;
 
+--  Terminal ANSI renderer.
+--  Produces a colored, human-readable report on standard output using
+--  ANSI escape sequences for highlighting.
+
 package Adacovex.Renderers.ANSI is
 
+   --  Print a formatted report to standard output.
    procedure Render_Summary
      (Doc_Metrics  : Types.Docstring_Metrics;
       Proof        : Types.Proof_Summary;

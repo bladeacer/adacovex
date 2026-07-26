@@ -127,13 +127,13 @@ package body Adacovex.Server.HTTP is
       Path    : constant String := Get_Path (Request);
    begin
       -- Drain remaining request headers
-      declare
-         Line : String := Read_Request_Line (Channel);
-      begin
-         while Line'Length > 0 loop
-            Line := Read_Request_Line (Channel);
-         end loop;
-      end;
+      loop
+         declare
+            Line : constant String := Read_Request_Line (Channel);
+         begin
+            exit when Line'Length = 0;
+         end;
+      end loop;
 
       if Path = "/" then
          Send_Response (Channel, "200 OK", "text/html",

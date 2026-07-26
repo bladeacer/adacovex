@@ -1,7 +1,12 @@
 with Adacovex.Types;
 
+--  HTML dashboard and JSON API renderer.
+--  Produces a self-contained HTML page with embedded CSS for the web
+--  dashboard and a lightweight JSON endpoint for programmatic access.
+
 package Adacovex.Renderers.HTML is
 
+   --  Render a full HTML dashboard page with cards for all metrics.
    function Render_Dashboard
      (Doc_Metrics : Types.Docstring_Metrics;
       Proof       : Types.Proof_Summary;
@@ -10,6 +15,7 @@ package Adacovex.Renderers.HTML is
       Packages    : Types.Package_Array;
       Pkg_Count   : Natural) return String;
 
+   --  Render a JSON object with key metric values.
    function Render_Metrics_JSON
      (Doc_Metrics : Types.Docstring_Metrics;
       Proof       : Types.Proof_Summary;
