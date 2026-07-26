@@ -3,4 +3,5 @@
 --  Adacovex.Server.HTTP.Handle_Request.
 
 package Adacovex.Server.Router is
+   pragma SPARK_Mode (On);
 end Adacovex.Server.Router;

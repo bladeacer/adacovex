@@ -5,8 +5,10 @@ with Adacovex.Parsers.Source;
 --  DO-178C DAL compliance assessment engine.
 --  Evaluates HLR trace coverage, orphan tags, test passing status, and
 --  minimum SPARK proof level to determine Achieved / Unmet status.
+--  HLR-COMPLIANCE: DAL assessment
 
 package Adacovex.Compliance.DAL is
+   pragma SPARK_Mode (On);
 
    --  Run all DAL-C assessment checks against the scanned project data.
    procedure Assess_DAL_C

@@ -3,8 +3,10 @@ with Adacovex.Config;
 
 --  Lightweight HTTP/1.1 server built on GNAT.Sockets.
 --  Serves the web dashboard, JSON API, and SVG badge endpoints.
+--  HLR-SERVER: HTTP server
 
 package Adacovex.Server.HTTP is
+   pragma SPARK_Mode (On);
 
    type Server_State is record
       Port        : Positive := 8080;

@@ -1,7 +1,12 @@
 --  All domain types used across the adacovex tool chain.
 --  Every type is bounded at compile time; no heap allocation is used.
+--  HLR-METRICS: Docstring_Metrics type
+--  HLR-PROOF: Proof_Summary type
+--  HLR-TEST: Test_Summary type
+--  HLR-COMPLIANCE: DAL_Assessment type
 
 package Adacovex.Types is
+   pragma SPARK_Mode (On);
 
    Max_Hlrs      : constant := 64;
    Max_Llrs      : constant := 64;

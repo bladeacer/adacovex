@@ -3,8 +3,10 @@ with Adacovex.Types;
 --  Parser for DO-178C requirements documents.
 --  Reads HLR.md and LLR.md markdown files, extracts HLR/LLR identifiers
 --  and descriptions, and matches HLR tags found in source code.
+--  HLR-COMPLIANCE: HLR/LLR parsing
 
 package Adacovex.Parsers.DO178C is
+   pragma SPARK_Mode (On);
 
    type HLR_Info is record
       Id   : String (1 .. Types.Max_Id_Str);

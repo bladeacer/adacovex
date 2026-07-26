@@ -3,8 +3,10 @@ with Adacovex.Types;
 --  Ada source-file scanner.
 --  Walks a project directory tree, reads every .ads file, extracts
 --  subprogram declarations, HLR tags, and docstring annotations.
+--  HLR-SCAN: Source scanning
 
 package Adacovex.Parsers.Source is
+   pragma SPARK_Mode (On);
 
    --  Scan a single .ads file, extracting subprogram info and HLR tags.
    procedure Scan_Ads_File

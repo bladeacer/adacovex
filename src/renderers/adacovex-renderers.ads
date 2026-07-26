@@ -3,4 +3,5 @@
 --  dashboard representations of coverage, proof, and compliance data.
 
 package Adacovex.Renderers is
+   pragma SPARK_Mode (On);
 end Adacovex.Renderers;

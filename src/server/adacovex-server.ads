@@ -3,4 +3,5 @@
 --  GNAT.Sockets.
 
 package Adacovex.Server is
+   pragma SPARK_Mode (On);
 end Adacovex.Server;

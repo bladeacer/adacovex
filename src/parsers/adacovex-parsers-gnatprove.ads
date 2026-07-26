@@ -3,8 +3,10 @@ with Adacovex.Types;
 --  Parser for GNATprove verification-output files.
 --  Reads the summary table from gnatprove.out and produces a
 --  structured Proof_Summary record.
+--  HLR-PROOF: GNATprove output parsing
 
 package Adacovex.Parsers.GNATprove is
+   pragma SPARK_Mode (On);
 
    --  Parse a gnatprove.out file, extracting VC counts per check type.
    procedure Parse_Prove_Out
