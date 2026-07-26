@@ -1,4 +1,5 @@
 package body Adacovex.Renderers.HTML is
+--  SPDX-License-Identifier: Apache-2.0
 
    use type Types.Test_Status;
    use type Types.DAL_Status;

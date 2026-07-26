@@ -1,4 +1,4 @@
-# Low-Level Requirements — adacovex
+# Low-Level Requirements -- adacovex
 
 ## LLR Mapping
 

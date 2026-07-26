@@ -1,13 +1,27 @@
+# Development manifest for local SPARK proof, doc generation, and formatting.
+# Copy this over alire.toml during development:
+#   make dev-setup
+# Restore the clean publishing manifest with:
+#   make prod-setup
+#
+# This manifest includes gnatprove, gnatdoc_bin, and gnatformat_bin which are
+# required for `make prove`, `make doc`, and `make fmt` but MUST NOT appear in
+# the published Alire community index (they are build tools, not library
+# dependencies).
+#
+# Only alire.toml is published to the community index.
 name = "adacovex"
 description = "Ada/SPARK coverage, proof, and DO-178C compliance verification tool (development)"
 version = "0.1.0"
 
-# Development-only dependency pins
-[[pins]]
-package = "gnatprove"
-version = "*"
+authors = ["bladeacer"]
+maintainers = ["bladeacer <wg.nick.exe@gmail.com>"]
+maintainers-logins = ["bladeacer"]
+licenses = "Apache-2.0"
+website = "https://github.com/bladeacer/adacovex"
+tags = ["ada", "spark", "coverage", "do-178c", "compliance"]
 
-# Development dependencies (not required for release build)
 [[depends-on]]
-gnatprove = "*"
-gnat_tools = "*"
+gnatprove = "^15.1.0"
+gnatdoc_bin = "^26.0.0"
+gnatformat_bin = "^26.0.0"

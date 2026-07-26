@@ -1,4 +1,5 @@
 with Adacovex.Types;
+--  SPDX-License-Identifier: Apache-2.0
 
 --  HTML dashboard and JSON API renderer.
 --  Produces a self-contained HTML page with embedded CSS for the web

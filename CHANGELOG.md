@@ -30,8 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `make build` / `alr build`
 - `make prove` / `alr gnatprove`
-- `make fmt` — format with gnatpp
-- `make lint` — check build warnings
-- `make api-docs` — generate gnatdoc output
-- `make changelog` — git-log based changelog
+- `make fmt` -- format with gnatpp
+- `make lint` -- check build warnings
+- `make api-docs` -- generate gnatdoc output
+- `make changelog` -- git-log based changelog
 - `make run-self` / `run-self-serve` / `run-self-badges`

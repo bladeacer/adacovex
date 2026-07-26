@@ -1,4 +1,5 @@
 --  Root package for the adacovex verification tool suite.
+--  SPDX-License-Identifier: Apache-2.0
 --  Provides the version constant used throughout.
 --  HLR-ARCH: Version constant
 --  HLR-ARCH: Package hierarchy

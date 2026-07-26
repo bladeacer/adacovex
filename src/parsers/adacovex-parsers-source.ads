@@ -1,4 +1,5 @@
 with Adacovex.Types;
+--  SPDX-License-Identifier: Apache-2.0
 
 --  Ada source-file scanner.
 --  Walks a project directory tree, reads every .ads file, extracts

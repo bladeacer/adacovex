@@ -1,4 +1,5 @@
 with Adacovex.Types;
+--  SPDX-License-Identifier: Apache-2.0
 
 --  Command-line argument parser for adacovex.
 --  Parses short and long option forms (--key=value and --key value)
