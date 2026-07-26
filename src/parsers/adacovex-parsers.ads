@@ -3,4 +3,5 @@
 --  results, and DO-178C HLR/LLR markdown files.
 
 package Adacovex.Parsers is
+   pragma SPARK_Mode (On);
 end Adacovex.Parsers;

@@ -3,8 +3,10 @@ with Adacovex.Types;
 --  Markdown report renderer.
 --  Generates VERIFICATION.md (coverage, proof, test, compliance tables)
 --  and TRACE.md (HLR-to-package traceability matrix).
+--  HLR-RENDER-MD: Markdown report generation
 
 package Adacovex.Renderers.Markdown is
+   pragma SPARK_Mode (On);
 
    --  Write a full verification report to the given file path.
    procedure Generate_Verification_Report

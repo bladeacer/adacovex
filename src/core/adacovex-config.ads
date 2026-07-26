@@ -3,8 +3,10 @@ with Adacovex.Types;
 --  Command-line argument parser for adacovex.
 --  Parses short and long option forms (--key=value and --key value)
 --  and returns a populated CLI_Config record.
+--  HLR-CLI: CLI argument parsing
 
 package Adacovex.Config is
+   pragma SPARK_Mode (On);
 
    type CLI_Config is record
       Target_Path   : String (1 .. Types.Max_Path);

@@ -2,4 +2,5 @@
 --  Sub-packages implement DAL-level checking logic.
 
 package Adacovex.Compliance is
+   pragma SPARK_Mode (On);
 end Adacovex.Compliance;

@@ -3,8 +3,10 @@ with Adacovex.Types;
 --  HTML dashboard and JSON API renderer.
 --  Produces a self-contained HTML page with embedded CSS for the web
 --  dashboard and a lightweight JSON endpoint for programmatic access.
+--  HLR-RENDER-HTML: HTML dashboard and JSON API
 
 package Adacovex.Renderers.HTML is
+   pragma SPARK_Mode (On);
 
    --  Render a full HTML dashboard page with cards for all metrics.
    function Render_Dashboard
