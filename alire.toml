@@ -1,0 +1,9 @@
+name = "adacovex"
+description = "Ada/SPARK coverage, proof, and DO-178C compliance verification tool"
+version = "0.1.0"
+authors = ["adacovex"]
+maintainers = ["adacovex <adacovex@adacovex.dev>"]
+maintainers-logins = ["adacovex"]
+licenses = "Apache-2.0"
+tags = ["ada", "spark", "coverage", "do-178c", "compliance"]
+executables = ["adacovex"]
