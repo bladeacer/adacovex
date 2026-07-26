@@ -1,3 +1,6 @@
+--  All domain types used across the adacovex tool chain.
+--  Every type is bounded at compile time; no heap allocation is used.
+
 package Adacovex.Types is
 
    Max_Hlrs      : constant := 64;
@@ -144,10 +147,16 @@ package Adacovex.Types is
       Show_DO178C : Boolean := True;
    end record;
 
+   --  Convert a SPARK_Level to its human-readable name.
    function To_String (L : SPARK_Level) return String;
+   --  Convert a DAL_Level to its single-letter code (A–E).
    function To_String (L : DAL_Level) return String;
+   --  Parse a single-letter DAL code string into a DAL_Level.
+   --  Accepts both upper and lower case; defaults to DAL_C on parse failure.
    function To_DAL (S : String) return DAL_Level;
+   --  Convert a DAL_Status to its human-readable string.
    function To_String (S : DAL_Status) return String;
+   --  Convert a Test_Status to "PASS" or "FAIL".
    function To_String (S : Test_Status) return String;
 
 end Adacovex.Types;

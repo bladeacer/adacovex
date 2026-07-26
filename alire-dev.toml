@@ -1,0 +1,7 @@
+name = "adacovex"
+description = "Ada/SPARK coverage, proof, and DO-178C compliance verification tool (development)"
+version = "0.1.0"
+
+[[pins]]
+package = "gnatprove"
+version = "*"

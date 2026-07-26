@@ -24,15 +24,15 @@ package body Adacovex.Renderers.HTML is
          end loop;
       end Put;
 
-      Spark_Color : String := "#888";
-   begin
-      case Proof.Level is
-         when Types.Platinum => Spark_Color := "#E5E4E2";
-         when Types.Gold     => Spark_Color := "#FFD700";
-         when Types.Silver   => Spark_Color := "#C0C0C0";
-         when Types.Bronze   => Spark_Color := "#CD7F32";
-         when Types.Stone    => Spark_Color := "#888";
-      end case;
+       Spark_Color : String (1 .. 7) := (others => ' ');
+    begin
+       case Proof.Level is
+          when Types.Platinum => Spark_Color := "#E5E4E2";
+          when Types.Gold     => Spark_Color := "#FFD700";
+          when Types.Silver   => Spark_Color := "#C0C0C0";
+          when Types.Bronze   => Spark_Color := "#CD7F32";
+          when Types.Stone    => Spark_Color := "#888888";
+       end case;
 
       Put ("<!DOCTYPE html><html lang=""en""><head>");
       Put ("<meta charset=""UTF-8"">");

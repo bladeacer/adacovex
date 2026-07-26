@@ -1,5 +1,9 @@
 with Adacovex.Types;
 
+--  Command-line argument parser for adacovex.
+--  Parses short and long option forms (--key=value and --key value)
+--  and returns a populated CLI_Config record.
+
 package Adacovex.Config is
 
    type CLI_Config is record
@@ -17,8 +21,10 @@ package Adacovex.Config is
       Verbose       : Boolean := False;
    end record;
 
+   --  Parse Ada.Command_Line arguments and return a fully populated config.
    function Parse_CLI return CLI_Config;
 
+   --  Print usage help text to standard output.
    procedure Print_Usage;
 
 end Adacovex.Config;
