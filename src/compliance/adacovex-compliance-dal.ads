@@ -15,20 +15,21 @@ with Adacovex.Parsers.Source;
 package Adacovex.Compliance.DAL is
    pragma SPARK_Mode (On);
 
-   --  Run all DAL-C assessment checks against the scanned project data.
-   --  Evaluates HLR trace coverage, orphan tag absence, test pass rate,
-   --  and minimum SPARK proof level. Populates Assessment with pass/fail
-   --  results and detailed failure reasons.
-   procedure Assess_DAL_C
-     (Target_Dir     : String;
-      Packages       : Types.Package_Array;
-      Pkg_Count      : Natural;
-      Proof_Summary  : Types.Proof_Summary;
-      Test_Summary   : Types.Test_Summary;
-      Assessment     : out Types.DAL_Assessment)
-     with Pre  => Pkg_Count <= Types.Max_Packages;
+    --  Run DAL compliance assessment for any DAL level (A-E).
+    --  Evaluates HLR trace coverage, orphan tag absence, test pass rate,
+    --  and minimum SPARK proof level (per-level criteria). Populates
+    --  Assessment with pass/fail results and detailed failure reasons.
+    procedure Assess_DAL
+      (Level           : Types.DAL_Level;
+       Target_Dir      : String;
+       Packages        : Types.Package_Array;
+       Pkg_Count       : Natural;
+       Proof_Summary   : Types.Proof_Summary;
+       Test_Summary    : Types.Test_Summary;
+       Assessment      : out Types.DAL_Assessment)
+      with Pre  => Pkg_Count <= Types.Max_Packages;
 
-   --  Convenience test: return True iff Assessment.Status = Achieved.
+   --  Convenience test: return True if Assessment.Status = Achieved.
    --  Equivalent to Assessment.Status = DAL_Status'Val (0).
    function Is_DAL_Achieved
      (Assessment : Types.DAL_Assessment) return Boolean

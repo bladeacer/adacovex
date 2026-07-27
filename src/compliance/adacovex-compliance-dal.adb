@@ -4,14 +4,32 @@ package body Adacovex.Compliance.DAL is
 
    use type Types.SPARK_Level;
    use type Types.DAL_Status;
+   use type Types.DAL_Level;
 
-   procedure Assess_DAL_C
-     (Target_Dir     : String;
-      Packages       : Types.Package_Array;
-      Pkg_Count      : Natural;
-      Proof_Summary  : Types.Proof_Summary;
-      Test_Summary   : Types.Test_Summary;
-      Assessment     : out Types.DAL_Assessment)
+   function Min_SPARK_For (Level : Types.DAL_Level) return Types.SPARK_Level is
+   begin
+      case Level is
+         when Types.DAL_A => return Types.Gold;
+         when Types.DAL_B => return Types.Silver;
+         when Types.DAL_C => return Types.Bronze;
+         when Types.DAL_D => return Types.Stone;
+         when Types.DAL_E => return Types.Stone;
+      end case;
+   end Min_SPARK_For;
+
+   function Need_Tests (Level : Types.DAL_Level) return Boolean is
+   begin
+      return Level /= Types.DAL_E;
+   end Need_Tests;
+
+   procedure Assess_DAL
+     (Level           : Types.DAL_Level;
+      Target_Dir      : String;
+      Packages        : Types.Package_Array;
+      Pkg_Count       : Natural;
+      Proof_Summary   : Types.Proof_Summary;
+      Test_Summary    : Types.Test_Summary;
+      Assessment      : out Types.DAL_Assessment)
    is
       HLR_Path : String (1 .. Types.Max_Path);
       HLR_Len  : Natural;
@@ -27,9 +45,12 @@ package body Adacovex.Compliance.DAL is
       LLR_Success : Boolean;
 
       Failed_Idx : Natural := 0;
+
+      Min_Lvl     : constant Types.SPARK_Level := Min_SPARK_For (Level);
+      Tests_Req   : constant Boolean := Need_Tests (Level);
    begin
       Assessment := (others => <>);
-      Assessment.Target_DAL := Types.DAL_C;
+      Assessment.Target_DAL := Level;
 
       -- Build paths to HLR.md and LLR.md
       declare
@@ -104,12 +125,16 @@ package body Adacovex.Compliance.DAL is
          Assessment.Orphan_Tags := Orphan_Found;
       end;
 
-      -- Check SPARK level: need Silver or Gold for DAL-C
+      -- Check SPARK level against per-level minimum
       Assessment.Min_SPARK_Level_Met :=
-        Proof_Summary.Level >= Types.Silver;
+        Proof_Summary.Level >= Min_Lvl;
 
-      -- Check tests passing
-      Assessment.Tests_Passing := Test_Summary.Total_Failed = 0;
+      -- Check tests passing (not required for DAL-E)
+      if Tests_Req then
+         Assessment.Tests_Passing := Test_Summary.Total_Failed = 0;
+      else
+         Assessment.Tests_Passing := True;
+      end if;
 
       -- Collect failures
       if Assessment.HLR_Found < Assessment.HLR_Total then
@@ -139,7 +164,8 @@ package body Adacovex.Compliance.DAL is
          Failed_Idx := Failed_Idx + 1;
          declare
             Msg : constant String :=
-              "SPARK level below Silver: " & Types.To_String (Proof_Summary.Level);
+              "SPARK level below " & Types.To_String (Min_Lvl)
+              & ": " & Types.To_String (Proof_Summary.Level);
          begin
             for I in 1 .. Msg'Length loop
                Assessment.Failed_Reasons (Failed_Idx) (I) := Msg (I);
@@ -147,7 +173,7 @@ package body Adacovex.Compliance.DAL is
          end;
       end if;
 
-      if not Assessment.Tests_Passing then
+      if Tests_Req and then not Assessment.Tests_Passing then
          Failed_Idx := Failed_Idx + 1;
          declare
             Msg : constant String :=
@@ -166,7 +192,7 @@ package body Adacovex.Compliance.DAL is
       else
          Assessment.Status := Types.Unmet;
       end if;
-   end Assess_DAL_C;
+   end Assess_DAL;
 
    function Is_DAL_Achieved
      (Assessment : Types.DAL_Assessment) return Boolean is
