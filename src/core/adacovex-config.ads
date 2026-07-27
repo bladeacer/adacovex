@@ -25,18 +25,22 @@ package Adacovex.Config is
       Verbose       : Boolean := False;
    end record;
 
-   --  Parse Ada.Command_Line arguments and return a fully populated config.
-   --  Reads command-line arguments via Ada.Command_Line; default values are
-   --  used for any option not provided.  Resolves relative target paths to
-   --  absolute and checks that the target's manifest file exists.
-   function Parse_CLI return CLI_Config
-     with Post => Parse_CLI'Result.Target_Len <= Types.Max_Path
-                  and then Parse_CLI'Result.Manifest_Len <= Types.Max_Path
-                  and then Parse_CLI'Result.SVG_Path_Len <= Types.Max_Path
-                  and then Parse_CLI'Result.MD_Path_Len <= Types.Max_Path;
+    --  Parse Ada.Command_Line arguments and return a fully populated config.
+    --  Reads command-line arguments via Ada.Command_Line; default values are
+    --  used for any option not provided.  Resolves relative target paths to
+    --  absolute and checks that the target's manifest file exists.
+    --  @return Fully populated CLI_Config from parsed command-line arguments.
+    function Parse_CLI return CLI_Config
+    with
+      Post =>
+        Parse_CLI'Result.Target_Len <= Types.Max_Path
+        and then Parse_CLI'Result.Manifest_Len <= Types.Max_Path
+        and then Parse_CLI'Result.SVG_Path_Len <= Types.Max_Path
+        and then Parse_CLI'Result.MD_Path_Len <= Types.Max_Path;
 
-   --  Print usage help text to standard output.
-   --  Displays all CLI options, default values, and usage examples.
-   procedure Print_Usage;
+    --  Print usage help text to standard output.
+    --  Displays all CLI options, default values, and usage examples.
+    --  @return Prints usage information to stdout.
+    procedure Print_Usage;
 
 end Adacovex.Config;

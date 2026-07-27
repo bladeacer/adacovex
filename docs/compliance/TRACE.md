@@ -2,17 +2,16 @@
 
 | Package | HLR Tags |
 |---------|-----------|
-| crdt-sync-state_based-clocked | SYNC-STATE, SYNC-DELTA |
-| crdt-sync-op_based | SYNC-OP, SYNC-ACK |
-| crdt-sync-state_based | SYNC-STATE, SYNC-DELTA |
-| crdt-lww_element_sets | LWW-CONTAINS, LWW-ADD, LWW-REMOVE, LWW-MERGE, LWW-SERIAL |
-| crdt-core | CORE-TS, CORE-VC, CORE-PROTO |
-| crdt-core-leb128 | PROTO-LEB128 |
-| crdt-clocks | CORE-CLOCKS |
-| crdt-clocks-vector | CORE-CLOCKS |
-| crdt-clocks-matrix | CORE-CLOCKS, CORE-CLOCKS-MATRIX |
-| crdt-clocks-lamport | CORE-CLOCKS |
-| crdt-hlc | HLC-CLOCK, HLC-ORDER |
-| crdt-pn_counters | CNTR-VALUE, CNTR-OP, CNTR-MERGE, CNTR-SERIAL |
-| crdt-serialization-legacy | PROTO-LEGACY |
-| crdt-serialization | PROTO-HEADER, PROTO-DISPATCH |
+| adacovex-server-http | SERVER |
+| adacovex-types | METRICS, PROOF, TEST, COMPLIANCE, DAL-A, DAL-B, DAL-C, DAL-D, DAL-E |
+| adacovex-config | CLI |
+| adacovex-compliance-dal | COMPLIANCE, DAL-A, DAL-B, DAL-C, DAL-D, DAL-E |
+| adacovex | ARCH, ARCH |
+| adacovex-parsers-do178c | COMPLIANCE |
+| adacovex-parsers-tests | TEST |
+| adacovex-parsers-source | SCAN |
+| adacovex-parsers-gnatprove | PROOF |
+| adacovex-renderers-ansi | RENDER-ANSI |
+| adacovex-renderers-html | RENDER-HTML |
+| adacovex-renderers-markdown | to-package, RENDER-MD |
+| adacovex-renderers-svg | RENDER-SVG |

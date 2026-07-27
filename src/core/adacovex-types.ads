@@ -13,19 +13,19 @@
 package Adacovex.Types is
    pragma SPARK_Mode (On);
 
-   Max_Hlrs      : constant := 64;
-   Max_Llrs      : constant := 64;
-   Max_Packages  : constant := 64;
-   Max_Subprogs  : constant := 64;
-   Max_Params    : constant := 8;
-   Max_Path      : constant := 256;
-   Max_Line      : constant := 512;
-   Max_Id_Str    : constant := 64;
-   Max_Desc_Str  : constant := 128;
-   Max_Filename  : constant := 64;
-   Max_VC_Count  : constant := 128;
-   Max_Badge_Path: constant := 128;
-   Max_Metrics   : constant := 32;
+   Max_Hlrs       : constant := 64;
+   Max_Llrs       : constant := 64;
+   Max_Packages   : constant := 64;
+   Max_Subprogs   : constant := 64;
+   Max_Params     : constant := 8;
+   Max_Path       : constant := 256;
+   Max_Line       : constant := 512;
+   Max_Id_Str     : constant := 64;
+   Max_Desc_Str   : constant := 128;
+   Max_Filename   : constant := 64;
+   Max_VC_Count   : constant := 128;
+   Max_Badge_Path : constant := 128;
+   Max_Metrics    : constant := 32;
 
    subtype HLR_Index is Positive range 1 .. Max_Hlrs;
    subtype LLR_Index is Positive range 1 .. Max_Llrs;
@@ -86,23 +86,23 @@ package Adacovex.Types is
    type VC_Vector is array (1 .. Max_VC_Count) of VC_Info;
 
    type Proof_Summary is record
-      Total_VCs        : Natural := 0;
-      Proved_VCs       : Natural := 0;
-      Flow_Checks      : Natural := 0;
-      Flow_Proved      : Natural := 0;
-      Runtime_Checks   : Natural := 0;
-      Runtime_Proved   : Natural := 0;
-      Assertions       : Natural := 0;
-      Assert_Proved    : Natural := 0;
-      Functional_Ct    : Natural := 0;
-      Functional_Proved: Natural := 0;
-      Termination_Ct   : Natural := 0;
-      Termination_Proved: Natural := 0;
-      Justified        : Natural := 0;
-      Unproved         : Natural := 0;
-      Level            : SPARK_Level := Stone;
-      Units_Analyzed   : Natural := 0;
-      Units_Skipped    : Natural := 0;
+      Total_VCs          : Natural := 0;
+      Proved_VCs         : Natural := 0;
+      Flow_Checks        : Natural := 0;
+      Flow_Proved        : Natural := 0;
+      Runtime_Checks     : Natural := 0;
+      Runtime_Proved     : Natural := 0;
+      Assertions         : Natural := 0;
+      Assert_Proved      : Natural := 0;
+      Functional_Ct      : Natural := 0;
+      Functional_Proved  : Natural := 0;
+      Termination_Ct     : Natural := 0;
+      Termination_Proved : Natural := 0;
+      Justified          : Natural := 0;
+      Unproved           : Natural := 0;
+      Level              : SPARK_Level := Stone;
+      Units_Analyzed     : Natural := 0;
+      Units_Skipped      : Natural := 0;
    end record;
 
    type Test_Metrics is record
@@ -134,18 +134,18 @@ package Adacovex.Types is
    type DAL_Failure_Array is array (1 .. 16) of Desc_Field;
 
    type DAL_Assessment is record
-      Target_DAL            : DAL_Level := DAL_C;
-      Status                : DAL_Status := Unmet;
-      HLR_Total             : Natural := 0;
-      HLR_Found             : Natural := 0;
-      LLR_Total             : Natural := 0;
-      LLR_Found             : Natural := 0;
-      All_Subprograms_Traced: Boolean := False;
-      Orphan_Tags           : Boolean := False;
-      Tests_Passing         : Boolean := False;
-      Min_SPARK_Level_Met   : Boolean := False;
-      Failed_Reasons        : DAL_Failure_Array;
-      Failed_Count          : Natural := 0;
+      Target_DAL             : DAL_Level := DAL_C;
+      Status                 : DAL_Status := Unmet;
+      HLR_Total              : Natural := 0;
+      HLR_Found              : Natural := 0;
+      LLR_Total              : Natural := 0;
+      LLR_Found              : Natural := 0;
+      All_Subprograms_Traced : Boolean := False;
+      Orphan_Tags            : Boolean := False;
+      Tests_Passing          : Boolean := False;
+      Min_SPARK_Level_Met    : Boolean := False;
+      Failed_Reasons         : DAL_Failure_Array;
+      Failed_Count           : Natural := 0;
    end record;
 
    type Badge_Config is record
@@ -159,25 +159,33 @@ package Adacovex.Types is
 
     --  Convert a SPARK_Level to its human-readable name.
     --  Returns "Stone", "Bronze", "Silver", "Gold", or "Platinum".
+    --  @return Human-readable SPARK level name.
     function To_String (L : SPARK_Level) return String
-      with Post => To_String'Result'Length > 0
-                   and then To_String'Result'Length <= 8,
-           Global => null;
-   --  Convert a DAL_Level to its single-letter code ('A' through 'E').
-   function To_String (L : DAL_Level) return String
-     with Post => To_String'Result'Length = 1,
-          Global => null;
-   --  Parse a single-letter DAL code string into a DAL_Level.
-   --  Accepts both upper and lower case; defaults to DAL_C on parse failure.
-   function To_DAL (S : String) return DAL_Level
-     with Global => null;
-   --  Convert a DAL_Status ("Achieved" or "Unmet") to its human-readable string.
-   function To_String (S : DAL_Status) return String
-     with Post => To_String'Result'Length > 0,
-          Global => null;
-   --  Convert a Test_Status ("Pass" or "Fail") to "PASS" or "FAIL".
-   function To_String (S : Test_Status) return String
-     with Post => To_String'Result'Length > 0,
-          Global => null;
+    with
+      Post   =>
+        To_String'Result'Length > 0 and then To_String'Result'Length <= 8,
+      Global => null;
+
+    --  Convert a DAL_Level to its single-letter code ('A' through 'E').
+    --  @return Single-letter DAL code.
+    function To_String (L : DAL_Level) return String
+    with Post => To_String'Result'Length = 1, Global => null;
+
+    --  Parse a single-letter DAL code string into a DAL_Level.
+    --  Accepts both upper and lower case; defaults to DAL_C on parse failure.
+    --  @param S  Single-letter DAL code (A-E, case-insensitive).
+    --  @return Converted DAL_Level (defaults to DAL_C on failure).
+    function To_DAL (S : String) return DAL_Level
+    with Global => null;
+
+    --  Convert a DAL_Status ("Achieved" or "Unmet") to its human-readable string.
+    --  @return "Achieved" or "Unmet".
+    function To_String (S : DAL_Status) return String
+    with Post => To_String'Result'Length > 0, Global => null;
+
+    --  Convert a Test_Status ("Pass" or "Fail") to "PASS" or "FAIL".
+    --  @return "PASS" or "FAIL".
+    function To_String (S : Test_Status) return String
+    with Post => To_String'Result'Length > 0, Global => null;
 
 end Adacovex.Types;

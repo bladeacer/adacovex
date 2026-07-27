@@ -15,13 +15,13 @@ package body Adacovex.Parsers.Source is
       end loop;
       return
         (TL >= 9 and then Trim (1 .. 9) = "procedure")
-        or else
-        (TL >= 7 and then Trim (1 .. 7) = "function")
-        or else
-        (TL >= 6 and then Trim (1 .. 6) = "generic");
+        or else (TL >= 7 and then Trim (1 .. 7) = "function")
+        or else (TL >= 6 and then Trim (1 .. 6) = "generic");
    end Is_Subprogram_Decl;
 
-   function Has_HLR_Tag (Line : String; Tag : out String; Tag_Len : out Natural) return Boolean is
+   function Has_HLR_Tag
+     (Line : String; Tag : out String; Tag_Len : out Natural) return Boolean
+   is
       In_Comment : Boolean := False;
       H_Start    : Natural := 0;
       H_End      : Natural := 0;
@@ -29,7 +29,10 @@ package body Adacovex.Parsers.Source is
       Tag_Len := 0;
       for I in Line'Range loop
          if not In_Comment then
-            if I < Line'Last - 1 and then Line (I) = '-' and then Line (I + 1) = '-' then
+            if I < Line'Last - 1
+              and then Line (I) = '-'
+              and then Line (I + 1) = '-'
+            then
                In_Comment := True;
             end if;
          else
@@ -85,7 +88,10 @@ package body Adacovex.Parsers.Source is
       Val_L := 0;
       for I in Line'Range loop
          if not In_Comment then
-            if I < Line'Last - 1 and then Line (I) = '-' and then Line (I + 1) = '-' then
+            if I < Line'Last - 1
+              and then Line (I) = '-'
+              and then Line (I + 1) = '-'
+            then
                In_Comment := True;
             end if;
          else
@@ -123,25 +129,42 @@ package body Adacovex.Parsers.Source is
    end Has_Docstring_Tag;
 
    procedure Scan_Ads_File
-     (File_Path : String;
-      Pkg       : out Types.Package_Info;
-      Success   : out Boolean)
+     (File_Path : String; Pkg : out Types.Package_Info; Success : out Boolean)
    is
       use Ada.Text_IO;
-      F  : File_Type;
-      Line : String (1 .. Types.Max_Line);
-      Last : Natural;
+      F        : File_Type;
+      Line     : String (1 .. Types.Max_Line);
+      Last     : Natural;
       Pkg_Name : Types.Name_Field;
       Pkg_NLen : Natural := 0;
       HLR_Buf  : String (1 .. Types.Max_Id_Str);
       HLR_Len  : Natural;
-      DT_Type  : String (1 .. 64);
-      DT_Len   : Natural;
-      DT_Value : String (1 .. Types.Max_Desc_Str);
-      DV_Len   : Natural;
-      Subp_Idx : Natural := 0;
-      In_Subp  : Boolean := False;
-   begin
+       DT_Type  : String (1 .. 64);
+       DT_Len   : Natural;
+       DT_Value : String (1 .. Types.Max_Desc_Str);
+       DV_Len   : Natural;
+       Subp_Idx : Natural := 0;
+       In_Subp  : Boolean := False;
+
+       Pending_Has_Doc : Boolean := False;
+       Pending_Param_Ct : Natural := 0;
+       Pending_Has_Return : Boolean := False;
+
+       procedure Flush_Pending (Idx : Natural) is
+       begin
+          if Pending_Has_Doc and then Idx in 1 .. Types.Max_Subprogs then
+             Pkg.Subprogram_List (Idx).Has_Docstring := True;
+             Pkg.Subprogram_List (Idx).Doc_Param_Ct :=
+               Pkg.Subprogram_List (Idx).Doc_Param_Ct + Pending_Param_Ct;
+             if Pending_Has_Return then
+                Pkg.Subprogram_List (Idx).Doc_Return := True;
+             end if;
+             Pending_Has_Doc := False;
+             Pending_Param_Ct := 0;
+             Pending_Has_Return := False;
+          end if;
+       end Flush_Pending;
+    begin
       Pkg := (others => <>);
 
       -- Extract package name from path
@@ -194,18 +217,19 @@ package body Adacovex.Parsers.Source is
             end if;
          end if;
 
-         if Is_Subprogram_Decl (Line (1 .. Last)) then
-            if Subp_Idx < Types.Max_Subprogs then
-               Subp_Idx := Subp_Idx + 1;
-               In_Subp := True;
+          if Is_Subprogram_Decl (Line (1 .. Last)) then
+             if Subp_Idx < Types.Max_Subprogs then
+                Subp_Idx := Subp_Idx + 1;
+                Flush_Pending (Subp_Idx);
+                In_Subp := True;
 
                declare
-                  Trim : String (1 .. Last);
-                  TL   : Natural := 0;
+                  Trim     : String (1 .. Last);
+                  TL       : Natural := 0;
                   In_SName : Boolean := False;
-                  SName : String (1 .. Types.Max_Desc_Str);
-                  SNLen : Natural := 0;
-                  Skip : Natural := 0;
+                  SName    : String (1 .. Types.Max_Desc_Str);
+                  SNLen    : Natural := 0;
+                  Skip     : Natural := 0;
                begin
                   for I in 1 .. Last loop
                      if Line (I) /= ' ' then
@@ -218,18 +242,27 @@ package body Adacovex.Parsers.Source is
                      if Skip > 0 then
                         Skip := Skip - 1;
                      elsif not In_SName then
-                        if I + 8 <= TL and then Trim (I .. I + 8) = "procedure" then
+                        if I + 8 <= TL and then Trim (I .. I + 8) = "procedure"
+                        then
                            Skip := 8;
-                        elsif I + 7 <= TL and then Trim (I .. I + 7) = "function" then
+                        elsif I + 7 <= TL
+                          and then Trim (I .. I + 7) = "function"
+                        then
                            Skip := 7;
-                        elsif I + 6 <= TL and then Trim (I .. I + 6) = "generic" then
+                        elsif I + 6 <= TL
+                          and then Trim (I .. I + 6) = "generic"
+                        then
                            Skip := 6;
-                        elsif Trim (I) in 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_' then
+                        elsif Trim (I)
+                              in 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_'
+                        then
                            In_SName := True;
                            SNLen := 1;
                            SName (SNLen) := Trim (I);
                         end if;
-                     elsif Trim (I) in 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_' then
+                     elsif Trim (I)
+                           in 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_'
+                     then
                         SNLen := SNLen + 1;
                         SName (SNLen) := Trim (I);
                      else
@@ -245,27 +278,28 @@ package body Adacovex.Parsers.Source is
             end if;
          end if;
 
-         if Has_Docstring_Tag (Line (1 .. Last), DT_Type, DT_Len, DT_Value, DV_Len) then
-            if Subp_Idx > 0 then
-               if DT_Len >= 5 and then DT_Type (1 .. 5) = "param" then
-                  Pkg.Subprogram_List (Subp_Idx).Has_Docstring := True;
-                  Pkg.Subprogram_List (Subp_Idx).Doc_Param_Ct :=
-                    Pkg.Subprogram_List (Subp_Idx).Doc_Param_Ct + 1;
-               elsif DT_Len >= 6 and then DT_Type (1 .. 6) = "return" then
-                  Pkg.Subprogram_List (Subp_Idx).Has_Docstring := True;
-                  Pkg.Subprogram_List (Subp_Idx).Doc_Return := True;
-               elsif DT_Len >= 5 and then DT_Type (1 .. 5) = "field" then
-                  Pkg.Subprogram_List (Subp_Idx).Has_Docstring := True;
-               elsif DT_Len >= 6 and then DT_Type (1 .. 6) = "formal" then
-                  null;
-               end if;
-            end if;
-         end if;
-      end loop;
+          if Has_Docstring_Tag
+               (Line (1 .. Last), DT_Type, DT_Len, DT_Value, DV_Len)
+          then
+             if DT_Len >= 5 and then DT_Type (1 .. 5) = "param" then
+                Pending_Has_Doc := True;
+                Pending_Param_Ct := Pending_Param_Ct + 1;
+             elsif DT_Len >= 6 and then DT_Type (1 .. 6) = "return" then
+                Pending_Has_Doc := True;
+                Pending_Has_Return := True;
+             elsif DT_Len >= 5 and then DT_Type (1 .. 5) = "field" then
+                Pending_Has_Doc := True;
+             elsif DT_Len >= 6 and then DT_Type (1 .. 6) = "formal" then
+                null;
+             end if;
+          end if;
+       end loop;
 
-      Close (F);
+       Flush_Pending (Subp_Idx);
 
-      Pkg.Subprogram_Count := Subp_Idx;
+       Close (F);
+
+       Pkg.Subprogram_Count := Subp_Idx;
       Success := True;
    end Scan_Ads_File;
 
@@ -290,7 +324,11 @@ package body Adacovex.Parsers.Source is
                Path : constant String := Full_Name (Ent);
             begin
                if Kind (Ent) = Directory then
-                  if Name /= "." and Name /= ".." and Name /= ".git" and Name /= "obj" then
+                  if Name /= "."
+                    and Name /= ".."
+                    and Name /= ".git"
+                    and Name /= "obj"
+                  then
                      Search_Dir (Path);
                   end if;
                elsif Kind (Ent) = Ordinary_File then
@@ -322,8 +360,8 @@ package body Adacovex.Parsers.Source is
    end Scan_Project;
 
    function Compute_Docstring_Metrics
-     (Packages  : Types.Package_Array;
-      Pkg_Count : Natural) return Types.Docstring_Metrics
+     (Packages : Types.Package_Array; Pkg_Count : Natural)
+      return Types.Docstring_Metrics
    is
       Metrics : Types.Docstring_Metrics;
    begin
