@@ -5,3 +5,4 @@ docs/compliance/
 docs/api/
 *.tmp
 .headroom
+alire.toml.bak

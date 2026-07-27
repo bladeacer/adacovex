@@ -3,18 +3,24 @@ with Ada.Text_IO;
 package body Adacovex.Parsers.GNATprove is
 
    function Get_Nth_Number_Raw (S : String; N : Positive) return Natural is
-      Val  : Natural := 0;
-      Ctr  : Natural := 0;
+      Val    : Natural := 0;
+      Ctr    : Natural := 0;
       In_Num : Boolean := False;
+      Paren  : Natural := 0;
    begin
       for I in S'Range loop
-         if S (I) in '0' .. '9' then
+         if S (I) = '(' then
+            Paren := Paren + 1;
+         elsif S (I) = ')' then
+            if Paren > 0 then
+               Paren := Paren - 1;
+            end if;
+         elsif Paren = 0 and then S (I) in '0' .. '9' then
             if not In_Num then
                Ctr := Ctr + 1;
                In_Num := True;
                Val := 0;
                if Ctr = N then
-                  -- Start counting this number
                   Val := Character'Pos (S (I)) - Character'Pos ('0');
                end if;
             elsif Ctr = N then
@@ -164,17 +170,14 @@ package body Adacovex.Parsers.GNATprove is
          return Types.Platinum;
       end if;
 
-      if Summary.Runtime_Proved > 0 and then
-        Summary.Runtime_Proved >= Summary.Runtime_Checks then
-         if Summary.Assert_Proved > 0 and then
-           Summary.Assert_Proved >= Summary.Assertions then
+      if Summary.Runtime_Proved >= Summary.Runtime_Checks then
+         if Summary.Assert_Proved >= Summary.Assertions then
             return Types.Gold;
          end if;
          return Types.Silver;
       end if;
 
-      if Summary.Flow_Proved > 0 and then
-        Summary.Flow_Proved >= Summary.Flow_Checks then
+      if Summary.Flow_Proved >= Summary.Flow_Checks then
          return Types.Bronze;
       end if;
 

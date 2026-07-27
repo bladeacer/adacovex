@@ -157,11 +157,12 @@ package Adacovex.Types is
       Show_DO178C : Boolean := True;
    end record;
 
-   --  Convert a SPARK_Level to its human-readable name.
-   --  Returns "Stone", "Bronze", "Silver", "Gold", or "Platinum".
-   function To_String (L : SPARK_Level) return String
-     with Post => To_String'Result'Length > 0,
-          Global => null;
+    --  Convert a SPARK_Level to its human-readable name.
+    --  Returns "Stone", "Bronze", "Silver", "Gold", or "Platinum".
+    function To_String (L : SPARK_Level) return String
+      with Post => To_String'Result'Length > 0
+                   and then To_String'Result'Length <= 8,
+           Global => null;
    --  Convert a DAL_Level to its single-letter code ('A' through 'E').
    function To_String (L : DAL_Level) return String
      with Post => To_String'Result'Length = 1,

@@ -1,4 +1,5 @@
 package body Adacovex.Types is
+   pragma SPARK_Mode (On);
 
    function To_String (L : SPARK_Level) return String is
    begin
@@ -23,12 +24,16 @@ package body Adacovex.Types is
    end To_String;
 
    function To_DAL (S : String) return DAL_Level is
-      U : String (1 .. S'Length);
+      U : String (1 .. S'Length) := (others => ' ');
    begin
       if S'Length = 0 then
          return DAL_C;
       end if;
       for I in S'Range loop
+         pragma Loop_Invariant
+           (I >= S'First and then I <= S'Last
+            and then U'Length = S'Length
+            and then (I - S'First + 1) in U'Range);
          if S (I) in 'a' .. 'z' then
             U (I - S'First + 1) := Character'Val
               (Character'Pos (S (I)) - 32);
