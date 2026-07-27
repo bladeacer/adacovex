@@ -9,6 +9,8 @@ package Adacovex.Renderers.ANSI is
    pragma SPARK_Mode (On);
 
    --  Print a formatted report to standard output.
+   --  Displays a color-coded summary of docstring coverage, proof results,
+   --  test results, and DO-178C DAL compliance using ANSI escape sequences.
    procedure Render_Summary
      (Doc_Metrics  : Types.Docstring_Metrics;
       Proof        : Types.Proof_Summary;

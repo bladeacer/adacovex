@@ -20,6 +20,10 @@ package Adacovex.Server.HTTP is
    end record;
 
    --  Start the HTTP server loop (blocks until error or Ctrl+C).
-   procedure Start (State : Server_State);
+   --  Binds to the configured port, accepts HTTP/1.1 requests, and serves
+   --  the HTML dashboard, JSON API, and SVG badge endpoints. Runs until
+   --  a fatal socket error or external interrupt.
+   procedure Start (State : Server_State)
+     with Pre => State.Port > 0;
 
 end Adacovex.Server.HTTP;

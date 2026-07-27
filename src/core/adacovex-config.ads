@@ -24,9 +24,15 @@ package Adacovex.Config is
    end record;
 
    --  Parse Ada.Command_Line arguments and return a fully populated config.
-   function Parse_CLI return CLI_Config;
+   --  Reads command-line arguments via Ada.Command_Line; default values are
+   --  used for any option not provided.
+   function Parse_CLI return CLI_Config
+     with Post => Parse_CLI'Result.Target_Len <= Types.Max_Path
+                  and then Parse_CLI'Result.SVG_Path_Len <= Types.Max_Path
+                  and then Parse_CLI'Result.MD_Path_Len <= Types.Max_Path;
 
    --  Print usage help text to standard output.
+   --  Displays all CLI options, default values, and usage examples.
    procedure Print_Usage;
 
 end Adacovex.Config;
