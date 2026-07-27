@@ -1,5 +1,5 @@
 name = "adacovex"
-description = "Ada/SPARK coverage, proof, and DO-178C compliance tool"
+description = "Ada/SPARK coverage, proof, DO-178C tool"
 version = "0.1.0"
 
 authors = ["bladeacer"]

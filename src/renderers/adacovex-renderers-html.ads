@@ -9,19 +9,29 @@ package Adacovex.Renderers.HTML is
    pragma SPARK_Mode (On);
 
    --  Render a full HTML dashboard page with cards for all metrics.
+   --  Produces a self-contained HTML page (with embedded CSS) showing
+   --  SPARK proof status, test results, DO-178C compliance, and package
+   --  coverage in a card-based layout.
    function Render_Dashboard
      (Doc_Metrics : Types.Docstring_Metrics;
       Proof       : Types.Proof_Summary;
       Tests       : Types.Test_Summary;
       DAL_Assess  : Types.DAL_Assessment;
       Packages    : Types.Package_Array;
-      Pkg_Count   : Natural) return String;
+      Pkg_Count   : Natural) return String
+     with Post => Render_Dashboard'Result'Length > 0,
+          Global => null;
 
    --  Render a JSON object with key metric values.
+   --  Produces a lightweight JSON payload containing docstring coverage,
+   --  proof results, test summary, and DO-178C status for programmatic
+   --  consumption by the API endpoint.
    function Render_Metrics_JSON
      (Doc_Metrics : Types.Docstring_Metrics;
       Proof       : Types.Proof_Summary;
       Tests       : Types.Test_Summary;
-      DAL_Assess  : Types.DAL_Assessment) return String;
+      DAL_Assess  : Types.DAL_Assessment) return String
+     with Post => Render_Metrics_JSON'Result'Length > 0,
+          Global => null;
 
 end Adacovex.Renderers.HTML;

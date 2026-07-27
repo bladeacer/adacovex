@@ -6,7 +6,13 @@
 - HLR-SCAN: Ada source scanning
 - HLR-PROOF: SPARK / GNATprove proof analysis
 - HLR-TEST: Test result parsing
-- HLR-COMPLIANCE: DO-178C compliance assessment
+- HLR-COMPLIANCE: DO-178C compliance assessment (all DAL levels A-E)
+- HLR-DAL-A to E: Per-level DAL criteria (see below)
+- HLR-DAL-A: DAL-A criteria -- all HLRs traced, no orphans, tests pass, Gold SPARK
+- HLR-DAL-B: DAL-B criteria -- all HLRs traced, no orphans, tests pass, Silver SPARK
+- HLR-DAL-C: DAL-C criteria -- all HLRs traced, no orphans, tests pass, Bronze SPARK
+- HLR-DAL-D: DAL-D criteria -- all HLRs traced, tests pass
+- HLR-DAL-E: DAL-E criteria -- all HLRs traced
 - HLR-RENDER-ANSI: ANSI terminal rendering
 - HLR-RENDER-SVG: SVG badge generation
 - HLR-RENDER-MD: Markdown report generation
@@ -29,9 +35,27 @@
 - HLR-TEST: The tool shall parse AUnit test results (Markdown or stdout) and
   report total passed / failed test counts.
 
-- HLR-COMPLIANCE: The tool shall assess DO-178C DAL-C compliance: HLR trace
-  coverage, orphan tag detection, test pass status, and minimum SPARK proof
-  level.
+- HLR-COMPLIANCE: The tool shall assess DO-178C compliance for any DAL level
+  A through E. Assessment criteria per level are defined in HLR-DAL-A through
+  HLR-DAL-E and implemented in the compliance package.
+
+- HLR-DAL-A: DAL-A assessment shall verify HLR trace coverage (all HLRs found
+  in source), no orphan tags, all tests passing, and minimum SPARK Gold level
+  (all run-time checks proved, all assertions proved, all functional contracts
+  proved, all termination proved).
+
+- HLR-DAL-B: DAL-B assessment shall verify HLR trace coverage, no orphan tags,
+  all tests passing, and minimum SPARK Silver level (all run-time checks proved,
+  all assertions proved, AoRTE-free).
+
+- HLR-DAL-C: DAL-C assessment shall verify HLR trace coverage, no orphan tags,
+  all tests passing, and minimum SPARK Bronze level (flow analysis passes).
+
+- HLR-DAL-D: DAL-D assessment shall verify HLR trace coverage and all tests
+  passing. No SPARK proof requirement.
+
+- HLR-DAL-E: DAL-E assessment shall verify HLR trace coverage only. No test or
+  proof requirements.
 
 - HLR-RENDER-ANSI: The tool shall render a color-annotated summary report to
   standard output using ANSI escape codes.

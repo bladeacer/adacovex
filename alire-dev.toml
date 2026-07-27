@@ -11,7 +11,7 @@
 #
 # Only alire.toml is published to the community index.
 name = "adacovex"
-description = "Ada/SPARK coverage, proof, and DO-178C compliance verification tool (development)"
+description = "Ada/SPARK coverage, proof, DO-178C compliance tool (dev)"
 version = "0.1.0"
 
 authors = ["bladeacer"]

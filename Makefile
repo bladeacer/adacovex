@@ -1,21 +1,21 @@
 .PHONY: help all build test prove fmt lint api-docs changelog \
         verify-report compliance ascii-check dev-setup prod-setup \
         bump-version release publish run-self run-self-serve run-self-badges \
-        clean
+        clean _dev_cmd
 
 .DEFAULT_GOAL := help
 
 help:
-	@echo 'adacovex — Ada Coverage & Verification Tool'
+	@echo 'adacovex -- Ada Coverage and Verification Tool'
 	@echo ''
 	@echo 'Usage: make <target>'
 	@echo ''
 	@echo '  build         Build the project (alr build)'
 	@echo '  test          Run tests'
-	@echo '  prove         Run SPARK proofs (alr gnatprove)'
-	@echo '  fmt           Format Ada sources with gnatformat'
+	@echo '  prove         Run SPARK proofs (swaps alire-dev.toml)'
+	@echo '  fmt           Format Ada sources with gnatformat (swaps alire-dev.toml)'
 	@echo '  lint          Check for build warnings'
-	@echo '  api-docs      Generate Ada API docs (requires gnatdoc)'
+	@echo '  api-docs      Generate Ada API docs (swaps alire-dev.toml)'
 	@echo '  changelog     Generate CHANGELOG from git log'
 	@echo '  verify-report Regenerate VERIFICATION.md from gnatprove.out + test results'
 	@echo '  compliance    HLR traceability check + verification report'
@@ -30,6 +30,8 @@ help:
 	@echo '  help          Show this message'
 	@echo ''
 	@echo 'System: Alire (alr), GNAT/SPARK toolchain (managed by Alire)'
+	@echo 'Dev tools (gnatprove, gnatformat, gnatdoc) declared in alire-dev.toml'
+	@echo 'make fmt/prove/api-docs auto-swap alire-dev.toml temporarily.'
 
 build:
 	tmpfile=$$(mktemp); \
@@ -41,31 +43,16 @@ test: build
 	alr run
 
 prove:
-	alr gnatprove
+	@$(MAKE) _dev_cmd CMD="alr gnatprove"
 
 fmt:
-	@echo "=== Formatting Ada sources with gnatformat ==="; \
-	if ! grep -q 'gnatformat_bin' alire.toml 2>/dev/null; then \
-		cp alire.toml alire.toml.fmtbak; \
-		cp alire-dev.toml alire.toml; \
-		restore=1; \
-	else \
-		restore=0; \
-	fi; \
-	alr exec -- gnatformat -P adacovex.gpr -U; \
-	status=$$?; \
-	if [ "$$restore" -eq 1 ]; then \
-		mv alire.toml.fmtbak alire.toml; \
-	fi; \
-	exit $$status
+	@$(MAKE) _dev_cmd CMD="alr exec -- gnatformat -P adacovex.gpr -U"
 
 lint:
 	alr build 2>&1 | grep -iE "warning|error" || true
 
 api-docs:
-	@echo "=== Generating Ada API docs ==="; \
-	alr exec -- gnatdoc -P adacovex.gpr --output-dir=docs/api --create-missing-dirs 2>/dev/null || \
-	  echo "gnatdoc not available; run 'make dev-setup' first"
+	@$(MAKE) _dev_cmd CMD="alr exec -- gnatdoc -P adacovex.gpr --output-dir=docs/api --create-missing-dirs"
 
 changelog:
 	git log --oneline --format="%s" > CHANGELOG.tmp && \
@@ -266,3 +253,19 @@ run-self-badges: build
 clean:
 	alr clean 2>/dev/null; \
 	rm -rf bin/ obj/ docs/badges/ docs/compliance/ docs/api/
+
+# Internal: run a dev command with alire-dev.toml temporarily swapped in
+_dev_cmd:
+	@if ! grep -q 'gnatformat_bin' alire.toml 2>/dev/null; then \
+		cp alire.toml alire.toml.bak; \
+		cp alire-dev.toml alire.toml; \
+		restore=1; \
+	else \
+		restore=0; \
+	fi; \
+	$(CMD); \
+	status=$$?; \
+	if [ "$$restore" -eq 1 ]; then \
+		mv alire.toml.bak alire.toml; \
+	fi; \
+	exit $$status
