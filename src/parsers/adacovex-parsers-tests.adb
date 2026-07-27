@@ -38,7 +38,8 @@ package body Adacovex.Parsers.Tests is
 
             if First_Pipe > 0 then
                declare
-                  Parts    : array (1 .. 5) of String (1 .. Types.Max_Desc_Str);
+                  Parts    :
+                    array (1 .. 5) of String (1 .. Types.Max_Desc_Str);
                   Part_Len : array (1 .. 5) of Natural := (others => 0);
                   Part_Ct  : Natural := 0;
                   In_Part  : Boolean := False;
@@ -58,8 +59,9 @@ package body Adacovex.Parsers.Tests is
                            end if;
                         end if;
                      else
-                        if Part_Ct <= 5 and then
-                          Part_Len (Part_Ct) < Types.Max_Desc_Str then
+                        if Part_Ct <= 5
+                          and then Part_Len (Part_Ct) < Types.Max_Desc_Str
+                        then
                            Part_Len (Part_Ct) := Part_Len (Part_Ct) + 1;
                            Parts (Part_Ct) (Part_Len (Part_Ct)) := Line (I);
                         end if;
@@ -74,33 +76,43 @@ package body Adacovex.Parsers.Tests is
                      begin
                         for I in 1 .. Part_Len (3) loop
                            if Parts (3) (I) in '0' .. '9' then
-                              TCount := TCount * 10 +
-                                (Character'Pos (Parts (3) (I)) - Character'Pos ('0'));
+                              TCount :=
+                                TCount
+                                * 10
+                                + (Character'Pos (Parts (3) (I))
+                                   - Character'Pos ('0'));
                            else
                               Is_Number := False;
                            end if;
                         end loop;
 
-                        if Is_Number and then TCount > 0 and then
-                          Summary.Category_Count < 32 then
-                           Summary.Category_Count := Summary.Category_Count + 1;
+                        if Is_Number
+                          and then TCount > 0
+                          and then Summary.Category_Count < 32
+                        then
+                           Summary.Category_Count :=
+                             Summary.Category_Count + 1;
                            declare
                               CI : constant Natural := Summary.Category_Count;
                            begin
                               Summary.Categories (CI).Cat_Len := Part_Len (2);
                               for I in 1 .. Part_Len (2) loop
-                                 Summary.Categories (CI).Category (I) := Parts (2) (I);
+                                 Summary.Categories (CI).Category (I) :=
+                                   Parts (2) (I);
                               end loop;
                               Summary.Categories (CI).Test_Count := TCount;
 
-                              if Part_Ct >= 4 and then
-                                Part_Len (4) >= 4 then
+                              if Part_Ct >= 4 and then Part_Len (4) >= 4 then
                                  if Parts (4) (1 .. 4) = "PASS" then
-                                    Summary.Categories (CI).Status := Types.Pass;
-                                    Summary.Total_Passed := Summary.Total_Passed + TCount;
+                                    Summary.Categories (CI).Status :=
+                                      Types.Pass;
+                                    Summary.Total_Passed :=
+                                      Summary.Total_Passed + TCount;
                                  else
-                                    Summary.Categories (CI).Status := Types.Fail;
-                                    Summary.Total_Failed := Summary.Total_Failed + TCount;
+                                    Summary.Categories (CI).Status :=
+                                      Types.Fail;
+                                    Summary.Total_Failed :=
+                                      Summary.Total_Failed + TCount;
                                  end if;
                               end if;
                            end;
@@ -122,8 +134,10 @@ package body Adacovex.Parsers.Tests is
                      J := J + 1;
                   end loop;
                   while J <= Last and then Line (J) in '0' .. '9' loop
-                     Num := Num * 10 +
-                       (Character'Pos (Line (J)) - Character'Pos ('0'));
+                     Num :=
+                       Num
+                       * 10
+                       + (Character'Pos (Line (J)) - Character'Pos ('0'));
                      J := J + 1;
                   end loop;
                   Summary.Total_Passed := Num;
@@ -139,8 +153,10 @@ package body Adacovex.Parsers.Tests is
                      J := J + 1;
                   end loop;
                   while J <= Last and then Line (J) in '0' .. '9' loop
-                     Num := Num * 10 +
-                       (Character'Pos (Line (J)) - Character'Pos ('0'));
+                     Num :=
+                       Num
+                       * 10
+                       + (Character'Pos (Line (J)) - Character'Pos ('0'));
                      J := J + 1;
                   end loop;
                   Summary.Total_Failed := Num;
@@ -153,9 +169,7 @@ package body Adacovex.Parsers.Tests is
       Success := True;
    end Parse_Test_Result;
 
-   procedure Parse_Test_Stdout
-     (Summary : out Types.Test_Summary)
-   is
+   procedure Parse_Test_Stdout (Summary : out Types.Test_Summary) is
    begin
       Summary := (others => <>);
    end Parse_Test_Stdout;

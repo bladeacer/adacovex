@@ -26,7 +26,7 @@ help:
 	@echo '  run-self      Run adacovex against itself (--target=.)'
 	@echo '  run-ada-crdt  Run adacovex against ../Ada_CRDT'
 	@echo '  run-self-serve Run adacovex against itself with HTTP server on :8080'
-	@echo '  run-self-badges Generate SVG badges + Markdown reports for ../Ada_CRDT'
+	@echo '  run-self-badges Generate SVG badges + Markdown reports for adacovex itself'
 	@echo '  clean         Remove build artifacts'
 	@echo '  help          Show this message'
 	@echo ''
@@ -250,7 +250,7 @@ run-self-serve: build
 
 run-self-badges: build
 	mkdir -p docs/badges docs/compliance
-	timeout 10 ./bin/adacovex_main --target=../Ada_CRDT --dal=C --manifest=../Ada_CRDT/alire-dev.toml \
+	timeout 10 ./bin/adacovex_main --target=. --dal=C --manifest=./alire-dev.toml \
 	  --emit-svg=docs/badges/ \
 	  --emit-markdown=docs/compliance/
 

@@ -1,6 +1,7 @@
-[![SPARK](docs/badges/spark.svg)](https://github.com/bladeacer/adacovex)
-[![Tests](docs/badges/tests.svg)](https://github.com/bladeacer/adacovex)
-[![DO-178C](docs/badges/do178c.svg)](https://github.com/bladeacer/adacovex)
+![SPARK](docs/badges/spark.svg)
+![Tests](docs/badges/tests.svg)
+![DO-178C](docs/badges/do178c.svg)
+![docs](docs/badges/docs.svg)
 
 # adacovex
 
@@ -18,7 +19,7 @@ test-result parsing, DO-178C DAL compliance assessment, and interactive dashboar
   test status, minimum SPARK proof level)
 - **Multiple outputs**:
   - ANSI terminal report
-  - SVG badges (Shields.io style) -- SPARK level, test status, DO-178C status
+   - SVG badges (Shields.io style) -- SPARK level, test status, DO-178C status, docstring coverage
   - Markdown reports -- `VERIFICATION.md` + `TRACE.md`
   - HTML dashboard + JSON API via built-in HTTP server
 - **Zero dynamic allocation** -- all storage is bounded at compile time
@@ -26,13 +27,13 @@ test-result parsing, DO-178C DAL compliance assessment, and interactive dashboar
 ## Quick start
 
 ```bash
-# Default run against ../Ada_CRDT at DAL-C
+# Run against adacovex itself
 make run-self
 
-# Explicit target
-./bin/adacovex --target=../Ada_CRDT --dal=C
+# Run against Ada_CRDT (default target)
+make run-ada-crdt
 
-# Single-argument form
+# Explicit target at DAL-C
 ./bin/adacovex --target=../Ada_CRDT --dal=C
 ```
 
@@ -47,6 +48,8 @@ Usage:
 Options:
   --target=PATH         Target project path (default: ../Ada_CRDT)
   --target PATH         Alternative form
+
+  --manifest=PATH       Target project manifest override
 
   --dal=LEVEL           Target DAL level: A, B, C, D, E (default: C)
   --dal LEVEL           Alternative form
@@ -68,14 +71,14 @@ Options:
 ### Basic usage
 
 ```bash
-# Scan target project and print ANSI report
-adacovex --target=../Ada_CRDT
+# Self-assessment: scan adacovex itself
+adacovex --target=.
 
-# Assess at DAL-C
+# Assess a CRDT library at DAL-C
 adacovex --target=../Ada_CRDT --dal=C
 
-# Use the long form
-adacovex --target ../Ada_CRDT --dal C
+# With explicit manifest
+adacovex --target=. --manifest=./alire-dev.toml
 ```
 
 ### Generate badges and reports
@@ -132,7 +135,7 @@ GET /api/metrics
 | `fmt`              | Format all Ada sources with `gnatpp`             |
 | `lint`             | Check for warnings in build output               |
 | `api-docs`         | Generate Ada API docs with `gnatdoc`             |
-| `run-self`         | Run against `../Ada_CRDT`, DAL-C                 |
+| `run-self`         | Run against adacovex itself (`--target=.`)        |
 | `run-self-serve`   | Run with HTTP server on `:8080`                  |
 | `run-self-badges`  | Emit SVG badges + Markdown reports               |
 | `changelog`        | Generate changelog from git log                  |

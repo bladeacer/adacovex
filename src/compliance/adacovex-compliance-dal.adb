@@ -8,11 +8,20 @@ package body Adacovex.Compliance.DAL is
    function Min_SPARK_For (Level : Types.DAL_Level) return Types.SPARK_Level is
    begin
       case Level is
-         when Types.DAL_A => return Types.Gold;
-         when Types.DAL_B => return Types.Silver;
-         when Types.DAL_C => return Types.Bronze;
-         when Types.DAL_D => return Types.Stone;
-         when Types.DAL_E => return Types.Stone;
+         when Types.DAL_A =>
+            return Types.Gold;
+
+         when Types.DAL_B =>
+            return Types.Silver;
+
+         when Types.DAL_C =>
+            return Types.Bronze;
+
+         when Types.DAL_D =>
+            return Types.Stone;
+
+         when Types.DAL_E =>
+            return Types.Stone;
       end case;
    end Min_SPARK_For;
 
@@ -22,20 +31,20 @@ package body Adacovex.Compliance.DAL is
    end Need_Tests;
 
    procedure Assess_DAL
-     (Level           : Types.DAL_Level;
-      Target_Dir      : String;
-      Packages        : Types.Package_Array;
-      Pkg_Count       : Natural;
-      Proof_Summary   : Types.Proof_Summary;
-      Test_Summary    : Types.Test_Summary;
-      Assessment      : out Types.DAL_Assessment)
+     (Level         : Types.DAL_Level;
+      Target_Dir    : String;
+      Packages      : Types.Package_Array;
+      Pkg_Count     : Natural;
+      Proof_Summary : Types.Proof_Summary;
+      Test_Summary  : Types.Test_Summary;
+      Assessment    : out Types.DAL_Assessment)
    is
       HLR_Path : String (1 .. Types.Max_Path);
       HLR_Len  : Natural;
       LLR_Path : String (1 .. Types.Max_Path);
       LLR_Len  : Natural;
 
-      HLR_List : Adacovex.Parsers.DO178C.HLR_Array;
+      HLR_List  : Adacovex.Parsers.DO178C.HLR_Array;
       HLR_Count : Natural := 0;
       LLR_List  : Adacovex.Parsers.DO178C.LLR_Array;
       LLR_Count : Natural := 0;
@@ -45,21 +54,22 @@ package body Adacovex.Compliance.DAL is
 
       Failed_Idx : Natural := 0;
 
-      Min_Lvl     : constant Types.SPARK_Level := Min_SPARK_For (Level);
-      Tests_Req   : constant Boolean := Need_Tests (Level);
+      Min_Lvl   : constant Types.SPARK_Level := Min_SPARK_For (Level);
+      Tests_Req : constant Boolean := Need_Tests (Level);
    begin
-      Assessment := (Target_DAL     => Level,
-                     Status         => Types.Unmet,
-                     HLR_Total      => 0,
-                     HLR_Found      => 0,
-                     LLR_Total      => 0,
-                     LLR_Found      => 0,
-                     All_Subprograms_Traced => False,
-                     Orphan_Tags    => False,
-                     Tests_Passing  => False,
-                     Min_SPARK_Level_Met   => False,
-                     Failed_Reasons => (others => (others => ' ')),
-                     Failed_Count   => 0);
+      Assessment :=
+        (Target_DAL             => Level,
+         Status                 => Types.Unmet,
+         HLR_Total              => 0,
+         HLR_Found              => 0,
+         LLR_Total              => 0,
+         LLR_Found              => 0,
+         All_Subprograms_Traced => False,
+         Orphan_Tags            => False,
+         Tests_Passing          => False,
+         Min_SPARK_Level_Met    => False,
+         Failed_Reasons         => (others => (others => ' ')),
+         Failed_Count           => 0);
 
       -- Build paths to HLR.md and LLR.md
       declare
@@ -87,10 +97,12 @@ package body Adacovex.Compliance.DAL is
       -- Check HLR traceability: every HLR in docs must be in source
       for H in 1 .. HLR_Count loop
          declare
-            HLR_Id : constant String := HLR_List (H).Id (1 .. HLR_List (H).Id_Len);
+            HLR_Id : constant String :=
+              HLR_List (H).Id (1 .. HLR_List (H).Id_Len);
          begin
             if Adacovex.Parsers.DO178C.Find_HLR_In_Source
-                 (HLR_Id, Packages, Pkg_Count) then
+                 (HLR_Id, Packages, Pkg_Count)
+            then
                Assessment.HLR_Found := Assessment.HLR_Found + 1;
             end if;
          end;
@@ -100,43 +112,45 @@ package body Adacovex.Compliance.DAL is
       declare
          Orphan_Found : Boolean := False;
       begin
-       for P in 1 .. Pkg_Count loop
-          for T in 1 .. Packages (P).Total_HLR_Tags loop
-             declare
-                Tag_Len : constant Natural := Packages (P).HLR_Tags (T).Len;
-                Found   : Boolean := False;
-             begin
-                 for H in 1 .. HLR_Count loop
-                    declare
-                       H_Str : constant String := HLR_List (H).Id (1 .. HLR_List (H).Id_Len);
-                       Match : Boolean := True;
-                    begin
-                       if Tag_Len = H_Str'Length then
-                          for I in 1 .. Tag_Len loop
-                             if Packages (P).HLR_Tags (T).Tag (I) /= H_Str (H_Str'First + I - 1) then
-                                Match := False;
-                                exit;
-                             end if;
-                          end loop;
-                          if Match then
-                             Found := True;
-                             exit;
-                          end if;
-                       end if;
-                    end;
-                 end loop;
-                if not Found then
-                   Orphan_Found := True;
-                end if;
-             end;
-          end loop;
+         for P in 1 .. Pkg_Count loop
+            for T in 1 .. Packages (P).Total_HLR_Tags loop
+               declare
+                  Tag_Len : constant Natural := Packages (P).HLR_Tags (T).Len;
+                  Found   : Boolean := False;
+               begin
+                  for H in 1 .. HLR_Count loop
+                     declare
+                        H_Str : constant String :=
+                          HLR_List (H).Id (1 .. HLR_List (H).Id_Len);
+                        Match : Boolean := True;
+                     begin
+                        if Tag_Len = H_Str'Length then
+                           for I in 1 .. Tag_Len loop
+                              if Packages (P).HLR_Tags (T).Tag (I)
+                                /= H_Str (H_Str'First + I - 1)
+                              then
+                                 Match := False;
+                                 exit;
+                              end if;
+                           end loop;
+                           if Match then
+                              Found := True;
+                              exit;
+                           end if;
+                        end if;
+                     end;
+                  end loop;
+                  if not Found then
+                     Orphan_Found := True;
+                  end if;
+               end;
+            end loop;
          end loop;
          Assessment.Orphan_Tags := Orphan_Found;
       end;
 
       -- Check SPARK level against per-level minimum
-      Assessment.Min_SPARK_Level_Met :=
-        Proof_Summary.Level >= Min_Lvl;
+      Assessment.Min_SPARK_Level_Met := Proof_Summary.Level >= Min_Lvl;
 
       -- Check tests passing (not required for DAL-E)
       if Tests_Req then
@@ -146,61 +160,67 @@ package body Adacovex.Compliance.DAL is
       end if;
 
       -- Collect failures
-       declare
-          Idx1 : Boolean := Assessment.HLR_Found < Assessment.HLR_Total;
-          Idx2 : Boolean := Assessment.Orphan_Tags;
-          Idx3 : Boolean := not Assessment.Min_SPARK_Level_Met;
-          Idx4 : Boolean := Tests_Req and then not Assessment.Tests_Passing;
-       begin
-          if Idx1 then
-             declare
-                Msg : constant String :=
-                  "Missing HLRs: " & Natural'Image (Assessment.HLR_Total - Assessment.HLR_Found);
-                Len : constant Natural := Msg'Length;
-             begin
-                if Len <= Types.Max_Desc_Str then
-                   Assessment.Failed_Reasons (1) (1 .. Len) := Msg;
-                end if;
-             end;
-          end if;
+      declare
+         Idx1 : Boolean := Assessment.HLR_Found < Assessment.HLR_Total;
+         Idx2 : Boolean := Assessment.Orphan_Tags;
+         Idx3 : Boolean := not Assessment.Min_SPARK_Level_Met;
+         Idx4 : Boolean := Tests_Req and then not Assessment.Tests_Passing;
+      begin
+         if Idx1 then
+            declare
+               Msg : constant String :=
+                 "Missing HLRs: "
+                 & Natural'Image (Assessment.HLR_Total - Assessment.HLR_Found);
+               Len : constant Natural := Msg'Length;
+            begin
+               if Len <= Types.Max_Desc_Str then
+                  Assessment.Failed_Reasons (1) (1 .. Len) := Msg;
+               end if;
+            end;
+         end if;
 
-          if Idx2 then
-             declare
-                Msg : constant String := "Orphan HLR tags found in source";
-                Len : constant Natural := Msg'Length;
-             begin
-                if Len <= Types.Max_Desc_Str then
-                   Assessment.Failed_Reasons (2) (1 .. Len) := Msg;
-                end if;
-             end;
-          end if;
+         if Idx2 then
+            declare
+               Msg : constant String := "Orphan HLR tags found in source";
+               Len : constant Natural := Msg'Length;
+            begin
+               if Len <= Types.Max_Desc_Str then
+                  Assessment.Failed_Reasons (2) (1 .. Len) := Msg;
+               end if;
+            end;
+         end if;
 
-          if Idx3 then
-             declare
-                Msg : constant String :=
-                  "SPARK level below " & Types.To_String (Min_Lvl)
-                  & ": " & Types.To_String (Proof_Summary.Level);
-             begin
-                if Msg'Length <= Types.Max_Desc_Str then
-                   Assessment.Failed_Reasons (3) (1 .. Msg'Length) := Msg;
-                end if;
-             end;
-          end if;
+         if Idx3 then
+            declare
+               Msg : constant String :=
+                 "SPARK level below "
+                 & Types.To_String (Min_Lvl)
+                 & ": "
+                 & Types.To_String (Proof_Summary.Level);
+            begin
+               if Msg'Length <= Types.Max_Desc_Str then
+                  Assessment.Failed_Reasons (3) (1 .. Msg'Length) := Msg;
+               end if;
+            end;
+         end if;
 
-          if Idx4 then
-             declare
-                Msg : constant String := "Test failures detected";
-                Len : constant Natural := Msg'Length;
-             begin
-                if Len <= Types.Max_Desc_Str then
-                   Assessment.Failed_Reasons (4) (1 .. Len) := Msg;
-                end if;
-             end;
-          end if;
+         if Idx4 then
+            declare
+               Msg : constant String := "Test failures detected";
+               Len : constant Natural := Msg'Length;
+            begin
+               if Len <= Types.Max_Desc_Str then
+                  Assessment.Failed_Reasons (4) (1 .. Len) := Msg;
+               end if;
+            end;
+         end if;
 
-          Failed_Idx := Boolean'Pos (Idx1) + Boolean'Pos (Idx2)
-                      + Boolean'Pos (Idx3) + Boolean'Pos (Idx4);
-        end;
+         Failed_Idx :=
+           Boolean'Pos (Idx1)
+           + Boolean'Pos (Idx2)
+           + Boolean'Pos (Idx3)
+           + Boolean'Pos (Idx4);
+      end;
 
       Assessment.Failed_Count := Failed_Idx;
 
@@ -211,8 +231,8 @@ package body Adacovex.Compliance.DAL is
       end if;
    end Assess_DAL;
 
-   function Is_DAL_Achieved
-     (Assessment : Types.DAL_Assessment) return Boolean is
+   function Is_DAL_Achieved (Assessment : Types.DAL_Assessment) return Boolean
+   is
    begin
       return Assessment.Status = Types.Achieved;
    end Is_DAL_Achieved;

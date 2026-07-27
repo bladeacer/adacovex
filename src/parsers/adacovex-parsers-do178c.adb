@@ -60,14 +60,15 @@ package body Adacovex.Parsers.DO178C is
                      end loop;
                   end if;
 
-                  if H_End > H_Start + 3 and then
-                    HLR_Count < Types.Max_Hlrs then
+                  if H_End > H_Start + 3 and then HLR_Count < Types.Max_Hlrs
+                  then
                      HLR_Count := HLR_Count + 1;
 
                      -- Extract HLR ID (skip "HLR-" prefix)
                      HLRs (HLR_Count).Id_Len := H_End - (H_Start + 4) + 1;
                      for I in H_Start + 4 .. H_End loop
-                        HLRs (HLR_Count).Id (I - (H_Start + 4) + 1) := Line (I);
+                        HLRs (HLR_Count).Id (I - (H_Start + 4) + 1) :=
+                          Line (I);
                      end loop;
 
                      -- Extract description after colon
@@ -75,14 +76,14 @@ package body Adacovex.Parsers.DO178C is
                         declare
                            D_Start : Natural := Colon + 1;
                         begin
-                           while D_Start <= Last and then
-                             Line (D_Start) = ' ' loop
+                           while D_Start <= Last and then Line (D_Start) = ' '
+                           loop
                               D_Start := D_Start + 1;
                            end loop;
                            HLRs (HLR_Count).D_Len := Last - D_Start + 1;
                            for I in D_Start .. Last loop
-                              HLRs (HLR_Count).Desc
-                                (I - D_Start + 1) := Line (I);
+                              HLRs (HLR_Count).Desc (I - D_Start + 1) :=
+                                Line (I);
                            end loop;
                         end;
                      end if;
@@ -130,9 +131,10 @@ package body Adacovex.Parsers.DO178C is
                H_End   : Natural := 0;
             begin
                for I in 1 .. Last - 3 loop
-                  if Line (I) = 'L' and then
-                    I + 3 <= Last and then
-                    Line (I .. I + 3) = "LLR-" then
+                  if Line (I) = 'L'
+                    and then I + 3 <= Last
+                    and then Line (I .. I + 3) = "LLR-"
+                  then
                      L_Start := I;
                      exit;
                   end if;
@@ -140,9 +142,10 @@ package body Adacovex.Parsers.DO178C is
 
                if L_Start = 0 then
                   for I in 1 .. Last - 3 loop
-                     if Line (I) = 'L' and then
-                       I + 3 <= Last and then
-                       (Line (I .. I + 3) = "LLR-") then
+                     if Line (I) = 'L'
+                       and then I + 3 <= Last
+                       and then (Line (I .. I + 3) = "LLR-")
+                     then
                         L_Start := I;
                         exit;
                      end if;
@@ -173,11 +176,14 @@ package body Adacovex.Parsers.DO178C is
                   -- Find HLR reference
                   if Colon > 0 then
                      for I in Colon + 1 .. Last - 3 loop
-                        if Line (I) = 'H' and then Line (I .. I + 3) = "HLR-" then
+                        if Line (I) = 'H' and then Line (I .. I + 3) = "HLR-"
+                        then
                            H_Start := I;
                            for J in I + 4 .. Last loop
-                              if Line (J) = ' ' or else Line (J) = ']' or else
-                                Line (J) = ')' then
+                              if Line (J) = ' '
+                                or else Line (J) = ']'
+                                or else Line (J) = ')'
+                              then
                                  H_End := J - 1;
                                  exit;
                               end if;
@@ -187,13 +193,14 @@ package body Adacovex.Parsers.DO178C is
                      end loop;
                   end if;
 
-                  if L_End > L_Start + 3 and then
-                    LLR_Count < Types.Max_Llrs then
+                  if L_End > L_Start + 3 and then LLR_Count < Types.Max_Llrs
+                  then
                      LLR_Count := LLR_Count + 1;
 
                      LLRs (LLR_Count).Id_Len := L_End - (L_Start + 4) + 1;
                      for I in L_Start + 4 .. L_End loop
-                        LLRs (LLR_Count).Id (I - (L_Start + 4) + 1) := Line (I);
+                        LLRs (LLR_Count).Id (I - (L_Start + 4) + 1) :=
+                          Line (I);
                      end loop;
 
                      if Colon > 0 and then Colon < Last then
@@ -201,24 +208,24 @@ package body Adacovex.Parsers.DO178C is
                            D_Start : Natural := Colon + 1;
                            D_End   : Natural := Last;
                         begin
-                           while D_Start <= Last and then
-                             Line (D_Start) = ' ' loop
+                           while D_Start <= Last and then Line (D_Start) = ' '
+                           loop
                               D_Start := D_Start + 1;
                            end loop;
 
                            -- Truncate at HLR reference
                            if H_Start > D_Start then
                               D_End := H_Start - 1;
-                              while D_End > D_Start and then
-                                Line (D_End) = ' ' loop
+                              while D_End > D_Start and then Line (D_End) = ' '
+                              loop
                                  D_End := D_End - 1;
                               end loop;
                            end if;
 
                            LLRs (LLR_Count).D_Len := D_End - D_Start + 1;
                            for I in D_Start .. D_End loop
-                              LLRs (LLR_Count).Desc
-                                (I - D_Start + 1) := Line (I);
+                              LLRs (LLR_Count).Desc (I - D_Start + 1) :=
+                                Line (I);
                            end loop;
                         end;
                      end if;
@@ -226,7 +233,8 @@ package body Adacovex.Parsers.DO178C is
                      if H_Start > 0 and then H_End > H_Start + 3 then
                         LLRs (LLR_Count).HLR_Len := H_End - (H_Start + 4) + 1;
                         for I in H_Start + 4 .. H_End loop
-                           LLRs (LLR_Count).HLR_Ref (I - (H_Start + 4) + 1) := Line (I);
+                           LLRs (LLR_Count).HLR_Ref (I - (H_Start + 4) + 1) :=
+                             Line (I);
                         end loop;
                      end if;
                   end if;
@@ -239,33 +247,33 @@ package body Adacovex.Parsers.DO178C is
       Success := True;
    end Parse_LLR_MD;
 
-    function Find_HLR_In_Source
-      (HLR_Id   : String;
-       Packages : Types.Package_Array;
-       Pkg_Count: Natural) return Boolean
-    is
-    begin
-       for P in 1 .. Pkg_Count loop
-          for T in 1 .. Packages (P).Total_HLR_Tags loop
-             declare
-                Tag_Len : constant Natural := Packages (P).HLR_Tags (T).Len;
-                Match   : Boolean := True;
-             begin
-                if Tag_Len = HLR_Id'Length then
-                   for I in 1 .. Tag_Len loop
-                      if Packages (P).HLR_Tags (T).Tag (I) /= HLR_Id (HLR_Id'First + I - 1) then
-                         Match := False;
-                         exit;
-                      end if;
-                   end loop;
-                   if Match then
-                      return True;
-                   end if;
-                end if;
-             end;
-          end loop;
-       end loop;
-       return False;
-    end Find_HLR_In_Source;
+   function Find_HLR_In_Source
+     (HLR_Id : String; Packages : Types.Package_Array; Pkg_Count : Natural)
+      return Boolean is
+   begin
+      for P in 1 .. Pkg_Count loop
+         for T in 1 .. Packages (P).Total_HLR_Tags loop
+            declare
+               Tag_Len : constant Natural := Packages (P).HLR_Tags (T).Len;
+               Match   : Boolean := True;
+            begin
+               if Tag_Len = HLR_Id'Length then
+                  for I in 1 .. Tag_Len loop
+                     if Packages (P).HLR_Tags (T).Tag (I)
+                       /= HLR_Id (HLR_Id'First + I - 1)
+                     then
+                        Match := False;
+                        exit;
+                     end if;
+                  end loop;
+                  if Match then
+                     return True;
+                  end if;
+               end if;
+            end;
+         end loop;
+      end loop;
+      return False;
+   end Find_HLR_In_Source;
 
 end Adacovex.Parsers.DO178C;
