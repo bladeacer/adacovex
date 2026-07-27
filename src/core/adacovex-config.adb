@@ -1,4 +1,5 @@
 with Ada.Command_Line;
+with Ada.Directories;
 with Ada.Text_IO;
 
 package body Adacovex.Config is
@@ -16,12 +17,21 @@ package body Adacovex.Config is
       return True;
    end Has_Prefix;
 
+   procedure Set_String (Dst : out String; Dst_Len : out Natural; Src : String) is
+   begin
+      Dst_Len := Src'Length;
+      for J in Src'Range loop
+         Dst (J - Src'First + 1) := Src (J);
+      end loop;
+   end Set_String;
+
    function Parse_CLI return CLI_Config is
       Cfg   : CLI_Config;
       Count : constant Natural := Ada.Command_Line.Argument_Count;
       I     : Positive := 1;
    begin
       Cfg.Target_Len := 0;
+      Cfg.Manifest_Len := 0;
       Cfg.SVG_Path_Len := 0;
       Cfg.MD_Path_Len := 0;
 
@@ -32,24 +42,21 @@ package body Adacovex.Config is
             if A = "--target" then
                I := I + 1;
                if I <= Count then
-                  declare
-                     V : constant String := Ada.Command_Line.Argument (I);
-                  begin
-                     Cfg.Target_Len := V'Length;
-                     for J in V'Range loop
-                        Cfg.Target_Path (J - V'First + 1) := V (J);
-                     end loop;
-                  end;
+                  Set_String (Cfg.Target_Path, Cfg.Target_Len,
+                    Ada.Command_Line.Argument (I));
                end if;
             elsif Has_Prefix (A, "--target=") then
-               declare
-                  V : constant String := A (A'First + 9 .. A'Last);
-               begin
-                  Cfg.Target_Len := V'Length;
-                  for J in V'Range loop
-                     Cfg.Target_Path (J - V'First + 1) := V (J);
-                  end loop;
-               end;
+               Set_String (Cfg.Target_Path, Cfg.Target_Len,
+                 A (A'First + 9 .. A'Last));
+            elsif A = "--manifest" then
+               I := I + 1;
+               if I <= Count then
+                  Set_String (Cfg.Manifest_Path, Cfg.Manifest_Len,
+                    Ada.Command_Line.Argument (I));
+               end if;
+            elsif Has_Prefix (A, "--manifest=") then
+               Set_String (Cfg.Manifest_Path, Cfg.Manifest_Len,
+                 A (A'First + 11 .. A'Last));
             elsif A = "--dal" then
                I := I + 1;
                if I <= Count then
@@ -69,79 +76,70 @@ package body Adacovex.Config is
             elsif A = "--emit-svg" then
                I := I + 1;
                if I <= Count then
-                  declare
-                     V : constant String := Ada.Command_Line.Argument (I);
-                  begin
-                     Cfg.Emit_SVG := True;
-                     Cfg.SVG_Path_Len := V'Length;
-                     for J in V'Range loop
-                        Cfg.SVG_Path (J - V'First + 1) := V (J);
-                     end loop;
-                  end;
+                  Cfg.Emit_SVG := True;
+                  Set_String (Cfg.SVG_Path, Cfg.SVG_Path_Len,
+                    Ada.Command_Line.Argument (I));
                end if;
             elsif Has_Prefix (A, "--emit-svg=") then
-               declare
-                  V : constant String := A (A'First + 11 .. A'Last);
-               begin
-                  Cfg.Emit_SVG := True;
-                  Cfg.SVG_Path_Len := V'Length;
-                  for J in V'Range loop
-                     Cfg.SVG_Path (J - V'First + 1) := V (J);
-                  end loop;
-               end;
+               Cfg.Emit_SVG := True;
+               Set_String (Cfg.SVG_Path, Cfg.SVG_Path_Len,
+                 A (A'First + 11 .. A'Last));
             elsif A = "--emit-markdown" then
                I := I + 1;
                if I <= Count then
-                  declare
-                     V : constant String := Ada.Command_Line.Argument (I);
-                  begin
-                     Cfg.Emit_Markdown := True;
-                     Cfg.MD_Path_Len := V'Length;
-                     for J in V'Range loop
-                        Cfg.MD_Path (J - V'First + 1) := V (J);
-                     end loop;
-                  end;
+                  Cfg.Emit_Markdown := True;
+                  Set_String (Cfg.MD_Path, Cfg.MD_Path_Len,
+                    Ada.Command_Line.Argument (I));
                end if;
              elsif Has_Prefix (A, "--emit-markdown=") then
-                declare
-                   Eq : Natural := 0;
-                begin
-                   for I in A'Range loop
-                      if A (I) = '=' then
-                         Eq := I;
-                         exit;
-                      end if;
-                   end loop;
-                   if Eq > 0 and Eq < A'Last then
-                      Cfg.Emit_Markdown := True;
-                      Cfg.MD_Path_Len := A'Last - Eq;
-                      for J in Eq + 1 .. A'Last loop
-                         Cfg.MD_Path (J - Eq) := A (J);
-                      end loop;
-                   end if;
-                end;
-            elsif A = "--verbose" then
-               Cfg.Verbose := True;
-            elsif A = "--help" then
-               Print_Usage;
-            end if;
-         end;
-         I := I + 1;
-      end loop;
+                Cfg.Emit_Markdown := True;
+                Set_String (Cfg.MD_Path, Cfg.MD_Path_Len,
+                  A (A'First + 16 .. A'Last));
+             elsif A = "--verbose" then
+                Cfg.Verbose := True;
+             elsif A = "--help" then
+                Print_Usage;
+             end if;
+          end;
+          I := I + 1;
+       end loop;
 
-      if Cfg.Target_Len = 0 then
-         declare
-            D : constant String := "../Ada_CRDT";
-         begin
-            Cfg.Target_Len := D'Length;
-            for J in D'Range loop
-               Cfg.Target_Path (J - D'First + 1) := D (J);
-            end loop;
-         end;
-      end if;
+        -- Default target if not provided
+        if Cfg.Target_Len = 0 then
+           Set_String (Cfg.Target_Path, Cfg.Target_Len, "../Ada_CRDT");
+        end if;
 
-      return Cfg;
-   end Parse_CLI;
+        -- Resolve target path to absolute, then derive default manifest
+        declare
+           Raw : constant String := Cfg.Target_Path (1 .. Cfg.Target_Len);
+        begin
+           if Raw'Length > 0 and then Raw (Raw'First) /= '/' then
+              declare
+                 CD : constant String := Ada.Directories.Current_Directory;
+                 AP : constant String := CD & "/" & Raw;
+              begin
+                 Set_String (Cfg.Target_Path, Cfg.Target_Len, AP);
+              end;
+           end if;
+        end;
+
+        -- Default manifest derived from target
+        if Cfg.Manifest_Len = 0 then
+           declare
+              TDir : constant String := Cfg.Target_Path (1 .. Cfg.Target_Len);
+           begin
+              if Ada.Directories.Exists (TDir & "/alire-dev.toml") then
+                 Set_String (Cfg.Manifest_Path, Cfg.Manifest_Len,
+                   TDir & "/alire-dev.toml");
+              else
+                 Set_String (Cfg.Manifest_Path, Cfg.Manifest_Len,
+                   TDir & "/alire.toml");
+              end if;
+           end;
+        end if;
+
+       return Cfg;
+    end Parse_CLI;
 
    procedure Print_Usage is
    begin
@@ -150,6 +148,7 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line ("  adacovex [options]");
       Ada.Text_IO.Put_Line ("Options:");
       Ada.Text_IO.Put_Line ("  --target=PATH       Target project path (default: ../Ada_CRDT)");
+      Ada.Text_IO.Put_Line ("  --manifest=PATH     Target project manifest (default: alire-dev.toml or alire.toml)");
       Ada.Text_IO.Put_Line ("  --dal=LEVEL         Target DAL level: A, B, C, D, E (default: C)");
       Ada.Text_IO.Put_Line ("  --serve             Start HTTP dashboard server");
       Ada.Text_IO.Put_Line ("  --port=N            Server port (default: 8080)");

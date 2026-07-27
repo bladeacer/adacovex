@@ -34,9 +34,16 @@ begin
       Target (I) := Cfg.Target_Path (I);
    end loop;
 
-   Ada.Text_IO.Put_Line ("adacovex v" & Adacovex.Version);
-   Ada.Text_IO.Put_Line ("Target: " & Target (1 .. TLen));
-   Ada.Text_IO.New_Line;
+    Ada.Text_IO.Put_Line ("adacovex v" & Adacovex.Version);
+    Ada.Text_IO.Put_Line ("Target: " & Target (1 .. TLen));
+    if Cfg.Manifest_Len > 0 then
+       declare
+          MPath : String renames Cfg.Manifest_Path (1 .. Cfg.Manifest_Len);
+       begin
+          Ada.Text_IO.Put_Line ("Manifest: " & MPath);
+       end;
+    end if;
+    Ada.Text_IO.New_Line;
 
    -- Step 1: Scan source files
    Ada.Text_IO.Put_Line ("Scanning Ada sources...");

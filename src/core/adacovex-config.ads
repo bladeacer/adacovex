@@ -11,6 +11,8 @@ package Adacovex.Config is
    type CLI_Config is record
       Target_Path   : String (1 .. Types.Max_Path);
       Target_Len    : Natural := 0;
+      Manifest_Path : String (1 .. Types.Max_Path);
+      Manifest_Len  : Natural := 0;
       DAL_Target    : Types.DAL_Level := Types.DAL_C;
       Serve_Mode    : Boolean := False;
       Port          : Positive := 8080;
@@ -25,9 +27,11 @@ package Adacovex.Config is
 
    --  Parse Ada.Command_Line arguments and return a fully populated config.
    --  Reads command-line arguments via Ada.Command_Line; default values are
-   --  used for any option not provided.
+   --  used for any option not provided.  Resolves relative target paths to
+   --  absolute and checks that the target's manifest file exists.
    function Parse_CLI return CLI_Config
      with Post => Parse_CLI'Result.Target_Len <= Types.Max_Path
+                  and then Parse_CLI'Result.Manifest_Len <= Types.Max_Path
                   and then Parse_CLI'Result.SVG_Path_Len <= Types.Max_Path
                   and then Parse_CLI'Result.MD_Path_Len <= Types.Max_Path;
 
