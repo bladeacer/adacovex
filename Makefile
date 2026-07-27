@@ -1,6 +1,6 @@
 .PHONY: help all build test prove fmt lint api-docs changelog \
         verify-report compliance ascii-check dev-setup prod-setup \
-        bump-version release publish run-self run-self-serve run-self-badges \
+        bump-version release publish run-self run-ada-crdt run-self-serve run-self-badges \
         clean _dev_cmd
 
 .DEFAULT_GOAL := help
@@ -23,9 +23,10 @@ help:
 	@echo '  dev-setup     Symlink alire-dev.toml over alire.toml for dev tools'
 	@echo '  prod-setup    Restore clean publishing alire.toml'
 	@echo '  bump-version  Bump version (VERSION=x.y.z)'
-	@echo '  run-self      Dogfood: run against ../Ada_CRDT, DAL-C'
-	@echo '  run-self-serve Dogfood with HTTP server on :8080'
-	@echo '  run-self-badges Generate SVG badges + Markdown reports'
+	@echo '  run-self      Run adacovex against itself (--target=.)'
+	@echo '  run-ada-crdt  Run adacovex against ../Ada_CRDT'
+	@echo '  run-self-serve Run adacovex against itself with HTTP server on :8080'
+	@echo '  run-self-badges Generate SVG badges + Markdown reports for ../Ada_CRDT'
 	@echo '  clean         Remove build artifacts'
 	@echo '  help          Show this message'
 	@echo ''
@@ -239,14 +240,17 @@ publish:
 	alr publish
 
 run-self: build
-	timeout 10 ./bin/adacovex_main --target=../Ada_CRDT --dal=C
+	timeout 10 ./bin/adacovex_main --target=. --dal=C --manifest=./alire-dev.toml
+
+run-ada-crdt: build
+	timeout 10 ./bin/adacovex_main --target=../Ada_CRDT --dal=C --manifest=../Ada_CRDT/alire-dev.toml
 
 run-self-serve: build
-	timeout 5 ./bin/adacovex_main --target=../Ada_CRDT --dal=C --serve --port=8080
+	timeout 5 ./bin/adacovex_main --target=. --dal=C --manifest=./alire-dev.toml --serve --port=8080
 
 run-self-badges: build
 	mkdir -p docs/badges docs/compliance
-	timeout 10 ./bin/adacovex_main --target=../Ada_CRDT --dal=C \
+	timeout 10 ./bin/adacovex_main --target=../Ada_CRDT --dal=C --manifest=../Ada_CRDT/alire-dev.toml \
 	  --emit-svg=docs/badges/ \
 	  --emit-markdown=docs/compliance/
 
