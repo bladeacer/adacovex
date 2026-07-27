@@ -1,9 +1,24 @@
 with Ada.Text_IO;
---  SPDX-License-Identifier: Apache-2.0
 
 package body Adacovex.Renderers.SVG is
 
    use type Types.DAL_Status;
+
+   function I2S (N : Natural) return String is
+      Buf : String (1 .. 10);
+       Pos : Natural := 10;
+       R : Natural := N;
+   begin
+      if N = 0 then
+         return "0";
+      end if;
+       while R > 0 and Pos > 1 loop
+          Buf (Pos) := Character'Val (Character'Pos ('0') + (R mod 10));
+          R := R / 10;
+          Pos := Pos - 1;
+      end loop;
+      return Buf (Pos + 1 .. 10);
+   end I2S;
 
    function Badge_SVG
      (Label     : String;
@@ -11,38 +26,40 @@ package body Adacovex.Renderers.SVG is
       Label_Color : String := "#555";
       Value_Color : String := "#4c1") return String
    is
+      LW : constant Natural := Label'Length * 7 + 10;
+      VW : constant Natural := Value'Length * 7 + 10;
+      TW : constant Natural := LW + VW;
+      LX : constant Natural := LW / 2;
+      VX : constant Natural := LW + VW / 2;
    begin
       return
         "<svg xmlns=""http://www.w3.org/2000/svg"" width=""" &
-        Integer'Image (Label'Length * 7 + Value'Length * 7 + 14) &
-        """ height=""20"">" &
+        I2S (TW) & """ height=""20"">" &
         "<linearGradient id=""b"" x2=""0"" y2=""100%"">" &
         "<stop offset=""0"" stop-color=""#bbb"" stop-opacity="".1""/>" &
         "<stop offset=""1"" stop-opacity="".1""/>" &
         "</linearGradient>" &
-        "<rect rx=""3"" width=""100%"" height=""100%"" fill=""" &
+        "<clipPath id=""r""><rect width=""" & I2S (TW) &
+        """ height=""20"" rx=""3"" fill=""#fff""/></clipPath>" &
+        "<g clip-path=""url(#r)"">" &
+        "<rect width=""" & I2S (LW) & """ height=""20"" fill=""" &
         Label_Color & """/>" &
-        "<rect rx=""3"" x=""" &
-        Integer'Image (Label'Length * 7 + 7) &
-        """ width=""100%"" height=""100%"" fill=""" &
-        Value_Color & """/>" &
-        "<rect fill=""" & Value_Color & """ x=""" &
-        Integer'Image (Label'Length * 7 + 7) &
-        """ width=""4"" height=""100%""/>" &
-        "<rect rx=""3"" width=""100%"" height=""100%"" fill=""url(#b)""/>" &
+        "<rect x=""" & I2S (LW) & """ width=""" & I2S (VW) &
+        """ height=""20"" fill=""" & Value_Color & """/>" &
+        "<rect width=""" & I2S (TW) &
+        """ height=""20"" fill=""url(#b)""/>" &
+        "</g>" &
         "<g fill=""#fff"" font-family=""DejaVu Sans,Verdana,Geneva,sans-serif"" " &
         "font-size=""11"">" &
-        "<text x=""" & Integer'Image ((Label'Length * 7 + 7) / 2) &
+        "<text x=""" & I2S (LX) &
         """ y=""15"" fill=""#010101"" fill-opacity="".3"" " &
         "text-anchor=""middle"">" & Label & "</text>" &
-        "<text x=""" & Integer'Image ((Label'Length * 7 + 7) / 2) &
+        "<text x=""" & I2S (LX) &
         """ y=""14"" text-anchor=""middle"">" & Label & "</text>" &
-        "<text x=""" &
-        Integer'Image (Label'Length * 7 + 7 + (Value'Length * 7 + 7) / 2) &
+        "<text x=""" & I2S (VX) &
         """ y=""15"" fill=""#010101"" fill-opacity="".3"" " &
         "text-anchor=""middle"">" & Value & "</text>" &
-        "<text x=""" &
-        Integer'Image (Label'Length * 7 + 7 + (Value'Length * 7 + 7) / 2) &
+        "<text x=""" & I2S (VX) &
         """ y=""14"" text-anchor=""middle"">" & Value & "</text>" &
         "</g></svg>";
    end Badge_SVG;

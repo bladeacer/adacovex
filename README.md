@@ -1,11 +1,11 @@
+[![SPARK](docs/badges/spark.svg)](https://github.com/bladeacer/adacovex)
+[![Tests](docs/badges/tests.svg)](https://github.com/bladeacer/adacovex)
+[![DO-178C](docs/badges/do178c.svg)](https://github.com/bladeacer/adacovex)
+
 # adacovex
 
 **Zero-dependency Ada/SPARK CLI tool** for coverage analysis, proof verification,
 test-result parsing, DO-178C DAL compliance assessment, and interactive dashboards.
-
-[![SPARK](docs/badges/spark.svg)](https://github.com/bladeacer/adacovex)
-[![Tests](docs/badges/tests.svg)](https://github.com/bladeacer/adacovex)
-[![DO-178C](docs/badges/do178c.svg)](https://github.com/bladeacer/adacovex)
 
 ## Features
 

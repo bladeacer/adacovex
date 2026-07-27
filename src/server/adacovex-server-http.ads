@@ -1,5 +1,4 @@
 with Adacovex.Types;
---  SPDX-License-Identifier: Apache-2.0
 with Adacovex.Config;
 
 --  Lightweight HTTP/1.1 server built on GNAT.Sockets.

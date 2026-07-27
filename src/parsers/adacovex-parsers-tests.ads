@@ -1,5 +1,4 @@
 with Adacovex.Types;
---  SPDX-License-Identifier: Apache-2.0
 
 --  Parser for AUnit test-run results.
 --  Reads a Markdown-format test summary file or parses raw stdout

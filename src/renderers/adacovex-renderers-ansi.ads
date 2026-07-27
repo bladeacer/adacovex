@@ -1,5 +1,4 @@
 with Adacovex.Types;
---  SPDX-License-Identifier: Apache-2.0
 
 --  Terminal ANSI renderer.
 --  Produces a colored, human-readable report on standard output using

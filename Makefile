@@ -45,8 +45,19 @@ prove:
 
 fmt:
 	@echo "=== Formatting Ada sources with gnatformat ==="; \
-	alr exec -- gnatformat -P adacovex.gpr -U 2>/dev/null || \
-	  echo "gnatformat not available; run 'make dev-setup' first"
+	if ! grep -q 'gnatformat_bin' alire.toml 2>/dev/null; then \
+		cp alire.toml alire.toml.fmtbak; \
+		cp alire-dev.toml alire.toml; \
+		restore=1; \
+	else \
+		restore=0; \
+	fi; \
+	alr exec -- gnatformat -P adacovex.gpr -U; \
+	status=$$?; \
+	if [ "$$restore" -eq 1 ]; then \
+		mv alire.toml.fmtbak alire.toml; \
+	fi; \
+	exit $$status
 
 lint:
 	alr build 2>&1 | grep -iE "warning|error" || true

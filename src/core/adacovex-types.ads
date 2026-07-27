@@ -1,5 +1,4 @@
 --  All domain types used across the adacovex tool chain.
---  SPDX-License-Identifier: Apache-2.0
 --  Every type is bounded at compile time; no heap allocation is used.
 --  HLR-METRICS: Docstring_Metrics type
 --  HLR-PROOF: Proof_Summary type
