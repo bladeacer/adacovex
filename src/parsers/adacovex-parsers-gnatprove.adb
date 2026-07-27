@@ -152,7 +152,7 @@ package body Adacovex.Parsers.GNATprove is
    end Parse_Prove_Out;
 
    function Determine_SPARK_Level
-     (Summary : Types.Proof_Summary) return Types.SPARK_Level
+      (Summary : Types.Proof_Summary) return Types.SPARK_Level
    is
    begin
       if Summary.Unproved > 0 then
@@ -180,5 +180,126 @@ package body Adacovex.Parsers.GNATprove is
 
       return Types.Stone;
    end Determine_SPARK_Level;
+
+   procedure Parse_Prove_From_Project
+     (Target_Dir : String;
+      Summary    : out Types.Proof_Summary;
+      Success    : out Boolean)
+   is
+      Path1 : constant String := Target_Dir & "/obj/gnatprove/gnatprove.out";
+      Path2 : constant String := Target_Dir & "/gnatprove.out";
+   begin
+      Summary := (others => <>);
+      Parse_Prove_Out (Path1, Summary, Success);
+      if Success then
+         return;
+      end if;
+      Parse_Prove_Out (Path2, Summary, Success);
+   end Parse_Prove_From_Project;
+
+   procedure Parse_Prove_JSON
+     (File_Path : String;
+      Summary   : out Types.Proof_Summary;
+      Success   : out Boolean)
+   is
+      use Ada.Text_IO;
+      F     : File_Type;
+      Line  : String (1 .. Types.Max_Line);
+      Last  : Natural;
+      --  Simple JSON field extractor: looks for "key": number
+      function JSON_Get (S : String; Key : String) return Natural is
+         Pos : Natural := 0;
+         K   : constant String := '"' & Key & '"';
+      begin
+         for I in S'Range loop
+            if S (I) = '"' and then
+              I + K'Length - 1 <= S'Last
+            then
+               --  Check for key match
+               declare
+                  Match : Boolean := True;
+               begin
+                  for J in 1 .. K'Length loop
+                     if S (I + J - 1) /= K (J) then
+                        Match := False;
+                        exit;
+                     end if;
+                  end loop;
+                  if Match then
+                     Pos := I + K'Length;
+                     exit;
+                  end if;
+               end;
+            end if;
+         end loop;
+         if Pos = 0 then
+            return 0;
+         end if;
+         --  Skip whitespace, colon, whitespace
+         while Pos <= S'Last and then S (Pos) in ' ' | ':' | ',' loop
+            Pos := Pos + 1;
+         end loop;
+         --  Read number
+         if Pos <= S'Last and then S (Pos) in '0' .. '9' then
+            declare
+               Val : Natural := 0;
+            begin
+               while Pos <= S'Last and then S (Pos) in '0' .. '9' loop
+                  Val := Val * 10 + (Character'Pos (S (Pos)) - Character'Pos ('0'));
+                  Pos := Pos + 1;
+               end loop;
+               return Val;
+            end;
+         end if;
+         return 0;
+      end JSON_Get;
+   begin
+      Summary := (others => <>);
+      begin
+         Open (F, In_File, File_Path);
+      exception
+         when others =>
+            Success := False;
+            return;
+      end;
+      --  Read entire file line by line looking for known keys
+      while not End_Of_File (F) loop
+         Get_Line (F, Line, Last);
+         declare
+            S : String renames Line (1 .. Last);
+         begin
+            if JSON_Get (S, "total_vcs") > 0 then
+               Summary.Total_VCs := JSON_Get (S, "total_vcs");
+            end if;
+            if JSON_Get (S, "proved_vcs") > 0 then
+               Summary.Proved_VCs := JSON_Get (S, "proved_vcs");
+            end if;
+            if JSON_Get (S, "unproved_vcs") > 0 then
+               Summary.Unproved := JSON_Get (S, "unproved_vcs");
+            end if;
+            if JSON_Get (S, "flow_deps") > 0 then
+               Summary.Flow_Checks := JSON_Get (S, "flow_deps");
+            end if;
+            if JSON_Get (S, "flow_proved") > 0 then
+               Summary.Flow_Proved := JSON_Get (S, "flow_proved");
+            end if;
+            if JSON_Get (S, "runtime_checks") > 0 then
+               Summary.Runtime_Checks := JSON_Get (S, "runtime_checks");
+            end if;
+            if JSON_Get (S, "runtime_proved") > 0 then
+               Summary.Runtime_Proved := JSON_Get (S, "runtime_proved");
+            end if;
+            if JSON_Get (S, "assertions") > 0 then
+               Summary.Assertions := JSON_Get (S, "assertions");
+            end if;
+            if JSON_Get (S, "assert_proved") > 0 then
+               Summary.Assert_Proved := JSON_Get (S, "assert_proved");
+            end if;
+         end;
+      end loop;
+      Close (F);
+      Summary.Level := Determine_SPARK_Level (Summary);
+       Success := Summary.Total_VCs > 0;
+   end Parse_Prove_JSON;
 
 end Adacovex.Parsers.GNATprove;

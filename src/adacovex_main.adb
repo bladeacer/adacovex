@@ -58,12 +58,10 @@ begin
 
    -- Step 2: Parse GNATprove output
    declare
-      GP_Path : constant String :=
-        Target (1 .. TLen) & "/obj/gnatprove/gnatprove.out";
    begin
       Ada.Text_IO.Put_Line ("Parsing GNATprove output...");
-      Adacovex.Parsers.GNATprove.Parse_Prove_Out
-        (GP_Path, Proof, Success);
+      Adacovex.Parsers.GNATprove.Parse_Prove_From_Project
+        (Target (1 .. TLen), Proof, Success);
       if Success then
          Ada.Text_IO.Put_Line
            ("  SPARK Level: " & To_String (Proof.Level));
@@ -93,11 +91,12 @@ begin
 
    -- Step 4: Assess DAL compliance
    Ada.Text_IO.Put_Line ("Assessing DO-178C DAL compliance...");
-   Adacovex.Compliance.DAL.Assess_DAL_C
-     (Target (1 .. TLen), Packages, Pkg_Count,
+   Adacovex.Compliance.DAL.Assess_DAL
+     (Cfg.DAL_Target, Target (1 .. TLen), Packages, Pkg_Count,
       Proof, Tests, DAL_Assess);
    Ada.Text_IO.Put_Line
-     ("  Status: " & To_String (DAL_Assess.Status));
+     ("  DAL-" & To_String (Cfg.DAL_Target) & " Status: "
+      & To_String (DAL_Assess.Status));
    Ada.Text_IO.New_Line;
 
    -- Step 5: Render ANSI summary
