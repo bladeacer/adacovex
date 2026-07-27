@@ -1,5 +1,4 @@
 with Adacovex.Types;
---  SPDX-License-Identifier: Apache-2.0
 
 --  Parser for DO-178C requirements documents.
 --  Reads HLR.md and LLR.md markdown files, extracts HLR/LLR identifiers

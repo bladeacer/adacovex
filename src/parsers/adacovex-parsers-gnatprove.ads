@@ -1,5 +1,4 @@
 with Adacovex.Types;
---  SPDX-License-Identifier: Apache-2.0
 
 --  Parser for GNATprove verification-output files.
 --  Reads the summary table from gnatprove.out and produces a

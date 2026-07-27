@@ -1,5 +1,4 @@
 with Ada.Text_IO;
---  SPDX-License-Identifier: Apache-2.0
 with Ada.Exceptions;
 with Adacovex.Types;
 with Adacovex.Config;
