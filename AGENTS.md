@@ -139,7 +139,7 @@ Test source: `src/tests/`. Entry point: `test_runner.adb` (builds as
 `bin/test_runner` from `for Main use ("adacovex_main.adb", "test_runner.adb")`
 in `adacovex.gpr`).
 
-`make test` builds and runs the 140-test suite. Test results are written to
+`make test` builds and runs the 152-test suite. Test results are written to
 `docs/test_result.md` in a Markdown table format that can be parsed by
 `adacovex-parsers-tests`. This means adacovex **supports both** native test
 running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).

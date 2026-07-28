@@ -198,6 +198,87 @@ package body Adacovex_Scanner_Tests is
             "Compute_Metrics empty: coverage = 0%");
       end;
 
+      --  Test 6: After-declaration docstring tags on last subprogram
+      begin
+         declare
+            F : File_Type;
+         begin
+            Create (F, Out_File, Tmp_File);
+            Put_Line (F, "package After_Decl is");
+            Put_Line (F, "   pragma Pure;");
+            Put_Line (F, "   function Add (X, Y : Integer) return Integer;");
+            Put_Line (F, "   --  @param X  First parameter.");
+            Put_Line (F, "   --  @param Y  Second parameter.");
+            Put_Line (F, "   --  @return The sum.");
+            Put_Line (F, "end After_Decl;");
+            Close (F);
+         end;
+      end;
+
+      Adacovex.Parsers.Source.Scan_Ads_File (Tmp_File, Pkg, Success);
+      R.Check (Success, "Test 6: parse succeeded");
+      R.Check (Pkg.Subprogram_Count >= 1, "Test 6: at least 1 subprogram");
+      declare
+         Add_Idx : constant Natural := Pkg.Subprogram_Count;
+      begin
+         R.Check (Add_Idx >= 1, "Test 6: has subprograms");
+         if Add_Idx >= 1 then
+            R.Check
+              (Pkg.Subprogram_List (Add_Idx).Has_Docstring,
+               "Test 6: after-decl tags attached to last subprogram");
+            R.Check
+              (Pkg.Subprogram_List (Add_Idx).Doc_Param_Ct >= 2,
+               "Test 6: after-decl has 2 documented params");
+            R.Check
+              (Pkg.Subprogram_List (Add_Idx).Doc_Return,
+               "Test 6: after-decl has documented return");
+         end if;
+      end;
+
+      --  Test 7: @field tag support
+      begin
+         declare
+            F : File_Type;
+         begin
+            Create (F, Out_File, Tmp_File);
+            Put_Line (F, "package Field_Test is");
+            Put_Line (F, "   pragma Pure;");
+            Put_Line (F, "   --  @field Some component description.");
+            Put_Line (F, "   procedure Proc;");
+            Put_Line (F, "end Field_Test;");
+            Close (F);
+         end;
+      end;
+
+      Adacovex.Parsers.Source.Scan_Ads_File (Tmp_File, Pkg, Success);
+      R.Check (Success, "Test 7: parse succeeded");
+      R.Check (Pkg.Subprogram_Count >= 1, "Test 7: at least 1 subprogram");
+      R.Check
+        (Pkg.Subprogram_List (Pkg.Subprogram_Count).Has_Docstring,
+         "Test 7: @field sets Has_Docstring");
+
+      --  Test 8: @formal tag (recognized but does not set Has_Docstring)
+      begin
+         declare
+            F : File_Type;
+         begin
+            Create (F, Out_File, Tmp_File);
+            Put_Line (F, "package Formal_Test is");
+            Put_Line (F, "   pragma Pure;");
+            Put_Line (F, "   --  @formal T  Generic type parameter.");
+            Put_Line (F, "   procedure Proc;");
+            Put_Line (F, "end Formal_Test;");
+            Close (F);
+         end;
+      end;
+
+      Adacovex.Parsers.Source.Scan_Ads_File (Tmp_File, Pkg, Success);
+      R.Check (Success, "Test 8: parse succeeded");
+      R.Check (Pkg.Subprogram_Count >= 1, "Test 8: at least 1 subprogram");
+      R.Check
+        (not Pkg.Subprogram_List (Pkg.Subprogram_Count).Has_Docstring,
+         "Test 8: @formal alone does not set Has_Docstring");
+
       --  Cleanup
       begin
          Ada.Directories.Delete_File (Tmp_File);
