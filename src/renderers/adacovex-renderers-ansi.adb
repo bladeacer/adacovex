@@ -7,18 +7,22 @@ package body Adacovex.Renderers.ANSI is
 
    ESC : constant String := ASCII.ESC & "[";
 
-   procedure Put_Color (Color : String; Bold : Boolean := False) is
+   procedure Put_Color (Color : String; Bold : Boolean := False; Enable : Boolean := True) is
    begin
-      if Bold then
-         Ada.Text_IO.Put (ESC & "1;" & Color & "m");
-      else
-         Ada.Text_IO.Put (ESC & Color & "m");
+      if Enable then
+         if Bold then
+            Ada.Text_IO.Put (ESC & "1;" & Color & "m");
+         else
+            Ada.Text_IO.Put (ESC & Color & "m");
+         end if;
       end if;
    end Put_Color;
 
-   procedure Reset_Color is
+   procedure Reset_Color (Enable : Boolean := True) is
    begin
-      Ada.Text_IO.Put (ESC & "0m");
+      if Enable then
+         Ada.Text_IO.Put (ESC & "0m");
+      end if;
    end Reset_Color;
 
    procedure Render_Summary
@@ -27,14 +31,15 @@ package body Adacovex.Renderers.ANSI is
       Tests       : Types.Test_Summary;
       DAL_Assess  : Types.DAL_Assessment;
       Packages    : Types.Package_Array;
-      Pkg_Count   : Natural) is
+      Pkg_Count   : Natural;
+      Use_Color   : Boolean := False) is
    begin
       Ada.Text_IO.Put ("  scanning sources... ");
-      Put_Color ("37");
+      Put_Color ("37", Enable => Use_Color);
       Ada.Text_IO.Put (Natural'Image (Pkg_Count) & " packages,");
       Ada.Text_IO.Put (Natural'Image (Doc_Metrics.Total_Subprograms)
                        & " subprograms");
-      Reset_Color;
+      Reset_Color (Enable => Use_Color);
       Ada.Text_IO.New_Line;
 
       --  Docstring coverage
@@ -42,32 +47,32 @@ package body Adacovex.Renderers.ANSI is
       Ada.Text_IO.Put (Natural'Image (Doc_Metrics.Documented_Subprogs)
                        & "/" & Natural'Image (Doc_Metrics.Total_Subprograms));
       if Doc_Metrics.Coverage_Pct >= 80 then
-         Put_Color ("32");
+         Put_Color ("32", Enable => Use_Color);
       elsif Doc_Metrics.Coverage_Pct >= 50 then
-         Put_Color ("33");
+         Put_Color ("33", Enable => Use_Color);
       else
-         Put_Color ("31");
+         Put_Color ("31", Enable => Use_Color);
       end if;
       Ada.Text_IO.Put (" (" & Natural'Image (Doc_Metrics.Coverage_Pct) & "%)");
-      Reset_Color;
+      Reset_Color (Enable => Use_Color);
       Ada.Text_IO.New_Line;
 
       --  SPARK proof
       Ada.Text_IO.Put ("  GNATprove: ");
       case Proof.Level is
          when Types.Platinum =>
-            Put_Color ("37");
+            Put_Color ("37", Enable => Use_Color);
          when Types.Gold =>
-            Put_Color ("33");
+            Put_Color ("33", Enable => Use_Color);
          when Types.Silver =>
-            Put_Color ("37");
+            Put_Color ("37", Enable => Use_Color);
          when Types.Bronze =>
-            Put_Color ("31");
+            Put_Color ("31", Enable => Use_Color);
          when Types.Stone =>
-            Put_Color ("31");
+            Put_Color ("31", Enable => Use_Color);
       end case;
       Ada.Text_IO.Put (Types.To_String (Proof.Level));
-      Reset_Color;
+      Reset_Color (Enable => Use_Color);
       Ada.Text_IO.Put (" (" & Natural'Image (Proof.Total_VCs) & " VCs,");
       Ada.Text_IO.Put (Natural'Image (Proof.Unproved) & " unproved)");
       Ada.Text_IO.New_Line;
@@ -75,13 +80,13 @@ package body Adacovex.Renderers.ANSI is
       --  Test results
       Ada.Text_IO.Put ("  tests: ");
       if Tests.Total_Failed = 0 then
-         Put_Color ("32");
+         Put_Color ("32", Enable => Use_Color);
       else
-         Put_Color ("31");
+         Put_Color ("31", Enable => Use_Color);
       end if;
       Ada.Text_IO.Put (Natural'Image (Tests.Total_Passed) & " passed,");
       Ada.Text_IO.Put (Natural'Image (Tests.Total_Failed) & " failed");
-      Reset_Color;
+      Reset_Color (Enable => Use_Color);
       Ada.Text_IO.New_Line;
 
       --  DAL compliance
@@ -89,12 +94,12 @@ package body Adacovex.Renderers.ANSI is
                        & Types.To_String (DAL_Assess.Target_DAL)
                        & ": ");
       if DAL_Assess.Status = Types.Achieved then
-         Put_Color ("32", True);
+         Put_Color ("32", Bold => True, Enable => Use_Color);
       else
-         Put_Color ("31", True);
+         Put_Color ("31", Bold => True, Enable => Use_Color);
       end if;
       Ada.Text_IO.Put (Types.To_String (DAL_Assess.Status));
-      Reset_Color;
+      Reset_Color (Enable => Use_Color);
       Ada.Text_IO.New_Line;
 
       --  Undocumented subprograms (file:line format)
@@ -141,11 +146,11 @@ package body Adacovex.Renderers.ANSI is
       --  DAL failures
       if DAL_Assess.Failed_Count > 0 then
          Ada.Text_IO.New_Line;
-         Put_Color ("31");
+         Put_Color ("31", Enable => Use_Color);
          Ada.Text_IO.Put_Line ("  DAL-"
                                & Types.To_String (DAL_Assess.Target_DAL)
                                & " failures:");
-         Reset_Color;
+         Reset_Color (Enable => Use_Color);
          for F in 1 .. DAL_Assess.Failed_Count loop
             Ada.Text_IO.Put_Line
               ("    - "
@@ -172,11 +177,11 @@ package body Adacovex.Renderers.ANSI is
                   if T > 1 then
                      Ada.Text_IO.Put (", ");
                   end if;
-                  Put_Color ("33");
+                  Put_Color ("33", Enable => Use_Color);
                   Ada.Text_IO.Put
                     (Packages (P).HLR_Tags (T).Tag
                        (1 .. Packages (P).HLR_Tags (T).Len));
-                  Reset_Color;
+                  Reset_Color (Enable => Use_Color);
                end loop;
                Ada.Text_IO.New_Line;
             end if;

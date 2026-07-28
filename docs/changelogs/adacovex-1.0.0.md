@@ -4,14 +4,15 @@ Date: _2026-07-28_
 
 Initial stable release.
 
-## New Features
+## New Features (from earlier rounds)
 
 ### Ada Source Scanner
 
 Scans `.ads` files and extracts subprogram declarations (procedures, functions,
 types, subtypes), docstring annotations (`@param`, `@return`, `@field`,
 `@formal`), and HLR traceability tags (`-- HLR-XXXX`). Supports both
-before-declaration and after-declaration docstring placement.
+before-declaration and after-declaration docstring placement. Tracks source
+line numbers for each subprogram.
 
 ### GNATprove Output Parser
 
@@ -38,22 +39,54 @@ Assesses target projects against DO-178C DAL A--E criteria:
 ### Multiple Output Formats
 
 - **ANSI terminal report**: colored output with coverage, SPARK, tests, and
-  DAL assessment sections
+  DAL assessment sections; respects `NO_COLOR` environment variable and
+  non-interactive terminal detection
 - **SVG badges**: shields.io-style badges for SPARK level, test status,
-  DO-178C status, and docstring coverage
+  DO-178C status, and docstring coverage; automatically emitted to
+  `docs/badges/` by default (overridable via `--emit-svg=PATH` or suppressed
+  with `--no-svg`)
 - **Markdown reports**: VERIFICATION.md and TRACE.md for compliance docs
 - **HTML dashboard**: full web dashboard with live metrics and JSON API
-- **HTTP server**: built-in HTTP/1.1 server (GNAT.Sockets) on configurable port
+- **HTTP server**: multi-threaded HTTP/1.1 server (GNAT.Sockets) with a
+  4-worker Ada task pool and keep-alive connection support on configurable port
 
 ### CLI Interface
 
 Self-documenting command-line interface with options for target project path,
-manifest override, DAL level, server mode, SVG/Markdown output, and verbose
-diagnostics.
+manifest override, DAL level, server mode, SVG/Markdown output, verbose
+diagnostics, and port configuration. Proper exit codes (0=success, 1=failure).
+
+### HTTP Server Enhancements
+
+- Multi-threaded request handling via bounded Ada task pool (4 workers)
+- HTTP/1.1 keep-alive connections (parses Connection and Content-Length headers)
+- Concurrent request processing without blocking
+
+### CLI UX
+
+- `NO_COLOR` environment variable suppresses ANSI escape sequences
+- TTY auto-detection: ANSI colors enabled by default on interactive terminals
+- stdout/stderr separation: report/header on stdout, diagnostics on stderr
+- Timing footer ("Completed in Xs") on every run
+- Exit code 0 on success, 1 on failure
 
 ## Changes
 
-None. Initial release.
+- **HTTP server**: single-threaded accept loop replaced with 4-worker Ada task
+  pool; HTTP/1.1 keep-alive support added; Connection and Content-Length
+  headers parsed correctly; request body draining for POST requests
+- **SVG output**: `--emit-svg` now defaults to emitting badges to `docs/badges/`;
+  added `--no-svg` flag to suppress default SVG output
+- **CLI output**: rewrote to Go/Rust compact format with `file:line` style
+  undocumented-subprogram messages and `help:` suggestions
+- **Line number tracking**: `Subprogram_Info` now includes `Line_Number` field,
+  populated during source scanning
+- **Name extraction bug fix**: fixed off-by-one offset in subprogram name
+  extraction that caused truncated names (e.g., "Add" -> "dd", "Log" -> "og")
+- **Tests**: expanded from 23 to 140 tests across 7 categories
+- **Docstring styles**: British English (`colour`, `behaviour`) normalized
+  throughout comments and documentation
+- **ASCII verification**: all source files verified pure ASCII
 
 ## Known Issues
 
@@ -61,7 +94,6 @@ None. Initial release.
   comments with adjacent tag-like patterns
 - DAL compliance requires target project to have `docs/compliance/HLR.md`
   and `docs/compliance/LLR.md` in specific paths
-- HTTP server is single-threaded; concurrent requests are serialized
 
 ## Migration
 
