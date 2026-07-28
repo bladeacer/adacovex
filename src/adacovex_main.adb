@@ -1,5 +1,8 @@
 with Ada.Text_IO;
 with Ada.Exceptions;
+with Ada.Calendar;
+with Ada.Environment_Variables;
+with Ada.Command_Line;
 with Adacovex.Types;
 with Adacovex.Config;
 with Adacovex.Parsers.Source;
@@ -12,10 +15,15 @@ with Adacovex.Renderers.Markdown;
 with Adacovex.Server.HTTP;
 
 procedure Adacovex_Main is
+   use Ada.Calendar;
    use Adacovex.Types;
-   Cfg    : Adacovex.Config.CLI_Config;
-   Target : String (1 .. Max_Path);
-   TLen   : Natural;
+
+   Start_Time : constant Time := Clock;
+   Cfg        : Adacovex.Config.CLI_Config;
+   Target     : String (1 .. Max_Path);
+   TLen       : Natural;
+
+   Use_Color : Boolean := False;
 
    Packages  : Package_Array;
    Pkg_Count : Natural;
@@ -25,9 +33,13 @@ procedure Adacovex_Main is
    Tests       : Test_Summary;
    DAL_Assess  : DAL_Assessment;
 
-   Success : Boolean;
+   Success  : Boolean;
+   Exit_St  : Ada.Command_Line.Exit_Status := 0;
 begin
    Cfg := Adacovex.Config.Parse_CLI;
+
+   --  Determine ANSI color support (assume TTY, overridden by NO_COLOR)
+   Use_Color := not Ada.Environment_Variables.Exists ("NO_COLOR");
 
    TLen := Cfg.Target_Len;
    for I in 1 .. TLen loop
@@ -37,11 +49,9 @@ begin
    Ada.Text_IO.Put_Line
      ("adacovex v" & Adacovex.Version & " -- " & Target (1 .. TLen));
    if Cfg.Manifest_Len > 0 then
-      declare
-         MPath : String renames Cfg.Manifest_Path (1 .. Cfg.Manifest_Len);
-      begin
-         Ada.Text_IO.Put_Line ("  manifest: " & MPath);
-      end;
+      Ada.Text_IO.Put_Line
+        (Ada.Text_IO.Standard_Error,
+         "  manifest: " & Cfg.Manifest_Path (1 .. Cfg.Manifest_Len));
    end if;
 
    -- Step 1: Scan source files
@@ -71,36 +81,42 @@ begin
       Tests,
       DAL_Assess);
 
-   -- Step 5: Render ANSI summary
-   Adacovex.Renderers.ANSI.Render_Summary
-     (Doc_Metrics, Proof, Tests, DAL_Assess, Packages, Pkg_Count);
+   if DAL_Assess.Status /= Achieved then
+      Exit_St := 1;
+   end if;
 
-    -- Step 6: Emit SVG badges if requested
-    if Cfg.Emit_SVG then
-       declare
-          Dir : String renames Cfg.SVG_Path (1 .. Cfg.SVG_Path_Len);
-       begin
-          Adacovex.Renderers.SVG.Write_Badge_To_File
-            (Dir & "/spark.svg",
-             Adacovex.Renderers.SVG.Render_SPARK_Badge (Proof.Level));
-          Adacovex.Renderers.SVG.Write_Badge_To_File
-            (Dir & "/tests.svg",
-             Adacovex.Renderers.SVG.Render_Tests_Badge (Tests));
-          Adacovex.Renderers.SVG.Write_Badge_To_File
-            (Dir & "/do178c.svg",
-             Adacovex.Renderers.SVG.Render_DO178C_Badge (DAL_Assess));
-          Adacovex.Renderers.SVG.Write_Badge_To_File
-            (Dir & "/docs.svg",
-             Adacovex.Renderers.SVG.Render_Docstring_Badge (Doc_Metrics));
-       end;
-    end if;
+   -- Step 5: Render ANSI summary (stdout)
+   Adacovex.Renderers.ANSI.Render_Summary
+     (Doc_Metrics, Proof, Tests, DAL_Assess, Packages, Pkg_Count, Use_Color);
+
+   -- Step 6: Emit SVG badges if requested
+   if Cfg.Emit_SVG then
+      declare
+         Dir : String renames Cfg.SVG_Path (1 .. Cfg.SVG_Path_Len);
+      begin
+         Adacovex.Renderers.SVG.Write_Badge_To_File
+           (Dir & "/spark.svg",
+            Adacovex.Renderers.SVG.Render_SPARK_Badge (Proof.Level));
+         Adacovex.Renderers.SVG.Write_Badge_To_File
+           (Dir & "/tests.svg",
+            Adacovex.Renderers.SVG.Render_Tests_Badge (Tests));
+         Adacovex.Renderers.SVG.Write_Badge_To_File
+           (Dir & "/do178c.svg",
+            Adacovex.Renderers.SVG.Render_DO178C_Badge (DAL_Assess));
+         Adacovex.Renderers.SVG.Write_Badge_To_File
+           (Dir & "/docs.svg",
+            Adacovex.Renderers.SVG.Render_Docstring_Badge (Doc_Metrics));
+      end;
+   end if;
 
    -- Step 7: Emit Markdown reports if requested
    if Cfg.Emit_Markdown then
       declare
          Dir : String renames Cfg.MD_Path (1 .. Cfg.MD_Path_Len);
       begin
-         Ada.Text_IO.Put_Line ("Writing Markdown reports to " & Dir & "...");
+         Ada.Text_IO.Put_Line
+           (Ada.Text_IO.Standard_Error,
+            "Writing Markdown reports to " & Dir & "...");
          Adacovex.Renderers.Markdown.Generate_Verification_Report
            (Dir & "/VERIFICATION.md",
             Doc_Metrics,
@@ -111,7 +127,7 @@ begin
             Pkg_Count);
          Adacovex.Renderers.Markdown.Generate_Trace_Matrix
            (Dir & "/TRACE.md", Packages, Pkg_Count);
-         Ada.Text_IO.Put_Line ("  Done.");
+         Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "  Done.");
       end;
    end if;
 
@@ -131,7 +147,19 @@ begin
       end;
    end if;
 
+   -- Timing footer
+   declare
+      Elapsed : constant Duration := Clock - Start_Time;
+   begin
+      Ada.Text_IO.Put_Line ("Completed in" & Duration'Image (Elapsed));
+   end;
+
+   Ada.Command_Line.Set_Exit_Status (Exit_St);
+
 exception
    when E : others =>
-      Ada.Text_IO.Put_Line ("Error: " & Ada.Exceptions.Exception_Message (E));
+      Ada.Text_IO.Put_Line
+        (Ada.Text_IO.Standard_Error,
+         "Error: " & Ada.Exceptions.Exception_Message (E));
+      Ada.Command_Line.Set_Exit_Status (1);
 end Adacovex_Main;

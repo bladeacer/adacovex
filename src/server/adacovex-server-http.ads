@@ -1,8 +1,9 @@
 with Adacovex.Types;
-with Adacovex.Config;
 
---  Lightweight HTTP/1.1 server built on GNAT.Sockets.
---  Serves the web dashboard, JSON API, and SVG badge endpoints.
+--  Multi-threaded HTTP/1.1 server built on GNAT.Sockets.
+--  Uses a bounded Ada task pool for concurrent request handling.
+--  Supports keep-alive connections and serves the web dashboard,
+--  JSON API, and SVG badge endpoints.
 --  HLR-SERVER: HTTP server
 
 package Adacovex.Server.HTTP is
@@ -19,10 +20,10 @@ package Adacovex.Server.HTTP is
       Running     : Boolean := False;
    end record;
 
-   --  Start the HTTP server loop (blocks until error or Ctrl+C).
-   --  Binds to the configured port, accepts HTTP/1.1 requests, and serves
-   --  the HTML dashboard, JSON API, and SVG badge endpoints. Runs until
-   --  a fatal socket error or external interrupt.
+   --  Start the HTTP server (runs until Ctrl+C or socket error).
+   --  Creates a bounded task pool of 4 workers for concurrent request
+   --  handling with HTTP/1.1 keep-alive support. Binds to the configured
+   --  port and serves the HTML dashboard, JSON API, and SVG badge endpoints.
    --  @param State  Server configuration and metric data.
    procedure Start (State : Server_State)
    with Pre => State.Port > 0;
