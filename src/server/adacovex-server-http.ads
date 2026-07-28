@@ -19,12 +19,12 @@ package Adacovex.Server.HTTP is
       Running     : Boolean := False;
    end record;
 
-    --  Start the HTTP server loop (blocks until error or Ctrl+C).
-    --  Binds to the configured port, accepts HTTP/1.1 requests, and serves
-    --  the HTML dashboard, JSON API, and SVG badge endpoints. Runs until
-    --  a fatal socket error or external interrupt.
-    --  @param State  Server configuration and metric data.
-    procedure Start (State : Server_State)
-    with Pre => State.Port > 0;
+   --  Start the HTTP server loop (blocks until error or Ctrl+C).
+   --  Binds to the configured port, accepts HTTP/1.1 requests, and serves
+   --  the HTML dashboard, JSON API, and SVG badge endpoints. Runs until
+   --  a fatal socket error or external interrupt.
+   --  @param State  Server configuration and metric data.
+   procedure Start (State : Server_State)
+   with Pre => State.Port > 0;
 
 end Adacovex.Server.HTTP;

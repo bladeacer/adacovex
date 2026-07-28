@@ -1,4 +1,4 @@
-.PHONY: help all build test prove fmt lint api-docs changelog \
+.PHONY: help all build test prove fmt lint doc api-docs changelog \
         verify-report compliance ascii-check dev-setup prod-setup \
         bump-version release publish run-self run-ada-crdt run-self-serve run-self-badges \
         clean _dev_cmd
@@ -15,7 +15,8 @@ help:
 	@echo '  prove         Run SPARK proofs (swaps alire-dev.toml)'
 	@echo '  fmt           Format Ada sources with gnatformat (swaps alire-dev.toml)'
 	@echo '  lint          Check for build warnings'
-	@echo '  api-docs      Generate Ada API docs (swaps alire-dev.toml)'
+	@echo '  doc           Alias for api-docs (generate API docs)'
+	@echo '  api-docs      Generate Ada API docs via gnatdoc + rst2md (swaps alire-dev.toml)'
 	@echo '  changelog     Generate CHANGELOG from git log'
 	@echo '  verify-report Regenerate VERIFICATION.md from gnatprove.out + test results'
 	@echo '  compliance    HLR traceability check + verification report'
@@ -41,7 +42,7 @@ build:
 	rm -f $$tmpfile; exit $$result
 
 test: build
-	alr run
+	./bin/test_runner
 
 prove:
 	@$(MAKE) _dev_cmd CMD="alr gnatprove"
@@ -52,8 +53,14 @@ fmt:
 lint:
 	alr build 2>&1 | grep -iE "warning|error" || true
 
-api-docs:
-	@$(MAKE) _dev_cmd CMD="alr exec -- gnatdoc -P adacovex.gpr --output-dir=docs/api --create-missing-dirs"
+doc api-docs:
+	@$(MAKE) _dev_cmd CMD='mkdir -p obj && \
+	  alr exec -- gnatdoc -P adacovex.gpr --backend=rst \
+	    --generate private --output-dir=obj/gnatdoc-rst && \
+	  python3 tools/rst2md.py obj/gnatdoc-rst docs/api-docs && \
+	  rm -f docs/api-docs/test_*.md docs/api-docs/adacovex-test_support.md && \
+	  sed -i "/](test_[^)]*\.md)/d" docs/api-docs/index.md 2>/dev/null; \
+	  sed -i "/](adacovex-test_support\.md)/d" docs/api-docs/index.md 2>/dev/null'
 
 changelog:
 	git log --oneline --format="%s" > CHANGELOG.tmp && \
@@ -118,8 +125,8 @@ compliance:
 	@echo "=== DO-178C Traceability Verification ==="; \
 	errors=0; \
 	srcdir=src; \
-	hlr_file="docs/HLR.md"; \
-	llr_file="docs/LLR.md"; \
+	hlr_file="docs/compliance/HLR.md"; \
+	llr_file="docs/compliance/LLR.md"; \
 	trace_file="docs/compliance/TRACE.md"; \
 	\
 	echo "--- HLR tag scan ---"; \

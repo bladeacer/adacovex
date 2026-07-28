@@ -61,6 +61,27 @@ package body Adacovex.Parsers.Source is
 
                   if H_End > H_Start + 3 then
                      Tag_Len := H_End - (H_Start + 4) + 1;
+                     declare
+                        Valid : Boolean := True;
+                     begin
+                        for CI in 1 .. Tag_Len loop
+                           declare
+                              C : constant Character :=
+                                Line (H_Start + 4 + CI - 1);
+                           begin
+                              if C not in 'A' .. 'Z'
+                                and then C not in '0' .. '9'
+                                and then C /= '-'
+                              then
+                                 Valid := False;
+                                 exit;
+                              end if;
+                           end;
+                        end loop;
+                        if not Valid then
+                           return False;
+                        end if;
+                     end;
                      for J in 1 .. Tag_Len loop
                         Tag (J) := Line (H_Start + 4 + J - 1);
                      end loop;
@@ -139,32 +160,32 @@ package body Adacovex.Parsers.Source is
       Pkg_NLen : Natural := 0;
       HLR_Buf  : String (1 .. Types.Max_Id_Str);
       HLR_Len  : Natural;
-       DT_Type  : String (1 .. 64);
-       DT_Len   : Natural;
-       DT_Value : String (1 .. Types.Max_Desc_Str);
-       DV_Len   : Natural;
-       Subp_Idx : Natural := 0;
-       In_Subp  : Boolean := False;
+      DT_Type  : String (1 .. 64);
+      DT_Len   : Natural;
+      DT_Value : String (1 .. Types.Max_Desc_Str);
+      DV_Len   : Natural;
+      Subp_Idx : Natural := 0;
+      In_Subp  : Boolean := False;
 
-       Pending_Has_Doc : Boolean := False;
-       Pending_Param_Ct : Natural := 0;
-       Pending_Has_Return : Boolean := False;
+      Pending_Has_Doc    : Boolean := False;
+      Pending_Param_Ct   : Natural := 0;
+      Pending_Has_Return : Boolean := False;
 
-       procedure Flush_Pending (Idx : Natural) is
-       begin
-          if Pending_Has_Doc and then Idx in 1 .. Types.Max_Subprogs then
-             Pkg.Subprogram_List (Idx).Has_Docstring := True;
-             Pkg.Subprogram_List (Idx).Doc_Param_Ct :=
-               Pkg.Subprogram_List (Idx).Doc_Param_Ct + Pending_Param_Ct;
-             if Pending_Has_Return then
-                Pkg.Subprogram_List (Idx).Doc_Return := True;
-             end if;
-             Pending_Has_Doc := False;
-             Pending_Param_Ct := 0;
-             Pending_Has_Return := False;
-          end if;
-       end Flush_Pending;
-    begin
+      procedure Flush_Pending (Idx : Natural) is
+      begin
+         if Pending_Has_Doc and then Idx in 1 .. Types.Max_Subprogs then
+            Pkg.Subprogram_List (Idx).Has_Docstring := True;
+            Pkg.Subprogram_List (Idx).Doc_Param_Ct :=
+              Pkg.Subprogram_List (Idx).Doc_Param_Ct + Pending_Param_Ct;
+            if Pending_Has_Return then
+               Pkg.Subprogram_List (Idx).Doc_Return := True;
+            end if;
+            Pending_Has_Doc := False;
+            Pending_Param_Ct := 0;
+            Pending_Has_Return := False;
+         end if;
+      end Flush_Pending;
+   begin
       Pkg := (others => <>);
 
       -- Extract package name from path
@@ -217,11 +238,11 @@ package body Adacovex.Parsers.Source is
             end if;
          end if;
 
-          if Is_Subprogram_Decl (Line (1 .. Last)) then
-             if Subp_Idx < Types.Max_Subprogs then
-                Subp_Idx := Subp_Idx + 1;
-                Flush_Pending (Subp_Idx);
-                In_Subp := True;
+         if Is_Subprogram_Decl (Line (1 .. Last)) then
+            if Subp_Idx < Types.Max_Subprogs then
+               Subp_Idx := Subp_Idx + 1;
+               Flush_Pending (Subp_Idx);
+               In_Subp := True;
 
                declare
                   Trim     : String (1 .. Last);
@@ -278,28 +299,28 @@ package body Adacovex.Parsers.Source is
             end if;
          end if;
 
-          if Has_Docstring_Tag
-               (Line (1 .. Last), DT_Type, DT_Len, DT_Value, DV_Len)
-          then
-             if DT_Len >= 5 and then DT_Type (1 .. 5) = "param" then
-                Pending_Has_Doc := True;
-                Pending_Param_Ct := Pending_Param_Ct + 1;
-             elsif DT_Len >= 6 and then DT_Type (1 .. 6) = "return" then
-                Pending_Has_Doc := True;
-                Pending_Has_Return := True;
-             elsif DT_Len >= 5 and then DT_Type (1 .. 5) = "field" then
-                Pending_Has_Doc := True;
-             elsif DT_Len >= 6 and then DT_Type (1 .. 6) = "formal" then
-                null;
-             end if;
-          end if;
-       end loop;
+         if Has_Docstring_Tag
+              (Line (1 .. Last), DT_Type, DT_Len, DT_Value, DV_Len)
+         then
+            if DT_Len >= 5 and then DT_Type (1 .. 5) = "param" then
+               Pending_Has_Doc := True;
+               Pending_Param_Ct := Pending_Param_Ct + 1;
+            elsif DT_Len >= 6 and then DT_Type (1 .. 6) = "return" then
+               Pending_Has_Doc := True;
+               Pending_Has_Return := True;
+            elsif DT_Len >= 5 and then DT_Type (1 .. 5) = "field" then
+               Pending_Has_Doc := True;
+            elsif DT_Len >= 6 and then DT_Type (1 .. 6) = "formal" then
+               null;
+            end if;
+         end if;
+      end loop;
 
-       Flush_Pending (Subp_Idx);
+      Flush_Pending (Subp_Idx);
 
-       Close (F);
+      Close (F);
 
-       Pkg.Subprogram_Count := Subp_Idx;
+      Pkg.Subprogram_Count := Subp_Idx;
       Success := True;
    end Scan_Ads_File;
 

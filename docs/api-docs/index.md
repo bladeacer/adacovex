@@ -1,0 +1,25 @@
+# adacovex API Reference
+
+## Packages
+
+- [Adacovex](adacovex.md)
+- [Adacovex_DAL_Tests](adacovex_dal_tests.md)
+- [Adacovex_Types_Tests](adacovex_types_tests.md)
+- [Adacovex.Compliance](adacovex-compliance.md)
+- [Adacovex.Config](adacovex-config.md)
+- [Adacovex.Core](adacovex-core.md)
+- [Adacovex.Parsers](adacovex-parsers.md)
+- [Adacovex.Renderers](adacovex-renderers.md)
+- [Adacovex.Server](adacovex-server.md)
+- [Adacovex.Types](adacovex-types.md)
+- [Adacovex.Compliance.DAL](adacovex-compliance-dal.md)
+- [Adacovex.Parsers.DO178C](adacovex-parsers-do178c.md)
+- [Adacovex.Parsers.GNATprove](adacovex-parsers-gnatprove.md)
+- [Adacovex.Parsers.Source](adacovex-parsers-source.md)
+- [Adacovex.Parsers.Tests](adacovex-parsers-tests.md)
+- [Adacovex.Renderers.ANSI](adacovex-renderers-ansi.md)
+- [Adacovex.Renderers.HTML](adacovex-renderers-html.md)
+- [Adacovex.Renderers.Markdown](adacovex-renderers-markdown.md)
+- [Adacovex.Renderers.SVG](adacovex-renderers-svg.md)
+- [Adacovex.Server.HTTP](adacovex-server-http.md)
+- [Adacovex.Server.Router](adacovex-server-router.md)

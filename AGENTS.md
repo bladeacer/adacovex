@@ -24,6 +24,11 @@ src/
 |   |-- adacovex-parsers-gnatprove.ads/.adb   -- GNATprove .out parser
 |   |-- adacovex-parsers-tests.ads/.adb       -- AUnit test-result parser
 |   `-- adacovex-parsers-do178c.ads/.adb      -- HLR/LLR markdown parser + source tag matcher
+|-- tests/
+|   |-- adacovex-test_support.ads/.adb        -- Native test Runner type
+|   |-- adacovex_dal_tests.ads/.adb           -- DAL compliance tests
+|   |-- adacovex_types_tests.ads/.adb         -- Type conversion tests
+|   `-- test_runner.adb                       -- Test suite entry point
 |-- compliance/
 |   |-- adacovex-compliance-dal.ads/.adb       -- DAL-C assessment logic
 |-- renderers/
@@ -41,8 +46,10 @@ No dynamic allocation; all storage bounded at compile time.
 
 | Target             | Description |
 |--------------------|-------------|
-| `build`            | `alr build` |
+| `build`            | `alr build` (builds adacovex_main + test_runner) |
+| `test`             | Build + run test_runner |
 | `prove`            | `alr gnatprove` |
+| `doc` / `api-docs` | Generate API docs via gnatdoc + rst2md |
 | `run-self`         | Run against adacovex itself (--target=.) |
 | `run-ada-crdt`     | Run against ../Ada_CRDT, DAL-C |
 | `run-self-serve`   | Run against adacovex with HTTP server on :8080 |
@@ -65,6 +72,9 @@ adacovex [options]
 
 ## Docstring annotation spec
 
+See [docs/api-docs/adacovex-docstring-spec.md](docs/api-docs/adacovex-docstring-spec.md)
+for full reference.
+
 Supported tags (`adacovex-parsers-source.ads`), placed **immediately before**
 the subprogram declaration (no blank lines between tags and declaration):
 
@@ -86,6 +96,9 @@ subprogram declaration (before style is the canonical Ada convention).
 
 ## DAL-C assessment criteria
 
+See [docs/api-docs/adacovex-dal-levels.md](docs/api-docs/adacovex-dal-levels.md)
+for full DAL A--E criteria.
+
 1. All HLRs traced in source tags (24/24)
 2. No orphan tags
 3. All tests passing (10290/0)
@@ -93,9 +106,21 @@ subprogram declaration (before style is the canonical Ada convention).
 
 ## Unit tests
 
-**None.** There are no AUnit tests for adacovex. All verification is done
-via: (a) `make run-self` — docstring self-coverage must reach 100%,
-(b) `make prove` — SPARK proof must reach Platinum (28/28 VCs),
+**Native (zero-dependency).** Tests use `Adacovex.Test_Support` — a minimal
+`Runner` type with a `Check` procedure (modeled after `../Ada_CRDT`'s
+`CRDT.Test_Support`). No AUnit or other external framework.
+
+Test source: `src/tests/`. Entry point: `test_runner.adb` (builds as
+`bin/test_runner` from `for Main use ("adacovex_main.adb", "test_runner.adb")`
+in `adacovex.gpr`).
+
+`make test` builds and runs the test suite. Test results are written to
+`docs/test_result.md` in a Markdown table format that can be parsed by
+`adacovex-parsers-tests`. This means adacovex **supports both** native test
+running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
+
+Verification also covers: (a) `make run-self` — docstring self-coverage must
+reach 100%, (b) `make prove` — SPARK proof must reach Platinum (28/28 VCs),
 (c) `make run-ada-crdt` — Ada_CRDT regression check must remain stable.
 
 ## Key constraints

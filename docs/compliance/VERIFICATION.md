@@ -4,10 +4,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Packages Scanned |  20 |
-| Total Subprograms |  16 |
+| Packages Scanned |  25 |
+| Total Subprograms |  23 |
 | Documented Subprograms |  16 |
-| Docstring Coverage |  100% |
+| Docstring Coverage |  69% |
 
 ## SPARK Proof Analysis
 
@@ -32,11 +32,8 @@
 | Criterion | Status |
 |-----------|--------|
 | Target DAL | C |
-| Overall Status | Unmet |
-| HLR Traced |  0 /  0 |
-| Orphan Tags | Yes |
+| Overall Status | Achieved |
+| HLR Traced |  37 /  37 |
+| Orphan Tags | No |
 | Tests Passing | Yes |
 | Min SPARK Level | Yes |
-
-### Failure Reasons
--                                                                                                                                 
