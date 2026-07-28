@@ -478,7 +478,7 @@ package ada_main is
    pragma Export (C, u00218, "adacovex__renderers__svgB");
    u00219 : constant Version_32 := 16#02588900#;
    pragma Export (C, u00219, "adacovex__renderers__svgS");
-   u00220 : constant Version_32 := 16#6f8581ae#;
+   u00220 : constant Version_32 := 16#5a557f87#;
    pragma Export (C, u00220, "adacovex_scanner_testsB");
    u00221 : constant Version_32 := 16#21f20466#;
    pragma Export (C, u00221, "adacovex_scanner_testsS");

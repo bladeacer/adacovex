@@ -1,7 +1,6 @@
 bin/
 obj/
 .alire/
-docs/badges/
 docs/compliance/
 docs/api/
 docs/api-docs/*_tests.md
