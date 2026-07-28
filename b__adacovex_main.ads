@@ -448,7 +448,7 @@ package ada_main is
    pragma Export (C, u00203, "system__storage_poolsB");
    u00204 : constant Version_32 := 16#8e431254#;
    pragma Export (C, u00204, "system__storage_poolsS");
-   u00205 : constant Version_32 := 16#e57d0adc#;
+   u00205 : constant Version_32 := 16#3bc58ad7#;
    pragma Export (C, u00205, "adacovex__configB");
    u00206 : constant Version_32 := 16#b51f6130#;
    pragma Export (C, u00206, "adacovex__configS");
@@ -482,7 +482,7 @@ package ada_main is
    pragma Export (C, u00220, "system__concat_7B");
    u00221 : constant Version_32 := 16#1dd52a90#;
    pragma Export (C, u00221, "system__concat_7S");
-   u00222 : constant Version_32 := 16#bc673318#;
+   u00222 : constant Version_32 := 16#797356e6#;
    pragma Export (C, u00222, "adacovex__renderers__svgB");
    u00223 : constant Version_32 := 16#02588900#;
    pragma Export (C, u00223, "adacovex__renderers__svgS");
