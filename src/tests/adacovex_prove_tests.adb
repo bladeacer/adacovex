@@ -74,7 +74,7 @@ package body Adacovex_Prove_Tests is
          Put_Line (F, "   Assertions                   2       2 (100%)");
          Put_Line (F, "   Functional Contracts         5       5 (100%)");
          Put_Line (F, "   All checks proved           29      29 (100%)");
-         Put_Line (F, "   Total                    29      29       0       0");
+          Put_Line (F, "   Total                    29       0      29       0       .");
          Close (F);
 
          Adacovex.Parsers.GNATprove.Parse_Prove_Out
@@ -118,7 +118,7 @@ package body Adacovex_Prove_Tests is
          Put_Line (F, "   Flow Dependencies            7       7 (100%)");
          Put_Line (F, "   Run-time Checks             12      10 (83%)");
          Put_Line (F, "   Assertions                   2       2 (100%)");
-         Put_Line (F, "   Total                    29      26       0       3");
+          Put_Line (F, "   Total                    29       0      26       0       3");
          Close (F);
 
          Adacovex.Parsers.GNATprove.Parse_Prove_Out

@@ -73,8 +73,14 @@ package body Adacovex.Renderers.ANSI is
       end case;
       Ada.Text_IO.Put (Types.To_String (Proof.Level));
       Reset_Color (Enable => Use_Color);
-      Ada.Text_IO.Put (" (" & Natural'Image (Proof.Total_VCs) & " VCs,");
-      Ada.Text_IO.Put (Natural'Image (Proof.Unproved) & " unproved)");
+      Ada.Text_IO.Put (" (" & Natural'Image (Proof.Total_VCs) & " VCs");
+      if Proof.Unproved > 0 then
+         Ada.Text_IO.Put (", " & Natural'Image (Proof.Unproved) & " unproved");
+      end if;
+      if Proof.Justified > 0 then
+         Ada.Text_IO.Put (", " & Natural'Image (Proof.Justified) & " justified");
+      end if;
+      Ada.Text_IO.Put (")");
       Ada.Text_IO.New_Line;
 
       --  Test results
@@ -141,6 +147,14 @@ package body Adacovex.Renderers.ANSI is
             & Natural'Image (Proof.Unproved) & " total");
          Ada.Text_IO.Put_Line
            ("    help: review gnatprove.out for individual VC locations");
+      end if;
+      if Proof.Justified > 0 then
+         Ada.Text_IO.New_Line;
+         Ada.Text_IO.Put_Line
+           ("  justified VCs: "
+            & Natural'Image (Proof.Justified) & " total");
+         Ada.Text_IO.Put_Line
+           ("    help: review gnatprove.out for justified VC locations");
       end if;
 
       --  DAL failures
