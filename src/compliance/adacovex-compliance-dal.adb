@@ -159,14 +159,17 @@ package body Adacovex.Compliance.DAL is
          Assessment.Tests_Passing := True;
       end if;
 
-      -- Collect failures
+      -- Collect failures (contiguous indices for renderer)
       declare
          Idx1 : Boolean := Assessment.HLR_Found < Assessment.HLR_Total;
          Idx2 : Boolean := Assessment.Orphan_Tags;
          Idx3 : Boolean := not Assessment.Min_SPARK_Level_Met;
          Idx4 : Boolean := Tests_Req and then not Assessment.Tests_Passing;
       begin
+         Failed_Idx := 0;
+
          if Idx1 then
+            Failed_Idx := Failed_Idx + 1;
             declare
                Msg : constant String :=
                  "Missing HLRs: "
@@ -174,23 +177,25 @@ package body Adacovex.Compliance.DAL is
                Len : constant Natural := Msg'Length;
             begin
                if Len <= Types.Max_Desc_Str then
-                  Assessment.Failed_Reasons (1) (1 .. Len) := Msg;
+                  Assessment.Failed_Reasons (Failed_Idx) (1 .. Len) := Msg;
                end if;
             end;
          end if;
 
          if Idx2 then
+            Failed_Idx := Failed_Idx + 1;
             declare
                Msg : constant String := "Orphan HLR tags found in source";
                Len : constant Natural := Msg'Length;
             begin
                if Len <= Types.Max_Desc_Str then
-                  Assessment.Failed_Reasons (2) (1 .. Len) := Msg;
+                  Assessment.Failed_Reasons (Failed_Idx) (1 .. Len) := Msg;
                end if;
             end;
          end if;
 
          if Idx3 then
+            Failed_Idx := Failed_Idx + 1;
             declare
                Msg : constant String :=
                  "SPARK level below "
@@ -199,27 +204,23 @@ package body Adacovex.Compliance.DAL is
                  & Types.To_String (Proof_Summary.Level);
             begin
                if Msg'Length <= Types.Max_Desc_Str then
-                  Assessment.Failed_Reasons (3) (1 .. Msg'Length) := Msg;
+                  Assessment.Failed_Reasons (Failed_Idx) (1 .. Msg'Length) :=
+                    Msg;
                end if;
             end;
          end if;
 
          if Idx4 then
+            Failed_Idx := Failed_Idx + 1;
             declare
                Msg : constant String := "Test failures detected";
                Len : constant Natural := Msg'Length;
             begin
                if Len <= Types.Max_Desc_Str then
-                  Assessment.Failed_Reasons (4) (1 .. Len) := Msg;
+                  Assessment.Failed_Reasons (Failed_Idx) (1 .. Len) := Msg;
                end if;
             end;
          end if;
-
-         Failed_Idx :=
-           Boolean'Pos (Idx1)
-           + Boolean'Pos (Idx2)
-           + Boolean'Pos (Idx3)
-           + Boolean'Pos (Idx4);
       end;
 
       Assessment.Failed_Count := Failed_Idx;

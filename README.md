@@ -10,13 +10,16 @@ test-result parsing, DO-178C DAL compliance assessment, and interactive dashboar
 
 ## Features
 
-- **Source scanning** -- walks `.ads` files, extracts subprogram declarations, docstring
-  annotations (`@param`, `@return`, `@field`, `@formal`), and HLR traceability tags
+- **Source scanning** -- walks `.ads` files, extracts subprogram declarations, [docstring
+  annotations](docs/api-docs/adacovex-docstring-spec.md)
+  (`@param`, `@return`, `@field`, `@formal`), and HLR traceability tags
 - **Proof analysis** -- parses GNATprove `gnatprove.out` summaries per check category
-  (flow, run-time, assertions, contracts, termination)
-- **Test parsing** -- reads AUnit test-result markdown or stdout for pass/fail counts
-- **DAL compliance** -- assesses DO-178C DAL A-E criteria (HLR coverage, orphan tags,
-  test status, minimum SPARK proof level)
+  (flow, run-time, assertions, contracts, termination); assesses [SPARK assurance
+  levels](docs/api-docs/adacovex-spark-levels.md) (Stone--Platinum)
+- **Test parsing** -- reads [test-result markdown](docs/api-docs/adacovex-test-format.md)
+  for pass/fail counts (supports both native Ada test output and AUnit format)
+- **[DAL compliance](docs/api-docs/adacovex-dal-levels.md)** -- assesses DO-178C DAL A-E
+  criteria (HLR coverage, orphan tags, test status, minimum SPARK proof level)
 - **Multiple outputs**:
   - ANSI terminal report
    - SVG badges (Shields.io style) -- SPARK level, test status, DO-178C status, docstring coverage
@@ -130,15 +133,15 @@ GET /api/metrics
 
 | Target             | Description                                      |
 |--------------------|--------------------------------------------------|
-| `build`            | `alr build`                                      |
+| `build`            | `alr build` (adacovex_main + test_runner)        |
+| `test`             | Build and run native test suite                  |
 | `prove`            | `alr gnatprove` (requires GNATprove installed)   |
 | `fmt`              | Format all Ada sources with `gnatpp`             |
 | `lint`             | Check for warnings in build output               |
-| `api-docs`         | Generate Ada API docs with `gnatdoc`             |
+| `doc` / `api-docs` | Generate API docs via gnatdoc + rst2md           |
 | `run-self`         | Run against adacovex itself (`--target=.`)        |
 | `run-self-serve`   | Run with HTTP server on `:8080`                  |
 | `run-self-badges`  | Emit SVG badges + Markdown reports               |
-| `changelog`        | Generate changelog from git log                  |
 | `clean`            | Remove `bin/`, `obj/`, `docs/badges/`            |
 
 ## Project structure
@@ -155,6 +158,11 @@ src/
 |   |-- adacovex-parsers-gnatprove.ads/.adb
 |   |-- adacovex-parsers-tests.ads/.adb
 |   `-- adacovex-parsers-do178c.ads/.adb
+|-- tests/
+|   |-- adacovex-test_support.ads/.adb    -- Native test Runner type
+|   |-- adacovex_dal_tests.ads/.adb       -- DAL compliance tests
+|   |-- adacovex_types_tests.ads/.adb     -- Type conversion tests
+|   `-- test_runner.adb                   -- Test suite entry point
 |-- compliance/
 |   |-- adacovex-compliance-dal.ads/.adb
 |-- renderers/
@@ -178,6 +186,46 @@ adacovex can assess a target project against DO-178C DAL-C criteria:
 
 When running against itself (`adacovex --target=.`), the tool verifies its own
 compliance documentation.
+
+## Documentation
+
+| Reference | Description |
+|-----------|-------------|
+| [Docstring Spec](docs/api-docs/adacovex-docstring-spec.md) | Annotation format, placement, conventions |
+| [Test Format](docs/api-docs/adacovex-test-format.md) | Supported test-result output format |
+| [SPARK Levels](docs/api-docs/adacovex-spark-levels.md) | Assurance level objectives (Stone--Platinum) |
+| [DAL Levels](docs/api-docs/adacovex-dal-levels.md) | DO-178C DAL A--E criteria |
+| [API Reference](docs/api-docs/index.md) | Auto-generated package API docs (`make doc`) |
+| [Changelog](docs/changelogs/index.md) | Release history
+
+## Test suite
+
+```bash
+make test
+```
+
+Test source: `src/tests/`. Uses a native zero-dependency `Runner` type
+(`Adacovex.Test_Support`, modeled after Ada_CRDT's `CRDT.Test_Support`).
+Results are written to `docs/test_result.md` and printed to stdout.
+
+## Credits
+
+Technology Stack:
+
+- [Ada / SPARK 2014](https://www.adacore.com/languages/spark): (AdaCore) language and dialect of choice
+- [gnatprove](https://docs.adacore.com/spark2014-docs/html/ug/index.html): (AdaCore) formal verification
+- [Alire](https://alire.ada.dev): (AdaCore) Ada/SPARK package manager
+- [gnatformat](https://github.com/AdaCore/gnatformat): (AdaCore) code formatter
+- [gnatdoc](https://github.com/AdaCore/gnatdoc): (AdaCore) API documentation generator
+- [GNAT.Sockets](https://www.adacore.com): (AdaCore) networking library
+
+Test framework inspired by:
+
+- [Ada_CRDT](https://github.com/bladeacer/Ada_CRDT): Native zero-dependency test
+  runner with `Runner.Check` pattern
+
+AUnit test-output parsing supported for compatibility with projects using
+the [AUnit](https://github.com/AdaCore/aunit) test framework.
 
 ## Requirements
 

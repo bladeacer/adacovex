@@ -157,35 +157,35 @@ package Adacovex.Types is
       Show_DO178C : Boolean := True;
    end record;
 
-    --  Convert a SPARK_Level to its human-readable name.
-    --  Returns "Stone", "Bronze", "Silver", "Gold", or "Platinum".
-    --  @return Human-readable SPARK level name.
-    function To_String (L : SPARK_Level) return String
-    with
-      Post   =>
-        To_String'Result'Length > 0 and then To_String'Result'Length <= 8,
-      Global => null;
+   --  Convert a SPARK_Level to its human-readable name.
+   --  Returns "Stone", "Bronze", "Silver", "Gold", or "Platinum".
+   --  @return Human-readable SPARK level name.
+   function To_String (L : SPARK_Level) return String
+   with
+     Post   =>
+       To_String'Result'Length > 0 and then To_String'Result'Length <= 8,
+     Global => null;
 
-    --  Convert a DAL_Level to its single-letter code ('A' through 'E').
-    --  @return Single-letter DAL code.
-    function To_String (L : DAL_Level) return String
-    with Post => To_String'Result'Length = 1, Global => null;
+   --  Convert a DAL_Level to its single-letter code ('A' through 'E').
+   --  @return Single-letter DAL code.
+   function To_String (L : DAL_Level) return String
+   with Post => To_String'Result'Length = 1, Global => null;
 
-    --  Parse a single-letter DAL code string into a DAL_Level.
-    --  Accepts both upper and lower case; defaults to DAL_C on parse failure.
-    --  @param S  Single-letter DAL code (A-E, case-insensitive).
-    --  @return Converted DAL_Level (defaults to DAL_C on failure).
-    function To_DAL (S : String) return DAL_Level
-    with Global => null;
+   --  Parse a single-letter DAL code string into a DAL_Level.
+   --  Accepts both upper and lower case; defaults to DAL_C on parse failure.
+   --  @param S  Single-letter DAL code (A-E, case-insensitive).
+   --  @return Converted DAL_Level (defaults to DAL_C on failure).
+   function To_DAL (S : String) return DAL_Level
+   with Global => null;
 
-    --  Convert a DAL_Status ("Achieved" or "Unmet") to its human-readable string.
-    --  @return "Achieved" or "Unmet".
-    function To_String (S : DAL_Status) return String
-    with Post => To_String'Result'Length > 0, Global => null;
+   --  Convert a DAL_Status ("Achieved" or "Unmet") to its human-readable string.
+   --  @return "Achieved" or "Unmet".
+   function To_String (S : DAL_Status) return String
+   with Post => To_String'Result'Length > 0, Global => null;
 
-    --  Convert a Test_Status ("Pass" or "Fail") to "PASS" or "FAIL".
-    --  @return "PASS" or "FAIL".
-    function To_String (S : Test_Status) return String
-    with Post => To_String'Result'Length > 0, Global => null;
+   --  Convert a Test_Status ("Pass" or "Fail") to "PASS" or "FAIL".
+   --  @return "PASS" or "FAIL".
+   function To_String (S : Test_Status) return String
+   with Post => To_String'Result'Length > 0, Global => null;
 
 end Adacovex.Types;

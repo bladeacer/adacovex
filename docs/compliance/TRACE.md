@@ -13,5 +13,5 @@
 | adacovex-parsers-gnatprove | PROOF |
 | adacovex-renderers-ansi | RENDER-ANSI |
 | adacovex-renderers-html | RENDER-HTML |
-| adacovex-renderers-markdown | to-package, RENDER-MD |
+| adacovex-renderers-markdown | RENDER-MD |
 | adacovex-renderers-svg | RENDER-SVG |

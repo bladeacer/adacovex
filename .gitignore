@@ -1,8 +1,16 @@
 bin/
 obj/
+.alire/
 docs/badges/
 docs/compliance/
 docs/api/
+docs/api-docs/*_tests.md
 *.tmp
 .headroom
 alire.toml.bak
+*.stdout
+*.stderr
+*.cswi
+*.o
+*.ali
+*.bexch
