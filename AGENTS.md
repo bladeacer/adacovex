@@ -20,7 +20,7 @@ Self-assessment (`make run-self` / `--target=.`) verifies adacovex against its o
 source -- all 19 packages, 32 subprograms -- and must always show:
 - 100% docstring coverage
 - Platinum SPARK level (28/28 VCs proved)
-- 140/140 native tests passing
+- 152/152 native tests passing
 - DAL-C Achieved
 
 ## Architecture
@@ -127,7 +127,7 @@ for full DAL A--E criteria.
 
 1. All HLRs traced in source tags (24/24 for adacovex self)
 2. No orphan tags
-3. All tests passing (140/0 for self)
+3. All tests passing (152/0 for self)
 4. Minimum SPARK Level >= Bronze (target is Platinum)
 
 ## Unit tests
@@ -144,13 +144,13 @@ in `adacovex.gpr`).
 `adacovex-parsers-tests`. This means adacovex **supports both** native test
 running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 
-### Test categories (140 total)
+### Test categories (152 total)
 
 | Category | Tests | What it covers |
 |----------|-------|----------------|
 | Types conversions | 21 | SPARK_Level/DAL_Level/DAL_Status/Test_Status strings |
 | DAL compliance | 2 | DAL assessment status |
-| Source scanner | 28 | Package scan, docstring parsing, HLR tags, name extraction |
+| Source scanner | 40 | Package scan, docstring parsing, HLR tags, name extraction, @field/@formal/after-decl |
 | GNATprove parser | 24 | .out parsing, proof summary, SPARK level detection |
 | Test-result parser | 27 | Markdown test result parsing |
 | CLI config | 8 | Default option values, --no-svg field |
@@ -166,7 +166,7 @@ running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 140/140 passing |
+| Unit tests | `make test` | 152/152 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | 28/28 VCs Platinum |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library |
