@@ -45,28 +45,19 @@ make run-ada-crdt
 ```
 adacovex v0.1.0
 
-Usage:
-  adacovex [options]
+Usage: adacovex [options]
 
 Options:
   --target=PATH         Target project path (default: ../Ada_CRDT)
-  --target PATH         Alternative form
-
   --manifest=PATH       Target project manifest override
-
-  --dal=LEVEL           Target DAL level: A, B, C, D, E (default: C)
-  --dal LEVEL           Alternative form
-
-  --serve               Start HTTP dashboard server on :8080
-  --port=N              Server port (default: 8080)
-
-  --emit-svg=PATH       Write SVG badges to directory
-  --emit-svg PATH       Alternative form
-  --emit-markdown=PATH  Write VERIFICATION.md + TRACE.md to directory
-  --emit-markdown PATH  Alternative form
-
-  --verbose             Verbose output
-  --help                Show this help
+  --dal=LEVEL           DAL level: A | B | C | D | E (default: C)
+  --serve               Start HTTP dashboard on :8080
+  --port=N              HTTP server port (default: 8080)
+  --emit-svg=PATH       Write SVG badges (default: docs/badges)
+  --no-svg              Suppress automatic SVG output
+  --emit-markdown=PATH  Write VERIFICATION.md + TRACE.md
+  --verbose             Verbose diagnostics
+  --help                Show this message
 ```
 
 ## Examples
@@ -74,29 +65,30 @@ Options:
 ### Basic usage
 
 ```bash
-# Self-assessment: scan adacovex itself
+# Self-assessment: scan adacovex itself (SVGs written to docs/badges/)
 adacovex --target=.
 
 # Assess a CRDT library at DAL-C
 adacovex --target=../Ada_CRDT --dal=C
 
+# Without SVG output
+adacovex --target=../Ada_CRDT --no-svg
+
 # With explicit manifest
 adacovex --target=. --manifest=./alire-dev.toml
 ```
 
-### Generate badges and reports
+### Additional outputs
 
 ```bash
-# Write SVG badges to docs/badges/
-adacovex --target=../Ada_CRDT --dal=C --emit-svg=docs/badges/
+# Write SVG badges to a custom directory (default: docs/badges/)
+adacovex --target=../Ada_CRDT --emit-svg=docs/badges/
 
-# Write Markdown compliance reports to docs/compliance/
-adacovex --target=../Ada_CRDT --dal=C --emit-markdown=docs/compliance/
+# Write Markdown compliance reports
+adacovex --target=../Ada_CRDT --emit-markdown=docs/compliance/
 
-# Both at once
-adacovex --target=../Ada_CRDT --dal=C \
-  --emit-svg=docs/badges/ \
-  --emit-markdown=docs/compliance/
+# Web dashboard
+adacovex --target=../Ada_CRDT --serve
 ```
 
 ### Start the web dashboard
@@ -131,18 +123,16 @@ GET /api/metrics
 
 ## Makefile targets
 
-| Target             | Description                                      |
-|--------------------|--------------------------------------------------|
-| `build`            | `alr build` (adacovex_main + test_runner)        |
-| `test`             | Build and run native test suite                  |
-| `prove`            | `alr gnatprove` (requires GNATprove installed)   |
-| `fmt`              | Format all Ada sources with `gnatpp`             |
-| `lint`             | Check for warnings in build output               |
-| `doc` / `api-docs` | Generate API docs via gnatdoc + rst2md           |
-| `run-self`         | Run against adacovex itself (`--target=.`)        |
-| `run-self-serve`   | Run with HTTP server on `:8080`                  |
-| `run-self-badges`  | Emit SVG badges + Markdown reports               |
-| `clean`            | Remove `bin/`, `obj/`, `docs/badges/`            |
+| Target     | Description                                      |
+|------------|--------------------------------------------------|
+| `build`    | `alr build` (adacovex_main + test_runner)        |
+| `test`     | Build and run native test suite                  |
+| `prove`    | `alr gnatprove` (auto-swaps alire-dev.toml)      |
+| `fmt`      | Format Ada sources with `gnatformat`             |
+| `doc`      | Generate API docs via gnatdoc + rst2md           |
+| `run-self` | Run against adacovex itself (`--target=.`)        |
+| `run-ada-crdt` | Run against `../Ada_CRDT` (default target)   |
+| `clean`    | Remove `bin/`, `obj/`, generated reports         |
 
 ## Project structure
 

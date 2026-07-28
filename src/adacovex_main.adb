@@ -34,60 +34,34 @@ begin
       Target (I) := Cfg.Target_Path (I);
    end loop;
 
-   Ada.Text_IO.Put_Line ("adacovex v" & Adacovex.Version);
-   Ada.Text_IO.Put_Line ("Target: " & Target (1 .. TLen));
+   Ada.Text_IO.Put_Line
+     ("adacovex v" & Adacovex.Version & " -- " & Target (1 .. TLen));
    if Cfg.Manifest_Len > 0 then
       declare
          MPath : String renames Cfg.Manifest_Path (1 .. Cfg.Manifest_Len);
       begin
-         Ada.Text_IO.Put_Line ("Manifest: " & MPath);
+         Ada.Text_IO.Put_Line ("  manifest: " & MPath);
       end;
    end if;
-   Ada.Text_IO.New_Line;
 
    -- Step 1: Scan source files
-   Ada.Text_IO.Put_Line ("Scanning Ada sources...");
    Adacovex.Parsers.Source.Scan_Project
      (Target (1 .. TLen), Packages, Pkg_Count);
    Doc_Metrics :=
      Adacovex.Parsers.Source.Compute_Docstring_Metrics (Packages, Pkg_Count);
-   Ada.Text_IO.Put_Line ("  Found" & Natural'Image (Pkg_Count) & " packages");
-   Ada.Text_IO.New_Line;
 
    -- Step 2: Parse GNATprove output
-   declare
-   begin
-      Ada.Text_IO.Put_Line ("Parsing GNATprove output...");
-      Adacovex.Parsers.GNATprove.Parse_Prove_From_Project
-        (Target (1 .. TLen), Proof, Success);
-      if Success then
-         Ada.Text_IO.Put_Line ("  SPARK Level: " & To_String (Proof.Level));
-      else
-         Ada.Text_IO.Put_Line ("  Could not read GNATprove output");
-      end if;
-      Ada.Text_IO.New_Line;
-   end;
+   Adacovex.Parsers.GNATprove.Parse_Prove_From_Project
+     (Target (1 .. TLen), Proof, Success);
 
    -- Step 3: Parse test results
    declare
       T_Path : constant String := Target (1 .. TLen) & "/test_result.md";
    begin
-      Ada.Text_IO.Put_Line ("Parsing test results...");
       Adacovex.Parsers.Tests.Parse_Test_Result (T_Path, Tests, Success);
-      if Success then
-         Ada.Text_IO.Put_Line
-           ("  Passed:"
-            & Natural'Image (Tests.Total_Passed)
-            & "  Failed:"
-            & Natural'Image (Tests.Total_Failed));
-      else
-         Ada.Text_IO.Put_Line ("  Could not read test results");
-      end if;
-      Ada.Text_IO.New_Line;
    end;
 
    -- Step 4: Assess DAL compliance
-   Ada.Text_IO.Put_Line ("Assessing DO-178C DAL compliance...");
    Adacovex.Compliance.DAL.Assess_DAL
      (Cfg.DAL_Target,
       Target (1 .. TLen),
@@ -96,38 +70,30 @@ begin
       Proof,
       Tests,
       DAL_Assess);
-   Ada.Text_IO.Put_Line
-     ("  DAL-"
-      & To_String (Cfg.DAL_Target)
-      & " Status: "
-      & To_String (DAL_Assess.Status));
-   Ada.Text_IO.New_Line;
 
    -- Step 5: Render ANSI summary
    Adacovex.Renderers.ANSI.Render_Summary
      (Doc_Metrics, Proof, Tests, DAL_Assess, Packages, Pkg_Count);
 
-   -- Step 6: Emit SVG badges if requested
-   if Cfg.Emit_SVG then
-      declare
-         Dir : String renames Cfg.SVG_Path (1 .. Cfg.SVG_Path_Len);
-      begin
-         Ada.Text_IO.Put_Line ("Writing SVG badges to " & Dir & "...");
-         Adacovex.Renderers.SVG.Write_Badge_To_File
-           (Dir & "/spark.svg",
-            Adacovex.Renderers.SVG.Render_SPARK_Badge (Proof.Level));
-         Adacovex.Renderers.SVG.Write_Badge_To_File
-           (Dir & "/tests.svg",
-            Adacovex.Renderers.SVG.Render_Tests_Badge (Tests));
-         Adacovex.Renderers.SVG.Write_Badge_To_File
-           (Dir & "/do178c.svg",
-            Adacovex.Renderers.SVG.Render_DO178C_Badge (DAL_Assess));
-         Adacovex.Renderers.SVG.Write_Badge_To_File
-           (Dir & "/docs.svg",
-            Adacovex.Renderers.SVG.Render_Docstring_Badge (Doc_Metrics));
-         Ada.Text_IO.Put_Line ("  Done.");
-      end;
-   end if;
+    -- Step 6: Emit SVG badges if requested
+    if Cfg.Emit_SVG then
+       declare
+          Dir : String renames Cfg.SVG_Path (1 .. Cfg.SVG_Path_Len);
+       begin
+          Adacovex.Renderers.SVG.Write_Badge_To_File
+            (Dir & "/spark.svg",
+             Adacovex.Renderers.SVG.Render_SPARK_Badge (Proof.Level));
+          Adacovex.Renderers.SVG.Write_Badge_To_File
+            (Dir & "/tests.svg",
+             Adacovex.Renderers.SVG.Render_Tests_Badge (Tests));
+          Adacovex.Renderers.SVG.Write_Badge_To_File
+            (Dir & "/do178c.svg",
+             Adacovex.Renderers.SVG.Render_DO178C_Badge (DAL_Assess));
+          Adacovex.Renderers.SVG.Write_Badge_To_File
+            (Dir & "/docs.svg",
+             Adacovex.Renderers.SVG.Render_Docstring_Badge (Doc_Metrics));
+       end;
+    end if;
 
    -- Step 7: Emit Markdown reports if requested
    if Cfg.Emit_Markdown then

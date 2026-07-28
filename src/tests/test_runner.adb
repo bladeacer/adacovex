@@ -2,93 +2,148 @@ with Ada.Text_IO;           use Ada.Text_IO;
 with Adacovex.Test_Support; use Adacovex.Test_Support;
 with Adacovex_Types_Tests;
 with Adacovex_DAL_Tests;
+with Adacovex_Scanner_Tests;
+with Adacovex_Prove_Tests;
+with Adacovex_TestParser_Tests;
+with Adacovex_Config_Tests;
+with Adacovex_Renderer_SVG_Tests;
 
 procedure Test_Runner is
 
-   R_Types : Runner;
-   R_DAL   : Runner;
+   R_Types       : Runner;
+   R_DAL         : Runner;
+   R_Scanner     : Runner;
+   R_Prove       : Runner;
+   R_TestParser  : Runner;
+   R_Config      : Runner;
+   R_RendererSVG : Runner;
 
    Total_Passed : Natural := 0;
    Total_Failed : Natural := 0;
 
-   procedure Write_Summary is
+   procedure Write_Output (Out_File : File_Type; File_Name : String) is
    begin
-      New_Line;
       Put_Line
-        ("  | Category                                |  Tests | Status   |");
+        (Out_File,
+         "  | Category                                |  Tests | Status   |");
       Put_Line
-        ("  |-----------------------------------------|--------|----------|");
+        (Out_File,
+         "  |-----------------------------------------|--------|----------|");
 
       declare
          procedure Row (Name : String; R : Runner) is
+            TCount : constant Natural := R.Passed + R.Failed;
+         begin
+            Put_Line
+              (Out_File,
+               "  | "
+               & Name
+               & (1 .. (40 - Name'Length) => ' ')
+               & " | "
+               & Natural'Image (TCount)
+               & " |"
+               & (if R.Failed = 0 then " PASS     |" else " FAIL     |"));
+         end Row;
+      begin
+         Row ("Types conversions", R_Types);
+         Row ("DAL compliance", R_DAL);
+         Row ("Source scanner", R_Scanner);
+         Row ("GNATprove parser", R_Prove);
+         Row ("Test-result parser", R_TestParser);
+         Row ("CLI config", R_Config);
+         Row ("SVG renderer", R_RendererSVG);
+      end;
+
+      Put_Line
+        (Out_File,
+         "  |-----------------------------------------|--------|----------|");
+      New_Line (Out_File);
+      Put_Line
+        (Out_File,
+         "  Passed:"
+         & Natural'Image (Total_Passed)
+         & "  Failed:"
+         & Natural'Image (Total_Failed));
+   end Write_Output;
+
+   procedure Write_Results is
+      F : File_Type;
+   begin
+      --  Write to project root (for ./test_result.md)
+      begin
+         Create (F, Out_File, "test_result.md");
+         Write_Output (F, "test_result.md");
+         Close (F);
+      exception
+         when others =>
+            null;
+      end;
+
+      --  Write to docs/ (for git-tracking)
+      begin
+         Create (F, Out_File, "docs/test_result.md");
+         Write_Output (F, "docs/test_result.md");
+         Close (F);
+      exception
+         when others =>
+            null;
+      end;
+   end Write_Results;
+
+   procedure Print_Summary is
+   begin
+      New_Line;
+      Put_Line ("  | Category                                |  Tests | Status   |");
+      Put_Line ("  |-----------------------------------------|--------|----------|");
+
+      declare
+         procedure Row (Name : String; R : Runner) is
+            TCount : constant Natural := R.Passed + R.Failed;
          begin
             Put_Line
               ("  | "
                & Name
                & (1 .. (40 - Name'Length) => ' ')
                & " | "
-               & Natural'Image (R.Passed + R.Failed)
-               & " | PASS     |");
+               & Natural'Image (TCount)
+               & " |"
+               & (if R.Failed = 0 then " PASS     |" else " FAIL     |"));
          end Row;
       begin
          Row ("Types conversions", R_Types);
          Row ("DAL compliance", R_DAL);
+         Row ("Source scanner", R_Scanner);
+         Row ("GNATprove parser", R_Prove);
+         Row ("Test-result parser", R_TestParser);
+         Row ("CLI config", R_Config);
+         Row ("SVG renderer", R_RendererSVG);
       end;
 
-      Put_Line
-        ("  |-----------------------------------------|--------|----------|");
+      Put_Line ("  |-----------------------------------------|--------|----------|");
       New_Line;
-      Put_Line
-        ("  Passed:"
-         & Natural'Image (Total_Passed)
-         & "  Failed:"
-         & Natural'Image (Total_Failed));
-   end Write_Summary;
+      Put_Line ("  Passed:" & Natural'Image (Total_Passed) & "  Failed:" & Natural'Image (Total_Failed));
+   end Print_Summary;
 
 begin
    Put_Line ("=== Adacovex Test Suite ===");
 
    Adacovex_Types_Tests.Run (R_Types);
    Adacovex_DAL_Tests.Run (R_DAL);
+   Adacovex_Scanner_Tests.Run (R_Scanner);
+   Adacovex_Prove_Tests.Run (R_Prove);
+   Adacovex_TestParser_Tests.Run (R_TestParser);
+   Adacovex_Config_Tests.Run (R_Config);
+   Adacovex_Renderer_SVG_Tests.Run (R_RendererSVG);
 
-   Total_Passed := R_Types.Passed + R_DAL.Passed;
-   Total_Failed := R_Types.Failed + R_DAL.Failed;
+   Total_Passed := R_Types.Passed + R_DAL.Passed + R_Scanner.Passed
+     + R_Prove.Passed + R_TestParser.Passed + R_Config.Passed
+     + R_RendererSVG.Passed;
+   Total_Failed := R_Types.Failed + R_DAL.Failed + R_Scanner.Failed
+     + R_Prove.Failed + R_TestParser.Failed + R_Config.Failed
+     + R_RendererSVG.Failed;
 
-   Write_Summary;
-
-   --  Write to docs/test_result.md for README integration
-   declare
-      F : File_Type;
-   begin
-      Create (F, Out_File, "docs/test_result.md");
-      Put_Line
-        (F,
-         "  | Category                                |  Tests | Status   |");
-      Put_Line
-        (F,
-         "  |-----------------------------------------|--------|----------|");
-      Put_Line
-        (F,
-         "  | Types conversions                       |"
-         & Natural'Image (R_Types.Passed + R_Types.Failed)
-         & " | PASS     |");
-      Put_Line
-        (F,
-         "  | DAL compliance                          |"
-         & Natural'Image (R_DAL.Passed + R_DAL.Failed)
-         & " | PASS     |");
-      Put_Line
-        (F,
-         "  |-----------------------------------------|--------|----------|");
-      New_Line (F);
-      Put_Line
-        (F,
-         "  Passed:"
-         & Natural'Image (Total_Passed)
-         & "  Failed:"
-         & Natural'Image (Total_Failed));
-      Close (F);
-   end;
+   Print_Summary;
+   Write_Results;
 
    New_Line;
    Put_Line ("=== Results ===");

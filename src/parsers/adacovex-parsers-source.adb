@@ -164,6 +164,7 @@ package body Adacovex.Parsers.Source is
       DT_Len   : Natural;
       DT_Value : String (1 .. Types.Max_Desc_Str);
       DV_Len   : Natural;
+      Line_Num : Natural := 0;
       Subp_Idx : Natural := 0;
       In_Subp  : Boolean := False;
 
@@ -221,6 +222,7 @@ package body Adacovex.Parsers.Source is
 
       while not End_Of_File (F) loop
          Get_Line (F, Line, Last);
+         Line_Num := Line_Num + 1;
 
          if Has_HLR_Tag (Line (1 .. Last), HLR_Buf, HLR_Len) then
             if Subp_Idx = 0 then
@@ -238,11 +240,12 @@ package body Adacovex.Parsers.Source is
             end if;
          end if;
 
-         if Is_Subprogram_Decl (Line (1 .. Last)) then
-            if Subp_Idx < Types.Max_Subprogs then
-               Subp_Idx := Subp_Idx + 1;
-               Flush_Pending (Subp_Idx);
-               In_Subp := True;
+          if Is_Subprogram_Decl (Line (1 .. Last)) then
+             if Subp_Idx < Types.Max_Subprogs then
+                Subp_Idx := Subp_Idx + 1;
+                Pkg.Subprogram_List (Subp_Idx).Line_Number := Line_Num;
+                Flush_Pending (Subp_Idx);
+                In_Subp := True;
 
                declare
                   Trim     : String (1 .. Last);
@@ -263,17 +266,17 @@ package body Adacovex.Parsers.Source is
                      if Skip > 0 then
                         Skip := Skip - 1;
                      elsif not In_SName then
-                        if I + 8 <= TL and then Trim (I .. I + 8) = "procedure"
-                        then
-                           Skip := 9;
-                        elsif I + 7 <= TL
-                          and then Trim (I .. I + 7) = "function"
-                        then
-                           Skip := 8;
-                        elsif I + 6 <= TL
-                          and then Trim (I .. I + 6) = "generic"
-                        then
-                           Skip := 7;
+                         if I + 8 <= TL and then Trim (I .. I + 8) = "procedure"
+                         then
+                            Skip := 8;
+                         elsif I + 7 <= TL
+                           and then Trim (I .. I + 7) = "function"
+                         then
+                            Skip := 7;
+                         elsif I + 6 <= TL
+                           and then Trim (I .. I + 6) = "generic"
+                         then
+                            Skip := 6;
                         elsif Trim (I)
                               in 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_'
                         then
