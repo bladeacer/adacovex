@@ -2,7 +2,7 @@
 
 ## Project
 
-**adacovex** -- zero-dependency Ada/SPARK 2014 CLI tool for coverage, proof analysis,
+**adacovex** -- zero-dependency Ada/SPARK CLI tool for coverage, proof analysis,
 test-result parsing, DO-178C DAL compliance assessment, and interactive dashboards.
 
 - **Repo**: https://github.com/bladeacer/adacovex

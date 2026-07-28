@@ -52,6 +52,7 @@ package Adacovex.Types is
    type Subprogram_Info is record
       Name          : Desc_Field;
       Name_Len      : Natural := 0;
+      Line_Number   : Natural := 0;
       Has_Docstring : Boolean := False;
       Param_Count   : Natural := 0;
       Doc_Param_Ct  : Natural := 0;

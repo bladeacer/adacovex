@@ -40,7 +40,7 @@ package ada_main is
    pragma Export (C, main, "main");
 
    type Version_32 is mod 2 ** 32;
-   u00001 : constant Version_32 := 16#b9269e84#;
+   u00001 : constant Version_32 := 16#4f3b391c#;
    pragma Export (C, u00001, "test_runnerB");
    u00002 : constant Version_32 := 16#b2cfab41#;
    pragma Export (C, u00002, "system__standard_libraryB");
@@ -324,142 +324,184 @@ package ada_main is
    pragma Export (C, u00141, "system__concat_2B");
    u00142 : constant Version_32 := 16#a1d318f8#;
    pragma Export (C, u00142, "system__concat_2S");
-   u00143 : constant Version_32 := 16#4d61ef6c#;
-   pragma Export (C, u00143, "adacovex_dal_testsB");
-   u00144 : constant Version_32 := 16#b64c04e2#;
-   pragma Export (C, u00144, "adacovex_dal_testsS");
-   u00145 : constant Version_32 := 16#01e71279#;
-   pragma Export (C, u00145, "adacovex__complianceS");
-   u00146 : constant Version_32 := 16#a2fd68c9#;
-   pragma Export (C, u00146, "adacovex__compliance__dalB");
-   u00147 : constant Version_32 := 16#d211cb54#;
-   pragma Export (C, u00147, "adacovex__compliance__dalS");
-   u00148 : constant Version_32 := 16#e259c480#;
-   pragma Export (C, u00148, "system__assertionsB");
-   u00149 : constant Version_32 := 16#322b1494#;
-   pragma Export (C, u00149, "system__assertionsS");
-   u00150 : constant Version_32 := 16#8b2c6428#;
-   pragma Export (C, u00150, "ada__assertionsB");
-   u00151 : constant Version_32 := 16#cc3ec2fd#;
-   pragma Export (C, u00151, "ada__assertionsS");
-   u00152 : constant Version_32 := 16#bcc987d2#;
-   pragma Export (C, u00152, "system__concat_4B");
-   u00153 : constant Version_32 := 16#27d03431#;
-   pragma Export (C, u00153, "system__concat_4S");
-   u00154 : constant Version_32 := 16#9d245557#;
-   pragma Export (C, u00154, "adacovex__parsersS");
-   u00155 : constant Version_32 := 16#d0f6dfb7#;
-   pragma Export (C, u00155, "adacovex__parsers__do178cB");
-   u00156 : constant Version_32 := 16#0512cb75#;
-   pragma Export (C, u00156, "adacovex__parsers__do178cS");
-   u00157 : constant Version_32 := 16#209c1bdd#;
-   pragma Export (C, u00157, "adacovex__typesB");
-   u00158 : constant Version_32 := 16#16f115fd#;
-   pragma Export (C, u00158, "adacovex__typesS");
-   u00159 : constant Version_32 := 16#fdc0aa5b#;
-   pragma Export (C, u00159, "adacovex__parsers__sourceB");
-   u00160 : constant Version_32 := 16#4b859345#;
-   pragma Export (C, u00160, "adacovex__parsers__sourceS");
-   u00161 : constant Version_32 := 16#85b92d20#;
-   pragma Export (C, u00161, "ada__directoriesB");
-   u00162 : constant Version_32 := 16#c1305a6c#;
-   pragma Export (C, u00162, "ada__directoriesS");
-   u00163 : constant Version_32 := 16#78511131#;
-   pragma Export (C, u00163, "ada__calendarB");
-   u00164 : constant Version_32 := 16#c907a168#;
-   pragma Export (C, u00164, "ada__calendarS");
-   u00165 : constant Version_32 := 16#d172d809#;
-   pragma Export (C, u00165, "system__os_primitivesB");
-   u00166 : constant Version_32 := 16#13d50ef9#;
-   pragma Export (C, u00166, "system__os_primitivesS");
-   u00167 : constant Version_32 := 16#c1ef1512#;
-   pragma Export (C, u00167, "ada__calendar__formattingB");
-   u00168 : constant Version_32 := 16#5a9d5c4e#;
-   pragma Export (C, u00168, "ada__calendar__formattingS");
-   u00169 : constant Version_32 := 16#974d849e#;
-   pragma Export (C, u00169, "ada__calendar__time_zonesB");
-   u00170 : constant Version_32 := 16#55da5b9f#;
-   pragma Export (C, u00170, "ada__calendar__time_zonesS");
-   u00171 : constant Version_32 := 16#0a4a0a25#;
-   pragma Export (C, u00171, "system__val_fixed_64S");
-   u00172 : constant Version_32 := 16#afdc38b2#;
-   pragma Export (C, u00172, "system__arith_64B");
-   u00173 : constant Version_32 := 16#509fabdd#;
-   pragma Export (C, u00173, "system__arith_64S");
-   u00174 : constant Version_32 := 16#aa0160a2#;
-   pragma Export (C, u00174, "system__val_intS");
-   u00175 : constant Version_32 := 16#5da6ebca#;
-   pragma Export (C, u00175, "system__val_unsS");
-   u00176 : constant Version_32 := 16#c3b32edd#;
-   pragma Export (C, u00176, "ada__containers__helpersB");
-   u00177 : constant Version_32 := 16#444c93c2#;
-   pragma Export (C, u00177, "ada__containers__helpersS");
-   u00178 : constant Version_32 := 16#52627794#;
-   pragma Export (C, u00178, "system__atomic_countersB");
-   u00179 : constant Version_32 := 16#c83084cc#;
-   pragma Export (C, u00179, "system__atomic_countersS");
-   u00180 : constant Version_32 := 16#1dec9118#;
-   pragma Export (C, u00180, "ada__directories__hierarchical_file_namesB");
-   u00181 : constant Version_32 := 16#34d5eeb2#;
-   pragma Export (C, u00181, "ada__directories__hierarchical_file_namesS");
-   u00182 : constant Version_32 := 16#ab4ad33a#;
-   pragma Export (C, u00182, "ada__directories__validityB");
-   u00183 : constant Version_32 := 16#0877bcae#;
-   pragma Export (C, u00183, "ada__directories__validityS");
-   u00184 : constant Version_32 := 16#96a20755#;
-   pragma Export (C, u00184, "ada__strings__fixedB");
-   u00185 : constant Version_32 := 16#11b694ce#;
-   pragma Export (C, u00185, "ada__strings__fixedS");
-   u00186 : constant Version_32 := 16#b40d9bf2#;
-   pragma Export (C, u00186, "ada__strings__searchB");
-   u00187 : constant Version_32 := 16#97fe4a15#;
-   pragma Export (C, u00187, "ada__strings__searchS");
-   u00188 : constant Version_32 := 16#4259a79c#;
-   pragma Export (C, u00188, "ada__strings__unboundedB");
-   u00189 : constant Version_32 := 16#b40332b4#;
-   pragma Export (C, u00189, "ada__strings__unboundedS");
-   u00190 : constant Version_32 := 16#d79db92c#;
-   pragma Export (C, u00190, "system__return_stackS");
-   u00191 : constant Version_32 := 16#756a1fdd#;
-   pragma Export (C, u00191, "system__stream_attributesB");
-   u00192 : constant Version_32 := 16#a8236f45#;
-   pragma Export (C, u00192, "system__stream_attributesS");
-   u00193 : constant Version_32 := 16#1c617d0b#;
-   pragma Export (C, u00193, "system__stream_attributes__xdrB");
-   u00194 : constant Version_32 := 16#e4218e58#;
-   pragma Export (C, u00194, "system__stream_attributes__xdrS");
-   u00195 : constant Version_32 := 16#d71ab463#;
-   pragma Export (C, u00195, "system__fat_fltS");
-   u00196 : constant Version_32 := 16#f128bd6e#;
-   pragma Export (C, u00196, "system__fat_lfltS");
-   u00197 : constant Version_32 := 16#8bf81384#;
-   pragma Export (C, u00197, "system__fat_llfS");
-   u00198 : constant Version_32 := 16#aaf681ed#;
-   pragma Export (C, u00198, "system__file_attributesS");
-   u00199 : constant Version_32 := 16#8f8e85c2#;
-   pragma Export (C, u00199, "system__regexpB");
-   u00200 : constant Version_32 := 16#371accc3#;
-   pragma Export (C, u00200, "system__regexpS");
-   u00201 : constant Version_32 := 16#35d6ef80#;
-   pragma Export (C, u00201, "system__storage_poolsB");
-   u00202 : constant Version_32 := 16#8e431254#;
-   pragma Export (C, u00202, "system__storage_poolsS");
-   u00203 : constant Version_32 := 16#57f7985e#;
-   pragma Export (C, u00203, "adacovex_types_testsB");
-   u00204 : constant Version_32 := 16#6c4bc137#;
-   pragma Export (C, u00204, "adacovex_types_testsS");
-   u00205 : constant Version_32 := 16#752a67ed#;
-   pragma Export (C, u00205, "system__concat_3B");
-   u00206 : constant Version_32 := 16#9e5272ad#;
-   pragma Export (C, u00206, "system__concat_3S");
-   u00207 : constant Version_32 := 16#02cecc7b#;
-   pragma Export (C, u00207, "system__concat_6B");
-   u00208 : constant Version_32 := 16#967a9a07#;
-   pragma Export (C, u00208, "system__concat_6S");
-   u00209 : constant Version_32 := 16#0ddbd91f#;
-   pragma Export (C, u00209, "system__memoryB");
-   u00210 : constant Version_32 := 16#0cbcf715#;
-   pragma Export (C, u00210, "system__memoryS");
+   u00143 : constant Version_32 := 16#f8019374#;
+   pragma Export (C, u00143, "adacovex_config_testsB");
+   u00144 : constant Version_32 := 16#d8661246#;
+   pragma Export (C, u00144, "adacovex_config_testsS");
+   u00145 : constant Version_32 := 16#e57d0adc#;
+   pragma Export (C, u00145, "adacovex__configB");
+   u00146 : constant Version_32 := 16#b51f6130#;
+   pragma Export (C, u00146, "adacovex__configS");
+   u00147 : constant Version_32 := 16#fe7a0f2d#;
+   pragma Export (C, u00147, "ada__command_lineB");
+   u00148 : constant Version_32 := 16#3cdef8c9#;
+   pragma Export (C, u00148, "ada__command_lineS");
+   u00149 : constant Version_32 := 16#85b92d20#;
+   pragma Export (C, u00149, "ada__directoriesB");
+   u00150 : constant Version_32 := 16#c1305a6c#;
+   pragma Export (C, u00150, "ada__directoriesS");
+   u00151 : constant Version_32 := 16#78511131#;
+   pragma Export (C, u00151, "ada__calendarB");
+   u00152 : constant Version_32 := 16#c907a168#;
+   pragma Export (C, u00152, "ada__calendarS");
+   u00153 : constant Version_32 := 16#d172d809#;
+   pragma Export (C, u00153, "system__os_primitivesB");
+   u00154 : constant Version_32 := 16#13d50ef9#;
+   pragma Export (C, u00154, "system__os_primitivesS");
+   u00155 : constant Version_32 := 16#c1ef1512#;
+   pragma Export (C, u00155, "ada__calendar__formattingB");
+   u00156 : constant Version_32 := 16#5a9d5c4e#;
+   pragma Export (C, u00156, "ada__calendar__formattingS");
+   u00157 : constant Version_32 := 16#974d849e#;
+   pragma Export (C, u00157, "ada__calendar__time_zonesB");
+   u00158 : constant Version_32 := 16#55da5b9f#;
+   pragma Export (C, u00158, "ada__calendar__time_zonesS");
+   u00159 : constant Version_32 := 16#0a4a0a25#;
+   pragma Export (C, u00159, "system__val_fixed_64S");
+   u00160 : constant Version_32 := 16#afdc38b2#;
+   pragma Export (C, u00160, "system__arith_64B");
+   u00161 : constant Version_32 := 16#509fabdd#;
+   pragma Export (C, u00161, "system__arith_64S");
+   u00162 : constant Version_32 := 16#aa0160a2#;
+   pragma Export (C, u00162, "system__val_intS");
+   u00163 : constant Version_32 := 16#5da6ebca#;
+   pragma Export (C, u00163, "system__val_unsS");
+   u00164 : constant Version_32 := 16#c3b32edd#;
+   pragma Export (C, u00164, "ada__containers__helpersB");
+   u00165 : constant Version_32 := 16#444c93c2#;
+   pragma Export (C, u00165, "ada__containers__helpersS");
+   u00166 : constant Version_32 := 16#52627794#;
+   pragma Export (C, u00166, "system__atomic_countersB");
+   u00167 : constant Version_32 := 16#c83084cc#;
+   pragma Export (C, u00167, "system__atomic_countersS");
+   u00168 : constant Version_32 := 16#1dec9118#;
+   pragma Export (C, u00168, "ada__directories__hierarchical_file_namesB");
+   u00169 : constant Version_32 := 16#34d5eeb2#;
+   pragma Export (C, u00169, "ada__directories__hierarchical_file_namesS");
+   u00170 : constant Version_32 := 16#ab4ad33a#;
+   pragma Export (C, u00170, "ada__directories__validityB");
+   u00171 : constant Version_32 := 16#0877bcae#;
+   pragma Export (C, u00171, "ada__directories__validityS");
+   u00172 : constant Version_32 := 16#96a20755#;
+   pragma Export (C, u00172, "ada__strings__fixedB");
+   u00173 : constant Version_32 := 16#11b694ce#;
+   pragma Export (C, u00173, "ada__strings__fixedS");
+   u00174 : constant Version_32 := 16#b40d9bf2#;
+   pragma Export (C, u00174, "ada__strings__searchB");
+   u00175 : constant Version_32 := 16#97fe4a15#;
+   pragma Export (C, u00175, "ada__strings__searchS");
+   u00176 : constant Version_32 := 16#4259a79c#;
+   pragma Export (C, u00176, "ada__strings__unboundedB");
+   u00177 : constant Version_32 := 16#b40332b4#;
+   pragma Export (C, u00177, "ada__strings__unboundedS");
+   u00178 : constant Version_32 := 16#d79db92c#;
+   pragma Export (C, u00178, "system__return_stackS");
+   u00179 : constant Version_32 := 16#756a1fdd#;
+   pragma Export (C, u00179, "system__stream_attributesB");
+   u00180 : constant Version_32 := 16#a8236f45#;
+   pragma Export (C, u00180, "system__stream_attributesS");
+   u00181 : constant Version_32 := 16#1c617d0b#;
+   pragma Export (C, u00181, "system__stream_attributes__xdrB");
+   u00182 : constant Version_32 := 16#e4218e58#;
+   pragma Export (C, u00182, "system__stream_attributes__xdrS");
+   u00183 : constant Version_32 := 16#d71ab463#;
+   pragma Export (C, u00183, "system__fat_fltS");
+   u00184 : constant Version_32 := 16#f128bd6e#;
+   pragma Export (C, u00184, "system__fat_lfltS");
+   u00185 : constant Version_32 := 16#8bf81384#;
+   pragma Export (C, u00185, "system__fat_llfS");
+   u00186 : constant Version_32 := 16#aaf681ed#;
+   pragma Export (C, u00186, "system__file_attributesS");
+   u00187 : constant Version_32 := 16#8f8e85c2#;
+   pragma Export (C, u00187, "system__regexpB");
+   u00188 : constant Version_32 := 16#371accc3#;
+   pragma Export (C, u00188, "system__regexpS");
+   u00189 : constant Version_32 := 16#35d6ef80#;
+   pragma Export (C, u00189, "system__storage_poolsB");
+   u00190 : constant Version_32 := 16#8e431254#;
+   pragma Export (C, u00190, "system__storage_poolsS");
+   u00191 : constant Version_32 := 16#e259c480#;
+   pragma Export (C, u00191, "system__assertionsB");
+   u00192 : constant Version_32 := 16#322b1494#;
+   pragma Export (C, u00192, "system__assertionsS");
+   u00193 : constant Version_32 := 16#8b2c6428#;
+   pragma Export (C, u00193, "ada__assertionsB");
+   u00194 : constant Version_32 := 16#cc3ec2fd#;
+   pragma Export (C, u00194, "ada__assertionsS");
+   u00195 : constant Version_32 := 16#752a67ed#;
+   pragma Export (C, u00195, "system__concat_3B");
+   u00196 : constant Version_32 := 16#9e5272ad#;
+   pragma Export (C, u00196, "system__concat_3S");
+   u00197 : constant Version_32 := 16#0be4f98a#;
+   pragma Export (C, u00197, "adacovex__typesB");
+   u00198 : constant Version_32 := 16#3d89f7aa#;
+   pragma Export (C, u00198, "adacovex__typesS");
+   u00199 : constant Version_32 := 16#66190d3b#;
+   pragma Export (C, u00199, "adacovex_dal_testsB");
+   u00200 : constant Version_32 := 16#b64c04e2#;
+   pragma Export (C, u00200, "adacovex_dal_testsS");
+   u00201 : constant Version_32 := 16#01e71279#;
+   pragma Export (C, u00201, "adacovex__complianceS");
+   u00202 : constant Version_32 := 16#a2fd68c9#;
+   pragma Export (C, u00202, "adacovex__compliance__dalB");
+   u00203 : constant Version_32 := 16#f9692903#;
+   pragma Export (C, u00203, "adacovex__compliance__dalS");
+   u00204 : constant Version_32 := 16#bcc987d2#;
+   pragma Export (C, u00204, "system__concat_4B");
+   u00205 : constant Version_32 := 16#27d03431#;
+   pragma Export (C, u00205, "system__concat_4S");
+   u00206 : constant Version_32 := 16#9d245557#;
+   pragma Export (C, u00206, "adacovex__parsersS");
+   u00207 : constant Version_32 := 16#d0f6dfb7#;
+   pragma Export (C, u00207, "adacovex__parsers__do178cB");
+   u00208 : constant Version_32 := 16#2e6a2922#;
+   pragma Export (C, u00208, "adacovex__parsers__do178cS");
+   u00209 : constant Version_32 := 16#57f1cbf9#;
+   pragma Export (C, u00209, "adacovex__parsers__sourceB");
+   u00210 : constant Version_32 := 16#60fd7112#;
+   pragma Export (C, u00210, "adacovex__parsers__sourceS");
+   u00211 : constant Version_32 := 16#07aa6dd2#;
+   pragma Export (C, u00211, "adacovex_prove_testsB");
+   u00212 : constant Version_32 := 16#b91b3a89#;
+   pragma Export (C, u00212, "adacovex_prove_testsS");
+   u00213 : constant Version_32 := 16#ae210ed4#;
+   pragma Export (C, u00213, "adacovex__parsers__gnatproveB");
+   u00214 : constant Version_32 := 16#d65ff4b5#;
+   pragma Export (C, u00214, "adacovex__parsers__gnatproveS");
+   u00215 : constant Version_32 := 16#42d55324#;
+   pragma Export (C, u00215, "adacovex_renderer_svg_testsB");
+   u00216 : constant Version_32 := 16#dd0d3240#;
+   pragma Export (C, u00216, "adacovex_renderer_svg_testsS");
+   u00217 : constant Version_32 := 16#f7b37384#;
+   pragma Export (C, u00217, "adacovex__renderersS");
+   u00218 : constant Version_32 := 16#bc673318#;
+   pragma Export (C, u00218, "adacovex__renderers__svgB");
+   u00219 : constant Version_32 := 16#02588900#;
+   pragma Export (C, u00219, "adacovex__renderers__svgS");
+   u00220 : constant Version_32 := 16#6f8581ae#;
+   pragma Export (C, u00220, "adacovex_scanner_testsB");
+   u00221 : constant Version_32 := 16#21f20466#;
+   pragma Export (C, u00221, "adacovex_scanner_testsS");
+   u00222 : constant Version_32 := 16#28256eae#;
+   pragma Export (C, u00222, "adacovex_testparser_testsB");
+   u00223 : constant Version_32 := 16#d2e9f759#;
+   pragma Export (C, u00223, "adacovex_testparser_testsS");
+   u00224 : constant Version_32 := 16#d979eb23#;
+   pragma Export (C, u00224, "adacovex__parsers__testsB");
+   u00225 : constant Version_32 := 16#085c8fcb#;
+   pragma Export (C, u00225, "adacovex__parsers__testsS");
+   u00226 : constant Version_32 := 16#7c8f7a09#;
+   pragma Export (C, u00226, "adacovex_types_testsB");
+   u00227 : constant Version_32 := 16#6c4bc137#;
+   pragma Export (C, u00227, "adacovex_types_testsS");
+   u00228 : constant Version_32 := 16#ada38524#;
+   pragma Export (C, u00228, "system__concat_7B");
+   u00229 : constant Version_32 := 16#1dd52a90#;
+   pragma Export (C, u00229, "system__concat_7S");
+   u00230 : constant Version_32 := 16#0ddbd91f#;
+   pragma Export (C, u00230, "system__memoryB");
+   u00231 : constant Version_32 := 16#0cbcf715#;
+   pragma Export (C, u00231, "system__memoryS");
 
    --  BEGIN ELABORATION ORDER
    --  ada%s
@@ -507,8 +549,8 @@ package ada_main is
    --  system.concat_3%b
    --  system.concat_4%s
    --  system.concat_4%b
-   --  system.concat_6%s
-   --  system.concat_6%b
+   --  system.concat_7%s
+   --  system.concat_7%b
    --  system.traceback%s
    --  system.traceback%b
    --  ada.characters.handling%s
@@ -583,6 +625,8 @@ package ada_main is
    --  ada.exceptions%b
    --  ada.assertions%s
    --  ada.assertions%b
+   --  ada.command_line%s
+   --  ada.command_line%b
    --  ada.strings.search%s
    --  ada.strings.search%b
    --  ada.strings.fixed%s
@@ -657,18 +701,37 @@ package ada_main is
    --  adacovex%s
    --  adacovex.compliance%s
    --  adacovex.parsers%s
+   --  adacovex.renderers%s
    --  adacovex.test_support%s
    --  adacovex.test_support%b
    --  adacovex.types%s
    --  adacovex.types%b
+   --  adacovex.config%s
+   --  adacovex.config%b
    --  adacovex.parsers.do178c%s
    --  adacovex.parsers.do178c%b
+   --  adacovex.parsers.gnatprove%s
+   --  adacovex.parsers.gnatprove%b
    --  adacovex.parsers.source%s
    --  adacovex.parsers.source%b
    --  adacovex.compliance.dal%s
    --  adacovex.compliance.dal%b
+   --  adacovex.parsers.tests%s
+   --  adacovex.parsers.tests%b
+   --  adacovex.renderers.svg%s
+   --  adacovex.renderers.svg%b
+   --  adacovex_config_tests%s
+   --  adacovex_config_tests%b
    --  adacovex_dal_tests%s
    --  adacovex_dal_tests%b
+   --  adacovex_prove_tests%s
+   --  adacovex_prove_tests%b
+   --  adacovex_renderer_svg_tests%s
+   --  adacovex_renderer_svg_tests%b
+   --  adacovex_scanner_tests%s
+   --  adacovex_scanner_tests%b
+   --  adacovex_testparser_tests%s
+   --  adacovex_testparser_tests%b
    --  adacovex_types_tests%s
    --  adacovex_types_tests%b
    --  test_runner%b
