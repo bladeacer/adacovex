@@ -40,7 +40,7 @@ package ada_main is
    pragma Export (C, main, "main");
 
    type Version_32 is mod 2 ** 32;
-   u00001 : constant Version_32 := 16#508c05cc#;
+   u00001 : constant Version_32 := 16#fe4c9829#;
    pragma Export (C, u00001, "adacovex_mainB");
    u00002 : constant Version_32 := 16#b2cfab41#;
    pragma Export (C, u00002, "system__standard_libraryB");
@@ -348,7 +348,7 @@ package ada_main is
    pragma Export (C, u00153, "adacovex__typesB");
    u00154 : constant Version_32 := 16#16f115fd#;
    pragma Export (C, u00154, "adacovex__typesS");
-   u00155 : constant Version_32 := 16#ec051fa2#;
+   u00155 : constant Version_32 := 16#fdc0aa5b#;
    pragma Export (C, u00155, "adacovex__parsers__sourceB");
    u00156 : constant Version_32 := 16#4b859345#;
    pragma Export (C, u00156, "adacovex__parsers__sourceS");
@@ -436,9 +436,9 @@ package ada_main is
    pragma Export (C, u00197, "system__storage_poolsB");
    u00198 : constant Version_32 := 16#8e431254#;
    pragma Export (C, u00198, "system__storage_poolsS");
-   u00199 : constant Version_32 := 16#8c98d7cf#;
+   u00199 : constant Version_32 := 16#e57d0adc#;
    pragma Export (C, u00199, "adacovex__configB");
-   u00200 : constant Version_32 := 16#30a71e82#;
+   u00200 : constant Version_32 := 16#9e678367#;
    pragma Export (C, u00200, "adacovex__configS");
    u00201 : constant Version_32 := 16#fe7a0f2d#;
    pragma Export (C, u00201, "ada__command_lineB");
@@ -482,7 +482,7 @@ package ada_main is
    pragma Export (C, u00220, "adacovex__serverS");
    u00221 : constant Version_32 := 16#ab476a8a#;
    pragma Export (C, u00221, "adacovex__server__httpB");
-   u00222 : constant Version_32 := 16#7b5383c0#;
+   u00222 : constant Version_32 := 16#d5931e25#;
    pragma Export (C, u00222, "adacovex__server__httpS");
    u00223 : constant Version_32 := 16#df7f3e17#;
    pragma Export (C, u00223, "adacovex__renderers__htmlB");

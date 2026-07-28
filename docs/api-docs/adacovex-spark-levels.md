@@ -46,8 +46,8 @@ specifications.
 
 | Criterion | Requirement |
 |-----------|-------------|
-| Full functional requirements | Complete formal specification of all subprogram behavior |
-| Total correctness | All subprograms have complete Pre/Post contracts covering full behavior |
+| Full functional requirements | Complete formal specification of all subprogram behaviour |
+| Total correctness | All subprograms have complete Pre/Post contracts covering full behaviour |
 | Domain properties | Algebraic properties (commutativity, idempotence, convergence) proved |
 | Enforcement | `gnatprove` reports all VCs proved, 0 unproved, 0 justified |
 

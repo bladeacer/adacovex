@@ -16,7 +16,8 @@ package Adacovex.Config is
       DAL_Target    : Types.DAL_Level := Types.DAL_C;
       Serve_Mode    : Boolean := False;
       Port          : Positive := 8080;
-      Emit_SVG      : Boolean := False;
+      No_SVG        : Boolean := False;
+      Emit_SVG      : Boolean := True;
       SVG_Path      : String (1 .. Types.Max_Path);
       SVG_Path_Len  : Natural := 0;
       Emit_Markdown : Boolean := False;

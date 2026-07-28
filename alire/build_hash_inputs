@@ -1,4 +1,3 @@
-dependency:aunit=26.0.0=78c67a8b011e08e5500962fc633efb7809a9c7391b64fc383bbaebb1096eadc4
 external:ADACOVEX_LIBRARY_TYPE=default
 external:LIBRARY_TYPE=default
 profile:adacovex=DEVELOPMENT

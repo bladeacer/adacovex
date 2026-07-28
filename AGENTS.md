@@ -87,7 +87,7 @@ the subprogram declaration (no blank lines between tags and declaration):
 
 Conventions (following `../Ada_CRDT` style):
 - Prefix: `--  ` (two dashes + two spaces) for all doc lines.
-- Summary first, then tag lines, then declaration — no blank lines.
+- Summary first, then tag lines, then declaration -- no blank lines.
 - Descriptions capitalized, end with period.
 - Two spaces between tag name and description (alignment padding).
 
@@ -106,7 +106,7 @@ for full DAL A--E criteria.
 
 ## Unit tests
 
-**Native (zero-dependency).** Tests use `Adacovex.Test_Support` — a minimal
+**Native (zero-dependency).** Tests use `Adacovex.Test_Support` -- a minimal
 `Runner` type with a `Check` procedure (modeled after `../Ada_CRDT`'s
 `CRDT.Test_Support`). No AUnit or other external framework.
 
@@ -119,9 +119,9 @@ in `adacovex.gpr`).
 `adacovex-parsers-tests`. This means adacovex **supports both** native test
 running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 
-Verification also covers: (a) `make run-self` — docstring self-coverage must
-reach 100%, (b) `make prove` — SPARK proof must reach Platinum (28/28 VCs),
-(c) `make run-ada-crdt` — Ada_CRDT regression check must remain stable.
+Verification also covers: (a) `make run-self` -- docstring self-coverage must
+reach 100%, (b) `make prove` -- SPARK proof must reach Platinum (28/28 VCs),
+(c) `make run-ada-crdt` -- Ada_CRDT regression check must remain stable.
 
 ## Key constraints
 
