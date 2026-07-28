@@ -159,6 +159,11 @@ running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 ### Known scanner quirks
 - `(null record)` typed parameters are counted as parameters
 
+### Directory exclusions
+The scanner skips these directories during source traversal: `.git`, `obj`, `tests`,
+`config`, `demo`, `deps`, `examples`. Third-party vendored code (e.g.
+`demo/deps/vt100/`) is excluded from docstring coverage and metric counts.
+
 ## Verification
 
 | Check | Command | Requirement |

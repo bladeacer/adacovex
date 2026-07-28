@@ -348,16 +348,19 @@ package body Adacovex.Parsers.Source is
                Name : constant String := Simple_Name (Ent);
                Path : constant String := Full_Name (Ent);
             begin
-               if Kind (Ent) = Directory then
-                  if Name /= "."
-                    and Name /= ".."
-                    and Name /= ".git"
-                    and Name /= "obj"
-                    and Name /= "tests"
-                    and Name /= "config"
-                  then
-                     Search_Dir (Path);
-                  end if;
+                if Kind (Ent) = Directory then
+                   if Name /= "."
+                     and Name /= ".."
+                     and Name /= ".git"
+                     and Name /= "obj"
+                     and Name /= "tests"
+                     and Name /= "config"
+                     and Name /= "demo"
+                     and Name /= "deps"
+                     and Name /= "examples"
+                   then
+                      Search_Dir (Path);
+                   end if;
                elsif Kind (Ent) = Ordinary_File then
                   declare
                      Dot : Natural := 0;
