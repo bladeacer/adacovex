@@ -129,14 +129,6 @@ package body Adacovex.Config is
          Set_String (Cfg.Target_Path, Cfg.Target_Len, "../Ada_CRDT");
       end if;
 
-      -- Default SVG output path: project-scoped (relative to target)
-      -- so running against ../Ada_CRDT writes to ../Ada_CRDT/docs/badges
-      if Cfg.Emit_SVG and then Cfg.SVG_Path_Len = 0 then
-         Set_String
-           (Cfg.SVG_Path, Cfg.SVG_Path_Len,
-            Cfg.Target_Path (1 .. Cfg.Target_Len) & "/docs/badges");
-      end if;
-
       -- Resolve target path to absolute, then derive default manifest
       declare
          Raw : constant String := Cfg.Target_Path (1 .. Cfg.Target_Len);
@@ -150,6 +142,14 @@ package body Adacovex.Config is
             end;
          end if;
       end;
+
+      -- Default SVG output path: project-scoped (relative to resolved target)
+      -- so running against ../Ada_CRDT writes to ../Ada_CRDT/docs/badges
+      if Cfg.Emit_SVG and then Cfg.SVG_Path_Len = 0 then
+         Set_String
+           (Cfg.SVG_Path, Cfg.SVG_Path_Len,
+            Cfg.Target_Path (1 .. Cfg.Target_Len) & "/docs/badges");
+      end if;
 
       -- Default manifest derived from target
       if Cfg.Manifest_Len = 0 then

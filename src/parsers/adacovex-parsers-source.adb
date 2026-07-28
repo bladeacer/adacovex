@@ -16,7 +16,8 @@ package body Adacovex.Parsers.Source is
       return
         (TL >= 9 and then Trim (1 .. 9) = "procedure")
         or else (TL >= 8 and then Trim (1 .. 8) = "function")
-        or else (TL >= 7 and then Trim (1 .. 7) = "generic");
+        or else (TL >= 15 and then Trim (1 .. 15) = "genericprocedure")
+        or else (TL >= 14 and then Trim (1 .. 14) = "genericfunction");
    end Is_Subprogram_Decl;
 
    function Has_HLR_Tag

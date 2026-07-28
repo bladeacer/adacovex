@@ -12,8 +12,8 @@ test-result parsing, DO-178C DAL compliance assessment, and interactive dashboar
 
 ## Dogfood target
 
-adacovex was designed to audit the Ada_CRDT library at `../Ada_CRDT` (38 packages,
-~135 subprograms). Running `make run-ada-crdt` runs the full pipeline against it.
+adacovex was designed to audit the Ada_CRDT library at `../Ada_CRDT` (26 packages,
+~219 subprograms). Running `make run-ada-crdt` runs the full pipeline against it.
 The `--target=PATH` option can point at any Ada/SPARK project.
 
 Self-assessment (`make run-self` / `--target=.`) verifies adacovex against its own
@@ -46,7 +46,7 @@ src/
 |   |-- adacovex_test_parser_tests.ads/.adb   -- Test-result parser tests (27)
 |   |-- adacovex_config_tests.ads/.adb        -- CLI config tests (8)
 |   |-- adacovex_svg_tests.ads/.adb          -- SVG renderer tests (30)
-|   `-- test_runner.adb                       -- Test suite entry point (140 tests)
+|   `-- test_runner.adb                       -- Test suite entry point (152 tests)
 |-- compliance/
 |   |-- adacovex-compliance-dal.ads/.adb       -- DAL-C assessment logic
 |-- renderers/
@@ -157,9 +157,6 @@ running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 | SVG renderer | 30 | SVG badge content and format |
 
 ### Known scanner quirks
-- `generic` keyword before a subprogram is detected as a separate subprogram
-  (this creates a 2-line entry with no name; harmless but counted in subtypes)
-- Empty subprogram name appears when `generic` is followed by `procedure`/`function`
 - `(null record)` typed parameters are counted as parameters
 
 ## Verification
