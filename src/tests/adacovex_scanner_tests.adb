@@ -90,10 +90,9 @@ package body Adacovex_Scanner_Tests is
          "Test 1: No_Docs has no docstring");
 
       --  Test 2: scan a file with generic function.
-      --  NOTE: scanner detects `generic` as a subprogram declaration
-      --  (known behaviour -- `generic` line is counted as subprogram).
-      --  So Subprogram_Count = 2 (generic + Clone), and generic
-      --  gets an empty name (SNLen = 0).
+      --  `generic` on its own is not detected as a subprogram declaration,
+      --  so only `function Clone` counts. The pending docstring tags
+      --  (started before `generic`) attach to Clone via Flush_Pending.
       begin
          declare
             F : File_Type;
@@ -112,7 +111,7 @@ package body Adacovex_Scanner_Tests is
 
       Adacovex.Parsers.Source.Scan_Ads_File (Tmp_File, Pkg, Success);
       R.Check (Success, "Test 2: parse succeeded");
-      --  generic + function => 2 subprograms detected
+      --  only Clone detected, generic line is not a separate subprogram
       R.Check (Pkg.Subprogram_Count >= 1, "Test 2: at least 1 subprogram");
       --  The named subprogram (Clone) should be last
       declare
