@@ -15,8 +15,8 @@ package body Adacovex.Parsers.Source is
       end loop;
       return
         (TL >= 9 and then Trim (1 .. 9) = "procedure")
-        or else (TL >= 7 and then Trim (1 .. 7) = "function")
-        or else (TL >= 6 and then Trim (1 .. 6) = "generic");
+        or else (TL >= 8 and then Trim (1 .. 8) = "function")
+        or else (TL >= 7 and then Trim (1 .. 7) = "generic");
    end Is_Subprogram_Decl;
 
    function Has_HLR_Tag
@@ -265,15 +265,15 @@ package body Adacovex.Parsers.Source is
                      elsif not In_SName then
                         if I + 8 <= TL and then Trim (I .. I + 8) = "procedure"
                         then
-                           Skip := 8;
+                           Skip := 9;
                         elsif I + 7 <= TL
                           and then Trim (I .. I + 7) = "function"
                         then
-                           Skip := 7;
+                           Skip := 8;
                         elsif I + 6 <= TL
                           and then Trim (I .. I + 6) = "generic"
                         then
-                           Skip := 6;
+                           Skip := 7;
                         elsif Trim (I)
                               in 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_'
                         then
@@ -349,6 +349,8 @@ package body Adacovex.Parsers.Source is
                     and Name /= ".."
                     and Name /= ".git"
                     and Name /= "obj"
+                    and Name /= "tests"
+                    and Name /= "config"
                   then
                      Search_Dir (Path);
                   end if;
@@ -362,7 +364,12 @@ package body Adacovex.Parsers.Source is
                            exit;
                         end if;
                      end loop;
-                     if Dot > 0 and then Name (Dot .. Name'Last) = ".ads" then
+                     if Dot > 0
+                       and then Name (Dot .. Name'Last) = ".ads"
+                       and then (Name'Length < 3
+                                 or else Name (Name'First .. Name'First + 2)
+                                         /= "b__")
+                     then
                         if Pkg_Count < Types.Max_Packages then
                            Pkg_Count := Pkg_Count + 1;
                            Scan_Ads_File (Path, Packages (Pkg_Count), OK);

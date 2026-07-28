@@ -1,7 +1,7 @@
 # Adacovex.Renderers.ANSI
 
 Print a formatted report to standard output.
-Displays a color-coded summary of docstring coverage, proof results,
+Displays a colour-coded summary of docstring coverage, proof results,
 test results, and DO-178C DAL compliance using ANSI escape sequences.
 @param Doc_Metrics  Docstring coverage metrics.
 @param Proof  GNATprove proof summary.

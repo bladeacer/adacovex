@@ -107,6 +107,8 @@ package body Adacovex.Config is
                Cfg.Emit_Markdown := True;
                Set_String
                  (Cfg.MD_Path, Cfg.MD_Path_Len, A (A'First + 16 .. A'Last));
+            elsif A = "--no-svg" then
+               Cfg.No_SVG := True;
             elsif A = "--verbose" then
                Cfg.Verbose := True;
             elsif A = "--help" then
@@ -115,6 +117,17 @@ package body Adacovex.Config is
          end;
          I := I + 1;
       end loop;
+
+      -- --no-svg overrides --emit-svg
+      if Cfg.No_SVG then
+         Cfg.Emit_SVG := False;
+         Cfg.SVG_Path_Len := 0;
+      end if;
+
+      -- Default SVG output path if SVG is enabled but no path given
+      if Cfg.Emit_SVG and then Cfg.SVG_Path_Len = 0 then
+         Set_String (Cfg.SVG_Path, Cfg.SVG_Path_Len, "docs/badges");
+      end if;
 
       -- Default target if not provided
       if Cfg.Target_Len = 0 then
@@ -176,7 +189,9 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("  --port=N              HTTP server port (default: 8080)");
       Ada.Text_IO.Put_Line
-        ("  --emit-svg=PATH       Write SVG badges to directory");
+        ("  --emit-svg=PATH       Write SVG badges to directory (default: docs/badges)");
+      Ada.Text_IO.Put_Line
+        ("  --no-svg              Suppress automatic SVG output");
       Ada.Text_IO.Put_Line
         ("  --emit-markdown=PATH  Write VERIFICATION.md + TRACE.md");
       Ada.Text_IO.Put_Line ("  --verbose             Verbose diagnostics");

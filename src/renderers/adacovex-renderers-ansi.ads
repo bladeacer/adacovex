@@ -1,7 +1,7 @@
 with Adacovex.Types;
 
 --  Terminal ANSI renderer.
---  Produces a colored, human-readable report on standard output using
+--  Produces a coloured, human-readable report on standard output using
 --  ANSI escape sequences for highlighting.
 --  HLR-RENDER-ANSI: ANSI rendering
 
@@ -9,7 +9,7 @@ package Adacovex.Renderers.ANSI is
    pragma SPARK_Mode (On);
 
    --  Print a formatted report to standard output.
-   --  Displays a color-coded summary of docstring coverage, proof results,
+   --  Displays a colour-coded summary of docstring coverage, proof results,
    --  test results, and DO-178C DAL compliance using ANSI escape sequences.
    --  @param Doc_Metrics  Docstring coverage metrics.
    --  @param Proof  GNATprove proof summary.

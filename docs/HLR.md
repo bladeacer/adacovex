@@ -57,7 +57,7 @@
 - HLR-DAL-E: DAL-E assessment shall verify HLR trace coverage only. No test or
   proof requirements.
 
-- HLR-RENDER-ANSI: The tool shall render a color-annotated summary report to
+- HLR-RENDER-ANSI: The tool shall render a colour-annotated summary report to
   standard output using ANSI escape codes.
 
 - HLR-RENDER-SVG: The tool shall generate Shields.io-style SVG badges for

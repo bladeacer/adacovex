@@ -1,4 +1,4 @@
-with Adacovex.Types;         use Adacovex.Types;
+with Adacovex.Types; use Adacovex.Types;
 with Adacovex.Compliance.DAL;
 
 package body Adacovex_DAL_Tests is
