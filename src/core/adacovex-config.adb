@@ -124,14 +124,17 @@ package body Adacovex.Config is
          Cfg.SVG_Path_Len := 0;
       end if;
 
-      -- Default SVG output path if SVG is enabled but no path given
-      if Cfg.Emit_SVG and then Cfg.SVG_Path_Len = 0 then
-         Set_String (Cfg.SVG_Path, Cfg.SVG_Path_Len, "docs/badges");
-      end if;
-
       -- Default target if not provided
       if Cfg.Target_Len = 0 then
          Set_String (Cfg.Target_Path, Cfg.Target_Len, "../Ada_CRDT");
+      end if;
+
+      -- Default SVG output path: project-scoped (relative to target)
+      -- so running against ../Ada_CRDT writes to ../Ada_CRDT/docs/badges
+      if Cfg.Emit_SVG and then Cfg.SVG_Path_Len = 0 then
+         Set_String
+           (Cfg.SVG_Path, Cfg.SVG_Path_Len,
+            Cfg.Target_Path (1 .. Cfg.Target_Len) & "/docs/badges");
       end if;
 
       -- Resolve target path to absolute, then derive default manifest
@@ -189,7 +192,7 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("  --port=N              HTTP server port (default: 8080)");
       Ada.Text_IO.Put_Line
-        ("  --emit-svg=PATH       Write SVG badges to directory (default: docs/badges)");
+        ("  --emit-svg=PATH       Write SVG badges to directory (default: <target>/docs/badges)");
       Ada.Text_IO.Put_Line
         ("  --no-svg              Suppress automatic SVG output");
       Ada.Text_IO.Put_Line
