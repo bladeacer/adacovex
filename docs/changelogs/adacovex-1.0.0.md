@@ -1,110 +1,106 @@
-### adacovex 1.0.0
+# adacovex 1.0.0
 
-Date: _2026-07-28_
+Date: _2026-07-29_
 
-Initial stable release.
+## New Features
 
-## New Features (from earlier rounds)
+### Strict mode (default) + `--relaxed` flag
 
-### Ada Source Scanner
+- **Strict mode** is now the default: scans ALL directories (except always-excluded
+  `.git`, `obj`, `tests`, `config`, `.adacovex`), applies `.adacovex/patches/`
+  docstring overlays. Ensures full compliance coverage including vendored code.
+- **`--relaxed`** flag to disable strict mode: enables directory skip list
+  (default: `demo,deps,examples`) and disables patch file application.
+- Use case: strict for compliance audits, relaxed for quick dev-cycle checks.
 
-Scans `.ads` files and extracts subprogram declarations (procedures, functions,
-types, subtypes), docstring annotations (`@param`, `@return`, `@field`,
-`@formal`), and HLR traceability tags (`-- HLR-XXXX`). Supports both
-before-declaration and after-declaration docstring placement. Tracks source
-line numbers for each subprogram.
+### `--skip-dir` flag
 
-### GNATprove Output Parser
+- New `--skip-dir=NAME` (repeatable) adds directory names to the scanner's skip
+  list. Only effective in `--relaxed` mode.
+- Complements the default skip list (`demo,deps,examples`) for projects with
+  additional third-party code.
 
-Parses `gnatprove.out` summaries into structured check categories: flow
-dependencies, initialization, run-time checks, assertions, functional
-contracts, and termination. Determines SPARK assurance level
-(Stone, Bronze, Silver, Gold, Platinum) from proof statistics.
+### `.adacovex/patches/` mechanism
 
-### Test Result Parser
+- Patch files at `<target>/.adacovex/patches/<relative-path>` allow documenting
+  vendored/third-party `.ads` files without modifying the originals.
+- Patch files are valid Ada specs with docstrings; merged by subprogram name.
+- Overloaded subprograms: each overload requires one patch entry; the patch
+  engine assigns entries to the next undocumented original.
+- The `.adacovex` directory is always excluded from source scanning.
 
-Reads Markdown-format test summary tables for pass/fail counts. Supports both
-native test-runner output and AUnit-compatible format. Per-category test
-counts and overall totals are extracted.
+### Plain docstring summary detection
 
-### DO-178C DAL Compliance
+- Previously only `@param`/`@return`/`@field` tags counted as docstrings.
+- Now any `--  ` (two dashes + two spaces) comment line before a subprogram
+  declaration is recognized as a docstring, even without a tag.
+- No-param procedures with only a summary line are now correctly counted.
 
-Assesses target projects against DO-178C DAL A--E criteria:
+### `--verbose` output
 
-- **HLR traceability**: each HLR-XXXX tag in `HLR.md` must appear in source
-- **No orphan tags**: every in-source HLR tag must correspond to a defined HLR
-- **Test pass/fail**: target project must report 0 failures
-- **Min SPARK level**: Bronze for DAL-C, up to Platinum for DAL-A
+- The `--verbose` flag now produces pipeline diagnostic output to stderr:
+  step labels, package counts, SPARK level, test file path, and output paths.
+- Previously a no-op placeholder.
 
-### Multiple Output Formats
+### `make bump-version` target
 
-- **ANSI terminal report**: colored output with coverage, SPARK, tests, and
-  DAL assessment sections; respects `NO_COLOR` environment variable and
-  non-interactive terminal detection
-- **SVG badges**: shields.io-style badges for SPARK level, test status,
-  DO-178C status, and docstring coverage; automatically emitted to
-  `docs/badges/` by default (overridable via `--emit-svg=PATH` or suppressed
-  with `--no-svg`)
-- **Markdown reports**: VERIFICATION.md and TRACE.md for compliance docs
-- **HTML dashboard**: full web dashboard with live metrics and JSON API
-- **HTTP server**: multi-threaded HTTP/1.1 server (GNAT.Sockets) with a
-  4-worker Ada task pool and keep-alive connection support on configurable port
+- `make bump-version VERSION=x.y.z` bumps version across `alire.toml`,
+  `alire-dev.toml`, `src/adacovex.ads`, and creates/updates the changelog.
+- Modeled after the `Ada_CRDT` project's bump workflow.
 
-### CLI Interface
+### `make run-ada-crdt` strict mode
 
-Self-documenting command-line interface with options for target project path,
-manifest override, DAL level, server mode, SVG/Markdown output, verbose
-diagnostics, and port configuration. Proper exit codes (0=success, 1=failure).
+- `make run-ada-crdt` now runs in strict mode (no `--relaxed`).
+- Achieves 100% docstring coverage on Ada_CRDT including vendored vt100 code
+  via `.adacovex/patches/demo/deps/vt100/vt100.ads`.
 
-### HTTP Server Enhancements
+### Patch overload handling
 
-- Multi-threaded request handling via bounded Ada task pool (4 workers)
-- HTTP/1.1 keep-alive connections (parses Connection and Content-Length headers)
-- Concurrent request processing without blocking
+- `Apply_Patches` now skips already-documented originals when searching for
+  name matches, so overloaded subprograms get correctly assigned to the next
+  undocumented overload instead of re-patching the first one.
 
-### CLI UX
+### Always-excluded directories
 
-- `NO_COLOR` environment variable suppresses ANSI escape sequences
-- TTY auto-detection: ANSI colors enabled by default on interactive terminals
-- stdout/stderr separation: report/header on stdout, diagnostics on stderr
-- Timing footer ("Completed in Xs") on every run
-- Exit code 0 on success, 1 on failure
+- `config` and `.adacovex` added to the hardcoded always-excluded directories
+  (alongside `.git`, `obj`, `tests`).
+- `config/` contains generated Alire configuration, not production source.
+- `.adacovex/` contains patch metadata relevant only to the patch engine.
 
 ## Changes
 
-- **HTTP server**: single-threaded accept loop replaced with 4-worker Ada task
-  pool; HTTP/1.1 keep-alive support added; Connection and Content-Length
-  headers parsed correctly; request body draining for POST requests
-- **SVG output**: `--emit-svg` now defaults to emitting badges to `docs/badges/`;
-  added `--no-svg` flag to suppress default SVG output
-- **CLI output**: rewrote to Go/Rust compact format with `file:line` style
-  undocumented-subprogram messages and `help:` suggestions
-- **Line number tracking**: `Subprogram_Info` now includes `Line_Number` field,
-  populated during source scanning
-- **Name extraction bug fix**: fixed off-by-one offset in subprogram name
-  extraction that caused truncated names (e.g., "Add" -> "dd", "Log" -> "og")
-- **Tests**: expanded from 23 to 140 tests across 7 categories
-- **Docstring styles**: British English (`colour`, `behaviour`) normalized
-  throughout comments and documentation
-- **ASCII verification**: all source files verified pure ASCII
+- **Version**: bumped from 0.1.0 to 1.0.0
+- **CLI default**: strict mode is on by default; `--relaxed` to disable
+- **Docstring scanner**: plain `--  ` summary lines now count as docstrings
+- **Patch engine**: overloaded subprograms now handled correctly
+- **Source scanner**: `.adacovex` always excluded from directory walk
+- **Tests**: 152 tests pass across 7 categories
 
 ## Known Issues
 
-- Docstring coverage scanner may produce false positives for non-subprogram
-  comments with adjacent tag-like patterns
-- DAL compliance requires target project to have `docs/compliance/HLR.md`
-  and `docs/compliance/LLR.md` in specific paths
+- `(null record)` typed parameters are counted as parameters by the scanner
+  (benign — they are parameters, just parameterless).
+- Docstring detection uses strict `--  ` prefix; `-- ` (one space) and `---`
+  (three dashes) do not count.
+- Relative `--target=PATH` is resolved against CWD, so behavior depends on
+  invocation directory.
 
 ## Migration
 
-Initial release. No prior versions exist.
+From 0.1.0:
+- Default behavior changes from "relaxed, skip demo/deps" to "strict, scan
+  everything". Add `--relaxed` to existing commands to keep old behavior.
+- Projects relying on being skipped by default now need `--relaxed` or
+  `--skip-dir` explicitly.
 
 ## Proof Results
 
-SPARK proof results are generated by scanning the target project's
-`gnatprove.out` or `obj/gnatprove/gnatprove.out` file. Self-assessment
-targets Platinum (all VCs proved, AoRTE-free).
+Self-assessment: **Platinum** (28/28 VCs proved, AoRTE-free).
+Ada_CRDT (strict): **Platinum** (273 VCs, 5 justified overflow checks).
+Ada_CRDT (relaxed): **Platinum** (273 VCs, 5 justified).
 
 ## Breaking Changes
 
-None. Initial release.
+- `--relaxed` now defaults to OFF (was ON in 0.1.0). Existing workflows using
+  plain `adacovex --target=...` now run in strict mode. Add `--relaxed` to
+  restore old behavior for targets with undocumented vendored code.

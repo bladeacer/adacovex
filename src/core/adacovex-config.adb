@@ -233,7 +233,7 @@ package body Adacovex.Config is
        Ada.Text_IO.Put_Line
          ("  --skip-dir=NAME       Add directory name to skip list (repeatable)");
       Ada.Text_IO.Put_Line
-         ("  --relaxed             Disable strict mode (skip dirs, no patches); on by default");
+         ("  --relaxed             Disable strict mode (skip dirs, no patches); strict is default");
       Ada.Text_IO.Put_Line ("  --verbose             Verbose diagnostics");
       Ada.Text_IO.Put_Line
         ("  --help                Show this message and exit");
