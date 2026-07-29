@@ -13,7 +13,6 @@ with Adacovex.Parsers.Source;
 --  HLR-DAL-E: DAL-E compliance criteria
 
 package Adacovex.Compliance.DAL is
-   pragma SPARK_Mode (On);
 
    --  Run DAL compliance assessment for any DAL level (A-E).
    --  Evaluates HLR trace coverage, orphan tag absence, test pass rate,
@@ -21,20 +20,17 @@ package Adacovex.Compliance.DAL is
    --  Assessment with pass/fail results and detailed failure reasons.
    --  @param Level  Target DAL level (A-E).
    --  @param Target_Dir  Project root directory.
-   --  @param Packages  Scanned package array.
-   --  @param Pkg_Count  Number of packages.
+   --  @param Packages  Scanned package vector.
    --  @param Proof_Summary  GNATprove proof results.
    --  @param Test_Summary  Test run results.
    --  @param Assessment  Output DAL assessment record.
    procedure Assess_DAL
      (Level         : Types.DAL_Level;
       Target_Dir    : String;
-      Packages      : Types.Package_Array;
-      Pkg_Count     : Natural;
+      Packages      : Types.Package_Vectors.Vector;
       Proof_Summary : Types.Proof_Summary;
       Test_Summary  : Types.Test_Summary;
-      Assessment    : out Types.DAL_Assessment)
-   with Pre => Pkg_Count <= Types.Max_Packages;
+      Assessment    : out Types.DAL_Assessment);
 
    --  Convenience test: return True if Assessment.Status = Achieved.
    --  Equivalent to Assessment.Status = DAL_Status'Val (0).

@@ -248,10 +248,10 @@ package body Adacovex.Parsers.DO178C is
    end Parse_LLR_MD;
 
    function Find_HLR_In_Source
-     (HLR_Id : String; Packages : Types.Package_Array; Pkg_Count : Natural)
+     (HLR_Id : String; Packages : Types.Package_Vectors.Vector)
       return Boolean is
    begin
-      for P in 1 .. Pkg_Count loop
+      for P in 1 .. Integer (Packages.Length) loop
          for T in 1 .. Packages (P).Total_HLR_Tags loop
             declare
                Tag_Len : constant Natural := Packages (P).HLR_Tags (T).Len;

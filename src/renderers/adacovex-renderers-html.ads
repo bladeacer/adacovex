@@ -6,7 +6,6 @@ with Adacovex.Types;
 --  HLR-RENDER-HTML: HTML dashboard and JSON API
 
 package Adacovex.Renderers.HTML is
-   pragma SPARK_Mode (On);
 
    --  Render a full HTML dashboard page with cards for all metrics.
    --  Produces a self-contained HTML page (with embedded CSS) showing
@@ -16,16 +15,14 @@ package Adacovex.Renderers.HTML is
    --  @param Proof  GNATprove proof summary.
    --  @param Tests  Test result summary.
    --  @param DAL_Assess  DAL compliance assessment.
-   --  @param Packages  Scanned package array.
-   --  @param Pkg_Count  Number of packages.
+   --  @param Packages  Scanned package vector.
    --  @return HTML dashboard page.
    function Render_Dashboard
      (Doc_Metrics : Types.Docstring_Metrics;
       Proof       : Types.Proof_Summary;
       Tests       : Types.Test_Summary;
       DAL_Assess  : Types.DAL_Assessment;
-      Packages    : Types.Package_Array;
-      Pkg_Count   : Natural) return String
+      Packages    : Types.Package_Vectors.Vector) return String
    with Post => Render_Dashboard'Result'Length > 0, Global => null;
 
    --  Render a JSON object with key metric values.

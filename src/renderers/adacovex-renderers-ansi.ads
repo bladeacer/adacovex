@@ -7,7 +7,6 @@ with Adacovex.Types;
 --  HLR-RENDER-ANSI: ANSI rendering
 
 package Adacovex.Renderers.ANSI is
-   pragma SPARK_Mode (On);
 
    --  Print a formatted report to standard output.
    --  Displays a colour-coded summary of docstring coverage, proof results,
@@ -18,16 +17,14 @@ package Adacovex.Renderers.ANSI is
    --  @param Proof  GNATprove proof summary.
    --  @param Tests  Test result summary.
    --  @param DAL_Assess  DAL compliance assessment.
-   --  @param Packages  Scanned package array.
-   --  @param Pkg_Count  Number of packages.
+   --  @param Packages  Scanned package vector.
    --  @param Use_Color  Enable ANSI color output (default False).
    procedure Render_Summary
      (Doc_Metrics : Types.Docstring_Metrics;
       Proof       : Types.Proof_Summary;
       Tests       : Types.Test_Summary;
       DAL_Assess  : Types.DAL_Assessment;
-      Packages    : Types.Package_Array;
-      Pkg_Count   : Natural;
+      Packages    : Types.Package_Vectors.Vector;
       Use_Color   : Boolean := False);
 
 end Adacovex.Renderers.ANSI;

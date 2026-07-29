@@ -1,5 +1,4 @@
 package body Adacovex.Compliance.DAL is
-   pragma SPARK_Mode (Off);
 
    use type Types.SPARK_Level;
    use type Types.DAL_Status;
@@ -33,8 +32,7 @@ package body Adacovex.Compliance.DAL is
    procedure Assess_DAL
      (Level         : Types.DAL_Level;
       Target_Dir    : String;
-      Packages      : Types.Package_Array;
-      Pkg_Count     : Natural;
+      Packages      : Types.Package_Vectors.Vector;
       Proof_Summary : Types.Proof_Summary;
       Test_Summary  : Types.Test_Summary;
       Assessment    : out Types.DAL_Assessment)
@@ -100,19 +98,19 @@ package body Adacovex.Compliance.DAL is
             HLR_Id : constant String :=
               HLR_List (H).Id (1 .. HLR_List (H).Id_Len);
          begin
-            if Adacovex.Parsers.DO178C.Find_HLR_In_Source
-                 (HLR_Id, Packages, Pkg_Count)
+             if Adacovex.Parsers.DO178C.Find_HLR_In_Source
+                  (HLR_Id, Packages)
             then
                Assessment.HLR_Found := Assessment.HLR_Found + 1;
             end if;
          end;
       end loop;
 
-      -- Check for orphan HLR tags in source (not found in HLR.md)
-      declare
-         Orphan_Found : Boolean := False;
-      begin
-         for P in 1 .. Pkg_Count loop
+       -- Check for orphan HLR tags in source (not found in HLR.md)
+       declare
+          Orphan_Found : Boolean := False;
+       begin
+          for P in 1 .. Integer (Packages.Length) loop
             for T in 1 .. Packages (P).Total_HLR_Tags loop
                declare
                   Tag_Len : constant Natural := Packages (P).HLR_Tags (T).Len;

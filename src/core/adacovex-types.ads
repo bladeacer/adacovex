@@ -1,5 +1,7 @@
 --  All domain types used across the adacovex tool chain.
---  Every type is bounded at compile time; no heap allocation is used.
+--  Subprogram and package collections use Ada.Containers.Vectors for
+--  unbounded (up to Natural'Last) capacity. Other fixed-size buffers
+--  remain bounded at compile time.
 --  HLR-METRICS: Docstring_Metrics type
 --  HLR-PROOF: Proof_Summary type
 --  HLR-TEST: Test_Summary type
@@ -10,20 +12,19 @@
 --  HLR-DAL-D: DAL_Level (DAL_D)
 --  HLR-DAL-E: DAL_Level (DAL_E)
 
-package Adacovex.Types is
-   pragma SPARK_Mode (On);
+with Ada.Containers.Vectors;
 
-   Max_Hlrs       : constant := 64;
-   Max_Llrs       : constant := 64;
-   Max_Packages   : constant := 64;
-   Max_Subprogs   : constant := 64;
+package Adacovex.Types is
+
+   Max_Hlrs       : constant := 128;
+   Max_Llrs       : constant := 128;
    Max_Params     : constant := 8;
-   Max_Path       : constant := 256;
-   Max_Line       : constant := 512;
+   Max_Path       : constant := 512;
+   Max_Line       : constant := 2048;
    Max_Id_Str     : constant := 64;
    Max_Desc_Str   : constant := 128;
    Max_Filename   : constant := 64;
-   Max_VC_Count   : constant := 128;
+   Max_VC_Count   : constant := 512;
    Max_Badge_Path : constant := 128;
    Max_Metrics    : constant := 32;
    Max_Skip_Dirs  : constant := 8;
@@ -61,20 +62,21 @@ package Adacovex.Types is
       Doc_Return    : Boolean := False;
    end record;
 
-   type Subprogram_Array is array (1 .. Max_Subprogs) of Subprogram_Info;
+   package Subprogram_Vectors is
+     new Ada.Containers.Vectors (Positive, Subprogram_Info);
 
    type Package_Info is record
       Name             : Name_Field;
       Name_Len         : Natural := 0;
       File_Path        : Path_Field;
       Path_Len         : Natural := 0;
-      Subprogram_List  : Subprogram_Array;
-      Subprogram_Count : Natural := 0;
+      Subprograms      : Subprogram_Vectors.Vector;
       Total_HLR_Tags   : Natural := 0;
       HLR_Tags         : HLR_Tag_Array;
    end record;
 
-   type Package_Array is array (1 .. Max_Packages) of Package_Info;
+   package Package_Vectors is
+     new Ada.Containers.Vectors (Positive, Package_Info);
 
    type VC_Info is record
       Unit       : Desc_Field;

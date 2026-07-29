@@ -67,6 +67,24 @@ Date: _2026-07-29_
 - `config/` contains generated Alire configuration, not production source.
 - `.adacovex/` contains patch metadata relevant only to the patch engine.
 
+### Scalability limits
+
+- **Max_Packages** raised from 64 → **128** (handles large projects).
+- **Max_Subprogs** raised from 64 → **128** per package (handles large packages).
+- **Max_Line** raised from 512 → **2048** characters (long contract lines).
+- **Max_Path** raised from 256 → **512** characters (deep directory trees).
+- **Max_VC_Count** raised from 128 → **512** (large proof campaigns).
+- **Max_Hlrs** / **Max_Llrs** raised from 64 → **128** each (more HLR traceability).
+
+All array storage remains stack-allocated with compile-time bounds — no heap
+allocation, no dynamic dispatch. The 128/128 limits ensure the stack footprint
+stays under ~4 MB, well within typical 8 MB Linux defaults.
+
+### `--dal` validation
+
+- `--dal=Z` (or any value outside A-E) now prints an error and exits with
+  code 1, instead of silently defaulting to DAL-C.
+
 ## Changes
 
 - **Version**: bumped from 0.1.0 to 1.0.0
@@ -74,6 +92,8 @@ Date: _2026-07-29_
 - **Docstring scanner**: plain `--  ` summary lines now count as docstrings
 - **Patch engine**: overloaded subprograms now handled correctly
 - **Source scanner**: `.adacovex` always excluded from directory walk
+- **Scalability**: all Max_* constants raised (see above)
+- **CLI validation**: `--dal` rejects invalid levels
 - **Tests**: 152 tests pass across 7 categories
 
 ## Known Issues
@@ -84,6 +104,9 @@ Date: _2026-07-29_
   (three dashes) do not count.
 - Relative `--target=PATH` is resolved against CWD, so behavior depends on
   invocation directory.
+- All internal buffers are fixed-size (no heap). Projects exceeding 128
+  packages or 128 subprograms per package will silently truncate. Raise the
+  Max_* constants in `adacovex-types.ads` and recompile for such cases.
 
 ## Migration
 

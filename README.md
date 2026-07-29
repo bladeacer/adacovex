@@ -26,6 +26,8 @@ test-result parsing, DO-178C DAL compliance assessment, and interactive dashboar
   - Markdown reports -- `VERIFICATION.md` + `TRACE.md`
   - HTML dashboard + JSON API via built-in HTTP server
 - **Zero dynamic allocation** -- all storage is bounded at compile time
+(max 128 packages, 128 subprograms per package, 2048-char lines, 512-char paths).
+Raise `Max_*` constants in `adacovex-types.ads` for larger projects.
 
 ## Quick start
 

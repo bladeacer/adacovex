@@ -7,7 +7,6 @@ with Adacovex.Types;
 --  HLR-SERVER: HTTP server
 
 package Adacovex.Server.HTTP is
-   pragma SPARK_Mode (On);
 
    type Server_State is record
       Port        : Positive := 8080;
@@ -15,8 +14,7 @@ package Adacovex.Server.HTTP is
       Proof       : Types.Proof_Summary;
       Tests       : Types.Test_Summary;
       DAL_Assess  : Types.DAL_Assessment;
-      Packages    : Types.Package_Array;
-      Pkg_Count   : Natural;
+      Packages    : Types.Package_Vectors.Vector;
       Running     : Boolean := False;
    end record;
 

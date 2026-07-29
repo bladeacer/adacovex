@@ -6,7 +6,6 @@ with Adacovex.Types;
 --  HLR-COMPLIANCE: HLR/LLR parsing
 
 package Adacovex.Parsers.DO178C is
-   pragma SPARK_Mode (On);
 
    type HLR_Info is record
       Id     : String (1 .. Types.Max_Id_Str);
@@ -60,14 +59,11 @@ package Adacovex.Parsers.DO178C is
    --  anywhere in the scanned package set.
    --  Searches the HLR_Tags array of every scanned package for a match.
    --  @param HLR_Id  HLR identifier to search for.
-   --  @param Packages  Array of scanned packages.
-   --  @param Pkg_Count  Number of packages in array.
+   --  @param Packages  Vector of scanned packages.
    --  @return True if HLR_Id appears as a source-code tag in any package.
    function Find_HLR_In_Source
-     (HLR_Id : String; Packages : Types.Package_Array; Pkg_Count : Natural)
+     (HLR_Id : String; Packages : Types.Package_Vectors.Vector)
       return Boolean
-   with
-     Pre    => HLR_Id'Length > 0 and then Pkg_Count <= Types.Max_Packages,
-     Global => null;
+   with Global => null;
 
 end Adacovex.Parsers.DO178C;
