@@ -601,12 +601,12 @@ are unbounded via `Ada.Containers.Vectors`):
 
 | Constant | Value | Notes |
 |----------|-------|-------|
-| `Max_Line` | 2048 | Source line length |
-| `Max_Path` | 512 | File path length |
-| `Max_VC_Count` | 512 | VCs in GNATprove output |
+| `Max_Line` | 8192 | Source line length (long lines drained silently) |
+| `Max_Path` | 4096 | File path length (matches `PATH_MAX`) |
 | `Max_Hlrs` | 128 | HLR tags per package |
-| `Max_Params` | 8 | Parameters per subprogram |
 | `Max_Desc_Str` | 128 | Subprogram name / description|
+| `Max_Filename` | 128 | Package name from filename |
+| `Max_Id_Str` | 64 | HLR/LLR tag ID length |
 
 Package and subprogram collections grow dynamically via `Ada.Containers.Vectors`
 (heap allocation, up to `Natural'Last` ≈ 2.1B). The fixed-size constants above

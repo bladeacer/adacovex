@@ -67,18 +67,21 @@ Date: _2026-07-29_
 - `config/` contains generated Alire configuration, not production source.
 - `.adacovex/` contains patch metadata relevant only to the patch engine.
 
-### Scalability limits
+### Production scalability (unbounded)
 
-- **Max_Packages** raised from 64 → **128** (handles large projects).
-- **Max_Subprogs** raised from 64 → **128** per package (handles large packages).
-- **Max_Line** raised from 512 → **2048** characters (long contract lines).
-- **Max_Path** raised from 256 → **512** characters (deep directory trees).
-- **Max_VC_Count** raised from 128 → **512** (large proof campaigns).
-- **Max_Hlrs** / **Max_Llrs** raised from 64 → **128** each (more HLR traceability).
-
-All array storage remains stack-allocated with compile-time bounds — no heap
-allocation, no dynamic dispatch. The 128/128 limits ensure the stack footprint
-stays under ~4 MB, well within typical 8 MB Linux defaults.
+- **Packages and subprograms** now use `Ada.Containers.Vectors` (heap-allocated,
+  up to `Natural'Last` ≈ 2.1B). Compile-time `Max_Packages` / `Max_Subprogs`
+  bounds eliminated entirely. Projects of any size are supported without
+  recompilation.
+- **VC counts** use unbounded `Natural` fields; `Max_VC_Count` dead type removed.
+- **Line buffer** raised from 2048 → **8192** characters with automatic
+  truncation draining (silently skips remaining chars on lines > 8192).
+- **Path buffer** raised from 512 → **4096** characters (matches `PATH_MAX`).
+- **Filename buffer** raised from 64 → **128** characters (matches Ada's max
+  identifier length).
+- **Line-truncation guard** added: `Get_Line` calls now detect when the buffer
+  was filled (partial read) and drain the remainder of the line, preventing
+  stream desynchronisation that previously caused false subprogram declarations.
 
 ### `--dal` validation
 
@@ -92,7 +95,11 @@ stays under ~4 MB, well within typical 8 MB Linux defaults.
 - **Docstring scanner**: plain `--  ` summary lines now count as docstrings
 - **Patch engine**: overloaded subprograms now handled correctly
 - **Source scanner**: `.adacovex` always excluded from directory walk
-- **Scalability**: all Max_* constants raised (see above)
+- **Scalability**: `Package_Array` / `Subprogram_Array` replaced with
+  `Ada.Containers.Vectors` (unbounded). `Max_Line` 2048→8192, `Max_Path`
+  512→4096, `Max_Filename` 64→128. Line-truncation drain added.
+- **Dead code removed**: `Max_Params`, `Max_VC_Count`, `Max_Badge_Path`,
+  `Max_Metrics`, `Max_Skip_Dirs`, `VC_Info`, `VC_Vector`, `Param_Count`
 - **CLI validation**: `--dal` rejects invalid levels
 - **Tests**: 152 tests pass across 7 categories
 
@@ -104,9 +111,6 @@ stays under ~4 MB, well within typical 8 MB Linux defaults.
   (three dashes) do not count.
 - Relative `--target=PATH` is resolved against CWD, so behavior depends on
   invocation directory.
-- All internal buffers are fixed-size (no heap). Projects exceeding 128
-  packages or 128 subprograms per package will silently truncate. Raise the
-  Max_* constants in `adacovex-types.ads` and recompile for such cases.
 
 ## Migration
 
