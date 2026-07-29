@@ -17,16 +17,11 @@ with Ada.Containers.Vectors;
 
 package Adacovex.Types is
 
-   Max_Hlrs     : constant := 128;
-   Max_Llrs     : constant := 128;
    Max_Path     : constant := 4096;
    Max_Line     : constant := 8192;
    Max_Id_Str   : constant := 64;
    Max_Desc_Str : constant := 128;
    Max_Filename : constant := 128;
-
-   subtype HLR_Index is Positive range 1 .. Max_Hlrs;
-   subtype LLR_Index is Positive range 1 .. Max_Llrs;
 
    subtype Desc_Field is String (1 .. Max_Desc_Str);
    subtype Name_Field is String (1 .. Max_Filename);
@@ -36,8 +31,6 @@ package Adacovex.Types is
       Tag : String (1 .. Max_Id_Str);
       Len : Natural := 0;
    end record;
-
-   type HLR_Tag_Array is array (1 .. Max_Hlrs) of HLR_Tag_Entry;
 
    type SPARK_Level is (Stone, Bronze, Silver, Gold, Platinum);
 
@@ -60,14 +53,16 @@ package Adacovex.Types is
    package Subprogram_Vectors is
      new Ada.Containers.Vectors (Positive, Subprogram_Info);
 
+   package HLR_Tag_Vectors is
+     new Ada.Containers.Vectors (Positive, HLR_Tag_Entry);
+
    type Package_Info is record
-      Name             : Name_Field;
-      Name_Len         : Natural := 0;
-      File_Path        : Path_Field;
-      Path_Len         : Natural := 0;
-      Subprograms      : Subprogram_Vectors.Vector;
-      Total_HLR_Tags   : Natural := 0;
-      HLR_Tags         : HLR_Tag_Array;
+      Name        : Name_Field;
+      Name_Len    : Natural := 0;
+      File_Path   : Path_Field;
+      Path_Len    : Natural := 0;
+      Subprograms : Subprogram_Vectors.Vector;
+      HLR_Tags    : HLR_Tag_Vectors.Vector;
    end record;
 
    package Package_Vectors is
@@ -100,13 +95,13 @@ package Adacovex.Types is
       Status     : Test_Status := Pass;
    end record;
 
-   type Test_Metrics_Array is array (1 .. 32) of Test_Metrics;
+   package Test_Metrics_Vectors is
+     new Ada.Containers.Vectors (Positive, Test_Metrics);
 
    type Test_Summary is record
-      Categories     : Test_Metrics_Array;
-      Category_Count : Natural := 0;
-      Total_Passed   : Natural := 0;
-      Total_Failed   : Natural := 0;
+      Categories   : Test_Metrics_Vectors.Vector;
+      Total_Passed : Natural := 0;
+      Total_Failed : Natural := 0;
    end record;
 
    type Docstring_Metrics is record
@@ -119,7 +114,8 @@ package Adacovex.Types is
       Coverage_Pct        : Natural := 0;
    end record;
 
-   type DAL_Failure_Array is array (1 .. 16) of Desc_Field;
+   package DAL_Failure_Vectors is
+     new Ada.Containers.Vectors (Positive, Desc_Field);
 
    type DAL_Assessment is record
       Target_DAL             : DAL_Level := DAL_C;
@@ -132,8 +128,7 @@ package Adacovex.Types is
       Orphan_Tags            : Boolean := False;
       Tests_Passing          : Boolean := False;
       Min_SPARK_Level_Met    : Boolean := False;
-      Failed_Reasons         : DAL_Failure_Array;
-      Failed_Count           : Natural := 0;
+      Failed_Reasons         : DAL_Failure_Vectors.Vector;
    end record;
 
    type Badge_Config is record

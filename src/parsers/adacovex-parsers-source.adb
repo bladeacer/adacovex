@@ -245,18 +245,16 @@ package body Adacovex.Parsers.Source is
 
           if Has_HLR_Tag (Line (1 .. Last), HLR_Buf, HLR_Len) then
              if not In_Subp then
-               if Pkg.Total_HLR_Tags < Types.Max_Hlrs then
-                  Pkg.Total_HLR_Tags := Pkg.Total_HLR_Tags + 1;
-                  declare
-                     TI : constant Natural := Pkg.Total_HLR_Tags;
-                  begin
-                     for I in 1 .. HLR_Len loop
-                        Pkg.HLR_Tags (TI).Tag (I) := HLR_Buf (I);
-                     end loop;
-                     Pkg.HLR_Tags (TI).Len := HLR_Len;
-                  end;
-               end if;
-            end if;
+                declare
+                   Elem : Types.HLR_Tag_Entry;
+                begin
+                   for I in 1 .. HLR_Len loop
+                      Elem.Tag (I) := HLR_Buf (I);
+                   end loop;
+                   Elem.Len := HLR_Len;
+                   Pkg.HLR_Tags.Append (Elem);
+                end;
+             end if;
          end if;
 
            if Is_Subprogram_Decl (Line (1 .. Last)) then

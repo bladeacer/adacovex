@@ -1,3 +1,4 @@
+with Ada.Containers.Vectors;
 with Adacovex.Types;
 
 --  Parser for DO-178C requirements documents.
@@ -14,7 +15,8 @@ package Adacovex.Parsers.DO178C is
       D_Len  : Natural := 0;
    end record;
 
-   type HLR_Array is array (1 .. Types.Max_Hlrs) of HLR_Info;
+   package HLR_Vectors is
+     new Ada.Containers.Vectors (Positive, HLR_Info);
 
    type LLR_Info is record
       Id      : String (1 .. Types.Max_Id_Str);
@@ -25,35 +27,32 @@ package Adacovex.Parsers.DO178C is
       D_Len   : Natural := 0;
    end record;
 
-   type LLR_Array is array (1 .. Types.Max_Llrs) of LLR_Info;
+   package LLR_Vectors is
+     new Ada.Containers.Vectors (Positive, LLR_Info);
 
    --  Parse an HLR.md file, extracting HLR entries and descriptions.
    --  Scans a Markdown file for lines matching "HLR_xxxx: Description",
-   --  storing up to Max_Hlrs entries in the output array.
+   --  storing entries in the output vector.
    --  @param File_Path  Path to HLR.md markdown file.
-   --  @param HLRs  Output array of HLR entries.
-   --  @param HLR_Count  Number of HLRs found.
+   --  @param HLRs  Output vector of HLR entries (appended to).
    --  @param Success  True if file was parsed successfully.
    procedure Parse_HLR_MD
      (File_Path : String;
-      HLRs      : out HLR_Array;
-      HLR_Count : out Natural;
+      HLRs      : in out HLR_Vectors.Vector;
       Success   : out Boolean)
-   with Pre => File_Path'Length > 0, Post => HLR_Count <= Types.Max_Hlrs;
+   with Pre => File_Path'Length > 0;
 
    --  Parse an LLR.md file, extracting LLR_xxxx entries with HLR references.
    --  Scans a Markdown file for lines matching "LLR_xxxx: Description",
-   --  including the HLR_xxxx reference, storing up to Max_Llrs entries.
+   --  including the HLR_xxxx reference, storing entries in the output vector.
    --  @param File_Path  Path to LLR.md markdown file.
-   --  @param LLRs  Output array of LLR entries.
-   --  @param LLR_Count  Number of LLRs found.
+   --  @param LLRs  Output vector of LLR entries (appended to).
    --  @param Success  True if file was parsed successfully.
    procedure Parse_LLR_MD
      (File_Path : String;
-      LLRs      : out LLR_Array;
-      LLR_Count : out Natural;
+      LLRs      : in out LLR_Vectors.Vector;
       Success   : out Boolean)
-   with Pre => File_Path'Length > 0, Post => LLR_Count <= Types.Max_Llrs;
+   with Pre => File_Path'Length > 0;
 
    --  Check whether an HLR identifier appears as a source-code tag
    --  anywhere in the scanned package set.

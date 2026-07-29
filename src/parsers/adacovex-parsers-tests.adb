@@ -12,7 +12,9 @@ package body Adacovex.Parsers.Tests is
       Line : String (1 .. Types.Max_Line);
       Last : Natural;
    begin
-      Summary := (others => <>);
+      Summary := (Categories   => Types.Test_Metrics_Vectors.Empty_Vector,
+                  Total_Passed => 0,
+                  Total_Failed => 0);
 
       begin
          Open (F, In_File, File_Path);
@@ -86,36 +88,30 @@ package body Adacovex.Parsers.Tests is
                            end if;
                         end loop;
 
-                        if Is_Number
-                          and then TCount > 0
-                          and then Summary.Category_Count < 32
-                        then
-                           Summary.Category_Count :=
-                             Summary.Category_Count + 1;
-                           declare
-                              CI : constant Natural := Summary.Category_Count;
-                           begin
-                              Summary.Categories (CI).Cat_Len := Part_Len (2);
-                              for I in 1 .. Part_Len (2) loop
-                                 Summary.Categories (CI).Category (I) :=
-                                   Parts (2) (I);
-                              end loop;
-                              Summary.Categories (CI).Test_Count := TCount;
+                         if Is_Number and then TCount > 0 then
+                            declare
+                               Cat : Types.Test_Metrics :=
+                                 (Cat_Len    => Part_Len (2),
+                                  Test_Count => TCount,
+                                  others     => <>);
+                            begin
+                               for I in 1 .. Part_Len (2) loop
+                                  Cat.Category (I) := Parts (2) (I);
+                               end loop;
 
-                              if Part_Ct >= 4 and then Part_Len (4) >= 4 then
-                                 if Parts (4) (1 .. 4) = "PASS" then
-                                    Summary.Categories (CI).Status :=
-                                      Types.Pass;
-                                    Summary.Total_Passed :=
-                                      Summary.Total_Passed + TCount;
-                                 else
-                                    Summary.Categories (CI).Status :=
-                                      Types.Fail;
-                                    Summary.Total_Failed :=
-                                      Summary.Total_Failed + TCount;
-                                 end if;
-                              end if;
-                           end;
+                               if Part_Ct >= 4 and then Part_Len (4) >= 4 then
+                                  if Parts (4) (1 .. 4) = "PASS" then
+                                     Cat.Status := Types.Pass;
+                                     Summary.Total_Passed :=
+                                       Summary.Total_Passed + TCount;
+                                  else
+                                     Cat.Status := Types.Fail;
+                                     Summary.Total_Failed :=
+                                       Summary.Total_Failed + TCount;
+                                  end if;
+                               end if;
+                               Summary.Categories.Append (Cat);
+                            end;
                         end if;
                      end;
                   end if;
@@ -171,7 +167,9 @@ package body Adacovex.Parsers.Tests is
 
    procedure Parse_Test_Stdout (Summary : out Types.Test_Summary) is
    begin
-      Summary := (others => <>);
+      Summary := (Categories   => Types.Test_Metrics_Vectors.Empty_Vector,
+                  Total_Passed => 0,
+                  Total_Failed => 0);
    end Parse_Test_Stdout;
 
 end Adacovex.Parsers.Tests;

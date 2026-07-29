@@ -58,9 +58,9 @@ src/
     |-- adacovex-server-http.ads/.adb          -- HTTP/1.1 server (4-worker task pool)
 ```
 
-No dynamic allocation; all storage bounded at compile time.
-
 ---
+
+
 
 ### .adacovex patch directory
 
@@ -249,8 +249,7 @@ adacovex [options]
 #### `--verbose`
 - **Purpose**: Enable verbose diagnostic output.
 - **Default**: Off.
-- **Effect**: Currently a placeholder flag (recognized but no verbose output
-  is emitted yet). Intended for future diagnostic logging.
+- **Effect**: Prints pipeline step diagnostics to stderr.
 
 #### `--help`
 - **Purpose**: Print usage information and exit.
@@ -278,7 +277,7 @@ When adacovex runs, it executes these steps in sequence:
 ```
 1. Parse CLI args           → CLI_Config record
 2. Determine ANSI color     → NO_COLOR check
-3. Scan source files        → Package_Array (subprograms, HLR tags, docstrings)
+3. Scan source files        → Package_Vectors.Vector (subprograms, HLR tags, docstrings)
 4. Apply docstring patches  → Merge .adacovex/patches/ (strict mode only)
 5. Compute doc metrics      → Docstring_Metrics (coverage %)
 6. Parse GNATprove output   → Proof_Summary (VC counts, SPARK level)
@@ -577,7 +576,7 @@ running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 - Docstring detection: any `--  ` (dash dash space space) line before a
   subprogram counts as a docstring. Other comment formats (`-- ` with one
   space, `---` with three dashes) do not.
-- The `--verbose` flag is parsed but currently produces no additional output.
+- `--verbose` prints pipeline step diagnostics to stderr.
 - Relative `--target=PATH` is resolved against CWD, so behavior depends on
   where adacovex is invoked.
 
@@ -586,10 +585,11 @@ running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 ## Key constraints
 
 - Ada 2012 / SPARK 2014
-- **Package and subprogram collections** use `Ada.Containers.Vectors`
-  (unbounded, up to `Natural'Last`). No compile-time `Max_Packages` /
-  `Max_Subprogs` limits.
-- Fixed-size string buffers (`Max_Path`, `Max_Line`, etc.) remain bounded.
+- **Package/subprogram collections**: `Ada.Containers.Vectors`
+  (heap, `Natural'Last` ≈ 2.1B). No `Max_Packages` / `Max_Subprogs` limits.
+- **HLR tags, test metrics, DAL failures**: also `Ada.Containers.Vectors`
+  (unbounded). No `Max_Hlrs`, `Max_Categories`, `Max_Failures` limits.
+- **Fixed-size string buffers** (`Max_Path`, `Max_Line`, etc.) remain bounded.
 - No external dependencies beyond GNAT runtime (`Ada.Containers` is
   part of the standard Ada runtime library).
 
@@ -603,7 +603,6 @@ are unbounded via `Ada.Containers.Vectors`):
 |----------|-------|-------|
 | `Max_Line` | 8192 | Source line length (long lines drained silently) |
 | `Max_Path` | 4096 | File path length (matches `PATH_MAX`) |
-| `Max_Hlrs` | 128 | HLR tags per package |
 | `Max_Desc_Str` | 128 | Subprogram name / description|
 | `Max_Filename` | 128 | Package name from filename |
 | `Max_Id_Str` | 64 | HLR/LLR tag ID length |

@@ -129,7 +129,7 @@ package body Adacovex.Renderers.HTML is
       Put ("<div class=""card"">");
       Put ("<h2>Test Results</h2>");
       Put ("<table><tr><th>Category</th><th>Tests</th><th>Status</th></tr>");
-      for C in 1 .. Tests.Category_Count loop
+       for C in 1 .. Integer (Tests.Categories.Length) loop
          Put ("<tr><td>");
          Put
            (Tests.Categories (C).Category (1 .. Tests.Categories (C).Cat_Len));
@@ -178,10 +178,10 @@ package body Adacovex.Renderers.HTML is
       Put (if DAL_Assess.Tests_Passing then "Yes" else "No");
       Put ("</td></tr>");
 
-      if DAL_Assess.Failed_Count > 0 then
-         for R in 1 .. DAL_Assess.Failed_Count loop
-            Put ("<tr><td>Failure</td><td class=""fail"">");
-            Put (DAL_Assess.Failed_Reasons (R) (1 .. Types.Max_Desc_Str));
+        if not DAL_Assess.Failed_Reasons.Is_Empty then
+          for R in 1 .. Integer (DAL_Assess.Failed_Reasons.Length) loop
+             Put ("<tr><td>Failure</td><td class=""fail"">");
+             Put (DAL_Assess.Failed_Reasons (R));
             Put ("</td></tr>");
          end loop;
       end if;
@@ -193,11 +193,11 @@ package body Adacovex.Renderers.HTML is
       Put ("<h2>HLR Traceability</h2>");
       Put ("<table><tr><th>Package</th><th>HLR Tags</th></tr>");
       for P in 1 .. Integer (Packages.Length) loop
-         if Packages (P).Total_HLR_Tags > 0 then
-            Put ("<tr><td>");
-            Put (Packages (P).Name (1 .. Packages (P).Name_Len));
-            Put ("</td><td>");
-            for T in 1 .. Packages (P).Total_HLR_Tags loop
+           if not Packages (P).HLR_Tags.Is_Empty then
+             Put ("<tr><td>");
+             Put (Packages (P).Name (1 .. Packages (P).Name_Len));
+             Put ("</td><td>");
+             for T in 1 .. Integer (Packages (P).HLR_Tags.Length) loop
                if T > 1 then
                   Put (", ");
                end if;

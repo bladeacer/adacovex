@@ -67,74 +67,81 @@ package body ada_main is
 
    procedure finalize_library is
    begin
-      E198 := E198 - 1;
+      E218 := E218 - 1;
       declare
          procedure F1;
-         pragma Import (Ada, F1, "adacovex__types__finalize_spec");
+         pragma Import (Ada, F1, "adacovex__parsers__do178c__finalize_spec");
       begin
          F1;
       end;
-      E140 := E140 - 1;
+      E198 := E198 - 1;
       declare
          procedure F2;
-         pragma Import (Ada, F2, "adacovex__test_support__finalize_spec");
+         pragma Import (Ada, F2, "adacovex__types__finalize_spec");
       begin
          F2;
       end;
+      E140 := E140 - 1;
       declare
          procedure F3;
-         pragma Import (Ada, F3, "ada__directories__finalize_body");
+         pragma Import (Ada, F3, "adacovex__test_support__finalize_spec");
       begin
-         E150 := E150 - 1;
          F3;
       end;
       declare
          procedure F4;
-         pragma Import (Ada, F4, "ada__directories__finalize_spec");
+         pragma Import (Ada, F4, "ada__directories__finalize_body");
       begin
+         E150 := E150 - 1;
          F4;
       end;
-      E188 := E188 - 1;
       declare
          procedure F5;
-         pragma Import (Ada, F5, "system__regexp__finalize_spec");
+         pragma Import (Ada, F5, "ada__directories__finalize_spec");
       begin
          F5;
       end;
-      E200 := E200 - 1;
+      E188 := E188 - 1;
       declare
          procedure F6;
-         pragma Import (Ada, F6, "system__pool_global__finalize_spec");
+         pragma Import (Ada, F6, "system__regexp__finalize_spec");
       begin
          F6;
       end;
-      E119 := E119 - 1;
+      E200 := E200 - 1;
       declare
          procedure F7;
-         pragma Import (Ada, F7, "ada__text_io__finalize_spec");
+         pragma Import (Ada, F7, "system__pool_global__finalize_spec");
       begin
          F7;
       end;
-      E177 := E177 - 1;
+      E119 := E119 - 1;
       declare
          procedure F8;
-         pragma Import (Ada, F8, "ada__strings__unbounded__finalize_spec");
+         pragma Import (Ada, F8, "ada__text_io__finalize_spec");
       begin
          F8;
       end;
-      E204 := E204 - 1;
+      E177 := E177 - 1;
       declare
          procedure F9;
-         pragma Import (Ada, F9, "system__storage_pools__subpools__finalize_spec");
+         pragma Import (Ada, F9, "ada__strings__unbounded__finalize_spec");
       begin
          F9;
       end;
+      E204 := E204 - 1;
       declare
          procedure F10;
-         pragma Import (Ada, F10, "system__file_io__finalize_body");
+         pragma Import (Ada, F10, "system__storage_pools__subpools__finalize_spec");
+      begin
+         F10;
+      end;
+      declare
+         procedure F11;
+         pragma Import (Ada, F11, "system__file_io__finalize_body");
       begin
          E129 := E129 - 1;
-         F10;
+         F11;
       end;
       declare
          procedure Reraise_Library_Exception_If_Any;
@@ -320,6 +327,7 @@ package body ada_main is
       Adacovex.Types'Elab_Spec;
       E198 := E198 + 1;
       E146 := E146 + 1;
+      Adacovex.Parsers.Do178c'Elab_Spec;
       E218 := E218 + 1;
       E224 := E224 + 1;
       E220 := E220 + 1;

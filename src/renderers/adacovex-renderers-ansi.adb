@@ -157,36 +157,36 @@ package body Adacovex.Renderers.ANSI is
       end if;
 
       --  DAL failures
-      if DAL_Assess.Failed_Count > 0 then
-         Ada.Text_IO.New_Line;
-         Put_Color ("31", Enable => Use_Color);
-         Ada.Text_IO.Put_Line ("  DAL-"
-                               & Types.To_String (DAL_Assess.Target_DAL)
-                               & " failures:");
-         Reset_Color (Enable => Use_Color);
-         for F in 1 .. DAL_Assess.Failed_Count loop
-            Ada.Text_IO.Put_Line
-              ("    - "
-               & DAL_Assess.Failed_Reasons (F) (1 .. Types.Max_Desc_Str));
-         end loop;
-      end if;
+       if not DAL_Assess.Failed_Reasons.Is_Empty then
+          Ada.Text_IO.New_Line;
+          Put_Color ("31", Enable => Use_Color);
+          Ada.Text_IO.Put_Line ("  DAL-"
+                                & Types.To_String (DAL_Assess.Target_DAL)
+                                & " failures:");
+          Reset_Color (Enable => Use_Color);
+          for F in 1 .. Integer (DAL_Assess.Failed_Reasons.Length) loop
+             Ada.Text_IO.Put_Line
+               ("    - "
+                & DAL_Assess.Failed_Reasons (F));
+          end loop;
+       end if;
 
       --  HLR traceability per package
       declare
          Has_HLR : Boolean := False;
       begin
-          for P in 1 .. Integer (Packages.Length) loop
-             if Packages (P).Total_HLR_Tags > 0 then
-               if not Has_HLR then
-                  Ada.Text_IO.New_Line;
-                  Ada.Text_IO.Put_Line ("  HLR traceability:");
-                  Has_HLR := True;
-               end if;
-               Ada.Text_IO.Put
-                 ("    "
-                  & Packages (P).File_Path (1 .. Packages (P).Path_Len)
-                  & ": ");
-               for T in 1 .. Packages (P).Total_HLR_Tags loop
+           for P in 1 .. Integer (Packages.Length) loop
+              if not Packages (P).HLR_Tags.Is_Empty then
+                if not Has_HLR then
+                   Ada.Text_IO.New_Line;
+                   Ada.Text_IO.Put_Line ("  HLR traceability:");
+                   Has_HLR := True;
+                end if;
+                Ada.Text_IO.Put
+                  ("    "
+                   & Packages (P).File_Path (1 .. Packages (P).Path_Len)
+                   & ": ");
+                for T in 1 .. Integer (Packages (P).HLR_Tags.Length) loop
                   if T > 1 then
                      Ada.Text_IO.Put (", ");
                   end if;

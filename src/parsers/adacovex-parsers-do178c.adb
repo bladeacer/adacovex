@@ -4,8 +4,7 @@ package body Adacovex.Parsers.DO178C is
 
    procedure Parse_HLR_MD
      (File_Path : String;
-      HLRs      : out HLR_Array;
-      HLR_Count : out Natural;
+      HLRs      : in out HLR_Vectors.Vector;
       Success   : out Boolean)
    is
       use Ada.Text_IO;
@@ -13,8 +12,6 @@ package body Adacovex.Parsers.DO178C is
       Line : String (1 .. Types.Max_Line);
       Last : Natural;
    begin
-      HLR_Count := 0;
-
       begin
          Open (F, In_File, File_Path);
       exception
@@ -60,33 +57,34 @@ package body Adacovex.Parsers.DO178C is
                      end loop;
                   end if;
 
-                  if H_End > H_Start + 3 and then HLR_Count < Types.Max_Hlrs
-                  then
-                     HLR_Count := HLR_Count + 1;
+                  if H_End > H_Start + 3 then
+                     HLRs.Append (HLR_Info'(others => <>));
+                     declare
+                        Elem : HLR_Info := HLRs (Positive (HLRs.Length));
+                     begin
+                        -- Extract HLR ID (skip "HLR-" prefix)
+                        Elem.Id_Len := H_End - (H_Start + 4) + 1;
+                        for I in H_Start + 4 .. H_End loop
+                           Elem.Id (I - (H_Start + 4) + 1) := Line (I);
+                        end loop;
 
-                     -- Extract HLR ID (skip "HLR-" prefix)
-                     HLRs (HLR_Count).Id_Len := H_End - (H_Start + 4) + 1;
-                     for I in H_Start + 4 .. H_End loop
-                        HLRs (HLR_Count).Id (I - (H_Start + 4) + 1) :=
-                          Line (I);
-                     end loop;
-
-                     -- Extract description after colon
-                     if Colon > 0 and then Colon < Last then
-                        declare
-                           D_Start : Natural := Colon + 1;
-                        begin
-                           while D_Start <= Last and then Line (D_Start) = ' '
-                           loop
-                              D_Start := D_Start + 1;
-                           end loop;
-                           HLRs (HLR_Count).D_Len := Last - D_Start + 1;
-                           for I in D_Start .. Last loop
-                              HLRs (HLR_Count).Desc (I - D_Start + 1) :=
-                                Line (I);
-                           end loop;
-                        end;
-                     end if;
+                        -- Extract description after colon
+                        if Colon > 0 and then Colon < Last then
+                           declare
+                              D_Start : Natural := Colon + 1;
+                           begin
+                              while D_Start <= Last and then Line (D_Start) = ' '
+                              loop
+                                 D_Start := D_Start + 1;
+                              end loop;
+                              Elem.D_Len := Last - D_Start + 1;
+                              for I in D_Start .. Last loop
+                                 Elem.Desc (I - D_Start + 1) := Line (I);
+                              end loop;
+                           end;
+                        end if;
+                        HLRs.Replace_Element (Positive (HLRs.Length), Elem);
+                     end;
                   end if;
                end if;
             end;
@@ -99,8 +97,7 @@ package body Adacovex.Parsers.DO178C is
 
    procedure Parse_LLR_MD
      (File_Path : String;
-      LLRs      : out LLR_Array;
-      LLR_Count : out Natural;
+      LLRs      : in out LLR_Vectors.Vector;
       Success   : out Boolean)
    is
       use Ada.Text_IO;
@@ -108,8 +105,6 @@ package body Adacovex.Parsers.DO178C is
       Line : String (1 .. Types.Max_Line);
       Last : Natural;
    begin
-      LLR_Count := 0;
-
       begin
          Open (F, In_File, File_Path);
       exception
@@ -193,50 +188,50 @@ package body Adacovex.Parsers.DO178C is
                      end loop;
                   end if;
 
-                  if L_End > L_Start + 3 and then LLR_Count < Types.Max_Llrs
-                  then
-                     LLR_Count := LLR_Count + 1;
-
-                     LLRs (LLR_Count).Id_Len := L_End - (L_Start + 4) + 1;
-                     for I in L_Start + 4 .. L_End loop
-                        LLRs (LLR_Count).Id (I - (L_Start + 4) + 1) :=
-                          Line (I);
-                     end loop;
-
-                     if Colon > 0 and then Colon < Last then
-                        declare
-                           D_Start : Natural := Colon + 1;
-                           D_End   : Natural := Last;
-                        begin
-                           while D_Start <= Last and then Line (D_Start) = ' '
-                           loop
-                              D_Start := D_Start + 1;
-                           end loop;
-
-                           -- Truncate at HLR reference
-                           if H_Start > D_Start then
-                              D_End := H_Start - 1;
-                              while D_End > D_Start and then Line (D_End) = ' '
-                              loop
-                                 D_End := D_End - 1;
-                              end loop;
-                           end if;
-
-                           LLRs (LLR_Count).D_Len := D_End - D_Start + 1;
-                           for I in D_Start .. D_End loop
-                              LLRs (LLR_Count).Desc (I - D_Start + 1) :=
-                                Line (I);
-                           end loop;
-                        end;
-                     end if;
-
-                     if H_Start > 0 and then H_End > H_Start + 3 then
-                        LLRs (LLR_Count).HLR_Len := H_End - (H_Start + 4) + 1;
-                        for I in H_Start + 4 .. H_End loop
-                           LLRs (LLR_Count).HLR_Ref (I - (H_Start + 4) + 1) :=
-                             Line (I);
+                  if L_End > L_Start + 3 then
+                     LLRs.Append (LLR_Info'(others => <>));
+                     declare
+                        Elem : LLR_Info := LLRs (Positive (LLRs.Length));
+                     begin
+                        Elem.Id_Len := L_End - (L_Start + 4) + 1;
+                        for I in L_Start + 4 .. L_End loop
+                           Elem.Id (I - (L_Start + 4) + 1) := Line (I);
                         end loop;
-                     end if;
+
+                        if Colon > 0 and then Colon < Last then
+                           declare
+                              D_Start : Natural := Colon + 1;
+                              D_End   : Natural := Last;
+                           begin
+                              while D_Start <= Last and then Line (D_Start) = ' '
+                              loop
+                                 D_Start := D_Start + 1;
+                              end loop;
+
+                              -- Truncate at HLR reference
+                              if H_Start > D_Start then
+                                 D_End := H_Start - 1;
+                                 while D_End > D_Start and then Line (D_End) = ' '
+                                 loop
+                                    D_End := D_End - 1;
+                                 end loop;
+                              end if;
+
+                              Elem.D_Len := D_End - D_Start + 1;
+                              for I in D_Start .. D_End loop
+                                 Elem.Desc (I - D_Start + 1) := Line (I);
+                              end loop;
+                           end;
+                        end if;
+
+                        if H_Start > 0 and then H_End > H_Start + 3 then
+                           Elem.HLR_Len := H_End - (H_Start + 4) + 1;
+                           for I in H_Start + 4 .. H_End loop
+                              Elem.HLR_Ref (I - (H_Start + 4) + 1) := Line (I);
+                           end loop;
+                        end if;
+                        LLRs.Replace_Element (Positive (LLRs.Length), Elem);
+                     end;
                   end if;
                end if;
             end;
@@ -252,7 +247,7 @@ package body Adacovex.Parsers.DO178C is
       return Boolean is
    begin
       for P in 1 .. Integer (Packages.Length) loop
-         for T in 1 .. Packages (P).Total_HLR_Tags loop
+         for T in 1 .. Integer (Packages (P).HLR_Tags.Length) loop
             declare
                Tag_Len : constant Natural := Packages (P).HLR_Tags (T).Len;
                Match   : Boolean := True;
