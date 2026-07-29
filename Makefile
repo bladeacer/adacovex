@@ -1,5 +1,6 @@
 .PHONY: help build test prove doc clean run-self run-ada-crdt \
-        dev-setup prod-setup ascii-check fmt bump-version _dev_cmd
+        dev-setup prod-setup ascii-check fmt bump-version \
+        release publish test-publish _dev_cmd
 
 .DEFAULT_GOAL := help
 
@@ -16,7 +17,11 @@ help:
 	@echo '  clean         Remove build artifacts'
 	@echo '  run-self      Run against adacovex itself (--target=.)'
 	@echo '  run-ada-crdt  Run against ../Ada_CRDT (strict mode)'
-	@echo '  bump-version  Bump version across all manifests (VERSION=x.y.z)'
+	@echo '  bump-version  Bump version across alire.toml, alire-dev.toml,'
+	@echo '                adacovex.ads, releases, index (VERSION=x.y.z)'
+	@echo '  release       Tag, update releases+index, push. Use VERSION=x.y.z'
+	@echo '  publish       Publish to Alire community index (run after make release)'
+	@echo '  test-publish  Dry-run showing what make publish would do'
 	@echo '  ascii-check   Verify all source files are pure ASCII'
 	@echo '  dev-setup     Copy alire-dev.toml over alire.toml'
 	@echo '  prod-setup    Restore clean publishing alire.toml'
@@ -89,6 +94,24 @@ bump-version:
 	sed -i 's/^   Version : constant String := "[^"]*"/   Version : constant String := "'$$version'"/' src/adacovex.ads; \
 	echo "  src/adacovex.ads: Version = \"$$version\""; \
 	\
+	release_file="alire/releases/adacovex-$$version.toml"; \
+	if [ ! -f "$$release_file" ]; then \
+		sed 's/^version = ".*"/version = "'$$version'"/' alire/releases/adacovex-0.0.0.toml > "$$release_file"; \
+		echo "  Created: $$release_file"; \
+	else \
+		sed -i 's/^version = ".*"/version = "'$$version'"/' "$$release_file"; \
+		echo "  Updated: $$release_file"; \
+	fi; \
+	\
+	index_file="index/ad/adacovex/adacovex-$$version.toml"; \
+	if [ ! -f "$$index_file" ]; then \
+		sed 's/^version = ".*"/version = "'$$version'"/' index/ad/adacovex/adacovex-0.1.0-dev.toml > "$$index_file"; \
+		echo "  Created: $$index_file"; \
+	else \
+		sed -i 's/^version = ".*"/version = "'$$version'"/' "$$index_file"; \
+		echo "  Updated: $$index_file"; \
+	fi; \
+	\
 	changelog="docs/changelogs/adacovex-$$version.md"; \
 	if [ ! -f "$$changelog" ]; then \
 		echo "# adacovex $$version" > "$$changelog"; \
@@ -109,8 +132,58 @@ bump-version:
 	echo "  - Update AGENTS.md version references"; \
 	echo "  - Commit: git commit -am \"Release $$version\" && git tag -a v$$version -m \"Release $$version\""
 
+release:
+	@if [ -n "$(VERSION)" ]; then \
+		version="$(VERSION)"; \
+		sed -i 's/^version = ".*"/version = "'$$version'"/' alire.toml; \
+		sed -i 's/^version = ".*"/version = "'$$version'"/' alire-dev.toml; \
+	else \
+		version=$$(sed -n 's/^version = "\(.*\)"/\1/p' alire.toml); \
+	fi; \
+	commit=$$(git rev-parse HEAD); \
+	index_file="index/ad/adacovex/adacovex-$$version.toml"; \
+	if [ ! -f "$$index_file" ]; then \
+		sed 's/^version = ".*"/version = "'$$version'"/' index/ad/adacovex/adacovex-0.1.0-dev.toml > "$$index_file"; \
+	fi; \
+	sed -i 's/^version = ".*"/version = "'$$version'"/' "$$index_file"; \
+	release_file="alire/releases/adacovex-$$version.toml"; \
+	if [ ! -f "$$release_file" ]; then \
+		sed 's/^version = ".*"/version = "'$$version'"/' alire/releases/adacovex-0.0.0.toml > "$$release_file"; \
+	fi; \
+	sed -i 's/^version = ".*"/version = "'$$version'"/' "$$release_file"; \
+	if git rev-parse "v$$version" >/dev/null 2>&1; then \
+		git tag -d "v$$version" >/dev/null 2>&1 || true; \
+		git push origin :refs/tags/"v$$version" >/dev/null 2>&1 || true; \
+		echo "  Replaced existing tag v$$version"; \
+	fi; \
+	git add -A; \
+	git commit -m "Release $$version" || true; \
+	git tag -a "v$$version" -m "Release $$version"; \
+	echo "Tagged v$$version at $$commit"; \
+	git push origin HEAD && git push origin "v$$version"; \
+	echo "Pushed commit and tag v$$version"; \
+	echo ""; \
+	echo "Next: run 'make publish' to submit to Alire community index."
+
+publish:
+	@if [ -n "$$(git status --porcelain)" ]; then \
+		echo "Error: working tree is not clean. Commit or stash changes first."; \
+		exit 1; \
+	fi; \
+	alr publish
+
+test-publish:
+	@version=$$(git describe --tags --abbrev=0 2>/dev/null || \
+		sed -n 's/^version = "\(.*\)"/\1/p' alire.toml); \
+	echo "=== test-publish dry-run ==="; \
+	echo "Version:  $$version"; \
+	echo "Action:   alr publish (auto-detects GitHub, test deps excluded)"; \
+	echo "Requires: GitHub PAT in GITHUB_TOKEN env var or gh auth token"; \
+	echo "Docs:     https://github.com/alire-project/alire/blob/master/doc/publishing.md"; \
+	echo "=== end dry-run ==="
+
 clean:
-	alr clean 2>/dev/null; rm -rf bin/ obj/ docs/badges/ docs/compliance/ docs/api/
+	alr clean 2>/dev/null; rm -rf bin/ obj/ docs/badges/ docs/api/
 
 _dev_cmd:
 	@if ! grep -q 'gnatformat_bin' alire.toml 2>/dev/null; then \
