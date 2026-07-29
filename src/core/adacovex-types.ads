@@ -1,6 +1,6 @@
 --  All domain types used across the adacovex tool chain.
 --  Package and subprogram collections use Ada.Containers.Vectors
---  (unbounded, up to Natural'Last â 2.1B). Fixed-size buffers
+--  (unbounded, up to Natural'Last ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ 2.1B). Fixed-size buffers
 --  (Max_Path, Max_Line, Max_Desc_Str, etc.) are bounded at compile time
 --  with generous production-suitable limits (Max_Path=4096, Max_Line=8192).
 --  HLR-METRICS: Docstring_Metrics type
