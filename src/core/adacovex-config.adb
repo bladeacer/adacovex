@@ -26,6 +26,23 @@ package body Adacovex.Config is
       end loop;
    end Set_String;
 
+   procedure Add_Skip_Dir (Cfg : in out CLI_Config; Name : String) is
+   begin
+      if Cfg.Skip_Dir_Ct > 0 then
+         if Cfg.Skip_Dir_Ct < Types.Max_Filename then
+            Cfg.Skip_Dir_Ct := Cfg.Skip_Dir_Ct + 1;
+            Cfg.Skip_Dirs (Cfg.Skip_Dir_Ct) := ',';
+         end if;
+      end if;
+      if Cfg.Skip_Dir_Ct < Types.Max_Filename then
+         for I in Name'Range loop
+            exit when Cfg.Skip_Dir_Ct >= Types.Max_Filename;
+            Cfg.Skip_Dir_Ct := Cfg.Skip_Dir_Ct + 1;
+            Cfg.Skip_Dirs (Cfg.Skip_Dir_Ct) := Name (I);
+         end loop;
+      end if;
+   end Add_Skip_Dir;
+
    function Parse_CLI return CLI_Config is
       Cfg   : CLI_Config;
       Count : constant Natural := Ada.Command_Line.Argument_Count;
@@ -35,6 +52,7 @@ package body Adacovex.Config is
       Cfg.Manifest_Len := 0;
       Cfg.SVG_Path_Len := 0;
       Cfg.MD_Path_Len := 0;
+      Cfg.Skip_Dir_Ct := 0;
 
       while I <= Count loop
          declare
@@ -111,12 +129,27 @@ package body Adacovex.Config is
                Cfg.No_SVG := True;
             elsif A = "--verbose" then
                Cfg.Verbose := True;
-            elsif A = "--help" then
-               Print_Usage;
-            end if;
+             elsif A = "--relaxed" then
+                Cfg.Strict_Mode := False;
+             elsif A = "--skip-dir" then
+                I := I + 1;
+                if I <= Count then
+                   Add_Skip_Dir (Cfg, Ada.Command_Line.Argument (I));
+                end if;
+             elsif Has_Prefix (A, "--skip-dir=") then
+                Add_Skip_Dir (Cfg, A (A'First + 10 .. A'Last));
+             elsif A = "--help" then
+                Print_Usage;
+             end if;
          end;
          I := I + 1;
       end loop;
+
+      -- Default skip dirs (used in relaxed mode; .git/obj always skipped)
+      if Cfg.Skip_Dir_Ct = 0 then
+         Set_String (Cfg.Skip_Dirs, Cfg.Skip_Dir_Ct,
+                     "demo,deps,examples");
+      end if;
 
       -- --no-svg overrides --emit-svg
       if Cfg.No_SVG then
@@ -197,6 +230,10 @@ package body Adacovex.Config is
         ("  --no-svg              Suppress automatic SVG output");
       Ada.Text_IO.Put_Line
         ("  --emit-markdown=PATH  Write VERIFICATION.md + TRACE.md");
+       Ada.Text_IO.Put_Line
+         ("  --skip-dir=NAME       Add directory name to skip list (repeatable)");
+      Ada.Text_IO.Put_Line
+         ("  --relaxed             Disable strict mode (skip dirs, no patches); on by default");
       Ada.Text_IO.Put_Line ("  --verbose             Verbose diagnostics");
       Ada.Text_IO.Put_Line
         ("  --help                Show this message and exit");

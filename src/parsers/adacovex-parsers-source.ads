@@ -35,15 +35,31 @@ package Adacovex.Parsers.Source is
 
    --  Recursively scan all .ads files under Target_Dir.
    --  Walks the directory tree rooted at Target_Dir, parsing every .ads file
-   --  found. Returns an array of up to Max_Packages package records.
+   --  found, skipping directories whose simple name appears in Skip_List
+   --  (comma-separated). Returns an array of up to Max_Packages package records.
    --  @param Target_Dir  Root directory to scan recursively.
+   --  @param Skip_List  Comma-separated directory names to skip (e.g. ".git,obj").
    --  @param Packages  Output array of parsed packages.
    --  @param Pkg_Count  Number of packages found.
    procedure Scan_Project
      (Target_Dir : String;
+      Skip_List  : String;
       Packages   : out Types.Package_Array;
       Pkg_Count  : out Natural)
    with Pre => Target_Dir'Length > 0, Post => Pkg_Count <= Types.Max_Packages;
+
+   --  Apply docstring patches to scanned packages.
+   --  For each package, checks for a patch file at
+   --  <Target_Dir>/.adacovex/patches/<relative-path> and merges its
+   --  docstring info into the original package's subprograms.
+   --  @param Target_Dir  Root directory used for patch path resolution.
+   --  @param Packages  In/out array of scanned packages to patch.
+   --  @param Pkg_Count  Number of packages in array.
+   procedure Apply_Patches
+     (Target_Dir : String;
+      Packages   : in out Types.Package_Array;
+      Pkg_Count  : in out Natural)
+   with Pre => Target_Dir'Length > 0;
 
    --  Compute aggregate docstring-coverage metrics from scanned packages.
    --  Tallies documented vs. undocumented subprograms, parameters, and return

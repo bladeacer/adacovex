@@ -26,6 +26,7 @@ package Adacovex.Types is
    Max_VC_Count   : constant := 128;
    Max_Badge_Path : constant := 128;
    Max_Metrics    : constant := 32;
+   Max_Skip_Dirs  : constant := 8;
 
    subtype HLR_Index is Positive range 1 .. Max_Hlrs;
    subtype LLR_Index is Positive range 1 .. Max_Llrs;
