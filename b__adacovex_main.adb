@@ -59,7 +59,7 @@ package body ada_main is
    E297 : Short_Integer; pragma Import (Ada, E297, "system__tasking__queuing_E");
    E301 : Short_Integer; pragma Import (Ada, E301, "system__tasking__stages_E");
    E164 : Short_Integer; pragma Import (Ada, E164, "adacovex__types_E");
-   E206 : Short_Integer; pragma Import (Ada, E206, "adacovex__config_E");
+   E208 : Short_Integer; pragma Import (Ada, E208, "adacovex__config_E");
    E162 : Short_Integer; pragma Import (Ada, E162, "adacovex__parsers__do178c_E");
    E210 : Short_Integer; pragma Import (Ada, E210, "adacovex__parsers__gnatprove_E");
    E166 : Short_Integer; pragma Import (Ada, E166, "adacovex__parsers__source_E");
@@ -400,7 +400,7 @@ package body ada_main is
       System.Tasking.Stages'Elab_Body;
       E301 := E301 + 1;
       E164 := E164 + 1;
-      E206 := E206 + 1;
+      E208 := E208 + 1;
       E162 := E162 + 1;
       E210 := E210 + 1;
       E166 := E166 + 1;

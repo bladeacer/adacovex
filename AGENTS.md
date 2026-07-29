@@ -17,8 +17,8 @@ adacovex was designed to audit the Ada_CRDT library at `../Ada_CRDT` (26 package
 The `--target=PATH` option can point at any Ada/SPARK project.
 
 Self-assessment (`make run-self` / `--target=.`) verifies adacovex against its own
-source -- all 19 packages, 32 subprograms -- and must always show:
-- 100% docstring coverage
+source -- all 19 packages, 34 subprograms -- and must always show:
+- 100% docstring coverage (strict mode on by default, cannot be disabled)
 - Platinum SPARK level (28/28 VCs proved)
 - 152/152 native tests passing
 - DAL-C Achieved
@@ -70,7 +70,7 @@ No dynamic allocation; all storage bounded at compile time.
 | `doc` / `api-docs` | Generate API docs via gnatdoc + rst2md |
 | `fmt`              | Format Ada sources with gnatformat |
 | `run-self`         | Run against adacovex itself (--target=.) |
-| `run-ada-crdt`     | Run against ../Ada_CRDT, DAL-C |
+| `run-ada-crdt`     | Run against ../Ada_CRDT, DAL-C (--relaxed) |
 | `ascii-check`      | Verify all source files are pure ASCII |
 | `dev-setup`        | Copy alire-dev.toml over alire.toml |
 | `prod-setup`       | Restore clean publishing alire.toml |
@@ -87,6 +87,8 @@ adacovex [options]
   --emit-svg=PATH       Write SVG badges to directory (default: docs/badges)
   --no-svg              Suppress default SVG badge output
   --emit-markdown=PATH  Write VERIFICATION.md + TRACE.md
+  --skip-dir=NAME       Add directory name to skip list (repeatable)
+  --relaxed             Disable strict mode (skip dirs, no patches; strict is default)
   --verbose             Verbose output
   --port=N              HTTP server port (default: 8080)
   --help                Show help
@@ -160,9 +162,11 @@ running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 - `(null record)` typed parameters are counted as parameters
 
 ### Directory exclusions
-The scanner skips these directories during source traversal: `.git`, `obj`, `tests`,
-`config`, `demo`, `deps`, `examples`. Third-party vendored code (e.g.
-`demo/deps/vt100/`) is excluded from docstring coverage and metric counts.
+Always excluded (safety/non-production): `.git`, `obj`, `tests`, `config`, `.adacovex`.
+In `--relaxed` mode the scanner additionally skips: `demo`, `deps`, `examples`.
+Use `--skip-dir=NAME` to add more in relaxed mode.
+In strict mode (default) vendored code is included and can be patched via
+`.adacovex/patches/` files.
 
 ## Verification
 

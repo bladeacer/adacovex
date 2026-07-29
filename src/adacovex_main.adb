@@ -54,9 +54,27 @@ begin
          "  manifest: " & Cfg.Manifest_Path (1 .. Cfg.Manifest_Len));
    end if;
 
-   -- Step 1: Scan source files
-   Adacovex.Parsers.Source.Scan_Project
-     (Target (1 .. TLen), Packages, Pkg_Count);
+   -- Step 1: Scan source files (strict mode scans everything + applies patches)
+   declare
+      Skip_List : String (1 .. Max_Path);
+      SLen      : Natural := 0;
+   begin
+      if not Cfg.Strict_Mode then
+         SLen := Cfg.Skip_Dir_Ct;
+         for I in 1 .. SLen loop
+            Skip_List (I) := Cfg.Skip_Dirs (I);
+         end loop;
+      end if;
+      Adacovex.Parsers.Source.Scan_Project
+        (Target (1 .. TLen), Skip_List (1 .. SLen), Packages, Pkg_Count);
+   end;
+
+   -- Apply docstring patches when in strict mode
+   if Cfg.Strict_Mode then
+      Adacovex.Parsers.Source.Apply_Patches
+        (Target (1 .. TLen), Packages, Pkg_Count);
+   end if;
+
    Doc_Metrics :=
      Adacovex.Parsers.Source.Compute_Docstring_Metrics (Packages, Pkg_Count);
 

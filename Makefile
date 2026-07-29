@@ -15,7 +15,7 @@ help:
 	@echo '  fmt           Format Ada sources with gnatformat'
 	@echo '  clean         Remove build artifacts'
 	@echo '  run-self      Run against adacovex itself (--target=.)'
-	@echo '  run-ada-crdt  Run against ../Ada_CRDT'
+	@echo '  run-ada-crdt  Run against ../Ada_CRDT (--relaxed)'
 	@echo '  ascii-check   Verify all source files are pure ASCII'
 	@echo '  dev-setup     Copy alire-dev.toml over alire.toml'
 	@echo '  prod-setup    Restore clean publishing alire.toml'
@@ -47,7 +47,7 @@ run-self: build
 	./bin/adacovex_main --target=. --dal=C
 
 run-ada-crdt: build
-	./bin/adacovex_main --target=../Ada_CRDT --dal=C
+	./bin/adacovex_main --target=../Ada_CRDT --dal=C --relaxed
 
 ascii-check:
 	@echo "=== ASCII Charset Verification ==="; \
