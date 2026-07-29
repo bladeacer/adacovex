@@ -93,8 +93,10 @@ procedure Test_Runner is
    procedure Print_Summary is
    begin
       New_Line;
-      Put_Line ("  | Category                                |  Tests | Status   |");
-      Put_Line ("  |-----------------------------------------|--------|----------|");
+      Put_Line
+        ("  | Category                                |  Tests | Status   |");
+      Put_Line
+        ("  |-----------------------------------------|--------|----------|");
 
       declare
          procedure Row (Name : String; R : Runner) is
@@ -119,9 +121,14 @@ procedure Test_Runner is
          Row ("SVG renderer", R_RendererSVG);
       end;
 
-      Put_Line ("  |-----------------------------------------|--------|----------|");
+      Put_Line
+        ("  |-----------------------------------------|--------|----------|");
       New_Line;
-      Put_Line ("  Passed:" & Natural'Image (Total_Passed) & "  Failed:" & Natural'Image (Total_Failed));
+      Put_Line
+        ("  Passed:"
+         & Natural'Image (Total_Passed)
+         & "  Failed:"
+         & Natural'Image (Total_Failed));
    end Print_Summary;
 
 begin
@@ -135,11 +142,21 @@ begin
    Adacovex_Config_Tests.Run (R_Config);
    Adacovex_Renderer_SVG_Tests.Run (R_RendererSVG);
 
-   Total_Passed := R_Types.Passed + R_DAL.Passed + R_Scanner.Passed
-     + R_Prove.Passed + R_TestParser.Passed + R_Config.Passed
+   Total_Passed :=
+     R_Types.Passed
+     + R_DAL.Passed
+     + R_Scanner.Passed
+     + R_Prove.Passed
+     + R_TestParser.Passed
+     + R_Config.Passed
      + R_RendererSVG.Passed;
-   Total_Failed := R_Types.Failed + R_DAL.Failed + R_Scanner.Failed
-     + R_Prove.Failed + R_TestParser.Failed + R_Config.Failed
+   Total_Failed :=
+     R_Types.Failed
+     + R_DAL.Failed
+     + R_Scanner.Failed
+     + R_Prove.Failed
+     + R_TestParser.Failed
+     + R_Config.Failed
      + R_RendererSVG.Failed;
 
    Print_Summary;

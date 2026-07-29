@@ -138,11 +138,11 @@ package body Adacovex.Parsers.GNATprove is
                   -- Check for "Total" line
                   if Row'Length >= 5
                     and then Row (Row'First .. Row'First + 4) = "Total"
-                   then
-                      Summary.Total_VCs := Get_Nth_Number_Raw (Row, 1);
-                      Summary.Proved_VCs := Get_Nth_Number_Raw (Row, 3);
-                      Summary.Justified := Get_Nth_Number_Raw (Row, 4);
-                      Summary.Unproved := Get_Nth_Number_Raw (Row, 5);
+                  then
+                     Summary.Total_VCs := Get_Nth_Number_Raw (Row, 1);
+                     Summary.Proved_VCs := Get_Nth_Number_Raw (Row, 3);
+                     Summary.Justified := Get_Nth_Number_Raw (Row, 4);
+                     Summary.Unproved := Get_Nth_Number_Raw (Row, 5);
                   end if;
 
                   -- Check for "Initialization"

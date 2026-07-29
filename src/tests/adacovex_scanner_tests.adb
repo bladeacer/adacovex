@@ -1,6 +1,6 @@
-with Ada.Text_IO;             use Ada.Text_IO;
+with Ada.Text_IO;    use Ada.Text_IO;
 with Ada.Directories;
-with Adacovex.Types;          use Adacovex.Types;
+with Adacovex.Types; use Adacovex.Types;
 with Adacovex.Parsers.Source;
 
 package body Adacovex_Scanner_Tests is
@@ -45,7 +45,8 @@ package body Adacovex_Scanner_Tests is
       Adacovex.Parsers.Source.Scan_Ads_File (Tmp_File, Pkg, Success);
       R.Check (Success, "Test 1: parse succeeded");
       R.Check (Pkg.Name_Len > 0, "Test 1: package name length > 0");
-      R.Check (Natural (Pkg.Subprograms.Length) = 3, "Test 1: 3 subprograms found");
+      R.Check
+        (Natural (Pkg.Subprograms.Length) = 3, "Test 1: 3 subprograms found");
       R.Check (Natural (Pkg.HLR_Tags.Length) = 1, "Test 1: 1 HLR tag found");
       R.Check
         (Pkg.HLR_Tags (1).Len = 4
@@ -57,29 +58,23 @@ package body Adacovex_Scanner_Tests is
         (Pkg.Subprograms (1).Name_Len = 3
          and then Pkg.Subprograms (1).Name (1 .. 3) = "Add",
          "Test 1: Subp 1 = Add");
-      R.Check
-        (Pkg.Subprograms (1).Has_Docstring,
-         "Test 1: Add has docstring");
+      R.Check (Pkg.Subprograms (1).Has_Docstring, "Test 1: Add has docstring");
       R.Check
         (Pkg.Subprograms (1).Doc_Param_Ct = 2,
          "Test 1: Add has 2 documented params");
       R.Check
-        (Pkg.Subprograms (1).Doc_Return,
-         "Test 1: Add has documented return");
+        (Pkg.Subprograms (1).Doc_Return, "Test 1: Add has documented return");
 
       R.Check
         (Pkg.Subprograms (2).Name_Len = 3
          and then Pkg.Subprograms (2).Name (1 .. 3) = "Log",
          "Test 1: Subp 2 = Log");
-      R.Check
-        (Pkg.Subprograms (2).Has_Docstring,
-         "Test 1: Log has docstring");
+      R.Check (Pkg.Subprograms (2).Has_Docstring, "Test 1: Log has docstring");
       R.Check
         (Pkg.Subprograms (2).Doc_Param_Ct = 1,
          "Test 1: Log has 1 documented param");
       R.Check
-        (not Pkg.Subprograms (2).Doc_Return,
-         "Test 1: Log has no return");
+        (not Pkg.Subprograms (2).Doc_Return, "Test 1: Log has no return");
 
       R.Check
         (Pkg.Subprograms (3).Name_Len = 7
@@ -112,7 +107,9 @@ package body Adacovex_Scanner_Tests is
       Adacovex.Parsers.Source.Scan_Ads_File (Tmp_File, Pkg, Success);
       R.Check (Success, "Test 2: parse succeeded");
       --  only Clone detected, generic line is not a separate subprogram
-      R.Check (Natural (Pkg.Subprograms.Length) >= 1, "Test 2: at least 1 subprogram");
+      R.Check
+        (Natural (Pkg.Subprograms.Length) >= 1,
+         "Test 2: at least 1 subprogram");
       --  The named subprogram (Clone) should be last
       declare
          Last_Subp : constant Positive := Positive (Pkg.Subprograms.Length);
@@ -154,13 +151,13 @@ package body Adacovex_Scanner_Tests is
 
       --  Test 4: Compute_Docstring_Metrics with known data
       declare
-         SP1 : Subprogram_Info := (others => <>);
-         SP2 : Subprogram_Info := (others => <>);
-         SP3 : Subprogram_Info := (others => <>);
-         SP4 : Subprogram_Info := (others => <>);
-         SP5 : Subprogram_Info := (others => <>);
-         P1  : Package_Info := (others => <>);
-         P2  : Package_Info := (others => <>);
+         SP1  : Subprogram_Info := (others => <>);
+         SP2  : Subprogram_Info := (others => <>);
+         SP3  : Subprogram_Info := (others => <>);
+         SP4  : Subprogram_Info := (others => <>);
+         SP5  : Subprogram_Info := (others => <>);
+         P1   : Package_Info := (others => <>);
+         P2   : Package_Info := (others => <>);
          Pkgs : Package_Vectors.Vector;
       begin
          SP1.Has_Docstring := True;
@@ -184,11 +181,8 @@ package body Adacovex_Scanner_Tests is
               (M.Total_Subprograms = 5,
                "Compute_Metrics: total subprograms = 5");
             R.Check
-              (M.Documented_Subprogs = 3,
-               "Compute_Metrics: documented = 3");
-            R.Check
-              (M.Coverage_Pct = 60,
-               "Compute_Metrics: coverage = 60%");
+              (M.Documented_Subprogs = 3, "Compute_Metrics: documented = 3");
+            R.Check (M.Coverage_Pct = 60, "Compute_Metrics: coverage = 60%");
          end;
       end;
 
@@ -198,12 +192,8 @@ package body Adacovex_Scanner_Tests is
            Adacovex.Parsers.Source.Compute_Docstring_Metrics
              (Package_Vectors.Empty_Vector);
       begin
-         R.Check
-           (M.Total_Subprograms = 0,
-            "Compute_Metrics empty: total = 0");
-         R.Check
-           (M.Coverage_Pct = 0,
-            "Compute_Metrics empty: coverage = 0%");
+         R.Check (M.Total_Subprograms = 0, "Compute_Metrics empty: total = 0");
+         R.Check (M.Coverage_Pct = 0, "Compute_Metrics empty: coverage = 0%");
       end;
 
       --  Test 6: After-declaration docstring tags on last subprogram
@@ -225,7 +215,9 @@ package body Adacovex_Scanner_Tests is
 
       Adacovex.Parsers.Source.Scan_Ads_File (Tmp_File, Pkg, Success);
       R.Check (Success, "Test 6: parse succeeded");
-      R.Check (Natural (Pkg.Subprograms.Length) >= 1, "Test 6: at least 1 subprogram");
+      R.Check
+        (Natural (Pkg.Subprograms.Length) >= 1,
+         "Test 6: at least 1 subprogram");
       declare
          Add_Idx : constant Positive := Positive (Pkg.Subprograms.Length);
       begin
@@ -260,7 +252,9 @@ package body Adacovex_Scanner_Tests is
 
       Adacovex.Parsers.Source.Scan_Ads_File (Tmp_File, Pkg, Success);
       R.Check (Success, "Test 7: parse succeeded");
-      R.Check (Natural (Pkg.Subprograms.Length) >= 1, "Test 7: at least 1 subprogram");
+      R.Check
+        (Natural (Pkg.Subprograms.Length) >= 1,
+         "Test 7: at least 1 subprogram");
       R.Check
         (Pkg.Subprograms (Positive (Pkg.Subprograms.Length)).Has_Docstring,
          "Test 7: @field sets Has_Docstring");
@@ -282,7 +276,9 @@ package body Adacovex_Scanner_Tests is
 
       Adacovex.Parsers.Source.Scan_Ads_File (Tmp_File, Pkg, Success);
       R.Check (Success, "Test 8: parse succeeded");
-      R.Check (Natural (Pkg.Subprograms.Length) >= 1, "Test 8: at least 1 subprogram");
+      R.Check
+        (Natural (Pkg.Subprograms.Length) >= 1,
+         "Test 8: at least 1 subprogram");
       R.Check
         (not Pkg.Subprograms (Positive (Pkg.Subprograms.Length)).Has_Docstring,
          "Test 8: @formal alone does not set Has_Docstring");

@@ -25,9 +25,9 @@ test-result parsing, DO-178C DAL compliance assessment, and interactive dashboar
   - SVG badges (Shields.io style) -- SPARK level, test status, DO-178C status, docstring coverage
   - Markdown reports -- `VERIFICATION.md` + `TRACE.md`
   - HTML dashboard + JSON API via built-in HTTP server
-- **Zero dynamic allocation** -- all storage is bounded at compile time
-(max 128 packages, 128 subprograms per package, 2048-char lines, 512-char paths).
-Raise `Max_*` constants in `adacovex-types.ads` for larger projects.
+- **Scalable** -- package/subprogram collections use `Ada.Containers.Vectors`
+(heap-allocated, no compile-time limits on count). Fixed-size buffers: 8192-char
+lines, 4096-char paths.
 
 ## Quick start
 
@@ -97,7 +97,7 @@ Only effective in relaxed mode. Default skip list: `demo,deps,examples`.
 plus any `--skip-dir` entries). Does NOT apply `.adacovex/patches/`.
 Default: OFF (strict mode is on by default).
 
-**`--verbose`** -- Placeholder; recognized but no output emitted yet.
+**`--verbose`** -- Print pipeline step diagnostics to stderr.
 
 ### Strict vs relaxed mode
 

@@ -51,8 +51,7 @@ package Adacovex.Parsers.Source is
    --  @param Target_Dir  Root directory used for patch path resolution.
    --  @param Packages  In/out vector of scanned packages to patch.
    procedure Apply_Patches
-     (Target_Dir : String;
-      Packages   : in out Types.Package_Vectors.Vector);
+     (Target_Dir : String; Packages : in out Types.Package_Vectors.Vector);
 
    --  Compute aggregate docstring-coverage metrics from scanned packages.
    --  Tallies documented vs. undocumented subprograms, parameters, and return
@@ -60,8 +59,7 @@ package Adacovex.Parsers.Source is
    --  @param Packages  Vector of scanned packages.
    --  @return Aggregate docstring-coverage metrics.
    function Compute_Docstring_Metrics
-     (Packages : Types.Package_Vectors.Vector)
-      return Types.Docstring_Metrics
+     (Packages : Types.Package_Vectors.Vector) return Types.Docstring_Metrics
    with Global => null;
 
 end Adacovex.Parsers.Source;

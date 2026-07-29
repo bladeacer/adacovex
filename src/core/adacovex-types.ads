@@ -1,6 +1,6 @@
 --  All domain types used across the adacovex tool chain.
 --  Package and subprogram collections use Ada.Containers.Vectors
---  (unbounded, up to Natural'Last ≈ 2.1B). Fixed-size buffers
+--  (unbounded, up to Natural'Last â 2.1B). Fixed-size buffers
 --  (Max_Path, Max_Line, Max_Desc_Str, etc.) are bounded at compile time
 --  with generous production-suitable limits (Max_Path=4096, Max_Line=8192).
 --  HLR-METRICS: Docstring_Metrics type
@@ -50,11 +50,11 @@ package Adacovex.Types is
       Doc_Return    : Boolean := False;
    end record;
 
-   package Subprogram_Vectors is
-     new Ada.Containers.Vectors (Positive, Subprogram_Info);
+   package Subprogram_Vectors is new
+     Ada.Containers.Vectors (Positive, Subprogram_Info);
 
-   package HLR_Tag_Vectors is
-     new Ada.Containers.Vectors (Positive, HLR_Tag_Entry);
+   package HLR_Tag_Vectors is new
+     Ada.Containers.Vectors (Positive, HLR_Tag_Entry);
 
    type Package_Info is record
       Name        : Name_Field;
@@ -65,8 +65,8 @@ package Adacovex.Types is
       HLR_Tags    : HLR_Tag_Vectors.Vector;
    end record;
 
-   package Package_Vectors is
-     new Ada.Containers.Vectors (Positive, Package_Info);
+   package Package_Vectors is new
+     Ada.Containers.Vectors (Positive, Package_Info);
 
    type Proof_Summary is record
       Total_VCs          : Natural := 0;
@@ -95,8 +95,8 @@ package Adacovex.Types is
       Status     : Test_Status := Pass;
    end record;
 
-   package Test_Metrics_Vectors is
-     new Ada.Containers.Vectors (Positive, Test_Metrics);
+   package Test_Metrics_Vectors is new
+     Ada.Containers.Vectors (Positive, Test_Metrics);
 
    type Test_Summary is record
       Categories   : Test_Metrics_Vectors.Vector;
@@ -114,8 +114,8 @@ package Adacovex.Types is
       Coverage_Pct        : Natural := 0;
    end record;
 
-   package DAL_Failure_Vectors is
-     new Ada.Containers.Vectors (Positive, Desc_Field);
+   package DAL_Failure_Vectors is new
+     Ada.Containers.Vectors (Positive, Desc_Field);
 
    type DAL_Assessment is record
       Target_DAL             : DAL_Level := DAL_C;

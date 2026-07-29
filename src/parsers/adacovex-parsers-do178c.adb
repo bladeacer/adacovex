@@ -73,7 +73,8 @@ package body Adacovex.Parsers.DO178C is
                            declare
                               D_Start : Natural := Colon + 1;
                            begin
-                              while D_Start <= Last and then Line (D_Start) = ' '
+                              while D_Start <= Last
+                                and then Line (D_Start) = ' '
                               loop
                                  D_Start := D_Start + 1;
                               end loop;
@@ -203,7 +204,8 @@ package body Adacovex.Parsers.DO178C is
                               D_Start : Natural := Colon + 1;
                               D_End   : Natural := Last;
                            begin
-                              while D_Start <= Last and then Line (D_Start) = ' '
+                              while D_Start <= Last
+                                and then Line (D_Start) = ' '
                               loop
                                  D_Start := D_Start + 1;
                               end loop;
@@ -211,7 +213,8 @@ package body Adacovex.Parsers.DO178C is
                               -- Truncate at HLR reference
                               if H_Start > D_Start then
                                  D_End := H_Start - 1;
-                                 while D_End > D_Start and then Line (D_End) = ' '
+                                 while D_End > D_Start
+                                   and then Line (D_End) = ' '
                                  loop
                                     D_End := D_End - 1;
                                  end loop;
@@ -243,8 +246,8 @@ package body Adacovex.Parsers.DO178C is
    end Parse_LLR_MD;
 
    function Find_HLR_In_Source
-     (HLR_Id : String; Packages : Types.Package_Vectors.Vector)
-      return Boolean is
+     (HLR_Id : String; Packages : Types.Package_Vectors.Vector) return Boolean
+   is
    begin
       for P in 1 .. Integer (Packages.Length) loop
          for T in 1 .. Integer (Packages (P).HLR_Tags.Length) loop

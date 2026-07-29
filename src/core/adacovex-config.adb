@@ -43,23 +43,22 @@ package body Adacovex.Config is
       end if;
    end Add_Skip_Dir;
 
-    procedure Set_Error (Cfg : in out CLI_Config; Msg : String) is
-    begin
-       Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "Error: " & Msg);
-       Cfg.CLI_Error := True;
-    end Set_Error;
+   procedure Set_Error (Cfg : in out CLI_Config; Msg : String) is
+   begin
+      Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "Error: " & Msg);
+      Cfg.CLI_Error := True;
+   end Set_Error;
 
-    function Is_Valid_DAL (S : String) return Boolean is
-    begin
-       return S'Length = 1
-         and then (S (S'First) in 'A' .. 'E' | 'a' .. 'e');
-    end Is_Valid_DAL;
+   function Is_Valid_DAL (S : String) return Boolean is
+   begin
+      return S'Length = 1 and then (S (S'First) in 'A' .. 'E' | 'a' .. 'e');
+   end Is_Valid_DAL;
 
-    function Parse_CLI return CLI_Config is
-       Cfg   : CLI_Config;
-       Count : constant Natural := Ada.Command_Line.Argument_Count;
-       I     : Positive := 1;
-    begin
+   function Parse_CLI return CLI_Config is
+      Cfg   : CLI_Config;
+      Count : constant Natural := Ada.Command_Line.Argument_Count;
+      I     : Positive := 1;
+   begin
       Cfg.Target_Len := 0;
       Cfg.Manifest_Len := 0;
       Cfg.SVG_Path_Len := 0;
@@ -94,31 +93,35 @@ package body Adacovex.Config is
                  (Cfg.Manifest_Path,
                   Cfg.Manifest_Len,
                   A (A'First + 11 .. A'Last));
-             elsif A = "--dal" then
-                I := I + 1;
-                if I <= Count then
-                   declare
-                      Val : constant String := Ada.Command_Line.Argument (I);
-                   begin
-                      if Is_Valid_DAL (Val) then
-                         Cfg.DAL_Target := Types.To_DAL (Val);
-                      else
-                         Set_Error (Cfg, "--dal must be A, B, C, D, or E (got: "
-                                    & Val & ")");
-                      end if;
-                   end;
-                end if;
-             elsif Has_Prefix (A, "--dal=") then
-                declare
-                   Val : constant String := A (A'First + 6 .. A'Last);
-                begin
-                   if Is_Valid_DAL (Val) then
-                      Cfg.DAL_Target := Types.To_DAL (Val);
-                   else
-                      Set_Error (Cfg, "--dal must be A, B, C, D, or E (got: "
-                                 & Val & ")");
-                   end if;
-                end;
+            elsif A = "--dal" then
+               I := I + 1;
+               if I <= Count then
+                  declare
+                     Val : constant String := Ada.Command_Line.Argument (I);
+                  begin
+                     if Is_Valid_DAL (Val) then
+                        Cfg.DAL_Target := Types.To_DAL (Val);
+                     else
+                        Set_Error
+                          (Cfg,
+                           "--dal must be A, B, C, D, or E (got: "
+                           & Val
+                           & ")");
+                     end if;
+                  end;
+               end if;
+            elsif Has_Prefix (A, "--dal=") then
+               declare
+                  Val : constant String := A (A'First + 6 .. A'Last);
+               begin
+                  if Is_Valid_DAL (Val) then
+                     Cfg.DAL_Target := Types.To_DAL (Val);
+                  else
+                     Set_Error
+                       (Cfg,
+                        "--dal must be A, B, C, D, or E (got: " & Val & ")");
+                  end if;
+               end;
             elsif A = "--serve" then
                Cfg.Serve_Mode := True;
             elsif A = "--port" then
@@ -158,26 +161,25 @@ package body Adacovex.Config is
                Cfg.No_SVG := True;
             elsif A = "--verbose" then
                Cfg.Verbose := True;
-             elsif A = "--relaxed" then
-                Cfg.Strict_Mode := False;
-             elsif A = "--skip-dir" then
-                I := I + 1;
-                if I <= Count then
-                   Add_Skip_Dir (Cfg, Ada.Command_Line.Argument (I));
-                end if;
-             elsif Has_Prefix (A, "--skip-dir=") then
-                Add_Skip_Dir (Cfg, A (A'First + 10 .. A'Last));
-             elsif A = "--help" then
-                Print_Usage;
-             end if;
+            elsif A = "--relaxed" then
+               Cfg.Strict_Mode := False;
+            elsif A = "--skip-dir" then
+               I := I + 1;
+               if I <= Count then
+                  Add_Skip_Dir (Cfg, Ada.Command_Line.Argument (I));
+               end if;
+            elsif Has_Prefix (A, "--skip-dir=") then
+               Add_Skip_Dir (Cfg, A (A'First + 10 .. A'Last));
+            elsif A = "--help" then
+               Print_Usage;
+            end if;
          end;
          I := I + 1;
       end loop;
 
       -- Default skip dirs (used in relaxed mode; .git/obj always skipped)
       if Cfg.Skip_Dir_Ct = 0 then
-         Set_String (Cfg.Skip_Dirs, Cfg.Skip_Dir_Ct,
-                     "demo,deps,examples");
+         Set_String (Cfg.Skip_Dirs, Cfg.Skip_Dir_Ct, "demo,deps,examples");
       end if;
 
       -- --no-svg overrides --emit-svg
@@ -209,7 +211,8 @@ package body Adacovex.Config is
       -- so running against ../Ada_CRDT writes to ../Ada_CRDT/docs/badges
       if Cfg.Emit_SVG and then Cfg.SVG_Path_Len = 0 then
          Set_String
-           (Cfg.SVG_Path, Cfg.SVG_Path_Len,
+           (Cfg.SVG_Path,
+            Cfg.SVG_Path_Len,
             Cfg.Target_Path (1 .. Cfg.Target_Len) & "/docs/badges");
       end if;
 
@@ -259,10 +262,10 @@ package body Adacovex.Config is
         ("  --no-svg              Suppress automatic SVG output");
       Ada.Text_IO.Put_Line
         ("  --emit-markdown=PATH  Write VERIFICATION.md + TRACE.md");
-       Ada.Text_IO.Put_Line
-         ("  --skip-dir=NAME       Add directory name to skip list (repeatable)");
       Ada.Text_IO.Put_Line
-         ("  --relaxed             Disable strict mode (skip dirs, no patches); strict is default");
+        ("  --skip-dir=NAME       Add directory name to skip list (repeatable)");
+      Ada.Text_IO.Put_Line
+        ("  --relaxed             Disable strict mode (skip dirs, no patches); strict is default");
       Ada.Text_IO.Put_Line ("  --verbose             Verbose diagnostics");
       Ada.Text_IO.Put_Line
         ("  --help                Show this message and exit");

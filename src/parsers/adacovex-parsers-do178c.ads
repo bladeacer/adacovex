@@ -15,8 +15,7 @@ package Adacovex.Parsers.DO178C is
       D_Len  : Natural := 0;
    end record;
 
-   package HLR_Vectors is
-     new Ada.Containers.Vectors (Positive, HLR_Info);
+   package HLR_Vectors is new Ada.Containers.Vectors (Positive, HLR_Info);
 
    type LLR_Info is record
       Id      : String (1 .. Types.Max_Id_Str);
@@ -27,8 +26,7 @@ package Adacovex.Parsers.DO178C is
       D_Len   : Natural := 0;
    end record;
 
-   package LLR_Vectors is
-     new Ada.Containers.Vectors (Positive, LLR_Info);
+   package LLR_Vectors is new Ada.Containers.Vectors (Positive, LLR_Info);
 
    --  Parse an HLR.md file, extracting HLR entries and descriptions.
    --  Scans a Markdown file for lines matching "HLR_xxxx: Description",
@@ -61,8 +59,7 @@ package Adacovex.Parsers.DO178C is
    --  @param Packages  Vector of scanned packages.
    --  @return True if HLR_Id appears as a source-code tag in any package.
    function Find_HLR_In_Source
-     (HLR_Id : String; Packages : Types.Package_Vectors.Vector)
-      return Boolean
+     (HLR_Id : String; Packages : Types.Package_Vectors.Vector) return Boolean
    with Global => null;
 
 end Adacovex.Parsers.DO178C;

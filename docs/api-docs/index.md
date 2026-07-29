@@ -3,7 +3,12 @@
 ## Packages
 
 - [Adacovex](adacovex.md)
+- [Adacovex_Config_Tests](adacovex_config_tests.md)
 - [Adacovex_DAL_Tests](adacovex_dal_tests.md)
+- [Adacovex_Prove_Tests](adacovex_prove_tests.md)
+- [Adacovex_Renderer_SVG_Tests](adacovex_renderer_svg_tests.md)
+- [Adacovex_Scanner_Tests](adacovex_scanner_tests.md)
+- [Adacovex_TestParser_Tests](adacovex_testparser_tests.md)
 - [Adacovex_Types_Tests](adacovex_types_tests.md)
 - [Adacovex.Compliance](adacovex-compliance.md)
 - [Adacovex.Config](adacovex-config.md)
