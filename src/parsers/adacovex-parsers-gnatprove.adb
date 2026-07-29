@@ -197,6 +197,7 @@ package body Adacovex.Parsers.GNATprove is
    is
       Path1 : constant String := Target_Dir & "/obj/gnatprove/gnatprove.out";
       Path2 : constant String := Target_Dir & "/gnatprove.out";
+      Path3 : constant String := Target_Dir & "/gnatprove/gnatprove.out";
    begin
       Summary := (others => <>);
       Parse_Prove_Out (Path1, Summary, Success);
@@ -204,6 +205,10 @@ package body Adacovex.Parsers.GNATprove is
          return;
       end if;
       Parse_Prove_Out (Path2, Summary, Success);
+      if Success then
+         return;
+      end if;
+      Parse_Prove_Out (Path3, Summary, Success);
    end Parse_Prove_From_Project;
 
    procedure Parse_Prove_JSON

@@ -8,9 +8,10 @@
 # This manifest includes gnatprove, gnatdoc_bin, and gnatformat_bin which
 # are required for make prove, make doc, and make fmt but MUST NOT appear
 # in the published Alire community index.
-name = "adacovex"
+name = "covex"
 description = "Ada/SPARK coverage, proof, DO-178C compliance tool (dev)"
 version = "1.0.0"
+project-files = ["adacovex.gpr"]
 
 authors = ["bladeacer"]
 maintainers = ["bladeacer <wg.nick.exe@gmail.com>"]

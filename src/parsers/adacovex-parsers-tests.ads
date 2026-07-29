@@ -6,7 +6,6 @@ with Adacovex.Types;
 --  HLR-TEST: Test result parsing
 
 package Adacovex.Parsers.Tests is
-   pragma SPARK_Mode (On);
 
    --  Parse a Markdown-format test result file for pass/fail counts.
    --  Reads category counts from a pre-formatted test summary Markdown file.

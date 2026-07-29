@@ -1,8 +1,9 @@
-# Template index entry for the Alire community index.
+# Template release manifest.
 # Copied and version-replaced by make bump-version / make release.
-name = "adacovex"
+name = "covex"
 description = "Ada/SPARK coverage, proof, DO-178C compliance tool"
-version = "1.0.0"
+version = "0.0.0"
+project-files = ["adacovex.gpr"]
 
 authors = ["bladeacer"]
 maintainers = ["bladeacer <wg.nick.exe@gmail.com>"]
@@ -10,4 +11,3 @@ maintainers-logins = ["bladeacer"]
 licenses = "Apache-2.0"
 website = "https://github.com/bladeacer/adacovex"
 tags = ["ada", "spark", "coverage", "do-178c", "compliance"]
-auto-gpr-with = false

@@ -13,3 +13,4 @@ alire.toml.bak
 *.o
 *.ali
 *.bexch
+gnatprove

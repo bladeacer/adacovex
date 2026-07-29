@@ -6,7 +6,6 @@ with Adacovex.Types;
 --  HLR-RENDER-SVG: SVG badge generation
 
 package Adacovex.Renderers.SVG is
-   pragma SPARK_Mode (On);
 
    --  Render a SPARK-level badge (Stone/Bronze/Silver/Gold/Platinum).
    --  Returns SVG markup for a Shields.io-style badge with the SPARK level
