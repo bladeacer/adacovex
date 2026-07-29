@@ -147,37 +147,39 @@ package body Adacovex.Compliance.DAL is
       else
          Assessment.Tests_Passing := True;
       end if;
+       -- Collect failures
+       declare
+          procedure Push (Msg : String) is
+             Field : Types.Desc_Field := (others => ' ');
+          begin
+             if Msg'Length <= Types.Max_Desc_Str then
+                Field (1 .. Msg'Length) := Msg;
+             end if;
+             Assessment.Failed_Reasons.Append (Field);
+          end Push;
+       begin
+          if Assessment.HLR_Found < Assessment.HLR_Total then
+             Push
+               ("Missing HLRs: "
+                & Natural'Image (Assessment.HLR_Total - Assessment.HLR_Found));
+          end if;
 
-      -- Collect failures
-      if Assessment.HLR_Found < Assessment.HLR_Total then
-         declare
-            Msg : constant String :=
-              "Missing HLRs: "
-              & Natural'Image (Assessment.HLR_Total - Assessment.HLR_Found);
-         begin
-            Assessment.Failed_Reasons.Append (Msg);
-         end;
-      end if;
+          if Assessment.Orphan_Tags then
+             Push ("Orphan HLR tags found in source");
+          end if;
 
-      if Assessment.Orphan_Tags then
-         Assessment.Failed_Reasons.Append ("Orphan HLR tags found in source");
-      end if;
+          if not Assessment.Min_SPARK_Level_Met then
+             Push
+               ("SPARK level below "
+                & Types.To_String (Min_Lvl)
+                & ": "
+                & Types.To_String (Proof_Summary.Level));
+          end if;
 
-      if not Assessment.Min_SPARK_Level_Met then
-         declare
-            Msg : constant String :=
-              "SPARK level below "
-              & Types.To_String (Min_Lvl)
-              & ": "
-              & Types.To_String (Proof_Summary.Level);
-         begin
-            Assessment.Failed_Reasons.Append (Msg);
-         end;
-      end if;
-
-      if Tests_Req and then not Assessment.Tests_Passing then
-         Assessment.Failed_Reasons.Append ("Test failures detected");
-      end if;
+          if Tests_Req and then not Assessment.Tests_Passing then
+             Push ("Test failures detected");
+          end if;
+       end;
 
       if Assessment.Failed_Reasons.Is_Empty then
          Assessment.Status := Types.Achieved;

@@ -94,18 +94,18 @@ bump-version:
 	sed -i 's/^   Version : constant String := "[^"]*"/   Version : constant String := "'$$version'"/' src/adacovex.ads; \
 	echo "  src/adacovex.ads: Version = \"$$version\""; \
 	\
-	release_file="alire/releases/adacovex-$$version.toml"; \
+	release_file="alire/releases/covex-$$version.toml"; \
 	if [ ! -f "$$release_file" ]; then \
-		sed 's/^version = ".*"/version = "'$$version'"/' alire/releases/adacovex-0.0.0.toml > "$$release_file"; \
+		sed 's/^version = ".*"/version = "'$$version'"/' alire/releases/covex-0.0.0.toml > "$$release_file"; \
 		echo "  Created: $$release_file"; \
 	else \
 		sed -i 's/^version = ".*"/version = "'$$version'"/' "$$release_file"; \
 		echo "  Updated: $$release_file"; \
 	fi; \
 	\
-	index_file="index/ad/adacovex/adacovex-$$version.toml"; \
+	index_file="index/ad/covex/covex-$$version.toml"; \
 	if [ ! -f "$$index_file" ]; then \
-		sed 's/^version = ".*"/version = "'$$version'"/' index/ad/adacovex/adacovex-0.1.0-dev.toml > "$$index_file"; \
+		sed 's/^version = ".*"/version = "'$$version'"/' index/ad/covex/covex-0.1.0-dev.toml > "$$index_file"; \
 		echo "  Created: $$index_file"; \
 	else \
 		sed -i 's/^version = ".*"/version = "'$$version'"/' "$$index_file"; \
@@ -141,14 +141,14 @@ release:
 		version=$$(sed -n 's/^version = "\(.*\)"/\1/p' alire.toml); \
 	fi; \
 	commit=$$(git rev-parse HEAD); \
-	index_file="index/ad/adacovex/adacovex-$$version.toml"; \
+	index_file="index/ad/covex/covex-$$version.toml"; \
 	if [ ! -f "$$index_file" ]; then \
-		sed 's/^version = ".*"/version = "'$$version'"/' index/ad/adacovex/adacovex-0.1.0-dev.toml > "$$index_file"; \
+		sed 's/^version = ".*"/version = "'$$version'"/' index/ad/covex/covex-0.1.0-dev.toml > "$$index_file"; \
 	fi; \
 	sed -i 's/^version = ".*"/version = "'$$version'"/' "$$index_file"; \
-	release_file="alire/releases/adacovex-$$version.toml"; \
+	release_file="alire/releases/covex-$$version.toml"; \
 	if [ ! -f "$$release_file" ]; then \
-		sed 's/^version = ".*"/version = "'$$version'"/' alire/releases/adacovex-0.0.0.toml > "$$release_file"; \
+		sed 's/^version = ".*"/version = "'$$version'"/' alire/releases/covex-0.0.0.toml > "$$release_file"; \
 	fi; \
 	sed -i 's/^version = ".*"/version = "'$$version'"/' "$$release_file"; \
 	if git rev-parse "v$$version" >/dev/null 2>&1; then \
