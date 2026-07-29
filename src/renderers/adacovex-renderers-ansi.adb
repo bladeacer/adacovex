@@ -30,13 +30,12 @@ package body Adacovex.Renderers.ANSI is
       Proof       : Types.Proof_Summary;
       Tests       : Types.Test_Summary;
       DAL_Assess  : Types.DAL_Assessment;
-      Packages    : Types.Package_Array;
-      Pkg_Count   : Natural;
+      Packages    : Types.Package_Vectors.Vector;
       Use_Color   : Boolean := False) is
    begin
       Ada.Text_IO.Put ("  scanning sources... ");
       Put_Color ("37", Enable => Use_Color);
-      Ada.Text_IO.Put (Natural'Image (Pkg_Count) & " packages,");
+      Ada.Text_IO.Put (Integer'Image (Integer (Packages.Length)) & " packages,");
       Ada.Text_IO.Put (Natural'Image (Doc_Metrics.Total_Subprograms)
                        & " subprograms");
       Reset_Color (Enable => Use_Color);
@@ -112,9 +111,9 @@ package body Adacovex.Renderers.ANSI is
       declare
          UD_Count : Natural := 0;
       begin
-         for P in 1 .. Pkg_Count loop
-            for S in 1 .. Packages (P).Subprogram_Count loop
-               if not Packages (P).Subprogram_List (S).Has_Docstring then
+          for P in 1 .. Integer (Packages.Length) loop
+             for S in 1 .. Integer (Packages (P).Subprograms.Length) loop
+                if not Packages (P).Subprograms (S).Has_Docstring then
                   if UD_Count = 0 then
                      Ada.Text_IO.New_Line;
                      Ada.Text_IO.Put_Line ("  undocumented subprograms:");
@@ -125,11 +124,11 @@ package body Adacovex.Renderers.ANSI is
                      & Packages (P).File_Path (1 .. Packages (P).Path_Len));
                   Ada.Text_IO.Put
                     (":" & Natural'Image
-                       (Packages (P).Subprogram_List (S).Line_Number));
+                        (Packages (P).Subprograms (S).Line_Number));
                   Ada.Text_IO.Put_Line
                     (": subprogram """
-                     & Packages (P).Subprogram_List (S).Name
-                         (1 .. Packages (P).Subprogram_List (S).Name_Len)
+                      & Packages (P).Subprograms (S).Name
+                          (1 .. Packages (P).Subprograms (S).Name_Len)
                      & """ is undocumented");
                   Ada.Text_IO.Put_Line
                     ("      help: add --  @param and/or --  @return "
@@ -176,8 +175,8 @@ package body Adacovex.Renderers.ANSI is
       declare
          Has_HLR : Boolean := False;
       begin
-         for P in 1 .. Pkg_Count loop
-            if Packages (P).Total_HLR_Tags > 0 then
+          for P in 1 .. Integer (Packages.Length) loop
+             if Packages (P).Total_HLR_Tags > 0 then
                if not Has_HLR then
                   Ada.Text_IO.New_Line;
                   Ada.Text_IO.Put_Line ("  HLR traceability:");

@@ -39,9 +39,9 @@ src/
 |   `-- adacovex-parsers-do178c.ads/.adb      -- HLR/LLR markdown parser + source tag matcher
 |-- tests/
 |   |-- adacovex-test_support.ads/.adb        -- Native test Runner type
-|   |-- adacovex_dal_tests.ads/.adb           -- DAL compliance tests
-|   |-- adacovex_types_tests.ads/.adb         -- Type conversion tests
-|   |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (28)
+|   |-- adacovex_dal_tests.ads/.adb           -- DAL compliance tests (2)
+|   |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (21)
+|   |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (40)
 |   |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (24)
 |   |-- adacovex_test_parser_tests.ads/.adb   -- Test-result parser tests (27)
 |   |-- adacovex_config_tests.ads/.adb        -- CLI config tests (8)
@@ -586,6 +586,28 @@ running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 ## Key constraints
 
 - Ada 2012 / SPARK 2014
-- Zero heap allocation (all arrays sized via `Max_*` constants)
-- Fixed-size strings with explicit length fields
-- No dependencies beyond GNAT runtime
+- **Package and subprogram collections** use `Ada.Containers.Vectors`
+  (unbounded, up to `Natural'Last`). No compile-time `Max_Packages` /
+  `Max_Subprogs` limits.
+- Fixed-size string buffers (`Max_Path`, `Max_Line`, etc.) remain bounded.
+- No external dependencies beyond GNAT runtime (`Ada.Containers` is
+  part of the standard Ada runtime library).
+
+## Bounded resources
+
+The following compile-time constants in `src/core/adacovex-types.ads`
+govern fixed-size string/VC buffers (package and subprogram vectors
+are unbounded via `Ada.Containers.Vectors`):
+
+| Constant | Value | Notes |
+|----------|-------|-------|
+| `Max_Line` | 2048 | Source line length |
+| `Max_Path` | 512 | File path length |
+| `Max_VC_Count` | 512 | VCs in GNATprove output |
+| `Max_Hlrs` | 128 | HLR tags per package |
+| `Max_Params` | 8 | Parameters per subprogram |
+| `Max_Desc_Str` | 128 | Subprogram name / description|
+
+Package and subprogram collections grow dynamically via `Ada.Containers.Vectors`
+(heap allocation, up to `Natural'Last` ≈ 2.1B). The fixed-size constants above
+apply only to individual line/path/description buffers.

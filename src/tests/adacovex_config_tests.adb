@@ -22,12 +22,13 @@ package body Adacovex_Config_Tests is
              Emit_Markdown => False,
              MD_Path       => (others => ' '),
              MD_Path_Len   => 0,
-             Verbose       => False,
-             Strict_Mode   => False,
-             Skip_Dir_Ct   => 0,
-             Skip_Dirs     => (others => ' '));
-       begin
-          R.Check (Cfg.Emit_SVG, "Default Emit_SVG is True");
+              Verbose       => False,
+              Strict_Mode   => False,
+              CLI_Error     => False,
+              Skip_Dir_Ct   => 0,
+              Skip_Dirs     => (others => ' '));
+        begin
+           R.Check (Cfg.Emit_SVG, "Default Emit_SVG is True");
           R.Check
             (Cfg.SVG_Path_Len = 0,
              "Default SVG_Path_Len is 0 (set later if emit)");
@@ -55,12 +56,13 @@ package body Adacovex_Config_Tests is
              Emit_Markdown => False,
              MD_Path       => (others => ' '),
              MD_Path_Len   => 0,
-             Verbose       => False,
-             Strict_Mode   => False,
-             Skip_Dir_Ct   => 0,
-             Skip_Dirs     => (others => ' '));
-      begin
-         --  No_SVG=True means Emit_SVG should be forced False by Parse_CLI
+              Verbose       => False,
+              Strict_Mode   => False,
+              CLI_Error     => False,
+              Skip_Dir_Ct   => 0,
+              Skip_Dirs     => (others => ' '));
+       begin
+          --  No_SVG=True means Emit_SVG should be forced False by Parse_CLI
          R.Check (Cfg.No_SVG, "No_SVG field works");
       end;
 

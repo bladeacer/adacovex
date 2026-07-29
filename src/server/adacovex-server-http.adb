@@ -293,9 +293,9 @@ package body Adacovex.Server.HTTP is
       if Path = "/" then
          Send_Response
            (Channel, "200 OK", "text/html",
-            Adacovex.Renderers.HTML.Render_Dashboard
-              (State.Doc_Metrics, State.Proof, State.Tests,
-               State.DAL_Assess, State.Packages, State.Pkg_Count),
+             Adacovex.Renderers.HTML.Render_Dashboard
+               (State.Doc_Metrics, State.Proof, State.Tests,
+                State.DAL_Assess, State.Packages),
             Is_KA);
       elsif Path = "/badge/spark.svg" then
          Send_Response

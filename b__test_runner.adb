@@ -33,28 +33,30 @@ package body ada_main is
    E130 : Short_Integer; pragma Import (Ada, E130, "ada__finalization_E");
    E129 : Short_Integer; pragma Import (Ada, E129, "system__file_io_E");
    E190 : Short_Integer; pragma Import (Ada, E190, "system__storage_pools_E");
+   E204 : Short_Integer; pragma Import (Ada, E204, "system__storage_pools__subpools_E");
    E177 : Short_Integer; pragma Import (Ada, E177, "ada__strings__unbounded_E");
    E152 : Short_Integer; pragma Import (Ada, E152, "ada__calendar_E");
    E158 : Short_Integer; pragma Import (Ada, E158, "ada__calendar__time_zones_E");
    E119 : Short_Integer; pragma Import (Ada, E119, "ada__text_io_E");
+   E200 : Short_Integer; pragma Import (Ada, E200, "system__pool_global_E");
    E188 : Short_Integer; pragma Import (Ada, E188, "system__regexp_E");
    E150 : Short_Integer; pragma Import (Ada, E150, "ada__directories_E");
    E140 : Short_Integer; pragma Import (Ada, E140, "adacovex__test_support_E");
    E198 : Short_Integer; pragma Import (Ada, E198, "adacovex__types_E");
    E146 : Short_Integer; pragma Import (Ada, E146, "adacovex__config_E");
-   E208 : Short_Integer; pragma Import (Ada, E208, "adacovex__parsers__do178c_E");
-   E214 : Short_Integer; pragma Import (Ada, E214, "adacovex__parsers__gnatprove_E");
-   E210 : Short_Integer; pragma Import (Ada, E210, "adacovex__parsers__source_E");
-   E203 : Short_Integer; pragma Import (Ada, E203, "adacovex__compliance__dal_E");
-   E225 : Short_Integer; pragma Import (Ada, E225, "adacovex__parsers__tests_E");
-   E219 : Short_Integer; pragma Import (Ada, E219, "adacovex__renderers__svg_E");
+   E218 : Short_Integer; pragma Import (Ada, E218, "adacovex__parsers__do178c_E");
+   E224 : Short_Integer; pragma Import (Ada, E224, "adacovex__parsers__gnatprove_E");
+   E220 : Short_Integer; pragma Import (Ada, E220, "adacovex__parsers__source_E");
+   E213 : Short_Integer; pragma Import (Ada, E213, "adacovex__compliance__dal_E");
+   E235 : Short_Integer; pragma Import (Ada, E235, "adacovex__parsers__tests_E");
+   E229 : Short_Integer; pragma Import (Ada, E229, "adacovex__renderers__svg_E");
    E144 : Short_Integer; pragma Import (Ada, E144, "adacovex_config_tests_E");
-   E200 : Short_Integer; pragma Import (Ada, E200, "adacovex_dal_tests_E");
-   E212 : Short_Integer; pragma Import (Ada, E212, "adacovex_prove_tests_E");
-   E216 : Short_Integer; pragma Import (Ada, E216, "adacovex_renderer_svg_tests_E");
-   E221 : Short_Integer; pragma Import (Ada, E221, "adacovex_scanner_tests_E");
-   E223 : Short_Integer; pragma Import (Ada, E223, "adacovex_testparser_tests_E");
-   E227 : Short_Integer; pragma Import (Ada, E227, "adacovex_types_tests_E");
+   E210 : Short_Integer; pragma Import (Ada, E210, "adacovex_dal_tests_E");
+   E222 : Short_Integer; pragma Import (Ada, E222, "adacovex_prove_tests_E");
+   E226 : Short_Integer; pragma Import (Ada, E226, "adacovex_renderer_svg_tests_E");
+   E231 : Short_Integer; pragma Import (Ada, E231, "adacovex_scanner_tests_E");
+   E233 : Short_Integer; pragma Import (Ada, E233, "adacovex_testparser_tests_E");
+   E237 : Short_Integer; pragma Import (Ada, E237, "adacovex_types_tests_E");
 
    Sec_Default_Sized_Stacks : array (1 .. 1) of aliased System.Secondary_Stack.SS_Stack (System.Parameters.Runtime_Default_Sec_Stack_Size);
 
@@ -65,53 +67,74 @@ package body ada_main is
 
    procedure finalize_library is
    begin
-      E140 := E140 - 1;
+      E198 := E198 - 1;
       declare
          procedure F1;
-         pragma Import (Ada, F1, "adacovex__test_support__finalize_spec");
+         pragma Import (Ada, F1, "adacovex__types__finalize_spec");
       begin
          F1;
       end;
+      E140 := E140 - 1;
       declare
          procedure F2;
-         pragma Import (Ada, F2, "ada__directories__finalize_body");
+         pragma Import (Ada, F2, "adacovex__test_support__finalize_spec");
       begin
-         E150 := E150 - 1;
          F2;
       end;
       declare
          procedure F3;
-         pragma Import (Ada, F3, "ada__directories__finalize_spec");
+         pragma Import (Ada, F3, "ada__directories__finalize_body");
       begin
+         E150 := E150 - 1;
          F3;
       end;
-      E188 := E188 - 1;
       declare
          procedure F4;
-         pragma Import (Ada, F4, "system__regexp__finalize_spec");
+         pragma Import (Ada, F4, "ada__directories__finalize_spec");
       begin
          F4;
       end;
-      E119 := E119 - 1;
+      E188 := E188 - 1;
       declare
          procedure F5;
-         pragma Import (Ada, F5, "ada__text_io__finalize_spec");
+         pragma Import (Ada, F5, "system__regexp__finalize_spec");
       begin
          F5;
       end;
-      E177 := E177 - 1;
+      E200 := E200 - 1;
       declare
          procedure F6;
-         pragma Import (Ada, F6, "ada__strings__unbounded__finalize_spec");
+         pragma Import (Ada, F6, "system__pool_global__finalize_spec");
       begin
          F6;
       end;
+      E119 := E119 - 1;
       declare
          procedure F7;
-         pragma Import (Ada, F7, "system__file_io__finalize_body");
+         pragma Import (Ada, F7, "ada__text_io__finalize_spec");
+      begin
+         F7;
+      end;
+      E177 := E177 - 1;
+      declare
+         procedure F8;
+         pragma Import (Ada, F8, "ada__strings__unbounded__finalize_spec");
+      begin
+         F8;
+      end;
+      E204 := E204 - 1;
+      declare
+         procedure F9;
+         pragma Import (Ada, F9, "system__storage_pools__subpools__finalize_spec");
+      begin
+         F9;
+      end;
+      declare
+         procedure F10;
+         pragma Import (Ada, F10, "system__file_io__finalize_body");
       begin
          E129 := E129 - 1;
-         F7;
+         F10;
       end;
       declare
          procedure Reraise_Library_Exception_If_Any;
@@ -272,6 +295,8 @@ package body ada_main is
       E129 := E129 + 1;
       System.Storage_Pools'Elab_Spec;
       E190 := E190 + 1;
+      System.Storage_Pools.Subpools'Elab_Spec;
+      E204 := E204 + 1;
       Ada.Strings.Unbounded'Elab_Spec;
       E177 := E177 + 1;
       Ada.Calendar'Elab_Spec;
@@ -282,6 +307,8 @@ package body ada_main is
       Ada.Text_Io'Elab_Spec;
       Ada.Text_Io'Elab_Body;
       E119 := E119 + 1;
+      System.Pool_Global'Elab_Spec;
+      E200 := E200 + 1;
       System.Regexp'Elab_Spec;
       E188 := E188 + 1;
       Ada.Directories'Elab_Spec;
@@ -290,21 +317,22 @@ package body ada_main is
       Adacovex.Test_Support'Elab_Spec;
       Adacovex.Test_Support'Elab_Body;
       E140 := E140 + 1;
+      Adacovex.Types'Elab_Spec;
       E198 := E198 + 1;
       E146 := E146 + 1;
-      E208 := E208 + 1;
-      E214 := E214 + 1;
-      E210 := E210 + 1;
-      E203 := E203 + 1;
-      E225 := E225 + 1;
-      E219 := E219 + 1;
+      E218 := E218 + 1;
+      E224 := E224 + 1;
+      E220 := E220 + 1;
+      E213 := E213 + 1;
+      E235 := E235 + 1;
+      E229 := E229 + 1;
       E144 := E144 + 1;
-      E200 := E200 + 1;
-      E212 := E212 + 1;
-      E216 := E216 + 1;
-      E221 := E221 + 1;
-      E223 := E223 + 1;
-      E227 := E227 + 1;
+      E210 := E210 + 1;
+      E222 := E222 + 1;
+      E226 := E226 + 1;
+      E231 := E231 + 1;
+      E233 := E233 + 1;
+      E237 := E237 + 1;
    end adainit;
 
    procedure Ada_Main_Program;

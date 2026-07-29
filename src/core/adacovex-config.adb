@@ -43,11 +43,23 @@ package body Adacovex.Config is
       end if;
    end Add_Skip_Dir;
 
-   function Parse_CLI return CLI_Config is
-      Cfg   : CLI_Config;
-      Count : constant Natural := Ada.Command_Line.Argument_Count;
-      I     : Positive := 1;
-   begin
+    procedure Set_Error (Cfg : in out CLI_Config; Msg : String) is
+    begin
+       Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "Error: " & Msg);
+       Cfg.CLI_Error := True;
+    end Set_Error;
+
+    function Is_Valid_DAL (S : String) return Boolean is
+    begin
+       return S'Length = 1
+         and then (S (S'First) in 'A' .. 'E' | 'a' .. 'e');
+    end Is_Valid_DAL;
+
+    function Parse_CLI return CLI_Config is
+       Cfg   : CLI_Config;
+       Count : constant Natural := Ada.Command_Line.Argument_Count;
+       I     : Positive := 1;
+    begin
       Cfg.Target_Len := 0;
       Cfg.Manifest_Len := 0;
       Cfg.SVG_Path_Len := 0;
@@ -82,14 +94,31 @@ package body Adacovex.Config is
                  (Cfg.Manifest_Path,
                   Cfg.Manifest_Len,
                   A (A'First + 11 .. A'Last));
-            elsif A = "--dal" then
-               I := I + 1;
-               if I <= Count then
-                  Cfg.DAL_Target :=
-                    Types.To_DAL (Ada.Command_Line.Argument (I));
-               end if;
-            elsif Has_Prefix (A, "--dal=") then
-               Cfg.DAL_Target := Types.To_DAL (A (A'First + 6 .. A'Last));
+             elsif A = "--dal" then
+                I := I + 1;
+                if I <= Count then
+                   declare
+                      Val : constant String := Ada.Command_Line.Argument (I);
+                   begin
+                      if Is_Valid_DAL (Val) then
+                         Cfg.DAL_Target := Types.To_DAL (Val);
+                      else
+                         Set_Error (Cfg, "--dal must be A, B, C, D, or E (got: "
+                                    & Val & ")");
+                      end if;
+                   end;
+                end if;
+             elsif Has_Prefix (A, "--dal=") then
+                declare
+                   Val : constant String := A (A'First + 6 .. A'Last);
+                begin
+                   if Is_Valid_DAL (Val) then
+                      Cfg.DAL_Target := Types.To_DAL (Val);
+                   else
+                      Set_Error (Cfg, "--dal must be A, B, C, D, or E (got: "
+                                 & Val & ")");
+                   end if;
+                end;
             elsif A = "--serve" then
                Cfg.Serve_Mode := True;
             elsif A = "--port" then

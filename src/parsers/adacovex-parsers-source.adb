@@ -165,28 +165,35 @@ package body Adacovex.Parsers.Source is
       DT_Len   : Natural;
       DT_Value : String (1 .. Types.Max_Desc_Str);
       DV_Len   : Natural;
-      Line_Num : Natural := 0;
-      Subp_Idx : Natural := 0;
-      In_Subp  : Boolean := False;
+       Line_Num : Natural := 0;
+       In_Subp  : Boolean := False;
 
-      Pending_Has_Doc    : Boolean := False;
-      Pending_Param_Ct   : Natural := 0;
-      Pending_Has_Return : Boolean := False;
+       Pending_Has_Doc    : Boolean := False;
+       Pending_Param_Ct   : Natural := 0;
+       Pending_Has_Return : Boolean := False;
 
-      procedure Flush_Pending (Idx : Natural) is
-      begin
-         if Pending_Has_Doc and then Idx in 1 .. Types.Max_Subprogs then
-            Pkg.Subprogram_List (Idx).Has_Docstring := True;
-            Pkg.Subprogram_List (Idx).Doc_Param_Ct :=
-              Pkg.Subprogram_List (Idx).Doc_Param_Ct + Pending_Param_Ct;
-            if Pending_Has_Return then
-               Pkg.Subprogram_List (Idx).Doc_Return := True;
-            end if;
-            Pending_Has_Doc := False;
-            Pending_Param_Ct := 0;
-            Pending_Has_Return := False;
-         end if;
-      end Flush_Pending;
+       procedure Flush_Pending is
+       begin
+          if Pending_Has_Doc and then Integer (Pkg.Subprograms.Length) > 0 then
+             declare
+                Idx : constant Positive := Positive (Pkg.Subprograms.Length);
+             begin
+             declare
+                Subp : Types.Subprogram_Info := Pkg.Subprograms (Idx);
+             begin
+                Subp.Has_Docstring := True;
+                Subp.Doc_Param_Ct := Subp.Doc_Param_Ct + Pending_Param_Ct;
+                if Pending_Has_Return then
+                   Subp.Doc_Return := True;
+                end if;
+                Pkg.Subprograms.Replace_Element (Idx, Subp);
+             end;
+             end;
+             Pending_Has_Doc := False;
+             Pending_Param_Ct := 0;
+             Pending_Has_Return := False;
+          end if;
+       end Flush_Pending;
    begin
       Pkg := (others => <>);
 
@@ -225,8 +232,8 @@ package body Adacovex.Parsers.Source is
          Get_Line (F, Line, Last);
          Line_Num := Line_Num + 1;
 
-         if Has_HLR_Tag (Line (1 .. Last), HLR_Buf, HLR_Len) then
-            if Subp_Idx = 0 then
+          if Has_HLR_Tag (Line (1 .. Last), HLR_Buf, HLR_Len) then
+             if not In_Subp then
                if Pkg.Total_HLR_Tags < Types.Max_Hlrs then
                   Pkg.Total_HLR_Tags := Pkg.Total_HLR_Tags + 1;
                   declare
@@ -241,12 +248,14 @@ package body Adacovex.Parsers.Source is
             end if;
          end if;
 
-          if Is_Subprogram_Decl (Line (1 .. Last)) then
-             if Subp_Idx < Types.Max_Subprogs then
-                Subp_Idx := Subp_Idx + 1;
-                Pkg.Subprogram_List (Subp_Idx).Line_Number := Line_Num;
-                Flush_Pending (Subp_Idx);
-                In_Subp := True;
+           if Is_Subprogram_Decl (Line (1 .. Last)) then
+               Pkg.Subprograms.Append (New_Item => Types.Subprogram_Info'(others => <>));
+              declare
+                 Subp_Idx : constant Positive := Positive (Pkg.Subprograms.Length);
+              begin
+                 Pkg.Subprograms (Subp_Idx).Line_Number := Line_Num;
+                 Flush_Pending;
+                 In_Subp := True;
 
                declare
                   Trim     : String (1 .. Last);
@@ -295,13 +304,13 @@ package body Adacovex.Parsers.Source is
                      end if;
                   end loop;
 
-                  Pkg.Subprogram_List (Subp_Idx).Name_Len := SNLen;
-                  for J in 1 .. SNLen loop
-                     Pkg.Subprogram_List (Subp_Idx).Name (J) := SName (J);
-                  end loop;
-               end;
-            end if;
-         end if;
+                   Pkg.Subprograms (Subp_Idx).Name_Len := SNLen;
+                   for J in 1 .. SNLen loop
+                      Pkg.Subprograms (Subp_Idx).Name (J) := SName (J);
+                   end loop;
+                end;
+             end;
+          end if;
 
           if Has_Docstring_Tag
                (Line (1 .. Last), DT_Type, DT_Len, DT_Value, DV_Len)
@@ -334,12 +343,11 @@ package body Adacovex.Parsers.Source is
           end if;
       end loop;
 
-      Flush_Pending (Subp_Idx);
+       Flush_Pending;
 
-      Close (F);
+       Close (F);
 
-      Pkg.Subprogram_Count := Subp_Idx;
-      Success := True;
+       Success := True;
    end Scan_Ads_File;
 
    function Is_Skipped_Dir (Name : String; Skip_List : String) return Boolean is
@@ -388,15 +396,13 @@ package body Adacovex.Parsers.Source is
    procedure Scan_Project
      (Target_Dir : String;
       Skip_List  : String;
-      Packages   : out Types.Package_Array;
-      Pkg_Count  : out Natural)
+      Packages   : in out Types.Package_Vectors.Vector)
    is
-      Scan_Success : Boolean;
-
       procedure Search_Dir (Dir : String) is
          use Ada.Directories;
          Search : Search_Type;
          Ent    : Directory_Entry_Type;
+         Pkg    : Types.Package_Info;
          OK     : Boolean;
       begin
          Start_Search (Search, Dir, "");
@@ -431,9 +437,9 @@ package body Adacovex.Parsers.Source is
                                   or else Name (Name'First .. Name'First + 2)
                                           /= "b__")
                       then
-                         if Pkg_Count < Types.Max_Packages then
-                            Pkg_Count := Pkg_Count + 1;
-                            Scan_Ads_File (Path, Packages (Pkg_Count), OK);
+                         Scan_Ads_File (Path, Pkg, OK);
+                         if OK then
+                            Packages.Append (Pkg);
                          end if;
                       end if;
                    end;
@@ -444,7 +450,6 @@ package body Adacovex.Parsers.Source is
       end Search_Dir;
 
    begin
-      Pkg_Count := 0;
       Search_Dir (Target_Dir);
    end Scan_Project;
 
@@ -474,8 +479,7 @@ package body Adacovex.Parsers.Source is
 
    procedure Apply_Patches
      (Target_Dir : String;
-      Packages   : in out Types.Package_Array;
-      Pkg_Count  : in out Natural)
+      Packages   : in out Types.Package_Vectors.Vector)
    is
       Patch_Dir : constant String := Target_Dir & "/.adacovex/patches";
       OK       : Boolean;
@@ -483,78 +487,81 @@ package body Adacovex.Parsers.Source is
       if not Ada.Directories.Exists (Patch_Dir) then
          return;
       end if;
-      for P in 1 .. Pkg_Count loop
+      for P in 1 .. Integer (Packages.Length) loop
          declare
             Pkg_Path : String renames
               Packages (P).File_Path (1 .. Packages (P).Path_Len);
-             Rel      : constant String := Relative_Path (Pkg_Path, Target_Dir);
-             Tmp_Pkg  : Types.Package_Info;
-          begin
-             if Rel'Length > 0 then
-                declare
-                   Patch : constant String := Patch_Dir & "/" & Rel;
-                begin
-                   if Ada.Directories.Exists (Patch) then
-                      Scan_Ads_File (Patch, Tmp_Pkg, OK);
-                      if OK then
-                         for S in 1 .. Tmp_Pkg.Subprogram_Count loop
-                            for O in 1 .. Packages (P).Subprogram_Count loop
-                               if Tmp_Pkg.Subprogram_List (S).Name_Len =
-                                   Packages (P).Subprogram_List (O).Name_Len
-                                then
-                                   declare
-                                      Matches : Boolean := True;
-                                   begin
-                                      for C in 1 ..
-                                        Tmp_Pkg.Subprogram_List (S).Name_Len
-                                      loop
-                                         if Tmp_Pkg.Subprogram_List (S).Name (C) /=
-                                            Packages (P).Subprogram_List (O).Name (C)
-                                         then
-                                            Matches := False;
-                                            exit;
-                                         end if;
-                                      end loop;
-                                      if Matches
-                                        and then not
-                                          Packages (P).Subprogram_List (O)
-                                            .Has_Docstring
-                                      then
-                                         if Tmp_Pkg.Subprogram_List (S).Has_Docstring
-                                         then
-                                            Packages (P).Subprogram_List (O)
-                                              .Has_Docstring := True;
-                                            Packages (P).Subprogram_List (O)
-                                              .Doc_Param_Ct :=
-                                              Tmp_Pkg.Subprogram_List (S).Doc_Param_Ct;
-                                            Packages (P).Subprogram_List (O)
-                                              .Doc_Return :=
-                                              Tmp_Pkg.Subprogram_List (S).Doc_Return;
-                                         end if;
-                                         exit;
-                                      end if;
-                                   end;
-                                end if;
-                            end loop;
-                         end loop;
-                      end if;
-                   end if;
-                end;
-             end if;
-          end;
-       end loop;
+            Rel      : constant String := Relative_Path (Pkg_Path, Target_Dir);
+            Tmp_Pkg  : Types.Package_Info;
+            Pkg_Copy : Types.Package_Info := Packages (P);
+         begin
+            if Rel'Length > 0 then
+               declare
+                  Patch : constant String := Patch_Dir & "/" & Rel;
+               begin
+                  if Ada.Directories.Exists (Patch) then
+                     Scan_Ads_File (Patch, Tmp_Pkg, OK);
+                     if OK and then
+                        Integer (Tmp_Pkg.Subprograms.Length) > 0
+                     then
+                        for S in 1 .. Integer (Tmp_Pkg.Subprograms.Length) loop
+                           for O in 1 .. Integer (Pkg_Copy.Subprograms.Length) loop
+                              if Tmp_Pkg.Subprograms (S).Name_Len =
+                                  Pkg_Copy.Subprograms (O).Name_Len
+                               then
+                                  declare
+                                     Matches : Boolean := True;
+                                  begin
+                                     for C in 1 ..
+                                       Tmp_Pkg.Subprograms (S).Name_Len
+                                     loop
+                                        if Tmp_Pkg.Subprograms (S).Name (C) /=
+                                           Pkg_Copy.Subprograms (O).Name (C)
+                                        then
+                                           Matches := False;
+                                           exit;
+                                        end if;
+                                     end loop;
+                                     if Matches
+                                       and then not
+                                         Pkg_Copy.Subprograms (O).Has_Docstring
+                                     then
+                                        if Tmp_Pkg.Subprograms (S).Has_Docstring
+                                        then
+                                           Pkg_Copy.Subprograms (O)
+                                             .Has_Docstring := True;
+                                           Pkg_Copy.Subprograms (O)
+                                             .Doc_Param_Ct :=
+                                           Tmp_Pkg.Subprograms (S).Doc_Param_Ct;
+                                           Pkg_Copy.Subprograms (O)
+                                             .Doc_Return :=
+                                           Tmp_Pkg.Subprograms (S).Doc_Return;
+                                        end if;
+                                        exit;
+                                     end if;
+                                  end;
+                               end if;
+                           end loop;
+                        end loop;
+                        Packages.Replace_Element (P, Pkg_Copy);
+                     end if;
+                  end if;
+               end;
+            end if;
+         end;
+      end loop;
    end Apply_Patches;
 
    function Compute_Docstring_Metrics
-     (Packages : Types.Package_Array; Pkg_Count : Natural)
+     (Packages : Types.Package_Vectors.Vector)
       return Types.Docstring_Metrics
    is
       Metrics : Types.Docstring_Metrics;
    begin
-      for P in 1 .. Pkg_Count loop
-         for S in 1 .. Packages (P).Subprogram_Count loop
+      for P in 1 .. Integer (Packages.Length) loop
+         for S in 1 .. Integer (Packages (P).Subprograms.Length) loop
             Metrics.Total_Subprograms := Metrics.Total_Subprograms + 1;
-            if Packages (P).Subprogram_List (S).Has_Docstring then
+            if Packages (P).Subprograms (S).Has_Docstring then
                Metrics.Documented_Subprogs := Metrics.Documented_Subprogs + 1;
             end if;
          end loop;

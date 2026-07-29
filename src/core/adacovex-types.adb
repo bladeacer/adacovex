@@ -1,5 +1,4 @@
 package body Adacovex.Types is
-   pragma SPARK_Mode (On);
 
    function To_String (L : SPARK_Level) return String is
    begin

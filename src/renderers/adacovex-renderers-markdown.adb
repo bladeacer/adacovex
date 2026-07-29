@@ -8,8 +8,7 @@ package body Adacovex.Renderers.Markdown is
       Proof       : Types.Proof_Summary;
       Tests       : Types.Test_Summary;
       DAL_Assess  : Types.DAL_Assessment;
-      Packages    : Types.Package_Array;
-      Pkg_Count   : Natural)
+      Packages    : Types.Package_Vectors.Vector)
    is
       F : Ada.Text_IO.File_Type;
    begin
@@ -21,7 +20,7 @@ package body Adacovex.Renderers.Markdown is
       Ada.Text_IO.Put_Line (F, "| Metric | Value |");
       Ada.Text_IO.Put_Line (F, "|--------|-------|");
       Ada.Text_IO.Put_Line
-        (F, "| Packages Scanned | " & Natural'Image (Pkg_Count) & " |");
+        (F, "| Packages Scanned | " & Integer'Image (Integer (Packages.Length)) & " |");
       Ada.Text_IO.Put_Line
         (F,
          "| Total Subprograms | "
@@ -159,7 +158,7 @@ package body Adacovex.Renderers.Markdown is
    end Generate_Verification_Report;
 
    procedure Generate_Trace_Matrix
-     (Path : String; Packages : Types.Package_Array; Pkg_Count : Natural)
+     (Path : String; Packages : Types.Package_Vectors.Vector)
    is
       F : Ada.Text_IO.File_Type;
    begin
@@ -168,7 +167,7 @@ package body Adacovex.Renderers.Markdown is
       Ada.Text_IO.Put_Line (F, "");
       Ada.Text_IO.Put_Line (F, "| Package | HLR Tags |");
       Ada.Text_IO.Put_Line (F, "|---------|-----------|");
-      for P in 1 .. Pkg_Count loop
+      for P in 1 .. Integer (Packages.Length) loop
          if Packages (P).Total_HLR_Tags > 0 then
             Ada.Text_IO.Put
               (F,

@@ -25,8 +25,7 @@ procedure Adacovex_Main is
 
    Use_Color : Boolean := False;
 
-   Packages  : Package_Array;
-   Pkg_Count : Natural;
+   Packages  : Package_Vectors.Vector;
 
    Doc_Metrics : Docstring_Metrics;
    Proof       : Proof_Summary;
@@ -42,11 +41,16 @@ procedure Adacovex_Main is
 
    Success  : Boolean;
    Exit_St  : Ada.Command_Line.Exit_Status := 0;
-begin
-   Cfg := Adacovex.Config.Parse_CLI;
+   begin
+      Cfg := Adacovex.Config.Parse_CLI;
 
-   --  Determine ANSI color support (assume TTY, overridden by NO_COLOR)
-   Use_Color := not Ada.Environment_Variables.Exists ("NO_COLOR");
+      if Cfg.CLI_Error then
+         Ada.Command_Line.Set_Exit_Status (1);
+         return;
+      end if;
+
+      --  Determine ANSI color support (assume TTY, overridden by NO_COLOR)
+      Use_Color := not Ada.Environment_Variables.Exists ("NO_COLOR");
 
    TLen := Cfg.Target_Len;
    for I in 1 .. TLen loop
@@ -82,19 +86,19 @@ begin
          end loop;
       end if;
       Adacovex.Parsers.Source.Scan_Project
-        (Target (1 .. TLen), Skip_List (1 .. SLen), Packages, Pkg_Count);
+        (Target (1 .. TLen), Skip_List (1 .. SLen), Packages);
    end;
-   Verbose ("  found " & Natural'Image (Pkg_Count) & " packages");
+   Verbose ("  found " & Natural'Image (Natural (Packages.Length)) & " packages");
 
    -- Apply docstring patches when in strict mode
    if Cfg.Strict_Mode then
       Verbose ("step 1b: applying docstring patches...");
       Adacovex.Parsers.Source.Apply_Patches
-        (Target (1 .. TLen), Packages, Pkg_Count);
+        (Target (1 .. TLen), Packages);
    end if;
 
    Doc_Metrics :=
-     Adacovex.Parsers.Source.Compute_Docstring_Metrics (Packages, Pkg_Count);
+     Adacovex.Parsers.Source.Compute_Docstring_Metrics (Packages);
    Verbose ("  docstrings:"
             & Natural'Image (Doc_Metrics.Documented_Subprogs) & "/"
             & Natural'Image (Doc_Metrics.Total_Subprograms));
@@ -117,11 +121,10 @@ begin
 
    -- Step 4: Assess DAL compliance
    Verbose ("step 4/8: assessing DAL compliance...");
-   Adacovex.Compliance.DAL.Assess_DAL
+    Adacovex.Compliance.DAL.Assess_DAL
      (Cfg.DAL_Target,
       Target (1 .. TLen),
       Packages,
-      Pkg_Count,
       Proof,
       Tests,
       DAL_Assess);
@@ -134,8 +137,8 @@ begin
 
    -- Step 5: Render ANSI summary (stdout)
    Verbose ("step 5/8: rendering ANSI report...");
-   Adacovex.Renderers.ANSI.Render_Summary
-     (Doc_Metrics, Proof, Tests, DAL_Assess, Packages, Pkg_Count, Use_Color);
+    Adacovex.Renderers.ANSI.Render_Summary
+      (Doc_Metrics, Proof, Tests, DAL_Assess, Packages, Use_Color);
 
    -- Step 6: Emit SVG badges if requested
    if Cfg.Emit_SVG then
@@ -165,16 +168,15 @@ begin
       declare
          Dir : String renames Cfg.MD_Path (1 .. Cfg.MD_Path_Len);
       begin
-         Adacovex.Renderers.Markdown.Generate_Verification_Report
-           (Dir & "/VERIFICATION.md",
-            Doc_Metrics,
-            Proof,
-            Tests,
-            DAL_Assess,
-            Packages,
-            Pkg_Count);
+          Adacovex.Renderers.Markdown.Generate_Verification_Report
+            (Dir & "/VERIFICATION.md",
+             Doc_Metrics,
+             Proof,
+             Tests,
+             DAL_Assess,
+             Packages);
          Adacovex.Renderers.Markdown.Generate_Trace_Matrix
-           (Dir & "/TRACE.md", Packages, Pkg_Count);
+           (Dir & "/TRACE.md", Packages);
       end;
       Verbose ("  markdown reports written to " & Cfg.MD_Path (1 .. Cfg.MD_Path_Len));
    end if;
@@ -190,9 +192,8 @@ begin
          State.Doc_Metrics := Doc_Metrics;
          State.Proof := Proof;
          State.Tests := Tests;
-         State.DAL_Assess := DAL_Assess;
-         State.Packages := Packages;
-         State.Pkg_Count := Pkg_Count;
+          State.DAL_Assess := DAL_Assess;
+          State.Packages := Packages;
          Adacovex.Server.HTTP.Start (State);
       end;
    end if;

@@ -8,8 +8,7 @@ package body Adacovex.Renderers.HTML is
       Proof       : Types.Proof_Summary;
       Tests       : Types.Test_Summary;
       DAL_Assess  : Types.DAL_Assessment;
-      Packages    : Types.Package_Array;
-      Pkg_Count   : Natural) return String
+      Packages    : Types.Package_Vectors.Vector) return String
    is
       Result : String (1 .. 32768);
       Pos    : Natural := 1;
@@ -82,7 +81,7 @@ package body Adacovex.Renderers.HTML is
       Put ("<h2>Source Overview</h2>");
       Put ("<table><tr><th>Metric</th><th>Value</th></tr>");
       Put ("<tr><td>Packages Scanned</td><td>");
-      Put (Natural'Image (Pkg_Count));
+      Put (Integer'Image (Integer (Packages.Length)));
       Put ("</td></tr>");
       Put ("<tr><td>Total Subprograms</td><td>");
       Put (Natural'Image (Doc_Metrics.Total_Subprograms));
@@ -193,7 +192,7 @@ package body Adacovex.Renderers.HTML is
       Put ("<div class=""card"">");
       Put ("<h2>HLR Traceability</h2>");
       Put ("<table><tr><th>Package</th><th>HLR Tags</th></tr>");
-      for P in 1 .. Pkg_Count loop
+      for P in 1 .. Integer (Packages.Length) loop
          if Packages (P).Total_HLR_Tags > 0 then
             Put ("<tr><td>");
             Put (Packages (P).Name (1 .. Packages (P).Name_Len));

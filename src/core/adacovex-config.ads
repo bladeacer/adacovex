@@ -25,6 +25,7 @@ package Adacovex.Config is
       MD_Path_Len     : Natural := 0;
       Verbose         : Boolean := False;
       Strict_Mode     : Boolean := True;
+      CLI_Error       : Boolean := False;
       Skip_Dir_Ct     : Natural := 0;
       Skip_Dirs       : Types.Name_Field;
    end record;
