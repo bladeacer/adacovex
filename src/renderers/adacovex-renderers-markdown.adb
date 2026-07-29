@@ -90,7 +90,7 @@ package body Adacovex.Renderers.Markdown is
       Ada.Text_IO.Put_Line (F, "");
       Ada.Text_IO.Put_Line (F, "| Category | Tests | Status |");
       Ada.Text_IO.Put_Line (F, "|----------|-------|--------|");
-      for C in 1 .. Tests.Category_Count loop
+       for C in 1 .. Integer (Tests.Categories.Length) loop
          Ada.Text_IO.Put_Line
            (F,
             "| "
@@ -144,13 +144,12 @@ package body Adacovex.Renderers.Markdown is
          & (if DAL_Assess.Min_SPARK_Level_Met then "Yes" else "No")
          & " |");
 
-      if DAL_Assess.Failed_Count > 0 then
-         Ada.Text_IO.Put_Line (F, "");
-         Ada.Text_IO.Put_Line (F, "### Failure Reasons");
-         for R in 1 .. DAL_Assess.Failed_Count loop
-            Ada.Text_IO.Put_Line
-              (F,
-               "- " & DAL_Assess.Failed_Reasons (R) (1 .. Types.Max_Desc_Str));
+       if not DAL_Assess.Failed_Reasons.Is_Empty then
+          Ada.Text_IO.Put_Line (F, "");
+          Ada.Text_IO.Put_Line (F, "### Failure Reasons");
+          for R in 1 .. Integer (DAL_Assess.Failed_Reasons.Length) loop
+             Ada.Text_IO.Put_Line
+               (F, "- " & DAL_Assess.Failed_Reasons (R));
          end loop;
       end if;
 
@@ -168,11 +167,11 @@ package body Adacovex.Renderers.Markdown is
       Ada.Text_IO.Put_Line (F, "| Package | HLR Tags |");
       Ada.Text_IO.Put_Line (F, "|---------|-----------|");
       for P in 1 .. Integer (Packages.Length) loop
-         if Packages (P).Total_HLR_Tags > 0 then
-            Ada.Text_IO.Put
-              (F,
-               "| " & Packages (P).Name (1 .. Packages (P).Name_Len) & " | ");
-            for T in 1 .. Packages (P).Total_HLR_Tags loop
+          if not Packages (P).HLR_Tags.Is_Empty then
+             Ada.Text_IO.Put
+               (F,
+                "| " & Packages (P).Name (1 .. Packages (P).Name_Len) & " | ");
+             for T in 1 .. Integer (Packages (P).HLR_Tags.Length) loop
                if T > 1 then
                   Ada.Text_IO.Put (F, ", ");
                end if;

@@ -8,19 +8,18 @@ package body Adacovex_DAL_Tests is
       declare
          Assessment : DAL_Assessment;
       begin
-         Assessment :=
-           (Target_DAL             => DAL_C,
-            Status                 => Achieved,
-            HLR_Total              => 10,
-            HLR_Found              => 10,
-            LLR_Total              => 5,
-            LLR_Found              => 5,
-            All_Subprograms_Traced => True,
-            Orphan_Tags            => False,
-            Tests_Passing          => True,
-            Min_SPARK_Level_Met    => True,
-            Failed_Reasons         => (others => (others => ' ')),
-            Failed_Count           => 0);
+      Assessment :=
+            (Target_DAL             => DAL_C,
+             Status                 => Achieved,
+             HLR_Total              => 10,
+             HLR_Found              => 10,
+             LLR_Total              => 5,
+             LLR_Found              => 5,
+             All_Subprograms_Traced => True,
+             Orphan_Tags            => False,
+             Tests_Passing          => True,
+             Min_SPARK_Level_Met    => True,
+             Failed_Reasons         => DAL_Failure_Vectors.Empty_Vector);
          R.Check
            (Adacovex.Compliance.DAL.Is_DAL_Achieved (Assessment),
             "Is_DAL_Achieved True when Status = Achieved");
@@ -29,19 +28,18 @@ package body Adacovex_DAL_Tests is
       declare
          Assessment : DAL_Assessment;
       begin
-         Assessment :=
-           (Target_DAL             => DAL_C,
-            Status                 => Unmet,
-            HLR_Total              => 10,
-            HLR_Found              => 5,
-            LLR_Total              => 5,
-            LLR_Found              => 3,
-            All_Subprograms_Traced => False,
-            Orphan_Tags            => True,
-            Tests_Passing          => False,
-            Min_SPARK_Level_Met    => False,
-            Failed_Reasons         => (others => (others => ' ')),
-            Failed_Count           => 3);
+      Assessment :=
+            (Target_DAL             => DAL_C,
+             Status                 => Unmet,
+             HLR_Total              => 10,
+             HLR_Found              => 5,
+             LLR_Total              => 5,
+             LLR_Found              => 3,
+             All_Subprograms_Traced => False,
+             Orphan_Tags            => True,
+             Tests_Passing          => False,
+             Min_SPARK_Level_Met    => False,
+             Failed_Reasons         => DAL_Failure_Vectors.Empty_Vector);
          R.Check
            (not Adacovex.Compliance.DAL.Is_DAL_Achieved (Assessment),
             "Is_DAL_Achieved False when Status = Unmet");

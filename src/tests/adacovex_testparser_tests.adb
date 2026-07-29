@@ -27,7 +27,7 @@ package body Adacovex_TestParser_Tests is
       R.Check (Success, "Test 1: parse succeeded");
       R.Check (Summary.Total_Passed = 21, "Test 1: Total_Passed = 21");
       R.Check (Summary.Total_Failed = 2, "Test 1: Total_Failed = 2");
-      R.Check (Summary.Category_Count = 2, "Test 1: Category_Count = 2");
+      R.Check (Natural (Summary.Categories.Length) = 2, "Test 1: Category_Count = 2");
       R.Check
         (Summary.Categories (1).Cat_Len = 17
          and then Summary.Categories (1).Category (1) = 'T',
@@ -71,7 +71,7 @@ package body Adacovex_TestParser_Tests is
       R.Check (Success, "Test 2: parse succeeded");
       R.Check (Summary.Total_Passed = 30, "Test 2: Total_Passed = 30");
       R.Check (Summary.Total_Failed = 0, "Test 2: Total_Failed = 0");
-      R.Check (Summary.Category_Count = 3, "Test 2: Category_Count = 3");
+      R.Check (Natural (Summary.Categories.Length) = 3, "Test 2: Category_Count = 3");
       R.Check
         (Summary.Categories (1).Test_Count = 15
          and then Summary.Categories (1).Status = Pass,
@@ -103,7 +103,7 @@ package body Adacovex_TestParser_Tests is
       R.Check (Success, "Test 3: parse succeeded");
       R.Check (Summary.Total_Passed = 0, "Test 3: Total_Passed = 0");
       R.Check (Summary.Total_Failed = 0, "Test 3: Total_Failed = 0");
-      R.Check (Summary.Category_Count = 0, "Test 3: Category_Count = 0");
+      R.Check (Natural (Summary.Categories.Length) = 0, "Test 3: Category_Count = 0");
 
       begin
          Ada.Directories.Delete_File (Tmp_Path);
@@ -126,7 +126,7 @@ package body Adacovex_TestParser_Tests is
       R.Check (Success, "Test 4: parse succeeded");
       R.Check (Summary.Total_Passed = 0, "Test 4: Total_Passed = 0");
       R.Check (Summary.Total_Failed = 15, "Test 4: Total_Failed = 15");
-      R.Check (Summary.Category_Count = 2, "Test 4: Category_Count = 2");
+      R.Check (Natural (Summary.Categories.Length) = 2, "Test 4: Category_Count = 2");
       R.Check
         (Summary.Categories (1).Status = Fail,
          "Test 4: Cat 1 Status = Fail");

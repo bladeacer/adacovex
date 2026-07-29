@@ -46,7 +46,7 @@ package body Adacovex_Scanner_Tests is
       R.Check (Success, "Test 1: parse succeeded");
       R.Check (Pkg.Name_Len > 0, "Test 1: package name length > 0");
       R.Check (Natural (Pkg.Subprograms.Length) = 3, "Test 1: 3 subprograms found");
-      R.Check (Pkg.Total_HLR_Tags = 1, "Test 1: 1 HLR tag found");
+      R.Check (Natural (Pkg.HLR_Tags.Length) = 1, "Test 1: 1 HLR tag found");
       R.Check
         (Pkg.HLR_Tags (1).Len = 4
          and then Pkg.HLR_Tags (1).Tag (1 .. 4) = "SCAN",
