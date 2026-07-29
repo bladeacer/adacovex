@@ -184,13 +184,14 @@ package body Adacovex.Renderers.SVG is
       end if;
    end Render_Docstring_Badge;
 
-    procedure Write_Badge_To_File (Path : String; SVG_Content : String) is
-       F : Ada.Text_IO.File_Type;
-    begin
-       Ada.Directories.Create_Path (Ada.Directories.Containing_Directory (Path));
-       Ada.Text_IO.Create (F, Ada.Text_IO.Out_File, Path);
-       Ada.Text_IO.Put (F, SVG_Content);
-       Ada.Text_IO.Close (F);
-    end Write_Badge_To_File;
+   procedure Write_Badge_To_File (Path : String; SVG_Content : String) is
+      F : Ada.Text_IO.File_Type;
+   begin
+      Ada.Directories.Create_Path
+        (Ada.Directories.Containing_Directory (Path));
+      Ada.Text_IO.Create (F, Ada.Text_IO.Out_File, Path);
+      Ada.Text_IO.Put (F, SVG_Content);
+      Ada.Text_IO.Close (F);
+   end Write_Badge_To_File;
 
 end Adacovex.Renderers.SVG;

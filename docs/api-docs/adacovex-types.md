@@ -1,7 +1,10 @@
 # Adacovex.Types
 
 All domain types used across the adacovex tool chain.
-Every type is bounded at compile time; no heap allocation is used.
+Package and subprogram collections use Ada.Containers.Vectors
+(unbounded, up to Natural'Last ≈ 2.1B). Fixed-size buffers
+(Max_Path, Max_Line, Max_Desc_Str, etc.) are bounded at compile time
+with generous production-suitable limits (Max_Path=4096, Max_Line=8192).
 HLR-METRICS: Docstring_Metrics type
 HLR-PROOF: Proof_Summary type
 HLR-TEST: Test_Summary type
@@ -43,15 +46,8 @@ All_Subprograms_Traced : Boolean := False;
 Orphan_Tags            : Boolean := False;
 Tests_Passing          : Boolean := False;
 Min_SPARK_Level_Met    : Boolean := False;
-Failed_Reasons         : DAL_Failure_Array;
-Failed_Count           : Natural := 0;
+Failed_Reasons         : DAL_Failure_Vectors.Vector;
 end record;
-```
-
-### type DAL_Failure_Array
-
-```ada
-type DAL_Failure_Array is array (1 .. 16) of Desc_Field;
 ```
 
 ### type DAL_Level
@@ -86,18 +82,6 @@ Coverage_Pct        : Natural := 0;
 end record;
 ```
 
-### type HLR_Index
-
-```ada
-subtype HLR_Index is Positive range 1 .. Max_Hlrs;
-```
-
-### type HLR_Tag_Array
-
-```ada
-type HLR_Tag_Array is array (1 .. Max_Hlrs) of HLR_Tag_Entry;
-```
-
 ### type HLR_Tag_Entry
 
 ```ada
@@ -107,36 +91,22 @@ Len : Natural := 0;
 end record;
 ```
 
-### type LLR_Index
-
-```ada
-subtype LLR_Index is Positive range 1 .. Max_Llrs;
-```
-
 ### type Name_Field
 
 ```ada
 subtype Name_Field is String (1 .. Max_Filename);
 ```
 
-### type Package_Array
-
-```ada
-type Package_Array is array (1 .. Max_Packages) of Package_Info;
-```
-
 ### type Package_Info
 
 ```ada
 type Package_Info is record
-Name             : Name_Field;
-Name_Len         : Natural := 0;
-File_Path        : Path_Field;
-Path_Len         : Natural := 0;
-Subprogram_List  : Subprogram_Array;
-Subprogram_Count : Natural := 0;
-Total_HLR_Tags   : Natural := 0;
-HLR_Tags         : HLR_Tag_Array;
+Name        : Name_Field;
+Name_Len    : Natural := 0;
+File_Path   : Path_Field;
+Path_Len    : Natural := 0;
+Subprograms : Subprogram_Vectors.Vector;
+HLR_Tags    : HLR_Tag_Vectors.Vector;
 end record;
 ```
 
@@ -176,20 +146,14 @@ end record;
 type SPARK_Level is (Stone, Bronze, Silver, Gold, Platinum);
 ```
 
-### type Subprogram_Array
-
-```ada
-type Subprogram_Array is array (1 .. Max_Subprogs) of Subprogram_Info;
-```
-
 ### type Subprogram_Info
 
 ```ada
 type Subprogram_Info is record
 Name          : Desc_Field;
 Name_Len      : Natural := 0;
+Line_Number   : Natural := 0;
 Has_Docstring : Boolean := False;
-Param_Count   : Natural := 0;
 Doc_Param_Ct  : Natural := 0;
 Has_Return    : Boolean := False;
 Doc_Return    : Boolean := False;
@@ -207,12 +171,6 @@ Status     : Test_Status := Pass;
 end record;
 ```
 
-### type Test_Metrics_Array
-
-```ada
-type Test_Metrics_Array is array (1 .. 32) of Test_Metrics;
-```
-
 ### type Test_Status
 
 ```ada
@@ -223,30 +181,10 @@ type Test_Status is (Pass, Fail);
 
 ```ada
 type Test_Summary is record
-Categories     : Test_Metrics_Array;
-Category_Count : Natural := 0;
-Total_Passed   : Natural := 0;
-Total_Failed   : Natural := 0;
+Categories   : Test_Metrics_Vectors.Vector;
+Total_Passed : Natural := 0;
+Total_Failed : Natural := 0;
 end record;
-```
-
-### type VC_Info
-
-```ada
-type VC_Info is record
-Unit       : Desc_Field;
-Unit_Len   : Natural := 0;
-Check_Type : Desc_Field;
-Check_Len  : Natural := 0;
-Status     : Desc_Field;
-Stat_Len   : Natural := 0;
-end record;
-```
-
-### type VC_Vector
-
-```ada
-type VC_Vector is array (1 .. Max_VC_Count) of VC_Info;
 ```
 
 ## Functions

@@ -20,7 +20,10 @@ package body Adacovex.Renderers.Markdown is
       Ada.Text_IO.Put_Line (F, "| Metric | Value |");
       Ada.Text_IO.Put_Line (F, "|--------|-------|");
       Ada.Text_IO.Put_Line
-        (F, "| Packages Scanned | " & Integer'Image (Integer (Packages.Length)) & " |");
+        (F,
+         "| Packages Scanned | "
+         & Integer'Image (Integer (Packages.Length))
+         & " |");
       Ada.Text_IO.Put_Line
         (F,
          "| Total Subprograms | "
@@ -90,7 +93,7 @@ package body Adacovex.Renderers.Markdown is
       Ada.Text_IO.Put_Line (F, "");
       Ada.Text_IO.Put_Line (F, "| Category | Tests | Status |");
       Ada.Text_IO.Put_Line (F, "|----------|-------|--------|");
-       for C in 1 .. Integer (Tests.Categories.Length) loop
+      for C in 1 .. Integer (Tests.Categories.Length) loop
          Ada.Text_IO.Put_Line
            (F,
             "| "
@@ -144,12 +147,11 @@ package body Adacovex.Renderers.Markdown is
          & (if DAL_Assess.Min_SPARK_Level_Met then "Yes" else "No")
          & " |");
 
-       if not DAL_Assess.Failed_Reasons.Is_Empty then
-          Ada.Text_IO.Put_Line (F, "");
-          Ada.Text_IO.Put_Line (F, "### Failure Reasons");
-          for R in 1 .. Integer (DAL_Assess.Failed_Reasons.Length) loop
-             Ada.Text_IO.Put_Line
-               (F, "- " & DAL_Assess.Failed_Reasons (R));
+      if not DAL_Assess.Failed_Reasons.Is_Empty then
+         Ada.Text_IO.Put_Line (F, "");
+         Ada.Text_IO.Put_Line (F, "### Failure Reasons");
+         for R in 1 .. Integer (DAL_Assess.Failed_Reasons.Length) loop
+            Ada.Text_IO.Put_Line (F, "- " & DAL_Assess.Failed_Reasons (R));
          end loop;
       end if;
 
@@ -167,11 +169,11 @@ package body Adacovex.Renderers.Markdown is
       Ada.Text_IO.Put_Line (F, "| Package | HLR Tags |");
       Ada.Text_IO.Put_Line (F, "|---------|-----------|");
       for P in 1 .. Integer (Packages.Length) loop
-          if not Packages (P).HLR_Tags.Is_Empty then
-             Ada.Text_IO.Put
-               (F,
-                "| " & Packages (P).Name (1 .. Packages (P).Name_Len) & " | ");
-             for T in 1 .. Integer (Packages (P).HLR_Tags.Length) loop
+         if not Packages (P).HLR_Tags.Is_Empty then
+            Ada.Text_IO.Put
+              (F,
+               "| " & Packages (P).Name (1 .. Packages (P).Name_Len) & " | ");
+            for T in 1 .. Integer (Packages (P).HLR_Tags.Length) loop
                if T > 1 then
                   Ada.Text_IO.Put (F, ", ");
                end if;

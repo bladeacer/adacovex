@@ -1,16 +1,14 @@
 # Adacovex.Compliance.DAL
 
-Run DAL compliance assessment for any DAL level (A-E).
-Evaluates HLR trace coverage, orphan tag absence, test pass rate,
-and minimum SPARK proof level (per-level criteria). Populates
-Assessment with pass/fail results and detailed failure reasons.
-@param Level  Target DAL level (A-E).
-@param Target_Dir  Project root directory.
-@param Packages  Scanned package array.
-@param Pkg_Count  Number of packages.
-@param Proof_Summary  GNATprove proof results.
-@param Test_Summary  Test run results.
-@param Assessment  Output DAL assessment record.
+DO-178C DAL compliance assessment engine.
+Evaluates HLR trace coverage, orphan tags, test passing status, and
+minimum SPARK proof level to determine Achieved / Unmet status.
+HLR-COMPLIANCE: DAL assessment
+HLR-DAL-A: DAL-A compliance criteria
+HLR-DAL-B: DAL-B compliance criteria
+HLR-DAL-C: DAL-C compliance criteria
+HLR-DAL-D: DAL-D compliance criteria
+HLR-DAL-E: DAL-E compliance criteria
 
 > **Note:** All items in this package are public.
 
@@ -26,14 +24,13 @@ Assessment with pass/fail results and detailed failure reasons.
 
 ## Procedures
 
-### procedure Assess_DAL (Level : Adacovex.Types.DAL_Level; Target_Dir : Standard.String; Packages : Adacovex.Types.Package_Array; Pkg_Count : Standard.Natural; Proof_Summary : Adacovex.Types.Proof_Summary; Test_Summary : Adacovex.Types.Test_Summary; Assessment : Adacovex.Types.DAL_Assessment) `[Pre]`
+### procedure Assess_DAL (Level : Adacovex.Types.DAL_Level; Target_Dir : Standard.String; Packages : Adacovex.Types.Package_Vectors.Vector; Proof_Summary : Adacovex.Types.Proof_Summary; Test_Summary : Adacovex.Types.Test_Summary; Assessment : Adacovex.Types.DAL_Assessment)
 
 | Parameter | Description |
 |-----------|-------------|
 | `Assessment` | Output DAL assessment record. |
 | `Level` | Target DAL level (A-E). |
-| `Packages` | Scanned package array. |
-| `Pkg_Count` | Number of packages. |
+| `Packages` | Scanned package vector. |
 | `Proof_Summary` | GNATprove proof results. |
 | `Target_Dir` | Project root directory. |
 | `Test_Summary` | Test run results. |

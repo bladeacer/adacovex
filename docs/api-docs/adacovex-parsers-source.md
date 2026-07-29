@@ -1,26 +1,43 @@
 # Adacovex.Parsers.Source
 
-Scan a single .ads file, extracting subprogram info and HLR tags.
-File_Path must name a readable .ads file. On success, Pkg is populated
-with subprogram declarations, docstring annotations, and HLR tag entries.
-@param File_Path  Path to .ads file.
-@param Pkg  Output package info.
-@param Success  True if file was successfully parsed.
+Ada source-file scanner.
+Walks a project directory tree, reads every .ads file, extracts
+subprogram declarations, HLR tags, and docstring annotations.
+HLR-SCAN: Source scanning
+
+Supported docstring annotations (placed immediately before a
+subprogram declaration, no intervening blank lines):
+@param Name  Description.       -- Document a formal parameter
+@return Description.            -- Document a function return value
+@field Description.             -- Document a record component
+@formal Name  Description.      -- Document a generic formal
+
+Conventions (following Ada_CRDT style):
+Prefix:  --   (two dashes + two spaces)
+Summary: Capitalized sentence ending with a period.
+Alignment: Two spaces between tag name and description text.
+Placement: Summary lines first, then tag lines, then declaration.
 
 > **Note:** All items in this package are public.
 
 ## Functions
 
-### function Compute_Docstring_Metrics (Packages : Adacovex.Types.Package_Array; Pkg_Count : Standard.Natural) return Adacovex.Types.Docstring_Metrics `[Pre]` `[Post]` `[Global]`
+### function Compute_Docstring_Metrics (Packages : Adacovex.Types.Package_Vectors.Vector) return Adacovex.Types.Docstring_Metrics `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|
-| `Packages` | Array of scanned packages. |
-| `Pkg_Count` | Number of packages in array. |
+| `Packages` | Vector of scanned packages. |
 
 **Returns:** Aggregate docstring-coverage metrics.
 
 ## Procedures
+
+### procedure Apply_Patches (Target_Dir : Standard.String; Packages : Adacovex.Types.Package_Vectors.Vector)
+
+| Parameter | Description |
+|-----------|-------------|
+| `Packages` | In/out vector of scanned packages to patch. |
+| `Target_Dir` | Root directory used for patch path resolution. |
 
 ### procedure Scan_Ads_File (File_Path : Standard.String; Pkg : Adacovex.Types.Package_Info; Success : Standard.Boolean) `[Pre]` `[Post]`
 
@@ -30,10 +47,10 @@ with subprogram declarations, docstring annotations, and HLR tag entries.
 | `Pkg` |  |
 | `Success` |  |
 
-### procedure Scan_Project (Target_Dir : Standard.String; Packages : Adacovex.Types.Package_Array; Pkg_Count : Standard.Natural) `[Pre]` `[Post]`
+### procedure Scan_Project (Target_Dir : Standard.String; Skip_List : Standard.String; Packages : Adacovex.Types.Package_Vectors.Vector)
 
 | Parameter | Description |
 |-----------|-------------|
-| `Packages` | Output array of parsed packages. |
-| `Pkg_Count` | Number of packages found. |
+| `Packages` | Output vector of parsed packages (appended to). |
+| `Skip_List` | Comma-separated directory names to skip (e.g. ".git,obj"). |
 | `Target_Dir` | Root directory to scan recursively. |

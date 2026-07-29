@@ -28,9 +28,7 @@ package body Adacovex.Server.HTTP is
    function Is_Header (Line : String; Name : String) return Boolean;
 
    procedure Handle_Request
-     (Channel    : Socket_Type;
-      State      : Server_State;
-      Keep_Alive : out Boolean);
+     (Channel : Socket_Type; State : Server_State; Keep_Alive : out Boolean);
 
    function To_Lower (C : Character) return Character is
    begin
@@ -46,7 +44,9 @@ package body Adacovex.Server.HTTP is
          return False;
       end if;
       for I in Name'Range loop
-         if To_Lower (Line (Line'First + (I - Name'First))) /= To_Lower (Name (I)) then
+         if To_Lower (Line (Line'First + (I - Name'First)))
+           /= To_Lower (Name (I))
+         then
             return False;
          end if;
       end loop;
@@ -132,15 +132,29 @@ package body Adacovex.Server.HTTP is
       Conn_Val : constant String :=
         (if Keep_Alive then "keep-alive" else "close");
       Response : constant String :=
-        "HTTP/1.1 " & Status & ASCII.CR & ASCII.LF
-        & "Content-Type: " & Content_Type & ASCII.CR & ASCII.LF
-        & "Content-Length:" & Integer'Image (Resp_Body'Length) & ASCII.CR & ASCII.LF
-        & "Connection: " & Conn_Val & ASCII.CR & ASCII.LF
-        & ASCII.CR & ASCII.LF
+        "HTTP/1.1 "
+        & Status
+        & ASCII.CR
+        & ASCII.LF
+        & "Content-Type: "
+        & Content_Type
+        & ASCII.CR
+        & ASCII.LF
+        & "Content-Length:"
+        & Integer'Image (Resp_Body'Length)
+        & ASCII.CR
+        & ASCII.LF
+        & "Connection: "
+        & Conn_Val
+        & ASCII.CR
+        & ASCII.LF
+        & ASCII.CR
+        & ASCII.LF
         & Resp_Body;
-      SEA : Ada.Streams.Stream_Element_Array
-        (1 .. Ada.Streams.Stream_Element_Offset (Response'Length));
-      Last : Ada.Streams.Stream_Element_Offset;
+      SEA      :
+        Ada.Streams.Stream_Element_Array
+          (1 .. Ada.Streams.Stream_Element_Offset (Response'Length));
+      Last     : Ada.Streams.Stream_Element_Offset;
    begin
       for I in Response'Range loop
          SEA (Ada.Streams.Stream_Element_Offset (I)) :=
@@ -160,7 +174,8 @@ package body Adacovex.Server.HTTP is
          exit when Len < SEA'First;
          Last := Last + 1;
          Buffer (Last) := Character'Val (SEA (SEA'First));
-         exit when Last >= 2
+         exit when
+           Last >= 2
            and then Buffer (Last - 1) = ASCII.CR
            and then Buffer (Last) = ASCII.LF;
          exit when Last >= Buffer'Length;
@@ -192,9 +207,7 @@ package body Adacovex.Server.HTTP is
    end Get_Path;
 
    procedure Handle_Request
-     (Channel    : Socket_Type;
-      State      : Server_State;
-      Keep_Alive : out Boolean)
+     (Channel : Socket_Type; State : Server_State; Keep_Alive : out Boolean)
    is
       Request : constant String := Read_Request_Line (Channel);
       Path    : constant String := Get_Path (Request);
@@ -261,9 +274,13 @@ package body Adacovex.Server.HTTP is
                            Pos := Pos + 1;
                         end loop;
                         CLen := 0;
-                        while Pos <= Hdr'Last and then Hdr (Pos) in '0' .. '9' loop
-                           CLen := CLen * 10
-                             + (Character'Pos (Hdr (Pos)) - Character'Pos ('0'));
+                        while Pos <= Hdr'Last and then Hdr (Pos) in '0' .. '9'
+                        loop
+                           CLen :=
+                             CLen
+                             * 10
+                             + (Character'Pos (Hdr (Pos))
+                                - Character'Pos ('0'));
                            Pos := Pos + 1;
                         end loop;
                      end;
@@ -277,9 +294,10 @@ package body Adacovex.Server.HTTP is
       --  Read and discard request body if present
       while CLen > 0 loop
          declare
-            To_Read  : constant Natural := Natural'Min (CLen, 4096);
-            Body_SEA : Ada.Streams.Stream_Element_Array
-              (1 .. Ada.Streams.Stream_Element_Offset (To_Read));
+            To_Read   : constant Natural := Natural'Min (CLen, 4096);
+            Body_SEA  :
+              Ada.Streams.Stream_Element_Array
+                (1 .. Ada.Streams.Stream_Element_Offset (To_Read));
             Body_Last : Ada.Streams.Stream_Element_Offset;
          begin
             Receive_Socket (Channel, Body_SEA, Body_Last);
@@ -292,36 +310,52 @@ package body Adacovex.Server.HTTP is
 
       if Path = "/" then
          Send_Response
-           (Channel, "200 OK", "text/html",
-             Adacovex.Renderers.HTML.Render_Dashboard
-               (State.Doc_Metrics, State.Proof, State.Tests,
-                State.DAL_Assess, State.Packages),
+           (Channel,
+            "200 OK",
+            "text/html",
+            Adacovex.Renderers.HTML.Render_Dashboard
+              (State.Doc_Metrics,
+               State.Proof,
+               State.Tests,
+               State.DAL_Assess,
+               State.Packages),
             Is_KA);
       elsif Path = "/badge/spark.svg" then
          Send_Response
-           (Channel, "200 OK", "image/svg+xml",
+           (Channel,
+            "200 OK",
+            "image/svg+xml",
             Adacovex.Renderers.SVG.Render_SPARK_Badge (State.Proof.Level),
             Is_KA);
       elsif Path = "/badge/tests.svg" then
          Send_Response
-           (Channel, "200 OK", "image/svg+xml",
+           (Channel,
+            "200 OK",
+            "image/svg+xml",
             Adacovex.Renderers.SVG.Render_Tests_Badge (State.Tests),
             Is_KA);
       elsif Path = "/badge/do178c.svg" then
          Send_Response
-           (Channel, "200 OK", "image/svg+xml",
+           (Channel,
+            "200 OK",
+            "image/svg+xml",
             Adacovex.Renderers.SVG.Render_DO178C_Badge (State.DAL_Assess),
             Is_KA);
       elsif Path = "/api/metrics" then
          Send_Response
-           (Channel, "200 OK", "application/json",
+           (Channel,
+            "200 OK",
+            "application/json",
             Adacovex.Renderers.HTML.Render_Metrics_JSON
               (State.Doc_Metrics, State.Proof, State.Tests, State.DAL_Assess),
             Is_KA);
       else
          Send_Response
-           (Channel, "404 Not Found", "text/plain",
-            "Not Found: " & Path, Is_KA);
+           (Channel,
+            "404 Not Found",
+            "text/plain",
+            "Not Found: " & Path,
+            Is_KA);
       end if;
    end Handle_Request;
 

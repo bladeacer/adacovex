@@ -1,6 +1,6 @@
 with Ada.Strings.Fixed;
-with Adacovex.Types;          use Adacovex.Types;
-with Adacovex.Renderers.SVG;  use Adacovex.Renderers.SVG;
+with Adacovex.Types;         use Adacovex.Types;
+with Adacovex.Renderers.SVG; use Adacovex.Renderers.SVG;
 
 package body Adacovex_Renderer_SVG_Tests is
 
@@ -101,8 +101,7 @@ package body Adacovex_Renderer_SVG_Tests is
          begin
             R.Check (Contains (S, "<svg"), "DO-178C Unmet: contains <svg");
             R.Check (Contains (S, "DO-178C"), "DO-178C Unmet: label");
-            R.Check
-              (Contains (S, "DAL-C FAIL"), "DO-178C Unmet: DAL-C FAIL");
+            R.Check (Contains (S, "DAL-C FAIL"), "DO-178C Unmet: DAL-C FAIL");
          end;
       end;
 
