@@ -1,5 +1,5 @@
 .PHONY: help build test prove doc clean run-self run-ada-crdt \
-        dev-setup prod-setup ascii-check fmt _dev_cmd
+        dev-setup prod-setup ascii-check fmt bump-version _dev_cmd
 
 .DEFAULT_GOAL := help
 
@@ -15,7 +15,8 @@ help:
 	@echo '  fmt           Format Ada sources with gnatformat'
 	@echo '  clean         Remove build artifacts'
 	@echo '  run-self      Run against adacovex itself (--target=.)'
-	@echo '  run-ada-crdt  Run against ../Ada_CRDT (--relaxed)'
+	@echo '  run-ada-crdt  Run against ../Ada_CRDT (strict mode)'
+	@echo '  bump-version  Bump version across all manifests (VERSION=x.y.z)'
 	@echo '  ascii-check   Verify all source files are pure ASCII'
 	@echo '  dev-setup     Copy alire-dev.toml over alire.toml'
 	@echo '  prod-setup    Restore clean publishing alire.toml'
@@ -47,7 +48,7 @@ run-self: build
 	./bin/adacovex_main --target=. --dal=C
 
 run-ada-crdt: build
-	./bin/adacovex_main --target=../Ada_CRDT --dal=C --relaxed
+	./bin/adacovex_main --target=../Ada_CRDT --dal=C
 
 ascii-check:
 	@echo "=== ASCII Charset Verification ==="; \
@@ -69,6 +70,44 @@ dev-setup:
 
 prod-setup:
 	mv alire.toml.bak alire.toml 2>/dev/null || git checkout alire.toml
+
+bump-version:
+	@if [ -z "$(VERSION)" ]; then \
+		echo "Usage: make bump-version VERSION=x.y.z"; \
+		exit 1; \
+	fi; \
+	version="$(VERSION)"; \
+	if ! echo "$$version" | grep -q '^[0-9]\+\.[0-9]\+\.[0-9]\+$$'; then \
+		echo "Error: version must be in x.y.z format (got: $$version)"; \
+		exit 1; \
+	fi; \
+	echo "Bumping version to $$version..."; \
+	sed -i 's/^version = ".*"/version = "'$$version'"/' alire.toml; \
+	echo "  alire.toml: version = \"$$version\""; \
+	sed -i 's/^version = ".*"/version = "'$$version'"/' alire-dev.toml; \
+	echo "  alire-dev.toml: version = \"$$version\""; \
+	sed -i 's/^   Version : constant String := "[^"]*"/   Version : constant String := "'$$version'"/' src/adacovex.ads; \
+	echo "  src/adacovex.ads: Version = \"$$version\""; \
+	\
+	changelog="docs/changelogs/adacovex-$$version.md"; \
+	if [ ! -f "$$changelog" ]; then \
+		echo "# adacovex $$version" > "$$changelog"; \
+		echo "" >> "$$changelog"; \
+		echo "Date: _$(shell date +%Y-%m-%d)_" >> "$$changelog"; \
+		echo "" >> "$$changelog"; \
+		echo "## Changes" >> "$$changelog"; \
+		echo "" >> "$$changelog"; \
+		echo "- Version bumped to $$version." >> "$$changelog"; \
+		echo "  Created: $$changelog"; \
+	else \
+		sed -i 's/^version = ".*"/version = "'$$version'"/' "$$changelog" 2>/dev/null; \
+		echo "  Updated: $$changelog"; \
+	fi; \
+	\
+	echo "Done. Remember to:"; \
+	echo "  - Update docs/changelogs/index.md"; \
+	echo "  - Update AGENTS.md version references"; \
+	echo "  - Commit: git commit -am \"Release $$version\" && git tag -a v$$version -m \"Release $$version\""
 
 clean:
 	alr clean 2>/dev/null; rm -rf bin/ obj/ docs/badges/ docs/compliance/ docs/api/

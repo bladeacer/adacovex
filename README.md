@@ -22,7 +22,7 @@ test-result parsing, DO-178C DAL compliance assessment, and interactive dashboar
   criteria (HLR coverage, orphan tags, test status, minimum SPARK proof level)
 - **Multiple outputs**:
   - ANSI terminal report
-   - SVG badges (Shields.io style) -- SPARK level, test status, DO-178C status, docstring coverage
+  - SVG badges (Shields.io style) -- SPARK level, test status, DO-178C status, docstring coverage
   - Markdown reports -- `VERIFICATION.md` + `TRACE.md`
   - HTML dashboard + JSON API via built-in HTTP server
 - **Zero dynamic allocation** -- all storage is bounded at compile time
@@ -30,152 +30,211 @@ test-result parsing, DO-178C DAL compliance assessment, and interactive dashboar
 ## Quick start
 
 ```bash
-# Run against adacovex itself
+# Build
+make build
+
+# Run against adacovex itself (strict mode, default)
 make run-self
 
-# Run against Ada_CRDT (default target)
+# Run against Ada_CRDT (relaxed mode, skip demo/deps/examples)
 make run-ada-crdt
 
-# Explicit target at DAL-C
-./bin/adacovex --target=../Ada_CRDT --dal=C
+# Explicit target
+./bin/adacovex_main --target=../Ada_CRDT --dal=C
 ```
 
 ## CLI reference
 
 ```
-adacovex v0.1.0
-
-Usage: adacovex [options]
-
-Options:
-  --target=PATH         Target project path (default: ../Ada_CRDT)
-  --manifest=PATH       Target project manifest override
-  --dal=LEVEL           DAL level: A | B | C | D | E (default: C)
-  --serve               Start HTTP dashboard on :8080
-  --port=N              HTTP server port (default: 8080)
-  --emit-svg=PATH       Write SVG badges (default: docs/badges)
-  --no-svg              Suppress automatic SVG output
-  --emit-markdown=PATH  Write VERIFICATION.md + TRACE.md
-  --verbose             Verbose diagnostics
-  --help                Show this message
+adacovex [options]
 ```
+
+| Flag | Default | Mode | Description |
+|------|---------|------|-------------|
+| `--target=PATH` | `../Ada_CRDT` | both | Target project root directory |
+| `--manifest=PATH` | auto-detected | both | Override project manifest path |
+| `--dal=LEVEL` | `C` | both | Target DAL level (A-E) |
+| `--serve` | off | both | Start HTTP dashboard server |
+| `--port=N` | `8080` | serve | Dashboard server port |
+| `--emit-svg=PATH` | `<target>/docs/badges` | both | Output directory for SVG badges |
+| `--no-svg` | off | both | Suppress SVG badge output |
+| `--emit-markdown=PATH` | off | both | Output directory for Markdown reports |
+| `--skip-dir=NAME` | `demo,deps,examples` | relaxed | Directory name to skip (repeatable) |
+| `--relaxed` | off | both | Disable strict mode (skip dirs, no patches) |
+| `--verbose` | off | both | Verbose diagnostics |
+| `--help` | - | both | Print usage and exit |
+
+### Flag details
+
+**`--target=PATH`** -- Project to analyze. Relative paths resolved against CWD.
+Default: `../Ada_CRDT`.
+
+**`--manifest=PATH`** -- Override project manifest file. Auto-detected from
+`<target>/alire-dev.toml` or `<target>/alire.toml`. Displayed as metadata only.
+
+**`--dal=LEVEL`** -- Target DAL level: `A`, `B`, `C`, `D`, or `E` (case-insensitive).
+Determines minimum SPARK level and criteria checked. See [DAL levels](#dal-levels).
+
+**`--serve`** -- After scanning, start HTTP server on `--port` (default 8080):
+- `GET /` -- HTML dashboard
+- `GET /api/metrics` -- JSON metrics
+- `GET /badge/spark.svg`, `GET /badge/tests.svg`, `GET /badge/do178c.svg` -- SVG badges
+
+**`--emit-svg=PATH`** -- Write SVG badges (`spark.svg`, `tests.svg`, `do178c.svg`, `docs.svg`)
+to directory. Default: `<target>/docs/badges`. Override with `--no-svg`.
+
+**`--no-svg`** -- Suppress all SVG badge output. Overrides `--emit-svg`.
+
+**`--emit-markdown=PATH`** -- Write `VERIFICATION.md` (full report) and `TRACE.md`
+(HLR traceability matrix) to the given directory.
+
+**`--skip-dir=NAME`** -- Add directory name to skip list (repeatable).
+Only effective in relaxed mode. Default skip list: `demo,deps,examples`.
+
+**`--relaxed`** -- Disable strict mode. Enables the skip list (default: `demo,deps,examples`
+plus any `--skip-dir` entries). Does NOT apply `.adacovex/patches/`.
+Default: OFF (strict mode is on by default).
+
+**`--verbose`** -- Placeholder; recognized but no output emitted yet.
+
+### Strict vs relaxed mode
+
+| Aspect | Strict (default) | Relaxed (`--relaxed`) |
+|--------|-----------------|----------------------|
+| Directory exclusions | `.git`, `obj`, `tests`, `config`, `.adacovex` only | Same + `demo,deps,examples` + `--skip-dir` additions |
+| Vendored code | Scanned and counted | Skipped |
+| Patch files | Applied from `.adacovex/patches/` | Not applied |
+| Use case | Full compliance audit | Quick assessment of production code |
+
+### Exit codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success (DAL achieved, all checks pass) |
+| `1` | Compliance failure (DAL unmet, tests failing, etc.) |
 
 ## Examples
 
-### Basic usage
-
 ```bash
-# Self-assessment: scan adacovex itself (SVGs written to docs/badges/)
+# Self-assessment (strict mode, 100% docs required)
 adacovex --target=.
 
-# Assess a CRDT library at DAL-C
-adacovex --target=../Ada_CRDT --dal=C
+# Assess a CRDT library at DAL-C in relaxed mode
+adacovex --target=../Ada_CRDT --dal=C --relaxed
+
+# DAL-A assessment (requires Platinum SPARK)
+adacovex --target=. --dal=A
 
 # Without SVG output
 adacovex --target=../Ada_CRDT --no-svg
 
-# With explicit manifest
-adacovex --target=. --manifest=./alire-dev.toml
+# Custom skip dirs
+adacovex --target=../Ada_CRDT --relaxed --skip-dir=vendor
+
+# With Markdown reports
+adacovex --target=. --emit-markdown=docs/compliance
+
+# Web dashboard on custom port
+adacovex --target=. --serve --port=9090
 ```
 
-### Additional outputs
+## Requirements for target projects
 
-```bash
-# Write SVG badges to a custom directory (default: docs/badges/)
-adacovex --target=../Ada_CRDT --emit-svg=docs/badges/
+To run adacovex against a project, it must have:
 
-# Write Markdown compliance reports
-adacovex --target=../Ada_CRDT --emit-markdown=docs/compliance/
+1. **Ada source files** (`.ads`) under the target root.
+2. **GNATprove output**: `gnatprove.out` in the target root or
+   `<target>/obj/gnatprove/gnatprove.out`.
+3. **Test results**: `<target>/test_result.md` with a Markdown table
+   containing `Tests` and `Status` columns (PASS/FAIL).
+4. **HLR document** (for DAL assessment): `<target>/docs/compliance/HLR.md`.
 
-# Web dashboard
-adacovex --target=../Ada_CRDT --serve
+Missing data shows "N/A" and relevant DAL checks report `Unmet`.
+
+## Docstring format
+
+```ada
+--  Summary sentence describing what the subprogram does.
+--  @param Name  Description of the parameter.
+--  @return Description of the return value.
+procedure Do_Something (Name : in Some_Type);
+
+--  A plain summary line is sufficient for no-param procedures.
+procedure Simple_Thing;
 ```
 
-### Start the web dashboard
+Tags: `@param`, `@return`, `@field`, `@formal`. Prefix: `--  ` (two dashes + two spaces).
 
-```bash
-# Default port 8080
-adacovex --target=../Ada_CRDT --serve
+See [full spec](docs/api-docs/adacovex-docstring-spec.md).
 
-# Custom port
-adacovex --target=../Ada_CRDT --serve --port=9090
+## Patch files (strict mode)
+
+For vendored/third-party code that you cannot modify, create docstring patches:
+
+```
+<target>/.adacovex/patches/<relative-path>
 ```
 
-Then open http://localhost:8080/ in a browser:
-- Dashboard: `GET /` -- full HTML page with coverage, proof, test, and compliance cards
-- API: `GET /api/metrics` -- JSON object with key metrics
-- Badges: `GET /badge/spark.svg`, `/badge/tests.svg`, `/badge/do178c.svg`
+Example: to patch `Ada_CRDT/demo/deps/vt100/vt100.ads`:
 
-### API response
-
-```json
-GET /api/metrics
-{
-    "spark_level": "Silver",
-    "total_vcs": 273,
-    "proved_vcs": 47,
-    "tests_passed": 10290,
-    "tests_failed": 0,
-    "doc_coverage": 57,
-    "dal_status": "Achieved"
-}
 ```
+Ada_CRDT/.adacovex/patches/demo/deps/vt100/vt100.ads
+```
+
+The patch file is a valid Ada `.ads` with docstrings for subprograms you want
+to document. Overloaded subprograms require one patch entry per overload.
+
+## DAL levels
+
+| DAL | Min SPARK | Tests must pass | HLRs traced | No orphans |
+|-----|-----------|-----------------|-------------|------------|
+| A | Platinum | Yes | Yes | Yes |
+| B | Gold | Yes | Yes | Yes |
+| C | Bronze | Yes | Yes | Yes |
+| D | Bronze | No | No | No |
+| E | Stone | No | No | No |
 
 ## Makefile targets
 
-| Target     | Description                                      |
-|------------|--------------------------------------------------|
-| `build`    | `alr build` (adacovex_main + test_runner)        |
-| `test`     | Build and run native test suite                  |
-| `prove`    | `alr gnatprove` (auto-swaps alire-dev.toml)      |
-| `fmt`      | Format Ada sources with `gnatformat`             |
-| `doc`      | Generate API docs via gnatdoc + rst2md           |
-| `run-self` | Run against adacovex itself (`--target=.`)        |
-| `run-ada-crdt` | Run against `../Ada_CRDT` (default target)   |
-| `clean`    | Remove `bin/`, `obj/`, generated reports         |
+| Target | Description |
+|--------|-------------|
+| `build` | `alr build` (adacovex_main + test_runner) |
+| `test` | Build and run native test suite (152 tests) |
+| `prove` | `alr gnatprove` (auto-swaps alire-dev.toml) |
+| `fmt` | Format Ada sources with `gnatformat` |
+| `doc` | Generate API docs via gnatdoc + rst2md |
+| `run-self` | Run against adacovex itself (`--target=.`) |
+| `run-ada-crdt` | Run against `../Ada_CRDT` (strict mode) |
+| `bump-version` | Bump version across manifests + changelog (`VERSION=x.y.z`) |
+| `ascii-check` | Verify all source files are pure ASCII |
+| `dev-setup` | Copy alire-dev.toml over alire.toml |
+| `prod-setup` | Restore clean publishing alire.toml |
+| `clean` | Remove `bin/`, `obj/`, generated reports |
 
 ## Project structure
 
 ```
 src/
-|-- adacovex.ads
-|-- adacovex_main.adb
-|-- core/
-|   |-- adacovex-types.ads/.adb
-|   `-- adacovex-config.ads/.adb
-|-- parsers/
-|   |-- adacovex-parsers-source.ads/.adb
-|   |-- adacovex-parsers-gnatprove.ads/.adb
-|   |-- adacovex-parsers-tests.ads/.adb
-|   `-- adacovex-parsers-do178c.ads/.adb
-|-- tests/
-|   |-- adacovex-test_support.ads/.adb    -- Native test Runner type
-|   |-- adacovex_dal_tests.ads/.adb       -- DAL compliance tests
-|   |-- adacovex_types_tests.ads/.adb     -- Type conversion tests
-|   `-- test_runner.adb                   -- Test suite entry point
-|-- compliance/
-|   |-- adacovex-compliance-dal.ads/.adb
-|-- renderers/
-|   |-- adacovex-renderers-ansi.ads/.adb
-|   |-- adacovex-renderers-markdown.ads/.adb
-|   |-- adacovex-renderers-svg.ads/.adb
-|   `-- adacovex-renderers-html.ads/.adb
-`-- server/
-    |-- adacovex-server-http.ads/.adb
+|-- adacovex.ads                  -- Version constant
+|-- adacovex_main.adb             -- CLI entry point
+|-- core/                         -- Types + CLI config
+|-- parsers/                      -- Source, proof, test, DO-178C parsers
+|-- compliance/                   -- DAL assessment logic
+|-- renderers/                    -- ANSI, SVG, Markdown, HTML output
+|-- server/                       -- HTTP/1.1 dashboard server
+|-- tests/                        -- Native test suite (152 tests)
 ```
 
-## DO-178C / DAL-C
+## Verification
 
-adacovex can assess a target project against DO-178C DAL-C criteria:
+| Check | Command | Requirement |
+|-------|---------|-------------|
+| Unit tests | `make test` | 152/152 passing |
+| Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C |
+| SPARK proof | `make prove` | 28/28 VCs Platinum |
+| Ada_CRDT regression | `make run-ada-crdt` | 100% docs, Platinum, DAL-C (strict mode) |
 
-1. **All HLRs traced** -- each HLR-XXXX tag in `HLR.md` must appear as `-- HLR-XXXX`
-   in at least one `.ads` source file  
-2. **No orphan tags** -- every in-source HLR tag must correspond to a defined HLR  
-3. **All tests passing** -- the target project must report 0 failures  
-4. **Minimum SPARK Level >= Bronze** -- the target must pass flow analysis
-
-When running against itself (`adacovex --target=.`), the tool verifies its own
-compliance documentation.
+See [changelogs](docs/changelogs/adacovex-1.0.0.md) for full release notes.
 
 ## Documentation
 
@@ -185,45 +244,15 @@ compliance documentation.
 | [Test Format](docs/api-docs/adacovex-test-format.md) | Supported test-result output format |
 | [SPARK Levels](docs/api-docs/adacovex-spark-levels.md) | Assurance level objectives (Stone--Platinum) |
 | [DAL Levels](docs/api-docs/adacovex-dal-levels.md) | DO-178C DAL A--E criteria |
-| [API Reference](docs/api-docs/index.md) | Auto-generated package API docs (`make doc`) |
-| [Changelog](docs/changelogs/index.md) | Release history
-
-## Test suite
-
-```bash
-make test
-```
-
-Test source: `src/tests/`. Uses a native zero-dependency `Runner` type
-(`Adacovex.Test_Support`, modeled after Ada_CRDT's `CRDT.Test_Support`).
-Results are written to `docs/test_result.md` and printed to stdout.
-
-## Credits
-
-Technology Stack:
-
-- [Ada / SPARK 2014](https://www.adacore.com/languages/spark): (AdaCore) language and dialect of choice
-- [gnatprove](https://docs.adacore.com/spark2014-docs/html/ug/index.html): (AdaCore) formal verification
-- [Alire](https://alire.ada.dev): (AdaCore) Ada/SPARK package manager
-- [gnatformat](https://github.com/AdaCore/gnatformat): (AdaCore) code formatter
-- [gnatdoc](https://github.com/AdaCore/gnatdoc): (AdaCore) API documentation generator
-- [GNAT.Sockets](https://www.adacore.com): (AdaCore) networking library
-
-Test framework inspired by:
-
-- [Ada_CRDT](https://github.com/bladeacer/Ada_CRDT): Native zero-dependency test
-  runner with `Runner.Check` pattern
-
-AUnit test-output parsing supported for compatibility with projects using
-the [AUnit](https://github.com/AdaCore/aunit) test framework.
+| [API Reference](docs/api-docs/index.md) | Auto-generated package API docs |
+| [Changelog](docs/changelogs/index.md) | Release history |
 
 ## Requirements
 
-- **Alire** >= 2.0 (for building)
-- **GNAT** Ada compiler (toolchain provided by `alr setup`)
+- **Alire** >= 2.0
+- **GNAT** Ada compiler (provided by `alr setup`)
 - **GNATprove** (optional, for proof targets)
-- **gnatpp** (optional, for `make fmt`)
-- **gnatdoc** (optional, for `make api-docs`)
+- **gnatpp** / **gnatdoc** (optional, for fmt/doc targets)
 
 ## License
 
