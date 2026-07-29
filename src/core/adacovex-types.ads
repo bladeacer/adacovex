@@ -1,7 +1,8 @@
 --  All domain types used across the adacovex tool chain.
---  Subprogram and package collections use Ada.Containers.Vectors for
---  unbounded (up to Natural'Last) capacity. Other fixed-size buffers
---  remain bounded at compile time.
+--  Package and subprogram collections use Ada.Containers.Vectors
+--  (unbounded, up to Natural'Last ≈ 2.1B). Fixed-size buffers
+--  (Max_Path, Max_Line, Max_Desc_Str, etc.) are bounded at compile time
+--  with generous production-suitable limits (Max_Path=4096, Max_Line=8192).
 --  HLR-METRICS: Docstring_Metrics type
 --  HLR-PROOF: Proof_Summary type
 --  HLR-TEST: Test_Summary type
@@ -16,18 +17,13 @@ with Ada.Containers.Vectors;
 
 package Adacovex.Types is
 
-   Max_Hlrs       : constant := 128;
-   Max_Llrs       : constant := 128;
-   Max_Params     : constant := 8;
-   Max_Path       : constant := 512;
-   Max_Line       : constant := 2048;
-   Max_Id_Str     : constant := 64;
-   Max_Desc_Str   : constant := 128;
-   Max_Filename   : constant := 64;
-   Max_VC_Count   : constant := 512;
-   Max_Badge_Path : constant := 128;
-   Max_Metrics    : constant := 32;
-   Max_Skip_Dirs  : constant := 8;
+   Max_Hlrs     : constant := 128;
+   Max_Llrs     : constant := 128;
+   Max_Path     : constant := 4096;
+   Max_Line     : constant := 8192;
+   Max_Id_Str   : constant := 64;
+   Max_Desc_Str : constant := 128;
+   Max_Filename : constant := 128;
 
    subtype HLR_Index is Positive range 1 .. Max_Hlrs;
    subtype LLR_Index is Positive range 1 .. Max_Llrs;
@@ -56,7 +52,6 @@ package Adacovex.Types is
       Name_Len      : Natural := 0;
       Line_Number   : Natural := 0;
       Has_Docstring : Boolean := False;
-      Param_Count   : Natural := 0;
       Doc_Param_Ct  : Natural := 0;
       Has_Return    : Boolean := False;
       Doc_Return    : Boolean := False;
@@ -77,17 +72,6 @@ package Adacovex.Types is
 
    package Package_Vectors is
      new Ada.Containers.Vectors (Positive, Package_Info);
-
-   type VC_Info is record
-      Unit       : Desc_Field;
-      Unit_Len   : Natural := 0;
-      Check_Type : Desc_Field;
-      Check_Len  : Natural := 0;
-      Status     : Desc_Field;
-      Stat_Len   : Natural := 0;
-   end record;
-
-   type VC_Vector is array (1 .. Max_VC_Count) of VC_Info;
 
    type Proof_Summary is record
       Total_VCs          : Natural := 0;

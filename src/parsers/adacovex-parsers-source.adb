@@ -231,6 +231,17 @@ package body Adacovex.Parsers.Source is
       while not End_Of_File (F) loop
          Get_Line (F, Line, Last);
          Line_Num := Line_Num + 1;
+         if Last = Types.Max_Line then
+            declare
+               Drain : String (1 .. Types.Max_Line);
+               DLast : Natural;
+            begin
+               loop
+                  Get_Line (F, Drain, DLast);
+                  exit when DLast < Types.Max_Line;
+               end loop;
+            end;
+         end if;
 
           if Has_HLR_Tag (Line (1 .. Last), HLR_Buf, HLR_Len) then
              if not In_Subp then
