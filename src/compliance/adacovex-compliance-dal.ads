@@ -27,16 +27,17 @@ package Adacovex.Compliance.DAL is
    procedure Assess_DAL
      (Level         : Types.DAL_Level;
       Target_Dir    : String;
-      Packages      : Types.Package_Vectors.Vector;
+      Packages      : Types.Implementation.Package_Vectors.Vector;
       Proof_Summary : Types.Proof_Summary;
-      Test_Summary  : Types.Test_Summary;
-      Assessment    : out Types.DAL_Assessment);
+      Test_Summary  : Types.Implementation.Test_Summary;
+      Assessment    : out Types.Implementation.DAL_Assessment);
 
    --  Convenience test: return True if Assessment.Status = Achieved.
    --  Equivalent to Assessment.Status = DAL_Status'Val (0).
    --  @param Assessment  DAL assessment record.
    --  @return True if Assessment.Status = Achieved.
-   function Is_DAL_Achieved (Assessment : Types.DAL_Assessment) return Boolean
+   function Is_DAL_Achieved
+     (Assessment : Types.Implementation.DAL_Assessment) return Boolean
    with Global => null;
 
 end Adacovex.Compliance.DAL;

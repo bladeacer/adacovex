@@ -16,7 +16,7 @@ with Adacovex.Server.HTTP;
 
 procedure Adacovex_Main is
    use Ada.Calendar;
-   use Adacovex.Types;
+   use Adacovex.Types, Adacovex.Types.Implementation;
 
    Start_Time : constant Time := Clock;
    Cfg        : Adacovex.Config.CLI_Config;

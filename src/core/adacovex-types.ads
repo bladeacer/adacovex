@@ -16,6 +16,7 @@
 with Ada.Containers.Vectors;
 
 package Adacovex.Types is
+   pragma SPARK_Mode (On);
 
    Max_Path     : constant := 4096;
    Max_Line     : constant := 8192;
@@ -50,24 +51,6 @@ package Adacovex.Types is
       Doc_Return    : Boolean := False;
    end record;
 
-   package Subprogram_Vectors is new
-     Ada.Containers.Vectors (Positive, Subprogram_Info);
-
-   package HLR_Tag_Vectors is new
-     Ada.Containers.Vectors (Positive, HLR_Tag_Entry);
-
-   type Package_Info is record
-      Name        : Name_Field;
-      Name_Len    : Natural := 0;
-      File_Path   : Path_Field;
-      Path_Len    : Natural := 0;
-      Subprograms : Subprogram_Vectors.Vector;
-      HLR_Tags    : HLR_Tag_Vectors.Vector;
-   end record;
-
-   package Package_Vectors is new
-     Ada.Containers.Vectors (Positive, Package_Info);
-
    type Proof_Summary is record
       Total_VCs          : Natural := 0;
       Proved_VCs         : Natural := 0;
@@ -95,15 +78,6 @@ package Adacovex.Types is
       Status     : Test_Status := Pass;
    end record;
 
-   package Test_Metrics_Vectors is new
-     Ada.Containers.Vectors (Positive, Test_Metrics);
-
-   type Test_Summary is record
-      Categories   : Test_Metrics_Vectors.Vector;
-      Total_Passed : Natural := 0;
-      Total_Failed : Natural := 0;
-   end record;
-
    type Docstring_Metrics is record
       Total_Subprograms   : Natural := 0;
       Documented_Subprogs : Natural := 0;
@@ -114,31 +88,61 @@ package Adacovex.Types is
       Coverage_Pct        : Natural := 0;
    end record;
 
-   package DAL_Failure_Vectors is new
-     Ada.Containers.Vectors (Positive, Desc_Field);
+   package Implementation is
+      pragma SPARK_Mode (Off);
+      package Subprogram_Vectors is new
+        Ada.Containers.Vectors (Positive, Subprogram_Info);
 
-   type DAL_Assessment is record
-      Target_DAL             : DAL_Level := DAL_C;
-      Status                 : DAL_Status := Unmet;
-      HLR_Total              : Natural := 0;
-      HLR_Found              : Natural := 0;
-      LLR_Total              : Natural := 0;
-      LLR_Found              : Natural := 0;
-      All_Subprograms_Traced : Boolean := False;
-      Orphan_Tags            : Boolean := False;
-      Tests_Passing          : Boolean := False;
-      Min_SPARK_Level_Met    : Boolean := False;
-      Failed_Reasons         : DAL_Failure_Vectors.Vector;
-   end record;
+      package HLR_Tag_Vectors is new
+        Ada.Containers.Vectors (Positive, HLR_Tag_Entry);
 
-   type Badge_Config is record
-      Spark_Lvl   : SPARK_Level := Stone;
-      Test_Summ   : Test_Summary;
-      DAL_Assess  : DAL_Assessment;
-      Show_Spark  : Boolean := True;
-      Show_Tests  : Boolean := True;
-      Show_DO178C : Boolean := True;
-   end record;
+      type Package_Info is record
+         Name        : Name_Field;
+         Name_Len    : Natural := 0;
+         File_Path   : Path_Field;
+         Path_Len    : Natural := 0;
+         Subprograms : Subprogram_Vectors.Vector;
+         HLR_Tags    : HLR_Tag_Vectors.Vector;
+      end record;
+
+      package Package_Vectors is new
+        Ada.Containers.Vectors (Positive, Package_Info);
+
+      package Test_Metrics_Vectors is new
+        Ada.Containers.Vectors (Positive, Test_Metrics);
+
+      type Test_Summary is record
+         Categories   : Test_Metrics_Vectors.Vector;
+         Total_Passed : Natural := 0;
+         Total_Failed : Natural := 0;
+      end record;
+
+      package DAL_Failure_Vectors is new
+        Ada.Containers.Vectors (Positive, Desc_Field);
+
+      type DAL_Assessment is record
+         Target_DAL             : DAL_Level := DAL_C;
+         Status                 : DAL_Status := Unmet;
+         HLR_Total              : Natural := 0;
+         HLR_Found              : Natural := 0;
+         LLR_Total              : Natural := 0;
+         LLR_Found              : Natural := 0;
+         All_Subprograms_Traced : Boolean := False;
+         Orphan_Tags            : Boolean := False;
+         Tests_Passing          : Boolean := False;
+         Min_SPARK_Level_Met    : Boolean := False;
+         Failed_Reasons         : DAL_Failure_Vectors.Vector;
+      end record;
+
+      type Badge_Config is record
+         Spark_Lvl   : SPARK_Level := Stone;
+         Test_Summ   : Test_Summary;
+         DAL_Assess  : DAL_Assessment;
+         Show_Spark  : Boolean := True;
+         Show_Tests  : Boolean := True;
+         Show_DO178C : Boolean := True;
+      end record;
+   end Implementation;
 
    --  Convert a SPARK_Level to its human-readable name.
    --  Returns "Stone", "Bronze", "Silver", "Gold", or "Platinum".

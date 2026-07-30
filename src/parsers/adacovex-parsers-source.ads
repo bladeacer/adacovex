@@ -27,7 +27,9 @@ package Adacovex.Parsers.Source is
    --  @param Pkg  Output package info.
    --  @param Success  True if file was successfully parsed.
    procedure Scan_Ads_File
-     (File_Path : String; Pkg : out Types.Package_Info; Success : out Boolean)
+     (File_Path : String;
+      Pkg       : out Types.Implementation.Package_Info;
+      Success   : out Boolean)
    with
      Pre  => File_Path'Length > 0,
      Post => (if Success then Pkg.Name_Len > 0);
@@ -42,7 +44,7 @@ package Adacovex.Parsers.Source is
    procedure Scan_Project
      (Target_Dir : String;
       Skip_List  : String;
-      Packages   : in out Types.Package_Vectors.Vector);
+      Packages   : in out Types.Implementation.Package_Vectors.Vector);
 
    --  Apply docstring patches to scanned packages.
    --  For each package, checks for a patch file at
@@ -51,7 +53,8 @@ package Adacovex.Parsers.Source is
    --  @param Target_Dir  Root directory used for patch path resolution.
    --  @param Packages  In/out vector of scanned packages to patch.
    procedure Apply_Patches
-     (Target_Dir : String; Packages : in out Types.Package_Vectors.Vector);
+     (Target_Dir : String;
+      Packages   : in out Types.Implementation.Package_Vectors.Vector);
 
    --  Compute aggregate docstring-coverage metrics from scanned packages.
    --  Tallies documented vs. undocumented subprograms, parameters, and return
@@ -59,7 +62,8 @@ package Adacovex.Parsers.Source is
    --  @param Packages  Vector of scanned packages.
    --  @return Aggregate docstring-coverage metrics.
    function Compute_Docstring_Metrics
-     (Packages : Types.Package_Vectors.Vector) return Types.Docstring_Metrics
+     (Packages : Types.Implementation.Package_Vectors.Vector)
+      return Types.Docstring_Metrics
    with Global => null;
 
 end Adacovex.Parsers.Source;

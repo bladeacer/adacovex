@@ -117,7 +117,9 @@ package body Adacovex.Renderers.SVG is
       end;
    end Render_SPARK_Badge;
 
-   function Render_Tests_Badge (Tests : Types.Test_Summary) return String is
+   function Render_Tests_Badge
+     (Tests : Types.Implementation.Test_Summary) return String
+   is
       Value : String (1 .. 64);
       Len   : Natural := 0;
       Num   : String := Natural'Image (Tests.Total_Passed);
@@ -132,7 +134,8 @@ package body Adacovex.Renderers.SVG is
       return Badge_SVG ("Tests", Value (1 .. Len), "#555", "#4c1");
    end Render_Tests_Badge;
 
-   function Render_DO178C_Badge (Assess : Types.DAL_Assessment) return String
+   function Render_DO178C_Badge
+     (Assess : Types.Implementation.DAL_Assessment) return String
    is
       Status_Str : String (1 .. 16);
       SLen       : Natural := 0;

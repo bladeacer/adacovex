@@ -9,7 +9,7 @@ HLR-RENDER-SVG: SVG badge generation
 
 ## Functions
 
-### function Render_DO178C_Badge (Assess : Adacovex.Types.DAL_Assessment) return Standard.String `[Post]` `[Global]`
+### function Render_DO178C_Badge (Assess : Adacovex.Types.Implementation.DAL_Assessment) return Standard.String `[Post]` `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|
@@ -33,7 +33,7 @@ HLR-RENDER-SVG: SVG badge generation
 
 **Returns:** SVG badge markup.
 
-### function Render_Tests_Badge (Tests : Adacovex.Types.Test_Summary) return Standard.String `[Post]` `[Global]`
+### function Render_Tests_Badge (Tests : Adacovex.Types.Implementation.Test_Summary) return Standard.String `[Post]` `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|

@@ -151,7 +151,9 @@ package body Adacovex.Parsers.Source is
    end Has_Docstring_Tag;
 
    procedure Scan_Ads_File
-     (File_Path : String; Pkg : out Types.Package_Info; Success : out Boolean)
+     (File_Path : String;
+      Pkg       : out Types.Implementation.Package_Info;
+      Success   : out Boolean)
    is
       use Ada.Text_IO;
       F        : File_Type;
@@ -409,13 +411,13 @@ package body Adacovex.Parsers.Source is
    procedure Scan_Project
      (Target_Dir : String;
       Skip_List  : String;
-      Packages   : in out Types.Package_Vectors.Vector)
+      Packages   : in out Types.Implementation.Package_Vectors.Vector)
    is
       procedure Search_Dir (Dir : String) is
          use Ada.Directories;
          Search : Search_Type;
          Ent    : Directory_Entry_Type;
-         Pkg    : Types.Package_Info;
+         Pkg    : Types.Implementation.Package_Info;
          OK     : Boolean;
       begin
          Start_Search (Search, Dir, "");
@@ -494,7 +496,8 @@ package body Adacovex.Parsers.Source is
    end Relative_Path;
 
    procedure Apply_Patches
-     (Target_Dir : String; Packages : in out Types.Package_Vectors.Vector)
+     (Target_Dir : String;
+      Packages   : in out Types.Implementation.Package_Vectors.Vector)
    is
       Patch_Dir : constant String := Target_Dir & "/.adacovex/patches";
       OK        : Boolean;
@@ -507,8 +510,8 @@ package body Adacovex.Parsers.Source is
             Pkg_Path : String renames
               Packages (P).File_Path (1 .. Packages (P).Path_Len);
             Rel      : constant String := Relative_Path (Pkg_Path, Target_Dir);
-            Tmp_Pkg  : Types.Package_Info;
-            Pkg_Copy : Types.Package_Info := Packages (P);
+            Tmp_Pkg  : Types.Implementation.Package_Info;
+            Pkg_Copy : Types.Implementation.Package_Info := Packages (P);
          begin
             if Rel'Length > 0 then
                declare
@@ -570,7 +573,8 @@ package body Adacovex.Parsers.Source is
    end Apply_Patches;
 
    function Compute_Docstring_Metrics
-     (Packages : Types.Package_Vectors.Vector) return Types.Docstring_Metrics
+     (Packages : Types.Implementation.Package_Vectors.Vector)
+      return Types.Docstring_Metrics
    is
       Metrics : Types.Docstring_Metrics;
    begin

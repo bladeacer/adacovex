@@ -22,7 +22,7 @@ Placement: Summary lines first, then tag lines, then declaration.
 
 ## Functions
 
-### function Compute_Docstring_Metrics (Packages : Adacovex.Types.Package_Vectors.Vector) return Adacovex.Types.Docstring_Metrics `[Global]`
+### function Compute_Docstring_Metrics (Packages : Adacovex.Types.Implementation.Package_Vectors.Vector) return Adacovex.Types.Docstring_Metrics `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|
@@ -32,14 +32,14 @@ Placement: Summary lines first, then tag lines, then declaration.
 
 ## Procedures
 
-### procedure Apply_Patches (Target_Dir : Standard.String; Packages : Adacovex.Types.Package_Vectors.Vector)
+### procedure Apply_Patches (Target_Dir : Standard.String; Packages : Adacovex.Types.Implementation.Package_Vectors.Vector)
 
 | Parameter | Description |
 |-----------|-------------|
 | `Packages` | In/out vector of scanned packages to patch. |
 | `Target_Dir` | Root directory used for patch path resolution. |
 
-### procedure Scan_Ads_File (File_Path : Standard.String; Pkg : Adacovex.Types.Package_Info; Success : Standard.Boolean) `[Pre]` `[Post]`
+### procedure Scan_Ads_File (File_Path : Standard.String; Pkg : Adacovex.Types.Implementation.Package_Info; Success : Standard.Boolean) `[Pre]` `[Post]`
 
 | Parameter | Description |
 |-----------|-------------|
@@ -47,7 +47,7 @@ Placement: Summary lines first, then tag lines, then declaration.
 | `Pkg` |  |
 | `Success` |  |
 
-### procedure Scan_Project (Target_Dir : Standard.String; Skip_List : Standard.String; Packages : Adacovex.Types.Package_Vectors.Vector)
+### procedure Scan_Project (Target_Dir : Standard.String; Skip_List : Standard.String; Packages : Adacovex.Types.Implementation.Package_Vectors.Vector)
 
 | Parameter | Description |
 |-----------|-------------|

@@ -70,14 +70,14 @@ Date: _2026-07-29_
 ### Production scalability (unbounded)
 
 - **Packages and subprograms** now use `Ada.Containers.Vectors` (heap-allocated,
-  up to `Natural'Last` ≈ 2.1B). Compile-time `Max_Packages` / `Max_Subprogs`
+  up to `Natural'Last` ~ 2.1B). Compile-time `Max_Packages` / `Max_Subprogs`
   bounds eliminated entirely. Projects of any size are supported without
   recompilation.
 - **VC counts** use unbounded `Natural` fields; `Max_VC_Count` dead type removed.
-- **Line buffer** raised from 2048 → **8192** characters with automatic
+- **Line buffer** raised from 2048 -> **8192** characters with automatic
   truncation draining (silently skips remaining chars on lines > 8192).
-- **Path buffer** raised from 512 → **4096** characters (matches `PATH_MAX`).
-- **Filename buffer** raised from 64 → **128** characters (matches Ada's max
+- **Path buffer** raised from 512 -> **4096** characters (matches `PATH_MAX`).
+- **Filename buffer** raised from 64 -> **128** characters (matches Ada's max
   identifier length).
 - **Line-truncation guard** added: `Get_Line` calls now detect when the buffer
   was filled (partial read) and drain the remainder of the line, preventing
@@ -96,8 +96,8 @@ Date: _2026-07-29_
 - **Patch engine**: overloaded subprograms now handled correctly
 - **Source scanner**: `.adacovex` always excluded from directory walk
 - **Scalability**: `Package_Array` / `Subprogram_Array` replaced with
-  `Ada.Containers.Vectors` (unbounded). `Max_Line` 2048→8192, `Max_Path`
-  512→4096, `Max_Filename` 64→128. Line-truncation drain added.
+  `Ada.Containers.Vectors` (unbounded). `Max_Line` 2048->8192, `Max_Path`
+  512->4096, `Max_Filename` 64->128. Line-truncation drain added.
 - **Dead code removed**: `Max_Params`, `Max_VC_Count`, `Max_Badge_Path`,
   `Max_Metrics`, `Max_Skip_Dirs`, `VC_Info`, `VC_Vector`, `Param_Count`
 - **CLI validation**: `--dal` rejects invalid levels
@@ -106,7 +106,7 @@ Date: _2026-07-29_
 ## Known Issues
 
 - `(null record)` typed parameters are counted as parameters by the scanner
-  (benign — they are parameters, just parameterless).
+  (benign -- they are parameters, just parameterless).
 - Docstring detection uses strict `--  ` prefix; `-- ` (one space) and `---`
   (three dashes) do not count.
 - Relative `--target=PATH` is resolved against CWD, so behavior depends on
@@ -156,7 +156,7 @@ Ada_CRDT (relaxed): **Platinum** (273 VCs, 5 justified).
   so `make run-self` finds the proof output.
 
 ### Fixed `make fmt` non-determinism
-- Replaced non-ASCII `≈` (U+2248) with ASCII `~` in `adacovex-types.ads` source
+- Replaced non-ASCII `~` (U+2248) with ASCII `~` in `adacovex-types.ads` source
   comment. gnatformat was re-encoding the UTF-8 character on each run, creating
   an oscillating diff that never converged. Now idempotent across repeated runs.
 

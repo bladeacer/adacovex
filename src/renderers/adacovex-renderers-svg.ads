@@ -19,7 +19,8 @@ package Adacovex.Renderers.SVG is
    --  Returns SVG markup showing the total test count and pass/fail breakdown.
    --  @param Tests  Test result summary.
    --  @return SVG badge markup.
-   function Render_Tests_Badge (Tests : Types.Test_Summary) return String
+   function Render_Tests_Badge
+     (Tests : Types.Implementation.Test_Summary) return String
    with Post => Render_Tests_Badge'Result'Length > 0, Global => null;
 
    --  Render a DO-178C compliance badge (Achieved / Unmet).
@@ -27,7 +28,8 @@ package Adacovex.Renderers.SVG is
    --  status as the value, green for Achieved, red for Unmet.
    --  @param Assess  DAL assessment record.
    --  @return SVG badge markup.
-   function Render_DO178C_Badge (Assess : Types.DAL_Assessment) return String
+   function Render_DO178C_Badge
+     (Assess : Types.Implementation.DAL_Assessment) return String
    with Post => Render_DO178C_Badge'Result'Length > 0, Global => null;
 
    --  Render a docstring-coverage badge showing documented percentage.

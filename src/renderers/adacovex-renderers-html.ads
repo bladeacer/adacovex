@@ -20,9 +20,9 @@ package Adacovex.Renderers.HTML is
    function Render_Dashboard
      (Doc_Metrics : Types.Docstring_Metrics;
       Proof       : Types.Proof_Summary;
-      Tests       : Types.Test_Summary;
-      DAL_Assess  : Types.DAL_Assessment;
-      Packages    : Types.Package_Vectors.Vector) return String
+      Tests       : Types.Implementation.Test_Summary;
+      DAL_Assess  : Types.Implementation.DAL_Assessment;
+      Packages    : Types.Implementation.Package_Vectors.Vector) return String
    with Post => Render_Dashboard'Result'Length > 0, Global => null;
 
    --  Render a JSON object with key metric values.
@@ -37,8 +37,8 @@ package Adacovex.Renderers.HTML is
    function Render_Metrics_JSON
      (Doc_Metrics : Types.Docstring_Metrics;
       Proof       : Types.Proof_Summary;
-      Tests       : Types.Test_Summary;
-      DAL_Assess  : Types.DAL_Assessment) return String
+      Tests       : Types.Implementation.Test_Summary;
+      DAL_Assess  : Types.Implementation.DAL_Assessment) return String
    with Post => Render_Metrics_JSON'Result'Length > 0, Global => null;
 
 end Adacovex.Renderers.HTML;

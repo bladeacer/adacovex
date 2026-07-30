@@ -35,7 +35,7 @@ end record;
 
 ## Functions
 
-### function Find_HLR_In_Source (HLR_Id : Standard.String; Packages : Adacovex.Types.Package_Vectors.Vector) return Standard.Boolean `[Global]`
+### function Find_HLR_In_Source (HLR_Id : Standard.String; Packages : Adacovex.Types.Implementation.Package_Vectors.Vector) return Standard.Boolean `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|

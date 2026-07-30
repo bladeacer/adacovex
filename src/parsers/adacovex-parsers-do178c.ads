@@ -59,7 +59,8 @@ package Adacovex.Parsers.DO178C is
    --  @param Packages  Vector of scanned packages.
    --  @return True if HLR_Id appears as a source-code tag in any package.
    function Find_HLR_In_Source
-     (HLR_Id : String; Packages : Types.Package_Vectors.Vector) return Boolean
+     (HLR_Id : String; Packages : Types.Implementation.Package_Vectors.Vector)
+      return Boolean
    with Global => null;
 
 end Adacovex.Parsers.DO178C;

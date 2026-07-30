@@ -10,7 +10,7 @@ HLR-RENDER-ANSI: ANSI rendering
 
 ## Procedures
 
-### procedure Render_Summary (Doc_Metrics : Adacovex.Types.Docstring_Metrics; Proof : Adacovex.Types.Proof_Summary; Tests : Adacovex.Types.Test_Summary; DAL_Assess : Adacovex.Types.DAL_Assessment; Packages : Adacovex.Types.Package_Vectors.Vector; Use_Color : Standard.Boolean)
+### procedure Render_Summary (Doc_Metrics : Adacovex.Types.Docstring_Metrics; Proof : Adacovex.Types.Proof_Summary; Tests : Adacovex.Types.Implementation.Test_Summary; DAL_Assess : Adacovex.Types.Implementation.DAL_Assessment; Packages : Adacovex.Types.Implementation.Package_Vectors.Vector; Use_Color : Standard.Boolean)
 
 | Parameter | Description |
 |-----------|-------------|
