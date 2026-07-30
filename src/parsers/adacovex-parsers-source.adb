@@ -1,5 +1,6 @@
 with Ada.Text_IO;
 with Ada.Directories;
+with Ada.Containers.Vectors;
 
 package body Adacovex.Parsers.Source is
 
@@ -230,133 +231,140 @@ package body Adacovex.Parsers.Source is
             return;
       end;
 
-      while not End_Of_File (F) loop
-         Get_Line (F, Line, Last);
-         Line_Num := Line_Num + 1;
-         if Last = Types.Max_Line then
-            declare
-               Drain : String (1 .. Types.Max_Line);
-               DLast : Natural;
-            begin
-               loop
-                  Get_Line (F, Drain, DLast);
-                  exit when DLast < Types.Max_Line;
-               end loop;
-            end;
-         end if;
-
-         if Has_HLR_Tag (Line (1 .. Last), HLR_Buf, HLR_Len) then
-            if not In_Subp then
+      begin
+         while not End_Of_File (F) loop
+            Get_Line (F, Line, Last);
+            Line_Num := Line_Num + 1;
+            if Last = Types.Max_Line then
                declare
-                  Elem : Types.HLR_Tag_Entry;
+                  Drain : String (1 .. Types.Max_Line);
+                  DLast : Natural;
                begin
-                  for I in 1 .. HLR_Len loop
-                     Elem.Tag (I) := HLR_Buf (I);
+                  loop
+                     Get_Line (F, Drain, DLast);
+                     exit when DLast < Types.Max_Line;
                   end loop;
-                  Elem.Len := HLR_Len;
-                  Pkg.HLR_Tags.Append (Elem);
                end;
             end if;
-         end if;
 
-         if Is_Subprogram_Decl (Line (1 .. Last)) then
-            Pkg.Subprograms.Append
-              (New_Item => Types.Subprogram_Info'(others => <>));
-            declare
-               Subp_Idx : constant Positive :=
-                 Positive (Pkg.Subprograms.Length);
-            begin
-               Pkg.Subprograms (Subp_Idx).Line_Number := Line_Num;
-               Flush_Pending;
-               In_Subp := True;
+            if Has_HLR_Tag (Line (1 .. Last), HLR_Buf, HLR_Len) then
+               if not In_Subp then
+                  declare
+                     Elem : Types.HLR_Tag_Entry;
+                  begin
+                     for I in 1 .. HLR_Len loop
+                        Elem.Tag (I) := HLR_Buf (I);
+                     end loop;
+                     Elem.Len := HLR_Len;
+                     Pkg.HLR_Tags.Append (Elem);
+                  end;
+               end if;
+            end if;
 
+            if Is_Subprogram_Decl (Line (1 .. Last)) then
+               Pkg.Subprograms.Append
+                 (New_Item => Types.Subprogram_Info'(others => <>));
                declare
-                  Trim     : String (1 .. Last);
-                  TL       : Natural := 0;
-                  In_SName : Boolean := False;
-                  SName    : String (1 .. Types.Max_Desc_Str);
-                  SNLen    : Natural := 0;
-                  Skip     : Natural := 0;
+                  Subp_Idx : constant Positive :=
+                    Positive (Pkg.Subprograms.Length);
                begin
-                  for I in 1 .. Last loop
-                     if Line (I) /= ' ' then
-                        TL := TL + 1;
-                        Trim (TL) := Line (I);
-                     end if;
-                  end loop;
+                  Pkg.Subprograms (Subp_Idx).Line_Number := Line_Num;
+                  Flush_Pending;
+                  In_Subp := True;
 
-                  for I in 1 .. TL loop
-                     if Skip > 0 then
-                        Skip := Skip - 1;
-                     elsif not In_SName then
-                        if I + 8 <= TL and then Trim (I .. I + 8) = "procedure"
-                        then
-                           Skip := 8;
-                        elsif I + 7 <= TL
-                          and then Trim (I .. I + 7) = "function"
-                        then
-                           Skip := 7;
-                        elsif I + 6 <= TL
-                          and then Trim (I .. I + 6) = "generic"
-                        then
-                           Skip := 6;
+                  declare
+                     Trim     : String (1 .. Last);
+                     TL       : Natural := 0;
+                     In_SName : Boolean := False;
+                     SName    : String (1 .. Types.Max_Desc_Str);
+                     SNLen    : Natural := 0;
+                     Skip     : Natural := 0;
+                  begin
+                     for I in 1 .. Last loop
+                        if Line (I) /= ' ' then
+                           TL := TL + 1;
+                           Trim (TL) := Line (I);
+                        end if;
+                     end loop;
+
+                     for I in 1 .. TL loop
+                        if Skip > 0 then
+                           Skip := Skip - 1;
+                        elsif not In_SName then
+                           if I + 8 <= TL
+                             and then Trim (I .. I + 8) = "procedure"
+                           then
+                              Skip := 8;
+                           elsif I + 7 <= TL
+                             and then Trim (I .. I + 7) = "function"
+                           then
+                              Skip := 7;
+                           elsif I + 6 <= TL
+                             and then Trim (I .. I + 6) = "generic"
+                           then
+                              Skip := 6;
+                           elsif Trim (I)
+                                 in 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_'
+                           then
+                              In_SName := True;
+                              SNLen := 1;
+                              SName (SNLen) := Trim (I);
+                           end if;
                         elsif Trim (I)
                               in 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_'
                         then
-                           In_SName := True;
-                           SNLen := 1;
+                           SNLen := SNLen + 1;
                            SName (SNLen) := Trim (I);
+                        else
+                           exit;
                         end if;
-                     elsif Trim (I)
-                           in 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_'
-                     then
-                        SNLen := SNLen + 1;
-                        SName (SNLen) := Trim (I);
-                     else
-                        exit;
-                     end if;
-                  end loop;
+                     end loop;
 
-                  Pkg.Subprograms (Subp_Idx).Name_Len := SNLen;
-                  for J in 1 .. SNLen loop
-                     Pkg.Subprograms (Subp_Idx).Name (J) := SName (J);
-                  end loop;
+                     Pkg.Subprograms (Subp_Idx).Name_Len := SNLen;
+                     for J in 1 .. SNLen loop
+                        Pkg.Subprograms (Subp_Idx).Name (J) := SName (J);
+                     end loop;
+                  end;
                end;
-            end;
-         end if;
-
-         if Has_Docstring_Tag
-              (Line (1 .. Last), DT_Type, DT_Len, DT_Value, DV_Len)
-         then
-            if DT_Len >= 5 and then DT_Type (1 .. 5) = "param" then
-               Pending_Has_Doc := True;
-               Pending_Param_Ct := Pending_Param_Ct + 1;
-            elsif DT_Len >= 6 and then DT_Type (1 .. 6) = "return" then
-               Pending_Has_Doc := True;
-               Pending_Has_Return := True;
-            elsif DT_Len >= 5 and then DT_Type (1 .. 5) = "field" then
-               Pending_Has_Doc := True;
-            elsif DT_Len >= 6 and then DT_Type (1 .. 6) = "formal" then
-               null;
             end if;
-         elsif Last >= 5 then
-            for P in 1 .. Last - 3 loop
-               if Line (P) = '-'
-                 and Line (P + 1) = '-'
-                 and Line (P + 2) = ' '
-                 and Line (P + 3) = ' '
-               then
-                  for C in P + 4 .. Last loop
-                     if Line (C) /= ' ' then
-                        Pending_Has_Doc := True;
-                        exit;
-                     end if;
-                  end loop;
-                  exit;
+
+            if Has_Docstring_Tag
+                 (Line (1 .. Last), DT_Type, DT_Len, DT_Value, DV_Len)
+            then
+               if DT_Len >= 5 and then DT_Type (1 .. 5) = "param" then
+                  Pending_Has_Doc := True;
+                  Pending_Param_Ct := Pending_Param_Ct + 1;
+               elsif DT_Len >= 6 and then DT_Type (1 .. 6) = "return" then
+                  Pending_Has_Doc := True;
+                  Pending_Has_Return := True;
+               elsif DT_Len >= 5 and then DT_Type (1 .. 5) = "field" then
+                  Pending_Has_Doc := True;
+               elsif DT_Len >= 6 and then DT_Type (1 .. 6) = "formal" then
+                  null;
                end if;
-            end loop;
-         end if;
-      end loop;
+            elsif Last >= 5 then
+               for P in 1 .. Last - 3 loop
+                  if Line (P) = '-'
+                    and Line (P + 1) = '-'
+                    and Line (P + 2) = ' '
+                    and Line (P + 3) = ' '
+                  then
+                     for C in P + 4 .. Last loop
+                        if Line (C) /= ' ' then
+                           Pending_Has_Doc := True;
+                           exit;
+                        end if;
+                     end loop;
+                     exit;
+                  end if;
+               end loop;
+            end if;
+         end loop;
+      exception
+         when others =>
+            Close (F);
+            raise;
+      end;
 
       Flush_Pending;
 
@@ -413,62 +421,91 @@ package body Adacovex.Parsers.Source is
       Skip_List  : String;
       Packages   : in out Types.Implementation.Package_Vectors.Vector)
    is
-      procedure Search_Dir (Dir : String) is
-         use Ada.Directories;
-         Search : Search_Type;
-         Ent    : Directory_Entry_Type;
-         Pkg    : Types.Implementation.Package_Info;
-         OK     : Boolean;
+      type Dir_Entry is record
+         Path : Types.Path_Field;
+         Len  : Natural := 0;
+      end record;
+      package Dir_Stacks is new Ada.Containers.Vectors (Positive, Dir_Entry);
+      Dir_Stack : Dir_Stacks.Vector;
+
+      use Ada.Directories;
+      Search : Search_Type;
+      Ent    : Directory_Entry_Type;
+      Pkg    : Types.Implementation.Package_Info;
+      OK     : Boolean;
+
+      procedure Push_Dir (Dir : String) is
       begin
-         Start_Search (Search, Dir, "");
-         while More_Entries (Search) loop
-            Get_Next_Entry (Search, Ent);
+         if Dir'Length <= Types.Max_Path then
             declare
-               Name : constant String := Simple_Name (Ent);
-               Path : constant String := Full_Name (Ent);
+               Item : Dir_Entry;
             begin
-               if Kind (Ent) = Directory then
-                  if Name /= "."
-                    and Name /= ".."
-                    and Name /= ".git"
-                    and Name /= "obj"
-                    and Name /= "tests"
-                    and Name /= "config"
-                    and Name /= ".adacovex"
-                    and not Is_Skipped_Dir (Name, Skip_List)
-                  then
-                     Search_Dir (Path);
-                  end if;
-               elsif Kind (Ent) = Ordinary_File then
-                  declare
-                     Dot : Natural := 0;
-                  begin
-                     for I in reverse Name'Range loop
-                        if Name (I) = '.' then
-                           Dot := I;
-                           exit;
-                        end if;
-                     end loop;
-                     if Dot > 0
-                       and then Name (Dot .. Name'Last) = ".ads"
-                       and then (Name'Length < 3
-                                 or else Name (Name'First .. Name'First + 2)
-                                         /= "b__")
-                     then
-                        Scan_Ads_File (Path, Pkg, OK);
-                        if OK then
-                           Packages.Append (Pkg);
-                        end if;
-                     end if;
-                  end;
-               end if;
+               Item.Len := Dir'Length;
+               for I in Dir'Range loop
+                  Item.Path (I - Dir'First + 1) := Dir (I);
+               end loop;
+               Dir_Stack.Append (Item);
             end;
-         end loop;
-         End_Search (Search);
-      end Search_Dir;
+         end if;
+      end Push_Dir;
 
    begin
-      Search_Dir (Target_Dir);
+      Push_Dir (Target_Dir);
+
+      while not Dir_Stack.Is_Empty loop
+         declare
+            Current  : Dir_Entry := Dir_Stack.Last_Element;
+            Dir_Path : String renames Current.Path (1 .. Current.Len);
+         begin
+            Dir_Stack.Delete_Last;
+
+            Start_Search (Search, Dir_Path, "");
+            while More_Entries (Search) loop
+               Get_Next_Entry (Search, Ent);
+               declare
+                  Name : constant String := Simple_Name (Ent);
+                  Path : constant String := Full_Name (Ent);
+               begin
+                  if Kind (Ent) = Directory then
+                     if Name /= "."
+                       and Name /= ".."
+                       and Name /= ".git"
+                       and Name /= "obj"
+                       and Name /= "tests"
+                       and Name /= "config"
+                       and Name /= ".adacovex"
+                       and not Is_Skipped_Dir (Name, Skip_List)
+                     then
+                        Push_Dir (Path);
+                     end if;
+                  elsif Kind (Ent) = Ordinary_File then
+                     declare
+                        Dot : Natural := 0;
+                     begin
+                        for I in reverse Name'Range loop
+                           if Name (I) = '.' then
+                              Dot := I;
+                              exit;
+                           end if;
+                        end loop;
+                        if Dot > 0
+                          and then Name (Dot .. Name'Last) = ".ads"
+                          and then (Name'Length < 3
+                                    or else Name (Name'First .. Name'First + 2)
+                                            /= "b__")
+                        then
+                           Scan_Ads_File (Path, Pkg, OK);
+                           if OK then
+                              Packages.Append (Pkg);
+                           end if;
+                        end if;
+                     end;
+                  end if;
+               end;
+            end loop;
+            End_Search (Search);
+         end;
+      end loop;
    end Scan_Project;
 
    function Is_Prefix (Pre, S : String) return Boolean is

@@ -59,103 +59,104 @@ package body Adacovex.Parsers.GNATprove is
             return;
       end;
 
-      while not End_Of_File (F) loop
-         Get_Line (F, Line, Last);
+      begin
+         while not End_Of_File (F) loop
+            Get_Line (F, Line, Last);
 
-         -- Look for "Analyzed N units"
-         if Last >= 12 then
-            for I in 1 .. Last - 8 loop
-               if Line (I .. I + 7) = "Analyzed" then
-                  Summary.Units_Analyzed :=
-                    Get_Nth_Number_Raw (Line (I + 8 .. Last), 1);
-               end if;
-            end loop;
-         end if;
-         if Last >= 8 then
-            for I in 1 .. Last - 7 loop
-               if Line (I .. I + 6) = "skipped" then
-                  Summary.Units_Skipped :=
-                    Get_Nth_Number_Raw (Line (I + 7 .. Last), 1);
-               end if;
-            end loop;
-         end if;
-
-         -- Match data rows by keyword at the start of the line (first non-space)
-         declare
-            First_Char : Natural := 0;
-         begin
-            for I in 1 .. Last loop
-               if Line (I) /= ' ' then
-                  First_Char := I;
-                  exit;
-               end if;
-            end loop;
-
-            if First_Char > 0 then
-               declare
-                  Row : String renames Line (First_Char .. Last);
-               begin
-                  -- Check for "Flow Dependencies"
-                  if Row'Length >= 17
-                    and then Row (Row'First .. Row'First + 4) = "Flow "
-                  then
-                     Summary.Flow_Checks := Get_Nth_Number_Raw (Row, 1);
-                     Summary.Flow_Proved := Get_Nth_Number_Raw (Row, 2);
+            -- Look for "Analyzed N units"
+            if Last >= 12 then
+               for I in 1 .. Last - 8 loop
+                  if Line (I .. I + 7) = "Analyzed" then
+                     Summary.Units_Analyzed :=
+                       Get_Nth_Number_Raw (Line (I + 8 .. Last), 1);
                   end if;
-
-                  -- Check for "Run-time Checks"
-                  if Row'Length >= 15
-                    and then Row (Row'First .. Row'First + 3) = "Run-"
-                  then
-                     Summary.Runtime_Checks := Get_Nth_Number_Raw (Row, 1);
-                     Summary.Runtime_Proved := Get_Nth_Number_Raw (Row, 2);
-                  end if;
-
-                  -- Check for "Assertions"
-                  if Row'Length >= 10
-                    and then Row (Row'First .. Row'First + 3) = "Asse"
-                  then
-                     Summary.Assertions := Get_Nth_Number_Raw (Row, 1);
-                     Summary.Assert_Proved := Get_Nth_Number_Raw (Row, 2);
-                  end if;
-
-                  -- Check for "Functional"
-                  if Row'Length >= 11
-                    and then Row (Row'First .. Row'First + 3) = "Func"
-                  then
-                     Summary.Functional_Ct := Get_Nth_Number_Raw (Row, 1);
-                     Summary.Functional_Proved := Get_Nth_Number_Raw (Row, 2);
-                  end if;
-
-                  -- Check for "Termination"
-                  if Row'Length >= 11
-                    and then Row (Row'First .. Row'First + 3) = "Term"
-                  then
-                     Summary.Termination_Ct := Get_Nth_Number_Raw (Row, 1);
-                     Summary.Termination_Proved := Get_Nth_Number_Raw (Row, 2);
-                  end if;
-
-                  -- Check for "Total" line
-                  if Row'Length >= 5
-                    and then Row (Row'First .. Row'First + 4) = "Total"
-                  then
-                     Summary.Total_VCs := Get_Nth_Number_Raw (Row, 1);
-                     Summary.Proved_VCs := Get_Nth_Number_Raw (Row, 3);
-                     Summary.Justified := Get_Nth_Number_Raw (Row, 4);
-                     Summary.Unproved := Get_Nth_Number_Raw (Row, 5);
-                  end if;
-
-                  -- Check for "Initialization"
-                  if Row'Length >= 14
-                    and then Row (Row'First .. Row'First + 3) = "Init"
-                  then
-                     Summary.Flow_Checks := Get_Nth_Number_Raw (Row, 1);
-                     Summary.Flow_Proved := Get_Nth_Number_Raw (Row, 2);
-                  end if;
-               end;
+               end loop;
             end if;
-         end;
-      end loop;
+            if Last >= 8 then
+               for I in 1 .. Last - 7 loop
+                  if Line (I .. I + 6) = "skipped" then
+                     Summary.Units_Skipped :=
+                       Get_Nth_Number_Raw (Line (I + 7 .. Last), 1);
+                  end if;
+               end loop;
+            end if;
+
+            -- Match data rows by keyword at the start of the line
+            declare
+               First_Char : Natural := 0;
+            begin
+               for I in 1 .. Last loop
+                  if Line (I) /= ' ' then
+                     First_Char := I;
+                     exit;
+                  end if;
+               end loop;
+
+               if First_Char > 0 then
+                  declare
+                     Row : String renames Line (First_Char .. Last);
+                  begin
+                     if Row'Length >= 17
+                       and then Row (Row'First .. Row'First + 4) = "Flow "
+                     then
+                        Summary.Flow_Checks := Get_Nth_Number_Raw (Row, 1);
+                        Summary.Flow_Proved := Get_Nth_Number_Raw (Row, 2);
+                     end if;
+
+                     if Row'Length >= 15
+                       and then Row (Row'First .. Row'First + 3) = "Run-"
+                     then
+                        Summary.Runtime_Checks := Get_Nth_Number_Raw (Row, 1);
+                        Summary.Runtime_Proved := Get_Nth_Number_Raw (Row, 2);
+                     end if;
+
+                     if Row'Length >= 10
+                       and then Row (Row'First .. Row'First + 3) = "Asse"
+                     then
+                        Summary.Assertions := Get_Nth_Number_Raw (Row, 1);
+                        Summary.Assert_Proved := Get_Nth_Number_Raw (Row, 2);
+                     end if;
+
+                     if Row'Length >= 11
+                       and then Row (Row'First .. Row'First + 3) = "Func"
+                     then
+                        Summary.Functional_Ct := Get_Nth_Number_Raw (Row, 1);
+                        Summary.Functional_Proved :=
+                          Get_Nth_Number_Raw (Row, 2);
+                     end if;
+
+                     if Row'Length >= 11
+                       and then Row (Row'First .. Row'First + 3) = "Term"
+                     then
+                        Summary.Termination_Ct := Get_Nth_Number_Raw (Row, 1);
+                        Summary.Termination_Proved :=
+                          Get_Nth_Number_Raw (Row, 2);
+                     end if;
+
+                     if Row'Length >= 5
+                       and then Row (Row'First .. Row'First + 4) = "Total"
+                     then
+                        Summary.Total_VCs := Get_Nth_Number_Raw (Row, 1);
+                        Summary.Proved_VCs := Get_Nth_Number_Raw (Row, 3);
+                        Summary.Justified := Get_Nth_Number_Raw (Row, 4);
+                        Summary.Unproved := Get_Nth_Number_Raw (Row, 5);
+                     end if;
+
+                     if Row'Length >= 14
+                       and then Row (Row'First .. Row'First + 3) = "Init"
+                     then
+                        Summary.Flow_Checks := Get_Nth_Number_Raw (Row, 1);
+                        Summary.Flow_Proved := Get_Nth_Number_Raw (Row, 2);
+                     end if;
+                  end;
+               end if;
+            end;
+         end loop;
+      exception
+         when others =>
+            Close (F);
+            raise;
+      end;
 
       Close (F);
 
@@ -275,41 +276,46 @@ package body Adacovex.Parsers.GNATprove is
             Success := False;
             return;
       end;
-      --  Read entire file line by line looking for known keys
-      while not End_Of_File (F) loop
-         Get_Line (F, Line, Last);
-         declare
-            S : String renames Line (1 .. Last);
-         begin
-            if JSON_Get (S, "total_vcs") > 0 then
-               Summary.Total_VCs := JSON_Get (S, "total_vcs");
-            end if;
-            if JSON_Get (S, "proved_vcs") > 0 then
-               Summary.Proved_VCs := JSON_Get (S, "proved_vcs");
-            end if;
-            if JSON_Get (S, "unproved_vcs") > 0 then
-               Summary.Unproved := JSON_Get (S, "unproved_vcs");
-            end if;
-            if JSON_Get (S, "flow_deps") > 0 then
-               Summary.Flow_Checks := JSON_Get (S, "flow_deps");
-            end if;
-            if JSON_Get (S, "flow_proved") > 0 then
-               Summary.Flow_Proved := JSON_Get (S, "flow_proved");
-            end if;
-            if JSON_Get (S, "runtime_checks") > 0 then
-               Summary.Runtime_Checks := JSON_Get (S, "runtime_checks");
-            end if;
-            if JSON_Get (S, "runtime_proved") > 0 then
-               Summary.Runtime_Proved := JSON_Get (S, "runtime_proved");
-            end if;
-            if JSON_Get (S, "assertions") > 0 then
-               Summary.Assertions := JSON_Get (S, "assertions");
-            end if;
-            if JSON_Get (S, "assert_proved") > 0 then
-               Summary.Assert_Proved := JSON_Get (S, "assert_proved");
-            end if;
-         end;
-      end loop;
+      begin
+         while not End_Of_File (F) loop
+            Get_Line (F, Line, Last);
+            declare
+               S : String renames Line (1 .. Last);
+            begin
+               if JSON_Get (S, "total_vcs") > 0 then
+                  Summary.Total_VCs := JSON_Get (S, "total_vcs");
+               end if;
+               if JSON_Get (S, "proved_vcs") > 0 then
+                  Summary.Proved_VCs := JSON_Get (S, "proved_vcs");
+               end if;
+               if JSON_Get (S, "unproved_vcs") > 0 then
+                  Summary.Unproved := JSON_Get (S, "unproved_vcs");
+               end if;
+               if JSON_Get (S, "flow_deps") > 0 then
+                  Summary.Flow_Checks := JSON_Get (S, "flow_deps");
+               end if;
+               if JSON_Get (S, "flow_proved") > 0 then
+                  Summary.Flow_Proved := JSON_Get (S, "flow_proved");
+               end if;
+               if JSON_Get (S, "runtime_checks") > 0 then
+                  Summary.Runtime_Checks := JSON_Get (S, "runtime_checks");
+               end if;
+               if JSON_Get (S, "runtime_proved") > 0 then
+                  Summary.Runtime_Proved := JSON_Get (S, "runtime_proved");
+               end if;
+               if JSON_Get (S, "assertions") > 0 then
+                  Summary.Assertions := JSON_Get (S, "assertions");
+               end if;
+               if JSON_Get (S, "assert_proved") > 0 then
+                  Summary.Assert_Proved := JSON_Get (S, "assert_proved");
+               end if;
+            end;
+         end loop;
+      exception
+         when others =>
+            Close (F);
+            raise;
+      end;
       Close (F);
       Summary.Level := Determine_SPARK_Level (Summary);
       Success := Summary.Total_VCs > 0;
