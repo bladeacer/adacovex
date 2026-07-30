@@ -1,13 +1,15 @@
 with Ada.Text_IO;
 with Ada.Exceptions;
+with Ada.Command_Line;
 with Ada.Calendar;
 with Ada.Environment_Variables;
-with Ada.Command_Line;
+with GNAT.Sockets;
 with Adacovex.Types;
 with Adacovex.Config;
 with Adacovex.Parsers.Source;
 with Adacovex.Parsers.GNATprove;
 with Adacovex.Parsers.Tests;
+with Adacovex.Parsers.DO178C;
 with Adacovex.Compliance.DAL;
 with Adacovex.Renderers.ANSI;
 with Adacovex.Renderers.SVG;
@@ -17,6 +19,12 @@ with Adacovex.Server.HTTP;
 procedure Adacovex_Main is
    use Ada.Calendar;
    use Adacovex.Types, Adacovex.Types.Implementation;
+
+   function Img (N : Natural) return String is
+      S : constant String := Natural'Image (N);
+   begin
+      return S (2 .. S'Last);
+   end Img;
 
    Start_Time : constant Time := Clock;
    Cfg        : Adacovex.Config.CLI_Config;
@@ -89,7 +97,7 @@ begin
         (Target (1 .. TLen), Skip_List (1 .. SLen), Packages);
    end;
    Verbose
-     ("  found " & Natural'Image (Natural (Packages.Length)) & " packages");
+     ("  found " & Img (Natural (Packages.Length)) & " packages");
 
    -- Apply docstring patches when in strict mode
    if Cfg.Strict_Mode then
@@ -100,9 +108,9 @@ begin
    Doc_Metrics := Adacovex.Parsers.Source.Compute_Docstring_Metrics (Packages);
    Verbose
      ("  docstrings:"
-      & Natural'Image (Doc_Metrics.Documented_Subprogs)
+      & Img (Doc_Metrics.Documented_Subprogs)
       & "/"
-      & Natural'Image (Doc_Metrics.Total_Subprograms));
+      & Img (Doc_Metrics.Total_Subprograms));
 
    -- Step 2: Parse GNATprove output
    Verbose ("step 2/8: parsing GNATprove output...");
@@ -112,7 +120,7 @@ begin
      ("  spark level: "
       & Adacovex.Types.To_String (Proof.Level)
       & " ("
-      & Natural'Image (Proof.Total_VCs)
+      & Img (Proof.Total_VCs)
       & " VCs)");
 
    -- Step 3: Parse test results
@@ -185,7 +193,7 @@ begin
    if Cfg.Serve_Mode then
       Verbose
         ("step 8/8: starting HTTP server on port"
-         & Positive'Image (Cfg.Port)
+          & Img (Natural (Cfg.Port))
          & "...");
       declare
          State : Adacovex.Server.HTTP.Server_State;

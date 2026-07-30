@@ -15,7 +15,6 @@ package Adacovex.Server.HTTP is
       Tests       : Types.Implementation.Test_Summary;
       DAL_Assess  : Types.Implementation.DAL_Assessment;
       Packages    : Types.Implementation.Package_Vectors.Vector;
-      Running     : Boolean := False;
    end record;
 
    --  Start the HTTP server (runs until Ctrl+C or socket error).
