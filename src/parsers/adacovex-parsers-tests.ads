@@ -18,11 +18,4 @@ package Adacovex.Parsers.Tests is
       Success   : out Boolean)
    with Pre => File_Path'Length > 0;
 
-   --  Parse raw test-runner stdout for pass/fail counts.
-   --  Reads from the standard input (piped test-runner output) and extracts
-   --  per-category test counts and overall pass/fail status.
-   --  @param Summary  Output test summary from piped stdout.
-   procedure Parse_Test_Stdout
-     (Summary : out Types.Implementation.Test_Summary);
-
 end Adacovex.Parsers.Tests;

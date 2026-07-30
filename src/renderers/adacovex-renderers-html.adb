@@ -6,6 +6,12 @@ package body Adacovex.Renderers.HTML is
    use type Types.Test_Status;
    use type Types.DAL_Status;
 
+   function Img (N : Natural) return String is
+      S : constant String := Natural'Image (N);
+   begin
+      return S (2 .. S'Last);
+   end Img;
+
    function Render_Dashboard
      (Doc_Metrics : Types.Docstring_Metrics;
       Proof       : Types.Proof_Summary;
@@ -76,13 +82,13 @@ package body Adacovex.Renderers.HTML is
       Put ("<h2>Source Overview</h2>");
       Put ("<table><tr><th>Metric</th><th>Value</th></tr>");
       Put ("<tr><td>Packages Scanned</td><td>");
-      Put (Integer'Image (Integer (Packages.Length)));
+      Put (Img (Natural (Packages.Length)));
       Put ("</td></tr>");
       Put ("<tr><td>Total Subprograms</td><td>");
-      Put (Natural'Image (Doc_Metrics.Total_Subprograms));
+      Put (Img (Doc_Metrics.Total_Subprograms));
       Put ("</td></tr>");
       Put ("<tr><td>Docstring Coverage</td><td>");
-      Put (Natural'Image (Doc_Metrics.Coverage_Pct));
+      Put (Img (Doc_Metrics.Coverage_Pct));
       Put ("%</td></tr></table></div>");
 
       Put ("<div class=""card"">");
@@ -94,29 +100,29 @@ package body Adacovex.Renderers.HTML is
       Put (Types.To_String (Proof.Level));
       Put ("</td></tr>");
       Put ("<tr><td>Flow</td><td>");
-      Put (Natural'Image (Proof.Flow_Checks));
+      Put (Img (Proof.Flow_Checks));
       Put ("</td><td>");
-      Put (Natural'Image (Proof.Flow_Proved));
+      Put (Img (Proof.Flow_Proved));
       Put ("</td></tr>");
       Put ("<tr><td>Runtime</td><td>");
-      Put (Natural'Image (Proof.Runtime_Checks));
+      Put (Img (Proof.Runtime_Checks));
       Put ("</td><td>");
-      Put (Natural'Image (Proof.Runtime_Proved));
+      Put (Img (Proof.Runtime_Proved));
       Put ("</td></tr>");
       Put ("<tr><td>Assertions</td><td>");
-      Put (Natural'Image (Proof.Assertions));
+      Put (Img (Proof.Assertions));
       Put ("</td><td>");
-      Put (Natural'Image (Proof.Assert_Proved));
+      Put (Img (Proof.Assert_Proved));
       Put ("</td></tr>");
       Put ("<tr><td>Functional</td><td>");
-      Put (Natural'Image (Proof.Functional_Ct));
+      Put (Img (Proof.Functional_Ct));
       Put ("</td><td>");
-      Put (Natural'Image (Proof.Functional_Proved));
+      Put (Img (Proof.Functional_Proved));
       Put ("</td></tr>");
       Put ("<tr><td>Total VCs</td><td>");
-      Put (Natural'Image (Proof.Total_VCs));
+      Put (Img (Proof.Total_VCs));
       Put ("</td><td>");
-      Put (Natural'Image (Proof.Proved_VCs));
+      Put (Img (Proof.Proved_VCs));
       Put ("</td></tr></table></div>");
 
       Put ("<div class=""card"">");
@@ -127,7 +133,7 @@ package body Adacovex.Renderers.HTML is
          Put
            (Tests.Categories (C).Category (1 .. Tests.Categories (C).Cat_Len));
          Put ("</td><td>");
-         Put (Natural'Image (Tests.Categories (C).Test_Count));
+         Put (Img (Tests.Categories (C).Test_Count));
          Put ("</td><td class=""");
          Put
            (if Tests.Categories (C).Status = Types.Pass
@@ -138,13 +144,13 @@ package body Adacovex.Renderers.HTML is
          Put ("</td></tr>");
       end loop;
       Put ("<tr><td><strong>Total</strong></td><td><strong>");
-      Put (Natural'Image (Tests.Total_Passed + Tests.Total_Failed));
+      Put (Img (Tests.Total_Passed + Tests.Total_Failed));
       Put ("</strong></td><td><strong class=""");
       Put (if Tests.Total_Failed = 0 then "pass" else "fail");
       Put (""">Passed: ");
-      Put (Natural'Image (Tests.Total_Passed));
+      Put (Img (Tests.Total_Passed));
       Put (", Failed: ");
-      Put (Natural'Image (Tests.Total_Failed));
+      Put (Img (Tests.Total_Failed));
       Put ("</strong></td></tr></table></div>");
 
       Put ("<div class=""card"">");
@@ -159,9 +165,9 @@ package body Adacovex.Renderers.HTML is
       Put (Types.To_String (DAL_Assess.Status));
       Put ("</td></tr>");
       Put ("<tr><td>HLR Traced</td><td>");
-      Put (Natural'Image (DAL_Assess.HLR_Found));
+      Put (Img (DAL_Assess.HLR_Found));
       Put (" / ");
-      Put (Natural'Image (DAL_Assess.HLR_Total));
+      Put (Img (DAL_Assess.HLR_Total));
       Put ("</td></tr>");
       Put ("<tr><td>Orphan Tags</td><td>");
       Put (if DAL_Assess.Orphan_Tags then "Yes" else "No");
@@ -226,19 +232,19 @@ package body Adacovex.Renderers.HTML is
       Put (Types.To_String (Proof.Level));
       Put (""",");
       Put ("""total_vcs"":");
-      Put (Natural'Image (Proof.Total_VCs));
+      Put (Img (Proof.Total_VCs));
       Put (",");
       Put ("""proved_vcs"":");
-      Put (Natural'Image (Proof.Proved_VCs));
+      Put (Img (Proof.Proved_VCs));
       Put (",");
       Put ("""tests_passed"":");
-      Put (Natural'Image (Tests.Total_Passed));
+      Put (Img (Tests.Total_Passed));
       Put (",");
       Put ("""tests_failed"":");
-      Put (Natural'Image (Tests.Total_Failed));
+      Put (Img (Tests.Total_Failed));
       Put (",");
       Put ("""doc_coverage"":");
-      Put (Natural'Image (Doc_Metrics.Coverage_Pct));
+      Put (Img (Doc_Metrics.Coverage_Pct));
       Put (",");
       Put ("""dal_status"":""");
       Put (Types.To_String (DAL_Assess.Status));

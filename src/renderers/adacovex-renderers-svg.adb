@@ -13,12 +13,13 @@ package body Adacovex.Renderers.SVG is
       if N = 0 then
          return "0";
       end if;
-      while R > 0 and Pos > 1 loop
+      while R > 0 loop
          Buf (Pos) := Character'Val (Character'Pos ('0') + (R mod 10));
          R := R / 10;
+         exit when R = 0;
          Pos := Pos - 1;
       end loop;
-      return Buf (Pos + 1 .. 10);
+      return Buf (Pos .. 10);
    end I2S;
 
    function Badge_SVG

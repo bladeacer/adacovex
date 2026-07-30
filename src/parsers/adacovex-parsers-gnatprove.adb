@@ -160,14 +160,14 @@ package body Adacovex.Parsers.GNATprove is
 
       Close (F);
 
-      Summary.Level := Determine_SPARK_Level (Summary);
-      Success := True;
-   end Parse_Prove_Out;
+       Summary.Level := Determine_SPARK_Level (Summary);
+       Success := Summary.Total_VCs > 0;
+    end Parse_Prove_Out;
 
-   function Determine_SPARK_Level
-     (Summary : Types.Proof_Summary) return Types.SPARK_Level is
-   begin
-      if Summary.Unproved > 0 then
+    function Determine_SPARK_Level
+      (Summary : Types.Proof_Summary) return Types.SPARK_Level is
+    begin
+       if Summary.Unproved > 0 then
          return Types.Silver;
       end if;
 
