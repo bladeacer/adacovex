@@ -131,3 +131,39 @@ Ada_CRDT (relaxed): **Platinum** (273 VCs, 5 justified).
 - `--relaxed` now defaults to OFF (was ON in 0.1.0). Existing workflows using
   plain `adacovex --target=...` now run in strict mode. Add `--relaxed` to
   restore old behavior for targets with undocumented vendored code.
+
+## Post-Release Patches (2026-07-30)
+
+### Crate renamed to `covex`
+- Alire crate renamed from `adacovex` to `covex` to comply with naming rules.
+- Binary name stays `adacovex_main` via `project-files = ["adacovex.gpr"]` in
+  all manifest files.
+- `alire/releases/covex-*.toml`, `index/ad/covex/*.toml` created; `index/ad/adacovex/`
+  removed.
+- New `make release`, `make publish`, `make test-publish` targets for Alire
+  community index publishing workflow.
+
+### SPARK proof restored to Platinum (28 VCs)
+- `adacovex-types.ads`: restored `pragma SPARK_Mode (On)` at package level.
+- Vector instantiations and vector-containing types (`Package_Info`,
+  `Test_Summary`, `DAL_Assessment`, `Badge_Config`) moved into a nested
+  `Implementation` package with `pragma SPARK_Mode (Off)`.
+- SPARK-clean types (`SPARK_Level`, `Proof_Summary`, `Docstring_Metrics`,
+  conversion functions) remain in the outer `On` region, restoring 28 VCs.
+- `SPARK_Mode (On)` removed from `adacovex-parsers-tests.ads` and
+  `adacovex-renderers-svg.ads` (reference vector-containing types).
+- Added `gnatprove/gnatprove.out` to search paths in `Parse_Prove_From_Project`
+  so `make run-self` finds the proof output.
+
+### Fixed `make fmt` non-determinism
+- Replaced non-ASCII `≈` (U+2248) with ASCII `~` in `adacovex-types.ads` source
+  comment. gnatformat was re-encoding the UTF-8 character on each run, creating
+  an oscillating diff that never converged. Now idempotent across repeated runs.
+
+### Fixed `make doc` non-determinism
+- Propagated the ASCII-only fix to generated API docs. `make doc` now produces
+  identical output on repeated runs.
+
+### Fixed `compliance-dal.adb` `Desc_Field` overflow
+- `Append` to `Failed_Reasons` vector now properly constructs a 128-char
+  `Desc_Field` before pushing, fixing a `Constraint_Error` on long messages.

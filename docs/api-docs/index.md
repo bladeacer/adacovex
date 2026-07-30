@@ -28,3 +28,4 @@
 - [Adacovex.Renderers.SVG](adacovex-renderers-svg.md)
 - [Adacovex.Server.HTTP](adacovex-server-http.md)
 - [Adacovex.Server.Router](adacovex-server-router.md)
+- [Adacovex.Types.Implementation](adacovex-types-implementation.md)

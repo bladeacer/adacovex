@@ -1,10 +1,9 @@
 # Adacovex.Renderers.SVG
 
-Render a SPARK-level badge (Stone/Bronze/Silver/Gold/Platinum).
-Returns SVG markup for a Shields.io-style badge with the SPARK level
-as the label and the level name as the value, colour-coded by level.
-@param Level  SPARK certification level.
-@return SVG badge markup.
+SVG badge renderer.
+Generates Shields.io-style SVG badges for SPARK level, test status,
+and DO-178C compliance status.
+HLR-RENDER-SVG: SVG badge generation
 
 > **Note:** All items in this package are public.
 
