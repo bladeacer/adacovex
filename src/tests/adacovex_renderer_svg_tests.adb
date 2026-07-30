@@ -1,5 +1,6 @@
 with Ada.Strings.Fixed;
-with Adacovex.Types;         use Adacovex.Types;
+with Adacovex.Types;
+use Adacovex.Types, Adacovex.Types.Implementation;
 with Adacovex.Renderers.SVG; use Adacovex.Renderers.SVG;
 
 package body Adacovex_Renderer_SVG_Tests is

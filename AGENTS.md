@@ -275,19 +275,19 @@ ANSI color codes are suppressed in terminal output. Color is enabled by default.
 When adacovex runs, it executes these steps in sequence:
 
 ```
-1. Parse CLI args           → CLI_Config record
-2. Determine ANSI color     → NO_COLOR check
-3. Scan source files        → Package_Vectors.Vector (subprograms, HLR tags, docstrings)
-4. Apply docstring patches  → Merge .adacovex/patches/ (strict mode only)
-5. Compute doc metrics      → Docstring_Metrics (coverage %)
-6. Parse GNATprove output   → Proof_Summary (VC counts, SPARK level)
-7. Parse test results       → Test_Summary (pass/fail counts)
-8. Assess DAL compliance    → DAL_Assessment (Achieved / Unmet + reasons)
-9. Render ANSI summary      → stdout (terminal report)
-10. Emit SVG badges          → <svg-dir>/*.svg (if enabled)
-11. Emit Markdown reports    → <md-dir>/VERIFICATION.md + TRACE.md (if enabled)
-12. Start HTTP server        → :<port> (if --serve)
-13. Set exit code            → 0 if Achieved, 1 if Unmet
+1. Parse CLI args           -> CLI_Config record
+2. Determine ANSI color     -> NO_COLOR check
+3. Scan source files        -> Package_Vectors.Vector (subprograms, HLR tags, docstrings)
+4. Apply docstring patches  -> Merge .adacovex/patches/ (strict mode only)
+5. Compute doc metrics      -> Docstring_Metrics (coverage %)
+6. Parse GNATprove output   -> Proof_Summary (VC counts, SPARK level)
+7. Parse test results       -> Test_Summary (pass/fail counts)
+8. Assess DAL compliance    -> DAL_Assessment (Achieved / Unmet + reasons)
+9. Render ANSI summary      -> stdout (terminal report)
+10. Emit SVG badges          -> <svg-dir>/*.svg (if enabled)
+11. Emit Markdown reports    -> <md-dir>/VERIFICATION.md + TRACE.md (if enabled)
+12. Start HTTP server        -> :<port> (if --serve)
+13. Set exit code            -> 0 if Achieved, 1 if Unmet
 ```
 
 ### Step details
@@ -586,7 +586,7 @@ running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 
 - Ada 2012 / SPARK 2014
 - **Package/subprogram collections**: `Ada.Containers.Vectors`
-  (heap, `Natural'Last` ≈ 2.1B). No `Max_Packages` / `Max_Subprogs` limits.
+  (heap, `Natural'Last` ~ 2.1B). No `Max_Packages` / `Max_Subprogs` limits.
 - **HLR tags, test metrics, DAL failures**: also `Ada.Containers.Vectors`
   (unbounded). No `Max_Hlrs`, `Max_Categories`, `Max_Failures` limits.
 - **Fixed-size string buffers** (`Max_Path`, `Max_Line`, etc.) remain bounded.
@@ -608,5 +608,5 @@ are unbounded via `Ada.Containers.Vectors`):
 | `Max_Id_Str` | 64 | HLR/LLR tag ID length |
 
 Package and subprogram collections grow dynamically via `Ada.Containers.Vectors`
-(heap allocation, up to `Natural'Last` ≈ 2.1B). The fixed-size constants above
+(heap allocation, up to `Natural'Last` ~ 2.1B). The fixed-size constants above
 apply only to individual line/path/description buffers.

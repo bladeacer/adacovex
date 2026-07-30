@@ -9,14 +9,14 @@ HLR-RENDER-MD: Markdown report generation
 
 ## Procedures
 
-### procedure Generate_Trace_Matrix (Path : Standard.String; Packages : Adacovex.Types.Package_Vectors.Vector) `[Pre]`
+### procedure Generate_Trace_Matrix (Path : Standard.String; Packages : Adacovex.Types.Implementation.Package_Vectors.Vector) `[Pre]`
 
 | Parameter | Description |
 |-----------|-------------|
 | `Packages` | Scanned package vector. |
 | `Path` | Output file path for TRACE.md. |
 
-### procedure Generate_Verification_Report (Path : Standard.String; Doc_Metrics : Adacovex.Types.Docstring_Metrics; Proof : Adacovex.Types.Proof_Summary; Tests : Adacovex.Types.Test_Summary; DAL_Assess : Adacovex.Types.DAL_Assessment; Packages : Adacovex.Types.Package_Vectors.Vector) `[Pre]`
+### procedure Generate_Verification_Report (Path : Standard.String; Doc_Metrics : Adacovex.Types.Docstring_Metrics; Proof : Adacovex.Types.Proof_Summary; Tests : Adacovex.Types.Implementation.Test_Summary; DAL_Assess : Adacovex.Types.Implementation.DAL_Assessment; Packages : Adacovex.Types.Implementation.Package_Vectors.Vector) `[Pre]`
 
 | Parameter | Description |
 |-----------|-------------|

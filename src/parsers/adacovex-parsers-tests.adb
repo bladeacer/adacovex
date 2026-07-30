@@ -4,7 +4,7 @@ package body Adacovex.Parsers.Tests is
 
    procedure Parse_Test_Result
      (File_Path : String;
-      Summary   : out Types.Test_Summary;
+      Summary   : out Types.Implementation.Test_Summary;
       Success   : out Boolean)
    is
       use Ada.Text_IO;
@@ -13,7 +13,8 @@ package body Adacovex.Parsers.Tests is
       Last : Natural;
    begin
       Summary :=
-        (Categories   => Types.Test_Metrics_Vectors.Empty_Vector,
+        (Categories   =>
+           Types.Implementation.Test_Metrics_Vectors.Empty_Vector,
          Total_Passed => 0,
          Total_Failed => 0);
 
@@ -166,10 +167,12 @@ package body Adacovex.Parsers.Tests is
       Success := True;
    end Parse_Test_Result;
 
-   procedure Parse_Test_Stdout (Summary : out Types.Test_Summary) is
+   procedure Parse_Test_Stdout
+     (Summary : out Types.Implementation.Test_Summary) is
    begin
       Summary :=
-        (Categories   => Types.Test_Metrics_Vectors.Empty_Vector,
+        (Categories   =>
+           Types.Implementation.Test_Metrics_Vectors.Empty_Vector,
          Total_Passed => 0,
          Total_Failed => 0);
    end Parse_Test_Stdout;

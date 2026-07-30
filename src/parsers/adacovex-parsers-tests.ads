@@ -14,7 +14,7 @@ package Adacovex.Parsers.Tests is
    --  @param Success  True if file was parsed successfully.
    procedure Parse_Test_Result
      (File_Path : String;
-      Summary   : out Types.Test_Summary;
+      Summary   : out Types.Implementation.Test_Summary;
       Success   : out Boolean)
    with Pre => File_Path'Length > 0;
 
@@ -22,6 +22,7 @@ package Adacovex.Parsers.Tests is
    --  Reads from the standard input (piped test-runner output) and extracts
    --  per-category test counts and overall pass/fail status.
    --  @param Summary  Output test summary from piped stdout.
-   procedure Parse_Test_Stdout (Summary : out Types.Test_Summary);
+   procedure Parse_Test_Stdout
+     (Summary : out Types.Implementation.Test_Summary);
 
 end Adacovex.Parsers.Tests;

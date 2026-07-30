@@ -9,7 +9,7 @@ HLR-TEST: Test result parsing
 
 ## Procedures
 
-### procedure Parse_Test_Result (File_Path : Standard.String; Summary : Adacovex.Types.Test_Summary; Success : Standard.Boolean) `[Pre]`
+### procedure Parse_Test_Result (File_Path : Standard.String; Summary : Adacovex.Types.Implementation.Test_Summary; Success : Standard.Boolean) `[Pre]`
 
 | Parameter | Description |
 |-----------|-------------|
@@ -17,7 +17,7 @@ HLR-TEST: Test result parsing
 | `Success` | True if file was parsed successfully. |
 | `Summary` | Output test summary record. |
 
-### procedure Parse_Test_Stdout (Summary : Adacovex.Types.Test_Summary)
+### procedure Parse_Test_Stdout (Summary : Adacovex.Types.Implementation.Test_Summary)
 
 | Parameter | Description |
 |-----------|-------------|

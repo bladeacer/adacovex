@@ -6,9 +6,9 @@ package body Adacovex.Renderers.HTML is
    function Render_Dashboard
      (Doc_Metrics : Types.Docstring_Metrics;
       Proof       : Types.Proof_Summary;
-      Tests       : Types.Test_Summary;
-      DAL_Assess  : Types.DAL_Assessment;
-      Packages    : Types.Package_Vectors.Vector) return String
+      Tests       : Types.Implementation.Test_Summary;
+      DAL_Assess  : Types.Implementation.DAL_Assessment;
+      Packages    : Types.Implementation.Package_Vectors.Vector) return String
    is
       Result : String (1 .. 32768);
       Pos    : Natural := 1;
@@ -220,8 +220,8 @@ package body Adacovex.Renderers.HTML is
    function Render_Metrics_JSON
      (Doc_Metrics : Types.Docstring_Metrics;
       Proof       : Types.Proof_Summary;
-      Tests       : Types.Test_Summary;
-      DAL_Assess  : Types.DAL_Assessment) return String
+      Tests       : Types.Implementation.Test_Summary;
+      DAL_Assess  : Types.Implementation.DAL_Assessment) return String
    is
       Result : String (1 .. 4096);
       Pos    : Natural := 1;

@@ -1,6 +1,7 @@
-with Ada.Text_IO;    use Ada.Text_IO;
+with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Directories;
-with Adacovex.Types; use Adacovex.Types;
+with Adacovex.Types;
+use Adacovex.Types, Adacovex.Types.Implementation;
 with Adacovex.Parsers.Source;
 
 package body Adacovex_Scanner_Tests is

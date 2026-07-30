@@ -9,7 +9,7 @@ HLR-RENDER-HTML: HTML dashboard and JSON API
 
 ## Functions
 
-### function Render_Dashboard (Doc_Metrics : Adacovex.Types.Docstring_Metrics; Proof : Adacovex.Types.Proof_Summary; Tests : Adacovex.Types.Test_Summary; DAL_Assess : Adacovex.Types.DAL_Assessment; Packages : Adacovex.Types.Package_Vectors.Vector) return Standard.String `[Post]` `[Global]`
+### function Render_Dashboard (Doc_Metrics : Adacovex.Types.Docstring_Metrics; Proof : Adacovex.Types.Proof_Summary; Tests : Adacovex.Types.Implementation.Test_Summary; DAL_Assess : Adacovex.Types.Implementation.DAL_Assessment; Packages : Adacovex.Types.Implementation.Package_Vectors.Vector) return Standard.String `[Post]` `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|
@@ -21,7 +21,7 @@ HLR-RENDER-HTML: HTML dashboard and JSON API
 
 **Returns:** HTML dashboard page.
 
-### function Render_Metrics_JSON (Doc_Metrics : Adacovex.Types.Docstring_Metrics; Proof : Adacovex.Types.Proof_Summary; Tests : Adacovex.Types.Test_Summary; DAL_Assess : Adacovex.Types.DAL_Assessment) return Standard.String `[Post]` `[Global]`
+### function Render_Metrics_JSON (Doc_Metrics : Adacovex.Types.Docstring_Metrics; Proof : Adacovex.Types.Proof_Summary; Tests : Adacovex.Types.Implementation.Test_Summary; DAL_Assess : Adacovex.Types.Implementation.DAL_Assessment) return Standard.String `[Post]` `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|

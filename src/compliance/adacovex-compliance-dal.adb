@@ -32,10 +32,10 @@ package body Adacovex.Compliance.DAL is
    procedure Assess_DAL
      (Level         : Types.DAL_Level;
       Target_Dir    : String;
-      Packages      : Types.Package_Vectors.Vector;
+      Packages      : Types.Implementation.Package_Vectors.Vector;
       Proof_Summary : Types.Proof_Summary;
-      Test_Summary  : Types.Test_Summary;
-      Assessment    : out Types.DAL_Assessment)
+      Test_Summary  : Types.Implementation.Test_Summary;
+      Assessment    : out Types.Implementation.DAL_Assessment)
    is
       HLR_Path    : String (1 .. Types.Max_Path);
       HLR_Len     : Natural;
@@ -59,7 +59,8 @@ package body Adacovex.Compliance.DAL is
          Orphan_Tags            => False,
          Tests_Passing          => False,
          Min_SPARK_Level_Met    => False,
-         Failed_Reasons         => Types.DAL_Failure_Vectors.Empty_Vector);
+         Failed_Reasons         =>
+           Types.Implementation.DAL_Failure_Vectors.Empty_Vector);
 
       -- Build paths to HLR.md and LLR.md
       declare
@@ -188,8 +189,8 @@ package body Adacovex.Compliance.DAL is
       end if;
    end Assess_DAL;
 
-   function Is_DAL_Achieved (Assessment : Types.DAL_Assessment) return Boolean
-   is
+   function Is_DAL_Achieved
+     (Assessment : Types.Implementation.DAL_Assessment) return Boolean is
    begin
       return Assessment.Status = Types.Achieved;
    end Is_DAL_Achieved;

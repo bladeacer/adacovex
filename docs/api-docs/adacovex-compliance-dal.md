@@ -14,7 +14,7 @@ HLR-DAL-E: DAL-E compliance criteria
 
 ## Functions
 
-### function Is_DAL_Achieved (Assessment : Adacovex.Types.DAL_Assessment) return Standard.Boolean `[Global]`
+### function Is_DAL_Achieved (Assessment : Adacovex.Types.Implementation.DAL_Assessment) return Standard.Boolean `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|
@@ -24,7 +24,7 @@ HLR-DAL-E: DAL-E compliance criteria
 
 ## Procedures
 
-### procedure Assess_DAL (Level : Adacovex.Types.DAL_Level; Target_Dir : Standard.String; Packages : Adacovex.Types.Package_Vectors.Vector; Proof_Summary : Adacovex.Types.Proof_Summary; Test_Summary : Adacovex.Types.Test_Summary; Assessment : Adacovex.Types.DAL_Assessment)
+### procedure Assess_DAL (Level : Adacovex.Types.DAL_Level; Target_Dir : Standard.String; Packages : Adacovex.Types.Implementation.Package_Vectors.Vector; Proof_Summary : Adacovex.Types.Proof_Summary; Test_Summary : Adacovex.Types.Implementation.Test_Summary; Assessment : Adacovex.Types.Implementation.DAL_Assessment)
 
 | Parameter | Description |
 |-----------|-------------|

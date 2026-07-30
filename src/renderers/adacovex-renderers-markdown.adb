@@ -6,9 +6,9 @@ package body Adacovex.Renderers.Markdown is
      (Path        : String;
       Doc_Metrics : Types.Docstring_Metrics;
       Proof       : Types.Proof_Summary;
-      Tests       : Types.Test_Summary;
-      DAL_Assess  : Types.DAL_Assessment;
-      Packages    : Types.Package_Vectors.Vector)
+      Tests       : Types.Implementation.Test_Summary;
+      DAL_Assess  : Types.Implementation.DAL_Assessment;
+      Packages    : Types.Implementation.Package_Vectors.Vector)
    is
       F : Ada.Text_IO.File_Type;
    begin
@@ -159,7 +159,7 @@ package body Adacovex.Renderers.Markdown is
    end Generate_Verification_Report;
 
    procedure Generate_Trace_Matrix
-     (Path : String; Packages : Types.Package_Vectors.Vector)
+     (Path : String; Packages : Types.Implementation.Package_Vectors.Vector)
    is
       F : Ada.Text_IO.File_Type;
    begin
