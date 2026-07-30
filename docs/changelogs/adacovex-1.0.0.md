@@ -167,3 +167,41 @@ Ada_CRDT (relaxed): **Platinum** (273 VCs, 5 justified).
 ### Fixed `compliance-dal.adb` `Desc_Field` overflow
 - `Append` to `Failed_Reasons` vector now properly constructs a 128-char
   `Desc_Field` before pushing, fixing a `Constraint_Error` on long messages.
+
+### Production-readiness hardening (2026-07-30)
+
+#### Guarded `--port` `Positive'Value` crash
+- `--port` argument parsing in `adacovex-config.adb` now wraps
+  `Positive'Value` in an exception handler. Non-integer or zero/negative
+  port values produce a clear error message instead of crashing with
+  `Constraint_Error`.
+
+#### File-descriptor leak protection in parser read loops
+- All five `while not End_Of_File` read loops across the four parser units
+  (`adacovex-parsers-gnatprove.adb`, `adacovex-parsers-tests.adb`,
+  `adacovex-parsers-do178c.adb`, `adacovex-parsers-source.adb`) are now
+  wrapped in an inner `exception when others => Close(F); raise;` block.
+  If `Get_Line` raises mid-file, the file handle is closed and the
+  exception propagates, preventing FD leaks.
+
+#### Server graceful shutdown and backoff
+- `adacovex-server-http.adb`: worker tasks now check `Svr_State.Running`
+  at top of loop and exit when `False`.
+- On `Socket_Error`, workers increment a backoff counter and `delay 0.1`;
+  after 100 consecutive errors they set `Running := False` and exit,
+  fixing the busy-loop.
+- Main server loop changed from `delay 3600.0` to `delay 1.0` with
+  `exit when not Svr_State.Running`, enabling timely shutdown.
+- `Running` is set `False` on any exception in `Start`, ensuring socket
+  cleanup via the existing `Close_Socket (Listener)` handler.
+
+#### Iterative directory traversal (no recursion)
+- `Search_Dir` in `adacovex-parsers-source.adb` converted from recursive
+  to iterative using an explicit `Dir_Stacks` vector. Eliminates stack
+  overflow risk at deep directory nestings (>~1000 levels).
+
+#### Dynamic HTML buffer (no 32KB cap)
+- `Render_Dashboard` and `Render_Metrics_JSON` in
+  `adacovex-renderers-html.adb` replaced their fixed 32768-byte and
+  4096-byte stack buffers with `Ada.Strings.Unbounded.Unbounded_String`.
+  Dashboard output for large projects is no longer silently truncated.
