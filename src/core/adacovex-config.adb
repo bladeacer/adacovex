@@ -127,10 +127,29 @@ package body Adacovex.Config is
             elsif A = "--port" then
                I := I + 1;
                if I <= Count then
-                  Cfg.Port := Positive'Value (Ada.Command_Line.Argument (I));
+                  begin
+                     Cfg.Port :=
+                       Positive'Value (Ada.Command_Line.Argument (I));
+                  exception
+                     when Constraint_Error =>
+                        Set_Error
+                          (Cfg,
+                           "--port must be a positive integer (got: "
+                           & Ada.Command_Line.Argument (I)
+                           & ")");
+                  end;
                end if;
             elsif Has_Prefix (A, "--port=") then
-               Cfg.Port := Positive'Value (A (A'First + 7 .. A'Last));
+               begin
+                  Cfg.Port := Positive'Value (A (A'First + 7 .. A'Last));
+               exception
+                  when Constraint_Error =>
+                     Set_Error
+                       (Cfg,
+                        "--port must be a positive integer (got: "
+                        & A (A'First + 7 .. A'Last)
+                        & ")");
+               end;
             elsif A = "--emit-svg" then
                I := I + 1;
                if I <= Count then

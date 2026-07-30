@@ -65,14 +65,16 @@ package body Adacovex.Server.HTTP is
       end Worker;
 
       task body Worker is
-         Channel : Socket_Type;
-         From    : Sock_Addr_Type;
-         KA      : Boolean;
+         Channel    : Socket_Type;
+         From       : Sock_Addr_Type;
+         KA         : Boolean;
+         Backoff_Ct : Natural := 0;
       begin
          accept Start;
-         loop
+         while Svr_State.Running loop
             begin
                Accept_Socket (Listener, Channel, From);
+               Backoff_Ct := 0;
                loop
                   Handle_Request (Channel, Svr_State, KA);
                   exit when not KA;
@@ -80,7 +82,12 @@ package body Adacovex.Server.HTTP is
                Close_Socket (Channel);
             exception
                when GNAT.Sockets.Socket_Error =>
-                  null;
+                  Backoff_Ct := Backoff_Ct + 1;
+                  delay 0.1;
+                  if Backoff_Ct > 100 then
+                     Svr_State.Running := False;
+                     exit;
+                  end if;
             end;
          end loop;
       end Worker;
@@ -88,6 +95,8 @@ package body Adacovex.Server.HTTP is
       Workers : array (1 .. Max_Workers) of Worker;
 
    begin
+      Svr_State.Running := True;
+
       Ada.Text_IO.Put_Line
         ("Starting adacovex HTTP server on port"
          & Positive'Image (State.Port)
@@ -111,12 +120,15 @@ package body Adacovex.Server.HTTP is
          W.Start;
       end loop;
 
-      loop
-         delay 3600.0;
+      while Svr_State.Running loop
+         delay 1.0;
       end loop;
+
+      Close_Socket (Listener);
 
    exception
       when E : others =>
+         Svr_State.Running := False;
          Ada.Text_IO.Put_Line
            ("Server error: " & Ada.Exceptions.Exception_Message (E));
          Close_Socket (Listener);
