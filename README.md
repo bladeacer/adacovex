@@ -1,3 +1,4 @@
+[![covex Alire crate badge](https://img.shields.io/endpoint?url=https://alire.ada.dev/badges/covex.json)](https://alire.ada.dev/crates/covex)
 ![SPARK](docs/badges/spark.svg)
 ![Tests](docs/badges/tests.svg)
 ![DO-178C](docs/badges/do178c.svg)
@@ -236,7 +237,7 @@ src/
 | SPARK proof | `make prove` | 28/28 VCs Platinum |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, Platinum, DAL-C (strict mode) |
 
-See [changelogs](docs/changelogs/adacovex-1.0.0.md) for full release notes.
+See [changelogs](docs/changelogs/index.md) for full release notes.
 
 ## Documentation
 
@@ -252,9 +253,9 @@ See [changelogs](docs/changelogs/adacovex-1.0.0.md) for full release notes.
 ## Requirements
 
 - **Alire** >= 2.0
-- **GNAT** Ada compiler (provided by `alr setup`)
-- **GNATprove** (optional, for proof targets)
-- **gnatpp** / **gnatdoc** (optional, for fmt/doc targets)
+- **GNAT** Ada compiler (managed by Alire)
+- **GNATprove** (optional, for proof targets, managed by Alire)
+- **gnatpp** / **gnatdoc** (optional, for fmt/doc targets, managed by Alire)
 
 ## License
 
