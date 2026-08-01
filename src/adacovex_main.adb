@@ -57,6 +57,11 @@ begin
       return;
    end if;
 
+   if Cfg.Help_Requested then
+      Ada.Command_Line.Set_Exit_Status (0);
+      return;
+   end if;
+
    --  Determine ANSI color support (assume TTY, overridden by NO_COLOR)
    Use_Color := not Ada.Environment_Variables.Exists ("NO_COLOR");
 

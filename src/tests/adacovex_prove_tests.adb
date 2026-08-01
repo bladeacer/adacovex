@@ -75,6 +75,15 @@ package body Adacovex_Prove_Tests is
             "Determine_SPARK_Level: Stone");
       end;
 
+      --  Empty summary (zero VCs) must be Stone, not Gold
+      declare
+         S : Proof_Summary := (others => <>);
+      begin
+         R.Check
+           (Adacovex.Parsers.GNATprove.Determine_SPARK_Level (S) = Stone,
+            "Determine_SPARK_Level: empty summary is Stone");
+      end;
+
       declare
          F       : File_Type;
          Summary : Proof_Summary;
@@ -147,6 +156,40 @@ package body Adacovex_Prove_Tests is
          R.Check
            (Summary.Level = Silver,
             "Parse_Prove_Out (Silver): Level = Silver");
+      end;
+
+      --  Modern summary layout: Total | Flow | Provers | Justified | Unproved
+      --  Proved = Total - Justified - Unproved (28 all solved, split 10/18).
+      declare
+         F       : File_Type;
+         Summary : Proof_Summary;
+         Success : Boolean;
+      begin
+         Create (F, Out_File, "/tmp/adacovex_test_prove_out.txt");
+         Put_Line (F, "SPARK Analysis results   Total    Flow     Provers   Justified   Unproved");
+         Put_Line (F, "Run-time Checks              12      .     12 (CVC5)           .          .");
+         Put_Line (F, "Total                         28  10 (36%)  18 (64%)           .          .");
+         Close (F);
+
+         Adacovex.Parsers.GNATprove.Parse_Prove_Out
+           ("/tmp/adacovex_test_prove_out.txt", Summary, Success);
+
+         R.Check (Success, "Parse_Prove_Out (modern Total): success");
+         R.Check
+           (Summary.Total_VCs = 28,
+            "Parse_Prove_Out (modern Total): Total_VCs = 28");
+         R.Check
+           (Summary.Proved_VCs = 28,
+            "Parse_Prove_Out (modern Total): Proved_VCs = 28");
+         R.Check
+           (Summary.Justified = 0,
+            "Parse_Prove_Out (modern Total): Justified = 0");
+         R.Check
+           (Summary.Unproved = 0,
+            "Parse_Prove_Out (modern Total): Unproved = 0");
+         R.Check
+           (Summary.Level = Gold,
+            "Parse_Prove_Out (modern Total): Level = Gold (run-time proved, no functional)");
       end;
    end Run;
 

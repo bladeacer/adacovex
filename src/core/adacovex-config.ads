@@ -26,6 +26,7 @@ package Adacovex.Config is
       Verbose       : Boolean := False;
       Strict_Mode   : Boolean := True;
       CLI_Error     : Boolean := False;
+      Help_Requested : Boolean := False;
       Skip_Dir_Ct   : Natural := 0;
       Skip_Dirs     : Types.Name_Field;
    end record;
