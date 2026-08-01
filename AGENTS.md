@@ -16,11 +16,11 @@ adacovex was designed to audit the Ada_CRDT library at `../Ada_CRDT` (26 package
 ~219 subprograms). Running `make run-ada-crdt` runs the full pipeline against it.
 The `--target=PATH` option can point at any Ada/SPARK project.
 
-Self-assessment (`make run-self` / `--target=.`) verifies adacovex against its own
-source -- all 19 packages, 34 subprograms -- and must always show:
+Self-assessment (`make run-self`, default target: cwd) verifies adacovex against its own
+source -- all 19 packages, 33 subprograms -- and must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
 - Platinum SPARK level (28/28 VCs proved)
-- 160/160 native tests passing
+- 167/167 native tests passing
 - DAL-C Achieved
 
 ## Architecture
@@ -42,11 +42,11 @@ src/
 |   |-- adacovex_dal_tests.ads/.adb           -- DAL compliance tests (2)
 |   |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (21)
 |   |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (40)
-|   |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (24)
+|   |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (38)
 |   |-- adacovex_test_parser_tests.ads/.adb   -- Test-result parser tests (27)
-|   |-- adacovex_config_tests.ads/.adb        -- CLI config tests (8)
+|   |-- adacovex_config_tests.ads/.adb        -- CLI config tests (9)
 |   |-- adacovex_svg_tests.ads/.adb          -- SVG renderer tests (30)
-|   `-- test_runner.adb                       -- Test suite entry point (160 tests)
+|   `-- test_runner.adb                       -- Test suite entry point (167 tests)
 |-- compliance/
 |   |-- adacovex-compliance-dal.ads/.adb       -- DAL-C assessment logic
 |-- renderers/
@@ -423,13 +423,16 @@ Multiple HLR tags can appear on one line:
 
 ### Per-level requirements
 
+Per-level criteria follow `docs/HLR.md` (HLR-DAL-A through HLR-DAL-E) and the
+`Min_SPARK_For` table in `src/compliance/adacovex-compliance-dal.adb`.
+
 | DAL Level | Min SPARK Level | Tests must pass | HLRs traced | No orphans |
 |-----------|-----------------|-----------------|-------------|------------|
-| A | Platinum | Yes | Yes | Yes |
-| B | Gold | Yes | Yes | Yes |
+| A | Gold | Yes | Yes | Yes |
+| B | Silver | Yes | Yes | Yes |
 | C | Bronze | Yes | Yes | Yes |
-| D | Bronze | No (0 required) | No | No |
-| E | Stone | No (0 required) | No | No |
+| D | None (Stone) | Yes | Yes | Yes |
+| E | None (Stone) | No | Yes | Yes |
 
 DAL-C is the default. The DAL assessment evaluates all four criteria and reports
 specific failure reasons when the assessment is `Unmet`.
@@ -453,7 +456,7 @@ specific failure reasons when the assessment is `Unmet`.
 | `prove`            | `alr gnatprove` (uses alire-dev.toml) |
 | `doc` / `api-docs` | Generate API docs via gnatdoc + rst2md |
 | `fmt`              | Format Ada sources with gnatformat |
-| `run-self`         | Run against adacovex itself (`--target=.`) |
+| `run-self`         | Run against adacovex itself (default target: cwd) |
 | `run-ada-crdt`     | Run against `../Ada_CRDT`, DAL-C (strict mode) |
 | `bump-version`     | Bump version across alire.toml, alire-dev.toml, adacovex.ads, changelog (`VERSION=x.y.z`) |
 | `ascii-check`      | Verify all source files are pure ASCII |
@@ -487,7 +490,7 @@ adacovex --target=/path/to/project --relaxed
 # Custom skip list
 adacovex --target=/path/to/project --relaxed --skip-dir=vendor --skip-dir=external
 
-# DAL-A assessment (requires Platinum SPARK level)
+# DAL-A assessment (requires Gold SPARK level)
 adacovex --target=/path/to/project --dal=A
 ```
 
@@ -535,7 +538,7 @@ manifest.
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 160/160 passing |
+| Unit tests | `make test` | 167/167 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | 28/28 VCs Platinum |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -553,19 +556,19 @@ Test source: `src/tests/`. Entry point: `test_runner.adb` (builds as
 `bin/test_runner` from `for Main use ("adacovex_main.adb", "test_runner.adb")`
 in `adacovex.gpr`).
 
-`make test` builds and runs the 160-test suite. Test results are written to
+`make test` builds and runs the 167-test suite. Test results are written to
 `docs/test_result.md` in a Markdown table format that can be parsed by
 `adacovex-parsers-tests`. This means adacovex **supports both** native test
 running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 
-### Test categories (160 total)
+### Test categories (167 total)
 
 | Category | Tests | What it covers |
 |----------|-------|----------------|
 | Types conversions | 21 | SPARK_Level/DAL_Level/DAL_Status/Test_Status strings |
 | DAL compliance | 2 | DAL assessment status |
 | Source scanner | 40 | Package scan, docstring parsing, HLR tags, name extraction, @field/@formal/after-decl |
-| GNATprove parser | 31 | .out parsing, proof summary, SPARK level detection, --help handling |
+| GNATprove parser | 38 | .out parsing, proof summary, SPARK level detection, --help handling |
 | Test-result parser | 27 | Markdown test result parsing |
 | CLI config | 9 | Default option values, --help, --no-svg field |
 | SVG renderer | 30 | SVG badge content and format |

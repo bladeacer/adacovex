@@ -6,6 +6,6 @@
 package Adacovex is
    pragma SPARK_Mode (On);
 
-   Version : constant String := "1.1.0";
+   Version : constant String := "1.3.0";
 
 end Adacovex;

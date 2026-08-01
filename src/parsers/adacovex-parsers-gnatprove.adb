@@ -154,8 +154,8 @@ package body Adacovex.Parsers.GNATprove is
                      if Row'Length >= 14
                        and then Row (Row'First .. Row'First + 3) = "Init"
                      then
-                        Summary.Flow_Checks := Get_Nth_Number_Raw (Row, 1);
-                        Summary.Flow_Proved := Get_Nth_Number_Raw (Row, 2);
+                        Summary.Init_Checks := Get_Nth_Number_Raw (Row, 1);
+                        Summary.Init_Proved := Get_Nth_Number_Raw (Row, 2);
                      end if;
                   end;
                end if;

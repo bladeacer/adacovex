@@ -55,6 +55,13 @@ package body Adacovex.Renderers.Markdown is
          & " |");
       Ada.Text_IO.Put_Line
         (F,
+         "| Initialization | "
+         & Natural'Image (Proof.Init_Checks)
+         & " | "
+         & Natural'Image (Proof.Init_Proved)
+         & " |");
+      Ada.Text_IO.Put_Line
+        (F,
          "| Runtime Checks | "
          & Natural'Image (Proof.Runtime_Checks)
          & " | "

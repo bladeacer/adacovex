@@ -125,7 +125,7 @@ adacovex --target=.
 # Assess a CRDT library at DAL-C in relaxed mode
 adacovex --target=../Ada_CRDT --dal=C --relaxed
 
-# DAL-A assessment (requires Platinum SPARK)
+# DAL-A assessment (requires Gold SPARK)
 adacovex --target=. --dal=A
 
 # Without SVG output
@@ -191,22 +191,22 @@ to document. Overloaded subprograms require one patch entry per overload.
 
 | DAL | Min SPARK | Tests must pass | HLRs traced | No orphans |
 |-----|-----------|-----------------|-------------|------------|
-| A | Platinum | Yes | Yes | Yes |
-| B | Gold | Yes | Yes | Yes |
+| A | Gold | Yes | Yes | Yes |
+| B | Silver | Yes | Yes | Yes |
 | C | Bronze | Yes | Yes | Yes |
-| D | Bronze | No | No | No |
-| E | Stone | No | No | No |
+| D | None (Stone) | Yes | Yes | Yes |
+| E | None (Stone) | No | Yes | Yes |
 
 ## Makefile targets
 
 | Target | Description |
 |--------|-------------|
 | `build` | `alr build` (adacovex_main + test_runner) |
-| `test` | Build and run native test suite (160 tests) |
+| `test` | Build and run native test suite (167 tests) |
 | `prove` | `alr gnatprove` (auto-swaps alire-dev.toml) |
 | `fmt` | Format Ada sources with `gnatformat` |
 | `doc` | Generate API docs via gnatdoc + rst2md |
-| `run-self` | Run against adacovex itself (`--target=.`) |
+| `run-self` | Run against adacovex itself (default target: cwd) |
 | `run-ada-crdt` | Run against `../Ada_CRDT` (strict mode) |
 | `bump-version` | Bump version across manifests + changelog (`VERSION=x.y.z`) |
 | `ascii-check` | Verify all source files are pure ASCII |
@@ -225,14 +225,14 @@ src/
 |-- compliance/                   -- DAL assessment logic
 |-- renderers/                    -- ANSI, SVG, Markdown, HTML output
 |-- server/                       -- HTTP/1.1 dashboard server
-|-- tests/                        -- Native test suite (160 tests)
+|-- tests/                        -- Native test suite (167 tests)
 ```
 
 ## Verification
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 160/160 passing |
+| Unit tests | `make test` | 167/167 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C |
 | SPARK proof | `make prove` | 28/28 VCs Platinum |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, Platinum, DAL-C (strict mode) |

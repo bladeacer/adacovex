@@ -237,7 +237,15 @@ package body Adacovex.Config is
                CD : constant String := Ada.Directories.Current_Directory;
                AP : constant String := CD & "/" & Raw;
             begin
-               Set_String (Cfg.Target_Path, Cfg.Target_Len, AP);
+               -- Normalize a trailing "/." (e.g. "--target=.") to the
+               -- plain directory so display paths stay clean.
+               if AP'Length >= 2
+                 and then AP (AP'Last - 1 .. AP'Last) = "/."
+               then
+                  Set_String (Cfg.Target_Path, Cfg.Target_Len, CD);
+               else
+                  Set_String (Cfg.Target_Path, Cfg.Target_Len, AP);
+               end if;
             end;
          end if;
       end;
