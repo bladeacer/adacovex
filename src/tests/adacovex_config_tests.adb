@@ -25,6 +25,7 @@ package body Adacovex_Config_Tests is
             Verbose       => False,
             Strict_Mode   => False,
             CLI_Error     => False,
+            Help_Requested => False,
             Skip_Dir_Ct   => 0,
             Skip_Dirs     => (others => ' '));
       begin
@@ -37,6 +38,7 @@ package body Adacovex_Config_Tests is
          R.Check (Cfg.Port = 8080, "Default Port is 8080");
          R.Check (not Cfg.Verbose, "Default Verbose is False");
          R.Check (not Cfg.Emit_Markdown, "Default Emit_Markdown is False");
+         R.Check (not Cfg.Help_Requested, "Default Help_Requested is False");
       end;
 
       --  Test 2: No_SVG overrides Emit_SVG
@@ -59,6 +61,7 @@ package body Adacovex_Config_Tests is
             Verbose       => False,
             Strict_Mode   => False,
             CLI_Error     => False,
+            Help_Requested => False,
             Skip_Dir_Ct   => 0,
             Skip_Dirs     => (others => ' '));
       begin

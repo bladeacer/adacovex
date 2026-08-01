@@ -137,9 +137,18 @@ package body Adacovex.Parsers.GNATprove is
                        and then Row (Row'First .. Row'First + 4) = "Total"
                      then
                         Summary.Total_VCs := Get_Nth_Number_Raw (Row, 1);
-                        Summary.Proved_VCs := Get_Nth_Number_Raw (Row, 3);
                         Summary.Justified := Get_Nth_Number_Raw (Row, 4);
                         Summary.Unproved := Get_Nth_Number_Raw (Row, 5);
+                        --  Modern summary layout:
+                        --    Total | Flow | Provers | Justified | Unproved
+                        --  Proved = solved-by-flow + solved-by-provers,
+                        --  equivalently Total - Justified - Unproved.
+                        if Summary.Total_VCs > 0 then
+                           Summary.Proved_VCs :=
+                             Summary.Total_VCs
+                             - Summary.Justified
+                             - Summary.Unproved;
+                        end if;
                      end if;
 
                      if Row'Length >= 14
@@ -167,6 +176,21 @@ package body Adacovex.Parsers.GNATprove is
     function Determine_SPARK_Level
       (Summary : Types.Proof_Summary) return Types.SPARK_Level is
     begin
+       --  Empty summary (no gnatprove data) is Stone, not Gold:
+       --  a zero-row file must not be mistaken for fully-proved.
+       --  Unproved is excluded from the emptiness test: a summary that
+       --  reports unproved VCs carries real (Silver-capping) data.
+       if Summary.Total_VCs = 0
+         and then Summary.Unproved = 0
+         and then Summary.Flow_Checks = 0
+         and then Summary.Runtime_Checks = 0
+         and then Summary.Assertions = 0
+         and then Summary.Functional_Ct = 0
+         and then Summary.Termination_Ct = 0
+       then
+          return Types.Stone;
+       end if;
+
        if Summary.Unproved > 0 then
          return Types.Silver;
       end if;
