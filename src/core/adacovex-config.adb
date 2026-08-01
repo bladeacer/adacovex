@@ -222,9 +222,10 @@ package body Adacovex.Config is
          Cfg.SVG_Path_Len := 0;
       end if;
 
-      -- Default target if not provided
+      -- Default target if not provided: current working directory
       if Cfg.Target_Len = 0 then
-         Set_String (Cfg.Target_Path, Cfg.Target_Len, "../Ada_CRDT");
+         Set_String
+           (Cfg.Target_Path, Cfg.Target_Len, Ada.Directories.Current_Directory);
       end if;
 
       -- Resolve target path to absolute, then derive default manifest
@@ -242,7 +243,6 @@ package body Adacovex.Config is
       end;
 
       -- Default SVG output path: project-scoped (relative to resolved target)
-      -- so running against ../Ada_CRDT writes to ../Ada_CRDT/docs/badges
       if Cfg.Emit_SVG and then Cfg.SVG_Path_Len = 0 then
          Set_String
            (Cfg.SVG_Path,
@@ -281,7 +281,7 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line ("");
       Ada.Text_IO.Put_Line ("Options:");
       Ada.Text_IO.Put_Line
-        ("  --target=PATH         Target project path (default: ../Ada_CRDT)");
+        ("  --target=PATH         Target project path (default: current directory)");
       Ada.Text_IO.Put_Line
         ("  --manifest=PATH       Target manifest file override");
       Ada.Text_IO.Put_Line

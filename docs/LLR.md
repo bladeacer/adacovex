@@ -31,4 +31,4 @@
 - LLR-RENDER-HTML-02: Render_Metrics_JSON shall produce JSON with key metrics [HLR-RENDER-HTML]
 - LLR-SERVER-01: Start shall bind to port and serve dashboard at /, API at /api/metrics, badges at /badge/*.svg [HLR-SERVER]
 - LLR-CLI-01: Parse_CLI shall parse --target, --dal, --serve, --port, --emit-svg, --emit-markdown [HLR-CLI]
-- LLR-CLI-02: Parse_CLI shall default target to ../Ada_CRDT and DAL to C [HLR-CLI]
+- LLR-CLI-02: Parse_CLI shall default target to the current working directory and DAL to C [HLR-CLI]
