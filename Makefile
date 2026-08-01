@@ -15,7 +15,7 @@ help:
 	@echo '  doc           Generate API docs via gnatdoc + rst2md'
 	@echo '  fmt           Format Ada sources with gnatformat'
 	@echo '  clean         Remove build artifacts'
-	@echo '  run-self      Run against adacovex itself (--target=.)'
+	@echo '  run-self      Run against adacovex itself (default target: cwd)'
 	@echo '  run-ada-crdt  Run against ../Ada_CRDT (strict mode)'
 	@echo '  bump-version  Bump version across alire.toml, alire-dev.toml,'
 	@echo '                adacovex.ads, releases, index (VERSION=x.y.z)'
@@ -50,7 +50,7 @@ doc:
 	  sed -i "/](adacovex-test_support\.md)/d" docs/api-docs/index.md 2>/dev/null'
 
 run-self: build
-	./bin/adacovex_main --target=. --dal=C
+	./bin/adacovex_main --dal=C
 
 run-ada-crdt: build
 	./bin/adacovex_main --target=../Ada_CRDT --dal=C

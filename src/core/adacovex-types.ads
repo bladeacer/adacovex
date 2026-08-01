@@ -56,6 +56,8 @@ package Adacovex.Types is
       Proved_VCs         : Natural := 0;
       Flow_Checks        : Natural := 0;
       Flow_Proved        : Natural := 0;
+      Init_Checks        : Natural := 0;
+      Init_Proved        : Natural := 0;
       Runtime_Checks     : Natural := 0;
       Runtime_Proved     : Natural := 0;
       Assertions         : Natural := 0;

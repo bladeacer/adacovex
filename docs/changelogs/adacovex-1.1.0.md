@@ -80,7 +80,7 @@ when others => End_Search (Search); raise; end;` block.
 `Natural'Image` and `Integer'Image` in Ada prepend a space for non-negative
 values, producing ugly output like `"  found  19 packages"` and `<td> 19</td>`.
 
-**Impact:** Cosmetic — extra whitespace in terminal reports and HTML dashboard.
+**Impact:** Cosmetic -- extra whitespace in terminal reports and HTML dashboard.
 
 **Fix:** Added local `Img(Natural)` helper that strips the leading space.
 Applied to `adacovex_main.adb` (terminal output) and

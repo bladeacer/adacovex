@@ -191,6 +191,47 @@ package body Adacovex_Prove_Tests is
            (Summary.Level = Gold,
             "Parse_Prove_Out (modern Total): Level = Gold (run-time proved, no functional)");
       end;
+
+      --  Modern layout with non-empty Flow + Initialization rows:
+      --  Initialization must NOT clobber the Flow Dependencies values.
+      declare
+         F       : File_Type;
+         Summary : Proof_Summary;
+         Success : Boolean;
+      begin
+         Create (F, Out_File, "/tmp/adacovex_test_prove_out.txt");
+         Put_Line (F, "SPARK Analysis results   Total    Flow     Provers   Justified   Unproved");
+         Put_Line (F, "Flow Dependencies          11  11 (100%)           .           .          .");
+         Put_Line (F, "Initialization              3   3 (100%)           .           .          .");
+         Put_Line (F, "Run-time Checks            12      .     12 (CVC5)           .          .");
+         Put_Line (F, "Assertions                  2      .      2 (CVC5)           .          .");
+         Put_Line (F, "Functional Contracts        4      .      4 (CVC5)           .          .");
+         Put_Line (F, "Total                       28  10 (36%)  18 (64%)           .          .");
+         Close (F);
+
+         Adacovex.Parsers.GNATprove.Parse_Prove_Out
+           ("/tmp/adacovex_test_prove_out.txt", Summary, Success);
+
+         R.Check (Success, "Parse_Prove_Out (init row): success");
+         R.Check
+           (Summary.Flow_Checks = 11,
+            "Parse_Prove_Out (init row): Flow_Checks = 11");
+         R.Check
+           (Summary.Flow_Proved = 11,
+            "Parse_Prove_Out (init row): Flow_Proved = 11");
+         R.Check
+           (Summary.Init_Checks = 3,
+            "Parse_Prove_Out (init row): Init_Checks = 3");
+         R.Check
+           (Summary.Init_Proved = 3,
+            "Parse_Prove_Out (init row): Init_Proved = 3");
+         R.Check
+           (Summary.Total_VCs = 28,
+            "Parse_Prove_Out (init row): Total_VCs = 28");
+         R.Check
+           (Summary.Proved_VCs = 28,
+            "Parse_Prove_Out (init row): Proved_VCs = 28");
+      end;
    end Run;
 
 end Adacovex_Prove_Tests;

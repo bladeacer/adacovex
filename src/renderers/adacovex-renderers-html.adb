@@ -104,6 +104,11 @@ package body Adacovex.Renderers.HTML is
       Put ("</td><td>");
       Put (Img (Proof.Flow_Proved));
       Put ("</td></tr>");
+      Put ("<tr><td>Initialization</td><td>");
+      Put (Img (Proof.Init_Checks));
+      Put ("</td><td>");
+      Put (Img (Proof.Init_Proved));
+      Put ("</td></tr>");
       Put ("<tr><td>Runtime</td><td>");
       Put (Img (Proof.Runtime_Checks));
       Put ("</td><td>");
