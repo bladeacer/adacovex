@@ -64,6 +64,7 @@ package body Adacovex.Config is
       Cfg.SVG_Path_Len := 0;
       Cfg.MD_Path_Len := 0;
       Cfg.Skip_Dir_Ct := 0;
+      Cfg.Compare_Base_Len := 0;
 
       while I <= Count loop
          declare
@@ -201,8 +202,24 @@ package body Adacovex.Config is
                 else
                    Set_Error (Cfg, "--skip-dir requires a directory name");
                 end if;
-            elsif Has_Prefix (A, "--skip-dir=") then
-               Add_Skip_Dir (Cfg, A (A'First + 10 .. A'Last));
+             elsif Has_Prefix (A, "--skip-dir=") then
+                Add_Skip_Dir (Cfg, A (A'First + 10 .. A'Last));
+             elsif A = "--compare-base" then
+                I := I + 1;
+                if I <= Count then
+                   Set_String
+                     (Cfg.Compare_Base,
+                      Cfg.Compare_Base_Len,
+                      Ada.Command_Line.Argument (I));
+                else
+                   Set_Error
+                     (Cfg, "--compare-base requires a branch/commit argument");
+                end if;
+             elsif Has_Prefix (A, "--compare-base=") then
+                Set_String
+                  (Cfg.Compare_Base,
+                   Cfg.Compare_Base_Len,
+                   A (A'First + 15 .. A'Last));
              elsif A = "--help" then
                 Cfg.Help_Requested := True;
                 Print_Usage;
@@ -308,6 +325,10 @@ package body Adacovex.Config is
         ("  --skip-dir=NAME       Add directory name to skip list (repeatable)");
       Ada.Text_IO.Put_Line
         ("  --relaxed             Disable strict mode (skip dirs, no patches); strict is default");
+      Ada.Text_IO.Put_Line
+        ("  --compare-base=REF    Differential mode: compare against a git base");
+      Ada.Text_IO.Put_Line
+        ("                        (branch or commit) and report VC/DAL delta");
       Ada.Text_IO.Put_Line ("  --verbose             Verbose diagnostics");
       Ada.Text_IO.Put_Line
         ("  --help                Show this message and exit");

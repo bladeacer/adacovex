@@ -17,10 +17,10 @@ adacovex was designed to audit the Ada_CRDT library at `../Ada_CRDT` (26 package
 The `--target=PATH` option can point at any Ada/SPARK project.
 
 Self-assessment (`make run-self`, default target: cwd) verifies adacovex against its own
-source -- all 19 packages, 33 subprograms -- and must always show:
+source -- all 20 packages, 38 subprograms -- and must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
 - Platinum SPARK level (28/28 VCs proved)
-- 167/167 native tests passing
+- 168/168 native tests passing
 - DAL-C Achieved
 
 ## Architecture
@@ -31,7 +31,8 @@ src/
 |-- adacovex_main.adb               -- CLI entry point (ANSI, exit codes, NO_COLOR)
 |-- core/
 |   |-- adacovex-types.ads/.adb     -- All domain types + conversion functions
-|   `-- adacovex-config.ads/.adb    -- CLI argument parser
+|   |-- adacovex-config.ads/.adb    -- CLI argument parser
+|   `-- adacovex-diff.ads/.adb      -- Differential assessment (--compare-base)
 |-- parsers/
 |   |-- adacovex-parsers-source.ads/.adb      -- Ada source scanner (procs/funcs/docstrings/HLR)
 |   |-- adacovex-parsers-gnatprove.ads/.adb   -- GNATprove .out parser
@@ -44,9 +45,9 @@ src/
 |   |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (40)
 |   |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (38)
 |   |-- adacovex_test_parser_tests.ads/.adb   -- Test-result parser tests (27)
-|   |-- adacovex_config_tests.ads/.adb        -- CLI config tests (9)
+|   |-- adacovex_config_tests.ads/.adb        -- CLI config tests (10)
 |   |-- adacovex_svg_tests.ads/.adb          -- SVG renderer tests (30)
-|   `-- test_runner.adb                       -- Test suite entry point (167 tests)
+|   `-- test_runner.adb                       -- Test suite entry point (168 tests)
 |-- compliance/
 |   |-- adacovex-compliance-dal.ads/.adb       -- DAL-C assessment logic
 |-- renderers/
@@ -142,6 +143,7 @@ adacovex [options]
 | `--emit-markdown=PATH` | off | both | Output directory for Markdown reports |
 | `--skip-dir=NAME` | (see below) | relaxed | Directory name to skip (repeatable) |
 | `--relaxed` | off | both | Disable strict mode |
+| `--compare-base=REF` | off | both | Differential mode vs a git base ref |
 | `--verbose` | off | both | Verbose diagnostics |
 | `--help` | - | both | Print usage and exit |
 
@@ -245,6 +247,23 @@ adacovex [options]
     and merges docstring info.
   - Target use case: running against adacovex itself, where total coverage
     (including vendored code with patches) must be 100%.
+
+#### `--compare-base=REF`
+- **Purpose**: Run in differential mode: assess a git base revision and compare
+  it against the current working tree.
+- **Default**: Off (normal single-target assessment).
+- **Prerequisite**: The `--target` directory must be a git repository, and the
+  `git` executable must be on `PATH`.
+- **Effect**: Creates a temporary git worktree at `/tmp/adacovex-diff-<pid>`,
+  runs the full assessment (scan, patches, doc metrics, GNATprove, tests, DAL)
+  on the base revision and the current tree, then prints a side-by-side table
+  (packages, subprograms, docstring %, HLR traced, orphan tags, SPARK level,
+  VCs proved, tests, DAL status).
+- **Exit code**: `0` if no regressions AND current DAL is Achieved; `1`
+  otherwise (regression, or current DAL Unmet).
+- **Missing artifacts**: If the base revision does not commit `gnatprove.out`
+  or `test_result.md`, those rows report `N/A` and are not compared.
+- **Example**: `adacovex --target=. --compare-base=HEAD`.
 
 #### `--verbose`
 - **Purpose**: Enable verbose diagnostic output.
@@ -453,15 +472,13 @@ specific failure reasons when the assessment is `Unmet`.
 |--------------------|-------------|
 | `build`            | `alr build` (builds adacovex_main + test_runner) |
 | `test`             | Build + run test_runner |
-| `prove`            | `alr gnatprove` (uses alire-dev.toml) |
-| `doc` / `api-docs` | Generate API docs via gnatdoc + rst2md |
-| `fmt`              | Format Ada sources with gnatformat |
+| `prove`            | `alr gnatprove` (auto-swaps alire-dev.toml, then restores) |
+| `doc` / `api-docs` | Generate API docs via gnatdoc + rst2md (auto-swaps alire-dev.toml) |
+| `fmt`              | Format Ada sources with gnatformat (auto-swaps alire-dev.toml) |
 | `run-self`         | Run against adacovex itself (default target: cwd) |
 | `run-ada-crdt`     | Run against `../Ada_CRDT`, DAL-C (strict mode) |
 | `bump-version`     | Bump version across alire.toml, alire-dev.toml, adacovex.ads, changelog (`VERSION=x.y.z`) |
 | `ascii-check`      | Verify all source files are pure ASCII |
-| `dev-setup`        | Copy alire-dev.toml over alire.toml |
-| `prod-setup`       | Restore clean publishing alire.toml |
 | `clean`            | Remove bin/ obj/ docs/badges/ |
 | `help`             | Print available targets |
 
@@ -518,6 +535,35 @@ toolchain). The default `--target` is the current working directory, so running
 `adacovex` from a non-Ada repo scans that repo and uses its `alire.toml` as the
 manifest.
 
+### Using adacovex from another project (Ada or non-Ada)
+
+Two approaches are equally valid; pick whichever fits the project:
+
+1. **Pass `--target` to the adacovex dev source (no install needed).** Build
+   adacovex once, then point it at the project:
+   ```bash
+   cd /path/to/adacovex && make build
+   cd /path/to/project
+   /path/to/adacovex/bin/adacovex_main --target=. --dal=C
+   ```
+   Because `--target` defaults to the current directory, running the binary
+   from inside the project scans it without extra flags. The project does not
+   need any Ada tooling of its own; only the adacovex working tree needs GNAT
+   and Alire.
+
+2. **Manage adacovex as an Alire dev dependency.** Add it to the project's
+   `alire-dev.toml` (never `alire.toml`, so release builds stay clean):
+   ```toml
+   [[depends-on]]
+   covex = "*"
+   ```
+   Then `alr build` produces `bin/adacovex_main` inside the project and
+   `adacovex` runs against the current directory by default.
+
+In both cases the assessed project is the directory given to `--target` (or
+CWD when omitted); the two approaches differ only in how the adacovex binary
+is obtained and built.
+
 ### Creating patch files for vendored code
 
 1. Run adacovex in strict mode to identify undocumented subprograms:
@@ -538,7 +584,7 @@ manifest.
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 167/167 passing |
+| Unit tests | `make test` | 168/168 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | 28/28 VCs Platinum |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -556,12 +602,12 @@ Test source: `src/tests/`. Entry point: `test_runner.adb` (builds as
 `bin/test_runner` from `for Main use ("adacovex_main.adb", "test_runner.adb")`
 in `adacovex.gpr`).
 
-`make test` builds and runs the 167-test suite. Test results are written to
+`make test` builds and runs the 168-test suite. Test results are written to
 `docs/test_result.md` in a Markdown table format that can be parsed by
 `adacovex-parsers-tests`. This means adacovex **supports both** native test
 running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 
-### Test categories (167 total)
+### Test categories (168 total)
 
 | Category | Tests | What it covers |
 |----------|-------|----------------|
@@ -570,7 +616,7 @@ running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 | Source scanner | 40 | Package scan, docstring parsing, HLR tags, name extraction, @field/@formal/after-decl |
 | GNATprove parser | 38 | .out parsing, proof summary, SPARK level detection, --help handling |
 | Test-result parser | 27 | Markdown test result parsing |
-| CLI config | 9 | Default option values, --help, --no-svg field |
+| CLI config | 10 | Default option values, --help, --no-svg field, --compare-base default |
 | SVG renderer | 30 | SVG badge content and format |
 
 ---

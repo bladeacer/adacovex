@@ -11,9 +11,9 @@ help:
 	@echo ''
 	@echo '  build         Build project (adacovex_main + test_runner)'
 	@echo '  test          Build and run native test suite'
-	@echo '  prove         Run SPARK proofs (swaps alire-dev.toml)'
-	@echo '  doc           Generate API docs via gnatdoc + rst2md'
-	@echo '  fmt           Format Ada sources with gnatformat'
+	@echo '  prove         Run SPARK proofs (uses alire-dev.toml, auto-swap)'
+	@echo '  doc           Generate API docs via gnatdoc + rst2md (alire-dev.toml)'
+	@echo '  fmt           Format Ada sources with gnatformat (alire-dev.toml)'
 	@echo '  clean         Remove build artifacts'
 	@echo '  run-self      Run against adacovex itself (default target: cwd)'
 	@echo '  run-ada-crdt  Run against ../Ada_CRDT (strict mode)'
@@ -23,8 +23,9 @@ help:
 	@echo '  publish       Publish to Alire community index (run after make release)'
 	@echo '  test-publish  Dry-run showing what make publish would do'
 	@echo '  ascii-check   Verify all source files are pure ASCII'
-	@echo '  dev-setup     Copy alire-dev.toml over alire.toml'
-	@echo '  prod-setup    Restore clean publishing alire.toml'
+	@echo ''
+	@echo 'Note: prove/doc/fmt temporarily swap in alire-dev.toml for the duration'
+	@echo '      of the command, then restore alire.toml and alire.lock untouched.'
 	@echo ''
 	@echo 'Prerequisites: alr (Alire), GNAT toolchain'
 
@@ -71,10 +72,13 @@ ascii-check:
 	else echo "$$error file(s) contain non-ASCII characters."; exit 1; fi
 
 dev-setup:
-	cp alire.toml alire.toml.bak && cp alire-dev.toml alire.toml
+	@echo 'dev-setup is no longer needed. prove/doc/fmt auto-swap alire-dev.toml'
+	@echo 'safely and restore alire.toml afterwards. alire.toml always stays clean.'
+	@exit 0
 
 prod-setup:
-	mv alire.toml.bak alire.toml 2>/dev/null || git checkout alire.toml
+	@echo 'prod-setup is no longer needed. alire.toml is never left with dev deps.'
+	@exit 0
 
 bump-version:
 	@if [ -z "$(VERSION)" ]; then \
@@ -186,10 +190,17 @@ clean:
 	alr clean 2>/dev/null; rm -rf bin/ obj/ docs/badges/ docs/api/
 
 _dev_cmd:
-	@if ! grep -q 'gnatformat_bin' alire.toml 2>/dev/null; then \
-	  cp alire.toml alire.toml.bak && cp alire-dev.toml alire.toml; \
-	  restore=1; \
-	else restore=0; fi; \
+	@tmp=$$(mktemp -d); \
+	cp alire.toml "$$tmp/alire.toml" && cp alire-dev.toml alire.toml; \
+	cp -r alire "$$tmp/alire"; \
+	restore() { \
+	  mv -f "$$tmp/alire.toml" alire.toml 2>/dev/null; \
+	  rm -rf alire; \
+	  mv -f "$$tmp/alire" alire; \
+	  rmdir "$$tmp" 2>/dev/null || true; \
+	}; \
+	trap restore EXIT INT TERM; \
 	$(CMD); status=$$?; \
-	if [ "$$restore" -eq 1 ]; then mv alire.toml.bak alire.toml; fi; \
+	trap - EXIT INT TERM; \
+	restore; \
 	exit $$status

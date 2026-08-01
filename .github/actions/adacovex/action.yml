@@ -1,0 +1,165 @@
+name: 'adacovex'
+description: >-
+  Run the adacovex Ada/SPARK verification pipeline: docstring coverage,
+  GNATprove proof analysis, test-result parsing, and DO-178C DAL assessment.
+  Writes a Markdown summary to $GITHUB_STEP_SUMMARY and uploads SVG badges.
+
+inputs:
+  target:
+    description: 'Target project root directory (relative to workspace root).'
+    required: false
+    default: '.'
+  dal:
+    description: 'DO-178C DAL level to assess (A-E, case-insensitive).'
+    required: false
+    default: 'C'
+  gnat-version:
+    description: 'GNAT toolchain version to select via alr (e.g. 15.2.0).'
+    required: false
+    default: '15.2.0'
+  build:
+    description: >-
+      Run `alr build` before assessing. Use when the workspace is adacovex
+      itself or when adacovex is a dev dependency of the target project.
+    required: false
+    default: 'true'
+  compare-base:
+    description: >-
+      Git base ref to run a differential assessment against (e.g. origin/main).
+      When set, the action runs --compare-base and fails on regression.
+    required: false
+    default: ''
+  emit-markdown:
+    description: 'Write VERIFICATION.md + TRACE.md into this directory (relative).'
+    required: false
+    default: ''
+  cache:
+    description: 'Enable dependency/toolchain caching with actions/cache.'
+    required: false
+    default: 'true'
+
+outputs:
+  dal-status:
+    description: 'DAL assessment status: Achieved or Unmet.'
+    value: ${{ steps.adacovex.outputs.dal_status }}
+  spark-level:
+    description: 'SPARK assurance level detected (Stone..Platinum).'
+    value: ${{ steps.adacovex.outputs.spark_level }}
+  test-count:
+    description: 'Number of passing tests.'
+    value: ${{ steps.adacovex.outputs.test_count }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install Alire toolchain
+      shell: bash
+      run: |
+        set -euxo pipefail
+        if command -v alr >/dev/null 2>&1; then
+          echo "alr already installed: $(alr --version)"
+        else
+          ALR_VER=2.1.1
+          ALR_TGZ="alr-$ALR_VER-bin-x86_64-linux.tar.gz"
+          curl -fsSL "https://github.com/alire-project/alire/releases/download/v$ALR_VER/$ALR_TGZ" \
+            -o "$RUNNER_TEMP/$ALR_TGZ"
+          tar -xzf "$RUNNER_TEMP/$ALR_TGZ" -C "$RUNNER_TEMP"
+          mkdir -p "$HOME/.local/bin"
+          cp "$RUNNER_TEMP/bin/alr" "$HOME/.local/bin/alr"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+        fi
+        alr version
+
+    - name: Select GNAT toolchain
+      shell: bash
+      run: |
+        set -euxo pipefail
+        alr toolchain --select gnat_native=${{ inputs.gnat-version }} gprbuild --disable-assistant
+
+    - name: Cache Alire
+      if: ${{ inputs.cache == 'true' }}
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/alire
+          ~/.local/share/alire
+        key: ${{ runner.os }}-alire-${{ hashFiles('**/alire.lock', '**/alire.toml', '**/alire-dev.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-alire-
+
+    - name: Build adacovex
+      if: ${{ inputs.build == 'true' }}
+      shell: bash
+      run: |
+        set -euxo pipefail
+        cd "$GITHUB_WORKSPACE"
+        alr build
+
+    - name: Run adacovex assessment
+      id: adacovex
+      shell: bash
+      run: |
+        set -euxo pipefail
+        cd "$GITHUB_WORKSPACE"
+        BIN=""
+        if [ -x bin/adacovex_main ]; then
+          BIN="$GITHUB_WORKSPACE/bin/adacovex_main"
+        elif command -v adacovex >/dev/null 2>&1; then
+          BIN="$(command -v adacovex)"
+        elif command -v adacovex_main >/dev/null 2>&1; then
+          BIN="$(command -v adacovex_main)"
+        fi
+        if [ -z "$BIN" ]; then
+          echo "::error::adacovex binary not found. Set build: true or install adacovex on PATH."
+          exit 1
+        fi
+        ARGS=()
+        ARGS+=(--target="${{ inputs.target }}")
+        ARGS+=(--dal=${{ inputs.dal }})
+        if [ -n "${{ inputs.compare-base }}" ]; then
+          ARGS+=(--compare-base="${{ inputs.compare-base }}")
+        fi
+        if [ -n "${{ inputs.emit-markdown }}" ]; then
+          ARGS+=(--emit-markdown="${{ inputs.emit-markdown }}")
+        fi
+        set +e
+        "$BIN" "${ARGS[@]}" > "$RUNNER_TEMP/adacovex.out" 2>&1
+        STATUS=$?
+        set -e
+        cat "$RUNNER_TEMP/adacovex.out"
+
+        DAL_STATUS=$(grep -oE 'DAL-[A-E]:.*(Achieved|Unmet)' "$RUNNER_TEMP/adacovex.out" | grep -oE '(Achieved|Unmet)' | head -1 || true)
+        SPARK_LEVEL=$(grep -oE '(Stone|Bronze|Silver|Gold|Platinum)' "$RUNNER_TEMP/adacovex.out" | head -1 || true)
+        TEST_COUNT=$(grep -oE '[0-9]+ passed' "$RUNNER_TEMP/adacovex.out" | grep -oE '[0-9]+' | head -1 || true)
+
+        echo "dal_status=${DAL_STATUS:-unknown}" >> "$GITHUB_OUTPUT"
+        echo "spark_level=${SPARK_LEVEL:-unknown}" >> "$GITHUB_OUTPUT"
+        echo "test_count=${TEST_COUNT:-0}" >> "$GITHUB_OUTPUT"
+
+        {
+          echo '## adacovex assessment'
+          echo ''
+          echo "| Metric | Value |"
+          echo "|--------|-------|"
+          echo "| Target | \`${{ inputs.target }}\` |"
+          echo "| DAL-${{ inputs.dal }} | ${DAL_STATUS:-unknown} |"
+          echo "| SPARK level | ${SPARK_LEVEL:-unknown} |"
+          echo "| Tests passed | ${TEST_COUNT:-0} |"
+          echo ''
+          echo '```text'
+          cat "$RUNNER_TEMP/adacovex.out"
+          echo '```'
+        } >> "$GITHUB_STEP_SUMMARY"
+
+        exit $STATUS
+
+    - name: Upload badges
+      if: ${{ always() && inputs.compare-base == '' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: adacovex-badges
+        path: ${{ inputs.target }}/docs/badges/*.svg
+        if-no-files-found: ignore

@@ -6,6 +6,7 @@ with Ada.Environment_Variables;
 with GNAT.Sockets;
 with Adacovex.Types;
 with Adacovex.Config;
+with Adacovex.Diff;
 with Adacovex.Parsers.Source;
 with Adacovex.Parsers.GNATprove;
 with Adacovex.Parsers.Tests;
@@ -49,6 +50,56 @@ procedure Adacovex_Main is
 
    Success : Boolean;
    Exit_St : Ada.Command_Line.Exit_Status := 0;
+
+   --  Differential mode (--compare-base): assess the target at a git base
+   --  ref and at the current working tree, report the delta, and set the
+   --  exit code to 1 on regression or current DAL failure.
+   procedure Run_Diff is
+      Base_Ref : constant String := Cfg.Compare_Base (1 .. Cfg.Compare_Base_Len);
+      Tmp_Path : String (1 .. Max_Path);
+      Tmp_Len  : Natural := 0;
+      OK       : Boolean;
+      Base_R   : Adacovex.Diff.Assessment_Result;
+      Cur_R    : Adacovex.Diff.Assessment_Result;
+      Regressed : Boolean;
+   begin
+      if not Adacovex.Diff.Is_Git_Repo (Target (1 .. TLen)) then
+         Ada.Text_IO.Put_Line
+           (Ada.Text_IO.Standard_Error,
+            "Error: --compare-base requires "
+            & Target (1 .. TLen)
+            & " to be a git repository");
+         Exit_St := 1;
+         return;
+      end if;
+
+      Adacovex.Diff.Make_Worktree
+        (Target (1 .. TLen), Base_Ref, Tmp_Path, Tmp_Len, OK);
+      if not OK then
+         Ada.Text_IO.Put_Line
+           (Ada.Text_IO.Standard_Error,
+            "Error: could not create worktree for base ref '" & Base_Ref
+            & "' (ref not found or not a git repo)");
+         Exit_St := 1;
+         return;
+      end if;
+
+      Verbose ("base worktree: " & Tmp_Path (1 .. Tmp_Len));
+      Base_R := Adacovex.Diff.Assess (Tmp_Path (1 .. Tmp_Len), Cfg.DAL_Target);
+      Cur_R := Adacovex.Diff.Assess (Target (1 .. TLen), Cfg.DAL_Target);
+
+      Regressed := Adacovex.Diff.Report_Delta
+        (Base_R, Cur_R, Base_Ref, Use_Color);
+
+      Adacovex.Diff.Remove_Worktree (Target (1 .. TLen), Tmp_Path (1 .. Tmp_Len));
+
+      if Regressed or else Cur_R.DAL_Status = Unmet then
+         Exit_St := 1;
+      else
+         Exit_St := 0;
+      end if;
+   end Run_Diff;
+
 begin
    Cfg := Adacovex.Config.Parse_CLI;
 
@@ -84,6 +135,13 @@ begin
       Ada.Text_IO.Put_Line
         (Ada.Text_IO.Standard_Error,
          "  manifest: " & Cfg.Manifest_Path (1 .. Cfg.Manifest_Len));
+   end if;
+
+   -- Differential mode: compare against a git base ref and exit.
+   if Cfg.Compare_Base_Len > 0 then
+      Run_Diff;
+      Ada.Command_Line.Set_Exit_Status (Exit_St);
+      return;
    end if;
 
    -- Step 1: Scan source files (strict mode scans everything + applies patches)
