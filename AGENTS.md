@@ -20,7 +20,7 @@ Self-assessment (`make run-self` / `--target=.`) verifies adacovex against its o
 source -- all 19 packages, 34 subprograms -- and must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
 - Platinum SPARK level (28/28 VCs proved)
-- 152/152 native tests passing
+- 160/160 native tests passing
 - DAL-C Achieved
 
 ## Architecture
@@ -46,7 +46,7 @@ src/
 |   |-- adacovex_test_parser_tests.ads/.adb   -- Test-result parser tests (27)
 |   |-- adacovex_config_tests.ads/.adb        -- CLI config tests (8)
 |   |-- adacovex_svg_tests.ads/.adb          -- SVG renderer tests (30)
-|   `-- test_runner.adb                       -- Test suite entry point (152 tests)
+|   `-- test_runner.adb                       -- Test suite entry point (160 tests)
 |-- compliance/
 |   |-- adacovex-compliance-dal.ads/.adb       -- DAL-C assessment logic
 |-- renderers/
@@ -132,7 +132,7 @@ adacovex [options]
 
 | Flag | Default | Mode | Description |
 |------|---------|------|-------------|
-| `--target=PATH` | `../Ada_CRDT` | both | Target project root directory |
+| `--target=PATH` | `.` (CWD) | both | Target project root directory |
 | `--manifest=PATH` | auto-detected | both | Override project manifest path |
 | `--dal=LEVEL` | `C` | both | Target DAL level (A-E) |
 | `--serve` | off | both | Start HTTP dashboard server |
@@ -149,7 +149,7 @@ adacovex [options]
 
 #### `--target=PATH`
 - **Purpose**: Specifies the Ada/SPARK project to analyze.
-- **Default**: `../Ada_CRDT` (relative to CWD).
+- **Default**: current working directory.
 - **Resolution**: Relative paths are resolved against the current working
   directory to an absolute path.
 - **Effect**: Determines the root directory for source scanning, manifest
@@ -508,6 +508,13 @@ Projects that do not have GNATprove output or test results will show "N/A"
 for those metrics. DAL compliance checks that depend on missing data will
 report as `Unmet` with appropriate failure reasons.
 
+Non-Ada projects (e.g. a C/C++, Python, or JS repo) that run adacovex should
+provision their own `alire.toml` or `alire-dev.toml` to manage the Ada-related
+dependencies required to build and run adacovex itself (adacovex + GNAT
+toolchain). The default `--target` is the current working directory, so running
+`adacovex` from a non-Ada repo scans that repo and uses its `alire.toml` as the
+manifest.
+
 ### Creating patch files for vendored code
 
 1. Run adacovex in strict mode to identify undocumented subprograms:
@@ -528,7 +535,7 @@ report as `Unmet` with appropriate failure reasons.
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 152/152 passing |
+| Unit tests | `make test` | 160/160 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | 28/28 VCs Platinum |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -546,21 +553,21 @@ Test source: `src/tests/`. Entry point: `test_runner.adb` (builds as
 `bin/test_runner` from `for Main use ("adacovex_main.adb", "test_runner.adb")`
 in `adacovex.gpr`).
 
-`make test` builds and runs the 152-test suite. Test results are written to
+`make test` builds and runs the 160-test suite. Test results are written to
 `docs/test_result.md` in a Markdown table format that can be parsed by
 `adacovex-parsers-tests`. This means adacovex **supports both** native test
 running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 
-### Test categories (152 total)
+### Test categories (160 total)
 
 | Category | Tests | What it covers |
 |----------|-------|----------------|
 | Types conversions | 21 | SPARK_Level/DAL_Level/DAL_Status/Test_Status strings |
 | DAL compliance | 2 | DAL assessment status |
 | Source scanner | 40 | Package scan, docstring parsing, HLR tags, name extraction, @field/@formal/after-decl |
-| GNATprove parser | 24 | .out parsing, proof summary, SPARK level detection |
+| GNATprove parser | 31 | .out parsing, proof summary, SPARK level detection, --help handling |
 | Test-result parser | 27 | Markdown test result parsing |
-| CLI config | 8 | Default option values, --no-svg field |
+| CLI config | 9 | Default option values, --help, --no-svg field |
 | SVG renderer | 30 | SVG badge content and format |
 
 ---

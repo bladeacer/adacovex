@@ -20,7 +20,7 @@ test-result parsing, DO-178C DAL compliance assessment, and interactive dashboar
   (heap-allocated, no compile-time limits)
 - No external dependencies beyond the GNAT runtime library
 - Self-assessment: 100% docstring coverage, Platinum SPARK (28/28 VCs proved),
-  DAL-C Achieved, 152/152 native tests passing
+  DAL-C Achieved, 160/160 native tests passing
 """
 
 authors = ["bladeacer"]

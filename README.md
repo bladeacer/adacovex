@@ -54,7 +54,7 @@ adacovex [options]
 
 | Flag | Default | Mode | Description |
 |------|---------|------|-------------|
-| `--target=PATH` | `../Ada_CRDT` | both | Target project root directory |
+| `--target=PATH` | `.` (CWD) | both | Target project root directory |
 | `--manifest=PATH` | auto-detected | both | Override project manifest path |
 | `--dal=LEVEL` | `C` | both | Target DAL level (A-E) |
 | `--serve` | off | both | Start HTTP dashboard server |
@@ -70,7 +70,7 @@ adacovex [options]
 ### Flag details
 
 **`--target=PATH`** -- Project to analyze. Relative paths resolved against CWD.
-Default: `../Ada_CRDT`.
+Default: current working directory.
 
 **`--manifest=PATH`** -- Override project manifest file. Auto-detected from
 `<target>/alire-dev.toml` or `<target>/alire.toml`. Displayed as metadata only.
@@ -202,7 +202,7 @@ to document. Overloaded subprograms require one patch entry per overload.
 | Target | Description |
 |--------|-------------|
 | `build` | `alr build` (adacovex_main + test_runner) |
-| `test` | Build and run native test suite (152 tests) |
+| `test` | Build and run native test suite (160 tests) |
 | `prove` | `alr gnatprove` (auto-swaps alire-dev.toml) |
 | `fmt` | Format Ada sources with `gnatformat` |
 | `doc` | Generate API docs via gnatdoc + rst2md |
@@ -225,14 +225,14 @@ src/
 |-- compliance/                   -- DAL assessment logic
 |-- renderers/                    -- ANSI, SVG, Markdown, HTML output
 |-- server/                       -- HTTP/1.1 dashboard server
-|-- tests/                        -- Native test suite (152 tests)
+|-- tests/                        -- Native test suite (160 tests)
 ```
 
 ## Verification
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 152/152 passing |
+| Unit tests | `make test` | 160/160 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C |
 | SPARK proof | `make prove` | 28/28 VCs Platinum |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, Platinum, DAL-C (strict mode) |
