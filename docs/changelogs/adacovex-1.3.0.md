@@ -29,6 +29,36 @@ full pipeline and exited according to the DAL result. A dedicated
 The generated `b__adacovex_main.*` and `b__test_runner.*` files were removed
 from version control (build artifacts only).
 
+### C4: Differential assessment (`--compare-base=REF`)
+
+New `--compare-base=REF` flag assesses a git base revision in a temporary
+worktree (`/tmp/adacovex-diff-<pid>`) and prints a side-by-side table against
+the current working tree: packages, subprograms, docstring %, HLR traced,
+orphan tags, SPARK level, VCs proved, tests, DAL status. Exit code is `0` only
+when there is no regression and the current DAL is Achieved.
+
+Implemented in the new non-SPARK `Adacovex.Diff` package (it spawns `git`
+via `GNAT.OS_Lib`), wired into `adacovex_main` as `Run_Diff`, with
+`Compare_Base`/`Compare_Base_Len` added to `CLI_Config`. Rows for proof/test
+artifacts that the base revision does not commit report `N/A`.
+
+### C5: Hardened dev-manifest swap in the Makefile
+
+`_dev_cmd` (used by `prove`, `doc`, `fmt`) now snapshots `alire.toml`,
+`alire.lock`, `alire.lock.prev`, and `alire/settings.toml` into a temp dir,
+swaps in `alire-dev.toml`, and restores the snapshots on exit via
+`trap ... EXIT INT TERM`. Interrupted or failed dev commands can no longer
+leave the manifest or lock files polluted with development dependencies
+(whether or not the lock files are committed). `dev-setup` and `prod-setup`
+were replaced with guidance stubs.
+
+### C6: GitHub composite action and CI
+
+New `.github/actions/adacovex/action.yml` (install Alire + GNAT toolchain,
+cache, build, run the full assessment, publish `dal-status`/`spark-level`/
+`test-count` outputs, a Markdown step summary, and SVG badge artifacts) and
+`.github/workflows/ci.yml` (self-assessment job + build/test job).
+
 ## Fixes
 
 ### H1: GNATprove `Initialization` row clobbered Flow Dependencies data
@@ -66,15 +96,26 @@ assessment on a false Gold.
 ## Notes
 
 - GNATprove parser tests extended to cover the modern layout, empty summaries,
-  and the Flow/Initialization separation (7 new checks; suite now 167 tests).
+  and the Flow/Initialization separation (7 new checks; suite now 168 tests).
 - The DAL-level minimum SPARK requirements documented in `AGENTS.md` and
   `README.md` were corrected to match `docs/HLR.md` and the implemented
   `Min_SPARK_For` table (DAL-A: Gold, DAL-B: Silver, DAL-C: Bronze, DAL-D/E:
   none).
 - `make badges` in `Ada_CRDT` now builds adacovex first if the binary is
   missing and passes an explicit `--target=.`.
+- The tracked `alire/alire.lock` and `alire/settings.toml` are now the clean
+  release versions (previously they contained development dependencies from an
+  accidental dev-manifest build).
+- Self-assessment metrics updated to the new layout: 20 packages, 38
+  subprograms, 100% docstrings, Platinum (28/28 VCs), 168 tests, DAL-C
+  Achieved.
 
 ## Proof Results
 
 Self-assessment: **Platinum** (28/28 VCs proved, AoRTE-free).
-Ada_CRDT (strict): **Platinum**.
+Ada_CRDT (strict): **Platinum** (273 VCs proved).
+
+## Traceability
+
+New `-- HLR-DIFF` tag on `Adacovex.Diff` is defined in `docs/compliance/HLR.md`
+and traced by the differential-assessment feature.

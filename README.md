@@ -64,6 +64,7 @@ adacovex [options]
 | `--emit-markdown=PATH` | off | both | Output directory for Markdown reports |
 | `--skip-dir=NAME` | `demo,deps,examples` | relaxed | Directory name to skip (repeatable) |
 | `--relaxed` | off | both | Disable strict mode (skip dirs, no patches) |
+| `--compare-base=REF` | off | both | Differential mode vs a git base ref |
 | `--verbose` | off | both | Verbose diagnostics |
 | `--help` | - | both | Print usage and exit |
 
@@ -97,6 +98,13 @@ Only effective in relaxed mode. Default skip list: `demo,deps,examples`.
 **`--relaxed`** -- Disable strict mode. Enables the skip list (default: `demo,deps,examples`
 plus any `--skip-dir` entries). Does NOT apply `.adacovex/patches/`.
 Default: OFF (strict mode is on by default).
+
+**`--compare-base=REF`** -- Differential mode: assess a git base revision in a
+temporary worktree and print a side-by-side comparison against the current
+tree (packages, docstrings, HLR trace, orphans, SPARK level, VCs, tests, DAL).
+Exit `0` only if there are no regressions and the current DAL is Achieved.
+The target must be a git repository with `git` on `PATH`. Artifacts the base
+does not commit (`gnatprove.out`, `test_result.md`) report `N/A`.
 
 **`--verbose`** -- Print pipeline step diagnostics to stderr.
 
@@ -139,7 +147,60 @@ adacovex --target=. --emit-markdown=docs/compliance
 
 # Web dashboard on custom port
 adacovex --target=. --serve --port=9090
+
+# Differential assessment vs a git base revision
+adacovex --target=. --compare-base=HEAD
 ```
+
+### Using adacovex from another project
+
+Two approaches are equally valid; pick whichever fits the project.
+
+**1. Point `--target` at the adacovex dev source (no install needed):**
+
+```bash
+cd /path/to/adacovex && make build
+cd /path/to/project
+/path/to/adacovex/bin/adacovex_main --target=. --dal=C
+```
+
+Because `--target` defaults to the current directory, running the binary from
+inside the project scans it with no extra flags. The project needs no Ada
+tooling of its own -- only the adacovex working tree needs GNAT and Alire.
+
+**2. Manage adacovex as an Alire dev dependency:**
+
+```toml
+# <project>/alire-dev.toml (never alire.toml, so release builds stay clean)
+[[depends-on]]
+covex = "*"
+```
+
+Then `alr build` produces `bin/adacovex_main` inside the project and
+`adacovex` runs against the current directory by default.
+
+In both cases the assessed project is the `--target` directory (or CWD when
+omitted); the two approaches differ only in how the binary is obtained.
+
+### GitHub Actions
+
+Use the composite action for CI compliance gates:
+
+```yaml
+jobs:
+  compliance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/adacovex
+        with:
+          target: .
+          dal: C
+```
+
+The action installs Alire + GNAT, builds adacovex, runs the full assessment,
+and publishes `dal-status` / `spark-level` / `test-count` outputs, a Markdown
+step summary, and SVG badge artifacts.
 
 ## Requirements for target projects
 
@@ -153,6 +214,11 @@ To run adacovex against a project, it must have:
 4. **HLR document** (for DAL assessment): `<target>/docs/compliance/HLR.md`.
 
 Missing data shows "N/A" and relevant DAL checks report `Unmet`.
+
+Non-Ada projects (C/C++, Python, JS, ...) that run adacovex provision their
+own `alire.toml` / `alire-dev.toml` to manage the Ada deps needed to build
+adacovex itself (adacovex + GNAT toolchain). Running `adacovex` from the repo
+scans it and uses its manifest.
 
 ## Docstring format
 
@@ -202,7 +268,7 @@ to document. Overloaded subprograms require one patch entry per overload.
 | Target | Description |
 |--------|-------------|
 | `build` | `alr build` (adacovex_main + test_runner) |
-| `test` | Build and run native test suite (167 tests) |
+| `test` | Build and run native test suite (168 tests) |
 | `prove` | `alr gnatprove` (auto-swaps alire-dev.toml) |
 | `fmt` | Format Ada sources with `gnatformat` |
 | `doc` | Generate API docs via gnatdoc + rst2md |
@@ -225,14 +291,14 @@ src/
 |-- compliance/                   -- DAL assessment logic
 |-- renderers/                    -- ANSI, SVG, Markdown, HTML output
 |-- server/                       -- HTTP/1.1 dashboard server
-|-- tests/                        -- Native test suite (167 tests)
+|-- tests/                        -- Native test suite (168 tests)
 ```
 
 ## Verification
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 167/167 passing |
+| Unit tests | `make test` | 168/168 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C |
 | SPARK proof | `make prove` | 28/28 VCs Platinum |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, Platinum, DAL-C (strict mode) |

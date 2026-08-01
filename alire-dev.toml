@@ -1,9 +1,7 @@
 # Development manifest for local SPARK proof, doc generation, formatting.
-# Copy this over alire.toml during development:
-#   make dev-setup
-# or use make prove/doc to auto-swap temporarily.
-# Restore the clean publishing manifest with:
-#   make prod-setup
+# Used exclusively by make prove/doc/fmt, which temporarily swap this manifest
+# in for the duration of the command and then restore alire.toml (and
+# alire.lock / alire/settings.toml) untouched. alire.toml is never polluted.
 #
 # This manifest includes gnatprove, gnatdoc_bin, and gnatformat_bin which
 # are required for make prove, make doc, and make fmt but MUST NOT appear
