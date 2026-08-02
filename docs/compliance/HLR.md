@@ -19,8 +19,8 @@
 - HLR-RENDER-HTML: HTML dashboard and JSON API
 - HLR-SERVER: HTTP server
 - HLR-CLI: CLI argument parsing
+- HLR-DIFF: Differential assessment (--compare-base)
 - HLR-METRICS: Docstring coverage metrics
-- HLR-DIFF: Differential assessment (--compare-base / --coverage-delta)
 
 ## Requirements
 
@@ -76,11 +76,10 @@
 - HLR-CLI: The tool shall accept CLI arguments in --key=value and --key value
   forms with sensible defaults, and print usage help on --help.
 
-- HLR-METRICS: The tool shall compute docstring coverage as a percentage of
-  documented subprograms over total subprograms.
-
 - HLR-DIFF: The tool shall support differential assessment via --compare-base,
   comparing the target at a git base ref against its current working tree and
   reporting deltas in docstring coverage, HLR traceability, SPARK proof level,
-  test results, and DAL status. It shall also support a lightweight
-  docstring-coverage gate via --coverage-delta.
+  test results, and DAL status.
+
+- HLR-METRICS: The tool shall compute docstring coverage as a percentage of
+  documented subprograms over total subprograms.

@@ -23,6 +23,13 @@ inputs:
       itself or when adacovex is a dev dependency of the target project.
     required: false
     default: 'true'
+  prove:
+    description: >-
+      Run GNATprove before assessing (swaps in alire-dev.toml). Use when the
+      target repo does not commit gnatprove.out but needs a proof level, e.g.
+      adacovex's own self-assessment.
+    required: false
+    default: 'false'
   compare-base:
     description: >-
       Git base ref to run a differential assessment against (e.g. origin/main).
@@ -106,6 +113,21 @@ runs:
         set -euxo pipefail
         cd "$GITHUB_WORKSPACE"
         alr build
+
+    - name: Run GNATprove
+      if: ${{ inputs.prove == 'true' }}
+      shell: bash
+      run: |
+        set -euxo pipefail
+        cd "$GITHUB_WORKSPACE"
+        if [ ! -f alire-dev.toml ]; then
+          echo "::error::prove: true requires alire-dev.toml (dev manifest) in the target repo."
+          exit 1
+        fi
+        cp alire.toml "$RUNNER_TEMP/alire.toml.bak"
+        cp alire-dev.toml alire.toml
+        alr gnatprove
+        mv "$RUNNER_TEMP/alire.toml.bak" alire.toml
 
     - name: Run adacovex assessment
       id: adacovex

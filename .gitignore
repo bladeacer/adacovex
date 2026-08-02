@@ -2,9 +2,7 @@ bin/
 obj/
 .alire/
 config/
-docs/compliance/
 docs/api/
-docs/api-docs/*_tests.md
 *.tmp
 .headroom
 alire.toml.bak
