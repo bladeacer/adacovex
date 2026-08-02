@@ -8,6 +8,7 @@
 
 **Zero-library-dependency Ada/SPARK CLI tool** for coverage analysis, proof verification,
 test-result parsing, DO-178C DAL compliance assessment, and interactive dashboards.
+gnatprove is the only declared (tool) dependency; no libraries beyond the GNAT runtime.
 
 ## Features
 
@@ -200,20 +201,27 @@ step summary, machine-readable outputs, and SVG badge artifacts.
 
 The action is version-matched to the adacovex binary: the release workflow
 bundles `adacovex-vX.Y.Z.tar.gz` for every `vX.Y.Z` tag, and the action
-downloads the binary for the tag it is referenced by. So the marketplace
-action at `@v1.3.0` always runs the `v1.3.0` binary — no building in the
-consumer's repo.
+downloads the binary for the tag it is referenced by. Reference it by a
+floating tag to always get the latest published release, or pin to an exact
+release for reproducibility. So the marketplace action at `@v1` always runs the
+latest `v1.x` binary — no building in the consumer's repo.
 
-Reference it from any Ada/SPARK repo (pinned to the version tag that matches
-the adacovex release you want):
+Reference it from any Ada/SPARK repo (recommended: `@latest`-style floating
+tag; you can pin to a specific release if needed):
 
 ```yaml
 steps:
   - uses: actions/checkout@v4
-  - uses: bladeacer/adacovex/.github/actions/adacovex@v1.3.0
+  - uses: bladeacer/adacovex/.github/actions/adacovex@v1
     with:
       target: .
       dal: C
+```
+
+To target a specific release instead, pin the ref:
+
+```yaml
+  - uses: bladeacer/adacovex/.github/actions/adacovex@v1.3.0
 ```
 
 #### Inputs
@@ -226,7 +234,7 @@ steps:
 | `version` | `''` | adacovex version to use; defaults to the tag the action is referenced by |
 | `build` | `false` | Build adacovex from source instead of downloading the version-matched binary (`true` for in-repo self-assessment) |
 | `release-build` | `false` | Pass `--release` to `alr build` (for release workflows) |
-| `prove` | `false` | Run GNATprove before assessing (for repos that don't commit `gnatprove.out`) |
+| `prove` | `false` | Run GNATprove before assessing, for repos that don't commit `gnatprove.out` (gnatprove is a declared dependency, no dev-manifest swap) |
 | `run-tests` | `false` | Build and run the native test suite (requires `build: true`) |
 | `assess` | `true` | Run the assessment and publish outputs/badges (set `false` for build/test-only jobs) |
 | `compare-base` | `''` | Git ref to run `--compare-base` against (fails on regression) |
@@ -246,8 +254,9 @@ steps:
 #### PR coverage gate
 
 Gate every pull request on docstring coverage not regressing against the base
-branch (this is exactly what `--coverage-delta` was built for). Pin the action
-to a full release tag so it downloads the matching binary:
+branch (this is exactly what `--coverage-delta` was built for). Use the
+floating tag to track the latest release, or pin to a full release tag to
+download a matching binary deterministically:
 
 ```yaml
 # .github/workflows/pr-check.yml
@@ -260,7 +269,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: bladeacer/adacovex/.github/actions/adacovex@v1.3.0
+      - uses: bladeacer/adacovex/.github/actions/adacovex@v1
         with:
           target: .
           dal: C
@@ -279,7 +288,8 @@ and publishes the bundle to the GitHub Release:
 
 - `adacovex-vX.Y.Z.tar.gz` -- the version-matched binary (`adacovex` plus the
   `covex` alias). The action downloads this asset for the tag it is referenced
-  by, so `@v1.3.0` runs adacovex `v1.3.0`.
+  by, so `@v1.3.0` runs adacovex `v1.3.0` and `@v1` runs the latest `v1.x`
+  release.
 - `adacovex-action-vX.Y.Z.tar.gz` -- a copy of the composite action itself for
   vendoring or air-gapped use.
 
@@ -306,9 +316,9 @@ GitHub Actions marketplace, every `vX.Y.Z` tag auto-publishes that version of
 the action.
 
 The release workflow also force-pushes the floating tags `vMAJOR` and
-`vMAJOR.MINOR` (e.g. `v1` and `v1.3` from `v1.3.0`) so you can reference
-`@v1` / `@v1.3` to always get the latest release within a major or minor
-version, instead of pinning an exact `@vX.Y.Z`.
+`vMAJOR.MINOR` (e.g. `v1` and `v1.3` from `v1.3.0`). Reference `@v1` /
+`@v1.3` to always get the latest release within a major or minor version, or
+pin an exact `@vX.Y.Z` when you need a fixed version.
 
 ## Requirements for target projects
 
@@ -383,6 +393,7 @@ to document. Overloaded subprograms require one patch entry per overload.
 | `run-self` | Run against adacovex itself (default target: cwd) |
 | `run-ada-crdt` | Run against `../Ada_CRDT` (strict mode) |
 | `bump-version` | Bump version across manifests + changelog (`VERSION=x.y.z`) |
+| `release` | Build `--release`, prove, validate, run docstring-coverage gate vs last release, bundle + push (`VERSION=x.y.z`) |
 | `ascii-check` | Verify all source files are pure ASCII |
 | `dev-setup` | Copy alire-dev.toml over alire.toml |
 | `prod-setup` | Restore clean publishing alire.toml |

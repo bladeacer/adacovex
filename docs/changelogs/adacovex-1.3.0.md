@@ -44,7 +44,8 @@ artifacts that the base revision does not commit report `N/A`.
 
 ### C5: Hardened dev-manifest swap in the Makefile
 
-`_dev_cmd` (used by `prove`, `doc`, `fmt`) now snapshots `alire.toml`,
+`_dev_cmd` (used by `doc`, `fmt`; `prove` no longer needs it now that
+`gnatprove` is a declared dependency of `alire.toml`) snapshots `alire.toml`,
 `alire.lock`, `alire.lock.prev`, and `alire/settings.toml` into a temp dir,
 swaps in `alire-dev.toml`, and restores the snapshots on exit via
 `trap ... EXIT INT TERM`. Interrupted or failed dev commands can no longer
@@ -141,6 +142,17 @@ assessment on a false Gold.
 
 ## Notes
 
+- `alire.toml` now declares `gnatprove` as an explicit dependency: adacovex
+  analyzes `gnatprove.out` and its own self-assessment runs the proof campaign,
+  so `alr gnatprove` works without a dev-manifest swap. `gnatprove` is the only
+  declared dependency beyond the GNAT runtime (gnatdoc/gnatformat stay
+  dev-only in `alire-dev.toml`).
+- The release workflow force-pushes floating `vMAJOR` / `vMAJOR.MINOR` tags
+  (e.g. `v1` and `v1.3` from `v1.3.0`) so the composite action can be consumed
+  as `@v1` / `@v1.3` for the latest matching release.
+- `make release` now runs a docstring-coverage gate (`--coverage-delta`) that
+  compares the last release tag against the current tree and aborts if coverage
+  regressed -- the same PR compliance gate, applied between releases.
 - GNATprove parser tests extended to cover the modern layout, empty summaries,
   and the Flow/Initialization separation (7 new checks; suite now 169 tests).
 - The DAL-level minimum SPARK requirements documented in `AGENTS.md` and

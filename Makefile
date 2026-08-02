@@ -20,8 +20,10 @@ help:
 	@echo '  bump-version  Bump version across alire.toml, alire-dev.toml,'
 	@echo '                adacovex.ads, releases, index (VERSION=x.y.z)'
 	@echo '  release       Tag, update releases+index, push. Use VERSION=x.y.z'
-	@echo '                (CI then force-pushes vMAJOR / vMAJOR.MINOR floating'
-	@echo '                 tags so @v1 / @v1.3 refs track the latest release)'
+	@echo '                (Runs a docstring-coverage gate comparing the last'
+	@echo '                 release against the current tree, then CI force-pushes'
+	@echo '                 vMAJOR / vMAJOR.MINOR floating tags so @v1 / @v1.3'
+	@echo '                 refs track the latest release)'
 	@echo '  publish       Publish to Alire community index (run after make release)'
 	@echo '  test-publish  Dry-run showing what make publish would do'
 	@echo '  ascii-check   Verify all source files are pure ASCII'
@@ -152,6 +154,18 @@ release:
 	alr build --release; \
 	echo "=== Validating self-assessment (DAL-C) ==="; \
 	./bin/adacovex --target=. --dal=C; \
+	echo "=== Docstring coverage gate (last release vs current) ==="; \
+	prev_tag=$$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$$' | grep -v "^v$$version$$" | head -1); \
+	if [ -z "$$prev_tag" ]; then \
+		echo "  No previous release found; skipping coverage gate"; \
+	else \
+		echo "  Comparing docstring coverage against $$prev_tag"; \
+		./bin/adacovex --target=. --coverage-delta="$$prev_tag"; \
+		if [ $$? -ne 0 ]; then \
+			echo "  ERROR: docstring coverage regressed vs $$prev_tag; aborting release"; \
+			exit 1; \
+		fi; \
+	fi; \
 	echo "=== Bundling release artifacts ==="; \
 	rm -rf dist; \
 	mkdir -p dist; \
