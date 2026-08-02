@@ -72,39 +72,11 @@ runs:
       uses: actions/checkout@v4
 
     - name: Install Alire toolchain
-      shell: bash
-      run: |
-        set -euxo pipefail
-        if command -v alr >/dev/null 2>&1; then
-          echo "alr already installed: $(alr --version)"
-        else
-          ALR_VER=2.1.1
-          ALR_ZIP="alr-$ALR_VER-bin-x86_64-linux.zip"
-          curl -fsSL "https://github.com/alire-project/alire/releases/download/v$ALR_VER/$ALR_ZIP" \
-            -o "$RUNNER_TEMP/$ALR_ZIP"
-          unzip -q "$RUNNER_TEMP/$ALR_ZIP" -d "$RUNNER_TEMP/alr-$ALR_VER"
-          mkdir -p "$HOME/.local/bin"
-          cp "$RUNNER_TEMP/alr-$ALR_VER/bin/alr" "$HOME/.local/bin/alr"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-        fi
-        alr version
-
-    - name: Select GNAT toolchain
-      shell: bash
-      run: |
-        set -euxo pipefail
-        alr toolchain --select gnat_native=${{ inputs.gnat-version }} gprbuild --disable-assistant
-
-    - name: Cache Alire
-      if: ${{ inputs.cache == 'true' }}
-      uses: actions/cache@v4
+      uses: alire-project/setup-alire@latest
       with:
-        path: |
-          ~/.cache/alire
-          ~/.local/share/alire
-        key: ${{ runner.os }}-alire-${{ hashFiles('**/alire.lock', '**/alire.toml', '**/alire-dev.toml') }}
-        restore-keys: |
-          ${{ runner.os }}-alire-
+        version: '2.1.1'
+        toolchain: 'gnat_native=${{ inputs.gnat-version }} gprbuild'
+        cache: ${{ inputs.cache }}
 
     - name: Build adacovex
       if: ${{ inputs.build == 'true' }}

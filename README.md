@@ -193,9 +193,10 @@ omitted); the two approaches differ only in how the binary is obtained.
 ### GitHub Actions
 
 A composite action at `.github/actions/adacovex` runs the full adacovex
-pipeline in CI. It installs the Alire toolchain, builds adacovex, runs the
-assessment, and publishes a Markdown step summary, machine-readable outputs,
-and SVG badge artifacts.
+pipeline in CI. It installs the Alire toolchain via
+[`alire-project/setup-alire`](https://github.com/alire-project/setup-alire),
+builds adacovex, runs the assessment, and publishes a Markdown step summary,
+machine-readable outputs, and SVG badge artifacts.
 
 Reference it from the repo that contains it (pinned to the version tag that
 matches the adacovex release you want):
@@ -218,6 +219,7 @@ steps:
 | `dal` | `C` | DO-178C DAL level to assess (A-E) |
 | `gnat-version` | `15.2.1` | GNAT toolchain version to select via `alr` |
 | `build` | `true` | Run `alr build` before assessing |
+| `prove` | `false` | Run GNATprove before assessing (for repos that don't commit `gnatprove.out`) |
 | `compare-base` | `''` | Git ref to run `--compare-base` against (fails on regression) |
 | `coverage-delta` | `''` | Git ref to run `--coverage-delta` against (fails if coverage dropped) |
 | `emit-markdown` | `''` | Write `VERIFICATION.md` + `TRACE.md` into this directory |
@@ -393,6 +395,10 @@ See [changelogs](docs/changelogs/index.md) for full release notes.
 - **GNAT** Ada compiler (managed by Alire)
 - **GNATprove** (optional, for proof targets, managed by Alire)
 - **gnatpp** / **gnatdoc** (optional, for fmt/doc targets, managed by Alire)
+
+## Credits
+
+- **[setup-alire](https://github.com/alire-project/setup-alire)** GitHub Action (used in CI)
 
 ## License
 

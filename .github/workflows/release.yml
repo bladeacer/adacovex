@@ -15,19 +15,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Alire toolchain
-        shell: bash
-        run: |
-          set -euxo pipefail
-          ALR_VER=2.1.1
-          ALR_ZIP="alr-$ALR_VER-bin-x86_64-linux.zip"
-          curl -fsSL "https://github.com/alire-project/alire/releases/download/v$ALR_VER/$ALR_ZIP" \
-            -o "$RUNNER_TEMP/$ALR_ZIP"
-          unzip -q "$RUNNER_TEMP/$ALR_ZIP" -d "$RUNNER_TEMP/alr-$ALR_VER"
-          mkdir -p "$HOME/.local/bin"
-          cp "$RUNNER_TEMP/alr-$ALR_VER/bin/alr" "$HOME/.local/bin/alr"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          alr toolchain --select gnat_native=15.2.1 gprbuild --disable-assistant
+      - uses: alire-project/setup-alire@latest
+        with:
+          version: '2.1.1'
+          toolchain: 'gnat_native=15.2.1 gprbuild'
 
       - name: Build release binary
         shell: bash
