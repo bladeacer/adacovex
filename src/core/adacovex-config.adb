@@ -71,53 +71,53 @@ package body Adacovex.Config is
          declare
             A : constant String := Ada.Command_Line.Argument (I);
          begin
-             if A = "--target" then
-                I := I + 1;
-                if I <= Count then
-                   Set_String
-                     (Cfg.Target_Path,
-                      Cfg.Target_Len,
-                      Ada.Command_Line.Argument (I));
-                else
-                   Set_Error (Cfg, "--target requires a path argument");
-                end if;
+            if A = "--target" then
+               I := I + 1;
+               if I <= Count then
+                  Set_String
+                    (Cfg.Target_Path,
+                     Cfg.Target_Len,
+                     Ada.Command_Line.Argument (I));
+               else
+                  Set_Error (Cfg, "--target requires a path argument");
+               end if;
             elsif Has_Prefix (A, "--target=") then
                Set_String
                  (Cfg.Target_Path, Cfg.Target_Len, A (A'First + 9 .. A'Last));
-             elsif A = "--manifest" then
-                I := I + 1;
-                if I <= Count then
-                   Set_String
-                     (Cfg.Manifest_Path,
-                      Cfg.Manifest_Len,
-                      Ada.Command_Line.Argument (I));
-                else
-                   Set_Error (Cfg, "--manifest requires a path argument");
-                end if;
+            elsif A = "--manifest" then
+               I := I + 1;
+               if I <= Count then
+                  Set_String
+                    (Cfg.Manifest_Path,
+                     Cfg.Manifest_Len,
+                     Ada.Command_Line.Argument (I));
+               else
+                  Set_Error (Cfg, "--manifest requires a path argument");
+               end if;
             elsif Has_Prefix (A, "--manifest=") then
                Set_String
                  (Cfg.Manifest_Path,
                   Cfg.Manifest_Len,
                   A (A'First + 11 .. A'Last));
-             elsif A = "--dal" then
-                I := I + 1;
-                if I <= Count then
-                   declare
-                      Val : constant String := Ada.Command_Line.Argument (I);
-                   begin
-                      if Is_Valid_DAL (Val) then
-                         Cfg.DAL_Target := Types.To_DAL (Val);
-                      else
-                         Set_Error
-                           (Cfg,
-                            "--dal must be A, B, C, D, or E (got: "
-                            & Val
-                            & ")");
-                      end if;
-                   end;
-                else
-                   Set_Error (Cfg, "--dal requires a level argument (A-E)");
-                end if;
+            elsif A = "--dal" then
+               I := I + 1;
+               if I <= Count then
+                  declare
+                     Val : constant String := Ada.Command_Line.Argument (I);
+                  begin
+                     if Is_Valid_DAL (Val) then
+                        Cfg.DAL_Target := Types.To_DAL (Val);
+                     else
+                        Set_Error
+                          (Cfg,
+                           "--dal must be A, B, C, D, or E (got: "
+                           & Val
+                           & ")");
+                     end if;
+                  end;
+               else
+                  Set_Error (Cfg, "--dal requires a level argument (A-E)");
+               end if;
             elsif Has_Prefix (A, "--dal=") then
                declare
                   Val : constant String := A (A'First + 6 .. A'Last);
@@ -132,23 +132,23 @@ package body Adacovex.Config is
                end;
             elsif A = "--serve" then
                Cfg.Serve_Mode := True;
-             elsif A = "--port" then
-                I := I + 1;
-                if I <= Count then
-                   begin
-                      Cfg.Port :=
-                        Positive'Value (Ada.Command_Line.Argument (I));
-                   exception
-                      when Constraint_Error =>
-                         Set_Error
-                           (Cfg,
-                            "--port must be a positive integer (got: "
-                            & Ada.Command_Line.Argument (I)
-                            & ")");
-                   end;
-                else
-                   Set_Error (Cfg, "--port requires an integer argument");
-                end if;
+            elsif A = "--port" then
+               I := I + 1;
+               if I <= Count then
+                  begin
+                     Cfg.Port :=
+                       Positive'Value (Ada.Command_Line.Argument (I));
+                  exception
+                     when Constraint_Error =>
+                        Set_Error
+                          (Cfg,
+                           "--port must be a positive integer (got: "
+                           & Ada.Command_Line.Argument (I)
+                           & ")");
+                  end;
+               else
+                  Set_Error (Cfg, "--port requires an integer argument");
+               end if;
             elsif Has_Prefix (A, "--port=") then
                begin
                   Cfg.Port := Positive'Value (A (A'First + 7 .. A'Last));
@@ -160,32 +160,33 @@ package body Adacovex.Config is
                         & A (A'First + 7 .. A'Last)
                         & ")");
                end;
-             elsif A = "--emit-svg" then
-                I := I + 1;
-                if I <= Count then
-                   Cfg.Emit_SVG := True;
-                   Set_String
-                     (Cfg.SVG_Path,
-                      Cfg.SVG_Path_Len,
-                      Ada.Command_Line.Argument (I));
-                else
-                   Set_Error (Cfg, "--emit-svg requires a directory argument");
-                end if;
+            elsif A = "--emit-svg" then
+               I := I + 1;
+               if I <= Count then
+                  Cfg.Emit_SVG := True;
+                  Set_String
+                    (Cfg.SVG_Path,
+                     Cfg.SVG_Path_Len,
+                     Ada.Command_Line.Argument (I));
+               else
+                  Set_Error (Cfg, "--emit-svg requires a directory argument");
+               end if;
             elsif Has_Prefix (A, "--emit-svg=") then
                Cfg.Emit_SVG := True;
                Set_String
                  (Cfg.SVG_Path, Cfg.SVG_Path_Len, A (A'First + 11 .. A'Last));
-             elsif A = "--emit-markdown" then
-                I := I + 1;
-                if I <= Count then
-                   Cfg.Emit_Markdown := True;
-                   Set_String
-                     (Cfg.MD_Path,
-                      Cfg.MD_Path_Len,
-                      Ada.Command_Line.Argument (I));
-                else
-                   Set_Error (Cfg, "--emit-markdown requires a directory argument");
-                end if;
+            elsif A = "--emit-markdown" then
+               I := I + 1;
+               if I <= Count then
+                  Cfg.Emit_Markdown := True;
+                  Set_String
+                    (Cfg.MD_Path,
+                     Cfg.MD_Path_Len,
+                     Ada.Command_Line.Argument (I));
+               else
+                  Set_Error
+                    (Cfg, "--emit-markdown requires a directory argument");
+               end if;
             elsif Has_Prefix (A, "--emit-markdown=") then
                Cfg.Emit_Markdown := True;
                Set_String
@@ -196,51 +197,52 @@ package body Adacovex.Config is
                Cfg.Verbose := True;
             elsif A = "--relaxed" then
                Cfg.Strict_Mode := False;
-             elsif A = "--skip-dir" then
-                I := I + 1;
-                if I <= Count then
-                   Add_Skip_Dir (Cfg, Ada.Command_Line.Argument (I));
-                else
-                   Set_Error (Cfg, "--skip-dir requires a directory name");
-                end if;
-             elsif Has_Prefix (A, "--skip-dir=") then
-                Add_Skip_Dir (Cfg, A (A'First + 10 .. A'Last));
-             elsif A = "--compare-base" then
-                I := I + 1;
-                if I <= Count then
-                   Set_String
-                     (Cfg.Compare_Base,
-                      Cfg.Compare_Base_Len,
-                      Ada.Command_Line.Argument (I));
-                else
-                   Set_Error
-                     (Cfg, "--compare-base requires a branch/commit argument");
-                end if;
-             elsif Has_Prefix (A, "--compare-base=") then
-                Set_String
-                  (Cfg.Compare_Base,
-                   Cfg.Compare_Base_Len,
-                   A (A'First + 15 .. A'Last));
-             elsif A = "--coverage-delta" then
-                I := I + 1;
-                if I <= Count then
-                   Set_String
-                     (Cfg.Coverage_Delta,
-                      Cfg.Coverage_Delta_Len,
-                      Ada.Command_Line.Argument (I));
-                else
-                   Set_Error
-                     (Cfg, "--coverage-delta requires a branch/commit argument");
-                end if;
-             elsif Has_Prefix (A, "--coverage-delta=") then
-                Set_String
-                  (Cfg.Coverage_Delta,
-                   Cfg.Coverage_Delta_Len,
-                   A (A'First + 17 .. A'Last));
-             elsif A = "--help" then
-                Cfg.Help_Requested := True;
-                Print_Usage;
-             end if;
+            elsif A = "--skip-dir" then
+               I := I + 1;
+               if I <= Count then
+                  Add_Skip_Dir (Cfg, Ada.Command_Line.Argument (I));
+               else
+                  Set_Error (Cfg, "--skip-dir requires a directory name");
+               end if;
+            elsif Has_Prefix (A, "--skip-dir=") then
+               Add_Skip_Dir (Cfg, A (A'First + 10 .. A'Last));
+            elsif A = "--compare-base" then
+               I := I + 1;
+               if I <= Count then
+                  Set_String
+                    (Cfg.Compare_Base,
+                     Cfg.Compare_Base_Len,
+                     Ada.Command_Line.Argument (I));
+               else
+                  Set_Error
+                    (Cfg, "--compare-base requires a branch/commit argument");
+               end if;
+            elsif Has_Prefix (A, "--compare-base=") then
+               Set_String
+                 (Cfg.Compare_Base,
+                  Cfg.Compare_Base_Len,
+                  A (A'First + 15 .. A'Last));
+            elsif A = "--coverage-delta" then
+               I := I + 1;
+               if I <= Count then
+                  Set_String
+                    (Cfg.Coverage_Delta,
+                     Cfg.Coverage_Delta_Len,
+                     Ada.Command_Line.Argument (I));
+               else
+                  Set_Error
+                    (Cfg,
+                     "--coverage-delta requires a branch/commit argument");
+               end if;
+            elsif Has_Prefix (A, "--coverage-delta=") then
+               Set_String
+                 (Cfg.Coverage_Delta,
+                  Cfg.Coverage_Delta_Len,
+                  A (A'First + 17 .. A'Last));
+            elsif A = "--help" then
+               Cfg.Help_Requested := True;
+               Print_Usage;
+            end if;
          end;
          I := I + 1;
       end loop;
@@ -265,7 +267,9 @@ package body Adacovex.Config is
       -- Default target if not provided: current working directory
       if Cfg.Target_Len = 0 then
          Set_String
-           (Cfg.Target_Path, Cfg.Target_Len, Ada.Directories.Current_Directory);
+           (Cfg.Target_Path,
+            Cfg.Target_Len,
+            Ada.Directories.Current_Directory);
       end if;
 
       -- Resolve target path to absolute, then derive default manifest
@@ -279,8 +283,7 @@ package body Adacovex.Config is
             begin
                -- Normalize a trailing "/." (e.g. "--target=.") to the
                -- plain directory so display paths stay clean.
-               if AP'Length >= 2
-                 and then AP (AP'Last - 1 .. AP'Last) = "/."
+               if AP'Length >= 2 and then AP (AP'Last - 1 .. AP'Last) = "/."
                then
                   Set_String (Cfg.Target_Path, Cfg.Target_Len, CD);
                else

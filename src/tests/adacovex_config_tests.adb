@@ -8,31 +8,31 @@ package body Adacovex_Config_Tests is
       --  Test 1: default config has Emit_SVG = True and SVG_Path_Len = 0
       declare
          Cfg : constant CLI_Config :=
-           (Target_Path   => (others => ' '),
-            Target_Len    => 0,
-            Manifest_Path => (others => ' '),
-            Manifest_Len  => 0,
-            DAL_Target    => DAL_C,
-            Serve_Mode    => False,
-            Port          => 8080,
-            No_SVG        => False,
-            Emit_SVG      => True,
-            SVG_Path      => (others => ' '),
-            SVG_Path_Len  => 0,
-            Emit_Markdown => False,
-            MD_Path       => (others => ' '),
-            MD_Path_Len   => 0,
-            Verbose       => False,
-            Strict_Mode   => False,
-            CLI_Error     => False,
-            Help_Requested => False,
-            Skip_Dir_Ct   => 0,
-            Skip_Dirs     => (others => ' '),
-            Compare_Base  => (others => ' '),
-            Compare_Base_Len => 0,
-            Coverage_Delta => (others => ' '),
+           (Target_Path        => (others => ' '),
+            Target_Len         => 0,
+            Manifest_Path      => (others => ' '),
+            Manifest_Len       => 0,
+            DAL_Target         => DAL_C,
+            Serve_Mode         => False,
+            Port               => 8080,
+            No_SVG             => False,
+            Emit_SVG           => True,
+            SVG_Path           => (others => ' '),
+            SVG_Path_Len       => 0,
+            Emit_Markdown      => False,
+            MD_Path            => (others => ' '),
+            MD_Path_Len        => 0,
+            Verbose            => False,
+            Strict_Mode        => False,
+            CLI_Error          => False,
+            Help_Requested     => False,
+            Skip_Dir_Ct        => 0,
+            Skip_Dirs          => (others => ' '),
+            Compare_Base       => (others => ' '),
+            Compare_Base_Len   => 0,
+            Coverage_Delta     => (others => ' '),
             Coverage_Delta_Len => 0);
-       begin
+      begin
          R.Check (Cfg.Emit_SVG, "Default Emit_SVG is True");
          R.Check
            (Cfg.SVG_Path_Len = 0,
@@ -41,47 +41,47 @@ package body Adacovex_Config_Tests is
          R.Check (Cfg.DAL_Target = DAL_C, "Default DAL_Target is C");
          R.Check (Cfg.Port = 8080, "Default Port is 8080");
          R.Check (not Cfg.Verbose, "Default Verbose is False");
-          R.Check (not Cfg.Emit_Markdown, "Default Emit_Markdown is False");
-          R.Check (not Cfg.Help_Requested, "Default Help_Requested is False");
-          R.Check
-            (Cfg.Compare_Base_Len = 0,
-             "Default Compare_Base_Len is 0 (--compare-base not set)");
-          R.Check
-            (Cfg.Coverage_Delta_Len = 0,
-             "Default Coverage_Delta_Len is 0 (--coverage-delta not set)");
-       end;
+         R.Check (not Cfg.Emit_Markdown, "Default Emit_Markdown is False");
+         R.Check (not Cfg.Help_Requested, "Default Help_Requested is False");
+         R.Check
+           (Cfg.Compare_Base_Len = 0,
+            "Default Compare_Base_Len is 0 (--compare-base not set)");
+         R.Check
+           (Cfg.Coverage_Delta_Len = 0,
+            "Default Coverage_Delta_Len is 0 (--coverage-delta not set)");
+      end;
 
       --  Test 2: No_SVG overrides Emit_SVG
       declare
          Cfg : constant CLI_Config :=
-           (Target_Path   => (others => ' '),
-            Target_Len    => 0,
-            Manifest_Path => (others => ' '),
-            Manifest_Len  => 0,
-            DAL_Target    => DAL_C,
-            Serve_Mode    => False,
-            Port          => 8080,
-            No_SVG        => True,
-            Emit_SVG      => True,
-            SVG_Path      => (others => ' '),
-            SVG_Path_Len  => 0,
-            Emit_Markdown => False,
-            MD_Path       => (others => ' '),
-            MD_Path_Len   => 0,
-            Verbose       => False,
-            Strict_Mode   => False,
-            CLI_Error     => False,
-            Help_Requested => False,
-            Skip_Dir_Ct   => 0,
-            Skip_Dirs     => (others => ' '),
-            Compare_Base  => (others => ' '),
-            Compare_Base_Len => 0,
-            Coverage_Delta => (others => ' '),
+           (Target_Path        => (others => ' '),
+            Target_Len         => 0,
+            Manifest_Path      => (others => ' '),
+            Manifest_Len       => 0,
+            DAL_Target         => DAL_C,
+            Serve_Mode         => False,
+            Port               => 8080,
+            No_SVG             => True,
+            Emit_SVG           => True,
+            SVG_Path           => (others => ' '),
+            SVG_Path_Len       => 0,
+            Emit_Markdown      => False,
+            MD_Path            => (others => ' '),
+            MD_Path_Len        => 0,
+            Verbose            => False,
+            Strict_Mode        => False,
+            CLI_Error          => False,
+            Help_Requested     => False,
+            Skip_Dir_Ct        => 0,
+            Skip_Dirs          => (others => ' '),
+            Compare_Base       => (others => ' '),
+            Compare_Base_Len   => 0,
+            Coverage_Delta     => (others => ' '),
             Coverage_Delta_Len => 0);
-       begin
-          --  No_SVG=True means Emit_SVG should be forced False by Parse_CLI
-          R.Check (Cfg.No_SVG, "No_SVG field works");
-       end;
+      begin
+         --  No_SVG=True means Emit_SVG should be forced False by Parse_CLI
+         R.Check (Cfg.No_SVG, "No_SVG field works");
+      end;
 
    end Run;
 

@@ -166,9 +166,15 @@ package body Adacovex_Prove_Tests is
          Success : Boolean;
       begin
          Create (F, Out_File, "/tmp/adacovex_test_prove_out.txt");
-         Put_Line (F, "SPARK Analysis results   Total    Flow     Provers   Justified   Unproved");
-         Put_Line (F, "Run-time Checks              12      .     12 (CVC5)           .          .");
-         Put_Line (F, "Total                         28  10 (36%)  18 (64%)           .          .");
+         Put_Line
+           (F,
+            "SPARK Analysis results   Total    Flow     Provers   Justified   Unproved");
+         Put_Line
+           (F,
+            "Run-time Checks              12      .     12 (CVC5)           .          .");
+         Put_Line
+           (F,
+            "Total                         28  10 (36%)  18 (64%)           .          .");
          Close (F);
 
          Adacovex.Parsers.GNATprove.Parse_Prove_Out
@@ -200,13 +206,27 @@ package body Adacovex_Prove_Tests is
          Success : Boolean;
       begin
          Create (F, Out_File, "/tmp/adacovex_test_prove_out.txt");
-         Put_Line (F, "SPARK Analysis results   Total    Flow     Provers   Justified   Unproved");
-         Put_Line (F, "Flow Dependencies          11  11 (100%)           .           .          .");
-         Put_Line (F, "Initialization              3   3 (100%)           .           .          .");
-         Put_Line (F, "Run-time Checks            12      .     12 (CVC5)           .          .");
-         Put_Line (F, "Assertions                  2      .      2 (CVC5)           .          .");
-         Put_Line (F, "Functional Contracts        4      .      4 (CVC5)           .          .");
-         Put_Line (F, "Total                       28  10 (36%)  18 (64%)           .          .");
+         Put_Line
+           (F,
+            "SPARK Analysis results   Total    Flow     Provers   Justified   Unproved");
+         Put_Line
+           (F,
+            "Flow Dependencies          11  11 (100%)           .           .          .");
+         Put_Line
+           (F,
+            "Initialization              3   3 (100%)           .           .          .");
+         Put_Line
+           (F,
+            "Run-time Checks            12      .     12 (CVC5)           .          .");
+         Put_Line
+           (F,
+            "Assertions                  2      .      2 (CVC5)           .          .");
+         Put_Line
+           (F,
+            "Functional Contracts        4      .      4 (CVC5)           .          .");
+         Put_Line
+           (F,
+            "Total                       28  10 (36%)  18 (64%)           .          .");
          Close (F);
 
          Adacovex.Parsers.GNATprove.Parse_Prove_Out

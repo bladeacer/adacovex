@@ -51,7 +51,8 @@ package Adacovex.Diff is
    --  @param DAL_Target  DAL level to assess against.
    --  @return Aggregate metrics for the target directory.
    function Assess
-     (Target_Dir : String; DAL_Target : Types.DAL_Level) return Assessment_Result;
+     (Target_Dir : String; DAL_Target : Types.DAL_Level)
+      return Assessment_Result;
 
    --  Compute the docstring-coverage snapshot for a target directory.
    --  Runs source scanning, patch application, and docstring metrics only.
