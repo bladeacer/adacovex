@@ -1,2 +1,2 @@
-last_build_profile = "covex=DEVELOPMENT"
+last_build_profile = "covex=DEVELOPMENT,gnatprove=RELEASE"
 

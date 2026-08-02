@@ -1,11 +1,13 @@
-# Development manifest for local SPARK proof, doc generation, formatting.
-# Used exclusively by make prove/doc/fmt, which temporarily swap this manifest
+# Development manifest for local doc generation and formatting.
+# Used exclusively by make doc/fmt, which temporarily swap this manifest
 # in for the duration of the command and then restore alire.toml (and
 # alire.lock / alire/settings.toml) untouched. alire.toml is never polluted.
 #
-# This manifest includes gnatprove, gnatdoc_bin, and gnatformat_bin which
-# are required for make prove, make doc, and make fmt but MUST NOT appear
-# in the published Alire community index.
+# gnatprove is a declared dependency of alire.toml (the tool's input is
+# gnatprove.out), so make prove runs against alire.toml directly. This
+# manifest only adds gnatdoc_bin and gnatformat_bin, which are required for
+# make doc and make fmt but MUST NOT appear in the published Alire community
+# index.
 name = "covex"
 description = "Ada/SPARK coverage, proof, DO-178C compliance tool (dev)"
 version = "1.3.0"
@@ -19,6 +21,5 @@ website = "https://github.com/bladeacer/adacovex"
 tags = ["ada", "spark", "coverage", "do-178c", "compliance"]
 
 [[depends-on]]
-gnatprove = "^15.1.0"
 gnatdoc_bin = "^26.0.0"
 gnatformat_bin = "^26.0.0"

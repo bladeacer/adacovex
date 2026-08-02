@@ -2,12 +2,13 @@
 
 ## Project
 
-**adacovex** -- zero-dependency Ada/SPARK CLI tool for coverage, proof analysis,
+**adacovex** -- zero-library-dependency Ada/SPARK CLI tool for coverage, proof analysis,
 test-result parsing, DO-178C DAL compliance assessment, and interactive dashboards.
 
 - **Repo**: https://github.com/bladeacer/adacovex
 - **Language**: Ada 2012 / SPARK 2014 (GNAT, Alire)
-- **Zero dependency**: uses only GNAT runtime (GNAT.Sockets, Ada tasking, standard libs)
+- **Zero library dependency**: uses only GNAT runtime (GNAT.Sockets, Ada tasking, standard libs);
+  gnatprove is a declared tool dependency (adacovex analyzes `gnatprove.out`)
 - **SPARK target**: Platinum (AoRTE-free, all VCs proved) on adacovex itself
 
 ## Dogfood target
@@ -488,7 +489,7 @@ specific failure reasons when the assessment is `Unmet`.
 |--------------------|-------------|
 | `build`            | `alr build` (builds adacovex + test_runner, covex alias) |
 | `test`             | Build + run test_runner |
-| `prove`            | `alr gnatprove` (auto-swaps alire-dev.toml, then restores) |
+| `prove`            | `alr gnatprove` (gnatprove is a declared dependency of alire.toml) |
 | `doc` / `api-docs` | Generate API docs via gnatdoc + rst2md (auto-swaps alire-dev.toml) |
 | `fmt`              | Format Ada sources with gnatformat (auto-swaps alire-dev.toml) |
 | `run-self`         | Run against adacovex itself (default target: cwd) |
@@ -643,7 +644,7 @@ See [docs/changelogs/adacovex-1.0.0.md](docs/changelogs/adacovex-1.0.0.md) for f
 
 ## Unit tests
 
-**Native (zero-dependency).** Tests use `Adacovex.Test_Support` -- a minimal
+**Native (zero-library-dependency).** Tests use `Adacovex.Test_Support` -- a minimal
 `Runner` type with a `Check` procedure. No AUnit or other external framework.
 
 Test source: `src/tests/`. Entry point: `test_runner.adb` (builds as
@@ -695,8 +696,9 @@ running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 - **HLR tags, test metrics, DAL failures**: also `Ada.Containers.Vectors`
   (unbounded). No `Max_Hlrs`, `Max_Categories`, `Max_Failures` limits.
 - **Fixed-size string buffers** (`Max_Path`, `Max_Line`, etc.) remain bounded.
-- No external dependencies beyond GNAT runtime (`Ada.Containers` is
-  part of the standard Ada runtime library).
+- No library dependencies beyond GNAT runtime (`Ada.Containers` is
+  part of the standard Ada runtime library). gnatprove is the only
+  declared (tool) dependency.
 
 ## Bounded resources
 
