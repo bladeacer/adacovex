@@ -126,8 +126,20 @@ runs:
         VERSION="${INPUT_VERSION:-${ACTION_REF}}"
         VERSION="${VERSION#v}"
         if [ -z "$VERSION" ]; then
-          echo "::error::build: false requires the 'version' input or a release-tag reference (e.g. @v1.3.0 or @v1)."
+          echo "::error::build: false requires the 'version' input or a release-tag reference (e.g. @v1.3.0, @v1, or @latest)."
           exit 1
+        fi
+        # Resolve the 'latest' keyword to the newest published release.
+        if [ "$VERSION" = "latest" ]; then
+          echo "Resolving 'latest' to the newest published release..."
+          VERSION=$(curl -fsSL "https://api.github.com/repos/${ACTION_REPO}/releases/latest" \
+            | grep -oE '"tag_name": *"v[0-9]+\.[0-9]+\.[0-9]+"' \
+            | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1 | cut -c2-)
+          if [ -z "$VERSION" ]; then
+            echo "::error::Could not resolve 'latest' release for ${ACTION_REPO}."
+            exit 1
+          fi
+          echo "Resolved to v${VERSION}"
         fi
         # Resolve a floating ref (v1 or v1.3) to the latest matching release tag.
         if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -219,7 +231,12 @@ runs:
         DAL_STATUS=$(grep -oE 'DAL-[A-E]:.*(Achieved|Unmet)' "$RUNNER_TEMP/adacovex.out" | grep -oE '(Achieved|Unmet)' | head -1 || true)
         SPARK_LEVEL=$(grep -oE '(Stone|Bronze|Silver|Gold|Platinum)' "$RUNNER_TEMP/adacovex.out" | head -1 || true)
         TEST_COUNT=$(grep -oE '[0-9]+ passed' "$RUNNER_TEMP/adacovex.out" | grep -oE '[0-9]+' | head -1 || true)
-        COVERAGE_PCT=$(grep -oE 'coverage_delta:.*current= *[0-9]+' "$RUNNER_TEMP/adacovex.out" | grep -oE '[0-9]+$' || true)
+        # Prefer the machine-parseable coverage_delta line (--coverage-delta mode);
+        # otherwise fall back to the "docstrings:  N/ M ( P%)" line in normal mode.
+        COVERAGE_PCT=$(grep -oE 'coverage_delta:.*current= *[0-9]+' "$RUNNER_TEMP/adacovex.out" | grep -oE '[0-9]+$' | head -1 || true)
+        if [ -z "$COVERAGE_PCT" ]; then
+          COVERAGE_PCT=$(grep -oE 'docstrings:.*\( *[0-9]+%\)' "$RUNNER_TEMP/adacovex.out" | grep -oE '[0-9]+' | head -1 || true)
+        fi
 
         echo "dal_status=${DAL_STATUS:-unknown}" >> "$GITHUB_OUTPUT"
         echo "spark_level=${SPARK_LEVEL:-unknown}" >> "$GITHUB_OUTPUT"
