@@ -508,20 +508,26 @@ specific failure reasons when the assessment is `Unmet`.
 - `.github/actions/adacovex/` -- composite action (`branding`: shield/green,
   `author`: bladeacer): installs Alire + GNAT, obtains
   the version-matched adacovex binary (downloads the release bundle by default,
-  or builds from source with `build: true`), runs the assessment, publishes
+  or builds from source with `build: true`), optionally runs GNATprove
+  (`prove`), the native tests (`run-tests`), and a `--release` build
+  (`release-build`), then runs the assessment and publishes
   outputs (`dal-status`, `spark-level`, `test-count`, `coverage-pct`), a
-  Markdown step summary, and SVG badge artifacts. Inputs: `target`, `dal`,
-  `gnat-version`, `version`, `build`, `prove`, `compare-base`,
-  `coverage-delta`, `emit-markdown`, `cache`. Once listed on the GitHub Actions
-  marketplace, each `vX.Y.Z` tag auto-publishes the matching action version.
-- `.github/workflows/ci.yml` -- self-assessment + build/test on push to main
-  and pull requests.
+  Markdown step summary, and SVG badge artifacts (`assess: false` skips the
+  assessment for build/test-only jobs). Inputs: `target`, `dal`,
+  `gnat-version`, `version`, `build`, `release-build`, `prove`, `run-tests`,
+  `assess`, `compare-base`, `coverage-delta`, `emit-markdown`, `cache`. Once
+  listed on the GitHub Actions marketplace, each `vX.Y.Z` tag auto-publishes
+  the matching action version.
+- `.github/workflows/ci.yml` -- self-assessment (build + prove + assess) and
+  build + native tests (build + run-tests, assess: false) on push to main and
+  pull requests.
 - `.github/workflows/pr-check.yml` -- runs `--coverage-delta` against
   `pull_request.base.sha` to fail PRs that drop docstring coverage.
-- `.github/workflows/release.yml` -- on a `v*` tag, runs GNATprove, builds the
-  release binary, validates the self-assessment, and creates a GitHub Release
-  with the binary tarball (`adacovex-vX.Y.Z.tar.gz`: `adacovex` + the `covex`
-  alias) and the action tarball
+- `.github/workflows/release.yml` -- on a `v*` tag, runs the action with
+  `build: true`, `release-build: true`, `prove: true` to build the release
+  binary, run GNATprove, and validate the self-assessment, then creates a
+  GitHub Release with the binary tarball (`adacovex-vX.Y.Z.tar.gz`: `adacovex`
+  + the `covex` alias) and the action tarball
   (`adacovex-action-vX.Y.Z.tar.gz`). The action downloads the matching binary
   tarball for the tag it is referenced by, so `@v1.3.0` runs adacovex `v1.3.0`.
   The tag itself publishes the action for

@@ -15,35 +15,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: alire-project/setup-alire@latest
+      - uses: ./.github/actions/adacovex
         with:
-          version: '2.1.1'
-          toolchain: 'gnat_native=15.2.1 gprbuild'
-
-      - name: Run GNATprove
-        shell: bash
-        run: |
-          set -euxo pipefail
-          if [ ! -f alire-dev.toml ]; then
-            echo "::error::alire-dev.toml required to generate proof artifacts."
-            exit 1
-          fi
-          cp alire.toml "$RUNNER_TEMP/alire.toml.bak"
-          cp alire-dev.toml alire.toml
-          alr gnatprove
-          mv "$RUNNER_TEMP/alire.toml.bak" alire.toml
-
-      - name: Build release binary
-        shell: bash
-        run: |
-          set -euxo pipefail
-          alr build --release
-
-      - name: Validate self-assessment
-        shell: bash
-        run: |
-          set -euxo pipefail
-          ./bin/adacovex --target=. --dal=C
+          target: .
+          dal: C
+          gnat-version: 15.2.1
+          build: true
+          release-build: true
+          prove: true
 
       - name: Package release artifacts
         shell: bash

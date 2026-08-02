@@ -225,7 +225,10 @@ steps:
 | `gnat-version` | `15.2.1` | GNAT toolchain version to select via `alr` |
 | `version` | `''` | adacovex version to use; defaults to the tag the action is referenced by |
 | `build` | `false` | Build adacovex from source instead of downloading the version-matched binary (`true` for in-repo self-assessment) |
+| `release-build` | `false` | Pass `--release` to `alr build` (for release workflows) |
 | `prove` | `false` | Run GNATprove before assessing (for repos that don't commit `gnatprove.out`) |
+| `run-tests` | `false` | Build and run the native test suite (requires `build: true`) |
+| `assess` | `true` | Run the assessment and publish outputs/badges (set `false` for build/test-only jobs) |
 | `compare-base` | `''` | Git ref to run `--compare-base` against (fails on regression) |
 | `coverage-delta` | `''` | Git ref to run `--coverage-delta` against (fails if coverage dropped) |
 | `emit-markdown` | `''` | Write `VERIFICATION.md` + `TRACE.md` into this directory |
@@ -269,9 +272,10 @@ workflow ships in the repo at `.github/workflows/pr-check.yml`.
 
 #### Release bundling
 
-Every `vX.Y.Z` tag triggers `.github/workflows/release.yml`, which builds the
-release binary, validates the self-assessment, and publishes the bundle to the
-GitHub Release:
+Every `vX.Y.Z` tag triggers `.github/workflows/release.yml`, which calls the
+composite action with `build`, `release-build`, and `prove` to build the
+release binary, run GNATprove, and validate the self-assessment, then packages
+and publishes the bundle to the GitHub Release:
 
 - `adacovex-vX.Y.Z.tar.gz` -- the version-matched binary (`adacovex` plus the
   `covex` alias). The action downloads this asset for the tag it is referenced
