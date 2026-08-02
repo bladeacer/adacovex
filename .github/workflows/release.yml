@@ -44,3 +44,20 @@ jobs:
             "adacovex-${{ github.ref_name }}.tar.gz" \
             "adacovex-action-${{ github.ref_name }}.tar.gz" \
             --generate-notes
+
+      - name: Update floating version tags
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euxo pipefail
+          VERSION="${{ github.ref_name }}"
+          MAJOR="${VERSION%%.*}"
+          MINOR="${VERSION%.*}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
+          git tag -fa "$MAJOR" -m "Release $VERSION"
+          git tag -fa "$MINOR" -m "Release $VERSION"
+          git push origin "refs/tags/$MAJOR" --force
+          git push origin "refs/tags/$MINOR" --force

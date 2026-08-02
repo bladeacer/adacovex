@@ -305,6 +305,11 @@ action ships with `branding` and an `author`, so once it is listed on the
 GitHub Actions marketplace, every `vX.Y.Z` tag auto-publishes that version of
 the action.
 
+The release workflow also force-pushes the floating tags `vMAJOR` and
+`vMAJOR.MINOR` (e.g. `v1` and `v1.3` from `v1.3.0`) so you can reference
+`@v1` / `@v1.3` to always get the latest release within a major or minor
+version, instead of pinning an exact `@vX.Y.Z`.
+
 ## Requirements for target projects
 
 To run adacovex against an Ada/SPARK project, it must have:

@@ -534,6 +534,9 @@ specific failure reasons when the assessment is `Unmet`.
   The tag itself publishes the action for
   `uses: <owner>/adacovex/.github/actions/adacovex@vX.Y.Z`, and once the
   action is listed on the marketplace, each tag auto-publishes that version.
+  A final step force-pushes the floating tags `vMAJOR` and `vMAJOR.MINOR`
+  (e.g. `v1` and `v1.3` from `v1.3.0`) so users can reference
+  `@v1` / `@v1.3` for the latest matching release.
 
 ### Run adacovex on any Ada project
 
