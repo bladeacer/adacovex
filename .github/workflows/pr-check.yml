@@ -19,4 +19,5 @@ jobs:
           target: .
           dal: C
           gnat-version: 15.2.1
+          build: true
           coverage-delta: ${{ github.event.pull_request.base.sha }}

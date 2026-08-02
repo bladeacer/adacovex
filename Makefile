@@ -144,6 +144,21 @@ release:
 	else \
 		version=$$(sed -n 's/^version = "\(.*\)"/\1/p' alire.toml); \
 	fi; \
+	echo "=== Generating proof artifacts ==="; \
+	$(MAKE) prove; \
+	echo "=== Building release binary (covex v$$version) ==="; \
+	alr build --release; \
+	echo "=== Validating self-assessment (DAL-C) ==="; \
+	./bin/adacovex_main --target=. --dal=C; \
+	echo "=== Bundling release artifacts ==="; \
+	rm -rf dist; \
+	mkdir -p dist; \
+	cp bin/adacovex_main dist/adacovex_main; \
+	ln -s adacovex_main dist/adacovex; \
+	ln -s adacovex_main dist/covex; \
+	tar -czf "adacovex-v$$version.tar.gz" -C dist .; \
+	tar -czf "adacovex-action-v$$version.tar.gz" -C . .github/actions/adacovex; \
+	echo "  Bundled: adacovex-v$$version.tar.gz, adacovex-action-v$$version.tar.gz"; \
 	commit=$$(git rev-parse HEAD); \
 	index_file="index/ad/covex/covex-$$version.toml"; \
 	if [ ! -f "$$index_file" ]; then \

@@ -17,12 +17,22 @@ inputs:
     description: 'GNAT toolchain version to select via alr (e.g. 15.2.1).'
     required: false
     default: '15.2.1'
+  version:
+    description: >-
+      adacovex version to use, e.g. 1.3.0. Defaults to the release tag this
+      action was referenced by (e.g. v1.3.0). Only used when build is false,
+      to download the matching adacovex release binary.
+    required: false
+    default: ''
   build:
     description: >-
-      Run `alr build` before assessing. Use when the workspace is adacovex
-      itself or when adacovex is a dev dependency of the target project.
+      Build adacovex from source (true) or download the release binary matching
+      this action's version (false, default). Downloading uses the 'version'
+      input or the tag this action is referenced by, so the marketplace action
+      at @v1.3.0 always runs the v1.3.0 binary. Set true for in-repo
+      self-assessment where the workspace is adacovex itself.
     required: false
-    default: 'true'
+    default: 'false'
   prove:
     description: >-
       Run GNATprove before assessing (swaps in alire-dev.toml). Use when the
@@ -72,11 +82,36 @@ runs:
       uses: actions/checkout@v4
 
     - name: Install Alire toolchain
+      if: ${{ inputs.build == 'true' || inputs.prove == 'true' }}
       uses: alire-project/setup-alire@latest
       with:
         version: '2.1.1'
         toolchain: 'gnat_native=${{ inputs.gnat-version }} gprbuild'
         cache: ${{ inputs.cache }}
+
+    - name: Download adacovex release binary
+      if: ${{ inputs.build == 'false' }}
+      shell: bash
+      env:
+        ACTION_REPO: ${{ github.action_repository }}
+        ACTION_REF: ${{ github.action_ref }}
+        INPUT_VERSION: ${{ inputs.version }}
+      run: |
+        set -euxo pipefail
+        VERSION="${INPUT_VERSION:-${ACTION_REF}}"
+        VERSION="${VERSION#v}"
+        if [ -z "$VERSION" ]; then
+          echo "::error::build: false requires the 'version' input or a release-tag reference (e.g. @v1.3.0)."
+          exit 1
+        fi
+        ASSET="adacovex-v${VERSION}.tar.gz"
+        echo "Downloading $ASSET from ${ACTION_REPO} release v${VERSION}"
+        mkdir -p "$GITHUB_WORKSPACE/bin"
+        curl -fsSL "https://github.com/${ACTION_REPO}/releases/download/v${VERSION}/${ASSET}" \
+          -o "$RUNNER_TEMP/${ASSET}"
+        tar -xzf "$RUNNER_TEMP/${ASSET}" -C "$GITHUB_WORKSPACE/bin"
+        chmod +x "$GITHUB_WORKSPACE/bin/adacovex_main"
+        "$GITHUB_WORKSPACE/bin/adacovex_main" --help >/dev/null 2>&1 || true
 
     - name: Build adacovex
       if: ${{ inputs.build == 'true' }}

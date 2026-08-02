@@ -195,11 +195,17 @@ omitted); the two approaches differ only in how the binary is obtained.
 A composite action at `.github/actions/adacovex` runs the full adacovex
 pipeline in CI. It installs the Alire toolchain via
 [`alire-project/setup-alire`](https://github.com/alire-project/setup-alire),
-builds adacovex, runs the assessment, and publishes a Markdown step summary,
-machine-readable outputs, and SVG badge artifacts.
+obtains the adacovex binary, runs the assessment, and publishes a Markdown
+step summary, machine-readable outputs, and SVG badge artifacts.
 
-Reference it from the repo that contains it (pinned to the version tag that
-matches the adacovex release you want):
+The action is version-matched to the adacovex binary: the release workflow
+bundles `adacovex-vX.Y.Z.tar.gz` for every `vX.Y.Z` tag, and the action
+downloads the binary for the tag it is referenced by. So the marketplace
+action at `@v1.3.0` always runs the `v1.3.0` binary — no building in the
+consumer's repo.
+
+Reference it from any Ada/SPARK repo (pinned to the version tag that matches
+the adacovex release you want):
 
 ```yaml
 steps:
@@ -208,7 +214,6 @@ steps:
     with:
       target: .
       dal: C
-      gnat-version: 15.2.1
 ```
 
 #### Inputs
@@ -218,7 +223,8 @@ steps:
 | `target` | `.` | Target project root (relative to workspace root) |
 | `dal` | `C` | DO-178C DAL level to assess (A-E) |
 | `gnat-version` | `15.2.1` | GNAT toolchain version to select via `alr` |
-| `build` | `true` | Run `alr build` before assessing |
+| `version` | `''` | adacovex version to use; defaults to the tag the action is referenced by |
+| `build` | `false` | Build adacovex from source instead of downloading the version-matched binary (`true` for in-repo self-assessment) |
 | `prove` | `false` | Run GNATprove before assessing (for repos that don't commit `gnatprove.out`) |
 | `compare-base` | `''` | Git ref to run `--compare-base` against (fails on regression) |
 | `coverage-delta` | `''` | Git ref to run `--coverage-delta` against (fails if coverage dropped) |
@@ -237,7 +243,8 @@ steps:
 #### PR coverage gate
 
 Gate every pull request on docstring coverage not regressing against the base
-branch (this is exactly what `--coverage-delta` was built for):
+branch (this is exactly what `--coverage-delta` was built for). Pin the action
+to a full release tag so it downloads the matching binary:
 
 ```yaml
 # .github/workflows/pr-check.yml
@@ -250,7 +257,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: bladeacer/adacovex/.github/actions/adacovex@v1
+      - uses: bladeacer/adacovex/.github/actions/adacovex@v1.3.0
         with:
           target: .
           dal: C
@@ -259,6 +266,22 @@ jobs:
 
 The action exits non-zero when coverage drops, failing the check. This
 workflow ships in the repo at `.github/workflows/pr-check.yml`.
+
+#### Release bundling
+
+Every `vX.Y.Z` tag triggers `.github/workflows/release.yml`, which builds the
+release binary, validates the self-assessment, and publishes the bundle to the
+GitHub Release:
+
+- `adacovex-vX.Y.Z.tar.gz` -- the version-matched binary (`adacovex_main`
+  plus the `adacovex`/`covex` aliases). The action downloads this asset for
+  the tag it is referenced by, so `@v1.3.0` runs adacovex `v1.3.0`.
+- `adacovex-action-vX.Y.Z.tar.gz` -- a copy of the composite action itself for
+  vendoring or air-gapped use.
+
+`make release VERSION=x.y.z` does the same locally (build `--release`,
+generate proofs, validate DAL-C, bundle `dist/`), then tags and pushes to
+trigger the workflow.
 
 #### Releases on tags
 
@@ -385,7 +408,7 @@ See [changelogs](docs/changelogs/index.md) for full release notes.
 | [Docstring Spec](docs/api-docs/adacovex-docstring-spec.md) | Annotation format, placement, conventions |
 | [Test Format](docs/api-docs/adacovex-test-format.md) | Supported test-result output format |
 | [SPARK Levels](docs/api-docs/adacovex-spark-levels.md) | Assurance level objectives (Stone--Platinum) |
-| [DAL Levels](docs/api-docs/adacovex-dal-levels.md) | DO-178C DAL A--E criteria |
+| [DAL Levels](docs/api-docs/adacovex-dal-levels.md) | DO-178C DAL A - E criteria |
 | [API Reference](docs/api-docs/index.md) | Auto-generated package API docs |
 | [Changelog](docs/changelogs/index.md) | Release history |
 

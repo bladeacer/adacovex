@@ -3,6 +3,8 @@ obj/
 .alire/
 config/
 docs/api/
+dist/
+adacovex-*.tar.gz
 *.tmp
 .headroom
 alire.toml.bak
