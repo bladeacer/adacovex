@@ -17,10 +17,10 @@ adacovex was designed to audit the Ada_CRDT library at `../Ada_CRDT` (26 package
 The `--target=PATH` option can point at any Ada/SPARK project.
 
 Self-assessment (`make run-self`, default target: cwd) verifies adacovex against its own
-source -- all 20 packages, 38 subprograms -- and must always show:
+source -- all 20 packages, 40 subprograms -- and must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
 - Platinum SPARK level (28/28 VCs proved)
-- 168/168 native tests passing
+- 169/169 native tests passing
 - DAL-C Achieved
 
 ## Architecture
@@ -45,9 +45,9 @@ src/
 |   |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (40)
 |   |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (38)
 |   |-- adacovex_test_parser_tests.ads/.adb   -- Test-result parser tests (27)
-|   |-- adacovex_config_tests.ads/.adb        -- CLI config tests (10)
+|   |-- adacovex_config_tests.ads/.adb        -- CLI config tests (11)
 |   |-- adacovex_svg_tests.ads/.adb          -- SVG renderer tests (30)
-|   `-- test_runner.adb                       -- Test suite entry point (168 tests)
+|   `-- test_runner.adb                       -- Test suite entry point (169 tests)
 |-- compliance/
 |   |-- adacovex-compliance-dal.ads/.adb       -- DAL-C assessment logic
 |-- renderers/
@@ -144,6 +144,7 @@ adacovex [options]
 | `--skip-dir=NAME` | (see below) | relaxed | Directory name to skip (repeatable) |
 | `--relaxed` | off | both | Disable strict mode |
 | `--compare-base=REF` | off | both | Differential mode vs a git base ref |
+| `--coverage-delta=REF` | off | both | Docstring-coverage gate vs a git base ref |
 | `--verbose` | off | both | Verbose diagnostics |
 | `--help` | - | both | Print usage and exit |
 
@@ -269,6 +270,21 @@ adacovex [options]
 - **Purpose**: Enable verbose diagnostic output.
 - **Default**: Off.
 - **Effect**: Prints pipeline step diagnostics to stderr.
+
+#### `--coverage-delta=REF`
+- **Purpose**: Lightweight docstring-coverage gate for PR-style CI checks.
+- **Default**: Off (normal single-target assessment).
+- **Prerequisite**: The `--target` directory must be a git repository, and the
+  `git` executable must be on `PATH`. Mutually exclusive with
+  `--compare-base`.
+- **Effect**: Creates a temporary git worktree, scans sources + applies
+  patches + computes docstring metrics on both the base ref and the current
+  tree (no GNATprove/tests/DAL, so it works even when the base does not commit
+  build artifacts), prints a compact coverage table and a machine-parseable
+  `coverage_delta:` line, and cleans up the worktree.
+- **Exit code**: `0` if current docstring coverage is `>=` the base (or the
+  base has no sources); `1` if coverage regressed.
+- **Example**: `adacovex --target=. --coverage-delta=origin/main`.
 
 #### `--help`
 - **Purpose**: Print usage information and exit.
@@ -486,6 +502,23 @@ specific failure reasons when the assessment is `Unmet`.
 
 ## Workflows
 
+### GitHub Actions
+
+- `.github/actions/adacovex/` -- composite action: installs Alire + GNAT, builds
+  adacovex, runs the assessment, publishes outputs (`dal-status`,
+  `spark-level`, `test-count`, `coverage-pct`), a Markdown step summary, and
+  SVG badge artifacts. Inputs: `target`, `dal`, `gnat-version`, `build`,
+  `compare-base`, `coverage-delta`, `emit-markdown`, `cache`.
+- `.github/workflows/ci.yml` -- self-assessment + build/test on push to main
+  and pull requests.
+- `.github/workflows/pr-check.yml` -- runs `--coverage-delta` against
+  `pull_request.base.sha` to fail PRs that drop docstring coverage.
+- `.github/workflows/release.yml` -- on a `v*` tag, builds the release binary,
+  validates the self-assessment, and creates a GitHub Release with the binary
+  tarball (`adacovex_main` + `adacovex`/`covex` aliases) and the action
+  tarball. The tag itself publishes the action for
+  `uses: <owner>/adacovex/.github/actions/adacovex@vX.Y.Z`.
+
 ### Run adacovex on any Ada project
 
 ```bash
@@ -584,7 +617,7 @@ is obtained and built.
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 168/168 passing |
+| Unit tests | `make test` | 169/169 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | 28/28 VCs Platinum |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -602,12 +635,12 @@ Test source: `src/tests/`. Entry point: `test_runner.adb` (builds as
 `bin/test_runner` from `for Main use ("adacovex_main.adb", "test_runner.adb")`
 in `adacovex.gpr`).
 
-`make test` builds and runs the 168-test suite. Test results are written to
+`make test` builds and runs the 169-test suite. Test results are written to
 `docs/test_result.md` in a Markdown table format that can be parsed by
 `adacovex-parsers-tests`. This means adacovex **supports both** native test
 running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 
-### Test categories (168 total)
+### Test categories (169 total)
 
 | Category | Tests | What it covers |
 |----------|-------|----------------|
@@ -616,7 +649,7 @@ running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 | Source scanner | 40 | Package scan, docstring parsing, HLR tags, name extraction, @field/@formal/after-decl |
 | GNATprove parser | 38 | .out parsing, proof summary, SPARK level detection, --help handling |
 | Test-result parser | 27 | Markdown test result parsing |
-| CLI config | 10 | Default option values, --help, --no-svg field, --compare-base default |
+| CLI config | 11 | Default option values, --help, --no-svg field, --compare-base and --coverage-delta defaults |
 | SVG renderer | 30 | SVG badge content and format |
 
 ---

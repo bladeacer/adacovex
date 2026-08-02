@@ -1,0 +1,22 @@
+name: PR compliance gate
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  coverage-delta:
+    name: Docstring coverage delta
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/adacovex
+        with:
+          target: .
+          dal: C
+          gnat-version: 15.2.1
+          coverage-delta: ${{ github.event.pull_request.base.sha }}

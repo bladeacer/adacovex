@@ -5,8 +5,8 @@
   | Source scanner                           |  40 | PASS     |
   | GNATprove parser                         |  38 | PASS     |
   | Test-result parser                       |  27 | PASS     |
-  | CLI config                               |  10 | PASS     |
+  | CLI config                               |  11 | PASS     |
   | SVG renderer                             |  30 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 168  Failed: 0
+  Passed: 169  Failed: 0

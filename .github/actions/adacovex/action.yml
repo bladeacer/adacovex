@@ -14,9 +14,9 @@ inputs:
     required: false
     default: 'C'
   gnat-version:
-    description: 'GNAT toolchain version to select via alr (e.g. 15.2.0).'
+    description: 'GNAT toolchain version to select via alr (e.g. 15.2.1).'
     required: false
-    default: '15.2.0'
+    default: '15.2.1'
   build:
     description: >-
       Run `alr build` before assessing. Use when the workspace is adacovex
@@ -27,6 +27,12 @@ inputs:
     description: >-
       Git base ref to run a differential assessment against (e.g. origin/main).
       When set, the action runs --compare-base and fails on regression.
+    required: false
+    default: ''
+  coverage-delta:
+    description: >-
+      Git base ref to gate docstring coverage against (e.g. origin/main).
+      When set, the action runs --coverage-delta and fails if coverage dropped.
     required: false
     default: ''
   emit-markdown:
@@ -48,6 +54,9 @@ outputs:
   test-count:
     description: 'Number of passing tests.'
     value: ${{ steps.adacovex.outputs.test_count }}
+  coverage-pct:
+    description: 'Current docstring coverage percentage (--coverage-delta mode).'
+    value: ${{ steps.adacovex.outputs.coverage_pct }}
 
 runs:
   using: 'composite'
@@ -63,12 +72,12 @@ runs:
           echo "alr already installed: $(alr --version)"
         else
           ALR_VER=2.1.1
-          ALR_TGZ="alr-$ALR_VER-bin-x86_64-linux.tar.gz"
-          curl -fsSL "https://github.com/alire-project/alire/releases/download/v$ALR_VER/$ALR_TGZ" \
-            -o "$RUNNER_TEMP/$ALR_TGZ"
-          tar -xzf "$RUNNER_TEMP/$ALR_TGZ" -C "$RUNNER_TEMP"
+          ALR_ZIP="alr-$ALR_VER-bin-x86_64-linux.zip"
+          curl -fsSL "https://github.com/alire-project/alire/releases/download/v$ALR_VER/$ALR_ZIP" \
+            -o "$RUNNER_TEMP/$ALR_ZIP"
+          unzip -q "$RUNNER_TEMP/$ALR_ZIP" -d "$RUNNER_TEMP/alr-$ALR_VER"
           mkdir -p "$HOME/.local/bin"
-          cp "$RUNNER_TEMP/bin/alr" "$HOME/.local/bin/alr"
+          cp "$RUNNER_TEMP/alr-$ALR_VER/bin/alr" "$HOME/.local/bin/alr"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
         fi
         alr version
@@ -122,6 +131,9 @@ runs:
         if [ -n "${{ inputs.compare-base }}" ]; then
           ARGS+=(--compare-base="${{ inputs.compare-base }}")
         fi
+        if [ -n "${{ inputs.coverage-delta }}" ]; then
+          ARGS+=(--coverage-delta="${{ inputs.coverage-delta }}")
+        fi
         if [ -n "${{ inputs.emit-markdown }}" ]; then
           ARGS+=(--emit-markdown="${{ inputs.emit-markdown }}")
         fi
@@ -134,10 +146,12 @@ runs:
         DAL_STATUS=$(grep -oE 'DAL-[A-E]:.*(Achieved|Unmet)' "$RUNNER_TEMP/adacovex.out" | grep -oE '(Achieved|Unmet)' | head -1 || true)
         SPARK_LEVEL=$(grep -oE '(Stone|Bronze|Silver|Gold|Platinum)' "$RUNNER_TEMP/adacovex.out" | head -1 || true)
         TEST_COUNT=$(grep -oE '[0-9]+ passed' "$RUNNER_TEMP/adacovex.out" | grep -oE '[0-9]+' | head -1 || true)
+        COVERAGE_PCT=$(grep -oE 'coverage_delta:.*current= *[0-9]+' "$RUNNER_TEMP/adacovex.out" | grep -oE '[0-9]+$' || true)
 
         echo "dal_status=${DAL_STATUS:-unknown}" >> "$GITHUB_OUTPUT"
         echo "spark_level=${SPARK_LEVEL:-unknown}" >> "$GITHUB_OUTPUT"
         echo "test_count=${TEST_COUNT:-0}" >> "$GITHUB_OUTPUT"
+        echo "coverage_pct=${COVERAGE_PCT:-0}" >> "$GITHUB_OUTPUT"
 
         {
           echo '## adacovex assessment'
@@ -148,6 +162,7 @@ runs:
           echo "| DAL-${{ inputs.dal }} | ${DAL_STATUS:-unknown} |"
           echo "| SPARK level | ${SPARK_LEVEL:-unknown} |"
           echo "| Tests passed | ${TEST_COUNT:-0} |"
+          echo "| Coverage | ${COVERAGE_PCT:-0}% |"
           echo ''
           echo '```text'
           cat "$RUNNER_TEMP/adacovex.out"
@@ -157,7 +172,7 @@ runs:
         exit $STATUS
 
     - name: Upload badges
-      if: ${{ always() && inputs.compare-base == '' }}
+      if: ${{ always() && inputs.compare-base == '' && inputs.coverage-delta == '' }}
       uses: actions/upload-artifact@v4
       with:
         name: adacovex-badges

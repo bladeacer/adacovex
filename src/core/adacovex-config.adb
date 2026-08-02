@@ -65,6 +65,7 @@ package body Adacovex.Config is
       Cfg.MD_Path_Len := 0;
       Cfg.Skip_Dir_Ct := 0;
       Cfg.Compare_Base_Len := 0;
+      Cfg.Coverage_Delta_Len := 0;
 
       while I <= Count loop
          declare
@@ -220,6 +221,22 @@ package body Adacovex.Config is
                   (Cfg.Compare_Base,
                    Cfg.Compare_Base_Len,
                    A (A'First + 15 .. A'Last));
+             elsif A = "--coverage-delta" then
+                I := I + 1;
+                if I <= Count then
+                   Set_String
+                     (Cfg.Coverage_Delta,
+                      Cfg.Coverage_Delta_Len,
+                      Ada.Command_Line.Argument (I));
+                else
+                   Set_Error
+                     (Cfg, "--coverage-delta requires a branch/commit argument");
+                end if;
+             elsif Has_Prefix (A, "--coverage-delta=") then
+                Set_String
+                  (Cfg.Coverage_Delta,
+                   Cfg.Coverage_Delta_Len,
+                   A (A'First + 17 .. A'Last));
              elsif A = "--help" then
                 Cfg.Help_Requested := True;
                 Print_Usage;
@@ -237,6 +254,12 @@ package body Adacovex.Config is
       if Cfg.No_SVG then
          Cfg.Emit_SVG := False;
          Cfg.SVG_Path_Len := 0;
+      end if;
+
+      -- Differential modes are mutually exclusive
+      if Cfg.Compare_Base_Len > 0 and then Cfg.Coverage_Delta_Len > 0 then
+         Set_Error
+           (Cfg, "--compare-base and --coverage-delta are mutually exclusive");
       end if;
 
       -- Default target if not provided: current working directory
@@ -329,6 +352,10 @@ package body Adacovex.Config is
         ("  --compare-base=REF    Differential mode: compare against a git base");
       Ada.Text_IO.Put_Line
         ("                        (branch or commit) and report VC/DAL delta");
+      Ada.Text_IO.Put_Line
+        ("  --coverage-delta=REF  Docstring coverage gate: exit non-zero if");
+      Ada.Text_IO.Put_Line
+        ("                        current docstring coverage is below the base");
       Ada.Text_IO.Put_Line ("  --verbose             Verbose diagnostics");
       Ada.Text_IO.Put_Line
         ("  --help                Show this message and exit");

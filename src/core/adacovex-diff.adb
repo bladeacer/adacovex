@@ -78,6 +78,20 @@ package body Adacovex.Diff is
       return R;
    end Assess;
 
+   function Assess_Coverage (Target_Dir : String) return Coverage_Result is
+      R    : Coverage_Result;
+      Pkgs : Package_Vectors.Vector;
+      Docs : Docstring_Metrics;
+   begin
+      Adacovex.Parsers.Source.Scan_Project (Target_Dir, "", Pkgs);
+      Adacovex.Parsers.Source.Apply_Patches (Target_Dir, Pkgs);
+      Docs := Adacovex.Parsers.Source.Compute_Docstring_Metrics (Pkgs);
+      R.Total := Docs.Total_Subprograms;
+      R.Documented := Docs.Documented_Subprogs;
+      R.Pct := Docs.Coverage_Pct;
+      return R;
+   end Assess_Coverage;
+
    function Is_Git_Repo (Target_Dir : String) return Boolean is
    begin
       return Run_Git
@@ -320,5 +334,123 @@ package body Adacovex.Diff is
 
       return Regressed;
    end Report_Delta;
+
+   function Report_Coverage_Delta
+     (Base      : Coverage_Result;
+      Cur       : Coverage_Result;
+      Base_Ref  : String;
+      Use_Color : Boolean := False) return Boolean
+   is
+      ESC       : constant String := ASCII.ESC & "[";
+      Regressed : Boolean := False;
+
+      procedure C (Color : String) is
+      begin
+         if Use_Color then
+            Ada.Text_IO.Put (ESC & Color & "m");
+         end if;
+      end C;
+
+      procedure RC is
+      begin
+         if Use_Color then
+            Ada.Text_IO.Put (ESC & "0m");
+         end if;
+      end RC;
+
+      procedure Col (S : String; W : Natural) is
+      begin
+         Ada.Text_IO.Put (S);
+         for I in S'Length + 1 .. W loop
+            Ada.Text_IO.Put (" ");
+         end loop;
+      end Col;
+
+      procedure Row (Label, B, Cur_Val : String; Bad : Boolean := False) is
+      begin
+         Col (Label, 20);
+         Col (B, 14);
+         if Bad then
+            C ("31");
+         end if;
+         Ada.Text_IO.Put (Cur_Val);
+         RC;
+         Ada.Text_IO.New_Line;
+      end Row;
+
+      function Count_Str (R : Coverage_Result) return String is
+      begin
+         if R.Total = 0 then
+            return "N/A";
+         else
+            return Natural'Image (R.Documented) & "/"
+              & Natural'Image (R.Total);
+         end if;
+      end Count_Str;
+
+      function Pct_Str (R : Coverage_Result) return String is
+      begin
+         if R.Total = 0 then
+            return "N/A";
+         else
+            return Natural'Image (R.Pct) & "%";
+         end if;
+      end Pct_Str;
+
+   begin
+      Ada.Text_IO.New_Line;
+      Ada.Text_IO.Put_Line
+        ("  -- Coverage delta: base <" & Base_Ref & "> vs current --");
+      Col ("metric", 20);
+      Col ("base", 14);
+      Ada.Text_IO.Put_Line ("current");
+
+      Row ("subprograms",
+           Count_Str (Base),
+           Count_Str (Cur));
+      Row ("docstring coverage",
+           Pct_Str (Base),
+           Pct_Str (Cur),
+           Bad => Cur.Total > 0 and Base.Total > 0 and Cur.Pct < Base.Pct);
+
+      Ada.Text_IO.New_Line;
+      if Base.Total = 0 then
+         Ada.Text_IO.Put_Line
+           ("  (base tree has no sources; nothing to regress against)");
+         return False;
+      end if;
+
+      Regressed := Cur.Total > 0 and then Cur.Pct < Base.Pct;
+      if Regressed then
+         C ("31");
+         Ada.Text_IO.Put_Line
+           ("  COVERAGE REGRESSION: docstring coverage dropped from"
+            & Natural'Image (Base.Pct)
+            & "% to"
+            & Natural'Image (Cur.Pct)
+            & "%.");
+      else
+         C ("32");
+         Ada.Text_IO.Put_Line
+           ("  Coverage OK: docstring coverage is"
+            & Natural'Image (Cur.Pct)
+            & "% (base"
+            & Natural'Image (Base.Pct)
+            & "%).");
+      end if;
+      RC;
+      Ada.Text_IO.New_Line;
+
+      --  Machine-parseable line for CI gates (e.g. GitHub Actions).
+      Ada.Text_IO.Put_Line
+        ("coverage_delta: base="
+         & Natural'Image (Base.Pct)
+         & " current="
+         & Natural'Image (Cur.Pct)
+         & " regressed="
+         & (if Regressed then "yes" else "no"));
+
+      return Regressed;
+   end Report_Coverage_Delta;
 
 end Adacovex.Diff;

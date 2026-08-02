@@ -29,8 +29,10 @@ package body Adacovex_Config_Tests is
             Skip_Dir_Ct   => 0,
             Skip_Dirs     => (others => ' '),
             Compare_Base  => (others => ' '),
-            Compare_Base_Len => 0);
-      begin
+            Compare_Base_Len => 0,
+            Coverage_Delta => (others => ' '),
+            Coverage_Delta_Len => 0);
+       begin
          R.Check (Cfg.Emit_SVG, "Default Emit_SVG is True");
          R.Check
            (Cfg.SVG_Path_Len = 0,
@@ -44,7 +46,10 @@ package body Adacovex_Config_Tests is
           R.Check
             (Cfg.Compare_Base_Len = 0,
              "Default Compare_Base_Len is 0 (--compare-base not set)");
-      end;
+          R.Check
+            (Cfg.Coverage_Delta_Len = 0,
+             "Default Coverage_Delta_Len is 0 (--coverage-delta not set)");
+       end;
 
       --  Test 2: No_SVG overrides Emit_SVG
       declare
@@ -70,11 +75,13 @@ package body Adacovex_Config_Tests is
             Skip_Dir_Ct   => 0,
             Skip_Dirs     => (others => ' '),
             Compare_Base  => (others => ' '),
-            Compare_Base_Len => 0);
-      begin
-         --  No_SVG=True means Emit_SVG should be forced False by Parse_CLI
-         R.Check (Cfg.No_SVG, "No_SVG field works");
-      end;
+            Compare_Base_Len => 0,
+            Coverage_Delta => (others => ' '),
+            Coverage_Delta_Len => 0);
+       begin
+          --  No_SVG=True means Emit_SVG should be forced False by Parse_CLI
+          R.Check (Cfg.No_SVG, "No_SVG field works");
+       end;
 
    end Run;
 

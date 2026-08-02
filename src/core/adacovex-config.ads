@@ -27,11 +27,13 @@ package Adacovex.Config is
       Strict_Mode   : Boolean := True;
       CLI_Error     : Boolean := False;
       Help_Requested : Boolean := False;
-      Skip_Dir_Ct   : Natural := 0;
-      Skip_Dirs     : Types.Name_Field;
-      Compare_Base  : String (1 .. Types.Max_Path);
-      Compare_Base_Len : Natural := 0;
-   end record;
+       Skip_Dir_Ct   : Natural := 0;
+       Skip_Dirs     : Types.Name_Field;
+       Compare_Base  : String (1 .. Types.Max_Path);
+       Compare_Base_Len : Natural := 0;
+       Coverage_Delta : String (1 .. Types.Max_Path);
+       Coverage_Delta_Len : Natural := 0;
+    end record;
 
    --  Parse Ada.Command_Line arguments and return a fully populated config.
    --  Reads command-line arguments via Ada.Command_Line; default values are
@@ -45,7 +47,8 @@ package Adacovex.Config is
        and then Parse_CLI'Result.Manifest_Len <= Types.Max_Path
        and then Parse_CLI'Result.SVG_Path_Len <= Types.Max_Path
        and then Parse_CLI'Result.MD_Path_Len <= Types.Max_Path
-       and then Parse_CLI'Result.Compare_Base_Len <= Types.Max_Path;
+       and then Parse_CLI'Result.Compare_Base_Len <= Types.Max_Path
+       and then Parse_CLI'Result.Coverage_Delta_Len <= Types.Max_Path;
 
    --  Add a directory name to the comma-separated skip list.
    --  Appends Name to the Skip_Dirs field, inserting ',' separator if
