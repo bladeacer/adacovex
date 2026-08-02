@@ -8,12 +8,6 @@ adacovex-*.tar.gz
 *.tmp
 .headroom
 alire.toml.bak
-*.stdout
-*.stderr
-*.cswi
-*.o
-*.ali
-*.bexch
 gnatprove
 .lccst
 b__*

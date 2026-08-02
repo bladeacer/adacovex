@@ -28,7 +28,7 @@ source -- all 20 packages, 40 subprograms -- and must always show:
 ```
 src/
 |-- adacovex.ads                    -- Version constant
-|-- adacovex_main.adb               -- CLI entry point (ANSI, exit codes, NO_COLOR)
+|-- adacovex_main.adb               -- CLI entry point (builds as bin/adacovex; covex alias)
 |-- core/
 |   |-- adacovex-types.ads/.adb     -- All domain types + conversion functions
 |   |-- adacovex-config.ads/.adb    -- CLI argument parser
@@ -486,7 +486,7 @@ specific failure reasons when the assessment is `Unmet`.
 
 | Target             | Description |
 |--------------------|-------------|
-| `build`            | `alr build` (builds adacovex_main + test_runner) |
+| `build`            | `alr build` (builds adacovex + test_runner, covex alias) |
 | `test`             | Build + run test_runner |
 | `prove`            | `alr gnatprove` (auto-swaps alire-dev.toml, then restores) |
 | `doc` / `api-docs` | Generate API docs via gnatdoc + rst2md (auto-swaps alire-dev.toml) |
@@ -505,25 +505,28 @@ specific failure reasons when the assessment is `Unmet`.
 
 ### GitHub Actions
 
-- `.github/actions/adacovex/` -- composite action: installs Alire + GNAT, obtains
+- `.github/actions/adacovex/` -- composite action (`branding`: shield/green,
+  `author`: bladeacer): installs Alire + GNAT, obtains
   the version-matched adacovex binary (downloads the release bundle by default,
   or builds from source with `build: true`), runs the assessment, publishes
   outputs (`dal-status`, `spark-level`, `test-count`, `coverage-pct`), a
   Markdown step summary, and SVG badge artifacts. Inputs: `target`, `dal`,
-  `gnat-version`, `version`, `build`, `compare-base`, `coverage-delta`,
-  `emit-markdown`, `cache`.
+  `gnat-version`, `version`, `build`, `prove`, `compare-base`,
+  `coverage-delta`, `emit-markdown`, `cache`. Once listed on the GitHub Actions
+  marketplace, each `vX.Y.Z` tag auto-publishes the matching action version.
 - `.github/workflows/ci.yml` -- self-assessment + build/test on push to main
   and pull requests.
 - `.github/workflows/pr-check.yml` -- runs `--coverage-delta` against
   `pull_request.base.sha` to fail PRs that drop docstring coverage.
 - `.github/workflows/release.yml` -- on a `v*` tag, runs GNATprove, builds the
   release binary, validates the self-assessment, and creates a GitHub Release
-  with the binary tarball (`adacovex-vX.Y.Z.tar.gz`: `adacovex_main` +
-  `adacovex`/`covex` aliases) and the action tarball
+  with the binary tarball (`adacovex-vX.Y.Z.tar.gz`: `adacovex` + the `covex`
+  alias) and the action tarball
   (`adacovex-action-vX.Y.Z.tar.gz`). The action downloads the matching binary
   tarball for the tag it is referenced by, so `@v1.3.0` runs adacovex `v1.3.0`.
   The tag itself publishes the action for
-  `uses: <owner>/adacovex/.github/actions/adacovex@vX.Y.Z`.
+  `uses: <owner>/adacovex/.github/actions/adacovex@vX.Y.Z`, and once the
+  action is listed on the marketplace, each tag auto-publishes that version.
 
 ### Run adacovex on any Ada project
 
@@ -583,7 +586,7 @@ Two approaches are equally valid; pick whichever fits the project:
    ```bash
    cd /path/to/adacovex && make build
    cd /path/to/project
-   /path/to/adacovex/bin/adacovex_main --target=. --dal=C
+   /path/to/adacovex/bin/adacovex --target=. --dal=C
    ```
    Because `--target` defaults to the current directory, running the binary
    from inside the project scans it without extra flags. The project does not
@@ -596,7 +599,7 @@ Two approaches are equally valid; pick whichever fits the project:
    [[depends-on]]
    covex = "*"
    ```
-   Then `alr build` produces `bin/adacovex_main` inside the project and
+   Then `alr build` produces `bin/adacovex` inside the project and
    `adacovex` runs against the current directory by default.
 
 In both cases the assessed project is the directory given to `--target` (or
@@ -639,7 +642,8 @@ See [docs/changelogs/adacovex-1.0.0.md](docs/changelogs/adacovex-1.0.0.md) for f
 
 Test source: `src/tests/`. Entry point: `test_runner.adb` (builds as
 `bin/test_runner` from `for Main use ("adacovex_main.adb", "test_runner.adb")`
-in `adacovex.gpr`).
+in `adacovex.gpr`; the CLI entry point builds as `bin/adacovex` via the
+`Builder.Executable` override, with a `bin/covex` alias symlink).
 
 `make test` builds and runs the 169-test suite. Test results are written to
 `docs/test_result.md` in a Markdown table format that can be parsed by

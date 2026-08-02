@@ -9,7 +9,7 @@ help:
 	@echo ''
 	@echo 'Usage: make <target>'
 	@echo ''
-	@echo '  build         Build project (adacovex_main + test_runner)'
+	@echo '  build         Build project (adacovex + test_runner, covex alias)'
 	@echo '  test          Build and run native test suite'
 	@echo '  prove         Run SPARK proofs (uses alire-dev.toml, auto-swap)'
 	@echo '  doc           Generate API docs via gnatdoc + rst2md (alire-dev.toml)'
@@ -31,6 +31,7 @@ help:
 
 build:
 	alr build
+	ln -sf adacovex bin/covex
 
 test: build
 	./bin/test_runner
@@ -51,10 +52,10 @@ doc:
 	  sed -i "/](adacovex-test_support\.md)/d" docs/api-docs/index.md 2>/dev/null'
 
 run-self: build
-	./bin/adacovex_main --dal=C
+	./bin/adacovex --dal=C
 
 run-ada-crdt: build
-	./bin/adacovex_main --target=../Ada_CRDT --dal=C
+	./bin/adacovex --target=../Ada_CRDT --dal=C
 
 ascii-check:
 	@echo "=== ASCII Charset Verification ==="; \
@@ -149,13 +150,12 @@ release:
 	echo "=== Building release binary (covex v$$version) ==="; \
 	alr build --release; \
 	echo "=== Validating self-assessment (DAL-C) ==="; \
-	./bin/adacovex_main --target=. --dal=C; \
+	./bin/adacovex --target=. --dal=C; \
 	echo "=== Bundling release artifacts ==="; \
 	rm -rf dist; \
 	mkdir -p dist; \
-	cp bin/adacovex_main dist/adacovex_main; \
-	ln -s adacovex_main dist/adacovex; \
-	ln -s adacovex_main dist/covex; \
+	cp bin/adacovex dist/adacovex; \
+	ln -s adacovex dist/covex; \
 	tar -czf "adacovex-v$$version.tar.gz" -C dist .; \
 	tar -czf "adacovex-action-v$$version.tar.gz" -C . .github/actions/adacovex; \
 	echo "  Bundled: adacovex-v$$version.tar.gz, adacovex-action-v$$version.tar.gz"; \

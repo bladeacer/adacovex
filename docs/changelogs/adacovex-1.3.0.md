@@ -65,7 +65,7 @@ artifacts), plus three workflows:
   `pull_request.base.sha` so any PR that drops docstring coverage fails.
 - `.github/workflows/release.yml` -- on a `v*` tag, builds the release binary,
   validates the self-assessment, and creates a GitHub Release with the binary
-  tarball (`adacovex_main` + `adacovex`/`covex` aliases) and an action
+  tarball (`adacovex` + `covex` alias) and an action
   tarball. The tag itself publishes the action for
   `uses: <owner>/adacovex/.github/actions/adacovex@vX.Y.Z`.
 
@@ -82,6 +82,19 @@ only, no GNATprove/tests/DAL), prints a compact table and a machine-parseable
 `coverage_delta: base=.. current=.. regressed=..` line, and exits `1` when
 coverage dropped. Works on base refs that do not commit build artifacts and is
 mutually exclusive with `--compare-base`.
+
+### C8: Binary named `adacovex`, clean dev tree
+
+The compiled CLI is now named `adacovex` (via `for Executable
+("adacovex_main.adb") use "adacovex"` in `adacovex.gpr`), with a `covex`
+symlink alias. All scripts, docs, and workflows reference `bin/adacovex` /
+`covex`; `adacovex_main` remains only as the internal Ada source unit name.
+
+`adacovex.gpr` now sets `for Object_Dir use "obj"`, so `*.o`, `*.ali`,
+`*.cswi`, `*.bexch` no longer accumulate in the repo root. Stray artifacts
+were removed from the working tree. The composite action gained `branding`
+(shield/green) and an `author` so it can be listed on the GitHub Actions
+marketplace; each `vX.Y.Z` release publishes the matching action version.
 
 ## Fixes
 

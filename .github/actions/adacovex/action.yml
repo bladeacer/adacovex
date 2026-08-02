@@ -3,6 +3,10 @@ description: >-
   Run the adacovex Ada/SPARK verification pipeline: docstring coverage,
   GNATprove proof analysis, test-result parsing, and DO-178C DAL assessment.
   Writes a Markdown summary to $GITHUB_STEP_SUMMARY and uploads SVG badges.
+author: 'bladeacer'
+branding:
+  icon: 'shield'
+  color: 'green'
 
 inputs:
   target:
@@ -110,8 +114,8 @@ runs:
         curl -fsSL "https://github.com/${ACTION_REPO}/releases/download/v${VERSION}/${ASSET}" \
           -o "$RUNNER_TEMP/${ASSET}"
         tar -xzf "$RUNNER_TEMP/${ASSET}" -C "$GITHUB_WORKSPACE/bin"
-        chmod +x "$GITHUB_WORKSPACE/bin/adacovex_main"
-        "$GITHUB_WORKSPACE/bin/adacovex_main" --help >/dev/null 2>&1 || true
+        chmod +x "$GITHUB_WORKSPACE/bin/adacovex"
+        "$GITHUB_WORKSPACE/bin/adacovex" --help >/dev/null 2>&1 || true
 
     - name: Build adacovex
       if: ${{ inputs.build == 'true' }}
@@ -143,12 +147,12 @@ runs:
         set -euxo pipefail
         cd "$GITHUB_WORKSPACE"
         BIN=""
-        if [ -x bin/adacovex_main ]; then
-          BIN="$GITHUB_WORKSPACE/bin/adacovex_main"
+        if [ -x bin/adacovex ]; then
+          BIN="$GITHUB_WORKSPACE/bin/adacovex"
         elif command -v adacovex >/dev/null 2>&1; then
           BIN="$(command -v adacovex)"
-        elif command -v adacovex_main >/dev/null 2>&1; then
-          BIN="$(command -v adacovex_main)"
+        elif command -v covex >/dev/null 2>&1; then
+          BIN="$(command -v covex)"
         fi
         if [ -z "$BIN" ]; then
           echo "::error::adacovex binary not found. Set build: true or install adacovex on PATH."
