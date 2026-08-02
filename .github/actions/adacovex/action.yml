@@ -24,8 +24,9 @@ inputs:
   version:
     description: >-
       adacovex version to use, e.g. 1.3.0. Defaults to the release tag this
-      action was referenced by (e.g. v1.3.0). Only used when build is false,
-      to download the matching adacovex release binary.
+      action was referenced by (e.g. @v1.3.0). A floating ref (@v1 or @v1.3)
+      is resolved to the latest matching published release. Only used when
+      build is false, to download the matching adacovex release binary.
     required: false
     default: ''
   build:
@@ -33,15 +34,17 @@ inputs:
       Build adacovex from source (true) or download the release binary matching
       this action's version (false, default). Downloading uses the 'version'
       input or the tag this action is referenced by, so the marketplace action
-      at @v1.3.0 always runs the v1.3.0 binary. Set true for in-repo
-      self-assessment where the workspace is adacovex itself.
+      at @v1.3.0 always runs the v1.3.0 binary and @v1 runs the latest v1.x
+      release. Set true for in-repo self-assessment where the workspace is
+      adacovex itself.
     required: false
     default: 'false'
   prove:
     description: >-
-      Run GNATprove before assessing (swaps in alire-dev.toml). Use when the
-      target repo does not commit gnatprove.out but needs a proof level, e.g.
-      adacovex's own self-assessment.
+      Run GNATprove before assessing. gnatprove is a declared dependency of
+      alire.toml, so no dev-manifest swap is needed. Use when the target repo
+      does not commit gnatprove.out but needs a proof level, e.g. adacovex's
+      own self-assessment.
     required: false
     default: 'false'
   run-tests:
@@ -123,8 +126,21 @@ runs:
         VERSION="${INPUT_VERSION:-${ACTION_REF}}"
         VERSION="${VERSION#v}"
         if [ -z "$VERSION" ]; then
-          echo "::error::build: false requires the 'version' input or a release-tag reference (e.g. @v1.3.0)."
+          echo "::error::build: false requires the 'version' input or a release-tag reference (e.g. @v1.3.0 or @v1)."
           exit 1
+        fi
+        # Resolve a floating ref (v1 or v1.3) to the latest matching release tag.
+        if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "Resolving floating ref v${VERSION} to latest matching release..."
+          VERSION=$(curl -fsSL "https://api.github.com/repos/${ACTION_REPO}/releases" \
+            | grep -oE '"tag_name": *"v[0-9]+\.[0-9]+\.[0-9]+"' \
+            | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' \
+            | grep -E "^v${VERSION}(\\.|$)" | head -1 | cut -c2-)
+          if [ -z "$VERSION" ]; then
+            echo "::error::No release found matching floating ref v${INPUT_VERSION:-${ACTION_REF}}."
+            exit 1
+          fi
+          echo "Resolved to v${VERSION}"
         fi
         ASSET="adacovex-v${VERSION}.tar.gz"
         echo "Downloading $ASSET from ${ACTION_REPO} release v${VERSION}"
@@ -161,14 +177,7 @@ runs:
       run: |
         set -euxo pipefail
         cd "$GITHUB_WORKSPACE"
-        if [ ! -f alire-dev.toml ]; then
-          echo "::error::prove: true requires alire-dev.toml (dev manifest) in the target repo."
-          exit 1
-        fi
-        cp alire.toml "$RUNNER_TEMP/alire.toml.bak"
-        cp alire-dev.toml alire.toml
         alr gnatprove
-        mv "$RUNNER_TEMP/alire.toml.bak" alire.toml
 
     - name: Run adacovex assessment
       if: ${{ inputs.assess == 'true' }}

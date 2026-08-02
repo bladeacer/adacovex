@@ -286,6 +286,9 @@ adacovex [options]
 - **Exit code**: `0` if current docstring coverage is `>=` the base (or the
   base has no sources); `1` if coverage regressed.
 - **Example**: `adacovex --target=. --coverage-delta=origin/main`.
+- **Release usage**: `make release` runs the same gate against the last release
+  tag (e.g. `--coverage-delta=v1.1.0`) and aborts if docstring coverage
+  regressed between releases.
 
 #### `--help`
 - **Purpose**: Print usage information and exit.
@@ -495,7 +498,7 @@ specific failure reasons when the assessment is `Unmet`.
 | `run-self`         | Run against adacovex itself (default target: cwd) |
 | `run-ada-crdt`     | Run against `../Ada_CRDT`, DAL-C (strict mode) |
 | `bump-version`     | Bump version across alire.toml, alire-dev.toml, adacovex.ads, changelog (`VERSION=x.y.z`) |
-| `release`          | Build `--release`, prove, validate self-assessment, bundle `dist/` + tarballs, then tag & push (`VERSION=x.y.z`) |
+| `release`          | Build `--release`, prove, validate self-assessment, run docstring-coverage gate vs last release tag, bundle `dist/` + tarballs, then tag & push (`VERSION=x.y.z`) |
 | `ascii-check`      | Verify all source files are pure ASCII |
 | `clean`            | Remove bin/ obj/ docs/badges/ |
 | `help`             | Print available targets |
@@ -518,7 +521,10 @@ specific failure reasons when the assessment is `Unmet`.
   `gnat-version`, `version`, `build`, `release-build`, `prove`, `run-tests`,
   `assess`, `compare-base`, `coverage-delta`, `emit-markdown`, `cache`. Once
   listed on the GitHub Actions marketplace, each `vX.Y.Z` tag auto-publishes
-  the matching action version.
+  the matching action version. Consumers should reference the floating `@v1`
+  (or `@v1.3`) tag to always use the latest published release; a specific
+  `@vX.Y.Z` can be pinned for reproducibility. Floating refs are resolved to
+  the matching release tag by the binary-download step.
 - `.github/workflows/ci.yml` -- self-assessment (build + prove + assess) and
   build + native tests (build + run-tests, assess: false) on push to main and
   pull requests.
