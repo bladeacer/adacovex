@@ -1,0 +1,64 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish release artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Alire toolchain
+        shell: bash
+        run: |
+          set -euxo pipefail
+          ALR_VER=2.1.1
+          ALR_ZIP="alr-$ALR_VER-bin-x86_64-linux.zip"
+          curl -fsSL "https://github.com/alire-project/alire/releases/download/v$ALR_VER/$ALR_ZIP" \
+            -o "$RUNNER_TEMP/$ALR_ZIP"
+          unzip -q "$RUNNER_TEMP/$ALR_ZIP" -d "$RUNNER_TEMP/alr-$ALR_VER"
+          mkdir -p "$HOME/.local/bin"
+          cp "$RUNNER_TEMP/alr-$ALR_VER/bin/alr" "$HOME/.local/bin/alr"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          alr toolchain --select gnat_native=15.2.1 gprbuild --disable-assistant
+
+      - name: Build release binary
+        shell: bash
+        run: |
+          set -euxo pipefail
+          alr build --release
+
+      - name: Validate self-assessment
+        shell: bash
+        run: |
+          set -euxo pipefail
+          ./bin/adacovex_main --target=. --dal=C
+
+      - name: Package release artifacts
+        shell: bash
+        run: |
+          set -euxo pipefail
+          VERSION="${{ github.ref_name }}"
+          mkdir -p dist
+          cp bin/adacovex_main dist/adacovex_main
+          ln -s adacovex_main dist/adacovex
+          ln -s adacovex_main dist/covex
+          tar -czf "adacovex-$VERSION.tar.gz" -C dist .
+          tar -czf "adacovex-action-$VERSION.tar.gz" -C . .github/actions/adacovex
+
+      - name: Create GitHub Release
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            "adacovex-${{ github.ref_name }}.tar.gz" \
+            "adacovex-action-${{ github.ref_name }}.tar.gz" \
+            --generate-notes

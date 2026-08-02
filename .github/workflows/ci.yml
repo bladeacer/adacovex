@@ -15,7 +15,7 @@ jobs:
         with:
           target: .
           dal: C
-          gnat-version: 15.2.0
+          gnat-version: 15.2.1
 
   adacovex-tests:
     name: Build + native tests
@@ -27,14 +27,14 @@ jobs:
         run: |
           set -euxo pipefail
           ALR_VER=2.1.1
-          ALR_TGZ="alr-$ALR_VER-bin-x86_64-linux.tar.gz"
-          curl -fsSL "https://github.com/alire-project/alire/releases/download/v$ALR_VER/$ALR_TGZ" \
-            -o "$RUNNER_TEMP/$ALR_TGZ"
-          tar -xzf "$RUNNER_TEMP/$ALR_TGZ" -C "$RUNNER_TEMP"
+          ALR_ZIP="alr-$ALR_VER-bin-x86_64-linux.zip"
+          curl -fsSL "https://github.com/alire-project/alire/releases/download/v$ALR_VER/$ALR_ZIP" \
+            -o "$RUNNER_TEMP/$ALR_ZIP"
+          unzip -q "$RUNNER_TEMP/$ALR_ZIP" -d "$RUNNER_TEMP/alr-$ALR_VER"
           mkdir -p "$HOME/.local/bin"
-          cp "$RUNNER_TEMP/bin/alr" "$HOME/.local/bin/alr"
+          cp "$RUNNER_TEMP/alr-$ALR_VER/bin/alr" "$HOME/.local/bin/alr"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          alr toolchain --select gnat_native=15.2.0 gprbuild --disable-assistant
+          alr toolchain --select gnat_native=15.2.1 gprbuild --disable-assistant
       - name: Build and test
         shell: bash
         run: |

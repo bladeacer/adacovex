@@ -52,12 +52,36 @@ leave the manifest or lock files polluted with development dependencies
 (whether or not the lock files are committed). `dev-setup` and `prod-setup`
 were replaced with guidance stubs.
 
-### C6: GitHub composite action and CI
+### C6: GitHub Actions: composite action, CI, PR gate, and releases
 
 New `.github/actions/adacovex/action.yml` (install Alire + GNAT toolchain,
-cache, build, run the full assessment, publish `dal-status`/`spark-level`/
-`test-count` outputs, a Markdown step summary, and SVG badge artifacts) and
-`.github/workflows/ci.yml` (self-assessment job + build/test job).
+cache, build, run the assessment, publish `dal-status`/`spark-level`/
+`test-count`/`coverage-pct` outputs, a Markdown step summary, and SVG badge
+artifacts), plus three workflows:
+
+- `.github/workflows/ci.yml` -- self-assessment job + build/test job on push
+  to main and pull requests.
+- `.github/workflows/pr-check.yml` -- runs `--coverage-delta` against
+  `pull_request.base.sha` so any PR that drops docstring coverage fails.
+- `.github/workflows/release.yml` -- on a `v*` tag, builds the release binary,
+  validates the self-assessment, and creates a GitHub Release with the binary
+  tarball (`adacovex_main` + `adacovex`/`covex` aliases) and an action
+  tarball. The tag itself publishes the action for
+  `uses: <owner>/adacovex/.github/actions/adacovex@vX.Y.Z`.
+
+The Alire toolchain is installed from the official
+`alr-*-bin-x86_64-linux.zip` release assets, and the GNAT toolchain default is
+the index-available `15.2.1`. Dead, build-generated `config/covex_config.*`
+files are no longer tracked (gitignored).
+
+### C7: Coverage gate (`--coverage-delta=REF`)
+
+New `--coverage-delta=REF` flag for PR-style CI checks: it computes docstring
+coverage on a git base ref and the current tree (scan + patches + metrics
+only, no GNATprove/tests/DAL), prints a compact table and a machine-parseable
+`coverage_delta: base=.. current=.. regressed=..` line, and exits `1` when
+coverage dropped. Works on base refs that do not commit build artifacts and is
+mutually exclusive with `--compare-base`.
 
 ## Fixes
 
@@ -96,7 +120,7 @@ assessment on a false Gold.
 ## Notes
 
 - GNATprove parser tests extended to cover the modern layout, empty summaries,
-  and the Flow/Initialization separation (7 new checks; suite now 168 tests).
+  and the Flow/Initialization separation (7 new checks; suite now 169 tests).
 - The DAL-level minimum SPARK requirements documented in `AGENTS.md` and
   `README.md` were corrected to match `docs/HLR.md` and the implemented
   `Min_SPARK_For` table (DAL-A: Gold, DAL-B: Silver, DAL-C: Bronze, DAL-D/E:
@@ -106,8 +130,8 @@ assessment on a false Gold.
 - The tracked `alire/alire.lock` and `alire/settings.toml` are now the clean
   release versions (previously they contained development dependencies from an
   accidental dev-manifest build).
-- Self-assessment metrics updated to the new layout: 20 packages, 38
-  subprograms, 100% docstrings, Platinum (28/28 VCs), 168 tests, DAL-C
+- Self-assessment metrics updated to the new layout: 20 packages, 40
+  subprograms, 100% docstrings, Platinum (28/28 VCs), 169 tests, DAL-C
   Achieved.
 
 ## Proof Results

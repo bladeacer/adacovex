@@ -100,6 +100,57 @@ procedure Adacovex_Main is
       end if;
    end Run_Diff;
 
+   --  Coverage-gate mode (--coverage-delta): compare docstring coverage at a
+   --  git base ref against the current working tree. Only scans sources and
+   --  computes docstring metrics, so it works even when the base revision
+   --  does not commit build artifacts. Exit code is 1 if coverage dropped.
+   procedure Run_Coverage is
+      Base_Ref : constant String :=
+        Cfg.Coverage_Delta (1 .. Cfg.Coverage_Delta_Len);
+      Tmp_Path : String (1 .. Max_Path);
+      Tmp_Len  : Natural := 0;
+      OK       : Boolean;
+      Base_R   : Adacovex.Diff.Coverage_Result;
+      Cur_R    : Adacovex.Diff.Coverage_Result;
+      Regressed : Boolean;
+   begin
+      if not Adacovex.Diff.Is_Git_Repo (Target (1 .. TLen)) then
+         Ada.Text_IO.Put_Line
+           (Ada.Text_IO.Standard_Error,
+            "Error: --coverage-delta requires "
+            & Target (1 .. TLen)
+            & " to be a git repository");
+         Exit_St := 1;
+         return;
+      end if;
+
+      Adacovex.Diff.Make_Worktree
+        (Target (1 .. TLen), Base_Ref, Tmp_Path, Tmp_Len, OK);
+      if not OK then
+         Ada.Text_IO.Put_Line
+           (Ada.Text_IO.Standard_Error,
+            "Error: could not create worktree for base ref '" & Base_Ref
+            & "' (ref not found or not a git repo)");
+         Exit_St := 1;
+         return;
+      end if;
+
+      Verbose ("base worktree: " & Tmp_Path (1 .. Tmp_Len));
+      Base_R := Adacovex.Diff.Assess_Coverage (Tmp_Path (1 .. Tmp_Len));
+      Cur_R := Adacovex.Diff.Assess_Coverage (Target (1 .. TLen));
+
+      Regressed := Adacovex.Diff.Report_Coverage_Delta
+        (Base_R, Cur_R, Base_Ref, Use_Color);
+
+      Adacovex.Diff.Remove_Worktree (Target (1 .. TLen), Tmp_Path (1 .. Tmp_Len));
+
+      if Regressed then
+         Exit_St := 1;
+      else
+         Exit_St := 0;
+      end if;
+   end Run_Coverage;
+
 begin
    Cfg := Adacovex.Config.Parse_CLI;
 
@@ -140,6 +191,13 @@ begin
    -- Differential mode: compare against a git base ref and exit.
    if Cfg.Compare_Base_Len > 0 then
       Run_Diff;
+      Ada.Command_Line.Set_Exit_Status (Exit_St);
+      return;
+   end if;
+
+   -- Coverage-gate mode: check docstring coverage delta against a base ref.
+   if Cfg.Coverage_Delta_Len > 0 then
+      Run_Coverage;
       Ada.Command_Line.Set_Exit_Status (Exit_St);
       return;
    end if;

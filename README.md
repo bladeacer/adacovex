@@ -65,6 +65,7 @@ adacovex [options]
 | `--skip-dir=NAME` | `demo,deps,examples` | relaxed | Directory name to skip (repeatable) |
 | `--relaxed` | off | both | Disable strict mode (skip dirs, no patches) |
 | `--compare-base=REF` | off | both | Differential mode vs a git base ref |
+| `--coverage-delta=REF` | off | both | Docstring-coverage gate vs a git base ref |
 | `--verbose` | off | both | Verbose diagnostics |
 | `--help` | - | both | Print usage and exit |
 
@@ -105,6 +106,13 @@ tree (packages, docstrings, HLR trace, orphans, SPARK level, VCs, tests, DAL).
 Exit `0` only if there are no regressions and the current DAL is Achieved.
 The target must be a git repository with `git` on `PATH`. Artifacts the base
 does not commit (`gnatprove.out`, `test_result.md`) report `N/A`.
+
+**`--coverage-delta=REF`** -- Docstring-coverage gate for PR checks: scans
+sources + patches on a git base ref and the current tree, prints a compact
+coverage table plus a machine-parseable `coverage_delta:` line, and exits `1`
+if current coverage dropped below the base. Runs without GNATprove/tests, so
+it works when the base does not commit build artifacts. Mutually exclusive
+with `--compare-base`.
 
 **`--verbose`** -- Print pipeline step diagnostics to stderr.
 
@@ -184,23 +192,86 @@ omitted); the two approaches differ only in how the binary is obtained.
 
 ### GitHub Actions
 
-Use the composite action for CI compliance gates:
+A composite action at `.github/actions/adacovex` runs the full adacovex
+pipeline in CI. It installs the Alire toolchain, builds adacovex, runs the
+assessment, and publishes a Markdown step summary, machine-readable outputs,
+and SVG badge artifacts.
+
+Reference it from the repo that contains it (pinned to the version tag that
+matches the adacovex release you want):
 
 ```yaml
+steps:
+  - uses: actions/checkout@v4
+  - uses: bladeacer/adacovex/.github/actions/adacovex@v1.3.0
+    with:
+      target: .
+      dal: C
+      gnat-version: 15.2.1
+```
+
+#### Inputs
+
+| Input | Default | Description |
+|-------|---------|-------------|
+| `target` | `.` | Target project root (relative to workspace root) |
+| `dal` | `C` | DO-178C DAL level to assess (A-E) |
+| `gnat-version` | `15.2.1` | GNAT toolchain version to select via `alr` |
+| `build` | `true` | Run `alr build` before assessing |
+| `compare-base` | `''` | Git ref to run `--compare-base` against (fails on regression) |
+| `coverage-delta` | `''` | Git ref to run `--coverage-delta` against (fails if coverage dropped) |
+| `emit-markdown` | `''` | Write `VERIFICATION.md` + `TRACE.md` into this directory |
+| `cache` | `true` | Cache Alire toolchain/deps with `actions/cache` |
+
+#### Outputs
+
+| Output | Description |
+|--------|-------------|
+| `dal-status` | `Achieved` or `Unmet` |
+| `spark-level` | SPARK level detected (Stone..Platinum) |
+| `test-count` | Number of passing tests |
+| `coverage-pct` | Current docstring coverage (in `--coverage-delta` mode) |
+
+#### PR coverage gate
+
+Gate every pull request on docstring coverage not regressing against the base
+branch (this is exactly what `--coverage-delta` was built for):
+
+```yaml
+# .github/workflows/pr-check.yml
+on:
+  pull_request:
 jobs:
-  compliance:
+  coverage-delta:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/adacovex
+        with:
+          fetch-depth: 0
+      - uses: bladeacer/adacovex/.github/actions/adacovex@v1
         with:
           target: .
           dal: C
+          coverage-delta: ${{ github.event.pull_request.base.sha }}
 ```
 
-The action installs Alire + GNAT, builds adacovex, runs the full assessment,
-and publishes `dal-status` / `spark-level` / `test-count` outputs, a Markdown
-step summary, and SVG badge artifacts.
+The action exits non-zero when coverage drops, failing the check. This
+workflow ships in the repo at `.github/workflows/pr-check.yml`.
+
+#### Releases on tags
+
+Pushing a `vX.Y.Z` tag triggers `.github/workflows/release.yml`, which builds
+the release binary, runs the self-assessment as validation, and creates a
+GitHub Release with two artifacts:
+
+- `adacovex-<version>.tar.gz` -- `adacovex_main` plus `adacovex` / `covex`
+  symlinks pointing at it.
+- `adacovex-action-<version>.tar.gz` -- the composite action directory, for
+  vendoring/consuming the action outside the repo.
+
+The tag itself is what "publishes" the action: once pushed,
+`uses: bladeacer/adacovex/.github/actions/adacovex@v<version>` resolves for any
+workflow. Each release therefore corresponds to one adacovex version.
 
 ## Requirements for target projects
 
@@ -268,7 +339,7 @@ to document. Overloaded subprograms require one patch entry per overload.
 | Target | Description |
 |--------|-------------|
 | `build` | `alr build` (adacovex_main + test_runner) |
-| `test` | Build and run native test suite (168 tests) |
+| `test` | Build and run native test suite (169 tests) |
 | `prove` | `alr gnatprove` (auto-swaps alire-dev.toml) |
 | `fmt` | Format Ada sources with `gnatformat` |
 | `doc` | Generate API docs via gnatdoc + rst2md |
@@ -291,14 +362,14 @@ src/
 |-- compliance/                   -- DAL assessment logic
 |-- renderers/                    -- ANSI, SVG, Markdown, HTML output
 |-- server/                       -- HTTP/1.1 dashboard server
-|-- tests/                        -- Native test suite (168 tests)
+|-- tests/                        -- Native test suite (169 tests)
 ```
 
 ## Verification
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 168/168 passing |
+| Unit tests | `make test` | 169/169 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C |
 | SPARK proof | `make prove` | 28/28 VCs Platinum |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, Platinum, DAL-C (strict mode) |

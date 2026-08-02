@@ -32,6 +32,17 @@ package Adacovex.Diff is
       DAL_Status   : Types.DAL_Status := Types.Unmet;
    end record;
 
+   --  Docstring-coverage snapshot for one target directory.
+   --  Used by the lightweight --coverage-delta gate: only source scanning,
+   --  patch application, and docstring metrics are computed (no GNATprove,
+   --  test results, or DAL assessment), so it works on a base ref that lacks
+   --  committed build artifacts.
+   type Coverage_Result is record
+      Documented : Natural := 0;
+      Total      : Natural := 0;
+      Pct        : Natural := 0;
+   end record;
+
    --  Run the full assessment pipeline against a target directory.
    --  Scans .ads sources, parses GNATprove output and test results, and
    --  assesses DO-178C DAL compliance. Missing proof or test artifacts are
@@ -41,6 +52,12 @@ package Adacovex.Diff is
    --  @return Aggregate metrics for the target directory.
    function Assess
      (Target_Dir : String; DAL_Target : Types.DAL_Level) return Assessment_Result;
+
+   --  Compute the docstring-coverage snapshot for a target directory.
+   --  Runs source scanning, patch application, and docstring metrics only.
+   --  @param Target_Dir  Project root directory.
+   --  @return Coverage snapshot (documented/total/percentage).
+   function Assess_Coverage (Target_Dir : String) return Coverage_Result;
 
    --  Check that a directory is a git repository work tree.
    --  Runs `git -C Target_Dir rev-parse --is-inside-work-tree`.
@@ -84,6 +101,21 @@ package Adacovex.Diff is
    function Report_Delta
      (Base      : Assessment_Result;
       Cur       : Assessment_Result;
+      Base_Ref  : String;
+      Use_Color : Boolean := False) return Boolean;
+
+   --  Print a compact docstring-coverage delta report for a PR-style gate.
+   --  A regression is reported when the current docstring coverage percentage
+   --  is lower than the base. If the base tree has no sources, no regression
+   --  is reported (there is nothing to regress against).
+   --  @param Base  Coverage of the base ref.
+   --  @param Cur  Coverage of the current working tree.
+   --  @param Base_Ref  Human-readable name of the base ref.
+   --  @param Use_Color  Enable ANSI color output (default False).
+   --  @return True if the current coverage regressed versus the base.
+   function Report_Coverage_Delta
+     (Base      : Coverage_Result;
+      Cur       : Coverage_Result;
       Base_Ref  : String;
       Use_Color : Boolean := False) return Boolean;
 
