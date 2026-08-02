@@ -16,6 +16,7 @@ jobs:
           target: .
           dal: C
           gnat-version: 15.2.1
+          build: true
           prove: true
 
   adacovex-tests:

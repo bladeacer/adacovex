@@ -494,6 +494,7 @@ specific failure reasons when the assessment is `Unmet`.
 | `run-self`         | Run against adacovex itself (default target: cwd) |
 | `run-ada-crdt`     | Run against `../Ada_CRDT`, DAL-C (strict mode) |
 | `bump-version`     | Bump version across alire.toml, alire-dev.toml, adacovex.ads, changelog (`VERSION=x.y.z`) |
+| `release`          | Build `--release`, prove, validate self-assessment, bundle `dist/` + tarballs, then tag & push (`VERSION=x.y.z`) |
 | `ascii-check`      | Verify all source files are pure ASCII |
 | `clean`            | Remove bin/ obj/ docs/badges/ |
 | `help`             | Print available targets |
@@ -504,19 +505,24 @@ specific failure reasons when the assessment is `Unmet`.
 
 ### GitHub Actions
 
-- `.github/actions/adacovex/` -- composite action: installs Alire + GNAT, builds
-  adacovex, runs the assessment, publishes outputs (`dal-status`,
-  `spark-level`, `test-count`, `coverage-pct`), a Markdown step summary, and
-  SVG badge artifacts. Inputs: `target`, `dal`, `gnat-version`, `build`,
-  `compare-base`, `coverage-delta`, `emit-markdown`, `cache`.
+- `.github/actions/adacovex/` -- composite action: installs Alire + GNAT, obtains
+  the version-matched adacovex binary (downloads the release bundle by default,
+  or builds from source with `build: true`), runs the assessment, publishes
+  outputs (`dal-status`, `spark-level`, `test-count`, `coverage-pct`), a
+  Markdown step summary, and SVG badge artifacts. Inputs: `target`, `dal`,
+  `gnat-version`, `version`, `build`, `compare-base`, `coverage-delta`,
+  `emit-markdown`, `cache`.
 - `.github/workflows/ci.yml` -- self-assessment + build/test on push to main
   and pull requests.
 - `.github/workflows/pr-check.yml` -- runs `--coverage-delta` against
   `pull_request.base.sha` to fail PRs that drop docstring coverage.
-- `.github/workflows/release.yml` -- on a `v*` tag, builds the release binary,
-  validates the self-assessment, and creates a GitHub Release with the binary
-  tarball (`adacovex_main` + `adacovex`/`covex` aliases) and the action
-  tarball. The tag itself publishes the action for
+- `.github/workflows/release.yml` -- on a `v*` tag, runs GNATprove, builds the
+  release binary, validates the self-assessment, and creates a GitHub Release
+  with the binary tarball (`adacovex-vX.Y.Z.tar.gz`: `adacovex_main` +
+  `adacovex`/`covex` aliases) and the action tarball
+  (`adacovex-action-vX.Y.Z.tar.gz`). The action downloads the matching binary
+  tarball for the tag it is referenced by, so `@v1.3.0` runs adacovex `v1.3.0`.
+  The tag itself publishes the action for
   `uses: <owner>/adacovex/.github/actions/adacovex@vX.Y.Z`.
 
 ### Run adacovex on any Ada project
