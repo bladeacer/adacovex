@@ -43,7 +43,7 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-          ./bin/adacovex_main --target=. --dal=C
+          ./bin/adacovex --target=. --dal=C
 
       - name: Package release artifacts
         shell: bash
@@ -51,9 +51,8 @@ jobs:
           set -euxo pipefail
           VERSION="${{ github.ref_name }}"
           mkdir -p dist
-          cp bin/adacovex_main dist/adacovex_main
-          ln -s adacovex_main dist/adacovex
-          ln -s adacovex_main dist/covex
+          cp bin/adacovex dist/adacovex
+          ln -s adacovex dist/covex
           tar -czf "adacovex-$VERSION.tar.gz" -C dist .
           tar -czf "adacovex-action-$VERSION.tar.gz" -C . .github/actions/adacovex
 

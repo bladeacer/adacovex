@@ -43,7 +43,7 @@ make run-self
 make run-ada-crdt
 
 # Explicit target
-./bin/adacovex_main --target=../Ada_CRDT --dal=C
+./bin/adacovex --target=../Ada_CRDT --dal=C
 ```
 
 ## CLI reference
@@ -169,7 +169,7 @@ Two approaches are equally valid; pick whichever fits the project.
 ```bash
 cd /path/to/adacovex && make build
 cd /path/to/project
-/path/to/adacovex/bin/adacovex_main --target=. --dal=C
+/path/to/adacovex/bin/adacovex --target=. --dal=C
 ```
 
 Because `--target` defaults to the current directory, running the binary from
@@ -184,7 +184,7 @@ tooling of its own -- only the adacovex working tree needs GNAT and Alire.
 covex = "*"
 ```
 
-Then `alr build` produces `bin/adacovex_main` inside the project and
+Then `alr build` produces `bin/adacovex` inside the project and
 `adacovex` runs against the current directory by default.
 
 In both cases the assessed project is the `--target` directory (or CWD when
@@ -273,9 +273,9 @@ Every `vX.Y.Z` tag triggers `.github/workflows/release.yml`, which builds the
 release binary, validates the self-assessment, and publishes the bundle to the
 GitHub Release:
 
-- `adacovex-vX.Y.Z.tar.gz` -- the version-matched binary (`adacovex_main`
-  plus the `adacovex`/`covex` aliases). The action downloads this asset for
-  the tag it is referenced by, so `@v1.3.0` runs adacovex `v1.3.0`.
+- `adacovex-vX.Y.Z.tar.gz` -- the version-matched binary (`adacovex` plus the
+  `covex` alias). The action downloads this asset for the tag it is referenced
+  by, so `@v1.3.0` runs adacovex `v1.3.0`.
 - `adacovex-action-vX.Y.Z.tar.gz` -- a copy of the composite action itself for
   vendoring or air-gapped use.
 
@@ -289,18 +289,21 @@ Pushing a `vX.Y.Z` tag triggers `.github/workflows/release.yml`, which builds
 the release binary, runs the self-assessment as validation, and creates a
 GitHub Release with two artifacts:
 
-- `adacovex-<version>.tar.gz` -- `adacovex_main` plus `adacovex` / `covex`
-  symlinks pointing at it.
+- `adacovex-<version>.tar.gz` -- `adacovex` plus a `covex` symlink pointing at
+  it.
 - `adacovex-action-<version>.tar.gz` -- the composite action directory, for
   vendoring/consuming the action outside the repo.
 
 The tag itself is what "publishes" the action: once pushed,
 `uses: bladeacer/adacovex/.github/actions/adacovex@v<version>` resolves for any
-workflow. Each release therefore corresponds to one adacovex version.
+workflow. Each release therefore corresponds to one adacovex version. The
+action ships with `branding` and an `author`, so once it is listed on the
+GitHub Actions marketplace, every `vX.Y.Z` tag auto-publishes that version of
+the action.
 
 ## Requirements for target projects
 
-To run adacovex against a project, it must have:
+To run adacovex against an Ada/SPARK project, it must have:
 
 1. **Ada source files** (`.ads`) under the target root.
 2. **GNATprove output**: `gnatprove.out` in the target root or
@@ -363,7 +366,7 @@ to document. Overloaded subprograms require one patch entry per overload.
 
 | Target | Description |
 |--------|-------------|
-| `build` | `alr build` (adacovex_main + test_runner) |
+| `build` | `alr build` (adacovex + test_runner, covex alias) |
 | `test` | Build and run native test suite (169 tests) |
 | `prove` | `alr gnatprove` (auto-swaps alire-dev.toml) |
 | `fmt` | Format Ada sources with `gnatformat` |
@@ -381,7 +384,7 @@ to document. Overloaded subprograms require one patch entry per overload.
 ```
 src/
 |-- adacovex.ads                  -- Version constant
-|-- adacovex_main.adb             -- CLI entry point
+|-- adacovex_main.adb             -- CLI entry point (builds as bin/adacovex)
 |-- core/                         -- Types + CLI config
 |-- parsers/                      -- Source, proof, test, DO-178C parsers
 |-- compliance/                   -- DAL assessment logic
