@@ -20,6 +20,8 @@ help:
 	@echo '  bump-version  Bump version across alire.toml, alire-dev.toml,'
 	@echo '                adacovex.ads, releases, index (VERSION=x.y.z)'
 	@echo '  release       Tag, update releases+index, push. Use VERSION=x.y.z'
+	@echo '                (CI then force-pushes vMAJOR / vMAJOR.MINOR floating'
+	@echo '                 tags so @v1 / @v1.3 refs track the latest release)'
 	@echo '  publish       Publish to Alire community index (run after make release)'
 	@echo '  test-publish  Dry-run showing what make publish would do'
 	@echo '  ascii-check   Verify all source files are pure ASCII'
