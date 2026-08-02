@@ -55,12 +55,13 @@ procedure Adacovex_Main is
    --  ref and at the current working tree, report the delta, and set the
    --  exit code to 1 on regression or current DAL failure.
    procedure Run_Diff is
-      Base_Ref : constant String := Cfg.Compare_Base (1 .. Cfg.Compare_Base_Len);
-      Tmp_Path : String (1 .. Max_Path);
-      Tmp_Len  : Natural := 0;
-      OK       : Boolean;
-      Base_R   : Adacovex.Diff.Assessment_Result;
-      Cur_R    : Adacovex.Diff.Assessment_Result;
+      Base_Ref  : constant String :=
+        Cfg.Compare_Base (1 .. Cfg.Compare_Base_Len);
+      Tmp_Path  : String (1 .. Max_Path);
+      Tmp_Len   : Natural := 0;
+      OK        : Boolean;
+      Base_R    : Adacovex.Diff.Assessment_Result;
+      Cur_R     : Adacovex.Diff.Assessment_Result;
       Regressed : Boolean;
    begin
       if not Adacovex.Diff.Is_Git_Repo (Target (1 .. TLen)) then
@@ -78,7 +79,8 @@ procedure Adacovex_Main is
       if not OK then
          Ada.Text_IO.Put_Line
            (Ada.Text_IO.Standard_Error,
-            "Error: could not create worktree for base ref '" & Base_Ref
+            "Error: could not create worktree for base ref '"
+            & Base_Ref
             & "' (ref not found or not a git repo)");
          Exit_St := 1;
          return;
@@ -88,10 +90,11 @@ procedure Adacovex_Main is
       Base_R := Adacovex.Diff.Assess (Tmp_Path (1 .. Tmp_Len), Cfg.DAL_Target);
       Cur_R := Adacovex.Diff.Assess (Target (1 .. TLen), Cfg.DAL_Target);
 
-      Regressed := Adacovex.Diff.Report_Delta
-        (Base_R, Cur_R, Base_Ref, Use_Color);
+      Regressed :=
+        Adacovex.Diff.Report_Delta (Base_R, Cur_R, Base_Ref, Use_Color);
 
-      Adacovex.Diff.Remove_Worktree (Target (1 .. TLen), Tmp_Path (1 .. Tmp_Len));
+      Adacovex.Diff.Remove_Worktree
+        (Target (1 .. TLen), Tmp_Path (1 .. Tmp_Len));
 
       if Regressed or else Cur_R.DAL_Status = Unmet then
          Exit_St := 1;
@@ -105,13 +108,13 @@ procedure Adacovex_Main is
    --  computes docstring metrics, so it works even when the base revision
    --  does not commit build artifacts. Exit code is 1 if coverage dropped.
    procedure Run_Coverage is
-      Base_Ref : constant String :=
+      Base_Ref  : constant String :=
         Cfg.Coverage_Delta (1 .. Cfg.Coverage_Delta_Len);
-      Tmp_Path : String (1 .. Max_Path);
-      Tmp_Len  : Natural := 0;
-      OK       : Boolean;
-      Base_R   : Adacovex.Diff.Coverage_Result;
-      Cur_R    : Adacovex.Diff.Coverage_Result;
+      Tmp_Path  : String (1 .. Max_Path);
+      Tmp_Len   : Natural := 0;
+      OK        : Boolean;
+      Base_R    : Adacovex.Diff.Coverage_Result;
+      Cur_R     : Adacovex.Diff.Coverage_Result;
       Regressed : Boolean;
    begin
       if not Adacovex.Diff.Is_Git_Repo (Target (1 .. TLen)) then
@@ -129,7 +132,8 @@ procedure Adacovex_Main is
       if not OK then
          Ada.Text_IO.Put_Line
            (Ada.Text_IO.Standard_Error,
-            "Error: could not create worktree for base ref '" & Base_Ref
+            "Error: could not create worktree for base ref '"
+            & Base_Ref
             & "' (ref not found or not a git repo)");
          Exit_St := 1;
          return;
@@ -139,10 +143,12 @@ procedure Adacovex_Main is
       Base_R := Adacovex.Diff.Assess_Coverage (Tmp_Path (1 .. Tmp_Len));
       Cur_R := Adacovex.Diff.Assess_Coverage (Target (1 .. TLen));
 
-      Regressed := Adacovex.Diff.Report_Coverage_Delta
-        (Base_R, Cur_R, Base_Ref, Use_Color);
+      Regressed :=
+        Adacovex.Diff.Report_Coverage_Delta
+          (Base_R, Cur_R, Base_Ref, Use_Color);
 
-      Adacovex.Diff.Remove_Worktree (Target (1 .. TLen), Tmp_Path (1 .. Tmp_Len));
+      Adacovex.Diff.Remove_Worktree
+        (Target (1 .. TLen), Tmp_Path (1 .. Tmp_Len));
 
       if Regressed then
          Exit_St := 1;
@@ -217,8 +223,7 @@ begin
       Adacovex.Parsers.Source.Scan_Project
         (Target (1 .. TLen), Skip_List (1 .. SLen), Packages);
    end;
-   Verbose
-     ("  found " & Img (Natural (Packages.Length)) & " packages");
+   Verbose ("  found " & Img (Natural (Packages.Length)) & " packages");
 
    -- Apply docstring patches when in strict mode
    if Cfg.Strict_Mode then
@@ -314,7 +319,7 @@ begin
    if Cfg.Serve_Mode then
       Verbose
         ("step 8/8: starting HTTP server on port"
-          & Img (Natural (Cfg.Port))
+         & Img (Natural (Cfg.Port))
          & "...");
       declare
          State : Adacovex.Server.HTTP.Server_State;

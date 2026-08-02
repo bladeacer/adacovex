@@ -11,7 +11,9 @@ package body Adacovex.Diff is
    use Adacovex.Types;
    use Adacovex.Types.Implementation;
 
-   function Run_Git (Dir : String; Args : GNAT.OS_Lib.Argument_List) return Boolean is
+   function Run_Git
+     (Dir : String; Args : GNAT.OS_Lib.Argument_List) return Boolean
+   is
       use GNAT.OS_Lib;
       Args_L : GNAT.OS_Lib.Argument_List (1 .. Args'Length + 2);
       K      : Positive := 1;
@@ -30,13 +32,20 @@ package body Adacovex.Diff is
          Args_L (K) := Args (I);
          K := K + 1;
       end loop;
-      Spawn (Git.all, Args_L (1 .. K - 1), "/dev/null", OK, Code, Err_To_Out => True);
+      Spawn
+        (Git.all,
+         Args_L (1 .. K - 1),
+         "/dev/null",
+         OK,
+         Code,
+         Err_To_Out => True);
       Free (Git);
       return OK and then Code = 0;
    end Run_Git;
 
    function Assess
-     (Target_Dir : String; DAL_Target : Types.DAL_Level) return Assessment_Result
+     (Target_Dir : String; DAL_Target : Types.DAL_Level)
+      return Assessment_Result
    is
       R     : Assessment_Result;
       Pkgs  : Package_Vectors.Vector;
@@ -54,7 +63,8 @@ package body Adacovex.Diff is
       R.Documented := Docs.Documented_Subprogs;
       R.Coverage_Pct := Docs.Coverage_Pct;
 
-      Adacovex.Parsers.GNATprove.Parse_Prove_From_Project (Target_Dir, Proof, OK);
+      Adacovex.Parsers.GNATprove.Parse_Prove_From_Project
+        (Target_Dir, Proof, OK);
       R.Has_Proof := OK;
       R.Total_VCs := Proof.Total_VCs;
       R.Proved_VCs := Proof.Proved_VCs;
@@ -94,9 +104,10 @@ package body Adacovex.Diff is
 
    function Is_Git_Repo (Target_Dir : String) return Boolean is
    begin
-      return Run_Git
-        (Target_Dir,
-         (new String'("rev-parse"), new String'("--is-inside-work-tree")));
+      return
+        Run_Git
+          (Target_Dir,
+           (new String'("rev-parse"), new String'("--is-inside-work-tree")));
    end Is_Git_Repo;
 
    procedure Make_Worktree
@@ -119,13 +130,14 @@ package body Adacovex.Diff is
 
       --  Clean up any stale worktree from a previous run, then create.
       Remove_Worktree (Target_Dir, Tmp_Path (1 .. Tmp_Len));
-      Success := Run_Git
-        (Target_Dir,
-         (new String'("worktree"),
-          new String'("add"),
-          new String'("--detach"),
-          new String'(Tmp_Path (1 .. Tmp_Len)),
-          new String'(Base_Ref)));
+      Success :=
+        Run_Git
+          (Target_Dir,
+           (new String'("worktree"),
+            new String'("add"),
+            new String'("--detach"),
+            new String'(Tmp_Path (1 .. Tmp_Len)),
+            new String'(Base_Ref)));
       if not Success then
          Tmp_Len := 0;
       end if;
@@ -134,12 +146,13 @@ package body Adacovex.Diff is
    procedure Remove_Worktree (Target_Dir : String; Tmp_Path : String) is
       Ignored : Boolean;
    begin
-      Ignored := Run_Git
-        (Target_Dir,
-         (new String'("worktree"),
-          new String'("remove"),
-          new String'("--force"),
-          new String'(Tmp_Path)));
+      Ignored :=
+        Run_Git
+          (Target_Dir,
+           (new String'("worktree"),
+            new String'("remove"),
+            new String'("--force"),
+            new String'(Tmp_Path)));
    end Remove_Worktree;
 
    function Report_Delta
@@ -176,8 +189,8 @@ package body Adacovex.Diff is
       function VC_Str (R : Assessment_Result) return String is
       begin
          if R.Has_Proof then
-            return Natural'Image (R.Proved_VCs) & "/"
-              & Natural'Image (R.Total_VCs);
+            return
+              Natural'Image (R.Proved_VCs) & "/" & Natural'Image (R.Total_VCs);
          else
             return "N/A";
          end if;
@@ -195,7 +208,9 @@ package body Adacovex.Diff is
       function Tests_Str (R : Assessment_Result) return String is
       begin
          if R.Has_Tests then
-            return Natural'Image (R.Tests_Passed) & "/"
+            return
+              Natural'Image (R.Tests_Passed)
+              & "/"
               & Natural'Image (R.Tests_Failed);
          else
             return "N/A";
@@ -216,8 +231,8 @@ package body Adacovex.Diff is
          if R.HLR_Total = 0 then
             return "N/A";
          else
-            return Natural'Image (R.HLR_Found) & "/"
-              & Natural'Image (R.HLR_Total);
+            return
+              Natural'Image (R.HLR_Found) & "/" & Natural'Image (R.HLR_Total);
          end if;
       end HLR_Str;
 
@@ -236,51 +251,72 @@ package body Adacovex.Diff is
    begin
       Ada.Text_IO.New_Line;
       Ada.Text_IO.Put_Line
-        ("  -- Differential assessment: base <" & Base_Ref & "> vs current --");
+        ("  -- Differential assessment: base <"
+         & Base_Ref
+         & "> vs current --");
       Col ("metric", 20);
       Col ("base", 14);
       Ada.Text_IO.Put_Line ("current");
 
-      Row ("packages",
-           Natural'Image (Base.Packages),
-           Natural'Image (Cur.Packages));
-      Row ("subprograms",
-           Natural'Image (Base.Subprograms),
-           Natural'Image (Cur.Subprograms));
-      Row ("documented",
-           Natural'Image (Base.Coverage_Pct) & "%",
-           Natural'Image (Cur.Coverage_Pct) & "%",
-           Bad => Cur.Coverage_Pct < Base.Coverage_Pct);
-      Row ("HLR traced",
-           HLR_Str (Base),
-           HLR_Str (Cur),
-           Bad => Cur.HLR_Found < Base.HLR_Found);
-      Row ("orphan tags",
-           Orphan_Str (Base),
-           Orphan_Str (Cur),
-           Bad => (not Base.Orphan_Tags) and Cur.Orphan_Tags);
-      Row ("spark level",
-           Spark_Str (Base),
-           Spark_Str (Cur),
-           Bad => Base.Has_Proof and Cur.Has_Proof
-             and Cur.SPARK_Level < Base.SPARK_Level);
-      Row ("VCs proved",
-           VC_Str (Base),
-           VC_Str (Cur),
-           Bad => Base.Has_Proof and Cur.Has_Proof
-             and Base.Proved_VCs > 0 and Cur.Proved_VCs < Base.Proved_VCs);
-      Row ("tests passed/failed",
-           Tests_Str (Base),
-           Tests_Str (Cur),
-           Bad => Base.Has_Tests and Cur.Has_Tests
-             and Cur.Tests_Failed > Base.Tests_Failed);
-      Row ("DAL status",
-           Types.To_String (Base.DAL_Status),
-           Types.To_String (Cur.DAL_Status),
-           Bad => Base.Has_Proof and Base.Has_Tests and Cur.Has_Proof
-             and Cur.Has_Tests
-             and Base.DAL_Status = Types.Achieved
-             and Cur.DAL_Status = Types.Unmet);
+      Row
+        ("packages",
+         Natural'Image (Base.Packages),
+         Natural'Image (Cur.Packages));
+      Row
+        ("subprograms",
+         Natural'Image (Base.Subprograms),
+         Natural'Image (Cur.Subprograms));
+      Row
+        ("documented",
+         Natural'Image (Base.Coverage_Pct) & "%",
+         Natural'Image (Cur.Coverage_Pct) & "%",
+         Bad => Cur.Coverage_Pct < Base.Coverage_Pct);
+      Row
+        ("HLR traced",
+         HLR_Str (Base),
+         HLR_Str (Cur),
+         Bad => Cur.HLR_Found < Base.HLR_Found);
+      Row
+        ("orphan tags",
+         Orphan_Str (Base),
+         Orphan_Str (Cur),
+         Bad => (not Base.Orphan_Tags) and Cur.Orphan_Tags);
+      Row
+        ("spark level",
+         Spark_Str (Base),
+         Spark_Str (Cur),
+         Bad =>
+           Base.Has_Proof
+           and Cur.Has_Proof
+           and Cur.SPARK_Level < Base.SPARK_Level);
+      Row
+        ("VCs proved",
+         VC_Str (Base),
+         VC_Str (Cur),
+         Bad =>
+           Base.Has_Proof
+           and Cur.Has_Proof
+           and Base.Proved_VCs > 0
+           and Cur.Proved_VCs < Base.Proved_VCs);
+      Row
+        ("tests passed/failed",
+         Tests_Str (Base),
+         Tests_Str (Cur),
+         Bad =>
+           Base.Has_Tests
+           and Cur.Has_Tests
+           and Cur.Tests_Failed > Base.Tests_Failed);
+      Row
+        ("DAL status",
+         Types.To_String (Base.DAL_Status),
+         Types.To_String (Cur.DAL_Status),
+         Bad =>
+           Base.Has_Proof
+           and Base.Has_Tests
+           and Cur.Has_Proof
+           and Cur.Has_Tests
+           and Base.DAL_Status = Types.Achieved
+           and Cur.DAL_Status = Types.Unmet);
 
       --  Regression determination.
       if Cur.Coverage_Pct < Base.Coverage_Pct then
@@ -305,8 +341,12 @@ package body Adacovex.Diff is
             Regressed := True;
          end if;
       end if;
-      if Base.Has_Proof and Base.Has_Tests and Cur.Has_Proof and Cur.Has_Tests
-        and Base.DAL_Status = Types.Achieved and Cur.DAL_Status = Types.Unmet
+      if Base.Has_Proof
+        and Base.Has_Tests
+        and Cur.Has_Proof
+        and Cur.Has_Tests
+        and Base.DAL_Status = Types.Achieved
+        and Cur.DAL_Status = Types.Unmet
       then
          Regressed := True;
       end if;
@@ -383,8 +423,8 @@ package body Adacovex.Diff is
          if R.Total = 0 then
             return "N/A";
          else
-            return Natural'Image (R.Documented) & "/"
-              & Natural'Image (R.Total);
+            return
+              Natural'Image (R.Documented) & "/" & Natural'Image (R.Total);
          end if;
       end Count_Str;
 
@@ -405,13 +445,12 @@ package body Adacovex.Diff is
       Col ("base", 14);
       Ada.Text_IO.Put_Line ("current");
 
-      Row ("subprograms",
-           Count_Str (Base),
-           Count_Str (Cur));
-      Row ("docstring coverage",
-           Pct_Str (Base),
-           Pct_Str (Cur),
-           Bad => Cur.Total > 0 and Base.Total > 0 and Cur.Pct < Base.Pct);
+      Row ("subprograms", Count_Str (Base), Count_Str (Cur));
+      Row
+        ("docstring coverage",
+         Pct_Str (Base),
+         Pct_Str (Cur),
+         Bad => Cur.Total > 0 and Base.Total > 0 and Cur.Pct < Base.Pct);
 
       Ada.Text_IO.New_Line;
       if Base.Total = 0 then

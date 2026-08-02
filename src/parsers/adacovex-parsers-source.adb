@@ -17,8 +17,8 @@ package body Adacovex.Parsers.Source is
       return
         (TL >= 9 and then Trim (1 .. 9) = "procedure")
         or else (TL >= 8 and then Trim (1 .. 8) = "function")
-         or else (TL >= 16 and then Trim (1 .. 16) = "genericprocedure")
-         or else (TL >= 15 and then Trim (1 .. 15) = "genericfunction");
+        or else (TL >= 16 and then Trim (1 .. 16) = "genericprocedure")
+        or else (TL >= 15 and then Trim (1 .. 15) = "genericfunction");
    end Is_Subprogram_Decl;
 
    function Has_HLR_Tag
@@ -43,14 +43,14 @@ package body Adacovex.Parsers.Source is
             elsif Line (I) = ' ' then
                null;
             else
-                for J in I .. Line'Last - 3 loop
-                   if J > I and then Line (J - 1) in 'A' .. 'Z' then
-                      null;
-                   elsif Line (J) = 'H' and then Line (J .. J + 3) = "HLR-" then
-                      H_Start := J;
-                      exit;
-                   end if;
-                end loop;
+               for J in I .. Line'Last - 3 loop
+                  if J > I and then Line (J - 1) in 'A' .. 'Z' then
+                     null;
+                  elsif Line (J) = 'H' and then Line (J .. J + 3) = "HLR-" then
+                     H_Start := J;
+                     exit;
+                  end if;
+               end loop;
 
                if H_Start > 0 then
                   for J in H_Start + 4 .. Line'Last loop
@@ -361,16 +361,16 @@ package body Adacovex.Parsers.Source is
                   end if;
                end loop;
             end if;
-          end loop;
-          Flush_Pending;
-          Close (F);
-       exception
-          when others =>
-             Close (F);
-             raise;
-       end;
+         end loop;
+         Flush_Pending;
+         Close (F);
+      exception
+         when others =>
+            Close (F);
+            raise;
+      end;
 
-       Success := True;
+      Success := True;
    end Scan_Ads_File;
 
    function Is_Skipped_Dir (Name : String; Skip_List : String) return Boolean
@@ -459,57 +459,58 @@ package body Adacovex.Parsers.Source is
          begin
             Dir_Stack.Delete_Last;
 
-             Start_Search (Search, Dir_Path, "");
-             begin
-                while More_Entries (Search) loop
-                   Get_Next_Entry (Search, Ent);
-                   declare
-                      Name : constant String := Simple_Name (Ent);
-                      Path : constant String := Full_Name (Ent);
-                   begin
-                      if Kind (Ent) = Directory then
-                         if Name /= "."
-                           and Name /= ".."
-                           and Name /= ".git"
-                           and Name /= "obj"
-                           and Name /= "tests"
-                           and Name /= "config"
-                           and Name /= ".adacovex"
-                           and not Is_Skipped_Dir (Name, Skip_List)
-                         then
-                            Push_Dir (Path);
-                         end if;
-                      elsif Kind (Ent) = Ordinary_File then
-                         declare
-                            Dot : Natural := 0;
-                         begin
-                            for I in reverse Name'Range loop
-                               if Name (I) = '.' then
-                                  Dot := I;
-                                  exit;
-                               end if;
-                            end loop;
-                            if Dot > 0
-                              and then Name (Dot .. Name'Last) = ".ads"
-                              and then (Name'Length < 3
-                                        or else Name (Name'First .. Name'First + 2)
-                                                /= "b__")
-                            then
-                               Scan_Ads_File (Path, Pkg, OK);
-                               if OK then
-                                  Packages.Append (Pkg);
-                               end if;
-                            end if;
-                         end;
-                      end if;
-                   end;
-                end loop;
-             exception
-                when others =>
-                   End_Search (Search);
-                   raise;
-             end;
-             End_Search (Search);
+            Start_Search (Search, Dir_Path, "");
+            begin
+               while More_Entries (Search) loop
+                  Get_Next_Entry (Search, Ent);
+                  declare
+                     Name : constant String := Simple_Name (Ent);
+                     Path : constant String := Full_Name (Ent);
+                  begin
+                     if Kind (Ent) = Directory then
+                        if Name /= "."
+                          and Name /= ".."
+                          and Name /= ".git"
+                          and Name /= "obj"
+                          and Name /= "tests"
+                          and Name /= "config"
+                          and Name /= ".adacovex"
+                          and not Is_Skipped_Dir (Name, Skip_List)
+                        then
+                           Push_Dir (Path);
+                        end if;
+                     elsif Kind (Ent) = Ordinary_File then
+                        declare
+                           Dot : Natural := 0;
+                        begin
+                           for I in reverse Name'Range loop
+                              if Name (I) = '.' then
+                                 Dot := I;
+                                 exit;
+                              end if;
+                           end loop;
+                           if Dot > 0
+                             and then Name (Dot .. Name'Last) = ".ads"
+                             and then (Name'Length < 3
+                                       or else Name
+                                                 (Name'First .. Name'First + 2)
+                                               /= "b__")
+                           then
+                              Scan_Ads_File (Path, Pkg, OK);
+                              if OK then
+                                 Packages.Append (Pkg);
+                              end if;
+                           end if;
+                        end;
+                     end if;
+                  end;
+               end loop;
+            exception
+               when others =>
+                  End_Search (Search);
+                  raise;
+            end;
+            End_Search (Search);
          end;
       end loop;
    end Scan_Project;
