@@ -6,7 +6,7 @@
 
 # adacovex
 
-**Zero-dependency Ada/SPARK CLI tool** for coverage analysis, proof verification,
+**Zero-library-dependency Ada/SPARK CLI tool** for coverage analysis, proof verification,
 test-result parsing, DO-178C DAL compliance assessment, and interactive dashboards.
 
 ## Features
@@ -372,7 +372,7 @@ to document. Overloaded subprograms require one patch entry per overload.
 |--------|-------------|
 | `build` | `alr build` (adacovex + test_runner, covex alias) |
 | `test` | Build and run native test suite (169 tests) |
-| `prove` | `alr gnatprove` (auto-swaps alire-dev.toml) |
+| `prove` | `alr gnatprove` (gnatprove is a declared dependency) |
 | `fmt` | Format Ada sources with `gnatformat` |
 | `doc` | Generate API docs via gnatdoc + rst2md |
 | `run-self` | Run against adacovex itself (default target: cwd) |

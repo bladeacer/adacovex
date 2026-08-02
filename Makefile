@@ -11,7 +11,7 @@ help:
 	@echo ''
 	@echo '  build         Build project (adacovex + test_runner, covex alias)'
 	@echo '  test          Build and run native test suite'
-	@echo '  prove         Run SPARK proofs (uses alire-dev.toml, auto-swap)'
+	@echo '  prove         Run SPARK proofs (gnatprove declared dependency)'
 	@echo '  doc           Generate API docs via gnatdoc + rst2md (alire-dev.toml)'
 	@echo '  fmt           Format Ada sources with gnatformat (alire-dev.toml)'
 	@echo '  clean         Remove build artifacts'
@@ -24,7 +24,7 @@ help:
 	@echo '  test-publish  Dry-run showing what make publish would do'
 	@echo '  ascii-check   Verify all source files are pure ASCII'
 	@echo ''
-	@echo 'Note: prove/doc/fmt temporarily swap in alire-dev.toml for the duration'
+	@echo 'Note: doc/fmt temporarily swap in alire-dev.toml for the duration'
 	@echo '      of the command, then restore alire.toml and alire.lock untouched.'
 	@echo ''
 	@echo 'Prerequisites: alr (Alire), GNAT toolchain'
@@ -37,7 +37,7 @@ test: build
 	./bin/test_runner
 
 prove:
-	@$(MAKE) _dev_cmd CMD="alr gnatprove"
+	alr gnatprove
 
 fmt:
 	@$(MAKE) _dev_cmd CMD="alr exec -- gnatformat -P adacovex.gpr -U"
@@ -141,12 +141,11 @@ release:
 	@if [ -n "$(VERSION)" ]; then \
 		version="$(VERSION)"; \
 		sed -i 's/^version = ".*"/version = "'$$version'"/' alire.toml; \
-		sed -i 's/^version = ".*"/version = "'$$version'"/' alire-dev.toml; \
 	else \
 		version=$$(sed -n 's/^version = "\(.*\)"/\1/p' alire.toml); \
 	fi; \
 	echo "=== Generating proof artifacts ==="; \
-	$(MAKE) prove; \
+	alr gnatprove; \
 	echo "=== Building release binary (covex v$$version) ==="; \
 	alr build --release; \
 	echo "=== Validating self-assessment (DAL-C) ==="; \
@@ -207,11 +206,13 @@ clean:
 _dev_cmd:
 	@tmp=$$(mktemp -d); \
 	cp alire.toml "$$tmp/alire.toml" && cp alire-dev.toml alire.toml; \
-	cp -r alire "$$tmp/alire"; \
+	if [ -d alire ]; then cp -r alire "$$tmp/alire"; fi; \
 	restore() { \
-	  mv -f "$$tmp/alire.toml" alire.toml 2>/dev/null; \
-	  rm -rf alire; \
-	  mv -f "$$tmp/alire" alire; \
+	  [ -f "$$tmp/alire.toml" ] && mv -f "$$tmp/alire.toml" alire.toml 2>/dev/null; \
+	  if [ -d "$$tmp/alire" ]; then \
+	    rm -rf alire; \
+	    mv -f "$$tmp/alire" alire; \
+	  fi; \
 	  rmdir "$$tmp" 2>/dev/null || true; \
 	}; \
 	trap restore EXIT INT TERM; \
