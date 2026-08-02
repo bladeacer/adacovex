@@ -24,13 +24,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: alire-project/setup-alire@latest
+      - uses: ./.github/actions/adacovex
         with:
-          version: '2.1.1'
-          toolchain: 'gnat_native=15.2.1 gprbuild'
-      - name: Build and test
-        shell: bash
-        run: |
-          set -euxo pipefail
-          alr build
-          ./bin/test_runner
+          target: .
+          dal: C
+          gnat-version: 15.2.1
+          build: true
+          run-tests: true
+          assess: false

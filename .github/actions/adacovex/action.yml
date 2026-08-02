@@ -44,6 +44,24 @@ inputs:
       adacovex's own self-assessment.
     required: false
     default: 'false'
+  run-tests:
+    description: >-
+      Build and run the native test suite (requires build: true). Use for
+      build/test-only jobs that do not run the assessment.
+    required: false
+    default: 'false'
+  release-build:
+    description: >-
+      Pass --release to alr build. Use for release workflows that need an
+      optimized binary.
+    required: false
+    default: 'false'
+  assess:
+    description: >-
+      Run the adacovex assessment and publish outputs + SVG badges. Set false
+      for build/test-only jobs (e.g. the test suite job).
+    required: false
+    default: 'true'
   compare-base:
     description: >-
       Git base ref to run a differential assessment against (e.g. origin/main).
@@ -123,7 +141,19 @@ runs:
       run: |
         set -euxo pipefail
         cd "$GITHUB_WORKSPACE"
-        alr build
+        if [ "${{ inputs.release-build }}" == 'true' ]; then
+          alr build --release
+        else
+          alr build
+        fi
+
+    - name: Run native tests
+      if: ${{ inputs.run-tests == 'true' }}
+      shell: bash
+      run: |
+        set -euxo pipefail
+        cd "$GITHUB_WORKSPACE"
+        ./bin/test_runner
 
     - name: Run GNATprove
       if: ${{ inputs.prove == 'true' }}
@@ -141,6 +171,7 @@ runs:
         mv "$RUNNER_TEMP/alire.toml.bak" alire.toml
 
     - name: Run adacovex assessment
+      if: ${{ inputs.assess == 'true' }}
       id: adacovex
       shell: bash
       run: |
@@ -205,7 +236,7 @@ runs:
         exit $STATUS
 
     - name: Upload badges
-      if: ${{ always() && inputs.compare-base == '' && inputs.coverage-delta == '' }}
+      if: ${{ always() && inputs.assess == 'true' && inputs.compare-base == '' && inputs.coverage-delta == '' }}
       uses: actions/upload-artifact@v4
       with:
         name: adacovex-badges

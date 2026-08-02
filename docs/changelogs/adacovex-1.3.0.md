@@ -96,6 +96,15 @@ were removed from the working tree. The composite action gained `branding`
 (shield/green) and an `author` so it can be listed on the GitHub Actions
 marketplace; each `vX.Y.Z` release publishes the matching action version.
 
+### C9: All workflows use the single composite action
+
+`ci.yml` (self-assessment and build+tests jobs), `pr-check.yml` (coverage
+gate), and `release.yml` now all delegate to `.github/actions/adacovex`
+instead of duplicating inline Alire/GNATprove steps. The action gained three
+inputs to cover every workflow need: `run-tests` (build + native test suite,
+`assess: false`), `release-build` (pass `--release` to `alr build`), and
+`assess` (skip the assessment/outputs/badges for build/test-only jobs).
+
 ## Fixes
 
 ### H1: GNATprove `Initialization` row clobbered Flow Dependencies data
