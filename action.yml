@@ -1,9 +1,7 @@
 name: 'adacovex'
 description: >-
-  Run the adacovex Ada/SPARK verification pipeline: docstring coverage,
-  GNATprove proof analysis, test-result parsing, DO-178C DAL assessment, and
-  proof-aware SBOM generation. Writes a Markdown summary to
-  $GITHUB_STEP_SUMMARY, uploads SVG badges, and emits a CycloneDX/SPDX SBOM.
+  Ada/SPARK coverage, proof, DO-178C DAL assessment and proof-aware SBOM
+  generation.
 author: 'bladeacer'
 branding:
   icon: 'shield'
@@ -24,62 +22,39 @@ inputs:
     default: '15.2.1'
   version:
     description: >-
-      adacovex version to use, e.g. 1.3.0. Defaults to the release tag this
-      action was referenced by (e.g. @v1.3.0). A floating ref (@v1 or @v1.3)
-      is resolved to the latest matching published release. Only used when
-      build is false, to download the matching adacovex release binary.
+      adacovex version; defaults to the release tag this action is
+      referenced by.
     required: false
     default: ''
   build:
     description: >-
-      Build adacovex from source (true) or download the release binary matching
-      this action's version (false, default). Downloading uses the 'version'
-      input or the tag this action is referenced by, so the marketplace action
-      at @v1.3.0 always runs the v1.3.0 binary and @v1 runs the latest v1.x
-      release. Set true for in-repo self-assessment where the workspace is
-      adacovex itself.
+      Build adacovex from source (true) or download the release binary
+      (false).
     required: false
     default: 'false'
   prove:
     description: >-
-      Run GNATprove before assessing via the adacovex `prove` subcommand
-      (bundled gnatprove resolution -- PATH, ~/.adacovex/toolchain/bin, or a
-      platform toolchain download -- so the target needs no alire.toml
-      gnatprove dependency). Use when the target repo does not commit
-      gnatprove.out but needs a proof level, e.g. adacovex's own
-      self-assessment.
+      Run GNATprove before assessing via the adacovex prove subcommand.
     required: false
     default: 'false'
   run-tests:
-    description: >-
-      Build and run the native test suite (requires build: true). Use for
-      build/test-only jobs that do not run the assessment.
+    description: 'Build and run the native test suite (requires build: true).'
     required: false
     default: 'false'
   release-build:
-    description: >-
-      Pass --release to alr build. Use for release workflows that need an
-      optimized binary.
+    description: 'Pass --release to alr build for an optimized binary.'
     required: false
     default: 'false'
   assess:
-    description: >-
-      Run the adacovex assessment and publish outputs + SVG badges. Set false
-      for build/test-only jobs (e.g. the test suite job).
+    description: 'Run the adacovex assessment and publish outputs + SVG badges.'
     required: false
     default: 'true'
   compare-base:
-    description: >-
-      Git base ref to run a differential assessment against (e.g. origin/main).
-      When set, the action runs --compare-base and fails on regression. The
-      SBOM is not generated in differential mode.
+    description: 'Git base ref to run a differential assessment against.'
     required: false
     default: ''
   coverage-delta:
-    description: >-
-      Git base ref to gate docstring coverage against (e.g. origin/main).
-      When set, the action runs --coverage-delta and fails if coverage dropped.
-      The SBOM is not generated in coverage-gate mode.
+    description: 'Git base ref to gate docstring coverage against.'
     required: false
     default: ''
   emit-markdown:
@@ -87,20 +62,11 @@ inputs:
     required: false
     default: ''
   generate-sbom:
-    description: >-
-      Generate a proof-aware SBOM after the assessment and upload it as an
-      artifact. The SBOM is now emitted automatically at the end of every
-      adacovex assessment (unless --no-sbom); this input controls that
-      behavior and the artifact upload. The SBOM carries the
-      adacovex:proof_level and adacovex:dal_target properties on every
-      component. Set false to skip SBOM generation entirely.
+    description: 'Generate a proof-aware SBOM after the assessment and upload it.'
     required: false
     default: 'true'
   sbom-format:
-    description: >-
-      SBOM format to generate: cyclonedx-json (writes <target>/sbom.json),
-      spdx-json (writes <target>/sbom.spdx.json), or md (writes
-      <target>/docs/compliance/SBOM.md).
+    description: 'SBOM format: cyclonedx-json, spdx-json, or md.'
     required: false
     default: 'cyclonedx-json'
   cache:
@@ -184,34 +150,6 @@ runs:
         tar -xzf "$RUNNER_TEMP/${ASSET}" -C "$GITHUB_WORKSPACE/bin"
         chmod +x "$GITHUB_WORKSPACE/bin/adacovex"
         "$GITHUB_WORKSPACE/bin/adacovex" --help >/dev/null 2>&1 || true
-
-    - name: Download gnatprove toolchain
-      if: ${{ inputs.build == 'false' && inputs.prove == 'true' }}
-      shell: bash
-      env:
-        ACTION_REPO: ${{ github.action_repository }}
-        RUNNER_OS: ${{ runner.os }}
-        RUNNER_ARCH: ${{ runner.arch }}
-      run: |
-        set -euxo pipefail
-        case "${RUNNER_OS}" in
-          Linux) OS=linux ;;
-          macOS) OS=macos ;;
-          Windows) OS=windows ;;
-          *) echo "::error::unsupported runner OS: ${RUNNER_OS}"; exit 1 ;;
-        esac
-        case "${RUNNER_ARCH}" in
-          X64) ARCH=x86_64 ;;
-          ARM64) ARCH=aarch64 ;;
-          *) echo "::error::unsupported runner arch: ${RUNNER_ARCH}"; exit 1 ;;
-        esac
-        ASSET="adacovex-toolchain-${OS}-${ARCH}.tar.gz"
-        echo "Downloading ${ASSET} into ~/.adacovex/toolchain"
-        mkdir -p "$HOME/.adacovex/toolchain"
-        curl -fsSL "https://github.com/${ACTION_REPO}/releases/latest/download/${ASSET}" \
-          -o "$RUNNER_TEMP/${ASSET}"
-        tar -xzf "$RUNNER_TEMP/${ASSET}" -C "$HOME/.adacovex/toolchain"
-        ls "$HOME/.adacovex/toolchain/bin/gnatprove"
 
     - name: Build adacovex
       if: ${{ inputs.build == 'true' }}
