@@ -521,10 +521,12 @@ specific failure reasons when the assessment is `Unmet`.
   `gnat-version`, `version`, `build`, `release-build`, `prove`, `run-tests`,
   `assess`, `compare-base`, `coverage-delta`, `emit-markdown`, `cache`. Once
   listed on the GitHub Actions marketplace, each `vX.Y.Z` tag auto-publishes
-  the matching action version. Consumers should reference the floating `@v1`
-  (or `@v1.3`) tag to always use the latest published release; a specific
-  `@vX.Y.Z` can be pinned for reproducibility. Floating refs are resolved to
-  the matching release tag by the binary-download step.
+  the matching action version. Consumers should reference the floating `@latest`
+  tag to always use the newest published release; the narrower `@v1` (or
+  `@v1.3`) refs track the latest release within a major or minor version, and a
+  specific `@vX.Y.Z` can be pinned for reproducibility. Floating refs and the
+  `latest` keyword are resolved to the matching release tag by the
+  binary-download step.
 - `.github/workflows/ci.yml` -- self-assessment (build + prove + assess) and
   build + native tests (build + run-tests, assess: false) on push to main and
   pull requests.
@@ -540,9 +542,9 @@ specific failure reasons when the assessment is `Unmet`.
   The tag itself publishes the action for
   `uses: <owner>/adacovex/.github/actions/adacovex@vX.Y.Z`, and once the
   action is listed on the marketplace, each tag auto-publishes that version.
-  A final step force-pushes the floating tags `vMAJOR` and `vMAJOR.MINOR`
-  (e.g. `v1` and `v1.3` from `v1.3.0`) so users can reference
-  `@v1` / `@v1.3` for the latest matching release.
+  A final step force-pushes the floating tags `vMAJOR`, `vMAJOR.MINOR`, and
+  `latest` (e.g. `v1`, `v1.3`, and `latest` from `v1.3.0`) so users can
+  reference `@v1` / `@v1.3` / `@latest` for the latest matching release.
 
 ### Run adacovex on any Ada project
 

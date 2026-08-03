@@ -148,8 +148,11 @@ assessment on a false Gold.
   declared dependency beyond the GNAT runtime (gnatdoc/gnatformat stay
   dev-only in `alire-dev.toml`).
 - The release workflow force-pushes floating `vMAJOR` / `vMAJOR.MINOR` tags
-  (e.g. `v1` and `v1.3` from `v1.3.0`) so the composite action can be consumed
-  as `@v1` / `@v1.3` for the latest matching release.
+  (e.g. `v1` and `v1.3` from `v1.3.0`) plus a `latest` tag so the composite
+  action can be consumed as `@latest`, `@v1`, or `@v1.3` for the latest
+  matching release. The action's binary-download step resolves `@latest` (and
+  any floating ref) to the matching release tag; a `coverage-pct` output is
+  also emitted from the docstring percentage in normal mode.
 - `make release` now runs a docstring-coverage gate (`--coverage-delta`) that
   compares the last release tag against the current tree and aborts if coverage
   regressed -- the same PR compliance gate, applied between releases.
