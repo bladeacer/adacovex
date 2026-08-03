@@ -1,5 +1,5 @@
 .PHONY: help build test prove doc clean run-self run-ada-crdt \
-        dev-setup prod-setup ascii-check fmt bump-version \
+        dev-setup prod-setup ascii-check fmt bump-version coverage-gate \
         release publish test-publish _dev_cmd
 
 .DEFAULT_GOAL := help
@@ -17,6 +17,9 @@ help:
 	@echo '  clean         Remove build artifacts'
 	@echo '  run-self      Run against adacovex itself (default target: cwd)'
 	@echo '  run-ada-crdt  Run against ../Ada_CRDT (strict mode)'
+	@echo '  coverage-gate Compare docstring coverage between the latest two'
+	@echo '                release tags (--coverage-delta in a worktree at'
+	@echo '                the latest tag; verifies the release gate logic)'
 	@echo '  bump-version  Bump version across alire.toml, alire-dev.toml,'
 	@echo '                adacovex.ads, releases, index (VERSION=x.y.z)'
 	@echo '  release       Tag, update releases+index, push. Use VERSION=x.y.z'
@@ -60,6 +63,27 @@ run-self: build
 
 run-ada-crdt: build
 	./bin/adacovex --target=../Ada_CRDT --dal=C
+
+coverage-gate: build
+	@tags=$$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$$'); \
+	latest=$$(echo "$$tags" | head -1); \
+	prev=$$(echo "$$tags" | sed -n '2p'); \
+	if [ -z "$$latest" ] || [ -z "$$prev" ]; then \
+		echo "  Need at least two release tags to compare."; \
+		exit 1; \
+	fi; \
+	echo "=== Coverage delta gate: $$prev (base) vs $$latest (current) ==="; \
+	tmp=$$(mktemp -d); \
+	if ! git worktree add --detach "$$tmp" "$$latest" >/dev/null 2>&1; then \
+		echo "  ERROR: could not check out $$latest"; \
+		rm -rf "$$tmp"; \
+		exit 1; \
+	fi; \
+	( cd "$$tmp" && "$(CURDIR)/bin/adacovex" --target=. --coverage-delta="$$prev" ); \
+	rc=$$?; \
+	git worktree remove --force "$$tmp" >/dev/null 2>&1; \
+	rmdir "$$tmp" 2>/dev/null || true; \
+	exit $$rc
 
 ascii-check:
 	@echo "=== ASCII Charset Verification ==="; \

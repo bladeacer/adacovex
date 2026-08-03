@@ -393,6 +393,7 @@ to document. Overloaded subprograms require one patch entry per overload.
 | `doc` | Generate API docs via gnatdoc + rst2md |
 | `run-self` | Run against adacovex itself (default target: cwd) |
 | `run-ada-crdt` | Run against `../Ada_CRDT` (strict mode) |
+| `coverage-gate` | Run `--coverage-delta` between the latest two release tags (worktree at latest tag) |
 | `bump-version` | Bump version across manifests + changelog (`VERSION=x.y.z`) |
 | `release` | Build `--release`, prove, validate, run docstring-coverage gate vs last release, bundle + push (`VERSION=x.y.z`) |
 | `ascii-check` | Verify all source files are pure ASCII |
