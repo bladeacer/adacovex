@@ -22,6 +22,7 @@
 - HLR-DIFF: Differential assessment (--compare-base)
 - HLR-METRICS: Docstring coverage metrics
 - HLR-MANIFEST: Alire manifest and dependency-graph parsing
+- HLR-PROVE: GNATprove subcommand
 - HLR-SBOM: Proof-aware SBOM generation
 
 ## Requirements
@@ -93,3 +94,9 @@
 - HLR-SBOM: The tool shall generate proof-aware software bills of materials in
   CycloneDX 1.5 and SPDX 2.3 JSON, extending every component with the
   adacovex:proof_level and adacovex:dal_target properties.
+
+- HLR-PROVE: The tool shall provide a `prove` subcommand that runs GNATprove
+  against the target project's root .gpr file, resolving the gnatprove
+  executable from PATH, ~/.adacovex/toolchain/bin, or a platform toolchain
+  download without requiring an alire.toml in the target, then hands off to
+  the standard assessment pipeline.

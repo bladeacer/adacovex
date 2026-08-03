@@ -7,6 +7,7 @@ with GNAT.Sockets;
 with Adacovex.Types;
 with Adacovex.Config;
 with Adacovex.Diff;
+with Adacovex.Prove;
 with Adacovex.Parsers.Source;
 with Adacovex.Parsers.GNATprove;
 with Adacovex.Parsers.Tests;
@@ -159,20 +160,109 @@ procedure Adacovex_Main is
       end if;
    end Run_Coverage;
 
-   --  SBOM mode (adacovex sbom): run the assessment pipeline to derive the
-   --  proof-aware properties, resolve the dependency graph from the Alire
-   --  manifest / alire.lock / .gpr files, and emit a CycloneDX 1.5 or SPDX
-   --  2.3 JSON document.  Exit code is 0 when the SBOM is written, 1 on
-   --  failure; the DAL status is informational only.
-   procedure Run_SBOM is
-      Skip_List  : String (1 .. Max_Path);
-      SLen       : Natural := 0;
+   --  Generate an SBOM for the target using the assessment state already
+   --  computed (Packages, Proof, DAL_Assess).  Used by both the explicit
+   --  `adacovex sbom` subcommand and the automatic SBOM emitted at the end
+   --  of every assessment.  Prints the SBOM location on success; never
+   --  raises and never changes the assessment exit code (failures are
+   --  warnings only).
+   procedure Generate_SBOM
+     (Skip_List : String;
+      SLen      : Natural;
+      Out_Path  : String;
+      Fail_Hard : Boolean := False)
+   is
       Proof_Prop : String (1 .. 16);
       PPLen      : Natural := 0;
       DAL_Prop   : String (1 .. 8);
       DPLen      : Natural := 0;
       Graph      : Adacovex.Types.Implementation.Component_Vectors.Vector;
       GOK, WOK   : Boolean;
+   begin
+      declare
+         D : constant String :=
+           Adacovex.Renderers.SBOM.Proof_Level_Property (Proof.Level);
+      begin
+         PPLen := D'Length;
+         for I in 1 .. PPLen loop
+            Proof_Prop (I) := D (D'First + I - 1);
+         end loop;
+      end;
+      declare
+         D : constant String :=
+           Adacovex.Renderers.SBOM.DAL_Property_Value (Cfg.DAL_Target);
+      begin
+         DPLen := D'Length;
+         for I in 1 .. DPLen loop
+            DAL_Prop (I) := D (D'First + I - 1);
+         end loop;
+      end;
+
+      Adacovex.Parsers.Manifest.Build_Dependency_Graph
+        (Target (1 .. TLen),
+         Cfg.Manifest_Path (1 .. Cfg.Manifest_Len),
+         Graph,
+         GOK);
+      if not GOK then
+         if Fail_Hard then
+            Ada.Text_IO.Put_Line
+              (Ada.Text_IO.Standard_Error,
+               "Error: could not resolve dependency graph (no manifest?)");
+         else
+            Ada.Text_IO.Put_Line
+              (Ada.Text_IO.Standard_Error,
+               "Warning: could not resolve dependency graph; skipping SBOM");
+         end if;
+         if Fail_Hard then
+            Exit_St := 1;
+         end if;
+         return;
+      end if;
+
+      Adacovex.Renderers.SBOM.Write_SBOM
+        (Cfg.SBOM_Format,
+         Out_Path,
+         Graph,
+         Proof_Prop (1 .. PPLen),
+         DAL_Prop (1 .. DPLen),
+         WOK);
+
+      if WOK then
+         Ada.Text_IO.Put_Line
+           ("SBOM written to "
+            & Out_Path
+            & " ("
+            & Img (Natural (Graph.Length))
+            & " components, proof level "
+            & Proof_Prop (1 .. PPLen)
+            & ", DAL target "
+            & (if DPLen > 0 then DAL_Prop (1 .. DPLen) else "none")
+            & ")");
+         if not Fail_Hard then
+            Exit_St := 0;
+         end if;
+      else
+         if Fail_Hard then
+            Ada.Text_IO.Put_Line
+              (Ada.Text_IO.Standard_Error,
+               "Error: could not write SBOM to " & Out_Path);
+            Exit_St := 1;
+         else
+            Ada.Text_IO.Put_Line
+              (Ada.Text_IO.Standard_Error,
+               "Warning: could not write SBOM to " & Out_Path);
+         end if;
+      end if;
+   end Generate_SBOM;
+
+   --  SBOM mode (adacovex sbom): run the assessment pipeline to derive the
+   --  proof-aware properties, resolve the dependency graph from the Alire
+   --  manifest / alire.lock / .gpr files, and emit a CycloneDX 1.5, SPDX
+   --  2.3, or Markdown document.  Exit code is 0 when the SBOM is written,
+   --  1 on failure; the DAL status is informational only.
+   procedure Run_SBOM is
+      Skip_List  : String (1 .. Max_Path);
+      SLen       : Natural := 0;
       Out_Path   : constant String := Cfg.SBOM_Out (1 .. Cfg.SBOM_Out_Len);
    begin
       Verbose ("sbom mode: resolving dependency graph and generating SBOM...");
@@ -206,61 +296,7 @@ procedure Adacovex_Main is
          Tests,
          DAL_Assess);
 
-      declare
-         D : constant String :=
-           Adacovex.Renderers.SBOM.Proof_Level_Property (Proof.Level);
-      begin
-         PPLen := D'Length;
-         for I in 1 .. PPLen loop
-            Proof_Prop (I) := D (D'First + I - 1);
-         end loop;
-      end;
-      declare
-         D : constant String :=
-           Adacovex.Renderers.SBOM.DAL_Property_Value (Cfg.DAL_Target);
-      begin
-         DPLen := D'Length;
-         for I in 1 .. DPLen loop
-            DAL_Prop (I) := D (D'First + I - 1);
-         end loop;
-      end;
-
-      Adacovex.Parsers.Manifest.Build_Dependency_Graph
-        (Target (1 .. TLen),
-         Cfg.Manifest_Path (1 .. Cfg.Manifest_Len),
-         Graph,
-         GOK);
-      Verbose
-        ("  dependency graph: "
-         & Img (Natural (Graph.Length))
-         & " components");
-
-      Adacovex.Renderers.SBOM.Write_SBOM
-        (Cfg.SBOM_Format,
-         Out_Path,
-         Graph,
-         Proof_Prop (1 .. PPLen),
-         DAL_Prop (1 .. DPLen),
-         WOK);
-
-      if WOK then
-         Ada.Text_IO.Put_Line
-           ("SBOM written to "
-            & Out_Path
-            & " ("
-            & Img (Natural (Graph.Length))
-            & " components, proof level "
-            & Proof_Prop (1 .. PPLen)
-            & ", DAL target "
-            & (if DPLen > 0 then DAL_Prop (1 .. DPLen) else "none")
-            & ")");
-         Exit_St := 0;
-      else
-         Ada.Text_IO.Put_Line
-           (Ada.Text_IO.Standard_Error,
-            "Error: could not write SBOM to " & Out_Path);
-         Exit_St := 1;
-      end if;
+      Generate_SBOM (Skip_List (1 .. SLen), SLen, Out_Path, Fail_Hard => True);
    end Run_SBOM;
 
 begin
@@ -312,6 +348,23 @@ begin
       Run_Coverage;
       Ada.Command_Line.Set_Exit_Status (Exit_St);
       return;
+   end if;
+
+   -- Prove mode: run gnatprove on the target, then fall through to the normal
+   -- assessment pipeline (which parses the freshly generated gnatprove.out).
+   -- gnatprove is resolved from the toolchain, so the target needs no
+   -- alire.toml dependency.
+   if Cfg.Prove_Mode then
+      Verbose ("prove mode: resolving gnatprove and running proof...");
+      declare
+         OK : Boolean;
+      begin
+         Adacovex.Prove.Run_Prove (Target (1 .. TLen), OK);
+         if not OK then
+            Ada.Command_Line.Set_Exit_Status (1);
+            return;
+         end if;
+      end;
    end if;
 
    -- SBOM mode: generate a proof-aware software bill of materials.
@@ -428,10 +481,33 @@ begin
          & Cfg.MD_Path (1 .. Cfg.MD_Path_Len));
    end if;
 
-   -- Step 8: Start HTTP server if requested
+   -- Step 8: Automatically emit a proof-aware SBOM (unless --no-sbom)
+   if not Cfg.No_SBOM then
+      Verbose
+        ("step 8/9: generating automatic SBOM in "
+         & SBOM_Format_Kind'Image (Cfg.SBOM_Format)
+         & " format...");
+      declare
+         Skip_List : String (1 .. Max_Path);
+         SLen      : Natural := 0;
+      begin
+         if not Cfg.Strict_Mode then
+            SLen := Cfg.Skip_Dir_Ct;
+            for I in 1 .. SLen loop
+               Skip_List (I) := Cfg.Skip_Dirs (I);
+            end loop;
+         end if;
+         Generate_SBOM
+           (Skip_List (1 .. SLen),
+            SLen,
+            Cfg.SBOM_Out (1 .. Cfg.SBOM_Out_Len));
+      end;
+   end if;
+
+   -- Step 9: Start HTTP server if requested
    if Cfg.Serve_Mode then
       Verbose
-        ("step 8/8: starting HTTP server on port"
+        ("step 9/9: starting HTTP server on port"
          & Img (Natural (Cfg.Port))
          & "...");
       declare

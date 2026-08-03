@@ -71,4 +71,17 @@ package Adacovex.Renderers.SBOM is
       Proof_Level : String;
       DAL_Target  : String);
 
+   --  Write a human-readable Markdown SBOM to an already-open file.
+   --  Renders a compliance table of every component with its version,
+   --  license, PURL, proof level, and DAL target properties.
+   --  @param F  Output file to write the Markdown document to.
+   --  @param Graph  Dependency graph (index 1 = root component).
+   --  @param Proof_Level  adacovex:proof_level property value.
+   --  @param DAL_Target  adacovex:dal_target property value.
+   procedure Write_Markdown_To
+     (F           : in out Ada.Text_IO.File_Type;
+      Graph       : Types.Implementation.Component_Vectors.Vector;
+      Proof_Level : String;
+      DAL_Target  : String);
+
 end Adacovex.Renderers.SBOM;
