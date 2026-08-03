@@ -603,7 +603,9 @@ package body Adacovex.Renderers.SBOM is
          Raw (F, "## Dependencies");
          NL (F);
          NL (F);
-         Raw (F, "| Component | Version | License | PURL | adacovex:proof_level");
+         Raw
+           (F,
+            "| Component | Version | License | PURL | adacovex:proof_level");
          if DAL_Target'Length > 0 then
             Raw (F, " | adacovex:dal_target");
          end if;
@@ -648,7 +650,8 @@ package body Adacovex.Renderers.SBOM is
       NL (F);
       Raw (F, "_Automatic SBOM -- regenerate with `adacovex --target=.` (or");
       NL (F);
-      Raw (F, "`adacovex sbom --format=md --target=.`). Do not edit manually._");
+      Raw
+        (F, "`adacovex sbom --format=md --target=.`). Do not edit manually._");
       NL (F);
    end Write_Markdown_To;
 
@@ -678,10 +681,10 @@ package body Adacovex.Renderers.SBOM is
             when Types.CycloneDX_JSON =>
                Write_CycloneDX_To (F, Graph, Proof_Level, DAL_Target);
 
-            when Types.SPDX_JSON =>
+            when Types.SPDX_JSON      =>
                Write_SPDX_To (F, Graph, Proof_Level, DAL_Target);
 
-            when Types.Markdown =>
+            when Types.Markdown       =>
                Write_Markdown_To (F, Graph, Proof_Level, DAL_Target);
          end case;
       exception

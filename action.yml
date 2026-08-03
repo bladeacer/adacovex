@@ -185,6 +185,34 @@ runs:
         chmod +x "$GITHUB_WORKSPACE/bin/adacovex"
         "$GITHUB_WORKSPACE/bin/adacovex" --help >/dev/null 2>&1 || true
 
+    - name: Download gnatprove toolchain
+      if: ${{ inputs.build == 'false' && inputs.prove == 'true' }}
+      shell: bash
+      env:
+        ACTION_REPO: ${{ github.action_repository }}
+        RUNNER_OS: ${{ runner.os }}
+        RUNNER_ARCH: ${{ runner.arch }}
+      run: |
+        set -euxo pipefail
+        case "${RUNNER_OS}" in
+          Linux) OS=linux ;;
+          macOS) OS=macos ;;
+          Windows) OS=windows ;;
+          *) echo "::error::unsupported runner OS: ${RUNNER_OS}"; exit 1 ;;
+        esac
+        case "${RUNNER_ARCH}" in
+          X64) ARCH=x86_64 ;;
+          ARM64) ARCH=aarch64 ;;
+          *) echo "::error::unsupported runner arch: ${RUNNER_ARCH}"; exit 1 ;;
+        esac
+        ASSET="adacovex-toolchain-${OS}-${ARCH}.tar.gz"
+        echo "Downloading ${ASSET} into ~/.adacovex/toolchain"
+        mkdir -p "$HOME/.adacovex/toolchain"
+        curl -fsSL "https://github.com/${ACTION_REPO}/releases/latest/download/${ASSET}" \
+          -o "$RUNNER_TEMP/${ASSET}"
+        tar -xzf "$RUNNER_TEMP/${ASSET}" -C "$HOME/.adacovex/toolchain"
+        ls "$HOME/.adacovex/toolchain/bin/gnatprove"
+
     - name: Build adacovex
       if: ${{ inputs.build == 'true' }}
       shell: bash

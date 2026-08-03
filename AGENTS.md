@@ -29,39 +29,46 @@ source -- all 22 packages, 46 subprograms -- and must always show:
 <!-- agents-tree:begin -->
 ```
 src/
-|-- adacovex.ads                    -- Version constant
-|-- adacovex_main.adb               -- CLI entry point (builds as bin/adacovex; covex alias)
-|-- core/
-|   |-- adacovex-types.ads/.adb     -- All domain types + conversion functions
-|   |-- adacovex-config.ads/.adb    -- CLI argument parser
-|   `-- adacovex-diff.ads/.adb      -- Differential assessment (--compare-base)
-|-- parsers/
-|   |-- adacovex-parsers-source.ads/.adb      -- Ada source scanner (procs/funcs/docstrings/HLR)
-|   |-- adacovex-parsers-gnatprove.ads/.adb   -- GNATprove .out parser
-|   |-- adacovex-parsers-tests.ads/.adb       -- AUnit test-result parser
-|   |-- adacovex-parsers-do178c.ads/.adb      -- HLR/LLR markdown parser + source tag matcher
-|   `-- adacovex-parsers-manifest.ads/.adb    -- Alire manifest / alire.lock / .gpr dep graph
-|-- tests/
-|   |-- adacovex-test_support.ads/.adb        -- Native test Runner type
-|   |-- adacovex_dal_tests.ads/.adb           -- DAL compliance tests (2)
-|   |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (21)
-|   |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (40)
-|   |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (38)
-|   |-- adacovex_test_parser_tests.ads/.adb   -- Test-result parser tests (27)
-|   |-- adacovex_config_tests.ads/.adb        -- CLI config tests (11)
-|   |-- adacovex_svg_tests.ads/.adb          -- SVG renderer tests (30)
-|   |-- adacovex_sbom_tests.ads/.adb         -- SBOM / manifest graph tests (53)
-|   `-- test_runner.adb                       -- Test suite entry point (222 tests)
+|-- adacovex.ads                              -- Version constant
+|-- adacovex_main.adb                         -- CLI entry point (builds as bin/adacovex; covex alias)
 |-- compliance/
-|   |-- adacovex-compliance-dal.ads/.adb       -- DAL-C assessment logic
+|   |-- adacovex-compliance.ads               -- Parent package for DO-178C compliance assessment
+|   `-- adacovex-compliance-dal.ads/.adb      -- DAL level assessment logic (DAL-A..E criteria)
+|-- core/
+|   |-- adacovex-config.ads/.adb              -- CLI argument parser (prove mode, --no-sbom, --sbom-format)
+|   |-- adacovex-core.ads                     -- Parent package for core data types and configuration
+|   |-- adacovex-diff.ads/.adb                -- Differential assessment (--compare-base / --coverage-delta)
+|   |-- adacovex-prove.ads/.adb               -- GNATprove runner for the `prove` subcommand (toolchain resolution)
+|   `-- adacovex-types.ads/.adb               -- All domain types + conversion functions
+|-- parsers/
+|   |-- adacovex-parsers.ads                  -- Parent package for all input-file parsers
+|   |-- adacovex-parsers-do178c.ads/.adb      -- HLR/LLR markdown parser + source tag matcher
+|   |-- adacovex-parsers-gnatprove.ads/.adb   -- GNATprove .out parser
+|   |-- adacovex-parsers-manifest.ads/.adb    -- Alire manifest / alire.lock / .gpr dep graph
+|   |-- adacovex-parsers-source.ads/.adb      -- Ada source scanner (procs/funcs/docstrings/HLR)
+|   `-- adacovex-parsers-tests.ads/.adb       -- AUnit test-result parser
 |-- renderers/
-|   |-- adacovex-renderers-ansi.ads/.adb       -- Terminal ANSI report (NO_COLOR aware)
-|   |-- adacovex-renderers-markdown.ads/.adb   -- VERIFICATION.md + TRACE.md
-|   |-- adacovex-renderers-svg.ads/.adb        -- SVG badges (spark/tests/do178c/docs)
-|   |-- adacovex-renderers-html.ads/.adb       -- Web dashboard + JSON API
-|   `-- adacovex-renderers-sbom.ads/.adb       -- CycloneDX 1.5 / SPDX 2.3 SBOM generator
-`-- server/
-    |-- adacovex-server-http.ads/.adb          -- HTTP/1.1 server (4-worker task pool)
+|   |-- adacovex-renderers.ads                -- Parent package for all output renderers
+|   |-- adacovex-renderers-ansi.ads/.adb      -- Terminal ANSI report (NO_COLOR aware)
+|   |-- adacovex-renderers-html.ads/.adb      -- Web dashboard + JSON API
+|   |-- adacovex-renderers-markdown.ads/.adb  -- VERIFICATION.md + TRACE.md
+|   |-- adacovex-renderers-sbom.ads/.adb      -- CycloneDX 1.5 / SPDX 2.3 / Markdown SBOM generator
+|   `-- adacovex-renderers-svg.ads/.adb       -- SVG badges (spark/tests/do178c/docs)
+|-- server/
+|   |-- adacovex-server.ads                   -- Parent package for the HTTP server subsystem
+|   |-- adacovex-server-http.ads/.adb         -- HTTP/1.1 server (4-worker task pool)
+|   `-- adacovex-server-router.ads            -- Parent package for HTTP request routing (future expansion)
+`-- tests/
+    |-- adacovex-test_support.ads/.adb        -- Native test Runner type
+    |-- adacovex_config_tests.ads/.adb        -- CLI config tests (11)
+    |-- adacovex_dal_tests.ads/.adb           -- DAL compliance tests (2)
+    |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (38)
+    |-- adacovex_renderer_svg_tests.ads/.adb  -- SVG renderer tests (30)
+    |-- adacovex_sbom_tests.ads/.adb          -- SBOM / manifest graph tests (53)
+    |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (40)
+    |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (27)
+    |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (21)
+    `-- test_runner.adb                       -- Test suite entry point (222 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -343,8 +350,9 @@ ANSI color codes are suppressed in terminal output. Color is enabled by default.
 When adacovex runs, it executes these steps in sequence:
 
 ```
-1. Parse CLI args           -> CLI_Config record
-2. Determine ANSI color     -> NO_COLOR check
+0. Parse CLI args           -> CLI_Config record (prove / sbom / diff / normal)
+1. Determine ANSI color     -> NO_COLOR check
+2. (prove mode) Run GNATprove -> fresh obj/gnatprove/gnatprove.out
 3. Scan source files        -> Package_Vectors.Vector (subprograms, HLR tags, docstrings)
 4. Apply docstring patches  -> Merge .adacovex/patches/ (strict mode only)
 5. Compute doc metrics      -> Docstring_Metrics (coverage %)
@@ -354,8 +362,9 @@ When adacovex runs, it executes these steps in sequence:
 9. Render ANSI summary      -> stdout (terminal report)
 10. Emit SVG badges          -> <svg-dir>/*.svg (if enabled)
 11. Emit Markdown reports    -> <md-dir>/VERIFICATION.md + TRACE.md (if enabled)
-12. Start HTTP server        -> :<port> (if --serve)
-13. Set exit code            -> 0 if Achieved, 1 if Unmet
+12. Emit automatic SBOM      -> <target>/sbom.json | sbom.spdx.json | docs/compliance/SBOM.md (unless --no-sbom)
+13. Start HTTP server        -> :<port> (if --serve)
+14. Set exit code            -> 0 if Achieved, 1 if Unmet
 ```
 
 ### Step details
@@ -521,13 +530,15 @@ specific failure reasons when the assessment is `Unmet`.
 |--------------------|-------------|
 | `build`            | `alr build` (builds adacovex + test_runner, covex alias) |
 | `test`             | Build + run test_runner |
-| `prove`            | `alr gnatprove` (gnatprove is a declared dependency of alire.toml) |
+| `prove`            | `./bin/adacovex prove --target=. --no-svg` (runs gnatprove via the `prove` subcommand; gnatprove resolved from PATH / `~/.adacovex/toolchain` / download, no target alire.toml needed) |
 | `doc` / `api-docs` | Generate API docs via gnatdoc + rst2md (auto-swaps alire-dev.toml) |
 | `fmt`              | Format Ada sources with gnatformat (auto-swaps alire-dev.toml) |
 | `run-self`         | Run against adacovex itself (default target: cwd) |
 | `run-ada-crdt`     | Run against `../Ada_CRDT`, DAL-C (strict mode) |
 | `coverage-gate`    | Run the docstring-coverage gate between the latest two release tags (`--coverage-delta` in a worktree at the latest tag) |
 | `bump-version`     | Bump version across alire.toml, alire-dev.toml, adacovex.ads, changelog (`VERSION=x.y.z`) |
+| `agents-tree`      | Regenerate the AGENTS.md `src/` architecture tree (`tools/gen-agents-tree.py` + `tools/agents-tree.map`) |
+| `toolchain-asset`  | Bundle the local gnatprove toolchain into `adacovex-toolchain-<os>-<arch>.tar.gz` for release attachment |
 | `release`          | Build `--release`, prove, validate self-assessment, run docstring-coverage gate vs last release tag, bundle `dist/` + tarballs, then tag & push (`VERSION=x.y.z`) |
 | `ascii-check`      | Verify all source files are pure ASCII |
 | `clean`            | Remove bin/ obj/ docs/badges/ |

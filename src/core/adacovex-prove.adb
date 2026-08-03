@@ -30,9 +30,7 @@ package body Adacovex.Prove is
       end if;
    end Strip_Trailing_Slash;
 
-   procedure Copy_To
-     (Dst : out String; Dst_Len : out Natural; Src : String)
-   is
+   procedure Copy_To (Dst : out String; Dst_Len : out Natural; Src : String) is
    begin
       Dst_Len := Src'Length;
       for I in Src'Range loop
@@ -62,10 +60,10 @@ package body Adacovex.Prove is
    --  variable if set, otherwise the default GitHub release asset
    --  adacovex-toolchain-<os>-<arch>.tar.gz from the project's releases.
    procedure Download_Toolchain (Success : out Boolean) is
-      Home : constant String := Home_Dir;
-      Dst  : constant String := Home & Toolchain_Subdir;
-      Tmp  : constant String := "/tmp/adacovex-toolchain.tar.gz";
-      URL  : String (1 .. Types.Max_Path);
+      Home    : constant String := Home_Dir;
+      Dst     : constant String := Home & Toolchain_Subdir;
+      Tmp     : constant String := "/tmp/adacovex-toolchain.tar.gz";
+      URL     : String (1 .. Types.Max_Path);
       URL_Len : Natural := 0;
    begin
       Ada.Directories.Create_Path (Dst);
@@ -101,7 +99,8 @@ package body Adacovex.Prove is
       begin
          Run_Command
            ((new String'("-c"),
-             new String'("curl -fsSL '" & URL (1 .. URL_Len) & "' -o '" & Tmp & "'")),
+             new String'
+               ("curl -fsSL '" & URL (1 .. URL_Len) & "' -o '" & Tmp & "'")),
             "/dev/null",
             OK,
             C);
@@ -118,7 +117,13 @@ package body Adacovex.Prove is
          Run_Command
            ((new String'("-c"),
              new String'
-               ("mkdir -p '" & Dst & "' && tar -xzf '" & Tmp & "' -C '" & Dst & "'")),
+               ("mkdir -p '"
+                & Dst
+                & "' && tar -xzf '"
+                & Tmp
+                & "' -C '"
+                & Dst
+                & "'")),
             "/dev/null",
             OK,
             C);
@@ -138,10 +143,10 @@ package body Adacovex.Prove is
       Dir_Len       : out Natural;
       Success       : out Boolean)
    is
-      Home     : constant String := Home_Dir;
+      Home      : constant String := Home_Dir;
       Toolchain : constant String := Home & Toolchain_Subdir;
-      Bin_Dir  : constant String := Toolchain & "/bin";
-      Exe      : String_Access;
+      Bin_Dir   : constant String := Toolchain & "/bin";
+      Exe       : String_Access;
    begin
       --  Priority 1: a gnatprove already on $PATH.
       Exe := Locate_Exec_On_Path ("gnatprove");
@@ -236,10 +241,7 @@ package body Adacovex.Prove is
       End_Search (Search);
 
       if Ct = 1 and then First_Len > 0 then
-         Copy_To
-           (GPR_Path,
-            GPR_Len,
-            Dir & "/" & First_Name (1 .. First_Len));
+         Copy_To (GPR_Path, GPR_Len, Dir & "/" & First_Name (1 .. First_Len));
          Success := True;
       else
          Success := False;
@@ -247,15 +249,15 @@ package body Adacovex.Prove is
    end Find_Root_GPR;
 
    procedure Run_Prove (Target_Dir : String; Success : out Boolean) is
-      Exe      : String (1 .. Types.Max_Path);
-      Exe_Len  : Natural := 0;
-      TDir     : String (1 .. Types.Max_Path);
-      TLen     : Natural := 0;
-      GPR      : String (1 .. Types.Max_Path);
-      GLen     : Natural := 0;
-      OK       : Boolean;
-      Code     : Integer;
-      Args     : GNAT.OS_Lib.Argument_List (1 .. 2);
+      Exe     : String (1 .. Types.Max_Path);
+      Exe_Len : Natural := 0;
+      TDir    : String (1 .. Types.Max_Path);
+      TLen    : Natural := 0;
+      GPR     : String (1 .. Types.Max_Path);
+      GLen    : Natural := 0;
+      OK      : Boolean;
+      Code    : Integer;
+      Args    : GNAT.OS_Lib.Argument_List (1 .. 2);
    begin
       Resolve_GNATprove (Exe, Exe_Len, TDir, TLen, OK);
       if not OK then
@@ -272,8 +274,7 @@ package body Adacovex.Prove is
          return;
       end if;
 
-      Ada.Text_IO.Put_Line
-        ("  gnatprove: " & Exe (1 .. Exe_Len));
+      Ada.Text_IO.Put_Line ("  gnatprove: " & Exe (1 .. Exe_Len));
       Ada.Text_IO.Put_Line ("  project:   " & GPR (1 .. GLen));
 
       --  Prepend the toolchain bin dir to PATH so gnatprove finds its
@@ -284,9 +285,7 @@ package body Adacovex.Prove is
             New_Path : constant String :=
               TDir (1 .. TLen)
               & GNAT.OS_Lib.Path_Separator
-              & (if Old_Path = null
-                then ""
-                else Old_Path.all);
+              & (if Old_Path = null then "" else Old_Path.all);
          begin
             GNAT.OS_Lib.Setenv ("PATH", New_Path);
             Free (Old_Path);
@@ -305,8 +304,7 @@ package body Adacovex.Prove is
       else
          Ada.Text_IO.Put_Line
            (Ada.Text_IO.Standard_Error,
-            "  ERROR: gnatprove exited with code"
-            & Integer'Image (Code));
+            "  ERROR: gnatprove exited with code" & Integer'Image (Code));
          Success := False;
       end if;
    end Run_Prove;

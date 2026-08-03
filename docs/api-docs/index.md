@@ -16,6 +16,7 @@
 - [Adacovex.Core](adacovex-core.md)
 - [Adacovex.Diff](adacovex-diff.md)
 - [Adacovex.Parsers](adacovex-parsers.md)
+- [Adacovex.Prove](adacovex-prove.md)
 - [Adacovex.Renderers](adacovex-renderers.md)
 - [Adacovex.Server](adacovex-server.md)
 - [Adacovex.Types](adacovex-types.md)

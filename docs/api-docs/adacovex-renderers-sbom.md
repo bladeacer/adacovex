@@ -39,6 +39,15 @@ HLR-SBOM: SBOM generation
 | `Graph` | Dependency graph (index 1 = root component). |
 | `Proof_Level` | adacovex:proof_level property value. |
 
+### procedure Write_Markdown_To (F : Ada.Text_IO.File_Type; Graph : Adacovex.Types.Implementation.Component_Vectors.Vector; Proof_Level : Standard.String; DAL_Target : Standard.String)
+
+| Parameter | Description |
+|-----------|-------------|
+| `DAL_Target` | adacovex:dal_target property value. |
+| `F` | Output file to write the Markdown document to. |
+| `Graph` | Dependency graph (index 1 = root component). |
+| `Proof_Level` | adacovex:proof_level property value. |
+
 ### procedure Write_SBOM (Format : Adacovex.Types.SBOM_Format_Kind; Out_Path : Standard.String; Graph : Adacovex.Types.Implementation.Component_Vectors.Vector; Proof_Level : Standard.String; DAL_Target : Standard.String; Success : Standard.Boolean) `[Pre]`
 
 | Parameter | Description |

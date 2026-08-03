@@ -32,6 +32,10 @@ jobs:
           mkdir -p dist
           cp bin/adacovex dist/adacovex
           ln -s adacovex dist/covex
+          cp install.sh dist/install.sh
+          chmod +x dist/install.sh
+          cp LICENSE dist/LICENSE
+          cp docs/THIRD_PARTY_NOTICES.md dist/THIRD_PARTY_NOTICES.md
           tar -czf "adacovex-$VERSION.tar.gz" -C dist .
           tar -czf "adacovex-action-$VERSION.tar.gz" -C . action.yml
 
@@ -52,10 +56,10 @@ jobs:
           https://github.com/${{ github.repository }}/compare/${PREV#v}...$VERSION"
           fi
           # Attach a platform toolchain asset if one was built for this tag
-          # (e.g. adacovex-toolchain-linux-x86_64-$VERSION.tar.gz). The
-          # gnatprove toolchain is large and optional: `covex prove` falls
-          # back to a PATH or ~/.adacovex/toolchain gnatprove otherwise.
-          for f in adacovex-toolchain-*-$VERSION.tar.gz; do
+          # (e.g. adacovex-toolchain-linux-x86_64.tar.gz). The gnatprove
+          # toolchain is large and optional: `covex prove` falls back to a
+          # PATH or ~/.adacovex/toolchain gnatprove otherwise.
+          for f in adacovex-toolchain-*.tar.gz; do
             [ -f "$f" ] && ASSETS+=("$f")
           done
           gh release create "$VERSION" "${ASSETS[@]}" --notes "$BODY"

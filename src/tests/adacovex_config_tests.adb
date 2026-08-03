@@ -28,16 +28,16 @@ package body Adacovex_Config_Tests is
             Help_Requested     => False,
             Skip_Dir_Ct        => 0,
             Skip_Dirs          => (others => ' '),
-             Compare_Base       => (others => ' '),
-             Compare_Base_Len   => 0,
-             Coverage_Delta     => (others => ' '),
-             Coverage_Delta_Len => 0,
-             Prove_Mode         => False,
-             SBOM_Mode          => False,
-             SBOM_Format        => CycloneDX_JSON,
-             SBOM_Out           => (others => ' '),
-             SBOM_Out_Len       => 0,
-             No_SBOM            => False);
+            Compare_Base       => (others => ' '),
+            Compare_Base_Len   => 0,
+            Coverage_Delta     => (others => ' '),
+            Coverage_Delta_Len => 0,
+            Prove_Mode         => False,
+            SBOM_Mode          => False,
+            SBOM_Format        => CycloneDX_JSON,
+            SBOM_Out           => (others => ' '),
+            SBOM_Out_Len       => 0,
+            No_SBOM            => False);
       begin
          R.Check (Cfg.Emit_SVG, "Default Emit_SVG is True");
          R.Check
@@ -80,16 +80,16 @@ package body Adacovex_Config_Tests is
             Help_Requested     => False,
             Skip_Dir_Ct        => 0,
             Skip_Dirs          => (others => ' '),
-             Compare_Base       => (others => ' '),
-             Compare_Base_Len   => 0,
-             Coverage_Delta     => (others => ' '),
-             Coverage_Delta_Len => 0,
-             Prove_Mode         => False,
-             SBOM_Mode          => False,
-             SBOM_Format        => CycloneDX_JSON,
-             SBOM_Out           => (others => ' '),
-             SBOM_Out_Len       => 0,
-             No_SBOM            => False);
+            Compare_Base       => (others => ' '),
+            Compare_Base_Len   => 0,
+            Coverage_Delta     => (others => ' '),
+            Coverage_Delta_Len => 0,
+            Prove_Mode         => False,
+            SBOM_Mode          => False,
+            SBOM_Format        => CycloneDX_JSON,
+            SBOM_Out           => (others => ' '),
+            SBOM_Out_Len       => 0,
+            No_SBOM            => False);
       begin
          --  No_SVG=True means Emit_SVG should be forced False by Parse_CLI
          R.Check (Cfg.No_SVG, "No_SVG field works");

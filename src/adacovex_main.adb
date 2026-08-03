@@ -261,9 +261,9 @@ procedure Adacovex_Main is
    --  2.3, or Markdown document.  Exit code is 0 when the SBOM is written,
    --  1 on failure; the DAL status is informational only.
    procedure Run_SBOM is
-      Skip_List  : String (1 .. Max_Path);
-      SLen       : Natural := 0;
-      Out_Path   : constant String := Cfg.SBOM_Out (1 .. Cfg.SBOM_Out_Len);
+      Skip_List : String (1 .. Max_Path);
+      SLen      : Natural := 0;
+      Out_Path  : constant String := Cfg.SBOM_Out (1 .. Cfg.SBOM_Out_Len);
    begin
       Verbose ("sbom mode: resolving dependency graph and generating SBOM...");
 
@@ -498,9 +498,7 @@ begin
             end loop;
          end if;
          Generate_SBOM
-           (Skip_List (1 .. SLen),
-            SLen,
-            Cfg.SBOM_Out (1 .. Cfg.SBOM_Out_Len));
+           (Skip_List (1 .. SLen), SLen, Cfg.SBOM_Out (1 .. Cfg.SBOM_Out_Len));
       end;
    end if;
 
