@@ -31,7 +31,11 @@ package body Adacovex_Config_Tests is
             Compare_Base       => (others => ' '),
             Compare_Base_Len   => 0,
             Coverage_Delta     => (others => ' '),
-            Coverage_Delta_Len => 0);
+            Coverage_Delta_Len => 0,
+            SBOM_Mode          => False,
+            SBOM_Format        => CycloneDX_JSON,
+            SBOM_Out           => (others => ' '),
+            SBOM_Out_Len       => 0);
       begin
          R.Check (Cfg.Emit_SVG, "Default Emit_SVG is True");
          R.Check
@@ -77,7 +81,11 @@ package body Adacovex_Config_Tests is
             Compare_Base       => (others => ' '),
             Compare_Base_Len   => 0,
             Coverage_Delta     => (others => ' '),
-            Coverage_Delta_Len => 0);
+            Coverage_Delta_Len => 0,
+            SBOM_Mode          => False,
+            SBOM_Format        => CycloneDX_JSON,
+            SBOM_Out           => (others => ' '),
+            SBOM_Out_Len       => 0);
       begin
          --  No_SVG=True means Emit_SVG should be forced False by Parse_CLI
          R.Check (Cfg.No_SVG, "No_SVG field works");

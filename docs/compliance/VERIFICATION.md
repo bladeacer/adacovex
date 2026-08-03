@@ -4,10 +4,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Packages Scanned |  25 |
-| Total Subprograms |  23 |
-| Documented Subprograms |  16 |
-| Docstring Coverage |  69% |
+| Packages Scanned |  22 |
+| Total Subprograms |  46 |
+| Documented Subprograms |  46 |
+| Docstring Coverage |  100% |
 
 ## SPARK Proof Analysis
 
@@ -15,17 +15,18 @@
 |------------|-------|--------|
 | SPARK Level | Platinum | - |
 | Flow Dependencies |  0 |  0 |
+| Initialization |  0 |  0 |
 | Runtime Checks |  12 |  12 |
 | Assertions |  2 |  2 |
 | Functional Contracts |  4 |  4 |
 | Termination |  5 |  5 |
-| **Total** |  28 |  10 |
+| **Total** |  28 |  28 |
 
 ## Test Results
 
 | Category | Tests | Status |
 |----------|-------|--------|
-| **Total** | ** 0** | **Passed:  0, Failed:  0** |
+| **Total** | ** 222** | **Passed:  222, Failed:  0** |
 
 ## DO-178C Compliance
 
@@ -33,7 +34,7 @@
 |-----------|--------|
 | Target DAL | C |
 | Overall Status | Achieved |
-| HLR Traced |  37 /  37 |
+| HLR Traced |  43 /  43 |
 | Orphan Tags | No |
 | Tests Passing | Yes |
 | Min SPARK Level | Yes |

@@ -18,10 +18,10 @@ adacovex was designed to audit the Ada_CRDT library at `../Ada_CRDT` (26 package
 The `--target=PATH` option can point at any Ada/SPARK project.
 
 Self-assessment (`make run-self`, default target: cwd) verifies adacovex against its own
-source -- all 20 packages, 40 subprograms -- and must always show:
+source -- all 22 packages, 46 subprograms -- and must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
 - Platinum SPARK level (28/28 VCs proved)
-- 169/169 native tests passing
+- 222/222 native tests passing
 - DAL-C Achieved
 
 ## Architecture
@@ -38,7 +38,8 @@ src/
 |   |-- adacovex-parsers-source.ads/.adb      -- Ada source scanner (procs/funcs/docstrings/HLR)
 |   |-- adacovex-parsers-gnatprove.ads/.adb   -- GNATprove .out parser
 |   |-- adacovex-parsers-tests.ads/.adb       -- AUnit test-result parser
-|   `-- adacovex-parsers-do178c.ads/.adb      -- HLR/LLR markdown parser + source tag matcher
+|   |-- adacovex-parsers-do178c.ads/.adb      -- HLR/LLR markdown parser + source tag matcher
+|   `-- adacovex-parsers-manifest.ads/.adb    -- Alire manifest / alire.lock / .gpr dep graph
 |-- tests/
 |   |-- adacovex-test_support.ads/.adb        -- Native test Runner type
 |   |-- adacovex_dal_tests.ads/.adb           -- DAL compliance tests (2)
@@ -48,14 +49,16 @@ src/
 |   |-- adacovex_test_parser_tests.ads/.adb   -- Test-result parser tests (27)
 |   |-- adacovex_config_tests.ads/.adb        -- CLI config tests (11)
 |   |-- adacovex_svg_tests.ads/.adb          -- SVG renderer tests (30)
-|   `-- test_runner.adb                       -- Test suite entry point (169 tests)
+|   |-- adacovex_sbom_tests.ads/.adb         -- SBOM / manifest graph tests (53)
+|   `-- test_runner.adb                       -- Test suite entry point (222 tests)
 |-- compliance/
 |   |-- adacovex-compliance-dal.ads/.adb       -- DAL-C assessment logic
 |-- renderers/
 |   |-- adacovex-renderers-ansi.ads/.adb       -- Terminal ANSI report (NO_COLOR aware)
 |   |-- adacovex-renderers-markdown.ads/.adb   -- VERIFICATION.md + TRACE.md
 |   |-- adacovex-renderers-svg.ads/.adb        -- SVG badges (spark/tests/do178c/docs)
-|   `-- adacovex-renderers-html.ads/.adb       -- Web dashboard + JSON API
+|   |-- adacovex-renderers-html.ads/.adb       -- Web dashboard + JSON API
+|   `-- adacovex-renderers-sbom.ads/.adb       -- CycloneDX 1.5 / SPDX 2.3 SBOM generator
 `-- server/
     |-- adacovex-server-http.ads/.adb          -- HTTP/1.1 server (4-worker task pool)
 ```
@@ -128,6 +131,7 @@ Ada_CRDT/.adacovex/patches/demo/deps/vt100/vt100.ads
 
 ```
 adacovex [options]
+adacovex sbom [--format=cyclonedx-json|spdx-json] [--out=PATH]
 ```
 
 ### Flag summary
@@ -164,8 +168,9 @@ adacovex [options]
 - **Purpose**: Override the project manifest file path.
 - **Default**: `<target>/alire-dev.toml` if it exists, otherwise
   `<target>/alire.toml`.
-- **Effect**: The manifest path is displayed in stderr output but is not used
-  internally by adacovex itself (it is metadata for the user/AI agent).
+- **Effect**: The manifest path is displayed in stderr output and is used by
+  `adacovex sbom` to resolve the root project metadata for the dependency
+  graph.
 - **Example**: `--manifest=/path/to/alire.toml`.
 
 #### `--dal=LEVEL`
@@ -294,6 +299,28 @@ adacovex [options]
 - **Purpose**: Print usage information and exit.
 - **Effect**: Prints all options, defaults, examples to stdout, then the
   program exits. No scanning or assessment is performed.
+
+### The `sbom` subcommand (`adacovex sbom`)
+
+- **Purpose**: Generate a proof-aware software bill of materials for the target
+  project.
+- **Usage**: `adacovex sbom [--format=FMT] [--out=PATH]`.
+- **Effect**: Scans sources, parses GNATprove output and test results, and
+  assesses DAL first, then resolves the dependency graph from the Alire
+  manifest (`alire.toml` / `alire-dev.toml`), `alire/alire.lock`, and the root
+  `.gpr` `with` clauses (via `Adacovex.Parsers.Manifest.Build_Dependency_Graph`)
+  and writes the SBOM via `Adacovex.Renderers.SBOM.Write_SBOM`.
+- **Properties**: Every component carries `adacovex:proof_level`
+  (`Gold`/`Platinum`) and `adacovex:dal_target` (`DAL-A`..`DAL-D`; empty for
+  `DAL-E`), encoded as `attributionTexts` in SPDX.
+- **Default output**: `<target>/sbom.json` for `cyclonedx-json`,
+  `<target>/sbom.spdx.json` for `spdx-json`. The containing directory is
+  created automatically.
+- **Exclusivity**: Mutually exclusive with `--compare-base` and
+  `--coverage-delta`.
+- **Exit code**: `0` when the SBOM was written, `1` otherwise.
+- **Examples**: `adacovex sbom --format=cyclonedx-json --target=. --dal=C`,
+  `adacovex sbom --format=spdx-json --out=sbom.spdx.json`.
 
 ### Exit codes
 
@@ -510,17 +537,21 @@ specific failure reasons when the assessment is `Unmet`.
 
 ### GitHub Actions
 
-- `.github/actions/adacovex/` -- composite action (`branding`: shield/green,
-  `author`: bladeacer): installs Alire + GNAT, obtains
+- `./action.yml` at the repository root -- composite action (`branding`:
+  shield/green, `author`: bladeacer): installs Alire + GNAT, obtains
   the version-matched adacovex binary (downloads the release bundle by default,
   or builds from source with `build: true`), optionally runs GNATprove
   (`prove`), the native tests (`run-tests`), and a `--release` build
   (`release-build`), then runs the assessment and publishes
   outputs (`dal-status`, `spark-level`, `test-count`, `coverage-pct`), a
   Markdown step summary, and SVG badge artifacts (`assess: false` skips the
-  assessment for build/test-only jobs). Inputs: `target`, `dal`,
+  assessment for build/test-only jobs). When `generate-sbom` (default `true`)
+  is set and the assessment runs, it also generates a proof-aware SBOM
+  (`adacovex sbom --format=${{ sbom-format }}`, default `cyclonedx-json`) and
+  uploads it as an `adacovex-sbom` artifact. Inputs: `target`, `dal`,
   `gnat-version`, `version`, `build`, `release-build`, `prove`, `run-tests`,
-  `assess`, `compare-base`, `coverage-delta`, `emit-markdown`, `cache`. Once
+  `assess`, `compare-base`, `coverage-delta`, `emit-markdown`, `generate-sbom`,
+  `sbom-format`, `cache`. Once
   listed on the GitHub Actions marketplace, each `vX.Y.Z` tag auto-publishes
   the matching action version. Consumers should reference the floating `@latest`
   tag to always use the newest published release; the narrower `@v1` (or
@@ -539,9 +570,9 @@ specific failure reasons when the assessment is `Unmet`.
   GitHub Release with the binary tarball (`adacovex-vX.Y.Z.tar.gz`: `adacovex`
   + the `covex` alias) and the action tarball
   (`adacovex-action-vX.Y.Z.tar.gz`). The action downloads the matching binary
-  tarball for the tag it is referenced by, so `@v1.3.0` runs adacovex `v1.3.0`.
+  tarball for the tag it is referenced by, so `@v1.4.0` runs adacovex `v1.4.0`.
   The tag itself publishes the action for
-  `uses: <owner>/adacovex/.github/actions/adacovex@vX.Y.Z`, and once the
+  `uses: <owner>/adacovex@vX.Y.Z`, and once the
   action is listed on the marketplace, each tag auto-publishes that version.
   A final step force-pushes the floating tags `vMAJOR`, `vMAJOR.MINOR`, and
   `latest` (e.g. `v1`, `v1.3`, and `latest` from `v1.3.0`) so users can
@@ -645,7 +676,7 @@ is obtained and built.
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 169/169 passing |
+| Unit tests | `make test` | 222/222 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | 28/28 VCs Platinum |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -664,12 +695,12 @@ Test source: `src/tests/`. Entry point: `test_runner.adb` (builds as
 in `adacovex.gpr`; the CLI entry point builds as `bin/adacovex` via the
 `Builder.Executable` override, with a `bin/covex` alias symlink).
 
-`make test` builds and runs the 169-test suite. Test results are written to
+`make test` builds and runs the 222-test suite. Test results are written to
 `docs/test_result.md` in a Markdown table format that can be parsed by
 `adacovex-parsers-tests`. This means adacovex **supports both** native test
 running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 
-### Test categories (169 total)
+### Test categories (222 total)
 
 | Category | Tests | What it covers |
 |----------|-------|----------------|
@@ -680,6 +711,7 @@ running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 | Test-result parser | 27 | Markdown test result parsing |
 | CLI config | 11 | Default option values, --help, --no-svg field, --compare-base and --coverage-delta defaults |
 | SVG renderer | 30 | SVG badge content and format |
+| SBOM generator | 53 | Proof/DAL property mapping, Alire manifest + GPR dependency graph, CycloneDX/SPDX rendering |
 
 ---
 

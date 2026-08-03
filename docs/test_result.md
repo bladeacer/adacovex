@@ -7,6 +7,7 @@
   | Test-result parser                       |  27 | PASS     |
   | CLI config                               |  11 | PASS     |
   | SVG renderer                             |  30 | PASS     |
+  | SBOM generator                           |  53 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 169  Failed: 0
+  Passed: 222  Failed: 0

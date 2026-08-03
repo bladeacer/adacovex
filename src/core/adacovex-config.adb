@@ -4,6 +4,8 @@ with Ada.Text_IO;
 
 package body Adacovex.Config is
 
+   use type Types.SBOM_Format_Kind;
+
    function Has_Prefix (S : String; Prefix : String) return Boolean is
    begin
       if S'Length < Prefix'Length then
@@ -66,6 +68,7 @@ package body Adacovex.Config is
       Cfg.Skip_Dir_Ct := 0;
       Cfg.Compare_Base_Len := 0;
       Cfg.Coverage_Delta_Len := 0;
+      Cfg.SBOM_Out_Len := 0;
 
       while I <= Count loop
          declare
@@ -239,6 +242,58 @@ package body Adacovex.Config is
                  (Cfg.Coverage_Delta,
                   Cfg.Coverage_Delta_Len,
                   A (A'First + 17 .. A'Last));
+            elsif A = "sbom" then
+               Cfg.SBOM_Mode := True;
+            elsif A = "--format" then
+               I := I + 1;
+               if I <= Count then
+                  declare
+                     Val : constant String := Ada.Command_Line.Argument (I);
+                  begin
+                     if Val = "cyclonedx-json" then
+                        Cfg.SBOM_Format := Types.CycloneDX_JSON;
+                     elsif Val = "spdx-json" then
+                        Cfg.SBOM_Format := Types.SPDX_JSON;
+                     else
+                        Set_Error
+                          (Cfg,
+                           "--format must be cyclonedx-json or spdx-json (got: "
+                           & Val
+                           & ")");
+                     end if;
+                  end;
+               else
+                  Set_Error (Cfg, "--format requires a format argument");
+               end if;
+            elsif Has_Prefix (A, "--format=") then
+               declare
+                  Val : constant String := A (A'First + 9 .. A'Last);
+               begin
+                  if Val = "cyclonedx-json" then
+                     Cfg.SBOM_Format := Types.CycloneDX_JSON;
+                  elsif Val = "spdx-json" then
+                     Cfg.SBOM_Format := Types.SPDX_JSON;
+                  else
+                     Set_Error
+                       (Cfg,
+                        "--format must be cyclonedx-json or spdx-json (got: "
+                        & Val
+                        & ")");
+                  end if;
+               end;
+            elsif A = "--out" then
+               I := I + 1;
+               if I <= Count then
+                  Set_String
+                    (Cfg.SBOM_Out,
+                     Cfg.SBOM_Out_Len,
+                     Ada.Command_Line.Argument (I));
+               else
+                  Set_Error (Cfg, "--out requires a path argument");
+               end if;
+            elsif Has_Prefix (A, "--out=") then
+               Set_String
+                 (Cfg.SBOM_Out, Cfg.SBOM_Out_Len, A (A'First + 6 .. A'Last));
             elsif A = "--help" then
                Cfg.Help_Requested := True;
                Print_Usage;
@@ -262,6 +317,15 @@ package body Adacovex.Config is
       if Cfg.Compare_Base_Len > 0 and then Cfg.Coverage_Delta_Len > 0 then
          Set_Error
            (Cfg, "--compare-base and --coverage-delta are mutually exclusive");
+      end if;
+
+      -- SBOM mode is exclusive with the differential modes
+      if Cfg.SBOM_Mode
+        and then (Cfg.Compare_Base_Len > 0 or Cfg.Coverage_Delta_Len > 0)
+      then
+         Set_Error
+           (Cfg,
+            "sbom cannot be combined with --compare-base/--coverage-delta");
       end if;
 
       -- Default target if not provided: current working directory
@@ -318,6 +382,21 @@ package body Adacovex.Config is
          end;
       end if;
 
+      -- Default SBOM output path: project-scoped, format-aware
+      if Cfg.SBOM_Mode and then Cfg.SBOM_Out_Len = 0 then
+         declare
+            TDir : constant String := Cfg.Target_Path (1 .. Cfg.Target_Len);
+         begin
+            if Cfg.SBOM_Format = Types.SPDX_JSON then
+               Set_String
+                 (Cfg.SBOM_Out, Cfg.SBOM_Out_Len, TDir & "/sbom.spdx.json");
+            else
+               Set_String
+                 (Cfg.SBOM_Out, Cfg.SBOM_Out_Len, TDir & "/sbom.json");
+            end if;
+         end;
+      end if;
+
       return Cfg;
    end Parse_CLI;
 
@@ -329,6 +408,7 @@ package body Adacovex.Config is
          & " -- Ada/SPARK Coverage, Proof & DO-178C Compliance Tool");
       Ada.Text_IO.Put_Line ("");
       Ada.Text_IO.Put_Line ("Usage: adacovex [options]");
+      Ada.Text_IO.Put_Line ("       adacovex sbom --format=FMT --out=PATH");
       Ada.Text_IO.Put_Line ("");
       Ada.Text_IO.Put_Line ("Options:");
       Ada.Text_IO.Put_Line
@@ -359,6 +439,14 @@ package body Adacovex.Config is
         ("  --coverage-delta=REF  Docstring coverage gate: exit non-zero if");
       Ada.Text_IO.Put_Line
         ("                        current docstring coverage is below the base");
+      Ada.Text_IO.Put_Line
+        ("  sbom --format=FMT     Generate a proof-aware SBOM (FMT: cyclonedx-json");
+      Ada.Text_IO.Put_Line
+        ("                        | spdx-json; default: cyclonedx-json)");
+      Ada.Text_IO.Put_Line
+        ("  sbom --out=PATH       SBOM output path (default: <target>/sbom.json");
+      Ada.Text_IO.Put_Line
+        ("                        or <target>/sbom.spdx.json)");
       Ada.Text_IO.Put_Line ("  --verbose             Verbose diagnostics");
       Ada.Text_IO.Put_Line
         ("  --help                Show this message and exit");

@@ -16,9 +16,3 @@ HLR-TEST: Test result parsing
 | `File_Path` | Path to test result Markdown file. |
 | `Success` | True if file was parsed successfully. |
 | `Summary` | Output test summary record. |
-
-### procedure Parse_Test_Stdout (Summary : Adacovex.Types.Implementation.Test_Summary)
-
-| Parameter | Description |
-|-----------|-------------|
-| `Summary` | Output test summary from piped stdout. |

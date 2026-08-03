@@ -1,6 +1,6 @@
 # Adacovex.Types.Implementation
 
-All domain types used across the adacovex tool chain. Package and subprogram collections use Ada.Containers.Vectors (unbounded, up to Natural'Last ~ 2.1B). Fixed-size buffers (Max_Path, Max_Line, Max_Desc_Str, etc.) are bounded at compile time with generous production-suitable limits (Max_Path=4096, Max_Line=8192). HLR-METRICS: Docstring_Metrics type HLR-PROOF: Proof_Summary type HLR-TEST: Test_Summary type HLR-COMPLIANCE: DAL_Assessment type HLR-DAL-A: DAL_Level (DAL_A) HLR-DAL-B: DAL_Level (DAL_B) HLR-DAL-C: DAL_Level (DAL_C) HLR-DAL-D: DAL_Level (DAL_D) HLR-DAL-E: DAL_Level (DAL_E)
+All domain types used across the adacovex tool chain. Package and subprogram collections use Ada.Containers.Vectors (unbounded, up to Natural'Last ~ 2.1B). Fixed-size buffers (Max_Path, Max_Line, Max_Desc_Str, etc.) are bounded at compile time with generous production-suitable limits (Max_Path=4096, Max_Line=8192). HLR-METRICS: Docstring_Metrics type HLR-PROOF: Proof_Summary type HLR-TEST: Test_Summary type HLR-COMPLIANCE: DAL_Assessment type HLR-DAL-A: DAL_Level (DAL_A) HLR-DAL-B: DAL_Level (DAL_B) HLR-DAL-C: DAL_Level (DAL_C) HLR-DAL-D: DAL_Level (DAL_D) HLR-DAL-E: DAL_Level (DAL_E) HLR-SBOM: SBOM component and format types
 
 > **Note:** All items in this package are public.
 
@@ -16,6 +16,28 @@ DAL_Assess  : DAL_Assessment;
 Show_Spark  : Boolean := True;
 Show_Tests  : Boolean := True;
 Show_DO178C : Boolean := True;
+end record;
+```
+
+### type Component_Info
+
+```ada
+type Component_Info is record
+Ref             : Path_Field;
+Ref_Len         : Natural := 0;
+Name            : Desc_Field;
+Name_Len        : Natural := 0;
+Version         : Desc_Field;
+Version_Len     : Natural := 0;
+License         : Desc_Field;
+License_Len     : Natural := 0;
+PURL            : Path_Field;
+PURL_Len        : Natural := 0;
+Description     : Path_Field;
+Description_Len : Natural := 0;
+Kind            : Component_Kind := Dependency_Component;
+Parent          : Natural := 0;
+From_GPR        : Boolean := False;
 end record;
 ```
 
