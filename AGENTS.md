@@ -497,6 +497,7 @@ specific failure reasons when the assessment is `Unmet`.
 | `fmt`              | Format Ada sources with gnatformat (auto-swaps alire-dev.toml) |
 | `run-self`         | Run against adacovex itself (default target: cwd) |
 | `run-ada-crdt`     | Run against `../Ada_CRDT`, DAL-C (strict mode) |
+| `coverage-gate`    | Run the docstring-coverage gate between the latest two release tags (`--coverage-delta` in a worktree at the latest tag) |
 | `bump-version`     | Bump version across alire.toml, alire-dev.toml, adacovex.ads, changelog (`VERSION=x.y.z`) |
 | `release`          | Build `--release`, prove, validate self-assessment, run docstring-coverage gate vs last release tag, bundle `dist/` + tarballs, then tag & push (`VERSION=x.y.z`) |
 | `ascii-check`      | Verify all source files are pure ASCII |
