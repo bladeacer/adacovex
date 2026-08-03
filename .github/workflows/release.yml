@@ -59,5 +59,7 @@ jobs:
           git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
           git tag -fa "$MAJOR" -m "Release $VERSION"
           git tag -fa "$MINOR" -m "Release $VERSION"
+          git tag -fa latest -m "Release $VERSION"
           git push origin "refs/tags/$MAJOR" --force
           git push origin "refs/tags/$MINOR" --force
+          git push origin "refs/tags/latest" --force

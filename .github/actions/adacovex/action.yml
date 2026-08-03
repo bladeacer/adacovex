@@ -235,7 +235,7 @@ runs:
         # otherwise fall back to the "docstrings:  N/ M ( P%)" line in normal mode.
         COVERAGE_PCT=$(grep -oE 'coverage_delta:.*current= *[0-9]+' "$RUNNER_TEMP/adacovex.out" | grep -oE '[0-9]+$' | head -1 || true)
         if [ -z "$COVERAGE_PCT" ]; then
-          COVERAGE_PCT=$(grep -oE 'docstrings:.*\( *[0-9]+%\)' "$RUNNER_TEMP/adacovex.out" | grep -oE '[0-9]+' | head -1 || true)
+          COVERAGE_PCT=$(grep -oE '\( *[0-9]+%\)' "$RUNNER_TEMP/adacovex.out" | grep -oE '[0-9]+' | head -1 || true)
         fi
 
         echo "dal_status=${DAL_STATUS:-unknown}" >> "$GITHUB_OUTPUT"

@@ -315,10 +315,11 @@ action ships with `branding` and an `author`, so once it is listed on the
 GitHub Actions marketplace, every `vX.Y.Z` tag auto-publishes that version of
 the action.
 
-The release workflow also force-pushes the floating tags `vMAJOR` and
-`vMAJOR.MINOR` (e.g. `v1` and `v1.3` from `v1.3.0`). Reference `@v1` /
-`@v1.3` to always get the latest release within a major or minor version, or
-pin an exact `@vX.Y.Z` when you need a fixed version.
+The release workflow also force-pushes the floating tags `vMAJOR`,
+`vMAJOR.MINOR`, and `latest` (e.g. `v1`, `v1.3`, and `latest` from `v1.3.0`).
+Reference `@latest` to always get the newest published release, `@v1` /
+`@v1.3` for the latest release within a major or minor version, or pin an exact
+`@vX.Y.Z` when you need a fixed version.
 
 ## Requirements for target projects
 
