@@ -26,6 +26,7 @@ source -- all 22 packages, 46 subprograms -- and must always show:
 
 ## Architecture
 
+<!-- agents-tree:begin -->
 ```
 src/
 |-- adacovex.ads                    -- Version constant
@@ -62,6 +63,7 @@ src/
 `-- server/
     |-- adacovex-server-http.ads/.adb          -- HTTP/1.1 server (4-worker task pool)
 ```
+<!-- agents-tree:end -->
 
 ---
 

@@ -1,0 +1,34 @@
+src/adacovex	Version constant
+src/adacovex_main	CLI entry point (builds as bin/adacovex; covex alias)
+src/compliance/adacovex-compliance	Parent package for DO-178C compliance assessment
+src/compliance/adacovex-compliance-dal	DAL level assessment logic (DAL-A..E criteria)
+src/core/adacovex-core	Parent package for core data types and configuration
+src/core/adacovex-types	All domain types + conversion functions
+src/core/adacovex-config	CLI argument parser (prove mode, --no-sbom, --sbom-format)
+src/core/adacovex-diff	Differential assessment (--compare-base / --coverage-delta)
+src/core/adacovex-prove	GNATprove runner for the `prove` subcommand (toolchain resolution)
+src/parsers/adacovex-parsers	Parent package for all input-file parsers
+src/parsers/adacovex-parsers-source	Ada source scanner (procs/funcs/docstrings/HLR)
+src/parsers/adacovex-parsers-gnatprove	GNATprove .out parser
+src/parsers/adacovex-parsers-tests	AUnit test-result parser
+src/parsers/adacovex-parsers-do178c	HLR/LLR markdown parser + source tag matcher
+src/parsers/adacovex-parsers-manifest	Alire manifest / alire.lock / .gpr dep graph
+src/renderers/adacovex-renderers	Parent package for all output renderers
+src/renderers/adacovex-renderers-ansi	Terminal ANSI report (NO_COLOR aware)
+src/renderers/adacovex-renderers-markdown	VERIFICATION.md + TRACE.md
+src/renderers/adacovex-renderers-svg	SVG badges (spark/tests/do178c/docs)
+src/renderers/adacovex-renderers-html	Web dashboard + JSON API
+src/renderers/adacovex-renderers-sbom	CycloneDX 1.5 / SPDX 2.3 / Markdown SBOM generator
+src/server/adacovex-server	Parent package for the HTTP server subsystem
+src/server/adacovex-server-http	HTTP/1.1 server (4-worker task pool)
+src/server/adacovex-server-router	Parent package for HTTP request routing (future expansion)
+src/tests/adacovex-test_support	Native test Runner type
+src/tests/adacovex_dal_tests	DAL compliance tests (2)
+src/tests/adacovex_types_tests	Type conversion tests (21)
+src/tests/adacovex_scanner_tests	Source scanner tests (40)
+src/tests/adacovex_prove_tests	GNATprove parser tests (38)
+src/tests/adacovex_testparser_tests	Test-result parser tests (27)
+src/tests/adacovex_config_tests	CLI config tests (11)
+src/tests/adacovex_renderer_svg_tests	SVG renderer tests (30)
+src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (53)
+src/tests/test_runner	Test suite entry point (222 tests)

@@ -40,10 +40,25 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${{ github.ref_name }}" \
-            "adacovex-${{ github.ref_name }}.tar.gz" \
-            "adacovex-action-${{ github.ref_name }}.tar.gz" \
-            --generate-notes
+          VERSION="${{ github.ref_name }}"
+          PREV=$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | grep -v "^$VERSION$" | head -1 || true)
+          BODY="**Human Readable Changelogs**
+          https://github.com/${{ github.repository }}/blob/main/docs/changelogs/adacovex-$VERSION.md"
+          ASSETS=("adacovex-$VERSION.tar.gz" "adacovex-action-$VERSION.tar.gz")
+          if [ -n "$PREV" ]; then
+            BODY="$BODY
+
+          *Git Changelog*:
+          https://github.com/${{ github.repository }}/compare/${PREV#v}...$VERSION"
+          fi
+          # Attach a platform toolchain asset if one was built for this tag
+          # (e.g. adacovex-toolchain-linux-x86_64-$VERSION.tar.gz). The
+          # gnatprove toolchain is large and optional: `covex prove` falls
+          # back to a PATH or ~/.adacovex/toolchain gnatprove otherwise.
+          for f in adacovex-toolchain-*-$VERSION.tar.gz; do
+            [ -f "$f" ] && ASSETS+=("$f")
+          done
+          gh release create "$VERSION" "${ASSETS[@]}" --notes "$BODY"
 
       - name: Update floating version tags
         shell: bash

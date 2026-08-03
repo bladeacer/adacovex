@@ -1,6 +1,6 @@
 .PHONY: help build test prove doc clean run-self run-ada-crdt \
         dev-setup prod-setup ascii-check fmt bump-version coverage-gate \
-        release publish test-publish _dev_cmd
+        release publish test-publish _dev_cmd agents-tree
 
 .DEFAULT_GOAL := help
 
@@ -20,6 +20,8 @@ help:
 	@echo '  coverage-gate Compare docstring coverage between the latest two'
 	@echo '                release tags (--coverage-delta in a worktree at'
 	@echo '                the latest tag; verifies the release gate logic)'
+	@echo '  agents-tree   Regenerate the AGENTS.md src/ architecture tree'
+	@echo '                (tools/gen-agents-tree.py + tools/agents-tree.map)'
 	@echo '  bump-version  Bump version across alire.toml, alire-dev.toml,'
 	@echo '                adacovex.ads, releases, index (VERSION=x.y.z)'
 	@echo '  release       Tag, update releases+index, push. Use VERSION=x.y.z'
@@ -84,6 +86,23 @@ coverage-gate: build
 	git worktree remove --force "$$tmp" >/dev/null 2>&1; \
 	rmdir "$$tmp" 2>/dev/null || true; \
 	exit $$rc
+
+agents-tree:
+	@python3 tools/gen-agents-tree.py > /tmp/agents-tree.out && \
+	  python3 -c "
+import sys
+markers = ('<!-- agents-tree:begin -->', '<!-- agents-tree:end -->')
+with open('AGENTS.md') as f:
+    text = f.read()
+with open('/tmp/agents-tree.out') as f:
+    tree = f.read().rstrip()
+start = text.index(markers[0])
+end = text.index(markers[1]) + len(markers[1])
+block = markers[0] + '\n```\n' + tree + '\n```\n' + markers[1]
+with open('AGENTS.md', 'w') as f:
+    f.write(text[:start] + block + text[end:])
+print('AGENTS.md architecture tree regenerated.')
+"; rm -f /tmp/agents-tree.out
 
 ascii-check:
 	@echo "=== ASCII Charset Verification ==="; \
