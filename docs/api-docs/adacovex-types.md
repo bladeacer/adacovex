@@ -108,7 +108,7 @@ end record;
 ### type SBOM_Format_Kind
 
 ```ada
-type SBOM_Format_Kind is (CycloneDX_JSON, SPDX_JSON);
+type SBOM_Format_Kind is (CycloneDX_JSON, SPDX_JSON, Markdown);
 ```
 
 ### type SPARK_Level

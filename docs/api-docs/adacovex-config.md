@@ -37,10 +37,12 @@ Compare_Base       : String (1 .. Types.Max_Path);
 Compare_Base_Len   : Natural := 0;
 Coverage_Delta     : String (1 .. Types.Max_Path);
 Coverage_Delta_Len : Natural := 0;
+Prove_Mode         : Boolean := False;
 SBOM_Mode          : Boolean := False;
 SBOM_Format        : Types.SBOM_Format_Kind := Types.CycloneDX_JSON;
 SBOM_Out           : String (1 .. Types.Max_Path);
 SBOM_Out_Len       : Natural := 0;
+No_SBOM            : Boolean := False;
 end record;
 ```
 

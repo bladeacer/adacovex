@@ -242,99 +242,99 @@ package body Adacovex.Config is
                  (Cfg.Coverage_Delta,
                   Cfg.Coverage_Delta_Len,
                   A (A'First + 17 .. A'Last));
-             elsif A = "sbom" then
-                Cfg.SBOM_Mode := True;
-             elsif A = "prove" then
-                Cfg.Prove_Mode := True;
-             elsif A = "--no-sbom" then
-                Cfg.No_SBOM := True;
-             elsif A = "--sbom-format" then
-                I := I + 1;
-                if I <= Count then
-                   declare
-                      Val : constant String := Ada.Command_Line.Argument (I);
-                   begin
-                      if Val = "cyclonedx-json" then
-                         Cfg.SBOM_Format := Types.CycloneDX_JSON;
-                      elsif Val = "spdx-json" then
-                         Cfg.SBOM_Format := Types.SPDX_JSON;
-                      elsif Val = "md" then
-                         Cfg.SBOM_Format := Types.Markdown;
-                      else
-                         Set_Error
-                           (Cfg,
-                            "--sbom-format must be cyclonedx-json, spdx-json, "
-                            & "or md (got: "
-                            & Val
-                            & ")");
-                      end if;
-                   end;
-                else
-                   Set_Error (Cfg, "--sbom-format requires a format argument");
-                end if;
-             elsif Has_Prefix (A, "--sbom-format=") then
-                declare
-                   Val : constant String := A (A'First + 14 .. A'Last);
-                begin
-                   if Val = "cyclonedx-json" then
-                      Cfg.SBOM_Format := Types.CycloneDX_JSON;
-                   elsif Val = "spdx-json" then
-                      Cfg.SBOM_Format := Types.SPDX_JSON;
-                   elsif Val = "md" then
-                      Cfg.SBOM_Format := Types.Markdown;
-                   else
-                      Set_Error
-                        (Cfg,
-                         "--sbom-format must be cyclonedx-json, spdx-json, "
-                         & "or md (got: "
-                         & Val
-                         & ")");
-                   end if;
-                end;
-             elsif A = "--format" then
+            elsif A = "sbom" then
+               Cfg.SBOM_Mode := True;
+            elsif A = "prove" then
+               Cfg.Prove_Mode := True;
+            elsif A = "--no-sbom" then
+               Cfg.No_SBOM := True;
+            elsif A = "--sbom-format" then
                I := I + 1;
                if I <= Count then
                   declare
                      Val : constant String := Ada.Command_Line.Argument (I);
                   begin
-                      if Val = "cyclonedx-json" then
-                         Cfg.SBOM_Format := Types.CycloneDX_JSON;
-                      elsif Val = "spdx-json" then
-                         Cfg.SBOM_Format := Types.SPDX_JSON;
-                      elsif Val = "md" then
-                         Cfg.SBOM_Format := Types.Markdown;
-                      else
-                         Set_Error
-                           (Cfg,
-                            "--format must be cyclonedx-json, spdx-json, or "
-                            & "md (got: "
-                            & Val
-                            & ")");
-                      end if;
-                   end;
-                else
-                   Set_Error (Cfg, "--format requires a format argument");
-                end if;
-             elsif Has_Prefix (A, "--format=") then
-                declare
-                   Val : constant String := A (A'First + 9 .. A'Last);
-                begin
-                   if Val = "cyclonedx-json" then
-                      Cfg.SBOM_Format := Types.CycloneDX_JSON;
-                   elsif Val = "spdx-json" then
-                      Cfg.SBOM_Format := Types.SPDX_JSON;
-                   elsif Val = "md" then
-                      Cfg.SBOM_Format := Types.Markdown;
-                   else
-                      Set_Error
-                        (Cfg,
-                         "--format must be cyclonedx-json, spdx-json, or "
-                         & "md (got: "
-                         & Val
-                         & ")");
-                   end if;
-                end;
-             elsif A = "--out" then
+                     if Val = "cyclonedx-json" then
+                        Cfg.SBOM_Format := Types.CycloneDX_JSON;
+                     elsif Val = "spdx-json" then
+                        Cfg.SBOM_Format := Types.SPDX_JSON;
+                     elsif Val = "md" then
+                        Cfg.SBOM_Format := Types.Markdown;
+                     else
+                        Set_Error
+                          (Cfg,
+                           "--sbom-format must be cyclonedx-json, spdx-json, "
+                           & "or md (got: "
+                           & Val
+                           & ")");
+                     end if;
+                  end;
+               else
+                  Set_Error (Cfg, "--sbom-format requires a format argument");
+               end if;
+            elsif Has_Prefix (A, "--sbom-format=") then
+               declare
+                  Val : constant String := A (A'First + 14 .. A'Last);
+               begin
+                  if Val = "cyclonedx-json" then
+                     Cfg.SBOM_Format := Types.CycloneDX_JSON;
+                  elsif Val = "spdx-json" then
+                     Cfg.SBOM_Format := Types.SPDX_JSON;
+                  elsif Val = "md" then
+                     Cfg.SBOM_Format := Types.Markdown;
+                  else
+                     Set_Error
+                       (Cfg,
+                        "--sbom-format must be cyclonedx-json, spdx-json, "
+                        & "or md (got: "
+                        & Val
+                        & ")");
+                  end if;
+               end;
+            elsif A = "--format" then
+               I := I + 1;
+               if I <= Count then
+                  declare
+                     Val : constant String := Ada.Command_Line.Argument (I);
+                  begin
+                     if Val = "cyclonedx-json" then
+                        Cfg.SBOM_Format := Types.CycloneDX_JSON;
+                     elsif Val = "spdx-json" then
+                        Cfg.SBOM_Format := Types.SPDX_JSON;
+                     elsif Val = "md" then
+                        Cfg.SBOM_Format := Types.Markdown;
+                     else
+                        Set_Error
+                          (Cfg,
+                           "--format must be cyclonedx-json, spdx-json, or "
+                           & "md (got: "
+                           & Val
+                           & ")");
+                     end if;
+                  end;
+               else
+                  Set_Error (Cfg, "--format requires a format argument");
+               end if;
+            elsif Has_Prefix (A, "--format=") then
+               declare
+                  Val : constant String := A (A'First + 9 .. A'Last);
+               begin
+                  if Val = "cyclonedx-json" then
+                     Cfg.SBOM_Format := Types.CycloneDX_JSON;
+                  elsif Val = "spdx-json" then
+                     Cfg.SBOM_Format := Types.SPDX_JSON;
+                  elsif Val = "md" then
+                     Cfg.SBOM_Format := Types.Markdown;
+                  else
+                     Set_Error
+                       (Cfg,
+                        "--format must be cyclonedx-json, spdx-json, or "
+                        & "md (got: "
+                        & Val
+                        & ")");
+                  end if;
+               end;
+            elsif A = "--out" then
                I := I + 1;
                if I <= Count then
                   Set_String
@@ -383,10 +383,9 @@ package body Adacovex.Config is
 
       -- Prove mode is exclusive with the differential modes and sbom mode
       if Cfg.Prove_Mode
-        and then
-          (Cfg.Compare_Base_Len > 0
-           or Cfg.Coverage_Delta_Len > 0
-           or Cfg.SBOM_Mode)
+        and then (Cfg.Compare_Base_Len > 0
+                  or Cfg.Coverage_Delta_Len > 0
+                  or Cfg.SBOM_Mode)
       then
          Set_Error
            (Cfg,
@@ -471,12 +470,14 @@ package body Adacovex.Config is
                when Types.SPDX_JSON =>
                   Set_String
                     (Cfg.SBOM_Out, Cfg.SBOM_Out_Len, TDir & "/sbom.spdx.json");
-               when Types.Markdown =>
+
+               when Types.Markdown  =>
                   Set_String
                     (Cfg.SBOM_Out,
                      Cfg.SBOM_Out_Len,
                      TDir & "/docs/compliance/SBOM.md");
-               when others =>
+
+               when others          =>
                   Set_String
                     (Cfg.SBOM_Out, Cfg.SBOM_Out_Len, TDir & "/sbom.json");
             end case;
