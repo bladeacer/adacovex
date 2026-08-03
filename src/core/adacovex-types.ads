@@ -42,7 +42,10 @@ package Adacovex.Types is
 
    type Test_Status is (Pass, Fail);
 
-   type SBOM_Format_Kind is (CycloneDX_JSON, SPDX_JSON);
+   --  SBOM output format. CycloneDX_JSON and SPDX_JSON emit machine-readable
+   --  JSON documents; Markdown emits a human-readable compliance table.
+   --  HLR-SBOM: SBOM format kind
+   type SBOM_Format_Kind is (CycloneDX_JSON, SPDX_JSON, Markdown);
 
    --  SBOM component kind: the root project being described, or a library
    --  dependency resolved from the dependency graph.

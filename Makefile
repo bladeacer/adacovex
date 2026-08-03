@@ -43,8 +43,8 @@ build:
 test: build
 	./bin/test_runner
 
-prove:
-	alr gnatprove
+prove: build
+	./bin/adacovex prove --target=. --no-svg
 
 fmt:
 	@$(MAKE) _dev_cmd CMD="alr exec -- gnatformat -P adacovex.gpr -U"
@@ -173,11 +173,11 @@ release:
 		version=$$(sed -n 's/^version = "\(.*\)"/\1/p' alire.toml); \
 	fi; \
 	echo "=== Generating proof artifacts ==="; \
-	alr gnatprove; \
+	./bin/adacovex prove --target=. --no-svg; \
 	echo "=== Building release binary (covex v$$version) ==="; \
 	alr build --release; \
 	echo "=== Validating self-assessment (DAL-C) ==="; \
-	./bin/adacovex --target=. --dal=C; \
+	./bin/adacovex --target=. --dal=C --no-svg; \
 	echo "=== Docstring coverage gate (last release vs current) ==="; \
 	prev_tag=$$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$$' | grep -v "^v$$version$$" | head -1); \
 	if [ -z "$$prev_tag" ]; then \
