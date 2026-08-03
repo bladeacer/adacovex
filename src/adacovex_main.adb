@@ -11,10 +11,12 @@ with Adacovex.Parsers.Source;
 with Adacovex.Parsers.GNATprove;
 with Adacovex.Parsers.Tests;
 with Adacovex.Parsers.DO178C;
+with Adacovex.Parsers.Manifest;
 with Adacovex.Compliance.DAL;
 with Adacovex.Renderers.ANSI;
 with Adacovex.Renderers.SVG;
 with Adacovex.Renderers.Markdown;
+with Adacovex.Renderers.SBOM;
 with Adacovex.Server.HTTP;
 
 procedure Adacovex_Main is
@@ -157,6 +159,110 @@ procedure Adacovex_Main is
       end if;
    end Run_Coverage;
 
+   --  SBOM mode (adacovex sbom): run the assessment pipeline to derive the
+   --  proof-aware properties, resolve the dependency graph from the Alire
+   --  manifest / alire.lock / .gpr files, and emit a CycloneDX 1.5 or SPDX
+   --  2.3 JSON document.  Exit code is 0 when the SBOM is written, 1 on
+   --  failure; the DAL status is informational only.
+   procedure Run_SBOM is
+      Skip_List  : String (1 .. Max_Path);
+      SLen       : Natural := 0;
+      Proof_Prop : String (1 .. 16);
+      PPLen      : Natural := 0;
+      DAL_Prop   : String (1 .. 8);
+      DPLen      : Natural := 0;
+      Graph      : Adacovex.Types.Implementation.Component_Vectors.Vector;
+      GOK, WOK   : Boolean;
+      Out_Path   : constant String := Cfg.SBOM_Out (1 .. Cfg.SBOM_Out_Len);
+   begin
+      Verbose ("sbom mode: resolving dependency graph and generating SBOM...");
+
+      if not Cfg.Strict_Mode then
+         SLen := Cfg.Skip_Dir_Ct;
+         for I in 1 .. SLen loop
+            Skip_List (I) := Cfg.Skip_Dirs (I);
+         end loop;
+      end if;
+      Adacovex.Parsers.Source.Scan_Project
+        (Target (1 .. TLen), Skip_List (1 .. SLen), Packages);
+      if Cfg.Strict_Mode then
+         Adacovex.Parsers.Source.Apply_Patches (Target (1 .. TLen), Packages);
+      end if;
+      Doc_Metrics :=
+        Adacovex.Parsers.Source.Compute_Docstring_Metrics (Packages);
+
+      Adacovex.Parsers.GNATprove.Parse_Prove_From_Project
+        (Target (1 .. TLen), Proof, Success);
+      declare
+         T_Path : constant String := Target (1 .. TLen) & "/test_result.md";
+      begin
+         Adacovex.Parsers.Tests.Parse_Test_Result (T_Path, Tests, Success);
+      end;
+      Adacovex.Compliance.DAL.Assess_DAL
+        (Cfg.DAL_Target,
+         Target (1 .. TLen),
+         Packages,
+         Proof,
+         Tests,
+         DAL_Assess);
+
+      declare
+         D : constant String :=
+           Adacovex.Renderers.SBOM.Proof_Level_Property (Proof.Level);
+      begin
+         PPLen := D'Length;
+         for I in 1 .. PPLen loop
+            Proof_Prop (I) := D (D'First + I - 1);
+         end loop;
+      end;
+      declare
+         D : constant String :=
+           Adacovex.Renderers.SBOM.DAL_Property_Value (Cfg.DAL_Target);
+      begin
+         DPLen := D'Length;
+         for I in 1 .. DPLen loop
+            DAL_Prop (I) := D (D'First + I - 1);
+         end loop;
+      end;
+
+      Adacovex.Parsers.Manifest.Build_Dependency_Graph
+        (Target (1 .. TLen),
+         Cfg.Manifest_Path (1 .. Cfg.Manifest_Len),
+         Graph,
+         GOK);
+      Verbose
+        ("  dependency graph: "
+         & Img (Natural (Graph.Length))
+         & " components");
+
+      Adacovex.Renderers.SBOM.Write_SBOM
+        (Cfg.SBOM_Format,
+         Out_Path,
+         Graph,
+         Proof_Prop (1 .. PPLen),
+         DAL_Prop (1 .. DPLen),
+         WOK);
+
+      if WOK then
+         Ada.Text_IO.Put_Line
+           ("SBOM written to "
+            & Out_Path
+            & " ("
+            & Img (Natural (Graph.Length))
+            & " components, proof level "
+            & Proof_Prop (1 .. PPLen)
+            & ", DAL target "
+            & (if DPLen > 0 then DAL_Prop (1 .. DPLen) else "none")
+            & ")");
+         Exit_St := 0;
+      else
+         Ada.Text_IO.Put_Line
+           (Ada.Text_IO.Standard_Error,
+            "Error: could not write SBOM to " & Out_Path);
+         Exit_St := 1;
+      end if;
+   end Run_SBOM;
+
 begin
    Cfg := Adacovex.Config.Parse_CLI;
 
@@ -204,6 +310,13 @@ begin
    -- Coverage-gate mode: check docstring coverage delta against a base ref.
    if Cfg.Coverage_Delta_Len > 0 then
       Run_Coverage;
+      Ada.Command_Line.Set_Exit_Status (Exit_St);
+      return;
+   end if;
+
+   -- SBOM mode: generate a proof-aware software bill of materials.
+   if Cfg.SBOM_Mode then
+      Run_SBOM;
       Ada.Command_Line.Set_Exit_Status (Exit_St);
       return;
    end if;

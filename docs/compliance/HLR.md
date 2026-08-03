@@ -21,6 +21,8 @@
 - HLR-CLI: CLI argument parsing
 - HLR-DIFF: Differential assessment (--compare-base)
 - HLR-METRICS: Docstring coverage metrics
+- HLR-MANIFEST: Alire manifest and dependency-graph parsing
+- HLR-SBOM: Proof-aware SBOM generation
 
 ## Requirements
 
@@ -83,3 +85,11 @@
 
 - HLR-METRICS: The tool shall compute docstring coverage as a percentage of
   documented subprograms over total subprograms.
+
+- HLR-MANIFEST: The tool shall resolve the project dependency graph from Alire
+  manifest files (alire.toml / alire-dev.toml), the alire.lock solved-crate
+  list, and GNAT project (.gpr) with clauses, deduplicating across sources.
+
+- HLR-SBOM: The tool shall generate proof-aware software bills of materials in
+  CycloneDX 1.5 and SPDX 2.3 JSON, extending every component with the
+  adacovex:proof_level and adacovex:dal_target properties.

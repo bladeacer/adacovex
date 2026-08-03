@@ -12,6 +12,7 @@
 --  HLR-DAL-C: DAL_Level (DAL_C)
 --  HLR-DAL-D: DAL_Level (DAL_D)
 --  HLR-DAL-E: DAL_Level (DAL_E)
+--  HLR-SBOM: SBOM component and format types
 
 with Ada.Containers.Vectors;
 
@@ -40,6 +41,12 @@ package Adacovex.Types is
    type DAL_Status is (Achieved, Unmet);
 
    type Test_Status is (Pass, Fail);
+
+   type SBOM_Format_Kind is (CycloneDX_JSON, SPDX_JSON);
+
+   --  SBOM component kind: the root project being described, or a library
+   --  dependency resolved from the dependency graph.
+   type Component_Kind is (Root_Component, Dependency_Component);
 
    type Subprogram_Info is record
       Name          : Desc_Field;
@@ -144,6 +151,31 @@ package Adacovex.Types is
          Show_Tests  : Boolean := True;
          Show_DO178C : Boolean := True;
       end record;
+
+      --  A single component of a software bill of materials (SBOM).
+      --  The root project occupies index 1; dependency components reference
+      --  their parent by vector index (0 = direct dependency of the root).
+      --  HLR-SBOM: SBOM component record
+      type Component_Info is record
+         Ref             : Path_Field;
+         Ref_Len         : Natural := 0;
+         Name            : Desc_Field;
+         Name_Len        : Natural := 0;
+         Version         : Desc_Field;
+         Version_Len     : Natural := 0;
+         License         : Desc_Field;
+         License_Len     : Natural := 0;
+         PURL            : Path_Field;
+         PURL_Len        : Natural := 0;
+         Description     : Path_Field;
+         Description_Len : Natural := 0;
+         Kind            : Component_Kind := Dependency_Component;
+         Parent          : Natural := 0;
+         From_GPR        : Boolean := False;
+      end record;
+
+      package Component_Vectors is new
+        Ada.Containers.Vectors (Positive, Component_Info);
    end Implementation;
 
    --  Convert a SPARK_Level to its human-readable name.

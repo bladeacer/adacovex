@@ -51,6 +51,7 @@ make run-ada-crdt
 
 ```
 adacovex [options]
+adacovex sbom [--format=cyclonedx-json|spdx-json] [--out=PATH]
 ```
 
 | Flag | Default | Mode | Description |
@@ -159,7 +160,36 @@ adacovex --target=. --serve --port=9090
 
 # Differential assessment vs a git base revision
 adacovex --target=. --compare-base=HEAD
+
+# Proof-aware SBOM (CycloneDX 1.5 JSON)
+adacovex sbom --format=cyclonedx-json --target=. --dal=C
+
+# Proof-aware SBOM (SPDX 2.3 JSON) at a custom path
+adacovex sbom --format=spdx-json --out=docs/compliance/sbom.spdx.json
 ```
+
+### Proof-aware SBOM (`adacovex sbom`)
+
+`adacovex sbom` resolves the target project's dependency graph from its Alire
+manifest (`alire.toml` / `alire-dev.toml`), the solved-crate list in
+`alire/alire.lock`, and the GNAT project file's `with` clauses, then writes a
+software bill of materials in either CycloneDX 1.5 JSON (`--format=
+cyclonedx-json`, default, writes `<target>/sbom.json`) or SPDX 2.3 JSON
+(`--format=spdx-json`, writes `<target>/sbom.spdx.json`). `--out=PATH`
+overrides the output path; the containing directory is created automatically.
+
+Every component in the SBOM carries the proof-aware properties
+`adacovex:proof_level` (`Gold` for the verified build tier, `Platinum` when the
+assessment proved every verification condition) and `adacovex:dal_target`
+(`DAL-A` through `DAL-D`; omitted for `DAL-E`). In SPDX these are encoded as
+`attributionTexts` entries. Both formats validate against the official
+CycloneDX 1.5 / SPDX 2.3 JSON schemas.
+
+`sbom` mode is mutually exclusive with `--compare-base` and
+`--coverage-delta`, and it scans sources, parses proof/test results, and
+assesses DAL first so the emitted properties reflect the real assessment
+state. If the target has no Alire manifest the SBOM cannot be generated (the
+GitHub Action reports this as a warning without failing the job).
 
 ### Using adacovex from another project
 
@@ -193,11 +223,12 @@ omitted); the two approaches differ only in how the binary is obtained.
 
 ### GitHub Actions
 
-A composite action at `.github/actions/adacovex` runs the full adacovex
-pipeline in CI. It installs the Alire toolchain via
+A composite action at the repository root (`./action.yml`) runs the full
+adacovex pipeline in CI. It installs the Alire toolchain via
 [`alire-project/setup-alire`](https://github.com/alire-project/setup-alire),
-obtains the adacovex binary, runs the assessment, and publishes a Markdown
-step summary, machine-readable outputs, and SVG badge artifacts.
+obtains the adacovex binary, runs the assessment, generates a proof-aware
+SBOM, and publishes a Markdown step summary, machine-readable outputs, and SVG
+badge artifacts.
 
 The action is version-matched to the adacovex binary: the release workflow
 bundles `adacovex-vX.Y.Z.tar.gz` for every `vX.Y.Z` tag, and the action
@@ -212,7 +243,7 @@ tag; you can pin to a specific release if needed):
 ```yaml
 steps:
   - uses: actions/checkout@v4
-  - uses: bladeacer/adacovex/.github/actions/adacovex@v1
+  - uses: bladeacer/adacovex@v1
     with:
       target: .
       dal: C
@@ -221,7 +252,7 @@ steps:
 To target a specific release instead, pin the ref:
 
 ```yaml
-  - uses: bladeacer/adacovex/.github/actions/adacovex@v1.3.0
+  - uses: bladeacer/adacovex@v1.4.0
 ```
 
 #### Inputs
@@ -240,6 +271,8 @@ To target a specific release instead, pin the ref:
 | `compare-base` | `''` | Git ref to run `--compare-base` against (fails on regression) |
 | `coverage-delta` | `''` | Git ref to run `--coverage-delta` against (fails if coverage dropped) |
 | `emit-markdown` | `''` | Write `VERIFICATION.md` + `TRACE.md` into this directory |
+| `generate-sbom` | `true` | Generate a proof-aware SBOM after the assessment and upload it as an artifact |
+| `sbom-format` | `cyclonedx-json` | SBOM format: `cyclonedx-json` (writes `<target>/sbom.json`) or `spdx-json` (writes `<target>/sbom.spdx.json`) |
 | `cache` | `true` | Cache Alire toolchain/deps with `actions/cache` |
 
 #### Outputs
@@ -269,7 +302,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: bladeacer/adacovex/.github/actions/adacovex@v1
+      - uses: bladeacer/adacovex@v1
         with:
           target: .
           dal: C
@@ -309,7 +342,7 @@ GitHub Release with two artifacts:
   vendoring/consuming the action outside the repo.
 
 The tag itself is what "publishes" the action: once pushed,
-`uses: bladeacer/adacovex/.github/actions/adacovex@v<version>` resolves for any
+`uses: bladeacer/adacovex@v<version>` resolves for any
 workflow. Each release therefore corresponds to one adacovex version. The
 action ships with `branding` and an `author`, so once it is listed on the
 GitHub Actions marketplace, every `vX.Y.Z` tag auto-publishes that version of
@@ -387,7 +420,7 @@ to document. Overloaded subprograms require one patch entry per overload.
 | Target | Description |
 |--------|-------------|
 | `build` | `alr build` (adacovex + test_runner, covex alias) |
-| `test` | Build and run native test suite (169 tests) |
+| `test` | Build and run native test suite (222 tests) |
 | `prove` | `alr gnatprove` (gnatprove is a declared dependency) |
 | `fmt` | Format Ada sources with `gnatformat` |
 | `doc` | Generate API docs via gnatdoc + rst2md |
@@ -412,14 +445,14 @@ src/
 |-- compliance/                   -- DAL assessment logic
 |-- renderers/                    -- ANSI, SVG, Markdown, HTML output
 |-- server/                       -- HTTP/1.1 dashboard server
-|-- tests/                        -- Native test suite (169 tests)
+|-- tests/                        -- Native test suite (222 tests)
 ```
 
 ## Verification
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 169/169 passing |
+| Unit tests | `make test` | 222/222 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C |
 | SPARK proof | `make prove` | 28/28 VCs Platinum |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, Platinum, DAL-C (strict mode) |

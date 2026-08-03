@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: ./.github/actions/adacovex
+      - uses: ./
         with:
           target: .
           dal: C
@@ -33,7 +33,7 @@ jobs:
           cp bin/adacovex dist/adacovex
           ln -s adacovex dist/covex
           tar -czf "adacovex-$VERSION.tar.gz" -C dist .
-          tar -czf "adacovex-action-$VERSION.tar.gz" -C . .github/actions/adacovex
+          tar -czf "adacovex-action-$VERSION.tar.gz" -C . action.yml
 
       - name: Create GitHub Release
         shell: bash

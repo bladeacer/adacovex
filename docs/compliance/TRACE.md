@@ -2,16 +2,19 @@
 
 | Package | HLR Tags |
 |---------|-----------|
-| adacovex-server-http | SERVER |
-| adacovex-types | METRICS, PROOF, TEST, COMPLIANCE, DAL-A, DAL-B, DAL-C, DAL-D, DAL-E |
-| adacovex-config | CLI |
-| adacovex-compliance-dal | COMPLIANCE, DAL-A, DAL-B, DAL-C, DAL-D, DAL-E |
 | adacovex | ARCH, ARCH |
-| adacovex-parsers-do178c | COMPLIANCE |
-| adacovex-parsers-tests | TEST |
-| adacovex-parsers-source | SCAN |
-| adacovex-parsers-gnatprove | PROOF |
+| adacovex-renderers-sbom | SBOM |
 | adacovex-renderers-ansi | RENDER-ANSI |
 | adacovex-renderers-html | RENDER-HTML |
 | adacovex-renderers-markdown | RENDER-MD |
 | adacovex-renderers-svg | RENDER-SVG |
+| adacovex-parsers-do178c | COMPLIANCE |
+| adacovex-parsers-manifest | MANIFEST |
+| adacovex-parsers-tests | TEST |
+| adacovex-parsers-source | SCAN |
+| adacovex-parsers-gnatprove | PROOF |
+| adacovex-compliance-dal | COMPLIANCE, DAL-A, DAL-B, DAL-C, DAL-D, DAL-E |
+| adacovex-types | METRICS, PROOF, TEST, COMPLIANCE, DAL-A, DAL-B, DAL-C, DAL-D, DAL-E, SBOM, SBOM |
+| adacovex-config | CLI |
+| adacovex-diff | DIFF |
+| adacovex-server-http | SERVER |

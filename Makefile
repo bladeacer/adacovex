@@ -196,7 +196,7 @@ release:
 	cp bin/adacovex dist/adacovex; \
 	ln -s adacovex dist/covex; \
 	tar -czf "adacovex-v$$version.tar.gz" -C dist .; \
-	tar -czf "adacovex-action-v$$version.tar.gz" -C . .github/actions/adacovex; \
+	tar -czf "adacovex-action-v$$version.tar.gz" -C . action.yml; \
 	echo "  Bundled: adacovex-v$$version.tar.gz, adacovex-action-v$$version.tar.gz"; \
 	commit=$$(git rev-parse HEAD); \
 	index_file="index/ad/covex/covex-$$version.toml"; \

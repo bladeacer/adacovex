@@ -14,10 +14,17 @@ HLR-DAL-B: DAL_Level (DAL_B)
 HLR-DAL-C: DAL_Level (DAL_C)
 HLR-DAL-D: DAL_Level (DAL_D)
 HLR-DAL-E: DAL_Level (DAL_E)
+HLR-SBOM: SBOM component and format types
 
 > **Note:** All items in this package are public.
 
 ## Types
+
+### type Component_Kind
+
+```ada
+type Component_Kind is (Root_Component, Dependency_Component);
+```
 
 ### type DAL_Level
 
@@ -80,6 +87,8 @@ Total_VCs          : Natural := 0;
 Proved_VCs         : Natural := 0;
 Flow_Checks        : Natural := 0;
 Flow_Proved        : Natural := 0;
+Init_Checks        : Natural := 0;
+Init_Proved        : Natural := 0;
 Runtime_Checks     : Natural := 0;
 Runtime_Proved     : Natural := 0;
 Assertions         : Natural := 0;
@@ -94,6 +103,12 @@ Level              : SPARK_Level := Stone;
 Units_Analyzed     : Natural := 0;
 Units_Skipped      : Natural := 0;
 end record;
+```
+
+### type SBOM_Format_Kind
+
+```ada
+type SBOM_Format_Kind is (CycloneDX_JSON, SPDX_JSON);
 ```
 
 ### type SPARK_Level

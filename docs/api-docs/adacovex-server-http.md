@@ -20,7 +20,6 @@ Proof       : Types.Proof_Summary;
 Tests       : Types.Implementation.Test_Summary;
 DAL_Assess  : Types.Implementation.DAL_Assessment;
 Packages    : Types.Implementation.Package_Vectors.Vector;
-Running     : Boolean := False;
 end record;
 ```
 

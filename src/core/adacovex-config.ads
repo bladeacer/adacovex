@@ -33,6 +33,10 @@ package Adacovex.Config is
       Compare_Base_Len   : Natural := 0;
       Coverage_Delta     : String (1 .. Types.Max_Path);
       Coverage_Delta_Len : Natural := 0;
+      SBOM_Mode          : Boolean := False;
+      SBOM_Format        : Types.SBOM_Format_Kind := Types.CycloneDX_JSON;
+      SBOM_Out           : String (1 .. Types.Max_Path);
+      SBOM_Out_Len       : Natural := 0;
    end record;
 
    --  Parse Ada.Command_Line arguments and return a fully populated config.
@@ -48,7 +52,8 @@ package Adacovex.Config is
        and then Parse_CLI'Result.SVG_Path_Len <= Types.Max_Path
        and then Parse_CLI'Result.MD_Path_Len <= Types.Max_Path
        and then Parse_CLI'Result.Compare_Base_Len <= Types.Max_Path
-       and then Parse_CLI'Result.Coverage_Delta_Len <= Types.Max_Path;
+       and then Parse_CLI'Result.Coverage_Delta_Len <= Types.Max_Path
+       and then Parse_CLI'Result.SBOM_Out_Len <= Types.Max_Path;
 
    --  Add a directory name to the comma-separated skip list.
    --  Appends Name to the Skip_Dirs field, inserting ',' separator if
