@@ -1,4 +1,5 @@
 with Ada.Directories;
+with Ada.Strings.Fixed;
 with Ada.Text_IO;
 with Ada.Environment_Variables;
 with GNAT.OS_Lib;
@@ -7,6 +8,7 @@ with Adacovex;
 package body Adacovex.Prove is
 
    use GNAT.OS_Lib;
+   use Ada.Strings.Fixed;
 
    Toolchain_Subdir : constant String := "/.adacovex/toolchain";
    Bin_Subdir       : constant String := "/bin/gnatprove";
@@ -55,8 +57,84 @@ package body Adacovex.Prove is
       Free (Prog);
    end Run_Command;
 
+   --  True when <target>/alire-dev.toml or <target>/alire.toml declares a
+   --  gnatprove dependency in its `[[depends-on]]` section.  A simple TOML
+   --  scan: section headers are `[name]` lines and dependency entries are
+   --  `name = "version"` lines inside `[[depends-on]]`.
+   function Manifest_Declares_GNATprove (Target_Dir : String) return Boolean is
+      use Ada.Text_IO;
+
+      function File_Declares (Path : String) return Boolean is
+         F          : File_Type;
+         In_Depends : Boolean := False;
+         Declares   : Boolean := False;
+      begin
+         if not Ada.Directories.Exists (Path) then
+            return False;
+         end if;
+         Open (F, In_File, Path);
+         while not End_Of_File (F) loop
+            declare
+               Line : constant String := Trim (Get_Line (F), Ada.Strings.Both);
+            begin
+               if Line'Length > 2
+                 and then Line (Line'First) = '['
+                 and then Line (Line'Last) = ']'
+               then
+                  declare
+                     Sec_Name : constant String :=
+                       Line (Line'First + 1 .. Line'Last - 1);
+                  begin
+                     In_Depends :=
+                       Trim (Sec_Name, Ada.Strings.Both) = "depends-on";
+                     if not In_Depends
+                       and then Sec_Name'Length > 1
+                       and then Sec_Name (Sec_Name'First) = '['
+                       and then Sec_Name (Sec_Name'Last) = ']'
+                     then
+                        --  [[depends-on]] array-of-tables form.
+                        In_Depends :=
+                          Trim
+                            (Sec_Name
+                               (Sec_Name'First + 1 .. Sec_Name'Last - 1),
+                             Ada.Strings.Both) = "depends-on";
+                     end if;
+                  end;
+               elsif In_Depends then
+                  declare
+                     Eq   : constant Natural := Index (Line, "=");
+                  begin
+                     if Eq > Line'First then
+                        declare
+                           Name : constant String :=
+                             Trim (Line (Line'First .. Eq - 1),
+                                   Ada.Strings.Both);
+                        begin
+                           if Name = "gnatprove" then
+                              Declares := True;
+                              exit;
+                           end if;
+                        end;
+                     end if;
+                  end;
+               end if;
+            end;
+         end loop;
+         Close (F);
+         return Declares;
+      end File_Declares;
+
+   begin
+      return File_Declares (Strip_Trailing_Slash (Target_Dir)
+                            & "/alire-dev.toml")
+        or else File_Declares (Strip_Trailing_Slash (Target_Dir)
+                               & "/alire.toml");
+   end Manifest_Declares_GNATprove;
+
    --  Download and unpack the platform toolchain bundle into
-   --  ~/.adacovex/toolchain/.  Uses the ADACOVEX_TOOLCHAIN_URL environment
+   --  ~/.adacovex/toolchain/.  Last-resort fallback only: used when neither
+   --  an alire-managed gnatprove nor a gnatprove on $PATH nor a cached
+   --  toolchain is available.  Uses the ADACOVEX_TOOLCHAIN_URL environment
    --  variable if set, otherwise the default GitHub release asset
    --  adacovex-toolchain-<os>-<arch>.tar.gz from the project's releases.
    procedure Download_Toolchain (Success : out Boolean) is
@@ -137,10 +215,12 @@ package body Adacovex.Prove is
    end Download_Toolchain;
 
    procedure Resolve_GNATprove
-     (Exe_Path      : out String;
+     (Target_Dir    : String;
+      Exe_Path      : out String;
       Exe_Len       : out Natural;
       Toolchain_Dir : out String;
       Dir_Len       : out Natural;
+      Via_Alr       : out Boolean;
       Success       : out Boolean)
    is
       Home      : constant String := Home_Dir;
@@ -148,7 +228,23 @@ package body Adacovex.Prove is
       Bin_Dir   : constant String := Toolchain & "/bin";
       Exe       : String_Access;
    begin
-      --  Priority 1: a gnatprove already on $PATH.
+      Via_Alr := False;
+
+      --  Priority 1: the target declares gnatprove in alire.toml /
+      --  alire-dev.toml; let alire manage the toolchain via `alr exec`.
+      if Manifest_Declares_GNATprove (Target_Dir) then
+         Exe := Locate_Exec_On_Path ("alr");
+         if Exe /= null then
+            Copy_To (Exe_Path, Exe_Len, Exe.all);
+            Free (Exe);
+            Dir_Len := 0;
+            Via_Alr := True;
+            Success := True;
+            return;
+         end if;
+      end if;
+
+      --  Priority 2: a gnatprove already on $PATH.
       Exe := Locate_Exec_On_Path ("gnatprove");
       if Exe /= null then
          Copy_To (Exe_Path, Exe_Len, Exe.all);
@@ -158,7 +254,7 @@ package body Adacovex.Prove is
          return;
       end if;
 
-      --  Priority 2: the local toolchain directory.
+      --  Priority 3: the local toolchain directory.
       if Ada.Directories.Exists (Bin_Dir & Bin_Subdir) then
          Copy_To (Exe_Path, Exe_Len, Bin_Dir & Bin_Subdir);
          Copy_To (Toolchain_Dir, Dir_Len, Bin_Dir);
@@ -166,10 +262,12 @@ package body Adacovex.Prove is
          return;
       end if;
 
-      --  Priority 3: download the platform toolchain into ~/.adacovex/toolchain.
+      --  Priority 4: last resort, download the platform toolchain into
+      --  ~/.adacovex/toolchain/.
       Ada.Text_IO.Put_Line
-        ("  gnatprove not found on PATH or in " & Toolchain);
-      Ada.Text_IO.Put_Line ("  downloading platform toolchain...");
+        ("  gnatprove not found via alire, PATH, or " & Toolchain);
+      Ada.Text_IO.Put_Line
+        ("  last resort: downloading platform toolchain...");
       declare
          OK : Boolean;
       begin
@@ -180,7 +278,8 @@ package body Adacovex.Prove is
                "  ERROR: could not download the gnatprove toolchain.");
             Ada.Text_IO.Put_Line
               (Ada.Text_IO.Standard_Error,
-               "  Install gnatprove, or set ADACOVEX_TOOLCHAIN_URL.");
+               "  Declare gnatprove in your alire.toml, install gnatprove,"
+               & " or set ADACOVEX_TOOLCHAIN_URL.");
             Success := False;
             return;
          end if;
@@ -255,11 +354,14 @@ package body Adacovex.Prove is
       TLen    : Natural := 0;
       GPR     : String (1 .. Types.Max_Path);
       GLen    : Natural := 0;
+      Via_Alr : Boolean := False;
       OK      : Boolean;
       Code    : Integer;
-      Args    : GNAT.OS_Lib.Argument_List (1 .. 2);
+      Args    : GNAT.OS_Lib.Argument_List (1 .. 7);
+      N       : Natural := 0;
    begin
-      Resolve_GNATprove (Exe, Exe_Len, TDir, TLen, OK);
+      Resolve_GNATprove
+        (Target_Dir, Exe, Exe_Len, TDir, TLen, Via_Alr, OK);
       if not OK then
          Success := False;
          return;
@@ -274,30 +376,49 @@ package body Adacovex.Prove is
          return;
       end if;
 
-      Ada.Text_IO.Put_Line ("  gnatprove: " & Exe (1 .. Exe_Len));
+      Ada.Text_IO.Put_Line
+        ("  gnatprove: "
+         & (if Via_Alr then "alr exec -- gnatprove (alire-managed)"
+            else Exe (1 .. Exe_Len)));
       Ada.Text_IO.Put_Line ("  project:   " & GPR (1 .. GLen));
 
-      --  Prepend the toolchain bin dir to PATH so gnatprove finds its
-      --  solvers (Z3/CVC5/Alt-Ergo) when running from ~/.adacovex/toolchain.
-      if TLen > 0 then
-         declare
-            Old_Path : String_Access := GNAT.OS_Lib.Getenv ("PATH");
-            New_Path : constant String :=
-              TDir (1 .. TLen)
-              & GNAT.OS_Lib.Path_Separator
-              & (if Old_Path = null then "" else Old_Path.all);
-         begin
-            GNAT.OS_Lib.Setenv ("PATH", New_Path);
-            Free (Old_Path);
-         end;
+      --  When resolved via alire, spawn `alr -C <target> exec -- gnatprove
+      --  -P <gpr>`; alire sets up the toolchain environment itself.
+      if Via_Alr then
+         Args (1) := new String'("-C");
+         Args (2) := new String'(Strip_Trailing_Slash (Target_Dir));
+         Args (3) := new String'("exec");
+         Args (4) := new String'("--");
+         Args (5) := new String'("gnatprove");
+         Args (6) := new String'("-P");
+         Args (7) := new String'(GPR (1 .. GLen));
+         N := 7;
+      else
+         --  Prepend the toolchain bin dir to PATH so gnatprove finds its
+         --  solvers (Z3/CVC5/Alt-Ergo) when running from ~/.adacovex/toolchain.
+         if TLen > 0 then
+            declare
+               Old_Path : String_Access := GNAT.OS_Lib.Getenv ("PATH");
+               New_Path : constant String :=
+                 TDir (1 .. TLen)
+                 & GNAT.OS_Lib.Path_Separator
+                 & (if Old_Path = null then "" else Old_Path.all);
+            begin
+               GNAT.OS_Lib.Setenv ("PATH", New_Path);
+               Free (Old_Path);
+            end;
+         end if;
+
+         Args (1) := new String'("-P");
+         Args (2) := new String'(GPR (1 .. GLen));
+         N := 2;
       end if;
 
-      Args (1) := new String'("-P");
-      Args (2) := new String'(GPR (1 .. GLen));
-      Spawn (Exe (1 .. Exe_Len), Args, "/dev/stdout", OK, Code);
+      Spawn (Exe (1 .. Exe_Len), Args (1 .. N), "/dev/stdout", OK, Code);
 
-      GNAT.OS_Lib.Free (Args (1));
-      GNAT.OS_Lib.Free (Args (2));
+      for I in 1 .. N loop
+         GNAT.OS_Lib.Free (Args (I));
+      end loop;
 
       if OK and then Code = 0 then
          Success := True;
