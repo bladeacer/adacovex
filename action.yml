@@ -42,10 +42,12 @@ inputs:
     default: 'false'
   prove:
     description: >-
-      Run GNATprove before assessing. gnatprove is a declared dependency of
-      alire.toml, so no dev-manifest swap is needed. Use when the target repo
-      does not commit gnatprove.out but needs a proof level, e.g. adacovex's
-      own self-assessment.
+      Run GNATprove before assessing via the adacovex `prove` subcommand
+      (bundled gnatprove resolution -- PATH, ~/.adacovex/toolchain/bin, or a
+      platform toolchain download -- so the target needs no alire.toml
+      gnatprove dependency). Use when the target repo does not commit
+      gnatprove.out but needs a proof level, e.g. adacovex's own
+      self-assessment.
     required: false
     default: 'false'
   run-tests:
@@ -87,15 +89,18 @@ inputs:
   generate-sbom:
     description: >-
       Generate a proof-aware SBOM after the assessment and upload it as an
-      artifact. The SBOM carries the adacovex:proof_level and
-      adacovex:dal_target properties on every component. Set false to skip
-      SBOM generation entirely.
+      artifact. The SBOM is now emitted automatically at the end of every
+      adacovex assessment (unless --no-sbom); this input controls that
+      behavior and the artifact upload. The SBOM carries the
+      adacovex:proof_level and adacovex:dal_target properties on every
+      component. Set false to skip SBOM generation entirely.
     required: false
     default: 'true'
   sbom-format:
     description: >-
-      SBOM format to generate: cyclonedx-json (writes <target>/sbom.json) or
-      spdx-json (writes <target>/sbom.spdx.json).
+      SBOM format to generate: cyclonedx-json (writes <target>/sbom.json),
+      spdx-json (writes <target>/sbom.spdx.json), or md (writes
+      <target>/docs/compliance/SBOM.md).
     required: false
     default: 'cyclonedx-json'
   cache:
@@ -206,7 +211,16 @@ runs:
       run: |
         set -euxo pipefail
         cd "$GITHUB_WORKSPACE"
-        alr gnatprove
+        if [ -x bin/adacovex ]; then
+          ./bin/adacovex prove --target="${{ inputs.target }}"
+        elif command -v adacovex >/dev/null 2>&1; then
+          adacovex prove --target="${{ inputs.target }}"
+        elif command -v covex >/dev/null 2>&1; then
+          covex prove --target="${{ inputs.target }}"
+        else
+          echo "::error::adacovex binary not found. Set build: true or install adacovex on PATH."
+          exit 1
+        fi
 
     - name: Run adacovex assessment
       if: ${{ inputs.assess == 'true' }}
@@ -238,6 +252,11 @@ runs:
         fi
         if [ -n "${{ inputs.emit-markdown }}" ]; then
           ARGS+=(--emit-markdown="${{ inputs.emit-markdown }}")
+        fi
+        if [ "${{ inputs.generate-sbom }}" == 'false' ]; then
+          ARGS+=(--no-sbom)
+        elif [ -z "${{ inputs.compare-base }}" ] && [ -z "${{ inputs.coverage-delta }}" ]; then
+          ARGS+=(--sbom-format=${{ inputs.sbom-format }})
         fi
         set +e
         "$BIN" "${ARGS[@]}" > "$RUNNER_TEMP/adacovex.out" 2>&1
@@ -278,55 +297,6 @@ runs:
 
         exit $STATUS
 
-    - name: Generate SBOM
-      if: ${{ inputs.assess == 'true' && inputs.generate-sbom == 'true' && inputs.compare-base == '' && inputs.coverage-delta == '' }}
-      id: sbom
-      shell: bash
-      run: |
-        set -euxo pipefail
-        cd "$GITHUB_WORKSPACE"
-        BIN=""
-        if [ -x bin/adacovex ]; then
-          BIN="$GITHUB_WORKSPACE/bin/adacovex"
-        elif command -v adacovex >/dev/null 2>&1; then
-          BIN="$(command -v adacovex)"
-        fi
-        if [ -z "$BIN" ]; then
-          echo "::warning::adacovex binary not found; skipping SBOM generation."
-          echo "sbom_status=skipped" >> "$GITHUB_OUTPUT"
-          exit 0
-        fi
-        set +e
-        "$BIN" sbom --format=${{ inputs.sbom-format }} --dal=${{ inputs.dal }} --target="${{ inputs.target }}" > "$RUNNER_TEMP/sbom.out" 2>&1
-        SBOM_STATUS=$?
-        set -e
-        cat "$RUNNER_TEMP/sbom.out"
-        if [ $SBOM_STATUS -ne 0 ]; then
-          echo "::warning::adacovex SBOM generation failed (status $SBOM_STATUS); continuing without an SBOM artifact."
-          echo "sbom_status=failed" >> "$GITHUB_OUTPUT"
-          {
-            echo '## SBOM'
-            echo ''
-            echo "| SBOM | Status |"
-            echo "|------|--------|"
-            echo "| ${{ inputs.sbom-format }} | failed (see log above) |"
-          } >> "$GITHUB_STEP_SUMMARY"
-          exit 0
-        fi
-        SBOM_PATH=$(grep -oE 'SBOM written to [^ ]+' "$RUNNER_TEMP/sbom.out" | sed 's/^SBOM written to //' || true)
-        echo "sbom_status=generated" >> "$GITHUB_OUTPUT"
-        if [ -n "$SBOM_PATH" ]; then
-          echo "sbom_path=${SBOM_PATH}" >> "$GITHUB_OUTPUT"
-        fi
-        {
-          echo '## SBOM'
-          echo ''
-          echo "| SBOM | Value |"
-          echo "|------|-------|"
-          echo "| Format | ${{ inputs.sbom-format }} |"
-          echo "| Path | \`${SBOM_PATH:-<target>/sbom.json}\` |"
-        } >> "$GITHUB_STEP_SUMMARY"
-
     - name: Upload badges
       if: ${{ always() && inputs.assess == 'true' && inputs.compare-base == '' && inputs.coverage-delta == '' }}
       uses: actions/upload-artifact@v4
@@ -340,5 +310,7 @@ runs:
       uses: actions/upload-artifact@v4
       with:
         name: adacovex-sbom
-        path: ${{ inputs.target }}/sbom*.json
+        path: |
+          ${{ inputs.target }}/sbom*.json
+          ${{ inputs.target }}/docs/compliance/SBOM.md
         if-no-files-found: ignore
