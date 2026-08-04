@@ -195,6 +195,10 @@ runs:
       run: |
         set -euxo pipefail
         cd "$GITHUB_WORKSPACE"
+        # Deterministic SBOM timestamps: derive from the target git HEAD.
+        if [ -d "${{ inputs.target }}/.git" ] || git rev-parse --git-dir >/dev/null 2>&1; then
+          export SOURCE_DATE_EPOCH="$(git -C "${{ inputs.target }}" show -s --format=%ct HEAD 2>/dev/null || git show -s --format=%ct HEAD 2>/dev/null || echo 0)"
+        fi
         BIN=""
         if [ -x bin/adacovex ]; then
           BIN="$GITHUB_WORKSPACE/bin/adacovex"

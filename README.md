@@ -194,6 +194,15 @@ assesses DAL first so the emitted properties reflect the real assessment
 state. If the target has no Alire manifest the SBOM cannot be generated (the
 GitHub Action reports this as a warning without failing the job).
 
+SBOM output is **deterministic**: the `metadata.timestamp` (CycloneDX) /
+`creationInfo.created` (SPDX) field honors the `SOURCE_DATE_EPOCH`
+environment variable (the reproducible-builds convention). When it is set to
+a Unix epoch second count the timestamp is derived from it in UTC with pure
+integer math, so the emitted SBOM is byte-for-byte identical across runs and
+machines. Without it the current time is used. The `make` targets set it from
+the target's git `HEAD` commit time, so regenerated `sbom.json` stays stable
+per commit.
+
 ### Using adacovex from another project
 
 Two approaches are equally valid; pick whichever fits the project.

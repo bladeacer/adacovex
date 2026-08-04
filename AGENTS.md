@@ -325,6 +325,13 @@ adacovex sbom [--format=cyclonedx-json|spdx-json] [--out=PATH]
 - **Default output**: `<target>/sbom.json` for `cyclonedx-json`,
   `<target>/sbom.spdx.json` for `spdx-json`. The containing directory is
   created automatically.
+- **Determinism**: The `metadata.timestamp` / `creationInfo.created` field
+  honors the `SOURCE_DATE_EPOCH` environment variable (reproducible-builds
+  convention); when set to a Unix epoch second count the timestamp is derived
+  from it in UTC via pure integer math, so SBOM output is byte-for-byte
+  deterministic across runs and machines. The `make` targets (`run-self`,
+  `run-ada-crdt`, `prove`, `release`, and Ada_CRDT's `prove`/`badges`) set it
+  from the target's git `HEAD` commit time.
 - **Exclusivity**: Mutually exclusive with `--compare-base` and
   `--coverage-delta`.
 - **Exit code**: `0` when the SBOM was written, `1` otherwise.
