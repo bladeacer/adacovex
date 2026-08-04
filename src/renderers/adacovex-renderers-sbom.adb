@@ -1,5 +1,6 @@
 with Ada.Calendar;
 with Ada.Directories;
+with Ada.Environment_Variables;
 with Ada.Text_IO;
 with Adacovex;
 
@@ -135,38 +136,115 @@ package body Adacovex.Renderers.SBOM is
       return Buf (Pos .. 10);
    end I2S;
 
-   --  Local-time ISO 8601 timestamp (YYYY-MM-DDTHH:MM:SS).
+   function Pad2 (N : Natural) return String is
+   begin
+      if N < 10 then
+         return "0" & I2S (N);
+      else
+         return I2S (N);
+      end if;
+   end Pad2;
+
+   --  ISO 8601 UTC timestamp from a Unix epoch second count, computed with
+   --  pure integer arithmetic (Howard Hinnant's civil-from-days algorithm)
+   --  so the result is identical on every machine and timezone.
+   function ISO_From_Epoch (Epoch_Sec : Natural) return String is
+      Days : constant Long_Long_Integer :=
+        Long_Long_Integer (Epoch_Sec) / 86_400;
+      Secs : constant Natural := Epoch_Sec mod 86_400;
+      Z    : Long_Long_Integer := Days + 719_468;
+      Era  : Long_Long_Integer;
+      Doe  : Long_Long_Integer;
+      Yoe  : Long_Long_Integer;
+      Doy  : Long_Long_Integer;
+      Mp   : Long_Long_Integer;
+      Y, M, D : Natural;
+      H, Mi, S : Natural;
+   begin
+      Era := (if Z >= 0 then Z else Z - 146_096) / 146_097;
+      Doe := Z - Era * 146_097;
+      Yoe := (Doe - Doe / 1_460 + Doe / 36_524 - Doe / 146_096) / 365;
+      Y   := Natural (Yoe + Era * 400);
+      Doy := Doe - (365 * Yoe + Yoe / 4 - Yoe / 100);
+      Mp  := (5 * Doy + 2) / 153;
+      D   := Natural (Doy - (153 * Mp + 2) / 5 + 1);
+      M   := Natural (Mp + (if Mp < 10 then 3 else -9));
+      if M <= 2 then
+         Y := Y + 1;
+      end if;
+      H  := Secs / 3_600;
+      Mi := (Secs mod 3_600) / 60;
+      S  := Secs mod 60;
+      return I2S (Y) & "-" & Pad2 (M) & "-" & Pad2 (D)
+        & "T" & Pad2 (H) & ":" & Pad2 (Mi) & ":" & Pad2 (S);
+   end ISO_From_Epoch;
+
+   --  ISO 8601 timestamp (YYYY-MM-DDTHH:MM:SS).
+   --  Honors the SOURCE_DATE_EPOCH environment variable (reproducible-builds
+   --  convention): when set to a Unix epoch second count, the timestamp is
+   --  derived from it (UTC, integer math) so SBOM output is byte-for-byte
+   --  deterministic across runs and machines.  Otherwise the current local
+   --  time is used.
    function ISO_Timestamp return String is
       use Ada.Calendar;
-      Now      : constant Time := Clock;
-      Yr       : Year_Number;
-      Mo       : Month_Number;
-      Dy       : Day_Number;
-      Sec      : Day_Duration;
-      H, M, Sd : Natural;
    begin
-      Split (Now, Yr, Mo, Dy, Sec);
-      H := Integer (Sec) / 3600;
-      M := (Integer (Sec) mod 3600) / 60;
-      Sd := Integer (Sec) mod 60;
+      if Ada.Environment_Variables.Exists ("SOURCE_DATE_EPOCH") then
+         declare
+            V : constant String :=
+              Ada.Environment_Variables.Value ("SOURCE_DATE_EPOCH");
+            N  : Natural := 0;
+            Ok : Boolean := V'Length > 0;
+         begin
+            for I in V'Range loop
+               if V (I) in '0' .. '9' then
+                  if N < Natural'Last / 10 then
+                     N := N * 10 + Character'Pos (V (I)) - Character'Pos ('0');
+                  else
+                     Ok := False;
+                     exit;
+                  end if;
+               else
+                  Ok := False;
+                  exit;
+               end if;
+            end loop;
+            if Ok then
+               return ISO_From_Epoch (N);
+            end if;
+         end;
+      end if;
 
-      return
-        I2S (Natural (Yr))
-        & "-"
-        & (if Mo < 10 then "0" else "")
-        & I2S (Natural (Mo))
-        & "-"
-        & (if Dy < 10 then "0" else "")
-        & I2S (Natural (Dy))
-        & "T"
-        & (if H < 10 then "0" else "")
-        & I2S (H)
-        & ":"
-        & (if M < 10 then "0" else "")
-        & I2S (M)
-        & ":"
-        & (if Sd < 10 then "0" else "")
-        & I2S (Sd);
+      declare
+         Now      : constant Time := Clock;
+         Yr       : Year_Number;
+         Mo       : Month_Number;
+         Dy       : Day_Number;
+         Sec      : Day_Duration;
+         H, M, Sd : Natural;
+      begin
+         Split (Now, Yr, Mo, Dy, Sec);
+         H := Integer (Sec) / 3600;
+         M := (Integer (Sec) mod 3600) / 60;
+         Sd := Integer (Sec) mod 60;
+
+         return
+           I2S (Natural (Yr))
+           & "-"
+           & (if Mo < 10 then "0" else "")
+           & I2S (Natural (Mo))
+           & "-"
+           & (if Dy < 10 then "0" else "")
+           & I2S (Natural (Dy))
+           & "T"
+           & (if H < 10 then "0" else "")
+           & I2S (H)
+           & ":"
+           & (if M < 10 then "0" else "")
+           & I2S (M)
+           & ":"
+           & (if Sd < 10 then "0" else "")
+           & I2S (Sd);
+      end;
    end ISO_Timestamp;
 
    --  Emit a single CycloneDX component object.  Used for the root component
