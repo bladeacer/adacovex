@@ -97,7 +97,9 @@
   adacovex:proof_level and adacovex:dal_target properties.
 
 - HLR-PROVE: The tool shall provide a `prove` subcommand that runs GNATprove
-  against the target project's root .gpr file, resolving the gnatprove
-  executable from PATH, ~/.adacovex/toolchain/bin, or a platform toolchain
-  download without requiring an alire.toml in the target, then hands off to
-  the standard assessment pipeline.
+  against the target project's root .gpr file. When the target's
+  alire.toml / alire-dev.toml declares a gnatprove dependency, gnatprove is
+  resolved through Alire (`alr exec`) so the tool only requires `alr` on PATH.
+  Otherwise it falls back to a gnatprove on PATH, a cached
+  ~/.adacovex/toolchain/bin gnatprove, and finally a platform toolchain
+  download, then hands off to the standard assessment pipeline.

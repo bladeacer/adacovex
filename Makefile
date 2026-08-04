@@ -28,7 +28,8 @@ help:
 	@echo '                (Runs a docstring-coverage gate comparing the last'
 	@echo '                 release against the current tree, then CI force-pushes'
 	@echo '                 vMAJOR / vMAJOR.MINOR floating tags so @v1 / @v1.3'
-	@echo '                 refs track the latest release)'
+	@echo '                 refs track the latest release. Release artifacts are'
+	@echo '                 attested via actions/attest-build-provenance.)'
 	@echo '  publish       Publish to Alire community index (run after make release)'
 	@echo '  test-publish  Dry-run showing what make publish would do'
 	@echo '  ascii-check   Verify all source files are pure ASCII'
@@ -91,30 +92,6 @@ agents-tree:
 	@python3 tools/gen-agents-tree.py > /tmp/agents-tree.out && \
 	python3 tools/apply-agents-tree.py /tmp/agents-tree.out && \
 	rm -f /tmp/agents-tree.out
-
-# Package the local gnatprove toolchain into the platform bundle that
-# `covex prove` downloads into ~/.adacovex/toolchain/ when gnatprove is not
-# on PATH or already cached.  Produces
-# adacovex-toolchain-<os>-<arch>.tar.gz from the Alire gnatprove release
-# (currently a GNAT distribution with gnatprove + solvers).  Attach it to a
-# GitHub Release and the default toolchain URL
-# (releases/latest/download/adacovex-toolchain-<os>-<arch>.tar.gz) resolves.
-toolchain-asset:
-	@set -e; \
-	os=$$(uname -s | tr 'A-Z' 'a-z'); \
-	arch=$$(uname -m); \
-	case "$$arch" in x86_64|amd64) arch=x86_64;; aarch64|arm64) arch=aarch64;; *) echo "unsupported arch: $$arch" >&2; exit 1;; esac; \
-	gnatprove_dir=$$(ls -d $$HOME/.local/share/alire/releases/gnatprove_*/ 2>/dev/null | head -1); \
-	if [ -z "$$gnatprove_dir" ]; then \
-		echo "ERROR: no gnatprove toolchain found under ~/.local/share/alire/releases/"; \
-		echo "  Install it first: alr toolchain --select --install gnatprove"; \
-		exit 1; \
-	fi; \
-	asset="adacovex-toolchain-$$os-$$arch.tar.gz"; \
-	echo "Bundling gnatprove toolchain ($$gnatprove_dir) -> $$asset"; \
-	tar -czf "$$asset" -C "$$gnatprove_dir" .; \
-	echo "  Done: $$asset ($$(du -h "$$asset" | cut -f1))"; \
-	echo "  Attach it to the release and 'covex prove' will auto-download it."
 
 ascii-check:
 	@echo "=== ASCII Charset Verification ==="; \
@@ -233,6 +210,20 @@ release:
 	tar -czf "adacovex-v$$version.tar.gz" -C dist .; \
 	tar -czf "adacovex-action-v$$version.tar.gz" -C . action.yml; \
 	echo "  Bundled: adacovex-v$$version.tar.gz, adacovex-action-v$$version.tar.gz"; \
+	echo "=== Attesting release artifacts (actions/attest) ==="; \
+	if command -v gh >/dev/null 2>&1; then \
+		if [ -n "$$GITHUB_TOKEN" ]; then \
+			gh attest "adacovex-v$$version.tar.gz" "adacovex-action-v$$version.tar.gz" \
+				--repo "$${GITHUB_REPOSITORY:-bladeacer/adacovex}" && \
+			echo "  Attestations created locally."; \
+		else \
+			echo "  gh found but GITHUB_TOKEN is not set; skipping local attestation."; \
+			echo "  (CI attests these artifacts with OIDC on the v$$version tag push.)"; \
+		fi; \
+	else \
+		echo "  gh not installed; skipping local attestation."; \
+		echo "  (CI attests these artifacts with OIDC on the v$$version tag push.)"; \
+	fi; \
 	commit=$$(git rev-parse HEAD); \
 	index_file="index/ad/covex/covex-$$version.toml"; \
 	if [ ! -f "$$index_file" ]; then \

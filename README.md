@@ -183,7 +183,10 @@ Every component in the SBOM carries the proof-aware properties
 assessment proved every verification condition) and `adacovex:dal_target`
 (`DAL-A` through `DAL-D`; omitted for `DAL-E`). In SPDX these are encoded as
 `attributionTexts` entries. Both formats validate against the official
-CycloneDX 1.5 / SPDX 2.3 JSON schemas.
+[CycloneDX 1.5](https://github.com/CycloneDX/specification) and
+[SPDX 2.3](https://spdx.dev) JSON schemas (specifications by the CycloneDX and
+SPDX projects, licensed Apache-2.0 and CC0-1.0 respectively; see
+[THIRD_PARTY_NOTICES.md](docs/THIRD_PARTY_NOTICES.md)).
 
 `sbom` mode is mutually exclusive with `--compare-base` and
 `--coverage-delta`, and it scans sources, parses proof/test results, and
@@ -325,6 +328,10 @@ and publishes the bundle to the GitHub Release:
   release.
 - `adacovex-action-vX.Y.Z.tar.gz` -- a copy of the composite action itself for
   vendoring or air-gapped use.
+
+Both bundles are attested with
+[`actions/attest-build-provenance`](https://github.com/actions/attest) on every
+tag (OIDC attestations appear under the release's attestations tab).
 
 `make release VERSION=x.y.z` does the same locally (build `--release`,
 generate proofs, validate DAL-C, bundle `dist/`), then tags and pushes to
@@ -477,9 +484,54 @@ See [changelogs](docs/changelogs/index.md) for full release notes.
 - **GNATprove** (optional, for proof targets, managed by Alire)
 - **gnatpp** / **gnatdoc** (optional, for fmt/doc targets, managed by Alire)
 
+## Swapping the GNAT compiler for an LLVM-based one
+
+adacovex and Alire both default to the GCC-based **GNAT** (`gnat_native`)
+compiler; no action is needed. Only swap if you specifically want an
+LLVM-backend GNAT (e.g. GNAT LLVM) for your target project -- for example to
+exercise dissimilar redundancy via diverse code generation.
+
+GNAT LLVM is **not** yet packaged as a standard Alire toolchain crate, so two
+paths exist:
+
+1. **Alire-managed compiler (preferred when available).** If a GNAT LLVM binary
+   release becomes available in the Alire index, declare it in your
+   `alire.toml` / `alire-dev.toml`:
+
+   ```toml
+   [[depends-on]]
+   gnat_llvm = "*"
+   ```
+
+   `alr` then selects it automatically for that project's builds. You can also
+   pick a default compiler for all projects with
+   `alr toolchain --select --disable-assistant` and choosing the LLVM GNAT.
+
+2. **System-installed GNAT LLVM.** Install GNAT LLVM on `$PATH`, then force the
+   Ada toolchain in the root `.gpr` so `gprbuild` doesn't fall back to the
+   GCC GNAT:
+
+   ```gpr
+   for Toolchain_Name ("Ada") use "GNAT_LLVM";
+   ```
+
+   You can confirm which compiler built a given `.ali` file by its first line
+   (`GNAT` vs `GNAT-LLVM`).
+
+Notes:
+
+- GNAT LLVM and GCC GNAT are not guaranteed ABI-compatible; compile all Ada in
+  a project with the same compiler.
+- GNAT LLVM's `-fstack-check` support is partial and some features
+  (`Scalar_Storage_Order`, `Convention C++`) differ from GCC GNAT.
+- SPARK proof results are compiler-independent, so `covex prove` and the
+  DAL assessment are unaffected by the choice.
+
 ## Credits
 
 - **[setup-alire](https://github.com/alire-project/setup-alire)** GitHub Action (used in CI)
+- **[CycloneDX](https://github.com/CycloneDX/specification)** SBOM specification (CycloneDX 1.5 JSON output)
+- **[SPDX](https://spdx.dev)** Software Package Data Exchange specification (SPDX 2.3 JSON output)
 
 ## License
 
