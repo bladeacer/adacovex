@@ -146,6 +146,98 @@ package body Adacovex_TestParser_Tests is
             null;
       end;
 
+      --  Test 5: TAP (Test Anything Protocol) output
+      begin
+         Create (F, Out_File, Tmp_Path);
+         Put_Line (F, "TAP version 13");
+         Put_Line (F, "1..5");
+         Put_Line (F, "ok 1 - merge works");
+         Put_Line (F, "not ok 2 - remove edge case");
+         Put_Line (F, "ok 3 - add works");
+         Put_Line (F, "ok - unnamed pass");
+         Put_Line (F, "not ok - unnamed fail");
+         Close (F);
+      end;
+
+      Adacovex.Parsers.Tests.Parse_Test_Result (Tmp_Path, Summary, Success);
+      R.Check (Success, "Test 5: TAP parse succeeded");
+      R.Check
+        (Summary.Total_Passed = 3 and then Summary.Total_Failed = 2,
+         "Test 5: TAP totals (3 passed, 2 failed)");
+
+      begin
+         Ada.Directories.Delete_File (Tmp_Path);
+      exception
+         when others =>
+            null;
+      end;
+
+      --  Test 6: automake "PASS:" / "FAIL:" output
+      begin
+         Create (F, Out_File, Tmp_Path);
+         Put_Line (F, "PASS: basic");
+         Put_Line (F, "FAIL: broken");
+         Put_Line (F, "PASS: advanced");
+         Put_Line (F, "SKIP: optional");
+         Close (F);
+      end;
+
+      Adacovex.Parsers.Tests.Parse_Test_Result (Tmp_Path, Summary, Success);
+      R.Check (Success, "Test 6: automake parse succeeded");
+      R.Check
+        (Summary.Total_Passed = 2 and then Summary.Total_Failed = 1,
+         "Test 6: automake totals (2 passed, 1 failed)");
+
+      begin
+         Ada.Directories.Delete_File (Tmp_Path);
+      exception
+         when others =>
+            null;
+      end;
+
+      --  Test 7: Maven Surefire "Tests run:" summary
+      begin
+         Create (F, Out_File, Tmp_Path);
+         Put_Line (F, "Running test suite");
+         Put_Line (F, "Tests run: 5, Failures: 1, Errors: 0, Skipped: 0");
+         Close (F);
+      end;
+
+      Adacovex.Parsers.Tests.Parse_Test_Result (Tmp_Path, Summary, Success);
+      R.Check (Success, "Test 7: surefire parse succeeded");
+      R.Check
+        (Summary.Total_Passed = 4 and then Summary.Total_Failed = 1,
+         "Test 7: surefire totals (4 passed, 1 failed)");
+
+      begin
+         Ada.Directories.Delete_File (Tmp_Path);
+      exception
+         when others =>
+            null;
+      end;
+
+      --  Test 8: Unity "N Tests M Failures" summary
+      begin
+         Create (F, Out_File, Tmp_Path);
+         Put_Line (F, "---------------------");
+         Put_Line (F, "5 Tests 1 Failures 0 Ignored");
+         Put_Line (F, "OK");
+         Close (F);
+      end;
+
+      Adacovex.Parsers.Tests.Parse_Test_Result (Tmp_Path, Summary, Success);
+      R.Check (Success, "Test 8: unity parse succeeded");
+      R.Check
+        (Summary.Total_Passed = 4 and then Summary.Total_Failed = 1,
+         "Test 8: unity totals (4 passed, 1 failed)");
+
+      begin
+         Ada.Directories.Delete_File (Tmp_Path);
+      exception
+         when others =>
+            null;
+      end;
+
    end Run;
 
 end Adacovex_TestParser_Tests;

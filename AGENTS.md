@@ -18,10 +18,10 @@ adacovex was designed to audit the Ada_CRDT library at `../Ada_CRDT` (26 package
 The `--target=PATH` option can point at any Ada/SPARK project.
 
 Self-assessment (`make run-self`, default target: cwd) verifies adacovex against its own
-source -- all 22 packages, 46 subprograms -- and must always show:
+source -- all 23 packages, 50 subprograms -- and must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
 - Platinum SPARK level (28/28 VCs proved)
-- 222/222 native tests passing
+- 246/246 native tests passing
 - DAL-C Achieved
 
 ## Architecture
@@ -68,7 +68,7 @@ src/
     |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (40)
     |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (27)
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (21)
-    `-- test_runner.adb                       -- Test suite entry point (222 tests)
+    `-- test_runner.adb                       -- Test suite entry point (246 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -387,12 +387,15 @@ When adacovex runs, it executes these steps in sequence:
     2. Scans lines for subprogram declarations (`procedure`, `function`,
        `generic procedure`, `generic function`).
     3. Extracts subprogram name (first identifier after keyword).
-    4. Associates preceding docstring lines (`--  ` prefix) with the subprogram.
-    5. Detects docstring tags (`@param`, `@return`, `@field`, `@formal`).
+    4. Associates preceding docstring lines (`--  `, `-- `, or `--<TAB>`
+       prefix) with the subprogram.
+    5. Detects docstring tags (`@param`/`@parameter`, `@return`/`@returns`,
+       `@field`, `@formal`, `@brief`, `@summary`).
     6. Detects HLR tags (`-- HLR-XXXX`) and accumulates them.
   - A subprogram is counted as having a docstring if any preceding comment line
-    uses the `--  ` (two dashes + two spaces) prefix, OR has `@param`/`@return`
-    tags. A plain summary line (`--  Clears the screen.`) alone is sufficient.
+    uses a recognized prefix (`--  `, `-- `, or `--<TAB>`), OR has
+    `@param`/`@return`/`@brief`/`@summary` tags. A plain summary line
+    (`--  Clears the screen.`) alone is sufficient.
 
 #### 4. Patch application (`Apply_Patches`)
 - Only runs in strict mode (default).
@@ -447,7 +450,9 @@ only).
 
 ### Format
 
-Every docstring line starts with `--  ` (two dashes + two spaces).
+Every docstring line starts with `--  ` (two dashes + two spaces). The
+single-space (`-- `) and tab-separated (`--<TAB>`) comment styles are also
+recognized as docstrings.
 
 ```
 --  Summary sentence describing what the subprogram does.
@@ -477,9 +482,13 @@ procedure Bar (Y : Integer);
 | Tag | Syntax | Purpose | Sets Has_Docstring |
 |-----|--------|---------|--------------------|
 | `@param` | `--  @param Name  Description.` | Subprogram formal parameter | Yes |
+| `@parameter` | `--  @parameter Name  Description.` | Alias of `@param` | Yes |
 | `@return` | `--  @return Description.` | Function return value | Yes |
+| `@returns` | `--  @returns Description.` | Alias of `@return` | Yes |
 | `@field` | `--  @field Description.` | Record component | Yes |
 | `@formal` | `--  @formal Name  Description.` | Generic formal parameter | No |
+| `@brief` | `--  @brief Summary.` | Short summary | Yes |
+| `@summary` | `--  @summary Description.` | Summary | Yes |
 
 ### Rules
 - Descriptions are capitalized and end with a period.
@@ -697,7 +706,7 @@ is obtained and built.
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 222/222 passing |
+| Unit tests | `make test` | 246/246 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | 28/28 VCs Platinum |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -717,20 +726,20 @@ Test source: `src/tests/`. Entry point: `test_runner.adb` (builds as
 in `adacovex.gpr`; the CLI entry point builds as `bin/adacovex` via the
 `Builder.Executable` override, with a `bin/covex` alias symlink).
 
-`make test` builds and runs the 222-test suite. Test results are written to
+`make test` builds and runs the 246-test suite. Test results are written to
 `docs/test_result.md` in a Markdown table format that can be parsed by
 `adacovex-parsers-tests`. This means adacovex **supports both** native test
 running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 
-### Test categories (222 total)
+### Test categories (246 total)
 
 | Category | Tests | What it covers |
 |----------|-------|----------------|
 | Types conversions | 21 | SPARK_Level/DAL_Level/DAL_Status/Test_Status strings |
 | DAL compliance | 2 | DAL assessment status |
-| Source scanner | 40 | Package scan, docstring parsing, HLR tags, name extraction, @field/@formal/after-decl |
+| Source scanner | 56 | Package scan, docstring parsing, HLR tags, name extraction, @field/@formal/after-decl, comment-style variants, tag aliases, long generated lines |
 | GNATprove parser | 38 | .out parsing, proof summary, SPARK level detection, --help handling |
-| Test-result parser | 27 | Markdown test result parsing |
+| Test-result parser | 35 | Markdown table, TAP, Automake, Maven Surefire, and Unity test-result parsing |
 | CLI config | 11 | Default option values, --help, --no-svg field, --compare-base and --coverage-delta defaults |
 | SVG renderer | 30 | SVG badge content and format |
 | SBOM generator | 53 | Proof/DAL property mapping, Alire manifest + GPR dependency graph, CycloneDX/SPDX rendering |
@@ -745,9 +754,9 @@ running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
   original, the second patches the second, etc.
 - `Is_Subprogram_Decl` matches `procedure`, `function`, `generic procedure`,
   and `generic function` only (not `type`, `package`, `task`, etc.).
-- Docstring detection: any `--  ` (dash dash space space) line before a
-  subprogram counts as a docstring. Other comment formats (`-- ` with one
-  space, `---` with three dashes) do not.
+- Docstring detection: any `--  ` (two dashes + two spaces), `-- ` (single
+  space), or `--<TAB>` line before a subprogram counts as a docstring. Other
+  comment formats (bare `--`, `---` with three dashes) do not.
 - `--verbose` prints pipeline step diagnostics to stderr.
 - Relative `--target=PATH` is resolved against CWD, so behavior depends on
   where adacovex is invoked.
@@ -774,7 +783,7 @@ are unbounded via `Ada.Containers.Vectors`):
 
 | Constant | Value | Notes |
 |----------|-------|-------|
-| `Max_Line` | 8192 | Source line length (long lines drained silently) |
+| `Max_Line` | 262144 | Source line length (long generated lines never truncated) |
 | `Max_Path` | 4096 | File path length (matches `PATH_MAX`) |
 | `Max_Desc_Str` | 128 | Subprogram name / description|
 | `Max_Filename` | 128 | Package name from filename |

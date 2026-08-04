@@ -284,6 +284,175 @@ package body Adacovex_Scanner_Tests is
         (not Pkg.Subprograms (Positive (Pkg.Subprograms.Length)).Has_Docstring,
          "Test 8: @formal alone does not set Has_Docstring");
 
+      --  Test 9: single-space docstring prefix (`-- `) is recognized.
+      begin
+         declare
+            F : File_Type;
+         begin
+            Create (F, Out_File, Tmp_File);
+            Put_Line (F, "package Style1 is");
+            Put_Line (F, "   pragma Pure;");
+            Put_Line (F, "   -- Clear the screen.");
+            Put_Line (F, "   procedure Single_Space;");
+            Put_Line (F, "end Style1;");
+            Close (F);
+         end;
+      end;
+
+      Adacovex.Parsers.Source.Scan_Ads_File (Tmp_File, Pkg, Success);
+      R.Check (Success, "Test 9: parse succeeded");
+      R.Check
+        (Natural (Pkg.Subprograms.Length) >= 1
+         and then Pkg.Subprograms
+                    (Positive (Pkg.Subprograms.Length)).Has_Docstring,
+         "Test 9: single-space `-- ` prefix sets Has_Docstring");
+
+      --  Test 10: tab-separated docstring prefix (`--<TAB>`) is recognized.
+      begin
+         declare
+            F : File_Type;
+         begin
+            Create (F, Out_File, Tmp_File);
+            Put_Line (F, "package Style2 is");
+            Put_Line (F, "   pragma Pure;");
+            Put_Line (F, "   --" & ASCII.HT & "Clear the screen.");
+            Put_Line (F, "   procedure Tab_Separated;");
+            Put_Line (F, "end Style2;");
+            Close (F);
+         end;
+      end;
+
+      Adacovex.Parsers.Source.Scan_Ads_File (Tmp_File, Pkg, Success);
+      R.Check (Success, "Test 10: parse succeeded");
+      R.Check
+        (Natural (Pkg.Subprograms.Length) >= 1
+         and then Pkg.Subprograms
+                    (Positive (Pkg.Subprograms.Length)).Has_Docstring,
+         "Test 10: tab-separated prefix sets Has_Docstring");
+
+      --  Test 11: @parameter is accepted as an alias of @param.
+      begin
+         declare
+            F : File_Type;
+         begin
+            Create (F, Out_File, Tmp_File);
+            Put_Line (F, "package Style3 is");
+            Put_Line (F, "   pragma Pure;");
+            Put_Line (F, "   --  @parameter X  First parameter.");
+            Put_Line (F, "   procedure Alias_Param (X : Integer);");
+            Put_Line (F, "end Style3;");
+            Close (F);
+         end;
+      end;
+
+      Adacovex.Parsers.Source.Scan_Ads_File (Tmp_File, Pkg, Success);
+      R.Check (Success, "Test 11: parse succeeded");
+      R.Check
+        (Natural (Pkg.Subprograms.Length) >= 1
+         and then Pkg.Subprograms
+                    (Positive (Pkg.Subprograms.Length)).Has_Docstring,
+         "Test 11: @parameter sets Has_Docstring");
+      R.Check
+        (Pkg.Subprograms (Positive (Pkg.Subprograms.Length)).Doc_Param_Ct >= 1,
+         "Test 11: @parameter counts as a documented param");
+
+      --  Test 12: @returns is accepted as an alias of @return.
+      begin
+         declare
+            F : File_Type;
+         begin
+            Create (F, Out_File, Tmp_File);
+            Put_Line (F, "package Style4 is");
+            Put_Line (F, "   pragma Pure;");
+            Put_Line (F, "   --  @returns The computed value.");
+            Put_Line (F, "   function Alias_Return return Integer;");
+            Put_Line (F, "end Style4;");
+            Close (F);
+         end;
+      end;
+
+      Adacovex.Parsers.Source.Scan_Ads_File (Tmp_File, Pkg, Success);
+      R.Check (Success, "Test 12: parse succeeded");
+      R.Check
+        (Natural (Pkg.Subprograms.Length) >= 1
+         and then Pkg.Subprograms
+                    (Positive (Pkg.Subprograms.Length)).Has_Docstring,
+         "Test 12: @returns sets Has_Docstring");
+      R.Check
+        (Pkg.Subprograms (Positive (Pkg.Subprograms.Length)).Doc_Return,
+         "Test 12: @returns sets Doc_Return");
+
+      --  Test 13: @brief and @summary mark a subprogram as documented.
+      begin
+         declare
+            F : File_Type;
+         begin
+            Create (F, Out_File, Tmp_File);
+            Put_Line (F, "package Style5 is");
+            Put_Line (F, "   pragma Pure;");
+            Put_Line (F, "   --  @brief Brief summary.");
+            Put_Line (F, "   procedure Brief_Proc;");
+            Put_Line (F, "   --  @summary Longer summary text.");
+            Put_Line (F, "   procedure Summary_Proc;");
+            Put_Line (F, "end Style5;");
+            Close (F);
+         end;
+      end;
+
+      Adacovex.Parsers.Source.Scan_Ads_File (Tmp_File, Pkg, Success);
+      R.Check (Success, "Test 13: parse succeeded");
+      R.Check
+        (Natural (Pkg.Subprograms.Length) >= 2
+         and then Pkg.Subprograms (1).Has_Docstring,
+         "Test 13: @brief sets Has_Docstring");
+      R.Check
+        (Natural (Pkg.Subprograms.Length) >= 2
+         and then Pkg.Subprograms (2).Has_Docstring,
+         "Test 13: @summary sets Has_Docstring");
+
+      --  Test 14: a single-line declaration longer than 8192 chars is still
+      --  parsed (buffer constraints no longer silently drop generated lines).
+      begin
+         declare
+            F    : File_Type;
+            Big  : String (1 .. 12000);
+            BLen : Natural := 0;
+            procedure Add (S : String) is
+            begin
+               for I in S'Range loop
+                  BLen := BLen + 1;
+                  Big (BLen) := S (I);
+               end loop;
+            end Add;
+         begin
+            Create (F, Out_File, Tmp_File);
+            Put_Line (F, "package Long_Line_Test is");
+            Put_Line (F, "   pragma Pure;");
+            Add ("   procedure Huge_Proc (");
+            for I in 1 .. 600 loop
+               Add ("P"
+                    & Natural'Image (I) (2 .. Natural'Image (I)'Last)
+                    & " : Integer; ");
+            end loop;
+            Add ("Last : Integer);");
+            Put_Line (F, Big (1 .. BLen));
+            Put_Line (F, "end Long_Line_Test;");
+            Close (F);
+            R.Check (BLen > 8192, "Test 14: generated line exceeds old limit");
+         end;
+      end;
+
+      Adacovex.Parsers.Source.Scan_Ads_File (Tmp_File, Pkg, Success);
+      R.Check (Success, "Test 14: parse succeeded");
+      R.Check
+        (Natural (Pkg.Subprograms.Length) >= 1
+         and then Pkg.Subprograms
+                    (Positive (Pkg.Subprograms.Length)).Name_Len = 9
+         and then Pkg.Subprograms
+                    (Positive (Pkg.Subprograms.Length)).Name (1 .. 9)
+                  = "Huge_Proc",
+         "Test 14: subprogram on a >8192-char line is parsed");
+
       --  Cleanup
       begin
          Ada.Directories.Delete_File (Tmp_File);

@@ -4,9 +4,9 @@
 
 | Metric | Value |
 |--------|-------|
-| Packages Scanned |  22 |
-| Total Subprograms |  46 |
-| Documented Subprograms |  46 |
+| Packages Scanned |  23 |
+| Total Subprograms |  50 |
+| Documented Subprograms |  50 |
 | Docstring Coverage |  100% |
 
 ## SPARK Proof Analysis
@@ -26,7 +26,7 @@
 
 | Category | Tests | Status |
 |----------|-------|--------|
-| **Total** | ** 222** | **Passed:  222, Failed:  0** |
+| **Total** | ** 246** | **Passed:  246, Failed:  0** |
 
 ## DO-178C Compliance
 
@@ -34,7 +34,7 @@
 |-----------|--------|
 | Target DAL | C |
 | Overall Status | Achieved |
-| HLR Traced |  43 /  43 |
+| HLR Traced |  45 /  45 |
 | Orphan Tags | No |
 | Tests Passing | Yes |
 | Min SPARK Level | Yes |

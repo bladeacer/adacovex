@@ -14,7 +14,8 @@
 | adacovex-parsers-source | SCAN |
 | adacovex-parsers-gnatprove | PROOF |
 | adacovex-compliance-dal | COMPLIANCE, DAL-A, DAL-B, DAL-C, DAL-D, DAL-E |
-| adacovex-types | METRICS, PROOF, TEST, COMPLIANCE, DAL-A, DAL-B, DAL-C, DAL-D, DAL-E, SBOM, SBOM |
+| adacovex-types | METRICS, PROOF, TEST, COMPLIANCE, DAL-A, DAL-B, DAL-C, DAL-D, DAL-E, SBOM, SBOM, SBOM |
 | adacovex-config | CLI |
 | adacovex-diff | DIFF |
+| adacovex-prove | PROVE |
 | adacovex-server-http | SERVER |
