@@ -175,8 +175,8 @@ adacovex sbom [--format=cyclonedx-json|spdx-json] [--out=PATH]
 
 #### `--manifest=PATH`
 - **Purpose**: Override the project manifest file path.
-- **Default**: `<target>/alire-dev.toml` if it exists, otherwise
-  `<target>/alire.toml`.
+- **Default**: `<target>/alire.toml` if it exists, otherwise
+  `<target>/alire-dev.toml`.
 - **Effect**: The manifest path is displayed in stderr output and is used by
   `adacovex sbom` to resolve the root project metadata for the dependency
   graph.
@@ -703,6 +703,7 @@ is obtained and built.
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
 
 See [docs/changelogs/adacovex-1.0.0.md](docs/changelogs/adacovex-1.0.0.md) for full release notes.
+See [docs/architecture.md](docs/architecture.md) for architectural decisions.
 
 ---
 

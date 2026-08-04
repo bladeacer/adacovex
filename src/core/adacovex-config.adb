@@ -442,21 +442,23 @@ package body Adacovex.Config is
       end if;
 
       -- Default manifest derived from target
-      if Cfg.Manifest_Len = 0 then
-         declare
-            TDir : constant String := Cfg.Target_Path (1 .. Cfg.Target_Len);
-         begin
-            if Ada.Directories.Exists (TDir & "/alire-dev.toml") then
-               Set_String
-                 (Cfg.Manifest_Path,
-                  Cfg.Manifest_Len,
-                  TDir & "/alire-dev.toml");
-            else
-               Set_String
-                 (Cfg.Manifest_Path, Cfg.Manifest_Len, TDir & "/alire.toml");
-            end if;
-         end;
-      end if;
+       if Cfg.Manifest_Len = 0 then
+          declare
+             TDir : constant String := Cfg.Target_Path (1 .. Cfg.Target_Len);
+          begin
+             if Ada.Directories.Exists (TDir & "/alire.toml") then
+                Set_String
+                  (Cfg.Manifest_Path,
+                   Cfg.Manifest_Len,
+                   TDir & "/alire.toml");
+             else
+                Set_String
+                  (Cfg.Manifest_Path,
+                   Cfg.Manifest_Len,
+                   TDir & "/alire-dev.toml");
+             end if;
+          end;
+       end if;
 
       -- Default SBOM output path: project-scoped, format-aware.  Applies to
       -- both the explicit `adacovex sbom` subcommand and the automatic SBOM
