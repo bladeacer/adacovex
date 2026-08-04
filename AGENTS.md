@@ -38,7 +38,7 @@ src/
 |   |-- adacovex-config.ads/.adb              -- CLI argument parser (prove mode, --no-sbom, --sbom-format)
 |   |-- adacovex-core.ads                     -- Parent package for core data types and configuration
 |   |-- adacovex-diff.ads/.adb                -- Differential assessment (--compare-base / --coverage-delta)
-|   |-- adacovex-prove.ads/.adb               -- GNATprove runner for the `prove` subcommand (toolchain resolution)
+|   |-- adacovex-prove.ads/.adb               -- GNATprove runner for the `prove` subcommand (alire-first toolchain resolution)
 |   `-- adacovex-types.ads/.adb               -- All domain types + conversion functions
 |-- parsers/
 |   |-- adacovex-parsers.ads                  -- Parent package for all input-file parsers
@@ -530,7 +530,7 @@ specific failure reasons when the assessment is `Unmet`.
 |--------------------|-------------|
 | `build`            | `alr build` (builds adacovex + test_runner, covex alias) |
 | `test`             | Build + run test_runner |
-| `prove`            | `./bin/adacovex prove --target=. --no-svg` (runs gnatprove via the `prove` subcommand; gnatprove resolved from PATH / `~/.adacovex/toolchain` / download, no target alire.toml needed) |
+| `prove`            | `./bin/adacovex prove --target=. --no-svg` (runs gnatprove via the `prove` subcommand; when the target declares a gnatprove dep in alire.toml / alire-dev.toml it is run via `alr exec`, else falls back to PATH / `~/.adacovex/toolchain` / download) |
 | `doc` / `api-docs` | Generate API docs via gnatdoc + rst2md (auto-swaps alire-dev.toml) |
 | `fmt`              | Format Ada sources with gnatformat (auto-swaps alire-dev.toml) |
 | `run-self`         | Run against adacovex itself (default target: cwd) |
@@ -538,8 +538,7 @@ specific failure reasons when the assessment is `Unmet`.
 | `coverage-gate`    | Run the docstring-coverage gate between the latest two release tags (`--coverage-delta` in a worktree at the latest tag) |
 | `bump-version`     | Bump version across alire.toml, alire-dev.toml, adacovex.ads, changelog (`VERSION=x.y.z`) |
 | `agents-tree`      | Regenerate the AGENTS.md `src/` architecture tree (`tools/gen-agents-tree.py` + `tools/agents-tree.map`) |
-| `toolchain-asset`  | Bundle the local gnatprove toolchain into `adacovex-toolchain-<os>-<arch>.tar.gz` for release attachment |
-| `release`          | Build `--release`, prove, validate self-assessment, run docstring-coverage gate vs last release tag, bundle `dist/` + tarballs, then tag & push (`VERSION=x.y.z`) |
+| `release`          | Build `--release`, prove, validate self-assessment, run docstring-coverage gate vs last release tag, bundle `dist/` + tarballs (attested via actions/attest-build-provenance in CI, best-effort `gh attest` locally), then tag & push (`VERSION=x.y.z`) |
 | `ascii-check`      | Verify all source files are pure ASCII |
 | `clean`            | Remove bin/ obj/ docs/badges/ |
 | `help`             | Print available targets |
@@ -582,8 +581,10 @@ specific failure reasons when the assessment is `Unmet`.
   binary, run GNATprove, and validate the self-assessment, then creates a
   GitHub Release with the binary tarball (`adacovex-vX.Y.Z.tar.gz`: `adacovex`
   + the `covex` alias) and the action tarball
-  (`adacovex-action-vX.Y.Z.tar.gz`). The action downloads the matching binary
-  tarball for the tag it is referenced by, so `@v1.4.0` runs adacovex `v1.4.0`.
+  (`adacovex-action-vX.Y.Z.tar.gz`). Both bundles are attested via
+  `actions/attest-build-provenance` (OIDC). The action downloads the matching
+  binary tarball for the tag it is referenced by, so `@v1.4.0` runs adacovex
+  `v1.4.0`.
   The tag itself publishes the action for
   `uses: <owner>/adacovex@vX.Y.Z`, and once the
   action is listed on the marketplace, each tag auto-publishes that version.

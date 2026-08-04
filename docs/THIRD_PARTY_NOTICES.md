@@ -13,12 +13,25 @@ artifacts and are covered by their own licenses.
 | Z3 / Alt-Ergo / CVC5 solvers | bundled with GNATprove | MIT / CeCILL-C / Apache-2.0 respectively | Satisfying SPARK verification conditions |
 
 The GNAT toolchain is **not** embedded in the adacovex release bundle.
-`covex prove` resolves a gnatprove executable from (in order) `$PATH`,
-`~/.adacovex/toolchain/bin/gnatprove`, or a platform toolchain download
-(`adacovex-toolchain-<os>-<arch>.tar.gz` published on GitHub Releases, or the
-URL in `ADACOVEX_TOOLCHAIN_URL`). The toolchain archive, when published,
-contains a GPL-licensed GNAT/gnatprove distribution; distributing it requires
-the end user to accept the GPL for that component.
+`covex prove` prefers the target project's own gnatprove dependency when its
+`alire.toml` / `alire-dev.toml` declares one, running it through `alr exec`
+so adacovex itself only requires `alr` on `$PATH`. If no dependency is
+declared it falls back to a gnatprove on `$PATH`, then a cached
+`~/.adacovex/toolchain/bin/gnatprove`, and finally a platform toolchain
+download (a GPL-licensed GNAT/gnatprove distribution; distributing it
+requires the end user to accept the GPL for that component).
+
+## SBOM specifications
+
+The proof-aware SBOMs adacovex emits conform to these open specifications:
+
+| Specification | Version | License | Reference |
+|---------------|---------|---------|-----------|
+| CycloneDX Software Bill of Materials | 1.5 | Apache-2.0 | https://github.com/CycloneDX/specification |
+| SPDX (Software Package Data Exchange) | 2.3 | CC0-1.0 | https://spdx.dev |
+
+The CycloneDX 1.5 JSON and SPDX 2.3 JSON schemas are referenced for validation
+only; adacovex does not vendor or redistribute them.
 
 ## Acknowledgments
 

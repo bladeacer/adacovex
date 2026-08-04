@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: write
+  attestations: write
+  id-token: write
 
 jobs:
   release:
@@ -39,6 +41,11 @@ jobs:
           tar -czf "adacovex-$VERSION.tar.gz" -C dist .
           tar -czf "adacovex-action-$VERSION.tar.gz" -C . action.yml
 
+      - name: Attest release artifacts
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: adacovex-*.tar.gz
+
       - name: Create GitHub Release
         shell: bash
         env:
@@ -55,13 +62,6 @@ jobs:
           *Git Changelog*:
           https://github.com/${{ github.repository }}/compare/${PREV#v}...$VERSION"
           fi
-          # Attach a platform toolchain asset if one was built for this tag
-          # (e.g. adacovex-toolchain-linux-x86_64.tar.gz). The gnatprove
-          # toolchain is large and optional: `covex prove` falls back to a
-          # PATH or ~/.adacovex/toolchain gnatprove otherwise.
-          for f in adacovex-toolchain-*.tar.gz; do
-            [ -f "$f" ] && ASSETS+=("$f")
-          done
           gh release create "$VERSION" "${ASSETS[@]}" --notes "$BODY"
 
       - name: Update floating version tags
