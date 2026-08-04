@@ -9,16 +9,25 @@ compatibility. No blank lines between tags and declaration.
 | Tag | Format | Purpose |
 |-----|--------|---------|
 | `@param` | `--  @param Name  Description.` | Subprogram formal parameter |
+| `@parameter` | `--  @parameter Name  Description.` | Alias of `@param` |
 | `@return` | `--  @return Description.` | Function return value |
+| `@returns` | `--  @returns Description.` | Alias of `@return` |
 | `@field` | `--  @field Description.` | Record component |
 | `@formal` | `--  @formal Name  Description.` | Generic formal parameter |
+| `@brief` | `--  @brief Summary.` | Short summary; marks a subprogram documented |
+| `@summary` | `--  @summary Description.` | Summary; marks a subprogram documented |
 
 ## Conventions
 
-- Prefix: `--  ` (two dashes + two spaces) for all doc lines.
+- Prefix: `--  ` (two dashes + two spaces) for all doc lines. The single-space
+  `-- ` and tab-separated (`--<TAB>`) comment styles are also recognized, so
+  generated or third-party code using those conventions counts toward coverage.
+  A bare `--` or `---` (divider) line is **not** a docstring.
 - Summary first, then tag lines, then declaration -- no blank lines.
 - Descriptions capitalized, end with period.
 - Two spaces between tag name and description (alignment padding).
+- A plain summary line (`--  Does a thing.`) is sufficient to mark a subprogram
+  as documented; tags are not required for no-param procedures.
 
 ## Examples
 
@@ -28,6 +37,16 @@ compatibility. No blank lines between tags and declaration.
 -- @param B  Second operand.
 -- @return  Sum of A and B.
 function Add (A, B : Integer) return Integer;
+```
+
+`@parameter` / `@returns` aliases and the common single-space style are
+equivalent:
+
+```ada
+-- Increments the counter.
+-- @parameter Amount  Amount to add (alias of @param).
+-- @returns The new value (alias of @return).
+function Incr (Amount : Natural) return Natural;
 ```
 
 ```ada
@@ -52,7 +71,8 @@ end Priority_Queue;
 ## Coverage
 
 Docstring coverage measures: documented subprograms / total subprograms.
-A subprogram is "documented" if it has at least one docstring annotation tag
-or a summary comment immediately preceding it.
+A subprogram is "documented" if it has at least one docstring annotation tag,
+a `@brief` / `@summary` tag, or a summary comment line (any recognized prefix)
+immediately preceding or following it.
 
 Coverage is displayed in terminal reports and SVG badges.

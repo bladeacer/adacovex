@@ -2,7 +2,9 @@
 --  Package and subprogram collections use Ada.Containers.Vectors
 --  (unbounded, up to Natural'Last ~ 2.1B). Fixed-size buffers
 --  (Max_Path, Max_Line, Max_Desc_Str, etc.) are bounded at compile time
---  with generous production-suitable limits (Max_Path=4096, Max_Line=8192).
+--  with generous production-suitable limits (Max_Path=4096, Max_Line=262144).
+--  Max_Line is large enough to read single-line declarations from heavily
+--  generated Ada sources without silently draining them.
 --  HLR-METRICS: Docstring_Metrics type
 --  HLR-PROOF: Proof_Summary type
 --  HLR-TEST: Test_Summary type
@@ -20,7 +22,7 @@ package Adacovex.Types is
    pragma SPARK_Mode (On);
 
    Max_Path     : constant := 4096;
-   Max_Line     : constant := 8192;
+   Max_Line     : constant := 262144;
    Max_Id_Str   : constant := 64;
    Max_Desc_Str : constant := 128;
    Max_Filename : constant := 128;

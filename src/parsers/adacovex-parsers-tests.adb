@@ -2,6 +2,108 @@ with Ada.Text_IO;
 
 package body Adacovex.Parsers.Tests is
 
+   --  Strip leading spaces from a string slice.
+   function Trim_Left (S : String) return String is
+      F : Natural := S'First;
+   begin
+      while F <= S'Last and then S (F) = ' ' loop
+         F := F + 1;
+      end loop;
+      if F > S'Last then
+         return "";
+      end if;
+      return S (F .. S'Last);
+   end Trim_Left;
+
+   function Starts_With (S : String; Pre : String) return Boolean is
+   begin
+      if Pre'Length > S'Length then
+         return False;
+      end if;
+      for I in Pre'Range loop
+         if S (S'First + (I - Pre'First)) /= Pre (I) then
+            return False;
+         end if;
+      end loop;
+      return True;
+   end Starts_With;
+
+   --  Parse the integer that immediately follows a keyword in a line,
+   --  skipping any intervening spaces.  Returns 0 when absent.
+   function Number_After (S : String; Key : String) return Natural is
+   begin
+      for I in S'First .. S'Last - Key'Length + 1 loop
+         if S (I .. I + Key'Length - 1) = Key then
+            declare
+               J      : Natural := I + Key'Length;
+               Num    : Natural := 0;
+               Got    : Boolean := False;
+            begin
+               while J <= S'Last and then S (J) = ' ' loop
+                  J := J + 1;
+               end loop;
+               while J <= S'Last and then S (J) in '0' .. '9' loop
+                  Num := Num * 10
+                    + (Character'Pos (S (J)) - Character'Pos ('0'));
+                  J := J + 1;
+                  Got := True;
+               end loop;
+               if Got then
+                  return Num;
+               end if;
+            end;
+         end if;
+      end loop;
+      return 0;
+   end Number_After;
+
+   --  Parse the integer that immediately precedes a whole word in a line.
+   --  The word must be preceded by digits and followed by a non-letter
+   --  (or end of line).  Returns 0 when absent.  Used for the
+   --  "N Tests M Failures" summary style.
+   function Number_Before_Word (S : String; Word : String) return Natural is
+   begin
+      for I in S'First .. S'Last - Word'Length + 1 loop
+         if S (I .. I + Word'Length - 1) = Word then
+            declare
+               J : constant Natural := I + Word'Length;
+               OK : Boolean := True;
+            begin
+               if J <= S'Last and then S (J) in 'a' .. 'z' | 'A' .. 'Z' then
+                  OK := False;
+               end if;
+               if OK then
+                  declare
+                     K : Natural := I - 1;
+                  begin
+                     while K >= S'First and then S (K) = ' ' loop
+                        K := K - 1;
+                     end loop;
+                     if K >= S'First and then S (K) in '0' .. '9' then
+                        declare
+                           DStart : Natural := K;
+                           Num    : Natural := 0;
+                        begin
+                           while DStart > S'First
+                             and then S (DStart - 1) in '0' .. '9'
+                           loop
+                              DStart := DStart - 1;
+                           end loop;
+                           for C in DStart .. K loop
+                              Num := Num * 10
+                                + (Character'Pos (S (C)) - Character'Pos ('0'));
+                           end loop;
+                           return Num;
+                        end;
+                     end if;
+                  end;
+               end if;
+            end;
+         end if;
+      end loop;
+      return 0;
+   end Number_Before_Word;
+
    procedure Parse_Test_Result
      (File_Path : String;
       Summary   : out Types.Implementation.Test_Summary;
@@ -143,25 +245,89 @@ package body Adacovex.Parsers.Tests is
                   end;
                end if;
 
-               if Line (I .. I + 6) = "Failed:" then
-                  declare
-                     Num : Natural := 0;
-                     J   : Natural := I + 7;
-                  begin
-                     while J <= Last and then Line (J) = ' ' loop
-                        J := J + 1;
-                     end loop;
-                     while J <= Last and then Line (J) in '0' .. '9' loop
-                        Num :=
-                          Num
-                          * 10
-                          + (Character'Pos (Line (J)) - Character'Pos ('0'));
-                        J := J + 1;
-                     end loop;
-                     Summary.Total_Failed := Num;
-                  end;
+                if Line (I .. I + 6) = "Failed:" then
+                   declare
+                      Num : Natural := 0;
+                      J   : Natural := I + 7;
+                   begin
+                      while J <= Last and then Line (J) = ' ' loop
+                         J := J + 1;
+                      end loop;
+                      while J <= Last and then Line (J) in '0' .. '9' loop
+                         Num :=
+                           Num
+                           * 10
+                           + (Character'Pos (Line (J)) - Character'Pos ('0'));
+                         J := J + 1;
+                      end loop;
+                      Summary.Total_Failed := Num;
+                   end;
+                end if;
+             end loop;
+
+            -- TAP (Test Anything Protocol): "ok 1 - name" / "not ok 2 - name".
+            -- Each line is one test, so pass/fail counters accumulate.
+            declare
+               T : constant String := Trim_Left (Line (1 .. Last));
+            begin
+               if Starts_With (T, "not ok")
+                 and then (T'Length = 6 or else T (T'First + 6) = ' ')
+               then
+                  Summary.Total_Failed := Summary.Total_Failed + 1;
+               elsif Starts_With (T, "ok")
+                 and then (T'Length = 2 or else T (T'First + 2) = ' ')
+               then
+                  Summary.Total_Passed := Summary.Total_Passed + 1;
                end if;
-            end loop;
+            end;
+
+            -- Automake test-suite style: "PASS: name" / "FAIL: name".
+            declare
+               T : constant String := Trim_Left (Line (1 .. Last));
+            begin
+               if Starts_With (T, "PASS:") then
+                  Summary.Total_Passed := Summary.Total_Passed + 1;
+               elsif Starts_With (T, "FAIL:") then
+                  Summary.Total_Failed := Summary.Total_Failed + 1;
+               end if;
+            end;
+
+            -- Maven Surefire style: "Tests run: N, Failures: M, Errors: E".
+            -- Last summary line wins, matching the "Passed:"/"Failed:" rule.
+            declare
+               Tests_Run : Natural :=
+                 Number_After (Line (1 .. Last), "Tests run:");
+               Failures  : Natural :=
+                 Number_After (Line (1 .. Last), "Failures:");
+               Errors    : Natural :=
+                 Number_After (Line (1 .. Last), "Errors:");
+            begin
+               if Tests_Run > 0 then
+                  Summary.Total_Failed := Failures + Errors;
+                  if Failures + Errors < Tests_Run then
+                     Summary.Total_Passed := Tests_Run - Failures - Errors;
+                  else
+                     Summary.Total_Passed := 0;
+                  end if;
+               end if;
+            end;
+
+            -- Unity style: "N Tests M Failures [K Ignored]".
+            declare
+               N_Tests    : constant Natural :=
+                 Number_Before_Word (Line (1 .. Last), "Tests");
+               N_Failures : constant Natural :=
+                 Number_Before_Word (Line (1 .. Last), "Failures");
+            begin
+               if N_Tests > 0 then
+                  Summary.Total_Failed := N_Failures;
+                  if N_Failures < N_Tests then
+                     Summary.Total_Passed := N_Tests - N_Failures;
+                  else
+                     Summary.Total_Passed := 0;
+                  end if;
+               end if;
+            end;
          end loop;
       exception
          when others =>

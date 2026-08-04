@@ -8,6 +8,10 @@ with Adacovex.Types;
 --  Resolution priority (lightweight: adacovex only requires `alr` on PATH):
 --    1. If the target's alire.toml / alire-dev.toml declares gnatprove as a
 --       dependency, invoke it via `alr exec` (alire manages the toolchain).
+--       When gnatprove lives only in alire-dev.toml (the common dev-manifest
+--       layout), the dev manifest is temporarily swapped over alire.toml for
+--       the proof run and restored afterwards -- the assessment and SBOM
+--       pipeline always scans the publishing alire.toml.
 --    2. A gnatprove already on $PATH.
 --    3. A cached gnatprove in ~/.adacovex/toolchain/bin.
 --    4. Last resort: a platform toolchain download (curl; only used when

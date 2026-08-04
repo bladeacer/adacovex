@@ -11,6 +11,24 @@ adacovex uses [Alire](https://alire.ada.dev/) to manage all dependencies. The pr
 
 When both files exist, `alire.toml` takes precedence for manifest scanning and SBOM generation. The `alire-dev.toml` is consulted only for toolchain resolution (gnatprove detection) via `Manifest_Declares_GNATprove`, which checks both manifests.
 
+### Dev-manifest proof swap (`prove` subcommand)
+
+Target projects may declare `gnatprove` only in `alire-dev.toml` (keeping the
+publishing `alire.toml` clean). When the `prove` subcommand detects this
+(`Gnatprove_Dev_Only`), it runs the proof through a temporary `sh` wrapper
+that:
+
+1. Backs up `alire.toml`, `alire.lock`, and `alire/` to a `mktemp -d`
+   directory,
+2. swaps `alire-dev.toml` over `alire.toml` so `alr exec` resolves the
+   development toolchain,
+3. runs `alr exec -- gnatprove -P <gpr>`,
+4. restores the backed-up files via a `trap ... EXIT INT TERM` (also on
+   failure or interruption).
+
+The assessment and SBOM pipeline always scans the publishing `alire.toml`, so
+dev-only tool declarations never leak into dependency graphs or SBOMs.
+
 ## Unix Philosophy
 
 adacovex follows the Unix philosophy of doing one thing well:
@@ -26,7 +44,10 @@ adacovex follows the Unix philosophy of doing one thing well:
 adacovex declares no library dependencies beyond the GNAT runtime. All data structures use either:
 
 - GNAT runtime containers (`Ada.Containers.Vectors` for unbounded collections)
-- Fixed-size string buffers (`Max_Line = 8192`, `Max_Path = 4096`, etc.) for bounded I/O
+- Fixed-size string buffers (`Max_Line = 262144`, `Max_Path = 4096`, etc.) for bounded I/O
+
+`Max_Line` is deliberately generous (256 KiB) so that single-line declarations
+from heavily code-generated projects are never truncated or silently drained.
 
 This ensures adacovex can be built and run on any system with a GNAT toolchain, without requiring any additional package installation beyond Alire for toolchain management.
 
@@ -74,4 +95,4 @@ adacovex supports multiple output formats:
 
 ## Testing
 
-adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 222 tests across 9 categories. No external test framework (AUnit, etc.) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
+adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 246 tests across 9 categories. No external test framework (AUnit, etc.) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.

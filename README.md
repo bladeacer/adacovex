@@ -14,12 +14,14 @@ gnatprove is the only declared (tool) dependency; no libraries beyond the GNAT r
 
 - **Source scanning** -- walks `.ads` files, extracts subprogram declarations, [docstring
   annotations](docs/api-docs/adacovex-docstring-spec.md)
-  (`@param`, `@return`, `@field`, `@formal`), and HLR traceability tags
+  (`@param`/`@parameter`, `@return`/`@returns`, `@field`, `@formal`, `@brief`,
+  `@summary`), and HLR traceability tags
 - **Proof analysis** -- parses GNATprove `gnatprove.out` summaries per check category
   (flow, run-time, assertions, contracts, termination); assesses [SPARK assurance
   levels](docs/api-docs/adacovex-spark-levels.md) (Stone--Platinum)
-- **Test parsing** -- reads [test-result markdown](docs/api-docs/adacovex-test-format.md)
-  for pass/fail counts (supports both native Ada test output and AUnit format)
+- **Test parsing** -- reads [test-result summaries](docs/api-docs/adacovex-test-format.md)
+  for pass/fail counts (Markdown tables, TAP, Automake suites, Maven Surefire,
+  Unity, and AUnit-compatible output)
 - **[DAL compliance](docs/api-docs/adacovex-dal-levels.md)** -- assesses DO-178C DAL A-E
   criteria (HLR coverage, orphan tags, test status, minimum SPARK proof level)
 - **Multiple outputs**:
@@ -28,7 +30,7 @@ gnatprove is the only declared (tool) dependency; no libraries beyond the GNAT r
   - Markdown reports -- `VERIFICATION.md` + `TRACE.md`
   - HTML dashboard + JSON API via built-in HTTP server
 - **Scalable** -- package/subprogram collections use `Ada.Containers.Vectors`
-(heap-allocated, no compile-time limits on count). Fixed-size buffers: 8192-char
+(heap-allocated, no compile-time limits on count). Fixed-size buffers: 262144-char
 lines, 4096-char paths.
 
 ## Quick start
@@ -377,8 +379,10 @@ To run adacovex against an Ada/SPARK project, it must have:
 1. **Ada source files** (`.ads`) under the target root.
 2. **GNATprove output**: `gnatprove.out` in the target root or
    `<target>/obj/gnatprove/gnatprove.out`.
-3. **Test results**: `<target>/test_result.md` with a Markdown table
-   containing `Tests` and `Status` columns (PASS/FAIL).
+3. **Test results**: `<target>/test_result.md` with a Markdown table containing
+   `Tests` and `Status` columns (PASS/FAIL), or a supported summary format (TAP,
+   Automake `PASS:`/`FAIL:`, Maven Surefire `Tests run:`, Unity `N Tests M
+   Failures`, or a `Passed:`/`Failed:` line).
 4. **HLR document** (for DAL assessment): `<target>/docs/compliance/HLR.md`.
 
 Missing data shows "N/A" and relevant DAL checks report `Unmet`.
@@ -400,7 +404,9 @@ procedure Do_Something (Name : in Some_Type);
 procedure Simple_Thing;
 ```
 
-Tags: `@param`, `@return`, `@field`, `@formal`. Prefix: `--  ` (two dashes + two spaces).
+Tags: `@param`, `@parameter`, `@return`, `@returns`, `@field`, `@formal`,
+`@brief`, `@summary`. Prefix: `--  ` (two dashes + two spaces); the
+single-space `-- ` and tab-separated styles are also recognized.
 
 See [full spec](docs/api-docs/adacovex-docstring-spec.md).
 
@@ -436,7 +442,7 @@ to document. Overloaded subprograms require one patch entry per overload.
 | Target | Description |
 |--------|-------------|
 | `build` | `alr build` (adacovex + test_runner, covex alias) |
-| `test` | Build and run native test suite (222 tests) |
+| `test` | Build and run native test suite (246 tests) |
 | `prove` | `alr gnatprove` (gnatprove is a declared dependency) |
 | `fmt` | Format Ada sources with `gnatformat` |
 | `doc` | Generate API docs via gnatdoc + rst2md |
@@ -461,14 +467,14 @@ src/
 |-- compliance/                   -- DAL assessment logic
 |-- renderers/                    -- ANSI, SVG, Markdown, HTML output
 |-- server/                       -- HTTP/1.1 dashboard server
-|-- tests/                        -- Native test suite (222 tests)
+|-- tests/                        -- Native test suite (246 tests)
 ```
 
 ## Verification
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 222/222 passing |
+| Unit tests | `make test` | 246/246 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C |
 | SPARK proof | `make prove` | 28/28 VCs Platinum |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, Platinum, DAL-C (strict mode) |

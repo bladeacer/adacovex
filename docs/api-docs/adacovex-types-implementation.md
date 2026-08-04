@@ -1,6 +1,6 @@
 # Adacovex.Types.Implementation
 
-All domain types used across the adacovex tool chain. Package and subprogram collections use Ada.Containers.Vectors (unbounded, up to Natural'Last ~ 2.1B). Fixed-size buffers (Max_Path, Max_Line, Max_Desc_Str, etc.) are bounded at compile time with generous production-suitable limits (Max_Path=4096, Max_Line=8192). HLR-METRICS: Docstring_Metrics type HLR-PROOF: Proof_Summary type HLR-TEST: Test_Summary type HLR-COMPLIANCE: DAL_Assessment type HLR-DAL-A: DAL_Level (DAL_A) HLR-DAL-B: DAL_Level (DAL_B) HLR-DAL-C: DAL_Level (DAL_C) HLR-DAL-D: DAL_Level (DAL_D) HLR-DAL-E: DAL_Level (DAL_E) HLR-SBOM: SBOM component and format types
+All domain types used across the adacovex tool chain. Package and subprogram collections use Ada.Containers.Vectors (unbounded, up to Natural'Last ~ 2.1B). Fixed-size buffers (Max_Path, Max_Line, Max_Desc_Str, etc.) are bounded at compile time with generous production-suitable limits (Max_Path=4096, Max_Line=262144). HLR-METRICS: Docstring_Metrics type HLR-PROOF: Proof_Summary type HLR-TEST: Test_Summary type HLR-COMPLIANCE: DAL_Assessment type HLR-DAL-A: DAL_Level (DAL_A) HLR-DAL-B: DAL_Level (DAL_B) HLR-DAL-C: DAL_Level (DAL_C) HLR-DAL-D: DAL_Level (DAL_D) HLR-DAL-E: DAL_Level (DAL_E) HLR-SBOM: SBOM component and format types
 
 > **Note:** All items in this package are public.
 

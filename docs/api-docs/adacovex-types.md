@@ -4,7 +4,7 @@ All domain types used across the adacovex tool chain.
 Package and subprogram collections use Ada.Containers.Vectors
 (unbounded, up to Natural'Last ~ 2.1B). Fixed-size buffers
 (Max_Path, Max_Line, Max_Desc_Str, etc.) are bounded at compile time
-with generous production-suitable limits (Max_Path=4096, Max_Line=8192).
+with generous production-suitable limits (Max_Path=4096, Max_Line=262144).
 HLR-METRICS: Docstring_Metrics type
 HLR-PROOF: Proof_Summary type
 HLR-TEST: Test_Summary type

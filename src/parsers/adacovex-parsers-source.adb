@@ -153,6 +153,31 @@ package body Adacovex.Parsers.Source is
       return False;
    end Has_Docstring_Tag;
 
+   --  True when Line is a docstring summary line: an Ada comment (`--`)
+   --  followed by at least one space or tab and then at least one non-blank
+   --  character.  Accepts both the canonical `--  ` prefix and the common
+   --  single-space `-- ` / tab-separated styles found in generated code.
+   --  A bare `--` or `---` (three dashes) is not a docstring.
+   function Is_Docstring_Line (Line : String) return Boolean is
+   begin
+      for I in Line'First .. Line'Last - 1 loop
+         if Line (I) = '-' and then Line (I + 1) = '-' then
+            if I + 1 < Line'Last then
+               if Line (I + 2) /= ' ' and then Line (I + 2) /= ASCII.HT then
+                  return False;
+               end if;
+               for J in I + 2 .. Line'Last loop
+                  if Line (J) /= ' ' and then Line (J) /= ASCII.HT then
+                     return True;
+                  end if;
+               end loop;
+            end if;
+            return False;
+         end if;
+      end loop;
+      return False;
+   end Is_Docstring_Line;
+
    procedure Scan_Ads_File
      (File_Path : String;
       Pkg       : out Types.Implementation.Package_Info;
@@ -343,23 +368,13 @@ package body Adacovex.Parsers.Source is
                   Pending_Has_Doc := True;
                elsif DT_Len >= 6 and then DT_Type (1 .. 6) = "formal" then
                   null;
+               elsif DT_Len >= 5 and then DT_Type (1 .. 5) = "brief" then
+                  Pending_Has_Doc := True;
+               elsif DT_Len >= 7 and then DT_Type (1 .. 7) = "summary" then
+                  Pending_Has_Doc := True;
                end if;
-            elsif Last >= 5 then
-               for P in 1 .. Last - 3 loop
-                  if Line (P) = '-'
-                    and Line (P + 1) = '-'
-                    and Line (P + 2) = ' '
-                    and Line (P + 3) = ' '
-                  then
-                     for C in P + 4 .. Last loop
-                        if Line (C) /= ' ' then
-                           Pending_Has_Doc := True;
-                           exit;
-                        end if;
-                     end loop;
-                     exit;
-                  end if;
-               end loop;
+            elsif Is_Docstring_Line (Line (1 .. Last)) then
+               Pending_Has_Doc := True;
             end if;
          end loop;
          Flush_Pending;
