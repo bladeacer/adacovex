@@ -7,6 +7,9 @@ src/core/adacovex-types	All domain types + conversion functions
 src/core/adacovex-config	CLI argument parser (prove mode, --no-sbom, --sbom-format)
 src/core/adacovex-diff	Differential assessment (--compare-base / --coverage-delta)
 src/core/adacovex-prove	GNATprove runner for the `prove` subcommand (alire-first toolchain resolution)
+src/ir/adacovex-target_profiles	Bounded IR scalar types (IR_Int8..IR_Int64 / IR_UInt8..IR_UInt64) + host/target config
+src/ir/adacovex-ir_bounds	Bounds-verification fixture (synthesized lowered types, gnatprove-proved)
+src/ir/adacovex-ir_synthesiser	Future-use IR synthesiser (foreign type-name lowering to bounded Ada)
 src/parsers/adacovex-parsers	Parent package for all input-file parsers
 src/parsers/adacovex-parsers-source	Ada source scanner (procs/funcs/docstrings/HLR)
 src/parsers/adacovex-parsers-gnatprove	GNATprove .out parser
@@ -25,10 +28,11 @@ src/server/adacovex-server-router	Parent package for HTTP request routing (futur
 src/tests/adacovex-test_support	Native test Runner type
 src/tests/adacovex_dal_tests	DAL compliance tests (2)
 src/tests/adacovex_types_tests	Type conversion tests (21)
-src/tests/adacovex_scanner_tests	Source scanner tests (40)
+src/tests/adacovex_scanner_tests	Source scanner tests (68)
+src/tests/adacovex_ir_tests	IR synthesis tests (26)
 src/tests/adacovex_prove_tests	GNATprove parser tests (38)
-src/tests/adacovex_testparser_tests	Test-result parser tests (27)
+src/tests/adacovex_testparser_tests	Test-result parser tests (35)
 src/tests/adacovex_config_tests	CLI config tests (11)
 src/tests/adacovex_renderer_svg_tests	SVG renderer tests (30)
 src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (53)
-src/tests/test_runner	Test suite entry point (222 tests)
+src/tests/test_runner	Test suite entry point (284 tests)

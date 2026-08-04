@@ -3,6 +3,9 @@
 | Package | HLR Tags |
 |---------|-----------|
 | adacovex | ARCH, ARCH |
+| adacovex-target_profiles | IR |
+| adacovex-ir_bounds | IR |
+| adacovex-ir_synthesiser | IR |
 | adacovex-renderers-sbom | SBOM |
 | adacovex-renderers-ansi | RENDER-ANSI |
 | adacovex-renderers-html | RENDER-HTML |

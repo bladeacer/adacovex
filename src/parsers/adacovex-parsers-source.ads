@@ -28,6 +28,22 @@ with Adacovex.Types;
 --    --  one-line summary (tab separator)
 --  A bare `--` or `---` divider is not a docstring.  Docstrings may
 --  appear before or after the declaration.
+--
+--  Google style (Doxygen-free Python convention):
+--    --  Args:
+--    --      X (int):  First operand.
+--    --  Returns:
+--    --      The sum.
+--  An "Args:" header opens a parameter block: deeper-indented comment lines
+--  inside it count as parameter entries.  "Returns:" marks a documented
+--  return value.
+--
+--  Sphinx style (reStructuredText field lists):
+--    --  :param X:  First operand.
+--    --  :returns: The sum.
+--  ":param"/":parameter" count as parameters, ":return"/":returns" mark a
+--  documented return value, and ":type"/":rtype" mark the subprogram as
+--  documented.
 
 package Adacovex.Parsers.Source is
 

@@ -68,6 +68,41 @@ package Priority_Queue is
 end Priority_Queue;
 ```
 
+## Google / Sphinx styles
+
+The scanner also recognizes the two most common non-Ada docstring conventions,
+so the same subprogram can be documented in Ada, Google, or Sphinx style.
+
+### Google style
+
+A `Args:` or `Args: ...` header opens a parameter block: deeper-indented
+following comment lines count as parameters. A `Returns:` header marks the
+return-value description.
+
+```ada
+-- Do something useful.
+--
+-- Args:
+--   X:  The first argument.
+--
+-- Returns:
+--   The result.
+function Foo (X : Integer) return Integer;
+```
+
+### Sphinx style
+
+`:param Name:`, `:parameter Name:`, `:type Name:`, `:return:`, `:returns:`,
+and `:rtype:` fields are all recognized.
+
+```ada
+-- Do something else.
+--
+-- :param X: The argument.
+-- :returns: The result.
+function Bar (X : Integer) return Integer;
+```
+
 ## Coverage
 
 Docstring coverage measures: documented subprograms / total subprograms.

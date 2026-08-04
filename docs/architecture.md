@@ -38,6 +38,13 @@ adacovex follows the Unix philosophy of doing one thing well:
 - **No library dependencies**: Only the GNAT runtime is used. No external libraries, frameworks, or package managers beyond Alire for toolchain management.
 - **Composable tools**: The `prove` subcommand runs GNATprove and then falls through to the standard assessment pipeline. The `sbom` subcommand generates a proof-aware SBOM independently.
 - **Exit codes**: `0` for success (DAL achieved), `1` for compliance failure. This enables straightforward CI integration.
+- **Minimal user code**: users write as little code as possible while getting
+  maximum value. The tool meets third-party and generated code where it is --
+  recognizing common docstring conventions (Ada `--  @param`, Google
+  `Args:`/`Returns:`, Sphinx `:param:`/`:returns:`), common test-result
+  formats (TAP, Automake, Surefire, Unity), and lowering foreign type names
+  (`int32_t`, `size_t`, ...) onto bounded Ada types -- so nothing needs to be
+  rewritten to be assessed.
 
 ## Zero-Library-Dependency Design
 
@@ -53,9 +60,28 @@ This ensures adacovex can be built and run on any system with a GNAT toolchain, 
 
 ## SPARK Formal Verification
 
-adacovex itself is SPARK-proven at Platinum level (28/28 VCs proved, AoRTE-free). The tool analyzes GNATprove output (`gnatprove.out`) to assess SPARK assurance levels (Stone through Platinum) for target projects.
+adacovex itself is SPARK-proven at Platinum level (36/36 VCs proved, AoRTE-free). The tool analyzes GNATprove output (`gnatprove.out`) to assess SPARK assurance levels (Stone through Platinum) for target projects.
 
 The tool does not perform verification itself -- it parses and reports on proof results produced by GNATprove. This keeps the tool's scope narrow and aligns with the Unix philosophy of composing specialized tools.
+
+## IR Synthesiser
+
+The `src/ir/` layer starts an intermediate representation for
+cross-compilation assessments, so the tool can reason about types as they
+exist on a target rather than only as they appear in Ada source:
+
+- `Adacovex.Target_Profiles` defines bounded machine-integer types
+  (`IR_Int8`..`IR_Int64`, `IR_UInt8`..`IR_UInt64`) with `Size` clauses and a
+  `Target_Config` record (host/target/pointer word sizes). The types are
+  SPARK-proved: `Checked_Add32` / `Checked_Add64` show overflow is detected,
+  not undefined.
+- `Adacovex.IR_Synthesiser` lowers foreign type names (`int8_t`, `size_t`,
+  `usize`, `ptrdiff_t`, ...) onto the bounded IR types and synthesizes
+  package declarations from a comma/whitespace-separated type list.
+- `Adacovex.IR_Bounds` is a gnatprove fixture deriving synthesized-style
+  `int32_t` / `int64_t` types and proving their `Add32` / `Add64` overflow
+  checks, so absence of integer overflow on the lowered types is
+  machine-checked.
 
 ## DO-178C DAL Compliance
 
@@ -74,7 +100,7 @@ The scanner walks the target directory tree, skipping always-excluded directorie
 
 - Package name from filename
 - Subprogram declarations (`procedure`, `function`, `generic procedure`, `generic function`)
-- Docstring annotations (`--  ` prefix with optional `@param`, `@return`, `@field`, `@formal` tags)
+- Docstring annotations (`--  ` prefix with optional `@param`, `@return`, `@field`, `@formal` tags, plus Google `Args:`/`Returns:` blocks and Sphinx `:param:`/`:returns:` fields)
 - HLR traceability tags (`-- HLR-XXXX`)
 
 In strict mode (default), the scanner also applies docstring patches from `.adacovex/patches/` to document vendored/third-party code without modifying the originals.

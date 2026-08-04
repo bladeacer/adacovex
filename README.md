@@ -14,8 +14,8 @@ gnatprove is the only declared (tool) dependency; no libraries beyond the GNAT r
 
 - **Source scanning** -- walks `.ads` files, extracts subprogram declarations, [docstring
   annotations](docs/api-docs/adacovex-docstring-spec.md)
-  (`@param`/`@parameter`, `@return`/`@returns`, `@field`, `@formal`, `@brief`,
-  `@summary`), and HLR traceability tags
+  in three styles (Ada `@param`/`@return`/`@field`/`@formal`/`@brief`/`@summary`,
+  Google `Args:`/`Returns:`, Sphinx `:param:`/`:returns:`), and HLR traceability tags
 - **Proof analysis** -- parses GNATprove `gnatprove.out` summaries per check category
   (flow, run-time, assertions, contracts, termination); assesses [SPARK assurance
   levels](docs/api-docs/adacovex-spark-levels.md) (Stone--Platinum)
@@ -406,7 +406,9 @@ procedure Simple_Thing;
 
 Tags: `@param`, `@parameter`, `@return`, `@returns`, `@field`, `@formal`,
 `@brief`, `@summary`. Prefix: `--  ` (two dashes + two spaces); the
-single-space `-- ` and tab-separated styles are also recognized.
+single-space `-- ` and tab-separated styles are also recognized. Google
+(`Args:`/`Returns:`) and Sphinx (`:param:`/`:returns:`) docstring styles are
+supported too, so third-party and generated code needs no rewriting.
 
 See [full spec](docs/api-docs/adacovex-docstring-spec.md).
 
@@ -442,7 +444,7 @@ to document. Overloaded subprograms require one patch entry per overload.
 | Target | Description |
 |--------|-------------|
 | `build` | `alr build` (adacovex + test_runner, covex alias) |
-| `test` | Build and run native test suite (246 tests) |
+| `test` | Build and run native test suite (284 tests) |
 | `prove` | `alr gnatprove` (gnatprove is a declared dependency) |
 | `fmt` | Format Ada sources with `gnatformat` |
 | `doc` | Generate API docs via gnatdoc + rst2md |
@@ -467,16 +469,16 @@ src/
 |-- compliance/                   -- DAL assessment logic
 |-- renderers/                    -- ANSI, SVG, Markdown, HTML output
 |-- server/                       -- HTTP/1.1 dashboard server
-|-- tests/                        -- Native test suite (246 tests)
+|-- tests/                        -- Native test suite (284 tests)
 ```
 
 ## Verification
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 246/246 passing |
+| Unit tests | `make test` | 284/284 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C |
-| SPARK proof | `make prove` | 28/28 VCs Platinum |
+| SPARK proof | `make prove` | 36/36 VCs Platinum |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, Platinum, DAL-C (strict mode) |
 
 See [changelogs](docs/changelogs/index.md) for full release notes.

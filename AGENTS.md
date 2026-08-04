@@ -18,10 +18,10 @@ adacovex was designed to audit the Ada_CRDT library at `../Ada_CRDT` (26 package
 The `--target=PATH` option can point at any Ada/SPARK project.
 
 Self-assessment (`make run-self`, default target: cwd) verifies adacovex against its own
-source -- all 23 packages, 50 subprograms -- and must always show:
+source -- all 26 packages, 57 subprograms -- and must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
-- Platinum SPARK level (28/28 VCs proved)
-- 246/246 native tests passing
+- Platinum SPARK level (36/36 VCs proved)
+- 284/284 native tests passing
 - DAL-C Achieved
 
 ## Architecture
@@ -40,6 +40,10 @@ src/
 |   |-- adacovex-diff.ads/.adb                -- Differential assessment (--compare-base / --coverage-delta)
 |   |-- adacovex-prove.ads/.adb               -- GNATprove runner for the `prove` subcommand (alire-first toolchain resolution)
 |   `-- adacovex-types.ads/.adb               -- All domain types + conversion functions
+|-- ir/
+|   |-- adacovex-ir_bounds.ads/.adb           -- Bounds-verification fixture (synthesized lowered types, gnatprove-proved)
+|   |-- adacovex-ir_synthesiser.ads/.adb      -- Future-use IR synthesiser (foreign type-name lowering to bounded Ada)
+|   `-- adacovex-target_profiles.ads/.adb     -- Bounded IR scalar types (IR_Int8..IR_Int64 / IR_UInt8..IR_UInt64) + host/target config
 |-- parsers/
 |   |-- adacovex-parsers.ads                  -- Parent package for all input-file parsers
 |   |-- adacovex-parsers-do178c.ads/.adb      -- HLR/LLR markdown parser + source tag matcher
@@ -62,15 +66,17 @@ src/
     |-- adacovex-test_support.ads/.adb        -- Native test Runner type
     |-- adacovex_config_tests.ads/.adb        -- CLI config tests (11)
     |-- adacovex_dal_tests.ads/.adb           -- DAL compliance tests (2)
+    |-- adacovex_ir_tests.ads/.adb            -- IR synthesis tests (26)
     |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (38)
     |-- adacovex_renderer_svg_tests.ads/.adb  -- SVG renderer tests (30)
     |-- adacovex_sbom_tests.ads/.adb          -- SBOM / manifest graph tests (53)
-    |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (40)
-    |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (27)
+    |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (68)
+    |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (35)
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (21)
-    `-- test_runner.adb                       -- Test suite entry point (246 tests)
+    `-- test_runner.adb                       -- Test suite entry point (284 tests)
 ```
 <!-- agents-tree:end -->
+
 
 ---
 
@@ -490,6 +496,35 @@ procedure Bar (Y : Integer);
 | `@brief` | `--  @brief Summary.` | Short summary | Yes |
 | `@summary` | `--  @summary Description.` | Summary | Yes |
 
+### Google / Sphinx styles
+
+The scanner also recognizes the two most common non-Ada docstring conventions,
+so the same subprogram can be documented with `Args:` / `Returns:` blocks
+(Google style) or `:param:` / `:returns:` fields (Sphinx style):
+
+```
+--  Do something useful.
+--
+--  Args:
+--    X:  The first argument.
+--
+--  Returns:
+--    The result.
+function Foo (X : Integer) return Integer;
+
+--  Do something else.
+--
+--  :param X: The argument.
+--  :returns: The result.
+function Bar (X : Integer) return Integer;
+```
+
+- A `Args:` / `Args: ...` header opens a block; deeper-indented following
+  comment lines count as parameters.
+- A `Returns:` header (or `@return`) marks the return-value description.
+- Sphinx `:param Name:`, `:parameter Name:`, `:type Name:`, `:return:`,
+  `:returns:`, and `:rtype:` fields are all recognized.
+
 ### Rules
 - Descriptions are capitalized and end with a period.
 - Two spaces between tag name and description text (alignment padding).
@@ -706,9 +741,9 @@ is obtained and built.
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 246/246 passing |
+| Unit tests | `make test` | 284/284 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
-| SPARK proof | `make prove` | 28/28 VCs Platinum |
+| SPARK proof | `make prove` | 36/36 VCs Platinum |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
 
 See [docs/changelogs/adacovex-1.0.0.md](docs/changelogs/adacovex-1.0.0.md) for full release notes.
@@ -726,18 +761,19 @@ Test source: `src/tests/`. Entry point: `test_runner.adb` (builds as
 in `adacovex.gpr`; the CLI entry point builds as `bin/adacovex` via the
 `Builder.Executable` override, with a `bin/covex` alias symlink).
 
-`make test` builds and runs the 246-test suite. Test results are written to
+`make test` builds and runs the 284-test suite. Test results are written to
 `docs/test_result.md` in a Markdown table format that can be parsed by
 `adacovex-parsers-tests`. This means adacovex **supports both** native test
 running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 
-### Test categories (246 total)
+### Test categories (284 total)
 
 | Category | Tests | What it covers |
 |----------|-------|----------------|
 | Types conversions | 21 | SPARK_Level/DAL_Level/DAL_Status/Test_Status strings |
 | DAL compliance | 2 | DAL assessment status |
-| Source scanner | 56 | Package scan, docstring parsing, HLR tags, name extraction, @field/@formal/after-decl, comment-style variants, tag aliases, long generated lines |
+| Source scanner | 68 | Package scan, docstring parsing (Ada/Google/Sphinx styles), HLR tags, name extraction, @field/@formal/after-decl, comment-style variants, tag aliases, long generated lines |
+| IR synthesis | 26 | Bounded type bounds, Target_Config defaults, foreign type-name lowering, package synthesis |
 | GNATprove parser | 38 | .out parsing, proof summary, SPARK level detection, --help handling |
 | Test-result parser | 35 | Markdown table, TAP, Automake, Maven Surefire, and Unity test-result parsing |
 | CLI config | 11 | Default option values, --help, --no-svg field, --compare-base and --coverage-delta defaults |
