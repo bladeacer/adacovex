@@ -24,6 +24,7 @@
 - HLR-MANIFEST: Alire manifest and dependency-graph parsing
 - HLR-PROVE: GNATprove subcommand
 - HLR-SBOM: Proof-aware SBOM generation
+- HLR-IR: IR type profiles, host/target config, and foreign type-name lowering
 
 ## Requirements
 
@@ -102,3 +103,9 @@
   Otherwise it falls back to a gnatprove on PATH, a cached
   ~/.adacovex/toolchain/bin gnatprove, and finally a platform toolchain
   download, then hands off to the standard assessment pipeline.
+
+- HLR-IR: The tool shall define bounded target machine-integer types
+  (IR_Int8 through IR_Int64 and IR_UInt8 through IR_UInt64), a host/target
+  word-size configuration, and lower foreign type names (int32_t, size_t,
+  usize, ...) onto them, synthesizing bounded Ada declarations that gnatprove
+  can prove free of integer overflow.

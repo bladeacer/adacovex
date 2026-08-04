@@ -48,6 +48,40 @@ declarations never leak into dependency graphs or SBOMs. This fixes
 `make run-ada-crdt` / `make prove` against projects (e.g. Ada_CRDT) that keep
 gnatprove out of their publishing manifest.
 
+### C5: IR layer -- bounded target type profiles
+
+New `src/ir/` layer implements the first stage of an intermediate
+representation for cross-compilation assessments:
+
+- `Adacovex.Target_Profiles` (SPARK On): bounded machine-integer types
+  `IR_Int8`..`IR_Int64` (fixed-width signed ranges with `Size` clauses) and
+  `IR_UInt8`..`IR_UInt64` (modular unsigned), plus `Word_Size` and a
+  `Target_Config` record carrying `Host_Bits` / `Target_Bits` / `Pointer_Bits`.
+  `Checked_Add32` / `Checked_Add64` perform overflow-checked addition on the
+  bounded types.
+- `Adacovex.IR_Synthesiser` (SPARK Off, string generation): `IR_Type_Name`,
+  `Lower_Type_Name` (case-sensitive: `int8_t`..`uint64_t`, `size_t`/`usize`
+  -> unsigned target-width, `isize` -> signed target-width, `ptrdiff_t` /
+  `uintptr_t` -> pointer-width), and `Synthesize_Package` that splits a
+  comma/whitespace-separated type list into synthesized bounded Ada
+  declarations.
+- `Adacovex.IR_Bounds` (SPARK On): a gnatprove fixture that derives
+  `int32_t` / `int64_t` from the bounded IR types and proves the overflow
+  checks on `Add32` / `Add64` -- absence of integer overflow on the lowered
+  types is machine-checked.
+
+### C6: Google / Sphinx docstring styles
+
+The source scanner now also recognizes the two most common non-Ada docstring
+conventions, so the same subprogram can be documented in Ada, Google, or
+Sphinx style:
+
+- **Google**: `Args:` / `Args: ...` headers open a parameter block
+  (deeper-indented following comment lines count as parameters); a `Returns:`
+  header marks the return-value description.
+- **Sphinx**: `:param Name:`, `:parameter Name:`, `:type Name:`, `:return:`,
+  `:returns:`, and `:rtype:` fields are all recognized.
+
 ## Fixes
 
 ### H1: Unity summary count separated by a space
@@ -59,20 +93,26 @@ run.
 
 ## Notes
 
-- Test suite extended: Source scanner 40 -> **56** checks (comment-style
-  variants, tag aliases, 12000-char single-line declaration); Test-result
-  parser 27 -> **35** checks (TAP, Automake, Surefire, Unity). The suite is
-  now **246 tests**.
-- Self-assessment metrics: 23 packages, 50 subprograms, 100% docstrings,
-  Platinum (28/28 VCs), 246 tests, DAL-C Achieved.
+- Test suite extended: Source scanner 40 -> **68** checks (comment-style
+  variants, tag aliases, Google/Sphinx styles, 12000-char single-line
+  declaration); Test-result parser 27 -> **35** checks (TAP, Automake,
+  Surefire, Unity); new **IR synthesis** category (**26** checks). The suite
+  is now **284 tests**.
+- Self-assessment metrics: 26 packages, 57 subprograms, 100% docstrings,
+  Platinum (36/36 VCs), 284 tests, DAL-C Achieved.
 
 ## Proof Results
 
-Self-assessment: **Platinum** (28/28 VCs proved, AoRTE-free). Ada_CRDT proof
-run verified end-to-end via the dev-manifest swap (279 VCs, 5 justified).
+Self-assessment: **Platinum** (36/36 VCs proved, AoRTE-free) -- the four
+overflow-checked adds on the bounded IR types
+(`Target_Profiles.Checked_Add32/64`, `IR_Bounds.Add32/64`) are all machine
+proved. Ada_CRDT proof run verified end-to-end via the dev-manifest swap
+(279 VCs, 5 justified).
 
 ## Traceability
 
-No new HLRs. Existing tags continue to cover the changed packages
-(`-- HLR-SCAN` on `Adacovex.Parsers.Source`, `-- HLR-TEST` on
-`Adacovex.Parsers.Tests`, `-- HLR-PROVE` on `Adacovex.Core.Prove`).
+New HLR `HLR-IR` (IR type profiles, host/target config, and foreign type-name
+lowering) covers the new `src/ir/` packages. Existing tags continue to cover
+the changed packages (`-- HLR-SCAN` on `Adacovex.Parsers.Source`,
+`-- HLR-TEST` on `Adacovex.Parsers.Tests`, `-- HLR-PROVE` on
+`Adacovex.Core.Prove`).

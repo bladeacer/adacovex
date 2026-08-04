@@ -453,6 +453,92 @@ package body Adacovex_Scanner_Tests is
                   = "Huge_Proc",
          "Test 14: subprogram on a >8192-char line is parsed");
 
+      --  Test 15: Google-style Args:/Returns: sections.
+      begin
+         declare
+            F : File_Type;
+         begin
+            Create (F, Out_File, Tmp_File);
+            Put_Line (F, "package Google_Style is");
+            Put_Line (F, "   --  Adds two numbers.");
+            Put_Line (F, "   --  Args:");
+            Put_Line (F, "   --      X (int):  First operand.");
+            Put_Line (F, "   --      Y (int):  Second operand.");
+            Put_Line (F, "   --  Returns:");
+            Put_Line (F, "   --      The sum of X and Y.");
+            Put_Line (F, "   function G_Add (X, Y : Integer) return Integer;");
+            Put_Line (F, "   --  Divides two numbers.");
+            Put_Line (F, "   --  Args:");
+            Put_Line (F, "   --      A (int):  Dividend.");
+            Put_Line (F, "   procedure G_Div (A : Integer);");
+            Put_Line (F, "   procedure G_No_Docs;");
+            Put_Line (F, "end Google_Style;");
+            Close (F);
+         end;
+      end;
+
+      Adacovex.Parsers.Source.Scan_Ads_File (Tmp_File, Pkg, Success);
+      R.Check (Success, "Test 15: parse succeeded");
+      R.Check
+        (Natural (Pkg.Subprograms.Length) = 3,
+         "Test 15: 3 subprograms found");
+      R.Check
+        (Pkg.Subprograms (1).Has_Docstring,
+         "Test 15: Google Args/Returns marks documented");
+      R.Check
+        (Pkg.Subprograms (1).Doc_Param_Ct = 2,
+         "Test 15: Google Args block counts 2 params");
+      R.Check
+        (Pkg.Subprograms (1).Doc_Return,
+         "Test 15: Google Returns marks return");
+      R.Check
+        (Pkg.Subprograms (2).Has_Docstring
+         and then Pkg.Subprograms (2).Doc_Param_Ct = 1,
+         "Test 15: Google Args single param");
+      R.Check
+        (not Pkg.Subprograms (3).Has_Docstring,
+         "Test 15: no docstring without section headers");
+
+      --  Test 16: Sphinx-style reST field lists.
+      begin
+         declare
+            F : File_Type;
+         begin
+            Create (F, Out_File, Tmp_File);
+            Put_Line (F, "package Sphinx_Style is");
+            Put_Line (F, "   --  Subtracts two numbers.");
+            Put_Line (F, "   --  :param X: First operand.");
+            Put_Line (F, "   --  :param Y: Second operand.");
+            Put_Line (F, "   --  :returns: The difference.");
+            Put_Line (F, "   function S_Sub (X, Y : Integer) return Integer;");
+            Put_Line (F, "   --  Prints a message.");
+            Put_Line (F, "   --  :param Msg: The message to print.");
+            Put_Line (F, "   --  :rtype: None.");
+            Put_Line (F, "   procedure S_Print (Msg : String);");
+            Put_Line (F, "   procedure S_No_Docs;");
+            Put_Line (F, "end Sphinx_Style;");
+            Close (F);
+         end;
+      end;
+
+      Adacovex.Parsers.Source.Scan_Ads_File (Tmp_File, Pkg, Success);
+      R.Check (Success, "Test 16: parse succeeded");
+      R.Check
+        (Natural (Pkg.Subprograms.Length) = 3,
+         "Test 16: 3 subprograms found");
+      R.Check
+        (Pkg.Subprograms (1).Has_Docstring
+         and then Pkg.Subprograms (1).Doc_Param_Ct = 2
+         and then Pkg.Subprograms (1).Doc_Return,
+         "Test 16: Sphinx :param:/:returns: parsed");
+      R.Check
+        (Pkg.Subprograms (2).Has_Docstring
+         and then Pkg.Subprograms (2).Doc_Param_Ct = 1,
+         "Test 16: Sphinx :param: single + :rtype: documented");
+      R.Check
+        (not Pkg.Subprograms (3).Has_Docstring,
+         "Test 16: no docstring without field lists");
+
       --  Cleanup
       begin
          Ada.Directories.Delete_File (Tmp_File);
