@@ -52,7 +52,9 @@ package Adacovex.IR_Synthesiser is
       return String
    with
      Pre    =>
-       Pkg_Name'Length <= Max_Pkg_Len
+       Pkg_Name'First >= 1
+       and then Pkg_Name'Length <= Max_Pkg_Len
+       and then Type_Names'First >= 1
        and then Type_Names'Length <= Max_Pkg_Len
        and then Type_Names'Last <= Natural'Last - 2,
      Post   => Synthesize_Package'Result'Length <= Max_Pkg_Len,

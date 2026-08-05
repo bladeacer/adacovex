@@ -76,7 +76,7 @@ package body Adacovex.IR_Synthesiser is
      (Pkg_Name : String; Type_Names : String; Cfg : Target_Config)
       return String
    is
-      Result : String (1 .. Max_Pkg_Len);
+      Result : String (1 .. Max_Pkg_Len) := (others => ' ');
       RLen   : Natural := 0;
 
       --  Append a string to the synthesized text buffer.  The buffer is
@@ -108,7 +108,7 @@ package body Adacovex.IR_Synthesiser is
             pragma Loop_Invariant (RLen <= Result'Last);
             declare
                J    : Natural := I;
-               Sub  : String (1 .. Type_Names'Length);
+               Sub  : String (1 .. Type_Names'Length) := (others => ' ');
                SLen : Natural := 0;
             begin
                while J <= Type_Names'Last and then Type_Names (J) /= ',' loop
