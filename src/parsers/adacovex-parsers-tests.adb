@@ -38,8 +38,7 @@ package body Adacovex.Parsers.Tests is
    --  longer than the Natural capacity stop accumulating (previously the
    --  unguarded accumulation raised Constraint_Error at runtime).
    function Number_After (S : String; Key : String) return Natural
-   with SPARK_Mode => On,
-     Pre => S'First >= 1 and S'Last < Natural'Last
+   with SPARK_Mode => On, Pre => S'First >= 1 and S'Last < Natural'Last
    is
    begin
       if Key'Length <= S'Length then
@@ -87,8 +86,7 @@ package body Adacovex.Parsers.Tests is
    --  Natural capacity stop accumulating (previously a runtime
    --  Constraint_Error on overflow).
    function Number_Before_Word (S : String; Word : String) return Natural
-   with SPARK_Mode => On,
-     Pre => S'First >= 1 and S'Last < Natural'Last
+   with SPARK_Mode => On, Pre => S'First >= 1 and S'Last < Natural'Last
    is
    begin
       if Word'Length <= S'Length then
@@ -106,7 +104,7 @@ package body Adacovex.Parsers.Tests is
                         K : Natural := I - 1;
                      begin
                         while K >= S'First and then S (K) = ' ' loop
-                           pragma Loop_Invariant (K >= S'First);
+                           pragma Loop_Invariant (K in S'First .. S'Last);
                            K := K - 1;
                         end loop;
                         if K >= S'First and then S (K) in '0' .. '9' then
@@ -117,14 +115,17 @@ package body Adacovex.Parsers.Tests is
                               while DStart > S'First
                                 and then S (DStart - 1) in '0' .. '9'
                               loop
-                                 pragma Loop_Invariant (DStart >= S'First);
+                                 pragma
+                                   Loop_Invariant
+                                     (DStart in S'First .. S'Last);
                                  DStart := DStart - 1;
                               end loop;
                               for C in DStart .. K loop
-                                 pragma Loop_Invariant (C >= S'First);
+                                 pragma Loop_Invariant (C in S'First .. K);
                                  declare
                                     Digit : constant Natural :=
-                                      Character'Pos (S (C)) - Character'Pos ('0');
+                                      Character'Pos (S (C))
+                                      - Character'Pos ('0');
                                  begin
                                     if Num <= (Natural'Last - Digit) / 10 then
                                        Num := Num * 10 + Digit;

@@ -19,9 +19,9 @@ package body Adacovex.Renderers.SVG is
          100_000_000,
          1_000_000_000,
          10_000_000_000);
-      Buf : String (1 .. 10) := (others => '0');
-      Pos : Natural := 10;
-      R   : Natural := N;
+      Buf   : String (1 .. 10) := (others => '0');
+      Pos   : Natural := 10;
+      R     : Natural := N;
    begin
       if N = 0 then
          return "0";

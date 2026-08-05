@@ -47,19 +47,18 @@ package body Adacovex.Parsers.Manifest is
    end Set_Path;
 
    function Trim (S : String) return String
-   with SPARK_Mode => On,
-     Pre => S'First >= 1 and S'Last < Natural'Last
+   with SPARK_Mode => On, Pre => S'First >= 1 and S'Last < Natural'Last
    is
       F, L : Natural;
    begin
       F := S'First;
       L := S'Last;
       while F <= L and then S (F) = ' ' loop
-         pragma Loop_Invariant (F >= S'First);
+         pragma Loop_Invariant (F in S'First .. S'Last + 1);
          F := F + 1;
       end loop;
       while L >= F and then S (L) = ' ' loop
-         pragma Loop_Invariant (L >= S'First);
+         pragma Loop_Invariant (L in S'First .. S'Last);
          L := L - 1;
       end loop;
       if L < F then
