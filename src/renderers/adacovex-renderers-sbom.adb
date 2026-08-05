@@ -132,7 +132,9 @@ package body Adacovex.Renderers.SBOM is
    --  Decimal string of a non-negative integer.  A fixed 10-character buffer
    --  holds any Natural (up to 2,147,483,647, ten digits); the loop invariant
    --  proves the write cursor never underflows the buffer.
-   function I2S (N : Natural) return String with SPARK_Mode => On is
+   function I2S (N : Natural) return String
+   with SPARK_Mode => On, Post => I2S'Result'Length in 1 .. 10
+   is
       Pow10 : constant array (1 .. 10) of Long_Long_Integer :=
         (10,
          100,
@@ -144,9 +146,9 @@ package body Adacovex.Renderers.SBOM is
          100_000_000,
          1_000_000_000,
          10_000_000_000);
-      Buf : String (1 .. 10) := (others => '0');
-      Pos : Natural := 10;
-      R   : Natural := N;
+      Buf   : String (1 .. 10) := (others => '0');
+      Pos   : Natural := 10;
+      R     : Natural := N;
    begin
       if N = 0 then
          return "0";
@@ -161,8 +163,9 @@ package body Adacovex.Renderers.SBOM is
       end loop;
       return Buf (Pos .. 10);
    end I2S;
-
-   function Pad2 (N : Natural) return String with SPARK_Mode => On is
+   function Pad2 (N : Natural) return String
+   with SPARK_Mode => On, Post => Pad2'Result'Length in 1 .. 11
+   is
    begin
       if N < 10 then
          return "0" & I2S (N);
@@ -205,6 +208,10 @@ package body Adacovex.Renderers.SBOM is
       H := Secs / 3_600;
       Mi := (Secs mod 3_600) / 60;
       S := Secs mod 60;
+      pragma Assert (I2S (Y)'Length <= 10);
+      pragma Assert (Pad2 (M)'Length <= 11 and Pad2 (D)'Length <= 11);
+      pragma Assert (Pad2 (H)'Length <= 11 and Pad2 (Mi)'Length <= 11);
+      pragma Assert (Pad2 (S)'Length <= 11);
       return
         I2S (Y)
         & "-"
