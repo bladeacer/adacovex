@@ -46,7 +46,7 @@ package body Adacovex.Parsers.Manifest is
       end loop;
    end Set_Path;
 
-   function Trim (S : String) return String is
+   function Trim (S : String) return String with SPARK_Mode => On is
       F, L : Natural;
    begin
       F := S'First;
@@ -63,7 +63,9 @@ package body Adacovex.Parsers.Manifest is
       return S (F .. L);
    end Trim;
 
-   function Starts_With (S : String; Pre : String) return Boolean is
+   function Starts_With (S : String; Pre : String) return Boolean
+   with SPARK_Mode => On
+   is
    begin
       if Pre'Length > S'Length then
          return False;

@@ -13,14 +13,14 @@ package Adacovex.Target_Profiles is
    --  Signed two's-complement fixed-width integer types.  Each carries an
    --  explicit Size so that IR values map one-to-one onto target machine
    --  types.
-   type IR_Int8  is range -2**7  .. 2**7 - 1  with Size => 8;
+   type IR_Int8 is range -2**7 .. 2**7 - 1 with Size => 8;
    type IR_Int16 is range -2**15 .. 2**15 - 1 with Size => 16;
    type IR_Int32 is range -2**31 .. 2**31 - 1 with Size => 32;
    type IR_Int64 is range -2**63 .. 2**63 - 1 with Size => 64;
 
    --  Unsigned fixed-width integer types.  Modular (wrapping) semantics
    --  mirror C/C++ unsigned behaviour: arithmetic cannot raise overflow.
-   type IR_UInt8  is mod 2**8;
+   type IR_UInt8 is mod 2**8;
    type IR_UInt16 is mod 2**16;
    type IR_UInt32 is mod 2**32;
    type IR_UInt64 is mod 2**64;
@@ -38,22 +38,33 @@ package Adacovex.Target_Profiles is
       Pointer_Bits : Word_Size := Bits_64;
    end record;
 
+   --  Auto-detect the host machine word size from the Ada runtime
+   --  (System.Word_Size: 8, 16, 32, or 64 bits).  Callers use it to populate
+   --  Target_Config.Host_Bits for the machine adacovex executes on.
+   --  @return Bits_8 .. Bits_64 matching the host word size.
+   function Host_Word_Size return Word_Size
+   with Global => null;
+
    --  Bounds-checked 32-bit addition.  Restricting both operands to the
    --  inner half of the range guarantees the sum is representable; gnatprove
    --  discharges the overflow check, proving absence of integer overflow.
    --  @param A  First operand.
    --  @param B  Second operand.
    --  @return The sum of A and B.
-   function Checked_Add32 (A, B : IR_Int32) return IR_Int32 with
-     Pre => A in IR_Int32'First / 2 .. IR_Int32'Last / 2
+   function Checked_Add32 (A, B : IR_Int32) return IR_Int32
+   with
+     Pre =>
+       A in IR_Int32'First / 2 .. IR_Int32'Last / 2
        and then B in IR_Int32'First / 2 .. IR_Int32'Last / 2;
 
    --  Bounds-checked 64-bit addition, analogous to Checked_Add32.
    --  @param A  First operand.
    --  @param B  Second operand.
    --  @return The sum of A and B.
-   function Checked_Add64 (A, B : IR_Int64) return IR_Int64 with
-     Pre => A in IR_Int64'First / 2 .. IR_Int64'Last / 2
+   function Checked_Add64 (A, B : IR_Int64) return IR_Int64
+   with
+     Pre =>
+       A in IR_Int64'First / 2 .. IR_Int64'Last / 2
        and then B in IR_Int64'First / 2 .. IR_Int64'Last / 2;
 
 end Adacovex.Target_Profiles;

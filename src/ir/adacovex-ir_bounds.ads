@@ -21,8 +21,10 @@ package Adacovex.IR_Bounds is
    --  @param A  First operand.
    --  @param B  Second operand.
    --  @return The sum of A and B.
-   function Add32 (A, B : int32_t) return int32_t with
-     Pre => A in int32_t'First / 2 .. int32_t'Last / 2
+   function Add32 (A, B : int32_t) return int32_t
+   with
+     Pre =>
+       A in int32_t'First / 2 .. int32_t'Last / 2
        and then B in int32_t'First / 2 .. int32_t'Last / 2;
 
    --  Bounds-checked addition on the lowered 64-bit type, analogous to
@@ -30,8 +32,10 @@ package Adacovex.IR_Bounds is
    --  @param A  First operand.
    --  @param B  Second operand.
    --  @return The sum of A and B.
-   function Add64 (A, B : int64_t) return int64_t with
-     Pre => A in int64_t'First / 2 .. int64_t'Last / 2
+   function Add64 (A, B : int64_t) return int64_t
+   with
+     Pre =>
+       A in int64_t'First / 2 .. int64_t'Last / 2
        and then B in int64_t'First / 2 .. int64_t'Last / 2;
 
 end Adacovex.IR_Bounds;

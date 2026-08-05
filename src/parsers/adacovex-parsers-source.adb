@@ -182,8 +182,7 @@ package body Adacovex.Parsers.Source is
    --  (reStructuredText) field-list entry of the form ":Keyword" where
    --  Keyword is followed by a space (":param name:") or a colon
    --  (":returns:").  The scan is restricted to Ada comment text.
-   function Has_Sphinx_Field
-     (Line : String; Keyword : String) return Boolean
+   function Has_Sphinx_Field (Line : String; Keyword : String) return Boolean
    is
       In_Comment : Boolean := False;
    begin
@@ -214,8 +213,7 @@ package body Adacovex.Parsers.Source is
 
    --  True when the comment portion of Line contains a Google-style section
    --  header, i.e. "Section:" (Args:, Returns:, ...) as comment text.
-   function Has_Google_Section
-     (Line : String; Section : String) return Boolean
+   function Has_Google_Section (Line : String; Section : String) return Boolean
    is
       In_Comment : Boolean := False;
    begin
@@ -456,56 +454,56 @@ package body Adacovex.Parsers.Source is
                   Pending_Has_Doc := True;
                elsif DT_Len >= 6 and then DT_Type (1 .. 6) = "formal" then
                   null;
-                elsif DT_Len >= 5 and then DT_Type (1 .. 5) = "brief" then
-                   Pending_Has_Doc := True;
-                elsif DT_Len >= 7 and then DT_Type (1 .. 7) = "summary" then
-                   Pending_Has_Doc := True;
-                end if;
-             elsif Is_Docstring_Line (Line (1 .. Last)) then
-                Pending_Has_Doc := True;
-             end if;
+               elsif DT_Len >= 5 and then DT_Type (1 .. 5) = "brief" then
+                  Pending_Has_Doc := True;
+               elsif DT_Len >= 7 and then DT_Type (1 .. 7) = "summary" then
+                  Pending_Has_Doc := True;
+               end if;
+            elsif Is_Docstring_Line (Line (1 .. Last)) then
+               Pending_Has_Doc := True;
+            end if;
 
-             --  Sphinx-style reST field lists: ":param X: ..." and
-             --  ":returns: ..." inside comments.
-             if Has_Sphinx_Field (Line (1 .. Last), "param")
-               or else Has_Sphinx_Field (Line (1 .. Last), "parameter")
-             then
-                Pending_Has_Doc := True;
-                Pending_Param_Ct := Pending_Param_Ct + 1;
-             elsif Has_Sphinx_Field (Line (1 .. Last), "return")
-               or else Has_Sphinx_Field (Line (1 .. Last), "returns")
-             then
-                Pending_Has_Doc := True;
-                Pending_Has_Return := True;
-             elsif Has_Sphinx_Field (Line (1 .. Last), "type")
-               or else Has_Sphinx_Field (Line (1 .. Last), "rtype")
-             then
-                Pending_Has_Doc := True;
-             end if;
+            --  Sphinx-style reST field lists: ":param X: ..." and
+            --  ":returns: ..." inside comments.
+            if Has_Sphinx_Field (Line (1 .. Last), "param")
+              or else Has_Sphinx_Field (Line (1 .. Last), "parameter")
+            then
+               Pending_Has_Doc := True;
+               Pending_Param_Ct := Pending_Param_Ct + 1;
+            elsif Has_Sphinx_Field (Line (1 .. Last), "return")
+              or else Has_Sphinx_Field (Line (1 .. Last), "returns")
+            then
+               Pending_Has_Doc := True;
+               Pending_Has_Return := True;
+            elsif Has_Sphinx_Field (Line (1 .. Last), "type")
+              or else Has_Sphinx_Field (Line (1 .. Last), "rtype")
+            then
+               Pending_Has_Doc := True;
+            end if;
 
-             --  Google-style "Args:" / "Returns:" sections.  An "Args:"
-             --  header opens a block; deeper-indented comment lines within
-             --  it count as parameter entries until the indent returns to
-             --  the header level (or the block is closed by a declaration).
-             declare
-                Ind : constant Integer := Comment_Indent (Line (1 .. Last));
-             begin
-                if Has_Google_Section (Line (1 .. Last), "Args") then
-                   Pending_Has_Doc := True;
-                   In_Google_Args := True;
-                   Google_Args_Indent := Ind;
-                elsif In_Google_Args and then Ind > Google_Args_Indent then
-                   Pending_Has_Doc := True;
-                   Pending_Param_Ct := Pending_Param_Ct + 1;
-                elsif In_Google_Args then
-                   In_Google_Args := False;
-                end if;
-             end;
-             if Has_Google_Section (Line (1 .. Last), "Returns") then
-                Pending_Has_Doc := True;
-                Pending_Has_Return := True;
-             end if;
-          end loop;
+            --  Google-style "Args:" / "Returns:" sections.  An "Args:"
+            --  header opens a block; deeper-indented comment lines within
+            --  it count as parameter entries until the indent returns to
+            --  the header level (or the block is closed by a declaration).
+            declare
+               Ind : constant Integer := Comment_Indent (Line (1 .. Last));
+            begin
+               if Has_Google_Section (Line (1 .. Last), "Args") then
+                  Pending_Has_Doc := True;
+                  In_Google_Args := True;
+                  Google_Args_Indent := Ind;
+               elsif In_Google_Args and then Ind > Google_Args_Indent then
+                  Pending_Has_Doc := True;
+                  Pending_Param_Ct := Pending_Param_Ct + 1;
+               elsif In_Google_Args then
+                  In_Google_Args := False;
+               end if;
+            end;
+            if Has_Google_Section (Line (1 .. Last), "Returns") then
+               Pending_Has_Doc := True;
+               Pending_Has_Return := True;
+            end if;
+         end loop;
          Flush_Pending;
          Close (F);
       exception

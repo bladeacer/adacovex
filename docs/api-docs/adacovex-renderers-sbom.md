@@ -12,7 +12,7 @@ HLR-SBOM: SBOM generation
 
 ## Functions
 
-### function DAL_Property_Value (Level : Adacovex.Types.DAL_Level) return Standard.String `[Post]` `[Global]`
+### function DAL_Property_Value (Level : Adacovex.Types.DAL_Level) return Standard.String `[Post]` `[Global]` `[SPARK]`
 
 | Parameter | Description |
 |-----------|-------------|
@@ -20,7 +20,7 @@ HLR-SBOM: SBOM generation
 
 **Returns:** "DAL-A".."DAL-D", or "" for DAL-E.
 
-### function Proof_Level_Property (Level : Adacovex.Types.SPARK_Level) return Standard.String `[Post]` `[Global]`
+### function Proof_Level_Property (Level : Adacovex.Types.SPARK_Level) return Standard.String `[Post]` `[Global]` `[SPARK]`
 
 | Parameter | Description |
 |-----------|-------------|

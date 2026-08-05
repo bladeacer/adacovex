@@ -12,11 +12,38 @@ subprogram declaration, no intervening blank lines):
 @field Description.             -- Document a record component
 @formal Name  Description.      -- Document a generic formal
 
+Standard tag aliases are accepted (``@parameter`` == ``@param``,
+``@returns`` == ``@return``), and the summary tags ``@brief`` / ``@summary``
+mark a subprogram as documented.
+
 Conventions (following Ada_CRDT style):
 Prefix:  --   (two dashes + two spaces)
 Summary: Capitalized sentence ending with a period.
 Alignment: Two spaces between tag name and description text.
 Placement: Summary lines first, then tag lines, then declaration.
+
+Other standard comment styles are also recognized as docstrings:
+--  one-line summary (single space, ``-- ``)
+--  one-line summary (two spaces, ``--  ``)
+--  one-line summary (tab separator)
+A bare ``--`` or ``---`` divider is not a docstring.  Docstrings may
+appear before or after the declaration.
+
+Google style (Doxygen-free Python convention):
+--  Args:
+--      X (int):  First operand.
+--  Returns:
+--      The sum.
+An "Args:" header opens a parameter block: deeper-indented comment lines
+inside it count as parameter entries.  "Returns:" marks a documented
+return value.
+
+Sphinx style (reStructuredText field lists):
+--  :param X:  First operand.
+--  :returns: The sum.
+":param"/":parameter" count as parameters, ":return"/":returns" mark a
+documented return value, and ":type"/":rtype" mark the subprogram as
+documented.
 
 > **Note:** All items in this package are public.
 

@@ -2,9 +2,11 @@
 --  Package and subprogram collections use Ada.Containers.Vectors
 --  (unbounded, up to Natural'Last ~ 2.1B). Fixed-size buffers
 --  (Max_Path, Max_Line, Max_Desc_Str, etc.) are bounded at compile time
---  with generous production-suitable limits (Max_Path=4096, Max_Line=262144).
---  Max_Line is large enough to read single-line declarations from heavily
---  generated Ada sources without silently draining them.
+--  with generous production-suitable limits (Max_Path=4096, Max_Line=262144
+--  on a 64-bit host).  Max_Path and Max_Line scale with the host word size
+--  (System.Word_Size) so builds on narrower hosts use proportionally smaller
+--  limits; Max_Line is large enough to read single-line declarations from
+--  heavily generated Ada sources without silently draining them.
 --  HLR-METRICS: Docstring_Metrics type
 --  HLR-PROOF: Proof_Summary type
 --  HLR-TEST: Test_Summary type
@@ -17,12 +19,22 @@
 --  HLR-SBOM: SBOM component and format types
 
 with Ada.Containers.Vectors;
+with System;
 
 package Adacovex.Types is
    pragma SPARK_Mode (On);
 
-   Max_Path     : constant := 4096;
-   Max_Line     : constant := 262144;
+   --  Host machine word size in bits, auto-detected from the Ada runtime
+   --  (8, 16, 32, or 64).  Fixed-size path/line buffers scale with it so
+   --  builds on narrower hosts use proportionally smaller limits.
+   Host_Word_Bits : constant := System.Word_Size;
+
+   --  Path and line buffers scale with the host word size; on a 64-bit host
+   --  they keep their classic values (4096 / 262144).  Identifier and
+   --  description limits (Max_Id_Str, Max_Desc_Str, Max_Filename) are
+   --  semantic, not storage-size dependent, and remain fixed.
+   Max_Path     : constant := 64 * Host_Word_Bits;
+   Max_Line     : constant := 4096 * Host_Word_Bits;
    Max_Id_Str   : constant := 64;
    Max_Desc_Str : constant := 128;
    Max_Filename : constant := 128;

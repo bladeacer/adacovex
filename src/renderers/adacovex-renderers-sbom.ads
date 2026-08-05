@@ -19,10 +19,11 @@ package Adacovex.Renderers.SBOM is
    --  @return "Gold" or "Platinum".
    function Proof_Level_Property (Level : Types.SPARK_Level) return String
    with
-     Post   =>
+     SPARK_Mode => On,
+     Post       =>
        Proof_Level_Property'Result = "Gold"
        or else Proof_Level_Property'Result = "Platinum",
-     Global => null;
+     Global     => null;
 
    --  Map a DAL level to the dal_target property value ("DAL-A".."DAL-D").
    --  Returns an empty string for DAL-E, which has no safety effect and is
@@ -30,7 +31,10 @@ package Adacovex.Renderers.SBOM is
    --  @param Level  Target DAL level.
    --  @return "DAL-A".."DAL-D", or "" for DAL-E.
    function DAL_Property_Value (Level : Types.DAL_Level) return String
-   with Post => DAL_Property_Value'Result'Length <= 5, Global => null;
+   with
+     SPARK_Mode => On,
+     Post       => DAL_Property_Value'Result'Length <= 5,
+     Global     => null;
 
    --  Write an SBOM in the requested format to Out_Path.
    --  Creates any missing parent directories and overwrites Out_Path.

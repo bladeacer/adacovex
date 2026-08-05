@@ -9,7 +9,9 @@ package body Adacovex.Renderers.SBOM is
    use type Types.SPARK_Level;
    use type Types.Component_Kind;
 
-   function Proof_Level_Property (Level : Types.SPARK_Level) return String is
+   function Proof_Level_Property (Level : Types.SPARK_Level) return String
+   with SPARK_Mode => On
+   is
    begin
       if Level = Types.Platinum then
          return "Platinum";
@@ -17,7 +19,9 @@ package body Adacovex.Renderers.SBOM is
       return "Gold";
    end Proof_Level_Property;
 
-   function DAL_Property_Value (Level : Types.DAL_Level) return String is
+   function DAL_Property_Value (Level : Types.DAL_Level) return String
+   with SPARK_Mode => On
+   is
    begin
       case Level is
          when Types.DAL_A =>
@@ -40,7 +44,12 @@ package body Adacovex.Renderers.SBOM is
    --  Escape a string for inclusion in a JSON document.  Backslash, quote
    --  and control characters are escaped so the emitted JSON is always
    --  well-formed, even for manifest strings containing embedded quotes.
-   function Escape_JSON (S : String) return String is
+   --  The output buffer is bounded at six bytes per input byte (the widest
+   --  escape, "\u00xx"), so the source length is preconditioned to keep the
+   --  buffer bound within Natural.
+   function Escape_JSON (S : String) return String
+   with SPARK_Mode => On, Pre => S'Length <= Natural'Last / 6
+   is
       Buf : String (1 .. S'Length * 6);
       Len : Natural := 0;
       Hex : constant String := "0123456789abcdef";
@@ -98,6 +107,7 @@ package body Adacovex.Renderers.SBOM is
                Len := Len + 1;
                Buf (Len) := S (I);
          end case;
+         pragma Loop_Invariant (Len <= (I - S'First + 1) * 6);
       end loop;
       return Buf (1 .. Len);
    end Escape_JSON;
@@ -119,7 +129,10 @@ package body Adacovex.Renderers.SBOM is
       Raw (F, """");
    end JStr;
 
-   function I2S (N : Natural) return String is
+   --  Decimal string of a non-negative integer.  A fixed 10-character buffer
+   --  holds any Natural (up to 2,147,483,647, ten digits); the loop invariant
+   --  proves the write cursor never underflows the buffer.
+   function I2S (N : Natural) return String with SPARK_Mode => On is
       Buf : String (1 .. 10);
       Pos : Natural := 10;
       R   : Natural := N;
@@ -132,11 +145,15 @@ package body Adacovex.Renderers.SBOM is
          R := R / 10;
          exit when R = 0;
          Pos := Pos - 1;
+         pragma Loop_Invariant (Pos in 1 .. 10);
+         pragma
+           Loop_Invariant
+             (Long_Long_Integer (R) < Long_Long_Integer (10)**Pos);
       end loop;
       return Buf (Pos .. 10);
    end I2S;
 
-   function Pad2 (N : Natural) return String is
+   function Pad2 (N : Natural) return String with SPARK_Mode => On is
    begin
       if N < 10 then
          return "0" & I2S (N);
@@ -148,35 +165,49 @@ package body Adacovex.Renderers.SBOM is
    --  ISO 8601 UTC timestamp from a Unix epoch second count, computed with
    --  pure integer arithmetic (Howard Hinnant's civil-from-days algorithm)
    --  so the result is identical on every machine and timezone.
-   function ISO_From_Epoch (Epoch_Sec : Natural) return String is
-      Days : constant Long_Long_Integer :=
+   --  The result is fixed-length (YYYY-MM-DDTHH:MM:SS), so it is proven
+   --  within the SPARK scope of this body.
+   function ISO_From_Epoch (Epoch_Sec : Natural) return String
+   with SPARK_Mode => On
+   is
+      Days     : constant Long_Long_Integer :=
         Long_Long_Integer (Epoch_Sec) / 86_400;
-      Secs : constant Natural := Epoch_Sec mod 86_400;
-      Z    : Long_Long_Integer := Days + 719_468;
-      Era  : Long_Long_Integer;
-      Doe  : Long_Long_Integer;
-      Yoe  : Long_Long_Integer;
-      Doy  : Long_Long_Integer;
-      Mp   : Long_Long_Integer;
-      Y, M, D : Natural;
+      Secs     : constant Natural := Epoch_Sec mod 86_400;
+      Z        : Long_Long_Integer := Days + 719_468;
+      Era      : Long_Long_Integer;
+      Doe      : Long_Long_Integer;
+      Yoe      : Long_Long_Integer;
+      Doy      : Long_Long_Integer;
+      Mp       : Long_Long_Integer;
+      Y, M, D  : Natural;
       H, Mi, S : Natural;
    begin
       Era := (if Z >= 0 then Z else Z - 146_096) / 146_097;
       Doe := Z - Era * 146_097;
       Yoe := (Doe - Doe / 1_460 + Doe / 36_524 - Doe / 146_096) / 365;
-      Y   := Natural (Yoe + Era * 400);
+      Y := Natural (Yoe + Era * 400);
       Doy := Doe - (365 * Yoe + Yoe / 4 - Yoe / 100);
-      Mp  := (5 * Doy + 2) / 153;
-      D   := Natural (Doy - (153 * Mp + 2) / 5 + 1);
-      M   := Natural (Mp + (if Mp < 10 then 3 else -9));
+      Mp := (5 * Doy + 2) / 153;
+      D := Natural (Doy - (153 * Mp + 2) / 5 + 1);
+      M := Natural (Mp + (if Mp < 10 then 3 else -9));
       if M <= 2 then
          Y := Y + 1;
       end if;
-      H  := Secs / 3_600;
+      H := Secs / 3_600;
       Mi := (Secs mod 3_600) / 60;
-      S  := Secs mod 60;
-      return I2S (Y) & "-" & Pad2 (M) & "-" & Pad2 (D)
-        & "T" & Pad2 (H) & ":" & Pad2 (Mi) & ":" & Pad2 (S);
+      S := Secs mod 60;
+      return
+        I2S (Y)
+        & "-"
+        & Pad2 (M)
+        & "-"
+        & Pad2 (D)
+        & "T"
+        & Pad2 (H)
+        & ":"
+        & Pad2 (Mi)
+        & ":"
+        & Pad2 (S);
    end ISO_From_Epoch;
 
    --  ISO 8601 timestamp (YYYY-MM-DDTHH:MM:SS).
@@ -190,7 +221,7 @@ package body Adacovex.Renderers.SBOM is
    begin
       if Ada.Environment_Variables.Exists ("SOURCE_DATE_EPOCH") then
          declare
-            V : constant String :=
+            V  : constant String :=
               Ada.Environment_Variables.Value ("SOURCE_DATE_EPOCH");
             N  : Natural := 0;
             Ok : Boolean := V'Length > 0;
