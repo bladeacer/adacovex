@@ -1,4 +1,5 @@
 with Adacovex.Types; use Adacovex.Types;
+with System;
 
 package body Adacovex_Types_Tests is
 
@@ -31,6 +32,23 @@ package body Adacovex_Types_Tests is
 
       R.Check (To_String (Pass) = "PASS", "Test_Status Pass -> string");
       R.Check (To_String (Fail) = "FAIL", "Test_Status Fail -> string");
+
+      --  Host word-size auto-detection (added 1.6.0).
+      R.Check
+        (Host_Word_Bits = System.Word_Size,
+         "Host_Word_Bits matches System.Word_Size");
+      R.Check
+        (Host_Word_Bits in 8 | 16 | 32 | 64,
+         "Host_Word_Bits is a supported word size");
+      R.Check
+        (Max_Path = 64 * System.Word_Size,
+         "Max_Path scales with host word size");
+      R.Check
+        (Max_Line = 4096 * System.Word_Size,
+         "Max_Line scales with host word size");
+      R.Check
+        (Max_Desc_Str = 128 and Max_Filename = 128 and Max_Id_Str = 64,
+         "Identifier/description limits remain fixed");
    end Run;
 
 end Adacovex_Types_Tests;

@@ -3,7 +3,7 @@ with Ada.Text_IO;
 package body Adacovex.Parsers.Tests is
 
    --  Strip leading spaces from a string slice.
-   function Trim_Left (S : String) return String is
+   function Trim_Left (S : String) return String with SPARK_Mode => On is
       F : Natural := S'First;
    begin
       while F <= S'Last and then S (F) = ' ' loop
@@ -15,7 +15,9 @@ package body Adacovex.Parsers.Tests is
       return S (F .. S'Last);
    end Trim_Left;
 
-   function Starts_With (S : String; Pre : String) return Boolean is
+   function Starts_With (S : String; Pre : String) return Boolean
+   with SPARK_Mode => On
+   is
    begin
       if Pre'Length > S'Length then
          return False;
@@ -29,24 +31,37 @@ package body Adacovex.Parsers.Tests is
    end Starts_With;
 
    --  Parse the integer that immediately follows a keyword in a line,
-   --  skipping any intervening spaces.  Returns 0 when absent.
-   function Number_After (S : String; Key : String) return Natural is
+   --  skipping any intervening spaces.  Returns 0 when absent.  Digit runs
+   --  longer than the Natural capacity stop accumulating (previously the
+   --  unguarded accumulation raised Constraint_Error at runtime).
+   function Number_After (S : String; Key : String) return Natural
+   with SPARK_Mode => On, Pre => S'Last < Natural'Last
+   is
    begin
       for I in S'First .. S'Last - Key'Length + 1 loop
          if S (I .. I + Key'Length - 1) = Key then
             declare
-               J      : Natural := I + Key'Length;
-               Num    : Natural := 0;
-               Got    : Boolean := False;
+               J   : Natural := I + Key'Length;
+               Num : Natural := 0;
+               Got : Boolean := False;
             begin
                while J <= S'Last and then S (J) = ' ' loop
                   J := J + 1;
                end loop;
                while J <= S'Last and then S (J) in '0' .. '9' loop
-                  Num := Num * 10
-                    + (Character'Pos (S (J)) - Character'Pos ('0'));
-                  J := J + 1;
-                  Got := True;
+                  declare
+                     Digit : constant Natural :=
+                       Character'Pos (S (J)) - Character'Pos ('0');
+                  begin
+                     if Num <= (Natural'Last - Digit) / 10 then
+                        Num := Num * 10 + Digit;
+                        J := J + 1;
+                        Got := True;
+                     else
+                        Got := True;
+                        exit;
+                     end if;
+                  end;
                end loop;
                if Got then
                   return Num;
@@ -60,13 +75,17 @@ package body Adacovex.Parsers.Tests is
    --  Parse the integer that immediately precedes a whole word in a line.
    --  The word must be preceded by digits and followed by a non-letter
    --  (or end of line).  Returns 0 when absent.  Used for the
-   --  "N Tests M Failures" summary style.
-   function Number_Before_Word (S : String; Word : String) return Natural is
+   --  "N Tests M Failures" summary style.  Digit runs longer than the
+   --  Natural capacity stop accumulating (previously a runtime
+   --  Constraint_Error on overflow).
+   function Number_Before_Word (S : String; Word : String) return Natural
+   with SPARK_Mode => On, Pre => S'Last < Natural'Last
+   is
    begin
       for I in S'First .. S'Last - Word'Length + 1 loop
          if S (I .. I + Word'Length - 1) = Word then
             declare
-               J : constant Natural := I + Word'Length;
+               J  : constant Natural := I + Word'Length;
                OK : Boolean := True;
             begin
                if J <= S'Last and then S (J) in 'a' .. 'z' | 'A' .. 'Z' then
@@ -90,8 +109,16 @@ package body Adacovex.Parsers.Tests is
                               DStart := DStart - 1;
                            end loop;
                            for C in DStart .. K loop
-                              Num := Num * 10
-                                + (Character'Pos (S (C)) - Character'Pos ('0'));
+                              declare
+                                 Digit : constant Natural :=
+                                   Character'Pos (S (C)) - Character'Pos ('0');
+                              begin
+                                 if Num <= (Natural'Last - Digit) / 10 then
+                                    Num := Num * 10 + Digit;
+                                 else
+                                    exit;
+                                 end if;
+                              end;
                            end loop;
                            return Num;
                         end;
@@ -245,25 +272,25 @@ package body Adacovex.Parsers.Tests is
                   end;
                end if;
 
-                if Line (I .. I + 6) = "Failed:" then
-                   declare
-                      Num : Natural := 0;
-                      J   : Natural := I + 7;
-                   begin
-                      while J <= Last and then Line (J) = ' ' loop
-                         J := J + 1;
-                      end loop;
-                      while J <= Last and then Line (J) in '0' .. '9' loop
-                         Num :=
-                           Num
-                           * 10
-                           + (Character'Pos (Line (J)) - Character'Pos ('0'));
-                         J := J + 1;
-                      end loop;
-                      Summary.Total_Failed := Num;
-                   end;
-                end if;
-             end loop;
+               if Line (I .. I + 6) = "Failed:" then
+                  declare
+                     Num : Natural := 0;
+                     J   : Natural := I + 7;
+                  begin
+                     while J <= Last and then Line (J) = ' ' loop
+                        J := J + 1;
+                     end loop;
+                     while J <= Last and then Line (J) in '0' .. '9' loop
+                        Num :=
+                          Num
+                          * 10
+                          + (Character'Pos (Line (J)) - Character'Pos ('0'));
+                        J := J + 1;
+                     end loop;
+                     Summary.Total_Failed := Num;
+                  end;
+               end if;
+            end loop;
 
             -- TAP (Test Anything Protocol): "ok 1 - name" / "not ok 2 - name".
             -- Each line is one test, so pass/fail counters accumulate.

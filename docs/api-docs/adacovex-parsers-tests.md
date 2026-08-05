@@ -1,9 +1,17 @@
 # Adacovex.Parsers.Tests
 
-Parser for AUnit test-run results.
+Parser for test-run results.
 Reads a Markdown-format test summary file or parses raw stdout
 to produce a structured Test_Summary.
 HLR-TEST: Test result parsing
+
+Recognized formats (all additive, best-effort):
+Markdown table      | Category | Tests | PASS/FAIL | rows
+Summary line        "Passed: N  Failed: M"
+TAP                 "ok N - name" / "not ok N - name"
+Automake suite      "PASS: name" / "FAIL: name"
+Maven Surefire      "Tests run: N, Failures: M, Errors: E"
+Unity               "N Tests M Failures [K Ignored]"
 
 > **Note:** All items in this package are public.
 

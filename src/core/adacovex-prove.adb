@@ -93,9 +93,9 @@ package body Adacovex.Prove is
                      --  [[depends-on]] array-of-tables form.
                      In_Depends :=
                        Trim
-                         (Sec_Name
-                            (Sec_Name'First + 1 .. Sec_Name'Last - 1),
-                          Ada.Strings.Both) = "depends-on";
+                         (Sec_Name (Sec_Name'First + 1 .. Sec_Name'Last - 1),
+                          Ada.Strings.Both)
+                       = "depends-on";
                   end if;
                end;
             elsif In_Depends then
@@ -105,8 +105,7 @@ package body Adacovex.Prove is
                   if Eq > Line'First then
                      declare
                         Name : constant String :=
-                          Trim (Line (Line'First .. Eq - 1),
-                                Ada.Strings.Both);
+                          Trim (Line (Line'First .. Eq - 1), Ada.Strings.Both);
                      begin
                         if Name = "gnatprove" then
                            Declares := True;
@@ -127,10 +126,11 @@ package body Adacovex.Prove is
    --  extends alire.toml with the proof toolchain for local make targets.
    function Manifest_Declares_GNATprove (Target_Dir : String) return Boolean is
    begin
-      return File_Declares_GNATprove (Strip_Trailing_Slash (Target_Dir)
-                                      & "/alire-dev.toml")
-        or else File_Declares_GNATprove (Strip_Trailing_Slash (Target_Dir)
-                                         & "/alire.toml");
+      return
+        File_Declares_GNATprove
+          (Strip_Trailing_Slash (Target_Dir) & "/alire-dev.toml")
+        or else File_Declares_GNATprove
+                  (Strip_Trailing_Slash (Target_Dir) & "/alire.toml");
    end Manifest_Declares_GNATprove;
 
    --  True when gnatprove is declared only in <target>/alire-dev.toml and not
@@ -140,7 +140,8 @@ package body Adacovex.Prove is
    function Gnatprove_Dev_Only (Target_Dir : String) return Boolean is
       T : constant String := Strip_Trailing_Slash (Target_Dir);
    begin
-      return File_Declares_GNATprove (T & "/alire-dev.toml")
+      return
+        File_Declares_GNATprove (T & "/alire-dev.toml")
         and then not File_Declares_GNATprove (T & "/alire.toml");
    end Gnatprove_Dev_Only;
 
@@ -397,20 +398,24 @@ package body Adacovex.Prove is
          Append ("cd " & Q (Target_Dir) & " || exit 1" & ASCII.LF);
          Append ("_b=`mktemp -d` || exit 1" & ASCII.LF);
          Append ("cp -f alire.toml ""$_b/alire.toml"" || exit 1" & ASCII.LF);
-         Append ("[ -f alire.lock ] && cp -f alire.lock ""$_b/alire.lock"""
-                 & ASCII.LF);
+         Append
+           ("[ -f alire.lock ] && cp -f alire.lock ""$_b/alire.lock"""
+            & ASCII.LF);
          Append ("[ -d alire ] && cp -rf alire ""$_b/alire""" & ASCII.LF);
          Append ("cp -f alire-dev.toml alire.toml || exit 1" & ASCII.LF);
          Append ("_restore() {" & ASCII.LF);
-         Append ("  [ -f ""$_b/alire.toml"" ] && "
-                 & "mv -f ""$_b/alire.toml"" alire.toml 2>/dev/null"
-                 & ASCII.LF);
-         Append ("  [ -f ""$_b/alire.lock"" ] && "
-                 & "mv -f ""$_b/alire.lock"" alire.lock 2>/dev/null"
-                 & ASCII.LF);
-         Append ("  if [ -d ""$_b/alire"" ]; then rm -rf alire 2>/dev/null; "
-                 & "mv -f ""$_b/alire"" alire 2>/dev/null; fi"
-                 & ASCII.LF);
+         Append
+           ("  [ -f ""$_b/alire.toml"" ] && "
+            & "mv -f ""$_b/alire.toml"" alire.toml 2>/dev/null"
+            & ASCII.LF);
+         Append
+           ("  [ -f ""$_b/alire.lock"" ] && "
+            & "mv -f ""$_b/alire.lock"" alire.lock 2>/dev/null"
+            & ASCII.LF);
+         Append
+           ("  if [ -d ""$_b/alire"" ]; then rm -rf alire 2>/dev/null; "
+            & "mv -f ""$_b/alire"" alire 2>/dev/null; fi"
+            & ASCII.LF);
          Append ("  rmdir ""$_b"" 2>/dev/null || true" & ASCII.LF);
          Append ("}" & ASCII.LF);
          Append ("trap _restore EXIT INT TERM" & ASCII.LF);
@@ -439,8 +444,7 @@ package body Adacovex.Prove is
       Args    : GNAT.OS_Lib.Argument_List (1 .. 7);
       N       : Natural := 0;
    begin
-      Resolve_GNATprove
-        (Target_Dir, Exe, Exe_Len, TDir, TLen, Via_Alr, OK);
+      Resolve_GNATprove (Target_Dir, Exe, Exe_Len, TDir, TLen, Via_Alr, OK);
       if not OK then
          Success := False;
          return;
@@ -457,7 +461,8 @@ package body Adacovex.Prove is
 
       Ada.Text_IO.Put_Line
         ("  gnatprove: "
-         & (if Via_Alr then "alr exec -- gnatprove (alire-managed)"
+         & (if Via_Alr
+            then "alr exec -- gnatprove (alire-managed)"
             else Exe (1 .. Exe_Len)));
       Ada.Text_IO.Put_Line ("  project:   " & GPR (1 .. GLen));
 
@@ -482,8 +487,7 @@ package body Adacovex.Prove is
          --  proof run and restore afterwards (a shell trap guarantees the
          --  restore).  The publishing alire.toml is left untouched and is
          --  still the manifest scanned by the assessment/SBOM pipeline.
-         Ada.Text_IO.Put_Line
-           ("  gnatprove declared only in alire-dev.toml;");
+         Ada.Text_IO.Put_Line ("  gnatprove declared only in alire-dev.toml;");
          Ada.Text_IO.Put_Line
            ("  using the dev manifest for the proof run (restored after).");
          declare

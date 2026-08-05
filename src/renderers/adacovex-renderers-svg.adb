@@ -5,7 +5,9 @@ package body Adacovex.Renderers.SVG is
 
    use type Types.DAL_Status;
 
-   function I2S (N : Natural) return String is
+   --  Decimal string of a non-negative integer.  The fixed 10-character
+   --  buffer and the loop invariant prove the write cursor never underflows.
+   function I2S (N : Natural) return String with SPARK_Mode => On is
       Buf : String (1 .. 10);
       Pos : Natural := 10;
       R   : Natural := N;
@@ -18,6 +20,10 @@ package body Adacovex.Renderers.SVG is
          R := R / 10;
          exit when R = 0;
          Pos := Pos - 1;
+         pragma Loop_Invariant (Pos in 1 .. 10);
+         pragma
+           Loop_Invariant
+             (Long_Long_Integer (R) < Long_Long_Integer (10)**Pos);
       end loop;
       return Buf (Pos .. 10);
    end I2S;
@@ -89,7 +95,9 @@ package body Adacovex.Renderers.SVG is
         & "</g></svg>";
    end Badge_SVG;
 
-   function Spark_Color (Level : Types.SPARK_Level) return String is
+   function Spark_Color (Level : Types.SPARK_Level) return String
+   with SPARK_Mode => On
+   is
    begin
       case Level is
          when Types.Platinum =>

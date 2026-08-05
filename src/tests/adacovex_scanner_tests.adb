@@ -303,8 +303,8 @@ package body Adacovex_Scanner_Tests is
       R.Check (Success, "Test 9: parse succeeded");
       R.Check
         (Natural (Pkg.Subprograms.Length) >= 1
-         and then Pkg.Subprograms
-                    (Positive (Pkg.Subprograms.Length)).Has_Docstring,
+         and then Pkg.Subprograms (Positive (Pkg.Subprograms.Length))
+                    .Has_Docstring,
          "Test 9: single-space `-- ` prefix sets Has_Docstring");
 
       --  Test 10: tab-separated docstring prefix (`--<TAB>`) is recognized.
@@ -326,8 +326,8 @@ package body Adacovex_Scanner_Tests is
       R.Check (Success, "Test 10: parse succeeded");
       R.Check
         (Natural (Pkg.Subprograms.Length) >= 1
-         and then Pkg.Subprograms
-                    (Positive (Pkg.Subprograms.Length)).Has_Docstring,
+         and then Pkg.Subprograms (Positive (Pkg.Subprograms.Length))
+                    .Has_Docstring,
          "Test 10: tab-separated prefix sets Has_Docstring");
 
       --  Test 11: @parameter is accepted as an alias of @param.
@@ -349,8 +349,8 @@ package body Adacovex_Scanner_Tests is
       R.Check (Success, "Test 11: parse succeeded");
       R.Check
         (Natural (Pkg.Subprograms.Length) >= 1
-         and then Pkg.Subprograms
-                    (Positive (Pkg.Subprograms.Length)).Has_Docstring,
+         and then Pkg.Subprograms (Positive (Pkg.Subprograms.Length))
+                    .Has_Docstring,
          "Test 11: @parameter sets Has_Docstring");
       R.Check
         (Pkg.Subprograms (Positive (Pkg.Subprograms.Length)).Doc_Param_Ct >= 1,
@@ -375,8 +375,8 @@ package body Adacovex_Scanner_Tests is
       R.Check (Success, "Test 12: parse succeeded");
       R.Check
         (Natural (Pkg.Subprograms.Length) >= 1
-         and then Pkg.Subprograms
-                    (Positive (Pkg.Subprograms.Length)).Has_Docstring,
+         and then Pkg.Subprograms (Positive (Pkg.Subprograms.Length))
+                    .Has_Docstring,
          "Test 12: @returns sets Has_Docstring");
       R.Check
         (Pkg.Subprograms (Positive (Pkg.Subprograms.Length)).Doc_Return,
@@ -430,9 +430,10 @@ package body Adacovex_Scanner_Tests is
             Put_Line (F, "   pragma Pure;");
             Add ("   procedure Huge_Proc (");
             for I in 1 .. 600 loop
-               Add ("P"
-                    & Natural'Image (I) (2 .. Natural'Image (I)'Last)
-                    & " : Integer; ");
+               Add
+                 ("P"
+                  & Natural'Image (I) (2 .. Natural'Image (I)'Last)
+                  & " : Integer; ");
             end loop;
             Add ("Last : Integer);");
             Put_Line (F, Big (1 .. BLen));
@@ -446,10 +447,10 @@ package body Adacovex_Scanner_Tests is
       R.Check (Success, "Test 14: parse succeeded");
       R.Check
         (Natural (Pkg.Subprograms.Length) >= 1
-         and then Pkg.Subprograms
-                    (Positive (Pkg.Subprograms.Length)).Name_Len = 9
-         and then Pkg.Subprograms
-                    (Positive (Pkg.Subprograms.Length)).Name (1 .. 9)
+         and then Pkg.Subprograms (Positive (Pkg.Subprograms.Length)).Name_Len
+                  = 9
+         and then Pkg.Subprograms (Positive (Pkg.Subprograms.Length)).Name
+                    (1 .. 9)
                   = "Huge_Proc",
          "Test 14: subprogram on a >8192-char line is parsed");
 
@@ -480,8 +481,7 @@ package body Adacovex_Scanner_Tests is
       Adacovex.Parsers.Source.Scan_Ads_File (Tmp_File, Pkg, Success);
       R.Check (Success, "Test 15: parse succeeded");
       R.Check
-        (Natural (Pkg.Subprograms.Length) = 3,
-         "Test 15: 3 subprograms found");
+        (Natural (Pkg.Subprograms.Length) = 3, "Test 15: 3 subprograms found");
       R.Check
         (Pkg.Subprograms (1).Has_Docstring,
          "Test 15: Google Args/Returns marks documented");
@@ -524,8 +524,7 @@ package body Adacovex_Scanner_Tests is
       Adacovex.Parsers.Source.Scan_Ads_File (Tmp_File, Pkg, Success);
       R.Check (Success, "Test 16: parse succeeded");
       R.Check
-        (Natural (Pkg.Subprograms.Length) = 3,
-         "Test 16: 3 subprograms found");
+        (Natural (Pkg.Subprograms.Length) = 3, "Test 16: 3 subprograms found");
       R.Check
         (Pkg.Subprograms (1).Has_Docstring
          and then Pkg.Subprograms (1).Doc_Param_Ct = 2

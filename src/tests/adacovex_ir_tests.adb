@@ -1,17 +1,16 @@
 with Ada.Strings.Fixed;
-with Adacovex.Target_Profiles;
-use Adacovex.Target_Profiles;
-with Adacovex.IR_Synthesiser;
-use Adacovex.IR_Synthesiser;
-with Adacovex.IR_Bounds;
-use Adacovex.IR_Bounds;
+with Adacovex.Target_Profiles; use Adacovex.Target_Profiles;
+with Adacovex.IR_Synthesiser;  use Adacovex.IR_Synthesiser;
+with Adacovex.IR_Bounds;       use Adacovex.IR_Bounds;
+with System;
 
 package body Adacovex_IR_Tests is
 
    procedure Run (R : in out Adacovex.Test_Support.Runner'Class) is
       Cfg64 : constant Target_Config := (others => Bits_64);
       Cfg32 : constant Target_Config :=
-        (Host_Bits => Bits_64, Target_Bits => Bits_32,
+        (Host_Bits    => Bits_64,
+         Target_Bits  => Bits_32,
          Pointer_Bits => Bits_32);
    begin
       --  Test 1: bounded scalar type bounds.
@@ -41,7 +40,8 @@ package body Adacovex_IR_Tests is
          C : constant Target_Config := (others => <>);
       begin
          R.Check
-           (C.Host_Bits = Bits_64 and then C.Target_Bits = Bits_64
+           (C.Host_Bits = Bits_64
+            and then C.Target_Bits = Bits_64
             and then C.Pointer_Bits = Bits_64,
             "Test 3: default target config is 64-bit host/target");
          R.Check
@@ -105,8 +105,7 @@ package body Adacovex_IR_Tests is
            Synthesize_Package ("IR_Add", "int32_t,uint64_t", Cfg64);
       begin
          R.Check
-           (Pkg_Text'Length > 0
-            and then Pkg_Text'Length <= 4096,
+           (Pkg_Text'Length > 0 and then Pkg_Text'Length <= 4096,
             "Test 8: synthesized package has bounded length");
          R.Check
            (Ada.Strings.Fixed.Index (Pkg_Text, "package IR_Add is") > 0,
@@ -117,9 +116,9 @@ package body Adacovex_IR_Tests is
                "type int32_t is new Adacovex.Target_Profiles.IR_Int32;")
             > 0
             and then Ada.Strings.Fixed.Index
-                      (Pkg_Text,
-                       "type uint64_t is new Adacovex.Target_Profiles.IR_UInt64;")
-            > 0,
+                       (Pkg_Text,
+                        "type uint64_t is new Adacovex.Target_Profiles.IR_UInt64;")
+                     > 0,
             "Test 8: lowered declarations present");
          R.Check
            (Ada.Strings.Fixed.Index (Pkg_Text, "end IR_Add;") > 0,
@@ -131,8 +130,7 @@ package body Adacovex_IR_Tests is
         (Adacovex.Target_Profiles.Checked_Add32 (10, 20) = 30,
          "Test 9: Checked_Add32 sum");
       R.Check
-        (Adacovex.Target_Profiles.Checked_Add64
-           (2**40, 2**40) = 2**41,
+        (Adacovex.Target_Profiles.Checked_Add64 (2**40, 2**40) = 2**41,
          "Test 9: Checked_Add64 sum");
 
       --  Test 10: IR_Bounds fixture (synthesized-style lowered types).
@@ -144,6 +142,16 @@ package body Adacovex_IR_Tests is
         (Adacovex.IR_Bounds.Add32 (1000, 2000) = 3000
          and then Adacovex.IR_Bounds.Add64 (2**40, 2**40) = 2**41,
          "Test 10: IR_Bounds checked additions");
+
+      --  Test 11: host word-size auto-detection (added 1.6.0).
+      R.Check
+        ((System.Word_Size <= 8 and then Host_Word_Size = Bits_8)
+         or else (System.Word_Size in 9 .. 16
+                  and then Host_Word_Size = Bits_16)
+         or else (System.Word_Size in 17 .. 32
+                  and then Host_Word_Size = Bits_32)
+         or else (System.Word_Size > 32 and then Host_Word_Size = Bits_64),
+         "Test 11: Host_Word_Size matches System.Word_Size");
    end Run;
 
 end Adacovex_IR_Tests;
