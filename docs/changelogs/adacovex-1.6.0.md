@@ -61,6 +61,18 @@ name (`v1.6.0`), producing a broken `/docs/changelogs/adacovex-v1.6.0.md`
 URL. The link now strips the leading `v` (`${VERSION#v}`) so it points at
 `docs/changelogs/adacovex-1.6.0.md`.
 
+The same release step now also:
+
+- **Links the build-provenance attestation** in the release notes. The
+  `actions/attest-build-provenance@v2` step is captured (`id: attest`) and its
+  `attestation-url` output is included as a *Build Provenance Attestation*
+  entry, so consumers can jump straight from the release to the signed
+  SLSA provenance bundle.
+- **Fixes the *Git Changelog* compare link** to use the tag form
+  `compare/v1.5.0...v1.6.0` (previous version keeps its `v` prefix), matching
+  GitHub's tag-to-tag compare URL convention instead of the version-only form
+  produced by stripping the `v`.
+
 ## Notes
 
 - Test suite extended: IR synthesis 26 -> **27** checks; new word-size checks.

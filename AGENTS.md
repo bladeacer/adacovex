@@ -66,13 +66,13 @@ src/
     |-- adacovex-test_support.ads/.adb        -- Native test Runner type
     |-- adacovex_config_tests.ads/.adb        -- CLI config tests (11)
     |-- adacovex_dal_tests.ads/.adb           -- DAL compliance tests (2)
-    |-- adacovex_ir_tests.ads/.adb            -- IR synthesis tests (26)
+    |-- adacovex_ir_tests.ads/.adb            -- IR synthesis tests (27)
     |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (38)
     |-- adacovex_renderer_svg_tests.ads/.adb  -- SVG renderer tests (30)
     |-- adacovex_sbom_tests.ads/.adb          -- SBOM / manifest graph tests (53)
     |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (68)
     |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (35)
-    |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (21)
+    |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (26)
     `-- test_runner.adb                       -- Test suite entry point (290 tests)
 ```
 <!-- agents-tree:end -->
@@ -633,7 +633,10 @@ specific failure reasons when the assessment is `Unmet`.
   GitHub Release with the binary tarball (`adacovex-vX.Y.Z.tar.gz`: `adacovex`
   + the `covex` alias) and the action tarball
   (`adacovex-action-vX.Y.Z.tar.gz`). Both bundles are attested via
-  `actions/attest-build-provenance` (OIDC). The action downloads the matching
+  `actions/attest-build-provenance` (OIDC); the release notes link the signed
+  attestation (`attestation-url` output), a *Git Changelog* compare link
+  (`compare/v1.5.0...v1.6.0`), and the human-readable changelog. The action
+  downloads the matching
   binary tarball for the tag it is referenced by, so `@v1.4.0` runs adacovex
   `v1.4.0`.
   The tag itself publishes the action for

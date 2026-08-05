@@ -42,6 +42,7 @@ jobs:
           tar -czf "adacovex-action-$VERSION.tar.gz" -C . action.yml
 
       - name: Attest release artifacts
+        id: attest
         uses: actions/attest-build-provenance@v2
         with:
           subject-path: adacovex-*.tar.gz
@@ -50,6 +51,7 @@ jobs:
         shell: bash
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          ATTESTATION_URL: ${{ steps.attest.outputs.attestation-url }}
         run: |
           VERSION="${{ github.ref_name }}"
           PREV=$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | grep -v "^$VERSION$" | head -1 || true)
@@ -60,7 +62,13 @@ jobs:
             BODY="$BODY
 
           *Git Changelog*:
-          https://github.com/${{ github.repository }}/compare/${PREV#v}...$VERSION"
+          https://github.com/${{ github.repository }}/compare/$PREV...$VERSION"
+          fi
+          if [ -n "$ATTESTATION_URL" ]; then
+            BODY="$BODY
+
+          *Build Provenance Attestation*:
+          $ATTESTATION_URL"
           fi
           gh release create "$VERSION" "${ASSETS[@]}" --notes "$BODY"
 
