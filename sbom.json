@@ -3,7 +3,7 @@
   "specVersion": "1.5",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-08-05T10:38:49",
+    "timestamp": "2026-08-05T21:11:40",
     "tools": [
       {"vendor": "bladeacer", "name": "adacovex", "version": "1.5.0"}
     ],
@@ -15,7 +15,7 @@
       "purl": "pkg:alire/covex@1.5.0",
       "licenses": [{"license": {"id": "Apache-2.0"}}],
       "description": "Ada/SPARK coverage, proof, DO-178C compliance tool",
-      "properties": [{"name": "adacovex:proof_level", "value": "Gold"}, {"name": "adacovex:dal_target", "value": "DAL-C"}]
+      "properties": [{"name": "adacovex:proof_level", "value": "Platinum"}, {"name": "adacovex:dal_target", "value": "DAL-C"}]
       }
   },
   "components": [
@@ -27,7 +27,7 @@
       "purl": "pkg:alire/gnatprove@15.1.0",
       "licenses": [{"license": {"id": "GPL-3.0-or-later"}}],
       "description": "Automatic formal verification of SPARK code",
-      "properties": [{"name": "adacovex:proof_level", "value": "Gold"}, {"name": "adacovex:dal_target", "value": "DAL-C"}]
+      "properties": [{"name": "adacovex:proof_level", "value": "Platinum"}, {"name": "adacovex:dal_target", "value": "DAL-C"}]
       }
   ],
   "dependencies": [

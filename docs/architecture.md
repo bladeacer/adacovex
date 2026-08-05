@@ -53,14 +53,23 @@ adacovex declares no library dependencies beyond the GNAT runtime. All data stru
 - GNAT runtime containers (`Ada.Containers.Vectors` for unbounded collections)
 - Fixed-size string buffers (`Max_Line = 262144`, `Max_Path = 4096`, etc.) for bounded I/O
 
-`Max_Line` is deliberately generous (256 KiB) so that single-line declarations
-from heavily code-generated projects are never truncated or silently drained.
+`Max_Path` and `Max_Line` scale with the auto-detected host word size
+(`System.Word_Size`), keeping the classic 4096 / 262144 values on 64-bit
+hosts while using proportionally smaller limits on narrower machines. The
+semantic limits (`Max_Id_Str`, `Max_Desc_Str`, `Max_Filename`) are not
+storage-size dependent and remain fixed.
+
+`Max_Line` is deliberately generous (256 KiB on 64-bit) so that single-line
+declarations from heavily code-generated projects are never truncated or
+silently drained.
 
 This ensures adacovex can be built and run on any system with a GNAT toolchain, without requiring any additional package installation beyond Alire for toolchain management.
 
 ## SPARK Formal Verification
 
-adacovex itself is SPARK-proven at Platinum level (36/36 VCs proved, AoRTE-free). The tool analyzes GNATprove output (`gnatprove.out`) to assess SPARK assurance levels (Stone through Platinum) for target projects.
+adacovex itself is SPARK-proven at Platinum level (490/490 VCs proved,
+AoRTE-free). The tool analyzes GNATprove output (`gnatprove.out`) to assess
+SPARK assurance levels (Stone through Platinum) for target projects.
 
 The tool does not perform verification itself -- it parses and reports on proof results produced by GNATprove. This keeps the tool's scope narrow and aligns with the Unix philosophy of composing specialized tools.
 

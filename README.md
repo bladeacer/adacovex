@@ -31,7 +31,8 @@ gnatprove is the only declared (tool) dependency; no libraries beyond the GNAT r
   - HTML dashboard + JSON API via built-in HTTP server
 - **Scalable** -- package/subprogram collections use `Ada.Containers.Vectors`
 (heap-allocated, no compile-time limits on count). Fixed-size buffers: 262144-char
-lines, 4096-char paths.
+lines, 4096-char paths on a 64-bit host (scaled by the auto-detected host
+word size).
 
 ## Quick start
 
@@ -249,7 +250,7 @@ bundles `adacovex-vX.Y.Z.tar.gz` for every `vX.Y.Z` tag, and the action
 downloads the binary for the tag it is referenced by. Reference it by a
 floating tag to always get the latest published release, or pin to an exact
 release for reproducibility. So the marketplace action at `@v1` always runs the
-latest `v1.x` binary — no building in the consumer's repo.
+latest `v1.x` binary -- no building in the consumer's repo.
 
 Reference it from any Ada/SPARK repo (recommended: `@latest`-style floating
 tag; you can pin to a specific release if needed):
@@ -444,7 +445,7 @@ to document. Overloaded subprograms require one patch entry per overload.
 | Target | Description |
 |--------|-------------|
 | `build` | `alr build` (adacovex + test_runner, covex alias) |
-| `test` | Build and run native test suite (284 tests) |
+| `test` | Build and run native test suite (290 tests) |
 | `prove` | `alr gnatprove` (gnatprove is a declared dependency) |
 | `fmt` | Format Ada sources with `gnatformat` |
 | `doc` | Generate API docs via gnatdoc + rst2md |
@@ -469,16 +470,16 @@ src/
 |-- compliance/                   -- DAL assessment logic
 |-- renderers/                    -- ANSI, SVG, Markdown, HTML output
 |-- server/                       -- HTTP/1.1 dashboard server
-|-- tests/                        -- Native test suite (284 tests)
+|-- tests/                        -- Native test suite (290 tests)
 ```
 
 ## Verification
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 284/284 passing |
-| Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C |
-| SPARK proof | `make prove` | 36/36 VCs Platinum |
+| Unit tests | `make test` | 290/290 passing |
+| Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
+| SPARK proof | `make prove` | 490/490 VCs Platinum |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, Platinum, DAL-C (strict mode) |
 
 See [changelogs](docs/changelogs/index.md) for full release notes.

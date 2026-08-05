@@ -18,10 +18,10 @@ adacovex was designed to audit the Ada_CRDT library at `../Ada_CRDT` (26 package
 The `--target=PATH` option can point at any Ada/SPARK project.
 
 Self-assessment (`make run-self`, default target: cwd) verifies adacovex against its own
-source -- all 26 packages, 57 subprograms -- and must always show:
+source -- all 26 packages, 58 subprograms -- and must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
-- Platinum SPARK level (36/36 VCs proved)
-- 284/284 native tests passing
+- Platinum SPARK level (490/490 VCs proved)
+- 290/290 native tests passing
 - DAL-C Achieved
 
 ## Architecture
@@ -73,7 +73,7 @@ src/
     |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (68)
     |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (35)
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (21)
-    `-- test_runner.adb                       -- Test suite entry point (284 tests)
+    `-- test_runner.adb                       -- Test suite entry point (290 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -741,9 +741,9 @@ is obtained and built.
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 284/284 passing |
+| Unit tests | `make test` | 290/290 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
-| SPARK proof | `make prove` | 36/36 VCs Platinum |
+| SPARK proof | `make prove` | 490/490 VCs Platinum |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
 
 See [docs/changelogs/adacovex-1.0.0.md](docs/changelogs/adacovex-1.0.0.md) for full release notes.
@@ -761,19 +761,19 @@ Test source: `src/tests/`. Entry point: `test_runner.adb` (builds as
 in `adacovex.gpr`; the CLI entry point builds as `bin/adacovex` via the
 `Builder.Executable` override, with a `bin/covex` alias symlink).
 
-`make test` builds and runs the 284-test suite. Test results are written to
+`make test` builds and runs the 290-test suite. Test results are written to
 `docs/test_result.md` in a Markdown table format that can be parsed by
 `adacovex-parsers-tests`. This means adacovex **supports both** native test
 running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 
-### Test categories (284 total)
+### Test categories (290 total)
 
 | Category | Tests | What it covers |
 |----------|-------|----------------|
-| Types conversions | 21 | SPARK_Level/DAL_Level/DAL_Status/Test_Status strings |
+| Types conversions | 26 | SPARK_Level/DAL_Level/DAL_Status/Test_Status strings, host word-size detection |
 | DAL compliance | 2 | DAL assessment status |
 | Source scanner | 68 | Package scan, docstring parsing (Ada/Google/Sphinx styles), HLR tags, name extraction, @field/@formal/after-decl, comment-style variants, tag aliases, long generated lines |
-| IR synthesis | 26 | Bounded type bounds, Target_Config defaults, foreign type-name lowering, package synthesis |
+| IR synthesis | 27 | Bounded type bounds, Target_Config defaults, host word-size detection, foreign type-name lowering, package synthesis |
 | GNATprove parser | 38 | .out parsing, proof summary, SPARK level detection, --help handling |
 | Test-result parser | 35 | Markdown table, TAP, Automake, Maven Surefire, and Unity test-result parsing |
 | CLI config | 11 | Default option values, --help, --no-svg field, --compare-base and --coverage-delta defaults |
