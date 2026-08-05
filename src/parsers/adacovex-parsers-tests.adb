@@ -3,10 +3,13 @@ with Ada.Text_IO;
 package body Adacovex.Parsers.Tests is
 
    --  Strip leading spaces from a string slice.
-   function Trim_Left (S : String) return String with SPARK_Mode => On is
+   function Trim_Left (S : String) return String
+   with SPARK_Mode => On, Pre => S'First >= 1 and S'Last < Natural'Last
+   is
       F : Natural := S'First;
    begin
       while F <= S'Last and then S (F) = ' ' loop
+         pragma Loop_Invariant (F >= S'First);
          F := F + 1;
       end loop;
       if F > S'Last then
@@ -35,40 +38,45 @@ package body Adacovex.Parsers.Tests is
    --  longer than the Natural capacity stop accumulating (previously the
    --  unguarded accumulation raised Constraint_Error at runtime).
    function Number_After (S : String; Key : String) return Natural
-   with SPARK_Mode => On, Pre => S'Last < Natural'Last
+   with SPARK_Mode => On,
+     Pre => S'First >= 1 and S'Last < Natural'Last
    is
    begin
-      for I in S'First .. S'Last - Key'Length + 1 loop
-         if S (I .. I + Key'Length - 1) = Key then
-            declare
-               J   : Natural := I + Key'Length;
-               Num : Natural := 0;
-               Got : Boolean := False;
-            begin
-               while J <= S'Last and then S (J) = ' ' loop
-                  J := J + 1;
-               end loop;
-               while J <= S'Last and then S (J) in '0' .. '9' loop
-                  declare
-                     Digit : constant Natural :=
-                       Character'Pos (S (J)) - Character'Pos ('0');
-                  begin
-                     if Num <= (Natural'Last - Digit) / 10 then
-                        Num := Num * 10 + Digit;
-                        J := J + 1;
-                        Got := True;
-                     else
-                        Got := True;
-                        exit;
-                     end if;
-                  end;
-               end loop;
-               if Got then
-                  return Num;
-               end if;
-            end;
-         end if;
-      end loop;
+      if Key'Length <= S'Length then
+         for I in S'First .. S'Last - Key'Length + 1 loop
+            if S (I .. I + Key'Length - 1) = Key then
+               declare
+                  J   : Natural := I + Key'Length;
+                  Num : Natural := 0;
+                  Got : Boolean := False;
+               begin
+                  while J <= S'Last and then S (J) = ' ' loop
+                     pragma Loop_Invariant (J >= S'First);
+                     J := J + 1;
+                  end loop;
+                  while J <= S'Last and then S (J) in '0' .. '9' loop
+                     pragma Loop_Invariant (J >= S'First);
+                     declare
+                        Digit : constant Natural :=
+                          Character'Pos (S (J)) - Character'Pos ('0');
+                     begin
+                        if Num <= (Natural'Last - Digit) / 10 then
+                           Num := Num * 10 + Digit;
+                           J := J + 1;
+                           Got := True;
+                        else
+                           Got := True;
+                           exit;
+                        end if;
+                     end;
+                  end loop;
+                  if Got then
+                     return Num;
+                  end if;
+               end;
+            end if;
+         end loop;
+      end if;
       return 0;
    end Number_After;
 
@@ -79,55 +87,61 @@ package body Adacovex.Parsers.Tests is
    --  Natural capacity stop accumulating (previously a runtime
    --  Constraint_Error on overflow).
    function Number_Before_Word (S : String; Word : String) return Natural
-   with SPARK_Mode => On, Pre => S'Last < Natural'Last
+   with SPARK_Mode => On,
+     Pre => S'First >= 1 and S'Last < Natural'Last
    is
    begin
-      for I in S'First .. S'Last - Word'Length + 1 loop
-         if S (I .. I + Word'Length - 1) = Word then
-            declare
-               J  : constant Natural := I + Word'Length;
-               OK : Boolean := True;
-            begin
-               if J <= S'Last and then S (J) in 'a' .. 'z' | 'A' .. 'Z' then
-                  OK := False;
-               end if;
-               if OK then
-                  declare
-                     K : Natural := I - 1;
-                  begin
-                     while K >= S'First and then S (K) = ' ' loop
-                        K := K - 1;
-                     end loop;
-                     if K >= S'First and then S (K) in '0' .. '9' then
-                        declare
-                           DStart : Natural := K;
-                           Num    : Natural := 0;
-                        begin
-                           while DStart > S'First
-                             and then S (DStart - 1) in '0' .. '9'
-                           loop
-                              DStart := DStart - 1;
-                           end loop;
-                           for C in DStart .. K loop
-                              declare
-                                 Digit : constant Natural :=
-                                   Character'Pos (S (C)) - Character'Pos ('0');
-                              begin
-                                 if Num <= (Natural'Last - Digit) / 10 then
-                                    Num := Num * 10 + Digit;
-                                 else
-                                    exit;
-                                 end if;
-                              end;
-                           end loop;
-                           return Num;
-                        end;
-                     end if;
-                  end;
-               end if;
-            end;
-         end if;
-      end loop;
+      if Word'Length <= S'Length then
+         for I in S'First .. S'Last - Word'Length + 1 loop
+            if S (I .. I + Word'Length - 1) = Word then
+               declare
+                  J  : constant Natural := I + Word'Length;
+                  OK : Boolean := True;
+               begin
+                  if J <= S'Last and then S (J) in 'a' .. 'z' | 'A' .. 'Z' then
+                     OK := False;
+                  end if;
+                  if OK then
+                     declare
+                        K : Natural := I - 1;
+                     begin
+                        while K >= S'First and then S (K) = ' ' loop
+                           pragma Loop_Invariant (K >= S'First);
+                           K := K - 1;
+                        end loop;
+                        if K >= S'First and then S (K) in '0' .. '9' then
+                           declare
+                              DStart : Natural := K;
+                              Num    : Natural := 0;
+                           begin
+                              while DStart > S'First
+                                and then S (DStart - 1) in '0' .. '9'
+                              loop
+                                 pragma Loop_Invariant (DStart >= S'First);
+                                 DStart := DStart - 1;
+                              end loop;
+                              for C in DStart .. K loop
+                                 pragma Loop_Invariant (C >= S'First);
+                                 declare
+                                    Digit : constant Natural :=
+                                      Character'Pos (S (C)) - Character'Pos ('0');
+                                 begin
+                                    if Num <= (Natural'Last - Digit) / 10 then
+                                       Num := Num * 10 + Digit;
+                                    else
+                                       exit;
+                                    end if;
+                                 end;
+                              end loop;
+                              return Num;
+                           end;
+                        end if;
+                     end;
+                  end if;
+               end;
+            end if;
+         end loop;
+      end if;
       return 0;
    end Number_Before_Word;
 

@@ -133,7 +133,18 @@ package body Adacovex.Renderers.SBOM is
    --  holds any Natural (up to 2,147,483,647, ten digits); the loop invariant
    --  proves the write cursor never underflows the buffer.
    function I2S (N : Natural) return String with SPARK_Mode => On is
-      Buf : String (1 .. 10);
+      Pow10 : constant array (1 .. 10) of Long_Long_Integer :=
+        (10,
+         100,
+         1_000,
+         10_000,
+         100_000,
+         1_000_000,
+         10_000_000,
+         100_000_000,
+         1_000_000_000,
+         10_000_000_000);
+      Buf : String (1 .. 10) := (others => '0');
       Pos : Natural := 10;
       R   : Natural := N;
    begin
@@ -141,14 +152,12 @@ package body Adacovex.Renderers.SBOM is
          return "0";
       end if;
       while R > 0 loop
+         pragma Loop_Invariant (Pos in 1 .. 10);
+         pragma Loop_Invariant (Long_Long_Integer (R) < Pow10 (Pos));
          Buf (Pos) := Character'Val (Character'Pos ('0') + (R mod 10));
          R := R / 10;
          exit when R = 0;
          Pos := Pos - 1;
-         pragma Loop_Invariant (Pos in 1 .. 10);
-         pragma
-           Loop_Invariant
-             (Long_Long_Integer (R) < Long_Long_Integer (10)**Pos);
       end loop;
       return Buf (Pos .. 10);
    end I2S;
