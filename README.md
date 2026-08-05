@@ -343,7 +343,10 @@ and publishes the bundle to the GitHub Release:
 
 Both bundles are attested with
 [`actions/attest-build-provenance`](https://github.com/actions/attest) on every
-tag (OIDC attestations appear under the release's attestations tab).
+tag (OIDC attestations appear under the release's attestations tab). The
+release notes link the signed attestation directly via the action's
+`attestation-url` output, plus a *Git Changelog* compare link
+(`compare/v1.5.0...v1.6.0`) and the human-readable changelog.
 
 `make release VERSION=x.y.z` does the same locally (build `--release`,
 generate proofs, validate DAL-C, bundle `dist/`), then tags and pushes to
