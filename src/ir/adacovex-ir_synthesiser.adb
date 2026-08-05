@@ -106,6 +106,7 @@ package body Adacovex.IR_Synthesiser is
             pragma
               Loop_Invariant (I in Type_Names'First .. Type_Names'Last + 1);
             pragma Loop_Invariant (RLen <= Result'Last);
+            pragma Loop_Variant (Increases => I);
             declare
                J    : Natural := I;
                Sub  : String (1 .. Type_Names'Length) := (others => ' ');
@@ -121,6 +122,8 @@ package body Adacovex.IR_Synthesiser is
                   pragma
                     Loop_Invariant
                       (J in Type_Names'First .. Type_Names'Last + 1);
+                  pragma Loop_Invariant (J >= I);
+                  pragma Loop_Variant (Increases => J);
                end loop;
                if SLen > 0 then
                   declare

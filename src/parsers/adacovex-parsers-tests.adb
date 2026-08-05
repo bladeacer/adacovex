@@ -10,6 +10,7 @@ package body Adacovex.Parsers.Tests is
    begin
       while F <= S'Last and then S (F) = ' ' loop
          pragma Loop_Invariant (F >= S'First);
+         pragma Loop_Variant (Increases => F);
          F := F + 1;
       end loop;
       if F > S'Last then
@@ -51,10 +52,12 @@ package body Adacovex.Parsers.Tests is
                begin
                   while J <= S'Last and then S (J) = ' ' loop
                      pragma Loop_Invariant (J >= S'First);
+                     pragma Loop_Variant (Increases => J);
                      J := J + 1;
                   end loop;
                   while J <= S'Last and then S (J) in '0' .. '9' loop
                      pragma Loop_Invariant (J >= S'First);
+                     pragma Loop_Variant (Increases => J);
                      declare
                         Digit : constant Natural :=
                           Character'Pos (S (J)) - Character'Pos ('0');
@@ -105,6 +108,7 @@ package body Adacovex.Parsers.Tests is
                      begin
                         while K >= S'First and then S (K) = ' ' loop
                            pragma Loop_Invariant (K in S'First .. S'Last);
+                           pragma Loop_Variant (Decreases => K);
                            K := K - 1;
                         end loop;
                         if K >= S'First and then S (K) in '0' .. '9' then
@@ -118,10 +122,19 @@ package body Adacovex.Parsers.Tests is
                                  pragma
                                    Loop_Invariant
                                      (DStart in S'First .. S'Last);
+                                 pragma
+                                   Loop_Invariant
+                                     (for all Q in DStart .. K =>
+                                        S (Q) in '0' .. '9');
+                                 pragma Loop_Variant (Decreases => DStart);
                                  DStart := DStart - 1;
                               end loop;
                               for C in DStart .. K loop
                                  pragma Loop_Invariant (C in S'First .. K);
+                                 pragma
+                                   Loop_Invariant
+                                     (for all Q in C .. K =>
+                                        S (Q) in '0' .. '9');
                                  declare
                                     Digit : constant Natural :=
                                       Character'Pos (S (C))

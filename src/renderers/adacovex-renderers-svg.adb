@@ -29,6 +29,7 @@ package body Adacovex.Renderers.SVG is
       while R > 0 loop
          pragma Loop_Invariant (Pos in 1 .. 10);
          pragma Loop_Invariant (Long_Long_Integer (R) < Pow10 (Pos));
+         pragma Loop_Variant (Decreases => R);
          Buf (Pos) := Character'Val (Character'Pos ('0') + (R mod 10));
          R := R / 10;
          exit when R = 0;
