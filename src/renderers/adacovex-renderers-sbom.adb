@@ -50,7 +50,7 @@ package body Adacovex.Renderers.SBOM is
    function Escape_JSON (S : String) return String
    with SPARK_Mode => On, Pre => S'Length <= Natural'Last / 6
    is
-      Buf : String (1 .. S'Length * 6);
+      Buf : String (1 .. S'Length * 6) := (others => ' ');
       Len : Natural := 0;
       Hex : constant String := "0123456789abcdef";
    begin
@@ -193,6 +193,23 @@ package body Adacovex.Renderers.SBOM is
       Mp       : Long_Long_Integer;
       Y, M, D  : Natural;
       H, Mi, S : Natural;
+      Buf      : String (1 .. 80) := (others => ' ');
+      Len      : Natural := 0;
+
+      --  Append a fixed-size field to the timestamp buffer, then a single
+      --  separator character.  The buffer is large enough for the longest
+      --  timestamp (10-digit year + five 2-digit fields + separators).
+      procedure Field (Txt : String; Sep : Character) is
+      begin
+         for I in Txt'Range loop
+            Buf (Len + 1 + (I - Txt'First)) := Txt (I);
+         end loop;
+         Len := Len + Txt'Length;
+         if Sep /= ASCII.NUL then
+            Len := Len + 1;
+            Buf (Len) := Sep;
+         end if;
+      end Field;
    begin
       Era := (if Z >= 0 then Z else Z - 146_096) / 146_097;
       Doe := Z - Era * 146_097;
@@ -208,22 +225,13 @@ package body Adacovex.Renderers.SBOM is
       H := Secs / 3_600;
       Mi := (Secs mod 3_600) / 60;
       S := Secs mod 60;
-      pragma Assert (I2S (Y)'Length <= 10);
-      pragma Assert (Pad2 (M)'Length <= 11 and Pad2 (D)'Length <= 11);
-      pragma Assert (Pad2 (H)'Length <= 11 and Pad2 (Mi)'Length <= 11);
-      pragma Assert (Pad2 (S)'Length <= 11);
-      return
-        I2S (Y)
-        & "-"
-        & Pad2 (M)
-        & "-"
-        & Pad2 (D)
-        & "T"
-        & Pad2 (H)
-        & ":"
-        & Pad2 (Mi)
-        & ":"
-        & Pad2 (S);
+      Field (I2S (Y), '-');
+      Field (Pad2 (M), '-');
+      Field (Pad2 (D), 'T');
+      Field (Pad2 (H), ':');
+      Field (Pad2 (Mi), ':');
+      Field (Pad2 (S), ASCII.NUL);
+      return Buf (1 .. Len);
    end ISO_From_Epoch;
 
    --  ISO 8601 timestamp (YYYY-MM-DDTHH:MM:SS).
