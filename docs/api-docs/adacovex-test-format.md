@@ -83,11 +83,15 @@ overall `Passed:` / `Failed:` summary line).
 ## Usage
 
 The parser (`Adacovex.Parsers.Tests.Parse_Test_Result`) reads from a file;
-`Parse_Test_Stdout` reads from standard input.
+`Parse_Test_Stdout` reads from standard input. When no explicit file is given,
+`Parse_Test_Result_From_Project` auto-discovers the test summary in the target
+project, trying conventional file names (`test_result.md`, `test_results.md`,
+`test-result.md`, `test_report.md`, `test_output.md`, `.txt`/`.log` variants,
+and `docs/` mirrors) in order.
 
 ```bash
 # Parse a test result file
 adacovex --target=../Ada_CRDT
 
-# The parser reads test_result.md from the target project
+# The parser auto-discovers test_result.md (or any conventional variant) from the target project
 ```

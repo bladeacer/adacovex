@@ -70,11 +70,8 @@ package body Adacovex.Diff is
       R.Proved_VCs := Proof.Proved_VCs;
       R.SPARK_Level := Proof.Level;
 
-      declare
-         T_Path : constant String := Target_Dir & "/test_result.md";
-      begin
-         Adacovex.Parsers.Tests.Parse_Test_Result (T_Path, Tests, OK);
-      end;
+      Adacovex.Parsers.Tests.Parse_Test_Result_From_Project
+        (Target_Dir, Tests, OK);
       R.Has_Tests := OK;
       R.Tests_Passed := Tests.Total_Passed;
       R.Tests_Failed := Tests.Total_Failed;

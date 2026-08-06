@@ -5,8 +5,8 @@
 | Metric | Value |
 |--------|-------|
 | Packages Scanned |  26 |
-| Total Subprograms |  58 |
-| Documented Subprograms |  58 |
+| Total Subprograms |  59 |
+| Documented Subprograms |  59 |
 | Docstring Coverage |  100% |
 
 ## SPARK Proof Analysis
@@ -16,17 +16,17 @@
 | SPARK Level | Platinum | - |
 | Flow Dependencies |  0 |  0 |
 | Initialization |  13 |  13 |
-| Runtime Checks |  353 |  353 |
-| Assertions |  58 |  58 |
+| Runtime Checks |  358 |  358 |
+| Assertions |  60 |  60 |
 | Functional Contracts |  13 |  13 |
-| Termination |  42 |  31 |
-| **Total** |  491 |  491 |
+| Termination |  44 |  32 |
+| **Total** |  500 |  500 |
 
 ## Test Results
 
 | Category | Tests | Status |
 |----------|-------|--------|
-| **Total** | ** 290** | **Passed:  290, Failed:  0** |
+| **Total** | ** 295** | **Passed:  295, Failed:  0** |
 
 ## DO-178C Compliance
 

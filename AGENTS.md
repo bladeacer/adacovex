@@ -20,10 +20,10 @@ adacovex was designed to audit the Ada_CRDT library at `../Ada_CRDT` (26 package
 The `--target=PATH` option can point at any Ada/SPARK project.
 
 Self-assessment (`make run-self`, default target: cwd) verifies adacovex against its own
-source -- all 26 packages, 58 subprograms -- and must always show:
+source -- all 26 packages, 59 subprograms -- and must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
-- Platinum SPARK level (491/491 VCs proved)
-- 290/290 native tests passing
+- Platinum SPARK level (500/500 VCs proved)
+- 295/295 native tests passing
 - DAL-C Achieved
 
 ## Architecture
@@ -73,9 +73,9 @@ src/
     |-- adacovex_renderer_svg_tests.ads/.adb  -- SVG renderer tests (30)
     |-- adacovex_sbom_tests.ads/.adb          -- SBOM / manifest graph tests (53)
     |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (68)
-    |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (35)
+    |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (40)
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (26)
-    `-- test_runner.adb                       -- Test suite entry point (290 tests)
+    `-- test_runner.adb                       -- Test suite entry point (295 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -286,7 +286,8 @@ adacovex sbom [--format=cyclonedx-json|spdx-json] [--out=PATH]
 - **Exit code**: `0` if no regressions AND current DAL is Achieved; `1`
   otherwise (regression, or current DAL Unmet).
 - **Missing artifacts**: If the base revision does not commit `gnatprove.out`
-  or `test_result.md`, those rows report `N/A` and are not compared.
+  or a test-result summary (e.g. `test_result.md`), those rows report `N/A`
+  and are not compared.
 - **Example**: `adacovex --target=. --compare-base=HEAD`.
 
 #### `--verbose`
@@ -577,7 +578,8 @@ specific failure reasons when the assessment is `Unmet`.
 1. All HLRs defined in `<target>/docs/compliance/HLR.md` must be traced by
    at least one `-- HLR-XXXX` tag in source `.ads` files.
 2. Every `-- HLR-XXXX` tag in source must map to a defined HLR (no orphans).
-3. All tests passing (zero failures in `<target>/test_result.md`).
+3. All tests passing (zero failures in the discovered test-result file,
+   e.g. `<target>/test_result.md`).
 4. Minimum SPARK level `>= Bronze` (flow analysis passing).
 
 ---
@@ -686,8 +688,13 @@ The target project must have:
 2. **GNATprove output** -- either `gnatprove.out` in the target root or
    `<target>/obj/gnatprove/gnatprove.out`. Adacovex parses the proof summary
    to determine the SPARK level.
-3. **Test results** -- a `test_result.md` file in the target root containing
-   a Markdown table with `Tests` and `Status` columns (PASS/FAIL).
+3. **Test results** -- a test-summary file in the target root. Adacovex
+   auto-discovers conventional names (`test_result.md`, `test_results.md`,
+   `test-result.md`, `test_report.md`, `test_output.md`, plus `.txt`/`.log`
+   variants and the `docs/` mirrors) containing a Markdown table with `Tests`
+   and `Status` columns (PASS/FAIL) or a supported summary format (TAP,
+   Automake `PASS:`/`FAIL:`, Maven Surefire `Tests run:`, Unity `N Tests M
+   Failures`, `Passed:`/`Failed:`).
 4. **HLR document** (for DAL assessment) -- `<target>/docs/compliance/HLR.md`
    defining the High-Level Requirements.
 
@@ -812,9 +819,9 @@ is obtained and built.
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 290/290 passing |
+| Unit tests | `make test` | 295/295 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
-| SPARK proof | `make prove` | 491/491 VCs Platinum |
+| SPARK proof | `make prove` | 500/500 VCs Platinum |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
 
 See [docs/changelogs/adacovex-1.0.0.md](docs/changelogs/adacovex-1.0.0.md) for full release notes.
@@ -832,12 +839,12 @@ Test source: `src/tests/`. Entry point: `test_runner.adb` (builds as
 in `adacovex.gpr`; the CLI entry point builds as `bin/adacovex` via the
 `Builder.Executable` override, with a `bin/covex` alias symlink).
 
-`make test` builds and runs the 290-test suite. Test results are written to
+`make test` builds and runs the 295-test suite. Test results are written to
 `docs/test_result.md` in a Markdown table format that can be parsed by
 `adacovex-parsers-tests`. This means adacovex **supports both** native test
 running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 
-### Test categories (290 total)
+### Test categories (295 total)
 
 | Category | Tests | What it covers |
 |----------|-------|----------------|
@@ -846,7 +853,7 @@ running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 | Source scanner | 68 | Package scan, docstring parsing (Ada/Google/Sphinx styles), HLR tags, name extraction, @field/@formal/after-decl, comment-style variants, tag aliases, long generated lines |
 | IR synthesis | 27 | Bounded type bounds, Target_Config defaults, host word-size detection, foreign type-name lowering, package synthesis |
 | GNATprove parser | 38 | .out parsing, proof summary, SPARK level detection, --help handling |
-| Test-result parser | 35 | Markdown table, TAP, Automake, Maven Surefire, and Unity test-result parsing |
+| Test-result parser | 40 | Markdown table, TAP, Automake, Maven Surefire, and Unity test-result parsing; conventional file-name discovery |
 | CLI config | 11 | Default option values, --help, --no-svg field, --compare-base and --coverage-delta defaults |
 | SVG renderer | 30 | SVG badge content and format |
 | SBOM generator | 53 | Proof/DAL property mapping, Alire manifest + GPR dependency graph, CycloneDX/SPDX rendering |

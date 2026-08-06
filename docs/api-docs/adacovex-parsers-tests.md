@@ -24,3 +24,11 @@ Unity               "N Tests M Failures [K Ignored]"
 | `File_Path` | Path to test result Markdown file. |
 | `Success` | True if file was parsed successfully. |
 | `Summary` | Output test summary record. |
+
+### procedure Parse_Test_Result_From_Project (Target_Dir : Standard.String; Summary : Adacovex.Types.Implementation.Test_Summary; Success : Standard.Boolean) `[Pre]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `Success` | True if a test result file was found and parsed. |
+| `Summary` | Output test summary record. |
+| `Target_Dir` | Target project root directory. |
