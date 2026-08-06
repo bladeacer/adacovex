@@ -98,6 +98,36 @@ The same release step now also:
   `SOURCE_DATE_EPOCH` timestamp to the exact commit (`git -C <target> log -1
   --format=%ct`); the make targets already do this from `HEAD`.
 
+### H3: Back to zero-dependency -- gnatprove moved out of `alire.toml`
+
+- **`alire.toml` no longer declares gnatprove.** The covex crate is once again
+  fully zero-dependency: no library or tool dependencies. `gnatprove` lives
+  only in `alire-dev.toml` (used by the local make targets), and the `prove`
+  subcommand resolves it at run time via the dev-manifest swap, `$PATH`,
+  `~/.adacovex/toolchain/`, or a download. Installing `covex` no longer drags
+  in gnatprove or the proof solvers.
+- **Install docs prefer the per-project manifest.** README/AGENTS now lead
+  with declaring `covex` (plus `gnatprove` when proofs are wanted) in the
+  project's `alire-dev.toml`, keeping `alr install covex gnatprove` as the
+  documented global alternative, alongside the GitHub release bundle and
+  from-source installs.
+- **Architecture decision: supported platforms.** Since Alire is the packaging
+  and delivery mechanism, adacovex supports the platforms Alire itself
+  supports -- binary distribution on Linux x86-64, Windows x86-64, and macOS
+  x86-64, and building from source on any host with GNAT FSF 9.2+ that can
+  build Alire. Added to `docs/architecture.md`.
+- **Architecture decision: CI tied to release version.** Documented that the
+  GitHub Actions action is version-matched to the binary (the release workflow
+  bundles `adacovex-vX.Y.Z.tar.gz` for each tag, and the action downloads the
+  binary for the tag it is referenced by, with floating `vMAJOR` / `vMAJOR.MINOR`
+  / `latest` tags force-pushed at release time). CI runs on `ubuntu-latest`
+  with the pinned `gnat-version`.
+- **Release/index manifest templates** (`alire/releases/covex-0.0.0.toml`,
+  `index/ad/covex/covex-0.1.0-dev.toml`, and the 1.6.0 variants) dropped the
+  gnatprove dependency; `alire/alire.lock` regenerated accordingly.
+- The toolchain-resolution and THIRD_PARTY_NOTICES wording now state plainly
+  that adacovex declares no gnatprove dependency and resolves it at run time.
+
 ## Notes
 
 - Test suite extended: IR synthesis 26 -> **27** checks; new word-size checks.

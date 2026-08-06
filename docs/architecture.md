@@ -2,20 +2,37 @@
 
 ## Dependency Management: Alire
 
-adacovex uses [Alire](https://alire.ada.dev/) to manage all dependencies. The project declares `gnatprove` as a tool dependency in `alire.toml`, which is the canonical publishing manifest. Development-only tools (`gnatdoc_bin`, `gnatformat_bin`) are declared in `alire-dev.toml`, which is never published to the Alire community index.
+adacovex uses [Alire](https://alire.ada.dev/) as its packaging and delivery
+mechanism. The publishing manifest `alire.toml` declares **zero dependencies**
+-- no libraries beyond the GNAT runtime and no tool dependencies. In
+particular `gnatprove` is *not* a declared dependency: adacovex analyzes
+`gnatprove.out` files produced externally, and the `prove` subcommand resolves
+a gnatprove executable at run time (per-project manifest, `$PATH`, cached
+toolchain, or download). Development-only tools (`gnatprove`, `gnatdoc_bin`,
+`gnatformat_bin`) are declared in `alire-dev.toml`, which is never published to
+the Alire community index.
 
 ### Manifest distinction (`alire.toml` vs `alire-dev.toml`)
 
-- **`alire.toml`**: The clean publishing manifest. Contains only runtime and tool dependencies needed for the assessment pipeline (currently `gnatprove`). Used for SBOM generation and dependency graph scanning.
-- **`alire-dev.toml`**: The development manifest. Extends `alire.toml` with dev-only tools (`gnatdoc_bin`, `gnatformat_bin`) needed for `make doc` and `make fmt`. Used for toolchain resolution when running `alr exec`.
+- **`alire.toml`**: The clean publishing manifest. Declares no dependencies at
+  all, so `alr install covex` (or `alr build` from source) pulls nothing beyond
+  the binary and the GNAT compiler. Used for SBOM generation and dependency
+  graph scanning.
+- **`alire-dev.toml`**: The development manifest. Extends `alire.toml` with
+  dev-only tools (`gnatprove`, `gnatdoc_bin`, `gnatformat_bin`) needed for
+  `make prove`, `make doc`, and `make fmt`. Used for toolchain resolution when
+  running `alr exec`.
 
-When both files exist, `alire.toml` takes precedence for manifest scanning and SBOM generation. The `alire-dev.toml` is consulted only for toolchain resolution (gnatprove detection) via `Manifest_Declares_GNATprove`, which checks both manifests.
+When both files exist, `alire.toml` takes precedence for manifest scanning and
+SBOM generation. The `alire-dev.toml` is consulted only for toolchain
+resolution (gnatprove detection) via `Manifest_Declares_GNATprove`, which
+checks both manifests.
 
 ### Dev-manifest proof swap (`prove` subcommand)
 
-Target projects may declare `gnatprove` only in `alire-dev.toml` (keeping the
-publishing `alire.toml` clean). When the `prove` subcommand detects this
-(`Gnatprove_Dev_Only`), it runs the proof through a temporary `sh` wrapper
+adacovex declares `gnatprove` only in its own `alire-dev.toml` (keeping the
+publishing `alire.toml` clean). The `prove` subcommand detects this
+(`Gnatprove_Dev_Only`), and runs the proof through a temporary `sh` wrapper
 that:
 
 1. Backs up `alire.toml`, `alire.lock`, and `alire/` to a `mktemp -d`
@@ -26,6 +43,10 @@ that:
 4. restores the backed-up files via a `trap ... EXIT INT TERM` (also on
    failure or interruption).
 
+The same rule applies to target projects: a target that keeps gnatprove in its
+own `alire-dev.toml` gets the identical dev-manifest swap, so the publishing
+`alire.toml` is always clean.
+
 The assessment and SBOM pipeline always scans the publishing `alire.toml`, so
 dev-only tool declarations never leak into dependency graphs or SBOMs.
 
@@ -35,7 +56,10 @@ adacovex follows the Unix philosophy of doing one thing well:
 
 - **Single-purpose pipeline**: Each step (scanning, proof parsing, test parsing, DAL assessment, rendering) is a focused, composable unit.
 - **Text-based interfaces**: Input and output are plain text (Ada source, `.out` files, Markdown reports, ANSI terminal output).
-- **No library dependencies**: Only the GNAT runtime is used. No external libraries, frameworks, or package managers beyond Alire for toolchain management.
+- **No library dependencies**: Only the GNAT runtime is used. No external
+  libraries or frameworks. Alire is the packaging/delivery mechanism but adds
+  no runtime dependency: adacovex declares no library or tool dependencies
+  (gnatprove is resolved at run time by the `prove` subcommand).
 - **Composable tools**: The `prove` subcommand runs GNATprove and then falls through to the standard assessment pipeline. The `sbom` subcommand generates a proof-aware SBOM independently.
 - **Exit codes**: `0` for success (DAL achieved), `1` for compliance failure. This enables straightforward CI integration.
 - **Minimal user code**: users write as little code as possible while getting
@@ -63,7 +87,9 @@ storage-size dependent and remain fixed.
 declarations from heavily code-generated projects are never truncated or
 silently drained.
 
-This ensures adacovex can be built and run on any system with a GNAT toolchain, without requiring any additional package installation beyond Alire for toolchain management.
+This ensures adacovex can be built and run on any system with a GNAT toolchain,
+without requiring any additional package installation beyond Alire for
+toolchain management.
 
 ## SPARK Formal Verification
 
@@ -130,7 +156,51 @@ adacovex supports multiple output formats:
 
 ## Testing
 
-adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 246 tests across 9 categories. No external test framework (AUnit, etc.) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
+adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 290 tests across 10 categories. No external test framework (AUnit, etc.) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
+
+## Supported Platforms
+
+adacovex supports the same platforms Alire itself supports. Because Alire is
+the packaging and delivery mechanism -- the crate builds via `alr build`, is
+distributed through the Alire community index (`alr install covex`), and the
+release workflow builds it with the Alire toolchain -- adacovex inherits
+Alire's supported-platform matrix:
+
+- **Binary distribution**: Linux x86-64, Windows x86-64, and macOS x86-64
+  (the platforms for which Alire publishes binary releases and GNAT FSF
+  toolchains, including cross compilers for ARM, RISC-V, and AVR).
+- **From source**: any platform with a GNAT FSF 9.2+ compiler on which Alire
+  can be built (Alire lists FreeBSD and OpenBSD among buildable hosts).
+- **GitHub release bundles**: built on GitHub's Linux runners and distributed
+  as `adacovex-vX.Y.Z.tar.gz` for every tag.
+
+The GitHub Actions composite action pins `gnat-version` (default `15.2.1`) via
+`alire-project/setup-alire`, and CI runs on `ubuntu-latest`, so the CI-verified
+platform is Linux x86-64. The tool itself is written in portable Ada 2012 using
+only the GNAT runtime, so no adacovex code is platform-specific beyond what the
+GNAT runtime and Alire toolchain provide.
+
+## Delivery and Versioning
+
+adacovex follows one version across every delivery channel, and each channel is
+version-locked to the same release:
+
+- **Single source of truth**: the `version` field in `alire.toml` /
+  `alire-dev.toml` and `Adacovex.Version` in `src/adacovex.ads`, bumped together
+  by `make bump-version`.
+- **CI is tied to the release version**: the GitHub Actions composite action
+  (`action.yml`) is version-matched to the adacovex binary. The release
+  workflow bundles `adacovex-vX.Y.Z.tar.gz` and `adacovex-action-vX.Y.Z.tar.gz`
+  for every `vX.Y.Z` tag, and the action downloads the binary for the tag it is
+  referenced by (`@vX.Y.Z` runs that exact version). Floating tags
+  (`vMAJOR`, `vMAJOR.MINOR`, `latest`) are force-pushed at release time so
+  `@latest` / `@v1` / `@v1.3` always resolve to the newest matching release.
+- **CI platform/compiler**: CI validates the self-assessment (build, prove,
+  tests) with the pinned `gnat-version` on `ubuntu-latest`, so the CI-proven
+  combination is the released binary built against that exact toolchain.
+- **Attestation**: every release bundle is attested with
+  `actions/attest-build-provenance` (OIDC), and the release notes link the
+  signed attestation.
 
 ## Read Only
 

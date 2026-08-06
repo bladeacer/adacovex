@@ -11,6 +11,3 @@ maintainers-logins = ["bladeacer"]
 licenses = "Apache-2.0"
 website = "https://github.com/bladeacer/adacovex"
 tags = ["ada", "spark", "coverage", "do-178c", "compliance"]
-
-[[depends-on]]
-gnatprove = "^15.1.0"
