@@ -11,19 +11,23 @@ Usage: python3 tools/apply-agents-tree.py /tmp/agents-tree.out
 
 import sys
 
+TREE_MARKERS: tuple[str, str] = (
+    "<!-- agents-tree:begin -->",
+    "<!-- agents-tree:end -->",
+)
 
-def main():
-    if len(sys.argv) < 2:
+
+def main(argv: list[str]) -> int:
+    if len(argv) < 2:
         print("usage: apply-agents-tree.py <tree-file>", file=sys.stderr)
         return 1
-    with open(sys.argv[1], encoding="utf-8") as fh:
+    with open(argv[1], encoding="utf-8") as fh:
         tree = fh.read().rstrip()
-    markers = ("<!-- agents-tree:begin -->", "<!-- agents-tree:end -->")
     with open("AGENTS.md", encoding="utf-8") as fh:
         text = fh.read()
-    start = text.index(markers[0])
-    end = text.index(markers[1]) + len(markers[1])
-    block = markers[0] + "\n```\n" + tree + "\n```\n" + markers[1]
+    start = text.index(TREE_MARKERS[0])
+    end = text.index(TREE_MARKERS[1]) + len(TREE_MARKERS[1])
+    block = TREE_MARKERS[0] + "\n```\n" + tree + "\n```\n" + TREE_MARKERS[1]
     with open("AGENTS.md", "w", encoding="utf-8") as fh:
         fh.write(text[:start] + block + text[end:])
     print("AGENTS.md architecture tree regenerated.")
@@ -31,4 +35,4 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(sys.argv))
