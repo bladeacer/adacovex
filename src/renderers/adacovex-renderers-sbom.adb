@@ -205,6 +205,11 @@ package body Adacovex.Renderers.SBOM is
       --  Append a fixed-size field to the timestamp buffer, then a single
       --  separator character.  The buffer is large enough for the longest
       --  timestamp (10-digit year + five 2-digit fields + separators).
+      --
+      --  The separator test is a compile-time constant at every call site, so
+      --  inlining constant-folds it; the folded-away branch triggers the
+      --  benign "statement has no effect" warning, suppressed here.
+      pragma Warnings (Off, "statement has no effect");
       procedure Field (Txt : String; Sep : Character) is
       begin
          for I in Txt'Range loop
@@ -237,6 +242,7 @@ package body Adacovex.Renderers.SBOM is
       Field (Pad2 (H), ':');
       Field (Pad2 (Mi), ':');
       Field (Pad2 (S), ASCII.NUL);
+      pragma Warnings (On, "statement has no effect");
       return Buf (1 .. Len);
    end ISO_From_Epoch;
 

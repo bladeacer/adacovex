@@ -199,7 +199,7 @@ version-locked to the same release:
   tests) with the pinned `gnat-version` on `ubuntu-latest`, so the CI-proven
   combination is the released binary built against that exact toolchain.
 - **Attestation**: every release bundle is attested with
-  `actions/attest-build-provenance` (OIDC), and the release notes link the
+  `actions/attest` (OIDC), and the release notes link the
   signed attestation.
 
 ## Read Only

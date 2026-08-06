@@ -3,7 +3,7 @@ description = "Ada/SPARK coverage, proof, DO-178C compliance tool"
 version = "1.6.0"
 project-files = ["adacovex.gpr"]
 long-description = """
-Zero-library-dependency Ada/SPARK CLI tool for coverage analysis, proof verification,
+Zero-dependency Ada/SPARK CLI tool for coverage analysis, proof verification,
 test-result parsing, DO-178C DAL compliance assessment, and interactive dashboards.
 
 - Source scanning: walks .ads files, extracts subprogram declarations, docstring
@@ -31,4 +31,4 @@ maintainers = ["bladeacer <wg.nick.exe@gmail.com>"]
 maintainers-logins = ["bladeacer"]
 licenses = "Apache-2.0"
 website = "https://github.com/bladeacer/adacovex"
-tags = ["ada", "spark", "coverage", "do-178c", "compliance"]
+tags = ["ada", "spark", "formal-verify", "cli", "gnatprove", "sbom", "tests", "code-coverage", "do-178c", "compliance", "developer-tools"]

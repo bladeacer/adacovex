@@ -146,6 +146,18 @@ package body Adacovex.Renderers.SVG is
       end case;
    end Spark_Text_Color;
 
+   --  Text color with sufficient contrast on the value background: dark text
+   --  on the light green (#4c1) and yellow (#dfb317) pass colors, white on
+   --  the dark red (#e05d44) failure color.
+   function Badge_Text_Color (Value_Color : String) return String is
+   begin
+      if Value_Color = "#4c1" or else Value_Color = "#dfb317" then
+         return "#1a1a1a";
+      else
+         return "#fff";
+      end if;
+   end Badge_Text_Color;
+
    function Render_SPARK_Badge (Level : Types.SPARK_Level) return String is
    begin
       declare
@@ -170,7 +182,13 @@ package body Adacovex.Renderers.SVG is
       Value (Len + 1 .. Len + 7) := " Passed";
       Len := Len + 7;
 
-      return Badge_SVG ("Tests", Value (1 .. Len), "#555", "#4c1");
+      return
+        Badge_SVG
+          ("Tests",
+           Value (1 .. Len),
+           "#555",
+           "#4c1",
+           Badge_Text_Color ("#4c1"));
    end Render_Tests_Badge;
 
    function Render_DO178C_Badge
@@ -188,7 +206,13 @@ package body Adacovex.Renderers.SVG is
             Status_Str (6 .. 10) := " PASS";
             SLen := 10;
          end;
-         return Badge_SVG ("DO-178C", Status_Str (1 .. SLen), "#555", "#4c1");
+         return
+           Badge_SVG
+             ("DO-178C",
+              Status_Str (1 .. SLen),
+              "#555",
+              "#4c1",
+              Badge_Text_Color ("#4c1"));
       else
          declare
             S : constant String := Types.To_String (Assess.Target_DAL);
@@ -218,11 +242,29 @@ package body Adacovex.Renderers.SVG is
       Val (Len + 1 .. Len + 1) := "%";
       Len := Len + 1;
       if Pct >= 80 then
-         return Badge_SVG ("docs", Val (1 .. Len), "#555", "#4c1");
+         return
+           Badge_SVG
+             ("docs",
+              Val (1 .. Len),
+              "#555",
+              "#4c1",
+              Badge_Text_Color ("#4c1"));
       elsif Pct >= 50 then
-         return Badge_SVG ("docs", Val (1 .. Len), "#555", "#dfb317");
+         return
+           Badge_SVG
+             ("docs",
+              Val (1 .. Len),
+              "#555",
+              "#dfb317",
+              Badge_Text_Color ("#dfb317"));
       else
-         return Badge_SVG ("docs", Val (1 .. Len), "#555", "#e05d44");
+         return
+           Badge_SVG
+             ("docs",
+              Val (1 .. Len),
+              "#555",
+              "#e05d44",
+              Badge_Text_Color ("#e05d44"));
       end if;
    end Render_Docstring_Badge;
 

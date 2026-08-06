@@ -25,6 +25,19 @@ VERSION="${1:-${ADACOVEX_VERSION:-latest}}"
 PREFIX="${ADACOVEX_HOME:-$HOME/.adacovex}"
 BINDIR="$PREFIX/bin"
 
+# --- toolchain prerequisites -------------------------------------------------
+# adacovex itself is a self-contained binary, but the `prove` subcommand
+# resolves gnatprove at run time (per-project manifest via `alr exec`, then
+# $PATH, cached toolchain, download). Warn early if Alire is missing so proof
+# runs have no `alr exec` fallback.
+if ! command -v alr >/dev/null 2>&1; then
+    echo "note: 'alr' (Alire) not found on PATH." >&2
+    echo "  Install it with:  curl https://alire.ada.dev -sSf | sh" >&2
+    echo "  'covex prove' then falls back to a gnatprove on PATH, a cached" >&2
+    echo "  toolchain in ~/.adacovex/toolchain, or an automatic download." >&2
+    echo "" >&2
+fi
+
 # --- OS / architecture detection ------------------------------------------
 detect_os() {
     case "$(uname -s)" in
