@@ -34,6 +34,30 @@ gnatprove is the only declared (tool) dependency; no libraries beyond the GNAT r
 lines, 4096-char paths on a 64-bit host (scaled by the auto-detected host
 word size).
 
+## AI Assistance Disclosure
+
+AI tools were utilized during the development of this project for tasks
+such as boilerplate generation, contract drafting, and docstring formatting.
+
+### "Why should I trust your code?"
+
+Given the use of AI assistance, healthy skepticism is natural and encouraged.
+However, project reliability is grounded in mathematical proof and
+non-invasive design rather than implicit trust:
+
+- **Formal Verification:** Core Ada logic is formally verified using
+SPARK Ada (achieving Platinum/AoRTE-free verification conditions via `gnatprove`).
+- **Read-Only Engine:** `adacovex` acts strictly as an assessment engine.
+It processes input payloads, parses build artifacts, and produces reports without
+modifying your source files in place.
+- **Open Auditability:** The codebase is fully open source under the Apache-2.0
+license for independent inspection and review.
+
+> *Still skeptical?* See Ken Thompson's landmark paper,
+[*Reflections on Trusting Trust*](https://dl.acm.org/doi/epdf/10.1145/358198.358210),
+on the fundamental nature of trust in software toolchains.
+
+
 ## Quick start
 
 ```bash
@@ -49,6 +73,66 @@ make run-ada-crdt
 # Explicit target
 ./bin/adacovex --target=../Ada_CRDT --dal=C
 ```
+
+## Installing adacovex
+
+### Option 1: `alr install` (recommended)
+
+Install the `covex` binary and the `gnatprove` tool via Alire, then add Alire's
+bin directory to `$PATH`:
+
+```bash
+alr install covex gnatprove
+export PATH="$HOME/.local/bin:$PATH"   # or wherever `alr install` put the binaries
+```
+
+`covex` is the crate name for adacovex; the installed binary runs adacovex and
+scans the current directory by default, so once it is on `$PATH` you can run it
+from any Ada/SPARK project with no further setup. (Alire prints the install
+location after `alr install`; `alr toolchain --install-dir` shows the default.)
+
+### Option 2: download a release bundle from GitHub
+
+Every `vX.Y.Z` tag publishes `adacovex-vX.Y.Z.tar.gz`
+(`adacovex` plus a `covex` alias symlink) on the
+[GitHub Releases page](https://github.com/bladeacer/adacovex/releases). Download
+it with `curl` and unpack anywhere on `$PATH`:
+
+```bash
+VERSION=v1.6.0
+curl -fL -o adacovex.tar.gz \
+  "https://github.com/bladeacer/adacovex/releases/download/$VERSION/adacovex-$VERSION.tar.gz"
+mkdir -p ~/.local/bin
+tar -xzf adacovex.tar.gz -C ~/.local/bin
+export PATH="$HOME/.local/bin:$PATH"
+adacovex --help
+```
+
+Release bundles are attested with
+[`actions/attest-build-provenance`](https://github.com/actions/attest-build-provenance);
+verify a download with `gh attestation verify` against the
+[release](https://github.com/bladeacer/adacovex/releases) you fetched.
+
+### Building from source
+
+Clone the repo and `make build`, or manage adacovex as an Alire dev dependency
+(see [Using adacovex from another project](#using-adacovex-from-another-project)).
+
+## GNATprove toolchain resolution
+
+The `prove` subcommand resolves the `gnatprove` executable in this order:
+
+1. **Per-project manifest**: if `<target>/alire.toml` or
+   `<target>/alire-dev.toml` declares a `gnatprove` dependency, it is run via
+   `alr exec gnatprove` so Alire manages the exact toolchain version.
+2. **`$PATH`**: a `gnatprove` already on `$PATH` (e.g. installed beforehand
+   with `alr install gnatprove`).
+3. **Cached toolchain**: `~/.adacovex/toolchain/`.
+4. **Download**: last resort, fetch the platform toolchain bundle.
+
+If the target manifest declares `gnatprove` but `alr` is not installed, install
+Alire first (`curl https://alire.ada.dev -sSf | sh`); the fallback paths then
+kick in automatically.
 
 ## CLI reference
 
@@ -181,11 +265,14 @@ cyclonedx-json`, default, writes `<target>/sbom.json`) or SPDX 2.3 JSON
 (`--format=spdx-json`, writes `<target>/sbom.spdx.json`). `--out=PATH`
 overrides the output path; the containing directory is created automatically.
 
-Every component in the SBOM carries the proof-aware properties
-`adacovex:proof_level` (`Gold` for the verified build tier, `Platinum` when the
-assessment proved every verification condition) and `adacovex:dal_target`
-(`DAL-A` through `DAL-D`; omitted for `DAL-E`). In SPDX these are encoded as
-`attributionTexts` entries. Both formats validate against the official
+Only the **root component** -- the project adacovex actually assessed -- carries
+the proof-aware properties `adacovex:proof_level` (`Gold` for the verified build
+tier, `Platinum` when the assessment proved every verification condition) and
+`adacovex:dal_target` (`DAL-A` through `DAL-D`; omitted for `DAL-E`). Dependency
+components report `adacovex:proof_level = "Not proved"`: adacovex only proves
+the target itself, never third-party dependencies, so they must not claim a
+Gold/Platinum level. In SPDX these are encoded as `attributionTexts` entries.
+Both formats validate against the official
 [CycloneDX 1.5](https://github.com/CycloneDX/specification) and
 [SPDX 2.3](https://spdx.dev) JSON schemas (specifications by the CycloneDX and
 SPDX projects, licensed Apache-2.0 and CC0-1.0 respectively; see
@@ -202,9 +289,19 @@ SBOM output is **deterministic**: the `metadata.timestamp` (CycloneDX) /
 environment variable (the reproducible-builds convention). When it is set to
 a Unix epoch second count the timestamp is derived from it in UTC with pure
 integer math, so the emitted SBOM is byte-for-byte identical across runs and
-machines. Without it the current time is used. The `make` targets set it from
-the target's git `HEAD` commit time, so regenerated `sbom.json` stays stable
-per commit.
+machines. Without it the current time is used.
+
+To tie the SBOM timestamp to the exact git commit the assessment ran on, set
+`SOURCE_DATE_EPOCH` from the commit time before running adacovex:
+
+```bash
+export SOURCE_DATE_EPOCH=$(git -C /path/to/target log -1 --format=%ct)
+adacovex --target=/path/to/target
+```
+
+The bundled `make` targets (`run-self`, `run-ada-crdt`, `prove`, `release`,
+and Ada_CRDT's `prove`/`badges`) already do this from the target's git `HEAD`
+commit time, so regenerated `sbom.json` stays stable per commit.
 
 ### Using adacovex from another project
 
@@ -342,9 +439,9 @@ and publishes the bundle to the GitHub Release:
   vendoring or air-gapped use.
 
 Both bundles are attested with
-[`actions/attest-build-provenance`](https://github.com/actions/attest) on every
-tag (OIDC attestations appear under the release's attestations tab). The
-release notes link the signed attestation directly via the action's
+[`actions/attest-build-provenance`](https://github.com/actions/attest-build-provenance)
+on every tag (OIDC attestations appear under the release's attestations tab).
+The release notes link the signed attestation directly via the action's
 `attestation-url` output, plus a *Git Changelog* compare link
 (`compare/v1.5.0...v1.6.0`) and the human-readable changelog.
 
@@ -482,7 +579,7 @@ src/
 |-------|---------|-------------|
 | Unit tests | `make test` | 290/290 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
-| SPARK proof | `make prove` | 490/490 VCs Platinum |
+| SPARK proof | `make prove` | 491/491 VCs Platinum |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, Platinum, DAL-C (strict mode) |
 
 See [changelogs](docs/changelogs/index.md) for full release notes.

@@ -93,8 +93,10 @@
   list, and GNAT project (.gpr) with clauses, deduplicating across sources.
 
 - HLR-SBOM: The tool shall generate proof-aware software bills of materials in
-  CycloneDX 1.5 and SPDX 2.3 JSON, extending every component with the
-  adacovex:proof_level and adacovex:dal_target properties.
+  CycloneDX 1.5 and SPDX 2.3 JSON, extending the root component with the
+  adacovex:proof_level and adacovex:dal_target properties and dependency
+  components with adacovex:proof_level = "Not proved" (third-party
+  dependencies are not proved by the tool).
 
 - HLR-PROVE: The tool shall provide a `prove` subcommand that runs GNATprove
   against the target project's root .gpr file. When the target's

@@ -19,8 +19,8 @@
 | Runtime Checks |  353 |  353 |
 | Assertions |  58 |  58 |
 | Functional Contracts |  13 |  13 |
-| Termination |  41 |  30 |
-| **Total** |  490 |  490 |
+| Termination |  42 |  31 |
+| **Total** |  491 |  491 |
 
 ## Test Results
 

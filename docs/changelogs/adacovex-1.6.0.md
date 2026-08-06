@@ -11,7 +11,7 @@ Version bumped 1.5.0 -> 1.6.0.
 The whole SPARK-on codebase is now fully machine-proved. Previously only the
 bounded IR types (`Checked_Add32/64`, `IR_Bounds.Add32/64`) carried complete
 proofs; every other SPARK unit was analyzed but not fully discharged. Now
-**all 490 VCs prove** with `--prover=z3 --timeout=20`, including the run-time
+**all 491 VCs prove** with `--prover=z3 --timeout=20`, including the run-time
 range checks, assertions, functional contracts, and loop termination:
 
 - **Renderers**: `I2S` (fixed `10**Pos` overflow by replacing exponentiation
@@ -34,7 +34,7 @@ range checks, assertions, functional contracts, and loop termination:
   non-terminating.
 
 The self-assessment is now: 26 packages, 58 subprograms, 100% docstrings,
-**Platinum (490/490 VCs, 0 unproved)**, 290/290 tests, DAL-C Achieved.
+**Platinum (491/491 VCs, 0 unproved)**, 290/290 tests, DAL-C Achieved.
 
 ### C2: Host word-size auto-detection
 
@@ -73,19 +73,44 @@ The same release step now also:
   GitHub's tag-to-tag compare URL convention instead of the version-only form
   produced by stripping the `v`.
 
+### H2: Honest SBOM proof levels + badge contrast + install docs
+
+- **SBOM proof levels**: Only the root component -- the project adacovex
+  actually assessed -- now carries `adacovex:proof_level`
+  (`Gold`/`Platinum`) and `adacovex:dal_target`. Dependency components report
+  `adacovex:proof_level = "Not proved"`: adacovex only proves the target
+  itself, never third-party dependencies, so they no longer claim a
+  Gold/Platinum level they did not earn. Applied to CycloneDX, SPDX, and
+  Markdown outputs; the `Write_SBOM` summary line now says "root proof level".
+- **Platinum badge contrast**: the SPARK badge used white text on the light
+  platinum background (`#E5E4E2`), which failed contrast. Added a
+  `Spark_Text_Color` selector (`#1a1a1a` on Platinum/Gold/Silver, white on
+  Bronze/Stone) and a `Value_Text_Color` parameter to `Badge_SVG`.
+- **Installation docs**: README now documents installing adacovex via
+  `alr install covex gnatprove` (add Alire's bin dir to `$PATH`), downloading
+  the version-matched release bundle with `curl` from the GitHub Releases page
+  (verifiable with `gh attestation verify`), or building from source. The
+  `prove`-mode GNATprove toolchain resolution order
+  (per-project manifest -> `$PATH` -> cached toolchain -> download) is
+  documented, including the "install Alire first" fallback when a manifest
+  declares gnatprove but `alr` is missing.
+- **SBOM timestamp to git commit**: documented how to tie the deterministic
+  `SOURCE_DATE_EPOCH` timestamp to the exact commit (`git -C <target> log -1
+  --format=%ct`); the make targets already do this from `HEAD`.
+
 ## Notes
 
 - Test suite extended: IR synthesis 26 -> **27** checks; new word-size checks.
   The suite is now **290 tests** (passing).
 - Self-assessment metrics: 26 packages, 58 subprograms, 100% docstrings,
-  Platinum (490/490 VCs), 290 tests, DAL-C Achieved.
+  Platinum (491/491 VCs), 290 tests, DAL-C Achieved.
 
 ## Proof Results
 
-Self-assessment: **Platinum** (490/490 VCs proved, 0 unproved, AoRTE-free).
+Self-assessment: **Platinum** (491/491 VCs proved, 0 unproved, AoRTE-free).
 Every SPARK-on unit is fully discharged -- run-time checks 353/353,
-assertions 56/56, functional contracts 13/13, termination 34/34, flow
-55/55. Proof invocation: `gnatprove -P adacovex.gpr --prover=z3 --timeout=20`.
+assertions 58/58, functional contracts 13/13, termination 42/42, flow
+56/56. Proof invocation: `gnatprove -P adacovex.gpr --prover=z3 --timeout=20`.
 
 ## Traceability
 
@@ -94,3 +119,5 @@ No new HLRs. Existing tags continue to cover the changed packages:
 `Adacovex.Parsers.Tests`, `-- HLR-PROVE` / `-- HLR-METRICS` on
 `Adacovex.Types`, `-- HLR-IR` on `Adacovex.Target_Profiles` and
 `Adacovex.IR_Synthesiser`, `-- HLR-SBOM` on `Adacovex.Renderers.SBOM`.
+The HLR-SBOM wording was tightened to reflect that only the root component
+carries proof-aware properties while dependencies are reported as "Not proved".

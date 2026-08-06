@@ -2,10 +2,12 @@
 
 Proof-aware software bill of materials (SBOM) generator.
 Produces CycloneDX 1.5 JSON and SPDX 2.3 JSON documents from the
-dependency graph resolved by Adacovex.Parsers.Manifest.  Every
-component is extended with the adacovex proof-aware properties
+dependency graph resolved by Adacovex.Parsers.Manifest.  Only the root
+component -- the project adacovex actually assessed -- carries the
 adacovex:proof_level (Gold | Platinum) and adacovex:dal_target
-(DAL-A through DAL-D).
+(DAL-A through DAL-D) properties.  Dependency components report
+adacovex:proof_level = "Not proved": adacovex only proves the target
+itself, never third-party dependencies.
 HLR-SBOM: SBOM generation
 
 > **Note:** All items in this package are public.

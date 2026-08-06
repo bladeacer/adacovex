@@ -8,7 +8,7 @@ import re
 import sys
 import os
 from os.path import join
-from typing import Iterable, TypedDict
+from typing import Dict, Iterable, List, Optional, Tuple, TypedDict
 
 RST_DIR = sys.argv[1] if len(sys.argv) > 1 else "obj/gnatdoc-rst"
 OUT_DIR = sys.argv[2] if len(sys.argv) > 2 else "docs/api-docs"
@@ -17,7 +17,7 @@ MOJIBAKE_EMDASH = "\u00e2\u0080\u0094"
 
 
 class ParamDesc(TypedDict):
-    params: dict[str, str]
+    params: Dict[str, str]
     returns: str
 
 
@@ -26,13 +26,13 @@ class SubItem(TypedDict):
     name: str
     signature: str
     description: str
-    params: dict[str, str]
+    params: Dict[str, str]
     returns: str
     is_private: bool
 
 
-Block = tuple[str, str, str, dict[str, str], str, str]
-TypeMap = dict[str, tuple[str, str]]
+Block = Tuple[str, str, str, Dict[str, str], str, str]
+TypeMap = Dict[str, Tuple[str, str]]
 
 
 def fix_text(text: str) -> str:
@@ -65,9 +65,9 @@ def parse_description(text: str) -> str:
     return ""
 
 
-def parse_blocks(text: str) -> list[Block]:
+def parse_blocks(text: str) -> List[Block]:
     """Split RST text into (kind, name, decl, params, returns) blocks."""
-    blocks: list[Block] = []
+    blocks: List[Block] = []
     lines = text.split("\n")
     i = 0
     while i < len(lines):
@@ -85,7 +85,7 @@ def parse_blocks(text: str) -> list[Block]:
                 if decl:
                     decl += "\n"
                 decl += stripped
-            params: dict[str, str] = {}
+            params: Dict[str, str] = {}
             returns = ""
             desc = ""
             while i < len(lines):
@@ -110,7 +110,7 @@ def parse_blocks(text: str) -> list[Block]:
                         i += 1
                 elif re.match(r'^\s*\.\. code-block:: ada', lines[i]):
                     i += 1
-                    base_indent: int | None = None
+                    base_indent: Optional[int] = None
                     while i < len(lines):
                         if not lines[i].strip():
                             i += 1
@@ -144,9 +144,9 @@ def parse_blocks(text: str) -> list[Block]:
     return blocks
 
 
-def parse_ada_pkg_desc(lines: list[str]) -> str:
+def parse_ada_pkg_desc(lines: List[str]) -> str:
     """Extract package description from Ada spec file header comments."""
-    desc_parts: list[str] = []
+    desc_parts: List[str] = []
     for line in lines:
         s = line.strip()
         if re.match(r'--\s*@', s):
@@ -165,7 +165,7 @@ def parse_ada_pkg_desc(lines: list[str]) -> str:
     return re.sub(r'\s+', ' ', desc).strip()
 
 
-def extract_params_from_decl(decl: str) -> list[str]:
+def extract_params_from_decl(decl: str) -> List[str]:
     """Extract parameter names from a subprogram declaration using paren-balance."""
     start = decl.find('(')
     if start == -1:
@@ -181,7 +181,7 @@ def extract_params_from_decl(decl: str) -> list[str]:
                 end = i
                 break
     params_part = decl[start + 1:end]
-    result: list[str] = []
+    result: List[str] = []
     for group in params_part.split(';'):
         names_part = group.split(':')[0].strip()
         for name in names_part.split(','):
@@ -198,7 +198,7 @@ def annotation_key(name: str, param_names: Iterable[str]) -> str:
 
 def parse_ada_annotations(
     ads_path: str,
-) -> tuple[str, dict[str, ParamDesc], bool, list[tuple[str, str]]]:
+) -> Tuple[str, Dict[str, ParamDesc], bool, List[Tuple[str, str]]]:
     """Parse .ads file for package description and per-subprogram annotations.
     Returns (pkg_desc, annotations, has_private, private_items).
     private_items is a list of (kind, name) tuples for items declared
@@ -208,12 +208,12 @@ def parse_ada_annotations(
     with open(ads_path) as f:
         lines = f.readlines()
     pkg_desc = parse_ada_pkg_desc(lines)
-    annotations: dict[str, ParamDesc] = {}
+    annotations: Dict[str, ParamDesc] = {}
     cur: ParamDesc = {"params": {}, "returns": ""}
     in_private = False
     protected_depth = 0
     record_depth = 0
-    private_items: list[tuple[str, str]] = []
+    private_items: List[Tuple[str, str]] = []
     for line in lines:
         s = line.strip()
         if re.match(r'\s*protected\s+type\b', s):
@@ -272,10 +272,10 @@ def parse_ada_annotations(
     return pkg_desc, annotations, in_private, private_items
 
 
-def extract_aspects_from_ads(ads_path: str) -> dict[str, str]:
+def extract_aspects_from_ads(ads_path: str) -> Dict[str, str]:
     """Second pass over .ads to find with-clauses for all subprograms.
     Returns dict of short_name -> aspect_text."""
-    aspects: dict[str, str] = {}
+    aspects: Dict[str, str] = {}
     if not os.path.isfile(ads_path):
         return aspects
     with open(ads_path) as f:
@@ -319,7 +319,7 @@ def subprog_short_name(block_name: str) -> str:
     return m.group(1) if m else block_name
 
 
-def find_ads(pkg_basename: str) -> str | None:
+def find_ads(pkg_basename: str) -> Optional[str]:
     """Search for .ads file in src/ subdirectories (excluding tests)."""
     for root, dirs, files in os.walk("src/"):
         dirs[:] = [d for d in dirs if d != "tests"]
@@ -350,14 +350,14 @@ def extract_protected_type_decl(ads_path: str, type_name: str) -> str:
         return ""
     with open(ads_path) as f:
         lines = f.readlines()
-    start: int | None = None
+    start: Optional[int] = None
     for i, line in enumerate(lines):
         if re.match(rf'\s*protected\s+type\s+{re.escape(type_name)}\b', line):
             start = i
             break
     if start is None:
         return ""
-    buf: list[str] = []
+    buf: List[str] = []
     for i in range(start, len(lines)):
         buf.append(lines[i].rstrip())
         if re.match(rf'^\s*end\s+{re.escape(type_name)}\s*;', lines[i]):
@@ -371,11 +371,11 @@ def parse_subitem_from_comment(
     kind: str,
     name: str,
     signature: str,
-    comment_lines: list[str],
+    comment_lines: List[str],
     is_private: bool,
 ) -> SubItem:
-    desc_lines: list[str] = []
-    params: dict[str, str] = {}
+    desc_lines: List[str] = []
+    params: Dict[str, str] = {}
     returns = ""
     for cl in comment_lines:
         pm = re.match(r'--\s*@param\s+(\S+)\s*(.*)', cl)
@@ -404,12 +404,12 @@ def parse_subitem_from_comment(
 def parse_protected_subitems(
     decl: str,
     type_name: str,
-) -> tuple[str, list[SubItem], str]:
+) -> Tuple[str, List[SubItem], str]:
     """Parse protected type Ada declaration into structured sub-items.
     Returns (header_text, items, footer_text) where each item is
     (kind, name, signature, description, params, returns, is_private)."""
     lines = decl.split("\n")
-    header_lines: list[str] = []
+    header_lines: List[str] = []
     i = 0
     found_is = False
     while i < len(lines):
@@ -423,8 +423,8 @@ def parse_protected_subitems(
         return "\n".join(header_lines), [], f"end {type_name};"
     header = "\n".join(header_lines)
 
-    items: list[SubItem] = []
-    current_comment: list[str] = []
+    items: List[SubItem] = []
+    current_comment: List[str] = []
     in_private = False
 
     while i < len(lines):
@@ -450,7 +450,7 @@ def parse_protected_subitems(
         if sm:
             kind = sm.group(1)
             name = sm.group(2)
-            sig_lines: list[str] = [line]
+            sig_lines: List[str] = [line]
             depth = line.count("(") - line.count(")")
             i += 1
             while i < len(lines) and depth > 0:
@@ -475,20 +475,20 @@ def parse_protected_subitems(
     return header, items, f"end {type_name};"
 
 
-RecordField = tuple[str, str]
-Variant = tuple[str, list[RecordField]]
+RecordField = Tuple[str, str]
+Variant = Tuple[str, List[RecordField]]
 
 
 def parse_record_subitems(
     decl: str,
     type_name: str,
-) -> tuple[str, list[tuple[str, str, str]], list[Variant], str]:
+) -> Tuple[str, List[Tuple[str, str, str]], List[Variant], str]:
     """Parse record Ada declaration, extracting common fields and variant cases.
     Returns (header_text, common_fields, variants, footer_text).
     common_fields is list of (field_name, field_type_str, description)
     variants is list of (when_expr, [(field_name, field_type_str)])."""
     lines = decl.split("\n")
-    header_lines: list[str] = []
+    header_lines: List[str] = []
     i = 0
     while i < len(lines) and "record" not in lines[i]:
         header_lines.append(lines[i])
@@ -497,9 +497,9 @@ def parse_record_subitems(
         header_lines.append(lines[i])
         i += 1
     header = "\n".join(header_lines)
-    common: list[tuple[str, str, str]] = []
-    variants: list[Variant] = []
-    current_variant: Variant | None = None
+    common: List[Tuple[str, str, str]] = []
+    variants: List[Variant] = []
+    current_variant: Optional[Variant] = None
     in_case = False
     while i < len(lines):
         s = lines[i].strip()
@@ -544,13 +544,13 @@ def parse_record_subitems(
 def render_record_type(
     name: str,
     header: str,
-    common: list[tuple[str, str, str]],
-    variants: list[Variant],
+    common: List[Tuple[str, str, str]],
+    variants: List[Variant],
     footer: str,
     desc: str,
-    type_map: TypeMap | None = None,
-) -> list[str]:
-    lines: list[str] = []
+    type_map: Optional[TypeMap] = None,
+) -> List[str]:
+    lines: List[str] = []
     lines.append(f"```ada\n{header}\n```\n")
     if desc:
         lines.append(f"> {desc}\n")
@@ -573,7 +573,7 @@ def render_record_type(
     return lines
 
 
-def render_index(packages: dict[str, str]) -> str:
+def render_index(packages: Dict[str, str]) -> str:
     lines = ["# adacovex API Reference", "", "## Packages", ""]
     for title in sorted(packages, key=lambda p: (p.count("."), p.lower())):
         lines.append(f"- [{title}]({packages[title]})")
@@ -617,9 +617,9 @@ def link_type_refs(text: str, type_map: TypeMap) -> str:
     return re.sub(r'\b(?:CRDT\.|Adacovex\.)?[A-Z]\w*(?:\.[A-Z]\w*)+\b', replace_match, text)
 
 
-def extract_aspect_badges(sig: str) -> list[str]:
+def extract_aspect_badges(sig: str) -> List[str]:
     """Check Ada signature for SPARK aspects and return badge strings."""
-    badges: list[str] = []
+    badges: List[str] = []
     if re.search(r'\bwith\s+Inline\b', sig, re.IGNORECASE):
         badges.append("[Inline]")
     if re.search(r'\bPre\s*[=][>]', sig):
@@ -638,13 +638,13 @@ def extract_aspect_badges(sig: str) -> list[str]:
 def render_structured_type(
     name: str,
     header: str,
-    subitems: list[SubItem],
+    subitems: List[SubItem],
     footer: str,
     desc: str,
-    type_map: TypeMap | None = None,
-) -> list[str]:
+    type_map: Optional[TypeMap] = None,
+) -> List[str]:
     """Render a type with sub-items (e.g. protected type with operations/state)."""
-    lines: list[str] = []
+    lines: List[str] = []
     lines.append(f"```ada\n{header}\n```\n")
     if desc:
         lines.append(f"> {desc}\n")
@@ -689,15 +689,15 @@ def render_structured_type(
 def render_package(
     title: str,
     desc: str,
-    blocks: list[Block],
-    annotations: dict[str, ParamDesc],
+    blocks: List[Block],
+    annotations: Dict[str, ParamDesc],
     has_private: bool,
-    private_items: list[tuple[str, str]],
+    private_items: List[Tuple[str, str]],
     ads_path: str,
-    type_map: TypeMap | None = None,
-    subprog_aspects: dict[str, str] | None = None,
+    type_map: Optional[TypeMap] = None,
+    subprog_aspects: Optional[Dict[str, str]] = None,
 ) -> str:
-    lines: list[str] = [f"# {title}", ""]
+    lines: List[str] = [f"# {title}", ""]
     if desc:
         lines.append(desc)
         lines.append("")
@@ -714,7 +714,7 @@ def render_package(
         lines.append("> **Note:** All items in this package are public.")
         lines.append("")
 
-    sections: dict[str, list[tuple[str, str, tuple[dict[str, str], str], str]]] = {}
+    sections: Dict[str, List[Tuple[str, str, Tuple[Dict[str, str], str], str]]] = {}
     for kind, name, decl, params, returns, desc in blocks:
         sec = {"type": "Types", "function": "Functions", "procedure": "Procedures"}.get(kind, "Other")
         sections.setdefault(sec, []).append((name, decl, (params, returns), desc))
@@ -749,7 +749,7 @@ def render_package(
                     lines.append(f"```ada\n{decl}\n```\n")
                 if desc:
                     lines.append(f"> {desc}\n")
-                merged: dict[str, str] = {}
+                merged: Dict[str, str] = {}
                 for pname in sorted(params):
                     merged[pname] = params[pname] or anno.get("params", {}).get(pname, "")
                 if merged:
@@ -778,7 +778,7 @@ def main() -> None:
     os.makedirs(OUT_DIR, exist_ok=True)
 
     files = sorted(f for f in os.listdir(RST_DIR) if f.endswith(".rst"))
-    packages: dict[str, str] = {}
+    packages: Dict[str, str] = {}
 
     type_map = build_type_map(RST_DIR)
 
