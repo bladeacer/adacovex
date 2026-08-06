@@ -8,7 +8,10 @@
 
 **Zero-library-dependency Ada/SPARK CLI tool** for coverage analysis, proof verification,
 test-result parsing, DO-178C DAL compliance assessment, and interactive dashboards.
-gnatprove is the only declared (tool) dependency; no libraries beyond the GNAT runtime.
+No library dependencies beyond the GNAT runtime. gnatprove is not a declared
+dependency -- the `prove` subcommand resolves it at run time (per-project
+manifest, `$PATH`, cached toolchain, or download) -- so installing adacovex
+pulls nothing but the binary.
 
 ## Features
 
@@ -76,22 +79,54 @@ make run-ada-crdt
 
 ## Installing adacovex
 
-### Option 1: `alr install` (recommended)
+### Option 1: declare it in your project's Alire manifest (recommended)
 
-Install the `covex` binary and the `gnatprove` tool via Alire, then add Alire's
-bin directory to `$PATH`:
+The preferred way to use adacovex inside a project is to declare it as a
+dependency, so Alire manages the binary together with the rest of the build
+environment. Put `covex` in your project's `alire-dev.toml` (never `alire.toml`,
+so release builds stay clean). If you also want proof runs, declare `gnatprove`
+in the same manifest:
+
+```toml
+# <project>/alire-dev.toml
+[[depends-on]]
+covex = "*"
+gnatprove = "^15.1.0"
+```
+
+Then `alr build` produces `bin/adacovex` inside the project and the `prove`
+subcommand runs gnatprove through `alr exec`, so each project pins its own
+exact toolchain version -- no global install needed:
+
+```bash
+alr build
+./bin/adacovex --target=. --dal=C
+./bin/adacovex prove --target=.   # runs gnatprove via alr exec
+```
+
+For a project that is itself an Alire crate, `gnatprove` may instead be
+declared in `alire.toml` if the proof toolchain should ship with the crate.
+The `prove` subcommand consults both manifests (dev first) and resolves
+accordingly.
+
+### Option 2: `alr install` (global, to `$PATH`)
+
+Install the binary and the prover together, then put Alire's bin directory on
+`$PATH`:
 
 ```bash
 alr install covex gnatprove
 export PATH="$HOME/.local/bin:$PATH"   # or wherever `alr install` put the binaries
 ```
 
-`covex` is the crate name for adacovex; the installed binary runs adacovex and
-scans the current directory by default, so once it is on `$PATH` you can run it
-from any Ada/SPARK project with no further setup. (Alire prints the install
-location after `alr install`; `alr toolchain --install-dir` shows the default.)
+`covex` is the crate name for adacovex; the installed binary scans the current
+directory by default, so once on `$PATH` it runs from any project with no
+further setup. (Alire prints the install location after `alr install`;
+`alr toolchain --install-dir` shows the default.) A `gnatprove` installed this
+way is picked up from `$PATH` by `covex prove` when the target project declares
+no manifest dependency of its own.
 
-### Option 2: download a release bundle from GitHub
+### Option 3: download a release bundle from GitHub
 
 Every `vX.Y.Z` tag publishes `adacovex-vX.Y.Z.tar.gz`
 (`adacovex` plus a `covex` alias symlink) on the
@@ -122,9 +157,10 @@ Clone the repo and `make build`, or manage adacovex as an Alire dev dependency
 
 The `prove` subcommand resolves the `gnatprove` executable in this order:
 
-1. **Per-project manifest**: if `<target>/alire.toml` or
+1. **Per-project manifest (preferred)**: if `<target>/alire.toml` or
    `<target>/alire-dev.toml` declares a `gnatprove` dependency, it is run via
-   `alr exec gnatprove` so Alire manages the exact toolchain version.
+   `alr exec gnatprove` so Alire manages the exact toolchain version for that
+   project.
 2. **`$PATH`**: a `gnatprove` already on `$PATH` (e.g. installed beforehand
    with `alr install gnatprove`).
 3. **Cached toolchain**: `~/.adacovex/toolchain/`.
@@ -319,7 +355,7 @@ Because `--target` defaults to the current directory, running the binary from
 inside the project scans it with no extra flags. The project needs no Ada
 tooling of its own -- only the adacovex working tree needs GNAT and Alire.
 
-**2. Manage adacovex as an Alire dev dependency:**
+**2. Manage adacovex as an Alire dev dependency (preferred for real usage):**
 
 ```toml
 # <project>/alire-dev.toml (never alire.toml, so release builds stay clean)
@@ -328,7 +364,9 @@ covex = "*"
 ```
 
 Then `alr build` produces `bin/adacovex` inside the project and
-`adacovex` runs against the current directory by default.
+`adacovex` runs against the current directory by default. Add `gnatprove` to
+the same manifest to enable `prove` runs (see
+[Installing adacovex](#installing-adacovex)).
 
 In both cases the assessed project is the `--target` directory (or CWD when
 omitted); the two approaches differ only in how the binary is obtained.
@@ -377,7 +415,7 @@ To target a specific release instead, pin the ref:
 | `version` | `''` | adacovex version to use; defaults to the tag the action is referenced by |
 | `build` | `false` | Build adacovex from source instead of downloading the version-matched binary (`true` for in-repo self-assessment) |
 | `release-build` | `false` | Pass `--release` to `alr build` (for release workflows) |
-| `prove` | `false` | Run GNATprove before assessing, for repos that don't commit `gnatprove.out` (gnatprove is a declared dependency, no dev-manifest swap) |
+| `prove` | `false` | Run GNATprove before assessing, for repos that don't commit `gnatprove.out` (resolved via per-project manifest, `$PATH`, cached toolchain, or download) |
 | `run-tests` | `false` | Build and run the native test suite (requires `build: true`) |
 | `assess` | `true` | Run the assessment and publish outputs/badges (set `false` for build/test-only jobs) |
 | `compare-base` | `''` | Git ref to run `--compare-base` against (fails on regression) |
@@ -546,7 +584,7 @@ to document. Overloaded subprograms require one patch entry per overload.
 |--------|-------------|
 | `build` | `alr build` (adacovex + test_runner, covex alias) |
 | `test` | Build and run native test suite (290 tests) |
-| `prove` | `alr gnatprove` (gnatprove is a declared dependency) |
+| `prove` | `./bin/adacovex prove --target=. --no-svg` (resolves gnatprove from the dev manifest / `$PATH` / cache / download) |
 | `fmt` | Format Ada sources with `gnatformat` |
 | `doc` | Generate API docs via gnatdoc + rst2md |
 | `run-self` | Run against adacovex itself (default target: cwd) |
@@ -599,7 +637,9 @@ See [changelogs](docs/changelogs/index.md) for full release notes.
 
 - **Alire** >= 2.0
 - **GNAT** Ada compiler (managed by Alire)
-- **GNATprove** (optional, for proof targets, managed by Alire)
+- **GNATprove** (optional; used by `prove`. Resolved at run time from the
+  per-project manifest, `$PATH`, `~/.adacovex/toolchain/`, or a download --
+  adacovex declares no gnatprove dependency itself)
 - **gnatpp** / **gnatdoc** (optional, for fmt/doc targets, managed by Alire)
 
 ## Swapping the GNAT compiler for an LLVM-based one

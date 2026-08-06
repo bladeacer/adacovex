@@ -1,24 +1,26 @@
 # Third-Party Notices
 
 adacovex itself is Apache-2.0 (see `LICENSE`) and depends only on the GNAT
-runtime. The following third-party components are used as tools or bundled
-artifacts and are covered by their own licenses.
+runtime. It declares no library or tool dependencies. The following third-party
+components are used as tools or bundled artifacts and are covered by their own
+licenses.
 
 ## GNAT / GNATprove toolchain
 
 | Component | Version | License | Used for |
 |-----------|---------|---------|----------|
 | GNAT compiler (GNAT Community / FSF GNAT) | toolchain-managed | GPL-3.0-or-later (with GCC Runtime Library Exception for runtime) | Compiling adacovex and target projects |
-| GNATprove | 15.1.0 | GPL-3.0-or-later | SPARK proof analysis (`covex prove`) |
+| GNATprove | toolchain-managed | GPL-3.0-or-later | SPARK proof analysis (`covex prove`) |
 | Z3 / Alt-Ergo / CVC5 solvers | bundled with GNATprove | MIT / CeCILL-C / Apache-2.0 respectively | Satisfying SPARK verification conditions |
 
-The GNAT toolchain is **not** embedded in the adacovex release bundle.
-`covex prove` prefers the target project's own gnatprove dependency when its
-`alire.toml` / `alire-dev.toml` declares one, running it through `alr exec`
-so adacovex itself only requires `alr` on `$PATH`. If no dependency is
-declared it falls back to a gnatprove on `$PATH`, then a cached
-`~/.adacovex/toolchain/bin/gnatprove`, and finally a platform toolchain
-download (a GPL-licensed GNAT/gnatprove distribution; distributing it
+The GNAT toolchain is **not** embedded in the adacovex release bundle, and
+gnatprove is **not** a declared dependency of the `covex` crate -- adacovex
+resolves gnatprove at run time. `covex prove` prefers the target project's own
+gnatprove dependency when its `alire.toml` / `alire-dev.toml` declares one,
+running it through `alr exec` so adacovex itself only requires `alr` on
+`$PATH`. If no dependency is declared it falls back to a gnatprove on `$PATH`,
+then a cached `~/.adacovex/toolchain/bin/gnatprove`, and finally a platform
+toolchain download (a GPL-licensed GNAT/gnatprove distribution; distributing it
 requires the end user to accept the GPL for that component).
 
 ## SBOM specifications
