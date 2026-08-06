@@ -394,4 +394,71 @@ package body Adacovex.Parsers.Tests is
       Success := True;
    end Parse_Test_Result;
 
+   --  Conventional test-result file names, tried in order at the project
+   --  root and under docs/.  Covers common Markdown, plain-text and log
+   --  summary conventions in addition to adacovex's native test_result.md.
+   type Name_Array is array (Positive range <>) of String (1 .. 24);
+   Candidates : constant Name_Array :=
+     ("test_result.md          ",
+      "test_results.md         ",
+      "test-result.md          ",
+      "test-results.md         ",
+      "test_report.md          ",
+      "test-report.md          ",
+      "test_output.md          ",
+      "test-output.md          ",
+      "test_result.txt         ",
+      "test_results.txt        ",
+      "test-result.txt         ",
+      "test-results.txt        ",
+      "test_report.txt         ",
+      "test-report.txt         ",
+      "test_output.txt         ",
+      "test-output.txt         ",
+      "tests.md                ",
+      "tests.txt               ",
+      "test_results.log        ",
+      "test-results.log        ",
+      "docs/test_result.md     ",
+      "docs/test_results.md    ",
+      "docs/test-result.md     ",
+      "docs/test-results.md    ");
+
+   --  Strip trailing spaces from a string slice.
+   function Trim_Right (S : String) return String
+   with SPARK_Mode => On, Pre => S'Last >= 1 and S'Last < Natural'Last
+   is
+      L : Natural := S'Last;
+   begin
+      while L >= S'First and then S (L) = ' ' loop
+         pragma Loop_Invariant (L in S'First - 1 .. S'Last);
+         pragma Loop_Variant (Decreases => L);
+         L := L - 1;
+      end loop;
+      if L < S'First then
+         return "";
+      end if;
+      return S (S'First .. L);
+   end Trim_Right;
+
+   procedure Parse_Test_Result_From_Project
+     (Target_Dir : String;
+      Summary    : out Types.Implementation.Test_Summary;
+      Success    : out Boolean)
+   is
+      Tmp : Types.Implementation.Test_Summary;
+      OK  : Boolean;
+   begin
+      for I in Candidates'Range loop
+         Parse_Test_Result
+           (Target_Dir & "/" & Trim_Right (Candidates (I)), Tmp, OK);
+         if OK then
+            Summary := Tmp;
+            Success := True;
+            return;
+         end if;
+      end loop;
+      Success := False;
+   end Parse_Test_Result_From_Project;
+
 end Adacovex.Parsers.Tests;

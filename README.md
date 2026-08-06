@@ -230,7 +230,7 @@ temporary worktree and print a side-by-side comparison against the current
 tree (packages, docstrings, HLR trace, orphans, SPARK level, VCs, tests, DAL).
 Exit `0` only if there are no regressions and the current DAL is Achieved.
 The target must be a git repository with `git` on `PATH`. Artifacts the base
-does not commit (`gnatprove.out`, `test_result.md`) report `N/A`.
+does not commit (`gnatprove.out`, a test-result summary) report `N/A`.
 
 **`--coverage-delta=REF`** -- Docstring-coverage gate for PR checks: scans
 sources + patches on a git base ref and the current tree, prints a compact
@@ -518,8 +518,11 @@ To run adacovex against an Ada/SPARK project, it must have:
 1. **Ada source files** (`.ads`) under the target root.
 2. **GNATprove output**: `gnatprove.out` in the target root or
    `<target>/obj/gnatprove/gnatprove.out`.
-3. **Test results**: `<target>/test_result.md` with a Markdown table containing
-   `Tests` and `Status` columns (PASS/FAIL), or a supported summary format (TAP,
+3. **Test results**: a test-summary file in the target root -- adacovex
+   auto-discovers conventional names (`test_result.md`, `test_results.md`,
+   `test-result.md`, `test_report.md`, `test_output.md`, plus `.txt`/`.log`
+   variants, and the `docs/` mirrors) containing a Markdown table with `Tests`
+   and `Status` columns (PASS/FAIL), or a supported summary format (TAP,
    Automake `PASS:`/`FAIL:`, Maven Surefire `Tests run:`, Unity `N Tests M
    Failures`, or a `Passed:`/`Failed:` line).
 4. **HLR document** (for DAL assessment): `<target>/docs/compliance/HLR.md`.
@@ -583,7 +586,7 @@ to document. Overloaded subprograms require one patch entry per overload.
 | Target | Description |
 |--------|-------------|
 | `build` | `alr build` (adacovex + test_runner, covex alias) |
-| `test` | Build and run native test suite (290 tests) |
+| `test` | Build and run native test suite (295 tests) |
 | `prove` | `./bin/adacovex prove --target=. --no-svg` (resolves gnatprove from the dev manifest / `$PATH` / cache / download) |
 | `fmt` | Format Ada sources with `gnatformat` |
 | `doc` | Generate API docs via gnatdoc + rst2md |
@@ -608,16 +611,16 @@ src/
 |-- compliance/                   -- DAL assessment logic
 |-- renderers/                    -- ANSI, SVG, Markdown, HTML output
 |-- server/                       -- HTTP/1.1 dashboard server
-|-- tests/                        -- Native test suite (290 tests)
+|-- tests/                        -- Native test suite (295 tests)
 ```
 
 ## Verification
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 290/290 passing |
+| Unit tests | `make test` | 295/295 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
-| SPARK proof | `make prove` | 491/491 VCs Platinum |
+| SPARK proof | `make prove` | 500/500 VCs Platinum |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, Platinum, DAL-C (strict mode) |
 
 See [changelogs](docs/changelogs/index.md) for full release notes.

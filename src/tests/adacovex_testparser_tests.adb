@@ -216,7 +216,70 @@ package body Adacovex_TestParser_Tests is
             null;
       end;
 
-      --  Test 8: Unity "N Tests M Failures" summary
+      --  Test 9: project discovery finds a conventional file name
+      --  (test_results.md) in the target directory.
+      declare
+         Tgt_Dir : constant String := "/tmp/adacovex_test_project";
+      begin
+         Ada.Directories.Create_Path (Tgt_Dir);
+         Create (F, Out_File, Tgt_Dir & "/test_results.md");
+         Put_Line (F, "| - | Unit tests|12| PASS     |");
+         Put_Line (F, "  Passed: 12  Failed: 0");
+         Close (F);
+      end;
+
+      Adacovex.Parsers.Tests.Parse_Test_Result_From_Project
+        ("/tmp/adacovex_test_project", Summary, Success);
+      R.Check (Success, "Test 9: project discovery succeeded");
+      R.Check
+        (Summary.Total_Passed = 12 and then Summary.Total_Failed = 0,
+         "Test 9: project discovery totals (12 passed, 0 failed)");
+
+      begin
+         Ada.Directories.Delete_File
+           ("/tmp/adacovex_test_project/test_results.md");
+         Ada.Directories.Delete_Directory ("/tmp/adacovex_test_project");
+      exception
+         when others =>
+            null;
+      end;
+
+      --  Test 10: project discovery falls back to docs/test_result.md
+      --  when no conventional root-level file exists.
+      declare
+         Tgt_Dir : constant String := "/tmp/adacovex_test_docs";
+      begin
+         Ada.Directories.Create_Path (Tgt_Dir & "/docs");
+         Create (F, Out_File, Tgt_Dir & "/docs/test_result.md");
+         Put_Line (F, "| - | Unit tests|3| PASS     |");
+         Put_Line (F, "  Passed: 3  Failed: 0");
+         Close (F);
+      end;
+
+      Adacovex.Parsers.Tests.Parse_Test_Result_From_Project
+        ("/tmp/adacovex_test_docs", Summary, Success);
+      R.Check (Success, "Test 10: docs fallback discovery succeeded");
+      R.Check
+        (Summary.Total_Passed = 3 and then Summary.Total_Failed = 0,
+         "Test 10: docs fallback totals (3 passed, 0 failed)");
+
+      begin
+         Ada.Directories.Delete_File
+           ("/tmp/adacovex_test_docs/docs/test_result.md");
+         Ada.Directories.Delete_Directory ("/tmp/adacovex_test_docs/docs");
+         Ada.Directories.Delete_Directory ("/tmp/adacovex_test_docs");
+      exception
+         when others =>
+            null;
+      end;
+
+      --  Test 11: project discovery reports failure when no test result
+      --  file exists in the target directory.
+      Adacovex.Parsers.Tests.Parse_Test_Result_From_Project
+        ("/tmp/adacovex_test_missing", Summary, Success);
+      R.Check (not Success, "Test 11: missing test result reported");
+
+      --  Test 12: Unity "N Tests M Failures" summary
       begin
          Create (F, Out_File, Tmp_Path);
          Put_Line (F, "---------------------");
@@ -226,10 +289,10 @@ package body Adacovex_TestParser_Tests is
       end;
 
       Adacovex.Parsers.Tests.Parse_Test_Result (Tmp_Path, Summary, Success);
-      R.Check (Success, "Test 8: unity parse succeeded");
+      R.Check (Success, "Test 12: unity parse succeeded");
       R.Check
         (Summary.Total_Passed = 4 and then Summary.Total_Failed = 1,
-         "Test 8: unity totals (4 passed, 1 failed)");
+         "Test 12: unity totals (4 passed, 1 failed)");
 
       begin
          Ada.Directories.Delete_File (Tmp_Path);

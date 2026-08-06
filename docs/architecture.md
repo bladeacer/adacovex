@@ -93,7 +93,7 @@ toolchain management.
 
 ## SPARK Formal Verification
 
-adacovex itself is SPARK-proven at Platinum level (491/491 VCs proved,
+adacovex itself is SPARK-proven at Platinum level (500/500 VCs proved,
 AoRTE-free). The tool analyzes GNATprove output (`gnatprove.out`) to assess
 SPARK assurance levels (Stone through Platinum) for target projects.
 
@@ -156,7 +156,7 @@ adacovex supports multiple output formats:
 
 ## Testing
 
-adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 290 tests across 10 categories. No external test framework (AUnit, etc.) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
+adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 295 tests across 10 categories. No external test framework (AUnit, etc.) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
 
 ## Supported Platforms
 

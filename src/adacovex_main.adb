@@ -283,11 +283,8 @@ procedure Adacovex_Main is
 
       Adacovex.Parsers.GNATprove.Parse_Prove_From_Project
         (Target (1 .. TLen), Proof, Success);
-      declare
-         T_Path : constant String := Target (1 .. TLen) & "/test_result.md";
-      begin
-         Adacovex.Parsers.Tests.Parse_Test_Result (T_Path, Tests, Success);
-      end;
+      Adacovex.Parsers.Tests.Parse_Test_Result_From_Project
+        (Target (1 .. TLen), Tests, Success);
       Adacovex.Compliance.DAL.Assess_DAL
         (Cfg.DAL_Target,
          Target (1 .. TLen),
@@ -416,12 +413,9 @@ begin
       & " VCs)");
 
    -- Step 3: Parse test results
-   declare
-      T_Path : constant String := Target (1 .. TLen) & "/test_result.md";
-   begin
-      Verbose ("step 3/8: parsing test results from " & T_Path & "...");
-      Adacovex.Parsers.Tests.Parse_Test_Result (T_Path, Tests, Success);
-   end;
+   Verbose ("step 3/8: parsing test results...");
+   Adacovex.Parsers.Tests.Parse_Test_Result_From_Project
+     (Target (1 .. TLen), Tests, Success);
 
    -- Step 4: Assess DAL compliance
    Verbose ("step 4/8: assessing DAL compliance...");

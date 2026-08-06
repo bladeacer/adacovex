@@ -33,8 +33,8 @@ range checks, assertions, functional contracts, and loop termination:
   `Always_Terminates` aspects discharge -- no loop is left as potentially
   non-terminating.
 
-The self-assessment is now: 26 packages, 58 subprograms, 100% docstrings,
-**Platinum (491/491 VCs, 0 unproved)**, 290/290 tests, DAL-C Achieved.
+The self-assessment is now: 26 packages, 59 subprograms, 100% docstrings,
+**Platinum (500/500 VCs, 0 unproved)**, 295/295 tests, DAL-C Achieved.
 
 ### C2: Host word-size auto-detection
 
@@ -51,6 +51,22 @@ word size instead of being hard-coded to 64-bit assumptions:
   dead-branch warning resolved by a `case System.Word_Size` structure.
 - Test suite extended: 6 new checks (Types conversion + IR host-word-size
   detection). The suite is now **290 tests**.
+
+### C3: Conventional test-result file discovery
+
+The test-summary lookup is no longer hard-coded to `<target>/test_result.md`.
+A new `Parse_Test_Result_From_Project` searches a conventional list of
+test-result file names at the project root (and under `docs/`) and parses the
+first file that exists -- `test_result.md`, `test_results.md`,
+`test-result.md`, `test_report.md`, `test_output.md`, the equivalent `.txt`
+and `.log` variants, `tests.md`/`tests.txt`, and the `docs/` mirrors. The
+assessment, `sbom`, and `--compare-base` paths all use the new lookup, so
+adacovex accepts common report conventions (e.g. CI that emits
+`test_results.md` or `test-output.txt`) without configuration. The parser
+itself already understood Markdown tables, plain `Passed:`/`Failed:` summary
+lines, TAP, Automake, Maven Surefire, and Unity formats. The new candidate
+search adds one SPARK-proved helper (`Trim_Right`, fully discharged) and 9 new
+VCs, taking the self-assessment to **500/500 VCs Platinum**.
 
 ## Fixes
 
@@ -131,16 +147,16 @@ The same release step now also:
 ## Notes
 
 - Test suite extended: IR synthesis 26 -> **27** checks; new word-size checks.
-  The suite is now **290 tests** (passing).
-- Self-assessment metrics: 26 packages, 58 subprograms, 100% docstrings,
-  Platinum (491/491 VCs), 290 tests, DAL-C Achieved.
+  The suite is now **295 tests** (passing).
+- Self-assessment metrics: 26 packages, 59 subprograms, 100% docstrings,
+  Platinum (500/500 VCs), 295 tests, DAL-C Achieved.
 
 ## Proof Results
 
-Self-assessment: **Platinum** (491/491 VCs proved, 0 unproved, AoRTE-free).
-Every SPARK-on unit is fully discharged -- run-time checks 353/353,
-assertions 58/58, functional contracts 13/13, termination 42/42, flow
-56/56. Proof invocation: `gnatprove -P adacovex.gpr --prover=z3 --timeout=20`.
+Self-assessment: **Platinum** (500/500 VCs proved, 0 unproved, AoRTE-free).
+Every SPARK-on unit is fully discharged -- run-time checks 358/358,
+assertions 60/60, functional contracts 13/13, termination 44/44, flow
+69/69. Proof invocation: `gnatprove -P adacovex.gpr --prover=z3 --timeout=20`.
 
 ## Traceability
 
