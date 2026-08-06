@@ -233,7 +233,7 @@ procedure Adacovex_Main is
             & Out_Path
             & " ("
             & Img (Natural (Graph.Length))
-            & " components, proof level "
+            & " components, root proof level "
             & Proof_Prop (1 .. PPLen)
             & ", DAL target "
             & (if DPLen > 0 then DAL_Prop (1 .. DPLen) else "none")

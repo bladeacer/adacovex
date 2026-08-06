@@ -10,14 +10,15 @@ Usage: python3 tools/apply-agents-tree.py /tmp/agents-tree.out
 """
 
 import sys
+from typing import List, Tuple
 
-TREE_MARKERS: tuple[str, str] = (
+TREE_MARKERS: Tuple[str, str] = (
     "<!-- agents-tree:begin -->",
     "<!-- agents-tree:end -->",
 )
 
 
-def main(argv: list[str]) -> int:
+def main(argv: List[str]) -> int:
     if len(argv) < 2:
         print("usage: apply-agents-tree.py <tree-file>", file=sys.stderr)
         return 1

@@ -39,10 +39,11 @@ package body Adacovex.Renderers.SVG is
    end I2S;
 
    function Badge_SVG
-     (Label       : String;
-      Value       : String;
-      Label_Color : String := "#555";
-      Value_Color : String := "#4c1") return String
+     (Label            : String;
+      Value            : String;
+      Label_Color      : String := "#555";
+      Value_Color      : String := "#4c1";
+      Value_Text_Color : String := "#fff") return String
    is
       LW : constant Natural := Label'Length * 7 + 10;
       VW : constant Natural := Value'Length * 7 + 10;
@@ -99,7 +100,9 @@ package body Adacovex.Renderers.SVG is
         & "</text>"
         & "<text x="""
         & I2S (VX)
-        & """ y=""14"" text-anchor=""middle"">"
+        & """ y=""14"" fill="""
+        & Value_Text_Color
+        & """ text-anchor=""middle"">"
         & Value
         & "</text>"
         & "</g></svg>";
@@ -127,12 +130,29 @@ package body Adacovex.Renderers.SVG is
       end case;
    end Spark_Color;
 
+   --  Text color with sufficient contrast on the level background.
+   --  Light metals (Platinum, Gold, Silver) take dark text; Bronze and
+   --  Stone keep white text.
+   function Spark_Text_Color (Level : Types.SPARK_Level) return String
+   with SPARK_Mode => On
+   is
+   begin
+      case Level is
+         when Types.Platinum | Types.Gold | Types.Silver =>
+            return "#1a1a1a";
+
+         when Types.Bronze | Types.Stone                 =>
+            return "#fff";
+      end case;
+   end Spark_Text_Color;
+
    function Render_SPARK_Badge (Level : Types.SPARK_Level) return String is
    begin
       declare
          SC : constant String := Spark_Color (Level);
+         TC : constant String := Spark_Text_Color (Level);
       begin
-         return Badge_SVG ("SPARK", Types.To_String (Level), "#555", SC);
+         return Badge_SVG ("SPARK", Types.To_String (Level), "#555", SC, TC);
       end;
    end Render_SPARK_Badge;
 

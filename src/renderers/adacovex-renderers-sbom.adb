@@ -19,6 +19,11 @@ package body Adacovex.Renderers.SBOM is
       return "Gold";
    end Proof_Level_Property;
 
+   --  Proof level reported for dependency components.  adacovex only
+   --  proves the target project itself; vendored/third-party dependencies
+   --  are not audited, so they must never claim a Gold/Platinum level.
+   Not_Proved : constant String := "Not proved";
+
    function DAL_Property_Value (Level : Types.DAL_Level) return String
    with SPARK_Mode => On
    is
@@ -365,9 +370,11 @@ package body Adacovex.Renderers.SBOM is
       Raw (F, Indent);
       JStr (F, "properties");
       Raw (F, ": [{""name"": ""adacovex:proof_level"", ""value"": ");
-      JStr (F, Proof_Level);
+      JStr
+        (F,
+         (if C.Kind = Types.Root_Component then Proof_Level else Not_Proved));
       Raw (F, "}");
-      if DAL_Target'Length > 0 then
+      if C.Kind = Types.Root_Component and DAL_Target'Length > 0 then
          Raw (F, ", {""name"": ""adacovex:dal_target"", ""value"": ");
          JStr (F, DAL_Target);
          Raw (F, "}");
@@ -570,9 +577,11 @@ package body Adacovex.Renderers.SBOM is
       Raw (F, "}],");
       NL (F);
       Raw (F, "      ""attributionTexts"": [""adacovex:proof_level=");
-      Raw (F, Proof_Level);
+      Raw
+        (F,
+         (if C.Kind = Types.Root_Component then Proof_Level else Not_Proved));
       Raw (F, """");
-      if DAL_Target'Length > 0 then
+      if C.Kind = Types.Root_Component and DAL_Target'Length > 0 then
          Raw (F, ", ""adacovex:dal_target=");
          Raw (F, DAL_Target);
          Raw (F, """");
@@ -740,15 +749,9 @@ package body Adacovex.Renderers.SBOM is
          Raw
            (F,
             "| Component | Version | License | PURL | adacovex:proof_level");
-         if DAL_Target'Length > 0 then
-            Raw (F, " | adacovex:dal_target");
-         end if;
          Raw (F, " |");
          NL (F);
          Raw (F, "|---|---|---|---|---");
-         if DAL_Target'Length > 0 then
-            Raw (F, "|---");
-         end if;
          Raw (F, "|");
          NL (F);
          for I in 2 .. Integer (Graph.Length) loop
@@ -770,11 +773,7 @@ package body Adacovex.Renderers.SBOM is
                Raw (F, " | `");
                Raw (F, C.PURL (1 .. C.PURL_Len));
                Raw (F, "` | ");
-               Raw (F, Proof_Level);
-               if DAL_Target'Length > 0 then
-                  Raw (F, " | ");
-                  Raw (F, DAL_Target);
-               end if;
+               Raw (F, Not_Proved);
                Raw (F, " |");
                NL (F);
             end;

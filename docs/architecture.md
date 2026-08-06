@@ -67,7 +67,7 @@ This ensures adacovex can be built and run on any system with a GNAT toolchain, 
 
 ## SPARK Formal Verification
 
-adacovex itself is SPARK-proven at Platinum level (490/490 VCs proved,
+adacovex itself is SPARK-proven at Platinum level (491/491 VCs proved,
 AoRTE-free). The tool analyzes GNATprove output (`gnatprove.out`) to assess
 SPARK assurance levels (Stone through Platinum) for target projects.
 
@@ -131,3 +131,15 @@ adacovex supports multiple output formats:
 ## Testing
 
 adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 246 tests across 9 categories. No external test framework (AUnit, etc.) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
+
+## Read Only
+
+adacovex itself is read-only. It merely scans your codebase for target docstrings and proofs.
+
+It does not make edits in place or on your behalf.
+
+## Flexible
+
+adacovex lets you write proofs and decide where proofs are pointless (e.g. code that has to involve manual memory management). You just have to justify your rationale. The tool should not be rigid and expect 100% proving for all use cases.
+
+You write the proofs yourself, so there is no magic or hidden abstractions here.
