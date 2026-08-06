@@ -80,7 +80,7 @@ URL. The link now strips the leading `v` (`${VERSION#v}`) so it points at
 The same release step now also:
 
 - **Links the build-provenance attestation** in the release notes. The
-  `actions/attest-build-provenance@v2` step is captured (`id: attest`) and its
+  `actions/attest@v4` step is captured (`id: attest`) and its
   `attestation-url` output is included as a *Build Provenance Attestation*
   entry, so consumers can jump straight from the release to the signed
   SLSA provenance bundle.

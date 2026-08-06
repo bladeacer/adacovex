@@ -30,7 +30,7 @@ help:
 	@echo '                 release against the current tree, then CI force-pushes'
 	@echo '                 vMAJOR / vMAJOR.MINOR floating tags so @v1 / @v1.3'
 	@echo '                 refs track the latest release. Release artifacts are'
-	@echo '                 attested via actions/attest-build-provenance.)'
+	@echo '                 attested via actions/attest.)'
 	@echo '  publish       Publish to Alire community index (run after make release)'
 	@echo '  test-publish  Dry-run showing what make publish would do'
 	@echo '  ascii-check   Verify all source files are pure ASCII'

@@ -99,7 +99,7 @@ runs:
       uses: alire-project/setup-alire@latest
       with:
         version: '2.1.1'
-        toolchain: 'gnat_native=${{ inputs.gnat-version }} gprbuild'
+        toolchain: 'gnat_native=${{ inputs.gnat-version }} gnatprove=15.1.0 gprbuild'
         cache: ${{ inputs.cache }}
 
     - name: Download adacovex release binary

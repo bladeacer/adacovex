@@ -2,7 +2,7 @@
 
 ## Project
 
-**adacovex** -- zero-library-dependency Ada/SPARK CLI tool for coverage, proof analysis,
+**adacovex** -- zero-dependency Ada/SPARK CLI tool for coverage, proof analysis,
 test-result parsing, DO-178C DAL compliance assessment, and interactive dashboards.
 
 - **Repo**: https://github.com/bladeacer/adacovex
@@ -598,7 +598,7 @@ specific failure reasons when the assessment is `Unmet`.
 | `coverage-gate`    | Run the docstring-coverage gate between the latest two release tags (`--coverage-delta` in a worktree at the latest tag) |
 | `bump-version`     | Bump version across alire.toml, alire-dev.toml, adacovex.ads, changelog (`VERSION=x.y.z`) |
 | `agents-tree`      | Regenerate the AGENTS.md `src/` architecture tree (`tools/gen-agents-tree.py` + `tools/agents-tree.map`) |
-| `release`          | Build `--release`, prove, validate self-assessment, run docstring-coverage gate vs last release tag, bundle `dist/` + tarballs (attested via actions/attest-build-provenance in CI, best-effort `gh attest` locally), then tag & push (`VERSION=x.y.z`) |
+| `release`          | Build `--release`, prove, validate self-assessment, run docstring-coverage gate vs last release tag, bundle `dist/` + tarballs (attested via actions/attest in CI, best-effort `gh attest` locally), then tag & push (`VERSION=x.y.z`) |
 | `ascii-check`      | Verify all source files are pure ASCII |
 | `clean`            | Remove bin/ obj/ docs/badges/ |
 | `help`             | Print available targets |
@@ -617,7 +617,10 @@ specific failure reasons when the assessment is `Unmet`.
   (`release-build`), then runs the assessment and publishes
   outputs (`dal-status`, `spark-level`, `test-count`, `coverage-pct`), a
   Markdown step summary, and SVG badge artifacts (`assess: false` skips the
-  assessment for build/test-only jobs). When `generate-sbom` (default `true`)
+  assessment for build/test-only jobs). The Alire toolchain install
+  (`setup-alire`) selects GNAT at `gnat-version` plus `gnatprove` as its
+  standard companion, so `prove: true` needs no toolchain download. When
+  `generate-sbom` (default `true`)
   is set and the assessment runs, it also generates a proof-aware SBOM
   (`adacovex sbom --format=${{ sbom-format }}`, default `cyclonedx-json`) and
   uploads it as an `adacovex-sbom` artifact. Inputs: `target`, `dal`,
@@ -642,7 +645,7 @@ specific failure reasons when the assessment is `Unmet`.
   GitHub Release with the binary tarball (`adacovex-vX.Y.Z.tar.gz`: `adacovex`
   + the `covex` alias) and the action tarball
   (`adacovex-action-vX.Y.Z.tar.gz`). Both bundles are attested via
-  `actions/attest-build-provenance` (OIDC); the release notes link the signed
+  `actions/attest` (OIDC); the release notes link the signed
   attestation (`attestation-url` output), a *Git Changelog* compare link
   (`compare/v1.5.0...v1.6.0`), and the human-readable changelog. The action
   downloads the matching
@@ -717,7 +720,8 @@ method fits:
 
 1. **Per-project Alire manifest (preferred).** Declare `covex` in the
    project's `alire-dev.toml` (never `alire.toml`, so release builds stay
-   clean), plus `gnatprove` in the same manifest when proof runs are wanted:
+   clean), with `gnatprove` as its standard companion in the same manifest --
+   proof runs are part of the workflow:
    ```toml
    # <project>/alire-dev.toml
    [[depends-on]]
@@ -733,10 +737,14 @@ method fits:
    alr install covex gnatprove
    export PATH="$HOME/.local/bin:$PATH"
    ```
-   `covex` is the Alire crate name for adacovex; the installed binary scans the
-   current directory by default, so once on `$PATH` it runs from any project
-   with no further setup. A `gnatprove` installed this way is picked up from
-   `$PATH` when the target project declares no manifest dependency of its own.
+   `covex` is the Alire crate name for adacovex
+   ([crate page](https://alire.ada.dev/crates/covex)); the installed binary
+   scans the current directory by default, so once on `$PATH` it runs from any
+   project with no further setup. Alire installs to its bin directory (default
+   `~/.local/bin`; `alr install` prints the exact location, `alr toolchain
+   --install-dir` shows the toolchain dir). A `gnatprove` installed this way is
+   picked up from `$PATH` when the target project declares no manifest
+   dependency of its own.
 3. **GitHub release bundle.** Every `vX.Y.Z` tag publishes
    `adacovex-vX.Y.Z.tar.gz` (`adacovex` + `covex` alias) on the Releases page.
    Fetch it with `curl` and unpack onto `$PATH`:
@@ -748,7 +756,7 @@ method fits:
    tar -xzf adacovex.tar.gz -C ~/.local/bin
    export PATH="$HOME/.local/bin:$PATH"
    ```
-   Bundles are attested with `actions/attest-build-provenance`; verify with
+   Bundles are attested with `actions/attest`; verify with
    `gh attestation verify`.
 4. **From source.** `make build` in the repo, or manage adacovex as a dev
    dependency (see below).
@@ -784,15 +792,16 @@ Two approaches are equally valid; pick whichever fits the project:
    and Alire.
 
 2. **Manage adacovex as an Alire dev dependency (preferred for real usage).**
-   Add it to the project's `alire-dev.toml` (never `alire.toml`, so release
-   builds stay clean):
+   Add it -- and `gnatprove`, its standard proof companion -- to the project's
+   `alire-dev.toml` (never `alire.toml`, so release builds stay clean):
    ```toml
    [[depends-on]]
    covex = "*"
+   gnatprove = "^15.1.0"
    ```
-   Then `alr build` produces `bin/adacovex` inside the project and
-   `adacovex` runs against the current directory by default. Add `gnatprove`
-   to the same manifest to enable `prove` runs (see
+   Then `alr build` produces `bin/adacovex` inside the project,
+   `adacovex` runs against the current directory by default, and `covex prove`
+   runs gnatprove through `alr exec` (see
    [Installing adacovex](#installing-adacovex)).
 
 In both cases the assessed project is the directory given to `--target` (or
@@ -831,7 +840,7 @@ See [docs/architecture.md](docs/architecture.md) for architectural decisions.
 
 ## Unit tests
 
-**Native (zero-library-dependency).** Tests use `Adacovex.Test_Support` -- a minimal
+**Native (zero-dependency).** Tests use `Adacovex.Test_Support` -- a minimal
 `Runner` type with a `Check` procedure. No AUnit or other external framework.
 
 Test source: `src/tests/`. Entry point: `test_runner.adb` (builds as

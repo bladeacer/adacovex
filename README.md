@@ -6,7 +6,7 @@
 
 # adacovex
 
-**Zero-library-dependency Ada/SPARK CLI tool** for coverage analysis, proof verification,
+**Zero-dependency Ada/SPARK CLI tool** for coverage analysis, proof verification,
 test-result parsing, DO-178C DAL compliance assessment, and interactive dashboards.
 No library dependencies beyond the GNAT runtime. gnatprove is not a declared
 dependency -- the `prove` subcommand resolves it at run time (per-project
@@ -84,8 +84,8 @@ make run-ada-crdt
 The preferred way to use adacovex inside a project is to declare it as a
 dependency, so Alire manages the binary together with the rest of the build
 environment. Put `covex` in your project's `alire-dev.toml` (never `alire.toml`,
-so release builds stay clean). If you also want proof runs, declare `gnatprove`
-in the same manifest:
+so release builds stay clean), alongside `gnatprove` -- proof runs are a
+standard part of the workflow, so declare the prover in the same manifest:
 
 ```toml
 # <project>/alire-dev.toml
@@ -119,19 +119,35 @@ alr install covex gnatprove
 export PATH="$HOME/.local/bin:$PATH"   # or wherever `alr install` put the binaries
 ```
 
-`covex` is the crate name for adacovex; the installed binary scans the current
-directory by default, so once on `$PATH` it runs from any project with no
-further setup. (Alire prints the install location after `alr install`;
-`alr toolchain --install-dir` shows the default.) A `gnatprove` installed this
-way is picked up from `$PATH` by `covex prove` when the target project declares
-no manifest dependency of its own.
+`covex` is the Alire crate name for adacovex
+([crate page](https://alire.ada.dev/crates/covex)); the installed binary scans
+the current directory by default, so once on `$PATH` it runs from any project
+with no further setup. Alire installs to its bin directory (default
+`~/.local/bin`; `alr install` prints the exact location after installing, and
+`alr toolchain --install-dir` shows the toolchain directory) -- add it to
+`$PATH` to call `covex` from anywhere. A `gnatprove` installed this way is
+picked up from `$PATH` by `covex prove` when the target project declares no
+manifest dependency of its own.
 
 ### Option 3: download a release bundle from GitHub
 
 Every `vX.Y.Z` tag publishes `adacovex-vX.Y.Z.tar.gz`
 (`adacovex` plus a `covex` alias symlink) on the
-[GitHub Releases page](https://github.com/bladeacer/adacovex/releases). Download
-it with `curl` and unpack anywhere on `$PATH`:
+[GitHub Releases page](https://github.com/bladeacer/adacovex/releases).
+
+**One-liner (latest release).** The bundled `install.sh` detects the OS and
+architecture, resolves the latest tag, and installs to `~/.adacovex/bin`
+(override with `ADACOVEX_HOME`, `ADACOVEX_VERSION`, `ADACOVEX_REPO`):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/bladeacer/adacovex/main/install.sh | bash
+```
+
+It warns if Alire is not on `$PATH` (so `covex prove` has no `alr exec`
+fallback), then adds the install bin dir to your shell's `PATH` and symlinks
+`covex` -> `adacovex`.
+
+**Manual.** Or fetch the bundle and unpack anywhere on `$PATH`:
 
 ```bash
 VERSION=v1.6.0
@@ -144,7 +160,7 @@ adacovex --help
 ```
 
 Release bundles are attested with
-[`actions/attest-build-provenance`](https://github.com/actions/attest-build-provenance);
+[`actions/attest`](https://github.com/actions/attest);
 verify a download with `gh attestation verify` against the
 [release](https://github.com/bladeacer/adacovex/releases) you fetched.
 
@@ -361,12 +377,12 @@ tooling of its own -- only the adacovex working tree needs GNAT and Alire.
 # <project>/alire-dev.toml (never alire.toml, so release builds stay clean)
 [[depends-on]]
 covex = "*"
+gnatprove = "^15.1.0"
 ```
 
-Then `alr build` produces `bin/adacovex` inside the project and
-`adacovex` runs against the current directory by default. Add `gnatprove` to
-the same manifest to enable `prove` runs (see
-[Installing adacovex](#installing-adacovex)).
+Then `alr build` produces `bin/adacovex` inside the project, `adacovex` runs
+against the current directory by default, and `covex prove` runs gnatprove
+through `alr exec` (see [Installing adacovex](#installing-adacovex)).
 
 In both cases the assessed project is the `--target` directory (or CWD when
 omitted); the two approaches differ only in how the binary is obtained.
@@ -375,8 +391,9 @@ omitted); the two approaches differ only in how the binary is obtained.
 
 A composite action at the repository root (`./action.yml`) runs the full
 adacovex pipeline in CI. It installs the Alire toolchain via
-[`alire-project/setup-alire`](https://github.com/alire-project/setup-alire),
-obtains the adacovex binary, runs the assessment, generates a proof-aware
+[`alire-project/setup-alire`](https://github.com/alire-project/setup-alire)
+(GNAT at `gnat-version`, plus `gnatprove` as its companion), obtains the
+adacovex binary, runs the assessment, generates a proof-aware
 SBOM, and publishes a Markdown step summary, machine-readable outputs, and SVG
 badge artifacts.
 
@@ -477,7 +494,7 @@ and publishes the bundle to the GitHub Release:
   vendoring or air-gapped use.
 
 Both bundles are attested with
-[`actions/attest-build-provenance`](https://github.com/actions/attest-build-provenance)
+[`actions/attest`](https://github.com/actions/attest)
 on every tag (OIDC attestations appear under the release's attestations tab).
 The release notes link the signed attestation directly via the action's
 `attestation-url` output, plus a *Git Changelog* compare link

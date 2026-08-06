@@ -10,4 +10,4 @@ maintainers = ["bladeacer <wg.nick.exe@gmail.com>"]
 maintainers-logins = ["bladeacer"]
 licenses = "Apache-2.0"
 website = "https://github.com/bladeacer/adacovex"
-tags = ["ada", "spark", "coverage", "do-178c", "compliance"]
+tags = ["ada", "spark", "formal-verify", "cli", "gnatprove", "sbom", "tests", "code-coverage", "do-178c", "compliance", "developer-tools"]
