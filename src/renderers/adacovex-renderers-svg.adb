@@ -83,20 +83,8 @@ package body Adacovex.Renderers.SVG is
         & "font-size=""11"">"
         & "<text x="""
         & I2S (LX)
-        & """ y=""15"" fill=""#010101"" fill-opacity="".3"" "
-        & "text-anchor=""middle"">"
-        & Label
-        & "</text>"
-        & "<text x="""
-        & I2S (LX)
         & """ y=""14"" text-anchor=""middle"">"
         & Label
-        & "</text>"
-        & "<text x="""
-        & I2S (VX)
-        & """ y=""15"" fill=""#010101"" fill-opacity="".3"" "
-        & "text-anchor=""middle"">"
-        & Value
         & "</text>"
         & "<text x="""
         & I2S (VX)
