@@ -99,7 +99,12 @@ runs:
       uses: alire-project/setup-alire@latest
       with:
         version: '2.1.1'
-        toolchain: 'gnat_native=${{ inputs.gnat-version }} gnatprove=15.1.0 gprbuild'
+        # gnatprove is NOT an alr toolchain component; `alr toolchain` only
+        # accepts compilers/build tools. It is resolved by the `prove`
+        # subcommand via the target project's manifest (alire-dev.toml), the
+        # README-preferred method, falling back to PATH / cached toolchain /
+        # download. Only the compiler and gprbuild go in the toolchain here.
+        toolchain: 'gnat_native=${{ inputs.gnat-version }} gprbuild'
         cache: ${{ inputs.cache }}
 
     - name: Download adacovex release binary

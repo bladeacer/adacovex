@@ -50,7 +50,7 @@ word size instead of being hard-coded to 64-bit assumptions:
   (8/16/32/64) from the Ada runtime for `Target_Config.Host_Bits`, with the
   dead-branch warning resolved by a `case System.Word_Size` structure.
 - Test suite extended: 6 new checks (Types conversion + IR host-word-size
-  detection). The suite is now **290 tests**.
+  detection). The suite is now **295 tests**.
 
 ### C3: Conventional test-result file discovery
 
@@ -143,6 +143,55 @@ The same release step now also:
   gnatprove dependency; `alire/alire.lock` regenerated accordingly.
 - The toolchain-resolution and THIRD_PARTY_NOTICES wording now state plainly
   that adacovex declares no gnatprove dependency and resolves it at run time.
+
+## H2: Compiler/proof warning cleanup + gnatprove standard companion
+
+- **Remaining build warnings fixed.**
+  - `Adacovex.Renderers.SBOM`: the compiler inlined `Field` and constant-folded
+    its `Sep /= ASCII.NUL` guard, so the check reported "statement has no
+    effect" at the call sites. Kept the original single-loop form and wrapped
+    it in `pragma Warnings (Off/On, "statement has no effect")`; the
+    two-loop `String` alternative was tried and reverted because it cost 35
+    unproved VCs. Proof remains intact: 500/500 VCs, Platinum, 0 unproved.
+  - `Adacovex.Target_Profiles`: `Host_Word_Size` is now a return-expression
+    `case` (instead of an unreachable multi-branch `case` statement on the
+    64-bit archive host), eliminating the "statement is never reached"
+    warnings at lines 10/13/16.
+  - Forced rebuild: **0 warnings**. `make prove`: **Platinum, 500/500 VCs,
+    0 unproved, 0 justified**. `make test`: **295/295**.
+- **`gnatprove` is now the standard companion in every covex TOML usage.**
+  README (Option 1) and AGENTS (install item 1, dev-manifest usage) declare
+  `covex = "*"` with `gnatprove = "^15.1.0"` in the same manifest. The GitHub
+  Actions `action.yml` no longer passes `gnatprove` to `alr toolchain`
+  (`gnatprove` is not a toolchain component; that failed CI with "The requested
+  crate is not a toolchain component") -- it selects only `gnat_native` and
+  `gprbuild`, and the `prove` subcommand resolves gnatprove via the target
+  project's `alire-dev.toml` (README-preferred method), falling back to
+  `$PATH`, the cached toolchain, or download. The "if you also want proof runs"
+  phrasing was removed.
+- **GitHub Actions attestation migrated to `actions/attest`.** The release
+  workflow now uses `actions/attest@v4` with `subject-path:
+  adacovex-*.tar.gz` (kept `id: attest` + `attestation-url` output);
+  `attest-build-provenance@v2` is gone. All prose references (README, AGENTS,
+  `docs/architecture.md`, Makefile) updated.
+- **Crate tags expanded to 11** across `alire.toml`, `alire-dev.toml`, the
+  release templates, and the index templates: `ada`, `spark`,
+  `formal-verify`, `cli`, `gnatprove`, `sbom`, `tests`, `code-coverage`,
+  `do-178c`, `compliance`, `developer-tools`. (`formal-verify` is used because
+  Alire caps tag strings at 15 characters.)
+- **Remaining badge contrast fixed.** The bright-green (`#4c1`) and yellow
+  (`#dfb317`) badge values used white text. Added a `Badge_Text_Color`
+  selector: dark `#1a1a1a` text on `#4c1`/`#dfb317`, white on the red
+  `#e05d44`, matching the SPARK badge's approach. `tests.svg`, `do178c.svg`,
+  and `docs.svg` regenerate with dark value text; SVG tests still pass.
+- **`install.sh` documents `curl | bash` and checks for Alire.** README Option
+  3 now leads with the one-liner
+  (`curl -fsSL .../main/install.sh | bash`), and the script warns when `alr`
+  is missing from `$PATH`, pointing at `curl https://alire.ada.dev -sSf | sh`
+  and the remaining gnatprove fallbacks (`$PATH`, cached toolchain, download).
+- **"zero-library-dependency" -> "zero-dependency".** Renamed across README,
+  AGENTS, and the `alire.toml` long-description (the published 1.0.0-1.5.0
+  release records keep their historical wording).
 
 ## Notes
 
