@@ -270,6 +270,7 @@ package body Adacovex.Parsers.Source is
       F        : File_Type;
       Line     : String (1 .. Types.Max_Line);
       Last     : Natural;
+      Overflow : Boolean;
       Pkg_Name : Types.Name_Field;
       Pkg_NLen : Natural := 0;
       HLR_Buf  : String (1 .. Types.Max_Id_Str);
@@ -346,18 +347,16 @@ package body Adacovex.Parsers.Source is
 
       begin
          while not End_Of_File (F) loop
-            Get_Line (F, Line, Last);
             Line_Num := Line_Num + 1;
-            if Last = Types.Max_Line then
-               declare
-                  Drain : String (1 .. Types.Max_Line);
-                  DLast : Natural;
-               begin
-                  loop
-                     Get_Line (F, Drain, DLast);
-                     exit when DLast < Types.Max_Line;
-                  end loop;
-               end;
+            Adacovex.Parsers.Read_Line
+              (F, File_Path, Line_Num, Line, Last, Overflow);
+            if Overflow then
+               --  A physical line longer than Max_Line is drained and
+               --  reported by Read_Line; parsing stops so no partial AST is
+               --  passed downstream.
+               Close (F);
+               Success := False;
+               return;
             end if;
 
             if Has_HLR_Tag (Line (1 .. Last), HLR_Buf, HLR_Len) then
@@ -561,7 +560,8 @@ package body Adacovex.Parsers.Source is
    procedure Scan_Project
      (Target_Dir : String;
       Skip_List  : String;
-      Packages   : in out Types.Implementation.Package_Vectors.Vector)
+      Packages   : in out Types.Implementation.Package_Vectors.Vector;
+      Skipped_Ct : out Natural)
    is
       type Dir_Entry is record
          Path : Types.Path_Field;
@@ -588,10 +588,17 @@ package body Adacovex.Parsers.Source is
                end loop;
                Dir_Stack.Append (Item);
             end;
+         else
+            Ada.Text_IO.Put_Line
+              (Ada.Text_IO.Standard_Error,
+               "Error: "
+               & Dir
+               & ": directory path exceeds Max_Path buffer; subtree not scanned");
          end if;
       end Push_Dir;
 
    begin
+      Skipped_Ct := 0;
       Push_Dir (Target_Dir);
 
       while not Dir_Stack.Is_Empty loop
@@ -638,9 +645,21 @@ package body Adacovex.Parsers.Source is
                                                  (Name'First .. Name'First + 2)
                                                /= "b__")
                            then
-                              Scan_Ads_File (Path, Pkg, OK);
-                              if OK then
-                                 Packages.Append (Pkg);
+                              if Path'Length > Types.Max_Path then
+                                 Ada.Text_IO.Put_Line
+                                   (Ada.Text_IO.Standard_Error,
+                                    "Error: "
+                                    & Path
+                                    & ": file path exceeds Max_Path buffer; "
+                                    & "file not scanned");
+                                 Skipped_Ct := Skipped_Ct + 1;
+                              else
+                                 Scan_Ads_File (Path, Pkg, OK);
+                                 if OK then
+                                    Packages.Append (Pkg);
+                                 else
+                                    Skipped_Ct := Skipped_Ct + 1;
+                                 end if;
                               end if;
                            end if;
                         end;

@@ -8,9 +8,11 @@ package body Adacovex.Parsers.DO178C is
       Success   : out Boolean)
    is
       use Ada.Text_IO;
-      F    : File_Type;
-      Line : String (1 .. Types.Max_Line);
-      Last : Natural;
+      F        : File_Type;
+      Line     : String (1 .. Types.Max_Line);
+      Last     : Natural;
+      Overflow : Boolean;
+      Line_Num : Natural := 0;
    begin
       begin
          Open (F, In_File, File_Path);
@@ -22,7 +24,18 @@ package body Adacovex.Parsers.DO178C is
 
       begin
          while not End_Of_File (F) loop
-            Get_Line (F, Line, Last);
+            Line_Num := Line_Num + 1;
+            Adacovex.Parsers.Read_Line
+              (F, File_Path, Line_Num, Line, Last, Overflow);
+            if Overflow then
+               --  A physical line longer than Max_Line is drained and
+               --  reported by Read_Line; parsing stops so no partial HLR set
+               --  is passed downstream.
+               HLRs.Clear;
+               Close (F);
+               Success := False;
+               return;
+            end if;
 
             -- Look for lines matching "- HLR_XXX: description"
             if Last > 6 then
@@ -106,9 +119,11 @@ package body Adacovex.Parsers.DO178C is
       Success   : out Boolean)
    is
       use Ada.Text_IO;
-      F    : File_Type;
-      Line : String (1 .. Types.Max_Line);
-      Last : Natural;
+      F        : File_Type;
+      Line     : String (1 .. Types.Max_Line);
+      Last     : Natural;
+      Overflow : Boolean;
+      Line_Num : Natural := 0;
    begin
       begin
          Open (F, In_File, File_Path);
@@ -120,7 +135,18 @@ package body Adacovex.Parsers.DO178C is
 
       begin
          while not End_Of_File (F) loop
-            Get_Line (F, Line, Last);
+            Line_Num := Line_Num + 1;
+            Adacovex.Parsers.Read_Line
+              (F, File_Path, Line_Num, Line, Last, Overflow);
+            if Overflow then
+               --  A physical line longer than Max_Line is drained and
+               --  reported by Read_Line; parsing stops so no partial LLR set
+               --  is passed downstream.
+               LLRs.Clear;
+               Close (F);
+               Success := False;
+               return;
+            end if;
 
             -- Look for lines matching "- LLR_XXX: description [HLR_XXX]"
             if Last > 6 then

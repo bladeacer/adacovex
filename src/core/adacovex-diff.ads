@@ -30,6 +30,7 @@ package Adacovex.Diff is
       Tests_Passed : Natural := 0;
       Tests_Failed : Natural := 0;
       DAL_Status   : Types.DAL_Status := Types.Unmet;
+      Skipped      : Natural := 0;
    end record;
 
    --  Docstring-coverage snapshot for one target directory.
@@ -41,6 +42,7 @@ package Adacovex.Diff is
       Documented : Natural := 0;
       Total      : Natural := 0;
       Pct        : Natural := 0;
+      Skipped    : Natural := 0;
    end record;
 
    --  Run the full assessment pipeline against a target directory.

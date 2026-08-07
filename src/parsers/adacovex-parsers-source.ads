@@ -64,14 +64,19 @@ package Adacovex.Parsers.Source is
    --  Recursively scan all .ads files under Target_Dir.
    --  Walks the directory tree rooted at Target_Dir, parsing every .ads file
    --  found, skipping directories whose simple name appears in Skip_List
-   --  (comma-separated). Appends found packages to the vector.
+   --  (comma-separated). Appends found packages to the vector. Files whose
+   --  physical lines exceed Types.Max_Line, or whose paths exceed
+   --  Types.Max_Path, are reported to standard error and counted in
+   --  Skipped_Ct instead of producing partial results.
    --  @param Target_Dir  Root directory to scan recursively.
    --  @param Skip_List  Comma-separated directory names to skip (e.g. ".git,obj").
    --  @param Packages  Output vector of parsed packages (appended to).
+   --  @param Skipped_Ct  Number of .ads files skipped (line/path overflow).
    procedure Scan_Project
      (Target_Dir : String;
       Skip_List  : String;
-      Packages   : in out Types.Implementation.Package_Vectors.Vector);
+      Packages   : in out Types.Implementation.Package_Vectors.Vector;
+      Skipped_Ct : out Natural);
 
    --  Apply docstring patches to scanned packages.
    --  For each package, checks for a patch file at

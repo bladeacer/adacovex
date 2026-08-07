@@ -45,9 +45,11 @@ package body Adacovex.Parsers.GNATprove is
       Success   : out Boolean)
    is
       use Ada.Text_IO;
-      F    : File_Type;
-      Line : String (1 .. Types.Max_Line);
-      Last : Natural;
+      F        : File_Type;
+      Line     : String (1 .. Types.Max_Line);
+      Last     : Natural;
+      Overflow : Boolean;
+      Line_Num : Natural := 0;
    begin
       Summary := (others => <>);
 
@@ -61,7 +63,18 @@ package body Adacovex.Parsers.GNATprove is
 
       begin
          while not End_Of_File (F) loop
-            Get_Line (F, Line, Last);
+            Line_Num := Line_Num + 1;
+            Adacovex.Parsers.Read_Line
+              (F, File_Path, Line_Num, Line, Last, Overflow);
+            if Overflow then
+               --  A physical line longer than Max_Line is drained and
+               --  reported by Read_Line; parsing stops so no partial proof
+               --  summary is passed downstream.
+               Summary := (others => <>);
+               Close (F);
+               Success := False;
+               return;
+            end if;
 
             -- Look for "Analyzed N units"
             if Last >= 12 then
@@ -242,9 +255,11 @@ package body Adacovex.Parsers.GNATprove is
       Success   : out Boolean)
    is
       use Ada.Text_IO;
-      F    : File_Type;
-      Line : String (1 .. Types.Max_Line);
-      Last : Natural;
+      F        : File_Type;
+      Line     : String (1 .. Types.Max_Line);
+      Last     : Natural;
+      Overflow : Boolean;
+      Line_Num : Natural := 0;
       --  Simple JSON field extractor: looks for "key": number
       function JSON_Get (S : String; Key : String) return Natural is
          Pos : Natural := 0;
@@ -302,7 +317,18 @@ package body Adacovex.Parsers.GNATprove is
       end;
       begin
          while not End_Of_File (F) loop
-            Get_Line (F, Line, Last);
+            Line_Num := Line_Num + 1;
+            Adacovex.Parsers.Read_Line
+              (F, File_Path, Line_Num, Line, Last, Overflow);
+            if Overflow then
+               --  A physical line longer than Max_Line is drained and
+               --  reported by Read_Line; parsing stops so no partial proof
+               --  summary is passed downstream.
+               Summary := (others => <>);
+               Close (F);
+               Success := False;
+               return;
+            end if;
             declare
                S : String renames Line (1 .. Last);
             begin

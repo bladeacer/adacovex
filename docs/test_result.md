@@ -2,13 +2,13 @@
   |-----------------------------------------|--------|----------|
   | Types conversions                        |  26 | PASS     |
   | DAL compliance                           |  2 | PASS     |
-  | Source scanner                           |  68 | PASS     |
-  | GNATprove parser                         |  38 | PASS     |
-  | Test-result parser                       |  40 | PASS     |
+  | Source scanner                           |  76 | PASS     |
+  | GNATprove parser                         |  52 | PASS     |
+  | Test-result parser                       |  43 | PASS     |
   | CLI config                               |  11 | PASS     |
   | SVG renderer                             |  30 | PASS     |
   | SBOM generator                           |  53 | PASS     |
   | IR synthesis                             |  27 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 295  Failed: 0
+  Passed: 320  Failed: 0

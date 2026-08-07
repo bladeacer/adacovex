@@ -30,6 +30,7 @@ Has_Tests    : Boolean := False;
 Tests_Passed : Natural := 0;
 Tests_Failed : Natural := 0;
 DAL_Status   : Types.DAL_Status := Types.Unmet;
+Skipped      : Natural := 0;
 end record;
 ```
 
@@ -40,6 +41,7 @@ type Coverage_Result is record
 Documented : Natural := 0;
 Total      : Natural := 0;
 Pct        : Natural := 0;
+Skipped    : Natural := 0;
 end record;
 ```
 

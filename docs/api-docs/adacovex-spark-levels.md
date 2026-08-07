@@ -49,7 +49,12 @@ specifications.
 | Full functional requirements | Complete formal specification of all subprogram behaviour |
 | Total correctness | All subprograms have complete Pre/Post contracts covering full behaviour |
 | Domain properties | Algebraic properties (commutativity, idempotence, convergence) proved |
-| Enforcement | `gnatprove` reports all VCs proved, 0 unproved, 0 justified |
+| Enforcement | `gnatprove` reports all functional contracts proved, 0 unproved |
+
+Platinum is a best-effort ideal, not a DAL compliance gate. Justified VCs
+(`pragma Annotate` for decidedly unprovable checks) count neither as proved
+nor as unproved and never downgrade the level; only unproved VCs do. The
+minimum DAL gates are Gold (DAL-A), Silver (DAL-B), and Bronze (DAL-C/D).
 
 ## Level attainment in practice
 

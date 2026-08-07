@@ -84,8 +84,18 @@ semantic limits (`Max_Id_Str`, `Max_Desc_Str`, `Max_Filename`) are not
 storage-size dependent and remain fixed.
 
 `Max_Line` is deliberately generous (256 KiB on 64-bit) so that single-line
-declarations from heavily code-generated projects are never truncated or
-silently drained.
+declarations from heavily code-generated projects parse cleanly. When a
+physical line *does* exceed the buffer, it is **never truncated and then
+processed** -- that would silently produce a partial (and wrong) result.
+Instead the parser drains the remainder, reports the file and line to
+standard error, and fails that parse explicitly. The source scanner counts
+the skipped file in `Skipped_Ct`, which forces the DAL assessment to
+`Unmet` and the exit code to `1` (no compliance claim can be made for
+unread code). The same explicit-failure contract applies to every parser:
+HLR/LLR markdown, GNATprove output (text and JSON), test results, and
+Alire manifest / lockfile / GPR dependency graphs. An exact buffer-length
+line is not an overflow (it parses normally), and paths exceeding
+`Max_Path` are likewise reported and skipped rather than crashing.
 
 This ensures adacovex can be built and run on any system with a GNAT toolchain,
 without requiring any additional package installation beyond Alire for
@@ -93,11 +103,31 @@ toolchain management.
 
 ## SPARK Formal Verification
 
-adacovex itself is SPARK-proven at Platinum level (500/500 VCs proved,
+adacovex itself is SPARK-proven at Platinum level (all VCs proved,
 AoRTE-free). The tool analyzes GNATprove output (`gnatprove.out`) to assess
 SPARK assurance levels (Stone through Platinum) for target projects.
 
 The tool does not perform verification itself -- it parses and reports on proof results produced by GNATprove. This keeps the tool's scope narrow and aligns with the Unix philosophy of composing specialized tools.
+
+### Proof scope and justification policy
+
+- **Proof scope is the target's own units.** adacovex proves the Ada/SPARK
+  code it is run against, never third-party dependencies. GNATprove units that
+  are skipped (e.g. standard-library or vendor code that GNATprove itself does
+  not analyze) are tracked via `Units_Skipped` and reported in the ANSI and
+  Markdown reports; they are out of proof scope by design, not a proof
+  failure.
+- **Justifications are an accepted discharge mechanism.** A `Total` row's
+  `Justified` count (GNATprove `pragma Annotate` justifications for decidedly
+  unprovable checks, such as non-functional foreign-language calls) is counted
+  neither as proved nor as unproved: `Proved = Total - Justified - Unproved`.
+  Justified VCs do **not** downgrade the SPARK level -- only unproved VCs do.
+  This is pinned by unit tests.
+- **Gold is the minimum compliance baseline; Platinum is the ideal.**
+  `Min_SPARK_For` thresholds (A=Gold, B=Silver, C=Bronze, D/E=Stone) are the
+  gate for DAL compliance. Platinum is achieved and reported when every
+  functional contract is proved, but it is a best-effort target, not a
+  compliance requirement at any DAL level.
 
 ## IR Synthesiser
 
@@ -156,7 +186,7 @@ adacovex supports multiple output formats:
 
 ## Testing
 
-adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 295 tests across 10 categories. No external test framework (AUnit, etc.) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
+adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 320 tests across 10 categories. No external test framework (AUnit, etc.) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
 
 ## Supported Platforms
 

@@ -55,7 +55,7 @@ package body Adacovex.Diff is
       DAL   : DAL_Assessment;
       OK    : Boolean;
    begin
-      Adacovex.Parsers.Source.Scan_Project (Target_Dir, "", Pkgs);
+      Adacovex.Parsers.Source.Scan_Project (Target_Dir, "", Pkgs, R.Skipped);
       Adacovex.Parsers.Source.Apply_Patches (Target_Dir, Pkgs);
       Docs := Adacovex.Parsers.Source.Compute_Docstring_Metrics (Pkgs);
       R.Packages := Natural (Pkgs.Length);
@@ -82,6 +82,11 @@ package body Adacovex.Diff is
       R.HLR_Found := DAL.HLR_Found;
       R.Orphan_Tags := DAL.Orphan_Tags;
       R.DAL_Status := DAL.Status;
+      if R.Skipped > 0 then
+         --  Skipped sources make the source set incomplete; the assessment
+         --  cannot claim compliance for unread code.
+         R.DAL_Status := Types.Unmet;
+      end if;
       return R;
    end Assess;
 
@@ -90,7 +95,7 @@ package body Adacovex.Diff is
       Pkgs : Package_Vectors.Vector;
       Docs : Docstring_Metrics;
    begin
-      Adacovex.Parsers.Source.Scan_Project (Target_Dir, "", Pkgs);
+      Adacovex.Parsers.Source.Scan_Project (Target_Dir, "", Pkgs, R.Skipped);
       Adacovex.Parsers.Source.Apply_Patches (Target_Dir, Pkgs);
       Docs := Adacovex.Parsers.Source.Compute_Docstring_Metrics (Pkgs);
       R.Total := Docs.Total_Subprograms;
@@ -314,6 +319,11 @@ package body Adacovex.Diff is
            and Cur.Has_Tests
            and Base.DAL_Status = Types.Achieved
            and Cur.DAL_Status = Types.Unmet);
+      Row
+        ("sources skipped",
+         Natural'Image (Base.Skipped),
+         Natural'Image (Cur.Skipped),
+         Bad => Cur.Skipped > 0);
 
       --  Regression determination.
       if Cur.Coverage_Pct < Base.Coverage_Pct then
@@ -345,6 +355,9 @@ package body Adacovex.Diff is
         and Base.DAL_Status = Types.Achieved
         and Cur.DAL_Status = Types.Unmet
       then
+         Regressed := True;
+      end if;
+      if Cur.Skipped > 0 then
          Regressed := True;
       end if;
 
@@ -448,6 +461,11 @@ package body Adacovex.Diff is
          Pct_Str (Base),
          Pct_Str (Cur),
          Bad => Cur.Total > 0 and Base.Total > 0 and Cur.Pct < Base.Pct);
+      Row
+        ("sources skipped",
+         Natural'Image (Base.Skipped),
+         Natural'Image (Cur.Skipped),
+         Bad => Cur.Skipped > 0);
 
       Ada.Text_IO.New_Line;
       if Base.Total = 0 then
@@ -457,6 +475,9 @@ package body Adacovex.Diff is
       end if;
 
       Regressed := Cur.Total > 0 and then Cur.Pct < Base.Pct;
+      if Cur.Skipped > 0 then
+         Regressed := True;
+      end if;
       if Regressed then
          C ("31");
          Ada.Text_IO.Put_Line

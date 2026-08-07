@@ -252,6 +252,140 @@ package body Adacovex_Prove_Tests is
            (Summary.Proved_VCs = 28,
             "Parse_Prove_Out (init row): Proved_VCs = 28");
       end;
+
+      --  Justified VCs do not downgrade the SPARK level: a summary with all
+      --  functional contracts proved and some VCs justified (but none
+      --  unproved) is still Platinum, since justifications are an accepted
+      --  way to discharge decidedly-unprovable checks.
+      declare
+         S : Proof_Summary;
+      begin
+         S :=
+           (Functional_Ct     => 5,
+            Functional_Proved => 5,
+            Total_VCs         => 29,
+            Justified         => 4,
+            others            => <>);
+         R.Check
+           (Adacovex.Parsers.GNATprove.Determine_SPARK_Level (S) = Platinum,
+            "Determine_SPARK_Level: justified VCs keep Platinum");
+      end;
+
+      --  Justified VCs are counted neither proved nor unproved: Proved =
+      --  Total - Justified - Unproved.
+      declare
+         F       : File_Type;
+         Summary : Proof_Summary;
+         Success : Boolean;
+      begin
+         Create (F, Out_File, "/tmp/adacovex_test_prove_out.txt");
+         Put_Line
+           (F,
+            "SPARK Analysis results   Total    Flow     Provers   Justified   Unproved");
+         Put_Line
+           (F,
+            "Flow Dependencies          11  11 (100%)           .           .          .");
+         Put_Line
+           (F,
+            "Run-time Checks            12      .     12 (CVC5)           .          .");
+         Put_Line
+           (F,
+            "Functional Contracts        5      .      5 (CVC5)           .          .");
+         Put_Line
+           (F,
+            "Total                       28  10 (36%)  14 (50%)           4          .");
+         Close (F);
+
+         Adacovex.Parsers.GNATprove.Parse_Prove_Out
+           ("/tmp/adacovex_test_prove_out.txt", Summary, Success);
+
+         R.Check (Success, "Parse_Prove_Out (justified): success");
+         R.Check
+           (Summary.Total_VCs = 28,
+            "Parse_Prove_Out (justified): Total_VCs = 28");
+         R.Check
+           (Summary.Justified = 4,
+            "Parse_Prove_Out (justified): Justified = 4");
+         R.Check
+           (Summary.Unproved = 0, "Parse_Prove_Out (justified): Unproved = 0");
+         R.Check
+           (Summary.Proved_VCs = 24,
+            "Parse_Prove_Out (justified): Proved = 28 - 4 - 0");
+         R.Check
+           (Summary.Functional_Proved = 5,
+            "Parse_Prove_Out (justified): Functional_Proved = 5");
+         R.Check
+           (Summary.Level = Platinum,
+            "Parse_Prove_Out (justified): Level = Platinum");
+      end;
+
+      --  Units analyzed/skipped rows are parsed from the .out header.
+      declare
+         F       : File_Type;
+         Summary : Proof_Summary;
+         Success : Boolean;
+      begin
+         Create (F, Out_File, "/tmp/adacovex_test_prove_out.txt");
+         Put_Line (F, "Summary of SPARK analysis");
+         Put_Line (F, "=========================");
+         Put_Line (F, "   Analyzed 28 units");
+         Put_Line (F, "   skipped 3 units");
+         Put_Line
+           (F,
+            "SPARK Analysis results   Total    Flow     Provers   Justified   Unproved");
+         Put_Line
+           (F,
+            "Total                       28  10 (36%)  18 (64%)           .          .");
+         Close (F);
+
+         Adacovex.Parsers.GNATprove.Parse_Prove_Out
+           ("/tmp/adacovex_test_prove_out.txt", Summary, Success);
+
+         R.Check (Success, "Parse_Prove_Out (units): success");
+         R.Check
+           (Summary.Units_Analyzed = 28,
+            "Parse_Prove_Out (units): Units_Analyzed = 28");
+         R.Check
+           (Summary.Units_Skipped = 3,
+            "Parse_Prove_Out (units): Units_Skipped = 3");
+      end;
+
+      --  A physical line longer than Max_Line in the .out file is rejected
+      --  explicitly (no partial proof summary).
+      declare
+         F       : File_Type;
+         Summary : Proof_Summary;
+         Success : Boolean;
+         Big     : String (1 .. Adacovex.Types.Max_Line + 50);
+         BLen    : Natural := 0;
+      begin
+         for I in Big'Range loop
+            Big (BLen + 1) := 'q';
+            BLen := BLen + 1;
+         end loop;
+         Create (F, Out_File, "/tmp/adacovex_test_prove_out.txt");
+         Put_Line
+           (F,
+            "SPARK Analysis results   Total    Flow     Provers   Justified   Unproved");
+         Put_Line (F, Big (1 .. BLen));
+         Put_Line
+           (F,
+            "Total                       28  10 (36%)  18 (64%)           .          .");
+         Close (F);
+         R.Check
+           (BLen = Adacovex.Types.Max_Line + 50,
+            "Parse_Prove_Out (overflow): line exceeds Max_Line");
+
+         Adacovex.Parsers.GNATprove.Parse_Prove_Out
+           ("/tmp/adacovex_test_prove_out.txt", Summary, Success);
+
+         R.Check
+           (not Success,
+            "Parse_Prove_Out (overflow): parse fails, no partial summary");
+         R.Check
+           (Summary.Total_VCs = 0,
+            "Parse_Prove_Out (overflow): no partial VC counts");
+      end;
    end Run;
 
 end Adacovex_Prove_Tests;

@@ -169,9 +169,11 @@ package body Adacovex.Parsers.Manifest is
       Success          : out Boolean)
    is
       use Ada.Text_IO;
-      F    : File_Type;
-      Line : String (1 .. Types.Max_Line);
-      Last : Natural;
+      F        : File_Type;
+      Line     : String (1 .. Types.Max_Line);
+      Last     : Natural;
+      Overflow : Boolean;
+      Line_Num : Natural := 0;
    begin
       Root_Name_Len := 0;
       Root_Version_Len := 0;
@@ -188,7 +190,16 @@ package body Adacovex.Parsers.Manifest is
       end;
 
       while not End_Of_File (F) loop
-         Get_Line (F, Line, Last);
+         Line_Num := Line_Num + 1;
+         Adacovex.Parsers.Read_Line
+           (F, Manifest_Path, Line_Num, Line, Last, Overflow);
+         if Overflow then
+            --  A physical line longer than Max_Line is drained and reported
+            --  by Read_Line; the manifest is not resolved so no partial
+            --  dependency graph is produced.
+            Close (F);
+            return;
+         end if;
          declare
             T : constant String := Trim (Line (1 .. Last));
          begin
@@ -255,6 +266,8 @@ package body Adacovex.Parsers.Manifest is
       F            : File_Type;
       Line         : String (1 .. Types.Max_Line);
       Last         : Natural;
+      Overflow     : Boolean;
+      Line_Num     : Natural := 0;
       With_Pending : Boolean := False;
 
       procedure Add_Name (S : String) is
@@ -322,7 +335,16 @@ package body Adacovex.Parsers.Manifest is
       end;
 
       while not End_Of_File (F) loop
-         Get_Line (F, Line, Last);
+         Line_Num := Line_Num + 1;
+         Adacovex.Parsers.Read_Line
+           (F, GPR_Path, Line_Num, Line, Last, Overflow);
+         if Overflow then
+            --  A physical line longer than Max_Line is drained and reported
+            --  by Read_Line; the .gpr is not resolved so no partial
+            --  dependency graph is produced.
+            Close (F);
+            return;
+         end if;
          declare
             T : constant String := Trim (Line (1 .. Last));
          begin
@@ -524,6 +546,8 @@ package body Adacovex.Parsers.Manifest is
       F                 : File_Type;
       Line              : String (1 .. Types.Max_Line);
       Last              : Natural;
+      Overflow          : Boolean;
+      Line_Num          : Natural := 0;
       In_State          : Boolean := False;
       Has_Crate         : Boolean := False;
       Crate_Name        : Types.Desc_Field;
@@ -620,7 +644,16 @@ package body Adacovex.Parsers.Manifest is
       end;
 
       while not End_Of_File (F) loop
-         Get_Line (F, Line, Last);
+         Line_Num := Line_Num + 1;
+         Adacovex.Parsers.Read_Line
+           (F, Lock_Path, Line_Num, Line, Last, Overflow);
+         if Overflow then
+            --  A physical line longer than Max_Line is drained and reported
+            --  by Read_Line; the lockfile is not resolved so no partial
+            --  dependency graph is produced.
+            Close (F);
+            return;
+         end if;
          declare
             T : constant String := Trim (Line (1 .. Last));
          begin
