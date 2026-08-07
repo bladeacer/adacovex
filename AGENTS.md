@@ -618,8 +618,11 @@ specific failure reasons when the assessment is `Unmet`.
   outputs (`dal-status`, `spark-level`, `test-count`, `coverage-pct`), a
   Markdown step summary, and SVG badge artifacts (`assess: false` skips the
   assessment for build/test-only jobs). The Alire toolchain install
-  (`setup-alire`) selects GNAT at `gnat-version` plus `gnatprove` as its
-  standard companion, so `prove: true` needs no toolchain download. When
+  (`setup-alire`) selects only the compiler and `gprbuild` at `gnat-version`
+  (`gnatprove` is NOT an `alr toolchain` component); gnatprove is resolved by
+  the `prove` subcommand via the target project's `alire-dev.toml`
+  (README-preferred method, `alr exec` with the dev-manifest swap), falling
+  back to `$PATH`, `~/.adacovex/toolchain`, or download. When
   `generate-sbom` (default `true`)
   is set and the assessment runs, it also generates a proof-aware SBOM
   (`adacovex sbom --format=${{ sbom-format }}`, default `cyclonedx-json`) and

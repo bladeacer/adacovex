@@ -390,9 +390,11 @@ omitted); the two approaches differ only in how the binary is obtained.
 ### GitHub Actions
 
 A composite action at the repository root (`./action.yml`) runs the full
-adacovex pipeline in CI. It installs the Alire toolchain via
+adacovex pipeline in CI. It installs Alire via
 [`alire-project/setup-alire`](https://github.com/alire-project/setup-alire)
-(GNAT at `gnat-version`, plus `gnatprove` as its companion), obtains the
+(GNAT at `gnat-version` plus `gprbuild`; `gnatprove` is not an `alr toolchain`
+component and is resolved by the `prove` subcommand via the target project's
+manifest, the README-preferred method), obtains the
 adacovex binary, runs the assessment, generates a proof-aware
 SBOM, and publishes a Markdown step summary, machine-readable outputs, and SVG
 badge artifacts.
