@@ -37,7 +37,8 @@ procedure Adacovex_Main is
 
    Use_Color : Boolean := False;
 
-   Packages : Package_Vectors.Vector;
+   Packages   : Package_Vectors.Vector;
+   Skipped_Ct : Natural := 0;
 
    Doc_Metrics : Docstring_Metrics;
    Proof       : Proof_Summary;
@@ -238,9 +239,11 @@ procedure Adacovex_Main is
             & ", DAL target "
             & (if DPLen > 0 then DAL_Prop (1 .. DPLen) else "none")
             & ")");
-         if not Fail_Hard then
-            Exit_St := 0;
-         end if;
+      --  Do NOT touch Exit_St here: the automatic SBOM (Fail_Hard False)
+      --  must never change the assessment exit code.  Only the explicit
+      --  `adacovex sbom` subcommand (Fail_Hard True) leaves the default 0
+      --  on success.
+
       else
          if Fail_Hard then
             Ada.Text_IO.Put_Line
@@ -263,6 +266,7 @@ procedure Adacovex_Main is
    procedure Run_SBOM is
       Skip_List : String (1 .. Max_Path);
       SLen      : Natural := 0;
+      Skipped   : Natural;
       Out_Path  : constant String := Cfg.SBOM_Out (1 .. Cfg.SBOM_Out_Len);
    begin
       Verbose ("sbom mode: resolving dependency graph and generating SBOM...");
@@ -274,7 +278,14 @@ procedure Adacovex_Main is
          end loop;
       end if;
       Adacovex.Parsers.Source.Scan_Project
-        (Target (1 .. TLen), Skip_List (1 .. SLen), Packages);
+        (Target (1 .. TLen), Skip_List (1 .. SLen), Packages, Skipped);
+      if Skipped > 0 then
+         Ada.Text_IO.Put_Line
+           (Ada.Text_IO.Standard_Error,
+            "Warning: "
+            & Img (Skipped)
+            & " source file(s) skipped: line exceeds Max_Line");
+      end if;
       if Cfg.Strict_Mode then
          Adacovex.Parsers.Source.Apply_Patches (Target (1 .. TLen), Packages);
       end if;
@@ -384,7 +395,14 @@ begin
          end loop;
       end if;
       Adacovex.Parsers.Source.Scan_Project
-        (Target (1 .. TLen), Skip_List (1 .. SLen), Packages);
+        (Target (1 .. TLen), Skip_List (1 .. SLen), Packages, Skipped_Ct);
+      if Skipped_Ct > 0 then
+         Ada.Text_IO.Put_Line
+           (Ada.Text_IO.Standard_Error,
+            "Warning: "
+            & Img (Skipped_Ct)
+            & " source file(s) skipped: line exceeds Max_Line");
+      end if;
    end;
    Verbose ("  found " & Img (Natural (Packages.Length)) & " packages");
 
@@ -419,8 +437,34 @@ begin
 
    -- Step 4: Assess DAL compliance
    Verbose ("step 4/8: assessing DAL compliance...");
-   Adacovex.Compliance.DAL.Assess_DAL
-     (Cfg.DAL_Target, Target (1 .. TLen), Packages, Proof, Tests, DAL_Assess);
+   declare
+      Field : Desc_Field := (others => ' ');
+   begin
+      Adacovex.Compliance.DAL.Assess_DAL
+        (Cfg.DAL_Target,
+         Target (1 .. TLen),
+         Packages,
+         Proof,
+         Tests,
+         DAL_Assess);
+      if Skipped_Ct > 0 then
+         --  A skipped source file means the source set is incomplete; the
+         --  assessment cannot claim compliance for unread code, so the DAL is
+         --  Unmet regardless of the other criteria.
+         declare
+            Msg : constant String :=
+              Img (Skipped_Ct)
+              & " source file(s) skipped: line exceeds Max_Line";
+         begin
+            if Msg'Length <= Max_Desc_Str then
+               Field (1 .. Msg'Length) := Msg;
+            end if;
+            DAL_Assess.Failed_Reasons.Append (Field);
+         end;
+         DAL_Assess.Status := Unmet;
+         Exit_St := 1;
+      end if;
+   end;
    Verbose ("  dal status: " & Adacovex.Types.To_String (DAL_Assess.Status));
 
    if DAL_Assess.Status /= Achieved then

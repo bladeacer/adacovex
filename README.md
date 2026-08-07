@@ -605,7 +605,7 @@ to document. Overloaded subprograms require one patch entry per overload.
 | Target | Description |
 |--------|-------------|
 | `build` | `alr build` (adacovex + test_runner, covex alias) |
-| `test` | Build and run native test suite (295 tests) |
+| `test` | Build and run native test suite (320 tests) |
 | `prove` | `./bin/adacovex prove --target=. --no-svg` (resolves gnatprove from the dev manifest / `$PATH` / cache / download) |
 | `fmt` | Format Ada sources with `gnatformat` |
 | `doc` | Generate API docs via gnatdoc + rst2md |
@@ -630,16 +630,16 @@ src/
 |-- compliance/                   -- DAL assessment logic
 |-- renderers/                    -- ANSI, SVG, Markdown, HTML output
 |-- server/                       -- HTTP/1.1 dashboard server
-|-- tests/                        -- Native test suite (295 tests)
+|-- tests/                        -- Native test suite (320 tests)
 ```
 
 ## Verification
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 295/295 passing |
+| Unit tests | `make test` | 320/320 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
-| SPARK proof | `make prove` | 500/500 VCs Platinum |
+| SPARK proof | `make prove` | all VCs proved, Platinum |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, Platinum, DAL-C (strict mode) |
 
 See [changelogs](docs/changelogs/index.md) for full release notes.

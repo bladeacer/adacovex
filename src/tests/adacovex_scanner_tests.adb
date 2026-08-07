@@ -538,6 +538,119 @@ package body Adacovex_Scanner_Tests is
         (not Pkg.Subprograms (3).Has_Docstring,
          "Test 16: no docstring without field lists");
 
+      --  Test 17: a physical line longer than Max_Line is rejected explicitly.
+      --  The file must not be processed (no partial AST), and Scan_Ads_File
+      --  returns Success = False.
+      begin
+         declare
+            F    : File_Type;
+            Big  : String (1 .. Adacovex.Types.Max_Line + 100);
+            BLen : Natural := 0;
+         begin
+            for I in Big'Range loop
+               Big (BLen + 1) := 'x';
+               BLen := BLen + 1;
+            end loop;
+            Create (F, Out_File, Tmp_File);
+            Put_Line (F, "package Overflow_Test is");
+            Put_Line (F, "   pragma Pure;");
+            Put_Line (F, Big (1 .. BLen));
+            Put_Line (F, "   procedure Proc;");
+            Put_Line (F, "end Overflow_Test;");
+            Close (F);
+            R.Check
+              (BLen = Adacovex.Types.Max_Line + 100,
+               "Test 17: overflow line exceeds Max_Line");
+         end;
+      end;
+
+      Adacovex.Parsers.Source.Scan_Ads_File (Tmp_File, Pkg, Success);
+      R.Check (not Success, "Test 17: overflow line makes scan fail");
+      R.Check
+        (Natural (Pkg.Subprograms.Length) = 0,
+         "Test 17: no partial AST on overflow");
+
+      --  Test 18: a physical line exactly Max_Line chars long (exact buffer
+      --  fit) is NOT an overflow; the following lines still parse.
+      begin
+         declare
+            F    : File_Type;
+            Big  : String (1 .. Adacovex.Types.Max_Line);
+            BLen : Natural := 0;
+         begin
+            for I in Big'Range loop
+               Big (BLen + 1) := 'y';
+               BLen := BLen + 1;
+            end loop;
+            Create (F, Out_File, Tmp_File);
+            Put_Line (F, "package Exact_Fit_Test is");
+            Put_Line (F, "   pragma Pure;");
+            Put_Line (F, Big (1 .. BLen));
+            Put_Line (F, "   procedure After_Exact;");
+            Put_Line (F, "end Exact_Fit_Test;");
+            Close (F);
+            R.Check
+              (BLen = Adacovex.Types.Max_Line,
+               "Test 18: exact-fit line = Max_Line");
+         end;
+      end;
+
+      Adacovex.Parsers.Source.Scan_Ads_File (Tmp_File, Pkg, Success);
+      R.Check (Success, "Test 18: exact-fit line parses fine");
+      R.Check
+        (Natural (Pkg.Subprograms.Length) >= 1
+         and then Pkg.Subprograms (Positive (Pkg.Subprograms.Length)).Name_Len
+                  = 11
+         and then Pkg.Subprograms (Positive (Pkg.Subprograms.Length)).Name
+                    (1 .. 11)
+                  = "After_Exact",
+         "Test 18: subprogram after exact-fit line is parsed");
+
+      --  Test 19: Scan_Project counts files skipped for line overflow in
+      --  Skipped_Ct and keeps parsing the rest of the tree.
+      begin
+         declare
+            F    : File_Type;
+            Big  : String (1 .. Adacovex.Types.Max_Line + 100);
+            BLen : Natural := 0;
+         begin
+            for I in Big'Range loop
+               Big (BLen + 1) := 'z';
+               BLen := BLen + 1;
+            end loop;
+            Create (F, Out_File, Tmp_File);
+            Put_Line (F, "package Overflow_Scan is");
+            Put_Line (F, "   pragma Pure;");
+            Put_Line (F, Big (1 .. BLen));
+            Put_Line (F, "end Overflow_Scan;");
+            Close (F);
+         end;
+         declare
+            Pkgs       : Package_Vectors.Vector;
+            Skipped_Ct : Natural;
+            Ok_File    : constant String := Tmp_Dir & "/ok_pkg.ads";
+         begin
+            declare
+               F : File_Type;
+            begin
+               Create (F, Out_File, Ok_File);
+               Put_Line (F, "package Ok_Pkg is");
+               Put_Line (F, "   --  @param X  A parameter.");
+               Put_Line (F, "   procedure Ok_Proc (X : Integer);");
+               Put_Line (F, "end Ok_Pkg;");
+               Close (F);
+            end;
+            Adacovex.Parsers.Source.Scan_Project
+              (Tmp_Dir, "", Pkgs, Skipped_Ct);
+            R.Check
+              (Skipped_Ct = 1, "Test 19: Skipped_Ct counts overflow file");
+            R.Check
+              (Natural (Pkgs.Length) = 1,
+               "Test 19: healthy .ads still parsed");
+            Ada.Directories.Delete_File (Ok_File);
+         end;
+      end;
+
       --  Cleanup
       begin
          Ada.Directories.Delete_File (Tmp_File);

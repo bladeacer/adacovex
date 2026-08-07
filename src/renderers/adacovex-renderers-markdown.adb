@@ -95,6 +95,23 @@ package body Adacovex.Renderers.Markdown is
          & " | "
          & Natural'Image (Proof.Proved_VCs)
          & " |");
+      if Proof.Justified > 0 then
+         Ada.Text_IO.Put_Line
+           (F,
+            "| Justified VCs | " & Natural'Image (Proof.Justified) & " | - |");
+      end if;
+      if Proof.Units_Analyzed > 0 then
+         Ada.Text_IO.Put_Line
+           (F,
+            "| Units Analyzed | "
+            & Natural'Image (Proof.Units_Analyzed)
+            & " | - |");
+         Ada.Text_IO.Put_Line
+           (F,
+            "| Units Skipped | "
+            & Natural'Image (Proof.Units_Skipped)
+            & " | - |");
+      end if;
       Ada.Text_IO.Put_Line (F, "");
       Ada.Text_IO.Put_Line (F, "## Test Results");
       Ada.Text_IO.Put_Line (F, "");

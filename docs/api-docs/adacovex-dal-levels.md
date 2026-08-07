@@ -45,11 +45,18 @@ adacovex evaluates four criteria for each DAL level:
 
 | DAL | Minimum SPARK Level | Requirement |
 |-----|---------------------|-------------|
-| A | Platinum | Full functional contracts, all VCs proved |
-| B | Gold | Core invariants proved, AoRTE achieved |
+| A | Gold | Core invariants proved, AoRTE achieved |
+| B | Silver | Partial proofs, all VCs attempted |
 | C | Bronze | Flow analysis passes |
 | D | Stone | Valid SPARK subset |
 | E | None | -- |
+
+The minimum levels match `Min_SPARK_For` in
+`src/compliance/adacovex-compliance-dal.adb`. Gold is the minimum compliance
+baseline; Platinum (every functional contract proved) is a best-effort ideal
+reported when achieved, not a compliance gate. Justified VCs (GNATprove
+`pragma Annotate`) count neither as proved nor unproved and never downgrade
+the level.
 
 ## DAL-C (default)
 

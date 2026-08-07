@@ -20,10 +20,10 @@ adacovex was designed to audit the Ada_CRDT library at `../Ada_CRDT` (26 package
 The `--target=PATH` option can point at any Ada/SPARK project.
 
 Self-assessment (`make run-self`, default target: cwd) verifies adacovex against its own
-source -- all 26 packages, 59 subprograms -- and must always show:
+source -- all 26 packages, 60 subprograms -- and must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
-- Platinum SPARK level (500/500 VCs proved)
-- 295/295 native tests passing
+- Platinum SPARK level (all VCs proved)
+- 320/320 native tests passing
 - DAL-C Achieved
 
 ## Architecture
@@ -75,7 +75,7 @@ src/
     |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (68)
     |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (40)
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (26)
-    `-- test_runner.adb                       -- Test suite entry point (295 tests)
+    `-- test_runner.adb                       -- Test suite entry point (320 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -831,9 +831,9 @@ is obtained and built.
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 295/295 passing |
+| Unit tests | `make test` | 320/320 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
-| SPARK proof | `make prove` | 500/500 VCs Platinum |
+| SPARK proof | `make prove` | all VCs proved, Platinum |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
 
 See [docs/changelogs/adacovex-1.0.0.md](docs/changelogs/adacovex-1.0.0.md) for full release notes.
@@ -851,21 +851,21 @@ Test source: `src/tests/`. Entry point: `test_runner.adb` (builds as
 in `adacovex.gpr`; the CLI entry point builds as `bin/adacovex` via the
 `Builder.Executable` override, with a `bin/covex` alias symlink).
 
-`make test` builds and runs the 295-test suite. Test results are written to
+`make test` builds and runs the 320-test suite. Test results are written to
 `docs/test_result.md` in a Markdown table format that can be parsed by
 `adacovex-parsers-tests`. This means adacovex **supports both** native test
 running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 
-### Test categories (295 total)
+### Test categories (320 total)
 
 | Category | Tests | What it covers |
 |----------|-------|----------------|
 | Types conversions | 26 | SPARK_Level/DAL_Level/DAL_Status/Test_Status strings, host word-size detection |
 | DAL compliance | 2 | DAL assessment status |
-| Source scanner | 68 | Package scan, docstring parsing (Ada/Google/Sphinx styles), HLR tags, name extraction, @field/@formal/after-decl, comment-style variants, tag aliases, long generated lines |
+| Source scanner | 76 | Package scan, docstring parsing (Ada/Google/Sphinx styles), HLR tags, name extraction, @field/@formal/after-decl, comment-style variants, tag aliases, long generated lines, Max_Line overflow/exact-fit rejection, Skipped_Ct |
 | IR synthesis | 27 | Bounded type bounds, Target_Config defaults, host word-size detection, foreign type-name lowering, package synthesis |
-| GNATprove parser | 38 | .out parsing, proof summary, SPARK level detection, --help handling |
-| Test-result parser | 40 | Markdown table, TAP, Automake, Maven Surefire, and Unity test-result parsing; conventional file-name discovery |
+| GNATprove parser | 52 | .out parsing, proof summary, SPARK level detection, Units_Analyzed/Skipped, justified-VC handling, --help handling, Max_Line overflow rejection |
+| Test-result parser | 43 | Markdown table, TAP, Automake, Maven Surefire, and Unity test-result parsing; conventional file-name discovery; Max_Line overflow rejection |
 | CLI config | 11 | Default option values, --help, --no-svg field, --compare-base and --coverage-delta defaults |
 | SVG renderer | 30 | SVG badge content and format |
 | SBOM generator | 53 | Proof/DAL property mapping, Alire manifest + GPR dependency graph, CycloneDX/SPDX rendering |
@@ -883,6 +883,13 @@ running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 - Docstring detection: any `--  ` (two dashes + two spaces), `-- ` (single
   space), or `--<TAB>` line before a subprogram counts as a docstring. Other
   comment formats (bare `--`, `---` with three dashes) do not.
+- A physical line longer than `Max_Line` (262144 bytes on 64-bit) is drained
+  and reported to stderr (`Error: <path>:<line>: line exceeds Max_Line
+  buffer`); the file is not parsed and the scanner increments `Skipped_Ct`,
+  which forces DAL `Unmet` and exit code 1. A line exactly `Max_Line` long
+  (exact buffer fit) parses normally. Paths longer than `Max_Path` are
+  likewise reported and skipped. The same explicit-overflow contract applies
+  to every parser (HLR/LLR, GNATprove, test results, manifest/lock/gpr).
 - `--verbose` prints pipeline step diagnostics to stderr.
 - Relative `--target=PATH` is resolved against CWD, so behavior depends on
   where adacovex is invoked.
@@ -909,7 +916,7 @@ are unbounded via `Ada.Containers.Vectors`):
 
 | Constant | Value | Notes |
 |----------|-------|-------|
-| `Max_Line` | 262144 | Source line length (long generated lines never truncated) |
+| `Max_Line` | 262144 | Source line length (overlong lines fail loudly, never silently truncated) |
 | `Max_Path` | 4096 | File path length (matches `PATH_MAX`) |
 | `Max_Desc_Str` | 128 | Subprogram name / description|
 | `Max_Filename` | 128 | Package name from filename |

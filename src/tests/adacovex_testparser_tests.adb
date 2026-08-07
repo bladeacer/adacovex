@@ -301,6 +301,41 @@ package body Adacovex_TestParser_Tests is
             null;
       end;
 
+      --  Test 13: a physical line longer than Max_Line in the test-result
+      --  file is rejected explicitly (no partial test summary).
+      begin
+         declare
+            Big  : String (1 .. Adacovex.Types.Max_Line + 50);
+            BLen : Natural := 0;
+         begin
+            for I in Big'Range loop
+               Big (BLen + 1) := 'p';
+               BLen := BLen + 1;
+            end loop;
+            Create (F, Out_File, Tmp_Path);
+            Put_Line (F, "  | - | Types conversions|21| PASS     |");
+            Put_Line (F, Big (1 .. BLen));
+            Put_Line (F, "  Passed: 21  Failed: 0");
+            Close (F);
+            R.Check
+              (BLen = Adacovex.Types.Max_Line + 50,
+               "Test 13: overflow line exceeds Max_Line");
+         end;
+      end;
+
+      Adacovex.Parsers.Tests.Parse_Test_Result (Tmp_Path, Summary, Success);
+      R.Check (not Success, "Test 13: overflow line makes parse fail");
+      R.Check
+        (Summary.Total_Passed = 0 and then Summary.Total_Failed = 0,
+         "Test 13: no partial test summary on overflow");
+
+      begin
+         Ada.Directories.Delete_File (Tmp_Path);
+      exception
+         when others =>
+            null;
+      end;
+
    end Run;
 
 end Adacovex_TestParser_Tests;

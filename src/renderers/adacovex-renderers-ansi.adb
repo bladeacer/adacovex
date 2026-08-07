@@ -89,7 +89,17 @@ package body Adacovex.Renderers.ANSI is
            (", " & Natural'Image (Proof.Justified) & " justified");
       end if;
       Ada.Text_IO.Put (")");
-      Ada.Text_IO.New_Line;
+      if Proof.Units_Analyzed > 0 then
+         Ada.Text_IO.Put_Line
+           ("  GNATprove units: "
+            & Natural'Image (Proof.Units_Analyzed)
+            & " analyzed"
+            & (if Proof.Units_Skipped > 0
+               then ", " & Natural'Image (Proof.Units_Skipped) & " skipped"
+               else ""));
+      else
+         Ada.Text_IO.New_Line;
+      end if;
 
       --  Test results
       Ada.Text_IO.Put ("  tests: ");
