@@ -32,3 +32,8 @@ maintainers-logins = ["bladeacer"]
 licenses = "Apache-2.0"
 website = "https://github.com/bladeacer/adacovex"
 tags = ["ada", "spark", "formal-verify", "cli", "gnatprove", "sbom", "tests", "code-coverage", "do-178c", "compliance", "developer-tools"]
+
+executables = ["adacovex"]
+
+[environment]
+PATH.prepend = "${CRATE_ROOT}/bin"
