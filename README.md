@@ -552,6 +552,7 @@ Non-Ada projects (C/C++, Python, JS, ...) that run adacovex provision their
 own `alire.toml` / `alire-dev.toml` to manage the Ada deps needed to build
 adacovex itself (adacovex + GNAT toolchain). Running `adacovex` from the repo
 scans it and uses its manifest.
+> We are currently working on support for other languages, stay tuned.
 
 ## Docstring format
 

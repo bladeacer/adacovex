@@ -242,7 +242,7 @@ release:
 		echo "  Replaced existing tag v$$version"; \
 	fi; \
 	git add -A; \
-	git commit -m "Release $$version" || true; \
+	git commit -m "chore: Release $$version" || true; \
 	git tag -a "v$$version" -m "Release $$version"; \
 	echo "Tagged v$$version at $$commit"; \
 	git push origin HEAD && git push origin "v$$version"; \
