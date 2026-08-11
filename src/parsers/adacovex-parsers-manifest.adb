@@ -5,6 +5,7 @@ with Ada.Containers.Vectors;
 package body Adacovex.Parsers.Manifest is
 
    use type Types.Component_Kind;
+   use type Types.Component_Scope;
 
    --  Small local name list used to collect GPR with-clause dependencies.
    type Name_Item is record
@@ -518,7 +519,8 @@ package body Adacovex.Parsers.Manifest is
    end Name_In_Graph;
 
    --  Append a crate name to a name vector unless already present.
-   procedure Add_Dep_Name (Names : in out Name_Vectors.Vector; Name : String) is
+   procedure Add_Dep_Name (Names : in out Name_Vectors.Vector; Name : String)
+   is
       Item : Name_Item;
    begin
       if Name'Length = 0 then
@@ -542,16 +544,15 @@ package body Adacovex.Parsers.Manifest is
    --  [depends-on]) section.  Missing files are ignored; a physical line
    --  longer than Max_Line clears the collected names (no partial set).
    procedure Read_Manifest_Deps
-     (Path  : String;
-      Names : in out Name_Vectors.Vector)
+     (Path : String; Names : in out Name_Vectors.Vector)
    is
       use Ada.Text_IO;
-      F           : File_Type;
-      Line        : String (1 .. Types.Max_Line);
-      Last        : Natural;
-      Overflow    : Boolean;
-      Line_Num    : Natural := 0;
-      In_Depends  : Boolean := False;
+      F          : File_Type;
+      Line       : String (1 .. Types.Max_Line);
+      Last       : Natural;
+      Overflow   : Boolean;
+      Line_Num   : Natural := 0;
+      In_Depends : Boolean := False;
    begin
       Names.Clear;
 
@@ -567,8 +568,7 @@ package body Adacovex.Parsers.Manifest is
 
       while not End_Of_File (F) loop
          Line_Num := Line_Num + 1;
-         Adacovex.Parsers.Read_Line
-           (F, Path, Line_Num, Line, Last, Overflow);
+         Adacovex.Parsers.Read_Line (F, Path, Line_Num, Line, Last, Overflow);
          if Overflow then
             --  No partial dev-dependency set: classification falls back to
             --  base/transitive only.
@@ -592,8 +592,8 @@ package body Adacovex.Parsers.Manifest is
                              and then Sec (Sec'First) = '['
                              and then Sec (Sec'Last) = ']'
                              and then Trim
-                                       (Sec (Sec'First + 1 .. Sec'Last - 1))
-                                       = "depends-on");
+                                        (Sec (Sec'First + 1 .. Sec'Last - 1))
+                                      = "depends-on");
                end;
             elsif In_Depends then
                declare
@@ -606,8 +606,7 @@ package body Adacovex.Parsers.Manifest is
                      end if;
                   end loop;
                   if Eq > T'First then
-                     Add_Dep_Name
-                       (Names, Trim (T (T'First .. Eq - 1)));
+                     Add_Dep_Name (Names, Trim (T (T'First .. Eq - 1)));
                   end if;
                end;
             end if;
@@ -836,7 +835,14 @@ package body Adacovex.Parsers.Manifest is
                      S := Types.Scope_Base;
                   end if;
                   Append_Dependency
-                    (Graph, Name, "", "", "", "pkg:gpr/" & Name, Parent, True,
+                    (Graph,
+                     Name,
+                     "",
+                     "",
+                     "",
+                     "pkg:gpr/" & Name,
+                     Parent,
+                     True,
                      S);
                end;
                if Depth > 0 then
@@ -904,11 +910,11 @@ package body Adacovex.Parsers.Manifest is
          end if;
       end Push_Dir;
 
-      procedure Add_Vendored (Ads_Path : String) is
-         Base : constant String := Simple_Name (Ads_Path);
-         Dot  : Natural := 0;
-         Name : String;
-      begin
+       procedure Add_Vendored (Ads_Path : String) is
+          Base : constant String := Simple_Name (Ads_Path);
+          Dot  : Natural := 0;
+          Name : String := "";
+       begin
          for I in reverse Base'Range loop
             if Base (I) = '.' then
                Dot := I;
@@ -920,7 +926,14 @@ package body Adacovex.Parsers.Manifest is
          end if;
          Name := Base (Base'First .. Dot - 1);
          Append_Dependency
-           (Graph, Name, "", "", "", "pkg:gpr/" & Name, 1, False,
+           (Graph,
+            Name,
+            "",
+            "",
+            "",
+            "pkg:gpr/" & Name,
+            1,
+            False,
             Types.Scope_Vendored);
       end Add_Vendored;
 
@@ -1019,7 +1032,8 @@ package body Adacovex.Parsers.Manifest is
       Read_Manifest_Deps (Manifest_Path, Base_Names);
       declare
          T : constant String :=
-           (if Target_Dir'Length > 0 and then Target_Dir (Target_Dir'Last) = '/'
+           (if Target_Dir'Length > 0
+              and then Target_Dir (Target_Dir'Last) = '/'
             then Target_Dir (Target_Dir'First .. Target_Dir'Last - 1)
             else Target_Dir);
       begin

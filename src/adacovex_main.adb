@@ -362,18 +362,27 @@ begin
    -- assessment pipeline (which parses the freshly generated gnatprove.out).
    -- gnatprove is resolved from the toolchain, so the target needs no
    -- alire.toml dependency.
-   if Cfg.Prove_Mode then
-      Verbose ("prove mode: resolving gnatprove and running proof...");
-      declare
-         OK : Boolean;
-      begin
-         Adacovex.Prove.Run_Prove (Target (1 .. TLen), OK);
-         if not OK then
-            Ada.Command_Line.Set_Exit_Status (1);
-            return;
-         end if;
-      end;
-   end if;
+    if Cfg.Prove_Mode then
+       Verbose ("prove mode: resolving gnatprove and running proof...");
+       declare
+          OK     : Boolean;
+          Opts   : constant Adacovex.Prove.Prove_Options :=
+            (Jobs              => Cfg.Prove_Jobs,
+             Level             => Cfg.Prove_Level,
+             Timeout           => Cfg.Prove_Timeout,
+             Steps             => Cfg.Prove_Steps,
+             Memlimit          => Cfg.Prove_Memlimit,
+             Force             => Cfg.Prove_Force,
+             No_Loop_Unrolling => Cfg.Prove_No_Loop_Unroll,
+             No_Inlining       => Cfg.Prove_No_Inlining);
+       begin
+          Adacovex.Prove.Run_Prove (Target (1 .. TLen), Opts, OK);
+          if not OK then
+             Ada.Command_Line.Set_Exit_Status (1);
+             return;
+          end if;
+       end;
+    end if;
 
    -- SBOM mode: generate a proof-aware software bill of materials.
    if Cfg.SBOM_Mode then

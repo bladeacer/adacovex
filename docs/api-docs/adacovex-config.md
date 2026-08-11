@@ -43,6 +43,14 @@ SBOM_Format        : Types.SBOM_Format_Kind := Types.CycloneDX_JSON;
 SBOM_Out           : String (1 .. Types.Max_Path);
 SBOM_Out_Len       : Natural := 0;
 No_SBOM            : Boolean := False;
+Prove_Jobs           : Integer := -1;
+Prove_Level          : Integer := -1;
+Prove_Timeout        : Integer := -1;
+Prove_Steps          : Integer := -1;
+Prove_Memlimit       : Integer := -1;
+Prove_Force          : Boolean := False;
+Prove_No_Loop_Unroll : Boolean := False;
+Prove_No_Inlining    : Boolean := False;
 end record;
 ```
 

@@ -7,7 +7,10 @@ component -- the project adacovex actually assessed -- carries the
 adacovex:proof_level (Gold | Platinum) and adacovex:dal_target
 (DAL-A through DAL-D) properties.  Dependency components report
 adacovex:proof_level = "Not proved": adacovex only proves the target
-itself, never third-party dependencies.
+itself, never third-party dependencies.  Every dependency component also
+carries an adacovex:dep_scope property ("base" | "dev" | "transitive" |
+"vendored") distinguishing publishing (alire.toml), development-only
+(alire-dev.toml), transitive, and patched-vendored packages.
 HLR-SBOM: SBOM generation
 
 > **Note:** All items in this package are public.
@@ -29,6 +32,14 @@ HLR-SBOM: SBOM generation
 | `Level` | Assessed SPARK level. |
 
 **Returns:** "Gold" or "Platinum".
+
+### function Scope_Property (Scope : Adacovex.Types.Component_Scope) return Standard.String `[Post]` `[Global]` `[SPARK]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `Scope` | Component dependency scope. |
+
+**Returns:** "base", "dev", "transitive", or "vendored".
 
 ## Procedures
 

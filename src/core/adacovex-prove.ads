@@ -20,6 +20,40 @@ with Adacovex.Types;
 
 package Adacovex.Prove is
 
+   --  GNATprove invocation options forwarded to the gnatprove command line.
+   --  An integer field of -1 means "not configured": --jobs auto-detects the
+   --  host core count and the level/timeout/steps/memlimit options are not
+   --  passed.  --jobs=0 forwards -j0 (all cores).  A sane default of
+   --  auto-detected parallelism means CI and the local make targets use every
+   --  core without any flag, while users can pin --jobs=12 (or -j12).
+   type Prove_Options is record
+      Jobs             : Integer := -1;
+      Level            : Integer := -1;
+      Timeout          : Integer := -1;
+      Steps            : Integer := -1;
+      Memlimit         : Integer := -1;
+      Force            : Boolean := False;
+      No_Loop_Unrolling : Boolean := False;
+      No_Inlining      : Boolean := False;
+   end record;
+
+   --  Detect the number of logical CPUs on the host.  Reads /proc/cpuinfo
+   --  (Linux); falls back to 1 elsewhere or when the file is unreadable.
+   --  @return Number of logical processors (>= 1).
+   function Detect_Core_Count return Natural;
+
+   --  Build the gnatprove option arguments as a space-separated string
+   --  (excluding the -P <project> pair).  Always includes `-j <jobs>`:
+   --  pass the resolved job count (Opts.Jobs when >= 0, else a detected
+   --  core count).  Level/timeout/steps/memlimit are included only when
+   --  configured; --force, --no-loop-unrolling and --no-inlining map to the
+   --  corresponding gnatprove switches.
+   --  @param Opts  GNATprove options.
+   --  @param Jobs  Resolved job count to forward (-j value).
+   --  @return Space-separated gnatprove option string.
+   function Build_Option_String (Opts : Prove_Options; Jobs : Natural)
+     return String;
+
    --  Resolve how to run gnatprove for a target project.
    --  Priority: alire-managed (Via_Alr => True), then PATH, then
    --  ~/.adacovex/toolchain/bin, then a platform toolchain download.
@@ -58,13 +92,19 @@ package Adacovex.Prove is
 
    --  Run gnatprove against a target project's root .gpr file.
    --  Resolves gnatprove (see Resolve_GNATprove), then spawns
-   --  `alr -C <target> exec -- gnatprove -P <gpr>` when alire-managed, or
-   --  `gnatprove -P <gpr>` directly otherwise (prepending the toolchain bin
-   --  directory to PATH for the child).  On success a fresh
+   --  `alr -C <target> exec -- gnatprove -P <gpr> <options>` when
+   --  alire-managed, or `gnatprove -P <gpr> <options>` directly otherwise
+   --  (prepending the toolchain bin directory to PATH for the child).  The
+   --  options (jobs, level, timeout, steps, memlimit, force, unrolling,
+   --  inlining) are forwarded to gnatprove.  On success a fresh
    --  <target>/obj/gnatprove/gnatprove.out is written by gnatprove.  The
    --  command's stdout/stderr stream to the parent's terminal.
    --  @param Target_Dir  Project root directory.
+   --  @param Opts  GNATprove invocation options.
    --  @param Success  True if gnatprove ran and exited 0.
-   procedure Run_Prove (Target_Dir : String; Success : out Boolean);
+   procedure Run_Prove
+     (Target_Dir : String;
+      Opts       : Prove_Options;
+      Success    : out Boolean);
 
 end Adacovex.Prove;

@@ -56,6 +56,39 @@ package body Adacovex.Config is
       return S'Length = 1 and then (S (S'First) in 'A' .. 'E' | 'a' .. 'e');
    end Is_Valid_DAL;
 
+   --  Parse an integer prove option into a config field, validating its
+   --  range.  On a bad value or out-of-range value the config is flagged as
+   --  an error and Field is left untouched.
+   procedure Set_Prove_Int
+     (Cfg   : in out CLI_Config;
+      Field : out Integer;
+      Val   : String;
+      Min   : Integer;
+      Max   : Integer;
+      Flag  : String)
+   is
+   begin
+      begin
+         Field := Integer'Value (Val);
+      exception
+         when Constraint_Error =>
+            Set_Error (Cfg, Flag & " must be an integer (got: " & Val & ")");
+            return;
+      end;
+      if Field < Min or Field > Max then
+         Set_Error
+           (Cfg,
+            Flag
+            & " must be in"
+            & Integer'Image (Min)
+            & ".."
+            & Integer'Image (Max)
+            & " (got: "
+            & Val
+            & ")");
+      end if;
+   end Set_Prove_Int;
+
    function Parse_CLI return CLI_Config is
       Cfg   : CLI_Config;
       Count : constant Natural := Ada.Command_Line.Argument_Count;
@@ -344,13 +377,133 @@ package body Adacovex.Config is
                else
                   Set_Error (Cfg, "--out requires a path argument");
                end if;
-            elsif Has_Prefix (A, "--out=") then
-               Set_String
-                 (Cfg.SBOM_Out, Cfg.SBOM_Out_Len, A (A'First + 6 .. A'Last));
-            elsif A = "--help" then
-               Cfg.Help_Requested := True;
-               Print_Usage;
-            end if;
+             elsif Has_Prefix (A, "--out=") then
+                Set_String
+                  (Cfg.SBOM_Out, Cfg.SBOM_Out_Len, A (A'First + 6 .. A'Last));
+             elsif A = "--jobs" or A = "-j" then
+                I := I + 1;
+                if I <= Count then
+                   Set_Prove_Int
+                     (Cfg,
+                      Cfg.Prove_Jobs,
+                      Ada.Command_Line.Argument (I),
+                      -1,
+                      1024,
+                      "--jobs");
+                else
+                   Set_Error (Cfg, "--jobs requires an integer argument");
+                end if;
+             elsif Has_Prefix (A, "--jobs=") then
+                Set_Prove_Int
+                  (Cfg,
+                   Cfg.Prove_Jobs,
+                   A (A'First + 7 .. A'Last),
+                   -1,
+                   1024,
+                   "--jobs");
+             elsif Has_Prefix (A, "-j") and then A'Length > 2 then
+                --  Combined short form: -j12
+                Set_Prove_Int
+                  (Cfg,
+                   Cfg.Prove_Jobs,
+                   A (A'First + 2 .. A'Last),
+                   -1,
+                   1024,
+                   "-j");
+             elsif A = "--level" then
+                I := I + 1;
+                if I <= Count then
+                   Set_Prove_Int
+                     (Cfg,
+                      Cfg.Prove_Level,
+                      Ada.Command_Line.Argument (I),
+                      0,
+                      4,
+                      "--level");
+                else
+                   Set_Error (Cfg, "--level requires an integer argument");
+                end if;
+             elsif Has_Prefix (A, "--level=") then
+                Set_Prove_Int
+                  (Cfg,
+                   Cfg.Prove_Level,
+                   A (A'First + 8 .. A'Last),
+                   0,
+                   4,
+                   "--level");
+             elsif A = "--timeout" then
+                I := I + 1;
+                if I <= Count then
+                   Set_Prove_Int
+                     (Cfg,
+                      Cfg.Prove_Timeout,
+                      Ada.Command_Line.Argument (I),
+                      1,
+                      3600,
+                      "--timeout");
+                else
+                   Set_Error (Cfg, "--timeout requires an integer argument");
+                end if;
+             elsif Has_Prefix (A, "--timeout=") then
+                Set_Prove_Int
+                  (Cfg,
+                   Cfg.Prove_Timeout,
+                   A (A'First + 10 .. A'Last),
+                   1,
+                   3600,
+                   "--timeout");
+             elsif A = "--steps" then
+                I := I + 1;
+                if I <= Count then
+                   Set_Prove_Int
+                     (Cfg,
+                      Cfg.Prove_Steps,
+                      Ada.Command_Line.Argument (I),
+                      1,
+                      100_000_000,
+                      "--steps");
+                else
+                   Set_Error (Cfg, "--steps requires an integer argument");
+                end if;
+             elsif Has_Prefix (A, "--steps=") then
+                Set_Prove_Int
+                  (Cfg,
+                   Cfg.Prove_Steps,
+                   A (A'First + 8 .. A'Last),
+                   1,
+                   100_000_000,
+                   "--steps");
+             elsif A = "--memlimit" then
+                I := I + 1;
+                if I <= Count then
+                   Set_Prove_Int
+                     (Cfg,
+                      Cfg.Prove_Memlimit,
+                      Ada.Command_Line.Argument (I),
+                      1,
+                      1_000_000,
+                      "--memlimit");
+                else
+                   Set_Error (Cfg, "--memlimit requires an integer argument");
+                end if;
+             elsif Has_Prefix (A, "--memlimit=") then
+                Set_Prove_Int
+                  (Cfg,
+                   Cfg.Prove_Memlimit,
+                   A (A'First + 11 .. A'Last),
+                   1,
+                   1_000_000,
+                   "--memlimit");
+             elsif A = "--force" then
+                Cfg.Prove_Force := True;
+             elsif A = "--no-loop-unrolling" then
+                Cfg.Prove_No_Loop_Unroll := True;
+             elsif A = "--no-inlining" then
+                Cfg.Prove_No_Inlining := True;
+             elsif A = "--help" then
+                Cfg.Help_Requested := True;
+                Print_Usage;
+             end if;
          end;
          I := I + 1;
       end loop;
@@ -391,6 +544,24 @@ package body Adacovex.Config is
            (Cfg,
             "prove cannot be combined with --compare-base, --coverage-delta, "
             & "or sbom");
+      end if;
+
+      -- GNATprove options only make sense in prove mode.
+      if not Cfg.Prove_Mode
+        and then (Cfg.Prove_Jobs >= 0
+                  or Cfg.Prove_Level >= 0
+                  or Cfg.Prove_Timeout >= 0
+                  or Cfg.Prove_Steps >= 0
+                  or Cfg.Prove_Memlimit >= 0
+                  or Cfg.Prove_Force
+                  or Cfg.Prove_No_Loop_Unroll
+                  or Cfg.Prove_No_Inlining)
+      then
+         Set_Error
+           (Cfg,
+            "prove options (--jobs, --level, --timeout, --steps, --memlimit, "
+            & "--force, --no-loop-unrolling, --no-inlining) require the prove "
+            & "subcommand");
       end if;
 
       -- Automatic SBOM at the end of every assessment is skipped only in the
@@ -533,6 +704,24 @@ package body Adacovex.Config is
         ("                        assess it (bundled gnatprove resolution,");
       Ada.Text_IO.Put_Line
         ("                        no alire.toml required in the target)");
+      Ada.Text_IO.Put_Line
+        ("  --jobs=N, -j N        GNATprove parallelism (default: auto-detect");
+      Ada.Text_IO.Put_Line
+        ("                        CPU count; 0 = all cores; e.g. -j12)");
+      Ada.Text_IO.Put_Line
+        ("  --level=N             GNATprove proof effort 0-4 (default: tool default)");
+      Ada.Text_IO.Put_Line
+        ("  --timeout=N           Per-check prover timeout in seconds");
+      Ada.Text_IO.Put_Line
+        ("  --steps=N             Max proof steps (reproducible)");
+      Ada.Text_IO.Put_Line
+        ("  --memlimit=N          Prover memory limit in MB");
+      Ada.Text_IO.Put_Line
+        ("  --force               Force full gnatprove reanalysis (-f)");
+      Ada.Text_IO.Put_Line
+        ("  --no-loop-unrolling   Disable automatic loop unrolling");
+      Ada.Text_IO.Put_Line
+        ("  --no-inlining         Disable contextual analysis inlining");
       Ada.Text_IO.Put_Line
         ("  sbom --format=FMT     Generate a proof-aware SBOM (FMT: cyclonedx-json");
       Ada.Text_IO.Put_Line

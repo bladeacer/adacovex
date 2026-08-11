@@ -38,6 +38,7 @@ Description_Len : Natural := 0;
 Kind            : Component_Kind := Dependency_Component;
 Parent          : Natural := 0;
 From_GPR        : Boolean := False;
+Scope           : Component_Scope := Scope_Transitive;
 end record;
 ```
 
