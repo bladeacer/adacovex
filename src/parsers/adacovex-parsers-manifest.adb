@@ -913,7 +913,6 @@ package body Adacovex.Parsers.Manifest is
       procedure Add_Vendored (Ads_Path : String) is
          Base : constant String := Simple_Name (Ads_Path);
          Dot  : Natural := 0;
-         Name : String := "";
       begin
          for I in reverse Base'Range loop
             if Base (I) = '.' then
@@ -924,14 +923,13 @@ package body Adacovex.Parsers.Manifest is
          if Dot <= Base'First then
             return;
          end if;
-         Name := Base (Base'First .. Dot - 1);
          Append_Dependency
            (Graph,
-            Name,
+            Base (Base'First .. Dot - 1),
             "",
             "",
             "",
-            "pkg:gpr/" & Name,
+            "pkg:gpr/" & Base (Base'First .. Dot - 1),
             1,
             False,
             Types.Scope_Vendored);
