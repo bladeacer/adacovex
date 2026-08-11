@@ -22,6 +22,12 @@ package body Adacovex.Parsers.Manifest is
 
    package Path_Vectors is new Ada.Containers.Vectors (Positive, Path_Item);
 
+   --  Crate-name sets collected from the publishing manifest (alire.toml or
+   --  the --manifest override) and the dev manifest (alire-dev.toml).  Used
+   --  to classify every resolved dependency into a Component_Scope.
+   Base_Names : Name_Vectors.Vector;
+   Dev_Names  : Name_Vectors.Vector;
+
    procedure Set_Field
      (Field : out Types.Desc_Field; Len : out Natural; S : String) is
    begin
@@ -511,6 +517,128 @@ package body Adacovex.Parsers.Manifest is
       return False;
    end Name_In_Graph;
 
+   --  Append a crate name to a name vector unless already present.
+   procedure Add_Dep_Name (Names : in out Name_Vectors.Vector; Name : String) is
+      Item : Name_Item;
+   begin
+      if Name'Length = 0 then
+         return;
+      end if;
+      for I in 1 .. Integer (Names.Length) loop
+         if Names (I).Len = Name'Length
+           and then Names (I).Name (1 .. Name'Length) = Name
+         then
+            return;
+         end if;
+      end loop;
+      Item.Len := Name'Length;
+      for I in 1 .. Name'Length loop
+         Item.Name (I) := Name (Name'First + I - 1);
+      end loop;
+      Names.Append (Item);
+   end Add_Dep_Name;
+
+   --  Collect the crate names declared in a manifest's [[depends-on]] (or
+   --  [depends-on]) section.  Missing files are ignored; a physical line
+   --  longer than Max_Line clears the collected names (no partial set).
+   procedure Read_Manifest_Deps
+     (Path  : String;
+      Names : in out Name_Vectors.Vector)
+   is
+      use Ada.Text_IO;
+      F           : File_Type;
+      Line        : String (1 .. Types.Max_Line);
+      Last        : Natural;
+      Overflow    : Boolean;
+      Line_Num    : Natural := 0;
+      In_Depends  : Boolean := False;
+   begin
+      Names.Clear;
+
+      if not Ada.Directories.Exists (Path) then
+         return;
+      end if;
+      begin
+         Open (F, In_File, Path);
+      exception
+         when others =>
+            return;
+      end;
+
+      while not End_Of_File (F) loop
+         Line_Num := Line_Num + 1;
+         Adacovex.Parsers.Read_Line
+           (F, Path, Line_Num, Line, Last, Overflow);
+         if Overflow then
+            --  No partial dev-dependency set: classification falls back to
+            --  base/transitive only.
+            Names.Clear;
+            Close (F);
+            return;
+         end if;
+         declare
+            T : constant String := Trim (Line (1 .. Last));
+         begin
+            if T'Length > 2
+              and then T (T'First) = '['
+              and then T (T'Last) = ']'
+            then
+               declare
+                  Sec : constant String := T (T'First + 1 .. T'Last - 1);
+               begin
+                  In_Depends :=
+                    Trim (Sec) = "depends-on"
+                    or else (Sec'Length > 1
+                             and then Sec (Sec'First) = '['
+                             and then Sec (Sec'Last) = ']'
+                             and then Trim
+                                       (Sec (Sec'First + 1 .. Sec'Last - 1))
+                                       = "depends-on");
+               end;
+            elsif In_Depends then
+               declare
+                  Eq : Natural := 0;
+               begin
+                  for I in T'Range loop
+                     if T (I) = '=' then
+                        Eq := I;
+                        exit;
+                     end if;
+                  end loop;
+                  if Eq > T'First then
+                     Add_Dep_Name
+                       (Names, Trim (T (T'First .. Eq - 1)));
+                  end if;
+               end;
+            end if;
+         end;
+      end loop;
+
+      Close (F);
+   end Read_Manifest_Deps;
+
+   --  Classify a dependency name into a Component_Scope from the collected
+   --  manifest sets: a name in the publishing manifest is base, one declared
+   --  only in the dev manifest is dev, and anything else is transitive.
+   function Classify_Scope (Name : String) return Types.Component_Scope is
+   begin
+      for I in 1 .. Integer (Base_Names.Length) loop
+         if Base_Names (I).Len = Name'Length
+           and then Base_Names (I).Name (1 .. Name'Length) = Name
+         then
+            return Types.Scope_Base;
+         end if;
+      end loop;
+      for I in 1 .. Integer (Dev_Names.Length) loop
+         if Dev_Names (I).Len = Name'Length
+           and then Dev_Names (I).Name (1 .. Name'Length) = Name
+         then
+            return Types.Scope_Dev;
+         end if;
+      end loop;
+      return Types.Scope_Transitive;
+   end Classify_Scope;
+
    procedure Append_Dependency
      (Graph    : in out Types.Implementation.Component_Vectors.Vector;
       Name     : String;
@@ -519,7 +647,8 @@ package body Adacovex.Parsers.Manifest is
       Desc     : String;
       PURL     : String;
       Parent   : Natural;
-      From_GPR : Boolean)
+      From_GPR : Boolean;
+      Scope    : Types.Component_Scope)
    is
       C : Types.Implementation.Component_Info;
    begin
@@ -535,6 +664,7 @@ package body Adacovex.Parsers.Manifest is
       C.Kind := Types.Dependency_Component;
       C.Parent := Parent;
       C.From_GPR := From_GPR;
+      C.Scope := Scope;
       Graph.Append (C);
    end Append_Dependency;
 
@@ -584,7 +714,8 @@ package body Adacovex.Parsers.Manifest is
                   Crate_Desc (1 .. Crate_Desc_Len),
                   PURL,
                   1,
-                  False);
+                  False,
+                  Classify_Scope (Crate_Name (1 .. Crate_Name_Len)));
             end;
          end if;
          Crate_Name_Len := 0;
@@ -694,8 +825,20 @@ package body Adacovex.Parsers.Manifest is
             Name : constant String := Deps (I).Name (1 .. Deps (I).Len);
          begin
             if not Name_In_Graph (Graph, Name) then
-               Append_Dependency
-                 (Graph, Name, "", "", "", "pkg:gpr/" & Name, Parent, True);
+               declare
+                  S : Types.Component_Scope := Classify_Scope (Name);
+               begin
+                  --  A GPR with-clause dependency of the root project is a
+                  --  direct build dependency (base) unless a manifest names
+                  --  it (in which case Classify_Scope already decided);
+                  --  deeper with-clauses are transitive.
+                  if S = Types.Scope_Transitive and then Parent = 1 then
+                     S := Types.Scope_Base;
+                  end if;
+                  Append_Dependency
+                    (Graph, Name, "", "", "", "pkg:gpr/" & Name, Parent, True,
+                     S);
+               end;
                if Depth > 0 then
                   declare
                      GPR_Path : Types.Path_Field;
@@ -725,6 +868,106 @@ package body Adacovex.Parsers.Manifest is
       end loop;
    end Resolve_GPR_Deps;
 
+   --  Add a component for every vendored package overlaid by a docstring
+   --  patch under <target>/.adacovex/patches/.  Each patch file (.ads) names
+   --  the vendored package (basename); such packages have no manifest entry
+   --  and no .gpr of their own, so they are recorded as Scope_Vendored
+   --  dependencies of the root.
+   procedure Discover_Vendored_Components
+     (Target_Dir : String;
+      Graph      : in out Types.Implementation.Component_Vectors.Vector)
+   is
+      use Ada.Directories;
+      type Dir_Entry is record
+         Path : Types.Path_Field;
+         Len  : Natural := 0;
+      end record;
+      package Dir_Stacks is new Ada.Containers.Vectors (Positive, Dir_Entry);
+      Dir_Stack : Dir_Stacks.Vector;
+      Search    : Search_Type;
+      Ent       : Directory_Entry_Type;
+      Root      : constant String :=
+        (if Target_Dir'Length > 0 and then Target_Dir (Target_Dir'Last) = '/'
+         then Target_Dir (Target_Dir'First .. Target_Dir'Last - 1)
+         else Target_Dir)
+        & "/.adacovex/patches";
+
+      procedure Push_Dir (Dir : String) is
+         Item : Dir_Entry;
+      begin
+         if Dir'Length <= Types.Max_Path then
+            Item.Len := Dir'Length;
+            for I in Dir'Range loop
+               Item.Path (I - Dir'First + 1) := Dir (I);
+            end loop;
+            Dir_Stack.Append (Item);
+         end if;
+      end Push_Dir;
+
+      procedure Add_Vendored (Ads_Path : String) is
+         Base : constant String := Simple_Name (Ads_Path);
+         Dot  : Natural := 0;
+         Name : String;
+      begin
+         for I in reverse Base'Range loop
+            if Base (I) = '.' then
+               Dot := I;
+               exit;
+            end if;
+         end loop;
+         if Dot <= Base'First then
+            return;
+         end if;
+         Name := Base (Base'First .. Dot - 1);
+         Append_Dependency
+           (Graph, Name, "", "", "", "pkg:gpr/" & Name, 1, False,
+            Types.Scope_Vendored);
+      end Add_Vendored;
+
+   begin
+      if not Ada.Directories.Exists (Root) then
+         return;
+      end if;
+
+      Push_Dir (Root);
+      while not Dir_Stack.Is_Empty loop
+         declare
+            Current  : Dir_Entry := Dir_Stack.Last_Element;
+            Dir_Path : String renames Current.Path (1 .. Current.Len);
+         begin
+            Dir_Stack.Delete_Last;
+
+            Start_Search (Search, Dir_Path, "");
+            begin
+               while More_Entries (Search) loop
+                  Get_Next_Entry (Search, Ent);
+                  declare
+                     N    : constant String := Simple_Name (Ent);
+                     Path : constant String := Full_Name (Ent);
+                  begin
+                     if Kind (Ent) = Directory then
+                        if N /= "." and N /= ".." then
+                           Push_Dir (Path);
+                        end if;
+                     elsif Kind (Ent) = Ordinary_File then
+                        if N'Length > 4
+                          and then N (N'Last - 3 .. N'Last) = ".ads"
+                        then
+                           Add_Vendored (Path);
+                        end if;
+                     end if;
+                  end;
+               end loop;
+            exception
+               when others =>
+                  End_Search (Search);
+                  raise;
+            end;
+            End_Search (Search);
+         end;
+      end loop;
+   end Discover_Vendored_Components;
+
    procedure Build_Dependency_Graph
      (Target_Dir    : String;
       Manifest_Path : String;
@@ -753,6 +996,10 @@ package body Adacovex.Parsers.Manifest is
    begin
       Graph := Types.Implementation.Component_Vectors.Empty_Vector;
 
+      --  Reset the package-level dependency-scope sets for this resolution.
+      Base_Names.Clear;
+      Dev_Names.Clear;
+
       Read_Manifest
         (Manifest_Path,
          Root_Name,
@@ -766,6 +1013,20 @@ package body Adacovex.Parsers.Manifest is
          Proj_File,
          Proj_File_Len,
          Manifest_OK);
+
+      --  Collect the base (publishing manifest) and dev (alire-dev.toml)
+      --  dependency crate sets used to classify every resolved component.
+      Read_Manifest_Deps (Manifest_Path, Base_Names);
+      declare
+         T : constant String :=
+           (if Target_Dir'Length > 0 and then Target_Dir (Target_Dir'Last) = '/'
+            then Target_Dir (Target_Dir'First .. Target_Dir'Last - 1)
+            else Target_Dir);
+      begin
+         if T & "/alire-dev.toml" /= Manifest_Path then
+            Read_Manifest_Deps (T & "/alire-dev.toml", Dev_Names);
+         end if;
+      end;
 
       Collect_GPR_Files (Target_Dir, GPR_Files);
 
@@ -841,6 +1102,11 @@ package body Adacovex.Parsers.Manifest is
 
       --  Resolve GPR with-clause dependencies, including transitives.
       Resolve_GPR_Deps (Graph, GPR_Files, GPR_Deps, 1, 8);
+
+      --  Add vendored packages overlaid by .adacovex/patches/ docstring
+      --  patches (e.g. a third-party copy under demo/deps) as scope=vendored
+      --  dependencies of the root.
+      Discover_Vendored_Components (Target_Dir, Graph);
 
       Success := Root.Name_Len > 0;
    end Build_Dependency_Graph;

@@ -33,13 +33,26 @@ package Adacovex.Config is
       Compare_Base_Len   : Natural := 0;
       Coverage_Delta     : String (1 .. Types.Max_Path);
       Coverage_Delta_Len : Natural := 0;
-      Prove_Mode         : Boolean := False;
-      SBOM_Mode          : Boolean := False;
-      SBOM_Format        : Types.SBOM_Format_Kind := Types.CycloneDX_JSON;
-      SBOM_Out           : String (1 .. Types.Max_Path);
-      SBOM_Out_Len       : Natural := 0;
-      No_SBOM            : Boolean := False;
-   end record;
+       Prove_Mode         : Boolean := False;
+       SBOM_Mode          : Boolean := False;
+       SBOM_Format        : Types.SBOM_Format_Kind := Types.CycloneDX_JSON;
+       SBOM_Out           : String (1 .. Types.Max_Path);
+       SBOM_Out_Len       : Natural := 0;
+       No_SBOM            : Boolean := False;
+
+       --  GNATprove invocation options (prove mode).  A value of -1 means
+       --  "not configured": --jobs auto-detects the core count, and the
+       --  level/timeout/steps/memlimit options are not passed to gnatprove.
+       --  --jobs=0 forwards -j0 (all cores).
+       Prove_Jobs           : Integer := -1;
+       Prove_Level          : Integer := -1;
+       Prove_Timeout        : Integer := -1;
+       Prove_Steps          : Integer := -1;
+       Prove_Memlimit       : Integer := -1;
+       Prove_Force          : Boolean := False;
+       Prove_No_Loop_Unroll : Boolean := False;
+       Prove_No_Inlining    : Boolean := False;
+    end record;
 
    --  Parse Ada.Command_Line arguments and return a fully populated config.
    --  Reads command-line arguments via Ada.Command_Line; default values are

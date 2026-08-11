@@ -29,7 +29,9 @@ inputs:
   build:
     description: >-
       Build adacovex from source (true) or download the release binary
-      (false).
+      (false).  Consumers of this action normally use false (the default);
+      true builds adacovex from source, cloning the repository at the
+      referenced ref when the workspace is not adacovex itself.
     required: false
     default: 'false'
   prove:
@@ -41,6 +43,12 @@ inputs:
     description: 'Build and run the native test suite (requires build: true).'
     required: false
     default: 'false'
+  test-command:
+    description: >-
+      Command (relative to the workspace root) used to run the target's test
+      suite when run-tests is true.  Defaults to the adacovex self-test runner.
+    required: false
+    default: './bin/test_runner'
   release-build:
     description: 'Pass --release to alr build for an optimized binary.'
     required: false
@@ -159,13 +167,45 @@ runs:
     - name: Build adacovex
       if: ${{ inputs.build == 'true' }}
       shell: bash
+      env:
+        ACTION_REPO: ${{ github.action_repository }}
+        ACTION_REF: ${{ github.action_ref }}
       run: |
         set -euxo pipefail
         cd "$GITHUB_WORKSPACE"
-        if [ "${{ inputs.release-build }}" == 'true' ]; then
-          alr build --release
+        if [ -f adacovex.gpr ]; then
+          # The checked-out repository IS adacovex (self-assessment via
+          # `uses: ./`): build it in place.
+          if [ "${{ inputs.release-build }}" == 'true' ]; then
+            alr build --release
+          else
+            alr build
+          fi
         else
-          alr build
+          # Consumer repository: the workspace is the target project, not
+          # adacovex, so `alr build` here would build the consumer and never
+          # produce a bin/adacovex.  Build adacovex from source at the
+          # referenced ref in a scratch checkout instead.
+          REF="${ACTION_REF:-v1}"
+          if [ "$REF" = "." ] || [ -z "$REF" ]; then
+            REF="v1"
+          fi
+          echo "Building adacovex from source at ${ACTION_REPO}@${REF}..."
+          git clone --quiet "https://github.com/${ACTION_REPO}.git" "$RUNNER_TEMP/adacovex-src"
+          cd "$RUNNER_TEMP/adacovex-src"
+          if git rev-parse --verify --quiet "refs/tags/$REF" >/dev/null 2>&1; then
+            git checkout --quiet "refs/tags/$REF"
+          else
+            git checkout --quiet "$REF" || git checkout --quiet "${REF#v}"
+          fi
+          if [ "${{ inputs.release-build }}" == 'true' ]; then
+            alr build --release
+          else
+            alr build
+          fi
+          mkdir -p "$GITHUB_WORKSPACE/bin"
+          cp bin/adacovex "$GITHUB_WORKSPACE/bin/adacovex"
+          chmod +x "$GITHUB_WORKSPACE/bin/adacovex"
         fi
 
     - name: Run native tests
@@ -174,7 +214,7 @@ runs:
       run: |
         set -euxo pipefail
         cd "$GITHUB_WORKSPACE"
-        ./bin/test_runner
+        ${{ inputs.test-command }}
 
     - name: Run GNATprove
       if: ${{ inputs.prove == 'true' }}
@@ -189,7 +229,7 @@ runs:
         elif command -v covex >/dev/null 2>&1; then
           covex prove --target="${{ inputs.target }}"
         else
-          echo "::error::adacovex binary not found. Set build: true or install adacovex on PATH."
+          echo "::error::adacovex binary not found. Set build: true (builds adacovex from source) or install adacovex on PATH."
           exit 1
         fi
 
@@ -213,7 +253,7 @@ runs:
           BIN="$(command -v covex)"
         fi
         if [ -z "$BIN" ]; then
-          echo "::error::adacovex binary not found. Set build: true or install adacovex on PATH."
+          echo "::error::adacovex binary not found. Set build: true (builds adacovex from source) or install adacovex on PATH."
           exit 1
         fi
         ARGS=()

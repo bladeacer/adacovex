@@ -46,6 +46,31 @@ package body Adacovex.Renderers.SBOM is
       end case;
    end DAL_Property_Value;
 
+   --  Map a dependency scope to the adacovex:dep_scope property value.
+   --  Base dependencies are declared in the publishing manifest, dev
+   --  dependencies only in the dev manifest, transitive ones in neither,
+   --  and vendored packages are overlaid by a .adacovex/patches/ patch.
+   --  @param Scope  Component dependency scope.
+   --  @return "base", "dev", "transitive", or "vendored".
+   function Scope_Property (Scope : Types.Component_Scope) return String
+   with SPARK_Mode => On
+   is
+   begin
+      case Scope is
+         when Types.Scope_Base      =>
+            return "base";
+
+         when Types.Scope_Dev       =>
+            return "dev";
+
+         when Types.Scope_Transitive =>
+            return "transitive";
+
+         when Types.Scope_Vendored  =>
+            return "vendored";
+      end case;
+   end Scope_Property;
+
    --  Escape a string for inclusion in a JSON document.  Backslash, quote
    --  and control characters are escaped so the emitted JSON is always
    --  well-formed, even for manifest strings containing embedded quotes.
@@ -385,6 +410,11 @@ package body Adacovex.Renderers.SBOM is
          JStr (F, DAL_Target);
          Raw (F, "}");
       end if;
+      if C.Kind = Types.Dependency_Component then
+         Raw (F, ", {""name"": ""adacovex:dep_scope"", ""value"": ");
+         JStr (F, Scope_Property (C.Scope));
+         Raw (F, "}");
+      end if;
       Raw (F, "]");
       First_Field := False;
       NL (F);
@@ -592,6 +622,11 @@ package body Adacovex.Renderers.SBOM is
          Raw (F, DAL_Target);
          Raw (F, """");
       end if;
+      if C.Kind = Types.Dependency_Component then
+         Raw (F, ", ""adacovex:dep_scope=");
+         Raw (F, Scope_Property (C.Scope));
+         Raw (F, """");
+      end if;
       Raw (F, "]");
       NL (F);
       Raw (F, "    }");
@@ -754,10 +789,10 @@ package body Adacovex.Renderers.SBOM is
          NL (F);
          Raw
            (F,
-            "| Component | Version | License | PURL | adacovex:proof_level");
+            "| Component | Version | License | PURL | Scope | adacovex:proof_level");
          Raw (F, " |");
          NL (F);
-         Raw (F, "|---|---|---|---|---");
+         Raw (F, "|---|---|---|---|---|---");
          Raw (F, "|");
          NL (F);
          for I in 2 .. Integer (Graph.Length) loop
@@ -779,6 +814,8 @@ package body Adacovex.Renderers.SBOM is
                Raw (F, " | `");
                Raw (F, C.PURL (1 .. C.PURL_Len));
                Raw (F, "` | ");
+               Raw (F, Scope_Property (C.Scope));
+               Raw (F, " | ");
                Raw (F, Not_Proved);
                Raw (F, " |");
                NL (F);
