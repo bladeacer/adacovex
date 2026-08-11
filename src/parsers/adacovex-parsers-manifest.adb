@@ -910,11 +910,11 @@ package body Adacovex.Parsers.Manifest is
          end if;
       end Push_Dir;
 
-       procedure Add_Vendored (Ads_Path : String) is
-          Base : constant String := Simple_Name (Ads_Path);
-          Dot  : Natural := 0;
-          Name : String := "";
-       begin
+      procedure Add_Vendored (Ads_Path : String) is
+         Base : constant String := Simple_Name (Ads_Path);
+         Dot  : Natural := 0;
+         Name : String := "";
+      begin
          for I in reverse Base'Range loop
             if Base (I) = '.' then
                Dot := I;

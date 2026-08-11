@@ -25,6 +25,38 @@ HLR-PROVE: GNATprove subcommand
 
 > **Note:** All items in this package are public.
 
+## Types
+
+### type Prove_Options
+
+```ada
+type Prove_Options is record
+Jobs              : Integer := -1;
+Level             : Integer := -1;
+Timeout           : Integer := -1;
+Steps             : Integer := -1;
+Memlimit          : Integer := -1;
+Force             : Boolean := False;
+No_Loop_Unrolling : Boolean := False;
+No_Inlining       : Boolean := False;
+end record;
+```
+
+## Functions
+
+### function Build_Option_String (Opts : Adacovex.Prove.Prove_Options; Jobs : Standard.Natural) return Standard.String
+
+| Parameter | Description |
+|-----------|-------------|
+| `Jobs` | Resolved job count to forward (-j value). |
+| `Opts` | GNATprove options. |
+
+**Returns:** Space-separated gnatprove option string.
+
+### function Detect_Core_Count return Standard.Natural
+
+**Returns:** Number of logical processors (>= 1).
+
 ## Procedures
 
 ### procedure Find_Root_GPR (Target_Dir : Standard.String; GPR_Path : Standard.String; GPR_Len : Standard.Natural; Success : Standard.Boolean)
@@ -48,9 +80,10 @@ HLR-PROVE: GNATprove subcommand
 | `Toolchain_Dir` | Output buffer for the toolchain bin directory. |
 | `Via_Alr` | True if gnatprove must run through `alr exec`. |
 
-### procedure Run_Prove (Target_Dir : Standard.String; Success : Standard.Boolean)
+### procedure Run_Prove (Target_Dir : Standard.String; Opts : Adacovex.Prove.Prove_Options; Success : Standard.Boolean)
 
 | Parameter | Description |
 |-----------|-------------|
+| `Opts` | GNATprove invocation options. |
 | `Success` | True if gnatprove ran and exited 0. |
 | `Target_Dir` | Project root directory. |

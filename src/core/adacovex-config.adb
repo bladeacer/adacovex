@@ -65,8 +65,7 @@ package body Adacovex.Config is
       Val   : String;
       Min   : Integer;
       Max   : Integer;
-      Flag  : String)
-   is
+      Flag  : String) is
    begin
       begin
          Field := Integer'Value (Val);
@@ -377,133 +376,133 @@ package body Adacovex.Config is
                else
                   Set_Error (Cfg, "--out requires a path argument");
                end if;
-             elsif Has_Prefix (A, "--out=") then
-                Set_String
-                  (Cfg.SBOM_Out, Cfg.SBOM_Out_Len, A (A'First + 6 .. A'Last));
-             elsif A = "--jobs" or A = "-j" then
-                I := I + 1;
-                if I <= Count then
-                   Set_Prove_Int
-                     (Cfg,
-                      Cfg.Prove_Jobs,
-                      Ada.Command_Line.Argument (I),
-                      -1,
-                      1024,
-                      "--jobs");
-                else
-                   Set_Error (Cfg, "--jobs requires an integer argument");
-                end if;
-             elsif Has_Prefix (A, "--jobs=") then
-                Set_Prove_Int
-                  (Cfg,
-                   Cfg.Prove_Jobs,
-                   A (A'First + 7 .. A'Last),
-                   -1,
-                   1024,
-                   "--jobs");
-             elsif Has_Prefix (A, "-j") and then A'Length > 2 then
-                --  Combined short form: -j12
-                Set_Prove_Int
-                  (Cfg,
-                   Cfg.Prove_Jobs,
-                   A (A'First + 2 .. A'Last),
-                   -1,
-                   1024,
-                   "-j");
-             elsif A = "--level" then
-                I := I + 1;
-                if I <= Count then
-                   Set_Prove_Int
-                     (Cfg,
-                      Cfg.Prove_Level,
-                      Ada.Command_Line.Argument (I),
-                      0,
-                      4,
-                      "--level");
-                else
-                   Set_Error (Cfg, "--level requires an integer argument");
-                end if;
-             elsif Has_Prefix (A, "--level=") then
-                Set_Prove_Int
-                  (Cfg,
-                   Cfg.Prove_Level,
-                   A (A'First + 8 .. A'Last),
-                   0,
-                   4,
-                   "--level");
-             elsif A = "--timeout" then
-                I := I + 1;
-                if I <= Count then
-                   Set_Prove_Int
-                     (Cfg,
-                      Cfg.Prove_Timeout,
-                      Ada.Command_Line.Argument (I),
-                      1,
-                      3600,
-                      "--timeout");
-                else
-                   Set_Error (Cfg, "--timeout requires an integer argument");
-                end if;
-             elsif Has_Prefix (A, "--timeout=") then
-                Set_Prove_Int
-                  (Cfg,
-                   Cfg.Prove_Timeout,
-                   A (A'First + 10 .. A'Last),
-                   1,
-                   3600,
-                   "--timeout");
-             elsif A = "--steps" then
-                I := I + 1;
-                if I <= Count then
-                   Set_Prove_Int
-                     (Cfg,
-                      Cfg.Prove_Steps,
-                      Ada.Command_Line.Argument (I),
-                      1,
-                      100_000_000,
-                      "--steps");
-                else
-                   Set_Error (Cfg, "--steps requires an integer argument");
-                end if;
-             elsif Has_Prefix (A, "--steps=") then
-                Set_Prove_Int
-                  (Cfg,
-                   Cfg.Prove_Steps,
-                   A (A'First + 8 .. A'Last),
-                   1,
-                   100_000_000,
-                   "--steps");
-             elsif A = "--memlimit" then
-                I := I + 1;
-                if I <= Count then
-                   Set_Prove_Int
-                     (Cfg,
-                      Cfg.Prove_Memlimit,
-                      Ada.Command_Line.Argument (I),
-                      1,
-                      1_000_000,
-                      "--memlimit");
-                else
-                   Set_Error (Cfg, "--memlimit requires an integer argument");
-                end if;
-             elsif Has_Prefix (A, "--memlimit=") then
-                Set_Prove_Int
-                  (Cfg,
-                   Cfg.Prove_Memlimit,
-                   A (A'First + 11 .. A'Last),
-                   1,
-                   1_000_000,
-                   "--memlimit");
-             elsif A = "--force" then
-                Cfg.Prove_Force := True;
-             elsif A = "--no-loop-unrolling" then
-                Cfg.Prove_No_Loop_Unroll := True;
-             elsif A = "--no-inlining" then
-                Cfg.Prove_No_Inlining := True;
-             elsif A = "--help" then
-                Cfg.Help_Requested := True;
-                Print_Usage;
-             end if;
+            elsif Has_Prefix (A, "--out=") then
+               Set_String
+                 (Cfg.SBOM_Out, Cfg.SBOM_Out_Len, A (A'First + 6 .. A'Last));
+            elsif A = "--jobs" or A = "-j" then
+               I := I + 1;
+               if I <= Count then
+                  Set_Prove_Int
+                    (Cfg,
+                     Cfg.Prove_Jobs,
+                     Ada.Command_Line.Argument (I),
+                     -1,
+                     1024,
+                     "--jobs");
+               else
+                  Set_Error (Cfg, "--jobs requires an integer argument");
+               end if;
+            elsif Has_Prefix (A, "--jobs=") then
+               Set_Prove_Int
+                 (Cfg,
+                  Cfg.Prove_Jobs,
+                  A (A'First + 7 .. A'Last),
+                  -1,
+                  1024,
+                  "--jobs");
+            elsif Has_Prefix (A, "-j") and then A'Length > 2 then
+               --  Combined short form: -j12
+               Set_Prove_Int
+                 (Cfg,
+                  Cfg.Prove_Jobs,
+                  A (A'First + 2 .. A'Last),
+                  -1,
+                  1024,
+                  "-j");
+            elsif A = "--level" then
+               I := I + 1;
+               if I <= Count then
+                  Set_Prove_Int
+                    (Cfg,
+                     Cfg.Prove_Level,
+                     Ada.Command_Line.Argument (I),
+                     0,
+                     4,
+                     "--level");
+               else
+                  Set_Error (Cfg, "--level requires an integer argument");
+               end if;
+            elsif Has_Prefix (A, "--level=") then
+               Set_Prove_Int
+                 (Cfg,
+                  Cfg.Prove_Level,
+                  A (A'First + 8 .. A'Last),
+                  0,
+                  4,
+                  "--level");
+            elsif A = "--timeout" then
+               I := I + 1;
+               if I <= Count then
+                  Set_Prove_Int
+                    (Cfg,
+                     Cfg.Prove_Timeout,
+                     Ada.Command_Line.Argument (I),
+                     1,
+                     3600,
+                     "--timeout");
+               else
+                  Set_Error (Cfg, "--timeout requires an integer argument");
+               end if;
+            elsif Has_Prefix (A, "--timeout=") then
+               Set_Prove_Int
+                 (Cfg,
+                  Cfg.Prove_Timeout,
+                  A (A'First + 10 .. A'Last),
+                  1,
+                  3600,
+                  "--timeout");
+            elsif A = "--steps" then
+               I := I + 1;
+               if I <= Count then
+                  Set_Prove_Int
+                    (Cfg,
+                     Cfg.Prove_Steps,
+                     Ada.Command_Line.Argument (I),
+                     1,
+                     100_000_000,
+                     "--steps");
+               else
+                  Set_Error (Cfg, "--steps requires an integer argument");
+               end if;
+            elsif Has_Prefix (A, "--steps=") then
+               Set_Prove_Int
+                 (Cfg,
+                  Cfg.Prove_Steps,
+                  A (A'First + 8 .. A'Last),
+                  1,
+                  100_000_000,
+                  "--steps");
+            elsif A = "--memlimit" then
+               I := I + 1;
+               if I <= Count then
+                  Set_Prove_Int
+                    (Cfg,
+                     Cfg.Prove_Memlimit,
+                     Ada.Command_Line.Argument (I),
+                     1,
+                     1_000_000,
+                     "--memlimit");
+               else
+                  Set_Error (Cfg, "--memlimit requires an integer argument");
+               end if;
+            elsif Has_Prefix (A, "--memlimit=") then
+               Set_Prove_Int
+                 (Cfg,
+                  Cfg.Prove_Memlimit,
+                  A (A'First + 11 .. A'Last),
+                  1,
+                  1_000_000,
+                  "--memlimit");
+            elsif A = "--force" then
+               Cfg.Prove_Force := True;
+            elsif A = "--no-loop-unrolling" then
+               Cfg.Prove_No_Loop_Unroll := True;
+            elsif A = "--no-inlining" then
+               Cfg.Prove_No_Inlining := True;
+            elsif A = "--help" then
+               Cfg.Help_Requested := True;
+               Print_Usage;
+            end if;
          end;
          I := I + 1;
       end loop;
