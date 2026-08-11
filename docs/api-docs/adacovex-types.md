@@ -14,6 +14,13 @@ builds on narrower hosts use proportionally smaller limits.
 type Component_Kind is (Root_Component, Dependency_Component);
 ```
 
+### type Component_Scope
+
+```ada
+type Component_Scope is
+(Scope_Base, Scope_Dev, Scope_Transitive, Scope_Vendored);
+```
+
 ### type DAL_Level
 
 ```ada
@@ -142,9 +149,7 @@ type Test_Status is (Pass, Fail);
 
 | Parameter | Description |
 |-----------|-------------|
-| `S` | Single-letter DAL code (A-E, case-insensitive). |
-
-**Returns:** Converted DAL_Level (defaults to DAL_C on failure).
+| `S` |  |
 
 ### function To_String (L : Adacovex.Types.DAL_Level) return Standard.String `[Post]` `[Global]`
 

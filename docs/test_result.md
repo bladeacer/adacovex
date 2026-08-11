@@ -5,10 +5,10 @@
   | Source scanner                           |  76 | PASS     |
   | GNATprove parser                         |  52 | PASS     |
   | Test-result parser                       |  43 | PASS     |
-  | CLI config                               |  11 | PASS     |
+  | CLI config                               |  19 | PASS     |
   | SVG renderer                             |  30 | PASS     |
   | SBOM generator                           |  53 | PASS     |
   | IR synthesis                             |  27 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 320  Failed: 0
+  Passed: 328  Failed: 0

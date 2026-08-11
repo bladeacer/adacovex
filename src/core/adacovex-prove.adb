@@ -40,6 +40,113 @@ package body Adacovex.Prove is
       end loop;
    end Copy_To;
 
+   --  Detect the number of logical CPUs on the host by counting "processor"
+   --  entries in /proc/cpuinfo (Linux).  Falls back to 1 when the file is
+   --  unreadable or absent.
+   function Detect_Core_Count return Natural is
+      use Ada.Text_IO;
+      F     : File_Type;
+      Count : Natural := 0;
+   begin
+      begin
+         Open (F, In_File, "/proc/cpuinfo");
+      exception
+         when others =>
+            return 1;
+      end;
+      while not End_Of_File (F) loop
+         declare
+            Line : constant String := Trim (Get_Line (F), Ada.Strings.Both);
+         begin
+            if Line'Length >= 9
+              and then Line (Line'First .. Line'First + 8) = "processor"
+            then
+               Count := Count + 1;
+            end if;
+         end;
+      end loop;
+      Close (F);
+      if Count = 0 then
+         return 1;
+      end if;
+      return Count;
+   end Detect_Core_Count;
+
+   --  Build the gnatprove option string (without the -P project pair).
+   --  Always forwards -j <jobs>; the resolved job count is passed in by the
+   --  caller (Opts.Jobs when >= 0, else a detected core count).  The other
+   --  switches are appended only when configured, so a default invocation
+   --  still parallelizes while remaining minimal.
+   function Build_Option_String
+     (Opts : Prove_Options; Jobs : Natural) return String
+   is
+      S : String (1 .. 512);
+      P : Natural := 0;
+
+      procedure App (T : String) is
+      begin
+         if P > 0 then
+            P := P + 1;
+            S (P) := ' ';
+         end if;
+         for I in T'Range loop
+            P := P + 1;
+            S (P) := T (I);
+         end loop;
+      end App;
+   begin
+      App ("-j" & Integer'Image (Jobs));
+      if Opts.Level >= 0 then
+         App ("--level" & Integer'Image (Opts.Level));
+      end if;
+      if Opts.Timeout >= 0 then
+         App ("--timeout" & Integer'Image (Opts.Timeout));
+      end if;
+      if Opts.Steps >= 0 then
+         App ("--steps" & Integer'Image (Opts.Steps));
+      end if;
+      if Opts.Memlimit >= 0 then
+         App ("--memlimit" & Integer'Image (Opts.Memlimit));
+      end if;
+      if Opts.Force then
+         App ("-f");
+      end if;
+      if Opts.No_Loop_Unrolling then
+         App ("--no-loop-unrolling");
+      end if;
+      if Opts.No_Inlining then
+         App ("--no-inlining");
+      end if;
+      return S (1 .. P);
+   end Build_Option_String;
+
+   --  Split a space-separated option string into individual Argument_List
+   --  entries (option values never contain spaces).  Appends to Args at N.
+   procedure Append_Option_Tokens
+     (Args   : in out GNAT.OS_Lib.Argument_List;
+      N      : in out Natural;
+      Tokens : String)
+   is
+      Start : Natural := Tokens'First;
+   begin
+      while Start <= Tokens'Last loop
+         while Start <= Tokens'Last and then Tokens (Start) = ' ' loop
+            Start := Start + 1;
+         end loop;
+         exit when Start > Tokens'Last;
+         declare
+            Stop : Natural := Start;
+         begin
+            while Stop < Tokens'Last and then Tokens (Stop + 1) /= ' ' loop
+               Stop := Stop + 1;
+            end loop;
+            N := N + 1;
+            Args (N) := new String'(Tokens (Start .. Stop));
+            Start := Stop + 1;
+         end;
+      end loop;
+   end Append_Option_Tokens;
+
    procedure Run_Command
      (Args        : GNAT.OS_Lib.Argument_List;
       Output_File : String;
@@ -371,6 +478,7 @@ package body Adacovex.Prove is
    procedure Build_Dev_Exec_Script
      (Target_Dir : String;
       GPR_Path   : String;
+      Options    : String;
       Script     : out String;
       Script_Len : out Natural;
       Success    : out Boolean)
@@ -419,7 +527,11 @@ package body Adacovex.Prove is
          Append ("  rmdir ""$_b"" 2>/dev/null || true" & ASCII.LF);
          Append ("}" & ASCII.LF);
          Append ("trap _restore EXIT INT TERM" & ASCII.LF);
-         Append ("alr exec -- gnatprove -P " & Q (GPR_Path) & ASCII.LF);
+         Append ("alr exec -- gnatprove -P " & Q (GPR_Path));
+         if Options'Length > 0 then
+            Append (" " & Options);
+         end if;
+         Append ("" & ASCII.LF);
          Append ("_s=$?" & ASCII.LF);
          Append ("exit $_s" & ASCII.LF);
       exception
@@ -431,7 +543,9 @@ package body Adacovex.Prove is
       Success := True;
    end Build_Dev_Exec_Script;
 
-   procedure Run_Prove (Target_Dir : String; Success : out Boolean) is
+   procedure Run_Prove
+     (Target_Dir : String; Opts : Prove_Options; Success : out Boolean)
+   is
       Exe     : String (1 .. Types.Max_Path);
       Exe_Len : Natural := 0;
       TDir    : String (1 .. Types.Max_Path);
@@ -441,8 +555,11 @@ package body Adacovex.Prove is
       Via_Alr : Boolean := False;
       OK      : Boolean;
       Code    : Integer;
-      Args    : GNAT.OS_Lib.Argument_List (1 .. 7);
+      Args    : GNAT.OS_Lib.Argument_List (1 .. 40);
       N       : Natural := 0;
+      Jobs    : Natural := 0;
+      Options : String (1 .. 512);
+      OLen    : Natural := 0;
    begin
       Resolve_GNATprove (Target_Dir, Exe, Exe_Len, TDir, TLen, Via_Alr, OK);
       if not OK then
@@ -459,15 +576,26 @@ package body Adacovex.Prove is
          return;
       end if;
 
+      --  Resolve the parallelism: explicit --jobs (0 = all cores, N > 0 =
+      --  N processes) or the detected core count when unset.  The sane
+      --  default of all detected cores applies automatically on CI.
+      if Opts.Jobs >= 0 then
+         Jobs := Natural (Opts.Jobs);
+      else
+         Jobs := Detect_Core_Count;
+      end if;
+      Copy_To (Options, OLen, Build_Option_String (Opts, Jobs));
+
       Ada.Text_IO.Put_Line
         ("  gnatprove: "
          & (if Via_Alr
             then "alr exec -- gnatprove (alire-managed)"
             else Exe (1 .. Exe_Len)));
       Ada.Text_IO.Put_Line ("  project:   " & GPR (1 .. GLen));
+      Ada.Text_IO.Put_Line ("  options:   " & Options (1 .. OLen));
 
       --  When resolved via alire, spawn `alr -C <target> exec -- gnatprove
-      --  -P <gpr>`; alire sets up the toolchain environment itself.
+      --  -P <gpr> <options>`; alire sets up the toolchain environment itself.
       if Via_Alr and then not Gnatprove_Dev_Only (Target_Dir) then
          Args (1) := new String'("-C");
          Args (2) := new String'(Strip_Trailing_Slash (Target_Dir));
@@ -477,6 +605,7 @@ package body Adacovex.Prove is
          Args (6) := new String'("-P");
          Args (7) := new String'(GPR (1 .. GLen));
          N := 7;
+         Append_Option_Tokens (Args, N, Options (1 .. OLen));
          Spawn (Exe (1 .. Exe_Len), Args (1 .. N), "/dev/stdout", OK, Code);
          for I in 1 .. N loop
             GNAT.OS_Lib.Free (Args (I));
@@ -497,6 +626,7 @@ package body Adacovex.Prove is
             Build_Dev_Exec_Script
               (Strip_Trailing_Slash (Target_Dir),
                GPR (1 .. GLen),
+               Options (1 .. OLen),
                Script,
                SLen,
                OK);
@@ -532,6 +662,7 @@ package body Adacovex.Prove is
          Args (1) := new String'("-P");
          Args (2) := new String'(GPR (1 .. GLen));
          N := 2;
+         Append_Option_Tokens (Args, N, Options (1 .. OLen));
          Spawn (Exe (1 .. Exe_Len), Args (1 .. N), "/dev/stdout", OK, Code);
          for I in 1 .. N loop
             GNAT.OS_Lib.Free (Args (I));

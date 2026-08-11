@@ -57,16 +57,16 @@ package body Adacovex.Renderers.SBOM is
    is
    begin
       case Scope is
-         when Types.Scope_Base      =>
+         when Types.Scope_Base       =>
             return "base";
 
-         when Types.Scope_Dev       =>
+         when Types.Scope_Dev        =>
             return "dev";
 
          when Types.Scope_Transitive =>
             return "transitive";
 
-         when Types.Scope_Vendored  =>
+         when Types.Scope_Vendored   =>
             return "vendored";
       end case;
    end Scope_Property;

@@ -196,11 +196,11 @@ package Adacovex.Types is
          PURL_Len        : Natural := 0;
          Description     : Path_Field;
          Description_Len : Natural := 0;
-          Kind            : Component_Kind := Dependency_Component;
-          Parent          : Natural := 0;
-          From_GPR        : Boolean := False;
-          Scope           : Component_Scope := Scope_Transitive;
-       end record;
+         Kind            : Component_Kind := Dependency_Component;
+         Parent          : Natural := 0;
+         From_GPR        : Boolean := False;
+         Scope           : Component_Scope := Scope_Transitive;
+      end record;
 
       package Component_Vectors is new
         Ada.Containers.Vectors (Positive, Component_Info);
