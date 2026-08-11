@@ -8,7 +8,10 @@ with Adacovex.Types;
 --  adacovex:proof_level (Gold | Platinum) and adacovex:dal_target
 --  (DAL-A through DAL-D) properties.  Dependency components report
 --  adacovex:proof_level = "Not proved": adacovex only proves the target
---  itself, never third-party dependencies.
+--  itself, never third-party dependencies.  Every dependency component also
+--  carries an adacovex:dep_scope property ("base" | "dev" | "transitive" |
+--  "vendored") distinguishing publishing (alire.toml), development-only
+--  (alire-dev.toml), transitive, and patched-vendored packages.
 --  HLR-SBOM: SBOM generation
 
 package Adacovex.Renderers.SBOM is
@@ -36,6 +39,19 @@ package Adacovex.Renderers.SBOM is
    with
      SPARK_Mode => On,
      Post       => DAL_Property_Value'Result'Length <= 5,
+     Global     => null;
+
+   --  Map a dependency scope to the adacovex:dep_scope property value
+   --  ("base", "dev", "transitive", or "vendored").  Base dependencies are
+   --  declared in the publishing alire.toml, dev dependencies only in
+   --  alire-dev.toml, transitive ones in neither manifest, and vendored
+   --  packages are overlaid by a .adacovex/patches/ docstring patch.
+   --  @param Scope  Component dependency scope.
+   --  @return "base", "dev", "transitive", or "vendored".
+   function Scope_Property (Scope : Types.Component_Scope) return String
+   with
+     SPARK_Mode => On,
+     Post       => Scope_Property'Result'Length in 4 .. 10,
      Global     => null;
 
    --  Write an SBOM in the requested format to Out_Path.

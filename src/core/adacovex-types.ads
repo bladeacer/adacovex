@@ -65,6 +65,16 @@ package Adacovex.Types is
    --  dependency resolved from the dependency graph.
    type Component_Kind is (Root_Component, Dependency_Component);
 
+   --  Dependency scope for an SBOM component: whether it is a publishing
+   --  dependency declared in alire.toml (base), a development-only dependency
+   --  declared only in alire-dev.toml (dev), a transitive crate resolved from
+   --  alire.lock or GPR with clauses that no manifest names directly
+   --  (transitive), or a vendored package overlaid by a .adacovex/patches/
+   --  docstring patch (vendored).
+   --  HLR-SBOM: SBOM dependency scope
+   type Component_Scope is
+     (Scope_Base, Scope_Dev, Scope_Transitive, Scope_Vendored);
+
    type Subprogram_Info is record
       Name          : Desc_Field;
       Name_Len      : Natural := 0;
@@ -186,10 +196,11 @@ package Adacovex.Types is
          PURL_Len        : Natural := 0;
          Description     : Path_Field;
          Description_Len : Natural := 0;
-         Kind            : Component_Kind := Dependency_Component;
-         Parent          : Natural := 0;
-         From_GPR        : Boolean := False;
-      end record;
+          Kind            : Component_Kind := Dependency_Component;
+          Parent          : Natural := 0;
+          From_GPR        : Boolean := False;
+          Scope           : Component_Scope := Scope_Transitive;
+       end record;
 
       package Component_Vectors is new
         Ada.Containers.Vectors (Positive, Component_Info);

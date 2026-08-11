@@ -1,6 +1,5 @@
-environment:PATH=gprbuild_26.0.1_e3f27f25/bin:gnatprove_15.1.0_aad9a73f/bin:gnatformat_bin_26.0.0_0b48324d/bin:gnatdoc_bin_26.0.0_a3a91ecf/bin:gnat_native_16.1.0_9f74f58a/bin:covex_1.7.0_filesystem/bin:/home/data/.local/bin:/home/data/go/bin:/home/data/.cargo/bin:~/Desktop/projects/mnemosync:~/.local/bin:~/go/bin:/home/data/.local/bin:/home/data/go/bin:/home/data/.cargo/bin:~/Desktop/projects/mnemosync:~/.local/bin:~/go/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/var/lib/flatpak/exports/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl
+environment:PATH=gprbuild_26.0.1_e3f27f25/bin:gnat_native_16.1.0_9f74f58a/bin:covex_1.7.0_filesystem/bin:/home/data/.local/bin:/home/data/go/bin:/home/data/.cargo/bin:/home/data/.local/bin:/home/data/go/bin:/home/data/.cargo/bin:~/Desktop/projects/mnemosync:~/.local/bin:~/go/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/var/lib/flatpak/exports/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl
 external:COVEX_LIBRARY_TYPE=default
 external:LIBRARY_TYPE=default
-profile:covex=RELEASE
-switches:covex=-O3,-fdata-sections,-ffunction-sections,-gnatW8,-gnatn
-version:gnat_native=16.1.0
+profile:covex=DEVELOPMENT
+switches:covex=-Og,-fdata-sections,-ffunction-sections,-g,-gnatVa,-gnatW8,-gnatw.X,-gnatwa,-gnaty-d,-gnaty3,-gnatyA,-gnatyB,-gnatyI,-gnatyO,-gnatyS,-gnatya,-gnatyb,-gnatyc,-gnatye,-gnatyf,-gnatyh,-gnatyi,-gnatyk,-gnatyl,-gnatym,-gnatyn,-gnatyp,-gnatyr,-gnatyt,-gnatyu,-gnatyx
