@@ -27,14 +27,14 @@ package Adacovex.Prove is
    --  auto-detected parallelism means CI and the local make targets use every
    --  core without any flag, while users can pin --jobs=12 (or -j12).
    type Prove_Options is record
-      Jobs             : Integer := -1;
-      Level            : Integer := -1;
-      Timeout          : Integer := -1;
-      Steps            : Integer := -1;
-      Memlimit         : Integer := -1;
-      Force            : Boolean := False;
+      Jobs              : Integer := -1;
+      Level             : Integer := -1;
+      Timeout           : Integer := -1;
+      Steps             : Integer := -1;
+      Memlimit          : Integer := -1;
+      Force             : Boolean := False;
       No_Loop_Unrolling : Boolean := False;
-      No_Inlining      : Boolean := False;
+      No_Inlining       : Boolean := False;
    end record;
 
    --  Detect the number of logical CPUs on the host.  Reads /proc/cpuinfo
@@ -51,8 +51,8 @@ package Adacovex.Prove is
    --  @param Opts  GNATprove options.
    --  @param Jobs  Resolved job count to forward (-j value).
    --  @return Space-separated gnatprove option string.
-   function Build_Option_String (Opts : Prove_Options; Jobs : Natural)
-     return String;
+   function Build_Option_String
+     (Opts : Prove_Options; Jobs : Natural) return String;
 
    --  Resolve how to run gnatprove for a target project.
    --  Priority: alire-managed (Via_Alr => True), then PATH, then
@@ -103,8 +103,6 @@ package Adacovex.Prove is
    --  @param Opts  GNATprove invocation options.
    --  @param Success  True if gnatprove ran and exited 0.
    procedure Run_Prove
-     (Target_Dir : String;
-      Opts       : Prove_Options;
-      Success    : out Boolean);
+     (Target_Dir : String; Opts : Prove_Options; Success : out Boolean);
 
 end Adacovex.Prove;
