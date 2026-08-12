@@ -99,10 +99,11 @@ package body Adacovex.Config is
       Cfg.Manifest_Len := 0;
       Cfg.SVG_Path_Len := 0;
       Cfg.MD_Path_Len := 0;
-      Cfg.Skip_Dir_Ct := 0;
-      Cfg.Compare_Base_Len := 0;
-      Cfg.Coverage_Delta_Len := 0;
-      Cfg.SBOM_Out_Len := 0;
+       Cfg.Skip_Dir_Ct := 0;
+       Cfg.Compare_Base_Len := 0;
+       Cfg.Coverage_Delta_Len := 0;
+       Cfg.SBOM_Out_Len := 0;
+       Cfg.Cache_Dir_Len := 0;
 
       while I <= Count loop
          declare
@@ -233,7 +234,52 @@ package body Adacovex.Config is
             elsif A = "--verbose" then
                Cfg.Verbose := True;
             elsif A = "--relaxed" then
-               Cfg.Strict_Mode := False;
+                Cfg.Strict_Mode := False;
+            elsif A = "--cache" then
+                Cfg.Cache_Enabled := True;
+            elsif A = "--no-cache" then
+                Cfg.Cache_Enabled := False;
+            elsif A = "--cache-dir" then
+                I := I + 1;
+                if I <= Count then
+                   Set_String
+                     (Cfg.Cache_Dir, Cfg.Cache_Dir_Len,
+                      Ada.Command_Line.Argument (I));
+                else
+                   Set_Error (Cfg, "--cache-dir requires a directory argument");
+                end if;
+            elsif Has_Prefix (A, "--cache-dir=") then
+                Set_String
+                  (Cfg.Cache_Dir, Cfg.Cache_Dir_Len, A (A'First + 12 .. A'Last));
+            elsif A = "--cache-max" then
+                I := I + 1;
+                if I <= Count then
+                   begin
+                      Cfg.Cache_Max_Entries :=
+                        Natural'Value (Ada.Command_Line.Argument (I));
+                   exception
+                      when Constraint_Error =>
+                         Set_Error
+                           (Cfg,
+                            "--cache-max must be a positive integer (got: "
+                            & Ada.Command_Line.Argument (I)
+                            & ")");
+                   end;
+                else
+                   Set_Error (Cfg, "--cache-max requires an integer argument");
+                end if;
+            elsif Has_Prefix (A, "--cache-max=") then
+                begin
+                   Cfg.Cache_Max_Entries :=
+                     Natural'Value (A (A'First + 12 .. A'Last));
+                exception
+                   when Constraint_Error =>
+                      Set_Error
+                        (Cfg,
+                         "--cache-max must be a positive integer (got: "
+                         & A (A'First + 12 .. A'Last)
+                         & ")");
+                end;
             elsif A = "--skip-dir" then
                I := I + 1;
                if I <= Count then
@@ -689,8 +735,16 @@ package body Adacovex.Config is
         ("  --emit-markdown=PATH  Write VERIFICATION.md + TRACE.md");
       Ada.Text_IO.Put_Line
         ("  --skip-dir=NAME       Add directory name to skip list (repeatable)");
-      Ada.Text_IO.Put_Line
-        ("  --relaxed             Disable strict mode (skip dirs, no patches); strict is default");
+       Ada.Text_IO.Put_Line
+         ("  --relaxed             Disable strict mode (skip dirs, no patches); strict is default");
+       Ada.Text_IO.Put_Line
+         ("  --cache               Enable result caching (default: on)");
+       Ada.Text_IO.Put_Line
+         ("  --no-cache            Disable result caching (always re-scan/re-prove)");
+       Ada.Text_IO.Put_Line
+         ("  --cache-dir=PATH      Cache directory (default: ~/.adacovex/cache/<ver>)");
+       Ada.Text_IO.Put_Line
+         ("  --cache-max=N         Max cache entries before eviction (default: 4096)");
       Ada.Text_IO.Put_Line
         ("  --compare-base=REF    Differential mode: compare against a git base");
       Ada.Text_IO.Put_Line

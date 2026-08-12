@@ -34,6 +34,14 @@ package Adacovex.Parsers.GNATprove is
       Success    : out Boolean)
    with Pre => Target_Dir'Length > 0;
 
+   --  Return the path of the first existing GNATprove output file under
+   --  Target_Dir, or "" if none is present.  Used by the result cache to key
+   --  a cached proof summary to the exact artifact analyzed.
+   --  @param Target_Dir  Root directory to inspect.
+   --  @return Path to a discovered gnatprove.out, or "".
+   function Find_Prove_Output (Target_Dir : String) return String
+   with Pre => Target_Dir'Length > 0;
+
    --  Parse VC summary from a JSON file containing GNATprove results.
    --  Expects top-level keys: "total_vcs", "proved_vcs", "unproved_vcs",
    --  "flow_deps", "flow_proved", etc.

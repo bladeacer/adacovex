@@ -167,6 +167,10 @@ adacovex sbom [--format=cyclonedx-json|spdx-json] [--out=PATH]
 | `--relaxed` | off | both | Disable strict mode |
 | `--compare-base=REF` | off | both | Differential mode vs a git base ref |
 | `--coverage-delta=REF` | off | both | Docstring-coverage gate vs a git base ref |
+| `--cache` | on | both | Enable on-disk result caching |
+| `--no-cache` | off | both | Disable result caching (always re-scan/re-parse/re-prove) |
+| `--cache-dir=PATH` | `~/.adacovex/cache/<ver>` | both | Cache directory for analysis results |
+| `--cache-max=N` | `4096` | both | Max cache entries before oldest-first eviction |
 | `--verbose` | off | both | Verbose diagnostics |
 | `--help` | - | both | Print usage and exit |
 

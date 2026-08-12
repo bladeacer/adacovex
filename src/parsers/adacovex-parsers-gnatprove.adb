@@ -1,6 +1,9 @@
 with Ada.Text_IO;
+with Ada.Directories;
 
 package body Adacovex.Parsers.GNATprove is
+
+   use Ada.Directories;
 
    function Get_Nth_Number_Raw (S : String; N : Positive) return Natural is
       Val    : Natural := 0;
@@ -248,6 +251,24 @@ package body Adacovex.Parsers.GNATprove is
       end if;
       Parse_Prove_Out (Path3, Summary, Success);
    end Parse_Prove_From_Project;
+
+   function Find_Prove_Output (Target_Dir : String) return String is
+      function Exists_At (P : String) return Boolean is
+      begin
+         return Exists (P) and then Kind (P) = Ordinary_File;
+      end Exists_At;
+   begin
+      if Exists_At (Target_Dir & "/obj/gnatprove/gnatprove.out") then
+         return Target_Dir & "/obj/gnatprove/gnatprove.out";
+      end if;
+      if Exists_At (Target_Dir & "/gnatprove.out") then
+         return Target_Dir & "/gnatprove.out";
+      end if;
+      if Exists_At (Target_Dir & "/gnatprove/gnatprove.out") then
+         return Target_Dir & "/gnatprove/gnatprove.out";
+      end if;
+      return "";
+   end Find_Prove_Output;
 
    procedure Parse_Prove_JSON
      (File_Path : String;

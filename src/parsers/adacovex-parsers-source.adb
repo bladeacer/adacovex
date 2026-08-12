@@ -1,8 +1,12 @@
 with Ada.Text_IO;
 with Ada.Directories;
 with Ada.Containers.Vectors;
+with Adacovex.Cache;
 
 package body Adacovex.Parsers.Source is
+
+   package Package_Store is
+     new Adacovex.Cache.Serialization (Types.Implementation.Package_Info);
 
    function Is_Subprogram_Decl (Line : String) return Boolean is
       Trim : String (1 .. Line'Length);
@@ -810,5 +814,197 @@ package body Adacovex.Parsers.Source is
 
       return Metrics;
    end Compute_Docstring_Metrics;
+
+   procedure Scan_Project_Cached
+     (Target_Dir : String;
+      Skip_List  : String;
+      Packages   : in out Types.Implementation.Package_Vectors.Vector;
+      Skipped_Ct : out Natural;
+      Hits       : out Natural;
+      Misses     : out Natural;
+      Use_Cache  : Boolean := True)
+   is
+      type Dir_Entry is record
+         Path : Types.Path_Field;
+         Len  : Natural := 0;
+      end record;
+      package Dir_Stacks is new Ada.Containers.Vectors (Positive, Dir_Entry);
+      Dir_Stack : Dir_Stacks.Vector;
+
+      use Ada.Directories;
+      Search : Search_Type;
+      Ent    : Directory_Entry_Type;
+      Pkg    : Types.Implementation.Package_Info;
+      OK     : Boolean;
+      Key    : String (1 .. 72);
+      Key_L  : Natural;
+      Blob   : String (1 .. Adacovex.Cache.Max_Cache_Blob);
+      Blen   : Natural;
+      Found  : Boolean;
+
+      procedure Push_Dir (Dir : String) is
+      begin
+         if Dir'Length <= Types.Max_Path then
+            declare
+               Item : Dir_Entry;
+            begin
+               Item.Len := Dir'Length;
+               for I in Dir'Range loop
+                  Item.Path (I - Dir'First + 1) := Dir (I);
+               end loop;
+               Dir_Stack.Append (Item);
+            end;
+         else
+            Ada.Text_IO.Put_Line
+              (Ada.Text_IO.Standard_Error,
+               "Error: "
+               & Dir
+               & ": directory path exceeds Max_Path buffer; subtree not scanned");
+         end if;
+      end Push_Dir;
+
+   begin
+      Hits := 0;
+      Misses := 0;
+      Skipped_Ct := 0;
+      Push_Dir (Target_Dir);
+
+      while not Dir_Stack.Is_Empty loop
+         declare
+            Current  : Dir_Entry := Dir_Stack.Last_Element;
+            Dir_Path : String renames Current.Path (1 .. Current.Len);
+         begin
+            Dir_Stack.Delete_Last;
+
+            Start_Search (Search, Dir_Path, "");
+            begin
+               while More_Entries (Search) loop
+                  Get_Next_Entry (Search, Ent);
+                  declare
+                     Name : constant String := Simple_Name (Ent);
+                     Path : constant String := Full_Name (Ent);
+                  begin
+                     if Kind (Ent) = Directory then
+                        if Name /= "."
+                          and Name /= ".."
+                          and Name /= ".git"
+                          and Name /= "obj"
+                          and Name /= "tests"
+                          and Name /= "config"
+                          and Name /= ".adacovex"
+                          and not Is_Skipped_Dir (Name, Skip_List)
+                        then
+                           Push_Dir (Path);
+                        end if;
+                     elsif Kind (Ent) = Ordinary_File then
+                        declare
+                           Dot : Natural := 0;
+                        begin
+                           for I in reverse Name'Range loop
+                              if Name (I) = '.' then
+                                 Dot := I;
+                                 exit;
+                              end if;
+                           end loop;
+                           if Dot > 0
+                             and then Name (Dot .. Name'Last) = ".ads"
+                             and then (Name'Length < 3
+                                       or else Name
+                                                 (Name'First .. Name'First + 2)
+                                               /= "b__")
+                           then
+                              if Path'Length > Types.Max_Path then
+                                 Ada.Text_IO.Put_Line
+                                   (Ada.Text_IO.Standard_Error,
+                                    "Error: "
+                                    & Path
+                                    & ": file path exceeds Max_Path buffer; "
+                                    & "file not scanned");
+                                 Skipped_Ct := Skipped_Ct + 1;
+                              else
+                                 if Use_Cache then
+                                    declare
+                                       F_Hash : constant String :=
+                                         Adacovex.Cache.Hash_File (Path);
+                                 begin
+                                    if F_Hash'Length >= 3 then
+                                       --  Sized cache key: "scan:" + sha256.
+                                       Key (1 .. 5) := "scan:";
+                                       Key (6 .. 5 + F_Hash'Length) := F_Hash;
+                                       Key_L := 5 + F_Hash'Length;
+                                       Adacovex.Cache.Get_Cached
+                                         (Key (1 .. Key_L), Blob, Blen, Found);
+                                       if Found then
+                                          if Package_Store.Deserialize
+                                            (Blob (1 .. Blen), Pkg)
+                                          then
+                                             Packages.Append (Pkg);
+                                             Hits := Hits + 1;
+                                          else
+                                             --  Corrupt blob: fall back to a
+                                             --  fresh scan.
+                                             Scan_Ads_File (Path, Pkg, OK);
+                                             if OK then
+                                                Packages.Append (Pkg);
+                                                Misses := Misses + 1;
+                                             else
+                                                Skipped_Ct := Skipped_Ct + 1;
+                                             end if;
+                                          end if;
+                                       else
+                                          Scan_Ads_File (Path, Pkg, OK);
+                                          if OK then
+                                             Packages.Append (Pkg);
+                                             Misses := Misses + 1;
+                                             declare
+                                                S_Blob : constant String :=
+                                                  Package_Store.Serialize (Pkg);
+                                             begin
+                                                Adacovex.Cache.Put_Cached
+                                                  (Key (1 .. Key_L),
+                                                   S_Blob,
+                                                   OK);
+                                             end;
+                                          else
+                                             Skipped_Ct := Skipped_Ct + 1;
+                                          end if;
+                                       end if;
+                                    else
+                                       --  Unhashable file (e.g. unreadable):
+                                       --  scan directly.
+                                       Scan_Ads_File (Path, Pkg, OK);
+                                       if OK then
+                                          Packages.Append (Pkg);
+                                          Misses := Misses + 1;
+                                       else
+                                          Skipped_Ct := Skipped_Ct + 1;
+                                       end if;
+                                    end if;
+                                 end;
+                              else
+                                 --  Cache disabled (--no-cache): rescan.
+                                 Scan_Ads_File (Path, Pkg, OK);
+                                 if OK then
+                                    Packages.Append (Pkg);
+                                    Misses := Misses + 1;
+                                 else
+                                    Skipped_Ct := Skipped_Ct + 1;
+                                 end if;
+                              end if;
+                           end if;
+                           end if;
+                        end;
+                     end if;
+                  end;
+               end loop;
+            exception
+               when others =>
+                  End_Search (Search);
+                  raise;
+            end;
+            End_Search (Search);
+         end;
+      end loop;
+   end Scan_Project_Cached;
 
 end Adacovex.Parsers.Source;

@@ -32,7 +32,10 @@ package body Adacovex.Renderers.ANSI is
       Tests       : Types.Implementation.Test_Summary;
       DAL_Assess  : Types.Implementation.DAL_Assessment;
       Packages    : Types.Implementation.Package_Vectors.Vector;
-      Use_Color   : Boolean := False) is
+      Use_Color   : Boolean := False;
+      Cache_Hits  : Natural := 0;
+      Cache_Misses : Natural := 0;
+      Cache_Evictions : Natural := 0) is
    begin
       Ada.Text_IO.Put ("  scanning sources... ");
       Put_Color ("37", Enable => Use_Color);
@@ -41,6 +44,17 @@ package body Adacovex.Renderers.ANSI is
       Ada.Text_IO.Put
         (Natural'Image (Doc_Metrics.Total_Subprograms) & " subprograms");
       Reset_Color (Enable => Use_Color);
+      Ada.Text_IO.New_Line;
+
+      --  Result cache effectiveness
+      Ada.Text_IO.Put ("  result cache: ");
+      Ada.Text_IO.Put
+        (Natural'Image (Cache_Hits)
+         & " hit(s),"
+         & Natural'Image (Cache_Misses)
+         & " miss(es),"
+         & Natural'Image (Cache_Evictions)
+         & " evicted");
       Ada.Text_IO.New_Line;
 
       --  Docstring coverage

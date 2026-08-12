@@ -78,6 +78,28 @@ package Adacovex.Parsers.Source is
       Packages   : in out Types.Implementation.Package_Vectors.Vector;
       Skipped_Ct : out Natural);
 
+   --  Like Scan_Project, but each .ads file is keyed in the on-disk result
+   --  cache by its content hash (SHA-256).  Unchanged files are served from
+   --  the cache without re-scanning; changed files are rescanned and the
+   --  cache entry is refreshed.  Hits/Misses report how many files were
+   --  served from / written to the cache.
+   --  @param Target_Dir  Root directory to scan recursively.
+   --  @param Skip_List  Comma-separated directory names to skip.
+   --  @param Packages  Output vector of parsed packages (appended to).
+   --  @param Skipped_Ct  Number of .ads files skipped (line/path overflow).
+   --  @param Hits  Number of files served from the cache.
+   --  @param Misses  Number of files rescanned and re-cached.
+   --  @param Use_Cache  When False the cache is bypassed and every file is
+   --  rescanned (reported as a miss); caller controls this from --no-cache.
+   procedure Scan_Project_Cached
+     (Target_Dir : String;
+      Skip_List  : String;
+      Packages   : in out Types.Implementation.Package_Vectors.Vector;
+      Skipped_Ct : out Natural;
+      Hits       : out Natural;
+      Misses     : out Natural;
+      Use_Cache  : Boolean := True);
+
    --  Apply docstring patches to scanned packages.
    --  For each package, checks for a patch file at
    --  <Target_Dir>/.adacovex/patches/<relative-path> and merges its
