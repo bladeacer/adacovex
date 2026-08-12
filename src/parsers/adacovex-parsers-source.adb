@@ -5,8 +5,8 @@ with Adacovex.Cache;
 
 package body Adacovex.Parsers.Source is
 
-   package Package_Store is
-     new Adacovex.Cache.Serialization (Types.Implementation.Package_Info);
+   package Package_Store is new
+     Adacovex.Cache.Serialization (Types.Implementation.Package_Info);
 
    function Is_Subprogram_Decl (Line : String) return Boolean is
       Trim : String (1 .. Line'Length);
@@ -926,72 +926,80 @@ package body Adacovex.Parsers.Source is
                                     declare
                                        F_Hash : constant String :=
                                          Adacovex.Cache.Hash_File (Path);
-                                 begin
-                                    if F_Hash'Length >= 3 then
-                                       --  Sized cache key: "scan:" + sha256.
-                                       Key (1 .. 5) := "scan:";
-                                       Key (6 .. 5 + F_Hash'Length) := F_Hash;
-                                       Key_L := 5 + F_Hash'Length;
-                                       Adacovex.Cache.Get_Cached
-                                         (Key (1 .. Key_L), Blob, Blen, Found);
-                                       if Found then
-                                          if Package_Store.Deserialize
-                                            (Blob (1 .. Blen), Pkg)
-                                          then
-                                             Packages.Append (Pkg);
-                                             Hits := Hits + 1;
+                                    begin
+                                       if F_Hash'Length >= 3 then
+                                          --  Sized cache key: "scan:" + sha256.
+                                          Key (1 .. 5) := "scan:";
+                                          Key (6 .. 5 + F_Hash'Length) :=
+                                            F_Hash;
+                                          Key_L := 5 + F_Hash'Length;
+                                          Adacovex.Cache.Get_Cached
+                                            (Key (1 .. Key_L),
+                                             Blob,
+                                             Blen,
+                                             Found);
+                                          if Found then
+                                             if Package_Store.Deserialize
+                                                  (Blob (1 .. Blen), Pkg)
+                                             then
+                                                Packages.Append (Pkg);
+                                                Hits := Hits + 1;
+                                             else
+                                                --  Corrupt blob: fall back to a
+                                                --  fresh scan.
+                                                Scan_Ads_File (Path, Pkg, OK);
+                                                if OK then
+                                                   Packages.Append (Pkg);
+                                                   Misses := Misses + 1;
+                                                else
+                                                   Skipped_Ct :=
+                                                     Skipped_Ct + 1;
+                                                end if;
+                                             end if;
                                           else
-                                             --  Corrupt blob: fall back to a
-                                             --  fresh scan.
                                              Scan_Ads_File (Path, Pkg, OK);
                                              if OK then
                                                 Packages.Append (Pkg);
                                                 Misses := Misses + 1;
+                                                declare
+                                                   S_Blob : constant String :=
+                                                     Package_Store.Serialize
+                                                       (Pkg);
+                                                begin
+                                                   if S_Blob'Length > 0 then
+                                                      Adacovex.Cache.Put_Cached
+                                                        (Key (1 .. Key_L),
+                                                         S_Blob,
+                                                         OK);
+                                                   end if;
+                                                end;
                                              else
                                                 Skipped_Ct := Skipped_Ct + 1;
                                              end if;
                                           end if;
                                        else
+                                          --  Unhashable file (e.g. unreadable):
+                                          --  scan directly.
                                           Scan_Ads_File (Path, Pkg, OK);
                                           if OK then
                                              Packages.Append (Pkg);
                                              Misses := Misses + 1;
-                                             declare
-                                                S_Blob : constant String :=
-                                                  Package_Store.Serialize (Pkg);
-                                             begin
-                                                Adacovex.Cache.Put_Cached
-                                                  (Key (1 .. Key_L),
-                                                   S_Blob,
-                                                   OK);
-                                             end;
                                           else
                                              Skipped_Ct := Skipped_Ct + 1;
                                           end if;
                                        end if;
-                                    else
-                                       --  Unhashable file (e.g. unreadable):
-                                       --  scan directly.
-                                       Scan_Ads_File (Path, Pkg, OK);
-                                       if OK then
-                                          Packages.Append (Pkg);
-                                          Misses := Misses + 1;
-                                       else
-                                          Skipped_Ct := Skipped_Ct + 1;
-                                       end if;
-                                    end if;
-                                 end;
-                              else
-                                 --  Cache disabled (--no-cache): rescan.
-                                 Scan_Ads_File (Path, Pkg, OK);
-                                 if OK then
-                                    Packages.Append (Pkg);
-                                    Misses := Misses + 1;
+                                    end;
                                  else
-                                    Skipped_Ct := Skipped_Ct + 1;
+                                    --  Cache disabled (--no-cache): rescan.
+                                    Scan_Ads_File (Path, Pkg, OK);
+                                    if OK then
+                                       Packages.Append (Pkg);
+                                       Misses := Misses + 1;
+                                    else
+                                       Skipped_Ct := Skipped_Ct + 1;
+                                    end if;
                                  end if;
                               end if;
-                           end if;
                            end if;
                         end;
                      end if;

@@ -27,14 +27,14 @@ package body Adacovex.Renderers.ANSI is
    end Reset_Color;
 
    procedure Render_Summary
-     (Doc_Metrics : Types.Docstring_Metrics;
-      Proof       : Types.Proof_Summary;
-      Tests       : Types.Implementation.Test_Summary;
-      DAL_Assess  : Types.Implementation.DAL_Assessment;
-      Packages    : Types.Implementation.Package_Vectors.Vector;
-      Use_Color   : Boolean := False;
-      Cache_Hits  : Natural := 0;
-      Cache_Misses : Natural := 0;
+     (Doc_Metrics     : Types.Docstring_Metrics;
+      Proof           : Types.Proof_Summary;
+      Tests           : Types.Implementation.Test_Summary;
+      DAL_Assess      : Types.Implementation.DAL_Assessment;
+      Packages        : Types.Implementation.Package_Vectors.Vector;
+      Use_Color       : Boolean := False;
+      Cache_Hits      : Natural := 0;
+      Cache_Misses    : Natural := 0;
       Cache_Evictions : Natural := 0) is
    begin
       Ada.Text_IO.Put ("  scanning sources... ");

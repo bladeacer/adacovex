@@ -81,6 +81,14 @@ inputs:
     description: 'Enable dependency/toolchain caching with actions/cache.'
     required: false
     default: 'true'
+  result-cache:
+    description: >-
+      Persist adacovex's on-disk result cache (~/.adacovex/cache) across
+      workflow runs with actions/cache. Entries are keyed by SHA-256 content
+      hashes, so restoring a stale cache is always safe: only artifacts that
+      are byte-for-byte unchanged since the previous run are served from it.
+    required: false
+    default: 'true'
 
 outputs:
   dal-status:
@@ -114,6 +122,15 @@ runs:
         # download. Only the compiler and gprbuild go in the toolchain here.
         toolchain: 'gnat_native=${{ inputs.gnat-version }} gprbuild'
         cache: ${{ inputs.cache }}
+
+    - name: Restore adacovex result cache
+      if: ${{ inputs.result-cache == 'true' }}
+      uses: actions/cache/restore@v4
+      with:
+        path: ~/.adacovex/cache
+        key: adacovex-result-${{ inputs.target }}-${{ runner.os }}-${{ github.run_id }}
+        restore-keys: |
+          adacovex-result-${{ inputs.target }}-${{ runner.os }}-
 
     - name: Download adacovex release binary
       if: ${{ inputs.build == 'false' }}
@@ -329,3 +346,12 @@ runs:
           ${{ inputs.target }}/sbom*.json
           ${{ inputs.target }}/docs/compliance/SBOM.md
         if-no-files-found: ignore
+
+    - name: Save adacovex result cache
+      if: ${{ always() && inputs.result-cache == 'true' && (inputs.assess == 'true' || inputs.prove == 'true') }}
+      uses: actions/cache/save@v4
+      with:
+        path: ~/.adacovex/cache
+        # Content-addressed entries mean a restored but slightly stale cache
+        # is never wrong; the unique key keeps save/restore bounded per run.
+        key: adacovex-result-${{ inputs.target }}-${{ runner.os }}-${{ github.run_id }}

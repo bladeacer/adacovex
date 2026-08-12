@@ -82,3 +82,15 @@ documented.
 | `Skip_List` | Comma-separated directory names to skip (e.g. ".git,obj"). |
 | `Skipped_Ct` | Number of .ads files skipped (line/path overflow). |
 | `Target_Dir` | Root directory to scan recursively. |
+
+### procedure Scan_Project_Cached (Target_Dir : Standard.String; Skip_List : Standard.String; Packages : Adacovex.Types.Implementation.Package_Vectors.Vector; Skipped_Ct : Standard.Natural; Hits : Standard.Natural; Misses : Standard.Natural; Use_Cache : Standard.Boolean)
+
+| Parameter | Description |
+|-----------|-------------|
+| `Hits` | Number of files served from the cache. |
+| `Misses` | Number of files rescanned and re-cached. |
+| `Packages` | Output vector of parsed packages (appended to). |
+| `Skip_List` | Comma-separated directory names to skip. |
+| `Skipped_Ct` | Number of .ads files skipped (line/path overflow). |
+| `Target_Dir` | Root directory to scan recursively. |
+| `Use_Cache` | When False the cache is bypassed and every file is |

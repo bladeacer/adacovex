@@ -15,6 +15,16 @@ Unity               "N Tests M Failures [K Ignored]"
 
 > **Note:** All items in this package are public.
 
+## Functions
+
+### function Find_Test_Result (Target_Dir : Standard.String) return Standard.String `[Pre]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `Target_Dir` | Root directory to inspect. |
+
+**Returns:** Path to a discovered test-result file, or "".
+
 ## Procedures
 
 ### procedure Parse_Test_Result (File_Path : Standard.String; Summary : Adacovex.Types.Implementation.Test_Summary; Success : Standard.Boolean) `[Pre]`

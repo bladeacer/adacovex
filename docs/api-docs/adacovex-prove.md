@@ -39,6 +39,7 @@ Memlimit          : Integer := -1;
 Force             : Boolean := False;
 No_Loop_Unrolling : Boolean := False;
 No_Inlining       : Boolean := False;
+Cache             : Boolean := True;
 end record;
 ```
 

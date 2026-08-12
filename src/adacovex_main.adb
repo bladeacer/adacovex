@@ -49,10 +49,8 @@ procedure Adacovex_Main is
    Cache_Hits   : Natural := 0;
    Cache_Misses : Natural := 0;
 
-   package Proof_Store is
-     new Adacovex.Cache.Serialization (Proof_Summary);
-   package Test_Store is
-     new Adacovex.Cache.Serialization (Test_Summary);
+   package Proof_Store is new Adacovex.Cache.Serialization (Proof_Summary);
+   package Test_Store is new Adacovex.Cache.Serialization (Test_Summary);
 
    procedure Verbose (Msg : String) is
    begin
@@ -60,6 +58,72 @@ procedure Adacovex_Main is
          Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, Msg);
       end if;
    end Verbose;
+
+   --  Collapse "." and ".." segments out of an absolute path so File_Path
+   --  values stored in the result cache do not depend on how --target was
+   --  spelled (e.g. "./.." vs ".").  Keeps the leading slash and clamps ".."
+   --  at the filesystem root.
+   function Normalize_Path (S : String) return String is
+      Out_Buf : String (1 .. Max_Path) := (others => ' ');
+      Out_Len : Natural := 0;
+      Seg_Buf : String (1 .. 512) := (others => ' ');
+      Seg_Len : Natural := 0;
+      I       : Natural := S'First;
+
+      procedure Flush_Seg is
+      begin
+         if Seg_Len = 0 then
+            return;
+         end if;
+         if Seg_Len = 1 and then Seg_Buf (1) = '.' then
+            null;
+         elsif Seg_Len = 2
+           and then Seg_Buf (1) = '.'
+           and then Seg_Buf (2) = '.'
+         then
+            while Out_Len > 0 and then Out_Buf (Out_Len) /= '/' loop
+               Out_Len := Out_Len - 1;
+            end loop;
+            if Out_Len > 1 then
+               Out_Len := Out_Len - 1;
+            end if;
+         else
+            if Out_Len > 0 and then Out_Buf (Out_Len) /= '/' then
+               Out_Len := Out_Len + 1;
+               Out_Buf (Out_Len) := '/';
+            end if;
+            if Out_Len + Seg_Len <= Out_Buf'Last then
+               Out_Buf (Out_Len + 1 .. Out_Len + Seg_Len) :=
+                 Seg_Buf (1 .. Seg_Len);
+               Out_Len := Out_Len + Seg_Len;
+            end if;
+         end if;
+         Seg_Len := 0;
+      end Flush_Seg;
+
+   begin
+      if S'Length >= 1 and then S (S'First) = '/' then
+         Out_Len := 1;
+         Out_Buf (1) := '/';
+      end if;
+      while I <= S'Last loop
+         if S (I) = '/' then
+            Flush_Seg;
+         else
+            if Seg_Len < Seg_Buf'Last then
+               Seg_Len := Seg_Len + 1;
+               Seg_Buf (Seg_Len) := S (I);
+            end if;
+         end if;
+         I := I + 1;
+      end loop;
+      Flush_Seg;
+      if Out_Len = 0 then
+         Out_Len := 1;
+         Out_Buf (1) := '/';
+      end if;
+      return Out_Buf (1 .. Out_Len);
+   end Normalize_Path;
 
    Success : Boolean;
    Exit_St : Ada.Command_Line.Exit_Status := 0;
@@ -342,19 +406,23 @@ begin
    for I in 1 .. TLen loop
       Target (I) := Cfg.Target_Path (I);
    end loop;
+   declare
+      Norm : constant String := Normalize_Path (Target (1 .. TLen));
+   begin
+      TLen := Norm'Length;
+      Target (1 .. TLen) := Norm;
+   end;
 
    Verbose ("target: " & Target (1 .. TLen));
 
    --  Configure the on-disk result cache.
    if Cfg.Cache_Enabled then
       if Cfg.Cache_Dir_Len > 0 then
-         Adacovex.Cache.Set_Cache_Dir
-           (Cfg.Cache_Dir (1 .. Cfg.Cache_Dir_Len));
+         Adacovex.Cache.Set_Cache_Dir (Cfg.Cache_Dir (1 .. Cfg.Cache_Dir_Len));
       end if;
       Adacovex.Cache.Set_Cache_Policy (Cfg.Cache_Max_Entries);
       Verbose
-        ("result cache: enabled (cap="
-         & Img (Cfg.Cache_Max_Entries) & ")");
+        ("result cache: enabled (cap=" & Img (Cfg.Cache_Max_Entries) & ")");
    else
       Verbose ("result cache: disabled");
    end if;
@@ -404,8 +472,8 @@ begin
             Memlimit          => Cfg.Prove_Memlimit,
             Force             => Cfg.Prove_Force,
             No_Loop_Unrolling => Cfg.Prove_No_Loop_Unroll,
-             No_Inlining       => Cfg.Prove_No_Inlining,
-             Cache             => Cfg.Cache_Enabled);
+            No_Inlining       => Cfg.Prove_No_Inlining,
+            Cache             => Cfg.Cache_Enabled);
       begin
          Adacovex.Prove.Run_Prove (Target (1 .. TLen), Opts, OK);
          if not OK then
@@ -465,47 +533,50 @@ begin
       & "/"
       & Img (Doc_Metrics.Total_Subprograms));
 
-    -- Step 2: Parse GNATprove output
-    Verbose ("step 2/8: parsing GNATprove output...");
-    declare
-       Pth   : constant String :=
-         Adacovex.Parsers.GNATprove.Find_Prove_Output (Target (1 .. TLen));
-       Key   : String (1 .. 72);
-       Key_L : Natural;
-       Blob  : String (1 .. Adacovex.Cache.Max_Cache_Blob);
-       Blen  : Natural;
-       Found : Boolean;
-    begin
-       if Cfg.Cache_Enabled and then Pth'Length > 0 then
-          declare
-             H : constant String := Adacovex.Cache.Hash_File (Pth);
-          begin
-             Key (1 .. 6) := "prove:";
-             Key (7 .. 6 + H'Length) := H;
-             Key_L := 6 + H'Length;
-             Adacovex.Cache.Get_Cached (Key (1 .. Key_L), Blob, Blen, Found);
-             if Found and then Proof_Store.Deserialize (Blob (1 .. Blen), Proof)
-             then
-                Cache_Hits := Cache_Hits + 1;
-                Success := True;
-             else
-                Adacovex.Parsers.GNATprove.Parse_Prove_From_Project
-                  (Target (1 .. TLen), Proof, Success);
-                if Success then
-                   Cache_Misses := Cache_Misses + 1;
-                   declare
-                      S_Blob : constant String := Proof_Store.Serialize (Proof);
-                   begin
-                      Adacovex.Cache.Put_Cached (Key (1 .. Key_L), S_Blob, Success);
-                   end;
-                end if;
-             end if;
-          end;
-       else
-          Adacovex.Parsers.GNATprove.Parse_Prove_From_Project
-            (Target (1 .. TLen), Proof, Success);
-       end if;
-    end;
+   -- Step 2: Parse GNATprove output
+   Verbose ("step 2/8: parsing GNATprove output...");
+   declare
+      Pth   : constant String :=
+        Adacovex.Parsers.GNATprove.Find_Prove_Output (Target (1 .. TLen));
+      Key   : String (1 .. 72);
+      Key_L : Natural;
+      Blob  : String (1 .. Adacovex.Cache.Max_Cache_Blob);
+      Blen  : Natural;
+      Found : Boolean;
+   begin
+      if Cfg.Cache_Enabled and then Pth'Length > 0 then
+         declare
+            H : constant String := Adacovex.Cache.Hash_File (Pth);
+         begin
+            Key (1 .. 6) := "prove:";
+            Key (7 .. 6 + H'Length) := H;
+            Key_L := 6 + H'Length;
+            Adacovex.Cache.Get_Cached (Key (1 .. Key_L), Blob, Blen, Found);
+            if Found and then Proof_Store.Deserialize (Blob (1 .. Blen), Proof)
+            then
+               Cache_Hits := Cache_Hits + 1;
+               Success := True;
+            else
+               Adacovex.Parsers.GNATprove.Parse_Prove_From_Project
+                 (Target (1 .. TLen), Proof, Success);
+               if Success then
+                  Cache_Misses := Cache_Misses + 1;
+                  declare
+                     S_Blob : constant String := Proof_Store.Serialize (Proof);
+                  begin
+                     if S_Blob'Length > 0 then
+                        Adacovex.Cache.Put_Cached
+                          (Key (1 .. Key_L), S_Blob, Success);
+                     end if;
+                  end;
+               end if;
+            end if;
+         end;
+      else
+         Adacovex.Parsers.GNATprove.Parse_Prove_From_Project
+           (Target (1 .. TLen), Proof, Success);
+      end if;
+   end;
    Verbose
      ("  spark level: "
       & Adacovex.Types.To_String (Proof.Level)
@@ -513,47 +584,50 @@ begin
       & Img (Proof.Total_VCs)
       & " VCs)");
 
-    -- Step 3: Parse test results
-    Verbose ("step 3/8: parsing test results...");
-    declare
-       Pth   : constant String :=
-         Adacovex.Parsers.Tests.Find_Test_Result (Target (1 .. TLen));
-       Key   : String (1 .. 72);
-       Key_L : Natural;
-       Blob  : String (1 .. Adacovex.Cache.Max_Cache_Blob);
-       Blen  : Natural;
-       Found : Boolean;
-    begin
-       if Cfg.Cache_Enabled and then Pth'Length > 0 then
-          declare
-             H : constant String := Adacovex.Cache.Hash_File (Pth);
-          begin
-             Key (1 .. 6) := "tests:";
-             Key (7 .. 6 + H'Length) := H;
-             Key_L := 6 + H'Length;
-             Adacovex.Cache.Get_Cached (Key (1 .. Key_L), Blob, Blen, Found);
-             if Found and then Test_Store.Deserialize (Blob (1 .. Blen), Tests)
-             then
-                Cache_Hits := Cache_Hits + 1;
-                Success := True;
-             else
-                Adacovex.Parsers.Tests.Parse_Test_Result_From_Project
-                  (Target (1 .. TLen), Tests, Success);
-                if Success then
-                   Cache_Misses := Cache_Misses + 1;
-                   declare
-                      S_Blob : constant String := Test_Store.Serialize (Tests);
-                   begin
-                      Adacovex.Cache.Put_Cached (Key (1 .. Key_L), S_Blob, Success);
-                   end;
-                end if;
-             end if;
-          end;
-       else
-          Adacovex.Parsers.Tests.Parse_Test_Result_From_Project
-            (Target (1 .. TLen), Tests, Success);
-       end if;
-    end;
+   -- Step 3: Parse test results
+   Verbose ("step 3/8: parsing test results...");
+   declare
+      Pth   : constant String :=
+        Adacovex.Parsers.Tests.Find_Test_Result (Target (1 .. TLen));
+      Key   : String (1 .. 72);
+      Key_L : Natural;
+      Blob  : String (1 .. Adacovex.Cache.Max_Cache_Blob);
+      Blen  : Natural;
+      Found : Boolean;
+   begin
+      if Cfg.Cache_Enabled and then Pth'Length > 0 then
+         declare
+            H : constant String := Adacovex.Cache.Hash_File (Pth);
+         begin
+            Key (1 .. 6) := "tests:";
+            Key (7 .. 6 + H'Length) := H;
+            Key_L := 6 + H'Length;
+            Adacovex.Cache.Get_Cached (Key (1 .. Key_L), Blob, Blen, Found);
+            if Found and then Test_Store.Deserialize (Blob (1 .. Blen), Tests)
+            then
+               Cache_Hits := Cache_Hits + 1;
+               Success := True;
+            else
+               Adacovex.Parsers.Tests.Parse_Test_Result_From_Project
+                 (Target (1 .. TLen), Tests, Success);
+               if Success then
+                  Cache_Misses := Cache_Misses + 1;
+                  declare
+                     S_Blob : constant String := Test_Store.Serialize (Tests);
+                  begin
+                     if S_Blob'Length > 0 then
+                        Adacovex.Cache.Put_Cached
+                          (Key (1 .. Key_L), S_Blob, Success);
+                     end if;
+                  end;
+               end if;
+            end if;
+         end;
+      else
+         Adacovex.Parsers.Tests.Parse_Test_Result_From_Project
+           (Target (1 .. TLen), Tests, Success);
+      end if;
+   end;
 
    -- Step 4: Assess DAL compliance
    Verbose ("step 4/8: assessing DAL compliance...");
@@ -593,16 +667,16 @@ begin
 
    -- Step 5: Render ANSI summary (stdout)
    Verbose ("step 5/8: rendering ANSI report...");
-    Adacovex.Renderers.ANSI.Render_Summary
-      (Doc_Metrics,
-       Proof,
-       Tests,
-       DAL_Assess,
-       Packages,
-       Use_Color,
-       Cache_Hits,
-       Cache_Misses,
-       Adacovex.Cache.Eviction_Count);
+   Adacovex.Renderers.ANSI.Render_Summary
+     (Doc_Metrics,
+      Proof,
+      Tests,
+      DAL_Assess,
+      Packages,
+      Use_Color,
+      Cache_Hits,
+      Cache_Misses,
+      Adacovex.Cache.Eviction_Count);
 
    -- Step 6: Emit SVG badges if requested
    if Cfg.Emit_SVG then

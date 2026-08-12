@@ -67,8 +67,8 @@ package body Adacovex.CPUs is
             begin
                if L'Length <= Out_Line'Length then
                   Out_Len := L'Length;
-                  Out_Line (Out_Line'First
-                            .. Out_Line'First + Out_Len - 1) := L;
+                  Out_Line (Out_Line'First .. Out_Line'First + Out_Len - 1) :=
+                    L;
                   Ok := True;
                end if;
             end;
@@ -158,7 +158,9 @@ package body Adacovex.CPUs is
       Run_Capture
         ("powershell -NoProfile -Command "
          & """(Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors""",
-         Captured, CLen, Ok);
+         Captured,
+         CLen,
+         Ok);
       if Ok then
          N := Parse_Natural (Captured (1 .. CLen));
          if N > 0 then
@@ -175,7 +177,8 @@ package body Adacovex.CPUs is
          return Ada.Environment_Variables.Exists (Name);
       end Has;
    begin
-      return Has ("CI")
+      return
+        Has ("CI")
         or else Has ("GITHUB_ACTIONS")
         or else Has ("GITLAB_CI")
         or else Has ("TF_BUILD")
@@ -186,7 +189,8 @@ package body Adacovex.CPUs is
         or else Has ("JENKINS_URL");
    end Is_Running_In_CI;
 
-   function Default_Prove_Jobs (Cores : Natural; In_CI : Boolean) return Natural is
+   function Default_Prove_Jobs
+     (Cores : Natural; In_CI : Boolean) return Natural is
    begin
       if In_CI then
          return Cores;
@@ -195,7 +199,8 @@ package body Adacovex.CPUs is
       end if;
    end Default_Prove_Jobs;
 
-   function Resolve_Jobs (Configured : Integer; In_CI : Boolean) return Natural is
+   function Resolve_Jobs (Configured : Integer; In_CI : Boolean) return Natural
+   is
    begin
       if Configured = 0 then
          --  -j0 means "all cores" to gnatprove; report the real count.
@@ -208,19 +213,18 @@ package body Adacovex.CPUs is
    end Resolve_Jobs;
 
    function Jobs_Justification
-     (Configured : Integer; Cores : Natural; In_CI : Boolean) return String
-   is
+     (Configured : Integer; Cores : Natural; In_CI : Boolean) return String is
    begin
       if Configured = 0 then
          return "auto default (all cores): -j0";
       elsif Configured > 0 then
          return "explicit --jobs=" & Integer'Image (Configured);
       elsif In_CI then
-         return "auto default (CI): using all"
-           & Natural'Image (Cores)
-           & " cores";
+         return
+           "auto default (CI): using all" & Natural'Image (Cores) & " cores";
       else
-         return "auto default:"
+         return
+           "auto default:"
            & Natural'Image (Cores)
            & " - 2 ="
            & Natural'Image (Natural'Max (1, Cores - 2))
