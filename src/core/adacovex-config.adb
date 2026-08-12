@@ -22,8 +22,10 @@ package body Adacovex.Config is
    procedure Set_String (Dst : out String; Dst_Len : out Natural; Src : String)
    is
    begin
-      Dst_Len := Src'Length;
-      for J in Src'Range loop
+      --  Clamp to the fixed destination buffer so an overlong CLI argument
+      --  never raises Constraint_Error; Dst_Len reflects the clamped length.
+      Dst_Len := Natural'Min (Src'Length, Dst'Length);
+      for J in Src'First .. Src'First + Dst_Len - 1 loop
          Dst (J - Src'First + 1) := Src (J);
       end loop;
    end Set_String;

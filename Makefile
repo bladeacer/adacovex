@@ -1,6 +1,6 @@
 .PHONY: help build test prove doc clean run-self run-ada-crdt \
         dev-setup prod-setup ascii-check fmt bump-version coverage-gate \
-        release publish test-publish _dev_cmd agents-tree
+        release publish test-publish _dev_cmd agents-tree sbom
 
 .DEFAULT_GOAL := help
 
@@ -13,11 +13,15 @@ help:
 	@echo '  test          Build and run native test suite'
 	@echo '  prove         Run SPARK proofs (gnatprove via the prove subcommand,'
 	@echo '                resolved from alire-dev.toml / PATH / cache / download)'
+	@echo '                (also auto-regenerates SVG badges in docs/badges/)'
 	@echo '  doc           Generate API docs via gnatdoc + rst2md (alire-dev.toml)'
 	@echo '  fmt           Format Ada sources with gnatformat (alire-dev.toml)'
 	@echo '  clean         Remove build artifacts'
 	@echo '  run-self      Run against adacovex itself (default target: cwd)'
+	@echo '                (auto-updates docs/badges/*.svg)'
 	@echo '  run-ada-crdt  Run against ../Ada_CRDT (strict mode)'
+	@echo '                (auto-updates ../Ada_CRDT/docs/badges/*.svg)'
+	@echo '  sbom          Generate a proof-aware CycloneDX SBOM (sbom.json)'
 	@echo '  coverage-gate Compare docstring coverage between the latest two'
 	@echo '                release tags (--coverage-delta in a worktree at'
 	@echo '                the latest tag; verifies the release gate logic)'
@@ -48,7 +52,7 @@ test: build
 	./bin/test_runner
 
 prove: build
-	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex prove --target=. --no-svg
+	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex prove --target=. --dal=C --emit-svg=docs/badges/
 
 fmt:
 	@$(MAKE) _dev_cmd CMD="alr exec -- gnatformat -P adacovex.gpr -U"
@@ -63,10 +67,13 @@ doc:
 	  sed -i "/](adacovex-test_support\.md)/d" docs/api-docs/index.md 2>/dev/null'
 
 run-self: build
-	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex --dal=C
+	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex --dal=C --emit-svg=docs/badges/
 
 run-ada-crdt: build
 	SOURCE_DATE_EPOCH=$$(git -C ../Ada_CRDT show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex --target=../Ada_CRDT --dal=C
+
+sbom: build
+	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex sbom --target=. --dal=C
 
 coverage-gate: build
 	@tags=$$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$$'); \
@@ -182,11 +189,11 @@ release:
 		version=$$(sed -n 's/^version = "\(.*\)"/\1/p' alire.toml); \
 	fi; \
 	echo "=== Generating proof artifacts ==="; \
-	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex prove --target=. --no-svg; \
+	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex prove --target=. --dal=C --emit-svg=docs/badges/; \
 	echo "=== Building release binary (covex v$$version) ==="; \
 	alr build --release; \
 	echo "=== Validating self-assessment (DAL-C) ==="; \
-	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex --target=. --dal=C --no-svg; \
+	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex --target=. --dal=C --emit-svg=docs/badges/; \
 	echo "=== Docstring coverage gate (last release vs current) ==="; \
 	prev_tag=$$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$$' | grep -v "^v$$version$$" | head -1); \
 	if [ -z "$$prev_tag" ]; then \
