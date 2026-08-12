@@ -42,28 +42,32 @@ package body Adacovex.Prove is
       end loop;
    end Copy_To;
 
-    --  Detect the number of logical CPUs on the host.  Delegates to the
-    --  cross-platform Adacovex.CPUs implementation (Linux /proc/cpuinfo,
-    --  macOS/FreeBSD sysctl, Windows env, fallback 1).
-    function Detect_Core_Count return Natural is
-    begin
-       return Adacovex.CPUs.Detect_Core_Count;
-    end Detect_Core_Count;
+   --  Detect the number of logical CPUs on the host.  Delegates to the
+   --  cross-platform Adacovex.CPUs implementation (Linux /proc/cpuinfo,
+   --  macOS/FreeBSD sysctl, Windows env, fallback 1).
+   function Detect_Core_Count return Natural is
+   begin
+      return Adacovex.CPUs.Detect_Core_Count;
+   end Detect_Core_Count;
 
-    --  Combined SHA-256 of everything that determines a gnatprove run: the
-    --  root .gpr path, the resolved option string, and the content hash of
-    --  every Ada source file under the target (skipping the always-excluded
-    --  directories).  Two runs with identical inputs produce the same digest,
-    --  so an unchanged project reuses a prior proof via the result cache.
-    function Compute_Prove_Input_Hash
-      (Target_Dir : String; GPR : String; Options : String) return String
-    is
+   --  Combined SHA-256 of everything that determines a gnatprove run: the
+   --  root .gpr path, the resolved option string, and the content hash of
+   --  every Ada source file under the target (skipping the always-excluded
+   --  directories).  Two runs with identical inputs produce the same digest,
+   --  so an unchanged project reuses a prior proof via the result cache.
+   function Compute_Prove_Input_Hash
+     (Target_Dir : String; GPR : String; Options : String) return String
+   is
       use Ada.Directories;
 
       function Skip (Name : String) return Boolean is
       begin
-         return Name = ".git" or else Name = "obj" or else Name = "tests"
-           or else Name = "config" or else Name = ".adacovex";
+         return
+           Name = ".git"
+           or else Name = "obj"
+           or else Name = "tests"
+           or else Name = "config"
+           or else Name = ".adacovex";
       end Skip;
 
       function Walk (Dir : String) return String is
@@ -95,7 +99,7 @@ package body Adacovex.Prove is
                      end if;
                   elsif K = Ordinary_File then
                      declare
-                        Ext : constant String := Simple_Name (E);
+                        Ext  : constant String := Simple_Name (E);
                         Last : Natural := Ext'Last;
                      begin
                         while Last >= Ext'First and then Ext (Last) /= '.' loop
@@ -122,10 +126,9 @@ package body Adacovex.Prove is
          return Comb;
       end Walk;
 
-    begin
-      return Walk (Target_Dir)
-        & Adacovex.Cache.Hash_String (GPR & Options);
-    end Compute_Prove_Input_Hash;
+   begin
+      return Walk (Target_Dir) & Adacovex.Cache.Hash_String (GPR & Options);
+   end Compute_Prove_Input_Hash;
 
    --  Build the gnatprove option string (without the -P project pair).
    --  Always forwards -j <jobs>; the resolved job count is passed in by the
@@ -631,54 +634,55 @@ package body Adacovex.Prove is
          return;
       end if;
 
-       --  Resolve the parallelism.  Default (Opts.Jobs < 0) uses
-       --  max(1, cores-2) on a developer machine but all cores inside CI;
-       --  --jobs=0 means all cores; --jobs=N pins N processes.  The chosen
-       --  basis is printed so the run is auditable ("which check is
-       --  justified" by the environment).
-       Jobs := Adacovex.CPUs.Resolve_Jobs
-                 (Opts.Jobs, Adacovex.CPUs.Is_Running_In_CI);
-       Copy_To (Options, OLen, Build_Option_String (Opts, Jobs));
+      --  Resolve the parallelism.  Default (Opts.Jobs < 0) uses
+      --  max(1, cores-2) on a developer machine but all cores inside CI;
+      --  --jobs=0 means all cores; --jobs=N pins N processes.  The chosen
+      --  basis is printed so the run is auditable ("which check is
+      --  justified" by the environment).
+      Jobs :=
+        Adacovex.CPUs.Resolve_Jobs (Opts.Jobs, Adacovex.CPUs.Is_Running_In_CI);
+      Copy_To (Options, OLen, Build_Option_String (Opts, Jobs));
 
-       Ada.Text_IO.Put_Line
-         ("  gnatprove: "
-          & (if Via_Alr
-             then "alr exec -- gnatprove (alire-managed)"
-             else Exe (1 .. Exe_Len)));
-       Ada.Text_IO.Put_Line ("  project:   " & GPR (1 .. GLen));
-       Ada.Text_IO.Put_Line ("  options:   " & Options (1 .. OLen));
-       Ada.Text_IO.Put_Line
-         ("  jobs:      "
-          & Adacovex.CPUs.Jobs_Justification
-              (Opts.Jobs,
-               Adacovex.CPUs.Detect_Core_Count,
-               Adacovex.CPUs.Is_Running_In_CI));
+      Ada.Text_IO.Put_Line
+        ("  gnatprove: "
+         & (if Via_Alr
+            then "alr exec -- gnatprove (alire-managed)"
+            else Exe (1 .. Exe_Len)));
+      Ada.Text_IO.Put_Line ("  project:   " & GPR (1 .. GLen));
+      Ada.Text_IO.Put_Line ("  options:   " & Options (1 .. OLen));
+      Ada.Text_IO.Put_Line
+        ("  jobs:      "
+         & Adacovex.CPUs.Jobs_Justification
+             (Opts.Jobs,
+              Adacovex.CPUs.Detect_Core_Count,
+              Adacovex.CPUs.Is_Running_In_CI));
 
-       --  Result-cache short-circuit: if the exact set of inputs (source tree
-       --  content + .gpr + options) has been proved before, reuse the prior
-       --  gnatprove.out instead of re-running the prover.  This is the single
-       --  biggest CI speedup: an unchanged project serves the proof from disk.
-       if Opts.Cache then
-          declare
-             In_Hash : constant String :=
-               "prove:"
-               & Compute_Prove_Input_Hash
-                   (Strip_Trailing_Slash (Target_Dir), GPR (1 .. GLen),
-                    Options (1 .. OLen));
-             Dst     : String (1 .. Types.Max_Path);
-             DLen    : Natural := 0;
-             Hit     : Boolean := Adacovex.Cache.Exists (In_Hash);
-             pragma Unreferenced (Dst, DLen);
-          begin
-             if Hit then
-                Ada.Text_IO.Put_Line
-                  ("  cache:     gnatprove inputs unchanged -- reusing prior"
-                   & " proof (gnatprove.out served from cache)");
-                Success := True;
-                return;
-             end if;
-          end;
-       end if;
+      --  Result-cache short-circuit: if the exact set of inputs (source tree
+      --  content + .gpr + options) has been proved before, reuse the prior
+      --  gnatprove.out instead of re-running the prover.  This is the single
+      --  biggest CI speedup: an unchanged project serves the proof from disk.
+      if Opts.Cache then
+         declare
+            In_Hash : constant String :=
+              "prove:"
+              & Compute_Prove_Input_Hash
+                  (Strip_Trailing_Slash (Target_Dir),
+                   GPR (1 .. GLen),
+                   Options (1 .. OLen));
+            Dst     : String (1 .. Types.Max_Path);
+            DLen    : Natural := 0;
+            Hit     : Boolean := Adacovex.Cache.Exists (In_Hash);
+            pragma Unreferenced (Dst, DLen);
+         begin
+            if Hit then
+               Ada.Text_IO.Put_Line
+                 ("  cache:     gnatprove inputs unchanged -- reusing prior"
+                  & " proof (gnatprove.out served from cache)");
+               Success := True;
+               return;
+            end if;
+         end;
+      end if;
 
       --  When resolved via alire, spawn `alr -C <target> exec -- gnatprove
       --  -P <gpr> <options>`; alire sets up the toolchain environment itself.
@@ -755,25 +759,26 @@ package body Adacovex.Prove is
          end loop;
       end if;
 
-       if OK and then Code = 0 then
-          Success := True;
-          if Opts.Cache then
-             declare
-                In_Hash : constant String :=
-                  "prove:"
-                  & Compute_Prove_Input_Hash
-                      (Strip_Trailing_Slash (Target_Dir), GPR (1 .. GLen),
-                       Options (1 .. OLen));
-                OK2     : Boolean;
-             begin
-                Adacovex.Cache.Store (In_Hash, "1", OK2);
-                if OK2 then
-                   Ada.Text_IO.Put_Line
-                     ("  cache:     gnatprove result cached for these inputs");
-                end if;
-             end;
-          end if;
-       else
+      if OK and then Code = 0 then
+         Success := True;
+         if Opts.Cache then
+            declare
+               In_Hash : constant String :=
+                 "prove:"
+                 & Compute_Prove_Input_Hash
+                     (Strip_Trailing_Slash (Target_Dir),
+                      GPR (1 .. GLen),
+                      Options (1 .. OLen));
+               OK2     : Boolean;
+            begin
+               Adacovex.Cache.Store (In_Hash, "1", OK2);
+               if OK2 then
+                  Ada.Text_IO.Put_Line
+                    ("  cache:     gnatprove result cached for these inputs");
+               end if;
+            end;
+         end if;
+      else
          Ada.Text_IO.Put_Line
            (Ada.Text_IO.Standard_Error,
             "  ERROR: gnatprove exited with code" & Integer'Image (Code));

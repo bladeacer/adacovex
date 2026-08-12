@@ -24,7 +24,8 @@ package body Adacovex.Cache is
       if Key'Length < 3 or else Cache_Root_Len = 0 then
          return "";
       end if;
-      return Cache_Root (1 .. Cache_Root_Len)
+      return
+        Cache_Root (1 .. Cache_Root_Len)
         & "/"
         & Key (Key'First .. Key'First + 1)
         & "/"
@@ -37,7 +38,8 @@ package body Adacovex.Cache is
       if Key'Length < 3 or else Cache_Root_Len = 0 then
          return "";
       end if;
-      return Cache_Root (1 .. Cache_Root_Len)
+      return
+        Cache_Root (1 .. Cache_Root_Len)
         & "/"
         & Key (Key'First .. Key'First + 1);
    end Subdir_Path;
@@ -71,7 +73,7 @@ package body Adacovex.Cache is
          then Ada.Environment_Variables.Value ("HOME")
          else "/tmp");
       S    : constant String :=
-        Home & "/.adacovex/cache/" & Adacovex.Version;
+        Home & "/.adacovex/cache/" & Adacovex.Version & "/" & Cache_Schema;
    begin
       if S'Length <= Dir'Length then
          Len := S'Length;
@@ -117,8 +119,8 @@ package body Adacovex.Cache is
       DDir   : constant String := Entry_Path (Key);
       Parent : constant String := Subdir_Path (Key);
       F      : File_Type;
-      SEA    : Stream_Element_Array
-        (0 .. Stream_Element_Offset (Data'Length - 1));
+      SEA    :
+        Stream_Element_Array (0 .. Stream_Element_Offset (Data'Length - 1));
    begin
       Success := False;
       if Key'Length < 3 or else DDir = "" then
@@ -144,10 +146,7 @@ package body Adacovex.Cache is
    end Store;
 
    procedure Load
-     (Key    : String;
-      Data   : out String;
-      Len    : out Natural;
-      Found  : out Boolean)
+     (Key : String; Data : out String; Len : out Natural; Found : out Boolean)
    is
       DDir : constant String := Entry_Path (Key);
       F    : File_Type;
@@ -175,14 +174,13 @@ package body Adacovex.Cache is
       begin
          Open (F, In_File, DDir);
          declare
-            SEA  : Stream_Element_Array
-              (0 .. Stream_Element_Offset (Size - 1));
+            SEA  :
+              Stream_Element_Array (0 .. Stream_Element_Offset (Size - 1));
             Last : Stream_Element_Offset;
          begin
             Read (F, SEA, Last);
             for I in SEA'Range loop
-               Data (Data'First + Natural (I)) :=
-                 Character'Val (SEA (I));
+               Data (Data'First + Natural (I)) := Character'Val (SEA (I));
             end loop;
             Len := Natural (Last) + 1;
             Found := True;
@@ -214,18 +212,13 @@ package body Adacovex.Cache is
    end Set_Cache_Policy;
 
    procedure Get_Cached
-     (Key    : String;
-      Data   : out String;
-      Len    : out Natural;
-      Found  : out Boolean) is
+     (Key : String; Data : out String; Len : out Natural; Found : out Boolean)
+   is
    begin
       Load (Key, Data, Len, Found);
    end Get_Cached;
 
-   procedure Put_Cached
-     (Key      : String;
-      Data     : String;
-      Success  : out Boolean) is
+   procedure Put_Cached (Key : String; Data : String; Success : out Boolean) is
    begin
       Store (Key, Data, Success);
       if Success then
@@ -253,12 +246,13 @@ package body Adacovex.Cache is
       while More_Entries (Search) loop
          Get_Next_Entry (Search, Ent);
          declare
-            N  : constant String := Full_Name (Ent);
-            K  : File_Kind;
+            N : constant String := Full_Name (Ent);
+            K : File_Kind;
          begin
             K := Kind (N);
             if K = Directory then
-               if Simple_Name (Ent) /= "." and then Simple_Name (Ent) /= ".." then
+               if Simple_Name (Ent) /= "." and then Simple_Name (Ent) /= ".."
+               then
                   declare
                      Sub : constant String := Oldest_File (N);
                   begin
@@ -322,7 +316,8 @@ package body Adacovex.Cache is
          begin
             K := Kind (N);
             if K = Directory then
-               if Simple_Name (Ent) /= "." and then Simple_Name (Ent) /= ".." then
+               if Simple_Name (Ent) /= "." and then Simple_Name (Ent) /= ".."
+               then
                   Total := Total + Count_Files (N);
                end if;
             elsif K = Ordinary_File then
@@ -358,29 +353,31 @@ package body Adacovex.Cache is
    --  In-memory stream backing onto a fixed String buffer, used to turn any
    --  streamable value into a blob String (and back) without touching disk.
    type Memory_Stream is new Ada.Streams.Root_Stream_Type with record
-      Buf   : String (1 .. Max_Cache_Blob) := (others => ' ');
-      Count : Natural := 0;
-      Pos   : Positive := 1;
+      Buf        : String (1 .. Max_Cache_Blob) := (others => ' ');
+      Count      : Natural := 0;
+      Pos        : Positive := 1;
+      Overflowed : Boolean := False;
    end record;
 
-   overriding procedure Write
-     (S    : in out Memory_Stream;
-      Item : Ada.Streams.Stream_Element_Array);
+   overriding
+   procedure Write
+     (S : in out Memory_Stream; Item : Ada.Streams.Stream_Element_Array);
 
-   overriding procedure Read
+   overriding
+   procedure Read
      (S    : in out Memory_Stream;
       Item : out Ada.Streams.Stream_Element_Array;
       Last : out Ada.Streams.Stream_Element_Offset);
 
    procedure Write
-     (S    : in out Memory_Stream;
-      Item : Ada.Streams.Stream_Element_Array)
-   is
+     (S : in out Memory_Stream; Item : Ada.Streams.Stream_Element_Array) is
    begin
       for I in Item'Range loop
          if S.Count < S.Buf'Last then
             S.Count := S.Count + 1;
             S.Buf (S.Count) := Character'Val (Item (I));
+         else
+            S.Overflowed := True;
          end if;
       end loop;
    end Write;
@@ -406,13 +403,18 @@ package body Adacovex.Cache is
          M : aliased Memory_Stream;
       begin
          T'Write (M'Access, X);
+         if M.Overflowed then
+            --  Blob would exceed Max_Cache_Blob: never persist a truncated
+            --  payload (it would deserialize as silently-corrupt data).
+            return "";
+         end if;
          return M.Buf (1 .. M.Count);
       end Serialize;
 
       function Deserialize (S : String; X : out T) return Boolean is
          M : aliased Memory_Stream;
       begin
-         if S'Length > M.Buf'Last then
+         if S'Length = 0 or else S'Length > M.Buf'Last then
             return False;
          end if;
          M.Buf (1 .. S'Length) := S;

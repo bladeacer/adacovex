@@ -22,6 +22,12 @@ package Adacovex.Cache is
    --  scan result always fits; larger blobs are simply not cached.
    Max_Cache_Blob : constant := 1_048_576;
 
+   --  Cache-schema namespace.  Bump when the serialized layout of cached
+   --  records (Package_Info / Proof_Summary / Test_Summary) or the scanner /
+   --  parser semantics change, so blobs written by an incompatible build are
+   --  never served.  Appended to the default cache directory below.
+   Cache_Schema : constant String := "s3";
+
    --  Soft cap on the number of cache entries kept on disk.  Once exceeded,
    --  the oldest entries are evicted first.
    Default_Max_Entries : constant := 4096;
@@ -70,10 +76,7 @@ package Adacovex.Cache is
    --  @param Len  Length of the loaded blob.
    --  @param Found  True when the entry existed and fit in Data.
    procedure Load
-     (Key    : String;
-      Data   : out String;
-      Len    : out Natural;
-      Found  : out Boolean);
+     (Key : String; Data : out String; Len : out Natural; Found : out Boolean);
 
    --  True when an entry exists for Key (without loading its payload).
    --  @param Key  Cache key.
@@ -91,20 +94,14 @@ package Adacovex.Cache is
    --  @param Len  Length of the loaded blob.
    --  @param Found  True when the entry existed and fit in Data.
    procedure Get_Cached
-     (Key    : String;
-      Data   : out String;
-      Len    : out Natural;
-      Found  : out Boolean);
+     (Key : String; Data : out String; Len : out Natural; Found : out Boolean);
 
    --  Store a blob under Key, then evict oldest entries until the configured
    --  cap is satisfied.  Convenience wrapper over Store + Evict_If_Needed.
    --  @param Key  Cache key.
    --  @param Data  Blob payload.
    --  @param Success  True if the blob was written.
-   procedure Put_Cached
-     (Key      : String;
-      Data     : String;
-      Success  : out Boolean);
+   procedure Put_Cached (Key : String; Data : String; Success : out Boolean);
 
    --  Evict oldest-first until at most Max_Entries entries remain under the
    --  configured cache root.  No-op (and harmless) when the count is already

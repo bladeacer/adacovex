@@ -468,7 +468,8 @@ package body Adacovex.Parsers.Tests is
    begin
       for I in Candidates'Range loop
          declare
-            P : constant String := Target_Dir & "/" & Trim_Right (Candidates (I));
+            P : constant String :=
+              Target_Dir & "/" & Trim_Right (Candidates (I));
          begin
             if Exists (P) and then Kind (P) = Ordinary_File then
                return P;

@@ -207,6 +207,10 @@ adacovex sbom [--format=cyclonedx-json|spdx-json] [--out=PATH]
 | `--relaxed` | off | both | Disable strict mode (skip dirs, no patches) |
 | `--compare-base=REF` | off | both | Differential mode vs a git base ref |
 | `--coverage-delta=REF` | off | both | Docstring-coverage gate vs a git base ref |
+| `--cache` | on | both | Enable on-disk result caching |
+| `--no-cache` | off | both | Disable result caching (always re-scan/re-parse/re-prove) |
+| `--cache-dir=PATH` | `~/.adacovex/cache/<ver>/<schema>` | both | Cache directory for analysis results |
+| `--cache-max=N` | `4096` | both | Max cache entries before oldest-first eviction |
 | `--verbose` | off | both | Verbose diagnostics |
 | `--help` | - | both | Print usage and exit |
 
@@ -254,6 +258,19 @@ coverage table plus a machine-parseable `coverage_delta:` line, and exits `1`
 if current coverage dropped below the base. Runs without GNATprove/tests, so
 it works when the base does not commit build artifacts. Mutually exclusive
 with `--compare-base`.
+
+**`--cache` / `--no-cache` / `--cache-dir=PATH` / `--cache-max=N`** --
+adacovex caches analysis results on disk: source scans, GNATprove summaries,
+and test summaries are each keyed by the SHA-256 of the artifact they came
+from, so unchanged files are served without being re-scanned / re-parsed /
+re-proved. The cache lives under `~/.adacovex/cache/<version>/<schema>` by
+default (`<schema>` changes whenever the cached record layout changes, so old
+blobs are never misread) and evicts oldest-first when more than `--cache-max`
+entries (default 4096) accumulate. `--no-cache` bypasses it entirely (useful
+when artifacts change without their content hash changing, or to measure the
+rescan cost), and `--cache-dir` relocates it (the GitHub action persists this
+directory between workflow runs for you). The ANSI report shows a
+`result cache: X hit(s), Y miss(es), Z evicted` line per run.
 
 **`--verbose`** -- Print pipeline step diagnostics to stderr.
 
@@ -473,6 +490,14 @@ To target a specific release instead, pin the ref:
 | `generate-sbom` | `true` | Generate a proof-aware SBOM after the assessment and upload it as an artifact |
 | `sbom-format` | `cyclonedx-json` | SBOM format: `cyclonedx-json` (writes `<target>/sbom.json`) or `spdx-json` (writes `<target>/sbom.spdx.json`) |
 | `cache` | `true` | Cache Alire toolchain/deps with `actions/cache` |
+| `result-cache` | `true` | Persist adacovex's on-disk result cache (`~/.adacovex/cache`) across runs with `actions/cache`; entries are SHA-256 content-hashed per artifact, so unchanged sources/proofs/tests are served without re-parsing |
+
+The action restores the result cache before running adacovex and saves it when
+the job finishes. Because every entry is keyed by its artifact's content hash,
+restoring a cache saved by an earlier run (or an earlier commit) is always
+safe: only files that are byte-for-byte unchanged are served from it, and the
+rest are rescanned / re-parsed automatically. This turns the second CI run on
+an incrementally-edited branch into mostly cache hits.
 
 #### Outputs
 

@@ -32,7 +32,8 @@ package Adacovex.CPUs is
    --  @param Configured  The --jobs integer from the CLI (-1 = auto).
    --  @param In_CI  Whether the run is inside CI.
    --  @return Resolved job count (>= 1).
-   function Resolve_Jobs (Configured : Integer; In_CI : Boolean) return Natural;
+   function Resolve_Jobs
+     (Configured : Integer; In_CI : Boolean) return Natural;
 
    --  The auto default: all cores in CI, otherwise max(1, cores - 2) to keep
    --  the developer machine responsive.  Pass the already-detected core count
@@ -40,7 +41,8 @@ package Adacovex.CPUs is
    --  @param Cores  Detected logical CPU count.
    --  @param In_CI  Whether the run is inside CI.
    --  @return Default job count.
-   function Default_Prove_Jobs (Cores : Natural; In_CI : Boolean) return Natural;
+   function Default_Prove_Jobs
+     (Cores : Natural; In_CI : Boolean) return Natural;
 
    --  A human-readable justification for the resolved job count, suitable for
    --  the verbose pipeline log.  Examples:

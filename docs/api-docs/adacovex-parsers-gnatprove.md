@@ -19,6 +19,14 @@ record with proved/unproved VC counts per category.
 
 **Returns:** Derived SPARK_Level (Stone through Platinum).
 
+### function Find_Prove_Output (Target_Dir : Standard.String) return Standard.String `[Pre]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `Target_Dir` | Root directory to inspect. |
+
+**Returns:** Path to a discovered gnatprove.out, or "".
+
 ## Procedures
 
 ### procedure Parse_Prove_From_Project (Target_Dir : Standard.String; Summary : Adacovex.Types.Proof_Summary; Success : Standard.Boolean) `[Pre]`

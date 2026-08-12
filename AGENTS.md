@@ -319,6 +319,34 @@ adacovex sbom [--format=cyclonedx-json|spdx-json] [--out=PATH]
   tag (e.g. `--coverage-delta=v1.1.0`) and aborts if docstring coverage
   regressed between releases.
 
+#### Result caching (`--cache` / `--no-cache` / `--cache-dir` / `--cache-max`)
+- **Purpose**: Persist parsed analysis results between runs so unchanged inputs
+  are not re-scanned / re-parsed / re-proved.
+- **Keys**: Each cache entry is `"scan:" | "prove:" | "tests:" + SHA-256` of the
+  artifact it was derived from (a `.ads` file's bytes, `gnatprove.out`, or the
+  test-result file). Re-parsing a byte-identical artifact yields a cache hit
+  regardless of the target directory or command line used.
+- **Schema namespace**: The default cache root is
+  `~/.adacovex/cache/<version>/<Cache_Schema>`. `Cache_Schema` (in
+  `src/core/adacovex-cache.ads`) must be bumped whenever the serialized layout
+  of a cached record or the scanner/parser semantics change, so blobs written
+  by an incompatible build are never served as if valid.
+- **Eviction**: `Put_Cached` calls `Evict_If_Needed(--cache-max)` (default
+  4096), deleting oldest-first by modification time. `Eviction_Count` tracks
+  removals and is reported in the ANSI cache line.
+- **Overflow safety**: `Serialize` returns an empty blob when a package would
+  exceed `Max_Cache_Blob`; callers skip storing it and `Deserialize` rejects
+  empty/oversized input, so truncated data can never be served as a hit.
+- **`--target` normalization**: `--target` is normalized (`.`/`..` collapsed to
+  a canonical absolute path) before scanning. This keeps the `File_Path`
+  values stored in cached `Package_Info` consistent across invocations that
+  spell the same directory differently (e.g. `--target=../Ada_CRDT` vs
+  `--target=.`), which matters because docstring patches are matched by the
+  package's path relative to the target root.
+- **CI**: The GitHub action persists `~/.adacovex/cache` between workflow runs
+  (`result-cache` input, default true), so incremental branches get mostly
+  cache hits; content-addressed keys make restoring a stale cache always safe.
+
 #### `--help`
 - **Purpose**: Print usage information and exit.
 - **Effect**: Prints all options, defaults, examples to stdout, then the
@@ -635,7 +663,11 @@ specific failure reasons when the assessment is `Unmet`.
   uploads it as an `adacovex-sbom` artifact. Inputs: `target`, `dal`,
   `gnat-version`, `version`, `build`, `release-build`, `prove`, `run-tests`,
   `assess`, `compare-base`, `coverage-delta`, `emit-markdown`, `generate-sbom`,
-  `sbom-format`, `cache`. Once
+  `sbom-format`, `cache`, `result-cache`. `result-cache` (default `true`)
+  persists adacovex's on-disk result cache (`~/.adacovex/cache`) across runs
+  with `actions/cache`; entries are SHA-256 content-hashed per artifact, so
+  unchanged sources/proofs/tests are served from the previous run's cache
+  without re-parsing. Once
   listed on the GitHub Actions marketplace, each `vX.Y.Z` tag auto-publishes
   the matching action version. Consumers should reference the floating `@latest`
   tag to always use the newest published release; the narrower `@v1` (or
@@ -844,6 +876,43 @@ is obtained and built.
 
 See [docs/changelogs/adacovex-1.0.0.md](docs/changelogs/adacovex-1.0.0.md) for full release notes.
 See [docs/architecture.md](docs/architecture.md) for architectural decisions.
+
+---
+
+## Changelog format
+
+Each release gets one file at `docs/changelogs/adacovex-<version>.md`, linked
+from `docs/changelogs/index.md` under the `<!-- CHANGELOG_LIST -->` marker
+(newest first). Follow the structure used by the existing entries (1.5.0+):
+
+```
+# adacovex <version>                    -- H1 title
+Date: _YYYY-MM-DD_                      -- release date
+Version bumped <old> -> <new>.          -- version diff line
+
+## Changes                              -- features / behavior changes
+### C1: <Short title>                   -- numbered, one subsection per change
+### C2: ...
+## Fixes                                -- bugfixes only (omit if none)
+### H1: <Short title>
+### H2: ...
+## Test Suite                           -- suite size + what changed
+## Proof Results                        -- SPARK level, VC counts, invocation
+## Traceability                         -- new HLRs + tags covering changes
+```
+
+Rules:
+- `## Changes` and `## Fixes` use numbered subsections (`### C#:` / `### H#:`)
+  with a short bold-worthy title, then prose -- no bare bullet lists.
+- Fixes are grouped under `## Fixes` (`### H#:`), distinct from Changes.
+- `## Proof Results` states the SPARK level (Stone..Platinum), the exact VC
+  totals (e.g. `503/503 VCs proved across 38 analyzed units`), and calls out
+  whether any proof metrics changed. It notes when changed units are
+  non-SPARK and therefore unaffected.
+- `## Traceability` lists any new HLRs by tag name and package, then the
+  existing `-- HLR-*` tags covering the changed packages.
+- `make bump-version` (`VERSION=x.y.z`) creates/updates the changelog; keep
+  the section headings and numbering style identical across releases.
 
 ---
 
