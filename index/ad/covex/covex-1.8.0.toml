@@ -4,7 +4,7 @@ name = "covex"
 description = "Ada/SPARK coverage, proof, DO-178C compliance tool"
 version = "1.8.0"
 project-files = ["adacovex.gpr"]
-auto-gpr-with = "adacovex.gpr"
+auto-gpr-with = true
 executables = ["adacovex"]
 
 [environment]

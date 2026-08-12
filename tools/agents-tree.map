@@ -7,6 +7,8 @@ src/core/adacovex-types	All domain types + conversion functions
 src/core/adacovex-config	CLI argument parser (prove mode, --no-sbom, --sbom-format)
 src/core/adacovex-diff	Differential assessment (--compare-base / --coverage-delta)
 src/core/adacovex-prove	GNATprove runner for the `prove` subcommand (alire-first toolchain resolution)
+src/core/adacovex-cache	On-disk result cache (content-hashed per-file, oldest-first eviction, size policy)
+src/core/adacovex-cpus	Host CPU/CI detection + GNATprove parallelism resolution
 src/ir/adacovex-target_profiles	Bounded IR scalar types (IR_Int8..IR_Int64 / IR_UInt8..IR_UInt64) + host/target config
 src/ir/adacovex-ir_bounds	Bounds-verification fixture (synthesized lowered types, gnatprove-proved)
 src/ir/adacovex-ir_synthesiser	Future-use IR synthesiser (foreign type-name lowering to bounded Ada)

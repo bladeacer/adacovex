@@ -3,16 +3,16 @@
   "specVersion": "1.5",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-08-12T11:59:22",
+    "timestamp": "2026-08-12T21:34:54",
     "tools": [
-      {"vendor": "bladeacer", "name": "adacovex", "version": "1.7.0"}
+      {"vendor": "bladeacer", "name": "adacovex", "version": "1.8.0"}
     ],
     "component": {
       "type": "application",
-      "bom-ref": "pkg:alire/covex@1.7.0",
+      "bom-ref": "pkg:alire/covex@1.8.0",
       "name": "covex",
-      "version": "1.7.0",
-      "purl": "pkg:alire/covex@1.7.0",
+      "version": "1.8.0",
+      "purl": "pkg:alire/covex@1.8.0",
       "licenses": [{"license": {"id": "Apache-2.0"}}],
       "description": "Ada/SPARK coverage, proof, DO-178C compliance tool",
       "properties": [{"name": "adacovex:proof_level", "value": "Platinum"}, {"name": "adacovex:dal_target", "value": "DAL-C"}]

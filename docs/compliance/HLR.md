@@ -3,6 +3,8 @@
 ## Requirement Index
 
 - HLR-ARCH: Architecture and build system
+- HLR-CACHE: Result caching
+- HLR-CPU: Cross-platform CPU core detection
 - HLR-SCAN: Ada source scanning
 - HLR-PROOF: SPARK / GNATprove proof analysis
 - HLR-TEST: Test result parsing
@@ -30,6 +32,20 @@
 
 - HLR-ARCH: The tool shall build with `alr build` and support Makefile targets
   for build, prove, fmt, lint, api-docs, changelog, and clean.
+
+- HLR-CACHE: The tool shall cache per-file analysis results (source scans,
+  GNATprove summaries, test summaries) on disk keyed by the SHA-256 hash of
+  each analyzed artifact, serve unchanged files from the cache instead of
+  re-scanning / re-parsing / re-proving, evict oldest entries first when the
+  configured cap is reached, and report cache hits, misses, and evictions;
+  behavior is controlled by `--cache` / `--no-cache` / `--cache-dir` /
+  `--cache-max`.
+
+- HLR-CPU: The tool shall detect the host logical CPU count across Linux,
+  macOS, FreeBSD, and Windows using only the GNAT runtime (no external tools),
+  detect CI environments, and resolve GNATprove parallelism: an auto default
+  that reserves two cores for system responsiveness on developer machines, all
+  cores inside CI, and explicit `-jN` overrides.
 
 - HLR-SCAN: The tool shall recursively scan Ada source files, extract subprogram
   declarations, docstring annotations, and HLR traceability tags.
