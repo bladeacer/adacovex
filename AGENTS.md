@@ -20,7 +20,7 @@ adacovex was designed to audit the Ada_CRDT library at `../Ada_CRDT` (26 package
 The `--target=PATH` option can point at any Ada/SPARK project.
 
 Self-assessment (`make run-self`, default target: cwd) verifies adacovex against its own
-source -- all 26 packages, 63 subprograms -- and must always show:
+source -- 28 packages, 86 subprograms -- and must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
 - Platinum SPARK level (all VCs proved)
 - 336/336 native tests passing
@@ -37,8 +37,10 @@ src/
 |   |-- adacovex-compliance.ads               -- Parent package for DO-178C compliance assessment
 |   `-- adacovex-compliance-dal.ads/.adb      -- DAL level assessment logic (DAL-A..E criteria)
 |-- core/
+|   |-- adacovex-cache.ads/.adb               -- On-disk result cache (content-hashed per-file, oldest-first eviction, size policy)
 |   |-- adacovex-config.ads/.adb              -- CLI argument parser (prove mode, --no-sbom, --sbom-format)
 |   |-- adacovex-core.ads                     -- Parent package for core data types and configuration
+|   |-- adacovex-cpus.ads/.adb                -- Host CPU/CI detection + GNATprove parallelism resolution
 |   |-- adacovex-diff.ads/.adb                -- Differential assessment (--compare-base / --coverage-delta)
 |   |-- adacovex-prove.ads/.adb               -- GNATprove runner for the `prove` subcommand (alire-first toolchain resolution)
 |   `-- adacovex-types.ads/.adb               -- All domain types + conversion functions
