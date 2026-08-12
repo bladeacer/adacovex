@@ -1,6 +1,9 @@
 with Ada.Text_IO;
+with Ada.Directories;
 
 package body Adacovex.Parsers.Tests is
+
+   use Ada.Directories;
 
    --  Strip leading spaces from a string slice.
    function Trim_Left (S : String) return String
@@ -458,6 +461,23 @@ package body Adacovex.Parsers.Tests is
       return S (S'First .. L);
    end Trim_Right;
 
+   --  Return the path of the first existing conventional test-result file
+   --  under Target_Dir, or "" if none is present.  Used by the result cache
+   --  to key a cached test summary to the exact artifact analyzed.
+   function Find_Test_Result (Target_Dir : String) return String is
+   begin
+      for I in Candidates'Range loop
+         declare
+            P : constant String := Target_Dir & "/" & Trim_Right (Candidates (I));
+         begin
+            if Exists (P) and then Kind (P) = Ordinary_File then
+               return P;
+            end if;
+         end;
+      end loop;
+      return "";
+   end Find_Test_Result;
+
    procedure Parse_Test_Result_From_Project
      (Target_Dir : String;
       Summary    : out Types.Implementation.Test_Summary;
@@ -465,16 +485,16 @@ package body Adacovex.Parsers.Tests is
    is
       Tmp : Types.Implementation.Test_Summary;
       OK  : Boolean;
+      Pth : constant String := Find_Test_Result (Target_Dir);
    begin
-      for I in Candidates'Range loop
-         Parse_Test_Result
-           (Target_Dir & "/" & Trim_Right (Candidates (I)), Tmp, OK);
+      if Pth'Length > 0 then
+         Parse_Test_Result (Pth, Tmp, OK);
          if OK then
             Summary := Tmp;
             Success := True;
             return;
          end if;
-      end loop;
+      end if;
       Success := False;
    end Parse_Test_Result_From_Project;
 

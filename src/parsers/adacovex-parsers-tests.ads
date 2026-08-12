@@ -39,4 +39,11 @@ package Adacovex.Parsers.Tests is
       Success    : out Boolean)
    with Pre => Target_Dir'Length > 0;
 
+   --  Return the path of the first existing conventional test-result file
+   --  under Target_Dir, or "" if none is present.
+   --  @param Target_Dir  Root directory to inspect.
+   --  @return Path to a discovered test-result file, or "".
+   function Find_Test_Result (Target_Dir : String) return String
+   with Pre => Target_Dir'Length > 0;
+
 end Adacovex.Parsers.Tests;

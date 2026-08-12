@@ -26,16 +26,17 @@ package Adacovex.Prove is
    --  passed.  --jobs=0 forwards -j0 (all cores).  A sane default of
    --  auto-detected parallelism means CI and the local make targets use every
    --  core without any flag, while users can pin --jobs=12 (or -j12).
-   type Prove_Options is record
-      Jobs              : Integer := -1;
-      Level             : Integer := -1;
-      Timeout           : Integer := -1;
-      Steps             : Integer := -1;
-      Memlimit          : Integer := -1;
-      Force             : Boolean := False;
-      No_Loop_Unrolling : Boolean := False;
-      No_Inlining       : Boolean := False;
-   end record;
+    type Prove_Options is record
+       Jobs              : Integer := -1;
+       Level             : Integer := -1;
+       Timeout           : Integer := -1;
+       Steps             : Integer := -1;
+       Memlimit          : Integer := -1;
+       Force             : Boolean := False;
+       No_Loop_Unrolling : Boolean := False;
+       No_Inlining       : Boolean := False;
+       Cache             : Boolean := True;
+    end record;
 
    --  Detect the number of logical CPUs on the host.  Reads /proc/cpuinfo
    --  (Linux); falls back to 1 elsewhere or when the file is unreadable.

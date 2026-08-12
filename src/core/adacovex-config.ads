@@ -23,9 +23,18 @@ package Adacovex.Config is
       Emit_Markdown      : Boolean := False;
       MD_Path            : String (1 .. Types.Max_Path);
       MD_Path_Len        : Natural := 0;
-      Verbose            : Boolean := False;
-      Strict_Mode        : Boolean := True;
-      CLI_Error          : Boolean := False;
+       Verbose            : Boolean := False;
+       Strict_Mode         : Boolean := True;
+
+       --  Result caching (see Adacovex.Cache).  Enabled by default; the cache
+       --  is keyed by the SHA-256 of each analyzed input, so unchanged code
+       --  is served from disk instead of re-scanned / re-parsed / re-proved.
+       Cache_Enabled     : Boolean := True;
+       Cache_Dir         : String (1 .. Types.Max_Path);
+       Cache_Dir_Len     : Natural := 0;
+       Cache_Max_Entries : Natural := 4096;
+
+       CLI_Error          : Boolean := False;
       Help_Requested     : Boolean := False;
       Skip_Dir_Ct        : Natural := 0;
       Skip_Dirs          : Types.Name_Field;
