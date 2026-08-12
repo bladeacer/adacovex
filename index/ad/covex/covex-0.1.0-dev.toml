@@ -4,6 +4,11 @@ name = "covex"
 description = "Ada/SPARK coverage, proof, DO-178C compliance tool"
 version = "0.1.0-dev"
 project-files = ["adacovex.gpr"]
+auto-gpr-with = "adacovex.gpr"
+executables = ["adacovex"]
+
+[environment]
+PATH.prepend = "${CRATE_ROOT}/bin"
 
 authors = ["bladeacer"]
 maintainers = ["bladeacer <wg.nick.exe@gmail.com>"]
@@ -11,4 +16,3 @@ maintainers-logins = ["bladeacer"]
 licenses = "Apache-2.0"
 website = "https://github.com/bladeacer/adacovex"
 tags = ["ada", "spark", "formal-verify", "cli", "gnatprove", "sbom", "tests", "code-coverage", "do-178c", "compliance", "developer-tools"]
-auto-gpr-with = false

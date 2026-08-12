@@ -1,8 +1,8 @@
-# Template release manifest.
+# Template index entry for the Alire community index.
 # Copied and version-replaced by make bump-version / make release.
 name = "covex"
 description = "Ada/SPARK coverage, proof, DO-178C compliance tool"
-version = "0.0.0"
+version = "1.8.0"
 project-files = ["adacovex.gpr"]
 auto-gpr-with = "adacovex.gpr"
 executables = ["adacovex"]
