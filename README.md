@@ -387,6 +387,36 @@ through `alr exec` (see [Installing adacovex](#installing-adacovex)).
 In both cases the assessed project is the `--target` directory (or CWD when
 omitted); the two approaches differ only in how the binary is obtained.
 
+### Consumer manifest prerequisites (avoid a broken CI)
+
+adacovex's `prove` subcommand and the GitHub Action resolve `gnatprove` through
+the *target project's* manifest (`alr exec -- gnatprove`). For that to succeed
+in a clean checkout or on CI, the consumer's manifests must follow two rules:
+
+1. **`alire.toml` must be the clean publishing manifest** -- no dev tooling
+   (`gnatprove`, `gnatdoc_bin`, `gnatformat_bin`, `covex`) and **no `[[pins]]`**.
+   This is the manifest Alire reads when the action runs `alr build` and when
+   `prove` runs `alr exec`, so it must resolve with nothing but Alire + GNAT.
+2. **`alire-dev.toml` must declare `covex` as a normal index dependency**
+   (`covex = "*"`), never pinned to a local path such as
+   `covex = { path = "../adacovex" }`. A path pin resolves only on the machine
+   that has the sibling checkout; in a consumer workspace or on CI Alire fails
+   the whole workspace load with a confusing error before adacovex or `alr`
+   even runs:
+
+   ```
+   ERROR: Failed to load alire.toml:
+   ERROR:    pins:
+   ERROR:    covex:
+   ERROR:    Pin path is not a valid directory: /home/runner/work/<repo>/<repo>/../adacovex
+   ```
+
+If you see that, drop the `covex` path pin (use `covex = "*"`) and strip the dev
+deps + pins out of `alire.toml`; keep them only in `alire-dev.toml`. The
+Makefile pattern in many projects (swap `alire-dev.toml` over `alire.toml` only
+for the duration of a `prove`/`fmt`/`doc` target, then restore) keeps the
+published `alire.toml` clean while still giving local tooling the dev deps.
+
 ### GitHub Actions
 
 A composite action at the repository root (`./action.yml`) runs the full
