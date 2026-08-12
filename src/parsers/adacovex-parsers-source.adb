@@ -64,7 +64,12 @@ package body Adacovex.Parsers.Source is
                   end loop;
 
                   if H_End > H_Start + 3 then
-                     Tag_Len := H_End - (H_Start + 4) + 1;
+                     --  Clamp to the caller's fixed buffer (Max_Id_Str) so a
+                     --  malformed tag longer than the buffer never overruns;
+                     --  Tag_Len reflects the clamped length so downstream
+                     --  comparisons stay in bounds.
+                     Tag_Len :=
+                       Natural'Min (H_End - (H_Start + 4) + 1, Tag'Length);
                      declare
                         Valid : Boolean := True;
                      begin
@@ -124,13 +129,14 @@ package body Adacovex.Parsers.Source is
                Start := I + 1;
                for J in Start .. Line'Last loop
                   if Line (J) = ' ' then
-                     Dtype_L := J - Start;
+                     Dtype_L := Natural'Min (J - Start, Dtype'Length);
                      for K in 1 .. Dtype_L loop
                         Dtype (K) := Line (Start + K - 1);
                      end loop;
                      for K in J + 1 .. Line'Last loop
                         if Line (K) /= ' ' then
-                           Val_L := Line'Last - K + 1;
+                           Val_L :=
+                             Natural'Min (Line'Last - K + 1, Value'Length);
                            for L in 1 .. Val_L loop
                               Value (L) := Line (K + L - 1);
                            end loop;
@@ -140,7 +146,7 @@ package body Adacovex.Parsers.Source is
                      return True;
                   end if;
                   if J = Line'Last then
-                     Dtype_L := J - Start + 1;
+                     Dtype_L := Natural'Min (J - Start + 1, Dtype'Length);
                      for K in 1 .. Dtype_L loop
                         Dtype (K) := Line (Start + K - 1);
                      end loop;
@@ -425,8 +431,13 @@ package body Adacovex.Parsers.Source is
                         elsif Trim (I)
                               in 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_'
                         then
-                           SNLen := SNLen + 1;
-                           SName (SNLen) := Trim (I);
+                           --  Clamp the stored name to the fixed buffer;
+                           --  the scan still consumes the full identifier so
+                           --  following tokens are not misparsed.
+                           if SNLen < SName'Length then
+                              SNLen := SNLen + 1;
+                              SName (SNLen) := Trim (I);
+                           end if;
                         else
                            exit;
                         end if;

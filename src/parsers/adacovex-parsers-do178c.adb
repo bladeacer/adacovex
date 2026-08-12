@@ -76,8 +76,11 @@ package body Adacovex.Parsers.DO178C is
                         declare
                            Elem : HLR_Info := HLRs (Positive (HLRs.Length));
                         begin
-                           Elem.Id_Len := H_End - (H_Start + 4) + 1;
-                           for I in H_Start + 4 .. H_End loop
+                           Elem.Id_Len :=
+                             Natural'Min
+                               (H_End - (H_Start + 4) + 1, Elem.Id'Length);
+                           for I in H_Start + 4 .. H_Start + 3 + Elem.Id_Len
+                           loop
                               Elem.Id (I - (H_Start + 4) + 1) := Line (I);
                            end loop;
 
@@ -90,8 +93,11 @@ package body Adacovex.Parsers.DO178C is
                                  loop
                                     D_Start := D_Start + 1;
                                  end loop;
-                                 Elem.D_Len := Last - D_Start + 1;
-                                 for I in D_Start .. Last loop
+                                 Elem.D_Len :=
+                                   Natural'Min
+                                     (Last - D_Start + 1, Elem.Desc'Length);
+                                 for I in D_Start .. D_Start + Elem.D_Len - 1
+                                 loop
                                     Elem.Desc (I - D_Start + 1) := Line (I);
                                  end loop;
                               end;
@@ -224,8 +230,11 @@ package body Adacovex.Parsers.DO178C is
                         declare
                            Elem : LLR_Info := LLRs (Positive (LLRs.Length));
                         begin
-                           Elem.Id_Len := L_End - (L_Start + 4) + 1;
-                           for I in L_Start + 4 .. L_End loop
+                           Elem.Id_Len :=
+                             Natural'Min
+                               (L_End - (L_Start + 4) + 1, Elem.Id'Length);
+                           for I in L_Start + 4 .. L_Start + 3 + Elem.Id_Len
+                           loop
                               Elem.Id (I - (L_Start + 4) + 1) := Line (I);
                            end loop;
 
@@ -249,16 +258,24 @@ package body Adacovex.Parsers.DO178C is
                                     end loop;
                                  end if;
 
-                                 Elem.D_Len := D_End - D_Start + 1;
-                                 for I in D_Start .. D_End loop
+                                 Elem.D_Len :=
+                                   Natural'Min
+                                     (D_End - D_Start + 1, Elem.Desc'Length);
+                                 for I in D_Start .. D_Start + Elem.D_Len - 1
+                                 loop
                                     Elem.Desc (I - D_Start + 1) := Line (I);
                                  end loop;
                               end;
                            end if;
 
                            if H_Start > 0 and then H_End > H_Start + 3 then
-                              Elem.HLR_Len := H_End - (H_Start + 4) + 1;
-                              for I in H_Start + 4 .. H_End loop
+                              Elem.HLR_Len :=
+                                Natural'Min
+                                  (H_End - (H_Start + 4) + 1,
+                                   Elem.HLR_Ref'Length);
+                              for I in
+                                H_Start + 4 .. H_Start + 3 + Elem.HLR_Len
+                              loop
                                  Elem.HLR_Ref (I - (H_Start + 4) + 1) :=
                                    Line (I);
                               end loop;

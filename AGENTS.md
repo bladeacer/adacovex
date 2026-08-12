@@ -20,10 +20,10 @@ adacovex was designed to audit the Ada_CRDT library at `../Ada_CRDT` (26 package
 The `--target=PATH` option can point at any Ada/SPARK project.
 
 Self-assessment (`make run-self`, default target: cwd) verifies adacovex against its own
-source -- all 26 packages, 60 subprograms -- and must always show:
+source -- all 26 packages, 63 subprograms -- and must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
 - Platinum SPARK level (all VCs proved)
-- 320/320 native tests passing
+- 336/336 native tests passing
 - DAL-C Achieved
 
 ## Architecture
@@ -47,7 +47,7 @@ src/
 |   |-- adacovex-ir_synthesiser.ads/.adb      -- Future-use IR synthesiser (foreign type-name lowering to bounded Ada)
 |   `-- adacovex-target_profiles.ads/.adb     -- Bounded IR scalar types (IR_Int8..IR_Int64 / IR_UInt8..IR_UInt64) + host/target config
 |-- parsers/
-|   |-- adacovex-parsers.ads                  -- Parent package for all input-file parsers
+|   |-- adacovex-parsers.ads/.adb             -- Parent package for all input-file parsers
 |   |-- adacovex-parsers-do178c.ads/.adb      -- HLR/LLR markdown parser + source tag matcher
 |   |-- adacovex-parsers-gnatprove.ads/.adb   -- GNATprove .out parser
 |   |-- adacovex-parsers-manifest.ads/.adb    -- Alire manifest / alire.lock / .gpr dep graph
@@ -66,16 +66,16 @@ src/
 |   `-- adacovex-server-router.ads            -- Parent package for HTTP request routing (future expansion)
 `-- tests/
     |-- adacovex-test_support.ads/.adb        -- Native test Runner type
-    |-- adacovex_config_tests.ads/.adb        -- CLI config tests (11)
-    |-- adacovex_dal_tests.ads/.adb           -- DAL compliance tests (2)
+    |-- adacovex_config_tests.ads/.adb        -- CLI config tests (19)
+    |-- adacovex_dal_tests.ads/.adb           -- DAL compliance tests (7)
     |-- adacovex_ir_tests.ads/.adb            -- IR synthesis tests (27)
-    |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (38)
+    |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (52)
     |-- adacovex_renderer_svg_tests.ads/.adb  -- SVG renderer tests (30)
     |-- adacovex_sbom_tests.ads/.adb          -- SBOM / manifest graph tests (53)
-    |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (68)
-    |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (40)
+    |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (79)
+    |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (43)
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (26)
-    `-- test_runner.adb                       -- Test suite entry point (320 tests)
+    `-- test_runner.adb                       -- Test suite entry point (336 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -831,7 +831,7 @@ is obtained and built.
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 320/320 passing |
+| Unit tests | `make test` | 336/336 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | all VCs proved, Platinum |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -851,22 +851,22 @@ Test source: `src/tests/`. Entry point: `test_runner.adb` (builds as
 in `adacovex.gpr`; the CLI entry point builds as `bin/adacovex` via the
 `Builder.Executable` override, with a `bin/covex` alias symlink).
 
-`make test` builds and runs the 320-test suite. Test results are written to
+`make test` builds and runs the 336-test suite. Test results are written to
 `docs/test_result.md` in a Markdown table format that can be parsed by
 `adacovex-parsers-tests`. This means adacovex **supports both** native test
 running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 
-### Test categories (320 total)
+### Test categories (336 total)
 
 | Category | Tests | What it covers |
 |----------|-------|----------------|
 | Types conversions | 26 | SPARK_Level/DAL_Level/DAL_Status/Test_Status strings, host word-size detection |
-| DAL compliance | 2 | DAL assessment status |
-| Source scanner | 76 | Package scan, docstring parsing (Ada/Google/Sphinx styles), HLR tags, name extraction, @field/@formal/after-decl, comment-style variants, tag aliases, long generated lines, Max_Line overflow/exact-fit rejection, Skipped_Ct |
+| DAL compliance | 7 | DAL assessment status, oversized HLR/LLR entry clamping |
+| Source scanner | 79 | Package scan, docstring parsing (Ada/Google/Sphinx styles), HLR tags, name extraction, @field/@formal/after-decl, comment-style variants, tag aliases, long generated lines, Max_Line overflow/exact-fit rejection, oversized-name/tag/value clamping, Skipped_Ct |
 | IR synthesis | 27 | Bounded type bounds, Target_Config defaults, host word-size detection, foreign type-name lowering, package synthesis |
 | GNATprove parser | 52 | .out parsing, proof summary, SPARK level detection, Units_Analyzed/Skipped, justified-VC handling, --help handling, Max_Line overflow rejection |
 | Test-result parser | 43 | Markdown table, TAP, Automake, Maven Surefire, and Unity test-result parsing; conventional file-name discovery; Max_Line overflow rejection |
-| CLI config | 11 | Default option values, --help, --no-svg field, --compare-base and --coverage-delta defaults |
+| CLI config | 19 | Default option values, --help, --no-svg field, --compare-base and --coverage-delta defaults, prove-option defaults |
 | SVG renderer | 30 | SVG badge content and format |
 | SBOM generator | 53 | Proof/DAL property mapping, Alire manifest + GPR dependency graph, CycloneDX/SPDX rendering |
 
@@ -925,3 +925,24 @@ are unbounded via `Ada.Containers.Vectors`):
 Package and subprogram collections grow dynamically via `Ada.Containers.Vectors`
 (heap allocation, up to `Natural'Last` ~ 2.1B). The fixed-size constants above
 apply only to individual line/path/description buffers.
+
+**Overflow contract (two tiers).** Path and line buffers *fail loudly*: an
+overlong physical line is drained and reported (`line exceeds Max_Line
+buffer`), the file is not parsed, `Skipped_Ct` increments, and DAL becomes
+`Unmet`; an overlong path is reported and the file/subtree is skipped. No
+partial results ever flow downstream. Semantic text fields (subprogram names,
+HLR/LLR IDs, descriptions, docstring tag names/values, CLI strings) are
+*clamped* to their fixed buffer with the length field (`Name_Len`, `Id_Len`,
+`D_Len`, ...) recording the recorded prefix, so adversarial or generated input
+can never raise `Constraint_Error`. Clamping keeps the scan correct -- the
+full token is still consumed so following tokens are not misparsed.
+
+**Why no chunking / LEB128.** adacovex audits in memory: counts (packages,
+subprograms, HLR tags, tests, SBOM components) are unbounded vectors, and each
+scanned unit is processed line-at-a-time into fixed per-item buffers. A single
+Ada declaration does not admit streaming/chunked parsing -- truncating a
+declaration is worse than a loud failure, so chunking would gain nothing.
+LEB128 (variable-length integer encoding) is a serialization concern and does
+not apply to an in-memory CLI audit. The design therefore scales to arbitrarily
+large codebases by dynamic allocation, bounded per-item buffers, and explicit
+overflow handling, without streaming encodings.

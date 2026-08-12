@@ -39,7 +39,7 @@ HLR-SBOM: SBOM generation
 |-----------|-------------|
 | `Scope` | Component dependency scope. |
 
-**Returns:** "base", "dev", "transitive", or "vendored".
+**Returns:** "base" (4), "dev" (3), "transitive" (10), or "vendored" (8).
 
 ## Procedures
 

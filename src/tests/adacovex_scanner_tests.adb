@@ -651,6 +651,50 @@ package body Adacovex_Scanner_Tests is
          end;
       end;
 
+      --  Test 20: oversized subprogram names, HLR tags, and docstring values
+      --  are clamped to their fixed buffers instead of raising
+      --  Constraint_Error.
+      begin
+         declare
+            F      : File_Type;
+            Big    : String (1 .. 200);
+            HLR    : String (1 .. 70);
+            Doc    : String (1 .. 200);
+            BigLen : Natural := 0;
+         begin
+            for I in Big'Range loop
+               Big (I) := (if I mod 2 = 0 then 'a' else 'b');
+               BigLen := BigLen + 1;
+            end loop;
+            for I in HLR'Range loop
+               HLR (I) := 'A';
+            end loop;
+            for I in Doc'Range loop
+               Doc (I) := 'x';
+            end loop;
+            Create (F, Out_File, Tmp_File);
+            Put_Line (F, "--  HLR-" & HLR);
+            Put_Line (F, "package Oversized is");
+            Put_Line (F, "   pragma Pure;");
+            Put_Line (F, "   --  @param X  " & Doc);
+            Put_Line (F, "   procedure " & Big & " (X : Integer);");
+            Put_Line (F, "end Oversized;");
+            Close (F);
+         end;
+
+         Adacovex.Parsers.Source.Scan_Ads_File (Tmp_File, Pkg, Success);
+         R.Check (Success, "Test 20: oversized input parses without crash");
+         R.Check
+           (Natural (Pkg.HLR_Tags.Length) = 1
+            and then Pkg.HLR_Tags (1).Len = Adacovex.Types.Max_Id_Str,
+            "Test 20: HLR tag clamped to Max_Id_Str");
+         R.Check
+           (Natural (Pkg.Subprograms.Length) = 1
+            and then Pkg.Subprograms (1).Name_Len
+                     = Adacovex.Types.Max_Desc_Str,
+            "Test 20: subprogram name clamped to Max_Desc_Str");
+      end;
+
       --  Cleanup
       begin
          Ada.Directories.Delete_File (Tmp_File);

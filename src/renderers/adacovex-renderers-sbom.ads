@@ -47,11 +47,11 @@ package Adacovex.Renderers.SBOM is
    --  alire-dev.toml, transitive ones in neither manifest, and vendored
    --  packages are overlaid by a .adacovex/patches/ docstring patch.
    --  @param Scope  Component dependency scope.
-   --  @return "base", "dev", "transitive", or "vendored".
+   --  @return "base" (4), "dev" (3), "transitive" (10), or "vendored" (8).
    function Scope_Property (Scope : Types.Component_Scope) return String
    with
      SPARK_Mode => On,
-     Post       => Scope_Property'Result'Length in 4 .. 10,
+     Post       => Scope_Property'Result'Length in 3 .. 10,
      Global     => null;
 
    --  Write an SBOM in the requested format to Out_Path.
