@@ -15,7 +15,12 @@ with Adacovex.Types;
 --       flaky third-party downloads in CI could not fail a proof run, and no
 --       dev-manifest swap is ever needed.  The manifest may declare the version
 --       as a rich set expression (`^15.1.0`, `~15.1.0`, ...); the leading
---       operator is stripped to yield the bare version alr accepts.
+--       operator is stripped to yield the bare version alr accepts.  A
+--       manifest-declared prover is authoritative: when it cannot be deployed
+--       the run fails instead of falling back, because a different gnatprove
+--       version can change which VCs are discharged (results must always come
+--       from the pinned prover).  Priorities 2-4 apply only to projects whose
+--       manifest does not declare gnatprove.
 --    2. A gnatprove already on $PATH.
 --    3. A cached gnatprove in ~/.adacovex/toolchain/bin (download layout) or a
 --       previously `alr get`-deployed gnatprove_*/ crate under the same dir.
