@@ -69,17 +69,19 @@ end record;
 | `Success` | True if a root .gpr file was found. |
 | `Target_Dir` | Project root directory. |
 
-### procedure Resolve_GNATprove (Target_Dir : Standard.String; Exe_Path : Standard.String; Exe_Len : Standard.Natural; Toolchain_Dir : Standard.String; Dir_Len : Standard.Natural; Via_Alr : Standard.Boolean; Success : Standard.Boolean)
+### procedure Resolve_GNATprove (Target_Dir : Standard.String; Exe_Path : Standard.String; Exe_Len : Standard.Natural; Toolchain_Dir : Standard.String; Dir_Len : Standard.Natural; Via_Alr : Standard.Boolean; Identity : Standard.String; Ident_Len : Standard.Natural; Success : Standard.Boolean)
 
 | Parameter | Description |
 |-----------|-------------|
-| `Dir_Len` | Length of the toolchain bin directory path. |
-| `Exe_Len` | Length of the resolved executable path. |
-| `Exe_Path` | Output buffer for the executable path. |
-| `Success` | True if a usable gnatprove was found. |
-| `Target_Dir` | Project root directory. |
-| `Toolchain_Dir` | Output buffer for the toolchain bin directory. |
-| `Via_Alr` | True if gnatprove must run through `alr exec`. |
+| `Dir_Len` |  |
+| `Exe_Len` |  |
+| `Exe_Path` |  |
+| `Ident_Len` |  |
+| `Identity` |  |
+| `Success` |  |
+| `Target_Dir` |  |
+| `Toolchain_Dir` |  |
+| `Via_Alr` |  |
 
 ### procedure Run_Prove (Target_Dir : Standard.String; Opts : Adacovex.Prove.Prove_Options; Success : Standard.Boolean)
 
