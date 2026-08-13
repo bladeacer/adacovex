@@ -7,15 +7,20 @@ with Adacovex.Types;
 --
 --  Resolution priority (lightweight: adacovex only requires `alr` on PATH):
 --    1. If the target's alire.toml / alire-dev.toml declares gnatprove as a
---       dependency, invoke it via `alr exec` (alire manages the toolchain).
---       When gnatprove lives only in alire-dev.toml (the common dev-manifest
---       layout), the dev manifest is temporarily swapped over alire.toml for
---       the proof run and restored afterwards -- the assessment and SBOM
---       pipeline always scans the publishing alire.toml.
+--       dependency, deploy ONLY the gnatprove binary crate (a self-contained
+--       bundle -- no dependencies) into ~/.adacovex/toolchain via
+--       `alr -n get gnatprove=<version>`, then run it directly.  This avoids
+--       the fragile `alr exec` path that used to compose the target's entire
+--       dev-manifest dependency set (covex, gnatdoc_bin, gnatformat_bin, ...):
+--       flaky third-party downloads in CI could not fail a proof run, and no
+--       dev-manifest swap is ever needed.  The manifest may declare the version
+--       as a rich set expression (`^15.1.0`, `~15.1.0`, ...); the leading
+--       operator is stripped to yield the bare version alr accepts.
 --    2. A gnatprove already on $PATH.
---    3. A cached gnatprove in ~/.adacovex/toolchain/bin.
+--    3. A cached gnatprove in ~/.adacovex/toolchain/bin (download layout) or a
+--       previously `alr get`-deployed gnatprove_*/ crate under the same dir.
 --    4. Last resort: a platform toolchain download (curl; only used when
---       no alire-managed or on-PATH gnatprove is available).
+--       no deployable, on-PATH, or cached gnatprove is available).
 --  HLR-PROVE: GNATprove subcommand
 
 package Adacovex.Prove is
@@ -56,18 +61,22 @@ package Adacovex.Prove is
      (Opts : Prove_Options; Jobs : Natural) return String;
 
    --  Resolve how to run gnatprove for a target project.
-   --  Priority: alire-managed (Via_Alr => True), then PATH, then
+   --  Priority: manifest-declared deployment via `alr get`, then PATH, then
    --  ~/.adacovex/toolchain/bin, then a platform toolchain download.
-   --  When Via_Alr is True, Exe_Path holds the `alr` executable and
-   --  Run_Prove spawns `alr -C <target> exec -- gnatprove -P <gpr>`.
-   --  Otherwise Exe_Path holds the gnatprove binary and Toolchain_Dir is
-   --  the bin directory to prepend to PATH (empty when already on PATH).
+   --  Exe_Path always holds a directly-executable gnatprove binary (never the
+   --  `alr` wrapper -- the deployment path runs the deployed binary itself),
+   --  and Toolchain_Dir is the bin directory to prepend to PATH for the child
+   --  (empty when already on PATH).  Identity is a short fingerprint of the
+   --  resolved prover (pinned manifest version for the deploy path, else the
+   --  executable/toolchain path); Run_Prove folds it into the result-cache key
+   --  so proofs from different gnatprove deployments are never mixed.
    --  @param Target_Dir  Project root directory.
    --  @param Exe_Path  Output buffer for the executable path.
    --  @param Exe_Len  Length of the resolved executable path.
    --  @param Toolchain_Dir  Output buffer for the toolchain bin directory.
    --  @param Dir_Len  Length of the toolchain bin directory path.
-   --  @param Via_Alr  True if gnatprove must run through `alr exec`.
+   --  @param Identity  Output buffer for the prover identity fingerprint.
+   --  @param Ident_Len  Length of the identity fingerprint.
    --  @param Success  True if a usable gnatprove was found.
    procedure Resolve_GNATprove
      (Target_Dir    : String;
@@ -75,7 +84,6 @@ package Adacovex.Prove is
       Exe_Len       : out Natural;
       Toolchain_Dir : out String;
       Dir_Len       : out Natural;
-      Via_Alr       : out Boolean;
       Identity      : out String;
       Ident_Len     : out Natural;
       Success       : out Boolean);
@@ -95,11 +103,10 @@ package Adacovex.Prove is
 
    --  Run gnatprove against a target project's root .gpr file.
    --  Resolves gnatprove (see Resolve_GNATprove), then spawns
-   --  `alr -C <target> exec -- gnatprove -P <gpr> <options>` when
-   --  alire-managed, or `gnatprove -P <gpr> <options>` directly otherwise
-   --  (prepending the toolchain bin directory to PATH for the child).  The
-   --  options (jobs, level, timeout, steps, memlimit, force, unrolling,
-   --  inlining) are forwarded to gnatprove.  On success a fresh
+   --  `gnatprove -P <gpr> <options>` directly (prepending the toolchain bin
+   --  directory to PATH for the child when the deployment was not already on
+   --  PATH).  The options (jobs, level, timeout, steps, memlimit, force,
+   --  unrolling, inlining) are forwarded to gnatprove.  On success a fresh
    --  <target>/obj/gnatprove/gnatprove.out is written by gnatprove.  The
    --  command's stdout/stderr stream to the parent's terminal.
    --  @param Target_Dir  Project root directory.

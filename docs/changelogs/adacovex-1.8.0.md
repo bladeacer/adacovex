@@ -64,6 +64,23 @@ The composite action gains a `result-cache` input (default on) that persists
 content-addressed entries make restoring a stale cache always safe, so
 incremental branches get mostly cache hits.
 
+### C8: Toolchain-aware proof cache and standalone gnatprove deployment
+
+The GNATprove result-cache key now folds in the resolved prover identity (the
+manifest-pinned version for alire-managed deployments, else the resolved
+executable/toolchain path), so a proof produced by one gnatprove is never reused
+after an upgrade or a different on-PATH / cached / downloaded toolchain -- stale
+entries simply miss and are transparently re-proved, with no explicit
+invalidation. The `prove` subcommand also stops composing the target's entire
+dev-manifest dependency set: instead of `alr exec -- gnatprove` (which could
+pull covex / gnatdoc_bin / gnatformat_bin and, for dev-only gnatprove, swap
+manifests for the run), it deploys only the self-contained gnatprove binary
+crate into `~/.adacovex/toolchain` via `alr -n get gnatprove=<version>` and
+runs the deployed binary directly. The manifest version set expression
+(`^15.1.0`, `~15.1.0`, ...) is reduced to the bare version alr accepts.
+CI proof runs now depend on a single crate download instead of the full
+dev-manifest dependency closure, and the dev-manifest swap machinery is gone.
+
 ## Fixes
 
 ### H1: Cache eviction
@@ -83,10 +100,15 @@ release).
 
 Self-assessment remains **Platinum** (all VCs proved, 0 unproved, AoRTE-free).
 `make prove` re-ran gnatprove 15.1.0 against the current tree: **503/503** VCs
-proved across 38 analyzed units. The cache, CLI, and main-flow changes live in
-non-SPARK units (`Adacovex.Cache`, `Adacovex.CPUs`, `Adacovex.Config`,
-`adacovex_main`), so no SPARK proof metrics regress. Ada_CRDT re-proved clean
-too: 584/584 VCs (44 justified) across 34 analyzed units, Platinum.
+proved across 38 analyzed units. The cache, CLI, main-flow, and prove-resolution
+changes live in non-SPARK units (`Adacovex.Cache`, `Adacovex.CPUs`,
+`Adacovex.Config`, `Adacovex.Prove`, `adacovex_main`), so no SPARK proof metrics
+regress. Ada_CRDT re-proved clean too: 584/584 VCs (44 justified) across 34
+analyzed units, Platinum. Proof runs
+now deploy gnatprove standalone via `alr -n get gnatprove=15.1.0` into
+`~/.adacovex/toolchain` and execute that binary directly; identical inputs hit
+the newly toolchain-aware result cache (verified: 30 hit(s), 0 miss(es) on
+re-run).
 
 ## Traceability
 
