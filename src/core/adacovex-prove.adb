@@ -597,20 +597,31 @@ package body Adacovex.Prove is
                   Set_Identity ("alr:" & Bare);
                   return;
                end if;
+               --  A manifest-declared prover is authoritative: fail the run
+               --  rather than silently falling back to a different gnatprove,
+               --  because a prover version drift can change which VCs are
+               --  discharged (e.g. CI Bronze vs local Platinum on identical
+               --  sources).
                Ada.Text_IO.Put_Line
                  (Ada.Text_IO.Standard_Error,
-                  "  WARNING: could not deploy the pinned gnatprove"
-                  & " '"
+                  "  ERROR: manifest pins gnatprove '"
                   & Bare
-                  & "' via alr; trying PATH/cache/download.");
-            else
+                  & "' but it could not be deployed via `alr -n get`;");
                Ada.Text_IO.Put_Line
                  (Ada.Text_IO.Standard_Error,
-                  "  WARNING: manifest declares gnatprove with an unparseable"
-                  & " version expression '"
-                  & Con
-                  & "'; trying PATH/cache/download.");
+                  "  refusing to fall back to a different gnatprove.  Install"
+                  & " Alire and re-run.");
+               Success := False;
+               return;
             end if;
+            Ada.Text_IO.Put_Line
+              (Ada.Text_IO.Standard_Error,
+               "  ERROR: manifest declares gnatprove with an unparseable"
+               & " version expression '"
+               & Con
+               & "'; refusing to guess which prover to use.");
+            Success := False;
+            return;
          end;
       end if;
 

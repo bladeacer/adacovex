@@ -468,7 +468,7 @@ tag; you can pin to a specific release if needed):
 
 ```yaml
 steps:
-  - uses: actions/checkout@v4
+  - uses: actions/checkout@v7
   - uses: bladeacer/adacovex@v1
     with:
       target: .
@@ -533,7 +533,7 @@ jobs:
   coverage-delta:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: bladeacer/adacovex@v1
