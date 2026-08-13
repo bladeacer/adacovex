@@ -95,13 +95,15 @@ gnatprove = "^15.1.0"
 ```
 
 Then `alr build` produces `bin/adacovex` inside the project and the `prove`
-subcommand runs gnatprove through `alr exec`, so each project pins its own
-exact toolchain version -- no global install needed:
+subcommand deploys the pinned gnatprove crate standalone via
+`alr -n get gnatprove=<version>` into `~/.adacovex/toolchain` and runs it
+directly, so each project pins its own exact toolchain version -- no global
+install needed:
 
 ```bash
 alr build
 ./bin/adacovex --target=. --dal=C
-./bin/adacovex prove --target=.   # runs gnatprove via alr exec
+./bin/adacovex prove --target=.   # deploys gnatprove via alr get, then runs it
 ```
 
 For a project that is itself an Alire crate, `gnatprove` may instead be
@@ -143,7 +145,7 @@ architecture, resolves the latest tag, and installs to `~/.adacovex/bin`
 curl -fsSL https://raw.githubusercontent.com/bladeacer/adacovex/main/install.sh | bash
 ```
 
-It warns if Alire is not on `$PATH` (so `covex prove` has no `alr exec`
+It warns if Alire is not on `$PATH` (so `covex prove` has no `alr get`
 fallback), then adds the install bin dir to your shell's `PATH` and symlinks
 `covex` -> `adacovex`.
 
@@ -174,12 +176,17 @@ Clone the repo and `make build`, or manage adacovex as an Alire dev dependency
 The `prove` subcommand resolves the `gnatprove` executable in this order:
 
 1. **Per-project manifest (preferred)**: if `<target>/alire.toml` or
-   `<target>/alire-dev.toml` declares a `gnatprove` dependency, it is run via
-   `alr exec gnatprove` so Alire manages the exact toolchain version for that
-   project.
+   `<target>/alire-dev.toml` declares a `gnatprove` dependency, the pinned
+   gnatprove binary crate is deployed standalone into `~/.adacovex/toolchain/`
+   via `alr -n get gnatprove=<version>` and executed directly (the manifest's
+   version-set expression, e.g. `^15.1.0`, is reduced to the bare version alr
+   accepts). This isolates the proof run from the target's other dev-manifest
+   tools and never swaps manifests.
 2. **`$PATH`**: a `gnatprove` already on `$PATH` (e.g. installed beforehand
    with `alr install gnatprove`).
-3. **Cached toolchain**: `~/.adacovex/toolchain/`.
+3. **Cached toolchain**: `~/.adacovex/toolchain/` -- either the download
+   layout (`<toolchain>/bin/gnatprove`) or a previously `alr get`-deployed
+   `gnatprove_*/` crate.
 4. **Download**: last resort, fetch the platform toolchain bundle.
 
 If the target manifest declares `gnatprove` but `alr` is not installed, install
@@ -398,8 +405,9 @@ gnatprove = "^15.1.0"
 ```
 
 Then `alr build` produces `bin/adacovex` inside the project, `adacovex` runs
-against the current directory by default, and `covex prove` runs gnatprove
-through `alr exec` (see [Installing adacovex](#installing-adacovex)).
+against the current directory by default, and `covex prove` deploys the pinned
+gnatprove crate standalone via `alr -n get` and runs it directly (see
+[Installing adacovex](#installing-adacovex)).
 
 In both cases the assessed project is the `--target` directory (or CWD when
 omitted); the two approaches differ only in how the binary is obtained.
@@ -407,13 +415,15 @@ omitted); the two approaches differ only in how the binary is obtained.
 ### Consumer manifest prerequisites (avoid a broken CI)
 
 adacovex's `prove` subcommand and the GitHub Action resolve `gnatprove` through
-the *target project's* manifest (`alr exec -- gnatprove`). For that to succeed
-in a clean checkout or on CI, the consumer's manifests must follow two rules:
+the *target project's* manifest: the pinned gnatprove crate is deployed via
+`alr -n get gnatprove=<version>` and run directly, with no `alr exec` over the
+whole workspace. For that to succeed in a clean checkout or on CI, the
+consumer's manifests must still follow two rules:
 
 1. **`alire.toml` must be the clean publishing manifest** -- no dev tooling
    (`gnatprove`, `gnatdoc_bin`, `gnatformat_bin`, `covex`) and **no `[[pins]]`**.
-   This is the manifest Alire reads when the action runs `alr build` and when
-   `prove` runs `alr exec`, so it must resolve with nothing but Alire + GNAT.
+   This is the manifest Alire reads when the action runs `alr build`, so it
+   must resolve with nothing but Alire + GNAT.
 2. **`alire-dev.toml` must declare `covex` as a normal index dependency**
    (`covex = "*"`), never pinned to a local path such as
    `covex = { path = "../adacovex" }`. A path pin resolves only on the machine
