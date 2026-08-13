@@ -332,18 +332,6 @@ package body Adacovex.Prove is
                   (Strip_Trailing_Slash (Target_Dir) & "/alire.toml");
    end Manifest_Declares_GNATprove;
 
-   --  True when gnatprove is declared only in <target>/alire-dev.toml and not
-   --  in the publishing <target>/alire.toml.  `alr exec` reads the active
-   --  manifest (alire.toml), so in this case gnatprove must be made visible
-   --  to alr by temporarily swapping the dev manifest into place.
-   function Gnatprove_Dev_Only (Target_Dir : String) return Boolean is
-      T : constant String := Strip_Trailing_Slash (Target_Dir);
-   begin
-      return
-        File_Declares_GNATprove (T & "/alire-dev.toml")
-        and then not File_Declares_GNATprove (T & "/alire.toml");
-   end Gnatprove_Dev_Only;
-
    --  Download and unpack the platform toolchain bundle into
    --  ~/.adacovex/toolchain/.  Last-resort fallback only: used when neither
    --  an alire-managed gnatprove nor a gnatprove on $PATH nor a cached
@@ -427,13 +415,142 @@ package body Adacovex.Prove is
       Success := True;
    end Download_Toolchain;
 
+   --  Strip a version-set expression (`^15.1.0`, `~15.1.0`, `>=16.0.0`,
+   --  `15.1.0`) down to the bare numeric version alr accepts on the
+   --  `alr get gnatprove=<v>` command line: skip leading operators/spaces,
+   --  then take digits and dots up to the first other character.  Returns ""
+   --  when no version could be extracted.
+   function Bare_Version (Con : String) return String is
+      Start : Natural := Con'First;
+      I     : Natural := Con'First;
+   begin
+      while Start <= Con'Last and then Con (Start) not in '0' .. '9' loop
+         Start := Start + 1;
+      end loop;
+      if Start > Con'Last then
+         return "";
+      end if;
+      I := Start;
+      while I <= Con'Last
+        and then (Con (I) in '0' .. '9' or else Con (I) = '.')
+      loop
+         I := I + 1;
+      end loop;
+      return Con (Start .. I - 1);
+   end Bare_Version;
+
+   --  Locate a gnatprove crate previously deployed under Root by `alr get`:
+   --  a `gnatprove_<version>_<hash>/` directory containing bin/gnatprove.
+   --  When Version is non-empty only directories with that exact version
+   --  prefix match; when empty, any gnatprove_* crate qualifies (the greatest
+   --  name wins -- a later version/hash).  Returns the crate directory.
+   procedure Find_Deployed_GNATprove
+     (Root    : String;
+      Version : String;
+      Dir     : out String;
+      Dir_Len : out Natural;
+      Found   : out Boolean)
+   is
+      use Ada.Directories;
+      Prefix    : constant String :=
+        (if Version'Length > 0
+         then "gnatprove_" & Version & "_"
+         else "gnatprove_");
+      Srch      : Search_Type;
+      Ent       : Directory_Entry_Type;
+      Best_Name : String (1 .. Types.Max_Filename);
+      Best_Len  : Natural := 0;
+   begin
+      Found := False;
+      if not Exists (Root) then
+         return;
+      end if;
+      Start_Search (Srch, Root, "gnatprove_*");
+      while More_Entries (Srch) loop
+         Get_Next_Entry (Srch, Ent);
+         if Kind (Ent) = Directory then
+            declare
+               N : constant String := Simple_Name (Ent);
+            begin
+               if N'Length > Prefix'Length
+                 and then N (N'First .. N'First + Prefix'Length - 1) = Prefix
+                 and then Ada.Directories.Exists
+                            (Full_Name (Ent) & "/bin/gnatprove")
+               then
+                  if Best_Len = 0 or else N > Best_Name (1 .. Best_Len) then
+                     Best_Len := N'Length;
+                     for I in 1 .. N'Length loop
+                        Best_Name (I) := N (N'First + I - 1);
+                     end loop;
+                  end if;
+               end if;
+            end;
+         end if;
+      end loop;
+      End_Search (Srch);
+      if Best_Len > 0 then
+         Copy_To (Dir, Dir_Len, Root & "/" & Best_Name (1 .. Best_Len));
+         Found := True;
+      end if;
+   end Find_Deployed_GNATprove;
+
+   --  Deploy ONLY the gnatprove binary crate (a self-contained bundle, no
+   --  dependencies) into ~/.adacovex/toolchain/ via
+   --  `alr -n get gnatprove=<bare-version>` when the target manifest declares
+   --  gnatprove.  The deployed binary -- not the `alr` wrapper -- is what
+   --  Run_Prove executes, so no dev-manifest swap and no composition of the
+   --  target's whole dependency set is ever needed (the previous `alr exec`
+   --  path pulled in covex/gnatdoc_bin/gnatformat_bin etc., whose flaky
+   --  downloads could fail CI proof runs).  Idempotent: an existing crate for
+   --  the same version is reused without re-running alr, so a restored
+   --  toolchain cache never re-downloads.
+   procedure Deploy_GNATprove
+     (Bare          : String;
+      Exe_Path      : out String;
+      Exe_Len       : out Natural;
+      Toolchain_Dir : out String;
+      Dir_Len       : out Natural;
+      Success       : out Boolean)
+   is
+      Home : constant String := Home_Dir;
+      Dst  : constant String := Home & Toolchain_Subdir;
+      Dir  : String (1 .. Types.Max_Path);
+      DLen : Natural := 0;
+      OK   : Boolean;
+      C    : Integer;
+   begin
+      Find_Deployed_GNATprove (Dst, Bare, Dir, DLen, Success);
+      if Success then
+         Copy_To (Exe_Path, Exe_Len, Dir (1 .. DLen) & "/bin/gnatprove");
+         Copy_To (Toolchain_Dir, Dir_Len, Dir (1 .. DLen) & "/bin");
+         return;
+      end if;
+
+      Ada.Directories.Create_Path (Dst);
+      Run_Command
+        ((new String'("-c"),
+          new String'
+            ("cd '" & Dst & "' && alr -n get gnatprove='" & Bare & "'")),
+         "/dev/null",
+         OK,
+         C);
+      if not OK or else C /= 0 then
+         Success := False;
+         return;
+      end if;
+      Find_Deployed_GNATprove (Dst, Bare, Dir, DLen, Success);
+      if Success then
+         Copy_To (Exe_Path, Exe_Len, Dir (1 .. DLen) & "/bin/gnatprove");
+         Copy_To (Toolchain_Dir, Dir_Len, Dir (1 .. DLen) & "/bin");
+      end if;
+   end Deploy_GNATprove;
+
    procedure Resolve_GNATprove
      (Target_Dir    : String;
       Exe_Path      : out String;
       Exe_Len       : out Natural;
       Toolchain_Dir : out String;
       Dir_Len       : out Natural;
-      Via_Alr       : out Boolean;
       Identity      : out String;
       Ident_Len     : out Natural;
       Success       : out Boolean)
@@ -445,47 +562,56 @@ package body Adacovex.Prove is
 
       --  Identity is a short fingerprint folded into the proof result-cache
       --  key so proofs from different gnatprove deployments are never mixed:
-      --  for the alire path it is the manifest-pinned version constraint
-      --  (alr's path is stable across gnatprove upgrades, so the version must
-      --  be included explicitly); otherwise it is the resolved executable path
-      --  plus toolchain bin dir (which embeds the version hash for downloaded
-      --  / cached toolchains and the absolute path for on-PATH installs).
+      --  for the `alr get` deployment path it is the manifest-pinned bare
+      --  version; otherwise it is the resolved executable path (which embeds
+      --  the version hash for downloaded/cached toolchains and the absolute
+      --  path for on-PATH installs).
       procedure Set_Identity (S : String) is
+         Max : constant Natural := Natural'Min (S'Length, Identity'Length);
       begin
-         Ident_Len := S'Length;
-         for I in S'Range loop
-            Identity (I - S'First + 1) := S (I);
+         Ident_Len := Max;
+         for I in 1 .. Max loop
+            Identity (I) := S (S'First + I - 1);
          end loop;
       end Set_Identity;
    begin
-      Via_Alr := False;
       Ident_Len := 0;
 
       --  Priority 1: the target declares gnatprove in alire.toml /
-      --  alire-dev.toml; let alire manage the toolchain via `alr exec`.
+      --  alire-dev.toml -- deploy only that binary crate and run it directly.
       if Manifest_Declares_GNATprove (Target_Dir) then
-         Exe := Locate_Exec_On_Path ("alr");
-         if Exe /= null then
-            Copy_To (Exe_Path, Exe_Len, Exe.all);
-            Free (Exe);
-            Dir_Len := 0;
-            Via_Alr := True;
-            --  alr's path is stable across gnatprove upgrades, so anchor the
-            --  identity to the pinned version constraint instead.
-            declare
-               T    : constant String := Strip_Trailing_Slash (Target_Dir);
-               Ver  : constant String :=
-                 File_GNATprove_Version (T & "/alire-dev.toml");
-               Ver2 : constant String :=
-                 (if Ver'Length > 0
-                  then Ver
-                  else File_GNATprove_Version (T & "/alire.toml"));
-            begin
-               Set_Identity ("alr:" & Ver2);
-            end;
-            Success := True;
-            return;
-         end if;
+         declare
+            T    : constant String := Strip_Trailing_Slash (Target_Dir);
+            Ver  : constant String :=
+              File_GNATprove_Version (T & "/alire-dev.toml");
+            Con  : constant String :=
+              (if Ver'Length > 0
+               then Ver
+               else File_GNATprove_Version (T & "/alire.toml"));
+            Bare : constant String := Bare_Version (Con);
+         begin
+            if Bare'Length > 0 then
+               Deploy_GNATprove
+                 (Bare, Exe_Path, Exe_Len, Toolchain_Dir, Dir_Len, Success);
+               if Success then
+                  Set_Identity ("alr:" & Bare);
+                  return;
+               end if;
+               Ada.Text_IO.Put_Line
+                 (Ada.Text_IO.Standard_Error,
+                  "  WARNING: could not deploy the pinned gnatprove"
+                  & " '"
+                  & Bare
+                  & "' via alr; trying PATH/cache/download.");
+            else
+               Ada.Text_IO.Put_Line
+                 (Ada.Text_IO.Standard_Error,
+                  "  WARNING: manifest declares gnatprove with an unparseable"
+                  & " version expression '"
+                  & Con
+                  & "'; trying PATH/cache/download.");
+            end if;
+         end;
       end if;
 
       --  Priority 2: a gnatprove already on $PATH.
@@ -499,7 +625,8 @@ package body Adacovex.Prove is
          return;
       end if;
 
-      --  Priority 3: the local toolchain directory.
+      --  Priority 3: the local toolchain directory -- the download layout
+      --  (<toolchain>/bin) or a previously alr-get-deployed gnatprove_* crate.
       if Ada.Directories.Exists (Bin_Dir & Bin_Subdir) then
          Copy_To (Exe_Path, Exe_Len, Bin_Dir & Bin_Subdir);
          Copy_To (Toolchain_Dir, Dir_Len, Bin_Dir);
@@ -507,6 +634,18 @@ package body Adacovex.Prove is
          Success := True;
          return;
       end if;
+      declare
+         Dir  : String (1 .. Types.Max_Path);
+         DLen : Natural := 0;
+      begin
+         Find_Deployed_GNATprove (Toolchain, "", Dir, DLen, Success);
+         if Success then
+            Copy_To (Exe_Path, Exe_Len, Dir (1 .. DLen) & "/bin/gnatprove");
+            Copy_To (Toolchain_Dir, Dir_Len, Dir (1 .. DLen) & "/bin");
+            Set_Identity ("cache:" & Toolchain_Dir (1 .. Dir_Len));
+            return;
+         end if;
+      end;
 
       --  Priority 4: last resort, download the platform toolchain into
       --  ~/.adacovex/toolchain/.
@@ -594,81 +733,6 @@ package body Adacovex.Prove is
       end if;
    end Find_Root_GPR;
 
-   --  Build a shell script that runs `alr exec -- gnatprove -P <gpr>` with the
-   --  target's alire-dev.toml temporarily swapped over alire.toml, restoring
-   --  both manifests (and alire.lock / alire/) afterwards.  Used when the
-   --  target declares gnatprove only in its dev manifest: `alr exec` reads the
-   --  active alire.toml, so the dev dependency must be made visible for the
-   --  duration of the proof run.  The manifest swap never affects the
-   --  assessment pipeline, which scans the publishing alire.toml.
-   procedure Build_Dev_Exec_Script
-     (Target_Dir : String;
-      GPR_Path   : String;
-      Options    : String;
-      Script     : out String;
-      Script_Len : out Natural;
-      Success    : out Boolean)
-   is
-      Pos : Natural := 0;
-
-      procedure Append (S : String) is
-      begin
-         for I in S'Range loop
-            Pos := Pos + 1;
-            if Pos > Script'Length then
-               raise Constraint_Error;
-            end if;
-            Script (Pos) := S (I);
-         end loop;
-      end Append;
-
-      function Q (S : String) return String is
-      begin
-         return "'" & S & "'";
-      end Q;
-   begin
-      Script_Len := 0;
-      begin
-         Append ("cd " & Q (Target_Dir) & " || exit 1" & ASCII.LF);
-         Append ("_b=`mktemp -d` || exit 1" & ASCII.LF);
-         Append ("cp -f alire.toml ""$_b/alire.toml"" || exit 1" & ASCII.LF);
-         Append
-           ("[ -f alire.lock ] && cp -f alire.lock ""$_b/alire.lock"""
-            & ASCII.LF);
-         Append ("[ -d alire ] && cp -rf alire ""$_b/alire""" & ASCII.LF);
-         Append ("cp -f alire-dev.toml alire.toml || exit 1" & ASCII.LF);
-         Append ("_restore() {" & ASCII.LF);
-         Append
-           ("  [ -f ""$_b/alire.toml"" ] && "
-            & "mv -f ""$_b/alire.toml"" alire.toml 2>/dev/null"
-            & ASCII.LF);
-         Append
-           ("  [ -f ""$_b/alire.lock"" ] && "
-            & "mv -f ""$_b/alire.lock"" alire.lock 2>/dev/null"
-            & ASCII.LF);
-         Append
-           ("  if [ -d ""$_b/alire"" ]; then rm -rf alire 2>/dev/null; "
-            & "mv -f ""$_b/alire"" alire 2>/dev/null; fi"
-            & ASCII.LF);
-         Append ("  rmdir ""$_b"" 2>/dev/null || true" & ASCII.LF);
-         Append ("}" & ASCII.LF);
-         Append ("trap _restore EXIT INT TERM" & ASCII.LF);
-         Append ("alr exec -- gnatprove -P " & Q (GPR_Path));
-         if Options'Length > 0 then
-            Append (" " & Options);
-         end if;
-         Append ("" & ASCII.LF);
-         Append ("_s=$?" & ASCII.LF);
-         Append ("exit $_s" & ASCII.LF);
-      exception
-         when Constraint_Error =>
-            Success := False;
-            return;
-      end;
-      Script_Len := Pos;
-      Success := True;
-   end Build_Dev_Exec_Script;
-
    procedure Run_Prove
      (Target_Dir : String; Opts : Prove_Options; Success : out Boolean)
    is
@@ -678,7 +742,6 @@ package body Adacovex.Prove is
       TLen    : Natural := 0;
       GPR     : String (1 .. Types.Max_Path);
       GLen    : Natural := 0;
-      Via_Alr : Boolean := False;
       Ident   : String (1 .. Types.Max_Path);
       ILen    : Natural := 0;
       OK      : Boolean;
@@ -711,7 +774,7 @@ package body Adacovex.Prove is
       end Prove_Cache_Key;
    begin
       Resolve_GNATprove
-        (Target_Dir, Exe, Exe_Len, TDir, TLen, Via_Alr, Ident, ILen, OK);
+        (Target_Dir, Exe, Exe_Len, TDir, TLen, Ident, ILen, OK);
       if not OK then
          Success := False;
          return;
@@ -735,11 +798,7 @@ package body Adacovex.Prove is
         Adacovex.CPUs.Resolve_Jobs (Opts.Jobs, Adacovex.CPUs.Is_Running_In_CI);
       Copy_To (Options, OLen, Build_Option_String (Opts, Jobs));
 
-      Ada.Text_IO.Put_Line
-        ("  gnatprove: "
-         & (if Via_Alr
-            then "alr exec -- gnatprove (alire-managed)"
-            else Exe (1 .. Exe_Len)));
+      Ada.Text_IO.Put_Line ("  gnatprove: " & Exe (1 .. Exe_Len));
       Ada.Text_IO.Put_Line ("  project:   " & GPR (1 .. GLen));
       Ada.Text_IO.Put_Line ("  options:   " & Options (1 .. OLen));
       Ada.Text_IO.Put_Line
@@ -771,80 +830,32 @@ package body Adacovex.Prove is
          end;
       end if;
 
-      --  When resolved via alire, spawn `alr -C <target> exec -- gnatprove
-      --  -P <gpr> <options>`; alire sets up the toolchain environment itself.
-      if Via_Alr and then not Gnatprove_Dev_Only (Target_Dir) then
-         Args (1) := new String'("-C");
-         Args (2) := new String'(Strip_Trailing_Slash (Target_Dir));
-         Args (3) := new String'("exec");
-         Args (4) := new String'("--");
-         Args (5) := new String'("gnatprove");
-         Args (6) := new String'("-P");
-         Args (7) := new String'(GPR (1 .. GLen));
-         N := 7;
-         Append_Option_Tokens (Args, N, Options (1 .. OLen));
-         Spawn (Exe (1 .. Exe_Len), Args (1 .. N), "/dev/stdout", OK, Code);
-         for I in 1 .. N loop
-            GNAT.OS_Lib.Free (Args (I));
-         end loop;
-      elsif Via_Alr then
-         --  gnatprove is declared only in the dev manifest.  `alr exec` reads
-         --  the active alire.toml, so swap alire-dev.toml over it for the
-         --  proof run and restore afterwards (a shell trap guarantees the
-         --  restore).  The publishing alire.toml is left untouched and is
-         --  still the manifest scanned by the assessment/SBOM pipeline.
-         Ada.Text_IO.Put_Line ("  gnatprove declared only in alire-dev.toml;");
-         Ada.Text_IO.Put_Line
-           ("  using the dev manifest for the proof run (restored after).");
+      --  Resolve_GNATprove always returns a directly-executable gnatprove binary
+      --  (the `alr get` deployment path runs the deployed binary itself, never
+      --  the alr wrapper), so there is exactly one spawn shape.  Prepend the
+      --  toolchain bin dir to PATH so gnatprove finds its solvers
+      --  (Z3/CVC5/Alt-Ergo), which live in the deployment's bin/libexec dirs.
+      if TLen > 0 then
          declare
-            Script : String (1 .. Types.Max_Path * 4);
-            SLen   : Natural := 0;
+            Old_Path : String_Access := GNAT.OS_Lib.Getenv ("PATH");
+            New_Path : constant String :=
+              TDir (1 .. TLen)
+              & GNAT.OS_Lib.Path_Separator
+              & (if Old_Path = null then "" else Old_Path.all);
          begin
-            Build_Dev_Exec_Script
-              (Strip_Trailing_Slash (Target_Dir),
-               GPR (1 .. GLen),
-               Options (1 .. OLen),
-               Script,
-               SLen,
-               OK);
-            if not OK then
-               Ada.Text_IO.Put_Line
-                 (Ada.Text_IO.Standard_Error,
-                  "  ERROR: could not build the dev-manifest proof script.");
-               Success := False;
-               return;
-            end if;
-            Run_Command
-              ((new String'("-c"), new String'(Script (1 .. SLen))),
-               "/dev/stdout",
-               OK,
-               Code);
+            GNAT.OS_Lib.Setenv ("PATH", New_Path);
+            Free (Old_Path);
          end;
-      else
-         --  Prepend the toolchain bin dir to PATH so gnatprove finds its
-         --  solvers (Z3/CVC5/Alt-Ergo) when running from ~/.adacovex/toolchain.
-         if TLen > 0 then
-            declare
-               Old_Path : String_Access := GNAT.OS_Lib.Getenv ("PATH");
-               New_Path : constant String :=
-                 TDir (1 .. TLen)
-                 & GNAT.OS_Lib.Path_Separator
-                 & (if Old_Path = null then "" else Old_Path.all);
-            begin
-               GNAT.OS_Lib.Setenv ("PATH", New_Path);
-               Free (Old_Path);
-            end;
-         end if;
-
-         Args (1) := new String'("-P");
-         Args (2) := new String'(GPR (1 .. GLen));
-         N := 2;
-         Append_Option_Tokens (Args, N, Options (1 .. OLen));
-         Spawn (Exe (1 .. Exe_Len), Args (1 .. N), "/dev/stdout", OK, Code);
-         for I in 1 .. N loop
-            GNAT.OS_Lib.Free (Args (I));
-         end loop;
       end if;
+
+      Args (1) := new String'("-P");
+      Args (2) := new String'(GPR (1 .. GLen));
+      N := 2;
+      Append_Option_Tokens (Args, N, Options (1 .. OLen));
+      Spawn (Exe (1 .. Exe_Len), Args (1 .. N), "/dev/stdout", OK, Code);
+      for I in 1 .. N loop
+         GNAT.OS_Lib.Free (Args (I));
+      end loop;
 
       if OK and then Code = 0 then
          Success := True;
