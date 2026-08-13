@@ -76,6 +76,8 @@ package Adacovex.Prove is
       Toolchain_Dir : out String;
       Dir_Len       : out Natural;
       Via_Alr       : out Boolean;
+      Identity      : out String;
+      Ident_Len     : out Natural;
       Success       : out Boolean);
 
    --  Locate the root GNAT project file for a target directory.

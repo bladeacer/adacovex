@@ -222,18 +222,31 @@ package body Adacovex.Prove is
       Free (Prog);
    end Run_Command;
 
-   --  True when the manifest file at Path declares a gnatprove dependency in
-   --  its `[[depends-on]]` section.  A simple TOML scan: section headers are
-   --  `[name]` lines and dependency entries are `name = "version"` lines
-   --  inside `[[depends-on]]`.  Missing files report False.
-   function File_Declares_GNATprove (Path : String) return Boolean is
+   --  Return the gnatprove version constraint declared in the manifest file
+   --  at Path (the `gnatprove = "..."` value inside `[[depends-on]]`), or ""
+   --  when the manifest does not declare gnatprove.  A simple TOML scan:
+   --  section headers are `[name]` lines and dependency entries are
+   --  `name = "version"` lines inside `[[depends-on]]`.  Missing files report
+   --  "".  Used to fold the prover identity into the proof result cache key so
+   --  a different pinned gnatprove version can never reuse a stale proof.
+   function File_GNATprove_Version (Path : String) return String is
       use Ada.Text_IO;
       F          : File_Type;
       In_Depends : Boolean := False;
-      Declares   : Boolean := False;
+      Res        : String (1 .. 32);
+      RLen       : Natural := 0;
+      procedure Emit (S : String) is
+      begin
+         for I in S'Range loop
+            if RLen < Res'Last then
+               RLen := RLen + 1;
+               Res (RLen) := S (I);
+            end if;
+         end loop;
+      end Emit;
    begin
       if not Ada.Directories.Exists (Path) then
-         return False;
+         return "";
       end if;
       Open (F, In_File, Path);
       while not End_Of_File (F) loop
@@ -273,8 +286,21 @@ package body Adacovex.Prove is
                           Trim (Line (Line'First .. Eq - 1), Ada.Strings.Both);
                      begin
                         if Name = "gnatprove" then
-                           Declares := True;
-                           exit;
+                           declare
+                              Q1 : constant Natural :=
+                                Index (Line (Eq .. Line'Last), """");
+                              Q2 : Natural := 0;
+                           begin
+                              if Q1 > 0 then
+                                 Q2 :=
+                                   Index (Line (Q1 + 1 .. Line'Last), """");
+                              end if;
+                              if Q1 > 0 and then Q2 > Q1 then
+                                 Emit (Line (Q1 + 1 .. Q2 - 1));
+                              end if;
+                           end;
+                           Close (F);
+                           return Res (1 .. RLen);
                         end if;
                      end;
                   end if;
@@ -283,7 +309,15 @@ package body Adacovex.Prove is
          end;
       end loop;
       Close (F);
-      return Declares;
+      return "";
+   end File_GNATprove_Version;
+
+   --  True when the manifest file at Path declares a gnatprove dependency in
+   --  its `[[depends-on]]` section.  See File_GNATprove_Version for the scan
+   --  rules.  Missing files report False.
+   function File_Declares_GNATprove (Path : String) return Boolean is
+   begin
+      return File_GNATprove_Version (Path) /= "";
    end File_Declares_GNATprove;
 
    --  True when <target>/alire-dev.toml or <target>/alire.toml declares a
@@ -400,14 +434,32 @@ package body Adacovex.Prove is
       Toolchain_Dir : out String;
       Dir_Len       : out Natural;
       Via_Alr       : out Boolean;
+      Identity      : out String;
+      Ident_Len     : out Natural;
       Success       : out Boolean)
    is
       Home      : constant String := Home_Dir;
       Toolchain : constant String := Home & Toolchain_Subdir;
       Bin_Dir   : constant String := Toolchain & "/bin";
       Exe       : String_Access;
+
+      --  Identity is a short fingerprint folded into the proof result-cache
+      --  key so proofs from different gnatprove deployments are never mixed:
+      --  for the alire path it is the manifest-pinned version constraint
+      --  (alr's path is stable across gnatprove upgrades, so the version must
+      --  be included explicitly); otherwise it is the resolved executable path
+      --  plus toolchain bin dir (which embeds the version hash for downloaded
+      --  / cached toolchains and the absolute path for on-PATH installs).
+      procedure Set_Identity (S : String) is
+      begin
+         Ident_Len := S'Length;
+         for I in S'Range loop
+            Identity (I - S'First + 1) := S (I);
+         end loop;
+      end Set_Identity;
    begin
       Via_Alr := False;
+      Ident_Len := 0;
 
       --  Priority 1: the target declares gnatprove in alire.toml /
       --  alire-dev.toml; let alire manage the toolchain via `alr exec`.
@@ -418,6 +470,19 @@ package body Adacovex.Prove is
             Free (Exe);
             Dir_Len := 0;
             Via_Alr := True;
+            --  alr's path is stable across gnatprove upgrades, so anchor the
+            --  identity to the pinned version constraint instead.
+            declare
+               T    : constant String := Strip_Trailing_Slash (Target_Dir);
+               Ver  : constant String :=
+                 File_GNATprove_Version (T & "/alire-dev.toml");
+               Ver2 : constant String :=
+                 (if Ver'Length > 0
+                  then Ver
+                  else File_GNATprove_Version (T & "/alire.toml"));
+            begin
+               Set_Identity ("alr:" & Ver2);
+            end;
             Success := True;
             return;
          end if;
@@ -429,6 +494,7 @@ package body Adacovex.Prove is
          Copy_To (Exe_Path, Exe_Len, Exe.all);
          Free (Exe);
          Dir_Len := 0;
+         Set_Identity ("path:" & Exe_Path (1 .. Exe_Len));
          Success := True;
          return;
       end if;
@@ -437,6 +503,7 @@ package body Adacovex.Prove is
       if Ada.Directories.Exists (Bin_Dir & Bin_Subdir) then
          Copy_To (Exe_Path, Exe_Len, Bin_Dir & Bin_Subdir);
          Copy_To (Toolchain_Dir, Dir_Len, Bin_Dir);
+         Set_Identity ("cache:" & Bin_Dir);
          Success := True;
          return;
       end if;
@@ -467,6 +534,7 @@ package body Adacovex.Prove is
       if Ada.Directories.Exists (Bin_Dir & Bin_Subdir) then
          Copy_To (Exe_Path, Exe_Len, Bin_Dir & Bin_Subdir);
          Copy_To (Toolchain_Dir, Dir_Len, Bin_Dir);
+         Set_Identity ("cache:" & Bin_Dir);
          Success := True;
       else
          Ada.Text_IO.Put_Line
@@ -611,6 +679,8 @@ package body Adacovex.Prove is
       GPR     : String (1 .. Types.Max_Path);
       GLen    : Natural := 0;
       Via_Alr : Boolean := False;
+      Ident   : String (1 .. Types.Max_Path);
+      ILen    : Natural := 0;
       OK      : Boolean;
       Code    : Integer;
       Args    : GNAT.OS_Lib.Argument_List (1 .. 40);
@@ -618,8 +688,30 @@ package body Adacovex.Prove is
       Jobs    : Natural := 0;
       Options : String (1 .. 512);
       OLen    : Natural := 0;
+
+      --  Build the proof result-cache key.  It must capture everything that
+      --  can change the (cached) gnatprove.out: the source tree content, the
+      --  .gpr, the options, AND the prover identity.  Folding the prover
+      --  identity in means a different gnatprove deployment (pinned version,
+      --  on-PATH upgrade, or re-downloaded toolchain) can never reuse a stale
+      --  proof from a previous toolchain.  Stale cache entries simply miss and
+      --  are transparently re-proved, so no explicit cache invalidation is
+      --  needed when the toolchain changes.
+      function Prove_Cache_Key return String is
+      begin
+         return
+           "prove:"
+           & Adacovex.Cache.Hash_String
+               (Ident (1 .. ILen)
+                & ASCII.NUL
+                & Compute_Prove_Input_Hash
+                    (Strip_Trailing_Slash (Target_Dir),
+                     GPR (1 .. GLen),
+                     Options (1 .. OLen)));
+      end Prove_Cache_Key;
    begin
-      Resolve_GNATprove (Target_Dir, Exe, Exe_Len, TDir, TLen, Via_Alr, OK);
+      Resolve_GNATprove
+        (Target_Dir, Exe, Exe_Len, TDir, TLen, Via_Alr, Ident, ILen, OK);
       if not OK then
          Success := False;
          return;
@@ -663,12 +755,7 @@ package body Adacovex.Prove is
       --  biggest CI speedup: an unchanged project serves the proof from disk.
       if Opts.Cache then
          declare
-            In_Hash : constant String :=
-              "prove:"
-              & Compute_Prove_Input_Hash
-                  (Strip_Trailing_Slash (Target_Dir),
-                   GPR (1 .. GLen),
-                   Options (1 .. OLen));
+            In_Hash : constant String := Prove_Cache_Key;
             Dst     : String (1 .. Types.Max_Path);
             DLen    : Natural := 0;
             Hit     : Boolean := Adacovex.Cache.Exists (In_Hash);
@@ -763,12 +850,7 @@ package body Adacovex.Prove is
          Success := True;
          if Opts.Cache then
             declare
-               In_Hash : constant String :=
-                 "prove:"
-                 & Compute_Prove_Input_Hash
-                     (Strip_Trailing_Slash (Target_Dir),
-                      GPR (1 .. GLen),
-                      Options (1 .. OLen));
+               In_Hash : constant String := Prove_Cache_Key;
                OK2     : Boolean;
             begin
                Adacovex.Cache.Store (In_Hash, "1", OK2);
