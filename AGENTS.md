@@ -624,7 +624,7 @@ specific failure reasons when the assessment is `Unmet`.
 |--------------------|-------------|
 | `build`            | `alr build` (builds adacovex + test_runner, covex alias) |
 | `test`             | Build + run test_runner |
-| `prove`            | `./bin/adacovex prove --target=. --no-svg` (runs gnatprove via the `prove` subcommand; gnatprove lives only in alire-dev.toml, so it is run via `alr exec` with the dev-manifest swap, else falls back to PATH / `~/.adacovex/toolchain` / download) |
+| `prove`            | `./bin/adacovex prove --target=. --no-svg` (runs gnatprove via the `prove` subcommand; gnatprove lives only in alire-dev.toml, so the pinned version is deployed standalone via `alr -n get gnatprove=<version>` into `~/.adacovex/toolchain` and run directly, else falls back to PATH / `~/.adacovex/toolchain` / download) |
 | `doc` / `api-docs` | Generate API docs via gnatdoc + rst2md (auto-swaps alire-dev.toml) |
 | `fmt`              | Format Ada sources with gnatformat (auto-swaps alire-dev.toml) |
 | `run-self`         | Run against adacovex itself (default target: cwd) |
@@ -655,7 +655,9 @@ specific failure reasons when the assessment is `Unmet`.
   (`setup-alire`) selects only the compiler and `gprbuild` at `gnat-version`
   (`gnatprove` is NOT an `alr toolchain` component); gnatprove is resolved by
   the `prove` subcommand via the target project's `alire-dev.toml`
-  (README-preferred method, `alr exec` with the dev-manifest swap), falling
+  (deploying the pinned gnatprove binary crate standalone via
+  `alr -n get gnatprove=<version>` into `~/.adacovex/toolchain` and running it
+  directly -- no dev-manifest swap, only one crate download), falling
   back to `$PATH`, `~/.adacovex/toolchain`, or download. When
   `generate-sbom` (default `true`)
   is set and the assessment runs, it also generates a proof-aware SBOM
@@ -770,8 +772,10 @@ method fits:
    gnatprove = "^15.1.0"
    ```
    `alr build` then produces `bin/adacovex` in the project and
-   `covex prove` runs gnatprove through `alr exec` (Alire pins the exact
-   toolchain version per project; no global install needed).
+   `covex prove` deploys the pinned gnatprove crate standalone into
+   `~/.adacovex/toolchain` via `alr -n get gnatprove=<version>` and runs it
+   directly (Alire pins the exact toolchain version per project; no global
+   install needed).
 2. **`alr install` (global, to `$PATH`).** Install the binary and the prover
    together, then put Alire's bin directory on `$PATH`:
    ```bash
@@ -807,10 +811,18 @@ method fits:
 `covex prove` finds `gnatprove` in this order:
 
 1. **Per-project manifest (preferred)**: if `<target>/alire.toml` /
-   `<target>/alire-dev.toml` declares a `gnatprove` dependency, run via
-   `alr exec gnatprove`.
+   `<target>/alire-dev.toml` declares a `gnatprove` dependency, deploy ONLY
+   the gnatprove binary crate (a self-contained bundle, no dependencies) into
+   `~/.adacovex/toolchain/` via `alr -n get gnatprove=<version>` and run the
+   deployed binary directly -- the version-set expression (`^15.1.0`,
+   `~15.1.0`, ...) is reduced to the bare version alr accepts. This avoids the
+   fragile `alr exec` path that composed the target's entire dev-manifest
+   dependency set (covex, gnatdoc_bin, gnatformat_bin, ...), so CI proof runs
+   depend on a single crate download and never need a dev-manifest swap.
 2. **`$PATH`**: a `gnatprove` installed beforehand (e.g. `alr install gnatprove`).
-3. **Cached toolchain**: `~/.adacovex/toolchain/`.
+3. **Cached toolchain**: `~/.adacovex/toolchain/` -- either the download
+   layout (`<toolchain>/bin/gnatprove`) or a previously `alr get`-deployed
+   `gnatprove_*/` crate.
 4. **Download**: last-resort platform toolchain bundle.
 
 If a project manifest declares `gnatprove` but `alr` is missing, install Alire
@@ -842,7 +854,8 @@ Two approaches are equally valid; pick whichever fits the project:
    ```
    Then `alr build` produces `bin/adacovex` inside the project,
    `adacovex` runs against the current directory by default, and `covex prove`
-   runs gnatprove through `alr exec` (see
+   deploys the pinned gnatprove crate standalone via `alr -n get` and runs it
+   directly (see
    [Installing adacovex](#installing-adacovex)).
 
 In both cases the assessed project is the directory given to `--target` (or

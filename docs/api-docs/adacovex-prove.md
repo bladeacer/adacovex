@@ -8,18 +8,23 @@ standard assessment pipeline to parse.
 Resolution priority (lightweight: adacovex only requires ``alr`` on PATH):
 
 #. If the target's alire.toml / alire-dev.toml declares gnatprove as a
-dependency, invoke it via ``alr exec`` (alire manages the toolchain).
-When gnatprove lives only in alire-dev.toml (the common dev-manifest
-layout), the dev manifest is temporarily swapped over alire.toml for
-the proof run and restored afterwards -- the assessment and SBOM
-pipeline always scans the publishing alire.toml.
+dependency, deploy ONLY the gnatprove binary crate (a self-contained
+bundle -- no dependencies) into ~/.adacovex/toolchain via
+``alr -n get gnatprove=<version>``, then run it directly.  This avoids
+the fragile ``alr exec`` path that used to compose the target's entire
+dev-manifest dependency set (covex, gnatdoc_bin, gnatformat_bin, ...):
+flaky third-party downloads in CI could not fail a proof run, and no
+dev-manifest swap is ever needed.  The manifest may declare the version
+as a rich set expression (``^15.1.0``, ``~15.1.0``, ...); the leading
+operator is stripped to yield the bare version alr accepts.
 
 #. A gnatprove already on $PATH.
 
-#. A cached gnatprove in ~/.adacovex/toolchain/bin.
+#. A cached gnatprove in ~/.adacovex/toolchain/bin (download layout) or a
+previously ``alr get``-deployed gnatprove_*/ crate under the same dir.
 
 #. Last resort: a platform toolchain download (curl; only used when
-no alire-managed or on-PATH gnatprove is available).
+no deployable, on-PATH, or cached gnatprove is available).
 
 HLR-PROVE: GNATprove subcommand
 
@@ -69,19 +74,18 @@ end record;
 | `Success` | True if a root .gpr file was found. |
 | `Target_Dir` | Project root directory. |
 
-### procedure Resolve_GNATprove (Target_Dir : Standard.String; Exe_Path : Standard.String; Exe_Len : Standard.Natural; Toolchain_Dir : Standard.String; Dir_Len : Standard.Natural; Via_Alr : Standard.Boolean; Identity : Standard.String; Ident_Len : Standard.Natural; Success : Standard.Boolean)
+### procedure Resolve_GNATprove (Target_Dir : Standard.String; Exe_Path : Standard.String; Exe_Len : Standard.Natural; Toolchain_Dir : Standard.String; Dir_Len : Standard.Natural; Identity : Standard.String; Ident_Len : Standard.Natural; Success : Standard.Boolean)
 
 | Parameter | Description |
 |-----------|-------------|
-| `Dir_Len` |  |
-| `Exe_Len` |  |
-| `Exe_Path` |  |
-| `Ident_Len` |  |
-| `Identity` |  |
-| `Success` |  |
-| `Target_Dir` |  |
-| `Toolchain_Dir` |  |
-| `Via_Alr` |  |
+| `Dir_Len` | Length of the toolchain bin directory path. |
+| `Exe_Len` | Length of the resolved executable path. |
+| `Exe_Path` | Output buffer for the executable path. |
+| `Ident_Len` | Length of the identity fingerprint. |
+| `Identity` | Output buffer for the prover identity fingerprint. |
+| `Success` | True if a usable gnatprove was found. |
+| `Target_Dir` | Project root directory. |
+| `Toolchain_Dir` | Output buffer for the toolchain bin directory. |
 
 ### procedure Run_Prove (Target_Dir : Standard.String; Opts : Adacovex.Prove.Prove_Options; Success : Standard.Boolean)
 
