@@ -49,7 +49,9 @@ However, project reliability is grounded in mathematical proof and
 non-invasive design rather than implicit trust:
 
 - **Formal Verification:** Core Ada logic is formally verified using
-SPARK Ada (achieving Platinum/AoRTE-free verification conditions via `gnatprove`).
+SPARK Ada (Silver baseline under `gnatprove` 16.1.0 -- 509 VCs, 168 unproved
+on stricter overflow/counterexample checks; the earlier "Platinum" claim was
+a parser artifact that misread the unproved column).
 - **Read-Only Engine:** `adacovex` acts strictly as an assessment engine.
 It processes input payloads, parses build artifacts, and produces reports without
 modifying your source files in place.
@@ -175,23 +177,35 @@ Clone the repo and `make build`, or manage adacovex as an Alire dev dependency
 
 The `prove` subcommand resolves the `gnatprove` executable in this order:
 
-1. **Per-project manifest (preferred)**: if `<target>/alire.toml` or
+1. **Per-project manifest (authoritative)**: if `<target>/alire.toml` or
    `<target>/alire-dev.toml` declares a `gnatprove` dependency, the pinned
    gnatprove binary crate is deployed standalone into `~/.adacovex/toolchain/`
    via `alr -n get gnatprove=<version>` and executed directly (the manifest's
-   version-set expression, e.g. `^15.1.0`, is reduced to the bare version alr
+   version-set expression, e.g. `^16.1.0`, is reduced to the bare version alr
    accepts). This isolates the proof run from the target's other dev-manifest
-   tools and never swaps manifests.
-2. **`$PATH`**: a `gnatprove` already on `$PATH` (e.g. installed beforehand
+   tools and never swaps manifests. A manifest pin always wins over the other
+   sources: when the pinned version cannot be deployed the run fails instead
+   of falling back, because a different gnatprove can change which VCs are
+   discharged.
+2. **Global version pin**: the `ADACOVEX_GNATPROVE_VERSION` environment
+   variable or the `[prove] gnatprove-version = "16.1.0"` key in
+   `~/.adacovex/adacovex.toml`. The exact version is deployed standalone via
+   `alr -n get gnatprove=<version>` and run directly -- same authoritative,
+   never-fall-back semantics as a manifest pin, and folded into the proof
+   result-cache identity so a different pinned version can never reuse a stale
+   proof. Use it to keep every proof on one prover across projects that do not
+   pin a version themselves.
+3. **`$PATH`**: a `gnatprove` already on `$PATH` (e.g. installed beforehand
    with `alr install gnatprove`).
-3. **Cached toolchain**: `~/.adacovex/toolchain/` -- either the download
+4. **Cached toolchain**: `~/.adacovex/toolchain/` -- either the download
    layout (`<toolchain>/bin/gnatprove`) or a previously `alr get`-deployed
    `gnatprove_*/` crate.
-4. **Download**: last resort, fetch the platform toolchain bundle.
+5. **Download**: last resort, fetch the platform toolchain bundle.
 
-If the target manifest declares `gnatprove` but `alr` is not installed, install
-Alire first (`curl https://alire.ada.dev -sSf | sh`); the fallback paths then
-kick in automatically.
+So the effective order is: **manifest pin > global pin (config/env) > PATH >
+cache > download**. If the target manifest declares `gnatprove` but `alr` is not
+installed, install Alire first (`curl https://alire.ada.dev -sSf | sh`); the
+fallback paths then kick in automatically.
 
 ## CLI reference
 
@@ -218,8 +232,33 @@ adacovex sbom [--format=cyclonedx-json|spdx-json] [--out=PATH]
 | `--no-cache` | off | both | Disable result caching (always re-scan/re-parse/re-prove) |
 | `--cache-dir=PATH` | `~/.adacovex/cache/<ver>/<schema>` | both | Cache directory for analysis results |
 | `--cache-max=N` | `4096` | both | Max cache entries before oldest-first eviction |
+| `--require-spark=LVL` | off | both | Fail loudly (exit 1) if SPARK level < LVL (Stone..Platinum) |
+| `--require-docstrings=PCT` | off | both | Fail loudly if docstring coverage < PCT% (0-100) |
+| `--require-tests=N` | off | both | Fail loudly if passing test count < N |
+| `--require-proof=PCT` | off | both | Fail loudly if proved-VC coverage < PCT% (0-100) |
 | `--verbose` | off | both | Verbose diagnostics |
 | `--help` | - | both | Print usage and exit |
+
+#### CI threshold gates (`--require-*`)
+
+The four `--require-*` flags add explicit minimum-bar checks on top of the DAL
+criteria. They are off by default; when set, the assessment fails loudly
+(exit code `1`, with an explicit `CI GATE:` reason printed to the report) if the
+target does not meet the required level. This is exactly what a CI workflow
+wants to pin so a regression cannot slip through:
+
+```bash
+adacovex --target=. --require-spark=Silver --require-docstrings=100 \
+         --require-tests=361 --require-proof=65
+```
+
+The `require-spark` gate compares the honest assessed SPARK level
+(Stone..Platinum). The `require-docstrings` and `require-proof` gates take a
+percentage (0-100); `require-tests` takes a count of passing tests. CI that
+pins a gnatprove version (manifest or global `adacovex.toml` pin) should set
+these to the values that version actually achieves -- a stricter prover can
+legitimately leave more VCs unproved, so gate on the results of the prover you
+pin.
 
 ### Flag details
 
@@ -295,7 +334,7 @@ directory between workflow runs for you). The ANSI report shows a
 | Code | Meaning |
 |------|---------|
 | `0` | Success (DAL achieved, all checks pass) |
-| `1` | Compliance failure (DAL unmet, tests failing, etc.) |
+| `1` | Compliance failure (DAL unmet, tests failing, a `--require-*` CI gate unmet, etc.) |
 
 ## Examples
 
@@ -342,12 +381,12 @@ cyclonedx-json`, default, writes `<target>/sbom.json`) or SPDX 2.3 JSON
 overrides the output path; the containing directory is created automatically.
 
 Only the **root component** -- the project adacovex actually assessed -- carries
-the proof-aware properties `adacovex:proof_level` (`Gold` for the verified build
-tier, `Platinum` when the assessment proved every verification condition) and
+the proof-aware properties `adacovex:proof_level` (`Stone` through `Platinum`,
+the honest assessed level, e.g. `Silver` when VCs remain unproved) and
 `adacovex:dal_target` (`DAL-A` through `DAL-D`; omitted for `DAL-E`). Dependency
 components report `adacovex:proof_level = "Not proved"`: adacovex only proves
 the target itself, never third-party dependencies, so they must not claim a
-Gold/Platinum level. In SPDX these are encoded as `attributionTexts` entries.
+proof level at all. In SPDX these are encoded as `attributionTexts` entries.
 Both formats validate against the official
 [CycloneDX 1.5](https://github.com/CycloneDX/specification) and
 [SPDX 2.3](https://spdx.dev) JSON schemas (specifications by the CycloneDX and
@@ -671,7 +710,7 @@ to document. Overloaded subprograms require one patch entry per overload.
 | Target | Description |
 |--------|-------------|
 | `build` | `alr build` (adacovex + test_runner, covex alias) |
-| `test` | Build and run native test suite (336 tests) |
+| `test` | Build and run native test suite (361 tests) |
 | `prove` | `./bin/adacovex prove --target=. --no-svg` (resolves gnatprove from the dev manifest / `$PATH` / cache / download) |
 | `fmt` | Format Ada sources with `gnatformat` |
 | `doc` | Generate API docs via gnatdoc + rst2md |
@@ -696,17 +735,17 @@ src/
 |-- compliance/                   -- DAL assessment logic
 |-- renderers/                    -- ANSI, SVG, Markdown, HTML output
 |-- server/                       -- HTTP/1.1 dashboard server
-|-- tests/                        -- Native test suite (336 tests)
+|-- tests/                        -- Native test suite (361 tests)
 ```
 
 ## Verification
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 336/336 passing |
-| Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
-| SPARK proof | `make prove` | all VCs proved, Platinum |
-| Ada_CRDT regression | `make run-ada-crdt` | 100% docs, Platinum, DAL-C (strict mode) |
+| Unit tests | `make test` | 361/361 passing |
+| Self-assessment | `make run-self` | 100% docs, Silver, DAL-C Achieved |
+| SPARK proof | `make prove` | Silver (509 VCs, 168 unproved under gnatprove 16.1.0) |
+| Ada_CRDT regression | `make run-ada-crdt` | 100% docs, DAL-C (strict mode) |
 
 See [changelogs](docs/changelogs/index.md) for full release notes.
 

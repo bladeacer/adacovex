@@ -815,7 +815,7 @@ package body Adacovex.Prove is
       end if;
 
       declare
-         F : File_Type;
+         F        : File_Type;
          In_Prove : Boolean := False;
       begin
          if not Ada.Directories.Exists (Home_Dir & "/.adacovex/adacovex.toml")
@@ -830,9 +830,10 @@ package body Adacovex.Prove is
                if Line'Length > 2
                  and then Line (Line'First) = '['
                  and then Line (Line'Last) = ']'
-                 and then
-                   Trim (Line (Line'First + 1 .. Line'Last - 1),
-                         Ada.Strings.Both) = "prove"
+                 and then Trim
+                            (Line (Line'First + 1 .. Line'Last - 1),
+                             Ada.Strings.Both)
+                          = "prove"
                then
                   In_Prove := True;
                elsif Line'Length > 0 and then Line (Line'First) = '[' then
@@ -844,8 +845,8 @@ package body Adacovex.Prove is
                      if Eq > Line'First then
                         declare
                            Name : constant String :=
-                             Trim (Line (Line'First .. Eq - 1),
-                                   Ada.Strings.Both);
+                             Trim
+                               (Line (Line'First .. Eq - 1), Ada.Strings.Both);
                         begin
                            if Name = "gnatprove-version" then
                               declare
@@ -855,8 +856,7 @@ package body Adacovex.Prove is
                               begin
                                  if Q1 > 0 then
                                     Q2 :=
-                                      Index
-                                        (Line (Q1 + 1 .. Line'Last), """");
+                                      Index (Line (Q1 + 1 .. Line'Last), """");
                                  end if;
                                  if Q1 > 0 and then Q2 > Q1 then
                                     Close (F);

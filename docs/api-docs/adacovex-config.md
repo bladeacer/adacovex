@@ -55,6 +55,14 @@ Prove_Memlimit       : Integer := -1;
 Prove_Force          : Boolean := False;
 Prove_No_Loop_Unroll : Boolean := False;
 Prove_No_Inlining    : Boolean := False;
+Require_SPARK          : Types.SPARK_Level := Types.Stone;
+Require_SPARK_Set      : Boolean := False;
+Require_Docstrings     : Natural := 0;
+Require_Docstrings_Set : Boolean := False;
+Require_Tests          : Natural := 0;
+Require_Tests_Set      : Boolean := False;
+Require_Proof          : Natural := 0;
+Require_Proof_Set      : Boolean := False;
 end record;
 ```
 

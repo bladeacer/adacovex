@@ -20,8 +20,17 @@ operator is stripped to yield the bare version alr accepts.  A
 manifest-declared prover is authoritative: when it cannot be deployed
 the run fails instead of falling back, because a different gnatprove
 version can change which VCs are discharged (results must always come
-from the pinned prover).  Priorities 2-4 apply only to projects whose
+from the pinned prover).  Priorities 2-5 apply only to projects whose
 manifest does not declare gnatprove.
+
+#. A gnatprove version pinned globally -- the ADACOVEX_GNATPROVE_VERSION
+environment variable or the ``[prove] gnatprove-version = "16.1.0"``
+key in ~/.adacovex/adacovex.toml (read by Run_Prove and passed in as
+Pinned_Version).  The exact version is deployed via
+``alr -n get gnatprove=<version>`` and run directly; like the manifest
+pin it is authoritative (a failure to deploy is a failure to run) and
+is folded into the proof result-cache identity so a different pinned
+version can never reuse a stale proof.
 
 #. A gnatprove already on $PATH.
 
@@ -31,6 +40,8 @@ previously ``alr get``-deployed gnatprove_*/ crate under the same dir.
 #. Last resort: a platform toolchain download (curl; only used when
 no deployable, on-PATH, or cached gnatprove is available).
 
+So the order is: manifest pin > global pin (config/env) > PATH > cache >
+download.
 HLR-PROVE: GNATprove subcommand
 
 > **Note:** All items in this package are public.
@@ -79,7 +90,7 @@ end record;
 | `Success` | True if a root .gpr file was found. |
 | `Target_Dir` | Project root directory. |
 
-### procedure Resolve_GNATprove (Target_Dir : Standard.String; Exe_Path : Standard.String; Exe_Len : Standard.Natural; Toolchain_Dir : Standard.String; Dir_Len : Standard.Natural; Identity : Standard.String; Ident_Len : Standard.Natural; Success : Standard.Boolean)
+### procedure Resolve_GNATprove (Target_Dir : Standard.String; Pinned_Version : Standard.String; Exe_Path : Standard.String; Exe_Len : Standard.Natural; Toolchain_Dir : Standard.String; Dir_Len : Standard.Natural; Identity : Standard.String; Ident_Len : Standard.Natural; Success : Standard.Boolean)
 
 | Parameter | Description |
 |-----------|-------------|
@@ -88,6 +99,7 @@ end record;
 | `Exe_Path` | Output buffer for the executable path. |
 | `Ident_Len` | Length of the identity fingerprint. |
 | `Identity` | Output buffer for the prover identity fingerprint. |
+| `Pinned_Version` | Global gnatprove version pin ("" = none; the |
 | `Success` | True if a usable gnatprove was found. |
 | `Target_Dir` | Project root directory. |
 | `Toolchain_Dir` | Output buffer for the toolchain bin directory. |

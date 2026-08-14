@@ -11,7 +11,7 @@ test-result parsing, DO-178C DAL compliance assessment, and interactive dashboar
   no declared tool dependency either -- gnatprove is resolved at run time by the
   `prove` subcommand (per-project manifest, `$PATH`, `~/.adacovex/toolchain/`, or
   download) and lives only in the dev manifest for the local make targets
-- **SPARK target**: Platinum (AoRTE-free, all VCs proved) on adacovex itself
+- **SPARK target**: Silver (honest baseline; see [SPARK levels](docs/api-docs/adacovex-spark-levels.md))
 
 ## Dogfood target
 
@@ -22,8 +22,11 @@ The `--target=PATH` option can point at any Ada/SPARK project.
 Self-assessment (`make run-self`, default target: cwd) verifies adacovex against its own
 source -- 28 packages, 86 subprograms -- and must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
-- Platinum SPARK level (all VCs proved)
-- 336/336 native tests passing
+- Silver SPARK level (509 VCs under gnatprove 16.1.0, 168 unproved -- the
+  honest reading; stricter overflow/counterexample checks than older provers,
+  so the previous "Platinum" self-assessment was a parser artifact that
+  misread the unproved column)
+- 361/361 native tests passing
 - DAL-C Achieved
 
 ## Architecture
@@ -77,7 +80,7 @@ src/
     |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (79)
     |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (43)
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (26)
-    `-- test_runner.adb                       -- Test suite entry point (336 tests)
+    `-- test_runner.adb                       -- Test suite entry point (361 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -363,7 +366,8 @@ adacovex sbom [--format=cyclonedx-json|spdx-json] [--out=PATH]
   `.gpr` `with` clauses (via `Adacovex.Parsers.Manifest.Build_Dependency_Graph`)
   and writes the SBOM via `Adacovex.Renderers.SBOM.Write_SBOM`.
 - **Properties**: Only the root component -- the project adacovex actually
-  assessed -- carries `adacovex:proof_level` (`Gold`/`Platinum`) and
+  assessed -- carries `adacovex:proof_level` (`Stone`..`Platinum`, the honest
+  assessed level) and
   `adacovex:dal_target` (`DAL-A`..`DAL-D`; empty for `DAL-E`). Dependency
   components report `adacovex:proof_level = "Not proved"` (adacovex only
   proves the target itself, never third-party dependencies). Encoded as
@@ -810,7 +814,7 @@ method fits:
 
 `covex prove` finds `gnatprove` in this order:
 
-1. **Per-project manifest (preferred)**: if `<target>/alire.toml` /
+1. **Per-project manifest (authoritative)**: if `<target>/alire.toml` /
    `<target>/alire-dev.toml` declares a `gnatprove` dependency, deploy ONLY
    the gnatprove binary crate (a self-contained bundle, no dependencies) into
    `~/.adacovex/toolchain/` via `alr -n get gnatprove=<version>` and run the
@@ -819,11 +823,26 @@ method fits:
    fragile `alr exec` path that composed the target's entire dev-manifest
    dependency set (covex, gnatdoc_bin, gnatformat_bin, ...), so CI proof runs
    depend on a single crate download and never need a dev-manifest swap.
-2. **`$PATH`**: a `gnatprove` installed beforehand (e.g. `alr install gnatprove`).
-3. **Cached toolchain**: `~/.adacovex/toolchain/` -- either the download
+   A manifest pin always wins over every other source below: when the pinned
+   version cannot be deployed the run fails instead of falling back, because a
+   different gnatprove can change which VCs are discharged. Priorities 2-5
+   apply only to projects that do not declare gnatprove.
+2. **Global version pin**: the `ADACOVEX_GNATPROVE_VERSION` environment
+   variable or the `[prove] gnatprove-version = "X.Y.Z"` key in
+   `~/.adacovex/adacovex.toml`. The exact version is deployed standalone via
+   `alr -n get gnatprove=<version>` and run directly -- same authoritative,
+   never-fall-back semantics as the manifest pin, and folded into the proof
+   result-cache identity so a different pinned version can never reuse a stale
+   proof. Use it to fix every proof on one prover (e.g. 16.1.0) without
+   touching per-project manifests.
+3. **`$PATH`**: a `gnatprove` installed beforehand (e.g. `alr install gnatprove`).
+4. **Cached toolchain**: `~/.adacovex/toolchain/` -- either the download
    layout (`<toolchain>/bin/gnatprove`) or a previously `alr get`-deployed
    `gnatprove_*/` crate.
-4. **Download**: last-resort platform toolchain bundle.
+5. **Download**: last-resort platform toolchain bundle.
+
+So the effective order is: **manifest pin > global pin (config/env) > PATH >
+cache > download**.
 
 If a project manifest declares `gnatprove` but `alr` is missing, install Alire
 first; the remaining fallbacks then apply.
@@ -882,9 +901,9 @@ is obtained and built.
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 336/336 passing |
-| Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
-| SPARK proof | `make prove` | all VCs proved, Platinum |
+| Unit tests | `make test` | 361/361 passing |
+| Self-assessment | `make run-self` | 100% docs, Silver, DAL-C Achieved |
+| SPARK proof | `make prove` | Silver (509 VCs, 168 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
 
 See [docs/changelogs/adacovex-1.0.0.md](docs/changelogs/adacovex-1.0.0.md) for full release notes.
@@ -939,12 +958,12 @@ Test source: `src/tests/`. Entry point: `test_runner.adb` (builds as
 in `adacovex.gpr`; the CLI entry point builds as `bin/adacovex` via the
 `Builder.Executable` override, with a `bin/covex` alias symlink).
 
-`make test` builds and runs the 336-test suite. Test results are written to
+`make test` builds and runs the 361-test suite. Test results are written to
 `docs/test_result.md` in a Markdown table format that can be parsed by
 `adacovex-parsers-tests`. This means adacovex **supports both** native test
 running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 
-### Test categories (336 total)
+### Test categories (361 total)
 
 | Category | Tests | What it covers |
 |----------|-------|----------------|
@@ -952,9 +971,9 @@ running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 | DAL compliance | 7 | DAL assessment status, oversized HLR/LLR entry clamping |
 | Source scanner | 79 | Package scan, docstring parsing (Ada/Google/Sphinx styles), HLR tags, name extraction, @field/@formal/after-decl, comment-style variants, tag aliases, long generated lines, Max_Line overflow/exact-fit rejection, oversized-name/tag/value clamping, Skipped_Ct |
 | IR synthesis | 27 | Bounded type bounds, Target_Config defaults, host word-size detection, foreign type-name lowering, package synthesis |
-| GNATprove parser | 52 | .out parsing, proof summary, SPARK level detection, Units_Analyzed/Skipped, justified-VC handling, --help handling, Max_Line overflow rejection |
+| GNATprove parser | 64 | .out parsing, proof summary, SPARK level detection, gnatprove v15/v16 command-line reconciliation, Units_Analyzed/Skipped, justified-VC handling, --help handling, Max_Line overflow rejection |
 | Test-result parser | 43 | Markdown table, TAP, Automake, Maven Surefire, and Unity test-result parsing; conventional file-name discovery; Max_Line overflow rejection |
-| CLI config | 19 | Default option values, --help, --no-svg field, --compare-base and --coverage-delta defaults, prove-option defaults |
+| CLI config | 32 | Default option values, --help, --no-svg field, --compare-base and --coverage-delta defaults, prove-option and CI-threshold defaults |
 | SVG renderer | 30 | SVG badge content and format |
 | SBOM generator | 53 | Proof/DAL property mapping, Alire manifest + GPR dependency graph, CycloneDX/SPDX rendering |
 
