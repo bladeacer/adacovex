@@ -191,6 +191,7 @@ package body Adacovex.Renderers.SBOM is
       while R > 0 loop
          pragma Loop_Invariant (I in 1 .. 10);
          pragma Loop_Invariant (Long_Long_Integer (R) < Pow10 (I));
+         pragma Loop_Variant (Decreases => I);
          Buf (I) := Character'Val (Character'Pos ('0') + (R mod 10));
          R := R / 10;
          exit when R = 0;
@@ -223,22 +224,20 @@ package body Adacovex.Renderers.SBOM is
       is (if Is_Leap (Y) then 366 else 365)
       with Global => null;
 
-      function Days_In_Month (Y : Natural; M : Natural) return Natural
+      function Days_In_Month (M : Natural) return Natural
       is (case M is
-            when 2              => (if Is_Leap (Y) then 29 else 28),
+            when 2              => 28,
             when 4 | 6 | 9 | 11 => 30,
             when others         => 31)
-      with
-        Pre    => M in 1 .. 12,
-        Post   => Days_In_Month'Result in 28 .. 31,
-        Global => null;
+      with Post => Days_In_Month'Result in 28 .. 31, Global => null;
 
-      Days : constant Natural := Epoch_Sec / 86_400;
-      Din  : Natural := Days;
-      Sec  : Natural := Epoch_Sec mod 86_400;
-      Yr   : Natural := 1970;
-      Mo   : Natural := 1;
-      Dy   : Natural := 1;
+      Days     : constant Natural := Epoch_Sec / 86_400;
+      Din      : Natural := Days;
+      Sec      : Natural := Epoch_Sec mod 86_400;
+      Yr       : Natural := 1970;
+      Mo       : Natural := 1;
+      Dy       : Natural := 1;
+      Is_Feb29 : Boolean := False;
    begin
       pragma Assert (Days <= 24_855);
       for YI in 1 .. 68 loop
@@ -249,19 +248,29 @@ package body Adacovex.Renderers.SBOM is
          Yr := 1970 + YI;
       end loop;
       pragma Assert (Din < 366);
-
-      for MI in 1 .. 12 loop
-         pragma Loop_Invariant (Din < 366);
-         exit when Din < Days_In_Month (Yr, MI);
-         pragma Assert (Din < 366);
-         pragma Assert (Din >= Days_In_Month (Yr, MI));
-         Din := Din - Days_In_Month (Yr, MI);
-         Mo := MI + 1;
+      declare
+         Leap : constant Boolean := Is_Leap (Yr);
+      begin
+         if Leap and then Din = 59 then
+            Is_Feb29 := True;
+            Din := 58;
+         elsif Leap and then Din > 59 then
+            Din := Din - 1;
+         end if;
+      end;
+      pragma Assert (Din < 365);
+      Mo := 1;
+      while Mo < 12 and then Din >= Days_In_Month (Mo) loop
+         pragma Loop_Invariant (Din < 365);
+         pragma Loop_Variant (Decreases => Din);
+         Din := Din - Days_In_Month (Mo);
+         Mo := Mo + 1;
       end loop;
-      if Mo > 12 then
-         Mo := 12;
-      end if;
+      pragma Assert (Din < 31);
       Dy := Din + 1;
+      if Is_Feb29 then
+         Dy := Dy + 1;
+      end if;
       declare
          YrS : constant String := I2S (Yr);
          MoS : constant String := Pad2 (Mo);
