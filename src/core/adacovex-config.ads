@@ -62,19 +62,6 @@ package Adacovex.Config is
       Prove_No_Loop_Unroll : Boolean := False;
       Prove_No_Inlining    : Boolean := False;
 
-      --  GNATprove version pin for the prove subcommand.  Empty means
-      --  "latest": Resolve_GNATprove follows normal resolution priority
-      --  (manifest-declared version first).  When set, the named gnatprove
-      --  version is deployed via `alr -n get gnatprove=<version>` and run
-      --  directly, overriding any manifest pin (the CLI pin is authoritative
-      --  -- "latest" otherwise -- and the version is folded into the proof
-      --  result-cache identity so proofs from different provers never mix).
-      --  Recommended for mission-critical / reproducible CI: pin the exact
-      --  version (e.g. --gnatprove-version=16.1.0), because a gnatprove
-      --  upgrade can change which VCs are discharged.
-      GNATprove_Version     : String (1 .. Types.Max_Id_Str);
-      GNATprove_Version_Len : Natural := 0;
-
       --  CI threshold gates (default: all off).  When set, the assessment
       --  fails loudly (exit code 1 with an explicit reason) if the target
       --  does not meet the minimum required level.  These are extra gates on
@@ -110,7 +97,6 @@ package Adacovex.Config is
        and then Parse_CLI'Result.Prove_Timeout in -1 .. 3600
        and then Parse_CLI'Result.Prove_Steps in -1 .. 100_000_000
        and then Parse_CLI'Result.Prove_Memlimit in -1 .. 1_000_000
-       and then Parse_CLI'Result.GNATprove_Version_Len <= Types.Max_Id_Str
        and then Parse_CLI'Result.Require_Docstrings in 0 .. 100
        and then Parse_CLI'Result.Require_Proof in 0 .. 100;
 

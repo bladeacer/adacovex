@@ -39,16 +39,6 @@ inputs:
       Run GNATprove before assessing via the adacovex prove subcommand.
     required: false
     default: 'false'
-  gnatprove-version:
-    description: >-
-      GNATprove version to use for the prove subcommand.  Empty (default)
-      resolves the latest/latest-pinned version per the normal resolution
-      order (target manifest, PATH, cache, download).  Pin an exact version
-      (e.g. 16.1.0) for reproducible, mission-critical CI -- a gnatprove
-      upgrade can change which VCs are discharged, so pinned provers keep
-      results stable.
-    required: false
-    default: ''
   require-spark:
     description: >-
       Minimum SPARK level (Stone/Bronze/Silver/Gold/Platinum) the assessment
@@ -273,16 +263,12 @@ runs:
       run: |
         set -euxo pipefail
         cd "$GITHUB_WORKSPACE"
-        VERSION_ARGS=()
-        if [ -n "${{ inputs.gnatprove-version }}" ]; then
-          VERSION_ARGS+=(--gnatprove-version="${{ inputs.gnatprove-version }}")
-        fi
         if [ -x bin/adacovex ]; then
-          ./bin/adacovex prove --target="${{ inputs.target }}" "${VERSION_ARGS[@]}"
+          ./bin/adacovex prove --target="${{ inputs.target }}"
         elif command -v adacovex >/dev/null 2>&1; then
-          adacovex prove --target="${{ inputs.target }}" "${VERSION_ARGS[@]}"
+          adacovex prove --target="${{ inputs.target }}"
         elif command -v covex >/dev/null 2>&1; then
-          covex prove --target="${{ inputs.target }}" "${VERSION_ARGS[@]}"
+          covex prove --target="${{ inputs.target }}"
         else
           echo "::error::adacovex binary not found. Set build: true (builds adacovex from source) or install adacovex on PATH."
           exit 1

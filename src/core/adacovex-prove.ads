@@ -19,13 +19,23 @@ with Adacovex.Types;
 --       manifest-declared prover is authoritative: when it cannot be deployed
 --       the run fails instead of falling back, because a different gnatprove
 --       version can change which VCs are discharged (results must always come
---       from the pinned prover).  Priorities 2-4 apply only to projects whose
+--       from the pinned prover).  Priorities 2-5 apply only to projects whose
 --       manifest does not declare gnatprove.
---    2. A gnatprove already on $PATH.
---    3. A cached gnatprove in ~/.adacovex/toolchain/bin (download layout) or a
+--    2. A gnatprove version pinned globally -- the ADACOVEX_GNATPROVE_VERSION
+--       environment variable or the `[prove] gnatprove-version = "16.1.0"`
+--       key in ~/.adacovex/adacovex.toml (read by Run_Prove and passed in as
+--       Pinned_Version).  The exact version is deployed via
+--       `alr -n get gnatprove=<version>` and run directly; like the manifest
+--       pin it is authoritative (a failure to deploy is a failure to run) and
+--       is folded into the proof result-cache identity so a different pinned
+--       version can never reuse a stale proof.
+--    3. A gnatprove already on $PATH.
+--    4. A cached gnatprove in ~/.adacovex/toolchain/bin (download layout) or a
 --       previously `alr get`-deployed gnatprove_*/ crate under the same dir.
---    4. Last resort: a platform toolchain download (curl; only used when
+--    5. Last resort: a platform toolchain download (curl; only used when
 --       no deployable, on-PATH, or cached gnatprove is available).
+--  So the order is: manifest pin > global pin (config/env) > PATH > cache >
+--  download.
 --  HLR-PROVE: GNATprove subcommand
 
 package Adacovex.Prove is
@@ -46,15 +56,6 @@ package Adacovex.Prove is
       No_Loop_Unrolling : Boolean := False;
       No_Inlining       : Boolean := False;
       Cache             : Boolean := True;
-
-      --  GNATprove version to use, overriding the manifest-declared version.
-      --  Empty means "resolve normally" (manifest-pinned version, then PATH /
-      --  cache / download).  When non-empty, the exact version is deployed via
-      --  `alr -n get gnatprove=<version>` and run directly, and it is folded
-      --  into the proof result-cache identity so a different pinned version
-      --  can never reuse a stale proof.
-      GNATprove_Version    : String (1 .. Types.Max_Id_Str);
-      GNATprove_Version_Ln : Natural := 0;
    end record;
 
    --  Detect the number of logical CPUs on the host.  Reads /proc/cpuinfo
@@ -75,14 +76,16 @@ package Adacovex.Prove is
      (Opts : Prove_Options; Jobs : Natural) return String;
 
    --  Resolve how to run gnatprove for a target project.
-   --  Priority: manifest-declared deployment via `alr get`, then PATH, then
+   --  Priority: manifest-declared deployment via `alr get`, then the global
+   --  version pin (Pinned_Version -- see the package comment), then PATH, then
    --  ~/.adacovex/toolchain/bin, then a platform toolchain download.
-   --  Pinned_Version overrides the normal priority list: when non-empty, the
-   --  exact gnatprove version is deployed via `alr -n get gnatprove=<version>`
-   --  and run directly (authoritative -- a failure to deploy is a failure to
-   --  run, never a silent fallback to a different prover), which is how
-   --  mission-critical CI fixes the proof toolchain.  Empty means "latest":
-   --  the manifest-pinned version wins when the target declares gnatprove.
+   --  Pinned_Version applies only when the manifest does not declare
+   --  gnatprove: the manifest pin is authoritative and always wins.  When
+   --  non-empty, the exact gnatprove version is deployed via
+   --  `alr -n get gnatprove=<version>` and run directly (authoritative -- a
+   --  failure to deploy is a failure to run, never a silent fallback to a
+   --  different prover), which is how mission-critical CI fixes the proof
+   --  toolchain across projects that do not pin one themselves.
    --  Exe_Path always holds a directly-executable gnatprove binary (never the
    --  `alr` wrapper -- the deployment path runs the deployed binary itself),
    --  and Toolchain_Dir is the bin directory to prepend to PATH for the child
@@ -91,8 +94,8 @@ package Adacovex.Prove is
    --  executable/toolchain path); Run_Prove folds it into the result-cache key
    --  so proofs from different gnatprove deployments are never mixed.
    --  @param Target_Dir  Project root directory.
-   --  @param Pinned_Version  Exact gnatprove version to use ("" = latest /
-   --  manifest-resolved).
+   --  @param Pinned_Version  Global gnatprove version pin ("" = none; the
+   --  manifest pin is still preferred when the target declares one).
    --  @param Exe_Path  Output buffer for the executable path.
    --  @param Exe_Len  Length of the resolved executable path.
    --  @param Toolchain_Dir  Output buffer for the toolchain bin directory.
