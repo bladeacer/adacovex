@@ -46,6 +46,15 @@ package Adacovex.Prove is
       No_Loop_Unrolling : Boolean := False;
       No_Inlining       : Boolean := False;
       Cache             : Boolean := True;
+
+      --  GNATprove version to use, overriding the manifest-declared version.
+      --  Empty means "resolve normally" (manifest-pinned version, then PATH /
+      --  cache / download).  When non-empty, the exact version is deployed via
+      --  `alr -n get gnatprove=<version>` and run directly, and it is folded
+      --  into the proof result-cache identity so a different pinned version
+      --  can never reuse a stale proof.
+      GNATprove_Version    : String (1 .. Types.Max_Id_Str);
+      GNATprove_Version_Ln : Natural := 0;
    end record;
 
    --  Detect the number of logical CPUs on the host.  Reads /proc/cpuinfo
@@ -68,14 +77,22 @@ package Adacovex.Prove is
    --  Resolve how to run gnatprove for a target project.
    --  Priority: manifest-declared deployment via `alr get`, then PATH, then
    --  ~/.adacovex/toolchain/bin, then a platform toolchain download.
+   --  Pinned_Version overrides the normal priority list: when non-empty, the
+   --  exact gnatprove version is deployed via `alr -n get gnatprove=<version>`
+   --  and run directly (authoritative -- a failure to deploy is a failure to
+   --  run, never a silent fallback to a different prover), which is how
+   --  mission-critical CI fixes the proof toolchain.  Empty means "latest":
+   --  the manifest-pinned version wins when the target declares gnatprove.
    --  Exe_Path always holds a directly-executable gnatprove binary (never the
    --  `alr` wrapper -- the deployment path runs the deployed binary itself),
    --  and Toolchain_Dir is the bin directory to prepend to PATH for the child
    --  (empty when already on PATH).  Identity is a short fingerprint of the
-   --  resolved prover (pinned manifest version for the deploy path, else the
+   --  resolved prover (pinned version for the deploy path, else the
    --  executable/toolchain path); Run_Prove folds it into the result-cache key
    --  so proofs from different gnatprove deployments are never mixed.
    --  @param Target_Dir  Project root directory.
+   --  @param Pinned_Version  Exact gnatprove version to use ("" = latest /
+   --  manifest-resolved).
    --  @param Exe_Path  Output buffer for the executable path.
    --  @param Exe_Len  Length of the resolved executable path.
    --  @param Toolchain_Dir  Output buffer for the toolchain bin directory.
@@ -84,14 +101,15 @@ package Adacovex.Prove is
    --  @param Ident_Len  Length of the identity fingerprint.
    --  @param Success  True if a usable gnatprove was found.
    procedure Resolve_GNATprove
-     (Target_Dir    : String;
-      Exe_Path      : out String;
-      Exe_Len       : out Natural;
-      Toolchain_Dir : out String;
-      Dir_Len       : out Natural;
-      Identity      : out String;
-      Ident_Len     : out Natural;
-      Success       : out Boolean);
+     (Target_Dir     : String;
+      Pinned_Version : String;
+      Exe_Path       : out String;
+      Exe_Len        : out Natural;
+      Toolchain_Dir  : out String;
+      Dir_Len        : out Natural;
+      Identity       : out String;
+      Ident_Len      : out Natural;
+      Success        : out Boolean);
 
    --  Locate the root GNAT project file for a target directory.
    --  Searches the target root for a single *.gpr file (the build project).

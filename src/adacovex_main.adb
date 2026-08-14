@@ -465,15 +465,17 @@ begin
       declare
          OK   : Boolean;
          Opts : constant Adacovex.Prove.Prove_Options :=
-           (Jobs              => Cfg.Prove_Jobs,
-            Level             => Cfg.Prove_Level,
-            Timeout           => Cfg.Prove_Timeout,
-            Steps             => Cfg.Prove_Steps,
-            Memlimit          => Cfg.Prove_Memlimit,
-            Force             => Cfg.Prove_Force,
-            No_Loop_Unrolling => Cfg.Prove_No_Loop_Unroll,
-            No_Inlining       => Cfg.Prove_No_Inlining,
-            Cache             => Cfg.Cache_Enabled);
+           (Jobs                 => Cfg.Prove_Jobs,
+            Level                => Cfg.Prove_Level,
+            Timeout              => Cfg.Prove_Timeout,
+            Steps                => Cfg.Prove_Steps,
+            Memlimit             => Cfg.Prove_Memlimit,
+            Force                => Cfg.Prove_Force,
+            No_Loop_Unrolling    => Cfg.Prove_No_Loop_Unroll,
+            No_Inlining          => Cfg.Prove_No_Inlining,
+            Cache                => Cfg.Cache_Enabled,
+            GNATprove_Version    => Cfg.GNATprove_Version,
+            GNATprove_Version_Ln => Cfg.GNATprove_Version_Len);
       begin
          Adacovex.Prove.Run_Prove (Target (1 .. TLen), Opts, OK);
          if not OK then
@@ -660,6 +662,72 @@ begin
       end if;
    end;
    Verbose ("  dal status: " & Adacovex.Types.To_String (DAL_Assess.Status));
+
+   --  CI threshold gates (--require-spark / --require-docstrings /
+   --  --require-tests / --require-proof).  When set, the assessment fails
+   --  loudly (exit code 1, explicit reason) if the target is below the
+   --  pinned minimum -- an extra gate on top of the DAL criteria that lets a
+   --  workflow require e.g. Platinum SPARK, 100% docstrings, 336 passing
+   --  tests, and 100% proved VCs and fail if any slips.
+   declare
+      All_Pass : Boolean := True;
+      Prf_Cov  : Natural := 0;
+   begin
+      if Proof.Total_VCs > 0 then
+         Prf_Cov := (Proof.Proved_VCs * 100) / Proof.Total_VCs;
+      end if;
+
+      if Cfg.Require_SPARK_Set and then Proof.Level < Cfg.Require_SPARK then
+         Ada.Text_IO.Put_Line
+           (Ada.Text_IO.Standard_Error,
+            "  CI GATE: SPARK level "
+            & Adacovex.Types.To_String (Proof.Level)
+            & " below required "
+            & Adacovex.Types.To_String (Cfg.Require_SPARK)
+            & " (--require-spark)");
+         All_Pass := False;
+      end if;
+
+      if Cfg.Require_Docstrings_Set
+        and then Doc_Metrics.Coverage_Pct < Cfg.Require_Docstrings
+      then
+         Ada.Text_IO.Put_Line
+           (Ada.Text_IO.Standard_Error,
+            "  CI GATE: docstring coverage "
+            & Img (Doc_Metrics.Coverage_Pct)
+            & "% below required "
+            & Img (Cfg.Require_Docstrings)
+            & "% (--require-docstrings)");
+         All_Pass := False;
+      end if;
+
+      if Cfg.Require_Tests_Set and then Tests.Total_Passed < Cfg.Require_Tests
+      then
+         Ada.Text_IO.Put_Line
+           (Ada.Text_IO.Standard_Error,
+            "  CI GATE: "
+            & Img (Tests.Total_Passed)
+            & " passing tests below required "
+            & Img (Cfg.Require_Tests)
+            & " (--require-tests)");
+         All_Pass := False;
+      end if;
+
+      if Cfg.Require_Proof_Set and then Prf_Cov < Cfg.Require_Proof then
+         Ada.Text_IO.Put_Line
+           (Ada.Text_IO.Standard_Error,
+            "  CI GATE: proved-VC coverage "
+            & Img (Prf_Cov)
+            & "% below required "
+            & Img (Cfg.Require_Proof)
+            & "% (--require-proof)");
+         All_Pass := False;
+      end if;
+
+      if not All_Pass then
+         Exit_St := 1;
+      end if;
+   end;
 
    if DAL_Assess.Status /= Achieved then
       Exit_St := 1;

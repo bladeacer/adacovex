@@ -26,6 +26,10 @@ jobs:
           build: true
           release-build: true
           prove: true
+          gnatprove-version: 16.1.0
+          require-spark: Platinum
+          require-docstrings: 100
+          require-proof: 100
 
       - name: Require Platinum SPARK level
         shell: bash

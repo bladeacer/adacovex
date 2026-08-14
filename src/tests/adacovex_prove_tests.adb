@@ -350,6 +350,97 @@ package body Adacovex_Prove_Tests is
             "Parse_Prove_Out (units): Units_Skipped = 3");
       end;
 
+      --  gnatprove v16 real-world row: the Provers column holds "." and the
+      --  Flow column carries a percentage, but field positions are stable, so
+      --  the field-based extractor must read Total=3, Justified=. (0) and
+      --  Unproved=1 (33%) off the same row.  This is exactly the output both
+      --  gnatprove 15.1.0 and 16.1.0 produce (verified against both).
+      declare
+         F       : File_Type;
+         Summary : Proof_Summary;
+         Success : Boolean;
+      begin
+         Create (F, Out_File, "/tmp/adacovex_test_prove_out.txt");
+         Put_Line
+           (F,
+            "SPARK Analysis results        Total       Flow     Provers   Justified   Unproved");
+         Put_Line
+           (F,
+            "Run-time Checks                   1          .           .           .          1");
+         Put_Line
+           (F,
+            "Functional Contracts              1          .    1 (CVC5)           .          .");
+         Put_Line
+           (F,
+            "Termination                       1          1           .           .          .");
+         Put_Line
+           (F,
+            "Total                             3    1 (33%)     1 (33%)           .    1 (33%)");
+         Close (F);
+
+         Adacovex.Parsers.GNATprove.Parse_Prove_Out
+           ("/tmp/adacovex_test_prove_out.txt", Summary, Success);
+
+         R.Check (Success, "Parse_Prove_Out (v16 Total): success");
+         R.Check
+           (Summary.Total_VCs = 3, "Parse_Prove_Out (v16 Total): Total = 3");
+         R.Check
+           (Summary.Justified = 0,
+            "Parse_Prove_Out (v16 Total): Justified = 0 (.)");
+         R.Check
+           (Summary.Unproved = 1,
+            "Parse_Prove_Out (v16 Total): Unproved = 1 (33%)");
+         R.Check
+           (Summary.Proved_VCs = 2,
+            "Parse_Prove_Out (v16 Total): Proved = 3 - 0 - 1");
+         R.Check
+           (Summary.Level = Silver,
+            "Parse_Prove_Out (v16 Total): Level = Silver (unproved > 0)");
+      end;
+
+      --  gnatprove v15 style: the Provers column is filled with a percentage
+      --  (`326 (65%)`) rather than ".", but field positions 5/6 are
+      --  unchanged, so Justified and Unproved must still be extracted.
+      declare
+         F       : File_Type;
+         Summary : Proof_Summary;
+         Success : Boolean;
+      begin
+         Create (F, Out_File, "/tmp/adacovex_test_prove_out.txt");
+         Put_Line
+           (F,
+            "SPARK Analysis results        Total       Flow     Provers   Justified   Unproved");
+         Put_Line
+           (F,
+            "Flow Dependencies               8   8 (100%)           .           .          .");
+         Put_Line
+           (F,
+            "Run-time Checks                 22      .   21 (CVC5)           1          .");
+         Put_Line
+           (F,
+            "Total                           30  8 (27%)   20 (70%)          1   1 (33%)");
+         Close (F);
+
+         Adacovex.Parsers.GNATprove.Parse_Prove_Out
+           ("/tmp/adacovex_test_prove_out.txt", Summary, Success);
+
+         R.Check (Success, "Parse_Prove_Out (v15 Total): success");
+         R.Check
+           (Summary.Total_VCs = 30, "Parse_Prove_Out (v15 Total): Total = 30");
+         R.Check
+           (Summary.Justified = 1,
+            "Parse_Prove_Out (v15 Total): Justified = 1");
+         R.Check
+           (Summary.Unproved = 1,
+            "Parse_Prove_Out (v15 Total): Unproved = 1 (33%)");
+         R.Check
+           (Summary.Proved_VCs = 28,
+            "Parse_Prove_Out (v15 Total): Proved = 30 - 1 - 1");
+         R.Check
+           (Summary.Runtime_Proved = 21,
+            "Parse_Prove_Out (v15 Total): Runtime_Proved = 21");
+      end;
+
       --  A physical line longer than Max_Line in the .out file is rejected
       --  explicitly (no partial proof summary).
       declare

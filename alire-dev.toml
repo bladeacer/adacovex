@@ -22,6 +22,6 @@ website = "https://github.com/bladeacer/adacovex"
 tags = ["ada", "spark", "formal-verify", "cli", "gnatprove", "sbom", "tests", "code-coverage", "do-178c", "compliance", "developer-tools"]
 
 [[depends-on]]
-gnatprove = "^15.1.0"
+gnatprove = "^16.1.0"
 gnatdoc_bin = "^26.0.0"
 gnatformat_bin = "^26.0.0"
