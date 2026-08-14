@@ -42,6 +42,63 @@ package body Adacovex.Parsers.GNATprove is
       return 0;
    end Get_Nth_Number_Raw;
 
+   --  Return the numeric value in the N-th column of a gnatprove summary row
+   --  (1-based, so column 1 is the leading label).  Columns are delimited by
+   --  runs of two or more spaces, which is how gnatprove aligns its summary
+   --  table regardless of version: every layout since the modern headers
+   --  (`Total | Flow | Provers | Justified | Unproved`) pads to at least two
+   --  separators between fields, while a single space stays inside a field
+   --  (as in `59 (12%)` or `326 (65%)`).  A "." or absent column returns 0.
+   --  This reconciles gnatprove v15 vs v16 output: older releases report an
+   --  unproved count such as `118 (23%)` in the last column, newer ones
+   --  `450 (88%)` with a "Provers" column of ".", but the column positions
+   --  (Justified = 5, Unproved = 6) are stable across both.
+   function Get_Column_Number (Row : String; N : Positive) return Natural;
+   function Get_Column_Number (Row : String; N : Positive) return Natural is
+      Field  : Positive := 1;
+      J      : Natural := Row'First;
+      Run_Of : Natural;
+      FS     : Natural := 0;
+      FE     : Natural := 0;
+   begin
+      --  Skip leading spaces to reach the first column start.
+      while J <= Row'Last and then Row (J) = ' ' loop
+         J := J + 1;
+      end loop;
+      if J > Row'Last then
+         return 0;
+      end if;
+      FS := J;
+      loop
+         --  Scan the current field's non-space run; FE is its last index.
+         while J <= Row'Last and then Row (J) /= ' ' loop
+            J := J + 1;
+         end loop;
+         FE := J - 1;
+         if Field = N then
+            --  Read the number within THIS field only, so a later "." or a
+            --  trailing numeric column can never leak into an earlier one.
+            return Get_Nth_Number_Raw (Row (FS .. FE), 1);
+         end if;
+         exit when J > Row'Last;
+         --  Consume the separating space run.
+         Run_Of := 1;
+         while J + Run_Of <= Row'Last and then Row (J + Run_Of) = ' ' loop
+            Run_Of := Run_Of + 1;
+         end loop;
+         if Run_Of >= 2 then
+            --  A run of 2+ spaces ends the column and starts the next one.
+            Field := Field + 1;
+            J := J + Run_Of;
+            FS := J;
+         else
+            --  A single space stays inside the field (e.g. `1 (CVC5)`).
+            J := J + Run_Of;
+         end if;
+      end loop;
+      return 0;
+   end Get_Column_Number;
+
    procedure Parse_Prove_Out
      (File_Path : String;
       Summary   : out Types.Proof_Summary;
@@ -152,13 +209,18 @@ package body Adacovex.Parsers.GNATprove is
                      if Row'Length >= 5
                        and then Row (Row'First .. Row'First + 4) = "Total"
                      then
-                        Summary.Total_VCs := Get_Nth_Number_Raw (Row, 1);
-                        Summary.Justified := Get_Nth_Number_Raw (Row, 4);
-                        Summary.Unproved := Get_Nth_Number_Raw (Row, 5);
-                        --  Modern summary layout:
+                        --  Column layout (stable across gnatprove v15/v16):
                         --    Total | Flow | Provers | Justified | Unproved
+                        --  Columns are aligned with runs of 2+ spaces, so a
+                        --  field-split extraction is version-independent:
+                        --  v15 fills the Provers column (e.g. `326 (65%)`)
+                        --  while v16 may show `.`, but Justified is always
+                        --  column 5 and Unproved always column 6.
                         --  Proved = solved-by-flow + solved-by-provers,
                         --  equivalently Total - Justified - Unproved.
+                        Summary.Total_VCs := Get_Column_Number (Row, 2);
+                        Summary.Justified := Get_Column_Number (Row, 5);
+                        Summary.Unproved := Get_Column_Number (Row, 6);
                         if Summary.Total_VCs > 0 then
                            Summary.Proved_VCs :=
                              Summary.Total_VCs

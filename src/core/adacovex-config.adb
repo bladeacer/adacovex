@@ -53,6 +53,38 @@ package body Adacovex.Config is
       Cfg.CLI_Error := True;
    end Set_Error;
 
+   --  Parse a SPARK level name into a Types.SPARK_Level.  Accepts the exact
+   --  names returned by Types.To_String (case matters) or ignores case for
+   --  convenience.  Sets Valid False and Result to Stone on parse failure.
+   procedure To_SPARK_Level
+     (S : String; Result : out Types.SPARK_Level; Valid : out Boolean)
+   is
+      Up : String (1 .. S'Length);
+   begin
+      for I in S'Range loop
+         if S (I) in 'a' .. 'z' then
+            Up (I - S'First + 1) := Character'Val (Character'Pos (S (I)) - 32);
+         else
+            Up (I - S'First + 1) := S (I);
+         end if;
+      end loop;
+      Valid := True;
+      if Up = "STONE" then
+         Result := Types.Stone;
+      elsif Up = "BRONZE" then
+         Result := Types.Bronze;
+      elsif Up = "SILVER" then
+         Result := Types.Silver;
+      elsif Up = "GOLD" then
+         Result := Types.Gold;
+      elsif Up = "PLATINUM" then
+         Result := Types.Platinum;
+      else
+         Result := Types.Stone;
+         Valid := False;
+      end if;
+   end To_SPARK_Level;
+
    function Is_Valid_DAL (S : String) return Boolean is
    begin
       return S'Length = 1 and then (S (S'First) in 'A' .. 'E' | 'a' .. 'e');
@@ -550,6 +582,149 @@ package body Adacovex.Config is
                Cfg.Prove_No_Loop_Unroll := True;
             elsif A = "--no-inlining" then
                Cfg.Prove_No_Inlining := True;
+            elsif A = "--gnatprove-version" then
+               I := I + 1;
+               if I <= Count then
+                  Set_String
+                    (Cfg.GNATprove_Version,
+                     Cfg.GNATprove_Version_Len,
+                     Ada.Command_Line.Argument (I));
+               else
+                  Set_Error
+                    (Cfg, "--gnatprove-version requires a version argument");
+               end if;
+            elsif Has_Prefix (A, "--gnatprove-version=") then
+               Set_String
+                 (Cfg.GNATprove_Version,
+                  Cfg.GNATprove_Version_Len,
+                  A (A'First + 20 .. A'Last));
+            elsif A = "--require-spark" then
+               I := I + 1;
+               if I <= Count then
+                  declare
+                     Val : constant String := Ada.Command_Line.Argument (I);
+                     Lvl : Types.SPARK_Level;
+                     OK  : Boolean;
+                  begin
+                     To_SPARK_Level (Val, Lvl, OK);
+                     if OK then
+                        Cfg.Require_SPARK := Lvl;
+                        Cfg.Require_SPARK_Set := True;
+                     else
+                        Set_Error
+                          (Cfg,
+                           "--require-spark must be Stone, Bronze, Silver, "
+                           & "Gold, or Platinum (got: "
+                           & Val
+                           & ")");
+                     end if;
+                  end;
+               else
+                  Set_Error (Cfg, "--require-spark requires a level argument");
+               end if;
+            elsif Has_Prefix (A, "--require-spark=") then
+               declare
+                  Val : constant String := A (A'First + 16 .. A'Last);
+                  Lvl : Types.SPARK_Level;
+                  OK  : Boolean;
+               begin
+                  To_SPARK_Level (Val, Lvl, OK);
+                  if OK then
+                     Cfg.Require_SPARK := Lvl;
+                     Cfg.Require_SPARK_Set := True;
+                  else
+                     Set_Error
+                       (Cfg,
+                        "--require-spark must be Stone, Bronze, Silver, "
+                        & "Gold, or Platinum (got: "
+                        & Val
+                        & ")");
+                  end if;
+               end;
+            elsif A = "--require-docstrings" then
+               I := I + 1;
+               if I <= Count then
+                  Set_Prove_Int
+                    (Cfg,
+                     Cfg.Require_Docstrings,
+                     Ada.Command_Line.Argument (I),
+                     0,
+                     100,
+                     "--require-docstrings");
+                  if not Cfg.CLI_Error then
+                     Cfg.Require_Docstrings_Set := True;
+                  end if;
+               else
+                  Set_Error
+                    (Cfg,
+                     "--require-docstrings requires a percentage argument");
+               end if;
+            elsif Has_Prefix (A, "--require-docstrings=") then
+               Set_Prove_Int
+                 (Cfg,
+                  Cfg.Require_Docstrings,
+                  A (A'First + 21 .. A'Last),
+                  0,
+                  100,
+                  "--require-docstrings");
+               if not Cfg.CLI_Error then
+                  Cfg.Require_Docstrings_Set := True;
+               end if;
+            elsif A = "--require-tests" then
+               I := I + 1;
+               if I <= Count then
+                  Set_Prove_Int
+                    (Cfg,
+                     Cfg.Require_Tests,
+                     Ada.Command_Line.Argument (I),
+                     0,
+                     1_000_000,
+                     "--require-tests");
+                  if not Cfg.CLI_Error then
+                     Cfg.Require_Tests_Set := True;
+                  end if;
+               else
+                  Set_Error (Cfg, "--require-tests requires a count argument");
+               end if;
+            elsif Has_Prefix (A, "--require-tests=") then
+               Set_Prove_Int
+                 (Cfg,
+                  Cfg.Require_Tests,
+                  A (A'First + 16 .. A'Last),
+                  0,
+                  1_000_000,
+                  "--require-tests");
+               if not Cfg.CLI_Error then
+                  Cfg.Require_Tests_Set := True;
+               end if;
+            elsif A = "--require-proof" then
+               I := I + 1;
+               if I <= Count then
+                  Set_Prove_Int
+                    (Cfg,
+                     Cfg.Require_Proof,
+                     Ada.Command_Line.Argument (I),
+                     0,
+                     100,
+                     "--require-proof");
+                  if not Cfg.CLI_Error then
+                     Cfg.Require_Proof_Set := True;
+                  end if;
+               else
+                  Set_Error
+                    (Cfg, "--require-proof requires a percentage argument");
+               end if;
+            elsif Has_Prefix (A, "--require-proof=") then
+               Set_Prove_Int
+                 (Cfg,
+                  Cfg.Require_Proof,
+                  A (A'First + 16 .. A'Last),
+                  0,
+                  100,
+                  "--require-proof");
+               if not Cfg.CLI_Error then
+                  Cfg.Require_Proof_Set := True;
+               end if;
             elsif A = "--help" then
                Cfg.Help_Requested := True;
                Print_Usage;
@@ -605,13 +780,14 @@ package body Adacovex.Config is
                   or Cfg.Prove_Memlimit >= 0
                   or Cfg.Prove_Force
                   or Cfg.Prove_No_Loop_Unroll
-                  or Cfg.Prove_No_Inlining)
+                  or Cfg.Prove_No_Inlining
+                  or Cfg.GNATprove_Version_Len > 0)
       then
          Set_Error
            (Cfg,
             "prove options (--jobs, --level, --timeout, --steps, --memlimit, "
-            & "--force, --no-loop-unrolling, --no-inlining) require the prove "
-            & "subcommand");
+            & "--force, --no-loop-unrolling, --no-inlining, "
+            & "--gnatprove-version) require the prove subcommand");
       end if;
 
       -- Automatic SBOM at the end of every assessment is skipped only in the
@@ -780,6 +956,22 @@ package body Adacovex.Config is
         ("  --no-loop-unrolling   Disable automatic loop unrolling");
       Ada.Text_IO.Put_Line
         ("  --no-inlining         Disable contextual analysis inlining");
+      Ada.Text_IO.Put_Line
+        ("  --gnatprove-version=V  Pin the gnatprove version used by prove");
+      Ada.Text_IO.Put_Line
+        ("                        (default: latest / manifest-pinned version;");
+      Ada.Text_IO.Put_Line
+        ("                        pin e.g. 16.1.0 for reproducible CI)");
+      Ada.Text_IO.Put_Line
+        ("  --require-spark=LVL   Fail if SPARK level < LVL (Stone..Platinum)");
+      Ada.Text_IO.Put_Line
+        ("  --require-docstrings=PCT Fail if docstring coverage < PCT% (0-100)");
+      Ada.Text_IO.Put_Line
+        ("  --require-tests=N     Fail if passing test count < N");
+      Ada.Text_IO.Put_Line
+        ("  --require-proof=PCT   Fail if proved-VC coverage < PCT% (0-100)");
+      Ada.Text_IO.Put_Line
+        ("                        (CI gates: default off, fail loudly when set)");
       Ada.Text_IO.Put_Line
         ("  sbom --format=FMT     Generate a proof-aware SBOM (FMT: cyclonedx-json");
       Ada.Text_IO.Put_Line

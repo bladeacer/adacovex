@@ -546,14 +546,15 @@ package body Adacovex.Prove is
    end Deploy_GNATprove;
 
    procedure Resolve_GNATprove
-     (Target_Dir    : String;
-      Exe_Path      : out String;
-      Exe_Len       : out Natural;
-      Toolchain_Dir : out String;
-      Dir_Len       : out Natural;
-      Identity      : out String;
-      Ident_Len     : out Natural;
-      Success       : out Boolean)
+     (Target_Dir     : String;
+      Pinned_Version : String;
+      Exe_Path       : out String;
+      Exe_Len        : out Natural;
+      Toolchain_Dir  : out String;
+      Dir_Len        : out Natural;
+      Identity       : out String;
+      Ident_Len      : out Natural;
+      Success        : out Boolean)
    is
       Home      : constant String := Home_Dir;
       Toolchain : constant String := Home & Toolchain_Subdir;
@@ -562,10 +563,10 @@ package body Adacovex.Prove is
 
       --  Identity is a short fingerprint folded into the proof result-cache
       --  key so proofs from different gnatprove deployments are never mixed:
-      --  for the `alr get` deployment path it is the manifest-pinned bare
-      --  version; otherwise it is the resolved executable path (which embeds
-      --  the version hash for downloaded/cached toolchains and the absolute
-      --  path for on-PATH installs).
+      --  for the `alr get` deployment path it is the pinned version;
+      --  otherwise it is the resolved executable path (which embeds the
+      --  version hash for downloaded/cached toolchains and the absolute path
+      --  for on-PATH installs).
       procedure Set_Identity (S : String) is
          Max : constant Natural := Natural'Min (S'Length, Identity'Length);
       begin
@@ -576,6 +577,42 @@ package body Adacovex.Prove is
       end Set_Identity;
    begin
       Ident_Len := 0;
+
+      --  A CLI-pinned version overrides the entire priority list: deploy ONLY
+      --  that gnatprove version and run it directly.  Authoritative -- a
+      --  failure to deploy the pinned version is a failure to run, because a
+      --  different gnatprove can change which VCs are discharged (results
+      --  must always come from the pinned prover, and CI reproducibility is
+      --  the whole point of pinning).
+      if Pinned_Version'Length > 0 then
+         declare
+            Bare : constant String := Bare_Version (Pinned_Version);
+         begin
+            if Bare'Length = 0 then
+               Ada.Text_IO.Put_Line
+                 (Ada.Text_IO.Standard_Error,
+                  "  ERROR: --gnatprove-version '"
+                  & Pinned_Version
+                  & "' is not a parseable gnatprove version.");
+               Success := False;
+               return;
+            end if;
+            Deploy_GNATprove
+              (Bare, Exe_Path, Exe_Len, Toolchain_Dir, Dir_Len, Success);
+            if not Success then
+               Ada.Text_IO.Put_Line
+                 (Ada.Text_IO.Standard_Error,
+                  "  ERROR: pinned gnatprove '"
+                  & Bare
+                  & "' could not be deployed via `alr -n get`; refusing to "
+                  & "fall back to a different gnatprove.  Install Alire and "
+                  & "re-run.");
+               return;
+            end if;
+            Set_Identity ("alr:" & Bare);
+            return;
+         end;
+      end if;
 
       --  Priority 1: the target declares gnatprove in alire.toml /
       --  alire-dev.toml -- deploy only that binary crate and run it directly.
@@ -755,6 +792,8 @@ package body Adacovex.Prove is
       GLen    : Natural := 0;
       Ident   : String (1 .. Types.Max_Path);
       ILen    : Natural := 0;
+      Vers    : String (1 .. Types.Max_Id_Str);
+      VLen    : Natural := 0;
       OK      : Boolean;
       Code    : Integer;
       Args    : GNAT.OS_Lib.Argument_List (1 .. 40);
@@ -784,8 +823,22 @@ package body Adacovex.Prove is
                      Options (1 .. OLen)));
       end Prove_Cache_Key;
    begin
+      VLen := Opts.GNATprove_Version_Ln;
+      if VLen > 0 then
+         for I in 1 .. VLen loop
+            Vers (I) := Opts.GNATprove_Version (I);
+         end loop;
+      end if;
       Resolve_GNATprove
-        (Target_Dir, Exe, Exe_Len, TDir, TLen, Ident, ILen, OK);
+        (Target_Dir,
+         Vers (1 .. VLen),
+         Exe,
+         Exe_Len,
+         TDir,
+         TLen,
+         Ident,
+         ILen,
+         OK);
       if not OK then
          Success := False;
          return;

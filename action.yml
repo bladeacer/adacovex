@@ -39,6 +39,40 @@ inputs:
       Run GNATprove before assessing via the adacovex prove subcommand.
     required: false
     default: 'false'
+  gnatprove-version:
+    description: >-
+      GNATprove version to use for the prove subcommand.  Empty (default)
+      resolves the latest/latest-pinned version per the normal resolution
+      order (target manifest, PATH, cache, download).  Pin an exact version
+      (e.g. 16.1.0) for reproducible, mission-critical CI -- a gnatprove
+      upgrade can change which VCs are discharged, so pinned provers keep
+      results stable.
+    required: false
+    default: ''
+  require-spark:
+    description: >-
+      Minimum SPARK level (Stone/Bronze/Silver/Gold/Platinum) the assessment
+      must reach, otherwise the step fails loudly.  CI threshold gate.
+    required: false
+    default: ''
+  require-docstrings:
+    description: >-
+      Minimum docstring coverage percentage (0-100) the assessment must reach,
+      otherwise the step fails loudly.  CI threshold gate.
+    required: false
+    default: ''
+  require-tests:
+    description: >-
+      Minimum number of passing tests required, otherwise the step fails
+      loudly.  CI threshold gate.
+    required: false
+    default: ''
+  require-proof:
+    description: >-
+      Minimum proved-VC coverage percentage (0-100) required, otherwise the
+      step fails loudly.  CI threshold gate.
+    required: false
+    default: ''
   run-tests:
     description: 'Build and run the native test suite (requires build: true).'
     required: false
@@ -239,12 +273,16 @@ runs:
       run: |
         set -euxo pipefail
         cd "$GITHUB_WORKSPACE"
+        VERSION_ARGS=()
+        if [ -n "${{ inputs.gnatprove-version }}" ]; then
+          VERSION_ARGS+=(--gnatprove-version="${{ inputs.gnatprove-version }}")
+        fi
         if [ -x bin/adacovex ]; then
-          ./bin/adacovex prove --target="${{ inputs.target }}"
+          ./bin/adacovex prove --target="${{ inputs.target }}" "${VERSION_ARGS[@]}"
         elif command -v adacovex >/dev/null 2>&1; then
-          adacovex prove --target="${{ inputs.target }}"
+          adacovex prove --target="${{ inputs.target }}" "${VERSION_ARGS[@]}"
         elif command -v covex >/dev/null 2>&1; then
-          covex prove --target="${{ inputs.target }}"
+          covex prove --target="${{ inputs.target }}" "${VERSION_ARGS[@]}"
         else
           echo "::error::adacovex binary not found. Set build: true (builds adacovex from source) or install adacovex on PATH."
           exit 1
@@ -284,6 +322,18 @@ runs:
         fi
         if [ -n "${{ inputs.emit-markdown }}" ]; then
           ARGS+=(--emit-markdown="${{ inputs.emit-markdown }}")
+        fi
+        if [ -n "${{ inputs.require-spark }}" ]; then
+          ARGS+=(--require-spark="${{ inputs.require-spark }}")
+        fi
+        if [ -n "${{ inputs.require-docstrings }}" ]; then
+          ARGS+=(--require-docstrings="${{ inputs.require-docstrings }}")
+        fi
+        if [ -n "${{ inputs.require-tests }}" ]; then
+          ARGS+=(--require-tests="${{ inputs.require-tests }}")
+        fi
+        if [ -n "${{ inputs.require-proof }}" ]; then
+          ARGS+=(--require-proof="${{ inputs.require-proof }}")
         fi
         if [ "${{ inputs.generate-sbom }}" == 'false' ]; then
           ARGS+=(--no-sbom)

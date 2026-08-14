@@ -5,51 +5,21 @@ package body Adacovex_Config_Tests is
 
    procedure Run (R : in out Adacovex.Test_Support.Runner'Class) is
    begin
-      --  Test 1: default config has Emit_SVG = True and SVG_Path_Len = 0
+      --  Test 1: default config has Emit_SVG = True and SVG_Path_Len = 0.
+      --  Uses `others => <>` so newly added fields with defaults need no
+      --  explicit mention; a non-defaulted field would fail to compile.
       declare
          Cfg : constant CLI_Config :=
-           (Target_Path          => (others => ' '),
-            Target_Len           => 0,
-            Manifest_Path        => (others => ' '),
-            Manifest_Len         => 0,
-            DAL_Target           => DAL_C,
-            Serve_Mode           => False,
-            Port                 => 8080,
-            No_SVG               => False,
-            Emit_SVG             => True,
-            SVG_Path             => (others => ' '),
-            SVG_Path_Len         => 0,
-            Emit_Markdown        => False,
-            MD_Path              => (others => ' '),
-            MD_Path_Len          => 0,
-            Verbose              => False,
-            Strict_Mode          => False,
-            CLI_Error            => False,
-            Help_Requested       => False,
-            Skip_Dir_Ct          => 0,
-            Skip_Dirs            => (others => ' '),
-            Cache_Enabled        => True,
-            Cache_Dir            => (others => ' '),
-            Cache_Dir_Len        => 0,
-            Cache_Max_Entries    => 4096,
-            Compare_Base         => (others => ' '),
-            Compare_Base_Len     => 0,
-            Coverage_Delta       => (others => ' '),
-            Coverage_Delta_Len   => 0,
-            Prove_Mode           => False,
-            SBOM_Mode            => False,
-            SBOM_Format          => CycloneDX_JSON,
-            SBOM_Out             => (others => ' '),
-            SBOM_Out_Len         => 0,
-            No_SBOM              => False,
-            Prove_Jobs           => -1,
-            Prove_Level          => -1,
-            Prove_Timeout        => -1,
-            Prove_Steps          => -1,
-            Prove_Memlimit       => -1,
-            Prove_Force          => False,
-            Prove_No_Loop_Unroll => False,
-            Prove_No_Inlining    => False);
+           (Emit_SVG       => True,
+            SVG_Path_Len   => 0,
+            Serve_Mode     => False,
+            DAL_Target     => DAL_C,
+            Port           => 8080,
+            Verbose        => False,
+            Emit_Markdown  => False,
+            Help_Requested => False,
+            Strict_Mode    => False,
+            others         => <>);
       begin
          R.Check (Cfg.Emit_SVG, "Default Emit_SVG is True");
          R.Check
@@ -72,48 +42,7 @@ package body Adacovex_Config_Tests is
       --  Test 2: No_SVG overrides Emit_SVG
       declare
          Cfg : constant CLI_Config :=
-           (Target_Path          => (others => ' '),
-            Target_Len           => 0,
-            Manifest_Path        => (others => ' '),
-            Manifest_Len         => 0,
-            DAL_Target           => DAL_C,
-            Serve_Mode           => False,
-            Port                 => 8080,
-            No_SVG               => True,
-            Emit_SVG             => True,
-            SVG_Path             => (others => ' '),
-            SVG_Path_Len         => 0,
-            Emit_Markdown        => False,
-            MD_Path              => (others => ' '),
-            MD_Path_Len          => 0,
-            Verbose              => False,
-            Strict_Mode          => False,
-            CLI_Error            => False,
-            Help_Requested       => False,
-            Skip_Dir_Ct          => 0,
-            Skip_Dirs            => (others => ' '),
-            Cache_Enabled        => True,
-            Cache_Dir            => (others => ' '),
-            Cache_Dir_Len        => 0,
-            Cache_Max_Entries    => 4096,
-            Compare_Base         => (others => ' '),
-            Compare_Base_Len     => 0,
-            Coverage_Delta       => (others => ' '),
-            Coverage_Delta_Len   => 0,
-            Prove_Mode           => False,
-            SBOM_Mode            => False,
-            SBOM_Format          => CycloneDX_JSON,
-            SBOM_Out             => (others => ' '),
-            SBOM_Out_Len         => 0,
-            No_SBOM              => False,
-            Prove_Jobs           => -1,
-            Prove_Level          => -1,
-            Prove_Timeout        => -1,
-            Prove_Steps          => -1,
-            Prove_Memlimit       => -1,
-            Prove_Force          => False,
-            Prove_No_Loop_Unroll => False,
-            Prove_No_Inlining    => False);
+           (No_SVG => True, Emit_SVG => True, others => <>);
       begin
          --  No_SVG=True means Emit_SVG should be forced False by Parse_CLI
          R.Check (Cfg.No_SVG, "No_SVG field works");
@@ -121,49 +50,7 @@ package body Adacovex_Config_Tests is
 
       --  Test 3: prove option defaults are the unset sentinels
       declare
-         Cfg : constant CLI_Config :=
-           (Target_Path          => (others => ' '),
-            Target_Len           => 0,
-            Manifest_Path        => (others => ' '),
-            Manifest_Len         => 0,
-            DAL_Target           => DAL_C,
-            Serve_Mode           => False,
-            Port                 => 8080,
-            No_SVG               => False,
-            Emit_SVG             => True,
-            SVG_Path             => (others => ' '),
-            SVG_Path_Len         => 0,
-            Emit_Markdown        => False,
-            MD_Path              => (others => ' '),
-            MD_Path_Len          => 0,
-            Verbose              => False,
-            Strict_Mode          => False,
-            CLI_Error            => False,
-            Help_Requested       => False,
-            Skip_Dir_Ct          => 0,
-            Skip_Dirs            => (others => ' '),
-            Cache_Enabled        => True,
-            Cache_Dir            => (others => ' '),
-            Cache_Dir_Len        => 0,
-            Cache_Max_Entries    => 4096,
-            Compare_Base         => (others => ' '),
-            Compare_Base_Len     => 0,
-            Coverage_Delta       => (others => ' '),
-            Coverage_Delta_Len   => 0,
-            Prove_Mode           => False,
-            SBOM_Mode            => False,
-            SBOM_Format          => CycloneDX_JSON,
-            SBOM_Out             => (others => ' '),
-            SBOM_Out_Len         => 0,
-            No_SBOM              => False,
-            Prove_Jobs           => -1,
-            Prove_Level          => -1,
-            Prove_Timeout        => -1,
-            Prove_Steps          => -1,
-            Prove_Memlimit       => -1,
-            Prove_Force          => False,
-            Prove_No_Loop_Unroll => False,
-            Prove_No_Inlining    => False);
+         Cfg : constant CLI_Config := (others => <>);
       begin
          R.Check (Cfg.Prove_Jobs = -1, "Default Prove_Jobs is -1 (auto)");
          R.Check (Cfg.Prove_Level = -1, "Default Prove_Level is -1 (unset)");
@@ -180,6 +67,48 @@ package body Adacovex_Config_Tests is
            (not Cfg.Prove_No_Inlining, "Default Prove_No_Inlining is False");
       end;
 
+      --  Test 4: gnatprove version + CI threshold defaults are "not set"
+      declare
+         Cfg : constant CLI_Config := (others => <>);
+      begin
+         R.Check
+           (Cfg.GNATprove_Version_Len = 0,
+            "Default GNATprove_Version_Len is 0 (no pin = latest)");
+         R.Check
+           (not Cfg.Require_SPARK_Set,
+            "Default Require_SPARK_Set is False (gate off)");
+         R.Check
+           (Cfg.Require_SPARK = Stone,
+            "Default Require_SPARK is Stone (lowest)");
+         R.Check
+           (not Cfg.Require_Docstrings_Set,
+            "Default Require_Docstrings_Set is False (gate off)");
+         R.Check
+           (Cfg.Require_Docstrings = 0, "Default Require_Docstrings is 0 (%)");
+         R.Check
+           (not Cfg.Require_Tests_Set,
+            "Default Require_Tests_Set is False (gate off)");
+         R.Check (Cfg.Require_Tests = 0, "Default Require_Tests is 0");
+         R.Check
+           (not Cfg.Require_Proof_Set,
+            "Default Require_Proof_Set is False (gate off)");
+         R.Check (Cfg.Require_Proof = 0, "Default Require_Proof is 0 (%)");
+      end;
+
+      --  Test 5: the new prove-option / threshold fields can be set on a
+      --  populated record (a field that loses its default stops compiling).
+      declare
+         Cfg : CLI_Config := (Prove_Jobs => 12, others => <>);
+      begin
+         Cfg.GNATprove_Version_Len := 6;
+         Cfg.GNATprove_Version (1 .. 6) := "16.1.0";
+         R.Check
+           (Cfg.GNATprove_Version_Len = 6, "GNATprove_Version_Len can be set");
+         R.Check
+           (Cfg.GNATprove_Version (1 .. 6) = "16.1.0",
+            "GNATprove_Version string can be set");
+         R.Check (Cfg.Prove_Jobs = 12, "Prove_Jobs can be set");
+      end;
    end Run;
 
 end Adacovex_Config_Tests;
