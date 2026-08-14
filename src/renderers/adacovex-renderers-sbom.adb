@@ -76,16 +76,23 @@ package body Adacovex.Renderers.SBOM is
    --  and control characters are escaped so the emitted JSON is always
    --  well-formed, even for manifest strings containing embedded quotes.
    --  The output buffer is bounded at six bytes per input byte (the widest
+   --  escape, "\u00xx").  Input length is capped at Max_Esc_Src so the
+   --  6x output bound stays provably within Natural.
+   --  @param S  String to escape.
+   --  @return The escaped JSON string.
+   --  Escape a string for inclusion in a JSON document.  Backslash, quote
+   --  and control characters are escaped so the emitted JSON is always
+   --  well-formed, even for manifest strings containing embedded quotes.
+   --  The output buffer is bounded at six bytes per input byte (the widest
    --  escape, "\u00xx"), so the source length is preconditioned to keep the
    --  buffer bound within Natural.
-   function Escape_JSON (S : String) return String
-   with SPARK_Mode => On, Pre => S'Length <= Natural'Last / 6
-   is
-      Buf : String (1 .. S'Length * 6) := (others => ' ');
+   function Escape_JSON (S : String) return String is
+      Buf : String (1 .. 6 * S'Length) := (others => ' ');
       Len : Natural := 0;
       Hex : constant String := "0123456789abcdef";
    begin
       for I in S'Range loop
+         pragma Loop_Invariant (Len <= (I - S'First) * 6);
          case S (I) is
             when '"'                                      =>
                Buf (Len + 1) := '\';
@@ -138,7 +145,6 @@ package body Adacovex.Renderers.SBOM is
                Len := Len + 1;
                Buf (Len) := S (I);
          end case;
-         pragma Loop_Invariant (Len <= (I - S'First + 1) * 6);
       end loop;
       return Buf (1 .. Len);
    end Escape_JSON;
@@ -163,9 +169,7 @@ package body Adacovex.Renderers.SBOM is
    --  Decimal string of a non-negative integer.  A fixed 10-character buffer
    --  holds any Natural (up to 2,147,483,647, ten digits); the loop invariant
    --  proves the write cursor never underflows the buffer.
-   function I2S (N : Natural) return String
-   with SPARK_Mode => On, Post => I2S'Result'Length in 1 .. 10
-   is
+   function I2S (N : Natural) return String with SPARK_Mode => On is
       Pow10 : constant array (1 .. 10) of Long_Long_Integer :=
         (10,
          100,
@@ -178,26 +182,23 @@ package body Adacovex.Renderers.SBOM is
          1_000_000_000,
          10_000_000_000);
       Buf   : String (1 .. 10) := (others => '0');
-      Pos   : Natural := 10;
+      I     : Positive := 10;
       R     : Natural := N;
    begin
       if N = 0 then
          return "0";
       end if;
       while R > 0 loop
-         pragma Loop_Invariant (Pos in 1 .. 10);
-         pragma Loop_Invariant (Long_Long_Integer (R) < Pow10 (Pos));
-         pragma Loop_Variant (Decreases => R);
-         Buf (Pos) := Character'Val (Character'Pos ('0') + (R mod 10));
+         pragma Loop_Invariant (I in 1 .. 10);
+         pragma Loop_Invariant (Long_Long_Integer (R) < Pow10 (I));
+         Buf (I) := Character'Val (Character'Pos ('0') + (R mod 10));
          R := R / 10;
          exit when R = 0;
-         Pos := Pos - 1;
+         I := I - 1;
       end loop;
-      return Buf (Pos .. 10);
+      return Buf (I .. 10);
    end I2S;
-   function Pad2 (N : Natural) return String
-   with SPARK_Mode => On, Post => Pad2'Result'Length in 1 .. 11
-   is
+   function Pad2 (N : Natural) return String with SPARK_Mode => On is
    begin
       if N < 10 then
          return "0" & I2S (N);
@@ -207,69 +208,87 @@ package body Adacovex.Renderers.SBOM is
    end Pad2;
 
    --  ISO 8601 UTC timestamp from a Unix epoch second count, computed with
-   --  pure integer arithmetic (Howard Hinnant's civil-from-days algorithm)
-   --  so the result is identical on every machine and timezone.
-   --  The result is fixed-length (YYYY-MM-DDTHH:MM:SS), so it is proven
-   --  within the SPARK scope of this body.
+   --  pure integer arithmetic so the result is identical on every machine
+   --  and timezone.  The civil date is extracted by bounded iteration over
+   --  years and months (the epoch span is under ~70 years), so every bound
+   --  is discharged with constant-coefficient arithmetic.
    function ISO_From_Epoch (Epoch_Sec : Natural) return String
    with SPARK_Mode => On
    is
-      Days     : constant Long_Long_Integer :=
-        Long_Long_Integer (Epoch_Sec) / 86_400;
-      Secs     : constant Natural := Epoch_Sec mod 86_400;
-      Z        : Long_Long_Integer := Days + 719_468;
-      Era      : Long_Long_Integer;
-      Doe      : Long_Long_Integer;
-      Yoe      : Long_Long_Integer;
-      Doy      : Long_Long_Integer;
-      Mp       : Long_Long_Integer;
-      Y, M, D  : Natural;
-      H, Mi, S : Natural;
-      Buf      : String (1 .. 80) := (others => ' ');
-      Len      : Natural := 0;
+      function Is_Leap (Y : Natural) return Boolean
+      is ((Y mod 4 = 0 and then Y mod 100 /= 0) or else Y mod 400 = 0)
+      with Global => null;
 
-      --  Append a fixed-size field to the timestamp buffer, then a single
-      --  separator character.  The buffer is large enough for the longest
-      --  timestamp (10-digit year + five 2-digit fields + separators).
-      --
-      --  The separator test is a compile-time constant at every call site, so
-      --  inlining constant-folds it; the folded-away branch triggers the
-      --  benign "statement has no effect" warning, suppressed here.
-      pragma Warnings (Off, "statement has no effect");
-      procedure Field (Txt : String; Sep : Character) is
-      begin
-         for I in Txt'Range loop
-            Buf (Len + 1 + (I - Txt'First)) := Txt (I);
-         end loop;
-         Len := Len + Txt'Length;
-         if Sep /= ASCII.NUL then
-            Len := Len + 1;
-            Buf (Len) := Sep;
-         end if;
-      end Field;
+      function Days_In_Year (Y : Natural) return Natural
+      is (if Is_Leap (Y) then 366 else 365)
+      with Global => null;
+
+      function Days_In_Month (Y : Natural; M : Natural) return Natural
+      is (case M is
+            when 2              => (if Is_Leap (Y) then 29 else 28),
+            when 4 | 6 | 9 | 11 => 30,
+            when others         => 31)
+      with
+        Pre    => M in 1 .. 12,
+        Post   => Days_In_Month'Result in 28 .. 31,
+        Global => null;
+
+      Days : constant Natural := Epoch_Sec / 86_400;
+      Din  : Natural := Days;
+      Sec  : Natural := Epoch_Sec mod 86_400;
+      Yr   : Natural := 1970;
+      Mo   : Natural := 1;
+      Dy   : Natural := 1;
    begin
-      Era := (if Z >= 0 then Z else Z - 146_096) / 146_097;
-      Doe := Z - Era * 146_097;
-      Yoe := (Doe - Doe / 1_460 + Doe / 36_524 - Doe / 146_096) / 365;
-      Y := Natural (Yoe + Era * 400);
-      Doy := Doe - (365 * Yoe + Yoe / 4 - Yoe / 100);
-      Mp := (5 * Doy + 2) / 153;
-      D := Natural (Doy - (153 * Mp + 2) / 5 + 1);
-      M := Natural (Mp + (if Mp < 10 then 3 else -9));
-      if M <= 2 then
-         Y := Y + 1;
+      pragma Assert (Days <= 24_855);
+      for YI in 1 .. 68 loop
+         pragma Loop_Invariant (Yr = 1969 + YI);
+         pragma Loop_Invariant (Days - Din >= 365 * (YI - 1));
+         exit when Din < Days_In_Year (Yr);
+         Din := Din - Days_In_Year (Yr);
+         Yr := 1970 + YI;
+      end loop;
+      pragma Assert (Din < 366);
+
+      for MI in 1 .. 12 loop
+         pragma Loop_Invariant (Din < 366);
+         exit when Din < Days_In_Month (Yr, MI);
+         pragma Assert (Din < 366);
+         pragma Assert (Din >= Days_In_Month (Yr, MI));
+         Din := Din - Days_In_Month (Yr, MI);
+         Mo := MI + 1;
+      end loop;
+      if Mo > 12 then
+         Mo := 12;
       end if;
-      H := Secs / 3_600;
-      Mi := (Secs mod 3_600) / 60;
-      S := Secs mod 60;
-      Field (I2S (Y), '-');
-      Field (Pad2 (M), '-');
-      Field (Pad2 (D), 'T');
-      Field (Pad2 (H), ':');
-      Field (Pad2 (Mi), ':');
-      Field (Pad2 (S), ASCII.NUL);
-      pragma Warnings (On, "statement has no effect");
-      return Buf (1 .. Len);
+      Dy := Din + 1;
+      declare
+         YrS : constant String := I2S (Yr);
+         MoS : constant String := Pad2 (Mo);
+         DyS : constant String := Pad2 (Dy);
+         HrS : constant String := Pad2 (Sec / 3_600);
+         MiS : constant String := Pad2 ((Sec mod 3_600) / 60);
+         SdS : constant String := Pad2 (Sec mod 60);
+      begin
+         pragma Assert (YrS'Length <= 10);
+         pragma Assert (MoS'Length <= 11);
+         pragma Assert (DyS'Length <= 11);
+         pragma Assert (HrS'Length <= 11);
+         pragma Assert (MiS'Length <= 11);
+         pragma Assert (SdS'Length <= 11);
+         pragma
+           Assert
+             (YrS'Length
+                + MoS'Length
+                + DyS'Length
+                + HrS'Length
+                + MiS'Length
+                + SdS'Length
+                + 5
+                <= Natural'Last);
+         return
+           YrS & "-" & MoS & "-" & DyS & "T" & HrS & ":" & MiS & ":" & SdS;
+      end;
    end ISO_From_Epoch;
 
    --  ISO 8601 timestamp (YYYY-MM-DDTHH:MM:SS).

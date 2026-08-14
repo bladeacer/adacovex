@@ -212,7 +212,11 @@ package Adacovex.Types is
    function To_String (L : SPARK_Level) return String
    with
      Post   =>
-       To_String'Result'Length > 0 and then To_String'Result'Length <= 8,
+       To_String'Result = "Stone"
+       or else To_String'Result = "Bronze"
+       or else To_String'Result = "Silver"
+       or else To_String'Result = "Gold"
+       or else To_String'Result = "Platinum",
      Global => null;
 
    --  Convert a DAL_Level to its single-letter code ('A' through 'E').
