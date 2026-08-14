@@ -67,13 +67,10 @@ package body Adacovex_Config_Tests is
            (not Cfg.Prove_No_Inlining, "Default Prove_No_Inlining is False");
       end;
 
-      --  Test 4: gnatprove version + CI threshold defaults are "not set"
+      --  Test 4: CI threshold defaults are "not set" (gates off)
       declare
          Cfg : constant CLI_Config := (others => <>);
       begin
-         R.Check
-           (Cfg.GNATprove_Version_Len = 0,
-            "Default GNATprove_Version_Len is 0 (no pin = latest)");
          R.Check
            (not Cfg.Require_SPARK_Set,
             "Default Require_SPARK_Set is False (gate off)");
@@ -95,18 +92,23 @@ package body Adacovex_Config_Tests is
          R.Check (Cfg.Require_Proof = 0, "Default Require_Proof is 0 (%)");
       end;
 
-      --  Test 5: the new prove-option / threshold fields can be set on a
+      --  Test 5: the prove-option / threshold fields can be set on a
       --  populated record (a field that loses its default stops compiling).
       declare
          Cfg : CLI_Config := (Prove_Jobs => 12, others => <>);
       begin
-         Cfg.GNATprove_Version_Len := 6;
-         Cfg.GNATprove_Version (1 .. 6) := "16.1.0";
+         Cfg.Require_SPARK       := Gold;
+         Cfg.Require_SPARK_Set   := True;
+         Cfg.Require_Docstrings  := 80;
+         Cfg.Require_Tests       := 300;
+         Cfg.Require_Proof       := 90;
          R.Check
-           (Cfg.GNATprove_Version_Len = 6, "GNATprove_Version_Len can be set");
+           (Cfg.Require_SPARK = Gold and Cfg.Require_SPARK_Set,
+            "Require_SPARK can be set");
          R.Check
-           (Cfg.GNATprove_Version (1 .. 6) = "16.1.0",
-            "GNATprove_Version string can be set");
+           (Cfg.Require_Docstrings = 80, "Require_Docstrings can be set");
+         R.Check (Cfg.Require_Tests = 300, "Require_Tests can be set");
+         R.Check (Cfg.Require_Proof = 90, "Require_Proof can be set");
          R.Check (Cfg.Prove_Jobs = 12, "Prove_Jobs can be set");
       end;
    end Run;

@@ -13,10 +13,11 @@ package body Adacovex.Renderers.SBOM is
    with SPARK_Mode => On
    is
    begin
-      if Level = Types.Platinum then
-         return "Platinum";
-      end if;
-      return "Gold";
+      --  Report the honest assessed level (Stone..Platinum).  The proof-level
+      --  property must never overstate certainty: a lower level (e.g. Silver
+      --  with unproved VCs) is reported verbatim rather than collapsed into a
+      --  coarse "Gold", so SBOM consumers see the real assurance state.
+      return Types.To_String (Level);
    end Proof_Level_Property;
 
    --  Proof level reported for dependency components.  adacovex only

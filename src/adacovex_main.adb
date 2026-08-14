@@ -473,9 +473,7 @@ begin
             Force                => Cfg.Prove_Force,
             No_Loop_Unrolling    => Cfg.Prove_No_Loop_Unroll,
             No_Inlining          => Cfg.Prove_No_Inlining,
-            Cache                => Cfg.Cache_Enabled,
-            GNATprove_Version    => Cfg.GNATprove_Version,
-            GNATprove_Version_Ln => Cfg.GNATprove_Version_Len);
+            Cache                => Cfg.Cache_Enabled);
       begin
          Adacovex.Prove.Run_Prove (Target (1 .. TLen), Opts, OK);
          if not OK then

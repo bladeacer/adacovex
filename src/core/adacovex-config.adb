@@ -582,22 +582,6 @@ package body Adacovex.Config is
                Cfg.Prove_No_Loop_Unroll := True;
             elsif A = "--no-inlining" then
                Cfg.Prove_No_Inlining := True;
-            elsif A = "--gnatprove-version" then
-               I := I + 1;
-               if I <= Count then
-                  Set_String
-                    (Cfg.GNATprove_Version,
-                     Cfg.GNATprove_Version_Len,
-                     Ada.Command_Line.Argument (I));
-               else
-                  Set_Error
-                    (Cfg, "--gnatprove-version requires a version argument");
-               end if;
-            elsif Has_Prefix (A, "--gnatprove-version=") then
-               Set_String
-                 (Cfg.GNATprove_Version,
-                  Cfg.GNATprove_Version_Len,
-                  A (A'First + 20 .. A'Last));
             elsif A = "--require-spark" then
                I := I + 1;
                if I <= Count then
@@ -780,14 +764,13 @@ package body Adacovex.Config is
                   or Cfg.Prove_Memlimit >= 0
                   or Cfg.Prove_Force
                   or Cfg.Prove_No_Loop_Unroll
-                  or Cfg.Prove_No_Inlining
-                  or Cfg.GNATprove_Version_Len > 0)
+                  or Cfg.Prove_No_Inlining)
       then
          Set_Error
            (Cfg,
             "prove options (--jobs, --level, --timeout, --steps, --memlimit, "
-            & "--force, --no-loop-unrolling, --no-inlining, "
-            & "--gnatprove-version) require the prove subcommand");
+            & "--force, --no-loop-unrolling, --no-inlining) require the prove "
+            & "subcommand");
       end if;
 
       -- Automatic SBOM at the end of every assessment is skipped only in the
@@ -956,12 +939,6 @@ package body Adacovex.Config is
         ("  --no-loop-unrolling   Disable automatic loop unrolling");
       Ada.Text_IO.Put_Line
         ("  --no-inlining         Disable contextual analysis inlining");
-      Ada.Text_IO.Put_Line
-        ("  --gnatprove-version=V  Pin the gnatprove version used by prove");
-      Ada.Text_IO.Put_Line
-        ("                        (default: latest / manifest-pinned version;");
-      Ada.Text_IO.Put_Line
-        ("                        pin e.g. 16.1.0 for reproducible CI)");
       Ada.Text_IO.Put_Line
         ("  --require-spark=LVL   Fail if SPARK level < LVL (Stone..Platinum)");
       Ada.Text_IO.Put_Line

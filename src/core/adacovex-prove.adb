@@ -578,42 +578,6 @@ package body Adacovex.Prove is
    begin
       Ident_Len := 0;
 
-      --  A CLI-pinned version overrides the entire priority list: deploy ONLY
-      --  that gnatprove version and run it directly.  Authoritative -- a
-      --  failure to deploy the pinned version is a failure to run, because a
-      --  different gnatprove can change which VCs are discharged (results
-      --  must always come from the pinned prover, and CI reproducibility is
-      --  the whole point of pinning).
-      if Pinned_Version'Length > 0 then
-         declare
-            Bare : constant String := Bare_Version (Pinned_Version);
-         begin
-            if Bare'Length = 0 then
-               Ada.Text_IO.Put_Line
-                 (Ada.Text_IO.Standard_Error,
-                  "  ERROR: --gnatprove-version '"
-                  & Pinned_Version
-                  & "' is not a parseable gnatprove version.");
-               Success := False;
-               return;
-            end if;
-            Deploy_GNATprove
-              (Bare, Exe_Path, Exe_Len, Toolchain_Dir, Dir_Len, Success);
-            if not Success then
-               Ada.Text_IO.Put_Line
-                 (Ada.Text_IO.Standard_Error,
-                  "  ERROR: pinned gnatprove '"
-                  & Bare
-                  & "' could not be deployed via `alr -n get`; refusing to "
-                  & "fall back to a different gnatprove.  Install Alire and "
-                  & "re-run.");
-               return;
-            end if;
-            Set_Identity ("alr:" & Bare);
-            return;
-         end;
-      end if;
-
       --  Priority 1: the target declares gnatprove in alire.toml /
       --  alire-dev.toml -- deploy only that binary crate and run it directly.
       if Manifest_Declares_GNATprove (Target_Dir) then
@@ -662,7 +626,47 @@ package body Adacovex.Prove is
          end;
       end if;
 
-      --  Priority 2: a gnatprove already on $PATH.
+      --  Priority 2: a global gnatprove version pin (the
+      --  ADACOVEX_GNATPROVE_VERSION environment variable or the
+      --  `[prove] gnatprove-version` key in ~/.adacovex/adacovex.toml, read by
+      --  Global_GNATprove_Pin): deploy ONLY that gnatprove version and run it
+      --  directly.  Authoritative -- a failure to deploy the pinned version is
+      --  a failure to run, because a different gnatprove can change which VCs
+      --  are discharged (results must always come from the pinned prover, and
+      --  reproducibility is the whole point of pinning).  The manifest pin
+      --  above always wins; this applies only to projects that do not declare
+      --  gnatprove themselves.
+      if Pinned_Version'Length > 0 then
+         declare
+            Bare : constant String := Bare_Version (Pinned_Version);
+         begin
+            if Bare'Length = 0 then
+               Ada.Text_IO.Put_Line
+                 (Ada.Text_IO.Standard_Error,
+                  "  ERROR: global gnatprove pin '"
+                  & Pinned_Version
+                  & "' is not a parseable gnatprove version.");
+               Success := False;
+               return;
+            end if;
+            Deploy_GNATprove
+              (Bare, Exe_Path, Exe_Len, Toolchain_Dir, Dir_Len, Success);
+            if not Success then
+               Ada.Text_IO.Put_Line
+                 (Ada.Text_IO.Standard_Error,
+                  "  ERROR: global gnatprove pin '"
+                  & Bare
+                  & "' could not be deployed via `alr -n get`; refusing to "
+                  & "fall back to a different gnatprove.  Install Alire and "
+                  & "re-run.");
+               return;
+            end if;
+            Set_Identity ("alr:" & Bare);
+            return;
+         end;
+      end if;
+
+      --  Priority 3: a gnatprove already on $PATH.
       Exe := Locate_Exec_On_Path ("gnatprove");
       if Exe /= null then
          Copy_To (Exe_Path, Exe_Len, Exe.all);
@@ -673,7 +677,7 @@ package body Adacovex.Prove is
          return;
       end if;
 
-      --  Priority 3: the local toolchain directory -- the download layout
+      --  Priority 4: the local toolchain directory -- the download layout
       --  (<toolchain>/bin) or a previously alr-get-deployed gnatprove_* crate.
       if Ada.Directories.Exists (Bin_Dir & Bin_Subdir) then
          Copy_To (Exe_Path, Exe_Len, Bin_Dir & Bin_Subdir);
@@ -695,7 +699,7 @@ package body Adacovex.Prove is
          end if;
       end;
 
-      --  Priority 4: last resort, download the platform toolchain into
+      --  Priority 5: last resort, download the platform toolchain into
       --  ~/.adacovex/toolchain/.
       Ada.Text_IO.Put_Line
         ("  gnatprove not found via alire, PATH, or " & Toolchain);
@@ -781,6 +785,96 @@ package body Adacovex.Prove is
       end if;
    end Find_Root_GPR;
 
+   --  Read the global gnatprove version pin -- the version Run_Prove passes to
+   --  Resolve_GNATprove for projects that do not declare gnatprove in their
+   --  own manifest.  Empty means "no global pin" (fall back to PATH / cache /
+   --  download).  Priority: the ADACOVEX_GNATPROVE_VERSION environment
+   --  variable, then the `[prove] gnatprove-version = "X.Y.Z"` key in
+   --  ~/.adacovex/adacovex.toml.  The returned value is clamped to
+   --  Types.Max_Id_Str like every other CLI/config string.
+   function Global_GNATprove_Pin return String is
+      use Ada.Text_IO;
+      Buf  : String (1 .. Types.Max_Id_Str);
+      BLen : Natural := 0;
+   begin
+      if Ada.Environment_Variables.Exists ("ADACOVEX_GNATPROVE_VERSION") then
+         declare
+            V : constant String :=
+              Ada.Environment_Variables.Value ("ADACOVEX_GNATPROVE_VERSION");
+         begin
+            if V'Length > 0 then
+               for I in V'Range loop
+                  if BLen < Buf'Last then
+                     BLen := BLen + 1;
+                     Buf (BLen) := V (I);
+                  end if;
+               end loop;
+               return Buf (1 .. BLen);
+            end if;
+         end;
+      end if;
+
+      declare
+         F : File_Type;
+         In_Prove : Boolean := False;
+      begin
+         if not Ada.Directories.Exists (Home_Dir & "/.adacovex/adacovex.toml")
+         then
+            return "";
+         end if;
+         Open (F, In_File, Home_Dir & "/.adacovex/adacovex.toml");
+         while not End_Of_File (F) loop
+            declare
+               Line : constant String := Trim (Get_Line (F), Ada.Strings.Both);
+            begin
+               if Line'Length > 2
+                 and then Line (Line'First) = '['
+                 and then Line (Line'Last) = ']'
+                 and then
+                   Trim (Line (Line'First + 1 .. Line'Last - 1),
+                         Ada.Strings.Both) = "prove"
+               then
+                  In_Prove := True;
+               elsif Line'Length > 0 and then Line (Line'First) = '[' then
+                  In_Prove := False;
+               elsif In_Prove then
+                  declare
+                     Eq : constant Natural := Index (Line, "=");
+                  begin
+                     if Eq > Line'First then
+                        declare
+                           Name : constant String :=
+                             Trim (Line (Line'First .. Eq - 1),
+                                   Ada.Strings.Both);
+                        begin
+                           if Name = "gnatprove-version" then
+                              declare
+                                 Q1 : constant Natural :=
+                                   Index (Line (Eq .. Line'Last), """");
+                                 Q2 : Natural := 0;
+                              begin
+                                 if Q1 > 0 then
+                                    Q2 :=
+                                      Index
+                                        (Line (Q1 + 1 .. Line'Last), """");
+                                 end if;
+                                 if Q1 > 0 and then Q2 > Q1 then
+                                    Close (F);
+                                    return Line (Q1 + 1 .. Q2 - 1);
+                                 end if;
+                              end;
+                           end if;
+                        end;
+                     end if;
+                  end;
+               end if;
+            end;
+         end loop;
+         Close (F);
+         return "";
+      end;
+   end Global_GNATprove_Pin;
+
    procedure Run_Prove
      (Target_Dir : String; Opts : Prove_Options; Success : out Boolean)
    is
@@ -823,12 +917,14 @@ package body Adacovex.Prove is
                      Options (1 .. OLen)));
       end Prove_Cache_Key;
    begin
-      VLen := Opts.GNATprove_Version_Ln;
-      if VLen > 0 then
+      declare
+         Pin : constant String := Global_GNATprove_Pin;
+      begin
+         VLen := Natural'Min (Pin'Length, Vers'Length);
          for I in 1 .. VLen loop
-            Vers (I) := Opts.GNATprove_Version (I);
+            Vers (I) := Pin (Pin'First + I - 1);
          end loop;
-      end if;
+      end;
       Resolve_GNATprove
         (Target_Dir,
          Vers (1 .. VLen),
