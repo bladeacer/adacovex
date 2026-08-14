@@ -58,6 +58,55 @@ package Adacovex.Renderers.SBOM is
      Post       => Scope_Property'Result'Length in 3 .. 10,
      Global     => null;
 
+   --  Escape a string for inclusion in a JSON document.  Backslash, quote
+   --  and control characters are escaped so the emitted JSON is always
+   --  well-formed, even for manifest strings containing embedded quotes.
+   --  The output buffer is bounded at six bytes per input byte (the widest
+   --  escape, "\u00xx").  Source length is capped at Max_Esc_Src so the 6x
+   --  output bound stays provably within Natural.
+   --  @param S  String to escape.
+   --  @return The escaped JSON string.
+   function Escape_JSON (S : String) return String
+   with
+     SPARK_Mode => On,
+     Pre        => S'Length <= Max_Esc_Src,
+     Post       => Escape_JSON'Result'Length <= 6 * S'Length,
+     Global     => null;
+
+   --  Maximum source length Escape_JSON accepts.  Kept well below
+   --  Natural'Last / 6 so the 6x output buffer bound is provable with
+   --  constant-coefficient arithmetic (no division-floor reasoning needed).
+   --  SBOM field values (names, licenses, descriptions, PURLs) are far
+   --  smaller than this cap.
+   Max_Esc_Src : constant := 200_000;
+
+   --  Decimal string of a non-negative integer.  A fixed 10-character buffer
+   --  holds any Natural (up to 2,147,483,647, ten digits); the loop invariant
+   --  proves the write cursor never underflows the buffer.
+   --  @param N  Non-negative integer to format.
+   --  @return The decimal string, 1-10 characters, no leading zeros.
+   function I2S (N : Natural) return String
+   with SPARK_Mode => On, Post => I2S'Result'Length in 1 .. 10, Global => null;
+
+   --  Two-digit-padded decimal string of a non-negative integer (single
+   --  digits are prefixed with a zero).
+   --  @param N  Non-negative integer to format.
+   --  @return Two-or-more-digit zero-padded decimal string.
+   function Pad2 (N : Natural) return String
+   with
+     SPARK_Mode => On,
+     Post       => Pad2'Result'Length in 1 .. 11,
+     Global     => null;
+
+   --  ISO 8601 UTC timestamp (YYYY-MM-DDTHH:MM:SS) from a Unix epoch second
+   --  count, computed with pure integer arithmetic (Howard Hinnant's
+   --  civil-from-days algorithm) so the result is identical on every machine
+   --  and timezone.
+   --  @param Epoch_Sec  Unix epoch seconds since 1970-01-01T00:00:00Z.
+   --  @return The fixed-length ISO 8601 timestamp string.
+   function ISO_From_Epoch (Epoch_Sec : Natural) return String
+   with SPARK_Mode => On, Global => null;
+
    --  Write an SBOM in the requested format to Out_Path.
    --  Creates any missing parent directories and overwrites Out_Path.
    --  @param Format  SBOM format (CycloneDX_JSON or SPDX_JSON).

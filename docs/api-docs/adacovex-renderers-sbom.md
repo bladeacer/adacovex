@@ -25,6 +25,38 @@ HLR-SBOM: SBOM generation
 
 **Returns:** "DAL-A".."DAL-D", or "" for DAL-E.
 
+### function Escape_JSON (S : Standard.String) return Standard.String `[Pre]` `[Post]` `[Global]` `[SPARK]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `S` | String to escape. |
+
+**Returns:** The escaped JSON string.
+
+### function I2S (N : Standard.Natural) return Standard.String `[Post]` `[Global]` `[SPARK]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `N` | Non-negative integer to format. |
+
+**Returns:** The decimal string, 1-10 characters, no leading zeros.
+
+### function ISO_From_Epoch (Epoch_Sec : Standard.Natural) return Standard.String `[Global]` `[SPARK]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `Epoch_Sec` | Unix epoch seconds since 1970-01-01T00:00:00Z. |
+
+**Returns:** The fixed-length ISO 8601 timestamp string.
+
+### function Pad2 (N : Standard.Natural) return Standard.String `[Post]` `[Global]` `[SPARK]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `N` | Non-negative integer to format. |
+
+**Returns:** Two-or-more-digit zero-padded decimal string.
+
 ### function Proof_Level_Property (Level : Adacovex.Types.SPARK_Level) return Standard.String `[Post]` `[Global]` `[SPARK]`
 
 | Parameter | Description |
