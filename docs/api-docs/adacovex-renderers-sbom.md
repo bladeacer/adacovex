@@ -31,7 +31,7 @@ HLR-SBOM: SBOM generation
 |-----------|-------------|
 | `Level` | Assessed SPARK level. |
 
-**Returns:** "Gold" or "Platinum".
+**Returns:** "Stone", "Bronze", "Silver", "Gold", or "Platinum".
 
 ### function Scope_Property (Scope : Adacovex.Types.Component_Scope) return Standard.String `[Post]` `[Global]` `[SPARK]`
 

@@ -97,11 +97,11 @@ package body Adacovex_Config_Tests is
       declare
          Cfg : CLI_Config := (Prove_Jobs => 12, others => <>);
       begin
-         Cfg.Require_SPARK       := Gold;
-         Cfg.Require_SPARK_Set   := True;
-         Cfg.Require_Docstrings  := 80;
-         Cfg.Require_Tests       := 300;
-         Cfg.Require_Proof       := 90;
+         Cfg.Require_SPARK := Gold;
+         Cfg.Require_SPARK_Set := True;
+         Cfg.Require_Docstrings := 80;
+         Cfg.Require_Tests := 300;
+         Cfg.Require_Proof := 90;
          R.Check
            (Cfg.Require_SPARK = Gold and Cfg.Require_SPARK_Set,
             "Require_SPARK can be set");

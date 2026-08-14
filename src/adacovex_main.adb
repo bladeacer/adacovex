@@ -465,15 +465,15 @@ begin
       declare
          OK   : Boolean;
          Opts : constant Adacovex.Prove.Prove_Options :=
-           (Jobs                 => Cfg.Prove_Jobs,
-            Level                => Cfg.Prove_Level,
-            Timeout              => Cfg.Prove_Timeout,
-            Steps                => Cfg.Prove_Steps,
-            Memlimit             => Cfg.Prove_Memlimit,
-            Force                => Cfg.Prove_Force,
-            No_Loop_Unrolling    => Cfg.Prove_No_Loop_Unroll,
-            No_Inlining          => Cfg.Prove_No_Inlining,
-            Cache                => Cfg.Cache_Enabled);
+           (Jobs              => Cfg.Prove_Jobs,
+            Level             => Cfg.Prove_Level,
+            Timeout           => Cfg.Prove_Timeout,
+            Steps             => Cfg.Prove_Steps,
+            Memlimit          => Cfg.Prove_Memlimit,
+            Force             => Cfg.Prove_Force,
+            No_Loop_Unrolling => Cfg.Prove_No_Loop_Unroll,
+            No_Inlining       => Cfg.Prove_No_Inlining,
+            Cache             => Cfg.Cache_Enabled);
       begin
          Adacovex.Prove.Run_Prove (Target (1 .. TLen), Opts, OK);
          if not OK then

@@ -17,16 +17,20 @@ with Adacovex.Types;
 package Adacovex.Renderers.SBOM is
 
    --  Map an assessed SPARK level to the binary proof-level property value.
-   --  "Platinum" when the assessment reached Platinum (all VCs proved),
-   --  otherwise "Gold", the formal-verification tier the build is verified
-   --  against.  adacovex SBOMs distinguish these two proof-aware tiers.
+   --  Reports the honest assessed level (Stone..Platinum) verbatim rather than
+   --  collapsing to a coarse "Gold"/"Platinum" tier, so SBOM consumers never
+   --  overstate the assurance state (e.g. Silver with unproved VCs is
+   --  reported as "Silver", never "Gold").
    --  @param Level  Assessed SPARK level.
-   --  @return "Gold" or "Platinum".
+   --  @return "Stone", "Bronze", "Silver", "Gold", or "Platinum".
    function Proof_Level_Property (Level : Types.SPARK_Level) return String
    with
      SPARK_Mode => On,
      Post       =>
-       Proof_Level_Property'Result = "Gold"
+       Proof_Level_Property'Result = "Stone"
+       or else Proof_Level_Property'Result = "Bronze"
+       or else Proof_Level_Property'Result = "Silver"
+       or else Proof_Level_Property'Result = "Gold"
        or else Proof_Level_Property'Result = "Platinum",
      Global     => null;
 

@@ -239,10 +239,13 @@ package body Adacovex_SBOM_Tests is
 
    procedure Run (R : in out Adacovex.Test_Support.Runner'Class) is
    begin
-      --  Proof-aware property mapping.
-      R.Check (Proof_Level_Property (Stone) = "Gold", "proof Stone -> Gold");
-      R.Check (Proof_Level_Property (Bronze) = "Gold", "proof Bronze -> Gold");
-      R.Check (Proof_Level_Property (Silver) = "Gold", "proof Silver -> Gold");
+      --  Proof-aware property mapping (honest assessed level, not a coarse
+      --  Gold/Platinum collapse).
+      R.Check (Proof_Level_Property (Stone) = "Stone", "proof Stone -> Stone");
+      R.Check
+        (Proof_Level_Property (Bronze) = "Bronze", "proof Bronze -> Bronze");
+      R.Check
+        (Proof_Level_Property (Silver) = "Silver", "proof Silver -> Silver");
       R.Check (Proof_Level_Property (Gold) = "Gold", "proof Gold -> Gold");
       R.Check
         (Proof_Level_Property (Platinum) = "Platinum",
