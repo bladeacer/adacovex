@@ -29,6 +29,7 @@
 - [Adacovex.Types](adacovex-types.md)
 - [Adacovex.Cache.Serialization](adacovex-cache-serialization.md)
 - [Adacovex.Compliance.DAL](adacovex-compliance-dal.md)
+- [Adacovex.Config.Testing](adacovex-config-testing.md)
 - [Adacovex.Parsers.DO178C](adacovex-parsers-do178c.md)
 - [Adacovex.Parsers.GNATprove](adacovex-parsers-gnatprove.md)
 - [Adacovex.Parsers.Manifest](adacovex-parsers-manifest.md)

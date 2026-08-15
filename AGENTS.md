@@ -23,7 +23,7 @@ Self-assessment (`make run-self`) must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
 - Platinum SPARK level (398 VCs under gnatprove 16.1.0, 0 unproved; see
   `docs/proof/16.1.0-ledger.md`)
-- 460/460 native tests passing
+- 490/490 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
   `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
@@ -69,7 +69,7 @@ src/
 |   `-- adacovex-server-router.ads            -- Parent package for HTTP request routing (future expansion)
 `-- tests/
     |-- adacovex-test_support.ads/.adb        -- Native test Runner type
-    |-- adacovex_config_tests.ads/.adb        -- CLI config tests (34)
+    |-- adacovex_config_tests.ads/.adb        -- CLI config tests (64)
     |-- adacovex_dal_tests.ads/.adb           -- DAL compliance tests (11)
     |-- adacovex_ir_tests.ads/.adb            -- IR synthesis tests (27)
     |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (64)
@@ -79,7 +79,7 @@ src/
     |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (83)
     |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (43)
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (67)
-    `-- test_runner.adb                       -- Test suite entry point (460 tests)
+    `-- test_runner.adb                       -- Test suite entry point (490 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -146,7 +146,7 @@ for paths, and no `pip install` / external imports. Run them with
 | Target | Description |
 |--------|-------------|
 | `build` | `alr build` (adacovex + test_runner, covex alias) |
-| `test` | Build + run the 460-test native suite |
+| `test` | Build + run the 490-test native suite |
 | `prove` | `./bin/adacovex prove --target=. --no-svg` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
 | `fmt` | Format Ada sources (gnatformat) |
@@ -180,7 +180,7 @@ project: [README.md](README.md#installing-adacovex).
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 460/460 passing |
+| Unit tests | `make test` | 490/490 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (398 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -194,7 +194,7 @@ rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 460 tests across 10 categories).
+Native zero-dependency suite (`src/tests/`, 490 tests across 10 categories).
 Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests).
 

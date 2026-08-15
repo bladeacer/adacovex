@@ -1,4 +1,5 @@
 with Adacovex.Types;
+with Ada.Containers.Indefinite_Vectors;
 
 --  Command-line argument parser for adacovex.
 --  Parses short and long option forms (--key=value and --key value)
@@ -94,7 +95,8 @@ package Adacovex.Config is
    --  @return Fully populated CLI_Config from parsed command-line arguments.
    function Parse_CLI return CLI_Config
    with
-     Post =>
+     SPARK_Mode => Off,
+     Post       =>
        Parse_CLI'Result.Target_Len <= Types.Max_Path
        and then Parse_CLI'Result.Manifest_Len <= Types.Max_Path
        and then Parse_CLI'Result.SVG_Path_Len <= Types.Max_Path
@@ -121,5 +123,34 @@ package Adacovex.Config is
    --  Displays all CLI options, default values, and usage examples.
    --  @return Prints usage information to stdout.
    procedure Print_Usage;
+
+   --  Testable CLI-parser core.  Kept out of SPARK (it operates on an
+   --  unbounded string vector and reports parse errors to Standard_Error),
+   --  so unit tests can drive flag precedence through Parse_Args without
+   --  touching Ada.Command_Line.  Parse_CLI wraps Parse_Args with the real
+   --  command line and then finalizes filesystem defaults.
+   package Testing is
+      pragma SPARK_Mode (Off);
+
+      package Arg_Vectors is new
+        Ada.Containers.Indefinite_Vectors (Positive, String);
+
+      --  Parse an argument vector into Cfg, applying each argument
+      --  (--flag=value and --flag value forms) in order.  Flag precedence is
+      --  last-write-wins per field: --dal sets only the shared tier,
+      --  --asil/--class set both the standard and the tier, and --standard
+      --  sets only the standard (or the "all" expansion).
+      --  @param Args  Argument strings in command-line order.
+      --  @param Cfg  Config record to populate (fields are overwritten in
+      --              argument order).
+      procedure Parse_Args
+        (Args : Arg_Vectors.Vector; Cfg : in out CLI_Config);
+
+      --  Read the real Ada.Command_Line into an argument vector and delegate
+      --  to Parse_Args.  Kept here (non-SPARK) so Parse_CLI's body stays
+      --  free of access-type objects.
+      --  @param Cfg  Config record to populate from the command line.
+      procedure Parse_Command_Line (Cfg : out CLI_Config);
+   end Testing;
 
 end Adacovex.Config;

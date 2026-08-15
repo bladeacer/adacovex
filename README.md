@@ -291,7 +291,7 @@ all three standards. Full tier mapping and rationale:
 | Target | Description |
 |--------|-------------|
 | `build` | `alr build` (adacovex + test_runner, covex alias) |
-| `test` | Build and run native test suite (460 tests) |
+| `test` | Build and run native test suite (490 tests) |
 | `prove` | `./bin/adacovex prove --target=. --no-svg` |
 | `fmt` | Format Ada sources with `gnatformat` |
 | `doc` | Generate API docs via gnatdoc + rst2md |
@@ -314,7 +314,7 @@ Action inputs/outputs, result caching, and release bundling:
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 460/460 passing |
+| Unit tests | `make test` | 490/490 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (398 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, DAL-C (strict mode) |
@@ -331,6 +331,8 @@ See [changelogs](docs/changelogs/index.md) for full release notes.
 | [Test Format](docs/api-docs/adacovex-test-format.md) | Supported test-result output format |
 | [SPARK Levels](docs/api-docs/adacovex-spark-levels.md) | Assurance level objectives (Stone--Platinum) |
 | [DAL Levels](docs/api-docs/adacovex-dal-levels.md) | DO-178C DAL A - E criteria |
+| [ASIL Levels](docs/api-docs/adacovex-asil-levels.md) | ISO 26262 ASIL A - D / QM criteria |
+| [Safety Classes](docs/api-docs/adacovex-class-levels.md) | IEC 62304 Class A - C criteria |
 | [Standards](docs/standards.md) | DO-178C / ISO 26262 / IEC 62304 abstraction |
 | [Platforms](docs/platforms.md) | Platform support, CPU core detection, `status` subcommand |
 | [Architecture](docs/architecture.md) | Design decisions, patches, toolchain resolution, overflow contract |

@@ -70,14 +70,16 @@ ISO 26262 Automotive Safety Integrity Level: `A`, `B`, `C`, `D`, or `QM`
 (case-insensitive). Sets the standard to `iso26262` and maps the ASIL level
 to the shared rigor tier (ASIL D -> DAL A, ASIL C -> DAL B, ASIL B -> DAL C,
 ASIL A -> DAL D, QM -> DAL E). `--asil=B` is therefore the clearest spelling
-of "assess this project at ASIL B".
+of "assess this project at ASIL B". See
+[ASIL Levels](api-docs/adacovex-asil-levels.md).
 
 ### `--class=LEVEL`
 
 IEC 62304 software safety class: `A`, `B`, or `C` (case-insensitive). Sets
 the standard to `iec62304` and maps the class to the shared rigor tier
 (Class C -> DAL A, Class B -> DAL B, Class A -> DAL C). `--class=A` is the
-clearest spelling of "assess this project at safety Class A".
+clearest spelling of "assess this project at safety Class A". See
+[Safety Classes](api-docs/adacovex-class-levels.md).
 
 ### `--standard=NAME`
 
@@ -204,7 +206,7 @@ target does not meet the required level:
 
 ```bash
 adacovex --target=. --require-spark=Platinum --require-docstrings=100 \
-         --require-tests=460 --require-proof=100
+         --require-tests=490 --require-proof=100
 ```
 
 - `require-spark` compares the honest assessed SPARK level (Stone..Platinum).

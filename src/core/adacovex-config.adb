@@ -136,58 +136,74 @@ package body Adacovex.Config is
       end if;
    end Set_Prove_Int;
 
-   function Parse_CLI return CLI_Config is
-      Cfg   : CLI_Config;
-      Count : constant Natural := Ada.Command_Line.Argument_Count;
-      I     : Positive := 1;
-   begin
-      Cfg.Target_Len := 0;
-      Cfg.Manifest_Len := 0;
-      Cfg.SVG_Path_Len := 0;
-      Cfg.MD_Path_Len := 0;
-      Cfg.Skip_Dir_Ct := 0;
-      Cfg.Compare_Base_Len := 0;
-      Cfg.Coverage_Delta_Len := 0;
-      Cfg.SBOM_Out_Len := 0;
-      Cfg.Cache_Dir_Len := 0;
+   package body Testing is
 
-      while I <= Count loop
-         declare
-            A : constant String := Ada.Command_Line.Argument (I);
-         begin
-            if A = "--target" then
-               I := I + 1;
-               if I <= Count then
+      procedure Parse_Args (Args : Arg_Vectors.Vector; Cfg : in out CLI_Config)
+      is
+         Count : constant Natural := Natural (Args.Length);
+         I     : Positive := 1;
+      begin
+         Cfg.Target_Len := 0;
+         Cfg.Manifest_Len := 0;
+         Cfg.SVG_Path_Len := 0;
+         Cfg.MD_Path_Len := 0;
+         Cfg.Skip_Dir_Ct := 0;
+         Cfg.Compare_Base_Len := 0;
+         Cfg.Coverage_Delta_Len := 0;
+         Cfg.SBOM_Out_Len := 0;
+         Cfg.Cache_Dir_Len := 0;
+
+         while I <= Count loop
+            declare
+               A : constant String := Args (I);
+            begin
+               if A = "--target" then
+                  I := I + 1;
+                  if I <= Count then
+                     Set_String (Cfg.Target_Path, Cfg.Target_Len, Args (I));
+                  else
+                     Set_Error (Cfg, "--target requires a path argument");
+                  end if;
+               elsif Has_Prefix (A, "--target=") then
                   Set_String
                     (Cfg.Target_Path,
                      Cfg.Target_Len,
-                     Ada.Command_Line.Argument (I));
-               else
-                  Set_Error (Cfg, "--target requires a path argument");
-               end if;
-            elsif Has_Prefix (A, "--target=") then
-               Set_String
-                 (Cfg.Target_Path, Cfg.Target_Len, A (A'First + 9 .. A'Last));
-            elsif A = "--manifest" then
-               I := I + 1;
-               if I <= Count then
+                     A (A'First + 9 .. A'Last));
+               elsif A = "--manifest" then
+                  I := I + 1;
+                  if I <= Count then
+                     Set_String
+                       (Cfg.Manifest_Path, Cfg.Manifest_Len, Args (I));
+                  else
+                     Set_Error (Cfg, "--manifest requires a path argument");
+                  end if;
+               elsif Has_Prefix (A, "--manifest=") then
                   Set_String
                     (Cfg.Manifest_Path,
                      Cfg.Manifest_Len,
-                     Ada.Command_Line.Argument (I));
-               else
-                  Set_Error (Cfg, "--manifest requires a path argument");
-               end if;
-            elsif Has_Prefix (A, "--manifest=") then
-               Set_String
-                 (Cfg.Manifest_Path,
-                  Cfg.Manifest_Len,
-                  A (A'First + 11 .. A'Last));
-            elsif A = "--dal" then
-               I := I + 1;
-               if I <= Count then
+                     A (A'First + 11 .. A'Last));
+               elsif A = "--dal" then
+                  I := I + 1;
+                  if I <= Count then
+                     declare
+                        Val : constant String := Args (I);
+                     begin
+                        if Is_Valid_DAL (Val) then
+                           Cfg.DAL_Target := Types.To_DAL (Val);
+                        else
+                           Set_Error
+                             (Cfg,
+                              "--dal must be A, B, C, D, or E (got: "
+                              & Val
+                              & ")");
+                        end if;
+                     end;
+                  else
+                     Set_Error (Cfg, "--dal requires a level argument (A-E)");
+                  end if;
+               elsif Has_Prefix (A, "--dal=") then
                   declare
-                     Val : constant String := Ada.Command_Line.Argument (I);
+                     Val : constant String := A (A'First + 6 .. A'Last);
                   begin
                      if Is_Valid_DAL (Val) then
                         Cfg.DAL_Target := Types.To_DAL (Val);
@@ -199,26 +215,31 @@ package body Adacovex.Config is
                            & ")");
                      end if;
                   end;
-               else
-                  Set_Error (Cfg, "--dal requires a level argument (A-E)");
-               end if;
-            elsif Has_Prefix (A, "--dal=") then
-               declare
-                  Val : constant String := A (A'First + 6 .. A'Last);
-               begin
-                  if Is_Valid_DAL (Val) then
-                     Cfg.DAL_Target := Types.To_DAL (Val);
+               elsif A = "--asil" then
+                  I := I + 1;
+                  if I <= Count then
+                     declare
+                        Val : constant String := Args (I);
+                     begin
+                        if Types.Is_Valid_ASIL (Val) then
+                           Cfg.Standard_Target := Types.ISO_26262;
+                           Cfg.DAL_Target := Types.To_ASIL (Val);
+                           Cfg.Standard_All := False;
+                        else
+                           Set_Error
+                             (Cfg,
+                              "--asil must be A, B, C, D, or QM (got: "
+                              & Val
+                              & ")");
+                        end if;
+                     end;
                   else
                      Set_Error
-                       (Cfg,
-                        "--dal must be A, B, C, D, or E (got: " & Val & ")");
+                       (Cfg, "--asil requires a level argument (A-D or QM)");
                   end if;
-               end;
-            elsif A = "--asil" then
-               I := I + 1;
-               if I <= Count then
+               elsif Has_Prefix (A, "--asil=") then
                   declare
-                     Val : constant String := Ada.Command_Line.Argument (I);
+                     Val : constant String := A (A'First + 7 .. A'Last);
                   begin
                      if Types.Is_Valid_ASIL (Val) then
                         Cfg.Standard_Target := Types.ISO_26262;
@@ -232,29 +253,29 @@ package body Adacovex.Config is
                            & ")");
                      end if;
                   end;
-               else
-                  Set_Error
-                    (Cfg, "--asil requires a level argument (A-D or QM)");
-               end if;
-            elsif Has_Prefix (A, "--asil=") then
-               declare
-                  Val : constant String := A (A'First + 7 .. A'Last);
-               begin
-                  if Types.Is_Valid_ASIL (Val) then
-                     Cfg.Standard_Target := Types.ISO_26262;
-                     Cfg.DAL_Target := Types.To_ASIL (Val);
-                     Cfg.Standard_All := False;
+               elsif A = "--class" then
+                  I := I + 1;
+                  if I <= Count then
+                     declare
+                        Val : constant String := Args (I);
+                     begin
+                        if Types.Is_Valid_Class (Val) then
+                           Cfg.Standard_Target := Types.IEC_62304;
+                           Cfg.DAL_Target := Types.To_Class (Val);
+                           Cfg.Standard_All := False;
+                        else
+                           Set_Error
+                             (Cfg,
+                              "--class must be A, B, or C (got: " & Val & ")");
+                        end if;
+                     end;
                   else
                      Set_Error
-                       (Cfg,
-                        "--asil must be A, B, C, D, or QM (got: " & Val & ")");
+                       (Cfg, "--class requires a level argument (A-C)");
                   end if;
-               end;
-            elsif A = "--class" then
-               I := I + 1;
-               if I <= Count then
+               elsif Has_Prefix (A, "--class=") then
                   declare
-                     Val : constant String := Ada.Command_Line.Argument (I);
+                     Val : constant String := A (A'First + 8 .. A'Last);
                   begin
                      if Types.Is_Valid_Class (Val) then
                         Cfg.Standard_Target := Types.IEC_62304;
@@ -266,27 +287,29 @@ package body Adacovex.Config is
                            "--class must be A, B, or C (got: " & Val & ")");
                      end if;
                   end;
-               else
-                  Set_Error (Cfg, "--class requires a level argument (A-C)");
-               end if;
-            elsif Has_Prefix (A, "--class=") then
-               declare
-                  Val : constant String := A (A'First + 8 .. A'Last);
-               begin
-                  if Types.Is_Valid_Class (Val) then
-                     Cfg.Standard_Target := Types.IEC_62304;
-                     Cfg.DAL_Target := Types.To_Class (Val);
-                     Cfg.Standard_All := False;
+               elsif A = "--standard" then
+                  I := I + 1;
+                  if I <= Count then
+                     declare
+                        Val : constant String := Args (I);
+                     begin
+                        if Is_All (Val) then
+                           Cfg.Standard_All := True;
+                           Cfg.Standard_Target := Types.DO_178C;
+                        else
+                           Cfg.Standard_All := False;
+                           Cfg.Standard_Target := Types.To_Standard (Val);
+                        end if;
+                     end;
                   else
                      Set_Error
-                       (Cfg, "--class must be A, B, or C (got: " & Val & ")");
+                       (Cfg,
+                        "--standard requires a name (do178c, iso26262, iec62304, "
+                        & "all)");
                   end if;
-               end;
-            elsif A = "--standard" then
-               I := I + 1;
-               if I <= Count then
+               elsif Has_Prefix (A, "--standard=") then
                   declare
-                     Val : constant String := Ada.Command_Line.Argument (I);
+                     Val : constant String := A (A'First + 11 .. A'Last);
                   begin
                      if Is_All (Val) then
                         Cfg.Standard_All := True;
@@ -296,194 +319,190 @@ package body Adacovex.Config is
                         Cfg.Standard_Target := Types.To_Standard (Val);
                      end if;
                   end;
-               else
-                  Set_Error
-                    (Cfg,
-                     "--standard requires a name (do178c, iso26262, iec62304, "
-                     & "all)");
-               end if;
-            elsif Has_Prefix (A, "--standard=") then
-               declare
-                  Val : constant String := A (A'First + 11 .. A'Last);
-               begin
-                  if Is_All (Val) then
-                     Cfg.Standard_All := True;
-                     Cfg.Standard_Target := Types.DO_178C;
+               elsif A = "--serve" then
+                  Cfg.Serve_Mode := True;
+               elsif A = "--port" then
+                  I := I + 1;
+                  if I <= Count then
+                     begin
+                        Cfg.Port := Positive'Value (Args (I));
+                     exception
+                        when Constraint_Error =>
+                           Set_Error
+                             (Cfg,
+                              "--port must be a positive integer (got: "
+                              & Args (I)
+                              & ")");
+                     end;
                   else
-                     Cfg.Standard_All := False;
-                     Cfg.Standard_Target := Types.To_Standard (Val);
+                     Set_Error (Cfg, "--port requires an integer argument");
                   end if;
-               end;
-            elsif A = "--serve" then
-               Cfg.Serve_Mode := True;
-            elsif A = "--port" then
-               I := I + 1;
-               if I <= Count then
+               elsif Has_Prefix (A, "--port=") then
                   begin
-                     Cfg.Port :=
-                       Positive'Value (Ada.Command_Line.Argument (I));
+                     Cfg.Port := Positive'Value (A (A'First + 7 .. A'Last));
                   exception
                      when Constraint_Error =>
                         Set_Error
                           (Cfg,
                            "--port must be a positive integer (got: "
-                           & Ada.Command_Line.Argument (I)
+                           & A (A'First + 7 .. A'Last)
                            & ")");
                   end;
-               else
-                  Set_Error (Cfg, "--port requires an integer argument");
-               end if;
-            elsif Has_Prefix (A, "--port=") then
-               begin
-                  Cfg.Port := Positive'Value (A (A'First + 7 .. A'Last));
-               exception
-                  when Constraint_Error =>
+               elsif A = "--emit-svg" then
+                  I := I + 1;
+                  if I <= Count then
+                     Cfg.Emit_SVG := True;
+                     Set_String (Cfg.SVG_Path, Cfg.SVG_Path_Len, Args (I));
+                  else
                      Set_Error
-                       (Cfg,
-                        "--port must be a positive integer (got: "
-                        & A (A'First + 7 .. A'Last)
-                        & ")");
-               end;
-            elsif A = "--emit-svg" then
-               I := I + 1;
-               if I <= Count then
+                       (Cfg, "--emit-svg requires a directory argument");
+                  end if;
+               elsif Has_Prefix (A, "--emit-svg=") then
                   Cfg.Emit_SVG := True;
                   Set_String
                     (Cfg.SVG_Path,
                      Cfg.SVG_Path_Len,
-                     Ada.Command_Line.Argument (I));
-               else
-                  Set_Error (Cfg, "--emit-svg requires a directory argument");
-               end if;
-            elsif Has_Prefix (A, "--emit-svg=") then
-               Cfg.Emit_SVG := True;
-               Set_String
-                 (Cfg.SVG_Path, Cfg.SVG_Path_Len, A (A'First + 11 .. A'Last));
-            elsif A = "--emit-markdown" then
-               I := I + 1;
-               if I <= Count then
+                     A (A'First + 11 .. A'Last));
+               elsif A = "--emit-markdown" then
+                  I := I + 1;
+                  if I <= Count then
+                     Cfg.Emit_Markdown := True;
+                     Set_String (Cfg.MD_Path, Cfg.MD_Path_Len, Args (I));
+                  else
+                     Set_Error
+                       (Cfg, "--emit-markdown requires a directory argument");
+                  end if;
+               elsif Has_Prefix (A, "--emit-markdown=") then
                   Cfg.Emit_Markdown := True;
                   Set_String
-                    (Cfg.MD_Path,
-                     Cfg.MD_Path_Len,
-                     Ada.Command_Line.Argument (I));
-               else
-                  Set_Error
-                    (Cfg, "--emit-markdown requires a directory argument");
-               end if;
-            elsif Has_Prefix (A, "--emit-markdown=") then
-               Cfg.Emit_Markdown := True;
-               Set_String
-                 (Cfg.MD_Path, Cfg.MD_Path_Len, A (A'First + 16 .. A'Last));
-            elsif A = "--no-svg" then
-               Cfg.No_SVG := True;
-            elsif A = "--verbose" then
-               Cfg.Verbose := True;
-            elsif A = "--relaxed" then
-               Cfg.Strict_Mode := False;
-            elsif A = "--cache" then
-               Cfg.Cache_Enabled := True;
-            elsif A = "--no-cache" then
-               Cfg.Cache_Enabled := False;
-            elsif A = "--cache-dir" then
-               I := I + 1;
-               if I <= Count then
+                    (Cfg.MD_Path, Cfg.MD_Path_Len, A (A'First + 16 .. A'Last));
+               elsif A = "--no-svg" then
+                  Cfg.No_SVG := True;
+               elsif A = "--verbose" then
+                  Cfg.Verbose := True;
+               elsif A = "--relaxed" then
+                  Cfg.Strict_Mode := False;
+               elsif A = "--cache" then
+                  Cfg.Cache_Enabled := True;
+               elsif A = "--no-cache" then
+                  Cfg.Cache_Enabled := False;
+               elsif A = "--cache-dir" then
+                  I := I + 1;
+                  if I <= Count then
+                     Set_String (Cfg.Cache_Dir, Cfg.Cache_Dir_Len, Args (I));
+                  else
+                     Set_Error
+                       (Cfg, "--cache-dir requires a directory argument");
+                  end if;
+               elsif Has_Prefix (A, "--cache-dir=") then
                   Set_String
                     (Cfg.Cache_Dir,
                      Cfg.Cache_Dir_Len,
-                     Ada.Command_Line.Argument (I));
-               else
-                  Set_Error (Cfg, "--cache-dir requires a directory argument");
-               end if;
-            elsif Has_Prefix (A, "--cache-dir=") then
-               Set_String
-                 (Cfg.Cache_Dir,
-                  Cfg.Cache_Dir_Len,
-                  A (A'First + 12 .. A'Last));
-            elsif A = "--cache-max" then
-               I := I + 1;
-               if I <= Count then
+                     A (A'First + 12 .. A'Last));
+               elsif A = "--cache-max" then
+                  I := I + 1;
+                  if I <= Count then
+                     begin
+                        Cfg.Cache_Max_Entries := Natural'Value (Args (I));
+                     exception
+                        when Constraint_Error =>
+                           Set_Error
+                             (Cfg,
+                              "--cache-max must be a positive integer (got: "
+                              & Args (I)
+                              & ")");
+                     end;
+                  else
+                     Set_Error
+                       (Cfg, "--cache-max requires an integer argument");
+                  end if;
+               elsif Has_Prefix (A, "--cache-max=") then
                   begin
                      Cfg.Cache_Max_Entries :=
-                       Natural'Value (Ada.Command_Line.Argument (I));
+                       Natural'Value (A (A'First + 12 .. A'Last));
                   exception
                      when Constraint_Error =>
                         Set_Error
                           (Cfg,
                            "--cache-max must be a positive integer (got: "
-                           & Ada.Command_Line.Argument (I)
+                           & A (A'First + 12 .. A'Last)
                            & ")");
                   end;
-               else
-                  Set_Error (Cfg, "--cache-max requires an integer argument");
-               end if;
-            elsif Has_Prefix (A, "--cache-max=") then
-               begin
-                  Cfg.Cache_Max_Entries :=
-                    Natural'Value (A (A'First + 12 .. A'Last));
-               exception
-                  when Constraint_Error =>
+               elsif A = "--skip-dir" then
+                  I := I + 1;
+                  if I <= Count then
+                     Add_Skip_Dir (Cfg, Args (I));
+                  else
+                     Set_Error (Cfg, "--skip-dir requires a directory name");
+                  end if;
+               elsif Has_Prefix (A, "--skip-dir=") then
+                  Add_Skip_Dir (Cfg, A (A'First + 10 .. A'Last));
+               elsif A = "--compare-base" then
+                  I := I + 1;
+                  if I <= Count then
+                     Set_String
+                       (Cfg.Compare_Base, Cfg.Compare_Base_Len, Args (I));
+                  else
                      Set_Error
                        (Cfg,
-                        "--cache-max must be a positive integer (got: "
-                        & A (A'First + 12 .. A'Last)
-                        & ")");
-               end;
-            elsif A = "--skip-dir" then
-               I := I + 1;
-               if I <= Count then
-                  Add_Skip_Dir (Cfg, Ada.Command_Line.Argument (I));
-               else
-                  Set_Error (Cfg, "--skip-dir requires a directory name");
-               end if;
-            elsif Has_Prefix (A, "--skip-dir=") then
-               Add_Skip_Dir (Cfg, A (A'First + 10 .. A'Last));
-            elsif A = "--compare-base" then
-               I := I + 1;
-               if I <= Count then
+                        "--compare-base requires a branch/commit argument");
+                  end if;
+               elsif Has_Prefix (A, "--compare-base=") then
                   Set_String
                     (Cfg.Compare_Base,
                      Cfg.Compare_Base_Len,
-                     Ada.Command_Line.Argument (I));
-               else
-                  Set_Error
-                    (Cfg, "--compare-base requires a branch/commit argument");
-               end if;
-            elsif Has_Prefix (A, "--compare-base=") then
-               Set_String
-                 (Cfg.Compare_Base,
-                  Cfg.Compare_Base_Len,
-                  A (A'First + 15 .. A'Last));
-            elsif A = "--coverage-delta" then
-               I := I + 1;
-               if I <= Count then
+                     A (A'First + 15 .. A'Last));
+               elsif A = "--coverage-delta" then
+                  I := I + 1;
+                  if I <= Count then
+                     Set_String
+                       (Cfg.Coverage_Delta, Cfg.Coverage_Delta_Len, Args (I));
+                  else
+                     Set_Error
+                       (Cfg,
+                        "--coverage-delta requires a branch/commit argument");
+                  end if;
+               elsif Has_Prefix (A, "--coverage-delta=") then
                   Set_String
                     (Cfg.Coverage_Delta,
                      Cfg.Coverage_Delta_Len,
-                     Ada.Command_Line.Argument (I));
-               else
-                  Set_Error
-                    (Cfg,
-                     "--coverage-delta requires a branch/commit argument");
-               end if;
-            elsif Has_Prefix (A, "--coverage-delta=") then
-               Set_String
-                 (Cfg.Coverage_Delta,
-                  Cfg.Coverage_Delta_Len,
-                  A (A'First + 17 .. A'Last));
-            elsif A = "sbom" then
-               Cfg.SBOM_Mode := True;
-            elsif A = "prove" then
-               Cfg.Prove_Mode := True;
-            elsif A = "status" then
-               Cfg.Status_Mode := True;
-            elsif A = "--no-sbom" then
-               Cfg.No_SBOM := True;
-            elsif A = "--sbom-format" then
-               I := I + 1;
-               if I <= Count then
+                     A (A'First + 17 .. A'Last));
+               elsif A = "sbom" then
+                  Cfg.SBOM_Mode := True;
+               elsif A = "prove" then
+                  Cfg.Prove_Mode := True;
+               elsif A = "status" then
+                  Cfg.Status_Mode := True;
+               elsif A = "--no-sbom" then
+                  Cfg.No_SBOM := True;
+               elsif A = "--sbom-format" then
+                  I := I + 1;
+                  if I <= Count then
+                     declare
+                        Val : constant String := Args (I);
+                     begin
+                        if Val = "cyclonedx-json" then
+                           Cfg.SBOM_Format := Types.CycloneDX_JSON;
+                        elsif Val = "spdx-json" then
+                           Cfg.SBOM_Format := Types.SPDX_JSON;
+                        elsif Val = "md" then
+                           Cfg.SBOM_Format := Types.Markdown;
+                        else
+                           Set_Error
+                             (Cfg,
+                              "--sbom-format must be cyclonedx-json, spdx-json, "
+                              & "or md (got: "
+                              & Val
+                              & ")");
+                        end if;
+                     end;
+                  else
+                     Set_Error
+                       (Cfg, "--sbom-format requires a format argument");
+                  end if;
+               elsif Has_Prefix (A, "--sbom-format=") then
                   declare
-                     Val : constant String := Ada.Command_Line.Argument (I);
+                     Val : constant String := A (A'First + 14 .. A'Last);
                   begin
                      if Val = "cyclonedx-json" then
                         Cfg.SBOM_Format := Types.CycloneDX_JSON;
@@ -500,33 +519,33 @@ package body Adacovex.Config is
                            & ")");
                      end if;
                   end;
-               else
-                  Set_Error (Cfg, "--sbom-format requires a format argument");
-               end if;
-            elsif Has_Prefix (A, "--sbom-format=") then
-               declare
-                  Val : constant String := A (A'First + 14 .. A'Last);
-               begin
-                  if Val = "cyclonedx-json" then
-                     Cfg.SBOM_Format := Types.CycloneDX_JSON;
-                  elsif Val = "spdx-json" then
-                     Cfg.SBOM_Format := Types.SPDX_JSON;
-                  elsif Val = "md" then
-                     Cfg.SBOM_Format := Types.Markdown;
+               elsif A = "--format" then
+                  I := I + 1;
+                  if I <= Count then
+                     declare
+                        Val : constant String := Args (I);
+                     begin
+                        if Val = "cyclonedx-json" then
+                           Cfg.SBOM_Format := Types.CycloneDX_JSON;
+                        elsif Val = "spdx-json" then
+                           Cfg.SBOM_Format := Types.SPDX_JSON;
+                        elsif Val = "md" then
+                           Cfg.SBOM_Format := Types.Markdown;
+                        else
+                           Set_Error
+                             (Cfg,
+                              "--format must be cyclonedx-json, spdx-json, or "
+                              & "md (got: "
+                              & Val
+                              & ")");
+                        end if;
+                     end;
                   else
-                     Set_Error
-                       (Cfg,
-                        "--sbom-format must be cyclonedx-json, spdx-json, "
-                        & "or md (got: "
-                        & Val
-                        & ")");
+                     Set_Error (Cfg, "--format requires a format argument");
                   end if;
-               end;
-            elsif A = "--format" then
-               I := I + 1;
-               if I <= Count then
+               elsif Has_Prefix (A, "--format=") then
                   declare
-                     Val : constant String := Ada.Command_Line.Argument (I);
+                     Val : constant String := A (A'First + 9 .. A'Last);
                   begin
                      if Val = "cyclonedx-json" then
                         Cfg.SBOM_Format := Types.CycloneDX_JSON;
@@ -543,166 +562,157 @@ package body Adacovex.Config is
                            & ")");
                      end if;
                   end;
-               else
-                  Set_Error (Cfg, "--format requires a format argument");
-               end if;
-            elsif Has_Prefix (A, "--format=") then
-               declare
-                  Val : constant String := A (A'First + 9 .. A'Last);
-               begin
-                  if Val = "cyclonedx-json" then
-                     Cfg.SBOM_Format := Types.CycloneDX_JSON;
-                  elsif Val = "spdx-json" then
-                     Cfg.SBOM_Format := Types.SPDX_JSON;
-                  elsif Val = "md" then
-                     Cfg.SBOM_Format := Types.Markdown;
+               elsif A = "--out" then
+                  I := I + 1;
+                  if I <= Count then
+                     Set_String (Cfg.SBOM_Out, Cfg.SBOM_Out_Len, Args (I));
                   else
-                     Set_Error
-                       (Cfg,
-                        "--format must be cyclonedx-json, spdx-json, or "
-                        & "md (got: "
-                        & Val
-                        & ")");
+                     Set_Error (Cfg, "--out requires a path argument");
                   end if;
-               end;
-            elsif A = "--out" then
-               I := I + 1;
-               if I <= Count then
+               elsif Has_Prefix (A, "--out=") then
                   Set_String
                     (Cfg.SBOM_Out,
                      Cfg.SBOM_Out_Len,
-                     Ada.Command_Line.Argument (I));
-               else
-                  Set_Error (Cfg, "--out requires a path argument");
-               end if;
-            elsif Has_Prefix (A, "--out=") then
-               Set_String
-                 (Cfg.SBOM_Out, Cfg.SBOM_Out_Len, A (A'First + 6 .. A'Last));
-            elsif A = "--jobs" or A = "-j" then
-               I := I + 1;
-               if I <= Count then
+                     A (A'First + 6 .. A'Last));
+               elsif A = "--jobs" or A = "-j" then
+                  I := I + 1;
+                  if I <= Count then
+                     Set_Prove_Int
+                       (Cfg, Cfg.Prove_Jobs, Args (I), -1, 1024, "--jobs");
+                  else
+                     Set_Error (Cfg, "--jobs requires an integer argument");
+                  end if;
+               elsif Has_Prefix (A, "--jobs=") then
                   Set_Prove_Int
                     (Cfg,
                      Cfg.Prove_Jobs,
-                     Ada.Command_Line.Argument (I),
+                     A (A'First + 7 .. A'Last),
                      -1,
                      1024,
                      "--jobs");
-               else
-                  Set_Error (Cfg, "--jobs requires an integer argument");
-               end if;
-            elsif Has_Prefix (A, "--jobs=") then
-               Set_Prove_Int
-                 (Cfg,
-                  Cfg.Prove_Jobs,
-                  A (A'First + 7 .. A'Last),
-                  -1,
-                  1024,
-                  "--jobs");
-            elsif Has_Prefix (A, "-j") and then A'Length > 2 then
-               --  Combined short form: -j12
-               Set_Prove_Int
-                 (Cfg,
-                  Cfg.Prove_Jobs,
-                  A (A'First + 2 .. A'Last),
-                  -1,
-                  1024,
-                  "-j");
-            elsif A = "--level" then
-               I := I + 1;
-               if I <= Count then
+               elsif Has_Prefix (A, "-j") and then A'Length > 2 then
+                  --  Combined short form: -j12
+                  Set_Prove_Int
+                    (Cfg,
+                     Cfg.Prove_Jobs,
+                     A (A'First + 2 .. A'Last),
+                     -1,
+                     1024,
+                     "-j");
+               elsif A = "--level" then
+                  I := I + 1;
+                  if I <= Count then
+                     Set_Prove_Int
+                       (Cfg, Cfg.Prove_Level, Args (I), 0, 4, "--level");
+                  else
+                     Set_Error (Cfg, "--level requires an integer argument");
+                  end if;
+               elsif Has_Prefix (A, "--level=") then
                   Set_Prove_Int
                     (Cfg,
                      Cfg.Prove_Level,
-                     Ada.Command_Line.Argument (I),
+                     A (A'First + 8 .. A'Last),
                      0,
                      4,
                      "--level");
-               else
-                  Set_Error (Cfg, "--level requires an integer argument");
-               end if;
-            elsif Has_Prefix (A, "--level=") then
-               Set_Prove_Int
-                 (Cfg,
-                  Cfg.Prove_Level,
-                  A (A'First + 8 .. A'Last),
-                  0,
-                  4,
-                  "--level");
-            elsif A = "--timeout" then
-               I := I + 1;
-               if I <= Count then
+               elsif A = "--timeout" then
+                  I := I + 1;
+                  if I <= Count then
+                     Set_Prove_Int
+                       (Cfg,
+                        Cfg.Prove_Timeout,
+                        Args (I),
+                        1,
+                        3600,
+                        "--timeout");
+                  else
+                     Set_Error (Cfg, "--timeout requires an integer argument");
+                  end if;
+               elsif Has_Prefix (A, "--timeout=") then
                   Set_Prove_Int
                     (Cfg,
                      Cfg.Prove_Timeout,
-                     Ada.Command_Line.Argument (I),
+                     A (A'First + 10 .. A'Last),
                      1,
                      3600,
                      "--timeout");
-               else
-                  Set_Error (Cfg, "--timeout requires an integer argument");
-               end if;
-            elsif Has_Prefix (A, "--timeout=") then
-               Set_Prove_Int
-                 (Cfg,
-                  Cfg.Prove_Timeout,
-                  A (A'First + 10 .. A'Last),
-                  1,
-                  3600,
-                  "--timeout");
-            elsif A = "--steps" then
-               I := I + 1;
-               if I <= Count then
+               elsif A = "--steps" then
+                  I := I + 1;
+                  if I <= Count then
+                     Set_Prove_Int
+                       (Cfg,
+                        Cfg.Prove_Steps,
+                        Args (I),
+                        1,
+                        100_000_000,
+                        "--steps");
+                  else
+                     Set_Error (Cfg, "--steps requires an integer argument");
+                  end if;
+               elsif Has_Prefix (A, "--steps=") then
                   Set_Prove_Int
                     (Cfg,
                      Cfg.Prove_Steps,
-                     Ada.Command_Line.Argument (I),
+                     A (A'First + 8 .. A'Last),
                      1,
                      100_000_000,
                      "--steps");
-               else
-                  Set_Error (Cfg, "--steps requires an integer argument");
-               end if;
-            elsif Has_Prefix (A, "--steps=") then
-               Set_Prove_Int
-                 (Cfg,
-                  Cfg.Prove_Steps,
-                  A (A'First + 8 .. A'Last),
-                  1,
-                  100_000_000,
-                  "--steps");
-            elsif A = "--memlimit" then
-               I := I + 1;
-               if I <= Count then
+               elsif A = "--memlimit" then
+                  I := I + 1;
+                  if I <= Count then
+                     Set_Prove_Int
+                       (Cfg,
+                        Cfg.Prove_Memlimit,
+                        Args (I),
+                        1,
+                        1_000_000,
+                        "--memlimit");
+                  else
+                     Set_Error
+                       (Cfg, "--memlimit requires an integer argument");
+                  end if;
+               elsif Has_Prefix (A, "--memlimit=") then
                   Set_Prove_Int
                     (Cfg,
                      Cfg.Prove_Memlimit,
-                     Ada.Command_Line.Argument (I),
+                     A (A'First + 11 .. A'Last),
                      1,
                      1_000_000,
                      "--memlimit");
-               else
-                  Set_Error (Cfg, "--memlimit requires an integer argument");
-               end if;
-            elsif Has_Prefix (A, "--memlimit=") then
-               Set_Prove_Int
-                 (Cfg,
-                  Cfg.Prove_Memlimit,
-                  A (A'First + 11 .. A'Last),
-                  1,
-                  1_000_000,
-                  "--memlimit");
-            elsif A = "--force" then
-               Cfg.Prove_Force := True;
-            elsif A = "--no-loop-unrolling" then
-               Cfg.Prove_No_Loop_Unroll := True;
-            elsif A = "--no-inlining" then
-               Cfg.Prove_No_Inlining := True;
-            elsif A = "--require-spark" then
-               I := I + 1;
-               if I <= Count then
+               elsif A = "--force" then
+                  Cfg.Prove_Force := True;
+               elsif A = "--no-loop-unrolling" then
+                  Cfg.Prove_No_Loop_Unroll := True;
+               elsif A = "--no-inlining" then
+                  Cfg.Prove_No_Inlining := True;
+               elsif A = "--require-spark" then
+                  I := I + 1;
+                  if I <= Count then
+                     declare
+                        Val : constant String := Args (I);
+                        Lvl : Types.SPARK_Level;
+                        OK  : Boolean;
+                     begin
+                        To_SPARK_Level (Val, Lvl, OK);
+                        if OK then
+                           Cfg.Require_SPARK := Lvl;
+                           Cfg.Require_SPARK_Set := True;
+                        else
+                           Set_Error
+                             (Cfg,
+                              "--require-spark must be Stone, Bronze, Silver, "
+                              & "Gold, or Platinum (got: "
+                              & Val
+                              & ")");
+                        end if;
+                     end;
+                  else
+                     Set_Error
+                       (Cfg, "--require-spark requires a level argument");
+                  end if;
+               elsif Has_Prefix (A, "--require-spark=") then
                   declare
-                     Val : constant String := Ada.Command_Line.Argument (I);
+                     Val : constant String := A (A'First + 16 .. A'Last);
                      Lvl : Types.SPARK_Level;
                      OK  : Boolean;
                   begin
@@ -719,119 +729,115 @@ package body Adacovex.Config is
                            & ")");
                      end if;
                   end;
-               else
-                  Set_Error (Cfg, "--require-spark requires a level argument");
-               end if;
-            elsif Has_Prefix (A, "--require-spark=") then
-               declare
-                  Val : constant String := A (A'First + 16 .. A'Last);
-                  Lvl : Types.SPARK_Level;
-                  OK  : Boolean;
-               begin
-                  To_SPARK_Level (Val, Lvl, OK);
-                  if OK then
-                     Cfg.Require_SPARK := Lvl;
-                     Cfg.Require_SPARK_Set := True;
+               elsif A = "--require-docstrings" then
+                  I := I + 1;
+                  if I <= Count then
+                     Set_Prove_Int
+                       (Cfg,
+                        Cfg.Require_Docstrings,
+                        Args (I),
+                        0,
+                        100,
+                        "--require-docstrings");
+                     if not Cfg.CLI_Error then
+                        Cfg.Require_Docstrings_Set := True;
+                     end if;
                   else
                      Set_Error
                        (Cfg,
-                        "--require-spark must be Stone, Bronze, Silver, "
-                        & "Gold, or Platinum (got: "
-                        & Val
-                        & ")");
+                        "--require-docstrings requires a percentage argument");
                   end if;
-               end;
-            elsif A = "--require-docstrings" then
-               I := I + 1;
-               if I <= Count then
+               elsif Has_Prefix (A, "--require-docstrings=") then
                   Set_Prove_Int
                     (Cfg,
                      Cfg.Require_Docstrings,
-                     Ada.Command_Line.Argument (I),
+                     A (A'First + 21 .. A'Last),
                      0,
                      100,
                      "--require-docstrings");
                   if not Cfg.CLI_Error then
                      Cfg.Require_Docstrings_Set := True;
                   end if;
-               else
-                  Set_Error
-                    (Cfg,
-                     "--require-docstrings requires a percentage argument");
-               end if;
-            elsif Has_Prefix (A, "--require-docstrings=") then
-               Set_Prove_Int
-                 (Cfg,
-                  Cfg.Require_Docstrings,
-                  A (A'First + 21 .. A'Last),
-                  0,
-                  100,
-                  "--require-docstrings");
-               if not Cfg.CLI_Error then
-                  Cfg.Require_Docstrings_Set := True;
-               end if;
-            elsif A = "--require-tests" then
-               I := I + 1;
-               if I <= Count then
+               elsif A = "--require-tests" then
+                  I := I + 1;
+                  if I <= Count then
+                     Set_Prove_Int
+                       (Cfg,
+                        Cfg.Require_Tests,
+                        Args (I),
+                        0,
+                        1_000_000,
+                        "--require-tests");
+                     if not Cfg.CLI_Error then
+                        Cfg.Require_Tests_Set := True;
+                     end if;
+                  else
+                     Set_Error
+                       (Cfg, "--require-tests requires a count argument");
+                  end if;
+               elsif Has_Prefix (A, "--require-tests=") then
                   Set_Prove_Int
                     (Cfg,
                      Cfg.Require_Tests,
-                     Ada.Command_Line.Argument (I),
+                     A (A'First + 16 .. A'Last),
                      0,
                      1_000_000,
                      "--require-tests");
                   if not Cfg.CLI_Error then
                      Cfg.Require_Tests_Set := True;
                   end if;
-               else
-                  Set_Error (Cfg, "--require-tests requires a count argument");
-               end if;
-            elsif Has_Prefix (A, "--require-tests=") then
-               Set_Prove_Int
-                 (Cfg,
-                  Cfg.Require_Tests,
-                  A (A'First + 16 .. A'Last),
-                  0,
-                  1_000_000,
-                  "--require-tests");
-               if not Cfg.CLI_Error then
-                  Cfg.Require_Tests_Set := True;
-               end if;
-            elsif A = "--require-proof" then
-               I := I + 1;
-               if I <= Count then
+               elsif A = "--require-proof" then
+                  I := I + 1;
+                  if I <= Count then
+                     Set_Prove_Int
+                       (Cfg,
+                        Cfg.Require_Proof,
+                        Args (I),
+                        0,
+                        100,
+                        "--require-proof");
+                     if not Cfg.CLI_Error then
+                        Cfg.Require_Proof_Set := True;
+                     end if;
+                  else
+                     Set_Error
+                       (Cfg, "--require-proof requires a percentage argument");
+                  end if;
+               elsif Has_Prefix (A, "--require-proof=") then
                   Set_Prove_Int
                     (Cfg,
                      Cfg.Require_Proof,
-                     Ada.Command_Line.Argument (I),
+                     A (A'First + 16 .. A'Last),
                      0,
                      100,
                      "--require-proof");
                   if not Cfg.CLI_Error then
                      Cfg.Require_Proof_Set := True;
                   end if;
-               else
-                  Set_Error
-                    (Cfg, "--require-proof requires a percentage argument");
+               elsif A = "--help" then
+                  Cfg.Help_Requested := True;
+                  Print_Usage;
                end if;
-            elsif Has_Prefix (A, "--require-proof=") then
-               Set_Prove_Int
-                 (Cfg,
-                  Cfg.Require_Proof,
-                  A (A'First + 16 .. A'Last),
-                  0,
-                  100,
-                  "--require-proof");
-               if not Cfg.CLI_Error then
-                  Cfg.Require_Proof_Set := True;
-               end if;
-            elsif A = "--help" then
-               Cfg.Help_Requested := True;
-               Print_Usage;
-            end if;
-         end;
-         I := I + 1;
-      end loop;
+            end;
+            I := I + 1;
+         end loop;
+      end Parse_Args;
+
+      procedure Parse_Command_Line (Cfg : out CLI_Config) is
+         Args : Arg_Vectors.Vector;
+      begin
+         for I in 1 .. Ada.Command_Line.Argument_Count loop
+            Arg_Vectors.Append (Args, Ada.Command_Line.Argument (I));
+         end loop;
+         Parse_Args (Args, Cfg);
+      end Parse_Command_Line;
+
+   end Testing;
+
+   function Parse_CLI return CLI_Config is
+      Cfg : CLI_Config;
+   begin
+      Testing.Parse_Command_Line (Cfg);
 
       -- Default skip dirs (used in relaxed mode; .git/obj always skipped)
       if Cfg.Skip_Dir_Ct = 0 then
