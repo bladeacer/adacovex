@@ -54,4 +54,24 @@ package Adacovex.Compliance.DAL is
    function Need_Tests (Level : Types.DAL_Level) return Boolean
    with Global => null;
 
+   --  Run a standard-aware assessment: delegates to Assess_DAL (the evidence
+   --  checks are identical across DO-178C / ISO 26262 / IEC 62304) and then
+   --  records which standard the level label belongs to, so renderers can
+   --  print "ASIL B" or "Class A" instead of "DAL C".
+   --  @param Standard  Compliance standard (DO_178C, ISO_26262, IEC_62304).
+   --  @param Level  Rigor tier (reused DAL level A-E).
+   --  @param Target_Dir  Project root directory.
+   --  @param Packages  Scanned package vector.
+   --  @param Proof_Summary  GNATprove proof results.
+   --  @param Test_Summary  Test run results.
+   --  @param Assessment  Output assessment record (Standard field set).
+   procedure Assess_Standard
+     (Standard      : Types.Compliance_Standard;
+      Level         : Types.DAL_Level;
+      Target_Dir    : String;
+      Packages      : Types.Implementation.Package_Vectors.Vector;
+      Proof_Summary : Types.Proof_Summary;
+      Test_Summary  : Types.Implementation.Test_Summary;
+      Assessment    : out Types.Implementation.DAL_Assessment);
+
 end Adacovex.Compliance.DAL;

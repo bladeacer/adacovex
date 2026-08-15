@@ -189,36 +189,39 @@ package body Adacovex.Renderers.SVG is
    function Render_DO178C_Badge
      (Assess : Types.Implementation.DAL_Assessment) return String
    is
-      Status_Str : String (1 .. 16);
+      Status_Str : String (1 .. 32);
       SLen       : Natural := 0;
+      Level_Name : constant String :=
+        Types.Standard_Level_Name (Assess.Standard, Assess.Target_DAL);
+      Suffix     : constant String :=
+        (if Assess.Status = Types.Achieved then " PASS" else " FAIL");
+      Color      : constant String :=
+        (if Assess.Status = Types.Achieved then "#4c1" else "#e05d44");
    begin
+      --  Compose "<level> PASS" / "<level> FAIL".  The standard level names
+      --  (DAL A, ASIL D, Class C, QM, No class) are all well within the
+      --  32-character buffer.
+      Status_Str (1 .. Level_Name'Length) := Level_Name;
+      Status_Str
+        (Level_Name'Length + 1 .. Level_Name'Length + Suffix'Length) :=
+        Suffix;
+      SLen := Level_Name'Length + Suffix'Length;
+
       if Assess.Status = Types.Achieved then
-         declare
-            S : constant String := Types.To_String (Assess.Target_DAL);
-         begin
-            Status_Str (1 .. 4) := "DAL-";
-            Status_Str (5) := S (S'First);
-            Status_Str (6 .. 10) := " PASS";
-            SLen := 10;
-         end;
          return
            Badge_SVG
-             ("DO-178C",
+             (Types.To_String (Assess.Standard),
               Status_Str (1 .. SLen),
               "#555",
-              "#4c1",
-              Badge_Text_Color ("#4c1"));
+              Color,
+              Badge_Text_Color (Color));
       else
-         declare
-            S : constant String := Types.To_String (Assess.Target_DAL);
-         begin
-            Status_Str (1 .. 4) := "DAL-";
-            Status_Str (5) := S (S'First);
-            Status_Str (6 .. 10) := " FAIL";
-            SLen := 10;
-         end;
          return
-           Badge_SVG ("DO-178C", Status_Str (1 .. SLen), "#555", "#e05d44");
+           Badge_SVG
+             (Types.To_String (Assess.Standard),
+              Status_Str (1 .. SLen),
+              "#555",
+              Color);
       end if;
    end Render_DO178C_Badge;
 

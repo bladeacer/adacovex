@@ -5,6 +5,8 @@
 ```
 adacovex [options]
 adacovex sbom [--format=cyclonedx-json|spdx-json] [--out=PATH]
+adacovex prove [--target=PATH] [prove options]
+adacovex status [--target=PATH]
 ```
 
 ## Flags
@@ -13,7 +15,8 @@ adacovex sbom [--format=cyclonedx-json|spdx-json] [--out=PATH]
 |------|---------|------|-------------|
 | `--target=PATH` | `.` (CWD) | both | Target project root directory |
 | `--manifest=PATH` | auto-detected | both | Override project manifest path |
-| `--dal=LEVEL` | `C` | both | Target DAL level (A-E) |
+| `--dal=LEVEL` | `C` | both | Target rigor tier (A-E; shared across standards) |
+| `--standard=NAME` | `do178c` | both | Compliance standard: `do178c`, `iso26262`, `iec62304` |
 | `--serve` | off | both | Start HTTP dashboard server |
 | `--port=N` | `8080` | serve | Dashboard server port |
 | `--emit-svg=PATH` | `<target>/docs/badges` | both | Output directory for SVG badges |
@@ -52,10 +55,41 @@ project metadata for the dependency graph.
 
 ### `--dal=LEVEL`
 
-Target DO-178C DAL level: `A`, `B`, `C`, `D`, or `E` (case-insensitive).
-Determines the minimum SPARK proof level required and the specific DAL criteria
-checked. Higher levels (A, B) require stricter proofs. See
-[DAL levels](api-docs/adacovex-dal-levels.md).
+Target rigor tier: `A`, `B`, `C`, `D`, or `E` (case-insensitive). Determines
+the minimum SPARK proof level required and the specific criteria checked. This
+tier is shared across standards -- `--dal=C` is DAL-C under DO-178C, ASIL B
+under ISO 26262, and safety Class A under IEC 62304. See
+[DAL levels](api-docs/adacovex-dal-levels.md) and
+[Standards](standards.md).
+
+### `--standard=NAME`
+
+Select the compliance standard used to label the assessment (default
+`do178c`). The evidence checks are identical across standards; only the
+integrity-level names change in the ANSI report and SVG badge:
+
+- `do178c` -- DAL A--E (avionics)
+- `iso26262` -- ASIL D / C / B / A / QM (automotive)
+- `iec62304` -- Class C / B / A / no class (medical-device software)
+
+Accepted case-insensitively, with or without the hyphen/space (`ISO-26262`,
+`iec62304`, ...). See [Standards](standards.md) for the full tier mapping.
+
+### `status`
+
+`adacovex status [--target=PATH]` reports toolchain + platform state without
+running an assessment and without downloading or deploying anything:
+
+- whether Alire (`alr`) is installed on `$PATH`;
+- whether gnatprove is dependency-managed (target manifest pin) or detectable
+  (global pin, on `$PATH`, or cached in `~/.adacovex/toolchain`);
+- the host logical-CPU count, CI status, and resulting default `-j`
+  parallelism;
+- the release-note that the CI binary is Linux x86-64 only.
+
+Exit `0` when a usable gnatprove is detectable without a download (and `alr`
+is present whenever the deploy path is the only option), `1` otherwise. See
+[Platforms](platforms.md#status-subcommand).
 
 ### `--serve`
 
@@ -144,7 +178,7 @@ target does not meet the required level:
 
 ```bash
 adacovex --target=. --require-spark=Platinum --require-docstrings=100 \
-         --require-tests=372 --require-proof=100
+         --require-tests=395 --require-proof=100
 ```
 
 - `require-spark` compares the honest assessed SPARK level (Stone..Platinum).
@@ -261,6 +295,12 @@ Both formats validate against the official
 ```bash
 # Self-assessment (strict mode, 100% docs required)
 adacovex --target=.
+
+# ISO 26262 assessment at rigor tier C (ASIL B)
+adacovex --target=. --standard=iso26262 --dal=C
+
+# Report toolchain + platform status
+adacovex status --target=.
 
 # Assess a CRDT library at DAL-C in relaxed mode
 adacovex --target=../Ada_CRDT --dal=C --relaxed

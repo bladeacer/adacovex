@@ -47,6 +47,7 @@ end record;
 ```ada
 type DAL_Assessment is record
 Target_DAL             : DAL_Level := DAL_C;
+Standard               : Compliance_Standard := DO_178C;
 Status                 : DAL_Status := Unmet;
 HLR_Total              : Natural := 0;
 HLR_Found              : Natural := 0;

@@ -14,6 +14,7 @@ package body Adacovex_DAL_Tests is
       begin
          Assessment :=
            (Target_DAL             => DAL_C,
+            Standard               => DO_178C,
             Status                 => Achieved,
             HLR_Total              => 10,
             HLR_Found              => 10,
@@ -34,6 +35,7 @@ package body Adacovex_DAL_Tests is
       begin
          Assessment :=
            (Target_DAL             => DAL_C,
+            Standard               => DO_178C,
             Status                 => Unmet,
             HLR_Total              => 10,
             HLR_Found              => 5,
@@ -88,6 +90,56 @@ package body Adacovex_DAL_Tests is
             "Normal HLR entry unchanged");
          begin
             Ada.Directories.Delete_File (HLR_File);
+         exception
+            when others =>
+               null;
+         end;
+      end;
+
+      --  Test 4 (1.10.0): Assess_Standard records the compliance standard and
+      --  reuses the shared evidence checks, so the level label is
+      --  standard-aware (ISO 26262 DAL C -> ASIL B).
+      declare
+         Tmp        : constant String := "/tmp/adacovex_std_test";
+         Assessment : DAL_Assessment;
+         Pkgs       : Package_Vectors.Vector;
+         Proof      : Proof_Summary;
+         Tests      : Test_Summary;
+         F          : File_Type;
+      begin
+         begin
+            if Ada.Directories.Exists (Tmp) then
+               Ada.Directories.Delete_Tree (Tmp);
+            end if;
+            Ada.Directories.Create_Path (Tmp & "/docs/compliance");
+            Create (F, Out_File, Tmp & "/docs/compliance/HLR.md");
+            Close (F);
+            Create (F, Out_File, Tmp & "/docs/compliance/LLR.md");
+            Close (F);
+         end;
+         Proof.Level := Gold;
+         Proof.Proved_VCs := 1;
+         Proof.Total_VCs := 1;
+         Adacovex.Compliance.DAL.Assess_Standard
+           (ISO_26262, DAL_C, Tmp, Pkgs, Proof, Tests, Assessment);
+         R.Check
+           (Assessment.Standard = ISO_26262,
+            "Assess_Standard records ISO 26262 standard");
+         R.Check
+           (Assessment.Target_DAL = DAL_C,
+            "Assess_Standard reuses the DAL rigor tier");
+         R.Check
+           (Adacovex.Types.Standard_Level_Name
+              (Assessment.Standard, Assessment.Target_DAL)
+            = "ASIL B",
+            "Assess_Standard level label is ASIL B");
+         R.Check
+           (Assessment.Status = Achieved,
+            "Assess_Standard achieves on empty target (Gold, no HLRs/orphans)");
+         begin
+            if Ada.Directories.Exists (Tmp) then
+               Ada.Directories.Delete_Tree (Tmp);
+            end if;
          exception
             when others =>
                null;

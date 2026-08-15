@@ -27,6 +27,9 @@ package body Adacovex_Config_Tests is
             "Default SVG_Path_Len is 0 (set later if emit)");
          R.Check (not Cfg.Serve_Mode, "Default Serve_Mode is False");
          R.Check (Cfg.DAL_Target = DAL_C, "Default DAL_Target is C");
+         R.Check
+           (Cfg.Standard_Target = DO_178C,
+            "Default Standard_Target is DO_178C");
          R.Check (Cfg.Port = 8080, "Default Port is 8080");
          R.Check (not Cfg.Verbose, "Default Verbose is False");
          R.Check (not Cfg.Emit_Markdown, "Default Emit_Markdown is False");

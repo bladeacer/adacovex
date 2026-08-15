@@ -111,3 +111,10 @@ end record;
 | `Opts` | GNATprove invocation options. |
 | `Success` | True if gnatprove ran and exited 0. |
 | `Target_Dir` | Project root directory. |
+
+### procedure Run_Status (Target_Dir : Standard.String; Success : Standard.Boolean)
+
+| Parameter | Description |
+|-----------|-------------|
+| `Success` | True when alr + gnatprove are available or |
+| `Target_Dir` | Project root directory. |

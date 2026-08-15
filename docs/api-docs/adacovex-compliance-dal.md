@@ -50,3 +50,15 @@ HLR-DAL-E: DAL-E compliance criteria
 | `Proof_Summary` | GNATprove proof results. |
 | `Target_Dir` | Project root directory. |
 | `Test_Summary` | Test run results. |
+
+### procedure Assess_Standard (Standard : Adacovex.Types.Compliance_Standard; Level : Adacovex.Types.DAL_Level; Target_Dir : Standard.String; Packages : Adacovex.Types.Implementation.Package_Vectors.Vector; Proof_Summary : Adacovex.Types.Proof_Summary; Test_Summary : Adacovex.Types.Implementation.Test_Summary; Assessment : Adacovex.Types.Implementation.DAL_Assessment)
+
+| Parameter | Description |
+|-----------|-------------|
+| `Assessment` | Output assessment record (Standard field set). |
+| `Level` | Rigor tier (reused DAL level A-E). |
+| `Packages` | Scanned package vector. |
+| `Proof_Summary` | GNATprove proof results. |
+| `Standard` | Compliance standard (DO_178C, ISO_26262, IEC_62304). |
+| `Target_Dir` | Project root directory. |
+| `Test_Summary` | Test run results. |

@@ -8,6 +8,12 @@ builds on narrower hosts use proportionally smaller limits.
 
 ## Types
 
+### type Compliance_Standard
+
+```ada
+type Compliance_Standard is (DO_178C, ISO_26262, IEC_62304);
+```
+
 ### type Component_Kind
 
 ```ada
@@ -145,7 +151,26 @@ type Test_Status is (Pass, Fail);
 
 ## Functions
 
+### function Standard_Level_Name (Standard : Adacovex.Types.Compliance_Standard; Level : Adacovex.Types.DAL_Level) return Standard.String `[Post]` `[Global]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `Level` |  |
+| `Standard` |  |
+
 ### function To_DAL (S : Standard.String) return Adacovex.Types.DAL_Level `[Global]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `S` |  |
+
+### function To_Standard (S : Standard.String) return Adacovex.Types.Compliance_Standard `[Global]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `S` |  |
+
+### function To_String (S : Adacovex.Types.Compliance_Standard) return Standard.String `[Post]` `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|

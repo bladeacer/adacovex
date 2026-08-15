@@ -165,8 +165,12 @@ package body Adacovex.Prove is
       else
          --  Default proof budget, well above gnatprove's own step limit, so
          --  solver-timeout false negatives are not reported as unproved.
-         --  An explicit --steps=... always overrides this default.
-         App ("--steps 5000");
+         --  An explicit --steps=... always overrides this default.  Raised
+         --  from 5000 to 10000 in 1.10.0 when the multi-standard type layer
+         --  grew the proof surface; 5000 sat on the solver's non-determinism
+         --  boundary and intermittently left a trivial string contract
+         --  unproved.
+         App ("--steps 10000");
       end if;
       if Opts.Memlimit >= 0 then
          App ("--memlimit" & Integer'Image (Opts.Memlimit));
@@ -1043,5 +1047,108 @@ package body Adacovex.Prove is
          Success := False;
       end if;
    end Run_Prove;
+
+   procedure Run_Status (Target_Dir : String; Success : out Boolean) is
+      T           : constant String := Strip_Trailing_Slash (Target_Dir);
+      Alr         : String_Access := Locate_Exec_On_Path ("alr");
+      Gnatprove   : String_Access := Locate_Exec_On_Path ("gnatprove");
+      Declared    : constant Boolean := Manifest_Declares_GNATprove (T);
+      Pin         : constant String := Global_GNATprove_Pin;
+      Toolchain   : constant String := Home_Dir & Toolchain_Subdir;
+      Cached_Dir  : String (1 .. Types.Max_Path);
+      Cached_Len  : Natural := 0;
+      Cached      : Boolean := False;
+      Cores       : constant Natural := Adacovex.CPUs.Detect_Core_Count;
+      In_CI       : constant Boolean := Adacovex.CPUs.Is_Running_In_CI;
+      Needs_Alr   : constant Boolean := Declared or else Pin'Length > 0;
+      Gnat_Usable : constant Boolean :=
+        Gnatprove /= null
+        or else Cached
+        or else Declared
+        or else Pin'Length > 0;
+      Alr_Ok      : constant Boolean := Alr /= null or else not Needs_Alr;
+
+      --  Print a name/value pair; Name carries the full indentation + label.
+      procedure Row (Name : String; Value : String) is
+      begin
+         Ada.Text_IO.Put_Line (Name & Value);
+      end Row;
+   begin
+      Find_Deployed_GNATprove (Toolchain, "", Cached_Dir, Cached_Len, Cached);
+
+      Ada.Text_IO.Put_Line ("adacovex v" & Adacovex.Version & " status");
+      Ada.Text_IO.Put_Line ("  target:             " & T);
+
+      --  Alire: only required when the manifest or a global pin drives the
+      --  `alr -n get` deployment path; otherwise gnatprove on PATH / cache
+      --  suffices.
+      if Alr /= null then
+         Row ("  alire:              installed (", Alr.all & ")");
+      else
+         Row
+           ("  alire:              NOT FOUND on PATH",
+            (if Needs_Alr then " (required: manifest/global pin)" else ""));
+      end if;
+
+      --  gnatprove detectability across the resolution tiers, without
+      --  downloading anything.
+      Ada.Text_IO.Put_Line ("  gnatprove:");
+      if Declared then
+         declare
+            Ver  : constant String :=
+              File_GNATprove_Version (T & "/alire-dev.toml");
+            Ver2 : constant String :=
+              File_GNATprove_Version (T & "/alire.toml");
+            Con  : constant String := (if Ver'Length > 0 then Ver else Ver2);
+         begin
+            Row
+              ("    manifest pin:     ",
+               (if Con'Length > 0 then Con else "declared"));
+         end;
+      else
+         Row ("    manifest pin:     none", "");
+      end if;
+      Row
+        ("    global pin:        ", (if Pin'Length > 0 then Pin else "none"));
+      if Gnatprove /= null then
+         Row ("    on PATH:           ", Gnatprove.all);
+      else
+         Row ("    on PATH:           not found", "");
+      end if;
+      if Cached then
+         Row ("    toolchain cache:   ", Cached_Dir (1 .. Cached_Len));
+      else
+         Row ("    toolchain cache:   empty", "");
+      end if;
+
+      --  Platform support / parallelism basis.
+      Ada.Text_IO.Put_Line ("  platform:");
+      Row
+        ("    logical CPUs:      ",
+         Natural'Image (Cores) (2 .. Natural'Image (Cores)'Last));
+      Row ("    CI environment:    ", (if In_CI then "yes" else "no"));
+      Row
+        ("    prove -j default:  ",
+         Adacovex.CPUs.Jobs_Justification (-1, Cores, In_CI));
+
+      Ada.Text_IO.Put_Line
+        ("  release note: CI release binary is Linux x86-64 only for now");
+
+      Free (Alr);
+      Free (Gnatprove);
+
+      Success := Gnat_Usable and then Alr_Ok;
+      if Success then
+         Ada.Text_IO.Put_Line
+           ("  => OK (alr + gnatprove available or dependency-managed)");
+      else
+         Ada.Text_IO.Put_Line
+           (Ada.Text_IO.Standard_Error,
+            "  => FAIL: gnatprove not detectable without a download"
+            & (if not Alr_Ok
+               then " (and alr is required but missing)"
+               else ""));
+      end if;
+   end Run_Status;
 
 end Adacovex.Prove;

@@ -50,6 +50,7 @@ package body Adacovex.Compliance.DAL is
    begin
       Assessment :=
         (Target_DAL             => Level,
+         Standard               => Types.DO_178C,
          Status                 => Types.Unmet,
          HLR_Total              => 0,
          HLR_Found              => 0,
@@ -194,5 +195,19 @@ package body Adacovex.Compliance.DAL is
    begin
       return Assessment.Status = Types.Achieved;
    end Is_DAL_Achieved;
+
+   procedure Assess_Standard
+     (Standard      : Types.Compliance_Standard;
+      Level         : Types.DAL_Level;
+      Target_Dir    : String;
+      Packages      : Types.Implementation.Package_Vectors.Vector;
+      Proof_Summary : Types.Proof_Summary;
+      Test_Summary  : Types.Implementation.Test_Summary;
+      Assessment    : out Types.Implementation.DAL_Assessment) is
+   begin
+      Assess_DAL
+        (Level, Target_Dir, Packages, Proof_Summary, Test_Summary, Assessment);
+      Assessment.Standard := Standard;
+   end Assess_Standard;
 
 end Adacovex.Compliance.DAL;

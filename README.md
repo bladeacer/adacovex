@@ -41,7 +41,7 @@ However, project reliability is grounded in mathematical proof and
 non-invasive design rather than implicit trust:
 
 - **Formal Verification:** Core Ada logic is formally verified using
-  SPARK Ada (Platinum under `gnatprove` 16.1.0 -- 343 VCs, 0 unproved; see
+  SPARK Ada (Platinum under `gnatprove` 16.1.0 -- 369 VCs, 0 unproved; see
   `docs/proof/16.1.0-ledger.md`).
 - **Read-Only Engine:** `adacovex` acts strictly as an assessment engine.
   It processes input payloads, parses build artifacts, and produces reports
@@ -152,13 +152,16 @@ Full resolution order and the doc/fmt manifest-swap:
 ```
 adacovex [options]
 adacovex sbom [--format=cyclonedx-json|spdx-json] [--out=PATH]
+adacovex prove [--target=PATH] [prove options]
+adacovex status [--target=PATH]
 ```
 
 | Flag | Default | Mode | Description |
 |------|---------|------|-------------|
 | `--target=PATH` | `.` (CWD) | both | Target project root directory |
 | `--manifest=PATH` | auto-detected | both | Override project manifest path |
-| `--dal=LEVEL` | `C` | both | Target DAL level (A-E) |
+| `--dal=LEVEL` | `C` | both | Target rigor tier (A-E; shared across standards) |
+| `--standard=NAME` | `do178c` | both | Compliance standard: `do178c`, `iso26262`, `iec62304` |
 | `--serve` | off | both | Start HTTP dashboard server |
 | `--port=N` | `8080` | serve | Dashboard server port |
 | `--emit-svg=PATH` | `<target>/docs/badges` | both | Output directory for SVG badges |
@@ -193,6 +196,8 @@ adacovex --target=. --emit-markdown=docs/compliance # Markdown reports
 adacovex --target=. --serve --port=9090             # web dashboard
 adacovex --target=. --compare-base=HEAD             # differential assessment
 adacovex sbom --format=cyclonedx-json --target=. --dal=C   # proof-aware SBOM
+adacovex --target=. --standard=iso26262 --dal=C           # ISO 26262 at ASIL B
+adacovex status --target=.                                # toolchain + platform report
 ```
 
 More examples: [docs/cli-reference.md](docs/cli-reference.md#examples).
@@ -260,7 +265,7 @@ See [DAL Levels](docs/api-docs/adacovex-dal-levels.md) for the full criteria.
 | Target | Description |
 |--------|-------------|
 | `build` | `alr build` (adacovex + test_runner, covex alias) |
-| `test` | Build and run native test suite (372 tests) |
+| `test` | Build and run native test suite (395 tests) |
 | `prove` | `./bin/adacovex prove --target=. --no-svg` |
 | `fmt` | Format Ada sources with `gnatformat` |
 | `doc` | Generate API docs via gnatdoc + rst2md |
@@ -283,9 +288,9 @@ Action inputs/outputs, result caching, and release bundling:
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 372/372 passing |
+| Unit tests | `make test` | 395/395 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
-| SPARK proof | `make prove` | Platinum (343 VCs, 0 unproved under gnatprove 16.1.0) |
+| SPARK proof | `make prove` | Platinum (369 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, DAL-C (strict mode) |
 
 See [changelogs](docs/changelogs/index.md) for full release notes.
@@ -300,8 +305,10 @@ See [changelogs](docs/changelogs/index.md) for full release notes.
 | [Test Format](docs/api-docs/adacovex-test-format.md) | Supported test-result output format |
 | [SPARK Levels](docs/api-docs/adacovex-spark-levels.md) | Assurance level objectives (Stone--Platinum) |
 | [DAL Levels](docs/api-docs/adacovex-dal-levels.md) | DO-178C DAL A - E criteria |
+| [Standards](docs/standards.md) | DO-178C / ISO 26262 / IEC 62304 abstraction |
+| [Platforms](docs/platforms.md) | Platform support, CPU core detection, `status` subcommand |
 | [Architecture](docs/architecture.md) | Design decisions, patches, toolchain resolution, overflow contract |
-| [Contributing](docs/contributing.md) | Changelog format, test suite, patch files |
+| [Contributing](CONTRIBUTING.md) | Changelog format, test suite |
 | [API Reference](docs/api-docs/index.md) | Auto-generated package API docs |
 | [Changelog](docs/changelogs/index.md) | Release history |
 

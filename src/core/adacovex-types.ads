@@ -52,6 +52,13 @@ package Adacovex.Types is
 
    type DAL_Level is (DAL_A, DAL_B, DAL_C, DAL_D, DAL_E);
 
+   --  Compliance standard target for the assessment.  DO_178C covers
+   --  avionics software, ISO_26262 covers automotive functional safety, and
+   --  IEC_62304 covers medical-device software.  All three share the same
+   --  evidence (SPARK proof level, passing tests, HLR traceability); the
+   --  standard only re-labels the integrity levels.
+   type Compliance_Standard is (DO_178C, ISO_26262, IEC_62304);
+
    type DAL_Status is (Achieved, Unmet);
 
    type Test_Status is (Pass, Fail);
@@ -158,6 +165,7 @@ package Adacovex.Types is
 
       type DAL_Assessment is record
          Target_DAL             : DAL_Level := DAL_C;
+         Standard               : Compliance_Standard := DO_178C;
          Status                 : DAL_Status := Unmet;
          HLR_Total              : Natural := 0;
          HLR_Found              : Natural := 0;
@@ -231,14 +239,48 @@ package Adacovex.Types is
    function To_DAL (S : String) return DAL_Level
    with Global => null;
 
+   --  Convert a Compliance_Standard to its human-readable name.
+   --  @return "DO-178C", "ISO 26262", or "IEC 62304".
+   function To_String (S : Compliance_Standard) return String
+   with
+     Post   =>
+       To_String'Result = "DO-178C"
+       or else To_String'Result = "ISO 26262"
+       or else To_String'Result = "IEC 62304",
+     Global => null;
+
+   --  Parse a standard name into a Compliance_Standard.  Accepts
+   --  "do178c"/"do-178c", "iso26262"/"iso-26262", and "iec62304"/
+   --  "iec-62304" (case-insensitive); defaults to DO_178C on parse failure.
+   --  @param S  Standard name.
+   --  @return Converted Compliance_Standard (defaults to DO_178C).
+   function To_Standard (S : String) return Compliance_Standard
+   with Global => null;
+
+   --  Human-readable integrity-level label for a standard and a rigor tier.
+   --  DO-178C keeps "DAL-A".."DAL-E"; ISO 26262 maps A..E to
+   --  "ASIL D", "ASIL C", "ASIL B", "ASIL A", "QM"; IEC 62304 maps to
+   --  "Class C", "Class B", "Class A", "No class", "No class".
+   --  @param Standard  Compliance standard.
+   --  @param Level  Rigor tier (reused DAL level).
+   --  @return The standard-specific level label.
+   function Standard_Level_Name
+     (Standard : Compliance_Standard; Level : DAL_Level) return String
+   with Post => Standard_Level_Name'Result'Length > 0, Global => null;
+
    --  Convert a DAL_Status ("Achieved" or "Unmet") to its human-readable string.
    --  @return "Achieved" or "Unmet".
    function To_String (S : DAL_Status) return String
-   with Post => To_String'Result'Length > 0, Global => null;
+   with
+     Post   =>
+       To_String'Result = "Achieved" or else To_String'Result = "Unmet",
+     Global => null;
 
    --  Convert a Test_Status ("Pass" or "Fail") to "PASS" or "FAIL".
    --  @return "PASS" or "FAIL".
    function To_String (S : Test_Status) return String
-   with Post => To_String'Result'Length > 0, Global => null;
+   with
+     Post   => To_String'Result = "PASS" or else To_String'Result = "FAIL",
+     Global => null;
 
 end Adacovex.Types;

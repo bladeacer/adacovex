@@ -141,4 +141,22 @@ package Adacovex.Prove is
    procedure Run_Prove
      (Target_Dir : String; Opts : Prove_Options; Success : out Boolean);
 
+   --  Print a non-mutating toolchain + platform report for the `adacovex
+   --  status` subcommand.  Checks, in order, whether:
+   --    * Alire (`alr`) is installed on $PATH;
+   --    * the target manifest declares gnatprove (dependency-managed), a
+   --      global pin is set, or a gnatprove is already on $PATH or cached in
+   --      ~/.adacovex/toolchain;
+   --    * the host logical-CPU count and CI status (driving GNATprove
+   --      parallelism).
+   --  Unlike Resolve_GNATprove / Run_Prove, it never deploys or downloads
+   --  anything.  Success is True when a usable gnatprove is detectable
+   --  without a download and alr is present whenever the deploy path is the
+   --  only option.  Also prints the release-note that the CI release binary
+   --  is Linux x86-64 only for now.
+   --  @param Target_Dir  Project root directory.
+   --  @param Success  True when alr + gnatprove are available or
+   --  dependency-managed.
+   procedure Run_Status (Target_Dir : String; Success : out Boolean);
+
 end Adacovex.Prove;

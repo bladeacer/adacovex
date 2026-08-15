@@ -127,9 +127,12 @@ package body Adacovex.Renderers.ANSI is
       Reset_Color (Enable => Use_Color);
       Ada.Text_IO.New_Line;
 
-      --  DAL compliance
+      --  Compliance (standard-aware level label)
       Ada.Text_IO.Put
-        ("  DAL-" & Types.To_String (DAL_Assess.Target_DAL) & ": ");
+        ("  "
+         & Types.Standard_Level_Name
+             (DAL_Assess.Standard, DAL_Assess.Target_DAL)
+         & ": ");
       if DAL_Assess.Status = Types.Achieved then
          Put_Color ("32", Bold => True, Enable => Use_Color);
       else
@@ -187,12 +190,15 @@ package body Adacovex.Renderers.ANSI is
            ("    help: review gnatprove.out for justified VC locations");
       end if;
 
-      --  DAL failures
+      --  Compliance failures
       if not DAL_Assess.Failed_Reasons.Is_Empty then
          Ada.Text_IO.New_Line;
          Put_Color ("31", Enable => Use_Color);
          Ada.Text_IO.Put_Line
-           ("  DAL-" & Types.To_String (DAL_Assess.Target_DAL) & " failures:");
+           ("  "
+            & Types.Standard_Level_Name
+                (DAL_Assess.Standard, DAL_Assess.Target_DAL)
+            & " failures:");
          Reset_Color (Enable => Use_Color);
          for F in 1 .. Integer (DAL_Assess.Failed_Reasons.Length) loop
             Ada.Text_IO.Put_Line ("    - " & DAL_Assess.Failed_Reasons (F));
