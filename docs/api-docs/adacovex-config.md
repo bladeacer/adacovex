@@ -19,18 +19,18 @@ Manifest_Path   : String (1 .. Types.Max_Path);
 Manifest_Len    : Natural := 0;
 DAL_Target      : Types.DAL_Level := Types.DAL_C;
 Standard_Target : Types.Compliance_Standard := Types.DO_178C;
-Standard_All    : Boolean := False;
-Serve_Mode      : Boolean := False;
-Port            : Positive := 8080;
-No_SVG          : Boolean := False;
-Emit_SVG        : Boolean := True;
-SVG_Path        : String (1 .. Types.Max_Path);
-SVG_Path_Len    : Natural := 0;
-Emit_Markdown   : Boolean := False;
-MD_Path         : String (1 .. Types.Max_Path);
-MD_Path_Len     : Natural := 0;
-Verbose         : Boolean := False;
-Strict_Mode     : Boolean := True;
+Standard_All  : Boolean := False;
+Serve_Mode    : Boolean := False;
+Port          : Positive := 8080;
+No_SVG        : Boolean := False;
+Emit_SVG      : Boolean := True;
+SVG_Path      : String (1 .. Types.Max_Path);
+SVG_Path_Len  : Natural := 0;
+Emit_Markdown : Boolean := False;
+MD_Path       : String (1 .. Types.Max_Path);
+MD_Path_Len   : Natural := 0;
+Verbose       : Boolean := False;
+Strict_Mode   : Boolean := True;
 Cache_Enabled     : Boolean := True;
 Cache_Dir         : String (1 .. Types.Max_Path);
 Cache_Dir_Len     : Natural := 0;
@@ -71,7 +71,7 @@ end record;
 
 ## Functions
 
-### function Parse_CLI return Adacovex.Config.CLI_Config `[Post]`
+### function Parse_CLI return Adacovex.Config.CLI_Config `[Post]` `[SPARK]`
 
 **Returns:** Fully populated CLI_Config from parsed command-line arguments.
 

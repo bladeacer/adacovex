@@ -3,6 +3,29 @@ with Adacovex.Config; use Adacovex.Config;
 
 package body Adacovex_Config_Tests is
 
+   procedure Add (A : in out Testing.Arg_Vectors.Vector; S : String) is
+   begin
+      Testing.Arg_Vectors.Append (A, S);
+   end Add;
+
+   --  Run the parser over Args and check the resolved standard/tier/all
+   --  fields against the expected precedence outcome.
+   procedure Check_Args
+     (Args    : Testing.Arg_Vectors.Vector;
+      R       : in out Adacovex.Test_Support.Runner'Class;
+      Std     : Compliance_Standard;
+      Tier    : DAL_Level;
+      All_Std : Boolean;
+      Msg     : String)
+   is
+      Cfg : CLI_Config;
+   begin
+      Testing.Parse_Args (Args, Cfg);
+      R.Check (Cfg.Standard_Target = Std, Msg & ": standard");
+      R.Check (Cfg.DAL_Target = Tier, Msg & ": tier");
+      R.Check (Cfg.Standard_All = All_Std, Msg & ": all-standards");
+   end Check_Args;
+
    procedure Run (R : in out Adacovex.Test_Support.Runner'Class) is
    begin
       --  Test 1: default config has Emit_SVG = True and SVG_Path_Len = 0.
@@ -116,6 +139,119 @@ package body Adacovex_Config_Tests is
          R.Check (Cfg.Require_Tests = 300, "Require_Tests can be set");
          R.Check (Cfg.Require_Proof = 90, "Require_Proof can be set");
          R.Check (Cfg.Prove_Jobs = 12, "Prove_Jobs can be set");
+      end;
+
+      --  Flag precedence (1.10.0): dedicated level flags set both the
+      --  standard and the shared tier; --dal sets only the tier; --standard
+      --  sets only the standard (or the "all" expansion).  Sequential
+      --  application is last-write-wins per field.
+      declare
+         A : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--asil=B");
+         Check_Args (A, R, ISO_26262, DAL_C, False, "--asil=B alone");
+      end;
+
+      declare
+         A : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--class=A");
+         Check_Args (A, R, IEC_62304, DAL_C, False, "--class=A alone");
+      end;
+
+      declare
+         A : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--standard=iso26262");
+         Add (A, "--dal=C");
+         Check_Args
+           (A, R, ISO_26262, DAL_C, False, "--standard=iso26262 --dal=C");
+      end;
+
+      declare
+         A : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--dal=A");
+         Add (A, "--standard=iso26262");
+         Check_Args
+           (A, R, ISO_26262, DAL_A, False, "--dal=A --standard=iso26262");
+      end;
+
+      declare
+         A : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--standard=do178c");
+         Add (A, "--asil=B");
+         Check_Args
+           (A,
+            R,
+            ISO_26262,
+            DAL_C,
+            False,
+            "--asil=B after --standard overrides standard");
+      end;
+
+      declare
+         A : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--asil=B");
+         Add (A, "--standard=do178c");
+         Check_Args
+           (A,
+            R,
+            DO_178C,
+            DAL_C,
+            False,
+            "--standard=do178c after --asil=B overrides standard");
+      end;
+
+      declare
+         A : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--class=C");
+         Add (A, "--asil=B");
+         Check_Args
+           (A,
+            R,
+            ISO_26262,
+            DAL_C,
+            False,
+            "--asil=B after --class=C overrides standard and tier");
+      end;
+
+      declare
+         A : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--asil=B");
+         Add (A, "--class=C");
+         Check_Args
+           (A,
+            R,
+            IEC_62304,
+            DAL_A,
+            False,
+            "--class=C after --asil=B overrides standard and tier");
+      end;
+
+      declare
+         A : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--standard=all");
+         Check_Args (A, R, DO_178C, DAL_C, True, "--standard=all alone");
+      end;
+
+      declare
+         A : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--asil=B");
+         Add (A, "--standard=all");
+         Check_Args
+           (A,
+            R,
+            DO_178C,
+            DAL_C,
+            True,
+            "--standard=all after --asil=B keeps tier, enables all");
       end;
    end Run;
 

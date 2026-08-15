@@ -87,5 +87,9 @@ Achieved/Unmet; only the level label changes.
 - `Min_SPARK_For` still drives the per-tier proof bar; the tiers share one
   lookup because the standards only re-label the levels.
 
-See [DAL levels](api-docs/adacovex-dal-levels.md) for the existing DO-178C
-criteria that the abstraction generalizes.
+Each standard has a dedicated reference page with its level definitions and
+criteria:
+
+- [DO-178C DAL levels](api-docs/adacovex-dal-levels.md)
+- [ISO 26262 ASIL levels](api-docs/adacovex-asil-levels.md)
+- [IEC 62304 safety classes](api-docs/adacovex-class-levels.md)

@@ -71,6 +71,10 @@ unambiguous spelling of "assess at ASIL B" (tier C) and `--class=A` of
 tier and emits badges for every standard (`do178c.svg`, `iso26262.svg`,
 `iec62304.svg`) plus a per-standard breakdown in the ANSI report, HTML
 dashboard, JSON API, and Markdown report, without re-scanning or re-proving.
+The CLI parser's argument loop was extracted into a testable `Parse_Args`
+entry point (a plain argument vector, no `Ada.Command_Line` access) so the
+last-write-wins precedence across `--dal` / `--asil` / `--class` /
+`--standard` is covered by unit tests.
 
 ### C8: Standard-aware SBOM and renderers
 
@@ -83,6 +87,15 @@ properties, SPDX `attributionTexts`, and the Markdown table). The HTML
 dashboard, JSON API, and Markdown `VERIFICATION.md` now print the
 standard-specific level label and the `--standard=all` per-standard
 breakdown; the ANSI report and SVG badges already did.
+
+### C9: Per-standard reference pages
+
+Each standard now has a dedicated reference page mirroring the existing
+DO-178C one: `docs/api-docs/adacovex-asil-levels.md` (ISO 26262 ASIL A--D/QM
+level definitions, criteria, and tier mapping) and
+`docs/api-docs/adacovex-class-levels.md` (IEC 62304 safety classes A--C).
+Both are linked from the README documentation table, the CLI reference, and
+`docs/standards.md`.
 
 ## Fixes
 
@@ -103,14 +116,15 @@ producing `Value`.
 
 ## Test Suite
 
-460 tests (was 395). The types category gained 23 checks for the dedicated
+490 tests (was 395). The types category gained 23 checks for the dedicated
 level parsers (`To_ASIL`, `Is_Valid_ASIL`, `To_Class`, `Is_Valid_Class`) and
-`Standard_Slug`; the CLI-config category gained a check for the `Standard_All`
-default; the SVG category gained six checks for the standard-parameterized
-`Render_Compliance_Badge`; the SBOM category gained 18 checks for the
-standard/level properties; and a new HTML/Markdown renderer category (17
-checks) covers standard-aware dashboard, JSON, and Markdown output. Total
-categories: 10 (was 9).
+`Standard_Slug`; the CLI-config category gained 31 checks (the `Standard_All`
+default plus 30 flag-precedence checks driven through the new `Parse_Args`
+entry point); the SVG category gained six checks for the
+standard-parameterized `Render_Compliance_Badge`; the SBOM category gained 18
+checks for the standard/level properties; and a new HTML/Markdown renderer
+category (17 checks) covers standard-aware dashboard, JSON, and Markdown
+output. Total categories: 10 (was 9).
 
 ## Proof Results
 
