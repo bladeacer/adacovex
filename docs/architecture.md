@@ -31,24 +31,40 @@ the SBOM as the `adacovex:dep_scope` property (`base` / `dev` / `transitive` /
 `alire-dev.toml` is also consulted for gnatprove detection
 (`Manifest_Declares_GNATprove` checks both manifests).
 
-### Dev-manifest proof swap (`prove` subcommand)
+### GNATprove toolchain resolution (`prove` subcommand)
 
 adacovex declares `gnatprove` only in its own `alire-dev.toml` (keeping the
-publishing `alire.toml` clean). The `prove` subcommand detects this
-(`Gnatprove_Dev_Only`), and runs the proof through a temporary `sh` wrapper
-that:
+publishing `alire.toml` clean). The `prove` subcommand resolves the `gnatprove`
+executable in this order:
 
-1. Backs up `alire.toml`, `alire.lock`, and `alire/` to a `mktemp -d`
-   directory,
-2. swaps `alire-dev.toml` over `alire.toml` so `alr exec` resolves the
-   development toolchain,
-3. runs `alr exec -- gnatprove -P <gpr>`,
-4. restores the backed-up files via a `trap ... EXIT INT TERM` (also on
-   failure or interruption).
+1. **Per-project manifest (authoritative)**: if `<target>/alire.toml` /
+   `<target>/alire-dev.toml` declares a `gnatprove` dependency, the pinned
+   gnatprove binary crate is deployed standalone into `~/.adacovex/toolchain/`
+   via `alr -n get gnatprove=<version>` and executed directly (the version-set
+   expression, e.g. `^16.1.0`, is reduced to the bare version alr accepts).
+   This isolates the proof run from the target's other dev-manifest tools and
+   never swaps manifests. A manifest pin always wins: when the pinned version
+   cannot be deployed, the run fails instead of falling back.
+2. **Global version pin**: the `ADACOVEX_GNATPROVE_VERSION` environment
+   variable or the `[prove] gnatprove-version` key in
+   `~/.adacovex/adacovex.toml`, deployed standalone via
+   `alr -n get gnatprove=<version>` -- same never-fall-back semantics, folded
+   into the proof result-cache identity.
+3. **`$PATH`**: a `gnatprove` already installed (e.g. `alr install gnatprove`).
+4. **Cached toolchain**: `~/.adacovex/toolchain/` -- the download layout
+   (`<toolchain>/bin/gnatprove`) or a previously `alr get`-deployed
+   `gnatprove_*/` crate.
+5. **Download**: last-resort platform toolchain bundle.
 
-The same rule applies to target projects: a target that keeps gnatprove in its
-own `alire-dev.toml` gets the identical dev-manifest swap, so the publishing
-`alire.toml` is always clean.
+Effective order: **manifest pin > global pin (config/env) > PATH > cache >
+download**. If a project manifest declares `gnatprove` but `alr` is missing,
+install Alire first; the remaining fallbacks then apply.
+
+The `make doc` / `make fmt` targets still swap `alire-dev.toml` over
+`alire.toml` for the duration of `gnatdoc` / `gnatformat` (the `_dev_cmd`
+Makefile recipe backs up `alire.toml` / `alire.lock` / `alire/`, swaps, runs,
+and restores via a `trap`). `prove` does not use that swap -- it deploys only
+the single gnatprove crate.
 
 The assessment and SBOM pipeline always scans the publishing `alire.toml`, so
 dev-only tool declarations never leak into dependency graphs or SBOMs.
@@ -200,7 +216,55 @@ In strict mode (default), the scanner also applies docstring patches from `.adac
 
 ## Patch System
 
-The `.adacovex/patches/` directory allows overlaying docstring information onto third-party or vendored code. Patch files are valid Ada specs with docstrings; the scanner merges `Has_Docstring`, `Doc_Param_Ct`, and `Doc_Return` into matching originals. This enables 100% docstring coverage without modifying vendored dependencies.
+The `.adacovex/patches/` directory overlays docstring information onto
+third-party or vendored code that cannot be modified directly, so strict mode
+can still reach 100% docstring coverage without touching the originals.
+
+### Why patches exist
+
+In strict mode (default), all directories except `.git`, `obj`, `tests`,
+`config`, and `.adacovex` are scanned. Vendored dependencies (e.g. a copy of
+vt100 in `demo/deps/vt100/`) are scanned, and their undocumented subprograms
+count against docstring coverage. Patches document them in place.
+
+### Patch file format
+
+A patch file is a valid Ada `.ads` file containing only the subprogram
+declarations to document, each preceded by a docstring:
+
+```ada
+--  Package-level comment (optional, not used by patch engine).
+package VT100 is
+
+   --  Summary of the procedure.
+   --  @param Name  Description.
+   procedure Some_Procedure (Name : in Some_Type);
+
+   --  Another procedure with no params.
+   procedure No_Param_Proc;
+
+end VT100;
+```
+
+Rules:
+1. File name must match the original `.ads` (e.g. `vt100.ads`).
+2. Subprogram names must match the originals exactly.
+3. Only subprograms with preceding docstrings (`--  ` lines) are merged.
+4. Overloaded subprograms: one patch entry per overload; each patches the next
+   undocumented original with the same name.
+5. The scanner merges `Has_Docstring`, `Doc_Param_Ct`, and `Doc_Return` into
+   the matching originals.
+
+### Patch file location
+
+```
+<target-project>/.adacovex/patches/<relative-path>
+```
+
+`<relative-path>` is the path from the target root to the `.ads` file. Example:
+to patch `Ada_CRDT/demo/deps/vt100/vt100.ads`, create
+`Ada_CRDT/.adacovex/patches/demo/deps/vt100/vt100.ads`. The `.adacovex`
+directory is always excluded from source scanning.
 
 ## Output Formats
 

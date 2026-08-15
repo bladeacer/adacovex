@@ -94,7 +94,7 @@ standard part of the workflow, so declare the prover in the same manifest:
 # <project>/alire-dev.toml
 [[depends-on]]
 covex = "*"
-gnatprove = "^15.1.0"
+gnatprove = "^16.1.0"
 ```
 
 Then `alr build` produces `bin/adacovex` inside the project and the `prove`
@@ -155,7 +155,7 @@ fallback), then adds the install bin dir to your shell's `PATH` and symlinks
 **Manual.** Or fetch the bundle and unpack anywhere on `$PATH`:
 
 ```bash
-VERSION=v1.6.0
+VERSION=v1.9.0
 curl -fL -o adacovex.tar.gz \
   "https://github.com/bladeacer/adacovex/releases/download/$VERSION/adacovex-$VERSION.tar.gz"
 mkdir -p ~/.local/bin
@@ -441,7 +441,7 @@ tooling of its own -- only the adacovex working tree needs GNAT and Alire.
 # <project>/alire-dev.toml (never alire.toml, so release builds stay clean)
 [[depends-on]]
 covex = "*"
-gnatprove = "^15.1.0"
+gnatprove = "^16.1.0"
 ```
 
 Then `alr build` produces `bin/adacovex` inside the project, `adacovex` runs
@@ -518,7 +518,7 @@ steps:
 To target a specific release instead, pin the ref:
 
 ```yaml
-  - uses: bladeacer/adacovex@v1.4.0
+  - uses: bladeacer/adacovex@v1.9.0
 ```
 
 #### Inputs
@@ -605,7 +605,7 @@ Both bundles are attested with
 on every tag (OIDC attestations appear under the release's attestations tab).
 The release notes link the signed attestation directly via the action's
 `attestation-url` output, plus a *Git Changelog* compare link
-(`compare/v1.5.0...v1.6.0`) and the human-readable changelog.
+(`compare/v1.8.0...v1.9.0`) and the human-readable changelog.
 
 `make release VERSION=x.y.z` does the same locally (build `--release`,
 generate proofs, validate DAL-C, bundle `dist/`), then tags and pushes to
@@ -696,6 +696,9 @@ Ada_CRDT/.adacovex/patches/demo/deps/vt100/vt100.ads
 The patch file is a valid Ada `.ads` with docstrings for subprograms you want
 to document. Overloaded subprograms require one patch entry per overload.
 
+See [Architecture -- Patch System](docs/architecture.md#patch-system) for the
+full format and rules.
+
 ## DAL levels
 
 | DAL | Min SPARK | Tests must pass | HLRs traced | No orphans |
@@ -705,6 +708,8 @@ to document. Overloaded subprograms require one patch entry per overload.
 | C | Bronze | Yes | Yes | Yes |
 | D | None (Stone) | Yes | Yes | Yes |
 | E | None (Stone) | No | Yes | Yes |
+
+See [DAL Levels](docs/api-docs/adacovex-dal-levels.md) for the full criteria.
 
 ## Makefile targets
 
@@ -758,6 +763,7 @@ See [changelogs](docs/changelogs/index.md) for full release notes.
 | [Test Format](docs/api-docs/adacovex-test-format.md) | Supported test-result output format |
 | [SPARK Levels](docs/api-docs/adacovex-spark-levels.md) | Assurance level objectives (Stone--Platinum) |
 | [DAL Levels](docs/api-docs/adacovex-dal-levels.md) | DO-178C DAL A - E criteria |
+| [Architecture](docs/architecture.md) | Design decisions, patches, toolchain resolution, overflow contract |
 | [API Reference](docs/api-docs/index.md) | Auto-generated package API docs |
 | [Changelog](docs/changelogs/index.md) | Release history |
 

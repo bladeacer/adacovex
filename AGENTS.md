@@ -93,61 +93,14 @@ src/
 
 ### .adacovex patch directory
 
-Located at `<target-project>/.adacovex/patches/<relative-path>`.
+Strict mode (default) scans ALL directories except the always-excluded ones, so
+vendored code counts against docstring coverage. A patch file at
+`<target>/.adacovex/patches/<relative-path>` (a valid Ada `.ads` with docstrings
+for the subprograms to document) overlays docstring info onto the matching
+original without modifying it. Only active in strict mode.
 
-Used to add docstrings to third-party or vendored code that you cannot or do not
-want to modify directly. Only active in strict mode (default).
-
-**Why patches exist.** When `--relaxed` is not passed, strict mode scans ALL
-directories (except the always-excluded ones). Vendored dependencies (e.g. a
-copy of vt100 in `demo/deps/vt100/`) will be scanned and their undocumented
-subprograms will count against docstring coverage. Patches let you overlay
-docstring info without touching the original files.
-
-#### Patch file format
-
-A patch file is a valid Ada `.ads` file. It must contain only the subprogram
-declarations you want to document, with docstrings in adacovex format preceding
-each declaration.
-
-```
---  Package-level comment (optional, not used by patch engine).
-package VT100 is
-
-   --  Summary of the procedure.
-   --  @param Name  Description.
-   procedure Some_Procedure (Name : in Some_Type);
-
-   --  Another procedure with no params.
-   procedure No_Param_Proc;
-
-end VT100;
-```
-
-**Rules:**
-1. File name must match the original `.ads` (e.g. `vt100.ads`).
-2. Subprogram names must match the originals exactly.
-3. Only subprograms with preceding docstrings (`--  ` lines) are merged.
-4. Overloaded subprograms: provide one patch entry per overload; each patches the
-   next undocumented original with the same name.
-5. The scanner parses the patch and merges `Has_Docstring`, `Doc_Param_Ct`, and
-   `Doc_Return` into the matching originals.
-
-#### Patch file location
-
-```
-<target-project>/.adacovex/patches/<relative-path>
-```
-
-Where `<relative-path>` is the path from the target root to the `.ads` file.
-
-Example: to patch `Ada_CRDT/demo/deps/vt100/vt100.ads`, create:
-```
-Ada_CRDT/.adacovex/patches/demo/deps/vt100/vt100.ads
-```
-
-**The `.adacovex` directory is always excluded from source scanning** (same as
-`.git`, `obj`, `tests`, `config`).
+Full format, rules, and examples:
+[docs/architecture.md](docs/architecture.md#patch-system).
 
 ---
 
@@ -597,10 +550,10 @@ Per-level table and assessment criteria:
   (`adacovex-action-vX.Y.Z.tar.gz`). Both bundles are attested via
   `actions/attest` (OIDC); the release notes link the signed
   attestation (`attestation-url` output), a *Git Changelog* compare link
-  (`compare/v1.5.0...v1.6.0`), and the human-readable changelog. The action
+  (`compare/v1.8.0...v1.9.0`), and the human-readable changelog. The action
   downloads the matching
-  binary tarball for the tag it is referenced by, so `@v1.4.0` runs adacovex
-  `v1.4.0`.
+  binary tarball for the tag it is referenced by, so `@v1.9.0` runs adacovex
+  `v1.9.0`.
   The tag itself publishes the action for
   `uses: <owner>/adacovex@vX.Y.Z`, and once the
   action is listed on the marketplace, each tag auto-publishes that version.
@@ -664,91 +617,20 @@ manifest.
 
 ### Installing adacovex
 
-adacovex is a zero-dependency Alire crate: it declares no library or tool
-dependencies, so installing it never drags in gnatprove. Pick whichever
-method fits:
-
-1. **Per-project Alire manifest (preferred).** Declare `covex` in the
-   project's `alire-dev.toml` (never `alire.toml`, so release builds stay
-   clean), with `gnatprove` as its standard companion in the same manifest --
-   proof runs are part of the workflow:
-   ```toml
-   # <project>/alire-dev.toml
-   [[depends-on]]
-   covex = "*"
-   gnatprove = "^15.1.0"
-   ```
-   `alr build` then produces `bin/adacovex` in the project and
-   `covex prove` deploys the pinned gnatprove crate standalone into
-   `~/.adacovex/toolchain` via `alr -n get gnatprove=<version>` and runs it
-   directly (Alire pins the exact toolchain version per project; no global
-   install needed).
-2. **`alr install` (global, to `$PATH`).** Install the binary and the prover
-   together, then put Alire's bin directory on `$PATH`:
-   ```bash
-   alr install covex gnatprove
-   export PATH="$HOME/.local/bin:$PATH"
-   ```
-   `covex` is the Alire crate name for adacovex
-   ([crate page](https://alire.ada.dev/crates/covex)); the installed binary
-   scans the current directory by default, so once on `$PATH` it runs from any
-   project with no further setup. Alire installs to its bin directory (default
-   `~/.local/bin`; `alr install` prints the exact location, `alr toolchain
-   --install-dir` shows the toolchain dir). A `gnatprove` installed this way is
-   picked up from `$PATH` when the target project declares no manifest
-   dependency of its own.
-3. **GitHub release bundle.** Every `vX.Y.Z` tag publishes
-   `adacovex-vX.Y.Z.tar.gz` (`adacovex` + `covex` alias) on the Releases page.
-   Fetch it with `curl` and unpack onto `$PATH`:
-   ```bash
-   VERSION=v1.6.0
-   curl -fL -o adacovex.tar.gz \
-     "https://github.com/bladeacer/adacovex/releases/download/$VERSION/adacovex-$VERSION.tar.gz"
-   mkdir -p ~/.local/bin
-   tar -xzf adacovex.tar.gz -C ~/.local/bin
-   export PATH="$HOME/.local/bin:$PATH"
-   ```
-   Bundles are attested with `actions/attest`; verify with
-   `gh attestation verify`.
-4. **From source.** `make build` in the repo, or manage adacovex as a dev
-   dependency (see below).
+adacovex is a zero-dependency Alire crate (no library or tool dependencies, so
+installing it never drags in gnatprove). Installation methods (per-project
+manifest, `alr install`, release bundle, from source):
+[README.md](README.md#installing-adacovex).
 
 ### GNATprove toolchain resolution (prove mode)
 
-`covex prove` finds `gnatprove` in this order:
+`covex prove` resolves `gnatprove` in this order: **per-project manifest pin >
+global pin (`ADACOVEX_GNATPROVE_VERSION` / `~/.adacovex/adacovex.toml`) >
+`$PATH` > `~/.adacovex/toolchain/` cache > download**. A manifest pin is
+authoritative (fails rather than falls back).
 
-1. **Per-project manifest (authoritative)**: if `<target>/alire.toml` /
-   `<target>/alire-dev.toml` declares a `gnatprove` dependency, deploy ONLY
-   the gnatprove binary crate (a self-contained bundle, no dependencies) into
-   `~/.adacovex/toolchain/` via `alr -n get gnatprove=<version>` and run the
-   deployed binary directly -- the version-set expression (`^15.1.0`,
-   `~15.1.0`, ...) is reduced to the bare version alr accepts. This avoids the
-   fragile `alr exec` path that composed the target's entire dev-manifest
-   dependency set (covex, gnatdoc_bin, gnatformat_bin, ...), so CI proof runs
-   depend on a single crate download and never need a dev-manifest swap.
-   A manifest pin always wins over every other source below: when the pinned
-   version cannot be deployed the run fails instead of falling back, because a
-   different gnatprove can change which VCs are discharged. Priorities 2-5
-   apply only to projects that do not declare gnatprove.
-2. **Global version pin**: the `ADACOVEX_GNATPROVE_VERSION` environment
-   variable or the `[prove] gnatprove-version = "X.Y.Z"` key in
-   `~/.adacovex/adacovex.toml`. The exact version is deployed standalone via
-   `alr -n get gnatprove=<version>` and run directly -- same authoritative,
-   never-fall-back semantics as the manifest pin, and folded into the proof
-   result-cache identity so a different pinned version can never reuse a stale
-   proof. Use it to fix every proof on one prover (e.g. 16.1.0) without
-   touching per-project manifests.
-3. **`$PATH`**: a `gnatprove` installed beforehand (e.g. `alr install gnatprove`).
-4. **Cached toolchain**: `~/.adacovex/toolchain/` -- either the download
-   layout (`<toolchain>/bin/gnatprove`) or a previously `alr get`-deployed
-   `gnatprove_*/` crate.
-5. **Download**: last-resort platform toolchain bundle.
-
-So the effective order is: **manifest pin > global pin (config/env) > PATH >
-cache > download**.
-
-If a project manifest declares `gnatprove` but `alr` is missing, install Alire
-first; the remaining fallbacks then apply.
+Full resolution order and the doc/fmt manifest-swap:
+[docs/architecture.md](docs/architecture.md#gnatprove-toolchain-resolution-prove-subcommand).
 
 ### Using adacovex from another project (Ada or non-Ada)
 
@@ -772,7 +654,7 @@ Two approaches are equally valid; pick whichever fits the project:
    ```toml
    [[depends-on]]
    covex = "*"
-   gnatprove = "^15.1.0"
+   gnatprove = "^16.1.0"
    ```
    Then `alr build` produces `bin/adacovex` inside the project,
    `adacovex` runs against the current directory by default, and `covex prove`
