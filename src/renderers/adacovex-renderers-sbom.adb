@@ -8,6 +8,7 @@ package body Adacovex.Renderers.SBOM is
 
    use type Types.SPARK_Level;
    use type Types.Component_Kind;
+   use type Types.DAL_Level;
 
    function Proof_Level_Property (Level : Types.SPARK_Level) return String
    with SPARK_Mode => On
@@ -46,6 +47,19 @@ package body Adacovex.Renderers.SBOM is
             return "";
       end case;
    end DAL_Property_Value;
+
+   function Level_Property
+     (Standard : Types.Compliance_Standard; Level : Types.DAL_Level)
+      return String
+   with SPARK_Mode => On
+   is
+   begin
+      if Level = Types.DAL_E then
+         return "";
+      else
+         return Types.Standard_Level_Name (Standard, Level);
+      end if;
+   end Level_Property;
 
    --  Map a dependency scope to the adacovex:dep_scope property value.
    --  Base dependencies are declared in the publishing manifest, dev
@@ -441,12 +455,14 @@ package body Adacovex.Renderers.SBOM is
    --  Emit a single CycloneDX component object.  Used for the root component
    --  in metadata and for every dependency in the components array.
    procedure Write_CDX_Component
-     (F           : in out Ada.Text_IO.File_Type;
-      C           : Types.Implementation.Component_Info;
-      Proof_Level : String;
-      DAL_Target  : String;
-      Indent      : String;
-      First_Field : in out Boolean)
+     (F             : in out Ada.Text_IO.File_Type;
+      C             : Types.Implementation.Component_Info;
+      Proof_Level   : String;
+      Standard_Name : String;
+      DAL_Target    : String;
+      Level_Label   : String;
+      Indent        : String;
+      First_Field   : in out Boolean)
    is
       procedure Fld (Key, Val : String; Quoted : Boolean) is
       begin
@@ -504,9 +520,19 @@ package body Adacovex.Renderers.SBOM is
         (F,
          (if C.Kind = Types.Root_Component then Proof_Level else Not_Proved));
       Raw (F, "}");
+      if C.Kind = Types.Root_Component then
+         Raw (F, ", {""name"": ""adacovex:standard"", ""value"": ");
+         JStr (F, Standard_Name);
+         Raw (F, "}");
+      end if;
       if C.Kind = Types.Root_Component and DAL_Target'Length > 0 then
          Raw (F, ", {""name"": ""adacovex:dal_target"", ""value"": ");
          JStr (F, DAL_Target);
+         Raw (F, "}");
+      end if;
+      if C.Kind = Types.Root_Component and Level_Label'Length > 0 then
+         Raw (F, ", {""name"": ""adacovex:level"", ""value"": ");
+         JStr (F, Level_Label);
          Raw (F, "}");
       end if;
       if C.Kind = Types.Dependency_Component then
@@ -580,12 +606,16 @@ package body Adacovex.Renderers.SBOM is
      (F           : in out Ada.Text_IO.File_Type;
       Graph       : Types.Implementation.Component_Vectors.Vector;
       Proof_Level : String;
-      DAL_Target  : String)
+      Standard    : Types.Compliance_Standard;
+      DAL_Target  : Types.DAL_Level)
    is
       Root         : Types.Implementation.Component_Info;
       First_Field  : Boolean := True;
       First_Comp   : Boolean := True;
       Tool_Version : constant String := Adacovex.Version;
+      Std_Name     : constant String := Types.To_String (Standard);
+      Tier_Prop    : constant String := DAL_Property_Value (DAL_Target);
+      Lvl_Label    : constant String := Level_Property (Standard, DAL_Target);
    begin
       if Integer (Graph.Length) = 0 then
          return;
@@ -618,7 +648,14 @@ package body Adacovex.Renderers.SBOM is
       NL (F);
       Raw (F, "    ""component"": ");
       Write_CDX_Component
-        (F, Root, Proof_Level, DAL_Target, "      ", First_Field);
+        (F,
+         Root,
+         Proof_Level,
+         Std_Name,
+         Tier_Prop,
+         Lvl_Label,
+         "      ",
+         First_Field);
       NL (F);
       Raw (F, "  },");
 
@@ -637,7 +674,14 @@ package body Adacovex.Renderers.SBOM is
             Raw (F, "    ");
             First_Field := True;
             Write_CDX_Component
-              (F, C, Proof_Level, DAL_Target, "      ", First_Field);
+              (F,
+               C,
+               Proof_Level,
+               Std_Name,
+               Tier_Prop,
+               Lvl_Label,
+               "      ",
+               First_Field);
          end;
       end loop;
       NL (F);
@@ -657,12 +701,14 @@ package body Adacovex.Renderers.SBOM is
 
    --  Emit a single SPDX package object.
    procedure Write_SPDX_Package
-     (F           : in out Ada.Text_IO.File_Type;
-      C           : Types.Implementation.Component_Info;
-      Index       : Natural;
-      Proof_Level : String;
-      DAL_Target  : String;
-      First_Pkg   : in out Boolean)
+     (F             : in out Ada.Text_IO.File_Type;
+      C             : Types.Implementation.Component_Info;
+      Index         : Natural;
+      Proof_Level   : String;
+      Standard_Name : String;
+      DAL_Target    : String;
+      Level_Label   : String;
+      First_Pkg     : in out Boolean)
    is
       License : constant String :=
         (if C.License_Len > 0
@@ -716,9 +762,19 @@ package body Adacovex.Renderers.SBOM is
         (F,
          (if C.Kind = Types.Root_Component then Proof_Level else Not_Proved));
       Raw (F, """");
+      if C.Kind = Types.Root_Component then
+         Raw (F, ", ""adacovex:standard=");
+         Raw (F, Standard_Name);
+         Raw (F, """");
+      end if;
       if C.Kind = Types.Root_Component and DAL_Target'Length > 0 then
          Raw (F, ", ""adacovex:dal_target=");
          Raw (F, DAL_Target);
+         Raw (F, """");
+      end if;
+      if C.Kind = Types.Root_Component and Level_Label'Length > 0 then
+         Raw (F, ", ""adacovex:level=");
+         Raw (F, Level_Label);
          Raw (F, """");
       end if;
       if C.Kind = Types.Dependency_Component then
@@ -735,10 +791,14 @@ package body Adacovex.Renderers.SBOM is
      (F           : in out Ada.Text_IO.File_Type;
       Graph       : Types.Implementation.Component_Vectors.Vector;
       Proof_Level : String;
-      DAL_Target  : String)
+      Standard    : Types.Compliance_Standard;
+      DAL_Target  : Types.DAL_Level)
    is
       Root      : Types.Implementation.Component_Info;
       First_Pkg : Boolean := True;
+      Std_Name  : constant String := Types.To_String (Standard);
+      Tier_Prop : constant String := DAL_Property_Value (DAL_Target);
+      Lvl_Label : constant String := Level_Property (Standard, DAL_Target);
    begin
       if Integer (Graph.Length) = 0 then
          return;
@@ -781,7 +841,15 @@ package body Adacovex.Renderers.SBOM is
          declare
             C : Types.Implementation.Component_Info := Graph (I);
          begin
-            Write_SPDX_Package (F, C, I, Proof_Level, DAL_Target, First_Pkg);
+            Write_SPDX_Package
+              (F,
+               C,
+               I,
+               Proof_Level,
+               Std_Name,
+               Tier_Prop,
+               Lvl_Label,
+               First_Pkg);
          end;
       end loop;
       NL (F);
@@ -819,9 +887,13 @@ package body Adacovex.Renderers.SBOM is
      (F           : in out Ada.Text_IO.File_Type;
       Graph       : Types.Implementation.Component_Vectors.Vector;
       Proof_Level : String;
-      DAL_Target  : String)
+      Standard    : Types.Compliance_Standard;
+      DAL_Target  : Types.DAL_Level)
    is
-      Root : Types.Implementation.Component_Info;
+      Root      : Types.Implementation.Component_Info;
+      Std_Name  : constant String := Types.To_String (Standard);
+      Tier_Prop : constant String := DAL_Property_Value (DAL_Target);
+      Lvl_Label : constant String := Level_Property (Standard, DAL_Target);
    begin
       if Integer (Graph.Length) = 0 then
          return;
@@ -874,9 +946,19 @@ package body Adacovex.Renderers.SBOM is
       Raw (F, Proof_Level);
       Raw (F, " |");
       NL (F);
-      if DAL_Target'Length > 0 then
+      Raw (F, "| adacovex:standard | ");
+      Raw (F, Std_Name);
+      Raw (F, " |");
+      NL (F);
+      if Tier_Prop'Length > 0 then
          Raw (F, "| adacovex:dal_target | ");
-         Raw (F, DAL_Target);
+         Raw (F, Tier_Prop);
+         Raw (F, " |");
+         NL (F);
+      end if;
+      if Lvl_Label'Length > 0 then
+         Raw (F, "| adacovex:level | ");
+         Raw (F, Lvl_Label);
          Raw (F, " |");
          NL (F);
       end if;
@@ -935,7 +1017,8 @@ package body Adacovex.Renderers.SBOM is
       Out_Path    : String;
       Graph       : Types.Implementation.Component_Vectors.Vector;
       Proof_Level : String;
-      DAL_Target  : String;
+      Standard    : Types.Compliance_Standard;
+      DAL_Target  : Types.DAL_Level;
       Success     : out Boolean)
    is
       use Ada.Text_IO;
@@ -954,13 +1037,14 @@ package body Adacovex.Renderers.SBOM is
       begin
          case Format is
             when Types.CycloneDX_JSON =>
-               Write_CycloneDX_To (F, Graph, Proof_Level, DAL_Target);
+               Write_CycloneDX_To
+                 (F, Graph, Proof_Level, Standard, DAL_Target);
 
             when Types.SPDX_JSON      =>
-               Write_SPDX_To (F, Graph, Proof_Level, DAL_Target);
+               Write_SPDX_To (F, Graph, Proof_Level, Standard, DAL_Target);
 
             when Types.Markdown       =>
-               Write_Markdown_To (F, Graph, Proof_Level, DAL_Target);
+               Write_Markdown_To (F, Graph, Proof_Level, Standard, DAL_Target);
          end case;
       exception
          when others =>

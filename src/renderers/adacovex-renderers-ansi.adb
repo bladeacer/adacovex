@@ -33,6 +33,7 @@ package body Adacovex.Renderers.ANSI is
       DAL_Assess      : Types.Implementation.DAL_Assessment;
       Packages        : Types.Implementation.Package_Vectors.Vector;
       Use_Color       : Boolean := False;
+      All_Standards   : Boolean := False;
       Cache_Hits      : Natural := 0;
       Cache_Misses    : Natural := 0;
       Cache_Evictions : Natural := 0) is
@@ -127,20 +128,38 @@ package body Adacovex.Renderers.ANSI is
       Reset_Color (Enable => Use_Color);
       Ada.Text_IO.New_Line;
 
-      --  Compliance (standard-aware level label)
-      Ada.Text_IO.Put
-        ("  "
-         & Types.Standard_Level_Name
-             (DAL_Assess.Standard, DAL_Assess.Target_DAL)
-         & ": ");
-      if DAL_Assess.Status = Types.Achieved then
-         Put_Color ("32", Bold => True, Enable => Use_Color);
+      --  Compliance (standard-aware level label; all-standards expansion)
+      if All_Standards then
+         Ada.Text_IO.Put_Line ("  compliance (all standards):");
+         for Std in Types.Compliance_Standard loop
+            Ada.Text_IO.Put
+              ("    "
+               & Types.Standard_Level_Name (Std, DAL_Assess.Target_DAL)
+               & ": ");
+            if DAL_Assess.Status = Types.Achieved then
+               Put_Color ("32", Bold => True, Enable => Use_Color);
+            else
+               Put_Color ("31", Bold => True, Enable => Use_Color);
+            end if;
+            Ada.Text_IO.Put (Types.To_String (DAL_Assess.Status));
+            Reset_Color (Enable => Use_Color);
+            Ada.Text_IO.New_Line;
+         end loop;
       else
-         Put_Color ("31", Bold => True, Enable => Use_Color);
+         Ada.Text_IO.Put
+           ("  "
+            & Types.Standard_Level_Name
+                (DAL_Assess.Standard, DAL_Assess.Target_DAL)
+            & ": ");
+         if DAL_Assess.Status = Types.Achieved then
+            Put_Color ("32", Bold => True, Enable => Use_Color);
+         else
+            Put_Color ("31", Bold => True, Enable => Use_Color);
+         end if;
+         Ada.Text_IO.Put (Types.To_String (DAL_Assess.Status));
+         Reset_Color (Enable => Use_Color);
+         Ada.Text_IO.New_Line;
       end if;
-      Ada.Text_IO.Put (Types.To_String (DAL_Assess.Status));
-      Reset_Color (Enable => Use_Color);
-      Ada.Text_IO.New_Line;
 
       --  Undocumented subprograms (file:line format)
       declare

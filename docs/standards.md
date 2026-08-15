@@ -48,18 +48,42 @@ The four checks stay identical across standards; only the names change:
 3. **Tests passing** -- zero failures (not enforced at the lowest tier).
 4. **Minimum SPARK level** -- the proof bar for the selected rigor tier.
 
+## Selecting a standard on the CLI
+
+Each standard has a dedicated level flag, so your intent is unambiguous on the
+command line. The flags all resolve to the same shared rigor tier:
+
+| Standard | Flag | Levels | Example (tier) |
+|----------|------|--------|----------------|
+| DO-178C | `--dal=` | A, B, C, D, E | `--dal=C` -> DAL-C (Major) |
+| ISO 26262 | `--asil=` | A, B, C, D, QM | `--asil=B` -> ASIL B (Major) |
+| IEC 62304 | `--class=` | A, B, C | `--class=A` -> Class A (Major) |
+
+You can also use `--standard=iso26262 --dal=C` to get the same result as
+`--asil=B`; the dedicated flags exist so a reader of the command line can see
+"ASIL B" (or "Class A") without decoding the shared tier.
+
+`--standard=all` runs **one** assessment at the shared tier and emits badges
+and reports for **every** standard -- `do178c.svg`, `iso26262.svg`, and
+`iec62304.svg` -- without re-scanning, re-proving, or re-parsing anything. The
+evidence is identical across standards, so the three badges always agree on
+Achieved/Unmet; only the level label changes.
+
 ## Implementation
 
 - `Compliance_Standard` type (`DO_178C`, `ISO_26262`, `IEC_62304`) with
-  `To_String` / `To_Standard` conversions in `Adacovex.Types`.
-- `--standard=NAME` CLI flag (default `do178c`) selects the labelling
-  standard; `--dal=LEVEL` is reused as the shared rigor tier (A--E), so
-  `--standard=iso26262 --dal=C` assesses ASIL B.
+  `To_String` / `To_Standard` / `Standard_Slug` conversions and the
+  dedicated `To_ASIL` / `To_Class` level parsers in `Adacovex.Types`.
+- `--standard=NAME` CLI flag (default `do178c`, plus `all`) selects the
+  labelling standard; `--dal=LEVEL` is the shared rigor tier (A--E), and the
+  dedicated `--asil=LEVEL` / `--class=LEVEL` flags set both the standard and
+  the tier in one step.
 - `Types.Standard_Level_Name` maps a standard + tier to its label (`DAL-C`,
   `ASIL B`, `Class A`, ...), and `Assess_Standard` runs the same evidence
-  checks as `Assess_DAL` while recording the standard, so the ANSI report and
-  SVG badge print the standard-specific level without re-running scanning,
-  proof parsing, or test parsing.
+  checks as `Assess_DAL` while recording the standard, so every renderer
+  (ANSI report, SVG badge, HTML dashboard, JSON API, Markdown report, and
+  SBOM) prints the standard-specific level without re-running scanning, proof
+  parsing, or test parsing.
 - `Min_SPARK_For` still drives the per-tier proof bar; the tiers share one
   lookup because the standards only re-label the levels.
 

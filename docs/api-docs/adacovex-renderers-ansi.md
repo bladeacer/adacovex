@@ -10,10 +10,11 @@ HLR-RENDER-ANSI: ANSI rendering
 
 ## Procedures
 
-### procedure Render_Summary (Doc_Metrics : Adacovex.Types.Docstring_Metrics; Proof : Adacovex.Types.Proof_Summary; Tests : Adacovex.Types.Implementation.Test_Summary; DAL_Assess : Adacovex.Types.Implementation.DAL_Assessment; Packages : Adacovex.Types.Implementation.Package_Vectors.Vector; Use_Color : Standard.Boolean; Cache_Hits : Standard.Natural; Cache_Misses : Standard.Natural; Cache_Evictions : Standard.Natural)
+### procedure Render_Summary (Doc_Metrics : Adacovex.Types.Docstring_Metrics; Proof : Adacovex.Types.Proof_Summary; Tests : Adacovex.Types.Implementation.Test_Summary; DAL_Assess : Adacovex.Types.Implementation.DAL_Assessment; Packages : Adacovex.Types.Implementation.Package_Vectors.Vector; Use_Color : Standard.Boolean; All_Standards : Standard.Boolean; Cache_Hits : Standard.Natural; Cache_Misses : Standard.Natural; Cache_Evictions : Standard.Natural)
 
 | Parameter | Description |
 |-----------|-------------|
+| `All_Standards` | Print every standard (else the selected one). |
 | `Cache_Evictions` | Number of stale entries evicted from the cache. |
 | `Cache_Hits` | Number of analysis results served from the cache. |
 | `Cache_Misses` | Number of results recomputed and re-cached. |

@@ -268,6 +268,44 @@ package Adacovex.Types is
      (Standard : Compliance_Standard; Level : DAL_Level) return String
    with Post => Standard_Level_Name'Result'Length > 0, Global => null;
 
+   --  Parse an ASIL level into the shared rigor tier.  ASIL A--D map to
+   --  DAL_D--DAL_A (ASIL D is the most rigorous) and QM maps to DAL_E (no
+   --  safety effect).  Accepts "A".."D" and "QM" case-insensitively;
+   --  defaults to DAL_C (ASIL B) on parse failure.
+   --  @param S  ASIL level (A-D or QM, case-insensitive).
+   --  @return Shared rigor tier (defaults to DAL_C on failure).
+   function To_ASIL (S : String) return DAL_Level
+   with Global => null;
+
+   --  Whether S is a valid ASIL level ("A".."D" or "QM", case-insensitive).
+   --  @param S  Candidate ASIL level string.
+   --  @return True when S names a valid ASIL level.
+   function Is_Valid_ASIL (S : String) return Boolean
+   with Global => null;
+
+   --  Parse an IEC 62304 software safety class into the shared rigor tier.
+   --  Class A--C map to DAL_C--DAL_A (Class C is the most rigorous).
+   --  Accepts "A".."C" case-insensitively; defaults to DAL_C (Class A) on
+   --  parse failure.
+   --  @param S  Safety class (A-C, case-insensitive).
+   --  @return Shared rigor tier (defaults to DAL_C on failure).
+   function To_Class (S : String) return DAL_Level
+   with Global => null;
+
+   --  Whether S is a valid IEC 62304 safety class ("A".."C",
+   --  case-insensitive).
+   --  @param S  Candidate safety-class string.
+   --  @return True when S names a valid safety class.
+   function Is_Valid_Class (S : String) return Boolean
+   with Global => null;
+
+   --  Lowercase filename slug for a standard's badge file: "do178c",
+   --  "iso26262", or "iec62304".
+   --  @param S  Compliance standard.
+   --  @return The standard's badge-file slug.
+   function Standard_Slug (S : Compliance_Standard) return String
+   with Post => Standard_Slug'Result'Length > 0, Global => null;
+
    --  Convert a DAL_Status ("Achieved" or "Unmet") to its human-readable string.
    --  @return "Achieved" or "Unmet".
    function To_String (S : DAL_Status) return String

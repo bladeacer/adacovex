@@ -5,13 +5,16 @@ with Adacovex.Types;
 --  Produces CycloneDX 1.5 JSON and SPDX 2.3 JSON documents from the
 --  dependency graph resolved by Adacovex.Parsers.Manifest.  Only the root
 --  component -- the project adacovex actually assessed -- carries the
---  adacovex:proof_level (Gold | Platinum) and adacovex:dal_target
---  (DAL-A through DAL-D) properties.  Dependency components report
---  adacovex:proof_level = "Not proved": adacovex only proves the target
---  itself, never third-party dependencies.  Every dependency component also
---  carries an adacovex:dep_scope property ("base" | "dev" | "transitive" |
---  "vendored") distinguishing publishing (alire.toml), development-only
---  (alire-dev.toml), transitive, and patched-vendored packages.
+--  adacovex:proof_level (Stone..Platinum), adacovex:standard
+--  ("DO-178C" | "ISO 26262" | "IEC 62304"), adacovex:dal_target
+--  (DAL-A through DAL-D), and adacovex:level (the standard-specific label
+--  "DAL-C" | "ASIL B" | "Class A") properties.  Dependency components
+--  report adacovex:proof_level = "Not proved": adacovex only proves the
+--  target itself, never third-party dependencies.  Every dependency
+--  component also carries an adacovex:dep_scope property ("base" | "dev" |
+--  "transitive" | "vendored") distinguishing publishing (alire.toml),
+--  development-only (alire-dev.toml), transitive, and patched-vendored
+--  packages.
 --  HLR-SBOM: SBOM generation
 
 package Adacovex.Renderers.SBOM is
@@ -39,6 +42,18 @@ package Adacovex.Renderers.SBOM is
      SPARK_Mode => On,
      Post       => DAL_Property_Value'Result'Length <= 5,
      Global     => null;
+
+   --  Standard-specific level label for the root component's adacovex:level
+   --  property ("DAL-C", "ASIL B", "Class A", ...).  Returns an empty
+   --  string for the no-safety-effect tier (DAL-E), matching
+   --  DAL_Property_Value's omission of DAL-E.
+   --  @param Standard  Compliance standard labelling the level.
+   --  @param Level  Shared rigor tier.
+   --  @return The standard-specific level label, or "" for DAL-E.
+   function Level_Property
+     (Standard : Types.Compliance_Standard; Level : Types.DAL_Level)
+      return String
+   with SPARK_Mode => On, Global => null;
 
    --  Map a dependency scope to the adacovex:dep_scope property value
    --  ("base", "dev", "transitive", or "vendored").  Base dependencies are
@@ -113,18 +128,20 @@ package Adacovex.Renderers.SBOM is
 
    --  Write an SBOM in the requested format to Out_Path.
    --  Creates any missing parent directories and overwrites Out_Path.
-   --  @param Format  SBOM format (CycloneDX_JSON or SPDX_JSON).
+   --  @param Format  SBOM format (CycloneDX_JSON, SPDX_JSON, or Markdown).
    --  @param Out_Path  Filesystem path to write the SBOM to.
    --  @param Graph  Dependency graph (index 1 = root component).
    --  @param Proof_Level  adacovex:proof_level property value.
-   --  @param DAL_Target  adacovex:dal_target property value.
+   --  @param Standard  Compliance standard labelling the root assessment.
+   --  @param DAL_Target  Shared rigor tier for adacovex:dal_target/level.
    --  @param Success  True if the SBOM was written successfully.
    procedure Write_SBOM
      (Format      : Types.SBOM_Format_Kind;
       Out_Path    : String;
       Graph       : Types.Implementation.Component_Vectors.Vector;
       Proof_Level : String;
-      DAL_Target  : String;
+      Standard    : Types.Compliance_Standard;
+      DAL_Target  : Types.DAL_Level;
       Success     : out Boolean)
    with Pre => Out_Path'Length > 0;
 
@@ -132,35 +149,41 @@ package Adacovex.Renderers.SBOM is
    --  @param F  Output file to write the JSON document to.
    --  @param Graph  Dependency graph (index 1 = root component).
    --  @param Proof_Level  adacovex:proof_level property value.
-   --  @param DAL_Target  adacovex:dal_target property value.
+   --  @param Standard  Compliance standard labelling the root assessment.
+   --  @param DAL_Target  Shared rigor tier for adacovex:dal_target/level.
    procedure Write_CycloneDX_To
      (F           : in out Ada.Text_IO.File_Type;
       Graph       : Types.Implementation.Component_Vectors.Vector;
       Proof_Level : String;
-      DAL_Target  : String);
+      Standard    : Types.Compliance_Standard;
+      DAL_Target  : Types.DAL_Level);
 
    --  Write an SPDX 2.3 JSON SBOM to an already-open file.
    --  @param F  Output file to write the JSON document to.
    --  @param Graph  Dependency graph (index 1 = root component).
    --  @param Proof_Level  adacovex:proof_level property value.
-   --  @param DAL_Target  adacovex:dal_target property value.
+   --  @param Standard  Compliance standard labelling the root assessment.
+   --  @param DAL_Target  Shared rigor tier for adacovex:dal_target/level.
    procedure Write_SPDX_To
      (F           : in out Ada.Text_IO.File_Type;
       Graph       : Types.Implementation.Component_Vectors.Vector;
       Proof_Level : String;
-      DAL_Target  : String);
+      Standard    : Types.Compliance_Standard;
+      DAL_Target  : Types.DAL_Level);
 
    --  Write a human-readable Markdown SBOM to an already-open file.
    --  Renders a compliance table of every component with its version,
-   --  license, PURL, proof level, and DAL target properties.
+   --  license, PURL, proof level, standard, and DAL target properties.
    --  @param F  Output file to write the Markdown document to.
    --  @param Graph  Dependency graph (index 1 = root component).
    --  @param Proof_Level  adacovex:proof_level property value.
-   --  @param DAL_Target  adacovex:dal_target property value.
+   --  @param Standard  Compliance standard labelling the root assessment.
+   --  @param DAL_Target  Shared rigor tier for adacovex:dal_target/level.
    procedure Write_Markdown_To
      (F           : in out Ada.Text_IO.File_Type;
       Graph       : Types.Implementation.Component_Vectors.Vector;
       Proof_Level : String;
-      DAL_Target  : String);
+      Standard    : Types.Compliance_Standard;
+      DAL_Target  : Types.DAL_Level);
 
 end Adacovex.Renderers.SBOM;

@@ -9,6 +9,15 @@ HLR-RENDER-SVG: SVG badge generation
 
 ## Functions
 
+### function Render_Compliance_Badge (Assess : Adacovex.Types.Implementation.DAL_Assessment; Standard : Adacovex.Types.Compliance_Standard) return Standard.String `[Post]` `[Global]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `Assess` | DAL assessment record (evidence is shared across |
+| `Standard` | Compliance standard to label the badge with. |
+
+**Returns:** SVG badge markup.
+
 ### function Render_DO178C_Badge (Assess : Adacovex.Types.Implementation.DAL_Assessment) return Standard.String `[Post]` `[Global]`
 
 | Parameter | Description |

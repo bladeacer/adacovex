@@ -7,6 +7,7 @@ with Adacovex_Prove_Tests;
 with Adacovex_TestParser_Tests;
 with Adacovex_Config_Tests;
 with Adacovex_Renderer_SVG_Tests;
+with Adacovex_Renderer_Tests;
 with Adacovex_SBOM_Tests;
 with Adacovex_IR_Tests;
 
@@ -19,6 +20,7 @@ procedure Test_Runner is
    R_TestParser  : Runner;
    R_Config      : Runner;
    R_RendererSVG : Runner;
+   R_Renderers   : Runner;
    R_SBOM        : Runner;
    R_IR          : Runner;
 
@@ -56,6 +58,7 @@ procedure Test_Runner is
          Row ("Test-result parser", R_TestParser);
          Row ("CLI config", R_Config);
          Row ("SVG renderer", R_RendererSVG);
+         Row ("HTML/Markdown renderers", R_Renderers);
          Row ("SBOM generator", R_SBOM);
          Row ("IR synthesis", R_IR);
       end;
@@ -125,6 +128,7 @@ procedure Test_Runner is
          Row ("Test-result parser", R_TestParser);
          Row ("CLI config", R_Config);
          Row ("SVG renderer", R_RendererSVG);
+         Row ("HTML/Markdown renderers", R_Renderers);
          Row ("SBOM generator", R_SBOM);
          Row ("IR synthesis", R_IR);
       end;
@@ -149,6 +153,7 @@ begin
    Adacovex_TestParser_Tests.Run (R_TestParser);
    Adacovex_Config_Tests.Run (R_Config);
    Adacovex_Renderer_SVG_Tests.Run (R_RendererSVG);
+   Adacovex_Renderer_Tests.Run (R_Renderers);
    Adacovex_SBOM_Tests.Run (R_SBOM);
    Adacovex_IR_Tests.Run (R_IR);
 
@@ -160,6 +165,7 @@ begin
      + R_TestParser.Passed
      + R_Config.Passed
      + R_RendererSVG.Passed
+     + R_Renderers.Passed
      + R_SBOM.Passed
      + R_IR.Passed;
    Total_Failed :=
@@ -170,6 +176,7 @@ begin
      + R_TestParser.Failed
      + R_Config.Failed
      + R_RendererSVG.Failed
+     + R_Renderers.Failed
      + R_SBOM.Failed
      + R_IR.Failed;
 

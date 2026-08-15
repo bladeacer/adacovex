@@ -151,12 +151,42 @@ type Test_Status is (Pass, Fail);
 
 ## Functions
 
+### function Is_Valid_ASIL (S : Standard.String) return Standard.Boolean `[Global]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `S` |  |
+
+### function Is_Valid_Class (S : Standard.String) return Standard.Boolean `[Global]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `S` |  |
+
 ### function Standard_Level_Name (Standard : Adacovex.Types.Compliance_Standard; Level : Adacovex.Types.DAL_Level) return Standard.String `[Post]` `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|
 | `Level` |  |
 | `Standard` |  |
+
+### function Standard_Slug (S : Adacovex.Types.Compliance_Standard) return Standard.String `[Post]` `[Global]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `S` |  |
+
+### function To_ASIL (S : Standard.String) return Adacovex.Types.DAL_Level `[Global]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `S` |  |
+
+### function To_Class (S : Standard.String) return Adacovex.Types.DAL_Level `[Global]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `S` |  |
 
 ### function To_DAL (S : Standard.String) return Adacovex.Types.DAL_Level `[Global]`
 

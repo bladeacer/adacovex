@@ -13,11 +13,12 @@ package body Adacovex.Renderers.HTML is
    end Img;
 
    function Render_Dashboard
-     (Doc_Metrics : Types.Docstring_Metrics;
-      Proof       : Types.Proof_Summary;
-      Tests       : Types.Implementation.Test_Summary;
-      DAL_Assess  : Types.Implementation.DAL_Assessment;
-      Packages    : Types.Implementation.Package_Vectors.Vector) return String
+     (Doc_Metrics   : Types.Docstring_Metrics;
+      Proof         : Types.Proof_Summary;
+      Tests         : Types.Implementation.Test_Summary;
+      DAL_Assess    : Types.Implementation.DAL_Assessment;
+      Packages      : Types.Implementation.Package_Vectors.Vector;
+      All_Standards : Boolean := False) return String
    is
       Result : Unbounded_String;
 
@@ -75,7 +76,21 @@ package body Adacovex.Renderers.HTML is
         ("<div class=""card""><h2>Status Badges</h2><div class=""badge-container"">");
       Put ("<img src=""/badge/spark.svg"" alt=""SPARK Badge"">");
       Put ("<img src=""/badge/tests.svg"" alt=""Tests Badge"">");
-      Put ("<img src=""/badge/do178c.svg"" alt=""DO-178C Badge"">");
+      if All_Standards then
+         for Std in Types.Compliance_Standard loop
+            Put ("<img src=""/badge/");
+            Put (Types.Standard_Slug (Std));
+            Put (".svg"" alt=""");
+            Put (Types.To_String (Std));
+            Put (" Badge"">");
+         end loop;
+      else
+         Put ("<img src=""/badge/");
+         Put (Types.Standard_Slug (DAL_Assess.Standard));
+         Put (".svg"" alt=""");
+         Put (Types.To_String (DAL_Assess.Standard));
+         Put (" Badge"">");
+      end if;
       Put ("</div></div>");
 
       Put ("<div class=""card"">");
@@ -159,16 +174,39 @@ package body Adacovex.Renderers.HTML is
       Put ("</strong></td></tr></table></div>");
 
       Put ("<div class=""card"">");
-      Put ("<h2>DO-178C Compliance</h2>");
+      if All_Standards then
+         Put ("<h2>Compliance (all standards)</h2>");
+      else
+         Put ("<h2>");
+         Put (Types.To_String (DAL_Assess.Standard));
+         Put (" Compliance</h2>");
+      end if;
       Put ("<table><tr><th>Criterion</th><th>Status</th></tr>");
-      Put ("<tr><td>Target DAL</td><td>DAL-");
-      Put (Types.To_String (DAL_Assess.Target_DAL));
-      Put ("</td></tr>");
-      Put ("<tr><td>Overall Status</td><td class=""");
-      Put (if DAL_Assess.Status = Types.Achieved then "pass" else "fail");
-      Put (""">");
-      Put (Types.To_String (DAL_Assess.Status));
-      Put ("</td></tr>");
+      if All_Standards then
+         for Std in Types.Compliance_Standard loop
+            Put ("<tr><td>");
+            Put (Types.To_String (Std));
+            Put (" level</td><td class=""");
+            Put
+              (if DAL_Assess.Status = Types.Achieved then "pass" else "fail");
+            Put (""">");
+            Put (Types.Standard_Level_Name (Std, DAL_Assess.Target_DAL));
+            Put (" (");
+            Put (Types.To_String (DAL_Assess.Status));
+            Put (")</td></tr>");
+         end loop;
+      else
+         Put ("<tr><td>Target level</td><td>");
+         Put
+           (Types.Standard_Level_Name
+              (DAL_Assess.Standard, DAL_Assess.Target_DAL));
+         Put ("</td></tr>");
+         Put ("<tr><td>Overall Status</td><td class=""");
+         Put (if DAL_Assess.Status = Types.Achieved then "pass" else "fail");
+         Put (""">");
+         Put (Types.To_String (DAL_Assess.Status));
+         Put ("</td></tr>");
+      end if;
       Put ("<tr><td>HLR Traced</td><td>");
       Put (Img (DAL_Assess.HLR_Found));
       Put (" / ");
@@ -220,10 +258,11 @@ package body Adacovex.Renderers.HTML is
    end Render_Dashboard;
 
    function Render_Metrics_JSON
-     (Doc_Metrics : Types.Docstring_Metrics;
-      Proof       : Types.Proof_Summary;
-      Tests       : Types.Implementation.Test_Summary;
-      DAL_Assess  : Types.Implementation.DAL_Assessment) return String
+     (Doc_Metrics   : Types.Docstring_Metrics;
+      Proof         : Types.Proof_Summary;
+      Tests         : Types.Implementation.Test_Summary;
+      DAL_Assess    : Types.Implementation.DAL_Assessment;
+      All_Standards : Boolean := False) return String
    is
       Result : Unbounded_String;
 
@@ -251,9 +290,47 @@ package body Adacovex.Renderers.HTML is
       Put ("""doc_coverage"":");
       Put (Img (Doc_Metrics.Coverage_Pct));
       Put (",");
+      Put ("""standard"":""");
+      if All_Standards then
+         Put ("all");
+      else
+         Put (Types.To_String (DAL_Assess.Standard));
+      end if;
+      Put (""",");
+      Put ("""level"":""");
+      if All_Standards then
+         Put
+           (Types.Standard_Level_Name (Types.DO_178C, DAL_Assess.Target_DAL));
+      else
+         Put
+           (Types.Standard_Level_Name
+              (DAL_Assess.Standard, DAL_Assess.Target_DAL));
+      end if;
+      Put (""",");
       Put ("""dal_status"":""");
       Put (Types.To_String (DAL_Assess.Status));
       Put ("""");
+      if All_Standards then
+         Put (",""standards"":{");
+         declare
+            First : Boolean := True;
+         begin
+            for Std in Types.Compliance_Standard loop
+               if not First then
+                  Put (",");
+               end if;
+               First := False;
+               Put ("""");
+               Put (Types.To_String (Std));
+               Put (""":{""level"":""");
+               Put (Types.Standard_Level_Name (Std, DAL_Assess.Target_DAL));
+               Put (""",""status"":""");
+               Put (Types.To_String (DAL_Assess.Status));
+               Put ("""}");
+            end loop;
+         end;
+         Put ("}");
+      end if;
       Put ("}");
 
       return To_String (Result);

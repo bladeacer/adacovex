@@ -8,6 +8,7 @@
 - [Adacovex_IR_Tests](adacovex_ir_tests.md)
 - [Adacovex_Prove_Tests](adacovex_prove_tests.md)
 - [Adacovex_Renderer_SVG_Tests](adacovex_renderer_svg_tests.md)
+- [Adacovex_Renderer_Tests](adacovex_renderer_tests.md)
 - [Adacovex_SBOM_Tests](adacovex_sbom_tests.md)
 - [Adacovex_Scanner_Tests](adacovex_scanner_tests.md)
 - [Adacovex_TestParser_Tests](adacovex_testparser_tests.md)

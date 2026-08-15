@@ -23,7 +23,7 @@ Rules:
 - `## Changes` and `## Fixes` use numbered subsections (`### C#:` / `### H#:`)
   with a short bold-worthy title, then prose -- no bare bullet lists.
 - `## Proof Results` states the SPARK level (Stone..Platinum), the exact VC
-  totals (e.g. `343/343 VCs proved across 38 analyzed units`), and calls out
+  totals (e.g. `398/398 VCs proved across 39 analyzed units`), and calls out
   whether any proof metrics changed.
 - `## Traceability` lists any new HLRs by tag name and package, then the
   existing `-- HLR-*` tags covering the changed packages.
@@ -39,13 +39,14 @@ Native (zero-dependency) framework (`Adacovex.Test_Support`, no AUnit). Source:
 
 | Category | Tests |
 |----------|-------|
-| Types conversions | 44 |
+| Types conversions | 67 |
 | DAL compliance | 11 |
 | Source scanner | 83 |
 | GNATprove parser | 64 |
 | Test-result parser | 43 |
-| CLI config | 33 |
-| SVG renderer | 30 |
-| SBOM generator | 60 |
+| CLI config | 34 |
+| SVG renderer | 36 |
+| HTML/Markdown renderers | 17 |
+| SBOM generator | 78 |
 | IR synthesis | 27 |
-| **Total** | **395** |
+| **Total** | **460** |

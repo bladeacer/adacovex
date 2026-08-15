@@ -121,6 +121,92 @@ package body Adacovex.Types is
       end if;
    end To_Standard;
 
+   --  Uppercase a string (ASCII only).  Reused by the dedicated level
+   --  parsers below; mirrors the loop already proved in To_Standard.
+   function To_Upper (S : String) return String
+   with Post => To_Upper'Result'Length = S'Length
+   is
+      U : String (1 .. S'Length) := (others => ' ');
+   begin
+      for I in S'Range loop
+         pragma
+           Loop_Invariant
+             (I >= S'First
+                and then I <= S'Last
+                and then U'Length = S'Length
+                and then (I - S'First + 1) in U'Range);
+         if S (I) in 'a' .. 'z' then
+            U (I - S'First + 1) := Character'Val (Character'Pos (S (I)) - 32);
+         else
+            U (I - S'First + 1) := S (I);
+         end if;
+      end loop;
+      return U;
+   end To_Upper;
+
+   function To_ASIL (S : String) return DAL_Level is
+      U : constant String := To_Upper (S);
+   begin
+      if U = "A" then
+         return DAL_D;
+      elsif U = "B" then
+         return DAL_C;
+      elsif U = "C" then
+         return DAL_B;
+      elsif U = "D" then
+         return DAL_A;
+      elsif U = "QM" then
+         return DAL_E;
+      else
+         return DAL_C;
+      end if;
+   end To_ASIL;
+
+   function Is_Valid_ASIL (S : String) return Boolean is
+      U : constant String := To_Upper (S);
+   begin
+      return
+        U = "A"
+        or else U = "B"
+        or else U = "C"
+        or else U = "D"
+        or else U = "QM";
+   end Is_Valid_ASIL;
+
+   function To_Class (S : String) return DAL_Level is
+      U : constant String := To_Upper (S);
+   begin
+      if U = "A" then
+         return DAL_C;
+      elsif U = "B" then
+         return DAL_B;
+      elsif U = "C" then
+         return DAL_A;
+      else
+         return DAL_C;
+      end if;
+   end To_Class;
+
+   function Is_Valid_Class (S : String) return Boolean is
+      U : constant String := To_Upper (S);
+   begin
+      return U = "A" or else U = "B" or else U = "C";
+   end Is_Valid_Class;
+
+   function Standard_Slug (S : Compliance_Standard) return String is
+   begin
+      case S is
+         when DO_178C   =>
+            return "do178c";
+
+         when ISO_26262 =>
+            return "iso26262";
+
+         when IEC_62304 =>
+            return "iec62304";
+      end case;
+   end Standard_Slug;
+
    function Standard_Level_Name
      (Standard : Compliance_Standard; Level : DAL_Level) return String is
    begin

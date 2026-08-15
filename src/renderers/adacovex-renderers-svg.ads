@@ -23,9 +23,21 @@ package Adacovex.Renderers.SVG is
      (Tests : Types.Implementation.Test_Summary) return String
    with Post => Render_Tests_Badge'Result'Length > 0, Global => null;
 
-   --  Render a DO-178C compliance badge (Achieved / Unmet).
-   --  Returns SVG markup with "DO-178C" as the label and the compliance
-   --  status as the value, green for Achieved, red for Unmet.
+   --  Render a compliance badge for a specific standard (Achieved / Unmet).
+   --  Returns SVG markup with the standard's name as the label and its
+   --  standard-specific level + PASS/FAIL as the value, green for Achieved,
+   --  red for Unmet.
+   --  @param Assess  DAL assessment record (evidence is shared across
+   --                 standards; only the level label changes).
+   --  @param Standard  Compliance standard to label the badge with.
+   --  @return SVG badge markup.
+   function Render_Compliance_Badge
+     (Assess   : Types.Implementation.DAL_Assessment;
+      Standard : Types.Compliance_Standard) return String
+   with Post => Render_Compliance_Badge'Result'Length > 0, Global => null;
+
+   --  Render the compliance badge for the standard recorded in the
+   --  assessment (backwards-compatible convenience wrapper).
    --  @param Assess  DAL assessment record.
    --  @return SVG badge markup.
    function Render_DO178C_Badge

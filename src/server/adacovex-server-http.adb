@@ -330,7 +330,8 @@ package body Adacovex.Server.HTTP is
                State.Proof,
                State.Tests,
                State.DAL_Assess,
-               State.Packages),
+               State.Packages,
+               State.All_Standards),
             Is_KA);
       elsif Path = "/badge/spark.svg" then
          Send_Response
@@ -351,7 +352,24 @@ package body Adacovex.Server.HTTP is
            (Channel,
             "200 OK",
             "image/svg+xml",
-            Adacovex.Renderers.SVG.Render_DO178C_Badge (State.DAL_Assess),
+            Adacovex.Renderers.SVG.Render_Compliance_Badge
+              (State.DAL_Assess, Types.DO_178C),
+            Is_KA);
+      elsif Path = "/badge/iso26262.svg" then
+         Send_Response
+           (Channel,
+            "200 OK",
+            "image/svg+xml",
+            Adacovex.Renderers.SVG.Render_Compliance_Badge
+              (State.DAL_Assess, Types.ISO_26262),
+            Is_KA);
+      elsif Path = "/badge/iec62304.svg" then
+         Send_Response
+           (Channel,
+            "200 OK",
+            "image/svg+xml",
+            Adacovex.Renderers.SVG.Render_Compliance_Badge
+              (State.DAL_Assess, Types.IEC_62304),
             Is_KA);
       elsif Path = "/api/metrics" then
          Send_Response
@@ -359,7 +377,11 @@ package body Adacovex.Server.HTTP is
             "200 OK",
             "application/json",
             Adacovex.Renderers.HTML.Render_Metrics_JSON
-              (State.Doc_Metrics, State.Proof, State.Tests, State.DAL_Assess),
+              (State.Doc_Metrics,
+               State.Proof,
+               State.Tests,
+               State.DAL_Assess,
+               State.All_Standards),
             Is_KA);
       else
          Send_Response

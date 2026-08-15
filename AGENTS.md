@@ -21,10 +21,11 @@ any Ada/SPARK project.
 
 Self-assessment (`make run-self`) must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
-- Platinum SPARK level (369 VCs under gnatprove 16.1.0, 0 unproved; see
+- Platinum SPARK level (398 VCs under gnatprove 16.1.0, 0 unproved; see
   `docs/proof/16.1.0-ledger.md`)
-- 395/395 native tests passing
-- DAL-C Achieved
+- 460/460 native tests passing
+- DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
+  `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
 ## Architecture
 
@@ -68,16 +69,17 @@ src/
 |   `-- adacovex-server-router.ads            -- Parent package for HTTP request routing (future expansion)
 `-- tests/
     |-- adacovex-test_support.ads/.adb        -- Native test Runner type
-    |-- adacovex_config_tests.ads/.adb        -- CLI config tests (33)
+    |-- adacovex_config_tests.ads/.adb        -- CLI config tests (34)
     |-- adacovex_dal_tests.ads/.adb           -- DAL compliance tests (11)
     |-- adacovex_ir_tests.ads/.adb            -- IR synthesis tests (27)
     |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (64)
-    |-- adacovex_renderer_svg_tests.ads/.adb  -- SVG renderer tests (30)
-    |-- adacovex_sbom_tests.ads/.adb          -- SBOM / manifest graph tests (60)
+    |-- adacovex_renderer_svg_tests.ads/.adb  -- SVG renderer tests (36)
+    |-- adacovex_renderer_tests.ads/.adb      -- HTML/Markdown renderer tests (17)
+    |-- adacovex_sbom_tests.ads/.adb          -- SBOM / manifest graph tests (78)
     |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (83)
     |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (43)
-    |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (44)
-    `-- test_runner.adb                       -- Test suite entry point (395 tests)
+    |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (67)
+    `-- test_runner.adb                       -- Test suite entry point (460 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -102,8 +104,9 @@ adacovex status [--target=PATH]
 ```
 
 Full flag reference, detailed behavior, CI threshold gates (`--require-*`),
-exit codes, the `sbom` subcommand, and the `--standard` flag:
-[docs/cli-reference.md](docs/cli-reference.md).
+exit codes, the `sbom` subcommand, the per-standard level flags
+(`--dal`, `--asil`, `--class`), and the `--standard` flag (including
+`--standard=all`): [docs/cli-reference.md](docs/cli-reference.md).
 
 `adacovex status` reports toolchain + platform state (Alire installed,
 gnatprove dependency-managed/detectable, CPU count, CI status) without running
@@ -143,7 +146,7 @@ for paths, and no `pip install` / external imports. Run them with
 | Target | Description |
 |--------|-------------|
 | `build` | `alr build` (adacovex + test_runner, covex alias) |
-| `test` | Build + run the 395-test native suite |
+| `test` | Build + run the 460-test native suite |
 | `prove` | `./bin/adacovex prove --target=. --no-svg` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
 | `fmt` | Format Ada sources (gnatformat) |
@@ -177,9 +180,9 @@ project: [README.md](README.md#installing-adacovex).
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 395/395 passing |
+| Unit tests | `make test` | 460/460 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
-| SPARK proof | `make prove` | Platinum (369 VCs, 0 unproved under gnatprove 16.1.0) |
+| SPARK proof | `make prove` | Platinum (398 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
 
 ## Changelog format
@@ -191,7 +194,7 @@ rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 395 tests across 9 categories).
+Native zero-dependency suite (`src/tests/`, 460 tests across 10 categories).
 Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests).
 
