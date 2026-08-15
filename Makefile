@@ -1,6 +1,4 @@
-.PHONY: help build test prove doc clean run-self run-ada-crdt \
-        dev-setup prod-setup ascii-check fmt bump-version coverage-gate \
-        release publish test-publish _dev_cmd agents-tree sbom
+.PHONY: help build test prove doc clean run-self run-ada-crdt dev-setup prod-setup ascii-check fmt bump-version coverage-gate release publish test-publish _dev_cmd agents-tree sbom
 
 .DEFAULT_GOAL := help
 
@@ -27,6 +25,8 @@ help:
 	@echo '                the latest tag; verifies the release gate logic)'
 	@echo '  agents-tree   Regenerate the AGENTS.md src/ architecture tree'
 	@echo '                (tools/gen-agents-tree.py + tools/agents-tree.map)'
+	@echo '  proof-status  Update the VC count + SPARK level in the docs from'
+	@echo '                the current gnatprove.out (tools/update-proof-status.py)'
 	@echo '  bump-version  Bump version across alire.toml, alire-dev.toml,'
 	@echo '                adacovex.ads, releases, index (VERSION=x.y.z)'
 	@echo '  release       Tag, update releases+index, push. Use VERSION=x.y.z'
@@ -52,7 +52,7 @@ test: build
 	./bin/test_runner
 
 prove: build
-	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex prove --target=. --dal=C --require-spark=Platinum --require-docstrings=100 --require-tests=361 --require-proof=100 --emit-svg=docs/badges/
+	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex prove --target=. --dal=C --require-spark=Platinum --require-docstrings=100 --require-tests=368 --require-proof=100 --emit-svg=docs/badges/
 
 fmt:
 	@$(MAKE) _dev_cmd CMD="alr exec -- gnatformat -P adacovex.gpr -U"
@@ -67,7 +67,7 @@ doc:
 	  sed -i "/](adacovex-test_support\.md)/d" docs/api-docs/index.md 2>/dev/null'
 
 run-self: build
-	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex --dal=C --require-spark=Platinum --require-docstrings=100 --require-tests=361 --require-proof=100 --emit-svg=docs/badges/
+	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex --dal=C --require-spark=Platinum --require-docstrings=100 --require-tests=368 --require-proof=100 --emit-svg=docs/badges/
 
 run-ada-crdt: build
 	SOURCE_DATE_EPOCH=$$(git -C ../Ada_CRDT show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex --target=../Ada_CRDT --dal=C
@@ -100,6 +100,9 @@ agents-tree:
 	@python3 tools/gen-agents-tree.py > /tmp/agents-tree.out && \
 	python3 tools/apply-agents-tree.py /tmp/agents-tree.out && \
 	rm -f /tmp/agents-tree.out
+
+proof-status:
+	@python3 tools/update-proof-status.py
 
 ascii-check:
 	@echo "=== ASCII Charset Verification ==="; \
@@ -189,11 +192,11 @@ release:
 		version=$$(sed -n 's/^version = "\(.*\)"/\1/p' alire.toml); \
 	fi; \
 	echo "=== Generating proof artifacts ==="; \
-	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex prove --target=. --dal=C --require-spark=Platinum --require-docstrings=100 --require-tests=361 --require-proof=100 --emit-svg=docs/badges/; \
+	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex prove --target=. --dal=C --require-spark=Platinum --require-docstrings=100 --require-tests=368 --require-proof=100 --emit-svg=docs/badges/; \
 	echo "=== Building release binary (covex v$$version) ==="; \
 	alr build --release; \
 	echo "=== Validating self-assessment (DAL-C) ==="; \
-	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex --target=. --dal=C --require-spark=Platinum --require-docstrings=100 --require-tests=361 --require-proof=100 --emit-svg=docs/badges/; \
+	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex --target=. --dal=C --require-spark=Platinum --require-docstrings=100 --require-tests=368 --require-proof=100 --emit-svg=docs/badges/; \
 	echo "=== Docstring coverage gate (last release vs current) ==="; \
 	prev_tag=$$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$$' | grep -v "^v$$version$$" | head -1); \
 	if [ -z "$$prev_tag" ]; then \

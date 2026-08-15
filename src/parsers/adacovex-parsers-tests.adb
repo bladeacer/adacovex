@@ -23,7 +23,6 @@ package body Adacovex.Parsers.Tests is
    end Trim_Left;
 
    function Starts_With (S : String; Pre : String) return Boolean
-   with SPARK_Mode => On
    is
    begin
       if Pre'Length > S'Length then

@@ -250,7 +250,7 @@ wants to pin so a regression cannot slip through:
 
 ```bash
 adacovex --target=. --require-spark=Platinum --require-docstrings=100 \
-         --require-tests=361 --require-proof=100
+         --require-tests=368 --require-proof=100
 ```
 
 The `require-spark` gate compares the honest assessed SPARK level
@@ -711,7 +711,7 @@ to document. Overloaded subprograms require one patch entry per overload.
 | Target | Description |
 |--------|-------------|
 | `build` | `alr build` (adacovex + test_runner, covex alias) |
-| `test` | Build and run native test suite (361 tests) |
+| `test` | Build and run native test suite (368 tests) |
 | `prove` | `./bin/adacovex prove --target=. --no-svg` (resolves gnatprove from the dev manifest / `$PATH` / cache / download) |
 | `fmt` | Format Ada sources with `gnatformat` |
 | `doc` | Generate API docs via gnatdoc + rst2md |
@@ -736,14 +736,14 @@ src/
 |-- compliance/                   -- DAL assessment logic
 |-- renderers/                    -- ANSI, SVG, Markdown, HTML output
 |-- server/                       -- HTTP/1.1 dashboard server
-|-- tests/                        -- Native test suite (361 tests)
+|-- tests/                        -- Native test suite (368 tests)
 ```
 
 ## Verification
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 361/361 passing |
+| Unit tests | `make test` | 368/368 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (369 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, DAL-C (strict mode) |

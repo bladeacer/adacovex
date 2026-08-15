@@ -5,7 +5,6 @@ package body Adacovex.Compliance.DAL is
    use type Types.DAL_Level;
 
    function Min_SPARK_For (Level : Types.DAL_Level) return Types.SPARK_Level
-   with SPARK_Mode => On
    is
    begin
       case Level is
@@ -27,7 +26,6 @@ package body Adacovex.Compliance.DAL is
    end Min_SPARK_For;
 
    function Need_Tests (Level : Types.DAL_Level) return Boolean
-   with SPARK_Mode => On
    is
    begin
       return Level /= Types.DAL_E;
