@@ -8,21 +8,68 @@ package body Adacovex.Parsers.Source is
    package Package_Store is new
      Adacovex.Cache.Serialization (Types.Implementation.Package_Info);
 
-   function Is_Subprogram_Decl (Line : String) return Boolean is
-      Trim : String (1 .. Line'Length);
-      TL   : Natural := 0;
+   --  True when S, starting at Pos, equals the keyword Kw and is followed by
+   --  a non-identifier character (or end of string), so `procedure_X` and
+   --  `functionality` never match `procedure` / `function`.
+   function Match_Keyword
+     (S : String; Pos : Natural; Kw : String) return Boolean
+   is
+      Nxt : Natural;
    begin
-      for I in Line'Range loop
-         if Line (I) /= ' ' then
-            TL := TL + 1;
-            Trim (TL) := Line (I);
-         end if;
-      end loop;
+      if Pos < S'First or else Pos + Kw'Length - 1 > S'Last then
+         return False;
+      end if;
+      if S (Pos .. Pos + Kw'Length - 1) /= Kw then
+         return False;
+      end if;
+      Nxt := Pos + Kw'Length;
+      if Nxt > S'Last then
+         return True;
+      end if;
       return
-        (TL >= 9 and then Trim (1 .. 9) = "procedure")
-        or else (TL >= 8 and then Trim (1 .. 8) = "function")
-        or else (TL >= 16 and then Trim (1 .. 16) = "genericprocedure")
-        or else (TL >= 15 and then Trim (1 .. 15) = "genericfunction");
+        S (Nxt) not in 'a' .. 'z'
+        and then S (Nxt) not in 'A' .. 'Z'
+        and then S (Nxt) not in '0' .. '9'
+        and then S (Nxt) /= '_';
+   end Match_Keyword;
+
+   --  Advance Pos past blanks (space or tab); stops at the first non-blank
+   --  character or at the end of S.
+   procedure Skip_Blanks (S : String; Pos : in out Natural) is
+   begin
+      while Pos <= S'Last and then (S (Pos) = ' ' or else S (Pos) = ASCII.HT)
+      loop
+         Pos := Pos + 1;
+      end loop;
+   end Skip_Blanks;
+
+   function Is_Subprogram_Decl (Line : String) return Boolean is
+      Pos : Natural := Line'First;
+   begin
+      Skip_Blanks (Line, Pos);
+
+      --  Optional object-oriented modifiers.
+      if Match_Keyword (Line, Pos, "overriding") then
+         Pos := Pos + 10;
+         Skip_Blanks (Line, Pos);
+      elsif Match_Keyword (Line, Pos, "not") then
+         Pos := Pos + 3;
+         Skip_Blanks (Line, Pos);
+         if Match_Keyword (Line, Pos, "overriding") then
+            Pos := Pos + 10;
+            Skip_Blanks (Line, Pos);
+         end if;
+      end if;
+
+      --  Optional single-line generic keyword.
+      if Match_Keyword (Line, Pos, "generic") then
+         Pos := Pos + 7;
+         Skip_Blanks (Line, Pos);
+      end if;
+
+      return
+        Match_Keyword (Line, Pos, "procedure")
+        or else Match_Keyword (Line, Pos, "function");
    end Is_Subprogram_Decl;
 
    function Has_HLR_Tag
@@ -395,56 +442,52 @@ package body Adacovex.Parsers.Source is
                   In_Subp := True;
 
                   declare
-                     Trim     : String (1 .. Last);
-                     TL       : Natural := 0;
-                     In_SName : Boolean := False;
-                     SName    : String (1 .. Types.Max_Desc_Str);
-                     SNLen    : Natural := 0;
-                     Skip     : Natural := 0;
+                     L     : constant String := Line (1 .. Last);
+                     Pos   : Natural := L'First;
+                     SName : String (1 .. Types.Max_Desc_Str);
+                     SNLen : Natural := 0;
                   begin
-                     for I in 1 .. Last loop
-                        if Line (I) /= ' ' then
-                           TL := TL + 1;
-                           Trim (TL) := Line (I);
+                     --  Skip the leading keywords Is_Subprogram_Decl already
+                     --  validated (modifiers, generic, procedure/function) to
+                     --  reach the subprogram name.  Working on the raw line
+                     --  (blanks intact) keeps the name from merging with a
+                     --  following `return` keyword.
+                     Skip_Blanks (L, Pos);
+                     if Match_Keyword (L, Pos, "overriding") then
+                        Pos := Pos + 10;
+                        Skip_Blanks (L, Pos);
+                     end if;
+                     if Match_Keyword (L, Pos, "not") then
+                        Pos := Pos + 3;
+                        Skip_Blanks (L, Pos);
+                        if Match_Keyword (L, Pos, "overriding") then
+                           Pos := Pos + 10;
+                           Skip_Blanks (L, Pos);
                         end if;
-                     end loop;
+                     end if;
+                     if Match_Keyword (L, Pos, "generic") then
+                        Pos := Pos + 7;
+                        Skip_Blanks (L, Pos);
+                     end if;
+                     if Match_Keyword (L, Pos, "procedure") then
+                        Pos := Pos + 9;
+                     elsif Match_Keyword (L, Pos, "function") then
+                        Pos := Pos + 8;
+                     end if;
+                     Skip_Blanks (L, Pos);
 
-                     for I in 1 .. TL loop
-                        if Skip > 0 then
-                           Skip := Skip - 1;
-                        elsif not In_SName then
-                           if I + 8 <= TL
-                             and then Trim (I .. I + 8) = "procedure"
-                           then
-                              Skip := 8;
-                           elsif I + 7 <= TL
-                             and then Trim (I .. I + 7) = "function"
-                           then
-                              Skip := 7;
-                           elsif I + 6 <= TL
-                             and then Trim (I .. I + 6) = "generic"
-                           then
-                              Skip := 6;
-                           elsif Trim (I)
-                                 in 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_'
-                           then
-                              In_SName := True;
-                              SNLen := 1;
-                              SName (SNLen) := Trim (I);
-                           end if;
-                        elsif Trim (I)
-                              in 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_'
-                        then
-                           --  Clamp the stored name to the fixed buffer;
-                           --  the scan still consumes the full identifier so
-                           --  following tokens are not misparsed.
-                           if SNLen < SName'Length then
-                              SNLen := SNLen + 1;
-                              SName (SNLen) := Trim (I);
-                           end if;
-                        else
-                           exit;
+                     --  Collect the identifier at Pos, clamped to the fixed
+                     --  buffer; the scan still consumes the full identifier
+                     --  so following tokens are not misparsed.
+                     while Pos <= L'Last
+                       and then L (Pos)
+                                in 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_'
+                     loop
+                        if SNLen < SName'Length then
+                           SNLen := SNLen + 1;
+                           SName (SNLen) := L (Pos);
                         end if;
+                        Pos := Pos + 1;
                      end loop;
 
                      Pkg.Subprograms (Subp_Idx).Name_Len := SNLen;

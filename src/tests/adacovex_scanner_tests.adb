@@ -695,6 +695,47 @@ package body Adacovex_Scanner_Tests is
             "Test 20: subprogram name clamped to Max_Desc_Str");
       end;
 
+      --  Test 21: word-boundary matching (identifiers prefixed with
+      --  `function`/`procedure` are not subprograms) and OOP modifiers
+      --  (`overriding` / `not overriding`) are recognized.
+      begin
+         declare
+            F : File_Type;
+         begin
+            Create (F, Out_File, Tmp_File);
+            Put_Line (F, "package Oop_Boundary is");
+            Put_Line (F, "   pragma Pure;");
+            Put_Line (F, "   functionality : Integer := 0;");
+            Put_Line (F, "   procedure_holder : Integer := 0;");
+            Put_Line (F, "   --  @param X  Value to reset.");
+            Put_Line (F, "   overriding procedure Reset (X : Integer);");
+            Put_Line (F, "   --  @return The current value.");
+            Put_Line (F, "   not overriding function Value return Integer;");
+            Put_Line (F, "end Oop_Boundary;");
+            Close (F);
+         end;
+      end;
+
+      Adacovex.Parsers.Source.Scan_Ads_File (Tmp_File, Pkg, Success);
+      R.Check (Success, "Test 21: parse succeeded");
+      R.Check
+        (Natural (Pkg.Subprograms.Length) = 2,
+         "Test 21: 2 subprograms (boundary excludes identifiers)");
+      R.Check
+        (Natural (Pkg.Subprograms.Length) >= 1
+         and then Pkg.Subprograms (1).Name_Len = 5
+         and then Pkg.Subprograms (1).Name (1 .. 5) = "Reset"
+         and then Pkg.Subprograms (1).Has_Docstring
+         and then Pkg.Subprograms (1).Doc_Param_Ct = 1,
+         "Test 21: overriding procedure parsed with name Reset");
+      R.Check
+        (Natural (Pkg.Subprograms.Length) >= 2
+         and then Pkg.Subprograms (2).Name_Len = 5
+         and then Pkg.Subprograms (2).Name (1 .. 5) = "Value"
+         and then Pkg.Subprograms (2).Has_Docstring
+         and then Pkg.Subprograms (2).Doc_Return,
+         "Test 21: not overriding function parsed with name Value");
+
       --  Cleanup
       begin
          Ada.Directories.Delete_File (Tmp_File);

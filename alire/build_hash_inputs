@@ -1,5 +1,5 @@
 environment:PATH=gprbuild_26.0.1_e3f27f25/bin:gnat_native_15.2.1_4640d4b3/bin:covex_1.9.0_filesystem/bin:/home/data/.nvm/versions/node/v26.7.0/bin:/home/data/.local/bin:/home/data/go/bin:/home/data/.cargo/bin:~/Desktop/projects/mnemosync:~/.local/bin:~/go/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/var/lib/flatpak/exports/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl
 external:COVEX_LIBRARY_TYPE=default
 external:LIBRARY_TYPE=default
-profile:covex=RELEASE
-switches:covex=-O3,-fdata-sections,-ffunction-sections,-gnatW8,-gnatn
+profile:covex=DEVELOPMENT
+switches:covex=-Og,-fdata-sections,-ffunction-sections,-g,-gnatVa,-gnatW8,-gnatw.X,-gnatwa,-gnaty-d,-gnaty3,-gnatyA,-gnatyB,-gnatyI,-gnatyO,-gnatyS,-gnatya,-gnatyb,-gnatyc,-gnatye,-gnatyf,-gnatyh,-gnatyi,-gnatyk,-gnatyl,-gnatym,-gnatyn,-gnatyp,-gnatyr,-gnatyt,-gnatyu,-gnatyx
