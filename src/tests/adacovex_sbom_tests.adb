@@ -347,38 +347,38 @@ package body Adacovex_SBOM_Tests is
          R.Check (C.Parent = 1, "lib_a parent is root");
          R.Check (C.From_GPR, "lib_a resolved from GPR with clause");
 
-          C := Find_Name (Graph, "lib_b");
-          R.Check (C.Parent = 1, "lib_b parent is root");
-          R.Check (C.From_GPR, "lib_b resolved from GPR with clause");
-       end;
+         C := Find_Name (Graph, "lib_b");
+         R.Check (C.Parent = 1, "lib_b parent is root");
+         R.Check (C.From_GPR, "lib_b resolved from GPR with clause");
+      end;
 
-       --  Manifest-declared deps register even with no GPR with-clauses:
-       --  base from alire.toml, dev from alire-dev.toml.
-       declare
-          Graph   : Component_Vectors.Vector;
-          Success : Boolean := False;
-          C       : Component_Info;
-       begin
-          Make_Dep_Fixture;
-          Adacovex.Parsers.Manifest.Build_Dependency_Graph
-            ("obj/sbom_dep_fixture",
-             "obj/sbom_dep_fixture/alire.toml",
-             Graph,
-             Success);
-          R.Check (Success, "dep manifest graph success");
-          R.Check
-            (Count_Name (Graph, "libbase") = 1, "libbase registered (base)");
-          R.Check
-            (Count_Name (Graph, "libdev1") = 1, "libdev1 registered (dev)");
-          R.Check
-            (Count_Name (Graph, "libdev2") = 1, "libdev2 registered (dev)");
-          C := Find_Name (Graph, "libbase");
-          R.Check (C.Scope = Scope_Base, "libbase scope = base");
-          C := Find_Name (Graph, "libdev1");
-          R.Check (C.Scope = Scope_Dev, "libdev1 scope = dev");
-          C := Find_Name (Graph, "libdev2");
-          R.Check (C.Scope = Scope_Dev, "libdev2 scope = dev");
-       end;
+      --  Manifest-declared deps register even with no GPR with-clauses:
+      --  base from alire.toml, dev from alire-dev.toml.
+      declare
+         Graph   : Component_Vectors.Vector;
+         Success : Boolean := False;
+         C       : Component_Info;
+      begin
+         Make_Dep_Fixture;
+         Adacovex.Parsers.Manifest.Build_Dependency_Graph
+           ("obj/sbom_dep_fixture",
+            "obj/sbom_dep_fixture/alire.toml",
+            Graph,
+            Success);
+         R.Check (Success, "dep manifest graph success");
+         R.Check
+           (Count_Name (Graph, "libbase") = 1, "libbase registered (base)");
+         R.Check
+           (Count_Name (Graph, "libdev1") = 1, "libdev1 registered (dev)");
+         R.Check
+           (Count_Name (Graph, "libdev2") = 1, "libdev2 registered (dev)");
+         C := Find_Name (Graph, "libbase");
+         R.Check (C.Scope = Scope_Base, "libbase scope = base");
+         C := Find_Name (Graph, "libdev1");
+         R.Check (C.Scope = Scope_Dev, "libdev1 scope = dev");
+         C := Find_Name (Graph, "libdev2");
+         R.Check (C.Scope = Scope_Dev, "libdev2 scope = dev");
+      end;
 
       --  CycloneDX 1.5 JSON rendering.
       declare

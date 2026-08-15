@@ -22,6 +22,22 @@ HLR-DAL-E: DAL-E compliance criteria
 
 **Returns:** True if Assessment.Status = Achieved.
 
+### function Min_SPARK_For (Level : Adacovex.Types.DAL_Level) return Adacovex.Types.SPARK_Level `[Global]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `Level` | Target DAL level (A-E). |
+
+**Returns:** The minimum SPARK level that satisfies the level's criteria.
+
+### function Need_Tests (Level : Adacovex.Types.DAL_Level) return Standard.Boolean `[Global]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `Level` | Target DAL level (A-E). |
+
+**Returns:** True unless Level is DAL-E.
+
 ## Procedures
 
 ### procedure Assess_DAL (Level : Adacovex.Types.DAL_Level; Target_Dir : Standard.String; Packages : Adacovex.Types.Implementation.Package_Vectors.Vector; Proof_Summary : Adacovex.Types.Proof_Summary; Test_Summary : Adacovex.Types.Implementation.Test_Summary; Assessment : Adacovex.Types.Implementation.DAL_Assessment)

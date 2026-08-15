@@ -78,19 +78,17 @@ package body Adacovex.Parsers.Manifest is
       return S (F .. L);
    end Trim;
 
+   --  Whether S begins with the exact character sequence Pre.  The
+   --  precondition gives the function a contract so gnatprove analyzes it as
+   --  a unit instead of re-proving the body at every call site.
    function Starts_With (S : String; Pre : String) return Boolean
-   with SPARK_Mode => On
+   with SPARK_Mode => On, Pre => S'First >= 1 and S'Last < Natural'Last
    is
    begin
       if Pre'Length > S'Length then
          return False;
       end if;
-      for I in Pre'Range loop
-         if Pre (I) /= S (S'First + (I - Pre'First)) then
-            return False;
-         end if;
-      end loop;
-      return True;
+      return S (S'First .. S'First + Pre'Length - 1) = Pre;
    end Starts_With;
 
    --  Extract the quoted value of "Key = "value"" from a line of TOML.
@@ -663,47 +661,47 @@ package body Adacovex.Parsers.Manifest is
       C.Kind := Types.Dependency_Component;
       C.Parent := Parent;
       C.From_GPR := From_GPR;
-       C.Scope := Scope;
-       Graph.Append (C);
-    end Append_Dependency;
+      C.Scope := Scope;
+      Graph.Append (C);
+   end Append_Dependency;
 
-    --  Register manifest-declared dependencies that no GPR with-clause or
-    --  lockfile resolved: base deps from the publishing manifest (alire.toml)
-    --  and dev deps from alire-dev.toml.  Their version constraints are not
-    --  solved (only the crate name is parsed), so they appear name-only with a
-    --  "pkg:alire/<name>" purl, like GPR-only deps.  Already-registered names
-    --  are skipped by Append_Dependency.
-    procedure Register_Manifest_Deps
-      (Graph     : in out Types.Implementation.Component_Vectors.Vector;
-       Base_Names : Name_Vectors.Vector;
-       Dev_Names  : Name_Vectors.Vector)
-    is
-       procedure Register
-         (Names : Name_Vectors.Vector; Scope : Types.Component_Scope) is
-       begin
-          for I in 1 .. Integer (Names.Length) loop
-             declare
-                Name : constant String := Names (I).Name (1 .. Names (I).Len);
-             begin
-                Append_Dependency
-                  (Graph,
-                   Name,
-                   "",
-                   "",
-                   "",
-                   "pkg:alire/" & Name,
-                   1,
-                   False,
-                   Scope);
-             end;
-          end loop;
-       end Register;
-    begin
-       Register (Base_Names, Types.Scope_Base);
-       Register (Dev_Names, Types.Scope_Dev);
-    end Register_Manifest_Deps;
+   --  Register manifest-declared dependencies that no GPR with-clause or
+   --  lockfile resolved: base deps from the publishing manifest (alire.toml)
+   --  and dev deps from alire-dev.toml.  Their version constraints are not
+   --  solved (only the crate name is parsed), so they appear name-only with a
+   --  "pkg:alire/<name>" purl, like GPR-only deps.  Already-registered names
+   --  are skipped by Append_Dependency.
+   procedure Register_Manifest_Deps
+     (Graph      : in out Types.Implementation.Component_Vectors.Vector;
+      Base_Names : Name_Vectors.Vector;
+      Dev_Names  : Name_Vectors.Vector)
+   is
+      procedure Register
+        (Names : Name_Vectors.Vector; Scope : Types.Component_Scope) is
+      begin
+         for I in 1 .. Integer (Names.Length) loop
+            declare
+               Name : constant String := Names (I).Name (1 .. Names (I).Len);
+            begin
+               Append_Dependency
+                 (Graph,
+                  Name,
+                  "",
+                  "",
+                  "",
+                  "pkg:alire/" & Name,
+                  1,
+                  False,
+                  Scope);
+            end;
+         end loop;
+      end Register;
+   begin
+      Register (Base_Names, Types.Scope_Base);
+      Register (Dev_Names, Types.Scope_Dev);
+   end Register_Manifest_Deps;
 
-    procedure Read_Alire_Lock
+   procedure Read_Alire_Lock
      (Lock_Path : String;
       Graph     : in out Types.Implementation.Component_Vectors.Vector)
    is

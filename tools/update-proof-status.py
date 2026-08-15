@@ -11,6 +11,17 @@ proof-metric phrases across the docs.  Historical notes (the pre-audit
 "369 total checks" row in the ledger, past-release changelogs) are left
 untouched because they do not match the anchored patterns.
 
+The "proved" count reported and written here is the honest total proved VCs
+(flow + provers), computed the same way as Adacovex.Parsers.GNATprove sets
+Types.Proof_Summary.Proved_VCs:
+
+    proved = total - justified - unproved
+
+This keeps the docs consistent with the adacovex CLI's proved-VC coverage
+percentage (Proved_VCs * 100 / Total_VCs) and the Markdown renderer's
+"Total | Proved" table.  It deliberately does NOT reuse the raw "Provers"
+summary column, which excludes the VCs discharged by flow analysis.
+
 Usage:
   python3 tools/update-proof-status.py [--run-prove] [--out=obj/gnatprove/gnatprove.out] [--dry-run]
 
@@ -30,70 +41,99 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from typing import Callable, Dict, List, Optional, Pattern, Tuple
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT: Path = Path(__file__).resolve().parent.parent
 
-LEVELS = ["Stone", "Bronze", "Silver", "Gold", "Platinum"]
-LEVEL_RE = "(?:Stone|Bronze|Silver|Gold|Platinum)"
+LEVELS: List[str] = ["Stone", "Bronze", "Silver", "Gold", "Platinum"]
+LEVEL_RE: str = "(?:Stone|Bronze|Silver|Gold|Platinum)"
 
 # gnatprove summary rows we read.  Label prefix -> count/proved column pair.
-CATEGORY_ROWS = {
+CATEGORY_ROWS: Dict[str, str] = {
     "Flow Dependencies": "flow",
     "Run-time Checks": "runtime",
     "Assertions": "assert",
     "Functional Contracts": "functional",
 }
 
+# Metrics parsed from a gnatprove.out summary.
+Metrics = Dict[str, int]
 
-def numbers(s):
+
+def numbers(s: str) -> List[int]:
     return [int(m) for m in re.findall(r"\d+", s)]
 
 
-def parse_summary(path):
-    """Return a metrics dict parsed from a gnatprove.out summary."""
-    text = Path(path).read_text(errors="replace")
-    total = proved = flow = justified = unproved = units = None
-    cats = {"flow": (0, 0), "runtime": (0, 0), "assert": (0, 0),
-            "functional": (0, 0)}
+def parse_summary(path: Path) -> Metrics:
+    """Return a metrics dict parsed from a gnatprove.out summary.
+
+    "proved" is the honest total proved VCs (flow + provers), matching
+    Adacovex.Parsers.GNATprove's Proved_VCs = Total - Justified - Unproved.
+    """
+    text: str = Path(path).read_text(errors="replace")
+    total: Optional[int] = None
+    flow: Optional[int] = None
+    provers: Optional[int] = None
+    justified: Optional[int] = None
+    unproved: Optional[int] = None
+    units: Optional[int] = None
+    cats: Dict[str, Tuple[int, int]] = {
+        "flow": (0, 0),
+        "runtime": (0, 0),
+        "assert": (0, 0),
+        "functional": (0, 0),
+    }
 
     for line in text.splitlines():
         if line.startswith("Total"):
-            n = numbers(line)
+            n: List[int] = numbers(line)
             # Columns: Total | Flow | Provers | Justified | Unproved
             # (runs of 2+ spaces separate them; '.' means zero/none).
-            vals = re.split(r" {2,}", line.strip())
-            def col(i):
-                v = vals[i] if i < len(vals) else "."
-                m = re.match(r"\d+", v)
+            vals: List[str] = re.split(r" {2,}", line.strip())
+
+            def col(i: int) -> int:
+                v: str = vals[i] if i < len(vals) else "."
+                m: Optional[re.Match] = re.match(r"\d+", v)
                 return int(m.group(0)) if m else 0
+
             total = col(1)
             flow = col(2)
-            proved = col(3)
+            provers = col(3)
             justified = col(4)
             unproved = col(5)
-        m = re.match(r"(Flow Dependencies|Run-time Checks|Assertions|Functional Contracts)\s+(.*)", line)
+        m: Optional[re.Match] = re.match(
+            r"(Flow Dependencies|Run-time Checks|Assertions|Functional Contracts)"
+            r"\s+(.*)",
+            line,
+        )
         if m:
             n = numbers(m.group(2))
             cats[CATEGORY_ROWS[m.group(1)]] = (n[0], n[1]) if n else (0, 0)
         if "Analyzed" in line and "units" in line:
-            u = numbers(line)
+            u: List[int] = numbers(line)
             if u:
                 units = u[0]
 
     if total is None:
         raise SystemExit(f"error: no 'Total' row found in {path}")
 
-    if total != flow + proved + justified + unproved:
+    # The summary's own invariant: Total == Flow + Provers + Justified +
+    # Unproved.  The "proved" figure we write to the docs is flow + provers
+    # (== total - justified - unproved), i.e. the same value adacovex derives.
+    if total != (flow or 0) + (provers or 0) + (justified or 0) + (unproved or 0):
         raise SystemExit(
             f"error: inconsistent gnatprove totals in {path}: "
-            f"total {total} != flow {flow} + proved {proved} + "
-            f"justified {justified} + unproved {unproved}")
+            f"total {total} != flow {flow} + provers {provers} + "
+            f"justified {justified} + unproved {unproved}"
+        )
+
+    proved: int = total - (justified or 0) - (unproved or 0)
 
     # Same rules as Determine_SPARK_Level in
     # src/parsers/adacovex-parsers-gnatprove.adb.
-    if total == 0 and unproved == 0 and not any(c[0] for c in cats.values()):
-        level = "Stone"
-    elif unproved > 0:
+    if total == 0 and (unproved or 0) == 0 and not any(c[0] for c in cats.values()):
+        level: str = "Stone"
+    elif (unproved or 0) > 0:
         level = "Silver"
     elif cats["functional"][0] > 0 \
             and cats["functional"][1] == cats["functional"][0]:
@@ -106,16 +146,20 @@ def parse_summary(path):
         level = "Stone"
 
     return {
-        "total": total, "proved": proved, "flow": flow,
-        "justified": justified, "unproved": unproved,
-        "units": units or 0, "level": level,
+        "total": total,
+        "proved": proved,
+        "flow": flow or 0,
+        "justified": justified or 0,
+        "unproved": unproved or 0,
+        "units": units or 0,
+        "level": level,
     }
 
 
-def replacements(m):
+def replacements(m: Metrics) -> List[Tuple[Pattern[str], str]]:
     """Ordered (pattern, format) pairs applied across the doc files.
     Anchored to proof context so historical numbers are never touched."""
-    lvl = m["level"]
+    lvl: str = m["level"]
     t, p, u, n = m["total"], m["proved"], m["unproved"], m["units"]
     return [
         # "Platinum (369 VCs)" -- level + total together.
@@ -144,26 +188,26 @@ def replacements(m):
     ]
 
 
-def main():
-    ap = argparse.ArgumentParser(description=__doc__)
+def main() -> int:
+    ap: argparse.ArgumentParser = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--run-prove", action="store_true",
                     help="refresh obj/gnatprove/gnatprove.out via adacovex prove")
     ap.add_argument("--out", default=str(ROOT / "obj/gnatprove/gnatprove.out"))
     ap.add_argument("--dry-run", action="store_true",
                     help="report new metrics without editing files")
-    args = ap.parse_args()
+    args: argparse.Namespace = ap.parse_args()
 
     if args.run_prove:
-        exe = ROOT / "bin" / "adacovex"
+        exe: Path = ROOT / "bin" / "adacovex"
         subprocess.run([str(exe), "prove", "--target=.", "--no-svg"],
                        check=True, cwd=str(ROOT))
 
-    m = parse_summary(args.out)
+    m: Metrics = parse_summary(Path(args.out))
     print(f"gnatprove: {m['total']} VCs, {m['proved']} proved, "
           f"{m['flow']} flow, {m['unproved']} unproved, "
           f"{m['units']} units -> {m['level']}")
 
-    files = [
+    files: List[Path] = [
         ROOT / "AGENTS.md",
         ROOT / "README.md",
         ROOT / "docs/proof/16.1.0-ledger.md",
@@ -173,13 +217,13 @@ def main():
     if args.dry_run:
         return 0
 
-    matched = 0
+    matched: int = 0
     for f in files:
         if not f.exists():
             print(f"skip (missing): {f.name}")
             continue
-        text = f.read_text()
-        orig = text
+        text: str = f.read_text()
+        orig: str = text
         for pat, rep in replacements(m):
             text, cnt = pat.subn(rep, text)
             matched += cnt

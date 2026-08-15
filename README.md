@@ -49,7 +49,7 @@ However, project reliability is grounded in mathematical proof and
 non-invasive design rather than implicit trust:
 
 - **Formal Verification:** Core Ada logic is formally verified using
-SPARK Ada (Platinum under `gnatprove` 16.1.0 -- 369 VCs, 0 unproved at the
+SPARK Ada (Platinum under `gnatprove` 16.1.0 -- 343 VCs, 0 unproved at the
 standard `adacovex prove` invocation; the earlier "Silver / 509 VCs / 168
 unproved" figure was a stale count that no documented gnatprove invocation
 reproduces -- see `docs/proof/16.1.0-ledger.md`).
@@ -745,7 +745,7 @@ src/
 |-------|---------|-------------|
 | Unit tests | `make test` | 368/368 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
-| SPARK proof | `make prove` | Platinum (369 VCs, 0 unproved under gnatprove 16.1.0) |
+| SPARK proof | `make prove` | Platinum (343 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, DAL-C (strict mode) |
 
 See [changelogs](docs/changelogs/index.md) for full release notes.

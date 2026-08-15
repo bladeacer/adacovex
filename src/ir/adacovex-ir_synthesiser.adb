@@ -81,16 +81,20 @@ package body Adacovex.IR_Synthesiser is
 
       --  Append a string to the synthesized text buffer.  The buffer is
       --  bounded, so appended text is truncated (never overflows) at the
-      --  fixed-size limit.
+      --  fixed-size limit.  The precondition gives the procedure a contract
+      --  so gnatprove analyzes it as a unit instead of re-proving the body
+      --  at every call site.
       --  @param S  Text to append.
-      procedure Append (S : String) is
+      procedure Append (S : String)
+      with Pre => S'First >= 1 and S'Last < Natural'Last
+      is
       begin
          for I in S'Range loop
+            pragma Loop_Invariant (RLen <= Result'Last);
             if RLen < Result'Last then
                RLen := RLen + 1;
                Result (RLen) := S (I);
             end if;
-            pragma Loop_Invariant (RLen <= Result'Last);
          end loop;
       end Append;
    begin

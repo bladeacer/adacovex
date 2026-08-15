@@ -4,8 +4,7 @@ package body Adacovex.Compliance.DAL is
    use type Types.DAL_Status;
    use type Types.DAL_Level;
 
-   function Min_SPARK_For (Level : Types.DAL_Level) return Types.SPARK_Level
-   is
+   function Min_SPARK_For (Level : Types.DAL_Level) return Types.SPARK_Level is
    begin
       case Level is
          when Types.DAL_A =>
@@ -25,8 +24,7 @@ package body Adacovex.Compliance.DAL is
       end case;
    end Min_SPARK_For;
 
-   function Need_Tests (Level : Types.DAL_Level) return Boolean
-   is
+   function Need_Tests (Level : Types.DAL_Level) return Boolean is
    begin
       return Level /= Types.DAL_E;
    end Need_Tests;

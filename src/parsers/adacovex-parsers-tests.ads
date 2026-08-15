@@ -41,17 +41,17 @@ package Adacovex.Parsers.Tests is
 
    --  Return the path of the first existing conventional test-result file
    --  under Target_Dir, or "" if none is present.
-    --  @param Target_Dir  Root directory to inspect.
-    --  @return Path to a discovered test-result file, or "".
-    function Find_Test_Result (Target_Dir : String) return String
-    with Pre => Target_Dir'Length > 0;
+   --  @param Target_Dir  Root directory to inspect.
+   --  @return Path to a discovered test-result file, or "".
+   function Find_Test_Result (Target_Dir : String) return String
+   with Pre => Target_Dir'Length > 0;
 
-    --  Whether S starts with the exact character sequence Pre.
-    --  @param S  Candidate string.
-    --  @param Pre  Required prefix.
-    --  @return True when S'Length >= Pre'Length and the first Pre'Length
-    --  characters of S equal Pre.
-    function Starts_With (S : String; Pre : String) return Boolean
-    with Global => null;
+   --  Whether S starts with the exact character sequence Pre.
+   --  @param S  Candidate string.
+   --  @param Pre  Required prefix.
+   --  @return True when S'Length >= Pre'Length and the first Pre'Length
+   --  characters of S equal Pre.
+   function Starts_With (S : String; Pre : String) return Boolean
+   with Global => null;
 
 end Adacovex.Parsers.Tests;
