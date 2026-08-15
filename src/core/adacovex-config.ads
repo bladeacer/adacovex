@@ -52,7 +52,10 @@ package Adacovex.Config is
       --  GNATprove invocation options (prove mode).  A value of -1 means
       --  "not configured": --jobs auto-detects the core count, and the
       --  level/timeout/steps/memlimit options are not passed to gnatprove.
-      --  --jobs=0 forwards -j0 (all cores).
+      --  --jobs=0 forwards -j0 (all cores).  The prove subcommand applies
+      --  its own --steps=5000 default when --steps is not passed (see
+      --  Build_Option_String), so proofs get a reproducible budget instead
+      --  of gnatprove's step-limit false negatives.
       Prove_Jobs           : Integer := -1;
       Prove_Level          : Integer := -1;
       Prove_Timeout        : Integer := -1;
