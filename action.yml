@@ -16,6 +16,24 @@ inputs:
     description: 'DO-178C DAL level to assess (A-E, case-insensitive).'
     required: false
     default: 'C'
+  standard:
+    description: >-
+      Compliance standard to assess: do178c, iso26262, iec62304, or all
+      (emits badges/reports for every standard at the shared tier).
+    required: false
+    default: ''
+  asil:
+    description: >-
+      ISO 26262 ASIL level to assess (A-D or QM, case-insensitive).  Sets
+      both the standard (ISO 26262) and the shared rigor tier.
+    required: false
+    default: ''
+  class:
+    description: >-
+      IEC 62304 software safety class to assess (A-C, case-insensitive).
+      Sets both the standard (IEC 62304) and the shared rigor tier.
+    required: false
+    default: ''
   gnat-version:
     description: 'GNAT toolchain version to select via alr (e.g. 15.2.1).'
     required: false
@@ -300,6 +318,15 @@ runs:
         ARGS=()
         ARGS+=(--target="${{ inputs.target }}")
         ARGS+=(--dal=${{ inputs.dal }})
+        if [ -n "${{ inputs.standard }}" ]; then
+          ARGS+=(--standard=${{ inputs.standard }})
+        fi
+        if [ -n "${{ inputs.asil }}" ]; then
+          ARGS+=(--asil=${{ inputs.asil }})
+        fi
+        if [ -n "${{ inputs.class }}" ]; then
+          ARGS+=(--class=${{ inputs.class }})
+        fi
         if [ -n "${{ inputs.compare-base }}" ]; then
           ARGS+=(--compare-base="${{ inputs.compare-base }}")
         fi
@@ -332,7 +359,10 @@ runs:
         set -e
         cat "$RUNNER_TEMP/adacovex.out"
 
-        DAL_STATUS=$(grep -oE 'DAL-[A-E]:.*(Achieved|Unmet)' "$RUNNER_TEMP/adacovex.out" | grep -oE '(Achieved|Unmet)' | head -1 || true)
+        #  Compliance status: matches the standard-specific level label
+        #  (DAL-A..E, ASIL A..D/QM, Class A..C) in both single-standard and
+        #  --standard=all output.
+        DAL_STATUS=$(grep -oE '(DAL-[A-E]|ASIL [A-D]|QM|Class [A-C]): (Achieved|Unmet)' "$RUNNER_TEMP/adacovex.out" | grep -oE '(Achieved|Unmet)' | head -1 || true)
         SPARK_LEVEL=$(grep -oE '(Stone|Bronze|Silver|Gold|Platinum)' "$RUNNER_TEMP/adacovex.out" | head -1 || true)
         TEST_COUNT=$(grep -oE '[0-9]+ passed' "$RUNNER_TEMP/adacovex.out" | grep -oE '[0-9]+' | head -1 || true)
         # Prefer the machine-parseable coverage_delta line (--coverage-delta mode);
@@ -340,6 +370,21 @@ runs:
         COVERAGE_PCT=$(grep -oE 'coverage_delta:.*current= *[0-9]+' "$RUNNER_TEMP/adacovex.out" | grep -oE '[0-9]+$' | head -1 || true)
         if [ -z "$COVERAGE_PCT" ]; then
           COVERAGE_PCT=$(grep -oE '\( *[0-9]+%\)' "$RUNNER_TEMP/adacovex.out" | grep -oE '[0-9]+' | head -1 || true)
+        fi
+
+        #  Human-readable compliance label mirroring the CLI precedence:
+        #  --dal, then --standard, then --asil, then --class (last wins).
+        COMPLIANCE_LABEL="DAL-${{ inputs.dal }}"
+        if [ -n "${{ inputs.class }}" ]; then
+          COMPLIANCE_LABEL="Class ${{ inputs.class }}"
+        elif [ -n "${{ inputs.asil }}" ]; then
+          COMPLIANCE_LABEL="ASIL ${{ inputs.asil }}"
+        elif [ -n "${{ inputs.standard }}" ]; then
+          case "${{ inputs.standard }}" in
+            iso26262) COMPLIANCE_LABEL="ISO 26262 (DAL-${{ inputs.dal }})" ;;
+            iec62304) COMPLIANCE_LABEL="IEC 62304 (DAL-${{ inputs.dal }})" ;;
+            all)      COMPLIANCE_LABEL="All standards (tier DAL-${{ inputs.dal }})" ;;
+          esac
         fi
 
         echo "dal_status=${DAL_STATUS:-unknown}" >> "$GITHUB_OUTPUT"
@@ -353,7 +398,7 @@ runs:
           echo "| Metric | Value |"
           echo "|--------|-------|"
           echo "| Target | \`${{ inputs.target }}\` |"
-          echo "| DAL-${{ inputs.dal }} | ${DAL_STATUS:-unknown} |"
+          echo "| ${COMPLIANCE_LABEL} | ${DAL_STATUS:-unknown} |"
           echo "| SPARK level | ${SPARK_LEVEL:-unknown} |"
           echo "| Tests passed | ${TEST_COUNT:-0} |"
           echo "| Coverage | ${COVERAGE_PCT:-0}% |"

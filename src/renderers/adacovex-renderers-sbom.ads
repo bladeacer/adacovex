@@ -55,6 +55,24 @@ package Adacovex.Renderers.SBOM is
       return String
    with SPARK_Mode => On, Global => null;
 
+   --  Comma-joined standard names for the "all standards" SBOM property:
+   --  "DO-178C, ISO 26262, IEC 62304".  Used for adacovex:standard when
+   --  --standard=all runs one assessment against every standard.
+   --  @return The comma-joined standard names.
+   function All_Standards_Property return String
+   with
+     SPARK_Mode => On,
+     Post       => All_Standards_Property'Result'Length > 0,
+     Global     => null;
+
+   --  Slash-joined standard-specific level labels for the "all standards"
+   --  SBOM property, e.g. "DAL-C / ASIL B / Class A".  Each standard's
+   --  native label is used so an ISO 26262 / IEC 62304 reader sees "ASIL B"
+   --  / "Class A" without decoding the shared tier.
+   --  @param Level  Shared rigor tier.
+   --  @return The slash-joined level labels for all three standards.
+   function All_Levels_Property (Level : Types.DAL_Level) return String;
+
    --  Map a dependency scope to the adacovex:dep_scope property value
    --  ("base", "dev", "transitive", or "vendored").  Base dependencies are
    --  declared in the publishing alire.toml, dev dependencies only in
@@ -134,15 +152,19 @@ package Adacovex.Renderers.SBOM is
    --  @param Proof_Level  adacovex:proof_level property value.
    --  @param Standard  Compliance standard labelling the root assessment.
    --  @param DAL_Target  Shared rigor tier for adacovex:dal_target/level.
+   --  @param Standard_All  True when --standard=all: emit the joined
+   --    standard names and level labels for every standard instead of the
+   --    single selected standard.
    --  @param Success  True if the SBOM was written successfully.
    procedure Write_SBOM
-     (Format      : Types.SBOM_Format_Kind;
-      Out_Path    : String;
-      Graph       : Types.Implementation.Component_Vectors.Vector;
-      Proof_Level : String;
-      Standard    : Types.Compliance_Standard;
-      DAL_Target  : Types.DAL_Level;
-      Success     : out Boolean)
+     (Format       : Types.SBOM_Format_Kind;
+      Out_Path     : String;
+      Graph        : Types.Implementation.Component_Vectors.Vector;
+      Proof_Level  : String;
+      Standard     : Types.Compliance_Standard;
+      DAL_Target   : Types.DAL_Level;
+      Standard_All : Boolean;
+      Success      : out Boolean)
    with Pre => Out_Path'Length > 0;
 
    --  Write a CycloneDX 1.5 JSON SBOM to an already-open file.
@@ -151,12 +173,15 @@ package Adacovex.Renderers.SBOM is
    --  @param Proof_Level  adacovex:proof_level property value.
    --  @param Standard  Compliance standard labelling the root assessment.
    --  @param DAL_Target  Shared rigor tier for adacovex:dal_target/level.
+   --  @param Standard_All  True when --standard=all: emit the joined
+   --    standard names and level labels for every standard.
    procedure Write_CycloneDX_To
-     (F           : in out Ada.Text_IO.File_Type;
-      Graph       : Types.Implementation.Component_Vectors.Vector;
-      Proof_Level : String;
-      Standard    : Types.Compliance_Standard;
-      DAL_Target  : Types.DAL_Level);
+     (F            : in out Ada.Text_IO.File_Type;
+      Graph        : Types.Implementation.Component_Vectors.Vector;
+      Proof_Level  : String;
+      Standard     : Types.Compliance_Standard;
+      DAL_Target   : Types.DAL_Level;
+      Standard_All : Boolean);
 
    --  Write an SPDX 2.3 JSON SBOM to an already-open file.
    --  @param F  Output file to write the JSON document to.
@@ -164,12 +189,15 @@ package Adacovex.Renderers.SBOM is
    --  @param Proof_Level  adacovex:proof_level property value.
    --  @param Standard  Compliance standard labelling the root assessment.
    --  @param DAL_Target  Shared rigor tier for adacovex:dal_target/level.
+   --  @param Standard_All  True when --standard=all: emit the joined
+   --    standard names and level labels for every standard.
    procedure Write_SPDX_To
-     (F           : in out Ada.Text_IO.File_Type;
-      Graph       : Types.Implementation.Component_Vectors.Vector;
-      Proof_Level : String;
-      Standard    : Types.Compliance_Standard;
-      DAL_Target  : Types.DAL_Level);
+     (F            : in out Ada.Text_IO.File_Type;
+      Graph        : Types.Implementation.Component_Vectors.Vector;
+      Proof_Level  : String;
+      Standard     : Types.Compliance_Standard;
+      DAL_Target   : Types.DAL_Level;
+      Standard_All : Boolean);
 
    --  Write a human-readable Markdown SBOM to an already-open file.
    --  Renders a compliance table of every component with its version,
@@ -179,11 +207,14 @@ package Adacovex.Renderers.SBOM is
    --  @param Proof_Level  adacovex:proof_level property value.
    --  @param Standard  Compliance standard labelling the root assessment.
    --  @param DAL_Target  Shared rigor tier for adacovex:dal_target/level.
+   --  @param Standard_All  True when --standard=all: emit the joined
+   --    standard names and level labels for every standard.
    procedure Write_Markdown_To
-     (F           : in out Ada.Text_IO.File_Type;
-      Graph       : Types.Implementation.Component_Vectors.Vector;
-      Proof_Level : String;
-      Standard    : Types.Compliance_Standard;
-      DAL_Target  : Types.DAL_Level);
+     (F            : in out Ada.Text_IO.File_Type;
+      Graph        : Types.Implementation.Component_Vectors.Vector;
+      Proof_Level  : String;
+      Standard     : Types.Compliance_Standard;
+      DAL_Target   : Types.DAL_Level;
+      Standard_All : Boolean);
 
 end Adacovex.Renderers.SBOM;

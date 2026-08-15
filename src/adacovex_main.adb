@@ -289,6 +289,7 @@ procedure Adacovex_Main is
          Proof_Prop (1 .. PPLen),
          Cfg.Standard_Target,
          Cfg.DAL_Target,
+         Cfg.Standard_All,
          WOK);
 
       if WOK then
@@ -299,11 +300,14 @@ procedure Adacovex_Main is
             & Img (Natural (Graph.Length))
             & " components, root proof level "
             & Proof_Prop (1 .. PPLen)
-            & ", standard "
-            & Adacovex.Types.To_String (Cfg.Standard_Target)
-            & ", level "
-            & Adacovex.Types.Standard_Level_Name
-                (Cfg.Standard_Target, Cfg.DAL_Target)
+            & (if Cfg.Standard_All
+               then ", standards all (DO-178C, ISO 26262, IEC 62304)"
+               else
+                 ", standard "
+                 & Adacovex.Types.To_String (Cfg.Standard_Target)
+                 & ", level "
+                 & Adacovex.Types.Standard_Level_Name
+                     (Cfg.Standard_Target, Cfg.DAL_Target))
             & ")");
       --  Do NOT touch Exit_St here: the automatic SBOM (Fail_Hard False)
       --  must never change the assessment exit code.  Only the explicit

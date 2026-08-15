@@ -309,6 +309,20 @@ package body Adacovex_SBOM_Tests is
          "level IEC 62304 Class A");
       R.Check (Level_Property (ISO_26262, DAL_E) = "", "level DAL-E empty");
 
+      --  All-standards joined property values (--standard=all).
+      R.Check
+        (All_Standards_Property = "DO-178C, ISO 26262, IEC 62304",
+         "all standards joined names");
+      R.Check
+        (All_Levels_Property (DAL_C) = "DAL-C / ASIL B / Class A",
+         "all levels DAL-C joined");
+      R.Check
+        (All_Levels_Property (DAL_A) = "DAL-A / ASIL D / Class C",
+         "all levels DAL-A joined");
+      R.Check
+        (All_Levels_Property (DAL_E) = "DAL-E / QM / No class",
+         "all levels DAL-E joined");
+
       --  Dependency-graph resolution from an Alire fixture project.
       declare
          Graph   : Component_Vectors.Vector;
@@ -402,7 +416,14 @@ package body Adacovex_SBOM_Tests is
       begin
          Make_Demo_Graph (Graph);
          Write_SBOM
-           (CycloneDX_JSON, S, Graph, "Platinum", DO_178C, DAL_A, Success);
+           (CycloneDX_JSON,
+            S,
+            Graph,
+            "Platinum",
+            DO_178C,
+            DAL_A,
+            False,
+            Success);
          R.Check (Success, "cyclonedx written");
          declare
             T : constant String := Read_All (S);
@@ -433,7 +454,8 @@ package body Adacovex_SBOM_Tests is
          S       : constant String := "obj/sbom_test/spdx.json";
       begin
          Make_Demo_Graph (Graph);
-         Write_SBOM (SPDX_JSON, S, Graph, "Platinum", DO_178C, DAL_C, Success);
+         Write_SBOM
+           (SPDX_JSON, S, Graph, "Platinum", DO_178C, DAL_C, False, Success);
          R.Check (Success, "spdx written");
          declare
             T : constant String := Read_All (S);
@@ -465,7 +487,14 @@ package body Adacovex_SBOM_Tests is
       begin
          Make_Demo_Graph (Graph);
          Write_SBOM
-           (CycloneDX_JSON, S, Graph, "Platinum", ISO_26262, DAL_C, Success);
+           (CycloneDX_JSON,
+            S,
+            Graph,
+            "Platinum",
+            ISO_26262,
+            DAL_C,
+            False,
+            Success);
          R.Check (Success, "cdx-asil written");
          declare
             T : constant String := Read_All (S);
@@ -484,7 +513,14 @@ package body Adacovex_SBOM_Tests is
       begin
          Make_Demo_Graph (Graph);
          Write_SBOM
-           (CycloneDX_JSON, S, Graph, "Gold", IEC_62304, DAL_C, Success);
+           (CycloneDX_JSON,
+            S,
+            Graph,
+            "Gold",
+            IEC_62304,
+            DAL_C,
+            False,
+            Success);
          R.Check (Success, "cdx-iec written");
          declare
             T : constant String := Read_All (S);
@@ -492,6 +528,41 @@ package body Adacovex_SBOM_Tests is
             R.Check (Contains (T, "IEC 62304"), "cdx-iec standard value");
             R.Check (Contains (T, "Class A"), "cdx-iec level value");
             R.Check (Quotes_Balanced (T), "cdx-iec quotes balanced");
+         end;
+      end;
+
+      --  --standard=all emits the joined standard names and level labels for
+      --  every standard in a single SBOM document.
+      declare
+         Graph   : Component_Vectors.Vector;
+         Success : Boolean := False;
+         S       : constant String := "obj/sbom_test/cdx-all.json";
+      begin
+         Make_Demo_Graph (Graph);
+         Write_SBOM
+           (CycloneDX_JSON,
+            S,
+            Graph,
+            "Platinum",
+            DO_178C,
+            DAL_C,
+            True,
+            Success);
+         R.Check (Success, "cdx-all written");
+         declare
+            T : constant String := Read_All (S);
+         begin
+            R.Check
+              (Contains (T, "DO-178C, ISO 26262, IEC 62304"),
+               "cdx-all standards joined");
+            R.Check
+              (Contains (T, "DAL-C / ASIL B / Class A"),
+               "cdx-all levels joined");
+            R.Check
+              (Contains (T, "adacovex:dal_target"), "cdx-all dal property");
+            R.Check (Contains (T, "DAL-C"), "cdx-all dal value");
+            R.Check (Quotes_Balanced (T), "cdx-all quotes balanced");
+            R.Check (Braces_Balanced (T), "cdx-all braces balanced");
          end;
       end;
 
@@ -504,7 +575,7 @@ package body Adacovex_SBOM_Tests is
       begin
          Make_Demo_Graph (Graph);
          Write_SBOM
-           (CycloneDX_JSON, S, Graph, "Gold", DO_178C, DAL_B, Success);
+           (CycloneDX_JSON, S, Graph, "Gold", DO_178C, DAL_B, False, Success);
          R.Check (Success, "escaped-json written");
          R.Check
            (Quotes_Balanced (Read_All (S)), "escaped-json quotes balanced");

@@ -21,14 +21,14 @@ jobs:
         id: adacovex
         with:
           target: .
-          dal: C
+          standard: all
           gnat-version: 15.2.1
           build: true
           release-build: true
           prove: true
           require-spark: Platinum
           require-docstrings: 100
-          require-tests: 490
+          require-tests: 501
           require-proof: 100
 
       - name: Require Platinum SPARK level

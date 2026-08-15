@@ -29,7 +29,7 @@ steps:
   - uses: bladeacer/adacovex@v1
     with:
       target: .
-      dal: C
+      standard: all   # badges/reports for DO-178C + ISO 26262 + IEC 62304
 ```
 
 ### Inputs
@@ -37,7 +37,10 @@ steps:
 | Input | Default | Description |
 |-------|---------|-------------|
 | `target` | `.` | Target project root (relative to workspace root) |
-| `dal` | `C` | DO-178C DAL level to assess (A-E) |
+| `dal` | `C` | DO-178C DAL level to assess (A-E); also the shared rigor tier |
+| `standard` | `''` | Compliance standard: `do178c`, `iso26262`, `iec62304`, or `all` (badges/reports for every standard) |
+| `asil` | `''` | ISO 26262 ASIL level (A-D, QM); sets the standard and tier |
+| `class` | `''` | IEC 62304 safety class (A-C); sets the standard and tier |
 | `gnat-version` | `15.2.1` | GNAT toolchain version to select via `alr` |
 | `version` | `''` | adacovex version; defaults to the tag the action is referenced by |
 | `build` | `false` | Build adacovex from source instead of downloading the version-matched binary |
@@ -78,14 +81,22 @@ automatically.
 
 ## Workflows
 
-- **`.github/workflows/ci.yml`** -- self-assessment (build + prove + assess) and
-  build + native tests (build + run-tests, assess: false) on push to `main` and
-  pull requests.
+- **`.github/workflows/ci.yml`** -- four jobs on push to `main` and pull
+  requests:
+  - `self-assessment` -- build + prove + assess at `--standard=all` (so the
+    DO-178C, ISO 26262, and IEC 62304 badges/reports are all emitted and
+    gated), with the Platinum / 100% docstrings / test-count / 100% proof
+    thresholds.
+  - `adacovex-tests` -- build + native test suite (`run-tests`, `assess: false`).
+  - `ada-crdt` -- clones `../Ada_CRDT` and runs `make run-ada-crdt` (the same
+    strict-mode dogfood regression used locally).
+  - `coverage-gate` (push only) -- runs `make coverage-gate`, comparing
+    docstring coverage between the latest two release tags.
 - **`.github/workflows/pr-check.yml`** -- runs `--coverage-delta` against
   `pull_request.base.sha` to fail PRs that drop docstring coverage.
 - **`.github/workflows/release.yml`** -- on a `v*` tag, builds the release
-  binary, runs GNATprove, validates the self-assessment, and publishes the
-  GitHub Release (see [Release bundling](#release-bundling)).
+  binary, runs GNATprove, validates the `--standard=all` self-assessment, and
+  publishes the GitHub Release (see [Release bundling](#release-bundling)).
 
 ### PR coverage gate
 
@@ -106,7 +117,7 @@ jobs:
       - uses: bladeacer/adacovex@v1
         with:
           target: .
-          dal: C
+          standard: all
           coverage-delta: ${{ github.event.pull_request.base.sha }}
 ```
 

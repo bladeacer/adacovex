@@ -61,6 +61,21 @@ package body Adacovex.Renderers.SBOM is
       end if;
    end Level_Property;
 
+   function All_Standards_Property return String with SPARK_Mode => On is
+   begin
+      return "DO-178C, ISO 26262, IEC 62304";
+   end All_Standards_Property;
+
+   function All_Levels_Property (Level : Types.DAL_Level) return String is
+   begin
+      return
+        Types.Standard_Level_Name (Types.DO_178C, Level)
+        & " / "
+        & Types.Standard_Level_Name (Types.ISO_26262, Level)
+        & " / "
+        & Types.Standard_Level_Name (Types.IEC_62304, Level);
+   end All_Levels_Property;
+
    --  Map a dependency scope to the adacovex:dep_scope property value.
    --  Base dependencies are declared in the publishing manifest, dev
    --  dependencies only in the dev manifest, transitive ones in neither,
@@ -603,19 +618,26 @@ package body Adacovex.Renderers.SBOM is
    end Write_CDX_Dependencies;
 
    procedure Write_CycloneDX_To
-     (F           : in out Ada.Text_IO.File_Type;
-      Graph       : Types.Implementation.Component_Vectors.Vector;
-      Proof_Level : String;
-      Standard    : Types.Compliance_Standard;
-      DAL_Target  : Types.DAL_Level)
+     (F            : in out Ada.Text_IO.File_Type;
+      Graph        : Types.Implementation.Component_Vectors.Vector;
+      Proof_Level  : String;
+      Standard     : Types.Compliance_Standard;
+      DAL_Target   : Types.DAL_Level;
+      Standard_All : Boolean)
    is
       Root         : Types.Implementation.Component_Info;
       First_Field  : Boolean := True;
       First_Comp   : Boolean := True;
       Tool_Version : constant String := Adacovex.Version;
-      Std_Name     : constant String := Types.To_String (Standard);
+      Std_Name     : constant String :=
+        (if Standard_All
+         then All_Standards_Property
+         else Types.To_String (Standard));
       Tier_Prop    : constant String := DAL_Property_Value (DAL_Target);
-      Lvl_Label    : constant String := Level_Property (Standard, DAL_Target);
+      Lvl_Label    : constant String :=
+        (if Standard_All
+         then All_Levels_Property (DAL_Target)
+         else Level_Property (Standard, DAL_Target));
    begin
       if Integer (Graph.Length) = 0 then
          return;
@@ -788,17 +810,24 @@ package body Adacovex.Renderers.SBOM is
    end Write_SPDX_Package;
 
    procedure Write_SPDX_To
-     (F           : in out Ada.Text_IO.File_Type;
-      Graph       : Types.Implementation.Component_Vectors.Vector;
-      Proof_Level : String;
-      Standard    : Types.Compliance_Standard;
-      DAL_Target  : Types.DAL_Level)
+     (F            : in out Ada.Text_IO.File_Type;
+      Graph        : Types.Implementation.Component_Vectors.Vector;
+      Proof_Level  : String;
+      Standard     : Types.Compliance_Standard;
+      DAL_Target   : Types.DAL_Level;
+      Standard_All : Boolean)
    is
       Root      : Types.Implementation.Component_Info;
       First_Pkg : Boolean := True;
-      Std_Name  : constant String := Types.To_String (Standard);
+      Std_Name  : constant String :=
+        (if Standard_All
+         then All_Standards_Property
+         else Types.To_String (Standard));
       Tier_Prop : constant String := DAL_Property_Value (DAL_Target);
-      Lvl_Label : constant String := Level_Property (Standard, DAL_Target);
+      Lvl_Label : constant String :=
+        (if Standard_All
+         then All_Levels_Property (DAL_Target)
+         else Level_Property (Standard, DAL_Target));
    begin
       if Integer (Graph.Length) = 0 then
          return;
@@ -884,16 +913,23 @@ package body Adacovex.Renderers.SBOM is
    end Write_SPDX_To;
 
    procedure Write_Markdown_To
-     (F           : in out Ada.Text_IO.File_Type;
-      Graph       : Types.Implementation.Component_Vectors.Vector;
-      Proof_Level : String;
-      Standard    : Types.Compliance_Standard;
-      DAL_Target  : Types.DAL_Level)
+     (F            : in out Ada.Text_IO.File_Type;
+      Graph        : Types.Implementation.Component_Vectors.Vector;
+      Proof_Level  : String;
+      Standard     : Types.Compliance_Standard;
+      DAL_Target   : Types.DAL_Level;
+      Standard_All : Boolean)
    is
       Root      : Types.Implementation.Component_Info;
-      Std_Name  : constant String := Types.To_String (Standard);
+      Std_Name  : constant String :=
+        (if Standard_All
+         then All_Standards_Property
+         else Types.To_String (Standard));
       Tier_Prop : constant String := DAL_Property_Value (DAL_Target);
-      Lvl_Label : constant String := Level_Property (Standard, DAL_Target);
+      Lvl_Label : constant String :=
+        (if Standard_All
+         then All_Levels_Property (DAL_Target)
+         else Level_Property (Standard, DAL_Target));
    begin
       if Integer (Graph.Length) = 0 then
          return;
@@ -1013,13 +1049,14 @@ package body Adacovex.Renderers.SBOM is
    end Write_Markdown_To;
 
    procedure Write_SBOM
-     (Format      : Types.SBOM_Format_Kind;
-      Out_Path    : String;
-      Graph       : Types.Implementation.Component_Vectors.Vector;
-      Proof_Level : String;
-      Standard    : Types.Compliance_Standard;
-      DAL_Target  : Types.DAL_Level;
-      Success     : out Boolean)
+     (Format       : Types.SBOM_Format_Kind;
+      Out_Path     : String;
+      Graph        : Types.Implementation.Component_Vectors.Vector;
+      Proof_Level  : String;
+      Standard     : Types.Compliance_Standard;
+      DAL_Target   : Types.DAL_Level;
+      Standard_All : Boolean;
+      Success      : out Boolean)
    is
       use Ada.Text_IO;
       F : File_Type;
@@ -1038,13 +1075,15 @@ package body Adacovex.Renderers.SBOM is
          case Format is
             when Types.CycloneDX_JSON =>
                Write_CycloneDX_To
-                 (F, Graph, Proof_Level, Standard, DAL_Target);
+                 (F, Graph, Proof_Level, Standard, DAL_Target, Standard_All);
 
             when Types.SPDX_JSON      =>
-               Write_SPDX_To (F, Graph, Proof_Level, Standard, DAL_Target);
+               Write_SPDX_To
+                 (F, Graph, Proof_Level, Standard, DAL_Target, Standard_All);
 
             when Types.Markdown       =>
-               Write_Markdown_To (F, Graph, Proof_Level, Standard, DAL_Target);
+               Write_Markdown_To
+                 (F, Graph, Proof_Level, Standard, DAL_Target, Standard_All);
          end case;
       exception
          when others =>
