@@ -25,6 +25,15 @@ Unity               "N Tests M Failures [K Ignored]"
 
 **Returns:** Path to a discovered test-result file, or "".
 
+### function Starts_With (S : Standard.String; Pre : Standard.String) return Standard.Boolean `[Global]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `Pre` | Required prefix. |
+| `S` | Candidate string. |
+
+**Returns:** True when S'Length >= Pre'Length and the first Pre'Length
+
 ## Procedures
 
 ### procedure Parse_Test_Result (File_Path : Standard.String; Summary : Adacovex.Types.Implementation.Test_Summary; Success : Standard.Boolean) `[Pre]`

@@ -58,7 +58,7 @@ full range accordingly.
 ### C5: Proof fixes to 0 unproved (Platinum under gnatprove 16.1.0)
 
 Eliminated every unproved VC so the self-assessment reaches **Platinum**:
-**369 VCs, 310 proved, 0 unproved** across 38 analyzed units under gnatprove
+**343 VCs, 343 proved, 0 unproved** across 38 analyzed units under gnatprove
 16.1.0, with no `SPARK_Mode(Off)` and no justified VCs. The bulk of the debt
 was solver step-limit timeouts, not genuine proof gaps; the rest needed real
 contract and structure fixes:
@@ -123,7 +123,7 @@ deps are registered without GPR `with`-clauses or a lockfile.
 
 ## Proof Results
 
-Self-assessment reports **Platinum**: **369 VCs, 310 proved, 0 unproved** under
+Self-assessment reports **Platinum**: **343 VCs, 343 proved, 0 unproved** under
 gnatprove 16.1.0 across 38 analyzed units (no justified VCs). gnatprove 16.1.0
 generates stricter overflow/counterexample checks than 15.x; after the C1
 parser fix the honest level was Silver, and the C5 proof fixes (plus the

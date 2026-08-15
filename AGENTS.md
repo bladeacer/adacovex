@@ -23,7 +23,7 @@ The `--target=PATH` option can point at any Ada/SPARK project.
 Self-assessment (`make run-self`, default target: cwd) verifies adacovex against its own
 source -- 28 packages, 93 subprograms -- and must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
-- Platinum SPARK level (369 VCs under gnatprove 16.1.0, 0 unproved at the
+- Platinum SPARK level (343 VCs under gnatprove 16.1.0, 0 unproved at the
   standard `adacovex prove` invocation, which passes `--steps=5000` by
   default; the earlier "509 VCs / 168 unproved / Silver" figure was a stale
   count that no documented gnatprove invocation reproduces -- see
@@ -905,7 +905,7 @@ is obtained and built.
 |-------|---------|-------------|
 | Unit tests | `make test` | 368/368 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
-| SPARK proof | `make prove` | Platinum (369 VCs, 0 unproved under gnatprove 16.1.0) |
+| SPARK proof | `make prove` | Platinum (343 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
 
 See [docs/changelogs/adacovex-1.0.0.md](docs/changelogs/adacovex-1.0.0.md) for full release notes.
@@ -940,7 +940,7 @@ Rules:
   with a short bold-worthy title, then prose -- no bare bullet lists.
 - Fixes are grouped under `## Fixes` (`### H#:`), distinct from Changes.
 - `## Proof Results` states the SPARK level (Stone..Platinum), the exact VC
-  totals (e.g. `503/503 VCs proved across 38 analyzed units`), and calls out
+  totals (e.g. `343/343 VCs proved across 38 analyzed units`), and calls out
   whether any proof metrics changed. It notes when changed units are
   non-SPARK and therefore unaffected.
 - `## Traceability` lists any new HLRs by tag name and package, then the

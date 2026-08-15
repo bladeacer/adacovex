@@ -22,8 +22,7 @@ package body Adacovex.Parsers.Tests is
       return S (F .. S'Last);
    end Trim_Left;
 
-   function Starts_With (S : String; Pre : String) return Boolean
-   is
+   function Starts_With (S : String; Pre : String) return Boolean is
    begin
       if Pre'Length > S'Length then
          return False;
@@ -36,16 +35,67 @@ package body Adacovex.Parsers.Tests is
       return True;
    end Starts_With;
 
+   --  Numeric value of a decimal digit character (0 .. 9).  A case
+   --  statement avoids the Character'Pos subtraction so the range check is
+   --  discharged by plain case analysis instead of character arithmetic.
+   function Digit_Value (C : Character) return Natural
+   with
+     SPARK_Mode => On,
+     Pre        => C in '0' .. '9',
+     Post       => Digit_Value'Result <= 9
+   is
+   begin
+      case C is
+         when '0'    =>
+            return 0;
+
+         when '1'    =>
+            return 1;
+
+         when '2'    =>
+            return 2;
+
+         when '3'    =>
+            return 3;
+
+         when '4'    =>
+            return 4;
+
+         when '5'    =>
+            return 5;
+
+         when '6'    =>
+            return 6;
+
+         when '7'    =>
+            return 7;
+
+         when '8'    =>
+            return 8;
+
+         when '9'    =>
+            return 9;
+
+         when others =>
+            return 0;
+      end case;
+   end Digit_Value;
+
    --  Parse the integer that immediately follows a keyword in a line,
    --  skipping any intervening spaces.  Returns 0 when absent.  Digit runs
    --  longer than the Natural capacity stop accumulating (previously the
    --  unguarded accumulation raised Constraint_Error at runtime).
    function Number_After (S : String; Key : String) return Natural
-   with SPARK_Mode => On, Pre => S'First >= 1 and S'Last < Natural'Last
+   with
+     SPARK_Mode => On,
+     Pre        => S'First >= 1 and S'Last < Natural'Last and Key'Length >= 1
    is
+      I : Natural := S'First;
    begin
       if Key'Length <= S'Length then
-         for I in S'First .. S'Last - Key'Length + 1 loop
+         while I <= S'Last - Key'Length + 1 loop
+            pragma Loop_Invariant (I in S'First .. S'Last - Key'Length + 2);
+            pragma Loop_Variant (Increases => I);
             if S (I .. I + Key'Length - 1) = Key then
                declare
                   J   : Natural := I + Key'Length;
@@ -60,25 +110,21 @@ package body Adacovex.Parsers.Tests is
                   while J <= S'Last and then S (J) in '0' .. '9' loop
                      pragma Loop_Invariant (J >= S'First);
                      pragma Loop_Variant (Increases => J);
-                     declare
-                        Digit : constant Natural :=
-                          Character'Pos (S (J)) - Character'Pos ('0');
-                     begin
-                        if Num <= (Natural'Last - Digit) / 10 then
-                           Num := Num * 10 + Digit;
-                           J := J + 1;
-                           Got := True;
-                        else
-                           Got := True;
-                           exit;
-                        end if;
-                     end;
+                     if Num <= Natural'Last / 10 - 1 then
+                        Num := Num * 10 + Digit_Value (S (J));
+                        J := J + 1;
+                        Got := True;
+                     else
+                        Got := True;
+                        exit;
+                     end if;
                   end loop;
                   if Got then
                      return Num;
                   end if;
                end;
             end if;
+            I := I + 1;
          end loop;
       end if;
       return 0;
@@ -91,11 +137,16 @@ package body Adacovex.Parsers.Tests is
    --  Natural capacity stop accumulating (previously a runtime
    --  Constraint_Error on overflow).
    function Number_Before_Word (S : String; Word : String) return Natural
-   with SPARK_Mode => On, Pre => S'First >= 1 and S'Last < Natural'Last
+   with
+     SPARK_Mode => On,
+     Pre        => S'First >= 1 and S'Last < Natural'Last and Word'Length >= 1
    is
+      I : Natural := S'First;
    begin
       if Word'Length <= S'Length then
-         for I in S'First .. S'Last - Word'Length + 1 loop
+         while I <= S'Last - Word'Length + 1 loop
+            pragma Loop_Invariant (I in S'First .. S'Last - Word'Length + 2);
+            pragma Loop_Variant (Increases => I);
             if S (I .. I + Word'Length - 1) = Word then
                declare
                   J  : constant Natural := I + Word'Length;
@@ -138,17 +189,11 @@ package body Adacovex.Parsers.Tests is
                                    Loop_Invariant
                                      (for all Q in C .. K =>
                                         S (Q) in '0' .. '9');
-                                 declare
-                                    Digit : constant Natural :=
-                                      Character'Pos (S (C))
-                                      - Character'Pos ('0');
-                                 begin
-                                    if Num <= (Natural'Last - Digit) / 10 then
-                                       Num := Num * 10 + Digit;
-                                    else
-                                       exit;
-                                    end if;
-                                 end;
+                                 if Num <= Natural'Last / 10 - 1 then
+                                    Num := Num * 10 + Digit_Value (S (C));
+                                 else
+                                    exit;
+                                 end if;
                               end loop;
                               return Num;
                            end;
@@ -157,6 +202,7 @@ package body Adacovex.Parsers.Tests is
                   end if;
                end;
             end if;
+            I := I + 1;
          end loop;
       end if;
       return 0;

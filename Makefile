@@ -44,9 +44,18 @@ help:
 	@echo ''
 	@echo 'Prerequisites: alr (Alire), GNAT toolchain'
 
+# Filter the benign ld 2.44 SFrame message ("error in ...(.sframe); no
+# .sframe will be created") from the link step.  It is emitted by the Alire
+# GNAT toolchain's bundled ld when it reads the .sframe section newer system
+# binutils wrote into the glibc startup objects; the link still succeeds.  It
+# is the only build output deliberately silenced -- compiler and gnatprove
+# warnings stay fully visible.  See docs/toolchain.md.
 build:
-	alr build
-	ln -sf adacovex bin/covex
+	@alr build > /tmp/alr-build.log 2>&1; rc=$$?; \
+	sed -e '/\.sframe); no \.sframe will be created/d' /tmp/alr-build.log; \
+	rm -f /tmp/alr-build.log; \
+	if [ $$rc -eq 0 ]; then ln -sf adacovex bin/covex; fi; \
+	exit $$rc
 
 test: build
 	./bin/test_runner
