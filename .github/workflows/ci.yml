@@ -7,20 +7,20 @@ on:
 
 jobs:
   self-assessment:
-    name: Self-assessment (DAL-C)
+    name: Self-assessment (all standards)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
       - uses: ./
         with:
           target: .
-          dal: C
+          standard: all
           gnat-version: 15.2.1
           build: true
           prove: true
           require-spark: Platinum
           require-docstrings: 100
-          require-tests: 490
+          require-tests: 501
           require-proof: 100
 
   adacovex-tests:
@@ -36,3 +36,20 @@ jobs:
           build: true
           run-tests: true
           assess: false
+
+  coverage-gate:
+    name: Docstring coverage gate (release tags)
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: alire-project/setup-alire@latest
+        with:
+          version: '2.1.1'
+          toolchain: 'gnat_native=15.2.1 gprbuild'
+          cache: true
+      - name: Run coverage gate
+        shell: bash
+        run: make coverage-gate

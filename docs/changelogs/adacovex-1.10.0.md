@@ -97,6 +97,31 @@ level definitions, criteria, and tier mapping) and
 Both are linked from the README documentation table, the CLI reference, and
 `docs/standards.md`.
 
+### C10: SBOM emits every standard under `--standard=all`
+
+The proof-aware SBOM is now fully standard-aware end to end. A single
+standard writes `adacovex:standard` / `adacovex:level` for just that standard
+(`--asil=B` -> `ISO 26262` / `ASIL B`; `--class=A` -> `IEC 62304` /
+`Class A`). Under `--standard=all` the same two properties carry the joined
+values for every standard -- `adacovex:standard = DO-178C, ISO 26262,
+IEC 62304` and `adacovex:level = DAL-C / ASIL B / Class A` -- across
+CycloneDX, SPDX `attributionTexts`, and the Markdown table, while
+`adacovex:dal_target` keeps the shared tier. Two new helpers
+(`All_Standards_Property`, `All_Levels_Property`) drive the joined output,
+and `Standard_Level_Name` now posts its tight 1..8 length bound.
+
+### C11: CI feature parity with the multi-standard set
+
+The composite action gained `standard` / `asil` / `class` inputs (threaded
+through to the assessment as `--standard` / `--asil` / `--class`, with
+`--dal` still the shared tier) and now parses the compliance status from the
+standard-specific label (`DAL-X`, `ASIL X`, `QM`, or `Class X`) instead of
+only `DAL-X`. `ci.yml` now runs four jobs: an `--standard=all`
+self-assessment, the native test suite and a push-only `make coverage-gate`
+release-tag docstring gate. `pr-check.yml` and `release.yml` also pass
+`standard: all`, so PRs gate coverage across standards and releases emit all
+three compliance badges.
+
 ## Fixes
 
 ### H1: Scanner false positives on identifier prefixes
@@ -116,22 +141,24 @@ producing `Value`.
 
 ## Test Suite
 
-490 tests (was 395). The types category gained 23 checks for the dedicated
+501 tests (was 395). The types category gained 23 checks for the dedicated
 level parsers (`To_ASIL`, `Is_Valid_ASIL`, `To_Class`, `Is_Valid_Class`) and
 `Standard_Slug`; the CLI-config category gained 31 checks (the `Standard_All`
 default plus 30 flag-precedence checks driven through the new `Parse_Args`
 entry point); the SVG category gained six checks for the
-standard-parameterized `Render_Compliance_Badge`; the SBOM category gained 18
-checks for the standard/level properties; and a new HTML/Markdown renderer
-category (17 checks) covers standard-aware dashboard, JSON, and Markdown
-output. Total categories: 10 (was 9).
+standard-parameterized `Render_Compliance_Badge`; the SBOM category gained 29
+checks (18 for the single-standard standard/level properties plus 11 for the
+all-standards joined properties); and a new HTML/Markdown renderer category
+(17 checks) covers standard-aware dashboard, JSON, and Markdown output.
+Total categories: 10 (was 9).
 
 ## Proof Results
 
-Platinum, 398/398 VCs proved across 39 analyzed units (was 343 at 1.9.0). The
+Platinum, 401/401 VCs proved across 39 analyzed units (was 343 at 1.9.0). The
 compliance-standard layer (`Compliance_Standard`, `To_Standard`,
 `Standard_Level_Name`, `Standard_Slug`, `To_ASIL`, `To_Class`) and the SBOM
-`Level_Property` added 55 SPARK VCs, all discharged. The `prove` subcommand's
+`Level_Property` / `All_Standards_Property` helpers added 58 SPARK VCs, all
+discharged. The `prove` subcommand's
 default proof budget was raised from `--steps=5000` to `--steps=10000` because
 5000 sat on the solver's non-determinism boundary for the enlarged unit; an
 explicit `--steps=...` still overrides it. Changed scanner files remain

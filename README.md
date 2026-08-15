@@ -46,7 +46,7 @@ However, project reliability is grounded in mathematical proof and
 non-invasive design rather than implicit trust:
 
 - **Formal Verification:** Core Ada logic is formally verified using
-  SPARK Ada (Platinum under `gnatprove` 16.1.0 -- 398 VCs, 0 unproved; see
+  SPARK Ada (Platinum under `gnatprove` 16.1.0 -- 401 VCs, 0 unproved; see
   `docs/proof/16.1.0-ledger.md`).
 - **Read-Only Engine:** `adacovex` acts strictly as an assessment engine.
   It processes input payloads, parses build artifacts, and produces reports
@@ -291,7 +291,7 @@ all three standards. Full tier mapping and rationale:
 | Target | Description |
 |--------|-------------|
 | `build` | `alr build` (adacovex + test_runner, covex alias) |
-| `test` | Build and run native test suite (490 tests) |
+| `test` | Build and run native test suite (501 tests) |
 | `prove` | `./bin/adacovex prove --target=. --no-svg` |
 | `fmt` | Format Ada sources with `gnatformat` |
 | `doc` | Generate API docs via gnatdoc + rst2md |
@@ -306,17 +306,20 @@ all three standards. Full tier mapping and rationale:
 ## CI/CD
 
 A composite GitHub Action (`./action.yml`) plus `ci.yml`, `pr-check.yml`, and
-`release.yml` workflows cover self-assessment, PR coverage gating, and releases.
-Action inputs/outputs, result caching, and release bundling:
+`release.yml` workflows cover the `--standard=all` self-assessment (with prove
+and the `--require-*` gates), the native test suite, a `make run-ada-crdt`
+strict-mode regression, the release-tag docstring coverage gate, and releases.
+The action accepts `dal` / `standard` / `asil` / `class` inputs. Action
+inputs/outputs, result caching, and release bundling:
 [docs/ci-cd.md](docs/ci-cd.md).
 
 ## Verification
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 490/490 passing |
+| Unit tests | `make test` | 501/501 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
-| SPARK proof | `make prove` | Platinum (398 VCs, 0 unproved under gnatprove 16.1.0) |
+| SPARK proof | `make prove` | Platinum (401 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, DAL-C (strict mode) |
 
 See [changelogs](docs/changelogs/index.md) for full release notes.

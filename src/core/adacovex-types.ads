@@ -266,7 +266,7 @@ package Adacovex.Types is
    --  @return The standard-specific level label.
    function Standard_Level_Name
      (Standard : Compliance_Standard; Level : DAL_Level) return String
-   with Post => Standard_Level_Name'Result'Length > 0, Global => null;
+   with Post => Standard_Level_Name'Result'Length in 1 .. 8, Global => null;
 
    --  Parse an ASIL level into the shared rigor tier.  ASIL A--D map to
    --  DAL_D--DAL_A (ASIL D is the most rigorous) and QM maps to DAL_E (no

@@ -69,6 +69,25 @@ and reports for **every** standard -- `do178c.svg`, `iso26262.svg`, and
 evidence is identical across standards, so the three badges always agree on
 Achieved/Unmet; only the level label changes.
 
+## SBOM standard-awareness
+
+The proof-aware SBOM records the assessment standard and its native level
+label, so a CycloneDX / SPDX / Markdown consumer sees the right name for the
+selected standard:
+
+| `--` flag | `adacovex:standard` | `adacovex:level` |
+|-----------|---------------------|------------------|
+| `--dal=C` | `DO-178C` | `DAL-C` |
+| `--asil=B` | `ISO 26262` | `ASIL B` |
+| `--class=A` | `IEC 62304` | `Class A` |
+| `--standard=all` | `DO-178C, ISO 26262, IEC 62304` | `DAL-C / ASIL B / Class A` |
+
+The `adacovex:dal_target` property always carries the shared tier (`DAL-A`..
+`DAL-D`) regardless of the labelling standard; `--standard=all` joins all
+three standard names and level labels into the single `adacovex:standard` and
+`adacovex:level` properties so one document carries every standard's
+assessment.
+
 ## Implementation
 
 - `Compliance_Standard` type (`DO_178C`, `ISO_26262`, `IEC_62304`) with

@@ -20,6 +20,18 @@ HLR-SBOM: SBOM generation
 
 ## Functions
 
+### function All_Levels_Property (Level : Adacovex.Types.DAL_Level) return Standard.String
+
+| Parameter | Description |
+|-----------|-------------|
+| `Level` | Shared rigor tier. |
+
+**Returns:** The slash-joined level labels for all three standards.
+
+### function All_Standards_Property return Standard.String `[Post]` `[Global]` `[SPARK]`
+
+**Returns:** The comma-joined standard names.
+
 ### function DAL_Property_Value (Level : Adacovex.Types.DAL_Level) return Standard.String `[Post]` `[Global]` `[SPARK]`
 
 | Parameter | Description |
@@ -87,7 +99,7 @@ HLR-SBOM: SBOM generation
 
 ## Procedures
 
-### procedure Write_CycloneDX_To (F : Ada.Text_IO.File_Type; Graph : Adacovex.Types.Implementation.Component_Vectors.Vector; Proof_Level : Standard.String; Standard : Adacovex.Types.Compliance_Standard; DAL_Target : Adacovex.Types.DAL_Level)
+### procedure Write_CycloneDX_To (F : Ada.Text_IO.File_Type; Graph : Adacovex.Types.Implementation.Component_Vectors.Vector; Proof_Level : Standard.String; Standard : Adacovex.Types.Compliance_Standard; DAL_Target : Adacovex.Types.DAL_Level; Standard_All : Standard.Boolean)
 
 | Parameter | Description |
 |-----------|-------------|
@@ -96,8 +108,9 @@ HLR-SBOM: SBOM generation
 | `Graph` | Dependency graph (index 1 = root component). |
 | `Proof_Level` | adacovex:proof_level property value. |
 | `Standard` | Compliance standard labelling the root assessment. |
+| `Standard_All` | True when --standard=all: emit the joined |
 
-### procedure Write_Markdown_To (F : Ada.Text_IO.File_Type; Graph : Adacovex.Types.Implementation.Component_Vectors.Vector; Proof_Level : Standard.String; Standard : Adacovex.Types.Compliance_Standard; DAL_Target : Adacovex.Types.DAL_Level)
+### procedure Write_Markdown_To (F : Ada.Text_IO.File_Type; Graph : Adacovex.Types.Implementation.Component_Vectors.Vector; Proof_Level : Standard.String; Standard : Adacovex.Types.Compliance_Standard; DAL_Target : Adacovex.Types.DAL_Level; Standard_All : Standard.Boolean)
 
 | Parameter | Description |
 |-----------|-------------|
@@ -106,8 +119,9 @@ HLR-SBOM: SBOM generation
 | `Graph` | Dependency graph (index 1 = root component). |
 | `Proof_Level` | adacovex:proof_level property value. |
 | `Standard` | Compliance standard labelling the root assessment. |
+| `Standard_All` | True when --standard=all: emit the joined |
 
-### procedure Write_SBOM (Format : Adacovex.Types.SBOM_Format_Kind; Out_Path : Standard.String; Graph : Adacovex.Types.Implementation.Component_Vectors.Vector; Proof_Level : Standard.String; Standard : Adacovex.Types.Compliance_Standard; DAL_Target : Adacovex.Types.DAL_Level; Success : Standard.Boolean) `[Pre]`
+### procedure Write_SBOM (Format : Adacovex.Types.SBOM_Format_Kind; Out_Path : Standard.String; Graph : Adacovex.Types.Implementation.Component_Vectors.Vector; Proof_Level : Standard.String; Standard : Adacovex.Types.Compliance_Standard; DAL_Target : Adacovex.Types.DAL_Level; Standard_All : Standard.Boolean; Success : Standard.Boolean) `[Pre]`
 
 | Parameter | Description |
 |-----------|-------------|
@@ -117,9 +131,10 @@ HLR-SBOM: SBOM generation
 | `Out_Path` | Filesystem path to write the SBOM to. |
 | `Proof_Level` | adacovex:proof_level property value. |
 | `Standard` | Compliance standard labelling the root assessment. |
+| `Standard_All` | True when --standard=all: emit the joined |
 | `Success` | True if the SBOM was written successfully. |
 
-### procedure Write_SPDX_To (F : Ada.Text_IO.File_Type; Graph : Adacovex.Types.Implementation.Component_Vectors.Vector; Proof_Level : Standard.String; Standard : Adacovex.Types.Compliance_Standard; DAL_Target : Adacovex.Types.DAL_Level)
+### procedure Write_SPDX_To (F : Ada.Text_IO.File_Type; Graph : Adacovex.Types.Implementation.Component_Vectors.Vector; Proof_Level : Standard.String; Standard : Adacovex.Types.Compliance_Standard; DAL_Target : Adacovex.Types.DAL_Level; Standard_All : Standard.Boolean)
 
 | Parameter | Description |
 |-----------|-------------|
@@ -128,3 +143,4 @@ HLR-SBOM: SBOM generation
 | `Graph` | Dependency graph (index 1 = root component). |
 | `Proof_Level` | adacovex:proof_level property value. |
 | `Standard` | Compliance standard labelling the root assessment. |
+| `Standard_All` | True when --standard=all: emit the joined |
