@@ -21,9 +21,9 @@ any Ada/SPARK project.
 
 Self-assessment (`make run-self`) must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
-- Platinum SPARK level (343 VCs under gnatprove 16.1.0, 0 unproved; see
+- Platinum SPARK level (369 VCs under gnatprove 16.1.0, 0 unproved; see
   `docs/proof/16.1.0-ledger.md`)
-- 372/372 native tests passing
+- 395/395 native tests passing
 - DAL-C Achieved
 
 ## Architecture
@@ -68,16 +68,16 @@ src/
 |   `-- adacovex-server-router.ads            -- Parent package for HTTP request routing (future expansion)
 `-- tests/
     |-- adacovex-test_support.ads/.adb        -- Native test Runner type
-    |-- adacovex_config_tests.ads/.adb        -- CLI config tests (32)
-    |-- adacovex_dal_tests.ads/.adb           -- DAL compliance tests (7)
+    |-- adacovex_config_tests.ads/.adb        -- CLI config tests (33)
+    |-- adacovex_dal_tests.ads/.adb           -- DAL compliance tests (11)
     |-- adacovex_ir_tests.ads/.adb            -- IR synthesis tests (27)
     |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (64)
     |-- adacovex_renderer_svg_tests.ads/.adb  -- SVG renderer tests (30)
     |-- adacovex_sbom_tests.ads/.adb          -- SBOM / manifest graph tests (60)
     |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (83)
     |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (43)
-    |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (26)
-    `-- test_runner.adb                       -- Test suite entry point (372 tests)
+    |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (44)
+    `-- test_runner.adb                       -- Test suite entry point (395 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -97,10 +97,17 @@ Full format, rules, and examples:
 ```
 adacovex [options]
 adacovex sbom [--format=cyclonedx-json|spdx-json] [--out=PATH]
+adacovex prove [--target=PATH] [prove options]
+adacovex status [--target=PATH]
 ```
 
 Full flag reference, detailed behavior, CI threshold gates (`--require-*`),
-exit codes, and the `sbom` subcommand: [docs/cli-reference.md](docs/cli-reference.md).
+exit codes, the `sbom` subcommand, and the `--standard` flag:
+[docs/cli-reference.md](docs/cli-reference.md).
+
+`adacovex status` reports toolchain + platform state (Alire installed,
+gnatprove dependency-managed/detectable, CPU count, CI status) without running
+an assessment or downloading anything: [docs/platforms.md](docs/platforms.md#status-subcommand).
 
 ## Pipeline
 
@@ -122,12 +129,21 @@ Step details: [docs/architecture.md](docs/architecture.md#pipeline-execution-ord
   the standard Ada runtime). gnatprove is resolved at run time by the `prove`
   subcommand.
 
+## Tool scripts
+
+`tools/*.py` are pure-stdlib Python 3 (no third-party packages) and annotate
+all functions/variables with `typing` (`from typing import ...`). Keep new
+scripts consistent: `typing` for annotations, `argparse` for CLI, `pathlib`
+for paths, and no `pip install` / external imports. Run them with
+`python3 tools/<name>.py`; the sync ones are wired as `make test-count` and
+`make proof-status`.
+
 ## Makefile targets
 
 | Target | Description |
 |--------|-------------|
 | `build` | `alr build` (adacovex + test_runner, covex alias) |
-| `test` | Build + run the 372-test native suite |
+| `test` | Build + run the 395-test native suite |
 | `prove` | `./bin/adacovex prove --target=. --no-svg` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
 | `fmt` | Format Ada sources (gnatformat) |
@@ -136,10 +152,17 @@ Step details: [docs/architecture.md](docs/architecture.md#pipeline-execution-ord
 | `coverage-gate` | Docstring-coverage gate between the latest two release tags |
 | `bump-version` | Bump version across manifests + changelog (`VERSION=x.y.z`) |
 | `agents-tree` | Regenerate the `src/` architecture tree above |
+| `proof-status` | Sync VC count + SPARK level from gnatprove.out |
+| `test-count` | Sync test counts from docs/test_result.md |
 | `release` | Build, prove, validate, run coverage gate vs last release, bundle + tag & push |
 | `ascii-check` | Verify all source files are pure ASCII |
 | `clean` | Remove bin/ obj/ docs/badges/ |
 | `help` | Print available targets |
+
+Running `alr build` / `make build` / `make test` / `make run-self` rewrites a
+few generated files as a normal side effect: `alire/settings.toml` and
+`alire/build_hash_inputs` (Alire build-profile state) and `sbom.json` (SBOM
+output). These are expected and should be left as-is -- do not revert them.
 
 ## Workflows
 
@@ -154,9 +177,9 @@ project: [README.md](README.md#installing-adacovex).
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 372/372 passing |
+| Unit tests | `make test` | 395/395 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
-| SPARK proof | `make prove` | Platinum (343 VCs, 0 unproved under gnatprove 16.1.0) |
+| SPARK proof | `make prove` | Platinum (369 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
 
 ## Changelog format
@@ -164,19 +187,21 @@ project: [README.md](README.md#installing-adacovex).
 Releases get a `docs/changelogs/adacovex-<version>.md` file using `### C#:` /
 `### H#:` numbered subsections under `## Changes` / `## Fixes`, plus
 `## Test Suite`, `## Proof Results`, and `## Traceability`. Full format and
-rules: [docs/contributing.md](docs/contributing.md#changelog-format).
+rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 372 tests across 9 categories).
+Native zero-dependency suite (`src/tests/`, 395 tests across 9 categories).
 Per-category counts and framework details:
-[docs/contributing.md](docs/contributing.md#unit-tests).
+[CONTRIBUTING.md](CONTRIBUTING.md#unit-tests).
 
 ## Documentation
 
 - [CLI reference](docs/cli-reference.md)
 - [CI/CD](docs/ci-cd.md)
-- [Contributing](docs/contributing.md)
+- [Contributing](CONTRIBUTING.md)
 - [Docstring spec](docs/api-docs/adacovex-docstring-spec.md)
 - [DAL levels](docs/api-docs/adacovex-dal-levels.md)
+- [Standards](docs/standards.md)
+- [Platforms](docs/platforms.md)
 - [Architecture](docs/architecture.md)

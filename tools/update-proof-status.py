@@ -185,6 +185,11 @@ def replacements(m: Metrics) -> List[Tuple[Pattern[str], str]]:
          f"all checks proved ({t} checks)"),
         # "38 analyzed units".
         (re.compile(r"(\d+) analyzed units"), f"{n} analyzed units"),
+        # CI threshold gates pinned to the assessed SPARK level:
+        # "--require-spark=Platinum" (Makefile, docs) and
+        # "require-spark: Platinum" (workflows).
+        (re.compile(rf"--require-spark={LEVEL_RE}"), f"--require-spark={lvl}"),
+        (re.compile(rf"require-spark: {LEVEL_RE}"), f"require-spark: {lvl}"),
     ]
 
 
@@ -210,8 +215,12 @@ def main() -> int:
     files: List[Path] = [
         ROOT / "AGENTS.md",
         ROOT / "README.md",
+        ROOT / "Makefile",
+        ROOT / ".github" / "workflows" / "ci.yml",
+        ROOT / ".github" / "workflows" / "release.yml",
+        ROOT / "docs" / "cli-reference.md",
         ROOT / "docs/proof/16.1.0-ledger.md",
-        ROOT / "docs/changelogs/adacovex-1.9.0.md",
+        ROOT / "docs/changelogs/adacovex-1.10.0.md",
     ]
 
     if args.dry_run:

@@ -200,6 +200,19 @@ package body Adacovex.Config is
                         "--dal must be A, B, C, D, or E (got: " & Val & ")");
                   end if;
                end;
+            elsif A = "--standard" then
+               I := I + 1;
+               if I <= Count then
+                  Cfg.Standard_Target :=
+                    Types.To_Standard (Ada.Command_Line.Argument (I));
+               else
+                  Set_Error
+                    (Cfg,
+                     "--standard requires a name (do178c, iso26262, iec62304)");
+               end if;
+            elsif Has_Prefix (A, "--standard=") then
+               Cfg.Standard_Target :=
+                 Types.To_Standard (A (A'First + 11 .. A'Last));
             elsif A = "--serve" then
                Cfg.Serve_Mode := True;
             elsif A = "--port" then
@@ -361,6 +374,8 @@ package body Adacovex.Config is
                Cfg.SBOM_Mode := True;
             elsif A = "prove" then
                Cfg.Prove_Mode := True;
+            elsif A = "status" then
+               Cfg.Status_Mode := True;
             elsif A = "--no-sbom" then
                Cfg.No_SBOM := True;
             elsif A = "--sbom-format" then
@@ -755,6 +770,19 @@ package body Adacovex.Config is
             & "or sbom");
       end if;
 
+      -- Status mode is a pure toolchain/platform report: no assessment runs.
+      if Cfg.Status_Mode
+        and then (Cfg.Prove_Mode
+                  or Cfg.SBOM_Mode
+                  or Cfg.Compare_Base_Len > 0
+                  or Cfg.Coverage_Delta_Len > 0)
+      then
+         Set_Error
+           (Cfg,
+            "status cannot be combined with prove, sbom, --compare-base, "
+            & "or --coverage-delta");
+      end if;
+
       -- GNATprove options only make sense in prove mode.
       if not Cfg.Prove_Mode
         and then (Cfg.Prove_Jobs >= 0
@@ -877,6 +905,7 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line ("Usage: adacovex [options]");
       Ada.Text_IO.Put_Line ("       adacovex sbom --format=FMT --out=PATH");
       Ada.Text_IO.Put_Line ("       adacovex prove --target=PATH");
+      Ada.Text_IO.Put_Line ("       adacovex status --target=PATH");
       Ada.Text_IO.Put_Line ("");
       Ada.Text_IO.Put_Line ("Options:");
       Ada.Text_IO.Put_Line
@@ -885,6 +914,16 @@ package body Adacovex.Config is
         ("  --manifest=PATH       Target manifest file override");
       Ada.Text_IO.Put_Line
         ("  --dal=LEVEL           DAL level: A | B | C | D | E (default: C)");
+      Ada.Text_IO.Put_Line
+        ("  --standard=NAME       Compliance standard: do178c | iso26262 |");
+      Ada.Text_IO.Put_Line
+        ("                        iec62304 (default: do178c)");
+      Ada.Text_IO.Put_Line
+        ("  status                Report toolchain + platform status (no");
+      Ada.Text_IO.Put_Line
+        ("                        assessment); exit 0 when alr + gnatprove are");
+      Ada.Text_IO.Put_Line
+        ("                        available or dependency-managed");
       Ada.Text_IO.Put_Line
         ("  --serve               Start HTTP dashboard on :8080");
       Ada.Text_IO.Put_Line

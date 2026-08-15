@@ -9,22 +9,23 @@ package Adacovex.Config is
    pragma SPARK_Mode (On);
 
    type CLI_Config is record
-      Target_Path   : String (1 .. Types.Max_Path);
-      Target_Len    : Natural := 0;
-      Manifest_Path : String (1 .. Types.Max_Path);
-      Manifest_Len  : Natural := 0;
-      DAL_Target    : Types.DAL_Level := Types.DAL_C;
-      Serve_Mode    : Boolean := False;
-      Port          : Positive := 8080;
-      No_SVG        : Boolean := False;
-      Emit_SVG      : Boolean := True;
-      SVG_Path      : String (1 .. Types.Max_Path);
-      SVG_Path_Len  : Natural := 0;
-      Emit_Markdown : Boolean := False;
-      MD_Path       : String (1 .. Types.Max_Path);
-      MD_Path_Len   : Natural := 0;
-      Verbose       : Boolean := False;
-      Strict_Mode   : Boolean := True;
+      Target_Path     : String (1 .. Types.Max_Path);
+      Target_Len      : Natural := 0;
+      Manifest_Path   : String (1 .. Types.Max_Path);
+      Manifest_Len    : Natural := 0;
+      DAL_Target      : Types.DAL_Level := Types.DAL_C;
+      Standard_Target : Types.Compliance_Standard := Types.DO_178C;
+      Serve_Mode      : Boolean := False;
+      Port            : Positive := 8080;
+      No_SVG          : Boolean := False;
+      Emit_SVG        : Boolean := True;
+      SVG_Path        : String (1 .. Types.Max_Path);
+      SVG_Path_Len    : Natural := 0;
+      Emit_Markdown   : Boolean := False;
+      MD_Path         : String (1 .. Types.Max_Path);
+      MD_Path_Len     : Natural := 0;
+      Verbose         : Boolean := False;
+      Strict_Mode     : Boolean := True;
 
       --  Result caching (see Adacovex.Cache).  Enabled by default; the cache
       --  is keyed by the SHA-256 of each analyzed input, so unchanged code
@@ -43,6 +44,7 @@ package Adacovex.Config is
       Coverage_Delta     : String (1 .. Types.Max_Path);
       Coverage_Delta_Len : Natural := 0;
       Prove_Mode         : Boolean := False;
+      Status_Mode        : Boolean := False;
       SBOM_Mode          : Boolean := False;
       SBOM_Format        : Types.SBOM_Format_Kind := Types.CycloneDX_JSON;
       SBOM_Out           : String (1 .. Types.Max_Path);
@@ -53,7 +55,7 @@ package Adacovex.Config is
       --  "not configured": --jobs auto-detects the core count, and the
       --  level/timeout/steps/memlimit options are not passed to gnatprove.
       --  --jobs=0 forwards -j0 (all cores).  The prove subcommand applies
-      --  its own --steps=5000 default when --steps is not passed (see
+      --  its own --steps=10000 default when --steps is not passed (see
       --  Build_Option_String), so proofs get a reproducible budget instead
       --  of gnatprove's step-limit false negatives.
       Prove_Jobs           : Integer := -1;

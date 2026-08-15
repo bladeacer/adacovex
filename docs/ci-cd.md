@@ -133,6 +133,12 @@ The release notes link the signed attestation via the action's
 `attestation-url` output, a *Git Changelog* compare link
 (`compare/v1.8.0...v1.9.0`), and the human-readable changelog.
 
+**The CI release binary is Linux x86-64 only for now**: the release workflow
+runs on `ubuntu-latest` and packages the Linux binary + the prebuilt GNATprove
+toolchain bundle for that target. macOS, FreeBSD, Windows, and Linux aarch64
+build adacovex from source via Alire instead. See
+[Platforms](platforms.md#release-binaries).
+
 `make release VERSION=x.y.z` does the same locally (build `--release`,
 generate proofs, validate DAL-C, bundle `dist/`), then tags and pushes to
 trigger the workflow.

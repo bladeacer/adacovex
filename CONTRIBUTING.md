@@ -39,24 +39,13 @@ Native (zero-dependency) framework (`Adacovex.Test_Support`, no AUnit). Source:
 
 | Category | Tests |
 |----------|-------|
-| Types conversions | 26 |
-| DAL compliance | 7 |
+| Types conversions | 44 |
+| DAL compliance | 11 |
 | Source scanner | 83 |
 | GNATprove parser | 64 |
 | Test-result parser | 43 |
-| CLI config | 32 |
+| CLI config | 33 |
 | SVG renderer | 30 |
 | SBOM generator | 60 |
 | IR synthesis | 27 |
-| **Total** | **372** |
-
-## Creating patch files for vendored code
-
-1. Run adacovex in strict mode to identify undocumented subprograms.
-2. Find the undocumented packages and subprograms in the report.
-3. Create `<target>/.adacovex/patches/<relative-path>` with matching
-   subprogram declarations and docstrings.
-4. Re-run to verify 100% coverage.
-
-See [Architecture -- Patch System](architecture.md#patch-system) for the full
-format and rules.
+| **Total** | **395** |

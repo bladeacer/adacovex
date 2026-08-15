@@ -375,8 +375,9 @@ procedure Adacovex_Main is
         (Target (1 .. TLen), Proof, Success);
       Adacovex.Parsers.Tests.Parse_Test_Result_From_Project
         (Target (1 .. TLen), Tests, Success);
-      Adacovex.Compliance.DAL.Assess_DAL
-        (Cfg.DAL_Target,
+      Adacovex.Compliance.DAL.Assess_Standard
+        (Cfg.Standard_Target,
+         Cfg.DAL_Target,
          Target (1 .. TLen),
          Packages,
          Proof,
@@ -432,6 +433,19 @@ begin
       Verbose ("  patches: .adacovex/patches/ applied");
    else
       Verbose ("  skip list: " & Cfg.Skip_Dirs (1 .. Cfg.Skip_Dir_Ct));
+   end if;
+
+   -- Status mode: report toolchain + platform status and exit (no
+   -- assessment, no scanning).  Run_Status never deploys or downloads
+   -- anything, so it prints its own header and skips the normal one.
+   if Cfg.Status_Mode then
+      declare
+         OK : Boolean;
+      begin
+         Adacovex.Prove.Run_Status (Target (1 .. TLen), OK);
+         Ada.Command_Line.Set_Exit_Status (if OK then 0 else 1);
+      end;
+      return;
    end if;
 
    Ada.Text_IO.Put_Line
@@ -629,13 +643,14 @@ begin
       end if;
    end;
 
-   -- Step 4: Assess DAL compliance
-   Verbose ("step 4/8: assessing DAL compliance...");
+   -- Step 4: Assess compliance (standard-aware level label)
+   Verbose ("step 4/8: assessing compliance...");
    declare
       Field : Desc_Field := (others => ' ');
    begin
-      Adacovex.Compliance.DAL.Assess_DAL
-        (Cfg.DAL_Target,
+      Adacovex.Compliance.DAL.Assess_Standard
+        (Cfg.Standard_Target,
+         Cfg.DAL_Target,
          Target (1 .. TLen),
          Packages,
          Proof,

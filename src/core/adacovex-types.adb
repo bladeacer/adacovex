@@ -75,6 +75,94 @@ package body Adacovex.Types is
       end if;
    end To_DAL;
 
+   function To_String (S : Compliance_Standard) return String is
+   begin
+      case S is
+         when DO_178C   =>
+            return "DO-178C";
+
+         when ISO_26262 =>
+            return "ISO 26262";
+
+         when IEC_62304 =>
+            return "IEC 62304";
+      end case;
+   end To_String;
+
+   function To_Standard (S : String) return Compliance_Standard is
+      U : String (1 .. S'Length) := (others => ' ');
+   begin
+      if S'Length = 0 then
+         return DO_178C;
+      end if;
+      for I in S'Range loop
+         pragma
+           Loop_Invariant
+             (I >= S'First
+                and then I <= S'Last
+                and then U'Length = S'Length
+                and then (I - S'First + 1) in U'Range);
+         if S (I) in 'a' .. 'z' then
+            U (I - S'First + 1) := Character'Val (Character'Pos (S (I)) - 32);
+         elsif S (I) = '-' then
+            U (I - S'First + 1) := '_';
+         else
+            U (I - S'First + 1) := S (I);
+         end if;
+      end loop;
+      if U = "DO_178C" or else U = "DO178C" then
+         return DO_178C;
+      elsif U = "ISO_26262" or else U = "ISO26262" then
+         return ISO_26262;
+      elsif U = "IEC_62304" or else U = "IEC62304" then
+         return IEC_62304;
+      else
+         return DO_178C;
+      end if;
+   end To_Standard;
+
+   function Standard_Level_Name
+     (Standard : Compliance_Standard; Level : DAL_Level) return String is
+   begin
+      case Standard is
+         when DO_178C   =>
+            return "DAL-" & To_String (Level);
+
+         when ISO_26262 =>
+            case Level is
+               when DAL_A =>
+                  return "ASIL D";
+
+               when DAL_B =>
+                  return "ASIL C";
+
+               when DAL_C =>
+                  return "ASIL B";
+
+               when DAL_D =>
+                  return "ASIL A";
+
+               when DAL_E =>
+                  return "QM";
+            end case;
+
+         when IEC_62304 =>
+            case Level is
+               when DAL_A         =>
+                  return "Class C";
+
+               when DAL_B         =>
+                  return "Class B";
+
+               when DAL_C         =>
+                  return "Class A";
+
+               when DAL_D | DAL_E =>
+                  return "No class";
+            end case;
+      end case;
+   end Standard_Level_Name;
+
    function To_String (S : DAL_Status) return String is
    begin
       case S is

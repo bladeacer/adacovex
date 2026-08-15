@@ -1,4 +1,4 @@
-.PHONY: help build test prove doc clean run-self run-ada-crdt dev-setup prod-setup ascii-check fmt bump-version coverage-gate release publish test-publish _dev_cmd agents-tree sbom
+.PHONY: help build test prove doc clean run-self run-ada-crdt dev-setup prod-setup ascii-check fmt bump-version coverage-gate release publish test-publish _dev_cmd agents-tree sbom proof-status test-count
 
 .DEFAULT_GOAL := help
 
@@ -27,6 +27,8 @@ help:
 	@echo '                (tools/gen-agents-tree.py + tools/agents-tree.map)'
 	@echo '  proof-status  Update the VC count + SPARK level in the docs from'
 	@echo '                the current gnatprove.out (tools/update-proof-status.py)'
+	@echo '  test-count    Update the test counts in the docs from'
+	@echo '                docs/test_result.md (tools/update-test-count.py)'
 	@echo '  bump-version  Bump version across alire.toml, alire-dev.toml,'
 	@echo '                adacovex.ads, releases, index (VERSION=x.y.z)'
 	@echo '  release       Tag, update releases+index, push. Use VERSION=x.y.z'
@@ -63,7 +65,7 @@ test: build
 # Self-assessment acceptance gates, defined once so prove/run-self/release stay
 # in sync (and match .github/workflows/ci.yml + AGENTS.md "Dogfood target").
 # --require-tests is the current native test-suite size (docs/test_result.md).
-SELF_ASSESS_ARGS := --dal=C --require-spark=Platinum --require-docstrings=100 --require-tests=372 --require-proof=100
+SELF_ASSESS_ARGS := --dal=C --require-spark=Platinum --require-docstrings=100 --require-tests=395 --require-proof=100
 
 prove: build
 	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex prove --target=. $(SELF_ASSESS_ARGS) --emit-svg=docs/badges/
@@ -117,6 +119,9 @@ agents-tree:
 
 proof-status:
 	@python3 tools/update-proof-status.py
+
+test-count:
+	@python3 tools/update-test-count.py
 
 ascii-check:
 	@echo "=== ASCII Charset Verification ==="; \
