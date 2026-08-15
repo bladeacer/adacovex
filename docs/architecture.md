@@ -208,7 +208,7 @@ DAL-C is the default target level. Higher levels (A, B) require stricter proof l
 The scanner walks the target directory tree, skipping always-excluded directories (`.git`, `obj`, `tests`, `config`, `.adacovex`). For each `.ads` file found, it extracts:
 
 - Package name from filename
-- Subprogram declarations (`procedure`, `function`, `generic procedure`, `generic function`)
+- Subprogram declarations (`procedure`, `function`, `generic procedure`, `generic function`, and `overriding` / `not overriding` variants)
 - Docstring annotations (`--  ` prefix with optional `@param`, `@return`, `@field`, `@formal` tags, plus Google `Args:`/`Returns:` blocks and Sphinx `:param:`/`:returns:` fields)
 - HLR traceability tags (`-- HLR-XXXX`)
 
@@ -278,7 +278,7 @@ adacovex supports multiple output formats:
 
 ## Testing
 
-adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 368 tests across 9 categories. No external test framework (AUnit, etc.) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
+adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 372 tests across 9 categories. No external test framework (AUnit, etc.) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
 
 ## Supported Platforms
 
@@ -344,3 +344,68 @@ It does not make edits in place or on your behalf.
 adacovex lets you write proofs and decide where proofs are pointless (e.g. code that has to involve manual memory management). You just have to justify your rationale. The tool should not be rigid and expect 100% proving for all use cases.
 
 You write the proofs yourself, so there is no magic or hidden abstractions here.
+
+## Pipeline (execution order)
+
+When adacovex runs, it executes these steps in sequence:
+
+```
+0. Parse CLI args           -> CLI_Config record (prove / sbom / diff / normal)
+1. Determine ANSI color     -> NO_COLOR check
+2. (prove mode) Run GNATprove -> fresh obj/gnatprove/gnatprove.out
+3. Scan source files        -> Package_Vectors.Vector (subprograms, HLR tags, docstrings)
+4. Apply docstring patches  -> Merge .adacovex/patches/ (strict mode only)
+5. Compute doc metrics      -> Docstring_Metrics (coverage %)
+6. Parse GNATprove output   -> Proof_Summary (VC counts, SPARK level)
+7. Parse test results       -> Test_Summary (pass/fail counts)
+8. Assess DAL compliance    -> DAL_Assessment (Achieved / Unmet + reasons)
+9. Render ANSI summary      -> stdout (terminal report)
+10. Emit SVG badges          -> <svg-dir>/*.svg (if enabled)
+11. Emit Markdown reports    -> <md-dir>/VERIFICATION.md + TRACE.md (if enabled)
+12. Emit automatic SBOM      -> <target>/sbom.json | sbom.spdx.json | docs/compliance/SBOM.md (unless --no-sbom)
+13. Start HTTP server        -> :<port> (if --serve)
+14. Set exit code            -> 0 if Achieved, 1 if Unmet
+```
+
+## Swapping the GNAT compiler (LLVM backend)
+
+adacovex and Alire both default to the GCC-based **GNAT** (`gnat_native`)
+compiler; no action is needed. Only swap if you specifically want an
+LLVM-backend GNAT (e.g. GNAT LLVM) for your target project -- for example to
+exercise dissimilar redundancy via diverse code generation.
+
+GNAT LLVM is **not** yet packaged as a standard Alire toolchain crate, so two
+paths exist:
+
+1. **Alire-managed compiler (preferred when available).** If a GNAT LLVM binary
+   release becomes available in the Alire index, declare it in your
+   `alire.toml` / `alire-dev.toml`:
+
+   ```toml
+   [[depends-on]]
+   gnat_llvm = "*"
+   ```
+
+   `alr` then selects it automatically for that project's builds. You can also
+   pick a default compiler for all projects with
+   `alr toolchain --select --disable-assistant` and choosing the LLVM GNAT.
+
+2. **System-installed GNAT LLVM.** Install GNAT LLVM on `$PATH`, then force the
+   Ada toolchain in the root `.gpr` so `gprbuild` doesn't fall back to the
+   GCC GNAT:
+
+   ```gpr
+   for Toolchain_Name ("Ada") use "GNAT_LLVM";
+   ```
+
+   You can confirm which compiler built a given `.ali` file by its first line
+   (`GNAT` vs `GNAT-LLVM`).
+
+Notes:
+
+- GNAT LLVM and GCC GNAT are not guaranteed ABI-compatible; compile all Ada in
+  a project with the same compiler.
+- GNAT LLVM's `-fstack-check` support is partial and some features
+  (`Scalar_Storage_Order`, `Convention C++`) differ from GCC GNAT.
+- SPARK proof results are compiler-independent, so `covex prove` and the
+  DAL assessment are unaffected by the choice.

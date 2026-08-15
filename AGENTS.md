@@ -7,28 +7,23 @@ test-result parsing, DO-178C DAL compliance assessment, and interactive dashboar
 
 - **Repo**: https://github.com/bladeacer/adacovex
 - **Language**: Ada 2012 / SPARK 2014 (GNAT, Alire)
-- **Zero library dependency**: uses only GNAT runtime (GNAT.Sockets, Ada tasking, standard libs);
-  no declared tool dependency either -- gnatprove is resolved at run time by the
-  `prove` subcommand (per-project manifest, `$PATH`, `~/.adacovex/toolchain/`, or
-  download) and lives only in the dev manifest for the local make targets
-- **SPARK target**: Platinum (0 unproved at the standard invocation; see
-  [SPARK levels](docs/api-docs/adacovex-spark-levels.md))
+- **Zero library dependency**: uses only the GNAT runtime. gnatprove is *not* a
+  declared dependency -- the `prove` subcommand resolves it at run time
+  (per-project manifest, `$PATH`, `~/.adacovex/toolchain/`, or download) and
+  lives only in the dev manifest for local make targets.
+- **SPARK target**: Platinum. See [SPARK levels](docs/api-docs/adacovex-spark-levels.md).
 
 ## Dogfood target
 
-adacovex was designed to audit the Ada_CRDT library at `../Ada_CRDT` (26 packages,
-~219 subprograms). Running `make run-ada-crdt` runs the full pipeline against it.
-The `--target=PATH` option can point at any Ada/SPARK project.
+adacovex audits the Ada_CRDT library at `../Ada_CRDT` (`make run-ada-crdt`) and
+its own source (`make run-self`, default target: cwd). `--target=PATH` points at
+any Ada/SPARK project.
 
-Self-assessment (`make run-self`, default target: cwd) verifies adacovex against its own
-source -- 28 packages, 93 subprograms -- and must always show:
+Self-assessment (`make run-self`) must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
-- Platinum SPARK level (343 VCs under gnatprove 16.1.0, 0 unproved at the
-  standard `adacovex prove` invocation, which passes `--steps=5000` by
-  default; the earlier "509 VCs / 168 unproved / Silver" figure was a stale
-  count that no documented gnatprove invocation reproduces -- see
+- Platinum SPARK level (343 VCs under gnatprove 16.1.0, 0 unproved; see
   `docs/proof/16.1.0-ledger.md`)
-- 368/368 native tests passing
+- 372/372 native tests passing
 - DAL-C Achieved
 
 ## Architecture
@@ -79,19 +74,14 @@ src/
     |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (64)
     |-- adacovex_renderer_svg_tests.ads/.adb  -- SVG renderer tests (30)
     |-- adacovex_sbom_tests.ads/.adb          -- SBOM / manifest graph tests (60)
-    |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (79)
+    |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (83)
     |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (43)
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (26)
-    `-- test_runner.adb                       -- Test suite entry point (368 tests)
+    `-- test_runner.adb                       -- Test suite entry point (372 tests)
 ```
 <!-- agents-tree:end -->
 
-
----
-
-
-
-### .adacovex patch directory
+## .adacovex patch directory
 
 Strict mode (default) scans ALL directories except the always-excluded ones, so
 vendored code counts against docstring coverage. A patch file at
@@ -102,8 +92,6 @@ original without modifying it. Only active in strict mode.
 Full format, rules, and examples:
 [docs/architecture.md](docs/architecture.md#patch-system).
 
----
-
 ## CLI reference
 
 ```
@@ -111,703 +99,84 @@ adacovex [options]
 adacovex sbom [--format=cyclonedx-json|spdx-json] [--out=PATH]
 ```
 
-### Flag summary
+Full flag reference, detailed behavior, CI threshold gates (`--require-*`),
+exit codes, and the `sbom` subcommand: [docs/cli-reference.md](docs/cli-reference.md).
 
-| Flag | Default | Mode | Description |
-|------|---------|------|-------------|
-| `--target=PATH` | `.` (CWD) | both | Target project root directory |
-| `--manifest=PATH` | auto-detected | both | Override project manifest path |
-| `--dal=LEVEL` | `C` | both | Target DAL level (A-E) |
-| `--serve` | off | both | Start HTTP dashboard server |
-| `--port=N` | `8080` | serve | Dashboard server port |
-| `--emit-svg=PATH` | `<target>/docs/badges` | both | Output directory for SVG badges |
-| `--no-svg` | off | both | Suppress SVG badge output |
-| `--emit-markdown=PATH` | off | both | Output directory for Markdown reports |
-| `--skip-dir=NAME` | (see below) | relaxed | Directory name to skip (repeatable) |
-| `--relaxed` | off | both | Disable strict mode |
-| `--compare-base=REF` | off | both | Differential mode vs a git base ref |
-| `--coverage-delta=REF` | off | both | Docstring-coverage gate vs a git base ref |
-| `--cache` | on | both | Enable on-disk result caching |
-| `--no-cache` | off | both | Disable result caching (always re-scan/re-parse/re-prove) |
-| `--cache-dir=PATH` | `~/.adacovex/cache/<ver>` | both | Cache directory for analysis results |
-| `--cache-max=N` | `4096` | both | Max cache entries before oldest-first eviction |
-| `--verbose` | off | both | Verbose diagnostics |
-| `--help` | - | both | Print usage and exit |
+## Pipeline
 
-### Detailed flag behavior
+Execution order: parse CLI -> scan -> patch -> doc metrics -> proof parse ->
+test parse -> DAL assess -> render -> SVG/Markdown/SBOM -> serve -> exit code.
+Step details: [docs/architecture.md](docs/architecture.md#pipeline-execution-order).
 
-#### `--target=PATH`
-- **Purpose**: Specifies the Ada/SPARK project to analyze.
-- **Default**: current working directory.
-- **Resolution**: Relative paths are resolved against the current working
-  directory to an absolute path.
-- **Effect**: Determines the root directory for source scanning, manifest
-  detection, SVG badge output, and patch file resolution.
-- **Example**: `--target=.` scans the current directory.
+## Key constraints
 
-#### `--manifest=PATH`
-- **Purpose**: Override the project manifest file path.
-- **Default**: `<target>/alire.toml` if it exists, otherwise
-  `<target>/alire-dev.toml`.
-- **Effect**: The manifest path is displayed in stderr output and is used by
-  `adacovex sbom` to resolve the root project metadata for the dependency
-  graph.
-- **Example**: `--manifest=/path/to/alire.toml`.
-
-#### `--dal=LEVEL`
-- **Purpose**: Target DO-178C DAL level for compliance assessment.
-- **Values**: `A`, `B`, `C`, `D`, `E` (case-insensitive).
-- **Default**: `C`.
-- **Effect**: Determines the minimum SPARK proof level required and the specific
-  DAL criteria checked. Higher DAL levels (A, B) require stricter proofs. See
-  [DAL levels](#dal-levels) for per-level requirements.
-- **Examples**: `--dal=A`, `--dal=e`.
-
-#### `--serve`
-- **Purpose**: Start the built-in HTTP/1.1 web dashboard.
-- **Default**: Off (CLI mode).
-- **Effect**: After scanning and assessment, starts a web server on the
-  configured port serving:
-  - `GET /` -- HTML dashboard with coverage, proof, test, and compliance cards
-  - `GET /api/metrics` -- JSON object with key metrics
-  - `GET /badge/spark.svg` -- SPARK level badge
-  - `GET /badge/tests.svg` -- Test status badge
-  - `GET /badge/do178c.svg` -- DO-178C status badge
-- **Note**: The server blocks (does not return to shell) until interrupted.
-- **Example**: `adacovex --target=. --serve --port=9090`.
-
-#### `--port=N`
-- **Purpose**: HTTP server port when `--serve` is used.
-- **Default**: `8080`.
-- **Effect**: Only relevant when `--serve` is passed. Must be a valid
-  `Positive` integer.
-- **Example**: `--port=3000`.
-
-#### `--emit-svg=PATH`
-- **Purpose**: Generate SVG badges and write them to a directory.
-- **Default**: `<target>/docs/badges` (project-scoped).
-- **Effect**: Creates four SVG files:
-  - `spark.svg` -- SPARK assurance level (Stone through Platinum)
-  - `tests.svg` -- Test pass/fail count
-  - `do178c.svg` -- DO-178C DAL status (Achieved / Unmet)
-  - `docs.svg` -- Docstring coverage percentage
-- **Interaction**: `--no-svg` overrides and disables SVG output entirely.
-- **Example**: `--emit-svg=/tmp/badges`.
-
-#### `--no-svg`
-- **Purpose**: Suppress SVG badge output.
-- **Default**: Off (badges are emitted by default).
-- **Effect**: Sets `Emit_SVG` to `False`. Overrides `--emit-svg` if both given.
-- **Example**: `--no-svg`.
-
-#### `--emit-markdown=PATH`
-- **Purpose**: Generate Markdown compliance reports.
-- **Default**: Off (no Markdown output).
-- **Effect**: Creates two Markdown files:
-  - `VERIFICATION.md` -- Full verification report with all metrics
-  - `TRACE.md` -- HLR traceability matrix (source-to-requirement mapping)
-- **Example**: `--emit-markdown=docs/compliance/`.
-
-#### `--skip-dir=NAME`
-- **Purpose**: Add a directory name to the scanner's skip list.
-- **Default**: `demo,deps,examples` (only used in relaxed mode).
-- **Effect**: Directories whose simple name matches an entry in the skip list
-  are not recursed into during source scanning. Repeatable: each invocation
-  appends to the list.
-- **Example**: `--skip-dir=vendor --skip-dir=external`.
-- **Important**: In strict mode (default), the skip list is always empty
-  regardless of `--skip-dir` flags. Only `--relaxed` enables the skip list.
-
-#### `--relaxed`
-- **Purpose**: Disable strict mode.
-- **Default**: Off (strict mode is on by default).
-- **Effect**:
-  - **Skip list is active**: the comma-separated skip list (default:
-    `demo,deps,examples` plus any `--skip-dir` additions) is passed to the
-    scanner.
-  - **No patches applied**: `Apply_Patches` is NOT called.
-  - Target use case: running against a project with vendored deps that you
-    don't want to patch.
-- **Strict mode (--relaxed off)**:
-  - **Skip list is empty**: ALL directories except always-excluded ones are
-    scanned. No user-provided `--skip-dir` values are used.
-  - **Patches applied**: scans `<target>/.adacovex/patches/` for each package
-    and merges docstring info.
-  - Target use case: running against adacovex itself, where total coverage
-    (including vendored code with patches) must be 100%.
-
-#### `--compare-base=REF`
-- **Purpose**: Run in differential mode: assess a git base revision and compare
-  it against the current working tree.
-- **Default**: Off (normal single-target assessment).
-- **Prerequisite**: The `--target` directory must be a git repository, and the
-  `git` executable must be on `PATH`.
-- **Effect**: Creates a temporary git worktree at `/tmp/adacovex-diff-<pid>`,
-  runs the full assessment (scan, patches, doc metrics, GNATprove, tests, DAL)
-  on the base revision and the current tree, then prints a side-by-side table
-  (packages, subprograms, docstring %, HLR traced, orphan tags, SPARK level,
-  VCs proved, tests, DAL status).
-- **Exit code**: `0` if no regressions AND current DAL is Achieved; `1`
-  otherwise (regression, or current DAL Unmet).
-- **Missing artifacts**: If the base revision does not commit `gnatprove.out`
-  or a test-result summary (e.g. `test_result.md`), those rows report `N/A`
-  and are not compared.
-- **Example**: `adacovex --target=. --compare-base=HEAD`.
-
-#### `--verbose`
-- **Purpose**: Enable verbose diagnostic output.
-- **Default**: Off.
-- **Effect**: Prints pipeline step diagnostics to stderr.
-
-#### `--coverage-delta=REF`
-- **Purpose**: Lightweight docstring-coverage gate for PR-style CI checks.
-- **Default**: Off (normal single-target assessment).
-- **Prerequisite**: The `--target` directory must be a git repository, and the
-  `git` executable must be on `PATH`. Mutually exclusive with
-  `--compare-base`.
-- **Effect**: Creates a temporary git worktree, scans sources + applies
-  patches + computes docstring metrics on both the base ref and the current
-  tree (no GNATprove/tests/DAL, so it works even when the base does not commit
-  build artifacts), prints a compact coverage table and a machine-parseable
-  `coverage_delta:` line, and cleans up the worktree.
-- **Exit code**: `0` if current docstring coverage is `>=` the base (or the
-  base has no sources); `1` if coverage regressed.
-- **Example**: `adacovex --target=. --coverage-delta=origin/main`.
-- **Release usage**: `make release` runs the same gate against the last release
-  tag (e.g. `--coverage-delta=v1.1.0`) and aborts if docstring coverage
-  regressed between releases.
-
-#### Result caching (`--cache` / `--no-cache` / `--cache-dir` / `--cache-max`)
-- **Purpose**: Persist parsed analysis results between runs so unchanged inputs
-  are not re-scanned / re-parsed / re-proved.
-- **Keys**: Each cache entry is `"scan:" | "prove:" | "tests:" + SHA-256` of the
-  artifact it was derived from (a `.ads` file's bytes, `gnatprove.out`, or the
-  test-result file). Re-parsing a byte-identical artifact yields a cache hit
-  regardless of the target directory or command line used.
-- **Schema namespace**: The default cache root is
-  `~/.adacovex/cache/<version>/<Cache_Schema>`. `Cache_Schema` (in
-  `src/core/adacovex-cache.ads`) must be bumped whenever the serialized layout
-  of a cached record or the scanner/parser semantics change, so blobs written
-  by an incompatible build are never served as if valid.
-- **Eviction**: `Put_Cached` calls `Evict_If_Needed(--cache-max)` (default
-  4096), deleting oldest-first by modification time. `Eviction_Count` tracks
-  removals and is reported in the ANSI cache line.
-- **Overflow safety**: `Serialize` returns an empty blob when a package would
-  exceed `Max_Cache_Blob`; callers skip storing it and `Deserialize` rejects
-  empty/oversized input, so truncated data can never be served as a hit.
-- **`--target` normalization**: `--target` is normalized (`.`/`..` collapsed to
-  a canonical absolute path) before scanning. This keeps the `File_Path`
-  values stored in cached `Package_Info` consistent across invocations that
-  spell the same directory differently (e.g. `--target=../Ada_CRDT` vs
-  `--target=.`), which matters because docstring patches are matched by the
-  package's path relative to the target root.
-- **CI**: The GitHub action persists `~/.adacovex/cache` between workflow runs
-  (`result-cache` input, default true), so incremental branches get mostly
-  cache hits; content-addressed keys make restoring a stale cache always safe.
-
-#### `--help`
-- **Purpose**: Print usage information and exit.
-- **Effect**: Prints all options, defaults, examples to stdout, then the
-  program exits. No scanning or assessment is performed.
-
-### The `sbom` subcommand (`adacovex sbom`)
-
-- **Purpose**: Generate a proof-aware software bill of materials for the target
-  project.
-- **Usage**: `adacovex sbom [--format=FMT] [--out=PATH]`.
-- **Effect**: Scans sources, parses GNATprove output and test results, and
-  assesses DAL first, then resolves the dependency graph from the Alire
-  manifest (`alire.toml` / `alire-dev.toml`), `alire/alire.lock`, and the root
-  `.gpr` `with` clauses (via `Adacovex.Parsers.Manifest.Build_Dependency_Graph`)
-  and writes the SBOM via `Adacovex.Renderers.SBOM.Write_SBOM`.
-- **Properties**: Only the root component -- the project adacovex actually
-  assessed -- carries `adacovex:proof_level` (`Stone`..`Platinum`, the honest
-  assessed level) and
-  `adacovex:dal_target` (`DAL-A`..`DAL-D`; empty for `DAL-E`). Dependency
-  components report `adacovex:proof_level = "Not proved"` (adacovex only
-  proves the target itself, never third-party dependencies). Encoded as
-  `attributionTexts` in SPDX.
-- **Default output**: `<target>/sbom.json` for `cyclonedx-json`,
-  `<target>/sbom.spdx.json` for `spdx-json`. The containing directory is
-  created automatically.
-- **Determinism**: The `metadata.timestamp` / `creationInfo.created` field
-  honors the `SOURCE_DATE_EPOCH` environment variable (reproducible-builds
-  convention); when set to a Unix epoch second count the timestamp is derived
-  from it in UTC via pure integer math, so SBOM output is byte-for-byte
-  deterministic across runs and machines. To tie it to a specific git commit,
-  run `export SOURCE_DATE_EPOCH=$(git -C <target> log -1 --format=%ct)` before
-  adacovex. The `make` targets (`run-self`, `run-ada-crdt`, `prove`,
-  `release`, and Ada_CRDT's `prove`/`badges`) already set it from the target's
-  git `HEAD` commit time.
-- **Exclusivity**: Mutually exclusive with `--compare-base` and
-  `--coverage-delta`.
-- **Exit code**: `0` when the SBOM was written, `1` otherwise.
-- **Examples**: `adacovex sbom --format=cyclonedx-json --target=. --dal=C`,
-  `adacovex sbom --format=spdx-json --out=sbom.spdx.json`.
-
-### Exit codes
-
-| Code | Meaning |
-|------|---------|
-| `0` | Success (DAL achieved, all checks pass) |
-| `1` | Compliance failure (DAL unmet, tests failing, etc.) |
-
-### NO_COLOR support
-
-adacovex respects the `NO_COLOR` environment variable. If `NO_COLOR` is set,
-ANSI color codes are suppressed in terminal output. Color is enabled by default.
-
----
-
-## Pipeline (execution order)
-
-When adacovex runs, it executes these steps in sequence:
-
-```
-0. Parse CLI args           -> CLI_Config record (prove / sbom / diff / normal)
-1. Determine ANSI color     -> NO_COLOR check
-2. (prove mode) Run GNATprove -> fresh obj/gnatprove/gnatprove.out
-3. Scan source files        -> Package_Vectors.Vector (subprograms, HLR tags, docstrings)
-4. Apply docstring patches  -> Merge .adacovex/patches/ (strict mode only)
-5. Compute doc metrics      -> Docstring_Metrics (coverage %)
-6. Parse GNATprove output   -> Proof_Summary (VC counts, SPARK level)
-7. Parse test results       -> Test_Summary (pass/fail counts)
-8. Assess DAL compliance    -> DAL_Assessment (Achieved / Unmet + reasons)
-9. Render ANSI summary      -> stdout (terminal report)
-10. Emit SVG badges          -> <svg-dir>/*.svg (if enabled)
-11. Emit Markdown reports    -> <md-dir>/VERIFICATION.md + TRACE.md (if enabled)
-12. Emit automatic SBOM      -> <target>/sbom.json | sbom.spdx.json | docs/compliance/SBOM.md (unless --no-sbom)
-13. Start HTTP server        -> :<port> (if --serve)
-14. Set exit code            -> 0 if Achieved, 1 if Unmet
-```
-
-### Step details
-
-#### 3. Source scanning (`Scan_Project`)
-- Walks the target directory tree recursively.
-- Always skips: `.git`, `obj`, `tests`, `config`, `.adacovex`.
-- In relaxed mode: additionally skips directories matching the comma-separated
-  skip list (default: `demo,deps,examples` plus user `--skip-dir` entries).
-- For each `.ads` file found (excluding `b__*.ads` junk files):
-  - Calls `Scan_Ads_File` which:
-    1. Extracts package name from the filename.
-    2. Scans lines for subprogram declarations (`procedure`, `function`,
-       `generic procedure`, `generic function`).
-    3. Extracts subprogram name (first identifier after keyword).
-    4. Associates preceding docstring lines (`--  `, `-- `, or `--<TAB>`
-       prefix) with the subprogram.
-    5. Detects docstring tags (`@param`/`@parameter`, `@return`/`@returns`,
-       `@field`, `@formal`, `@brief`, `@summary`).
-    6. Detects HLR tags (`-- HLR-XXXX`) and accumulates them.
-  - A subprogram is counted as having a docstring if any preceding comment line
-    uses a recognized prefix (`--  `, `-- `, or `--<TAB>`), OR has
-    `@param`/`@return`/`@brief`/`@summary` tags. A plain summary line
-    (`--  Clears the screen.`) alone is sufficient.
-
-#### 4. Patch application (`Apply_Patches`)
-- Only runs in strict mode (default).
-- For each scanned package, computes its relative path from the target root.
-- Checks for `<target>/.adacovex/patches/<relative-path>`.
-- If the patch file exists, it is scanned by `Scan_Ads_File` to extract
-  subprogram info.
-- For each subprogram in the patch that has `Has_Docstring = True`:
-  - Matches by name against originals.
-  - If the original does not already have `Has_Docstring`, merges the docstring
-    metadata (`Has_Docstring`, `Doc_Param_Ct`, `Doc_Return`).
-  - Handles overloaded subprograms: each patch entry patches the next
-    undocumented original with the same name.
-
-#### 8. DAL assessment (`Assess_DAL`)
-- Evaluates four criteria (see [DAL levels](#dal-levels)):
-  1. All HLRs traced in source tags.
-  2. No orphan tags (every in-source HLR maps to a defined HLR).
-  3. All tests passing (zero failures).
-  4. Minimum SPARK proof level met (varies by DAL level).
-- Populates `DAL_Assessment` with `Achieved` or `Unmet` plus failure reasons.
-
----
-
-## Directory exclusions
-
-### Always excluded (hardcoded, cannot be overridden)
-| Directory | Reason |
-|-----------|--------|
-| `.git` | Version control metadata, binary blobs |
-| `obj` | Build artifacts |
-| `tests` | Test code (not production) |
-| `config` | Generated configuration (e.g. Alire config) |
-| `.adacovex` | Patch metadata (would create circular scan) |
-
-These are excluded at ANY depth. E.g. `demo/config/` is skipped because the
-directory simple name is `config`.
-
-### Default skip list (relaxed mode only)
-`demo,deps,examples`
-
-These directories are skipped only when `--relaxed` is used. In strict mode,
-they ARE scanned and their subprograms must be documented (either natively or
-via `.adacovex/patches/`).
-
-Use `--skip-dir=NAME` to add more directories to the skip list (relaxed mode
-only).
-
----
-
-## Docstring annotation spec
-
-Subprogram docstrings are `--  ` comment lines (`@param`, `@return`, `@field`,
-`@formal`, `@brief`, `@summary`) placed before (preferred) or after the
-declaration; a plain summary line alone is sufficient to mark a subprogram as
-documented. Google (`Args:` / `Returns:`) and Sphinx (`:param:` / `:returns:`)
-styles are also recognized. HLR traceability tags are `-- HLR-XXXX` comment
-lines.
-
-Full spec, tag table, examples, and coverage rules:
-[docs/api-docs/adacovex-docstring-spec.md](docs/api-docs/adacovex-docstring-spec.md).
-
----
-
-## DAL levels
-
-Each DAL level requires a minimum SPARK level, passing tests (except DAL-E),
-full HLR traceability, and no orphan tags. DAL-C (default) requires
-`>= Bronze`, zero test failures, all HLRs traced, and no orphan tags.
-
-Per-level table and assessment criteria:
-[docs/api-docs/adacovex-dal-levels.md](docs/api-docs/adacovex-dal-levels.md).
-
----
+- Ada 2012 / SPARK 2014
+- **Package/subprogram collections**: `Ada.Containers.Vectors` (heap,
+  `Natural'Last` ~ 2.1B). No `Max_Packages` / `Max_Subprogs` limits. HLR tags,
+  test metrics, and DAL failures are also unbounded vectors.
+- **Fixed-size string buffers** (`Max_Path`, `Max_Line`, etc.) remain bounded.
+  Overlong lines and paths fail loudly (never truncated): the file is skipped,
+  `Skipped_Ct` increments, and DAL becomes `Unmet`. See the overflow contract
+  in [docs/architecture.md](docs/architecture.md).
+- No library dependencies beyond the GNAT runtime (`Ada.Containers` is part of
+  the standard Ada runtime). gnatprove is resolved at run time by the `prove`
+  subcommand.
 
 ## Makefile targets
 
-| Target             | Description |
-|--------------------|-------------|
-| `build`            | `alr build` (builds adacovex + test_runner, covex alias) |
-| `test`             | Build + run test_runner |
-| `prove`            | `./bin/adacovex prove --target=. --no-svg` (runs gnatprove via the `prove` subcommand; gnatprove lives only in alire-dev.toml, so the pinned version is deployed standalone via `alr -n get gnatprove=<version>` into `~/.adacovex/toolchain` and run directly, else falls back to PATH / `~/.adacovex/toolchain` / download) |
-| `doc` / `api-docs` | Generate API docs via gnatdoc + rst2md (auto-swaps alire-dev.toml) |
-| `fmt`              | Format Ada sources with gnatformat (auto-swaps alire-dev.toml) |
-| `run-self`         | Run against adacovex itself (default target: cwd) |
-| `run-ada-crdt`     | Run against `../Ada_CRDT`, DAL-C (strict mode) |
-| `coverage-gate`    | Run the docstring-coverage gate between the latest two release tags (`--coverage-delta` in a worktree at the latest tag) |
-| `bump-version`     | Bump version across alire.toml, alire-dev.toml, adacovex.ads, changelog (`VERSION=x.y.z`) |
-| `agents-tree`      | Regenerate the AGENTS.md `src/` architecture tree (`tools/gen-agents-tree.py` + `tools/agents-tree.map`) |
-| `release`          | Build `--release`, prove, validate self-assessment, run docstring-coverage gate vs last release tag, bundle `dist/` + tarballs (attested via actions/attest in CI, best-effort `gh attest` locally), then tag & push (`VERSION=x.y.z`) |
-| `ascii-check`      | Verify all source files are pure ASCII |
-| `clean`            | Remove bin/ obj/ docs/badges/ |
-| `help`             | Print available targets |
-
----
+| Target | Description |
+|--------|-------------|
+| `build` | `alr build` (adacovex + test_runner, covex alias) |
+| `test` | Build + run the 372-test native suite |
+| `prove` | `./bin/adacovex prove --target=. --no-svg` |
+| `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
+| `fmt` | Format Ada sources (gnatformat) |
+| `run-self` | Run against adacovex itself (default target: cwd) |
+| `run-ada-crdt` | Run against `../Ada_CRDT` (strict mode) |
+| `coverage-gate` | Docstring-coverage gate between the latest two release tags |
+| `bump-version` | Bump version across manifests + changelog (`VERSION=x.y.z`) |
+| `agents-tree` | Regenerate the `src/` architecture tree above |
+| `release` | Build, prove, validate, run coverage gate vs last release, bundle + tag & push |
+| `ascii-check` | Verify all source files are pure ASCII |
+| `clean` | Remove bin/ obj/ docs/badges/ |
+| `help` | Print available targets |
 
 ## Workflows
 
-### GitHub Actions
+GitHub Actions (composite `./action.yml` + `ci.yml` / `pr-check.yml` /
+`release.yml`), action inputs/outputs, result caching, and release bundling:
+[docs/ci-cd.md](docs/ci-cd.md).
 
-- `./action.yml` at the repository root -- composite action (`branding`:
-  shield/green, `author`: bladeacer): installs Alire + GNAT, obtains
-  the version-matched adacovex binary (downloads the release bundle by default,
-  or builds from source with `build: true`), optionally runs GNATprove
-  (`prove`), the native tests (`run-tests`), and a `--release` build
-  (`release-build`), then runs the assessment and publishes
-  outputs (`dal-status`, `spark-level`, `test-count`, `coverage-pct`), a
-  Markdown step summary, and SVG badge artifacts (`assess: false` skips the
-  assessment for build/test-only jobs). The Alire toolchain install
-  (`setup-alire`) selects only the compiler and `gprbuild` at `gnat-version`
-  (`gnatprove` is NOT an `alr toolchain` component); gnatprove is resolved by
-  the `prove` subcommand via the target project's `alire-dev.toml`
-  (deploying the pinned gnatprove binary crate standalone via
-  `alr -n get gnatprove=<version>` into `~/.adacovex/toolchain` and running it
-  directly -- no dev-manifest swap, only one crate download), falling
-  back to `$PATH`, `~/.adacovex/toolchain`, or download. When
-  `generate-sbom` (default `true`)
-  is set and the assessment runs, it also generates a proof-aware SBOM
-  (`adacovex sbom --format=${{ sbom-format }}`, default `cyclonedx-json`) and
-  uploads it as an `adacovex-sbom` artifact. Inputs: `target`, `dal`,
-  `gnat-version`, `version`, `build`, `release-build`, `prove`, `run-tests`,
-  `assess`, `compare-base`, `coverage-delta`, `emit-markdown`, `generate-sbom`,
-  `sbom-format`, `cache`, `result-cache`. `result-cache` (default `true`)
-  persists adacovex's on-disk result cache (`~/.adacovex/cache`) across runs
-  with `actions/cache`; entries are SHA-256 content-hashed per artifact, so
-  unchanged sources/proofs/tests are served from the previous run's cache
-  without re-parsing. Once
-  listed on the GitHub Actions marketplace, each `vX.Y.Z` tag auto-publishes
-  the matching action version. Consumers should reference the floating `@latest`
-  tag to always use the newest published release; the narrower `@v1` (or
-  `@v1.3`) refs track the latest release within a major or minor version, and a
-  specific `@vX.Y.Z` can be pinned for reproducibility. Floating refs and the
-  `latest` keyword are resolved to the matching release tag by the
-  binary-download step.
-- `.github/workflows/ci.yml` -- self-assessment (build + prove + assess) and
-  build + native tests (build + run-tests, assess: false) on push to main and
-  pull requests.
-- `.github/workflows/pr-check.yml` -- runs `--coverage-delta` against
-  `pull_request.base.sha` to fail PRs that drop docstring coverage.
-- `.github/workflows/release.yml` -- on a `v*` tag, runs the action with
-  `build: true`, `release-build: true`, `prove: true` to build the release
-  binary, run GNATprove, and validate the self-assessment, then creates a
-  GitHub Release with the binary tarball (`adacovex-vX.Y.Z.tar.gz`: `adacovex`
-  + the `covex` alias) and the action tarball
-  (`adacovex-action-vX.Y.Z.tar.gz`). Both bundles are attested via
-  `actions/attest` (OIDC); the release notes link the signed
-  attestation (`attestation-url` output), a *Git Changelog* compare link
-  (`compare/v1.8.0...v1.9.0`), and the human-readable changelog. The action
-  downloads the matching
-  binary tarball for the tag it is referenced by, so `@v1.9.0` runs adacovex
-  `v1.9.0`.
-  The tag itself publishes the action for
-  `uses: <owner>/adacovex@vX.Y.Z`, and once the
-  action is listed on the marketplace, each tag auto-publishes that version.
-  A final step force-pushes the floating tags `vMAJOR`, `vMAJOR.MINOR`, and
-  `latest` (e.g. `v1`, `v1.3`, and `latest` from `v1.3.0`) so users can
-  reference `@v1` / `@v1.3` / `@latest` for the latest matching release.
-
-### Run adacovex on any Ada project
-
-```bash
-# Basic assessment
-adacovex --target=/path/to/project
-
-# Without SVG badges
-adacovex --target=/path/to/project --no-svg
-
-# With Markdown reports
-adacovex --target=/path/to/project --emit-markdown=docs/reports
-
-# With web dashboard
-adacovex --target=/path/to/project --serve
-
-# Relaxed mode (skip demo/deps/examples, no patches)
-adacovex --target=/path/to/project --relaxed
-
-# Custom skip list
-adacovex --target=/path/to/project --relaxed --skip-dir=vendor --skip-dir=external
-
-# DAL-A assessment (requires Gold SPARK level)
-adacovex --target=/path/to/project --dal=A
-```
-
-### Requirements for running adacovex against a project
-
-The target project must have:
-
-1. **Ada source files** (`.ads`) -- scanned for subprograms and docstrings.
-2. **GNATprove output** -- either `gnatprove.out` in the target root or
-   `<target>/obj/gnatprove/gnatprove.out`. Adacovex parses the proof summary
-   to determine the SPARK level.
-3. **Test results** -- a test-summary file in the target root. Adacovex
-   auto-discovers conventional names (`test_result.md`, `test_results.md`,
-   `test-result.md`, `test_report.md`, `test_output.md`, plus `.txt`/`.log`
-   variants and the `docs/` mirrors) containing a Markdown table with `Tests`
-   and `Status` columns (PASS/FAIL) or a supported summary format (TAP,
-   Automake `PASS:`/`FAIL:`, Maven Surefire `Tests run:`, Unity `N Tests M
-   Failures`, `Passed:`/`Failed:`).
-4. **HLR document** (for DAL assessment) -- `<target>/docs/compliance/HLR.md`
-   defining the High-Level Requirements.
-
-Projects that do not have GNATprove output or test results will show "N/A"
-for those metrics. DAL compliance checks that depend on missing data will
-report as `Unmet` with appropriate failure reasons.
-
-Non-Ada projects (e.g. a C/C++, Python, or JS repo) that run adacovex should
-provision their own `alire.toml` or `alire-dev.toml` to manage the Ada-related
-dependencies required to build and run adacovex itself (adacovex + GNAT
-toolchain). The default `--target` is the current working directory, so running
-`adacovex` from a non-Ada repo scans that repo and uses its `alire.toml` as the
-manifest.
-
-### Installing adacovex
-
-adacovex is a zero-dependency Alire crate (no library or tool dependencies, so
-installing it never drags in gnatprove). Installation methods (per-project
-manifest, `alr install`, release bundle, from source):
-[README.md](README.md#installing-adacovex).
-
-### GNATprove toolchain resolution (prove mode)
-
-`covex prove` resolves `gnatprove` in this order: **per-project manifest pin >
-global pin (`ADACOVEX_GNATPROVE_VERSION` / `~/.adacovex/adacovex.toml`) >
-`$PATH` > `~/.adacovex/toolchain/` cache > download**. A manifest pin is
-authoritative (fails rather than falls back).
-
-Full resolution order and the doc/fmt manifest-swap:
-[docs/architecture.md](docs/architecture.md#gnatprove-toolchain-resolution-prove-subcommand).
-
-### Using adacovex from another project (Ada or non-Ada)
-
-Two approaches are equally valid; pick whichever fits the project:
-
-1. **Pass `--target` to the adacovex dev source (no install needed).** Build
-   adacovex once, then point it at the project:
-   ```bash
-   cd /path/to/adacovex && make build
-   cd /path/to/project
-   /path/to/adacovex/bin/adacovex --target=. --dal=C
-   ```
-   Because `--target` defaults to the current directory, running the binary
-   from inside the project scans it without extra flags. The project does not
-   need any Ada tooling of its own; only the adacovex working tree needs GNAT
-   and Alire.
-
-2. **Manage adacovex as an Alire dev dependency (preferred for real usage).**
-   Add it -- and `gnatprove`, its standard proof companion -- to the project's
-   `alire-dev.toml` (never `alire.toml`, so release builds stay clean):
-   ```toml
-   [[depends-on]]
-   covex = "*"
-   gnatprove = "^16.1.0"
-   ```
-   Then `alr build` produces `bin/adacovex` inside the project,
-   `adacovex` runs against the current directory by default, and `covex prove`
-   deploys the pinned gnatprove crate standalone via `alr -n get` and runs it
-   directly (see
-   [Installing adacovex](#installing-adacovex)).
-
-In both cases the assessed project is the directory given to `--target` (or
-CWD when omitted); the two approaches differ only in how the adacovex binary
-is obtained and built.
-
-### Creating patch files for vendored code
-
-1. Run adacovex in strict mode to identify undocumented subprograms:
-   ```
-   adacovex --target=/path/to/project
-   ```
-2. Find the undocumented packages and subprograms in the report.
-3. Create `<target>/.adacovex/patches/<relative-path>` with matching
-   subprogram declarations and docstrings.
-4. Re-run to verify 100% coverage:
-   ```
-   adacovex --target=/path/to/project
-   ```
-
----
+Installation methods, target-project requirements, and running against another
+project: [README.md](README.md#installing-adacovex).
 
 ## Verification
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 368/368 passing |
+| Unit tests | `make test` | 372/372 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (343 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
 
-See [docs/changelogs/adacovex-1.0.0.md](docs/changelogs/adacovex-1.0.0.md) for full release notes.
-See [docs/architecture.md](docs/architecture.md) for architectural decisions.
-
----
-
 ## Changelog format
 
-Each release gets one file at `docs/changelogs/adacovex-<version>.md`, linked
-from `docs/changelogs/index.md` under the `<!-- CHANGELOG_LIST -->` marker
-(newest first). Follow the structure used by the existing entries (1.5.0+):
-
-```
-# adacovex <version>                    -- H1 title
-Date: _YYYY-MM-DD_                      -- release date
-Version bumped <old> -> <new>.          -- version diff line
-
-## Changes                              -- features / behavior changes
-### C1: <Short title>                   -- numbered, one subsection per change
-### C2: ...
-## Fixes                                -- bugfixes only (omit if none)
-### H1: <Short title>
-### H2: ...
-## Test Suite                           -- suite size + what changed
-## Proof Results                        -- SPARK level, VC counts, invocation
-## Traceability                         -- new HLRs + tags covering changes
-```
-
-Rules:
-- `## Changes` and `## Fixes` use numbered subsections (`### C#:` / `### H#:`)
-  with a short bold-worthy title, then prose -- no bare bullet lists.
-- Fixes are grouped under `## Fixes` (`### H#:`), distinct from Changes.
-- `## Proof Results` states the SPARK level (Stone..Platinum), the exact VC
-  totals (e.g. `343/343 VCs proved across 38 analyzed units`), and calls out
-  whether any proof metrics changed. It notes when changed units are
-  non-SPARK and therefore unaffected.
-- `## Traceability` lists any new HLRs by tag name and package, then the
-  existing `-- HLR-*` tags covering the changed packages.
-- `make bump-version` (`VERSION=x.y.z`) creates/updates the changelog; keep
-  the section headings and numbering style identical across releases.
-
----
+Releases get a `docs/changelogs/adacovex-<version>.md` file using `### C#:` /
+`### H#:` numbered subsections under `## Changes` / `## Fixes`, plus
+`## Test Suite`, `## Proof Results`, and `## Traceability`. Full format and
+rules: [docs/contributing.md](docs/contributing.md#changelog-format).
 
 ## Unit tests
 
-**Native (zero-dependency).** Tests use `Adacovex.Test_Support` -- a minimal
-`Runner` type with a `Check` procedure. No AUnit or other external framework.
+Native zero-dependency suite (`src/tests/`, 372 tests across 9 categories).
+Per-category counts and framework details:
+[docs/contributing.md](docs/contributing.md#unit-tests).
 
-Test source: `src/tests/`. Entry point: `test_runner.adb` (builds as
-`bin/test_runner` from `for Main use ("adacovex_main.adb", "test_runner.adb")`
-in `adacovex.gpr`; the CLI entry point builds as `bin/adacovex` via the
-`Builder.Executable` override, with a `bin/covex` alias symlink).
+## Documentation
 
-`make test` builds and runs the 368-test suite. Test results are written to
-`docs/test_result.md` in a Markdown table format that can be parsed by
-`adacovex-parsers-tests`. This means adacovex **supports both** native test
-running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
-
-### Test categories (368 total)
-
-| Category | Tests | What it covers |
-|----------|-------|----------------|
-| Types conversions | 26 | SPARK_Level/DAL_Level/DAL_Status/Test_Status strings, host word-size detection |
-| DAL compliance | 7 | DAL assessment status, oversized HLR/LLR entry clamping |
-| Source scanner | 79 | Package scan, docstring parsing (Ada/Google/Sphinx styles), HLR tags, name extraction, @field/@formal/after-decl, comment-style variants, tag aliases, long generated lines, Max_Line overflow/exact-fit rejection, oversized-name/tag/value clamping, Skipped_Ct |
-| IR synthesis | 27 | Bounded type bounds, Target_Config defaults, host word-size detection, foreign type-name lowering, package synthesis |
-| GNATprove parser | 64 | .out parsing, proof summary, SPARK level detection, gnatprove v15/v16 command-line reconciliation, Units_Analyzed/Skipped, justified-VC handling, --help handling, Max_Line overflow rejection |
-| Test-result parser | 43 | Markdown table, TAP, Automake, Maven Surefire, and Unity test-result parsing; conventional file-name discovery; Max_Line overflow rejection |
-| CLI config | 32 | Default option values, --help, --no-svg field, --compare-base and --coverage-delta defaults, prove-option and CI-threshold defaults |
-| SVG renderer | 30 | SVG badge content and format |
-| SBOM generator | 60 | Proof/DAL property mapping, Alire manifest + GPR dependency graph, CycloneDX/SPDX rendering |
-
----
-
-## Known quirks
-
-- `(null record)` typed parameters are counted as parameters by the scanner.
-- Overloaded patch entries: each overload needs its own patch entry; entries
-  patch the next undocumented original with the same name.
-- `Is_Subprogram_Decl` matches `procedure`, `function`, `generic procedure`,
-  and `generic function` only.
-- Overlong lines and paths fail loudly (never truncated): the file is skipped,
-  `Skipped_Ct` increments, and DAL becomes `Unmet`. See the overflow contract
-  in [docs/architecture.md](docs/architecture.md).
-- `--verbose` prints pipeline step diagnostics to stderr; relative
-  `--target=PATH` is resolved against CWD.
-
-Docstring prefix rules and the full overflow/scanning semantics:
-[docs/api-docs/adacovex-docstring-spec.md](docs/api-docs/adacovex-docstring-spec.md)
-and [docs/architecture.md](docs/architecture.md).
-
----
-
-## Key constraints
-
-- Ada 2012 / SPARK 2014
-- **Package/subprogram collections**: `Ada.Containers.Vectors`
-  (heap, `Natural'Last` ~ 2.1B). No `Max_Packages` / `Max_Subprogs` limits.
-- **HLR tags, test metrics, DAL failures**: also `Ada.Containers.Vectors`
-  (unbounded). No `Max_Hlrs`, `Max_Categories`, `Max_Failures` limits.
-- **Fixed-size string buffers** (`Max_Path`, `Max_Line`, etc.) remain bounded.
-- No library dependencies beyond GNAT runtime (`Ada.Containers` is
-  part of the standard Ada runtime library). No declared tool dependency
-  either: gnatprove is resolved at run time by the `prove` subcommand.
-
-## Bounded resources
-
-Fixed-size string/VC buffers are governed by compile-time constants in
-`src/core/adacovex-types.ads` (package and subprogram vectors are unbounded
-via `Ada.Containers.Vectors`):
-
-| Constant | Value | Notes |
-|----------|-------|-------|
-| `Max_Line` | 262144 | Source line length (overlong lines fail loudly, never silently truncated) |
-| `Max_Path` | 4096 | File path length (matches `PATH_MAX`) |
-| `Max_Desc_Str` | 128 | Subprogram name / description |
-| `Max_Filename` | 128 | Package name from filename |
-| `Max_Id_Str` | 64 | HLR/LLR tag ID length |
-
-Overflow handling (fail loudly vs. clamp) and why there is no chunking/LEB128
-are documented in [docs/architecture.md](docs/architecture.md).
+- [CLI reference](docs/cli-reference.md)
+- [CI/CD](docs/ci-cd.md)
+- [Contributing](docs/contributing.md)
+- [Docstring spec](docs/api-docs/adacovex-docstring-spec.md)
+- [DAL levels](docs/api-docs/adacovex-dal-levels.md)
+- [Architecture](docs/architecture.md)
