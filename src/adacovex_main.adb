@@ -248,8 +248,6 @@ procedure Adacovex_Main is
    is
       Proof_Prop : String (1 .. 16);
       PPLen      : Natural := 0;
-      DAL_Prop   : String (1 .. 8);
-      DPLen      : Natural := 0;
       Graph      : Adacovex.Types.Implementation.Component_Vectors.Vector;
       GOK, WOK   : Boolean;
    begin
@@ -260,15 +258,6 @@ procedure Adacovex_Main is
          PPLen := D'Length;
          for I in 1 .. PPLen loop
             Proof_Prop (I) := D (D'First + I - 1);
-         end loop;
-      end;
-      declare
-         D : constant String :=
-           Adacovex.Renderers.SBOM.DAL_Property_Value (Cfg.DAL_Target);
-      begin
-         DPLen := D'Length;
-         for I in 1 .. DPLen loop
-            DAL_Prop (I) := D (D'First + I - 1);
          end loop;
       end;
 
@@ -298,7 +287,8 @@ procedure Adacovex_Main is
          Out_Path,
          Graph,
          Proof_Prop (1 .. PPLen),
-         DAL_Prop (1 .. DPLen),
+         Cfg.Standard_Target,
+         Cfg.DAL_Target,
          WOK);
 
       if WOK then
@@ -309,8 +299,11 @@ procedure Adacovex_Main is
             & Img (Natural (Graph.Length))
             & " components, root proof level "
             & Proof_Prop (1 .. PPLen)
-            & ", DAL target "
-            & (if DPLen > 0 then DAL_Prop (1 .. DPLen) else "none")
+            & ", standard "
+            & Adacovex.Types.To_String (Cfg.Standard_Target)
+            & ", level "
+            & Adacovex.Types.Standard_Level_Name
+                (Cfg.Standard_Target, Cfg.DAL_Target)
             & ")");
       --  Do NOT touch Exit_St here: the automatic SBOM (Fail_Hard False)
       --  must never change the assessment exit code.  Only the explicit
@@ -755,6 +748,7 @@ begin
       DAL_Assess,
       Packages,
       Use_Color,
+      Cfg.Standard_All,
       Cache_Hits,
       Cache_Misses,
       Adacovex.Cache.Eviction_Count);
@@ -771,9 +765,22 @@ begin
          Adacovex.Renderers.SVG.Write_Badge_To_File
            (Dir & "/tests.svg",
             Adacovex.Renderers.SVG.Render_Tests_Badge (Tests));
-         Adacovex.Renderers.SVG.Write_Badge_To_File
-           (Dir & "/do178c.svg",
-            Adacovex.Renderers.SVG.Render_DO178C_Badge (DAL_Assess));
+         if Cfg.Standard_All then
+            for Std in Adacovex.Types.Compliance_Standard loop
+               Adacovex.Renderers.SVG.Write_Badge_To_File
+                 (Dir & "/" & Adacovex.Types.Standard_Slug (Std) & ".svg",
+                  Adacovex.Renderers.SVG.Render_Compliance_Badge
+                    (DAL_Assess, Std));
+            end loop;
+         else
+            Adacovex.Renderers.SVG.Write_Badge_To_File
+              (Dir
+               & "/"
+               & Adacovex.Types.Standard_Slug (DAL_Assess.Standard)
+               & ".svg",
+               Adacovex.Renderers.SVG.Render_Compliance_Badge
+                 (DAL_Assess, DAL_Assess.Standard));
+         end if;
          Adacovex.Renderers.SVG.Write_Badge_To_File
            (Dir & "/docs.svg",
             Adacovex.Renderers.SVG.Render_Docstring_Badge (Doc_Metrics));
@@ -793,7 +800,8 @@ begin
             Proof,
             Tests,
             DAL_Assess,
-            Packages);
+            Packages,
+            Cfg.Standard_All);
          Adacovex.Renderers.Markdown.Generate_Trace_Matrix
            (Dir & "/TRACE.md", Packages);
       end;
@@ -838,6 +846,7 @@ begin
          State.Tests := Tests;
          State.DAL_Assess := DAL_Assess;
          State.Packages := Packages;
+         State.All_Standards := Cfg.Standard_All;
          Adacovex.Server.HTTP.Start (State);
       end;
    end if;

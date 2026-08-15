@@ -2,15 +2,17 @@
 ![SPARK](docs/badges/spark.svg)
 ![Tests](docs/badges/tests.svg)
 ![DO-178C](docs/badges/do178c.svg)
+![ISO 26262](docs/badges/iso26262.svg)
+![IEC 62304](docs/badges/iec62304.svg)
 ![docs](docs/badges/docs.svg)
 
 # adacovex
 
 **Zero-dependency Ada/SPARK CLI tool** for coverage analysis, proof verification,
-test-result parsing, DO-178C DAL compliance assessment, and interactive dashboards.
-No library dependencies beyond the GNAT runtime; gnatprove is resolved at run
-time by the `prove` subcommand, so installing adacovex pulls nothing but the
-binary.
+test-result parsing, multi-standard safety-compliance assessment (DO-178C /
+ISO 26262 / IEC 62304), and interactive dashboards. No library dependencies
+beyond the GNAT runtime; gnatprove is resolved at run time by the `prove`
+subcommand, so installing adacovex pulls nothing but the binary.
 
 ## Features
 
@@ -22,8 +24,11 @@ binary.
   [SPARK assurance levels](docs/api-docs/adacovex-spark-levels.md) (Stone--Platinum)
 - **Test parsing** -- reads [test-result summaries](docs/api-docs/adacovex-test-format.md)
   (Markdown tables, TAP, Automake, Maven Surefire, Unity, AUnit-compatible)
-- **[DAL compliance](docs/api-docs/adacovex-dal-levels.md)** -- assesses DO-178C DAL A-E
-  criteria (HLR coverage, orphan tags, test status, minimum SPARK proof level)
+- **[Compliance](docs/api-docs/adacovex-dal-levels.md)** -- assesses DO-178C DAL A-E
+  criteria (HLR coverage, orphan tags, test status, minimum SPARK proof level),
+  re-labelled for [ISO 26262](docs/standards.md) (ASIL A--D/QM) and
+  [IEC 62304](docs/standards.md) (safety classes A--C) with dedicated
+  `--dal` / `--asil` / `--class` flags
 - **Multiple outputs** -- ANSI report, SVG badges, Markdown reports, HTML
   dashboard + JSON API, proof-aware SBOM (CycloneDX / SPDX)
 - **Scalable** -- package/subprogram collections use `Ada.Containers.Vectors`
@@ -41,7 +46,7 @@ However, project reliability is grounded in mathematical proof and
 non-invasive design rather than implicit trust:
 
 - **Formal Verification:** Core Ada logic is formally verified using
-  SPARK Ada (Platinum under `gnatprove` 16.1.0 -- 369 VCs, 0 unproved; see
+  SPARK Ada (Platinum under `gnatprove` 16.1.0 -- 398 VCs, 0 unproved; see
   `docs/proof/16.1.0-ledger.md`).
 - **Read-Only Engine:** `adacovex` acts strictly as an assessment engine.
   It processes input payloads, parses build artifacts, and produces reports
@@ -160,8 +165,10 @@ adacovex status [--target=PATH]
 |------|---------|------|-------------|
 | `--target=PATH` | `.` (CWD) | both | Target project root directory |
 | `--manifest=PATH` | auto-detected | both | Override project manifest path |
-| `--dal=LEVEL` | `C` | both | Target rigor tier (A-E; shared across standards) |
-| `--standard=NAME` | `do178c` | both | Compliance standard: `do178c`, `iso26262`, `iec62304` |
+| `--dal=LEVEL` | `C` | both | DO-178C DAL level (A-E; also the shared rigor tier) |
+| `--asil=LEVEL` | - | both | ISO 26262 level: `A`\|`B`\|`C`\|`D`\|`QM` (e.g. `--asil=B`) |
+| `--class=LEVEL` | - | both | IEC 62304 safety class: `A`\|`B`\|`C` (e.g. `--class=A`) |
+| `--standard=NAME` | `do178c` | both | `do178c`\|`iso26262`\|`iec62304`\|`all` (all emits every badge) |
 | `--serve` | off | both | Start HTTP dashboard server |
 | `--port=N` | `8080` | serve | Dashboard server port |
 | `--emit-svg=PATH` | `<target>/docs/badges` | both | Output directory for SVG badges |
@@ -192,11 +199,14 @@ mode, exit codes, and the `sbom` subcommand:
 adacovex --target=.                                 # self-assessment
 adacovex --target=../Ada_CRDT --dal=C --relaxed     # DAL-C, relaxed mode
 adacovex --target=. --dal=A                         # DAL-A (requires Gold SPARK)
+adacovex --target=. --asil=B                        # ISO 26262 at ASIL B
+adacovex --target=. --class=A                       # IEC 62304 at Class A
+adacovex --target=. --standard=iso26262 --dal=C     # ISO 26262 at ASIL B (alias)
+adacovex --target=. --standard=all                  # badges for every standard
 adacovex --target=. --emit-markdown=docs/compliance # Markdown reports
 adacovex --target=. --serve --port=9090             # web dashboard
 adacovex --target=. --compare-base=HEAD             # differential assessment
 adacovex sbom --format=cyclonedx-json --target=. --dal=C   # proof-aware SBOM
-adacovex --target=. --standard=iso26262 --dal=C           # ISO 26262 at ASIL B
 adacovex status --target=.                                # toolchain + platform report
 ```
 
@@ -260,12 +270,28 @@ full format and rules.
 
 See [DAL Levels](docs/api-docs/adacovex-dal-levels.md) for the full criteria.
 
+## Compliance standards
+
+The same evidence (proof level, passing tests, HLR traceability) is re-labelled
+for three functionally-equivalent safety standards. Pick a level with a
+standard's own naming, or list every standard:
+
+| Standard | Level flag | Levels | Example |
+|----------|-----------|--------|---------|
+| DO-178C (avionics) | `--dal=` | A, B, C, D, E | `--dal=C` = DAL-C |
+| ISO 26262 (automotive) | `--asil=` | A, B, C, D, QM | `--asil=B` = ASIL B |
+| IEC 62304 (medical) | `--class=` | A, B, C | `--class=A` = Class A |
+
+`--standard=all` runs one assessment at the shared tier and emits badges for
+all three standards. Full tier mapping and rationale:
+[Standards](docs/standards.md).
+
 ## Makefile targets
 
 | Target | Description |
 |--------|-------------|
 | `build` | `alr build` (adacovex + test_runner, covex alias) |
-| `test` | Build and run native test suite (395 tests) |
+| `test` | Build and run native test suite (460 tests) |
 | `prove` | `./bin/adacovex prove --target=. --no-svg` |
 | `fmt` | Format Ada sources with `gnatformat` |
 | `doc` | Generate API docs via gnatdoc + rst2md |
@@ -288,9 +314,9 @@ Action inputs/outputs, result caching, and release bundling:
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 395/395 passing |
+| Unit tests | `make test` | 460/460 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
-| SPARK proof | `make prove` | Platinum (369 VCs, 0 unproved under gnatprove 16.1.0) |
+| SPARK proof | `make prove` | Platinum (398 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, DAL-C (strict mode) |
 
 See [changelogs](docs/changelogs/index.md) for full release notes.

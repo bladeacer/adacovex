@@ -106,6 +106,42 @@ package body Adacovex_Renderer_SVG_Tests is
          end;
       end;
 
+      --  Compliance badge: ISO 26262 (ASIL B) via the standard-parameterized
+      --  renderer.
+      declare
+         Assess : DAL_Assessment;
+      begin
+         Assess.Status := Achieved;
+         Assess.Target_DAL := DAL_C;
+         declare
+            S : constant String := Render_Compliance_Badge (Assess, ISO_26262);
+         begin
+            R.Check
+              (Contains (S, "<svg"), "ISO 26262 Achieved: contains <svg");
+            R.Check (Contains (S, "ISO 26262"), "ISO 26262 Achieved: label");
+            R.Check
+              (Contains (S, "ASIL B PASS"), "ISO 26262 Achieved: ASIL B PASS");
+         end;
+      end;
+
+      --  Compliance badge: IEC 62304 (Class A).
+      declare
+         Assess : DAL_Assessment;
+      begin
+         Assess.Status := Achieved;
+         Assess.Target_DAL := DAL_C;
+         declare
+            S : constant String := Render_Compliance_Badge (Assess, IEC_62304);
+         begin
+            R.Check
+              (Contains (S, "<svg"), "IEC 62304 Achieved: contains <svg");
+            R.Check (Contains (S, "IEC 62304"), "IEC 62304 Achieved: label");
+            R.Check
+              (Contains (S, "Class A PASS"),
+               "IEC 62304 Achieved: Class A PASS");
+         end;
+      end;
+
       --  Docstring badge: 100%
       declare
          Metrics : Docstring_Metrics;

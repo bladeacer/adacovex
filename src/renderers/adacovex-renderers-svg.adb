@@ -186,13 +186,14 @@ package body Adacovex.Renderers.SVG is
            Badge_Text_Color ("#4c1"));
    end Render_Tests_Badge;
 
-   function Render_DO178C_Badge
-     (Assess : Types.Implementation.DAL_Assessment) return String
+   function Render_Compliance_Badge
+     (Assess   : Types.Implementation.DAL_Assessment;
+      Standard : Types.Compliance_Standard) return String
    is
       Status_Str : String (1 .. 32);
       SLen       : Natural := 0;
       Level_Name : constant String :=
-        Types.Standard_Level_Name (Assess.Standard, Assess.Target_DAL);
+        Types.Standard_Level_Name (Standard, Assess.Target_DAL);
       Suffix     : constant String :=
         (if Assess.Status = Types.Achieved then " PASS" else " FAIL");
       Color      : constant String :=
@@ -210,7 +211,7 @@ package body Adacovex.Renderers.SVG is
       if Assess.Status = Types.Achieved then
          return
            Badge_SVG
-             (Types.To_String (Assess.Standard),
+             (Types.To_String (Standard),
               Status_Str (1 .. SLen),
               "#555",
               Color,
@@ -218,11 +219,17 @@ package body Adacovex.Renderers.SVG is
       else
          return
            Badge_SVG
-             (Types.To_String (Assess.Standard),
+             (Types.To_String (Standard),
               Status_Str (1 .. SLen),
               "#555",
               Color);
       end if;
+   end Render_Compliance_Badge;
+
+   function Render_DO178C_Badge
+     (Assess : Types.Implementation.DAL_Assessment) return String is
+   begin
+      return Render_Compliance_Badge (Assess, Assess.Standard);
    end Render_DO178C_Badge;
 
    function Render_Docstring_Badge

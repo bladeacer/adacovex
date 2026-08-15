@@ -4,13 +4,16 @@ Proof-aware software bill of materials (SBOM) generator.
 Produces CycloneDX 1.5 JSON and SPDX 2.3 JSON documents from the
 dependency graph resolved by Adacovex.Parsers.Manifest.  Only the root
 component -- the project adacovex actually assessed -- carries the
-adacovex:proof_level (Gold | Platinum) and adacovex:dal_target
-(DAL-A through DAL-D) properties.  Dependency components report
-adacovex:proof_level = "Not proved": adacovex only proves the target
-itself, never third-party dependencies.  Every dependency component also
-carries an adacovex:dep_scope property ("base" | "dev" | "transitive" |
-"vendored") distinguishing publishing (alire.toml), development-only
-(alire-dev.toml), transitive, and patched-vendored packages.
+adacovex:proof_level (Stone..Platinum), adacovex:standard
+("DO-178C" | "ISO 26262" | "IEC 62304"), adacovex:dal_target
+(DAL-A through DAL-D), and adacovex:level (the standard-specific label
+"DAL-C" | "ASIL B" | "Class A") properties.  Dependency components
+report adacovex:proof_level = "Not proved": adacovex only proves the
+target itself, never third-party dependencies.  Every dependency
+component also carries an adacovex:dep_scope property ("base" | "dev" |
+"transitive" | "vendored") distinguishing publishing (alire.toml),
+development-only (alire-dev.toml), transitive, and patched-vendored
+packages.
 HLR-SBOM: SBOM generation
 
 > **Note:** All items in this package are public.
@@ -49,6 +52,15 @@ HLR-SBOM: SBOM generation
 
 **Returns:** The fixed-length ISO 8601 timestamp string.
 
+### function Level_Property (Standard : Adacovex.Types.Compliance_Standard; Level : Adacovex.Types.DAL_Level) return Standard.String `[Global]` `[SPARK]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `Level` | Shared rigor tier. |
+| `Standard` | Compliance standard labelling the level. |
+
+**Returns:** The standard-specific level label, or "" for DAL-E.
+
 ### function Pad2 (N : Standard.Natural) return Standard.String `[Post]` `[Global]` `[SPARK]`
 
 | Parameter | Description |
@@ -75,40 +87,44 @@ HLR-SBOM: SBOM generation
 
 ## Procedures
 
-### procedure Write_CycloneDX_To (F : Ada.Text_IO.File_Type; Graph : Adacovex.Types.Implementation.Component_Vectors.Vector; Proof_Level : Standard.String; DAL_Target : Standard.String)
+### procedure Write_CycloneDX_To (F : Ada.Text_IO.File_Type; Graph : Adacovex.Types.Implementation.Component_Vectors.Vector; Proof_Level : Standard.String; Standard : Adacovex.Types.Compliance_Standard; DAL_Target : Adacovex.Types.DAL_Level)
 
 | Parameter | Description |
 |-----------|-------------|
-| `DAL_Target` | adacovex:dal_target property value. |
+| `DAL_Target` | Shared rigor tier for adacovex:dal_target/level. |
 | `F` | Output file to write the JSON document to. |
 | `Graph` | Dependency graph (index 1 = root component). |
 | `Proof_Level` | adacovex:proof_level property value. |
+| `Standard` | Compliance standard labelling the root assessment. |
 
-### procedure Write_Markdown_To (F : Ada.Text_IO.File_Type; Graph : Adacovex.Types.Implementation.Component_Vectors.Vector; Proof_Level : Standard.String; DAL_Target : Standard.String)
+### procedure Write_Markdown_To (F : Ada.Text_IO.File_Type; Graph : Adacovex.Types.Implementation.Component_Vectors.Vector; Proof_Level : Standard.String; Standard : Adacovex.Types.Compliance_Standard; DAL_Target : Adacovex.Types.DAL_Level)
 
 | Parameter | Description |
 |-----------|-------------|
-| `DAL_Target` | adacovex:dal_target property value. |
+| `DAL_Target` | Shared rigor tier for adacovex:dal_target/level. |
 | `F` | Output file to write the Markdown document to. |
 | `Graph` | Dependency graph (index 1 = root component). |
 | `Proof_Level` | adacovex:proof_level property value. |
+| `Standard` | Compliance standard labelling the root assessment. |
 
-### procedure Write_SBOM (Format : Adacovex.Types.SBOM_Format_Kind; Out_Path : Standard.String; Graph : Adacovex.Types.Implementation.Component_Vectors.Vector; Proof_Level : Standard.String; DAL_Target : Standard.String; Success : Standard.Boolean) `[Pre]`
+### procedure Write_SBOM (Format : Adacovex.Types.SBOM_Format_Kind; Out_Path : Standard.String; Graph : Adacovex.Types.Implementation.Component_Vectors.Vector; Proof_Level : Standard.String; Standard : Adacovex.Types.Compliance_Standard; DAL_Target : Adacovex.Types.DAL_Level; Success : Standard.Boolean) `[Pre]`
 
 | Parameter | Description |
 |-----------|-------------|
-| `DAL_Target` | adacovex:dal_target property value. |
-| `Format` | SBOM format (CycloneDX_JSON or SPDX_JSON). |
+| `DAL_Target` | Shared rigor tier for adacovex:dal_target/level. |
+| `Format` | SBOM format (CycloneDX_JSON, SPDX_JSON, or Markdown). |
 | `Graph` | Dependency graph (index 1 = root component). |
 | `Out_Path` | Filesystem path to write the SBOM to. |
 | `Proof_Level` | adacovex:proof_level property value. |
+| `Standard` | Compliance standard labelling the root assessment. |
 | `Success` | True if the SBOM was written successfully. |
 
-### procedure Write_SPDX_To (F : Ada.Text_IO.File_Type; Graph : Adacovex.Types.Implementation.Component_Vectors.Vector; Proof_Level : Standard.String; DAL_Target : Standard.String)
+### procedure Write_SPDX_To (F : Ada.Text_IO.File_Type; Graph : Adacovex.Types.Implementation.Component_Vectors.Vector; Proof_Level : Standard.String; Standard : Adacovex.Types.Compliance_Standard; DAL_Target : Adacovex.Types.DAL_Level)
 
 | Parameter | Description |
 |-----------|-------------|
-| `DAL_Target` | adacovex:dal_target property value. |
+| `DAL_Target` | Shared rigor tier for adacovex:dal_target/level. |
 | `F` | Output file to write the JSON document to. |
 | `Graph` | Dependency graph (index 1 = root component). |
 | `Proof_Level` | adacovex:proof_level property value. |
+| `Standard` | Compliance standard labelling the root assessment. |

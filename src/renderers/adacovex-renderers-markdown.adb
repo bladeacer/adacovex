@@ -3,12 +3,13 @@ with Ada.Text_IO;
 package body Adacovex.Renderers.Markdown is
 
    procedure Generate_Verification_Report
-     (Path        : String;
-      Doc_Metrics : Types.Docstring_Metrics;
-      Proof       : Types.Proof_Summary;
-      Tests       : Types.Implementation.Test_Summary;
-      DAL_Assess  : Types.Implementation.DAL_Assessment;
-      Packages    : Types.Implementation.Package_Vectors.Vector)
+     (Path          : String;
+      Doc_Metrics   : Types.Docstring_Metrics;
+      Proof         : Types.Proof_Summary;
+      Tests         : Types.Implementation.Test_Summary;
+      DAL_Assess    : Types.Implementation.DAL_Assessment;
+      Packages      : Types.Implementation.Package_Vectors.Vector;
+      All_Standards : Boolean := False)
    is
       F : Ada.Text_IO.File_Type;
    begin
@@ -138,16 +139,40 @@ package body Adacovex.Renderers.Markdown is
          & Natural'Image (Tests.Total_Failed)
          & "** |");
       Ada.Text_IO.Put_Line (F, "");
-      Ada.Text_IO.Put_Line (F, "## DO-178C Compliance");
+      if All_Standards then
+         Ada.Text_IO.Put_Line (F, "## Compliance (all standards)");
+      else
+         Ada.Text_IO.Put_Line
+           (F, "## " & Types.To_String (DAL_Assess.Standard) & " Compliance");
+      end if;
       Ada.Text_IO.Put_Line (F, "");
       Ada.Text_IO.Put_Line (F, "| Criterion | Status |");
       Ada.Text_IO.Put_Line (F, "|-----------|--------|");
-      Ada.Text_IO.Put_Line
-        (F,
-         "| Target DAL | " & Types.To_String (DAL_Assess.Target_DAL) & " |");
-      Ada.Text_IO.Put_Line
-        (F,
-         "| Overall Status | " & Types.To_String (DAL_Assess.Status) & " |");
+      if All_Standards then
+         for Std in Types.Compliance_Standard loop
+            Ada.Text_IO.Put_Line
+              (F,
+               "| "
+               & Types.To_String (Std)
+               & " level | "
+               & Types.Standard_Level_Name (Std, DAL_Assess.Target_DAL)
+               & " ("
+               & Types.To_String (DAL_Assess.Status)
+               & ") |");
+         end loop;
+      else
+         Ada.Text_IO.Put_Line
+           (F,
+            "| Target level | "
+            & Types.Standard_Level_Name
+                (DAL_Assess.Standard, DAL_Assess.Target_DAL)
+            & " |");
+         Ada.Text_IO.Put_Line
+           (F,
+            "| Overall Status | "
+            & Types.To_String (DAL_Assess.Status)
+            & " |");
+      end if;
       Ada.Text_IO.Put_Line
         (F,
          "| HLR Traced | "

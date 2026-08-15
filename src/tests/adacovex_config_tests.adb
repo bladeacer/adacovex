@@ -30,6 +30,9 @@ package body Adacovex_Config_Tests is
          R.Check
            (Cfg.Standard_Target = DO_178C,
             "Default Standard_Target is DO_178C");
+         R.Check
+           (not Cfg.Standard_All,
+            "Default Standard_All is False (single-standard mode)");
          R.Check (Cfg.Port = 8080, "Default Port is 8080");
          R.Check (not Cfg.Verbose, "Default Verbose is False");
          R.Check (not Cfg.Emit_Markdown, "Default Emit_Markdown is False");

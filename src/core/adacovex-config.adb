@@ -19,6 +19,20 @@ package body Adacovex.Config is
       return True;
    end Has_Prefix;
 
+   --  Case-insensitive test for the literal "all" (the --standard=all value).
+   function Is_All (S : String) return Boolean is
+      Up : String (1 .. S'Length);
+   begin
+      for I in S'Range loop
+         if S (I) in 'a' .. 'z' then
+            Up (I - S'First + 1) := Character'Val (Character'Pos (S (I)) - 32);
+         else
+            Up (I - S'First + 1) := S (I);
+         end if;
+      end loop;
+      return Up = "ALL";
+   end Is_All;
+
    procedure Set_String (Dst : out String; Dst_Len : out Natural; Src : String)
    is
    begin
@@ -200,19 +214,106 @@ package body Adacovex.Config is
                         "--dal must be A, B, C, D, or E (got: " & Val & ")");
                   end if;
                end;
+            elsif A = "--asil" then
+               I := I + 1;
+               if I <= Count then
+                  declare
+                     Val : constant String := Ada.Command_Line.Argument (I);
+                  begin
+                     if Types.Is_Valid_ASIL (Val) then
+                        Cfg.Standard_Target := Types.ISO_26262;
+                        Cfg.DAL_Target := Types.To_ASIL (Val);
+                        Cfg.Standard_All := False;
+                     else
+                        Set_Error
+                          (Cfg,
+                           "--asil must be A, B, C, D, or QM (got: "
+                           & Val
+                           & ")");
+                     end if;
+                  end;
+               else
+                  Set_Error
+                    (Cfg, "--asil requires a level argument (A-D or QM)");
+               end if;
+            elsif Has_Prefix (A, "--asil=") then
+               declare
+                  Val : constant String := A (A'First + 7 .. A'Last);
+               begin
+                  if Types.Is_Valid_ASIL (Val) then
+                     Cfg.Standard_Target := Types.ISO_26262;
+                     Cfg.DAL_Target := Types.To_ASIL (Val);
+                     Cfg.Standard_All := False;
+                  else
+                     Set_Error
+                       (Cfg,
+                        "--asil must be A, B, C, D, or QM (got: " & Val & ")");
+                  end if;
+               end;
+            elsif A = "--class" then
+               I := I + 1;
+               if I <= Count then
+                  declare
+                     Val : constant String := Ada.Command_Line.Argument (I);
+                  begin
+                     if Types.Is_Valid_Class (Val) then
+                        Cfg.Standard_Target := Types.IEC_62304;
+                        Cfg.DAL_Target := Types.To_Class (Val);
+                        Cfg.Standard_All := False;
+                     else
+                        Set_Error
+                          (Cfg,
+                           "--class must be A, B, or C (got: " & Val & ")");
+                     end if;
+                  end;
+               else
+                  Set_Error (Cfg, "--class requires a level argument (A-C)");
+               end if;
+            elsif Has_Prefix (A, "--class=") then
+               declare
+                  Val : constant String := A (A'First + 8 .. A'Last);
+               begin
+                  if Types.Is_Valid_Class (Val) then
+                     Cfg.Standard_Target := Types.IEC_62304;
+                     Cfg.DAL_Target := Types.To_Class (Val);
+                     Cfg.Standard_All := False;
+                  else
+                     Set_Error
+                       (Cfg, "--class must be A, B, or C (got: " & Val & ")");
+                  end if;
+               end;
             elsif A = "--standard" then
                I := I + 1;
                if I <= Count then
-                  Cfg.Standard_Target :=
-                    Types.To_Standard (Ada.Command_Line.Argument (I));
+                  declare
+                     Val : constant String := Ada.Command_Line.Argument (I);
+                  begin
+                     if Is_All (Val) then
+                        Cfg.Standard_All := True;
+                        Cfg.Standard_Target := Types.DO_178C;
+                     else
+                        Cfg.Standard_All := False;
+                        Cfg.Standard_Target := Types.To_Standard (Val);
+                     end if;
+                  end;
                else
                   Set_Error
                     (Cfg,
-                     "--standard requires a name (do178c, iso26262, iec62304)");
+                     "--standard requires a name (do178c, iso26262, iec62304, "
+                     & "all)");
                end if;
             elsif Has_Prefix (A, "--standard=") then
-               Cfg.Standard_Target :=
-                 Types.To_Standard (A (A'First + 11 .. A'Last));
+               declare
+                  Val : constant String := A (A'First + 11 .. A'Last);
+               begin
+                  if Is_All (Val) then
+                     Cfg.Standard_All := True;
+                     Cfg.Standard_Target := Types.DO_178C;
+                  else
+                     Cfg.Standard_All := False;
+                     Cfg.Standard_Target := Types.To_Standard (Val);
+                  end if;
+               end;
             elsif A = "--serve" then
                Cfg.Serve_Mode := True;
             elsif A = "--port" then
@@ -900,7 +1001,7 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("adacovex v"
          & Adacovex.Version
-         & " -- Ada/SPARK Coverage, Proof & DO-178C Compliance Tool");
+         & " -- Ada/SPARK Coverage, Proof & Multi-Standard Compliance Tool");
       Ada.Text_IO.Put_Line ("");
       Ada.Text_IO.Put_Line ("Usage: adacovex [options]");
       Ada.Text_IO.Put_Line ("       adacovex sbom --format=FMT --out=PATH");
@@ -913,11 +1014,23 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("  --manifest=PATH       Target manifest file override");
       Ada.Text_IO.Put_Line
-        ("  --dal=LEVEL           DAL level: A | B | C | D | E (default: C)");
+        ("  --dal=LEVEL           DO-178C DAL level: A | B | C | D | E");
+      Ada.Text_IO.Put_Line
+        ("                        (default: C; also the shared rigor tier)");
+      Ada.Text_IO.Put_Line
+        ("  --asil=LEVEL          ISO 26262 ASIL level: A | B | C | D | QM");
+      Ada.Text_IO.Put_Line
+        ("                        (e.g. --asil=B selects ASIL B)");
+      Ada.Text_IO.Put_Line
+        ("  --class=LEVEL         IEC 62304 safety class: A | B | C");
+      Ada.Text_IO.Put_Line
+        ("                        (e.g. --class=A selects Class A)");
       Ada.Text_IO.Put_Line
         ("  --standard=NAME       Compliance standard: do178c | iso26262 |");
       Ada.Text_IO.Put_Line
-        ("                        iec62304 (default: do178c)");
+        ("                        iec62304 | all (default: do178c); all emits");
+      Ada.Text_IO.Put_Line
+        ("                        badges for every standard at the same tier");
       Ada.Text_IO.Put_Line
         ("  status                Report toolchain + platform status (no");
       Ada.Text_IO.Put_Line
@@ -1016,7 +1129,9 @@ package body Adacovex.Config is
         ("         HTML dashboard (--serve), JSON API (GET /api/metrics)");
       Ada.Text_IO.Put_Line ("");
       Ada.Text_IO.Put_Line
-        ("Zero-dependency Ada/SPARK tool for DO-178C DAL A-E assessment");
+        ("Zero-dependency Ada/SPARK tool for DO-178C / ISO 26262 / IEC 62304");
+      Ada.Text_IO.Put_Line
+        ("compliance assessment (DAL / ASIL / safety-class levels)");
    end Print_Usage;
 
 end Adacovex.Config;

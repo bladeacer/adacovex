@@ -16,10 +16,11 @@ HLR-RENDER-MD: Markdown report generation
 | `Packages` | Scanned package vector. |
 | `Path` | Output file path for TRACE.md. |
 
-### procedure Generate_Verification_Report (Path : Standard.String; Doc_Metrics : Adacovex.Types.Docstring_Metrics; Proof : Adacovex.Types.Proof_Summary; Tests : Adacovex.Types.Implementation.Test_Summary; DAL_Assess : Adacovex.Types.Implementation.DAL_Assessment; Packages : Adacovex.Types.Implementation.Package_Vectors.Vector) `[Pre]`
+### procedure Generate_Verification_Report (Path : Standard.String; Doc_Metrics : Adacovex.Types.Docstring_Metrics; Proof : Adacovex.Types.Proof_Summary; Tests : Adacovex.Types.Implementation.Test_Summary; DAL_Assess : Adacovex.Types.Implementation.DAL_Assessment; Packages : Adacovex.Types.Implementation.Package_Vectors.Vector; All_Standards : Standard.Boolean) `[Pre]`
 
 | Parameter | Description |
 |-----------|-------------|
+| `All_Standards` | Report every standard (else the selected one). |
 | `DAL_Assess` | DAL compliance assessment. |
 | `Doc_Metrics` | Docstring coverage metrics. |
 | `Packages` | Scanned package vector. |

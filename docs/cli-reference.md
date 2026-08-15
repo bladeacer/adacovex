@@ -15,8 +15,10 @@ adacovex status [--target=PATH]
 |------|---------|------|-------------|
 | `--target=PATH` | `.` (CWD) | both | Target project root directory |
 | `--manifest=PATH` | auto-detected | both | Override project manifest path |
-| `--dal=LEVEL` | `C` | both | Target rigor tier (A-E; shared across standards) |
-| `--standard=NAME` | `do178c` | both | Compliance standard: `do178c`, `iso26262`, `iec62304` |
+| `--dal=LEVEL` | `C` | both | DO-178C DAL level (A-E; also the shared rigor tier) |
+| `--asil=LEVEL` | - | both | ISO 26262 level: `A`\|`B`\|`C`\|`D`\|`QM` |
+| `--class=LEVEL` | - | both | IEC 62304 safety class: `A`\|`B`\|`C` |
+| `--standard=NAME` | `do178c` | both | `do178c`\|`iso26262`\|`iec62304`\|`all` |
 | `--serve` | off | both | Start HTTP dashboard server |
 | `--port=N` | `8080` | serve | Dashboard server port |
 | `--emit-svg=PATH` | `<target>/docs/badges` | both | Output directory for SVG badges |
@@ -55,25 +57,47 @@ project metadata for the dependency graph.
 
 ### `--dal=LEVEL`
 
-Target rigor tier: `A`, `B`, `C`, `D`, or `E` (case-insensitive). Determines
-the minimum SPARK proof level required and the specific criteria checked. This
-tier is shared across standards -- `--dal=C` is DAL-C under DO-178C, ASIL B
-under ISO 26262, and safety Class A under IEC 62304. See
-[DAL levels](api-docs/adacovex-dal-levels.md) and
+DO-178C DAL level (and the shared rigor tier): `A`, `B`, `C`, `D`, or `E`
+(case-insensitive). Determines the minimum SPARK proof level required and the
+specific criteria checked. This tier is shared across standards -- `--dal=C`
+is DAL-C under DO-178C, ASIL B under ISO 26262, and safety Class A under
+IEC 62304. See [DAL levels](api-docs/adacovex-dal-levels.md) and
 [Standards](standards.md).
+
+### `--asil=LEVEL`
+
+ISO 26262 Automotive Safety Integrity Level: `A`, `B`, `C`, `D`, or `QM`
+(case-insensitive). Sets the standard to `iso26262` and maps the ASIL level
+to the shared rigor tier (ASIL D -> DAL A, ASIL C -> DAL B, ASIL B -> DAL C,
+ASIL A -> DAL D, QM -> DAL E). `--asil=B` is therefore the clearest spelling
+of "assess this project at ASIL B".
+
+### `--class=LEVEL`
+
+IEC 62304 software safety class: `A`, `B`, or `C` (case-insensitive). Sets
+the standard to `iec62304` and maps the class to the shared rigor tier
+(Class C -> DAL A, Class B -> DAL B, Class A -> DAL C). `--class=A` is the
+clearest spelling of "assess this project at safety Class A".
 
 ### `--standard=NAME`
 
 Select the compliance standard used to label the assessment (default
 `do178c`). The evidence checks are identical across standards; only the
-integrity-level names change in the ANSI report and SVG badge:
+integrity-level names change in the report and badges:
 
 - `do178c` -- DAL A--E (avionics)
 - `iso26262` -- ASIL D / C / B / A / QM (automotive)
 - `iec62304` -- Class C / B / A / no class (medical-device software)
+- `all` -- run one assessment at the shared tier and emit badges/reports for
+  every standard (`do178c.svg`, `iso26262.svg`, `iec62304.svg`)
 
 Accepted case-insensitively, with or without the hyphen/space (`ISO-26262`,
 `iec62304`, ...). See [Standards](standards.md) for the full tier mapping.
+
+When both a dedicated level flag (`--asil` / `--class`) and `--standard` are
+passed, the dedicated flag sets the standard and `--standard` is ignored for
+labelling (last-write-wins per field); the shared tier is always whatever the
+level flag (or `--dal`) resolved to.
 
 ### `status`
 
@@ -98,7 +122,8 @@ After scanning and assessment, start the built-in HTTP/1.1 web dashboard on
 
 - `GET /` -- HTML dashboard with coverage, proof, test, and compliance cards
 - `GET /api/metrics` -- JSON object with key metrics
-- `GET /badge/spark.svg`, `GET /badge/tests.svg`, `GET /badge/do178c.svg` -- SVG badges
+- `GET /badge/spark.svg`, `GET /badge/tests.svg`, `GET /badge/do178c.svg`,
+  `GET /badge/iso26262.svg`, `GET /badge/iec62304.svg` -- SVG badges
 
 The server blocks (does not return to the shell) until interrupted.
 
@@ -110,11 +135,12 @@ Only relevant with `--serve`.
 ### `--emit-svg=PATH`
 
 Write SVG badges to a directory. Default `<target>/docs/badges`
-(project-scoped). Creates four files:
+(project-scoped). Creates:
 
 - `spark.svg` -- SPARK assurance level (Stone through Platinum)
 - `tests.svg` -- test pass/fail count
-- `do178c.svg` -- DO-178C DAL status (Achieved / Unmet)
+- `do178c.svg` / `iso26262.svg` / `iec62304.svg` -- compliance status for the
+  selected standard (Achieved / Unmet), or all three with `--standard=all`
 - `docs.svg` -- docstring coverage percentage
 
 `--no-svg` overrides and disables SVG output entirely.
@@ -178,7 +204,7 @@ target does not meet the required level:
 
 ```bash
 adacovex --target=. --require-spark=Platinum --require-docstrings=100 \
-         --require-tests=395 --require-proof=100
+         --require-tests=460 --require-proof=100
 ```
 
 - `require-spark` compares the honest assessed SPARK level (Stone..Platinum).
@@ -264,10 +290,13 @@ proof-aware software bill of materials in CycloneDX 1.5 JSON or SPDX 2.3 JSON.
   created automatically.
 - **Properties**: only the root component -- the project adacovex actually
   assessed -- carries `adacovex:proof_level` (`Stone`..`Platinum`, the honest
-  assessed level) and `adacovex:dal_target` (`DAL-A`..`DAL-D`; omitted for
-  `DAL-E`). Dependency components report `adacovex:proof_level = "Not proved"`
-  (adacovex only proves the target itself, never third-party dependencies).
-  Encoded as `attributionTexts` in SPDX.
+  assessed level), `adacovex:standard` (`DO-178C` / `ISO 26262` /
+  `IEC 62304`), `adacovex:dal_target` (`DAL-A`..`DAL-D`; omitted for
+  `DAL-E`), and `adacovex:level` (the standard-specific label `DAL-C` /
+  `ASIL B` / `Class A`; omitted for `DAL-E`). Dependency components report
+  `adacovex:proof_level = "Not proved"` (adacovex only proves the target
+  itself, never third-party dependencies). Encoded as `attributionTexts` in
+  SPDX.
 - **Determinism**: the `metadata.timestamp` / `creationInfo.created` field
   honors the `SOURCE_DATE_EPOCH` environment variable (reproducible-builds
   convention); when set to a Unix epoch second count the timestamp is derived
@@ -296,8 +325,17 @@ Both formats validate against the official
 # Self-assessment (strict mode, 100% docs required)
 adacovex --target=.
 
-# ISO 26262 assessment at rigor tier C (ASIL B)
+# ISO 26262 assessment at ASIL B (dedicated flag)
+adacovex --target=. --asil=B
+
+# IEC 62304 assessment at safety Class A (dedicated flag)
+adacovex --target=. --class=A
+
+# ISO 26262 assessment at rigor tier C (ASIL B) via --standard
 adacovex --target=. --standard=iso26262 --dal=C
+
+# Emit badges for every standard at the shared tier
+adacovex --target=. --standard=all
 
 # Report toolchain + platform status
 adacovex status --target=.

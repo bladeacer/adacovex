@@ -85,6 +85,35 @@ package body Adacovex_Types_Tests is
         (Standard_Level_Name (IEC_62304, DAL_E) = "No class",
          "IEC 62304 DAL E -> No class");
 
+      --  Dedicated level parsers (1.10.0): ASIL + IEC safety-class selectors.
+      R.Check (To_ASIL ("A") = DAL_D, "ASIL A -> DAL_D tier");
+      R.Check (To_ASIL ("B") = DAL_C, "ASIL B -> DAL_C tier");
+      R.Check (To_ASIL ("C") = DAL_B, "ASIL C -> DAL_B tier");
+      R.Check (To_ASIL ("D") = DAL_A, "ASIL D -> DAL_A tier");
+      R.Check (To_ASIL ("QM") = DAL_E, "ASIL QM -> DAL_E tier");
+      R.Check (To_ASIL ("qm") = DAL_E, "ASIL qm -> DAL_E tier (lowercase)");
+      R.Check (To_ASIL ("X") = DAL_C, "ASIL X -> DAL_C (unknown default)");
+      R.Check (Is_Valid_ASIL ("B"), "Is_Valid_ASIL B true");
+      R.Check (Is_Valid_ASIL ("qm"), "Is_Valid_ASIL qm true");
+      R.Check (not Is_Valid_ASIL ("E"), "Is_Valid_ASIL E false");
+      R.Check (not Is_Valid_ASIL (""), "Is_Valid_ASIL empty false");
+
+      R.Check (To_Class ("A") = DAL_C, "Class A -> DAL_C tier");
+      R.Check (To_Class ("B") = DAL_B, "Class B -> DAL_B tier");
+      R.Check (To_Class ("C") = DAL_A, "Class C -> DAL_A tier");
+      R.Check (To_Class ("c") = DAL_A, "Class c -> DAL_A tier (lowercase)");
+      R.Check (To_Class ("D") = DAL_C, "Class D -> DAL_C (unknown default)");
+      R.Check (Is_Valid_Class ("A"), "Is_Valid_Class A true");
+      R.Check (Is_Valid_Class ("c"), "Is_Valid_Class c true");
+      R.Check (not Is_Valid_Class ("D"), "Is_Valid_Class D false");
+      R.Check (not Is_Valid_Class (""), "Is_Valid_Class empty false");
+
+      R.Check (Standard_Slug (DO_178C) = "do178c", "Standard_Slug DO_178C");
+      R.Check
+        (Standard_Slug (ISO_26262) = "iso26262", "Standard_Slug ISO_26262");
+      R.Check
+        (Standard_Slug (IEC_62304) = "iec62304", "Standard_Slug IEC_62304");
+
       --  Host word-size auto-detection (added 1.6.0).
       R.Check
         (Host_Word_Bits = System.Word_Size,

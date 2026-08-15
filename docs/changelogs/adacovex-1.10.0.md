@@ -60,6 +60,30 @@ primary, macOS/FreeBSD/Windows from source), the CPU core-count detection
 order (`/proc/cpuinfo`, `sysctl`, `nproc`, `NUMBER_OF_PROCESSORS`, PowerShell),
 CI detection, prove parallelism resolution, and the Linux-only release binary.
 
+### C7: Dedicated per-standard level flags and `--standard=all`
+
+The shared `--dal=LEVEL` tier is complemented by dedicated level flags that
+spell each standard's integrity level in its own naming: `--asil=LEVEL`
+(`A|B|C|D|QM`, ISO 26262) and `--class=LEVEL` (`A|B|C`, IEC 62304). Each sets
+both the compliance standard and the shared tier, so `--asil=B` is the
+unambiguous spelling of "assess at ASIL B" (tier C) and `--class=A` of
+"assess at safety Class A". `--standard=all` runs one assessment at the shared
+tier and emits badges for every standard (`do178c.svg`, `iso26262.svg`,
+`iec62304.svg`) plus a per-standard breakdown in the ANSI report, HTML
+dashboard, JSON API, and Markdown report, without re-scanning or re-proving.
+
+### C8: Standard-aware SBOM and renderers
+
+The proof-aware SBOM now records the assessment standard and its native level
+label alongside the shared tier: the root component carries
+`adacovex:standard` (`DO-178C` / `ISO 26262` / `IEC 62304`) and
+`adacovex:level` (`DAL-C` / `ASIL B` / `Class A`), in addition to the existing
+`adacovex:proof_level` and `adacovex:dal_target` properties (CycloneDX
+properties, SPDX `attributionTexts`, and the Markdown table). The HTML
+dashboard, JSON API, and Markdown `VERIFICATION.md` now print the
+standard-specific level label and the `--standard=all` per-standard
+breakdown; the ANSI report and SVG badges already did.
+
 ## Fixes
 
 ### H1: Scanner false positives on identifier prefixes
@@ -79,25 +103,29 @@ producing `Value`.
 
 ## Test Suite
 
-395 tests (was 372). The source-scanner category gained four checks covering
-word-boundary rejection of keyword-prefixed identifiers and `overriding` /
-`not overriding` declaration parsing; the types category gained 18 checks for
-the compliance-standard conversions and `Standard_Level_Name` mapping; the DAL
-category gained four checks for `Assess_Standard`; and the CLI-config category
-gained a check for the `Standard_Target` default.
+460 tests (was 395). The types category gained 23 checks for the dedicated
+level parsers (`To_ASIL`, `Is_Valid_ASIL`, `To_Class`, `Is_Valid_Class`) and
+`Standard_Slug`; the CLI-config category gained a check for the `Standard_All`
+default; the SVG category gained six checks for the standard-parameterized
+`Render_Compliance_Badge`; the SBOM category gained 18 checks for the
+standard/level properties; and a new HTML/Markdown renderer category (17
+checks) covers standard-aware dashboard, JSON, and Markdown output. Total
+categories: 10 (was 9).
 
 ## Proof Results
 
-Platinum, 369/369 VCs proved across 38 analyzed units (was 343 at 1.9.0). The
-new compliance-standard layer (`Compliance_Standard`, `To_Standard`,
-`Standard_Level_Name`, `To_String`) added 26 SPARK VCs, all discharged. The
-`prove` subcommand's default proof budget was raised from `--steps=5000` to
-`--steps=10000` because 5000 sat on the solver's non-determinism boundary for
-the enlarged unit; an explicit `--steps=...` still overrides it. Changed
-scanner files remain non-SPARK (`Adacovex.Parsers.Source`).
+Platinum, 398/398 VCs proved across 39 analyzed units (was 343 at 1.9.0). The
+compliance-standard layer (`Compliance_Standard`, `To_Standard`,
+`Standard_Level_Name`, `Standard_Slug`, `To_ASIL`, `To_Class`) and the SBOM
+`Level_Property` added 55 SPARK VCs, all discharged. The `prove` subcommand's
+default proof budget was raised from `--steps=5000` to `--steps=10000` because
+5000 sat on the solver's non-determinism boundary for the enlarged unit; an
+explicit `--steps=...` still overrides it. Changed scanner files remain
+non-SPARK (`Adacovex.Parsers.Source`).
 
 ## Traceability
 
 No new HLRs. Source scanning remains covered by the existing `-- HLR-SCAN`
 tag in `src/parsers/adacovex-parsers-source.ads`; the new standard-aware
-assessment reuses the existing `HLR-COMPLIANCE` / `HLR-DAL-A..E` tags.
+assessment and renderers reuse the existing `HLR-COMPLIANCE` /
+`HLR-DAL-A..E` / `HLR-SBOM` / `HLR-RENDER-*` tags.

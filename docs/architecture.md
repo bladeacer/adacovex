@@ -271,14 +271,17 @@ directory is always excluded from source scanning.
 adacovex supports multiple output formats:
 
 - **ANSI terminal report**: Color-coded summary for interactive use
-- **SVG badges**: `spark.svg`, `tests.svg`, `do178c.svg`, `docs.svg` for CI badges
+- **SVG badges**: `spark.svg`, `tests.svg`, `docs.svg`, plus `do178c.svg` /
+  `iso26262.svg` / `iec62304.svg` compliance badges (`--standard=all` emits all
+  three) for CI badges
 - **Markdown reports**: `VERIFICATION.md` and `TRACE.md` for compliance documentation
 - **HTML dashboard**: Interactive web dashboard with JSON API (`--serve`)
-- **SBOM**: CycloneDX 1.5, SPDX 2.3, or Markdown format with proof and DAL properties
+- **SBOM**: CycloneDX 1.5, SPDX 2.3, or Markdown format with proof, standard,
+  and DAL/level properties
 
 ## Testing
 
-adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 395 tests across 9 categories. No external test framework (AUnit, etc.) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
+adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 460 tests across 10 categories. No external test framework (AUnit, etc.) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
 
 ## Supported Platforms
 
