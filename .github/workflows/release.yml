@@ -26,18 +26,18 @@ jobs:
           build: true
           release-build: true
           prove: true
-          require-spark: Silver
+          require-spark: Platinum
           require-docstrings: 100
           require-tests: 361
-          require-proof: 65
+          require-proof: 100
 
-      - name: Require Silver SPARK level
+      - name: Require Platinum SPARK level
         shell: bash
         run: |
           set -euo pipefail
           LEVEL="${{ steps.adacovex.outputs.spark-level }}"
-          if [ "$LEVEL" != "Silver" ]; then
-            echo "::error::release gate requires SPARK Silver, got: $LEVEL"
+          if [ "$LEVEL" != "Platinum" ]; then
+            echo "::error::release gate requires SPARK Platinum, got: $LEVEL"
             exit 1
           fi
           echo "SPARK level: $LEVEL (release gate passed)"

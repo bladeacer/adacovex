@@ -7,7 +7,14 @@ package body Adacovex.Renderers.SVG is
 
    --  Decimal string of a non-negative integer.  The fixed 10-character
    --  buffer and the loop invariant prove the write cursor never underflows.
-   function I2S (N : Natural) return String with SPARK_Mode => On is
+   function I2S (N : Natural) return String
+   with
+     SPARK_Mode => On,
+     Post       =>
+       I2S'Result'First in 1 .. 10
+       and I2S'Result'Last in 1 .. 10
+       and I2S'Result'Length in 1 .. 10
+   is
       Pow10 : constant array (1 .. 10) of Long_Long_Integer :=
         (10,
          100,
@@ -97,7 +104,7 @@ package body Adacovex.Renderers.SVG is
    end Badge_SVG;
 
    function Spark_Color (Level : Types.SPARK_Level) return String
-   with SPARK_Mode => On
+   with SPARK_Mode => On, Post => Spark_Color'Result'Length in 4 .. 7
    is
    begin
       case Level is
@@ -122,7 +129,7 @@ package body Adacovex.Renderers.SVG is
    --  Light metals (Platinum, Gold, Silver) take dark text; Bronze and
    --  Stone keep white text.
    function Spark_Text_Color (Level : Types.SPARK_Level) return String
-   with SPARK_Mode => On
+   with SPARK_Mode => On, Post => Spark_Text_Color'Result'Length in 4 .. 7
    is
    begin
       case Level is
