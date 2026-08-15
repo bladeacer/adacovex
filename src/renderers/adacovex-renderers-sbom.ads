@@ -26,12 +26,7 @@ package Adacovex.Renderers.SBOM is
    function Proof_Level_Property (Level : Types.SPARK_Level) return String
    with
      SPARK_Mode => On,
-     Post       =>
-       Proof_Level_Property'Result = "Stone"
-       or else Proof_Level_Property'Result = "Bronze"
-       or else Proof_Level_Property'Result = "Silver"
-       or else Proof_Level_Property'Result = "Gold"
-       or else Proof_Level_Property'Result = "Platinum",
+     Post       => Proof_Level_Property'Result = Types.To_String (Level),
      Global     => null;
 
    --  Map a DAL level to the dal_target property value ("DAL-A".."DAL-D").
@@ -86,7 +81,13 @@ package Adacovex.Renderers.SBOM is
    --  @param N  Non-negative integer to format.
    --  @return The decimal string, 1-10 characters, no leading zeros.
    function I2S (N : Natural) return String
-   with SPARK_Mode => On, Post => I2S'Result'Length in 1 .. 10, Global => null;
+   with
+     SPARK_Mode => On,
+     Post       =>
+       I2S'Result'First in 1 .. 10
+       and I2S'Result'Last in 1 .. 10
+       and I2S'Result'Length in 1 .. 10,
+     Global     => null;
 
    --  Two-digit-padded decimal string of a non-negative integer (single
    --  digits are prefixed with a zero).
@@ -95,7 +96,10 @@ package Adacovex.Renderers.SBOM is
    function Pad2 (N : Natural) return String
    with
      SPARK_Mode => On,
-     Post       => Pad2'Result'Length in 1 .. 11,
+     Post       =>
+       Pad2'Result'First in 1 .. 10
+       and Pad2'Result'Last in 1 .. 11
+       and Pad2'Result'Length in 1 .. 11,
      Global     => null;
 
    --  ISO 8601 UTC timestamp (YYYY-MM-DDTHH:MM:SS) from a Unix epoch second

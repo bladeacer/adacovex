@@ -162,6 +162,11 @@ package body Adacovex.Prove is
       end if;
       if Opts.Steps >= 0 then
          App ("--steps" & Integer'Image (Opts.Steps));
+      else
+         --  Default proof budget, well above gnatprove's own step limit, so
+         --  solver-timeout false negatives are not reported as unproved.
+         --  An explicit --steps=... always overrides this default.
+         App ("--steps 5000");
       end if;
       if Opts.Memlimit >= 0 then
          App ("--memlimit" & Integer'Image (Opts.Memlimit));

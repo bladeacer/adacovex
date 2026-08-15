@@ -115,6 +115,7 @@ package body Adacovex.Parsers.Tests is
                            K := K - 1;
                         end loop;
                         if K >= S'First and then S (K) in '0' .. '9' then
+                           pragma Assert (K in S'First .. S'Last);
                            declare
                               DStart : Natural := K;
                               Num    : Natural := 0;

@@ -169,7 +169,14 @@ package body Adacovex.Renderers.SBOM is
    --  Decimal string of a non-negative integer.  A fixed 10-character buffer
    --  holds any Natural (up to 2,147,483,647, ten digits); the loop invariant
    --  proves the write cursor never underflows the buffer.
-   function I2S (N : Natural) return String with SPARK_Mode => On is
+   function I2S (N : Natural) return String
+   with
+     SPARK_Mode   => On,
+     Refined_Post =>
+       I2S'Result'First in 1 .. 10
+       and I2S'Result'Last in 1 .. 10
+       and I2S'Result'Length in 1 .. 10
+   is
       Pow10 : constant array (1 .. 10) of Long_Long_Integer :=
         (10,
          100,
@@ -199,7 +206,14 @@ package body Adacovex.Renderers.SBOM is
       end loop;
       return Buf (I .. 10);
    end I2S;
-   function Pad2 (N : Natural) return String with SPARK_Mode => On is
+   function Pad2 (N : Natural) return String
+   with
+     SPARK_Mode   => On,
+     Refined_Post =>
+       Pad2'Result'First in 1 .. 10
+       and Pad2'Result'Last in 1 .. 11
+       and Pad2'Result'Length in 1 .. 11
+   is
    begin
       if N < 10 then
          return "0" & I2S (N);
@@ -207,6 +221,40 @@ package body Adacovex.Renderers.SBOM is
          return I2S (N);
       end if;
    end Pad2;
+
+   --  Assemble the fixed ISO timestamp from its decimal string fields.
+   --  Kept separate from ISO_From_Epoch so the concatenation bounds are
+   --  proved against a small precondition instead of the full calendar-math
+   --  context (which otherwise pushes the concat checks past the solver step
+   --  limit).
+   --  @param YrS  Year field.
+   --  @param MoS  Month field.
+   --  @param DyS  Day field.
+   --  @param HrS  Hour field.
+   --  @param MiS  Minute field.
+   --  @param SdS  Second field.
+   function Assemble_ISO (YrS, MoS, DyS, HrS, MiS, SdS : String) return String
+   with
+     SPARK_Mode => On,
+     Pre        =>
+       YrS'First >= 1
+       and YrS'Last <= 10
+       and MoS'First >= 1
+       and MoS'Last <= 11
+       and DyS'First >= 1
+       and DyS'Last <= 11
+       and HrS'First >= 1
+       and HrS'Last <= 11
+       and MiS'First >= 1
+       and MiS'Last <= 11
+       and SdS'First >= 1
+       and SdS'Last <= 11,
+     Post       => Assemble_ISO'Result'Length <= 70,
+     Global     => null
+   is
+   begin
+      return YrS & "-" & MoS & "-" & DyS & "T" & HrS & ":" & MiS & ":" & SdS;
+   end Assemble_ISO;
 
    --  ISO 8601 UTC timestamp from a Unix epoch second count, computed with
    --  pure integer arithmetic so the result is identical on every machine
@@ -231,21 +279,49 @@ package body Adacovex.Renderers.SBOM is
             when others         => 31)
       with Post => Days_In_Month'Result in 28 .. 31, Global => null;
 
+      --  Days left in the year from the start of month M (inclusive).  With
+      --  the leap day already folded out of Din, February counts 28 days, so
+      --  Days_Remaining (1) = 365 and Days_Remaining (Mo+1) =
+      --  Days_Remaining (Mo) - Days_In_Month (Mo).
+      function Days_Remaining (M : Natural) return Natural
+      is (case M is
+            when 1      => 365,
+            when 2      => 334,
+            when 3      => 306,
+            when 4      => 275,
+            when 5      => 245,
+            when 6      => 214,
+            when 7      => 184,
+            when 8      => 153,
+            when 9      => 122,
+            when 10     => 92,
+            when 11     => 61,
+            when 12     => 31,
+            when others => 0)
+      with Post => Days_Remaining'Result in 0 .. 365, Global => null;
+
       Days     : constant Natural := Epoch_Sec / 86_400;
       Din      : Natural := Days;
       Sec      : Natural := Epoch_Sec mod 86_400;
       Yr       : Natural := 1970;
-      Mo       : Natural := 1;
-      Dy       : Natural := 1;
+      Mo       : Natural;
+      Dy       : Natural;
       Is_Feb29 : Boolean := False;
    begin
       pragma Assert (Days <= 24_855);
       for YI in 1 .. 68 loop
          pragma Loop_Invariant (Yr = 1969 + YI);
          pragma Loop_Invariant (Days - Din >= 365 * (YI - 1));
-         exit when Din < Days_In_Year (Yr);
-         Din := Din - Days_In_Year (Yr);
-         Yr := 1970 + YI;
+         if Din >= Days_In_Year (Yr) then
+            declare
+               DY : constant Natural := Days_In_Year (Yr);
+            begin
+               Din := Din - DY;
+            end;
+            Yr := 1970 + YI;
+         else
+            exit;
+         end if;
       end loop;
       pragma Assert (Din < 366);
       declare
@@ -260,15 +336,26 @@ package body Adacovex.Renderers.SBOM is
       end;
       pragma Assert (Din < 365);
       Mo := 1;
-      while Mo < 12 and then Din >= Days_In_Month (Mo) loop
+      while Mo < 12 loop
          pragma Loop_Invariant (Din < 365);
+         pragma Loop_Invariant (Mo in 1 .. 12);
+         pragma Loop_Invariant (Din < Days_Remaining (Mo));
          pragma Loop_Variant (Decreases => Din);
-         Din := Din - Days_In_Month (Mo);
-         Mo := Mo + 1;
+         if Din >= Days_In_Month (Mo) then
+            declare
+               DM : constant Natural := Days_In_Month (Mo);
+            begin
+               Din := Din - DM;
+            end;
+            Mo := Mo + 1;
+         else
+            exit;
+         end if;
       end loop;
       pragma Assert (Din < 31);
       Dy := Din + 1;
       if Is_Feb29 then
+         pragma Assert (Dy <= 31);
          Dy := Dy + 1;
       end if;
       declare
@@ -279,24 +366,7 @@ package body Adacovex.Renderers.SBOM is
          MiS : constant String := Pad2 ((Sec mod 3_600) / 60);
          SdS : constant String := Pad2 (Sec mod 60);
       begin
-         pragma Assert (YrS'Length <= 10);
-         pragma Assert (MoS'Length <= 11);
-         pragma Assert (DyS'Length <= 11);
-         pragma Assert (HrS'Length <= 11);
-         pragma Assert (MiS'Length <= 11);
-         pragma Assert (SdS'Length <= 11);
-         pragma
-           Assert
-             (YrS'Length
-                + MoS'Length
-                + DyS'Length
-                + HrS'Length
-                + MiS'Length
-                + SdS'Length
-                + 5
-                <= Natural'Last);
-         return
-           YrS & "-" & MoS & "-" & DyS & "T" & HrS & ":" & MiS & ":" & SdS;
+         return Assemble_ISO (YrS, MoS, DyS, HrS, MiS, SdS);
       end;
    end ISO_From_Epoch;
 

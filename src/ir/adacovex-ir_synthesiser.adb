@@ -77,7 +77,7 @@ package body Adacovex.IR_Synthesiser is
       return String
    is
       Result : String (1 .. Max_Pkg_Len) := (others => ' ');
-      RLen   : Natural := 0;
+      RLen   : Natural range 0 .. Max_Pkg_Len := 0;
 
       --  Append a string to the synthesized text buffer.  The buffer is
       --  bounded, so appended text is truncated (never overflows) at the
