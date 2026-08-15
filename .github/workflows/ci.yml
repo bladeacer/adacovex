@@ -18,10 +18,10 @@ jobs:
           gnat-version: 15.2.1
           build: true
           prove: true
-          require-spark: Silver
+          require-spark: Platinum
           require-docstrings: 100
           require-tests: 361
-          require-proof: 65
+          require-proof: 100
 
   adacovex-tests:
     name: Build + native tests

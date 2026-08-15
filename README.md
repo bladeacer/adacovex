@@ -49,9 +49,10 @@ However, project reliability is grounded in mathematical proof and
 non-invasive design rather than implicit trust:
 
 - **Formal Verification:** Core Ada logic is formally verified using
-SPARK Ada (Silver baseline under `gnatprove` 16.1.0 -- 509 VCs, 168 unproved
-on stricter overflow/counterexample checks; the earlier "Platinum" claim was
-a parser artifact that misread the unproved column).
+SPARK Ada (Platinum under `gnatprove` 16.1.0 -- 369 VCs, 0 unproved at the
+standard `adacovex prove` invocation; the earlier "Silver / 509 VCs / 168
+unproved" figure was a stale count that no documented gnatprove invocation
+reproduces -- see `docs/proof/16.1.0-ledger.md`).
 - **Read-Only Engine:** `adacovex` acts strictly as an assessment engine.
 It processes input payloads, parses build artifacts, and produces reports without
 modifying your source files in place.
@@ -248,8 +249,8 @@ target does not meet the required level. This is exactly what a CI workflow
 wants to pin so a regression cannot slip through:
 
 ```bash
-adacovex --target=. --require-spark=Silver --require-docstrings=100 \
-         --require-tests=361 --require-proof=65
+adacovex --target=. --require-spark=Platinum --require-docstrings=100 \
+         --require-tests=361 --require-proof=100
 ```
 
 The `require-spark` gate compares the honest assessed SPARK level
@@ -743,8 +744,8 @@ src/
 | Check | Command | Requirement |
 |-------|---------|-------------|
 | Unit tests | `make test` | 361/361 passing |
-| Self-assessment | `make run-self` | 100% docs, Silver, DAL-C Achieved |
-| SPARK proof | `make prove` | Silver (509 VCs, 168 unproved under gnatprove 16.1.0) |
+| Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
+| SPARK proof | `make prove` | Platinum (369 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, DAL-C (strict mode) |
 
 See [changelogs](docs/changelogs/index.md) for full release notes.

@@ -15,10 +15,11 @@ the "Justified"/"Unproved" columns are blank (`.`) in one format and populated
 in the other). A field-based reader (`Get_Column_Number`) extracts each column
 by its padded column span instead of by "nth number in the line", so a
 justified-VC percentage that was mistaken for the unproved percentage on the
-shared 15.x/16.x layout no longer corrupts the summary. This fixes the
-self-assessment: the previous "Platinum / all VCs proved" report was a parser
-artifact that read the unproved column as zero; the honest level is now
-reported (Silver under 16.1.0).
+   shared 15.x/16.x layout no longer corrupts the summary. This fixes the
+   self-assessment: the previous "Platinum / all VCs proved" report was a parser
+   artifact that read the unproved column as zero. The honest level immediately
+   after this fix was Silver; the proof fixes in C5 then closed the real gap, so
+   the self-assessment is genuinely Platinum again (see Proof Results).
 
 ### C2: Global gnatprove version pin (`adacovex.toml` / env)
 
@@ -54,6 +55,35 @@ to `"Gold"`, so an SBOM never overstates assurance (Silver with unproved VCs
 is reported as `"Silver"`). The proof-level postcondition was widened to the
 full range accordingly.
 
+### C5: Proof fixes to 0 unproved (Platinum under gnatprove 16.1.0)
+
+Eliminated every unproved VC so the self-assessment reaches **Platinum**:
+**369 VCs, 307 proved, 0 unproved** across 38 analyzed units under gnatprove
+16.1.0, with no `SPARK_Mode(Off)` and no justified VCs. The bulk of the debt
+was solver step-limit timeouts, not genuine proof gaps; the rest needed real
+contract and structure fixes:
+
+- `covex prove` now passes `--steps=5000` by default (an explicit `--steps=`
+  still wins), replacing gnatprove's low default step budget that reported
+  "provers reached step limit" as unproved VCs. The CLI `--steps` default
+  stays `-1` so non-prove invocations are unaffected.
+- `Adacovex.Renderers.SBOM`: strengthened the `I2S`/`Pad2` contracts with
+  `Result'First`/`Result'Last` bounds; restructured the ISO epoch year/month
+  loops behind explicit guards with a `Days_Remaining` loop invariant; hoisted
+  per-iteration helper calls into constants; guarded `Dy + 1`; extracted the
+  timestamp `&` chain into an `Assemble_ISO` helper with a tight `Pre`; and
+  delegated the `Proof_Level_Property` postcondition to `Types.To_String`.
+- `Adacovex.IR_Synthesiser`: narrowed the append cursor `RLen` to
+  `Natural range 0 .. Max_Pkg_Len` so the buffer write can never overflow
+  `Natural'Last`.
+- `Adacovex.Parsers.Tests`: added a cursor-bound assert inside the
+  `K >= S'First` guard of `Number_Before_Word` so the quantified digit-check
+  loop invariants can discharge their array-access checks.
+
+The earlier "509 VCs / 168 unproved / Silver" figure is not reproducible by
+any documented gnatprove invocation and was retired; see
+`docs/proof/16.1.0-ledger.md`.
+
 ## Test Suite
 
 361 tests (was 336 native + new cases). Added: gnatprove v15/v16 Total-row
@@ -63,19 +93,25 @@ honest SBOM proof-level mapping in `adacovex_sbom_tests`.
 
 ## Proof Results
 
-Self-assessment now reports the honest level: **Silver** -- 509 VCs, 168
-unproved under gnatprove 16.1.0 across 38 analyzed units. gnatprove 16.1.0
-generates stricter overflow/counterexample checks than 15.x and leaves more
-VCs unproved; the earlier "Platinum / 503/503 proved" self-assessment was a
-parser artifact that read the unproved column as zero. The CI gates
-(`require-spark=Silver`, `require-proof=65` in the Makefile and workflows)
-now match this honest baseline.
+Self-assessment reports **Platinum**: **369 VCs, 307 proved, 0 unproved** under
+gnatprove 16.1.0 across 38 analyzed units (no justified VCs). gnatprove 16.1.0
+generates stricter overflow/counterexample checks than 15.x; after the C1
+parser fix the honest level was Silver, and the C5 proof fixes (plus the
+`--steps=5000` default) then discharged every remaining VC. The interim
+"509 VCs / 168 unproved / Silver" figure was a stale count that no documented
+gnatprove invocation reproduces. The CI gates
+(`require-spark=Platinum`, `require-proof=100` in the Makefile and workflows)
+match this state.
 
 ## Traceability
 
 No new HLR tags were added. The changed packages are covered by the existing
 tags:
 - `-- HLR-PROOF` on `Adacovex.Parsers.GNATprove` -- parser reconciliation.
-- `-- HLR-PROVE` on `Adacovex.Prove` -- global gnatprove pin + resolution order.
+- `-- HLR-PROVE` on `Adacovex.Prove` -- global gnatprove pin + resolution order,
+  default `--steps=5000` proof budget.
 - `-- HLR-CLI` on `Adacovex.Config` -- `--require-*` CI gates (CLI parsing).
-- `-- HLR-SBOM` on `Adacovex.Renderers.SBOM` -- honest proof-level property.
+- `-- HLR-SBOM` on `Adacovex.Renderers.SBOM` -- honest proof-level property,
+  ISO epoch proof fixes.
+- `-- HLR-IR` on `Adacovex.IR_Synthesiser` -- bounded append-cursor fixes.
+- `-- HLR-TEST` on `Adacovex.Parsers.Tests` -- digit-scan cursor bound.

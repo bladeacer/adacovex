@@ -11,7 +11,8 @@ test-result parsing, DO-178C DAL compliance assessment, and interactive dashboar
   no declared tool dependency either -- gnatprove is resolved at run time by the
   `prove` subcommand (per-project manifest, `$PATH`, `~/.adacovex/toolchain/`, or
   download) and lives only in the dev manifest for the local make targets
-- **SPARK target**: Silver (honest baseline; see [SPARK levels](docs/api-docs/adacovex-spark-levels.md))
+- **SPARK target**: Platinum (0 unproved at the standard invocation; see
+  [SPARK levels](docs/api-docs/adacovex-spark-levels.md))
 
 ## Dogfood target
 
@@ -22,10 +23,11 @@ The `--target=PATH` option can point at any Ada/SPARK project.
 Self-assessment (`make run-self`, default target: cwd) verifies adacovex against its own
 source -- 28 packages, 86 subprograms -- and must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
-- Silver SPARK level (509 VCs under gnatprove 16.1.0, 168 unproved -- the
-  honest reading; stricter overflow/counterexample checks than older provers,
-  so the previous "Platinum" self-assessment was a parser artifact that
-  misread the unproved column)
+- Platinum SPARK level (369 VCs under gnatprove 16.1.0, 0 unproved at the
+  standard `adacovex prove` invocation, which passes `--steps=5000` by
+  default; the earlier "509 VCs / 168 unproved / Silver" figure was a stale
+  count that no documented gnatprove invocation reproduces -- see
+  `docs/proof/16.1.0-ledger.md`)
 - 361/361 native tests passing
 - DAL-C Achieved
 
@@ -902,8 +904,8 @@ is obtained and built.
 | Check | Command | Requirement |
 |-------|---------|-------------|
 | Unit tests | `make test` | 361/361 passing |
-| Self-assessment | `make run-self` | 100% docs, Silver, DAL-C Achieved |
-| SPARK proof | `make prove` | Silver (509 VCs, 168 unproved under gnatprove 16.1.0) |
+| Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
+| SPARK proof | `make prove` | Platinum (369 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
 
 See [docs/changelogs/adacovex-1.0.0.md](docs/changelogs/adacovex-1.0.0.md) for full release notes.
