@@ -663,11 +663,47 @@ package body Adacovex.Parsers.Manifest is
       C.Kind := Types.Dependency_Component;
       C.Parent := Parent;
       C.From_GPR := From_GPR;
-      C.Scope := Scope;
-      Graph.Append (C);
-   end Append_Dependency;
+       C.Scope := Scope;
+       Graph.Append (C);
+    end Append_Dependency;
 
-   procedure Read_Alire_Lock
+    --  Register manifest-declared dependencies that no GPR with-clause or
+    --  lockfile resolved: base deps from the publishing manifest (alire.toml)
+    --  and dev deps from alire-dev.toml.  Their version constraints are not
+    --  solved (only the crate name is parsed), so they appear name-only with a
+    --  "pkg:alire/<name>" purl, like GPR-only deps.  Already-registered names
+    --  are skipped by Append_Dependency.
+    procedure Register_Manifest_Deps
+      (Graph     : in out Types.Implementation.Component_Vectors.Vector;
+       Base_Names : Name_Vectors.Vector;
+       Dev_Names  : Name_Vectors.Vector)
+    is
+       procedure Register
+         (Names : Name_Vectors.Vector; Scope : Types.Component_Scope) is
+       begin
+          for I in 1 .. Integer (Names.Length) loop
+             declare
+                Name : constant String := Names (I).Name (1 .. Names (I).Len);
+             begin
+                Append_Dependency
+                  (Graph,
+                   Name,
+                   "",
+                   "",
+                   "",
+                   "pkg:alire/" & Name,
+                   1,
+                   False,
+                   Scope);
+             end;
+          end loop;
+       end Register;
+    begin
+       Register (Base_Names, Types.Scope_Base);
+       Register (Dev_Names, Types.Scope_Dev);
+    end Register_Manifest_Deps;
+
+    procedure Read_Alire_Lock
      (Lock_Path : String;
       Graph     : in out Types.Implementation.Component_Vectors.Vector)
    is
@@ -1119,6 +1155,12 @@ package body Adacovex.Parsers.Manifest is
       --  patches (e.g. a third-party copy under demo/deps) as scope=vendored
       --  dependencies of the root.
       Discover_Vendored_Components (Target_Dir, Graph);
+
+      --  Register manifest-declared deps (base from alire.toml, dev from
+      --  alire-dev.toml) that no GPR with-clause or lockfile resolved, so the
+      --  SBOM captures the declared dependency set even for zero-`with`
+      --  projects whose toolchain deps live only in the dev manifest.
+      Register_Manifest_Deps (Graph, Base_Names, Dev_Names);
 
       Success := Root.Name_Len > 0;
    end Build_Dependency_Graph;

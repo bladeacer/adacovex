@@ -21,14 +21,14 @@ adacovex was designed to audit the Ada_CRDT library at `../Ada_CRDT` (26 package
 The `--target=PATH` option can point at any Ada/SPARK project.
 
 Self-assessment (`make run-self`, default target: cwd) verifies adacovex against its own
-source -- 28 packages, 86 subprograms -- and must always show:
+source -- 28 packages, 93 subprograms -- and must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
 - Platinum SPARK level (369 VCs under gnatprove 16.1.0, 0 unproved at the
   standard `adacovex prove` invocation, which passes `--steps=5000` by
   default; the earlier "509 VCs / 168 unproved / Silver" figure was a stale
   count that no documented gnatprove invocation reproduces -- see
   `docs/proof/16.1.0-ledger.md`)
-- 361/361 native tests passing
+- 368/368 native tests passing
 - DAL-C Achieved
 
 ## Architecture
@@ -82,7 +82,7 @@ src/
     |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (79)
     |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (43)
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (26)
-    `-- test_runner.adb                       -- Test suite entry point (361 tests)
+    `-- test_runner.adb                       -- Test suite entry point (368 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -903,7 +903,7 @@ is obtained and built.
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 361/361 passing |
+| Unit tests | `make test` | 368/368 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (369 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -960,12 +960,12 @@ Test source: `src/tests/`. Entry point: `test_runner.adb` (builds as
 in `adacovex.gpr`; the CLI entry point builds as `bin/adacovex` via the
 `Builder.Executable` override, with a `bin/covex` alias symlink).
 
-`make test` builds and runs the 361-test suite. Test results are written to
+`make test` builds and runs the 368-test suite. Test results are written to
 `docs/test_result.md` in a Markdown table format that can be parsed by
 `adacovex-parsers-tests`. This means adacovex **supports both** native test
 running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 
-### Test categories (361 total)
+### Test categories (368 total)
 
 | Category | Tests | What it covers |
 |----------|-------|----------------|
@@ -977,7 +977,7 @@ running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 | Test-result parser | 43 | Markdown table, TAP, Automake, Maven Surefire, and Unity test-result parsing; conventional file-name discovery; Max_Line overflow rejection |
 | CLI config | 32 | Default option values, --help, --no-svg field, --compare-base and --coverage-delta defaults, prove-option and CI-threshold defaults |
 | SVG renderer | 30 | SVG badge content and format |
-| SBOM generator | 53 | Proof/DAL property mapping, Alire manifest + GPR dependency graph, CycloneDX/SPDX rendering |
+| SBOM generator | 60 | Proof/DAL property mapping, Alire manifest + GPR dependency graph, CycloneDX/SPDX rendering |
 
 ---
 

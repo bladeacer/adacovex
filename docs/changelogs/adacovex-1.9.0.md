@@ -58,7 +58,7 @@ full range accordingly.
 ### C5: Proof fixes to 0 unproved (Platinum under gnatprove 16.1.0)
 
 Eliminated every unproved VC so the self-assessment reaches **Platinum**:
-**369 VCs, 307 proved, 0 unproved** across 38 analyzed units under gnatprove
+**369 VCs, 310 proved, 0 unproved** across 38 analyzed units under gnatprove
 16.1.0, with no `SPARK_Mode(Off)` and no justified VCs. The bulk of the debt
 was solver step-limit timeouts, not genuine proof gaps; the rest needed real
 contract and structure fixes:
@@ -84,16 +84,46 @@ The earlier "509 VCs / 168 unproved / Silver" figure is not reproducible by
 any documented gnatprove invocation and was retired; see
 `docs/proof/16.1.0-ledger.md`.
 
+### C6: Manifest-declared dependencies registered in the SBOM graph
+
+`Adacovex.Parsers.Manifest.Build_Dependency_Graph` now registers every
+dependency declared in the manifests even when no GPR `with`-clause or
+`alire.lock` entry resolves it: base deps from `alire.toml` (scope `base`)
+and dev deps from `alire-dev.toml` (scope `dev`). Previously the manifest was
+parsed only to classify the scope of GPR/lock-resolved components, so a
+zero-`with` project whose toolchain deps live solely in `alire-dev.toml`
+(e.g. adacovex itself: `gnatprove`, `gnatdoc_bin`, `gnatformat_bin`) produced
+an SBOM with no dependency components. Unresolved manifest deps appear
+name-only with a `pkg:alire/<name>` purl, exactly like GPR-only deps.
+
+### C7: GNATprove info-warning cleanup
+
+Removed the persistent `info:` noise from the standard prove run by making
+gnatprove analyze each flagged subprogram independently:
+
+- `Min_SPARK_For` and `Need_Tests` moved from the body of
+  `Adacovex.Compliance.DAL` into the spec (public API with docstrings), so
+  they are no longer "only analyzed in the context of calls".
+- `Starts_With` moved from the body of `Adacovex.Parsers.Tests` into the spec,
+  dropping its in-context-analysis note.
+
+The remaining in-context note (`Append`'s nested loop in
+`Adacovex.IR_Synthesiser`) is left as-is: hoisting it to package level to
+silence the note introduced unproved range-check VCs, so the benign message
+was kept over worse proof debt.
+
 ## Test Suite
 
-361 tests (was 336 native + new cases). Added: gnatprove v15/v16 Total-row
+368 tests (was 336 native + new cases). Added: gnatprove v15/v16 Total-row
 reconciliation cases (`Get_Column_Number`), CI-threshold default/set checks in
-`adacovex_config_tests` (the CLI gnatprove-version pin was removed), and the
-honest SBOM proof-level mapping in `adacovex_sbom_tests`.
+`adacovex_config_tests` (the CLI gnatprove-version pin was removed), the
+honest SBOM proof-level mapping in `adacovex_sbom_tests`, and a
+both-manifests fixture in `adacovex_sbom_tests` verifying base/dev manifest
+deps are registered without GPR `with`-clauses or a lockfile.
 
 ## Proof Results
 
-Self-assessment reports **Platinum**: **369 VCs, 307 proved, 0 unproved** under
+Self-assessment reports **Platinum**: **369 VCs, 310 proved, 0 unproved** under
 gnatprove 16.1.0 across 38 analyzed units (no justified VCs). gnatprove 16.1.0
 generates stricter overflow/counterexample checks than 15.x; after the C1
 parser fix the honest level was Silver, and the C5 proof fixes (plus the
@@ -115,3 +145,5 @@ tags:
   ISO epoch proof fixes.
 - `-- HLR-IR` on `Adacovex.IR_Synthesiser` -- bounded append-cursor fixes.
 - `-- HLR-TEST` on `Adacovex.Parsers.Tests` -- digit-scan cursor bound.
+- `-- HLR-MANIFEST` on `Adacovex.Parsers.Manifest` -- manifest-declared
+  base/dev deps registered in the SBOM dependency graph.
