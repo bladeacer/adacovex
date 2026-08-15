@@ -23,10 +23,13 @@ the Alire community index.
   `make prove`, `make doc`, and `make fmt`. Used for toolchain resolution when
   running `alr exec`.
 
-When both files exist, `alire.toml` takes precedence for manifest scanning and
-SBOM generation. The `alire-dev.toml` is consulted only for toolchain
-resolution (gnatprove detection) via `Manifest_Declares_GNATprove`, which
-checks both manifests.
+When both files exist, `Build_Dependency_Graph` reads **both**: a dependency
+declared in `alire.toml` is classified `Scope_Base` (explicit/clean dep) and
+one declared only in `alire-dev.toml` is `Scope_Dev`. The scope is surfaced in
+the SBOM as the `adacovex:dep_scope` property (`base` / `dev` / `transitive` /
+`vendored`), so it is always clear which file a dependency came from.
+`alire-dev.toml` is also consulted for gnatprove detection
+(`Manifest_Declares_GNATprove` checks both manifests).
 
 ### Dev-manifest proof swap (`prove` subcommand)
 
@@ -96,6 +99,31 @@ HLR/LLR markdown, GNATprove output (text and JSON), test results, and
 Alire manifest / lockfile / GPR dependency graphs. An exact buffer-length
 line is not an overflow (it parses normally), and paths exceeding
 `Max_Path` are likewise reported and skipped rather than crashing.
+
+**Overflow contract (two tiers).** Path and line buffers *fail loudly*: an
+overlong physical line is drained and reported (`line exceeds Max_Line
+buffer`), the file is not parsed, `Skipped_Ct` increments, and DAL becomes
+`Unmet`; an overlong path is reported and the file/subtree is skipped. No
+partial results ever flow downstream. Semantic text fields (subprogram names,
+HLR/LLR IDs, descriptions, docstring tag names/values, CLI strings) are
+*clamped* to their fixed buffer with the length field (`Name_Len`, `Id_Len`,
+`D_Len`, ...) recording the recorded prefix, so adversarial or generated input
+can never raise `Constraint_Error`. Clamping keeps the scan correct -- the
+full token is still consumed so following tokens are not misparsed.
+
+**Why no chunking / LEB128.** adacovex audits in memory: counts (packages,
+subprograms, HLR tags, tests, SBOM components) are unbounded vectors, and each
+scanned unit is processed line-at-a-time into fixed per-item buffers. A single
+Ada declaration does not admit streaming/chunked parsing -- truncating a
+declaration is worse than a loud failure, so chunking would gain nothing.
+LEB128 (variable-length integer encoding) is a serialization concern and does
+not apply to an in-memory CLI audit. The design therefore scales to
+arbitrarily large codebases by dynamic allocation, bounded per-item buffers,
+and explicit overflow handling, without streaming encodings.
+
+The bounded-buffer constants are tabulated in
+`docs/api-docs/adacovex-types.md` (`Max_Line`, `Max_Path`, `Max_Desc_Str`,
+`Max_Filename`, `Max_Id_Str`).
 
 This ensures adacovex can be built and run on any system with a GNAT toolchain,
 without requiring any additional package installation beyond Alire for
@@ -186,7 +214,7 @@ adacovex supports multiple output formats:
 
 ## Testing
 
-adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 336 tests across 10 categories. No external test framework (AUnit, etc.) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
+adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 368 tests across 9 categories. No external test framework (AUnit, etc.) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
 
 ## Supported Platforms
 
@@ -231,6 +259,15 @@ version-locked to the same release:
 - **Attestation**: every release bundle is attested with
   `actions/attest` (OIDC), and the release notes link the
   signed attestation.
+
+## Build-time linker output (SFrame)
+
+The Alire GNAT toolchain's bundled `ld` (2.44) emits a benign message
+(`error in ...(.sframe); no .sframe will be created`) when it reads the
+`.sframe` section that newer system binutils wrote into the glibc startup
+objects. The link still succeeds. `make build` filters only this one message;
+all compiler and gnatprove warnings remain fully visible, so nothing real is
+ever suppressed.
 
 ## Read Only
 

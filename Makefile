@@ -49,7 +49,7 @@ help:
 # GNAT toolchain's bundled ld when it reads the .sframe section newer system
 # binutils wrote into the glibc startup objects; the link still succeeds.  It
 # is the only build output deliberately silenced -- compiler and gnatprove
-# warnings stay fully visible.  See docs/toolchain.md.
+# warnings stay fully visible.  See docs/architecture.md.
 build:
 	@alr build > /tmp/alr-build.log 2>&1; rc=$$?; \
 	sed -e '/\.sframe); no \.sframe will be created/d' /tmp/alr-build.log; \
@@ -60,8 +60,13 @@ build:
 test: build
 	./bin/test_runner
 
+# Self-assessment acceptance gates, defined once so prove/run-self/release stay
+# in sync (and match .github/workflows/ci.yml + AGENTS.md "Dogfood target").
+# --require-tests is the current native test-suite size (docs/test_result.md).
+SELF_ASSESS_ARGS := --dal=C --require-spark=Platinum --require-docstrings=100 --require-tests=368 --require-proof=100
+
 prove: build
-	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex prove --target=. --dal=C --require-spark=Platinum --require-docstrings=100 --require-tests=368 --require-proof=100 --emit-svg=docs/badges/
+	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex prove --target=. $(SELF_ASSESS_ARGS) --emit-svg=docs/badges/
 
 fmt:
 	@$(MAKE) _dev_cmd CMD="alr exec -- gnatformat -P adacovex.gpr -U"
@@ -76,7 +81,7 @@ doc:
 	  sed -i "/](adacovex-test_support\.md)/d" docs/api-docs/index.md 2>/dev/null'
 
 run-self: build
-	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex --dal=C --require-spark=Platinum --require-docstrings=100 --require-tests=368 --require-proof=100 --emit-svg=docs/badges/
+	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex $(SELF_ASSESS_ARGS) --emit-svg=docs/badges/
 
 run-ada-crdt: build
 	SOURCE_DATE_EPOCH=$$(git -C ../Ada_CRDT show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex --target=../Ada_CRDT --dal=C
@@ -201,11 +206,11 @@ release:
 		version=$$(sed -n 's/^version = "\(.*\)"/\1/p' alire.toml); \
 	fi; \
 	echo "=== Generating proof artifacts ==="; \
-	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex prove --target=. --dal=C --require-spark=Platinum --require-docstrings=100 --require-tests=368 --require-proof=100 --emit-svg=docs/badges/; \
+	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex prove --target=. $(SELF_ASSESS_ARGS) --emit-svg=docs/badges/; \
 	echo "=== Building release binary (covex v$$version) ==="; \
 	alr build --release; \
 	echo "=== Validating self-assessment (DAL-C) ==="; \
-	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex --target=. --dal=C --require-spark=Platinum --require-docstrings=100 --require-tests=368 --require-proof=100 --emit-svg=docs/badges/; \
+	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex --target=. $(SELF_ASSESS_ARGS) --emit-svg=docs/badges/; \
 	echo "=== Docstring coverage gate (last release vs current) ==="; \
 	prev_tag=$$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$$' | grep -v "^v$$version$$" | head -1); \
 	if [ -z "$$prev_tag" ]; then \

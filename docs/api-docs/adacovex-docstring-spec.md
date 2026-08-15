@@ -111,3 +111,21 @@ a `@brief` / `@summary` tag, or a summary comment line (any recognized prefix)
 immediately preceding or following it.
 
 Coverage is displayed in terminal reports and SVG badges.
+
+## HLR traceability tags
+
+HLR (High-Level Requirement) tags use the format `-- HLR-XXXX` on their own
+comment line:
+
+```ada
+--  HLR-SCAN: Source scanning
+```
+
+Multiple HLR tags can appear on one line:
+
+```ada
+--  HLR-ARCH: Version constant  HLR-ARCH: Package hierarchy
+```
+
+Tag IDs map to the requirement index in `docs/HLR.md`; the scanner matches
+in-source tags against that index for the DO-178C traceability assessment.

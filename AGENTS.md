@@ -73,12 +73,12 @@ src/
 |   `-- adacovex-server-router.ads            -- Parent package for HTTP request routing (future expansion)
 `-- tests/
     |-- adacovex-test_support.ads/.adb        -- Native test Runner type
-    |-- adacovex_config_tests.ads/.adb        -- CLI config tests (19)
+    |-- adacovex_config_tests.ads/.adb        -- CLI config tests (32)
     |-- adacovex_dal_tests.ads/.adb           -- DAL compliance tests (7)
     |-- adacovex_ir_tests.ads/.adb            -- IR synthesis tests (27)
-    |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (52)
+    |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (64)
     |-- adacovex_renderer_svg_tests.ads/.adb  -- SVG renderer tests (30)
-    |-- adacovex_sbom_tests.ads/.adb          -- SBOM / manifest graph tests (53)
+    |-- adacovex_sbom_tests.ads/.adb          -- SBOM / manifest graph tests (60)
     |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (79)
     |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (43)
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (26)
@@ -502,125 +502,26 @@ only).
 
 ## Docstring annotation spec
 
-### Format
+Subprogram docstrings are `--  ` comment lines (`@param`, `@return`, `@field`,
+`@formal`, `@brief`, `@summary`) placed before (preferred) or after the
+declaration; a plain summary line alone is sufficient to mark a subprogram as
+documented. Google (`Args:` / `Returns:`) and Sphinx (`:param:` / `:returns:`)
+styles are also recognized. HLR traceability tags are `-- HLR-XXXX` comment
+lines.
 
-Every docstring line starts with `--  ` (two dashes + two spaces). The
-single-space (`-- `) and tab-separated (`--<TAB>`) comment styles are also
-recognized as docstrings.
-
-```
---  Summary sentence describing what the subprogram does.
---  @param Name  Description of the parameter.
---  @return Description of the return value.
-procedure Do_Something (Name : in Some_Type) return Result_Type;
-```
-
-### Placement
-
-Docstring may appear **before** (preferred) or **after** the subprogram
-declaration. The scanner associates preceding docstring lines with the next
-subprogram declaration. No blank lines between docstring and declaration.
-
-```
---  Preferred: docstring before declaration.
---  @param X  First parameter.
-procedure Foo (X : Integer);
-
-procedure Bar (Y : Integer);
---  Also accepted: docstring after declaration.
---  @param Y  First parameter.
-```
-
-### Tags
-
-| Tag | Syntax | Purpose | Sets Has_Docstring |
-|-----|--------|---------|--------------------|
-| `@param` | `--  @param Name  Description.` | Subprogram formal parameter | Yes |
-| `@parameter` | `--  @parameter Name  Description.` | Alias of `@param` | Yes |
-| `@return` | `--  @return Description.` | Function return value | Yes |
-| `@returns` | `--  @returns Description.` | Alias of `@return` | Yes |
-| `@field` | `--  @field Description.` | Record component | Yes |
-| `@formal` | `--  @formal Name  Description.` | Generic formal parameter | No |
-| `@brief` | `--  @brief Summary.` | Short summary | Yes |
-| `@summary` | `--  @summary Description.` | Summary | Yes |
-
-### Google / Sphinx styles
-
-The scanner also recognizes the two most common non-Ada docstring conventions,
-so the same subprogram can be documented with `Args:` / `Returns:` blocks
-(Google style) or `:param:` / `:returns:` fields (Sphinx style):
-
-```
---  Do something useful.
---
---  Args:
---    X:  The first argument.
---
---  Returns:
---    The result.
-function Foo (X : Integer) return Integer;
-
---  Do something else.
---
---  :param X: The argument.
---  :returns: The result.
-function Bar (X : Integer) return Integer;
-```
-
-- A `Args:` / `Args: ...` header opens a block; deeper-indented following
-  comment lines count as parameters.
-- A `Returns:` header (or `@return`) marks the return-value description.
-- Sphinx `:param Name:`, `:parameter Name:`, `:type Name:`, `:return:`,
-  `:returns:`, and `:rtype:` fields are all recognized.
-
-### Rules
-- Descriptions are capitalized and end with a period.
-- Two spaces between tag name and description text (alignment padding).
-- A plain `--  Summary.` line (no tag) is sufficient to mark a subprogram as
-  documented. Tags are not required for no-param procedures.
-
-### HLR traceability tags
-
-HLR (High-Level Requirement) tags use the format `-- HLR-XXXX` on their own
-comment line:
-
-```
---  HLR-SCAN: Source scanning
-```
-
-Multiple HLR tags can appear on one line:
-```
---  HLR-ARCH: Version constant  HLR-ARCH: Package hierarchy
-```
+Full spec, tag table, examples, and coverage rules:
+[docs/api-docs/adacovex-docstring-spec.md](docs/api-docs/adacovex-docstring-spec.md).
 
 ---
 
 ## DAL levels
 
-### Per-level requirements
+Each DAL level requires a minimum SPARK level, passing tests (except DAL-E),
+full HLR traceability, and no orphan tags. DAL-C (default) requires
+`>= Bronze`, zero test failures, all HLRs traced, and no orphan tags.
 
-Per-level criteria follow `docs/HLR.md` (HLR-DAL-A through HLR-DAL-E) and the
-`Min_SPARK_For` table in `src/compliance/adacovex-compliance-dal.adb`.
-
-| DAL Level | Min SPARK Level | Tests must pass | HLRs traced | No orphans |
-|-----------|-----------------|-----------------|-------------|------------|
-| A | Gold | Yes | Yes | Yes |
-| B | Silver | Yes | Yes | Yes |
-| C | Bronze | Yes | Yes | Yes |
-| D | None (Stone) | Yes | Yes | Yes |
-| E | None (Stone) | No | Yes | Yes |
-
-DAL-C is the default. The DAL assessment evaluates all four criteria and reports
-specific failure reasons when the assessment is `Unmet`.
-
-### DAL-C criteria (default)
-
-1. All HLRs defined in `<target>/docs/compliance/HLR.md` must be traced by
-   at least one `-- HLR-XXXX` tag in source `.ads` files.
-2. Every `-- HLR-XXXX` tag in source must map to a defined HLR (no orphans).
-3. All tests passing (zero failures in the discovered test-result file,
-   e.g. `<target>/test_result.md`).
-4. Minimum SPARK level `>= Bronze` (flow analysis passing).
+Per-level table and assessment criteria:
+[docs/api-docs/adacovex-dal-levels.md](docs/api-docs/adacovex-dal-levels.md).
 
 ---
 
@@ -984,24 +885,19 @@ running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 ## Known quirks
 
 - `(null record)` typed parameters are counted as parameters by the scanner.
-- Overloaded subprograms in patch files: each overload requires a separate
-  patch entry. The first patch entry for a name patches the first undocumented
-  original, the second patches the second, etc.
+- Overloaded patch entries: each overload needs its own patch entry; entries
+  patch the next undocumented original with the same name.
 - `Is_Subprogram_Decl` matches `procedure`, `function`, `generic procedure`,
-  and `generic function` only (not `type`, `package`, `task`, etc.).
-- Docstring detection: any `--  ` (two dashes + two spaces), `-- ` (single
-  space), or `--<TAB>` line before a subprogram counts as a docstring. Other
-  comment formats (bare `--`, `---` with three dashes) do not.
-- A physical line longer than `Max_Line` (262144 bytes on 64-bit) is drained
-  and reported to stderr (`Error: <path>:<line>: line exceeds Max_Line
-  buffer`); the file is not parsed and the scanner increments `Skipped_Ct`,
-  which forces DAL `Unmet` and exit code 1. A line exactly `Max_Line` long
-  (exact buffer fit) parses normally. Paths longer than `Max_Path` are
-  likewise reported and skipped. The same explicit-overflow contract applies
-  to every parser (HLR/LLR, GNATprove, test results, manifest/lock/gpr).
-- `--verbose` prints pipeline step diagnostics to stderr.
-- Relative `--target=PATH` is resolved against CWD, so behavior depends on
-  where adacovex is invoked.
+  and `generic function` only.
+- Overlong lines and paths fail loudly (never truncated): the file is skipped,
+  `Skipped_Ct` increments, and DAL becomes `Unmet`. See the overflow contract
+  in [docs/architecture.md](docs/architecture.md).
+- `--verbose` prints pipeline step diagnostics to stderr; relative
+  `--target=PATH` is resolved against CWD.
+
+Docstring prefix rules and the full overflow/scanning semantics:
+[docs/api-docs/adacovex-docstring-spec.md](docs/api-docs/adacovex-docstring-spec.md)
+and [docs/architecture.md](docs/architecture.md).
 
 ---
 
@@ -1019,39 +915,17 @@ running (via test_runner) and AUnit test-result parsing (via Parse_Test_Result).
 
 ## Bounded resources
 
-The following compile-time constants in `src/core/adacovex-types.ads`
-govern fixed-size string/VC buffers (package and subprogram vectors
-are unbounded via `Ada.Containers.Vectors`):
+Fixed-size string/VC buffers are governed by compile-time constants in
+`src/core/adacovex-types.ads` (package and subprogram vectors are unbounded
+via `Ada.Containers.Vectors`):
 
 | Constant | Value | Notes |
 |----------|-------|-------|
 | `Max_Line` | 262144 | Source line length (overlong lines fail loudly, never silently truncated) |
 | `Max_Path` | 4096 | File path length (matches `PATH_MAX`) |
-| `Max_Desc_Str` | 128 | Subprogram name / description|
+| `Max_Desc_Str` | 128 | Subprogram name / description |
 | `Max_Filename` | 128 | Package name from filename |
 | `Max_Id_Str` | 64 | HLR/LLR tag ID length |
 
-Package and subprogram collections grow dynamically via `Ada.Containers.Vectors`
-(heap allocation, up to `Natural'Last` ~ 2.1B). The fixed-size constants above
-apply only to individual line/path/description buffers.
-
-**Overflow contract (two tiers).** Path and line buffers *fail loudly*: an
-overlong physical line is drained and reported (`line exceeds Max_Line
-buffer`), the file is not parsed, `Skipped_Ct` increments, and DAL becomes
-`Unmet`; an overlong path is reported and the file/subtree is skipped. No
-partial results ever flow downstream. Semantic text fields (subprogram names,
-HLR/LLR IDs, descriptions, docstring tag names/values, CLI strings) are
-*clamped* to their fixed buffer with the length field (`Name_Len`, `Id_Len`,
-`D_Len`, ...) recording the recorded prefix, so adversarial or generated input
-can never raise `Constraint_Error`. Clamping keeps the scan correct -- the
-full token is still consumed so following tokens are not misparsed.
-
-**Why no chunking / LEB128.** adacovex audits in memory: counts (packages,
-subprograms, HLR tags, tests, SBOM components) are unbounded vectors, and each
-scanned unit is processed line-at-a-time into fixed per-item buffers. A single
-Ada declaration does not admit streaming/chunked parsing -- truncating a
-declaration is worse than a loud failure, so chunking would gain nothing.
-LEB128 (variable-length integer encoding) is a serialization concern and does
-not apply to an in-memory CLI audit. The design therefore scales to arbitrarily
-large codebases by dynamic allocation, bounded per-item buffers, and explicit
-overflow handling, without streaming encodings.
+Overflow handling (fail loudly vs. clamp) and why there is no chunking/LEB128
+are documented in [docs/architecture.md](docs/architecture.md).
