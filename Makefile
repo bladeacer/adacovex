@@ -1,4 +1,4 @@
-.PHONY: help build test prove doc clean run-self run-ada-crdt dev-setup prod-setup ascii-check fmt bump-version coverage-gate release publish test-publish _dev_cmd agents-tree sbom proof-status test-count
+.PHONY: help build test prove doc clean run-self run-ada-crdt dev-setup prod-setup ascii-check fmt bump-version coverage-gate release publish test-publish _dev_cmd agents-tree sbom proof-status test-count doc-links
 
 .DEFAULT_GOAL := help
 
@@ -29,6 +29,8 @@ help:
 	@echo '                the current gnatprove.out (tools/update-proof-status.py)'
 	@echo '  test-count    Update the test counts in the docs from'
 	@echo '                docs/test_result.md (tools/update-test-count.py)'
+	@echo '  doc-links     Regenerate the AGENTS.md Documentation block from'
+	@echo '                tools/doc-links.map (tools/update-doc-links.py)'
 	@echo '  bump-version  Bump version across alire.toml, alire-dev.toml,'
 	@echo '                adacovex.ads, releases, index (VERSION=x.y.z)'
 	@echo '  release       Tag, update releases+index, push. Use VERSION=x.y.z'
@@ -122,6 +124,9 @@ proof-status:
 
 test-count:
 	@python3 tools/update-test-count.py
+
+doc-links:
+	@python3 tools/update-doc-links.py
 
 ascii-check:
 	@echo "=== ASCII Charset Verification ==="; \
