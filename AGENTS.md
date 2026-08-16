@@ -138,8 +138,8 @@ Step details: [docs/architecture.md](docs/architecture.md#pipeline-execution-ord
 all functions/variables with `typing` (`from typing import ...`). Keep new
 scripts consistent: `typing` for annotations, `argparse` for CLI, `pathlib`
 for paths, and no `pip install` / external imports. Run them with
-`python3 tools/<name>.py`; the sync ones are wired as `make test-count` and
-`make proof-status`.
+`python3 tools/<name>.py`; the sync ones are wired as `make test-count`, `make
+proof-status`, and `make doc-links`.
 
 ## Makefile targets
 
@@ -157,6 +157,7 @@ for paths, and no `pip install` / external imports. Run them with
 | `agents-tree` | Regenerate the `src/` architecture tree above |
 | `proof-status` | Sync VC count + SPARK level from gnatprove.out |
 | `test-count` | Sync test counts from docs/test_result.md |
+| `doc-links` | Regenerate the AGENTS.md Documentation block from tools/doc-links.map |
 | `release` | Build, prove, validate, run coverage gate vs last release, bundle + tag & push |
 | `ascii-check` | Verify all source files are pure ASCII |
 | `clean` | Remove bin/ obj/ docs/badges/ |
@@ -175,6 +176,26 @@ GitHub Actions (composite `./action.yml` + `ci.yml` / `pr-check.yml` /
 
 Installation methods, target-project requirements, and running against another
 project: [README.md](README.md#installing-adacovex).
+
+### GitHub Action = base-CLI feature parity
+
+The composite action (`./action.yml`) mirrors the base CLI option set so CI
+can drive every assessment feature the same way the binary does. The action
+inputs map 1:1 onto the CLI flags (e.g. `target`/`--target`, `dal`/`--dal`,
+`standard`/`--standard`, `asil`/`--asil`, `class`/`--class`, `manifest`/
+`--manifest`, `relaxed`/`--relaxed`, `skip-dir`/`--skip-dir`, `no-svg`/
+`--no-svg`, `no-cache`/`--no-cache`, `cache-dir`/`--cache-dir`, `cache-max`/
+`--cache-max`, `verbose`/`--verbose`, `emit-markdown`/`--emit-markdown`,
+`compare-base`/`--compare-base`, `coverage-delta`/`--coverage-delta`, the
+`--require-*` gates, and the `prove-*` inputs onto the `prove` subcommand's
+`--jobs` / `--level` / `--timeout` / `--steps` / `--memlimit` / `--force` /
+`--no-loop-unrolling` / `--no-inlining` flags).
+
+Keep them in sync: when a CLI flag is added, a matching action input (and the
+docs/ci-cd.md input table) goes with it. The only assessment that is *not*
+reproduced in CI is `make run-ada-crdt` (a local dogfood regression against
+`../Ada_CRDT`); `ci.yml` runs `--standard=all` self-assessment, the native
+tests, and the release-tag coverage gate instead.
 
 ## Verification
 
@@ -200,6 +221,7 @@ Per-category counts and framework details:
 
 ## Documentation
 
+<!-- doc-links:begin -->
 - [CLI reference](docs/cli-reference.md)
 - [CI/CD](docs/ci-cd.md)
 - [Contributing](CONTRIBUTING.md)
@@ -208,3 +230,4 @@ Per-category counts and framework details:
 - [Standards](docs/standards.md)
 - [Platforms](docs/platforms.md)
 - [Architecture](docs/architecture.md)
+<!-- doc-links:end -->
