@@ -138,10 +138,43 @@ Release bundles are attested with
 [`actions/attest`](https://github.com/actions/attest); verify with
 `gh attestation verify`.
 
+> Release binaries are built for **Linux x86-64 only at the moment**. Every
+> other platform (Linux aarch64, macOS, FreeBSD, Windows) builds adacovex from
+> source via Alire -- no prebuilt bundle is published for those platforms yet.
+
 ### Building from source
 
-Clone the repo and `make build`, or manage adacovex as an Alire dev dependency
-(see Option 1 above).
+Clone the repo (shallow is fine) and `make build`. Adacovex builds with a
+stock Alire toolchain (`gnat_native` + `gprbuild`) plus the standard GNAT
+runtime -- no other dependencies:
+
+```bash
+# latest development snapshot (main branch)
+git clone --depth 1 https://github.com/bladeacer/adacovex.git
+cd adacovex
+make build
+
+# or a specific released tag (vX.Y.Z) for reproducibility
+git clone --depth 1 --branch v1.10.0 https://github.com/bladeacer/adacovex.git
+cd adacovex
+make build
+```
+
+`make build` produces `bin/adacovex` (with a `bin/covex` alias on Linux
+symlinks). Alternatively manage adacovex as an Alire dev dependency (see
+Option 1 above).
+
+## Platform support
+
+adacovex is a zero-dependency Ada/SPARK binary built on the GNAT runtime and
+the standard library, so it runs anywhere a GNAT/Alire toolchain exists.
+The official **release binary is plain Linux x86-64 only for now**; macOS,
+FreeBSD, Windows, and Linux aarch64 build from source via Alire instead.
+
+Full supported-platform table, CPU core-count detection order, CI detection,
+and prove-parallelism resolution:
+[docs/platforms.md](docs/platforms.md). Use `adacovex status` to report your
+own toolchain + platform state.
 
 ## GNATprove toolchain resolution
 
@@ -286,6 +319,15 @@ standard's own naming, or list every standard:
 all three standards. Full tier mapping and rationale:
 [Standards](docs/standards.md).
 
+**Compliance artifacts are identical across standards.** ISO 26262 and
+IEC 62304 do not require different evidence than DO-178C: all three consume
+the same HLR traceability, orphan-tag check, passing-test requirement, and
+minimum-SPARK proof bar, and adacovex emits the same artifacts
+(`HLR.md` source traceability, `VERIFICATION.md`, `TRACE.md`, the proof-aware
+SBOM, and the compliance SVG badges) for every standard. Only the integrity
+level's name differs (`DAL-C` vs `ASIL B` vs `Class A`); the underlying
+assessment and the artifacts describing it are shared.
+
 ## Makefile targets
 
 | Target | Description |
@@ -307,10 +349,10 @@ all three standards. Full tier mapping and rationale:
 
 A composite GitHub Action (`./action.yml`) plus `ci.yml`, `pr-check.yml`, and
 `release.yml` workflows cover the `--standard=all` self-assessment (with prove
-and the `--require-*` gates), the native test suite, a `make run-ada-crdt`
-strict-mode regression, the release-tag docstring coverage gate, and releases.
-The action accepts `dal` / `standard` / `asil` / `class` inputs. Action
-inputs/outputs, result caching, and release bundling:
+and the `--require-*` gates), the native test suite, the release-tag docstring
+coverage gate, and releases. The action accepts `dal` / `standard` / `asil` /
+`class` inputs plus the full `prove` subcommand options and the `--require-*`
+CI gates. Action inputs/outputs, result caching, and release bundling:
 [docs/ci-cd.md](docs/ci-cd.md).
 
 ## Verification

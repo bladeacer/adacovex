@@ -48,6 +48,14 @@ The four checks stay identical across standards; only the names change:
 3. **Tests passing** -- zero failures (not enforced at the lowest tier).
 4. **Minimum SPARK level** -- the proof bar for the selected rigor tier.
 
+Because the checks are shared, **the compliance artifacts are identical too**:
+ISO 26262 and IEC 62304 require no different evidence or documents than
+DO-178C. The same inputs (`HLR.md`, source traceability, proof summary, test
+summary) feed the same outputs (`VERIFICATION.md`, `TRACE.md`, the
+proof-aware SBOM, and the compliance SVG badges) for every standard -- only
+the integrity-level label printed inside them changes (`DAL-C`, `ASIL B`,
+`Class A`).
+
 ## Selecting a standard on the CLI
 
 Each standard has a dedicated level flag, so your intent is unambiguous on the

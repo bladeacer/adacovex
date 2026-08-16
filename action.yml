@@ -131,6 +131,70 @@ inputs:
       are byte-for-byte unchanged since the previous run are served from it.
     required: false
     default: 'true'
+  manifest:
+    description: 'Override the target project manifest path (relative to workspace root).'
+    required: false
+    default: ''
+  no-svg:
+    description: 'Suppress SVG badge generation.'
+    required: false
+    default: 'false'
+  relaxed:
+    description: 'Disable strict mode (skip dirs, no patches); strict is the default.'
+    required: false
+    default: 'false'
+  skip-dir:
+    description: 'Directory name to skip in relaxed mode (repeatable; comma-separated).'
+    required: false
+    default: ''
+  verbose:
+    description: 'Verbose diagnostics on stderr.'
+    required: false
+    default: 'false'
+  no-cache:
+    description: 'Disable adacovex on-disk result caching (always re-scan/re-prove).'
+    required: false
+    default: 'false'
+  cache-dir:
+    description: 'Override adacovex result cache directory (default ~/.adacovex/cache).'
+    required: false
+    default: ''
+  cache-max:
+    description: 'Max adacovex result-cache entries before oldest-first eviction.'
+    required: false
+    default: ''
+  prove-jobs:
+    description: 'GNATprove parallelism for the prove subcommand (-j, default auto-detect).'
+    required: false
+    default: ''
+  prove-level:
+    description: 'GNATprove proof effort 0-4 for the prove subcommand.'
+    required: false
+    default: ''
+  prove-timeout:
+    description: 'GNATprove per-check prover timeout in seconds.'
+    required: false
+    default: ''
+  prove-steps:
+    description: 'GNATprove max proof steps (reproducible).'
+    required: false
+    default: ''
+  prove-memlimit:
+    description: 'GNATprove prover memory limit in MB.'
+    required: false
+    default: ''
+  prove-force:
+    description: 'Force full GNATprove reanalysis (-f).'
+    required: false
+    default: 'false'
+  prove-no-loop-unrolling:
+    description: 'Disable GNATprove automatic loop unrolling.'
+    required: false
+    default: 'false'
+  prove-no-inlining:
+    description: 'Disable GNATprove contextual-analysis inlining.'
+    required: false
+    default: 'false'
 
 outputs:
   dal-status:
@@ -281,12 +345,37 @@ runs:
       run: |
         set -euxo pipefail
         cd "$GITHUB_WORKSPACE"
+        PROVE_ARGS=()
+        if [ -n "${{ inputs.prove-jobs }}" ]; then
+          PROVE_ARGS+=(--jobs=${{ inputs.prove-jobs }})
+        fi
+        if [ -n "${{ inputs.prove-level }}" ]; then
+          PROVE_ARGS+=(--level=${{ inputs.prove-level }})
+        fi
+        if [ -n "${{ inputs.prove-timeout }}" ]; then
+          PROVE_ARGS+=(--timeout=${{ inputs.prove-timeout }})
+        fi
+        if [ -n "${{ inputs.prove-steps }}" ]; then
+          PROVE_ARGS+=(--steps=${{ inputs.prove-steps }})
+        fi
+        if [ -n "${{ inputs.prove-memlimit }}" ]; then
+          PROVE_ARGS+=(--memlimit=${{ inputs.prove-memlimit }})
+        fi
+        if [ "${{ inputs.prove-force }}" == 'true' ]; then
+          PROVE_ARGS+=(--force)
+        fi
+        if [ "${{ inputs.prove-no-loop-unrolling }}" == 'true' ]; then
+          PROVE_ARGS+=(--no-loop-unrolling)
+        fi
+        if [ "${{ inputs.prove-no-inlining }}" == 'true' ]; then
+          PROVE_ARGS+=(--no-inlining)
+        fi
         if [ -x bin/adacovex ]; then
-          ./bin/adacovex prove --target="${{ inputs.target }}"
+          ./bin/adacovex prove --target="${{ inputs.target }}" "${PROVE_ARGS[@]}"
         elif command -v adacovex >/dev/null 2>&1; then
-          adacovex prove --target="${{ inputs.target }}"
+          adacovex prove --target="${{ inputs.target }}" "${PROVE_ARGS[@]}"
         elif command -v covex >/dev/null 2>&1; then
-          covex prove --target="${{ inputs.target }}"
+          covex prove --target="${{ inputs.target }}" "${PROVE_ARGS[@]}"
         else
           echo "::error::adacovex binary not found. Set build: true (builds adacovex from source) or install adacovex on PATH."
           exit 1
@@ -326,6 +415,33 @@ runs:
         fi
         if [ -n "${{ inputs.class }}" ]; then
           ARGS+=(--class=${{ inputs.class }})
+        fi
+        if [ -n "${{ inputs.manifest }}" ]; then
+          ARGS+=(--manifest="${{ inputs.manifest }}")
+        fi
+        if [ "${{ inputs.no-svg }}" == 'true' ]; then
+          ARGS+=(--no-svg)
+        fi
+        if [ "${{ inputs.relaxed }}" == 'true' ]; then
+          ARGS+=(--relaxed)
+        fi
+        if [ -n "${{ inputs.skip-dir }}" ]; then
+          IFS=',' read -r -a SKIP_DIRS <<< "${{ inputs.skip-dir }}"
+          for DIR in "${SKIP_DIRS[@]}"; do
+            ARGS+=(--skip-dir="$DIR")
+          done
+        fi
+        if [ "${{ inputs.verbose }}" == 'true' ]; then
+          ARGS+=(--verbose)
+        fi
+        if [ "${{ inputs.no-cache }}" == 'true' ]; then
+          ARGS+=(--no-cache)
+        fi
+        if [ -n "${{ inputs.cache-dir }}" ]; then
+          ARGS+=(--cache-dir="${{ inputs.cache-dir }}")
+        fi
+        if [ -n "${{ inputs.cache-max }}" ]; then
+          ARGS+=(--cache-max=${{ inputs.cache-max }})
         fi
         if [ -n "${{ inputs.compare-base }}" ]; then
           ARGS+=(--compare-base="${{ inputs.compare-base }}")
