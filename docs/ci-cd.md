@@ -60,6 +60,22 @@ steps:
 | `sbom-format` | `cyclonedx-json` | SBOM format: `cyclonedx-json`, `spdx-json`, or `md` |
 | `cache` | `true` | Cache Alire toolchain/deps with `actions/cache` |
 | `result-cache` | `true` | Persist adacovex's on-disk result cache across runs |
+| `manifest` | `''` | Override the target project manifest path |
+| `no-svg` | `false` | Suppress SVG badge generation |
+| `relaxed` | `false` | Disable strict mode (skip dirs, no patches) |
+| `skip-dir` | `''` | Directory name to skip in relaxed mode (repeatable, comma-separated) |
+| `verbose` | `false` | Verbose diagnostics on stderr |
+| `no-cache` | `false` | Disable adacovex on-disk result caching |
+| `cache-dir` | `''` | Override adacovex result cache directory |
+| `cache-max` | `''` | Max adacovex result-cache entries before eviction |
+| `prove-jobs` | `''` | GNATprove parallelism for the `prove` subcommand |
+| `prove-level` | `''` | GNATprove proof effort 0-4 |
+| `prove-timeout` | `''` | GNATprove per-check prover timeout in seconds |
+| `prove-steps` | `''` | GNATprove max proof steps |
+| `prove-memlimit` | `''` | GNATprove prover memory limit in MB |
+| `prove-force` | `false` | Force full GNATprove reanalysis (`-f`) |
+| `prove-no-loop-unrolling` | `false` | Disable GNATprove automatic loop unrolling |
+| `prove-no-inlining` | `false` | Disable GNATprove contextual-analysis inlining |
 
 ### Outputs
 
@@ -81,15 +97,13 @@ automatically.
 
 ## Workflows
 
-- **`.github/workflows/ci.yml`** -- four jobs on push to `main` and pull
+- **`.github/workflows/ci.yml`** -- three jobs on push to `main` and pull
   requests:
   - `self-assessment` -- build + prove + assess at `--standard=all` (so the
     DO-178C, ISO 26262, and IEC 62304 badges/reports are all emitted and
     gated), with the Platinum / 100% docstrings / test-count / 100% proof
     thresholds.
   - `adacovex-tests` -- build + native test suite (`run-tests`, `assess: false`).
-  - `ada-crdt` -- clones `../Ada_CRDT` and runs `make run-ada-crdt` (the same
-    strict-mode dogfood regression used locally).
   - `coverage-gate` (push only) -- runs `make coverage-gate`, comparing
     docstring coverage between the latest two release tags.
 - **`.github/workflows/pr-check.yml`** -- runs `--coverage-delta` against
