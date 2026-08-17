@@ -1,5 +1,5 @@
 with Ada.Text_IO;
-with GNAT.OS_Lib;
+with Adacovex.VCS;
 with Adacovex.Parsers.Source;
 with Adacovex.Parsers.GNATprove;
 with Adacovex.Parsers.Tests;
@@ -10,38 +10,6 @@ package body Adacovex.Diff is
 
    use Adacovex.Types;
    use Adacovex.Types.Implementation;
-
-   function Run_Git
-     (Dir : String; Args : GNAT.OS_Lib.Argument_List) return Boolean
-   is
-      use GNAT.OS_Lib;
-      Args_L : GNAT.OS_Lib.Argument_List (1 .. Args'Length + 2);
-      K      : Positive := 1;
-      OK     : Boolean;
-      Code   : Integer;
-      Git    : String_Access := Locate_Exec_On_Path ("git");
-   begin
-      if Git = null then
-         return False;
-      end if;
-      Args_L (K) := new String'("-C");
-      K := K + 1;
-      Args_L (K) := new String'(Dir);
-      K := K + 1;
-      for I in Args'Range loop
-         Args_L (K) := Args (I);
-         K := K + 1;
-      end loop;
-      Spawn
-        (Git.all,
-         Args_L (1 .. K - 1),
-         "/dev/null",
-         OK,
-         Code,
-         Err_To_Out => True);
-      Free (Git);
-      return OK and then Code = 0;
-   end Run_Git;
 
    function Assess
      (Target_Dir : String; DAL_Target : Types.DAL_Level)
@@ -104,13 +72,20 @@ package body Adacovex.Diff is
       return R;
    end Assess_Coverage;
 
-   function Is_Git_Repo (Target_Dir : String) return Boolean is
+   function Is_Repo (Target_Dir : String) return Boolean is
    begin
-      return
-        Run_Git
-          (Target_Dir,
-           (new String'("rev-parse"), new String'("--is-inside-work-tree")));
-   end Is_Git_Repo;
+      return Adacovex.VCS.Is_Managed (Target_Dir);
+   end Is_Repo;
+
+   function Repo_Kind_Name (Target_Dir : String) return String is
+   begin
+      return Adacovex.VCS.To_String (Adacovex.VCS.Detect (Target_Dir));
+   end Repo_Kind_Name;
+
+   function UX_Note (Target_Dir : String) return String is
+   begin
+      return Adacovex.VCS.UX_Note (Adacovex.VCS.Detect (Target_Dir));
+   end UX_Note;
 
    procedure Make_Worktree
      (Target_Dir : String;
@@ -119,42 +94,18 @@ package body Adacovex.Diff is
       Tmp_Len    : out Natural;
       Success    : out Boolean)
    is
-      Pid     : constant Integer :=
-        GNAT.OS_Lib.Pid_To_Integer (GNAT.OS_Lib.Current_Process_Id);
-      Pid_Img : constant String := Integer'Image (Pid);
-      Tmp_S   : constant String :=
-        "/tmp/adacovex-diff-" & Pid_Img (2 .. Pid_Img'Last);
+      Kind : constant Adacovex.VCS.VCS_Kind :=
+        Adacovex.VCS.Detect (Target_Dir);
    begin
-      Tmp_Len := Tmp_S'Length;
-      for I in Tmp_S'Range loop
-         Tmp_Path (I - Tmp_S'First + 1) := Tmp_S (I);
-      end loop;
-
-      --  Clean up any stale worktree from a previous run, then create.
-      Remove_Worktree (Target_Dir, Tmp_Path (1 .. Tmp_Len));
-      Success :=
-        Run_Git
-          (Target_Dir,
-           (new String'("worktree"),
-            new String'("add"),
-            new String'("--detach"),
-            new String'(Tmp_Path (1 .. Tmp_Len)),
-            new String'(Base_Ref)));
-      if not Success then
-         Tmp_Len := 0;
-      end if;
+      Adacovex.VCS.Make_Snapshot
+        (Target_Dir, Kind, Base_Ref, Tmp_Path, Tmp_Len, Success);
    end Make_Worktree;
 
    procedure Remove_Worktree (Target_Dir : String; Tmp_Path : String) is
-      Ignored : Boolean;
+      Kind : constant Adacovex.VCS.VCS_Kind :=
+        Adacovex.VCS.Detect (Target_Dir);
    begin
-      Ignored :=
-        Run_Git
-          (Target_Dir,
-           (new String'("worktree"),
-            new String'("remove"),
-            new String'("--force"),
-            new String'(Tmp_Path)));
+      Adacovex.VCS.Remove_Snapshot (Target_Dir, Kind, Tmp_Path);
    end Remove_Worktree;
 
    function Report_Delta

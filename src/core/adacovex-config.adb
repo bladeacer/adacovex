@@ -152,6 +152,7 @@ package body Adacovex.Config is
          Cfg.Coverage_Delta_Len := 0;
          Cfg.SBOM_Out_Len := 0;
          Cfg.Cache_Dir_Len := 0;
+         Cfg.Man_Dir_Len := 0;
 
          while I <= Count loop
             declare
@@ -473,6 +474,22 @@ package body Adacovex.Config is
                   Cfg.Prove_Mode := True;
                elsif A = "status" then
                   Cfg.Status_Mode := True;
+               elsif A = "man" then
+                  Cfg.Man_Mode := True;
+               elsif A = "--check" then
+                  Cfg.Man_Check := True;
+               elsif A = "--dir" then
+                  I := I + 1;
+                  if I <= Count then
+                     Set_String (Cfg.Man_Dir, Cfg.Man_Dir_Len, Args (I));
+                  else
+                     Set_Error (Cfg, "--dir requires a directory argument");
+                  end if;
+               elsif Has_Prefix (A, "--dir=") then
+                  Set_String
+                    (Cfg.Man_Dir, Cfg.Man_Dir_Len, A (A'First + 6 .. A'Last));
+               elsif A = "--version" then
+                  Cfg.Version_Requested := True;
                elsif A = "--no-sbom" then
                   Cfg.No_SBOM := True;
                elsif A = "--sbom-format" then
@@ -890,6 +907,41 @@ package body Adacovex.Config is
             & "or --coverage-delta");
       end if;
 
+      -- Man mode is a standalone installer: it cannot be combined with any
+      -- assessment mode (the man page is generated from the bundled version,
+      -- it does not need a target).
+      if Cfg.Man_Mode
+        and then (Cfg.Status_Mode
+                  or Cfg.Prove_Mode
+                  or Cfg.SBOM_Mode
+                  or Cfg.Compare_Base_Len > 0
+                  or Cfg.Coverage_Delta_Len > 0)
+      then
+         Set_Error
+           (Cfg,
+            "man cannot be combined with status, prove, sbom, --compare-base, "
+            & "or --coverage-delta");
+      end if;
+
+      -- --check and --dir only make sense with the man subcommand; a bare
+      -- `adacovex --check` is almost certainly a typo, so fail loudly rather
+      -- than silently running an assessment that ignores them.
+      if (Cfg.Man_Check or Cfg.Man_Dir_Len > 0) and then not Cfg.Man_Mode then
+         Set_Error (Cfg, "--check and --dir require the man subcommand");
+      end if;
+
+      -- --version is a pure banner: nothing else is meaningful with it.
+      if Cfg.Version_Requested
+        and then (Cfg.Man_Mode
+                  or Cfg.Status_Mode
+                  or Cfg.Prove_Mode
+                  or Cfg.SBOM_Mode
+                  or Cfg.Compare_Base_Len > 0
+                  or Cfg.Coverage_Delta_Len > 0)
+      then
+         Set_Error (Cfg, "--version cannot be combined with other modes");
+      end if;
+
       -- GNATprove options only make sense in prove mode.
       if not Cfg.Prove_Mode
         and then (Cfg.Prove_Jobs >= 0
@@ -1013,6 +1065,7 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line ("       adacovex sbom --format=FMT --out=PATH");
       Ada.Text_IO.Put_Line ("       adacovex prove --target=PATH");
       Ada.Text_IO.Put_Line ("       adacovex status --target=PATH");
+      Ada.Text_IO.Put_Line ("       adacovex man [--check] [--dir=PATH]");
       Ada.Text_IO.Put_Line ("");
       Ada.Text_IO.Put_Line ("Options:");
       Ada.Text_IO.Put_Line
@@ -1066,13 +1119,19 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("  --cache-max=N         Max cache entries before eviction (default: 4096)");
       Ada.Text_IO.Put_Line
-        ("  --compare-base=REF    Differential mode: compare against a git base");
+        ("  --compare-base=REF    Differential mode: compare against a base");
       Ada.Text_IO.Put_Line
-        ("                        (branch or commit) and report VC/DAL delta");
+        ("                        revision (branch/commit/rev) in a temporary");
+      Ada.Text_IO.Put_Line
+        ("                        snapshot and report VC/DAL delta (supports");
+      Ada.Text_IO.Put_Line
+        ("                        git, mercurial, subversion, fossil, jj)");
       Ada.Text_IO.Put_Line
         ("  --coverage-delta=REF  Docstring coverage gate: exit non-zero if");
       Ada.Text_IO.Put_Line
         ("                        current docstring coverage is below the base");
+      Ada.Text_IO.Put_Line
+        ("                        (any supported VCS; git, hg, svn, fossil, jj)");
       Ada.Text_IO.Put_Line
         ("  prove --target=PATH   Run GNATprove on the target project, then");
       Ada.Text_IO.Put_Line
@@ -1126,6 +1185,27 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("                        | spdx-json | md; default: cyclonedx-json)");
       Ada.Text_IO.Put_Line ("  --verbose             Verbose diagnostics");
+      Ada.Text_IO.Put_Line
+        ("  --version             Print the bundled version (read from");
+      Ada.Text_IO.Put_Line
+        ("                        alire-dev.toml; release builds bundle the");
+      Ada.Text_IO.Put_Line ("                        release tag) and exit");
+      Ada.Text_IO.Put_Line
+        ("  man [--check]         Install the man page into the local man");
+      Ada.Text_IO.Put_Line
+        ("                        database (~/.local/share/man, Linux/WSL);");
+      Ada.Text_IO.Put_Line
+        ("                        --check exits 0 when the installed man page");
+      Ada.Text_IO.Put_Line
+        ("                        matches this binary's version, 1 when a");
+      Ada.Text_IO.Put_Line
+        ("                        newer version is available or none is");
+      Ada.Text_IO.Put_Line
+        ("                        installed (man page contains the version)");
+      Ada.Text_IO.Put_Line
+        ("  man --dir=PATH        Install the man page into PATH/man1 instead");
+      Ada.Text_IO.Put_Line
+        ("                        of the default local man directory");
       Ada.Text_IO.Put_Line
         ("  --help                Show this message and exit");
       Ada.Text_IO.Put_Line ("");

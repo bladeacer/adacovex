@@ -11,6 +11,7 @@ single-core operation when the host cannot be probed.
 | Platform | Status | Notes |
 |----------|--------|-------|
 | Linux x86-64 | **Primary** | CI, releases, and the proof toolchain bundle all target it. |
+| **WSL** | **Supported** | Runs on the Linux/WSL targets below: `man` installs to the WSL man root and `mandb` refreshes it; VCS snapshot commands run via `sh -c`. |
 | Linux aarch64 | Supported | Builds from source; the prebuilt toolchain bundle is x86-64 only. |
 | macOS | Supported | Builds from source (Intel and Apple Silicon). |
 | FreeBSD | Supported | Builds from source. |
@@ -78,5 +79,26 @@ It checks and prints:
 
 Exit code `0` when a usable gnatprove is detectable without a download (and
 `alr` is present whenever the deploy path is the only option), `1` otherwise.
+
+## Local man page (Linux/WSL)
+
+`adacovex man` installs the man page into the **local man database** without
+root: the default root is `$XDG_DATA_HOME/man` when set, else
+`~/.local/share/man` (the standard Linux/WSL per-user man tree), and the
+index is refreshed with `mandb` when it is present (Ubuntu and WSL ship it;
+a missing `mandb` is silently ignored). `--dir=PATH` overrides the root.
+The page embeds the binary version; `adacovex man --check` compares it to the
+installed page and exits 0/1, so a prompt hook can auto-install when a newer
+version is available. See
+[CLI reference](cli-reference.md#man).
+
+## VCS support (Linux/WSL)
+
+`--compare-base` and `--coverage-delta` snapshot a base revision across
+git, Mercurial, Subversion, Fossil, and jj (see
+[CLI reference](cli-reference.md#vcs-support)). The snapshot commands run
+through `sh -c`, which WSL provides, and all temp snapshots live under
+`/tmp/adacovex-diff-<pid>`. For VCS with poor snapshot UX (Subversion,
+Fossil) adacovex prints a note recommending conversion to git.
 
 See the [CLI reference](cli-reference.md) for the full flag surface.

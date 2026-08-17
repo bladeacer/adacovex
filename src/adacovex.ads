@@ -3,9 +3,15 @@
 --  HLR-ARCH: Version constant
 --  HLR-ARCH: Package hierarchy
 
+with Adacovex_Version_Info;
+
 package Adacovex is
    pragma SPARK_Mode (On);
 
-   Version : constant String := "1.10.0";
+   --  Version of this adacovex build.  Generated at build time from
+   --  alire-dev.toml by tools/gen-version.py; release builds bundle the
+   --  release tag via ADACOVEX_VERSION, so `--version` always reports the
+   --  exact version the binary was built from.
+   Version : constant String := Adacovex_Version_Info.Version;
 
 end Adacovex;

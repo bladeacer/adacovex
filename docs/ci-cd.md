@@ -112,6 +112,43 @@ automatically.
   binary, runs GNATprove, validates the `--standard=all` self-assessment, and
   publishes the GitHub Release (see [Release bundling](#release-bundling)).
 
+### Markdown summaries and loud failures
+
+Every CI run leaves a **Markdown summary at the bottom of the job page**
+(`$GITHUB_STEP_SUMMARY`):
+
+- the composite action's assessment step writes an `## adacovex assessment`
+  table (target, bundled version, compliance label, SPARK level, tests,
+  coverage) plus the full raw output, and an `if: always()` **Write run
+  summary** step appends a run-overview table (version, target, standard,
+  DAL, job result);
+- each workflow adds a **`summary` job** (`if: always()`, `needs:` all other
+  jobs) that aggregates every job result into one table at the bottom of the
+  run.
+
+Threshold failures **fail loudly** at every layer:
+
+1. unmet `--require-*` gates make the adacovex binary exit non-zero;
+2. the assessment step re-surfaces each `CI GATE:` line as a GitHub
+   `::error::` annotation (visible at the top of the job page, not just in
+   the log) and marks the summary table **FAILED** with the unmet gates;
+3. the action's `Write run summary` step (runs on failure too) reports the
+   failed job result;
+4. the workflow `summary` job exits `1` when any of its dependencies failed,
+   so the whole run is red even if the failing job was retried or masked by
+   an `if: always()` cleanup step.
+
+### Release version bundling
+
+The release workflow builds the binary from the `vX.Y.Z` tag and **bundles
+that version into the binary**: the action's build step sets
+`ADACOVEX_VERSION` (from `github.ref_name`) and regenerates
+`src/adacovex_version_info.ads` before `alr build`, so the shipped
+`adacovex --version` reports exactly the tag. The download step of the
+published action verifies this with `adacovex --version` after unpacking the
+release bundle. Locally, `make release VERSION=x.y.z` does the same; normal
+`make build` reads the version from `alire-dev.toml` instead.
+
 ### PR coverage gate
 
 Gate every pull request on docstring coverage not regressing against the base
@@ -166,7 +203,9 @@ build adacovex from source via Alire instead. See
 
 `make release VERSION=x.y.z` does the same locally (build `--release`,
 generate proofs, validate DAL-C, bundle `dist/`), then tags and pushes to
-trigger the workflow.
+trigger the workflow. `make build` regenerates `src/adacovex_version_info.ads`
+from `alire-dev.toml` (or `ADACOVEX_VERSION`) before compiling, so the
+bundled version is always the build's version.
 
 ## Floating tags
 

@@ -1,4 +1,4 @@
-.PHONY: help build test prove doc clean run-self run-ada-crdt dev-setup prod-setup ascii-check fmt bump-version coverage-gate release publish test-publish _dev_cmd agents-tree sbom proof-status test-count doc-links changelog-check
+.PHONY: help build test prove doc clean run-self run-ada-crdt dev-setup prod-setup ascii-check fmt bump-version coverage-gate release publish test-publish _dev_cmd agents-tree sbom proof-status test-count doc-links changelog-check man
 
 .DEFAULT_GOAL := help
 
@@ -6,8 +6,11 @@ help:
 	@echo 'adacovex -- Ada Coverage and Verification Tool'
 	@echo ''
 	@echo 'Usage: make <target>'
-	@echo ''
-	@echo '  build         Build project (adacovex + test_runner, covex alias)'
+	@echo '  build         Build project (adacovex + test_runner, covex alias);'
+	@echo '                regenerates src/adacovex-version.ads from'
+	@echo '                alire-dev.toml (or ADACOVEX_VERSION for releases)'
+	@echo '  man           Install the man page into the local man database'
+	@echo '                (~/.local/share/man, Linux/WSL) and refresh mandb'
 	@echo '  test          Build and run native test suite'
 	@echo '  prove         Run SPARK proofs (gnatprove via the prove subcommand,'
 	@echo '                resolved from alire-dev.toml / PATH / cache / download)'
@@ -57,11 +60,15 @@ help:
 # is the only build output deliberately silenced -- compiler and gnatprove
 # warnings stay fully visible.  See docs/architecture.md.
 build:
-	@alr build > /tmp/alr-build.log 2>&1; rc=$$?; \
+	@python3 tools/gen-version.py; \
+	alr build > /tmp/alr-build.log 2>&1; rc=$$?; \
 	sed -e '/\.sframe); no \.sframe will be created/d' /tmp/alr-build.log; \
 	rm -f /tmp/alr-build.log; \
 	if [ $$rc -eq 0 ]; then ln -sf adacovex bin/covex; fi; \
 	exit $$rc
+
+man: build
+	./bin/adacovex man
 
 test: build
 	./bin/test_runner
@@ -69,7 +76,7 @@ test: build
 # Self-assessment acceptance gates, defined once so prove/run-self/release stay
 # in sync (and match .github/workflows/ci.yml + AGENTS.md "Dogfood target").
 # --require-tests is the current native test-suite size (docs/test_result.md).
-SELF_ASSESS_ARGS := --dal=C --standard=all --require-spark=Platinum --require-docstrings=100 --require-tests=501 --require-proof=100
+SELF_ASSESS_ARGS := --dal=C --standard=all --require-spark=Platinum --require-docstrings=100 --require-tests=549 --require-proof=100
 
 prove: build
 	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex prove --target=. $(SELF_ASSESS_ARGS) --emit-svg=docs/badges/
@@ -172,8 +179,8 @@ bump-version:
 	echo "  alire.toml: version = \"$$version\""; \
 	sed -i 's/^version = ".*"/version = "'$$version'"/' alire-dev.toml; \
 	echo "  alire-dev.toml: version = \"$$version\""; \
-	sed -i 's/^   Version : constant String := "[^"]*"/   Version : constant String := "'$$version'"/' src/adacovex.ads; \
-	echo "  src/adacovex.ads: Version = \"$$version\""; \
+	python3 tools/gen-version.py; \
+	echo "  src/adacovex-version.ads: Version = \"$$version\" (generated)"; \
 	\
 	release_file="alire/releases/covex-$$version.toml"; \
 	if [ ! -f "$$release_file" ]; then \
@@ -235,6 +242,7 @@ release:
 	echo "=== Generating proof artifacts ==="; \
 	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex prove --target=. $(SELF_ASSESS_ARGS) --emit-svg=docs/badges/; \
 	echo "=== Building release binary (covex v$$version) ==="; \
+	ADACOVEX_VERSION="$$version" python3 tools/gen-version.py; \
 	alr build --release; \
 	echo "=== Validating self-assessment (DAL-C) ==="; \
 	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex --target=. $(SELF_ASSESS_ARGS) --emit-svg=docs/badges/; \

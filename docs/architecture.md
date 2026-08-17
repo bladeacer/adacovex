@@ -281,7 +281,7 @@ adacovex supports multiple output formats:
 
 ## Testing
 
-adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 501 tests across 10 categories. No external test framework (AUnit, etc.) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
+adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 549 tests across 12 categories. No external test framework (AUnit, etc.) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
 
 ## Supported Platforms
 
@@ -311,8 +311,13 @@ adacovex follows one version across every delivery channel, and each channel is
 version-locked to the same release:
 
 - **Single source of truth**: the `version` field in `alire.toml` /
-  `alire-dev.toml` and `Adacovex.Version` in `src/adacovex.ads`, bumped together
-  by `make bump-version`.
+  `alire-dev.toml`. `tools/gen-version.py` regenerates
+  `src/adacovex_version_info.ads` at build time (and `make bump-version`),
+  and `Adacovex.Version` in `src/adacovex.ads` re-exports it, so
+  `--version`, the man page, the SBOM tool version, and the result-cache
+  namespace all derive from the manifest and can never drift. Release builds
+  bundle the release tag instead via the `ADACOVEX_VERSION` environment
+  variable (release workflow / `make release`).
 - **CI is tied to the release version**: the GitHub Actions composite action
   (`action.yml`) is version-matched to the adacovex binary. The release
   workflow bundles `adacovex-vX.Y.Z.tar.gz` and `adacovex-action-vX.Y.Z.tar.gz`
@@ -353,7 +358,8 @@ You write the proofs yourself, so there is no magic or hidden abstractions here.
 When adacovex runs, it executes these steps in sequence:
 
 ```
-0. Parse CLI args           -> CLI_Config record (prove / sbom / diff / normal)
+0. Parse CLI args           -> CLI_Config record (prove / sbom / diff / man / normal)
+0a. Early-exit modes        -> --help / --version / man / status exit before the pipeline
 1. Determine ANSI color     -> NO_COLOR check
 2. (prove mode) Run GNATprove -> fresh obj/gnatprove/gnatprove.out
 3. Scan source files        -> Package_Vectors.Vector (subprograms, HLR tags, docstrings)
@@ -369,6 +375,14 @@ When adacovex runs, it executes these steps in sequence:
 13. Start HTTP server        -> :<port> (if --serve)
 14. Set exit code            -> 0 if Achieved, 1 if Unmet
 ```
+
+Differential modes (`--compare-base` / `--coverage-delta`) run before the
+pipeline and snapshot a base revision via `Adacovex.VCS` (git `worktree add`,
+hg `archive`, svn `export`, fossil `open` on a copied DB, or a git worktree
+against the jj store), assess base and current tree, report the delta, and
+exit. `man` installs the generated man page (`Adacovex.Renderers.Man`) into
+the local man database (`~/.local/share/man`, Linux/WSL) and refreshes it with
+`mandb`.
 
 ## Swapping the GNAT compiler (LLVM backend)
 

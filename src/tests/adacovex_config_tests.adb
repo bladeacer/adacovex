@@ -253,6 +253,62 @@ package body Adacovex_Config_Tests is
             True,
             "--standard=all after --asil=B keeps tier, enables all");
       end;
+
+      --  --version is a standalone banner flag.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--version");
+         Testing.Parse_Args (A, Cfg);
+         R.Check (Cfg.Version_Requested, "--version sets Version_Requested");
+         R.Check (not Cfg.CLI_Error, "--version alone is not an error");
+         R.Check (not Cfg.Help_Requested, "--version does not imply --help");
+      end;
+
+      --  man subcommand: install mode by default.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "man");
+         Testing.Parse_Args (A, Cfg);
+         R.Check (Cfg.Man_Mode, "man sets Man_Mode");
+         R.Check
+           (not Cfg.Man_Check, "man without --check installs (no check)");
+         R.Check (Cfg.Man_Dir_Len = 0, "man without --dir uses the default");
+      end;
+
+      --  man --check --dir=PATH: check mode with an explicit man root.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "man");
+         Add (A, "--check");
+         Add (A, "--dir=/tmp/x");
+         Testing.Parse_Args (A, Cfg);
+         R.Check (Cfg.Man_Mode, "man --check sets Man_Mode");
+         R.Check (Cfg.Man_Check, "--check sets Man_Check");
+         R.Check (Cfg.Man_Dir_Len = 6, "--dir=/tmp/x sets Man_Dir_Len");
+         R.Check
+           (Cfg.Man_Dir (1 .. Cfg.Man_Dir_Len) = "/tmp/x",
+            "--dir=/tmp/x stores the man root");
+      end;
+
+      --  man --dir PATH (space-separated form) also parses.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "man");
+         Add (A, "--dir");
+         Add (A, "/tmp/y");
+         Testing.Parse_Args (A, Cfg);
+         R.Check
+           (Cfg.Man_Dir (1 .. Cfg.Man_Dir_Len) = "/tmp/y",
+            "--dir PATH space-separated form parses");
+      end;
    end Run;
 
 end Adacovex_Config_Tests;

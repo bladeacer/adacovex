@@ -47,6 +47,8 @@ CATEGORY_KEY: Dict[str, str] = {
     "HTML/Markdown renderers": "src/tests/adacovex_renderer_tests",
     "SBOM generator": "src/tests/adacovex_sbom_tests",
     "IR synthesis": "src/tests/adacovex_ir_tests",
+    "Man page renderer": "src/tests/adacovex_man_tests",
+    "VCS support": "src/tests/adacovex_vcs_tests",
 }
 
 TEST_RUNNER_KEY: str = "src/tests/test_runner"
@@ -93,7 +95,8 @@ def total_phrase_repls(passed: int, total: int) -> List[Tuple[str, str]]:
         (r"require-tests: (\d+)", f"require-tests: {passed}"),
         (r"(\d+)-test native suite", f"{total}-test native suite"),
         (r"native test suite \((\d+) tests\)", f"native test suite ({total} tests)"),
-        (r"(\d+) tests across 10 categories", f"{total} tests across 10 categories"),
+        (r"(\d+) tests across \d+ categories",
+         f"{total} tests across {len(CATEGORY_KEY)} categories"),
     ]
 
 

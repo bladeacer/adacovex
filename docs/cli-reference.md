@@ -7,6 +7,7 @@ adacovex [options]
 adacovex sbom [--format=cyclonedx-json|spdx-json] [--out=PATH]
 adacovex prove [--target=PATH] [prove options]
 adacovex status [--target=PATH]
+adacovex man [--check] [--dir=PATH]
 ```
 
 ## Flags
@@ -26,8 +27,8 @@ adacovex status [--target=PATH]
 | `--emit-markdown=PATH` | off | both | Output directory for Markdown reports |
 | `--skip-dir=NAME` | `demo,deps,examples` | relaxed | Directory name to skip (repeatable) |
 | `--relaxed` | off | both | Disable strict mode (skip dirs, no patches) |
-| `--compare-base=REF` | off | both | Differential mode vs a git base ref |
-| `--coverage-delta=REF` | off | both | Docstring-coverage gate vs a git base ref |
+| `--compare-base=REF` | off | both | Differential mode vs a base rev (git/hg/svn/fossil/jj) |
+| `--coverage-delta=REF` | off | both | Docstring-coverage gate vs a base rev (git/hg/svn/fossil/jj) |
 | `--cache` | on | both | Enable on-disk result caching |
 | `--no-cache` | off | both | Disable result caching (always re-scan/re-parse/re-prove) |
 | `--cache-dir=PATH` | `~/.adacovex/cache/<ver>/<schema>` | both | Cache directory for analysis results |
@@ -37,6 +38,10 @@ adacovex status [--target=PATH]
 | `--require-tests=N` | off | both | Fail loudly if passing test count < N |
 | `--require-proof=PCT` | off | both | Fail loudly if proved-VC coverage < PCT% (0-100) |
 | `--verbose` | off | both | Verbose diagnostics |
+| `--version` | - | - | Print the bundled version and exit |
+| `man` | - | - | Install the man page into the local man database |
+| `man --check` | - | - | Exit 0 if the installed man page matches the binary version, 1 otherwise |
+| `man --dir=PATH` | `~/.local/share/man` | - | Install the man page under `PATH/man1` instead |
 | `--help` | - | both | Print usage and exit |
 
 ## Flag details
@@ -173,11 +178,13 @@ any `--skip-dir` entries) and does NOT apply `.adacovex/patches/`. See
 
 ### `--compare-base=REF`
 
-Differential mode: assess a git base revision in a temporary worktree
+Differential mode: snapshot a base revision in a temporary directory
 (`/tmp/adacovex-diff-<pid>`) and print a side-by-side comparison against the
 current tree (packages, subprograms, docstring %, HLR traced, orphan tags,
-SPARK level, VCs proved, tests, DAL status). The `--target` directory must be a
-git repository with `git` on `PATH`.
+SPARK level, VCs proved, tests, DAL status). Works on **git, Mercurial,
+Subversion, Fossil, and jj** -- see [VCS support](#vcs-support). The
+`--target` directory must be a supported VCS repository with the VCS
+command-line tool on `PATH`.
 
 Exit `0` only if there are no regressions AND the current DAL is Achieved;
 `1` otherwise. Artifacts the base does not commit (`gnatprove.out`, a
@@ -186,16 +193,89 @@ test-result summary) report `N/A` and are not compared.
 ### `--coverage-delta=REF`
 
 Lightweight docstring-coverage gate for PR-style CI checks. Scans sources +
-patches + computes docstring metrics on both a git base ref and the current
+patches + computes docstring metrics on both a base revision and the current
 tree (no GNATprove/tests/DAL, so it works when the base does not commit build
 artifacts), prints a compact coverage table plus a machine-parseable
-`coverage_delta:` line, and cleans up the worktree.
+`coverage_delta:` line, and cleans up the snapshot.
 
 Exit `0` if current docstring coverage is `>=` the base (or the base has no
 sources); `1` if coverage regressed. Mutually exclusive with `--compare-base`.
 `make release` runs the same gate against the last release tag (e.g.
 `--coverage-delta=v1.1.0`) and aborts if docstring coverage regressed between
 releases.
+
+### `--version`
+
+Print the bundled version (`adacovex vX.Y.Z`) and exit, without scanning or
+assessing. The version is read from `alire/alire-dev.toml` at build time:
+`tools/gen-version.py` regenerates `src/adacovex_version_info.ads` (the
+compiled-in constant) on every `make build`. Release builds bundle the release
+tag instead -- the release workflow / `make release` set `ADACOVEX_VERSION`
+(from the `vX.Y.Z` tag) so the shipped binary always reports exactly the tag
+it was built from. The same constant drives the man page, the SBOM tool
+version, and the result-cache namespace, so they can never drift.
+
+### `man`
+
+The `man` subcommand installs the adacovex man page into the **local man
+database** (Linux/WSL, no root required) and refreshes the index:
+
+```bash
+adacovex man                 # install to ~/.local/share/man/man1 + run mandb
+adacovex man --check         # exit 0 if installed page matches, 1 otherwise
+adacovex man --dir=PATH      # install under PATH/man1 instead
+```
+
+- **Default root**: `$XDG_DATA_HOME/man` when set, else `~/.local/share/man`.
+  `--dir=PATH` overrides it (install goes to `PATH/man1/adacovex.1`).
+- **The page contains the version** (in the `.TH` header and a `VERSION`
+  section). `adacovex man --check` parses the installed page and exits `0`
+  when it matches the binary, `1` when a newer version is available or no
+  page is installed -- so a shell prompt hook can run `adacovex man --check`
+  and `adacovex man` automatically when the machine detects a newer version:
+
+  ```bash
+  # ~/.bashrc / ~/.zshrc: refresh the man page when the binary is newer
+  command -v adacovex >/dev/null && adacovex man --check >/dev/null 2>&1 \
+    || adacovex man >/dev/null 2>&1
+  ```
+
+- **Database refresh**: `mandb` is run on the man root when present (Ubuntu
+  and WSL ship it); a missing `mandb` is silently ignored.
+- Exit codes: `0` on success/up-to-date, `1` on install failure or when
+  `--check` finds a newer version available (or none installed).
+
+### VCS support
+
+Differential modes run against the VCS that manages the target. Detection is
+marker-file based, with a command-probe fallback:
+
+| VCS | Marker | Base snapshot mechanism |
+|-----|--------|-------------------------|
+| git | `.git` | `git worktree add --detach` (linked worktree) |
+| jj | `.jj` | `jj git export` into the internal git store, then a git worktree against `.jj/repo/store/git` (jj commits are git commits) |
+| Mercurial | `.hg` | `hg archive -r REF DIR` (pure export) |
+| Subversion | `.svn` | `svn info --show-item url` + `svn export -r REF URL DIR` |
+| Fossil | `.fslckout` / `_FOSSIL_` | copy the repo DB and `fossil open` it at REF in a scratch dir |
+
+For colocated git+jj repos git wins (exact interop). All snapshots land in
+`/tmp/adacovex-diff-<pid>` and are cleaned up afterwards; the working tree is
+never touched.
+
+**UX recommendation**: git (and jj, its git-compatible sibling) give the best
+experience. Mercurial is fully supported. For VCS whose snapshot UX is poor,
+adacovex prints a note recommending the developers **convert the repository to
+git** (or a git-compatible VCS):
+
+- **Subversion** -- no local history, network-dependent checkouts, slow
+  `svn export` per snapshot. Converting gives you local branches, offline
+  history, and faster diffs.
+- **Fossil** -- workable, but the tooling is niche and the single-file DB
+  model complicates CI integration.
+
+These notes are informational only: the assessment still runs and gates still
+apply on every supported VCS. Works on **Linux and WSL** (the snapshot
+commands run through `sh -c`, which WSL provides).
 
 ### CI threshold gates (`--require-*`)
 
@@ -206,7 +286,7 @@ target does not meet the required level:
 
 ```bash
 adacovex --target=. --require-spark=Platinum --require-docstrings=100 \
-         --require-tests=501 --require-proof=100
+         --require-tests=549 --require-proof=100
 ```
 
 - `require-spark` compares the honest assessed SPARK level (Stone..Platinum).
@@ -271,8 +351,8 @@ assessment is performed.
 
 | Code | Meaning |
 |------|---------|
-| `0` | Success (DAL achieved, all checks pass) |
-| `1` | Compliance failure (DAL unmet, tests failing, a `--require-*` CI gate unmet, etc.) |
+| `0` | Success (DAL achieved, all checks pass, `--version`, man page installed/up-to-date) |
+| `1` | Compliance failure (DAL unmet, tests failing, a `--require-*` CI gate unmet, differential regression, `man --check` finding a newer version available or none installed, etc.) |
 
 ## NO_COLOR support
 

@@ -10,6 +10,8 @@ with Adacovex_Renderer_SVG_Tests;
 with Adacovex_Renderer_Tests;
 with Adacovex_SBOM_Tests;
 with Adacovex_IR_Tests;
+with Adacovex_Man_Tests;
+with Adacovex_VCS_Tests;
 
 procedure Test_Runner is
 
@@ -23,6 +25,8 @@ procedure Test_Runner is
    R_Renderers   : Runner;
    R_SBOM        : Runner;
    R_IR          : Runner;
+   R_Man         : Runner;
+   R_VCS         : Runner;
 
    Total_Passed : Natural := 0;
    Total_Failed : Natural := 0;
@@ -61,6 +65,8 @@ procedure Test_Runner is
          Row ("HTML/Markdown renderers", R_Renderers);
          Row ("SBOM generator", R_SBOM);
          Row ("IR synthesis", R_IR);
+         Row ("Man page renderer", R_Man);
+         Row ("VCS support", R_VCS);
       end;
 
       Put_Line
@@ -131,6 +137,8 @@ procedure Test_Runner is
          Row ("HTML/Markdown renderers", R_Renderers);
          Row ("SBOM generator", R_SBOM);
          Row ("IR synthesis", R_IR);
+         Row ("Man page renderer", R_Man);
+         Row ("VCS support", R_VCS);
       end;
 
       Put_Line
@@ -156,6 +164,8 @@ begin
    Adacovex_Renderer_Tests.Run (R_Renderers);
    Adacovex_SBOM_Tests.Run (R_SBOM);
    Adacovex_IR_Tests.Run (R_IR);
+   Adacovex_Man_Tests.Run (R_Man);
+   Adacovex_VCS_Tests.Run (R_VCS);
 
    Total_Passed :=
      R_Types.Passed
@@ -167,7 +177,9 @@ begin
      + R_RendererSVG.Passed
      + R_Renderers.Passed
      + R_SBOM.Passed
-     + R_IR.Passed;
+     + R_IR.Passed
+     + R_Man.Passed
+     + R_VCS.Passed;
    Total_Failed :=
      R_Types.Failed
      + R_DAL.Failed
@@ -178,7 +190,9 @@ begin
      + R_RendererSVG.Failed
      + R_Renderers.Failed
      + R_SBOM.Failed
-     + R_IR.Failed;
+     + R_IR.Failed
+     + R_Man.Failed
+     + R_VCS.Failed;
 
    Print_Summary;
    Write_Results;
