@@ -158,6 +158,7 @@ proof-status`, and `make doc-links`.
 | `proof-status` | Sync VC count + SPARK level from gnatprove.out |
 | `test-count` | Sync test counts from docs/test_result.md |
 | `doc-links` | Regenerate the AGENTS.md Documentation block from tools/doc-links.map |
+| `changelog-check` | Validate all `docs/changelogs/` against the canonical format (tools/check-changelogs.py) |
 | `release` | Build, prove, validate, run coverage gate vs last release, bundle + tag & push |
 | `ascii-check` | Verify all source files are pure ASCII |
 | `clean` | Remove bin/ obj/ docs/badges/ |

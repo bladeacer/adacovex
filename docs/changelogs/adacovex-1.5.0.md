@@ -91,15 +91,13 @@ keyword, so `1 Failures` (number + space + word) parsed as zero failures and
 overwrote the correct totals. It now skips spaces back to the preceding digit
 run.
 
-## Notes
+## Test Suite
 
-- Test suite extended: Source scanner 40 -> **68** checks (comment-style
-  variants, tag aliases, Google/Sphinx styles, 12000-char single-line
-  declaration); Test-result parser 27 -> **35** checks (TAP, Automake,
-  Surefire, Unity); new **IR synthesis** category (**26** checks). The suite
-  is now **284 tests**.
-- Self-assessment metrics: 26 packages, 57 subprograms, 100% docstrings,
-  Platinum (36/36 VCs), 284 tests, DAL-C Achieved.
+Test suite extended: Source scanner 40 -> **68** checks (comment-style
+variants, tag aliases, Google/Sphinx styles, 12000-char single-line
+declaration); Test-result parser 27 -> **35** checks (TAP, Automake,
+Surefire, Unity); new **IR synthesis** category (**26** checks). The suite
+is now **284 tests**.
 
 ## Proof Results
 

@@ -2,7 +2,7 @@
 
 Date: _2026-08-01_
 
-Version bumped 1.1.0 -> 1.3.0 (1.2.0 was never released).
+Version bumped 1.1.0 -> 1.3.0.
 
 ## Changes
 
@@ -51,7 +51,11 @@ swaps in `alire-dev.toml`, and restores the snapshots on exit via
 `trap ... EXIT INT TERM`. Interrupted or failed dev commands can no longer
 leave the manifest or lock files polluted with development dependencies
 (whether or not the lock files are committed). `dev-setup` and `prod-setup`
-were replaced with guidance stubs.
+were replaced with guidance stubs. `alire.toml` now declares `gnatprove` as
+an explicit dependency (adacovex analyzes `gnatprove.out` and its own
+self-assessment runs the proof campaign), so `alr gnatprove` works without a
+dev-manifest swap; `gnatprove` is the only declared dependency beyond the GNAT
+runtime (gnatdoc/gnatformat stay dev-only in `alire-dev.toml`).
 
 ### C6: GitHub Actions: composite action, CI, PR gate, and releases
 
@@ -73,7 +77,13 @@ artifacts), plus three workflows:
 The Alire toolchain is installed from the official
 `alr-*-bin-x86_64-linux.zip` release assets, and the GNAT toolchain default is
 the index-available `15.2.1`. Dead, build-generated `config/covex_config.*`
-files are no longer tracked (gitignored).
+files are no longer tracked (gitignored). The release workflow force-pushes
+floating `vMAJOR` / `vMAJOR.MINOR` tags (e.g. `v1` and `v1.3` from `v1.3.0`)
+plus a `latest` tag, so the composite action can be consumed as `@latest`,
+`@v1`, or `@v1.3` for the latest matching release; the action's
+binary-download step resolves `@latest` (and any floating ref) to the matching
+release tag, and a `coverage-pct` output is also emitted from the docstring
+percentage in normal mode.
 
 ### C7: Coverage gate (`--coverage-delta=REF`)
 
@@ -81,8 +91,11 @@ New `--coverage-delta=REF` flag for PR-style CI checks: it computes docstring
 coverage on a git base ref and the current tree (scan + patches + metrics
 only, no GNATprove/tests/DAL), prints a compact table and a machine-parseable
 `coverage_delta: base=.. current=.. regressed=..` line, and exits `1` when
-coverage dropped. Works on base refs that do not commit build artifacts and is
-mutually exclusive with `--compare-base`.
+coverage dropped. Works on base refs that do not commit build artifacts and is mutually
+exclusive with `--compare-base`. `make release` now runs this
+docstring-coverage gate comparing the last release tag against the current
+tree and aborts if coverage regressed -- the same PR compliance gate, applied
+between releases.
 
 ### C8: Binary named `adacovex`, clean dev tree
 
@@ -96,6 +109,8 @@ symlink alias. All scripts, docs, and workflows reference `bin/adacovex` /
 were removed from the working tree. The composite action gained `branding`
 (shield/green) and an `author` so it can be listed on the GitHub Actions
 marketplace; each `vX.Y.Z` release publishes the matching action version.
+`make badges` in `Ada_CRDT` now builds adacovex first if the binary is
+missing and passes an explicit `--target=.`.
 
 ### C9: All workflows use the single composite action
 
@@ -140,36 +155,17 @@ old and modern layouts.
 returns Stone, so a project with no GNATprove output cannot pass DAL
 assessment on a false Gold.
 
-## Notes
+### H4: DAL-level minimum SPARK requirements corrected in the docs
 
-- `alire.toml` now declares `gnatprove` as an explicit dependency: adacovex
-  analyzes `gnatprove.out` and its own self-assessment runs the proof campaign,
-  so `alr gnatprove` works without a dev-manifest swap. `gnatprove` is the only
-  declared dependency beyond the GNAT runtime (gnatdoc/gnatformat stay
-  dev-only in `alire-dev.toml`).
-- The release workflow force-pushes floating `vMAJOR` / `vMAJOR.MINOR` tags
-  (e.g. `v1` and `v1.3` from `v1.3.0`) plus a `latest` tag so the composite
-  action can be consumed as `@latest`, `@v1`, or `@v1.3` for the latest
-  matching release. The action's binary-download step resolves `@latest` (and
-  any floating ref) to the matching release tag; a `coverage-pct` output is
-  also emitted from the docstring percentage in normal mode.
-- `make release` now runs a docstring-coverage gate (`--coverage-delta`) that
-  compares the last release tag against the current tree and aborts if coverage
-  regressed -- the same PR compliance gate, applied between releases.
-- GNATprove parser tests extended to cover the modern layout, empty summaries,
-  and the Flow/Initialization separation (7 new checks; suite now 169 tests).
-- The DAL-level minimum SPARK requirements documented in `AGENTS.md` and
-  `README.md` were corrected to match `docs/HLR.md` and the implemented
-  `Min_SPARK_For` table (DAL-A: Gold, DAL-B: Silver, DAL-C: Bronze, DAL-D/E:
-  none).
-- `make badges` in `Ada_CRDT` now builds adacovex first if the binary is
-  missing and passes an explicit `--target=.`.
-- The tracked `alire/alire.lock` and `alire/settings.toml` are now the clean
-  release versions (previously they contained development dependencies from an
-  accidental dev-manifest build).
-- Self-assessment metrics updated to the new layout: 20 packages, 40
-  subprograms, 100% docstrings, Platinum (28/28 VCs), 169 tests, DAL-C
-  Achieved.
+The DAL-level minimum SPARK requirements documented in `AGENTS.md` and
+`README.md` were corrected to match `docs/HLR.md` and the implemented
+`Min_SPARK_For` table (DAL-A: Gold, DAL-B: Silver, DAL-C: Bronze, DAL-D/E:
+none).
+
+## Test Suite
+
+GNATprove parser tests extended to cover the modern layout, empty summaries,
+and the Flow/Initialization separation (7 new checks; suite now **169 tests**).
 
 ## Proof Results
 

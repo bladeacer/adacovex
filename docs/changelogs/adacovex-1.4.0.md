@@ -67,16 +67,12 @@ before calling `Parse_Prove_From_Project`, so the emitted level was always
 `Gold` (the default empty-summary mapping). The property is now computed after
 the parse, so a verified target emits `Platinum`.
 
-## Notes
+## Test Suite
 
-- Test suite extended with a new `Adacovex_SBOM_Tests` category (53 checks)
-  covering the proof/DAL property mapping, the Alire manifest + GPR dependency
-  graph fixture, and CycloneDX/SPDX rendering with quote-escaping and JSON
-  structural balance. The suite is now **222 tests**.
-- Self-assessment metrics: 22 packages, 46 subprograms, 100% docstrings,
-  Platinum (28/28 VCs), 222 tests, DAL-C Achieved.
-- New `-- HLR-MANIFEST` and `-- HLR-SBOM` tags are defined in
-  `docs/HLR.md` and `docs/compliance/HLR.md`.
+Test suite extended with a new `Adacovex_SBOM_Tests` category (53 checks)
+covering the proof/DAL property mapping, the Alire manifest + GPR dependency
+graph fixture, and CycloneDX/SPDX rendering with quote-escaping and JSON
+structural balance. The suite is now **222 tests**.
 
 ## Proof Results
 

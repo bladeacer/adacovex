@@ -144,7 +144,7 @@ The same release step now also:
 - The toolchain-resolution and THIRD_PARTY_NOTICES wording now state plainly
   that adacovex declares no gnatprove dependency and resolves it at run time.
 
-## H2: Compiler/proof warning cleanup + gnatprove standard companion
+### H4: Compiler/proof warning cleanup + gnatprove standard companion
 
 - **Remaining build warnings fixed.**
   - `Adacovex.Renderers.SBOM`: the compiler inlined `Field` and constant-folded
@@ -193,12 +193,11 @@ The same release step now also:
   AGENTS, and the `alire.toml` long-description (the published 1.0.0-1.5.0
   release records keep their historical wording).
 
-## Notes
+## Test Suite
 
-- Test suite extended: IR synthesis 26 -> **27** checks; new word-size checks.
-  The suite is now **295 tests** (passing).
-- Self-assessment metrics: 26 packages, 59 subprograms, 100% docstrings,
-  Platinum (500/500 VCs), 295 tests, DAL-C Achieved.
+Test suite extended: IR synthesis 26 -> **27** checks plus six new word-size
+checks (Types conversion + IR host-word-size detection); the suite is now
+**295 tests** (passing).
 
 ## Proof Results
 
