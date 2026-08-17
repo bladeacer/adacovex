@@ -28,7 +28,7 @@ jobs:
           prove: true
           require-spark: Platinum
           require-docstrings: 100
-          require-tests: 501
+          require-tests: 549
           require-proof: 100
 
       - name: Require Platinum SPARK level
@@ -106,3 +106,32 @@ jobs:
           git push origin "refs/tags/$MAJOR" --force
           git push origin "refs/tags/$MINOR" --force
           git push origin "refs/tags/latest" --force
+
+  summary:
+    name: Release summary
+    if: always()
+    needs: [release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write release summary
+        shell: bash
+        env:
+          RELEASE: ${{ needs.release.result }}
+          VERSION: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          {
+            echo '## Release summary'
+            echo ''
+            echo "| Item | Value |"
+            echo "|------|-------|"
+            echo "| Tag | $VERSION |"
+            echo "| Build + self-assessment + publish | $RELEASE |"
+            echo ''
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$RELEASE" = "failure" ]; then
+            echo "::error::Release job failed for $VERSION." >&2
+            echo '**FAILED: release pipeline did not complete.**' >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo 'Release pipeline passed.' >> "$GITHUB_STEP_SUMMARY"

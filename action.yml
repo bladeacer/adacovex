@@ -285,6 +285,10 @@ runs:
           -o "$RUNNER_TEMP/${ASSET}"
         tar -xzf "$RUNNER_TEMP/${ASSET}" -C "$GITHUB_WORKSPACE/bin"
         chmod +x "$GITHUB_WORKSPACE/bin/adacovex"
+        # Verify the downloaded binary is self-consistent and reports the
+        # expected version (the release bundle embeds the tag it was built
+        # from via ADACOVEX_VERSION).
+        "$GITHUB_WORKSPACE/bin/adacovex" --version
         "$GITHUB_WORKSPACE/bin/adacovex" --help >/dev/null 2>&1 || true
 
     - name: Build adacovex
@@ -299,6 +303,14 @@ runs:
         if [ -f adacovex.gpr ]; then
           # The checked-out repository IS adacovex (self-assessment via
           # `uses: ./`): build it in place.
+          # Bundle the version from the release tag when building at a
+          # vX.Y.Z tag ref; otherwise regenerate from alire-dev.toml so the
+          # committed src/adacovex_version_info.ads is never stale.
+          if [[ "${GITHUB_REF_NAME:-}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            ADACOVEX_VERSION="${GITHUB_REF_NAME#v}" python3 tools/gen-version.py
+          else
+            python3 tools/gen-version.py
+          fi
           if [ "${{ inputs.release-build }}" == 'true' ]; then
             alr build --release
           else
@@ -320,6 +332,11 @@ runs:
             git checkout --quiet "refs/tags/$REF"
           else
             git checkout --quiet "$REF" || git checkout --quiet "${REF#v}"
+          fi
+          if [[ "${GITHUB_REF_NAME:-}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            ADACOVEX_VERSION="${GITHUB_REF_NAME#v}" python3 tools/gen-version.py
+          else
+            python3 tools/gen-version.py
           fi
           if [ "${{ inputs.release-build }}" == 'true' ]; then
             alr build --release
@@ -475,6 +492,17 @@ runs:
         set -e
         cat "$RUNNER_TEMP/adacovex.out"
 
+        #  Fail loudly: surface every unmet --require-* CI gate as an
+        #  ::error:: annotation so a threshold failure is impossible to miss
+        #  in the Actions UI (the exit code below also fails the step).
+        if [ "$STATUS" -ne 0 ]; then
+          while IFS= read -r GATE; do
+            echo "::error::$GATE" >&2
+          done < <(grep -oE 'CI GATE:.*' "$RUNNER_TEMP/adacovex.out" || true)
+        fi
+
+        BIN_VERSION="$("$BIN" --version 2>/dev/null | head -1 || true)"
+
         #  Compliance status: matches the standard-specific level label
         #  (DAL-A..E, ASIL A..D/QM, Class A..C) in both single-standard and
         #  --standard=all output.
@@ -514,11 +542,23 @@ runs:
           echo "| Metric | Value |"
           echo "|--------|-------|"
           echo "| Target | \`${{ inputs.target }}\` |"
+          echo "| adacovex | ${BIN_VERSION:-unknown} |"
           echo "| ${COMPLIANCE_LABEL} | ${DAL_STATUS:-unknown} |"
           echo "| SPARK level | ${SPARK_LEVEL:-unknown} |"
           echo "| Tests passed | ${TEST_COUNT:-0} |"
           echo "| Coverage | ${COVERAGE_PCT:-0}% |"
           echo ''
+          if [ "$STATUS" -ne 0 ]; then
+            echo "**FAILED: assessment exited with code $STATUS -- a DAL criterion or \`--require-*\` CI gate was not met.**"
+            echo ''
+            echo 'Unmet CI gates:'
+            echo ''
+            grep -oE 'CI GATE:.*' "$RUNNER_TEMP/adacovex.out" | sed 's/^/  - /' || true
+            echo ''
+          else
+            echo '**PASSED: all DAL criteria and CI gates met.**'
+            echo ''
+          fi
           echo '```text'
           cat "$RUNNER_TEMP/adacovex.out"
           echo '```'
@@ -552,3 +592,33 @@ runs:
         # Content-addressed entries mean a restored but slightly stale cache
         # is never wrong; the unique key keeps save/restore bounded per run.
         key: adacovex-result-${{ inputs.target }}-${{ runner.os }}-${{ github.run_id }}
+
+    - name: Write run summary
+      # Runs on success AND failure so every action invocation leaves a
+      # Markdown summary at the bottom of the job page.
+      if: ${{ always() }}
+      shell: bash
+      env:
+        RUN_RESULT: ${{ job.status }}
+      run: |
+        set -uo pipefail
+        VERSION_LINE="$("$GITHUB_WORKSPACE/bin/adacovex" --version 2>/dev/null | head -1 || true)"
+        {
+          echo '## adacovex run summary'
+          echo ''
+          echo "| Item | Value |"
+          echo "|------|-------|"
+          echo "| Version | ${VERSION_LINE:-n/a} |"
+          echo "| Target | \`${{ inputs.target }}\` |"
+          echo "| Standard | ${{ inputs.standard }} |"
+          echo "| DAL | ${{ inputs.dal }} |"
+          echo "| Job result | $RUN_RESULT |"
+          echo ''
+          if [ "$RUN_RESULT" != "success" ]; then
+            echo '**The adacovex action step failed.** Review the failing step'
+            echo 'above; unmet --require-* CI gates are listed as ::error::'
+            echo 'annotations and in the assessment summary table.'
+          else
+            echo 'The adacovex action completed successfully.'
+          fi
+        } >> "$GITHUB_STEP_SUMMARY"

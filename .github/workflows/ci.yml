@@ -20,7 +20,7 @@ jobs:
           prove: true
           require-spark: Platinum
           require-docstrings: 100
-          require-tests: 501
+          require-tests: 549
           require-proof: 100
 
   adacovex-tests:
@@ -53,3 +53,40 @@ jobs:
       - name: Run coverage gate
         shell: bash
         run: make coverage-gate
+
+  summary:
+    name: CI summary
+    if: always()
+    needs: [self-assessment, adacovex-tests, coverage-gate]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write CI summary
+        shell: bash
+        env:
+          SELF: ${{ needs.self-assessment.result }}
+          TESTS: ${{ needs.adacovex-tests.result }}
+          GATE: ${{ needs.coverage-gate.result }}
+        run: |
+          set -euo pipefail
+          FAILED=0
+          {
+            echo '## CI summary'
+            echo ''
+            echo '| Job | Result |'
+            echo '|-----|--------|'
+            echo "| Self-assessment (all standards) | $SELF |"
+            echo "| Build + native tests | $TESTS |"
+            echo "| Coverage gate (push only) | $GATE |"
+            echo ''
+          } >> "$GITHUB_STEP_SUMMARY"
+          for R in "$SELF" "$TESTS" "$GATE"; do
+            if [ "$R" = "failure" ]; then
+              FAILED=1
+              echo "::error::A CI job failed -- see the failing job logs and its adacovex assessment summary." >&2
+            fi
+          done
+          if [ "$FAILED" -ne 0 ]; then
+            echo '**CI FAILED: one or more jobs did not pass.**' >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo 'All CI jobs passed.' >> "$GITHUB_STEP_SUMMARY"

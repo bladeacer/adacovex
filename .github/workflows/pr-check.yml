@@ -21,3 +21,30 @@ jobs:
           gnat-version: 15.2.1
           build: true
           coverage-delta: ${{ github.event.pull_request.base.sha }}
+
+  summary:
+    name: PR summary
+    if: always()
+    needs: [coverage-delta]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write PR summary
+        shell: bash
+        env:
+          DELTA: ${{ needs.coverage-delta.result }}
+        run: |
+          set -euo pipefail
+          {
+            echo '## PR compliance gate summary'
+            echo ''
+            echo '| Job | Result |'
+            echo '|-----|--------|'
+            echo "| Docstring coverage delta vs base | $DELTA |"
+            echo ''
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$DELTA" = "failure" ]; then
+            echo "::error::Docstring coverage regressed against the PR base branch." >&2
+            echo '**FAILED: docstring coverage regressed.**' >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo 'Coverage gate passed.' >> "$GITHUB_STEP_SUMMARY"

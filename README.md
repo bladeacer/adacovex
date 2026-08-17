@@ -192,6 +192,7 @@ adacovex [options]
 adacovex sbom [--format=cyclonedx-json|spdx-json] [--out=PATH]
 adacovex prove [--target=PATH] [prove options]
 adacovex status [--target=PATH]
+adacovex man [--check] [--dir=PATH]
 ```
 
 | Flag | Default | Mode | Description |
@@ -209,8 +210,8 @@ adacovex status [--target=PATH]
 | `--emit-markdown=PATH` | off | both | Output directory for Markdown reports |
 | `--skip-dir=NAME` | `demo,deps,examples` | relaxed | Directory name to skip (repeatable) |
 | `--relaxed` | off | both | Disable strict mode (skip dirs, no patches) |
-| `--compare-base=REF` | off | both | Differential mode vs a git base ref |
-| `--coverage-delta=REF` | off | both | Docstring-coverage gate vs a git base ref |
+| `--compare-base=REF` | off | both | Differential mode vs a base rev (git/hg/svn/fossil/jj) |
+| `--coverage-delta=REF` | off | both | Docstring-coverage gate vs a base rev (git/hg/svn/fossil/jj) |
 | `--cache` | on | both | Enable on-disk result caching |
 | `--no-cache` | off | both | Disable result caching |
 | `--cache-dir=PATH` | `~/.adacovex/cache/<ver>/<schema>` | both | Cache directory |
@@ -220,7 +221,18 @@ adacovex status [--target=PATH]
 | `--require-tests=N` | off | both | Fail if passing test count < N |
 | `--require-proof=PCT` | off | both | Fail if proved-VC coverage < PCT% |
 | `--verbose` | off | both | Verbose diagnostics |
+| `--version` | - | - | Print the bundled version and exit |
+| `man` | - | - | Install the man page into the local man database (Linux/WSL) |
+| `man --check` | - | - | Exit 0 if the installed man page matches the binary version |
 | `--help` | - | both | Print usage and exit |
+
+The version is read from `alire/alire-dev.toml` at build time; release builds
+bundle the release tag. `adacovex man` installs the man page (which embeds
+the version) into `~/.local/share/man` and refreshes `mandb`; `--check` lets a
+prompt hook auto-install when a newer version is available. Differential
+modes (`--compare-base` / `--coverage-delta`) run on git, Mercurial,
+Subversion, Fossil, and jj repos; for Subversion/Fossil adacovex recommends
+converting to git.
 
 Full flag details, the `--require-*` CI threshold gates, strict vs relaxed
 mode, exit codes, and the `sbom` subcommand:
@@ -241,6 +253,8 @@ adacovex --target=. --serve --port=9090             # web dashboard
 adacovex --target=. --compare-base=HEAD             # differential assessment
 adacovex sbom --format=cyclonedx-json --target=. --dal=C   # proof-aware SBOM
 adacovex status --target=.                                # toolchain + platform report
+adacovex --version                                   # print the bundled version
+adacovex man                                         # install the man page + mandb
 ```
 
 More examples: [docs/cli-reference.md](docs/cli-reference.md#examples).
@@ -333,7 +347,7 @@ assessment and the artifacts describing it are shared.
 | Target | Description |
 |--------|-------------|
 | `build` | `alr build` (adacovex + test_runner, covex alias) |
-| `test` | Build and run native test suite (501 tests) |
+| `test` | Build and run native test suite (549 tests) |
 | `prove` | `./bin/adacovex prove --target=. --no-svg` |
 | `fmt` | Format Ada sources with `gnatformat` |
 | `doc` | Generate API docs via gnatdoc + rst2md |
@@ -359,7 +373,7 @@ CI gates. Action inputs/outputs, result caching, and release bundling:
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 501/501 passing |
+| Unit tests | `make test` | 549/549 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (401 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, DAL-C (strict mode) |

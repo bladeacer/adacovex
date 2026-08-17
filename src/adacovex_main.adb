@@ -17,6 +17,7 @@ with Adacovex.Compliance.DAL;
 with Adacovex.Renderers.ANSI;
 with Adacovex.Renderers.SVG;
 with Adacovex.Renderers.Markdown;
+with Adacovex.Renderers.Man;
 with Adacovex.Renderers.SBOM;
 with Adacovex.Server.HTTP;
 with Adacovex.Cache;
@@ -128,9 +129,22 @@ procedure Adacovex_Main is
    Success : Boolean;
    Exit_St : Ada.Command_Line.Exit_Status := 0;
 
-   --  Differential mode (--compare-base): assess the target at a git base
-   --  ref and at the current working tree, report the delta, and set the
-   --  exit code to 1 on regression or current DAL failure.
+   --  Print the detected VCS and any UX recommendation for the target so a
+   --  differential run on a legacy VCS is self-explanatory.
+   procedure Report_VCS (Target_Dir : String) is
+      VName : constant String := Adacovex.Diff.Repo_Kind_Name (Target_Dir);
+      Note  : constant String := Adacovex.Diff.UX_Note (Target_Dir);
+   begin
+      Verbose ("vcs: " & (if VName'Length > 0 then VName else "unknown"));
+      if Note'Length > 0 then
+         Ada.Text_IO.Put_Line (Note);
+      end if;
+   end Report_VCS;
+
+   --  Differential mode (--compare-base): assess the target at a base
+   --  revision and at the current working tree, report the delta, and set
+   --  the exit code to 1 on regression or current DAL failure.  Works on
+   --  git, mercurial, subversion, fossil, and jj repositories.
    procedure Run_Diff is
       Base_Ref  : constant String :=
         Cfg.Compare_Base (1 .. Cfg.Compare_Base_Len);
@@ -141,16 +155,18 @@ procedure Adacovex_Main is
       Cur_R     : Adacovex.Diff.Assessment_Result;
       Regressed : Boolean;
    begin
-      if not Adacovex.Diff.Is_Git_Repo (Target (1 .. TLen)) then
+      if not Adacovex.Diff.Is_Repo (Target (1 .. TLen)) then
          Ada.Text_IO.Put_Line
            (Ada.Text_IO.Standard_Error,
             "Error: --compare-base requires "
             & Target (1 .. TLen)
-            & " to be a git repository");
+            & " to be a git, mercurial, subversion, fossil, or jj "
+            & "repository");
          Exit_St := 1;
          return;
       end if;
 
+      Report_VCS (Target (1 .. TLen));
       Adacovex.Diff.Make_Worktree
         (Target (1 .. TLen), Base_Ref, Tmp_Path, Tmp_Len, OK);
       if not OK then
@@ -194,16 +210,18 @@ procedure Adacovex_Main is
       Cur_R     : Adacovex.Diff.Coverage_Result;
       Regressed : Boolean;
    begin
-      if not Adacovex.Diff.Is_Git_Repo (Target (1 .. TLen)) then
+      if not Adacovex.Diff.Is_Repo (Target (1 .. TLen)) then
          Ada.Text_IO.Put_Line
            (Ada.Text_IO.Standard_Error,
             "Error: --coverage-delta requires "
             & Target (1 .. TLen)
-            & " to be a git repository");
+            & " to be a git, mercurial, subversion, fossil, or jj "
+            & "repository");
          Exit_St := 1;
          return;
       end if;
 
+      Report_VCS (Target (1 .. TLen));
       Adacovex.Diff.Make_Worktree
         (Target (1 .. TLen), Base_Ref, Tmp_Path, Tmp_Len, OK);
       if not OK then
@@ -397,6 +415,14 @@ begin
       return;
    end if;
 
+   --  --version: print the bundled version (read from alire-dev.toml;
+   --  release builds bundle the release tag) and exit.
+   if Cfg.Version_Requested then
+      Ada.Text_IO.Put_Line ("adacovex v" & Adacovex.Version);
+      Ada.Command_Line.Set_Exit_Status (0);
+      return;
+   end if;
+
    --  Determine ANSI color support (assume TTY, overridden by NO_COLOR)
    Use_Color := not Ada.Environment_Variables.Exists ("NO_COLOR");
 
@@ -430,6 +456,68 @@ begin
       Verbose ("  patches: .adacovex/patches/ applied");
    else
       Verbose ("  skip list: " & Cfg.Skip_Dirs (1 .. Cfg.Skip_Dir_Ct));
+   end if;
+
+   -- Man mode: install the man page into the local man database (default
+   -- ~/.local/share/man on Linux/WSL, or --dir=PATH) and refresh it with
+   -- mandb.  --check exits 0 when the installed page matches this binary's
+   -- version, 1 when a newer version is available or none is installed.
+   if Cfg.Man_Mode then
+      declare
+         Man_Root : constant String :=
+           (if Cfg.Man_Dir_Len > 0
+            then Cfg.Man_Dir (1 .. Cfg.Man_Dir_Len)
+            else Adacovex.Renderers.Man.Default_Dir);
+         OK       : Boolean;
+      begin
+         if Cfg.Man_Check then
+            declare
+               Installed : constant String :=
+                 Adacovex.Renderers.Man.Installed_Version (Man_Root);
+            begin
+               if Installed = Adacovex.Version then
+                  Ada.Text_IO.Put_Line
+                    ("man page up to date (adacovex v"
+                     & Adacovex.Version
+                     & " at "
+                     & Man_Root
+                     & "/man1/adacovex.1)");
+                  Ada.Command_Line.Set_Exit_Status (0);
+               else
+                  Ada.Text_IO.Put_Line
+                    ("man page out of date: installed "
+                     & (if Installed'Length > 0
+                        then "v" & Installed
+                        else "nothing")
+                     & ", binary v"
+                     & Adacovex.Version
+                     & " (run `adacovex man` to install)");
+                  Ada.Command_Line.Set_Exit_Status (1);
+               end if;
+            end;
+         else
+            Adacovex.Renderers.Man.Install (Man_Root, Adacovex.Version, OK);
+            if OK then
+               Adacovex.Renderers.Man.Update_Database (Man_Root);
+               Ada.Text_IO.Put_Line
+                 ("man page installed: adacovex v"
+                  & Adacovex.Version
+                  & " -> "
+                  & Man_Root
+                  & "/man1/adacovex.1");
+               Ada.Text_IO.Put_Line
+                 ("run 'man adacovex' to read it; `adacovex man --check` "
+                  & "detects newer versions");
+               Ada.Command_Line.Set_Exit_Status (0);
+            else
+               Ada.Text_IO.Put_Line
+                 (Ada.Text_IO.Standard_Error,
+                  "Error: could not install man page to " & Man_Root);
+               Ada.Command_Line.Set_Exit_Status (1);
+            end if;
+         end if;
+      end;
+      return;
    end if;
 
    -- Status mode: report toolchain + platform status and exit (no

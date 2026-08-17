@@ -154,7 +154,7 @@ Total categories: 10 (was 9).
 
 ## Proof Results
 
-Platinum, 401/401 VCs proved across 39 analyzed units (was 343 at 1.9.0). The
+Platinum, 401/401 VCs proved across 44 analyzed units (was 343 at 1.9.0). The
 compliance-standard layer (`Compliance_Standard`, `To_Standard`,
 `Standard_Level_Name`, `Standard_Slug`, `To_ASIL`, `To_Class`) and the SBOM
 `Level_Property` / `All_Standards_Property` helpers added 58 SPARK VCs, all

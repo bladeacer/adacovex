@@ -1,7 +1,8 @@
 # Adacovex.Diff
 
 Differential assessment for --compare-base.
-Assesses a target project at a git base ref (branch or commit) and at its
+Assesses a target project at a base revision (branch/commit/rev/tag in
+git, mercurial, subversion, fossil, or jj -- see Adacovex.VCS) and at its
 current working tree, then reports a side-by-side delta of docstring
 coverage, SPARK proof level, test results, HLR traceability, and DO-178C
 DAL status so local regressions can be caught before pushing.
@@ -64,13 +65,21 @@ end record;
 
 **Returns:** Coverage snapshot (documented/total/percentage).
 
-### function Is_Git_Repo (Target_Dir : Standard.String) return Standard.Boolean
+### function Is_Repo (Target_Dir : Standard.String) return Standard.Boolean
 
 | Parameter | Description |
 |-----------|-------------|
 | `Target_Dir` | Directory to check. |
 
-**Returns:** True if Target_Dir is inside a git work tree.
+**Returns:** True if Target_Dir is inside a supported VCS repository.
+
+### function Repo_Kind_Name (Target_Dir : Standard.String) return Standard.String
+
+| Parameter | Description |
+|-----------|-------------|
+| `Target_Dir` | Directory to check. |
+
+**Returns:** Lowercase VCS name ("" when none is detected).
 
 ### function Report_Coverage_Delta (Base : Adacovex.Diff.Coverage_Result; Cur : Adacovex.Diff.Coverage_Result; Base_Ref : Standard.String; Use_Color : Standard.Boolean) return Standard.Boolean
 
@@ -94,21 +103,29 @@ end record;
 
 **Returns:** True if the current state regressed versus the base.
 
+### function UX_Note (Target_Dir : Standard.String) return Standard.String
+
+| Parameter | Description |
+|-----------|-------------|
+| `Target_Dir` | Directory to check. |
+
+**Returns:** Recommendation text ("" when no note is needed).
+
 ## Procedures
 
 ### procedure Make_Worktree (Target_Dir : Standard.String; Base_Ref : Standard.String; Tmp_Path : Standard.String; Tmp_Len : Standard.Natural; Success : Standard.Boolean)
 
 | Parameter | Description |
 |-----------|-------------|
-| `Base_Ref` | Git branch or commit to check out. |
-| `Success` | True if the worktree was created; False on git failure. |
-| `Target_Dir` | Root of the target git repository. |
-| `Tmp_Len` | Length of the worktree path on success. |
-| `Tmp_Path` | Output buffer receiving the worktree path. |
+| `Base_Ref` | Branch/commit/rev/tag to check out. |
+| `Success` | True if the snapshot was created; False on failure. |
+| `Target_Dir` | Root of the target repository. |
+| `Tmp_Len` | Length of the snapshot path on success. |
+| `Tmp_Path` | Output buffer receiving the snapshot path. |
 
 ### procedure Remove_Worktree (Target_Dir : Standard.String; Tmp_Path : Standard.String)
 
 | Parameter | Description |
 |-----------|-------------|
-| `Target_Dir` | Root of the target git repository. |
-| `Tmp_Path` | Path of the worktree to remove. |
+| `Target_Dir` | Root of the target repository. |
+| `Tmp_Path` | Path of the snapshot to remove. |

@@ -43,6 +43,11 @@ package Adacovex.Config is
 
       CLI_Error          : Boolean := False;
       Help_Requested     : Boolean := False;
+      Version_Requested  : Boolean := False;
+      Man_Mode           : Boolean := False;
+      Man_Check          : Boolean := False;
+      Man_Dir            : String (1 .. Types.Max_Path);
+      Man_Dir_Len        : Natural := 0;
       Skip_Dir_Ct        : Natural := 0;
       Skip_Dirs          : Types.Name_Field;
       Compare_Base       : String (1 .. Types.Max_Path);
@@ -104,6 +109,7 @@ package Adacovex.Config is
        and then Parse_CLI'Result.Compare_Base_Len <= Types.Max_Path
        and then Parse_CLI'Result.Coverage_Delta_Len <= Types.Max_Path
        and then Parse_CLI'Result.SBOM_Out_Len <= Types.Max_Path
+       and then Parse_CLI'Result.Man_Dir_Len <= Types.Max_Path
        and then Parse_CLI'Result.Prove_Jobs in -1 .. 1024
        and then Parse_CLI'Result.Prove_Level in -1 .. 4
        and then Parse_CLI'Result.Prove_Timeout in -1 .. 3600

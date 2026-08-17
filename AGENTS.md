@@ -23,7 +23,7 @@ Self-assessment (`make run-self`) must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
 - Platinum SPARK level (401 VCs under gnatprove 16.1.0, 0 unproved; see
   `docs/proof/16.1.0-ledger.md`)
-- 501/501 native tests passing
+- 549/549 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
   `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
@@ -34,6 +34,7 @@ Self-assessment (`make run-self`) must always show:
 src/
 |-- adacovex.ads                              -- Version constant
 |-- adacovex_main.adb                         -- CLI entry point (builds as bin/adacovex; covex alias)
+|-- adacovex_version_info.ads                 -- Generated version constant (from alire-dev.toml / ADACOVEX_VERSION)
 |-- compliance/
 |   |-- adacovex-compliance.ads               -- Parent package for DO-178C compliance assessment
 |   `-- adacovex-compliance-dal.ads/.adb      -- DAL level assessment logic (DAL-A..E criteria)
@@ -44,7 +45,8 @@ src/
 |   |-- adacovex-cpus.ads/.adb                -- Host CPU/CI detection + GNATprove parallelism resolution
 |   |-- adacovex-diff.ads/.adb                -- Differential assessment (--compare-base / --coverage-delta)
 |   |-- adacovex-prove.ads/.adb               -- GNATprove runner for the `prove` subcommand (alire-first toolchain resolution)
-|   `-- adacovex-types.ads/.adb               -- All domain types + conversion functions
+|   |-- adacovex-types.ads/.adb               -- All domain types + conversion functions
+|   `-- adacovex-vcs.ads/.adb                 -- VCS abstraction (git/hg/svn/fossil/jj detection + base snapshots)
 |-- ir/
 |   |-- adacovex-ir_bounds.ads/.adb           -- Bounds-verification fixture (synthesized lowered types, gnatprove-proved)
 |   |-- adacovex-ir_synthesiser.ads/.adb      -- Future-use IR synthesiser (foreign type-name lowering to bounded Ada)
@@ -60,6 +62,7 @@ src/
 |   |-- adacovex-renderers.ads                -- Parent package for all output renderers
 |   |-- adacovex-renderers-ansi.ads/.adb      -- Terminal ANSI report (NO_COLOR aware)
 |   |-- adacovex-renderers-html.ads/.adb      -- Web dashboard + JSON API
+|   |-- adacovex-renderers-man.ads/.adb       -- Man-page renderer + installer (local man db, Linux/WSL)
 |   |-- adacovex-renderers-markdown.ads/.adb  -- VERIFICATION.md + TRACE.md
 |   |-- adacovex-renderers-sbom.ads/.adb      -- CycloneDX 1.5 / SPDX 2.3 / Markdown SBOM generator
 |   `-- adacovex-renderers-svg.ads/.adb       -- SVG badges (spark/tests/do178c/docs)
@@ -69,9 +72,10 @@ src/
 |   `-- adacovex-server-router.ads            -- Parent package for HTTP request routing (future expansion)
 `-- tests/
     |-- adacovex-test_support.ads/.adb        -- Native test Runner type
-    |-- adacovex_config_tests.ads/.adb        -- CLI config tests (64)
+    |-- adacovex_config_tests.ads/.adb        -- CLI config tests (75)
     |-- adacovex_dal_tests.ads/.adb           -- DAL compliance tests (11)
     |-- adacovex_ir_tests.ads/.adb            -- IR synthesis tests (27)
+    |-- adacovex_man_tests.ads/.adb           -- Man page renderer tests (14)
     |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (64)
     |-- adacovex_renderer_svg_tests.ads/.adb  -- SVG renderer tests (36)
     |-- adacovex_renderer_tests.ads/.adb      -- HTML/Markdown renderer tests (17)
@@ -79,7 +83,8 @@ src/
     |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (83)
     |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (43)
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (67)
-    `-- test_runner.adb                       -- Test suite entry point (501 tests)
+    |-- adacovex_vcs_tests.ads/.adb           -- VCS support tests (23)
+    `-- test_runner.adb                       -- Test suite entry point (549 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -101,6 +106,7 @@ adacovex [options]
 adacovex sbom [--format=cyclonedx-json|spdx-json] [--out=PATH]
 adacovex prove [--target=PATH] [prove options]
 adacovex status [--target=PATH]
+adacovex man [--check] [--dir=PATH]
 ```
 
 Full flag reference, detailed behavior, CI threshold gates (`--require-*`),
@@ -112,11 +118,40 @@ exit codes, the `sbom` subcommand, the per-standard level flags
 gnatprove dependency-managed/detectable, CPU count, CI status) without running
 an assessment or downloading anything: [docs/platforms.md](docs/platforms.md#status-subcommand).
 
+`adacovex --version` prints the bundled version and exits. The version is
+*read from `alire/alire-dev.toml`* at build time (tools/gen-version.py
+regenerates `src/adacovex_version_info.ads`); release builds bundle the release
+tag via `ADACOVEX_VERSION`, so the shipped binary always reports the tag it
+was built from.
+
+`adacovex man` installs the man page into the local man database
+(`~/.local/share/man`, Linux/WSL; `--dir=PATH` overrides) and refreshes it with
+`mandb`. The page embeds the version, and `adacovex man --check` exits 0 when
+the installed page matches the binary (1 when a newer version is available or
+none is installed) -- so a shell prompt hook can auto-update the man page when
+the machine detects a newer version.
+
+## VCS support (Linux/WSL)
+
+adacovex runs on **Linux and WSL**. The differential modes (`--compare-base` /
+`--coverage-delta`) snapshot a base revision without touching the working tree
+across **git, Mercurial, Subversion, Fossil, and jj** (legacy codebases often
+live in legacy VCS): git `worktree add`, hg `archive`, svn `export`, fossil
+`open` on a copied DB, and jj via its internal git store. Detection is
+marker-file based (`.git` / `.jj` / `.hg` / `.svn` / `.fslckout` / `_FOSSIL_`)
+with a command-probe fallback. For VCS whose snapshot UX is poor (Subversion:
+no local history, network-dependent; Fossil: niche tooling) adacovex prints a
+note recommending the developers **convert the repo to git** (or a
+git-compatible VCS) for the best experience. See
+[docs/cli-reference.md](docs/cli-reference.md#vcs-support).
+
 ## Pipeline
 
 Execution order: parse CLI -> scan -> patch -> doc metrics -> proof parse ->
 test parse -> DAL assess -> render -> SVG/Markdown/SBOM -> serve -> exit code.
 Step details: [docs/architecture.md](docs/architecture.md#pipeline-execution-order).
+Early-exit modes run before the pipeline: `--help`, `--version`, `man`
+(install/check the man page), `status`, differential modes, and `sbom`.
 
 ## Key constraints
 
@@ -145,8 +180,9 @@ proof-status`, and `make doc-links`.
 
 | Target | Description |
 |--------|-------------|
-| `build` | `alr build` (adacovex + test_runner, covex alias) |
-| `test` | Build + run the 501-test native suite |
+| `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
+| `man` | Install the man page into the local man database + refresh mandb |
+| `test` | Build + run the 549-test native suite |
 | `prove` | `./bin/adacovex prove --target=. --no-svg` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
 | `fmt` | Format Ada sources (gnatformat) |
@@ -166,8 +202,10 @@ proof-status`, and `make doc-links`.
 
 Running `alr build` / `make build` / `make test` / `make run-self` rewrites a
 few generated files as a normal side effect: `alire/settings.toml` and
-`alire/build_hash_inputs` (Alire build-profile state) and `sbom.json` (SBOM
-output). These are expected and should be left as-is -- do not revert them.
+`alire/build_hash_inputs` (Alire build-profile state), `sbom.json` (SBOM
+output), and `src/adacovex_version_info.ads` (regenerated from
+`alire-dev.toml`; byte-identical when the version did not change). These are
+expected and should be left as-is -- do not revert them.
 
 ## Workflows
 
@@ -179,6 +217,16 @@ Installation methods, target-project requirements, and running against another
 project: [README.md](README.md#installing-adacovex).
 
 ### GitHub Action = base-CLI feature parity
+
+Every CI run (the composite action and the `ci.yml` / `pr-check.yml` /
+`release.yml` workflows) publishes a **Markdown summary** at the bottom of the
+job page via `$GITHUB_STEP_SUMMARY`: the action appends an assessment table
+(version, target, compliance, SPARK level, tests, coverage) plus an
+`always()` run-summary step, and each workflow adds a `summary` job that
+aggregates every job result. **Threshold failures fail loudly**: unmet
+`--require-*` gates surface as `::error::` annotations, the assessment step
+exits non-zero, the summary shows the unmet gates, and the workflow summary
+job exits 1 when any job failed.
 
 The composite action (`./action.yml`) mirrors the base CLI option set so CI
 can drive every assessment feature the same way the binary does. The action
@@ -202,7 +250,7 @@ tests, and the release-tag coverage gate instead.
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 501/501 passing |
+| Unit tests | `make test` | 549/549 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (401 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -216,7 +264,7 @@ rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 501 tests across 10 categories).
+Native zero-dependency suite (`src/tests/`, 549 tests across 12 categories).
 Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests).
 

@@ -1,7 +1,8 @@
 with Adacovex.Types;
 
 --  Differential assessment for --compare-base.
---  Assesses a target project at a git base ref (branch or commit) and at its
+--  Assesses a target project at a base revision (branch/commit/rev/tag in
+--  git, mercurial, subversion, fossil, or jj -- see Adacovex.VCS) and at its
 --  current working tree, then reports a side-by-side delta of docstring
 --  coverage, SPARK proof level, test results, HLR traceability, and DO-178C
 --  DAL status so local regressions can be caught before pushing.
@@ -62,20 +63,35 @@ package Adacovex.Diff is
    --  @return Coverage snapshot (documented/total/percentage).
    function Assess_Coverage (Target_Dir : String) return Coverage_Result;
 
-   --  Check that a directory is a git repository work tree.
-   --  Runs `git -C Target_Dir rev-parse --is-inside-work-tree`.
+   --  Check that a directory is managed by a supported VCS (git, mercurial,
+   --  subversion, fossil, or jj).  Marker-file detection with a command-tool
+   --  probe fallback; see Adacovex.VCS.Detect.
    --  @param Target_Dir  Directory to check.
-   --  @return True if Target_Dir is inside a git work tree.
-   function Is_Git_Repo (Target_Dir : String) return Boolean;
+   --  @return True if Target_Dir is inside a supported VCS repository.
+   function Is_Repo (Target_Dir : String) return Boolean;
 
-   --  Create a detached git worktree of Base_Ref for the target repository.
-   --  Runs `git -C Target_Dir worktree add --detach Tmp_Path Base_Ref` where
-   --  Tmp_Path is a unique path under the system temporary directory.
-   --  @param Target_Dir  Root of the target git repository.
-   --  @param Base_Ref  Git branch or commit to check out.
-   --  @param Tmp_Path  Output buffer receiving the worktree path.
-   --  @param Tmp_Len  Length of the worktree path on success.
-   --  @param Success  True if the worktree was created; False on git failure.
+   --  Human-readable name of the VCS managing Target_Dir ("git",
+   --  "mercurial", "subversion", "fossil", "jj", or "" when unknown).
+   --  @param Target_Dir  Directory to check.
+   --  @return Lowercase VCS name ("" when none is detected).
+   function Repo_Kind_Name (Target_Dir : String) return String;
+
+   --  UX guidance for the VCS managing Target_Dir: "" for a fully supported
+   --  VCS; for legacy VCS with poor snapshot UX (subversion, fossil) a note
+   --  recommending conversion to git (or a git-compatible VCS).
+   --  @param Target_Dir  Directory to check.
+   --  @return Recommendation text ("" when no note is needed).
+   function UX_Note (Target_Dir : String) return String;
+
+   --  Snapshot Base_Ref of the target repository into a temporary directory
+   --  (Tmp_Path, /tmp/adacovex-diff-<pid>) without touching the working
+   --  tree.  Dispatches per VCS: git worktree add, hg archive, svn export,
+   --  fossil open on a copied DB, or a git worktree against the jj store.
+   --  @param Target_Dir  Root of the target repository.
+   --  @param Base_Ref  Branch/commit/rev/tag to check out.
+   --  @param Tmp_Path  Output buffer receiving the snapshot path.
+   --  @param Tmp_Len  Length of the snapshot path on success.
+   --  @param Success  True if the snapshot was created; False on failure.
    procedure Make_Worktree
      (Target_Dir : String;
       Base_Ref   : String;
@@ -83,11 +99,11 @@ package Adacovex.Diff is
       Tmp_Len    : out Natural;
       Success    : out Boolean);
 
-   --  Remove a worktree created by Make_Worktree.
-   --  Runs `git -C Target_Dir worktree remove --force Tmp_Path`. Best effort;
-   --  failures are ignored (e.g. cleaning up a path that was never registered).
-   --  @param Target_Dir  Root of the target git repository.
-   --  @param Tmp_Path  Path of the worktree to remove.
+   --  Remove a snapshot created by Make_Worktree.
+   --  Deregisters VCS worktrees (git/jj) and deletes the directory. Best
+   --  effort; failures are ignored (e.g. a path that was never registered).
+   --  @param Target_Dir  Root of the target repository.
+   --  @param Tmp_Path  Path of the snapshot to remove.
    procedure Remove_Worktree (Target_Dir : String; Tmp_Path : String);
 
    --  Print a side-by-side delta report of the two assessments.
