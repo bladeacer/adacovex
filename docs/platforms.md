@@ -75,10 +75,15 @@ It checks and prints:
   `~/.adacovex/toolchain`);
 - the **logical CPU count**, **CI status**, and the resulting default
   `-j` parallelism;
+- a **VCS report**: which VCS command-line tools are available on `$PATH`
+  for the differential modes (git, mercurial/`hg`, subversion/`svn`,
+  fossil, jj, and the man-page tool `mandb`), the VCS detected for the
+  target repository, and a note when the target's VCS tool is missing;
 - the release-note that the CI binary is Linux x86-64 only.
 
 Exit code `0` when a usable gnatprove is detectable without a download (and
 `alr` is present whenever the deploy path is the only option), `1` otherwise.
+The VCS report is informational and does not affect the exit code.
 
 ## Local man page (Linux/WSL)
 

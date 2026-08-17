@@ -220,7 +220,7 @@ def main() -> int:
         ROOT / ".github" / "workflows" / "release.yml",
         ROOT / "docs" / "cli-reference.md",
         ROOT / "docs/proof/16.1.0-ledger.md",
-        ROOT / "docs/changelogs/adacovex-1.10.0.md",
+        ROOT / "docs/changelogs/adacovex-1.11.0.md",
     ]
 
     if args.dry_run:

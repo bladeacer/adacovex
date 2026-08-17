@@ -151,4 +151,4 @@ Native (zero-dependency) framework (`Adacovex.Test_Support`, no AUnit). Source:
 | HTML/Markdown renderers | 17 |
 | SBOM generator | 89 |
 | IR synthesis | 27 |
-| **Total** | **549** |
+| **Total** | **555** |

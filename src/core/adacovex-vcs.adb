@@ -112,6 +112,52 @@ package body Adacovex.VCS is
       return "";
    end First_Line;
 
+   --  Value of the first "Keyword: value" line in the captured output
+   --  (e.g. svn's "URL: ..." or fossil's "repository: ..."), or "" when the
+   --  keyword is absent.  The value runs to the end of the line.
+   function Field_Value
+     (Buf : String; BLen : Natural; Keyword : String) return String
+   is
+      Stop : constant Natural := Buf'First + BLen - 1;
+
+      function Match_At (I : Natural) return Boolean is
+      begin
+         if I + Keyword'Length - 1 > Stop then
+            return False;
+         end if;
+         for J in Keyword'Range loop
+            if Buf (I + (J - Keyword'First)) /= Keyword (J) then
+               return False;
+            end if;
+         end loop;
+         return True;
+      end Match_At;
+   begin
+      if BLen = 0 then
+         return "";
+      end if;
+      for I in Buf'First .. Stop loop
+         if Match_At (I) then
+            declare
+               St : Natural := I + Keyword'Length;
+               En : Natural := St;
+            begin
+               while En <= Stop and then Buf (En) = ' ' loop
+                  En := En + 1;
+               end loop;
+               St := En;
+               while En <= Stop and then Buf (En) /= ASCII.LF loop
+                  En := En + 1;
+               end loop;
+               if En > St then
+                  return Buf (St .. En - 1);
+               end if;
+            end;
+         end if;
+      end loop;
+      return "";
+   end Field_Value;
+
    function Exists (P : String) return Boolean is
    begin
       return Ada.Directories.Exists (P);
@@ -166,30 +212,29 @@ package body Adacovex.VCS is
    function Is_Managed (Target_Dir : String) return Boolean is
    begin
       return Detect (Target_Dir) /= Unknown;
-   end Is_Managed;
-
-   function To_String (Kind : VCS_Kind) return String is
+   end Is_Managed;   function To_String (Kind : VCS_Kind) return String is
    begin
       case Kind is
-         when Git        =>
-            return "git";
-
-         when Mercurial  =>
-            return "mercurial";
-
-         when Subversion =>
-            return "subversion";
-
-         when Fossil     =>
-            return "fossil";
-
-         when Jujutsu    =>
-            return "jj";
-
-         when Unknown    =>
-            return "";
+         when Git        => return "git";
+         when Mercurial  => return "mercurial";
+         when Subversion => return "subversion";
+         when Fossil     => return "fossil";
+         when Jujutsu    => return "jj";
+         when Unknown    => return "";
       end case;
    end To_String;
+
+   function Tool_Name (Kind : VCS_Kind) return String is
+   begin
+      case Kind is
+         when Git        => return "git";
+         when Mercurial  => return "hg";
+         when Subversion => return "svn";
+         when Fossil     => return "fossil";
+         when Jujutsu    => return "jj";
+         when Unknown    => return "";
+      end case;
+   end Tool_Name;
 
    function UX_Note (Kind : VCS_Kind) return String is
    begin
@@ -256,17 +301,21 @@ package body Adacovex.VCS is
                return L;
             end if;
          end;
+      end if;      --  jj templates changed syntax across versions: 0.44+ wants the bare
+      --  keyword (`-T commit_id`), older jj wants the braced form
+      --  (`-T '{commit_id}'`).  Try the new form first, then the legacy one
+      --  so both jj generations resolve change ids.
+      Run_Capture
+        ("jj -R '" & Target_Dir & "' log -r '" & Base_Ref
+         & "' --no-graph -T commit_id",
+         Buf, BLen, Code, OK);
+      if OK and then Code = 0 and then BLen > 0 then
+         return First_Line (Buf, BLen);
       end if;
       Run_Capture
-        ("jj -R '"
-         & Target_Dir
-         & "' log -r '"
-         & Base_Ref
+        ("jj -R '" & Target_Dir & "' log -r '" & Base_Ref
          & "' --no-graph -T '{commit_id}'",
-         Buf,
-         BLen,
-         Code,
-         OK);
+         Buf, BLen, Code, OK);
       if OK and then Code = 0 and then BLen > 0 then
          return First_Line (Buf, BLen);
       end if;
@@ -362,34 +411,14 @@ package body Adacovex.VCS is
                Run_Capture ("svn info '" & Target_Dir & "'", Buf, BLen, C, OK);
                if OK and then C = 0 then
                   declare
-                     L  : String (1 .. Max_Capture) := (others => ' ');
-                     LL : Natural := 0;
+                     V : constant String := Field_Value (Buf, BLen, "URL:");
                   begin
-                     for I in 1 .. BLen loop
-                        if LL < L'Last then
-                           LL := LL + 1;
-                           L (LL) := Buf (Buf'First + I - 1);
-                        end if;
-                     end loop;
-                     for I in 1 .. LL - 5 loop
-                        if L (I .. I + 4) = "URL: " then
-                           declare
-                              St : constant Natural := I + 5;
-                              En : Natural := St;
-                           begin
-                              while En <= LL and then L (En) /= ASCII.LF loop
-                                 En := En + 1;
-                              end loop;
-                              if En > St then
-                                 ULen := En - St;
-                                 for J in St .. En - 1 loop
-                                    URL (J - St + 1) := L (J);
-                                 end loop;
-                              end if;
-                           end;
-                           exit;
-                        end if;
-                     end loop;
+                     if V'Length > 0 and then V'Length <= URL'Last then
+                        ULen := V'Length;
+                        for I in 1 .. V'Length loop
+                           URL (I) := V (V'First + I - 1);
+                        end loop;
+                     end if;
                   end;
                end if;
             end if;
@@ -397,48 +426,32 @@ package body Adacovex.VCS is
                Success := False;
                return;
             end if;
-            Run_Cmd
-              ("svn export -r '"
-               & Base_Ref
-               & "' '"
-               & URL (1 .. ULen)
-               & "' '"
-               & Tmp
-               & "'",
-               "/dev/null",
-               S,
-               C);
-            Success := S and then C = 0;
-
-         when Fossil     =>
+            Run_Cmd ("svn export -r '" & Base_Ref & "' '"
+                     & URL (1 .. ULen) & "' '" & Tmp & "'",
+                     "/dev/null", S, C);
+            Success := S and then C = 0;         when Fossil =>
             Remove_Dir (Tmp);
+            --  The `.fslckout` file in a checkout is only a checkout-local
+            --  DB without the project history, so ask fossil for the real
+            --  repository database path and copy that instead.
+            Run_Capture
+              ("cd '" & Target_Dir & "' && fossil info", Buf, BLen, C, OK);
             declare
                Fossil_DB : constant String :=
-                 (if Exists (Target_Dir & "/.fslckout")
-                  then Target_Dir & "/.fslckout"
-                  elsif Exists (Target_Dir & "/_FOSSIL_")
-                  then Target_Dir & "/_FOSSIL_"
+                 (if OK and then C = 0
+                  then Field_Value (Buf, BLen, "repository:")
                   else "");
             begin
                if Fossil_DB'Length = 0 then
                   Success := False;
                   return;
                end if;
-               Run_Cmd
-                 ("mkdir -p '"
-                  & Tmp
-                  & "' && cp '"
-                  & Fossil_DB
-                  & "' '"
-                  & Tmp
-                  & "/repo.fossil' && cd '"
-                  & Tmp
-                  & "' && fossil open 'repo.fossil' '"
-                  & Base_Ref
-                  & "'",
-                  "/dev/null",
-                  S,
-                  C);
+               Run_Cmd ("mkdir -p '" & Tmp & "' && cp '" & Fossil_DB
+                        & "' '" & Tmp
+                        & "/repo.fossil' && cd '" & Tmp
+                        & "' && fossil open 'repo.fossil' '" & Base_Ref
+                        & "'",
+                        "/dev/null", S, C);
                Success := S and then C = 0;
             end;
 
@@ -484,6 +497,10 @@ package body Adacovex.VCS is
 
       if not Success then
          Tmp_Len := 0;
+         --  Best-effort cleanup of a partial snapshot so a failed run never
+         --  leaks a stale directory under /tmp (git worktree registrations
+         --  from a partial add are dropped by the next run's remove --force).
+         Remove_Dir (Tmp);
       end if;
    end Make_Snapshot;
 

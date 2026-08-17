@@ -11,7 +11,7 @@
   | SBOM generator                           |  89 | PASS     |
   | IR synthesis                             |  27 | PASS     |
   | Man page renderer                        |  14 | PASS     |
-  | VCS support                              |  23 | PASS     |
+  | VCS support                              |  29 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 549  Failed: 0
+  Passed: 555  Failed: 0

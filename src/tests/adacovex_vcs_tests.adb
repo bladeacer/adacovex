@@ -41,6 +41,14 @@ package body Adacovex_VCS_Tests is
       R.Check (To_String (Jujutsu) = "jj", "jj display name");
       R.Check (To_String (Unknown) = "", "unknown display name is empty");
 
+      --  Command-line tool binaries.
+      R.Check (Tool_Name (Git) = "git", "git tool binary");
+      R.Check (Tool_Name (Mercurial) = "hg", "mercurial tool binary");
+      R.Check (Tool_Name (Subversion) = "svn", "subversion tool binary");
+      R.Check (Tool_Name (Fossil) = "fossil", "fossil tool binary");
+      R.Check (Tool_Name (Jujutsu) = "jj", "jj tool binary");
+      R.Check (Tool_Name (Unknown) = "", "unknown tool binary is empty");
+
       --  UX guidance: git/mercurial/jj are fully supported (no note);
       --  subversion and fossil recommend converting to git.
       R.Check (UX_Note (Git) = "", "git needs no UX note");

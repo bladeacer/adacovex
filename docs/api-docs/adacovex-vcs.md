@@ -55,6 +55,14 @@ type VCS_Kind is (Unknown, Git, Mercurial, Subversion, Fossil, Jujutsu);
 
 **Returns:** Lowercase display name ("" for Unknown).
 
+### function Tool_Name (Kind : Adacovex.VCS.VCS_Kind) return Standard.String
+
+| Parameter | Description |
+|-----------|-------------|
+| `Kind` | VCS kind. |
+
+**Returns:** Tool binary name ("" for Unknown).
+
 ### function UX_Note (Kind : Adacovex.VCS.VCS_Kind) return Standard.String
 
 | Parameter | Description |

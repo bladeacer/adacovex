@@ -6,6 +6,7 @@ with GNAT.OS_Lib;
 with Adacovex;
 with Adacovex.CPUs;
 with Adacovex.Cache;
+with Adacovex.VCS;
 
 package body Adacovex.Prove is
 
@@ -1048,6 +1049,23 @@ package body Adacovex.Prove is
       end if;
    end Run_Prove;
 
+   --  Report the availability of a VCS command-line tool on PATH (used by
+   --  Run_Status's vcs section): "found (/path)" or "not found".
+   procedure Status_VCS_Row (Label : String; Tool : String) is
+      Exe : String_Access := Locate_Exec_On_Path (Tool);
+   begin
+      if Exe /= null then
+         Ada.Text_IO.Put_Line
+           ("    " & Label & (1 .. (19 - Label'Length) => ' ')
+            & "found (" & Exe.all & ")");
+         Free (Exe);
+      else
+         Ada.Text_IO.Put_Line
+           ("    " & Label & (1 .. (19 - Label'Length) => ' ')
+            & "not found");
+      end if;
+   end Status_VCS_Row;
+
    procedure Run_Status (Target_Dir : String; Success : out Boolean) is
       T           : constant String := Strip_Trailing_Slash (Target_Dir);
       Alr         : String_Access := Locate_Exec_On_Path ("alr");
@@ -1130,6 +1148,43 @@ package body Adacovex.Prove is
       Row
         ("    prove -j default:  ",
          Adacovex.CPUs.Jobs_Justification (-1, Cores, In_CI));
+
+      --  VCS support: which VCS tools are available for the differential
+      --  modes (--compare-base / --coverage-delta), the VCS managing the
+      --  target repo, and a warning when the target's VCS tool is missing.
+      Ada.Text_IO.Put_Line ("  vcs:");
+      Status_VCS_Row ("git", "git");
+      Status_VCS_Row ("mercurial", "hg");
+      Status_VCS_Row ("subversion", "svn");
+      Status_VCS_Row ("fossil", "fossil");
+      Status_VCS_Row ("jj", "jj");
+      Status_VCS_Row ("man page tool", "mandb");
+      declare
+         Kind  : constant Adacovex.VCS.VCS_Kind := Adacovex.VCS.Detect (T);
+         KName : constant String := Adacovex.VCS.To_String (Kind);
+         Need  : constant String := Adacovex.VCS.Tool_Name (Kind);
+      begin
+         Row
+           ("    target repo:       ",
+            (if KName'Length > 0 then KName else "none detected"));
+         if KName'Length > 0 and then Need'Length > 0 then
+            declare
+               Exe : String_Access := Locate_Exec_On_Path (Need);
+            begin
+               if Exe = null then
+                  Ada.Text_IO.Put_Line
+                    ("    note: '" & Need & "' is not on PATH; differential");
+                  Ada.Text_IO.Put_Line
+                    ("          modes (--compare-base / --coverage-delta)");
+                  Ada.Text_IO.Put_Line
+                    ("          need it to snapshot base revisions.");
+               end if;
+               if Exe /= null then
+                  Free (Exe);
+               end if;
+            end;
+         end if;
+      end;
 
       Ada.Text_IO.Put_Line
         ("  release note: CI release binary is Linux x86-64 only for now");
