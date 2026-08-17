@@ -23,7 +23,7 @@ Self-assessment (`make run-self`) must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
 - Platinum SPARK level (401 VCs under gnatprove 16.1.0, 0 unproved; see
   `docs/proof/16.1.0-ledger.md`)
-- 549/549 native tests passing
+- 555/555 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
   `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
@@ -83,8 +83,8 @@ src/
     |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (83)
     |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (43)
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (67)
-    |-- adacovex_vcs_tests.ads/.adb           -- VCS support tests (23)
-    `-- test_runner.adb                       -- Test suite entry point (549 tests)
+    |-- adacovex_vcs_tests.ads/.adb           -- VCS support tests (29)
+    `-- test_runner.adb                       -- Test suite entry point (555 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -115,8 +115,10 @@ exit codes, the `sbom` subcommand, the per-standard level flags
 `--standard=all`): [docs/cli-reference.md](docs/cli-reference.md).
 
 `adacovex status` reports toolchain + platform state (Alire installed,
-gnatprove dependency-managed/detectable, CPU count, CI status) without running
-an assessment or downloading anything: [docs/platforms.md](docs/platforms.md#status-subcommand).
+gnatprove dependency-managed/detectable, CPU count, CI status, and which VCS
+tools -- git/hg/svn/fossil/jj/mandb -- are available for the differential
+modes plus the target's detected VCS) without running an assessment or
+downloading anything: [docs/platforms.md](docs/platforms.md#status-subcommand).
 
 `adacovex --version` prints the bundled version and exits. The version is
 *read from `alire/alire-dev.toml`* at build time (tools/gen-version.py
@@ -182,7 +184,7 @@ proof-status`, and `make doc-links`.
 |--------|-------------|
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb |
-| `test` | Build + run the 549-test native suite |
+| `test` | Build + run the 555-test native suite |
 | `prove` | `./bin/adacovex prove --target=. --no-svg` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
 | `fmt` | Format Ada sources (gnatformat) |
@@ -250,7 +252,7 @@ tests, and the release-tag coverage gate instead.
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 549/549 passing |
+| Unit tests | `make test` | 555/555 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (401 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -264,7 +266,7 @@ rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 549 tests across 12 categories).
+Native zero-dependency suite (`src/tests/`, 555 tests across 12 categories).
 Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests).
 

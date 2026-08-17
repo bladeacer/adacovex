@@ -39,6 +39,14 @@ package Adacovex.VCS is
    --  @return Lowercase display name ("" for Unknown).
    function To_String (Kind : VCS_Kind) return String;
 
+   --  Command-line tool binary that drives a VCS kind ("git", "hg",
+   --  "svn", "fossil", "jj"), or "" for Unknown.  `adacovex status` uses it
+   --  to report which VCS tools are available on PATH for the differential
+   --  modes.
+   --  @param Kind  VCS kind.
+   --  @return Tool binary name ("" for Unknown).
+   function Tool_Name (Kind : VCS_Kind) return String;
+
    --  UX guidance for a VCS kind: "" for a fully supported VCS; for legacy
    --  VCS whose snapshot UX is poor (Subversion: no local history, network-
    --  dependent; Fossil: niche tooling), a note recommending the developers

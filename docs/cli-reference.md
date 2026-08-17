@@ -116,10 +116,16 @@ running an assessment and without downloading or deploying anything:
   (global pin, on `$PATH`, or cached in `~/.adacovex/toolchain`);
 - the host logical-CPU count, CI status, and resulting default `-j`
   parallelism;
+- a **VCS report**: which VCS command-line tools are on `$PATH` for the
+  differential modes (git, mercurial/`hg`, subversion/`svn`, fossil, jj, and
+  the man-page tool `mandb`), the VCS detected for the target repository
+  (see [VCS support](#vcs-support)), and a note when the target's VCS tool
+  is missing;
 - the release-note that the CI binary is Linux x86-64 only.
 
 Exit `0` when a usable gnatprove is detectable without a download (and `alr`
-is present whenever the deploy path is the only option), `1` otherwise. See
+is present whenever the deploy path is the only option), `1` otherwise. The
+VCS report is informational and does not affect the exit code. See
 [Platforms](platforms.md#status-subcommand).
 
 ### `--serve`
@@ -286,7 +292,7 @@ target does not meet the required level:
 
 ```bash
 adacovex --target=. --require-spark=Platinum --require-docstrings=100 \
-         --require-tests=549 --require-proof=100
+         --require-tests=555 --require-proof=100
 ```
 
 - `require-spark` compares the honest assessed SPARK level (Stone..Platinum).
