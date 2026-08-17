@@ -2,6 +2,8 @@
 
 Date: _2026-07-30_
 
+Version bumped 1.0.0 -> 1.1.0.
+
 ## Fixes
 
 ### H1: Generic keyword bounds not matching single-line declarations
@@ -41,7 +43,7 @@ values (practically unlikely but technically incorrect).
 **Fix:** Removed `and Pos > 1` condition; loop now exits when `R = 0`.
 Return slice adjusted from `Buf (Pos + 1 .. 10)` to `Buf (Pos .. 10)`.
 
-### M1: Unsynchronized `Running` flag across server tasks
+### H4: Unsynchronized `Running` flag across server tasks
 
 The `Running` field in `Server_State` was read/written by 5 tasks (1 main
 + 4 workers) without synchronization. On weakly-ordered architectures,
@@ -54,7 +56,7 @@ writes may never become visible to other tasks.
 `Boolean with Atomic` variable in `Start`, ensuring proper visibility
 across tasks.
 
-### M2: `Read_Request_Line` buffer overread on long request lines
+### H5: `Read_Request_Line` buffer overread on long request lines
 
 When 4096 bytes filled the buffer without a CRLF terminator, the last
 two received bytes were silently discarded. The returned string could
@@ -65,7 +67,7 @@ contain trailing undefined buffer content.
 **Fix:** Added `or else Last >= Buffer'Length` guard, returning `""` on
 buffer-full without CRLF to signal a malformed request.
 
-### M4: `Start_Search` / `End_Search` unprotected against exceptions
+### H6: `Start_Search` / `End_Search` unprotected against exceptions
 
 `Ada.Directories.Search_Type` handles could leak if `Get_Next_Entry`
 raised (e.g., on corrupted directory entries).
@@ -75,7 +77,7 @@ raised (e.g., on corrupted directory entries).
 **Fix:** Wrapped `Start_Search` .. `End_Search` in a `begin exception
 when others => End_Search (Search); raise; end;` block.
 
-### L1: `Natural'Image` leading spaces in user-facing output
+### H7: `Natural'Image` leading spaces in user-facing output
 
 `Natural'Image` and `Integer'Image` in Ada prepend a space for non-negative
 values, producing ugly output like `"  found  19 packages"` and `<td> 19</td>`.
@@ -86,7 +88,7 @@ values, producing ugly output like `"  found  19 packages"` and `<td> 19</td>`.
 Applied to `adacovex_main.adb` (terminal output) and
 `adacovex-renderers-html.adb` (dashboard HTML).
 
-### L2: `HLR-` false match inside larger words
+### H8: `HLR-` false match inside larger words
 
 `Has_HLR_Tag` matched "HLR-" anywhere in a comment, including inside
 larger words like `SUBHLR-SCAN`, producing false HLR tag detections.
@@ -97,7 +99,7 @@ requirements.
 **Fix:** Added word-boundary check: skip `H` if preceded by an uppercase
 letter.
 
-### L5: Removed dead code `Parse_Test_Stdout`
+### H9: Removed dead code `Parse_Test_Stdout`
 
 The stub procedure `Parse_Test_Stdout` in `adacovex-parsers-tests` was
 never called and served no purpose.
@@ -106,7 +108,7 @@ never called and served no purpose.
 
 **Fix:** Removed the specification and implementation.
 
-### L8: `Close(F)` not inside exception protection after read loop
+### H10: `Close(F)` not inside exception protection after read loop
 
 In `Scan_Ads_File`, `Flush_Pending` and `Close(F)` were outside the
 exception-protected block. If `Flush_Pending` somehow raised, the file
@@ -115,7 +117,18 @@ handle would leak.
 **Fix:** Moved `Flush_Pending` and `Close(F)` inside the `begin ...
 exception ... end` block that protects the read loop.
 
+## Test Suite
+
+152/152 native tests passing; counts unchanged from 1.0.0.
+
 ## Proof Results
 
 Self-assessment: **Platinum** (28/28 VCs proved, AoRTE-free).
 Ada_CRDT (strict): **Platinum** (273 VCs, 5 justified overflow checks).
+
+## Traceability
+
+No new HLRs. The tags in `docs/HLR.md` continue to cover the fixed packages:
+`HLR-SCAN`, `HLR-PROOF`, `HLR-TEST`, `HLR-COMPLIANCE`, `HLR-DAL-A..E`,
+`HLR-RENDER-ANSI` / `HLR-RENDER-SVG` / `HLR-RENDER-MD` / `HLR-RENDER-HTML`,
+`HLR-SERVER`, `HLR-CLI`, `HLR-METRICS`, `HLR-ARCH`.

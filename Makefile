@@ -1,4 +1,4 @@
-.PHONY: help build test prove doc clean run-self run-ada-crdt dev-setup prod-setup ascii-check fmt bump-version coverage-gate release publish test-publish _dev_cmd agents-tree sbom proof-status test-count doc-links
+.PHONY: help build test prove doc clean run-self run-ada-crdt dev-setup prod-setup ascii-check fmt bump-version coverage-gate release publish test-publish _dev_cmd agents-tree sbom proof-status test-count doc-links changelog-check
 
 .DEFAULT_GOAL := help
 
@@ -31,6 +31,8 @@ help:
 	@echo '                docs/test_result.md (tools/update-test-count.py)'
 	@echo '  doc-links     Regenerate the AGENTS.md Documentation block from'
 	@echo '                tools/doc-links.map (tools/update-doc-links.py)'
+	@echo '  changelog-check Validate all docs/changelogs follow the canonical'
+	@echo '                  format (tools/check-changelogs.py)'
 	@echo '  bump-version  Bump version across alire.toml, alire-dev.toml,'
 	@echo '                adacovex.ads, releases, index (VERSION=x.y.z)'
 	@echo '  release       Tag, update releases+index, push. Use VERSION=x.y.z'
@@ -128,6 +130,9 @@ test-count:
 doc-links:
 	@python3 tools/update-doc-links.py
 
+changelog-check:
+	@python3 tools/check-changelogs.py
+
 ascii-check:
 	@echo "=== ASCII Charset Verification ==="; \
 	error=0; \
@@ -190,14 +195,26 @@ bump-version:
 	\
 	changelog="docs/changelogs/adacovex-$$version.md"; \
 	if [ ! -f "$$changelog" ]; then \
+		prev=$$(ls docs/changelogs/adacovex-*.md 2>/dev/null | \
+			sed -n 's/.*adacovex-\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\.md/\1/p' | \
+			sort -t. -k1,1n -k2,2n -k3,3n | tail -1); \
+		if [ -z "$$prev" ]; then prev="0.0.0"; fi; \
 		echo "# adacovex $$version" > "$$changelog"; \
 		echo "" >> "$$changelog"; \
 		echo "Date: _$(shell date +%Y-%m-%d)_" >> "$$changelog"; \
 		echo "" >> "$$changelog"; \
+		echo "Version bumped $$prev -> $$version." >> "$$changelog"; \
+		echo "" >> "$$changelog"; \
 		echo "## Changes" >> "$$changelog"; \
 		echo "" >> "$$changelog"; \
-		echo "- Version bumped to $$version." >> "$$changelog"; \
-		echo "  Created: $$changelog"; \
+		echo "### C1: <Title>" >> "$$changelog"; \
+		echo "" >> "$$changelog"; \
+		echo "## Test Suite" >> "$$changelog"; \
+		echo "" >> "$$changelog"; \
+		echo "## Proof Results" >> "$$changelog"; \
+		echo "" >> "$$changelog"; \
+		echo "## Traceability" >> "$$changelog"; \
+		echo "  Created: $$changelog (fill in the ### C1: subsection)"; \
 	else \
 		sed -i 's/^version = ".*"/version = "'$$version'"/' "$$changelog" 2>/dev/null; \
 		echo "  Updated: $$changelog"; \
