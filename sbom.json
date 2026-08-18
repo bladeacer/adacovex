@@ -3,7 +3,7 @@
   "specVersion": "1.5",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-08-18T00:12:39",
+    "timestamp": "2026-08-18T00:27:23",
     "tools": [
       {"vendor": "bladeacer", "name": "adacovex", "version": "1.11.0"}
     ],
@@ -39,12 +39,100 @@
       "name": "gnatformat_bin",
       "purl": "pkg:alire/gnatformat_bin",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/bash",
+      "name": "bash",
+      "purl": "pkg:generic/bash",
+      "description": "System tool referenced by the project (dev dependency)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/curl",
+      "name": "curl",
+      "purl": "pkg:generic/curl",
+      "description": "System tool referenced by the project (dev dependency)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/alr",
+      "name": "alr",
+      "purl": "pkg:generic/alr",
+      "description": "System tool referenced by the project (dev dependency)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/python3",
+      "name": "python3",
+      "purl": "pkg:generic/python3",
+      "description": "System tool referenced by the project (dev dependency)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/git",
+      "name": "git",
+      "purl": "pkg:generic/git",
+      "description": "System tool referenced by the project (dev dependency)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/make",
+      "name": "make",
+      "purl": "pkg:generic/make",
+      "description": "System tool referenced by the project (dev dependency)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/jj",
+      "name": "jj",
+      "purl": "pkg:generic/jj",
+      "description": "System tool referenced by the project (dev dependency)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/mandb",
+      "name": "mandb",
+      "purl": "pkg:generic/mandb",
+      "description": "System tool referenced by the project (dev dependency)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/fossil",
+      "name": "fossil",
+      "purl": "pkg:generic/fossil",
+      "description": "System tool referenced by the project (dev dependency)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/hg",
+      "name": "hg",
+      "purl": "pkg:generic/hg",
+      "description": "System tool referenced by the project (dev dependency)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/svn",
+      "name": "svn",
+      "purl": "pkg:generic/svn",
+      "description": "System tool referenced by the project (dev dependency)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
       }
   ],
   "dependencies": [
     {
       "ref": "pkg:alire/covex@1.11.0",
-      "dependsOn": ["pkg:alire/gnatprove", "pkg:alire/gnatdoc_bin", "pkg:alire/gnatformat_bin"]
+      "dependsOn": ["pkg:alire/gnatprove", "pkg:alire/gnatdoc_bin", "pkg:alire/gnatformat_bin", "pkg:generic/bash", "pkg:generic/curl", "pkg:generic/alr", "pkg:generic/python3", "pkg:generic/git", "pkg:generic/make", "pkg:generic/jj", "pkg:generic/mandb", "pkg:generic/fossil", "pkg:generic/hg", "pkg:generic/svn"]
     }
   ]
 }

@@ -8,7 +8,10 @@ component carries a Component_Scope: base (declared in alire.toml), dev
 (declared only in alire-dev.toml), transitive (resolved from the lock or a
 GPR with clause but named in no manifest), or vendored (overlaid by a
 .adacovex/patches/ docstring patch). The result is a component vector
-suitable for SBOM generation.
+suitable for SBOM generation.  System-tool dev dependencies (python3,
+git, gnatprove, ...) that the project's build/dev files reference and
+that are installed on PATH are discovered on top of the manifest graph by
+Discover_System_Dev_Deps.
 HLR-MANIFEST: Manifest and dependency-graph parsing
 
 > **Note:** All items in this package are public.
@@ -24,3 +27,10 @@ HLR-MANIFEST: Manifest and dependency-graph parsing
 | `Success` | True if the manifest was readable and the root |
 | `Target_Dir` | Project root directory. |
 | `Use_Cache` | When True the resolved graph is keyed in the on-disk |
+
+### procedure Discover_System_Dev_Deps (Target_Dir : Standard.String; Graph : Adacovex.Types.Implementation.Component_Vectors.Vector)
+
+| Parameter | Description |
+|-----------|-------------|
+| `Graph` | Dependency graph to extend (root at index 1). |
+| `Target_Dir` | Project root directory to scan. |

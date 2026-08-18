@@ -311,6 +311,13 @@ procedure Adacovex_Main is
          return;
       end if;
 
+      --  System-tool dev dependencies (python3, git, gnatprove, ...) are
+      --  discovered from the project's build/dev files + PATH after the
+      --  cached manifest graph is resolved, so cache hits and misses stay
+      --  consistent and the on-disk graph blob keeps its manifest-only key.
+      Adacovex.Parsers.Manifest.Discover_System_Dev_Deps
+        (Target (1 .. TLen), Graph);
+
       Adacovex.Renderers.SBOM.Write_SBOM
         (Cfg.SBOM_Format,
          Out_Path,
