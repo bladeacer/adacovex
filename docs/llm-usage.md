@@ -20,7 +20,7 @@ Given the use of AI assistance, healthy skepticism is natural and encouraged.
 Reliability is grounded in proof and design, not implicit trust:
 
 - **Formal Verification:** core Ada logic is formally verified (Platinum under
-  `gnatprove` 16.1.0 -- 433 VCs, 0 unproved; see
+  `gnatprove` 16.1.0 -- 471 VCs, 0 unproved; see
   [docs/proof/16.1.0-ledger.md](proof/16.1.0-ledger.md)). The proof is
   re-run by `make prove` on every
   change and is a hard gate before any release.
@@ -86,7 +86,7 @@ Because the gates are cheap and deterministic, the safest workflow is to
 iterate locally and let `make check` be the arbiter:
 
 ```bash
-make build && make test      # native suite must stay 666/666
+make build && make test      # native suite must stay 738/738
 make prove                   # Platinum, 0 unproved, 0 justified
 make check                   # full gate: static checks, build, test, prove,
                              # doc, sbom, then tree-wide count-sync checks
