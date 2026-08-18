@@ -1,7 +1,40 @@
 # Template release manifest.
 # Copied and version-replaced by make bump-version / make release.
 name = "covex"
-description = "Ada/SPARK coverage, proof, DO-178C compliance tool"
+description = "Ada/SPARK coverage, proof, multi-standard compliance tool"
+long-description = """
+Zero-dependency Ada/SPARK CLI tool for coverage analysis, proof verification,
+test-result parsing, multi-standard safety-compliance assessment (DO-178C /
+ISO 26262 / IEC 62304), and interactive dashboards.
+
+- Source scanning: walks .ads files, extracts subprogram declarations, docstring
+  annotations (@param, @return, @field, @formal), and HLR traceability tags
+- Proof analysis: parses GNATprove gnatprove.out summaries; assesses SPARK
+  assurance levels (Stone through Platinum)
+- Test parsing: reads markdown test results for pass/fail counts (native Ada or
+  AUnit format)
+- DAL compliance: assesses DO-178C DAL A-E criteria (HLR coverage, orphan tags,
+  test status, minimum SPARK proof level), re-labelled for ISO 26262
+  (ASIL A-D/QM) and IEC 62304 (safety classes A-C) via --dal / --asil / --class
+- Differential assessment: --compare-base / --coverage-delta snapshot a base
+  revision on git, Mercurial, Subversion, Fossil, or jj without touching the
+  working tree
+- Multiple outputs: ANSI terminal report, SVG badges, Markdown reports,
+  HTML dashboard, JSON API via a built-in HTTP/1.1 server, and a proof-aware
+  SBOM (CycloneDX / SPDX / Markdown)
+- Result caching: a content-addressed on-disk cache serves unchanged scan,
+  proof, test, and manifest results without re-running the work
+- Tooling: `status` reports the toolchain + VCS state, `man` installs a local
+  man page, and the `prove` subcommand resolves gnatprove at run time
+- Scalable: package/subprogram collections use Ada.Containers.Vectors
+  (heap-allocated, no compile-time limits)
+- Zero library dependencies: uses only the GNAT runtime library. gnatprove is
+  NOT a declared dependency -- the prove subcommand resolves it at run time
+  (per-project manifest, PATH, cached toolchain, or download), so the covex
+  crate installs and builds with no toolchain beyond the GNAT compiler
+-  Self-assessment: 100% docstring coverage, Platinum SPARK (401/401 VCs proved),
+  DAL-C / ASIL B / Class A Achieved, 566/566 native tests passing
+"""
 version = "1.3.0"
 project-files = ["adacovex.gpr"]
 

@@ -119,8 +119,10 @@ running an assessment and without downloading or deploying anything:
 - a **VCS report**: which VCS command-line tools are on `$PATH` for the
   differential modes (git, mercurial/`hg`, subversion/`svn`, fossil, jj, and
   the man-page tool `mandb`), the VCS detected for the target repository
-  (see [VCS support](#vcs-support)), and a note when the target's VCS tool
-  is missing;
+  (see [VCS support](#vcs-support)), a note when the target's VCS tool is
+  missing, and a note when man-db (`mandb`) is absent -- so you know up
+  front that `adacovex man` can install the page but cannot refresh the
+  man database;
 - the release-note that the CI binary is Linux x86-64 only.
 
 Exit `0` when a usable gnatprove is detectable without a download (and `alr`
@@ -247,14 +249,25 @@ adacovex man --dir=PATH      # install under PATH/man1 instead
   ```
 
 - **Database refresh**: `mandb` is run on the man root when present (Ubuntu
-  and WSL ship it); a missing `mandb` is silently ignored.
+  and WSL ship it). When man-db is **not** installed (or `mandb` fails),
+  adacovex prints a warning that the database was not refreshed -- the page
+  is still installed and readable with `man -l
+  ~/.local/share/man/man1/adacovex.1`. `adacovex status` reports whether
+  `mandb` is on `$PATH` before you run `man`.
 - Exit codes: `0` on success/up-to-date, `1` on install failure or when
   `--check` finds a newer version available (or none installed).
 
 ### VCS support
 
-Differential modes run against the VCS that manages the target. Detection is
-marker-file based, with a command-probe fallback:
+**A version control system is not required for base adacovex functionality**
+(scanning, proof analysis, test parsing, compliance assessment, SBOM
+generation, dashboards, caching). A VCS is only needed for the differential
+modes below, which snapshot a base revision to compare against the current
+tree. Since adacovex assesses source code, assuming the audited project lives
+in a VCS is sensible -- but the base tool never requires one.
+
+The differential modes run against the VCS that manages the target. Detection
+is marker-file based, with a command-probe fallback:
 
 | VCS | Marker | Base snapshot mechanism |
 |-----|--------|-------------------------|
@@ -292,7 +305,7 @@ target does not meet the required level:
 
 ```bash
 adacovex --target=. --require-spark=Platinum --require-docstrings=100 \
-         --require-tests=555 --require-proof=100
+         --require-tests=566 --require-proof=100
 ```
 
 - `require-spark` compares the honest assessed SPARK level (Stone..Platinum).
@@ -307,10 +320,16 @@ prover you pin.
 ### Result caching (`--cache` / `--no-cache` / `--cache-dir` / `--cache-max`)
 
 adacovex persists parsed analysis results on disk so unchanged inputs are not
-re-scanned / re-parsed / re-proved. Source scans, GNATprove summaries, and test
-summaries are each keyed by `"scan:" | "prove:" | "tests:" + SHA-256` of the
-artifact they were derived from, so re-parsing a byte-identical artifact yields
-a cache hit regardless of the target directory or command line.
+re-scanned / re-parsed / re-proved. Source scans, GNATprove summaries, test
+summaries, HLR.md/LLR.md requirement parses, the resolved SBOM dependency
+graph, and the differential-mode scans are each keyed by a namespace prefix
+plus the SHA-256 of the artifact(s) they were derived from -- e.g.
+`"scan:" | "prove:" | "tests:" | "hlr:" | "llr:" | "graph:" + digest` -- so
+re-parsing a byte-identical artifact yields a cache hit regardless of the
+target directory or command line. An unchanged manifest/lockfile/.gpr set
+serves the cached dependency graph; unchanged HLR.md/LLR.md serve the cached
+requirement parses; and `--compare-base` / `--coverage-delta` reuse cached
+source scans for the current tree.
 
 - **Schema namespace**: the default cache root is
   `~/.adacovex/cache/<version>/<Cache_Schema>`. `Cache_Schema` (in

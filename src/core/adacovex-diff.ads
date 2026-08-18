@@ -52,16 +52,24 @@ package Adacovex.Diff is
    --  reported via Has_Proof/Has_Tests = False rather than as an error.
    --  @param Target_Dir  Project root directory to assess.
    --  @param DAL_Target  DAL level to assess against.
+   --  @param Use_Cache  When True the .ads scan and the HLR.md/LLR.md
+   --    parses are served from the on-disk result cache when unchanged;
+   --    when False everything is recomputed (--no-cache).
    --  @return Aggregate metrics for the target directory.
    function Assess
-     (Target_Dir : String; DAL_Target : Types.DAL_Level)
-      return Assessment_Result;
+     (Target_Dir : String;
+      DAL_Target : Types.DAL_Level;
+      Use_Cache  : Boolean := False) return Assessment_Result;
 
    --  Compute the docstring-coverage snapshot for a target directory.
    --  Runs source scanning, patch application, and docstring metrics only.
    --  @param Target_Dir  Project root directory.
+   --  @param Use_Cache  When True the .ads scan is served from the on-disk
+   --    result cache when unchanged; when False it is recomputed.
    --  @return Coverage snapshot (documented/total/percentage).
-   function Assess_Coverage (Target_Dir : String) return Coverage_Result;
+   function Assess_Coverage
+     (Target_Dir : String; Use_Cache : Boolean := False)
+      return Coverage_Result;
 
    --  Check that a directory is managed by a supported VCS (git, mercurial,
    --  subversion, fossil, or jj).  Marker-file detection with a command-tool

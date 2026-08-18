@@ -34,6 +34,14 @@ with ``mandb`` when it is present.
 
 **Returns:** Complete man-page source (roff format).
 
+### function Update_Database (Man_Root : Standard.String) return Standard.Boolean
+
+| Parameter | Description |
+|-----------|-------------|
+| `Man_Root` | Man root directory to index. |
+
+**Returns:** True when the man database was refreshed; False when mandb
+
 ## Procedures
 
 ### procedure Install (Man_Root : Standard.String; Version : Standard.String; Success : Standard.Boolean)
@@ -43,9 +51,3 @@ with ``mandb`` when it is present.
 | `Man_Root` | Man root directory (contains man1/). |
 | `Success` | True when the page was written; False on I/O failure. |
 | `Version` | adacovex version embedded in the page. |
-
-### procedure Update_Database (Man_Root : Standard.String)
-
-| Parameter | Description |
-|-----------|-------------|
-| `Man_Root` | Man root directory to index. |

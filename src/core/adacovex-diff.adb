@@ -12,18 +12,26 @@ package body Adacovex.Diff is
    use Adacovex.Types.Implementation;
 
    function Assess
-     (Target_Dir : String; DAL_Target : Types.DAL_Level)
-      return Assessment_Result
+     (Target_Dir : String;
+      DAL_Target : Types.DAL_Level;
+      Use_Cache  : Boolean := False) return Assessment_Result
    is
-      R     : Assessment_Result;
-      Pkgs  : Package_Vectors.Vector;
-      Docs  : Docstring_Metrics;
-      Proof : Proof_Summary;
-      Tests : Test_Summary;
-      DAL   : DAL_Assessment;
-      OK    : Boolean;
+      R      : Assessment_Result;
+      Pkgs   : Package_Vectors.Vector;
+      Docs   : Docstring_Metrics;
+      Proof  : Proof_Summary;
+      Tests  : Test_Summary;
+      DAL    : DAL_Assessment;
+      OK     : Boolean;
+      Hits   : Natural := 0;
+      Misses : Natural := 0;
    begin
-      Adacovex.Parsers.Source.Scan_Project (Target_Dir, "", Pkgs, R.Skipped);
+      --  Reuse the cached scan when enabled so an unchanged working tree is
+      --  not re-scanned on every differential run.  The base worktree is a
+      --  throwaway snapshot, but its entries are content-hashed and evicted
+      --  oldest-first, so caching them too is harmless.
+      Adacovex.Parsers.Source.Scan_Project_Cached
+        (Target_Dir, "", Pkgs, R.Skipped, Hits, Misses, Use_Cache);
       Adacovex.Parsers.Source.Apply_Patches (Target_Dir, Pkgs);
       Docs := Adacovex.Parsers.Source.Compute_Docstring_Metrics (Pkgs);
       R.Packages := Natural (Pkgs.Length);
@@ -45,7 +53,7 @@ package body Adacovex.Diff is
       R.Tests_Failed := Tests.Total_Failed;
 
       Adacovex.Compliance.DAL.Assess_DAL
-        (DAL_Target, Target_Dir, Pkgs, Proof, Tests, DAL);
+        (DAL_Target, Target_Dir, Pkgs, Proof, Tests, DAL, Use_Cache);
       R.HLR_Total := DAL.HLR_Total;
       R.HLR_Found := DAL.HLR_Found;
       R.Orphan_Tags := DAL.Orphan_Tags;
@@ -58,12 +66,17 @@ package body Adacovex.Diff is
       return R;
    end Assess;
 
-   function Assess_Coverage (Target_Dir : String) return Coverage_Result is
-      R    : Coverage_Result;
-      Pkgs : Package_Vectors.Vector;
-      Docs : Docstring_Metrics;
+   function Assess_Coverage
+     (Target_Dir : String; Use_Cache : Boolean := False) return Coverage_Result
+   is
+      R      : Coverage_Result;
+      Pkgs   : Package_Vectors.Vector;
+      Docs   : Docstring_Metrics;
+      Hits   : Natural := 0;
+      Misses : Natural := 0;
    begin
-      Adacovex.Parsers.Source.Scan_Project (Target_Dir, "", Pkgs, R.Skipped);
+      Adacovex.Parsers.Source.Scan_Project_Cached
+        (Target_Dir, "", Pkgs, R.Skipped, Hits, Misses, Use_Cache);
       Adacovex.Parsers.Source.Apply_Patches (Target_Dir, Pkgs);
       Docs := Adacovex.Parsers.Source.Compute_Docstring_Metrics (Pkgs);
       R.Total := Docs.Total_Subprograms;

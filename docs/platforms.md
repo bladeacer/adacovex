@@ -78,8 +78,15 @@ It checks and prints:
 - a **VCS report**: which VCS command-line tools are available on `$PATH`
   for the differential modes (git, mercurial/`hg`, subversion/`svn`,
   fossil, jj, and the man-page tool `mandb`), the VCS detected for the
-  target repository, and a note when the target's VCS tool is missing;
+  target repository, a note when the target's VCS tool is missing, and a
+  note when man-db (`mandb`) is absent -- so you know up front that
+  `adacovex man` can install the page but cannot refresh the man database;
 - the release-note that the CI binary is Linux x86-64 only.
+
+Base adacovex functionality (scanning, proof analysis, test parsing,
+compliance assessment, SBOM generation, dashboards, caching) does **not**
+require a version control system; a VCS is only needed for the differential
+modes (`--compare-base` / `--coverage-delta`).
 
 Exit code `0` when a usable gnatprove is detectable without a download (and
 `alr` is present whenever the deploy path is the only option), `1` otherwise.
@@ -90,11 +97,14 @@ The VCS report is informational and does not affect the exit code.
 `adacovex man` installs the man page into the **local man database** without
 root: the default root is `$XDG_DATA_HOME/man` when set, else
 `~/.local/share/man` (the standard Linux/WSL per-user man tree), and the
-index is refreshed with `mandb` when it is present (Ubuntu and WSL ship it;
-a missing `mandb` is silently ignored). `--dir=PATH` overrides the root.
-The page embeds the binary version; `adacovex man --check` compares it to the
-installed page and exits 0/1, so a prompt hook can auto-install when a newer
-version is available. See
+index is refreshed with `mandb` when it is present (Ubuntu and WSL ship it).
+When man-db is **not** installed (or `mandb` fails), adacovex prints a
+warning that the database was not refreshed -- the page is still installed
+and readable with `man -l ~/.local/share/man/man1/adacovex.1` -- and
+`adacovex status` reports whether `mandb` is on `$PATH` up front.
+`--dir=PATH` overrides the root. The page embeds the binary version;
+`adacovex man --check` compares it to the installed page and exits 0/1, so a
+prompt hook can auto-install when a newer version is available. See
 [CLI reference](cli-reference.md#man).
 
 ## VCS support (Linux/WSL)

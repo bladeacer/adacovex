@@ -35,7 +35,8 @@ package body Adacovex.Compliance.DAL is
       Packages      : Types.Implementation.Package_Vectors.Vector;
       Proof_Summary : Types.Proof_Summary;
       Test_Summary  : Types.Implementation.Test_Summary;
-      Assessment    : out Types.Implementation.DAL_Assessment)
+      Assessment    : out Types.Implementation.DAL_Assessment;
+      Use_Cache     : Boolean := False)
    is
       HLR_Path    : String (1 .. Types.Max_Path);
       HLR_Len     : Natural;
@@ -77,11 +78,12 @@ package body Adacovex.Compliance.DAL is
          LLR_Path (Dir'Length + 1 .. Dir'Length + 7) := "/LLR.md";
       end;
 
-      -- Parse HLR.md and LLR.md
+      -- Parse HLR.md and LLR.md (cached when Use_Cache, so unchanged
+      -- requirements documents are served from the on-disk result cache).
       Adacovex.Parsers.DO178C.Parse_HLR_MD
-        (HLR_Path (1 .. HLR_Len), HLR_List, HLR_Success);
+        (HLR_Path (1 .. HLR_Len), HLR_List, HLR_Success, Use_Cache);
       Adacovex.Parsers.DO178C.Parse_LLR_MD
-        (LLR_Path (1 .. LLR_Len), LLR_List, LLR_Success);
+        (LLR_Path (1 .. LLR_Len), LLR_List, LLR_Success, Use_Cache);
 
       Assessment.HLR_Total := Natural (HLR_List.Length);
       Assessment.LLR_Total := Natural (LLR_List.Length);
@@ -203,10 +205,17 @@ package body Adacovex.Compliance.DAL is
       Packages      : Types.Implementation.Package_Vectors.Vector;
       Proof_Summary : Types.Proof_Summary;
       Test_Summary  : Types.Implementation.Test_Summary;
-      Assessment    : out Types.Implementation.DAL_Assessment) is
+      Assessment    : out Types.Implementation.DAL_Assessment;
+      Use_Cache     : Boolean := False) is
    begin
       Assess_DAL
-        (Level, Target_Dir, Packages, Proof_Summary, Test_Summary, Assessment);
+        (Level,
+         Target_Dir,
+         Packages,
+         Proof_Summary,
+         Test_Summary,
+         Assessment,
+         Use_Cache);
       Assessment.Standard := Standard;
    end Assess_Standard;
 

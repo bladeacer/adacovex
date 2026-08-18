@@ -212,27 +212,50 @@ package body Adacovex.VCS is
    function Is_Managed (Target_Dir : String) return Boolean is
    begin
       return Detect (Target_Dir) /= Unknown;
-   end Is_Managed;   function To_String (Kind : VCS_Kind) return String is
+   end Is_Managed;
+   function To_String (Kind : VCS_Kind) return String is
    begin
       case Kind is
-         when Git        => return "git";
-         when Mercurial  => return "mercurial";
-         when Subversion => return "subversion";
-         when Fossil     => return "fossil";
-         when Jujutsu    => return "jj";
-         when Unknown    => return "";
+         when Git        =>
+            return "git";
+
+         when Mercurial  =>
+            return "mercurial";
+
+         when Subversion =>
+            return "subversion";
+
+         when Fossil     =>
+            return "fossil";
+
+         when Jujutsu    =>
+            return "jj";
+
+         when Unknown    =>
+            return "";
       end case;
    end To_String;
 
    function Tool_Name (Kind : VCS_Kind) return String is
    begin
       case Kind is
-         when Git        => return "git";
-         when Mercurial  => return "hg";
-         when Subversion => return "svn";
-         when Fossil     => return "fossil";
-         when Jujutsu    => return "jj";
-         when Unknown    => return "";
+         when Git        =>
+            return "git";
+
+         when Mercurial  =>
+            return "hg";
+
+         when Subversion =>
+            return "svn";
+
+         when Fossil     =>
+            return "fossil";
+
+         when Jujutsu    =>
+            return "jj";
+
+         when Unknown    =>
+            return "";
       end case;
    end Tool_Name;
 
@@ -306,16 +329,28 @@ package body Adacovex.VCS is
       --  (`-T '{commit_id}'`).  Try the new form first, then the legacy one
       --  so both jj generations resolve change ids.
       Run_Capture
-        ("jj -R '" & Target_Dir & "' log -r '" & Base_Ref
+        ("jj -R '"
+         & Target_Dir
+         & "' log -r '"
+         & Base_Ref
          & "' --no-graph -T commit_id",
-         Buf, BLen, Code, OK);
+         Buf,
+         BLen,
+         Code,
+         OK);
       if OK and then Code = 0 and then BLen > 0 then
          return First_Line (Buf, BLen);
       end if;
       Run_Capture
-        ("jj -R '" & Target_Dir & "' log -r '" & Base_Ref
+        ("jj -R '"
+         & Target_Dir
+         & "' log -r '"
+         & Base_Ref
          & "' --no-graph -T '{commit_id}'",
-         Buf, BLen, Code, OK);
+         Buf,
+         BLen,
+         Code,
+         OK);
       if OK and then Code = 0 and then BLen > 0 then
          return First_Line (Buf, BLen);
       end if;
@@ -426,10 +461,20 @@ package body Adacovex.VCS is
                Success := False;
                return;
             end if;
-            Run_Cmd ("svn export -r '" & Base_Ref & "' '"
-                     & URL (1 .. ULen) & "' '" & Tmp & "'",
-                     "/dev/null", S, C);
-            Success := S and then C = 0;         when Fossil =>
+            Run_Cmd
+              ("svn export -r '"
+               & Base_Ref
+               & "' '"
+               & URL (1 .. ULen)
+               & "' '"
+               & Tmp
+               & "'",
+               "/dev/null",
+               S,
+               C);
+            Success := S and then C = 0;
+
+         when Fossil     =>
             Remove_Dir (Tmp);
             --  The `.fslckout` file in a checkout is only a checkout-local
             --  DB without the project history, so ask fossil for the real
@@ -446,12 +491,21 @@ package body Adacovex.VCS is
                   Success := False;
                   return;
                end if;
-               Run_Cmd ("mkdir -p '" & Tmp & "' && cp '" & Fossil_DB
-                        & "' '" & Tmp
-                        & "/repo.fossil' && cd '" & Tmp
-                        & "' && fossil open 'repo.fossil' '" & Base_Ref
-                        & "'",
-                        "/dev/null", S, C);
+               Run_Cmd
+                 ("mkdir -p '"
+                  & Tmp
+                  & "' && cp '"
+                  & Fossil_DB
+                  & "' '"
+                  & Tmp
+                  & "/repo.fossil' && cd '"
+                  & Tmp
+                  & "' && fossil open 'repo.fossil' '"
+                  & Base_Ref
+                  & "'",
+                  "/dev/null",
+                  S,
+                  C);
                Success := S and then C = 0;
             end;
 

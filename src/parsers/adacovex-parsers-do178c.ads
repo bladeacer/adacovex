@@ -30,26 +30,36 @@ package Adacovex.Parsers.DO178C is
 
    --  Parse an HLR.md file, extracting HLR entries and descriptions.
    --  Scans a Markdown file for lines matching "HLR_xxxx: Description",
-   --  storing entries in the output vector.
+   --  storing entries in the output vector.  With Use_Cache the parsed
+   --  vector is keyed in the on-disk result cache by the file's content hash
+   --  (SHA-256), so an unchanged HLR.md is served without re-parsing.
    --  @param File_Path  Path to HLR.md markdown file.
    --  @param HLRs  Output vector of HLR entries (appended to).
    --  @param Success  True if file was parsed successfully.
+   --  @param Use_Cache  When True, serve/store the result in the on-disk
+   --    result cache keyed by file content; when False, always re-parse.
    procedure Parse_HLR_MD
      (File_Path : String;
       HLRs      : in out HLR_Vectors.Vector;
-      Success   : out Boolean)
+      Success   : out Boolean;
+      Use_Cache : Boolean := False)
    with Pre => File_Path'Length > 0;
 
    --  Parse an LLR.md file, extracting LLR_xxxx entries with HLR references.
    --  Scans a Markdown file for lines matching "LLR_xxxx: Description",
    --  including the HLR_xxxx reference, storing entries in the output vector.
+   --  With Use_Cache the parsed vector is keyed in the on-disk result cache
+   --  by the file's content hash (SHA-256).
    --  @param File_Path  Path to LLR.md markdown file.
    --  @param LLRs  Output vector of LLR entries (appended to).
    --  @param Success  True if file was parsed successfully.
+   --  @param Use_Cache  When True, serve/store the result in the on-disk
+   --    result cache keyed by file content; when False, always re-parse.
    procedure Parse_LLR_MD
      (File_Path : String;
       LLRs      : in out LLR_Vectors.Vector;
-      Success   : out Boolean)
+      Success   : out Boolean;
+      Use_Cache : Boolean := False)
    with Pre => File_Path'Length > 0;
 
    --  Check whether an HLR identifier appears as a source-code tag

@@ -48,20 +48,22 @@ end record;
 
 ## Functions
 
-### function Assess (Target_Dir : Standard.String; DAL_Target : Adacovex.Types.DAL_Level) return Adacovex.Diff.Assessment_Result
+### function Assess (Target_Dir : Standard.String; DAL_Target : Adacovex.Types.DAL_Level; Use_Cache : Standard.Boolean) return Adacovex.Diff.Assessment_Result
 
 | Parameter | Description |
 |-----------|-------------|
 | `DAL_Target` | DAL level to assess against. |
 | `Target_Dir` | Project root directory to assess. |
+| `Use_Cache` | When True the .ads scan and the HLR.md/LLR.md |
 
 **Returns:** Aggregate metrics for the target directory.
 
-### function Assess_Coverage (Target_Dir : Standard.String) return Adacovex.Diff.Coverage_Result
+### function Assess_Coverage (Target_Dir : Standard.String; Use_Cache : Standard.Boolean) return Adacovex.Diff.Coverage_Result
 
 | Parameter | Description |
 |-----------|-------------|
 | `Target_Dir` | Project root directory. |
+| `Use_Cache` | When True the .ads scan is served from the on-disk |
 
 **Returns:** Coverage snapshot (documented/total/percentage).
 

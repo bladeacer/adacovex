@@ -2,8 +2,10 @@ with Adacovex.Types;
 use Adacovex.Types, Adacovex.Types.Implementation;
 with Adacovex.Compliance.DAL;
 with Adacovex.Parsers.DO178C;
+with Adacovex.Cache;
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Directories;
+with GNAT.OS_Lib;
 
 package body Adacovex_DAL_Tests is
 
@@ -139,6 +141,66 @@ package body Adacovex_DAL_Tests is
          begin
             if Ada.Directories.Exists (Tmp) then
                Ada.Directories.Delete_Tree (Tmp);
+            end if;
+         exception
+            when others =>
+               null;
+         end;
+      end;
+
+      --  Cached HLR parse round-trip: parsing the same HLR.md twice with
+      --  Use_Cache serves the second parse from the on-disk result cache
+      --  (keyed by file content hash) instead of re-scanning the file.
+      declare
+         HLR_File : constant String := "/tmp/adacovex_hlr_cache_test.md";
+         Pid      : constant String :=
+           Integer'Image
+             (GNAT.OS_Lib.Pid_To_Integer (GNAT.OS_Lib.Current_Process_Id));
+         CDir     : constant String :=
+           "/tmp/adacovex-dal-cache-" & Pid (2 .. Pid'Last);
+         HLRs1    : Adacovex.Parsers.DO178C.HLR_Vectors.Vector;
+         HLRs2    : Adacovex.Parsers.DO178C.HLR_Vectors.Vector;
+         OK       : Boolean;
+         F        : File_Type;
+         Prev_Dir : String (1 .. 256) := (others => ' ');
+         Prev_Len : Natural := 0;
+      begin
+         begin
+            Create (F, Out_File, HLR_File);
+            Put_Line (F, "# High-Level Requirements");
+            Put_Line (F, "- HLR-CACHE1: First cached requirement.");
+            Put_Line (F, "- HLR-CACHE2: Second cached requirement.");
+            Close (F);
+         end;
+
+         --  Point the result cache at a throwaway dir and restore afterwards,
+         --  so the test never touches the real ~/.adacovex cache.
+         Adacovex.Cache.Cache_Dir (Prev_Dir, Prev_Len);
+         Adacovex.Cache.Set_Cache_Dir (CDir);
+
+         Adacovex.Parsers.DO178C.Parse_HLR_MD
+           (HLR_File, HLRs1, OK, Use_Cache => True);
+         R.Check (OK, "cached HLR parse succeeds (cache miss)");
+         R.Check
+           (Natural (HLRs1.Length) = 2, "cached HLR parse reads both entries");
+
+         Adacovex.Parsers.DO178C.Parse_HLR_MD
+           (HLR_File, HLRs2, OK, Use_Cache => True);
+         R.Check (OK, "cached HLR parse succeeds (cache hit)");
+         R.Check
+           (Natural (HLRs2.Length) = 2, "cache hit returns both HLR entries");
+         R.Check
+           (HLRs2 (1).Id (1 .. HLRs2 (1).Id_Len) = "CACHE1"
+            and then HLRs2 (2).Id (1 .. HLRs2 (2).Id_Len) = "CACHE2",
+            "cache hit preserves HLR ids and order");
+
+         if Prev_Len > 0 then
+            Adacovex.Cache.Set_Cache_Dir (Prev_Dir (1 .. Prev_Len));
+         end if;
+         begin
+            Ada.Directories.Delete_File (HLR_File);
+            if Ada.Directories.Exists (CDir) then
+               Ada.Directories.Delete_Tree (CDir);
             end if;
          exception
             when others =>

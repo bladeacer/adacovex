@@ -59,6 +59,26 @@ package body Adacovex_Man_Tests is
         (Index (Adacovex.Renderers.Man.Render_Page (""), ".SH NAME") > 0,
          "empty version renders a valid page");
 
+      --  Update_Database reports whether the man database was refreshed and
+      --  must never report True when man-db (mandb) is absent from PATH --
+      --  that is the contract `adacovex man` warns about.  The value when
+      --  mandb IS present depends on the exit code, so only the missing-tool
+      --  direction is asserted (deterministic in any environment).
+      declare
+         use GNAT.OS_Lib;
+         Mandb     : String_Access := Locate_Exec_On_Path ("mandb");
+         Has_Mandb : constant Boolean := Mandb /= null;
+         Updated   : constant Boolean :=
+           Adacovex.Renderers.Man.Update_Database ("/nonexistent/man-root");
+      begin
+         if Mandb /= null then
+            Free (Mandb);
+         end if;
+         R.Check
+           ((not Updated) or Has_Mandb,
+            "Update_Database never reports True without mandb on PATH");
+      end;
+
       --  Best-effort cleanup of the temp man root.
       begin
          Ada.Directories.Delete_File (Dir & "/man1/adacovex.1");

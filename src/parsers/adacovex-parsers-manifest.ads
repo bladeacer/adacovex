@@ -23,11 +23,16 @@ package Adacovex.Parsers.Manifest is
    --  @param Graph  Output dependency graph (index 1 = root project).
    --  @param Success  True if the manifest was readable and the root
    --    component was resolved.
+   --  @param Use_Cache  When True the resolved graph is keyed in the on-disk
+   --    result cache by the combined content hash of the manifests, the
+   --    lockfile, and every .gpr file, so an unchanged dependency set is
+   --    served without re-parsing; when False it is always rebuilt.
    procedure Build_Dependency_Graph
      (Target_Dir    : String;
       Manifest_Path : String;
       Graph         : out Types.Implementation.Component_Vectors.Vector;
-      Success       : out Boolean)
+      Success       : out Boolean;
+      Use_Cache     : Boolean := False)
    with Pre => Target_Dir'Length > 0;
 
 end Adacovex.Parsers.Manifest;

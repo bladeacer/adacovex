@@ -1,6 +1,7 @@
 with Ada.Text_IO;
 with Ada.Directories;
 with Ada.Containers.Vectors;
+with Adacovex.Cache;
 
 package body Adacovex.Parsers.Manifest is
 
@@ -28,6 +29,13 @@ package body Adacovex.Parsers.Manifest is
    --  to classify every resolved dependency into a Component_Scope.
    Base_Names : Name_Vectors.Vector;
    Dev_Names  : Name_Vectors.Vector;
+
+   --  On-disk serialization for the resolved dependency graph, so an
+   --  unchanged manifest/lockfile/.gpr set is served from the result cache
+   --  without re-parsing (HLR-SBOM: dependency-graph caching).
+   package Graph_Store is new
+     Adacovex.Cache.Serialization
+       (Types.Implementation.Component_Vectors.Vector);
 
    procedure Set_Field
      (Field : out Types.Desc_Field; Len : out Natural; S : String) is
@@ -1013,11 +1021,146 @@ package body Adacovex.Parsers.Manifest is
       end loop;
    end Discover_Vendored_Components;
 
+   --  Fingerprint of the docstring-patch directory (<target>/.adacovex/
+   --  patches/), which contributes vendored components to the graph: a
+   --  content hash of every .ads file found there.  Adding or removing a
+   --  patch changes the digest, so the cached graph is invalidated correctly.
+   --  Returns "" when the directory is absent or holds no .ads files.
+   --  @param Target_Dir  Project root directory.
+   --  @return SHA-256 digest of the patch files, or "" when none exist.
+   function Patch_Dir_Hash (Target_Dir : String) return String is
+      use Ada.Directories;
+      type Dir_Entry is record
+         Path : Types.Path_Field;
+         Len  : Natural := 0;
+      end record;
+      package Dir_Stacks is new Ada.Containers.Vectors (Positive, Dir_Entry);
+      Dir_Stack : Dir_Stacks.Vector;
+      Search    : Search_Type;
+      Ent       : Directory_Entry_Type;
+      Root      : constant String :=
+        (if Target_Dir'Length > 0 and then Target_Dir (Target_Dir'Last) = '/'
+         then Target_Dir (Target_Dir'First .. Target_Dir'Last - 1)
+         else Target_Dir)
+        & "/.adacovex/patches";
+      Comb      : String (1 .. Types.Max_Path);
+      CLen      : Natural := 0;
+
+      procedure Push_Dir (Dir : String) is
+         Item : Dir_Entry;
+      begin
+         if Dir'Length <= Types.Max_Path then
+            Item.Len := Dir'Length;
+            for I in Dir'Range loop
+               Item.Path (I - Dir'First + 1) := Dir (I);
+            end loop;
+            Dir_Stack.Append (Item);
+         end if;
+      end Push_Dir;
+
+      procedure Add (S : String) is
+      begin
+         if S'Length > 0 and then CLen + S'Length <= Comb'Last then
+            Comb (CLen + 1 .. CLen + S'Length) := S;
+            CLen := CLen + S'Length;
+         end if;
+      end Add;
+   begin
+      if not Ada.Directories.Exists (Root) then
+         return "";
+      end if;
+      Push_Dir (Root);
+      while not Dir_Stack.Is_Empty loop
+         declare
+            Current  : Dir_Entry := Dir_Stack.Last_Element;
+            Dir_Path : String renames Current.Path (1 .. Current.Len);
+         begin
+            Dir_Stack.Delete_Last;
+            Start_Search (Search, Dir_Path, "");
+            begin
+               while More_Entries (Search) loop
+                  Get_Next_Entry (Search, Ent);
+                  declare
+                     N    : constant String := Simple_Name (Ent);
+                     Path : constant String := Full_Name (Ent);
+                  begin
+                     if Kind (Ent) = Directory then
+                        if N /= "." and N /= ".." then
+                           Push_Dir (Path);
+                        end if;
+                     elsif Kind (Ent) = Ordinary_File
+                       and then N'Length > 4
+                       and then N (N'Last - 3 .. N'Last) = ".ads"
+                     then
+                        Add (Adacovex.Cache.Hash_File (Path));
+                     end if;
+                  end;
+               end loop;
+            exception
+               when others =>
+                  End_Search (Search);
+                  raise;
+            end;
+            End_Search (Search);
+         end;
+      end loop;
+      if CLen = 0 then
+         return "";
+      end if;
+      return Adacovex.Cache.Hash_String (Comb (1 .. CLen));
+   end Patch_Dir_Hash;
+
+   --  Combined content hash of everything that shapes the dependency graph:
+   --  the publishing manifest, the dev manifest, the alire.lock, every .gpr
+   --  file collected from the project tree, and the .adacovex/patches/ dir
+   --  (vendored components).  Returns "" when no input could be hashed
+   --  (nothing is cached in that case).
+   --  @param Target_Dir  Project root directory (for alire-dev.toml,
+   --    alire/alire.lock, and .adacovex/patches/, which live beside it).
+   --  @param Manifest_Path  Path to the Alire manifest (may be an override).
+   --  @param GPR_Files  Every .gpr file found under the target tree.
+   --  @return "graph:" + SHA-256 digest, or "" when inputs are unhashable.
+   function Graph_Key
+     (Target_Dir    : String;
+      Manifest_Path : String;
+      GPR_Files     : Path_Vectors.Vector) return String
+   is
+      T    : constant String :=
+        (if Target_Dir'Length > 1 and then Target_Dir (Target_Dir'Last) = '/'
+         then Target_Dir (Target_Dir'First .. Target_Dir'Last - 1)
+         else Target_Dir);
+      Comb : String (1 .. Types.Max_Path);
+      CLen : Natural := 0;
+
+      procedure Add (S : String) is
+      begin
+         if S'Length > 0 and then CLen + S'Length <= Comb'Last then
+            Comb (CLen + 1 .. CLen + S'Length) := S;
+            CLen := CLen + S'Length;
+         end if;
+      end Add;
+   begin
+      Add (Adacovex.Cache.Hash_File (Manifest_Path));
+      Add (Adacovex.Cache.Hash_File (T & "/alire-dev.toml"));
+      Add (Adacovex.Cache.Hash_File (T & "/alire/alire.lock"));
+      Add (Patch_Dir_Hash (Target_Dir));
+      for I in 1 .. Integer (GPR_Files.Length) loop
+         Add
+           (Adacovex.Cache.Hash_File
+              (GPR_Files (I).Path (1 .. GPR_Files (I).Len)));
+      end loop;
+      if CLen = 0 then
+         return "";
+      end if;
+      return "graph:" & Adacovex.Cache.Hash_String (Comb (1 .. CLen));
+   end Graph_Key;
+
    procedure Build_Dependency_Graph
      (Target_Dir    : String;
       Manifest_Path : String;
       Graph         : out Types.Implementation.Component_Vectors.Vector;
-      Success       : out Boolean)
+      Success       : out Boolean;
+      Use_Cache     : Boolean := False)
    is
       Root_Name        : Types.Desc_Field;
       Root_Name_Len    : Natural := 0;
@@ -1075,6 +1218,30 @@ package body Adacovex.Parsers.Manifest is
       end;
 
       Collect_GPR_Files (Target_Dir, GPR_Files);
+
+      --  Serve a previously resolved (unchanged) graph straight from the
+      --  on-disk result cache instead of re-parsing the lockfile and every
+      --  .gpr file.  The directory walk above is cheap; the recursive GPR
+      --  and lock parsing it saves is not.
+      if Use_Cache then
+         declare
+            K     : constant String :=
+              Graph_Key (Target_Dir, Manifest_Path, GPR_Files);
+            Blob  : String (1 .. Adacovex.Cache.Max_Cache_Blob);
+            Blen  : Natural;
+            Found : Boolean;
+         begin
+            if K'Length > 0 then
+               Adacovex.Cache.Get_Cached (K, Blob, Blen, Found);
+               if Found
+                 and then Graph_Store.Deserialize (Blob (1 .. Blen), Graph)
+               then
+                  Success := True;
+                  return;
+               end if;
+            end if;
+         end;
+      end if;
 
       --  Locate the root .gpr: the manifest project-files entry if present,
       --  otherwise a .gpr whose project name matches the manifest crate name.
@@ -1161,6 +1328,26 @@ package body Adacovex.Parsers.Manifest is
       Register_Manifest_Deps (Graph, Base_Names, Dev_Names);
 
       Success := Root.Name_Len > 0;
+
+      --  Store the freshly resolved graph for the next run (only on success,
+      --  so a partial graph is never cached).
+      if Use_Cache then
+         declare
+            K  : constant String :=
+              Graph_Key (Target_Dir, Manifest_Path, GPR_Files);
+            OK : Boolean;
+         begin
+            if K'Length > 0 then
+               declare
+                  S_Blob : constant String := Graph_Store.Serialize (Graph);
+               begin
+                  if S_Blob'Length > 0 then
+                     Adacovex.Cache.Put_Cached (K, S_Blob, OK);
+                  end if;
+               end;
+            end if;
+         end;
+      end if;
    end Build_Dependency_Graph;
 
 end Adacovex.Parsers.Manifest;

@@ -46,18 +46,20 @@ end record;
 
 ## Procedures
 
-### procedure Parse_HLR_MD (File_Path : Standard.String; HLRs : Adacovex.Parsers.DO178C.HLR_Vectors.Vector; Success : Standard.Boolean) `[Pre]`
+### procedure Parse_HLR_MD (File_Path : Standard.String; HLRs : Adacovex.Parsers.DO178C.HLR_Vectors.Vector; Success : Standard.Boolean; Use_Cache : Standard.Boolean) `[Pre]`
 
 | Parameter | Description |
 |-----------|-------------|
 | `File_Path` | Path to HLR.md markdown file. |
 | `HLRs` | Output vector of HLR entries (appended to). |
 | `Success` | True if file was parsed successfully. |
+| `Use_Cache` | When True, serve/store the result in the on-disk |
 
-### procedure Parse_LLR_MD (File_Path : Standard.String; LLRs : Adacovex.Parsers.DO178C.LLR_Vectors.Vector; Success : Standard.Boolean) `[Pre]`
+### procedure Parse_LLR_MD (File_Path : Standard.String; LLRs : Adacovex.Parsers.DO178C.LLR_Vectors.Vector; Success : Standard.Boolean; Use_Cache : Standard.Boolean) `[Pre]`
 
 | Parameter | Description |
 |-----------|-------------|
 | `File_Path` | Path to LLR.md markdown file. |
 | `LLRs` | Output vector of LLR entries (appended to). |
 | `Success` | True if file was parsed successfully. |
+| `Use_Cache` | When True, serve/store the result in the on-disk |
