@@ -1,6 +1,7 @@
 # adacovex Changelogs
 
 <!-- CHANGELOG_LIST -->
+- [1.12.0](adacovex-1.12.0.md)
 - [1.11.0](adacovex-1.11.0.md)
 - [1.10.0](adacovex-1.10.0.md)
 - [1.9.0](adacovex-1.9.0.md)
