@@ -369,7 +369,8 @@ package body Adacovex.Config is
                      end;
                   else
                      Set_Error
-                       (Cfg, "--theme requires a value (light | dark | system)");
+                       (Cfg,
+                        "--theme requires a value (light | dark | system)");
                   end if;
                elsif Has_Prefix (A, "--theme=") then
                   declare
@@ -1388,7 +1389,8 @@ package body Adacovex.Config is
            ("help [TOPIC]",
             "Show the full usage message, or contextual help for a single"
             & ASCII.LF
-            & "flag or subcommand when TOPIC names one." & ASCII.LF
+            & "flag or subcommand when TOPIC names one."
+            & ASCII.LF
             & ASCII.LF
             & "  adacovex help serve       contextual help for --serve"
             & ASCII.LF
@@ -1396,7 +1398,8 @@ package body Adacovex.Config is
             & ASCII.LF
             & "  adacovex --serve help     topic after the flag also works"
             & ASCII.LF
-            & "  adacovex help             full usage" & ASCII.LF
+            & "  adacovex help             full usage"
+            & ASCII.LF
             & ASCII.LF
             & "TOPIC is case-insensitive; a leading -- is optional, and a"
             & ASCII.LF
@@ -1406,15 +1409,19 @@ package body Adacovex.Config is
            ("--serve",
             "Start the built-in HTTP/1.1 web dashboard on --port (default"
             & ASCII.LF
-            & "8080) after the assessment.  Endpoints:" & ASCII.LF
+            & "8080) after the assessment.  Endpoints:"
+            & ASCII.LF
             & ASCII.LF
             & "  GET /                HTML dashboard (coverage, proof, tests,"
             & ASCII.LF
-            & "                       compliance cards)" & ASCII.LF
-            & "  GET /api/metrics     JSON object with key metrics" & ASCII.LF
+            & "                       compliance cards)"
+            & ASCII.LF
+            & "  GET /api/metrics     JSON object with key metrics"
+            & ASCII.LF
             & "  GET /badge/*.svg     SVG badges (spark, tests, do178c,"
             & ASCII.LF
-            & "                       iso26262, iec62304)" & ASCII.LF
+            & "                       iso26262, iec62304)"
+            & ASCII.LF
             & ASCII.LF
             & "Standard-aware: like the sbom subcommand it defaults to all"
             & ASCII.LF
@@ -1426,18 +1433,22 @@ package body Adacovex.Config is
             & ASCII.LF
             & "via the header dropdown (--theme sets the initial choice; the"
             & ASCII.LF
-            & "browser's own choice persists in localStorage)." & ASCII.LF
+            & "browser's own choice persists in localStorage)."
+            & ASCII.LF
             & ASCII.LF
             & "Related: --theme, --port.");
       elsif T = "theme" then
          Print_Section
            ("--theme=NAME",
-            "Dashboard color theme for --serve:" & ASCII.LF
+            "Dashboard color theme for --serve:"
+            & ASCII.LF
             & ASCII.LF
             & "  system   follow the browser's prefers-color-scheme (default)"
             & ASCII.LF
-            & "  light    force the light theme" & ASCII.LF
-            & "  dark     force the dark theme" & ASCII.LF
+            & "  light    force the light theme"
+            & ASCII.LF
+            & "  dark     force the dark theme"
+            & ASCII.LF
             & ASCII.LF
             & "The header dropdown switches live between the three; the"
             & ASCII.LF
@@ -1450,7 +1461,9 @@ package body Adacovex.Config is
             "HTTP server port for --serve (default 8080).  Must be a valid"
             & ASCII.LF
             & "positive integer.  Only relevant with --serve.");
-      elsif T = "standard" or else T = "dal" or else T = "asil"
+      elsif T = "standard"
+        or else T = "dal"
+        or else T = "asil"
         or else T = "class"
       then
          Print_Section
@@ -1459,13 +1472,19 @@ package body Adacovex.Config is
             & ASCII.LF
             & "evidence checks are identical across standards; only the"
             & ASCII.LF
-            & "level labels change:" & ASCII.LF
+            & "level labels change:"
             & ASCII.LF
-            & "  --standard=do178c    DO-178C DAL A-E (default)" & ASCII.LF
-            & "  --standard=iso26262  ISO 26262 ASIL D/QM" & ASCII.LF
-            & "  --standard=iec62304  IEC 62304 Class C/A" & ASCII.LF
-            & "  --standard=all       all standards at the shared tier" & ASCII.LF
-            & "  --dal=LEVEL          shared rigor tier A-E" & ASCII.LF
+            & ASCII.LF
+            & "  --standard=do178c    DO-178C DAL A-E (default)"
+            & ASCII.LF
+            & "  --standard=iso26262  ISO 26262 ASIL D/QM"
+            & ASCII.LF
+            & "  --standard=iec62304  IEC 62304 Class C/A"
+            & ASCII.LF
+            & "  --standard=all       all standards at the shared tier"
+            & ASCII.LF
+            & "  --dal=LEVEL          shared rigor tier A-E"
+            & ASCII.LF
             & "  --asil=LEVEL         ISO 26262 level (sets standard + tier)"
             & ASCII.LF
             & "  --class=LEVEL        IEC 62304 class (sets standard + tier)"
@@ -1496,8 +1515,11 @@ package body Adacovex.Config is
             & "VC/DAL delta; --coverage-delta gates on docstring coverage"
             & ASCII.LF
             & "only.  Works on git, mercurial, subversion, fossil, and jj.");
-      elsif T = "sbom" or else T = "format" or else T = "out"
-        or else T = "no-sbom" or else T = "sbom-format"
+      elsif T = "sbom"
+        or else T = "format"
+        or else T = "out"
+        or else T = "no-sbom"
+        or else T = "sbom-format"
       then
          Print_Section
            ("adacovex sbom",
@@ -1508,7 +1530,8 @@ package body Adacovex.Config is
             & "standards unless narrowed by --standard / --asil / --class."
             & ASCII.LF
             & ASCII.LF
-            & "  adacovex sbom --format=cyclonedx-json --dal=C" & ASCII.LF
+            & "  adacovex sbom --format=cyclonedx-json --dal=C"
+            & ASCII.LF
             & "  adacovex sbom --format=spdx-json --asil=B --out=sbom.spdx.json"
             & ASCII.LF
             & ASCII.LF
@@ -1517,9 +1540,14 @@ package body Adacovex.Config is
             & "and destination.  --no-sbom skips SBOM generation in the main"
             & ASCII.LF
             & "pipeline entirely.");
-      elsif T = "prove" or else T = "jobs" or else T = "level"
-        or else T = "timeout" or else T = "steps" or else T = "memlimit"
-        or else T = "force" or else T = "no-loop-unrolling"
+      elsif T = "prove"
+        or else T = "jobs"
+        or else T = "level"
+        or else T = "timeout"
+        or else T = "steps"
+        or else T = "memlimit"
+        or else T = "force"
+        or else T = "no-loop-unrolling"
         or else T = "no-inlining"
       then
          Print_Section
@@ -1590,7 +1618,9 @@ package body Adacovex.Config is
             & "on the installation method: ADACOVEX_VERSION (release builds),"
             & ASCII.LF
             & "then alire-dev.toml (source checkouts), then alire.toml.");
-      elsif T = "cache" or else T = "no-cache" or else T = "cache-dir"
+      elsif T = "cache"
+        or else T = "no-cache"
+        or else T = "cache-dir"
         or else T = "cache-max"
       then
          Print_Section
@@ -1600,8 +1630,10 @@ package body Adacovex.Config is
             & "content-addressed cache (default on).  --cache-dir relocates"
             & ASCII.LF
             & "it; --cache-max caps entries before oldest-first eviction.");
-      elsif T = "require-spark" or else T = "require-docstrings"
-        or else T = "require-tests" or else T = "require-proof"
+      elsif T = "require-spark"
+        or else T = "require-docstrings"
+        or else T = "require-tests"
+        or else T = "require-proof"
       then
          Print_Section
            ("--require-* CI gates",

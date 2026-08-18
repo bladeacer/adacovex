@@ -19,10 +19,11 @@ machine-readable outputs, and SVG badge artifacts.
 
 `run-tests` **builds the target's native test suite first**: in a consumer
 workspace the `build: true` step builds adacovex in a scratch checkout and
-leaves the target untouched, so the action runs `alr build` in the workspace
-root before executing `test-command` (in the self-assessment case that is an
-incremental no-op). This keeps `test-command: ./test_crdt`-style usage working
-in consumer repositories such as Ada_CRDT's release workflow.
+leaves the target untouched, so the action runs `alr build` in the target
+root (a subdirectory when `target` points at one) before executing
+`test-command` (in the self-assessment case that is an incremental no-op).
+This keeps `test-command: ./test_crdt`-style usage working in consumer
+repositories such as Ada_CRDT's release workflow.
 
 The action is version-matched to the adacovex binary: the release workflow
 bundles `adacovex-vX.Y.Z.tar.gz` for every `vX.Y.Z` tag, and the action
@@ -56,7 +57,7 @@ steps:
 | `require-docstrings` | `''` | Minimum docstring coverage % (0-100); CI threshold gate |
 | `require-tests` | `''` | Minimum passing test count; CI threshold gate |
 | `require-proof` | `''` | Minimum proved-VC coverage % (0-100); CI threshold gate |
-| `run-tests` | `false` | Build the target's native test suite and run it (requires `build: true`; the action runs `alr build` in the workspace root first) |
+| `run-tests` | `false` | Build the target's native test suite and run it (requires `build: true`; the action runs `alr build` in the target root first) |
 | `test-command` | `./bin/test_runner` | Command (relative to workspace root) that runs the target's test suite |
 | `release-build` | `false` | Pass `--release` to `alr build` |
 | `assess` | `true` | Run the assessment and publish outputs/badges (`false` for build/test-only jobs) |

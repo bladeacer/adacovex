@@ -7,11 +7,11 @@
   | Test-result parser                       |  43 | PASS     |
   | CLI config                               |  112 | PASS     |
   | SVG renderer                             |  36 | PASS     |
-  | HTML/Markdown renderers                  |  31 | PASS     |
+  | HTML/Markdown renderers                  |  34 | PASS     |
   | SBOM generator                           |  118 | PASS     |
   | IR synthesis                             |  27 | PASS     |
   | Man page renderer                        |  18 | PASS     |
   | VCS support                              |  29 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 644  Failed: 0
+  Passed: 647  Failed: 0

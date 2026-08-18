@@ -21,6 +21,7 @@
 - [Adacovex.Config](adacovex-config.md)
 - [Adacovex.Core](adacovex-core.md)
 - [Adacovex.CPUs](adacovex-cpus.md)
+- [Adacovex.Dashboard_Template](adacovex-dashboard_template.md)
 - [Adacovex.Diff](adacovex-diff.md)
 - [Adacovex.IR_Bounds](adacovex-ir_bounds.md)
 - [Adacovex.IR_Synthesiser](adacovex-ir_synthesiser.md)

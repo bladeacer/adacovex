@@ -88,7 +88,9 @@ package body Adacovex.Renderers.Man is
          & Q);
       App (Buf, Len, ".br");
       App
-        (Buf, Len, ".B " & Q & "adacovex prove [--target=PATH] [prove options]" & Q);
+        (Buf,
+         Len,
+         ".B " & Q & "adacovex prove [--target=PATH] [prove options]" & Q);
       App (Buf, Len, ".br");
       App (Buf, Len, ".B " & Q & "adacovex status [--target=PATH]" & Q);
       App (Buf, Len, ".br");
@@ -175,8 +177,11 @@ package body Adacovex.Renderers.Man is
          & "Standard-aware: defaults to all standards.  --theme=NAME sets"
          & " the initial color theme (system | light | dark); the header"
          & " dropdown switches live and the Save settings button persists"
-         & " the choice in localStorage.  GET /api/metrics serves the JSON"
-         & " API (curl http://localhost:8080/api/metrics).");
+         & " the choice in localStorage (no cookies).  Theme priority on"
+         & " page load: ?theme= query param, then an explicit --theme=light"
+         & " / dark, then the saved choice, then the system preference."
+         & "  GET /api/metrics serves the JSON API"
+         & " (curl http://localhost:8080/api/metrics).");
       App_Option
         (Buf,
          Len,

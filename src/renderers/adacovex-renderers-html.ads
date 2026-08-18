@@ -34,7 +34,8 @@ package Adacovex.Renderers.HTML is
       DAL_Assess    : Types.Implementation.DAL_Assessment;
       Packages      : Types.Implementation.Package_Vectors.Vector;
       All_Standards : Boolean := False;
-      Theme         : Types.Dashboard_Theme := Types.System_Theme) return String
+      Theme         : Types.Dashboard_Theme := Types.System_Theme)
+      return String
    with Post => Render_Dashboard'Result'Length > 0, Global => null;
 
    --  Render a JSON object with key metric values.

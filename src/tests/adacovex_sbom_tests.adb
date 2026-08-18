@@ -6,7 +6,7 @@ use Adacovex.Types, Adacovex.Types.Implementation;
 with Adacovex.Parsers.Manifest;
 with Adacovex.Cache;
 with Adacovex.Renderers.SBOM; use Adacovex.Renderers.SBOM;
-with GNAT.OS_Lib; use GNAT.OS_Lib;
+with GNAT.OS_Lib;             use GNAT.OS_Lib;
 
 package body Adacovex_SBOM_Tests is
 
@@ -497,8 +497,8 @@ package body Adacovex_SBOM_Tests is
                R.Check (C.Parent = 1, Tool & " parent = root");
                R.Check
                  (C.PURL_Len = 12 + Tool'Length
-                  and then
-                    C.PURL (1 .. 12 + Tool'Length) = "pkg:generic/" & Tool,
+                  and then C.PURL (1 .. 12 + Tool'Length)
+                           = "pkg:generic/" & Tool,
                   Tool & " purl");
                --  Version probing: the version is either empty (probe
                --  failed) or a digit-bearing token extracted from the

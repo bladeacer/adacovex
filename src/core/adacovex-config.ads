@@ -33,16 +33,16 @@ package Adacovex.Config is
       --  Dashboard color theme for --serve (system/light/dark).  "system"
       --  follows the browser's prefers-color-scheme; light/dark force a
       --  theme.  Only relevant with --serve.
-      Theme             : Types.Dashboard_Theme := Types.System_Theme;
-      No_SVG            : Boolean := False;
-      Emit_SVG          : Boolean := True;
-      SVG_Path          : String (1 .. Types.Max_Path);
-      SVG_Path_Len      : Natural := 0;
-      Emit_Markdown     : Boolean := False;
-      MD_Path           : String (1 .. Types.Max_Path);
-      MD_Path_Len       : Natural := 0;
-      Verbose           : Boolean := False;
-      Strict_Mode       : Boolean := True;
+      Theme         : Types.Dashboard_Theme := Types.System_Theme;
+      No_SVG        : Boolean := False;
+      Emit_SVG      : Boolean := True;
+      SVG_Path      : String (1 .. Types.Max_Path);
+      SVG_Path_Len  : Natural := 0;
+      Emit_Markdown : Boolean := False;
+      MD_Path       : String (1 .. Types.Max_Path);
+      MD_Path_Len   : Natural := 0;
+      Verbose       : Boolean := False;
+      Strict_Mode   : Boolean := True;
 
       --  Result caching (see Adacovex.Cache).  Enabled by default; the cache
       --  is keyed by the SHA-256 of each analyzed input, so unchanged code
@@ -113,7 +113,7 @@ package Adacovex.Config is
    --  @return Fully populated CLI_Config from parsed command-line arguments.
    function Parse_CLI return CLI_Config
    with
-     Post       =>
+     Post =>
        Parse_CLI'Result.Target_Len <= Types.Max_Path
        and then Parse_CLI'Result.Manifest_Len <= Types.Max_Path
        and then Parse_CLI'Result.SVG_Path_Len <= Types.Max_Path
