@@ -1,7 +1,15 @@
-# Template release manifest.
-# Copied and version-replaced by make bump-version / make release.
 name = "covex"
 description = "Ada/SPARK coverage, proof, multi-standard compliance tool"
+version = "1.14.0"
+project-files = ["adacovex.gpr"]
+# When a consumer declares covex as a dependency, auto-with this project so the
+# adacovex executable is compiled into the consumer build (producing bin/adacovex
+# and a `covex` symlink via the [environment] PATH.prepend below). Without this,
+# a consumer doing `covex = "*"` then `alr build` never compiles adacovex and
+# `alr exec -- adacovex` finds no binary. This is what makes the published crate
+# self-contained for `make prove`/`make badges`/etc. in dependent projects.
+# Boolean form only: alr < 2.2 rejects the string form auto-gpr-with = "adacovex.gpr".
+auto-gpr-with = true
 long-description = """
 Zero-dependency Ada/SPARK CLI tool for coverage analysis, proof verification,
 test-result parsing, multi-standard safety-compliance assessment (DO-178C /
@@ -35,17 +43,20 @@ ISO 26262 / IEC 62304), and interactive dashboards.
 -  Self-assessment: 100% docstring coverage, Platinum SPARK (408/408 VCs proved),
   DAL-C / ASIL B / Class A Achieved, 666/666 native tests passing
 """
-version = "1.14.0"
-project-files = ["adacovex.gpr"]
-auto-gpr-with = "adacovex.gpr"
-executables = ["adacovex"]
-
-[environment]
-PATH.prepend = "${CRATE_ROOT}/bin"
 
 authors = ["bladeacer"]
 maintainers = ["bladeacer <wg.nick.exe@gmail.com>"]
 maintainers-logins = ["bladeacer"]
 licenses = "Apache-2.0"
 website = "https://github.com/bladeacer/adacovex"
-tags = ["ada", "spark", "formal-verify", "cli", "gnatprove", "sbom", "tests", "code-coverage", "do-178c", "compliance", "developer-tools"]
+tags = ["ada", "spark", "formal-verify", "cli", "gnatprove", "sbom", "tests", "code-coverage", "do-178c", "iso-26262", "iec-62304", "asil", "compliance", "developer-tools"]
+
+executables = ["adacovex"]
+
+[environment]
+PATH.prepend = "${CRATE_ROOT}/bin"
+
+[origin]
+commit = "6816c1e867c0a07fbb6f1011d149e505c4410960"
+url = "git+https://github.com/bladeacer/adacovex"
+
