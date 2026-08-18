@@ -222,7 +222,7 @@ check:
 	@echo "=== Quality gate: proof metrics in sync ==="; python3 tools/update-proof-status.py --check
 	@echo "=== Quality gate: description sync ==="; python3 tools/update-description.py --check
 	@echo ""
-	@echo "=== Quality gate passed: ascii, spark-off, changelog, version, doc-links, build, test, prove, doc, sbom, test-count, proof-status, description ==="
+	@echo "=== Quality gate passed: ascii, spark-off, changelog, version, doc-links, link, build, test, prove, doc, sbom, test-count, proof-status, description ==="
 
 # Sync the crate description + long description from the canonical files
 # (alire/description.txt + alire/long-description.txt) into every manifest.

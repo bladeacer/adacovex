@@ -22,7 +22,7 @@ import argparse
 import re
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 ROOT: Path = Path(__file__).resolve().parent.parent
 
@@ -41,17 +41,29 @@ LINK_RE = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
 
 
 def slugify(heading: str) -> str:
-    """GitHub-style anchor slug for a markdown heading."""
+    """GitHub-faithful anchor slug for a markdown heading.
+
+    Mirrors github/html-pipeline's TableOfContentsFilter: lowercase, drop
+    everything that is not a word character (letters, digits, underscore),
+    hyphen, or space, then replace *each* space with a hyphen (consecutive
+    spaces yield consecutive hyphens, e.g. `a  b` -> `a--b`).
+    """
     s: str = heading.strip().lower()
-    s = re.sub(r"[`*_~]", "", s)          # drop markdown emphasis / backticks
-    s = re.sub(r"[^\w\s\-]", "", s)       # drop remaining punctuation
-    s = re.sub(r"\s+", "-", s)            # spaces -> hyphens
+    s = re.sub(r"^#{1,6}\s+", "", s)          # drop leading markdown markers
+    s = re.sub(r"[^\w\- ]", "", s)            # remove punctuation
+    s = s.strip()                               # drop space left by markers
+    s = s.replace(" ", "-")                    # each space -> hyphen
     return s
 
 
 def headings_slugs(path: Path) -> List[str]:
-    """Return the GitHub anchor slugs of all headings in a markdown file."""
+    """Return the GitHub anchor slugs of all headings in a markdown file.
+
+    Duplicate headings get GitHub's `-1`, `-2`, ... suffixes (the first
+    occurrence keeps the bare slug).
+    """
     slugs: List[str] = []
+    seen: Dict[str, int] = {}
     try:
         text: str = path.read_text(encoding="utf-8", errors="replace")
     except OSError:
@@ -59,7 +71,10 @@ def headings_slugs(path: Path) -> List[str]:
     for line in text.splitlines():
         m = re.match(r"^#{1,6}\s+(.+?)\s*#*\s*$", line)
         if m:
-            slugs.append(slugify(m.group(1)))
+            slug: str = slugify(m.group(1))
+            n: int = seen.get(slug, 0)
+            seen[slug] = n + 1
+            slugs.append(slug if n == 0 else f"{slug}-{n}")
     return slugs
 
 
@@ -120,10 +135,7 @@ def check_file(path: Path, slug_cache: Dict[Path, List[str]],
                 errors.append(f"{rel}:{line_no}: broken link: {target!r} "
                               f"(no such file {resolved})")
                 continue
-            # Generated gnatdoc pages use their own anchor scheme (e.g.
-            # `type-ir_int32`), so only verify the file exists for them.
-            if (anchor and resolved.suffix == ".md"
-                    and "docs/api-docs/" not in resolved.as_posix()):
+            if anchor and resolved.suffix == ".md":
                 if resolved not in slug_cache:
                     slug_cache[resolved] = headings_slugs(resolved)
                 if anchor not in slug_cache[resolved]:
