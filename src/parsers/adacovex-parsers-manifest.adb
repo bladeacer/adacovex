@@ -1,6 +1,8 @@
 with Ada.Text_IO;
 with Ada.Directories;
 with Ada.Containers.Vectors;
+with Ada.Strings.Fixed;
+with GNAT.OS_Lib; use GNAT.OS_Lib;
 with Adacovex.Cache;
 
 package body Adacovex.Parsers.Manifest is
@@ -1020,6 +1022,355 @@ package body Adacovex.Parsers.Manifest is
          end;
       end loop;
    end Discover_Vendored_Components;
+
+   --  Known system binaries that count as development dependencies.  This
+   --  is the curated toolchain set a project can interact with at
+   --  development time (build drivers, the GNAT/SPARK toolchain, Python
+   --  tooling, VCS clients, and container/network/doc tools).  Universal
+   --  coreutils (sed, grep, tar, ...) are deliberately absent: they are OS
+   --  components rather than project dev dependencies and would add noise
+   --  to every SBOM.
+   type Tool_Entry is record
+      Name : String (1 .. 16);
+      Len  : Natural := 0;
+   end record;
+
+   --  Build a Tool_Entry from a string literal, so the System_Tools table
+   --  stays readable.
+   --  @param S  Tool name (lowercase, e.g. "python3").
+   --  @return The Tool_Entry holding S.
+   function Make_Tool (S : String) return Tool_Entry is
+      E : Tool_Entry;
+   begin
+      E.Len := S'Length;
+      for I in 1 .. S'Length loop
+         E.Name (I) := S (S'First + I - 1);
+      end loop;
+      return E;
+   end Make_Tool;
+
+   System_Tools : constant array (1 .. 37) of Tool_Entry :=
+     (Make_Tool ("alr"),
+      Make_Tool ("make"),
+      Make_Tool ("cmake"),
+      Make_Tool ("ninja"),
+      Make_Tool ("gprbuild"),
+      Make_Tool ("gprclean"),
+      Make_Tool ("gprinstall"),
+      Make_Tool ("gnatmake"),
+      Make_Tool ("gnatbind"),
+      Make_Tool ("gnatlink"),
+      Make_Tool ("gnat"),
+      Make_Tool ("gnatls"),
+      Make_Tool ("gnatprep"),
+      Make_Tool ("gnatprove"),
+      Make_Tool ("gnatdoc"),
+      Make_Tool ("gnatformat"),
+      Make_Tool ("gnatpp"),
+      Make_Tool ("python3"),
+      Make_Tool ("python"),
+      Make_Tool ("pip3"),
+      Make_Tool ("pip"),
+      Make_Tool ("pytest"),
+      Make_Tool ("rst2md"),
+      Make_Tool ("git"),
+      Make_Tool ("git-lfs"),
+      Make_Tool ("hg"),
+      Make_Tool ("svn"),
+      Make_Tool ("fossil"),
+      Make_Tool ("jj"),
+      Make_Tool ("bash"),
+      Make_Tool ("mandb"),
+      Make_Tool ("gh"),
+      Make_Tool ("docker"),
+      Make_Tool ("podman"),
+      Make_Tool ("curl"),
+      Make_Tool ("wget"),
+      Make_Tool ("pandoc"));
+
+   --  Whether Line contains Tool as a whole word.  The match is
+   --  case-sensitive and bounded by characters outside [a-z0-9_-], so
+   --  "make" matches in "make build" but not in "Makefile" (capital M) or
+   --  "makefile", and "python" does not match inside "python3".
+   --  @param Line  Line of text to search.
+   --  @param Tool  Lowercase tool name to look for.
+   --  @return True when Line refers to Tool as a whole word.
+   function Line_Refers_To (Line : String; Tool : String) return Boolean is
+      function Is_Word_Char (C : Character) return Boolean is
+      begin
+         return
+           (C in 'a' .. 'z')
+           or else (C in '0' .. '9')
+           or else C = '_'
+           or else C = '-';
+      end Is_Word_Char;
+
+      function Match_At (I : Natural) return Boolean is
+      begin
+         if I + Tool'Length - 1 > Line'Last then
+            return False;
+         end if;
+         if I > Line'First and then Is_Word_Char (Line (I - 1)) then
+            return False;
+         end if;
+         if I + Tool'Length <= Line'Last
+           and then Is_Word_Char (Line (I + Tool'Length))
+         then
+            return False;
+         end if;
+         for J in Tool'Range loop
+            if Line (I + (J - Tool'First)) /= Tool (J) then
+               return False;
+            end if;
+         end loop;
+         return True;
+      end Match_At;
+   begin
+      if Tool'Length = 0 or else Tool'Length > Line'Length then
+         return False;
+      end if;
+      for I in Line'First .. Line'Last - Tool'Length + 1 loop
+         if Match_At (I) then
+            return True;
+         end if;
+      end loop;
+      return False;
+   end Line_Refers_To;
+
+   --  Discover system-tool dev dependencies referenced by the project.
+   --  Walks the project tree, reads dev-facing files (Makefile variants,
+   --  shell scripts, Python tools, Alire manifests, CI workflows, GNAT
+   --  project files, and Ada sources), and registers every known system
+   --  tool that the files reference AND that is actually installed on PATH
+   --  as a dev-scope dependency of the root.  A Makefile at the project
+   --  root implies make even when no recipe spells out the driver by name.
+   --  Docstrings (.md prose) are not scanned: prose is not tool
+   --  interaction, and words like "make" are far too common in it.  The
+   --  source file that declares the System_Tools table itself is skipped:
+   --  it references every curated tool by construction, so scanning it
+   --  would register every installed tool as a self-reference.
+   procedure Discover_System_Dev_Deps
+     (Target_Dir : String;
+      Graph      : in out Types.Implementation.Component_Vectors.Vector)
+   is
+      use Ada.Directories;
+      type Dir_Entry is record
+         Path : Types.Path_Field;
+         Len  : Natural := 0;
+      end record;
+      package Dir_Stacks is new Ada.Containers.Vectors (Positive, Dir_Entry);
+      Dir_Stack : Dir_Stacks.Vector;
+      Search    : Search_Type;
+      Ent       : Directory_Entry_Type;
+
+      --  Tool names the project's files reference (deduplicated).
+      Referenced : Name_Vectors.Vector;
+
+      procedure Push_Dir (Dir : String) is
+         Item : Dir_Entry;
+      begin
+         if Dir'Length <= Types.Max_Path then
+            Item.Len := Dir'Length;
+            for I in Dir'Range loop
+               Item.Path (I - Dir'First + 1) := Dir (I);
+            end loop;
+            Dir_Stack.Append (Item);
+         end if;
+      end Push_Dir;
+
+      --  Whether a file should be scanned for tool references: Makefile
+      --  variants by name, or dev-facing text files by extension.
+      function Should_Scan (Name : String) return Boolean is
+         Dot : Natural := 0;
+      begin
+         if Name = "makefile"
+           or else Name = "Makefile"
+           or else Name = "GNUmakefile"
+         then
+            return True;
+         end if;
+         for I in reverse Name'Range loop
+            if Name (I) = '.' then
+               Dot := I;
+               exit;
+            end if;
+         end loop;
+         if Dot = 0 then
+            return False;
+         end if;
+         declare
+            Ext : constant String := Name (Dot .. Name'Last);
+         begin
+            return
+              Ext = ".sh"
+              or else Ext = ".py"
+              or else Ext = ".gpr"
+              or else Ext = ".yml"
+              or else Ext = ".yaml"
+              or else Ext = ".toml"
+              or else Ext = ".ads"
+              or else Ext = ".adb";
+         end;
+      end Should_Scan;
+
+      --  Record Tool as referenced by the project's files.
+      procedure Note_Tool (Tool : Tool_Entry) is
+      begin
+         Add_Dep_Name (Referenced, Tool.Name (1 .. Tool.Len));
+      end Note_Tool;
+
+      --  Scan one file for every known system tool.
+      procedure Scan_File (Path : String) is
+         use Ada.Text_IO;
+         F        : File_Type;
+         Line     : String (1 .. Types.Max_Line);
+         Last     : Natural;
+         Overflow : Boolean;
+         Line_Num : Natural := 0;
+      begin
+         begin
+            Open (F, In_File, Path);
+         exception
+            when others =>
+               return;
+         end;
+         while not End_Of_File (F) loop
+            Line_Num := Line_Num + 1;
+            Adacovex.Parsers.Read_Line
+              (F, Path, Line_Num, Line, Last, Overflow);
+            if Overflow then
+               --  A physical line longer than Max_Line: stop scanning this
+               --  file so a truncated file never yields a partial tool set.
+               Close (F);
+               return;
+            end if;
+            if Ada.Strings.Fixed.Index
+                 (Line (1 .. Last), "System_Tools : constant array")
+               > 0
+            then
+               --  This file declares the curated tool table; every entry is
+               --  a literal tool name by construction, so references found
+               --  here would register every installed tool regardless of
+               --  whether the project actually uses it.
+               Close (F);
+               return;
+            end if;
+            for T in System_Tools'Range loop
+               if Line_Refers_To
+                 (Line (1 .. Last),
+                  System_Tools (T).Name (1 .. System_Tools (T).Len))
+               then
+                  Note_Tool (System_Tools (T));
+               end if;
+            end loop;
+         end loop;
+         Close (F);
+      exception
+         when others =>
+            if Is_Open (F) then
+               Close (F);
+            end if;
+      end Scan_File;
+
+      --  Whether the project root holds a Makefile variant (implies make).
+      function Has_Makefile return Boolean is
+      begin
+         return
+           Ada.Directories.Exists (Target_Dir & "/Makefile")
+           or else Ada.Directories.Exists (Target_Dir & "/makefile")
+           or else Ada.Directories.Exists (Target_Dir & "/GNUmakefile");
+      end Has_Makefile;
+   begin
+      Push_Dir (Target_Dir);
+
+      while not Dir_Stack.Is_Empty loop
+         declare
+            Current  : Dir_Entry := Dir_Stack.Last_Element;
+            Dir_Path : String renames Current.Path (1 .. Current.Len);
+         begin
+            Dir_Stack.Delete_Last;
+
+            Start_Search (Search, Dir_Path, "");
+            begin
+               while More_Entries (Search) loop
+                  Get_Next_Entry (Search, Ent);
+                  declare
+                     N    : constant String := Simple_Name (Ent);
+                     Path : constant String := Full_Name (Ent);
+                  begin
+                     if Kind (Ent) = Directory then
+                        if N /= "."
+                          and N /= ".."
+                          and N /= ".git"
+                          and N /= ".jj"
+                          and N /= ".hg"
+                          and N /= ".svn"
+                          and N /= "obj"
+                          and N /= "tests"
+                          and N /= "config"
+                          and N /= ".adacovex"
+                          and N /= "alire"
+                        then
+                           Push_Dir (Path);
+                        end if;
+                     elsif Kind (Ent) = Ordinary_File then
+                        if Should_Scan (N) then
+                           Scan_File (Path);
+                        end if;
+                     end if;
+                  end;
+               end loop;
+            exception
+               when others =>
+                  End_Search (Search);
+                  raise;
+            end;
+            End_Search (Search);
+         end;
+      end loop;
+
+      --  A Makefile at the project root implies make even when no recipe
+      --  spells out the driver by name.
+      if Has_Makefile then
+         for T in System_Tools'Range loop
+            if System_Tools (T).Len = 4
+              and then System_Tools (T).Name (1 .. 4) = "make"
+            then
+               Note_Tool (System_Tools (T));
+               exit;
+            end if;
+         end loop;
+      end if;
+
+      --  Register every referenced tool that is actually installed on PATH
+      --  as a dev-scope dependency of the root.  Tools the project does not
+      --  reference, or that are not installed, are skipped.  Append_
+      --  Dependency also deduplicates against manifest/lockfile/GPR deps
+      --  (e.g. gnatprove declared in alire-dev.toml), so a manifest-pinned
+      --  tool never appears twice.
+      for I in 1 .. Integer (Referenced.Length) loop
+         declare
+            Name : constant String :=
+              Referenced (I).Name (1 .. Referenced (I).Len);
+            Exe  : GNAT.OS_Lib.String_Access :=
+              GNAT.OS_Lib.Locate_Exec_On_Path (Name);
+         begin
+            if Exe /= null then
+               GNAT.OS_Lib.Free (Exe);
+               Append_Dependency
+                 (Graph,
+                  Name,
+                  "",
+                  "",
+                  "System tool referenced by the project (dev dependency)",
+                  "pkg:generic/" & Name,
+                  1,
+                  False,
+                  Types.Scope_Dev);
+            end if;
+         end;
+      end loop;
+   end Discover_System_Dev_Deps;
 
    --  Fingerprint of the docstring-patch directory (<target>/.adacovex/
    --  patches/), which contributes vendored components to the graph: a

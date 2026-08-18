@@ -69,6 +69,21 @@ the single gnatprove crate.
 The assessment and SBOM pipeline always scans the publishing `alire.toml`, so
 dev-only tool declarations never leak into dependency graphs or SBOMs.
 
+### System-tool dev dependencies (SBOM)
+
+Beyond the Alire graph, `Discover_System_Dev_Deps` adds the system binaries a
+project interacts with at development time (`python3`, `git`, `gnatprove`,
+`make`, ...) as `Scope_Dev` SBOM components. It scans the project's
+dev-facing files (Makefile variants, `.sh` / `.py` / `.gpr` / `.yml` /
+`.toml` / `.ads` / `.adb`) for a curated toolchain list and registers every
+referenced tool that is actually installed on `$PATH` under a
+`pkg:generic/<tool>` purl. Tools referenced nowhere in the project, or
+referenced but not installed, are skipped; a Makefile at the project root
+implies `make`. The scan runs after the cached manifest graph is resolved
+(so cache hits and misses agree) and never probes tool versions -- asking
+dozens of tools for their version would spawn many subprocesses and make the
+SBOM machine-dependent.
+
 ## Unix Philosophy
 
 adacovex follows the Unix philosophy of doing one thing well:
@@ -281,7 +296,7 @@ adacovex supports multiple output formats:
 
 ## Testing
 
-adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 577 tests across 12 categories. No external test framework (AUnit, etc.) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
+adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 597 tests across 12 categories. No external test framework (AUnit, etc.) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
 
 ## Supported Platforms
 

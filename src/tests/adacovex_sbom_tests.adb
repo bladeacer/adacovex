@@ -6,7 +6,7 @@ use Adacovex.Types, Adacovex.Types.Implementation;
 with Adacovex.Parsers.Manifest;
 with Adacovex.Cache;
 with Adacovex.Renderers.SBOM; use Adacovex.Renderers.SBOM;
-with GNAT.OS_Lib;
+with GNAT.OS_Lib; use GNAT.OS_Lib;
 
 package body Adacovex_SBOM_Tests is
 
@@ -237,6 +237,60 @@ package body Adacovex_SBOM_Tests is
          "project Depfix is" & ASCII.LF & "end Depfix;" & ASCII.LF);
    end Make_Dep_Fixture;
 
+   --  Fixture whose dev-facing files (Makefile, shell script, CI workflow)
+   --  reference system tools: Discover_System_Dev_Deps must register the
+   --  referenced tools that are installed on PATH as dev-scope components,
+   --  and never register unreferenced or fictional tools.
+   procedure Make_Sysdep_Fixture is
+      D : constant String := "obj/sbom_sysdep_fixture";
+   begin
+      Write_File
+        (D & "/alire.toml",
+         "name = ""sysfix"""
+         & ASCII.LF
+         & "version = ""1.0.0"""
+         & ASCII.LF
+         & "project-files = [""sysfix.gpr""]"
+         & ASCII.LF);
+      Write_File
+        (D & "/sysfix.gpr",
+         "project Sysfix is" & ASCII.LF & "end Sysfix;" & ASCII.LF);
+      Write_File
+        (D & "/Makefile",
+         "build:"
+         & ASCII.LF
+         & ASCII.HT
+         & "alr build"
+         & ASCII.LF
+         & ASCII.HT
+         & "python3 tools/gen.py"
+         & ASCII.LF
+         & ASCII.HT
+         & "git status"
+         & ASCII.LF
+         & ASCII.HT
+         & "gnatprove -P sysfix.gpr"
+         & ASCII.LF);
+      Write_File
+        (D & "/build.sh",
+         "#!/bin/sh"
+         & ASCII.LF
+         & "git rev-parse HEAD"
+         & ASCII.LF
+         & "make -C . all"
+         & ASCII.LF);
+      Write_File
+        (D & "/.github/workflows/ci.yml",
+         "jobs:"
+         & ASCII.LF
+         & "  build:"
+         & ASCII.LF
+         & "    steps:"
+         & ASCII.LF
+         & "      - run: python3 -m pytest"
+         & ASCII.LF);
+   end Make_Sysdep_Fixture;
+
    procedure Make_Demo_Graph (Graph : out Component_Vectors.Vector) is
       Root : Component_Info;
       Dep  : Component_Info;
@@ -408,6 +462,69 @@ package body Adacovex_SBOM_Tests is
          R.Check (C.Scope = Scope_Dev, "libdev1 scope = dev");
          C := Find_Name (Graph, "libdev2");
          R.Check (C.Scope = Scope_Dev, "libdev2 scope = dev");
+      end;
+
+      --  System-tool dev dependencies: tools referenced by the project's
+      --  dev-facing files and installed on PATH are registered as dev-scope
+      --  components of the root; unreferenced or fictional tools are never
+      --  registered.
+      declare
+         Graph   : Component_Vectors.Vector;
+         Success : Boolean := False;
+         C       : Component_Info;
+         Exe     : GNAT.OS_Lib.String_Access;
+
+         procedure Expect_If_Installed (Tool : String) is
+         begin
+            Exe := GNAT.OS_Lib.Locate_Exec_On_Path (Tool);
+            if Exe /= null then
+               GNAT.OS_Lib.Free (Exe);
+               R.Check
+                 (Count_Name (Graph, Tool) = 1,
+                  Tool & " registered (on PATH)");
+               C := Find_Name (Graph, Tool);
+               R.Check (C.Scope = Scope_Dev, Tool & " scope = dev");
+               R.Check (C.Parent = 1, Tool & " parent = root");
+               R.Check
+                 (C.PURL_Len = 12 + Tool'Length
+                  and then
+                    C.PURL (1 .. 12 + Tool'Length) = "pkg:generic/" & Tool,
+                  Tool & " purl");
+            else
+               R.Check
+                 (Count_Name (Graph, Tool) = 0,
+                  Tool & " not registered (absent from PATH)");
+            end if;
+         end Expect_If_Installed;
+      begin
+         Make_Sysdep_Fixture;
+         Adacovex.Parsers.Manifest.Build_Dependency_Graph
+           ("obj/sbom_sysdep_fixture",
+            "obj/sbom_sysdep_fixture/alire.toml",
+            Graph,
+            Success);
+         R.Check (Success, "sysdep manifest graph success");
+         Adacovex.Parsers.Manifest.Discover_System_Dev_Deps
+           ("obj/sbom_sysdep_fixture", Graph);
+
+         --  Fictional tool: never registered whatever PATH holds.
+         R.Check
+           (Count_Name (Graph, "nonexistent_adacovex_probe") = 0,
+            "fictional tool not registered");
+
+         --  Referenced by the fixture (Makefile / build.sh / ci.yml):
+         --  registered iff actually installed on PATH.
+         Expect_If_Installed ("git");
+         Expect_If_Installed ("make");
+         Expect_If_Installed ("python3");
+         Expect_If_Installed ("alr");
+         Expect_If_Installed ("gnatprove");
+
+         --  Installed or not, never referenced by the fixture: never
+         --  registered.
+         R.Check
+           (Count_Name (Graph, "pandoc") = 0,
+            "unreferenced tool not registered");
       end;
 
       --  Cached dependency-graph round-trip: resolving the same fixture
