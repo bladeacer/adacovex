@@ -396,7 +396,7 @@ assessment and the artifacts describing it are shared.
 |--------|-------------|
 | `check` | Full quality gate: build + tests + SPARK proof + badges + docs + SBOM + ASCII + spark-off + changelog + description sync |
 | `build` | `alr build` (adacovex + test_runner, covex alias) |
-| `test` | Build and run native test suite (601 tests) |
+| `test` | Build and run native test suite (616 tests) |
 | `prove` | SPARK proof (Platinum gate) + regenerates SVG badges in `docs/badges/` |
 | `fmt` | Format Ada sources with `gnatformat` |
 | `doc` | Generate API docs via gnatdoc + rst2md |
@@ -425,7 +425,7 @@ CI gates. Action inputs/outputs, result caching, and release bundling:
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 601/601 passing |
+| Unit tests | `make test` | 616/616 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (401 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, DAL-C (strict mode) |

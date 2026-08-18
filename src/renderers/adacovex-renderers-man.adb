@@ -173,7 +173,9 @@ package body Adacovex.Renderers.Man is
         (Buf,
          Len,
          "--serve / --port=N",
-         "Start the HTTP dashboard on port N (default 8080).");
+         "Start the HTTP dashboard on port N (default 8080).  "
+         & "Standard-aware: defaults to all standards and offers "
+         & "light/dark themes (toggle button, prefers-color-scheme).");
       App_Option
         (Buf,
          Len,

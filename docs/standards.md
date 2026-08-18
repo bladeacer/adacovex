@@ -77,11 +77,15 @@ and reports for **every** standard -- `do178c.svg`, `iso26262.svg`, and
 evidence is identical across standards, so the three badges always agree on
 Achieved/Unmet; only the level label changes.
 
-## SBOM standard-awareness
+## Dashboard and SBOM standard-awareness
 
-The proof-aware SBOM records the assessment standard and its native level
-label, so a CycloneDX / SPDX / Markdown consumer sees the right name for the
-selected standard:
+The served dashboard (`--serve`) and the proof-aware SBOM both record the
+assessment standard and its native level label, so a browser or a CycloneDX /
+SPDX / Markdown consumer sees the right name for the selected standard.
+Like the `sbom` subcommand, `--serve` **defaults to all standards** when no
+`--standard` / `--asil` / `--class` flag is given (the dashboard renders
+every standard's level at the shared tier); an explicit standard flag
+narrows it. The SBOM's `adacovex:standard` / `adacovex:level` properties:
 
 | `--` flag | `adacovex:standard` | `adacovex:level` |
 |-----------|---------------------|------------------|

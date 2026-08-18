@@ -103,6 +103,25 @@ package body Adacovex_Renderer_Tests is
          R.Check (Contains (S, "ASIL B"), "json all: ASIL B");
       end;
 
+      --  Dashboard supports light/dark themes: CSS custom properties with a
+      --  prefers-color-scheme dark default and a toggle button that flips a
+      --  data-theme attribute (persisted in localStorage).
+      declare
+         S : constant String :=
+           Adacovex.Renderers.HTML.Render_Dashboard
+             (Doc, Proof, Tests, Assess, Pkgs, All_Standards => True);
+      begin
+         R.Check
+           (Contains (S, "prefers-color-scheme"),
+            "dashboard respects prefers-color-scheme");
+         R.Check
+           (Contains (S, "theme-toggle"), "dashboard has theme toggle button");
+         R.Check
+           (Contains (S, "data-theme"), "dashboard uses data-theme override");
+         R.Check
+           (Contains (S, "localStorage"), "dashboard persists theme choice");
+      end;
+
       --  Markdown verification report is standard-aware.
       declare
          Dir : constant String := "/tmp/adacovex_md_test";

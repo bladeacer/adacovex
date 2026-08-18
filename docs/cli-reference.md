@@ -21,7 +21,7 @@ adacovex man [--check] [--dir=PATH]
 | `--asil=LEVEL` | - | both | ISO 26262 level: `A`\|`B`\|`C`\|`D`\|`QM` |
 | `--class=LEVEL` | - | both | IEC 62304 safety class: `A`\|`B`\|`C` |
 | `--standard=NAME` | `do178c` | both | `do178c`\|`iso26262`\|`iec62304`\|`all` |
-| `--serve` | off | both | Start HTTP dashboard server |
+| `--serve` | off | both | Start HTTP dashboard server (standard-aware; light/dark themes) |
 | `--port=N` | `8080` | serve | Dashboard server port |
 | `--emit-svg=PATH` | `<target>/docs/badges` | both | Output directory for SVG badges |
 | `--no-svg` | off | both | Suppress SVG badge output |
@@ -140,6 +140,17 @@ After scanning and assessment, start the built-in HTTP/1.1 web dashboard on
 - `GET /api/metrics` -- JSON object with key metrics
 - `GET /badge/spark.svg`, `GET /badge/tests.svg`, `GET /badge/do178c.svg`,
   `GET /badge/iso26262.svg`, `GET /badge/iec62304.svg` -- SVG badges
+
+The served dashboard is **standard-aware**: like the `sbom` subcommand it
+defaults to all standards when no `--standard` / `--asil` / `--class` flag is
+given, so the compliance card lists every standard's level (DAL-C, ASIL B,
+Class A) at the shared tier; an explicit standard flag narrows the dashboard
+to that single standard (e.g. `--asil=B` shows only ISO 26262 at ASIL B).
+
+The dashboard supports **light and dark themes**: colors are driven by CSS
+custom properties, the initial theme follows the browser's
+`prefers-color-scheme`, and a header button toggles between light and dark
+(the choice is persisted in `localStorage`).
 
 The server blocks (does not return to the shell) until interrupted.
 
@@ -311,7 +322,7 @@ target does not meet the required level:
 
 ```bash
 adacovex --target=. --require-spark=Platinum --require-docstrings=100 \
-         --require-tests=601 --require-proof=100
+         --require-tests=616 --require-proof=100
 ```
 
 - `require-spark` compares the honest assessed SPARK level (Stone..Platinum).

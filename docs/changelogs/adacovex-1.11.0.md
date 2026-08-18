@@ -122,19 +122,34 @@ properties at the shared DAL tier; `--standard=iso26262` / `--asil=B` narrows
 it to ISO 26262 at ASIL B, `--class=A` to IEC 62304 at Class A. The usage,
 man page, README, and CLI reference document the new form.
 
+### C10: `--serve` dashboard is standard-aware with light/dark themes
+
+The served dashboard (`--serve`) is standard-aware like the `sbom`
+subcommand: without an explicit `--standard` / `--asil` / `--class` it
+renders every standard's compliance level (DAL-C, ASIL B, Class A) at the
+shared tier, and an explicit standard flag narrows it to that single
+standard. The dashboard page also supports **light and dark themes**: colors
+are driven by CSS custom properties, the initial theme follows the browser's
+`prefers-color-scheme`, and a header button toggles between light and dark
+(persisted in `localStorage`).
+
 ## Test Suite
 
-577 tests (was 501), across 12 categories (was 10). The CLI-config category
-(86 checks) covers `--version`, the `man` subcommand and its `--check` /
-`--dir` flags, and the `sbom` subcommand's standard-awareness defaults (all
-standards by default, narrowed by `--standard` / `--asil` / `--class`); the
-DAL compliance category (16) gained the cached-HLR parse round-trip; the SBOM
-generator category (94) gained the dependency-graph cache round-trip; the Man
-page renderer category (15 checks) covers page structure, the embedded
-version, an install/read-back round-trip, and the `Update_Database` man-db
-contract; the VCS support category (29 checks) covers marker-file detection
-for every VCS, display and tool-binary names, and the UX-conversion
-recommendations.
+616 tests (was 501), across 12 categories (was 10). The CLI-config category
+(97 checks) covers `--version`, the `man` subcommand and its `--check` /
+`--dir` flags, and the `sbom` subcommand's and `--serve` dashboard's
+standard-awareness defaults (all standards by default, narrowed by
+`--standard` / `--asil` / `--class`); the HTML/Markdown renderers category
+(21 checks) covers the dashboard's light/dark theme support (CSS custom
+properties, `prefers-color-scheme`, the `data-theme` override, and the
+`localStorage`-persisted toggle) on top of the standard-aware dashboard and
+JSON output; the DAL compliance category (16) gained the cached-HLR parse
+round-trip; the SBOM generator category (118) gained the dependency-graph
+cache round-trip; the Man page renderer category (15 checks) covers page
+structure, the embedded version, an install/read-back round-trip, and the
+`Update_Database` man-db contract; the VCS support category (29 checks) covers
+marker-file detection for every VCS, display and tool-binary names, and the
+UX-conversion recommendations.
 
 ## Proof Results
 
