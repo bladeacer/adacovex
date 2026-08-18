@@ -307,6 +307,43 @@ adacovex supports multiple output formats:
 - **SBOM**: CycloneDX 1.5, SPDX 2.3, or Markdown format with proof, standard,
   and DAL/level properties
 
+## Result caching
+
+adacovex persists parsed analysis results on disk so unchanged inputs are not
+re-scanned / re-parsed / re-proved. Source scans, GNATprove summaries, test
+summaries, HLR.md/LLR.md requirement parses, the resolved SBOM dependency
+graph, and the differential-mode scans are each keyed by a namespace prefix
+plus the SHA-256 of the artifact(s) they were derived from -- e.g.
+`"scan:" | "prove:" | "tests:" | "hlr:" | "llr:" | "graph:" + digest` -- so
+re-parsing a byte-identical artifact yields a cache hit regardless of the
+target directory or command line. An unchanged manifest/lockfile/.gpr set
+serves the cached dependency graph; unchanged HLR.md/LLR.md serve the cached
+requirement parses; and `--compare-base` / `--coverage-delta` reuse cached
+source scans for the current tree.
+
+- **Schema namespace**: the default cache root is
+  `~/.adacovex/cache/<version>/<Cache_Schema>`. `Cache_Schema` (in
+  `src/core/adacovex-cache.ads`) is bumped whenever the serialized layout of a
+  cached record or the scanner/parser semantics change, so blobs written by an
+  incompatible build are never served as if valid.
+- **Eviction**: `Put_Cached` evicts oldest-first by modification time when more
+  than `--cache-max` entries (default `4096`) accumulate. `Eviction_Count`
+  tracks removals and is reported in the ANSI cache line.
+- **Overflow safety**: `Serialize` returns an empty blob when a package would
+  exceed `Max_Cache_Blob`; callers skip storing it and `Deserialize` rejects
+  empty/oversized input, so truncated data can never be served as a hit.
+- **`--target` normalization**: `--target` is normalized (`.`/`..` collapsed to
+  a canonical absolute path) before scanning, keeping the `File_Path` values in
+  cached `Package_Info` consistent across invocations that spell the same
+  directory differently.
+- **CI**: the GitHub action persists `~/.adacovex/cache` between workflow runs
+  (`result-cache` input, default true).
+
+`--no-cache` bypasses it entirely (useful when artifacts change without their
+content hash changing, or to measure rescan cost) and `--cache-dir` relocates
+it. The ANSI report shows a
+`result cache: X hit(s), Y miss(es), Z evicted` line per run.
+
 ## Testing
 
 adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 663 tests across 12 categories. No external test framework (AUnit, etc.) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.

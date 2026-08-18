@@ -1,4 +1,8 @@
 docs/cli-reference.md	CLI reference
+docs/dashboard.md	Web dashboard
+docs/sbom.md	SBOM
+docs/vcs.md	VCS support
+docs/target-projects.md	Target projects
 docs/ci-cd.md	CI/CD
 CONTRIBUTING.md	Contributing
 docs/installation.md	Installation

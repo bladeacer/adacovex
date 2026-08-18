@@ -201,7 +201,19 @@ Both bundles are attested with
 on every tag (OIDC attestations appear under the release's attestations tab).
 The release notes link the signed attestation via the action's
 `attestation-url` output, a *Git Changelog* compare link
-(`compare/v1.8.0...v1.9.0`), and the human-readable changelog.
+(`compare/v1.9.0...v1.14.0`), and the human-readable changelogs.
+
+**Changelog listing.** The `Create GitHub Release` step derives the changelog
+list from the **available `docs/changelogs/adacovex-*.md` entries between the
+previous release tag and the released version**: it resolves the previous
+three-component release tag (`git tag --sort=-version:refname`, e.g. `v1.9.0`
+when releasing `v1.14.0`) and then lists every changelog whose version is
+strictly above the previous release and at or below the released version -- so
+releasing `v1.14.0` after `v1.9.0` links the `1.10.0`..`1.14.0` changelogs in
+one release. The list is derived from the changelog files actually present in
+the tree (not from tags), so a version that was never released simply has no
+entry, and a release that skips versions still links every changelog in the
+range.
 
 **The CI release binary is Linux x86-64 only for now**: the release workflow
 runs on `ubuntu-latest` and packages the Linux binary + the prebuilt GNATprove

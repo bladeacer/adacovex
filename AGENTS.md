@@ -159,7 +159,7 @@ with a command-probe fallback. For VCS whose snapshot UX is poor (Subversion:
 no local history, network-dependent; Fossil: niche tooling) adacovex prints a
 note recommending the developers **convert the repo to git** (or a
 git-compatible VCS) for the best experience. See
-[docs/cli-reference.md](docs/cli-reference.md#vcs-support).
+[docs/vcs.md](docs/vcs.md).
 
 ## Pipeline
 
@@ -307,6 +307,10 @@ Per-category counts and framework details:
 
 <!-- doc-links:begin -->
 - [CLI reference](docs/cli-reference.md)
+- [Web dashboard](docs/dashboard.md)
+- [SBOM](docs/sbom.md)
+- [VCS support](docs/vcs.md)
+- [Target projects](docs/target-projects.md)
 - [CI/CD](docs/ci-cd.md)
 - [Contributing](CONTRIBUTING.md)
 - [Installation](docs/installation.md)

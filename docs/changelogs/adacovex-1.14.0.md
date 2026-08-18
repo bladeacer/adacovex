@@ -35,6 +35,46 @@ last. `make fmt` now re-runs both generators after gnatformat, so the
 generated files always end in their canonical committed form -- verified
 deterministic across repeated `build -> fmt -> doc` chains.
 
+### C3: dedicated documentation pages and a slimmer CLI reference
+
+The docs were reorganized around one page per feature so the CLI reference
+stays a quick reference instead of accumulating every flag's full detail:
+
+- **New [Web dashboard + JSON API](dashboard.md)** page -- endpoints,
+  dashboard cards, the `/api/metrics` JSON schema, and the theme-resolution
+  order (`?theme=` > `--theme=` > saved `localStorage` > system).
+- **New [SBOM](sbom.md)** page -- usage, standard-awareness, component
+  properties, and `SOURCE_DATE_EPOCH` determinism.
+- **New [VCS support](vcs.md)** page -- the per-VCS snapshot mechanisms and
+  the `--compare-base` / `--coverage-delta` contracts.
+- **New [Target projects](target-projects.md)** page -- the target-project
+  requirements (sources, `gnatprove.out` discovery order, test-summary file
+  names, HLR.md, missing-data behavior) moved out of the README.
+- **`docs/cli-reference.md` slimmed** to the flag table plus a concise note
+  per flag, linking to the dedicated pages; the result-caching design moved
+  to `docs/architecture.md#result-caching`.
+- **README condensed and its Quick start rewritten**: the Quick start now
+  shows the end-user flow (install -> assess -> `status` -> `--serve`)
+  instead of contributor build targets, the documentation table moved to the
+  top (right after Quick start), the duplicated standards paragraph was
+  removed, and sections that duplicate dedicated pages (platforms,
+  toolchain resolution, VCS, AI disclosure, dashboard) now point at them.
+
+## Fixes
+
+### H1: release workflow linked only the current version's changelog
+
+The `Create GitHub Release` step in `.github/workflows/release.yml` filters
+`docs/changelogs/adacovex-*.md` to the versions between the previous release
+tag and the released version. The upper-bound filter compared the maximum of
+the changelog version and the released version against the changelog version
+-- inverted -- so every changelog below the released version was skipped and
+the release notes listed only the current version's changelog. The comparison
+now keeps every available changelog strictly above the previous release tag
+and at or below the released version, so a release that spans multiple
+versions links all of them (derived from the entries actually present in the
+tree).
+
 ## Test Suite
 
 663 tests (was 659), across 12 categories. The HTML/Markdown renderers
@@ -54,4 +94,7 @@ non-SPARK renderer test suite, adding no proof obligations. Proven with
 No new HLRs. The dashboard rendering fix stays covered by the existing
 `HLR-RENDER-HTML` (`src/renderers/adacovex-renderers-html.ads`/`.adb`) tag;
 the template bundle (`resources/dashboard.html` +
-`tools/gen-dashboard.py`) is generated data that adds no traceability.
+`tools/gen-dashboard.py`) is generated data that adds no traceability. The
+documentation reorganization and the release-workflow changelog-listing fix
+touch no `src/` Ada code, so no new or changed HLR traceability tags are
+required.

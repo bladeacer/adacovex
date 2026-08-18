@@ -111,9 +111,9 @@ prompt hook can auto-install when a newer version is available. See
 
 `--compare-base` and `--coverage-delta` snapshot a base revision across
 git, Mercurial, Subversion, Fossil, and jj (see
-[CLI reference](cli-reference.md#vcs-support)). The snapshot commands run
-through `sh -c`, which WSL provides, and all temp snapshots live under
-`/tmp/adacovex-diff-<pid>`. For VCS with poor snapshot UX (Subversion,
-Fossil) adacovex prints a note recommending conversion to git.
+[VCS support](vcs.md)). The snapshot commands run through `sh -c`, which
+WSL provides, and all temp snapshots live under `/tmp/adacovex-diff-<pid>`.
+For VCS with poor snapshot UX (Subversion, Fossil) adacovex prints a note
+recommending conversion to git.
 
 See the [CLI reference](cli-reference.md) for the full flag surface.
