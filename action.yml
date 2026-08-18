@@ -237,7 +237,7 @@ runs:
 
     - name: Restore adacovex result cache
       if: ${{ inputs.result-cache == 'true' }}
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v5
       with:
         path: ~/.adacovex/cache
         key: adacovex-result-${{ inputs.target }}-${{ runner.os }}-${{ github.run_id }}
@@ -602,7 +602,7 @@ runs:
 
     - name: Upload badges
       if: ${{ always() && inputs.assess == 'true' && inputs.compare-base == '' && inputs.coverage-delta == '' }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: adacovex-badges
         path: ${{ inputs.target }}/docs/badges/*.svg
@@ -610,7 +610,7 @@ runs:
 
     - name: Upload SBOM
       if: ${{ always() && inputs.assess == 'true' && inputs.generate-sbom == 'true' && inputs.compare-base == '' && inputs.coverage-delta == '' }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: adacovex-sbom
         path: |
@@ -620,7 +620,7 @@ runs:
 
     - name: Save adacovex result cache
       if: ${{ always() && inputs.result-cache == 'true' && (inputs.assess == 'true' || inputs.prove == 'true') }}
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       with:
         path: ~/.adacovex/cache
         # Content-addressed entries mean a restored but slightly stale cache
