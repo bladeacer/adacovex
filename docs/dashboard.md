@@ -56,7 +56,8 @@ Like the `sbom` subcommand, the dashboard **defaults to all standards** when
 no `--standard` / `--asil` / `--class` flag is given: the status badges and
 the compliance card list every standard's label at the shared tier (DAL-C,
 ASIL B, Class A). An explicit standard flag narrows the dashboard to that
-single standard (e.g. `--asil=B` shows only ISO 26262 at ASIL B).
+single standard (e.g. `--asil=B` shows only ISO 26262 at ASIL B). See
+[Standards](standards.md) for the cross-standard tier mapping.
 
 ## The JSON API
 

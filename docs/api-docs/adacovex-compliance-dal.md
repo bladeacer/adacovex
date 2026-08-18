@@ -10,6 +10,8 @@ HLR-DAL-C: DAL-C compliance criteria
 HLR-DAL-D: DAL-D compliance criteria
 HLR-DAL-E: DAL-E compliance criteria
 
+**See also:** [DAL Levels](adacovex-dal-levels.md) | [Standards](../standards.md)
+
 > **Note:** All items in this package are public.
 
 ## Functions

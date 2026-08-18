@@ -29,7 +29,7 @@ shows as `N/A`, and DAL checks that depend on it report `Unmet`.
 4. **HLR / LLR documents** (for DAL assessment) --
    `<target>/docs/compliance/HLR.md` and optionally
    `<target>/docs/compliance/LLR.md`, following the
-   [DO-178C requirement format](api-docs/adacovex-dal-levels.md).
+   [HLR traceability-tag format](api-docs/adacovex-docstring-spec.md#hlr-traceability-tags).
 
 ## Missing data
 

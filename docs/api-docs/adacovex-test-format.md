@@ -95,3 +95,11 @@ adacovex --target=../Ada_CRDT
 
 # The parser auto-discovers test_result.md (or any conventional variant) from the target project
 ```
+
+## See also
+
+- [Target projects](../target-projects.md) -- the test-summary file
+  auto-discovery rules and missing-data behavior
+- [Test parser API](adacovex-parsers-tests.md) -- `Adacovex.Parsers.Tests`
+- [DAL Levels](adacovex-dal-levels.md) -- how the passing-tests criterion
+  feeds the compliance assessment

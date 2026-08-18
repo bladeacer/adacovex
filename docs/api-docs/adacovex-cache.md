@@ -17,6 +17,8 @@ are evicted oldest-first once the count exceeds a soft cap, keeping disk
 usage bounded without external dependencies (pure GNAT runtime only).
 HLR-CACHE: Result caching
 
+**See also:** [Architecture -- result caching](../architecture.md#result-caching)
+
 > **Note:** All items in this package are public.
 
 ## Functions

@@ -5,6 +5,8 @@ Reads HLR.md and LLR.md markdown files, extracts HLR/LLR identifiers
 and descriptions, and matches HLR tags found in source code.
 HLR-COMPLIANCE: HLR/LLR parsing
 
+**See also:** [DAL Levels](adacovex-dal-levels.md) | [Docstring Spec -- HLR tags](adacovex-docstring-spec.md#hlr-traceability-tags)
+
 > **Note:** All items in this package are public.
 
 ## Types

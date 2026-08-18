@@ -52,7 +52,7 @@ curl -fsSL https://raw.githubusercontent.com/bladeacer/adacovex/main/install.sh 
 Bundles are attested with [`actions/attest`](https://github.com/actions/attest).
 
 > Release binaries are **Linux x86-64 only**; other platforms build from source
-> via Alire.
+> via Alire (see [Platforms](platforms.md)).
 
 ## Building from source
 
@@ -85,4 +85,6 @@ depends on the installation method:
 hook can auto-update), and `man --force` overwrites an up-to-date page (e.g.
 to repair a hand-edited one). When man-db is missing the page still installs
 -- read it with `man -l ~/.local/share/man/man1/adacovex.1` -- and
-`adacovex status` reports mandb availability up front.
+`adacovex status` reports mandb availability up front. See
+[Platforms -- local man page](platforms.md#local-man-page-linuxwsl) for the
+install roots and man-db behavior.

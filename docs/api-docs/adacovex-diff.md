@@ -8,6 +8,8 @@ coverage, SPARK proof level, test results, HLR traceability, and DO-178C
 DAL status so local regressions can be caught before pushing.
 HLR-DIFF: Differential assessment
 
+**See also:** [VCS support](../vcs.md)
+
 > **Note:** All items in this package are public.
 
 ## Types

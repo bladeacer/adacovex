@@ -8,6 +8,8 @@ count: leave two cores free for system responsiveness on a developer
 machine, but use every core inside CI.
 HLR-CPU: Cross-platform CPU core detection
 
+**See also:** [Platforms](../platforms.md)
+
 > **Note:** 6 public item(s) shown below; 4 private internal item(s) are in the `private` section.
 
 ## Functions

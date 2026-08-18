@@ -5,6 +5,8 @@ Produces a self-contained HTML page with embedded CSS for the web
 dashboard and a lightweight JSON endpoint for programmatic access.
 HLR-RENDER-HTML: HTML dashboard and JSON API
 
+**See also:** [Web dashboard](../dashboard.md)
+
 > **Note:** All items in this package are public.
 
 ## Functions

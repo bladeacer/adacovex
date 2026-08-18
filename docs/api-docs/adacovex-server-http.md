@@ -6,6 +6,8 @@ Supports keep-alive connections and serves the web dashboard,
 JSON API, and SVG badge endpoints.
 HLR-SERVER: HTTP server
 
+**See also:** [Web dashboard](../dashboard.md)
+
 > **Note:** All items in this package are public.
 
 ## Types

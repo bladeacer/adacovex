@@ -573,8 +573,78 @@ def render_record_type(
     return lines
 
 
+# Hand-written reference pages shipped alongside the generated package docs.
+# `make doc` regenerates only the gnatdoc package pages and the index, so the
+# index links these pages instead of the generator re-creating them.
+GUIDE_PAGES: List[Tuple[str, str]] = [
+    ("Docstring Spec", "adacovex-docstring-spec.md"),
+    ("Test Result Formats", "adacovex-test-format.md"),
+    ("SPARK Assurance Levels", "adacovex-spark-levels.md"),
+    ("DO-178C DAL Levels", "adacovex-dal-levels.md"),
+    ("ISO 26262 ASIL Levels", "adacovex-asil-levels.md"),
+    ("IEC 62304 Safety Classes", "adacovex-class-levels.md"),
+]
+
+# Package -> (label, target) cross-links to the hand-written reference pages,
+# rendered as a "See also" line under each package's description. gnatdoc
+# mangles markdown links in source comments (it parses them as RST), so the
+# links live here in the generator instead of in the .ads docstrings.
+PACKAGE_GUIDES: Dict[str, List[Tuple[str, str]]] = {
+    "Adacovex.Parsers.Source": [
+        ("Docstring Spec", "adacovex-docstring-spec.md"),
+        ("Architecture -- Patch System", "../architecture.md#patch-system"),
+    ],
+    "Adacovex.Parsers.Tests": [
+        ("Test Result Formats", "adacovex-test-format.md"),
+    ],
+    "Adacovex.Parsers.DO178C": [
+        ("DAL Levels", "adacovex-dal-levels.md"),
+        ("Docstring Spec -- HLR tags",
+         "adacovex-docstring-spec.md#hlr-traceability-tags"),
+    ],
+    "Adacovex.Compliance.DAL": [
+        ("DAL Levels", "adacovex-dal-levels.md"),
+        ("Standards", "../standards.md"),
+    ],
+    "Adacovex.Types": [
+        ("Standards", "../standards.md"),
+        ("DAL Levels", "adacovex-dal-levels.md"),
+    ],
+    "Adacovex.Prove": [
+        ("Architecture -- toolchain resolution",
+         "../architecture.md#gnatprove-toolchain-resolution-prove-subcommand"),
+    ],
+    "Adacovex.Cache": [
+        ("Architecture -- result caching", "../architecture.md#result-caching"),
+    ],
+    "Adacovex.Diff": [
+        ("VCS support", "../vcs.md"),
+    ],
+    "Adacovex.VCS": [
+        ("VCS support", "../vcs.md"),
+    ],
+    "Adacovex.CPUs": [
+        ("Platforms", "../platforms.md"),
+    ],
+    "Adacovex.Renderers.SBOM": [
+        ("SBOM", "../sbom.md"),
+    ],
+    "Adacovex.Renderers.HTML": [
+        ("Web dashboard", "../dashboard.md"),
+    ],
+    "Adacovex.Server.HTTP": [
+        ("Web dashboard", "../dashboard.md"),
+    ],
+}
+
+
 def render_index(packages: Dict[str, str]) -> str:
-    lines = ["# adacovex API Reference", "", "## Packages", ""]
+    lines = ["# adacovex API Reference", "", "## Guides", ""]
+    for title, fn in GUIDE_PAGES:
+        lines.append(f"- [{title}]({fn})")
+    lines.append("")
+    lines.append("## Packages")
+    lines.append("")
     for title in sorted(packages, key=lambda p: (p.count("."), p.lower())):
         lines.append(f"- [{title}]({packages[title]})")
     lines.append("")
@@ -700,6 +770,13 @@ def render_package(
     lines: List[str] = [f"# {title}", ""]
     if desc:
         lines.append(desc)
+        lines.append("")
+    see_also: List[Tuple[str, str]] = PACKAGE_GUIDES.get(title, [])
+    if see_also:
+        joined: str = " | ".join(
+            f"[{label}]({target})" for label, target in see_also
+        )
+        lines.append(f"**See also:** {joined}")
         lines.append("")
     if has_private:
         public_count = len(blocks)

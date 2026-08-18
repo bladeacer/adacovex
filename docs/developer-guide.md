@@ -85,6 +85,19 @@ A handful of modes exit before the pipeline: `--help`, `--version`, `man`,
 | Regenerate AGENTS.md blocks | `make agents-tree` (src tree) and `make doc-links` (docs list) |
 | Verify markdown links | `make link-check` |
 
+### API docs and cross-links
+
+`make doc` regenerates `docs/api-docs/` from the `.ads` docstrings via
+gnatdoc + `tools/rst2md.py`: one page per package plus `index.md`. The six
+hand-written reference pages (docstring spec, test formats, SPARK levels, and
+the DAL / ASIL / Class level pages) are never regenerated. Cross-links
+between the generated package pages and the reference pages live in
+`tools/rst2md.py` -- `GUIDE_PAGES` (the index's "Guides" section) and
+`PACKAGE_GUIDES` (the per-package "See also" lines) -- **not** in the `.ads`
+comments: gnatdoc parses comment text as RST and drops markdown link URLs.
+To add a package cross-link, extend `PACKAGE_GUIDES` in `tools/rst2md.py`,
+then run `make doc` and `make link-check`.
+
 ## Testing
 
 The test suite is native and zero-dependency: `src/tests/` holds one file per
@@ -152,4 +165,8 @@ The proof result is anchored in `docs/proof/` (the per-version VC ledger) and
 - [CLI reference](cli-reference.md) -- every flag and its defaults
 - [Architecture](architecture.md) -- design decisions, the overflow contract,
   the patch system, result caching
+- [Standards](standards.md) -- the DO-178C / ISO 26262 / IEC 62304
+  compliance model
+- [API reference](api-docs/index.md) -- generated package docs and the
+  reference pages (docstring spec, test formats, SPARK/DAL/ASIL/Class levels)
 - [CONTRIBUTING.md](../CONTRIBUTING.md) -- contribution process and changelog format
