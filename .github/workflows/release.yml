@@ -90,7 +90,7 @@ jobs:
             printf -- '- https://github.com/%s/blob/main/docs/changelogs/adacovex-%s.md\n' "${{ github.repository }}" "$v"
           done)
           BODY="**Changelogs**
-$CHANGELOGS"
+          $CHANGELOGS"
           ASSETS=("adacovex-$VERSION.tar.gz" "adacovex-action-$VERSION.tar.gz")
           if [ -n "$PREV" ]; then
             BODY="$BODY
