@@ -14,7 +14,7 @@ HLR-CPU: Cross-platform CPU core detection
 
 ## Functions
 
-### function Default_Prove_Jobs (Cores : Standard.Natural; In_CI : Standard.Boolean) return Standard.Natural
+### function Default_Prove_Jobs (Cores : Standard.Natural; In_CI : Standard.Boolean) return Standard.Natural `[Post]` `[Global]` `[SPARK]`
 
 | Parameter | Description |
 |-----------|-------------|

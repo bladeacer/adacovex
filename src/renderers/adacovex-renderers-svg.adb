@@ -5,6 +5,11 @@ package body Adacovex.Renderers.SVG is
 
    use type Types.DAL_Status;
 
+   --  Maximum length of a badge label or value text run.  Badge segments
+   --  are sized from measured glyph widths; bounding the text length keeps
+   --  the width arithmetic provably within Natural.
+   Max_Badge_Text : constant := 64;
+
    --  Decimal string of a non-negative integer.  The fixed 10-character
    --  buffer and the loop invariant prove the write cursor never underflows.
    function I2S (N : Natural) return String
@@ -50,7 +55,10 @@ package body Adacovex.Renderers.SVG is
    --  nearest pixel.  The values are DejaVu Sans's 2048-units-per-em
    --  advance widths scaled by 11/2048; unknown characters fall back to
    --  7px, the font's average glyph width.
-   function Glyph_Width (C : Character) return Natural is
+   function Glyph_Width (C : Character) return Natural
+   with SPARK_Mode => On,
+        Post       => Glyph_Width'Result in 3 .. 10
+   is
    begin
       case C is
          --  3px: space, punctuation, and narrow lowercase stems.
@@ -100,19 +108,34 @@ package body Adacovex.Renderers.SVG is
 
    --  Total advance width (px) of a badge text run at font-size 11: the
    --  sum of the per-glyph widths.  Replaces the flat 7px-per-character
-   --  estimate so every badge carries the same ~5px side padding -- the
-   --  old estimate left uppercase-heavy labels (SPARK, DO-178C) nearly
-   --  flush against their segment edge while narrow lowercase/digit text
-   --  (docs, 100%) ended up with visibly wider padding.
-   function Text_Width (S : String) return Natural is
+   --  estimate so every badge carries the same side padding regardless of
+   --  its letters -- the old estimate left uppercase-heavy labels (SPARK,
+   --  DO-178C) nearly flush against their segment edge while narrow
+   --  lowercase/digit text (docs, 100%) ended up with visibly wider
+   --  padding.
+   function Text_Width (S : String) return Natural
+   with SPARK_Mode => On,
+        Pre  => S'Length <= Max_Badge_Text,
+        Post => Text_Width'Result <= Max_Badge_Text * 10
+   is
       Total : Natural := 0;
    begin
       for I in S'Range loop
          Total := Total + Glyph_Width (S (I));
+         pragma Loop_Invariant (Total <= (I - S'First + 1) * 10);
       end loop;
       return Total;
    end Text_Width;
 
+   --  The badge SVG markup itself is assembled by plain (non-SPARK)
+   --  concatenation: a fully proved assembly needs the concatenation range
+   --  checks to bound every operand, and the ~30-element chain plus the
+   --  cursor arithmetic pushes the provers past the project's --steps
+   --  budget no matter how it is split (a single 2048-byte buffer, six
+   --  bounded section builders, and direct chains were all attempted).
+   --  The pure sizing math is proved (Glyph_Width, Text_Width) and the
+   --  assembled widths flow straight into the markup below, so the
+   --  unproved part is only the fixed scaffolding text.
    function Badge_SVG
      (Label            : String;
       Value            : String;
@@ -120,8 +143,10 @@ package body Adacovex.Renderers.SVG is
       Value_Color      : String := "#4c1";
       Value_Text_Color : String := "#fff") return String
    is
-      LW : constant Natural := Text_Width (Label) + 10;
-      VW : constant Natural := Text_Width (Value) + 10;
+      --  20px of total segment padding (10px each side) gives every badge
+      --  the same comfortable breathing room around its text.
+      LW : constant Natural := Text_Width (Label) + 20;
+      VW : constant Natural := Text_Width (Value) + 20;
       TW : constant Natural := LW + VW;
       LX : constant Natural := LW / 2;
       VX : constant Natural := LW + VW / 2;
@@ -212,7 +237,10 @@ package body Adacovex.Renderers.SVG is
    --  Text color with sufficient contrast on the value background: dark text
    --  on the light green (#4c1) and yellow (#dfb317) pass colors, white on
    --  the dark red (#e05d44) failure color.
-   function Badge_Text_Color (Value_Color : String) return String is
+   function Badge_Text_Color (Value_Color : String) return String
+   with SPARK_Mode => On,
+        Post       => Badge_Text_Color'Result'Length in 4 .. 7
+   is
    begin
       if Value_Color = "#4c1" or else Value_Color = "#dfb317" then
          return "#1a1a1a";
@@ -222,33 +250,26 @@ package body Adacovex.Renderers.SVG is
    end Badge_Text_Color;
 
    function Render_SPARK_Badge (Level : Types.SPARK_Level) return String is
+      SC : constant String := Spark_Color (Level);
+      TC : constant String := Spark_Text_Color (Level);
+      LV : constant String := Types.To_String (Level);
    begin
-      declare
-         SC : constant String := Spark_Color (Level);
-         TC : constant String := Spark_Text_Color (Level);
-      begin
-         return Badge_SVG ("SPARK", Types.To_String (Level), "#555", SC, TC);
-      end;
+      return Badge_SVG ("SPARK", LV, "#555", SC, TC);
    end Render_SPARK_Badge;
 
    function Render_Tests_Badge
      (Tests : Types.Implementation.Test_Summary) return String
    is
-      Value : String (1 .. 64);
-      Len   : Natural := 0;
-      Num   : String := Natural'Image (Tests.Total_Passed);
+      --  "<n> Passed" composed from the proved I2S decimal helper (1-10
+      --  chars) instead of a manual Natural'Image buffer, so the value
+      --  stays provably within the badge text bound.
+      Value : constant String :=
+        I2S (Tests.Total_Passed) & " Passed";
    begin
-      for I in 2 .. Num'Length loop
-         Len := Len + 1;
-         Value (Len) := Num (I);
-      end loop;
-      Value (Len + 1 .. Len + 7) := " Passed";
-      Len := Len + 7;
-
       return
         Badge_SVG
           ("Tests",
-           Value (1 .. Len),
+           Value,
            "#555",
            "#4c1",
            Badge_Text_Color ("#4c1"));
@@ -258,8 +279,11 @@ package body Adacovex.Renderers.SVG is
      (Assess   : Types.Implementation.DAL_Assessment;
       Standard : Types.Compliance_Standard) return String
    is
-      Status_Str : String (1 .. 32);
-      SLen       : Natural := 0;
+      --  "<level> PASS" / "<level> FAIL" composed by concatenation: the
+      --  standard level names (DAL A, ASIL D, Class C, QM, No class) are
+      --  bounded at 8 characters by Standard_Level_Name's contract, so the
+      --  value stays provably within the badge text bound without a manual
+      --  fixed-size buffer.
       Level_Name : constant String :=
         Types.Standard_Level_Name (Standard, Assess.Target_DAL);
       Suffix     : constant String :=
@@ -267,20 +291,11 @@ package body Adacovex.Renderers.SVG is
       Color      : constant String :=
         (if Assess.Status = Types.Achieved then "#4c1" else "#e05d44");
    begin
-      --  Compose "<level> PASS" / "<level> FAIL".  The standard level names
-      --  (DAL A, ASIL D, Class C, QM, No class) are all well within the
-      --  32-character buffer.
-      Status_Str (1 .. Level_Name'Length) := Level_Name;
-      Status_Str
-        (Level_Name'Length + 1 .. Level_Name'Length + Suffix'Length) :=
-        Suffix;
-      SLen := Level_Name'Length + Suffix'Length;
-
       if Assess.Status = Types.Achieved then
          return
            Badge_SVG
              (Types.To_String (Standard),
-              Status_Str (1 .. SLen),
+              Level_Name & Suffix,
               "#555",
               Color,
               Badge_Text_Color (Color));
@@ -288,14 +303,15 @@ package body Adacovex.Renderers.SVG is
          return
            Badge_SVG
              (Types.To_String (Standard),
-              Status_Str (1 .. SLen),
+              Level_Name & Suffix,
               "#555",
               Color);
       end if;
    end Render_Compliance_Badge;
 
    function Render_DO178C_Badge
-     (Assess : Types.Implementation.DAL_Assessment) return String is
+     (Assess : Types.Implementation.DAL_Assessment) return String
+   is
    begin
       return Render_Compliance_Badge (Assess, Assess.Standard);
    end Render_DO178C_Badge;
@@ -303,22 +319,16 @@ package body Adacovex.Renderers.SVG is
    function Render_Docstring_Badge
      (Doc_Metrics : Types.Docstring_Metrics) return String
    is
+      --  "<pct>%" composed from the proved I2S decimal helper instead of a
+      --  manual Natural'Image buffer (same reasoning as Render_Tests_Badge).
       Pct : constant Natural := Doc_Metrics.Coverage_Pct;
-      Val : String (1 .. 64);
-      Len : Natural := 0;
-      Num : String := Natural'Image (Pct);
+      Val : constant String := I2S (Pct) & "%";
    begin
-      for I in 2 .. Num'Length loop
-         Len := Len + 1;
-         Val (Len) := Num (I);
-      end loop;
-      Val (Len + 1 .. Len + 1) := "%";
-      Len := Len + 1;
       if Pct >= 80 then
          return
            Badge_SVG
              ("docs",
-              Val (1 .. Len),
+              Val,
               "#555",
               "#4c1",
               Badge_Text_Color ("#4c1"));
@@ -326,7 +336,7 @@ package body Adacovex.Renderers.SVG is
          return
            Badge_SVG
              ("docs",
-              Val (1 .. Len),
+              Val,
               "#555",
               "#dfb317",
               Badge_Text_Color ("#dfb317"));
@@ -334,7 +344,7 @@ package body Adacovex.Renderers.SVG is
          return
            Badge_SVG
              ("docs",
-              Val (1 .. Len),
+              Val,
               "#555",
               "#e05d44",
               Badge_Text_Color ("#e05d44"));

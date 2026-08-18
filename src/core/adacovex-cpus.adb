@@ -190,7 +190,9 @@ package body Adacovex.CPUs is
    end Is_Running_In_CI;
 
    function Default_Prove_Jobs
-     (Cores : Natural; In_CI : Boolean) return Natural is
+     (Cores : Natural; In_CI : Boolean) return Natural
+   with SPARK_Mode => On
+   is
    begin
       if In_CI then
          return Cores;

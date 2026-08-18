@@ -11,7 +11,7 @@ record with proved/unproved VC counts per category.
 
 ## Functions
 
-### function Determine_SPARK_Level (Summary : Adacovex.Types.Proof_Summary) return Adacovex.Types.SPARK_Level `[Global]`
+### function Determine_SPARK_Level (Summary : Adacovex.Types.Proof_Summary) return Adacovex.Types.SPARK_Level `[Post]` `[Global]` `[SPARK]`
 
 | Parameter | Description |
 |-----------|-------------|
