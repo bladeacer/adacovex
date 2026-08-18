@@ -159,6 +159,167 @@ package body Adacovex.Config is
       end if;
    end Set_Prove_Int;
 
+   --  Known CLI flags (without leading dashes), space-separated, used for
+   --  the "did you mean" suggestion when the user typos a flag name.  Kept
+   --  in sync with the Parse_Args branches below.
+   Known_Flags : constant String :=
+     "target manifest dal asil class standard serve theme port "
+     & "emit-svg no-svg emit-markdown verbose relaxed cache no-cache "
+     & "cache-dir cache-max skip-dir compare-base coverage-delta sbom "
+     & "prove status man check dir version no-sbom sbom-format format out "
+     & "jobs level timeout steps memlimit force no-loop-unrolling "
+     & "no-inlining require-spark require-docstrings require-tests "
+     & "require-proof help";
+
+   --  Levenshtein edit distance between two strings, capped at 9 so the
+   --  suggestion scan stays cheap (anything farther away is "not similar").
+   function Edit_Distance (A, B : String) return Natural is
+      subtype Row_Idx is Natural range 0 .. 64;
+      type Row_Arr is array (Row_Idx) of Natural;
+      ALen : constant Natural := A'Length;
+      BLen : constant Natural := B'Length;
+      Row  : Row_Arr := (others => 0);
+      Prev : Row_Arr := (others => 0);
+   begin
+      if ALen > 64 or BLen > 64 then
+         return 99;
+      end if;
+      for J in 0 .. BLen loop
+         Row (J) := J;
+      end loop;
+      for I in 1 .. ALen loop
+         Prev := Row;
+         Row (0) := I;
+         for J in 1 .. BLen loop
+            if A (A'First + I - 1) = B (B'First + J - 1) then
+               Row (J) := Prev (J - 1);
+            else
+               Row (J) := Natural'Min
+                 (Natural'Min (Prev (J) + 1, Row (J - 1) + 1),
+                  Prev (J - 1) + 1);
+            end if;
+            exit when Row (J) > 9 and J = BLen;
+         end loop;
+      end loop;
+      return Natural'Min (Row (BLen), 99);
+   end Edit_Distance;
+
+   --  Normalize an unknown argument into a comparable flag name: strip a
+   --  leading "--", drop any "=value" suffix, lowercase it.
+   procedure Normalize_Flag
+     (S : String; Out_Buf : out String; Out_Len : out Natural)
+   is
+      First : Natural := S'First;
+   begin
+      Out_Len := 0;
+      if First <= S'Last and then S (First) = '-' then
+         First := First + 1;
+         if First <= S'Last and then S (First) = '-' then
+            First := First + 1;
+         end if;
+      end if;
+      while First <= S'Last loop
+         exit when S (First) = '=';
+         if S (First) in 'A' .. 'Z' then
+            if Out_Len < Out_Buf'Last then
+               Out_Len := Out_Len + 1;
+               Out_Buf (Out_Len) :=
+                 Character'Val (Character'Pos (S (First)) + 32);
+            end if;
+         else
+            if Out_Len < Out_Buf'Last then
+               Out_Len := Out_Len + 1;
+               Out_Buf (Out_Len) := S (First);
+            end if;
+         end if;
+         First := First + 1;
+      end loop;
+   end Normalize_Flag;
+
+   --  Return " (did you mean --xxx?)" (or " --xxx or --yyy") for an
+   --  unknown token, or "" when no known flag is close enough.  The caller
+   --  appends this to the "unknown option/argument" error message.
+   function Suggest_Flags (S : String) return String is
+      Buf     : String (1 .. 128) := (others => ' ');
+      Len     : Natural := 0;
+      NFlag   : String (1 .. 64) := (others => ' ');
+      NLen    : Natural := 0;
+      Matches : array (1 .. 3) of String (1 .. 32) :=
+        (others => (others => ' '));
+      MLen    : array (1 .. 3) of Natural := (others => 0);
+      MCt     : Natural := 0;
+      Best    : Natural := 99;
+      Start   : Natural := Known_Flags'First;
+      Fin     : Natural;
+   begin
+      Normalize_Flag (S, NFlag, NLen);
+      if NLen = 0 then
+         return "";
+      end if;
+      --  Walk the space-separated Known_Flags list.
+      while Start <= Known_Flags'Last loop
+         Fin := Start;
+         while Fin <= Known_Flags'Last
+           and then Known_Flags (Fin) /= ' '
+         loop
+            Fin := Fin + 1;
+         end loop;
+         declare
+            D : constant Natural :=
+              Edit_Distance (NFlag (1 .. NLen), Known_Flags (Start .. Fin - 1));
+         begin
+            if D <= 2 and then D <= Best then
+               if D < Best then
+                  MCt := 0;
+                  Best := D;
+               end if;
+               if MCt < 3 then
+                  MCt := MCt + 1;
+                  MLen (MCt) := Fin - Start;
+                  Matches (MCt) (1 .. MLen (MCt)) :=
+                    Known_Flags (Start .. Fin - 1);
+               end if;
+            end if;
+         end;
+         exit when Fin > Known_Flags'Last;
+         Start := Fin + 1;
+      end loop;
+      if MCt = 0 then
+         return "";
+      end if;
+      --  " (did you mean --standard?)" or " (did you mean --jobs or --job?)"
+      if Len < Buf'Last then
+         Len := Len + 1;
+         Buf (Len) := ' ';
+      end if;
+      if Len + 13 <= Buf'Last then
+         Buf (Len + 1 .. Len + 13) := "(did you mean";
+         Len := Len + 13;
+      end if;
+      for I in 1 .. MCt loop
+         if Len < Buf'Last then
+            Len := Len + 1;
+            Buf (Len) := ' ';
+         end if;
+         if I > 1 and then Len < Buf'Last then
+            Buf (Len + 1 .. Len + 3) := "or ";
+            Len := Len + 3;
+         end if;
+         if Len + 2 + MLen (I) <= Buf'Last then
+            Buf (Len + 1 .. Len + 2) := "--";
+            Len := Len + 2;
+            Buf (Len + 1 .. Len + MLen (I)) :=
+              Matches (I) (1 .. MLen (I));
+            Len := Len + MLen (I);
+         end if;
+      end loop;
+      if Len < Buf'Last then
+         Len := Len + 1;
+         Buf (Len) := '?';
+      end if;
+      return Buf (1 .. Len);
+   end Suggest_Flags;
+
    package body Testing is
 
       procedure Parse_Args (Args : Arg_Vectors.Vector; Cfg : in out CLI_Config)
@@ -775,7 +936,10 @@ package body Adacovex.Config is
                      1_000_000,
                      "--memlimit");
                elsif A = "--force" then
+                  --  --force is shared between prove (bypass the result cache)
+                  --  and man (override an existing/up-to-date man page).
                   Cfg.Prove_Force := True;
+                  Cfg.Man_Force := True;
                elsif A = "--no-loop-unrolling" then
                   Cfg.Prove_No_Loop_Unroll := True;
                elsif A = "--no-inlining" then
@@ -914,6 +1078,19 @@ package body Adacovex.Config is
                   --  Help_Requested is set, so `--help`, `help`, and
                   --  `help TOPIC` share one printing path.
                   Cfg.Help_Requested := True;
+               else
+                  --  Unknown token: reject loudly instead of silently running
+                  --  an assessment.  Flag-like tokens (--foo) and bare words
+                  --  (a typo'd subcommand) both get a "did you mean" hint.
+                  if A'Length >= 1 and then A (A'First) = '-' then
+                     Set_Error
+                       (Cfg,
+                        "unknown option '" & A & "'" & Suggest_Flags (A));
+                  else
+                     Set_Error
+                       (Cfg,
+                        "unknown argument '" & A & "'" & Suggest_Flags (A));
+                  end if;
                end if;
             end;
             I := I + 1;
@@ -1034,8 +1211,11 @@ package body Adacovex.Config is
          Set_Error (Cfg, "--version cannot be combined with other modes");
       end if;
 
-      -- GNATprove options only make sense in prove mode.
+      -- GNATprove options only make sense in prove mode.  --force is shared
+      -- with the man subcommand (man --force overrides the installed page),
+      -- so it is only an error when neither prove nor man mode is set.
       if not Cfg.Prove_Mode
+        and then not Cfg.Man_Mode
         and then (Cfg.Prove_Jobs >= 0
                   or Cfg.Prove_Level >= 0
                   or Cfg.Prove_Timeout >= 0
@@ -1310,6 +1490,12 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("                        of the default local man directory");
       Ada.Text_IO.Put_Line
+        ("  man --force           Override an existing man page even when it");
+      Ada.Text_IO.Put_Line
+        ("                        already matches this binary (repair a");
+      Ada.Text_IO.Put_Line
+        ("                        hand-edited/corrupt installed page)");
+      Ada.Text_IO.Put_Line
         ("  help [TOPIC]          Show this message, or contextual help for a");
       Ada.Text_IO.Put_Line
         ("                        flag/subcommand (e.g. `adacovex help serve`);");
@@ -1572,7 +1758,8 @@ package body Adacovex.Config is
             & "or downloading anything: alire/gnatprove detectability, CPU"
             & ASCII.LF
             & "count, CI status, and which VCS tools are on PATH.");
-      elsif T = "man" or else T = "check" or else T = "dir" then
+      elsif T = "man" or else T = "check" or else T = "dir" or else T = "force"
+      then
          Print_Section
            ("adacovex man",
             "Install the man page into the local man database (default"
@@ -1581,7 +1768,14 @@ package body Adacovex.Config is
             & ASCII.LF
             & "refresh it with mandb when present.  --check exits 0 when the"
             & ASCII.LF
-            & "installed page matches this binary's version, 1 otherwise.");
+            & "installed page matches this binary's version, 1 otherwise."
+            & ASCII.LF
+            & ASCII.LF
+            & "--force always (re)writes the installed page even when it"
+            & ASCII.LF
+            & "already matches this binary -- use it to repair a hand-edited"
+            & ASCII.LF
+            & "or corrupt installed page.");
       elsif T = "emit-svg" or else T = "no-svg" then
          Print_Section
            ("--emit-svg / --no-svg",

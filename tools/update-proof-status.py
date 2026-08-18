@@ -22,18 +22,25 @@ percentage (Proved_VCs * 100 / Total_VCs) and the Markdown renderer's
 "Total | Proved" table.  It deliberately does NOT reuse the raw "Provers"
 summary column, which excludes the VCs discharged by flow analysis.
 
+The file set is derived from the tree (tools/live_files.py) rather than a
+hardcoded list, so a new doc file carrying a proof metric is picked up
+automatically and can never go stale.  Historical records (past-release
+changelogs, past proof ledgers) and generated outputs are excluded there.
+
 Usage:
-  python3 tools/update-proof-status.py [--run-prove] [--out=obj/gnatprove/gnatprove.out] [--dry-run]
+  python3 tools/update-proof-status.py [--run-prove] [--out=obj/gnatprove/gnatprove.out] [--dry-run] [--check]
 
 --run-prove  Run `./bin/adacovex prove --target=. --no-svg` first to refresh
              obj/gnatprove/gnatprove.out (takes several minutes).
 --out        Path to the gnatprove summary to parse (default
              obj/gnatprove/gnatprove.out).
 --dry-run    Parse and report the new metrics without editing any file.
+--check      Verify every live file already carries the current metrics;
+             exit 1 (without editing) when any file is stale.
 
 Exit code 0 when every anchored pattern matched and was updated (or, with
---dry-run, would be), 1 when a metric could not be parsed or a pattern did
-not match any file.
+--dry-run/--check, would be / already is), 1 when a metric could not be
+parsed or a pattern did not match any file.
 """
 
 import argparse
@@ -41,9 +48,11 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Pattern, Tuple
+from typing import Dict, List, Optional, Pattern, Tuple
 
 ROOT: Path = Path(__file__).resolve().parent.parent
+
+from live_files import live_files  # noqa: E402  (same-tools import)
 
 LEVELS: List[str] = ["Stone", "Bronze", "Silver", "Gold", "Platinum"]
 LEVEL_RE: str = "(?:Stone|Bronze|Silver|Gold|Platinum)"
@@ -181,6 +190,9 @@ def replacements(m: Metrics) -> List[Tuple[Pattern[str], str]]:
         # "(401/401 VCs proved)" -- crate-description phrasing (proved/total).
         (re.compile(r"\((\d+)/(\d+) VCs proved\)"),
          f"({p}/{t} VCs proved)"),
+        # "398/398 VCs proved across 39 analyzed units" (CONTRIBUTING.md).
+        (re.compile(r"(\d+)/(\d+) VCs proved across (\d+) analyzed units"),
+         f"{p}/{t} VCs proved across {n} analyzed units"),
         # "369 VCs under gnatprove 16.1.0".
         (re.compile(r"(\d+) VCs under gnatprove"), f"{t} VCs under gnatprove"),
         # "all checks proved (369 checks)".
@@ -203,6 +215,8 @@ def main() -> int:
     ap.add_argument("--out", default=str(ROOT / "obj/gnatprove/gnatprove.out"))
     ap.add_argument("--dry-run", action="store_true",
                     help="report new metrics without editing files")
+    ap.add_argument("--check", action="store_true",
+                    help="verify live files carry the current metrics (exit 1 when stale)")
     args: argparse.Namespace = ap.parse_args()
 
     if args.run_prove:
@@ -215,46 +229,44 @@ def main() -> int:
           f"{m['flow']} flow, {m['unproved']} unproved, "
           f"{m['units']} units -> {m['level']}")
 
-    files: List[Path] = [
-        ROOT / "AGENTS.md",
-        ROOT / "README.md",
-        ROOT / "alire.toml",
-        ROOT / "alire-dev.toml",
-        # The canonical crate description carries the VC count too, and
-        # tools/update-description.py propagates it to every release + index
-        # manifest, so it must stay in sync here or `make description` (and
-        # therefore bump-version / release) re-propagates a stale count.
-        ROOT / "alire" / "long-description.txt",
-        ROOT / "Makefile",
-        ROOT / ".github" / "workflows" / "ci.yml",
-        ROOT / ".github" / "workflows" / "release.yml",
-        ROOT / "docs" / "cli-reference.md",
-        ROOT / "docs/proof/16.1.0-ledger.md",
-        ROOT / "docs/changelogs/adacovex-1.12.0.md",
-    ]
+    # Every live file under the tree (see tools/live_files.py): generated
+    # outputs, past changelogs/ledgers, and the tools themselves are
+    # excluded there, so a stale reference anywhere in the repo is caught.
+    files: List[Path] = live_files()
 
     if args.dry_run:
+        print(f"would scan {len(files)} live file(s)")
         return 0
 
     matched: int = 0
+    stale: int = 0
     for f in files:
-        if not f.exists():
-            print(f"skip (missing): {f.name}")
-            continue
-        text: str = f.read_text()
+        text: str = f.read_text(errors="replace")
         orig: str = text
         for pat, rep in replacements(m):
             text, cnt = pat.subn(rep, text)
             matched += cnt
         if text != orig:
-            f.write_text(text)
-            print(f"updated: {f.relative_to(ROOT)}")
+            if args.check:
+                stale += 1
+                print(f"STALE: {f.relative_to(ROOT)}")
+            else:
+                f.write_text(text)
+                print(f"updated: {f.relative_to(ROOT)}")
+
+    if args.check:
+        if stale:
+            print(f"error: {stale} file(s) carry stale proof metrics "
+                  f"(run `make proof-status` to refresh)", file=sys.stderr)
+            return 1
+        print("proof metrics in sync across all live files")
+        return 0
 
     if matched == 0:
         print("error: no proof-metric pattern matched; docs may be out of sync",
               file=sys.stderr)
         return 1
-    print(f"updated {matched} metric occurrence(s)")
+    print(f"updated {matched} metric occurrence(s) across {len(files)} file(s)")
     return 0
 
 

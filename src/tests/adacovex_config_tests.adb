@@ -551,6 +551,52 @@ package body Adacovex_Config_Tests is
          Testing.Parse_Args (A, Cfg);
          R.Check (Cfg.Help_Requested, "--help sets Help_Requested");
       end;
+
+      --  Unknown flags are rejected loudly instead of silently running an
+      --  assessment, and a close flag is suggested ("did you mean").
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--stnadard=all");
+         Testing.Parse_Args (A, Cfg);
+         R.Check (Cfg.CLI_Error, "unknown option sets CLI_Error");
+      end;
+
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--comparebse");
+         Testing.Parse_Args (A, Cfg);
+         R.Check (Cfg.CLI_Error, "unknown option with a typo sets CLI_Error");
+      end;
+
+      --  Unknown bare words (typo'd subcommands) are rejected too.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "proove");
+         Testing.Parse_Args (A, Cfg);
+         R.Check
+           (Cfg.CLI_Error, "unknown bare-word argument sets CLI_Error");
+      end;
+
+      --  --force with the man subcommand is the man --force override flag
+      --  (not a prove-mode error).
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "man");
+         Add (A, "--force");
+         Testing.Parse_Args (A, Cfg);
+         R.Check (Cfg.Man_Mode, "man --force sets Man_Mode");
+         R.Check (Cfg.Man_Force, "--force sets Man_Force");
+         R.Check
+           (not Cfg.CLI_Error, "man --force is not a CLI error");
+      end;
    end Run;
 
 end Adacovex_Config_Tests;

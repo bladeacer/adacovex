@@ -14,16 +14,22 @@ untouched because they do not match the anchored patterns.  The generated
 badge (docs/badges/tests.svg) is *not* edited here: `make run-self` rewrites
 it from the assessment, recomputing the width for the live count.
 
+The file set is derived from the tree (tools/live_files.py) rather than a
+hardcoded list, so a new doc file carrying a test count is picked up
+automatically and can never go stale.
+
 Usage:
-  python3 tools/update-test-count.py [--dry-run] [--result=docs/test_result.md]
+  python3 tools/update-test-count.py [--dry-run] [--check] [--result=docs/test_result.md]
 
 --result   Path to the test-result summary to parse (default
            docs/test_result.md).
 --dry-run  Parse and report the new counts without editing any file.
+--check    Verify every live file already carries the current counts;
+           exit 1 (without editing) when any file is stale.
 
 Exit code 0 when every anchored pattern matched and was updated (or, with
---dry-run, would be), 1 when the result could not be parsed or a pattern did
-not match.
+--dry-run/--check, would be / already is), 1 when the result could not be
+parsed or a pattern did not match.
 """
 
 import argparse
@@ -34,6 +40,8 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 ROOT: Path = Path(__file__).resolve().parent.parent
+
+from live_files import live_files  # noqa: E402  (same-tools import)
 
 # docs/test_result.md category name -> agents-tree.map file key.
 CATEGORY_KEY: Dict[str, str] = {
@@ -114,41 +122,66 @@ def update_text_file(path: Path, repls: List[Tuple[str, str]]) -> int:
     return matched
 
 
-def update_map(cats: Dict[str, int], passed: int, total: int) -> int:
-    """Update the per-file counts in tools/agents-tree.map."""
+def map_lines(cats: Dict[str, int], total: int) -> List[str]:
+    """Return the updated tools/agents-tree.map lines (without writing)."""
     path: Path = ROOT / "tools" / "agents-tree.map"
     lines: List[str] = path.read_text().splitlines()
-    matched: int = 0
     for i, line in enumerate(lines):
         key: str = line.partition("\t")[0]
         if key == TEST_RUNNER_KEY:
-            line, n = re.subn(r"\((\d+) tests\)", f"({total} tests)", line)
-            matched += n
+            lines[i], _ = re.subn(r"\((\d+) tests\)", f"({total} tests)", line)
         elif key in CATEGORY_KEY.values():
             for name, k in CATEGORY_KEY.items():
                 if k == key:
-                    line, n = re.subn(r"\((\d+)\)$", f"({cats[name]})", line)
-                    matched += n
+                    lines[i], _ = re.subn(r"\((\d+)\)$", f"({cats[name]})", line)
                     break
-        lines[i] = line
+    return lines
+
+
+def update_map(cats: Dict[str, int], total: int) -> None:
+    """Write the per-file counts into tools/agents-tree.map."""
+    path: Path = ROOT / "tools" / "agents-tree.map"
+    lines: List[str] = map_lines(cats, total)
     path.write_text("\n".join(lines) + "\n")
-    return matched
 
 
-def regen_agents_tree() -> None:
-    """Regenerate the AGENTS.md source tree from tools/agents-tree.map."""
+BEGIN_TREE: str = "<!-- agents-tree:begin -->"
+END_TREE: str = "<!-- agents-tree:end -->"
+
+
+def agents_tree_block() -> str:
+    """Return the spliced block (markers + fenced tree) for the current map."""
     gen: Path = ROOT / "tools" / "gen-agents-tree.py"
-    apply_: Path = ROOT / "tools" / "apply-agents-tree.py"
-    tmp: Path = ROOT / "tools" / ".agents-tree.tmp"
     proc: subprocess.CompletedProcess = subprocess.run(
         [sys.executable, str(gen)], cwd=str(ROOT), capture_output=True, text=True
     )
     if proc.returncode != 0:
         raise SystemExit(f"gen-agents-tree.py failed:\n{proc.stderr}")
-    tmp.write_text(proc.stdout)
-    subprocess.run([sys.executable, str(apply_), str(tmp)],
-                   cwd=str(ROOT), check=True)
-    tmp.unlink()
+    tree: str = proc.stdout.rstrip()
+    return (BEGIN_TREE + "\n```\n" + tree + "\n```\n" + END_TREE)
+
+
+def regen_agents_tree(check: bool = False) -> bool:
+    """Regenerate the AGENTS.md source tree from tools/agents-tree.map.
+
+    Only the fenced block between the agents-tree markers is touched -- the
+    rest of AGENTS.md is preserved.  Returns True when the tree is up to
+    date (check mode) or was updated.
+    """
+    agents: Path = ROOT / "AGENTS.md"
+    text: str = agents.read_text()
+    if BEGIN_TREE not in text or END_TREE not in text:
+        raise SystemExit(
+            f"error: AGENTS.md is missing the agents-tree markers"
+        )
+    start: int = text.index(BEGIN_TREE)
+    end: int = text.index(END_TREE) + len(END_TREE)
+    block: str = agents_tree_block()
+    if check:
+        return text[start:end] == block
+    if text[start:end] != block:
+        agents.write_text(text[:start] + block + text[end:])
+    return True
 
 
 def main() -> int:
@@ -156,6 +189,8 @@ def main() -> int:
     ap.add_argument("--result", default=str(ROOT / "docs" / "test_result.md"))
     ap.add_argument("--dry-run", action="store_true",
                     help="report new counts without editing files")
+    ap.add_argument("--check", action="store_true",
+                    help="verify live files carry the current counts (exit 1 when stale)")
     args: argparse.Namespace = ap.parse_args()
 
     cats, passed, failed = parse_result(Path(args.result))
@@ -169,29 +204,29 @@ def main() -> int:
 
     repls: List[Tuple[str, str]] = total_phrase_repls(passed, total)
 
-    text_files: List[Path] = [
-        ROOT / "AGENTS.md",
-        ROOT / "README.md",
-        ROOT / "alire.toml",
-        ROOT / "alire-dev.toml",
-        # The canonical crate description also carries the test count, and
-        # tools/update-description.py propagates it to every release + index
-        # manifest, so it must stay in sync here or the next `make
-        # description` (and therefore `make bump-version` / `make release`)
-        # would re-propagate a stale count and drift the manifests.
-        ROOT / "alire" / "long-description.txt",
-        ROOT / "Makefile",
-        ROOT / ".github" / "workflows" / "ci.yml",
-        ROOT / ".github" / "workflows" / "release.yml",
-        ROOT / "docs" / "architecture.md",
-        ROOT / "docs" / "cli-reference.md",
-    ]
+    # Every live file under the tree (see tools/live_files.py).  This covers
+    # AGENTS.md, README.md, the manifests, the canonical description, the
+    # Makefile, the CI workflows, and every docs page that carries a count.
+    files: List[Path] = live_files()
 
+    stale: int = 0
     matched: int = 0
-    for f in text_files:
-        matched += update_text_file(f, repls)
+    for f in files:
+        text: str = f.read_text(errors="replace")
+        orig: str = text
+        for pat, rep in repls:
+            text, n = re.subn(pat, rep, text)
+            matched += n
+        if text != orig:
+            if args.check:
+                stale += 1
+                print(f"STALE: {f.relative_to(ROOT)}")
+            else:
+                f.write_text(text)
+                print(f"updated: {f.relative_to(ROOT)}")
 
-    # CONTRIBUTING.md category table + total.
+    # CONTRIBUTING.md category table + total (only file with a per-category
+    # table, handled separately from the anchored phrase scan).
     contrib: Path = ROOT / "CONTRIBUTING.md"
     if contrib.exists():
         text: str = contrib.read_text()
@@ -210,9 +245,36 @@ def main() -> int:
         )
         matched += n
         if text != orig:
-            contrib.write_text(text)
+            if args.check:
+                stale += 1
+                print(f"STALE: {contrib.relative_to(ROOT)}")
+            else:
+                contrib.write_text(text)
 
-    matched += update_map(cats, passed, total)
+    # tools/agents-tree.map lives under tools/ (excluded from the generic
+    # scan) and carries per-file counts; keep it in sync separately.
+    map_orig: str = (ROOT / "tools" / "agents-tree.map").read_text()
+    map_new: str = "\n".join(map_lines(cats, total)) + "\n"
+    if map_new != map_orig:
+        if args.check:
+            stale += 1
+            print("STALE: tools/agents-tree.map")
+        else:
+            (ROOT / "tools" / "agents-tree.map").write_text(map_new)
+
+    if args.check:
+        # AGENTS.md embeds the source tree; verify it matches the map too.
+        if not regen_agents_tree(check=True):
+            stale += 1
+            print("STALE: AGENTS.md source tree")
+        if stale:
+            print(f"error: {stale} file(s) carry stale test counts "
+                  f"(run `make test-count` to refresh)", file=sys.stderr)
+            return 1
+        print("test counts in sync across all live files")
+        return 0
+
+    update_map(cats, total)
     regen_agents_tree()
 
     if matched == 0:

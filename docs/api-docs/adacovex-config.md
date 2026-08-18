@@ -44,6 +44,7 @@ Help_Topic_Len     : Natural := 0;
 Version_Requested  : Boolean := False;
 Man_Mode           : Boolean := False;
 Man_Check          : Boolean := False;
+Man_Force          : Boolean := False;
 Man_Dir            : String (1 .. Types.Max_Path);
 Man_Dir_Len        : Natural := 0;
 Skip_Dir_Ct        : Natural := 0;

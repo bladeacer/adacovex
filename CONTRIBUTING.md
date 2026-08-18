@@ -62,7 +62,7 @@ Enforced rules:
 - Files are pure ASCII; list items indented under a heading use exactly
   three spaces (never 4+).
 - `## Proof Results` states the SPARK level (Stone..Platinum), the exact VC
-  totals (e.g. `398/398 VCs proved across 39 analyzed units`), and calls out
+  totals (e.g. `408/408 VCs proved across 45 analyzed units`), and calls out
   whether any proof metrics changed.
 - `## Traceability` lists any new HLRs by tag name and package, then the
   existing `-- HLR-*` tags covering the changed packages.
@@ -81,12 +81,12 @@ Pull requests should follow the following conventions.
 - Ada 2012 / SPARK 2014 only, and zero-dependency: no library dependencies
   beyond the GNAT runtime.
 - Keep the SPARK proof at Platinum: run `make prove` and make sure the VC
-  counts match `docs/proof/16.1.0-ledger.md` (401 VCs, 0 unproved under
+  counts match `docs/proof/16.1.0-ledger.md` (408 VCs, 0 unproved under
   gnatprove 16.1.0).
 - Keep docstring coverage at 100% (strict mode, cannot be disabled):
   `make run-self` must show Platinum, 100% docs, and DAL-C Achieved.
 - If you add or change behavior, extend the native test suite in `src/tests/`
-  (501 tests across 10 categories) and run `make test`.
+  (653 tests across 12 categories) and run `make test`.
 - Keep all source files pure ASCII: `make ascii-check`.
 - If a new CLI flag is added, mirror it as a matching GitHub Action input in
   `./action.yml` and document it in `docs/cli-reference.md` and the README
@@ -146,9 +146,9 @@ Native (zero-dependency) framework (`Adacovex.Test_Support`, no AUnit). Source:
 | Source scanner | 83 |
 | GNATprove parser | 64 |
 | Test-result parser | 43 |
-| CLI config | 112 |
+| CLI config | 118 |
 | SVG renderer | 36 |
 | HTML/Markdown renderers | 34 |
 | SBOM generator | 118 |
 | IR synthesis | 27 |
-| **Total** | **647** |
+| **Total** | **653** |

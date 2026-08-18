@@ -489,39 +489,57 @@ begin
    -- ~/.local/share/man on Linux/WSL, or --dir=PATH) and refresh it with
    -- mandb.  --check exits 0 when the installed page matches this binary's
    -- version, 1 when a newer version is available or none is installed.
+   -- --force always (re)writes the page even when the installed one already
+   -- matches this binary (e.g. to repair a hand-edited page).
    if Cfg.Man_Mode then
       declare
          Man_Root : constant String :=
            (if Cfg.Man_Dir_Len > 0
             then Cfg.Man_Dir (1 .. Cfg.Man_Dir_Len)
             else Adacovex.Renderers.Man.Default_Dir);
+         Installed : constant String :=
+           Adacovex.Renderers.Man.Installed_Version (Man_Root);
          OK       : Boolean;
       begin
          if Cfg.Man_Check then
-            declare
-               Installed : constant String :=
-                 Adacovex.Renderers.Man.Installed_Version (Man_Root);
-            begin
-               if Installed = Adacovex.Version then
-                  Ada.Text_IO.Put_Line
-                    ("man page up to date (adacovex v"
-                     & Adacovex.Version
-                     & " at "
-                     & Man_Root
-                     & "/man1/adacovex.1)");
-                  Ada.Command_Line.Set_Exit_Status (0);
-               else
-                  Ada.Text_IO.Put_Line
-                    ("man page out of date: installed "
-                     & (if Installed'Length > 0
-                        then "v" & Installed
-                        else "nothing")
-                     & ", binary v"
-                     & Adacovex.Version
-                     & " (run `adacovex man` to install)");
-                  Ada.Command_Line.Set_Exit_Status (1);
-               end if;
-            end;
+            if Installed = Adacovex.Version then
+               Ada.Text_IO.Put_Line
+                 ("man page up to date (adacovex v"
+                  & Adacovex.Version
+                  & " at "
+                  & Man_Root
+                  & "/man1/adacovex.1)");
+               Ada.Command_Line.Set_Exit_Status (0);
+            else
+               Ada.Text_IO.Put_Line
+                 ("man page out of date: installed "
+                  & (if Installed'Length > 0
+                     then "v" & Installed
+                     else "nothing")
+                  & ", binary v"
+                  & Adacovex.Version
+                  & " (run `adacovex man` to install)");
+               Ada.Command_Line.Set_Exit_Status (1);
+            end if;
+         elsif Cfg.Man_Force and then Installed = Adacovex.Version then
+            --  Force override: the page is already current, but the user
+            --  explicitly asked to rewrite it (e.g. a hand-edited or corrupt
+            --  installed page that Installed_Version still parses).
+            Adacovex.Renderers.Man.Install (Man_Root, Adacovex.Version, OK);
+            if OK then
+               Ada.Text_IO.Put_Line
+                 ("man page rewritten: adacovex v"
+                  & Adacovex.Version
+                  & " -> "
+                  & Man_Root
+                  & "/man1/adacovex.1");
+               Ada.Command_Line.Set_Exit_Status (0);
+            else
+               Ada.Text_IO.Put_Line
+                 (Ada.Text_IO.Standard_Error,
+                  "Error: could not install man page to " & Man_Root);
+               Ada.Command_Line.Set_Exit_Status (1);
+            end if;
          else
             Adacovex.Renderers.Man.Install (Man_Root, Adacovex.Version, OK);
             if OK then
