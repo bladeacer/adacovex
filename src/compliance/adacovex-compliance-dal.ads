@@ -14,6 +14,8 @@ with Adacovex.Parsers.Source;
 
 package Adacovex.Compliance.DAL is
 
+   use type Types.DAL_Level;
+
    --  Run DAL compliance assessment for any DAL level (A-E).
    --  Evaluates HLR trace coverage, orphan tag absence, test pass rate,
    --  and minimum SPARK proof level (per-level criteria). Populates
@@ -49,14 +51,18 @@ package Adacovex.Compliance.DAL is
    --  @param Level  Target DAL level (A-E).
    --  @return The minimum SPARK level that satisfies the level's criteria.
    function Min_SPARK_For (Level : Types.DAL_Level) return Types.SPARK_Level
-   with Global => null;
+   with SPARK_Mode => On,
+        Post       => Min_SPARK_For'Result in Types.Stone .. Types.Gold,
+        Global     => null;
 
    --  Whether the DAL level requires a passing test suite.  Only DAL-E
    --  dispenses with the test criterion.
    --  @param Level  Target DAL level (A-E).
    --  @return True unless Level is DAL-E.
    function Need_Tests (Level : Types.DAL_Level) return Boolean
-   with Global => null;
+   with SPARK_Mode => On,
+        Post       => Need_Tests'Result = not (Level = Types.DAL_E),
+        Global     => null;
 
    --  Run a standard-aware assessment: delegates to Assess_DAL (the evidence
    --  checks are identical across DO-178C / ISO 26262 / IEC 62304) and then

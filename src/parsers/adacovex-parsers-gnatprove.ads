@@ -8,6 +8,8 @@ with Adacovex.Types;
 package Adacovex.Parsers.GNATprove is
    pragma SPARK_Mode (On);
 
+   use type Types.SPARK_Level;
+
    --  Parse a gnatprove.out file, extracting VC counts per check type.
    --  Reads the GNATprove summary table and populates the Proof_Summary
    --  record with proved/unproved VC counts per category.
@@ -62,6 +64,10 @@ package Adacovex.Parsers.GNATprove is
    --  @return Derived SPARK_Level (Stone through Platinum).
    function Determine_SPARK_Level
      (Summary : Types.Proof_Summary) return Types.SPARK_Level
-   with Global => null;
+   with SPARK_Mode => On,
+        Post       =>
+          (if Summary.Unproved > 0
+           then not (Determine_SPARK_Level'Result = Types.Platinum)),
+        Global     => null;
 
 end Adacovex.Parsers.GNATprove;

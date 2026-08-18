@@ -252,7 +252,9 @@ package body Adacovex.Parsers.GNATprove is
    end Parse_Prove_Out;
 
    function Determine_SPARK_Level
-     (Summary : Types.Proof_Summary) return Types.SPARK_Level is
+     (Summary : Types.Proof_Summary) return Types.SPARK_Level
+   with SPARK_Mode => On
+   is
    begin
       --  Empty summary (no gnatprove data) is Stone, not Gold:
       --  a zero-row file must not be mistaken for fully-proved.

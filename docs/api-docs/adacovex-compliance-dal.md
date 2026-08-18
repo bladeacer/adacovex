@@ -1,14 +1,18 @@
 # Adacovex.Compliance.DAL
 
-DO-178C DAL compliance assessment engine.
-Evaluates HLR trace coverage, orphan tags, test passing status, and
-minimum SPARK proof level to determine Achieved / Unmet status.
-HLR-COMPLIANCE: DAL assessment
-HLR-DAL-A: DAL-A compliance criteria
-HLR-DAL-B: DAL-B compliance criteria
-HLR-DAL-C: DAL-C compliance criteria
-HLR-DAL-D: DAL-D compliance criteria
-HLR-DAL-E: DAL-E compliance criteria
+Run DAL compliance assessment for any DAL level (A-E).
+Evaluates HLR trace coverage, orphan tag absence, test pass rate,
+and minimum SPARK proof level (per-level criteria). Populates
+Assessment with pass/fail results and detailed failure reasons.
+@param Level  Target DAL level (A-E).
+@param Target_Dir  Project root directory.
+@param Packages  Scanned package vector.
+@param Proof_Summary  GNATprove proof results.
+@param Test_Summary  Test run results.
+@param Assessment  Output DAL assessment record.
+@param Use_Cache  When True the HLR.md/LLR.md parses are served from
+the on-disk result cache when unchanged; when False they are always
+re-parsed (--no-cache).
 
 **See also:** [DAL Levels](adacovex-dal-levels.md) | [Standards](../standards.md)
 
@@ -24,7 +28,7 @@ HLR-DAL-E: DAL-E compliance criteria
 
 **Returns:** True if Assessment.Status = Achieved.
 
-### function Min_SPARK_For (Level : Adacovex.Types.DAL_Level) return Adacovex.Types.SPARK_Level `[Global]`
+### function Min_SPARK_For (Level : Adacovex.Types.DAL_Level) return Adacovex.Types.SPARK_Level `[Post]` `[Global]` `[SPARK]`
 
 | Parameter | Description |
 |-----------|-------------|
@@ -32,7 +36,7 @@ HLR-DAL-E: DAL-E compliance criteria
 
 **Returns:** The minimum SPARK level that satisfies the level's criteria.
 
-### function Need_Tests (Level : Adacovex.Types.DAL_Level) return Standard.Boolean `[Global]`
+### function Need_Tests (Level : Adacovex.Types.DAL_Level) return Standard.Boolean `[Post]` `[Global]` `[SPARK]`
 
 | Parameter | Description |
 |-----------|-------------|
