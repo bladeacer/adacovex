@@ -1044,8 +1044,8 @@ package body Adacovex.Parsers.Manifest is
    --  @param S  Tool name (lowercase, e.g. "python3").
    --  @param VFlag  Version-probe flag (default "--version").
    --  @return The Tool_Entry holding S.
-   function Make_Tool (S : String; VFlag : String := "--version")
-     return Tool_Entry
+   function Make_Tool
+     (S : String; VFlag : String := "--version") return Tool_Entry
    is
       E : Tool_Entry;
    begin
@@ -1174,12 +1174,7 @@ package body Adacovex.Parsers.Manifest is
          return "";
       end if;
       Spawn
-        (Exe.all,
-         (1 => new String'(Flag)),
-         Tmp,
-         OK,
-         Code,
-         Err_To_Out => True);
+        (Exe.all, (1 => new String'(Flag)), Tmp, OK, Code, Err_To_Out => True);
       Free (Exe);
       if not OK or else Code /= 0 then
          return "";
@@ -1396,7 +1391,7 @@ package body Adacovex.Parsers.Manifest is
             end if;
             if Ada.Strings.Fixed.Index
                  (Line (1 .. Last), "System_Tools : constant array")
-               > 0
+              > 0
             then
                --  This file declares the curated tool table; every entry is
                --  a literal tool name by construction, so references found
@@ -1407,8 +1402,8 @@ package body Adacovex.Parsers.Manifest is
             end if;
             for T in System_Tools'Range loop
                if Line_Refers_To
-                 (Line (1 .. Last),
-                  System_Tools (T).Name (1 .. System_Tools (T).Len))
+                    (Line (1 .. Last),
+                     System_Tools (T).Name (1 .. System_Tools (T).Len))
                then
                   Note_Tool (System_Tools (T));
                end if;

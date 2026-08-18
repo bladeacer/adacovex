@@ -148,7 +148,7 @@ Native (zero-dependency) framework (`Adacovex.Test_Support`, no AUnit). Source:
 | Test-result parser | 43 |
 | CLI config | 112 |
 | SVG renderer | 36 |
-| HTML/Markdown renderers | 31 |
+| HTML/Markdown renderers | 34 |
 | SBOM generator | 118 |
 | IR synthesis | 27 |
-| **Total** | **644** |
+| **Total** | **647** |

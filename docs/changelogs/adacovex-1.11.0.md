@@ -208,38 +208,80 @@ build). The JSON API (`GET /api/metrics`) is now documented in the README
 with a curl example and sample response, and the man-page test suite gained a
 SYNOPSIS regression check (no `.RI` concatenation artifacts).
 
+### C18: dashboard HTML is a real file bundled at build time
+
+The `--serve` dashboard's static shell (doctype, CSS, header with the theme
+dropdown + Save settings button, footer with an embed hint, and the theme
+script) moved out of the Ada renderer's line-by-line string literals into a
+single HTML file, `resources/dashboard.html`. `tools/gen-dashboard.py`
+(pure stdlib, typed, `--check` mode like gen-version.py) bundles it into
+`src/adacovex-dashboard_template.ads` at `make build` (committed and
+byte-identical when unchanged), and `Adacovex.Renderers.HTML` now only
+builds the dynamic card markup, injecting it at the `__CARDS__` placeholder
+and filling the `__THEME__` initial-theme marker. Editing the page chrome
+is now a plain HTML edit with no Ada knowledge required.
+
+### C19: embed hint on the dashboard
+
+The dashboard footer now shows "Embed: append `?theme=light|dark|system` to
+the URL to pin the theme", and the theme dropdown carries a matching
+`title` attribute, so embedders discover the query-param pinning from the
+page itself.
+
+### C20: man page documents theme priority and the JSON API
+
+The man page's `--serve` entry now documents the full theme resolution
+order (`?theme=` query param, then explicit `--theme=light`/`dark`, then the
+saved `localStorage` choice, then the system preference), that persistence
+is localStorage-only (no cookies), and the `GET /api/metrics` JSON endpoint
+with a curl example.
+
+### C21: action integration test for consumer `run-tests`
+
+A new `consumer-run-tests` CI job restructures the workspace into a minimal
+zero-dependency fixture crate (no `adacovex.gpr`, so the action's consumer
+branch triggers), copies the action in, and runs it with `build: true` +
+`run-tests: true` + `test-command: ./fixture_main`. This pins the fix for
+the Ada_CRDT release failure (the action must build the target's native
+tests before running `test-command`); the target build runs in the target
+root so subdirectory `target` values work too.
+
 ## Test Suite
 
-644 tests (was 501), across 12 categories (was 10). The CLI-config category
+647 tests (was 501), across 12 categories (was 10). The CLI-config category
 (112 checks) covers `--version`, the `man` subcommand and its `--check` /
 `--dir` flags, the `sbom` subcommand's and `--serve` dashboard's
 standard-awareness defaults (all standards by default, narrowed by
 `--standard` / `--asil` / `--class`), the `--theme` flag (default `system`,
 light/dark parsing, invalid-value errors), and the contextual `help` keyword
 (topic capture in both orders, bare `help`, and newly documented flags such
-as `--emit-svg` and `--verbose`); the HTML/Markdown renderers category (31
+as `--emit-svg` and `--verbose`); the HTML/Markdown renderers category (34
 checks) covers the dashboard's theme dropdown (all three options, the
-`--theme` initial selection honored and its `var C` priority marker, the
-Save settings button, `saveTheme` persistence, the `?theme=` query param,
-`data-theme` override, `prefers-color-scheme`, and `localStorage`) on top
-of the standard-aware dashboard and JSON output; the DAL compliance category
-(16) gained the cached-HLR parse round-trip; the SBOM generator category
-(118) gained the dependency-graph cache round-trip; the Man page renderer
-category (18 checks) covers page structure, the embedded version, an
-install/read-back round-trip, the `Update_Database` man-db contract, and a
-SYNOPSIS regression check (single quoted `.B` lines, no `.RI`
+`data-initial-theme` CLI-theme marker, the Save settings button, `saveTheme`
+persistence, the `?theme=` query param, the embed hint, the bundled
+template shell, `data-theme` override, `prefers-color-scheme`, and
+`localStorage`, plus no leftover `__CARDS__`/`__THEME__` placeholders) on
+top of the standard-aware dashboard and JSON output; the DAL compliance
+category (16) gained the cached-HLR parse round-trip; the SBOM generator
+category (118) gained the dependency-graph cache round-trip; the Man page
+renderer category (18 checks) covers page structure, the embedded version,
+an install/read-back round-trip, the `Update_Database` man-db contract, and
+a SYNOPSIS regression check (single quoted `.B` lines, no `.RI`
 concatenation); the VCS support category (29 checks) covers marker-file
 detection for every VCS, display and tool-binary names, and the
 UX-conversion recommendations.
 
 ## Proof Results
 
-Platinum, 408/408 VCs proved across 44 analyzed units (up from 401): the
+Platinum, 408/408 VCs proved across 45 analyzed units (up from 44): the
 `--theme` additions (the `Dashboard_Theme` type and its `To_String` /
 `To_Theme` / `Is_Valid_Theme` conversions in `Adacovex.Types`) reuse the
-already-proved uppercase/parse patterns and add 7 VCs, all proved; the VCS
-and man-page packages are non-SPARK I/O code and add no proof obligations.
-Proven with `make prove` under gnatprove 16.1.0 (`--steps=10000`).
+already-proved uppercase/parse patterns and add 7 VCs, all proved; the new
+bundled dashboard template package (`Adacovex.Dashboard_Template`, a String
+constant generated from `resources/dashboard.html`) adds one analyzed unit
+with no proof obligations; the VCS and man-page packages are non-SPARK I/O
+code and add no proof obligations. Proven with `make prove` under gnatprove
+16.1.0 (`--steps=10000`).
 
 ## Traceability
 

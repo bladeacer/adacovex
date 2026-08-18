@@ -1,5 +1,6 @@
 src/adacovex	Version constant
 src/adacovex_version_info	Generated version constant (from alire-dev.toml / ADACOVEX_VERSION)
+src/adacovex-dashboard_template	Generated dashboard HTML template constant (from resources/dashboard.html)
 src/adacovex_main	CLI entry point (builds as bin/adacovex; covex alias)
 src/compliance/adacovex-compliance	Parent package for DO-178C compliance assessment
 src/compliance/adacovex-compliance-dal	DAL level assessment logic (DAL-A..E criteria)
@@ -41,6 +42,6 @@ src/tests/adacovex_prove_tests	GNATprove parser tests (64)
 src/tests/adacovex_testparser_tests	Test-result parser tests (43)
 src/tests/adacovex_config_tests	CLI config tests (112)
 src/tests/adacovex_renderer_svg_tests	SVG renderer tests (36)
-src/tests/adacovex_renderer_tests	HTML/Markdown renderer tests (31)
+src/tests/adacovex_renderer_tests	HTML/Markdown renderer tests (34)
 src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (118)
-src/tests/test_runner	Test suite entry point (644 tests)
+src/tests/test_runner	Test suite entry point (647 tests)

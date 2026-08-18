@@ -296,13 +296,20 @@ adacovex supports multiple output formats:
 - **Markdown reports**: `VERIFICATION.md` and `TRACE.md` for compliance documentation
 - **HTML dashboard**: Interactive web dashboard with JSON API (`--serve`);
   standard-aware (defaults to all standards like `sbom`) with light/dark
-  theme support (toggle button, respects `prefers-color-scheme`)
+  theme support (toggle button, respects `prefers-color-scheme`). The static
+  page shell (CSS, header, theme script) is a real HTML file,
+  `resources/dashboard.html`, bundled into the binary at build time:
+  `tools/gen-dashboard.py` regenerates
+  `src/adacovex-dashboard_template.ads` (a String constant, committed and
+  byte-identical when unchanged) and `Adacovex.Renderers.HTML` only builds
+  the dynamic card markup, injecting it at the `__CARDS__` placeholder and
+  filling the `__THEME__` initial-theme marker
 - **SBOM**: CycloneDX 1.5, SPDX 2.3, or Markdown format with proof, standard,
   and DAL/level properties
 
 ## Testing
 
-adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 644 tests across 12 categories. No external test framework (AUnit, etc.) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
+adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 647 tests across 12 categories. No external test framework (AUnit, etc.) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
 
 ## Supported Platforms
 

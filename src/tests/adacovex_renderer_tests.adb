@@ -134,11 +134,19 @@ package body Adacovex_Renderer_Tests is
            (Contains (S, "save-theme"), "dashboard has save settings button");
          R.Check
            (Contains (S, "Save settings"), "save settings button labeled");
-         R.Check
-           (Contains (S, "saveTheme"), "saveTheme persists on click");
+         R.Check (Contains (S, "saveTheme"), "saveTheme persists on click");
          R.Check
            (Contains (S, "URLSearchParams"),
             "dashboard reads the ?theme= query param");
+         R.Check
+           (Contains (S, "?theme=light|dark|system"),
+            "dashboard footer hints the embed query param");
+         R.Check
+           (not Contains (S, "__CARDS__"),
+            "dashboard template placeholders are substituted");
+         R.Check
+           (not Contains (S, "__THEME__"),
+            "dashboard theme placeholder is substituted");
       end;
 
       --  The --theme flag's initial selection is honored: Dark_Theme renders
@@ -155,11 +163,11 @@ package body Adacovex_Renderer_Tests is
               Theme         => Dark_Theme);
       begin
          R.Check
-           (Contains (S, "<option value=""dark"" selected"),
-            "dashboard honors Dark_Theme initial selection");
+           (Contains (S, "data-initial-theme=""dark"""),
+            "dashboard marks the CLI theme for the priority logic");
          R.Check
-           (Contains (S, "var C='dark';"),
-            "dashboard emits CLI theme marker for priority");
+           (Contains (S, "Coverage &amp; Verification"),
+            "dashboard bundles the template page shell");
       end;
 
       --  Light_Theme marks the light option selected.
@@ -175,8 +183,8 @@ package body Adacovex_Renderer_Tests is
               Theme         => Light_Theme);
       begin
          R.Check
-           (Contains (S, "<option value=""light"" selected"),
-            "dashboard honors Light_Theme initial selection");
+           (Contains (S, "data-initial-theme=""light"""),
+            "dashboard marks Light_Theme as the CLI preference");
       end;
 
       --  Markdown verification report is standard-aware.

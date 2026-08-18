@@ -360,7 +360,7 @@ runs:
       shell: bash
       run: |
         set -euxo pipefail
-        cd "$GITHUB_WORKSPACE"
+        cd "$GITHUB_WORKSPACE/${{ inputs.target }}"
         alr build
 
     - name: Run native tests

@@ -20,7 +20,7 @@ jobs:
           prove: true
           require-spark: Platinum
           require-docstrings: 100
-          require-tests: 644
+          require-tests: 647
           require-proof: 100
 
   adacovex-tests:
@@ -45,6 +45,67 @@ jobs:
       - name: Enforce no SPARK_Mode (Off) outside Types.Implementation
         run: make spark-off-check
 
+  consumer-run-tests:
+    # Regression test for the action's run-tests in a CONSUMER workspace:
+    # build:true builds adacovex in a scratch checkout, so the action must
+    # build the target's native tests itself before running test-command
+    # (this is what broke Ada_CRDT's release workflow -- ./test_crdt was
+    # never built).  The workspace root is restructured into a minimal
+    # zero-dependency fixture (no adacovex.gpr) so the consumer branch of
+    # the action triggers, then `uses: ./` runs the action against it.
+    name: Action run-tests (consumer workspace)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Restructure workspace into a consumer fixture
+        shell: bash
+        run: |
+          set -euxo pipefail
+          SRC="$RUNNER_TEMP/adacovex-src"
+          mkdir -p "$SRC"
+          shopt -s dotglob
+          mv "$GITHUB_WORKSPACE"/* "$SRC/" 2>/dev/null || true
+          shopt -u dotglob
+          # The fixture is the workspace root: a tiny Alire crate whose
+          # `alr build` produces ./fixture_main (Exec_Dir ".").
+          cp "$SRC/action.yml" "$GITHUB_WORKSPACE/action.yml"
+          mkdir -p src obj
+          cat > alire.toml <<'FIXTURE'
+          name = "fixture"
+          description = "adacovex action consumer fixture"
+          version = "0.1.0"
+          authors = ["adacovex"]
+          maintainers = ["adacovex <noreply@example.com>"]
+          maintainers-logins = ["adacovex"]
+          licenses = "MIT"
+          executables = ["fixture_main"]
+          FIXTURE
+          cat > fixture.gpr <<'FIXTURE'
+          project fixture is
+             for Languages use ("Ada");
+             for Source_Dirs use ("src");
+             for Object_Dir use "obj";
+             for Exec_Dir use ".";
+             for Main use ("fixture_main.adb");
+          end fixture;
+          FIXTURE
+          cat > src/fixture_main.adb <<'FIXTURE'
+          with Ada.Text_IO;
+          procedure Fixture_Main is
+          begin
+             Ada.Text_IO.Put_Line ("fixture tests passed");
+          end Fixture_Main;
+          FIXTURE
+      - uses: ./
+        with:
+          target: .
+          dal: C
+          gnat-version: 15.2.1
+          build: true
+          run-tests: true
+          test-command: ./fixture_main
+          assess: false
+
   coverage-gate:
     name: Docstring coverage gate (release tags)
     if: github.event_name == 'push'
@@ -65,7 +126,7 @@ jobs:
   summary:
     name: CI summary
     if: always()
-    needs: [self-assessment, adacovex-tests, no-spark-off, coverage-gate]
+    needs: [self-assessment, adacovex-tests, no-spark-off, consumer-run-tests, coverage-gate]
     runs-on: ubuntu-latest
     steps:
       - name: Write CI summary
@@ -74,6 +135,7 @@ jobs:
           SELF: ${{ needs.self-assessment.result }}
           TESTS: ${{ needs.adacovex-tests.result }}
           OFFOFF: ${{ needs.no-spark-off.result }}
+          CONSUMER: ${{ needs.consumer-run-tests.result }}
           GATE: ${{ needs.coverage-gate.result }}
         run: |
           set -euo pipefail
@@ -86,10 +148,11 @@ jobs:
             echo "| Self-assessment (all standards) | $SELF |"
             echo "| Build + native tests | $TESTS |"
             echo "| SPARK_Mode Off gate | $OFFOFF |"
+            echo "| Action run-tests (consumer workspace) | $CONSUMER |"
             echo "| Coverage gate (push only) | $GATE |"
             echo ''
           } >> "$GITHUB_STEP_SUMMARY"
-          for R in "$SELF" "$TESTS" "$OFFOFF" "$GATE"; do
+          for R in "$SELF" "$TESTS" "$OFFOFF" "$CONSUMER" "$GATE"; do
             if [ "$R" = "failure" ]; then
               FAILED=1
               echo "::error::A CI job failed -- see the failing job logs and its adacovex assessment summary." >&2
