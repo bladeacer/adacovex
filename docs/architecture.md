@@ -294,13 +294,15 @@ adacovex supports multiple output formats:
   `iso26262.svg` / `iec62304.svg` compliance badges (`--standard=all` emits all
   three) for CI badges
 - **Markdown reports**: `VERIFICATION.md` and `TRACE.md` for compliance documentation
-- **HTML dashboard**: Interactive web dashboard with JSON API (`--serve`)
+- **HTML dashboard**: Interactive web dashboard with JSON API (`--serve`);
+  standard-aware (defaults to all standards like `sbom`) with light/dark
+  theme support (toggle button, respects `prefers-color-scheme`)
 - **SBOM**: CycloneDX 1.5, SPDX 2.3, or Markdown format with proof, standard,
   and DAL/level properties
 
 ## Testing
 
-adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 601 tests across 12 categories. No external test framework (AUnit, etc.) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
+adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 616 tests across 12 categories. No external test framework (AUnit, etc.) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
 
 ## Supported Platforms
 

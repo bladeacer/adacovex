@@ -12,7 +12,10 @@ package Adacovex.Renderers.HTML is
    --  SPARK proof status, test results, compliance, and package coverage in
    --  a card-based layout.  The compliance card is standard-aware: it prints
    --  the selected standard's level label, or one row per standard when
-   --  All_Standards is True.
+   --  All_Standards is True.  The page supports light/dark themes: colors are
+   --  driven by CSS custom properties, the initial theme follows the user's
+   --  prefers-color-scheme, and a header button toggles between light and
+   --  dark (persisted in localStorage).
    --  @param Doc_Metrics  Docstring coverage metrics.
    --  @param Proof  GNATprove proof summary.
    --  @param Tests  Test result summary.

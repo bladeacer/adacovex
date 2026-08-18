@@ -367,6 +367,65 @@ package body Adacovex_Config_Tests is
          R.Check (Cfg.SBOM_Mode, "sbom --standard=all sets SBOM_Mode");
          R.Check (Cfg.Standard_All, "sbom --standard=all keeps all standards");
       end;
+
+      --  serve defaults to ALL standards (the dashboard renders every
+      --  standard's compliance level) unless a standard flag narrows it.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--serve");
+         Testing.Parse_Args (A, Cfg);
+         R.Check (Cfg.Serve_Mode, "serve sets Serve_Mode");
+         R.Check (Cfg.Standard_All, "serve defaults to all standards");
+         R.Check (not Cfg.CLI_Error, "bare serve is not an error");
+      end;
+
+      --  serve --standard=NAME narrows to that single standard.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--serve");
+         Add (A, "--standard=iso26262");
+         Testing.Parse_Args (A, Cfg);
+         R.Check (Cfg.Serve_Mode, "serve --standard sets Serve_Mode");
+         R.Check
+           (Cfg.Standard_Target = ISO_26262,
+            "serve --standard=iso26262 selects ISO 26262");
+         R.Check
+           (not Cfg.Standard_All,
+            "serve --standard=NAME disables all-standards");
+      end;
+
+      --  serve --asil=LEVEL selects the standard and level together.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--serve");
+         Add (A, "--asil=B");
+         Testing.Parse_Args (A, Cfg);
+         R.Check
+           (Cfg.Standard_Target = ISO_26262,
+            "serve --asil=B selects ISO 26262");
+         R.Check
+           (not Cfg.Standard_All, "serve --asil=LEVEL disables all-standards");
+         R.Check (Cfg.DAL_Target = DAL_C, "serve --asil=B maps to DAL-C tier");
+      end;
+
+      --  serve --standard=all stays all-standards (explicit form).
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--serve");
+         Add (A, "--standard=all");
+         Testing.Parse_Args (A, Cfg);
+         R.Check (Cfg.Serve_Mode, "serve --standard=all sets Serve_Mode");
+         R.Check
+           (Cfg.Standard_All, "serve --standard=all keeps all standards");
+      end;
    end Run;
 
 end Adacovex_Config_Tests;

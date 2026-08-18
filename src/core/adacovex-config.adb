@@ -845,13 +845,15 @@ package body Adacovex.Config is
             I := I + 1;
          end loop;
 
-         --  The sbom subcommand is standard-aware: without an explicit
-         --  --standard / --asil / --class it defaults to all standards, so
-         --  the SBOM carries the joined DO-178C / ISO 26262 / IEC 62304
-         --  properties at the shared DAL tier.  An explicit standard flag
-         --  narrows the SBOM to that single standard (e.g. --asil=B -> ISO
-         --  26262 at ASIL B).
-         if Cfg.SBOM_Mode and not Cfg.Standard_Explicit then
+         --  The sbom subcommand and the serve dashboard are standard-aware:
+         --  without an explicit --standard / --asil / --class they default to
+         --  all standards, so the SBOM carries the joined DO-178C / ISO
+         --  26262 / IEC 62304 properties at the shared DAL tier and the
+         --  served dashboard renders every standard's compliance level.  An
+         --  explicit standard flag narrows them to that single standard
+         --  (e.g. --asil=B -> ISO 26262 at ASIL B).
+         if (Cfg.SBOM_Mode or Cfg.Serve_Mode) and not Cfg.Standard_Explicit
+         then
             Cfg.Standard_All := True;
          end if;
       end Parse_Args;
@@ -1116,7 +1118,9 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("                        available or dependency-managed");
       Ada.Text_IO.Put_Line
-        ("  --serve               Start HTTP dashboard on :8080");
+        ("  --serve               Start HTTP dashboard on :8080 (standard-aware,");
+      Ada.Text_IO.Put_Line
+        ("                        defaults to all standards; light/dark themes)");
       Ada.Text_IO.Put_Line
         ("  --port=N              HTTP server port (default: 8080)");
       Ada.Text_IO.Put_Line

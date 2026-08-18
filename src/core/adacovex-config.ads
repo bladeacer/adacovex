@@ -22,9 +22,10 @@ package Adacovex.Config is
       Standard_All : Boolean := False;
 
       --  True when --standard / --asil / --class was passed explicitly.
-      --  The sbom subcommand defaults to Standard_All when none of these is
-      --  given (the SBOM carries the joined all-standards properties); an
-      --  explicit standard flag narrows it to that single standard.
+      --  The sbom subcommand and the serve dashboard default to Standard_All
+      --  when none of these is given (the SBOM carries the joined
+      --  all-standards properties and the dashboard renders every standard);
+      --  an explicit standard flag narrows them to that single standard.
       Standard_Explicit : Boolean := False;
       Serve_Mode        : Boolean := False;
       Port              : Positive := 8080;
