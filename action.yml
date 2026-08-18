@@ -348,6 +348,21 @@ runs:
           chmod +x "$GITHUB_WORKSPACE/bin/adacovex"
         fi
 
+    - name: Build target native tests
+      # run-tests promises to build AND run the target's native test suite.
+      # In a consumer workspace the 'Build adacovex' step only builds
+      # adacovex in a scratch checkout, so the target's test binary (e.g.
+      # ./test_crdt or ./bin/test_runner) would be missing here.  Build the
+      # target first so test-command actually has something to run; in the
+      # self-assessment case (workspace IS adacovex) this is an incremental
+      # no-op after 'Build adacovex' already ran alr build.
+      if: ${{ inputs.run-tests == 'true' && inputs.build == 'true' }}
+      shell: bash
+      run: |
+        set -euxo pipefail
+        cd "$GITHUB_WORKSPACE"
+        alr build
+
     - name: Run native tests
       if: ${{ inputs.run-tests == 'true' }}
       shell: bash

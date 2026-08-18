@@ -118,6 +118,9 @@ package body Adacovex.Renderers.HTML is
          Put ("</option>");
       end loop;
       Put ("</select>");
+      Put
+        ("<button id=""save-theme"" class=""theme-toggle"""
+         & " onclick=""saveTheme()"">Save settings</button>");
       Put ("</div>");
 
       Put
@@ -303,21 +306,35 @@ package body Adacovex.Renderers.HTML is
       Put ("<script>");
       Put
         ("(function(){var K='adacovex-theme',R=document.documentElement,"
-         & "S=document.getElementById('theme-select');");
+         & "S=document.getElementById('theme-select'),B=document.getElementById"
+         & "('save-theme');");
+      Put ("var C='");
+      Put (Types.To_String (Theme));
+      Put ("';");
       Put
         ("function apply(t){if(t==='dark')R.setAttribute('data-theme','dark');"
          & "else if(t==='light')R.setAttribute('data-theme','light');"
          & "else R.removeAttribute('data-theme');}");
       Put
         ("function pick(){return S?S.value:'system';}");
-      Put ("var s=null;try{s=localStorage.getItem(K);}catch(e){}");
       Put
-        ("if(s==='system'||s==='light'||s==='dark'){"
-         & "if(S)S.value=s;}");
+        ("var use='system';"
+         & "var q=null;try{q=new URLSearchParams(location.search)"
+         & ".get('theme');}catch(e){}"
+         & "if(q==='light'||q==='dark'||q==='system'){use=q;}"
+         & "else if(C==='light'||C==='dark'){use=C;}"
+         & "else{var s=null;try{s=localStorage.getItem(K);}catch(e){}"
+         & "if(s==='light'||s==='dark'||s==='system'){use=s;}}");
+      Put ("if(S)S.value=use;");
+      Put ("apply(use);");
       Put
-        ("window.themeChanged=function(){var t=pick();apply(t);"
-         & "try{localStorage.setItem(K,t);}catch(e){}};");
-      Put ("apply(pick());})();");
+        ("window.themeChanged=function(){apply(pick());};");
+      Put
+        ("window.saveTheme=function(){var t=pick();"
+         & "try{localStorage.setItem(K,t);}catch(e){}"
+         & "if(B){B.textContent='Saved';setTimeout(function(){"
+         & "B.textContent='Save settings';},1200);}};");
+      Put ("})();");
       Put ("</script>");
       Put ("</body></html>");
 

@@ -76,25 +76,23 @@ package body Adacovex.Renderers.Man is
          "adacovex \- Ada/SPARK coverage, proof, and multi-standard "
          & "compliance tool");
       App (Buf, Len, ".SH SYNOPSIS");
-      App (Buf, Len, ".B adacovex");
-      App (Buf, Len, ".RI [ options ]");
+      App (Buf, Len, ".B " & Q & "adacovex [options]" & Q);
       App (Buf, Len, ".br");
-      App (Buf, Len, ".B adacovex sbom");
-      App (Buf, Len, ".RI [ --format=FMT ] [ --out=PATH ]");
       App
         (Buf,
          Len,
-         ".RI [ --standard=NAME | --dal=LEVEL | --asil=LEVEL | "
-         & "--class=LEVEL ]");
+         ".B "
+         & Q
+         & "adacovex sbom [--format=FMT] [--out=PATH] [--standard=NAME "
+         & "| --dal=LEVEL | --asil=LEVEL | --class=LEVEL]"
+         & Q);
       App (Buf, Len, ".br");
-      App (Buf, Len, ".B adacovex prove");
-      App (Buf, Len, ".RI [ --target=PATH ] [ prove options ]");
+      App
+        (Buf, Len, ".B " & Q & "adacovex prove [--target=PATH] [prove options]" & Q);
       App (Buf, Len, ".br");
-      App (Buf, Len, ".B adacovex status");
-      App (Buf, Len, ".RI [ --target=PATH ]");
+      App (Buf, Len, ".B " & Q & "adacovex status [--target=PATH]" & Q);
       App (Buf, Len, ".br");
-      App (Buf, Len, ".B adacovex man");
-      App (Buf, Len, ".RI [ --check ] [ --dir=PATH ]");
+      App (Buf, Len, ".B " & Q & "adacovex man [--check] [--dir=PATH]" & Q);
       App (Buf, Len, ".SH DESCRIPTION");
       App
         (Buf,
@@ -175,8 +173,10 @@ package body Adacovex.Renderers.Man is
          "--serve / --port=N / --theme=NAME",
          "Start the HTTP dashboard on port N (default 8080).  "
          & "Standard-aware: defaults to all standards.  --theme=NAME sets"
-         & " the initial color theme (system | light | dark; the header"
-         & " dropdown switches live and persists in localStorage).");
+         & " the initial color theme (system | light | dark); the header"
+         & " dropdown switches live and the Save settings button persists"
+         & " the choice in localStorage.  GET /api/metrics serves the JSON"
+         & " API (curl http://localhost:8080/api/metrics).");
       App_Option
         (Buf,
          Len,
@@ -240,150 +240,66 @@ package body Adacovex.Renderers.Man is
         (Buf, Len, "--version", "Print the bundled version and exit.");
       App_Option (Buf, Len, "--help", "Show the full usage message and exit.");
       App (Buf, Len, ".SH MODES");
-      App (Buf, Len, ".TP");
-      App (Buf, Len, ".B sbom");
-      App
+      App_Option
         (Buf,
          Len,
-         ASCII.HT
-         & "Generate a proof-aware CycloneDX 1.5 / SPDX 2.3 / "
-         & "Markdown SBOM.");
-      App
+         "sbom",
+         "Generate a proof-aware CycloneDX 1.5 / SPDX 2.3 / Markdown "
+         & "SBOM.  Standard-aware: honors --standard / --dal / --asil / "
+         & "--class and defaults to all standards (DO-178C / ISO 26262 / "
+         & "IEC 62304 properties).");
+      App_Option
         (Buf,
          Len,
-         ASCII.HT
-         & "Standard-aware: honors --standard / --dal / --asil / --class");
-      App
+         "prove",
+         "Resolve gnatprove (manifest pin, PATH, cached toolchain, or "
+         & "download), run it, then assess the target.");
+      App_Option
         (Buf,
          Len,
-         ASCII.HT
-         & "and defaults to all standards (DO-178C / ISO 26262 / IEC");
-      App (Buf, Len, ASCII.HT & "62304 properties).");
-      App (Buf, Len, ".TP");
-      App (Buf, Len, ".B prove");
-      App
+         "status",
+         "Report toolchain + platform state without running an "
+         & "assessment, including which VCS tools (git, mercurial, "
+         & "subversion, fossil, jj, mandb) are available on PATH for the "
+         & "differential modes and the VCS managing the target "
+         & "repository.");
+      App_Option
         (Buf,
          Len,
-         ASCII.HT
-         & "Resolve gnatprove (manifest pin, PATH, cached "
-         & "toolchain, or");
-      App (Buf, Len, ASCII.HT & "download), run it, then assess the target.");
-      App (Buf, Len, ".TP");
-      App (Buf, Len, ".B status");
-      App
+         "man",
+         "Install this man page into the local man database (default "
+         & "~/.local/share/man, Linux/WSL) and refresh it with mandb.  "
+         & "--check exits 0 when the installed page matches this binary's "
+         & "version, 1 when a newer version is available or none is "
+         & "installed.  --dir=PATH installs under PATH/man1 instead.  The "
+         & "page contains the version, so a prompt hook can run `adacovex "
+         & "man --check` and install automatically when the machine "
+         & "detects a newer version.");
+      App_Option
         (Buf,
          Len,
-         ASCII.HT
-         & "Report toolchain + platform state without running an "
-         & "assessment,");
-      App
-        (Buf,
-         Len,
-         ASCII.HT
-         & "including which VCS tools (git, mercurial, subversion,"
-         & " fossil,");
-      App
-        (Buf,
-         Len,
-         ASCII.HT
-         & "jj, mandb) are available on PATH for the differential "
-         & "modes and");
-      App (Buf, Len, ASCII.HT & "the VCS managing the target repository.");
-      App (Buf, Len, ".TP");
-      App (Buf, Len, ".B man");
-      App
-        (Buf,
-         Len,
-         ASCII.HT
-         & "Install this man page into the local man database "
-         & "(default");
-      App
-        (Buf,
-         Len,
-         ASCII.HT
-         & "~/.local/share/man, Linux/WSL) and refresh it with "
-         & "mandb.");
-      App
-        (Buf,
-         Len,
-         ASCII.HT
-         & "--check exits 0 when the installed page "
-         & "matches this");
-      App
-        (Buf,
-         Len,
-         ASCII.HT
-         & "binary's version, 1 when a newer version is "
-         & "available or");
-      App
-        (Buf,
-         Len,
-         ASCII.HT
-         & "none is installed.  --dir=PATH installs "
-         & "under PATH/man1");
-      App
-        (Buf,
-         Len,
-         ASCII.HT
-         & "instead.  The page contains the version, so "
-         & "a prompt hook");
-      App
-        (Buf,
-         Len,
-         ASCII.HT
-         & "can run `adacovex man --check` and install "
-         & "automatically");
-      App (Buf, Len, ASCII.HT & "when the machine detects a newer version.");
-      App (Buf, Len, ".TP");
-      App (Buf, Len, ".B help");
-      App
-        (Buf,
-         Len,
-         ASCII.HT
-         & "Contextual help: `adacovex help serve`, `adacovex help "
-         & "--serve`,");
-      App
-        (Buf,
-         Len,
-         ASCII.HT
-         & "or `adacovex --serve help` print flag/subcommand-specific "
-         & "text.");
-      App
-        (Buf,
-         Len,
-         ASCII.HT
-         & "`adacovex help` (or --help) shows the full usage message.  "
-         & "The");
-      App
-        (Buf,
-         Len,
-         ASCII.HT
-         & "topic is case-insensitive with an optional leading --.");
+         "help",
+         "Contextual help: `adacovex help serve`, `adacovex help "
+         & "--serve`, or `adacovex --serve help` print "
+         & "flag/subcommand-specific text.  `adacovex help` (or --help) "
+         & "shows the full usage message.  The topic is case-insensitive "
+         & "with an optional leading --.");
       App (Buf, Len, ".SH VERSION");
       App (Buf, Len, "adacovex v" & V);
       App (Buf, Len, ".SH EXIT STATUS");
-      App (Buf, Len, ".TP");
-      App (Buf, Len, ".B 0");
-      App
+      App_Option
         (Buf,
          Len,
-         ASCII.HT
-         & "Success (DAL achieved, all --require-* gates met, man "
-         & "page current).");
-      App (Buf, Len, ".TP");
-      App (Buf, Len, ".B 1");
-      App
+         "0",
+         "Success (DAL achieved, all --require-* gates met, man page "
+         & "current).");
+      App_Option
         (Buf,
          Len,
-         ASCII.HT
-         & "Compliance failure, a CI threshold gate unmet, a "
-         & "differential");
-      App
-        (Buf,
-         Len,
-         ASCII.HT
-         & "regression, a newer man page available, or an "
-         & "operational error.");
+         "1",
+         "Compliance failure, a CI threshold gate unmet, a differential "
+         & "regression, a newer man page available, or an operational "
+         & "error.");
       App (Buf, Len, ".SH ENVIRONMENT");
       App (Buf, Len, ".TP");
       App (Buf, Len, ".B NO_COLOR");

@@ -14,9 +14,11 @@ package Adacovex.Renderers.HTML is
    --  the selected standard's level label, or one row per standard when
    --  All_Standards is True.  The page supports light / dark / system themes:
    --  colors are driven by CSS custom properties, the initial theme follows
-   --  Theme (System_Theme follows the browser's prefers-color-scheme), and a
-   --  header dropdown switches live between light, dark, and system
-   --  (persisted in localStorage).
+   --  Theme (System_Theme follows the browser's prefers-color-scheme), a
+   --  header dropdown switches live between light, dark, and system, and a
+   --  Save settings button persists the choice in localStorage.  Theme
+   --  resolution on load: explicit CLI light/dark wins, then localStorage,
+   --  then the system preference.
    --  @param Doc_Metrics  Docstring coverage metrics.
    --  @param Proof  GNATprove proof summary.
    --  @param Tests  Test result summary.
