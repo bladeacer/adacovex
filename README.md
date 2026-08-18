@@ -45,25 +45,13 @@ subcommand, so installing adacovex pulls nothing but the binary.
 - **Scalable** -- package/subprogram collections use `Ada.Containers.Vectors`
   (no compile-time limits on count); fixed-size buffers scale with host word size
 
-## AI Assistance Disclosure
+## AI assistance disclosure
 
-AI tools were used during development for boilerplate generation, contract
- drafting, and docstring formatting.
-
-### "Why should I trust your code?"
-
-Reliability is grounded in proof and design, not implicit trust:
-
-- **Formal Verification:** core Ada logic is formally verified (Platinum under
-  `gnatprove` 16.1.0 -- 408 VCs, 0 unproved; see
-  `docs/proof/16.1.0-ledger.md`).
-- **Read-Only Engine:** adacovex assesses input payloads, build artifacts, and
-  reports without modifying your source files in place.
-- **Open Auditability:** fully open source under Apache-2.0.
-
-> *Still skeptical?* See Ken Thompson's
-> [*Reflections on Trusting Trust*](https://dl.acm.org/doi/epdf/10.1145/358198.358210)
-> on the fundamental nature of trust in software toolchains.
+AI tools were used during development (boilerplate, contract drafting,
+docstring formatting) and LLM agents work on the tree under the rules in
+`AGENTS.md`. Why the code is still trustworthy, how agents are expected to
+work, and how every number in the docs is anchored to generated artifacts
+rather than a written claim: [docs/llm-usage.md](docs/llm-usage.md).
 
 ## Quick start
 
@@ -244,7 +232,7 @@ Response:
 
 ```json
 {"spark_level":"Platinum","total_vcs":408,"proved_vcs":408,
- "tests_passed":638,"tests_failed":0,"doc_coverage":100,
+ "tests_passed":653,"tests_failed":0,"doc_coverage":100,
  "standard":"all","level":"DAL-C","dal_status":"Achieved",
  "standards":{"DO-178C":{"level":"DAL-C","status":"Achieved"},
                "ISO 26262":{"level":"ASIL B","status":"Achieved"},

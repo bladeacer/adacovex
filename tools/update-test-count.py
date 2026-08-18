@@ -94,7 +94,7 @@ def parse_result(path: Path) -> Tuple[Dict[str, int], int, int]:
     return cats, passed, failed or 0
 
 
-def total_phrase_repls(passed: int, total: int) -> List[Tuple[str, str]]:
+def total_phrase_repls(passed: int, failed: int, total: int) -> List[Tuple[str, str]]:
     """Anchored (pattern, format) pairs for the total/passed counts."""
     return [
         (r"(\d+)/(\d+) native tests passing", f"{passed}/{total} native tests passing"),
@@ -105,6 +105,9 @@ def total_phrase_repls(passed: int, total: int) -> List[Tuple[str, str]]:
         (r"native test suite \((\d+) tests\)", f"native test suite ({total} tests)"),
         (r"(\d+) tests across \d+ categories",
          f"{total} tests across {len(CATEGORY_KEY)} categories"),
+        # JSON API sample response in README / cli-reference.
+        (r'"tests_passed":\d+', f'"tests_passed":{passed}'),
+        (r'"tests_failed":\d+', f'"tests_failed":{failed}'),
     ]
 
 
@@ -202,7 +205,7 @@ def main() -> int:
     if args.dry_run:
         return 0
 
-    repls: List[Tuple[str, str]] = total_phrase_repls(passed, total)
+    repls: List[Tuple[str, str]] = total_phrase_repls(passed, failed, total)
 
     # Every live file under the tree (see tools/live_files.py).  This covers
     # AGENTS.md, README.md, the manifests, the canonical description, the

@@ -291,10 +291,10 @@ bump-version:
 	\
 	python3 tools/update-description.py; \
 	echo "  descriptions synced to all manifests"; \
-	echo "Done. Remember to:"; \
-	echo "  - Update docs/changelogs/index.md"; \
-	echo "  - Update AGENTS.md version references"; \
-	echo "  - Commit: git commit -am \"Release $$version\" && git tag -a v$$version -m \"Release $$version\""
+	echo "Done. Version bumped to $$version."; \
+	echo "Next: run 'make release VERSION=$$version' to build, prove, validate,"; \
+	echo "bundle, commit, and tag the release (or 'make publish' to submit to the"; \
+	echo "Alire community index once the tag is pushed)."
 
 release:
 	@if [ -n "$(VERSION)" ]; then \
