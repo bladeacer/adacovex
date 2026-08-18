@@ -23,7 +23,7 @@ Self-assessment (`make run-self`) must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
 - Platinum SPARK level (408 VCs under gnatprove 16.1.0, 0 unproved, 0
   justified; see `docs/proof/16.1.0-ledger.md`)
-- 663/663 native tests passing
+- 666/666 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
   `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
@@ -81,11 +81,11 @@ src/
     |-- adacovex_renderer_svg_tests.ads/.adb  -- SVG renderer tests (36)
     |-- adacovex_renderer_tests.ads/.adb      -- HTML/Markdown renderer tests (38)
     |-- adacovex_sbom_tests.ads/.adb          -- SBOM / manifest graph tests (118)
-    |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (83)
+    |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (86)
     |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (43)
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (67)
     |-- adacovex_vcs_tests.ads/.adb           -- VCS support tests (29)
-    `-- test_runner.adb                       -- Test suite entry point (663 tests)
+    `-- test_runner.adb                       -- Test suite entry point (666 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -205,7 +205,8 @@ all functions/variables with `typing` (`from typing import ...`). Keep new
 scripts consistent: `typing` for annotations, `argparse` for CLI, `pathlib`
 for paths, and no `pip install` / external imports. Run them with
 `python3 tools/<name>.py`; the sync ones are wired as `make test-count`, `make
-proof-status`, and `make doc-links`.
+proof-status`, `make doc-links`, and `make link-check` (markdown link
+verification, run as a cheap static gate in `make check`).
 
 ## Makefile targets
 
@@ -214,7 +215,7 @@ proof-status`, and `make doc-links`.
 | `check` | Full quality gate (CI runs this before release): cheap static gates first (ascii, spark-off, changelog, version, doc-links), then build + tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description) that fail when any live file carries a stale metric |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
-| `test` | Build + run the 663-test native suite |
+| `test` | Build + run the 666-test native suite |
 | `prove` | SPARK proof (Platinum gate) + regenerates SVG badges in `docs/badges/` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
 | `fmt` | Format Ada sources (gnatformat) |
@@ -285,7 +286,7 @@ tests, and the release-tag coverage gate instead.
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 663/663 passing |
+| Unit tests | `make test` | 666/666 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (408 VCs, 0 unproved, 0 justified under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -299,7 +300,7 @@ rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 663 tests across 12 categories).
+Native zero-dependency suite (`src/tests/`, 666 tests across 12 categories).
 Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests).
 
@@ -313,6 +314,7 @@ Per-category counts and framework details:
 - [Target projects](docs/target-projects.md)
 - [CI/CD](docs/ci-cd.md)
 - [Contributing](CONTRIBUTING.md)
+- [Developer guide](docs/developer-guide.md)
 - [Installation](docs/installation.md)
 - [LLM usage](docs/llm-usage.md)
 - [Docstring spec](docs/api-docs/adacovex-docstring-spec.md)

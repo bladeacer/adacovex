@@ -80,6 +80,7 @@ itself and `make run-ada-crdt` runs the Ada_CRDT regression.
 | [Installation](docs/installation.md) | Alire manifest / `alr install` / release bundle / source build |
 | [LLM usage](docs/llm-usage.md) | AI disclosure, trust, how LLM agents work under AGENTS.md |
 | [Contributing](CONTRIBUTING.md) | Changelog format, test suite |
+| [Developer Guide](docs/developer-guide.md) | Codebase structure and repo setup for contributors |
 | [Changelog](docs/changelogs/index.md) | Release history |
 | [API Reference](docs/api-docs/index.md) | Auto-generated package API docs |
 | [Docstring Spec](docs/api-docs/adacovex-docstring-spec.md) | Annotation format, placement, conventions |
@@ -96,30 +97,17 @@ covex`, or download a release bundle / build from source.
 [Installation](docs/installation.md) covers each in detail, including the
 version source per method and keeping the man page in sync.
 
-## Platform support
+## Platforms, toolchain, and VCS
 
-adacovex runs anywhere a GNAT/Alire toolchain exists; the official **release
-binary is Linux x86-64 only for now** (macOS, FreeBSD, Windows, and Linux
-aarch64 build from source via Alire). Full platform table, CPU core-count
-detection, CI detection, and prove-parallelism resolution:
-[docs/platforms.md](docs/platforms.md). Use `adacovex status` to report your
-own toolchain + platform state.
-
-## GNATprove toolchain resolution
-
-The `prove` subcommand resolves the `gnatprove` executable in this order:
-**manifest pin > global pin (config/env) > `$PATH` > cached toolchain >
-download**. A manifest pin is authoritative (fails rather than falls back).
-Full resolution order and the doc/fmt manifest-swap:
-[docs/architecture.md](docs/architecture.md#gnatprove-toolchain-resolution-prove-subcommand).
-
-## Version control support
-
-**A VCS is not required for base adacovex functionality** -- only the
-differential modes (`--compare-base` / `--coverage-delta`) need one, and they
-work across git, Mercurial, Subversion, Fossil, and jj without touching the
-working tree. `adacovex status` reports which VCS tools are available and what
-manages the target. Full details: [docs/vcs.md](docs/vcs.md).
+- **Platforms** -- runs anywhere a GNAT/Alire toolchain exists; the release
+  binary is Linux x86-64 only for now (other platforms build from source).
+  [docs/platforms.md](docs/platforms.md)
+- **GNATprove resolution** -- manifest pin > global pin > `$PATH` > cached
+  toolchain > download (a manifest pin is authoritative).
+  [docs/architecture.md](docs/architecture.md#gnatprove-toolchain-resolution-prove-subcommand)
+- **VCS** -- not required for base functionality; only the differential modes
+  need one, and they work across git, hg, svn, fossil, and jj.
+  [docs/vcs.md](docs/vcs.md)
 
 ## CLI reference
 
@@ -141,15 +129,11 @@ dashboard + JSON API: [docs/dashboard.md](docs/dashboard.md).
 
 ```bash
 adacovex --target=.                                 # self-assessment
-adacovex --target=. --dal=A                         # DAL-A (requires Gold SPARK)
-adacovex --target=. --asil=B                        # ISO 26262 at ASIL B
 adacovex --target=. --standard=all                  # badges for every standard
-adacovex --target=. --emit-markdown=docs/compliance # Markdown reports
-adacovex --target=. --serve --port=9090             # web dashboard
+adacovex --target=. --serve                         # web dashboard at :8080
 adacovex --target=. --compare-base=HEAD             # differential assessment
 adacovex sbom --format=cyclonedx-json --target=.    # proof-aware SBOM
 adacovex status --target=.                          # toolchain + platform report
-adacovex man                                        # install the man page + mandb
 ```
 
 More examples: [docs/cli-reference.md](docs/cli-reference.md#examples).
@@ -162,21 +146,12 @@ To run adacovex against a project it needs Ada sources, GNATprove output
 report `Unmet`. Full requirements, file-discovery rules, and the
 non-Ada-project note: [docs/target-projects.md](docs/target-projects.md).
 
-## Docstring format
+## Docstrings and patches
 
-```ada
---  Summary sentence describing what the subprogram does.
---  @param Name  Description of the parameter.
---  @return Description of the return value.
-procedure Do_Something (Name : in Some_Type);
-
---  A plain summary line is sufficient for no-param procedures.
-procedure Simple_Thing;
-```
-
-See the [full spec](docs/api-docs/adacovex-docstring-spec.md) for the tag
-table and coverage rules. For vendored code you cannot modify, use patch
-files at `<target>/.adacovex/patches/` (strict mode) -- see
+Subprograms are documented with `--  @param` / `--  @return` annotations
+([full spec](docs/api-docs/adacovex-docstring-spec.md)); strict mode requires
+100% coverage. For vendored code you cannot modify, overlay docstrings with
+patch files at `<target>/.adacovex/patches/` -- see
 [Architecture -- Patch System](docs/architecture.md#patch-system).
 
 ## Compliance levels
@@ -192,17 +167,9 @@ the shared tier and emit badges for all three:
 | ISO 26262 (automotive) | `--asil=` | A, B, C, D, QM | `--asil=B` = ASIL B |
 | IEC 62304 (medical) | `--class=` | A, B, C | `--class=A` = Class A |
 
-| DAL | Min SPARK | Tests must pass | HLRs traced | No orphans |
-|-----|-----------|-----------------|-------------|------------|
-| A | Gold | Yes | Yes | Yes |
-| B | Silver | Yes | Yes | Yes |
-| C | Bronze | Yes | Yes | Yes |
-| D | None (Stone) | Yes | Yes | Yes |
-| E | None (Stone) | No | Yes | Yes |
-
-The evidence and artifacts are identical across standards -- only the
-integrity-level label changes (`DAL-C` vs `ASIL B` vs `Class A`). Full tier
-mapping and rationale: [Standards](docs/standards.md) and
+The evidence is identical across standards -- only the integrity-level label
+changes (`DAL-C` vs `ASIL B` vs `Class A`). Full tier mapping, the per-level
+criteria, and the DAL table: [Standards](docs/standards.md) and
 [DAL Levels](docs/api-docs/adacovex-dal-levels.md).
 
 ## Development
@@ -227,7 +194,7 @@ inputs/outputs, result caching, and release bundling:
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 663/663 passing |
+| Unit tests | `make test` | 666/666 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (408 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, DAL-C (strict mode) |

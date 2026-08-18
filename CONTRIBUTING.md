@@ -6,6 +6,11 @@ start, please take a moment to read and understand our
 
 By contributing, you **agree to abide by its terms.**
 
+**New to the codebase?** Read the
+[Contributor guide: codebase structure and setup](docs/developer-guide.md)
+first -- it tours the source layout, explains how to set up a development
+environment, and shows where each kind of change lives.
+
 ## Ways to contribute
 
 Code is not the only thing you can contribute. Contributions in the form of
@@ -86,7 +91,7 @@ Pull requests should follow the following conventions.
 - Keep docstring coverage at 100% (strict mode, cannot be disabled):
   `make run-self` must show Platinum, 100% docs, and DAL-C Achieved.
 - If you add or change behavior, extend the native test suite in `src/tests/`
-  (663 tests across 12 categories) and run `make test`.
+  (666 tests across 12 categories) and run `make test`.
 - Keep all source files pure ASCII: `make ascii-check`.
 - If a new CLI flag is added, mirror it as a matching GitHub Action input in
   `./action.yml` and document it in `docs/cli-reference.md` and the README
@@ -143,7 +148,7 @@ Native (zero-dependency) framework (`Adacovex.Test_Support`, no AUnit). Source:
 |----------|-------|
 | Types conversions | 67 |
 | DAL compliance | 16 |
-| Source scanner | 83 |
+| Source scanner | 86 |
 | GNATprove parser | 64 |
 | Test-result parser | 43 |
 | CLI config | 124 |
@@ -151,4 +156,4 @@ Native (zero-dependency) framework (`Adacovex.Test_Support`, no AUnit). Source:
 | HTML/Markdown renderers | 38 |
 | SBOM generator | 118 |
 | IR synthesis | 27 |
-| **Total** | **663** |
+| **Total** | **666** |
