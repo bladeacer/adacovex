@@ -28,7 +28,7 @@ jobs:
           prove: true
           require-spark: Platinum
           require-docstrings: 100
-          require-tests: 566
+          require-tests: 577
           require-proof: 100
 
       - name: Require Platinum SPARK level
@@ -69,10 +69,26 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           ATTESTATION_URL: ${{ steps.attest.outputs.attestation-url }}
         run: |
+          set -euo pipefail
           VERSION="${{ github.ref_name }}"
+          CUR="${VERSION#v}"
           PREV=$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | grep -v "^$VERSION$" | head -1 || true)
-          BODY="**Changelogs**
-          https://github.com/${{ github.repository }}/blob/main/docs/changelogs/adacovex-${VERSION#v}.md"
+          PREV_NUM="${PREV#v}"
+          # Every changelog from the last release tag up to this version.
+          CHANGELOGS=""
+          for f in docs/changelogs/adacovex-*.md; do
+            v="${f#docs/changelogs/adacovex-}"
+            v="${v%.md}"
+            if [ -n "$PREV_NUM" ]; then
+              # Skip versions at or below the previous release.
+              [ "$(printf '%s\n%s\n' "$v" "$PREV_NUM" | sort -V | head -1)" != "$v" ] || continue
+            fi
+            # Skip anything newer than this version (should not happen).
+            [ "$(printf '%s\n%s\n' "$v" "$CUR" | sort -V | tail -1)" = "$v" ] || continue
+            CHANGELOGS="$CHANGELOGS
+          - https://github.com/${{ github.repository }}/blob/main/docs/changelogs/adacovex-$v.md"
+          done
+          BODY="**Changelogs**$CHANGELOGS"
           ASSETS=("adacovex-$VERSION.tar.gz" "adacovex-action-$VERSION.tar.gz")
           if [ -n "$PREV" ]; then
             BODY="$BODY

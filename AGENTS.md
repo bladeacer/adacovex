@@ -23,7 +23,7 @@ Self-assessment (`make run-self`) must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
 - Platinum SPARK level (401 VCs under gnatprove 16.1.0, 0 unproved; see
   `docs/proof/16.1.0-ledger.md`)
-- 566/566 native tests passing
+- 577/577 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
   `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
@@ -72,7 +72,7 @@ src/
 |   `-- adacovex-server-router.ads            -- Parent package for HTTP request routing (future expansion)
 `-- tests/
     |-- adacovex-test_support.ads/.adb        -- Native test Runner type
-    |-- adacovex_config_tests.ads/.adb        -- CLI config tests (75)
+    |-- adacovex_config_tests.ads/.adb        -- CLI config tests (86)
     |-- adacovex_dal_tests.ads/.adb           -- DAL compliance tests (16)
     |-- adacovex_ir_tests.ads/.adb            -- IR synthesis tests (27)
     |-- adacovex_man_tests.ads/.adb           -- Man page renderer tests (15)
@@ -84,7 +84,7 @@ src/
     |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (43)
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (67)
     |-- adacovex_vcs_tests.ads/.adb           -- VCS support tests (29)
-    `-- test_runner.adb                       -- Test suite entry point (566 tests)
+    `-- test_runner.adb                       -- Test suite entry point (577 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -104,6 +104,7 @@ Full format, rules, and examples:
 ```
 adacovex [options]
 adacovex sbom [--format=cyclonedx-json|spdx-json] [--out=PATH]
+           [--standard=NAME|--dal=LEVEL|--asil=LEVEL|--class=LEVEL]
 adacovex prove [--target=PATH] [prove options]
 adacovex status [--target=PATH]
 adacovex man [--check] [--dir=PATH]
@@ -120,11 +121,13 @@ tools -- git/hg/svn/fossil/jj/mandb -- are available for the differential
 modes plus the target's detected VCS) without running an assessment or
 downloading anything: [docs/platforms.md](docs/platforms.md#status-subcommand).
 
-`adacovex --version` prints the bundled version and exits. The version is
-*read from `alire/alire-dev.toml`* at build time (tools/gen-version.py
-regenerates `src/adacovex_version_info.ads`); release builds bundle the release
-tag via `ADACOVEX_VERSION`, so the shipped binary always reports the tag it
-was built from.
+`adacovex --version` prints the bundled version and exits. The version source
+depends on the **installation method** (tools/gen-version.py resolves it and
+regenerates `src/adacovex_version_info.ads`): `ADACOVEX_VERSION` (release
+builds -- the shipped binary always reports the tag it was built from),
+then `alire/alire-dev.toml` (source checkouts), then `alire.toml`
+(dependency-managed installs: the toml associated with the covex binary for
+dependency management carries the release version).
 
 `adacovex man` installs the man page into the local man database
 (`~/.local/share/man`, Linux/WSL; `--dir=PATH` overrides) and refreshes it with
@@ -178,6 +181,10 @@ Early-exit modes run before the pipeline: `--help`, `--version`, `man`
 - No library dependencies beyond the GNAT runtime (`Ada.Containers` is part of
   the standard Ada runtime). gnatprove is resolved at run time by the `prove`
   subcommand.
+- **Build/dev tooling requires Python 3** (pure-stdlib `tools/*.py`: version
+  generation, description sync, test/proof doc sync, changelog checks,
+  doc-links, agents-tree). The adacovex binary itself has no Python
+  dependency.
 
 ## Tool scripts
 
@@ -195,7 +202,7 @@ proof-status`, and `make doc-links`.
 | `check` | Full quality gate: build + tests + SPARK proof + badges + docs + SBOM + ascii + changelog + description sync |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
-| `test` | Build + run the 566-test native suite |
+| `test` | Build + run the 577-test native suite |
 | `prove` | SPARK proof (Platinum gate) + regenerates SVG badges in `docs/badges/` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
 | `fmt` | Format Ada sources (gnatformat) |
@@ -265,7 +272,7 @@ tests, and the release-tag coverage gate instead.
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 566/566 passing |
+| Unit tests | `make test` | 577/577 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (401 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -279,7 +286,7 @@ rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 566 tests across 12 categories).
+Native zero-dependency suite (`src/tests/`, 577 tests across 12 categories).
 Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests).
 

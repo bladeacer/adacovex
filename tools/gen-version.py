@@ -1,18 +1,25 @@
 #!/usr/bin/env python3
 """Generate src/adacovex-version.ads from the authoritative version source.
 
-The single source of truth for the adacovex version is alire-dev.toml
-(`version = "x.y.z"`), which is bumped by `make bump-version`.  This script
-reads it and regenerates the Ada package spec that the binary is compiled
-against, so `--version`, the man page, the SBOM tool version, and the result
-cache path can never drift from the manifest.
+The version source depends on the installation method:
 
-Release builds bundle the version from the release tag instead: the release
-workflow (and `make release` / the composite action) export ADACOVEX_VERSION
-(e.g. "v1.10.0" or "1.10.0"); this script strips a leading "v" and uses it in
-place of the manifest value, so the binary a release ships reports exactly
-the tag it was built from.  A non-version ADACOVEX_VERSION (e.g. a branch
-name in non-release CI) is ignored and the manifest value is used.
+1. ADACOVEX_VERSION  -- release builds.  The release workflow and `make
+   release` export the vX.Y.Z tag (or the composite action's build step), and
+   this script strips a leading "v" and uses it in place of any manifest
+   value, so the binary a release ships reports exactly the tag it was built
+   from.  A non-version ADACOVEX_VERSION (e.g. a branch name in non-release
+   CI) is ignored and the manifest value is used.
+2. alire-dev.toml    -- development / self-builds from a source checkout
+   (`version = "x.y.z"`, bumped by `make bump-version`).
+3. alire.toml        -- dependency-managed installs: when covex is consumed
+   as an Alire crate the binary is built from the published crate source,
+   whose alire.toml carries the release-manifest version (the toml file
+   associated with the covex binary for dependency management).  alire-dev
+   .toml may not exist in that tree, so this is the fallback.
+
+This script regenerates the Ada package spec the binary is compiled against,
+so `--version`, the man page, the SBOM tool version, and the result cache
+path can never drift from the resolved source.
 
 The generated file is committed so the tree builds without running this
 script, and `make build` regenerates it (byte-identical when nothing
@@ -23,9 +30,11 @@ Usage:
 
 --check      Verify the generated file already matches the current version
              source; exit 1 on mismatch (used by CI to fail loudly when the
-             committed file drifted from alire-dev.toml).
---manifest   Manifest to read the version from (default: alire-dev.toml).
---out        Output Ada spec path (default: src/adacovex-version.ads).
+             committed file drifted from the manifest).
+--manifest   Manifest to read the version from (default: alire-dev.toml,
+             falling back to alire.toml when it is absent -- the
+             dependency-consumed crate build).
+--out        Output Ada spec path (default: src/adacovex_version_info.ads).
 
 Exit code 0 on success, 1 on a missing/invalid version source or a --check
 mismatch.
@@ -56,13 +65,15 @@ def read_manifest_version(path: Path) -> Optional[str]:
     return None
 
 
-def resolve_version(manifest: Path) -> Tuple[str, str]:
+def resolve_version(manifest: Path, fallback: Optional[Path] = None) -> Tuple[str, str]:
     """Return (version, source-description) honoring ADACOVEX_VERSION.
 
     ADACOVEX_VERSION wins when it is a parseable x.y.z (leading "v"
-    stripped); otherwise the manifest value is used.  A missing version in
-    both places is a hard error so the binary can never be built with an
-    unknown version.
+    stripped); otherwise the primary manifest value is used, falling back to
+    the release manifest (alire.toml) when the primary does not exist or has
+    no version -- e.g. a dependency-managed covex build that ships no
+    alire-dev.toml.  A missing version everywhere is a hard error so the
+    binary can never be built with an unknown version.
     """
     env: str = os.environ.get("ADACOVEX_VERSION", "").strip()
     if env:
@@ -70,13 +81,16 @@ def resolve_version(manifest: Path) -> Tuple[str, str]:
         if re.match(VERSION_RE, bare):
             return bare, f"ADACOVEX_VERSION ({env})"
         # Non-version env (branch name etc.): fall through to the manifest.
-    ver: Optional[str] = read_manifest_version(manifest)
-    if ver is None or not re.match(VERSION_RE, ver):
-        raise SystemExit(
-            f"error: no x.y.z version found in {manifest}"
-            + (f" (ADACOVEX_VERSION='{env}' is not a version)" if env else "")
-        )
-    return ver, str(manifest)
+    for candidate, label in ((manifest, str(manifest)), (fallback, str(fallback))):
+        if candidate is None:
+            continue
+        ver: Optional[str] = read_manifest_version(candidate)
+        if ver is not None and re.match(VERSION_RE, ver):
+            return ver, label
+    raise SystemExit(
+        f"error: no x.y.z version found in {manifest}"
+        + (f" (ADACOVEX_VERSION='{env}' is not a version)" if env else "")
+    )
 
 
 def render(version: str) -> str:
@@ -84,11 +98,12 @@ def render(version: str) -> str:
     return (
         "--  Version constant for the adacovex tool suite.\n"
         "--  GENERATED by tools/gen-version.py -- do not edit by hand.\n"
-        "--  Source of truth: alire-dev.toml (`version = \"...\"`), or the\n"
-        "--  ADACOVEX_VERSION environment variable for release builds, so the\n"
-        "--  bundled binary always reports the exact release tag it was built\n"
-        "--  from (`adacovex --version`, `adacovex man`, SBOM tool version,\n"
-        "--  and the result-cache namespace all derive from this).\n"
+        "--  The version source depends on the installation method: the\n"
+        "--  ADACOVEX_VERSION env var for release builds, alire-dev.toml for\n"
+        "--  source checkouts, or alire.toml (the toml associated with the\n"
+        "--  covex binary for dependency management) when the crate is built\n"
+        "--  as a dependency. `adacovex --version`, `adacovex man`, the SBOM\n"
+        "--  tool version, and the result-cache namespace derive from it.\n"
         "\n"
         "package Adacovex_Version_Info is\n"
         "   pragma SPARK_Mode (On);\n"
@@ -108,7 +123,14 @@ def main(argv: Optional[list] = None) -> int:
                     default=str(ROOT / "src" / "adacovex_version_info.ads"))
     args: argparse.Namespace = ap.parse_args(argv)
 
-    version, source = resolve_version(Path(args.manifest))
+    # Dependency-managed (crate) builds ship alire.toml but not necessarily
+    # alire-dev.toml: fall back to alire.toml when the primary manifest is
+    # absent, so the version comes from the toml associated with the covex
+    # binary for dependency management.
+    version, source = resolve_version(
+        Path(args.manifest),
+        fallback=ROOT / "alire.toml",
+    )
     content: str = render(version)
     out: Path = Path(args.out)
 

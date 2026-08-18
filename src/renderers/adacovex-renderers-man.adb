@@ -81,6 +81,11 @@ package body Adacovex.Renderers.Man is
       App (Buf, Len, ".br");
       App (Buf, Len, ".B adacovex sbom");
       App (Buf, Len, ".RI [ --format=FMT ] [ --out=PATH ]");
+      App
+        (Buf,
+         Len,
+         ".RI [ --standard=NAME | --dal=LEVEL | --asil=LEVEL | "
+         & "--class=LEVEL ]");
       App (Buf, Len, ".br");
       App (Buf, Len, ".B adacovex prove");
       App (Buf, Len, ".RI [ --target=PATH ] [ prove options ]");
@@ -240,6 +245,17 @@ package body Adacovex.Renderers.Man is
          ASCII.HT
          & "Generate a proof-aware CycloneDX 1.5 / SPDX 2.3 / "
          & "Markdown SBOM.");
+      App
+        (Buf,
+         Len,
+         ASCII.HT
+         & "Standard-aware: honors --standard / --dal / --asil / --class");
+      App
+        (Buf,
+         Len,
+         ASCII.HT
+         & "and defaults to all standards (DO-178C / ISO 26262 / IEC");
+      App (Buf, Len, ASCII.HT & "62304 properties).");
       App (Buf, Len, ".TP");
       App (Buf, Len, ".B prove");
       App

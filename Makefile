@@ -64,7 +64,9 @@ help:
 	@echo 'Note: doc/fmt temporarily swap in alire-dev.toml for the duration'
 	@echo '      of the command, then restore alire.toml and alire.lock untouched.'
 	@echo ''
-	@echo 'Prerequisites: alr (Alire), GNAT toolchain'
+	@echo 'Prerequisites: alr (Alire), GNAT toolchain, Python 3 (for the'
+	@echo '              tools/*.py dev scripts: version, description, test/'
+	@echo '              proof doc sync, changelog check, agents-tree)'
 
 # Filter the benign ld 2.44 SFrame message ("error in ...(.sframe); no
 # .sframe will be created") from the link step.  It is emitted by the Alire
@@ -89,7 +91,7 @@ test: build
 # Self-assessment acceptance gates, defined once so prove/run-self/release stay
 # in sync (and match .github/workflows/ci.yml + AGENTS.md "Dogfood target").
 # --require-tests is the current native test-suite size (docs/test_result.md).
-SELF_ASSESS_ARGS := --dal=C --standard=all --require-spark=Platinum --require-docstrings=100 --require-tests=566 --require-proof=100
+SELF_ASSESS_ARGS := --dal=C --standard=all --require-spark=Platinum --require-docstrings=100 --require-tests=577 --require-proof=100
 
 prove: build
 	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex prove --target=. $(SELF_ASSESS_ARGS) --emit-svg=docs/badges/
@@ -289,6 +291,15 @@ release:
 			exit 1; \
 		fi; \
 	fi; \
+	echo "=== Changelogs (last release to v$$version) ==="; \
+	for f in docs/changelogs/adacovex-*.md; do \
+		cv=$$(basename "$$f" .md | sed 's/^adacovex-//'); \
+		if [ -n "$$prev_tag" ]; then \
+			pv=$${prev_tag#v}; \
+			if [ "$$(printf '%s\n%s\n' "$$cv" "$$pv" | sort -V | head -1)" = "$$cv" ]; then continue; fi; \
+		fi; \
+		echo "  - docs/changelogs/adacovex-$$cv.md"; \
+	done; \
 	echo "=== Bundling release artifacts ==="; \
 	rm -rf dist; \
 	mkdir -p dist; \

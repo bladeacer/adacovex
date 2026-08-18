@@ -5,20 +5,25 @@ Version bumped 1.10.0 -> 1.11.0.
 
 ## Changes
 
-### C1: `--version` flag with the version read from `alire-dev.toml`
+### C1: `--version` flag with the version source tied to the installation method
 
 `adacovex --version` prints the bundled version (`adacovex vX.Y.Z`) and exits.
-The version's single source of truth is now `alire/alire-dev.toml`: a new
-`tools/gen-version.py` (pure stdlib, `argparse`/`pathlib`, typed) regenerates
+The version's source depends on how the binary was installed: a new
+`tools/gen-version.py` (pure stdlib, `argparse`/`pathlib`, typed) resolves it
+from the first available of `ADACOVEX_VERSION` (release builds -- the release
+workflow and `make release VERSION=x.y.z` set it from the `vX.Y.Z` tag, and
+the action's build step regenerates the version file from it, so the shipped
+binary always reports exactly the tag it was built from), `alire/alire-dev.toml`
+(source checkouts), or `alire.toml` (dependency-managed installs: when covex
+is built as an Alire crate the binary is compiled from the published crate
+source, whose `alire.toml` -- the toml associated with the covex binary for
+dependency management -- carries the release-manifest version; `alire-dev.toml`
+may not exist in that tree). The script regenerates
 `src/adacovex_version_info.ads` on every `make build` (byte-identical when
 nothing changed), and `Adacovex.Version` in `src/adacovex.ads` re-exports the
 generated constant, so `--version`, the man page, the SBOM tool version, and
-the result-cache namespace can never drift. Release builds bundle the release
-tag instead: the release workflow and `make release VERSION=x.y.z` set
-`ADACOVEX_VERSION` (from the `vX.Y.Z` tag) and the action's build step
-regenerates the version file from it, so the shipped binary always reports
-exactly the tag it was built from. `make bump-version` no longer hand-edits
-`src/adacovex.ads`.
+the result-cache namespace can never drift. `make bump-version` no longer
+hand-edits `src/adacovex.ads`.
 
 ### C2: `man` subcommand with a versioned man page
 
@@ -75,15 +80,61 @@ annotations, are listed in the FAILED summary, and the workflow `summary` job
 exits `1` when any of its dependencies failed. The action's build step also
 verifies the downloaded/built binary with `--version`.
 
+### C6: man-db (mandb) detection in `man` and `status`
+
+`adacovex man` now tells the user when man-db is missing instead of silently
+skipping the database refresh: `Update_Database` returns whether mandb was
+found and exited 0, and a missing/failed mandb prints a warning that the
+page is still installed and readable via `man -l`. `adacovex status` gained a
+note in the `vcs:` section explaining that `adacovex man` cannot refresh the
+man database when mandb is absent from PATH, so users know up front.
+
+### C7: `make check` quality gate + single-source crate description
+
+A new `make check` target runs the full quality gate in one command -- build,
+native tests, SPARK proof, SVG badges, API docs, SBOM, ASCII, changelog
+format, and description sync -- and the obsolete `dev-setup` / `prod-setup`
+stubs were removed. The crate description now has a single source of truth:
+`alire/description.txt` + `alire/long-description.txt`, propagated to every
+manifest (`alire.toml`, release manifests, index entries) by a new
+`tools/update-description.py` (`make description`, `CHECK=1` to verify),
+wired into `make bump-version` / `make release` so a new release always ships
+the current description. The `release` output (and the GitHub release body)
+now links every changelog from the last release tag up to the released
+version. Build/dev prerequisites now list **Python 3** for the pure-stdlib
+`tools/*.py` scripts.
+
+### C8: Result caching extended to HLR/LLR parses, the SBOM graph, and diffs
+
+The on-disk result cache now also covers the DO-178C HLR.md/LLR.md parses
+(`hlr:`/`llr:` keys, served into the DAL assessment), the resolved SBOM
+dependency graph (`graph:` key over the manifests, lockfile, every .gpr file,
+and the `.adacovex/patches/` dir), and the `--compare-base` /
+`--coverage-delta` source scans (via `Scan_Project_Cached`), so unchanged
+inputs are not re-parsed across runs.
+
+### C9: `sbom` subcommand is standard-aware and defaults to all standards
+
+The `sbom` subcommand accepts the standard flags (`--standard`, `--dal`,
+`--asil`, `--class`) and **defaults to all standards**: without an explicit
+standard flag the SBOM carries the joined DO-178C / ISO 26262 / IEC 62304
+properties at the shared DAL tier; `--standard=iso26262` / `--asil=B` narrows
+it to ISO 26262 at ASIL B, `--class=A` to IEC 62304 at Class A. The usage,
+man page, README, and CLI reference document the new form.
+
 ## Test Suite
 
-555 tests (was 501), across 12 categories (was 10). The CLI-config category
-gained 11 checks for `--version`, the `man` subcommand, and the
-`--check` / `--dir` flags; a new Man page renderer category (14 checks) covers
-page structure, the embedded version, and an install/read-back round-trip
-through the real file system; a new VCS support category (29 checks) covers
-marker-file detection for every VCS, display and tool-binary names, and the
-UX-conversion recommendations.
+577 tests (was 501), across 12 categories (was 10). The CLI-config category
+(86 checks) covers `--version`, the `man` subcommand and its `--check` /
+`--dir` flags, and the `sbom` subcommand's standard-awareness defaults (all
+standards by default, narrowed by `--standard` / `--asil` / `--class`); the
+DAL compliance category (16) gained the cached-HLR parse round-trip; the SBOM
+generator category (94) gained the dependency-graph cache round-trip; the Man
+page renderer category (15 checks) covers page structure, the embedded
+version, an install/read-back round-trip, and the `Update_Database` man-db
+contract; the VCS support category (29 checks) covers marker-file detection
+for every VCS, display and tool-binary names, and the UX-conversion
+recommendations.
 
 ## Proof Results
 
@@ -98,4 +149,8 @@ No new HLRs. The VCS abstraction reuses the existing `-- HLR-DIFF` tag
 (`src/core/adacovex-vcs.ads`, `src/core/adacovex-diff.ads`); the changed CLI,
 prove/status, and root packages stay covered by the existing `HLR-CLI`
 (`src/core/adacovex-config.ads`), `HLR-PROVE` (`src/core/adacovex-prove.ads`),
-and `HLR-ARCH` (`src/adacovex.ads`) tags.
+`HLR-CACHE` (`src/core/adacovex-cache.ads`, also tagging the new HLR/LLR
+parse-cache and SBOM graph-cache paths in `src/parsers/adacovex-parsers-
+do178c.adb` / `src/parsers/adacovex-parsers-manifest.adb`), `HLR-SBOM`
+(`src/parsers/adacovex-parsers-manifest.ads`), and `HLR-ARCH`
+(`src/adacovex.ads`) tags.

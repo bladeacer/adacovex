@@ -229,6 +229,7 @@ repo, and warns when a needed tool is missing. Full details:
 ```
 adacovex [options]
 adacovex sbom [--format=cyclonedx-json|spdx-json] [--out=PATH]
+           [--standard=NAME|--dal=LEVEL|--asil=LEVEL|--class=LEVEL]
 adacovex prove [--target=PATH] [prove options]
 adacovex status [--target=PATH]
 adacovex man [--check] [--dir=PATH]
@@ -265,11 +266,14 @@ adacovex man [--check] [--dir=PATH]
 | `man --check` | - | - | Exit 0 if the installed man page matches the binary version |
 | `--help` | - | both | Print usage and exit |
 
-The version is read from `alire/alire-dev.toml` at build time; release builds
-bundle the release tag. `adacovex man` installs the man page (which embeds
-the version) into `~/.local/share/man` and refreshes the database with
-`mandb`; `--check` lets a prompt hook auto-install when a newer version is
-available. When man-db (`mandb`) is **not** installed or detectable,
+The version source depends on the installation method: `tools/gen-version.py`
+resolves it from `ADACOVEX_VERSION` (release builds, from the `vX.Y.Z` tag),
+then `alire/alire-dev.toml` (source checkouts), then `alire.toml`
+(dependency-managed installs -- the toml associated with the covex binary
+for dependency management carries the release version). `adacovex man`
+installs the man page (which embeds the version) into `~/.local/share/man`
+and refreshes the database with `mandb`; `--check` lets a prompt hook
+auto-install when a newer version is available. When man-db (`mandb`) is **not** installed or detectable,
 `adacovex man` still installs the page (read it with `man -l
 ~/.local/share/man/man1/adacovex.1`) and warns that the database was not
 refreshed; `adacovex status` reports whether mandb is on `$PATH` up front.
@@ -294,7 +298,8 @@ adacovex --target=. --standard=all                  # badges for every standard
 adacovex --target=. --emit-markdown=docs/compliance # Markdown reports
 adacovex --target=. --serve --port=9090             # web dashboard
 adacovex --target=. --compare-base=HEAD             # differential assessment
-adacovex sbom --format=cyclonedx-json --target=. --dal=C   # proof-aware SBOM
+adacovex sbom --format=cyclonedx-json --target=. --dal=C   # proof-aware SBOM (all standards)
+adacovex sbom --target=. --asil=B                         # SBOM for ISO 26262 at ASIL B
 adacovex status --target=.                                # toolchain + platform report
 adacovex --version                                   # print the bundled version
 adacovex man                                         # install the man page + mandb
@@ -391,7 +396,7 @@ assessment and the artifacts describing it are shared.
 |--------|-------------|
 | `check` | Full quality gate: build + tests + SPARK proof + badges + docs + SBOM + ASCII + changelog + description sync |
 | `build` | `alr build` (adacovex + test_runner, covex alias) |
-| `test` | Build and run native test suite (566 tests) |
+| `test` | Build and run native test suite (577 tests) |
 | `prove` | SPARK proof (Platinum gate) + regenerates SVG badges in `docs/badges/` |
 | `fmt` | Format Ada sources with `gnatformat` |
 | `doc` | Generate API docs via gnatdoc + rst2md |
@@ -419,7 +424,7 @@ CI gates. Action inputs/outputs, result caching, and release bundling:
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 566/566 passing |
+| Unit tests | `make test` | 577/577 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (401 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, DAL-C (strict mode) |
@@ -449,6 +454,10 @@ See [changelogs](docs/changelogs/index.md) for full release notes.
 
 - **Alire** >= 2.0
 - **GNAT** Ada compiler (managed by Alire)
+- **Python 3** (build/dev tooling only: `tools/*.py` are pure-stdlib and drive
+  version generation, description sync, test/proof doc sync, changelog
+  checks, and the architecture tree -- the adacovex binary itself has no
+  Python dependency)
 - **GNATprove** (optional; resolved at run time by `prove` -- no declared dependency)
 - **gnatpp** / **gnatdoc** (optional, for fmt/doc targets)
 
