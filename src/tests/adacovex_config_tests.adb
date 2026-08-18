@@ -516,6 +516,32 @@ package body Adacovex_Config_Tests is
             "help serve captures bare topic word");
       end;
 
+      --  Newly documented flags resolve as help topics too (e.g. the
+      --  render/cache/verbosity flags beyond the core standard set).
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "help");
+         Add (A, "--emit-svg");
+         Testing.Parse_Args (A, Cfg);
+         R.Check
+           (Cfg.Help_Topic (1 .. Cfg.Help_Topic_Len) = "--emit-svg",
+            "help --emit-svg captures the topic");
+      end;
+
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--verbose");
+         Add (A, "help");
+         Testing.Parse_Args (A, Cfg);
+         R.Check
+           (Cfg.Help_Topic (1 .. Cfg.Help_Topic_Len) = "--verbose",
+            "--verbose help captures the preceding flag");
+      end;
+
       --  --help still sets Help_Requested (full usage printed by the caller).
       declare
          Cfg : CLI_Config;

@@ -141,6 +141,35 @@ After scanning and assessment, start the built-in HTTP/1.1 web dashboard on
 - `GET /api/metrics` -- JSON object with key metrics
 - `GET /badge/spark.svg`, `GET /badge/tests.svg`, `GET /badge/do178c.svg`,
   `GET /badge/iso26262.svg`, `GET /badge/iec62304.svg` -- SVG badges
+- any other path -- `404 Not Found`
+
+**Using the JSON API.** The metrics endpoint is a plain HTTP GET, so the
+workflow is: start the server, then curl the URL:
+
+```
+adacovex --target=. --serve --port=8080
+# in another terminal:
+curl http://localhost:8080/api/metrics
+```
+
+The response is a flat JSON object:
+
+```json
+{"spark_level":"Platinum","total_vcs":408,"proved_vcs":408,
+ "tests_passed":638,"tests_failed":0,"doc_coverage":100,
+ "standard":"all","level":"DAL-C","dal_status":"Achieved",
+ "standards":{"DO-178C":{"level":"DAL-C","status":"Achieved"},
+               "ISO 26262":{"level":"ASIL B","status":"Achieved"},
+               "IEC 62304":{"level":"Class A","status":"Achieved"}}}
+```
+
+Fields: `spark_level` (Stone..Platinum), `total_vcs` / `proved_vcs`,
+`tests_passed` / `tests_failed`, `doc_coverage` (0-100), `standard`
+(`do178c` \| `iso26262` \| `iec62304` \| `all`), `level` and `dal_status`
+for the top-level target, and a `standards` object with the per-standard
+`level` / `status` breakdown (all three standards present when
+`standard` is `all`). Scripts and CI can consume this endpoint without
+parsing HTML.
 
 The served dashboard is **standard-aware**: like the `sbom` subcommand it
 defaults to all standards when no `--standard` / `--asil` / `--class` flag is
@@ -151,8 +180,15 @@ to that single standard (e.g. `--asil=B` shows only ISO 26262 at ASIL B).
 The dashboard supports **light, dark, and system themes**: colors are driven
 by CSS custom properties, and a header dropdown switches live between
 **light mode**, **dark mode**, and **system theme** (which follows the
-browser's `prefers-color-scheme`). The browser's choice is persisted in
-`localStorage` and wins over `--theme` on later visits.
+browser's `prefers-color-scheme`). A **Save settings** button persists the
+current selection in `localStorage` (no cookies). Theme resolution on page
+load is:
+
+1. a `?theme=light|dark|system` query parameter on the dashboard URL
+   (useful when embedding the dashboard) -- always wins;
+2. otherwise an explicit CLI theme (`--theme=light` or `--theme=dark`);
+3. otherwise the saved `localStorage` choice, if one was saved;
+4. otherwise the system theme (`prefers-color-scheme`).
 
 The server blocks (does not return to the shell) until interrupted.
 
@@ -161,7 +197,10 @@ The server blocks (does not return to the shell) until interrupted.
 Dashboard color theme for `--serve`: `system` (default, follows
 `prefers-color-scheme`), `light`, or `dark` (case-insensitive). Sets the
 initial dropdown selection in the served page; the header dropdown can
-switch live afterwards. Only relevant with `--serve`.
+switch live afterwards and **Save settings** persists the choice in
+`localStorage` (no cookies). An explicit `light`/`dark` value overrides any
+saved browser preference on page load; a `?theme=` query parameter on the
+dashboard URL overrides both. Only relevant with `--serve`.
 
 ### `--port=N`
 
@@ -331,7 +370,7 @@ target does not meet the required level:
 
 ```bash
 adacovex --target=. --require-spark=Platinum --require-docstrings=100 \
-         --require-tests=634 --require-proof=100
+         --require-tests=644 --require-proof=100
 ```
 
 - `require-spark` compares the honest assessed SPARK level (Stone..Platinum).

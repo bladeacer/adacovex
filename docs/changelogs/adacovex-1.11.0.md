@@ -138,8 +138,7 @@ are driven by CSS custom properties, the initial theme follows the browser's
 `--serve` gains a `--theme=NAME` flag (`system` | `light` | `dark`, default
 `system`) that sets the dashboard's initial theme. The header control is now
 a **dropdown with three options -- light mode, dark mode, and system theme**
--- instead of a two-state button; the browser's choice is persisted in
-`localStorage` and wins over `--theme` on later visits. `system` follows
+-- instead of a two-state button. `system` follows
 `prefers-color-scheme`.
 
 ### C12: contextual `help` keyword with flag/subcommand topics
@@ -152,25 +151,86 @@ side of the keyword: `adacovex help serve`, `adacovex help --serve`, and
 (with no topic) and `--help` print the full usage. Unknown topics print the
 full usage with an "Unknown topic" notice.
 
+### C13: Save settings button with CLI-overrides-persisted theme priority
+
+Theme persistence moved from automatic (saving on every dropdown change) to
+an explicit **Save settings** button next to the dropdown, which writes the
+current selection to `localStorage` (with a brief "Saved" confirmation).
+Theme resolution on page load is now: an explicit CLI theme
+(`--theme=light` / `--theme=dark`) always wins; otherwise the saved
+`localStorage` choice if one was saved; otherwise the system
+`prefers-color-scheme`. `--theme=system` (or no flag) leaves the browser's
+saved choice in control.
+
+### C14: man page rendering fixed (no more runaway gaps)
+
+Two roff bugs made the man page render with broken spacing. The SYNOPSIS
+used the `.RI` macro with separate arguments, which groff concatenates
+without spaces (`[--format=FMT][--out=PATH]`), and long option lines
+interleaved with `.br` caused groff's terminal output to pad the paragraph
+with tab stops (`adacovex<big gap>sbom`). Each SYNOPSIS line is now a single
+quoted `.B` argument, and every MODES / EXIT-STATUS description is a single
+logical line that groff wraps with the proper hanging indent, so the page
+renders cleanly.
+
+### C15: JSON API documented and contextual help extended to all flags
+
+The `--serve` documentation now explains the JSON API end to end: start the
+server with `adacovex --target=. --serve --port=8080`, then
+`curl http://localhost:8080/api/metrics`; the response fields (`spark_level`,
+`total_vcs`, `proved_vcs`, `tests_passed`, `tests_failed`, `doc_coverage`,
+`standard`, `level`, `dal_status`, and the per-standard `standards` object)
+are documented in the CLI reference. Contextual help topics were added for
+the remaining flags: `--emit-svg` / `--no-svg`, `--emit-markdown`,
+`--skip-dir` / `--relaxed`, `--verbose`, `--no-sbom` / `--sbom-format`,
+the `prove` subcommand options (`--jobs`, `--level`, `--timeout`, `--steps`,
+`--memlimit`, `--force`, `--no-loop-unrolling`, `--no-inlining`), andthe `man` flags (`--check`, `--dir`).
+
+### C16: `?theme=` query parameter on the dashboard URL
+
+The served dashboard accepts a `?theme=light|dark|system` query parameter
+(for embedding), which takes priority over everything else. Theme
+resolution on page load is now: query parameter, then explicit CLI
+`--theme=light|dark`, then the saved `localStorage` choice, then the system
+`prefers-color-scheme`. Theme persistence remains **localStorage-only** --
+no cookies are used anywhere.
+
+### C17: adacovex action builds the target's native tests before running them
+
+The composite action's `run-tests` input claims to "build and run the native
+test suite", but in a consumer workspace the `build: true` step builds
+adacovex in a scratch checkout and never touched the target -- so
+`test-command: ./test_crdt` failed with `./test_crdt: No such file or
+directory` (exit 127), which broke Ada_CRDT's release workflow. The action
+now runs `alr build` in the workspace root before executing `test-command`
+(in the self-assessment case that is an incremental no-op after the adacovex
+build). The JSON API (`GET /api/metrics`) is now documented in the README
+with a curl example and sample response, and the man-page test suite gained a
+SYNOPSIS regression check (no `.RI` concatenation artifacts).
+
 ## Test Suite
 
-634 tests (was 501), across 12 categories (was 10). The CLI-config category
-(110 checks) covers `--version`, the `man` subcommand and its `--check` /
+644 tests (was 501), across 12 categories (was 10). The CLI-config category
+(112 checks) covers `--version`, the `man` subcommand and its `--check` /
 `--dir` flags, the `sbom` subcommand's and `--serve` dashboard's
 standard-awareness defaults (all standards by default, narrowed by
 `--standard` / `--asil` / `--class`), the `--theme` flag (default `system`,
 light/dark parsing, invalid-value errors), and the contextual `help` keyword
-(topic capture in both orders and bare `help`); the HTML/Markdown renderers
-category (26 checks) covers the dashboard's theme dropdown (all three
-options, the `--theme` initial selection honored, `data-theme` override,
-`prefers-color-scheme`, and the `localStorage`-persisted selection) on top
+(topic capture in both orders, bare `help`, and newly documented flags such
+as `--emit-svg` and `--verbose`); the HTML/Markdown renderers category (31
+checks) covers the dashboard's theme dropdown (all three options, the
+`--theme` initial selection honored and its `var C` priority marker, the
+Save settings button, `saveTheme` persistence, the `?theme=` query param,
+`data-theme` override, `prefers-color-scheme`, and `localStorage`) on top
 of the standard-aware dashboard and JSON output; the DAL compliance category
 (16) gained the cached-HLR parse round-trip; the SBOM generator category
 (118) gained the dependency-graph cache round-trip; the Man page renderer
-category (15 checks) covers page structure, the embedded version, an
-install/read-back round-trip, and the `Update_Database` man-db contract; the
-VCS support category (29 checks) covers marker-file detection for every VCS,
-display and tool-binary names, and the UX-conversion recommendations.
+category (18 checks) covers page structure, the embedded version, an
+install/read-back round-trip, the `Update_Database` man-db contract, and a
+SYNOPSIS regression check (single quoted `.B` lines, no `.RI`
+concatenation); the VCS support category (29 checks) covers marker-file
+detection for every VCS, display and tool-binary names, and the
+UX-conversion recommendations.
 
 ## Proof Results
 

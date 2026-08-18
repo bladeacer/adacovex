@@ -130,6 +130,15 @@ package body Adacovex_Renderer_Tests is
            (Contains (S, "data-theme"), "dashboard uses data-theme override");
          R.Check
            (Contains (S, "localStorage"), "dashboard persists theme choice");
+         R.Check
+           (Contains (S, "save-theme"), "dashboard has save settings button");
+         R.Check
+           (Contains (S, "Save settings"), "save settings button labeled");
+         R.Check
+           (Contains (S, "saveTheme"), "saveTheme persists on click");
+         R.Check
+           (Contains (S, "URLSearchParams"),
+            "dashboard reads the ?theme= query param");
       end;
 
       --  The --theme flag's initial selection is honored: Dark_Theme renders
@@ -148,6 +157,9 @@ package body Adacovex_Renderer_Tests is
          R.Check
            (Contains (S, "<option value=""dark"" selected"),
             "dashboard honors Dark_Theme initial selection");
+         R.Check
+           (Contains (S, "var C='dark';"),
+            "dashboard emits CLI theme marker for priority");
       end;
 
       --  Light_Theme marks the light option selected.

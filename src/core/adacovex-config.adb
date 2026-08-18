@@ -1496,7 +1496,9 @@ package body Adacovex.Config is
             & "VC/DAL delta; --coverage-delta gates on docstring coverage"
             & ASCII.LF
             & "only.  Works on git, mercurial, subversion, fossil, and jj.");
-      elsif T = "sbom" or else T = "format" or else T = "out" then
+      elsif T = "sbom" or else T = "format" or else T = "out"
+        or else T = "no-sbom" or else T = "sbom-format"
+      then
          Print_Section
            ("adacovex sbom",
             "Generate a proof-aware software bill of materials (CycloneDX"
@@ -1507,8 +1509,19 @@ package body Adacovex.Config is
             & ASCII.LF
             & ASCII.LF
             & "  adacovex sbom --format=cyclonedx-json --dal=C" & ASCII.LF
-            & "  adacovex sbom --format=spdx-json --asil=B --out=sbom.spdx.json");
-      elsif T = "prove" then
+            & "  adacovex sbom --format=spdx-json --asil=B --out=sbom.spdx.json"
+            & ASCII.LF
+            & ASCII.LF
+            & "--format (alias --sbom-format) and --out select the format"
+            & ASCII.LF
+            & "and destination.  --no-sbom skips SBOM generation in the main"
+            & ASCII.LF
+            & "pipeline entirely.");
+      elsif T = "prove" or else T = "jobs" or else T = "level"
+        or else T = "timeout" or else T = "steps" or else T = "memlimit"
+        or else T = "force" or else T = "no-loop-unrolling"
+        or else T = "no-inlining"
+      then
          Print_Section
            ("adacovex prove",
             "Resolve gnatprove (manifest pin, PATH, cached toolchain, or"
@@ -1516,9 +1529,13 @@ package body Adacovex.Config is
             & "download), run it on the target, then assess the result."
             & ASCII.LF
             & ASCII.LF
-            & "Options: --jobs/-j, --level, --timeout, --steps, --memlimit,"
+            & "Options: --jobs/-j (parallelism), --level (proof level),"
             & ASCII.LF
-            & "--force, --no-loop-unrolling, --no-inlining.");
+            & "--timeout (seconds per proof), --steps (max steps),"
+            & ASCII.LF
+            & "--memlimit, --force (bypass the result cache),"
+            & ASCII.LF
+            & "--no-loop-unrolling, --no-inlining.");
       elsif T = "status" then
          Print_Section
            ("adacovex status",
@@ -1527,7 +1544,7 @@ package body Adacovex.Config is
             & "or downloading anything: alire/gnatprove detectability, CPU"
             & ASCII.LF
             & "count, CI status, and which VCS tools are on PATH.");
-      elsif T = "man" then
+      elsif T = "man" or else T = "check" or else T = "dir" then
          Print_Section
            ("adacovex man",
             "Install the man page into the local man database (default"
@@ -1537,6 +1554,34 @@ package body Adacovex.Config is
             & "refresh it with mandb when present.  --check exits 0 when the"
             & ASCII.LF
             & "installed page matches this binary's version, 1 otherwise.");
+      elsif T = "emit-svg" or else T = "no-svg" then
+         Print_Section
+           ("--emit-svg / --no-svg",
+            "Write SVG badges (spark, tests, do178c, iso26262, iec62304) into"
+            & ASCII.LF
+            & "a directory (default <target>/docs/badges).  --no-svg"
+            & ASCII.LF
+            & "suppresses badge output.");
+      elsif T = "emit-markdown" then
+         Print_Section
+           ("--emit-markdown=PATH",
+            "Write the Markdown verification report (VERIFICATION.md) and"
+            & ASCII.LF
+            & "traceability report (TRACE.md) into the given directory.");
+      elsif T = "skip-dir" or else T = "relaxed" then
+         Print_Section
+           ("--skip-dir / --relaxed",
+            "--relaxed disables strict mode (docstrings then only count in"
+            & ASCII.LF
+            & "source dirs, and patch overlays are inactive).  --skip-dir=NAME"
+            & ASCII.LF
+            & "adds a directory to the skip list in relaxed mode.");
+      elsif T = "verbose" then
+         Print_Section
+           ("--verbose",
+            "Print extra progress detail while scanning, proving, parsing,"
+            & ASCII.LF
+            & "and rendering.");
       elsif T = "version" then
          Print_Section
            ("--version",

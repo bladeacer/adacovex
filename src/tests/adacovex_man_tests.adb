@@ -35,6 +35,20 @@ package body Adacovex_Man_Tests is
       R.Check (Index (Page, "--version") > 0, "man page documents --version");
       R.Check (Index (Page, "mercurial") > 0, "man page mentions VCS support");
 
+      --  SYNOPSIS rendering regression: the old .RI multi-argument macro
+      --  concatenated tokens without spaces ([--format=FMT][--out=PATH]) and
+      --  .br-interleaved lines made groff pad the paragraph with tab stops
+      --  ("adacovex<gap>sbom").  Every SYNOPSIS line must now be a single
+      --  quoted .B argument that preserves spaces, and no .RI may remain.
+      R.Check
+        (Index (Page, ".RI") = 0, "SYNOPSIS no longer uses .RI concatenation");
+      R.Check
+        (Index (Page, ".B ""adacovex [options]""") > 0,
+         "SYNOPSIS adacovex line is a single quoted .B argument");
+      R.Check
+        (Index (Page, "--format=FMT] [--out=PATH]") > 0,
+         "SYNOPSIS keeps spaces between bracket groups");
+
       --  Installed_Version on a directory with no page returns "".
       R.Check
         (Adacovex.Renderers.Man.Installed_Version (Dir) = "",

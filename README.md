@@ -244,7 +244,7 @@ adacovex man [--check] [--dir=PATH]
 | `--class=LEVEL` | - | both | IEC 62304 safety class: `A`\|`B`\|`C` (e.g. `--class=A`) |
 | `--standard=NAME` | `do178c` | both | `do178c`\|`iso26262`\|`iec62304`\|`all` (all emits every badge) |
 | `--serve` | off | both | Start HTTP dashboard server (standard-aware; light/dark/system themes) |
-| `--theme=NAME` | `system` | serve | Dashboard theme: `light`\|`dark`\|`system` |
+| `--theme=NAME` | `system` | serve | Dashboard theme: `light`\|`dark`\|`system` (also `?theme=` on the URL) |
 | `--port=N` | `8080` | serve | Dashboard server port |
 | `--emit-svg=PATH` | `<target>/docs/badges` | both | Output directory for SVG badges |
 | `--no-svg` | off | both | Suppress SVG badge output |
@@ -286,6 +286,33 @@ recommends converting to git.
 Full flag details, the `--require-*` CI threshold gates, strict vs relaxed
 mode, exit codes, and the `sbom` subcommand:
 [docs/cli-reference.md](docs/cli-reference.md).
+
+### JSON API
+
+`--serve` also exposes a machine-readable JSON endpoint. Start the server,
+then curl the URL:
+
+```bash
+adacovex --target=. --serve --port=8080
+# in another terminal:
+curl http://localhost:8080/api/metrics
+```
+
+Response:
+
+```json
+{"spark_level":"Platinum","total_vcs":408,"proved_vcs":408,
+ "tests_passed":638,"tests_failed":0,"doc_coverage":100,
+ "standard":"all","level":"DAL-C","dal_status":"Achieved",
+ "standards":{"DO-178C":{"level":"DAL-C","status":"Achieved"},
+               "ISO 26262":{"level":"ASIL B","status":"Achieved"},
+               "IEC 62304":{"level":"Class A","status":"Achieved"}}}
+```
+
+SVG badges are served at `/badge/spark.svg`, `/badge/tests.svg`,
+`/badge/do178c.svg`, `/badge/iso26262.svg`, and `/badge/iec62304.svg`; the
+HTML dashboard is at `/`. Scripts and CI can consume `/api/metrics` without
+parsing HTML.
 
 ## Examples
 
@@ -398,7 +425,7 @@ assessment and the artifacts describing it are shared.
 |--------|-------------|
 | `check` | Full quality gate: build + tests + SPARK proof + badges + docs + SBOM + ASCII + spark-off + changelog + description sync |
 | `build` | `alr build` (adacovex + test_runner, covex alias) |
-| `test` | Build and run native test suite (634 tests) |
+| `test` | Build and run native test suite (644 tests) |
 | `prove` | SPARK proof (Platinum gate) + regenerates SVG badges in `docs/badges/` |
 | `fmt` | Format Ada sources with `gnatformat` |
 | `doc` | Generate API docs via gnatdoc + rst2md |
@@ -427,7 +454,7 @@ CI gates. Action inputs/outputs, result caching, and release bundling:
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 634/634 passing |
+| Unit tests | `make test` | 644/644 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (408 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, DAL-C (strict mode) |
