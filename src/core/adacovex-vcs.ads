@@ -37,7 +37,16 @@ package Adacovex.VCS is
    --  Human-readable name of a VCS kind ("git", "mercurial", ...).
    --  @param Kind  VCS kind.
    --  @return Lowercase display name ("" for Unknown).
-   function To_String (Kind : VCS_Kind) return String;
+   function To_String (Kind : VCS_Kind) return String
+   with SPARK_Mode => On,
+        Post       =>
+          To_String'Result = "git"
+          or else To_String'Result = "mercurial"
+          or else To_String'Result = "subversion"
+          or else To_String'Result = "fossil"
+          or else To_String'Result = "jj"
+          or else To_String'Result = "",
+        Global     => null;
 
    --  Command-line tool binary that drives a VCS kind ("git", "hg",
    --  "svn", "fossil", "jj"), or "" for Unknown.  `adacovex status` uses it
@@ -45,7 +54,16 @@ package Adacovex.VCS is
    --  modes.
    --  @param Kind  VCS kind.
    --  @return Tool binary name ("" for Unknown).
-   function Tool_Name (Kind : VCS_Kind) return String;
+   function Tool_Name (Kind : VCS_Kind) return String
+   with SPARK_Mode => On,
+        Post       =>
+          Tool_Name'Result = "git"
+          or else Tool_Name'Result = "hg"
+          or else Tool_Name'Result = "svn"
+          or else Tool_Name'Result = "fossil"
+          or else Tool_Name'Result = "jj"
+          or else Tool_Name'Result = "",
+        Global     => null;
 
    --  UX guidance for a VCS kind: "" for a fully supported VCS; for legacy
    --  VCS whose snapshot UX is poor (Subversion: no local history, network-
