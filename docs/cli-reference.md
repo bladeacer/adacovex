@@ -156,7 +156,7 @@ The response is a flat JSON object:
 
 ```json
 {"spark_level":"Platinum","total_vcs":408,"proved_vcs":408,
- "tests_passed":638,"tests_failed":0,"doc_coverage":100,
+ "tests_passed":653,"tests_failed":0,"doc_coverage":100,
  "standard":"all","level":"DAL-C","dal_status":"Achieved",
  "standards":{"DO-178C":{"level":"DAL-C","status":"Achieved"},
                "ISO 26262":{"level":"ASIL B","status":"Achieved"},

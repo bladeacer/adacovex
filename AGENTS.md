@@ -309,6 +309,7 @@ Per-category counts and framework details:
 - [CLI reference](docs/cli-reference.md)
 - [CI/CD](docs/ci-cd.md)
 - [Contributing](CONTRIBUTING.md)
+- [LLM usage](docs/llm-usage.md)
 - [Docstring spec](docs/api-docs/adacovex-docstring-spec.md)
 - [DAL levels](docs/api-docs/adacovex-dal-levels.md)
 - [Standards](docs/standards.md)

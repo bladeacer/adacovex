@@ -1,0 +1,79 @@
+# AI / LLM Usage in this Project
+
+This page collects everything about how AI tooling is used in the adacovex
+project: the disclosure, why the code is trustworthy despite AI assistance,
+how LLM agents are expected to work on the codebase, and the honest limits
+of machine-generated code.
+
+## AI Assistance Disclosure
+
+AI tools were used during development for boilerplate generation, contract
+drafting, and docstring formatting. This is stated plainly rather than
+hidden: the project's own dogfood target is a zero-dependency, fully
+documented, SPARK-proven Ada codebase, and AI-generated contributions must
+meet the same bar as hand-written ones -- 100% docstring coverage, Platinum
+proof, zero justified VCs, and the full `make check` gate before they count.
+
+## "Why should I trust your code?"
+
+Given the use of AI assistance, healthy skepticism is natural and encouraged.
+Reliability is grounded in proof and design, not implicit trust:
+
+- **Formal Verification:** core Ada logic is formally verified (Platinum under
+  `gnatprove` 16.1.0 -- 408 VCs, 0 unproved; see
+  `docs/proof/16.1.0-ledger.md`). The proof is re-run by `make prove` on every
+  change and is a hard gate before any release.
+- **Read-Only Engine:** adacovex assesses input payloads, build artifacts, and
+  reports without modifying your source files in place. An AI-assisted tool
+  that cannot write to the tree it audits is a smaller blast radius by design.
+- **Open Auditability:** fully open source under Apache-2.0 -- every line,
+  human or AI-written, is inspectable.
+
+> *Still skeptical?* See Ken Thompson's landmark paper,
+> [*Reflections on Trusting Trust*](https://dl.acm.org/doi/epdf/10.1145/358198.358210),
+> on the fundamental nature of trust in software toolchains -- the point being
+> that no software (and no compiler, and no model) is trustworthy purely by
+> assertion; it must be inspectable and independently verifiable.
+
+## How LLM agents work on this codebase
+
+`AGENTS.md` at the repo root is the machine-readable project brief. It
+carries the architecture tree, the pipeline, the SPARK discipline, the
+Makefile targets, and the verification gates. An agent (or human) working on
+the tree is expected to read it first and to follow it -- in particular:
+
+- **Match existing conventions** and prefer editing existing files; verify
+  non-trivial changes with the project's typecheck and tests.
+- **Zero library dependency** is a hard constraint: use only the GNAT runtime,
+  and keep `tools/*.py` pure-stdlib, `typing`-annotated Python.
+- **SPARK proof discipline** (enforced by `make prove` and the
+  `spark-off-check` gate): zero unproved VCs, zero justified VCs, no
+  `SPARK_Mode (Off)` outside the Types.Implementation container package.
+- **The quality gate is the contract**: `make check` runs the same gates CI
+  enforces before a release, and a contribution that fails it is not done.
+- **Generated files are regenerated, not hand-edited**: the version constant,
+  the dashboard template package, the architecture tree, the count-synced
+  docs, and the descriptions all come from `tools/*.py` scripts whose
+  `--check` modes verify they did not drift.
+
+The doc-sync tools (`tools/update-test-count.py` and
+`tools/update-proof-status.py`) derive their file set from the tree itself
+(`tools/live_files.py`) rather than a hardcoded list, precisely so that a
+stale metric cannot survive anywhere -- generated outputs and historical
+records (past-release changelogs, past proof ledgers) are excluded and keep
+their release-time numbers.
+
+## Verifying claims instead of trusting them
+
+Every number in this repository's documentation is anchored to a generated
+artifact, not to a human or AI-written claim:
+
+- VC counts and the SPARK level come from `obj/gnatprove/gnatprove.out`
+  (via `make proof-status`).
+- Test counts come from `docs/test_result.md` (via `make test-count`).
+- Crate descriptions come from `alire/description.txt` and
+  `alire/long-description.txt` (via `make description`).
+
+The CI badge `docs/badges/*.svg` files are emitted by the assessment itself.
+If a document carries a number that does not match the artifact, one of the
+`--check` gates in `make check` fails loudly -- that is the point.

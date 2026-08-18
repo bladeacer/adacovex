@@ -173,6 +173,8 @@ def replacements(m: Metrics) -> List[Tuple[Pattern[str], str]]:
     return [
         # "Platinum (369 VCs)" -- level + total together.
         (re.compile(rf"{LEVEL_RE} \((\d+) VCs\)"), f"{lvl} ({t} VCs)"),
+        # "Platinum, 369 VCs" -- comma form used in Makefile help text.
+        (re.compile(rf"{LEVEL_RE}, (\d+) VCs"), f"{lvl}, {t} VCs"),
         # "Platinum (369 VCs, 0 unproved under gnatprove 16.1.0)".
         (re.compile(rf"{LEVEL_RE} \((\d+) VCs, (\d+) unproved under gnatprove"),
          f"{lvl} ({t} VCs, {u} unproved under gnatprove"),
@@ -205,6 +207,9 @@ def replacements(m: Metrics) -> List[Tuple[Pattern[str], str]]:
         # "require-spark: Platinum" (workflows).
         (re.compile(rf"--require-spark={LEVEL_RE}"), f"--require-spark={lvl}"),
         (re.compile(rf"require-spark: {LEVEL_RE}"), f"require-spark: {lvl}"),
+        # JSON API sample response in README / cli-reference.
+        (re.compile(r'"total_vcs":\d+'), f'"total_vcs":{t}'),
+        (re.compile(r'"proved_vcs":\d+'), f'"proved_vcs":{p}'),
     ]
 
 
