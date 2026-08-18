@@ -134,7 +134,12 @@ def main(argv: List[str]) -> int:
             return 1
         print(f"{out.name} is up to date.")
         return 0
+    before: str = out.read_text(encoding="ascii") if out.is_file() else ""
     generate(out, template)
+    after: str = out.read_text(encoding="ascii")
+    if before == after:
+        print(f"{out.name} up to date ({template.stat().st_size} bytes template)")
+        return 0
     print(f"wrote {out.name} ({template.stat().st_size} bytes template)")
     return 0
 

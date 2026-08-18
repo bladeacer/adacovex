@@ -425,6 +425,12 @@ begin
    Cfg := Adacovex.Config.Parse_CLI;
 
    if Cfg.CLI_Error then
+      --  An unknown token with no close-enough known flag lands the user on
+      --  the full usage text (stdout) instead of a bare one-line error, so
+      --  the valid flag list is right there after the error message.
+      if Cfg.Unknown_No_Suggest then
+         Adacovex.Config.Print_Usage;
+      end if;
       Ada.Command_Line.Set_Exit_Status (1);
       return;
    end if;

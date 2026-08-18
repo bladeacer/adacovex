@@ -71,64 +71,10 @@ make run-ada-crdt
 
 ## Installing adacovex
 
-### Option 1: declare it in your project's Alire manifest (recommended)
-
-Put `covex` in your project's `alire-dev.toml` (never `alire.toml`, so release
-builds stay clean), alongside `gnatprove`:
-
-```toml
-# <project>/alire-dev.toml
-[[depends-on]]
-covex = "*"
-gnatprove = "^16.1.0"
-```
-
-Then `alr build` produces `bin/adacovex` inside the project and `covex prove`
-deploys the pinned gnatprove crate standalone via `alr -n get` and runs it
-directly -- each project pins its own exact toolchain version, no global
-install needed:
-
-```bash
-alr build
-./bin/adacovex --target=. --dal=C
-./bin/adacovex prove --target=.   # deploys gnatprove via alr get, then runs it
-```
-
-### Option 2: `alr install` (global, to `$PATH`)
-
-```bash
-alr install covex gnatprove
-export PATH="$HOME/.local/bin:$PATH"
-```
-
-`covex` is the Alire crate name for adacovex
-([crate page](https://alire.ada.dev/crates/covex)); once on `$PATH` it scans
-the current directory by default. A `gnatprove` installed this way is picked up
-from `$PATH` by `covex prove` when the target project declares no manifest
-dependency of its own.
-
-### Option 3: download a release bundle from GitHub
-
-Every `vX.Y.Z` tag publishes `adacovex-vX.Y.Z.tar.gz` on the
-[GitHub Releases page](https://github.com/bladeacer/adacovex/releases).
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/bladeacer/adacovex/main/install.sh | bash
-```
-
-Bundles are attested with [`actions/attest`](https://github.com/actions/attest).
-
-> Release binaries are **Linux x86-64 only**; other platforms build from source
-> via Alire.
-
-### Building from source
-
-```bash
-git clone --depth 1 https://github.com/bladeacer/adacovex.git
-cd adacovex && make build   # or: --branch vX.Y.Z for a released tag
-```
-
-`make build` produces `bin/adacovex` (with a `bin/covex` alias).
+Three routes: declare `covex` in your project's `alire-dev.toml`, `alr install
+covex`, or download a release bundle / build from source.
+[Installation](docs/installation.md) covers each in detail, including the
+version source per method and keeping the man page in sync.
 
 ## Platform support
 
@@ -170,79 +116,33 @@ adacovex sbom [--format=cyclonedx-json|spdx-json] [--out=PATH]
            [--standard=NAME|--dal=LEVEL|--asil=LEVEL|--class=LEVEL]
 adacovex prove [--target=PATH] [prove options]
 adacovex status [--target=PATH]
-adacovex man [--check] [--dir=PATH]
+adacovex man [--check|--force] [--dir=PATH]
 ```
 
-| Flag | Default | Mode | Description |
-|------|---------|------|-------------|
-| `--target=PATH` | `.` (CWD) | both | Target project root directory |
-| `--manifest=PATH` | auto-detected | both | Override project manifest path |
-| `--dal=LEVEL` | `C` | both | DO-178C DAL level (A-E; also the shared rigor tier) |
-| `--asil=LEVEL` | - | both | ISO 26262 level: `A`\|`B`\|`C`\|`D`\|`QM` (e.g. `--asil=B`) |
-| `--class=LEVEL` | - | both | IEC 62304 safety class: `A`\|`B`\|`C` (e.g. `--class=A`) |
-| `--standard=NAME` | `do178c` | both | `do178c`\|`iso26262`\|`iec62304`\|`all` (all emits every badge) |
-| `--serve` | off | both | Start HTTP dashboard server (standard-aware; light/dark/system themes) |
-| `--theme=NAME` | `system` | serve | Dashboard theme: `light`\|`dark`\|`system` (also `?theme=` on the URL) |
-| `--port=N` | `8080` | serve | Dashboard server port |
-| `--emit-svg=PATH` | `<target>/docs/badges` | both | Output directory for SVG badges |
-| `--no-svg` | off | both | Suppress SVG badge output |
-| `--emit-markdown=PATH` | off | both | Output directory for Markdown reports |
-| `--skip-dir=NAME` | `demo,deps,examples` | relaxed | Directory name to skip (repeatable) |
-| `--relaxed` | off | both | Disable strict mode (skip dirs, no patches) |
-| `--compare-base=REF` | off | both | Differential mode vs a base rev (git/hg/svn/fossil/jj) |
-| `--coverage-delta=REF` | off | both | Docstring-coverage gate vs a base rev (git/hg/svn/fossil/jj) |
-| `--cache` | on | both | Enable on-disk result caching |
-| `--no-cache` | off | both | Disable result caching |
-| `--cache-dir=PATH` | `~/.adacovex/cache/<ver>/<schema>` | both | Cache directory |
-| `--cache-max=N` | `4096` | both | Max cache entries before eviction |
-| `--require-spark=LVL` | off | both | Fail (exit 1) if SPARK level < LVL |
-| `--require-docstrings=PCT` | off | both | Fail if docstring coverage < PCT% |
-| `--require-tests=N` | off | both | Fail if passing test count < N |
-| `--require-proof=PCT` | off | both | Fail if proved-VC coverage < PCT% |
-| `--verbose` | off | both | Verbose diagnostics |
-| `--version` | - | - | Print the bundled version and exit |
-| `man` | - | - | Install the man page into the local man database (Linux/WSL) |
-| `man --check` | - | - | Exit 0 if the installed man page matches the binary version |
-| `help [TOPIC]` | - | - | Contextual help for a flag/subcommand (`help serve`, `--serve help`) |
-| `--help` | - | both | Print usage and exit |
+The full flag table (defaults, modes, `--require-*` CI gates, strict vs
+relaxed mode, exit codes, the `sbom` subcommand, contextual `help [TOPIC]`
+and the unknown-flag "did you mean" behavior) lives in
+[docs/cli-reference.md](docs/cli-reference.md). `adacovex man` installs the
+man page into `~/.local/share/man` (with `mandb` refresh when present);
+`man --check` exits 0 when the installed page matches the binary,
+`man --force` overwrites an up-to-date page.
 
-`adacovex man` installs the man page (embedded version) into
-`~/.local/share/man` and refreshes `mandb` when present; `man --check` exits 0
-when the installed page matches the binary (a prompt hook can auto-update),
-`man --force` overwrites an up-to-date page. `adacovex --serve` supports
-contextual help (`help serve`, `--serve help`) and unknown flags get a
-"did you mean" suggestion.
+### Web dashboard and JSON API
 
-Full flag details, the `--require-*` CI gates, strict vs relaxed mode, exit
-codes, and the `sbom` subcommand:
-[docs/cli-reference.md](docs/cli-reference.md).
-
-### JSON API
-
-`--serve` also exposes a machine-readable JSON endpoint. Start the server,
-then curl the URL:
+`adacovex --target=. --serve --port=8080` starts an HTTP server that serves a
+**viewable HTML dashboard at `http://localhost:8080/`** (standard-aware,
+light/dark/system themes via `--theme=` or `?theme=` on the URL, and a Save
+settings button) plus a machine-readable endpoint for scripts and CI:
 
 ```bash
-adacovex --target=. --serve --port=8080
-# in another terminal:
 curl http://localhost:8080/api/metrics
 ```
 
-Response:
-
-```json
-{"spark_level":"Platinum","total_vcs":408,"proved_vcs":408,
- "tests_passed":653,"tests_failed":0,"doc_coverage":100,
- "standard":"all","level":"DAL-C","dal_status":"Achieved",
- "standards":{"DO-178C":{"level":"DAL-C","status":"Achieved"},
-               "ISO 26262":{"level":"ASIL B","status":"Achieved"},
-               "IEC 62304":{"level":"Class A","status":"Achieved"}}}
-```
-
-SVG badges are served at `/badge/spark.svg`, `/badge/tests.svg`,
-`/badge/do178c.svg`, `/badge/iso26262.svg`, and `/badge/iec62304.svg`; the
-HTML dashboard is at `/`. Scripts and CI can consume `/api/metrics` without
-parsing HTML.
+The response carries `spark_level`, `total_vcs`, `proved_vcs`,
+`tests_passed` / `tests_failed`, `doc_coverage`, `standard`, `level`,
+`dal_status`, and a per-standard `standards` object. SVG badges are served
+at `/badge/*.svg`. Full API details and a sample response:
+[docs/cli-reference.md](docs/cli-reference.md#--serve).
 
 ## Examples
 
@@ -367,7 +267,7 @@ CI gates. Action inputs/outputs, result caching, and release bundling:
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 653/653 passing |
+| Unit tests | `make test` | 659/659 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (408 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, DAL-C (strict mode) |
@@ -378,20 +278,23 @@ See [changelogs](docs/changelogs/index.md) for full release notes.
 
 | Reference | Description |
 |-----------|-------------|
+| [Installation](docs/installation.md) | Alire manifest / `alr install` / release bundle / source build |
 | [CLI Reference](docs/cli-reference.md) | Flags, `--require-*` gates, exit codes, `sbom` subcommand |
+| [Web Dashboard + JSON API](docs/cli-reference.md#--serve) | `--serve` HTML dashboard, `/api/metrics`, badges |
 | [CI/CD](docs/ci-cd.md) | GitHub Action, workflows, release bundling |
+| [Standards](docs/standards.md) | DO-178C / ISO 26262 / IEC 62304 abstraction |
+| [Platforms](docs/platforms.md) | Platform support, CPU core detection, `status` subcommand |
+| [Architecture](docs/architecture.md) | Design decisions, patches, toolchain resolution, overflow contract |
+| [LLM usage](docs/llm-usage.md) | AI disclosure, trust, how LLM agents work under AGENTS.md |
+| [Contributing](CONTRIBUTING.md) | Changelog format, test suite |
+| [Changelog](docs/changelogs/index.md) | Release history |
+| [API Reference](docs/api-docs/index.md) | Auto-generated package API docs |
 | [Docstring Spec](docs/api-docs/adacovex-docstring-spec.md) | Annotation format, placement, conventions |
 | [Test Format](docs/api-docs/adacovex-test-format.md) | Supported test-result output format |
 | [SPARK Levels](docs/api-docs/adacovex-spark-levels.md) | Assurance level objectives (Stone--Platinum) |
 | [DAL Levels](docs/api-docs/adacovex-dal-levels.md) | DO-178C DAL A - E criteria |
 | [ASIL Levels](docs/api-docs/adacovex-asil-levels.md) | ISO 26262 ASIL A - D / QM criteria |
 | [Safety Classes](docs/api-docs/adacovex-class-levels.md) | IEC 62304 Class A - C criteria |
-| [Standards](docs/standards.md) | DO-178C / ISO 26262 / IEC 62304 abstraction |
-| [Platforms](docs/platforms.md) | Platform support, CPU core detection, `status` subcommand |
-| [Architecture](docs/architecture.md) | Design decisions, patches, toolchain resolution, overflow contract |
-| [Contributing](CONTRIBUTING.md) | Changelog format, test suite |
-| [API Reference](docs/api-docs/index.md) | Auto-generated package API docs |
-| [Changelog](docs/changelogs/index.md) | Release history |
 
 ## Requirements
 

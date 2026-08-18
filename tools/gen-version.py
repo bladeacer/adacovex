@@ -142,6 +142,9 @@ def main(argv: Optional[list] = None) -> int:
               file=sys.stderr)
         return 1
 
+    if out.exists() and out.read_text() == content:
+        print(f"{out.relative_to(ROOT)} up to date (v{version} from {source})")
+        return 0
     out.write_text(content)
     print(f"wrote {out.relative_to(ROOT)} (v{version} from {source})")
     return 0

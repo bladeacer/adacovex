@@ -53,6 +53,14 @@ package Adacovex.Config is
       Cache_Max_Entries : Natural := 4096;
 
       CLI_Error          : Boolean := False;
+
+      --  True when an unknown flag/argument was rejected AND no similar
+      --  known flag was found to suggest (Suggest_Flags returned "").  The
+      --  main program prints the full usage text to stdout after the error
+      --  in this case, so a totally unrecognized token still lands the user
+      --  on the flag list instead of a bare one-line error.
+      Unknown_No_Suggest : Boolean := False;
+
       Help_Requested     : Boolean := False;
       Help_Topic         : String (1 .. Types.Max_Path);
       Help_Topic_Len     : Natural := 0;

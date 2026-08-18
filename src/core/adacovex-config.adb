@@ -1082,15 +1082,23 @@ package body Adacovex.Config is
                   --  Unknown token: reject loudly instead of silently running
                   --  an assessment.  Flag-like tokens (--foo) and bare words
                   --  (a typo'd subcommand) both get a "did you mean" hint.
-                  if A'Length >= 1 and then A (A'First) = '-' then
-                     Set_Error
-                       (Cfg,
-                        "unknown option '" & A & "'" & Suggest_Flags (A));
-                  else
-                     Set_Error
-                       (Cfg,
-                        "unknown argument '" & A & "'" & Suggest_Flags (A));
-                  end if;
+                  --  When no similar flag exists the hint is empty; the main
+                  --  program then prints the full usage so the user lands on
+                  --  the flag list instead of a bare one-line error.
+                  declare
+                     Hint : constant String := Suggest_Flags (A);
+                  begin
+                     if A'Length >= 1 and then A (A'First) = '-' then
+                        Set_Error
+                          (Cfg, "unknown option '" & A & "'" & Hint);
+                     else
+                        Set_Error
+                          (Cfg, "unknown argument '" & A & "'" & Hint);
+                     end if;
+                     if Hint'Length = 0 then
+                        Cfg.Unknown_No_Suggest := True;
+                     end if;
+                  end;
                end if;
             end;
             I := I + 1;
