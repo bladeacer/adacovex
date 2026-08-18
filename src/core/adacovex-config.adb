@@ -194,9 +194,10 @@ package body Adacovex.Config is
             if A (A'First + I - 1) = B (B'First + J - 1) then
                Row (J) := Prev (J - 1);
             else
-               Row (J) := Natural'Min
-                 (Natural'Min (Prev (J) + 1, Row (J - 1) + 1),
-                  Prev (J - 1) + 1);
+               Row (J) :=
+                 Natural'Min
+                   (Natural'Min (Prev (J) + 1, Row (J - 1) + 1),
+                    Prev (J - 1) + 1);
             end if;
             exit when Row (J) > 9 and J = BLen;
          end loop;
@@ -259,14 +260,13 @@ package body Adacovex.Config is
       --  Walk the space-separated Known_Flags list.
       while Start <= Known_Flags'Last loop
          Fin := Start;
-         while Fin <= Known_Flags'Last
-           and then Known_Flags (Fin) /= ' '
-         loop
+         while Fin <= Known_Flags'Last and then Known_Flags (Fin) /= ' ' loop
             Fin := Fin + 1;
          end loop;
          declare
             D : constant Natural :=
-              Edit_Distance (NFlag (1 .. NLen), Known_Flags (Start .. Fin - 1));
+              Edit_Distance
+                (NFlag (1 .. NLen), Known_Flags (Start .. Fin - 1));
          begin
             if D <= 2 and then D <= Best then
                if D < Best then
@@ -308,8 +308,7 @@ package body Adacovex.Config is
          if Len + 2 + MLen (I) <= Buf'Last then
             Buf (Len + 1 .. Len + 2) := "--";
             Len := Len + 2;
-            Buf (Len + 1 .. Len + MLen (I)) :=
-              Matches (I) (1 .. MLen (I));
+            Buf (Len + 1 .. Len + MLen (I)) := Matches (I) (1 .. MLen (I));
             Len := Len + MLen (I);
          end if;
       end loop;
@@ -1089,11 +1088,9 @@ package body Adacovex.Config is
                      Hint : constant String := Suggest_Flags (A);
                   begin
                      if A'Length >= 1 and then A (A'First) = '-' then
-                        Set_Error
-                          (Cfg, "unknown option '" & A & "'" & Hint);
+                        Set_Error (Cfg, "unknown option '" & A & "'" & Hint);
                      else
-                        Set_Error
-                          (Cfg, "unknown argument '" & A & "'" & Hint);
+                        Set_Error (Cfg, "unknown argument '" & A & "'" & Hint);
                      end if;
                      if Hint'Length = 0 then
                         Cfg.Unknown_No_Suggest := True;

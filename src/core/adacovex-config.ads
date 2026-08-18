@@ -52,7 +52,7 @@ package Adacovex.Config is
       Cache_Dir_Len     : Natural := 0;
       Cache_Max_Entries : Natural := 4096;
 
-      CLI_Error          : Boolean := False;
+      CLI_Error : Boolean := False;
 
       --  True when an unknown flag/argument was rejected AND no similar
       --  known flag was found to suggest (Suggest_Flags returned "").  The

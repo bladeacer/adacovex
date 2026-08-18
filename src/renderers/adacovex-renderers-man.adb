@@ -101,10 +101,7 @@ package body Adacovex.Renderers.Man is
       App
         (Buf,
          Len,
-         ".B "
-         & Q
-         & "adacovex man [--check] [--dir=PATH] [--force]"
-         & Q);
+         ".B " & Q & "adacovex man [--check] [--dir=PATH] [--force]" & Q);
       App (Buf, Len, ".SH DESCRIPTION");
       App
         (Buf,
@@ -323,23 +320,14 @@ package body Adacovex.Renderers.Man is
       App (Buf, Len, "Suppress ANSI color in terminal output.");
       App (Buf, Len, ".TP");
       App (Buf, Len, ".B SOURCE_DATE_EPOCH");
-      App
-        (Buf,
-         Len,
-         "Deterministic SBOM timestamps (reproducible builds).");
+      App (Buf, Len, "Deterministic SBOM timestamps (reproducible builds).");
       App (Buf, Len, ".TP");
       App (Buf, Len, ".B ADACOVEX_VERSION");
-      App
-        (Buf,
-         Len,
-         "Release-build version override (tools/gen-version.py).");
+      App (Buf, Len, "Release-build version override (tools/gen-version.py).");
       App (Buf, Len, ".SH FILES");
       App (Buf, Len, ".TP");
       App (Buf, Len, ".I ~/.local/share/man/man1/adacovex.1");
-      App
-        (Buf,
-         Len,
-         "Installed man page (Linux/WSL default man root).");
+      App (Buf, Len, "Installed man page (Linux/WSL default man root).");
       App (Buf, Len, ".TP");
       App (Buf, Len, ".I ~/.adacovex/cache");
       App (Buf, Len, "On-disk analysis result cache.");

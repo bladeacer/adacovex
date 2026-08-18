@@ -28,7 +28,7 @@ jobs:
           prove: true
           require-spark: Platinum
           require-docstrings: 100
-          require-tests: 659
+          require-tests: 663
           require-proof: 100
 
       - name: Require Platinum SPARK level
@@ -84,7 +84,7 @@ jobs:
               [ "$(printf '%s\n%s\n' "$v" "$PREV_NUM" | sort -V | head -1)" != "$v" ] || continue
             fi
             # Skip anything newer than this version (should not happen).
-            [ "$(printf '%s\n%s\n' "$v" "$CUR" | sort -V | tail -1)" = "$v" ] || continue
+            [ "$(printf '%s\n%s\n' "$v" "$CUR" | sort -V | tail -1)" = "$CUR" ] || continue
             CHANGELOGS="$CHANGELOGS
           - https://github.com/${{ github.repository }}/blob/main/docs/changelogs/adacovex-$v.md"
           done
