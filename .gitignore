@@ -15,3 +15,4 @@ b__*
 # Python artifacts
 __pycache__/
 *.pyc
+alire/build_hash_inputs
