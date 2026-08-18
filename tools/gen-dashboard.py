@@ -50,13 +50,16 @@ def generate(out: Path, template: Path) -> None:
     """Write the Ada package spec embedding the template as a constant."""
     lines: List[str] = template.read_text(encoding="ascii").splitlines()
     # Ada string literals cannot span lines, and GNAT truncates over-long
-    # source lines, so each template line is emitted as <=120-character
-    # quoted chunks joined with ` & `.  Source lines are joined with
-    # ASCII.LF (each keeps its own newline in the rendered page); no
-    # trailing line feed after the last line.
+    # source lines (the style gate is -gnatyM120), so each template line is
+    # emitted as short quoted chunks joined with ` & `.  The emitted line is
+    # "  & \"<chunk>\"" (6 chars of scaffolding) or, on the first line,
+    # "   Template : constant String := \"<chunk>\"" (30 chars), so 88-char
+    # chunks keep every emitted line well under 120.  Source lines are
+    # joined with ASCII.LF (each keeps its own newline in the rendered
+    # page); no trailing line feed after the last line.
     chunks: List[str] = []
     for i, line in enumerate(lines):
-        chunk_max: int = 120
+        chunk_max: int = 88
         for start in range(0, len(line), chunk_max):
             piece: str = line[start : start + chunk_max].replace('"', '""')
             chunks.append('"' + piece + '"')

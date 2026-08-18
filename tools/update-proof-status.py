@@ -178,6 +178,9 @@ def replacements(m: Metrics) -> List[Tuple[Pattern[str], str]]:
         # "369 VCs, 0 unproved" (no proved count).
         (re.compile(r"(\d+) VCs, (\d+) unproved"),
          f"{t} VCs, {u} unproved"),
+        # "(401/401 VCs proved)" -- crate-description phrasing (proved/total).
+        (re.compile(r"\((\d+)/(\d+) VCs proved\)"),
+         f"({p}/{t} VCs proved)"),
         # "369 VCs under gnatprove 16.1.0".
         (re.compile(r"(\d+) VCs under gnatprove"), f"{t} VCs under gnatprove"),
         # "all checks proved (369 checks)".
@@ -215,12 +218,19 @@ def main() -> int:
     files: List[Path] = [
         ROOT / "AGENTS.md",
         ROOT / "README.md",
+        ROOT / "alire.toml",
+        ROOT / "alire-dev.toml",
+        # The canonical crate description carries the VC count too, and
+        # tools/update-description.py propagates it to every release + index
+        # manifest, so it must stay in sync here or `make description` (and
+        # therefore bump-version / release) re-propagates a stale count.
+        ROOT / "alire" / "long-description.txt",
         ROOT / "Makefile",
         ROOT / ".github" / "workflows" / "ci.yml",
         ROOT / ".github" / "workflows" / "release.yml",
         ROOT / "docs" / "cli-reference.md",
         ROOT / "docs/proof/16.1.0-ledger.md",
-        ROOT / "docs/changelogs/adacovex-1.11.0.md",
+        ROOT / "docs/changelogs/adacovex-1.12.0.md",
     ]
 
     if args.dry_run:

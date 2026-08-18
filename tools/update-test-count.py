@@ -173,6 +173,13 @@ def main() -> int:
         ROOT / "AGENTS.md",
         ROOT / "README.md",
         ROOT / "alire.toml",
+        ROOT / "alire-dev.toml",
+        # The canonical crate description also carries the test count, and
+        # tools/update-description.py propagates it to every release + index
+        # manifest, so it must stay in sync here or the next `make
+        # description` (and therefore `make bump-version` / `make release`)
+        # would re-propagate a stale count and drift the manifests.
+        ROOT / "alire" / "long-description.txt",
         ROOT / "Makefile",
         ROOT / ".github" / "workflows" / "ci.yml",
         ROOT / ".github" / "workflows" / "release.yml",
