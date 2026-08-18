@@ -426,6 +426,105 @@ package body Adacovex_Config_Tests is
          R.Check
            (Cfg.Standard_All, "serve --standard=all keeps all standards");
       end;
+
+      --  --theme defaults to system and accepts light/dark/system.
+      declare
+         Cfg : CLI_Config := (others => <>);
+      begin
+         R.Check
+           (Cfg.Theme = System_Theme,
+            "Default Theme is system (follows prefers-color-scheme)");
+      end;
+
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--theme=dark");
+         Testing.Parse_Args (A, Cfg);
+         R.Check (Cfg.Theme = Dark_Theme, "--theme=dark parses");
+         R.Check (not Cfg.CLI_Error, "--theme=dark is not an error");
+      end;
+
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--theme");
+         Add (A, "light");
+         Testing.Parse_Args (A, Cfg);
+         R.Check (Cfg.Theme = Light_Theme, "--theme light space form parses");
+      end;
+
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--theme=neon");
+         Testing.Parse_Args (A, Cfg);
+         R.Check (Cfg.CLI_Error, "--theme=neon is an error");
+      end;
+
+      --  Contextual help: the help keyword sets Help_Requested, and a
+      --  neighboring flag/subcommand is captured as the help topic.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "help");
+         Testing.Parse_Args (A, Cfg);
+         R.Check (Cfg.Help_Requested, "bare help sets Help_Requested");
+         R.Check
+           (Cfg.Help_Topic_Len = 0, "bare help has no topic (full usage)");
+      end;
+
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "help");
+         Add (A, "--serve");
+         Testing.Parse_Args (A, Cfg);
+         R.Check (Cfg.Help_Requested, "help --serve sets Help_Requested");
+         R.Check
+           (Cfg.Help_Topic (1 .. Cfg.Help_Topic_Len) = "--serve",
+            "help --serve captures the topic");
+      end;
+
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--serve");
+         Add (A, "help");
+         Testing.Parse_Args (A, Cfg);
+         R.Check (Cfg.Help_Requested, "--serve help sets Help_Requested");
+         R.Check
+           (Cfg.Help_Topic (1 .. Cfg.Help_Topic_Len) = "--serve",
+            "--serve help captures the preceding flag");
+      end;
+
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "help");
+         Add (A, "serve");
+         Testing.Parse_Args (A, Cfg);
+         R.Check
+           (Cfg.Help_Topic (1 .. Cfg.Help_Topic_Len) = "serve",
+            "help serve captures bare topic word");
+      end;
+
+      --  --help still sets Help_Requested (full usage printed by the caller).
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--help");
+         Testing.Parse_Args (A, Cfg);
+         R.Check (Cfg.Help_Requested, "--help sets Help_Requested");
+      end;
    end Run;
 
 end Adacovex_Config_Tests;

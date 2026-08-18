@@ -12,16 +12,18 @@ package Adacovex.Renderers.HTML is
    --  SPARK proof status, test results, compliance, and package coverage in
    --  a card-based layout.  The compliance card is standard-aware: it prints
    --  the selected standard's level label, or one row per standard when
-   --  All_Standards is True.  The page supports light/dark themes: colors are
-   --  driven by CSS custom properties, the initial theme follows the user's
-   --  prefers-color-scheme, and a header button toggles between light and
-   --  dark (persisted in localStorage).
+   --  All_Standards is True.  The page supports light / dark / system themes:
+   --  colors are driven by CSS custom properties, the initial theme follows
+   --  Theme (System_Theme follows the browser's prefers-color-scheme), and a
+   --  header dropdown switches live between light, dark, and system
+   --  (persisted in localStorage).
    --  @param Doc_Metrics  Docstring coverage metrics.
    --  @param Proof  GNATprove proof summary.
    --  @param Tests  Test result summary.
    --  @param DAL_Assess  DAL compliance assessment.
    --  @param Packages  Scanned package vector.
    --  @param All_Standards  Render every standard (else the selected one).
+   --  @param Theme  Initial dashboard theme (system/light/dark).
    --  @return HTML dashboard page.
    function Render_Dashboard
      (Doc_Metrics   : Types.Docstring_Metrics;
@@ -29,7 +31,8 @@ package Adacovex.Renderers.HTML is
       Tests         : Types.Implementation.Test_Summary;
       DAL_Assess    : Types.Implementation.DAL_Assessment;
       Packages      : Types.Implementation.Package_Vectors.Vector;
-      All_Standards : Boolean := False) return String
+      All_Standards : Boolean := False;
+      Theme         : Types.Dashboard_Theme := Types.System_Theme) return String
    with Post => Render_Dashboard'Result'Length > 0, Global => null;
 
    --  Render a JSON object with key metric values.

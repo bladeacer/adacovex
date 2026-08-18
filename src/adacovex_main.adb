@@ -430,6 +430,14 @@ begin
    end if;
 
    if Cfg.Help_Requested then
+      if Cfg.Help_Topic_Len > 0 then
+         --  Contextual help: `adacovex help serve`, `adacovex help --serve`,
+         --  or `adacovex --serve help` prints flag/subcommand-specific text.
+         Adacovex.Config.Print_Topic_Help
+           (Cfg.Help_Topic (1 .. Cfg.Help_Topic_Len));
+      else
+         Adacovex.Config.Print_Usage;
+      end if;
       Ada.Command_Line.Set_Exit_Status (0);
       return;
    end if;
@@ -978,6 +986,7 @@ begin
          State.DAL_Assess := DAL_Assess;
          State.Packages := Packages;
          State.All_Standards := Cfg.Standard_All;
+         State.Theme := Cfg.Theme;
          Adacovex.Server.HTTP.Start (State);
       end;
    end if;

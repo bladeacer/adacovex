@@ -133,30 +133,53 @@ are driven by CSS custom properties, the initial theme follows the browser's
 `prefers-color-scheme`, and a header button toggles between light and dark
 (persisted in `localStorage`).
 
+### C11: `--theme=NAME` flag and a light/dark/system theme dropdown
+
+`--serve` gains a `--theme=NAME` flag (`system` | `light` | `dark`, default
+`system`) that sets the dashboard's initial theme. The header control is now
+a **dropdown with three options -- light mode, dark mode, and system theme**
+-- instead of a two-state button; the browser's choice is persisted in
+`localStorage` and wins over `--theme` on later visits. `system` follows
+`prefers-color-scheme`.
+
+### C12: contextual `help` keyword with flag/subcommand topics
+
+`help` is now a subcommand-like keyword that prints **contextual help** for a
+single flag or subcommand instead of the full usage. The topic is matched
+case-insensitively with an optional leading `--`, and may appear on either
+side of the keyword: `adacovex help serve`, `adacovex help --serve`, and
+`adacovex --serve help` all print the serve-specific help. `adacovex help`
+(with no topic) and `--help` print the full usage. Unknown topics print the
+full usage with an "Unknown topic" notice.
+
 ## Test Suite
 
-616 tests (was 501), across 12 categories (was 10). The CLI-config category
-(97 checks) covers `--version`, the `man` subcommand and its `--check` /
-`--dir` flags, and the `sbom` subcommand's and `--serve` dashboard's
+634 tests (was 501), across 12 categories (was 10). The CLI-config category
+(110 checks) covers `--version`, the `man` subcommand and its `--check` /
+`--dir` flags, the `sbom` subcommand's and `--serve` dashboard's
 standard-awareness defaults (all standards by default, narrowed by
-`--standard` / `--asil` / `--class`); the HTML/Markdown renderers category
-(21 checks) covers the dashboard's light/dark theme support (CSS custom
-properties, `prefers-color-scheme`, the `data-theme` override, and the
-`localStorage`-persisted toggle) on top of the standard-aware dashboard and
-JSON output; the DAL compliance category (16) gained the cached-HLR parse
-round-trip; the SBOM generator category (118) gained the dependency-graph
-cache round-trip; the Man page renderer category (15 checks) covers page
-structure, the embedded version, an install/read-back round-trip, and the
-`Update_Database` man-db contract; the VCS support category (29 checks) covers
-marker-file detection for every VCS, display and tool-binary names, and the
-UX-conversion recommendations.
+`--standard` / `--asil` / `--class`), the `--theme` flag (default `system`,
+light/dark parsing, invalid-value errors), and the contextual `help` keyword
+(topic capture in both orders and bare `help`); the HTML/Markdown renderers
+category (26 checks) covers the dashboard's theme dropdown (all three
+options, the `--theme` initial selection honored, `data-theme` override,
+`prefers-color-scheme`, and the `localStorage`-persisted selection) on top
+of the standard-aware dashboard and JSON output; the DAL compliance category
+(16) gained the cached-HLR parse round-trip; the SBOM generator category
+(118) gained the dependency-graph cache round-trip; the Man page renderer
+category (15 checks) covers page structure, the embedded version, an
+install/read-back round-trip, and the `Update_Database` man-db contract; the
+VCS support category (29 checks) covers marker-file detection for every VCS,
+display and tool-binary names, and the UX-conversion recommendations.
 
 ## Proof Results
 
-Platinum, 401/401 VCs proved across 44 analyzed units (unchanged from 1.10.0):
-the new VCS and man-page packages are non-SPARK I/O code and add no proof
-obligations, and the `--version`/`status` additions reuse existing SPARK-clean
-patterns. Proven with `make prove` under gnatprove 16.1.0 (`--steps=10000`).
+Platinum, 408/408 VCs proved across 44 analyzed units (up from 401): the
+`--theme` additions (the `Dashboard_Theme` type and its `To_String` /
+`To_Theme` / `Is_Valid_Theme` conversions in `Adacovex.Types`) reuse the
+already-proved uppercase/parse patterns and add 7 VCs, all proved; the VCS
+and man-page packages are non-SPARK I/O code and add no proof obligations.
+Proven with `make prove` under gnatprove 16.1.0 (`--steps=10000`).
 
 ## Traceability
 

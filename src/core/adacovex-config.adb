@@ -19,6 +19,29 @@ package body Adacovex.Config is
       return True;
    end Has_Prefix;
 
+   --  True when S looks like a help-topic token: a --flag or a bare
+   --  word (letters/hyphens only).  Used by the `help` keyword to decide
+   --  whether the neighboring argument names the topic (help --serve,
+   --  help serve, --serve help).  Unknown words are still accepted and
+   --  Print_Topic_Help reports them as unknown rather than crashing.
+   function Is_Help_Topic (S : String) return Boolean is
+   begin
+      if S'Length = 0 then
+         return False;
+      end if;
+      if S (S'First) = '-' then
+         return True;
+      end if;
+      for I in S'Range loop
+         if S (I) in 'a' .. 'z' | 'A' .. 'Z' | '-' then
+            null;
+         else
+            return False;
+         end if;
+      end loop;
+      return True;
+   end Is_Help_Topic;
+
    --  Case-insensitive test for the literal "all" (the --standard=all value).
    function Is_All (S : String) return Boolean is
       Up : String (1 .. S'Length);
@@ -328,6 +351,40 @@ package body Adacovex.Config is
                   end;
                elsif A = "--serve" then
                   Cfg.Serve_Mode := True;
+               elsif A = "--theme" then
+                  I := I + 1;
+                  if I <= Count then
+                     declare
+                        Val : constant String := Args (I);
+                     begin
+                        if Types.Is_Valid_Theme (Val) then
+                           Cfg.Theme := Types.To_Theme (Val);
+                        else
+                           Set_Error
+                             (Cfg,
+                              "--theme must be light, dark, or system (got: "
+                              & Val
+                              & ")");
+                        end if;
+                     end;
+                  else
+                     Set_Error
+                       (Cfg, "--theme requires a value (light | dark | system)");
+                  end if;
+               elsif Has_Prefix (A, "--theme=") then
+                  declare
+                     Val : constant String := A (A'First + 8 .. A'Last);
+                  begin
+                     if Types.Is_Valid_Theme (Val) then
+                        Cfg.Theme := Types.To_Theme (Val);
+                     else
+                        Set_Error
+                          (Cfg,
+                           "--theme must be light, dark, or system (got: "
+                           & Val
+                           & ")");
+                     end if;
+                  end;
                elsif A = "--port" then
                   I := I + 1;
                   if I <= Count then
@@ -482,6 +539,20 @@ package body Adacovex.Config is
                   Cfg.Status_Mode := True;
                elsif A = "man" then
                   Cfg.Man_Mode := True;
+               elsif A = "help" then
+                  --  Contextual help: `help --serve`, `help serve`, or
+                  --  `--serve help` all print flag-specific help.  The topic
+                  --  is the next argument when it looks like one, else the
+                  --  previous argument when it was a flag (--serve help).
+                  Cfg.Help_Requested := True;
+                  if I < Count and then Is_Help_Topic (Args (I + 1)) then
+                     Set_String
+                       (Cfg.Help_Topic, Cfg.Help_Topic_Len, Args (I + 1));
+                     I := I + 1;
+                  elsif I > 1 and then Is_Help_Topic (Args (I - 1)) then
+                     Set_String
+                       (Cfg.Help_Topic, Cfg.Help_Topic_Len, Args (I - 1));
+                  end if;
                elsif A = "--check" then
                   Cfg.Man_Check := True;
                elsif A = "--dir" then
@@ -838,8 +909,10 @@ package body Adacovex.Config is
                      Cfg.Require_Proof_Set := True;
                   end if;
                elsif A = "--help" then
+                  --  Full usage is printed by the caller (main / tests) when
+                  --  Help_Requested is set, so `--help`, `help`, and
+                  --  `help TOPIC` share one printing path.
                   Cfg.Help_Requested := True;
-                  Print_Usage;
                end if;
             end;
             I := I + 1;
@@ -1120,7 +1193,13 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("  --serve               Start HTTP dashboard on :8080 (standard-aware,");
       Ada.Text_IO.Put_Line
-        ("                        defaults to all standards; light/dark themes)");
+        ("                        defaults to all standards; light/dark/system");
+      Ada.Text_IO.Put_Line
+        ("                        themes via the header dropdown)");
+      Ada.Text_IO.Put_Line
+        ("  --theme=NAME          Dashboard theme: light | dark | system");
+      Ada.Text_IO.Put_Line
+        ("                        (default: system; only with --serve)");
       Ada.Text_IO.Put_Line
         ("  --port=N              HTTP server port (default: 8080)");
       Ada.Text_IO.Put_Line
@@ -1230,6 +1309,12 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("                        of the default local man directory");
       Ada.Text_IO.Put_Line
+        ("  help [TOPIC]          Show this message, or contextual help for a");
+      Ada.Text_IO.Put_Line
+        ("                        flag/subcommand (e.g. `adacovex help serve`);");
+      Ada.Text_IO.Put_Line
+        ("                        `adacovex --serve help` also works");
+      Ada.Text_IO.Put_Line
         ("  --help                Show this message and exit");
       Ada.Text_IO.Put_Line ("");
       Ada.Text_IO.Put_Line
@@ -1242,5 +1327,249 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("compliance assessment (DAL / ASIL / safety-class levels)");
    end Print_Usage;
+
+   --  Lowercase a string, stripping a leading "--" and any "=value" suffix
+   --  so "--standard=all", "--Serve", and "standard" all match "standard".
+   function Normalize_Topic (Topic : String) return String is
+      First : Natural := Topic'First;
+      Last  : Natural := Topic'Last;
+      Buf   : String (1 .. Topic'Length);
+      Len   : Natural := 0;
+   begin
+      if Last - First + 1 >= 2
+        and then Topic (First) = '-'
+        and then Topic (First + 1) = '-'
+      then
+         First := First + 2;
+      end if;
+      for I in First .. Last loop
+         exit when Topic (I) = '=';
+         Len := Len + 1;
+         Buf (Len) := Topic (I);
+      end loop;
+      for I in 1 .. Len loop
+         if Buf (I) in 'A' .. 'Z' then
+            Buf (I) := Character'Val (Character'Pos (Buf (I)) + 32);
+         end if;
+      end loop;
+      return Buf (1 .. Len);
+   end Normalize_Topic;
+
+   --  Print a named help section (title + body lines).
+   procedure Print_Section (Title : String; Body_Text : String) is
+      Start : Natural := Body_Text'First;
+   begin
+      Ada.Text_IO.Put_Line ("");
+      Ada.Text_IO.Put_Line (Title);
+      Ada.Text_IO.Put_Line
+        ("------------------------------------------------------------");
+      while Start <= Body_Text'Last loop
+         declare
+            Fin : Natural := Start;
+         begin
+            while Fin < Body_Text'Last and then Body_Text (Fin) /= ASCII.LF
+            loop
+               Fin := Fin + 1;
+            end loop;
+            Ada.Text_IO.Put_Line (Body_Text (Start .. Fin));
+            exit when Fin = Body_Text'Last;
+            Start := Fin + 1;
+         end;
+      end loop;
+   end Print_Section;
+
+   procedure Print_Topic_Help (Topic : String) is
+      T : constant String := Normalize_Topic (Topic);
+   begin
+      if T = "" then
+         Print_Usage;
+      elsif T = "help" then
+         Print_Section
+           ("help [TOPIC]",
+            "Show the full usage message, or contextual help for a single"
+            & ASCII.LF
+            & "flag or subcommand when TOPIC names one." & ASCII.LF
+            & ASCII.LF
+            & "  adacovex help serve       contextual help for --serve"
+            & ASCII.LF
+            & "  adacovex help --standard  contextual help for --standard"
+            & ASCII.LF
+            & "  adacovex --serve help     topic after the flag also works"
+            & ASCII.LF
+            & "  adacovex help             full usage" & ASCII.LF
+            & ASCII.LF
+            & "TOPIC is case-insensitive; a leading -- is optional, and a"
+            & ASCII.LF
+            & "=value suffix is ignored (help --standard=all == help standard).");
+      elsif T = "serve" then
+         Print_Section
+           ("--serve",
+            "Start the built-in HTTP/1.1 web dashboard on --port (default"
+            & ASCII.LF
+            & "8080) after the assessment.  Endpoints:" & ASCII.LF
+            & ASCII.LF
+            & "  GET /                HTML dashboard (coverage, proof, tests,"
+            & ASCII.LF
+            & "                       compliance cards)" & ASCII.LF
+            & "  GET /api/metrics     JSON object with key metrics" & ASCII.LF
+            & "  GET /badge/*.svg     SVG badges (spark, tests, do178c,"
+            & ASCII.LF
+            & "                       iso26262, iec62304)" & ASCII.LF
+            & ASCII.LF
+            & "Standard-aware: like the sbom subcommand it defaults to all"
+            & ASCII.LF
+            & "standards when no --standard / --asil / --class is given; an"
+            & ASCII.LF
+            & "explicit standard flag narrows the dashboard to that single"
+            & ASCII.LF
+            & "standard.  The dashboard supports light / dark / system themes"
+            & ASCII.LF
+            & "via the header dropdown (--theme sets the initial choice; the"
+            & ASCII.LF
+            & "browser's own choice persists in localStorage)." & ASCII.LF
+            & ASCII.LF
+            & "Related: --theme, --port.");
+      elsif T = "theme" then
+         Print_Section
+           ("--theme=NAME",
+            "Dashboard color theme for --serve:" & ASCII.LF
+            & ASCII.LF
+            & "  system   follow the browser's prefers-color-scheme (default)"
+            & ASCII.LF
+            & "  light    force the light theme" & ASCII.LF
+            & "  dark     force the dark theme" & ASCII.LF
+            & ASCII.LF
+            & "The header dropdown switches live between the three; the"
+            & ASCII.LF
+            & "browser's selection is persisted in localStorage and wins over"
+            & ASCII.LF
+            & "--theme on later visits.  Only relevant with --serve.");
+      elsif T = "port" then
+         Print_Section
+           ("--port=N",
+            "HTTP server port for --serve (default 8080).  Must be a valid"
+            & ASCII.LF
+            & "positive integer.  Only relevant with --serve.");
+      elsif T = "standard" or else T = "dal" or else T = "asil"
+        or else T = "class"
+      then
+         Print_Section
+           ("--standard / --dal / --asil / --class",
+            "Select the compliance standard and integrity level.  The"
+            & ASCII.LF
+            & "evidence checks are identical across standards; only the"
+            & ASCII.LF
+            & "level labels change:" & ASCII.LF
+            & ASCII.LF
+            & "  --standard=do178c    DO-178C DAL A-E (default)" & ASCII.LF
+            & "  --standard=iso26262  ISO 26262 ASIL D/QM" & ASCII.LF
+            & "  --standard=iec62304  IEC 62304 Class C/A" & ASCII.LF
+            & "  --standard=all       all standards at the shared tier" & ASCII.LF
+            & "  --dal=LEVEL          shared rigor tier A-E" & ASCII.LF
+            & "  --asil=LEVEL         ISO 26262 level (sets standard + tier)"
+            & ASCII.LF
+            & "  --class=LEVEL        IEC 62304 class (sets standard + tier)"
+            & ASCII.LF
+            & ASCII.LF
+            & "Run `adacovex status` for toolchain state; see docs/standards.md"
+            & ASCII.LF
+            & "for the full tier mapping.");
+      elsif T = "target" or else T = "manifest" then
+         Print_Section
+           ("--target / --manifest",
+            "--target=PATH sets the project root to scan and assess (default"
+            & ASCII.LF
+            & "current directory); relative paths are resolved to absolute."
+            & ASCII.LF
+            & "--manifest=PATH overrides the auto-detected Alire manifest"
+            & ASCII.LF
+            & "(alire-dev.toml, then alire.toml).");
+      elsif T = "compare-base" or else T = "coverage-delta" then
+         Print_Section
+           ("--compare-base / --coverage-delta",
+            "Differential modes: snapshot a base revision in a temporary"
+            & ASCII.LF
+            & "directory and compare it against the current working tree"
+            & ASCII.LF
+            & "without touching the repo.  --compare-base reports the full"
+            & ASCII.LF
+            & "VC/DAL delta; --coverage-delta gates on docstring coverage"
+            & ASCII.LF
+            & "only.  Works on git, mercurial, subversion, fossil, and jj.");
+      elsif T = "sbom" or else T = "format" or else T = "out" then
+         Print_Section
+           ("adacovex sbom",
+            "Generate a proof-aware software bill of materials (CycloneDX"
+            & ASCII.LF
+            & "1.5, SPDX 2.3, or Markdown).  Standard-aware: defaults to all"
+            & ASCII.LF
+            & "standards unless narrowed by --standard / --asil / --class."
+            & ASCII.LF
+            & ASCII.LF
+            & "  adacovex sbom --format=cyclonedx-json --dal=C" & ASCII.LF
+            & "  adacovex sbom --format=spdx-json --asil=B --out=sbom.spdx.json");
+      elsif T = "prove" then
+         Print_Section
+           ("adacovex prove",
+            "Resolve gnatprove (manifest pin, PATH, cached toolchain, or"
+            & ASCII.LF
+            & "download), run it on the target, then assess the result."
+            & ASCII.LF
+            & ASCII.LF
+            & "Options: --jobs/-j, --level, --timeout, --steps, --memlimit,"
+            & ASCII.LF
+            & "--force, --no-loop-unrolling, --no-inlining.");
+      elsif T = "status" then
+         Print_Section
+           ("adacovex status",
+            "Report toolchain + platform state without running an assessment"
+            & ASCII.LF
+            & "or downloading anything: alire/gnatprove detectability, CPU"
+            & ASCII.LF
+            & "count, CI status, and which VCS tools are on PATH.");
+      elsif T = "man" then
+         Print_Section
+           ("adacovex man",
+            "Install the man page into the local man database (default"
+            & ASCII.LF
+            & "~/.local/share/man on Linux/WSL; --dir=PATH overrides) and"
+            & ASCII.LF
+            & "refresh it with mandb when present.  --check exits 0 when the"
+            & ASCII.LF
+            & "installed page matches this binary's version, 1 otherwise.");
+      elsif T = "version" then
+         Print_Section
+           ("--version",
+            "Print the bundled version and exit.  The version source depends"
+            & ASCII.LF
+            & "on the installation method: ADACOVEX_VERSION (release builds),"
+            & ASCII.LF
+            & "then alire-dev.toml (source checkouts), then alire.toml.");
+      elsif T = "cache" or else T = "no-cache" or else T = "cache-dir"
+        or else T = "cache-max"
+      then
+         Print_Section
+           ("--cache / --no-cache / --cache-dir / --cache-max",
+            "Result caching: unchanged inputs are served from an on-disk"
+            & ASCII.LF
+            & "content-addressed cache (default on).  --cache-dir relocates"
+            & ASCII.LF
+            & "it; --cache-max caps entries before oldest-first eviction.");
+      elsif T = "require-spark" or else T = "require-docstrings"
+        or else T = "require-tests" or else T = "require-proof"
+      then
+         Print_Section
+           ("--require-* CI gates",
+            "Fail loudly (exit 1) when a pinned minimum is not met:"
+            & ASCII.LF
+            & "--require-spark=LVL, --require-docstrings=PCT,"
+            & ASCII.LF
+            & "--require-tests=N, --require-proof=PCT.  Default off.");
+      else
+         Print_Usage;
+         Ada.Text_IO.Put_Line
+           ("Unknown topic '" & Topic & "' -- showing full usage above.");
+      end if;
+   end Print_Topic_Help;
 
 end Adacovex.Config;

@@ -39,6 +39,12 @@ type DAL_Level is (DAL_A, DAL_B, DAL_C, DAL_D, DAL_E);
 type DAL_Status is (Achieved, Unmet);
 ```
 
+### type Dashboard_Theme
+
+```ada
+type Dashboard_Theme is (System_Theme, Light_Theme, Dark_Theme);
+```
+
 ### type Desc_Field
 
 ```ada
@@ -163,6 +169,12 @@ type Test_Status is (Pass, Fail);
 |-----------|-------------|
 | `S` |  |
 
+### function Is_Valid_Theme (S : Standard.String) return Standard.Boolean `[Global]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `S` |  |
+
 ### function Standard_Level_Name (Standard : Adacovex.Types.Compliance_Standard; Level : Adacovex.Types.DAL_Level) return Standard.String `[Post]` `[Global]`
 
 | Parameter | Description |
@@ -218,6 +230,12 @@ type Test_Status is (Pass, Fail);
 |-----------|-------------|
 | `S` |  |
 
+### function To_String (T : Adacovex.Types.Dashboard_Theme) return Standard.String `[Post]` `[Global]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `T` |  |
+
 ### function To_String (L : Adacovex.Types.SPARK_Level) return Standard.String `[Post]` `[Global]`
 
 | Parameter | Description |
@@ -225,6 +243,12 @@ type Test_Status is (Pass, Fail);
 | `L` |  |
 
 ### function To_String (S : Adacovex.Types.Test_Status) return Standard.String `[Post]` `[Global]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `S` |  |
+
+### function To_Theme (S : Standard.String) return Adacovex.Types.Dashboard_Theme `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|

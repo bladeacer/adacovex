@@ -9,7 +9,7 @@ HLR-RENDER-HTML: HTML dashboard and JSON API
 
 ## Functions
 
-### function Render_Dashboard (Doc_Metrics : Adacovex.Types.Docstring_Metrics; Proof : Adacovex.Types.Proof_Summary; Tests : Adacovex.Types.Implementation.Test_Summary; DAL_Assess : Adacovex.Types.Implementation.DAL_Assessment; Packages : Adacovex.Types.Implementation.Package_Vectors.Vector; All_Standards : Standard.Boolean) return Standard.String `[Post]` `[Global]`
+### function Render_Dashboard (Doc_Metrics : Adacovex.Types.Docstring_Metrics; Proof : Adacovex.Types.Proof_Summary; Tests : Adacovex.Types.Implementation.Test_Summary; DAL_Assess : Adacovex.Types.Implementation.DAL_Assessment; Packages : Adacovex.Types.Implementation.Package_Vectors.Vector; All_Standards : Standard.Boolean; Theme : Adacovex.Types.Dashboard_Theme) return Standard.String `[Post]` `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|
@@ -19,6 +19,7 @@ HLR-RENDER-HTML: HTML dashboard and JSON API
 | `Packages` | Scanned package vector. |
 | `Proof` | GNATprove proof summary. |
 | `Tests` | Test result summary. |
+| `Theme` | Initial dashboard theme (system/light/dark). |
 
 **Returns:** HTML dashboard page.
 

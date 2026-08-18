@@ -249,6 +249,40 @@ package body Adacovex.Types is
       end case;
    end Standard_Level_Name;
 
+   function To_String (T : Dashboard_Theme) return String is
+   begin
+      case T is
+         when System_Theme =>
+            return "system";
+
+         when Light_Theme  =>
+            return "light";
+
+         when Dark_Theme   =>
+            return "dark";
+      end case;
+   end To_String;
+
+   function To_Theme (S : String) return Dashboard_Theme is
+      U : constant String := To_Upper (S);
+   begin
+      if U = "SYSTEM" then
+         return System_Theme;
+      elsif U = "LIGHT" then
+         return Light_Theme;
+      elsif U = "DARK" then
+         return Dark_Theme;
+      else
+         return System_Theme;
+      end if;
+   end To_Theme;
+
+   function Is_Valid_Theme (S : String) return Boolean is
+      U : constant String := To_Upper (S);
+   begin
+      return U = "SYSTEM" or else U = "LIGHT" or else U = "DARK";
+   end Is_Valid_Theme;
+
    function To_String (S : DAL_Status) return String is
    begin
       case S is

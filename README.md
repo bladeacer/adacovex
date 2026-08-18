@@ -57,7 +57,7 @@ However, project reliability is grounded in mathematical proof and
 non-invasive design rather than implicit trust:
 
 - **Formal Verification:** Core Ada logic is formally verified using
-  SPARK Ada (Platinum under `gnatprove` 16.1.0 -- 401 VCs, 0 unproved; see
+  SPARK Ada (Platinum under `gnatprove` 16.1.0 -- 408 VCs, 0 unproved; see
   `docs/proof/16.1.0-ledger.md`).
 - **Read-Only Engine:** `adacovex` acts strictly as an assessment engine.
   It processes input payloads, parses build artifacts, and produces reports
@@ -243,7 +243,8 @@ adacovex man [--check] [--dir=PATH]
 | `--asil=LEVEL` | - | both | ISO 26262 level: `A`\|`B`\|`C`\|`D`\|`QM` (e.g. `--asil=B`) |
 | `--class=LEVEL` | - | both | IEC 62304 safety class: `A`\|`B`\|`C` (e.g. `--class=A`) |
 | `--standard=NAME` | `do178c` | both | `do178c`\|`iso26262`\|`iec62304`\|`all` (all emits every badge) |
-| `--serve` | off | both | Start HTTP dashboard server |
+| `--serve` | off | both | Start HTTP dashboard server (standard-aware; light/dark/system themes) |
+| `--theme=NAME` | `system` | serve | Dashboard theme: `light`\|`dark`\|`system` |
 | `--port=N` | `8080` | serve | Dashboard server port |
 | `--emit-svg=PATH` | `<target>/docs/badges` | both | Output directory for SVG badges |
 | `--no-svg` | off | both | Suppress SVG badge output |
@@ -264,6 +265,7 @@ adacovex man [--check] [--dir=PATH]
 | `--version` | - | - | Print the bundled version and exit |
 | `man` | - | - | Install the man page into the local man database (Linux/WSL) |
 | `man --check` | - | - | Exit 0 if the installed man page matches the binary version |
+| `help [TOPIC]` | - | - | Contextual help for a flag/subcommand (`help serve`, `--serve help`) |
 | `--help` | - | both | Print usage and exit |
 
 The version source depends on the installation method: `tools/gen-version.py`
@@ -396,7 +398,7 @@ assessment and the artifacts describing it are shared.
 |--------|-------------|
 | `check` | Full quality gate: build + tests + SPARK proof + badges + docs + SBOM + ASCII + spark-off + changelog + description sync |
 | `build` | `alr build` (adacovex + test_runner, covex alias) |
-| `test` | Build and run native test suite (616 tests) |
+| `test` | Build and run native test suite (634 tests) |
 | `prove` | SPARK proof (Platinum gate) + regenerates SVG badges in `docs/badges/` |
 | `fmt` | Format Ada sources with `gnatformat` |
 | `doc` | Generate API docs via gnatdoc + rst2md |
@@ -425,9 +427,9 @@ CI gates. Action inputs/outputs, result caching, and release bundling:
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 616/616 passing |
+| Unit tests | `make test` | 634/634 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
-| SPARK proof | `make prove` | Platinum (401 VCs, 0 unproved under gnatprove 16.1.0) |
+| SPARK proof | `make prove` | Platinum (408 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, DAL-C (strict mode) |
 
 See [changelogs](docs/changelogs/index.md) for full release notes.
