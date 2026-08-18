@@ -248,7 +248,9 @@ runs:
       if: ${{ inputs.build == 'false' }}
       shell: bash
       env:
-        ACTION_REPO: ${{ github.action_repository }}
+        # Same fallback as the build step: `uses: ./` leaves
+        # action_repository empty, so use the workflow's own repo.
+        ACTION_REPO: ${{ github.action_repository || github.repository }}
         ACTION_REF: ${{ github.action_ref }}
         INPUT_VERSION: ${{ inputs.version }}
       run: |
@@ -301,8 +303,15 @@ runs:
       if: ${{ inputs.build == 'true' }}
       shell: bash
       env:
-        ACTION_REPO: ${{ github.action_repository }}
-        ACTION_REF: ${{ github.action_ref }}
+        # github.action_repository is empty when the action runs via
+        # `uses: ./` (local-path reference, e.g. adacovex's own
+        # consumer-run-tests job); github.repository is then the repo the
+        # workflow lives in, which IS adacovex -- exactly what the
+        # consumer branch needs to clone.  A real consumer referencing
+        # bladeacer/adacovex@v1 sets action_repository to the action's
+        # repo, so that takes priority.
+        ACTION_REPO: ${{ github.action_repository || github.repository }}
+        ACTION_REF: ${{ github.action_ref || github.sha }}
       run: |
         set -euxo pipefail
         cd "$GITHUB_WORKSPACE"

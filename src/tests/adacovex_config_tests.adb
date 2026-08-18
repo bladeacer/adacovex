@@ -583,6 +583,48 @@ package body Adacovex_Config_Tests is
            (Cfg.CLI_Error, "unknown bare-word argument sets CLI_Error");
       end;
 
+      --  Unknown_No_Suggest: set (True) when the unknown token has no
+      --  close-enough known flag, so the main program prints --help.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--zzz-flag");
+         Testing.Parse_Args (A, Cfg);
+         R.Check (Cfg.CLI_Error, "unknown --zzz-flag sets CLI_Error");
+         R.Check
+           (Cfg.Unknown_No_Suggest,
+            "unknown flag with no similar match sets Unknown_No_Suggest");
+      end;
+
+      --  A near-miss unknown flag (suggestion produced) leaves
+      --  Unknown_No_Suggest False so no full usage dump is printed.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--serve");
+         Add (A, "--verbos");
+         Testing.Parse_Args (A, Cfg);
+         R.Check (Cfg.CLI_Error, "--verbos sets CLI_Error");
+         R.Check
+           (not Cfg.Unknown_No_Suggest,
+            "near-miss flag (suggested) leaves Unknown_No_Suggest False");
+      end;
+
+      --  Bare-word unknown tokens with no match also set the flag.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "frobnicate");
+         Testing.Parse_Args (A, Cfg);
+         R.Check (Cfg.CLI_Error, "unknown bare word sets CLI_Error");
+         R.Check
+           (Cfg.Unknown_No_Suggest,
+            "unknown bare word with no match sets Unknown_No_Suggest");
+      end;
+
       --  --force with the man subcommand is the man --force override flag
       --  (not a prove-mode error).
       declare

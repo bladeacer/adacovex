@@ -66,7 +66,7 @@ their release-time numbers.
 ## Verifying claims instead of trusting them
 
 Every number in this repository's documentation is anchored to a generated
-artifact, not to a human or AI-written claim:
+artifact, not to a human- or AI-written claim:
 
 - VC counts and the SPARK level come from `obj/gnatprove/gnatprove.out`
   (via `make proof-status`).
@@ -77,3 +77,51 @@ artifact, not to a human or AI-written claim:
 The CI badge `docs/badges/*.svg` files are emitted by the assessment itself.
 If a document carries a number that does not match the artifact, one of the
 `--check` gates in `make check` fails loudly -- that is the point.
+
+## Working in a fork or branch (LLM or human)
+
+Because the gates are cheap and deterministic, the safest workflow is to
+iterate locally and let `make check` be the arbiter:
+
+```bash
+make build && make test      # native suite must stay 653/653
+make prove                   # Platinum, 0 unproved, 0 justified
+make check                   # full gate: static checks, build, test, prove,
+                             # doc, sbom, then tree-wide count-sync checks
+```
+
+`make check` runs the cheap static gates first (ascii, spark-off, changelog,
+version source, doc links) so a formatting or sync problem fails before the
+expensive build + SPARK proof, then verifies the count-sync checks
+(`test-count --check`, `proof-status --check`, `description --check`) so a
+stale metric anywhere in the tree fails loudly. Regenerated files that are
+byte-identical when nothing changed (the version constant, the dashboard
+template) are left untouched so `git status` stays quiet.
+
+## The served dashboard as a trust surface
+
+`adacovex --serve` renders a live HTML dashboard at `/` plus a JSON API at
+`/api/metrics` and SVG badges at `/badge/*.svg` -- the same numbers an agent
+or reviewer would quote from the CLI are visible (and machine-checkable) in
+the browser. The dashboard shell is a real file
+(`resources/dashboard.html`) bundled at build time by
+`tools/gen-dashboard.py`, so page chrome is a plain HTML edit with no Ada
+knowledge required; the dynamic cards are injected by the Ada renderer. The
+theme resolution chain (query param, then explicit `--theme`, then saved
+`localStorage`, then system preference) and the localStorage-only
+persistence are documented in [cli-reference.md](cli-reference.md#--serve).
+
+## Honest limits
+
+AI assistance raises the pace of contribution but does not change the bar:
+
+- An AI-written docstring that is not provably accurate is a liability, not a
+  contribution -- the 100% docstring-coverage gate measures presence, and
+  review measures accuracy.
+- Generated code must still pass the SPARK proof; a `pragma Assume` or a
+  `SPARK_Mode (Off)` outside the one allowed container package is rejected
+  by the gates.
+- The changelog, the traceability tags, and the HLRs are written by people
+  (or by agents following AGENTS.md), and the `changelog-check` validator
+  enforces the canonical format -- a machine-generated changelog that does
+  not conform is caught before release.
