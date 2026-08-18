@@ -281,7 +281,7 @@ adacovex supports multiple output formats:
 
 ## Testing
 
-adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 566 tests across 12 categories. No external test framework (AUnit, etc.) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
+adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 577 tests across 12 categories. No external test framework (AUnit, etc.) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
 
 ## Supported Platforms
 
@@ -311,13 +311,18 @@ adacovex follows one version across every delivery channel, and each channel is
 version-locked to the same release:
 
 - **Single source of truth**: the `version` field in `alire.toml` /
-  `alire-dev.toml`. `tools/gen-version.py` regenerates
-  `src/adacovex_version_info.ads` at build time (and `make bump-version`),
-  and `Adacovex.Version` in `src/adacovex.ads` re-exports it, so
-  `--version`, the man page, the SBOM tool version, and the result-cache
-  namespace all derive from the manifest and can never drift. Release builds
-  bundle the release tag instead via the `ADACOVEX_VERSION` environment
-  variable (release workflow / `make release`).
+  `alire-dev.toml`, resolved by installation method. `tools/gen-version.py`
+  regenerates `src/adacovex_version_info.ads` at build time (and `make
+  bump-version`) from the first available of `ADACOVEX_VERSION` (release
+  builds), `alire-dev.toml` (source checkouts), or `alire.toml`
+  (dependency-managed installs: the published crate builds from its release
+  manifest, so the toml associated with the covex binary for dependency
+  management carries the version), and `Adacovex.Version` in
+  `src/adacovex.ads` re-exports it, so `--version`, the man page, the SBOM
+  tool version, and the result-cache namespace all derive from the manifest
+  and can never drift. Release builds bundle the release tag instead via the
+  `ADACOVEX_VERSION` environment variable (release workflow / `make
+  release`).
 - **CI is tied to the release version**: the GitHub Actions composite action
   (`action.yml`) is version-matched to the adacovex binary. The release
   workflow bundles `adacovex-vX.Y.Z.tar.gz` and `adacovex-action-vX.Y.Z.tar.gz`

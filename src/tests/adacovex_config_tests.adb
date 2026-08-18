@@ -309,6 +309,64 @@ package body Adacovex_Config_Tests is
            (Cfg.Man_Dir (1 .. Cfg.Man_Dir_Len) = "/tmp/y",
             "--dir PATH space-separated form parses");
       end;
+
+      --  sbom subcommand defaults to ALL standards (joined DO-178C / ISO
+      --  26262 / IEC 62304 properties) unless a standard flag narrows it.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "sbom");
+         Testing.Parse_Args (A, Cfg);
+         R.Check (Cfg.SBOM_Mode, "sbom sets SBOM_Mode");
+         R.Check (Cfg.Standard_All, "sbom defaults to all standards");
+         R.Check (not Cfg.CLI_Error, "bare sbom is not an error");
+      end;
+
+      --  sbom --standard=NAME narrows to that single standard.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "sbom");
+         Add (A, "--standard=iso26262");
+         Testing.Parse_Args (A, Cfg);
+         R.Check (Cfg.SBOM_Mode, "sbom --standard sets SBOM_Mode");
+         R.Check
+           (Cfg.Standard_Target = ISO_26262,
+            "sbom --standard=iso26262 selects ISO 26262");
+         R.Check
+           (not Cfg.Standard_All,
+            "sbom --standard=NAME disables all-standards");
+      end;
+
+      --  sbom --asil=LEVEL selects the standard and level together.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "sbom");
+         Add (A, "--asil=B");
+         Testing.Parse_Args (A, Cfg);
+         R.Check
+           (Cfg.Standard_Target = ISO_26262,
+            "sbom --asil=B selects ISO 26262");
+         R.Check
+           (not Cfg.Standard_All, "sbom --asil=LEVEL disables all-standards");
+         R.Check (Cfg.DAL_Target = DAL_C, "sbom --asil=B maps to DAL-C tier");
+      end;
+
+      --  sbom --standard=all stays all-standards (explicit form).
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "sbom");
+         Add (A, "--standard=all");
+         Testing.Parse_Args (A, Cfg);
+         R.Check (Cfg.SBOM_Mode, "sbom --standard=all sets SBOM_Mode");
+         R.Check (Cfg.Standard_All, "sbom --standard=all keeps all standards");
+      end;
    end Run;
 
 end Adacovex_Config_Tests;

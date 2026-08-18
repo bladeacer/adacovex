@@ -5,6 +5,7 @@
 ```
 adacovex [options]
 adacovex sbom [--format=cyclonedx-json|spdx-json] [--out=PATH]
+           [--standard=NAME|--dal=LEVEL|--asil=LEVEL|--class=LEVEL]
 adacovex prove [--target=PATH] [prove options]
 adacovex status [--target=PATH]
 adacovex man [--check] [--dir=PATH]
@@ -215,12 +216,17 @@ releases.
 ### `--version`
 
 Print the bundled version (`adacovex vX.Y.Z`) and exit, without scanning or
-assessing. The version is read from `alire/alire-dev.toml` at build time:
+assessing. The version source depends on the **installation method**:
 `tools/gen-version.py` regenerates `src/adacovex_version_info.ads` (the
-compiled-in constant) on every `make build`. Release builds bundle the release
-tag instead -- the release workflow / `make release` set `ADACOVEX_VERSION`
-(from the `vX.Y.Z` tag) so the shipped binary always reports exactly the tag
-it was built from. The same constant drives the man page, the SBOM tool
+compiled-in constant) on every `make build` from the first available of
+`ADACOVEX_VERSION` (release builds -- the release workflow / `make release`
+set it from the `vX.Y.Z` tag, so the shipped binary always reports exactly the
+tag it was built from), `alire/alire-dev.toml` (source checkouts), or
+`alire.toml` (dependency-managed installs: when covex is built as an Alire
+crate the binary is compiled from the published crate source, whose
+`alire.toml` -- the toml associated with the covex binary for dependency
+management -- carries the release version; `alire-dev.toml` may not exist in
+that tree). The same constant drives the man page, the SBOM tool
 version, and the result-cache namespace, so they can never drift.
 
 ### `man`
@@ -305,7 +311,7 @@ target does not meet the required level:
 
 ```bash
 adacovex --target=. --require-spark=Platinum --require-docstrings=100 \
-         --require-tests=566 --require-proof=100
+         --require-tests=577 --require-proof=100
 ```
 
 - `require-spark` compares the honest assessed SPARK level (Stone..Platinum).
@@ -391,7 +397,14 @@ manifest (`alire.toml` / `alire-dev.toml`), the solved-crate list in
 `alire/alire.lock`, and the root `.gpr` `with` clauses, then writes a
 proof-aware software bill of materials in CycloneDX 1.5 JSON or SPDX 2.3 JSON.
 
-- **Usage**: `adacovex sbom [--format=FMT] [--out=PATH]`.
+- **Usage**:
+  `adacovex sbom [--format=FMT] [--out=PATH] [--standard=NAME] [--dal=LEVEL | --asil=LEVEL | --class=LEVEL]`.
+  The sbom subcommand is **standard-aware**: it accepts the same standard
+  flags as the assessment (`--standard`, `--dal`, `--asil`, `--class`) and
+  **defaults to all standards** -- without an explicit standard flag the SBOM
+  carries the joined DO-178C / ISO 26262 / IEC 62304 properties at the shared
+  DAL tier; `--standard=iso26262` / `--asil=B` narrows it to ISO 26262 at
+  ASIL B, and `--class=A` to IEC 62304 at Class A.
 - **Default output**: `<target>/sbom.json` for `cyclonedx-json`,
   `<target>/sbom.spdx.json` for `spdx-json`. The containing directory is
   created automatically.
@@ -468,8 +481,12 @@ adacovex --target=. --serve --port=9090
 # Differential assessment vs a git base revision
 adacovex --target=. --compare-base=HEAD
 
-# Proof-aware SBOM (CycloneDX 1.5 JSON)
+# Proof-aware SBOM (CycloneDX 1.5 JSON; all standards by default)
 adacovex sbom --format=cyclonedx-json --target=. --dal=C
+# SBOM for a single standard (ISO 26262 at ASIL B)
+adacovex sbom --format=cyclonedx-json --target=. --asil=B
+# SPDX 2.3 SBOM at IEC 62304 Class A
+adacovex sbom --format=spdx-json --target=. --class=A --out=sbom.spdx.json
 
 # Proof-aware SBOM (SPDX 2.3 JSON) at a custom path
 adacovex sbom --format=spdx-json --out=docs/compliance/sbom.spdx.json

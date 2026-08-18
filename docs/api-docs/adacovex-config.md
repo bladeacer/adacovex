@@ -20,6 +20,7 @@ Manifest_Len    : Natural := 0;
 DAL_Target      : Types.DAL_Level := Types.DAL_C;
 Standard_Target : Types.Compliance_Standard := Types.DO_178C;
 Standard_All  : Boolean := False;
+Standard_Explicit : Boolean := False;
 Serve_Mode    : Boolean := False;
 Port          : Positive := 8080;
 No_SVG        : Boolean := False;

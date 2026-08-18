@@ -20,18 +20,24 @@ package Adacovex.Config is
       --  True when --standard=all is given: run the assessment once at the
       --  shared tier and emit badges/reports for every compliance standard
       --  (DO-178C, ISO 26262, IEC 62304) instead of just the selected one.
-      Standard_All  : Boolean := False;
-      Serve_Mode    : Boolean := False;
-      Port          : Positive := 8080;
-      No_SVG        : Boolean := False;
-      Emit_SVG      : Boolean := True;
-      SVG_Path      : String (1 .. Types.Max_Path);
-      SVG_Path_Len  : Natural := 0;
-      Emit_Markdown : Boolean := False;
-      MD_Path       : String (1 .. Types.Max_Path);
-      MD_Path_Len   : Natural := 0;
-      Verbose       : Boolean := False;
-      Strict_Mode   : Boolean := True;
+      Standard_All : Boolean := False;
+
+      --  True when --standard / --asil / --class was passed explicitly.
+      --  The sbom subcommand defaults to Standard_All when none of these is
+      --  given (the SBOM carries the joined all-standards properties); an
+      --  explicit standard flag narrows it to that single standard.
+      Standard_Explicit : Boolean := False;
+      Serve_Mode        : Boolean := False;
+      Port              : Positive := 8080;
+      No_SVG            : Boolean := False;
+      Emit_SVG          : Boolean := True;
+      SVG_Path          : String (1 .. Types.Max_Path);
+      SVG_Path_Len      : Natural := 0;
+      Emit_Markdown     : Boolean := False;
+      MD_Path           : String (1 .. Types.Max_Path);
+      MD_Path_Len       : Natural := 0;
+      Verbose           : Boolean := False;
+      Strict_Mode       : Boolean := True;
 
       --  Result caching (see Adacovex.Cache).  Enabled by default; the cache
       --  is keyed by the SHA-256 of each analyzed input, so unchanged code

@@ -226,6 +226,7 @@ package body Adacovex.Config is
                            Cfg.Standard_Target := Types.ISO_26262;
                            Cfg.DAL_Target := Types.To_ASIL (Val);
                            Cfg.Standard_All := False;
+                           Cfg.Standard_Explicit := True;
                         else
                            Set_Error
                              (Cfg,
@@ -246,6 +247,7 @@ package body Adacovex.Config is
                         Cfg.Standard_Target := Types.ISO_26262;
                         Cfg.DAL_Target := Types.To_ASIL (Val);
                         Cfg.Standard_All := False;
+                        Cfg.Standard_Explicit := True;
                      else
                         Set_Error
                           (Cfg,
@@ -264,6 +266,7 @@ package body Adacovex.Config is
                            Cfg.Standard_Target := Types.IEC_62304;
                            Cfg.DAL_Target := Types.To_Class (Val);
                            Cfg.Standard_All := False;
+                           Cfg.Standard_Explicit := True;
                         else
                            Set_Error
                              (Cfg,
@@ -282,6 +285,7 @@ package body Adacovex.Config is
                         Cfg.Standard_Target := Types.IEC_62304;
                         Cfg.DAL_Target := Types.To_Class (Val);
                         Cfg.Standard_All := False;
+                        Cfg.Standard_Explicit := True;
                      else
                         Set_Error
                           (Cfg,
@@ -301,6 +305,7 @@ package body Adacovex.Config is
                            Cfg.Standard_All := False;
                            Cfg.Standard_Target := Types.To_Standard (Val);
                         end if;
+                        Cfg.Standard_Explicit := True;
                      end;
                   else
                      Set_Error
@@ -319,6 +324,7 @@ package body Adacovex.Config is
                         Cfg.Standard_All := False;
                         Cfg.Standard_Target := Types.To_Standard (Val);
                      end if;
+                     Cfg.Standard_Explicit := True;
                   end;
                elsif A = "--serve" then
                   Cfg.Serve_Mode := True;
@@ -838,6 +844,16 @@ package body Adacovex.Config is
             end;
             I := I + 1;
          end loop;
+
+         --  The sbom subcommand is standard-aware: without an explicit
+         --  --standard / --asil / --class it defaults to all standards, so
+         --  the SBOM carries the joined DO-178C / ISO 26262 / IEC 62304
+         --  properties at the shared DAL tier.  An explicit standard flag
+         --  narrows the SBOM to that single standard (e.g. --asil=B -> ISO
+         --  26262 at ASIL B).
+         if Cfg.SBOM_Mode and not Cfg.Standard_Explicit then
+            Cfg.Standard_All := True;
+         end if;
       end Parse_Args;
 
       procedure Parse_Command_Line (Cfg : out CLI_Config) is
@@ -1062,7 +1078,10 @@ package body Adacovex.Config is
          & " -- Ada/SPARK Coverage, Proof & Multi-Standard Compliance Tool");
       Ada.Text_IO.Put_Line ("");
       Ada.Text_IO.Put_Line ("Usage: adacovex [options]");
-      Ada.Text_IO.Put_Line ("       adacovex sbom --format=FMT --out=PATH");
+      Ada.Text_IO.Put_Line
+        ("       adacovex sbom [--format=FMT] [--out=PATH] [--standard=NAME]");
+      Ada.Text_IO.Put_Line
+        ("                        [--dal=LEVEL | --asil=LEVEL | --class=LEVEL]");
       Ada.Text_IO.Put_Line ("       adacovex prove --target=PATH");
       Ada.Text_IO.Put_Line ("       adacovex status --target=PATH");
       Ada.Text_IO.Put_Line ("       adacovex man [--check] [--dir=PATH]");

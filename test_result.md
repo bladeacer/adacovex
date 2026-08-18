@@ -5,7 +5,7 @@
   | Source scanner                           |  83 | PASS     |
   | GNATprove parser                         |  64 | PASS     |
   | Test-result parser                       |  43 | PASS     |
-  | CLI config                               |  75 | PASS     |
+  | CLI config                               |  86 | PASS     |
   | SVG renderer                             |  36 | PASS     |
   | HTML/Markdown renderers                  |  17 | PASS     |
   | SBOM generator                           |  94 | PASS     |
@@ -14,4 +14,4 @@
   | VCS support                              |  29 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 566  Failed: 0
+  Passed: 577  Failed: 0
