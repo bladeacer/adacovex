@@ -337,6 +337,8 @@ release:
 			pv=$${prev_tag#v}; \
 			if [ "$$(printf '%s\n%s\n' "$$cv" "$$pv" | sort -V | head -1)" = "$$cv" ]; then continue; fi; \
 		fi; \
+		printf '%s\n' "$$cv"; \
+	done | sort -V -r | while read cv; do \
 		echo "  - docs/changelogs/adacovex-$$cv.md"; \
 	done; \
 	echo "=== Bundling release artifacts ==="; \

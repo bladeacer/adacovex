@@ -210,10 +210,11 @@ three-component release tag (`git tag --sort=-version:refname`, e.g. `v1.9.0`
 when releasing `v1.14.0`) and then lists every changelog whose version is
 strictly above the previous release and at or below the released version -- so
 releasing `v1.14.0` after `v1.9.0` links the `1.10.0`..`1.14.0` changelogs in
-one release. The list is derived from the changelog files actually present in
-the tree (not from tags), so a version that was never released simply has no
-entry, and a release that skips versions still links every changelog in the
-range.
+one release. The list is emitted **newest-first** (version-sorted, not shell
+glob order), so the entries read `1.14.0` down to `1.10.0`. The list is
+derived from the changelog files actually present in the tree (not from
+tags), so a version that was never released simply has no entry, and a
+release that skips versions still links every changelog in the range.
 
 **The CI release binary is Linux x86-64 only for now**: the release workflow
 runs on `ubuntu-latest` and packages the Linux binary + the prebuilt GNATprove

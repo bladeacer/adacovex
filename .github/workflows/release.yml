@@ -74,9 +74,9 @@ jobs:
           CUR="${VERSION#v}"
           PREV=$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | grep -v "^$VERSION$" | head -1 || true)
           PREV_NUM="${PREV#v}"
-          # Every changelog from the last release tag up to this version.
-          CHANGELOGS=""
-          for f in docs/changelogs/adacovex-*.md; do
+          # Every changelog from the last release tag up to this version,
+          # newest first (version sort, not glob order).
+          CHANGELOGS=$(for f in docs/changelogs/adacovex-*.md; do
             v="${f#docs/changelogs/adacovex-}"
             v="${v%.md}"
             if [ -n "$PREV_NUM" ]; then
@@ -85,10 +85,12 @@ jobs:
             fi
             # Skip anything newer than this version (should not happen).
             [ "$(printf '%s\n%s\n' "$v" "$CUR" | sort -V | tail -1)" = "$CUR" ] || continue
-            CHANGELOGS="$CHANGELOGS
-          - https://github.com/${{ github.repository }}/blob/main/docs/changelogs/adacovex-$v.md"
-          done
-          BODY="**Changelogs**$CHANGELOGS"
+            printf '%s\n' "$v"
+          done | sort -V -r | while read -r v; do
+            printf -- '- https://github.com/%s/blob/main/docs/changelogs/adacovex-%s.md\n' "${{ github.repository }}" "$v"
+          done)
+          BODY="**Changelogs**
+$CHANGELOGS"
           ASSETS=("adacovex-$VERSION.tar.gz" "adacovex-action-$VERSION.tar.gz")
           if [ -n "$PREV" ]; then
             BODY="$BODY
