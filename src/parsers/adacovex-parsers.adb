@@ -1,7 +1,6 @@
 with Ada.Text_IO;
 
 package body Adacovex.Parsers is
-   pragma SPARK_Mode (Off);
 
    function Img (N : Natural) return String is
       S : constant String := Natural'Image (N);

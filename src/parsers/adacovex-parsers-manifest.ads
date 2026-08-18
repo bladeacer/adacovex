@@ -46,10 +46,11 @@ package Adacovex.Parsers.Manifest is
    --  appended to the graph as a dev-scope dependency of the root.  Tools
    --  referenced nowhere in the project, or referenced but not installed,
    --  are not registered -- the SBOM only lists system tools the project
-   --  really interacts with and that are actually present.  No versions are
-   --  probed: asking dozens of tools for their version on every SBOM
-   --  generation would spawn many subprocesses and make the output
-   --  machine-dependent.
+   --  really interacts with and that are actually present.  Each registered
+   --  tool's version is probed by running "<Tool> --version" (or the
+   --  tool-specific subcommand) and extracting the version token, so the
+   --  SBOM carries the installed version; tools whose probe fails simply
+   --  report no version.
    --  @param Target_Dir  Project root directory to scan.
    --  @param Graph  Dependency graph to extend (root at index 1).
    procedure Discover_System_Dev_Deps

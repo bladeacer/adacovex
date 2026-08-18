@@ -32,6 +32,16 @@ package body Adacovex_SBOM_Tests is
       return N;
    end Count_Name;
 
+   function Has_Digit (S : String) return Boolean is
+   begin
+      for I in S'Range loop
+         if S (I) in '0' .. '9' then
+            return True;
+         end if;
+      end loop;
+      return False;
+   end Has_Digit;
+
    function Find_Name
      (Graph : Component_Vectors.Vector; Name : String) return Component_Info
    is
@@ -490,6 +500,13 @@ package body Adacovex_SBOM_Tests is
                   and then
                     C.PURL (1 .. 12 + Tool'Length) = "pkg:generic/" & Tool,
                   Tool & " purl");
+               --  Version probing: the version is either empty (probe
+               --  failed) or a digit-bearing token extracted from the
+               --  tool's --version output.
+               R.Check
+                 (C.Version_Len = 0
+                  or else Has_Digit (C.Version (1 .. C.Version_Len)),
+                  Tool & " version empty or digit-bearing");
             else
                R.Check
                  (Count_Name (Graph, Tool) = 0,

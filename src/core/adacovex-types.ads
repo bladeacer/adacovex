@@ -132,6 +132,10 @@ package Adacovex.Types is
    end record;
 
    package Implementation is
+      --  Non-SPARK container types: SPARK forbids instantiating the
+      --  non-formal Ada.Containers in SPARK_Mode On code, so this package
+      --  must stay SPARK_Mode Off.  It is the only SPARK_Mode (Off) in the
+      --  codebase.
       pragma SPARK_Mode (Off);
       package Subprogram_Vectors is new
         Ada.Containers.Vectors (Positive, Subprogram_Info);

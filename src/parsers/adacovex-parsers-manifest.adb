@@ -1033,18 +1033,29 @@ package body Adacovex.Parsers.Manifest is
    type Tool_Entry is record
       Name : String (1 .. 16);
       Len  : Natural := 0;
+      Flag : String (1 .. 16);
+      FLen : Natural := 0;
    end record;
 
    --  Build a Tool_Entry from a string literal, so the System_Tools table
-   --  stays readable.
+   --  stays readable.  VFlag is the version-probe flag or subcommand;
+   --  every tool here accepts "--version" except fossil and git-lfs, which
+   --  use the "version" subcommand.
    --  @param S  Tool name (lowercase, e.g. "python3").
+   --  @param VFlag  Version-probe flag (default "--version").
    --  @return The Tool_Entry holding S.
-   function Make_Tool (S : String) return Tool_Entry is
+   function Make_Tool (S : String; VFlag : String := "--version")
+     return Tool_Entry
+   is
       E : Tool_Entry;
    begin
       E.Len := S'Length;
       for I in 1 .. S'Length loop
          E.Name (I) := S (S'First + I - 1);
+      end loop;
+      E.FLen := VFlag'Length;
+      for I in 1 .. VFlag'Length loop
+         E.Flag (I) := VFlag (VFlag'First + I - 1);
       end loop;
       return E;
    end Make_Tool;
@@ -1074,10 +1085,10 @@ package body Adacovex.Parsers.Manifest is
       Make_Tool ("pytest"),
       Make_Tool ("rst2md"),
       Make_Tool ("git"),
-      Make_Tool ("git-lfs"),
+      Make_Tool ("git-lfs", "version"),
       Make_Tool ("hg"),
       Make_Tool ("svn"),
-      Make_Tool ("fossil"),
+      Make_Tool ("fossil", "version"),
       Make_Tool ("jj"),
       Make_Tool ("bash"),
       Make_Tool ("mandb"),
@@ -1136,6 +1147,145 @@ package body Adacovex.Parsers.Manifest is
       end loop;
       return False;
    end Line_Refers_To;
+
+   --  Probe a tool's version by running "<Tool> <Flag>" and extracting the
+   --  first whitespace-separated token that contains a digit from the
+   --  captured output (e.g. "2.55.0" from "git version 2.55.0", "4.4.1"
+   --  from "GNU Make 4.4.1").  Returns "" when the tool is missing, the
+   --  probe fails, or no digit token is found -- so a tool that does not
+   --  understand its version flag simply reports no version.
+   --  @param Tool  Executable name (must be on PATH).
+   --  @param Flag  Version-probe flag or subcommand.
+   --  @return The extracted version string, or "".
+   function Probe_Version (Tool : String; Flag : String) return String is
+      Pid     : constant Integer := Pid_To_Integer (Current_Process_Id);
+      Pid_Img : constant String := Integer'Image (Pid);
+      Tmp     : constant String :=
+        "/tmp/adacovex-ver-" & Pid_Img (2 .. Pid_Img'Last) & ".out";
+      Buf     : String (1 .. 4096);
+      BLen    : Natural := 0;
+      F       : Ada.Text_IO.File_Type;
+      Exe     : String_Access := Locate_Exec_On_Path (Tool);
+      OK      : Boolean;
+      Code    : Integer;
+      Ver     : String (1 .. 40);
+   begin
+      if Exe = null then
+         return "";
+      end if;
+      Spawn
+        (Exe.all,
+         (1 => new String'(Flag)),
+         Tmp,
+         OK,
+         Code,
+         Err_To_Out => True);
+      Free (Exe);
+      if not OK or else Code /= 0 then
+         return "";
+      end if;
+      begin
+         Ada.Text_IO.Open (F, Ada.Text_IO.In_File, Tmp);
+         while not Ada.Text_IO.End_Of_File (F) loop
+            declare
+               Line : constant String := Ada.Text_IO.Get_Line (F);
+            begin
+               for I in Line'Range loop
+                  if BLen < Buf'Last then
+                     BLen := BLen + 1;
+                     Buf (BLen) := Line (I);
+                  end if;
+               end loop;
+               --  Keep the physical line break so tokens on separate lines
+               --  do not run together (e.g. "4.4.1\nBuilt for ...").
+               if BLen < Buf'Last then
+                  BLen := BLen + 1;
+                  Buf (BLen) := ASCII.LF;
+               end if;
+            end;
+         end loop;
+         Ada.Text_IO.Close (F);
+      exception
+         when others =>
+            if Ada.Text_IO.Is_Open (F) then
+               Ada.Text_IO.Close (F);
+            end if;
+            return "";
+      end;
+      begin
+         Ada.Directories.Delete_File (Tmp);
+      exception
+         when others =>
+            null;
+      end;
+
+      --  First whitespace/newline-separated token containing a digit, with
+      --  stray trailing punctuation (e.g. the ")" of "7.2.4)") trimmed.
+      declare
+         Last : constant Natural := Buf'First + BLen - 1;
+         I    : Natural := Buf'First;
+
+         function Is_Sep (C : Character) return Boolean is
+         begin
+            return C = ' ' or else C = ASCII.LF or else C = ASCII.CR;
+         end Is_Sep;
+      begin
+         while I <= Last loop
+            while I <= Last and then Is_Sep (Buf (I)) loop
+               I := I + 1;
+            end loop;
+            declare
+               Start     : constant Natural := I;
+               Has_Digit : Boolean := False;
+            begin
+               while I <= Last and then not Is_Sep (Buf (I)) loop
+                  if Buf (I) in '0' .. '9' then
+                     Has_Digit := True;
+                  end if;
+                  I := I + 1;
+               end loop;
+               if Has_Digit then
+                  declare
+                     L : Natural := I - 1;
+                  begin
+                     while L > Start
+                       and then Buf (L) not in 'a' .. 'z'
+                       and then Buf (L) not in 'A' .. 'Z'
+                       and then Buf (L) not in '0' .. '9'
+                       and then Buf (L) /= '.'
+                       and then Buf (L) /= '-'
+                     loop
+                        L := L - 1;
+                     end loop;
+                     if L - Start + 1 <= Ver'Last then
+                        for J in 1 .. L - Start + 1 loop
+                           Ver (J) := Buf (Start + J - 1);
+                        end loop;
+                        return Ver (1 .. L - Start + 1);
+                     end if;
+                  end;
+               end if;
+            end;
+         end loop;
+      end;
+      return "";
+   end Probe_Version;
+
+   --  Version-probe flag for a registered tool name (the table entry's
+   --  Flag), defaulting to "--version" for names not in the table.
+   --  @param Name  Tool name from the System_Tools table.
+   --  @return The version-probe flag or subcommand.
+   function Version_Flag (Name : String) return String is
+   begin
+      for T in System_Tools'Range loop
+         if System_Tools (T).Len = Name'Length
+           and then System_Tools (T).Name (1 .. Name'Length) = Name
+         then
+            return System_Tools (T).Flag (1 .. System_Tools (T).FLen);
+         end if;
+      end loop;
+      return "--version";
+   end Version_Flag;
 
    --  Discover system-tool dev dependencies referenced by the project.
    --  Walks the project tree, reads dev-facing files (Makefile variants,
@@ -1343,7 +1493,8 @@ package body Adacovex.Parsers.Manifest is
       end if;
 
       --  Register every referenced tool that is actually installed on PATH
-      --  as a dev-scope dependency of the root.  Tools the project does not
+      --  as a dev-scope dependency of the root, probing its version
+      --  ("<Tool> <flag>") when possible.  Tools the project does not
       --  reference, or that are not installed, are skipped.  Append_
       --  Dependency also deduplicates against manifest/lockfile/GPR deps
       --  (e.g. gnatprove declared in alire-dev.toml), so a manifest-pinned
@@ -1360,7 +1511,7 @@ package body Adacovex.Parsers.Manifest is
                Append_Dependency
                  (Graph,
                   Name,
-                  "",
+                  Probe_Version (Name, Version_Flag (Name)),
                   "",
                   "System tool referenced by the project (dev dependency)",
                   "pkg:generic/" & Name,

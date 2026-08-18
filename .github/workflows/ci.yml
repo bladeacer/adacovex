@@ -20,7 +20,7 @@ jobs:
           prove: true
           require-spark: Platinum
           require-docstrings: 100
-          require-tests: 597
+          require-tests: 601
           require-proof: 100
 
   adacovex-tests:
@@ -36,6 +36,14 @@ jobs:
           build: true
           run-tests: true
           assess: false
+
+  no-spark-off:
+    name: SPARK_Mode Off gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Enforce no SPARK_Mode (Off) outside Types.Implementation
+        run: make spark-off-check
 
   coverage-gate:
     name: Docstring coverage gate (release tags)
@@ -57,7 +65,7 @@ jobs:
   summary:
     name: CI summary
     if: always()
-    needs: [self-assessment, adacovex-tests, coverage-gate]
+    needs: [self-assessment, adacovex-tests, no-spark-off, coverage-gate]
     runs-on: ubuntu-latest
     steps:
       - name: Write CI summary
@@ -65,6 +73,7 @@ jobs:
         env:
           SELF: ${{ needs.self-assessment.result }}
           TESTS: ${{ needs.adacovex-tests.result }}
+          OFFOFF: ${{ needs.no-spark-off.result }}
           GATE: ${{ needs.coverage-gate.result }}
         run: |
           set -euo pipefail
@@ -76,10 +85,11 @@ jobs:
             echo '|-----|--------|'
             echo "| Self-assessment (all standards) | $SELF |"
             echo "| Build + native tests | $TESTS |"
+            echo "| SPARK_Mode Off gate | $OFFOFF |"
             echo "| Coverage gate (push only) | $GATE |"
             echo ''
           } >> "$GITHUB_STEP_SUMMARY"
-          for R in "$SELF" "$TESTS" "$GATE"; do
+          for R in "$SELF" "$TESTS" "$OFFOFF" "$GATE"; do
             if [ "$R" = "failure" ]; then
               FAILED=1
               echo "::error::A CI job failed -- see the failing job logs and its adacovex assessment summary." >&2
