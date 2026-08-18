@@ -78,20 +78,71 @@ regenerate generated files rather than hand-editing them) and how every
 number in the docs is anchored to generated artifacts via the tree-wide sync
 tools rather than a written claim. The README now links to the page.
 
+### C7: unknown flags with no suggestion print the full usage
+
+An unknown flag that has no close-enough known flag (edit distance > 2)
+now prints the full usage text to stdout after the one-line error, so a
+completely unrecognized token lands the user on the flag list instead of a
+bare error. Near-miss typos still get just the "did you mean" hint (no
+usage dump). A new `Unknown_No_Suggest` config flag drives the behavior;
+config tests cover all three cases (no-match flag, near-miss flag, no-match
+bare word).
+
+### C8: adacovex action works when referenced via `uses: ./`
+
+The action's build/download steps read `github.action_repository`, which is
+**empty** when the action is referenced by a local path (`uses: ./`) -- the
+consumer branch then tried to clone `https://github.com/.git` and failed
+with exit 128, breaking adacovex's own `consumer-run-tests` CI job. Both
+steps now fall back to `github.repository` (the workflow's own repo, which
+IS adacovex for the self-test), and the build step falls back to
+`github.sha` for the ref so the scratch clone checks out the exact commit
+under test.
+
+### C9: installation methods on a dedicated page
+
+`docs/installation.md` now covers the three install routes (Alire manifest
+dependency, `alr install`, release bundle / source build), the per-method
+version source, and keeping the man page in sync. The README's install
+section shrank to a two-line summary pointing at it, the giant CLI flag
+table was dropped (the brief subcommand code block remains, with the full
+table in docs/cli-reference.md), the JSON API section was condensed to the
+endpoint + a curl example, and the README's documentation table now links
+the dashboard/JSON-API section directly. The README also now calls out that
+`--serve` serves a **viewable HTML dashboard** at `/` (not just an API).
+
+### C10: LLM-usage page expanded
+
+The page gained a "Working in a fork or branch" section (the `make check`
+workflow as arbiter), a "served dashboard as a trust surface" section, and
+an "honest limits" section (presence vs accuracy, SPARK-proof bar,
+changelog validator) -- all anchored to the same gates and artifacts as the
+rest of the docs.
+
+### C11: generated-file generators skip rewriting when unchanged
+
+`tools/gen-version.py` and `tools/gen-dashboard.py` now compare the
+generated output against the committed file and skip the write (printing
+"up to date") when byte-identical, so `make build` no longer touches
+two generated files on every run -- `git status` stays quiet and the build
+output is shorter.
+
 ## Test Suite
 
-653 tests (was 501), across 12 categories. The CLI-config category (118
+659 tests (was 501), across 12 categories. The CLI-config category (124
 checks, up from 112) adds: `man --force` parsing (with and without the
-prove-options guard), unknown-flag rejection with exit code 1, and "did you
+prove-options guard), unknown-flag rejection with exit code 1, "did you
 mean" suggestions for near-miss flags (single/multi character edits, missing
-dashes); the HTML/Markdown renderers category (34 checks) covers the
-dashboard's theme dropdown (all three options, the `data-initial-theme`
-CLI-theme marker, the Save settings button, `saveTheme` persistence, the
-`?theme=` query param, the embed hint, the bundled template shell,
-`data-theme` override, `prefers-color-scheme`, and `localStorage`, plus no
-leftover `__CARDS__`/`__THEME__` placeholders) on top of the standard-aware
-dashboard and JSON output; the DAL compliance category (16) gained the
-cached-HLR parse round-trip; the SBOM generator category (118) gained the
+dashes), and the `Unknown_No_Suggest` contract (set for a no-match unknown
+flag and bare word, unset for a near-miss flag that produces a suggestion);
+the HTML/Markdown renderers category (34 checks) covers the dashboard's
+theme dropdown (all three options, the `data-initial-theme` CLI-theme
+marker, the Save settings button, `saveTheme` persistence, the `?theme=`
+query param, the embed hint, the bundled template shell, `data-theme`
+override, `prefers-color-scheme`, and `localStorage`, plus no leftover
+`__CARDS__`/`__THEME__` placeholders) on top of the standard-aware dashboard
+and JSON output; the DAL compliance category (16) gained the cached-HLR
+parse round-trip; the SBOM generator category (118) gained the
 dependency-graph cache round-trip; the Man page renderer category (18
 checks) covers page structure, the embedded version, an install/read-back
 round-trip, the `Update_Database` man-db contract, and a SYNOPSIS regression
@@ -107,14 +158,15 @@ Platinum, 408/408 VCs proved across 45 analyzed units (up from 44): the
 already-proved uppercase/parse patterns and add 7 VCs, all proved; the new
 bundled dashboard template package (`Adacovex.Dashboard_Template`, a String
 constant generated from `resources/dashboard.html`) adds one analyzed unit
-with no proof obligations; the CLI config parser, VCS, and man-page packages
-are non-SPARK I/O code and add no proof obligations. Proven with `make
-prove` under gnatprove 16.1.0 (`--steps=10000`).
+with no proof obligations; the CLI config parser (including the
+`Unknown_No_Suggest` field), VCS, and man-page packages are non-SPARK I/O
+code and add no proof obligations. Proven with `make prove` under gnatprove
+16.1.0 (`--steps=10000`).
 
 ## Traceability
 
 No new HLRs. The `man --force` and unknown-flag work stays covered by the
-existing `HLR-CLI` (`src/core/adacovex-config.ads`); the doc-sync and gate
-changes are Python/Makefile tooling that adds no traceability, and the
-LLM-usage page is documentation. The action and CI changes are workflow
-files that add no traceability.
+existing `HLR-CLI` (`src/core/adacovex-config.ads`); the doc-sync, generator,
+and gate changes are Python/Makefile tooling that adds no traceability, and
+the installation/LLM-usage pages are documentation. The action and CI
+changes are workflow files that add no traceability.

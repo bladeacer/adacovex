@@ -579,8 +579,7 @@ package body Adacovex_Config_Tests is
       begin
          Add (A, "proove");
          Testing.Parse_Args (A, Cfg);
-         R.Check
-           (Cfg.CLI_Error, "unknown bare-word argument sets CLI_Error");
+         R.Check (Cfg.CLI_Error, "unknown bare-word argument sets CLI_Error");
       end;
 
       --  Unknown_No_Suggest: set (True) when the unknown token has no
@@ -636,8 +635,7 @@ package body Adacovex_Config_Tests is
          Testing.Parse_Args (A, Cfg);
          R.Check (Cfg.Man_Mode, "man --force sets Man_Mode");
          R.Check (Cfg.Man_Force, "--force sets Man_Force");
-         R.Check
-           (not Cfg.CLI_Error, "man --force is not a CLI error");
+         R.Check (not Cfg.CLI_Error, "man --force is not a CLI error");
       end;
    end Run;
 

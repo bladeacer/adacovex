@@ -86,7 +86,7 @@ Pull requests should follow the following conventions.
 - Keep docstring coverage at 100% (strict mode, cannot be disabled):
   `make run-self` must show Platinum, 100% docs, and DAL-C Achieved.
 - If you add or change behavior, extend the native test suite in `src/tests/`
-  (659 tests across 12 categories) and run `make test`.
+  (663 tests across 12 categories) and run `make test`.
 - Keep all source files pure ASCII: `make ascii-check`.
 - If a new CLI flag is added, mirror it as a matching GitHub Action input in
   `./action.yml` and document it in `docs/cli-reference.md` and the README
@@ -148,7 +148,7 @@ Native (zero-dependency) framework (`Adacovex.Test_Support`, no AUnit). Source:
 | Test-result parser | 43 |
 | CLI config | 124 |
 | SVG renderer | 36 |
-| HTML/Markdown renderers | 34 |
+| HTML/Markdown renderers | 38 |
 | SBOM generator | 118 |
 | IR synthesis | 27 |
-| **Total** | **659** |
+| **Total** | **663** |

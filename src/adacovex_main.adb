@@ -499,13 +499,13 @@ begin
    -- matches this binary (e.g. to repair a hand-edited page).
    if Cfg.Man_Mode then
       declare
-         Man_Root : constant String :=
+         Man_Root  : constant String :=
            (if Cfg.Man_Dir_Len > 0
             then Cfg.Man_Dir (1 .. Cfg.Man_Dir_Len)
             else Adacovex.Renderers.Man.Default_Dir);
          Installed : constant String :=
            Adacovex.Renderers.Man.Installed_Version (Man_Root);
-         OK       : Boolean;
+         OK        : Boolean;
       begin
          if Cfg.Man_Check then
             if Installed = Adacovex.Version then

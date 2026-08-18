@@ -147,6 +147,25 @@ package body Adacovex_Renderer_Tests is
          R.Check
            (not Contains (S, "__THEME__"),
             "dashboard theme placeholder is substituted");
+
+         --  Fatal-bug regression: the template once wrapped the card
+         --  placeholder in an HTML comment (<!--__CARDS__-->), so after
+         --  substitution the whole cards block stayed commented out and the
+         --  served dashboard showed only the header + footer (no badges, no
+         --  metrics).  The rendered page must contain the actual card markup
+         --  as live elements, not hidden inside <!-- ... -->.
+         R.Check
+           (not Contains (S, "<!--"),
+            "dashboard cards are not wrapped in an HTML comment");
+         R.Check
+           (Contains (S, "<div class=""card"">"),
+            "dashboard renders live card markup");
+         R.Check
+           (Contains (S, "/badge/spark.svg"),
+            "dashboard renders badge images");
+         R.Check
+           (Contains (S, "<h2>SPARK Proof Analysis</h2>"),
+            "dashboard renders the proof metrics card");
       end;
 
       --  The --theme flag's initial selection is honored: Dark_Theme renders
