@@ -15,7 +15,7 @@ HLR-MANIFEST: Manifest and dependency-graph parsing
 
 ## Procedures
 
-### procedure Build_Dependency_Graph (Target_Dir : Standard.String; Manifest_Path : Standard.String; Graph : Adacovex.Types.Implementation.Component_Vectors.Vector; Success : Standard.Boolean) `[Pre]`
+### procedure Build_Dependency_Graph (Target_Dir : Standard.String; Manifest_Path : Standard.String; Graph : Adacovex.Types.Implementation.Component_Vectors.Vector; Success : Standard.Boolean; Use_Cache : Standard.Boolean) `[Pre]`
 
 | Parameter | Description |
 |-----------|-------------|
@@ -23,3 +23,4 @@ HLR-MANIFEST: Manifest and dependency-graph parsing
 | `Manifest_Path` | Path to the Alire manifest (alire.toml or dev). |
 | `Success` | True if the manifest was readable and the root |
 | `Target_Dir` | Project root directory. |
+| `Use_Cache` | When True the resolved graph is keyed in the on-disk |

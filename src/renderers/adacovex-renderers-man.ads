@@ -34,12 +34,16 @@ package Adacovex.Renderers.Man is
    procedure Install
      (Man_Root : String; Version : String; Success : out Boolean);
 
-   --  Best-effort refresh of the local man database for Man_Root.
-   --  Runs `mandb Man_Root` when mandb is on PATH (Linux/WSL); other
-   --  platforms and missing mandb are silently ignored so a missing
-   --  makewhatis/mandb never fails the man command.
+   --  Refresh the local man database for Man_Root with `mandb`.
+   --  Runs `mandb Man_Root` when mandb is on PATH (Linux/WSL) and reports
+   --  whether the refresh actually happened: True when mandb was found and
+   --  exited 0, False when man-db is not installed or mandb failed.  Never
+   --  raises, so a missing makewhatis/mandb never fails the man command --
+   --  the page is still installed and readable via `man -l`.
    --  @param Man_Root  Man root directory to index.
-   procedure Update_Database (Man_Root : String);
+   --  @return True when the man database was refreshed; False when mandb
+   --          is unavailable or failed.
+   function Update_Database (Man_Root : String) return Boolean;
 
    --  Version embedded in the installed man page, or "" when no page is
    --  installed under Man_Root/man1/adacovex.1 or its version cannot be

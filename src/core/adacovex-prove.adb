@@ -1056,13 +1056,16 @@ package body Adacovex.Prove is
    begin
       if Exe /= null then
          Ada.Text_IO.Put_Line
-           ("    " & Label & (1 .. (19 - Label'Length) => ' ')
-            & "found (" & Exe.all & ")");
+           ("    "
+            & Label
+            & (1 .. (19 - Label'Length) => ' ')
+            & "found ("
+            & Exe.all
+            & ")");
          Free (Exe);
       else
          Ada.Text_IO.Put_Line
-           ("    " & Label & (1 .. (19 - Label'Length) => ' ')
-            & "not found");
+           ("    " & Label & (1 .. (19 - Label'Length) => ' ') & "not found");
       end if;
    end Status_VCS_Row;
 
@@ -1159,6 +1162,20 @@ package body Adacovex.Prove is
       Status_VCS_Row ("fossil", "fossil");
       Status_VCS_Row ("jj", "jj");
       Status_VCS_Row ("man page tool", "mandb");
+      declare
+         Mandb : String_Access := Locate_Exec_On_Path ("mandb");
+      begin
+         if Mandb = null then
+            Ada.Text_IO.Put_Line
+              ("    note: man-db (mandb) is not on PATH; `adacovex man`");
+            Ada.Text_IO.Put_Line
+              ("          still installs the page but cannot refresh the");
+            Ada.Text_IO.Put_Line
+              ("          man database (read it with `man -l`).");
+         else
+            Free (Mandb);
+         end if;
+      end;
       declare
          Kind  : constant Adacovex.VCS.VCS_Kind := Adacovex.VCS.Detect (T);
          KName : constant String := Adacovex.VCS.To_String (Kind);

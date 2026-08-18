@@ -31,6 +31,17 @@ subcommand, so installing adacovex pulls nothing but the binary.
   `--dal` / `--asil` / `--class` flags
 - **Multiple outputs** -- ANSI report, SVG badges, Markdown reports, HTML
   dashboard + JSON API, proof-aware SBOM (CycloneDX / SPDX)
+- **[Multi-VCS differential assessment](docs/cli-reference.md#vcs-support)** --
+  `--compare-base` / `--coverage-delta` snapshot a base revision on **git,
+  Mercurial, Subversion, Fossil, or jj** without touching your working tree,
+  so regressions are caught before pushing even in legacy repositories
+- **Result caching** -- a content-addressed on-disk cache (`~/.adacovex/cache`)
+  serves unchanged scan, proof, test, HLR/LLR, and dependency-graph results
+  without re-running the work; per-file granularity means a one-line change
+  only invalidates that file's entry
+- **Tooling** -- `status` reports your toolchain + VCS state, `man` installs
+  a local man page (`man-db` detected and reported; the page still installs
+  without it), and `make check` runs the full quality gate in one command
 - **Scalable** -- package/subprogram collections use `Ada.Containers.Vectors`
   (no compile-time limits on count); fixed-size buffers scale with host word size
 
@@ -185,6 +196,34 @@ download**. A manifest pin is authoritative (fails rather than falls back).
 Full resolution order and the doc/fmt manifest-swap:
 [docs/architecture.md](docs/architecture.md#gnatprove-toolchain-resolution-prove-subcommand).
 
+## Version control support
+
+**A version control system is not required for base adacovex functionality.**
+Scanning, proof analysis, test parsing, DAL/ASIL/Class assessment, SBOM
+generation, dashboards, and caching all work on a plain directory with no VCS
+at all. A VCS is only needed for the differential modes
+(`--compare-base` / `--coverage-delta`), which snapshot a base revision to
+compare against the current tree. Since adacovex assesses *source code*, it is
+a sensible assumption that the project you are auditing lives in a VCS in the
+first place -- but the base tool never requires one.
+
+When a VCS **is** present, the differential modes work across **git,
+Mercurial, Subversion, Fossil, and jj**:
+
+| VCS | Snapshot mechanism | Notes |
+|-----|--------------------|-------|
+| git | `git worktree add` | Best experience |
+| Mercurial (hg) | `hg archive` | |
+| Subversion (svn) | `svn export` | adacovex recommends converting to git |
+| Fossil | `fossil open` on a copied DB | adacovex recommends converting to git |
+| jj | worktree against the jj internal git store | |
+
+Detection is marker-file based (`.git` / `.jj` / `.hg` / `.svn` /
+`.fslckout` / `_FOSSIL_`) with a command-tool probe fallback. `adacovex
+status` lists every VCS tool found on `$PATH`, the VCS managing the target
+repo, and warns when a needed tool is missing. Full details:
+[docs/cli-reference.md](docs/cli-reference.md#vcs-support).
+
 ## CLI reference
 
 ```
@@ -228,11 +267,15 @@ adacovex man [--check] [--dir=PATH]
 
 The version is read from `alire/alire-dev.toml` at build time; release builds
 bundle the release tag. `adacovex man` installs the man page (which embeds
-the version) into `~/.local/share/man` and refreshes `mandb`; `--check` lets a
-prompt hook auto-install when a newer version is available. Differential
-modes (`--compare-base` / `--coverage-delta`) run on git, Mercurial,
-Subversion, Fossil, and jj repos; for Subversion/Fossil adacovex recommends
-converting to git.
+the version) into `~/.local/share/man` and refreshes the database with
+`mandb`; `--check` lets a prompt hook auto-install when a newer version is
+available. When man-db (`mandb`) is **not** installed or detectable,
+`adacovex man` still installs the page (read it with `man -l
+~/.local/share/man/man1/adacovex.1`) and warns that the database was not
+refreshed; `adacovex status` reports whether mandb is on `$PATH` up front.
+Differential modes (`--compare-base` / `--coverage-delta`) run on git,
+Mercurial, Subversion, Fossil, and jj repos; for Subversion/Fossil adacovex
+recommends converting to git.
 
 Full flag details, the `--require-*` CI threshold gates, strict vs relaxed
 mode, exit codes, and the `sbom` subcommand:
@@ -346,11 +389,14 @@ assessment and the artifacts describing it are shared.
 
 | Target | Description |
 |--------|-------------|
+| `check` | Full quality gate: build + tests + SPARK proof + badges + docs + SBOM + ASCII + changelog + description sync |
 | `build` | `alr build` (adacovex + test_runner, covex alias) |
-| `test` | Build and run native test suite (555 tests) |
-| `prove` | `./bin/adacovex prove --target=. --no-svg` |
+| `test` | Build and run native test suite (566 tests) |
+| `prove` | SPARK proof (Platinum gate) + regenerates SVG badges in `docs/badges/` |
 | `fmt` | Format Ada sources with `gnatformat` |
 | `doc` | Generate API docs via gnatdoc + rst2md |
+| `sbom` | Generate the proof-aware SBOM (`sbom.json`) |
+| `description` | Sync the crate description from `alire/description.txt` + `alire/long-description.txt` (`CHECK=1` to verify only) |
 | `run-self` | Run against adacovex itself (default target: cwd) |
 | `run-ada-crdt` | Run against `../Ada_CRDT` (strict mode) |
 | `coverage-gate` | Run `--coverage-delta` between the latest two release tags |
@@ -373,7 +419,7 @@ CI gates. Action inputs/outputs, result caching, and release bundling:
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 555/555 passing |
+| Unit tests | `make test` | 566/566 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (401 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, DAL-C (strict mode) |

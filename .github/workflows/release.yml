@@ -28,7 +28,7 @@ jobs:
           prove: true
           require-spark: Platinum
           require-docstrings: 100
-          require-tests: 555
+          require-tests: 566
           require-proof: 100
 
       - name: Require Platinum SPARK level

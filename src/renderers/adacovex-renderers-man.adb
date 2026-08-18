@@ -248,17 +248,27 @@ package body Adacovex.Renderers.Man is
          ASCII.HT
          & "Resolve gnatprove (manifest pin, PATH, cached "
          & "toolchain, or");
-      App (Buf, Len, ASCII.HT & "download), run it, then assess the target.");      App (Buf, Len, ".TP");
+      App (Buf, Len, ASCII.HT & "download), run it, then assess the target.");
+      App (Buf, Len, ".TP");
       App (Buf, Len, ".B status");
-      App (Buf, Len,
-           ASCII.HT & "Report toolchain + platform state without running an "
-           & "assessment,");
-      App (Buf, Len,
-           ASCII.HT & "including which VCS tools (git, mercurial, subversion,"
-           & " fossil,");
-      App (Buf, Len,
-           ASCII.HT & "jj, mandb) are available on PATH for the differential "
-           & "modes and");
+      App
+        (Buf,
+         Len,
+         ASCII.HT
+         & "Report toolchain + platform state without running an "
+         & "assessment,");
+      App
+        (Buf,
+         Len,
+         ASCII.HT
+         & "including which VCS tools (git, mercurial, subversion,"
+         & " fossil,");
+      App
+        (Buf,
+         Len,
+         ASCII.HT
+         & "jj, mandb) are available on PATH for the differential "
+         & "modes and");
       App (Buf, Len, ASCII.HT & "the VCS managing the target repository.");
       App (Buf, Len, ".TP");
       App (Buf, Len, ".B man");
@@ -413,15 +423,17 @@ package body Adacovex.Renderers.Man is
       Success := True;
    end Install;
 
-   procedure Update_Database (Man_Root : String) is
+   function Update_Database (Man_Root : String) return Boolean is
       use GNAT.OS_Lib;
       Root : constant String := Strip_Trailing_Slash (Man_Root);
       Prog : String_Access := Locate_Exec_On_Path ("mandb");
-      OK   : Boolean;
-      Code : Integer;
+      OK   : Boolean := False;
+      Code : Integer := 0;
    begin
       if Prog = null then
-         return;
+         --  man-db (mandb) is not installed: the page is still written by
+         --  Install, but the man database cannot be refreshed.
+         return False;
       end if;
       Spawn
         (Prog.all,
@@ -431,6 +443,7 @@ package body Adacovex.Renderers.Man is
          Code,
          Err_To_Out => True);
       Free (Prog);
+      return OK and then Code = 0;
    end Update_Database;
 
    --  Extract the version token following "adacovex v" in S ("1.10.0").

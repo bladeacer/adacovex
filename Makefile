@@ -1,4 +1,4 @@
-.PHONY: help build test prove doc clean run-self run-ada-crdt dev-setup prod-setup ascii-check fmt bump-version coverage-gate release publish test-publish _dev_cmd agents-tree sbom proof-status test-count doc-links changelog-check man
+.PHONY: help check build test prove doc clean run-self run-ada-crdt ascii-check fmt bump-version coverage-gate release publish test-publish _dev_cmd agents-tree sbom description proof-status test-count doc-links changelog-check man
 
 .DEFAULT_GOAL := help
 
@@ -6,6 +6,9 @@ help:
 	@echo 'adacovex -- Ada Coverage and Verification Tool'
 	@echo ''
 	@echo 'Usage: make <target>'
+	@echo '  check         Full quality gate: build + test + prove + doc + sbom'
+	@echo '                + badges + ascii-check + changelog-check +'
+	@echo '                description-check (CI runs this before release)'
 	@echo '  build         Build project (adacovex + test_runner, covex alias);'
 	@echo '                regenerates src/adacovex-version.ads from'
 	@echo '                alire-dev.toml (or ADACOVEX_VERSION for releases)'
@@ -23,6 +26,10 @@ help:
 	@echo '  run-ada-crdt  Run against ../Ada_CRDT (strict mode)'
 	@echo '                (auto-updates ../Ada_CRDT/docs/badges/*.svg)'
 	@echo '  sbom          Generate a proof-aware CycloneDX SBOM (sbom.json)'
+	@echo '  description   Sync the crate description + long description from'
+	@echo '                alire/description.txt + alire/long-description.txt'
+	@echo '                into every manifest (tools/update-description.py;'
+	@echo '                add CHECK=1 for a verify-only run)'
 	@echo '  coverage-gate Compare docstring coverage between the latest two'
 	@echo '                release tags (--coverage-delta in a worktree at'
 	@echo '                the latest tag; verifies the release gate logic)'
@@ -47,6 +54,12 @@ help:
 	@echo '  publish       Publish to Alire community index (run after make release)'
 	@echo '  test-publish  Dry-run showing what make publish would do'
 	@echo '  ascii-check   Verify all source files are pure ASCII'
+	@echo ''
+	@echo 'check runs the same gates CI enforces before a release:'
+	@echo '  build + native tests + SPARK proof (Platinum, 401 VCs) + SVG badges'
+	@echo '  + API docs + SBOM + ASCII + changelog format + description sync.'
+	@echo '  `make prove` and `make run-self` both emit docs/badges/*.svg, so'
+	@echo '  check does not re-run them separately (no duplicate work).'
 	@echo ''
 	@echo 'Note: doc/fmt temporarily swap in alire-dev.toml for the duration'
 	@echo '      of the command, then restore alire.toml and alire.lock untouched.'
@@ -76,7 +89,7 @@ test: build
 # Self-assessment acceptance gates, defined once so prove/run-self/release stay
 # in sync (and match .github/workflows/ci.yml + AGENTS.md "Dogfood target").
 # --require-tests is the current native test-suite size (docs/test_result.md).
-SELF_ASSESS_ARGS := --dal=C --standard=all --require-spark=Platinum --require-docstrings=100 --require-tests=555 --require-proof=100
+SELF_ASSESS_ARGS := --dal=C --standard=all --require-spark=Platinum --require-docstrings=100 --require-tests=566 --require-proof=100
 
 prove: build
 	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex prove --target=. $(SELF_ASSESS_ARGS) --emit-svg=docs/badges/
@@ -155,14 +168,30 @@ ascii-check:
 	if [ $$error -eq 0 ]; then echo "All source files are pure ASCII."; \
 	else echo "$$error file(s) contain non-ASCII characters."; exit 1; fi
 
-dev-setup:
-	@echo 'dev-setup is no longer needed. prove/doc/fmt auto-swap alire-dev.toml'
-	@echo 'safely and restore alire.toml afterwards. alire.toml always stays clean.'
-	@exit 0
+# Quality gate: everything CI enforces before a release. prove/run-self both
+# emit docs/badges/*.svg, so badges are produced exactly once here (no
+# duplicate work across targets).
+check:
+	@echo "=== Quality gate: build ==="; $(MAKE) build
+	@echo "=== Quality gate: native tests ==="; $(MAKE) test
+	@echo "=== Quality gate: SPARK proof + badges ==="; $(MAKE) prove
+	@echo "=== Quality gate: API docs ==="; $(MAKE) doc
+	@echo "=== Quality gate: SBOM ==="; $(MAKE) sbom
+	@echo "=== Quality gate: ASCII ==="; $(MAKE) ascii-check
+	@echo "=== Quality gate: changelog format ==="; $(MAKE) changelog-check
+	@echo "=== Quality gate: description sync ==="; python3 tools/update-description.py --check
+	@echo ""
+	@echo "=== Quality gate passed: build, test, prove, doc, sbom, badges, ascii, changelog, description ==="
 
-prod-setup:
-	@echo 'prod-setup is no longer needed. alire.toml is never left with dev deps.'
-	@exit 0
+# Sync the crate description + long description from the canonical files
+# (alire/description.txt + alire/long-description.txt) into every manifest.
+# CHECK=1 verifies without writing (used by the quality gate).
+description:
+	@if [ "$(CHECK)" = "1" ]; then \
+		python3 tools/update-description.py --check; \
+	else \
+		python3 tools/update-description.py; \
+	fi
 
 bump-version:
 	@if [ -z "$(VERSION)" ]; then \
@@ -227,6 +256,8 @@ bump-version:
 		echo "  Updated: $$changelog"; \
 	fi; \
 	\
+	python3 tools/update-description.py; \
+	echo "  descriptions synced to all manifests"; \
 	echo "Done. Remember to:"; \
 	echo "  - Update docs/changelogs/index.md"; \
 	echo "  - Update AGENTS.md version references"; \
@@ -295,6 +326,8 @@ release:
 		sed 's/^version = ".*"/version = "'$$version'"/' alire/releases/covex-0.0.0.toml > "$$release_file"; \
 	fi; \
 	sed -i 's/^version = ".*"/version = "'$$version'"/' "$$release_file"; \
+	python3 tools/update-description.py; \
+	echo "  descriptions synced to all manifests"; \
 	if git rev-parse "v$$version" >/dev/null 2>&1; then \
 		git tag -d "v$$version" >/dev/null 2>&1 || true; \
 		git push origin :refs/tags/"v$$version" >/dev/null 2>&1 || true; \

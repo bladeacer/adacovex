@@ -24,13 +24,17 @@ package Adacovex.Compliance.DAL is
    --  @param Proof_Summary  GNATprove proof results.
    --  @param Test_Summary  Test run results.
    --  @param Assessment  Output DAL assessment record.
+   --  @param Use_Cache  When True the HLR.md/LLR.md parses are served from
+   --    the on-disk result cache when unchanged; when False they are always
+   --    re-parsed (--no-cache).
    procedure Assess_DAL
      (Level         : Types.DAL_Level;
       Target_Dir    : String;
       Packages      : Types.Implementation.Package_Vectors.Vector;
       Proof_Summary : Types.Proof_Summary;
       Test_Summary  : Types.Implementation.Test_Summary;
-      Assessment    : out Types.Implementation.DAL_Assessment);
+      Assessment    : out Types.Implementation.DAL_Assessment;
+      Use_Cache     : Boolean := False);
 
    --  Convenience test: return True if Assessment.Status = Achieved.
    --  Equivalent to Assessment.Status = DAL_Status'Val (0).
@@ -65,6 +69,8 @@ package Adacovex.Compliance.DAL is
    --  @param Proof_Summary  GNATprove proof results.
    --  @param Test_Summary  Test run results.
    --  @param Assessment  Output assessment record (Standard field set).
+   --  @param Use_Cache  When True the HLR.md/LLR.md parses are served from
+   --    the on-disk result cache when unchanged (see Assess_DAL).
    procedure Assess_Standard
      (Standard      : Types.Compliance_Standard;
       Level         : Types.DAL_Level;
@@ -72,6 +78,7 @@ package Adacovex.Compliance.DAL is
       Packages      : Types.Implementation.Package_Vectors.Vector;
       Proof_Summary : Types.Proof_Summary;
       Test_Summary  : Types.Implementation.Test_Summary;
-      Assessment    : out Types.Implementation.DAL_Assessment);
+      Assessment    : out Types.Implementation.DAL_Assessment;
+      Use_Cache     : Boolean := False);
 
 end Adacovex.Compliance.DAL;

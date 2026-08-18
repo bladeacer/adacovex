@@ -23,7 +23,7 @@ Self-assessment (`make run-self`) must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
 - Platinum SPARK level (401 VCs under gnatprove 16.1.0, 0 unproved; see
   `docs/proof/16.1.0-ledger.md`)
-- 555/555 native tests passing
+- 566/566 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
   `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
@@ -73,18 +73,18 @@ src/
 `-- tests/
     |-- adacovex-test_support.ads/.adb        -- Native test Runner type
     |-- adacovex_config_tests.ads/.adb        -- CLI config tests (75)
-    |-- adacovex_dal_tests.ads/.adb           -- DAL compliance tests (11)
+    |-- adacovex_dal_tests.ads/.adb           -- DAL compliance tests (16)
     |-- adacovex_ir_tests.ads/.adb            -- IR synthesis tests (27)
-    |-- adacovex_man_tests.ads/.adb           -- Man page renderer tests (14)
+    |-- adacovex_man_tests.ads/.adb           -- Man page renderer tests (15)
     |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (64)
     |-- adacovex_renderer_svg_tests.ads/.adb  -- SVG renderer tests (36)
     |-- adacovex_renderer_tests.ads/.adb      -- HTML/Markdown renderer tests (17)
-    |-- adacovex_sbom_tests.ads/.adb          -- SBOM / manifest graph tests (89)
+    |-- adacovex_sbom_tests.ads/.adb          -- SBOM / manifest graph tests (94)
     |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (83)
     |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (43)
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (67)
     |-- adacovex_vcs_tests.ads/.adb           -- VCS support tests (29)
-    `-- test_runner.adb                       -- Test suite entry point (555 tests)
+    `-- test_runner.adb                       -- Test suite entry point (566 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -128,12 +128,22 @@ was built from.
 
 `adacovex man` installs the man page into the local man database
 (`~/.local/share/man`, Linux/WSL; `--dir=PATH` overrides) and refreshes it with
-`mandb`. The page embeds the version, and `adacovex man --check` exits 0 when
-the installed page matches the binary (1 when a newer version is available or
-none is installed) -- so a shell prompt hook can auto-update the man page when
-the machine detects a newer version.
+`mandb` when man-db is installed. When `mandb` is missing (or fails) adacovex
+prints a warning -- the page is still installed and readable via `man -l` --
+and `adacovex status` reports mandb availability up front. The page embeds
+the version, and `adacovex man --check` exits 0 when the installed page
+matches the binary (1 when a newer version is available or none is installed)
+-- so a shell prompt hook can auto-update the man page when the machine
+detects a newer version.
 
 ## VCS support (Linux/WSL)
+
+A **VCS is not required for base adacovex functionality**: scanning, proof
+analysis, test parsing, compliance assessment, SBOM generation, dashboards,
+and caching all work on a plain directory. A VCS is only needed for the
+differential modes (`--compare-base` / `--coverage-delta`), which snapshot a
+base revision -- and since adacovex audits *source code*, assuming the target
+lives in a VCS is sensible.
 
 adacovex runs on **Linux and WSL**. The differential modes (`--compare-base` /
 `--coverage-delta`) snapshot a base revision without touching the working tree
@@ -182,12 +192,15 @@ proof-status`, and `make doc-links`.
 
 | Target | Description |
 |--------|-------------|
+| `check` | Full quality gate: build + tests + SPARK proof + badges + docs + SBOM + ascii + changelog + description sync |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
-| `man` | Install the man page into the local man database + refresh mandb |
-| `test` | Build + run the 555-test native suite |
-| `prove` | `./bin/adacovex prove --target=. --no-svg` |
+| `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
+| `test` | Build + run the 566-test native suite |
+| `prove` | SPARK proof (Platinum gate) + regenerates SVG badges in `docs/badges/` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
 | `fmt` | Format Ada sources (gnatformat) |
+| `sbom` | Generate the proof-aware SBOM (`sbom.json`) |
+| `description` | Sync the crate description from alire/description.txt + alire/long-description.txt (`CHECK=1` verifies only) |
 | `run-self` | Run against adacovex itself (default target: cwd) |
 | `run-ada-crdt` | Run against `../Ada_CRDT` (strict mode) |
 | `coverage-gate` | Docstring-coverage gate between the latest two release tags |
@@ -252,7 +265,7 @@ tests, and the release-tag coverage gate instead.
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 555/555 passing |
+| Unit tests | `make test` | 566/566 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (401 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -266,7 +279,7 @@ rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 555 tests across 12 categories).
+Native zero-dependency suite (`src/tests/`, 566 tests across 12 categories).
 Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests).
 

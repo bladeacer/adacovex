@@ -40,7 +40,7 @@ HLR-DAL-E: DAL-E compliance criteria
 
 ## Procedures
 
-### procedure Assess_DAL (Level : Adacovex.Types.DAL_Level; Target_Dir : Standard.String; Packages : Adacovex.Types.Implementation.Package_Vectors.Vector; Proof_Summary : Adacovex.Types.Proof_Summary; Test_Summary : Adacovex.Types.Implementation.Test_Summary; Assessment : Adacovex.Types.Implementation.DAL_Assessment)
+### procedure Assess_DAL (Level : Adacovex.Types.DAL_Level; Target_Dir : Standard.String; Packages : Adacovex.Types.Implementation.Package_Vectors.Vector; Proof_Summary : Adacovex.Types.Proof_Summary; Test_Summary : Adacovex.Types.Implementation.Test_Summary; Assessment : Adacovex.Types.Implementation.DAL_Assessment; Use_Cache : Standard.Boolean)
 
 | Parameter | Description |
 |-----------|-------------|
@@ -50,8 +50,9 @@ HLR-DAL-E: DAL-E compliance criteria
 | `Proof_Summary` | GNATprove proof results. |
 | `Target_Dir` | Project root directory. |
 | `Test_Summary` | Test run results. |
+| `Use_Cache` | When True the HLR.md/LLR.md parses are served from |
 
-### procedure Assess_Standard (Standard : Adacovex.Types.Compliance_Standard; Level : Adacovex.Types.DAL_Level; Target_Dir : Standard.String; Packages : Adacovex.Types.Implementation.Package_Vectors.Vector; Proof_Summary : Adacovex.Types.Proof_Summary; Test_Summary : Adacovex.Types.Implementation.Test_Summary; Assessment : Adacovex.Types.Implementation.DAL_Assessment)
+### procedure Assess_Standard (Standard : Adacovex.Types.Compliance_Standard; Level : Adacovex.Types.DAL_Level; Target_Dir : Standard.String; Packages : Adacovex.Types.Implementation.Package_Vectors.Vector; Proof_Summary : Adacovex.Types.Proof_Summary; Test_Summary : Adacovex.Types.Implementation.Test_Summary; Assessment : Adacovex.Types.Implementation.DAL_Assessment; Use_Cache : Standard.Boolean)
 
 | Parameter | Description |
 |-----------|-------------|
@@ -62,3 +63,4 @@ HLR-DAL-E: DAL-E compliance criteria
 | `Standard` | Compliance standard (DO_178C, ISO_26262, IEC_62304). |
 | `Target_Dir` | Project root directory. |
 | `Test_Summary` | Test run results. |
+| `Use_Cache` | When True the HLR.md/LLR.md parses are served from |

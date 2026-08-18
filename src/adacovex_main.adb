@@ -180,8 +180,14 @@ procedure Adacovex_Main is
       end if;
 
       Verbose ("base worktree: " & Tmp_Path (1 .. Tmp_Len));
-      Base_R := Adacovex.Diff.Assess (Tmp_Path (1 .. Tmp_Len), Cfg.DAL_Target);
-      Cur_R := Adacovex.Diff.Assess (Target (1 .. TLen), Cfg.DAL_Target);
+      Base_R :=
+        Adacovex.Diff.Assess
+          (Tmp_Path (1 .. Tmp_Len),
+           Cfg.DAL_Target,
+           Use_Cache => Cfg.Cache_Enabled);
+      Cur_R :=
+        Adacovex.Diff.Assess
+          (Target (1 .. TLen), Cfg.DAL_Target, Use_Cache => Cfg.Cache_Enabled);
 
       Regressed :=
         Adacovex.Diff.Report_Delta (Base_R, Cur_R, Base_Ref, Use_Color);
@@ -235,8 +241,12 @@ procedure Adacovex_Main is
       end if;
 
       Verbose ("base worktree: " & Tmp_Path (1 .. Tmp_Len));
-      Base_R := Adacovex.Diff.Assess_Coverage (Tmp_Path (1 .. Tmp_Len));
-      Cur_R := Adacovex.Diff.Assess_Coverage (Target (1 .. TLen));
+      Base_R :=
+        Adacovex.Diff.Assess_Coverage
+          (Tmp_Path (1 .. Tmp_Len), Use_Cache => Cfg.Cache_Enabled);
+      Cur_R :=
+        Adacovex.Diff.Assess_Coverage
+          (Target (1 .. TLen), Use_Cache => Cfg.Cache_Enabled);
 
       Regressed :=
         Adacovex.Diff.Report_Coverage_Delta
@@ -283,7 +293,8 @@ procedure Adacovex_Main is
         (Target (1 .. TLen),
          Cfg.Manifest_Path (1 .. Cfg.Manifest_Len),
          Graph,
-         GOK);
+         GOK,
+         Use_Cache => Cfg.Cache_Enabled);
       if not GOK then
          if Fail_Hard then
             Ada.Text_IO.Put_Line
@@ -397,7 +408,8 @@ procedure Adacovex_Main is
          Packages,
          Proof,
          Tests,
-         DAL_Assess);
+         DAL_Assess,
+         Use_Cache => Cfg.Cache_Enabled);
 
       Generate_SBOM (Skip_List (1 .. SLen), SLen, Out_Path, Fail_Hard => True);
    end Run_SBOM;
@@ -498,17 +510,36 @@ begin
          else
             Adacovex.Renderers.Man.Install (Man_Root, Adacovex.Version, OK);
             if OK then
-               Adacovex.Renderers.Man.Update_Database (Man_Root);
-               Ada.Text_IO.Put_Line
-                 ("man page installed: adacovex v"
-                  & Adacovex.Version
-                  & " -> "
-                  & Man_Root
-                  & "/man1/adacovex.1");
-               Ada.Text_IO.Put_Line
-                 ("run 'man adacovex' to read it; `adacovex man --check` "
-                  & "detects newer versions");
-               Ada.Command_Line.Set_Exit_Status (0);
+               declare
+                  DB_Refreshed : constant Boolean :=
+                    Adacovex.Renderers.Man.Update_Database (Man_Root);
+               begin
+                  Ada.Text_IO.Put_Line
+                    ("man page installed: adacovex v"
+                     & Adacovex.Version
+                     & " -> "
+                     & Man_Root
+                     & "/man1/adacovex.1");
+                  if DB_Refreshed then
+                     Ada.Text_IO.Put_Line
+                       ("man database refreshed with mandb");
+                  else
+                     Ada.Text_IO.Put_Line
+                       (Ada.Text_IO.Standard_Error,
+                        "Warning: mandb (man-db) not found on PATH or "
+                        & "failed -- man database not refreshed");
+                     Ada.Text_IO.Put_Line
+                       (Ada.Text_IO.Standard_Error,
+                        "         the page is still installed; read it with "
+                        & "`man -l "
+                        & Man_Root
+                        & "/man1/adacovex.1`");
+                  end if;
+                  Ada.Text_IO.Put_Line
+                    ("run 'man adacovex' to read it; `adacovex man --check` "
+                     & "detects newer versions");
+                  Ada.Command_Line.Set_Exit_Status (0);
+               end;
             else
                Ada.Text_IO.Put_Line
                  (Ada.Text_IO.Standard_Error,
@@ -740,7 +771,8 @@ begin
          Packages,
          Proof,
          Tests,
-         DAL_Assess);
+         DAL_Assess,
+         Use_Cache => Cfg.Cache_Enabled);
       if Skipped_Ct > 0 then
          --  A skipped source file means the source set is incomplete; the
          --  assessment cannot claim compliance for unread code, so the DAL is

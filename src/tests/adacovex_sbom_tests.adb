@@ -4,7 +4,9 @@ with Ada.Text_IO;
 with Adacovex.Types;
 use Adacovex.Types, Adacovex.Types.Implementation;
 with Adacovex.Parsers.Manifest;
+with Adacovex.Cache;
 with Adacovex.Renderers.SBOM; use Adacovex.Renderers.SBOM;
+with GNAT.OS_Lib;
 
 package body Adacovex_SBOM_Tests is
 
@@ -406,6 +408,66 @@ package body Adacovex_SBOM_Tests is
          R.Check (C.Scope = Scope_Dev, "libdev1 scope = dev");
          C := Find_Name (Graph, "libdev2");
          R.Check (C.Scope = Scope_Dev, "libdev2 scope = dev");
+      end;
+
+      --  Cached dependency-graph round-trip: resolving the same fixture
+      --  twice with Use_Cache serves the second graph from the on-disk
+      --  result cache (keyed by manifest + lockfile + .gpr contents) instead
+      --  of re-parsing the lock and every project file.
+      declare
+         Pid      : constant String :=
+           Integer'Image
+             (GNAT.OS_Lib.Pid_To_Integer (GNAT.OS_Lib.Current_Process_Id));
+         CDir     : constant String :=
+           "obj/sbom_graph_cache-" & Pid (2 .. Pid'Last);
+         Graph1   : Component_Vectors.Vector;
+         Graph2   : Component_Vectors.Vector;
+         Success  : Boolean := False;
+         Prev_Dir : String (1 .. 256) := (others => ' ');
+         Prev_Len : Natural := 0;
+      begin
+         --  Point the result cache at a throwaway dir and restore afterwards,
+         --  so the test never touches the real ~/.adacovex cache.
+         Adacovex.Cache.Cache_Dir (Prev_Dir, Prev_Len);
+         Adacovex.Cache.Set_Cache_Dir (CDir);
+
+         Make_Fixture;
+         Adacovex.Parsers.Manifest.Build_Dependency_Graph
+           (Fixture,
+            Fixture & "/alire.toml",
+            Graph1,
+            Success,
+            Use_Cache => True);
+         R.Check (Success, "cached graph build succeeds (cache miss)");
+         R.Check
+           (Integer (Graph1.Length) = 4, "cached graph resolves 4 components");
+
+         Adacovex.Parsers.Manifest.Build_Dependency_Graph
+           (Fixture,
+            Fixture & "/alire.toml",
+            Graph2,
+            Success,
+            Use_Cache => True);
+         R.Check (Success, "cached graph build succeeds (cache hit)");
+         R.Check
+           (Integer (Graph2.Length) = 4, "cache hit returns the full graph");
+         R.Check
+           (Count_Name (Graph2, "lib_c") = 1
+            and Count_Name (Graph2, "lib_a") = 1
+            and Count_Name (Graph2, "lib_b") = 1,
+            "cache hit returns the complete component set");
+
+         if Prev_Len > 0 then
+            Adacovex.Cache.Set_Cache_Dir (Prev_Dir (1 .. Prev_Len));
+         end if;
+         begin
+            if Ada.Directories.Exists (CDir) then
+               Ada.Directories.Delete_Tree (CDir);
+            end if;
+         exception
+            when others =>
+               null;
+         end;
       end;
 
       --  CycloneDX 1.5 JSON rendering.
