@@ -214,6 +214,12 @@ runs:
   using: 'composite'
   steps:
     - name: Checkout
+      # Safety net for consumers who skip their own checkout: populate the
+      # workspace with the target repository.  Skipped when the workspace
+      # already has content (the caller checked out, or the workspace was
+      # pre-populated -- e.g. the consumer-run-tests fixture in ci.yml) so
+      # this internal checkout can never clobber a prepared workspace.
+      if: ${{ hashFiles('**') == '' }}
       uses: actions/checkout@v7
 
     - name: Install Alire toolchain
@@ -326,6 +332,10 @@ runs:
             REF="v1"
           fi
           echo "Building adacovex from source at ${ACTION_REPO}@${REF}..."
+          # The scratch checkout must be clean: a previous invocation (or a
+          # workflow that staged adacovex's own sources at this path, like
+          # the consumer-run-tests fixture) may have left files here.
+          rm -rf "$RUNNER_TEMP/adacovex-src"
           git clone --quiet "https://github.com/${ACTION_REPO}.git" "$RUNNER_TEMP/adacovex-src"
           cd "$RUNNER_TEMP/adacovex-src"
           if git rev-parse --verify --quiet "refs/tags/$REF" >/dev/null 2>&1; then

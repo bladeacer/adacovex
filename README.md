@@ -47,27 +47,23 @@ subcommand, so installing adacovex pulls nothing but the binary.
 
 ## AI Assistance Disclosure
 
-AI tools were utilized during the development of this project for tasks
-such as boilerplate generation, contract drafting, and docstring formatting.
+AI tools were used during development for boilerplate generation, contract
+ drafting, and docstring formatting.
 
 ### "Why should I trust your code?"
 
-Given the use of AI assistance, healthy skepticism is natural and encouraged.
-However, project reliability is grounded in mathematical proof and
-non-invasive design rather than implicit trust:
+Reliability is grounded in proof and design, not implicit trust:
 
-- **Formal Verification:** Core Ada logic is formally verified using
-  SPARK Ada (Platinum under `gnatprove` 16.1.0 -- 408 VCs, 0 unproved; see
+- **Formal Verification:** core Ada logic is formally verified (Platinum under
+  `gnatprove` 16.1.0 -- 408 VCs, 0 unproved; see
   `docs/proof/16.1.0-ledger.md`).
-- **Read-Only Engine:** `adacovex` acts strictly as an assessment engine.
-  It processes input payloads, parses build artifacts, and produces reports
-  without modifying your source files in place.
-- **Open Auditability:** The codebase is fully open source under the Apache-2.0
-  license for independent inspection and review.
+- **Read-Only Engine:** adacovex assesses input payloads, build artifacts, and
+  reports without modifying your source files in place.
+- **Open Auditability:** fully open source under Apache-2.0.
 
-> *Still skeptical?* See Ken Thompson's landmark paper,
-[*Reflections on Trusting Trust*](https://dl.acm.org/doi/epdf/10.1145/358198.358210),
-on the fundamental nature of trust in software toolchains.
+> *Still skeptical?* See Ken Thompson's
+> [*Reflections on Trusting Trust*](https://dl.acm.org/doi/epdf/10.1145/358198.358210)
+> on the fundamental nature of trust in software toolchains.
 
 ## Quick start
 
@@ -125,55 +121,26 @@ dependency of its own.
 
 ### Option 3: download a release bundle from GitHub
 
-Every `vX.Y.Z` tag publishes `adacovex-vX.Y.Z.tar.gz` (`adacovex` plus a
-`covex` alias) on the
+Every `vX.Y.Z` tag publishes `adacovex-vX.Y.Z.tar.gz` on the
 [GitHub Releases page](https://github.com/bladeacer/adacovex/releases).
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/bladeacer/adacovex/main/install.sh | bash
 ```
 
-Or fetch the bundle manually and unpack anywhere on `$PATH`:
+Bundles are attested with [`actions/attest`](https://github.com/actions/attest).
 
-```bash
-VERSION=v1.9.0
-curl -fL -o adacovex.tar.gz \
-  "https://github.com/bladeacer/adacovex/releases/download/$VERSION/adacovex-$VERSION.tar.gz"
-mkdir -p ~/.local/bin
-tar -xzf adacovex.tar.gz -C ~/.local/bin
-export PATH="$HOME/.local/bin:$PATH"
-adacovex --help
-```
-
-Release bundles are attested with
-[`actions/attest`](https://github.com/actions/attest); verify with
-`gh attestation verify`.
-
-> Release binaries are built for **Linux x86-64 only at the moment**. Every
-> other platform (Linux aarch64, macOS, FreeBSD, Windows) builds adacovex from
-> source via Alire -- no prebuilt bundle is published for those platforms yet.
+> Release binaries are **Linux x86-64 only**; other platforms build from source
+> via Alire.
 
 ### Building from source
 
-Clone the repo (shallow is fine) and `make build`. Adacovex builds with a
-stock Alire toolchain (`gnat_native` + `gprbuild`) plus the standard GNAT
-runtime -- no other dependencies:
-
 ```bash
-# latest development snapshot (main branch)
 git clone --depth 1 https://github.com/bladeacer/adacovex.git
-cd adacovex
-make build
-
-# or a specific released tag (vX.Y.Z) for reproducibility
-git clone --depth 1 --branch v1.10.0 https://github.com/bladeacer/adacovex.git
-cd adacovex
-make build
+cd adacovex && make build   # or: --branch vX.Y.Z for a released tag
 ```
 
-`make build` produces `bin/adacovex` (with a `bin/covex` alias on Linux
-symlinks). Alternatively manage adacovex as an Alire dev dependency (see
-Option 1 above).
+`make build` produces `bin/adacovex` (with a `bin/covex` alias).
 
 ## Platform support
 
@@ -198,30 +165,13 @@ Full resolution order and the doc/fmt manifest-swap:
 
 ## Version control support
 
-**A version control system is not required for base adacovex functionality.**
-Scanning, proof analysis, test parsing, DAL/ASIL/Class assessment, SBOM
-generation, dashboards, and caching all work on a plain directory with no VCS
-at all. A VCS is only needed for the differential modes
-(`--compare-base` / `--coverage-delta`), which snapshot a base revision to
-compare against the current tree. Since adacovex assesses *source code*, it is
-a sensible assumption that the project you are auditing lives in a VCS in the
-first place -- but the base tool never requires one.
-
-When a VCS **is** present, the differential modes work across **git,
-Mercurial, Subversion, Fossil, and jj**:
-
-| VCS | Snapshot mechanism | Notes |
-|-----|--------------------|-------|
-| git | `git worktree add` | Best experience |
-| Mercurial (hg) | `hg archive` | |
-| Subversion (svn) | `svn export` | adacovex recommends converting to git |
-| Fossil | `fossil open` on a copied DB | adacovex recommends converting to git |
-| jj | worktree against the jj internal git store | |
-
-Detection is marker-file based (`.git` / `.jj` / `.hg` / `.svn` /
-`.fslckout` / `_FOSSIL_`) with a command-tool probe fallback. `adacovex
-status` lists every VCS tool found on `$PATH`, the VCS managing the target
-repo, and warns when a needed tool is missing. Full details:
+**A VCS is not required for base adacovex functionality** -- scanning, proof
+analysis, test parsing, compliance assessment, SBOM generation, dashboards,
+and caching all work on a plain directory. A VCS is only needed for the
+differential modes (`--compare-base` / `--coverage-delta`), which work across
+git, Mercurial, Subversion, Fossil, and jj without touching the working tree.
+`adacovex status` reports which VCS tools are available and what manages the
+target. Full details:
 [docs/cli-reference.md](docs/cli-reference.md#vcs-support).
 
 ## CLI reference
@@ -268,23 +218,15 @@ adacovex man [--check] [--dir=PATH]
 | `help [TOPIC]` | - | - | Contextual help for a flag/subcommand (`help serve`, `--serve help`) |
 | `--help` | - | both | Print usage and exit |
 
-The version source depends on the installation method: `tools/gen-version.py`
-resolves it from `ADACOVEX_VERSION` (release builds, from the `vX.Y.Z` tag),
-then `alire/alire-dev.toml` (source checkouts), then `alire.toml`
-(dependency-managed installs -- the toml associated with the covex binary
-for dependency management carries the release version). `adacovex man`
-installs the man page (which embeds the version) into `~/.local/share/man`
-and refreshes the database with `mandb`; `--check` lets a prompt hook
-auto-install when a newer version is available. When man-db (`mandb`) is **not** installed or detectable,
-`adacovex man` still installs the page (read it with `man -l
-~/.local/share/man/man1/adacovex.1`) and warns that the database was not
-refreshed; `adacovex status` reports whether mandb is on `$PATH` up front.
-Differential modes (`--compare-base` / `--coverage-delta`) run on git,
-Mercurial, Subversion, Fossil, and jj repos; for Subversion/Fossil adacovex
-recommends converting to git.
+`adacovex man` installs the man page (embedded version) into
+`~/.local/share/man` and refreshes `mandb` when present; `man --check` exits 0
+when the installed page matches the binary (a prompt hook can auto-update),
+`man --force` overwrites an up-to-date page. `adacovex --serve` supports
+contextual help (`help serve`, `--serve help`) and unknown flags get a
+"did you mean" suggestion.
 
-Full flag details, the `--require-*` CI threshold gates, strict vs relaxed
-mode, exit codes, and the `sbom` subcommand:
+Full flag details, the `--require-*` CI gates, strict vs relaxed mode, exit
+codes, and the `sbom` subcommand:
 [docs/cli-reference.md](docs/cli-reference.md).
 
 ### JSON API
@@ -410,35 +352,18 @@ standard's own naming, or list every standard:
 all three standards. Full tier mapping and rationale:
 [Standards](docs/standards.md).
 
-**Compliance artifacts are identical across standards.** ISO 26262 and
-IEC 62304 do not require different evidence than DO-178C: all three consume
-the same HLR traceability, orphan-tag check, passing-test requirement, and
-minimum-SPARK proof bar, and adacovex emits the same artifacts
-(`HLR.md` source traceability, `VERIFICATION.md`, `TRACE.md`, the proof-aware
-SBOM, and the compliance SVG badges) for every standard. Only the integrity
-level's name differs (`DAL-C` vs `ASIL B` vs `Class A`); the underlying
-assessment and the artifacts describing it are shared.
+The evidence and artifacts are identical across standards -- only the
+integrity-level label changes (`DAL-C` vs `ASIL B` vs `Class A`). Full tier
+mapping and rationale: [Standards](docs/standards.md).
 
 ## Makefile targets
 
-| Target | Description |
-|--------|-------------|
-| `check` | Full quality gate: build + tests + SPARK proof + badges + docs + SBOM + ASCII + spark-off + changelog + description sync |
-| `build` | `alr build` (adacovex + test_runner, covex alias) |
-| `test` | Build and run native test suite (647 tests) |
-| `prove` | SPARK proof (Platinum gate) + regenerates SVG badges in `docs/badges/` |
-| `fmt` | Format Ada sources with `gnatformat` |
-| `doc` | Generate API docs via gnatdoc + rst2md |
-| `sbom` | Generate the proof-aware SBOM (`sbom.json`) |
-| `description` | Sync the crate description from `alire/description.txt` + `alire/long-description.txt` (`CHECK=1` to verify only) |
-| `run-self` | Run against adacovex itself (default target: cwd) |
-| `run-ada-crdt` | Run against `../Ada_CRDT` (strict mode) |
-| `coverage-gate` | Run `--coverage-delta` between the latest two release tags |
-| `bump-version` | Bump version across manifests + changelog (`VERSION=x.y.z`) |
-| `release` | Build `--release`, prove, validate, bundle + push (`VERSION=x.y.z`) |
-| `ascii-check` | Verify all source files are pure ASCII |
-| `spark-off-check` | Fail if any `SPARK_Mode (Off)` appears outside the `Types.Implementation` container package |
-| `clean` | Remove `bin/`, `obj/`, generated reports |
+`make check` runs the full quality gate (cheap static gates first, then build +
+test + prove + doc + sbom, then tree-wide count-sync checks). Other key
+targets: `build`, `test`, `prove`, `doc`, `sbom`, `fmt`, `description`,
+`run-self`, `run-ada-crdt`, `bump-version`, `release`, `ascii-check`,
+`spark-off-check`, `coverage-gate`, and `clean`. Run `make help` or see
+[AGENTS.md](AGENTS.md) for the full table.
 
 ## CI/CD
 
@@ -454,7 +379,7 @@ CI gates. Action inputs/outputs, result caching, and release bundling:
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 647/647 passing |
+| Unit tests | `make test` | 653/653 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (408 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, DAL-C (strict mode) |

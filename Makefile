@@ -6,9 +6,11 @@ help:
 	@echo 'adacovex -- Ada Coverage and Verification Tool'
 	@echo ''
 	@echo 'Usage: make <target>'
-	@echo '  check         Full quality gate: build + test + prove + doc + sbom'
-	@echo '                + badges + ascii-check + changelog-check +'
-	@echo '                description-check (CI runs this before release)'
+	@echo '  check         Full quality gate (CI runs this before release): cheap'
+	@echo '                static gates first (ascii, spark-off, changelog,'
+	@echo '                version, doc-links), then build+test+prove+doc+sbom,'
+	@echo '                then count-sync checks (test-count, proof-status,'
+	@echo '                description) so stale metrics fail loudly'
 	@echo '  build         Build project (adacovex + test_runner, covex alias);'
 	@echo '                regenerates src/adacovex-version.ads from'
 	@echo '                alire-dev.toml (or ADACOVEX_VERSION for releases)'
@@ -57,10 +59,12 @@ help:
 	@echo '  spark-off-check  Fail if any SPARK_Mode (Off) appears outside the'
 	@echo '                  Types.Implementation container package'
 	@echo ''
-	@echo 'check runs the same gates CI enforces before a release:'
-	@echo '  build + native tests + SPARK proof (Platinum, 401 VCs) + SVG badges'
-	@echo '  + API docs + SBOM + ASCII + changelog format + description sync.'
-	@echo '  `make prove` and `make run-self` both emit docs/badges/*.svg, so'
+	@echo 'check runs the same gates CI enforces before a release, cheap static'
+	@echo '  gates first (ascii, spark-off, changelog, version, doc-links), then'
+	@echo '  build + native tests + SPARK proof (Platinum, 408 VCs) + SVG badges'
+	@echo '  + API docs + SBOM, then tree-wide count-sync checks (test-count,'
+	@echo '  proof-status, description) that fail when any live file carries a'
+	@echo '  stale metric. `make prove` / `make run-self` both emit badges, so'
 	@echo '  check does not re-run them separately (no duplicate work).'
 	@echo ''
 	@echo 'Note: doc/fmt temporarily swap in alire-dev.toml for the duration'
@@ -94,7 +98,7 @@ test: build
 # Self-assessment acceptance gates, defined once so prove/run-self/release stay
 # in sync (and match .github/workflows/ci.yml + AGENTS.md "Dogfood target").
 # --require-tests is the current native test-suite size (docs/test_result.md).
-SELF_ASSESS_ARGS := --dal=C --standard=all --require-spark=Platinum --require-docstrings=100 --require-tests=647 --require-proof=100
+SELF_ASSESS_ARGS := --dal=C --standard=all --require-spark=Platinum --require-docstrings=100 --require-tests=653 --require-proof=100
 
 prove: build
 	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex prove --target=. $(SELF_ASSESS_ARGS) --emit-svg=docs/badges/
@@ -189,21 +193,28 @@ spark-off-check:
 	fi; \
 	echo "  no SPARK_Mode (Off) outside src/core/adacovex-types.ads"
 
-# Quality gate: everything CI enforces before a release. prove/run-self both
-# emit docs/badges/*.svg, so badges are produced exactly once here (no
-# duplicate work across targets).
+# Quality gate: everything CI enforces before a release.  Cheap static
+# gates run first so a formatting / sync problem fails before the expensive
+# build+prove; the count-sync checks then verify test/proof metrics stayed
+# in sync across the whole tree after `make test` / `make prove` refreshed
+# them (both prove and run-self emit docs/badges/*.svg, so badges are
+# produced exactly once here).
 check:
+	@echo "=== Quality gate: ASCII ==="; $(MAKE) ascii-check
+	@echo "=== Quality gate: SPARK_Mode Off ==="; $(MAKE) spark-off-check
+	@echo "=== Quality gate: changelog format ==="; $(MAKE) changelog-check
+	@echo "=== Quality gate: version source ==="; python3 tools/gen-version.py --check
+	@echo "=== Quality gate: doc links ==="; python3 tools/update-doc-links.py --check
 	@echo "=== Quality gate: build ==="; $(MAKE) build
 	@echo "=== Quality gate: native tests ==="; $(MAKE) test
 	@echo "=== Quality gate: SPARK proof + badges ==="; $(MAKE) prove
 	@echo "=== Quality gate: API docs ==="; $(MAKE) doc
 	@echo "=== Quality gate: SBOM ==="; $(MAKE) sbom
-	@echo "=== Quality gate: ASCII ==="; $(MAKE) ascii-check
-	@echo "=== Quality gate: SPARK_Mode Off ==="; $(MAKE) spark-off-check
-	@echo "=== Quality gate: changelog format ==="; $(MAKE) changelog-check
+	@echo "=== Quality gate: test counts in sync ==="; python3 tools/update-test-count.py --check
+	@echo "=== Quality gate: proof metrics in sync ==="; python3 tools/update-proof-status.py --check
 	@echo "=== Quality gate: description sync ==="; python3 tools/update-description.py --check
 	@echo ""
-	@echo "=== Quality gate passed: build, test, prove, doc, sbom, badges, ascii, spark-off, changelog, description ==="
+	@echo "=== Quality gate passed: ascii, spark-off, changelog, version, doc-links, build, test, prove, doc, sbom, test-count, proof-status, description ==="
 
 # Sync the crate description + long description from the canonical files
 # (alire/description.txt + alire/long-description.txt) into every manifest.

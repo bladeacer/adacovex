@@ -1,4 +1,4 @@
-environment:PATH=gprbuild_26.0.1_e3f27f25/bin:gnat_native_16.1.0_9f74f58a/bin:covex_1.11.0_filesystem/bin:/home/data/.local/bin:/home/data/go/bin:/home/data/.cargo/bin:~/Desktop/projects/mnemosync:~/.local/bin:~/go/bin:/home/data/.nvm/versions/node/v26.7.0/bin:/home/data/.local/bin:/home/data/go/bin:/home/data/.cargo/bin:~/Desktop/projects/mnemosync:~/.local/bin:~/go/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/var/lib/flatpak/exports/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl
+environment:PATH=gprbuild_26.0.1_e3f27f25/bin:gnat_native_16.1.0_9f74f58a/bin:covex_1.13.0_filesystem/bin:/home/data/.local/bin:/home/data/go/bin:/home/data/.cargo/bin:~/Desktop/projects/mnemosync:~/.local/bin:~/go/bin:/home/data/.nvm/versions/node/v26.7.0/bin:/home/data/.local/bin:/home/data/go/bin:/home/data/.cargo/bin:~/Desktop/projects/mnemosync:~/.local/bin:~/go/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/var/lib/flatpak/exports/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl
 external:COVEX_LIBRARY_TYPE=default
 external:LIBRARY_TYPE=default
 profile:covex=DEVELOPMENT

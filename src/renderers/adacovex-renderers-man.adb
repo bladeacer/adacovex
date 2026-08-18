@@ -37,14 +37,18 @@ package body Adacovex.Renderers.Man is
    end App;
 
    --  Render one .TP option entry: the option name line followed by the
-   --  description lines (each indented with a tab, as roff expects).
+   --  description.  The description must NOT be indented with a literal tab:
+   --  groff's .TP macro computes the hanging indent itself, and a leading tab
+   --  pushes the first line to a tab stop while wrapped lines go back to the
+   --  .TP indent -- the "random extra spaces" bug.  A plain following line
+   --  renders first and wrapped lines at the same indent.
    procedure App_Option
      (Buf : in out String; Len : in out Natural; Name : String; Desc : String)
    is
    begin
       App (Buf, Len, ".TP");
       App (Buf, Len, ".B " & Name);
-      App (Buf, Len, ASCII.HT & Desc);
+      App (Buf, Len, Desc);
    end App_Option;
 
    function Render_Page (Version : String) return String is
@@ -94,7 +98,13 @@ package body Adacovex.Renderers.Man is
       App (Buf, Len, ".br");
       App (Buf, Len, ".B " & Q & "adacovex status [--target=PATH]" & Q);
       App (Buf, Len, ".br");
-      App (Buf, Len, ".B " & Q & "adacovex man [--check] [--dir=PATH]" & Q);
+      App
+        (Buf,
+         Len,
+         ".B "
+         & Q
+         & "adacovex man [--check] [--dir=PATH] [--force]"
+         & Q);
       App (Buf, Len, ".SH DESCRIPTION");
       App
         (Buf,
@@ -276,10 +286,12 @@ package body Adacovex.Renderers.Man is
          & "~/.local/share/man, Linux/WSL) and refresh it with mandb.  "
          & "--check exits 0 when the installed page matches this binary's "
          & "version, 1 when a newer version is available or none is "
-         & "installed.  --dir=PATH installs under PATH/man1 instead.  The "
-         & "page contains the version, so a prompt hook can run `adacovex "
-         & "man --check` and install automatically when the machine "
-         & "detects a newer version.");
+         & "installed.  --dir=PATH installs under PATH/man1 instead.  "
+         & "--force always (re)writes the installed page even when it "
+         & "already matches this binary (repair a hand-edited or corrupt "
+         & "page).  The page contains the version, so a prompt hook can "
+         & "run `adacovex man --check` and install automatically when the "
+         & "machine detects a newer version.");
       App_Option
         (Buf,
          Len,
@@ -308,29 +320,29 @@ package body Adacovex.Renderers.Man is
       App (Buf, Len, ".SH ENVIRONMENT");
       App (Buf, Len, ".TP");
       App (Buf, Len, ".B NO_COLOR");
-      App (Buf, Len, ASCII.HT & "Suppress ANSI color in terminal output.");
+      App (Buf, Len, "Suppress ANSI color in terminal output.");
       App (Buf, Len, ".TP");
       App (Buf, Len, ".B SOURCE_DATE_EPOCH");
       App
         (Buf,
          Len,
-         ASCII.HT & "Deterministic SBOM timestamps (reproducible builds).");
+         "Deterministic SBOM timestamps (reproducible builds).");
       App (Buf, Len, ".TP");
       App (Buf, Len, ".B ADACOVEX_VERSION");
       App
         (Buf,
          Len,
-         ASCII.HT & "Release-build version override (tools/gen-version.py).");
+         "Release-build version override (tools/gen-version.py).");
       App (Buf, Len, ".SH FILES");
       App (Buf, Len, ".TP");
       App (Buf, Len, ".I ~/.local/share/man/man1/adacovex.1");
       App
         (Buf,
          Len,
-         ASCII.HT & "Installed man page (Linux/WSL default man root).");
+         "Installed man page (Linux/WSL default man root).");
       App (Buf, Len, ".TP");
       App (Buf, Len, ".I ~/.adacovex/cache");
-      App (Buf, Len, ASCII.HT & "On-disk analysis result cache.");
+      App (Buf, Len, "On-disk analysis result cache.");
       App (Buf, Len, ".SH SEE ALSO");
       App
         (Buf,
