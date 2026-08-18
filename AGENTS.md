@@ -207,6 +207,11 @@ for paths, and no `pip install` / external imports. Run them with
 `python3 tools/<name>.py`; the sync ones are wired as `make test-count`, `make
 proof-status`, `make doc-links`, and `make link-check` (markdown link
 verification, run as a cheap static gate in `make check`).
+`tools/rst2md.py` (wired as `make doc`) converts gnatdoc RST output into the
+`docs/api-docs/` package pages + index; cross-links to the hand-written
+reference pages live in its `GUIDE_PAGES` / `PACKAGE_GUIDES` tables, **never**
+in `.ads` docstrings (gnatdoc parses comment text as RST and drops markdown
+link URLs).
 
 ## Makefile targets
 
@@ -317,8 +322,14 @@ Per-category counts and framework details:
 - [Developer guide](docs/developer-guide.md)
 - [Installation](docs/installation.md)
 - [LLM usage](docs/llm-usage.md)
+- [Changelog](docs/changelogs/index.md)
+- [API reference](docs/api-docs/index.md)
 - [Docstring spec](docs/api-docs/adacovex-docstring-spec.md)
+- [Test format](docs/api-docs/adacovex-test-format.md)
+- [SPARK levels](docs/api-docs/adacovex-spark-levels.md)
 - [DAL levels](docs/api-docs/adacovex-dal-levels.md)
+- [ASIL levels](docs/api-docs/adacovex-asil-levels.md)
+- [Safety classes](docs/api-docs/adacovex-class-levels.md)
 - [Standards](docs/standards.md)
 - [Platforms](docs/platforms.md)
 - [Architecture](docs/architecture.md)

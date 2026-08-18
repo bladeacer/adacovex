@@ -33,9 +33,10 @@ sharing your opinion on issues are all appreciated.
 ## Changelog format
 
 Each release gets one file at `docs/changelogs/adacovex-<version>.md`, linked
-from `docs/changelogs/index.md` under the `<!-- CHANGELOG_LIST -->` marker
-(newest first). The format is enforced by `make changelog-check`
-(`tools/check-changelogs.py`) and every release changelog must pass it:
+from [docs/changelogs/index.md](docs/changelogs/index.md) under the
+`<!-- CHANGELOG_LIST -->` marker (newest first). The format is enforced by
+`make changelog-check` (`tools/check-changelogs.py`) and every release
+changelog must pass it:
 
 ```
 # adacovex <version>
@@ -86,8 +87,8 @@ Pull requests should follow the following conventions.
 - Ada 2012 / SPARK 2014 only, and zero-dependency: no library dependencies
   beyond the GNAT runtime.
 - Keep the SPARK proof at Platinum: run `make prove` and make sure the VC
-  counts match `docs/proof/16.1.0-ledger.md` (408 VCs, 0 unproved under
-  gnatprove 16.1.0).
+  counts match [docs/proof/16.1.0-ledger.md](docs/proof/16.1.0-ledger.md)
+  (408 VCs, 0 unproved under gnatprove 16.1.0).
 - Keep docstring coverage at 100% (strict mode, cannot be disabled):
   `make run-self` must show Platinum, 100% docs, and DAL-C Achieved.
 - If you add or change behavior, extend the native test suite in `src/tests/`
@@ -142,7 +143,8 @@ Pull requests should follow the following conventions.
 Native (zero-dependency) framework (`Adacovex.Test_Support`, no AUnit). Source:
 `src/tests/`; entry point `test_runner.adb` (builds as `bin/test_runner`).
 `make test` builds and runs the suite and writes results to
-`docs/test_result.md` in a Markdown table format adacovex itself parses.
+[docs/test_result.md](docs/test_result.md) in a Markdown table format
+adacovex itself parses.
 
 | Category | Tests |
 |----------|-------|

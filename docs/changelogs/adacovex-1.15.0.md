@@ -3,6 +3,32 @@
 Date: _2026-08-18_
 Version bumped 1.14.0 -> 1.15.0.
 
+## Changes
+
+### C1: docs cross-linking audit and generator-owned API-doc links
+
+The docs were audited for misplaced and missing cross-links. The README's
+compliance bullet now leads with the general standards page instead of the
+DO-178C-only DAL page, and its ISO 26262 / IEC 62304 links point at the
+dedicated ASIL / Class level pages; the "Compliance levels" section links
+all three per-level pages. `docs/target-projects.md`'s HLR-format reference
+now points at the docstring spec's HLR-tags section instead of the DAL
+criteria page, and the plain-text doc references in CONTRIBUTING.md,
+llm-usage.md, installation.md, platforms.md, and standards.md became real
+links (dashboard.md and sbom.md gained standards links too, and llm-usage.md
+carried a stale 653/653 test count, now corrected to 666/666).
+
+The six hand-written reference pages (docstring spec, test formats, SPARK
+levels, DAL/ASIL/Class levels) gained reciprocal "See also" sections. The
+generated api-docs cross-links live in `tools/rst2md.py` so they survive
+`make doc` regeneration: `GUIDE_PAGES` adds a "Guides" section to the API
+index, and `PACKAGE_GUIDES` renders a "See also" line on 13 package pages
+(parsers, compliance, types, prove, cache, diff, vcs, cpus, renderers,
+server) pointing at their reference pages -- gnatdoc drops markdown link
+URLs from `.ads` comments, so the links cannot live in source docstrings.
+AGENTS.md's Documentation block (via `tools/doc-links.map`) and the
+developer-guide now document the pattern.
+
 ## Fixes
 
 ### H1: release changelog list now newest-first instead of glob order
@@ -34,7 +60,9 @@ release.
 
 666 tests (unchanged from 1.14.0), across 12 categories: the
 changelog-listing and action-version fixes are release-workflow, Makefile,
-and composite-action shell/YAML code, so no unit tests changed.
+and composite-action shell/YAML code, and the docs change is documentation
+plus `tools/rst2md.py` Python tooling (covered by `make doc` and
+`make link-check`), so no unit tests changed.
 
 ## Proof Results
 
@@ -45,5 +73,6 @@ Platinum, 408/408 VCs proved across 45 analyzed units (unchanged from
 ## Traceability
 
 No new HLRs. Both fixes live in release-workflow shell code, the `make
-release` target, the composite action, and docs, none of which carry HLR
-traceability tags.
+release` target, the composite action, and docs; the docs change touches
+documentation and `tools/rst2md.py` / `tools/doc-links.map`. None of these
+carry HLR traceability tags.

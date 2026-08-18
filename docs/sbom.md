@@ -26,7 +26,8 @@ The `sbom` subcommand accepts the same standard flags as the assessment
 standards**: without an explicit standard flag the SBOM carries the joined
 DO-178C / ISO 26262 / IEC 62304 properties at the shared DAL tier;
 `--standard=iso26262` / `--asil=B` narrows it to ISO 26262 at ASIL B, and
-`--class=A` to IEC 62304 at Class A.
+`--class=A` to IEC 62304 at Class A. See [Standards](standards.md) for the
+cross-standard tier mapping.
 
 ## Properties
 

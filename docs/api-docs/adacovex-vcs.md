@@ -19,6 +19,8 @@ Detection is marker-file based (.git / .jj / .hg / .svn / .fslckout /
 Runs only on Linux/WSL (uses sh -c for CWD-dependent tools like fossil).
 HLR-DIFF: VCS abstraction for differential assessment
 
+**See also:** [VCS support](../vcs.md)
+
 > **Note:** All items in this package are public.
 
 ## Types

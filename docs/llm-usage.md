@@ -21,7 +21,8 @@ Reliability is grounded in proof and design, not implicit trust:
 
 - **Formal Verification:** core Ada logic is formally verified (Platinum under
   `gnatprove` 16.1.0 -- 408 VCs, 0 unproved; see
-  `docs/proof/16.1.0-ledger.md`). The proof is re-run by `make prove` on every
+  [docs/proof/16.1.0-ledger.md](proof/16.1.0-ledger.md)). The proof is
+  re-run by `make prove` on every
   change and is a hard gate before any release.
 - **Read-Only Engine:** adacovex assesses input payloads, build artifacts, and
   reports without modifying your source files in place. An AI-assisted tool
@@ -37,9 +38,9 @@ Reliability is grounded in proof and design, not implicit trust:
 
 ## How LLM agents work on this codebase
 
-`AGENTS.md` at the repo root is the machine-readable project brief. It
-carries the architecture tree, the pipeline, the SPARK discipline, the
-Makefile targets, and the verification gates. An agent (or human) working on
+[`AGENTS.md`](../AGENTS.md) at the repo root is the machine-readable project
+brief. It carries the architecture tree, the pipeline, the SPARK discipline,
+the Makefile targets, and the verification gates. An agent (or human) working on
 the tree is expected to read it first and to follow it -- in particular:
 
 - **Match existing conventions** and prefer editing existing files; verify
@@ -70,7 +71,8 @@ artifact, not to a human- or AI-written claim:
 
 - VC counts and the SPARK level come from `obj/gnatprove/gnatprove.out`
   (via `make proof-status`).
-- Test counts come from `docs/test_result.md` (via `make test-count`).
+- Test counts come from [docs/test_result.md](test_result.md) (via
+  `make test-count`).
 - Crate descriptions come from `alire/description.txt` and
   `alire/long-description.txt` (via `make description`).
 
@@ -84,7 +86,7 @@ Because the gates are cheap and deterministic, the safest workflow is to
 iterate locally and let `make check` be the arbiter:
 
 ```bash
-make build && make test      # native suite must stay 653/653
+make build && make test      # native suite must stay 666/666
 make prove                   # Platinum, 0 unproved, 0 justified
 make check                   # full gate: static checks, build, test, prove,
                              # doc, sbom, then tree-wide count-sync checks

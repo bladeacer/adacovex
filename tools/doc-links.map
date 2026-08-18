@@ -8,8 +8,14 @@ CONTRIBUTING.md	Contributing
 docs/developer-guide.md	Developer guide
 docs/installation.md	Installation
 docs/llm-usage.md	LLM usage
+docs/changelogs/index.md	Changelog
+docs/api-docs/index.md	API reference
 docs/api-docs/adacovex-docstring-spec.md	Docstring spec
+docs/api-docs/adacovex-test-format.md	Test format
+docs/api-docs/adacovex-spark-levels.md	SPARK levels
 docs/api-docs/adacovex-dal-levels.md	DAL levels
+docs/api-docs/adacovex-asil-levels.md	ASIL levels
+docs/api-docs/adacovex-class-levels.md	Safety classes
 docs/standards.md	Standards
 docs/platforms.md	Platforms
 docs/architecture.md	Architecture

@@ -13,6 +13,8 @@ Automake suite      "PASS: name" / "FAIL: name"
 Maven Surefire      "Tests run: N, Failures: M, Errors: E"
 Unity               "N Tests M Failures [K Ignored]"
 
+**See also:** [Test Result Formats](adacovex-test-format.md)
+
 > **Note:** All items in this package are public.
 
 ## Functions

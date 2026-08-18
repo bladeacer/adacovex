@@ -66,3 +66,12 @@ minimum requirement is Bronze (flow analysis passes).
 # Check SPARK level of target project
 adacovex --target=../Ada_CRDT --dal=C
 ```
+
+## See also
+
+- [Standards](../standards.md) -- the minimum proof bar per rigor tier across
+  DO-178C / ISO 26262 / IEC 62304
+- [DAL Levels](adacovex-dal-levels.md) -- the per-level SPARK gates
+  (Gold / Silver / Bronze / Stone)
+- [Proof ledger](../proof/16.1.0-ledger.md) -- adacovex's own Platinum proof
+  results (408 VCs, 0 unproved under gnatprove 16.1.0)

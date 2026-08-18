@@ -59,7 +59,9 @@ the integrity-level label printed inside them changes (`DAL-C`, `ASIL B`,
 ## Selecting a standard on the CLI
 
 Each standard has a dedicated level flag, so your intent is unambiguous on the
-command line. The flags all resolve to the same shared rigor tier:
+command line (full flag details in the
+[CLI reference](cli-reference.md)). The flags all resolve to the same shared
+rigor tier:
 
 | Standard | Flag | Levels | Example (tier) |
 |----------|------|--------|----------------|
@@ -79,9 +81,10 @@ Achieved/Unmet; only the level label changes.
 
 ## Dashboard and SBOM standard-awareness
 
-The served dashboard (`--serve`) and the proof-aware SBOM both record the
-assessment standard and its native level label, so a browser or a CycloneDX /
-SPDX / Markdown consumer sees the right name for the selected standard.
+The served [dashboard](dashboard.md) (`--serve`) and the proof-aware
+[SBOM](sbom.md) both record the assessment standard and its native level
+label, so a browser or a CycloneDX / SPDX / Markdown consumer sees the right
+name for the selected standard.
 Like the `sbom` subcommand, `--serve` **defaults to all standards** when no
 `--standard` / `--asil` / `--class` flag is given (the dashboard renders
 every standard's level at the shared tier); an explicit standard flag

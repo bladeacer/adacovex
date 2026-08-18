@@ -72,7 +72,8 @@ It checks and prints:
 - whether **Alire** (`alr`) is installed on `$PATH`;
 - whether **gnatprove** is dependency-managed (target manifest pin) or
   detectable (global pin, on `$PATH`, or cached in
-  `~/.adacovex/toolchain`);
+  `~/.adacovex/toolchain` -- see
+  [Architecture -- toolchain resolution](architecture.md#gnatprove-toolchain-resolution-prove-subcommand));
 - the **logical CPU count**, **CI status**, and the resulting default
   `-j` parallelism;
 - a **VCS report**: which VCS command-line tools are available on `$PATH`

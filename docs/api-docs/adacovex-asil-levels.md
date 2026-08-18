@@ -75,9 +75,10 @@ adacovex --target=. --standard=iso26262 --dal=C   # ASIL B via the shared tier
 adacovex --target=. --standard=all    # badges for DO-178C + ISO 26262 + IEC 62304
 ```
 
-See [Standards](../standards.md) for the full cross-standard tier mapping and
+See [Standards](../standards.md) for the full cross-standard tier mapping,
 [DAL Levels](adacovex-dal-levels.md) for the DO-178C criteria this page
-generalizes.
+generalizes, and [SPARK Levels](adacovex-spark-levels.md) for the per-level
+proof bar.
 
 ## Assessment Output
 

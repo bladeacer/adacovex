@@ -24,11 +24,11 @@ dependencies beyond the GNAT runtime; gnatprove is resolved at run time by the
   [SPARK assurance levels](docs/api-docs/adacovex-spark-levels.md) (Stone--Platinum)
 - **Test parsing** -- reads [test-result summaries](docs/api-docs/adacovex-test-format.md)
   (Markdown tables, TAP, Automake, Maven Surefire, Unity, AUnit-compatible)
-- **[Compliance](docs/api-docs/adacovex-dal-levels.md)** -- assesses DO-178C
-  DAL A-E criteria (HLR coverage, orphan tags, test status, minimum SPARK
-  proof level), re-labelled for [ISO 26262](docs/standards.md)
-  (ASIL A--D/QM) and [IEC 62304](docs/standards.md) (classes A--C) with
-  dedicated `--dal` / `--asil` / `--class` flags
+- **[Compliance](docs/standards.md)** -- assesses DO-178C DAL A-E criteria
+  (HLR coverage, orphan tags, test status, minimum SPARK proof level),
+  re-labelled for [ISO 26262](docs/api-docs/adacovex-asil-levels.md)
+  (ASIL A--D/QM) and [IEC 62304](docs/api-docs/adacovex-class-levels.md)
+  (classes A--C) with dedicated `--dal` / `--asil` / `--class` flags
 - **Multiple outputs** -- ANSI report, SVG badges, Markdown reports, web
   dashboard + JSON API, proof-aware SBOM (CycloneDX / SPDX)
 - **[Differential assessment](docs/vcs.md)** -- `--compare-base` /
@@ -168,9 +168,11 @@ the shared tier and emit badges for all three:
 | IEC 62304 (medical) | `--class=` | A, B, C | `--class=A` = Class A |
 
 The evidence is identical across standards -- only the integrity-level label
-changes (`DAL-C` vs `ASIL B` vs `Class A`). Full tier mapping, the per-level
-criteria, and the DAL table: [Standards](docs/standards.md) and
-[DAL Levels](docs/api-docs/adacovex-dal-levels.md).
+changes (`DAL-C` vs `ASIL B` vs `Class A`). Full tier mapping:
+[Standards](docs/standards.md); per-level criteria:
+[DAL Levels](docs/api-docs/adacovex-dal-levels.md),
+[ASIL Levels](docs/api-docs/adacovex-asil-levels.md), and
+[Safety Classes](docs/api-docs/adacovex-class-levels.md).
 
 ## Development
 
