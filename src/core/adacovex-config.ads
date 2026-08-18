@@ -29,6 +29,11 @@ package Adacovex.Config is
       Standard_Explicit : Boolean := False;
       Serve_Mode        : Boolean := False;
       Port              : Positive := 8080;
+
+      --  Dashboard color theme for --serve (system/light/dark).  "system"
+      --  follows the browser's prefers-color-scheme; light/dark force a
+      --  theme.  Only relevant with --serve.
+      Theme             : Types.Dashboard_Theme := Types.System_Theme;
       No_SVG            : Boolean := False;
       Emit_SVG          : Boolean := True;
       SVG_Path          : String (1 .. Types.Max_Path);
@@ -49,6 +54,8 @@ package Adacovex.Config is
 
       CLI_Error          : Boolean := False;
       Help_Requested     : Boolean := False;
+      Help_Topic         : String (1 .. Types.Max_Path);
+      Help_Topic_Len     : Natural := 0;
       Version_Requested  : Boolean := False;
       Man_Mode           : Boolean := False;
       Man_Check          : Boolean := False;
@@ -121,7 +128,8 @@ package Adacovex.Config is
        and then Parse_CLI'Result.Prove_Steps in -1 .. 100_000_000
        and then Parse_CLI'Result.Prove_Memlimit in -1 .. 1_000_000
        and then Parse_CLI'Result.Require_Docstrings in 0 .. 100
-       and then Parse_CLI'Result.Require_Proof in 0 .. 100;
+       and then Parse_CLI'Result.Require_Proof in 0 .. 100
+       and then Parse_CLI'Result.Help_Topic_Len <= Types.Max_Path;
 
    --  Add a directory name to the comma-separated skip list.
    --  Appends Name to the Skip_Dirs field, inserting ',' separator if
@@ -134,6 +142,15 @@ package Adacovex.Config is
    --  Displays all CLI options, default values, and usage examples.
    --  @return Prints usage information to stdout.
    procedure Print_Usage;
+
+   --  Print contextual help for a single flag or subcommand.
+   --  Topic is matched case-insensitively, with or without the leading
+   --  "--" (e.g. "serve", "--serve", "standard", "--standard").  Prints
+   --  flag-specific detail (purpose, accepted values, related flags) for
+   --  known topics, the full usage text for "help" itself, and a short
+   --  "unknown topic" notice followed by the full usage for anything else.
+   --  @param Topic  Flag or subcommand name to explain.
+   procedure Print_Topic_Help (Topic : String);
 
    --  Testable CLI-parser core.  Kept out of SPARK (it operates on an
    --  unbounded string vector and reports parse errors to Standard_Error),

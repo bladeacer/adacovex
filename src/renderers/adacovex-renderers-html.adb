@@ -5,6 +5,7 @@ package body Adacovex.Renderers.HTML is
    use Ada.Strings.Unbounded;
    use type Types.Test_Status;
    use type Types.DAL_Status;
+   use type Types.Dashboard_Theme;
 
    function Img (N : Natural) return String is
       S : constant String := Natural'Image (N);
@@ -18,7 +19,8 @@ package body Adacovex.Renderers.HTML is
       Tests         : Types.Implementation.Test_Summary;
       DAL_Assess    : Types.Implementation.DAL_Assessment;
       Packages      : Types.Implementation.Package_Vectors.Vector;
-      All_Standards : Boolean := False) return String
+      All_Standards : Boolean := False;
+      Theme         : Types.Dashboard_Theme := Types.System_Theme) return String
    is
       Result : Unbounded_String;
 
@@ -88,6 +90,8 @@ package body Adacovex.Renderers.HTML is
          & "border:1px solid var(--border);border-radius:6px;padding:8px 14px;"
          & "cursor:pointer;font-size:0.9em;font-family:inherit}");
       Put (".theme-toggle:hover{border-color:var(--pass)}");
+      Put
+        (".theme-label{color:var(--muted);font-size:0.9em;margin-right:6px}");
       Put (".spark-");
       Put (Types.To_String (Proof.Level));
       Put ("{color:");
@@ -98,8 +102,22 @@ package body Adacovex.Renderers.HTML is
       Put ("<div class=""dash-header"">");
       Put ("<h1>adacovex Coverage & Verification Dashboard</h1>");
       Put
-        ("<button id=""theme-toggle"" class=""theme-toggle"" type=""button"""
-         & ">Dark mode</button>");
+        ("<label class=""theme-label"" for=""theme-select"">Theme</label>");
+      Put
+        ("<select id=""theme-select"" class=""theme-toggle"""
+         & " onchange=""themeChanged()"">");
+      for T in Types.Dashboard_Theme loop
+         Put ("<option value=""");
+         Put (Types.To_String (T));
+         Put ("""");
+         if T = Theme then
+            Put (" selected");
+         end if;
+         Put (">");
+         Put (Types.To_String (T));
+         Put ("</option>");
+      end loop;
+      Put ("</select>");
       Put ("</div>");
 
       Put
@@ -285,22 +303,21 @@ package body Adacovex.Renderers.HTML is
       Put ("<script>");
       Put
         ("(function(){var K='adacovex-theme',R=document.documentElement,"
-         & "B=document.getElementById('theme-toggle');");
+         & "S=document.getElementById('theme-select');");
       Put
-        ("function cur(){var t=R.getAttribute('data-theme');if(t==='dark'"
-         & "||t==='light')return t;return(window.matchMedia&&"
-         & "window.matchMedia('(prefers-color-scheme: dark)').matches)"
-         & "?'dark':'light';}");
+        ("function apply(t){if(t==='dark')R.setAttribute('data-theme','dark');"
+         & "else if(t==='light')R.setAttribute('data-theme','light');"
+         & "else R.removeAttribute('data-theme');}");
       Put
-        ("function lab(){if(B)B.textContent=cur()==='dark'?'Light mode':'Dark mode';}");
+        ("function pick(){return S?S.value:'system';}");
       Put ("var s=null;try{s=localStorage.getItem(K);}catch(e){}");
       Put
-        ("if(s==='dark'||s==='light')R.setAttribute('data-theme',s);");
+        ("if(s==='system'||s==='light'||s==='dark'){"
+         & "if(S)S.value=s;}");
       Put
-        ("if(B)B.onclick=function(){var n=cur()==='dark'?'light':'dark';"
-         & "R.setAttribute('data-theme',n);try{localStorage.setItem(K,n);}"
-         & "catch(e){}lab();};");
-      Put ("lab();})();");
+        ("window.themeChanged=function(){var t=pick();apply(t);"
+         & "try{localStorage.setItem(K,t);}catch(e){}};");
+      Put ("apply(pick());})();");
       Put ("</script>");
       Put ("</body></html>");
 

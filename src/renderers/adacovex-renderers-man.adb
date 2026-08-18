@@ -172,10 +172,11 @@ package body Adacovex.Renderers.Man is
       App_Option
         (Buf,
          Len,
-         "--serve / --port=N",
+         "--serve / --port=N / --theme=NAME",
          "Start the HTTP dashboard on port N (default 8080).  "
-         & "Standard-aware: defaults to all standards and offers "
-         & "light/dark themes (toggle button, prefers-color-scheme).");
+         & "Standard-aware: defaults to all standards.  --theme=NAME sets"
+         & " the initial color theme (system | light | dark; the header"
+         & " dropdown switches live and persists in localStorage).");
       App_Option
         (Buf,
          Len,
@@ -333,6 +334,31 @@ package body Adacovex.Renderers.Man is
          & "can run `adacovex man --check` and install "
          & "automatically");
       App (Buf, Len, ASCII.HT & "when the machine detects a newer version.");
+      App (Buf, Len, ".TP");
+      App (Buf, Len, ".B help");
+      App
+        (Buf,
+         Len,
+         ASCII.HT
+         & "Contextual help: `adacovex help serve`, `adacovex help "
+         & "--serve`,");
+      App
+        (Buf,
+         Len,
+         ASCII.HT
+         & "or `adacovex --serve help` print flag/subcommand-specific "
+         & "text.");
+      App
+        (Buf,
+         Len,
+         ASCII.HT
+         & "`adacovex help` (or --help) shows the full usage message.  "
+         & "The");
+      App
+        (Buf,
+         Len,
+         ASCII.HT
+         & "topic is case-insensitive with an optional leading --.");
       App (Buf, Len, ".SH VERSION");
       App (Buf, Len, "adacovex v" & V);
       App (Buf, Len, ".SH EXIT STATUS");

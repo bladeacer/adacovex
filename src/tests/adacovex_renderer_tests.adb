@@ -103,9 +103,10 @@ package body Adacovex_Renderer_Tests is
          R.Check (Contains (S, "ASIL B"), "json all: ASIL B");
       end;
 
-      --  Dashboard supports light/dark themes: CSS custom properties with a
-      --  prefers-color-scheme dark default and a toggle button that flips a
-      --  data-theme attribute (persisted in localStorage).
+      --  Dashboard supports light/dark/system themes: CSS custom properties
+      --  with a prefers-color-scheme dark default, a header dropdown with
+      --  the three options (the selected one honored as the initial theme),
+      --  and a data-theme override persisted in localStorage.
       declare
          S : constant String :=
            Adacovex.Renderers.HTML.Render_Dashboard
@@ -115,11 +116,55 @@ package body Adacovex_Renderer_Tests is
            (Contains (S, "prefers-color-scheme"),
             "dashboard respects prefers-color-scheme");
          R.Check
-           (Contains (S, "theme-toggle"), "dashboard has theme toggle button");
+           (Contains (S, "theme-select"), "dashboard has theme dropdown");
+         R.Check
+           (Contains (S, "<option value=""system"""),
+            "dashboard dropdown offers system theme");
+         R.Check
+           (Contains (S, "<option value=""light"""),
+            "dashboard dropdown offers light theme");
+         R.Check
+           (Contains (S, "<option value=""dark"""),
+            "dashboard dropdown offers dark theme");
          R.Check
            (Contains (S, "data-theme"), "dashboard uses data-theme override");
          R.Check
            (Contains (S, "localStorage"), "dashboard persists theme choice");
+      end;
+
+      --  The --theme flag's initial selection is honored: Dark_Theme renders
+      --  a dark option marked selected.
+      declare
+         S : constant String :=
+           Adacovex.Renderers.HTML.Render_Dashboard
+             (Doc,
+              Proof,
+              Tests,
+              Assess,
+              Pkgs,
+              All_Standards => True,
+              Theme         => Dark_Theme);
+      begin
+         R.Check
+           (Contains (S, "<option value=""dark"" selected"),
+            "dashboard honors Dark_Theme initial selection");
+      end;
+
+      --  Light_Theme marks the light option selected.
+      declare
+         S : constant String :=
+           Adacovex.Renderers.HTML.Render_Dashboard
+             (Doc,
+              Proof,
+              Tests,
+              Assess,
+              Pkgs,
+              All_Standards => True,
+              Theme         => Light_Theme);
+      begin
+         R.Check
+           (Contains (S, "<option value=""light"" selected"),
+            "dashboard honors Light_Theme initial selection");
       end;
 
       --  Markdown verification report is standard-aware.

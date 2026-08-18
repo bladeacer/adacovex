@@ -331,7 +331,8 @@ package body Adacovex.Server.HTTP is
                State.Tests,
                State.DAL_Assess,
                State.Packages,
-               State.All_Standards),
+               State.All_Standards,
+               State.Theme),
             Is_KA);
       elsif Path = "/badge/spark.svg" then
          Send_Response

@@ -23,6 +23,7 @@ Standard_All : Boolean := False;
 Standard_Explicit : Boolean := False;
 Serve_Mode        : Boolean := False;
 Port              : Positive := 8080;
+Theme             : Types.Dashboard_Theme := Types.System_Theme;
 No_SVG            : Boolean := False;
 Emit_SVG          : Boolean := True;
 SVG_Path          : String (1 .. Types.Max_Path);
@@ -38,6 +39,8 @@ Cache_Dir_Len     : Natural := 0;
 Cache_Max_Entries : Natural := 4096;
 CLI_Error          : Boolean := False;
 Help_Requested     : Boolean := False;
+Help_Topic         : String (1 .. Types.Max_Path);
+Help_Topic_Len     : Natural := 0;
 Version_Requested  : Boolean := False;
 Man_Mode           : Boolean := False;
 Man_Check          : Boolean := False;
@@ -89,6 +92,12 @@ end record;
 |-----------|-------------|
 | `Cfg` | Config record to modify. |
 | `Name` | Directory name to add to skip list. |
+
+### procedure Print_Topic_Help (Topic : Standard.String)
+
+| Parameter | Description |
+|-----------|-------------|
+| `Topic` | Flag or subcommand name to explain. |
 
 ### procedure Print_Usage
 

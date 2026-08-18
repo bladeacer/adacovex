@@ -21,7 +21,8 @@ adacovex man [--check] [--dir=PATH]
 | `--asil=LEVEL` | - | both | ISO 26262 level: `A`\|`B`\|`C`\|`D`\|`QM` |
 | `--class=LEVEL` | - | both | IEC 62304 safety class: `A`\|`B`\|`C` |
 | `--standard=NAME` | `do178c` | both | `do178c`\|`iso26262`\|`iec62304`\|`all` |
-| `--serve` | off | both | Start HTTP dashboard server (standard-aware; light/dark themes) |
+| `--serve` | off | both | Start HTTP dashboard server (standard-aware; light/dark/system themes) |
+| `--theme=NAME` | `system` | serve | Dashboard theme: `light`\|`dark`\|`system` |
 | `--port=N` | `8080` | serve | Dashboard server port |
 | `--emit-svg=PATH` | `<target>/docs/badges` | both | Output directory for SVG badges |
 | `--no-svg` | off | both | Suppress SVG badge output |
@@ -147,12 +148,20 @@ given, so the compliance card lists every standard's level (DAL-C, ASIL B,
 Class A) at the shared tier; an explicit standard flag narrows the dashboard
 to that single standard (e.g. `--asil=B` shows only ISO 26262 at ASIL B).
 
-The dashboard supports **light and dark themes**: colors are driven by CSS
-custom properties, the initial theme follows the browser's
-`prefers-color-scheme`, and a header button toggles between light and dark
-(the choice is persisted in `localStorage`).
+The dashboard supports **light, dark, and system themes**: colors are driven
+by CSS custom properties, and a header dropdown switches live between
+**light mode**, **dark mode**, and **system theme** (which follows the
+browser's `prefers-color-scheme`). The browser's choice is persisted in
+`localStorage` and wins over `--theme` on later visits.
 
 The server blocks (does not return to the shell) until interrupted.
+
+### `--theme=NAME`
+
+Dashboard color theme for `--serve`: `system` (default, follows
+`prefers-color-scheme`), `light`, or `dark` (case-insensitive). Sets the
+initial dropdown selection in the served page; the header dropdown can
+switch live afterwards. Only relevant with `--serve`.
 
 ### `--port=N`
 
@@ -322,7 +331,7 @@ target does not meet the required level:
 
 ```bash
 adacovex --target=. --require-spark=Platinum --require-docstrings=100 \
-         --require-tests=616 --require-proof=100
+         --require-tests=634 --require-proof=100
 ```
 
 - `require-spark` compares the honest assessed SPARK level (Stone..Platinum).
@@ -375,10 +384,27 @@ it. The ANSI report shows a
 
 Print pipeline step diagnostics to stderr.
 
-### `--help`
+### `--help` and contextual `help`
 
-Print all options, defaults, and examples to stdout, then exit. No scanning or
-assessment is performed.
+`--help` prints all options, defaults, and examples to stdout, then exits. No
+scanning or assessment is performed.
+
+**Contextual help**: the `help` keyword prints flag/subcommand-specific text
+instead of the full usage. The topic can be given in either order, with or
+without the leading `--`:
+
+```
+adacovex help serve        # or: help --serve, --serve help
+adacovex help standard     # standard / dal / asil / class
+adacovex help sbom         # subcommands: sbom, prove, status, man
+adacovex help theme        # every flag has a topic (port, target, ...)
+adacovex help              # no topic: full usage
+```
+
+The topic is case-insensitive and an `=value` suffix is ignored
+(`help --standard=all` == `help standard`). Unknown topics print the full
+usage with an "Unknown topic" notice. Contextual help exits `0` and never
+scans or assesses.
 
 ## Strict vs relaxed mode
 

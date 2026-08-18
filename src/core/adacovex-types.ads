@@ -63,6 +63,11 @@ package Adacovex.Types is
 
    type Test_Status is (Pass, Fail);
 
+   --  Dashboard color theme for --serve.  System_Theme follows the
+   --  browser's prefers-color-scheme; Light_Theme and Dark_Theme force a
+   --  specific theme regardless of the OS preference.
+   type Dashboard_Theme is (System_Theme, Light_Theme, Dark_Theme);
+
    --  SBOM output format. CycloneDX_JSON and SPDX_JSON emit machine-readable
    --  JSON documents; Markdown emits a human-readable compliance table.
    --  HLR-SBOM: SBOM format kind
@@ -309,6 +314,33 @@ package Adacovex.Types is
    --  @return The standard's badge-file slug.
    function Standard_Slug (S : Compliance_Standard) return String
    with Post => Standard_Slug'Result'Length > 0, Global => null;
+
+   --  Convert a Dashboard_Theme to its CLI value: "system", "light", or
+   --  "dark".
+   --  @param T  Dashboard theme.
+   --  @return The theme's CLI name.
+   function To_String (T : Dashboard_Theme) return String
+   with
+     Post   =>
+       To_String'Result = "system"
+       or else To_String'Result = "light"
+       or else To_String'Result = "dark",
+     Global => null;
+
+   --  Parse a dashboard theme name into a Dashboard_Theme.  Accepts
+   --  "system", "light", and "dark" case-insensitively; defaults to
+   --  System_Theme on parse failure.
+   --  @param S  Theme name.
+   --  @return Converted Dashboard_Theme (defaults to System_Theme).
+   function To_Theme (S : String) return Dashboard_Theme
+   with Global => null;
+
+   --  Whether S names a valid dashboard theme ("system", "light", or
+   --  "dark", case-insensitive).
+   --  @param S  Candidate theme string.
+   --  @return True when S names a valid dashboard theme.
+   function Is_Valid_Theme (S : String) return Boolean
+   with Global => null;
 
    --  Convert a DAL_Status ("Achieved" or "Unmet") to its human-readable string.
    --  @return "Achieved" or "Unmet".

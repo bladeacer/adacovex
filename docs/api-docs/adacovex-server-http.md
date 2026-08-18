@@ -21,6 +21,7 @@ Tests         : Types.Implementation.Test_Summary;
 DAL_Assess    : Types.Implementation.DAL_Assessment;
 Packages      : Types.Implementation.Package_Vectors.Vector;
 All_Standards : Boolean := False;
+Theme         : Types.Dashboard_Theme := Types.System_Theme;
 end record;
 ```
 

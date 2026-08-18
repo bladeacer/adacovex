@@ -16,6 +16,7 @@ package Adacovex.Server.HTTP is
       DAL_Assess    : Types.Implementation.DAL_Assessment;
       Packages      : Types.Implementation.Package_Vectors.Vector;
       All_Standards : Boolean := False;
+      Theme         : Types.Dashboard_Theme := Types.System_Theme;
    end record;
 
    --  Start the HTTP server (runs until Ctrl+C or socket error).
