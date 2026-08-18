@@ -17,10 +17,24 @@ to `0.1.0` when no previous release tag is found). The `make release` target
 prints the same list in the same order, and `docs/ci-cd.md` documents the
 newest-first contract.
 
+### H2: bump deprecated Node-20 actions to Node-24 runtimes
+
+GitHub deprecated the Node.js 20 runtime on Actions runners: actions that
+target Node 20 are now forced to run on Node 24, and every such step emits
+a deprecation warning. The composite action's `actions/cache` restore/save
+steps (`@v4`, Node 20) and `actions/upload-artifact` steps (`@v4`, Node 20)
+are bumped to `@v5` and `@v7` respectively, which run on the Node 24
+runtime (minimum Actions Runner 2.327.1). `actions/checkout@v7` and
+`actions/attest@v4` already run on Node 24 and are unchanged. All action
+inputs and outputs are unchanged, and consumers of the action (e.g.
+Ada_CRDT via `bladeacer/adacovex@v1`) pick up the fix with the next
+release.
+
 ## Test Suite
 
-666 tests (unchanged from 1.14.0), across 12 categories: the changelog-listing
-fix is release-workflow and Makefile shell code, so no unit tests changed.
+666 tests (unchanged from 1.14.0), across 12 categories: the
+changelog-listing and action-version fixes are release-workflow, Makefile,
+and composite-action shell/YAML code, so no unit tests changed.
 
 ## Proof Results
 
@@ -30,6 +44,6 @@ Platinum, 408/408 VCs proved across 45 analyzed units (unchanged from
 
 ## Traceability
 
-No new HLRs. The changelog-ordering fix lives in release-workflow shell code,
-the `make release` target, and docs, none of which carry HLR traceability
-tags.
+No new HLRs. Both fixes live in release-workflow shell code, the `make
+release` target, the composite action, and docs, none of which carry HLR
+traceability tags.
