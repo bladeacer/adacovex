@@ -1,4 +1,4 @@
-.PHONY: help check build test prove doc clean run-self run-ada-crdt ascii-check fmt bump-version coverage-gate release publish test-publish _dev_cmd agents-tree sbom description proof-status test-count doc-links changelog-check man
+.PHONY: help check build test prove doc clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish _dev_cmd agents-tree sbom description proof-status test-count doc-links changelog-check man
 
 .DEFAULT_GOAL := help
 
@@ -54,6 +54,8 @@ help:
 	@echo '  publish       Publish to Alire community index (run after make release)'
 	@echo '  test-publish  Dry-run showing what make publish would do'
 	@echo '  ascii-check   Verify all source files are pure ASCII'
+	@echo '  spark-off-check  Fail if any SPARK_Mode (Off) appears outside the'
+	@echo '                  Types.Implementation container package'
 	@echo ''
 	@echo 'check runs the same gates CI enforces before a release:'
 	@echo '  build + native tests + SPARK proof (Platinum, 401 VCs) + SVG badges'
@@ -91,7 +93,7 @@ test: build
 # Self-assessment acceptance gates, defined once so prove/run-self/release stay
 # in sync (and match .github/workflows/ci.yml + AGENTS.md "Dogfood target").
 # --require-tests is the current native test-suite size (docs/test_result.md).
-SELF_ASSESS_ARGS := --dal=C --standard=all --require-spark=Platinum --require-docstrings=100 --require-tests=597 --require-proof=100
+SELF_ASSESS_ARGS := --dal=C --standard=all --require-spark=Platinum --require-docstrings=100 --require-tests=601 --require-proof=100
 
 prove: build
 	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex prove --target=. $(SELF_ASSESS_ARGS) --emit-svg=docs/badges/
@@ -170,6 +172,22 @@ ascii-check:
 	if [ $$error -eq 0 ]; then echo "All source files are pure ASCII."; \
 	else echo "$$error file(s) contain non-ASCII characters."; exit 1; fi
 
+# Quality gate: no `SPARK_Mode (Off)` may appear anywhere in src/ except the
+# Types.Implementation container package -- SPARK forbids instantiating the
+# non-formal Ada.Containers in SPARK_Mode On code, so that package is the one
+# required exception (see AGENTS.md "SPARK proof discipline").
+spark-off-check:
+	@echo "=== SPARK_Mode Off verification ==="; \
+	off=$$(grep -rn --include='*.ads' --include='*.adb' -E 'pragma SPARK_Mode \(Off\)|SPARK_Mode => Off' src/ 2>/dev/null | grep -v '^src/core/adacovex-types.ads:' || true); \
+	if [ -n "$$off" ]; then \
+	  echo "  SPARK_Mode (Off) found outside src/core/adacovex-types.ads:"; \
+	  echo "$$off"; \
+	  echo "  Only Types.Implementation may be SPARK_Mode Off (non-formal"; \
+	  echo "  Ada.Containers are illegal in SPARK_Mode On code)."; \
+	  exit 1; \
+	fi; \
+	echo "  no SPARK_Mode (Off) outside src/core/adacovex-types.ads"
+
 # Quality gate: everything CI enforces before a release. prove/run-self both
 # emit docs/badges/*.svg, so badges are produced exactly once here (no
 # duplicate work across targets).
@@ -180,10 +198,11 @@ check:
 	@echo "=== Quality gate: API docs ==="; $(MAKE) doc
 	@echo "=== Quality gate: SBOM ==="; $(MAKE) sbom
 	@echo "=== Quality gate: ASCII ==="; $(MAKE) ascii-check
+	@echo "=== Quality gate: SPARK_Mode Off ==="; $(MAKE) spark-off-check
 	@echo "=== Quality gate: changelog format ==="; $(MAKE) changelog-check
 	@echo "=== Quality gate: description sync ==="; python3 tools/update-description.py --check
 	@echo ""
-	@echo "=== Quality gate passed: build, test, prove, doc, sbom, badges, ascii, changelog, description ==="
+	@echo "=== Quality gate passed: build, test, prove, doc, sbom, badges, ascii, spark-off, changelog, description ==="
 
 # Sync the crate description + long description from the canonical files
 # (alire/description.txt + alire/long-description.txt) into every manifest.

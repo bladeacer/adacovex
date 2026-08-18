@@ -77,7 +77,7 @@ end record;
 
 ## Functions
 
-### function Parse_CLI return Adacovex.Config.CLI_Config `[Post]` `[SPARK]`
+### function Parse_CLI return Adacovex.Config.CLI_Config `[Post]`
 
 **Returns:** Fully populated CLI_Config from parsed command-line arguments.
 

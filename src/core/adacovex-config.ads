@@ -7,7 +7,6 @@ with Ada.Containers.Indefinite_Vectors;
 --  HLR-CLI: CLI argument parsing
 
 package Adacovex.Config is
-   pragma SPARK_Mode (On);
 
    type CLI_Config is record
       Target_Path     : String (1 .. Types.Max_Path);
@@ -106,7 +105,6 @@ package Adacovex.Config is
    --  @return Fully populated CLI_Config from parsed command-line arguments.
    function Parse_CLI return CLI_Config
    with
-     SPARK_Mode => Off,
      Post       =>
        Parse_CLI'Result.Target_Len <= Types.Max_Path
        and then Parse_CLI'Result.Manifest_Len <= Types.Max_Path
@@ -142,7 +140,6 @@ package Adacovex.Config is
    --  touching Ada.Command_Line.  Parse_CLI wraps Parse_Args with the real
    --  command line and then finalizes filesystem defaults.
    package Testing is
-      pragma SPARK_Mode (Off);
 
       package Arg_Vectors is new
         Ada.Containers.Indefinite_Vectors (Positive, String);

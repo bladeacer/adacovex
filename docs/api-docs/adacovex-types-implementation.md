@@ -1,6 +1,9 @@
 # Adacovex.Types.Implementation
 
-All domain types used across the adacovex tool chain. Package and subprogram collections use Ada.Containers.Vectors (unbounded, up to Natural'Last ~ 2.1B). Fixed-size buffers (Max_Path, Max_Line, Max_Desc_Str, etc.) are bounded at compile time with generous production-suitable limits (Max_Path=4096, Max_Line=262144 on a 64-bit host). Max_Path and Max_Line scale with the host word size (System.Word_Size) so builds on narrower hosts use proportionally smaller limits; Max_Line is large enough to read single-line declarations from heavily generated Ada sources without silently draining them. HLR-METRICS: Docstring_Metrics type HLR-PROOF: Proof_Summary type HLR-TEST: Test_Summary type HLR-COMPLIANCE: DAL_Assessment type HLR-DAL-A: DAL_Level (DAL_A) HLR-DAL-B: DAL_Level (DAL_B) HLR-DAL-C: DAL_Level (DAL_C) HLR-DAL-D: DAL_Level (DAL_D) HLR-DAL-E: DAL_Level (DAL_E) HLR-SBOM: SBOM component and format types
+Non-SPARK container types: SPARK forbids instantiating the
+non-formal Ada.Containers in SPARK_Mode On code, so this package
+must stay SPARK_Mode Off.  It is the only SPARK_Mode (Off) in the
+codebase.
 
 > **Note:** All items in this package are public.
 

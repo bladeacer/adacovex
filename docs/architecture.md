@@ -80,9 +80,13 @@ referenced tool that is actually installed on `$PATH` under a
 `pkg:generic/<tool>` purl. Tools referenced nowhere in the project, or
 referenced but not installed, are skipped; a Makefile at the project root
 implies `make`. The scan runs after the cached manifest graph is resolved
-(so cache hits and misses agree) and never probes tool versions -- asking
-dozens of tools for their version would spawn many subprocesses and make the
-SBOM machine-dependent.
+(so cache hits and misses agree). Each registered tool's version is probed
+by running `--version` (or a tool-specific subcommand such as fossil's
+`version`) and extracting the version token, so the SBOM records the
+installed version; a probe that fails or prints no digit token leaves the
+version empty. The source file declaring the `System_Tools` table is
+skipped by the scan, otherwise every installed tool on the list would be
+registered as a self-reference.
 
 ## Unix Philosophy
 
@@ -296,7 +300,7 @@ adacovex supports multiple output formats:
 
 ## Testing
 
-adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 597 tests across 12 categories. No external test framework (AUnit, etc.) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
+adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 601 tests across 12 categories. No external test framework (AUnit, etc.) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
 
 ## Supported Platforms
 
