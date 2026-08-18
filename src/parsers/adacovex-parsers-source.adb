@@ -985,6 +985,26 @@ package body Adacovex.Parsers.Source is
                                              if Package_Store.Deserialize
                                                   (Blob (1 .. Blen), Pkg)
                                              then
+                                                --  The blob is keyed by file
+                                                --  content, so it may have
+                                                --  been cached from a different
+                                                --  directory (e.g. a
+                                                --  --compare-base /
+                                                --  --coverage-delta base
+                                                --  snapshot). Rewrite the
+                                                --  embedded absolute path to
+                                                --  the file being scanned:
+                                                --  Relative_Path consumers
+                                                --  (patch application, HLR
+                                                --  traceability, report paths)
+                                                --  depend on it.
+                                                Pkg.Path_Len :=
+                                                  Path'Length;
+                                                for I in Path'Range loop
+                                                   Pkg.File_Path
+                                                     (I - Path'First + 1) :=
+                                                     Path (I);
+                                                end loop;
                                                 Packages.Append (Pkg);
                                                 Hits := Hits + 1;
                                              else

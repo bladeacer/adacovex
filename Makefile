@@ -1,4 +1,4 @@
-.PHONY: help check build test prove doc clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish _dev_cmd agents-tree sbom description proof-status test-count doc-links changelog-check man
+.PHONY: help check build test prove doc clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish _dev_cmd agents-tree sbom description proof-status test-count doc-links link-check changelog-check man
 
 .DEFAULT_GOAL := help
 
@@ -43,6 +43,8 @@ help:
 	@echo '                docs/test_result.md (tools/update-test-count.py)'
 	@echo '  doc-links     Regenerate the AGENTS.md Documentation block from'
 	@echo '                tools/doc-links.map (tools/update-doc-links.py)'
+	@echo '  link-check    Verify every markdown link in the repo resolves'
+	@echo '                (tools/check-links.py)'
 	@echo '  changelog-check Validate all docs/changelogs follow the canonical'
 	@echo '                  format (tools/check-changelogs.py)'
 	@echo '  bump-version  Bump version across alire.toml, alire-dev.toml,'
@@ -98,7 +100,7 @@ test: build
 # Self-assessment acceptance gates, defined once so prove/run-self/release stay
 # in sync (and match .github/workflows/ci.yml + AGENTS.md "Dogfood target").
 # --require-tests is the current native test-suite size (docs/test_result.md).
-SELF_ASSESS_ARGS := --dal=C --standard=all --require-spark=Platinum --require-docstrings=100 --require-tests=663 --require-proof=100
+SELF_ASSESS_ARGS := --dal=C --standard=all --require-spark=Platinum --require-docstrings=100 --require-tests=666 --require-proof=100
 
 prove: build
 	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex prove --target=. $(SELF_ASSESS_ARGS) --emit-svg=docs/badges/
@@ -146,6 +148,9 @@ coverage-gate: build
 	git worktree remove --force "$$tmp" >/dev/null 2>&1; \
 	rmdir "$$tmp" 2>/dev/null || true; \
 	exit $$rc
+
+link-check:
+	@python3 tools/check-links.py
 
 agents-tree:
 	@python3 tools/gen-agents-tree.py > /tmp/agents-tree.out && \
@@ -207,6 +212,7 @@ check:
 	@echo "=== Quality gate: changelog format ==="; $(MAKE) changelog-check
 	@echo "=== Quality gate: version source ==="; python3 tools/gen-version.py --check
 	@echo "=== Quality gate: doc links ==="; python3 tools/update-doc-links.py --check
+	@echo "=== Quality gate: markdown links ==="; $(MAKE) link-check
 	@echo "=== Quality gate: build ==="; $(MAKE) build
 	@echo "=== Quality gate: native tests ==="; $(MAKE) test
 	@echo "=== Quality gate: SPARK proof + badges ==="; $(MAKE) prove

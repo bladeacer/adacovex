@@ -5,6 +5,7 @@ docs/vcs.md	VCS support
 docs/target-projects.md	Target projects
 docs/ci-cd.md	CI/CD
 CONTRIBUTING.md	Contributing
+docs/developer-guide.md	Developer guide
 docs/installation.md	Installation
 docs/llm-usage.md	LLM usage
 docs/api-docs/adacovex-docstring-spec.md	Docstring spec

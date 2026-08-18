@@ -736,6 +736,71 @@ package body Adacovex_Scanner_Tests is
          and then Pkg.Subprograms (2).Doc_Return,
          "Test 21: not overriding function parsed with name Value");
 
+      --  Test 22: a cached scan from a different directory must not leak its
+      --  File_Path.  Scan entries are keyed by file content hash, so scanning
+      --  an identical file in a second directory (e.g. a --coverage-delta /
+      --  --compare-base base snapshot) used to hit the entry cached from the
+      --  first directory and carry its absolute path -- which broke
+      --  Relative_Path consumers such as Apply_Patches and HLR traceability.
+      begin
+         declare
+            Cache_A : constant String := "/tmp/adacovex_scan_cache_a";
+            Cache_B : constant String := "/tmp/adacovex_scan_cache_b";
+            File_A  : constant String := Cache_A & "/pkg.ads";
+            File_B  : constant String := Cache_B & "/pkg.ads";
+            F       : File_Type;
+            Pkgs_A  : Package_Vectors.Vector;
+            Pkgs_B  : Package_Vectors.Vector;
+            Skip_A  : Natural := 0;
+            Skip_B  : Natural := 0;
+            Hits_A  : Natural := 0;
+            Misses_A : Natural := 0;
+            Hits_B  : Natural := 0;
+            Misses_B : Natural := 0;
+         begin
+            Ada.Directories.Create_Path (Cache_A);
+            Ada.Directories.Create_Path (Cache_B);
+            Create (F, Out_File, File_A);
+            Put_Line (F, "package Cache_Pkg is");
+            Put_Line (F, "   --  @param X  Value.");
+            Put_Line (F, "   procedure Touch (X : Integer);");
+            Put_Line (F, "end Cache_Pkg;");
+            Close (F);
+            --  Byte-identical content in the second tree.
+            Ada.Directories.Copy_File (File_A, File_B);
+
+            --  First scan populates the content-hash cache.
+            Adacovex.Parsers.Source.Scan_Project_Cached
+              (Cache_A, "", Pkgs_A, Skip_A, Hits_A, Misses_A, True);
+            --  Second scan must hit the same entries but use its own paths.
+            Adacovex.Parsers.Source.Scan_Project_Cached
+              (Cache_B, "", Pkgs_B, Skip_B, Hits_B, Misses_B, True);
+
+            R.Check
+              (Natural (Pkgs_A.Length) = 1
+               and then Natural (Pkgs_B.Length) = 1,
+               "Test 22: both cached scans parsed the package");
+            if Natural (Pkgs_A.Length) = 1
+              and then Natural (Pkgs_B.Length) = 1
+            then
+               R.Check
+                 (Pkgs_B (1).Path_Len = File_B'Length
+                  and then Pkgs_B (1).File_Path (1 .. File_B'Length) = File_B,
+                  "Test 22: cached hit rewrites File_Path to the scanned tree");
+               R.Check
+                 (Pkgs_A (1).Path_Len = File_A'Length
+                  and then Pkgs_A (1).File_Path (1 .. File_A'Length) = File_A,
+                  "Test 22: first scan keeps its own File_Path");
+            end if;
+
+            Ada.Directories.Delete_Tree (Cache_A);
+            Ada.Directories.Delete_Tree (Cache_B);
+         exception
+            when others =>
+               null;
+         end;
+      end;
+
       --  Cleanup
       begin
          Ada.Directories.Delete_File (Tmp_File);

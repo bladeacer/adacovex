@@ -40,25 +40,44 @@ deterministic across repeated `build -> fmt -> doc` chains.
 The docs were reorganized around one page per feature so the CLI reference
 stays a quick reference instead of accumulating every flag's full detail:
 
-- **New [Web dashboard + JSON API](dashboard.md)** page -- endpoints,
+- **New [Web dashboard + JSON API](../dashboard.md)** page -- endpoints,
   dashboard cards, the `/api/metrics` JSON schema, and the theme-resolution
   order (`?theme=` > `--theme=` > saved `localStorage` > system).
-- **New [SBOM](sbom.md)** page -- usage, standard-awareness, component
+- **New [SBOM](../sbom.md)** page -- usage, standard-awareness, component
   properties, and `SOURCE_DATE_EPOCH` determinism.
-- **New [VCS support](vcs.md)** page -- the per-VCS snapshot mechanisms and
+- **New [VCS support](../vcs.md)** page -- the per-VCS snapshot mechanisms and
   the `--compare-base` / `--coverage-delta` contracts.
-- **New [Target projects](target-projects.md)** page -- the target-project
+- **New [Target projects](../target-projects.md)** page -- the target-project
   requirements (sources, `gnatprove.out` discovery order, test-summary file
   names, HLR.md, missing-data behavior) moved out of the README.
 - **`docs/cli-reference.md` slimmed** to the flag table plus a concise note
   per flag, linking to the dedicated pages; the result-caching design moved
-  to `docs/architecture.md#result-caching`.
+  to [`../architecture.md#result-caching`](../architecture.md#result-caching).
 - **README condensed and its Quick start rewritten**: the Quick start now
   shows the end-user flow (install -> assess -> `status` -> `--serve`)
   instead of contributor build targets, the documentation table moved to the
   top (right after Quick start), the duplicated standards paragraph was
   removed, and sections that duplicate dedicated pages (platforms,
   toolchain resolution, VCS, AI disclosure, dashboard) now point at them.
+
+### C4: contributor guide, link checker, and a tighter README
+
+- **New [Contributor guide](../developer-guide.md)** page -- a human-readable
+  tour of the codebase (repository layout, pipeline, where each kind of
+  change lives, testing and SPARK discipline, common workflows) to
+  supplement CONTRIBUTING.md, linked from it, the README docs table, and the
+  AGENTS.md documentation block.
+- **New `make link-check` gate** (`tools/check-links.py`) -- verifies every
+  markdown link in the repo resolves (file existence plus GitHub-style
+  heading anchors, code fences excluded), wired into `make check` as a cheap
+  static gate. It immediately found a pre-existing broken link in
+  `docs/platforms.md` (a `README.md` reference missing the `../` prefix),
+  now fixed.
+- **README trimmed further** (318 -> 229 lines over this release): the
+  platform/toolchain/VCS sections merged into one compact section, the
+  docstring example folded into a pointer, the DAL table moved out (the
+  standards table + links remain), and the example list cut to the six most
+  common invocations.
 
 ## Fixes
 
@@ -75,19 +94,38 @@ and at or below the released version, so a release that spans multiple
 versions links all of them (derived from the entries actually present in the
 tree).
 
+### H2: cached scans leaked another tree's absolute path (differential modes)
+
+`--compare-base` / `--coverage-delta` scan entries are cached per file by
+content hash (`"scan:" + sha256`), so a byte-identical file in a different
+directory -- e.g. the base snapshot under `/tmp/adacovex-diff-<pid>` -- used
+to hit the entry cached from whichever tree was scanned first and inherit
+that tree's absolute `File_Path`. Relative-path consumers then silently
+broke: `Apply_Patches` could not match `.adacovex/patches/` entries
+(`Relative_Path` returned ""), so docstring coverage dropped on cached runs
+(observed as 88% vs the true 100% when running `make coverage-gate` against
+Ada_CRDT, flipping with cache state). `Scan_Project_Cached` now rewrites the
+`File_Path` of every cache-hit package to the file currently being scanned,
+so patch application, HLR traceability, and report paths always reflect the
+scanned tree. The scanner test suite gained a regression check (Test 22:
+scan identical content in two directories and verify each result keeps its
+own path).
+
 ## Test Suite
 
-663 tests (was 659), across 12 categories. The HTML/Markdown renderers
-category gained 4 regression checks for the dashboard card block: no HTML
-comment wrapping, live card markup present, badge images rendered, and the
-SPARK proof card present.
+666 tests (was 659), across 12 categories. The HTML/Markdown renderers
+category gained 4 regression checks for the dashboard card block (no HTML
+comment wrapping, live card markup present, badge images rendered, SPARK
+proof card present), and the Source scanner category gained 3 checks for the
+cached-scan path fix (Test 22: both cached scans parse, the second tree keeps
+its own `File_Path`, the first keeps its own).
 
 ## Proof Results
 
 Platinum, 408/408 VCs proved across 45 analyzed units (unchanged from
-1.13.0): the fix touches only the bundled dashboard template string and the
-non-SPARK renderer test suite, adding no proof obligations. Proven with
-`make prove` under gnatprove 16.1.0 (`--steps=10000`).
+1.13.0): the cache-path fix lives in the non-SPARK `parsers-source` body and
+the regression tests are not proved, so no new proof obligations. Proven
+with `make prove` under gnatprove 16.1.0 (`--steps=10000`).
 
 ## Traceability
 
@@ -95,6 +133,8 @@ No new HLRs. The dashboard rendering fix stays covered by the existing
 `HLR-RENDER-HTML` (`src/renderers/adacovex-renderers-html.ads`/`.adb`) tag;
 the template bundle (`resources/dashboard.html` +
 `tools/gen-dashboard.py`) is generated data that adds no traceability. The
-documentation reorganization and the release-workflow changelog-listing fix
-touch no `src/` Ada code, so no new or changed HLR traceability tags are
+cached-scan fix stays covered by the existing `HLR-SCAN` tag
+(`src/parsers/adacovex-parsers-source.ads`/`.adb`); the documentation
+reorganization, the link checker, and the release-workflow changelog-listing
+fix touch no HLR-bearing code, so no new or changed HLR traceability tags are
 required.

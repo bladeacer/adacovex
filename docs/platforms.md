@@ -23,7 +23,7 @@ The CI **release binary is Linux x86-64 only for now**. The
 `adacovex-vX.Y.Z.tar.gz` bundle (`adacovex` + the `covex` alias) and the
 prebuilt GNATprove toolchain asset are built on `ubuntu-latest`. Every other
 platform builds adacovex from source via Alire (`alr build`) -- see
-[Installing adacovex](README.md#installing-adacovex).
+[Installing adacovex](../README.md#installing-adacovex).
 
 ## CPU core-count detection
 
