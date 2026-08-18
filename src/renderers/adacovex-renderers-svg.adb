@@ -45,6 +45,74 @@ package body Adacovex.Renderers.SVG is
       return Buf (Pos .. 10);
    end I2S;
 
+   --  Advance width (px) of one character in the badge font (DejaVu Sans,
+   --  Verdana, Geneva fallback chain) at font-size 11, rounded to the
+   --  nearest pixel.  The values are DejaVu Sans's 2048-units-per-em
+   --  advance widths scaled by 11/2048; unknown characters fall back to
+   --  7px, the font's average glyph width.
+   function Glyph_Width (C : Character) return Natural is
+   begin
+      case C is
+         --  3px: space, punctuation, and narrow lowercase stems.
+         when ' ' | '.' | '/' | '(' | ')' | 'I' | 'J' | 'f' | 'i' | 'j'
+           | 'l' | 't'
+         =>
+            return 3;
+
+         --  4px: hyphen and the short lowercase 'r'.
+         when '-' | 'r'
+         =>
+            return 4;
+
+         --  6px: narrow uppercase and lowercase glyphs.
+         when 'F' | 'L' | 'Z' | 'a' | 'c' | 'e' | 'k' | 's' | 'v' | 'x'
+           | 'y' | 'z'
+         =>
+            return 6;
+
+         --  7px: digits (tabular) and the average-width letters.
+         when '0' .. '9' | 'A' | 'B' | 'C' | 'D' | 'E' | 'G' | 'K' | 'P'
+           | 'R' | 'S' | 'T' | 'V' | 'X' | 'Y' | 'b' | 'd' | 'g' | 'h'
+           | 'n' | 'o' | 'p' | 'q' | 'u'
+         =>
+            return 7;
+
+         --  8px: wide uppercase letters.
+         when 'H' | 'N' | 'O' | 'Q' | 'U'
+         =>
+            return 8;
+
+         --  9px: the widest common glyphs.
+         when 'M' | 'w' | '%'
+         =>
+            return 9;
+
+         --  10px: the two widest glyphs in the badge repertoire.
+         when 'W' | 'm'
+         =>
+            return 10;
+
+         when others
+         =>
+            return 7;
+      end case;
+   end Glyph_Width;
+
+   --  Total advance width (px) of a badge text run at font-size 11: the
+   --  sum of the per-glyph widths.  Replaces the flat 7px-per-character
+   --  estimate so every badge carries the same ~5px side padding -- the
+   --  old estimate left uppercase-heavy labels (SPARK, DO-178C) nearly
+   --  flush against their segment edge while narrow lowercase/digit text
+   --  (docs, 100%) ended up with visibly wider padding.
+   function Text_Width (S : String) return Natural is
+      Total : Natural := 0;
+   begin
+      for I in S'Range loop
+         Total := Total + Glyph_Width (S (I));
+      end loop;
+      return Total;
+   end Text_Width;
+
    function Badge_SVG
      (Label            : String;
       Value            : String;
@@ -52,8 +120,8 @@ package body Adacovex.Renderers.SVG is
       Value_Color      : String := "#4c1";
       Value_Text_Color : String := "#fff") return String
    is
-      LW : constant Natural := Label'Length * 7 + 10;
-      VW : constant Natural := Value'Length * 7 + 10;
+      LW : constant Natural := Text_Width (Label) + 10;
+      VW : constant Natural := Text_Width (Value) + 10;
       TW : constant Natural := LW + VW;
       LX : constant Natural := LW / 2;
       VX : constant Natural := LW + VW / 2;

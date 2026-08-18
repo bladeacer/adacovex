@@ -1,10 +1,11 @@
 [![covex Alire crate badge](https://img.shields.io/endpoint?url=https://alire.ada.dev/badges/covex.json)](https://alire.ada.dev/crates/covex)
 ![SPARK](docs/badges/spark.svg)
 ![Tests](docs/badges/tests.svg)
+![docs](docs/badges/docs.svg)
+
 ![DO-178C](docs/badges/do178c.svg)
 ![ISO 26262](docs/badges/iso26262.svg)
 ![IEC 62304](docs/badges/iec62304.svg)
-![docs](docs/badges/docs.svg)
 
 # adacovex
 
