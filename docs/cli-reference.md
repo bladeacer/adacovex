@@ -1,5 +1,14 @@
 # adacovex CLI Reference
 
+This page is the quick reference: usage, the full flag table, and a concise
+note per flag. Feature-specific detail lives in dedicated pages (linked from
+each section): the [web dashboard](dashboard.md), the
+[`sbom` subcommand](sbom.md), [VCS support](vcs.md), the
+[platforms/`status`](platforms.md#status-subcommand) and
+[installation](installation.md) pages, and
+[Architecture](architecture.md) for design-level detail such as result
+caching and the patch system.
+
 ## Usage
 
 ```
@@ -111,86 +120,23 @@ level flag (or `--dal`) resolved to.
 ### `status`
 
 `adacovex status [--target=PATH]` reports toolchain + platform state without
-running an assessment and without downloading or deploying anything:
-
-- whether Alire (`alr`) is installed on `$PATH`;
-- whether gnatprove is dependency-managed (target manifest pin) or detectable
-  (global pin, on `$PATH`, or cached in `~/.adacovex/toolchain`);
-- the host logical-CPU count, CI status, and resulting default `-j`
-  parallelism;
-- a **VCS report**: which VCS command-line tools are on `$PATH` for the
-  differential modes (git, mercurial/`hg`, subversion/`svn`, fossil, jj, and
-  the man-page tool `mandb`), the VCS detected for the target repository
-  (see [VCS support](#vcs-support)), a note when the target's VCS tool is
-  missing, and a note when man-db (`mandb`) is absent -- so you know up
-  front that `adacovex man` can install the page but cannot refresh the
-  man database;
-- the release-note that the CI binary is Linux x86-64 only.
-
-Exit `0` when a usable gnatprove is detectable without a download (and `alr`
-is present whenever the deploy path is the only option), `1` otherwise. The
-VCS report is informational and does not affect the exit code. See
-[Platforms](platforms.md#status-subcommand).
+running an assessment and without downloading or deploying anything: whether
+Alire is installed, how gnatprove is resolved, the host CPU count and CI
+status (and the resulting default `-j` parallelism), a **VCS report** (which
+VCS tools are on `$PATH` and which manages the target -- see
+[VCS support](vcs.md)), and mandb availability. Exit `0` when a usable
+gnatprove is detectable without a download, `1` otherwise. Full detail:
+[Platforms -- `status` subcommand](platforms.md#status-subcommand).
 
 ### `--serve`
 
 After scanning and assessment, start the built-in HTTP/1.1 web dashboard on
-`--port` (default `8080`):
-
-- `GET /` -- HTML dashboard with coverage, proof, test, and compliance cards
-- `GET /api/metrics` -- JSON object with key metrics
-- `GET /badge/spark.svg`, `GET /badge/tests.svg`, `GET /badge/do178c.svg`,
-  `GET /badge/iso26262.svg`, `GET /badge/iec62304.svg` -- SVG badges
-- any other path -- `404 Not Found`
-
-**Using the JSON API.** The metrics endpoint is a plain HTTP GET, so the
-workflow is: start the server, then curl the URL:
-
-```
-adacovex --target=. --serve --port=8080
-# in another terminal:
-curl http://localhost:8080/api/metrics
-```
-
-The response is a flat JSON object:
-
-```json
-{"spark_level":"Platinum","total_vcs":408,"proved_vcs":408,
- "tests_passed":663,"tests_failed":0,"doc_coverage":100,
- "standard":"all","level":"DAL-C","dal_status":"Achieved",
- "standards":{"DO-178C":{"level":"DAL-C","status":"Achieved"},
-               "ISO 26262":{"level":"ASIL B","status":"Achieved"},
-               "IEC 62304":{"level":"Class A","status":"Achieved"}}}
-```
-
-Fields: `spark_level` (Stone..Platinum), `total_vcs` / `proved_vcs`,
-`tests_passed` / `tests_failed`, `doc_coverage` (0-100), `standard`
-(`do178c` \| `iso26262` \| `iec62304` \| `all`), `level` and `dal_status`
-for the top-level target, and a `standards` object with the per-standard
-`level` / `status` breakdown (all three standards present when
-`standard` is `all`). Scripts and CI can consume this endpoint without
-parsing HTML.
-
-The served dashboard is **standard-aware**: like the `sbom` subcommand it
-defaults to all standards when no `--standard` / `--asil` / `--class` flag is
-given, so the compliance card lists every standard's level (DAL-C, ASIL B,
-Class A) at the shared tier; an explicit standard flag narrows the dashboard
-to that single standard (e.g. `--asil=B` shows only ISO 26262 at ASIL B).
-
-The dashboard supports **light, dark, and system themes**: colors are driven
-by CSS custom properties, and a header dropdown switches live between
-**light mode**, **dark mode**, and **system theme** (which follows the
-browser's `prefers-color-scheme`). A **Save settings** button persists the
-current selection in `localStorage` (no cookies). Theme resolution on page
-load is:
-
-1. a `?theme=light|dark|system` query parameter on the dashboard URL
-   (useful when embedding the dashboard) -- always wins;
-2. otherwise an explicit CLI theme (`--theme=light` or `--theme=dark`);
-3. otherwise the saved `localStorage` choice, if one was saved;
-4. otherwise the system theme (`prefers-color-scheme`).
-
-The server blocks (does not return to the shell) until interrupted.
+`--port` (default `8080`): an HTML dashboard at `/`, a JSON API at
+`/api/metrics`, and the SVG badges at `/badge/*.svg`. The server blocks until
+interrupted. The dashboard is standard-aware (defaults to all standards) and
+supports light / dark / system themes. Full detail, the JSON schema, the
+theme-resolution order, and embedding tips:
+[Web dashboard and JSON API](dashboard.md).
 
 ### `--theme=NAME`
 
@@ -198,9 +144,8 @@ Dashboard color theme for `--serve`: `system` (default, follows
 `prefers-color-scheme`), `light`, or `dark` (case-insensitive). Sets the
 initial dropdown selection in the served page; the header dropdown can
 switch live afterwards and **Save settings** persists the choice in
-`localStorage` (no cookies). An explicit `light`/`dark` value overrides any
-saved browser preference on page load; a `?theme=` query parameter on the
-dashboard URL overrides both. Only relevant with `--serve`.
+`localStorage` (no cookies). Only relevant with `--serve`. See
+[dashboard themes](dashboard.md#themes).
 
 ### `--port=N`
 
@@ -246,120 +191,54 @@ any `--skip-dir` entries) and does NOT apply `.adacovex/patches/`. See
 
 ### `--compare-base=REF`
 
-Differential mode: snapshot a base revision in a temporary directory
-(`/tmp/adacovex-diff-<pid>`) and print a side-by-side comparison against the
-current tree (packages, subprograms, docstring %, HLR traced, orphan tags,
-SPARK level, VCs proved, tests, DAL status). Works on **git, Mercurial,
-Subversion, Fossil, and jj** -- see [VCS support](#vcs-support). The
-`--target` directory must be a supported VCS repository with the VCS
-command-line tool on `PATH`.
-
-Exit `0` only if there are no regressions AND the current DAL is Achieved;
-`1` otherwise. Artifacts the base does not commit (`gnatprove.out`, a
-test-result summary) report `N/A` and are not compared.
+Differential mode: snapshot a base revision and print a side-by-side
+comparison against the current tree (packages, subprograms, docstring %, HLR
+traced, orphan tags, SPARK level, VCs proved, tests, DAL status). Exit `0`
+only if there are no regressions AND the current DAL is Achieved; `1`
+otherwise. Works on **git, Mercurial, Subversion, Fossil, and jj** -- full
+detail and the per-VCS snapshot mechanisms:
+[VCS support and differential assessment](vcs.md).
 
 ### `--coverage-delta=REF`
 
 Lightweight docstring-coverage gate for PR-style CI checks. Scans sources +
 patches + computes docstring metrics on both a base revision and the current
-tree (no GNATprove/tests/DAL, so it works when the base does not commit build
-artifacts), prints a compact coverage table plus a machine-parseable
-`coverage_delta:` line, and cleans up the snapshot.
-
-Exit `0` if current docstring coverage is `>=` the base (or the base has no
-sources); `1` if coverage regressed. Mutually exclusive with `--compare-base`.
-`make release` runs the same gate against the last release tag (e.g.
-`--coverage-delta=v1.1.0`) and aborts if docstring coverage regressed between
-releases.
+tree (no GNATprove/tests/DAL), prints a compact coverage table plus a
+machine-parseable `coverage_delta:` line, and cleans up the snapshot. Exit `0`
+if current docstring coverage is `>=` the base; `1` if coverage regressed.
+Mutually exclusive with `--compare-base`. See
+[VCS support and differential assessment](vcs.md).
 
 ### `--version`
 
 Print the bundled version (`adacovex vX.Y.Z`) and exit, without scanning or
-assessing. The version source depends on the **installation method**:
-`tools/gen-version.py` regenerates `src/adacovex_version_info.ads` (the
-compiled-in constant) on every `make build` from the first available of
-`ADACOVEX_VERSION` (release builds -- the release workflow / `make release`
-set it from the `vX.Y.Z` tag, so the shipped binary always reports exactly the
-tag it was built from), `alire/alire-dev.toml` (source checkouts), or
-`alire.toml` (dependency-managed installs: when covex is built as an Alire
-crate the binary is compiled from the published crate source, whose
-`alire.toml` -- the toml associated with the covex binary for dependency
-management -- carries the release version; `alire-dev.toml` may not exist in
-that tree). The same constant drives the man page, the SBOM tool
-version, and the result-cache namespace, so they can never drift.
+assessing. The version source depends on the **installation method**
+(`ADACOVEX_VERSION` for release builds, `alire-dev.toml` for source
+checkouts, `alire.toml` for dependency-managed installs). The same constant
+drives the man page, the SBOM tool version, and the result-cache namespace,
+so they can never drift. Full detail:
+[Installation -- version source](installation.md#version-source-per-installation-method).
 
 ### `man`
 
 The `man` subcommand installs the adacovex man page into the **local man
-database** (Linux/WSL, no root required) and refreshes the index:
-
-```bash
-adacovex man                 # install to ~/.local/share/man/man1 + run mandb
-adacovex man --check         # exit 0 if installed page matches, 1 otherwise
-adacovex man --dir=PATH      # install under PATH/man1 instead
-```
-
-- **Default root**: `$XDG_DATA_HOME/man` when set, else `~/.local/share/man`.
-  `--dir=PATH` overrides it (install goes to `PATH/man1/adacovex.1`).
-- **The page contains the version** (in the `.TH` header and a `VERSION`
-  section). `adacovex man --check` parses the installed page and exits `0`
-  when it matches the binary, `1` when a newer version is available or no
-  page is installed -- so a shell prompt hook can run `adacovex man --check`
-  and `adacovex man` automatically when the machine detects a newer version:
-
-  ```bash
-  # ~/.bashrc / ~/.zshrc: refresh the man page when the binary is newer
-  command -v adacovex >/dev/null && adacovex man --check >/dev/null 2>&1 \
-    || adacovex man >/dev/null 2>&1
-  ```
-
-- **Database refresh**: `mandb` is run on the man root when present (Ubuntu
-  and WSL ship it). When man-db is **not** installed (or `mandb` fails),
-  adacovex prints a warning that the database was not refreshed -- the page
-  is still installed and readable with `man -l
-  ~/.local/share/man/man1/adacovex.1`. `adacovex status` reports whether
-  `mandb` is on `$PATH` before you run `man`.
-- Exit codes: `0` on success/up-to-date, `1` on install failure or when
-  `--check` finds a newer version available (or none installed).
+database** (Linux/WSL, no root required) and refreshes the index with `mandb`
+when present. `adacovex man --check` exits 0 when the installed page matches
+the binary, 1 otherwise (so a shell prompt hook can auto-update); `--dir=PATH`
+overrides the install root. Full detail, exit codes, and the prompt-hook
+recipe: [Installation -- keeping the man page in sync](installation.md#keeping-the-man-page-in-sync).
 
 ### VCS support
 
 **A version control system is not required for base adacovex functionality**
 (scanning, proof analysis, test parsing, compliance assessment, SBOM
 generation, dashboards, caching). A VCS is only needed for the differential
-modes below, which snapshot a base revision to compare against the current
-tree. Since adacovex assesses source code, assuming the audited project lives
-in a VCS is sensible -- but the base tool never requires one.
-
-The differential modes run against the VCS that manages the target. Detection
-is marker-file based, with a command-probe fallback:
-
-| VCS | Marker | Base snapshot mechanism |
-|-----|--------|-------------------------|
-| git | `.git` | `git worktree add --detach` (linked worktree) |
-| jj | `.jj` | `jj git export` into the internal git store, then a git worktree against `.jj/repo/store/git` (jj commits are git commits) |
-| Mercurial | `.hg` | `hg archive -r REF DIR` (pure export) |
-| Subversion | `.svn` | `svn info --show-item url` + `svn export -r REF URL DIR` |
-| Fossil | `.fslckout` / `_FOSSIL_` | copy the repo DB and `fossil open` it at REF in a scratch dir |
-
-For colocated git+jj repos git wins (exact interop). All snapshots land in
-`/tmp/adacovex-diff-<pid>` and are cleaned up afterwards; the working tree is
-never touched.
-
-**UX recommendation**: git (and jj, its git-compatible sibling) give the best
-experience. Mercurial is fully supported. For VCS whose snapshot UX is poor,
-adacovex prints a note recommending the developers **convert the repository to
-git** (or a git-compatible VCS):
-
-- **Subversion** -- no local history, network-dependent checkouts, slow
-  `svn export` per snapshot. Converting gives you local branches, offline
-  history, and faster diffs.
-- **Fossil** -- workable, but the tooling is niche and the single-file DB
-  model complicates CI integration.
-
-These notes are informational only: the assessment still runs and gates still
-apply on every supported VCS. Works on **Linux and WSL** (the snapshot
-commands run through `sh -c`, which WSL provides).
+modes (`--compare-base` / `--coverage-delta`), which snapshot a base revision
+across **git, Mercurial, Subversion, Fossil, and jj** without touching the
+working tree. Detection is marker-file based (`.git` / `.jj` / `.hg` / `.svn`
+/ `.fslckout` / `_FOSSIL_`) with a command-probe fallback. Full detail, the
+snapshot mechanism per VCS, and the Subversion/Fossil UX notes:
+[VCS support and differential assessment](vcs.md).
 
 ### CI threshold gates (`--require-*`)
 
@@ -385,39 +264,15 @@ prover you pin.
 ### Result caching (`--cache` / `--no-cache` / `--cache-dir` / `--cache-max`)
 
 adacovex persists parsed analysis results on disk so unchanged inputs are not
-re-scanned / re-parsed / re-proved. Source scans, GNATprove summaries, test
-summaries, HLR.md/LLR.md requirement parses, the resolved SBOM dependency
-graph, and the differential-mode scans are each keyed by a namespace prefix
-plus the SHA-256 of the artifact(s) they were derived from -- e.g.
-`"scan:" | "prove:" | "tests:" | "hlr:" | "llr:" | "graph:" + digest` -- so
-re-parsing a byte-identical artifact yields a cache hit regardless of the
-target directory or command line. An unchanged manifest/lockfile/.gpr set
-serves the cached dependency graph; unchanged HLR.md/LLR.md serve the cached
-requirement parses; and `--compare-base` / `--coverage-delta` reuse cached
-source scans for the current tree.
-
-- **Schema namespace**: the default cache root is
-  `~/.adacovex/cache/<version>/<Cache_Schema>`. `Cache_Schema` (in
-  `src/core/adacovex-cache.ads`) is bumped whenever the serialized layout of a
-  cached record or the scanner/parser semantics change, so blobs written by an
-  incompatible build are never served as if valid.
-- **Eviction**: `Put_Cached` evicts oldest-first by modification time when more
-  than `--cache-max` entries (default `4096`) accumulate. `Eviction_Count`
-  tracks removals and is reported in the ANSI cache line.
-- **Overflow safety**: `Serialize` returns an empty blob when a package would
-  exceed `Max_Cache_Blob`; callers skip storing it and `Deserialize` rejects
-  empty/oversized input, so truncated data can never be served as a hit.
-- **`--target` normalization**: `--target` is normalized (`.`/`..` collapsed to
-  a canonical absolute path) before scanning, keeping the `File_Path` values in
-  cached `Package_Info` consistent across invocations that spell the same
-  directory differently.
-- **CI**: the GitHub action persists `~/.adacovex/cache` between workflow runs
-  (`result-cache` input, default true).
-
-`--no-cache` bypasses it entirely (useful when artifacts change without their
-content hash changing, or to measure rescan cost) and `--cache-dir` relocates
-it. The ANSI report shows a
-`result cache: X hit(s), Y miss(es), Z evicted` line per run.
+re-scanned / re-parsed / re-proved. Every entry is keyed by a namespace prefix
+plus the SHA-256 of the artifact(s) it was derived from; an unchanged
+manifest/lockfile/.gpr set serves the cached dependency graph, and unchanged
+HLR.md/LLR.md serve the cached requirement parses. `--no-cache` bypasses it
+entirely, `--cache-dir` relocates it, and `--cache-max` (default `4096`) caps
+entries before oldest-first eviction. The ANSI report shows a
+`result cache: X hit(s), Y miss(es), Z evicted` line per run. Full design
+(schema namespace, eviction, overflow safety, `--target` normalization):
+[Architecture -- Result caching](architecture.md#result-caching).
 
 ### `--verbose`
 
@@ -469,51 +324,13 @@ ANSI color codes are suppressed in terminal output. Color is enabled by default.
 ## The `sbom` subcommand
 
 `adacovex sbom` resolves the target project's dependency graph from its Alire
-manifest (`alire.toml` / `alire-dev.toml`), the solved-crate list in
-`alire/alire.lock`, and the root `.gpr` `with` clauses, then writes a
-proof-aware software bill of materials in CycloneDX 1.5 JSON or SPDX 2.3 JSON.
-
-- **Usage**:
-  `adacovex sbom [--format=FMT] [--out=PATH] [--standard=NAME] [--dal=LEVEL | --asil=LEVEL | --class=LEVEL]`.
-  The sbom subcommand is **standard-aware**: it accepts the same standard
-  flags as the assessment (`--standard`, `--dal`, `--asil`, `--class`) and
-  **defaults to all standards** -- without an explicit standard flag the SBOM
-  carries the joined DO-178C / ISO 26262 / IEC 62304 properties at the shared
-  DAL tier; `--standard=iso26262` / `--asil=B` narrows it to ISO 26262 at
-  ASIL B, and `--class=A` to IEC 62304 at Class A.
-- **Default output**: `<target>/sbom.json` for `cyclonedx-json`,
-  `<target>/sbom.spdx.json` for `spdx-json`. The containing directory is
-  created automatically.
-- **Properties**: only the root component -- the project adacovex actually
-  assessed -- carries `adacovex:proof_level` (`Stone`..`Platinum`, the honest
-  assessed level), `adacovex:standard` (`DO-178C` / `ISO 26262` /
-  `IEC 62304`), `adacovex:dal_target` (`DAL-A`..`DAL-D`; omitted for
-  `DAL-E`), and `adacovex:level` (the standard-specific label `DAL-C` /
-  `ASIL B` / `Class A`; omitted for `DAL-E`). Dependency components report
-  `adacovex:proof_level = "Not proved"` (adacovex only proves the target
-  itself, never third-party dependencies). Encoded as `attributionTexts` in
-  SPDX.
-- **Determinism**: the `metadata.timestamp` / `creationInfo.created` field
-  honors the `SOURCE_DATE_EPOCH` environment variable (reproducible-builds
-  convention); when set to a Unix epoch second count the timestamp is derived
-  from it in UTC via pure integer math, so SBOM output is byte-for-byte
-  deterministic across runs and machines. To tie it to a specific git commit,
-  run `export SOURCE_DATE_EPOCH=$(git -C <target> log -1 --format=%ct)` before
-  adacovex. The bundled `make` targets (`run-self`, `run-ada-crdt`, `prove`,
-  `release`, and Ada_CRDT's `prove`/`badges`) already set it from the target's
-  git `HEAD` commit time.
-- **Exclusivity**: mutually exclusive with `--compare-base` and
-  `--coverage-delta`. `sbom` scans sources, parses proof/test results, and
-  assesses DAL first, so the emitted properties reflect the real assessment
-  state.
-- **Exit code**: `0` when the SBOM was written, `1` otherwise. If the target
-  has no Alire manifest the SBOM cannot be generated (the GitHub Action reports
-  this as a warning without failing the job).
-
-Both formats validate against the official
-[CycloneDX 1.5](https://github.com/CycloneDX/specification) and
-[SPDX 2.3](https://spdx.dev) JSON schemas (see
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)).
+manifest, `alire/alire.lock`, and the root `.gpr` `with` clauses, then writes
+a proof-aware software bill of materials in CycloneDX 1.5 JSON or SPDX 2.3
+JSON. It is **standard-aware** (defaults to all standards), honors
+`SOURCE_DATE_EPOCH` for byte-for-byte deterministic output, and is mutually
+exclusive with `--compare-base` / `--coverage-delta`. Full detail (usage,
+properties, determinism, exit codes):
+[The `sbom` subcommand](sbom.md).
 
 ## Examples
 

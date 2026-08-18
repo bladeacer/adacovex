@@ -109,7 +109,7 @@ the browser. The dashboard shell is a real file
 knowledge required; the dynamic cards are injected by the Ada renderer. The
 theme resolution chain (query param, then explicit `--theme`, then saved
 `localStorage`, then system preference) and the localStorage-only
-persistence are documented in [cli-reference.md](cli-reference.md#--serve).
+persistence are documented in [dashboard.md](dashboard.md).
 
 ## Honest limits
 
