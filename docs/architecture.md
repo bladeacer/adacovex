@@ -293,7 +293,10 @@ the SPARK proof without modifying their sources. A patch file that includes
 any of `SPARK_Mode`, `Pre =>`, `Post =>`, or `Global =>` (detected by
 `Adacovex.Prove_Patch.Has_Proof`) is a *proof patch*; a patch with only
 docstrings remains a docstring overlay and never engages the proof
-machinery.
+machinery. This section is the design; for the user-facing guide -- how
+proving works, writing SPARK contracts, and the `.ads`/`.adb` patch files
+with worked examples and pitfalls -- see
+[Proving and writing proofs](proving.md).
 
 ```ada
 package VT100 with SPARK_Mode => On is

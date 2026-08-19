@@ -3,17 +3,19 @@
 `adacovex sbom` resolves the target project's dependency graph from its Alire
 manifest (`alire.toml` / `alire-dev.toml`), the solved-crate list in
 `alire/alire.lock`, and the root `.gpr` `with` clauses, then writes a
-proof-aware software bill of materials in CycloneDX 1.5 JSON or SPDX 2.3 JSON.
+proof-aware software bill of materials in CycloneDX 1.5 JSON, SPDX 2.3 JSON,
+or Markdown.
 
 ## Usage
 
 ```
-adacovex sbom [--format=cyclonedx-json|spdx-json] [--out=PATH]
+adacovex sbom [--format=cyclonedx-json|spdx-json|md] [--out=PATH]
            [--standard=NAME|--dal=LEVEL|--asil=LEVEL|--class=LEVEL]
 ```
 
 - **Default output**: `<target>/sbom.json` for `cyclonedx-json`,
-  `<target>/sbom.spdx.json` for `spdx-json`. The containing directory is
+  `<target>/sbom.spdx.json` for `spdx-json`, and
+  `<target>/docs/compliance/SBOM.md` for `md`. The containing directory is
   created automatically.
 - **Exit code**: `0` when the SBOM was written, `1` otherwise. If the target
   has no Alire manifest the SBOM cannot be generated (the GitHub Action

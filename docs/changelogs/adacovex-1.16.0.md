@@ -90,6 +90,31 @@ two-arg case from the vt100 dogfood) and treats the default `in` mode as
 bare (`in out` stays distinct), unmatched-patch rejection, and
 patch-content hashing for the prove cache key.
 
+### C4: documentation -- a dedicated proving guide, HLR/LLR links, and full CLI coverage
+
+Proving moved from scattered design notes to a dedicated user-facing page:
+new `docs/proving.md` -- *Proving and writing SPARK proofs* -- covers how
+`adacovex prove` works (gnatprove resolution, the fall-through assessment,
+the result cache), what a proof contains (the VC categories and the
+Stone..Platinum model), how to write SPARK contracts (the
+body-must-opt-in rule, why `Ada.Text_IO` bodies are skipped), and the full
+proof-patch section: **why** patches exist for vendored deps (strict mode
+counts vendored code, bodies must opt in, sources are immutable), **how**
+to write the `.ads` spec patch and `.adb` body patch, the matching rules, a
+worked `Vecmath.Clamp` example that proves its contract, and a pitfalls
+section. The page is linked from the README documentation table, AGENTS.md's
+Documentation block, the CLI reference, target-projects, and architecture.
+
+The CLI reference gained the missing first-class surfaces: a full **`prove`
+subcommand** section (its eight options, the fall-through to the assessment
+pipeline, gnatprove resolution, the patched-copy proof tree, and the cache /
+`--force` semantics), the **`--no-sbom` / `--sbom-format`** flags for the
+automatic SBOM every assessment writes, and **`man --force`** -- and
+`docs/sbom.md` now documents the Markdown (`md`) SBOM format alongside
+CycloneDX and SPDX. The internal traceability documents `docs/HLR.md` and
+`docs/LLR.md` are now linked from the README and AGENTS.md documentation
+lists.
+
 ## Test Suite
 
 850 tests (was 791), across 14 categories: the C2 `Server routing` category
@@ -118,8 +143,11 @@ gnatprove 16.1.0 (`--steps=10000`).
 No new HLRs. The proof-patch machinery extends the existing `HLR-PROVE`
 tag (`src/core/adacovex-prove_patch.ads`/`.adb` alongside
 `adacovex-prove`), covered by the C3 merge-engine tests and the Ada_CRDT
-dogfood regression (`make run-ada-crdt`), and documented in
-`docs/architecture.md` and AGENTS.md. The C2 route mapping extends
+dogfood regression (`make run-ada-crdt`), and documented in the new
+`docs/proving.md` guide, `docs/architecture.md`, and AGENTS.md. The
+C4 documentation changes are documentation-only (new `proving.md`
+page, README/AGENTS.md link tables, CLI-reference and sbom.md coverage) and
+carry no HLR tags. The C2 route mapping extends
 `HLR-SERVER` / `LLR-SERVER-01`: `Route` is the single pure mapping behind
 every `/`, `/badge/*.svg`, and `/api/metrics` route that `Handle_Request`
 serves, pinned by the C2 `Server routing` tests and proved by its
