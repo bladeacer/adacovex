@@ -13,11 +13,11 @@ caching and the patch system.
 
 ```
 adacovex [options]
-adacovex sbom [--format=cyclonedx-json|spdx-json] [--out=PATH]
+adacovex sbom [--format=cyclonedx-json|spdx-json|md] [--out=PATH]
            [--standard=NAME|--dal=LEVEL|--asil=LEVEL|--class=LEVEL]
 adacovex prove [--target=PATH] [prove options]
 adacovex status [--target=PATH]
-adacovex man [--check] [--dir=PATH]
+adacovex man [--check|--force] [--dir=PATH]
 ```
 
 ## Flags
@@ -44,6 +44,8 @@ adacovex man [--check] [--dir=PATH]
 | `--no-cache` | off | both | Disable result caching (always re-scan/re-parse/re-prove) |
 | `--cache-dir=PATH` | `~/.adacovex/cache/<ver>/<schema>` | both | Cache directory for analysis results |
 | `--cache-max=N` | `4096` | both | Max cache entries before oldest-first eviction |
+| `--no-sbom` | off | both | Skip the automatic SBOM written at the end of every assessment |
+| `--sbom-format=FMT` | `cyclonedx-json` | both | Format of the automatic SBOM: `cyclonedx-json`\|`spdx-json`\|`md` |
 | `--require-spark=LVL` | off | both | Fail loudly (exit 1) if SPARK level < LVL (Stone..Platinum) |
 | `--require-docstrings=PCT` | off | both | Fail loudly if docstring coverage < PCT% (0-100) |
 | `--require-tests=N` | off | both | Fail loudly if passing test count < N |
@@ -52,8 +54,14 @@ adacovex man [--check] [--dir=PATH]
 | `--version` | - | - | Print the bundled version and exit |
 | `man` | - | - | Install the man page into the local man database |
 | `man --check` | - | - | Exit 0 if the installed man page matches the binary version, 1 otherwise |
+| `man --force` | - | - | Reinstall the man page even when it already matches (repair) |
 | `man --dir=PATH` | `~/.local/share/man` | - | Install the man page under `PATH/man1` instead |
 | `--help` | - | both | Print usage and exit |
+
+`prove`-mode flags (also accepted by the main command, validated only in
+prove mode): `--jobs`/`-j`, `--level`, `--timeout`, `--steps`, `--memlimit`,
+`--force`, `--no-loop-unrolling`, `--no-inlining` -- see
+[The `prove` subcommand](#the-prove-subcommand).
 
 ## Flag details
 
@@ -127,6 +135,56 @@ VCS tools are on `$PATH` and which manages the target -- see
 [VCS support](vcs.md)), and mandb availability. Exit `0` when a usable
 gnatprove is detectable without a download, `1` otherwise. Full detail:
 [Platforms -- `status` subcommand](platforms.md#status-subcommand).
+
+### The `prove` subcommand
+
+`adacovex prove --target=PATH` resolves a gnatprove installation, runs it
+against the target, and then **falls through to the normal assessment
+pipeline**, which parses the freshly generated proof summary -- so one
+command both proves and assesses. For the full guide to proving and
+writing SPARK proofs (contracts, VC categories, proof patches for vendored
+deps), see [Proving and writing proofs](proving.md). gnatprove is resolved
+in this order:
+manifest pin > global pin > `$PATH` > cached toolchain > download, so the
+target does not need to declare gnatprove (full detail:
+[Architecture -- GNATprove toolchain resolution](architecture.md#gnatprove-toolchain-resolution-prove-subcommand)).
+
+The proof summary is written to `<target>/obj/gnatprove/gnatprove.out`
+(the same location the assessment discovers), the SVG badges are emitted as
+usual, and the result cache serves unchanged targets -- `--force` bypasses
+the cache and forces a full gnatprove reanalysis. When the target carries
+proof patches (`.adacovex/patches/`), gnatprove runs against a patched tree
+copy at `<target>/obj/adacovex-proof/` so vendored dependencies participate
+in the proof without touching their sources -- see
+[Proving and writing proofs](proving.md#proof-patches-proving-vendored-dependencies)
+for how to write them and
+[Architecture -- Proof patches](architecture.md#proof-patches-spark-contracts-over-vendored-dependencies)
+for the design.
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--jobs=N`, `-j N` | auto | GNATprove parallelism: auto-detect (max(1, cores-2); all cores in CI), `0` = all cores, `N` = pin N processes |
+| `--level=N` | tool default | GNATprove proof effort, 0-4 |
+| `--timeout=N` | tool default | Per-check prover timeout in seconds |
+| `--steps=N` | `10000` | Max proof steps (reproducible budget; an explicit value overrides the default) |
+| `--memlimit=N` | tool default | Prover memory limit in MB |
+| `--force` | off | Force full gnatprove reanalysis (`-f`); also bypasses the result cache |
+| `--no-loop-unrolling` | off | Disable automatic loop unrolling |
+| `--no-inlining` | off | Disable contextual analysis inlining |
+
+`prove` accepts all assessment flags too (`--dal`, `--standard`, the
+`--require-*` gates, `--emit-svg`, ...), so CI gates apply to the proof run
+directly. `--force` is shared with `man --force` (see below); the remaining
+prove flags are validated only in prove mode.
+
+### Automatic SBOM (`--no-sbom` / `--sbom-format`)
+
+Every assessment writes a proof-aware SBOM by default (the pipeline's last
+step): `<target>/sbom.json` (CycloneDX 1.5), `<target>/sbom.spdx.json`
+(SPDX 2.3), or `<target>/docs/compliance/SBOM.md` depending on
+`--sbom-format` (default `cyclonedx-json`). `--no-sbom` skips it entirely.
+These are separate from the dedicated [`sbom` subcommand](sbom.md), which
+writes a single SBOM at an explicit path and exits.
 
 ### `--serve`
 
@@ -306,8 +364,15 @@ scans or assesses.
 |--------|-----------------|----------------------|
 | Directory exclusions | `.git`, `obj`, `tests`, `config`, `.adacovex` only | Same + `demo,deps,examples` + `--skip-dir` additions |
 | Vendored code | Scanned and counted | Skipped |
-| Patch files | Applied from `.adacovex/patches/` | Not applied |
+| Patch files | Applied from `.adacovex/patches/` (docstrings always; SPARK proof aspects in prove mode) | Not applied |
 | Use case | Full compliance audit | Quick assessment of production code |
+
+Patch files can carry more than docstrings: a patch with `SPARK_Mode` /
+`Pre` / `Post` / `Global` aspects is a **proof patch** that adds SPARK
+contracts to vendored code in prove mode (spec patches `.ads`, and body
+patches `.adb` opt the vendored body into the proof). Why they exist, how
+to write them, worked examples, and pitfalls:
+[Proving and writing proofs -- proof patches](proving.md#proof-patches-proving-vendored-dependencies).
 
 ## Exit codes
 

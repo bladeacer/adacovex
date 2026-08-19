@@ -59,3 +59,12 @@ cannot modify, use docstring **patch files** at
 [Architecture -- Patch System](architecture.md#patch-system)), or run in
 relaxed mode (`--relaxed`, skip dirs, no patches) -- see
 [Strict vs relaxed mode](cli-reference.md#strict-vs-relaxed-mode).
+
+Vendored code can also participate in the **SPARK proof**: a patch carrying
+`SPARK_Mode` / `Pre` / `Post` / `Global` aspects is a *proof patch* that the
+`prove` subcommand merges into a patched tree copy (`.ads` spec contracts,
+plus `.adb` body patches that opt a SPARK-clean vendored body into the
+proof) -- see [Proving and writing proofs](proving.md#proof-patches-proving-vendored-dependencies)
+for how to write them and
+[Architecture -- Proof patches](architecture.md#proof-patches-spark-contracts-over-vendored-dependencies)
+for the design.

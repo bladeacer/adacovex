@@ -77,6 +77,9 @@ itself and `make run-ada-crdt` runs the Ada_CRDT regression.
 | [Standards](docs/standards.md) | DO-178C / ISO 26262 / IEC 62304 abstraction |
 | [Platforms](docs/platforms.md) | Platform support, CPU core detection, `status` subcommand |
 | [Architecture](docs/architecture.md) | Design decisions, patches, toolchain resolution, overflow contract |
+| [Proving and Writing Proofs](docs/proving.md) | How proving works, writing SPARK contracts, proof patches for vendored deps |
+| [HLR Index](docs/HLR.md) | High-level requirements traceability index |
+| [LLR Mapping](docs/LLR.md) | Low-level requirement-to-HLR mapping |
 | [Installation](docs/installation.md) | Alire manifest / `alr install` / release bundle / source build |
 | [LLM usage](docs/llm-usage.md) | AI disclosure, trust, how LLM agents work under AGENTS.md |
 | [Contributing](CONTRIBUTING.md) | Changelog format, test suite |
@@ -132,6 +135,7 @@ adacovex --target=.                                 # self-assessment
 adacovex --target=. --standard=all                  # badges for every standard
 adacovex --target=. --serve                         # web dashboard at :8080
 adacovex --target=. --compare-base=HEAD             # differential assessment
+adacovex prove --target=.                           # run gnatprove, then assess
 adacovex sbom --format=cyclonedx-json --target=.    # proof-aware SBOM
 adacovex status --target=.                          # toolchain + platform report
 ```
@@ -153,6 +157,14 @@ Subprograms are documented with `--  @param` / `--  @return` annotations
 100% coverage. For vendored code you cannot modify, overlay docstrings with
 patch files at `<target>/.adacovex/patches/` -- see
 [Architecture -- Patch System](docs/architecture.md#patch-system).
+
+The same patch files can carry **SPARK proof aspects** (`SPARK_Mode`, `Pre`,
+`Post`, `Global`): the `prove` subcommand merges them into a patched tree
+copy and proves vendored dependencies against their contracts without
+touching the originals -- a `.ads` patch re-declares the spec with
+contracts, and a `.adb` patch opts a SPARK-clean vendored body into the
+proof. See
+[Architecture -- Proof patches](docs/architecture.md#proof-patches-spark-contracts-over-vendored-dependencies).
 
 ## Compliance levels
 

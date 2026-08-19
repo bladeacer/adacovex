@@ -105,9 +105,9 @@ The same patch file can carry **SPARK proof aspects** (`SPARK_Mode`, `Pre`,
 copy (`<target>/obj/adacovex-proof/`) and proves the vendored code against it,
 never touching the originals. A `.ads` patch re-declares the vendored spec
 with contracts; a `.adb` patch opts the vendored body into the proof (bodies
-are analyzed only when they declare `SPARK_Mode => On`). See the proof-patch
-section in
-[docs/architecture.md](docs/architecture.md#proof-patches-spark-contracts-over-vendored-dependencies).
+are analyzed only when they declare `SPARK_Mode => On`). How to write them:
+[docs/proving.md](docs/proving.md#proof-patches-proving-vendored-dependencies);
+the design: [docs/architecture.md](docs/architecture.md#proof-patches-spark-contracts-over-vendored-dependencies).
 
 Full format, rules, and examples:
 [docs/architecture.md](docs/architecture.md#patch-system).
@@ -344,5 +344,8 @@ Per-category counts and framework details:
 - [Safety classes](docs/api-docs/adacovex-class-levels.md)
 - [Standards](docs/standards.md)
 - [Platforms](docs/platforms.md)
+- [Proving and writing proofs](docs/proving.md)
 - [Architecture](docs/architecture.md)
+- [HLR index](docs/HLR.md)
+- [LLR mapping](docs/LLR.md)
 <!-- doc-links:end -->
