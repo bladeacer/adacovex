@@ -258,6 +258,78 @@ package body Adacovex_Prove_Patch_Tests is
          True,
          "multi-line original profile matched");
 
+      --  Default `in` modes are equivalent to bare modes: a patch that
+      --  writes `in` matches an original that omits it (and vice versa).
+      Merge_Check
+        ("package V is"
+         & ASCII.LF
+         & "   procedure P (A : Integer; B : Boolean);"
+         & ASCII.LF
+         & "end V;"
+         & ASCII.LF,
+         "package V is"
+         & ASCII.LF
+         & "   procedure P (A : in Integer; B : in Boolean)"
+         & ASCII.LF
+         & "     with Post => True;"
+         & ASCII.LF
+         & "end V;"
+         & ASCII.LF,
+         "package V is"
+         & ASCII.LF
+         & "   procedure P (A : in Integer; B : in Boolean)"
+         & ASCII.LF
+         & "     with Post => True;"
+         & ASCII.LF
+         & "end V;"
+         & ASCII.LF,
+         True,
+         "default in mode matches bare mode");
+
+      --  `in out` is a real mode: it must NOT be normalized away, and a
+      --  patch declaring `in out` never matches a bare/`in` original.
+      Merge_Check
+        ("package V is"
+         & ASCII.LF
+         & "   procedure P (A : in out Integer; B : Boolean);"
+         & ASCII.LF
+         & "end V;"
+         & ASCII.LF,
+         "package V is"
+         & ASCII.LF
+         & "   procedure P (A : in out Integer; B : in Boolean)"
+         & ASCII.LF
+         & "     with Post => True;"
+         & ASCII.LF
+         & "end V;"
+         & ASCII.LF,
+         "package V is"
+         & ASCII.LF
+         & "   procedure P (A : in out Integer; B : in Boolean)"
+         & ASCII.LF
+         & "     with Post => True;"
+         & ASCII.LF
+         & "end V;"
+         & ASCII.LF,
+         True,
+         "in out mode kept, matches itself");
+      Merge_Check
+        ("package V is"
+         & ASCII.LF
+         & "   procedure P (A : Integer);"
+         & ASCII.LF
+         & "end V;"
+         & ASCII.LF,
+         "package V is"
+         & ASCII.LF
+         & "   procedure P (A : in out Integer) with Post => True;"
+         & ASCII.LF
+         & "end V;"
+         & ASCII.LF,
+         "",
+         False,
+         "in out does not match bare mode");
+
       --  A multi-line aspect clause (Post spanning lines with parentheses)
       --  is taken as part of the patch declaration block.
       Merge_Check
@@ -318,6 +390,90 @@ package body Adacovex_Prove_Patch_Tests is
          VT100_Orig,
          True,
          "no-aspect patch merges unchanged");
+
+      --  Body patches: a `package body` declaration line accepts the
+      --  package-level aspect splice exactly like a spec.
+      Merge_Check
+        ("package body V is"
+         & ASCII.LF
+         & "   procedure P is"
+         & ASCII.LF
+         & "   begin"
+         & ASCII.LF
+         & "      null;"
+         & ASCII.LF
+         & "   end P;"
+         & ASCII.LF
+         & "end V;"
+         & ASCII.LF,
+         "package body V with SPARK_Mode => On is"
+         & ASCII.LF
+         & "   procedure P;"
+         & ASCII.LF
+         & "end V;"
+         & ASCII.LF,
+         "package body V with SPARK_Mode => On is"
+         & ASCII.LF
+         & "   procedure P is"
+         & ASCII.LF
+         & "   begin"
+         & ASCII.LF
+         & "      null;"
+         & ASCII.LF
+         & "   end P;"
+         & ASCII.LF
+         & "end V;"
+         & ASCII.LF,
+         True,
+         "body package-level aspect splice");
+
+      --  Body subprogram declarations terminate at the `is` keyword: the
+      --  patched declaration (with aspect) replaces the original
+      --  declaration only, and the original body proper (begin/end) is
+      --  preserved -- the stub body in the patch is never merged in.
+      Merge_Check
+        ("package body V is"
+         & ASCII.LF
+         & "   function F (X : in Integer) return Integer is"
+         & ASCII.LF
+         & "   begin"
+         & ASCII.LF
+         & "      return X + 1;"
+         & ASCII.LF
+         & "   end F;"
+         & ASCII.LF
+         & "end V;"
+         & ASCII.LF,
+         "package body V with SPARK_Mode => On is"
+         & ASCII.LF
+         & "   function F (X : in Integer) return Integer"
+         & ASCII.LF
+         & "     with SPARK_Mode => On is"
+         & ASCII.LF
+         & "   begin"
+         & ASCII.LF
+         & "      null;"
+         & ASCII.LF
+         & "   end F;"
+         & ASCII.LF
+         & "end V;"
+         & ASCII.LF,
+         "package body V with SPARK_Mode => On is"
+         & ASCII.LF
+         & "   function F (X : in Integer) return Integer"
+         & ASCII.LF
+         & "     with SPARK_Mode => On is"
+         & ASCII.LF
+         & "   begin"
+         & ASCII.LF
+         & "      return X + 1;"
+         & ASCII.LF
+         & "   end F;"
+         & ASCII.LF
+         & "end V;"
+         & ASCII.LF,
+         True,
+         "body subprogram declaration replaced, body proper kept");
 
       --  The merged spec is the shape gnatprove analyzes: package aspect on
       --  the declaration line, contract on the declaration.
