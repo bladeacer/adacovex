@@ -24,21 +24,22 @@ package body Adacovex.Prove_Patch is
    Max_Profile : constant := 512;
 
    type Subprog_Ref is record
-      Name            : String (1 .. Types.Max_Id_Str);
-      Name_Len        : Natural := 0;
-      Profile         : String (1 .. Max_Profile);
-      Profile_Len     : Natural := 0;
+      Name             : String (1 .. Types.Max_Id_Str);
+      Name_Len         : Natural := 0;
+      Profile          : String (1 .. Max_Profile);
+      Profile_Len      : Natural := 0;
       Profile_Too_Long : Boolean := False;
-      Start_Pos       : Natural := 0;
-      End_Pos         : Natural := 0;
-      Used            : Boolean := False;
+      Start_Pos        : Natural := 0;
+      End_Pos          : Natural := 0;
+      Used             : Boolean := False;
    end record;
 
    type Subprog_Refs is array (1 .. Max_Patch_Subprogs) of Subprog_Ref;
 
    function Has_Proof (Text : String) return Boolean is
    begin
-      return Index (Text, "SPARK_Mode") > 0
+      return
+        Index (Text, "SPARK_Mode") > 0
         or else Index (Text, "Pre =>") > 0
         or else Index (Text, "Post =>") > 0
         or else Index (Text, "Global =>") > 0;
@@ -48,11 +49,11 @@ package body Adacovex.Prove_Patch is
    --  or CR): Line_First .. Line_Last, with Next_Pos the start of the
    --  following line (Text'Last + 1 past the final line).
    procedure Next_Line_Bounds
-     (Text        : String;
-      Pos         : Natural;
-      Line_First  : out Natural;
-      Line_Last   : out Natural;
-      Next_Pos    : out Natural)
+     (Text       : String;
+      Pos        : Natural;
+      Line_First : out Natural;
+      Line_Last  : out Natural;
+      Next_Pos   : out Natural)
    is
       P : Natural := Pos;
    begin
@@ -85,25 +86,19 @@ package body Adacovex.Prove_Patch is
       T : constant String := Trim (Line, Ada.Strings.Both);
       P : Natural := T'First;
    begin
-      if T'Length >= 15
-        and then T (T'First .. T'First + 14) = "not overriding"
+      if T'Length >= 15 and then T (T'First .. T'First + 14) = "not overriding"
       then
          P := T'First + 15;
-      elsif T'Length >= 10
-        and then T (T'First .. T'First + 9) = "overriding"
+      elsif T'Length >= 10 and then T (T'First .. T'First + 9) = "overriding"
       then
          P := T'First + 10;
       end if;
       while P <= T'Last and then T (P) = ' ' loop
          P := P + 1;
       end loop;
-      if T'Last - P + 1 >= 10
-        and then T (P .. P + 9) = "procedure "
-      then
+      if T'Last - P + 1 >= 10 and then T (P .. P + 9) = "procedure " then
          P := P + 10;
-      elsif T'Last - P + 1 >= 9
-        and then T (P .. P + 8) = "function "
-      then
+      elsif T'Last - P + 1 >= 9 and then T (P .. P + 8) = "function " then
          P := P + 9;
       else
          return False;
@@ -120,11 +115,11 @@ package body Adacovex.Prove_Patch is
          declare
             C : constant Character := T (P + Name'Length);
          begin
-            return not
-              (C in 'a' .. 'z'
-               or else C in 'A' .. 'Z'
-               or else C in '0' .. '9'
-               or else C = '_');
+            return
+              not (C in 'a' .. 'z'
+                   or else C in 'A' .. 'Z'
+                   or else C in '0' .. '9'
+                   or else C = '_');
          end;
       end if;
       return True;
@@ -140,10 +135,7 @@ package body Adacovex.Prove_Patch is
    --  two-argument Scroll_Screen replaces the two-argument original,
    --  never a same-named sibling.
    function Param_Profile
-     (Text     : String;
-      Start    : Natural;
-      Span_End : Natural)
-      return String
+     (Text : String; Start : Natural; Span_End : Natural) return String
    is
       Open  : Natural := 0;
       Depth : Natural := 0;
@@ -197,11 +189,9 @@ package body Adacovex.Prove_Patch is
      (Original   : String;
       Line_Start : Natural;
       Span_End   : Natural;
-      Ref        : Subprog_Ref)
-      return Boolean
+      Ref        : Subprog_Ref) return Boolean
    is
-      O : constant String :=
-        Param_Profile (Original, Line_Start, Span_End);
+      O : constant String := Param_Profile (Original, Line_Start, Span_End);
    begin
       if Ref.Profile_Too_Long then
          return False;
@@ -223,12 +213,10 @@ package body Adacovex.Prove_Patch is
       T : constant String := Trim (Line, Ada.Strings.Both);
       P : Natural := T'First;
    begin
-      if T'Length >= 15
-        and then T (T'First .. T'First + 14) = "not overriding"
+      if T'Length >= 15 and then T (T'First .. T'First + 14) = "not overriding"
       then
          P := T'First + 15;
-      elsif T'Length >= 10
-        and then T (T'First .. T'First + 9) = "overriding"
+      elsif T'Length >= 10 and then T (T'First .. T'First + 9) = "overriding"
       then
          P := T'First + 10;
       end if;
@@ -237,8 +225,7 @@ package body Adacovex.Prove_Patch is
       end loop;
       return
         (T'Last - P + 1 >= 10 and then T (P .. P + 9) = "procedure ")
-        or else
-        (T'Last - P + 1 >= 9 and then T (P .. P + 8) = "function ");
+        or else (T'Last - P + 1 >= 9 and then T (P .. P + 8) = "function ");
    end Is_Subprog_Decl;
 
    --  Identifier of the subprogram declared by Line (the token after
@@ -252,12 +239,10 @@ package body Adacovex.Prove_Patch is
       E : Natural;
    begin
       Name_Len := 0;
-      if T'Length >= 15
-        and then T (T'First .. T'First + 14) = "not overriding"
+      if T'Length >= 15 and then T (T'First .. T'First + 14) = "not overriding"
       then
          P := T'First + 15;
-      elsif T'Length >= 10
-        and then T (T'First .. T'First + 9) = "overriding"
+      elsif T'Length >= 10 and then T (T'First .. T'First + 9) = "overriding"
       then
          P := T'First + 10;
       end if;
@@ -337,7 +322,8 @@ package body Adacovex.Prove_Patch is
    function Is_Package_Decl (Line : String) return Boolean is
       T : constant String := Trim (Line, Ada.Strings.Both);
    begin
-      return T'Length >= 9
+      return
+        T'Length >= 9
         and then T (T'First .. T'First + 7) = "package "
         and then Index (T, " is") > 0;
    end Is_Package_Decl;
@@ -345,10 +331,7 @@ package body Adacovex.Prove_Patch is
    --  Append S and a line terminator to Dst at cursor C; OK False when the
    --  fixed buffer would overflow (fail loudly, never truncate).
    procedure Emit_Line
-     (Dst   : in out String;
-      C     : in out Natural;
-      S     : String;
-      OK    : in out Boolean)
+     (Dst : in out String; C : in out Natural; S : String; OK : in out Boolean)
    is
    begin
       if C + S'Length + 1 > Dst'Last then
@@ -413,17 +396,12 @@ package body Adacovex.Prove_Patch is
                if Ref_Ct < Max_Patch_Subprogs then
                   Ref_Ct := Ref_Ct + 1;
                   Subprog_Name
-                    (Line,
-                     Refs (Ref_Ct).Name,
-                     Refs (Ref_Ct).Name_Len);
+                    (Line, Refs (Ref_Ct).Name, Refs (Ref_Ct).Name_Len);
                   Refs (Ref_Ct).Start_Pos := L1;
                   Refs (Ref_Ct).End_Pos := Decl_Span_End (Patch, L1);
                   declare
                      Prof : constant String :=
-                       Param_Profile
-                         (Patch,
-                          L1,
-                          Refs (Ref_Ct).End_Pos);
+                       Param_Profile (Patch, L1, Refs (Ref_Ct).End_Pos);
                   begin
                      if Prof'Length > Refs (Ref_Ct).Profile'Length then
                         --  Over-long parameter list: the ref can never
@@ -440,10 +418,11 @@ package body Adacovex.Prove_Patch is
                   --  a docstring-only mirror entry leaves the original
                   --  declaration untouched.
                   if Index
-                       (Patch (Refs (Ref_Ct).Start_Pos
-                               .. Refs (Ref_Ct).End_Pos - 1),
+                       (Patch
+                          (Refs (Ref_Ct).Start_Pos
+                           .. Refs (Ref_Ct).End_Pos - 1),
                         "with")
-                     = 0
+                    = 0
                   then
                      Ref_Ct := Ref_Ct - 1;
                   end if;
@@ -473,9 +452,9 @@ package body Adacovex.Prove_Patch is
       while Pos <= Original'Last loop
          Next_Line_Bounds (Original, Pos, L1, L2, Nx);
          declare
-            Line     : constant String := Original (L1 .. L2);
-            Emitted  : Boolean := False;
-            New_Pos  : Natural := Nx;
+            Line    : constant String := Original (L1 .. L2);
+            Emitted : Boolean := False;
+            New_Pos : Natural := Nx;
          begin
             if Pkg_Len > 0
               and then Is_Package_Decl (Line)
@@ -666,18 +645,13 @@ package body Adacovex.Prove_Patch is
 
    --  Copy a directory tree, skipping .git / obj / .adacovex at any depth
    --  (the same always-excluded set the scanner and proof hash use).
-   procedure Copy_Tree
-     (Src     : String;
-      Dst     : String;
-      Skipped : in out Natural)
+   procedure Copy_Tree (Src : String; Dst : String; Skipped : in out Natural)
    is
       use Ada.Directories;
 
       function Skip (Name : String) return Boolean is
       begin
-         return Name = ".git"
-           or else Name = "obj"
-           or else Name = ".adacovex";
+         return Name = ".git" or else Name = "obj" or else Name = ".adacovex";
       end Skip;
 
       Srch : Search_Type;
@@ -696,10 +670,7 @@ package body Adacovex.Prove_Patch is
          begin
             if N /= "." and then N /= ".." and then not Skip (N) then
                if Kind (Ent) = Directory then
-                  Copy_Tree
-                    (Full_Name (Ent),
-                     Dst & "/" & N,
-                     Skipped);
+                  Copy_Tree (Full_Name (Ent), Dst & "/" & N, Skipped);
                else
                   Copy_File (Full_Name (Ent), Dst & "/" & N, OK);
                   if not OK then
@@ -796,15 +767,15 @@ package body Adacovex.Prove_Patch is
    end Count_Proof_Patches;
 
    function Patches_Hash (Target_Dir : String) return String is
-      Root  : constant String := Target_Dir & "/.adacovex/patches";
-      Comb  : String (1 .. 64) := (others => ' ');
-      Has   : Boolean := False;
+      Root : constant String := Target_Dir & "/.adacovex/patches";
+      Comb : String (1 .. 64) := (others => ' ');
+      Has  : Boolean := False;
 
       procedure Fold (File : String; Rel : String) is
          pragma Unreferenced (Rel);
       begin
-         Comb := Adacovex.Cache.Hash_String
-           (Comb & Adacovex.Cache.Hash_File (File));
+         Comb :=
+           Adacovex.Cache.Hash_String (Comb & Adacovex.Cache.Hash_File (File));
          Has := True;
       end Fold;
    begin
@@ -825,11 +796,11 @@ package body Adacovex.Prove_Patch is
       Success    : out Boolean)
    is
       use Ada.Directories;
-      Dst     : constant String := Target_Dir & "/obj/adacovex-proof";
-      Skipped : Natural := 0;
-      Base    : String (1 .. Types.Max_Filename);
+      Dst      : constant String := Target_Dir & "/obj/adacovex-proof";
+      Skipped  : Natural := 0;
+      Base     : String (1 .. Types.Max_Filename);
       Base_Len : Natural := 0;
-      I       : Natural := Root_GPR'Last;
+      I        : Natural := Root_GPR'Last;
    begin
       Copy_Len := 0;
       GPR_Len := 0;
@@ -868,7 +839,8 @@ package body Adacovex.Prove_Patch is
             if not Exists (Orig) then
                Ada.Text_IO.Put_Line
                  (Ada.Text_IO.Standard_Error,
-                  "  ERROR: proof patch '" & Rel
+                  "  ERROR: proof patch '"
+                  & Rel
                   & "' has no matching source file under the target;"
                   & " patch skipped");
                return;
@@ -877,7 +849,8 @@ package body Adacovex.Prove_Patch is
             if not R1 then
                Ada.Text_IO.Put_Line
                  (Ada.Text_IO.Standard_Error,
-                  "  ERROR: could not read '" & Rel
+                  "  ERROR: could not read '"
+                  & Rel
                   & "' for proof patching; patch skipped");
                return;
             end if;
@@ -885,7 +858,8 @@ package body Adacovex.Prove_Patch is
             if not R2 then
                Ada.Text_IO.Put_Line
                  (Ada.Text_IO.Standard_Error,
-                  "  ERROR: proof patch '" & Rel
+                  "  ERROR: proof patch '"
+                  & Rel
                   & "' could not be merged into the vendored spec"
                   & " (unmatched subprogram or oversized file); patch"
                   & " skipped");

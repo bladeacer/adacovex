@@ -59,10 +59,14 @@ package body Adacovex_Renderer_SVG_Tests is
      (R    : in out Adacovex.Test_Support.Runner'Class;
       SVG  : String;
       Name : String;
-      LW   : Natural;  --  label segment width  (text + 10px each side)
-      VW   : Natural;  --  value segment width
-      TW   : Natural;  --  total badge width    (LW + VW)
-      LX   : Natural;  --  label text x (segment center)
+      LW   : Natural;
+      --  label segment width  (text + 10px each side)
+      VW   : Natural;
+      --  value segment width
+      TW   : Natural;
+      --  total badge width    (LW + VW)
+      LX   : Natural;
+      --  label text x (segment center)
       VX   : Natural)  --  value text x (segment center)
    is
    begin
@@ -73,10 +77,8 @@ package body Adacovex_Renderer_SVG_Tests is
         (Nth_Attr (SVG, "width", 4) = VW, Name & ": value segment width");
       R.Check
         (Nth_Attr (SVG, "x", 1) = LW, Name & ": value segment starts at LW");
-      R.Check
-        (Nth_Attr (SVG, "x", 2) = LX, Name & ": label text centered");
-      R.Check
-        (Nth_Attr (SVG, "x", 3) = VX, Name & ": value text centered");
+      R.Check (Nth_Attr (SVG, "x", 2) = LX, Name & ": label text centered");
+      R.Check (Nth_Attr (SVG, "x", 3) = VX, Name & ": value text centered");
    end Check_Geometry;
 
    procedure Run (R : in out Adacovex.Test_Support.Runner'Class) is
@@ -245,8 +247,7 @@ package body Adacovex_Renderer_SVG_Tests is
       declare
          S : constant String := Render_SPARK_Badge (Platinum);
       begin
-         R.Check
-           (Contains (S, "<svg"), "/badge/spark.svg: contains <svg");
+         R.Check (Contains (S, "<svg"), "/badge/spark.svg: contains <svg");
          R.Check (Contains (S, "SPARK"), "/badge/spark.svg: label");
          R.Check (Contains (S, "Platinum"), "/badge/spark.svg: value");
          Check_Geometry (R, S, "/badge/spark.svg", 55, 66, 121, 27, 88);
@@ -262,11 +263,9 @@ package body Adacovex_Renderer_SVG_Tests is
          declare
             S : constant String := Render_Tests_Badge (Summary);
          begin
-            R.Check
-              (Contains (S, "<svg"), "/badge/tests.svg: contains <svg");
+            R.Check (Contains (S, "<svg"), "/badge/tests.svg: contains <svg");
             R.Check (Contains (S, "Tests"), "/badge/tests.svg: label");
-            R.Check
-              (Contains (S, "738 Passed"), "/badge/tests.svg: value");
+            R.Check (Contains (S, "738 Passed"), "/badge/tests.svg: value");
             Check_Geometry (R, S, "/badge/tests.svg", 48, 82, 130, 24, 89);
          end;
       end;
@@ -280,16 +279,12 @@ package body Adacovex_Renderer_SVG_Tests is
          Assess.Status := Achieved;
          Assess.Target_DAL := DAL_C;
          declare
-            S : constant String :=
-              Render_Compliance_Badge (Assess, DO_178C);
+            S : constant String := Render_Compliance_Badge (Assess, DO_178C);
          begin
-            R.Check
-              (Contains (S, "<svg"), "/badge/do178c.svg: contains <svg");
+            R.Check (Contains (S, "<svg"), "/badge/do178c.svg: contains <svg");
             R.Check (Contains (S, "DO-178C"), "/badge/do178c.svg: label");
-            R.Check
-              (Contains (S, "DAL-C PASS"), "/badge/do178c.svg: value");
-            Check_Geometry
-              (R, S, "/badge/do178c.svg", 67, 82, 149, 33, 108);
+            R.Check (Contains (S, "DAL-C PASS"), "/badge/do178c.svg: value");
+            Check_Geometry (R, S, "/badge/do178c.svg", 67, 82, 149, 33, 108);
          end;
       end;
       declare
@@ -298,11 +293,9 @@ package body Adacovex_Renderer_SVG_Tests is
          Assess.Status := Unmet;
          Assess.Target_DAL := DAL_C;
          declare
-            S : constant String :=
-              Render_Compliance_Badge (Assess, DO_178C);
+            S : constant String := Render_Compliance_Badge (Assess, DO_178C);
          begin
-            R.Check
-              (Contains (S, "<svg"), "/badge/do178c.svg (Unmet): <svg");
+            R.Check (Contains (S, "<svg"), "/badge/do178c.svg (Unmet): <svg");
             R.Check
               (Contains (S, "DAL-C FAIL"), "/badge/do178c.svg: FAIL value");
             Check_Geometry
@@ -319,17 +312,14 @@ package body Adacovex_Renderer_SVG_Tests is
          Assess.Status := Achieved;
          Assess.Target_DAL := DAL_C;
          declare
-            S : constant String :=
-              Render_Compliance_Badge (Assess, ISO_26262);
+            S : constant String := Render_Compliance_Badge (Assess, ISO_26262);
          begin
             R.Check
               (Contains (S, "<svg"), "/badge/iso26262.svg: contains <svg");
-            R.Check
-              (Contains (S, "ISO 26262"), "/badge/iso26262.svg: label");
+            R.Check (Contains (S, "ISO 26262"), "/badge/iso26262.svg: label");
             R.Check
               (Contains (S, "ASIL B PASS"), "/badge/iso26262.svg: value");
-            Check_Geometry
-              (R, S, "/badge/iso26262.svg", 76, 84, 160, 38, 118);
+            Check_Geometry (R, S, "/badge/iso26262.svg", 76, 84, 160, 38, 118);
          end;
       end;
       declare
@@ -338,17 +328,14 @@ package body Adacovex_Renderer_SVG_Tests is
          Assess.Status := Achieved;
          Assess.Target_DAL := DAL_C;
          declare
-            S : constant String :=
-              Render_Compliance_Badge (Assess, IEC_62304);
+            S : constant String := Render_Compliance_Badge (Assess, IEC_62304);
          begin
             R.Check
               (Contains (S, "<svg"), "/badge/iec62304.svg: contains <svg");
-            R.Check
-              (Contains (S, "IEC 62304"), "/badge/iec62304.svg: label");
+            R.Check (Contains (S, "IEC 62304"), "/badge/iec62304.svg: label");
             R.Check
               (Contains (S, "Class A PASS"), "/badge/iec62304.svg: value");
-            Check_Geometry
-              (R, S, "/badge/iec62304.svg", 75, 89, 164, 37, 119);
+            Check_Geometry (R, S, "/badge/iec62304.svg", 75, 89, 164, 37, 119);
          end;
       end;
 

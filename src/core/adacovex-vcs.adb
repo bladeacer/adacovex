@@ -213,9 +213,7 @@ package body Adacovex.VCS is
    begin
       return Detect (Target_Dir) /= Unknown;
    end Is_Managed;
-   function To_String (Kind : VCS_Kind) return String
-   with SPARK_Mode => On
-   is
+   function To_String (Kind : VCS_Kind) return String with SPARK_Mode => On is
    begin
       case Kind is
          when Git        =>
@@ -238,9 +236,7 @@ package body Adacovex.VCS is
       end case;
    end To_String;
 
-   function Tool_Name (Kind : VCS_Kind) return String
-   with SPARK_Mode => On
-   is
+   function Tool_Name (Kind : VCS_Kind) return String with SPARK_Mode => On is
    begin
       case Kind is
          when Git        =>

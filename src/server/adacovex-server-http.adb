@@ -223,9 +223,7 @@ package body Adacovex.Server.HTTP is
    --  on the spec characterizes the result exactly (each route kind iff its
    --  literal path; Not_Found iff none of the seven literals), so the
    --  mapping is proved rather than just unit-tested.
-   function Route (Path : String) return Route_Kind
-   with SPARK_Mode => On
-   is
+   function Route (Path : String) return Route_Kind with SPARK_Mode => On is
    begin
       if Path = "/" then
          return Route_Dashboard;
@@ -351,7 +349,7 @@ package body Adacovex.Server.HTTP is
       Keep_Alive := Is_KA;
 
       case Route (Path) is
-         when Route_Dashboard =>
+         when Route_Dashboard      =>
             Send_Response
               (Channel,
                "200 OK",
@@ -365,22 +363,24 @@ package body Adacovex.Server.HTTP is
                   State.All_Standards,
                   State.Theme),
                Is_KA);
-         when Route_Badge_SPARK =>
+
+         when Route_Badge_SPARK    =>
             Send_Response
               (Channel,
                "200 OK",
                "image/svg+xml",
-               Adacovex.Renderers.SVG.Render_SPARK_Badge
-                 (State.Proof.Level),
+               Adacovex.Renderers.SVG.Render_SPARK_Badge (State.Proof.Level),
                Is_KA);
-         when Route_Badge_Tests =>
+
+         when Route_Badge_Tests    =>
             Send_Response
               (Channel,
                "200 OK",
                "image/svg+xml",
                Adacovex.Renderers.SVG.Render_Tests_Badge (State.Tests),
                Is_KA);
-         when Route_Badge_DO178C =>
+
+         when Route_Badge_DO178C   =>
             Send_Response
               (Channel,
                "200 OK",
@@ -388,6 +388,7 @@ package body Adacovex.Server.HTTP is
                Adacovex.Renderers.SVG.Render_Compliance_Badge
                  (State.DAL_Assess, Types.DO_178C),
                Is_KA);
+
          when Route_Badge_ISO26262 =>
             Send_Response
               (Channel,
@@ -396,6 +397,7 @@ package body Adacovex.Server.HTTP is
                Adacovex.Renderers.SVG.Render_Compliance_Badge
                  (State.DAL_Assess, Types.ISO_26262),
                Is_KA);
+
          when Route_Badge_IEC62304 =>
             Send_Response
               (Channel,
@@ -404,7 +406,8 @@ package body Adacovex.Server.HTTP is
                Adacovex.Renderers.SVG.Render_Compliance_Badge
                  (State.DAL_Assess, Types.IEC_62304),
                Is_KA);
-         when Route_API_Metrics =>
+
+         when Route_API_Metrics    =>
             Send_Response
               (Channel,
                "200 OK",
@@ -416,7 +419,8 @@ package body Adacovex.Server.HTTP is
                   State.DAL_Assess,
                   State.All_Standards),
                Is_KA);
-         when Route_Not_Found =>
+
+         when Route_Not_Found      =>
             Send_Response
               (Channel,
                "404 Not Found",

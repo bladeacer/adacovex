@@ -285,6 +285,58 @@ to patch `Ada_CRDT/demo/deps/vt100/vt100.ads`, create
 `Ada_CRDT/.adacovex/patches/demo/deps/vt100/vt100.ads`. The `.adacovex`
 directory is always excluded from source scanning.
 
+### Proof patches: SPARK contracts over vendored dependencies
+
+The same `.adacovex/patches/<relative-path>` file can carry **SPARK proof
+aspects** in addition to docstrings, so vendored dependencies participate in
+the SPARK proof without modifying their sources. A patch file that includes
+any of `SPARK_Mode`, `Pre =>`, `Post =>`, or `Global =>` (detected by
+`Adacovex.Prove_Patch.Has_Proof`) is a *proof patch*; a patch with only
+docstrings remains a docstring overlay and never engages the proof
+machinery.
+
+```ada
+package VT100 with SPARK_Mode => On is
+
+   --  Scroll a region of the screen up.
+   --  @param From  Starting line of scroll region.
+   --  @param To    Ending line of scroll region.
+   procedure Scroll_Screen (From : in Natural; To : in Natural)
+     with Pre => From <= To;
+
+end VT100;
+```
+
+The `prove` subcommand merges proof patches before running gnatprove:
+
+1. `Count_Proof_Patches` scans `<target>/.adacovex/patches/`; a target with
+   no proof patches is proved against its own tree exactly as before.
+2. `Build_Patched_Copy` copies the target tree (excluding `.git`, `obj`,
+   and `.adacovex`) into `<target>/obj/adacovex-proof/` and overwrites each
+   proof-patched spec with its merged form -- package-level aspects spliced
+   onto the package declaration line, and each aspect-carrying subprogram
+   declaration replaced by the patch's declaration block. The merge matches
+   on name **and** normalized parameter profile (`Param_Profile`), so an
+   overloaded subprogram patches its exact signature and never a
+   same-named sibling. The original vendored sources are never touched.
+3. gnatprove runs against the copy's root project (`<copy>/<basename>.gpr`)
+   and the resulting `gnatprove.out` is copied back to
+   `<target>/obj/gnatprove/gnatprove.out` for the assessment pipeline. The
+   copy lives under the target's `obj/`, so it is excluded from scanning,
+   manifest graphs, and the prove input hash.
+4. Proof-patch contents are folded into the prove result-cache key, so a
+   patch edit invalidates the cached proof and forces a re-prove.
+
+Where the vendored body is SPARK-clean, gnatprove proves the patched
+contracts; where it is not (e.g. bodies that call `Ada.Text_IO`, which is
+`SPARK_Mode Off`), gnatprove skips the I/O bodies by design and reports the
+unit out of proof scope -- a proof patch never drags the target's proof
+level down. The Ada_CRDT dogfood target proves the mechanism end to end:
+its `.adacovex/patches/demo/deps/vt100/vt100.ads` declares `SPARK_Mode =>
+On` on the vendored package and pins the `Scroll_Screen` scroll-region
+contract, and `make run-ada-crdt` / Ada_CRDT's `make prove` run through the
+patched copy.
+
 ## Output Formats
 
 adacovex supports multiple output formats:

@@ -9,11 +9,11 @@
 --  GNATprove analyzes the vendored unit with the patched contracts --
 --  without modifying the original vendored sources.
 --   --  The merge is textual and line-based: the patched spec is the original
-   --  spec with each patched subprogram declaration (matched on name AND
-   --  normalized parameter profile, so an overload patches its exact
-   --  signature -- never a same-named sibling) replaced by the patch's
-   --  declaration block (which carries the aspects), and the package
-   --  declaration given the patch's package-level aspect when present.
+--  spec with each patched subprogram declaration (matched on name AND
+--  normalized parameter profile, so an overload patches its exact
+--  signature -- never a same-named sibling) replaced by the patch's
+--  declaration block (which carries the aspects), and the package
+--  declaration given the patch's package-level aspect when present.
 --
 --  Where the vendored body is SPARK-clean, GNATprove proves the patched
 --  contracts; where it is not (e.g. Ada.Text_IO callers), GNATprove skips

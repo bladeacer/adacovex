@@ -34,37 +34,54 @@ package body Adacovex_Prove_Patch_Tests is
       end Merge_Check;
 
       VT100_Orig : constant String :=
-        "package VT100 is" & ASCII.LF
-        & "   procedure Reset;" & ASCII.LF
-        & "   procedure Move_Cursor" & ASCII.LF
-        & "     (Line : in Natural; Column : in Natural);" & ASCII.LF
-        & "end VT100;" & ASCII.LF;
+        "package VT100 is"
+        & ASCII.LF
+        & "   procedure Reset;"
+        & ASCII.LF
+        & "   procedure Move_Cursor"
+        & ASCII.LF
+        & "     (Line : in Natural; Column : in Natural);"
+        & ASCII.LF
+        & "end VT100;"
+        & ASCII.LF;
 
       VT100_Patch : constant String :=
-        "package VT100 with SPARK_Mode => On is" & ASCII.LF
-        & "   procedure Reset with SPARK_Mode => On;" & ASCII.LF
+        "package VT100 with SPARK_Mode => On is"
+        & ASCII.LF
+        & "   procedure Reset with SPARK_Mode => On;"
+        & ASCII.LF
         & "   procedure Move_Cursor (Line : in Natural; Column : in Natural)"
         & ASCII.LF
-        & "     with SPARK_Mode => On;" & ASCII.LF
-        & "end VT100;" & ASCII.LF;
+        & "     with SPARK_Mode => On;"
+        & ASCII.LF
+        & "end VT100;"
+        & ASCII.LF;
 
       VT100_Expected : constant String :=
-        "package VT100 with SPARK_Mode => On is" & ASCII.LF
-        & "   procedure Reset with SPARK_Mode => On;" & ASCII.LF
+        "package VT100 with SPARK_Mode => On is"
+        & ASCII.LF
+        & "   procedure Reset with SPARK_Mode => On;"
+        & ASCII.LF
         & "   procedure Move_Cursor (Line : in Natural; Column : in Natural)"
         & ASCII.LF
-        & "     with SPARK_Mode => On;" & ASCII.LF
-        & "end VT100;" & ASCII.LF;
+        & "     with SPARK_Mode => On;"
+        & ASCII.LF
+        & "end VT100;"
+        & ASCII.LF;
    begin
       --  Has_Proof: docstring-only patches carry no proof aspects; a patch
       --  with SPARK_Mode / Pre / Post / Global aspects does.
       R.Check
-        (not Has_Proof ("--  A docstring-only patch." & ASCII.LF
-                        & "package V is" & ASCII.LF & "end V;"),
+        (not Has_Proof
+               ("--  A docstring-only patch."
+                & ASCII.LF
+                & "package V is"
+                & ASCII.LF
+                & "end V;"),
          "docstring-only patch has no proof");
       R.Check
-        (Has_Proof ("package V with SPARK_Mode => On is" & ASCII.LF
-                    & "end V;"),
+        (Has_Proof
+           ("package V with SPARK_Mode => On is" & ASCII.LF & "end V;"),
          "SPARK_Mode aspect detected");
       R.Check
         (Has_Proof ("   procedure P with Post => True;" & ASCII.LF),
@@ -80,23 +97,34 @@ package body Adacovex_Prove_Patch_Tests is
       --  (single- and multi-line) replaced by the patch's aspect-carrying
       --  declarations.
       Merge_Check
-        (VT100_Orig, VT100_Patch, VT100_Expected, True,
+        (VT100_Orig,
+         VT100_Patch,
+         VT100_Expected,
+         True,
          "package aspect + subprogram aspects");
 
       --  Package-level aspect only: subprograms stay original when the
       --  patch mirrors them without aspects (the docstring-patch case).
       Merge_Check
         (VT100_Orig,
-         "package VT100 with SPARK_Mode => On is" & ASCII.LF
-         & "   procedure Reset;" & ASCII.LF
+         "package VT100 with SPARK_Mode => On is"
+         & ASCII.LF
+         & "   procedure Reset;"
+         & ASCII.LF
          & "   procedure Move_Cursor (Line : in Natural; Column : in Natural);"
          & ASCII.LF
-         & "end VT100;" & ASCII.LF,
-         "package VT100 with SPARK_Mode => On is" & ASCII.LF
-         & "   procedure Reset;" & ASCII.LF
-         & "   procedure Move_Cursor" & ASCII.LF
-         & "     (Line : in Natural; Column : in Natural);" & ASCII.LF
-         & "end VT100;" & ASCII.LF,
+         & "end VT100;"
+         & ASCII.LF,
+         "package VT100 with SPARK_Mode => On is"
+         & ASCII.LF
+         & "   procedure Reset;"
+         & ASCII.LF
+         & "   procedure Move_Cursor"
+         & ASCII.LF
+         & "     (Line : in Natural; Column : in Natural);"
+         & ASCII.LF
+         & "end VT100;"
+         & ASCII.LF,
          True,
          "package aspect only");
 
@@ -104,14 +132,22 @@ package body Adacovex_Prove_Patch_Tests is
       --  subprogram is replaced, the package line is untouched.
       Merge_Check
         (VT100_Orig,
-         "package VT100 is" & ASCII.LF
-         & "   procedure Reset with Post => True;" & ASCII.LF
-         & "end VT100;" & ASCII.LF,
-         "package VT100 is" & ASCII.LF
-         & "   procedure Reset with Post => True;" & ASCII.LF
-         & "   procedure Move_Cursor" & ASCII.LF
-         & "     (Line : in Natural; Column : in Natural);" & ASCII.LF
-         & "end VT100;" & ASCII.LF,
+         "package VT100 is"
+         & ASCII.LF
+         & "   procedure Reset with Post => True;"
+         & ASCII.LF
+         & "end VT100;"
+         & ASCII.LF,
+         "package VT100 is"
+         & ASCII.LF
+         & "   procedure Reset with Post => True;"
+         & ASCII.LF
+         & "   procedure Move_Cursor"
+         & ASCII.LF
+         & "     (Line : in Natural; Column : in Natural);"
+         & ASCII.LF
+         & "end VT100;"
+         & ASCII.LF,
          True,
          "subprogram aspect only");
 
@@ -120,9 +156,12 @@ package body Adacovex_Prove_Patch_Tests is
       --  dropping the contract.
       Merge_Check
         (VT100_Orig,
-         "package VT100 is" & ASCII.LF
-         & "   procedure No_Such_Proc with Post => True;" & ASCII.LF
-         & "end VT100;" & ASCII.LF,
+         "package VT100 is"
+         & ASCII.LF
+         & "   procedure No_Such_Proc with Post => True;"
+         & ASCII.LF
+         & "end VT100;"
+         & ASCII.LF,
          "",
          False,
          "unmatched subprogram fails");
@@ -131,17 +170,28 @@ package body Adacovex_Prove_Patch_Tests is
       --  declaration, so only the first overload is patched when the patch
       --  names it once.
       Merge_Check
-        ("package V is" & ASCII.LF
-         & "   procedure P (A : in Integer);" & ASCII.LF
-         & "   procedure P (A : in Integer; B : in Integer);" & ASCII.LF
-         & "end V;" & ASCII.LF,
-         "package V is" & ASCII.LF
-         & "   procedure P (A : in Integer) with Post => True;" & ASCII.LF
-         & "end V;" & ASCII.LF,
-         "package V is" & ASCII.LF
-         & "   procedure P (A : in Integer) with Post => True;" & ASCII.LF
-         & "   procedure P (A : in Integer; B : in Integer);" & ASCII.LF
-         & "end V;" & ASCII.LF,
+        ("package V is"
+         & ASCII.LF
+         & "   procedure P (A : in Integer);"
+         & ASCII.LF
+         & "   procedure P (A : in Integer; B : in Integer);"
+         & ASCII.LF
+         & "end V;"
+         & ASCII.LF,
+         "package V is"
+         & ASCII.LF
+         & "   procedure P (A : in Integer) with Post => True;"
+         & ASCII.LF
+         & "end V;"
+         & ASCII.LF,
+         "package V is"
+         & ASCII.LF
+         & "   procedure P (A : in Integer) with Post => True;"
+         & ASCII.LF
+         & "   procedure P (A : in Integer; B : in Integer);"
+         & ASCII.LF
+         & "end V;"
+         & ASCII.LF,
          True,
          "first overload patched");
 
@@ -150,17 +200,28 @@ package body Adacovex_Prove_Patch_Tests is
       --  the same-named parameterless sibling (the vt100 dogfood case --
       --  Scroll_Screen appears both with and without arguments).
       Merge_Check
-        ("package V is" & ASCII.LF
-         & "   procedure P;" & ASCII.LF
-         & "   procedure P (A : in Integer);" & ASCII.LF
-         & "end V;" & ASCII.LF,
-         "package V is" & ASCII.LF
-         & "   procedure P (A : in Integer) with Post => True;" & ASCII.LF
-         & "end V;" & ASCII.LF,
-         "package V is" & ASCII.LF
-         & "   procedure P;" & ASCII.LF
-         & "   procedure P (A : in Integer) with Post => True;" & ASCII.LF
-         & "end V;" & ASCII.LF,
+        ("package V is"
+         & ASCII.LF
+         & "   procedure P;"
+         & ASCII.LF
+         & "   procedure P (A : in Integer);"
+         & ASCII.LF
+         & "end V;"
+         & ASCII.LF,
+         "package V is"
+         & ASCII.LF
+         & "   procedure P (A : in Integer) with Post => True;"
+         & ASCII.LF
+         & "end V;"
+         & ASCII.LF,
+         "package V is"
+         & ASCII.LF
+         & "   procedure P;"
+         & ASCII.LF
+         & "   procedure P (A : in Integer) with Post => True;"
+         & ASCII.LF
+         & "end V;"
+         & ASCII.LF,
          True,
          "second overload patched, parameterless sibling kept");
 
@@ -168,51 +229,84 @@ package body Adacovex_Prove_Patch_Tests is
       --  single-line parameter list matches the original's multi-line
       --  parameter list.
       Merge_Check
-        ("package V is" & ASCII.LF
-         & "   procedure P" & ASCII.LF
-         & "     (A : in Integer;" & ASCII.LF
-         & "      B : in Integer);" & ASCII.LF
-         & "end V;" & ASCII.LF,
-         "package V is" & ASCII.LF
-         & "   procedure P (A : in Integer; B : in Integer)" & ASCII.LF
-         & "     with Post => True;" & ASCII.LF
-         & "end V;" & ASCII.LF,
-         "package V is" & ASCII.LF
-         & "   procedure P (A : in Integer; B : in Integer)" & ASCII.LF
-         & "     with Post => True;" & ASCII.LF
-         & "end V;" & ASCII.LF,
+        ("package V is"
+         & ASCII.LF
+         & "   procedure P"
+         & ASCII.LF
+         & "     (A : in Integer;"
+         & ASCII.LF
+         & "      B : in Integer);"
+         & ASCII.LF
+         & "end V;"
+         & ASCII.LF,
+         "package V is"
+         & ASCII.LF
+         & "   procedure P (A : in Integer; B : in Integer)"
+         & ASCII.LF
+         & "     with Post => True;"
+         & ASCII.LF
+         & "end V;"
+         & ASCII.LF,
+         "package V is"
+         & ASCII.LF
+         & "   procedure P (A : in Integer; B : in Integer)"
+         & ASCII.LF
+         & "     with Post => True;"
+         & ASCII.LF
+         & "end V;"
+         & ASCII.LF,
          True,
          "multi-line original profile matched");
 
       --  A multi-line aspect clause (Post spanning lines with parentheses)
       --  is taken as part of the patch declaration block.
       Merge_Check
-        ("package V is" & ASCII.LF
-         & "   function F (X : in Integer) return Integer;" & ASCII.LF
-         & "end V;" & ASCII.LF,
-         "package V is" & ASCII.LF
-         & "   function F (X : in Integer) return Integer" & ASCII.LF
-         & "     with Post => F'Result = X + 1;" & ASCII.LF
-         & "end V;" & ASCII.LF,
-         "package V is" & ASCII.LF
-         & "   function F (X : in Integer) return Integer" & ASCII.LF
-         & "     with Post => F'Result = X + 1;" & ASCII.LF
-         & "end V;" & ASCII.LF,
+        ("package V is"
+         & ASCII.LF
+         & "   function F (X : in Integer) return Integer;"
+         & ASCII.LF
+         & "end V;"
+         & ASCII.LF,
+         "package V is"
+         & ASCII.LF
+         & "   function F (X : in Integer) return Integer"
+         & ASCII.LF
+         & "     with Post => F'Result = X + 1;"
+         & ASCII.LF
+         & "end V;"
+         & ASCII.LF,
+         "package V is"
+         & ASCII.LF
+         & "   function F (X : in Integer) return Integer"
+         & ASCII.LF
+         & "     with Post => F'Result = X + 1;"
+         & ASCII.LF
+         & "end V;"
+         & ASCII.LF,
          True,
          "multi-line aspect clause");
 
       --  An original that already carries a package aspect is left alone
       --  (no double splicing).
       Merge_Check
-        ("package V with SPARK_Mode => On is" & ASCII.LF
-         & "   procedure P;" & ASCII.LF
-         & "end V;" & ASCII.LF,
-         "package V with SPARK_Mode => On is" & ASCII.LF
-         & "   procedure P with Post => True;" & ASCII.LF
-         & "end V;" & ASCII.LF,
-         "package V with SPARK_Mode => On is" & ASCII.LF
-         & "   procedure P with Post => True;" & ASCII.LF
-         & "end V;" & ASCII.LF,
+        ("package V with SPARK_Mode => On is"
+         & ASCII.LF
+         & "   procedure P;"
+         & ASCII.LF
+         & "end V;"
+         & ASCII.LF,
+         "package V with SPARK_Mode => On is"
+         & ASCII.LF
+         & "   procedure P with Post => True;"
+         & ASCII.LF
+         & "end V;"
+         & ASCII.LF,
+         "package V with SPARK_Mode => On is"
+         & ASCII.LF
+         & "   procedure P with Post => True;"
+         & ASCII.LF
+         & "end V;"
+         & ASCII.LF,
          True,
          "existing package aspect kept");
 

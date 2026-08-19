@@ -43,13 +43,13 @@ package Adacovex.CPUs is
    --  @return Default job count.
    function Default_Prove_Jobs
      (Cores : Natural; In_CI : Boolean) return Natural
-   with SPARK_Mode => On,
-        Post       =>
-          (if In_CI
-           then Default_Prove_Jobs'Result = Cores
-           else Default_Prove_Jobs'Result =
-                Natural'Max (1, Cores - 2)),
-        Global     => null;
+   with
+     SPARK_Mode => On,
+     Post       =>
+       (if In_CI
+        then Default_Prove_Jobs'Result = Cores
+        else Default_Prove_Jobs'Result = Natural'Max (1, Cores - 2)),
+     Global     => null;
 
    --  A human-readable justification for the resolved job count, suitable for
    --  the verbose pipeline log.  Examples:

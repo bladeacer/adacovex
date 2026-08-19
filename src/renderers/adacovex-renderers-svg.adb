@@ -56,52 +56,91 @@ package body Adacovex.Renderers.SVG is
    --  advance widths scaled by 11/2048; unknown characters fall back to
    --  7px, the font's average glyph width.
    function Glyph_Width (C : Character) return Natural
-   with SPARK_Mode => On,
-        Post       => Glyph_Width'Result in 3 .. 10
+   with SPARK_Mode => On, Post => Glyph_Width'Result in 3 .. 10
    is
    begin
       case C is
          --  3px: space, punctuation, and narrow lowercase stems.
-         when ' ' | '.' | '/' | '(' | ')' | 'I' | 'J' | 'f' | 'i' | 'j'
-           | 'l' | 't'
-         =>
+
+         when ' '
+            | '.'
+            | '/'
+            | '('
+            | ')'
+            | 'I'
+            | 'J'
+            | 'f'
+            | 'i'
+            | 'j'
+            | 'l'
+            | 't'                         =>
             return 3;
 
          --  4px: hyphen and the short lowercase 'r'.
-         when '-' | 'r'
-         =>
+
+         when '-' | 'r'                   =>
             return 4;
 
          --  6px: narrow uppercase and lowercase glyphs.
-         when 'F' | 'L' | 'Z' | 'a' | 'c' | 'e' | 'k' | 's' | 'v' | 'x'
-           | 'y' | 'z'
-         =>
+
+         when 'F'
+            | 'L'
+            | 'Z'
+            | 'a'
+            | 'c'
+            | 'e'
+            | 'k'
+            | 's'
+            | 'v'
+            | 'x'
+            | 'y'
+            | 'z'                         =>
             return 6;
 
          --  7px: digits (tabular) and the average-width letters.
-         when '0' .. '9' | 'A' | 'B' | 'C' | 'D' | 'E' | 'G' | 'K' | 'P'
-           | 'R' | 'S' | 'T' | 'V' | 'X' | 'Y' | 'b' | 'd' | 'g' | 'h'
-           | 'n' | 'o' | 'p' | 'q' | 'u'
-         =>
+
+         when '0' .. '9'
+            | 'A'
+            | 'B'
+            | 'C'
+            | 'D'
+            | 'E'
+            | 'G'
+            | 'K'
+            | 'P'
+            | 'R'
+            | 'S'
+            | 'T'
+            | 'V'
+            | 'X'
+            | 'Y'
+            | 'b'
+            | 'd'
+            | 'g'
+            | 'h'
+            | 'n'
+            | 'o'
+            | 'p'
+            | 'q'
+            | 'u'                         =>
             return 7;
 
          --  8px: wide uppercase letters.
-         when 'H' | 'N' | 'O' | 'Q' | 'U'
-         =>
+
+         when 'H' | 'N' | 'O' | 'Q' | 'U' =>
             return 8;
 
          --  9px: the widest common glyphs.
-         when 'M' | 'w' | '%'
-         =>
+
+         when 'M' | 'w' | '%'             =>
             return 9;
 
          --  10px: the two widest glyphs in the badge repertoire.
-         when 'W' | 'm'
-         =>
+
+         when 'W' | 'm'                   =>
             return 10;
 
-         when others
-         =>
+         when others                      =>
             return 7;
       end case;
    end Glyph_Width;
@@ -114,9 +153,10 @@ package body Adacovex.Renderers.SVG is
    --  lowercase/digit text (docs, 100%) ended up with visibly wider
    --  padding.
    function Text_Width (S : String) return Natural
-   with SPARK_Mode => On,
-        Pre  => S'Length <= Max_Badge_Text,
-        Post => Text_Width'Result <= Max_Badge_Text * 10
+   with
+     SPARK_Mode => On,
+     Pre        => S'Length <= Max_Badge_Text,
+     Post       => Text_Width'Result <= Max_Badge_Text * 10
    is
       Total : Natural := 0;
    begin
@@ -238,8 +278,7 @@ package body Adacovex.Renderers.SVG is
    --  on the light green (#4c1) and yellow (#dfb317) pass colors, white on
    --  the dark red (#e05d44) failure color.
    function Badge_Text_Color (Value_Color : String) return String
-   with SPARK_Mode => On,
-        Post       => Badge_Text_Color'Result'Length in 4 .. 7
+   with SPARK_Mode => On, Post => Badge_Text_Color'Result'Length in 4 .. 7
    is
    begin
       if Value_Color = "#4c1" or else Value_Color = "#dfb317" then
@@ -263,16 +302,10 @@ package body Adacovex.Renderers.SVG is
       --  "<n> Passed" composed from the proved I2S decimal helper (1-10
       --  chars) instead of a manual Natural'Image buffer, so the value
       --  stays provably within the badge text bound.
-      Value : constant String :=
-        I2S (Tests.Total_Passed) & " Passed";
+      Value : constant String := I2S (Tests.Total_Passed) & " Passed";
    begin
       return
-        Badge_SVG
-          ("Tests",
-           Value,
-           "#555",
-           "#4c1",
-           Badge_Text_Color ("#4c1"));
+        Badge_SVG ("Tests", Value, "#555", "#4c1", Badge_Text_Color ("#4c1"));
    end Render_Tests_Badge;
 
    function Render_Compliance_Badge
@@ -302,16 +335,12 @@ package body Adacovex.Renderers.SVG is
       else
          return
            Badge_SVG
-             (Types.To_String (Standard),
-              Level_Name & Suffix,
-              "#555",
-              Color);
+             (Types.To_String (Standard), Level_Name & Suffix, "#555", Color);
       end if;
    end Render_Compliance_Badge;
 
    function Render_DO178C_Badge
-     (Assess : Types.Implementation.DAL_Assessment) return String
-   is
+     (Assess : Types.Implementation.DAL_Assessment) return String is
    begin
       return Render_Compliance_Badge (Assess, Assess.Standard);
    end Render_DO178C_Badge;
@@ -326,28 +355,15 @@ package body Adacovex.Renderers.SVG is
    begin
       if Pct >= 80 then
          return
-           Badge_SVG
-             ("docs",
-              Val,
-              "#555",
-              "#4c1",
-              Badge_Text_Color ("#4c1"));
+           Badge_SVG ("docs", Val, "#555", "#4c1", Badge_Text_Color ("#4c1"));
       elsif Pct >= 50 then
          return
            Badge_SVG
-             ("docs",
-              Val,
-              "#555",
-              "#dfb317",
-              Badge_Text_Color ("#dfb317"));
+             ("docs", Val, "#555", "#dfb317", Badge_Text_Color ("#dfb317"));
       else
          return
            Badge_SVG
-             ("docs",
-              Val,
-              "#555",
-              "#e05d44",
-              Badge_Text_Color ("#e05d44"));
+             ("docs", Val, "#555", "#e05d44", Badge_Text_Color ("#e05d44"));
       end if;
    end Render_Docstring_Badge;
 

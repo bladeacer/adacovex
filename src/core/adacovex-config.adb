@@ -7,22 +7,24 @@ package body Adacovex.Config is
    use type Types.SBOM_Format_Kind;
 
    function Has_Prefix (S : String; Prefix : String) return Boolean
-   with SPARK_Mode => On,
-        Post       =>
-          Has_Prefix'Result =
-            (S'Length >= Prefix'Length
-             and then (for all I in Prefix'Range =>
-                         S (S'First + (I - Prefix'First)) = Prefix (I))),
-        Global     => null
+   with
+     SPARK_Mode => On,
+     Post       =>
+       Has_Prefix'Result
+       = (S'Length >= Prefix'Length
+          and then (for all I in Prefix'Range =>
+                      S (S'First + (I - Prefix'First)) = Prefix (I))),
+     Global     => null
    is
    begin
       if S'Length < Prefix'Length then
          return False;
       end if;
       for I in Prefix'Range loop
-         pragma Loop_Invariant
-           (for all J in Prefix'First .. I - 1 =>
-              S (S'First + (J - Prefix'First)) = Prefix (J));
+         pragma
+           Loop_Invariant
+             (for all J in Prefix'First .. I - 1 =>
+                S (S'First + (J - Prefix'First)) = Prefix (J));
          if S (S'First + (I - Prefix'First)) /= Prefix (I) then
             return False;
          end if;
@@ -36,15 +38,15 @@ package body Adacovex.Config is
    --  help serve, --serve help).  Unknown words are still accepted and
    --  Print_Topic_Help reports them as unknown rather than crashing.
    function Is_Help_Topic (S : String) return Boolean
-   with SPARK_Mode => On,
-        Post       =>
-          Is_Help_Topic'Result =
-            (S'Length > 0
-             and then
-               (S (S'First) = '-'
-                or else (for all I in S'Range =>
-                           S (I) in 'a' .. 'z' | 'A' .. 'Z' | '-'))),
-        Global     => null
+   with
+     SPARK_Mode => On,
+     Post       =>
+       Is_Help_Topic'Result
+       = (S'Length > 0
+          and then (S (S'First) = '-'
+                    or else (for all I in S'Range =>
+                               S (I) in 'a' .. 'z' | 'A' .. 'Z' | '-'))),
+     Global     => null
    is
    begin
       if S'Length = 0 then
@@ -54,9 +56,10 @@ package body Adacovex.Config is
          return True;
       end if;
       for I in S'Range loop
-         pragma Loop_Invariant
-           (for all J in S'First .. I - 1 =>
-              S (J) in 'a' .. 'z' | 'A' .. 'Z' | '-');
+         pragma
+           Loop_Invariant
+             (for all J in S'First .. I - 1 =>
+                S (J) in 'a' .. 'z' | 'A' .. 'Z' | '-');
          if S (I) in 'a' .. 'z' | 'A' .. 'Z' | '-' then
             null;
          else
@@ -73,17 +76,19 @@ package body Adacovex.Config is
    --  is needed (the forms that were attempted blew the prover's step
    --  budget; see the 1.15.0 changelog).
    function Is_All (S : String) return Boolean
-   with SPARK_Mode => On,
-        Post       =>
-          Is_All'Result =
-            (S'Length = 3
-             and then S (S'First) in 'a' | 'A'
-             and then S (S'First + 1) in 'l' | 'L'
-             and then S (S'First + 2) in 'l' | 'L'),
-        Global     => null
+   with
+     SPARK_Mode => On,
+     Post       =>
+       Is_All'Result
+       = (S'Length = 3
+          and then S (S'First) in 'a' | 'A'
+          and then S (S'First + 1) in 'l' | 'L'
+          and then S (S'First + 2) in 'l' | 'L'),
+     Global     => null
    is
    begin
-      return S'Length = 3
+      return
+        S'Length = 3
         and then S (S'First) in 'a' | 'A'
         and then S (S'First + 1) in 'l' | 'L'
         and then S (S'First + 2) in 'l' | 'L';
@@ -156,11 +161,12 @@ package body Adacovex.Config is
    end To_SPARK_Level;
 
    function Is_Valid_DAL (S : String) return Boolean
-   with SPARK_Mode => On,
-        Post       =>
-          Is_Valid_DAL'Result =
-            (S'Length = 1 and then S (S'First) in 'A' .. 'E' | 'a' .. 'e'),
-        Global     => null
+   with
+     SPARK_Mode => On,
+     Post       =>
+       Is_Valid_DAL'Result
+       = (S'Length = 1 and then S (S'First) in 'A' .. 'E' | 'a' .. 'e'),
+     Global     => null
    is
    begin
       return S'Length = 1 and then (S (S'First) in 'A' .. 'E' | 'a' .. 'e');
