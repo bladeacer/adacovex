@@ -127,14 +127,45 @@ of the result:
   with Posts pinning their result to the exact six-value repertoire
   (`"git"`, `"mercurial"`, `"subversion"`, `"fossil"`, `"jj"`, `""`).
 
-`config.Is_All` stays plain: fully characterizing it needs a quantified
-Post over the uppercased buffer, which blew the prover's step budget in
-every formulation tried (per-character equivalence, a True-implies-
-length-3 shape), and its callers only branch on the True case
-(`--standard=all`), so the unproved contract was dropped rather than
-shipped. This expansion adds 38 provable checks (433 to 471 VCs) with zero
+The one C5 helper left plain -- `config.Is_All` -- was finished in C6
+below. This expansion adds 38 provable checks (433 to 471 VCs) with zero
 unproved; the analyzed-unit count stays 45 because the new On subprograms
 live in units already analyzed.
+
+### C6: Is_All proved, and the server badge endpoints pinned
+
+Two additions on top of C5: the `config.Is_All` proof was finished, and
+the `/badge/*.svg` server surface gained direct geometry coverage.
+
+**`config.Is_All` is now `SPARK_Mode => On`.** The C5 attempt to
+characterize it with a quantified Post over the uppercased buffer blew the
+prover's step budget in every formulation tried (per-character
+equivalence, a True-implies-length-3 shape). The resolution is structural:
+the upper-cased-buffer comparison `Up = "ALL"` is exactly equivalent to
+three case-insensitive character tests -- `S'Length = 3`, the first
+character in `'a' | 'A'`, and the next two in `'l' | 'L'` -- so the
+function body and postcondition now state that characterization directly
+(no buffer, no quantifier). The Post fully characterizes the result and
+proves cleanly, adding 13 provable checks (471 to 484 VCs) with zero
+unproved; the analyzed-unit count stays 45 since `config` was already
+analyzed.
+
+**Server badge endpoints covered by geometry tests.** The five
+`/badge/*.svg` routes in `adacovex-server-http.adb` serve
+`Render_SPARK_Badge (Proof.Level)`, `Render_Tests_Badge (Tests)`, and
+`Render_Compliance_Badge (Assess, DO_178C / ISO_26262 / IEC_62304)` for
+`spark`, `tests`, `do178c`, `iso26262`, and `iec62304` respectively. The
+C4 geometry tests already pinned the spark / tests / ISO 26262 / IEC
+62304 render calls and the `Render_DO178C_Badge` wrapper, but
+`/badge/do178c.svg` is served through the standard-parameterized
+`Render_Compliance_Badge (Assess, DO_178C)` -- a call the suite did not
+exercise. The SVG tests now carry a "Server badge endpoints" section that
+names each route and pins its exact server-side render call: every
+endpoint asserts content plus the full six-number geometry, including
+`/badge/do178c.svg` in both Achieved ("DAL-C PASS", 67/82/149) and Unmet
+("DAL-C FAIL", 67/76/143) states through the exact server call, and
+`/badge/tests.svg` at the self-assessment count (791 Passed, 48/82/130)
+-- the same geometry `make run-self` emits into `docs/badges/tests.svg`.
 
 ## Fixes
 
@@ -165,40 +196,45 @@ release.
 
 ## Test Suite
 
-738 tests (was 666), across 12 categories: the C4 geometry tests add 72
-checks to the SVG renderer category (36 to 108) -- the only test change.
-The changelog-listing and action-version fixes (H1/H2) are
+791 tests (was 738), across 12 categories: the C4 geometry tests add 72
+checks to the SVG renderer category (36 to 108), and the C6 server badge
+endpoint tests add 53 more (108 to 161) -- the only test changes. The
+changelog-listing and action-version fixes (H1/H2) are
 release-workflow, Makefile, and composite-action shell/YAML code; the docs
 change is documentation plus `tools/rst2md.py` Python tooling (covered by
-`make doc` and `make link-check`); and the SPARK expansions (C3/C5) add
+`make doc` and `make link-check`); and the SPARK expansions (C3/C5/C6) add
 aspects and contracts without changing behavior. The regenerated
 `docs/badges/*.svg` geometry is verified by `make run-self`, by the proof
-run emitting the six badges, and now also directly by the C4 unit tests.
+run emitting the six badges, and now also directly by the C4/C6 unit tests.
 
 ## Proof Results
 
-Platinum, 471/471 VCs proved across 45 analyzed units (up from 408 at
+Platinum, 487/487 VCs proved across 48 analyzed units (up from 408 at
 1.14.0): the C3 `SPARK_Mode => On` expansion added 25 provable checks
 (408 to 433) across the renderers-svg helpers, the compliance-dal helpers
 (`Min_SPARK_For`, `Need_Tests`), `cpus.Default_Prove_Jobs`, and
 `parsers-gnatprove.Determine_SPARK_Level`; the C5 expansion added 38 more
 (433 to 471) across the config validation helpers (`Has_Prefix`,
 `Is_Help_Topic`, `Is_Valid_DAL`) and the VCS label helpers (`To_String`,
-`Tool_Name`) -- all pure computation with SPARK-clean types. 0 unproved,
-0 justified; the non-SPARK bodies keep gnatprove analyzing only the On
-subprograms, exactly as before. Proven with `make prove` under gnatprove
-16.1.0 (`--steps=10000`).
+`Tool_Name`); and the C6 `Is_All` completion added 13 more (471 to 484)
+-- all pure computation with SPARK-clean types. 0 unproved, 0 justified;
+the non-SPARK bodies keep gnatprove analyzing only the On subprograms,
+exactly as before. Proven with `make prove` under gnatprove 16.1.0
+(`--steps=10000`).
 
 ## Traceability
 
-No new HLRs. The badge geometry tests (C4) extend the coverage of the
-existing `HLR-RENDER-SVG` tag (`src/renderers/adacovex-renderers-svg.ads`/
-`.adb` and `src/tests/adacovex_renderer_svg_tests.adb`), and the SPARK
-expansions by the existing `HLR-COMPLIANCE` / `HLR-DAL-*` tags
-(`compliance-dal`), `HLR-CPU` (`cpus`), `HLR-PROOF`
-(`parsers-gnatprove`), `HLR-CLI` (`config`), and `HLR-DIFF` (`vcs`) -- the
-contracts extend the subprograms these tags already trace. The two fixes
-(H1/H2) live in release-workflow shell code, the `make release` target,
-the composite action, and docs; the docs change touches documentation and
-`tools/rst2md.py` / `tools/doc-links.map`. None of these carry HLR
-traceability tags.
+No new HLRs. The badge geometry tests (C4) and the server badge endpoint
+tests (C6) extend the coverage of the existing `HLR-RENDER-SVG` tag
+(`src/renderers/adacovex-renderers-svg.ads`/`.adb` and
+`src/tests/adacovex_renderer_svg_tests.adb`); the C6 endpoint tests also
+pin the badge surface of `LLR-SERVER-01` (`HLR-SERVER`), whose routes are
+served through the same render calls. The SPARK expansions are covered by
+the existing `HLR-COMPLIANCE` / `HLR-DAL-*` tags (`compliance-dal`),
+`HLR-CPU` (`cpus`), `HLR-PROOF` (`parsers-gnatprove`), `HLR-CLI`
+(`config`, including the completed `Is_All` proof), and `HLR-DIFF`
+(`vcs`) -- the contracts extend the subprograms these tags already trace.
+The two fixes (H1/H2) live in release-workflow shell code, the `make
+release` target, the composite action, and docs; the docs change touches
+documentation and `tools/rst2md.py` / `tools/doc-links.map`. None of these
+carry HLR traceability tags.

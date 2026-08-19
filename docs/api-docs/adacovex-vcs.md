@@ -49,7 +49,7 @@ type VCS_Kind is (Unknown, Git, Mercurial, Subversion, Fossil, Jujutsu);
 
 **Returns:** True when a supported VCS is detected.
 
-### function To_String (Kind : Adacovex.VCS.VCS_Kind) return Standard.String
+### function To_String (Kind : Adacovex.VCS.VCS_Kind) return Standard.String `[Post]` `[Global]` `[SPARK]`
 
 | Parameter | Description |
 |-----------|-------------|
@@ -57,7 +57,7 @@ type VCS_Kind is (Unknown, Git, Mercurial, Subversion, Fossil, Jujutsu);
 
 **Returns:** Lowercase display name ("" for Unknown).
 
-### function Tool_Name (Kind : Adacovex.VCS.VCS_Kind) return Standard.String
+### function Tool_Name (Kind : Adacovex.VCS.VCS_Kind) return Standard.String `[Post]` `[Global]` `[SPARK]`
 
 | Parameter | Description |
 |-----------|-------------|

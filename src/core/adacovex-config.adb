@@ -67,17 +67,26 @@ package body Adacovex.Config is
    end Is_Help_Topic;
 
    --  Case-insensitive test for the literal "all" (the --standard=all value).
-   function Is_All (S : String) return Boolean is
-      Up : String (1 .. S'Length);
+   --  The upper-cased-buffer comparison collapses to three exact
+   --  case-insensitive character tests, so the postcondition characterizes
+   --  the result directly -- no quantified Post over the uppercased buffer
+   --  is needed (the forms that were attempted blew the prover's step
+   --  budget; see the 1.15.0 changelog).
+   function Is_All (S : String) return Boolean
+   with SPARK_Mode => On,
+        Post       =>
+          Is_All'Result =
+            (S'Length = 3
+             and then S (S'First) in 'a' | 'A'
+             and then S (S'First + 1) in 'l' | 'L'
+             and then S (S'First + 2) in 'l' | 'L'),
+        Global     => null
+   is
    begin
-      for I in S'Range loop
-         if S (I) in 'a' .. 'z' then
-            Up (I - S'First + 1) := Character'Val (Character'Pos (S (I)) - 32);
-         else
-            Up (I - S'First + 1) := S (I);
-         end if;
-      end loop;
-      return Up = "ALL";
+      return S'Length = 3
+        and then S (S'First) in 'a' | 'A'
+        and then S (S'First + 1) in 'l' | 'L'
+        and then S (S'First + 2) in 'l' | 'L';
    end Is_All;
 
    procedure Set_String (Dst : out String; Dst_Len : out Natural; Src : String)

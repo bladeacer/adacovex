@@ -12,6 +12,20 @@ HLR-SERVER: HTTP server
 
 ## Types
 
+### type Route_Kind
+
+```ada
+type Route_Kind is
+(Route_Dashboard,
+Route_Badge_SPARK,
+Route_Badge_Tests,
+Route_Badge_DO178C,
+Route_Badge_ISO26262,
+Route_Badge_IEC62304,
+Route_API_Metrics,
+Route_Not_Found);
+```
+
 ### type Server_State
 
 ```ada
@@ -27,10 +41,18 @@ Theme         : Types.Dashboard_Theme := Types.System_Theme;
 end record;
 ```
 
+## Functions
+
+### function Route (Path : Standard.String) return Adacovex.Server.HTTP.Route_Kind `[Post]` `[Global]` `[SPARK]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `Path` |  |
+
 ## Procedures
 
 ### procedure Start (State : Adacovex.Server.HTTP.Server_State) `[Pre]`
 
 | Parameter | Description |
 |-----------|-------------|
-| `State` | Server configuration and metric data. |
+| `State` |  |

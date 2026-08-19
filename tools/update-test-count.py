@@ -57,6 +57,8 @@ CATEGORY_KEY: Dict[str, str] = {
     "IR synthesis": "src/tests/adacovex_ir_tests",
     "Man page renderer": "src/tests/adacovex_man_tests",
     "VCS support": "src/tests/adacovex_vcs_tests",
+    "Server routing": "src/tests/adacovex_server_tests",
+    "Proof patches": "src/tests/adacovex_prove_patch_tests",
 }
 
 TEST_RUNNER_KEY: str = "src/tests/test_runner"

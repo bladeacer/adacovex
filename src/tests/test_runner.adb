@@ -12,6 +12,8 @@ with Adacovex_SBOM_Tests;
 with Adacovex_IR_Tests;
 with Adacovex_Man_Tests;
 with Adacovex_VCS_Tests;
+with Adacovex_Server_Tests;
+with Adacovex_Prove_Patch_Tests;
 
 procedure Test_Runner is
 
@@ -27,6 +29,8 @@ procedure Test_Runner is
    R_IR          : Runner;
    R_Man         : Runner;
    R_VCS         : Runner;
+   R_Server      : Runner;
+   R_ProvePatch  : Runner;
 
    Total_Passed : Natural := 0;
    Total_Failed : Natural := 0;
@@ -67,6 +71,8 @@ procedure Test_Runner is
          Row ("IR synthesis", R_IR);
          Row ("Man page renderer", R_Man);
          Row ("VCS support", R_VCS);
+         Row ("Server routing", R_Server);
+         Row ("Proof patches", R_ProvePatch);
       end;
 
       Put_Line
@@ -139,6 +145,8 @@ procedure Test_Runner is
          Row ("IR synthesis", R_IR);
          Row ("Man page renderer", R_Man);
          Row ("VCS support", R_VCS);
+         Row ("Server routing", R_Server);
+         Row ("Proof patches", R_ProvePatch);
       end;
 
       Put_Line
@@ -166,6 +174,8 @@ begin
    Adacovex_IR_Tests.Run (R_IR);
    Adacovex_Man_Tests.Run (R_Man);
    Adacovex_VCS_Tests.Run (R_VCS);
+   Adacovex_Server_Tests.Run (R_Server);
+   Adacovex_Prove_Patch_Tests.Run (R_ProvePatch);
 
    Total_Passed :=
      R_Types.Passed
@@ -179,7 +189,9 @@ begin
      + R_SBOM.Passed
      + R_IR.Passed
      + R_Man.Passed
-     + R_VCS.Passed;
+     + R_VCS.Passed
+     + R_Server.Passed
+     + R_ProvePatch.Passed;
    Total_Failed :=
      R_Types.Failed
      + R_DAL.Failed
@@ -192,7 +204,9 @@ begin
      + R_SBOM.Failed
      + R_IR.Failed
      + R_Man.Failed
-     + R_VCS.Failed;
+     + R_VCS.Failed
+     + R_Server.Failed
+     + R_ProvePatch.Failed;
 
    Print_Summary;
    Write_Results;
