@@ -998,8 +998,7 @@ package body Adacovex.Parsers.Source is
                                                 --  (patch application, HLR
                                                 --  traceability, report paths)
                                                 --  depend on it.
-                                                Pkg.Path_Len :=
-                                                  Path'Length;
+                                                Pkg.Path_Len := Path'Length;
                                                 for I in Path'Range loop
                                                    Pkg.File_Path
                                                      (I - Path'First + 1) :=

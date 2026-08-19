@@ -744,18 +744,18 @@ package body Adacovex_Scanner_Tests is
       --  Relative_Path consumers such as Apply_Patches and HLR traceability.
       begin
          declare
-            Cache_A : constant String := "/tmp/adacovex_scan_cache_a";
-            Cache_B : constant String := "/tmp/adacovex_scan_cache_b";
-            File_A  : constant String := Cache_A & "/pkg.ads";
-            File_B  : constant String := Cache_B & "/pkg.ads";
-            F       : File_Type;
-            Pkgs_A  : Package_Vectors.Vector;
-            Pkgs_B  : Package_Vectors.Vector;
-            Skip_A  : Natural := 0;
-            Skip_B  : Natural := 0;
-            Hits_A  : Natural := 0;
+            Cache_A  : constant String := "/tmp/adacovex_scan_cache_a";
+            Cache_B  : constant String := "/tmp/adacovex_scan_cache_b";
+            File_A   : constant String := Cache_A & "/pkg.ads";
+            File_B   : constant String := Cache_B & "/pkg.ads";
+            F        : File_Type;
+            Pkgs_A   : Package_Vectors.Vector;
+            Pkgs_B   : Package_Vectors.Vector;
+            Skip_A   : Natural := 0;
+            Skip_B   : Natural := 0;
+            Hits_A   : Natural := 0;
             Misses_A : Natural := 0;
-            Hits_B  : Natural := 0;
+            Hits_B   : Natural := 0;
             Misses_B : Natural := 0;
          begin
             Ada.Directories.Create_Path (Cache_A);
@@ -780,8 +780,7 @@ package body Adacovex_Scanner_Tests is
               (Natural (Pkgs_A.Length) = 1
                and then Natural (Pkgs_B.Length) = 1,
                "Test 22: both cached scans parsed the package");
-            if Natural (Pkgs_A.Length) = 1
-              and then Natural (Pkgs_B.Length) = 1
+            if Natural (Pkgs_A.Length) = 1 and then Natural (Pkgs_B.Length) = 1
             then
                R.Check
                  (Pkgs_B (1).Path_Len = File_B'Length

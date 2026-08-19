@@ -216,6 +216,7 @@ check:
 	@echo "=== Quality gate: build ==="; $(MAKE) build
 	@echo "=== Quality gate: native tests ==="; $(MAKE) test
 	@echo "=== Quality gate: SPARK proof + badges ==="; $(MAKE) prove
+	@echo "=== Quality gate: fmt ==="; $(MAKE) fmt
 	@echo "=== Quality gate: API docs ==="; $(MAKE) doc
 	@echo "=== Quality gate: SBOM ==="; $(MAKE) sbom
 	@echo "=== Quality gate: test counts in sync ==="; python3 tools/update-test-count.py --check

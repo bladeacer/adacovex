@@ -35,29 +35,22 @@ package Adacovex.Server.HTTP is
    --  @param Path  Request path (as extracted by Get_Path).
    --  @return Route_Kind for the path.
    function Route (Path : String) return Route_Kind
-   with SPARK_Mode => On,
-        Post       =>
-          (Route'Result /= Route_Dashboard
-           or Path = "/")
-          and then
-          (Route'Result /= Route_Badge_SPARK
-           or Path = "/badge/spark.svg")
-          and then
-          (Route'Result /= Route_Badge_Tests
-           or Path = "/badge/tests.svg")
-          and then
-          (Route'Result /= Route_Badge_DO178C
-           or Path = "/badge/do178c.svg")
-          and then
-          (Route'Result /= Route_Badge_ISO26262
-           or Path = "/badge/iso26262.svg")
-          and then
-          (Route'Result /= Route_Badge_IEC62304
-           or Path = "/badge/iec62304.svg")
-          and then
-          (Route'Result /= Route_API_Metrics
-           or Path = "/api/metrics"),
-        Global     => null;
+   with
+     SPARK_Mode => On,
+     Post       =>
+       (Route'Result /= Route_Dashboard or Path = "/")
+       and then (Route'Result /= Route_Badge_SPARK
+                 or Path = "/badge/spark.svg")
+       and then (Route'Result /= Route_Badge_Tests
+                 or Path = "/badge/tests.svg")
+       and then (Route'Result /= Route_Badge_DO178C
+                 or Path = "/badge/do178c.svg")
+       and then (Route'Result /= Route_Badge_ISO26262
+                 or Path = "/badge/iso26262.svg")
+       and then (Route'Result /= Route_Badge_IEC62304
+                 or Path = "/badge/iec62304.svg")
+       and then (Route'Result /= Route_API_Metrics or Path = "/api/metrics"),
+     Global     => null;
 
    type Server_State is record
       Port          : Positive := 8080;

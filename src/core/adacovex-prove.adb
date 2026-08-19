@@ -130,13 +130,13 @@ package body Adacovex.Prove is
 
    begin
       declare
-         P : constant String :=
-           Adacovex.Prove_Patch.Patches_Hash (Target_Dir);
+         P : constant String := Adacovex.Prove_Patch.Patches_Hash (Target_Dir);
       begin
          if P'Length > 0 then
             --  Proof patches change what gnatprove sees (the patched spec
             --  copies), so a patch edit must invalidate the cached proof.
-            return Walk (Target_Dir)
+            return
+              Walk (Target_Dir)
               & Adacovex.Cache.Hash_String (GPR & Options & P);
          end if;
       end;
@@ -918,7 +918,6 @@ package body Adacovex.Prove is
       Options : String (1 .. 512);
       OLen    : Natural := 0;
 
-
       --  True when proof patches were applied and gnatprove ran against the
       --  patched proof tree instead of the target itself.  When set, the
       --  freshly generated gnatprove.out is copied back to the canonical
@@ -1010,9 +1009,11 @@ package body Adacovex.Prove is
                   return;
                end if;
                Ada.Text_IO.Put_Line
-                 ("  proof patches:" & Natural'Image (PCount)
+                 ("  proof patches:"
+                  & Natural'Image (PCount)
                   & " vendored spec(s) patched (proof tree: "
-                  & CDir (1 .. CDLen) & ")");
+                  & CDir (1 .. CDLen)
+                  & ")");
                GLen := CGLen;
                for I in 1 .. CGLen loop
                   GPR (I) := CGPR (I);
@@ -1098,12 +1099,12 @@ package body Adacovex.Prove is
          --  never scanned or hashed).
          if GPR_Patched then
             declare
-               C1       : Boolean;
-               C2       : Integer;
-               Slash    : Natural := GLen;
-               Suffix   : constant String := "obj/gnatprove/gnatprove.out";
-               Src_Out  : String (1 .. Types.Max_Path);
-               Src_Len  : Natural := 0;
+               C1      : Boolean;
+               C2      : Integer;
+               Slash   : Natural := GLen;
+               Suffix  : constant String := "obj/gnatprove/gnatprove.out";
+               Src_Out : String (1 .. Types.Max_Path);
+               Src_Len : Natural := 0;
             begin
                --  The proof result lives in the patched tree's own object
                --  dir: <copy>/obj/gnatprove/gnatprove.out (the copy's root
@@ -1126,7 +1127,9 @@ package body Adacovex.Prove is
                       & Target_Dir
                       & "/obj/gnatprove' && cp -f '"
                       & Src_Out (1 .. Src_Len)
-                      & "' '" & Target_Dir & "/obj/gnatprove/gnatprove.out'")),
+                      & "' '"
+                      & Target_Dir
+                      & "/obj/gnatprove/gnatprove.out'")),
                   "/dev/null",
                   C1,
                   C2);
@@ -1134,7 +1137,8 @@ package body Adacovex.Prove is
                   Ada.Text_IO.Put_Line
                     (Ada.Text_IO.Standard_Error,
                      "  ERROR: could not copy the proof result to "
-                     & Target_Dir & "/obj/gnatprove/gnatprove.out");
+                     & Target_Dir
+                     & "/obj/gnatprove/gnatprove.out");
                end if;
             end;
          end if;

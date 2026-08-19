@@ -1,6 +1,5 @@
 with Adacovex.Test_Support;
-with Adacovex.Server.HTTP;
-use Adacovex.Server.HTTP;
+with Adacovex.Server.HTTP; use Adacovex.Server.HTTP;
 
 package body Adacovex_Server_Tests is
 
@@ -12,11 +11,9 @@ package body Adacovex_Server_Tests is
       --  the socket handler can serve is pinned here.
       R.Check (Route ("/") = Route_Dashboard, "dashboard route");
       R.Check
-        (Route ("/badge/spark.svg") = Route_Badge_SPARK,
-         "spark badge route");
+        (Route ("/badge/spark.svg") = Route_Badge_SPARK, "spark badge route");
       R.Check
-        (Route ("/badge/tests.svg") = Route_Badge_Tests,
-         "tests badge route");
+        (Route ("/badge/tests.svg") = Route_Badge_Tests, "tests badge route");
       R.Check
         (Route ("/badge/do178c.svg") = Route_Badge_DO178C,
          "do178c badge route");
@@ -27,23 +24,19 @@ package body Adacovex_Server_Tests is
         (Route ("/badge/iec62304.svg") = Route_Badge_IEC62304,
          "iec62304 badge route");
       R.Check
-        (Route ("/api/metrics") = Route_API_Metrics,
-         "metrics API route");
+        (Route ("/api/metrics") = Route_API_Metrics, "metrics API route");
 
       --  Unknown paths are 404s: empty, near-misses of every literal route
       --  (case, trailing slash, wrong extension, prefix, suffix, query
       --  string), and arbitrary URLs.
       R.Check (Route ("") = Route_Not_Found, "empty path is not found");
       R.Check
-        (Route ("/index.html") = Route_Not_Found,
-         "index.html is not found");
+        (Route ("/index.html") = Route_Not_Found, "index.html is not found");
       R.Check
-        (Route ("/favicon.ico") = Route_Not_Found,
-         "favicon.ico is not found");
+        (Route ("/favicon.ico") = Route_Not_Found, "favicon.ico is not found");
       R.Check
         (Route ("/badge") = Route_Not_Found, "/badge alone is not found");
-      R.Check
-        (Route ("/badge/") = Route_Not_Found, "/badge/ is not found");
+      R.Check (Route ("/badge/") = Route_Not_Found, "/badge/ is not found");
       R.Check
         (Route ("/badge/spark.svg/") = Route_Not_Found,
          "trailing slash on badge is not found");
@@ -56,8 +49,7 @@ package body Adacovex_Server_Tests is
       R.Check
         (Route ("/badge/spark.svg?x=1") = Route_Not_Found,
          "query string on badge is not found");
-      R.Check
-        (Route ("/api") = Route_Not_Found, "/api alone is not found");
+      R.Check (Route ("/api") = Route_Not_Found, "/api alone is not found");
       R.Check
         (Route ("/api/metrics/") = Route_Not_Found,
          "trailing slash on metrics is not found");
@@ -67,10 +59,8 @@ package body Adacovex_Server_Tests is
       R.Check
         (Route ("/healthz") = Route_Not_Found,
          "health check path is not found");
-      R.Check
-        (Route ("//") = Route_Not_Found, "double slash is not found");
-      R.Check
-        (Route ("/../") = Route_Not_Found, "dot-dot path is not found");
+      R.Check (Route ("//") = Route_Not_Found, "double slash is not found");
+      R.Check (Route ("/../") = Route_Not_Found, "dot-dot path is not found");
       R.Check
         (Route ("/badge/iec62304.svg.gz") = Route_Not_Found,
          "compressed badge suffix is not found");
