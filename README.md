@@ -1,11 +1,10 @@
 [![covex Alire crate badge](https://img.shields.io/endpoint?url=https://alire.ada.dev/badges/covex.json)](https://alire.ada.dev/crates/covex)
 ![SPARK](docs/badges/spark.svg)
-![Tests](docs/badges/tests.svg)
-![docs](docs/badges/docs.svg)
-
 ![DO-178C](docs/badges/do178c.svg)
 ![ISO 26262](docs/badges/iso26262.svg)
 ![IEC 62304](docs/badges/iec62304.svg)
+![Tests](docs/badges/tests.svg)
+![docs](docs/badges/docs.svg)
 
 # adacovex
 
@@ -197,9 +196,9 @@ inputs/outputs, result caching, and release bundling:
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 738/738 passing |
+| Unit tests | `make test` | 841/841 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
-| SPARK proof | `make prove` | Platinum (471 VCs, 0 unproved under gnatprove 16.1.0) |
+| SPARK proof | `make prove` | Platinum (487 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, DAL-C (strict mode) |
 
 See [changelogs](docs/changelogs/index.md) for full release notes.

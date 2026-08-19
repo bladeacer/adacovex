@@ -8,6 +8,57 @@ with Adacovex.Types;
 
 package Adacovex.Server.HTTP is
 
+   --  The action a request path routes to.  The HTTP server serves the
+   --  dashboard, the JSON API, and the SVG badge endpoints; every other
+   --  path is a 404.
+   type Route_Kind is
+     (Route_Dashboard,
+      Route_Badge_SPARK,
+      Route_Badge_Tests,
+      Route_Badge_DO178C,
+      Route_Badge_ISO26262,
+      Route_Badge_IEC62304,
+      Route_API_Metrics,
+      Route_Not_Found);
+
+   --  Map a request path to its handler action.
+   --  Returns the Route_Kind for the given path: the dashboard at "/", the
+   --  JSON API at "/api/metrics", the five SVG badge endpoints at
+   --  "/badge/*.svg", and Route_Not_Found for every other path.  Pure path
+   --  routing -- the socket dispatch in Handle_Request switches on the
+   --  result, and the native test suite pins every route.  The postcondition
+   --  pins the served-route implications (a served route kind implies its
+   --  literal path); the exact path-to-kind mapping and the 404 case are
+   --  pinned exhaustively by the server routing tests (the full iff
+   --  characterization needs a seven-way string-inequality conjunction the
+   --  solver cannot discharge).
+   --  @param Path  Request path (as extracted by Get_Path).
+   --  @return Route_Kind for the path.
+   function Route (Path : String) return Route_Kind
+   with SPARK_Mode => On,
+        Post       =>
+          (Route'Result /= Route_Dashboard
+           or Path = "/")
+          and then
+          (Route'Result /= Route_Badge_SPARK
+           or Path = "/badge/spark.svg")
+          and then
+          (Route'Result /= Route_Badge_Tests
+           or Path = "/badge/tests.svg")
+          and then
+          (Route'Result /= Route_Badge_DO178C
+           or Path = "/badge/do178c.svg")
+          and then
+          (Route'Result /= Route_Badge_ISO26262
+           or Path = "/badge/iso26262.svg")
+          and then
+          (Route'Result /= Route_Badge_IEC62304
+           or Path = "/badge/iec62304.svg")
+          and then
+          (Route'Result /= Route_API_Metrics
+           or Path = "/api/metrics"),
+        Global     => null;
+
    type Server_State is record
       Port          : Positive := 8080;
       Doc_Metrics   : Types.Docstring_Metrics;

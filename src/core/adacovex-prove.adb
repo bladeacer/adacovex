@@ -7,6 +7,7 @@ with Adacovex;
 with Adacovex.CPUs;
 with Adacovex.Cache;
 with Adacovex.VCS;
+with Adacovex.Prove_Patch;
 
 package body Adacovex.Prove is
 
@@ -128,6 +129,17 @@ package body Adacovex.Prove is
       end Walk;
 
    begin
+      declare
+         P : constant String :=
+           Adacovex.Prove_Patch.Patches_Hash (Target_Dir);
+      begin
+         if P'Length > 0 then
+            --  Proof patches change what gnatprove sees (the patched spec
+            --  copies), so a patch edit must invalidate the cached proof.
+            return Walk (Target_Dir)
+              & Adacovex.Cache.Hash_String (GPR & Options & P);
+         end if;
+      end;
       return Walk (Target_Dir) & Adacovex.Cache.Hash_String (GPR & Options);
    end Compute_Prove_Input_Hash;
 
@@ -906,6 +918,14 @@ package body Adacovex.Prove is
       Options : String (1 .. 512);
       OLen    : Natural := 0;
 
+
+      --  True when proof patches were applied and gnatprove ran against the
+      --  patched proof tree instead of the target itself.  When set, the
+      --  freshly generated gnatprove.out is copied back to the canonical
+      --  <target>/obj/gnatprove/ path after a successful run so the
+      --  assessment pipeline finds it.
+      GPR_Patched : Boolean := False;
+
       --  Build the proof result-cache key.  It must capture everything that
       --  can change the (cached) gnatprove.out: the source tree content, the
       --  .gpr, the options, AND the prover identity.  Folding the prover
@@ -958,6 +978,49 @@ package body Adacovex.Prove is
          Success := False;
          return;
       end if;
+
+      --  Proof patches (SPARK aspects carried by .adacovex/patches files)
+      --  make the vendored specs part of the proof: build a patched copy of
+      --  the target tree (with the merged specs in place) and run gnatprove
+      --  against the copy's root project.  The copy lives under the
+      --  target's obj/ (excluded from scanning and hashing) and preserves
+      --  the original project structure exactly, so the target's own units
+      --  analyze identically -- only the patched vendored specs differ.
+      --  A target with no proof patches is proved against its own tree as
+      --  before.
+      declare
+         PCount : constant Natural :=
+           Adacovex.Prove_Patch.Count_Proof_Patches (Target_Dir);
+      begin
+         if PCount > 0 then
+            declare
+               CDir  : String (1 .. Types.Max_Path);
+               CDLen : Natural := 0;
+               CGPR  : String (1 .. Types.Max_Path);
+               CGLen : Natural := 0;
+            begin
+               Adacovex.Prove_Patch.Build_Patched_Copy
+                 (Target_Dir, GPR (1 .. GLen), CDir, CDLen, CGPR, CGLen, OK);
+               if not OK then
+                  Ada.Text_IO.Put_Line
+                    (Ada.Text_IO.Standard_Error,
+                     "  ERROR: could not build the patched proof tree for"
+                     & " proof patches under .adacovex/patches/");
+                  Success := False;
+                  return;
+               end if;
+               Ada.Text_IO.Put_Line
+                 ("  proof patches:" & Natural'Image (PCount)
+                  & " vendored spec(s) patched (proof tree: "
+                  & CDir (1 .. CDLen) & ")");
+               GLen := CGLen;
+               for I in 1 .. CGLen loop
+                  GPR (I) := CGPR (I);
+               end loop;
+               GPR_Patched := True;
+            end;
+         end if;
+      end;
 
       --  Resolve the parallelism.  Default (Opts.Jobs < 0) uses
       --  max(1, cores-2) on a developer machine but all cores inside CI;
@@ -1029,6 +1092,52 @@ package body Adacovex.Prove is
 
       if OK and then Code = 0 then
          Success := True;
+         --  The patched proof tree generated the .out; copy it to the
+         --  canonical <target>/obj/gnatprove/ path the assessment pipeline
+         --  parses (the copy itself lives under the target's obj/ and is
+         --  never scanned or hashed).
+         if GPR_Patched then
+            declare
+               C1       : Boolean;
+               C2       : Integer;
+               Slash    : Natural := GLen;
+               Suffix   : constant String := "obj/gnatprove/gnatprove.out";
+               Src_Out  : String (1 .. Types.Max_Path);
+               Src_Len  : Natural := 0;
+            begin
+               --  The proof result lives in the patched tree's own object
+               --  dir: <copy>/obj/gnatprove/gnatprove.out (the copy's root
+               --  project path is <copy>/<basename>.gpr).
+               while Slash > 1 and then GPR (Slash) /= '/' loop
+                  Slash := Slash - 1;
+               end loop;
+               Src_Len := Slash + Suffix'Length;
+               for I in 1 .. Slash - 1 loop
+                  Src_Out (I) := GPR (I);
+               end loop;
+               Src_Out (Slash) := '/';
+               for I in Suffix'Range loop
+                  Src_Out (Slash + 1 + (I - Suffix'First)) := Suffix (I);
+               end loop;
+               Run_Command
+                 ((new String'("-c"),
+                   new String'
+                     ("mkdir -p '"
+                      & Target_Dir
+                      & "/obj/gnatprove' && cp -f '"
+                      & Src_Out (1 .. Src_Len)
+                      & "' '" & Target_Dir & "/obj/gnatprove/gnatprove.out'")),
+                  "/dev/null",
+                  C1,
+                  C2);
+               if not C1 or else C2 /= 0 then
+                  Ada.Text_IO.Put_Line
+                    (Ada.Text_IO.Standard_Error,
+                     "  ERROR: could not copy the proof result to "
+                     & Target_Dir & "/obj/gnatprove/gnatprove.out");
+               end if;
+            end;
+         end if;
          if Opts.Cache then
             declare
                In_Hash : constant String := Prove_Cache_Key;

@@ -233,6 +233,125 @@ package body Adacovex_Renderer_SVG_Tests is
          end;
       end;
 
+      --  Server badge endpoints: the exact render calls the /badge/*.svg
+      --  routes in adacovex-server-http.adb make, pinned so the LLR-SERVER-01
+      --  badge surface (spark, tests, do178c, iso26262, iec62304) cannot
+      --  regress without a test failure.  The routes serve
+      --  Render_SPARK_Badge (Proof.Level), Render_Tests_Badge (Tests), and
+      --  Render_Compliance_Badge (Assess, DO_178C / ISO_26262 / IEC_62304)
+      --  respectively; do178c.svg goes through the standard-parameterized
+      --  renderer (not the Render_DO178C_Badge wrapper), so its geometry is
+      --  pinned here through the exact server call.
+      declare
+         S : constant String := Render_SPARK_Badge (Platinum);
+      begin
+         R.Check
+           (Contains (S, "<svg"), "/badge/spark.svg: contains <svg");
+         R.Check (Contains (S, "SPARK"), "/badge/spark.svg: label");
+         R.Check (Contains (S, "Platinum"), "/badge/spark.svg: value");
+         Check_Geometry (R, S, "/badge/spark.svg", 55, 66, 121, 27, 88);
+      end;
+
+      --  /badge/tests.svg with the self-assessment count (738 Passed): the
+      --  same 130px geometry make run-self emits into docs/badges/tests.svg.
+      declare
+         Summary : Test_Summary;
+      begin
+         Summary.Total_Passed := 738;
+         Summary.Total_Failed := 0;
+         declare
+            S : constant String := Render_Tests_Badge (Summary);
+         begin
+            R.Check
+              (Contains (S, "<svg"), "/badge/tests.svg: contains <svg");
+            R.Check (Contains (S, "Tests"), "/badge/tests.svg: label");
+            R.Check
+              (Contains (S, "738 Passed"), "/badge/tests.svg: value");
+            Check_Geometry (R, S, "/badge/tests.svg", 48, 82, 130, 24, 89);
+         end;
+      end;
+
+      --  /badge/do178c.svg: Render_Compliance_Badge (Assess, DO_178C) --
+      --  Achieved ("DAL-C PASS", 67/82/149) and Unmet ("DAL-C FAIL",
+      --  67/76/143), both through the exact server call.
+      declare
+         Assess : DAL_Assessment;
+      begin
+         Assess.Status := Achieved;
+         Assess.Target_DAL := DAL_C;
+         declare
+            S : constant String :=
+              Render_Compliance_Badge (Assess, DO_178C);
+         begin
+            R.Check
+              (Contains (S, "<svg"), "/badge/do178c.svg: contains <svg");
+            R.Check (Contains (S, "DO-178C"), "/badge/do178c.svg: label");
+            R.Check
+              (Contains (S, "DAL-C PASS"), "/badge/do178c.svg: value");
+            Check_Geometry
+              (R, S, "/badge/do178c.svg", 67, 82, 149, 33, 108);
+         end;
+      end;
+      declare
+         Assess : DAL_Assessment;
+      begin
+         Assess.Status := Unmet;
+         Assess.Target_DAL := DAL_C;
+         declare
+            S : constant String :=
+              Render_Compliance_Badge (Assess, DO_178C);
+         begin
+            R.Check
+              (Contains (S, "<svg"), "/badge/do178c.svg (Unmet): <svg");
+            R.Check
+              (Contains (S, "DAL-C FAIL"), "/badge/do178c.svg: FAIL value");
+            Check_Geometry
+              (R, S, "/badge/do178c.svg (Unmet)", 67, 76, 143, 33, 105);
+         end;
+      end;
+
+      --  /badge/iso26262.svg and /badge/iec62304.svg: the remaining two
+      --  compliance routes, pinned through their standard-parameterized
+      --  server calls.
+      declare
+         Assess : DAL_Assessment;
+      begin
+         Assess.Status := Achieved;
+         Assess.Target_DAL := DAL_C;
+         declare
+            S : constant String :=
+              Render_Compliance_Badge (Assess, ISO_26262);
+         begin
+            R.Check
+              (Contains (S, "<svg"), "/badge/iso26262.svg: contains <svg");
+            R.Check
+              (Contains (S, "ISO 26262"), "/badge/iso26262.svg: label");
+            R.Check
+              (Contains (S, "ASIL B PASS"), "/badge/iso26262.svg: value");
+            Check_Geometry
+              (R, S, "/badge/iso26262.svg", 76, 84, 160, 38, 118);
+         end;
+      end;
+      declare
+         Assess : DAL_Assessment;
+      begin
+         Assess.Status := Achieved;
+         Assess.Target_DAL := DAL_C;
+         declare
+            S : constant String :=
+              Render_Compliance_Badge (Assess, IEC_62304);
+         begin
+            R.Check
+              (Contains (S, "<svg"), "/badge/iec62304.svg: contains <svg");
+            R.Check
+              (Contains (S, "IEC 62304"), "/badge/iec62304.svg: label");
+            R.Check
+              (Contains (S, "Class A PASS"), "/badge/iec62304.svg: value");
+            Check_Geometry
+              (R, S, "/badge/iec62304.svg", 75, 89, 164, 37, 119);
+         end;
+      end;
+
       --  Docstring badge: 100%
       --  "docs" = 26px text + 20 = 46; "100%" = 30px (1/0/0 7 each, % 9)
       --  + 20 = 50; total 96.

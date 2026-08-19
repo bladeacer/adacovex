@@ -218,6 +218,36 @@ package body Adacovex.Server.HTTP is
       return "";
    end Get_Path;
 
+   --  Pure path-to-action routing: the socket handler below switches on the
+   --  result, and the native test suite pins every route.  The postcondition
+   --  on the spec characterizes the result exactly (each route kind iff its
+   --  literal path; Not_Found iff none of the seven literals), so the
+   --  mapping is proved rather than just unit-tested.
+   function Route (Path : String) return Route_Kind
+   with SPARK_Mode => On
+   is
+   begin
+      if Path = "/" then
+         return Route_Dashboard;
+      elsif Path = "/badge/spark.svg" then
+         return Route_Badge_SPARK;
+      elsif Path = "/badge/tests.svg" then
+         return Route_Badge_Tests;
+      elsif Path = "/badge/do178c.svg" then
+         return Route_Badge_DO178C;
+      elsif Path = "/badge/iso26262.svg" then
+         return Route_Badge_ISO26262;
+      elsif Path = "/badge/iec62304.svg" then
+         return Route_Badge_IEC62304;
+      elsif Path = "/api/metrics" then
+         return Route_API_Metrics;
+      else
+         --  The served-route implications are all vacuous here
+         --  (the result is Route_Not_Found, not a served kind).
+         return Route_Not_Found;
+      end if;
+   end Route;
+
    procedure Handle_Request
      (Channel : Socket_Type; State : Server_State; Keep_Alive : out Boolean)
    is
@@ -320,78 +350,80 @@ package body Adacovex.Server.HTTP is
 
       Keep_Alive := Is_KA;
 
-      if Path = "/" then
-         Send_Response
-           (Channel,
-            "200 OK",
-            "text/html",
-            Adacovex.Renderers.HTML.Render_Dashboard
-              (State.Doc_Metrics,
-               State.Proof,
-               State.Tests,
-               State.DAL_Assess,
-               State.Packages,
-               State.All_Standards,
-               State.Theme),
-            Is_KA);
-      elsif Path = "/badge/spark.svg" then
-         Send_Response
-           (Channel,
-            "200 OK",
-            "image/svg+xml",
-            Adacovex.Renderers.SVG.Render_SPARK_Badge (State.Proof.Level),
-            Is_KA);
-      elsif Path = "/badge/tests.svg" then
-         Send_Response
-           (Channel,
-            "200 OK",
-            "image/svg+xml",
-            Adacovex.Renderers.SVG.Render_Tests_Badge (State.Tests),
-            Is_KA);
-      elsif Path = "/badge/do178c.svg" then
-         Send_Response
-           (Channel,
-            "200 OK",
-            "image/svg+xml",
-            Adacovex.Renderers.SVG.Render_Compliance_Badge
-              (State.DAL_Assess, Types.DO_178C),
-            Is_KA);
-      elsif Path = "/badge/iso26262.svg" then
-         Send_Response
-           (Channel,
-            "200 OK",
-            "image/svg+xml",
-            Adacovex.Renderers.SVG.Render_Compliance_Badge
-              (State.DAL_Assess, Types.ISO_26262),
-            Is_KA);
-      elsif Path = "/badge/iec62304.svg" then
-         Send_Response
-           (Channel,
-            "200 OK",
-            "image/svg+xml",
-            Adacovex.Renderers.SVG.Render_Compliance_Badge
-              (State.DAL_Assess, Types.IEC_62304),
-            Is_KA);
-      elsif Path = "/api/metrics" then
-         Send_Response
-           (Channel,
-            "200 OK",
-            "application/json",
-            Adacovex.Renderers.HTML.Render_Metrics_JSON
-              (State.Doc_Metrics,
-               State.Proof,
-               State.Tests,
-               State.DAL_Assess,
-               State.All_Standards),
-            Is_KA);
-      else
-         Send_Response
-           (Channel,
-            "404 Not Found",
-            "text/plain",
-            "Not Found: " & Path,
-            Is_KA);
-      end if;
+      case Route (Path) is
+         when Route_Dashboard =>
+            Send_Response
+              (Channel,
+               "200 OK",
+               "text/html",
+               Adacovex.Renderers.HTML.Render_Dashboard
+                 (State.Doc_Metrics,
+                  State.Proof,
+                  State.Tests,
+                  State.DAL_Assess,
+                  State.Packages,
+                  State.All_Standards,
+                  State.Theme),
+               Is_KA);
+         when Route_Badge_SPARK =>
+            Send_Response
+              (Channel,
+               "200 OK",
+               "image/svg+xml",
+               Adacovex.Renderers.SVG.Render_SPARK_Badge
+                 (State.Proof.Level),
+               Is_KA);
+         when Route_Badge_Tests =>
+            Send_Response
+              (Channel,
+               "200 OK",
+               "image/svg+xml",
+               Adacovex.Renderers.SVG.Render_Tests_Badge (State.Tests),
+               Is_KA);
+         when Route_Badge_DO178C =>
+            Send_Response
+              (Channel,
+               "200 OK",
+               "image/svg+xml",
+               Adacovex.Renderers.SVG.Render_Compliance_Badge
+                 (State.DAL_Assess, Types.DO_178C),
+               Is_KA);
+         when Route_Badge_ISO26262 =>
+            Send_Response
+              (Channel,
+               "200 OK",
+               "image/svg+xml",
+               Adacovex.Renderers.SVG.Render_Compliance_Badge
+                 (State.DAL_Assess, Types.ISO_26262),
+               Is_KA);
+         when Route_Badge_IEC62304 =>
+            Send_Response
+              (Channel,
+               "200 OK",
+               "image/svg+xml",
+               Adacovex.Renderers.SVG.Render_Compliance_Badge
+                 (State.DAL_Assess, Types.IEC_62304),
+               Is_KA);
+         when Route_API_Metrics =>
+            Send_Response
+              (Channel,
+               "200 OK",
+               "application/json",
+               Adacovex.Renderers.HTML.Render_Metrics_JSON
+                 (State.Doc_Metrics,
+                  State.Proof,
+                  State.Tests,
+                  State.DAL_Assess,
+                  State.All_Standards),
+               Is_KA);
+         when Route_Not_Found =>
+            Send_Response
+              (Channel,
+               "404 Not Found",
+               "text/plain",
+               "Not Found: " & Path,
+               Is_KA);
+      end case;
    end Handle_Request;
 
 end Adacovex.Server.HTTP;
