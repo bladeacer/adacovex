@@ -209,7 +209,7 @@ run emitting the six badges, and now also directly by the C4/C6 unit tests.
 
 ## Proof Results
 
-Platinum, 487/487 VCs proved across 48 analyzed units (up from 408 at
+Platinum, 484/484 VCs proved across 45 analyzed units (up from 408 at
 1.14.0): the C3 `SPARK_Mode => On` expansion added 25 provable checks
 (408 to 433) across the renderers-svg helpers, the compliance-dal helpers
 (`Min_SPARK_For`, `Need_Tests`), `cpus.Default_Prove_Jobs`, and

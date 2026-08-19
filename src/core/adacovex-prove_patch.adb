@@ -134,6 +134,70 @@ package body Adacovex.Prove_Patch is
    --  entry to the exact overload it re-declares -- a patched
    --  two-argument Scroll_Screen replaces the two-argument original,
    --  never a same-named sibling.
+   --  Remove the default `in` mode from a raw parameter list so profile
+   --  matching is insensitive to whether the mode is written out: the
+   --  default mode is exactly equivalent to writing `in`.  `in out` and
+   --  `out` are real modes and are left untouched.  Colons inside
+   --  character literals (e.g. `X : Character := ':'`) are never treated
+   --  as parameter-mode colons because no mode word follows them.
+   function Normalize_Modes (Raw : String) return String is
+      Res : String (1 .. Raw'Length);
+      N   : Natural := 0;
+      I   : Natural := Raw'First;
+   begin
+      while I <= Raw'Last loop
+         if Raw (I) = ':' then
+            N := N + 1;
+            Res (N) := ':';  --  Copy the mode colon.
+            I := I + 1;
+            while I <= Raw'Last and then Raw (I) = ' ' loop
+               N := N + 1;
+               Res (N) := ' ';
+               I := I + 1;
+            end loop;
+            if I + 1 <= Raw'Last
+              and then Raw (I .. I + 1) = "in"
+              and then (I + 2 > Raw'Last or else Raw (I + 2) = ' ')
+            then
+               --  The word after `in` decides: `in out` keeps both,
+               --  anything else makes the `in` the default mode.
+               declare
+                  J : Natural := I + 2;
+               begin
+                  while J <= Raw'Last and then Raw (J) = ' ' loop
+                     J := J + 1;
+                  end loop;
+                  if J + 2 <= Raw'Last
+                    and then Raw (J .. J + 2) = "out"
+                    and then (J + 3 > Raw'Last or else Raw (J + 3) = ' ')
+                  then
+                     for K in I .. J + 2 loop
+                        N := N + 1;
+                        Res (N) := Raw (K);
+                     end loop;
+                     I := J + 3;
+                  else
+                     I := I + 2;  --  Drop the default `in`.
+                  end if;
+               end;
+            else
+               while I <= Raw'Last and then Raw (I) /= ':' loop
+                  N := N + 1;
+                  Res (N) := Raw (I);
+                  I := I + 1;
+               end loop;
+            end if;
+         else
+            while I <= Raw'Last and then Raw (I) /= ':' loop
+               N := N + 1;
+               Res (N) := Raw (I);
+               I := I + 1;
+            end loop;
+         end if;
+      end loop;
+      return Res (1 .. N);
+   end Normalize_Modes;
+
    function Param_Profile
      (Text : String; Start : Natural; Span_End : Natural) return String
    is
@@ -165,17 +229,19 @@ package body Adacovex.Prove_Patch is
          return "";
       end if;
       declare
-         Res : String (1 .. (Close - Open - 1));
-         N   : Natural := 0;
+         Norm : constant String :=
+           Normalize_Modes (Text (Open + 1 .. Close - 1));
+         Res  : String (1 .. Norm'Length);
+         N    : Natural := 0;
       begin
-         for I in Open + 1 .. Close - 1 loop
-            if Text (I) /= ' '
-              and then Text (I) /= ASCII.CR
-              and then Text (I) /= ASCII.LF
-              and then Text (I) /= ASCII.HT
+         for I in Norm'Range loop
+            if Norm (I) /= ' '
+              and then Norm (I) /= ASCII.CR
+              and then Norm (I) /= ASCII.LF
+              and then Norm (I) /= ASCII.HT
             then
                N := N + 1;
-               Res (N) := Text (I);
+               Res (N) := Norm (I);
             end if;
          end loop;
          return Res (1 .. N);
@@ -275,11 +341,22 @@ package body Adacovex.Prove_Patch is
       end if;
    end Subprog_Name;
 
+   --  True when the trimmed line ends with the keyword `is` (a body
+   --  declaration terminator: "function F (...) return T is" / "procedure
+   --  P (...) is").  The `is` must be its own word -- "Paris" or
+   --  "Valid_Is" never terminate a declaration.
+   function Line_Ends_With_Is (T : String) return Boolean is
+   begin
+      return T'Length >= 3 and then T (T'Last - 2 .. T'Last) = " is";
+   end Line_Ends_With_Is;
+
    --  Position of the last character of the line that terminates the
    --  declaration starting at Start: the first line (at paren depth 0)
-   --  whose trimmed text ends with ';'.  Aspect clauses and multi-line
+   --  whose trimmed text ends with ';' (a spec declaration or a null
+   --  body) or with the keyword `is` (a body declaration -- the body
+   --  proper follows on later lines).  Aspect clauses and multi-line
    --  parameter lists stay inside the span because their parentheses
-   --  balance before the final ';'.  The span text is therefore
+   --  balance before the terminator.  The span text is therefore
    --  Text (Start .. Decl_Span_End), with no trailing line terminator.
    function Decl_Span_End (Text : String; Start : Natural) return Natural is
       Pos    : Natural := Start;
@@ -307,9 +384,13 @@ package body Adacovex.Prove_Patch is
             declare
                T : constant String := Trim (Line, Ada.Strings.Both);
             begin
-               if Depth = 0 and then T'Length > 0 and then T (T'Last) = ';'
-               then
-                  return L2;
+               if Depth = 0 and then T'Length > 0 then
+                  if T (T'Last) = ';' then
+                     return L2;
+                  end if;
+                  if Line_Ends_With_Is (T) then
+                     return L2;
+                  end if;
                end if;
             end;
          end;
@@ -753,7 +834,8 @@ package body Adacovex.Prove_Patch is
          pragma Unreferenced (Rel);
       begin
          if File'Length >= 4
-           and then File (File'Last - 3 .. File'Last) = ".ads"
+           and then (File (File'Last - 3 .. File'Last) = ".ads"
+                     or else File (File'Last - 3 .. File'Last) = ".adb")
          then
             Read_Text_File (File, Buf, Len, Is_File);
             if Is_File and then Has_Proof (Buf (1 .. Len)) then
@@ -828,7 +910,8 @@ package body Adacovex.Prove_Patch is
             DstF : constant String := Dst & "/" & Rel;
          begin
             if File'Length < 4
-              or else File (File'Last - 3 .. File'Last) /= ".ads"
+              or else (File (File'Last - 3 .. File'Last) /= ".ads"
+                       and then File (File'Last - 3 .. File'Last) /= ".adb")
             then
                return;
             end if;
@@ -860,7 +943,7 @@ package body Adacovex.Prove_Patch is
                  (Ada.Text_IO.Standard_Error,
                   "  ERROR: proof patch '"
                   & Rel
-                  & "' could not be merged into the vendored spec"
+                  & "' could not be merged into the vendored source"
                   & " (unmatched subprogram or oversized file); patch"
                   & " skipped");
                return;

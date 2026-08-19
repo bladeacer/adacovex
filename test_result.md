@@ -13,7 +13,7 @@
   | Man page renderer                        |  18 | PASS     |
   | VCS support                              |  29 | PASS     |
   | Server routing                           |  24 | PASS     |
-  | Proof patches                            |  26 | PASS     |
+  | Proof patches                            |  35 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 841  Failed: 0
+  Passed: 850  Failed: 0

@@ -309,16 +309,22 @@ end VT100;
 
 The `prove` subcommand merges proof patches before running gnatprove:
 
-1. `Count_Proof_Patches` scans `<target>/.adacovex/patches/`; a target with
-   no proof patches is proved against its own tree exactly as before.
+1. `Count_Proof_Patches` scans `<target>/.adacovex/patches/` (`.ads` and
+   `.adb` patch files); a target with no proof patches is proved against
+   its own tree exactly as before.
 2. `Build_Patched_Copy` copies the target tree (excluding `.git`, `obj`,
    and `.adacovex`) into `<target>/obj/adacovex-proof/` and overwrites each
-   proof-patched spec with its merged form -- package-level aspects spliced
-   onto the package declaration line, and each aspect-carrying subprogram
-   declaration replaced by the patch's declaration block. The merge matches
-   on name **and** normalized parameter profile (`Param_Profile`), so an
-   overloaded subprogram patches its exact signature and never a
-   same-named sibling. The original vendored sources are never touched.
+   proof-patched source with its merged form -- package-level aspects
+   spliced onto the package declaration line (for a `package body ... is`
+   declaration too), and each aspect-carrying subprogram declaration
+   replaced by the patch's declaration block. The merge matches on name
+   **and** normalized parameter profile (`Param_Profile`), so an overloaded
+   subprogram patches its exact signature and never a same-named sibling;
+   the default `in` mode is equivalent to a bare mode, while `in out` and
+   `out` are distinct. A spec declaration terminates at its `;`, a body
+   declaration at its `is` -- so a patched body declaration is replaced
+   without touching the body proper. The original vendored sources are
+   never touched.
 3. gnatprove runs against the copy's root project (`<copy>/<basename>.gpr`)
    and the resulting `gnatprove.out` is copied back to
    `<target>/obj/gnatprove/gnatprove.out` for the assessment pipeline. The
@@ -327,15 +333,49 @@ The `prove` subcommand merges proof patches before running gnatprove:
 4. Proof-patch contents are folded into the prove result-cache key, so a
    patch edit invalidates the cached proof and forces a re-prove.
 
-Where the vendored body is SPARK-clean, gnatprove proves the patched
-contracts; where it is not (e.g. bodies that call `Ada.Text_IO`, which is
-`SPARK_Mode Off`), gnatprove skips the I/O bodies by design and reports the
-unit out of proof scope -- a proof patch never drags the target's proof
-level down. The Ada_CRDT dogfood target proves the mechanism end to end:
-its `.adacovex/patches/demo/deps/vt100/vt100.ads` declares `SPARK_Mode =>
-On` on the vendored package and pins the `Scroll_Screen` scroll-region
-contract, and `make run-ada-crdt` / Ada_CRDT's `make prove` run through the
-patched copy.
+#### The two patch shapes
+
+A **spec patch** (`.ads` in the patch directory) re-declares the vendored
+spec with contracts, exactly as the VT100 example above. gnatprove analyzes
+a unit's body only when the *body itself* opts in (`SPARK_Mode => On` on
+the package body or a subprogram body), so a SPARK-clean vendored body also
+needs a **body patch** (`.adb` in the patch directory) that declares the
+intended mode. The body patch mirrors the body's declarations with stub
+bodies that the merge ignores -- the original body proper is preserved:
+
+```ada
+--  .adacovex/patches/demo/deps/vecmath/vecmath.adb
+package body Vecmath with SPARK_Mode => On is
+
+   function Clamp (Value : in Integer; Lo : in Integer; Hi : in Integer)
+     return Integer with SPARK_Mode => On is
+   begin
+      null;  --  stub: replaced by the original body's implementation
+   end Clamp;
+
+end Vecmath;
+```
+
+A worked example end to end: a vendored `Vecmath.Clamp` whose original
+spec and body carry no contracts, with the spec patch above declaring
+`SPARK_Mode => On` plus `Pre => Lo <= Hi, Post => Clamp'Result in Lo .. Hi`
+and the body patch opting the body into the proof. The merged copy is what
+gnatprove sees -- `package body Vecmath with SPARK_Mode => On is` with the
+original `if Value < Lo ... return Value` implementation intact -- and the
+contracts prove: 2 VCs (the `Clamp` postcondition and its termination
+check), 0 unproved.
+
+Where the vendored body is SPARK-clean and opted in via a body patch,
+gnatprove proves the patched contracts; where it is not (e.g. bodies that
+call `Ada.Text_IO`, which is `SPARK_Mode Off`), gnatprove skips the I/O
+bodies by design and reports the unit out of proof scope -- a proof patch
+never drags the target's proof level down. The Ada_CRDT dogfood target
+proves the mechanism end to end: its
+`.adacovex/patches/demo/deps/vt100/vt100.ads` declares `SPARK_Mode => On`
+on the vendored package and pins the `Scroll_Screen` scroll-region
+contract (its bodies are Text_IO-bound, so gnatprove skips them by design),
+and `make run-ada-crdt` / Ada_CRDT's `make prove` run through the patched
+copy, preserving the target's proof.
 
 ## Output Formats
 
@@ -398,7 +438,7 @@ it. The ANSI report shows a
 
 ## Testing
 
-adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 841 tests across 14 categories. No external test framework (AUnit, etc.) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
+adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 850 tests across 14 categories. No external test framework (AUnit, etc.) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
 
 ## Supported Platforms
 

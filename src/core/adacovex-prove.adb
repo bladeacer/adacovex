@@ -1011,7 +1011,7 @@ package body Adacovex.Prove is
                Ada.Text_IO.Put_Line
                  ("  proof patches:"
                   & Natural'Image (PCount)
-                  & " vendored spec(s) patched (proof tree: "
+                  & " vendored source(s) patched (proof tree: "
                   & CDir (1 .. CDLen)
                   & ")");
                GLen := CGLen;

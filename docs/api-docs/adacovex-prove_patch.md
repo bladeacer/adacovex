@@ -7,20 +7,29 @@ overlays documentation onto vendored .ads files.  This package extends
 the same .adacovex/patches/<relative-path> layout with SPARK proof
 support: a patch file may carry SPARK aspects (SPARK_Mode on the package
 declaration, Pre/Post/SPARK_Mode on subprogram declarations), and the
-``prove`` subcommand merges them into a copy of the vendored spec so
-GNATprove analyzes the vendored unit with the patched contracts --
-without modifying the original vendored sources.
---  The merge is textual and line-based: the patched spec is the original
-spec with each patched subprogram declaration (matched on name AND
-normalized parameter profile, so an overload patches its exact
-signature -- never a same-named sibling) replaced by the patch's
-declaration block (which carries the aspects), and the package
-declaration given the patch's package-level aspect when present.
+``prove`` subcommand merges them into a copy of the vendored spec and --
+when the patch carries one -- of the vendored body, so GNATprove
+analyzes the vendored unit with the patched contracts -- without
+modifying the original vendored sources.  A .ads patch re-declares the
+spec with contracts; a .adb patch opts the body into the proof (the
+body is analyzed only when it declares SPARK_Mode On itself).
 
-Where the vendored body is SPARK-clean, GNATprove proves the patched
-contracts; where it is not (e.g. Ada.Text_IO callers), GNATprove skips
-the bodies by design and the unit is reported as out of proof scope --
-it never drags the target's proof level down.
+The merge is textual and line-based: the patched source is the original
+with each patched subprogram declaration (matched on name AND
+normalized parameter profile, so an overload patches its exact
+signature -- never a same-named sibling; the default ``in`` mode is
+equivalent to a bare mode, while ``in out`` and ``out`` are distinct)
+replaced by the patch's declaration block (which carries the aspects),
+and the package declaration given the patch's package-level aspect when
+present.  Subprogram declarations terminate at the ';' of a spec
+declaration or at the ``is`` of a body declaration, so a patched body
+declaration is replaced without touching the body proper.
+
+Where the vendored body is SPARK-clean and opted in via a body patch,
+GNATprove proves the patched contracts; where it is not (e.g.
+Ada.Text_IO callers), GNATprove skips the I/O bodies by design and the
+unit is reported as out of proof scope -- a proof patch never drags
+the target's proof level down.
 HLR-PROVE: GNATprove runner and proof patches
 
 > **Note:** All items in this package are public.
@@ -57,10 +66,10 @@ HLR-PROVE: GNATprove runner and proof patches
 
 | Parameter | Description |
 |-----------|-------------|
-| `Merged` | Buffer receiving the patched spec. |
-| `Merged_Len` | Length of the patched spec (0 on failure). |
+| `Merged` | Buffer receiving the patched source. |
+| `Merged_Len` | Length of the patched source (0 on failure). |
 | `OK` | True when the merge succeeded. |
-| `Original` | Original vendored spec text. |
+| `Original` | Original vendored source text. |
 | `Patch` | Patch text (valid Ada .ads with docstrings and/or |
 
 ### procedure Build_Patched_Copy (Target_Dir : Standard.String; Root_GPR : Standard.String; Copy_Dir : Standard.String; Copy_Len : Standard.Natural; Copy_GPR : Standard.String; GPR_Len : Standard.Natural; Success : Standard.Boolean)
