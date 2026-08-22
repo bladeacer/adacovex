@@ -87,13 +87,15 @@ package body Adacovex.VCS is
 
    --  First non-empty line of the captured buffer, clamped to Max_Path.
    function First_Line (Buf : String; BLen : Natural) return String
-   with SPARK_Mode => On,
-        Pre        => Buf'First >= 1 and Buf'Last < Natural'Last
-                      and BLen <= Buf'Length,
-        Global     => null
+   with
+     SPARK_Mode => On,
+     Pre        =>
+       Buf'First >= 1 and Buf'Last < Natural'Last and BLen <= Buf'Length,
+     Global     => null
    is
       Start : Natural := Buf'First;
-      Stop  : Natural := (if BLen = 0 then Buf'First else Buf'First + BLen - 1);
+      Stop  : Natural :=
+        (if BLen = 0 then Buf'First else Buf'First + BLen - 1);
    begin
       if BLen = 0 then
          return "";
@@ -132,9 +134,12 @@ package body Adacovex.VCS is
      (Buf : String; BLen : Natural; Keyword : String) return String
    with
      SPARK_Mode => On,
-     Pre        => Buf'First >= 1 and Buf'Last < Natural'Last
-                   and Keyword'First >= 1 and Keyword'Last < Natural'Last
-                   and BLen <= Buf'Length,
+     Pre        =>
+       Buf'First >= 1
+       and Buf'Last < Natural'Last
+       and Keyword'First >= 1
+       and Keyword'Last < Natural'Last
+       and BLen <= Buf'Length,
      Global     => null
    is
       Stop : Natural := (if BLen = 0 then Buf'First else Buf'First + BLen - 1);
@@ -175,6 +180,7 @@ package body Adacovex.VCS is
                end if;
             end;
          --  Keyword empty: treat as not found, skip.
+
          end if;
          I := I + 1;
       end loop;
@@ -282,7 +288,7 @@ package body Adacovex.VCS is
       end case;
    end Tool_Name;
 
-   function UX_Note (Kind : VCS_Kind) return String is
+   function UX_Note (Kind : VCS_Kind) return String with SPARK_Mode => On is
    begin
       case Kind is
          when Subversion =>

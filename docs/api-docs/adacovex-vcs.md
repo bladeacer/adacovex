@@ -65,7 +65,7 @@ type VCS_Kind is (Unknown, Git, Mercurial, Subversion, Fossil, Jujutsu);
 
 **Returns:** Tool binary name ("" for Unknown).
 
-### function UX_Note (Kind : Adacovex.VCS.VCS_Kind) return Standard.String
+### function UX_Note (Kind : Adacovex.VCS.VCS_Kind) return Standard.String `[Post]` `[Global]` `[SPARK]`
 
 | Parameter | Description |
 |-----------|-------------|

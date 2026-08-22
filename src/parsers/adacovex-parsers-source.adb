@@ -13,9 +13,14 @@ package body Adacovex.Parsers.Source is
    --  `functionality` never match `procedure` / `function`.
    function Match_Keyword
      (S : String; Pos : Natural; Kw : String) return Boolean
-   with SPARK_Mode => On, Global => null,
-        Pre        => S'First >= 1 and Kw'First >= 1
-                      and S'Last < Natural'Last and Kw'Last < Natural'Last
+   with
+     SPARK_Mode => On,
+     Global     => null,
+     Pre        =>
+       S'First >= 1
+       and Kw'First >= 1
+       and S'Last < Natural'Last
+       and Kw'Last < Natural'Last
    is
       Nxt : Natural;
    begin
@@ -51,9 +56,10 @@ package body Adacovex.Parsers.Source is
    --  Advance Pos past blanks (space or tab); stops at the first non-blank
    --  character or at the end of S.
    procedure Skip_Blanks (S : String; Pos : in out Natural)
-   with SPARK_Mode => On, Global => null,
-        Pre        => S'First >= 1 and S'Last < Natural'Last
-                      and Pos >= S'First
+   with
+     SPARK_Mode => On,
+     Global     => null,
+     Pre        => S'First >= 1 and S'Last < Natural'Last and Pos >= S'First
    is
    begin
       while Pos <= S'Last and then (S (Pos) = ' ' or else S (Pos) = ASCII.HT)
@@ -782,10 +788,14 @@ package body Adacovex.Parsers.Source is
    end Is_Prefix;
 
    function Relative_Path (Full_Path, Root : String) return String
-   with SPARK_Mode => On, Global => null,
-        Pre        => Full_Path'First >= 1 and Root'First >= 1
-                      and Full_Path'Last < Natural'Last
-                      and Root'Last < Natural'Last
+   with
+     SPARK_Mode => On,
+     Global     => null,
+     Pre        =>
+       Full_Path'First >= 1
+       and Root'First >= 1
+       and Full_Path'Last < Natural'Last
+       and Root'Last < Natural'Last
    is
    begin
       if Root'Length = 0 then

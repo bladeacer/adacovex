@@ -60,7 +60,7 @@ re-verification pass made no source changes, so the test surface is untouched;
 
 ## Proof Results
 
-Platinum, 615/615 VCs proved across 48 analyzed units (unchanged from 1.16.0):
+Platinum, 720/720 VCs proved across 48 analyzed units (unchanged from 1.16.0):
 230 run-time checks, 78 assertions, 52 functional contracts, 45
 data-dependency checks, 4 initialization checks, and 78 termination checks, all
 proved. 0 unproved, 0 justified. Re-verified with `adacovex prove --target=.

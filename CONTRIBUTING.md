@@ -68,7 +68,7 @@ Enforced rules:
 - Files are pure ASCII; list items indented under a heading use exactly
   three spaces (never 4+).
 - `## Proof Results` states the SPARK level (Stone..Platinum), the exact VC
-  totals (e.g. `615/615 VCs proved across 48 analyzed units`), and calls out
+  totals (e.g. `720/720 VCs proved across 48 analyzed units`), and calls out
   whether any proof metrics changed.
 - `## Traceability` lists any new HLRs by tag name and package, then the
   existing `-- HLR-*` tags covering the changed packages.
@@ -88,7 +88,7 @@ Pull requests should follow the following conventions.
   beyond the GNAT runtime.
 - Keep the SPARK proof at Platinum: run `make prove` and make sure the VC
   counts match [docs/proof/16.1.0-ledger.md](docs/proof/16.1.0-ledger.md)
-  (615 VCs, 0 unproved under gnatprove 16.1.0).
+  (720 VCs, 0 unproved under gnatprove 16.1.0).
 - Keep docstring coverage at 100% (strict mode, cannot be disabled):
   `make run-self` must show Platinum, 100% docs, and DAL-C Achieved.
 - If you add or change behavior, extend the native test suite in `src/tests/`
