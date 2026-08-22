@@ -641,10 +641,12 @@ begin
             Memlimit          => Cfg.Prove_Memlimit,
             Force             => Cfg.Prove_Force,
             No_Inlining       => Cfg.Prove_No_Inlining,
-            --  --suppress-warnings hides GNATprove's benign info notices;
-            --  --verbose never hides anything.
+            --  Quiet is the default (local runs suppress the default set);
+            --  --quiet / --suppress-warnings[=SETS] pick the sets, and
+            --  --verbose always shows every message.
             Suppress_Warnings => Cfg.Prove_Suppress_Warnings
                                  and then not Cfg.Verbose,
+            Suppress_Sets     => Cfg.Prove_Suppress_Sets,
             Cache             => Cfg.Cache_Enabled);
       begin
          Adacovex.Prove.Run_Prove (Target (1 .. TLen), Opts, OK);

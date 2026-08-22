@@ -1,5 +1,6 @@
 with Ada.Directories;
 with Ada.Strings.Fixed;
+with Ada.Strings.Unbounded;
 with Ada.Text_IO;
 with Ada.Environment_Variables;
 with GNAT.OS_Lib;
@@ -903,10 +904,12 @@ package body Adacovex.Prove is
    end Global_GNATprove_Pin;
 
    --  Replay a captured gnatprove output file to stdout, dropping the
-   --  default set of suppressed informational messages: every message block
-   --  carrying the [info-unrolling-inlining] tag (the loop-unrolling /
-   --  inlining notices -- purely informational, the proof outcome is
-   --  unaffected).  A block appears in two shapes:
+   --  suppressed informational-message blocks.  Sets is a comma-separated
+   --  list of suppression-set names (empty = the default set,
+   --  "unrolling-inlining"); a set name S suppresses every message block
+   --  carrying the `[info-S]` tag (or a bare `[S]` tag) -- purely
+   --  informational notices, the proof outcome is unaffected.  A block
+   --  appears in two shapes:
    --
    --     info: cannot unroll loop (too many loop iterations) [info-unrolling-inlining]
    --    --> crdt-core-leb128.adb:28:51
@@ -921,12 +924,19 @@ package body Adacovex.Prove is
    --  the whole block -- tag line, header, and any "+" sub-message -- is
    --  dropped together; every other gnatprove line (checks, summary,
    --  warnings) passes through untouched.
-   procedure Replay_Suppressed (Path : String) is
+   procedure Replay_Suppressed (Path : String; Sets : String) is
       use Ada.Text_IO;
       use Ada.Strings.Fixed;
 
-      Max_Line       : constant Natural := 1024;
-      Tag            : constant String := "[info-unrolling-inlining]";
+      Max_Line : constant Natural := 1024;
+      --  Suppression-set names, parsed from the comma-separated Sets string
+      --  (empty => the single default set "unrolling-inlining").
+      Max_Sets : constant := 8;
+      type Set_Array is array (1 .. Max_Sets) of String (1 .. 64);
+      Set_Bufs : Set_Array;
+      Set_Lens : array (1 .. Max_Sets) of Natural := (others => 0);
+      Set_Ct   : Natural := 0;
+
       type Line_Array is array (1 .. 4) of String (1 .. Max_Line);
       Bufs           : Line_Array;
       Lens           : array (1 .. 4) of Natural := (others => 0);
@@ -971,13 +981,61 @@ package body Adacovex.Prove is
             Bufs (Ct) (I) := S (S'First + I - 1);
          end loop;
       end Push;
+
+      --  True when L carries a suppressed tag: `[info-<Set>]` or `[<Set>]`
+      --  for any configured set name.
+      function Is_Suppressed (L : String) return Boolean is
+      begin
+         for I in 1 .. Set_Ct loop
+            declare
+               S : constant String := Set_Bufs (I) (1 .. Set_Lens (I));
+            begin
+               if Index (L, "[info-" & S & "]") > 0
+                 or else Index (L, "[" & S & "]") > 0
+               then
+                  return True;
+               end if;
+            end;
+         end loop;
+         return False;
+      end Is_Suppressed;
    begin
+      --  Parse the comma-separated set list; empty => default set.
+      declare
+         T : constant String :=
+           (if Sets'Length = 0 then "unrolling-inlining" else Sets);
+         Start : Natural := T'First;
+      begin
+         for I in T'First .. T'Last + 1 loop
+            if I > T'Last or else T (I) = ',' then
+               if I > Start and then Set_Ct < Max_Sets then
+                  Set_Ct := Set_Ct + 1;
+                  declare
+                     Len : constant Natural := I - Start;
+                  begin
+                     Set_Lens (Set_Ct) := Natural'Min (Len, 64);
+                     for J in 1 .. Set_Lens (Set_Ct) loop
+                        Set_Bufs (Set_Ct) (J) :=
+                          T (Start + J - 1);
+                     end loop;
+                  end;
+               end if;
+               Start := I + 1;
+            end if;
+         end loop;
+      end;
+      if Set_Ct = 0 then
+         Set_Lens (1) := 1;
+         Set_Bufs (1) (1) := ' ';  --  no sets parsed: suppress nothing
+         Set_Ct := 1;
+      end if;
+
       Open (F, In_File, Path);
       while not End_Of_File (F) loop
          declare
             L : constant String := Get_Line (F);
          begin
-            if Index (L, Tag) > 0 then
+            if Is_Suppressed (L) then
                --  Tagged line: drop it.  For a "+" sub-message (the
                --  in-instantiation shape) also drop its "info:" + "-->"
                --  header pair that is still waiting in the buffer.
@@ -1202,12 +1260,13 @@ package body Adacovex.Prove is
       Append_Option_Tokens (Args, N, Options (1 .. OLen));
       if Opts.Suppress_Warnings then
          --  Capture gnatprove's combined output, replay it to stdout with
-         --  the default suppression set (the [info-unrolling-inlining]
-         --  blocks) filtered out, then remove the capture file.  The
-         --  summary / check results always pass through -- only the benign
-         --  info notices are hidden.  Output appears once the run finishes
-         --  (no live tail) -- the flag is for quiet local runs, never for
-         --  --verbose or CI.
+         --  the configured suppression sets (default: the
+         --  [info-unrolling-inlining] blocks) filtered out, then remove the
+         --  capture file.  The summary / check results always pass through
+         --  -- only the benign info notices are hidden.  Output appears
+         --  once the run finishes (no live tail) -- quiet is the default
+         --  for local runs, never for --verbose or CI (which passes
+         --  --verbose).
          declare
             Fd  : GNAT.OS_Lib.File_Descriptor;
             Tmp : GNAT.OS_Lib.String_Access;
@@ -1222,7 +1281,9 @@ package body Adacovex.Prove is
                Code,
                Err_To_Out => True);
             if Ada.Directories.Exists (Tmp.all) then
-               Replay_Suppressed (Tmp.all);
+               Replay_Suppressed
+                 (Tmp.all,
+                  Ada.Strings.Unbounded.To_String (Opts.Suppress_Sets));
                declare
                   Del_OK : Boolean;
                begin

@@ -84,6 +84,8 @@ steps:
 | `prove-force` | `false` | Force full GNATprove reanalysis (`-f`) |
 | `prove-no-loop-unrolling` | `false` | Disable GNATprove automatic loop unrolling |
 | `prove-no-inlining` | `false` | Disable GNATprove contextual-analysis inlining |
+| `prove-quiet` | `false` | Suppress GNATprove benign info messages (the default set) from prove output. Quiet is already the default for local runs; this is the explicit prove-mode form. `--verbose` wins |
+| `prove-suppress-warnings` | `''` | Comma-separated GNATprove info tags to suppress from prove output (e.g. `unrolling-inlining,xyz`); a tag `S` suppresses blocks tagged `[info-S]` (or `[S]`). `--verbose` wins |
 
 ### Outputs
 

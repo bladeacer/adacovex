@@ -26,9 +26,12 @@ jobs:
           build: true
           release-build: true
           prove: true
+          #  Quiet (benign-info suppression) is the default; CI passes
+          #  --verbose so its output stays authoritative.
+          verbose: true
           require-spark: Platinum
           require-docstrings: 100
-          require-tests: 853
+          require-tests: 865
           require-proof: 100
 
       - name: Require Platinum SPARK level

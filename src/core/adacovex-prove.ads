@@ -1,4 +1,5 @@
 with Adacovex.Types;
+with Ada.Strings.Unbounded;
 
 --  GNATprove runner for the `adacovex prove` subcommand.
 --  Resolves a gnatprove executable and runs it against a target project's
@@ -55,12 +56,20 @@ package Adacovex.Prove is
       Force       : Boolean := False;
       No_Inlining : Boolean := False;
 
-      --  True when gnatprove's benign informational messages (the default
-      --  suppression set -- see Replay_Suppressed) are hidden from stdout.
-      --  Always off under --verbose; CI does not pass it, so CI output stays
-      --  authoritative.
-      Suppress_Warnings : Boolean := False;
-      Cache             : Boolean := True;
+      --  True when gnatprove's benign informational messages are hidden
+      --  from stdout (quiet-by-default for local runs; always off under
+      --  --verbose, which CI passes so CI output stays authoritative).
+      Suppress_Warnings : Boolean := True;
+
+      --  Comma-separated suppression-set names for --suppress-warnings=SETS;
+      --  empty (the default, also --quiet) = the default set
+      --  (unrolling-inlining).  A set name S suppresses gnatprove info tags
+      --  `[info-S]` (or `[S]`) -- see Replay_Suppressed.  Only consulted
+      --  when Suppress_Warnings is True.
+      Suppress_Sets : Ada.Strings.Unbounded.Unbounded_String :=
+        Ada.Strings.Unbounded.Null_Unbounded_String;
+
+      Cache : Boolean := True;
    end record;
 
    --  Detect the number of logical CPUs on the host.  Reads /proc/cpuinfo

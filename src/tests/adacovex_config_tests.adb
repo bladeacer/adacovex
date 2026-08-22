@@ -1,5 +1,6 @@
 with Adacovex.Types;  use Adacovex.Types;
 with Adacovex.Config; use Adacovex.Config;
+with Ada.Strings.Unbounded;
 
 package body Adacovex_Config_Tests is
 
@@ -94,14 +95,44 @@ package body Adacovex_Config_Tests is
             "Default Prove_No_Loop_Unroll is False");
          R.Check
            (not Cfg.Prove_No_Inlining, "Default Prove_No_Inlining is False");
+         --  Quiet is the default for local runs: suppression is on and the
+         --  set list is empty (the default set), without any flag.
          R.Check
-           (not Cfg.Prove_Suppress_Warnings,
-            "Default Prove_Suppress_Warnings is False");
+           (Cfg.Prove_Suppress_Warnings,
+            "Default Prove_Suppress_Warnings is True (quiet by default)");
+         R.Check
+           (Ada.Strings.Unbounded.Length (Cfg.Prove_Suppress_Sets) = 0,
+            "Default Prove_Suppress_Sets is empty (default set)");
+         R.Check
+           (not Cfg.Prove_Suppress_Explicit,
+            "Default Prove_Suppress_Explicit is False (not a prove-mode flag)");
       end;
 
-      --  --suppress-warnings parses as a prove-mode flag (the "outside
-      --  prove mode is an error" validation runs in Parse_CLI, which the
-      --  Parse_Args unit tests do not reach).
+      --  --quiet parses as an explicit prove-mode flag selecting the
+      --  default suppression set (the "outside prove mode is an error"
+      --  validation runs in Parse_CLI, which the Parse_Args unit tests do
+      --  not reach).
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "prove");
+         Add (A, "--quiet");
+         Testing.Parse_Args (A, Cfg);
+         R.Check
+           (Cfg.Prove_Suppress_Warnings,
+            "prove --quiet keeps Prove_Suppress_Warnings on");
+         R.Check
+           (Ada.Strings.Unbounded.Length (Cfg.Prove_Suppress_Sets) = 0,
+            "prove --quiet selects the default set (empty set list)");
+         R.Check
+           (Cfg.Prove_Suppress_Explicit,
+            "prove --quiet sets Prove_Suppress_Explicit");
+         R.Check (not Cfg.CLI_Error, "prove --quiet is not an error");
+      end;
+
+      --  --suppress-warnings (bare) is an alias of --quiet, and
+      --  --suppress-warnings=SETS carries a comma-separated custom set list.
       declare
          Cfg : CLI_Config;
          A   : Testing.Arg_Vectors.Vector;
@@ -112,7 +143,37 @@ package body Adacovex_Config_Tests is
          R.Check
            (Cfg.Prove_Suppress_Warnings,
             "prove --suppress-warnings sets Prove_Suppress_Warnings");
+         R.Check
+           (Ada.Strings.Unbounded.Length (Cfg.Prove_Suppress_Sets) = 0,
+            "prove --suppress-warnings selects the default set");
+         R.Check
+           (Cfg.Prove_Suppress_Explicit,
+            "prove --suppress-warnings sets Prove_Suppress_Explicit");
          R.Check (not Cfg.CLI_Error, "prove --suppress-warnings is not an error");
+      end;
+
+      --  --suppress-warnings=xyz,abc carries a custom comma-separated set
+      --  list verbatim.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "prove");
+         Add (A, "--suppress-warnings=xyz,abc");
+         Testing.Parse_Args (A, Cfg);
+         R.Check
+           (Cfg.Prove_Suppress_Warnings,
+            "prove --suppress-warnings=xyz,abc keeps suppression on");
+         R.Check
+           (Ada.Strings.Unbounded.To_String (Cfg.Prove_Suppress_Sets)
+              = "xyz,abc",
+            "prove --suppress-warnings=xyz,abc stores the set list verbatim");
+         R.Check
+           (Cfg.Prove_Suppress_Explicit,
+            "prove --suppress-warnings=xyz,abc sets Prove_Suppress_Explicit");
+         R.Check
+           (not Cfg.CLI_Error,
+            "prove --suppress-warnings=xyz,abc is not an error");
       end;
 
       --  Test 4: CI threshold defaults are "not set" (gates off)
