@@ -133,6 +133,8 @@ package body Adacovex.Config is
    --  convenience.  Sets Valid False and Result to Stone on parse failure.
    procedure To_SPARK_Level
      (S : String; Result : out Types.SPARK_Level; Valid : out Boolean)
+   with SPARK_Mode => On, Global => null,
+        Pre        => S'First >= 1 and S'Last < Natural'Last
    is
       Up : String (1 .. S'Length);
    begin

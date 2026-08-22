@@ -31,7 +31,7 @@ HLR-CPU: Cross-platform CPU core detection
 
 **Returns:** True when running inside CI.
 
-### function Jobs_Justification (Configured : Standard.Integer; Cores : Standard.Natural; In_CI : Standard.Boolean) return Standard.String
+### function Jobs_Justification (Configured : Standard.Integer; Cores : Standard.Natural; In_CI : Standard.Boolean) return Standard.String `[Global]` `[SPARK]`
 
 | Parameter | Description |
 |-----------|-------------|

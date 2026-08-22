@@ -32,7 +32,7 @@ ISO 26262 / IEC 62304), and interactive dashboards.
   NOT a declared dependency -- the prove subcommand resolves it at run time
   (per-project manifest, PATH, cached toolchain, or download), so the covex
   crate installs and builds with no toolchain beyond the GNAT compiler
--  Self-assessment: 100% docstring coverage, Platinum SPARK (487/487 VCs proved),
+-  Self-assessment: 100% docstring coverage, Platinum SPARK (615/615 VCs proved),
   DAL-C / ASIL B / Class A Achieved, 850/850 native tests passing
 """
 version = "1.4.0"

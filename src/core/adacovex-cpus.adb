@@ -215,7 +215,9 @@ package body Adacovex.CPUs is
    end Resolve_Jobs;
 
    function Jobs_Justification
-     (Configured : Integer; Cores : Natural; In_CI : Boolean) return String is
+     (Configured : Integer; Cores : Natural; In_CI : Boolean) return String
+   with SPARK_Mode => On
+   is
    begin
       if Configured = 0 then
          return "auto default (all cores): -j0";

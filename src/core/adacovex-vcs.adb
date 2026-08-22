@@ -86,14 +86,24 @@ package body Adacovex.VCS is
    end Run_Capture;
 
    --  First non-empty line of the captured buffer, clamped to Max_Path.
-   function First_Line (Buf : String; BLen : Natural) return String is
+   function First_Line (Buf : String; BLen : Natural) return String
+   with SPARK_Mode => On,
+        Pre        => Buf'First >= 1 and Buf'Last < Natural'Last
+                      and BLen <= Buf'Length,
+        Global     => null
+   is
       Start : Natural := Buf'First;
-      Stop  : Natural := Buf'First + BLen - 1;
+      Stop  : Natural := (if BLen = 0 then Buf'First else Buf'First + BLen - 1);
    begin
       if BLen = 0 then
          return "";
       end if;
+      --  Stop is valid because BLen <= Buf'Length and Buf'Last < Natural'Last
+      pragma Assert (Stop >= Buf'First and Stop <= Buf'Last);
       while Start <= Stop and then Buf (Start) = ASCII.LF loop
+         pragma Loop_Invariant (Start >= Buf'First);
+         pragma Loop_Invariant (Start <= Stop + 1);
+         pragma Loop_Variant (Increases => Start);
          Start := Start + 1;
       end loop;
       if Start > Stop then
@@ -103,6 +113,9 @@ package body Adacovex.VCS is
          E : Natural := Start;
       begin
          while E <= Stop and then Buf (E) /= ASCII.LF loop
+            pragma Loop_Invariant (E >= Start);
+            pragma Loop_Invariant (E <= Stop + 1);
+            pragma Loop_Variant (Increases => E);
             E := E + 1;
          end loop;
          if E > Start then
@@ -117,43 +130,53 @@ package body Adacovex.VCS is
    --  keyword is absent.  The value runs to the end of the line.
    function Field_Value
      (Buf : String; BLen : Natural; Keyword : String) return String
+   with
+     SPARK_Mode => On,
+     Pre        => Buf'First >= 1 and Buf'Last < Natural'Last
+                   and Keyword'First >= 1 and Keyword'Last < Natural'Last
+                   and BLen <= Buf'Length,
+     Global     => null
    is
-      Stop : constant Natural := Buf'First + BLen - 1;
-
-      function Match_At (I : Natural) return Boolean is
-      begin
-         if I + Keyword'Length - 1 > Stop then
-            return False;
-         end if;
-         for J in Keyword'Range loop
-            if Buf (I + (J - Keyword'First)) /= Keyword (J) then
-               return False;
-            end if;
-         end loop;
-         return True;
-      end Match_At;
+      Stop : Natural := (if BLen = 0 then Buf'First else Buf'First + BLen - 1);
+      I    : Natural := Buf'First;
    begin
       if BLen = 0 then
          return "";
       end if;
-      for I in Buf'First .. Stop loop
-         if Match_At (I) then
+      pragma Assert (Stop >= Buf'First and Stop <= Buf'Last);
+      while I <= Stop loop
+         pragma Loop_Invariant (I >= Buf'First);
+         pragma Loop_Invariant (I <= Stop + 1);
+         pragma Loop_Variant (Increases => I);
+         if Keyword'Length > 0
+           and then Stop - I + 1 >= Keyword'Length
+           and then Buf (I .. I + Keyword'Length - 1) = Keyword
+         then
             declare
                St : Natural := I + Keyword'Length;
                En : Natural := St;
             begin
+               pragma Assert (St >= Buf'First and St <= Stop + 1);
                while En <= Stop and then Buf (En) = ' ' loop
+                  pragma Loop_Invariant (En >= St);
+                  pragma Loop_Invariant (En <= Stop + 1);
+                  pragma Loop_Variant (Increases => En);
                   En := En + 1;
                end loop;
                St := En;
                while En <= Stop and then Buf (En) /= ASCII.LF loop
+                  pragma Loop_Invariant (En >= St);
+                  pragma Loop_Invariant (En <= Stop + 1);
+                  pragma Loop_Variant (Increases => En);
                   En := En + 1;
                end loop;
                if En > St then
                   return Buf (St .. En - 1);
                end if;
             end;
+         --  Keyword empty: treat as not found, skip.
          end if;
+         I := I + 1;
       end loop;
       return "";
    end Field_Value;
