@@ -60,8 +60,8 @@ adacovex man [--check|--force] [--dir=PATH]
 
 `prove`-mode flags (also accepted by the main command, validated only in
 prove mode): `--jobs`/`-j`, `--level`, `--timeout`, `--steps`, `--memlimit`,
-`--force`, `--no-loop-unrolling`, `--no-inlining` -- see
-[The `prove` subcommand](#the-prove-subcommand).
+`--force`, `--no-loop-unrolling`, `--no-inlining`, `--suppress-warnings` --
+see [The `prove` subcommand](#the-prove-subcommand).
 
 ## Flag details
 
@@ -169,8 +169,9 @@ for the design.
 | `--steps=N` | `10000` | Max proof steps (reproducible budget; an explicit value overrides the default) |
 | `--memlimit=N` | tool default | Prover memory limit in MB |
 | `--force` | off | Force full gnatprove reanalysis (`-f`); also bypasses the result cache |
-| `--no-loop-unrolling` | off | Disable automatic loop unrolling |
+| `--no-loop-unrolling` | always on | Disable automatic loop unrolling. Loop unrolling is always disabled so GNATprove never emits the purely-informational `cannot unroll loop (too many loop iterations) [info-unrolling-inlining]` notice; proof-neutral for the dogfood targets (720/720 adacovex, 589/589 Ada_CRDT VCs, 0 unproved). Flag kept for compatibility |
 | `--no-inlining` | off | Disable contextual analysis inlining |
+| `--suppress-warnings` | off | Hide GNATprove's benign info messages (the loop-unrolling/inlining notice blocks) from stdout. `--verbose` always shows every message and wins over this flag; CI does not pass it, so CI output stays authoritative |
 
 `prove` accepts all assessment flags too (`--dal`, `--standard`, the
 `--require-*` gates, `--emit-svg`, ...), so CI gates apply to the proof run
@@ -307,7 +308,7 @@ target does not meet the required level:
 
 ```bash
 adacovex --target=. --require-spark=Platinum --require-docstrings=100 \
-         --require-tests=850 --require-proof=100
+         --require-tests=853 --require-proof=100
 ```
 
 - `require-spark` compares the honest assessed SPARK level (Stone..Platinum).

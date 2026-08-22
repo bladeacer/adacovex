@@ -94,6 +94,25 @@ package body Adacovex_Config_Tests is
             "Default Prove_No_Loop_Unroll is False");
          R.Check
            (not Cfg.Prove_No_Inlining, "Default Prove_No_Inlining is False");
+         R.Check
+           (not Cfg.Prove_Suppress_Warnings,
+            "Default Prove_Suppress_Warnings is False");
+      end;
+
+      --  --suppress-warnings parses as a prove-mode flag (the "outside
+      --  prove mode is an error" validation runs in Parse_CLI, which the
+      --  Parse_Args unit tests do not reach).
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "prove");
+         Add (A, "--suppress-warnings");
+         Testing.Parse_Args (A, Cfg);
+         R.Check
+           (Cfg.Prove_Suppress_Warnings,
+            "prove --suppress-warnings sets Prove_Suppress_Warnings");
+         R.Check (not Cfg.CLI_Error, "prove --suppress-warnings is not an error");
       end;
 
       --  Test 4: CI threshold defaults are "not set" (gates off)

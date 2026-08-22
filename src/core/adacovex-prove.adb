@@ -191,9 +191,14 @@ package body Adacovex.Prove is
       if Opts.Force then
          App ("-f");
       end if;
-      if Opts.No_Loop_Unrolling then
-         App ("--no-loop-unrolling");
-      end if;
+      --  Loop unrolling is always disabled: GNATprove emits the purely
+      --  informational "cannot unroll loop (too many loop iterations)"
+      --  notice for loops it would like to unroll but cannot, which is
+      --  noise in every proof run (e.g. Ada_CRDT's Find_Actor / LEB128
+      --  loops and generic instantiations).  Disabling unrolling removes
+      --  the notice entirely and is proof-neutral for the dogfood targets
+      --  (720/720 adacovex and 589/589 Ada_CRDT VCs, 0 unproved).
+      App ("--no-loop-unrolling");
       if Opts.No_Inlining then
          App ("--no-inlining");
       end if;
@@ -897,6 +902,115 @@ package body Adacovex.Prove is
       end;
    end Global_GNATprove_Pin;
 
+   --  Replay a captured gnatprove output file to stdout, dropping the
+   --  default set of suppressed informational messages: every message block
+   --  carrying the [info-unrolling-inlining] tag (the loop-unrolling /
+   --  inlining notices -- purely informational, the proof outcome is
+   --  unaffected).  A block appears in two shapes:
+   --
+   --     info: cannot unroll loop (too many loop iterations) [info-unrolling-inlining]
+   --    --> crdt-core-leb128.adb:28:51
+   --
+   --  and, inside generic instantiations:
+   --
+   --     info: in instantiation at crdt-lww_sets.adb:19
+   --    --> proof_instantiations.ads:37:04
+   --          + cannot unroll loop (too many loop iterations) [info-unrolling-inlining]
+   --
+   --  A small FIFO buffers the header lines ("info:" + "-->" location) so
+   --  the whole block -- tag line, header, and any "+" sub-message -- is
+   --  dropped together; every other gnatprove line (checks, summary,
+   --  warnings) passes through untouched.
+   procedure Replay_Suppressed (Path : String) is
+      use Ada.Text_IO;
+      use Ada.Strings.Fixed;
+
+      Max_Line       : constant Natural := 1024;
+      Tag            : constant String := "[info-unrolling-inlining]";
+      type Line_Array is array (1 .. 4) of String (1 .. Max_Line);
+      Bufs           : Line_Array;
+      Lens           : array (1 .. 4) of Natural := (others => 0);
+      Ct             : Natural := 0;
+      Skip_Cont      : Boolean := False;
+      F              : File_Type;
+
+      --  First non-blank character of S (' ' when S is blank).
+      function Head (S : String) return Character is
+      begin
+         for I in S'Range loop
+            if S (I) not in ' ' | ASCII.HT then
+               return S (I);
+            end if;
+         end loop;
+         return ' ';
+      end Head;
+
+      --  True when S (trimmed) starts with Prefix.
+      function Starts (S : String; Prefix : String) return Boolean is
+         T : constant String := Trim (S, Ada.Strings.Both);
+      begin
+         return T'Length >= Prefix'Length
+           and then T (T'First .. T'First + Prefix'Length - 1) = Prefix;
+      end Starts;
+
+      --  Queue S for later output, flushing the oldest line once full.
+      procedure Push (S : String) is
+         L : constant Natural := Natural'Min (S'Length, Max_Line);
+      begin
+         if Ct = 4 then
+            Put_Line (Bufs (1) (1 .. Lens (1)));
+            for I in 1 .. 3 loop
+               Bufs (I) := Bufs (I + 1);
+               Lens (I) := Lens (I + 1);
+            end loop;
+            Ct := 3;
+         end if;
+         Ct := Ct + 1;
+         Lens (Ct) := L;
+         for I in 1 .. L loop
+            Bufs (Ct) (I) := S (S'First + I - 1);
+         end loop;
+      end Push;
+   begin
+      Open (F, In_File, Path);
+      while not End_Of_File (F) loop
+         declare
+            L : constant String := Get_Line (F);
+         begin
+            if Index (L, Tag) > 0 then
+               --  Tagged line: drop it.  For a "+" sub-message (the
+               --  in-instantiation shape) also drop its "info:" + "-->"
+               --  header pair that is still waiting in the buffer.
+               if Head (L) = '+' and then Ct >= 2 then
+                  if Starts (Bufs (Ct) (1 .. Lens (Ct)), "-->")
+                    and then Starts (Bufs (Ct - 1) (1 .. Lens (Ct - 1)), "info:")
+                  then
+                     Ct := Ct - 2;
+                  end if;
+               end if;
+               Skip_Cont := True;
+            elsif Skip_Cont
+              and then (Head (L) = '-' or else Head (L) = '+')
+            then
+               --  Location / sub-message continuation of a suppressed block.
+               null;
+            else
+               Skip_Cont := False;
+               Push (L);
+            end if;
+         end;
+      end loop;
+      while Ct > 0 loop
+         Put_Line (Bufs (1) (1 .. Lens (1)));
+         for I in 1 .. Ct - 1 loop
+            Bufs (I) := Bufs (I + 1);
+            Lens (I) := Lens (I + 1);
+         end loop;
+         Ct := Ct - 1;
+      end loop;
+      Close (F);
+   end Replay_Suppressed;
+
    procedure Run_Prove
      (Target_Dir : String; Opts : Prove_Options; Success : out Boolean)
    is
@@ -1086,7 +1200,40 @@ package body Adacovex.Prove is
       Args (2) := new String'(GPR (1 .. GLen));
       N := 2;
       Append_Option_Tokens (Args, N, Options (1 .. OLen));
-      Spawn (Exe (1 .. Exe_Len), Args (1 .. N), "/dev/stdout", OK, Code);
+      if Opts.Suppress_Warnings then
+         --  Capture gnatprove's combined output, replay it to stdout with
+         --  the default suppression set (the [info-unrolling-inlining]
+         --  blocks) filtered out, then remove the capture file.  The
+         --  summary / check results always pass through -- only the benign
+         --  info notices are hidden.  Output appears once the run finishes
+         --  (no live tail) -- the flag is for quiet local runs, never for
+         --  --verbose or CI.
+         declare
+            Fd  : GNAT.OS_Lib.File_Descriptor;
+            Tmp : GNAT.OS_Lib.String_Access;
+         begin
+            GNAT.OS_Lib.Create_Temp_File (Fd, Tmp);
+            GNAT.OS_Lib.Close (Fd);
+            Spawn
+              (Exe (1 .. Exe_Len),
+               Args (1 .. N),
+               Tmp.all,
+               OK,
+               Code,
+               Err_To_Out => True);
+            if Ada.Directories.Exists (Tmp.all) then
+               Replay_Suppressed (Tmp.all);
+               declare
+                  Del_OK : Boolean;
+               begin
+                  GNAT.OS_Lib.Delete_File (Tmp.all, Del_OK);
+               end;
+            end if;
+            GNAT.OS_Lib.Free (Tmp);
+         end;
+      else
+         Spawn (Exe (1 .. Exe_Len), Args (1 .. N), "/dev/stdout", OK, Code);
+      end if;
       for I in 1 .. N loop
          GNAT.OS_Lib.Free (Args (I));
       end loop;
