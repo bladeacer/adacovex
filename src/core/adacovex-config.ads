@@ -1,5 +1,6 @@
 with Adacovex.Types;
 with Ada.Containers.Indefinite_Vectors;
+with Ada.Strings.Unbounded;
 
 --  Command-line argument parser for adacovex.
 --  Parses short and long option forms (--key=value and --key value)
@@ -100,12 +101,26 @@ package Adacovex.Config is
       Prove_No_Loop_Unroll : Boolean := False;
       Prove_No_Inlining    : Boolean := False;
 
-      --  True when --suppress-warnings is given: the prove subcommand hides
-      --  GNATprove's benign informational messages (the default suppression
-      --  set -- loop-unrolling/inlining notices) from stdout.  --verbose
-      --  always wins over it (verbose shows every message); CI does not
-      --  pass the flag, so CI output stays authoritative.
-      Prove_Suppress_Warnings : Boolean := False;
+      --  Quiet-by-default prove output: unless --verbose is given, the
+      --  prove subcommand hides GNATprove's benign informational messages
+      --  (the default suppression set -- loop-unrolling/inlining notices)
+      --  from stdout.  --verbose always wins over it (verbose shows every
+      --  message), and CI passes --verbose so CI output stays authoritative.
+      --  Defaults to True so local runs are quiet without any flag.
+      Prove_Suppress_Warnings : Boolean := True;
+
+      --  Comma-separated suppression-set names for --suppress-warnings=SETS
+      --  (and --quiet, which is the default set).  Empty = the default set
+      --  (unrolling-inlining).  A set name suppresses gnatprove info tags
+      --  `[info-<SET>]` (or `[<SET>]`); see Adacovex.Prove.Replay_Suppressed.
+      Prove_Suppress_Sets : Ada.Strings.Unbounded.Unbounded_String :=
+        Ada.Strings.Unbounded.Null_Unbounded_String;
+
+      --  True when the user explicitly passed --quiet / --suppress-warnings
+      --  (as opposed to the quiet-by-default state).  Only the explicit
+      --  form is a prove-mode flag for the "requires the prove subcommand"
+      --  validation, so a plain local run never trips it.
+      Prove_Suppress_Explicit : Boolean := False;
 
       --  CI threshold gates (default: all off).  When set, the assessment
       --  fails loudly (exit code 1 with an explicit reason) if the target

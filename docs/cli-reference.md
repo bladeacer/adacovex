@@ -60,8 +60,8 @@ adacovex man [--check|--force] [--dir=PATH]
 
 `prove`-mode flags (also accepted by the main command, validated only in
 prove mode): `--jobs`/`-j`, `--level`, `--timeout`, `--steps`, `--memlimit`,
-`--force`, `--no-loop-unrolling`, `--no-inlining`, `--suppress-warnings` --
-see [The `prove` subcommand](#the-prove-subcommand).
+`--force`, `--no-loop-unrolling`, `--no-inlining`, `--suppress-warnings`,
+`--quiet` -- see [The `prove` subcommand](#the-prove-subcommand).
 
 ## Flag details
 
@@ -171,7 +171,9 @@ for the design.
 | `--force` | off | Force full gnatprove reanalysis (`-f`); also bypasses the result cache |
 | `--no-loop-unrolling` | always on | Disable automatic loop unrolling. Loop unrolling is always disabled so GNATprove never emits the purely-informational `cannot unroll loop (too many loop iterations) [info-unrolling-inlining]` notice; proof-neutral for the dogfood targets (720/720 adacovex, 589/589 Ada_CRDT VCs, 0 unproved). Flag kept for compatibility |
 | `--no-inlining` | off | Disable contextual analysis inlining |
-| `--suppress-warnings` | off | Hide GNATprove's benign info messages (the loop-unrolling/inlining notice blocks) from stdout. `--verbose` always shows every message and wins over this flag; CI does not pass it, so CI output stays authoritative |
+| `--quiet` | on | Hide GNATprove's benign info messages (the default suppression set -- the loop-unrolling/inlining notice blocks) from stdout. **Active by default for local runs**; `--verbose` always shows every message and wins over it. CI passes `--verbose`, so CI output stays authoritative. Explicit form of the default |
+| `--suppress-warnings` | on | Alias of `--quiet` (the default suppression set). Kept for compatibility |
+| `--suppress-warnings=SETS` | on | Hide GNATprove info messages whose tags match the comma-separated suppression-set names (e.g. `--suppress-warnings=unrolling-inlining,xyz`). A set name `S` suppresses blocks tagged `[info-S]` (or bare `[S]`). `--verbose` always shows every message |
 
 `prove` accepts all assessment flags too (`--dal`, `--standard`, the
 `--require-*` gates, `--emit-svg`, ...), so CI gates apply to the proof run
@@ -308,7 +310,7 @@ target does not meet the required level:
 
 ```bash
 adacovex --target=. --require-spark=Platinum --require-docstrings=100 \
-         --require-tests=853 --require-proof=100
+         --require-tests=865 --require-proof=100
 ```
 
 - `require-spark` compares the honest assessed SPARK level (Stone..Platinum).

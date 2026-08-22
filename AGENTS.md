@@ -23,7 +23,7 @@ Self-assessment (`make run-self`) must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
 - Platinum SPARK level (720 VCs under gnatprove 16.1.0, 0 unproved, 0
   justified; see `docs/proof/16.1.0-ledger.md`)
-- 853/853 native tests passing
+- 865/865 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
   `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
@@ -74,7 +74,7 @@ src/
 |   `-- adacovex-server-router.ads            -- Parent package for HTTP request routing (future expansion)
 `-- tests/
     |-- adacovex-test_support.ads/.adb        -- Native test Runner type
-    |-- adacovex_config_tests.ads/.adb        -- CLI config tests (127)
+    |-- adacovex_config_tests.ads/.adb        -- CLI config tests (139)
     |-- adacovex_dal_tests.ads/.adb           -- DAL compliance tests (16)
     |-- adacovex_ir_tests.ads/.adb            -- IR synthesis tests (27)
     |-- adacovex_man_tests.ads/.adb           -- Man page renderer tests (18)
@@ -88,7 +88,7 @@ src/
     |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (43)
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (67)
     |-- adacovex_vcs_tests.ads/.adb           -- VCS support tests (29)
-    `-- test_runner.adb                       -- Test suite entry point (853 tests)
+    `-- test_runner.adb                       -- Test suite entry point (865 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -232,7 +232,7 @@ link URLs).
 | `check` | Full quality gate (CI runs this before release): cheap static gates first (ascii, spark-off, changelog, version, doc-links), then build + tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description) that fail when any live file carries a stale metric |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
-| `test` | Build + run the 853-test native suite |
+| `test` | Build + run the 865-test native suite |
 | `prove` | SPARK proof (Platinum gate) + regenerates SVG badges in `docs/badges/` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
 | `fmt` | Format Ada sources (gnatformat) |
@@ -291,7 +291,8 @@ inputs map 1:1 onto the CLI flags (e.g. `target`/`--target`, `dal`/`--dal`,
 `compare-base`/`--compare-base`, `coverage-delta`/`--coverage-delta`, the
 `--require-*` gates, and the `prove-*` inputs onto the `prove` subcommand's
 `--jobs` / `--level` / `--timeout` / `--steps` / `--memlimit` / `--force` /
-`--no-loop-unrolling` / `--no-inlining` flags).
+`--no-loop-unrolling` / `--no-inlining` / `--quiet` /
+`--suppress-warnings=SETS` flags).
 
 Keep them in sync: when a CLI flag is added, a matching action input (and the
 docs/ci-cd.md input table) goes with it. The only assessment that is *not*
@@ -303,7 +304,7 @@ tests, and the release-tag coverage gate instead.
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 853/853 passing |
+| Unit tests | `make test` | 865/865 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (720 VCs, 0 unproved, 0 justified under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -317,7 +318,7 @@ rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 853 tests across 14 categories).
+Native zero-dependency suite (`src/tests/`, 865 tests across 14 categories).
 Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests).
 

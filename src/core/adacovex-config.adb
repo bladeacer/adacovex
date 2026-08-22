@@ -213,7 +213,7 @@ package body Adacovex.Config is
      & "cache-dir cache-max skip-dir compare-base coverage-delta sbom "
      & "prove status man check dir version no-sbom sbom-format format out "
      & "jobs level timeout steps memlimit force no-loop-unrolling "
-     & "no-inlining suppress-warnings require-spark require-docstrings "
+     & "no-inlining suppress-warnings quiet require-spark require-docstrings "
      & "require-tests require-proof help";
 
    --  Levenshtein edit distance between two strings, capped at 9 so the
@@ -991,8 +991,20 @@ package body Adacovex.Config is
                   Cfg.Prove_No_Loop_Unroll := True;
                elsif A = "--no-inlining" then
                   Cfg.Prove_No_Inlining := True;
-               elsif A = "--suppress-warnings" then
+               elsif A = "--quiet" or else A = "--suppress-warnings" then
+                  --  --quiet and bare --suppress-warnings select the
+                  --  default suppression set (unrolling-inlining).  Quiet
+                  --  is already the default for local runs, so this is an
+                  --  explicit request (and a prove-mode flag).
                   Cfg.Prove_Suppress_Warnings := True;
+                  Cfg.Prove_Suppress_Sets := Ada.Strings.Unbounded.Null_Unbounded_String;
+                  Cfg.Prove_Suppress_Explicit := True;
+               elsif Has_Prefix (A, "--suppress-warnings=") then
+                  Cfg.Prove_Suppress_Warnings := True;
+                  Cfg.Prove_Suppress_Sets :=
+                    Ada.Strings.Unbounded.To_Unbounded_String
+                      (A (A'First + 20 .. A'Last));
+                  Cfg.Prove_Suppress_Explicit := True;
                elsif A = "--require-spark" then
                   I := I + 1;
                   if I <= Count then
@@ -1279,13 +1291,13 @@ package body Adacovex.Config is
                   or Cfg.Prove_Force
                   or Cfg.Prove_No_Loop_Unroll
                   or Cfg.Prove_No_Inlining
-                  or Cfg.Prove_Suppress_Warnings)
+                  or Cfg.Prove_Suppress_Explicit)
       then
          Set_Error
            (Cfg,
             "prove options (--jobs, --level, --timeout, --steps, --memlimit, "
             & "--force, --no-loop-unrolling, --no-inlining, "
-            & "--suppress-warnings) require the prove subcommand");
+            & "--suppress-warnings, --quiet) require the prove subcommand");
       end if;
 
       -- Automatic SBOM at the end of every assessment is skipped only in the
@@ -1501,12 +1513,23 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("  --no-inlining         Disable contextual analysis inlining");
       Ada.Text_IO.Put_Line
-        ("  --suppress-warnings   Hide GNATprove's benign info messages (the");
+        ("  --quiet               Hide GNATprove's benign info messages (the");
       Ada.Text_IO.Put_Line
-        ("                        loop-unrolling/inlining notices) from stdout;");
+        ("                        default suppression set: loop-unrolling/");
       Ada.Text_IO.Put_Line
-        ("                        --verbose always shows every message, and CI");
-      Ada.Text_IO.Put_Line ("                        does not pass this flag");
+        ("                        inlining notices) from stdout.  Active by");
+      Ada.Text_IO.Put_Line
+        ("                        default for local runs; --verbose shows");
+      Ada.Text_IO.Put_Line ("                        every message and wins");
+      Ada.Text_IO.Put_Line
+        ("  --suppress-warnings[=SETS]  Hide GNATprove info messages from");
+      Ada.Text_IO.Put_Line
+        ("                        stdout; SETS is a comma-separated list of");
+      Ada.Text_IO.Put_Line
+        ("                        suppression-set names (empty = the default");
+      Ada.Text_IO.Put_Line
+        ("                        set, e.g. unrolling-inlining); --verbose");
+      Ada.Text_IO.Put_Line ("                        always shows every message");
       Ada.Text_IO.Put_Line
         ("  --require-spark=LVL   Fail if SPARK level < LVL (Stone..Platinum)");
       Ada.Text_IO.Put_Line
@@ -1804,6 +1827,7 @@ package body Adacovex.Config is
         or else T = "no-loop-unrolling"
         or else T = "no-inlining"
         or else T = "suppress-warnings"
+        or else T = "quiet"
       then
          Print_Section
            ("adacovex prove",
@@ -1820,9 +1844,11 @@ package body Adacovex.Config is
             & ASCII.LF
             & "--no-loop-unrolling (always on), --no-inlining, and"
             & ASCII.LF
-            & "--suppress-warnings (hide benign GNATprove info notices from"
+            & "--suppress-warnings[=SETS] / --quiet (hide benign GNATprove info"
             & ASCII.LF
-            & "stdout; --verbose shows everything).");
+            & "notices from stdout; quiet is the default for local runs and"
+            & ASCII.LF
+            & "--verbose shows everything).");
       elsif T = "status" then
          Print_Section
            ("adacovex status",

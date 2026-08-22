@@ -195,6 +195,14 @@ inputs:
     description: 'Disable GNATprove contextual-analysis inlining.'
     required: false
     default: 'false'
+  prove-quiet:
+    description: 'Suppress GNATprove benign info messages (the default set) from prove output. Quiet is already the default for local runs; this input is the explicit prove-mode form. --verbose wins and shows everything.'
+    required: false
+    default: 'false'
+  prove-suppress-warnings:
+    description: 'Comma-separated GNATprove info tags to suppress from prove output (e.g. unrolling-inlining,xyz). A tag S suppresses blocks tagged [info-S] (or [S]). --verbose wins and shows everything.'
+    required: false
+    default: ''
 
 outputs:
   dal-status:
@@ -420,6 +428,17 @@ runs:
         fi
         if [ "${{ inputs.prove-no-inlining }}" == 'true' ]; then
           PROVE_ARGS+=(--no-inlining)
+        fi
+        #  Quiet (suppression of benign GNATprove info messages) is the
+        #  default; CI passes --verbose so its output stays authoritative.
+        if [ "${{ inputs.prove-quiet }}" == 'true' ]; then
+          PROVE_ARGS+=(--quiet)
+        fi
+        if [ -n "${{ inputs.prove-suppress-warnings }}" ]; then
+          PROVE_ARGS+=(--suppress-warnings="${{ inputs.prove-suppress-warnings }}")
+        fi
+        if [ "${{ inputs.verbose }}" == 'true' ]; then
+          PROVE_ARGS+=(--verbose)
         fi
         if [ -x bin/adacovex ]; then
           ./bin/adacovex prove --target="${{ inputs.target }}" "${PROVE_ARGS[@]}"
