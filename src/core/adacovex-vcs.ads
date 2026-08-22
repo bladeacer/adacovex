@@ -73,7 +73,14 @@ package Adacovex.VCS is
    --  convert the repository to git (or a git-compatible VCS).
    --  @param Kind  VCS kind.
    --  @return Recommendation text ("" when no note is needed).
-   function UX_Note (Kind : VCS_Kind) return String;
+   function UX_Note (Kind : VCS_Kind) return String
+   with
+     SPARK_Mode => On,
+     Post       =>
+       (if Kind = Subversion or Kind = Fossil
+        then UX_Note'Result'Length > 0
+        else UX_Note'Result'Length = 0),
+     Global     => null;
 
    --  Snapshot Base_Ref of the Target_Dir repository into a temporary
    --  directory (Tmp_Path), without touching the working tree.
