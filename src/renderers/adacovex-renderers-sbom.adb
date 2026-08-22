@@ -115,7 +115,7 @@ package body Adacovex.Renderers.SBOM is
    --  The output buffer is bounded at six bytes per input byte (the widest
    --  escape, "\u00xx"), so the source length is preconditioned to keep the
    --  buffer bound within Natural.
-   function Escape_JSON (S : String) return String is
+   function Escape_JSON (S : String) return String with SPARK_Mode => On is
       Buf : String (1 .. 6 * S'Length) := (others => ' ');
       Len : Natural := 0;
       Hex : constant String := "0123456789abcdef";

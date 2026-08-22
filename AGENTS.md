@@ -21,7 +21,7 @@ any Ada/SPARK project.
 
 Self-assessment (`make run-self`) must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
-- Platinum SPARK level (487 VCs under gnatprove 16.1.0, 0 unproved, 0
+- Platinum SPARK level (615 VCs under gnatprove 16.1.0, 0 unproved, 0
   justified; see `docs/proof/16.1.0-ledger.md`)
 - 850/850 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
@@ -305,7 +305,7 @@ tests, and the release-tag coverage gate instead.
 |-------|---------|-------------|
 | Unit tests | `make test` | 850/850 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
-| SPARK proof | `make prove` | Platinum (487 VCs, 0 unproved, 0 justified under gnatprove 16.1.0) |
+| SPARK proof | `make prove` | Platinum (615 VCs, 0 unproved, 0 justified under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
 
 ## Changelog format

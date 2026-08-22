@@ -13,14 +13,29 @@ package body Adacovex.Parsers.Source is
    --  `functionality` never match `procedure` / `function`.
    function Match_Keyword
      (S : String; Pos : Natural; Kw : String) return Boolean
+   with SPARK_Mode => On, Global => null,
+        Pre        => S'First >= 1 and Kw'First >= 1
+                      and S'Last < Natural'Last and Kw'Last < Natural'Last
    is
       Nxt : Natural;
    begin
-      if Pos < S'First or else Pos + Kw'Length - 1 > S'Last then
+      if Kw'Length = 0 then
+         return False;
+      end if;
+      if Pos < S'First then
+         return False;
+      end if;
+      if S'Last < Pos then
+         return False;
+      end if;
+      if S'Last - Pos + 1 < Kw'Length then
          return False;
       end if;
       if S (Pos .. Pos + Kw'Length - 1) /= Kw then
          return False;
+      end if;
+      if Pos > Natural'Last - Kw'Length then
+         return True;
       end if;
       Nxt := Pos + Kw'Length;
       if Nxt > S'Last then
@@ -35,10 +50,16 @@ package body Adacovex.Parsers.Source is
 
    --  Advance Pos past blanks (space or tab); stops at the first non-blank
    --  character or at the end of S.
-   procedure Skip_Blanks (S : String; Pos : in out Natural) is
+   procedure Skip_Blanks (S : String; Pos : in out Natural)
+   with SPARK_Mode => On, Global => null,
+        Pre        => S'First >= 1 and S'Last < Natural'Last
+                      and Pos >= S'First
+   is
    begin
       while Pos <= S'Last and then (S (Pos) = ' ' or else S (Pos) = ASCII.HT)
       loop
+         pragma Loop_Invariant (Pos >= S'First);
+         pragma Loop_Variant (Increases => Pos);
          Pos := Pos + 1;
       end loop;
    end Skip_Blanks;
@@ -734,12 +755,25 @@ package body Adacovex.Parsers.Source is
       end loop;
    end Scan_Project;
 
-   function Is_Prefix (Pre, S : String) return Boolean is
+   function Is_Prefix (Pre, S : String) return Boolean
+   with
+     SPARK_Mode => On,
+     Post       =>
+       Is_Prefix'Result
+       = (Pre'Length <= S'Length
+          and then (for all I in Pre'Range =>
+                      Pre (I) = S (S'First + (I - Pre'First)))),
+     Global     => null
+   is
    begin
       if Pre'Length > S'Length then
          return False;
       end if;
       for I in Pre'Range loop
+         pragma
+           Loop_Invariant
+             (for all J in Pre'First .. I - 1 =>
+                Pre (J) = S (S'First + (J - Pre'First)));
          if Pre (I) /= S (S'First + (I - Pre'First)) then
             return False;
          end if;
@@ -747,13 +781,26 @@ package body Adacovex.Parsers.Source is
       return True;
    end Is_Prefix;
 
-   function Relative_Path (Full_Path, Root : String) return String is
+   function Relative_Path (Full_Path, Root : String) return String
+   with SPARK_Mode => On, Global => null,
+        Pre        => Full_Path'First >= 1 and Root'First >= 1
+                      and Full_Path'Last < Natural'Last
+                      and Root'Last < Natural'Last
+   is
    begin
+      if Root'Length = 0 then
+         return "";
+      end if;
       if Is_Prefix (Root, Full_Path)
         and then Full_Path'Length > Root'Length + 1
-        and then Full_Path (Root'Length + 1) = '/'
       then
-         return Full_Path (Root'Length + 2 .. Full_Path'Last);
+         declare
+            Sep : constant Natural := Full_Path'First + Root'Length;
+         begin
+            if Sep <= Full_Path'Last and then Full_Path (Sep) = '/' then
+               return Full_Path (Sep + 1 .. Full_Path'Last);
+            end if;
+         end;
       end if;
       return "";
    end Relative_Path;

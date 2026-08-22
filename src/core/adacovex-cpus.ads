@@ -62,7 +62,8 @@ package Adacovex.CPUs is
    --  @param In_CI  Whether the run is inside CI.
    --  @return Justification string (no trailing newline).
    function Jobs_Justification
-     (Configured : Integer; Cores : Natural; In_CI : Boolean) return String;
+     (Configured : Integer; Cores : Natural; In_CI : Boolean) return String
+   with SPARK_Mode => On, Global => null;
 
 private
 
