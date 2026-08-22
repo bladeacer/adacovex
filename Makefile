@@ -100,7 +100,7 @@ test: build
 # Self-assessment acceptance gates, defined once so prove/run-self/release stay
 # in sync (and match .github/workflows/ci.yml + AGENTS.md "Dogfood target").
 # --require-tests is the current native test-suite size (docs/test_result.md).
-SELF_ASSESS_ARGS := --dal=C --standard=all --require-spark=Platinum --require-docstrings=100 --require-tests=850 --require-proof=100
+SELF_ASSESS_ARGS := --dal=C --standard=all --require-spark=Platinum --require-docstrings=100 --require-tests=853 --require-proof=100
 
 prove: build
 	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex prove --target=. $(SELF_ASSESS_ARGS) --emit-svg=docs/badges/
@@ -332,12 +332,19 @@ release:
 		fi; \
 	fi; \
 	echo "=== Changelogs (last release to v$$version) ==="; \
+	prev_num=""; \
+	if [ -n "$$prev_tag" ]; then prev_num="$${prev_tag#v}"; \
+	else \
+		prev_num=$$(ls alire/releases/covex-*.toml 2>/dev/null | \
+			sed -n 's/.*covex-\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\.toml/\1/p' | \
+			grep -v "^$$version$$" | sort -V | tail -1); \
+	fi; \
 	for f in docs/changelogs/adacovex-*.md; do \
 		cv=$$(basename "$$f" .md | sed 's/^adacovex-//'); \
-		if [ -n "$$prev_tag" ]; then \
-			pv=$${prev_tag#v}; \
-			if [ "$$(printf '%s\n%s\n' "$$cv" "$$pv" | sort -V | head -1)" = "$$cv" ]; then continue; fi; \
+		if [ -n "$$prev_num" ]; then \
+			if [ "$$(printf '%s\n%s\n' "$$cv" "$$prev_num" | sort -V | head -1)" = "$$cv" ]; then continue; fi; \
 		fi; \
+		if [ "$$(printf '%s\n%s\n' "$$cv" "$$version" | sort -V | tail -1)" != "$$version" ]; then continue; fi; \
 		printf '%s\n' "$$cv"; \
 	done | sort -V -r | while read cv; do \
 		echo "  - docs/changelogs/adacovex-$$cv.md"; \

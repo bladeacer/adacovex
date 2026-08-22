@@ -640,8 +640,11 @@ begin
             Steps             => Cfg.Prove_Steps,
             Memlimit          => Cfg.Prove_Memlimit,
             Force             => Cfg.Prove_Force,
-            No_Loop_Unrolling => Cfg.Prove_No_Loop_Unroll,
             No_Inlining       => Cfg.Prove_No_Inlining,
+            --  --suppress-warnings hides GNATprove's benign info notices;
+            --  --verbose never hides anything.
+            Suppress_Warnings => Cfg.Prove_Suppress_Warnings
+                                 and then not Cfg.Verbose,
             Cache             => Cfg.Cache_Enabled);
       begin
          Adacovex.Prove.Run_Prove (Target (1 .. TLen), Opts, OK);

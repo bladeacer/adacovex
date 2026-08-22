@@ -100,6 +100,13 @@ package Adacovex.Config is
       Prove_No_Loop_Unroll : Boolean := False;
       Prove_No_Inlining    : Boolean := False;
 
+      --  True when --suppress-warnings is given: the prove subcommand hides
+      --  GNATprove's benign informational messages (the default suppression
+      --  set -- loop-unrolling/inlining notices) from stdout.  --verbose
+      --  always wins over it (verbose shows every message); CI does not
+      --  pass the flag, so CI output stays authoritative.
+      Prove_Suppress_Warnings : Boolean := False;
+
       --  CI threshold gates (default: all off).  When set, the assessment
       --  fails loudly (exit code 1 with an explicit reason) if the target
       --  does not meet the minimum required level.  These are extra gates on

@@ -213,8 +213,8 @@ package body Adacovex.Config is
      & "cache-dir cache-max skip-dir compare-base coverage-delta sbom "
      & "prove status man check dir version no-sbom sbom-format format out "
      & "jobs level timeout steps memlimit force no-loop-unrolling "
-     & "no-inlining require-spark require-docstrings require-tests "
-     & "require-proof help";
+     & "no-inlining suppress-warnings require-spark require-docstrings "
+     & "require-tests require-proof help";
 
    --  Levenshtein edit distance between two strings, capped at 9 so the
    --  suggestion scan stays cheap (anything farther away is "not similar").
@@ -985,9 +985,14 @@ package body Adacovex.Config is
                   Cfg.Prove_Force := True;
                   Cfg.Man_Force := True;
                elsif A = "--no-loop-unrolling" then
+                  --  Loop unrolling is always disabled by the prove
+                  --  subcommand (see Adacovex.Prove.Build_Option_String);
+                  --  the flag is accepted for compatibility.
                   Cfg.Prove_No_Loop_Unroll := True;
                elsif A = "--no-inlining" then
                   Cfg.Prove_No_Inlining := True;
+               elsif A = "--suppress-warnings" then
+                  Cfg.Prove_Suppress_Warnings := True;
                elsif A = "--require-spark" then
                   I := I + 1;
                   if I <= Count then
@@ -1273,13 +1278,14 @@ package body Adacovex.Config is
                   or Cfg.Prove_Memlimit >= 0
                   or Cfg.Prove_Force
                   or Cfg.Prove_No_Loop_Unroll
-                  or Cfg.Prove_No_Inlining)
+                  or Cfg.Prove_No_Inlining
+                  or Cfg.Prove_Suppress_Warnings)
       then
          Set_Error
            (Cfg,
             "prove options (--jobs, --level, --timeout, --steps, --memlimit, "
-            & "--force, --no-loop-unrolling, --no-inlining) require the prove "
-            & "subcommand");
+            & "--force, --no-loop-unrolling, --no-inlining, "
+            & "--suppress-warnings) require the prove subcommand");
       end if;
 
       -- Automatic SBOM at the end of every assessment is skipped only in the
@@ -1486,9 +1492,21 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("  --force               Force full gnatprove reanalysis (-f)");
       Ada.Text_IO.Put_Line
-        ("  --no-loop-unrolling   Disable automatic loop unrolling");
+        ("  --no-loop-unrolling   Disable automatic loop unrolling (always");
+      Ada.Text_IO.Put_Line
+        ("                        on: the prove subcommand never unrolls loops,");
+      Ada.Text_IO.Put_Line
+        ("                        so GNATprove's 'cannot unroll loop' info");
+      Ada.Text_IO.Put_Line ("                        notices never appear; flag kept for compat)");
       Ada.Text_IO.Put_Line
         ("  --no-inlining         Disable contextual analysis inlining");
+      Ada.Text_IO.Put_Line
+        ("  --suppress-warnings   Hide GNATprove's benign info messages (the");
+      Ada.Text_IO.Put_Line
+        ("                        loop-unrolling/inlining notices) from stdout;");
+      Ada.Text_IO.Put_Line
+        ("                        --verbose always shows every message, and CI");
+      Ada.Text_IO.Put_Line ("                        does not pass this flag");
       Ada.Text_IO.Put_Line
         ("  --require-spark=LVL   Fail if SPARK level < LVL (Stone..Platinum)");
       Ada.Text_IO.Put_Line
@@ -1785,6 +1803,7 @@ package body Adacovex.Config is
         or else T = "force"
         or else T = "no-loop-unrolling"
         or else T = "no-inlining"
+        or else T = "suppress-warnings"
       then
          Print_Section
            ("adacovex prove",
@@ -1799,7 +1818,11 @@ package body Adacovex.Config is
             & ASCII.LF
             & "--memlimit, --force (bypass the result cache),"
             & ASCII.LF
-            & "--no-loop-unrolling, --no-inlining.");
+            & "--no-loop-unrolling (always on), --no-inlining, and"
+            & ASCII.LF
+            & "--suppress-warnings (hide benign GNATprove info notices from"
+            & ASCII.LF
+            & "stdout; --verbose shows everything).");
       elsif T = "status" then
          Print_Section
            ("adacovex status",

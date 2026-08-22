@@ -47,14 +47,19 @@ package Adacovex.Prove is
    --  auto-detected parallelism means CI and the local make targets use every
    --  core without any flag, while users can pin --jobs=12 (or -j12).
    type Prove_Options is record
-      Jobs              : Integer := -1;
-      Level             : Integer := -1;
-      Timeout           : Integer := -1;
-      Steps             : Integer := -1;
-      Memlimit          : Integer := -1;
-      Force             : Boolean := False;
-      No_Loop_Unrolling : Boolean := False;
-      No_Inlining       : Boolean := False;
+      Jobs        : Integer := -1;
+      Level       : Integer := -1;
+      Timeout     : Integer := -1;
+      Steps       : Integer := -1;
+      Memlimit    : Integer := -1;
+      Force       : Boolean := False;
+      No_Inlining : Boolean := False;
+
+      --  True when gnatprove's benign informational messages (the default
+      --  suppression set -- see Replay_Suppressed) are hidden from stdout.
+      --  Always off under --verbose; CI does not pass it, so CI output stays
+      --  authoritative.
+      Suppress_Warnings : Boolean := False;
       Cache             : Boolean := True;
    end record;
 
@@ -64,11 +69,15 @@ package Adacovex.Prove is
    function Detect_Core_Count return Natural;
 
    --  Build the gnatprove option arguments as a space-separated string
-   --  (excluding the -P <project> pair).  Always includes `-j <jobs>`:
-   --  pass the resolved job count (Opts.Jobs when >= 0, else a detected
-   --  core count).  Level/timeout/steps/memlimit are included only when
-   --  configured; --force, --no-loop-unrolling and --no-inlining map to the
-   --  corresponding gnatprove switches.
+   --  (excluding the -P <project> pair).  Always includes `-j <jobs>` and
+   --  `--no-loop-unrolling`: pass the resolved job count (Opts.Jobs when
+   --  >= 0, else a detected core count), and loop unrolling is always
+   --  disabled so GNATprove never emits the purely-informational "cannot
+   --  unroll loop (too many loop iterations) [info-unrolling-inlining]"
+   --  notice (proof-neutral for the dogfood targets: 720/720 adacovex and
+   --  589/589 Ada_CRDT VCs with 0 unproved either way).  Level/timeout/
+   --  steps/memlimit are included only when configured; --force and
+   --  --no-inlining map to the corresponding gnatprove switches.
    --  @param Opts  GNATprove options.
    --  @param Jobs  Resolved job count to forward (-j value).
    --  @return Space-separated gnatprove option string.
