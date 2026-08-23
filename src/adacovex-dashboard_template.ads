@@ -57,19 +57,29 @@ package Adacovex.Dashboard_Template is
   & ".dep-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px}.dep-toolbar input{fl"
   & "ex:1;min-width:180px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;b"
   & "ackground:var(--card);color:var(--fg);font:inherit;font-size:.9rem}.dep-tree{font-size:."
-  & "9rem;line-height:1.5}.dep-tree ul{list-style:none;margin:0;padding-left:18px;border-left"
-  & ":1px dotted var(--border)}.dep-tree>ul{padding-left:0;border-left:none}.dep-node{positio"
-  & "n:relative;margin:4px 0}.dep-node details{border:1px solid var(--border);border-radius:8"
-  & "px;background:var(--card);padding:6px 8px}.dep-node summary{cursor:pointer;list-style:no"
-  & "ne;display:flex;align-items:center;gap:8px;flex-wrap:wrap}.dep-node summary::-webkit-det"
-  & "ails-marker{display:none}.dep-node summary::before{content:"">"";display:inline-block;tran"
-  & "sition:transform .15s;font-size:.8rem;color:var(--muted)}details[open]>summary::before{t"
-  & "ransform:rotate(90deg)}.dep-badge{font-size:.72rem;padding:2px 7px;border-radius:999px;b"
-  & "order:1px solid var(--border);background:var(--th);white-space:nowrap}.dep-badge.scope-b"
-  & "ase{border-color:var(--accent);color:var(--accent)}.dep-badge.scope-dev{border-color:#9c"
-  & "27b0;color:#9c27b0}.dep-badge.scope-transitive{color:var(--muted)}.dep-badge.scope-vendo"
-  & "red{border-color:var(--fail);color:var(--fail)}.dep-meta{color:var(--muted);font-size:.8"
-  & "rem;word-break:break-all}.dep-empty{color:var(--muted);font-style:italic;padding:12px}"
+  & "92rem;line-height:1.65}.dep-tree ul{list-style:none;margin:0;padding-left:20px;border-le"
+  & "ft:1px dotted var(--border)}.dep-tree>ul{padding-left:0;border-left:none}.dep-node{posit"
+  & "ion:relative;margin:6px 0}.dep-node details{border:1px solid var(--border);border-radius"
+  & ":10px;background:var(--card);padding:8px 12px;transition:border-color .15s}.dep-node det"
+  & "ails:hover{border-color:var(--accent)}.dep-node summary{cursor:pointer;list-style:none;d"
+  & "isplay:flex;align-items:center;gap:10px;flex-wrap:wrap;line-height:1.5}.dep-node summary"
+  & "::-webkit-details-marker{display:none}.dep-node summary::before{content:"">"";display:inli"
+  & "ne-block;transition:transform .15s;font-size:.8rem;color:var(--muted)}details[open]>summ"
+  & "ary::before{transform:rotate(90deg)}.dep-badge{font-size:.72rem;padding:2px 7px;border-r"
+  & "adius:999px;border:1px solid var(--border);background:var(--th);white-space:nowrap}.dep-"
+  & "badge.scope-base{border-color:var(--accent);color:var(--accent)}.dep-badge.scope-dev{bor"
+  & "der-color:#9c27b0;color:#9c27b0}.dep-badge.scope-transitive{color:var(--muted)}.dep-badg"
+  & "e.scope-vendored{border-color:var(--fail);color:var(--fail)}.dep-meta{color:var(--muted)"
+  & ";font-size:.8rem;word-break:break-all}.dep-view-switch{display:flex;gap:8px;margin:10px "
+  & "0;flex-wrap:wrap}.dep-view-switch button.active{background:var(--accent);color:#fff;bord"
+  & "er-color:var(--accent)}.nomnoml-wrap{background:var(--card);border:1px solid var(--borde"
+  & "r);border-radius:10px;padding:12px;overflow:auto;min-height:200px}.nomnoml-wrap canvas{m"
+  & "ax-width:100%}.search-box{position:relative}.search-hits{position:absolute;top:100%;left"
+  & ":0;right:0;background:var(--card);border:1px solid var(--border);border-radius:8px;margi"
+  & "n-top:4px;max-height:240px;overflow:auto;z-index:10;display:none}.search-hits.active{dis"
+  & "play:block}.search-hit{padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--bor"
+  & "der)}.search-hit:hover{background:var(--th)}.dep-empty{color:var(--muted);font-style:ita"
+  & "lic;padding:12px}"
   & ASCII.LF
   & "/* Charts */"
   & ASCII.LF
@@ -83,8 +93,6 @@ package Adacovex.Dashboard_Template is
   & "-color-scheme:dark){.charts-css{--color:#81c784;--color-2:#ef5350}}:root[data-theme=""dar"
   & "k""] .charts-css{--color:#81c784;--color-2:#ef5350}:root[data-theme=""light""] .charts-css{"
   & "--color:#2e7d32;--color-2:#c62828}"
-  & ASCII.LF
-  & "</style>"
   & ASCII.LF
   & "/* Charts.css v1.2.0 (MIT) vendored; see resources/charts.min.css */"
   & ASCII.LF
@@ -488,11 +496,16 @@ package Adacovex.Dashboard_Template is
   & "</style></head><body>"
   & ASCII.LF
   & "<div class=""dash-header""><h1>adacovex Coverage &amp; Verification Dashboard</h1><div cla"
-  & "ss=""header-actions""><label class=""theme-label"" for=""theme-select"">Theme</label><select i"
-  & "d=""theme-select"" class=""theme-toggle"" onchange=""themeChanged()"" title=""Pin the theme whe"
-  & "n embedding: append ?theme=light|dark|system""><option value=""system"">system</option><opt"
-  & "ion value=""light"">light</option><option value=""dark"">dark</option></select><button id=""s"
-  & "ave-theme"" class=""theme-toggle"" onclick=""saveTheme()"">Save settings</button></div></div>"
+  & "ss=""search-box"" style=""flex:1;max-width:320px;margin:0 12px""><input id=""global-search"" t"
+  & "ype=""search"" placeholder=""Search packages, HLRs, deps..."" aria-label=""Search"" style=""wid"
+  & "th:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var"
+  & "(--card);color:var(--fg);font:inherit;font-size:.88rem""><div id=""search-hits"" class=""sea"
+  & "rch-hits""></div></div><div class=""header-actions""><label class=""theme-label"" for=""theme-"
+  & "select"">Theme</label><select id=""theme-select"" class=""theme-toggle"" onchange=""themeChang"
+  & "ed()"" title=""Pin the theme when embedding: append ?theme=light|dark|system""><option valu"
+  & "e=""system"">system</option><option value=""light"">light</option><option value=""dark"">dark<"
+  & "/option></select><button id=""save-theme"" class=""theme-toggle"" onclick=""saveTheme()"">Save"
+  & " settings</button></div></div>"
   & ASCII.LF
   & "<nav class=""tabs"" role=""tablist"" aria-label=""Dashboard sections"">"
   & ASCII.LF
@@ -524,13 +537,3892 @@ package Adacovex.Dashboard_Template is
   & ASCII.LF
   & "<div id=""tab-compliance"" class=""tab-panel"">__COMPLIANCE__</div>"
   & ASCII.LF
-  & "<div id=""tab-deps"" class=""tab-panel"">__DEPS__</div>"
+  & "<div id=""tab-deps"" class=""tab-panel"">"
+  & ASCII.LF
+  & "<div class=""dep-view-switch"" role=""tablist"" aria-label=""Dependency view"">"
+  & ASCII.LF
+  & "<button class=""theme-toggle active"" data-view=""tree"" onclick=""switchDepView('tree')"">Tre"
+  & "e</button>"
+  & ASCII.LF
+  & "<button class=""theme-toggle"" data-view=""nomnoml"" onclick=""switchDepView('nomnoml')"">Diag"
+  & "ram (nomnoml)</button>"
+  & ASCII.LF
+  & "</div>"
+  & ASCII.LF
+  & "<div id=""dep-tree-view"">__DEPS__</div>"
+  & ASCII.LF
+  & "<div id=""dep-nomnoml-view"" style=""display:none"">"
+  & ASCII.LF
+  & "<div class=""card"">"
+  & ASCII.LF
+  & "<h2>Dependency Hierarchy (nomnoml)</h2>"
+  & ASCII.LF
+  & "<p style=""color:var(--muted);font-size:.85rem"">Rendered with vendored <a href=""https://g"
+  & "ithub.com/skanaar/nomnoml"" target=""_blank"" rel=""noopener"">nomnoml</a> - boxes = componen"
+  & "ts, arrows = depends-on. Filter controls affect both views.</p>"
+  & ASCII.LF
+  & "<div class=""nomnoml-wrap""><canvas id=""nomnoml-canvas"" width=""1000"" height=""600""></canvas"
+  & "></div>"
+  & ASCII.LF
+  & "<div style=""margin-top:8px""><button class=""theme-toggle"" onclick=""downloadNomnoml()"">Dow"
+  & "nload SVG</button> <button class=""theme-toggle"" onclick=""renderNomnoml()"">Re-render</but"
+  & "ton></div>"
+  & ASCII.LF
+  & "</div>"
+  & ASCII.LF
+  & "</div>"
+  & ASCII.LF
+  & "</div>"
   & ASCII.LF
   & "<div id=""tab-charts"" class=""tab-panel""><div class=""chart-grid"">__CHARTS__</div></div>"
   & ASCII.LF
   & "<p class=""footer"">Generated by adacovex &middot; Embed: append <code>?theme=light|dark|s"
   & "ystem</code> to the URL to pin the theme &middot; Tabs: append <code>#proof</code> / <co"
   & "de>#deps</code> etc. to link directly.</p>"
+  & ASCII.LF
+  & "<script>/* vendored nomnoml 1.7.0 MIT github.com/skanaar/nomnoml */"
+  & ASCII.LF
+  & "(function (global, factory) {"
+  & ASCII.LF
+  & "    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, requ"
+  & "ire('graphre')) :"
+  & ASCII.LF
+  & "    typeof define === 'function' && define.amd ? define(['exports', 'graphre'], factory)"
+  & " :"
+  & ASCII.LF
+  & "    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(g"
+  & "lobal.nomnoml = {}, global.graphre));"
+  & ASCII.LF
+  & "})(this, (function (exports, graphre) { 'use strict';"
+  & ASCII.LF
+  & ASCII.LF
+  & "    function range([min, max], count) {"
+  & ASCII.LF
+  & "        const output = [];"
+  & ASCII.LF
+  & "        for (let i = 0; i < count; i++)"
+  & ASCII.LF
+  & "            output.push(min + ((max - min) * i) / (count - 1));"
+  & ASCII.LF
+  & "        return output;"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & "    function sum(list, transform) {"
+  & ASCII.LF
+  & "        let summa = 0;"
+  & ASCII.LF
+  & "        for (let i = 0, len = list.length; i < len; i++)"
+  & ASCII.LF
+  & "            summa += transform(list[i]);"
+  & ASCII.LF
+  & "        return summa;"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & "    function last(list) {"
+  & ASCII.LF
+  & "        return list[list.length - 1];"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & "    function indexBy(list, key) {"
+  & ASCII.LF
+  & "        const obj = {};"
+  & ASCII.LF
+  & "        for (let i = 0; i < list.length; i++)"
+  & ASCII.LF
+  & "            obj[list[i][key]] = list[i];"
+  & ASCII.LF
+  & "        return obj;"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & ASCII.LF
+  & "    var util = /*#__PURE__*/Object.freeze({"
+  & ASCII.LF
+  & "        __proto__: null,"
+  & ASCII.LF
+  & "        indexBy: indexBy,"
+  & ASCII.LF
+  & "        last: last,"
+  & ASCII.LF
+  & "        range: range,"
+  & ASCII.LF
+  & "        sum: sum"
+  & ASCII.LF
+  & "    });"
+  & ASCII.LF
+  & ASCII.LF
+  & "    function buildStyle(conf, title, body = {}) {"
+  & ASCII.LF
+  & "        return {"
+  & ASCII.LF
+  & "            title: {"
+  & ASCII.LF
+  & "                bold: title.bold || false,"
+  & ASCII.LF
+  & "                underline: title.underline || false,"
+  & ASCII.LF
+  & "                italic: title.italic || false,"
+  & ASCII.LF
+  & "                center: title.center || false,"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            body: {"
+  & ASCII.LF
+  & "                bold: body.bold || false,"
+  & ASCII.LF
+  & "                underline: body.underline || false,"
+  & ASCII.LF
+  & "                italic: body.italic || false,"
+  & ASCII.LF
+  & "                center: body.center || false,"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            dashed: conf.dashed || false,"
+  & ASCII.LF
+  & "            fill: conf.fill || undefined,"
+  & ASCII.LF
+  & "            stroke: conf.stroke || undefined,"
+  & ASCII.LF
+  & "            visual: conf.visual || 'class',"
+  & ASCII.LF
+  & "            direction: conf.direction || undefined,"
+  & ASCII.LF
+  & "        };"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & "    const styles = {"
+  & ASCII.LF
+  & "        abstract: buildStyle({ visual: 'class' }, { center: true, italic: true }),"
+  & ASCII.LF
+  & "        actor: buildStyle({ visual: 'actor' }, { center: true }, { center: true }),"
+  & ASCII.LF
+  & "        choice: buildStyle({ visual: 'rhomb' }, { center: true }, { center: true }),"
+  & ASCII.LF
+  & "        class: buildStyle({ visual: 'class' }, { center: true, bold: true }),"
+  & ASCII.LF
+  & "        database: buildStyle({ visual: 'database' }, { center: true, bold: true }, { cen"
+  & "ter: true }),"
+  & ASCII.LF
+  & "        end: buildStyle({ visual: 'end' }, {}),"
+  & ASCII.LF
+  & "        frame: buildStyle({ visual: 'frame' }, {}),"
+  & ASCII.LF
+  & "        hidden: buildStyle({ visual: 'hidden' }, {}),"
+  & ASCII.LF
+  & "        input: buildStyle({ visual: 'input' }, { center: true }),"
+  & ASCII.LF
+  & "        instance: buildStyle({ visual: 'class' }, { center: true, underline: true }),"
+  & ASCII.LF
+  & "        label: buildStyle({ visual: 'none' }, { center: true }),"
+  & ASCII.LF
+  & "        lollipop: buildStyle({ visual: 'lollipop' }, { center: true }),"
+  & ASCII.LF
+  & "        note: buildStyle({ visual: 'note' }, {}),"
+  & ASCII.LF
+  & "        pipe: buildStyle({ visual: 'pipe' }, { center: true, bold: true }),"
+  & ASCII.LF
+  & "        package: buildStyle({ visual: 'package' }, {}),"
+  & ASCII.LF
+  & "        receiver: buildStyle({ visual: 'receiver' }, {}),"
+  & ASCII.LF
+  & "        reference: buildStyle({ visual: 'class', dashed: true }, { center: true }),"
+  & ASCII.LF
+  & "        sender: buildStyle({ visual: 'sender' }, {}),"
+  & ASCII.LF
+  & "        socket: buildStyle({ visual: 'socket' }, {}),"
+  & ASCII.LF
+  & "        start: buildStyle({ visual: 'start' }, {}),"
+  & ASCII.LF
+  & "        state: buildStyle({ visual: 'roundrect' }, { center: true }),"
+  & ASCII.LF
+  & "        sync: buildStyle({ visual: 'sync' }, { center: true }),"
+  & ASCII.LF
+  & "        table: buildStyle({ visual: 'table' }, { center: true, bold: true }),"
+  & ASCII.LF
+  & "        transceiver: buildStyle({ visual: 'transceiver' }, {}),"
+  & ASCII.LF
+  & "        usecase: buildStyle({ visual: 'ellipse' }, { center: true }, { center: true }),"
+  & ASCII.LF
+  & "    };"
+  & ASCII.LF
+  & "    function offsetBox(config, clas, offset) {"
+  & ASCII.LF
+  & "        clas.width = Math.max(...clas.parts.map((e) => e.width ?? 0));"
+  & ASCII.LF
+  & "        clas.height = sum(clas.parts, (e) => e.height ?? 0 ?? 0);"
+  & ASCII.LF
+  & "        clas.dividers = [];"
+  & ASCII.LF
+  & "        let y = 0;"
+  & ASCII.LF
+  & "        for (const comp of clas.parts) {"
+  & ASCII.LF
+  & "            comp.x = 0 + offset.x;"
+  & ASCII.LF
+  & "            comp.y = y + offset.y;"
+  & ASCII.LF
+  & "            comp.width = clas.width;"
+  & ASCII.LF
+  & "            y += comp.height ?? 0 ?? 0;"
+  & ASCII.LF
+  & "            if (comp != last(clas.parts))"
+  & ASCII.LF
+  & "                clas.dividers.push(["
+  & ASCII.LF
+  & "                    { x: 0, y: y },"
+  & ASCII.LF
+  & "                    { x: clas.width, y: y },"
+  & ASCII.LF
+  & "                ]);"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & "    function box(config, clas) {"
+  & ASCII.LF
+  & "        offsetBox(config, clas, { x: 0, y: 0 });"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & "    function icon(config, clas) {"
+  & ASCII.LF
+  & "        clas.dividers = [];"
+  & ASCII.LF
+  & "        clas.parts = [];"
+  & ASCII.LF
+  & "        clas.width = config.fontSize * 2.5;"
+  & ASCII.LF
+  & "        clas.height = config.fontSize * 2.5;"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & "    function labelledIcon(config, clas) {"
+  & ASCII.LF
+  & "        clas.width = config.fontSize * 1.5;"
+  & ASCII.LF
+  & "        clas.height = config.fontSize * 1.5;"
+  & ASCII.LF
+  & "        clas.dividers = [];"
+  & ASCII.LF
+  & "        let y = config.direction == 'LR' ? clas.height - config.padding : -clas.height /"
+  & " 2;"
+  & ASCII.LF
+  & "        for (const comp of clas.parts) {"
+  & ASCII.LF
+  & "            if (config.direction == 'LR') {"
+  & ASCII.LF
+  & "                comp.x = clas.width / 2 - (comp.width ?? 0) / 2;"
+  & ASCII.LF
+  & "                comp.y = y;"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            else {"
+  & ASCII.LF
+  & "                comp.x = clas.width / 2 + config.padding / 2;"
+  & ASCII.LF
+  & "                comp.y = y;"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            y += comp.height ?? 0 ?? 0;"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & "    const layouters = {"
+  & ASCII.LF
+  & "        actor: function (config, clas) {"
+  & ASCII.LF
+  & "            clas.width = Math.max(config.padding * 2, ...clas.parts.map((e) => e.width ?"
+  & "? 0));"
+  & ASCII.LF
+  & "            clas.height = config.padding * 3 + sum(clas.parts, (e) => e.height ?? 0);"
+  & ASCII.LF
+  & "            clas.dividers = [];"
+  & ASCII.LF
+  & "            let y = config.padding * 3;"
+  & ASCII.LF
+  & "            for (const comp of clas.parts) {"
+  & ASCII.LF
+  & "                comp.x = 0;"
+  & ASCII.LF
+  & "                comp.y = y;"
+  & ASCII.LF
+  & "                comp.width = clas.width;"
+  & ASCII.LF
+  & "                y += comp.height ?? 0;"
+  & ASCII.LF
+  & "                if (comp != last(clas.parts))"
+  & ASCII.LF
+  & "                    clas.dividers.push(["
+  & ASCII.LF
+  & "                        { x: config.padding, y: y },"
+  & ASCII.LF
+  & "                        { x: clas.width - config.padding, y: y },"
+  & ASCII.LF
+  & "                    ]);"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "        },"
+  & ASCII.LF
+  & "        class: box,"
+  & ASCII.LF
+  & "        database: function (config, clas) {"
+  & ASCII.LF
+  & "            clas.width = Math.max(...clas.parts.map((e) => e.width ?? 0));"
+  & ASCII.LF
+  & "            clas.height = sum(clas.parts, (e) => e.height ?? 0) + config.padding * 2;"
+  & ASCII.LF
+  & "            clas.dividers = [];"
+  & ASCII.LF
+  & "            let y = config.padding * 1.5;"
+  & ASCII.LF
+  & "            for (const comp of clas.parts) {"
+  & ASCII.LF
+  & "                comp.x = 0;"
+  & ASCII.LF
+  & "                comp.y = y;"
+  & ASCII.LF
+  & "                comp.width = clas.width;"
+  & ASCII.LF
+  & "                y += comp.height ?? 0;"
+  & ASCII.LF
+  & "                if (comp != last(clas.parts)) {"
+  & ASCII.LF
+  & "                    const path = range([0, Math.PI], 16).map((a) => ({"
+  & ASCII.LF
+  & "                        x: clas.width * 0.5 * (1 - Math.cos(a)),"
+  & ASCII.LF
+  & "                        y: y + config.padding * (0.75 * Math.sin(a) - 0.5),"
+  & ASCII.LF
+  & "                    }));"
+  & ASCII.LF
+  & "                    clas.dividers.push(path);"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "        },"
+  & ASCII.LF
+  & "        ellipse: function (config, clas) {"
+  & ASCII.LF
+  & "            const width = Math.max(...clas.parts.map((e) => e.width ?? 0));"
+  & ASCII.LF
+  & "            const height = sum(clas.parts, (e) => e.height ?? 0);"
+  & ASCII.LF
+  & "            clas.width = width * 1.25;"
+  & ASCII.LF
+  & "            clas.height = height * 1.25;"
+  & ASCII.LF
+  & "            clas.dividers = [];"
+  & ASCII.LF
+  & "            let y = height * 0.125;"
+  & ASCII.LF
+  & "            const sq = (x) => x * x;"
+  & ASCII.LF
+  & "            const rimPos = (y) => Math.sqrt(sq(0.5) - sq(y / clas.height - 0.5)) * clas."
+  & "width;"
+  & ASCII.LF
+  & "            for (const comp of clas.parts) {"
+  & ASCII.LF
+  & "                comp.x = width * 0.125;"
+  & ASCII.LF
+  & "                comp.y = y;"
+  & ASCII.LF
+  & "                comp.width = width;"
+  & ASCII.LF
+  & "                y += comp.height ?? 0;"
+  & ASCII.LF
+  & "                if (comp != last(clas.parts))"
+  & ASCII.LF
+  & "                    clas.dividers.push(["
+  & ASCII.LF
+  & "                        { x: clas.width / 2 + rimPos(y) - 1, y: y },"
+  & ASCII.LF
+  & "                        { x: clas.width / 2 - rimPos(y) + 1, y: y },"
+  & ASCII.LF
+  & "                    ]);"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "        },"
+  & ASCII.LF
+  & "        end: icon,"
+  & ASCII.LF
+  & "        frame: function (config, clas) {"
+  & ASCII.LF
+  & "            const w = clas.parts[0].width ?? 0;"
+  & ASCII.LF
+  & "            const h = clas.parts[0].height ?? 0;"
+  & ASCII.LF
+  & "            clas.parts[0].width = h / 2 + (clas.parts[0].width ?? 0);"
+  & ASCII.LF
+  & "            box(config, clas);"
+  & ASCII.LF
+  & "            if (clas.dividers?.length)"
+  & ASCII.LF
+  & "                clas.dividers.shift();"
+  & ASCII.LF
+  & "            clas.dividers?.unshift(["
+  & ASCII.LF
+  & "                { x: 0, y: h },"
+  & ASCII.LF
+  & "                { x: w - h / 4, y: h },"
+  & ASCII.LF
+  & "                { x: w + h / 4, y: h / 2 },"
+  & ASCII.LF
+  & "                { x: w + h / 4, y: 0 },"
+  & ASCII.LF
+  & "            ]);"
+  & ASCII.LF
+  & "        },"
+  & ASCII.LF
+  & "        hidden: function (config, clas) {"
+  & ASCII.LF
+  & "            clas.dividers = [];"
+  & ASCII.LF
+  & "            clas.parts = [];"
+  & ASCII.LF
+  & "            clas.width = 1;"
+  & ASCII.LF
+  & "            clas.height = 1;"
+  & ASCII.LF
+  & "        },"
+  & ASCII.LF
+  & "        input: box,"
+  & ASCII.LF
+  & "        lollipop: labelledIcon,"
+  & ASCII.LF
+  & "        none: box,"
+  & ASCII.LF
+  & "        note: box,"
+  & ASCII.LF
+  & "        package: box,"
+  & ASCII.LF
+  & "        pipe: function box(config, clas) {"
+  & ASCII.LF
+  & "            offsetBox(config, clas, { x: -config.padding / 2, y: 0 });"
+  & ASCII.LF
+  & "        },"
+  & ASCII.LF
+  & "        receiver: box,"
+  & ASCII.LF
+  & "        rhomb: function (config, clas) {"
+  & ASCII.LF
+  & "            const width = Math.max(...clas.parts.map((e) => e.width ?? 0));"
+  & ASCII.LF
+  & "            const height = sum(clas.parts, (e) => e.height ?? 0);"
+  & ASCII.LF
+  & "            clas.width = width * 1.5;"
+  & ASCII.LF
+  & "            clas.height = height * 1.5;"
+  & ASCII.LF
+  & "            clas.dividers = [];"
+  & ASCII.LF
+  & "            let y = height * 0.25;"
+  & ASCII.LF
+  & "            for (const comp of clas.parts) {"
+  & ASCII.LF
+  & "                comp.x = width * 0.25;"
+  & ASCII.LF
+  & "                comp.y = y;"
+  & ASCII.LF
+  & "                comp.width = width;"
+  & ASCII.LF
+  & "                y += comp.height ?? 0;"
+  & ASCII.LF
+  & "                const slope = clas.width / clas.height;"
+  & ASCII.LF
+  & "                if (comp != last(clas.parts))"
+  & ASCII.LF
+  & "                    clas.dividers.push(["
+  & ASCII.LF
+  & "                        {"
+  & ASCII.LF
+  & "                            x: clas.width / 2 + (y < clas.height / 2 ? y * slope : (clas"
+  & ".height - y) * slope),"
+  & ASCII.LF
+  & "                            y: y,"
+  & ASCII.LF
+  & "                        },"
+  & ASCII.LF
+  & "                        {"
+  & ASCII.LF
+  & "                            x: clas.width / 2 - (y < clas.height / 2 ? y * slope : (clas"
+  & ".height - y) * slope),"
+  & ASCII.LF
+  & "                            y: y,"
+  & ASCII.LF
+  & "                        },"
+  & ASCII.LF
+  & "                    ]);"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "        },"
+  & ASCII.LF
+  & "        roundrect: box,"
+  & ASCII.LF
+  & "        sender: box,"
+  & ASCII.LF
+  & "        socket: labelledIcon,"
+  & ASCII.LF
+  & "        start: icon,"
+  & ASCII.LF
+  & "        sync: function (config, clas) {"
+  & ASCII.LF
+  & "            clas.dividers = [];"
+  & ASCII.LF
+  & "            clas.parts = [];"
+  & ASCII.LF
+  & "            if (config.direction == 'LR') {"
+  & ASCII.LF
+  & "                clas.width = config.lineWidth * 3;"
+  & ASCII.LF
+  & "                clas.height = config.fontSize * 5;"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            else {"
+  & ASCII.LF
+  & "                clas.width = config.fontSize * 5;"
+  & ASCII.LF
+  & "                clas.height = config.lineWidth * 3;"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "        },"
+  & ASCII.LF
+  & "        table: function (config, clas) {"
+  & ASCII.LF
+  & "            if (clas.parts.length == 1) {"
+  & ASCII.LF
+  & "                box(config, clas);"
+  & ASCII.LF
+  & "                return;"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            const gridcells = clas.parts.slice(1);"
+  & ASCII.LF
+  & "            const rows = [[]];"
+  & ASCII.LF
+  & "            function isRowBreak(e) {"
+  & ASCII.LF
+  & "                return !e.lines.length && !e.nodes.length && !e.assocs.length;"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            function isRowFull(e) {"
+  & ASCII.LF
+  & "                const current = last(rows);"
+  & ASCII.LF
+  & "                return rows[0] != current && rows[0].length == current.length;"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            function isEnd(e) {"
+  & ASCII.LF
+  & "                return e == last(gridcells);"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            for (const comp of gridcells) {"
+  & ASCII.LF
+  & "                if (!isEnd(comp) && isRowBreak(comp) && last(rows).length) {"
+  & ASCII.LF
+  & "                    rows.push([]);"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "                else if (isRowFull()) {"
+  & ASCII.LF
+  & "                    rows.push([comp]);"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "                else {"
+  & ASCII.LF
+  & "                    last(rows).push(comp);"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            const header = clas.parts[0];"
+  & ASCII.LF
+  & "            const cellW = Math.max((header.width ?? 0) / rows[0].length, ...gridcells.ma"
+  & "p((e) => e.width ?? 0));"
+  & ASCII.LF
+  & "            const cellH = Math.max(...gridcells.map((e) => e.height ?? 0));"
+  & ASCII.LF
+  & "            clas.width = cellW * rows[0].length;"
+  & ASCII.LF
+  & "            clas.height = (header.height ?? 0) + cellH * rows.length;"
+  & ASCII.LF
+  & "            const hh = header.height ?? 0;"
+  & ASCII.LF
+  & "            clas.dividers = ["
+  & ASCII.LF
+  & "                ["
+  & ASCII.LF
+  & "                    { x: 0, y: header.height ?? 0 },"
+  & ASCII.LF
+  & "                    { x: 0, y: header.height ?? 0 },"
+  & ASCII.LF
+  & "                ],"
+  & ASCII.LF
+  & "                ...rows.map((e, i) => ["
+  & ASCII.LF
+  & "                    { x: 0, y: hh + i * cellH },"
+  & ASCII.LF
+  & "                    { x: clas.width ?? 0, y: hh + i * cellH },"
+  & ASCII.LF
+  & "                ]),"
+  & ASCII.LF
+  & "                ...rows[0].map((e, i) => ["
+  & ASCII.LF
+  & "                    { x: (i + 1) * cellW, y: hh },"
+  & ASCII.LF
+  & "                    { x: (i + 1) * cellW, y: clas.height },"
+  & ASCII.LF
+  & "                ]),"
+  & ASCII.LF
+  & "            ];"
+  & ASCII.LF
+  & "            header.x = 0;"
+  & ASCII.LF
+  & "            header.y = 0;"
+  & ASCII.LF
+  & "            header.width = clas.width;"
+  & ASCII.LF
+  & "            for (let i = 0; i < rows.length; i++) {"
+  & ASCII.LF
+  & "                for (let j = 0; j < rows[i].length; j++) {"
+  & ASCII.LF
+  & "                    const cell = rows[i][j];"
+  & ASCII.LF
+  & "                    cell.x = j * cellW;"
+  & ASCII.LF
+  & "                    cell.y = hh + i * cellH;"
+  & ASCII.LF
+  & "                    cell.width = cellW;"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            clas.parts = clas.parts.filter((e) => !isRowBreak(e));"
+  & ASCII.LF
+  & "        },"
+  & ASCII.LF
+  & "        transceiver: box,"
+  & ASCII.LF
+  & "    };"
+  & ASCII.LF
+  & "    const visualizers = {"
+  & ASCII.LF
+  & "        actor: function (node, x, y, config, g) {"
+  & ASCII.LF
+  & "            const a = config.padding / 2;"
+  & ASCII.LF
+  & "            const yp = y + a * 4;"
+  & ASCII.LF
+  & "            const faceCenter = { x: node.x, y: yp - a };"
+  & ASCII.LF
+  & "            g.circle(faceCenter, a).fillAndStroke();"
+  & ASCII.LF
+  & "            g.path(["
+  & ASCII.LF
+  & "                { x: node.x, y: yp },"
+  & ASCII.LF
+  & "                { x: node.x, y: yp + 2 * a },"
+  & ASCII.LF
+  & "            ]).stroke();"
+  & ASCII.LF
+  & "            g.path(["
+  & ASCII.LF
+  & "                { x: node.x - a, y: yp + a },"
+  & ASCII.LF
+  & "                { x: node.x + a, y: yp + a },"
+  & ASCII.LF
+  & "            ]).stroke();"
+  & ASCII.LF
+  & "            g.path(["
+  & ASCII.LF
+  & "                { x: node.x - a, y: yp + a + config.padding },"
+  & ASCII.LF
+  & "                { x: node.x, y: yp + config.padding },"
+  & ASCII.LF
+  & "                { x: node.x + a, y: yp + a + config.padding },"
+  & ASCII.LF
+  & "            ]).stroke();"
+  & ASCII.LF
+  & "        },"
+  & ASCII.LF
+  & "        class: function (node, x, y, config, g) {"
+  & ASCII.LF
+  & "            g.rect(x, y, node.width, node.height).fillAndStroke();"
+  & ASCII.LF
+  & "        },"
+  & ASCII.LF
+  & "        database: function (node, x, y, config, g) {"
+  & ASCII.LF
+  & "            const pad = config.padding;"
+  & ASCII.LF
+  & "            const cy = y - pad / 2;"
+  & ASCII.LF
+  & "            const pi = 3.1416;"
+  & ASCII.LF
+  & "            g.rect(x, y + pad, node.width, node.height - pad * 2).fill();"
+  & ASCII.LF
+  & "            g.path(["
+  & ASCII.LF
+  & "                { x: x, y: cy + pad * 1.5 },"
+  & ASCII.LF
+  & "                { x: x, y: cy - pad * 0.5 + node.height },"
+  & ASCII.LF
+  & "            ]).stroke();"
+  & ASCII.LF
+  & "            g.path(["
+  & ASCII.LF
+  & "                { x: x + node.width, y: cy + pad * 1.5 },"
+  & ASCII.LF
+  & "                { x: x + node.width, y: cy - pad * 0.5 + node.height },"
+  & ASCII.LF
+  & "            ]).stroke();"
+  & ASCII.LF
+  & "            g.ellipse({ x: node.x, y: cy + pad * 1.5 }, node.width, pad * 1.5).fillAndSt"
+  & "roke();"
+  & ASCII.LF
+  & "            g.ellipse({ x: node.x, y: cy - pad * 0.5 + node.height }, node.width, pad * "
+  & "1.5, 0, pi).fillAndStroke();"
+  & ASCII.LF
+  & "        },"
+  & ASCII.LF
+  & "        ellipse: function (node, x, y, config, g) {"
+  & ASCII.LF
+  & "            g.ellipse({ x: node.x, y: node.y }, node.width, node.height).fillAndStroke()"
+  & ";"
+  & ASCII.LF
+  & "        },"
+  & ASCII.LF
+  & "        end: function (node, x, y, config, g) {"
+  & ASCII.LF
+  & "            g.circle({ x: node.x, y: y + node.height / 2 }, node.height / 3).fillAndStro"
+  & "ke();"
+  & ASCII.LF
+  & "            g.fillStyle(config.stroke);"
+  & ASCII.LF
+  & "            g.circle({ x: node.x, y: y + node.height / 2 }, node.height / 3 - config.pad"
+  & "ding / 2).fill();"
+  & ASCII.LF
+  & "        },"
+  & ASCII.LF
+  & "        frame: function (node, x, y, config, g) {"
+  & ASCII.LF
+  & "            g.rect(x, y, node.width, node.height).fillAndStroke();"
+  & ASCII.LF
+  & "        },"
+  & ASCII.LF
+  & "        hidden: function (node, x, y, config, g) { },"
+  & ASCII.LF
+  & "        input: function (node, x, y, config, g) {"
+  & ASCII.LF
+  & "            g.circuit(["
+  & ASCII.LF
+  & "                { x: x + config.padding, y: y },"
+  & ASCII.LF
+  & "                { x: x + node.width, y: y },"
+  & ASCII.LF
+  & "                { x: x + node.width - config.padding, y: y + node.height },"
+  & ASCII.LF
+  & "                { x: x, y: y + node.height },"
+  & ASCII.LF
+  & "            ]).fillAndStroke();"
+  & ASCII.LF
+  & "        },"
+  & ASCII.LF
+  & "        lollipop: function (node, x, y, config, g) {"
+  & ASCII.LF
+  & "            g.circle({ x: node.x, y: y + node.height / 2 }, node.height / 2.5).fillAndSt"
+  & "roke();"
+  & ASCII.LF
+  & "        },"
+  & ASCII.LF
+  & "        none: function (node, x, y, config, g) { },"
+  & ASCII.LF
+  & "        note: function (node, x, y, config, g) {"
+  & ASCII.LF
+  & "            g.circuit(["
+  & ASCII.LF
+  & "                { x: x, y: y },"
+  & ASCII.LF
+  & "                { x: x + node.width - config.padding, y: y },"
+  & ASCII.LF
+  & "                { x: x + node.width, y: y + config.padding },"
+  & ASCII.LF
+  & "                { x: x + node.width, y: y + node.height },"
+  & ASCII.LF
+  & "                { x: x, y: y + node.height },"
+  & ASCII.LF
+  & "                { x: x, y: y },"
+  & ASCII.LF
+  & "            ]).fillAndStroke();"
+  & ASCII.LF
+  & "            g.path(["
+  & ASCII.LF
+  & "                { x: x + node.width - config.padding, y: y },"
+  & ASCII.LF
+  & "                { x: x + node.width - config.padding, y: y + config.padding },"
+  & ASCII.LF
+  & "                { x: x + node.width, y: y + config.padding },"
+  & ASCII.LF
+  & "            ]).stroke();"
+  & ASCII.LF
+  & "        },"
+  & ASCII.LF
+  & "        package: function (node, x, y, config, g) {"
+  & ASCII.LF
+  & "            const headHeight = node.parts[0].height ?? 0;"
+  & ASCII.LF
+  & "            g.rect(x, y + headHeight, node.width, node.height - headHeight).fillAndStrok"
+  & "e();"
+  & ASCII.LF
+  & "            const w = g.measureText(node.parts[0].lines[0]).width + 2 * config.padding;"
+  & ASCII.LF
+  & "            g.circuit(["
+  & ASCII.LF
+  & "                { x: x, y: y + headHeight },"
+  & ASCII.LF
+  & "                { x: x, y: y },"
+  & ASCII.LF
+  & "                { x: x + w, y: y },"
+  & ASCII.LF
+  & "                { x: x + w, y: y + headHeight },"
+  & ASCII.LF
+  & "            ]).fillAndStroke();"
+  & ASCII.LF
+  & "        },"
+  & ASCII.LF
+  & "        pipe: function (node, x, y, config, g) {"
+  & ASCII.LF
+  & "            const pad = config.padding;"
+  & ASCII.LF
+  & "            const pi = 3.1416;"
+  & ASCII.LF
+  & "            g.rect(x, y, node.width, node.height).fill();"
+  & ASCII.LF
+  & "            g.path(["
+  & ASCII.LF
+  & "                { x: x, y: y },"
+  & ASCII.LF
+  & "                { x: x + node.width, y: y },"
+  & ASCII.LF
+  & "            ]).stroke();"
+  & ASCII.LF
+  & "            g.path(["
+  & ASCII.LF
+  & "                { x: x, y: y + node.height },"
+  & ASCII.LF
+  & "                { x: x + node.width, y: y + node.height },"
+  & ASCII.LF
+  & "            ]).stroke();"
+  & ASCII.LF
+  & "            g.ellipse({ x: x + node.width, y: node.y }, pad * 1.5, node.height).fillAndS"
+  & "troke();"
+  & ASCII.LF
+  & "            g.ellipse({ x: x, y: node.y }, pad * 1.5, node.height, pi / 2, (pi * 3) / 2)"
+  & ".fillAndStroke();"
+  & ASCII.LF
+  & "        },"
+  & ASCII.LF
+  & "        receiver: function (node, x, y, config, g) {"
+  & ASCII.LF
+  & "            g.circuit(["
+  & ASCII.LF
+  & "                { x: x - config.padding, y: y },"
+  & ASCII.LF
+  & "                { x: x + node.width, y: y },"
+  & ASCII.LF
+  & "                { x: x + node.width, y: y + node.height },"
+  & ASCII.LF
+  & "                { x: x - config.padding, y: y + node.height },"
+  & ASCII.LF
+  & "                { x: x, y: y + node.height / 2 },"
+  & ASCII.LF
+  & "            ]).fillAndStroke();"
+  & ASCII.LF
+  & "        },"
+  & ASCII.LF
+  & "        rhomb: function (node, x, y, config, g) {"
+  & ASCII.LF
+  & "            g.circuit(["
+  & ASCII.LF
+  & "                { x: node.x, y: y },"
+  & ASCII.LF
+  & "                { x: x + node.width, y: node.y },"
+  & ASCII.LF
+  & "                { x: node.x, y: y + node.height },"
+  & ASCII.LF
+  & "                { x: x, y: node.y },"
+  & ASCII.LF
+  & "            ]).fillAndStroke();"
+  & ASCII.LF
+  & "        },"
+  & ASCII.LF
+  & "        roundrect: function (node, x, y, config, g) {"
+  & ASCII.LF
+  & "            const r = Math.min(config.padding * 2 * config.leading, node.height / 2);"
+  & ASCII.LF
+  & "            g.roundRect(x, y, node.width, node.height, r).fillAndStroke();"
+  & ASCII.LF
+  & "        },"
+  & ASCII.LF
+  & "        sender: function (node, x, y, config, g) {"
+  & ASCII.LF
+  & "            g.circuit(["
+  & ASCII.LF
+  & "                { x: x, y: y },"
+  & ASCII.LF
+  & "                { x: x + node.width - config.padding, y: y },"
+  & ASCII.LF
+  & "                { x: x + node.width, y: y + node.height / 2 },"
+  & ASCII.LF
+  & "                { x: x + node.width - config.padding, y: y + node.height },"
+  & ASCII.LF
+  & "                { x: x, y: y + node.height },"
+  & ASCII.LF
+  & "            ]).fillAndStroke();"
+  & ASCII.LF
+  & "        },"
+  & ASCII.LF
+  & "        socket: function (node, x, y, config, g) {"
+  & ASCII.LF
+  & "            const from = config.direction === 'TB' ? Math.PI : Math.PI / 2;"
+  & ASCII.LF
+  & "            const to = config.direction === 'TB' ? 2 * Math.PI : -Math.PI / 2;"
+  & ASCII.LF
+  & "            g.ellipse({ x: node.x, y: node.y }, node.width, node.height, from, to).strok"
+  & "e();"
+  & ASCII.LF
+  & "        },"
+  & ASCII.LF
+  & "        start: function (node, x, y, config, g) {"
+  & ASCII.LF
+  & "            g.fillStyle(config.stroke);"
+  & ASCII.LF
+  & "            g.circle({ x: node.x, y: y + node.height / 2 }, node.height / 2.5).fill();"
+  & ASCII.LF
+  & "        },"
+  & ASCII.LF
+  & "        sync: function (node, x, y, config, g) {"
+  & ASCII.LF
+  & "            g.fillStyle(config.stroke);"
+  & ASCII.LF
+  & "            g.rect(x, y, node.width, node.height).fillAndStroke();"
+  & ASCII.LF
+  & "        },"
+  & ASCII.LF
+  & "        table: function (node, x, y, config, g) {"
+  & ASCII.LF
+  & "            g.rect(x, y, node.width, node.height).fillAndStroke();"
+  & ASCII.LF
+  & "        },"
+  & ASCII.LF
+  & "        transceiver: function (node, x, y, config, g) {"
+  & ASCII.LF
+  & "            g.circuit(["
+  & ASCII.LF
+  & "                { x: x - config.padding, y: y },"
+  & ASCII.LF
+  & "                { x: x + node.width - config.padding, y: y },"
+  & ASCII.LF
+  & "                { x: x + node.width, y: y + node.height / 2 },"
+  & ASCII.LF
+  & "                { x: x + node.width - config.padding, y: y + node.height },"
+  & ASCII.LF
+  & "                { x: x - config.padding, y: y + node.height },"
+  & ASCII.LF
+  & "                { x: x, y: y + node.height / 2 },"
+  & ASCII.LF
+  & "            ]).fillAndStroke();"
+  & ASCII.LF
+  & "        },"
+  & ASCII.LF
+  & "    };"
+  & ASCII.LF
+  & ASCII.LF
+  & "    function layout(measurer, config, ast) {"
+  & ASCII.LF
+  & "        function measureLines(lines, fontWeight) {"
+  & ASCII.LF
+  & "            if (!lines.length)"
+  & ASCII.LF
+  & "                return { width: 0, height: config.padding };"
+  & ASCII.LF
+  & "            measurer.setFont(config.font, config.fontSize, fontWeight, 'normal');"
+  & ASCII.LF
+  & "            return {"
+  & ASCII.LF
+  & "                width: Math.round(Math.max(...lines.map(measurer.textWidth)) + 2 * confi"
+  & "g.padding),"
+  & ASCII.LF
+  & "                height: Math.round(measurer.textHeight() * lines.length + 2 * config.pad"
+  & "ding),"
+  & ASCII.LF
+  & "            };"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function layoutCompartment(c, compartmentIndex, style) {"
+  & ASCII.LF
+  & "            const textSize = measureLines(c.lines, compartmentIndex ? 'normal' : 'bold')"
+  & ";"
+  & ASCII.LF
+  & "            if (!c.nodes.length && !c.assocs.length) {"
+  & ASCII.LF
+  & "                const layoutedPart = c;"
+  & ASCII.LF
+  & "                layoutedPart.width = textSize.width;"
+  & ASCII.LF
+  & "                layoutedPart.height = textSize.height;"
+  & ASCII.LF
+  & "                layoutedPart.offset = { x: config.padding, y: config.padding };"
+  & ASCII.LF
+  & "                return;"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            const styledConfig = {"
+  & ASCII.LF
+  & "                ...config,"
+  & ASCII.LF
+  & "                direction: style.direction ?? config.direction,"
+  & ASCII.LF
+  & "            };"
+  & ASCII.LF
+  & "            const layoutedNodes = c.nodes;"
+  & ASCII.LF
+  & "            const layoutedAssoc = c.assocs;"
+  & ASCII.LF
+  & "            for (let i = 0; i < layoutedAssoc.length; i++)"
+  & ASCII.LF
+  & "                layoutedAssoc[i].id = `${i}`;"
+  & ASCII.LF
+  & "            for (const e of layoutedNodes)"
+  & ASCII.LF
+  & "                layoutNode(e, styledConfig);"
+  & ASCII.LF
+  & "            const g = new graphre.graphlib.Graph({"
+  & ASCII.LF
+  & "                multigraph: true,"
+  & ASCII.LF
+  & "            });"
+  & ASCII.LF
+  & "            g.setGraph({"
+  & ASCII.LF
+  & "                rankdir: style.direction || config.direction,"
+  & ASCII.LF
+  & "                nodesep: config.spacing,"
+  & ASCII.LF
+  & "                edgesep: config.spacing,"
+  & ASCII.LF
+  & "                ranksep: config.spacing,"
+  & ASCII.LF
+  & "                acyclicer: config.acyclicer,"
+  & ASCII.LF
+  & "                ranker: config.ranker,"
+  & ASCII.LF
+  & "            });"
+  & ASCII.LF
+  & "            for (const e of layoutedNodes) {"
+  & ASCII.LF
+  & "                g.setNode(e.id, { width: e.layoutWidth, height: e.layoutHeight });"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            for (const r of layoutedAssoc) {"
+  & ASCII.LF
+  & "                if (r.type.indexOf('_') > -1) {"
+  & ASCII.LF
+  & "                    g.setEdge(r.start, r.end, { minlen: 0 }, r.id);"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "                else if ((config.gravity ?? 1) != 1) {"
+  & ASCII.LF
+  & "                    g.setEdge(r.start, r.end, { minlen: config.gravity }, r.id);"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "                else {"
+  & ASCII.LF
+  & "                    g.setEdge(r.start, r.end, {}, r.id);"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            graphre.layout(g);"
+  & ASCII.LF
+  & "            const rels = indexBy(c.assocs, 'id');"
+  & ASCII.LF
+  & "            const nodes = indexBy(c.nodes, 'id');"
+  & ASCII.LF
+  & "            for (const name of g.nodes()) {"
+  & ASCII.LF
+  & "                const node = g.node(name);"
+  & ASCII.LF
+  & "                nodes[name].x = node.x;"
+  & ASCII.LF
+  & "                nodes[name].y = node.y;"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            let left = 0;"
+  & ASCII.LF
+  & "            let right = 0;"
+  & ASCII.LF
+  & "            let top = 0;"
+  & ASCII.LF
+  & "            let bottom = 0;"
+  & ASCII.LF
+  & "            for (const edgeObj of g.edges()) {"
+  & ASCII.LF
+  & "                const edge = g.edge(edgeObj);"
+  & ASCII.LF
+  & "                const start = nodes[edgeObj.v];"
+  & ASCII.LF
+  & "                const end = nodes[edgeObj.w];"
+  & ASCII.LF
+  & "                const rel = rels[edgeObj.name];"
+  & ASCII.LF
+  & "                rel.path = [start, ...edge.points, end].map(toPoint);"
+  & ASCII.LF
+  & "                const startP = rel.path[1];"
+  & ASCII.LF
+  & "                const endP = rel.path[rel.path.length - 2];"
+  & ASCII.LF
+  & "                layoutLabel(rel.startLabel, startP, adjustQuadrant(quadrant(startP, star"
+  & "t) ?? 4, start, end));"
+  & ASCII.LF
+  & "                layoutLabel(rel.endLabel, endP, adjustQuadrant(quadrant(endP, end) ?? 2,"
+  & " end, start));"
+  & ASCII.LF
+  & "                left = Math.min(left, rel.startLabel.x, rel.endLabel.x, ...edge.points.m"
+  & "ap((e) => e.x), ...edge.points.map((e) => e.x));"
+  & ASCII.LF
+  & "                right = Math.max(right, rel.startLabel.x + rel.startLabel.width, rel.end"
+  & "Label.x + rel.endLabel.width, ...edge.points.map((e) => e.x));"
+  & ASCII.LF
+  & "                top = Math.min(top, rel.startLabel.y, rel.endLabel.y, ...edge.points.map"
+  & "((e) => e.y));"
+  & ASCII.LF
+  & "                bottom = Math.max(bottom, rel.startLabel.y + rel.startLabel.height, rel."
+  & "endLabel.y + rel.endLabel.height, ...edge.points.map((e) => e.y));"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            const graph = g.graph();"
+  & ASCII.LF
+  & "            const width = Math.max(graph.width + (left < 0 ? -left : 0), right - left);"
+  & ASCII.LF
+  & "            const height = Math.max(graph.height + (top < 0 ? -top : 0), bottom - top);"
+  & ASCII.LF
+  & "            const graphHeight = height ? height + 2 * config.gutter : 0;"
+  & ASCII.LF
+  & "            const graphWidth = width ? width + 2 * config.gutter : 0;"
+  & ASCII.LF
+  & "            const part = c;"
+  & ASCII.LF
+  & "            part.width = Math.max(textSize.width, graphWidth) + 2 * config.padding;"
+  & ASCII.LF
+  & "            part.height = textSize.height + graphHeight + config.padding;"
+  & ASCII.LF
+  & "            part.offset = { x: config.padding - left, y: config.padding - top };"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function toPoint(o) {"
+  & ASCII.LF
+  & "            return { x: o.x, y: o.y };"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function layoutLabel(label, point, quadrant) {"
+  & ASCII.LF
+  & "            if (!label.text) {"
+  & ASCII.LF
+  & "                label.width = 0;"
+  & ASCII.LF
+  & "                label.height = 0;"
+  & ASCII.LF
+  & "                label.x = point.x;"
+  & ASCII.LF
+  & "                label.y = point.y;"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            else {"
+  & ASCII.LF
+  & "                const fontSize = config.fontSize;"
+  & ASCII.LF
+  & "                const lines = label.text.split('`');"
+  & ASCII.LF
+  & "                label.width = Math.max(...lines.map((l) => measurer.textWidth(l)));"
+  & ASCII.LF
+  & "                label.height = fontSize * lines.length;"
+  & ASCII.LF
+  & "                label.x ="
+  & ASCII.LF
+  & "                    point.x + (quadrant == 1 || quadrant == 4 ? config.padding : -label."
+  & "width - config.padding);"
+  & ASCII.LF
+  & "                label.y ="
+  & ASCII.LF
+  & "                    point.y + (quadrant == 3 || quadrant == 4 ? config.padding : -label."
+  & "height - config.padding);"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function quadrant(point, node) {"
+  & ASCII.LF
+  & "            if (point.x < node.x && point.y < node.y)"
+  & ASCII.LF
+  & "                return 1;"
+  & ASCII.LF
+  & "            if (point.x > node.x && point.y < node.y)"
+  & ASCII.LF
+  & "                return 2;"
+  & ASCII.LF
+  & "            if (point.x > node.x && point.y > node.y)"
+  & ASCII.LF
+  & "                return 3;"
+  & ASCII.LF
+  & "            if (point.x < node.x && point.y > node.y)"
+  & ASCII.LF
+  & "                return 4;"
+  & ASCII.LF
+  & "            return undefined;"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function adjustQuadrant(quadrant, point, opposite) {"
+  & ASCII.LF
+  & "            if (opposite.x == point.x || opposite.y == point.y)"
+  & ASCII.LF
+  & "                return quadrant;"
+  & ASCII.LF
+  & "            const flipHorizontally = [4, 3, 2, 1];"
+  & ASCII.LF
+  & "            const flipVertically = [2, 1, 4, 3];"
+  & ASCII.LF
+  & "            const oppositeQuadrant = opposite.y < point.y ? (opposite.x < point.x ? 2 : "
+  & "1) : opposite.x < point.x ? 3 : 4;"
+  & ASCII.LF
+  & "            if (oppositeQuadrant === quadrant) {"
+  & ASCII.LF
+  & "                if (config.direction === 'LR')"
+  & ASCII.LF
+  & "                    return flipHorizontally[quadrant - 1];"
+  & ASCII.LF
+  & "                if (config.direction === 'TB')"
+  & ASCII.LF
+  & "                    return flipVertically[quadrant - 1];"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            return quadrant;"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function layoutNode(node, config) {"
+  & ASCII.LF
+  & "            const style = config.styles[node.type] || styles.class;"
+  & ASCII.LF
+  & "            for (let i = 0; i < node.parts.length; i++) {"
+  & ASCII.LF
+  & "                layoutCompartment(node.parts[i], i, style);"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            const visual = layouters[style.visual] ?? layouters.class;"
+  & ASCII.LF
+  & "            visual(config, node);"
+  & ASCII.LF
+  & "            node.layoutWidth = (node.width ?? 0) + 2 * config.edgeMargin;"
+  & ASCII.LF
+  & "            node.layoutHeight = (node.height ?? 0) + 2 * config.edgeMargin;"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        const root = ast;"
+  & ASCII.LF
+  & "        layoutCompartment(root, 0, styles.class);"
+  & ASCII.LF
+  & "        return root;"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & ASCII.LF
+  & "    function extractDirectives(source) {"
+  & ASCII.LF
+  & "        const directives = [];"
+  & ASCII.LF
+  & "        for (const line of source.split('\n')) {"
+  & ASCII.LF
+  & "            if (line[0] === '#') {"
+  & ASCII.LF
+  & "                const [key, ...values] = line.slice(1).split(':');"
+  & ASCII.LF
+  & "                directives.push({ key, value: values.join(':').trim() });"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        return directives;"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & "    function linearParse(source) {"
+  & ASCII.LF
+  & "        let line = 1;"
+  & ASCII.LF
+  & "        let lineStartIndex = 0;"
+  & ASCII.LF
+  & "        let index = 0;"
+  & ASCII.LF
+  & "        const directives = extractDirectives(source);"
+  & ASCII.LF
+  & "        source = source.replace(/^[ \t]*\/\/[^\n]*/gm, '').replace(/^#[^\n]*/gm, '');"
+  & ASCII.LF
+  & "        if (source.trim() === '')"
+  & ASCII.LF
+  & "            return {"
+  & ASCII.LF
+  & "                root: { nodes: [], assocs: [], lines: [] },"
+  & ASCII.LF
+  & "                directives,"
+  & ASCII.LF
+  & "            };"
+  & ASCII.LF
+  & "        const part = parsePart();"
+  & ASCII.LF
+  & "        if (index < source.length)"
+  & ASCII.LF
+  & "            error('end of file', source[index]);"
+  & ASCII.LF
+  & "        return { root: part, directives };"
+  & ASCII.LF
+  & "        function advanceLineCounter() {"
+  & ASCII.LF
+  & "            line++;"
+  & ASCII.LF
+  & "            lineStartIndex = index;"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function addNode(nodes, node) {"
+  & ASCII.LF
+  & "            const i = nodes.findIndex((e) => e.id === node.id);"
+  & ASCII.LF
+  & "            if (i === -1)"
+  & ASCII.LF
+  & "                nodes.push(node);"
+  & ASCII.LF
+  & "            else if (nodes[i].parts.length < node.parts.length)"
+  & ASCII.LF
+  & "                nodes[i] = node;"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function parsePart() {"
+  & ASCII.LF
+  & "            const nodes = [];"
+  & ASCII.LF
+  & "            const assocs = [];"
+  & ASCII.LF
+  & "            const lines = [];"
+  & ASCII.LF
+  & "            while (index < source.length) {"
+  & ASCII.LF
+  & "                let lastIndex = index;"
+  & ASCII.LF
+  & "                discard(/ /);"
+  & ASCII.LF
+  & "                if (source[index] === '\n') {"
+  & ASCII.LF
+  & "                    pop();"
+  & ASCII.LF
+  & "                    advanceLineCounter();"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "                else if (source[index] === ';') {"
+  & ASCII.LF
+  & "                    pop();"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "                else if (source[index] == '|' || source[index] == ']') {"
+  & ASCII.LF
+  & "                    return { nodes, assocs, lines };"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "                else if (source[index] == '[') {"
+  & ASCII.LF
+  & "                    const extracted = parseNodesAndAssocs();"
+  & ASCII.LF
+  & "                    for (const node of extracted.nodes)"
+  & ASCII.LF
+  & "                        addNode(nodes, node);"
+  & ASCII.LF
+  & "                    for (const assoc of extracted.assocs)"
+  & ASCII.LF
+  & "                        assocs.push(assoc);"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "                else {"
+  & ASCII.LF
+  & "                    const text = parseLine().trim();"
+  & ASCII.LF
+  & "                    if (text)"
+  & ASCII.LF
+  & "                        lines.push(text);"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "                if (index === lastIndex)"
+  & ASCII.LF
+  & "                    throw new Error('Infinite loop');"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            return { nodes, assocs, lines };"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function parseNodesAndAssocs() {"
+  & ASCII.LF
+  & "            const nodes = [];"
+  & ASCII.LF
+  & "            const assocs = [];"
+  & ASCII.LF
+  & "            let node = parseNode();"
+  & ASCII.LF
+  & "            addNode(nodes, node);"
+  & ASCII.LF
+  & "            while (index < source.length) {"
+  & ASCII.LF
+  & "                let lastIndex = index;"
+  & ASCII.LF
+  & "                discard(/ /);"
+  & ASCII.LF
+  & "                if (isOneOf('\n', ']', '|', ';')) {"
+  & ASCII.LF
+  & "                    return { nodes, assocs };"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "                else {"
+  & ASCII.LF
+  & "                    const { association, target } = parseAssociation(node);"
+  & ASCII.LF
+  & "                    assocs.push(association);"
+  & ASCII.LF
+  & "                    addNode(nodes, target);"
+  & ASCII.LF
+  & "                    node = target;"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "                if (index === lastIndex)"
+  & ASCII.LF
+  & "                    throw new Error('Infinite loop');"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            return { nodes, assocs };"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function transformEscapes(char) {"
+  & ASCII.LF
+  & "            if (char === 'n')"
+  & ASCII.LF
+  & "                return '\n';"
+  & ASCII.LF
+  & "            return char;"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function parseAssociation(fromNode) {"
+  & ASCII.LF
+  & "            let startLabel = '';"
+  & ASCII.LF
+  & "            while (index < source.length) {"
+  & ASCII.LF
+  & "                let lastIndex = index;"
+  & ASCII.LF
+  & "                if (isOneOf('\\')) {"
+  & ASCII.LF
+  & "                    pop();"
+  & ASCII.LF
+  & "                    startLabel += transformEscapes(pop());"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "                if (isOneOf('(o-', '(-', 'o<-', 'o-', '+-', '<:-', '<-', '-'))"
+  & ASCII.LF
+  & "                    break;"
+  & ASCII.LF
+  & "                else if (isOneOf('[', ']', '|', '<', '>', ';'))"
+  & ASCII.LF
+  & "                    error('label', source[index]);"
+  & ASCII.LF
+  & "                else"
+  & ASCII.LF
+  & "                    startLabel += pop();"
+  & ASCII.LF
+  & "                if (index === lastIndex)"
+  & ASCII.LF
+  & "                    throw new Error('Infinite loop');"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            const assoc1 = consumeOneOf('(o', '(', 'o<', 'o', '+', '<:', '<', '');"
+  & ASCII.LF
+  & "            const assoc2 = consumeOneOf('--', '-/-', '-');"
+  & ASCII.LF
+  & "            const assoc3 = consumeOneOf('o)', 'o', '>o', '>', ')', '+', ':>', '');"
+  & ASCII.LF
+  & "            const endLabel = consumeOptional(/[^\[]/);"
+  & ASCII.LF
+  & "            const target = parseNode();"
+  & ASCII.LF
+  & "            return {"
+  & ASCII.LF
+  & "                association: {"
+  & ASCII.LF
+  & "                    type: `${assoc1}${assoc2}${assoc3}`,"
+  & ASCII.LF
+  & "                    start: fromNode.id,"
+  & ASCII.LF
+  & "                    end: target.id,"
+  & ASCII.LF
+  & "                    startLabel: { text: startLabel.trim() },"
+  & ASCII.LF
+  & "                    endLabel: { text: endLabel.trim() },"
+  & ASCII.LF
+  & "                },"
+  & ASCII.LF
+  & "                target: target,"
+  & ASCII.LF
+  & "            };"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function parseNode() {"
+  & ASCII.LF
+  & "            index++;"
+  & ASCII.LF
+  & "            let attr = {};"
+  & ASCII.LF
+  & "            let type = 'class';"
+  & ASCII.LF
+  & "            if (source[index] == '<') {"
+  & ASCII.LF
+  & "                const meta = parseMeta();"
+  & ASCII.LF
+  & "                attr = meta.attr;"
+  & ASCII.LF
+  & "                type = meta.type ?? 'class';"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            const parts = [parsePart()];"
+  & ASCII.LF
+  & "            while (source[index] == '|') {"
+  & ASCII.LF
+  & "                let lastIndex = index;"
+  & ASCII.LF
+  & "                pop();"
+  & ASCII.LF
+  & "                parts.push(parsePart());"
+  & ASCII.LF
+  & "                if (lastIndex === index)"
+  & ASCII.LF
+  & "                    throw new Error('Infinite loop');"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            if (source[index] == ']') {"
+  & ASCII.LF
+  & "                pop();"
+  & ASCII.LF
+  & "                discard(/ /);"
+  & ASCII.LF
+  & "                return { parts: parts, attr, id: attr.id ?? parts[0].lines[0], type };"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            error(']', source[index]);"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function parseLine() {"
+  & ASCII.LF
+  & "            const chars = [];"
+  & ASCII.LF
+  & "            while (index < source.length) {"
+  & ASCII.LF
+  & "                let lastIndex = index;"
+  & ASCII.LF
+  & "                if (source[index] === '\\') {"
+  & ASCII.LF
+  & "                    pop();"
+  & ASCII.LF
+  & "                    chars.push(transformEscapes(pop()));"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "                else if (source[index].match(/[\[\]|;\n]/)) {"
+  & ASCII.LF
+  & "                    break;"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "                else {"
+  & ASCII.LF
+  & "                    chars.push(pop());"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "                if (lastIndex === index)"
+  & ASCII.LF
+  & "                    throw new Error('Infinite loop');"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            return chars.join('');"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function parseMeta() {"
+  & ASCII.LF
+  & "            index++;"
+  & ASCII.LF
+  & "            const type = consume(/[a-zA-Z0-9_]/);"
+  & ASCII.LF
+  & "            const char = pop();"
+  & ASCII.LF
+  & "            if (char == '>')"
+  & ASCII.LF
+  & "                return { type, attr: {} };"
+  & ASCII.LF
+  & "            if (char != ' ')"
+  & ASCII.LF
+  & "                error([' ', '>'], char);"
+  & ASCII.LF
+  & "            return { type, attr: parseAttrs() };"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function parseAttrs() {"
+  & ASCII.LF
+  & "            const key = consume(/[a-zA-Z0-9_]/);"
+  & ASCII.LF
+  & "            const separator = pop();"
+  & ASCII.LF
+  & "            if (separator != '=')"
+  & ASCII.LF
+  & "                error('=', separator);"
+  & ASCII.LF
+  & "            const value = consume(/[^> ]/);"
+  & ASCII.LF
+  & "            const char = pop();"
+  & ASCII.LF
+  & "            if (char == '>')"
+  & ASCII.LF
+  & "                return { [key]: value };"
+  & ASCII.LF
+  & "            if (char == ' ')"
+  & ASCII.LF
+  & "                return { [key]: value, ...parseAttrs() };"
+  & ASCII.LF
+  & "            error([' ', '>'], char);"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function pop() {"
+  & ASCII.LF
+  & "            const char = source[index];"
+  & ASCII.LF
+  & "            index++;"
+  & ASCII.LF
+  & "            return char;"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function discard(regex) {"
+  & ASCII.LF
+  & "            while (source[index]?.match(regex))"
+  & ASCII.LF
+  & "                index++;"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function consume(regex, optional) {"
+  & ASCII.LF
+  & "            const start = index;"
+  & ASCII.LF
+  & "            while (source[index]?.match(regex))"
+  & ASCII.LF
+  & "                index++;"
+  & ASCII.LF
+  & "            const end = index;"
+  & ASCII.LF
+  & "            if (!optional && start == end)"
+  & ASCII.LF
+  & "                error(regex, source[index]);"
+  & ASCII.LF
+  & "            return source.slice(start, end);"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function consumeOptional(regex) {"
+  & ASCII.LF
+  & "            return consume(regex, 'optional');"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function isOneOf(...patterns) {"
+  & ASCII.LF
+  & "            for (const pattern of patterns) {"
+  & ASCII.LF
+  & "                const token = source.slice(index, index + pattern.length);"
+  & ASCII.LF
+  & "                if (token == pattern) {"
+  & ASCII.LF
+  & "                    return true;"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            return false;"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function consumeOneOf(...patterns) {"
+  & ASCII.LF
+  & "            for (const pattern of patterns) {"
+  & ASCII.LF
+  & "                const token = source.slice(index, index + pattern.length);"
+  & ASCII.LF
+  & "                if (token == pattern) {"
+  & ASCII.LF
+  & "                    index += pattern.length;"
+  & ASCII.LF
+  & "                    return pattern;"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            const maxPatternLength = Math.max(...patterns.map((e) => e.length));"
+  & ASCII.LF
+  & "            if (index + 1 >= source.length)"
+  & ASCII.LF
+  & "                error(patterns, undefined);"
+  & ASCII.LF
+  & "            else"
+  & ASCII.LF
+  & "                error(patterns, source.slice(index + 1, maxPatternLength));"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function error(expected, actual) {"
+  & ASCII.LF
+  & "            throw new ParseError(expected, actual, line, index - lineStartIndex);"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & "    function serializeValue(value) {"
+  & ASCII.LF
+  & "        if (value == null)"
+  & ASCII.LF
+  & "            return 'end of file';"
+  & ASCII.LF
+  & "        if (value instanceof RegExp)"
+  & ASCII.LF
+  & "            return value.toString().slice(1, -1);"
+  & ASCII.LF
+  & "        if (Array.isArray(value))"
+  & ASCII.LF
+  & "            return value.map(serializeValue).join(' or ');"
+  & ASCII.LF
+  & "        return JSON.stringify(value);"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & "    class ParseError extends Error {"
+  & ASCII.LF
+  & "        constructor(expected, actual, line, column) {"
+  & ASCII.LF
+  & "            const exp = serializeValue(expected);"
+  & ASCII.LF
+  & "            const act = serializeValue(actual);"
+  & ASCII.LF
+  & "            super(`Parse error at line ${line} column ${column}, expected ${exp} but got"
+  & " ${act}`);"
+  & ASCII.LF
+  & "            this.expected = exp;"
+  & ASCII.LF
+  & "            this.actual = act;"
+  & ASCII.LF
+  & "            this.line = line;"
+  & ASCII.LF
+  & "            this.column = column;"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & ASCII.LF
+  & "    function parse(source) {"
+  & ASCII.LF
+  & "        const { root, directives } = linearParse(source);"
+  & ASCII.LF
+  & "        return { root, directives, config: getConfig(directives) };"
+  & ASCII.LF
+  & "        function directionToDagre(word) {"
+  & ASCII.LF
+  & "            if (word == 'down')"
+  & ASCII.LF
+  & "                return 'TB';"
+  & ASCII.LF
+  & "            if (word == 'right')"
+  & ASCII.LF
+  & "                return 'LR';"
+  & ASCII.LF
+  & "            else"
+  & ASCII.LF
+  & "                return 'TB';"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function parseRanker(word) {"
+  & ASCII.LF
+  & "            if (word == 'network-simplex' || word == 'tight-tree' || word == 'longest-pa"
+  & "th') {"
+  & ASCII.LF
+  & "                return word;"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            return 'network-simplex';"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function parseCustomStyle(styleDef) {"
+  & ASCII.LF
+  & "            const floatingKeywords = styleDef.replace(/[a-z]*=[^ ]+/g, '');"
+  & ASCII.LF
+  & "            const titleDef = last(styleDef.match('title=([^ ]*)') || ['']);"
+  & ASCII.LF
+  & "            const bodyDef = last(styleDef.match('body=([^ ]*)') || ['']);"
+  & ASCII.LF
+  & "            return {"
+  & ASCII.LF
+  & "                title: {"
+  & ASCII.LF
+  & "                    bold: titleDef.includes('bold') || floatingKeywords.includes('bold')"
+  & ","
+  & ASCII.LF
+  & "                    underline: titleDef.includes('underline') || floatingKeywords.includ"
+  & "es('underline'),"
+  & ASCII.LF
+  & "                    italic: titleDef.includes('italic') || floatingKeywords.includes('it"
+  & "alic'),"
+  & ASCII.LF
+  & "                    center: !(titleDef.includes('left') || styleDef.includes('align=left"
+  & "')),"
+  & ASCII.LF
+  & "                },"
+  & ASCII.LF
+  & "                body: {"
+  & ASCII.LF
+  & "                    bold: bodyDef.includes('bold'),"
+  & ASCII.LF
+  & "                    underline: bodyDef.includes('underline'),"
+  & ASCII.LF
+  & "                    italic: bodyDef.includes('italic'),"
+  & ASCII.LF
+  & "                    center: bodyDef.includes('center'),"
+  & ASCII.LF
+  & "                },"
+  & ASCII.LF
+  & "                dashed: styleDef.includes('dashed'),"
+  & ASCII.LF
+  & "                fill: last(styleDef.match('fill=([^ ]*)') || []),"
+  & ASCII.LF
+  & "                stroke: last(styleDef.match('stroke=([^ ]*)') || []),"
+  & ASCII.LF
+  & "                visual: (last(styleDef.match('visual=([^ ]*)') || []) || 'class'),"
+  & ASCII.LF
+  & "                direction: directionToDagre(last(styleDef.match('direction=([^ ]*)') || "
+  & "[])),"
+  & ASCII.LF
+  & "            };"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function getConfig(directives) {"
+  & ASCII.LF
+  & "            const d = Object.fromEntries(directives.map((e) => [e.key, e.value]));"
+  & ASCII.LF
+  & "            const userStyles = {};"
+  & ASCII.LF
+  & "            for (const key in d) {"
+  & ASCII.LF
+  & "                if (key[0] != '.')"
+  & ASCII.LF
+  & "                    continue;"
+  & ASCII.LF
+  & "                const styleDef = d[key];"
+  & ASCII.LF
+  & "                userStyles[key.substring(1)] = parseCustomStyle(styleDef);"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            return {"
+  & ASCII.LF
+  & "                arrowSize: +d.arrowSize || 1,"
+  & ASCII.LF
+  & "                bendSize: +d.bendSize || 0.3,"
+  & ASCII.LF
+  & "                direction: directionToDagre(d.direction),"
+  & ASCII.LF
+  & "                gutter: +d.gutter || 20,"
+  & ASCII.LF
+  & "                edgeMargin: +d.edgeMargin || 0,"
+  & ASCII.LF
+  & "                gravity: Math.round(+(d.gravity ?? 1)),"
+  & ASCII.LF
+  & "                edges: d.edges == 'hard' ? 'hard' : 'rounded',"
+  & ASCII.LF
+  & "                fill: (d.fill || '#eee8d5;#fdf6e3;#eee8d5;#fdf6e3').split(';'),"
+  & ASCII.LF
+  & "                background: d.background || 'transparent',"
+  & ASCII.LF
+  & "                fillArrows: d.fillArrows === 'true',"
+  & ASCII.LF
+  & "                font: d.font || 'Helvetica',"
+  & ASCII.LF
+  & "                fontSize: +d.fontSize || 12,"
+  & ASCII.LF
+  & "                leading: +d.leading || 1.35,"
+  & ASCII.LF
+  & "                lineWidth: +d.lineWidth || 3,"
+  & ASCII.LF
+  & "                padding: +d.padding || 8,"
+  & ASCII.LF
+  & "                spacing: +d.spacing || 40,"
+  & ASCII.LF
+  & "                stroke: d.stroke || '#33322E',"
+  & ASCII.LF
+  & "                title: d.title || '',"
+  & ASCII.LF
+  & "                zoom: +d.zoom || 1,"
+  & ASCII.LF
+  & "                acyclicer: d.acyclicer === 'greedy' ? 'greedy' : undefined,"
+  & ASCII.LF
+  & "                ranker: parseRanker(d.ranker),"
+  & ASCII.LF
+  & "                styles: { ...styles, ...userStyles },"
+  & ASCII.LF
+  & "            };"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & ASCII.LF
+  & "    function add(a, b) {"
+  & ASCII.LF
+  & "        return { x: a.x + b.x, y: a.y + b.y };"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & "    function diff(a, b) {"
+  & ASCII.LF
+  & "        return { x: a.x - b.x, y: a.y - b.y };"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & "    function mult(v, factor) {"
+  & ASCII.LF
+  & "        return { x: factor * v.x, y: factor * v.y };"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & "    function mag(v) {"
+  & ASCII.LF
+  & "        return Math.sqrt(v.x * v.x + v.y * v.y);"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & "    function normalize(v) {"
+  & ASCII.LF
+  & "        return mult(v, 1 / mag(v));"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & "    function rot(a) {"
+  & ASCII.LF
+  & "        return { x: a.y, y: -a.x };"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & ASCII.LF
+  & "    const empty = false;"
+  & ASCII.LF
+  & "    const filled = true;"
+  & ASCII.LF
+  & "    function getPath(config, r) {"
+  & ASCII.LF
+  & "        const path = r.path.slice(1, -1);"
+  & ASCII.LF
+  & "        const endDir = normalize(diff(path[path.length - 2], last(path)));"
+  & ASCII.LF
+  & "        const startDir = normalize(diff(path[1], path[0]));"
+  & ASCII.LF
+  & "        const size = (config.spacing * config.arrowSize) / 30;"
+  & ASCII.LF
+  & "        const head = 0;"
+  & ASCII.LF
+  & "        const end = path.length - 1;"
+  & ASCII.LF
+  & "        const copy = path.map((p) => ({ x: p.x, y: p.y }));"
+  & ASCII.LF
+  & "        const tokens = r.type.split(/[-_]/);"
+  & ASCII.LF
+  & "        copy[head] = add(copy[head], mult(startDir, size * terminatorSize(tokens[0])));"
+  & ASCII.LF
+  & "        copy[end] = add(copy[end], mult(endDir, size * terminatorSize(last(tokens))));"
+  & ASCII.LF
+  & "        return copy;"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & "    function terminatorSize(id) {"
+  & ASCII.LF
+  & "        if (id === '>' || id === '<')"
+  & ASCII.LF
+  & "            return 5;"
+  & ASCII.LF
+  & "        if (id === ':>' || id === '<:')"
+  & ASCII.LF
+  & "            return 10;"
+  & ASCII.LF
+  & "        if (id === '+')"
+  & ASCII.LF
+  & "            return 14;"
+  & ASCII.LF
+  & "        if (id === 'o')"
+  & ASCII.LF
+  & "            return 14;"
+  & ASCII.LF
+  & "        if (id === '(' || id === ')')"
+  & ASCII.LF
+  & "            return 11;"
+  & ASCII.LF
+  & "        if (id === '(o' || id === 'o)')"
+  & ASCII.LF
+  & "            return 11;"
+  & ASCII.LF
+  & "        if (id === '>o' || id === 'o<')"
+  & ASCII.LF
+  & "            return 15;"
+  & ASCII.LF
+  & "        return 0;"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & "    function drawTerminators(g, config, r) {"
+  & ASCII.LF
+  & "        const start = r.path[1];"
+  & ASCII.LF
+  & "        const end = r.path[r.path.length - 2];"
+  & ASCII.LF
+  & "        const path = r.path.slice(1, -1);"
+  & ASCII.LF
+  & "        const tokens = r.type.split(/[-_]/);"
+  & ASCII.LF
+  & "        drawArrowEnd(last(tokens), path, end);"
+  & ASCII.LF
+  & "        drawArrowEnd(tokens[0], path.reverse(), start);"
+  & ASCII.LF
+  & "        function drawArrowEnd(id, path, end) {"
+  & ASCII.LF
+  & "            const dir = normalize(diff(path[path.length - 2], last(path)));"
+  & ASCII.LF
+  & "            const size = (config.spacing * config.arrowSize) / 30;"
+  & ASCII.LF
+  & "            if (id === '>' || id === '<')"
+  & ASCII.LF
+  & "                drawArrow(dir, size, filled, end);"
+  & ASCII.LF
+  & "            else if (id === ':>' || id === '<:')"
+  & ASCII.LF
+  & "                drawArrow(dir, size, empty, end);"
+  & ASCII.LF
+  & "            else if (id === '+')"
+  & ASCII.LF
+  & "                drawDiamond(dir, size, filled, end);"
+  & ASCII.LF
+  & "            else if (id === 'o')"
+  & ASCII.LF
+  & "                drawDiamond(dir, size, empty, end);"
+  & ASCII.LF
+  & "            else if (id === '(' || id === ')') {"
+  & ASCII.LF
+  & "                drawSocket(dir, size, 11, end);"
+  & ASCII.LF
+  & "                drawStem(dir, size, 5, end);"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            else if (id === '(o' || id === 'o)') {"
+  & ASCII.LF
+  & "                drawSocket(dir, size, 11, end);"
+  & ASCII.LF
+  & "                drawStem(dir, size, 5, end);"
+  & ASCII.LF
+  & "                drawBall(dir, size, 11, end);"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            else if (id === '>o' || id === 'o<') {"
+  & ASCII.LF
+  & "                drawArrow(dir, size * 0.75, empty, add(end, mult(dir, size * 10)));"
+  & ASCII.LF
+  & "                drawStem(dir, size, 8, end);"
+  & ASCII.LF
+  & "                drawBall(dir, size, 8, end);"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function drawBall(nv, size, stem, end) {"
+  & ASCII.LF
+  & "            const center = add(end, mult(nv, size * stem));"
+  & ASCII.LF
+  & "            g.fillStyle(config.fill[0]);"
+  & ASCII.LF
+  & "            g.ellipse(center, size * 6, size * 6).fillAndStroke();"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function drawStem(nv, size, stem, end) {"
+  & ASCII.LF
+  & "            const center = add(end, mult(nv, size * stem));"
+  & ASCII.LF
+  & "            g.path([center, end]).stroke();"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function drawSocket(nv, size, stem, end) {"
+  & ASCII.LF
+  & "            const base = add(end, mult(nv, size * stem));"
+  & ASCII.LF
+  & "            const t = rot(nv);"
+  & ASCII.LF
+  & "            const socket = range([-Math.PI / 2, Math.PI / 2], 12).map((a) => add(base, a"
+  & "dd(mult(nv, -6 * size * Math.cos(a)), mult(t, 6 * size * Math.sin(a)))));"
+  & ASCII.LF
+  & "            g.path(socket).stroke();"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function drawArrow(nv, size, isOpen, end) {"
+  & ASCII.LF
+  & "            const x = (s) => add(end, mult(nv, s * size));"
+  & ASCII.LF
+  & "            const y = (s) => mult(rot(nv), s * size);"
+  & ASCII.LF
+  & "            const arrow = ["
+  & ASCII.LF
+  & "                add(x(10), y(4)),"
+  & ASCII.LF
+  & "                x(isOpen && !config.fillArrows ? 5 : 10),"
+  & ASCII.LF
+  & "                add(x(10), y(-4)),"
+  & ASCII.LF
+  & "                end,"
+  & ASCII.LF
+  & "            ];"
+  & ASCII.LF
+  & "            g.fillStyle(isOpen ? config.stroke : config.fill[0]);"
+  & ASCII.LF
+  & "            g.circuit(arrow).fillAndStroke();"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function drawDiamond(nv, size, isOpen, end) {"
+  & ASCII.LF
+  & "            const x = (s) => add(end, mult(nv, s * size));"
+  & ASCII.LF
+  & "            const y = (s) => mult(rot(nv), s * size);"
+  & ASCII.LF
+  & "            const arrow = [add(x(7), y(4)), x(14), add(x(7), y(-4)), end];"
+  & ASCII.LF
+  & "            g.save();"
+  & ASCII.LF
+  & "            g.fillStyle(isOpen ? config.stroke : config.fill[0]);"
+  & ASCII.LF
+  & "            g.circuit(arrow).fillAndStroke();"
+  & ASCII.LF
+  & "            g.restore();"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & ASCII.LF
+  & "    function render(graphics, config, compartment) {"
+  & ASCII.LF
+  & "        const g = graphics;"
+  & ASCII.LF
+  & "        function renderCompartment(compartment, color, style, level) {"
+  & ASCII.LF
+  & "            g.save();"
+  & ASCII.LF
+  & "            g.translate(compartment.offset.x, compartment.offset.y);"
+  & ASCII.LF
+  & "            g.fillStyle(color || config.stroke);"
+  & ASCII.LF
+  & "            for (let i = 0; i < compartment.lines.length; i++) {"
+  & ASCII.LF
+  & "                const text = compartment.lines[i];"
+  & ASCII.LF
+  & "                g.textAlign(style.center ? 'center' : 'left');"
+  & ASCII.LF
+  & "                const x = style.center ? compartment.width / 2 - config.padding : 0;"
+  & ASCII.LF
+  & "                let y = (0.5 + (i + 0.5) * config.leading) * config.fontSize;"
+  & ASCII.LF
+  & "                if (text) {"
+  & ASCII.LF
+  & "                    g.fillText(text, x, y);"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "                if (style.underline) {"
+  & ASCII.LF
+  & "                    const w = g.measureText(text).width;"
+  & ASCII.LF
+  & "                    y += Math.round(config.fontSize * 0.2) + 0.5;"
+  & ASCII.LF
+  & "                    if (style.center) {"
+  & ASCII.LF
+  & "                        g.path(["
+  & ASCII.LF
+  & "                            { x: x - w / 2, y: y },"
+  & ASCII.LF
+  & "                            { x: x + w / 2, y: y },"
+  & ASCII.LF
+  & "                        ]).stroke();"
+  & ASCII.LF
+  & "                    }"
+  & ASCII.LF
+  & "                    else {"
+  & ASCII.LF
+  & "                        g.path(["
+  & ASCII.LF
+  & "                            { x: x, y: y },"
+  & ASCII.LF
+  & "                            { x: x + w, y: y },"
+  & ASCII.LF
+  & "                        ]).stroke();"
+  & ASCII.LF
+  & "                    }"
+  & ASCII.LF
+  & "                    g.lineWidth(config.lineWidth);"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            g.save();"
+  & ASCII.LF
+  & "            g.translate(config.gutter, config.gutter);"
+  & ASCII.LF
+  & "            for (const r of compartment.assocs)"
+  & ASCII.LF
+  & "                renderRelation(r);"
+  & ASCII.LF
+  & "            for (const n of compartment.nodes)"
+  & ASCII.LF
+  & "                renderNode(n, level);"
+  & ASCII.LF
+  & "            g.restore();"
+  & ASCII.LF
+  & "            g.restore();"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function renderNode(node, level) {"
+  & ASCII.LF
+  & "            const x = node.x - node.width / 2;"
+  & ASCII.LF
+  & "            const y = node.y - node.height / 2;"
+  & ASCII.LF
+  & "            const style = config.styles[node.type] || styles.class;"
+  & ASCII.LF
+  & "            g.save();"
+  & ASCII.LF
+  & "            g.setData('name', node.id);"
+  & ASCII.LF
+  & "            g.setData('compartment', undefined);"
+  & ASCII.LF
+  & "            g.save();"
+  & ASCII.LF
+  & "            g.fillStyle(style.fill || config.fill[level] || last(config.fill));"
+  & ASCII.LF
+  & "            g.strokeStyle(style.stroke || config.stroke);"
+  & ASCII.LF
+  & "            if (style.dashed) {"
+  & ASCII.LF
+  & "                const dash = Math.max(4, 2 * config.lineWidth);"
+  & ASCII.LF
+  & "                g.setLineDash([dash, dash]);"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            const drawNode = visualizers[style.visual] || visualizers.class;"
+  & ASCII.LF
+  & "            drawNode(node, x, y, config, g);"
+  & ASCII.LF
+  & "            for (const divider of node.dividers) {"
+  & ASCII.LF
+  & "                g.path(divider.map((e) => add(e, { x, y }))).stroke();"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            g.restore();"
+  & ASCII.LF
+  & "            let partIndex = 0;"
+  & ASCII.LF
+  & "            for (let part of node.parts) {"
+  & ASCII.LF
+  & "                const textStyle = part === node.parts[0] ? style.title : style.body;"
+  & ASCII.LF
+  & "                g.save();"
+  & ASCII.LF
+  & "                g.setData('compartment', String(partIndex));"
+  & ASCII.LF
+  & "                g.translate(x + part.x, y + part.y);"
+  & ASCII.LF
+  & "                g.setFont(config.font, config.fontSize, textStyle.bold ? 'bold' : 'norma"
+  & "l', textStyle.italic ? 'italic' : 'normal');"
+  & ASCII.LF
+  & "                renderCompartment(part, style.stroke, textStyle, level + 1);"
+  & ASCII.LF
+  & "                partIndex++;"
+  & ASCII.LF
+  & "                g.restore();"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            g.restore();"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function strokePath(p) {"
+  & ASCII.LF
+  & "            if (config.edges === 'rounded') {"
+  & ASCII.LF
+  & "                const radius = config.spacing * config.bendSize;"
+  & ASCII.LF
+  & "                g.beginPath();"
+  & ASCII.LF
+  & "                g.moveTo(p[0].x, p[0].y);"
+  & ASCII.LF
+  & "                for (let i = 1; i < p.length - 1; i++) {"
+  & ASCII.LF
+  & "                    g.arcTo(p[i].x, p[i].y, p[i + 1].x, p[i + 1].y, radius);"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "                g.lineTo(last(p).x, last(p).y);"
+  & ASCII.LF
+  & "                g.stroke();"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            else"
+  & ASCII.LF
+  & "                g.path(p).stroke();"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function renderLabel(label) {"
+  & ASCII.LF
+  & "            if (!label || !label.text)"
+  & ASCII.LF
+  & "                return;"
+  & ASCII.LF
+  & "            const fontSize = config.fontSize;"
+  & ASCII.LF
+  & "            const lines = label.text.split('`');"
+  & ASCII.LF
+  & "            for (let i = 0; i < lines.length; i++) {"
+  & ASCII.LF
+  & "                g.fillText(lines[i], label.x, label.y + fontSize * (i + 1));"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function renderRelation(r) {"
+  & ASCII.LF
+  & "            const path = getPath(config, r);"
+  & ASCII.LF
+  & "            g.fillStyle(config.stroke);"
+  & ASCII.LF
+  & "            g.setFont(config.font, config.fontSize, 'normal', 'normal');"
+  & ASCII.LF
+  & "            renderLabel(r.startLabel);"
+  & ASCII.LF
+  & "            renderLabel(r.endLabel);"
+  & ASCII.LF
+  & "            if (r.type !== '-/-') {"
+  & ASCII.LF
+  & "                if (r.type.includes('--')) {"
+  & ASCII.LF
+  & "                    const dash = Math.max(4, 2 * config.lineWidth);"
+  & ASCII.LF
+  & "                    g.save();"
+  & ASCII.LF
+  & "                    g.setLineDash([dash, dash]);"
+  & ASCII.LF
+  & "                    strokePath(path);"
+  & ASCII.LF
+  & "                    g.restore();"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "                else"
+  & ASCII.LF
+  & "                    strokePath(path);"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            drawTerminators(g, config, r);"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function setBackground() {"
+  & ASCII.LF
+  & "            g.clear();"
+  & ASCII.LF
+  & "            g.save();"
+  & ASCII.LF
+  & "            g.strokeStyle('transparent');"
+  & ASCII.LF
+  & "            g.fillStyle(config.background);"
+  & ASCII.LF
+  & "            g.rect(0, 0, compartment.width, compartment.height).fill();"
+  & ASCII.LF
+  & "            g.restore();"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        g.save();"
+  & ASCII.LF
+  & "        g.scale(config.zoom, config.zoom);"
+  & ASCII.LF
+  & "        setBackground();"
+  & ASCII.LF
+  & "        g.setFont(config.font, config.fontSize, 'bold', 'normal');"
+  & ASCII.LF
+  & "        g.lineWidth(config.lineWidth);"
+  & ASCII.LF
+  & "        g.lineJoin('round');"
+  & ASCII.LF
+  & "        g.lineCap('round');"
+  & ASCII.LF
+  & "        g.strokeStyle(config.stroke);"
+  & ASCII.LF
+  & "        renderCompartment(compartment, undefined, buildStyle({}, {}).title, 0);"
+  & ASCII.LF
+  & "        g.restore();"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & ASCII.LF
+  & "    function GraphicsCanvas(canvas) {"
+  & ASCII.LF
+  & "        const ctx = canvas.getContext('2d');"
+  & ASCII.LF
+  & "        const twopi = 2 * 3.1416;"
+  & ASCII.LF
+  & "        let mousePos = { x: 0, y: 0 };"
+  & ASCII.LF
+  & "        const chainable = {"
+  & ASCII.LF
+  & "            stroke: function () {"
+  & ASCII.LF
+  & "                ctx.stroke();"
+  & ASCII.LF
+  & "                return chainable;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            fill: function () {"
+  & ASCII.LF
+  & "                ctx.fill();"
+  & ASCII.LF
+  & "                return chainable;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            fillAndStroke: function () {"
+  & ASCII.LF
+  & "                ctx.fill();"
+  & ASCII.LF
+  & "                ctx.stroke();"
+  & ASCII.LF
+  & "                return chainable;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "        };"
+  & ASCII.LF
+  & "        function tracePath(path, offset, s) {"
+  & ASCII.LF
+  & "            s = s === undefined ? 1 : s;"
+  & ASCII.LF
+  & "            offset = offset || { x: 0, y: 0 };"
+  & ASCII.LF
+  & "            ctx.beginPath();"
+  & ASCII.LF
+  & "            ctx.moveTo(offset.x + s * path[0].x, offset.y + s * path[0].y);"
+  & ASCII.LF
+  & "            for (let i = 1, len = path.length; i < len; i++)"
+  & ASCII.LF
+  & "                ctx.lineTo(offset.x + s * path[i].x, offset.y + s * path[i].y);"
+  & ASCII.LF
+  & "            return chainable;"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        return {"
+  & ASCII.LF
+  & "            mousePos: function () {"
+  & ASCII.LF
+  & "                return mousePos;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            width: function () {"
+  & ASCII.LF
+  & "                return canvas.width;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            height: function () {"
+  & ASCII.LF
+  & "                return canvas.height;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            clear: function () {"
+  & ASCII.LF
+  & "                ctx.clearRect(0, 0, canvas.width, canvas.height);"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            circle: function (p, r) {"
+  & ASCII.LF
+  & "                ctx.beginPath();"
+  & ASCII.LF
+  & "                ctx.arc(p.x, p.y, r, 0, twopi);"
+  & ASCII.LF
+  & "                return chainable;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            ellipse: function (center, rx, ry, start, stop) {"
+  & ASCII.LF
+  & "                if (start === undefined)"
+  & ASCII.LF
+  & "                    start = 0;"
+  & ASCII.LF
+  & "                if (stop === undefined)"
+  & ASCII.LF
+  & "                    stop = twopi;"
+  & ASCII.LF
+  & "                ctx.beginPath();"
+  & ASCII.LF
+  & "                ctx.save();"
+  & ASCII.LF
+  & "                ctx.translate(center.x, center.y);"
+  & ASCII.LF
+  & "                ctx.scale(1, ry / rx);"
+  & ASCII.LF
+  & "                ctx.arc(0, 0, rx / 2, start, stop);"
+  & ASCII.LF
+  & "                ctx.restore();"
+  & ASCII.LF
+  & "                return chainable;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            arc: function (x, y, r, start, stop) {"
+  & ASCII.LF
+  & "                ctx.beginPath();"
+  & ASCII.LF
+  & "                ctx.moveTo(x, y);"
+  & ASCII.LF
+  & "                ctx.arc(x, y, r, start, stop);"
+  & ASCII.LF
+  & "                return chainable;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            roundRect: function (x, y, w, h, r) {"
+  & ASCII.LF
+  & "                ctx.beginPath();"
+  & ASCII.LF
+  & "                ctx.moveTo(x + r, y);"
+  & ASCII.LF
+  & "                ctx.arcTo(x + w, y, x + w, y + r, r);"
+  & ASCII.LF
+  & "                ctx.lineTo(x + w, y + h - r);"
+  & ASCII.LF
+  & "                ctx.arcTo(x + w, y + h, x + w - r, y + h, r);"
+  & ASCII.LF
+  & "                ctx.lineTo(x + r, y + h);"
+  & ASCII.LF
+  & "                ctx.arcTo(x, y + h, x, y + h - r, r);"
+  & ASCII.LF
+  & "                ctx.lineTo(x, y + r);"
+  & ASCII.LF
+  & "                ctx.arcTo(x, y, x + r, y, r);"
+  & ASCII.LF
+  & "                ctx.closePath();"
+  & ASCII.LF
+  & "                return chainable;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            rect: function (x, y, w, h) {"
+  & ASCII.LF
+  & "                ctx.beginPath();"
+  & ASCII.LF
+  & "                ctx.moveTo(x, y);"
+  & ASCII.LF
+  & "                ctx.lineTo(x + w, y);"
+  & ASCII.LF
+  & "                ctx.lineTo(x + w, y + h);"
+  & ASCII.LF
+  & "                ctx.lineTo(x, y + h);"
+  & ASCII.LF
+  & "                ctx.closePath();"
+  & ASCII.LF
+  & "                return chainable;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            path: tracePath,"
+  & ASCII.LF
+  & "            circuit: function (path, offset, s) {"
+  & ASCII.LF
+  & "                tracePath(path, offset, s);"
+  & ASCII.LF
+  & "                ctx.closePath();"
+  & ASCII.LF
+  & "                return chainable;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            setFont: function (family, size, weight, style) {"
+  & ASCII.LF
+  & "                ctx.font = `${weight} ${style} ${size}pt ${family}, Helvetica, sans-seri"
+  & "f`;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            fillStyle: function (s) {"
+  & ASCII.LF
+  & "                ctx.fillStyle = s;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            strokeStyle: function (s) {"
+  & ASCII.LF
+  & "                ctx.strokeStyle = s;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            textAlign: function (a) {"
+  & ASCII.LF
+  & "                ctx.textAlign = a;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            lineCap: function (cap) {"
+  & ASCII.LF
+  & "                ctx.lineCap = cap;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            lineJoin: function (join) {"
+  & ASCII.LF
+  & "                ctx.lineJoin = join;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            lineWidth: function (w) {"
+  & ASCII.LF
+  & "                ctx.lineWidth = w;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            arcTo: function () {"
+  & ASCII.LF
+  & "                return ctx.arcTo.apply(ctx, arguments);"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            beginPath: function () {"
+  & ASCII.LF
+  & "                return ctx.beginPath.apply(ctx, arguments);"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            fillText: function () {"
+  & ASCII.LF
+  & "                return ctx.fillText.apply(ctx, arguments);"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            lineTo: function () {"
+  & ASCII.LF
+  & "                return ctx.lineTo.apply(ctx, arguments);"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            measureText: function () {"
+  & ASCII.LF
+  & "                return ctx.measureText.apply(ctx, arguments);"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            moveTo: function () {"
+  & ASCII.LF
+  & "                return ctx.moveTo.apply(ctx, arguments);"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            restore: function () {"
+  & ASCII.LF
+  & "                return ctx.restore.apply(ctx, arguments);"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            setData: function (name, value) { },"
+  & ASCII.LF
+  & "            save: function () {"
+  & ASCII.LF
+  & "                return ctx.save.apply(ctx, arguments);"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            scale: function () {"
+  & ASCII.LF
+  & "                return ctx.scale.apply(ctx, arguments);"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            setLineDash: function () {"
+  & ASCII.LF
+  & "                return ctx.setLineDash.apply(ctx, arguments);"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            stroke: function () {"
+  & ASCII.LF
+  & "                return ctx.stroke.apply(ctx, arguments);"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            translate: function () {"
+  & ASCII.LF
+  & "                return ctx.translate.apply(ctx, arguments);"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "        };"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & ASCII.LF
+  & "    function toAttrString(obj) {"
+  & ASCII.LF
+  & "        return Object.entries(obj)"
+  & ASCII.LF
+  & "            .filter(([_, val]) => val !== undefined)"
+  & ASCII.LF
+  & "            .map(([key, val]) => `${key}=""${xmlEncode(val)}""`)"
+  & ASCII.LF
+  & "            .join(' ');"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & "    function xmlEncode(str) {"
+  & ASCII.LF
+  & "        if ('number' === typeof str)"
+  & ASCII.LF
+  & "            return str.toFixed(1);"
+  & ASCII.LF
+  & "        return (str ?? '')"
+  & ASCII.LF
+  & "            .toString()"
+  & ASCII.LF
+  & "            .replace(/&/g, '&amp;')"
+  & ASCII.LF
+  & "            .replace(/</g, '&lt;')"
+  & ASCII.LF
+  & "            .replace(/>/g, '&gt;')"
+  & ASCII.LF
+  & "            .replace(/""/g, '&quot;')"
+  & ASCII.LF
+  & "            .replace(/'/g, '&apos;');"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & "    const charWidths = { ""0"": 10, ""1"": 10, ""2"": 10, ""3"": 10, ""4"": 10, ""5"": 10, ""6"": 10, "
+  & """7"": 10, ""8"": 10, ""9"": 10, "" "": 5, ""!"": 5, ""\"""": 6, ""#"": 10, ""$"": 10, ""%"": 15, ""&"": 11, "
+  & """'"": 4, ""("": 6, "")"": 6, ""*"": 7, ""+"": 10, "","": 5, ""-"": 6, ""."": 5, ""/"": 5, "":"": 5, "";"": 5,"
+  & " ""<"": 10, ""="": 10, "">"": 10, ""?"": 10, ""@"": 17, ""A"": 11, ""B"": 11, ""C"": 12, ""D"": 12, ""E"": 1"
+  & "1, ""F"": 10, ""G"": 13, ""H"": 12, ""I"": 5, ""J"": 9, ""K"": 11, ""L"": 10, ""M"": 14, ""N"": 12, ""O"": 1"
+  & "3, ""P"": 11, ""Q"": 13, ""R"": 12, ""S"": 11, ""T"": 10, ""U"": 12, ""V"": 11, ""W"": 16, ""X"": 11, ""Y"":"
+  & " 11, ""Z"": 10, ""["": 5, ""\\"": 5, ""]"": 5, ""^"": 8, ""_"": 10, ""`"": 6, ""a"": 10, ""b"": 10, ""c"": 9"
+  & ", ""d"": 10, ""e"": 10, ""f"": 5, ""g"": 10, ""h"": 10, ""i"": 4, ""j"": 4, ""k"": 9, ""l"": 4, ""m"": 14, """
+  & "n"": 10, ""o"": 10, ""p"": 10, ""q"": 10, ""r"": 6, ""s"": 9, ""t"": 5, ""u"": 10, ""v"": 9, ""w"": 12, ""x"""
+  & ": 9, ""y"": 9, ""z"": 9, ""{"": 6, ""|"": 5, ""}"": 6, ""~"": 10 };"
+  & ASCII.LF
+  & "    function GraphicsSvg(document) {"
+  & ASCII.LF
+  & "        const initialState = {"
+  & ASCII.LF
+  & "            stroke: undefined,"
+  & ASCII.LF
+  & "            'stroke-width': 1,"
+  & ASCII.LF
+  & "            'stroke-dasharray': undefined,"
+  & ASCII.LF
+  & "            'stroke-linecap': undefined,"
+  & ASCII.LF
+  & "            'stroke-linejoin': undefined,"
+  & ASCII.LF
+  & "            'text-align': 'left',"
+  & ASCII.LF
+  & "            font: '12pt Helvetica, Arial, sans-serif',"
+  & ASCII.LF
+  & "            'font-size': '12pt',"
+  & ASCII.LF
+  & "        };"
+  & ASCII.LF
+  & "        const measurementCanvas = document"
+  & ASCII.LF
+  & "            ? document.createElement('canvas')"
+  & ASCII.LF
+  & "            : null;"
+  & ASCII.LF
+  & "        const ctx = measurementCanvas ? measurementCanvas.getContext('2d') : null;"
+  & ASCII.LF
+  & "        class Element {"
+  & ASCII.LF
+  & "            constructor(name, attr, parent, text) {"
+  & ASCII.LF
+  & "                this.elideEmpty = false;"
+  & ASCII.LF
+  & "                this.name = name;"
+  & ASCII.LF
+  & "                this.attr = attr;"
+  & ASCII.LF
+  & "                this.parent = parent;"
+  & ASCII.LF
+  & "                this.children = [];"
+  & ASCII.LF
+  & "                this.text = text || undefined;"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            stroke() {"
+  & ASCII.LF
+  & "                this.attr.fill = 'none';"
+  & ASCII.LF
+  & "                return this;"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            fill() {"
+  & ASCII.LF
+  & "                this.attr.stroke = 'none';"
+  & ASCII.LF
+  & "                return this;"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            fillAndStroke() {"
+  & ASCII.LF
+  & "                return this;"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            group() {"
+  & ASCII.LF
+  & "                return this.parent;"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            serialize() {"
+  & ASCII.LF
+  & "                const data = getAncestorData(this.group()) ?? {};"
+  & ASCII.LF
+  & "                const attrs = toAttrString({ ...this.attr, ...data });"
+  & ASCII.LF
+  & "                const content = this.children.map((o) => o.serialize()).join('\n');"
+  & ASCII.LF
+  & "                if (this.text && this.children.length === 0)"
+  & ASCII.LF
+  & "                    return `<${this.name} ${attrs}>${xmlEncode(this.text)}</${this.name}"
+  & ">`;"
+  & ASCII.LF
+  & "                else if (this.children.length === 0)"
+  & ASCII.LF
+  & "                    return this.elideEmpty ? '' : `<${this.name} ${attrs}></${this.name}"
+  & ">`;"
+  & ASCII.LF
+  & "                else"
+  & ASCII.LF
+  & "                    return `<${this.name} ${attrs}>"
+  & ASCII.LF
+  & "  ${content.replace(/\n/g, '\n\t')}"
+  & ASCII.LF
+  & "</${this.name}>`;"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function getAncestorData(group) {"
+  & ASCII.LF
+  & "            if (!group)"
+  & ASCII.LF
+  & "                return syntheticRoot.data;"
+  & ASCII.LF
+  & "            return { ...getAncestorData(group.parent), ...group.data };"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function getDefined(group, getter) {"
+  & ASCII.LF
+  & "            if (!group)"
+  & ASCII.LF
+  & "                return getter(syntheticRoot);"
+  & ASCII.LF
+  & "            return getter(group) ?? getDefined(group.parent, getter) ?? getter(synthetic"
+  & "Root);"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        class GroupElement extends Element {"
+  & ASCII.LF
+  & "            constructor(parent) {"
+  & ASCII.LF
+  & "                super('g', {}, parent);"
+  & ASCII.LF
+  & "                this.elideEmpty = true;"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            group() {"
+  & ASCII.LF
+  & "                return this;"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        const syntheticRoot = new GroupElement({});"
+  & ASCII.LF
+  & "        syntheticRoot.attr = initialState;"
+  & ASCII.LF
+  & "        const root = new Element('svg', {"
+  & ASCII.LF
+  & "            version: '1.1',"
+  & ASCII.LF
+  & "            baseProfile: 'full',"
+  & ASCII.LF
+  & "            xmlns: 'http://www.w3.org/2000/svg',"
+  & ASCII.LF
+  & "            'xmlns:xlink': 'http://www.w3.org/1999/xlink',"
+  & ASCII.LF
+  & "            'xmlns:ev': 'http://www.w3.org/2001/xml-events',"
+  & ASCII.LF
+  & "        }, undefined);"
+  & ASCII.LF
+  & "        let current = new GroupElement(root);"
+  & ASCII.LF
+  & "        current.attr = initialState;"
+  & ASCII.LF
+  & "        root.children.push(current);"
+  & ASCII.LF
+  & "        let inPathBuilderMode = false;"
+  & ASCII.LF
+  & "        function tracePath(path, offset = { x: 0, y: 0 }, s = 1) {"
+  & ASCII.LF
+  & "            const d = path"
+  & ASCII.LF
+  & "                .map((e, i) => (i ? 'L' : 'M') + (offset.x + s * e.x).toFixed(1) + ' ' +"
+  & " (offset.y + s * e.y).toFixed(1))"
+  & ASCII.LF
+  & "                .join(' ');"
+  & ASCII.LF
+  & "            return el('path', { d: d });"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function el(type, attr, text) {"
+  & ASCII.LF
+  & "            const element = new Element(type, attr, current, text);"
+  & ASCII.LF
+  & "            current.children.push(element);"
+  & ASCII.LF
+  & "            return element;"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        return {"
+  & ASCII.LF
+  & "            width: function () {"
+  & ASCII.LF
+  & "                return 0;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            height: function () {"
+  & ASCII.LF
+  & "                return 0;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            clear: function () { },"
+  & ASCII.LF
+  & "            circle: function (p, r) {"
+  & ASCII.LF
+  & "                return el('circle', { r: r, cx: p.x, cy: p.y });"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            ellipse: function (center, w, h, start = 0, stop = 0) {"
+  & ASCII.LF
+  & "                if (start || stop) {"
+  & ASCII.LF
+  & "                    const path = range([start, stop], 64).map((a) => add(center, { x: (M"
+  & "ath.cos(a) * w) / 2, y: (Math.sin(a) * h) / 2 }));"
+  & ASCII.LF
+  & "                    return tracePath(path);"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "                else {"
+  & ASCII.LF
+  & "                    return el('ellipse', { cx: center.x, cy: center.y, rx: w / 2, ry: h "
+  & "/ 2 });"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            arc: function (cx, cy, r) {"
+  & ASCII.LF
+  & "                return el('ellipse', { cx, cy, rx: r, ry: r });"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            roundRect: function (x, y, width, height, r) {"
+  & ASCII.LF
+  & "                return el('rect', { x, y, rx: r, ry: r, height, width });"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            rect: function (x, y, width, height) {"
+  & ASCII.LF
+  & "                return el('rect', { x, y, height, width });"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            path: tracePath,"
+  & ASCII.LF
+  & "            circuit: function (path, offset, s) {"
+  & ASCII.LF
+  & "                const element = tracePath(path, offset, s);"
+  & ASCII.LF
+  & "                element.attr.d += ' Z';"
+  & ASCII.LF
+  & "                return element;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            setFont: function (family, size, weight, style) {"
+  & ASCII.LF
+  & "                current.attr['font-family'] = family;"
+  & ASCII.LF
+  & "                current.attr['font-size'] = size + 'pt';"
+  & ASCII.LF
+  & "                current.attr['font-weight'] = weight;"
+  & ASCII.LF
+  & "                current.attr['font-style'] = style;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            strokeStyle: function (stroke) {"
+  & ASCII.LF
+  & "                current.attr.stroke = stroke;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            fillStyle: function (fill) {"
+  & ASCII.LF
+  & "                current.attr.fill = fill;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            arcTo: function (x1, y1, x2, y2) {"
+  & ASCII.LF
+  & "                if (inPathBuilderMode)"
+  & ASCII.LF
+  & "                    last(current.children).attr.d += 'L' + x1 + ' ' + y1 + ' L' + x2 + '"
+  & " ' + y2 + ' ';"
+  & ASCII.LF
+  & "                else"
+  & ASCII.LF
+  & "                    throw new Error('can only be called after .beginPath()');"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            beginPath: function () {"
+  & ASCII.LF
+  & "                inPathBuilderMode = true;"
+  & ASCII.LF
+  & "                return el('path', { d: '' });"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            fillText: function (text, x, y) {"
+  & ASCII.LF
+  & "                return el('text', {"
+  & ASCII.LF
+  & "                    x,"
+  & ASCII.LF
+  & "                    y,"
+  & ASCII.LF
+  & "                    stroke: 'none',"
+  & ASCII.LF
+  & "                    font: undefined,"
+  & ASCII.LF
+  & "                    style: undefined,"
+  & ASCII.LF
+  & "                    'text-anchor': getDefined(current, (e) => e.attr['text-align']) === "
+  & "'center' ? 'middle' : undefined,"
+  & ASCII.LF
+  & "                }, text);"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            lineCap: function (cap) {"
+  & ASCII.LF
+  & "                current.attr['stroke-linecap'] = cap;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            lineJoin: function (join) {"
+  & ASCII.LF
+  & "                current.attr['stroke-linejoin'] = join;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            lineTo: function (x, y) {"
+  & ASCII.LF
+  & "                if (inPathBuilderMode)"
+  & ASCII.LF
+  & "                    last(current.children).attr.d += 'L' + x.toFixed(1) + ' ' + y.toFixe"
+  & "d(1) + ' ';"
+  & ASCII.LF
+  & "                else"
+  & ASCII.LF
+  & "                    throw new Error('can only be called after .beginPath()');"
+  & ASCII.LF
+  & "                return current;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            lineWidth: function (w) {"
+  & ASCII.LF
+  & "                current.attr['stroke-width'] = w;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            measureText: function (s) {"
+  & ASCII.LF
+  & "                if (ctx) {"
+  & ASCII.LF
+  & "                    if (current)"
+  & ASCII.LF
+  & "                        ctx.font = `${getDefined(current, (e) => e.attr['font-weight'])}"
+  & " ${getDefined(current, (e) => e.attr['font-style'])} ${getDefined(current, (e) => e.attr"
+  & "['font-size'])} ${getDefined(current, (e) => e.attr['font-family'])}`;"
+  & ASCII.LF
+  & "                    else"
+  & ASCII.LF
+  & "                        ctx.font = `${initialState['font-weight']} ${initialState['font-"
+  & "style']} ${initialState['font-size']} ${initialState['font-family']}`;"
+  & ASCII.LF
+  & "                    return ctx.measureText(s);"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "                else {"
+  & ASCII.LF
+  & "                    return {"
+  & ASCII.LF
+  & "                        width: sum(s, function (c) {"
+  & ASCII.LF
+  & "                            const size = getDefined(current, (e) => e.attr['font-size'])"
+  & " ?? 12;"
+  & ASCII.LF
+  & "                            const scale = parseInt(size.toString()) / 12;"
+  & ASCII.LF
+  & "                            return (charWidths[c] ?? 16) * scale;"
+  & ASCII.LF
+  & "                        }),"
+  & ASCII.LF
+  & "                    };"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            moveTo: function (x, y) {"
+  & ASCII.LF
+  & "                if (inPathBuilderMode)"
+  & ASCII.LF
+  & "                    last(current.children).attr.d += 'M' + x.toFixed(1) + ' ' + y.toFixe"
+  & "d(1) + ' ';"
+  & ASCII.LF
+  & "                else"
+  & ASCII.LF
+  & "                    throw new Error('can only be called after .beginPath()');"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            restore: function () {"
+  & ASCII.LF
+  & "                if (current.parent)"
+  & ASCII.LF
+  & "                    current = current.parent;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            save: function () {"
+  & ASCII.LF
+  & "                const node = new GroupElement(current);"
+  & ASCII.LF
+  & "                current.children.push(node);"
+  & ASCII.LF
+  & "                current = node;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            setData: function (name, value) {"
+  & ASCII.LF
+  & "                current.data = current.data ?? {};"
+  & ASCII.LF
+  & "                current.data['data-' + name] = value;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            scale: function () { },"
+  & ASCII.LF
+  & "            setLineDash: function (d) {"
+  & ASCII.LF
+  & "                current.attr['stroke-dasharray'] = d.length === 0 ? 'none' : d[0] + ' ' "
+  & "+ d[1];"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            stroke: function () {"
+  & ASCII.LF
+  & "                inPathBuilderMode = false;"
+  & ASCII.LF
+  & "                last(current.children).stroke();"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            textAlign: function (a) {"
+  & ASCII.LF
+  & "                current.attr['text-align'] = a;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            translate: function (dx, dy) {"
+  & ASCII.LF
+  & "                if (Number.isNaN(dx) || Number.isNaN(dy)) {"
+  & ASCII.LF
+  & "                    throw new Error('dx and dy must be real numbers');"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "                current.attr.transform = `translate(${dx}, ${dy})`;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            serialize: function (size, desc, title) {"
+  & ASCII.LF
+  & "                if (desc) {"
+  & ASCII.LF
+  & "                    root.children.unshift(new Element('desc', {}, undefined, desc));"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "                if (title) {"
+  & ASCII.LF
+  & "                    root.children.unshift(new Element('title', {}, undefined, title));"
+  & ASCII.LF
+  & "                }"
+  & ASCII.LF
+  & "                root.attr = {"
+  & ASCII.LF
+  & "                    version: '1.1',"
+  & ASCII.LF
+  & "                    baseProfile: 'full',"
+  & ASCII.LF
+  & "                    width: size.width,"
+  & ASCII.LF
+  & "                    height: size.height,"
+  & ASCII.LF
+  & "                    viewBox: '0 0 ' + size.width + ' ' + size.height,"
+  & ASCII.LF
+  & "                    xmlns: 'http://www.w3.org/2000/svg',"
+  & ASCII.LF
+  & "                    'xmlns:xlink': 'http://www.w3.org/1999/xlink',"
+  & ASCII.LF
+  & "                    'xmlns:ev': 'http://www.w3.org/2001/xml-events',"
+  & ASCII.LF
+  & "                };"
+  & ASCII.LF
+  & "                return root.serialize();"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "        };"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & ASCII.LF
+  & "    function fitCanvasSize(canvas, rect, zoom) {"
+  & ASCII.LF
+  & "        canvas.width = rect.width * zoom;"
+  & ASCII.LF
+  & "        canvas.height = rect.height * zoom;"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & "    function createMeasurer(config, graphics) {"
+  & ASCII.LF
+  & "        return {"
+  & ASCII.LF
+  & "            setFont(family, size, weight, style) {"
+  & ASCII.LF
+  & "                graphics.setFont(family, size, weight, style);"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            textWidth(s) {"
+  & ASCII.LF
+  & "                return graphics.measureText(s).width;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "            textHeight() {"
+  & ASCII.LF
+  & "                return config.leading * config.fontSize;"
+  & ASCII.LF
+  & "            },"
+  & ASCII.LF
+  & "        };"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & "    function parseAndRender(code, graphics, canvas, scale) {"
+  & ASCII.LF
+  & "        const parsedDiagram = parse(code);"
+  & ASCII.LF
+  & "        const config = parsedDiagram.config;"
+  & ASCII.LF
+  & "        const measurer = createMeasurer(config, graphics);"
+  & ASCII.LF
+  & "        const graphLayout = layout(measurer, config, parsedDiagram.root);"
+  & ASCII.LF
+  & "        if (canvas) {"
+  & ASCII.LF
+  & "            fitCanvasSize(canvas, graphLayout, config.zoom * scale);"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        config.zoom *= scale;"
+  & ASCII.LF
+  & "        render(graphics, config, graphLayout);"
+  & ASCII.LF
+  & "        return { config: config, layout: graphLayout };"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & "    function draw(canvas, code, scale) {"
+  & ASCII.LF
+  & "        return parseAndRender(code, GraphicsCanvas(canvas), canvas, scale || 1);"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & "    function renderSvg(code, document) {"
+  & ASCII.LF
+  & "        const skCanvas = GraphicsSvg(document);"
+  & ASCII.LF
+  & "        const { config, layout } = parseAndRender(code, skCanvas, null, 1);"
+  & ASCII.LF
+  & "        return skCanvas.serialize({"
+  & ASCII.LF
+  & "            width: layout.width,"
+  & ASCII.LF
+  & "            height: layout.height,"
+  & ASCII.LF
+  & "        }, code, config.title);"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & "    class ImportDepthError extends Error {"
+  & ASCII.LF
+  & "        constructor() {"
+  & ASCII.LF
+  & "            super('max_import_depth exceeded');"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & "    async function processAsyncImports(source, loadFile, maxImportDepth = 10) {"
+  & ASCII.LF
+  & "        if (maxImportDepth == -1) {"
+  & ASCII.LF
+  & "            throw new ImportDepthError();"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        async function lenientLoadFile(key) {"
+  & ASCII.LF
+  & "            try {"
+  & ASCII.LF
+  & "                return (await loadFile(key)) || '';"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            catch (e) {"
+  & ASCII.LF
+  & "                return '';"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        const imports = [];"
+  & ASCII.LF
+  & "        source.replace(/#import: *(.*)/g, (a, file) => {"
+  & ASCII.LF
+  & "            const promise = lenientLoadFile(file).then((contents) => processAsyncImports"
+  & "(contents, loadFile, maxImportDepth - 1));"
+  & ASCII.LF
+  & "            imports.push({ file, promise });"
+  & ASCII.LF
+  & "            return '';"
+  & ASCII.LF
+  & "        });"
+  & ASCII.LF
+  & "        const imported = {};"
+  & ASCII.LF
+  & "        for (const imp of imports) {"
+  & ASCII.LF
+  & "            imported[imp.file] = await imp.promise;"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        return source.replace(/#import: *(.*)/g, (a, file) => imported[file]);"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & "    function processImports(source, loadFile, maxImportDepth = 10) {"
+  & ASCII.LF
+  & "        if (maxImportDepth == -1) {"
+  & ASCII.LF
+  & "            throw new ImportDepthError();"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        function lenientLoadFile(key) {"
+  & ASCII.LF
+  & "            try {"
+  & ASCII.LF
+  & "                return loadFile(key) || '';"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "            catch (e) {"
+  & ASCII.LF
+  & "                return '';"
+  & ASCII.LF
+  & "            }"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        return source.replace(/#import: *(.*)/g, (a, file) => processImports(lenientLoad"
+  & "File(file), loadFile, maxImportDepth - 1));"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & "    function compileFile(filepath, maxImportDepth) {"
+  & ASCII.LF
+  & "        const fs = require('fs');"
+  & ASCII.LF
+  & "        const path = require('path');"
+  & ASCII.LF
+  & "        const directory = path.dirname(filepath);"
+  & ASCII.LF
+  & "        const rootFileName = path.basename(filepath);"
+  & ASCII.LF
+  & "        function loadFile(filename) {"
+  & ASCII.LF
+  & "            return fs.readFileSync(path.join(directory, filename), { encoding: 'utf8' })"
+  & ";"
+  & ASCII.LF
+  & "        }"
+  & ASCII.LF
+  & "        return processImports(loadFile(rootFileName), loadFile, maxImportDepth);"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & ASCII.LF
+  & "    const version = '1.7.0';"
+  & ASCII.LF
+  & ASCII.LF
+  & "    exports.ImportDepthError = ImportDepthError;"
+  & ASCII.LF
+  & "    exports.ParseError = ParseError;"
+  & ASCII.LF
+  & "    exports.compileFile = compileFile;"
+  & ASCII.LF
+  & "    exports.draw = draw;"
+  & ASCII.LF
+  & "    exports.layout = layout;"
+  & ASCII.LF
+  & "    exports.parse = parse;"
+  & ASCII.LF
+  & "    exports.processAsyncImports = processAsyncImports;"
+  & ASCII.LF
+  & "    exports.processImports = processImports;"
+  & ASCII.LF
+  & "    exports.renderSvg = renderSvg;"
+  & ASCII.LF
+  & "    exports.skanaar = util;"
+  & ASCII.LF
+  & "    exports.styles = styles;"
+  & ASCII.LF
+  & "    exports.version = version;"
+  & ASCII.LF
+  & "    exports.visualizers = visualizers;"
+  & ASCII.LF
+  & ASCII.LF
+  & "}));"
+  & ASCII.LF
+  & ASCII.LF
+  & "</script>"
+  & ASCII.LF
+  & "<script>/* vendored flexsearch 0.7.31 Apache-2.0 github.com/nextapps-de/flexsearch */"
+  & ASCII.LF
+  & "/**!"
+  & ASCII.LF
+  & " * FlexSearch.js v0.7.31 (Bundle)"
+  & ASCII.LF
+  & " * Copyright 2018-2022 Nextapps GmbH"
+  & ASCII.LF
+  & " * Author: Thomas Wilkerling"
+  & ASCII.LF
+  & " * Licence: Apache-2.0"
+  & ASCII.LF
+  & " * https://github.com/nextapps-de/flexsearch"
+  & ASCII.LF
+  & " */"
+  & ASCII.LF
+  & "(function _f(self){'use strict';try{if(module)self=module}catch(e){}self._factory=_f;var"
+  & " t;function u(a){return""undefined""!==typeof a?a:!0}function aa(a){const b=Array(a);for(l"
+  & "et c=0;c<a;c++)b[c]=v();return b}function v(){return Object.create(null)}function ba(a,b"
+  & "){return b.length-a.length}function x(a){return""string""===typeof a}function C(a){return"""
+  & "object""===typeof a}function D(a){return""function""===typeof a};function ca(a,b){var c=da;"
+  & "if(a&&(b&&(a=E(a,b)),this.H&&(a=E(a,this.H)),this.J&&1<a.length&&(a=E(a,this.J)),c||""""=="
+  & "=c)){a=a.split(c);if(this.filter){b=this.filter;c=a.length;const d=[];for(let e=0,f=0;e<"
+  & "c;e++){const g=a[e];g&&!b[g]&&(d[f++]=g)}a=d}return a}return a}const da=/[\p{Z}\p{S}\p{P"
+  & "}\p{C}]+/u,ea=/[\u0300-\u036f]/g;"
+  & ASCII.LF
+  & "function fa(a,b){const c=Object.keys(a),d=c.length,e=[];let f="""",g=0;for(let h=0,k,m;h<d"
+  & ";h++)k=c[h],(m=a[k])?(e[g++]=F(b?""(?!\\b)""+k+""(\\b|_)"":k),e[g++]=m):f+=(f?""|"":"""")+k;f&&("
+  & "e[g++]=F(b?""(?!\\b)(""+f+"")(\\b|_)"":""(""+f+"")""),e[g]="""");return e}function E(a,b){for(let "
+  & "c=0,d=b.length;c<d&&(a=a.replace(b[c],b[c+1]),a);c+=2);return a}function F(a){return new"
+  & " RegExp(a,""g"")}function ha(a){let b="""",c="""";for(let d=0,e=a.length,f;d<e;d++)(f=a[d])!=="
+  & "c&&(b+=c=f);return b};var ja={encode:ia,F:!1,G:""""};function ia(a){return ca.call(this,("""
+  & """+a).toLowerCase(),!1)};const ka={},G={};function la(a){I(a,""add"");I(a,""append"");I(a,""se"
+  & "arch"");I(a,""update"");I(a,""remove"")}function I(a,b){a[b+""Async""]=function(){const c=this,"
+  & "d=arguments;var e=d[d.length-1];let f;D(e)&&(f=e,delete d[d.length-1]);e=new Promise(fun"
+  & "ction(g){setTimeout(function(){c.async=!0;const h=c[b].apply(c,d);c.async=!1;g(h)})});re"
+  & "turn f?(e.then(f),this):e}};function ma(a,b,c,d){const e=a.length;let f=[],g,h,k=0;d&&(d"
+  & "=[]);for(let m=e-1;0<=m;m--){const n=a[m],w=n.length,q=v();let r=!g;for(let l=0;l<w;l++)"
+  & "{const p=n[l],z=p.length;if(z)for(let B=0,A,y;B<z;B++)if(y=p[B],g){if(g[y]){if(!m)if(c)c"
+  & "--;else if(f[k++]=y,k===b)return f;if(m||d)q[y]=1;r=!0}if(d&&(A=(h[y]||0)+1,h[y]=A,A<e))"
+  & "{const H=d[A-2]||(d[A-2]=[]);H[H.length]=y}}else q[y]=1}if(d)g||(h=q);else if(!r)return["
+  & "];g=q}if(d)for(let m=d.length-1,n,w;0<=m;m--){n=d[m];w=n.length;for(let q=0,r;q<w;q++)if"
+  & "(r="
+  & ASCII.LF
+  & "n[q],!g[r]){if(c)c--;else if(f[k++]=r,k===b)return f;g[r]=1}}return f}function na(a,b){c"
+  & "onst c=v(),d=v(),e=[];for(let f=0;f<a.length;f++)c[a[f]]=1;for(let f=0,g;f<b.length;f++)"
+  & "{g=b[f];for(let h=0,k;h<g.length;h++)k=g[h],c[k]&&!d[k]&&(d[k]=1,e[e.length]=k)}return e"
+  & "};function J(a){this.l=!0!==a&&a;this.cache=v();this.h=[]}function oa(a,b,c){C(a)&&(a=a."
+  & "query);let d=this.cache.get(a);d||(d=this.search(a,b,c),this.cache.set(a,d));return d}J."
+  & "prototype.set=function(a,b){if(!this.cache[a]){var c=this.h.length;c===this.l?delete thi"
+  & "s.cache[this.h[c-1]]:c++;for(--c;0<c;c--)this.h[c]=this.h[c-1];this.h[0]=a}this.cache[a]"
+  & "=b};J.prototype.get=function(a){const b=this.cache[a];if(this.l&&b&&(a=this.h.indexOf(a)"
+  & ")){const c=this.h[a-1];this.h[a-1]=this.h[a];this.h[a]=c}return b};const qa={memory:{cha"
+  & "rset:""latin:extra"",D:3,B:4,m:!1},performance:{D:3,B:3,s:!1,context:{depth:2,D:1}},match:"
+  & "{charset:""latin:extra"",G:""reverse""},score:{charset:""latin:advanced"",D:20,B:3,context:{de"
+  & "pth:3,D:9}},""default"":{}};function ra(a,b,c,d,e,f,g){setTimeout(function(){const h=a(c?c"
+  & "+"".""+d:d,JSON.stringify(g));h&&h.then?h.then(function(){b.export(a,b,c,e,f+1)}):b.export"
+  & "(a,b,c,e,f+1)})};function K(a,b){if(!(this instanceof K))return new K(a);var c;if(a){x(a"
+  & ")?a=qa[a]:(c=a.preset)&&(a=Object.assign({},c[c],a));c=a.charset;var d=a.lang;x(c)&&(-1="
+  & "==c.indexOf("":"")&&(c+="":default""),c=G[c]);x(d)&&(d=ka[d])}else a={};let e,f,g=a.context|"
+  & "|{};this.encode=a.encode||c&&c.encode||ia;this.register=b||v();this.D=e=a.resolution||9;"
+  & "this.G=b=c&&c.G||a.tokenize||""strict"";this.depth=""strict""===b&&g.depth;this.l=u(g.bidire"
+  & "ctional);this.s=f=u(a.optimize);this.m=u(a.fastupdate);this.B=a.minlength||1;this.C="
+  & ASCII.LF
+  & "a.boost;this.map=f?aa(e):v();this.A=e=g.resolution||1;this.h=f?aa(e):v();this.F=c&&c.F||"
+  & "a.rtl;this.H=(b=a.matcher||d&&d.H)&&fa(b,!1);this.J=(b=a.stemmer||d&&d.J)&&fa(b,!0);if(c"
+  & "=b=a.filter||d&&d.filter){c=b;d=v();for(let h=0,k=c.length;h<k;h++)d[c[h]]=1;c=d}this.fi"
+  & "lter=c;this.cache=(b=a.cache)&&new J(b)}t=K.prototype;t.append=function(a,b){return this"
+  & ".add(a,b,!0)};"
+  & ASCII.LF
+  & "t.add=function(a,b,c,d){if(b&&(a||0===a)){if(!d&&!c&&this.register[a])return this.update"
+  & "(a,b);b=this.encode(b);if(d=b.length){const m=v(),n=v(),w=this.depth,q=this.D;for(let r="
+  & "0;r<d;r++){let l=b[this.F?d-1-r:r];var e=l.length;if(l&&e>=this.B&&(w||!n[l])){var f=L(q"
+  & ",d,r),g="""";switch(this.G){case ""full"":if(2<e){for(f=0;f<e;f++)for(var h=e;h>f;h--)if(h-f"
+  & ">=this.B){var k=L(q,d,r,e,f);g=l.substring(f,h);M(this,n,g,k,a,c)}break}case ""reverse"":i"
+  & "f(1<e){for(h=e-1;0<h;h--)g=l[h]+g,g.length>=this.B&&M(this,n,"
+  & ASCII.LF
+  & "g,L(q,d,r,e,h),a,c);g=""""}case ""forward"":if(1<e){for(h=0;h<e;h++)g+=l[h],g.length>=this.B"
+  & "&&M(this,n,g,f,a,c);break}default:if(this.C&&(f=Math.min(f/this.C(b,l,r)|0,q-1)),M(this,"
+  & "n,l,f,a,c),w&&1<d&&r<d-1)for(e=v(),g=this.A,f=l,h=Math.min(w+1,d-r),e[f]=1,k=1;k<h;k++)i"
+  & "f((l=b[this.F?d-1-r-k:r+k])&&l.length>=this.B&&!e[l]){e[l]=1;const p=this.l&&l>f;M(this,"
+  & "m,p?f:l,L(g+(d/2>g?0:1),d,r,h-1,k-1),a,c,p?l:f)}}}}this.m||(this.register[a]=1)}}return "
+  & "this};"
+  & ASCII.LF
+  & "function L(a,b,c,d,e){return c&&1<a?b+(d||0)<=a?c+(e||0):(a-1)/(b+(d||0))*(c+(e||0))+1|0"
+  & ":0}function M(a,b,c,d,e,f,g){let h=g?a.h:a.map;if(!b[c]||g&&!b[c][g])a.s&&(h=h[d]),g?(b="
+  & "b[c]||(b[c]=v()),b[g]=1,h=h[g]||(h[g]=v())):b[c]=1,h=h[c]||(h[c]=[]),a.s||(h=h[d]||(h[d]"
+  & "=[])),f&&h.includes(e)||(h[h.length]=e,a.m&&(a=a.register[e]||(a.register[e]=[]),a[a.len"
+  & "gth]=h))}"
+  & ASCII.LF
+  & "t.search=function(a,b,c){c||(!b&&C(a)?(c=a,a=c.query):C(b)&&(c=b));let d=[],e;let f,g=0;"
+  & "if(c){a=c.query||a;b=c.limit;g=c.offset||0;var h=c.context;f=c.suggest}if(a&&(a=this.enc"
+  & "ode(""""+a),e=a.length,1<e)){c=v();var k=[];for(let n=0,w=0,q;n<e;n++)if((q=a[n])&&q.lengt"
+  & "h>=this.B&&!c[q])if(this.s||f||this.map[q])k[w++]=q,c[q]=1;else return d;a=k;e=a.length}"
+  & "if(!e)return d;b||(b=100);h=this.depth&&1<e&&!1!==h;c=0;let m;h?(m=a[0],c=1):1<e&&a.sort"
+  & "(ba);for(let n,w;c<e;c++){w=a[c];h?(n=sa(this,d,f,b,g,2===e,w,"
+  & ASCII.LF
+  & "m),f&&!1===n&&d.length||(m=w)):n=sa(this,d,f,b,g,1===e,w);if(n)return n;if(f&&c===e-1){k"
+  & "=d.length;if(!k){if(h){h=0;c=-1;continue}return d}if(1===k)return ta(d[0],b,g)}}return m"
+  & "a(d,b,g,f)};"
+  & ASCII.LF
+  & "function sa(a,b,c,d,e,f,g,h){let k=[],m=h?a.h:a.map;a.s||(m=ua(m,g,h,a.l));if(m){let n=0"
+  & ";const w=Math.min(m.length,h?a.A:a.D);for(let q=0,r=0,l,p;q<w;q++)if(l=m[q])if(a.s&&(l=u"
+  & "a(l,g,h,a.l)),e&&l&&f&&(p=l.length,p<=e?(e-=p,l=null):(l=l.slice(e),e=0)),l&&(k[n++]=l,f"
+  & "&&(r+=l.length,r>=d)))break;if(n){if(f)return ta(k,d,0);b[b.length]=k;return}}return!c&&"
+  & "k}function ta(a,b,c){a=1===a.length?a[0]:[].concat.apply([],a);return c||a.length>b?a.sl"
+  & "ice(c,c+b):a}"
+  & ASCII.LF
+  & "function ua(a,b,c,d){c?(d=d&&b>c,a=(a=a[d?b:c])&&a[d?c:b]):a=a[b];return a}t.contain=fun"
+  & "ction(a){return!!this.register[a]};t.update=function(a,b){return this.remove(a).add(a,b)"
+  & "};"
+  & ASCII.LF
+  & "t.remove=function(a,b){const c=this.register[a];if(c){if(this.m)for(let d=0,e;d<c.length"
+  & ";d++)e=c[d],e.splice(e.indexOf(a),1);else N(this.map,a,this.D,this.s),this.depth&&N(this"
+  & ".h,a,this.A,this.s);b||delete this.register[a];if(this.cache){b=this.cache;for(let d=0,e"
+  & ",f;d<b.h.length;d++)f=b.h[d],e=b.cache[f],e.includes(a)&&(b.h.splice(d--,1),delete b.cac"
+  & "he[f])}}return this};"
+  & ASCII.LF
+  & "function N(a,b,c,d,e){let f=0;if(a.constructor===Array)if(e)b=a.indexOf(b),-1!==b?1<a.le"
+  & "ngth&&(a.splice(b,1),f++):f++;else{e=Math.min(a.length,c);for(let g=0,h;g<e;g++)if(h=a[g"
+  & "])f=N(h,b,c,d,e),d||f||delete a[g]}else for(let g in a)(f=N(a[g],b,c,d,e))||delete a[g];"
+  & "return f}t.searchCache=oa;"
+  & ASCII.LF
+  & "t.export=function(a,b,c,d,e){let f,g;switch(e||(e=0)){case 0:f=""reg"";if(this.m){g=v();fo"
+  & "r(let h in this.register)g[h]=1}else g=this.register;break;case 1:f=""cfg"";g={doc:0,opt:t"
+  & "his.s?1:0};break;case 2:f=""map"";g=this.map;break;case 3:f=""ctx"";g=this.h;break;default:r"
+  & "eturn}ra(a,b||this,c,f,d,e,g);return!0};t.import=function(a,b){if(b)switch(x(b)&&(b=JSON"
+  & ".parse(b)),a){case ""cfg"":this.s=!!b.opt;break;case ""reg"":this.m=!1;this.register=b;break"
+  & ";case ""map"":this.map=b;break;case ""ctx"":this.h=b}};la(K.prototype);function va(a){a=a.da"
+  & "ta;var b=self._index;const c=a.args;var d=a.task;switch(d){case ""init"":d=a.options||{};a"
+  & "=a.factory;b=d.encode;d.cache=!1;b&&0===b.indexOf(""function"")&&(d.encode=Function(""retur"
+  & "n ""+b)());a?(Function(""return ""+a)()(self),self._index=new self.FlexSearch.Index(d),dele"
+  & "te self.FlexSearch):self._index=new K(d);break;default:a=a.id,b=b[d].apply(b,c),postMess"
+  & "age(""search""===d?{id:a,msg:b}:{id:a})}};let wa=0;function O(a){if(!(this instanceof O))r"
+  & "eturn new O(a);var b;a?D(b=a.encode)&&(a.encode=b.toString()):a={};(b=(self||window)._fa"
+  & "ctory)&&(b=b.toString());const c=""undefined""===typeof window&&self.exports,d=this;this.o"
+  & "=xa(b,c,a.worker);this.h=v();if(this.o){if(c)this.o.on(""message"",function(e){d.h[e.id](e"
+  & ".msg);delete d.h[e.id]});else this.o.onmessage=function(e){e=e.data;d.h[e.id](e.msg);del"
+  & "ete d.h[e.id]};this.o.postMessage({task:""init"",factory:b,options:a})}}P(""add"");P(""append"
+  & """);P(""search"");"
+  & ASCII.LF
+  & "P(""update"");P(""remove"");function P(a){O.prototype[a]=O.prototype[a+""Async""]=function(){c"
+  & "onst b=this,c=[].slice.call(arguments);var d=c[c.length-1];let e;D(d)&&(e=d,c.splice(c.l"
+  & "ength-1,1));d=new Promise(function(f){setTimeout(function(){b.h[++wa]=f;b.o.postMessage("
+  & "{task:a,id:wa,args:c})})});return e?(d.then(e),this):d}}"
+  & ASCII.LF
+  & "function xa(a,b,c){let d;try{d=b?eval('new (require(""worker_threads"")[""Worker""])(""../dis"
+  & "t/node/node.js"")'):a?new Worker(URL.createObjectURL(new Blob([""onmessage=""+va.toString()"
+  & "],{type:""text/javascript""}))):new Worker(x(c)?c:""worker/worker.js"",{type:""module""})}catc"
+  & "h(e){}return d};function Q(a){if(!(this instanceof Q))return new Q(a);var b=a.document||"
+  & "a.doc||a,c;this.K=[];this.h=[];this.A=[];this.register=v();this.key=(c=b.key||b.id)&&S(c"
+  & ",this.A)||""id"";this.m=u(a.fastupdate);this.C=(c=b.store)&&!0!==c&&[];this.store=c&&v();t"
+  & "his.I=(c=b.tag)&&S(c,this.A);this.l=c&&v();this.cache=(c=a.cache)&&new J(c);a.cache=!1;t"
+  & "his.o=a.worker;this.async=!1;c=v();let d=b.index||b.field||b;x(d)&&(d=[d]);for(let e=0,f"
+  & ",g;e<d.length;e++)f=d[e],x(f)||(g=f,f=f.field),g=C(g)?Object.assign({},a,g):a,"
+  & ASCII.LF
+  & "this.o&&(c[f]=new O(g),c[f].o||(this.o=!1)),this.o||(c[f]=new K(g,this.register)),this.K"
+  & "[e]=S(f,this.A),this.h[e]=f;if(this.C)for(a=b.store,x(a)&&(a=[a]),b=0;b<a.length;b++)thi"
+  & "s.C[b]=S(a[b],this.A);this.index=c}function S(a,b){const c=a.split("":"");let d=0;for(let "
+  & "e=0;e<c.length;e++)a=c[e],0<=a.indexOf(""[]"")&&(a=a.substring(0,a.length-2))&&(b[d]=!0),a"
+  & "&&(c[d++]=a);d<c.length&&(c.length=d);return 1<d?c:c[0]}function T(a,b){if(x(b))a=a[b];e"
+  & "lse for(let c=0;a&&c<b.length;c++)a=a[b[c]];return a}"
+  & ASCII.LF
+  & "function U(a,b,c,d,e){a=a[e];if(d===c.length-1)b[e]=a;else if(a)if(a.constructor===Array"
+  & ")for(b=b[e]=Array(a.length),e=0;e<a.length;e++)U(a,b,c,d,e);else b=b[e]||(b[e]=v()),e=c["
+  & "++d],U(a,b,c,d,e)}function V(a,b,c,d,e,f,g,h){if(a=a[g])if(d===b.length-1){if(a.construc"
+  & "tor===Array){if(c[d]){for(b=0;b<a.length;b++)e.add(f,a[b],!0,!0);return}a=a.join("" "")}e."
+  & "add(f,a,h,!0)}else if(a.constructor===Array)for(g=0;g<a.length;g++)V(a,b,c,d,e,f,g,h);el"
+  & "se g=b[++d],V(a,b,c,d,e,f,g,h)}t=Q.prototype;"
+  & ASCII.LF
+  & "t.add=function(a,b,c){C(a)&&(b=a,a=T(b,this.key));if(b&&(a||0===a)){if(!c&&this.register"
+  & "[a])return this.update(a,b);for(let d=0,e,f;d<this.h.length;d++)f=this.h[d],e=this.K[d],"
+  & "x(e)&&(e=[e]),V(b,e,this.A,0,this.index[f],a,e[0],c);if(this.I){let d=T(b,this.I),e=v();"
+  & "x(d)&&(d=[d]);for(let f=0,g,h;f<d.length;f++)if(g=d[f],!e[g]&&(e[g]=1,h=this.l[g]||(this"
+  & ".l[g]=[]),!c||!h.includes(a)))if(h[h.length]=a,this.m){const k=this.register[a]||(this.r"
+  & "egister[a]=[]);k[k.length]=h}}if(this.store&&(!c||!this.store[a])){let d;"
+  & ASCII.LF
+  & "if(this.C){d=v();for(let e=0,f;e<this.C.length;e++)f=this.C[e],x(f)?d[f]=b[f]:U(b,d,f,0,"
+  & "f[0])}this.store[a]=d||b}}return this};t.append=function(a,b){return this.add(a,b,!0)};t"
+  & ".update=function(a,b){return this.remove(a).add(a,b)};"
+  & ASCII.LF
+  & "t.remove=function(a){C(a)&&(a=T(a,this.key));if(this.register[a]){for(var b=0;b<this.h.l"
+  & "ength&&(this.index[this.h[b]].remove(a,!this.o),!this.m);b++);if(this.I&&!this.m)for(let"
+  & " c in this.l){b=this.l[c];const d=b.indexOf(a);-1!==d&&(1<b.length?b.splice(d,1):delete "
+  & "this.l[c])}this.store&&delete this.store[a];delete this.register[a]}return this};"
+  & ASCII.LF
+  & "t.search=function(a,b,c,d){c||(!b&&C(a)?(c=a,a=""""):C(b)&&(c=b,b=0));let e=[],f=[],g,h,k,"
+  & "m,n,w,q=0;if(c)if(c.constructor===Array)k=c,c=null;else{a=c.query||a;k=(g=c.pluck)||c.in"
+  & "dex||c.field;m=c.tag;h=this.store&&c.enrich;n=""and""===c.bool;b=c.limit||b||100;w=c.offse"
+  & "t||0;if(m&&(x(m)&&(m=[m]),!a)){for(let l=0,p;l<m.length;l++)if(p=ya.call(this,m[l],b,w,h"
+  & "))e[e.length]=p,q++;return q?e:[]}x(k)&&(k=[k])}k||(k=this.h);n=n&&(1<k.length||m&&1<m.l"
+  & "ength);const r=!d&&(this.o||this.async)&&[];for(let l=0,p,z,B;l<"
+  & ASCII.LF
+  & "k.length;l++){let A;z=k[l];x(z)||(A=z,z=A.field,a=A.query||a,b=A.limit||b);if(r)r[l]=thi"
+  & "s.index[z].searchAsync(a,b,A||c);else{d?p=d[l]:p=this.index[z].search(a,b,A||c);B=p&&p.l"
+  & "ength;if(m&&B){const y=[];let H=0;n&&(y[0]=[p]);for(let X=0,pa,R;X<m.length;X++)if(pa=m["
+  & "X],B=(R=this.l[pa])&&R.length)H++,y[y.length]=n?[R]:R;H&&(p=n?ma(y,b||100,w||0):na(p,y),"
+  & "B=p.length)}if(B)f[q]=z,e[q++]=p;else if(n)return[]}}if(r){const l=this;return new Promi"
+  & "se(function(p){Promise.all(r).then(function(z){p(l.search(a,b,"
+  & ASCII.LF
+  & "c,z))})})}if(!q)return[];if(g&&(!h||!this.store))return e[0];for(let l=0,p;l<f.length;l+"
+  & "+){p=e[l];p.length&&h&&(p=za.call(this,p));if(g)return p;e[l]={field:f[l],result:p}}retu"
+  & "rn e};function ya(a,b,c,d){let e=this.l[a],f=e&&e.length-c;if(f&&0<f){if(f>b||c)e=e.slic"
+  & "e(c,c+b);d&&(e=za.call(this,e));return{tag:a,result:e}}}function za(a){const b=Array(a.l"
+  & "ength);for(let c=0,d;c<a.length;c++)d=a[c],b[c]={id:d,doc:this.store[d]};return b}t.cont"
+  & "ain=function(a){return!!this.register[a]};t.get=function(a){return this.store[a]};"
+  & ASCII.LF
+  & "t.set=function(a,b){this.store[a]=b;return this};t.searchCache=oa;t.export=function(a,b,"
+  & "c,d,e){e||(e=0);d||(d=0);if(d<this.h.length){const f=this.h[d],g=this.index[f];b=this;se"
+  & "tTimeout(function(){g.export(a,b,e?f:"""",d,e++)||(d++,e=1,b.export(a,b,f,d,e))})}else{let"
+  & " f,g;switch(e){case 1:f=""tag"";g=this.l;break;case 2:f=""store"";g=this.store;break;default"
+  & ":return}ra(a,this,c,f,d,e,g)}};"
+  & ASCII.LF
+  & "t.import=function(a,b){if(b)switch(x(b)&&(b=JSON.parse(b)),a){case ""tag"":this.l=b;break;"
+  & "case ""reg"":this.m=!1;this.register=b;for(let d=0,e;d<this.h.length;d++)e=this.index[this"
+  & ".h[d]],e.register=b,e.m=!1;break;case ""store"":this.store=b;break;default:a=a.split(""."");"
+  & "const c=a[0];a=a[1];c&&a&&this.index[c].import(a,b)}};la(Q.prototype);var Ba={encode:Aa,"
+  & "F:!1,G:""""};const Ca=[F(""[\u00e0\u00e1\u00e2\u00e3\u00e4\u00e5]""),""a"",F(""[\u00e8\u00e9\u0"
+  & "0ea\u00eb]""),""e"",F(""[\u00ec\u00ed\u00ee\u00ef]""),""i"",F(""[\u00f2\u00f3\u00f4\u00f5\u00f6\"
+  & "u0151]""),""o"",F(""[\u00f9\u00fa\u00fb\u00fc\u0171]""),""u"",F(""[\u00fd\u0177\u00ff]""),""y"",F("""
+  & "\u00f1""),""n"",F(""[\u00e7c]""),""k"",F(""\u00df""),""s"",F("" & ""),"" and ""];function Aa(a){var b=a"
+  & "=""""+a;b.normalize&&(b=b.normalize(""NFD"").replace(ea,""""));return ca.call(this,b.toLowerCa"
+  & "se(),!a.normalize&&Ca)};var Ea={encode:Da,F:!1,G:""strict""};const Fa=/[^a-z0-9]+/,Ga={b:"""
+  & "p"",v:""f"",w:""f"",z:""s"",x:""s"",""\u00df"":""s"",d:""t"",n:""m"",c:""k"",g:""k"",j:""k"",q:""k"",i:""e"",y:""e"","
+  & "u:""o""};function Da(a){a=Aa.call(this,a).join("" "");const b=[];if(a){const c=a.split(Fa),d"
+  & "=c.length;for(let e=0,f,g=0;e<d;e++)if((a=c[e])&&(!this.filter||!this.filter[a])){f=a[0]"
+  & ";let h=Ga[f]||f,k=h;for(let m=1;m<a.length;m++){f=a[m];const n=Ga[f]||f;n&&n!==k&&(h+=n,"
+  & "k=n)}b[g++]=h}}return b};var Ia={encode:Ha,F:!1,G:""""};const Ja=[F(""ae""),""a"",F(""oe""),""o"","
+  & "F(""sh""),""s"",F(""th""),""t"",F(""ph""),""f"",F(""pf""),""f"",F(""(?![aeo])h(?![aeo])""),"""",F(""(?!^[aeo]"
+  & ")h(?!^[aeo])""),""""];function Ha(a,b){a&&(a=Da.call(this,a).join("" ""),2<a.length&&(a=E(a,J"
+  & "a)),b||(1<a.length&&(a=ha(a)),a&&(a=a.split("" ""))));return a||[]};var La={encode:Ka,F:!1"
+  & ",G:""""};const Ma=F(""(?!\\b)[aeo]"");function Ka(a){a&&(a=Ha.call(this,a,!0),1<a.length&&(a"
+  & "=a.replace(Ma,"""")),1<a.length&&(a=ha(a)),a&&(a=a.split("" "")));return a||[]};G[""latin:def"
+  & "ault""]=ja;G[""latin:simple""]=Ba;G[""latin:balance""]=Ea;G[""latin:advanced""]=Ia;G[""latin:ext"
+  & "ra""]=La;const W=self;let Y;const Z={Index:K,Document:Q,Worker:O,registerCharset:function"
+  & "(a,b){G[a]=b},registerLanguage:function(a,b){ka[a]=b}};(Y=W.define)&&Y.amd?Y([],function"
+  & "(){return Z}):W.exports?W.exports=Z:W.FlexSearch=Z;}(this));"
+  & ASCII.LF
+  & ASCII.LF
+  & "</script>"
   & ASCII.LF
   & "<script>"
   & ASCII.LF
@@ -552,12 +4444,306 @@ package Adacovex.Dashboard_Template is
   & "#'+id);}catch(e){}try{localStorage.setItem('adacovex-tab',id);}catch(e){}};var init=null"
   & ";try{init=location.hash.replace('#','');}catch(e){}if(!init)try{init=localStorage.getIte"
   & "m('adacovex-tab');}catch(e){}if(init && document.getElementById('tab-'+init))showTab(ini"
-  & "t);var f=document.getElementById('dep-filter');if(f){f.addEventListener('input',function"
-  & "(){var q=f.value.toLowerCase(),nodes=document.querySelectorAll('.dep-node');nodes.forEac"
-  & "h(function(n){var txt=n.getAttribute('data-name')||'';n.style.display=txt.indexOf(q)===-"
-  & "1&&q!==''?'none':'';});});}window.expandDeps=function(o){document.querySelectorAll('.dep"
-  & "-node details').forEach(function(d){d.open=o;});};window.filterDeps=function(){var e=doc"
-  & "ument.getElementById('dep-filter');if(e)e.dispatchEvent(new Event('input'));};})();"
+  & "t);window.filterByScope=function(){"
+  & ASCII.LF
+  & "  var showBase=document.getElementById('filter-base') ? document.getElementById('filter-"
+  & "base').checked : true;"
+  & ASCII.LF
+  & "  var showDev=document.getElementById('filter-dev') ? document.getElementById('filter-de"
+  & "v').checked : true;"
+  & ASCII.LF
+  & "  var showTrans=document.getElementById('filter-transitive') ? document.getElementById('"
+  & "filter-transitive').checked : true;"
+  & ASCII.LF
+  & "  var showVend=document.getElementById('filter-vendored') ? document.getElementById('fil"
+  & "ter-vendored').checked : true;"
+  & ASCII.LF
+  & "  var q=(document.getElementById('dep-filter') ? document.getElementById('dep-filter').v"
+  & "alue.toLowerCase() : '');"
+  & ASCII.LF
+  & "  document.querySelectorAll('.dep-node').forEach(function(n){"
+  & ASCII.LF
+  & "    var scope=n.getAttribute('data-scope')||'transitive';"
+  & ASCII.LF
+  & "    var name=(n.getAttribute('data-name')||'').toLowerCase();"
+  & ASCII.LF
+  & "    var ok=true;"
+  & ASCII.LF
+  & "    if(scope==='base' && !showBase) ok=false;"
+  & ASCII.LF
+  & "    else if(scope==='dev' && !showDev) ok=false;"
+  & ASCII.LF
+  & "    else if(scope==='transitive' && !showTrans) ok=false;"
+  & ASCII.LF
+  & "    else if(scope==='vendored' && !showVend) ok=false;"
+  & ASCII.LF
+  & "    if(q && name.indexOf(q)===-1) ok=false;"
+  & ASCII.LF
+  & "    n.style.display= ok ? '' : 'none';"
+  & ASCII.LF
+  & "  });"
+  & ASCII.LF
+  & "  // Re-render diagram if visible"
+  & ASCII.LF
+  & "  if(document.getElementById('dep-nomnoml-view') && document.getElementById('dep-nomnoml"
+  & "-view').style.display !== 'none'){"
+  & ASCII.LF
+  & "    try{ renderNomnoml(); }catch(e){}"
+  & ASCII.LF
+  & "  }"
+  & ASCII.LF
+  & "};"
+  & ASCII.LF
+  & "var f=document.getElementById('dep-filter');if(f){f.addEventListener('input',function(){"
+  & " window.filterByScope(); });}window.expandDeps=function(o){document.querySelectorAll('.d"
+  & "ep-node details').forEach(function(d){d.open=o;});};"
+  & ASCII.LF
+  & "window.switchDepView=function(view){"
+  & ASCII.LF
+  & "  document.querySelectorAll('.dep-view-switch button').forEach(function(b){b.classList.t"
+  & "oggle('active', b.getAttribute('data-view')===view);});"
+  & ASCII.LF
+  & "  document.getElementById('dep-tree-view').style.display = view==='tree' ? '' : 'none';"
+  & ASCII.LF
+  & "  document.getElementById('dep-nomnoml-view').style.display = view==='nomnoml' ? '' : 'n"
+  & "one';"
+  & ASCII.LF
+  & "  if(view==='nomnoml') renderNomnoml();"
+  & ASCII.LF
+  & "  try{localStorage.setItem('adacovex-dep-view',view);}catch(e){}"
+  & ASCII.LF
+  & "};"
+  & ASCII.LF
+  & "window.downloadNomnoml=function(){"
+  & ASCII.LF
+  & "  var c=document.getElementById('nomnoml-canvas');"
+  & ASCII.LF
+  & "  if(!c) return;"
+  & ASCII.LF
+  & "  var a=document.createElement('a');"
+  & ASCII.LF
+  & "  a.href=c.toDataURL('image/png');"
+  & ASCII.LF
+  & "  a.download='adacovex-deps.png';"
+  & ASCII.LF
+  & "  a.click();"
+  & ASCII.LF
+  & "};"
+  & ASCII.LF
+  & "// Graph data injected by Ada"
+  & ASCII.LF
+  & "var ADACOVEX_GRAPH=__GRAPH_JSON__;"
+  & ASCII.LF
+  & "// FlexSearch index built from graph + packages"
+  & ASCII.LF
+  & "var flexIdx=null;"
+  & ASCII.LF
+  & "try{"
+  & ASCII.LF
+  & "  if(typeof FlexSearch!=='undefined' && FlexSearch.Index){"
+  & ASCII.LF
+  & "    flexIdx=new FlexSearch.Index({tokenize:'forward'});"
+  & ASCII.LF
+  & "    if(ADACOVEX_GRAPH && ADACOVEX_GRAPH.dependencies){"
+  & ASCII.LF
+  & "      ADACOVEX_GRAPH.dependencies.forEach(function(dep,i){ flexIdx.add(i, dep.name+' '+d"
+  & "ep.version+' '+dep.scope); });"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & "    document.querySelectorAll('.dep-node').forEach(function(n,i){"
+  & ASCII.LF
+  & "      var name=n.getAttribute('data-name')||'';"
+  & ASCII.LF
+  & "      try{ flexIdx.add(10000+i, name);}catch(e){}"
+  & ASCII.LF
+  & "    });"
+  & ASCII.LF
+  & "  }"
+  & ASCII.LF
+  & "}catch(e){}"
+  & ASCII.LF
+  & "function renderNomnoml(){"
+  & ASCII.LF
+  & "  try{"
+  & ASCII.LF
+  & "    if(typeof nomnoml==='undefined' || !ADACOVEX_GRAPH) return;"
+  & ASCII.LF
+  & "    var deps=ADACOVEX_GRAPH.dependencies||[];"
+  & ASCII.LF
+  & "    // Respect scope filters (same checkboxes as tree view)"
+  & ASCII.LF
+  & "    var showBase=document.getElementById('filter-base') ? document.getElementById('filte"
+  & "r-base').checked : true;"
+  & ASCII.LF
+  & "    var showDev=document.getElementById('filter-dev') ? document.getElementById('filter-"
+  & "dev').checked : true;"
+  & ASCII.LF
+  & "    var showTrans=document.getElementById('filter-transitive') ? document.getElementById"
+  & "('filter-transitive').checked : true;"
+  & ASCII.LF
+  & "    var showVend=document.getElementById('filter-vendored') ? document.getElementById('f"
+  & "ilter-vendored').checked : true;"
+  & ASCII.LF
+  & "    function scopeOk(s){ if(s==='base') return showBase; if(s==='dev') return showDev; i"
+  & "f(s==='transitive') return showTrans; if(s==='vendored') return showVend; return true; }"
+  & ASCII.LF
+  & "    var filtered=deps.filter(function(d){ return scopeOk(d.scope||'transitive'); });"
+  & ASCII.LF
+  & "    var lines=['#direction: right','#[<hidden> root]'];"
+  & ASCII.LF
+  & "    var byScope={base:[],dev:[],transitive:[],vendored:[]};"
+  & ASCII.LF
+  & "    filtered.forEach(function(d){"
+  & ASCII.LF
+  & "      var scope=d.scope||'transitive';"
+  & ASCII.LF
+  & "      if(!byScope[scope]) byScope[scope]=[];"
+  & ASCII.LF
+  & "      byScope[scope].push(d);"
+  & ASCII.LF
+  & "    });"
+  & ASCII.LF
+  & "    // Build nomnoml source: edges parent->child, skipping hidden parents/children"
+  & ASCII.LF
+  & "    var src='#.box: fill=#fff8dc\n#.arrow: fill=#333\n';"
+  & ASCII.LF
+  & "    src += '[<box> adacovex]\n';"
+  & ASCII.LF
+  & "    filtered.forEach(function(d){"
+  & ASCII.LF
+  & "      if(d.parent===0 || d.kind==='root') return;"
+  & ASCII.LF
+  & "      var parent = deps[d.parent-1] || deps[0];"
+  & ASCII.LF
+  & "      if(parent && !scopeOk(parent.scope||'transitive')) return;"
+  & ASCII.LF
+  & "      var pName = parent ? parent.name : 'root';"
+  & ASCII.LF
+  & "      src += '['+pName+']-->[ '+d.name+' ]\n';"
+  & ASCII.LF
+  & "    });"
+  & ASCII.LF
+  & "    // Add legend"
+  & ASCII.LF
+  & "    src += '\n[<note> Legend: base=alire.toml, dev=alire-dev.toml, vendored=.adacovex/pa"
+  & "tches]\n';"
+  & ASCII.LF
+  & "    var canvas=document.getElementById('nomnoml-canvas');"
+  & ASCII.LF
+  & "    if(canvas) nomnoml.draw(canvas, src);"
+  & ASCII.LF
+  & "  }catch(e){ console.warn('nomnoml render failed',e); }"
+  & ASCII.LF
+  & "}"
+  & ASCII.LF
+  & "var _origShowTab=window.showTab;"
+  & ASCII.LF
+  & "window.showTab=function(id){"
+  & ASCII.LF
+  & "  _origShowTab(id);"
+  & ASCII.LF
+  & "  if(id==='deps'){"
+  & ASCII.LF
+  & "    var v=null; try{v=localStorage.getItem('adacovex-dep-view');}catch(e){}"
+  & ASCII.LF
+  & "    if(v==='nomnoml') switchDepView('nomnoml');"
+  & ASCII.LF
+  & "  }"
+  & ASCII.LF
+  & "};"
+  & ASCII.LF
+  & "(function(){"
+  & ASCII.LF
+  & "  var v=null; try{v=localStorage.getItem('adacovex-dep-view');}catch(e){}"
+  & ASCII.LF
+  & "  if(v==='nomnoml') setTimeout(function(){switchDepView('nomnoml');}, 300);"
+  & ASCII.LF
+  & "})();"
+  & ASCII.LF
+  & "// Global search with FlexSearch"
+  & ASCII.LF
+  & "var gs=document.getElementById('global-search');"
+  & ASCII.LF
+  & "var sh=document.getElementById('search-hits');"
+  & ASCII.LF
+  & "if(gs && sh){"
+  & ASCII.LF
+  & "  gs.addEventListener('input', function(){"
+  & ASCII.LF
+  & "    var q=gs.value.trim().toLowerCase();"
+  & ASCII.LF
+  & "    sh.innerHTML='';"
+  & ASCII.LF
+  & "    if(!q){ sh.classList.remove('active'); return; }"
+  & ASCII.LF
+  & "    var results=[];"
+  & ASCII.LF
+  & "    // Try FlexSearch first"
+  & ASCII.LF
+  & "    try{"
+  & ASCII.LF
+  & "      if(flexIdx){"
+  & ASCII.LF
+  & "        var ids=flexIdx.search(q, {limit:20});"
+  & ASCII.LF
+  & "        ids.forEach(function(id){"
+  & ASCII.LF
+  & "          var dep = ADACOVEX_GRAPH.dependencies[id];"
+  & ASCII.LF
+  & "          if(dep) results.push(dep.name+' ('+dep.scope+')');"
+  & ASCII.LF
+  & "        });"
+  & ASCII.LF
+  & "      }"
+  & ASCII.LF
+  & "    }catch(e){}"
+  & ASCII.LF
+  & "    // Fallback: filter dep nodes"
+  & ASCII.LF
+  & "    if(results.length===0){"
+  & ASCII.LF
+  & "      document.querySelectorAll('.dep-node').forEach(function(n){"
+  & ASCII.LF
+  & "        var name=(n.getAttribute('data-name')||'').toLowerCase();"
+  & ASCII.LF
+  & "        if(name.indexOf(q)!==-1) results.push(name);"
+  & ASCII.LF
+  & "      });"
+  & ASCII.LF
+  & "      results=results.slice(0,20);"
+  & ASCII.LF
+  & "    }"
+  & ASCII.LF
+  & "    if(results.length===0){ sh.classList.remove('active'); return; }"
+  & ASCII.LF
+  & "    results.forEach(function(r){"
+  & ASCII.LF
+  & "      var div=document.createElement('div');"
+  & ASCII.LF
+  & "      div.className='search-hit';"
+  & ASCII.LF
+  & "      div.textContent=r;"
+  & ASCII.LF
+  & "      div.onclick=function(){ gs.value=r; sh.classList.remove('active'); switchDepView('"
+  & "tree'); document.getElementById('dep-filter').value=r; document.getElementById('dep-filt"
+  & "er').dispatchEvent(new Event('input')); showTab('deps'); };"
+  & ASCII.LF
+  & "      sh.appendChild(div);"
+  & ASCII.LF
+  & "    });"
+  & ASCII.LF
+  & "    sh.classList.add('active');"
+  & ASCII.LF
+  & "  });"
+  & ASCII.LF
+  & "  gs.addEventListener('blur', function(){ setTimeout(function(){ sh.classList.remove('ac"
+  & "tive'); }, 200); });"
+  & ASCII.LF
+  & "}"
+  & ASCII.LF
+  & "window.filterDeps=function(){var e=document.getElementById('dep-filter');if(e)e.dispatch"
+  & "Event(new Event('input'));};})();"
   & ASCII.LF
   & "</script>"
   & ASCII.LF

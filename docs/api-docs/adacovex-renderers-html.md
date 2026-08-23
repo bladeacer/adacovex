@@ -21,6 +21,17 @@ HLR-RENDER-HTML: HTML dashboard and JSON API
 
 **Returns:** HTML fragment with the chart cards.
 
+### function Render_Charts (Doc_Metrics : Adacovex.Types.Docstring_Metrics; Proof : Adacovex.Types.Proof_Summary; Tests : Adacovex.Types.Implementation.Test_Summary; Graph : Adacovex.Types.Implementation.Component_Vectors.Vector) return Standard.String `[Post]` `[Global]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `Doc_Metrics` | Docstring coverage metrics. |
+| `Graph` | Dependency graph for scope pie (empty = skip scope chart). |
+| `Proof` | GNATprove proof summary. |
+| `Tests` | Test result summary. |
+
+**Returns:** HTML fragment with the chart cards.
+
 ### function Render_Dashboard (Doc_Metrics : Adacovex.Types.Docstring_Metrics; Proof : Adacovex.Types.Proof_Summary; Tests : Adacovex.Types.Implementation.Test_Summary; DAL_Assess : Adacovex.Types.Implementation.DAL_Assessment; Packages : Adacovex.Types.Implementation.Package_Vectors.Vector; Graph : Adacovex.Types.Implementation.Component_Vectors.Vector; All_Standards : Standard.Boolean; Theme : Adacovex.Types.Dashboard_Theme) return Standard.String `[Post]` `[Global]`
 
 | Parameter | Description |

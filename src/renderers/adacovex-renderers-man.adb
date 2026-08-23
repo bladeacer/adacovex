@@ -2,6 +2,7 @@ with Ada.Directories;
 with Ada.Environment_Variables;
 with Ada.Strings.Fixed;
 with Ada.Text_IO;
+with Adacovex.Config;
 with GNAT.OS_Lib;
 
 package body Adacovex.Renderers.Man is
@@ -145,112 +146,166 @@ package body Adacovex.Renderers.Man is
          & "fossil, or jj");
       App (Buf, Len, "repositories.");
       App (Buf, Len, ".SH OPTIONS");
-      App_Option
-        (Buf,
-         Len,
-         "--target=PATH",
-         "Target project root directory (default: current " & "directory).");
-      App_Option
-        (Buf,
-         Len,
-         "--manifest=PATH",
-         "Override the target project manifest file.");
-      App_Option
-        (Buf,
-         Len,
-         "--dal=LEVEL",
-         "DO-178C DAL level A|B|C|D|E (default: C; also the shared "
-         & "rigor tier).");
-      App_Option
-        (Buf,
-         Len,
-         "--asil=LEVEL",
-         "ISO 26262 level A|B|C|D|QM (sets the standard and tier).");
-      App_Option
-        (Buf,
-         Len,
-         "--class=LEVEL",
-         "IEC 62304 safety class A|B|C (sets the standard and " & "tier).");
-      App_Option
-        (Buf,
-         Len,
-         "--standard=NAME",
-         "do178c | iso26262 | iec62304 | all (default: do178c).");
-      App_Option
-        (Buf,
-         Len,
-         "--serve / --port=N / --theme=NAME",
-         "Start the HTTP dashboard on port N (default 8080).  "
-         & "Standard-aware: defaults to all standards.  --theme=NAME sets"
-         & " the initial color theme (system | light | dark); the header"
-         & " dropdown switches live and the Save settings button persists"
-         & " the choice in localStorage (no cookies).  Theme priority on"
-         & " page load: ?theme= query param, then an explicit --theme=light"
-         & " / dark, then the saved choice, then the system preference."
-         & "  GET /api/metrics serves the JSON API"
-         & " (curl http://localhost:8080/api/metrics).");
-      App_Option
-        (Buf,
-         Len,
-         "--emit-svg=PATH / --no-svg",
-         "Write SVG badges to a directory (default "
-         & "<target>/docs/badges) or suppress them.");
-      App_Option
-        (Buf,
-         Len,
-         "--emit-markdown=PATH",
-         "Write VERIFICATION.md and TRACE.md into a directory.");
-      App_Option
-        (Buf,
-         Len,
-         "--skip-dir=NAME / --relaxed",
-         "Add a directory to the relaxed-mode skip list, or disable "
-         & "strict mode.");
-      App_Option
-        (Buf,
-         Len,
-         "--cache / --no-cache",
-         "Enable (default) or disable the on-disk result cache.");
-      App_Option
-        (Buf,
-         Len,
-         "--cache-dir=PATH / --cache-max=N",
-         "Relocate the result cache or cap its entry count.");
-      App_Option
-        (Buf,
-         Len,
-         "--compare-base=REF",
-         "Differential mode: compare against a base revision "
-         & "(git/hg/svn/fossil/jj) and report the VC/DAL delta.");
-      App_Option
-        (Buf,
-         Len,
-         "--coverage-delta=REF",
-         "Docstring-coverage gate: exit non-zero if current "
-         & "coverage is below the base revision.");
-      App_Option
-        (Buf,
-         Len,
-         "--require-spark=LVL",
-         "CI gate: fail loudly if SPARK level < LVL (Stone..Platinum).");
-      App_Option
-        (Buf,
-         Len,
-         "--require-docstrings=PCT",
-         "CI gate: fail loudly if docstring coverage < PCT% (0-100).");
-      App_Option
-        (Buf,
-         Len,
-         "--require-tests=N",
-         "CI gate: fail loudly if passing test count < N.");
-      App_Option
-        (Buf,
-         Len,
-         "--require-proof=PCT",
-         "CI gate: fail loudly if proved-VC coverage < PCT% (0-100).");
-      App_Option
-        (Buf, Len, "--version", "Print the bundled version and exit.");
-      App_Option (Buf, Len, "--help", "Show the full usage message and exit.");
+      --  Single source of truth: derive the option list from
+      --  Config.Flag_List (the same Known_Flags that drives
+      --  --help and shell completion), so the man page never drifts
+      --  from the binary.  Descriptions are mapped centrally here;
+      --  adding a flag to Known_Flags automatically adds a .TP entry
+      --  (with a fallback generic line) even before a bespoke
+      --  description is added.
+      declare
+         Flags : constant String := Adacovex.Config.Flag_List;
+         Start : Positive := Flags'First;
+         Fin   : Natural;
+
+         function Desc_For (Flag : String) return String is
+         begin
+            if Flag = "target" then
+               return
+                 "Target project root directory (default: current directory).";
+            elsif Flag = "manifest" then
+               return "Override the target project manifest file.";
+            elsif Flag = "dal" then
+               return
+                 "DO-178C DAL level A|B|C|D|E (default: C; also the shared rigor tier).";
+            elsif Flag = "asil" then
+               return
+                 "ISO 26262 level A|B|C|D|QM (sets the standard and tier).";
+            elsif Flag = "class" then
+               return
+                 "IEC 62304 safety class A|B|C (sets the standard and tier).";
+            elsif Flag = "standard" then
+               return "do178c | iso26262 | iec62304 | all (default: do178c).";
+            elsif Flag = "serve" then
+               return
+                 "Start the HTTP dashboard on port N "
+                 & "(default 8080). Standard-aware: defaults to all "
+                 & "standards. Also see --port/--theme.";
+            elsif Flag = "theme" then
+               return
+                 "Dashboard theme: light | dark | system (default: system; only with --serve).";
+            elsif Flag = "port" then
+               return "HTTP server port for --serve (default: 8080).";
+            elsif Flag = "emit-svg" then
+               return
+                 "Write SVG badges to a directory (default <target>/docs/badges).";
+            elsif Flag = "no-svg" then
+               return "Suppress SVG badge output (overrides --emit-svg).";
+            elsif Flag = "emit-markdown" then
+               return "Write VERIFICATION.md and TRACE.md into a directory.";
+            elsif Flag = "emit-metrics" then
+               return
+                 "Write a JSON metrics + dependency graph export to a file.";
+            elsif Flag = "skip-dir" then
+               return
+                 "Add a directory to the relaxed-mode skip list (repeatable).";
+            elsif Flag = "relaxed" then
+               return "Disable strict mode (skip dirs, no patches).";
+            elsif Flag = "cache" then
+               return "Enable the on-disk result cache (default: on).";
+            elsif Flag = "no-cache" then
+               return "Disable the on-disk result cache (always re-scan).";
+            elsif Flag = "cache-dir" then
+               return "Relocate the result cache directory.";
+            elsif Flag = "cache-max" then
+               return "Cap the result cache entry count (default: 4096).";
+            elsif Flag = "compare-base" then
+               return
+                 "Differential mode: compare against a base "
+                 & "revision (git/hg/svn/fossil/jj) and report the "
+                 & "VC/DAL delta.";
+            elsif Flag = "coverage-delta" then
+               return
+                 "Docstring-coverage gate: exit non-zero if current coverage is below the base revision.";
+            elsif Flag = "verbose" then
+               return "Verbose diagnostics on stderr.";
+            elsif Flag = "no-sbom" then
+               return
+                 "Skip the automatic SBOM generated at the end of every assessment.";
+            elsif Flag = "sbom-format" or Flag = "format" then
+               return
+                 "SBOM format for the automatic SBOM: cyclonedx-json | spdx-json | md (default: cyclonedx-json).";
+            elsif Flag = "out" then
+               return
+                 "SBOM output path for the sbom subcommand (default: <target>/sbom.json).";
+            elsif Flag = "jobs" then
+               return "GNATprove parallelism -j N (default: auto).";
+            elsif Flag = "level" then
+               return "GNATprove proof effort 0-4.";
+            elsif Flag = "timeout" then
+               return "Per-check prover timeout in seconds.";
+            elsif Flag = "steps" then
+               return "Max proof steps (default: 10000).";
+            elsif Flag = "memlimit" then
+               return "Prover memory limit in MB.";
+            elsif Flag = "force" then
+               return
+                 "Force full gnatprove reanalysis and man page reinstall.";
+            elsif Flag = "no-loop-unrolling" then
+               return
+                 "Disable automatic loop unrolling (always on for prove; kept for compat).";
+            elsif Flag = "no-inlining" then
+               return "Disable contextual analysis inlining.";
+            elsif Flag = "suppress-warnings" then
+               return
+                 "Suppress GNATprove benign info messages (--suppress-warnings[=SETS]).";
+            elsif Flag = "quiet" then
+               return "Alias for --suppress-warnings (the default set).";
+            elsif Flag = "require-spark" then
+               return
+                 "CI gate: fail loudly if SPARK level < LVL (Stone..Platinum).";
+            elsif Flag = "require-docstrings" then
+               return
+                 "CI gate: fail loudly if docstring coverage < PCT% (0-100).";
+            elsif Flag = "require-tests" then
+               return "CI gate: fail loudly if passing test count < N.";
+            elsif Flag = "require-proof" then
+               return
+                 "CI gate: fail loudly if proved-VC coverage < PCT% (0-100).";
+            elsif Flag = "help" then
+               return "Show help and exit (also 'adacovex help <topic>').";
+            elsif Flag = "version" then
+               return "Print the bundled version and exit.";
+            elsif Flag = "sbom" then
+               return
+                 "Subcommand: generate a proof-aware SBOM (see also --sbom-format/--format/--out).";
+            elsif Flag = "prove" then
+               return
+                 "Subcommand: run GNATprove then assess (see --jobs/--level/...).";
+            elsif Flag = "status" then
+               return "Subcommand: report toolchain + platform status.";
+            elsif Flag = "completion" then
+               return
+                 "Subcommand: print shell completion script (bash/fish/zsh/pwsh).";
+            elsif Flag = "man" then
+               return
+                 "Subcommand: install the man page into the local man database.";
+            elsif Flag = "check" then
+               return
+                 "Man subcommand flag: --check exits 0 when installed page matches binary.";
+            elsif Flag = "dir" then
+               return
+                 "Man subcommand flag: --dir=PATH installs under PATH/man1.";
+            else
+               return "See --help for details.";
+            end if;
+         end Desc_For;
+
+      begin
+         while Start <= Flags'Last loop
+            Fin := Start;
+            while Fin <= Flags'Last and then Flags (Fin) /= ' ' loop
+               Fin := Fin + 1;
+            end loop;
+            declare
+               Flag : constant String := Flags (Start .. Fin - 1);
+            begin
+               App_Option (Buf, Len, "--" & Flag, Desc_For (Flag));
+            end;
+            exit when Fin > Flags'Last;
+            Start := Fin + 1;
+         end loop;
+      end;
       App (Buf, Len, ".SH MODES");
       App_Option
         (Buf,

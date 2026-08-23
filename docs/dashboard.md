@@ -57,28 +57,57 @@ Tabs are linkable: `http://localhost:8080/#deps` opens the Dependencies tab
 directly (also `?theme=light#proof` composes with the theme pin). The active
 tab is saved as `adacovex-tab` in `localStorage`.
 
-### Dependencies tab
+### Dependencies tab and alternative diagram
 
 The **Dependencies** tab visualises the resolved `alire.toml` / `alire.lock`
 graph that also powers the SBOM (`/api/deps` JSON, `sbom.json`). The server
 resolves the graph at `--serve` start (best-effort; an unresolvable graph
 shows an empty state with a link to `/api/deps`).
 
-- Collapsible tree via `<details>` (root open, children closed); **Expand
-  all / Collapse all** buttons.
+**Tree view** (default):
+
+- Collapsible tree via `<details>` (root open, children closed) with improved
+  text spacing (`line-height: 1.65`, `padding: 8px 12px`, `gap: 10px`,
+  `margin: 6px 0`); **Expand all / Collapse all** buttons.
 - **Filter** input (client-side, case-insensitive by name) hides non-matching
-  nodes.
+  nodes; four **scope checkboxes** (`base`, `dev`, `transitive`, `vendored`
+  -- all checked by default) hide whole scopes, so vendored and dev deps can
+  be distinguished and filtered where required.
 - Scope badges: `base` (alire.toml), `dev` (alire-dev.toml only),
   `transitive`, `vendored`; `root` badge for the project itself; child count
-  badge.
+  badge; `data-scope` attribute on each `<li>` for JS filtering.
 - Each node shows `name`, `version`, `license`, `purl` when available.
+
+**Diagram view** (alternative, toggle **Tree / Diagram**):
+
+- Rendered with vendored [nomnoml 1.7.0](https://github.com/skanaar/nomnoml)
+  (MIT, `resources/nomnoml.js`, 71 KB, inlined) in a
+  `<canvas id="nomnoml-canvas">` inside a `nomnoml-wrap` card.  `ADACOVEX_GRAPH`
+  (`__GRAPH_JSON__` injected by the Ada renderer) is converted to nomnoml
+  source (`[parent]-->[child]` edges, `#direction: right`, legend note) and
+  drawn via `nomnoml.draw(canvas, src)`.  Scope checkboxes filter the diagram
+  too (re-render on change).  Buttons **Re-render** and **Download PNG** are
+  provided; the view choice is persisted in `localStorage`
+  (`adacovex-dep-view`).
+
+**Global search** (header):
+
+- A search box in the header is powered by vendored
+  [FlexSearch 0.7.31](https://github.com/nextapps-de/flexsearch)
+  (Apache-2.0, `resources/flexsearch.js`, 16 KB, inlined).  At page load a
+  `FlexSearch.Index({tokenize:'forward'})` is hydrated from
+  `ADACOVEX_GRAPH.dependencies` and from rendered `data-name` attributes;
+  queries are served from the index with a DOM fallback, and hits are shown
+  in a `search-hits` dropdown that jumps to the Dependencies tab and seeds
+  the `dep-filter`.  Both bundles are inlined into the single-file dashboard
+  template so the dashboard stays offline-capable.
 
 The same data is available headlessly at `/api/deps` and via
 `--emit-metrics=PATH` (`{"metrics":..., "dependencies":...}`).
 
 ### Metrics charts
 
-The **Charts** tab renders four cards using the vendored
+The **Charts** tab renders six cards using the vendored
 [Charts.css](https://chartscss.org/) framework (v1.2.0, MIT, inlined into the
 page shell so the page stays self-contained). Bars now use correct `0..1`
 `--size` fractions (previously `0..100` caused overflow) and the donut shows
@@ -93,11 +122,17 @@ arc):
 - **Test Results by Category** -- bar chart of test counts per category
   (normalised to the largest category; previously every bar was `100%`).
 - **Docstring Coverage** -- bar of documented subprograms vs total.
+- **Tests Pass/Fail** -- *pie* of passed vs failed tests (new; previously
+  only the bar existed, so a single failure was easy to miss).
+- **Dependencies by Scope** -- *pie* of base / dev / transitive / vendored
+  components from the resolved graph (skipped when the graph is empty).
 
 No JavaScript is required for the charts themselves; they are pure CSS driven
 by `--size` / `--start` / `--end` and follow the active light/dark theme
 automatically. The surrounding grid (`chart-grid`) is responsive and the page
-container is `max-width:1180px` so large monitors do not stretch cards.
+container is `max-width:1180px` so large monitors do not stretch cards.  Pies
+are used where a part-to-whole distribution is the point; bars/columns where
+a max-normalised comparison across categories is the point.
 
 ## Standard-awareness
 
