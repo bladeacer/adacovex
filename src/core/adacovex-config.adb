@@ -94,6 +94,29 @@ package body Adacovex.Config is
         and then S (S'First + 2) in 'l' | 'L';
    end Is_All;
 
+   --  True when S names one of the four supported completion shells.
+   function Is_Completion_Shell (S : String) return Boolean is
+      Lower : String (1 .. 4) := (others => ' ');
+      Len   : Natural := 0;
+   begin
+      for I in S'Range loop
+         if Len < 4 then
+            Len := Len + 1;
+            if S (I) in 'A' .. 'Z' then
+               Lower (Len) :=
+                 Character'Val (Character'Pos (S (I)) + 32);
+            else
+               Lower (Len) := S (I);
+            end if;
+         end if;
+      end loop;
+      return
+        (Len = 4 and then Lower (1 .. 4) = "bash")
+        or else (Len = 4 and then Lower (1 .. 4) = "fish")
+        or else (Len = 3 and then Lower (1 .. 3) = "zsh")
+        or else (Len = 4 and then Lower (1 .. 4) = "pwsh");
+   end Is_Completion_Shell;
+
    procedure Set_String (Dst : out String; Dst_Len : out Natural; Src : String)
    is
    begin
@@ -211,10 +234,16 @@ package body Adacovex.Config is
      "target manifest dal asil class standard serve theme port "
      & "emit-svg no-svg emit-markdown emit-metrics verbose relaxed cache no-cache "
      & "cache-dir cache-max skip-dir compare-base coverage-delta sbom "
-     & "prove status man check dir version no-sbom sbom-format format out "
+     & "prove status completion man check dir version no-sbom sbom-format format out "
      & "jobs level timeout steps memlimit force no-loop-unrolling "
      & "no-inlining suppress-warnings quiet require-spark require-docstrings "
      & "require-tests require-proof help";
+
+   --  Expose the flag list for the shell-completion generator (see spec).
+   function Flag_List return String is
+   begin
+      return Known_Flags;
+   end Flag_List;
 
    --  Levenshtein edit distance between two strings, capped at 9 so the
    --  suggestion scan stays cheap (anything farther away is "not similar").
@@ -759,6 +788,34 @@ package body Adacovex.Config is
                   Cfg.Prove_Mode := True;
                elsif A = "status" then
                   Cfg.Status_Mode := True;
+               elsif A = "completion" then
+                  --  `completion [bash|fish|zsh|pwsh]`: the shell name is
+                  --  the next argument when it is one of the four known
+                  --  shells; without one, the default (bash) is used.
+                  Cfg.Completion_Mode := True;
+                  if I < Count and then Is_Completion_Shell (Args (I + 1))
+                  then
+                     Set_String
+                       (Cfg.Completion_Shell,
+                        Cfg.Completion_Shell_Len,
+                        Args (I + 1));
+                     I := I + 1;
+                  end if;
+               elsif Has_Prefix (A, "--completion=") then
+                  Cfg.Completion_Mode := True;
+                  Set_String
+                    (Cfg.Completion_Shell,
+                     Cfg.Completion_Shell_Len,
+                     A (A'First + 13 .. A'Last));
+               elsif A = "--completion" then
+                  Cfg.Completion_Mode := True;
+                  if I < Count and then Is_Completion_Shell (Args (I + 1)) then
+                     Set_String
+                       (Cfg.Completion_Shell,
+                        Cfg.Completion_Shell_Len,
+                        Args (I + 1));
+                     I := I + 1;
+                  end if;
                elsif A = "man" then
                   Cfg.Man_Mode := True;
                elsif A = "help" then
@@ -1477,6 +1534,8 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("  --emit-metrics=FILE   Write a JSON metrics + dependency export");
       Ada.Text_IO.Put_Line
+        ("  completion [SHELL]    Print a shell completion script (bash/fish/zsh/pwsh)");
+      Ada.Text_IO.Put_Line
         ("  --skip-dir=NAME       Add directory name to skip list (repeatable)");
       Ada.Text_IO.Put_Line
         ("  --relaxed             Disable strict mode (skip dirs, no patches); strict is default");
@@ -1915,13 +1974,25 @@ package body Adacovex.Config is
            ("--emit-metrics=FILE",
             "Write a JSON export of the assessment metrics and the resolved"
             & ASCII.LF
-            & "dependency graph to FILE: spark level and VC counts, test"
+            & "dependency graph to FILE (spark level and VCs, test totals,"
             & ASCII.LF
-            & "totals, docstring coverage, DAL status, per-standard levels,"
+            & "docstring coverage, DAL status, per-standard levels, and the"
             & ASCII.LF
-            & "and the dependency tree (name/version/scope/parent) -- the same"
+            & "dependency tree) -- the same data the served dashboard's"
             & ASCII.LF
-            & "data the served dashboard's /api/metrics + /api/deps expose.");
+            & "/api/metrics + /api/deps expose.");
+      elsif T = "completion" then
+         Print_Section
+           ("completion [bash|fish|zsh|pwsh]",
+            "Print a shell auto-completion script for adacovex (and the"
+            & ASCII.LF
+            & "covex alias) to stdout.  Pipe it into your shell's completion"
+            & ASCII.LF
+            & "setup, e.g.  adacovex completion bash >> ~/.bashrc.  The script"
+            & ASCII.LF
+            & "completes the live flag set (the same list the 'did you mean'"
+            & ASCII.LF
+            & "suggestion walks) plus the subcommands.");
       elsif T = "skip-dir" or else T = "relaxed" then
          Print_Section
            ("--skip-dir / --relaxed",
