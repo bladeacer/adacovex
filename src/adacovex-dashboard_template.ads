@@ -69,19 +69,48 @@ package Adacovex.Dashboard_Template is
   & "ine-block;transition:transform .15s;font-size:.8rem;color:var(--muted)}details[open]>sum"
   & "mary::before{transform:rotate(90deg)}.dep-badge{font-size:.72rem;padding:2px 7px;border-"
   & "radius:999px;border:1px solid var(--border);background:var(--th);white-space:nowrap}.dep"
-  & "-badge.scope-base{border-color:var(--accent);color:var(--accent)}.dep-badge.scope-dev{bo"
-  & "rder-color:#9c27b0;color:#9c27b0}.dep-badge.scope-transitive{color:var(--muted)}.dep-bad"
-  & "ge.scope-vendored{border-color:var(--fail);color:var(--fail)}.dep-meta{color:var(--muted"
-  & ");font-size:.8rem;word-break:break-all}.dep-view-switch{display:flex;gap:8px;margin:10px"
-  & " 0;flex-wrap:wrap}.dep-view-switch button.active{background:var(--accent);color:#fff;bor"
-  & "der-color:var(--accent)}.nomnoml-wrap{background:var(--card);border:1px solid var(--bord"
-  & "er);border-radius:10px;padding:12px;overflow:auto;min-height:200px}.nomnoml-wrap canvas{"
-  & "max-width:100%}.search-box{position:relative;flex:1 1 200px;min-width:180px;max-width:32"
-  & "0px}.search-hits{position:absolute;top:100%;left:0;right:0;background:var(--card);border"
-  & ":1px solid var(--border);border-radius:8px;margin-top:4px;max-height:240px;overflow:auto"
-  & ";z-index:10;display:none}.search-hits.active{display:block}.search-hit{padding:8px 12px;"
-  & "cursor:pointer;border-bottom:1px solid var(--border)}.search-hit:hover{background:var(--"
-  & "th)}.dep-empty{color:var(--muted);font-style:italic;padding:12px}"
+  & "-badge.scope-base{border-color:var(--scope-base);color:var(--scope-base);background:colo"
+  & "r-mix(in srgb, var(--scope-base) 10%, var(--th))}.dep-badge.scope-dev{border-color:var(-"
+  & "-scope-dev);color:var(--scope-dev)}.dep-badge.scope-transitive{border-color:var(--scope-"
+  & "trans);color:var(--scope-trans);background:color-mix(in srgb, var(--scope-trans) 10%, va"
+  & "r(--th))}.dep-badge.scope-vendored{border-color:var(--scope-vend);color:var(--scope-vend"
+  & ");background:color-mix(in srgb, var(--scope-vend) 10%, var(--th))}:root{--scope-base:var"
+  & "(--accent);--scope-dev:#9c27b0;--scope-trans:var(--muted);--scope-vend:var(--fail)}:root"
+  & "[data-theme=""dark""]{--scope-base:var(--accent);--scope-dev:#ce93d8;--scope-trans:#9aa0a6"
+  & "}.polar-wrap{display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:w"
+  & "rap}.polar{width:172px;height:172px;border-radius:50%;position:relative;flex-shrink:0}.p"
+  & "olar::after{content:"""";position:absolute;top:50%;left:50%;width:44%;height:44%;backgroun"
+  & "d:var(--card);border-radius:50%;transform:translate(-50%,-50%);z-index:1;pointer-events:"
+  & "none}.polar-legend{list-style:none;margin:0;padding:0;font-size:.85rem;color:var(--muted"
+  & ");display:flex;flex-direction:column;gap:5px}.polar-legend li{display:flex;align-items:c"
+  & "enter;gap:6px}.polar-legend i{width:10px;height:10px;border-radius:3px;background:var(--"
+  & "i);flex-shrink:0}.polar-legend b{color:var(--fg);font-weight:600;margin-left:auto}.dep-m"
+  & "eta{color:var(--muted);font-size:.8rem;word-break:break-all}.cb{position:relative;displa"
+  & "y:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:.85rem;user-select:non"
+  & "e}"
+  & ASCII.LF
+  & ".cb input{position:absolute;opacity:0;width:0;height:0}"
+  & ASCII.LF
+  & ".cb .box{width:16px;height:16px;border:1px solid var(--border);border-radius:4px;backgro"
+  & "und:var(--card);display:grid;place-items:center;flex-shrink:0;transition:background .15s"
+  & ",border-color .15s}"
+  & ASCII.LF
+  & ".cb input:checked + .box{background:var(--accent);border-color:var(--accent);color:#fff}"
+  & ASCII.LF
+  & ".cb input:focus-visible + .box{outline:2px solid var(--accent);outline-offset:2px}"
+  & ASCII.LF
+  & ".cb .icon{width:12px;height:12px;flex-shrink:0;color:var(--muted)}"
+  & ASCII.LF
+  & ".dep-view-switch{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}.dep-view-switch butt"
+  & "on.active{background:var(--accent);color:#fff;border-color:var(--accent)}.nomnoml-wrap{b"
+  & "ackground:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;ove"
+  & "rflow:auto;min-height:200px}.nomnoml-wrap canvas{max-width:100%}.search-box{position:rel"
+  & "ative;flex:1 1 200px;min-width:180px;max-width:320px}.search-hits{position:absolute;top:"
+  & "100%;left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:"
+  & "8px;margin-top:4px;max-height:240px;overflow:auto;z-index:10;display:none}.search-hits.a"
+  & "ctive{display:block}.search-hit{padding:8px 12px;cursor:pointer;border-bottom:1px solid "
+  & "var(--border)}.search-hit:hover{background:var(--th)}.dep-empty{color:var(--muted);font-"
+  & "style:italic;padding:12px}"
   & ASCII.LF
   & "/* Charts */"
   & ASCII.LF
@@ -90,11 +119,14 @@ package Adacovex.Dashboard_Template is
   & "-radius);padding:14px;box-shadow:0 1px 2px rgba(0,0,0,.06)}.chart-card h3{margin:0 0 6px"
   & ";font-size:.92rem}.charts-css{--color:#2e7d32;--color-2:#c62828;--color-1:#2e7d32;max-wi"
   & "dth:100%}.charts-css.bar{height:170px}.charts-css.column{height:200px}.charts-css.donut{"
-  & "height:200px;max-width:240px;margin:0 auto}.charts-css .data{color:var(--fg);font-weight"
-  & ":600;font-size:.82rem}.charts-css th{color:var(--muted);font-size:.78rem}@media (prefers"
-  & "-color-scheme:dark){.charts-css{--color:#81c784;--color-2:#ef5350}}:root[data-theme=""dar"
-  & "k""] .charts-css{--color:#81c784;--color-2:#ef5350}:root[data-theme=""light""] .charts-css{"
-  & "--color:#2e7d32;--color-2:#c62828}"
+  & "height:200px;max-width:240px;margin:0 auto;position:relative}.charts-css.pie.donut::afte"
+  & "r{content:"""";position:absolute;top:50%;left:50%;width:48%;height:48%;background:var(--ca"
+  & "rd);border-radius:50%;transform:translate(-50%,-50%);z-index:1;pointer-events:none}.char"
+  & "ts-css.pie.donut tbody{position:relative;z-index:0}.charts-css .data{color:var(--fg);fon"
+  & "t-weight:600;font-size:.82rem}.charts-css th{color:var(--muted);font-size:.78rem}@media "
+  & "(prefers-color-scheme:dark){.charts-css{--color:#81c784;--color-2:#ef5350}}:root[data-th"
+  & "eme=""dark""] .charts-css{--color:#81c784;--color-2:#ef5350}:root[data-theme=""light""] .cha"
+  & "rts-css{--color:#2e7d32;--color-2:#c62828}"
   & ASCII.LF
   & "/* Charts.css v1.2.0 (MIT) vendored; see resources/charts.min.css */"
   & ASCII.LF
@@ -578,9 +610,28 @@ package Adacovex.Dashboard_Template is
   & ASCII.LF
   & "<div id=""tab-charts"" class=""tab-panel""><div class=""chart-grid"">__CHARTS__</div></div>"
   & ASCII.LF
-  & "<p class=""footer"">Generated by adacovex &middot; Embed: append <code>?theme=light|dark|s"
-  & "ystem</code> to the URL to pin the theme &middot; Tabs: append <code>#proof</code> / <co"
-  & "de>#deps</code> etc. to link directly.</p>"
+  & "<footer class=""footer"" role=""contentinfo"">"
+  & ASCII.LF
+  & "<div style=""display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12"
+  & "px;text-align:left"">"
+  & ASCII.LF
+  & "<div><strong>adacovex</strong> v__VERSION__ &middot; <a href=""https://github.com/bladeac"
+  & "er/adacovex"">github.com/bladeacer/adacovex</a> &middot; &copy; 2026 bladeacer &middot; A"
+  & "pache-2.0</div>"
+  & ASCII.LF
+  & "<div>Credits: <a href=""https://chartscss.org"">Charts.css</a> MIT &middot; <a href=""https"
+  & "://github.com/skanaar/nomnoml"">nomnoml</a> MIT &middot; <a href=""https://github.com/next"
+  & "apps-de/flexsearch"">FlexSearch</a> Apache-2.0 &middot; <a href=""https://github.com/cytos"
+  & "cape/graphre"">graphre</a> MIT &mdash; see <a href=""https://github.com/bladeacer/adacovex"
+  & "/blob/main/docs/THIRD_PARTY_NOTICES.md"">THIRD_PARTY_NOTICES</a></div>"
+  & ASCII.LF
+  & "<div>Generated by adacovex &middot; Embed: <code>?theme=light|dark|system</code> &middot"
+  & "; Tabs: <code>#proof</code>/<code>#deps</code> &middot; API: <a href=""/api/metrics"">/api"
+  & "/metrics</a> &middot; <a href=""/api/deps"">/api/deps</a></div>"
+  & ASCII.LF
+  & "</div>"
+  & ASCII.LF
+  & "</footer>"
   & ASCII.LF
   & "<script>/* vendored graphre 0.1.3 MIT github.com/cytoscape/graphre - dagre wrapper for n"
   & "omnoml */"
@@ -5049,7 +5100,7 @@ package Adacovex.Dashboard_Template is
   & ASCII.LF
   & "    var filtered=deps.filter(function(d){ return scopeOk(d.scope||'transitive'); });"
   & ASCII.LF
-  & "    var lines=['#direction: right','#[<hidden> root]'];"
+  & "    var lines=['#direction: down','#[<hidden> root]'];"
   & ASCII.LF
   & "    var byScope={base:[],dev:[],transitive:[],vendored:[]};"
   & ASCII.LF
@@ -5065,7 +5116,10 @@ package Adacovex.Dashboard_Template is
   & ASCII.LF
   & "    // Build nomnoml source: edges parent->child, skipping hidden parents/children"
   & ASCII.LF
-  & "    var src='#.box: fill=#fff8dc\n#.arrow: fill=#333\n';"
+  & "    var cardBg=getComputedStyle(document.documentElement).getPropertyValue('--card').tri"
+  & "m()||'#fff';var fg=getComputedStyle(document.documentElement).getPropertyValue('--fg').t"
+  & "rim()||'#333';var src='#.box: fill='+cardBg+'\n#.arrow: fill='+fg+'\n#direction: down\n'"
+  & ";"
   & ASCII.LF
   & "    src += '[<box> adacovex]\n';"
   & ASCII.LF

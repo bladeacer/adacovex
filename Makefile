@@ -16,7 +16,7 @@ help:
 	@echo '    build         Build project (adacovex + test_runner, covex alias);'
 	@echo '                  regenerates src/adacovex_version_info.ads from'
 	@echo '                  alire-dev.toml (or ADACOVEX_VERSION for releases)'
-	@echo '    test          Build and run native test suite (886 tests)'
+	@echo '    test          Build and run native test suite (900 tests)'
 	@echo '    prove         Run SPARK proofs (gnatprove via prove subcommand,'
 	@echo '                  resolved from alire-dev.toml / PATH / cache / download)'
 	@echo '                  (also auto-regenerates SVG badges in docs/badges/)'
@@ -122,7 +122,7 @@ test: build
 # Self-assessment acceptance gates, defined once so prove/run-self/release stay
 # in sync (and match .github/workflows/ci.yml + AGENTS.md "Dogfood target").
 # --require-tests is the current native test-suite size (docs/test_result.md).
-SELF_ASSESS_ARGS := --dal=C --standard=all --require-spark=Platinum --require-docstrings=100 --require-tests=886 --require-proof=100
+SELF_ASSESS_ARGS := --dal=C --standard=all --require-spark=Platinum --require-docstrings=100 --require-tests=900 --require-proof=100
 
 prove: build
 	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex prove --target=. $(SELF_ASSESS_ARGS) --emit-svg=docs/badges/

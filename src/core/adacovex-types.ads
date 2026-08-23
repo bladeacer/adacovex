@@ -213,6 +213,8 @@ package Adacovex.Types is
          PURL_Len        : Natural := 0;
          Description     : Path_Field;
          Description_Len : Natural := 0;
+         Language        : Desc_Field;
+         Language_Len    : Natural := 0;
          Kind            : Component_Kind := Dependency_Component;
          Parent          : Natural := 0;
          From_GPR        : Boolean := False;

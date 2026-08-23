@@ -3,7 +3,7 @@
   "specVersion": "1.5",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-08-23T16:11:30",
+    "timestamp": "2026-08-23T17:06:31",
     "tools": [
       {"vendor": "bladeacer", "name": "adacovex", "version": "1.21.0"}
     ],
@@ -12,6 +12,7 @@
       "bom-ref": "pkg:alire/covex@1.21.0",
       "name": "covex",
       "version": "1.21.0",
+      "language": "Ada; Assembly; Python",
       "purl": "pkg:alire/covex@1.21.0",
       "licenses": [{"license": {"id": "Apache-2.0"}}],
       "description": "Ada/SPARK coverage, proof, multi-standard compliance tool",
@@ -23,6 +24,7 @@
       "type": "library",
       "bom-ref": "pkg:generic/flexsearch",
       "name": "flexsearch",
+      "language": "JavaScript",
       "purl": "pkg:generic/flexsearch",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "vendored"}]
       },
@@ -30,6 +32,7 @@
       "type": "library",
       "bom-ref": "pkg:generic/graphre",
       "name": "graphre",
+      "language": "JavaScript",
       "purl": "pkg:generic/graphre",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "vendored"}]
       },
@@ -37,6 +40,7 @@
       "type": "library",
       "bom-ref": "pkg:generic/nomnoml",
       "name": "nomnoml",
+      "language": "JavaScript",
       "purl": "pkg:generic/nomnoml",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "vendored"}]
       },
@@ -44,6 +48,7 @@
       "type": "library",
       "bom-ref": "pkg:generic/charts.min",
       "name": "charts.min",
+      "language": "CSS",
       "purl": "pkg:generic/charts.min",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "vendored"}]
       },
@@ -51,6 +56,7 @@
       "type": "library",
       "bom-ref": "pkg:alire/gnatprove",
       "name": "gnatprove",
+      "language": "Ada",
       "purl": "pkg:alire/gnatprove",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
       },
@@ -58,6 +64,7 @@
       "type": "library",
       "bom-ref": "pkg:alire/gnatdoc_bin",
       "name": "gnatdoc_bin",
+      "language": "Ada",
       "purl": "pkg:alire/gnatdoc_bin",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
       },
@@ -65,6 +72,7 @@
       "type": "library",
       "bom-ref": "pkg:alire/gnatformat_bin",
       "name": "gnatformat_bin",
+      "language": "Ada",
       "purl": "pkg:alire/gnatformat_bin",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
       },

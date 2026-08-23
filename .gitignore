@@ -11,6 +11,8 @@ alire.toml.bak
 gnatprove
 .lccst
 b__*
+*.o
+*.ali
 
 # Python artifacts
 __pycache__/
