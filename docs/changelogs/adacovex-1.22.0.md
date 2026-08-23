@@ -91,6 +91,49 @@ fallbacks.  The graph cache key hashes vendored trees and lockfiles too
 (`Vendored_Hash`), so adding/removing vendored code invalidates the cached
 graph.
 
+### C8: Dashboard resources modularised and minified at build time
+
+The single 190 KB `resources/dashboard.html` (CSS, four script bundles and
+page markup all interleaved) is now a **page skeleton** plus one file per
+concern: `resources/dashboard.css` (author styles), `resources/dashboard.js`
+(tabs, theme, searches, filters, dep-details popup) and the vendored
+`charts.min.css` / `graphre.js` / `nomnoml.js` / `flexsearch.js`.
+`tools/gen-dashboard.py` inlines the modules into `dashboard.html` at build
+time via `__STYLE_CUSTOM__` / `__STYLE_CHARTS__` / `__JS_*`
+placeholders and **minifies the author CSS/JS** (comments and whitespace
+stripped; vendored bundles are already minified and inlined byte-for-byte,
+license headers preserved).  `gen-dashboard.py --check` (wired into
+`make check`) fails when the committed generated spec drifts.
+
+### C9: Per-dependency detail panel with registry links
+
+Dependency names in the tree are now clickable and open an inline
+detail panel: name, version, scope, licence, PURL, parent, and a
+registry link derived from the PURL (`pkg:github` -> GitHub repo,
+`pkg:npm` -> npmjs, `pkg:cargo` -> crates.io, `pkg:pypi` -> PyPI,
+`pkg:golang` -> pkg.go.dev, `pkg:alire` -> alire.ada.dev, otherwise a
+GitHub search).  Licence and PURL text in the tree is colour-coded
+(`--lic` amber, `--purl` muted monospace) so vendored/uncommon licences
+stand out; `lang` is exposed in `/api/deps` JSON per component.
+
+### C10: Mini-visualisation atop every tab; separate but similar searches
+
+Each tab now leads with a small visual: Proof gets a VCs-proved/total
+column, Tests a pass/fail donut, Compliance an achievement radial gauge, and
+Dependencies a scope-distribution stacked bar with legend.  The header
+**global search** (FlexSearch index over packages/HLRs/deps) and the
+Dependencies tab **tree filter** (plain DOM filter over the rendered tree)
+are separate mechanisms sharing one styling class, so they look consistent
+but only a clicked global hit seeds the tree filter.
+
+### C11: SBOM language detection documented
+
+`docs/sbom.md` gains a Language detection section: manifest-declared
+ecosystems map to their canonical language (npm -> JavaScript, cargo ->
+Rust, go.mod -> Go, ...), Alire/GPR -> Ada, and everything else (vendored
+trees, resources, loose file drops) infers the top-3 languages from actual
+source-extension distribution.
+
 ## Fixes
 
 ### H1: Pie charts rendered as full circles; "covex1.21.0transitive" spacing
@@ -111,7 +154,9 @@ checks pin the language-agnostic vendored discovery: npm packages under
 `node_modules` register as `pkg:npm/...@version` (shallow), a mixed-language
 `vendor/` directory becomes one component whose `Language` lists the top-3
 source-extension languages, and loose files under a vendor root never become
-components.
+components.  The dashboard renderer test that pinned a stale template
+heading now pins the Credits tab content instead (the template was
+reorganised in this release).
 
 ## Proof Results
 
@@ -126,11 +171,14 @@ obligations.  0 unproved, 0 justified.  Re-verified with
 
 No new HLRs.  Coverage:
 
-   - `HLR-DASH` -- C1 chart variety/pie fix, C2 robustness radar + tier
-     rating, C3 footer, C4 nomnoml, C5 spacing/badges, C6 checkbox icons;
+   - `HLR-DASH` -- C1 chart variety/pie, C2 robustness radar + tier
+     rating, C3 footer, C4 nomnoml, C5 spacing/badges, C6 checkbox icons,
+     C8 resource modularisation + minify, C9 dep detail panel, C10 per-tab
+     minis + search separation;
    - `HLR-MANIFEST` / `HLR-SBOM` -- C7 language-agnostic vendored discovery
      and SBOM language fields.
    - `HLR-DOC` -- `Comp`/tier documentation in `docs/dashboard.md`;
-   - `HLR-SERVER` -- `__VERSION__` footer injection.
+   - `HLR-SERVER` -- `__VERSION__` footer injection; Credits tab;
+   - `HLR-SBOM` -- C11 language-detection documentation.
 
 See `docs/dashboard.md`, `docs/sbom.md`, `docs/THIRD_PARTY_NOTICES.md`.

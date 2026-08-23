@@ -33,10 +33,19 @@ serves requests until the process is interrupted (Ctrl-C).
 
 ![Dashboard Preview Image](../media/dashboard_preview.png)
 
-The page is a single self-contained document (CSS and the theme/tab script are
-inlined; no external assets), rendered from the bundled
-`resources/dashboard.html` template. Content is organised into **clickable
-tabs** (hash-routed, keyboard-accessible, persisted in `localStorage`):
+The page is a single self-contained document (no external assets), bundled
+into the binary from **modular resources** -- `resources/dashboard.html` is
+just the page skeleton; `resources/dashboard.css` (author styles),
+`resources/dashboard.js` (tabs, theme, search, filters, dep-details popup) and
+the vendored `charts.min.css` / `graphre.js` / `nomnoml.js` /
+`flexsearch.js` are inlined into it at build time by
+`tools/gen-dashboard.py`, which also **minifies** the author CSS/JS
+(comments and whitespace stripped; vendored files are already minified and
+inlined byte-for-byte).  Edit the individual `resources/` files, never the
+generated `src/adacovex-dashboard_template.ads`; `make build` regenerates it
+and `gen-dashboard.py --check` (wired into `make check`) fails when it
+drifts.  Content is organised into **clickable tabs** (hash-routed,
+keyboard-accessible, persisted in `localStorage`):
 
 - **Overview** -- status badges (live `/badge/*.svg` preview), source overview
   (packages scanned, subprograms, docstring %), and quick stats (SPARK level,
@@ -48,18 +57,28 @@ tabs** (hash-routed, keyboard-accessible, persisted in `localStorage`):
   See [Robustness tier](#robustness-tier) for how the rating is derived.
 - **Proof** -- the SPARK level (Stone..Platinum) and, per check category
   (flow, initialization, runtime, assertions, functional), total and proved
-  counts plus total VCs / proved VCs.
-- **Tests** -- every test category with count and Pass/Fail plus the total
-  (Passed / Failed).
-- **Compliance** -- target integrity level and overall `Achieved` / `Unmet`
+  counts plus a mini **VCs proved/total** column at the top of the tab.
+- **Tests** -- every test category with count and Pass/Fail plus a mini
+  **pass/fail donut** at the top of the tab.
+- **Compliance** -- a mini **achievement radial gauge** at the top, then the
+  target integrity level and overall `Achieved` / `Unmet`
   status, HLRs traced, orphan-tag state, whether tests pass, each unmet
   criterion, and the HLR traceability table (package -> tags).
-- **Dependencies** -- interactive dependency tree/graph (see below).
+- **Dependencies** -- a scope-distribution **stacked bar** at the top, then
+  an interactive dependency tree/graph (see below).
 - **Charts** -- Charts.css metrics (see below).
+- **Credits** -- third-party libraries used by the dashboard (Charts.css,
+  nomnoml, graphre, FlexSearch) with versions, licences, links and the
+  THIRD_PARTY_NOTICES pointer.
 
 Tabs are linkable: `http://localhost:8080/#deps` opens the Dependencies tab
 directly (also `?theme=light#proof` composes with the theme pin). The active
 tab is saved as `adacovex-tab` in `localStorage`.
+
+The page **footer** carries the copyright line (`(c) 2026 bladeacer`,
+Apache-2.0), the **repository link** (`github.com/bladeacer/adacovex`), the
+binary **version** (`v__VERSION__`, injected from `Adacovex.Version`) and
+short links to the third-party credits and the `/api/*` endpoints.
 
 ### Dependencies tab and alternative diagram
 
@@ -79,8 +98,18 @@ shows an empty state with a link to `/api/deps`).
   be distinguished and filtered where required.
 - Scope badges: `base` (alire.toml), `dev` (alire-dev.toml only),
   `transitive`, `vendored`; `root` badge for the project itself; child count
-  badge; `data-scope` attribute on each `<li>` for JS filtering.
-- Each node shows `name`, `version`, `license`, `purl` when available.
+  badge; `data-scope` attribute on each `<li>` for JS filtering.  Scope badge
+  colours come from `--scope-base/-dev/-trans/-vend` CSS variables so they
+  stay readable in both themes.
+- Each node shows `name`, `version`, `license`, `purl` when available; the
+  licence and PURL text are colour-coded (`--lic` amber, `--purl` muted
+  monospace) so vendored/uncommon licences stand out at a glance.
+- **Click a dependency name** to open an inline **detail panel** below the
+  node: name, version, scope, licence, PURL, parent, and a **registry link**
+  derived from the PURL (`pkg:github` -> GitHub repo, `pkg:npm` -> npmjs,
+  `pkg:cargo` -> crates.io, `pkg:pypi` -> PyPI, `pkg:golang` -> pkg.go.dev,
+  `pkg:alire` -> alire.ada.dev, otherwise a GitHub search URL).  Close via
+  the `close` chip or by clicking another dependency.
 
 **Diagram view** (alternative, toggle **Tree / Diagram**):
 
@@ -99,17 +128,20 @@ shows an empty state with a link to `/api/deps`).
   provided; the view choice is persisted in `localStorage`
   (`adacovex-dep-view`).
 
-**Global search** (header):
+**Two separate searches, similar styling** (per user request):
 
-- A search box in the header is powered by vendored
-  [FlexSearch 0.7.31](https://github.com/nextapps-de/flexsearch)
+- **Global search** (header, `#global-search`) is the site-wide index: it is
+  powered by vendored [FlexSearch 0.7.31](https://github.com/nextapps-de/flexsearch)
   (Apache-2.0, `resources/flexsearch.js`, 16 KB, inlined).  At page load a
   `FlexSearch.Index({tokenize:'forward'})` is hydrated from
   `ADACOVEX_GRAPH.dependencies` and from rendered `data-name` attributes;
   queries are served from the index with a DOM fallback, and hits are shown
-  in a `search-hits` dropdown that jumps to the Dependencies tab and seeds
-  the `dep-filter`.  Both bundles are inlined into the single-file dashboard
-  template so the dashboard stays offline-capable.
+  in a `search-hits` dropdown that jumps to the tree and seeds `dep-filter`.
+- **Tree filter** (`#dep-filter`, inside the Dependencies tab) is a plain
+  client-side name filter over the rendered tree only -- it never touches the
+  global index.  The two inputs share the same styling class so they look
+  consistent, but they are functionally independent (typing in one does not
+  affect the other until a global hit is clicked).
 
 The same data is available headlessly at `/api/deps` and via
 `--emit-metrics=PATH` (`{"metrics":..., "dependencies":...}`).

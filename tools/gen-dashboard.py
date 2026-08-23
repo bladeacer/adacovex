@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
-"""Generate src/adacovex-dashboard_template.ads from resources/dashboard.html.
+"""Generate src/adacovex-dashboard_template.ads from the modular dashboard
+resources under resources/ (an index.html shell plus one file per concern):
+split-out presentation (dashboard.css, vendored charts.min.css) and behaviour
+(dashboard.js, plus the vendored graphre.js / nomnoml.js / flexsearch.js).
 
 The --serve dashboard used to be written out line by line from Ada string
 literals, mixing HTML/CSS/JS with rendering logic.  The static page shell
 (doctype, CSS, header with the theme dropdown + Save settings button, footer
 with the embed hint, and the theme script) now lives in
-resources/dashboard.html, and this script bundles it into the binary at
-build time as a single String constant.
+resources/dashboard.html, and this script bundles it -- and the sibling
+resources/ modules it references via __STYLE_*__ / __JS_*__ placeholders --
+into the binary at build time as a single String constant.  The CSS and
+author JS are minified here (comments stripped, whitespace collapsed); the
+vendored files are already minified and are inlined byte-for-byte.
 
 Two placeholders are substituted at run time by
 Adacovex.Renderers.HTML.Render_Dashboard:
@@ -31,57 +37,224 @@ Usage:
 
 --check       Verify the generated file matches the template; exit 1 on
               mismatch (used by CI to fail loudly when the committed file
-              drifted from resources/dashboard.html).
---template    Template source path (default: resources/dashboard.html).
+              drifted from resources/).
+--template    Skeleton source path (default: resources/dashboard.html).
 --out         Output Ada spec path (default: src/adacovex-dashboard_template.ads).
 
-Exit code 0 on success, 1 on a missing template or a --check mismatch.
+Exit code 0 on success, 1 on a missing resource or a --check mismatch.
 """
 
 import argparse
 import sys
 from pathlib import Path
-from typing import List
+from typing import Dict, List
 
 ROOT: Path = Path(__file__).resolve().parent.parent
 
+# Placeholder -> module file, in insertion order.  The skeleton contains
+# exactly one occurrence of each placeholder.  $T is resolved relative to
+# the skeleton's directory so --template=DIR/dashboard.html works on any
+# checkout.
+MODULES: Dict[str, str] = {
+    "__STYLE_CUSTOM__": "dashboard.css",        # author CSS (minified at build)
+    "__STYLE_CHARTS__": "charts.min.css",       # vendored Charts.css (already minified)
+    "__JS_GRAPhRE__": "graphre.js",             # vendored (already minified)
+    "__JS_NOMMONL__": "nomnoml.js",             # vendored (already minified)
+    "__JS_FLEXSEARCH__": "flexsearch.js",       # vendored (already minified)
+    "__JS_APP__": "dashboard.js",               # author JS (minified at build)
+}
+
+
+def minify_css(source: str) -> str:
+    """Minify authored CSS: strip comments and collapse whitespace outside
+    string literals.  Conservative -- never touches the contents of quoted
+    strings (so url()/content: values are safe)."""
+    out: List[str] = []
+    i: int = 0
+    n: int = len(source)
+    in_str: str = ""
+    while i < n:
+        c: str = source[i]
+        if in_str:
+            out.append(c)
+            if c == "\\" and i + 1 < n:
+                out.append(source[i + 1])
+                i += 2
+                continue
+            if c == in_str:
+                in_str = ""
+            i += 1
+            continue
+        if source.startswith("/*", i):
+            end: int = source.find("*/", i + 2)
+            i = n if end < 0 else end + 2
+            continue
+        if c in "\"'":
+            in_str = c
+            out.append(c)
+            i += 1
+            continue
+        if c.isspace():
+            # collapse a run of whitespace to a single space
+            if out and not out[-1].isspace():
+                out.append(" ")
+            while i < n and source[i].isspace():
+                i += 1
+            continue
+        out.append(c)
+        i += 1
+    text: str = "".join(out)
+    # drop a space before/after the structural punctuation CSS ignores it at
+    text = text.replace(" {", "{").replace("{ ", "{")
+    text = text.replace(" }", "}").replace("} ", "}")
+    text = text.replace(" :", ":").replace(": ", ":")
+    text = text.replace(" ;", ";").replace("; ", ";")
+    text = text.replace(" ,", ",").replace(", ", ",")
+    text = text.replace(" >", ">").replace("> ", ">")
+    text = text.replace(" ~", "~").replace("~ ", "~")
+    text = text.replace(" +", "+").replace("+ ", "+")
+    text = text.replace("( ", "(").replace(" )", ")")
+    return text.strip()
+
+
+def minify_js(source: str) -> str:
+    """Minify authored JS: strip // and /* */ comments and leading
+    indentation while preserving newlines (ASI-safe).  String contents are
+    left untouched, including regex-literal-looking text."""
+    lines: List[str] = []
+    i: int = 0
+    n: int = len(source)
+    in_line_comment: bool = False
+    in_block_comment: bool = False
+    in_str: str = ""
+    buf: List[str] = []
+    j: int = 0
+
+    def flush_line() -> None:
+        nonlocal buf, j, in_line_comment
+        text: str = "".join(buf).rstrip()
+        if text:
+            lines.append(text)
+        buf = []
+        j += 1
+        in_line_comment = False
+
+    while i < n:
+        c: str = source[i]
+        if in_block_comment:
+            if source.startswith("*/", i):
+                in_block_comment = False
+                i += 2
+            else:
+                i += 1
+            continue
+        if in_line_comment:
+            if c == "\n":
+                flush_line()
+            i += 1
+            continue
+        if in_str:
+            buf.append(c)
+            if c == "\\" and i + 1 < n:
+                buf.append(source[i + 1])
+                i += 2
+                continue
+            if c == in_str:
+                in_str = ""
+            i += 1
+            continue
+        if c == "\n":
+            flush_line()
+            i += 1
+            continue
+        if c in "\"'":
+            in_str = c
+            buf.append(c)
+            i += 1
+            continue
+        if source.startswith("//", i):
+            in_line_comment = True
+            i += 2
+            continue
+        if source.startswith("/*", i):
+            in_block_comment = True
+            i += 2
+            continue
+        if c.isspace():
+            # collapse horizontal whitespace to a single space
+            if buf and not buf[-1].isspace():
+                buf.append(" ")
+            while i < n and source[i] in " \t":
+                i += 1
+            continue
+        buf.append(c)
+        i += 1
+    flush_line()
+    return "\n".join(lines).strip()
+
+
+def assemble(template: Path) -> str:
+    """Inline the resource modules into the skeleton, minifying the authored
+    CSS/JS; return the final page text (pure ASCII)."""
+    page: str = template.read_text(encoding="ascii")
+    base: Path = template.parent
+    minify: Dict[str, bool] = {
+        "__STYLE_CUSTOM__": True,
+        "__STYLE_CHARTS__": False,
+        "__JS_GRAPhRE__": False,
+        "__JS_NOMMONL__": False,
+        "__JS_FLEXSEARCH__": False,
+        "__JS_APP__": True,
+    }
+    for placeholder, mod in MODULES.items():
+        path: Path = base / mod
+        if not path.is_file():
+            raise FileNotFoundError(f"required module missing: {path}")
+        body: str = path.read_text(encoding="ascii")
+        if minify[placeholder]:
+            body = (
+                minify_css(body) if placeholder == "__STYLE_CUSTOM__" else minify_js(body)
+            )
+        if placeholder not in page:
+            raise ValueError(f"placeholder {placeholder} not found in skeleton")
+        page = page.replace(placeholder, body, 1)
+    return page
+
 
 def generate(out: Path, template: Path) -> None:
-    """Write the Ada package spec embedding the template as a constant."""
-    lines: List[str] = template.read_text(encoding="ascii").splitlines()
+    """Write the Ada package spec embedding the assembled page."""
+    page: str = assemble(template)
     # Ada string literals cannot span lines, and GNAT truncates over-long
-    # source lines (the style gate is -gnatyM120), so each template line is
-    # emitted as short quoted chunks joined with ` & `.  The emitted line is
-    # "  & \"<chunk>\"" (6 chars of scaffolding) or, on the first line,
-    # "   Template : constant String := \"<chunk>\"" (30 chars), so 88-char
-    # chunks keep every emitted line well under 120.  Source lines are
-    # joined with ASCII.LF (each keeps its own newline in the rendered
-    # page); no trailing line feed after the last line.
+    # source lines (the style gate is -gnatyM120), so each page line is
+    # emitted as short quoted chunks joined with ` & `.
     chunks: List[str] = []
-    for i, line in enumerate(lines):
+    for i, line in enumerate(page.split("\n")):
         chunk_max: int = 88
         for start in range(0, len(line), chunk_max):
             piece: str = line[start : start + chunk_max].replace('"', '""')
             chunks.append('"' + piece + '"')
-        if i < len(lines) - 1:
+        if i < page.count("\n"):
             chunks.append("ASCII.LF")
     body: str = "\n  & ".join(chunks)
 
     header: str = (
-        "--  Generated by tools/gen-dashboard.py from resources/dashboard.html.\n"
-        "--  Bundled dashboard page shell for --serve: the static HTML/CSS/JS\n"
+        "--  Generated by tools/gen-dashboard.py from resources/dashboard.html\n"
+        "--  plus the resources/ modules it inlines (dashboard.css,"
+        " charts.min.css,\n"
+        "--  dashboard.js, graphre.js, nomnoml.js, flexsearch.js) -- a single\n"
+        "--  bundled dashboard page shell for --serve: the static HTML/CSS/JS\n"
         "--  (dynamic metric cards are injected at the __CARDS__ placeholder by\n"
         "--  Adacovex.Renderers.HTML.Render_Dashboard, which also fills the\n"
         "--  __THEME__ placeholder with the initial dashboard theme).  Do not\n"
-        "--  edit by hand; edit resources/dashboard.html and run make build.\n"
+        "--  edit by hand; edit resources/ and run make build.\n"
     )
     out.write_text(
         header
         + "package Adacovex.Dashboard_Template is\n"
         + "\n"
-        + "   --  The full dashboard page shell.  __CARDS__ marks where the\n"
-        + "   --  dynamic card markup is injected; __THEME__ is replaced with\n"
-        + "   --  the initial theme (system / light / dark).\n"
+        + "   -- The full dashboard page shell.  __CARDS__ marks where the\n"
+        + "   -- dynamic card markup is injected; __THEME__ is replaced with\n"
+        + "   -- the initial theme (system / light / dark).\n"
         + "   Template : constant String :=\n"
         + body
         + ";\n"
@@ -90,20 +263,26 @@ def generate(out: Path, template: Path) -> None:
     )
 
 
+def build_page(template: Path) -> str:
+    """Build the fully-inlined page (used by --check to detect drift without
+    writing the Ada wrapper)."""
+    return assemble(template)
+
+
 def parse_args(argv: List[str]) -> argparse.Namespace:
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
-        description="Bundle resources/dashboard.html into an Ada string constant."
+        description="Bundle resources/ into an Ada string constant."
     )
     parser.add_argument(
         "--check",
         action="store_true",
-        help="verify the committed generated file matches the template",
+        help="verify the committed generated file matches the resources",
     )
     parser.add_argument(
         "--template",
         default=str(ROOT / "resources" / "dashboard.html"),
-        help="template source path (default: resources/dashboard.html)",
+        help="skeleton source path (default: resources/dashboard.html)",
     )
     parser.add_argument(
         "--out",
@@ -121,28 +300,22 @@ def main(argv: List[str]) -> int:
     if not template.is_file():
         print(f"error: template not found: {template}", file=sys.stderr)
         return 1
-    if args.check:
-        before: str = out.read_text(encoding="ascii") if out.is_file() else ""
+    if not args.check:
         generate(out, template)
-        after: str = out.read_text(encoding="ascii")
-        if before != after:
-            print(
-                f"error: {out.name} is stale -- run tools/gen-dashboard.py (or "
-                "make build) and commit the regenerated file.",
-                file=sys.stderr,
-            )
-            return 1
-        print(f"{out.name} is up to date.")
+        print(f"{out.name} regenerated.")
         return 0
     before: str = out.read_text(encoding="ascii") if out.is_file() else ""
     generate(out, template)
     after: str = out.read_text(encoding="ascii")
-    if before == after:
-        print(f"{out.name} up to date ({template.stat().st_size} bytes template)")
-        return 0
-    print(f"wrote {out.name} ({template.stat().st_size} bytes template)")
+    if before != after:
+        print(
+            f"error: {out.name} is stale -- run tools/gen-dashboard.py (or "
+            "make build) and commit the regenerated file.",
+            file=sys.stderr,
+        )
+        return 1
+    print(f"{out.name} is up to date.")
     return 0
-
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))

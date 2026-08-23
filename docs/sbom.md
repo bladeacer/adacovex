@@ -67,3 +67,36 @@ Both formats validate against the official
 [CycloneDX 1.5](https://github.com/CycloneDX/specification) and
 [SPDX 2.3](https://spdx.dev) JSON schemas (see
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)).
+## Language detection
+
+Every dependency component carries a `language` field (CycloneDX JSON /
+`components[].properties` under `"name": "adacovex:language"`, or
+`packageFileName`-adjacent note in SPDX/Markdown tables) describing the
+implementation language(s) of that dependency.  Detection follows the
+component's origin, most specific first:
+
+- **Manifest-declared ecosystems** (`package.json`, `Cargo.toml`, `go.mod`,
+  `pyproject.toml`, `composer.json`, `Gemfile`, ...) map directly onto their
+  language -- `pkg:npm` / `pkg:cargo` / `pkg:golang` / `pkg:pypi` components
+  report the ecosystem's canonical language ("JavaScript", "Rust", "Go",
+  "Python", "PHP", "Ruby").
+- **Alire/GPR components** (Ada ecosystem, `pkg:alire`) report "Ada".
+
+  For everything else -- vendored trees, `vendor/`, `node_modules`,
+  resources, loose source drops -- adacovex infers the language from the
+  **file extensions actually present** in that directory (`.ad[sb]` =>
+  "Ada", `.js` => "JavaScript", `.ts`, `.py`, `.rs`, `.go`, `.c`/`.h`,
+  `.cpp`/`.hpp`, `.java`, `.rb`, `.php`, `.swift`, `.kt`, `.sh`, `.md`).
+  A directory that mixes languages roughly evenly reports its **top 3**
+  languages by file count (e.g. `"C, C++, D"`), so a mixed-language vendored
+  drop is summarised by what it actually contains rather than by a single
+  guess.
+
+  The extension-based inference also covers individual loose files inside
+  `resources/`, `assets/`, and `.adacovex/patches/`, which are registered as
+  file-level components.
+
+The result shows up in the dashboard Dependency tab (per-dependency detail
+popup) and in every SBOM renderer: CycloneDX `components[].language`,
+SPDX/JSON `adacovex:language` property, and the Markdown table's
+`Language` column.

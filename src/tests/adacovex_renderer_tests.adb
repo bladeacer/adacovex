@@ -185,8 +185,8 @@ package body Adacovex_Renderer_Tests is
            (Contains (S, "data-initial-theme=""dark"""),
             "dashboard marks the CLI theme for the priority logic");
          R.Check
-           (Contains (S, "Coverage &amp; Verification"),
-            "dashboard bundles the template page shell");
+           (Contains (S, "Third-Party Credits"),
+            "dashboard bundles the template page shell (Credits tab)");
       end;
 
       --  Light_Theme marks the light option selected.
