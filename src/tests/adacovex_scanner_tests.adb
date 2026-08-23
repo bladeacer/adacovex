@@ -3,10 +3,12 @@ with Ada.Directories;
 with Adacovex.Types;
 use Adacovex.Types, Adacovex.Types.Implementation;
 with Adacovex.Parsers.Source;
+with Adacovex.CPUs;
 
 package body Adacovex_Scanner_Tests is
 
-   Tmp_Dir  : constant String := "/tmp/adacovex_scan_test";
+   Tmp_Dir  : constant String :=
+     Adacovex.CPUs.Get_Temp_Directory & "/adacovex_scan_test";
    Tmp_File : constant String := Tmp_Dir & "/test_pkg.ads";
 
    procedure Run (R : in out Adacovex.Test_Support.Runner'Class) is
@@ -744,8 +746,10 @@ package body Adacovex_Scanner_Tests is
       --  Relative_Path consumers such as Apply_Patches and HLR traceability.
       begin
          declare
-            Cache_A  : constant String := "/tmp/adacovex_scan_cache_a";
-            Cache_B  : constant String := "/tmp/adacovex_scan_cache_b";
+            Cache_A  : constant String :=
+              Adacovex.CPUs.Get_Temp_Directory & "/adacovex_scan_cache_a";
+            Cache_B  : constant String :=
+              Adacovex.CPUs.Get_Temp_Directory & "/adacovex_scan_cache_b";
             File_A   : constant String := Cache_A & "/pkg.ads";
             File_B   : constant String := Cache_B & "/pkg.ads";
             F        : File_Type;

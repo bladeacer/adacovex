@@ -12,6 +12,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - uses: alire-project/setup-alire@latest
+        with:
+          version: '2.1.1'
+          toolchain: 'gnat_native=16.1.0 gprbuild'
+          cache: true
       - name: Enforce complexity + file-size caps
         run: make complexity-check
 
@@ -26,7 +31,7 @@ jobs:
         with:
           target: .
           standard: all
-          gnat-version: 15.2.1
+          gnat-version: 16.1.0
           build: true
           coverage-delta: ${{ github.event.pull_request.base.sha }}
 

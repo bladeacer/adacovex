@@ -3,6 +3,7 @@ with Ada.Strings.Fixed;
 with GNAT.OS_Lib;
 with Adacovex.Test_Support;
 with Adacovex.Renderers.Man;
+with Adacovex.CPUs;
 
 package body Adacovex_Man_Tests is
 
@@ -13,7 +14,9 @@ package body Adacovex_Man_Tests is
         Integer'Image
           (GNAT.OS_Lib.Pid_To_Integer (GNAT.OS_Lib.Current_Process_Id));
       Dir  : constant String :=
-        "/tmp/adacovex-man-test-" & Pid (2 .. Pid'Last);
+        Adacovex.CPUs.Get_Temp_Directory
+        & "/adacovex-man-test-"
+        & Pid (2 .. Pid'Last);
    begin
       --  The generated page carries the roff structure and the version.
       R.Check

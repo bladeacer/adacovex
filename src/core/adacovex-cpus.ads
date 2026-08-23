@@ -35,6 +35,15 @@ package Adacovex.CPUs is
    function Resolve_Jobs
      (Configured : Integer; In_CI : Boolean) return Natural;
 
+   --  Portable system temp directory.  Checks TMPDIR, TEMP, TMP (in that
+   --  order) and falls back to "/tmp".
+   function Get_Temp_Directory return String
+   with SPARK_Mode => Off;
+
+   --  Default shell executable for spawned commands.
+   function Get_Shell_Command return String
+   with SPARK_Mode => Off;
+
    --  The auto default: all cores in CI, otherwise max(1, cores - 2) to keep
    --  the developer machine responsive.  Pass the already-detected core count
    --  so callers can print the basis for the choice.

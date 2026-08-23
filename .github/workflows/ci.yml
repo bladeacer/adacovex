@@ -20,7 +20,7 @@ jobs:
         with:
           target: .
           standard: all
-          gnat-version: 15.2.1
+          gnat-version: 16.1.0
           build: true
           prove: true
           #  Quiet (benign-info suppression) is the default; CI passes
@@ -41,7 +41,7 @@ jobs:
         with:
           target: .
           dal: C
-          gnat-version: 15.2.1
+          gnat-version: 16.1.0
           build: true
           run-tests: true
           assess: false
@@ -57,11 +57,16 @@ jobs:
   complexity-gate:
     # Cyclomatic-complexity + LOC gate: fails when a function exceeds the
     # decision-point cap or a file dominates the codebase (god objects /
-    # god functions / extra-long files).  See tools/check-complexity.py.
+    # god functions / extra-long files).  See adacovex complexity --help.
     name: Complexity gate (no god objects)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - uses: alire-project/setup-alire@latest
+        with:
+          version: '2.1.1'
+          toolchain: 'gnat_native=16.1.0 gprbuild'
+          cache: true
       - name: Enforce complexity + file-size caps
         run: make complexity-check
 
@@ -132,7 +137,7 @@ jobs:
         with:
           target: .
           dal: C
-          gnat-version: 15.2.1
+          gnat-version: 16.1.0
           build: true
           run-tests: true
           test-command: ./fixture_main
@@ -151,7 +156,7 @@ jobs:
       - uses: alire-project/setup-alire@latest
         with:
           version: '2.1.1'
-          toolchain: 'gnat_native=15.2.1 gprbuild'
+          toolchain: 'gnat_native=16.1.0 gprbuild'
           cache: true
       - name: Run coverage gate
         shell: bash

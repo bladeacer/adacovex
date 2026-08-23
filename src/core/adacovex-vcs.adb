@@ -1,6 +1,7 @@
 with Ada.Directories;
 with Ada.Text_IO;
 with GNAT.OS_Lib;
+with Adacovex.CPUs;
 
 package body Adacovex.VCS is
 
@@ -8,16 +9,18 @@ package body Adacovex.VCS is
 
    Max_Capture : constant := 4096;
 
-   --  Spawn `sh -c Cmd` (Linux/WSL), redirecting stdout+stderr to Out_File.
-   --  sh is used so CWD-dependent tools (fossil open, svn) can be driven
-   --  with a `cd ... &&` prefix without changing the process directory.
+   --  Spawn the default shell with `-c Cmd`, redirecting stdout+stderr to
+   --  Out_File.  The shell is used so CWD-dependent tools (fossil open, svn)
+   --  can be driven with a `cd ... &&` prefix without changing the process
+   --  directory.
    procedure Run_Cmd
      (Cmd      : String;
       Out_File : String;
       Success  : out Boolean;
       Code     : out Integer)
    is
-      Prog : String_Access := Locate_Exec_On_Path ("sh");
+      Prog : String_Access :=
+        Locate_Exec_On_Path (Adacovex.CPUs.Get_Shell_Command);
    begin
       if Prog = null then
          Success := False;
@@ -47,7 +50,10 @@ package body Adacovex.VCS is
       Pid     : constant Integer := Pid_To_Integer (Current_Process_Id);
       Pid_Img : constant String := Integer'Image (Pid);
       Tmp     : constant String :=
-        "/tmp/adacovex-vcs-capture-" & Pid_Img (2 .. Pid_Img'Last) & ".out";
+        Adacovex.CPUs.Get_Temp_Directory
+        & "/adacovex-vcs-capture-"
+        & Pid_Img (2 .. Pid_Img'Last)
+        & ".out";
       F       : Ada.Text_IO.File_Type;
    begin
       BLen := 0;
@@ -313,7 +319,10 @@ package body Adacovex.VCS is
       Pid     : constant Integer := Pid_To_Integer (Current_Process_Id);
       Pid_Img : constant String := Integer'Image (Pid);
    begin
-      return "/tmp/adacovex-diff-" & Pid_Img (2 .. Pid_Img'Last);
+      return
+        Adacovex.CPUs.Get_Temp_Directory
+        & "/adacovex-diff-"
+        & Pid_Img (2 .. Pid_Img'Last);
    end Snapshot_Path;
 
    procedure Remove_Dir (Tmp_Path : String) is

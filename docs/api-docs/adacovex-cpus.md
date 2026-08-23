@@ -10,7 +10,7 @@ HLR-CPU: Cross-platform CPU core detection
 
 **See also:** [Platforms](../platforms.md)
 
-> **Note:** 6 public item(s) shown below; 4 private internal item(s) are in the `private` section.
+> **Note:** 8 public item(s) shown below; 4 private internal item(s) are in the `private` section.
 
 ## Functions
 
@@ -26,6 +26,10 @@ HLR-CPU: Cross-platform CPU core detection
 ### function Detect_Core_Count return Standard.Natural
 
 **Returns:** Logical CPU count (>= 1).
+
+### function Get_Shell_Command return Standard.String `[SPARK]`
+
+### function Get_Temp_Directory return Standard.String `[SPARK]`
 
 ### function Is_Running_In_CI return Standard.Boolean
 

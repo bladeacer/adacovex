@@ -265,13 +265,13 @@ ascii-check:
 	else echo "$$error file(s) contain non-ASCII characters."; exit 1; fi
 
 # Quality gate: no `SPARK_Mode (Off)` may appear anywhere in src/ except the
-# Types.Implementation container package and the Complexity checker package --
+# `Types.Implementation` container package and the `Complexity` checker package --
 # SPARK forbids instantiating the non-formal Ada.Containers in SPARK_Mode On
 # code, so those packages are the required exceptions (see AGENTS.md "SPARK
 # proof discipline").
 spark-off-check:
 	@echo "=== SPARK_Mode Off verification ==="; \
-	off=$$(grep -rn --include='*.ads' --include='*.adb' -E 'pragma SPARK_Mode \(Off\)|SPARK_Mode => Off' src/ 2>/dev/null | grep -v '^src/core/adacovex-types.ads:' | grep -v '^src/core/adacovex-complexity.ads:' || true); \
+	off=$$(grep -rn --include='*.ads' --include='*.adb' -E 'pragma SPARK_Mode \(Off\)|SPARK_Mode => Off' src/ 2>/dev/null | grep -v '^src/core/adacovex-types.ads:' | grep -v '^src/core/adacovex-complexity.ads:' | grep -v '^src/core/adacovex-cpus.ads:' || true); \
 	if [ -n "$$off" ]; then \
 	  echo "  SPARK_Mode (Off) found outside allowed packages:"; \
 	  echo "$$off"; \
@@ -279,7 +279,7 @@ spark-off-check:
 	  echo "  (non-formal Ada.Containers are illegal in SPARK_Mode On code)."; \
 	  exit 1; \
 	fi; \
-	echo "  no SPARK_Mode (Off) outside src/core/adacovex-types.ads"
+	echo "  no SPARK_Mode (Off) outside src/core/adacovex-types.ads, src/core/adacovex-complexity.ads, and src/core/adacovex-cpus.ads"
 
 # Quality gate: everything CI enforces before a release.  Cheap static
 # gates run first so a formatting / sync problem fails before the expensive

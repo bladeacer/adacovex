@@ -3,6 +3,7 @@ with Ada.Environment_Variables;
 with Ada.Strings.Fixed;
 with Ada.Text_IO;
 with Adacovex.Config;
+with Adacovex.CPUs;
 with GNAT.OS_Lib;
 
 package body Adacovex.Renderers.Man is
@@ -411,7 +412,7 @@ package body Adacovex.Renderers.Man is
       if Ada.Environment_Variables.Exists ("HOME") then
          return Ada.Environment_Variables.Value ("HOME") & "/.local/share/man";
       end if;
-      return "/tmp/adacovex-man";
+      return Adacovex.CPUs.Get_Temp_Directory & "/adacovex-man";
    end Default_Dir;
 
    procedure Install

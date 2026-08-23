@@ -4,6 +4,7 @@ with Ada.Containers.Vectors;
 with Ada.Strings.Fixed;
 with GNAT.OS_Lib; use GNAT.OS_Lib;
 with Adacovex.Cache;
+with Adacovex.CPUs;
 
 package body Adacovex.Parsers.Manifest is
 
@@ -2365,7 +2366,10 @@ package body Adacovex.Parsers.Manifest is
       Pid     : constant Integer := Pid_To_Integer (Current_Process_Id);
       Pid_Img : constant String := Integer'Image (Pid);
       Tmp     : constant String :=
-        "/tmp/adacovex-ver-" & Pid_Img (2 .. Pid_Img'Last) & ".out";
+        Adacovex.CPUs.Get_Temp_Directory
+        & "/adacovex-ver-"
+        & Pid_Img (2 .. Pid_Img'Last)
+        & ".out";
       Buf     : String (1 .. 4096);
       BLen    : Natural := 0;
       F       : Ada.Text_IO.File_Type;

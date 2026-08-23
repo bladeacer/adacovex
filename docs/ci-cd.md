@@ -150,7 +150,7 @@ steps:
 | `standard` | `''` | Compliance standard: `do178c`, `iso26262`, `iec62304`, or `all` (badges/reports for every standard) |
 | `asil` | `''` | ISO 26262 ASIL level (A-D, QM); sets the standard and tier |
 | `class` | `''` | IEC 62304 safety class (A-C); sets the standard and tier |
-| `gnat-version` | `15.2.1` | GNAT toolchain version to select via `alr` |
+| `gnat-version` | `16.1.0` | GNAT toolchain version to select via `alr` |
 | `version` | `''` | adacovex version; defaults to the tag the action is referenced by |
 | `build` | `false` | Build adacovex from source instead of downloading the version-matched binary |
 | `prove` | `false` | Run GNATprove before assessing, for repos that don't commit `gnatprove.out` |
@@ -274,7 +274,7 @@ Threshold failures **fail loudly** at every layer:
 | `result cache: X hit(s), Y miss(es), Z evicted` | Cache stats per run | `Z>0` means `--cache-max` evicted oldest entries; increase `--cache-max` or pass `--no-cache` to force a full rescan |
 | `Unknown option --foo (did you mean --bar?)` | Typo | Use `adacovex --help` or `adacovex help <topic>` |
 | `::notice::WARNING ...` annotation | Non-fatal warning surfaced from `adacovex.out` | Download `adacovex-assessment` artifact for full log; warnings do not fail the gate but indicate missing tests/proof |
-| `make complexity-check` failed | File or function exceeds caps (`--max-file-loc`/`--max-file-pct`/`--max-fn-complexity`) | See `tools/check-complexity.py --help`; split god objects/functions |
+| `make complexity-check` failed | File or function exceeds caps (`--max-file-loc`/`--max-file-pct`/`--max-fn-complexity`) | Run `./bin/adacovex complexity --help`; split god objects/functions |
 
 **Better debugging output contract:** after the brittleness fixes (`ci.yml` now has
 `timeout-minutes`, `concurrency.cancel-in-progress`, `fetch-tags: true`, and

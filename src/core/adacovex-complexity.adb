@@ -14,6 +14,8 @@ package body Adacovex.Complexity is
    use Ada.Characters.Handling;
    use type Ada.Containers.Count_Type;
 
+   --  Strip Ada line comments (--) while preserving string literals so
+   --  decision-point counting sees the raw source, not the comment text.
    function Strip_Comments (Line : String) return String is
       Out_Buf : Unbounded_String;
       In_Str  : Boolean := False;
@@ -41,6 +43,8 @@ package body Adacovex.Complexity is
       return To_String (Out_Buf);
    end Strip_Comments;
 
+   --  Case-insensitive prefix check: True when S starts with Prefix
+   --  (ignoring case for the overlapping portion).
    function CI_Starts_With (S : String; Prefix : String) return Boolean is
    begin
       if Prefix'Length > S'Length then
@@ -60,6 +64,7 @@ package body Adacovex.Complexity is
       return True;
    end CI_Starts_With;
 
+   --  Trim leading and trailing blanks, tabs, CR, and LF from S.
    function Trim (S : String) return String is
       F, L : Natural := S'First;
    begin
@@ -86,6 +91,8 @@ package body Adacovex.Complexity is
       return S (F .. L);
    end Trim;
 
+   --  Count Ada decision points (if, elsif, case, while, for, exit, when,
+   --  and/or short-circuit after then/else) in a single line of source.
    function Count_Decisions (Line : String) return Natural is
       S    : constant String := Strip_Comments (Line);
       N    : Natural := 0;
@@ -158,6 +165,8 @@ package body Adacovex.Complexity is
       return N;
    end Count_Decisions;
 
+   --  True when the first keyword of S is a block opener that cannot end a
+   --  decision point (if, loop, case, select, return, declare, block).
    function Forbidden_End (S : String) return Boolean is
       L : String (1 .. 7) := (others => ' ');
       N : Natural := 0;
@@ -177,6 +186,7 @@ package body Adacovex.Complexity is
         or else (N >= 5 and then L (1 .. 5) = "block");
    end Forbidden_End;
 
+   --  Detect a package or package-body declaration and return its name.
    procedure Detect_Package
      (S : String; Pkg : out Boolean; Name : out String; Name_Len : out Natural)
    is
@@ -231,6 +241,7 @@ package body Adacovex.Complexity is
       end if;
    end Detect_Package;
 
+   --  Detect a procedure or function header line and return its name.
    procedure Detect_Header
      (S : String; Hdr : out Boolean; Name : out String; Name_Len : out Natural)
    is
@@ -301,6 +312,7 @@ package body Adacovex.Complexity is
       end;
    end Detect_Header;
 
+   --  Detect an end (or end name;) line and return whether it is a bare end.
    procedure Detect_End
      (S               : String;
       Is_End, Is_Bare : out Boolean;
@@ -375,6 +387,8 @@ package body Adacovex.Complexity is
       end;
    end Detect_End;
 
+   --  Walk Target_Dir (or its src/ subdirectory) and collect every .ads/.adb
+   --  file except the generated version and dashboard template units.
    function Scan_Source_Files (Target_Dir : String) return File_Vectors.Vector
    is
       use Ada.Directories;
@@ -440,6 +454,7 @@ package body Adacovex.Complexity is
       return Result;
    end Scan_Source_Files;
 
+   --  Compute per-file and per-subprogram complexity for a single Ada source.
    function Analyze_File (Path : String) return File_Metrics is
       use Ada.Text_IO;
 
@@ -649,6 +664,8 @@ package body Adacovex.Complexity is
          end if;
    end;
 
+   --  Scan Target_Dir and return aggregate complexity metrics across all
+   --  discovered Ada source files.
    function Analyze_Project (Target_Dir : String) return Complexity_Result is
       Files : constant File_Vectors.Vector := Scan_Source_Files (Target_Dir);
       Res   : Complexity_Result;
@@ -665,6 +682,8 @@ package body Adacovex.Complexity is
       return Res;
    end Analyze_Project;
 
+   --  Evaluate Result against the supplied thresholds and return the list of
+   --  violations (empty when every gate passes).
    function Check_Gates
      (Result              : Complexity_Result;
       Max_File_LOC        : Natural;
@@ -757,6 +776,9 @@ package body Adacovex.Complexity is
       return V;
    end Check_Gates;
 
+   --  Emit a human-readable report to stdout.  When Check_Mode is True the
+   --  output is gated on Violations being non-empty; otherwise every file
+   --  and subprogram is always printed.
    procedure Print_Report
      (Result              : Complexity_Result;
       Check_Mode          : Boolean;

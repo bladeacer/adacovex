@@ -21,6 +21,7 @@
 - HLR-RENDER-HTML: HTML dashboard and JSON API
 - HLR-SERVER: HTTP server
 - HLR-CLI: CLI argument parsing
+- HLR-COMPLEXITY: Cyclomatic complexity and LOC gating
 - HLR-DIFF: Differential assessment (--compare-base)
 - HLR-METRICS: Docstring coverage metrics
 - HLR-MANIFEST: Alire manifest and dependency-graph parsing
@@ -95,6 +96,11 @@
 
 - HLR-CLI: The tool shall accept CLI arguments in --key=value and --key value
   forms with sensible defaults, and print usage help on --help.
+
+- HLR-COMPLEXITY: The tool shall compute per-file and per-subprogram cyclomatic
+  complexity for Ada source files and enforce configurable LOC and complexity
+  gates (max file LOC, max file percentage of codebase, max function
+  complexity, max file complexity).
 
 - HLR-DIFF: The tool shall support differential assessment via --compare-base,
   comparing the target at a git base ref against its current working tree and
