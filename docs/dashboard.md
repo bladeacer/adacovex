@@ -50,7 +50,24 @@ inlined; no external assets), rendered from the bundled
   criterion when the assessment failed.
 - **HLR Traceability** -- every package that carries HLR tags, with its tags.
 
-### Standard-awareness
+### Metrics charts
+
+Below the metric cards, the dashboard renders a **charts section** using
+the vendored [Charts.css](https://chartscss.org/) framework (v1.2.0, MIT,
+inlined into the page shell so the page stays self-contained):
+
+- **SPARK Proof** -- a donut of proved vs total verification conditions.
+- **Proof Check Types** -- a column chart of proved/failed checks per
+  category (flow, init, runtime, assertions, functional).
+- **Test Results by Category** -- a bar chart of the test counts per
+  category.
+- **Docstring Coverage** -- a bar chart of documented subprograms.
+
+No JavaScript is required; the charts are pure CSS driven by the same
+`--size` / `--start` / `--end` custom properties, and they follow the
+active light/dark theme automatically.
+
+## Standard-awareness
 
 Like the `sbom` subcommand, the dashboard **defaults to all standards** when
 no `--standard` / `--asil` / `--class` flag is given: the status badges and

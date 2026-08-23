@@ -245,17 +245,125 @@ package body Adacovex.Renderers.HTML is
       end loop;
       Put_Card ("</table></div>");
 
-      --  Inject the cards into the bundled page shell and set the initial
-      --  theme marker (read by the theme script as the CLI preference).
+      --  Inject the cards + chart cards into the bundled page shell and set
+      --  the initial theme marker (read by the theme script as the CLI
+      --  preference).
       return
         Replace_All
           (Replace_All
-             (Adacovex.Dashboard_Template.Template,
-              "__CARDS__",
-              To_String (Cards)),
+             (Replace_All
+                (Adacovex.Dashboard_Template.Template,
+                 "__CARDS__",
+                 To_String (Cards)),
+              "__CHARTS__",
+              Render_Charts (Doc_Metrics, Proof, Tests)),
            "__THEME__",
            Types.To_String (Theme));
    end Render_Dashboard;
+
+   --  Percentage of N in M, rounded down, clamped to 0..100.  Chart sizes
+   --  are unitless 0..1 fractions: divide by 100.
+   function Pct (Part, Total : Natural) return Natural is
+   begin
+      if Total = 0 then
+         return 0;
+      end if;
+      return (Part * 100) / Total;
+   end Pct;
+
+   function Render_Charts
+     (Doc_Metrics : Types.Docstring_Metrics;
+      Proof       : Types.Proof_Summary;
+      Tests       : Types.Implementation.Test_Summary) return String
+   is
+      R : Unbounded_String;
+
+      procedure Put (S : String) is
+      begin
+         Append (R, S);
+      end Put;
+
+      --  A single pie/donut slice: label + start/end (x100) + value.
+      procedure Slice_Row
+        (Label : String; Start, Finish : Natural; Value : Natural) is
+      begin
+         Put ("<tr><th scope=""row"">");
+         Put (Label);
+         Put ("</th><td style=""--start:");
+         Put (Img (Start));
+         Put (";--end:");
+         Put (Img (Finish));
+         Put ("""><span class=""data"">");
+         Put (Img (Value));
+         Put ("</span></td></tr>");
+      end Slice_Row;
+
+      --  A single bar row: label + size fraction (0..100) + value.
+      procedure Bar_Row
+        (Label : String; Fraction : Natural; Value : Natural) is
+      begin
+         Put ("<tr><th scope=""row"">");
+         Put (Label);
+         Put ("</th><td style=""--size:");
+         Put (Img (Fraction));
+         Put (".0""><span class=""data"">");
+         Put (Img (Value));
+         Put ("</span></td></tr>");
+      end Bar_Row;
+   begin
+      --  SPARK proof donut (proved + total slices fill the circle)
+      Put ("<div class=""chart-card""><h3>SPARK Proof</h3>");
+      Put ("<table class=""charts-css donut show-labels"">");
+      Put ("<caption>SPARK proof progress</caption><tbody>");
+      if Proof.Total_VCs > 0 then
+         declare
+            P : constant Natural := Pct (Proof.Proved_VCs, Proof.Total_VCs);
+         begin
+            Slice_Row ("Proved", 0, P, Proof.Proved_VCs);
+            Slice_Row ("Total", P, 100, Proof.Total_VCs);
+         end;
+      else
+         Slice_Row ("No VCs", 0, 100, 0);
+      end if;
+      Put ("</tbody></table></div>");
+
+      --  Proof categories column
+      Put ("<div class=""chart-card""><h3>Proof Check Types</h3>");
+      Put ("<table class=""charts-css column show-labels show-primary-axis"">");
+      Put ("<caption>Proved checks by category</caption><tbody>");
+      Bar_Row ("Flow", Pct (Proof.Flow_Proved, Proof.Flow_Checks), Proof.Flow_Proved);
+      Bar_Row ("Init", Pct (Proof.Init_Proved, Proof.Init_Checks), Proof.Init_Proved);
+      Bar_Row ("Runtime", Pct (Proof.Runtime_Proved, Proof.Runtime_Checks), Proof.Runtime_Proved);
+      Bar_Row ("Assert", Pct (Proof.Assert_Proved, Proof.Assertions), Proof.Assert_Proved);
+      Bar_Row ("Functional", Pct (Proof.Functional_Proved, Proof.Functional_Ct), Proof.Functional_Proved);
+      Put ("</tbody></table></div>");
+
+      --  Test categories bar
+      Put ("<div class=""chart-card""><h3>Test Results by Category</h3>");
+      Put ("<table class=""charts-css bar show-labels"">");
+      Put ("<caption>Test counts by category</caption><tbody>");
+      for C in 1 .. Integer (Tests.Categories.Length) loop
+         declare
+            Cat : Types.Test_Metrics renames Tests.Categories (C);
+         begin
+            Bar_Row
+              (Cat.Category (1 .. Cat.Cat_Len), 100, Cat.Test_Count);
+         end;
+      end loop;
+      Put ("</tbody></table></div>");
+
+      --  Docstring coverage bar
+      Put ("<div class=""chart-card""><h3>Docstring Coverage</h3>");
+      Put ("<table class=""charts-css bar show-labels"">");
+      Put ("<caption>Documented subprograms</caption><tbody>");
+      Bar_Row
+        ("Documented",
+         Doc_Metrics.Coverage_Pct,
+         Doc_Metrics.Documented_Subprogs);
+      Put ("</tbody></table></div>");
+
+      return To_String (R);
+   end Render_Charts;
 
    function Render_Metrics_JSON
      (Doc_Metrics   : Types.Docstring_Metrics;

@@ -35,6 +35,17 @@ The proof-aware SBOMs adacovex emits conform to these open specifications:
 The CycloneDX 1.5 JSON and SPDX 2.3 JSON schemas are referenced for validation
 only; adacovex does not vendor or redistribute them.
 
+## Bundled web assets
+
+| Component | Version | License | Used for |
+|-----------|---------|---------|----------|
+| Charts.css | 1.2.0 | MIT | Dashboard chart styles (`resources/charts.min.css`, inlined into the served dashboard) |
+
+Charts.css (https://chartscss.org/) is bundled in its minified form under
+`resources/charts.min.css` and inlined into the dashboard page shell
+(`resources/dashboard.html` -> `src/adacovex-dashboard_template.ads`). The
+MIT license text is preserved in the bundle header comment.
+
 ## Acknowledgments
 
 - The Ada_CRDT audit target (`../Ada_CRDT`) is used solely as a dogfood target.

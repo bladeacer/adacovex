@@ -38,6 +38,23 @@ package Adacovex.Renderers.HTML is
       return String
    with Post => Render_Dashboard'Result'Length > 0, Global => null;
 
+   --  Render the Chart.css metrics section (multiple chart cards) for the
+   --  dashboard: a donut of SPARK proof (proved vs total VCs), a column
+   --  chart of proved checks per category, a bar chart of the test
+   --  categories (pass vs fail), and a docstring-coverage bar.  The markup
+   --  uses the vendored Charts.css framework (resources/charts.min.css,
+   --  inlined into the dashboard template) so the page stays
+   --  self-contained and dependency-free at runtime.
+   --  @param Doc_Metrics  Docstring coverage metrics.
+   --  @param Proof  GNATprove proof summary.
+   --  @param Tests  Test result summary.
+   --  @return HTML fragment with the chart cards.
+   function Render_Charts
+     (Doc_Metrics : Types.Docstring_Metrics;
+      Proof       : Types.Proof_Summary;
+      Tests       : Types.Implementation.Test_Summary) return String
+   with Post => Render_Charts'Result'Length > 0, Global => null;
+
    --  Render a JSON object with key metric values.
    --  Produces a lightweight JSON payload containing docstring coverage,
    --  proof results, test summary, and compliance status for programmatic
