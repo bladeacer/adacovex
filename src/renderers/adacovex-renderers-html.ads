@@ -18,14 +18,38 @@ package Adacovex.Renderers.HTML is
    --  header dropdown switches live between light, dark, and system, and a
    --  Save settings button persists the choice in localStorage.  Theme
    --  resolution on load: explicit CLI light/dark wins, then localStorage,
-   --  then the system preference.
+   --  then the system preference.  Content is organised into clickable tabs
+   --  (Overview / Proof / Tests / Compliance / Dependencies / Charts) so the
+   --  dependency graph has its own page instead of sharing the card stack.
    --  @param Doc_Metrics  Docstring coverage metrics.
    --  @param Proof  GNATprove proof summary.
    --  @param Tests  Test result summary.
    --  @param DAL_Assess  DAL compliance assessment.
    --  @param Packages  Scanned package vector.
+   --  @param Graph  Resolved dependency graph (for the Dependencies tab).
    --  @param All_Standards  Render every standard (else the selected one).
    --  @param Theme  Initial dashboard theme (system/light/dark).
+   --  @return HTML dashboard page.
+   function Render_Dashboard
+     (Doc_Metrics   : Types.Docstring_Metrics;
+      Proof         : Types.Proof_Summary;
+      Tests         : Types.Implementation.Test_Summary;
+      DAL_Assess    : Types.Implementation.DAL_Assessment;
+      Packages      : Types.Implementation.Package_Vectors.Vector;
+      Graph         : Types.Implementation.Component_Vectors.Vector;
+      All_Standards : Boolean := False;
+      Theme         : Types.Dashboard_Theme := Types.System_Theme)
+      return String
+   with Post => Render_Dashboard'Result'Length > 0, Global => null;
+
+   --  Backward-compatible wrapper that renders an empty dependency graph.
+   --  @param Doc_Metrics  Docstring coverage metrics.
+   --  @param Proof  GNATprove proof summary.
+   --  @param Tests  Test result summary.
+   --  @param DAL_Assess  DAL compliance assessment.
+   --  @param Packages  Scanned package vector.
+   --  @param All_Standards  Render every standard.
+   --  @param Theme  Initial dashboard theme.
    --  @return HTML dashboard page.
    function Render_Dashboard
      (Doc_Metrics   : Types.Docstring_Metrics;
@@ -39,12 +63,13 @@ package Adacovex.Renderers.HTML is
    with Post => Render_Dashboard'Result'Length > 0, Global => null;
 
    --  Render the Chart.css metrics section (multiple chart cards) for the
-   --  dashboard: a donut of SPARK proof (proved vs total VCs), a column
+   --  dashboard: a donut of SPARK proof (proved vs unproved VCs), a column
    --  chart of proved checks per category, a bar chart of the test
    --  categories (pass vs fail), and a docstring-coverage bar.  The markup
    --  uses the vendored Charts.css framework (resources/charts.min.css,
    --  inlined into the dashboard template) so the page stays
-   --  self-contained and dependency-free at runtime.
+   --  self-contained and dependency-free at runtime.  Bar sizes are emitted
+   --  as 0..1 fractions (not 0..100) so the CSS scales correctly.
    --  @param Doc_Metrics  Docstring coverage metrics.
    --  @param Proof  GNATprove proof summary.
    --  @param Tests  Test result summary.
@@ -54,6 +79,15 @@ package Adacovex.Renderers.HTML is
       Proof       : Types.Proof_Summary;
       Tests       : Types.Implementation.Test_Summary) return String
    with Post => Render_Charts'Result'Length > 0, Global => null;
+
+   --  Render the dependency graph as an interactive HTML tree for the
+   --  Dependencies tab.  Groups components by parent index into a collapsible
+   --  <details> tree with scope badges and a client-side filter input.
+   --  @param Graph  Dependency graph component vector.
+   --  @return HTML fragment for the deps tab.
+   function Render_Deps_HTML
+     (Graph : Types.Implementation.Component_Vectors.Vector) return String
+   with Post => Render_Deps_HTML'Result'Length > 0, Global => null;
 
    --  Render the dependency graph as a JSON object for /api/deps.
    --  Serializes the resolved component vector (root at index 1 plus its
