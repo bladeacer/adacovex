@@ -58,6 +58,7 @@ Compare_Base_Len     : Natural := 0;
 Coverage_Delta       : String (1 .. Types.Max_Path);
 Coverage_Delta_Len   : Natural := 0;
 Prove_Mode           : Boolean := False;
+Complexity_Mode      : Boolean := False;
 Status_Mode          : Boolean := False;
 Completion_Mode      : Boolean := False;
 Completion_Shell     : String (1 .. Types.Max_Filename);

@@ -42,6 +42,7 @@ src/
 |-- core/
 |   |-- adacovex-cache.ads/.adb               -- On-disk result cache (content-hashed per-file, oldest-first eviction, size policy)
 |   |-- adacovex-completion.ads/.adb          -- Shell auto-completion script generator (bash/fish/zsh/pwsh)
+|   |-- adacovex-complexity.ads/.adb          -- Cyclomatic complexity checker (native Ada; gated by make complexity-check)
 |   |-- adacovex-config.ads/.adb              -- CLI argument parser (prove mode, --no-sbom, --sbom-format)
 |   |-- adacovex-core.ads                     -- Parent package for core data types and configuration
 |   |-- adacovex-cpus.ads/.adb                -- Host CPU/CI detection + GNATprove parallelism resolution

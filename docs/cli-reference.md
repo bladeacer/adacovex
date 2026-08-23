@@ -139,6 +139,17 @@ VCS tools are on `$PATH` and which manages the target -- see
 gnatprove is detectable without a download, `1` otherwise. Full detail:
 [Platforms -- `status` subcommand](platforms.md#status-subcommand).
 
+### `complexity`
+
+`adacovex complexity [--target=PATH]` runs a native Ada cyclomatic-complexity
+check on the target source tree.  It reports per-file LOC, percentage of the
+codebase, and total cyclomatic complexity, plus per-subprogram complexity for
+functions and procedures.  The gate fails when any file or function exceeds
+the configured thresholds (defaults: 4 000 LOC, 20% of codebase, 120
+complexity per function, 600 per file).  Exit `0` when all gates pass, `1`
+otherwise.  This replaces the previous Python `check-complexity.py` script and
+is wired into `make complexity-check`.
+
 ### The `prove` subcommand
 
 `adacovex prove --target=PATH` resolves a gnatprove installation, runs it

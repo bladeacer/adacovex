@@ -236,7 +236,7 @@ package body Adacovex.Config is
      & "prove status completion man check dir version no-sbom sbom-format format out "
      & "jobs level timeout steps memlimit force no-loop-unrolling "
      & "no-inlining suppress-warnings quiet require-spark require-docstrings "
-     & "require-tests require-proof help";
+     & "require-tests require-proof complexity help";
 
    --  Expose the flag list for the shell-completion generator (see spec).
    function Flag_List return String is
@@ -781,13 +781,13 @@ package body Adacovex.Config is
                     (Cfg.Coverage_Delta,
                      Cfg.Coverage_Delta_Len,
                      A (A'First + 17 .. A'Last));
-                elsif A = "sbom" then
-                   Cfg.SBOM_Mode := True;
-                elsif A = "prove" then
-                   Cfg.Prove_Mode := True;
-                elsif A = "complexity" then
-                   Cfg.Complexity_Mode := True;
-                elsif A = "status" then
+               elsif A = "sbom" then
+                  Cfg.SBOM_Mode := True;
+               elsif A = "prove" then
+                  Cfg.Prove_Mode := True;
+               elsif A = "complexity" then
+                  Cfg.Complexity_Mode := True;
+               elsif A = "status" then
                   Cfg.Status_Mode := True;
                elsif A = "completion" then
                   --  `completion [bash|fish|zsh|pwsh]`: the shell name is
@@ -1483,6 +1483,7 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line ("       adacovex prove --target=PATH");
       Ada.Text_IO.Put_Line ("       adacovex status --target=PATH");
       Ada.Text_IO.Put_Line ("       adacovex man [--check] [--dir=PATH]");
+      Ada.Text_IO.Put_Line ("       adacovex complexity [--target=PATH]");
       Ada.Text_IO.Put_Line ("");
       Ada.Text_IO.Put_Line ("Options:");
       Ada.Text_IO.Put_Line
