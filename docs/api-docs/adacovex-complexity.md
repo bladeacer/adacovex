@@ -1,5 +1,7 @@
 # Adacovex.Complexity
 
+Cyclomatic complexity checker for Ada source files. Scans a target directory for .ads/.adb files, computes per-file and per-subprogram cyclomatic complexity, and enforces configurable LOC and complexity gates. Native Ada implementation (zero external deps). HLR-COMPLEXITY: Cyclomatic complexity analysis
+
 > **Note:** All items in this package are public.
 
 ## Types

@@ -3,6 +3,7 @@ use Adacovex.Types, Adacovex.Types.Implementation;
 with Adacovex.Compliance.DAL;
 with Adacovex.Parsers.DO178C;
 with Adacovex.Cache;
+with Adacovex.CPUs;
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Directories;
 with GNAT.OS_Lib;
@@ -57,7 +58,8 @@ package body Adacovex_DAL_Tests is
       --  than the fixed buffers is clamped instead of raising
       --  Constraint_Error.
       declare
-         HLR_File : constant String := "/tmp/adacovex_hlr_test.md";
+         HLR_File : constant String :=
+           Adacovex.CPUs.Get_Temp_Directory & "/adacovex_hlr_test.md";
          HLRs     : Adacovex.Parsers.DO178C.HLR_Vectors.Vector;
          OK       : Boolean;
          F        : File_Type;
@@ -102,7 +104,8 @@ package body Adacovex_DAL_Tests is
       --  reuses the shared evidence checks, so the level label is
       --  standard-aware (ISO 26262 DAL C -> ASIL B).
       declare
-         Tmp        : constant String := "/tmp/adacovex_std_test";
+         Tmp        : constant String :=
+           Adacovex.CPUs.Get_Temp_Directory & "/adacovex_std_test";
          Assessment : DAL_Assessment;
          Pkgs       : Package_Vectors.Vector;
          Proof      : Proof_Summary;
@@ -152,12 +155,15 @@ package body Adacovex_DAL_Tests is
       --  Use_Cache serves the second parse from the on-disk result cache
       --  (keyed by file content hash) instead of re-scanning the file.
       declare
-         HLR_File : constant String := "/tmp/adacovex_hlr_cache_test.md";
+         HLR_File : constant String :=
+           Adacovex.CPUs.Get_Temp_Directory & "/adacovex_hlr_cache_test.md";
          Pid      : constant String :=
            Integer'Image
              (GNAT.OS_Lib.Pid_To_Integer (GNAT.OS_Lib.Current_Process_Id));
          CDir     : constant String :=
-           "/tmp/adacovex-dal-cache-" & Pid (2 .. Pid'Last);
+           Adacovex.CPUs.Get_Temp_Directory
+           & "/adacovex-dal-cache-"
+           & Pid (2 .. Pid'Last);
          HLRs1    : Adacovex.Parsers.DO178C.HLR_Vectors.Vector;
          HLRs2    : Adacovex.Parsers.DO178C.HLR_Vectors.Vector;
          OK       : Boolean;

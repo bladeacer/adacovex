@@ -5,6 +5,7 @@ with Adacovex.Types;
 use Adacovex.Types, Adacovex.Types.Implementation;
 with Adacovex.Renderers.HTML;
 with Adacovex.Renderers.Markdown;
+with Adacovex.CPUs;
 
 package body Adacovex_Renderer_Tests is
 
@@ -208,7 +209,8 @@ package body Adacovex_Renderer_Tests is
 
       --  Markdown verification report is standard-aware.
       declare
-         Dir : constant String := "/tmp/adacovex_md_test";
+         Dir : constant String :=
+           Adacovex.CPUs.Get_Temp_Directory & "/adacovex_md_test";
          Md  : constant String := Dir & "/VERIFICATION.md";
       begin
          begin

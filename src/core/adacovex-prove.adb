@@ -239,7 +239,8 @@ package body Adacovex.Prove is
       Success     : out Boolean;
       Code        : out Integer)
    is
-      Prog : String_Access := Locate_Exec_On_Path ("sh");
+      Prog : String_Access :=
+        Locate_Exec_On_Path (Adacovex.CPUs.Get_Shell_Command);
    begin
       if Prog = null then
          Success := False;
@@ -369,7 +370,8 @@ package body Adacovex.Prove is
    procedure Download_Toolchain (Success : out Boolean) is
       Home    : constant String := Home_Dir;
       Dst     : constant String := Home & Toolchain_Subdir;
-      Tmp     : constant String := "/tmp/adacovex-toolchain.tar.gz";
+      Tmp     : constant String :=
+        Adacovex.CPUs.Get_Temp_Directory & "/adacovex-toolchain.tar.gz";
       URL     : String (1 .. Types.Max_Path);
       URL_Len : Natural := 0;
    begin

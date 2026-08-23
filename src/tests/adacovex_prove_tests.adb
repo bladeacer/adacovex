@@ -1,6 +1,7 @@
 with Ada.Text_IO;    use Ada.Text_IO;
 with Adacovex.Types; use Adacovex.Types;
 with Adacovex.Parsers.GNATprove;
+with Adacovex.CPUs;
 
 package body Adacovex_Prove_Tests is
 
@@ -89,7 +90,10 @@ package body Adacovex_Prove_Tests is
          Summary : Proof_Summary;
          Success : Boolean;
       begin
-         Create (F, Out_File, "/tmp/adacovex_test_prove_out.txt");
+         Create
+           (F,
+            Out_File,
+            Adacovex.CPUs.Get_Temp_Directory & "/adacovex_test_prove_out.txt");
          Put_Line (F, "   Flow Dependencies            7       7 (100%)");
          Put_Line (F, "   Run-time Checks             15      15 (100%)");
          Put_Line (F, "   Assertions                   2       2 (100%)");
@@ -101,7 +105,9 @@ package body Adacovex_Prove_Tests is
          Close (F);
 
          Adacovex.Parsers.GNATprove.Parse_Prove_Out
-           ("/tmp/adacovex_test_prove_out.txt", Summary, Success);
+           (Adacovex.CPUs.Get_Temp_Directory & "/adacovex_test_prove_out.txt",
+            Summary,
+            Success);
 
          R.Check (Success, "Parse_Prove_Out: success");
          R.Check (Summary.Flow_Checks = 7, "Parse_Prove_Out: Flow_Checks = 7");
@@ -132,7 +138,10 @@ package body Adacovex_Prove_Tests is
          Summary : Proof_Summary;
          Success : Boolean;
       begin
-         Create (F, Out_File, "/tmp/adacovex_test_prove_out.txt");
+         Create
+           (F,
+            Out_File,
+            Adacovex.CPUs.Get_Temp_Directory & "/adacovex_test_prove_out.txt");
          Put_Line (F, "   Flow Dependencies            7       7 (100%)");
          Put_Line (F, "   Run-time Checks             12      10 (83%)");
          Put_Line (F, "   Assertions                   2       2 (100%)");
@@ -142,7 +151,9 @@ package body Adacovex_Prove_Tests is
          Close (F);
 
          Adacovex.Parsers.GNATprove.Parse_Prove_Out
-           ("/tmp/adacovex_test_prove_out.txt", Summary, Success);
+           (Adacovex.CPUs.Get_Temp_Directory & "/adacovex_test_prove_out.txt",
+            Summary,
+            Success);
 
          R.Check (Success, "Parse_Prove_Out (Silver): success");
          R.Check
@@ -165,7 +176,10 @@ package body Adacovex_Prove_Tests is
          Summary : Proof_Summary;
          Success : Boolean;
       begin
-         Create (F, Out_File, "/tmp/adacovex_test_prove_out.txt");
+         Create
+           (F,
+            Out_File,
+            Adacovex.CPUs.Get_Temp_Directory & "/adacovex_test_prove_out.txt");
          Put_Line
            (F,
             "SPARK Analysis results   Total    Flow     Provers   Justified   Unproved");
@@ -178,7 +192,9 @@ package body Adacovex_Prove_Tests is
          Close (F);
 
          Adacovex.Parsers.GNATprove.Parse_Prove_Out
-           ("/tmp/adacovex_test_prove_out.txt", Summary, Success);
+           (Adacovex.CPUs.Get_Temp_Directory & "/adacovex_test_prove_out.txt",
+            Summary,
+            Success);
 
          R.Check (Success, "Parse_Prove_Out (modern Total): success");
          R.Check
@@ -205,7 +221,10 @@ package body Adacovex_Prove_Tests is
          Summary : Proof_Summary;
          Success : Boolean;
       begin
-         Create (F, Out_File, "/tmp/adacovex_test_prove_out.txt");
+         Create
+           (F,
+            Out_File,
+            Adacovex.CPUs.Get_Temp_Directory & "/adacovex_test_prove_out.txt");
          Put_Line
            (F,
             "SPARK Analysis results   Total    Flow     Provers   Justified   Unproved");
@@ -230,7 +249,9 @@ package body Adacovex_Prove_Tests is
          Close (F);
 
          Adacovex.Parsers.GNATprove.Parse_Prove_Out
-           ("/tmp/adacovex_test_prove_out.txt", Summary, Success);
+           (Adacovex.CPUs.Get_Temp_Directory & "/adacovex_test_prove_out.txt",
+            Summary,
+            Success);
 
          R.Check (Success, "Parse_Prove_Out (init row): success");
          R.Check
@@ -278,7 +299,10 @@ package body Adacovex_Prove_Tests is
          Summary : Proof_Summary;
          Success : Boolean;
       begin
-         Create (F, Out_File, "/tmp/adacovex_test_prove_out.txt");
+         Create
+           (F,
+            Out_File,
+            Adacovex.CPUs.Get_Temp_Directory & "/adacovex_test_prove_out.txt");
          Put_Line
            (F,
             "SPARK Analysis results   Total    Flow     Provers   Justified   Unproved");
@@ -297,7 +321,9 @@ package body Adacovex_Prove_Tests is
          Close (F);
 
          Adacovex.Parsers.GNATprove.Parse_Prove_Out
-           ("/tmp/adacovex_test_prove_out.txt", Summary, Success);
+           (Adacovex.CPUs.Get_Temp_Directory & "/adacovex_test_prove_out.txt",
+            Summary,
+            Success);
 
          R.Check (Success, "Parse_Prove_Out (justified): success");
          R.Check
@@ -325,7 +351,10 @@ package body Adacovex_Prove_Tests is
          Summary : Proof_Summary;
          Success : Boolean;
       begin
-         Create (F, Out_File, "/tmp/adacovex_test_prove_out.txt");
+         Create
+           (F,
+            Out_File,
+            Adacovex.CPUs.Get_Temp_Directory & "/adacovex_test_prove_out.txt");
          Put_Line (F, "Summary of SPARK analysis");
          Put_Line (F, "=========================");
          Put_Line (F, "   Analyzed 28 units");
@@ -339,7 +368,9 @@ package body Adacovex_Prove_Tests is
          Close (F);
 
          Adacovex.Parsers.GNATprove.Parse_Prove_Out
-           ("/tmp/adacovex_test_prove_out.txt", Summary, Success);
+           (Adacovex.CPUs.Get_Temp_Directory & "/adacovex_test_prove_out.txt",
+            Summary,
+            Success);
 
          R.Check (Success, "Parse_Prove_Out (units): success");
          R.Check
@@ -360,7 +391,10 @@ package body Adacovex_Prove_Tests is
          Summary : Proof_Summary;
          Success : Boolean;
       begin
-         Create (F, Out_File, "/tmp/adacovex_test_prove_out.txt");
+         Create
+           (F,
+            Out_File,
+            Adacovex.CPUs.Get_Temp_Directory & "/adacovex_test_prove_out.txt");
          Put_Line
            (F,
             "SPARK Analysis results        Total       Flow     Provers   Justified   Unproved");
@@ -379,7 +413,9 @@ package body Adacovex_Prove_Tests is
          Close (F);
 
          Adacovex.Parsers.GNATprove.Parse_Prove_Out
-           ("/tmp/adacovex_test_prove_out.txt", Summary, Success);
+           (Adacovex.CPUs.Get_Temp_Directory & "/adacovex_test_prove_out.txt",
+            Summary,
+            Success);
 
          R.Check (Success, "Parse_Prove_Out (v16 Total): success");
          R.Check
@@ -406,7 +442,10 @@ package body Adacovex_Prove_Tests is
          Summary : Proof_Summary;
          Success : Boolean;
       begin
-         Create (F, Out_File, "/tmp/adacovex_test_prove_out.txt");
+         Create
+           (F,
+            Out_File,
+            Adacovex.CPUs.Get_Temp_Directory & "/adacovex_test_prove_out.txt");
          Put_Line
            (F,
             "SPARK Analysis results        Total       Flow     Provers   Justified   Unproved");
@@ -422,7 +461,9 @@ package body Adacovex_Prove_Tests is
          Close (F);
 
          Adacovex.Parsers.GNATprove.Parse_Prove_Out
-           ("/tmp/adacovex_test_prove_out.txt", Summary, Success);
+           (Adacovex.CPUs.Get_Temp_Directory & "/adacovex_test_prove_out.txt",
+            Summary,
+            Success);
 
          R.Check (Success, "Parse_Prove_Out (v15 Total): success");
          R.Check
@@ -454,7 +495,10 @@ package body Adacovex_Prove_Tests is
             Big (BLen + 1) := 'q';
             BLen := BLen + 1;
          end loop;
-         Create (F, Out_File, "/tmp/adacovex_test_prove_out.txt");
+         Create
+           (F,
+            Out_File,
+            Adacovex.CPUs.Get_Temp_Directory & "/adacovex_test_prove_out.txt");
          Put_Line
            (F,
             "SPARK Analysis results   Total    Flow     Provers   Justified   Unproved");
@@ -468,7 +512,9 @@ package body Adacovex_Prove_Tests is
             "Parse_Prove_Out (overflow): line exceeds Max_Line");
 
          Adacovex.Parsers.GNATprove.Parse_Prove_Out
-           ("/tmp/adacovex_test_prove_out.txt", Summary, Success);
+           (Adacovex.CPUs.Get_Temp_Directory & "/adacovex_test_prove_out.txt",
+            Summary,
+            Success);
 
          R.Check
            (not Success,

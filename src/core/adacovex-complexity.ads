@@ -1,3 +1,9 @@
+--  Cyclomatic complexity checker for Ada source files.
+--  Scans a target directory for .ads/.adb files, computes per-file and
+--  per-subprogram cyclomatic complexity, and enforces configurable LOC
+--  and complexity gates.  Native Ada implementation (zero external deps).
+--  HLR-COMPLEXITY: Cyclomatic complexity analysis
+--
 with Ada.Containers.Vectors;
 with Ada.Directories;
 with Ada.Text_IO;
@@ -47,10 +53,12 @@ package Adacovex.Complexity is
 
    --  Scan Target_Dir for Ada source files and return per-file and per-
    --  subprogram cyclomatic complexity metrics.
+   --  @brief Walk Target_Dir and compute complexity for every .ads/.adb file.
    function Analyze_Project (Target_Dir : String) return Complexity_Result;
 
    --  Evaluate Result against the supplied thresholds and return the list of
    --  violations (empty when every gate passes).
+   --  @brief Check Result against Max_File_LOC, Max_File_Pct, Max_Fn_Complexity, and Max_File_Complexity.
    function Check_Gates
      (Result              : Complexity_Result;
       Max_File_LOC        : Natural;
@@ -61,6 +69,7 @@ package Adacovex.Complexity is
    --  Emit a human-readable report to stdout.  When Check_Mode is True the
    --  output is gated on Violations being non-empty; otherwise every file
    --  and subprogram is always printed.
+   --  @brief Print a human-readable complexity report to stdout.
    procedure Print_Report
      (Result              : Complexity_Result;
       Check_Mode          : Boolean;

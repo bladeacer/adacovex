@@ -35,9 +35,9 @@ inputs:
     required: false
     default: ''
   gnat-version:
-    description: 'GNAT toolchain version to select via alr (e.g. 15.2.1).'
+    description: 'GNAT toolchain version to select via alr (e.g. 16.1.0).'
     required: false
-    default: '15.2.1'
+    default: '16.1.0'
   version:
     description: >-
       adacovex version; defaults to the release tag this action is

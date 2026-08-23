@@ -204,11 +204,12 @@ scripts), differential modes, and `sbom`.
   check must be proved -- **0 unproved VCs**; there must be **zero justified
   VCs** (no `pragma Assume` / `pragma Annotate` justifications); and there
   must be **no `pragma SPARK_Mode (Off)` in `src/` except
-  `Types.Implementation`** -- the non-SPARK container package that SPARK
-  forbids to analyze, because non-formal `Ada.Containers` are illegal in
-  SPARK_Mode On code. I/O- and container-heavy units are default-off bodies
-  or carry per-subprogram `SPARK_Mode => On` aspects; they never carry an
-  explicit Off pragma.
+  `Types.Implementation`, `Complexity`, and `CPUs`** -- the three packages
+  that instantiate non-formal `Ada.Containers.Vectors` or call non-SPARK
+  runtime routines (`Ada.Environment_Variables`, `GNAT.OS_Lib`), which SPARK
+  forbids in `SPARK_Mode On` code. I/O- and container-heavy units are
+  default-off bodies or carry per-subprogram `SPARK_Mode => On` aspects; they
+  never carry an explicit Off pragma outside the three exempted packages.
 - **Build/dev tooling requires Python 3** (pure-stdlib `tools/*.py`: version
   generation, description sync, test/proof doc sync, changelog checks,
   doc-links, agents-tree). The adacovex binary itself has no Python
@@ -257,7 +258,7 @@ link URLs).
 | `action-parity-check` | Fail if the GitHub Action drifts from the base CLI option set or the docs/ci-cd.md input table (tools/check-action-parity.py; feature gate) |
 | `release` | Build, prove, validate, run coverage gate vs last release, bundle + tag & push |
 | `ascii-check` | Verify all source files are pure ASCII |
-| `complexity-check` | Cyclomatic-complexity + LOC gate: no god objects/functions, no file above its LOC or percentage-of-codebase caps (tools/check-complexity.py; feature gate) |
+| `complexity-check` | Cyclomatic-complexity + LOC gate: no god objects/functions, no file above its LOC or percentage-of-codebase caps (native Ada; gated by make complexity-check) |
 | `bench` | Benchmark the pipeline with hyperfine (bash `time` fallback): cold vs warm timings + binary size (docs/perf.md) |
 | `spark-off-check` | Fail if any `SPARK_Mode (Off)` appears outside the `Types.Implementation` container package |
 | `clean` | Remove bin/ obj/ docs/badges/ |
@@ -352,6 +353,31 @@ Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests).
 
 ## Documentation
+
+adacovex has two distinct documentation tiers with different audiences:
+
+- **User documentation** (`docs/*.md` except `api-docs/`) -- written for end
+  users, safety engineers, and auditors who need to install, configure, run,
+  and interpret adacovex assessments.  After reading these pages a user should
+  understand the full project lifecycle: setup, CLI usage, dashboard
+  interpretation, SBOM generation, VCS differential modes, CI/CD integration,
+  compliance standards (DO-178C / ISO 26262 / IEC 62304), and the SPARK
+  proving workflow.  This tier includes installation, CLI reference, the web
+  dashboard, SBOM, VCS support, target projects, CI/CD, contributing,
+  standards, platforms, proving, architecture, changelogs, HLR/LLR indexes,
+  and performance guides.
+
+- **API reference** (`docs/api-docs/` and its sub-pages) -- generated from
+  Ada source docstrings via `gnatdoc` + `rst2md` (`make doc`).  Written for
+  contributors, developers, and code auditors who need package-level detail,
+  type definitions, subprogram contracts, and SPARK proof annotations.
+  Cross-links from the API pages point back to the hand-written user guides
+  where relevant, but the API pages themselves are not a substitute for the
+  user documentation tier.
+
+Keep this separation sharp: never move a user-guide topic into the API
+reference, and never inline API details into a user doc when a cross-link
+suffices.
 
 <!-- doc-links:begin -->
 - [CLI reference](docs/cli-reference.md)

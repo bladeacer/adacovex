@@ -43,7 +43,7 @@ package body Adacovex.CPUs is
       Out_Len  : out Natural;
       Ok       : out Boolean)
    is
-      Tmp  : constant String := "/tmp/adacovex-sysctl.tmp";
+      Tmp  : constant String := Get_Temp_Directory & "/adacovex-sysctl.tmp";
       Args : Argument_List :=
         (new String'("-c"), new String'(Cmd & " > '" & Tmp & "' 2>/dev/null"));
       Code : Integer;
@@ -52,7 +52,8 @@ package body Adacovex.CPUs is
    begin
       Out_Len := 0;
       Ok := False;
-      Spawn ("sh", Args, "/dev/null", Succ, Code, Err_To_Out => True);
+      Spawn
+        (Get_Shell_Command, Args, "/dev/null", Succ, Code, Err_To_Out => True);
       Free (Args (1));
       Free (Args (2));
       if not Succ or else Code /= 0 then
@@ -235,5 +236,27 @@ package body Adacovex.CPUs is
            & " jobs (reserved 2 cores for system)";
       end if;
    end Jobs_Justification;
+
+   --  Portable system temp directory.  Checks TMPDIR, TEMP, TMP (in that
+   --  order) and falls back to "/tmp".
+   function Get_Temp_Directory return String is
+      use Ada.Environment_Variables;
+   begin
+      if Exists ("TMPDIR") then
+         return Value ("TMPDIR");
+      elsif Exists ("TEMP") then
+         return Value ("TEMP");
+      elsif Exists ("TMP") then
+         return Value ("TMP");
+      else
+         return "/tmp";
+      end if;
+   end Get_Temp_Directory;
+
+   --  Default shell executable for spawned commands.
+   function Get_Shell_Command return String is
+   begin
+      return "sh";
+   end Get_Shell_Command;
 
 end Adacovex.CPUs;

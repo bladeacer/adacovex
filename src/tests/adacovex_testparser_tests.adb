@@ -3,6 +3,7 @@ with Ada.Directories;
 with Adacovex.Types;
 use Adacovex.Types, Adacovex.Types.Implementation;
 with Adacovex.Parsers.Tests;
+with Adacovex.CPUs;
 
 package body Adacovex_TestParser_Tests is
 
@@ -11,7 +12,8 @@ package body Adacovex_TestParser_Tests is
       F        : File_Type;
       Summary  : Test_Summary;
       Success  : Boolean;
-      Tmp_Path : constant String := "/tmp/adacovex_test_result.txt";
+      Tmp_Path : constant String :=
+        Adacovex.CPUs.Get_Temp_Directory & "/adacovex_test_result.txt";
    begin
 
       --  Test 1: mixed pass/fail categories
@@ -263,7 +265,8 @@ package body Adacovex_TestParser_Tests is
       --  Test 9: project discovery finds a conventional file name
       --  (test_results.md) in the target directory.
       declare
-         Tgt_Dir : constant String := "/tmp/adacovex_test_project";
+         Tgt_Dir : constant String :=
+           Adacovex.CPUs.Get_Temp_Directory & "/adacovex_test_project";
       begin
          Ada.Directories.Create_Path (Tgt_Dir);
          Create (F, Out_File, Tgt_Dir & "/test_results.md");
@@ -273,7 +276,9 @@ package body Adacovex_TestParser_Tests is
       end;
 
       Adacovex.Parsers.Tests.Parse_Test_Result_From_Project
-        ("/tmp/adacovex_test_project", Summary, Success);
+        (Adacovex.CPUs.Get_Temp_Directory & "/adacovex_test_project",
+         Summary,
+         Success);
       R.Check (Success, "Test 9: project discovery succeeded");
       R.Check
         (Summary.Total_Passed = 12 and then Summary.Total_Failed = 0,
@@ -281,8 +286,10 @@ package body Adacovex_TestParser_Tests is
 
       begin
          Ada.Directories.Delete_File
-           ("/tmp/adacovex_test_project/test_results.md");
-         Ada.Directories.Delete_Directory ("/tmp/adacovex_test_project");
+           (Adacovex.CPUs.Get_Temp_Directory
+            & "/adacovex_test_project/test_results.md");
+         Ada.Directories.Delete_Directory
+           (Adacovex.CPUs.Get_Temp_Directory & "/adacovex_test_project");
       exception
          when others =>
             null;
@@ -291,7 +298,8 @@ package body Adacovex_TestParser_Tests is
       --  Test 10: project discovery falls back to docs/test_result.md
       --  when no conventional root-level file exists.
       declare
-         Tgt_Dir : constant String := "/tmp/adacovex_test_docs";
+         Tgt_Dir : constant String :=
+           Adacovex.CPUs.Get_Temp_Directory & "/adacovex_test_docs";
       begin
          Ada.Directories.Create_Path (Tgt_Dir & "/docs");
          Create (F, Out_File, Tgt_Dir & "/docs/test_result.md");
@@ -301,7 +309,9 @@ package body Adacovex_TestParser_Tests is
       end;
 
       Adacovex.Parsers.Tests.Parse_Test_Result_From_Project
-        ("/tmp/adacovex_test_docs", Summary, Success);
+        (Adacovex.CPUs.Get_Temp_Directory & "/adacovex_test_docs",
+         Summary,
+         Success);
       R.Check (Success, "Test 10: docs fallback discovery succeeded");
       R.Check
         (Summary.Total_Passed = 3 and then Summary.Total_Failed = 0,
@@ -309,9 +319,12 @@ package body Adacovex_TestParser_Tests is
 
       begin
          Ada.Directories.Delete_File
-           ("/tmp/adacovex_test_docs/docs/test_result.md");
-         Ada.Directories.Delete_Directory ("/tmp/adacovex_test_docs/docs");
-         Ada.Directories.Delete_Directory ("/tmp/adacovex_test_docs");
+           (Adacovex.CPUs.Get_Temp_Directory
+            & "/adacovex_test_docs/docs/test_result.md");
+         Ada.Directories.Delete_Directory
+           (Adacovex.CPUs.Get_Temp_Directory & "/adacovex_test_docs/docs");
+         Ada.Directories.Delete_Directory
+           (Adacovex.CPUs.Get_Temp_Directory & "/adacovex_test_docs");
       exception
          when others =>
             null;
@@ -320,7 +333,9 @@ package body Adacovex_TestParser_Tests is
       --  Test 11: project discovery reports failure when no test result
       --  file exists in the target directory.
       Adacovex.Parsers.Tests.Parse_Test_Result_From_Project
-        ("/tmp/adacovex_test_missing", Summary, Success);
+        (Adacovex.CPUs.Get_Temp_Directory & "/adacovex_test_missing",
+         Summary,
+         Success);
       R.Check (not Success, "Test 11: missing test result reported");
 
       --  Test 12: Unity "N Tests M Failures" summary

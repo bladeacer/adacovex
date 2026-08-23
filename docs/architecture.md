@@ -459,7 +459,7 @@ Alire's supported-platform matrix:
 - **GitHub release bundles**: built on GitHub's Linux runners and distributed
   as `adacovex-vX.Y.Z.tar.gz` for every tag.
 
-The GitHub Actions composite action pins `gnat-version` (default `15.2.1`) via
+The GitHub Actions composite action pins `gnat-version` (default `16.1.0`) via
 `alire-project/setup-alire`, and CI runs on `ubuntu-latest`, so the CI-verified
 platform is Linux x86-64. The tool itself is written in portable Ada 2012 using
 only the GNAT runtime, so no adacovex code is platform-specific beyond what the

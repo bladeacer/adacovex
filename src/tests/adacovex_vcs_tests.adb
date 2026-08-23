@@ -4,6 +4,7 @@ with Ada.Text_IO;
 with GNAT.OS_Lib;
 with Adacovex.Test_Support;
 with Adacovex.VCS;
+with Adacovex.CPUs;
 
 package body Adacovex_VCS_Tests is
 
@@ -14,7 +15,9 @@ package body Adacovex_VCS_Tests is
         Integer'Image
           (GNAT.OS_Lib.Pid_To_Integer (GNAT.OS_Lib.Current_Process_Id));
       Base : constant String :=
-        "/tmp/adacovex-vcs-test-" & Pid (2 .. Pid'Last);
+        Adacovex.CPUs.Get_Temp_Directory
+        & "/adacovex-vcs-test-"
+        & Pid (2 .. Pid'Last);
 
       procedure Cleanup (Sub : String) is
       begin
