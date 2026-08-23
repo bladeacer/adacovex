@@ -239,6 +239,8 @@ package body Adacovex.Server.HTTP is
          return Route_Badge_IEC62304;
       elsif Path = "/api/metrics" then
          return Route_API_Metrics;
+      elsif Path = "/api/deps" then
+         return Route_API_Deps;
       else
          --  The served-route implications are all vacuous here
          --  (the result is Route_Not_Found, not a served kind).
@@ -418,6 +420,14 @@ package body Adacovex.Server.HTTP is
                   State.Tests,
                   State.DAL_Assess,
                   State.All_Standards),
+               Is_KA);
+
+         when Route_API_Deps       =>
+            Send_Response
+              (Channel,
+               "200 OK",
+               "application/json",
+               Adacovex.Renderers.HTML.Render_Deps_JSON (State.Graph),
                Is_KA);
 
          when Route_Not_Found      =>

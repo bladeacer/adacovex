@@ -209,7 +209,7 @@ package body Adacovex.Config is
    --  in sync with the Parse_Args branches below.
    Known_Flags : constant String :=
      "target manifest dal asil class standard serve theme port "
-     & "emit-svg no-svg emit-markdown verbose relaxed cache no-cache "
+     & "emit-svg no-svg emit-markdown emit-metrics verbose relaxed cache no-cache "
      & "cache-dir cache-max skip-dir compare-base coverage-delta sbom "
      & "prove status man check dir version no-sbom sbom-format format out "
      & "jobs level timeout steps memlimit force no-loop-unrolling "
@@ -646,6 +646,22 @@ package body Adacovex.Config is
                   Cfg.Emit_Markdown := True;
                   Set_String
                     (Cfg.MD_Path, Cfg.MD_Path_Len, A (A'First + 16 .. A'Last));
+               elsif A = "--emit-metrics" then
+                  I := I + 1;
+                  if I <= Count then
+                     Cfg.Emit_Metrics := True;
+                     Set_String
+                       (Cfg.Metrics_Path, Cfg.Metrics_Path_Len, Args (I));
+                  else
+                     Set_Error
+                       (Cfg, "--emit-metrics requires a file path argument");
+                  end if;
+               elsif Has_Prefix (A, "--emit-metrics=") then
+                  Cfg.Emit_Metrics := True;
+                  Set_String
+                    (Cfg.Metrics_Path,
+                     Cfg.Metrics_Path_Len,
+                     A (A'First + 15 .. A'Last));
                elsif A = "--no-svg" then
                   Cfg.No_SVG := True;
                elsif A = "--verbose" then
@@ -1459,6 +1475,8 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("  --emit-markdown=PATH  Write VERIFICATION.md + TRACE.md");
       Ada.Text_IO.Put_Line
+        ("  --emit-metrics=FILE   Write a JSON metrics + dependency export");
+      Ada.Text_IO.Put_Line
         ("  --skip-dir=NAME       Add directory name to skip list (repeatable)");
       Ada.Text_IO.Put_Line
         ("  --relaxed             Disable strict mode (skip dirs, no patches); strict is default");
@@ -1892,6 +1910,18 @@ package body Adacovex.Config is
             "Write the Markdown verification report (VERIFICATION.md) and"
             & ASCII.LF
             & "traceability report (TRACE.md) into the given directory.");
+      elsif T = "emit-metrics" then
+         Print_Section
+           ("--emit-metrics=FILE",
+            "Write a JSON export of the assessment metrics and the resolved"
+            & ASCII.LF
+            & "dependency graph to FILE: spark level and VC counts, test"
+            & ASCII.LF
+            & "totals, docstring coverage, DAL status, per-standard levels,"
+            & ASCII.LF
+            & "and the dependency tree (name/version/scope/parent) -- the same"
+            & ASCII.LF
+            & "data the served dashboard's /api/metrics + /api/deps expose.");
       elsif T = "skip-dir" or else T = "relaxed" then
          Print_Section
            ("--skip-dir / --relaxed",

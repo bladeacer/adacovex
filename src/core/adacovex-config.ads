@@ -42,6 +42,9 @@ package Adacovex.Config is
       Emit_Markdown : Boolean := False;
       MD_Path       : String (1 .. Types.Max_Path);
       MD_Path_Len   : Natural := 0;
+      Emit_Metrics  : Boolean := False;
+      Metrics_Path  : String (1 .. Types.Max_Path);
+      Metrics_Path_Len : Natural := 0;
       Verbose       : Boolean := False;
       Strict_Mode   : Boolean := True;
 
@@ -149,6 +152,7 @@ package Adacovex.Config is
        and then Parse_CLI'Result.Manifest_Len <= Types.Max_Path
        and then Parse_CLI'Result.SVG_Path_Len <= Types.Max_Path
        and then Parse_CLI'Result.MD_Path_Len <= Types.Max_Path
+       and then Parse_CLI'Result.Metrics_Path_Len <= Types.Max_Path
        and then Parse_CLI'Result.Compare_Base_Len <= Types.Max_Path
        and then Parse_CLI'Result.Coverage_Delta_Len <= Types.Max_Path
        and then Parse_CLI'Result.SBOM_Out_Len <= Types.Max_Path

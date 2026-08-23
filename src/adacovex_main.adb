@@ -16,6 +16,7 @@ with Adacovex.Parsers.Manifest;
 with Adacovex.Compliance.DAL;
 with Adacovex.Renderers.ANSI;
 with Adacovex.Renderers.SVG;
+with Adacovex.Renderers.HTML;
 with Adacovex.Renderers.Markdown;
 with Adacovex.Renderers.Man;
 with Adacovex.Renderers.SBOM;
@@ -978,6 +979,78 @@ begin
          & Cfg.MD_Path (1 .. Cfg.MD_Path_Len));
    end if;
 
+   -- Step 7b: Emit the JSON metrics + dependency export if requested
+   if Cfg.Emit_Metrics then
+      Verbose ("step 7b/9: emitting metrics export...");
+      declare
+         Graph    : Adacovex.Types.Implementation.Component_Vectors.Vector;
+         GOK      : Boolean;
+         Out_Path : constant String :=
+           Cfg.Metrics_Path (1 .. Cfg.Metrics_Path_Len);
+         F        : Ada.Text_IO.File_Type;
+         JSON     : String (1 .. 1_000_000);
+         JLen     : Natural := 0;
+         J        : Natural := 1;
+      begin
+         Adacovex.Parsers.Manifest.Build_Dependency_Graph
+           (Target (1 .. TLen),
+            Cfg.Manifest_Path (1 .. Cfg.Manifest_Len),
+            Graph,
+            GOK,
+            Use_Cache => Cfg.Cache_Enabled);
+         declare
+            Metrics_JSON : constant String :=
+              Adacovex.Renderers.HTML.Render_Metrics_JSON
+                (Doc_Metrics,
+                 Proof,
+                 Tests,
+                 DAL_Assess,
+                 Cfg.Standard_All);
+            Deps_JSON : constant String :=
+              Adacovex.Renderers.HTML.Render_Deps_JSON (Graph);
+         begin
+            --  Combine into one document: strip the surrounding braces of
+            --  each and merge under keys "metrics" and "dependencies".
+            --  Simpler: metrics{...} + deps{...} side by side as two keys.
+            declare
+               M : constant String :=
+                 "{""metrics"":"
+                 & Metrics_JSON
+                 & ",""dependencies"":"
+                 & Deps_JSON
+                 & "}";
+            begin
+               if M'Length <= JSON'Length then
+                  JSON (1 .. M'Length) := M;
+                  JLen := M'Length;
+               end if;
+            end;
+         end;
+         if JLen > 0 then
+            begin
+               Ada.Text_IO.Create (F, Ada.Text_IO.Out_File, Out_Path);
+               Ada.Text_IO.Put_Line (F, JSON (1 .. JLen));
+               Ada.Text_IO.Close (F);
+               Ada.Text_IO.Put_Line
+                 ("metrics export written to "
+                  & Out_Path
+                  & " ("
+                  & Img (JLen)
+                  & " bytes)");
+            exception
+               when others =>
+                  Ada.Text_IO.Put_Line
+                    (Ada.Text_IO.Standard_Error,
+                     "Warning: could not write metrics export to " & Out_Path);
+            end;
+         else
+            Ada.Text_IO.Put_Line
+              (Ada.Text_IO.Standard_Error,
+               "Warning: metrics export too large to buffer; skipped");
+         end if;
+      end;
+   end if;
+
    -- Step 8: Automatically emit a proof-aware SBOM (unless --no-sbom)
    if not Cfg.No_SBOM then
       Verbose
@@ -1007,6 +1080,7 @@ begin
          & "...");
       declare
          State : Adacovex.Server.HTTP.Server_State;
+         GOK   : Boolean;
       begin
          State.Port := Cfg.Port;
          State.Doc_Metrics := Doc_Metrics;
@@ -1016,6 +1090,17 @@ begin
          State.Packages := Packages;
          State.All_Standards := Cfg.Standard_All;
          State.Theme := Cfg.Theme;
+         --  Resolve the dependency graph so /api/deps can serve it (best
+         --  effort: an unresolvable graph serves an empty dependency list).
+         Adacovex.Parsers.Manifest.Build_Dependency_Graph
+           (Target (1 .. TLen),
+            Cfg.Manifest_Path (1 .. Cfg.Manifest_Len),
+            State.Graph,
+            GOK,
+            Use_Cache => Cfg.Cache_Enabled);
+         if not GOK then
+            Verbose ("serving dashboard with empty dependency graph");
+         end if;
          Adacovex.Server.HTTP.Start (State);
       end;
    end if;

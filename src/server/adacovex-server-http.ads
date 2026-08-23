@@ -19,19 +19,15 @@ package Adacovex.Server.HTTP is
       Route_Badge_ISO26262,
       Route_Badge_IEC62304,
       Route_API_Metrics,
+      Route_API_Deps,
       Route_Not_Found);
 
    --  Map a request path to its handler action.
    --  Returns the Route_Kind for the given path: the dashboard at "/", the
-   --  JSON API at "/api/metrics", the five SVG badge endpoints at
-   --  "/badge/*.svg", and Route_Not_Found for every other path.  Pure path
+   --  JSON APIs at "/api/metrics" and "/api/deps", and the SVG badge
+   --  endpoints at "/badge/*.svg", Route_Not_Found otherwise.  Pure path
    --  routing -- the socket dispatch in Handle_Request switches on the
-   --  result, and the native test suite pins every route.  The postcondition
-   --  pins the served-route implications (a served route kind implies its
-   --  literal path); the exact path-to-kind mapping and the 404 case are
-   --  pinned exhaustively by the server routing tests (the full iff
-   --  characterization needs a seven-way string-inequality conjunction the
-   --  solver cannot discharge).
+   --  result, and the native test suite pins every route.
    --  @param Path  Request path (as extracted by Get_Path).
    --  @return Route_Kind for the path.
    function Route (Path : String) return Route_Kind
@@ -49,7 +45,8 @@ package Adacovex.Server.HTTP is
                  or Path = "/badge/iso26262.svg")
        and then (Route'Result /= Route_Badge_IEC62304
                  or Path = "/badge/iec62304.svg")
-       and then (Route'Result /= Route_API_Metrics or Path = "/api/metrics"),
+       and then (Route'Result /= Route_API_Metrics or Path = "/api/metrics")
+       and then (Route'Result /= Route_API_Deps or Path = "/api/deps"),
      Global     => null;
 
    type Server_State is record
@@ -59,6 +56,7 @@ package Adacovex.Server.HTTP is
       Tests         : Types.Implementation.Test_Summary;
       DAL_Assess    : Types.Implementation.DAL_Assessment;
       Packages      : Types.Implementation.Package_Vectors.Vector;
+      Graph         : Types.Implementation.Component_Vectors.Vector;
       All_Standards : Boolean := False;
       Theme         : Types.Dashboard_Theme := Types.System_Theme;
    end record;

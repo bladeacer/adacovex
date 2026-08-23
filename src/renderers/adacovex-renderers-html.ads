@@ -55,6 +55,16 @@ package Adacovex.Renderers.HTML is
       Tests       : Types.Implementation.Test_Summary) return String
    with Post => Render_Charts'Result'Length > 0, Global => null;
 
+   --  Render the dependency graph as a JSON object for /api/deps.
+   --  Serializes the resolved component vector (root at index 1 plus its
+   --  transitive closure) with name, version, scope, license, PURL, kind,
+   --  and the parent index, so consumers can reconstruct the tree.
+   --  @param Graph  Dependency graph component vector.
+   --  @return JSON string with a "dependencies" array.
+   function Render_Deps_JSON
+     (Graph : Types.Implementation.Component_Vectors.Vector) return String
+   with Post => Render_Deps_JSON'Result'Length > 0, Global => null;
+
    --  Render a JSON object with key metric values.
    --  Produces a lightweight JSON payload containing docstring coverage,
    --  proof results, test summary, and compliance status for programmatic
