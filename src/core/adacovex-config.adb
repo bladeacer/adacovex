@@ -781,11 +781,13 @@ package body Adacovex.Config is
                     (Cfg.Coverage_Delta,
                      Cfg.Coverage_Delta_Len,
                      A (A'First + 17 .. A'Last));
-               elsif A = "sbom" then
-                  Cfg.SBOM_Mode := True;
-               elsif A = "prove" then
-                  Cfg.Prove_Mode := True;
-               elsif A = "status" then
+                elsif A = "sbom" then
+                   Cfg.SBOM_Mode := True;
+                elsif A = "prove" then
+                   Cfg.Prove_Mode := True;
+                elsif A = "complexity" then
+                   Cfg.Complexity_Mode := True;
+                elsif A = "status" then
                   Cfg.Status_Mode := True;
                elsif A = "completion" then
                   --  `completion [bash|fish|zsh|pwsh]`: the shell name is
