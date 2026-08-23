@@ -34,19 +34,19 @@ package Adacovex.Config is
       --  Dashboard color theme for --serve (system/light/dark).  "system"
       --  follows the browser's prefers-color-scheme; light/dark force a
       --  theme.  Only relevant with --serve.
-      Theme         : Types.Dashboard_Theme := Types.System_Theme;
-      No_SVG        : Boolean := False;
-      Emit_SVG      : Boolean := True;
-      SVG_Path      : String (1 .. Types.Max_Path);
-      SVG_Path_Len  : Natural := 0;
-      Emit_Markdown : Boolean := False;
-      MD_Path       : String (1 .. Types.Max_Path);
-      MD_Path_Len   : Natural := 0;
-      Emit_Metrics  : Boolean := False;
-      Metrics_Path  : String (1 .. Types.Max_Path);
+      Theme            : Types.Dashboard_Theme := Types.System_Theme;
+      No_SVG           : Boolean := False;
+      Emit_SVG         : Boolean := True;
+      SVG_Path         : String (1 .. Types.Max_Path);
+      SVG_Path_Len     : Natural := 0;
+      Emit_Markdown    : Boolean := False;
+      MD_Path          : String (1 .. Types.Max_Path);
+      MD_Path_Len      : Natural := 0;
+      Emit_Metrics     : Boolean := False;
+      Metrics_Path     : String (1 .. Types.Max_Path);
       Metrics_Path_Len : Natural := 0;
-      Verbose       : Boolean := False;
-      Strict_Mode   : Boolean := True;
+      Verbose          : Boolean := False;
+      Strict_Mode      : Boolean := True;
 
       --  Result caching (see Adacovex.Cache).  Enabled by default; the cache
       --  is keyed by the SHA-256 of each analyzed input, so unchanged code
@@ -65,31 +65,31 @@ package Adacovex.Config is
       --  on the flag list instead of a bare one-line error.
       Unknown_No_Suggest : Boolean := False;
 
-      Help_Requested     : Boolean := False;
-      Help_Topic         : String (1 .. Types.Max_Path);
-      Help_Topic_Len     : Natural := 0;
-      Version_Requested  : Boolean := False;
-      Man_Mode           : Boolean := False;
-      Man_Check          : Boolean := False;
-      Man_Force          : Boolean := False;
-      Man_Dir            : String (1 .. Types.Max_Path);
-      Man_Dir_Len        : Natural := 0;
-      Skip_Dir_Ct        : Natural := 0;
-      Skip_Dirs          : Types.Name_Field;
-      Compare_Base       : String (1 .. Types.Max_Path);
-      Compare_Base_Len   : Natural := 0;
-      Coverage_Delta     : String (1 .. Types.Max_Path);
-      Coverage_Delta_Len : Natural := 0;
-      Prove_Mode         : Boolean := False;
-      Status_Mode        : Boolean := False;
-      Completion_Mode    : Boolean := False;
-      Completion_Shell   : String (1 .. Types.Max_Filename);
+      Help_Requested       : Boolean := False;
+      Help_Topic           : String (1 .. Types.Max_Path);
+      Help_Topic_Len       : Natural := 0;
+      Version_Requested    : Boolean := False;
+      Man_Mode             : Boolean := False;
+      Man_Check            : Boolean := False;
+      Man_Force            : Boolean := False;
+      Man_Dir              : String (1 .. Types.Max_Path);
+      Man_Dir_Len          : Natural := 0;
+      Skip_Dir_Ct          : Natural := 0;
+      Skip_Dirs            : Types.Name_Field;
+      Compare_Base         : String (1 .. Types.Max_Path);
+      Compare_Base_Len     : Natural := 0;
+      Coverage_Delta       : String (1 .. Types.Max_Path);
+      Coverage_Delta_Len   : Natural := 0;
+      Prove_Mode           : Boolean := False;
+      Status_Mode          : Boolean := False;
+      Completion_Mode      : Boolean := False;
+      Completion_Shell     : String (1 .. Types.Max_Filename);
       Completion_Shell_Len : Natural := 0;
-      SBOM_Mode          : Boolean := False;
-      SBOM_Format        : Types.SBOM_Format_Kind := Types.CycloneDX_JSON;
-      SBOM_Out           : String (1 .. Types.Max_Path);
-      SBOM_Out_Len       : Natural := 0;
-      No_SBOM            : Boolean := False;
+      SBOM_Mode            : Boolean := False;
+      SBOM_Format          : Types.SBOM_Format_Kind := Types.CycloneDX_JSON;
+      SBOM_Out             : String (1 .. Types.Max_Path);
+      SBOM_Out_Len         : Natural := 0;
+      No_SBOM              : Boolean := False;
 
       --  GNATprove invocation options (prove mode).  A value of -1 means
       --  "not configured": --jobs auto-detects the core count, and the

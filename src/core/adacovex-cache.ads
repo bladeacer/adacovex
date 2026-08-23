@@ -128,7 +128,10 @@ package Adacovex.Cache is
    --  @param Val_Len  Length of the version string.
    --  @param Found  True when a fresh probe existed.
    procedure Get_Probe
-     (Tool : String; Value : out String; Val_Len : out Natural; Found : out Boolean);
+     (Tool    : String;
+      Value   : out String;
+      Val_Len : out Natural;
+      Found   : out Boolean);
 
    --  Store a system-tool version probe result on disk (overwrites any
    --  existing entry for the tool).

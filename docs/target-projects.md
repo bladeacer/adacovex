@@ -23,9 +23,14 @@ shows as `N/A`, and DAL checks that depend on it report `Unmet`.
    conventional name at the project root or under `docs/` (for example
    `test_result.md`, `test_results.md`, `test-result.md`, `tests.md`,
    `test_result.txt`, `test_results.log`, `docs/test_result.md`, ...).
-   Supported formats: Markdown tables, TAP, Automake, Maven Surefire, Unity,
-   and AUnit-compatible output -- see the
-   [test format spec](api-docs/adacovex-test-format.md).
+   Supported formats (from your runner's log or a summary file):
+   Markdown tables -- the native `test_runner` layout
+   `| Category | N | PASS |` and the AUnit-report layout
+   `| - | Category | N | PASS |` -- plus TAP (`ok`/`not ok`), GNU
+   Automake (`PASS:`/`FAIL:`), Maven Surefire (`Tests run: N`), and Unity
+   (`N Tests M Failures`). See the
+   [test format spec](api-docs/adacovex-test-format.md) for the detailed
+   rules (what each line looks like, which line wins when formats mix).
 4. **HLR / LLR documents** (for DAL assessment) --
    `<target>/docs/compliance/HLR.md` and optionally
    `<target>/docs/compliance/LLR.md`, following the

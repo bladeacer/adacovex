@@ -616,8 +616,7 @@ begin
             else "bash");
       begin
          Ada.Text_IO.Put
-           (Adacovex.Completion.Generate
-              (Shell, Adacovex.Config.Flag_List));
+           (Adacovex.Completion.Generate (Shell, Adacovex.Config.Flag_List));
       end;
       Ada.Command_Line.Set_Exit_Status (0);
       return;
@@ -1020,12 +1019,8 @@ begin
          declare
             Metrics_JSON : constant String :=
               Adacovex.Renderers.HTML.Render_Metrics_JSON
-                (Doc_Metrics,
-                 Proof,
-                 Tests,
-                 DAL_Assess,
-                 Cfg.Standard_All);
-            Deps_JSON : constant String :=
+                (Doc_Metrics, Proof, Tests, DAL_Assess, Cfg.Standard_All);
+            Deps_JSON    : constant String :=
               Adacovex.Renderers.HTML.Render_Deps_JSON (Graph);
          begin
             --  Combine into one document: strip the surrounding braces of

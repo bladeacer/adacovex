@@ -28,6 +28,7 @@
 - [Adacovex_VCS_Tests](adacovex_vcs_tests.md)
 - [Adacovex_Version_Info](adacovex_version_info.md)
 - [Adacovex.Cache](adacovex-cache.md)
+- [Adacovex.Completion](adacovex-completion.md)
 - [Adacovex.Compliance](adacovex-compliance.md)
 - [Adacovex.Config](adacovex-config.md)
 - [Adacovex.Core](adacovex-core.md)

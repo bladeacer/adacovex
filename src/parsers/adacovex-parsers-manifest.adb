@@ -1529,8 +1529,7 @@ package body Adacovex.Parsers.Manifest is
                         if VLen > VBuf'Last then
                            VLen := VBuf'Last;
                         end if;
-                        VBuf (1 .. VLen) :=
-                          V (V'First .. V'First + VLen - 1);
+                        VBuf (1 .. VLen) := V (V'First .. V'First + VLen - 1);
                      end;
                      Adacovex.Cache.Put_Probe (Name, VBuf (1 .. VLen));
                   end if;

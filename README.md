@@ -23,7 +23,10 @@ dependencies beyond the GNAT runtime; gnatprove is resolved at run time by the
 - **Proof analysis** -- parses GNATprove `gnatprove.out` summaries; assesses
   [SPARK assurance levels](docs/api-docs/adacovex-spark-levels.md) (Stone--Platinum)
 - **Test parsing** -- reads [test-result summaries](docs/api-docs/adacovex-test-format.md)
-  (Markdown tables, TAP, Automake, Maven Surefire, Unity, AUnit-compatible)
+  from your CI or runner logs: Markdown tables (the native `test_runner`
+  format, with or without an index column), TAP (`ok`/`not ok`), GNU
+  Automake (`PASS:`/`FAIL:`, Maven Surefire (`Tests run: N`), Unity
+  (`N Tests`) and AUnit reports
 - **[Compliance](docs/standards.md)** -- assesses DO-178C DAL A-E criteria
   (HLR coverage, orphan tags, test status, minimum SPARK proof level),
   re-labelled for [ISO 26262](docs/api-docs/adacovex-asil-levels.md)
@@ -208,7 +211,7 @@ inputs/outputs, result caching, and release bundling:
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 879/879 passing |
+| Unit tests | `make test` | 886/886 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (720 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, DAL-C (strict mode) |
@@ -237,6 +240,7 @@ for Alire-managed and system-installed GNAT LLVM options and caveats.
 - **[setup-alire](https://github.com/alire-project/setup-alire)** GitHub Action (used in CI)
 - **[CycloneDX](https://github.com/CycloneDX/specification)** SBOM specification (CycloneDX 1.5 JSON output)
 - **[SPDX](https://spdx.dev)** Software Package Data Exchange specification (SPDX 2.3 JSON output)
+- **[charts.css](https://github.com/ChartsCSS/charts.css/)**: Open source CSS framework for data visualisation
 
 ## License
 

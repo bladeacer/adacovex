@@ -11,6 +11,16 @@ HLR-RENDER-HTML: HTML dashboard and JSON API
 
 ## Functions
 
+### function Render_Charts (Doc_Metrics : Adacovex.Types.Docstring_Metrics; Proof : Adacovex.Types.Proof_Summary; Tests : Adacovex.Types.Implementation.Test_Summary) return Standard.String `[Post]` `[Global]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `Doc_Metrics` | Docstring coverage metrics. |
+| `Proof` | GNATprove proof summary. |
+| `Tests` | Test result summary. |
+
+**Returns:** HTML fragment with the chart cards.
+
 ### function Render_Dashboard (Doc_Metrics : Adacovex.Types.Docstring_Metrics; Proof : Adacovex.Types.Proof_Summary; Tests : Adacovex.Types.Implementation.Test_Summary; DAL_Assess : Adacovex.Types.Implementation.DAL_Assessment; Packages : Adacovex.Types.Implementation.Package_Vectors.Vector; All_Standards : Standard.Boolean; Theme : Adacovex.Types.Dashboard_Theme) return Standard.String `[Post]` `[Global]`
 
 | Parameter | Description |
@@ -24,6 +34,14 @@ HLR-RENDER-HTML: HTML dashboard and JSON API
 | `Theme` | Initial dashboard theme (system/light/dark). |
 
 **Returns:** HTML dashboard page.
+
+### function Render_Deps_JSON (Graph : Adacovex.Types.Implementation.Component_Vectors.Vector) return Standard.String `[Post]` `[Global]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `Graph` | Dependency graph component vector. |
+
+**Returns:** JSON string with a "dependencies" array.
 
 ### function Render_Metrics_JSON (Doc_Metrics : Adacovex.Types.Docstring_Metrics; Proof : Adacovex.Types.Proof_Summary; Tests : Adacovex.Types.Implementation.Test_Summary; DAL_Assess : Adacovex.Types.Implementation.DAL_Assessment; All_Standards : Standard.Boolean) return Standard.String `[Post]` `[Global]`
 

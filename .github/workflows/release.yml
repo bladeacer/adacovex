@@ -39,7 +39,7 @@ jobs:
           verbose: true
           require-spark: Platinum
           require-docstrings: 100
-          require-tests: 879
+          require-tests: 886
           require-proof: 100
 
       - name: Require Platinum SPARK level
