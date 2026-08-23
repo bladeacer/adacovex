@@ -101,6 +101,26 @@ assessment without parsing HTML:
 | `dal_status` | `Achieved` or `Unmet` |
 | `standards` | Per-standard `level` / `status` object (present when `standard` is `all`) |
 
+`/api/deps` serves the resolved dependency graph as JSON (the same data the
+SBOM embeds, minus the SBOM envelope):
+
+```json
+[{"name":"gnat_arm_elf","version":"13.2.1","scope":"build",
+  "parent":"adacovex","kind":"(direct)","purl":"pkg:generic/gnat_arm_elf@13.2.1"},
+ ...]
+```
+
+| Field | Meaning |
+|-------|---------|
+| `name` / `version` | Component name and version |
+| `scope` | `build` \| `dev` \| `runtime` \| `tool` \| `system` |
+| `parent` | Depending component (empty for the root) |
+| `kind` | Component kind (crate, toolchain tool, system tool, ...) |
+| `purl` | Package URL when derivable |
+
+On-disk, the same export is available via `--emit-metrics=PATH`
+(`{"metrics": {...}, "dependencies": [...]}` after any assessment).
+
 ## Themes
 
 The dashboard supports **light**, **dark**, and **system** themes. Colors are

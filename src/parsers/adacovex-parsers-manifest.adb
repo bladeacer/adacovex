@@ -1503,16 +1503,48 @@ package body Adacovex.Parsers.Manifest is
          begin
             if Exe /= null then
                GNAT.OS_Lib.Free (Exe);
-               Append_Dependency
-                 (Graph,
-                  Name,
-                  Probe_Version (Name, Version_Flag (Name)),
-                  "",
-                  "System tool referenced by the project (dev dependency)",
-                  "pkg:generic/" & Name,
-                  1,
-                  False,
-                  Types.Scope_Dev);
+               --  Version probing spawns a subprocess per tool; cache the
+               --  result on disk (7-day TTL) so unchanged toolchains do not
+               --  pay tens of milliseconds per referenced tool on every run.
+               declare
+                  Probe : String (1 .. 512) := (others => ' ');
+                  PLen  : Natural := 0;
+                  Found : Boolean := False;
+                  --  Version text (up to the 4096-char Probe_Version reader
+                  --  cap), copied into a fixed buffer so the cache-hit and
+                  --  cache-miss paths share one Append_Dependency call.
+                  VBuf  : String (1 .. 4096);
+                  VLen  : Natural := 0;
+               begin
+                  Adacovex.Cache.Get_Probe (Name, Probe, PLen, Found);
+                  if Found then
+                     VLen := PLen;
+                     VBuf (1 .. VLen) := Probe (1 .. VLen);
+                  else
+                     declare
+                        V : constant String :=
+                          Probe_Version (Name, Version_Flag (Name));
+                     begin
+                        VLen := V'Length;
+                        if VLen > VBuf'Last then
+                           VLen := VBuf'Last;
+                        end if;
+                        VBuf (1 .. VLen) :=
+                          V (V'First .. V'First + VLen - 1);
+                     end;
+                     Adacovex.Cache.Put_Probe (Name, VBuf (1 .. VLen));
+                  end if;
+                  Append_Dependency
+                    (Graph,
+                     Name,
+                     VBuf (1 .. VLen),
+                     "",
+                     "System tool referenced by the project (dev dependency)",
+                     "pkg:generic/" & Name,
+                     1,
+                     False,
+                     Types.Scope_Dev);
+               end;
             end if;
          end;
       end loop;

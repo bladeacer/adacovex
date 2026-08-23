@@ -48,6 +48,17 @@ jobs:
       - name: Enforce no SPARK_Mode (Off) outside Types.Implementation
         run: make spark-off-check
 
+  complexity-gate:
+    # Cyclomatic-complexity + LOC gate: fails when a function exceeds the
+    # decision-point cap or a file dominates the codebase (god objects /
+    # god functions / extra-long files).  See tools/check-complexity.py.
+    name: Complexity gate (no god objects)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Enforce complexity + file-size caps
+        run: make complexity-check
+
   action-parity:
     # Feature gate: the composite action must mirror the base CLI option set
     # (and the docs/ci-cd.md input table) 1:1.  Fails when a CLI flag, action
@@ -140,7 +151,7 @@ jobs:
   summary:
     name: CI summary
     if: always()
-    needs: [self-assessment, adacovex-tests, no-spark-off, action-parity, consumer-run-tests, coverage-gate]
+    needs: [self-assessment, adacovex-tests, no-spark-off, complexity-gate, action-parity, consumer-run-tests, coverage-gate]
     runs-on: ubuntu-latest
     steps:
       - name: Write CI summary
@@ -149,6 +160,7 @@ jobs:
           SELF: ${{ needs.self-assessment.result }}
           TESTS: ${{ needs.adacovex-tests.result }}
           OFFOFF: ${{ needs.no-spark-off.result }}
+          COMPLEX: ${{ needs.complexity-gate.result }}
           PARITY: ${{ needs.action-parity.result }}
           CONSUMER: ${{ needs.consumer-run-tests.result }}
           GATE: ${{ needs.coverage-gate.result }}
@@ -163,6 +175,7 @@ jobs:
             echo "| Self-assessment (all standards) | $SELF |"
             echo "| Build + native tests | $TESTS |"
             echo "| SPARK_Mode Off gate | $OFFOFF |"
+            echo "| Complexity gate (no god objects) | $COMPLEX |"
             echo "| Action/CLI/docs parity gate | $PARITY |"
             echo "| Action run-tests (consumer workspace) | $CONSUMER |"
             echo "| Coverage gate (push only) | $GATE |"

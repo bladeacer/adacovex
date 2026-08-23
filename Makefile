@@ -1,4 +1,4 @@
-.PHONY: help check build test prove doc clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish _dev_cmd agents-tree sbom description proof-status test-count doc-links link-check changelog-check action-parity-check man
+.PHONY: help check build test prove doc clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish _dev_cmd agents-tree sbom description proof-status test-count doc-links link-check changelog-check action-parity-check man bench complexity-check
 
 .DEFAULT_GOAL := help
 
@@ -23,6 +23,14 @@ help:
 	@echo '  doc           Generate API docs via gnatdoc + rst2md (alire-dev.toml)'
 	@echo '  fmt           Format Ada sources with gnatformat (alire-dev.toml)'
 	@echo '  clean         Remove build artifacts'
+	@echo '  bench         Benchmark the assessment pipeline + report binary size:'
+	@echo '                hyperfine when installed (else bash time fallback),'
+	@echo '                cold (fresh cache) and warm (cached) timings, and the'
+	@echo '                sizes of the raw and stripped binaries'
+	@echo '  complexity-check  Cyclomatic-complexity + LOC gate (no god objects,'
+	@echo '                no god functions, no extra-long files): fails when a'
+	@echo '                function exceeds the decision-point cap or a file'
+	@echo '                exceeds its LOC / percentage-of-codebase caps'
 	@echo '  run-self      Run against adacovex itself (default target: cwd)'
 	@echo '                (auto-updates docs/badges/*.svg)'
 	@echo '  run-ada-crdt  Run against ../Ada_CRDT (strict mode)'
@@ -131,6 +139,48 @@ run-ada-crdt: build
 sbom: build
 	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex sbom --target=. --dal=C
 
+# Performance benchmark: cold vs warm pipeline timings (hyperfine preferred,
+# bash `time` as fallback) plus binary-size report (stripped size is measured
+# on a /tmp copy so the build output is never modified).
+bench: build
+	@bench_cache=$$(mktemp -d /tmp/adacovex-bench.XXXXXX); \
+	export bench_cache; \
+	trap 'rm -rf "$$bench_cache"' EXIT; \
+	if command -v hyperfine >/dev/null 2>&1; then \
+		echo '=== Cold (fresh result cache + probe cache) ==='; \
+		hyperfine --runs 3 \
+		  --prepare 'rm -rf $$bench_cache' \
+		  "./bin/adacovex --cache-dir=$$bench_cache" \
+		  --export-markdown /tmp/adacovex-bench-cold.md; \
+		./bin/adacovex --cache-dir=$$bench_cache >/dev/null 2>&1; \
+		echo '=== Warm (populated caches) ==='; \
+		hyperfine --runs 5 \
+		  "./bin/adacovex --cache-dir=$$bench_cache" \
+		  --export-markdown /tmp/adacovex-bench-warm.md; \
+	else \
+		echo '== hyperfine not found; using bash time (3 cold + 3 warm) =='; \
+		for i in 1 2 3; do \
+			rm -rf $$bench_cache; \
+			echo -n 'cold run $$i: '; \
+			time ./bin/adacovex --cache-dir=$$bench_cache >/dev/null 2>&1; \
+		done; \
+		./bin/adacovex --cache-dir=$$bench_cache >/dev/null 2>&1; \
+		for i in 1 2 3; do \
+			echo -n 'warm run $$i: '; \
+			time ./bin/adacovex --cache-dir=$$bench_cache >/dev/null 2>&1; \
+		done; \
+	fi; \
+	raw=$$(stat -c %s bin/adacovex); \
+	cp bin/adacovex /tmp/adacovex-strip-test; \
+	strip /tmp/adacovex-strip-test; \
+	stripped=$$(stat -c %s /tmp/adacovex-strip-test); \
+	rm -f /tmp/adacovex-strip-test; \
+	echo ''; \
+	echo "== Binary size =="; \
+	echo "bin/adacovex          $$(echo $$raw | awk '{printf "%.1f MiB", $$1/1048576}') ($$raw bytes)"; \
+	echo "after strip           $$(echo $$stripped | awk '{printf "%.1f MiB", $$1/1048576}') ($$stripped bytes)"; \
+	echo "savings               $$(echo $$raw $$stripped | awk '{printf "%.1f%%", ($$1-$$2)/$$1*100}')"; \
+
 coverage-gate: build
 	@tags=$$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$$'); \
 	latest=$$(echo "$$tags" | head -1); \
@@ -178,6 +228,9 @@ doc-links:
 changelog-check:
 	@python3 tools/check-changelogs.py
 
+complexity-check:
+	python3 tools/check-complexity.py
+
 ascii-check:
 	@echo "=== ASCII Charset Verification ==="; \
 	error=0; \
@@ -217,6 +270,7 @@ spark-off-check:
 # produced exactly once here).
 check:
 	@echo "=== Quality gate: ASCII ==="; $(MAKE) ascii-check
+	@echo "=== Quality gate: complexity (no god objects/functions/files) ==="; $(MAKE) complexity-check
 	@echo "=== Quality gate: SPARK_Mode Off ==="; $(MAKE) spark-off-check
 	@echo "=== Quality gate: changelog format ==="; $(MAKE) changelog-check
 	@echo "=== Quality gate: action/CLI/docs parity ==="; $(MAKE) action-parity-check
@@ -233,7 +287,7 @@ check:
 	@echo "=== Quality gate: proof metrics in sync ==="; python3 tools/update-proof-status.py --check
 	@echo "=== Quality gate: description sync ==="; python3 tools/update-description.py --check
 	@echo ""
-	@echo "=== Quality gate passed: ascii, spark-off, changelog, action-parity, version, doc-links, link, build, test, prove, doc, sbom, test-count, proof-status, description ==="
+	@echo "=== Quality gate passed: ascii, complexity, spark-off, changelog, action-parity, version, doc-links, link, build, test, prove, doc, sbom, test-count, proof-status, description ==="
 
 # Sync the crate description + long description from the canonical files
 # (alire/description.txt + alire/long-description.txt) into every manifest.

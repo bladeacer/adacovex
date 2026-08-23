@@ -550,9 +550,24 @@ runs:
         "$BIN" "${ARGS[@]}" > "$RUNNER_TEMP/adacovex.out" 2>&1
         STATUS=$?
         set -e
+        #  Collapse the assessment output into an expandable group so debug
+        #  detail does not hide the step result in the Actions UI.
+        echo "::group::adacovex assessment output"
         cat "$RUNNER_TEMP/adacovex.out"
+        echo "::endgroup::"
 
-        #  Fail loudly: surface every unmet --require-* CI gate as an
+        #  Surface every WARNING line as a :notice: annotation (visible in the
+        #  workflow summary without expanding the group).
+        while IFS= read -r WARN; do
+          echo "::notice::$WARN" >&2
+        done < <(grep -E 'WARNING' "$RUNNER_TEMP/adacovex.out" || true)
+
+        #  Preserve the --emit-metrics JSON export for artifact upload.
+        if [ -n "${{ inputs.emit-metrics }}" ]; then
+          cp "${{ inputs.emit-metrics }}" "$RUNNER_TEMP/adacovex-metrics.json" 2>/dev/null || true
+        fi
+
+        #  Fail loudly: surface every unmet --require-* as an
         #  ::error:: annotation so a threshold failure is impossible to miss
         #  in the Actions UI (the exit code below also fails the step).
         if [ "$STATUS" -ne 0 ]; then
@@ -625,6 +640,21 @@ runs:
         } >> "$GITHUB_STEP_SUMMARY"
 
         exit $STATUS
+
+    - name: Upload assessment log + metrics
+      #  Always upload (success AND failure): the full assessment output is
+      #  the first artifact to grab when debugging a flaky or unmet gate,
+      #  and it is not truncated the way the job-page summary is.  The
+      #  --emit-metrics JSON export, when requested, is copied to a fixed
+      #  temp path by the assessment step and uploaded alongside.
+      if: ${{ always() && inputs.assess == 'true' }}
+      uses: actions/upload-artifact@v7
+      with:
+        name: adacovex-assessment
+        path: |
+          ${{ runner.temp }}/adacovex.out
+          ${{ runner.temp }}/adacovex-metrics.json
+        if-no-files-found: ignore
 
     - name: Upload badges
       if: ${{ always() && inputs.assess == 'true' && inputs.compare-base == '' && inputs.coverage-delta == '' }}

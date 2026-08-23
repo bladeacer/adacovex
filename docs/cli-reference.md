@@ -18,6 +18,7 @@ adacovex sbom [--format=cyclonedx-json|spdx-json|md] [--out=PATH]
 adacovex prove [--target=PATH] [prove options]
 adacovex status [--target=PATH]
 adacovex man [--check|--force] [--dir=PATH]
+adacovex completion [bash|fish|zsh|pwsh]
 ```
 
 ## Flags
@@ -36,6 +37,8 @@ adacovex man [--check|--force] [--dir=PATH]
 | `--emit-svg=PATH` | `<target>/docs/badges` | both | Output directory for SVG badges |
 | `--no-svg` | off | both | Suppress SVG badge output |
 | `--emit-markdown=PATH` | off | both | Output directory for Markdown reports |
+| `--emit-metrics=PATH` | off | both | Write a JSON export of metrics + dependency graph to PATH |
+| `--completion[=SHELL]` | - | - | Print shell completion script (bash/fish/zsh/pwsh, auto-detected) and exit |
 | `--skip-dir=NAME` | `demo,deps,examples` | relaxed | Directory name to skip (repeatable) |
 | `--relaxed` | off | both | Disable strict mode (skip dirs, no patches) |
 | `--compare-base=REF` | off | both | Differential mode vs a base rev (git/hg/svn/fossil/jj) |
@@ -230,6 +233,16 @@ Write SVG badges to a directory. Default `<target>/docs/badges`
 
 Suppress all SVG badge output. Overrides `--emit-svg` if both are given.
 
+### `--emit-metrics=PATH`
+
+After the assessment, writes a machine-readable JSON export to `PATH`:
+`{"metrics": {...}, "dependencies": {...}}`.  `metrics` is the same
+object the dashboard JSON API serves at `/api/metrics`; `dependencies` is
+the resolved dependency graph (name, version, scope, parent, purl, kind) at
+`/api/deps`.  Useful for scripting gates, external dashboards, or archiving
+assessment results; the composite GitHub Action uploads it as a CI artifact
+when `emit-metrics` is set.
+
 ### `--emit-markdown=PATH`
 
 Write compliance reports to a directory. Creates two files:
@@ -280,7 +293,27 @@ drives the man page, the SBOM tool version, and the result-cache namespace,
 so they can never drift. Full detail:
 [Installation -- version source](installation.md#version-source-per-installation-method).
 
+### `completion`
+
+`adacovex completion [SHELL]` (also `adacovex --completion[=SHELL]`) prints
+a static shell-completion script to stdout and exits.  `SHELL` is one of
+`bash`, `fish`, `zsh`, `pwsh`; when omitted it is auto-detected from
+`$SHELL`, falling back to bash for unknown or empty shells.  Typical setup:
+
+```bash
+eval "$(adacovex completion)"        # bash (default)
+source <(adacovex completion zsh)    # zsh
+adacovex completion fish | source    # fish
+adacovex completion pwsh | Invoke-Expression   # PowerShell
+```
+
+The scripts complete the subcommands and every long flag from the binary's
+own flag table, so the completion set cannot drift from the CLI. The flag
+list embeds at generation time; re-run `adacovex completion` after upgrading
+adacovex (a shell prompt hook that regenerates on version change works well).
+
 ### `man`
+
 
 The `man` subcommand installs the adacovex man page into the **local man
 database** (Linux/WSL, no root required) and refreshes the index with `mandb`

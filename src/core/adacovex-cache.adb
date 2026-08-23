@@ -3,6 +3,7 @@ with Ada.Directories;
 with Ada.Streams;
 with Ada.Streams.Stream_IO;
 with Ada.Environment_Variables;
+with Ada.Text_IO;
 with GNAT.SHA256;
 
 package body Adacovex.Cache is
@@ -205,6 +206,84 @@ package body Adacovex.Cache is
 
    --  Current eviction cap (entries retained).  Set via Set_Cache_Policy.
    Cache_Cap : Positive := 4096;
+
+   --  <cache>/probes/<tool> -- per-tool version-probe file.  Kept outside
+   --  the two-level entry tree so probes never collide with content-hashed
+   --  blobs and are cheap to check.
+   function Probe_Path (Tool : String) return String is
+   begin
+      if Tool'Length = 0 or else Cache_Root_Len = 0 then
+         return "";
+      end if;
+      return
+        Cache_Root (1 .. Cache_Root_Len)
+        & "/probes/"
+        & Tool (Tool'First .. Tool'Last);
+   end Probe_Path;
+
+   procedure Get_Probe
+     (Tool : String; Value : out String; Val_Len : out Natural; Found : out Boolean)
+   is
+      use Ada.Calendar;
+      Path : constant String := Probe_Path (Tool);
+      F    : Ada.Text_IO.File_Type;
+   begin
+      Value := (others => ' ');
+      Val_Len := 0;
+      Found := False;
+      if Path'Length = 0 or else not Ada.Directories.Exists (Path) then
+         return;
+      end if;
+      --  TTL: a stale probe is reported as not found; the caller re-probes
+      --  and overwrites via Put_Probe.
+      declare
+         Age : constant Duration :=
+           Clock - Ada.Directories.Modification_Time (Path);
+      begin
+         if Age < 0.0 or else Age > Duration (Probe_TTL_Days * 86_400) then
+            return;
+         end if;
+      end;
+      begin
+         Ada.Text_IO.Open (F, Ada.Text_IO.In_File, Path);
+         if not Ada.Text_IO.End_Of_File (F) then
+            Ada.Text_IO.Get_Line (F, Value, Val_Len);
+         end if;
+         Ada.Text_IO.Close (F);
+         Found := True;
+      exception
+         when others =>
+            if Ada.Text_IO.Is_Open (F) then
+               Ada.Text_IO.Close (F);
+            end if;
+      end;
+   end Get_Probe;
+
+   procedure Put_Probe (Tool : String; Value : String) is
+      P : constant String := Probe_Path (Tool);
+      F : Ada.Text_IO.File_Type;
+   begin
+      if P'Length = 0 then
+         return;
+      end if;
+      begin
+         Ada.Directories.Create_Path
+           (Cache_Root (1 .. Cache_Root_Len) & "/probes");
+      exception
+         when others =>
+            null;
+      end;
+      begin
+         Ada.Text_IO.Create (F, Ada.Text_IO.Out_File, P);
+         Ada.Text_IO.Put_Line (F, Value);
+         Ada.Text_IO.Close (F);
+      exception
+         when others =>
+            if Ada.Text_IO.Is_Open (F) then
+               Ada.Text_IO.Close (F);
+            end if;
+      end;
+   end Put_Probe;
 
    procedure Set_Cache_Policy (Max_Entries : Positive) is
    begin

@@ -143,6 +143,19 @@ Every CI run leaves a **Markdown summary at the bottom of the job page**
   jobs) that aggregates every job result into one table at the bottom of the
   run.
 
+Diagnostics are layered so a failure is debuggable from the Actions UI
+without re-running locally:
+
+- the assessment output is folded into a GitHub **log group** (``::group::``)
+  so the step result stays visible while the detail stays one click away;
+- `WARNING` lines are re-surfaced as `::notice::` annotations;
+- an **`adacovex-assessment` artifact** (uploaded `if: always()`) carries
+  the full, untruncated assessment output -- and the `--emit-metrics` JSON
+  export when `emit-metrics` is set -- so a flaky or unmet gate never
+  requires re-running to reproduce;
+- badge and SBOM artifacts are uploaded even when the step failed
+  (`if: always()`), so partially produced reports stay inspectable.
+
 Threshold failures **fail loudly** at every layer:
 
 1. unmet `--require-*` gates make the adacovex binary exit non-zero;
