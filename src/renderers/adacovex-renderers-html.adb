@@ -320,6 +320,45 @@ package body Adacovex.Renderers.HTML is
          end;
       end if;
 
+      --  Line chart variant for proof categories
+      Put ("<div class=""chart-card""><h3>Proof (line)</h3>");
+      Put
+        ("<table class=""charts-css line show-labels show-primary-axis"" style=""height:180px"">");
+      Put ("<caption>Proof line</caption><tbody>");
+      Bar_Row
+        ("Flow", Proof.Flow_Proved, Proof.Flow_Checks, Proof.Flow_Proved);
+      Bar_Row
+        ("Init", Proof.Init_Proved, Proof.Init_Checks, Proof.Init_Proved);
+      Bar_Row
+        ("Runtime",
+         Proof.Runtime_Proved,
+         Proof.Runtime_Checks,
+         Proof.Runtime_Proved);
+      Bar_Row
+        ("Assert", Proof.Assert_Proved, Proof.Assertions, Proof.Assert_Proved);
+      Bar_Row
+        ("Functional",
+         Proof.Functional_Proved,
+         Proof.Functional_Ct,
+         Proof.Functional_Proved);
+      Put ("</tbody></table></div>");
+
+      --  Area chart for doc coverage (as area)
+      Put ("<div class=""chart-card""><h3>Docs Area</h3>");
+      Put
+        ("<table class=""charts-css area show-labels"" style=""height:160px"">");
+      Put ("<caption>Docs area</caption><tbody>");
+      if Doc_Metrics.Total_Subprograms = 0 then
+         Bar_Row ("No subprograms", 0, 1, 0);
+      else
+         Bar_Row
+           ("Documented",
+            Doc_Metrics.Documented_Subprogs,
+            Doc_Metrics.Total_Subprograms,
+            Doc_Metrics.Documented_Subprogs);
+      end if;
+      Put ("</tbody></table></div>");
+
       return To_String (R);
    end Render_Charts;
 
@@ -658,6 +697,96 @@ package body Adacovex.Renderers.HTML is
          & " components</td></tr>");
       Put_O ("</table></div>");
       Put_O ("</div>");
+
+      --  Overview collation charts (mini visuals)
+      declare
+         procedure Mini_Slice (Lbl : String; St, Fi, V : Natural) is
+         begin
+            Put_O ("<tr><th scope=""row"">");
+            Put_O (Lbl);
+            Put_O ("</th><td style=""--start:");
+            Put_O (Img (St));
+            Put_O (";--end:");
+            Put_O (Img (Fi));
+            Put_O ("""><span class=""data"">");
+            Put_O (Img (V));
+            Put_O ("</span></td></tr>");
+         end Mini_Slice;
+
+         procedure Mini_Bar (Lbl : String; Pt, Tt, V : Natural) is
+         begin
+            Put_O ("<tr><th scope=""row"">");
+            Put_O (Html_Escape (Lbl));
+            Put_O ("</th><td style=""--size:");
+            if Tt = 0 then
+               Put_O ("0.0");
+            else
+               Put_O (Img_Frac (Pt, Tt));
+            end if;
+            Put_O ("""><span class=""data"">");
+            Put_O (Img (V));
+            Put_O ("</span></td></tr>");
+         end Mini_Bar;
+
+      begin
+         Put_O ("<div class=""chart-grid"" style=""margin-top:14px"">");
+         Put_O ("<div class=""chart-card""><h3>SPARK</h3>");
+         Put_O
+           ("<table class=""charts-css donut show-labels"" style=""height:150px;max-width:200px;margin:0 auto"">");
+         Put_O ("<caption>SPARK</caption><tbody>");
+         if Proof.Total_VCs > 0 then
+            declare
+               U : constant Natural := Proof.Total_VCs - Proof.Proved_VCs;
+               P : constant Natural := Pct (Proof.Proved_VCs, Proof.Total_VCs);
+            begin
+               Mini_Slice ("Proved", 0, P, Proof.Proved_VCs);
+               if U > 0 then
+                  Mini_Slice ("Unproved", P, 100, U);
+               end if;
+            end;
+         else
+            Mini_Slice ("No VCs", 0, 100, 0);
+         end if;
+         Put_O ("</tbody></table></div>");
+
+         Put_O ("<div class=""chart-card""><h3>Tests</h3>");
+         Put_O
+           ("<table class=""charts-css pie show-labels"" style=""height:150px;max-width:200px;margin:0 auto"">");
+         Put_O ("<caption>Tests</caption><tbody>");
+         declare
+            Tot : constant Natural := Tests.Total_Passed + Tests.Total_Failed;
+         begin
+            if Tot = 0 then
+               Mini_Slice ("No tests", 0, 100, 0);
+            else
+               declare
+                  P : constant Natural := Pct (Tests.Total_Passed, Tot);
+               begin
+                  Mini_Slice ("Passed", 0, P, Tests.Total_Passed);
+                  if Tests.Total_Failed > 0 then
+                     Mini_Slice ("Failed", P, 100, Tests.Total_Failed);
+                  end if;
+               end;
+            end if;
+         end;
+         Put_O ("</tbody></table></div>");
+
+         Put_O ("<div class=""chart-card""><h3>Docs</h3>");
+         Put_O
+           ("<table class=""charts-css bar show-labels"" style=""height:150px"">");
+         Put_O ("<caption>Docs</caption><tbody>");
+         if Doc_Metrics.Total_Subprograms = 0 then
+            Mini_Bar ("No subprograms", 0, 1, 0);
+         else
+            Mini_Bar
+              ("Documented",
+               Doc_Metrics.Documented_Subprogs,
+               Doc_Metrics.Total_Subprograms,
+               Doc_Metrics.Documented_Subprogs);
+         end if;
+         Put_O ("</tbody></table></div>");
+         Put_O ("</div>");
+      end;
 
       --  Proof tab
       Put_P ("<div class=""card""><h2>SPARK Proof Analysis</h2>");

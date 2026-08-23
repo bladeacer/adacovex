@@ -3,7 +3,7 @@
   "specVersion": "1.5",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-08-23T07:39:03",
+    "timestamp": "2026-08-23T16:11:30",
     "tools": [
       {"vendor": "bladeacer", "name": "adacovex", "version": "1.21.0"}
     ],
@@ -19,6 +19,34 @@
       }
   },
   "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/flexsearch",
+      "name": "flexsearch",
+      "purl": "pkg:generic/flexsearch",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "vendored"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/graphre",
+      "name": "graphre",
+      "purl": "pkg:generic/graphre",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "vendored"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/nomnoml",
+      "name": "nomnoml",
+      "purl": "pkg:generic/nomnoml",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "vendored"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/charts.min",
+      "name": "charts.min",
+      "purl": "pkg:generic/charts.min",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "vendored"}]
+      },
     {
       "type": "library",
       "bom-ref": "pkg:alire/gnatprove",
@@ -143,7 +171,7 @@
   "dependencies": [
     {
       "ref": "pkg:alire/covex@1.21.0",
-      "dependsOn": ["pkg:alire/gnatprove", "pkg:alire/gnatdoc_bin", "pkg:alire/gnatformat_bin", "pkg:generic/bash", "pkg:generic/curl", "pkg:generic/alr", "pkg:generic/python3", "pkg:generic/git", "pkg:generic/make", "pkg:generic/jj", "pkg:generic/mandb", "pkg:generic/fossil", "pkg:generic/hg", "pkg:generic/svn"]
+      "dependsOn": ["pkg:generic/flexsearch", "pkg:generic/graphre", "pkg:generic/nomnoml", "pkg:generic/charts.min", "pkg:alire/gnatprove", "pkg:alire/gnatdoc_bin", "pkg:alire/gnatformat_bin", "pkg:generic/bash", "pkg:generic/curl", "pkg:generic/alr", "pkg:generic/python3", "pkg:generic/git", "pkg:generic/make", "pkg:generic/jj", "pkg:generic/mandb", "pkg:generic/fossil", "pkg:generic/hg", "pkg:generic/svn"]
     }
   ]
 }
