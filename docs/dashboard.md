@@ -12,7 +12,78 @@ adacovex --target=. --serve --port=8080
 curl http://localhost:8080/api/metrics
 ```
 
-## Endpoints
+## How to use the dashboard
+
+Open `http://localhost:8080` in a browser. The page is a single self-contained
+document (no external assets) with hash-routed tabs. Use the header dropdown to
+switch themes (light / dark / system) and **Save settings** to persist your
+choice.
+
+### Overview tab
+
+Start here. The **Robustness tier** (S / A / B / C / D) is a single letter that
+summarises five quality axes: Docs, Proof, Tests, Compliance, and Deps. An **S**
+means the project is healthy across the board; a **D** means one or more axes
+are below 50%. Below that:
+
+- **SPARK radar** -- proved verification conditions per check category (flow,
+  initialization, runtime, assertions, functional). A balanced polygon means
+  every category has strong coverage; a spike in one corner and a flat line in
+  another means the proof effort is uneven.
+- **Tests donut** -- passed vs failed tests. A full green arc means 100%
+  passing; any red slice means the test suite has failures that must be fixed
+  before the project can be assessed as `Achieved`.
+- **Doc coverage radial gauge** -- documented subprograms as a percentage of
+  total. Strict mode requires 100%; a shortfall here shows exactly how many
+  subprograms are missing `--` docstrings.
+
+### Proof tab
+
+Shows the SPARK level (Stone .. Platinum) and per-category VC counts. The
+mini **VCs proved / total** at the top is the headline number. Click into a
+category to see the breakdown; if a category is low, that is where the proof
+effort should focus.
+
+### Tests tab
+
+Every test category with its count and Pass / Fail. A single failing category
+is enough to fail the compliance gate (`Tests passing` must be `Yes` for every
+tier except QM / DAL-E).
+
+### Compliance tab
+
+Shows the target integrity level, overall `Achieved` / `Unmet`, HLRs traced,
+orphan-tag state, and every unmet criterion. Use this to verify that every HLR
+is tagged in source and that no tags are orphaned (tagged but not defined in
+`HLR.md`).
+
+### Dependencies tab
+
+An interactive dependency tree (or diagram) of every component in the manifest.
+Use the filter input and scope checkboxes to focus on base, dev, transitive, or
+vendored dependencies. Click a node to see its licence, PURL, parent, and a
+registry link. The diagram view (toggle **Tree / Diagram**) renders the same
+graph as a directed diagram.
+
+### Charts tab
+
+Six CSS-only cards (donut, column, bar, radial gauge, pie, polar ring) that
+show the same data as the Overview tab in a different format. Use this to
+compare SPARK proof, test results, doc coverage, and dependency scope at a
+glance.
+
+## Interpreting the charts
+
+- **Green / full arcs** -- the metric is at 100% or close to it.
+- **Red slices or flat corners** -- there is a regression or missing data.
+- **Scope rings** -- a large vendored wedge means strict-mode docstrings are
+  being suppressed by patches; if you see no wedge, vendored code may not be
+  covered.
+- **Tier letter drops** -- a drop from `A` to `C` means the average across all
+  five axes fell; check the axis table to see which one regressed.
+
+The same data is available headlessly at `/api/metrics` and via
+`--emit-metrics=PATH` (`{"metrics":..., "dependencies":...}`).
 
 | Path | Content |
 |------|---------|

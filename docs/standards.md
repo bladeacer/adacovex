@@ -1,26 +1,59 @@
 # Compliance Standards (DO-178C / ISO 26262 / IEC 62304)
 
-adacovex's default assessment targets DO-178C (avionics). The 1.10.0 feature
-set generalizes the compliance model so one assessment can satisfy the
-functionally equivalent safety standards for **aviation** (DO-178C),
-**automotive** (ISO 26262), and **medical devices** (IEC 62304) at the same
-time.
+## What are these standards?
 
-## Why one abstraction
+**DO-178C** is the avionics software standard. It defines how to design,
+implement, verify, and certify software that flies airplanes. Every line of
+safety-critical flight software is assessed at one of five **DAL** (Development
+Assurance Level) tiers, from **DAL-E** (no safety effect) to **DAL-A**
+(catastrophic failure would bring down the aircraft).
 
-All three standards demand the same underlying evidence, only the names of the
-integrity levels differ:
+**ISO 26262** is the automotive functional-safety standard. It applies the same
+rigor to road-vehicle software (braking, steering, powertrain). Its integrity
+levels are called **ASIL** (Automotive Safety Integrity Level), from **QM**
+(quality management, no hazard) to **ASIL D** (highest hazard).
 
-- **DO-178C** -- Development Assurance Levels **DAL A--E** (avionics software).
-- **ISO 26262** -- Automotive Safety Integrity Levels **ASIL A--D** plus **QM**
-  (road-vehicle functional safety).
-- **IEC 62304** -- software safety classes **A, B, C** (medical-device
-  software lifecycle).
+**IEC 62304** is the medical-device software lifecycle standard. It classifies
+software into **safety classes** A, B, and C based on the severity of harm a
+failure could cause.
 
-Each level maps to a required rigor of verification: a minimum formal-proof
-bar (SPARK level), a passing test suite, and complete requirement traceability
-(HLR coverage, no orphan tags). adacovex already computes all of that
-evidence; the abstraction only re-labels the assessment per standard.
+All three demand the same underlying evidence:
+
+1. **Requirement traceability** -- every high-level requirement (HLR) is traced
+   by a `-- HLR-XXXX` tag in source.
+2. **No orphan tags** -- every tag in source maps to a defined HLR.
+3. **Tests passing** -- the test suite has zero failures (except at the lowest
+   tier).
+4. **Minimum SPARK level** -- the formal-proof bar for the selected rigor tier.
+
+adacovex computes all four checks once and re-labels the result per standard.
+The same inputs feed the same outputs; only the integrity-level label changes.
+
+## When to use which standard
+
+| Domain | Standard | CLI flag | Levels |
+|--------|----------|----------|--------|
+| Avionics | DO-178C | `--dal=` | A, B, C, D, E |
+| Automotive | ISO 26262 | `--asil=` | A, B, C, D, QM |
+| Medical | IEC 62304 | `--class=` | A, B, C |
+
+If your project targets multiple domains, `--standard=all` runs one assessment
+and emits badges and reports for every standard without re-scanning.
+
+## What the rigor tiers mean
+
+| Rigor tier | DO-178C | ISO 26262 | IEC 62304 | Min SPARK | Tests | HLRs |
+|------------|---------|-----------|-----------|-----------|-------|------|
+| Catastrophic | DAL A | ASIL D | Class C | Gold | Yes | Yes |
+| Hazardous | DAL B | ASIL C | Class B | Silver | Yes | Yes |
+| Major | DAL C | ASIL B | Class A | Bronze | Yes | Yes |
+| Minor | DAL D | ASIL A | -- | Stone | Yes | Yes |
+| No safety effect | DAL E | QM | -- | -- | No | Yes |
+
+The tier placement is a per-project policy choice (the standards do not define a
+one-to-one correspondence). adacovex's default mapping is shown above; use
+`--standard=NAME` to select the labelling standard and `--dal=LEVEL` to pin the
+shared rigor tier.
 
 ## Rigor-tier mapping
 

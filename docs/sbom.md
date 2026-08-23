@@ -1,10 +1,58 @@
 # The `sbom` subcommand
 
+## When and why to generate an SBOM
+
+A Software Bill of Materials (SBOM) is a structured inventory of every
+component in your project, plus its provenance, licence, and (in adacovex's
+case) its SPARK proof level and compliance context. You should generate one when:
+
+- **Auditing or certifying** -- an SBOM is a standard artifact for safety
+  certification (DO-178C, ISO 26262, IEC 62304). It shows the auditor exactly
+  which Ada/Alire components are in scope and which are proved / not proved.
+- **Shifting left on supply-chain security** -- the dependency graph exposes
+  transitive dependencies, their licences, and their PURLs so you can review
+  them before a release.
+- **Embedding in CI** -- the proof-aware SBOM carries the assessed standard and
+  level, so downstream tooling (policy engines, compliance dashboards) can
+  consume it without re-parsing markdown reports.
+- **Reproducible builds** -- adacovex honours `SOURCE_DATE_EPOCH`, so the SBOM
+  timestamp is deterministic when tied to a git commit.
+
 `adacovex sbom` resolves the target project's dependency graph from its Alire
 manifest (`alire.toml` / `alire-dev.toml`), the solved-crate list in
 `alire/alire.lock`, and the root `.gpr` `with` clauses, then writes a
 proof-aware software bill of materials in CycloneDX 1.5 JSON, SPDX 2.3 JSON,
 or Markdown.
+
+## How to read the output
+
+Choose the format that matches your toolchain:
+
+- **CycloneDX 1.5 JSON** (`--format=cyclonedx-json`) -- drop into any CycloneDX
+  consumer (Dependency-Track, OWASP Dependency-Check, etc.). The root component
+  carries `adacovex:proof_level`, `adacovex:standard`, `adacovex:dal_target`,
+  and `adacovex:level`. Every dependency has a `language` field inferred from
+  file extensions or declared ecosystems.
+- **SPDX 2.3 JSON** (`--format=spdx-json`) -- compatible with SPDX-aware tools
+  (FOSSA, Snyk, ScanCode). The adacovex properties appear as
+  `attributionTexts` on the root package.
+- **Markdown** (`--format=md`) -- human-readable table, useful for audits and
+  reports. Default path is `<target>/docs/compliance/SBOM.md`.
+
+### Key fields
+
+| Field | Where it appears | Meaning |
+|-------|-----------------|---------|
+| `adacovex:proof_level` | Root component | Assessed SPARK level (`Stone` .. `Platinum`) |
+| `adacovex:standard` | Root component | Compliance standard (`DO-178C`, `ISO 26262`, `IEC 62304`) |
+| `adacovex:dal_target` | Root component | Shared rigor tier (`DAL-A` .. `DAL-E`) |
+| `adacovex:level` | Root component | Standard-specific label (`DAL-C`, `ASIL B`, `Class A`) |
+| `language` | Every component | Implementation language(s) inferred from file extensions |
+| `purl` | Every component | Package URL for registry linking |
+
+Dependencies report `adacovex:proof_level = "Not proved"` because adacovex only
+proves the target itself. The SBOM is mutually exclusive with `--compare-base`
+and `--coverage-delta`.
 
 ## Usage
 
