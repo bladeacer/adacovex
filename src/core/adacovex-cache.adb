@@ -222,7 +222,10 @@ package body Adacovex.Cache is
    end Probe_Path;
 
    procedure Get_Probe
-     (Tool : String; Value : out String; Val_Len : out Natural; Found : out Boolean)
+     (Tool    : String;
+      Value   : out String;
+      Val_Len : out Natural;
+      Found   : out Boolean)
    is
       use Ada.Calendar;
       Path : constant String := Probe_Path (Tool);

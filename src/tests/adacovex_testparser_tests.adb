@@ -95,6 +95,50 @@ package body Adacovex_TestParser_Tests is
             null;
       end;
 
+      --  Test 2b: plain table without the leading index cell
+      --  ("| Category | N | PASS |") -- the layout adacovex's own
+      --  docs/test_result.md uses.  The count cell is detected by its
+      --  digits regardless of the index column, so categories parse.
+      begin
+         Create (F, Out_File, Tmp_Path);
+         Put_Line (F, "  | Category            | Tests | Status  |");
+         Put_Line (F, "  |---------------------|-------|---------|");
+         Put_Line (F, "  | Types conversions   |  67 | PASS     |");
+         Put_Line (F, "  | Server routing      | 25 | PASS     |");
+         Put_Line (F, "  | DAL compliance      |  2 | FAIL     |");
+         New_Line (F);
+         Put_Line (F, "  Passed: 92  Failed: 2");
+         Close (F);
+      end;
+
+      Adacovex.Parsers.Tests.Parse_Test_Result (Tmp_Path, Summary, Success);
+      R.Check (Success, "Test 2b: parse succeeded");
+      R.Check (Summary.Total_Passed = 92, "Test 2b: Total_Passed = 92");
+      R.Check (Summary.Total_Failed = 2, "Test 2b: Total_Failed = 2");
+      R.Check
+        (Natural (Summary.Categories.Length) = 3,
+         "Test 2b: Category_Count = 3");
+      R.Check
+        (Summary.Categories (1).Test_Count = 67
+         and then Summary.Categories (1).Status = Pass
+         and then Summary.Categories (1).Category (1) = 'T',
+         "Test 2b: Cat 1 = Types conversions 67 PASS");
+      R.Check
+        (Summary.Categories (2).Test_Count = 25
+         and then Summary.Categories (2).Status = Pass,
+         "Test 2b: Cat 2 = Server routing 25 PASS");
+      R.Check
+        (Summary.Categories (3).Test_Count = 2
+         and then Summary.Categories (3).Status = Fail,
+         "Test 2b: Cat 3 = DAL compliance 2 FAIL");
+
+      begin
+         Ada.Directories.Delete_File (Tmp_Path);
+      exception
+         when others =>
+            null;
+      end;
+
       --  Test 3: empty / zero results (no category rows)
       begin
          Create (F, Out_File, Tmp_Path);

@@ -23,6 +23,7 @@ Route_Badge_DO178C,
 Route_Badge_ISO26262,
 Route_Badge_IEC62304,
 Route_API_Metrics,
+Route_API_Deps,
 Route_Not_Found);
 ```
 
@@ -36,6 +37,7 @@ Proof         : Types.Proof_Summary;
 Tests         : Types.Implementation.Test_Summary;
 DAL_Assess    : Types.Implementation.DAL_Assessment;
 Packages      : Types.Implementation.Package_Vectors.Vector;
+Graph         : Types.Implementation.Component_Vectors.Vector;
 All_Standards : Boolean := False;
 Theme         : Types.Dashboard_Theme := Types.System_Theme;
 end record;

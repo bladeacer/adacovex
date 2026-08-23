@@ -103,8 +103,7 @@ package body Adacovex.Config is
          if Len < 4 then
             Len := Len + 1;
             if S (I) in 'A' .. 'Z' then
-               Lower (Len) :=
-                 Character'Val (Character'Pos (S (I)) + 32);
+               Lower (Len) := Character'Val (Character'Pos (S (I)) + 32);
             else
                Lower (Len) := S (I);
             end if;
@@ -793,8 +792,7 @@ package body Adacovex.Config is
                   --  the next argument when it is one of the four known
                   --  shells; without one, the default (bash) is used.
                   Cfg.Completion_Mode := True;
-                  if I < Count and then Is_Completion_Shell (Args (I + 1))
-                  then
+                  if I < Count and then Is_Completion_Shell (Args (I + 1)) then
                      Set_String
                        (Cfg.Completion_Shell,
                         Cfg.Completion_Shell_Len,

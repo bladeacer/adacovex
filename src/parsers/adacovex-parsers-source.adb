@@ -349,9 +349,7 @@ package body Adacovex.Parsers.Source is
    --  Is_Subprogram_Decl already validated the leading keywords) into the
    --  fixed buffer; returns the clamped name length.  Works on the raw line
    --  (blanks intact) so the name never merges with a following `return`.
-   function Subprogram_Name
-     (L : String; SName : out String) return Natural
-   is
+   function Subprogram_Name (L : String; SName : out String) return Natural is
       Pos   : Natural := L'First;
       SNLen : Natural := 0;
    begin
@@ -520,8 +518,7 @@ package body Adacovex.Parsers.Source is
                   declare
                      L     : constant String := Line (1 .. Last);
                      SName : String (1 .. Types.Max_Desc_Str);
-                     SNLen : constant Natural :=
-                       Subprogram_Name (L, SName);
+                     SNLen : constant Natural := Subprogram_Name (L, SName);
                   begin
                      Pkg.Subprograms (Subp_Idx).Name_Len := SNLen;
                      for J in 1 .. SNLen loop

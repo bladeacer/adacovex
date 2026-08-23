@@ -119,10 +119,26 @@ scanner's file-reading loop was extracted into a shared generic line-parser
 (one file-read skeleton, two entry types) and its in-line table parsing into
 `Parse_Table_Row`; the test-result parser's big loop was split into six
 line-style handlers (`Passed`/`Failed`, TAP, Automake, Surefire, Unity)
-plus the category-row helper; the source scanner's subprogram-name
-extraction became a helper.  Worst function complexity fell from 57 to 49,
-and the highest-complexity file dropped under the file cap. All thresholds
-are configurable flags and are documented in the tool's module docstring.
+plus the category-helper; and the source scanner's file-name extraction
+became a helper.  Worst function complexity fell from 57 to 49, and the
+highest-complexity file dropped under the file cap. All thresholds are
+configurable flags and are documented in the tool's module docstring.
+
+### C6b: test-summary tables now parse in both layouts (incl. the native one)
+
+The Markdown-table parser only accepted the AUnit-report layout with a
+leading index cell (`| - | Category | N | PASS |`); the native
+`test_runner` layout (`| Category | N | PASS |`, no index cell) and
+space-padded count cells (`| 67 |`) were silently skipped, so the new
+dashboard Tests chart was empty for the project's own `test_result.md`.
+`Parse_Table_Row` now detects the numeric count cell by its digits in
+either layout, trims column padding from the count and category cells, and
+keeps the existing footer-overrides-totals semantics. Seven new
+Test-result-parser tests pin the plain layout (with header and separator
+rows). This makes the [test format spec](../api-docs/adacovex-test-format.md)
+the single source of truth for what every format -- Markdown tables (both
+layouts), TAP, Automake, Maven Surefire, Unity and AUnit reports -- looks
+like and which line wins when formats mix.
 
 ### C7: CI -- less brittle, better debugging output
 
@@ -138,11 +154,13 @@ are configurable flags and are documented in the tool's module docstring.
 
 ## Test Suite
 
-879 tests passing (was 865) across 14 categories: the CLI config category
+886 tests passing (was 865) across 14 categories: the CLI config category
 grows from 139 to 152 with the completion-script tests (bash/zsh/fish/pwsh
-script shape, embedded flag list, unknown-shell fallback) and the server
-routing category grows from 24 to 25 with the `/api/deps` route test. All
-other categories unchanged. Counts synced with `make test-count`.
+script shape, embedded flag list, unknown-shell fallback), the server
+routing category grows from 24 to 25 with the `/api/deps` route test, and
+the test-result parser category grows from 43 to 50 with the
+plain-layout/space-padded table tests. Counts synced with
+`make test-count`.
 
 ## Proof Results
 

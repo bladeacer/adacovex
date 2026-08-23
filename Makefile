@@ -111,7 +111,7 @@ test: build
 # Self-assessment acceptance gates, defined once so prove/run-self/release stay
 # in sync (and match .github/workflows/ci.yml + AGENTS.md "Dogfood target").
 # --require-tests is the current native test-suite size (docs/test_result.md).
-SELF_ASSESS_ARGS := --dal=C --standard=all --require-spark=Platinum --require-docstrings=100 --require-tests=879 --require-proof=100
+SELF_ASSESS_ARGS := --dal=C --standard=all --require-spark=Platinum --require-docstrings=100 --require-tests=886 --require-proof=100
 
 prove: build
 	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex prove --target=. $(SELF_ASSESS_ARGS) --emit-svg=docs/badges/
@@ -141,32 +141,35 @@ sbom: build
 
 # Performance benchmark: cold vs warm pipeline timings (hyperfine preferred,
 # bash `time` as fallback) plus binary-size report (stripped size is measured
-# on a /tmp copy so the build output is never modified).
+# on a /tmp copy so the build output is never modified).  Sample sizes are
+# deliberately generous (hyperfine 10 cold + 15 warm runs, time fallback
+# 5 + 5) so the reported mean is stable; cold runs re-create the cache dir
+# first so every cold sample measures a truly empty result + probe cache.
 bench: build
 	@bench_cache=$$(mktemp -d /tmp/adacovex-bench.XXXXXX); \
 	export bench_cache; \
 	trap 'rm -rf "$$bench_cache"' EXIT; \
 	if command -v hyperfine >/dev/null 2>&1; then \
 		echo '=== Cold (fresh result cache + probe cache) ==='; \
-		hyperfine --runs 3 \
+		hyperfine --runs 10 \
 		  --prepare 'rm -rf $$bench_cache' \
 		  "./bin/adacovex --cache-dir=$$bench_cache" \
 		  --export-markdown /tmp/adacovex-bench-cold.md; \
 		./bin/adacovex --cache-dir=$$bench_cache >/dev/null 2>&1; \
 		echo '=== Warm (populated caches) ==='; \
-		hyperfine --runs 5 \
+		hyperfine --warmup 2 --runs 15 \
 		  "./bin/adacovex --cache-dir=$$bench_cache" \
 		  --export-markdown /tmp/adacovex-bench-warm.md; \
 	else \
-		echo '== hyperfine not found; using bash time (3 cold + 3 warm) =='; \
-		for i in 1 2 3; do \
+		echo '== hyperfine not found; using bash time (5 cold + 5 warm) =='; \
+		for i in 1 2 3 4 5; do \
 			rm -rf $$bench_cache; \
-			echo -n 'cold run $$i: '; \
+			echo -n "cold run $$i: "; \
 			time ./bin/adacovex --cache-dir=$$bench_cache >/dev/null 2>&1; \
 		done; \
 		./bin/adacovex --cache-dir=$$bench_cache >/dev/null 2>&1; \
-		for i in 1 2 3; do \
-			echo -n 'warm run $$i: '; \
+		for i in 1 2 3 4 5; do \
+			echo -n "warm run $$i: "; \
 			time ./bin/adacovex --cache-dir=$$bench_cache >/dev/null 2>&1; \
 		done; \
 	fi; \

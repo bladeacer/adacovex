@@ -78,6 +78,15 @@ HLR-CACHE: Result caching
 | `Key` | Cache key. |
 | `Len` | Length of the loaded blob. |
 
+### procedure Get_Probe (Tool : Standard.String; Value : Standard.String; Val_Len : Standard.Natural; Found : Standard.Boolean)
+
+| Parameter | Description |
+|-----------|-------------|
+| `Found` | True when a fresh probe existed. |
+| `Tool` | Tool name (safe characters only). |
+| `Val_Len` | Length of the version string. |
+| `Value` | Output version string (may be empty). |
+
 ### procedure Load (Key : Standard.String; Data : Standard.String; Len : Standard.Natural; Found : Standard.Boolean)
 
 | Parameter | Description |
@@ -94,6 +103,13 @@ HLR-CACHE: Result caching
 | `Data` | Blob payload. |
 | `Key` | Cache key. |
 | `Success` | True if the blob was written. |
+
+### procedure Put_Probe (Tool : Standard.String; Value : Standard.String)
+
+| Parameter | Description |
+|-----------|-------------|
+| `Tool` | Tool name (safe characters only). |
+| `Value` | Version string (may be empty). |
 
 ### procedure Set_Cache_Dir (Dir : Standard.String)
 

@@ -300,8 +300,8 @@ package body Adacovex.Renderers.HTML is
       end Slice_Row;
 
       --  A single bar row: label + size fraction (0..100) + value.
-      procedure Bar_Row
-        (Label : String; Fraction : Natural; Value : Natural) is
+      procedure Bar_Row (Label : String; Fraction : Natural; Value : Natural)
+      is
       begin
          Put ("<tr><th scope=""row"">");
          Put (Label);
@@ -330,13 +330,29 @@ package body Adacovex.Renderers.HTML is
 
       --  Proof categories column
       Put ("<div class=""chart-card""><h3>Proof Check Types</h3>");
-      Put ("<table class=""charts-css column show-labels show-primary-axis"">");
+      Put
+        ("<table class=""charts-css column show-labels show-primary-axis"">");
       Put ("<caption>Proved checks by category</caption><tbody>");
-      Bar_Row ("Flow", Pct (Proof.Flow_Proved, Proof.Flow_Checks), Proof.Flow_Proved);
-      Bar_Row ("Init", Pct (Proof.Init_Proved, Proof.Init_Checks), Proof.Init_Proved);
-      Bar_Row ("Runtime", Pct (Proof.Runtime_Proved, Proof.Runtime_Checks), Proof.Runtime_Proved);
-      Bar_Row ("Assert", Pct (Proof.Assert_Proved, Proof.Assertions), Proof.Assert_Proved);
-      Bar_Row ("Functional", Pct (Proof.Functional_Proved, Proof.Functional_Ct), Proof.Functional_Proved);
+      Bar_Row
+        ("Flow",
+         Pct (Proof.Flow_Proved, Proof.Flow_Checks),
+         Proof.Flow_Proved);
+      Bar_Row
+        ("Init",
+         Pct (Proof.Init_Proved, Proof.Init_Checks),
+         Proof.Init_Proved);
+      Bar_Row
+        ("Runtime",
+         Pct (Proof.Runtime_Proved, Proof.Runtime_Checks),
+         Proof.Runtime_Proved);
+      Bar_Row
+        ("Assert",
+         Pct (Proof.Assert_Proved, Proof.Assertions),
+         Proof.Assert_Proved);
+      Bar_Row
+        ("Functional",
+         Pct (Proof.Functional_Proved, Proof.Functional_Ct),
+         Proof.Functional_Proved);
       Put ("</tbody></table></div>");
 
       --  Test categories bar
@@ -347,8 +363,7 @@ package body Adacovex.Renderers.HTML is
          declare
             Cat : Types.Test_Metrics renames Tests.Categories (C);
          begin
-            Bar_Row
-              (Cat.Category (1 .. Cat.Cat_Len), 100, Cat.Test_Count);
+            Bar_Row (Cat.Category (1 .. Cat.Cat_Len), 100, Cat.Test_Count);
          end;
       end loop;
       Put ("</tbody></table></div>");
@@ -383,12 +398,14 @@ package body Adacovex.Renderers.HTML is
    begin
       for I in S'Range loop
          case S (I) is
-            when '"' =>
+            when '"'    =>
                --  JSON escape: backslash + quote
                Append (R, "\""");
-            when '\' =>
+
+            when '\'    =>
                --  JSON escape: backslash + backslash
                Append (R, "\\");
+
             when others =>
                Append (R, S (I));
          end case;
@@ -472,6 +489,34 @@ package body Adacovex.Renderers.HTML is
       Put (",");
       Put ("""tests_failed"":");
       Put (Img (Tests.Total_Failed));
+      Put (",");
+      --  Per-category test metrics (name, count, PASS/FAIL status) -- the
+      --  same data the dashboard Tests chart renders, exported for
+      --  scripting and archiving.  Empty when the target has no category
+      --  rows (e.g. TAP/Automake-only summaries).
+      Put ("""test_categories"":[");
+      declare
+         First_Cat : Boolean := True;
+      begin
+         for C in 1 .. Integer (Tests.Categories.Length) loop
+            declare
+               Cat : Types.Test_Metrics renames Tests.Categories (C);
+            begin
+               if not First_Cat then
+                  Put (",");
+               end if;
+               First_Cat := False;
+               Put ("{""name"":""");
+               Put (Cat.Category (1 .. Cat.Cat_Len));
+               Put (""",""count"":");
+               Put (Img (Cat.Test_Count));
+               Put (",""status"":""");
+               Put (Types.To_String (Cat.Status));
+               Put ("""}");
+            end;
+         end loop;
+      end;
+      Put ("]");
       Put (",");
       Put ("""doc_coverage"":");
       Put (Img (Doc_Metrics.Coverage_Pct));

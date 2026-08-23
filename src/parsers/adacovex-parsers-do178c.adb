@@ -54,10 +54,10 @@ package body Adacovex.Parsers.DO178C is
       M_First : constant Natural := Line'First;
    begin
       Id_Start := 0;
-      Id_End   := 0;
-      Colon    := 0;
-      H_Start  := 0;
-      H_End    := 0;
+      Id_End := 0;
+      Colon := 0;
+      H_Start := 0;
+      H_End := 0;
 
       --  Find the marker prefix anywhere on the line.
       if Marker'Length = 0 then
@@ -93,7 +93,10 @@ package body Adacovex.Parsers.DO178C is
             if Line (I) = 'H' and then Line (I .. I + 3) = "HLR-" then
                H_Start := I;
                for J in I + 4 .. Last loop
-                  if Line (J) = ' ' or else Line (J) = ']' or else Line (J) = ')' then
+                  if Line (J) = ' '
+                    or else Line (J) = ']'
+                    or else Line (J) = ')'
+                  then
                      H_End := J - 1;
                      exit;
                   end if;
@@ -128,9 +131,7 @@ package body Adacovex.Parsers.DO178C is
    --  Extract one line's parsed entry and append it to an HLR vector.
    --  Id is the "HLR-xxx" token; the description follows the colon.
    procedure Parse_HLR_Line
-     (Line : String;
-      Last : Natural;
-      HLRs : in out HLR_Vectors.Vector)
+     (Line : String; Last : Natural; HLRs : in out HLR_Vectors.Vector)
    is
       Id_S, Id_E, Colon, H_S, H_E : Natural;
    begin
@@ -139,6 +140,7 @@ package body Adacovex.Parsers.DO178C is
       end if;
       if Id_E <= Id_S + 3 then
          return;  --  empty id
+
       end if;
       HLRs.Append (HLR_Info'(others => <>));
       declare
@@ -162,9 +164,7 @@ package body Adacovex.Parsers.DO178C is
    --  Extract one parsed LLR entry; the description runs up to the
    --  (optional) HLR reference, which is copied into HLR_Ref.
    procedure Parse_LLR_Line
-     (Line : String;
-      Last : Natural;
-      LLRs : in out LLR_Vectors.Vector)
+     (Line : String; Last : Natural; LLRs : in out LLR_Vectors.Vector)
    is
       Id_S, Id_E, Colon, H_S, H_E : Natural;
    begin
@@ -211,8 +211,9 @@ package body Adacovex.Parsers.DO178C is
    generic
       type Item_Type is private;
       type Item_Vector is private;
-      with procedure Add_Line
-        (Line : String; Last : Natural; Items : in out Item_Vector);
+      with
+        procedure Add_Line
+          (Line : String; Last : Natural; Items : in out Item_Vector);
       with procedure Clear_Items (Items : in out Item_Vector);
    procedure Scan_Markdown_Lines
      (Src_File  : in out Ada.Text_IO.File_Type;
@@ -237,6 +238,7 @@ package body Adacovex.Parsers.DO178C is
          if Overflow then
             Clear_Items (Items);
             raise Constraint_Error;  --  caught by caller; marks failure
+
          end if;
          if Last > 6 then
             Add_Line (Line (1 .. Last), Last, Items);
@@ -255,12 +257,18 @@ package body Adacovex.Parsers.DO178C is
    end Clear_LLRs;
 
    --  Ada 2012: instantiate the generic over the two vector kinds.
-   procedure Scan_HLR is new Scan_Markdown_Lines
-     (Item_Type => HLR_Info, Item_Vector => HLR_Vectors.Vector,
-      Add_Line => Parse_HLR_Line, Clear_Items => Clear_HLRs);
-   procedure Scan_LLR is new Scan_Markdown_Lines
-     (Item_Type => LLR_Info, Item_Vector => LLR_Vectors.Vector,
-      Add_Line => Parse_LLR_Line, Clear_Items => Clear_LLRs);
+   procedure Scan_HLR is new
+     Scan_Markdown_Lines
+       (Item_Type   => HLR_Info,
+        Item_Vector => HLR_Vectors.Vector,
+        Add_Line    => Parse_HLR_Line,
+        Clear_Items => Clear_HLRs);
+   procedure Scan_LLR is new
+     Scan_Markdown_Lines
+       (Item_Type   => LLR_Info,
+        Item_Vector => LLR_Vectors.Vector,
+        Add_Line    => Parse_LLR_Line,
+        Clear_Items => Clear_LLRs);
 
    procedure Parse_And_Cache_HLR
      (File_Path : String;
