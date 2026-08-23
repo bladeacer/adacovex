@@ -936,11 +936,6 @@ package body Adacovex.Parsers.Manifest is
       Dir_Stack : Dir_Stacks.Vector;
       Search    : Search_Type;
       Ent       : Directory_Entry_Type;
-      Root      : constant String :=
-        (if Target_Dir'Length > 0 and then Target_Dir (Target_Dir'Last) = '/'
-         then Target_Dir (Target_Dir'First .. Target_Dir'Last - 1)
-         else Target_Dir)
-        & "/.adacovex/patches";
 
       procedure Push_Dir (Dir : String) is
          Item : Dir_Entry;
@@ -979,48 +974,123 @@ package body Adacovex.Parsers.Manifest is
             Types.Scope_Vendored);
       end Add_Vendored;
 
-   begin
-      if not Ada.Directories.Exists (Root) then
-         return;
-      end if;
-
-      Push_Dir (Root);
-      while not Dir_Stack.Is_Empty loop
+      procedure Add_Vendored_Asset (Asset_Path : String) is
+         Base : constant String := Simple_Name (Asset_Path);
+         Dot  : Natural := 0;
+         Name : String (1 .. 64) := (others => ' ');
+         NLen : Natural := 0;
+      begin
+         for I in reverse Base'Range loop
+            if Base (I) = '.' then
+               Dot := I;
+               exit;
+            end if;
+         end loop;
+         if Dot <= Base'First then
+            return;
+         end if;
+         --  Strip extension, keep "charts.min" as "charts.min"
+         --  Use basename without last extension as name
          declare
-            Current  : Dir_Entry := Dir_Stack.Last_Element;
-            Dir_Path : String renames Current.Path (1 .. Current.Len);
+            Raw : constant String := Base (Base'First .. Dot - 1);
          begin
-            Dir_Stack.Delete_Last;
-
-            Start_Search (Search, Dir_Path, "");
-            begin
-               while More_Entries (Search) loop
-                  Get_Next_Entry (Search, Ent);
-                  declare
-                     N    : constant String := Simple_Name (Ent);
-                     Path : constant String := Full_Name (Ent);
-                  begin
-                     if Kind (Ent) = Directory then
-                        if N /= "." and N /= ".." then
-                           Push_Dir (Path);
-                        end if;
-                     elsif Kind (Ent) = Ordinary_File then
-                        if N'Length > 4
-                          and then N (N'Last - 3 .. N'Last) = ".ads"
-                        then
-                           Add_Vendored (Path);
-                        end if;
-                     end if;
-                  end;
-               end loop;
-            exception
-               when others =>
-                  End_Search (Search);
-                  raise;
-            end;
-            End_Search (Search);
+            if Raw'Length > 64 then
+               NLen := 64;
+               Name (1 .. 64) := Raw (Raw'First .. Raw'First + 63);
+            else
+               NLen := Raw'Length;
+               Name (1 .. NLen) := Raw;
+            end if;
          end;
-      end loop;
+         --  Version left empty; purl uses generic pkg
+         Append_Dependency
+           (Graph,
+            Name (1 .. NLen),
+            "",
+            "",
+            "",
+            "pkg:generic/" & Name (1 .. NLen),
+            1,
+            False,
+            Types.Scope_Vendored);
+      end Add_Vendored_Asset;
+
+      procedure Scan_One_Vendored_Root (Root : String) is
+      begin
+         if not Ada.Directories.Exists (Root) then
+            return;
+         end if;
+         Dir_Stack.Clear;
+         Push_Dir (Root);
+         while not Dir_Stack.Is_Empty loop
+            declare
+               Current  : Dir_Entry := Dir_Stack.Last_Element;
+               Dir_Path : String renames Current.Path (1 .. Current.Len);
+            begin
+               Dir_Stack.Delete_Last;
+               Start_Search (Search, Dir_Path, "");
+               begin
+                  while More_Entries (Search) loop
+                     Get_Next_Entry (Search, Ent);
+                     declare
+                        N    : constant String := Simple_Name (Ent);
+                        Path : constant String := Full_Name (Ent);
+                     begin
+                        if Kind (Ent) = Directory then
+                           if N /= "." and N /= ".." then
+                              Push_Dir (Path);
+                           end if;
+                        elsif Kind (Ent) = Ordinary_File then
+                           if N'Length > 4
+                             and then N (N'Last - 3 .. N'Last) = ".ads"
+                           then
+                              Add_Vendored (Path);
+                           elsif N'Length > 3
+                             and then (N (N'Last - 2 .. N'Last) = ".js"
+                                       or else N (N'Last - 3 .. N'Last)
+                                               = ".css")
+                           then
+                              Add_Vendored_Asset (Path);
+                           end if;
+                        end if;
+                     end;
+                  end loop;
+               exception
+                  when others =>
+                     End_Search (Search);
+                     raise;
+               end;
+               End_Search (Search);
+            end;
+         end loop;
+      end Scan_One_Vendored_Root;
+
+      Patches_Root   : constant String :=
+        (if Target_Dir'Length > 0 and then Target_Dir (Target_Dir'Last) = '/'
+         then Target_Dir (Target_Dir'First .. Target_Dir'Last - 1)
+         else Target_Dir)
+        & "/.adacovex/patches";
+      Resources_Root : constant String :=
+        (if Target_Dir'Length > 0 and then Target_Dir (Target_Dir'Last) = '/'
+         then Target_Dir (Target_Dir'First .. Target_Dir'Last - 1)
+         else Target_Dir)
+        & "/resources";
+      Vendor_Root    : constant String :=
+        (if Target_Dir'Length > 0 and then Target_Dir (Target_Dir'Last) = '/'
+         then Target_Dir (Target_Dir'First .. Target_Dir'Last - 1)
+         else Target_Dir)
+        & "/vendor";
+      Assets_Root    : constant String :=
+        (if Target_Dir'Length > 0 and then Target_Dir (Target_Dir'Last) = '/'
+         then Target_Dir (Target_Dir'First .. Target_Dir'Last - 1)
+         else Target_Dir)
+        & "/assets";
+
+   begin
+      Scan_One_Vendored_Root (Patches_Root);
+      Scan_One_Vendored_Root (Resources_Root);
+      Scan_One_Vendored_Root (Vendor_Root);
+      Scan_One_Vendored_Root (Assets_Root);
    end Discover_Vendored_Components;
 
    --  Known system binaries that count as development dependencies.  This

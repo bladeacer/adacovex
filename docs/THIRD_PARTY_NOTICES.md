@@ -41,6 +41,7 @@ only; adacovex does not vendor or redistribute them.
 |-----------|---------|---------|----------|
 | Charts.css | 1.2.0 | MIT | Dashboard chart styles (`resources/charts.min.css`, inlined into the served dashboard) |
 | nomnoml | 1.7.0 | MIT | Dependency hierarchy diagram alternative view in the dashboard (`resources/nomnoml.js`, inlined into the served dashboard) |
+| graphre | 0.1.3 | MIT | Graph layout engine for nomnoml (`resources/graphre.js`, inlined; required by nomnoml's UMD wrapper) |
 | FlexSearch | 0.7.31 | Apache-2.0 | Client-side search indexing for packages, HLRs and dependencies in the dashboard (`resources/flexsearch.js`, inlined into the served dashboard) |
 
 Charts.css (https://chartscss.org/) is bundled in its minified form under
@@ -53,6 +54,13 @@ nomnoml (https://github.com/skanaar/nomnoml) is bundled under `resources/nomnoml
 dependency hierarchy as a UML-style diagram on the **Dependencies** tab's
 alternative view (Tree / Diagram toggle). The MIT license text is preserved in
 the bundle header comment.
+
+graphre (https://github.com/cytoscape/graphre) is bundled under
+`resources/graphre.js` (38 KB, MIT) and inlined before nomnoml. It provides
+the `graphre.graphlib` and Dagre layout that nomnoml's UMD wrapper
+(`global.graphre`) requires; without it `nomnoml.draw` throws
+`graphlib is undefined`. The MIT license text is preserved in the bundle
+header comment.
 
 FlexSearch (https://github.com/nextapps-de/flexsearch) is bundled under
 `resources/flexsearch.js` (16 KB, Apache-2.0) and inlined into the dashboard
