@@ -124,16 +124,13 @@ package body Adacovex.Renderers.HTML is
    --  top) at Radius.  Centre is (110,100); the exact cos/sin*1000 values
    --  for angles 90/162/234/306/378 degrees keep the math in integers --
    --  no floating point in the renderer.
-   Axis_Cos : constant array (1 .. 5) of Integer :=
-     (0, -951, -588, 588, 951);
+   Axis_Cos : constant array (1 .. 5) of Integer := (0, -951, -588, 588, 951);
    Axis_Sin : constant array (1 .. 5) of Integer :=
      (1000, 309, -809, -809, 309);
 
    function Radar_Point (A : Positive; Radius : Natural) return String is
-      X : constant Integer :=
-        110 + ((Integer (Radius) * Axis_Cos (A)) / 1000);
-      Y : constant Integer :=
-        100 - ((Integer (Radius) * Axis_Sin (A)) / 1000);
+      X : constant Integer := 110 + ((Integer (Radius) * Axis_Cos (A)) / 1000);
+      Y : constant Integer := 100 - ((Integer (Radius) * Axis_Sin (A)) / 1000);
    begin
       return I_S (X) & "," & I_S (Y);
    end Radar_Point;
@@ -309,15 +306,15 @@ package body Adacovex.Renderers.HTML is
             end;
          end if;
       end;
-      Put ("</tbody></table></div>");      --  Docstring coverage: half-circle radial gauge (SVG arc; the arc
+      Put
+        ("</tbody></table></div>");      --  Docstring coverage: half-circle radial gauge (SVG arc; the arc
       --  length for r=50 is ~157, kept as integers).  The per-category
       --  SPARK radar now lives on the Overview tab, where it reads at a
       --  glance.
       declare
          Cov : constant Natural :=
            Pct
-             (Doc_Metrics.Documented_Subprogs,
-              Doc_Metrics.Total_Subprograms);
+             (Doc_Metrics.Documented_Subprogs, Doc_Metrics.Total_Subprograms);
          Off : constant Natural := 157 - (157 * Cov) / 100;
       begin
          Put ("<div class=""chart-card""><h3>Docstring Coverage</h3>");
@@ -337,8 +334,7 @@ package body Adacovex.Renderers.HTML is
             Put (Img (Off));
             Put ("""/>");
             Put ("<text x=""60"" y=""56"" text-anchor=""middle""");
-            Put
-              (" font-size=""11"" font-weight=""600"" fill=""var(--fg)"">");
+            Put (" font-size=""11"" font-weight=""600"" fill=""var(--fg)"">");
             Put (Img (Cov));
             Put ("%</text></svg>");
             Put ("<p style=""color:var(--muted);font-size: .75rem;");
@@ -538,9 +534,12 @@ package body Adacovex.Renderers.HTML is
          end if;
 
          Put
-           ("<strong>"
-            & Html_Escape (Info.Name (1 .. Info.Name_Len))
-            & "</strong> ");
+           ("<button type=""button"" class=""dep-link"" "
+            & "onclick=""showDepDetails(");
+         Put (Img (Idx));
+         Put (");return false;"" title=""Click for details"">");
+         Put (Html_Escape (Info.Name (1 .. Info.Name_Len)));
+         Put ("</button> ");
          if Info.Version_Len > 0 then
             Put
               ("<span class=""dep-badge"">"
@@ -564,13 +563,13 @@ package body Adacovex.Renderers.HTML is
          end if;
          if Info.License_Len > 0 then
             Put
-              ("<span class=""dep-meta"">"
+              ("<span class=""dep-meta lic"">"
                & Html_Escape (Info.License (1 .. Info.License_Len))
                & "</span> ");
          end if;
          if Info.PURL_Len > 0 then
             Put
-              ("<span class=""dep-meta"" title=""PURL"">"
+              ("<span class=""dep-meta purl"" title=""PURL"">"
                & Html_Escape (Info.PURL (1 .. Info.PURL_Len))
                & "</span> ");
          end if;
@@ -604,6 +603,85 @@ package body Adacovex.Renderers.HTML is
 
       Put ("<div class=""card"">");
       Put ("<h2>Dependency Graph</h2>");
+      --  Mini summarizer at top: scope distribution bar (pure CSS, no JS)
+      declare
+         C_Base  : Natural := 0;
+         C_Dev   : Natural := 0;
+         C_Trans : Natural := 0;
+         C_Vend  : Natural := 0;
+         Total   : Natural := 0;
+         Pct_B   : Natural := 0;
+         Pct_D   : Natural := 0;
+         Pct_T   : Natural := 0;
+         Pct_V   : Natural := 0;
+      begin
+         for I in 1 .. Integer (Graph.Length) loop
+            case Graph (I).Scope is
+               when Types.Scope_Base       =>
+                  C_Base := C_Base + 1;
+
+               when Types.Scope_Dev        =>
+                  C_Dev := C_Dev + 1;
+
+               when Types.Scope_Transitive =>
+                  C_Trans := C_Trans + 1;
+
+               when Types.Scope_Vendored   =>
+                  C_Vend := C_Vend + 1;
+            end case;
+            Total := Total + 1;
+         end loop;
+         if Total > 0 then
+            Pct_B := (C_Base * 100) / Total;
+            Pct_D := (C_Dev * 100) / Total;
+            Pct_T := (C_Trans * 100) / Total;
+            Pct_V := 100 - Pct_B - Pct_D - Pct_T;
+         end if;
+         Put
+           ("<div class=""chart-card"" style=""margin:0 0 14px;max-width:640px"">");
+         Put ("<h3>Scope Distribution</h3>");
+         Put
+           ("<div class=""scope-stack"" role=""img"" "
+            & "aria-label=""Scope distribution"">");
+         if Pct_B > 0 then
+            Put
+              ("<i class=""s-base"" style=""width:"
+               & Img (Pct_B)
+               & "%""></i>");
+         end if;
+         if Pct_D > 0 then
+            Put
+              ("<i class=""s-dev"" style=""width:" & Img (Pct_D) & "%""></i>");
+         end if;
+         if Pct_T > 0 then
+            Put
+              ("<i class=""s-trans"" style=""width:"
+               & Img (Pct_T)
+               & "%""></i>");
+         end if;
+         if Pct_V > 0 then
+            Put
+              ("<i class=""s-vend"" style=""width:"
+               & Img (Pct_V)
+               & "%""></i>");
+         end if;
+         Put ("</div>");
+         Put
+           ("<ul class=""scope-legend"">"
+            & "<li><i class=""s-base""></i>base "
+            & Img (C_Base)
+            & "</li>"
+            & "<li><i class=""s-dev""></i>dev "
+            & Img (C_Dev)
+            & "</li>"
+            & "<li><i class=""s-trans""></i>transitive "
+            & Img (C_Trans)
+            & "</li>"
+            & "<li><i class=""s-vend""></i>vendored "
+            & Img (C_Vend)
+            & "</li></ul>");
+         Put ("</div>");
+      end;
       Put
         ("<p style=""color:var(--muted);font-size:.85rem;margin:4px 0 8px"">"
          & Img (Natural (Graph.Length))
@@ -616,21 +694,25 @@ package body Adacovex.Renderers.HTML is
          & "placeholder=""Filter by name (e.g. gnatprove)"" "
          & "aria-label=""Filter dependencies"">");
       Put
-        ("<label class=""cb"" title=""Show base (alire.toml) deps"">"
+        ("<label class=""cb"" title=""base = declared in alire.toml"">"
          & "<input type=""checkbox"" id=""filter-base"" checked "
-         & "onchange=""filterByScope()""><span class=""box""><svg viewBox=""0 0 12 12"" width=""10"" height=""10"" aria-hidden=""true""><path d=""M2 6 l2 2 l6 -6"" stroke=""currentColor"" fill=""none"" stroke-width=""1.5"" stroke-linecap=""round"" stroke-linejoin=""round""/></svg></span> base <svg class=""icon"" viewBox=""0 0 12 12"" aria-hidden=""true""><circle cx=""6"" cy=""6"" r=""5"" stroke=""currentColor"" fill=""none"" stroke-width=""1.2""/><text x=""6"" y=""8"" text-anchor=""middle"" font-size=""7"" font-weight=""700"" fill=""currentColor"">i</text></svg></label>");
+         & "onchange=""filterByScope()""><span class=""box""><svg class=""tick"" viewBox=""0 0 12 12"" width=""9"" height=""9"" aria-hidden=""true""><path d=""M2 6 L5 9 L10 3"" stroke=""currentColor"" fill=""none"" stroke-width=""2"" stroke-linecap=""round"" stroke-linejoin=""round""/></svg></span> "
+         & "<svg class=""icon"" viewBox=""0 0 12 12"" aria-hidden=""true""><use href=""#i-base""/></svg> base</label>");
       Put
-        ("<label class=""cb"" title=""Show dev (alire-dev.toml) deps"">"
+        ("<label class=""cb"" title=""dev = declared in alire-dev.toml"">"
          & "<input type=""checkbox"" id=""filter-dev"" checked "
-         & "onchange=""filterByScope()""><span class=""box""><svg viewBox=""0 0 12 12"" width=""10"" height=""10"" aria-hidden=""true""><path d=""M2 6 l2 2 l6 -6"" stroke=""currentColor"" fill=""none"" stroke-width=""1.5"" stroke-linecap=""round"" stroke-linejoin=""round""/></svg></span> dev <svg class=""icon"" viewBox=""0 0 12 12"" aria-hidden=""true""><path d=""M8 2 L3 7 A1.8 1.8 0 0 0 5 10 L10 5 Z"" stroke=""currentColor"" fill=""none"" stroke-width=""1.2"" stroke-linejoin=""round""/></svg></label>");
+         & "onchange=""filterByScope()""><span class=""box""><svg class=""tick"" viewBox=""0 0 12 12"" width=""9"" height=""9"" aria-hidden=""true""><path d=""M2 6 L5 9 L10 3"" stroke=""currentColor"" fill=""none"" stroke-width=""2"" stroke-linecap=""round"" stroke-linejoin=""round""/></svg></span> "
+         & "<svg class=""icon"" viewBox=""0 0 12 12"" aria-hidden=""true""><use href=""#i-dev""/></svg> dev</label>");
       Put
-        ("<label class=""cb"" title=""Show transitive deps"">"
+        ("<label class=""cb"" title=""transitive = pulled in by a dependency"">"
          & "<input type=""checkbox"" id=""filter-transitive"" checked "
-         & "onchange=""filterByScope()""><span class=""box""><svg viewBox=""0 0 12 12"" width=""10"" height=""10"" aria-hidden=""true""><path d=""M2 6 l2 2 l6 -6"" stroke=""currentColor"" fill=""none"" stroke-width=""1.5"" stroke-linecap=""round"" stroke-linejoin=""round""/></svg></span> transitive <svg class=""icon"" viewBox=""0 0 12 12"" aria-hidden=""true""><rect x=""2"" y=""3"" width=""7"" height=""5"" rx=""1"" stroke=""currentColor"" fill=""none"" stroke-width=""1.2""/><rect x=""3"" y=""5"" width=""7"" height=""5"" rx=""1"" stroke=""currentColor"" fill=""none"" stroke-width=""1.2""/></svg></label>");
+         & "onchange=""filterByScope()""><span class=""box""><svg class=""tick"" viewBox=""0 0 12 12"" width=""9"" height=""9"" aria-hidden=""true""><path d=""M2 6 L5 9 L10 3"" stroke=""currentColor"" fill=""none"" stroke-width=""2"" stroke-linecap=""round"" stroke-linejoin=""round""/></svg></span> "
+         & "<svg class=""icon"" viewBox=""0 0 12 12"" aria-hidden=""true""><use href=""#i-trans""/></svg> transitive</label>");
       Put
-        ("<label class=""cb"" title=""Show vendored deps"">"
+        ("<label class=""cb"" title=""vendored = bundled third-party source"">"
          & "<input type=""checkbox"" id=""filter-vendored"" checked "
-         & "onchange=""filterByScope()""><span class=""box""><svg viewBox=""0 0 12 12"" width=""10"" height=""10"" aria-hidden=""true""><path d=""M2 6 l2 2 l6 -6"" stroke=""currentColor"" fill=""none"" stroke-width=""1.5"" stroke-linecap=""round"" stroke-linejoin=""round""/></svg></span> vendored <svg class=""icon"" viewBox=""0 0 12 12"" aria-hidden=""true""><path d=""M6 1 L11 10 H1 Z"" stroke=""currentColor"" fill=""none"" stroke-width=""1.2"" stroke-linejoin=""round""/><text x=""6"" y=""8.5"" text-anchor=""middle"" font-size=""7"" font-weight=""700"" fill=""currentColor"">!</text></svg></label>");
+         & "onchange=""filterByScope()""><span class=""box""><svg class=""tick"" viewBox=""0 0 12 12"" width=""9"" height=""9"" aria-hidden=""true""><path d=""M2 6 L5 9 L10 3"" stroke=""currentColor"" fill=""none"" stroke-width=""2"" stroke-linecap=""round"" stroke-linejoin=""round""/></svg></span> "
+         & "<svg class=""icon"" viewBox=""0 0 12 12"" aria-hidden=""true""><use href=""#i-vend""/></svg> vendored</label>");
       Put
         ("<button class=""theme-toggle"" onclick=""expandDeps(true)"">Expand all</button>");
       Put
@@ -653,6 +735,9 @@ package body Adacovex.Renderers.HTML is
          end if;
       end;
       Put ("</ul></div>");
+      --  Dep details panel (populated by JS on click)
+      Put ("<div class=""dep-details"" id=""dep-detail-popup"" hidden"">");
+      Put ("</div>");
       Put ("</div>");
       return To_String (R);
    end Render_Deps_HTML;
@@ -799,11 +884,10 @@ package body Adacovex.Renderers.HTML is
          --  and in docs/dashboard.md.  Same integer-math SVG as the SPARK
          --  radar; colours follow the theme via CSS variables.
          declare
-            R_Vals : array (1 .. 5) of Natural := (others => 0);
-            R_Name : constant array (1 .. 5) of String (1 .. 8) :=
+            R_Vals  : array (1 .. 5) of Natural := (others => 0);
+            R_Name  : constant array (1 .. 5) of String (1 .. 8) :=
               ("Docs    ", "Proof   ", "Tests   ", "Comp    ", "Deps    ");
-            R_Len  : constant array (1 .. 5) of Natural :=
-              (4, 5, 5, 4, 4);
+            R_Len   : constant array (1 .. 5) of Natural := (4, 5, 5, 4, 4);
             Vend_Ct : Natural := 0;
             Avg     : Natural := 0;
             Tier    : Character := 'D';
@@ -812,8 +896,7 @@ package body Adacovex.Renderers.HTML is
             R_Vals (2) := Pct (Proof.Proved_VCs, Proof.Total_VCs);
             R_Vals (3) :=
               Pct
-                (Tests.Total_Passed,
-                 Tests.Total_Passed + Tests.Total_Failed);
+                (Tests.Total_Passed, Tests.Total_Passed + Tests.Total_Failed);
             R_Vals (4) :=
               (if DAL_Assess.Status = Types.Achieved then 100 else 0);
             for I in 1 .. Integer (Graph.Length) loop
@@ -822,12 +905,10 @@ package body Adacovex.Renderers.HTML is
                end if;
             end loop;
             R_Vals (5) :=
-              Pct
-                (Natural (Graph.Length) - Vend_Ct,
-                 Natural (Graph.Length));
+              Pct (Natural (Graph.Length) - Vend_Ct, Natural (Graph.Length));
             Avg :=
-              (R_Vals (1) + R_Vals (2) + R_Vals (3) + R_Vals (4)
-               + R_Vals (5)) / 5;
+              (R_Vals (1) + R_Vals (2) + R_Vals (3) + R_Vals (4) + R_Vals (5))
+              / 5;
             if Avg >= 90 then
                Tier := 'S';
             elsif Avg >= 80 then
@@ -909,13 +990,13 @@ package body Adacovex.Renderers.HTML is
                Name : String (1 .. 8);
                Len  : Natural;
             end record;
-            Cats : constant array (1 .. 5) of Cat_Rec :=
+            Cats  : constant array (1 .. 5) of Cat_Rec :=
               (("Flow    ", 4),
                ("Init    ", 4),
                ("Runtime ", 7),
                ("Assert  ", 6),
                ("Func    ", 4));
-            Vals : constant array (1 .. 5) of Natural :=
+            Vals  : constant array (1 .. 5) of Natural :=
               (Proof.Flow_Proved,
                Proof.Init_Proved,
                Proof.Runtime_Proved,
@@ -1041,7 +1122,55 @@ package body Adacovex.Renderers.HTML is
          Put_O ("</div>");
       end;
 
-      --  Proof tab
+      --  Proof tab: mini proved/total column at the top
+      Put_P ("<div class=""chart-grid"" style=""margin-bottom:14px"">");
+      Put_P ("<div class=""chart-card""><h3>VCs Proved</h3>");
+      Put_P
+        ("<table class=""charts-css column show-labels"" "
+         & "style=""height:110px"">");
+      Put_P ("<caption>Proved / total</caption><tbody>");
+      if Proof.Total_VCs = 0 then
+         Put_P
+           ("<tr><th scope=""row"">No VCs</th><td style=""--size:0.00""><span class=""data"">0</span></td></tr>");
+      else
+         for K in 1 .. 3 loop
+            Put_P ("<tr><th scope=""row"">");
+            case K is
+               when 1      =>
+                  Put_P ("Flow");
+
+               when 2      =>
+                  Put_P ("Init");
+
+               when others =>
+                  Put_P ("Runtime");
+            end case;
+            Put_P ("</th><td style=""--size:");
+            case K is
+               when 1      =>
+                  Put_P (Frac (Proof.Flow_Proved, Proof.Flow_Checks));
+
+               when 2      =>
+                  Put_P (Frac (Proof.Init_Proved, Proof.Init_Checks));
+
+               when others =>
+                  Put_P (Frac (Proof.Runtime_Proved, Proof.Runtime_Checks));
+            end case;
+            Put_P ("""><span class=""data"">");
+            case K is
+               when 1      =>
+                  Put_P (Img (Proof.Flow_Proved));
+
+               when 2      =>
+                  Put_P (Img (Proof.Init_Proved));
+
+               when others =>
+                  Put_P (Img (Proof.Runtime_Proved));
+            end case;
+            Put_P ("</span></td></tr>");
+         end loop;
+      end if;
+      Put_P ("</tbody></table></div></div>");
       Put_P ("<div class=""card""><h2>SPARK Proof Analysis</h2>");
       Put_P
         ("<table><tr><th>Check Type</th><th>Total</th><th>Proved</th></tr>");
@@ -1082,7 +1211,39 @@ package body Adacovex.Renderers.HTML is
       Put_P (Img (Proof.Proved_VCs));
       Put_P ("</td></tr></table></div>");
 
-      --  Tests tab
+      --  Tests tab: mini pass/fail donut at the top
+      Put_T ("<div class=""chart-grid"" style=""margin-bottom:14px"">");
+      Put_T ("<div class=""chart-card""><h3>Pass / Fail</h3>");
+      Put_T
+        ("<table class=""charts-css pie donut show-labels"" "
+         & "style=""height:110px;max-width:190px;margin:0 auto"">");
+      Put_T ("<caption>Pass / Fail</caption><tbody>");
+      if Tests.Total_Passed + Tests.Total_Failed = 0 then
+         Put_T
+           ("<tr><th scope=""row"">No tests</th><td style=""--start:0.00;--end:1.00""><span class=""data"">0</span></td></tr>");
+      else
+         declare
+            P : constant String :=
+              Frac
+                (Tests.Total_Passed, Tests.Total_Passed + Tests.Total_Failed);
+         begin
+            Put_T
+              ("<tr><th scope=""row"">Passed</th><td style=""--start:0.00;--end:"
+               & P
+               & """><span class=""data"">"
+               & Img (Tests.Total_Passed)
+               & "</span></td></tr>");
+            if Tests.Total_Failed > 0 then
+               Put_T
+                 ("<tr><th scope=""row"">Failed</th><td style=""--start:"
+                  & P
+                  & ";--end:1.00""><span class=""data"">"
+                  & Img (Tests.Total_Failed)
+                  & "</span></td></tr>");
+            end if;
+         end;
+      end if;
+      Put_T ("</tbody></table></div></div>");
       Put_T ("<div class=""card""><h2>Test Results</h2>");
       Put_T ("<table><tr><th>Category</th><th>Tests</th><th>Status</th></tr>");
       for C in 1 .. Integer (Tests.Categories.Length) loop
@@ -1112,7 +1273,37 @@ package body Adacovex.Renderers.HTML is
       Put_T (Img (Tests.Total_Failed));
       Put_T ("</strong></td></tr></table></div>");
 
-      --  Compliance tab
+      --  Compliance tab: mini achievement gauge at the top
+      Put_C
+        ("<div class=""chart-card"" style=""margin-bottom:14px;max-width:260px"">");
+      Put_C ("<h3>Compliance Status</h3>");
+      Put_C ("<svg viewBox=""0 0 120 68"" width=""100%"" height=""66""");
+      Put_C (" role=""img"" aria-label=""Compliance achievement"">");
+      Put_C ("<path d=""M10 60 A50 50 0 0 1 110 60"" fill=""none""");
+      Put_C (" stroke=""var(--border)"" stroke-width=""11""");
+      Put_C (" stroke-linecap=""round""/>");
+      if DAL_Assess.Status = Types.Achieved then
+         Put_C ("<path d=""M10 60 A50 50 0 0 1 110 60"" fill=""none""");
+         Put_C (" stroke=""var(--pass)"" stroke-width=""11""");
+         Put_C (" stroke-linecap=""round"" stroke-dasharray=""157""");
+         Put_C (" stroke-dashoffset=""0""/>");
+      else
+         Put_C ("<path d=""M10 60 A50 50 0 0 1 110 60"" fill=""none""");
+         Put_C (" stroke=""var(--fail)"" stroke-width=""11""");
+         Put_C (" stroke-linecap=""round"" stroke-dasharray=""157""");
+         Put_C (" stroke-dashoffset=""55""/>");
+      end if;
+      Put_C
+        ("<text x=""60"" y=""56"" text-anchor=""middle"" font-size=""11""");
+      Put_C (" font-weight=""600""");
+      Put_C (" fill=""");
+      Put_C
+        (if DAL_Assess.Status = Types.Achieved
+         then "var(--pass)"
+         else "var(--fail)");
+      Put_C (""">");
+      Put_C (Types.To_String (DAL_Assess.Status));
+      Put_C ("</text></svg></div>");
       Put_C ("<div class=""card"">");
       if All_Standards then
          Put_C ("<h2>Compliance (all standards)</h2>");
@@ -1319,6 +1510,8 @@ package body Adacovex.Renderers.HTML is
             else "dependency");
          Put (""",""parent"":");
          Put (Img (Graph (I).Parent));
+         Put (",""lang"":");
+         Put_Field (Graph (I).Language, Graph (I).Language_Len);
          Put (",""purl"":");
          Put_Field (Graph (I).PURL, Graph (I).PURL_Len);
          Put ("}");
