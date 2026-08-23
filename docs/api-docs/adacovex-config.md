@@ -69,6 +69,10 @@ Prove_Memlimit       : Integer := -1;
 Prove_Force          : Boolean := False;
 Prove_No_Loop_Unroll : Boolean := False;
 Prove_No_Inlining    : Boolean := False;
+Prove_Suppress_Warnings : Boolean := True;
+Prove_Suppress_Sets : Ada.Strings.Unbounded.Unbounded_String :=
+Ada.Strings.Unbounded.Null_Unbounded_String;
+Prove_Suppress_Explicit : Boolean := False;
 Require_SPARK          : Types.SPARK_Level := Types.Stone;
 Require_SPARK_Set      : Boolean := False;
 Require_Docstrings     : Natural := 0;

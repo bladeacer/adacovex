@@ -149,7 +149,8 @@ package body Adacovex_Config_Tests is
          R.Check
            (Cfg.Prove_Suppress_Explicit,
             "prove --suppress-warnings sets Prove_Suppress_Explicit");
-         R.Check (not Cfg.CLI_Error, "prove --suppress-warnings is not an error");
+         R.Check
+           (not Cfg.CLI_Error, "prove --suppress-warnings is not an error");
       end;
 
       --  --suppress-warnings=xyz,abc carries a custom comma-separated set
@@ -166,7 +167,7 @@ package body Adacovex_Config_Tests is
             "prove --suppress-warnings=xyz,abc keeps suppression on");
          R.Check
            (Ada.Strings.Unbounded.To_String (Cfg.Prove_Suppress_Sets)
-              = "xyz,abc",
+            = "xyz,abc",
             "prove --suppress-warnings=xyz,abc stores the set list verbatim");
          R.Check
            (Cfg.Prove_Suppress_Explicit,

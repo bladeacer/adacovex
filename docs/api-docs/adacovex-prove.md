@@ -54,15 +54,17 @@ HLR-PROVE: GNATprove subcommand
 
 ```ada
 type Prove_Options is record
-Jobs              : Integer := -1;
-Level             : Integer := -1;
-Timeout           : Integer := -1;
-Steps             : Integer := -1;
-Memlimit          : Integer := -1;
-Force             : Boolean := False;
-No_Loop_Unrolling : Boolean := False;
-No_Inlining       : Boolean := False;
-Cache             : Boolean := True;
+Jobs        : Integer := -1;
+Level       : Integer := -1;
+Timeout     : Integer := -1;
+Steps       : Integer := -1;
+Memlimit    : Integer := -1;
+Force       : Boolean := False;
+No_Inlining : Boolean := False;
+Suppress_Warnings : Boolean := True;
+Suppress_Sets : Ada.Strings.Unbounded.Unbounded_String :=
+Ada.Strings.Unbounded.Null_Unbounded_String;
+Cache : Boolean := True;
 end record;
 ```
 

@@ -997,7 +997,8 @@ package body Adacovex.Config is
                   --  is already the default for local runs, so this is an
                   --  explicit request (and a prove-mode flag).
                   Cfg.Prove_Suppress_Warnings := True;
-                  Cfg.Prove_Suppress_Sets := Ada.Strings.Unbounded.Null_Unbounded_String;
+                  Cfg.Prove_Suppress_Sets :=
+                    Ada.Strings.Unbounded.Null_Unbounded_String;
                   Cfg.Prove_Suppress_Explicit := True;
                elsif Has_Prefix (A, "--suppress-warnings=") then
                   Cfg.Prove_Suppress_Warnings := True;
@@ -1509,7 +1510,8 @@ package body Adacovex.Config is
         ("                        on: the prove subcommand never unrolls loops,");
       Ada.Text_IO.Put_Line
         ("                        so GNATprove's 'cannot unroll loop' info");
-      Ada.Text_IO.Put_Line ("                        notices never appear; flag kept for compat)");
+      Ada.Text_IO.Put_Line
+        ("                        notices never appear; flag kept for compat)");
       Ada.Text_IO.Put_Line
         ("  --no-inlining         Disable contextual analysis inlining");
       Ada.Text_IO.Put_Line
@@ -1529,7 +1531,8 @@ package body Adacovex.Config is
         ("                        suppression-set names (empty = the default");
       Ada.Text_IO.Put_Line
         ("                        set, e.g. unrolling-inlining); --verbose");
-      Ada.Text_IO.Put_Line ("                        always shows every message");
+      Ada.Text_IO.Put_Line
+        ("                        always shows every message");
       Ada.Text_IO.Put_Line
         ("  --require-spark=LVL   Fail if SPARK level < LVL (Stone..Platinum)");
       Ada.Text_IO.Put_Line
