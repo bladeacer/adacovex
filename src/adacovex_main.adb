@@ -23,6 +23,7 @@ with Adacovex.Renderers.Man;
 with Adacovex.Renderers.SBOM;
 with Adacovex.Server.HTTP;
 with Adacovex.Cache;
+with Adacovex.Complexity;
 
 procedure Adacovex_Main is
    use Ada.Calendar;
@@ -595,15 +596,47 @@ begin
    -- Status mode: print toolchain + platform status and exit (no
    -- assessment, no scanning).  Run_Status never deploys or downloads
    -- anything, so it prints its own header and skips the normal one.
-   if Cfg.Status_Mode then
-      declare
-         OK : Boolean;
-      begin
-         Adacovex.Prove.Run_Status (Target (1 .. TLen), OK);
-         Ada.Command_Line.Set_Exit_Status (if OK then 0 else 1);
-      end;
-      return;
-   end if;
+    if Cfg.Status_Mode then
+       declare
+          OK : Boolean;
+       begin
+          Adacovex.Prove.Run_Status (Target (1 .. TLen), OK);
+          Ada.Command_Line.Set_Exit_Status (if OK then 0 else 1);
+       end;
+       return;
+    end if;
+
+     -- Complexity mode: run cyclomatic-complexity check on the target
+     if Cfg.Complexity_Mode then
+        declare
+           Res : constant Adacovex.Complexity.Complexity_Result :=
+             Adacovex.Complexity.Analyze_Project (Target (1 .. TLen));
+           V   : constant Adacovex.Complexity.Violation_Vectors.Vector :=
+             Adacovex.Complexity.Check_Gates
+               (Res,
+                Max_File_LOC        => 2000,
+                Max_File_Pct        => 10,
+                Max_Fn_Complexity   => 50,
+                Max_File_Complexity => 300);
+        begin
+           Ada.Text_IO.Put_Line
+             ("Running complexity check on "
+              & Target (1 .. TLen));
+           Adacovex.Complexity.Print_Report
+             (Res,
+              Check_Mode        => True,
+              Violations        => V,
+              Max_File_LOC      => 2000,
+              Max_File_Pct      => 10,
+              Max_Fn_Complexity => 50,
+              Max_File_Complexity => 300);
+           Ada.Command_Line.Set_Exit_Status
+             (if Integer (Adacovex.Complexity.Violation_Vectors.Length (V)) > 0
+              then 1
+              else 0);
+        end;
+        return;
+     end if;
 
    -- Completion mode: emit a shell completion script (bash/fish/zsh/pwsh)
    -- for this binary's flag set and exit.  The script is generated from

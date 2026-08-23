@@ -80,6 +80,7 @@ help:
 	@echo '    test-publish  Dry-run showing what make publish would do'
 	@echo '    man           Install the man page into the local man database'
 	@echo '                  (~/.local/share/man, Linux/WSL) and refresh mandb'
+	@echo '    e2e           Run Playwright dashboard layout tests (pnpm)'
 	@echo '    clean         Remove build artifacts'
 	@echo ''
 	@echo 'check runs the same gates CI enforces before a release, cheap static'
@@ -245,14 +246,14 @@ sync: agents-tree proof-status test-count doc-links description
 changelog-check:
 	@python3 tools/check-changelogs.py
 
-complexity-check:
-	python3 tools/check-complexity.py
+complexity-check: build
+	./bin/adacovex complexity
 
 ascii-check:
 	@echo "=== ASCII Charset Verification ==="; \
 	error=0; \
 	for ext in ads adb md py toml gpr; do \
-	  files=$$(find . -name "*.$$ext" -not -path "./.git/*" -not -path "./alire/*" -not -path "./obj/*" 2>/dev/null); \
+ 	files=$$(find . -name "*.$$ext" -not -path "./.git/*" -not -path "./alire/*" -not -path "./obj/*" -not -path "*/node_modules/*" 2>/dev/null); \
 	  for f in $$files; do \
 	    if LC_ALL=C grep -q '[^ -~	]' "$$f" 2>/dev/null; then \
 	      echo "  NON-ASCII: $$f"; \
@@ -502,6 +503,11 @@ test-publish:
 
 clean:
 	alr clean 2>/dev/null; rm -rf bin/ obj/ docs/badges/ docs/api/
+
+e2e:
+	pnpm --dir tests/e2e install
+	pnpm --dir tests/e2e exec playwright install chromium
+	pnpm --dir tests/e2e test
 
 _dev_cmd:
 	@tmp=$$(mktemp -d); \

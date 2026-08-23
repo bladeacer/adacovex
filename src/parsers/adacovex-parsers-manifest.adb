@@ -2241,44 +2241,67 @@ package body Adacovex.Parsers.Manifest is
       return E;
    end Make_Tool;
 
-   System_Tools : constant array (1 .. 37) of Tool_Entry :=
-     (Make_Tool ("alr"),
-      Make_Tool ("make"),
-      Make_Tool ("cmake"),
-      Make_Tool ("ninja"),
-      Make_Tool ("gprbuild"),
-      Make_Tool ("gprclean"),
-      Make_Tool ("gprinstall"),
-      Make_Tool ("gnatmake"),
-      Make_Tool ("gnatbind"),
-      Make_Tool ("gnatlink"),
-      Make_Tool ("gnat"),
-      Make_Tool ("gnatls"),
-      Make_Tool ("gnatprep"),
-      Make_Tool ("gnatprove"),
-      Make_Tool ("gnatdoc"),
-      Make_Tool ("gnatformat"),
-      Make_Tool ("gnatpp"),
-      Make_Tool ("python3"),
-      Make_Tool ("python"),
-      Make_Tool ("pip3"),
-      Make_Tool ("pip"),
-      Make_Tool ("pytest"),
-      Make_Tool ("rst2md"),
-      Make_Tool ("git"),
-      Make_Tool ("git-lfs", "version"),
-      Make_Tool ("hg"),
-      Make_Tool ("svn"),
-      Make_Tool ("fossil", "version"),
-      Make_Tool ("jj"),
-      Make_Tool ("bash"),
-      Make_Tool ("mandb"),
-      Make_Tool ("gh"),
-      Make_Tool ("docker"),
-      Make_Tool ("podman"),
-      Make_Tool ("curl"),
-      Make_Tool ("wget"),
-      Make_Tool ("pandoc"));
+    System_Tools : constant array (1 .. 60) of Tool_Entry :=
+      (Make_Tool ("alr"),
+       Make_Tool ("make"),
+       Make_Tool ("cmake"),
+       Make_Tool ("ninja"),
+       Make_Tool ("gprbuild"),
+       Make_Tool ("gprclean"),
+       Make_Tool ("gprinstall"),
+       Make_Tool ("gnatmake"),
+       Make_Tool ("gnatbind"),
+       Make_Tool ("gnatlink"),
+       Make_Tool ("gnat"),
+       Make_Tool ("gnatls"),
+       Make_Tool ("gnatprep"),
+       Make_Tool ("gnatprove"),
+       Make_Tool ("gnatdoc"),
+       Make_Tool ("gnatformat"),
+       Make_Tool ("gnatpp"),
+       Make_Tool ("python3"),
+       Make_Tool ("python"),
+       Make_Tool ("pip3"),
+       Make_Tool ("pip"),
+       Make_Tool ("pytest"),
+       Make_Tool ("rst2md"),
+       Make_Tool ("git"),
+       Make_Tool ("git-lfs", "version"),
+       Make_Tool ("hg"),
+       Make_Tool ("svn"),
+       Make_Tool ("fossil", "version"),
+       Make_Tool ("jj"),
+       Make_Tool ("bash"),
+       Make_Tool ("mandb"),
+       Make_Tool ("gh"),
+       Make_Tool ("docker"),
+       Make_Tool ("podman"),
+       Make_Tool ("curl"),
+       Make_Tool ("wget"),
+       Make_Tool ("pandoc"),
+       Make_Tool ("npm"),
+       Make_Tool ("node"),
+       Make_Tool ("yarn"),
+       Make_Tool ("pnpm"),
+       Make_Tool ("cargo"),
+       Make_Tool ("rustc"),
+       Make_Tool ("go"),
+       Make_Tool ("gcc"),
+       Make_Tool ("g++"),
+       Make_Tool ("clang"),
+       Make_Tool ("javac"),
+       Make_Tool ("mvn"),
+       Make_Tool ("gradle"),
+       Make_Tool ("ruby"),
+       Make_Tool ("dotnet"),
+       Make_Tool ("tsc"),
+       Make_Tool ("sass"),
+       Make_Tool ("scss"),
+       Make_Tool ("rustup"),
+       Make_Tool ("cargo-hack"),
+       Make_Tool ("cargo-watch"),
+       Make_Tool ("ada"),
+       Make_Tool ("alire"));
 
    --  Whether Line contains Tool as a whole word.  The match is
    --  case-sensitive and bounded by characters outside [a-z0-9_-], so
@@ -2515,6 +2538,28 @@ package body Adacovex.Parsers.Manifest is
          then
             return True;
          end if;
+         if Name = "package.json"
+           or else Name = "tsconfig.json"
+           or else Name = "jsconfig.json"
+           or else Name = "Cargo.toml"
+           or else Name = "Cargo.lock"
+           or else Name = "go.mod"
+           or else Name = "go.sum"
+           or else Name = "Gemfile"
+           or else Name = "requirements.txt"
+           or else Name = "pyproject.toml"
+           or else Name = "pom.xml"
+           or else Name = "build.gradle"
+           or else Name = "build.gradle.kts"
+           or else Name = "settings.gradle"
+           or else Name = "settings.gradle.kts"
+           or else Name = "*.csproj"
+           or else Name = "*.sln"
+           or else Name = "Makefile"
+           or else Name = "makefile"
+         then
+            return True;
+         end if;
          for I in reverse Name'Range loop
             if Name (I) = '.' then
                Dot := I;
@@ -2535,7 +2580,27 @@ package body Adacovex.Parsers.Manifest is
               or else Ext = ".yaml"
               or else Ext = ".toml"
               or else Ext = ".ads"
-              or else Ext = ".adb";
+              or else Ext = ".adb"
+              or else Ext = ".c"
+              or else Ext = ".h"
+              or else Ext = ".cpp"
+              or else Ext = ".hpp"
+              or else Ext = ".cc"
+              or else Ext = ".cxx"
+              or else Ext = ".rb"
+              or else Ext = ".cs"
+              or else Ext = ".java"
+              or else Ext = ".rs"
+              or else Ext = ".go"
+              or else Ext = ".js"
+              or else Ext = ".mjs"
+              or else Ext = ".cjs"
+              or else Ext = ".ts"
+              or else Ext = ".mts"
+              or else Ext = ".cts"
+              or else Ext = ".scss"
+              or else Ext = ".css"
+              or else Ext = ".json";
          end;
       end Should_Scan;
 

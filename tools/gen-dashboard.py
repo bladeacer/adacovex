@@ -229,7 +229,7 @@ def generate(out: Path, template: Path) -> None:
     # emitted as short quoted chunks joined with ` & `.
     chunks: List[str] = []
     for i, line in enumerate(page.split("\n")):
-        chunk_max: int = 88
+        chunk_max: int = 60
         for start in range(0, len(line), chunk_max):
             piece: str = line[start : start + chunk_max].replace('"', '""')
             chunks.append('"' + piece + '"')
