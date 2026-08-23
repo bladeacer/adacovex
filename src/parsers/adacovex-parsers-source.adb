@@ -345,6 +345,55 @@ package body Adacovex.Parsers.Source is
       return -1;
    end Comment_Indent;
 
+   --  Extract the subprogram name from a declaration line (after
+   --  Is_Subprogram_Decl already validated the leading keywords) into the
+   --  fixed buffer; returns the clamped name length.  Works on the raw line
+   --  (blanks intact) so the name never merges with a following `return`.
+   function Subprogram_Name
+     (L : String; SName : out String) return Natural
+   is
+      Pos   : Natural := L'First;
+      SNLen : Natural := 0;
+   begin
+      Skip_Blanks (L, Pos);
+      if Match_Keyword (L, Pos, "overriding") then
+         Pos := Pos + 10;
+         Skip_Blanks (L, Pos);
+      end if;
+      if Match_Keyword (L, Pos, "not") then
+         Pos := Pos + 3;
+         Skip_Blanks (L, Pos);
+         if Match_Keyword (L, Pos, "overriding") then
+            Pos := Pos + 10;
+            Skip_Blanks (L, Pos);
+         end if;
+      end if;
+      if Match_Keyword (L, Pos, "generic") then
+         Pos := Pos + 7;
+         Skip_Blanks (L, Pos);
+      end if;
+      if Match_Keyword (L, Pos, "procedure") then
+         Pos := Pos + 9;
+      elsif Match_Keyword (L, Pos, "function") then
+         Pos := Pos + 8;
+      end if;
+      Skip_Blanks (L, Pos);
+
+      --  Collect the identifier at Pos, clamped to the fixed buffer; the
+      --  scan still consumes the full identifier so following tokens are
+      --  not misparsed.
+      while Pos <= L'Last
+        and then L (Pos) in 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_'
+      loop
+         if SNLen < SName'Length then
+            SNLen := SNLen + 1;
+            SName (SNLen) := L (Pos);
+         end if;
+         Pos := Pos + 1;
+      end loop;
+      return SNLen;
+   end Subprogram_Name;
+
    procedure Scan_Ads_File
      (File_Path : String;
       Pkg       : out Types.Implementation.Package_Info;
@@ -470,53 +519,10 @@ package body Adacovex.Parsers.Source is
 
                   declare
                      L     : constant String := Line (1 .. Last);
-                     Pos   : Natural := L'First;
                      SName : String (1 .. Types.Max_Desc_Str);
-                     SNLen : Natural := 0;
+                     SNLen : constant Natural :=
+                       Subprogram_Name (L, SName);
                   begin
-                     --  Skip the leading keywords Is_Subprogram_Decl already
-                     --  validated (modifiers, generic, procedure/function) to
-                     --  reach the subprogram name.  Working on the raw line
-                     --  (blanks intact) keeps the name from merging with a
-                     --  following `return` keyword.
-                     Skip_Blanks (L, Pos);
-                     if Match_Keyword (L, Pos, "overriding") then
-                        Pos := Pos + 10;
-                        Skip_Blanks (L, Pos);
-                     end if;
-                     if Match_Keyword (L, Pos, "not") then
-                        Pos := Pos + 3;
-                        Skip_Blanks (L, Pos);
-                        if Match_Keyword (L, Pos, "overriding") then
-                           Pos := Pos + 10;
-                           Skip_Blanks (L, Pos);
-                        end if;
-                     end if;
-                     if Match_Keyword (L, Pos, "generic") then
-                        Pos := Pos + 7;
-                        Skip_Blanks (L, Pos);
-                     end if;
-                     if Match_Keyword (L, Pos, "procedure") then
-                        Pos := Pos + 9;
-                     elsif Match_Keyword (L, Pos, "function") then
-                        Pos := Pos + 8;
-                     end if;
-                     Skip_Blanks (L, Pos);
-
-                     --  Collect the identifier at Pos, clamped to the fixed
-                     --  buffer; the scan still consumes the full identifier
-                     --  so following tokens are not misparsed.
-                     while Pos <= L'Last
-                       and then L (Pos)
-                                in 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_'
-                     loop
-                        if SNLen < SName'Length then
-                           SNLen := SNLen + 1;
-                           SName (SNLen) := L (Pos);
-                        end if;
-                        Pos := Pos + 1;
-                     end loop;
-
                      Pkg.Subprograms (Subp_Idx).Name_Len := SNLen;
                      for J in 1 .. SNLen loop
                         Pkg.Subprograms (Subp_Idx).Name (J) := SName (J);

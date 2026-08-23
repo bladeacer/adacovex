@@ -34,18 +34,331 @@ package body Adacovex.Parsers.DO178C is
       return "";
    end LLR_Key;
 
-   procedure Parse_HLR_MD
+   --  Find one requirement entry ("HLR-XXXX: ..." / "LLR-XXXX: ... [...]")
+   --  on a markdown line and return the offsets of its parts.
+   --  The Marker prefix ("HLR-" or "LLR-") is located on the line, then the
+   --  id runs to the first space or colon; the (optional) HLR reference
+   --  after the description is detected as "HLR-xxxx" followed by a closer.
+   --  All outputs are 0 when the part is absent; Id_Start > 0 iff the
+   --  marker was found.
+   function Find_Entry
+     (Line     : String;
+      Last     : Natural;
+      Marker   : String;
+      Id_Start : out Natural;
+      Id_End   : out Natural;
+      Colon    : out Natural;
+      H_Start  : out Natural;
+      H_End    : out Natural) return Boolean
+   is
+      M_First : constant Natural := Line'First;
+   begin
+      Id_Start := 0;
+      Id_End   := 0;
+      Colon    := 0;
+      H_Start  := 0;
+      H_End    := 0;
+
+      --  Find the marker prefix anywhere on the line.
+      if Marker'Length = 0 then
+         return False;
+      end if;
+      for I in M_First .. Last - 3 loop
+         if Line (I .. I + 3) = Marker then
+            Id_Start := I;
+            exit;
+         end if;
+      end loop;
+      if Id_Start = 0 then
+         return False;
+      end if;
+
+      --  Id runs until a space or colon.
+      for I in Id_Start + 4 .. Last loop
+         if Line (I) = ' ' or else Line (I) = ':' then
+            Id_End := I - 1;
+            if Line (I) = ':' then
+               Colon := I;
+            end if;
+            exit;
+         end if;
+      end loop;
+      if Id_End = 0 then
+         Id_End := Last;
+      end if;
+
+      --  Optional HLR reference after the colon ("[HLR-xxx]" / "(HLR-xxx)").
+      if Colon > 0 then
+         for I in Colon + 1 .. Last - 3 loop
+            if Line (I) = 'H' and then Line (I .. I + 3) = "HLR-" then
+               H_Start := I;
+               for J in I + 4 .. Last loop
+                  if Line (J) = ' ' or else Line (J) = ']' or else Line (J) = ')' then
+                     H_End := J - 1;
+                     exit;
+                  end if;
+               end loop;
+               exit;
+            end if;
+         end loop;
+      end if;
+
+      return True;
+   end Find_Entry;
+
+   --  Copy a fixed-width field from a line into the caller's buffer,
+   --  clamping the length to the buffer size (never overruns).
+   procedure Copy_Field
+     (Line    : String;
+      From    : Natural;
+      To      : Natural;
+      Dst     : out String;
+      Dst_Len : out Natural) is
+   begin
+      Dst_Len := 0;
+      if From = 0 or else To < From or else To > Line'Last then
+         return;
+      end if;
+      Dst_Len := Natural'Min (To - From + 1, Dst'Length);
+      for I in 1 .. Dst_Len loop
+         Dst (I) := Line (From + I - 1);
+      end loop;
+   end Copy_Field;
+
+   --  Extract one line's parsed entry and append it to an HLR vector.
+   --  Id is the "HLR-xxx" token; the description follows the colon.
+   procedure Parse_HLR_Line
+     (Line : String;
+      Last : Natural;
+      HLRs : in out HLR_Vectors.Vector)
+   is
+      Id_S, Id_E, Colon, H_S, H_E : Natural;
+   begin
+      if not Find_Entry (Line, Last, "HLR-", Id_S, Id_E, Colon, H_S, H_E) then
+         return;
+      end if;
+      if Id_E <= Id_S + 3 then
+         return;  --  empty id
+      end if;
+      HLRs.Append (HLR_Info'(others => <>));
+      declare
+         Elem : HLR_Info := HLRs (HLRs.Last_Index);
+      begin
+         Copy_Field (Line, Id_S + 4, Id_E, Elem.Id, Elem.Id_Len);
+         if Colon > 0 and then Colon < Last then
+            declare
+               D_Start : Natural := Colon + 1;
+            begin
+               while D_Start <= Last and then Line (D_Start) = ' ' loop
+                  D_Start := D_Start + 1;
+               end loop;
+               Copy_Field (Line, D_Start, Last, Elem.Desc, Elem.D_Len);
+            end;
+         end if;
+         HLRs.Replace_Element (HLRs.Last_Index, Elem);
+      end;
+   end Parse_HLR_Line;
+
+   --  Extract one parsed LLR entry; the description runs up to the
+   --  (optional) HLR reference, which is copied into HLR_Ref.
+   procedure Parse_LLR_Line
+     (Line : String;
+      Last : Natural;
+      LLRs : in out LLR_Vectors.Vector)
+   is
+      Id_S, Id_E, Colon, H_S, H_E : Natural;
+   begin
+      if not Find_Entry (Line, Last, "LLR-", Id_S, Id_E, Colon, H_S, H_E) then
+         return;
+      end if;
+      if Id_E <= Id_S + 3 then
+         return;
+      end if;
+      LLRs.Append (LLR_Info'(others => <>));
+      declare
+         Elem : LLR_Info := LLRs (LLRs.Last_Index);
+      begin
+         Copy_Field (Line, Id_S + 4, Id_E, Elem.Id, Elem.Id_Len);
+         if Colon > 0 and then Colon < Last then
+            declare
+               D_Start : Natural := Colon + 1;
+               D_End   : Natural := Last;
+            begin
+               while D_Start <= Last and then Line (D_Start) = ' ' loop
+                  D_Start := D_Start + 1;
+               end loop;
+               if H_S > D_Start then
+                  D_End := H_S - 1;
+                  while D_End > D_Start and then Line (D_End) = ' ' loop
+                     D_End := D_End - 1;
+                  end loop;
+               end if;
+               Copy_Field (Line, D_Start, D_End, Elem.Desc, Elem.D_Len);
+            end;
+         end if;
+         if H_S > 0 and then H_E > H_S + 3 then
+            Copy_Field (Line, H_S + 4, H_E, Elem.HLR_Ref, Elem.HLR_Len);
+         end if;
+         LLRs.Replace_Element (LLRs.Last_Index, Elem);
+      end;
+   end Parse_LLR_Line;
+
+   --  Iterate the lines of an open markdown file and feed each one to the
+   --  shared line parser, so the HLR and LLR parsers share one file-reading
+   --  skeleton while keeping their own entry type.  A line longer than
+   --  Max_Line is drained and reported by Read_Line; parsing stops so no
+   --  partial entry set is ever passed downstream.
+   generic
+      type Item_Type is private;
+      type Item_Vector is private;
+      with procedure Add_Line
+        (Line : String; Last : Natural; Items : in out Item_Vector);
+      with procedure Clear_Items (Items : in out Item_Vector);
+   procedure Scan_Markdown_Lines
+     (Src_File  : in out Ada.Text_IO.File_Type;
+      File_Path : String;
+      Items     : in out Item_Vector);
+
+   procedure Scan_Markdown_Lines
+     (Src_File  : in out Ada.Text_IO.File_Type;
+      File_Path : String;
+      Items     : in out Item_Vector)
+   is
+      use Ada.Text_IO;
+      Line     : String (1 .. Types.Max_Line);
+      Last     : Natural;
+      Overflow : Boolean;
+      Line_Num : Natural := 0;
+   begin
+      while not End_Of_File (Src_File) loop
+         Line_Num := Line_Num + 1;
+         Adacovex.Parsers.Read_Line
+           (Src_File, File_Path, Line_Num, Line, Last, Overflow);
+         if Overflow then
+            Clear_Items (Items);
+            raise Constraint_Error;  --  caught by caller; marks failure
+         end if;
+         if Last > 6 then
+            Add_Line (Line (1 .. Last), Last, Items);
+         end if;
+      end loop;
+   end Scan_Markdown_Lines;
+
+   procedure Clear_HLRs (Items : in out HLR_Vectors.Vector) is
+   begin
+      Items.Clear;
+   end Clear_HLRs;
+
+   procedure Clear_LLRs (Items : in out LLR_Vectors.Vector) is
+   begin
+      Items.Clear;
+   end Clear_LLRs;
+
+   --  Ada 2012: instantiate the generic over the two vector kinds.
+   procedure Scan_HLR is new Scan_Markdown_Lines
+     (Item_Type => HLR_Info, Item_Vector => HLR_Vectors.Vector,
+      Add_Line => Parse_HLR_Line, Clear_Items => Clear_HLRs);
+   procedure Scan_LLR is new Scan_Markdown_Lines
+     (Item_Type => LLR_Info, Item_Vector => LLR_Vectors.Vector,
+      Add_Line => Parse_LLR_Line, Clear_Items => Clear_LLRs);
+
+   procedure Parse_And_Cache_HLR
      (File_Path : String;
       HLRs      : in out HLR_Vectors.Vector;
       Success   : out Boolean;
       Use_Cache : Boolean := False)
    is
       use Ada.Text_IO;
-      F        : File_Type;
-      Line     : String (1 .. Types.Max_Line);
-      Last     : Natural;
-      Overflow : Boolean;
-      Line_Num : Natural := 0;
+      F : File_Type;
+   begin
+      begin
+         Open (F, In_File, File_Path);
+      exception
+         when others =>
+            Success := False;
+            return;
+      end;
+
+      begin
+         Scan_HLR (F, File_Path, HLRs);
+         Close (F);
+         Success := True;
+      exception
+         when others =>
+            Close (F);
+            HLRs.Clear;
+            Success := False;
+      end;
+
+      if Success and then Use_Cache then
+         declare
+            K  : constant String := HLR_Key (File_Path);
+            OK : Boolean;
+         begin
+            if K'Length > 0 then
+               declare
+                  S_Blob : constant String := HLR_Store.Serialize (HLRs);
+               begin
+                  if S_Blob'Length > 0 then
+                     Adacovex.Cache.Put_Cached (K, S_Blob, OK);
+                  end if;
+               end;
+            end if;
+         end;
+      end if;
+   end Parse_And_Cache_HLR;
+
+   procedure Parse_And_Cache_LLR
+     (File_Path : String;
+      LLRs      : in out LLR_Vectors.Vector;
+      Success   : out Boolean;
+      Use_Cache : Boolean := False)
+   is
+      use Ada.Text_IO;
+      F : File_Type;
+   begin
+      begin
+         Open (F, In_File, File_Path);
+      exception
+         when others =>
+            Success := False;
+            return;
+      end;
+
+      begin
+         Scan_LLR (F, File_Path, LLRs);
+         Close (F);
+         Success := True;
+      exception
+         when others =>
+            Close (F);
+            LLRs.Clear;
+            Success := False;
+      end;
+
+      if Success and then Use_Cache then
+         declare
+            K  : constant String := LLR_Key (File_Path);
+            OK : Boolean;
+         begin
+            if K'Length > 0 then
+               declare
+                  S_Blob : constant String := LLR_Store.Serialize (LLRs);
+               begin
+                  if S_Blob'Length > 0 then
+                     Adacovex.Cache.Put_Cached (K, S_Blob, OK);
+                  end if;
+               end;
+            end if;
+         end;
+      end if;
+   end Parse_And_Cache_LLR;
+
+   procedure Parse_HLR_MD
+     (File_Path : String;
+      HLRs      : in out HLR_Vectors.Vector;
+      Success   : out Boolean;
+      Use_Cache : Boolean := False) is
    begin
       --  Serve a previously parsed (unchanged) HLR.md straight from the
       --  on-disk result cache instead of re-scanning the file.
@@ -69,142 +382,14 @@ package body Adacovex.Parsers.DO178C is
          end;
       end if;
 
-      begin
-         Open (F, In_File, File_Path);
-      exception
-         when others =>
-            Success := False;
-            return;
-      end;
-
-      begin
-         while not End_Of_File (F) loop
-            Line_Num := Line_Num + 1;
-            Adacovex.Parsers.Read_Line
-              (F, File_Path, Line_Num, Line, Last, Overflow);
-            if Overflow then
-               --  A physical line longer than Max_Line is drained and
-               --  reported by Read_Line; parsing stops so no partial HLR set
-               --  is passed downstream.
-               HLRs.Clear;
-               Close (F);
-               Success := False;
-               return;
-            end if;
-
-            -- Look for lines matching "- HLR_XXX: description"
-            if Last > 6 then
-               declare
-                  H_Start : Natural := 0;
-                  H_End   : Natural := 0;
-                  Colon   : Natural := 0;
-               begin
-                  for I in 1 .. Last - 3 loop
-                     if Line (I) = 'H' and then Line (I .. I + 3) = "HLR-" then
-                        H_Start := I;
-                        exit;
-                     end if;
-                  end loop;
-
-                  if H_Start > 0 then
-                     for I in H_Start + 4 .. Last loop
-                        if Line (I) = ' ' or else Line (I) = ':' then
-                           H_End := I - 1;
-                           if Line (I) = ':' then
-                              Colon := I;
-                           end if;
-                           exit;
-                        end if;
-                     end loop;
-
-                     if Colon = 0 then
-                        for I in H_End + 1 .. Last loop
-                           if Line (I) = ':' then
-                              Colon := I;
-                              exit;
-                           end if;
-                        end loop;
-                     end if;
-
-                     if H_End > H_Start + 3 then
-                        HLRs.Append (HLR_Info'(others => <>));
-                        declare
-                           Elem : HLR_Info := HLRs (Positive (HLRs.Length));
-                        begin
-                           Elem.Id_Len :=
-                             Natural'Min
-                               (H_End - (H_Start + 4) + 1, Elem.Id'Length);
-                           for I in H_Start + 4 .. H_Start + 3 + Elem.Id_Len
-                           loop
-                              Elem.Id (I - (H_Start + 4) + 1) := Line (I);
-                           end loop;
-
-                           if Colon > 0 and then Colon < Last then
-                              declare
-                                 D_Start : Natural := Colon + 1;
-                              begin
-                                 while D_Start <= Last
-                                   and then Line (D_Start) = ' '
-                                 loop
-                                    D_Start := D_Start + 1;
-                                 end loop;
-                                 Elem.D_Len :=
-                                   Natural'Min
-                                     (Last - D_Start + 1, Elem.Desc'Length);
-                                 for I in D_Start .. D_Start + Elem.D_Len - 1
-                                 loop
-                                    Elem.Desc (I - D_Start + 1) := Line (I);
-                                 end loop;
-                              end;
-                           end if;
-                           HLRs.Replace_Element (Positive (HLRs.Length), Elem);
-                        end;
-                     end if;
-                  end if;
-               end;
-            end if;
-         end loop;
-      exception
-         when others =>
-            Close (F);
-            raise;
-      end;
-
-      Close (F);
-      Success := True;
-
-      --  Store the freshly parsed vector for the next run (only on success,
-      --  so a partial/empty parse is never cached).
-      if Use_Cache then
-         declare
-            K  : constant String := HLR_Key (File_Path);
-            OK : Boolean;
-         begin
-            if K'Length > 0 then
-               declare
-                  S_Blob : constant String := HLR_Store.Serialize (HLRs);
-               begin
-                  if S_Blob'Length > 0 then
-                     Adacovex.Cache.Put_Cached (K, S_Blob, OK);
-                  end if;
-               end;
-            end if;
-         end;
-      end if;
+      Parse_And_Cache_HLR (File_Path, HLRs, Success, Use_Cache);
    end Parse_HLR_MD;
 
    procedure Parse_LLR_MD
      (File_Path : String;
       LLRs      : in out LLR_Vectors.Vector;
       Success   : out Boolean;
-      Use_Cache : Boolean := False)
-   is
-      use Ada.Text_IO;
-      F        : File_Type;
-      Line     : String (1 .. Types.Max_Line);
-      Last     : Natural;
-      Overflow : Boolean;
-      Line_Num : Natural := 0;
+      Use_Cache : Boolean := False) is
    begin
       --  Serve a previously parsed (unchanged) LLR.md straight from the
       --  on-disk result cache instead of re-scanning the file.
@@ -228,189 +413,7 @@ package body Adacovex.Parsers.DO178C is
          end;
       end if;
 
-      begin
-         Open (F, In_File, File_Path);
-      exception
-         when others =>
-            Success := False;
-            return;
-      end;
-
-      begin
-         while not End_Of_File (F) loop
-            Line_Num := Line_Num + 1;
-            Adacovex.Parsers.Read_Line
-              (F, File_Path, Line_Num, Line, Last, Overflow);
-            if Overflow then
-               --  A physical line longer than Max_Line is drained and
-               --  reported by Read_Line; parsing stops so no partial LLR set
-               --  is passed downstream.
-               LLRs.Clear;
-               Close (F);
-               Success := False;
-               return;
-            end if;
-
-            -- Look for lines matching "- LLR_XXX: description [HLR_XXX]"
-            if Last > 6 then
-               declare
-                  L_Start : Natural := 0;
-                  L_End   : Natural := 0;
-                  Colon   : Natural := 0;
-                  H_Start : Natural := 0;
-                  H_End   : Natural := 0;
-               begin
-                  for I in 1 .. Last - 3 loop
-                     if Line (I) = 'L'
-                       and then I + 3 <= Last
-                       and then Line (I .. I + 3) = "LLR-"
-                     then
-                        L_Start := I;
-                        exit;
-                     end if;
-                  end loop;
-
-                  if L_Start = 0 then
-                     for I in 1 .. Last - 3 loop
-                        if Line (I) = 'L'
-                          and then I + 3 <= Last
-                          and then (Line (I .. I + 3) = "LLR-")
-                        then
-                           L_Start := I;
-                           exit;
-                        end if;
-                     end loop;
-                  end if;
-
-                  if L_Start > 0 then
-                     for I in L_Start + 4 .. Last loop
-                        if Line (I) = ' ' or else Line (I) = ':' then
-                           L_End := I - 1;
-                           if Line (I) = ':' then
-                              Colon := I;
-                           end if;
-                           exit;
-                        end if;
-                     end loop;
-
-                     if Colon = 0 then
-                        for I in L_End + 1 .. Last loop
-                           if Line (I) = ':' then
-                              Colon := I;
-                              exit;
-                           end if;
-                        end loop;
-                     end if;
-
-                     if Colon > 0 then
-                        for I in Colon + 1 .. Last - 3 loop
-                           if Line (I) = 'H'
-                             and then Line (I .. I + 3) = "HLR-"
-                           then
-                              H_Start := I;
-                              for J in I + 4 .. Last loop
-                                 if Line (J) = ' '
-                                   or else Line (J) = ']'
-                                   or else Line (J) = ')'
-                                 then
-                                    H_End := J - 1;
-                                    exit;
-                                 end if;
-                              end loop;
-                              exit;
-                           end if;
-                        end loop;
-                     end if;
-
-                     if L_End > L_Start + 3 then
-                        LLRs.Append (LLR_Info'(others => <>));
-                        declare
-                           Elem : LLR_Info := LLRs (Positive (LLRs.Length));
-                        begin
-                           Elem.Id_Len :=
-                             Natural'Min
-                               (L_End - (L_Start + 4) + 1, Elem.Id'Length);
-                           for I in L_Start + 4 .. L_Start + 3 + Elem.Id_Len
-                           loop
-                              Elem.Id (I - (L_Start + 4) + 1) := Line (I);
-                           end loop;
-
-                           if Colon > 0 and then Colon < Last then
-                              declare
-                                 D_Start : Natural := Colon + 1;
-                                 D_End   : Natural := Last;
-                              begin
-                                 while D_Start <= Last
-                                   and then Line (D_Start) = ' '
-                                 loop
-                                    D_Start := D_Start + 1;
-                                 end loop;
-
-                                 if H_Start > D_Start then
-                                    D_End := H_Start - 1;
-                                    while D_End > D_Start
-                                      and then Line (D_End) = ' '
-                                    loop
-                                       D_End := D_End - 1;
-                                    end loop;
-                                 end if;
-
-                                 Elem.D_Len :=
-                                   Natural'Min
-                                     (D_End - D_Start + 1, Elem.Desc'Length);
-                                 for I in D_Start .. D_Start + Elem.D_Len - 1
-                                 loop
-                                    Elem.Desc (I - D_Start + 1) := Line (I);
-                                 end loop;
-                              end;
-                           end if;
-
-                           if H_Start > 0 and then H_End > H_Start + 3 then
-                              Elem.HLR_Len :=
-                                Natural'Min
-                                  (H_End - (H_Start + 4) + 1,
-                                   Elem.HLR_Ref'Length);
-                              for I in
-                                H_Start + 4 .. H_Start + 3 + Elem.HLR_Len
-                              loop
-                                 Elem.HLR_Ref (I - (H_Start + 4) + 1) :=
-                                   Line (I);
-                              end loop;
-                           end if;
-                           LLRs.Replace_Element (Positive (LLRs.Length), Elem);
-                        end;
-                     end if;
-                  end if;
-               end;
-            end if;
-         end loop;
-      exception
-         when others =>
-            Close (F);
-            raise;
-      end;
-
-      Close (F);
-      Success := True;
-
-      --  Store the freshly parsed vector for the next run (only on success,
-      --  so a partial/empty parse is never cached).
-      if Use_Cache then
-         declare
-            K  : constant String := LLR_Key (File_Path);
-            OK : Boolean;
-         begin
-            if K'Length > 0 then
-               declare
-                  S_Blob : constant String := LLR_Store.Serialize (LLRs);
-               begin
-                  if S_Blob'Length > 0 then
-                     Adacovex.Cache.Put_Cached (K, S_Blob, OK);
-                  end if;
-               end;
-            end if;
-         end;
-      end if;
+      Parse_And_Cache_LLR (File_Path, LLRs, Success, Use_Cache);
    end Parse_LLR_MD;
 
    function Find_HLR_In_Source

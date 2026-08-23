@@ -208,6 +208,216 @@ package body Adacovex.Parsers.Tests is
       return 0;
    end Number_Before_Word;
 
+   --  Parse one markdown table row (`| Category | Count | PASS | ... |`)
+   --  and append it to Summary.Categories when it carries a positive count.
+   --  Automake pasS: falls back to the count column.
+   procedure Parse_Table_Row
+     (Line    : String;
+      Last    : Natural;
+      Summary : in out Types.Implementation.Test_Summary)
+   is
+      First_Pipe : Natural := 0;
+   begin
+      for I in 1 .. Last loop
+         if Line (I) = '|' then
+            First_Pipe := I;
+            exit;
+         end if;
+      end loop;
+      if First_Pipe = 0 then
+         return;
+      end if;
+
+      declare
+         Parts    : array (1 .. 5) of String (1 .. Types.Max_Desc_Str);
+         Part_Len : array (1 .. 5) of Natural := (others => 0);
+         Part_Ct  : Natural := 0;
+         In_Part  : Boolean := False;
+         PIdx     : Natural := 0;
+      begin
+         for I in First_Pipe + 1 .. Last loop
+            if Line (I) = '|' then
+               In_Part := False;
+            elsif not In_Part then
+               if Line (I) /= ' ' then
+                  Part_Ct := Part_Ct + 1;
+                  PIdx := 1;
+                  In_Part := True;
+                  if Part_Ct <= 5 then
+                     Part_Len (Part_Ct) := 1;
+                     Parts (Part_Ct) (1) := Line (I);
+                  end if;
+               end if;
+            else
+               if Part_Ct <= 5
+                 and then Part_Len (Part_Ct) < Types.Max_Desc_Str
+               then
+                  Part_Len (Part_Ct) := Part_Len (Part_Ct) + 1;
+                  Parts (Part_Ct) (Part_Len (Part_Ct)) := Line (I);
+               end if;
+            end if;
+         end loop;
+
+         if Part_Ct >= 3 then
+            declare
+               Is_Number : Boolean := True;
+               TCount    : Natural := 0;
+            begin
+               for I in 1 .. Part_Len (3) loop
+                  if Parts (3) (I) in '0' .. '9' then
+                     TCount :=
+                       TCount
+                       * 10
+                       + (Character'Pos (Parts (3) (I))
+                          - Character'Pos ('0'));
+                  else
+                     Is_Number := False;
+                  end if;
+               end loop;
+
+               if Is_Number and then TCount > 0 then
+                  declare
+                     Cat : Types.Test_Metrics :=
+                       (Cat_Len    => Part_Len (2),
+                        Test_Count => TCount,
+                        others     => <>);
+                  begin
+                     for I in 1 .. Part_Len (2) loop
+                        Cat.Category (I) := Parts (2) (I);
+                     end loop;
+
+                     if Part_Ct >= 4 and then Part_Len (4) >= 4 then
+                        if Parts (4) (1 .. 4) = "PASS" then
+                           Cat.Status := Types.Pass;
+                           Summary.Total_Passed :=
+                             Summary.Total_Passed + TCount;
+                        else
+                           Cat.Status := Types.Fail;
+                           Summary.Total_Failed :=
+                             Summary.Total_Failed + TCount;
+                        end if;
+                     end if;
+                     Summary.Categories.Append (Cat);
+                  end;
+               end if;
+            end;
+         end if;
+      end;
+   end Parse_Table_Row;
+
+   --  Parse the "Passed:" / "Failed:" summary lines (adacovex native
+   --  test_result.md footer).  The last occurrence wins.
+   procedure Parse_Passed_Failed_Line
+     (Line : String; Last : Natural; Summary : in out Types.Implementation.Test_Summary)
+   is
+   begin
+      for I in 1 .. Last - 6 loop
+         if Line (I .. I + 6) = "Passed:" then
+            declare
+               Num : Natural := 0;
+               J   : Natural := I + 7;
+            begin
+               while J <= Last and then Line (J) = ' ' loop
+                  J := J + 1;
+               end loop;
+               while J <= Last and then Line (J) in '0' .. '9' loop
+                  Num :=
+                    Num
+                    * 10
+                    + (Character'Pos (Line (J)) - Character'Pos ('0'));
+                  J := J + 1;
+               end loop;
+               Summary.Total_Passed := Num;
+            end;
+         end if;
+
+         if Line (I .. I + 6) = "Failed:" then
+            declare
+               Num : Natural := 0;
+               J   : Natural := I + 7;
+            begin
+               while J <= Last and then Line (J) = ' ' loop
+                  J := J + 1;
+               end loop;
+               while J <= Last and then Line (J) in '0' .. '9' loop
+                  Num :=
+                    Num
+                    * 10
+                    + (Character'Pos (Line (J)) - Character'Pos ('0'));
+                  J := J + 1;
+               end loop;
+               Summary.Total_Failed := Num;
+            end;
+         end if;
+      end loop;
+   end Parse_Passed_Failed_Line;
+
+   --  TAP: "ok 1 - name" / "not ok 2 - name" counters.
+   procedure Parse_TAP_Line
+     (Line : String; Last : Natural; Summary : in out Types.Implementation.Test_Summary)
+   is
+      T : constant String := Trim_Left (Line (1 .. Last));
+   begin
+      if Starts_With (T, "not ok")
+        and then (T'Length = 6 or else T (T'First + 6) = ' ')
+      then
+         Summary.Total_Failed := Summary.Total_Failed + 1;
+      elsif Starts_With (T, "ok")
+        and then (T'Length = 2 or else T (T'First + 2) = ' ')
+      then
+         Summary.Total_Passed := Summary.Total_Passed + 1;
+      end if;
+   end Parse_TAP_Line;
+
+   --  Automake: "PASS: name" / "FAIL: name".
+   procedure Parse_Automake_Line
+     (Line : String; Summary : in out Types.Implementation.Test_Summary)
+   is
+      T : constant String := Trim_Left (Line (1 .. Line'Last));
+   begin
+      if Starts_With (T, "PASS:") then
+         Summary.Total_Passed := Summary.Total_Passed + 1;
+      elsif Starts_With (T, "FAIL:") then
+         Summary.Total_Failed := Summary.Total_Failed + 1;
+      end if;
+   end Parse_Automake_Line;
+
+   --  Maven Surefire: "Tests run: N, Failures: M, Errors: E".
+   --  Last summary line wins, matching the "Passed:"/"Failed:" rule.
+   procedure Parse_Surefire_Line
+     (Line : String; Summary : in out Types.Implementation.Test_Summary)
+   is
+      Tests_Run : Natural := Number_After (Line, "Tests run:");
+      Failures  : Natural := Number_After (Line, "Failures:");
+      Errors    : Natural := Number_After (Line, "Errors:");
+   begin
+      if Tests_Run > 0 then
+         Summary.Total_Failed := Failures + Errors;
+         if Failures + Errors < Tests_Run then
+            Summary.Total_Passed := Tests_Run - Failures - Errors;
+         else
+            Summary.Total_Passed := 0;
+         end if;
+      end if;
+   end Parse_Surefire_Line;
+
+   --  Unity: "N Tests M Failures [K Ignored]".
+   procedure Parse_Unity_Line
+     (Line : String; Summary : in out Types.Implementation.Test_Summary)
+   is
+      N_Tests    : constant Natural := Number_Before_Word (Line, "Tests");
+      N_Failures : constant Natural := Number_Before_Word (Line, "Failures");
+   begin
+      if N_Tests > 0 then
+         Summary.Total_Failed := N_Failures;
+         if N_Failures < N_Tests then
+            Summary.Total_Passed := N_Tests - N_Failures;
+         else
+            Summary.Total_Passed := 0;
+         end if;
+      end if;
+   end Parse_Unity_Line;
+
    procedure Parse_Test_Result
      (File_Path : String;
       Summary   : out Types.Implementation.Test_Summary;
@@ -240,7 +450,7 @@ package body Adacovex.Parsers.Tests is
             Adacovex.Parsers.Read_Line
               (F, File_Path, Line_Num, Line, Last, Overflow);
             if Overflow then
-               --  A physical line longer than Max_Line is drained and
+               --  A physical line longer than the maximum is drained and
                --  reported by Read_Line; parsing stops so no partial test
                --  summary is passed downstream.
                Summary :=
@@ -253,202 +463,13 @@ package body Adacovex.Parsers.Tests is
                return;
             end if;
 
-            -- Find first '|' character (skip leading spaces)
-            declare
-               First_Pipe : Natural := 0;
-            begin
-               for I in 1 .. Last loop
-                  if Line (I) = '|' then
-                     First_Pipe := I;
-                     exit;
-                  end if;
-               end loop;
+            Parse_Table_Row (Line (1 .. Last), Last, Summary);
 
-               if First_Pipe > 0 then
-                  declare
-                     Parts    :
-                       array (1 .. 5) of String (1 .. Types.Max_Desc_Str);
-                     Part_Len : array (1 .. 5) of Natural := (others => 0);
-                     Part_Ct  : Natural := 0;
-                     In_Part  : Boolean := False;
-                     PIdx     : Natural := 0;
-                  begin
-                     for I in First_Pipe + 1 .. Last loop
-                        if Line (I) = '|' then
-                           In_Part := False;
-                        elsif not In_Part then
-                           if Line (I) /= ' ' then
-                              Part_Ct := Part_Ct + 1;
-                              PIdx := 1;
-                              In_Part := True;
-                              if Part_Ct <= 5 then
-                                 Part_Len (Part_Ct) := 1;
-                                 Parts (Part_Ct) (1) := Line (I);
-                              end if;
-                           end if;
-                        else
-                           if Part_Ct <= 5
-                             and then Part_Len (Part_Ct) < Types.Max_Desc_Str
-                           then
-                              Part_Len (Part_Ct) := Part_Len (Part_Ct) + 1;
-                              Parts (Part_Ct) (Part_Len (Part_Ct)) := Line (I);
-                           end if;
-                        end if;
-                     end loop;
-
-                     if Part_Ct >= 3 then
-                        declare
-                           Is_Number : Boolean := True;
-                           TCount    : Natural := 0;
-                        begin
-                           for I in 1 .. Part_Len (3) loop
-                              if Parts (3) (I) in '0' .. '9' then
-                                 TCount :=
-                                   TCount
-                                   * 10
-                                   + (Character'Pos (Parts (3) (I))
-                                      - Character'Pos ('0'));
-                              else
-                                 Is_Number := False;
-                              end if;
-                           end loop;
-
-                           if Is_Number and then TCount > 0 then
-                              declare
-                                 Cat : Types.Test_Metrics :=
-                                   (Cat_Len    => Part_Len (2),
-                                    Test_Count => TCount,
-                                    others     => <>);
-                              begin
-                                 for I in 1 .. Part_Len (2) loop
-                                    Cat.Category (I) := Parts (2) (I);
-                                 end loop;
-
-                                 if Part_Ct >= 4 and then Part_Len (4) >= 4
-                                 then
-                                    if Parts (4) (1 .. 4) = "PASS" then
-                                       Cat.Status := Types.Pass;
-                                       Summary.Total_Passed :=
-                                         Summary.Total_Passed + TCount;
-                                    else
-                                       Cat.Status := Types.Fail;
-                                       Summary.Total_Failed :=
-                                         Summary.Total_Failed + TCount;
-                                    end if;
-                                 end if;
-                                 Summary.Categories.Append (Cat);
-                              end;
-                           end if;
-                        end;
-                     end if;
-                  end;
-               end if;
-            end;
-
-            -- Look for "Passed:" keyword
-            for I in 1 .. Last - 6 loop
-               if Line (I .. I + 6) = "Passed:" then
-                  declare
-                     Num : Natural := 0;
-                     J   : Natural := I + 7;
-                  begin
-                     while J <= Last and then Line (J) = ' ' loop
-                        J := J + 1;
-                     end loop;
-                     while J <= Last and then Line (J) in '0' .. '9' loop
-                        Num :=
-                          Num
-                          * 10
-                          + (Character'Pos (Line (J)) - Character'Pos ('0'));
-                        J := J + 1;
-                     end loop;
-                     Summary.Total_Passed := Num;
-                  end;
-               end if;
-
-               if Line (I .. I + 6) = "Failed:" then
-                  declare
-                     Num : Natural := 0;
-                     J   : Natural := I + 7;
-                  begin
-                     while J <= Last and then Line (J) = ' ' loop
-                        J := J + 1;
-                     end loop;
-                     while J <= Last and then Line (J) in '0' .. '9' loop
-                        Num :=
-                          Num
-                          * 10
-                          + (Character'Pos (Line (J)) - Character'Pos ('0'));
-                        J := J + 1;
-                     end loop;
-                     Summary.Total_Failed := Num;
-                  end;
-               end if;
-            end loop;
-
-            -- TAP (Test Anything Protocol): "ok 1 - name" / "not ok 2 - name".
-            -- Each line is one test, so pass/fail counters accumulate.
-            declare
-               T : constant String := Trim_Left (Line (1 .. Last));
-            begin
-               if Starts_With (T, "not ok")
-                 and then (T'Length = 6 or else T (T'First + 6) = ' ')
-               then
-                  Summary.Total_Failed := Summary.Total_Failed + 1;
-               elsif Starts_With (T, "ok")
-                 and then (T'Length = 2 or else T (T'First + 2) = ' ')
-               then
-                  Summary.Total_Passed := Summary.Total_Passed + 1;
-               end if;
-            end;
-
-            -- Automake test-suite style: "PASS: name" / "FAIL: name".
-            declare
-               T : constant String := Trim_Left (Line (1 .. Last));
-            begin
-               if Starts_With (T, "PASS:") then
-                  Summary.Total_Passed := Summary.Total_Passed + 1;
-               elsif Starts_With (T, "FAIL:") then
-                  Summary.Total_Failed := Summary.Total_Failed + 1;
-               end if;
-            end;
-
-            -- Maven Surefire style: "Tests run: N, Failures: M, Errors: E".
-            -- Last summary line wins, matching the "Passed:"/"Failed:" rule.
-            declare
-               Tests_Run : Natural :=
-                 Number_After (Line (1 .. Last), "Tests run:");
-               Failures  : Natural :=
-                 Number_After (Line (1 .. Last), "Failures:");
-               Errors    : Natural :=
-                 Number_After (Line (1 .. Last), "Errors:");
-            begin
-               if Tests_Run > 0 then
-                  Summary.Total_Failed := Failures + Errors;
-                  if Failures + Errors < Tests_Run then
-                     Summary.Total_Passed := Tests_Run - Failures - Errors;
-                  else
-                     Summary.Total_Passed := 0;
-                  end if;
-               end if;
-            end;
-
-            -- Unity style: "N Tests M Failures [K Ignored]".
-            declare
-               N_Tests    : constant Natural :=
-                 Number_Before_Word (Line (1 .. Last), "Tests");
-               N_Failures : constant Natural :=
-                 Number_Before_Word (Line (1 .. Last), "Failures");
-            begin
-               if N_Tests > 0 then
-                  Summary.Total_Failed := N_Failures;
-                  if N_Failures < N_Tests then
-                     Summary.Total_Passed := N_Tests - N_Failures;
-                  else
-                     Summary.Total_Passed := 0;
-                  end if;
-               end if;
-            end;
+            Parse_Passed_Failed_Line (Line (1 .. Last), Last, Summary);
+            Parse_TAP_Line (Line (1 .. Last), Last, Summary);
+            Parse_Automake_Line (Line (1 .. Last), Summary);
+            Parse_Surefire_Line (Line (1 .. Last), Summary);
+            Parse_Unity_Line (Line (1 .. Last), Summary);
          end loop;
       exception
          when others =>
