@@ -91,7 +91,9 @@ package body Adacovex.Renderers.HTML is
    function Render_Charts
      (Doc_Metrics : Types.Docstring_Metrics;
       Proof       : Types.Proof_Summary;
-      Tests       : Types.Implementation.Test_Summary) return String
+      Tests       : Types.Implementation.Test_Summary;
+      Graph       : Types.Implementation.Component_Vectors.Vector)
+      return String
    is
       R : Unbounded_String;
 
@@ -226,7 +228,109 @@ package body Adacovex.Renderers.HTML is
       end if;
       Put ("</tbody></table></div>");
 
+      --  Test pass/fail pie
+      Put ("<div class=""chart-card""><h3>Tests Pass/Fail</h3>");
+      Put ("<table class=""charts-css pie show-labels"">");
+      Put ("<caption>Pass vs fail</caption><tbody>");
+      declare
+         Total_T : constant Natural := Tests.Total_Passed + Tests.Total_Failed;
+      begin
+         if Total_T = 0 then
+            Slice_Row ("No tests", 0, 100, 0);
+         else
+            declare
+               P : constant Natural := Pct (Tests.Total_Passed, Total_T);
+            begin
+               Slice_Row ("Passed", 0, P, Tests.Total_Passed);
+               if Tests.Total_Failed > 0 then
+                  Slice_Row ("Failed", P, 100, Tests.Total_Failed);
+               end if;
+            end;
+         end if;
+      end;
+      Put ("</tbody></table></div>");
+
+      --  Dependency scope pie (if Graph not empty)
+      if not Graph.Is_Empty then
+         declare
+            Base_Ct  : Natural := 0;
+            Dev_Ct   : Natural := 0;
+            Trans_Ct : Natural := 0;
+            Vend_Ct  : Natural := 0;
+         begin
+            for I in 1 .. Integer (Graph.Length) loop
+               case Graph (I).Scope is
+                  when Types.Scope_Base       =>
+                     Base_Ct := Base_Ct + 1;
+
+                  when Types.Scope_Dev        =>
+                     Dev_Ct := Dev_Ct + 1;
+
+                  when Types.Scope_Transitive =>
+                     Trans_Ct := Trans_Ct + 1;
+
+                  when Types.Scope_Vendored   =>
+                     Vend_Ct := Vend_Ct + 1;
+               end case;
+            end loop;
+            declare
+               Total : constant Natural :=
+                 Base_Ct + Dev_Ct + Trans_Ct + Vend_Ct;
+               Start : Natural := 0;
+            begin
+               if Total > 0 then
+                  Put
+                    ("<div class=""chart-card""><h3>Dependencies by Scope</h3>");
+                  Put ("<table class=""charts-css pie show-labels"">");
+                  Put ("<caption>Scope distribution</caption><tbody>");
+                  if Base_Ct > 0 then
+                     declare
+                        F : constant Natural := Pct (Base_Ct, Total);
+                     begin
+                        Slice_Row ("base", Start, Start + F, Base_Ct);
+                        Start := Start + F;
+                     end;
+                  end if;
+                  if Dev_Ct > 0 then
+                     declare
+                        F : constant Natural := Pct (Dev_Ct, Total);
+                     begin
+                        Slice_Row ("dev", Start, Start + F, Dev_Ct);
+                        Start := Start + F;
+                     end;
+                  end if;
+                  if Trans_Ct > 0 then
+                     declare
+                        F : constant Natural := Pct (Trans_Ct, Total);
+                     begin
+                        Slice_Row ("transitive", Start, Start + F, Trans_Ct);
+                        Start := Start + F;
+                     end;
+                  end if;
+                  if Vend_Ct > 0 then
+                     declare
+                        F : constant Natural := Pct (Vend_Ct, Total);
+                     begin
+                        Slice_Row ("vendored", Start, Start + F, Vend_Ct);
+                     end;
+                  end if;
+                  Put ("</tbody></table></div>");
+               end if;
+            end;
+         end;
+      end if;
+
       return To_String (R);
+   end Render_Charts;
+
+   function Render_Charts
+     (Doc_Metrics : Types.Docstring_Metrics;
+      Proof       : Types.Proof_Summary;
+      Tests       : Types.Implementation.Test_Summary) return String
+   is
+      Empty : Types.Implementation.Component_Vectors.Vector;
+   begin
+      return Render_Charts (Doc_Metrics, Proof, Tests, Empty);
    end Render_Charts;
 
    --  Machine name of a dependency scope for JSON output.
@@ -301,6 +405,8 @@ package body Adacovex.Renderers.HTML is
          Put
            ("<li class=""dep-node"" data-name="""
             & Html_Escape (Info.Name (1 .. Info.Name_Len))
+            & """ data-scope="""
+            & Scope_Name (Info.Scope)
             & """>");
          if Has_Children then
             Put ("<details");
@@ -312,9 +418,9 @@ package body Adacovex.Renderers.HTML is
          else
             Put
               ("<div style=""border:1px solid var(--border);"
-               & "border-radius:8px;background:var(--card);"
-               & "padding:6px 8px;display:flex;align-items:center;"
-               & "gap:8px;flex-wrap:wrap"">");
+               & "border-radius:10px;background:var(--card);"
+               & "padding:8px 12px;display:flex;align-items:center;"
+               & "gap:10px;flex-wrap:wrap;line-height:1.5"">");
          end if;
 
          Put
@@ -395,6 +501,22 @@ package body Adacovex.Renderers.HTML is
         ("<input id=""dep-filter"" type=""search"" "
          & "placeholder=""Filter by name (e.g. gnatprove)"" "
          & "aria-label=""Filter dependencies"">");
+      Put
+        ("<label style=""display:flex;align-items:center;gap:4px;font-size:.85rem"">"
+         & "<input type=""checkbox"" id=""filter-base"" checked "
+         & "onchange=""filterByScope()""> base</label>");
+      Put
+        ("<label style=""display:flex;align-items:center;gap:4px;font-size:.85rem"">"
+         & "<input type=""checkbox"" id=""filter-dev"" checked "
+         & "onchange=""filterByScope()""> dev</label>");
+      Put
+        ("<label style=""display:flex;align-items:center;gap:4px;font-size:.85rem"">"
+         & "<input type=""checkbox"" id=""filter-transitive"" checked "
+         & "onchange=""filterByScope()""> transitive</label>");
+      Put
+        ("<label style=""display:flex;align-items:center;gap:4px;font-size:.85rem"">"
+         & "<input type=""checkbox"" id=""filter-vendored"" checked "
+         & "onchange=""filterByScope()""> vendored</label>");
       Put
         ("<button class=""theme-toggle"" onclick=""expandDeps(true)"">Expand all</button>");
       Put
@@ -707,19 +829,22 @@ package body Adacovex.Renderers.HTML is
                    (Replace_All
                       (Replace_All
                          (Replace_All
-                            (Adacovex.Dashboard_Template.Template,
-                             "__OVERVIEW__",
-                             To_String (Overview)),
-                          "__PROOF__",
-                          To_String (Proof_S)),
-                       "__TESTS__",
-                       To_String (Tests_S)),
-                    "__COMPLIANCE__",
-                    To_String (Compl)),
-                 "__DEPS__",
-                 Render_Deps_HTML (Graph)),
-              "__CHARTS__",
-              Render_Charts (Doc_Metrics, Proof, Tests)),
+                            (Replace_All
+                               (Adacovex.Dashboard_Template.Template,
+                                "__OVERVIEW__",
+                                To_String (Overview)),
+                             "__PROOF__",
+                             To_String (Proof_S)),
+                          "__TESTS__",
+                          To_String (Tests_S)),
+                       "__COMPLIANCE__",
+                       To_String (Compl)),
+                    "__DEPS__",
+                    Render_Deps_HTML (Graph)),
+                 "__CHARTS__",
+                 Render_Charts (Doc_Metrics, Proof, Tests, Graph)),
+              "__GRAPH_JSON__",
+              Render_Deps_JSON (Graph)),
            "__THEME__",
            Types.To_String (Theme));
    end Render_Dashboard_Internal;

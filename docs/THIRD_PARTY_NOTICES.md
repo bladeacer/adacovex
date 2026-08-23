@@ -40,11 +40,26 @@ only; adacovex does not vendor or redistribute them.
 | Component | Version | License | Used for |
 |-----------|---------|---------|----------|
 | Charts.css | 1.2.0 | MIT | Dashboard chart styles (`resources/charts.min.css`, inlined into the served dashboard) |
+| nomnoml | 1.7.0 | MIT | Dependency hierarchy diagram alternative view in the dashboard (`resources/nomnoml.js`, inlined into the served dashboard) |
+| FlexSearch | 0.7.31 | Apache-2.0 | Client-side search indexing for packages, HLRs and dependencies in the dashboard (`resources/flexsearch.js`, inlined into the served dashboard) |
 
 Charts.css (https://chartscss.org/) is bundled in its minified form under
 `resources/charts.min.css` and inlined into the dashboard page shell
 (`resources/dashboard.html` -> `src/adacovex-dashboard_template.ads`). The
 MIT license text is preserved in the bundle header comment.
+
+nomnoml (https://github.com/skanaar/nomnoml) is bundled under `resources/nomnoml.js`
+(71 KB, MIT) and inlined into the dashboard page shell. It renders the
+dependency hierarchy as a UML-style diagram on the **Dependencies** tab's
+alternative view (Tree / Diagram toggle). The MIT license text is preserved in
+the bundle header comment.
+
+FlexSearch (https://github.com/nextapps-de/flexsearch) is bundled under
+`resources/flexsearch.js` (16 KB, Apache-2.0) and inlined into the dashboard
+page shell. It provides the global search box (packages, HLRs, dependencies)
+with an in-memory forward-tokenized index that is hydrated from
+`/__GRAPH_JSON__` at page load. The Apache-2.0 license text is preserved in
+the bundle header comment.
 
 ## Acknowledgments
 
