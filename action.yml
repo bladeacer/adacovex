@@ -111,6 +111,10 @@ inputs:
     description: 'Write VERIFICATION.md + TRACE.md into this directory (relative).'
     required: false
     default: ''
+  emit-metrics:
+    description: 'Write a JSON export of the assessment metrics + dependency graph to this file (relative).'
+    required: false
+    default: ''
   generate-sbom:
     description: 'Generate a proof-aware SBOM after the assessment and upload it.'
     required: false
@@ -521,6 +525,9 @@ runs:
         fi
         if [ -n "${{ inputs.emit-markdown }}" ]; then
           ARGS+=(--emit-markdown="${{ inputs.emit-markdown }}")
+        fi
+        if [ -n "${{ inputs.emit-metrics }}" ]; then
+          ARGS+=(--emit-metrics="${{ inputs.emit-metrics }}")
         fi
         if [ -n "${{ inputs.require-spark }}" ]; then
           ARGS+=(--require-spark="${{ inputs.require-spark }}")

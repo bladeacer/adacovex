@@ -8,6 +8,7 @@ package body Adacovex.Renderers.HTML is
    use type Types.Test_Status;
    use type Types.DAL_Status;
    use type Types.Dashboard_Theme;
+   use type Types.Component_Kind;
 
    function Img (N : Natural) return String is
       S : constant String := Natural'Image (N);
@@ -364,6 +365,83 @@ package body Adacovex.Renderers.HTML is
 
       return To_String (R);
    end Render_Charts;
+
+   --  Machine name of a dependency scope for JSON output.
+   function Scope_Name (S : Types.Component_Scope) return String is
+   begin
+      return
+        (case S is
+           when Types.Scope_Base       => "base",
+           when Types.Scope_Dev        => "dev",
+           when Types.Scope_Transitive => "transitive",
+           when Types.Scope_Vendored   => "vendored");
+   end Scope_Name;
+
+   --  Escape a fixed-width string field for JSON (quotes + backslashes).
+   function Json_Escape (S : String) return String is
+      R : Unbounded_String;
+   begin
+      for I in S'Range loop
+         case S (I) is
+            when '"' =>
+               --  JSON escape: backslash + quote
+               Append (R, "\""");
+            when '\' =>
+               --  JSON escape: backslash + backslash
+               Append (R, "\\");
+            when others =>
+               Append (R, S (I));
+         end case;
+      end loop;
+      return To_String (R);
+   end Json_Escape;
+
+   function Render_Deps_JSON
+     (Graph : Types.Implementation.Component_Vectors.Vector) return String
+   is
+      Result : Unbounded_String;
+
+      procedure Put (S : String) is
+      begin
+         Append (Result, S);
+      end Put;
+
+      --  Emit a quoted field from a Desc_Field/Path_Field + length.
+      procedure Put_Field (F : String; Len : Natural) is
+      begin
+         Put ("""");
+         Put (Json_Escape (F (1 .. Len)));
+         Put ("""");
+      end Put_Field;
+   begin
+      Put ("{""dependencies"":[");
+      for I in 1 .. Integer (Graph.Length) loop
+         if I > 1 then
+            Put (",");
+         end if;
+         Put ("{""name"":");
+         Put_Field (Graph (I).Name, Graph (I).Name_Len);
+         Put (",""version"":");
+         Put_Field (Graph (I).Version, Graph (I).Version_Len);
+         Put (",""scope"":""");
+         Put (Scope_Name (Graph (I).Scope));
+         Put (""",""license"":");
+         Put_Field (Graph (I).License, Graph (I).License_Len);
+         Put (",""kind"":""");
+         Put
+           (if Types.Component_Kind'(Graph (I).Kind) = Types.Root_Component
+            then "root"
+            else "dependency");
+         Put (""",""parent"":");
+         Put (Img (Graph (I).Parent));
+         Put (",""purl"":");
+         Put_Field (Graph (I).PURL, Graph (I).PURL_Len);
+         Put ("}");
+      end loop;
+      Put ("]}");
+
+      return To_String (Result);
+   end Render_Deps_JSON;
 
    function Render_Metrics_JSON
      (Doc_Metrics   : Types.Docstring_Metrics;

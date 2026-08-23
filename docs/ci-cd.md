@@ -70,6 +70,7 @@ steps:
 | `compare-base` | `''` | Git ref to run `--compare-base` against (fails on regression) |
 | `coverage-delta` | `''` | Git ref to run `--coverage-delta` against (fails if coverage dropped) |
 | `emit-markdown` | `''` | Write `VERIFICATION.md` + `TRACE.md` into this directory |
+| `emit-metrics` | `''` | Write a JSON export of assessment metrics + the dependency graph to this file |
 | `generate-sbom` | `true` | Generate a proof-aware SBOM after the assessment and upload it |
 | `sbom-format` | `cyclonedx-json` | SBOM format: `cyclonedx-json`, `spdx-json`, or `md` |
 | `cache` | `true` | Cache Alire toolchain/deps with `actions/cache` |

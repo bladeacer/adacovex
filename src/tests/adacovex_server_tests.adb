@@ -25,6 +25,7 @@ package body Adacovex_Server_Tests is
          "iec62304 badge route");
       R.Check
         (Route ("/api/metrics") = Route_API_Metrics, "metrics API route");
+      R.Check (Route ("/api/deps") = Route_API_Deps, "deps API route");
 
       --  Unknown paths are 404s: empty, near-misses of every literal route
       --  (case, trailing slash, wrong extension, prefix, suffix, query
@@ -75,8 +76,9 @@ package body Adacovex_Server_Tests is
          and then Route ("/badge/do178c.svg") /= Route_Not_Found
          and then Route ("/badge/iso26262.svg") /= Route_Not_Found
          and then Route ("/badge/iec62304.svg") /= Route_Not_Found
-         and then Route ("/api/metrics") /= Route_Not_Found,
-         "all seven served routes are non-404");
+         and then Route ("/api/metrics") /= Route_Not_Found
+         and then Route ("/api/deps") /= Route_Not_Found,
+         "all eight served routes are non-404");
    end Run;
 
 end Adacovex_Server_Tests;
