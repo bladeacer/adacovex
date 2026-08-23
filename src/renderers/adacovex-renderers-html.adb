@@ -347,7 +347,8 @@ package body Adacovex.Renderers.HTML is
       end;
 
       --  Dependency scope polar ring (conic gradient + CSS hole; the four
-      --  cut points are cumulative percentages, theme colours via variables)
+      --  cut points are cumulative percentages, theme colours via variables).
+      --  Now with a center rating badge and improved legend layout.
       if not Graph.Is_Empty then
          declare
             Base_Ct  : Natural := 0;
@@ -396,7 +397,14 @@ package body Adacovex.Renderers.HTML is
                   Put (Img (S3));
                   Put ("%, var(--scope-vend) ");
                   Put (Img (S3));
-                  Put ("% 100%)""</div>");
+                  Put ("% 100%)"">");
+                  --  Center hole with total count
+                  Put ("<div class=""polar-center"">");
+                  Put ("<div class=""polar-rating"">");
+                  Put (Img (Total));
+                  Put ("</div>");
+                  Put ("<div class=""polar-label"">deps</div>");
+                  Put ("</div></div>");
                   Put ("<ul class=""polar-legend"">");
                   if Base_Ct > 0 then
                      Put ("<li style=""--i:var(--scope-base)""><i></i>base");
@@ -425,6 +433,93 @@ package body Adacovex.Renderers.HTML is
                      Put ("</b></li>");
                   end if;
                   Put ("</ul></div></div>");
+               end if;
+            end;
+         end;
+      end if;
+
+      --  Stacked bar chart for dependency scopes (pure CSS, raw numbers)
+      if not Graph.Is_Empty then
+         declare
+            Base_Ct  : Natural := 0;
+            Dev_Ct   : Natural := 0;
+            Trans_Ct : Natural := 0;
+            Vend_Ct  : Natural := 0;
+         begin
+            for I in 1 .. Integer (Graph.Length) loop
+               case Graph (I).Scope is
+                  when Types.Scope_Base       =>
+                     Base_Ct := Base_Ct + 1;
+
+                  when Types.Scope_Dev        =>
+                     Dev_Ct := Dev_Ct + 1;
+
+                  when Types.Scope_Transitive =>
+                     Trans_Ct := Trans_Ct + 1;
+
+                  when Types.Scope_Vendored   =>
+                     Vend_Ct := Vend_Ct + 1;
+               end case;
+            end loop;
+            declare
+               Total : constant Natural :=
+                 Base_Ct + Dev_Ct + Trans_Ct + Vend_Ct;
+               Pct_B : Natural := 0;
+               Pct_D : Natural := 0;
+               Pct_T : Natural := 0;
+               Pct_V : Natural := 0;
+            begin
+               if Total > 0 then
+                  Pct_B := (Base_Ct * 100) / Total;
+                  Pct_D := (Dev_Ct * 100) / Total;
+                  Pct_T := (Trans_Ct * 100) / Total;
+                  Pct_V := 100 - Pct_B - Pct_D - Pct_T;
+                  Put ("<div class=""chart-card""><h3>Scope Breakdown</h3>");
+                  Put ("<div class=""stacked-bar"" role=""img""");
+                  Put (" aria-label=""Dependency scope breakdown"">");
+                  if Pct_B > 0 then
+                     Put ("<i style=""width:");
+                     Put (Img (Pct_B));
+                     Put ("%;background:var(--scope-base)""></i>");
+                  end if;
+                  if Pct_D > 0 then
+                     Put ("<i style=""width:");
+                     Put (Img (Pct_D));
+                     Put ("%;background:var(--scope-dev)""></i>");
+                  end if;
+                  if Pct_T > 0 then
+                     Put ("<i style=""width:");
+                     Put (Img (Pct_T));
+                     Put ("%;background:var(--scope-trans)""></i>");
+                  end if;
+                  if Pct_V > 0 then
+                     Put ("<i style=""width:");
+                     Put (Img (Pct_V));
+                     Put ("%;background:var(--scope-vend)""></i>");
+                  end if;
+                  Put ("</div>");
+                  Put ("<ul class=""scope-legend"" style=""margin-top:8px"">");
+                  Put ("<li><i class=""s-base""></i>base <b>");
+                  Put (Img (Base_Ct));
+                  Put (" (");
+                  Put (Img (Pct_B));
+                  Put ("%)</b></li>");
+                  Put ("<li><i class=""s-dev""></i>dev <b>");
+                  Put (Img (Dev_Ct));
+                  Put (" (");
+                  Put (Img (Pct_D));
+                  Put ("%)</b></li>");
+                  Put ("<li><i class=""s-trans""></i>transitive <b>");
+                  Put (Img (Trans_Ct));
+                  Put (" (");
+                  Put (Img (Pct_T));
+                  Put ("%)</b></li>");
+                  Put ("<li><i class=""s-vend""></i>vendored <b>");
+                  Put (Img (Vend_Ct));
+                  Put (" (");
+                  Put (Img (Pct_V));
+                  Put ("%)</b></li>");
+                  Put ("</ul></div>");
                end if;
             end;
          end;
@@ -666,20 +761,16 @@ package body Adacovex.Renderers.HTML is
                & "%""></i>");
          end if;
          Put ("</div>");
-         Put
-           ("<ul class=""scope-legend"">"
-            & "<li><i class=""s-base""></i>base "
-            & Img (C_Base)
-            & "</li>"
-            & "<li><i class=""s-dev""></i>dev "
-            & Img (C_Dev)
-            & "</li>"
-            & "<li><i class=""s-trans""></i>transitive "
-            & Img (C_Trans)
-            & "</li>"
-            & "<li><i class=""s-vend""></i>vendored "
-            & Img (C_Vend)
-            & "</li></ul>");
+         Put ("<ul class=""scope-legend scope-legend-prominent"">");
+         Put ("<li><i class=""s-base""></i>base <b>");
+         Put (Img (C_Base));
+         Put ("</b></li><li><i class=""s-dev""></i>dev <b>");
+         Put (Img (C_Dev));
+         Put ("</b></li><li><i class=""s-trans""></i>transitive <b>");
+         Put (Img (C_Trans));
+         Put ("</b></li><li><i class=""s-vend""></i>vendored <b>");
+         Put (Img (C_Vend));
+         Put ("</b></li></ul>");
          Put ("</div>");
       end;
       Put
@@ -696,23 +787,43 @@ package body Adacovex.Renderers.HTML is
       Put
         ("<label class=""cb"" title=""base = declared in alire.toml"">"
          & "<input type=""checkbox"" id=""filter-base"" checked "
-         & "onchange=""filterByScope()""><span class=""box""><svg class=""tick"" viewBox=""0 0 12 12"" width=""9"" height=""9"" aria-hidden=""true""><path d=""M2 6 L5 9 L10 3"" stroke=""currentColor"" fill=""none"" stroke-width=""2"" stroke-linecap=""round"" stroke-linejoin=""round""/></svg></span> "
-         & "<svg class=""icon"" viewBox=""0 0 12 12"" aria-hidden=""true""><use href=""#i-base""/></svg> base</label>");
+         & "onchange=""filterByScope()""><span class=""box"">"
+         & "<svg class=""tick"" viewBox=""0 0 12 12"" width=""11"" height=""11"" aria-hidden=""true"">"
+         & "<path d=""M2 6 L5 9 L10 3"" stroke=""currentColor"" fill=""none"" "
+         & "stroke-width=""2"" stroke-linecap=""round"" stroke-linejoin=""round""/>"
+         & "</svg></span> "
+         & "<svg class=""icon"" viewBox=""0 0 12 12"" width=""10"" height=""10"" aria-hidden=""true"">"
+         & "<use href=""#i-base""/></svg> base</label>");
       Put
         ("<label class=""cb"" title=""dev = declared in alire-dev.toml"">"
          & "<input type=""checkbox"" id=""filter-dev"" checked "
-         & "onchange=""filterByScope()""><span class=""box""><svg class=""tick"" viewBox=""0 0 12 12"" width=""9"" height=""9"" aria-hidden=""true""><path d=""M2 6 L5 9 L10 3"" stroke=""currentColor"" fill=""none"" stroke-width=""2"" stroke-linecap=""round"" stroke-linejoin=""round""/></svg></span> "
-         & "<svg class=""icon"" viewBox=""0 0 12 12"" aria-hidden=""true""><use href=""#i-dev""/></svg> dev</label>");
+         & "onchange=""filterByScope()""><span class=""box"">"
+         & "<svg class=""tick"" viewBox=""0 0 12 12"" width=""11"" height=""11"" aria-hidden=""true"">"
+         & "<path d=""M2 6 L5 9 L10 3"" stroke=""currentColor"" fill=""none"" "
+         & "stroke-width=""2"" stroke-linecap=""round"" stroke-linejoin=""round""/>"
+         & "</svg></span> "
+         & "<svg class=""icon"" viewBox=""0 0 12 12"" width=""10"" height=""10"" aria-hidden=""true"">"
+         & "<use href=""#i-dev""/></svg> dev</label>");
       Put
         ("<label class=""cb"" title=""transitive = pulled in by a dependency"">"
          & "<input type=""checkbox"" id=""filter-transitive"" checked "
-         & "onchange=""filterByScope()""><span class=""box""><svg class=""tick"" viewBox=""0 0 12 12"" width=""9"" height=""9"" aria-hidden=""true""><path d=""M2 6 L5 9 L10 3"" stroke=""currentColor"" fill=""none"" stroke-width=""2"" stroke-linecap=""round"" stroke-linejoin=""round""/></svg></span> "
-         & "<svg class=""icon"" viewBox=""0 0 12 12"" aria-hidden=""true""><use href=""#i-trans""/></svg> transitive</label>");
+         & "onchange=""filterByScope()""><span class=""box"">"
+         & "<svg class=""tick"" viewBox=""0 0 12 12"" width=""11"" height=""11"" aria-hidden=""true"">"
+         & "<path d=""M2 6 L5 9 L10 3"" stroke=""currentColor"" fill=""none"" "
+         & "stroke-width=""2"" stroke-linecap=""round"" stroke-linejoin=""round""/>"
+         & "</svg></span> "
+         & "<svg class=""icon"" viewBox=""0 0 12 12"" width=""10"" height=""10"" aria-hidden=""true"">"
+         & "<use href=""#i-trans""/></svg> transitive</label>");
       Put
         ("<label class=""cb"" title=""vendored = bundled third-party source"">"
          & "<input type=""checkbox"" id=""filter-vendored"" checked "
-         & "onchange=""filterByScope()""><span class=""box""><svg class=""tick"" viewBox=""0 0 12 12"" width=""9"" height=""9"" aria-hidden=""true""><path d=""M2 6 L5 9 L10 3"" stroke=""currentColor"" fill=""none"" stroke-width=""2"" stroke-linecap=""round"" stroke-linejoin=""round""/></svg></span> "
-         & "<svg class=""icon"" viewBox=""0 0 12 12"" aria-hidden=""true""><use href=""#i-vend""/></svg> vendored</label>");
+         & "onchange=""filterByScope()""><span class=""box"">"
+         & "<svg class=""tick"" viewBox=""0 0 12 12"" width=""11"" height=""11"" aria-hidden=""true"">"
+         & "<path d=""M2 6 L5 9 L10 3"" stroke=""currentColor"" fill=""none"" "
+         & "stroke-width=""2"" stroke-linecap=""round"" stroke-linejoin=""round""/>"
+         & "</svg></span> "
+         & "<svg class=""icon"" viewBox=""0 0 12 12"" width=""10"" height=""10"" aria-hidden=""true"">"
+         & "<use href=""#i-vend""/></svg> vendored</label>");
       Put
         ("<button class=""theme-toggle"" onclick=""expandDeps(true)"">Expand all</button>");
       Put
@@ -879,10 +990,9 @@ package body Adacovex.Renderers.HTML is
          Put_O ("<div class=""chart-grid"" style=""margin-top:14px"">");
 
          --  Robustness radar: five quality axes (each 0..100) plus a tier
-         --  rating derived from their average.  The tier thresholds and
-         --  the axis definitions are explained in the note under the radar
-         --  and in docs/dashboard.md.  Same integer-math SVG as the SPARK
-         --  radar; colours follow the theme via CSS variables.
+         --  rating derived from their average.  Split layout: chart on the
+         --  left, rating meanings and per-axis results on the right.  The
+         --  tier badge renders inside the chart centre.
          declare
             R_Vals  : array (1 .. 5) of Natural := (others => 0);
             R_Name  : constant array (1 .. 5) of String (1 .. 8) :=
@@ -920,8 +1030,10 @@ package body Adacovex.Renderers.HTML is
             end if;
 
             Put_O ("<div class=""chart-card""><h3>Robustness</h3>");
+            Put_O ("<div class=""radar-split"">");
+            Put_O ("<div class=""radar-chart"">");
             Put_O
-              ("<svg viewBox=""0 0 220 220"" width=""100%"" height=""150""");
+              ("<svg viewBox=""0 0 220 220"" width=""100%"" height=""200""");
             Put_O
               (" role=""img"" aria-label=""Robustness radar with tier rating"">");
             for G in 1 .. 4 loop
@@ -964,23 +1076,32 @@ package body Adacovex.Renderers.HTML is
                Put_O (R_Name (K) (1 .. R_Len (K)));
                Put_O ("</text>");
             end loop;
+            --  Tier badge inside the chart centre
+            Put_O ("<text x=""110"" y=""96"" text-anchor=""middle""");
+            Put_O
+              (" font-size=""28"" font-weight=""700"" fill=""var(--accent)"">");
+            Put_O (Tier & "</text>");
+            Put_O ("<text x=""110"" y=""112"" text-anchor=""middle""");
+            Put_O (" font-size=""8"" fill=""var(--muted)"">TIER</text>");
             Put_O ("</svg>");
+            Put_O ("</div>");
+            Put_O ("<div class=""radar-legend"">");
             Put_O ("<div class=""tier-wrap"">");
             Put_O ("<span class=""tier tier-" & Tier & """>" & Tier);
-            Put_O ("</span><span class=""tier-note"">Average ");
+            Put_O ("</span><span class=""tier-note"">Avg ");
             Put_O (Img (Avg));
-            Put_O ("% &middot; S &ge; 90 &middot; A &ge; 80 &middot; ");
-            Put_O ("B &ge; 65 &middot; C &ge; 50 &middot; D &lt; 50");
+            Put_O ("% &middot; S&ge;90 A&ge;80 B&ge;65 C&ge;50 D&lt;50");
             Put_O ("</span></div>");
-            Put_O ("<ul class=""rob-legend"">");
+            Put_O ("<ul>");
             for K in 1 .. 5 loop
-               Put_O ("<li><i style=""--i:var(--accent)""></i>");
+               Put_O ("<li><i></i>");
                Put_O (R_Name (K) (1 .. R_Len (K)));
                Put_O (" <b>");
                Put_O (Img (R_Vals (K)));
                Put_O ("%</b></li>");
             end loop;
             Put_O ("</ul></div>");
+            Put_O ("</div></div>");
          end;
 
          --  SPARK proof per check category (radar moved from the Charts
@@ -1063,6 +1184,7 @@ package body Adacovex.Renderers.HTML is
             Put_O ("</div>");
          end;
 
+         --  Tests donut + category column chart side by side
          Put_O ("<div class=""chart-card""><h3>Tests</h3>");
          Put_O
            ("<table class=""charts-css pie donut show-labels"" style=""height:150px;max-width:200px;margin:0 auto"">");
@@ -1084,6 +1206,45 @@ package body Adacovex.Renderers.HTML is
             end if;
          end;
          Put_O ("</tbody></table></div>");
+
+         --  Test category column chart (visualise per-category counts)
+         Put_O ("<div class=""chart-card""><h3>Test Categories</h3>");
+         if Tests.Categories.Is_Empty then
+            Put_O ("<p style=""color:var(--muted);font-size:.85rem"">");
+            Put_O ("No test categories</p>");
+         else
+            declare
+               Max_Ct : Natural := 1;
+            begin
+               for C in 1 .. Integer (Tests.Categories.Length) loop
+                  if Tests.Categories (C).Test_Count > Max_Ct then
+                     Max_Ct := Tests.Categories (C).Test_Count;
+                  end if;
+               end loop;
+               Put_O ("<div class=""test-col-grid"">");
+               for C in 1 .. Integer (Tests.Categories.Length) loop
+                  declare
+                     Cat : Types.Test_Metrics renames Tests.Categories (C);
+                     H   : constant Natural := (Cat.Test_Count * 60) / Max_Ct;
+                  begin
+                     Put_O ("<div class=""test-col-item"">");
+                     Put_O ("<div class=""test-col-bar"">");
+                     Put_O
+                       ("<div class=""test-col-bar-inner"" style=""height:");
+                     Put_O (Img (H));
+                     Put_O ("px""></div></div>");
+                     Put_O ("<div class=""test-col-num"">");
+                     Put_O (Img (Cat.Test_Count));
+                     Put_O ("</div>");
+                     Put_O ("<div class=""test-col-label"">");
+                     Put_O (Html_Escape (Cat.Category (1 .. Cat.Cat_Len)));
+                     Put_O ("</div></div>");
+                  end;
+               end loop;
+               Put_O ("</div>");
+            end;
+         end if;
+         Put_O ("</div>");
 
          --  Doc coverage: half-circle radial gauge (SVG arc, dasharray math
          --  in integers; arc length for r=50 is ~157)
@@ -1220,7 +1381,8 @@ package body Adacovex.Renderers.HTML is
       Put_T ("<caption>Pass / Fail</caption><tbody>");
       if Tests.Total_Passed + Tests.Total_Failed = 0 then
          Put_T
-           ("<tr><th scope=""row"">No tests</th><td style=""--start:0.00;--end:1.00""><span class=""data"">0</span></td></tr>");
+           ("<tr><th scope=""row"">No tests</th>"
+            & "<td style=""--start:0.00;--end:1.00""><span class=""data"">0</span></td></tr>");
       else
          declare
             P : constant String :=
@@ -1273,37 +1435,83 @@ package body Adacovex.Renderers.HTML is
       Put_T (Img (Tests.Total_Failed));
       Put_T ("</strong></td></tr></table></div>");
 
-      --  Compliance tab: mini achievement gauge at the top
-      Put_C
-        ("<div class=""chart-card"" style=""margin-bottom:14px;max-width:260px"">");
-      Put_C ("<h3>Compliance Status</h3>");
-      Put_C ("<svg viewBox=""0 0 120 68"" width=""100%"" height=""66""");
-      Put_C (" role=""img"" aria-label=""Compliance achievement"">");
-      Put_C ("<path d=""M10 60 A50 50 0 0 1 110 60"" fill=""none""");
-      Put_C (" stroke=""var(--border)"" stroke-width=""11""");
-      Put_C (" stroke-linecap=""round""/>");
-      if DAL_Assess.Status = Types.Achieved then
+      --  Compliance tab: achievement gauge with target + percent achieved
+      declare
+         --  Compliance percentage: weighted score across HLR traceability,
+         --  tests passing, SPARK level met, and subprogram coverage.
+         HLR_Pct   : Natural := 0;
+         Test_Pct  : Natural := 0;
+         SPARK_Pct : Natural := 0;
+         Compl_Pct : Natural := 0;
+      begin
+         if DAL_Assess.HLR_Total > 0 then
+            HLR_Pct := (DAL_Assess.HLR_Found * 100) / DAL_Assess.HLR_Total;
+         else
+            HLR_Pct := 100;
+         end if;
+         if Tests.Total_Passed + Tests.Total_Failed > 0 then
+            Test_Pct :=
+              (Tests.Total_Passed * 100)
+              / (Tests.Total_Passed + Tests.Total_Failed);
+         else
+            Test_Pct := 0;
+         end if;
+         SPARK_Pct := (if DAL_Assess.Min_SPARK_Level_Met then 100 else 0);
+         Compl_Pct := (HLR_Pct + Test_Pct + SPARK_Pct) / 3;
+
+         Put_C
+           ("<div class=""chart-card"" style=""margin-bottom:14px;max-width:400px"">");
+         Put_C ("<h3>Compliance Status</h3>");
+         Put_C ("<div class=""compliance-gauge-wrap"">");
+         Put_C ("<div class=""gauge-chart"">");
+         Put_C ("<svg viewBox=""0 0 120 68"" width=""100%"" height=""66""");
+         Put_C (" role=""img"" aria-label=""Compliance achievement"">");
          Put_C ("<path d=""M10 60 A50 50 0 0 1 110 60"" fill=""none""");
-         Put_C (" stroke=""var(--pass)"" stroke-width=""11""");
-         Put_C (" stroke-linecap=""round"" stroke-dasharray=""157""");
-         Put_C (" stroke-dashoffset=""0""/>");
-      else
+         Put_C (" stroke=""var(--border)"" stroke-width=""11""");
+         Put_C (" stroke-linecap=""round""/>");
          Put_C ("<path d=""M10 60 A50 50 0 0 1 110 60"" fill=""none""");
-         Put_C (" stroke=""var(--fail)"" stroke-width=""11""");
+         Put_C
+           (" stroke="""
+            & (if DAL_Assess.Status = Types.Achieved
+               then "var(--pass)"
+               else "var(--fail)")
+            & """ stroke-width=""11""");
          Put_C (" stroke-linecap=""round"" stroke-dasharray=""157""");
-         Put_C (" stroke-dashoffset=""55""/>");
-      end if;
-      Put_C
-        ("<text x=""60"" y=""56"" text-anchor=""middle"" font-size=""11""");
-      Put_C (" font-weight=""600""");
-      Put_C (" fill=""");
-      Put_C
-        (if DAL_Assess.Status = Types.Achieved
-         then "var(--pass)"
-         else "var(--fail)");
-      Put_C (""">");
-      Put_C (Types.To_String (DAL_Assess.Status));
-      Put_C ("</text></svg></div>");
+         Put_C (" stroke-dashoffset=""");
+         Put_C (Img (157 - (157 * Compl_Pct) / 100));
+         Put_C ("""/>");
+         Put_C
+           ("<text x=""60"" y=""56"" text-anchor=""middle"" font-size=""11""");
+         Put_C (" font-weight=""600""");
+         Put_C (" fill=""");
+         Put_C
+           (if DAL_Assess.Status = Types.Achieved
+            then "var(--pass)"
+            else "var(--fail)");
+         Put_C (""">");
+         Put_C (Img (Compl_Pct));
+         Put_C ("%</text></svg>");
+         Put_C ("</div>");
+         Put_C ("<div class=""gauge-info"">");
+         Put_C ("<div class=""gauge-target"">Target: <b>");
+         Put_C
+           (Types.Standard_Level_Name
+              (DAL_Assess.Standard, DAL_Assess.Target_DAL));
+         Put_C ("</b></div>");
+         Put_C
+           ("<div class=""gauge-achieved"">Achieved: <span class=""pct"">");
+         Put_C (Img (Compl_Pct));
+         Put_C ("%</span></div>");
+         Put_C ("<div style=""font-size:.82rem;color:var(--muted)"">");
+         Put_C ("HLR ");
+         Put_C (Img (HLR_Pct));
+         Put_C ("% &middot; Tests ");
+         Put_C (Img (Test_Pct));
+         Put_C ("% &middot; SPARK ");
+         Put_C (Img (SPARK_Pct));
+         Put_C ("%</div>");
+         Put_C ("</div></div></div>");
+      end;
       Put_C ("<div class=""card"">");
       if All_Standards then
          Put_C ("<h2>Compliance (all standards)</h2>");

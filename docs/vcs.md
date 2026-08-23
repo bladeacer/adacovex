@@ -10,6 +10,20 @@ in a VCS is sensible -- but the base tool never requires one.
 Works on **Linux and WSL** (the snapshot commands run through `sh -c`, which
 WSL provides).
 
+## When to use differential modes
+
+Differential modes are useful when you want to enforce that changes do not
+regress quality gates:
+
+- **PR checks** -- `--coverage-delta` ensures docstring coverage does not drop
+  between the base branch and the PR head. This is the lightest check and
+  works even when the base does not commit proof or test artifacts.
+- **Release gates** -- `adacovex --compare-base=v1.2.0` compares the current
+  tree against the last release tag and fails if any metric regressed
+  (packages, docstrings, HLR tags, SPARK level, tests, DAL status).
+- **Audit trails** -- a side-by-side report shows exactly what changed between
+  two revisions, useful for compliance audits that need a diff narrative.
+
 ## Supported VCS
 
 The differential modes run against the VCS that manages the target. Detection

@@ -16,7 +16,6 @@
     if(q && name.indexOf(q)===-1) ok=false;
     n.style.display= ok ? '' : 'none';
   });
-  // Re-render diagram if visible
   if(document.getElementById('dep-nomnoml-view') && document.getElementById('dep-nomnoml-view').style.display !== 'none'){
     try{ renderNomnoml(); }catch(e){}
   }
@@ -39,7 +38,34 @@ window.downloadNomnoml=function(){
 };
 // Graph data injected by Ada
 var ADACOVEX_GRAPH=__GRAPH_JSON__;
-// FlexSearch index built from graph + packages
+// Build full-text index from all tab content
+var fullTextIdx=[];
+function buildFullTextIdx(){
+  if(fullTextIdx.length>0) return;
+  var tabs=['overview','proof','tests','compliance','deps','charts'];
+  tabs.forEach(function(tab){
+    var panel=document.getElementById('tab-'+tab);
+    if(!panel) return;
+    var text=panel.innerText||'';
+    var words=text.split(/\s+/).filter(function(w){return w.length>2;});
+    fullTextIdx.push({tab:tab,label:tab,words:words.join(' '),snippet:text.substring(0,200)});
+  });
+  // Index dep names separately for quick lookup
+  if(ADACOVEX_GRAPH && ADACOVEX_GRAPH.dependencies){
+    ADACOVEX_GRAPH.dependencies.forEach(function(dep){
+      var words=(dep.name||'')+' '+(dep.version||'')+' '+(dep.scope||'')+' '+(dep.license||'')+' '+(dep.purl||'');
+      fullTextIdx.push({tab:'deps',label:dep.name,words:words.toLowerCase(),snippet:'['+dep.scope+'] '+dep.name+' @ '+dep.version});
+    });
+  }
+  // Index HLR tags
+  document.querySelectorAll('[data-hlr]').forEach(function(el){
+    var tag=el.getAttribute('data-hlr');
+    var pkg=el.getAttribute('data-pkg')||'';
+    fullTextIdx.push({tab:'compliance',label:tag,words:(tag+' '+pkg).toLowerCase(),snippet:'HLR '+tag+' in '+pkg});
+  });
+}
+buildFullTextIdx();
+// FlexSearch index for dep names
 var flexIdx=null;
 try{
   var FlexIdxCtor = null;
@@ -50,7 +76,7 @@ try{
   if(FlexIdxCtor){
     flexIdx=new FlexIdxCtor({tokenize:'forward'});
     if(ADACOVEX_GRAPH && ADACOVEX_GRAPH.dependencies){
-      ADACOVEX_GRAPH.dependencies.forEach(function(dep,i){ try{ flexIdx.add(i, dep.name+' '+dep.version+' '+dep.scope); }catch(e){} });
+      ADACOVEX_GRAPH.dependencies.forEach(function(dep,i){ try{ flexIdx.add(i, dep.name+' '+dep.version+' '+dep.scope+' '+dep.license+' '+dep.purl); }catch(e){} });
     }
     document.querySelectorAll('.dep-node').forEach(function(n,i){
       var name=n.getAttribute('data-name')||'';
@@ -62,21 +88,18 @@ function renderNomnoml(){
   try{
     if(typeof nomnoml==='undefined' || !ADACOVEX_GRAPH) return;
     var deps=ADACOVEX_GRAPH.dependencies||[];
-    // Respect scope filters (same checkboxes as tree view)
     var showBase=document.getElementById('filter-base') ? document.getElementById('filter-base').checked : true;
     var showDev=document.getElementById('filter-dev') ? document.getElementById('filter-dev').checked : true;
     var showTrans=document.getElementById('filter-transitive') ? document.getElementById('filter-transitive').checked : true;
     var showVend=document.getElementById('filter-vendored') ? document.getElementById('filter-vendored').checked : true;
     function scopeOk(s){ if(s==='base') return showBase; if(s==='dev') return showDev; if(s==='transitive') return showTrans; if(s==='vendored') return showVend; return true; }
     var filtered=deps.filter(function(d){ return scopeOk(d.scope||'transitive'); });
-    var lines=['#direction: down','#[<hidden> root]'];
     var byScope={base:[],dev:[],transitive:[],vendored:[]};
     filtered.forEach(function(d){
       var scope=d.scope||'transitive';
       if(!byScope[scope]) byScope[scope]=[];
       byScope[scope].push(d);
     });
-    // Build nomnoml source: edges parent->child, skipping hidden parents/children
     var cardBg=getComputedStyle(document.documentElement).getPropertyValue('--card').trim()||'#fff';var fg=getComputedStyle(document.documentElement).getPropertyValue('--fg').trim()||'#333';var src='#.box: fill='+cardBg+'\n#.arrow: fill='+fg+'\n#direction: down\n';
     src += '[<box> adacovex]\n';
     filtered.forEach(function(d){
@@ -86,7 +109,6 @@ function renderNomnoml(){
       var pName = parent ? parent.name : 'root';
       src += '['+pName+']-->[ '+d.name+' ]\n';
     });
-    // Add legend
     src += '\n[<note> Legend: base=alire.toml, dev=alire-dev.toml, vendored=.adacovex/patches]\n';
     var canvas=document.getElementById('nomnoml-canvas');
     if(canvas) nomnoml.draw(canvas, src);
@@ -104,51 +126,95 @@ window.showTab=function(id){
   var v=null; try{v=localStorage.getItem('adacovex-dep-view');}catch(e){}
   if(v==='nomnoml') setTimeout(function(){switchDepView('nomnoml');}, 300);
 })();
-// Global search with FlexSearch
+// Global search with full-text indexing
 var gs=document.getElementById('global-search');
 var sh=document.getElementById('search-hits');
-if(gs && sh){
-  gs.addEventListener('input', function(){
-    var q=gs.value.trim().toLowerCase();
-    sh.innerHTML='';
-    if(!q){ sh.classList.remove('active'); return; }
-    var results=[];
-    // Try FlexSearch first
-    try{
-      if(flexIdx){
-        var ids=flexIdx.search(q, {limit:20});
-        ids.forEach(function(id){
-          var dep = ADACOVEX_GRAPH.dependencies[id];
-          if(dep) results.push(dep.name+' ('+dep.scope+')');
-        });
-      }
-    }catch(e){}
-    // Fallback: filter dep nodes
-    if(results.length===0){
-      document.querySelectorAll('.dep-node').forEach(function(n){
-        var name=(n.getAttribute('data-name')||'').toLowerCase();
-        if(name.indexOf(q)!==-1) results.push(name);
+var sc=document.getElementById('search-clear');
+function clearSearch(){
+  if(gs) gs.value='';
+  if(sh) sh.classList.remove('active');
+  if(sc) sc.classList.remove('visible');
+  if(gs) gs.focus();
+}
+window.clearSearch=clearSearch;
+function doSearch(){
+  if(!gs || !sh) return;
+  var q=gs.value.trim().toLowerCase();
+  if(sc) sc.classList.toggle('visible', q.length>0);
+  sh.innerHTML='';
+  if(!q){ sh.classList.remove('active'); return; }
+  var results=[];
+  // Try FlexSearch first for dep names
+  try{
+    if(flexIdx){
+      var ids=flexIdx.search(q, {limit:10});
+      ids.forEach(function(id){
+        var dep = ADACOVEX_GRAPH.dependencies[id];
+        if(dep){
+          results.push({name:dep.name, scope:dep.scope, version:dep.version, tab:'deps', snippet:'['+dep.scope+'] '+dep.name+' @ '+dep.version});
+        }
       });
-      results=results.slice(0,20);
     }
-    if(results.length===0){ sh.classList.remove('active'); return; }
-    results.forEach(function(r){
-      var div=document.createElement('div');
-      div.className='search-hit';
-      div.textContent=r;
-      div.onclick=function(){ gs.value=r; sh.classList.remove('active'); switchDepView('tree'); document.getElementById('dep-filter').value=r; document.getElementById('dep-filter').dispatchEvent(new Event('input')); showTab('deps'); };
-      sh.appendChild(div);
+  }catch(e){}
+  // Full-text search across all indexed content
+  var seen=new Set();
+  fullTextIdx.forEach(function(item){
+    if(item.words.indexOf(q)!==-1){
+      var key=item.tab+':'+item.label;
+      if(!seen.has(key)){
+        seen.add(key);
+        if(results.length<15){
+          results.push({name:item.label, scope:item.tab, version:'', tab:item.tab, snippet:item.snippet});
+        }
+      }
+    }
+  });
+  // Fallback: filter dep nodes
+  if(results.length===0){
+    document.querySelectorAll('.dep-node').forEach(function(n){
+      var name=(n.getAttribute('data-name')||'').toLowerCase();
+      if(name.indexOf(q)!==-1){
+        var scope=n.getAttribute('data-scope')||'';
+        results.push({name:name, scope:scope, version:'', tab:'deps', snippet:'['+scope+'] '+name});
+      }
     });
-    sh.classList.add('active');
+    results=results.slice(0,15);
+  }
+  if(results.length===0){ sh.classList.remove('active'); return; }
+  results.forEach(function(r){
+    var div=document.createElement('div');
+    div.className='search-hit';
+    var label=document.createElement('div');
+    label.textContent=r.name;
+    div.appendChild(label);
+    if(r.snippet){
+      var snip=document.createElement('div');
+      snip.className='search-hit-snippet';
+      snip.textContent=r.snippet;
+      div.appendChild(snip);
+    }
+    var tabBadge=document.createElement('span');
+    tabBadge.className='search-hit-tab';
+    tabBadge.textContent=r.tab;
+    div.insertBefore(tabBadge, div.firstChild);
+    div.onclick=function(){ gs.value=r.name; sh.classList.remove('active'); showTab(r.tab); if(r.tab==='deps'){ switchDepView('tree'); var df=document.getElementById('dep-filter'); if(df){df.value=r.name; df.dispatchEvent(new Event('input'));}}};
+    sh.appendChild(div);
+  });
+  sh.classList.add('active');
+}
+if(gs){
+  gs.addEventListener('input', doSearch);
+  gs.addEventListener('keydown', function(e){
+    if(e.key==='Escape'){ clearSearch(); }
   });
   gs.addEventListener('blur', function(){ setTimeout(function(){ sh.classList.remove('active'); }, 200); });
+  gs.addEventListener('focus', function(){ if(gs.value.trim().length>0) doSearch(); });
 }
 window.filterDeps=function(){var e=document.getElementById('dep-filter');if(e)e.dispatchEvent(new Event('input'));};
 // --- Dependency details popup (click a dep name) ---
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function purlInfo(purl){
   var p=purl||''; var m=null;
-  // pkg:github/owner/name[@v]
   m=p.match(/^pkg:github\/([^\/@]+)\/([^\/@]+)/); if(m) return {label:'GitHub', href:'https://github.com/'+m[1]+'/'+m[2].replace(/@.*$/,'')};
   m=p.match(/^pkg:npm\/([^@]+)/); if(m) return {label:'npm', href:'https://www.npmjs.com/package/'+m[1]};
   m=p.match(/^pkg:cargo\/([^@]+)/); if(m) return {label:'crates.io', href:'https://crates.io/crates/'+m[1]};

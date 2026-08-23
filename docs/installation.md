@@ -1,5 +1,13 @@
 # Installing adacovex
 
+## Quick start
+
+1. **Install** via Alire: `alr install covex gnatprove && export PATH="$HOME/.local/bin:$PATH"`
+2. **Assess** your project: `adacovex --target=. --dal=C`
+3. **Serve** the dashboard: `adacovex --target=. --serve --port=8080`
+
+That is all you need for a local compliance assessment. For CI or release workflows, see [CI/CD](ci-cd.md).
+
 adacovex is distributed as the `covex` Alire crate, a release bundle on
 GitHub, or a source build. All three routes produce the same binary
 (`adacovex`, with a `covex` alias on Linux).
