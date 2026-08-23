@@ -168,6 +168,28 @@ Threshold failures **fail loudly** at every layer:
    so the whole run is red even if the failing job was retried or masked by
    an `if: always()` cleanup step.
 
+### Debugging guide: what to do when you see ...
+
+| Output | Meaning | Action |
+|--------|---------|--------|
+| `CI GATE: SPARK level X below required Y (--require-spark)` | Proven VCs or `gnatprove` version drift below the pinned gate | Check `gnatprove` pin in `alire-dev.toml` or `gnat-version` input; re-run `make prove`; update `--require-spark` only if prover legitimately tightened |
+| `CI GATE: docstring coverage N% below required M% (--require-docstrings)` | Missing `--` docstrings or patches | Run `adacovex --verbose` to list undocumented subprogs; add patches under `.adacovex/patches/` |
+| `CI GATE: proved-VC coverage N% below required M% (--require-proof)` | Some VCs unproved/justified | Inspect `gnatprove.out`; add contracts or fix `SPARK_Mode` |
+| `Warning: N source file(s) skipped: line exceeds Max_Line` | A physical line > `Max_Line` (262144 on 64-bit) | Split the declaration; DAL becomes `Unmet` by design (`docs/architecture.md#overflow-contract`) |
+| `result cache: X hit(s), Y miss(es), Z evicted` | Cache stats per run | `Z>0` means `--cache-max` evicted oldest entries; increase `--cache-max` or pass `--no-cache` to force a full rescan |
+| `Unknown option --foo (did you mean --bar?)` | Typo | Use `adacovex --help` or `adacovex help <topic>` |
+| `::notice::WARNING ...` annotation | Non-fatal warning surfaced from `adacovex.out` | Download `adacovex-assessment` artifact for full log; warnings do not fail the gate but indicate missing tests/proof |
+| `make complexity-check` failed | File or function exceeds caps (`--max-file-loc`/`--max-file-pct`/`--max-fn-complexity`) | See `tools/check-complexity.py --help`; split god objects/functions |
+
+**Better debugging output contract:** after the brittleness fixes (`ci.yml` now has
+`timeout-minutes`, `concurrency.cancel-in-progress`, `fetch-tags: true`, and
+`actions/cache` for both toolchain and result-cache), every failure leaves three
+things without re-running: (1) the `::error`/`::notice` annotations at the top
+of the job page, (2) the `## adacovex assessment` Markdown table in
+`GITHUB_STEP_SUMMARY`, and (3) the `adacovex-assessment` artifact (full
+untruncated `adacovex.out` + `adacovex-metrics.json` when `emit-metrics` is
+set). Start from the artifact, not a local repro, when the gate is flaky.
+
 ### Release version bundling
 
 The release workflow builds the binary from the `vX.Y.Z` tag and **bundles

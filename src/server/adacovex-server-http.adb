@@ -362,6 +362,7 @@ package body Adacovex.Server.HTTP is
                   State.Tests,
                   State.DAL_Assess,
                   State.Packages,
+                  State.Graph,
                   State.All_Standards,
                   State.Theme),
                Is_KA);

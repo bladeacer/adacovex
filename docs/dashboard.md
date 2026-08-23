@@ -16,8 +16,9 @@ curl http://localhost:8080/api/metrics
 
 | Path | Content |
 |------|---------|
-| `GET /` | HTML dashboard (coverage, proof, test, and compliance cards) |
+| `GET /` | HTML dashboard (tabbed) |
 | `GET /api/metrics` | JSON object with the key assessment metrics |
+| `GET /api/deps` | JSON dependency graph (same data as the Dependencies tab) |
 | `GET /badge/spark.svg` | SPARK assurance level badge |
 | `GET /badge/tests.svg` | Test pass/fail badge |
 | `GET /badge/do178c.svg` | DO-178C compliance badge (Achieved / Unmet) |
@@ -32,40 +33,71 @@ serves requests until the process is interrupted (Ctrl-C).
 
 ![Dashboard Preview Image](../media/dashboard_preview.png)
 
-The page is a single self-contained document (CSS and the theme script are
+The page is a single self-contained document (CSS and the theme/tab script are
 inlined; no external assets), rendered from the bundled
-`resources/dashboard.html` template. It contains one card per area:
+`resources/dashboard.html` template. Content is organised into **clickable
+tabs** (hash-routed, keyboard-accessible, persisted in `localStorage`):
 
-- **Status Badges** -- the live badge images, so the dashboard doubles as a
-  badge preview.
-- **Source Overview** -- packages scanned, total subprograms, and docstring
-  coverage %.
-- **SPARK Proof Analysis** -- the assessed level (Stone..Platinum) and, per
-  check category (flow, initialization, runtime, assertions, functional),
-  the total and proved counts, plus total VCs / proved VCs.
-- **Test Results** -- every test category with its count and Pass/Fail
-  status, plus the total (Passed / Failed).
+- **Overview** -- status badges (live `/badge/*.svg` preview), source overview
+  (packages scanned, subprograms, docstring %), and quick stats (SPARK level,
+  VCs proved, tests, compliance, dependency count). The badge row doubles as a
+  preview for the generated `docs/badges/*.svg` files.
+- **Proof** -- the SPARK level (Stone..Platinum) and, per check category
+  (flow, initialization, runtime, assertions, functional), total and proved
+  counts plus total VCs / proved VCs.
+- **Tests** -- every test category with count and Pass/Fail plus the total
+  (Passed / Failed).
 - **Compliance** -- target integrity level and overall `Achieved` / `Unmet`
-  status, HLRs traced, orphan-tag state, whether tests pass, and each unmet
-  criterion when the assessment failed.
-- **HLR Traceability** -- every package that carries HLR tags, with its tags.
+  status, HLRs traced, orphan-tag state, whether tests pass, each unmet
+  criterion, and the HLR traceability table (package -> tags).
+- **Dependencies** -- interactive dependency tree/graph (see below).
+- **Charts** -- Charts.css metrics (see below).
+
+Tabs are linkable: `http://localhost:8080/#deps` opens the Dependencies tab
+directly (also `?theme=light#proof` composes with the theme pin). The active
+tab is saved as `adacovex-tab` in `localStorage`.
+
+### Dependencies tab
+
+The **Dependencies** tab visualises the resolved `alire.toml` / `alire.lock`
+graph that also powers the SBOM (`/api/deps` JSON, `sbom.json`). The server
+resolves the graph at `--serve` start (best-effort; an unresolvable graph
+shows an empty state with a link to `/api/deps`).
+
+- Collapsible tree via `<details>` (root open, children closed); **Expand
+  all / Collapse all** buttons.
+- **Filter** input (client-side, case-insensitive by name) hides non-matching
+  nodes.
+- Scope badges: `base` (alire.toml), `dev` (alire-dev.toml only),
+  `transitive`, `vendored`; `root` badge for the project itself; child count
+  badge.
+- Each node shows `name`, `version`, `license`, `purl` when available.
+
+The same data is available headlessly at `/api/deps` and via
+`--emit-metrics=PATH` (`{"metrics":..., "dependencies":...}`).
 
 ### Metrics charts
 
-Below the metric cards, the dashboard renders a **charts section** using
-the vendored [Charts.css](https://chartscss.org/) framework (v1.2.0, MIT,
-inlined into the page shell so the page stays self-contained):
+The **Charts** tab renders four cards using the vendored
+[Charts.css](https://chartscss.org/) framework (v1.2.0, MIT, inlined into the
+page shell so the page stays self-contained). Bars now use correct `0..1`
+`--size` fractions (previously `0..100` caused overflow) and the donut shows
+proved vs *unproved* slices (previously proved vs total duplicated the proved
+arc):
 
-- **SPARK Proof** -- a donut of proved vs total verification conditions.
-- **Proof Check Types** -- a column chart of proved/failed checks per
-  category (flow, init, runtime, assertions, functional).
-- **Test Results by Category** -- a bar chart of the test counts per
-  category.
-- **Docstring Coverage** -- a bar chart of documented subprograms.
+- **SPARK Proof** -- donut of proved vs unproved VCs (`720/720` shows a full
+  proved arc; `680/720` shows `94%` proved + `40` unproved).
+- **Proof Check Types** -- column chart of proved checks per category (flow,
+  init, runtime, assertions, functional), each bar normalised to its category
+  total.
+- **Test Results by Category** -- bar chart of test counts per category
+  (normalised to the largest category; previously every bar was `100%`).
+- **Docstring Coverage** -- bar of documented subprograms vs total.
 
-No JavaScript is required; the charts are pure CSS driven by the same
-`--size` / `--start` / `--end` custom properties, and they follow the
-active light/dark theme automatically.
+No JavaScript is required for the charts themselves; they are pure CSS driven
+by `--size` / `--start` / `--end` and follow the active light/dark theme
+automatically. The surrounding grid (`chart-grid`) is responsive and the page
+container is `max-width:1180px` so large monitors do not stretch cards.
 
 ## Standard-awareness
 

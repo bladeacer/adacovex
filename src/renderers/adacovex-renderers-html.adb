@@ -16,6 +16,21 @@ package body Adacovex.Renderers.HTML is
       return S (2 .. S'Last);
    end Img;
 
+   function Img_Frac (Num : Natural; Den : Natural) return String is
+      --  0..1 fraction with one decimal, e.g. "0.5"
+      P : Natural := 0;
+   begin
+      if Den = 0 then
+         return "0.0";
+      end if;
+      P := (Num * 10) / Den;
+      --  Clamp 10 -> 1.0
+      if P >= 10 then
+         return "1.0";
+      end if;
+      return "0." & Img (P);
+   end Img_Frac;
+
    --  Replace every occurrence of From in S with To (pure string helper).
    function Replace_All (S, From, To : String) return String is
       R : Unbounded_String;
@@ -38,229 +53,30 @@ package body Adacovex.Renderers.HTML is
       return To_String (R);
    end Replace_All;
 
-   function Render_Dashboard
-     (Doc_Metrics   : Types.Docstring_Metrics;
-      Proof         : Types.Proof_Summary;
-      Tests         : Types.Implementation.Test_Summary;
-      DAL_Assess    : Types.Implementation.DAL_Assessment;
-      Packages      : Types.Implementation.Package_Vectors.Vector;
-      All_Standards : Boolean := False;
-      Theme         : Types.Dashboard_Theme := Types.System_Theme)
-      return String
-   is
-      Cards : Unbounded_String;
-
-      procedure Put_Card (S : String) is
-      begin
-         Append (Cards, S);
-      end Put_Card;
-
-      Spark_Color : constant String :=
-        (case Proof.Level is
-           when Types.Platinum => "#E5E4E2",
-           when Types.Gold     => "#FFD700",
-           when Types.Silver   => "#C0C0C0",
-           when Types.Bronze   => "#CD7F32",
-           when Types.Stone    => "#888888");
+   --  Escape HTML special chars in a bounded slice.
+   function Html_Escape (S : String) return String is
+      R : Unbounded_String;
    begin
-      --  Status badges card.
-      Put_Card
-        ("<div class=""card""><h2>Status Badges</h2>"
-         & "<div class=""badge-container"">");
-      Put_Card ("<img src=""/badge/spark.svg"" alt=""SPARK Badge"">");
-      Put_Card ("<img src=""/badge/tests.svg"" alt=""Tests Badge"">");
-      if All_Standards then
-         for Std in Types.Compliance_Standard loop
-            Put_Card ("<img src=""/badge/");
-            Put_Card (Types.Standard_Slug (Std));
-            Put_Card (".svg"" alt=""");
-            Put_Card (Types.To_String (Std));
-            Put_Card (" Badge"">");
-         end loop;
-      else
-         Put_Card ("<img src=""/badge/");
-         Put_Card (Types.Standard_Slug (DAL_Assess.Standard));
-         Put_Card (".svg"" alt=""");
-         Put_Card (Types.To_String (DAL_Assess.Standard));
-         Put_Card (" Badge"">");
-      end if;
-      Put_Card ("</div></div>");
+      for I in S'Range loop
+         case S (I) is
+            when '&'    =>
+               Append (R, "&amp;");
 
-      --  Source overview card.
-      Put_Card ("<div class=""card""><h2>Source Overview</h2>");
-      Put_Card ("<table><tr><th>Metric</th><th>Value</th></tr>");
-      Put_Card ("<tr><td>Packages Scanned</td><td>");
-      Put_Card (Img (Natural (Packages.Length)));
-      Put_Card ("</td></tr>");
-      Put_Card ("<tr><td>Total Subprograms</td><td>");
-      Put_Card (Img (Doc_Metrics.Total_Subprograms));
-      Put_Card ("</td></tr>");
-      Put_Card ("<tr><td>Docstring Coverage</td><td>");
-      Put_Card (Img (Doc_Metrics.Coverage_Pct));
-      Put_Card ("%</td></tr></table></div>");
+            when '<'    =>
+               Append (R, "&lt;");
 
-      --  SPARK proof analysis card.
-      Put_Card ("<div class=""card""><h2>SPARK Proof Analysis</h2>");
-      Put_Card
-        ("<table><tr><th>Check Type</th><th>Total</th><th>Proved</th></tr>");
-      Put_Card
-        ("<tr><td>Level</td><td colspan=""2"" class=""spark"" style=""color:");
-      Put_Card (Spark_Color);
-      Put_Card (""">");
-      Put_Card (Types.To_String (Proof.Level));
-      Put_Card ("</td></tr>");
-      Put_Card ("<tr><td>Flow</td><td>");
-      Put_Card (Img (Proof.Flow_Checks));
-      Put_Card ("</td><td>");
-      Put_Card (Img (Proof.Flow_Proved));
-      Put_Card ("</td></tr>");
-      Put_Card ("<tr><td>Initialization</td><td>");
-      Put_Card (Img (Proof.Init_Checks));
-      Put_Card ("</td><td>");
-      Put_Card (Img (Proof.Init_Proved));
-      Put_Card ("</td></tr>");
-      Put_Card ("<tr><td>Runtime</td><td>");
-      Put_Card (Img (Proof.Runtime_Checks));
-      Put_Card ("</td><td>");
-      Put_Card (Img (Proof.Runtime_Proved));
-      Put_Card ("</td></tr>");
-      Put_Card ("<tr><td>Assertions</td><td>");
-      Put_Card (Img (Proof.Assertions));
-      Put_Card ("</td><td>");
-      Put_Card (Img (Proof.Assert_Proved));
-      Put_Card ("</td></tr>");
-      Put_Card ("<tr><td>Functional</td><td>");
-      Put_Card (Img (Proof.Functional_Ct));
-      Put_Card ("</td><td>");
-      Put_Card (Img (Proof.Functional_Proved));
-      Put_Card ("</td></tr>");
-      Put_Card ("<tr><td>Total VCs</td><td>");
-      Put_Card (Img (Proof.Total_VCs));
-      Put_Card ("</td><td>");
-      Put_Card (Img (Proof.Proved_VCs));
-      Put_Card ("</td></tr></table></div>");
+            when '>'    =>
+               Append (R, "&gt;");
 
-      --  Test results card.
-      Put_Card ("<div class=""card""><h2>Test Results</h2>");
-      Put_Card
-        ("<table><tr><th>Category</th><th>Tests</th><th>Status</th></tr>");
-      for C in 1 .. Integer (Tests.Categories.Length) loop
-         Put_Card ("<tr><td>");
-         Put_Card
-           (Tests.Categories (C).Category (1 .. Tests.Categories (C).Cat_Len));
-         Put_Card ("</td><td>");
-         Put_Card (Img (Tests.Categories (C).Test_Count));
-         Put_Card ("</td><td class=""");
-         Put_Card
-           (if Tests.Categories (C).Status = Types.Pass
-            then "pass"
-            else "fail");
-         Put_Card (""">");
-         Put_Card (Types.To_String (Tests.Categories (C).Status));
-         Put_Card ("</td></tr>");
+            when '"'    =>
+               Append (R, "&quot;");
+
+            when others =>
+               Append (R, S (I .. I));
+         end case;
       end loop;
-      Put_Card ("<tr><td><strong>Total</strong></td><td><strong>");
-      Put_Card (Img (Tests.Total_Passed + Tests.Total_Failed));
-      Put_Card ("</strong></td><td><strong class=""");
-      Put_Card (if Tests.Total_Failed = 0 then "pass" else "fail");
-      Put_Card (""">Passed: ");
-      Put_Card (Img (Tests.Total_Passed));
-      Put_Card (", Failed: ");
-      Put_Card (Img (Tests.Total_Failed));
-      Put_Card ("</strong></td></tr></table></div>");
-
-      --  Compliance card (single standard or all standards at the tier).
-      Put_Card ("<div class=""card"">");
-      if All_Standards then
-         Put_Card ("<h2>Compliance (all standards)</h2>");
-      else
-         Put_Card ("<h2>");
-         Put_Card (Types.To_String (DAL_Assess.Standard));
-         Put_Card (" Compliance</h2>");
-      end if;
-      Put_Card ("<table><tr><th>Criterion</th><th>Status</th></tr>");
-      if All_Standards then
-         for Std in Types.Compliance_Standard loop
-            Put_Card ("<tr><td>");
-            Put_Card (Types.To_String (Std));
-            Put_Card (" level</td><td class=""");
-            Put_Card
-              (if DAL_Assess.Status = Types.Achieved then "pass" else "fail");
-            Put_Card (""">");
-            Put_Card (Types.Standard_Level_Name (Std, DAL_Assess.Target_DAL));
-            Put_Card (" (");
-            Put_Card (Types.To_String (DAL_Assess.Status));
-            Put_Card (")</td></tr>");
-         end loop;
-      else
-         Put_Card ("<tr><td>Target level</td><td>");
-         Put_Card
-           (Types.Standard_Level_Name
-              (DAL_Assess.Standard, DAL_Assess.Target_DAL));
-         Put_Card ("</td></tr>");
-         Put_Card ("<tr><td>Overall Status</td><td class=""");
-         Put_Card
-           (if DAL_Assess.Status = Types.Achieved then "pass" else "fail");
-         Put_Card (""">");
-         Put_Card (Types.To_String (DAL_Assess.Status));
-         Put_Card ("</td></tr>");
-      end if;
-      Put_Card ("<tr><td>HLR Traced</td><td>");
-      Put_Card (Img (DAL_Assess.HLR_Found));
-      Put_Card (" / ");
-      Put_Card (Img (DAL_Assess.HLR_Total));
-      Put_Card ("</td></tr>");
-      Put_Card ("<tr><td>Orphan Tags</td><td>");
-      Put_Card (if DAL_Assess.Orphan_Tags then "Yes" else "No");
-      Put_Card ("</td></tr>");
-      Put_Card ("<tr><td>Tests Passing</td><td>");
-      Put_Card (if DAL_Assess.Tests_Passing then "Yes" else "No");
-      Put_Card ("</td></tr>");
-      if not DAL_Assess.Failed_Reasons.Is_Empty then
-         for R in 1 .. Integer (DAL_Assess.Failed_Reasons.Length) loop
-            Put_Card ("<tr><td>Failure</td><td class=""fail"">");
-            Put_Card (DAL_Assess.Failed_Reasons (R));
-            Put_Card ("</td></tr>");
-         end loop;
-      end if;
-      Put_Card ("</table></div>");
-
-      --  HLR traceability card.
-      Put_Card ("<div class=""card""><h2>HLR Traceability</h2>");
-      Put_Card ("<table><tr><th>Package</th><th>HLR Tags</th></tr>");
-      for P in 1 .. Integer (Packages.Length) loop
-         if not Packages (P).HLR_Tags.Is_Empty then
-            Put_Card ("<tr><td>");
-            Put_Card (Packages (P).Name (1 .. Packages (P).Name_Len));
-            Put_Card ("</td><td>");
-            for T in 1 .. Integer (Packages (P).HLR_Tags.Length) loop
-               if T > 1 then
-                  Put_Card (", ");
-               end if;
-               Put_Card
-                 (Packages (P).HLR_Tags (T).Tag
-                    (1 .. Packages (P).HLR_Tags (T).Len));
-            end loop;
-            Put_Card ("</td></tr>");
-         end if;
-      end loop;
-      Put_Card ("</table></div>");
-
-      --  Inject the cards + chart cards into the bundled page shell and set
-      --  the initial theme marker (read by the theme script as the CLI
-      --  preference).
-      return
-        Replace_All
-          (Replace_All
-             (Replace_All
-                (Adacovex.Dashboard_Template.Template,
-                 "__CARDS__",
-                 To_String (Cards)),
-              "__CHARTS__",
-              Render_Charts (Doc_Metrics, Proof, Tests)),
-           "__THEME__",
-           Types.To_String (Theme));
-   end Render_Dashboard;
+      return To_String (R);
+   end Html_Escape;
 
    --  Percentage of N in M, rounded down, clamped to 0..100.  Chart sizes
    --  are unitless 0..1 fractions: divide by 100.
@@ -284,7 +100,7 @@ package body Adacovex.Renderers.HTML is
          Append (R, S);
       end Put;
 
-      --  A single pie/donut slice: label + start/end (x100) + value.
+      --  A single pie/donut slice: label + start/end (0..100) + value.
       procedure Slice_Row
         (Label : String; Start, Finish : Natural; Value : Natural) is
       begin
@@ -299,83 +115,115 @@ package body Adacovex.Renderers.HTML is
          Put ("</span></td></tr>");
       end Slice_Row;
 
-      --  A single bar row: label + size fraction (0..100) + value.
-      procedure Bar_Row (Label : String; Fraction : Natural; Value : Natural)
-      is
+      --  A single bar/column row: label + size fraction 0..1 + value.
+      procedure Bar_Row
+        (Label : String; Part : Natural; Total : Natural; Value : Natural) is
       begin
          Put ("<tr><th scope=""row"">");
-         Put (Label);
+         Put (Html_Escape (Label));
          Put ("</th><td style=""--size:");
-         Put (Img (Fraction));
-         Put (".0""><span class=""data"">");
+         if Total = 0 then
+            Put ("0.0");
+         else
+            Put (Img_Frac (Part, Total));
+         end if;
+         Put ("""><span class=""data"">");
          Put (Img (Value));
          Put ("</span></td></tr>");
       end Bar_Row;
    begin
-      --  SPARK proof donut (proved + total slices fill the circle)
+      --  SPARK proof donut: proved vs unproved (not total) so circle always sums to 100
       Put ("<div class=""chart-card""><h3>SPARK Proof</h3>");
       Put ("<table class=""charts-css donut show-labels"">");
       Put ("<caption>SPARK proof progress</caption><tbody>");
       if Proof.Total_VCs > 0 then
          declare
+            U : constant Natural := Proof.Total_VCs - Proof.Proved_VCs;
             P : constant Natural := Pct (Proof.Proved_VCs, Proof.Total_VCs);
          begin
             Slice_Row ("Proved", 0, P, Proof.Proved_VCs);
-            Slice_Row ("Total", P, 100, Proof.Total_VCs);
+            if U > 0 then
+               Slice_Row ("Unproved", P, 100, U);
+            end if;
          end;
       else
          Slice_Row ("No VCs", 0, 100, 0);
       end if;
-      Put ("</tbody></table></div>");
+      Put ("</tbody></table>");
+      Put ("<p style=""color:var(--muted);font-size:.82rem;margin:6px 0 0"">");
+      Put
+        (Img (Proof.Proved_VCs)
+         & " / "
+         & Img (Proof.Total_VCs)
+         & " VCs proved");
+      Put ("</p></div>");
 
-      --  Proof categories column
+      --  Proof categories column (proved vs total per category)
       Put ("<div class=""chart-card""><h3>Proof Check Types</h3>");
       Put
         ("<table class=""charts-css column show-labels show-primary-axis"">");
       Put ("<caption>Proved checks by category</caption><tbody>");
       Bar_Row
-        ("Flow",
-         Pct (Proof.Flow_Proved, Proof.Flow_Checks),
-         Proof.Flow_Proved);
+        ("Flow", Proof.Flow_Proved, Proof.Flow_Checks, Proof.Flow_Proved);
       Bar_Row
-        ("Init",
-         Pct (Proof.Init_Proved, Proof.Init_Checks),
-         Proof.Init_Proved);
+        ("Init", Proof.Init_Proved, Proof.Init_Checks, Proof.Init_Proved);
       Bar_Row
         ("Runtime",
-         Pct (Proof.Runtime_Proved, Proof.Runtime_Checks),
+         Proof.Runtime_Proved,
+         Proof.Runtime_Checks,
          Proof.Runtime_Proved);
       Bar_Row
-        ("Assert",
-         Pct (Proof.Assert_Proved, Proof.Assertions),
-         Proof.Assert_Proved);
+        ("Assert", Proof.Assert_Proved, Proof.Assertions, Proof.Assert_Proved);
       Bar_Row
         ("Functional",
-         Pct (Proof.Functional_Proved, Proof.Functional_Ct),
+         Proof.Functional_Proved,
+         Proof.Functional_Ct,
          Proof.Functional_Proved);
       Put ("</tbody></table></div>");
 
-      --  Test categories bar
+      --  Test categories bar (each category as its own row, normalized by max)
       Put ("<div class=""chart-card""><h3>Test Results by Category</h3>");
       Put ("<table class=""charts-css bar show-labels"">");
       Put ("<caption>Test counts by category</caption><tbody>");
-      for C in 1 .. Integer (Tests.Categories.Length) loop
+      if Tests.Categories.Is_Empty then
+         Bar_Row ("No categories", 0, 1, 0);
+      else
          declare
-            Cat : Types.Test_Metrics renames Tests.Categories (C);
+            Max_Ct : Natural := 1;
          begin
-            Bar_Row (Cat.Category (1 .. Cat.Cat_Len), 100, Cat.Test_Count);
+            for C in 1 .. Integer (Tests.Categories.Length) loop
+               if Tests.Categories (C).Test_Count > Max_Ct then
+                  Max_Ct := Tests.Categories (C).Test_Count;
+               end if;
+            end loop;
+            for C in 1 .. Integer (Tests.Categories.Length) loop
+               declare
+                  Cat : Types.Test_Metrics renames Tests.Categories (C);
+               begin
+                  Bar_Row
+                    (Cat.Category (1 .. Cat.Cat_Len),
+                     Cat.Test_Count,
+                     Max_Ct,
+                     Cat.Test_Count);
+               end;
+            end loop;
          end;
-      end loop;
+      end if;
       Put ("</tbody></table></div>");
 
       --  Docstring coverage bar
       Put ("<div class=""chart-card""><h3>Docstring Coverage</h3>");
       Put ("<table class=""charts-css bar show-labels"">");
       Put ("<caption>Documented subprograms</caption><tbody>");
-      Bar_Row
-        ("Documented",
-         Doc_Metrics.Coverage_Pct,
-         Doc_Metrics.Documented_Subprogs);
+      if Doc_Metrics.Total_Subprograms = 0 then
+         Bar_Row ("No subprograms", 0, 1, 0);
+      else
+         Bar_Row
+           ("Documented",
+            Doc_Metrics.Documented_Subprogs,
+            Doc_Metrics.Total_Subprograms,
+            Doc_Metrics.Documented_Subprogs);
+      end if;
       Put ("</tbody></table></div>");
 
       return To_String (R);
@@ -412,6 +260,516 @@ package body Adacovex.Renderers.HTML is
       end loop;
       return To_String (R);
    end Json_Escape;
+
+   function Render_Deps_HTML
+     (Graph : Types.Implementation.Component_Vectors.Vector) return String
+   is
+      R : Unbounded_String;
+
+      procedure Put (S : String) is
+      begin
+         Append (R, S);
+      end Put;
+
+      function Scope_Class (S : Types.Component_Scope) return String is
+      begin
+         return
+           (case S is
+              when Types.Scope_Base       => "scope-base",
+              when Types.Scope_Dev        => "scope-dev",
+              when Types.Scope_Transitive => "scope-transitive",
+              when Types.Scope_Vendored   => "scope-vendored");
+      end Scope_Class;
+
+      --  Count direct children of node Idx
+      function Child_Count (Idx : Positive) return Natural is
+         C : Natural := 0;
+      begin
+         for J in 1 .. Integer (Graph.Length) loop
+            if Graph (J).Parent = Idx then
+               C := C + 1;
+            end if;
+         end loop;
+         return C;
+      end Child_Count;
+
+      procedure Render_Node (Idx : Positive; Depth : Natural) is
+         Info         : Types.Implementation.Component_Info renames
+           Graph (Idx);
+         Has_Children : constant Boolean := Child_Count (Idx) > 0;
+      begin
+         Put
+           ("<li class=""dep-node"" data-name="""
+            & Html_Escape (Info.Name (1 .. Info.Name_Len))
+            & """>");
+         if Has_Children then
+            Put ("<details");
+            if Depth < 1 then
+               Put (" open");
+            end if;
+            Put (">");
+            Put ("<summary>");
+         else
+            Put
+              ("<div style=""border:1px solid var(--border);"
+               & "border-radius:8px;background:var(--card);"
+               & "padding:6px 8px;display:flex;align-items:center;"
+               & "gap:8px;flex-wrap:wrap"">");
+         end if;
+
+         Put
+           ("<strong>"
+            & Html_Escape (Info.Name (1 .. Info.Name_Len))
+            & "</strong>");
+         if Info.Version_Len > 0 then
+            Put
+              ("<span class=""dep-badge"">"
+               & Html_Escape (Info.Version (1 .. Info.Version_Len))
+               & "</span>");
+         end if;
+         Put
+           ("<span class=""dep-badge "
+            & Scope_Class (Info.Scope)
+            & """>"
+            & Scope_Name (Info.Scope)
+            & "</span>");
+         if Info.Kind = Types.Root_Component then
+            Put ("<span class=""dep-badge"">root</span>");
+         end if;
+         if Child_Count (Idx) > 0 then
+            Put
+              ("<span class=""dep-badge"">"
+               & Img (Child_Count (Idx))
+               & " deps</span>");
+         end if;
+         if Info.License_Len > 0 then
+            Put
+              ("<span class=""dep-meta"">"
+               & Html_Escape (Info.License (1 .. Info.License_Len))
+               & "</span>");
+         end if;
+         if Info.PURL_Len > 0 then
+            Put
+              ("<span class=""dep-meta"" title=""PURL"">"
+               & Html_Escape (Info.PURL (1 .. Info.PURL_Len))
+               & "</span>");
+         end if;
+
+         if Has_Children then
+            Put ("</summary>");
+         else
+            Put ("</div>");
+         end if;
+
+         if Has_Children then
+            Put ("<ul>");
+            for J in 1 .. Integer (Graph.Length) loop
+               if Graph (J).Parent = Idx then
+                  Render_Node (J, Depth + 1);
+               end if;
+            end loop;
+            Put ("</ul>");
+            Put ("</details>");
+         end if;
+         Put ("</li>");
+      end Render_Node;
+
+   begin
+      if Graph.Is_Empty then
+         return
+           "<div class=""card""><p class=""dep-empty"">No dependencies resolved. "
+           & "Add an <code>alire.toml</code> or check <code>--manifest</code>. "
+           & "Raw data at <a href=""/api/deps"">/api/deps</a>.</p></div>";
+      end if;
+
+      Put ("<div class=""card"">");
+      Put ("<h2>Dependency Graph</h2>");
+      Put
+        ("<p style=""color:var(--muted);font-size:.85rem;margin:4px 0 8px"">"
+         & Img (Natural (Graph.Length))
+         & " components &middot; "
+         & "<a href=""/api/deps"">/api/deps JSON</a> &middot; "
+         & "<a href=""/api/metrics"">/api/metrics</a></p>");
+      Put ("<div class=""dep-toolbar"">");
+      Put
+        ("<input id=""dep-filter"" type=""search"" "
+         & "placeholder=""Filter by name (e.g. gnatprove)"" "
+         & "aria-label=""Filter dependencies"">");
+      Put
+        ("<button class=""theme-toggle"" onclick=""expandDeps(true)"">Expand all</button>");
+      Put
+        ("<button class=""theme-toggle"" onclick=""expandDeps(false)"">Collapse all</button>");
+      Put ("</div>");
+      Put ("<div class=""dep-tree""><ul>");
+      --  Render roots (Parent=0 or index 1)
+      declare
+         Roots_Found : Boolean := False;
+      begin
+         for I in 1 .. Integer (Graph.Length) loop
+            if Graph (I).Parent = 0 then
+               Render_Node (I, 0);
+               Roots_Found := True;
+            end if;
+         end loop;
+         if not Roots_Found then
+            --  Fallback: render index 1 as root
+            Render_Node (1, 0);
+         end if;
+      end;
+      Put ("</ul></div>");
+      Put ("</div>");
+      return To_String (R);
+   end Render_Deps_HTML;
+
+   --  Shared tabbed dashboard builder.
+   function Render_Dashboard_Internal
+     (Doc_Metrics   : Types.Docstring_Metrics;
+      Proof         : Types.Proof_Summary;
+      Tests         : Types.Implementation.Test_Summary;
+      DAL_Assess    : Types.Implementation.DAL_Assessment;
+      Packages      : Types.Implementation.Package_Vectors.Vector;
+      Graph         : Types.Implementation.Component_Vectors.Vector;
+      All_Standards : Boolean;
+      Theme         : Types.Dashboard_Theme) return String
+   is
+      Overview : Unbounded_String;
+      Proof_S  : Unbounded_String;
+      Tests_S  : Unbounded_String;
+      Compl    : Unbounded_String;
+      HLR_S    : Unbounded_String;
+
+      procedure Put_O (S : String) is
+      begin
+         Append (Overview, S);
+      end Put_O;
+      procedure Put_P (S : String) is
+      begin
+         Append (Proof_S, S);
+      end Put_P;
+      procedure Put_T (S : String) is
+      begin
+         Append (Tests_S, S);
+      end Put_T;
+      procedure Put_C (S : String) is
+      begin
+         Append (Compl, S);
+      end Put_C;
+      procedure Put_H (S : String) is
+      begin
+         Append (HLR_S, S);
+      end Put_H;
+
+      Spark_Color : constant String :=
+        (case Proof.Level is
+           when Types.Platinum => "#E5E4E2",
+           when Types.Gold     => "#FFD700",
+           when Types.Silver   => "#C0C0C0",
+           when Types.Bronze   => "#CD7F32",
+           when Types.Stone    => "#888888");
+   begin
+      --  Overview tab: badges + source overview
+      Put_O
+        ("<div class=""card""><h2>Status Badges</h2>"
+         & "<div class=""badge-container"">");
+      Put_O ("<img src=""/badge/spark.svg"" alt=""SPARK Badge"">");
+      Put_O ("<img src=""/badge/tests.svg"" alt=""Tests Badge"">");
+      if All_Standards then
+         for Std in Types.Compliance_Standard loop
+            Put_O ("<img src=""/badge/");
+            Put_O (Types.Standard_Slug (Std));
+            Put_O (".svg"" alt=""");
+            Put_O (Types.To_String (Std));
+            Put_O (" Badge"">");
+         end loop;
+      else
+         Put_O ("<img src=""/badge/");
+         Put_O (Types.Standard_Slug (DAL_Assess.Standard));
+         Put_O (".svg"" alt=""");
+         Put_O (Types.To_String (DAL_Assess.Standard));
+         Put_O (" Badge"">");
+      end if;
+      Put_O
+        ("</div><p style=""color:var(--muted);font-size:.82rem;"
+         & "margin:8px 0 0"">Badges refresh from "
+         & "<code>/badge/*.svg</code> endpoints.</p></div>");
+
+      Put_O ("<div class=""tab-grid"">");
+      Put_O ("<div class=""card""><h2>Source Overview</h2>");
+      Put_O ("<table><tr><th>Metric</th><th>Value</th></tr>");
+      Put_O ("<tr><td>Packages Scanned</td><td>");
+      Put_O (Img (Natural (Packages.Length)));
+      Put_O ("</td></tr>");
+      Put_O ("<tr><td>Total Subprograms</td><td>");
+      Put_O (Img (Doc_Metrics.Total_Subprograms));
+      Put_O ("</td></tr>");
+      Put_O ("<tr><td>Docstring Coverage</td><td>");
+      Put_O (Img (Doc_Metrics.Coverage_Pct));
+      Put_O ("%</td></tr></table></div>");
+
+      Put_O ("<div class=""card""><h2>Quick Stats</h2><table>");
+      Put_O
+        ("<tr><td>SPARK Level</td><td class=""spark"" style=""color:"
+         & Spark_Color
+         & """>");
+      Put_O (Types.To_String (Proof.Level) & "</td></tr>");
+      Put_O
+        ("<tr><td>VCs Proved</td><td>"
+         & Img (Proof.Proved_VCs)
+         & " / "
+         & Img (Proof.Total_VCs)
+         & "</td></tr>");
+      Put_O
+        ("<tr><td>Tests</td><td>"
+         & Img (Tests.Total_Passed)
+         & " passed, "
+         & Img (Tests.Total_Failed)
+         & " failed</td></tr>");
+      Put_O
+        ("<tr><td>Compliance</td><td class="""
+         & (if DAL_Assess.Status = Types.Achieved then "pass" else "fail")
+         & """>"
+         & Types.To_String (DAL_Assess.Status)
+         & "</td></tr>");
+      Put_O
+        ("<tr><td>Dependencies</td><td>"
+         & Img (Natural (Graph.Length))
+         & " components</td></tr>");
+      Put_O ("</table></div>");
+      Put_O ("</div>");
+
+      --  Proof tab
+      Put_P ("<div class=""card""><h2>SPARK Proof Analysis</h2>");
+      Put_P
+        ("<table><tr><th>Check Type</th><th>Total</th><th>Proved</th></tr>");
+      Put_P
+        ("<tr><td>Level</td><td colspan=""2"" class=""spark"" style=""color:");
+      Put_P (Spark_Color);
+      Put_P (""">");
+      Put_P (Types.To_String (Proof.Level));
+      Put_P ("</td></tr>");
+      Put_P ("<tr><td>Flow</td><td>");
+      Put_P (Img (Proof.Flow_Checks));
+      Put_P ("</td><td>");
+      Put_P (Img (Proof.Flow_Proved));
+      Put_P ("</td></tr>");
+      Put_P ("<tr><td>Initialization</td><td>");
+      Put_P (Img (Proof.Init_Checks));
+      Put_P ("</td><td>");
+      Put_P (Img (Proof.Init_Proved));
+      Put_P ("</td></tr>");
+      Put_P ("<tr><td>Runtime</td><td>");
+      Put_P (Img (Proof.Runtime_Checks));
+      Put_P ("</td><td>");
+      Put_P (Img (Proof.Runtime_Proved));
+      Put_P ("</td></tr>");
+      Put_P ("<tr><td>Assertions</td><td>");
+      Put_P (Img (Proof.Assertions));
+      Put_P ("</td><td>");
+      Put_P (Img (Proof.Assert_Proved));
+      Put_P ("</td></tr>");
+      Put_P ("<tr><td>Functional</td><td>");
+      Put_P (Img (Proof.Functional_Ct));
+      Put_P ("</td><td>");
+      Put_P (Img (Proof.Functional_Proved));
+      Put_P ("</td></tr>");
+      Put_P ("<tr><td>Total VCs</td><td>");
+      Put_P (Img (Proof.Total_VCs));
+      Put_P ("</td><td>");
+      Put_P (Img (Proof.Proved_VCs));
+      Put_P ("</td></tr></table></div>");
+
+      --  Tests tab
+      Put_T ("<div class=""card""><h2>Test Results</h2>");
+      Put_T ("<table><tr><th>Category</th><th>Tests</th><th>Status</th></tr>");
+      for C in 1 .. Integer (Tests.Categories.Length) loop
+         Put_T ("<tr><td>");
+         Put_T
+           (Html_Escape
+              (Tests.Categories (C).Category
+                 (1 .. Tests.Categories (C).Cat_Len)));
+         Put_T ("</td><td>");
+         Put_T (Img (Tests.Categories (C).Test_Count));
+         Put_T ("</td><td class=""");
+         Put_T
+           (if Tests.Categories (C).Status = Types.Pass
+            then "pass"
+            else "fail");
+         Put_T (""">");
+         Put_T (Types.To_String (Tests.Categories (C).Status));
+         Put_T ("</td></tr>");
+      end loop;
+      Put_T ("<tr><td><strong>Total</strong></td><td><strong>");
+      Put_T (Img (Tests.Total_Passed + Tests.Total_Failed));
+      Put_T ("</strong></td><td><strong class=""");
+      Put_T (if Tests.Total_Failed = 0 then "pass" else "fail");
+      Put_T (""">Passed: ");
+      Put_T (Img (Tests.Total_Passed));
+      Put_T (", Failed: ");
+      Put_T (Img (Tests.Total_Failed));
+      Put_T ("</strong></td></tr></table></div>");
+
+      --  Compliance tab
+      Put_C ("<div class=""card"">");
+      if All_Standards then
+         Put_C ("<h2>Compliance (all standards)</h2>");
+      else
+         Put_C ("<h2>");
+         Put_C (Types.To_String (DAL_Assess.Standard));
+         Put_C (" Compliance</h2>");
+      end if;
+      Put_C ("<table><tr><th>Criterion</th><th>Status</th></tr>");
+      if All_Standards then
+         for Std in Types.Compliance_Standard loop
+            Put_C ("<tr><td>");
+            Put_C (Types.To_String (Std));
+            Put_C (" level</td><td class=""");
+            Put_C
+              (if DAL_Assess.Status = Types.Achieved then "pass" else "fail");
+            Put_C (""">");
+            Put_C (Types.Standard_Level_Name (Std, DAL_Assess.Target_DAL));
+            Put_C (" (");
+            Put_C (Types.To_String (DAL_Assess.Status));
+            Put_C (")</td></tr>");
+         end loop;
+      else
+         Put_C ("<tr><td>Target level</td><td>");
+         Put_C
+           (Types.Standard_Level_Name
+              (DAL_Assess.Standard, DAL_Assess.Target_DAL));
+         Put_C ("</td></tr>");
+         Put_C ("<tr><td>Overall Status</td><td class=""");
+         Put_C (if DAL_Assess.Status = Types.Achieved then "pass" else "fail");
+         Put_C (""">");
+         Put_C (Types.To_String (DAL_Assess.Status));
+         Put_C ("</td></tr>");
+      end if;
+      Put_C ("<tr><td>HLR Traced</td><td>");
+      Put_C (Img (DAL_Assess.HLR_Found));
+      Put_C (" / ");
+      Put_C (Img (DAL_Assess.HLR_Total));
+      Put_C ("</td></tr>");
+      Put_C ("<tr><td>Orphan Tags</td><td>");
+      Put_C (if DAL_Assess.Orphan_Tags then "Yes" else "No");
+      Put_C ("</td></tr>");
+      Put_C ("<tr><td>Tests Passing</td><td>");
+      Put_C (if DAL_Assess.Tests_Passing then "Yes" else "No");
+      Put_C ("</td></tr>");
+      if not DAL_Assess.Failed_Reasons.Is_Empty then
+         for R in 1 .. Integer (DAL_Assess.Failed_Reasons.Length) loop
+            Put_C ("<tr><td>Failure</td><td class=""fail"">");
+            Put_C (Html_Escape (DAL_Assess.Failed_Reasons (R)));
+            Put_C ("</td></tr>");
+         end loop;
+      end if;
+      Put_C ("</table></div>");
+
+      --  HLR tab content reused in Compliance? Keep separate HLR panel for inclusion
+      Put_H ("<div class=""card""><h2>HLR Traceability</h2>");
+      Put_H ("<table><tr><th>Package</th><th>HLR Tags</th></tr>");
+      declare
+         Any_HLR : Boolean := False;
+      begin
+         for P in 1 .. Integer (Packages.Length) loop
+            if not Packages (P).HLR_Tags.Is_Empty then
+               Any_HLR := True;
+               Put_H ("<tr><td>");
+               Put_H
+                 (Html_Escape
+                    (Packages (P).Name (1 .. Packages (P).Name_Len)));
+               Put_H ("</td><td>");
+               for T in 1 .. Integer (Packages (P).HLR_Tags.Length) loop
+                  if T > 1 then
+                     Put_H (", ");
+                  end if;
+                  Put_H
+                    (Html_Escape
+                       (Packages (P).HLR_Tags (T).Tag
+                          (1 .. Packages (P).HLR_Tags (T).Len)));
+               end loop;
+               Put_H ("</td></tr>");
+            end if;
+         end loop;
+         if not Any_HLR then
+            Put_H
+              ("<tr><td colspan=""2"" style=""color:var(--muted)"">No HLR tags found</td></tr>");
+         end if;
+      end;
+      Put_H ("</table></div>");
+
+      --  Blend HLR into compliance tab as extra card
+      Append (Compl, To_String (HLR_S));
+
+      return
+        Replace_All
+          (Replace_All
+             (Replace_All
+                (Replace_All
+                   (Replace_All
+                      (Replace_All
+                         (Replace_All
+                            (Adacovex.Dashboard_Template.Template,
+                             "__OVERVIEW__",
+                             To_String (Overview)),
+                          "__PROOF__",
+                          To_String (Proof_S)),
+                       "__TESTS__",
+                       To_String (Tests_S)),
+                    "__COMPLIANCE__",
+                    To_String (Compl)),
+                 "__DEPS__",
+                 Render_Deps_HTML (Graph)),
+              "__CHARTS__",
+              Render_Charts (Doc_Metrics, Proof, Tests)),
+           "__THEME__",
+           Types.To_String (Theme));
+   end Render_Dashboard_Internal;
+
+   function Render_Dashboard
+     (Doc_Metrics   : Types.Docstring_Metrics;
+      Proof         : Types.Proof_Summary;
+      Tests         : Types.Implementation.Test_Summary;
+      DAL_Assess    : Types.Implementation.DAL_Assessment;
+      Packages      : Types.Implementation.Package_Vectors.Vector;
+      Graph         : Types.Implementation.Component_Vectors.Vector;
+      All_Standards : Boolean := False;
+      Theme         : Types.Dashboard_Theme := Types.System_Theme)
+      return String is
+   begin
+      return
+        Render_Dashboard_Internal
+          (Doc_Metrics,
+           Proof,
+           Tests,
+           DAL_Assess,
+           Packages,
+           Graph,
+           All_Standards,
+           Theme);
+   end Render_Dashboard;
+
+   function Render_Dashboard
+     (Doc_Metrics   : Types.Docstring_Metrics;
+      Proof         : Types.Proof_Summary;
+      Tests         : Types.Implementation.Test_Summary;
+      DAL_Assess    : Types.Implementation.DAL_Assessment;
+      Packages      : Types.Implementation.Package_Vectors.Vector;
+      All_Standards : Boolean := False;
+      Theme         : Types.Dashboard_Theme := Types.System_Theme)
+      return String
+   is
+      Empty : Types.Implementation.Component_Vectors.Vector;
+   begin
+      return
+        Render_Dashboard_Internal
+          (Doc_Metrics,
+           Proof,
+           Tests,
+           DAL_Assess,
+           Packages,
+           Empty,
+           All_Standards,
+           Theme);
+   end Render_Dashboard;
 
    function Render_Deps_JSON
      (Graph : Types.Implementation.Component_Vectors.Vector) return String
