@@ -80,12 +80,17 @@ shows an empty state with a link to `/api/deps`).
 
 **Diagram view** (alternative, toggle **Tree / Diagram**):
 
-- Rendered with vendored [nomnoml 1.7.0](https://github.com/skanaar/nomnoml)
+-  Rendered with vendored [nomnoml 1.7.0](https://github.com/skanaa/nomnoml)
   (MIT, `resources/nomnoml.js`, 71 KB, inlined) in a
   `<canvas id="nomnoml-canvas">` inside a `nomnoml-wrap` card.  `ADACOVEX_GRAPH`
   (`__GRAPH_JSON__` injected by the Ada renderer) is converted to nomnoml
-  source (`[parent]-->[child]` edges, `#direction: right`, legend note) and
-  drawn via `nomnoml.draw(canvas, src)`.  Scope checkboxes filter the diagram
+  source (`[parent]-->[child]` edges, `#direction: down` top-to-bottom so deep
+  graphs stay within the page width, legend note) and drawn via
+  `nomnoml.draw(canvas, src)`.  The diagram reads the page's CSS custom
+  properties (`--card` / `--border` / `--fg`) at draw time and re-renders
+  when the light/dark theme changes, so box/arrow colours always match the
+  active theme; the canvas is sized to the container (max-width) and deep
+  graphs scroll inside `.nomnoml-wrap`.  Scope checkboxes filter the diagram
   too (re-render on change).  Buttons **Re-render** and **Download PNG** are
   provided; the view choice is persisted in `localStorage`
   (`adacovex-dep-view`).
@@ -109,30 +114,33 @@ The same data is available headlessly at `/api/deps` and via
 
 The **Charts** tab renders six cards using the vendored
 [Charts.css](https://chartscss.org/) framework (v1.2.0, MIT, inlined into the
-page shell so the page stays self-contained). Bars now use correct `0..1`
-`--size` fractions (previously `0..100` caused overflow) and the donut shows
-proved vs *unproved* slices (previously proved vs total duplicated the proved
-arc):
+page shell so the page stays self-contained). All values are unitless `0..1`
+`--size` / `--start` / `--end` fractions (previously `0..100` made every pie
+slice a full loop) and the donut shows proved vs *unproved* slices
+(previously proved vs total duplicated the proved arc):
 
-- **SPARK Proof** -- donut of proved vs unproved VCs (`720/720` shows a full
-  proved arc; `680/720` shows `94%` proved + `40` unproved).
-- **Proof Check Types** -- column chart of proved checks per category (flow,
+- **SPARK Proof** -- *donut* of proved vs unproved VCs (`720/720` shows a
+  full proved arc; `680/720` shows `94%` proved + `40` unproved).
+- **Proof Check Types** -- *column* of proved checks per category (flow,
   init, runtime, assertions, functional), each bar normalised to its category
   total.
-- **Test Results by Category** -- bar chart of test counts per category
-  (normalised to the largest category; previously every bar was `100%`).
-- **Docstring Coverage** -- bar of documented subprograms vs total.
-- **Tests Pass/Fail** -- *pie* of passed vs failed tests (new; previously
-  only the bar existed, so a single failure was easy to miss).
-- **Dependencies by Scope** -- *pie* of base / dev / transitive / vendored
-  components from the resolved graph (skipped when the graph is empty).
+- **Test Results by Category** -- *bar* of per-category test counts
+  (normalised to the largest category).
+- **Proof Radar** -- inline SVG radar (spider) of the five check categories.
+  Charts.css 1.2.0 ships no radar drawing rules, so grid rings, axes, the
+  data polygon and labels are drawn directly with integer math and
+  `var(--accent)` fill/stroke, following the active theme.
+- **Tests Pass/Fail** -- *pie* of passed vs failed tests.
+- **Dependencies by Scope** -- *polar ring* of base / dev / transitive /
+  vendored components (conic-gradient + CSS hole, `--scope-*` theme
+  variables) with a legend; skipped when the graph is empty.
 
-No JavaScript is required for the charts themselves; they are pure CSS driven
-by `--size` / `--start` / `--end` and follow the active light/dark theme
-automatically. The surrounding grid (`chart-grid`) is responsive and the page
-container is `max-width:1180px` so large monitors do not stretch cards.  Pies
-are used where a part-to-whole distribution is the point; bars/columns where
-a max-normalised comparison across categories is the point.
+No JavaScript is required for the Charts.css cards (pure CSS); the radar and
+scope ring are inline SVG/CSS and follow the light/dark theme automatically.
+The surrounding grid (`chart-grid`) is responsive and the page container is
+`max-width:1180px` so large monitors do not stretch cards.  Pies/rings are
+used where a part-to-whole distribution is the point; bars/columns where a
+max-normalised comparison across categories is the point.
 
 ## Standard-awareness
 
@@ -150,7 +158,7 @@ assessment without parsing HTML:
 
 ```json
 {"spark_level":"Platinum","total_vcs":720,"proved_vcs":720,
- "tests_passed":886,"tests_failed":0,"doc_coverage":100,
+ "tests_passed":900,"tests_failed":0,"doc_coverage":100,
  "standard":"all","level":"DAL-C","dal_status":"Achieved",
  "standards":{"DO-178C":{"level":"DAL-C","status":"Achieved"},
                "ISO 26262":{"level":"ASIL B","status":"Achieved"},

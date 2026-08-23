@@ -301,6 +301,34 @@ package body Adacovex_SBOM_Tests is
          & ASCII.LF);
    end Make_Sysdep_Fixture;
 
+   --  Fixture with language-agnostic vendored dependencies: an npm
+   --  node_modules tree (shallow, one component per package) and a generic
+   --  vendor/ library whose source files span several languages (the
+   --  directory must become ONE component with a top-3 language summary).
+   procedure Make_Vendored_Fixture is
+      D : constant String := "obj/sbom_vend_fixture";
+   begin
+      Write_File
+        (D & "/alire.toml",
+         "name = ""vendfix"""
+         & ASCII.LF
+         & "version = ""1.0.0"""
+         & ASCII.LF
+         & "project-files = [""vendfix.gpr""]"
+         & ASCII.LF);
+      Write_File
+        (D & "/package.json", "{""name"":""vendfix"",""version"":""1.0.0""}");
+      Write_File
+        (D & "/node_modules/left-pad/package.json",
+         "{""name"":""left-pad"",""version"":""1.3.0""}");
+      Write_File
+        (D & "/node_modules/lodash/package.json",
+         "{""name"":""lodash"",""version"":""4.17.21""}");
+      Write_File (D & "/vendor/mixlib/a.js", "var a = 1;" & ASCII.LF);
+      Write_File (D & "/vendor/mixlib/b.py", "def f(): pass" & ASCII.LF);
+      Write_File (D & "/vendor/mixlib/c.go", "package main" & ASCII.LF);
+   end Make_Vendored_Fixture;
+
    procedure Make_Demo_Graph (Graph : out Component_Vectors.Vector) is
       Root : Component_Info;
       Dep  : Component_Info;
@@ -775,6 +803,63 @@ package body Adacovex_SBOM_Tests is
          R.Check (Success, "escaped-json written");
          R.Check
            (Quotes_Balanced (Read_All (S)), "escaped-json quotes balanced");
+      end;
+
+      --  Language-agnostic vendored discovery: npm packages under
+      --  node_modules (shallow, pkg:npm PURLs, versioned) and a generic
+      --  vendor/ library without a manifest (one component, top-3 language
+      --  summary from source extensions).  Loose files under vendor/ must
+      --  never become components.
+      declare
+         Graph   : Component_Vectors.Vector;
+         Success : Boolean := False;
+         C       : Component_Info;
+      begin
+         Make_Vendored_Fixture;
+         Adacovex.Parsers.Manifest.Build_Dependency_Graph
+           ("obj/sbom_vend_fixture",
+            "obj/sbom_vend_fixture/alire.toml",
+            Graph,
+            Success);
+         R.Check (Success, "vendored fixture graph success");
+         R.Check (Count_Name (Graph, "left-pad") = 1, "left-pad registered");
+         R.Check (Count_Name (Graph, "lodash") = 1, "lodash registered");
+         R.Check (Count_Name (Graph, "mixlib") = 1, "mixlib registered");
+         R.Check
+           (Count_Name (Graph, "a") = 0,
+            "loose vendor files never become components");
+         R.Check
+           (Count_Name (Graph, "vendor") = 0,
+            "vendor root itself is not a component");
+
+         C := Find_Name (Graph, "left-pad");
+         R.Check (C.Scope = Scope_Vendored, "left-pad scope = vendored");
+         R.Check
+           (C.PURL_Len = 22 and C.PURL (1 .. 22) = "pkg:npm/left-pad@1.3.0",
+            "left-pad npm purl with version");
+         R.Check
+           (C.Language_Len = 10 and C.Language (1 .. 10) = "JavaScript",
+            "left-pad language from extension");
+
+         C := Find_Name (Graph, "mixlib");
+         R.Check (C.Scope = Scope_Vendored, "mixlib scope = vendored");
+         R.Check
+           (C.PURL_Len = 18 and C.PURL (1 .. 18) = "pkg:generic/mixlib",
+            "mixlib purl");
+         R.Check
+           (Ada.Strings.Fixed.Index (C.Language (1 .. C.Language_Len), "Go")
+            > 0,
+            "mixlib summary lists Go");
+         R.Check
+           (Ada.Strings.Fixed.Index
+              (C.Language (1 .. C.Language_Len), "Python")
+            > 0,
+            "mixlib summary lists Python");
+         R.Check
+           (Ada.Strings.Fixed.Index
+              (C.Language (1 .. C.Language_Len), "JavaScript")
+            > 0,
+            "mixlib summary lists JavaScript");
       end;
    end Run;
 

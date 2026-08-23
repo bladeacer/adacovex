@@ -506,6 +506,12 @@ package body Adacovex.Renderers.SBOM is
       if C.Version_Len > 0 then
          Fld ("version", C.Version (1 .. C.Version_Len), True);
       end if;
+      if C.Language_Len > 0 then
+         --  CycloneDX component language (e.g. "JavaScript"); adacovex
+         --  detects the top languages of the component's sources from file
+         --  extensions (top 3 for mixed-language trees).
+         Fld ("language", C.Language (1 .. C.Language_Len), True);
+      end if;
       if C.PURL_Len > 0 then
          Fld ("purl", C.PURL (1 .. C.PURL_Len), True);
       end if;
@@ -804,6 +810,11 @@ package body Adacovex.Renderers.SBOM is
          Raw (F, Scope_Property (C.Scope));
          Raw (F, """");
       end if;
+      if C.Language_Len > 0 then
+         Raw (F, ", ""adacovex:language=");
+         Raw (F, C.Language (1 .. C.Language_Len));
+         Raw (F, """");
+      end if;
       Raw (F, "]");
       NL (F);
       Raw (F, "    }");
@@ -978,6 +989,12 @@ package body Adacovex.Renderers.SBOM is
          Raw (F, " |");
          NL (F);
       end if;
+      if Root.Language_Len > 0 then
+         Raw (F, "| Language | ");
+         Raw (F, Root.Language (1 .. Root.Language_Len));
+         Raw (F, " |");
+         NL (F);
+      end if;
       Raw (F, "| adacovex:proof_level | ");
       Raw (F, Proof_Level);
       Raw (F, " |");
@@ -1006,10 +1023,11 @@ package body Adacovex.Renderers.SBOM is
          NL (F);
          Raw
            (F,
-            "| Component | Version | License | PURL | Scope | adacovex:proof_level");
+            "| Component | Version | Language | License | PURL | Scope | "
+            & "adacovex:proof_level");
          Raw (F, " |");
          NL (F);
-         Raw (F, "|---|---|---|---|---|---");
+         Raw (F, "|---|---|---|---|---|---|---");
          Raw (F, "|");
          NL (F);
          for I in 2 .. Integer (Graph.Length) loop
@@ -1021,6 +1039,10 @@ package body Adacovex.Renderers.SBOM is
                Raw (F, " | ");
                if C.Version_Len > 0 then
                   Raw (F, C.Version (1 .. C.Version_Len));
+               end if;
+               Raw (F, " | ");
+               if C.Language_Len > 0 then
+                  Raw (F, C.Language (1 .. C.Language_Len));
                end if;
                Raw (F, " | ");
                if C.License_Len > 0 then

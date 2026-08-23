@@ -655,7 +655,8 @@ package body Adacovex.Parsers.Manifest is
       PURL     : String;
       Parent   : Natural;
       From_GPR : Boolean;
-      Scope    : Types.Component_Scope)
+      Scope    : Types.Component_Scope;
+      Language : String := "")
    is
       C : Types.Implementation.Component_Info;
    begin
@@ -668,6 +669,7 @@ package body Adacovex.Parsers.Manifest is
       Set_Path (C.Description, C.Description_Len, Desc);
       Set_Path (C.PURL, C.PURL_Len, PURL);
       Set_Path (C.Ref, C.Ref_Len, PURL);
+      Set_Field (C.Language, C.Language_Len, Language);
       C.Kind := Types.Dependency_Component;
       C.Parent := Parent;
       C.From_GPR := From_GPR;
@@ -702,7 +704,8 @@ package body Adacovex.Parsers.Manifest is
                   "pkg:alire/" & Name,
                   1,
                   False,
-                  Scope);
+                  Scope,
+                  "Ada");
             end;
          end loop;
       end Register;
@@ -758,7 +761,8 @@ package body Adacovex.Parsers.Manifest is
                   PURL,
                   1,
                   False,
-                  Classify_Scope (Crate_Name (1 .. Crate_Name_Len)));
+                  Classify_Scope (Crate_Name (1 .. Crate_Name_Len)),
+                  "Ada");
             end;
          end if;
          Crate_Name_Len := 0;
@@ -887,7 +891,8 @@ package body Adacovex.Parsers.Manifest is
                      "pkg:gpr/" & Name,
                      Parent,
                      True,
-                     S);
+                     S,
+                     "Ada");
                end;
                if Depth > 0 then
                   declare
@@ -918,9 +923,925 @@ package body Adacovex.Parsers.Manifest is
       end loop;
    end Resolve_GPR_Deps;
 
+   --  Language name for a source file, derived from its extension.  The
+   --  extension is the source of truth (a .py file is Python even when a
+   --  Cargo.toml sits next to it); the manifest language only breaks ties.
+   --  @param Name  File base name (e.g. "a.py").
+   --  @return Language display name ("Python"), or "" for unknown.
+   function Extension_Language (Name : String) return String is
+      Dot : Natural := 0;
+      Ext : String (1 .. 8) := (others => ' ');
+      EL  : Natural := 0;
+   begin
+      for I in reverse Name'Range loop
+         if Name (I) = '.' then
+            Dot := I;
+            exit;
+         end if;
+      end loop;
+      if Dot = 0 or else Dot = Name'Last or else Name'Last - Dot > Ext'Last
+      then
+         return "";
+      end if;
+      EL := Name'Last - Dot;
+      for I in 1 .. EL loop
+         Ext (I) := Name (Dot + I);
+      end loop;
+
+      if Ext (1 .. EL) = "ads"
+        or else Ext (1 .. EL) = "adb"
+        or else Ext (1 .. EL) = "ada"
+        or else Ext (1 .. EL) = "gpr"
+      then
+         return "Ada";
+      elsif Ext (1 .. EL) = "js"
+        or else Ext (1 .. EL) = "mjs"
+        or else Ext (1 .. EL) = "cjs"
+      then
+         return "JavaScript";
+      elsif Ext (1 .. EL) = "ts" or else Ext (1 .. EL) = "tsx" then
+         return "TypeScript";
+      elsif Ext (1 .. EL) = "css" then
+         return "CSS";
+      elsif Ext (1 .. EL) = "html" or else Ext (1 .. EL) = "htm" then
+         return "HTML";
+      elsif Ext (1 .. EL) = "py" then
+         return "Python";
+      elsif Ext (1 .. EL) = "go" then
+         return "Go";
+      elsif Ext (1 .. EL) = "rs" then
+         return "Rust";
+      elsif Ext (1 .. EL) = "c" or else Ext (1 .. EL) = "h" then
+         return "C";
+      elsif Ext (1 .. EL) = "cpp"
+        or else Ext (1 .. EL) = "cc"
+        or else Ext (1 .. EL) = "cxx"
+        or else Ext (1 .. EL) = "hpp"
+        or else Ext (1 .. EL) = "hh"
+        or else Ext (1 .. EL) = "hxx"
+      then
+         return "C++";
+      elsif Ext (1 .. EL) = "cs" then
+         return "C#";
+      elsif Ext (1 .. EL) = "java" then
+         return "Java";
+      elsif Ext (1 .. EL) = "rb" then
+         return "Ruby";
+      elsif Ext (1 .. EL) = "php" then
+         return "PHP";
+      elsif Ext (1 .. EL) = "swift" then
+         return "Swift";
+      elsif Ext (1 .. EL) = "kt" or else Ext (1 .. EL) = "kts" then
+         return "Kotlin";
+      elsif Ext (1 .. EL) = "scala" then
+         return "Scala";
+      elsif Ext (1 .. EL) = "ml" or else Ext (1 .. EL) = "mli" then
+         return "OCaml";
+      elsif Ext (1 .. EL) = "lua" then
+         return "Lua";
+      elsif Ext (1 .. EL) = "pl" then
+         return "Perl";
+      elsif Ext (1 .. EL) = "hs" then
+         return "Haskell";
+      elsif Ext (1 .. EL) = "ex" or else Ext (1 .. EL) = "exs" then
+         return "Elixir";
+      elsif Ext (1 .. EL) = "erl" or else Ext (1 .. EL) = "hrl" then
+         return "Erlang";
+      elsif Ext (1 .. EL) = "clj" or else Ext (1 .. EL) = "cljs" then
+         return "Clojure";
+      elsif Ext (1 .. EL) = "dart" then
+         return "Dart";
+      elsif Ext (1 .. EL) = "sh" or else Ext (1 .. EL) = "bash" then
+         return "Shell";
+      elsif Ext (1 .. EL) = "ps1" then
+         return "PowerShell";
+      elsif Ext (1 .. EL) = "sql" then
+         return "SQL";
+      elsif Ext (1 .. EL) = "f"
+        or else Ext (1 .. EL) = "f90"
+        or else Ext (1 .. EL) = "f95"
+        or else Ext (1 .. EL) = "f03"
+      then
+         return "Fortran";
+      elsif Ext (1 .. EL) = "s" or else Ext (1 .. EL) = "asm" then
+         return "Assembly";
+      elsif Ext (1 .. EL) = "r" then
+         return "R";
+      elsif Ext (1 .. EL) = "jl" then
+         return "Julia";
+      elsif Ext (1 .. EL) = "zig" then
+         return "Zig";
+      elsif Ext (1 .. EL) = "vhd" or else Ext (1 .. EL) = "vhdl" then
+         return "VHDL";
+      elsif Ext (1 .. EL) = "tcl" then
+         return "Tcl";
+      end if;
+      return "";
+   end Extension_Language;
+
+   --  Per-language file counters used to rank a directory's languages.
+   type Lang_Item is record
+      Name : String (1 .. 16);
+      Len  : Natural := 0;
+      Ct   : Natural := 0;
+   end record;
+   package Lang_Vectors is new Ada.Containers.Vectors (Positive, Lang_Item);
+
+   --  Whether a directory holding the detected language counters already
+   --  contains the given language name.
+   function Has_Lang (Langs : Lang_Vectors.Vector; L : String) return Boolean
+   is
+   begin
+      for I in 1 .. Integer (Langs.Length) loop
+         if Langs (I).Len = L'Length
+           and then Langs (I).Name (1 .. L'Length) = L
+         then
+            return True;
+         end if;
+      end loop;
+      return False;
+   end Has_Lang;
+
+   --  Whether a directory base name denotes a vendored-code directory that
+   --  adacovex treats as a scope=vendored dependency source.
+   --  @param N  Directory base name.
+   --  @return True for vendored directory names.
+   function Is_Vendor_Dir_Name (N : String) return Boolean is
+   begin
+      return
+        N = "vendor"
+        or else N = "vendored"
+        or else N = "third_party"
+        or else N = "third-party"
+        or else N = "extern"
+        or else N = "external"
+        or else N = "deps"
+        or else N = "submodules"
+        or else N = ".vendor"
+        or else N = "lib"
+        or else N = "contrib"
+        or else N = "node_modules";
+   end Is_Vendor_Dir_Name;
+
+   --  Whether to skip descending into a directory during a source walk:
+   --  VCS metadata, the adacovex config dir, installer/build outputs, and
+   --  Alire's own dependency cache never carry project source.
+   function Skip_Walk_Dir (N : String) return Boolean is
+   begin
+      return
+        N = ".git"
+        or else N = ".hg"
+        or else N = ".svn"
+        or else N = ".adacovex"
+        or else N = "alire"
+        or else N = "obj"
+        or else N = "bin";
+   end Skip_Walk_Dir;
+
+   --  Count the source files under Root by language, descending at most
+   --  Max_Levels subdirectories (0 = Root's direct children only).  Only
+   --  file names are read (no content), so this is cheap.  When Skip_Vend
+   --  is True, vendored directories are not descended into -- used for the
+   --  root project's own language so vendored code is never attributed to
+   --  the owning project.
+   procedure Detect_Languages
+     (Root          : String;
+      Max_Levels    : Natural;
+      Langs         : in out Lang_Vectors.Vector;
+      Skip_Vendored : Boolean := False)
+   is
+      use Ada.Directories;
+      type Dir_Entry is record
+         Path  : Types.Path_Field;
+         Len   : Natural := 0;
+         Level : Natural := 0;
+      end record;
+      package Dir_Stacks is new Ada.Containers.Vectors (Positive, Dir_Entry);
+      Dir_Stack : Dir_Stacks.Vector;
+      Search    : Search_Type;
+      Ent       : Directory_Entry_Type;
+
+      procedure Push_Dir (Dir : String; Level : Natural) is
+         Item : Dir_Entry;
+      begin
+         if Dir'Length <= Types.Max_Path then
+            Item.Len := Dir'Length;
+            for I in Dir'Range loop
+               Item.Path (I - Dir'First + 1) := Dir (I);
+            end loop;
+            Item.Level := Level;
+            Dir_Stack.Append (Item);
+         end if;
+      end Push_Dir;
+
+      procedure Count_File (N : String) is
+         L : constant String := Extension_Language (N);
+      begin
+         if L'Length = 0 then
+            return;
+         end if;
+         for I in 1 .. Integer (Langs.Length) loop
+            if Langs (I).Len = L'Length
+              and then Langs (I).Name (1 .. L'Length) = L
+            then
+               Langs (I).Ct := Langs (I).Ct + 1;
+               return;
+            end if;
+         end loop;
+         declare
+            Item : Lang_Item;
+         begin
+            Item.Len := L'Length;
+            for I in 1 .. L'Length loop
+               Item.Name (I) := L (L'First + I - 1);
+            end loop;
+            Item.Ct := 1;
+            Langs.Append (Item);
+         end;
+      end Count_File;
+   begin
+      Langs.Clear;
+      Push_Dir (Root, 0);
+      while not Dir_Stack.Is_Empty loop
+         declare
+            Current  : Dir_Entry := Dir_Stack.Last_Element;
+            Dir_Path : String renames Current.Path (1 .. Current.Len);
+         begin
+            Dir_Stack.Delete_Last;
+            Start_Search (Search, Dir_Path, "");
+            begin
+               while More_Entries (Search) loop
+                  Get_Next_Entry (Search, Ent);
+                  declare
+                     N    : constant String := Simple_Name (Ent);
+                     Path : constant String := Full_Name (Ent);
+                  begin
+                     if Kind (Ent) = Directory then
+                        if N /= "."
+                          and then N /= ".."
+                          and then Current.Level < Max_Levels
+                          and then not Skip_Walk_Dir (N)
+                          and then (not Skip_Vendored
+                                    or else not Is_Vendor_Dir_Name (N))
+                        then
+                           Push_Dir (Path, Current.Level + 1);
+                        end if;
+                     elsif Kind (Ent) = Ordinary_File then
+                        Count_File (N);
+                     end if;
+                  end;
+               end loop;
+            exception
+               when others =>
+                  End_Search (Search);
+                  raise;
+            end;
+            End_Search (Search);
+         end;
+      end loop;
+   end Detect_Languages;
+
+   --  Rank a detected language counter vector: primary language first (the
+   --  ecosystem manifest's language, e.g. Rust for Cargo.toml), then the
+   --  remaining languages by file count descending, name ascending for
+   --  ties; join up to 3 with " - ".  Mixed-language sources list the top
+   --  ~3 languages so "Ada; C; C++" style labels stay bounded.
+   --  @param Langs  Detected language counters (must be sorted into rank).
+   --  @param Primary  Ecosystem language, or "" to rank by file count only.
+   --  @return Joined language summary (e.g. "Ada; C; C++").
+   function Language_Summary
+     (Langs : Lang_Vectors.Vector; Primary : String) return String
+   is
+      Vec   : Lang_Vectors.Vector := Langs;
+      Buf   : String (1 .. 128);
+      BLen  : Natural := 0;
+      Taken : Natural := 0;
+      J     : Integer := 0;
+      I     : Integer := 0;
+
+      procedure Add_One (L : String) is
+      begin
+         if BLen + L'Length + 2 > Buf'Last then
+            return;
+         end if;
+         if BLen > 0 then
+            Buf (BLen + 1 .. BLen + 2) := "; ";
+            BLen := BLen + 2;
+         end if;
+         Buf (BLen + 1 .. BLen + L'Length) := L;
+         BLen := BLen + L'Length;
+      end Add_One;
+   begin
+      --  Bubble sort the counter vector (small): file count descending.
+      --  Ties keep their detection order (the walk is deterministic).
+      --  The primary language is added first regardless of its file count,
+      --  then the remaining top languages up to 3 labels total.
+      I := Integer (Vec.Length);
+      while I > 1 loop
+         J := 2;
+         while J <= I loop
+            if Vec (J).Ct > Vec (J - 1).Ct then
+               declare
+                  T : Lang_Item := Vec (J);
+               begin
+                  Vec (J) := Vec (J - 1);
+                  Vec (J - 1) := T;
+               end;
+            end if;
+            J := J + 1;
+         end loop;
+         I := I - 1;
+      end loop;
+
+      if Primary'Length > 0 then
+         Add_One (Primary);
+         Taken := 1;
+      end if;
+      for I in 1 .. Integer (Vec.Length) loop
+         exit when Taken >= 3;
+         if Primary'Length = 0
+           or else Vec (I).Len /= Primary'Length
+           or else Vec (I).Name (1 .. Vec (I).Len) /= Primary
+         then
+            Add_One (Vec (I).Name (1 .. Vec (I).Len));
+            Taken := Taken + 1;
+         end if;
+      end loop;
+      return Buf (1 .. BLen);
+   end Language_Summary;
+
+   --  Everything needed to turn a vendored directory into a graph component:
+   --  ecosystem PURL kind, canonical name/version, and the ecosystem's
+   --  primary language.
+   type Vendor_Manifest is record
+      Found            : Boolean := False;
+      Name             : Types.Desc_Field;
+      Name_Len         : Natural := 0;
+      Version          : Types.Desc_Field;
+      Version_Len      : Natural := 0;
+      PURL_Kind        : String (1 .. 16);
+      PURL_Kind_Len    : Natural := 0;
+      Primary_Lang     : String (1 .. 16);
+      Primary_Lang_Len : Natural := 0;
+   end record;
+
+   --  Read the first "<Key>" quoted value from a key=value or key:value
+   --  file (TOML or JSON, quoted key or bare): locate Key followed by '='
+   --  or ':', then the next double-quoted string.  "" when absent.
+   function File_Quoted_Value (Path : String; Key : String) return String is
+      use Ada.Text_IO;
+      F        : File_Type;
+      Line     : String (1 .. Types.Max_Line);
+      Last     : Natural;
+      Overflow : Boolean;
+      Line_Num : Natural := 0;
+
+      function Is_Word_Char (C : Character) return Boolean is
+      begin
+         return
+           (C in 'a' .. 'z')
+           or else (C in 'A' .. 'Z')
+           or else (C in '0' .. '9')
+           or else C = '_'
+           or else C = '-';
+      end Is_Word_Char;
+
+      function Line_Value (T : String) return String is
+         Sep : Natural := 0;
+      begin
+         --  Locate Key as a whole word, then find the '=' or ':' separator
+         --  right after it (spaces allowed between key and separator).
+         for I in T'First .. T'Last - Key'Length + 1 loop
+            if T (I .. I + Key'Length - 1) = Key
+              and then (I = T'First or else not Is_Word_Char (T (I - 1)))
+              and then (I + Key'Length > T'Last
+                        or else not Is_Word_Char (T (I + Key'Length)))
+            then
+               declare
+                  J : Natural := I + Key'Length;
+               begin
+                  while J <= T'Last and then T (J) /= '=' and then T (J) /= ':'
+                  loop
+                     J := J + 1;
+                  end loop;
+                  if J <= T'Last then
+                     Sep := J;
+                     exit;
+                  end if;
+               end;
+            end if;
+         end loop;
+         if Sep = 0 then
+            return "";
+         end if;
+         --  Find the next quoted string after the separator.
+         for Q in Sep + 1 .. T'Last loop
+            if T (Q) = '"' then
+               for Q2 in Q + 1 .. T'Last loop
+                  if T (Q2) = '"' then
+                     return T (Q + 1 .. Q2 - 1);
+                  end if;
+               end loop;
+               return "";
+            end if;
+         end loop;
+         return "";
+      end Line_Value;
+   begin
+      begin
+         Open (F, In_File, Path);
+      exception
+         when others =>
+            return "";
+      end;
+      while not End_Of_File (F) loop
+         Line_Num := Line_Num + 1;
+         Adacovex.Parsers.Read_Line (F, Path, Line_Num, Line, Last, Overflow);
+         if Overflow then
+            Close (F);
+            return "";
+         end if;
+         declare
+            V : constant String := Line_Value (Trim (Line (1 .. Last)));
+         begin
+            if V'Length > 0 then
+               Close (F);
+               return V;
+            end if;
+         end;
+      end loop;
+      Close (F);
+      return "";
+   end File_Quoted_Value;
+
+   --  Read the first "module <path>" line of a go.mod (the module path is
+   --  the Go component's canonical name).
+   function Go_Module_Path (Path : String) return String is
+      use Ada.Text_IO;
+      F        : File_Type;
+      Line     : String (1 .. Types.Max_Line);
+      Last     : Natural;
+      Overflow : Boolean;
+      Line_Num : Natural := 0;
+   begin
+      begin
+         Open (F, In_File, Path);
+      exception
+         when others =>
+            return "";
+      end;
+      while not End_Of_File (F) loop
+         Line_Num := Line_Num + 1;
+         Adacovex.Parsers.Read_Line (F, Path, Line_Num, Line, Last, Overflow);
+         if Overflow then
+            Close (F);
+            return "";
+         end if;
+         declare
+            T : constant String := Trim (Line (1 .. Last));
+         begin
+            if T'Length > 7 and then T (T'First .. T'First + 6) = "module "
+            then
+               Close (F);
+               return Trim (T (T'First + 7 .. T'Last));
+            end if;
+         end;
+      end loop;
+      Close (F);
+      return "";
+   end Go_Module_Path;
+
+   --  First "gem " entry of a Gemfile: name and cleaned version.
+   procedure Gem_Entry
+     (Path    : String;
+      Name    : out String;
+      NLen    : out Natural;
+      Version : out String;
+      VLen    : out Natural)
+   is
+      use Ada.Text_IO;
+      F        : File_Type;
+      Line     : String (1 .. Types.Max_Line);
+      Last     : Natural;
+      Overflow : Boolean;
+      Line_Num : Natural := 0;
+      N        : String (1 .. 64) := (others => ' ');
+      V        : String (1 .. 64) := (others => ' ');
+   begin
+      NLen := 0;
+      VLen := 0;
+      begin
+         Open (F, In_File, Path);
+      exception
+         when others =>
+            return;
+      end;
+      while not End_Of_File (F) loop
+         Line_Num := Line_Num + 1;
+         Adacovex.Parsers.Read_Line (F, Path, Line_Num, Line, Last, Overflow);
+         if Overflow then
+            Close (F);
+            return;
+         end if;
+         declare
+            T : constant String := Trim (Line (1 .. Last));
+         begin
+            if T'Length > 4 and then T (T'First .. T'First + 3) = "gem " then
+               --  Extract the quoted strings (name, then version).
+               declare
+                  Got : Natural := 0;
+                  I   : Natural := T'First + 4;
+               begin
+                  while I <= T'Last and Got < 2 loop
+                     if T (I) = '"' then
+                        declare
+                           J : Natural := I + 1;
+                        begin
+                           while J <= T'Last and then T (J) /= '"' loop
+                              J := J + 1;
+                           end loop;
+                           if J <= T'Last then
+                              Got := Got + 1;
+                              if Got = 1 then
+                                 NLen := J - I - 1;
+                                 if NLen > 64 then
+                                    NLen := 64;
+                                 end if;
+                                 N (1 .. NLen) := T (I + 1 .. I + NLen);
+                              else
+                                 VLen := J - I - 1;
+                                 if VLen > 64 then
+                                    VLen := 64;
+                                 end if;
+                                 V (1 .. VLen) := T (I + 1 .. I + VLen);
+                              end if;
+                              I := J;
+                           end if;
+                        end;
+                     end if;
+                     I := I + 1;
+                  end loop;
+               end;
+               if NLen > 0 then
+                  Close (F);
+                  --  Trim non-version decoration from the version (e.g. ">= 12" -> "12").
+                  begin
+                     while VLen > 0 and then V (1) not in '0' .. '9' loop
+                        --  Skip "v" prefixes too but keep 'v' starts
+                        V (1 .. VLen - 1) := V (2 .. VLen);
+                        VLen := VLen - 1;
+                     end loop;
+                  end;
+                  Name := N;
+                  Version := V;
+                  return;
+               end if;
+            end if;
+         end;
+      end loop;
+      Close (F);
+   end Gem_Entry;
+
+   --  First non-comment requirement line of a requirements*.txt:
+   --  "requests==2.28.1" -> name "requests", version "2.28.1".
+   procedure Req_Entry
+     (Path    : String;
+      Name    : out String;
+      NLen    : out Natural;
+      Version : out String;
+      VLen    : out Natural)
+   is
+      use Ada.Text_IO;
+      F        : File_Type;
+      Line     : String (1 .. Types.Max_Line);
+      Last     : Natural;
+      Overflow : Boolean;
+      Line_Num : Natural := 0;
+      N        : String (1 .. 64) := (others => ' ');
+      V        : String (1 .. 64) := (others => ' ');
+   begin
+      NLen := 0;
+      VLen := 0;
+      begin
+         Open (F, In_File, Path);
+      exception
+         when others =>
+            return;
+      end;
+      while not End_Of_File (F) loop
+         Line_Num := Line_Num + 1;
+         Adacovex.Parsers.Read_Line (F, Path, Line_Num, Line, Last, Overflow);
+         if Overflow then
+            Close (F);
+            return;
+         end if;
+         declare
+            T : constant String := Trim (Line (1 .. Last));
+         begin
+            if T'Length > 0 and then T (T'First) /= '#' then
+               declare
+                  Stop : Natural := T'First - 1;
+                  I    : Natural := T'First;
+               begin
+                  while I <= T'Last
+                    and then T (I) /= ' '
+                    and then T (I) /= '='
+                    and then T (I) /= '<'
+                    and then T (I) /= '>'
+                    and then T (I) /= '~'
+                  loop
+                     I := I + 1;
+                  end loop;
+                  Stop := I - 1;
+                  if Stop >= T'First then
+                     NLen := Stop - T'First + 1;
+                     if NLen > 64 then
+                        NLen := 64;
+                     end if;
+                     N (1 .. NLen) := T (T'First .. T'First + NLen - 1);
+                     --  Skip operators and spaces, then take the version
+                     --  token (up to whitespace, a comment, or end).
+                     while I <= T'Last
+                       and then T (I) in ' ' | '=' | '<' | '>' | '~' | '!'
+                     loop
+                        I := I + 1;
+                     end loop;
+                     begin
+                        while I <= T'Last
+                          and then T (I) /= ' '
+                          and then T (I) /= '#'
+                        loop
+                           if VLen < 64 then
+                              VLen := VLen + 1;
+                              V (VLen) := T (I);
+                           end if;
+                           I := I + 1;
+                        end loop;
+                     end;
+                     Close (F);
+                     if NLen > 0 then
+                        Name := N;
+                        Version := V;
+                        return;
+                     end if;
+                  end if;
+               end;
+            end if;
+         end;
+      end loop;
+      Close (F);
+   end Req_Entry;
+
+   --  First <Tag>...</Tag> occurrence on a single line of an XML file
+   --  (pom.xml); returns the inner text, "" when absent.
+   function Xml_Tag_Value (Path : String; Tag : String) return String is
+      use Ada.Text_IO;
+      F        : File_Type;
+      Line     : String (1 .. Types.Max_Line);
+      Last     : Natural;
+      Overflow : Boolean;
+      Line_Num : Natural := 0;
+   begin
+      begin
+         Open (F, In_File, Path);
+      exception
+         when others =>
+            return "";
+      end;
+      while not End_Of_File (F) loop
+         Line_Num := Line_Num + 1;
+         Adacovex.Parsers.Read_Line (F, Path, Line_Num, Line, Last, Overflow);
+         if Overflow then
+            Close (F);
+            return "";
+         end if;
+         declare
+            T  : constant String := Line (1 .. Last);
+            O  : constant String := "<" & Tag & ">";
+            C  : constant String := "</" & Tag & ">";
+            OI : constant Natural := Ada.Strings.Fixed.Index (T, O);
+            CI : constant Natural := Ada.Strings.Fixed.Index (T, C);
+         begin
+            if OI > T'First - 1 and then CI >= OI + O'Length then
+               Close (F);
+               return T (OI + O'Length .. CI - 1);
+            end if;
+         end;
+      end loop;
+      Close (F);
+      return "";
+   end Xml_Tag_Value;
+
+   --  Probe Dir for the first recognized ecosystem manifest (defined
+   --  priority order): package.json (npm), Cargo.toml (cargo), go.mod
+   --  (golang), pyproject.toml (pypi), composer.json (composer), Gemfile
+   --  (gem), pom.xml (maven), requirements*.txt (pypi), Package.swift
+   --  (swift).  Name/version come from the manifest when present; the
+   --  caller falls back to the directory name / "" otherwise.
+   procedure Read_Vendor_Manifest (Dir : String; Info : out Vendor_Manifest) is
+      use Ada.Directories;
+
+      procedure Set_Text
+        (DST : out Types.Desc_Field; DST_Len : out Natural; S : String) is
+      begin
+         DST_Len := S'Length;
+         if DST_Len > Types.Max_Desc_Str then
+            DST_Len := Types.Max_Desc_Str;
+         end if;
+         for I in 1 .. DST_Len loop
+            DST (I) := S (S'First + I - 1);
+         end loop;
+      end Set_Text;
+
+      procedure Set_Kind (K : String) is
+      begin
+         if K'Length <= Info.PURL_Kind'Last then
+            Info.PURL_Kind_Len := K'Length;
+            Info.PURL_Kind (1 .. K'Length) := K;
+         end if;
+      end Set_Kind;
+
+      procedure Set_Lang (L : String) is
+      begin
+         if L'Length <= Info.Primary_Lang'Last then
+            Info.Primary_Lang_Len := L'Length;
+            Info.Primary_Lang (1 .. L'Length) := L;
+         end if;
+      end Set_Lang;
+
+      function Path (N : String) return String is
+      begin
+         return Dir & "/" & N;
+      end Path;
+   begin
+      Info.Found := False;
+      Info.PURL_Kind_Len := 0;
+      Info.Primary_Lang_Len := 0;
+      Info.Name_Len := 0;
+      Info.Version_Len := 0;
+
+      if Exists (Path ("package.json")) then
+         Set_Text
+           (Info.Name,
+            Info.Name_Len,
+            File_Quoted_Value (Path ("package.json"), "name"));
+         Set_Text
+           (Info.Version,
+            Info.Version_Len,
+            File_Quoted_Value (Path ("package.json"), "version"));
+         Set_Kind ("npm");
+         Set_Lang ("JavaScript");
+         Info.Found := True;
+      elsif Exists (Path ("Cargo.toml")) then
+         Set_Text
+           (Info.Name,
+            Info.Name_Len,
+            File_Quoted_Value (Path ("Cargo.toml"), "name"));
+         Set_Text
+           (Info.Version,
+            Info.Version_Len,
+            File_Quoted_Value (Path ("Cargo.toml"), "version"));
+         Set_Kind ("cargo");
+         Set_Lang ("Rust");
+         Info.Found := True;
+      elsif Exists (Path ("go.mod")) then
+         Set_Text (Info.Name, Info.Name_Len, Go_Module_Path (Path ("go.mod")));
+         Set_Kind ("golang");
+         Set_Lang ("Go");
+         Info.Found := True;
+      elsif Exists (Path ("pyproject.toml")) then
+         Set_Text
+           (Info.Name,
+            Info.Name_Len,
+            File_Quoted_Value (Path ("pyproject.toml"), "name"));
+         Set_Text
+           (Info.Version,
+            Info.Version_Len,
+            File_Quoted_Value (Path ("pyproject.toml"), "version"));
+         Set_Kind ("pypi");
+         Set_Lang ("Python");
+         Info.Found := True;
+      elsif Exists (Path ("composer.json")) then
+         Set_Text
+           (Info.Name,
+            Info.Name_Len,
+            File_Quoted_Value (Path ("composer.json"), "name"));
+         Set_Text
+           (Info.Version,
+            Info.Version_Len,
+            File_Quoted_Value (Path ("composer.json"), "version"));
+         Set_Kind ("composer");
+         Set_Lang ("PHP");
+         Info.Found := True;
+      elsif Exists (Path ("Gemfile")) then
+         declare
+            G_N : String (1 .. 64) := (others => ' ');
+            G_V : String (1 .. 64) := (others => ' ');
+            N_L : Natural := 0;
+            V_L : Natural := 0;
+         begin
+            Gem_Entry (Path ("Gemfile"), G_N, N_L, G_V, V_L);
+            Set_Text (Info.Name, Info.Name_Len, G_N (1 .. N_L));
+            Set_Text (Info.Version, Info.Version_Len, G_V (1 .. V_L));
+         end;
+         Set_Kind ("gem");
+         Set_Lang ("Ruby");
+         Info.Found := True;
+      elsif Exists (Path ("pom.xml")) then
+         declare
+            A : constant String :=
+              Xml_Tag_Value (Path ("pom.xml"), "artifactId");
+            G : constant String := Xml_Tag_Value (Path ("pom.xml"), "groupId");
+            V : constant String := Xml_Tag_Value (Path ("pom.xml"), "version");
+         begin
+            if G'Length > 0 then
+               Set_Text (Info.Name, Info.Name_Len, G & ":" & A);
+            else
+               Set_Text (Info.Name, Info.Name_Len, A);
+            end if;
+            Set_Text (Info.Version, Info.Version_Len, V);
+         end;
+         Set_Kind ("maven");
+         Set_Lang ("Java");
+         Info.Found := True;
+      elsif Exists (Path ("Package.swift")) then
+         Set_Kind ("swift");
+         Set_Lang ("Swift");
+         Info.Found := True;
+      else
+         --  requirements*.txt (pick the first match).
+         declare
+            Search : Search_Type;
+            Ent    : Directory_Entry_Type;
+            Found  : Boolean := False;
+         begin
+            Start_Search (Search, Dir, "requirements*.txt");
+            while not Found and then More_Entries (Search) loop
+               Get_Next_Entry (Search, Ent);
+               if Kind (Ent) = Ordinary_File then
+                  declare
+                     R_N : String (1 .. 64) := (others => ' ');
+                     R_V : String (1 .. 64) := (others => ' ');
+                     N_L : Natural := 0;
+                     V_L : Natural := 0;
+                  begin
+                     Req_Entry (Full_Name (Ent), R_N, N_L, R_V, V_L);
+                     Set_Text (Info.Name, Info.Name_Len, R_N (1 .. N_L));
+                     Set_Text (Info.Version, Info.Version_Len, R_V (1 .. V_L));
+                     Found := True;
+                  end;
+               end if;
+            end loop;
+            End_Search (Search);
+            if Found then
+               Set_Kind ("pypi");
+               Set_Lang ("Python");
+               Info.Found := True;
+            end if;
+         end;
+      end if;
+   end Read_Vendor_Manifest;
+
+   --  Language summary of the source files under a directory: the primary
+   --  (ecosystem) language first when given, then the top detected
+   --  languages by file count, joined with "; " (max 3 labels).
+   --  @param Root  Directory tree to scan (file names only, no content).
+   --  @param Max_Levels  Subdirectory depth to descend into.
+   --  @param Primary_Kind  Ecosystem primary language or "".
+   --  @return Language summary (e.g. "Ada; C; C++"), "" when nothing.
+   function Language_Of_Dir
+     (Root : String; Max_Levels : Natural; Primary_Kind : String := "")
+      return String
+   is
+      Langs : Lang_Vectors.Vector;
+   begin
+      Detect_Languages (Root, Max_Levels, Langs);
+      if Langs.Is_Empty and Primary_Kind'Length = 0 then
+         return "";
+      end if;
+      if Primary_Kind'Length > 0 and then not Has_Lang (Langs, Primary_Kind)
+      then
+         --  Manifest language always leads the label even when no
+         --  matching source files were counted.
+         declare
+            Item : Lang_Item;
+         begin
+            Item.Len := Primary_Kind'Length;
+            for I in 1 .. Primary_Kind'Length loop
+               Item.Name (I) := Primary_Kind (Primary_Kind'First + I - 1);
+            end loop;
+            Langs.Append (Item);
+         end;
+      end if;
+      return Language_Summary (Langs, Primary_Kind);
+   end Language_Of_Dir;
+
    --  Add a component for every vendored package overlaid by a docstring
-   --  patch under <target>/.adacovex/patches/.  Each patch file (.ads) names
-   --  the vendored package (basename); such packages have no manifest entry
+   --  patch under <target>/.adacovex/patches/, every web asset under
+   --  resources/ or assets/, and every source file under vendor/ (the
+   --  classic Alire-era vendored roots).  Each file becomes a
+   --  scope=vendored component named after its base name; the language
+   --  comes from the file extension.  Such packages have no manifest entry
    --  and no .gpr of their own, so they are recorded as Scope_Vendored
    --  dependencies of the root.
    procedure Discover_Vendored_Components
@@ -971,7 +1892,8 @@ package body Adacovex.Parsers.Manifest is
             "pkg:gpr/" & Base (Base'First .. Dot - 1),
             1,
             False,
-            Types.Scope_Vendored);
+            Types.Scope_Vendored,
+            "Ada");
       end Add_Vendored;
 
       procedure Add_Vendored_Asset (Asset_Path : String) is
@@ -989,8 +1911,6 @@ package body Adacovex.Parsers.Manifest is
          if Dot <= Base'First then
             return;
          end if;
-         --  Strip extension, keep "charts.min" as "charts.min"
-         --  Use basename without last extension as name
          declare
             Raw : constant String := Base (Base'First .. Dot - 1);
          begin
@@ -1002,7 +1922,8 @@ package body Adacovex.Parsers.Manifest is
                Name (1 .. NLen) := Raw;
             end if;
          end;
-         --  Version left empty; purl uses generic pkg
+         --  Language comes from the asset's extension (.js -> JavaScript,
+         --  .css -> CSS), like every other vendored file.
          Append_Dependency
            (Graph,
             Name (1 .. NLen),
@@ -1012,7 +1933,8 @@ package body Adacovex.Parsers.Manifest is
             "pkg:generic/" & Name (1 .. NLen),
             1,
             False,
-            Types.Scope_Vendored);
+            Types.Scope_Vendored,
+            Extension_Language (Base));
       end Add_Vendored_Asset;
 
       procedure Scan_One_Vendored_Root (Root : String) is
@@ -1075,31 +1997,220 @@ package body Adacovex.Parsers.Manifest is
          then Target_Dir (Target_Dir'First .. Target_Dir'Last - 1)
          else Target_Dir)
         & "/resources";
-      Vendor_Root    : constant String :=
-        (if Target_Dir'Length > 0 and then Target_Dir (Target_Dir'Last) = '/'
-         then Target_Dir (Target_Dir'First .. Target_Dir'Last - 1)
-         else Target_Dir)
-        & "/vendor";
+      --  The vendor/ root itself is NOT scanned here: loose files under it
+      --  must never become components -- Discover_Generic_Vendored turns
+      --  each manifest-carrying or source-carrying vendor subdirectory into
+      --  one component (with its top-3 language summary).
       Assets_Root    : constant String :=
         (if Target_Dir'Length > 0 and then Target_Dir (Target_Dir'Last) = '/'
          then Target_Dir (Target_Dir'First .. Target_Dir'Last - 1)
          else Target_Dir)
         & "/assets";
-
    begin
       Scan_One_Vendored_Root (Patches_Root);
       Scan_One_Vendored_Root (Resources_Root);
-      Scan_One_Vendored_Root (Vendor_Root);
       Scan_One_Vendored_Root (Assets_Root);
    end Discover_Vendored_Components;
 
-   --  Known system binaries that count as development dependencies.  This
-   --  is the curated toolchain set a project can interact with at
-   --  development time (build drivers, the GNAT/SPARK toolchain, Python
-   --  tooling, VCS clients, and container/network/doc tools).  Universal
-   --  coreutils (sed, grep, tar, ...) are deliberately absent: they are OS
-   --  components rather than project dev dependencies and would add noise
-   --  to every SBOM.
+   --  Language-agnostic vendored-component discovery: walk the target tree
+   --  (excluding VCS/build/installer noise) and treat every directory whose
+   --  base name is a known vendor directory as a vendored source, scanned
+   --  shallowly (max 2 levels; 1 for node_modules):
+   --    * a directory carrying an ecosystem manifest (package.json,
+   --      Cargo.toml, go.mod, pyproject.toml, composer.json, Gemfile,
+   --      pom.xml, Package.swift, requirements*.txt) becomes one
+   --      Scope_Vendored component named/versioned from the manifest with
+   --      its ecosystem PURL (pkg:npm/..., pkg:cargo/..., ...);
+   --    * a directory holding Ada sources (.ads/.adb) without a manifest
+   --      becomes a Scope_Vendored Ada component named after the directory
+   --      (e.g. a hand-vendored Ada library under third_party/).
+   --  Every component carries its language(s), detected from file
+   --  extensions with the ecosystem language first (top 3, mixed sources
+   --  list the leading languages).
+   procedure Discover_Generic_Vendored
+     (Target_Dir : String;
+      Graph      : in out Types.Implementation.Component_Vectors.Vector)
+   is
+      use Ada.Directories;
+      type Dir_Entry is record
+         Path  : Types.Path_Field;
+         Len   : Natural := 0;
+         Level : Natural := 0;
+      end record;
+      package Dir_Stacks is new Ada.Containers.Vectors (Positive, Dir_Entry);
+      Tree_Stack : Dir_Stacks.Vector;
+      Scan_Stack : Dir_Stacks.Vector;
+      Search     : Search_Type;
+      Ent        : Directory_Entry_Type;
+
+      procedure Push_Dir
+        (S : in out Dir_Stacks.Vector; Dir : String; Level : Natural)
+      is
+         Item : Dir_Entry;
+      begin
+         if Dir'Length <= Types.Max_Path then
+            Item.Len := Dir'Length;
+            for I in Dir'Range loop
+               Item.Path (I - Dir'First + 1) := Dir (I);
+            end loop;
+            Item.Level := Level;
+            S.Append (Item);
+         end if;
+      end Push_Dir;
+
+      --  One component per manifest-carrying (or Ada-source-carrying)
+      --  directory inside a matched vendor root; shallow scan.  Uses its
+      --  own directory-search handles so it can run while the caller's
+      --  tree walk is mid-search.
+      procedure Scan_Vendor_Root (Root : String; Max_Levels : Natural) is
+         S2 : Search_Type;
+         E2 : Directory_Entry_Type;
+      begin
+         Scan_Stack.Clear;
+         Push_Dir (Scan_Stack, Root, 0);
+         while not Scan_Stack.Is_Empty loop
+            declare
+               Current  : Dir_Entry := Scan_Stack.Last_Element;
+               Dir_Path : String renames Current.Path (1 .. Current.Len);
+            begin
+               Scan_Stack.Delete_Last;
+               --  Subdirectory bookkeeping: descend up to Max_Levels.
+               Start_Search (S2, Dir_Path, "");
+               begin
+                  while More_Entries (S2) loop
+                     Get_Next_Entry (S2, E2);
+                     declare
+                        N    : constant String := Simple_Name (E2);
+                        Path : constant String := Full_Name (E2);
+                     begin
+                        if Kind (E2) = Directory then
+                           if N /= "."
+                             and then N /= ".."
+                             and then Current.Level < Max_Levels
+                           then
+                              Push_Dir (Scan_Stack, Path, Current.Level + 1);
+                           end if;
+                        end if;
+                     end;
+                  end loop;
+               exception
+                  when others =>
+                     End_Search (S2);
+                     raise;
+               end;
+               End_Search (S2);
+
+               --  Component source: ecosystem manifest or source files.
+               --  The vendor root itself (level 0) is not a component --
+               --  only its children are.
+               if Current.Level > 0 then
+                  declare
+                     M : Vendor_Manifest;
+                  begin
+                     Read_Vendor_Manifest (Dir_Path, M);
+                     if M.Found then
+                        declare
+                           N   : String :=
+                             (if M.Name_Len > 0
+                              then M.Name (1 .. M.Name_Len)
+                              else Simple_Name (Dir_Path));
+                           V   : String :=
+                             (if M.Version_Len > 0
+                              then M.Version (1 .. M.Version_Len)
+                              else "");
+                           Pur : String :=
+                             "pkg:"
+                             & M.PURL_Kind (1 .. M.PURL_Kind_Len)
+                             & "/"
+                             & N
+                             & (if V'Length > 0 then "@" & V else "");
+                           L   : constant String :=
+                             Language_Of_Dir
+                               (Dir_Path,
+                                2,
+                                M.Primary_Lang (1 .. M.Primary_Lang_Len));
+                        begin
+                           Append_Dependency
+                             (Graph,
+                              N,
+                              V,
+                              "",
+                              "",
+                              Pur,
+                              1,
+                              False,
+                              Types.Scope_Vendored,
+                              L);
+                        end;
+                     else
+                        --  Library vendored without a manifest: the directory
+                        --  itself is the component; the language is the top-3
+                        --  summary of its source-file extensions (Ada-only
+                        --  directories included).
+                        declare
+                           L : constant String :=
+                             Language_Of_Dir (Dir_Path, 2);
+                        begin
+                           if L'Length > 0 then
+                              Append_Dependency
+                                (Graph,
+                                 Simple_Name (Dir_Path),
+                                 "",
+                                 "",
+                                 "",
+                                 "pkg:generic/" & Simple_Name (Dir_Path),
+                                 1,
+                                 False,
+                                 Types.Scope_Vendored,
+                                 L);
+                           end if;
+                        end;
+                     end if;
+                  end;
+               end if;
+            end;
+         end loop;
+      end Scan_Vendor_Root;
+   begin
+      Push_Dir (Tree_Stack, Target_Dir, 0);
+      while not Tree_Stack.Is_Empty loop
+         declare
+            Current  : Dir_Entry := Tree_Stack.Last_Element;
+            Dir_Path : String renames Current.Path (1 .. Current.Len);
+         begin
+            Tree_Stack.Delete_Last;
+            Start_Search (Search, Dir_Path, "");
+            begin
+               while More_Entries (Search) loop
+                  Get_Next_Entry (Search, Ent);
+                  declare
+                     N    : constant String := Simple_Name (Ent);
+                     Path : constant String := Full_Name (Ent);
+                  begin
+                     if Kind (Ent) = Directory then
+                        if N /= "."
+                          and then N /= ".."
+                          and then not Skip_Walk_Dir (N)
+                        then
+                           if Is_Vendor_Dir_Name (N) then
+                              Scan_Vendor_Root
+                                (Path, (if N = "node_modules" then 1 else 2));
+                           else
+                              Push_Dir (Tree_Stack, Path, 0);
+                           end if;
+                        end if;
+                     end if;
+                  end;
+               end loop;
+            exception
+               when others =>
+                  End_Search (Search);
+                  raise;
+            end;
+            End_Search (Search);
+         end;
+      end loop;
+   end Discover_Generic_Vendored;
    type Tool_Entry is record
       Name : String (1 .. 16);
       Len  : Natural := 0;
@@ -1619,40 +2730,49 @@ package body Adacovex.Parsers.Manifest is
       end loop;
    end Discover_System_Dev_Deps;
 
-   --  Fingerprint of the docstring-patch directory (<target>/.adacovex/
-   --  patches/), which contributes vendored components to the graph: a
-   --  content hash of every .ads file found there.  Adding or removing a
-   --  patch changes the digest, so the cached graph is invalidated correctly.
-   --  Returns "" when the directory is absent or holds no .ads files.
+   --  Fingerprint of everything that contributes *vendored* components to
+   --  the graph: every file under the classic vendored roots
+   --  (<target>/.adacovex/patches, resources, vendor, assets) plus every
+   --  file under the language-agnostic vendored directories discovered by
+   --  Discover_Generic_Vendored (deps, third_party, node_modules, ...,
+   --  hashed to depth 3).  Adding/removing/editing any of those files
+   --  changes the digest, so the cached graph is invalidated correctly.
+   --  Returns "" when no vendored input exists.
    --  @param Target_Dir  Project root directory.
-   --  @return SHA-256 digest of the patch files, or "" when none exist.
-   function Patch_Dir_Hash (Target_Dir : String) return String is
+   --  @return SHA256 of the vendored inputs, or "" when none exist.
+   function Vendored_Hash (Target_Dir : String) return String is
       use Ada.Directories;
       type Dir_Entry is record
-         Path : Types.Path_Field;
-         Len  : Natural := 0;
+         Path  : Types.Path_Field;
+         Len   : Natural := 0;
+         Level : Natural := 0;
       end record;
       package Dir_Stacks is new Ada.Containers.Vectors (Positive, Dir_Entry);
       Dir_Stack : Dir_Stacks.Vector;
       Search    : Search_Type;
       Ent       : Directory_Entry_Type;
-      Root      : constant String :=
+      T         : constant String :=
         (if Target_Dir'Length > 0 and then Target_Dir (Target_Dir'Last) = '/'
          then Target_Dir (Target_Dir'First .. Target_Dir'Last - 1)
-         else Target_Dir)
-        & "/.adacovex/patches";
+         else Target_Dir);
       Comb      : String (1 .. Types.Max_Path);
       CLen      : Natural := 0;
 
-      procedure Push_Dir (Dir : String) is
+      procedure Push_Dir
+        (S         : in out Dir_Stacks.Vector;
+         Dir       : String;
+         Level     : Natural;
+         Max_Depth : Natural)
+      is
          Item : Dir_Entry;
       begin
-         if Dir'Length <= Types.Max_Path then
+         if Dir'Length <= Types.Max_Path and then Level <= Max_Depth then
             Item.Len := Dir'Length;
             for I in Dir'Range loop
                Item.Path (I - Dir'First + 1) := Dir (I);
             end loop;
-            Dir_Stack.Append (Item);
+            Item.Level := Level;
+            S.Append (Item);
          end if;
       end Push_Dir;
 
@@ -1663,11 +2783,64 @@ package body Adacovex.Parsers.Manifest is
             CLen := CLen + S'Length;
          end if;
       end Add;
+
+      --  Hash every regular file under Root, descending at most Max_Levels
+      --  subdirectories.  Uses its own stack so the outer vendor walk is
+      --  unaffected.
+      procedure Hash_Tree (Root : String; Max_Levels : Natural) is
+         H_Stack  : Dir_Stacks.Vector;
+         H_Search : Search_Type;
+         H_Ent    : Directory_Entry_Type;
+      begin
+         if not Exists (Root) then
+            return;
+         end if;
+         Push_Dir (H_Stack, Root, 0, Max_Levels);
+         while not H_Stack.Is_Empty loop
+            declare
+               Current  : Dir_Entry := H_Stack.Last_Element;
+               Dir_Path : String renames Current.Path (1 .. Current.Len);
+            begin
+               H_Stack.Delete_Last;
+               Start_Search (H_Search, Dir_Path, "");
+               begin
+                  while More_Entries (H_Search) loop
+                     Get_Next_Entry (H_Search, H_Ent);
+                     declare
+                        N    : constant String := Simple_Name (H_Ent);
+                        Path : constant String := Full_Name (H_Ent);
+                     begin
+                        if Kind (H_Ent) = Directory then
+                           if N /= "." and N /= ".." then
+                              Push_Dir
+                                (H_Stack, Path, Current.Level + 1, Max_Levels);
+                           end if;
+                        elsif Kind (H_Ent) = Ordinary_File then
+                           Add (Adacovex.Cache.Hash_File (Path));
+                        end if;
+                     end;
+                  end loop;
+               exception
+                  when others =>
+                     End_Search (H_Search);
+                     raise;
+               end;
+               End_Search (H_Search);
+            end;
+         end loop;
+      end Hash_Tree;
    begin
-      if not Ada.Directories.Exists (Root) then
-         return "";
-      end if;
-      Push_Dir (Root);
+      --  Classic doc roots (.adacovex/patches, resources, vendor, assets:
+      --  every regular file counts, at any depth (curated and small).
+      Hash_Tree (T & "/.adacovex/patches", 99);
+      Hash_Tree (T & "/resources", 99);
+      Hash_Tree (T & "/vendor", 99);
+      Hash_Tree (T & "/assets", 99);
+
+      --  Language-agnostic vendored directories anywhere in the tree (same
+      --  discovery walk as Discover_Generic_Vendored, shallow).
+      Dir_Stack.Clear;
+      Push_Dir (Dir_Stack, Target_Dir, 0, 99);
       while not Dir_Stack.Is_Empty loop
          declare
             Current  : Dir_Entry := Dir_Stack.Last_Element;
@@ -1683,14 +2856,17 @@ package body Adacovex.Parsers.Manifest is
                      Path : constant String := Full_Name (Ent);
                   begin
                      if Kind (Ent) = Directory then
-                        if N /= "." and N /= ".." then
-                           Push_Dir (Path);
+                        if N /= "."
+                          and then N /= ".."
+                          and then not Skip_Walk_Dir (N)
+                        then
+                           if Is_Vendor_Dir_Name (N) then
+                              Hash_Tree
+                                (Path, (if N = "node_modules" then 1 else 3));
+                           else
+                              Push_Dir (Dir_Stack, Path, 0, 99);
+                           end if;
                         end if;
-                     elsif Kind (Ent) = Ordinary_File
-                       and then N'Length > 4
-                       and then N (N'Last - 3 .. N'Last) = ".ads"
-                     then
-                        Add (Adacovex.Cache.Hash_File (Path));
                      end if;
                   end;
                end loop;
@@ -1702,19 +2878,24 @@ package body Adacovex.Parsers.Manifest is
             End_Search (Search);
          end;
       end loop;
+
       if CLen = 0 then
          return "";
       end if;
       return Adacovex.Cache.Hash_String (Comb (1 .. CLen));
-   end Patch_Dir_Hash;
+   end Vendored_Hash;
 
    --  Combined content hash of everything that shapes the dependency graph:
    --  the publishing manifest, the dev manifest, the alire.lock, every .gpr
-   --  file collected from the project tree, and the .adacovex/patches/ dir
-   --  (vendored components).  Returns "" when no input could be hashed
+   --  file collected from the project tree, the vendored directories
+   --  (classic roots + language-agnostic vendor dirs), and the root
+   --  project's detected language mix (a cheap probe of the source tree's
+   --  file-name distribution, so a source-language change invalidates the
+   --  cached graph too).  Returns "" when no input could be hashed
    --  (nothing is cached in that case).
    --  @param Target_Dir  Project root directory (for alire-dev.toml,
-   --    alire/alire.lock, and .adacovex/patches/, which live beside it).
+   --    alire/alire.lock, the vendored dirs, and the root language probe,
+   --    which live beside or under it).
    --  @param Manifest_Path  Path to the Alire manifest (may be an override).
    --  @param GPR_Files  Every .gpr file found under the target tree.
    --  @return "graph:" + SHA-256 digest, or "" when inputs are unhashable.
@@ -1741,7 +2922,13 @@ package body Adacovex.Parsers.Manifest is
       Add (Adacovex.Cache.Hash_File (Manifest_Path));
       Add (Adacovex.Cache.Hash_File (T & "/alire-dev.toml"));
       Add (Adacovex.Cache.Hash_File (T & "/alire/alire.lock"));
-      Add (Patch_Dir_Hash (Target_Dir));
+      Add (Vendored_Hash (Target_Dir));
+      declare
+         Langs : Lang_Vectors.Vector;
+      begin
+         Detect_Languages (T, 3, Langs, Skip_Vendored => True);
+         Add ("rl:" & Language_Summary (Langs, ""));
+      end;
       for I in 1 .. Integer (GPR_Files.Length) loop
          Add
            (Adacovex.Cache.Hash_File
@@ -1895,6 +3082,29 @@ package body Adacovex.Parsers.Manifest is
          Set_Path (Root.PURL, Root.PURL_Len, "pkg:alire/" & V);
          Set_Path (Root.Ref, Root.Ref_Len, "pkg:alire/" & V);
       end;
+      --  Root language: the top languages of the project's own sources
+      --  (vendored directories excluded), so the SBOM root component
+      --  records the language mix that created it (top 3 for mixed trees).
+      declare
+         Root_T     : constant String :=
+           (if Target_Dir'Length > 0
+              and then Target_Dir (Target_Dir'Last) = '/'
+            then Target_Dir (Target_Dir'First .. Target_Dir'Last - 1)
+            else Target_Dir);
+         Root_Langs : Lang_Vectors.Vector;
+      begin
+         Detect_Languages (Root_T, 3, Root_Langs, Skip_Vendored => True);
+         if not Root_Langs.Is_Empty then
+            declare
+               RL : constant String := Language_Summary (Root_Langs, "");
+            begin
+               if RL'Length > 0 then
+                  Set_Field (Root.Language, Root.Language_Len, RL);
+               end if;
+            end;
+         end if;
+      end;
+
       Set_Field (Root.Name, Root.Name_Len, Root_Name (1 .. Root_Name_Len));
       Set_Field
         (Root.Version, Root.Version_Len, Root_Version (1 .. Root_Version_Len));
@@ -1918,6 +3128,12 @@ package body Adacovex.Parsers.Manifest is
       --  patches (e.g. a third-party copy under demo/deps) as scope=vendored
       --  dependencies of the root.
       Discover_Vendored_Components (Target_Dir, Graph);
+
+      --  Add language-agnostic vendored components: ecosystem manifests
+      --  (package.json, Cargo.toml, ...) and Ada library dirs under any
+      --  vendor-named directory (third_party, deps, node_modules, ...),
+      --  each with its ecosystem PURL and detected language(s).
+      Discover_Generic_Vendored (Target_Dir, Graph);
 
       --  Register manifest-declared deps (base from alire.toml, dev from
       --  alire-dev.toml) that no GPR with-clause or lockfile resolved, so the

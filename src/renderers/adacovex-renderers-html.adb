@@ -1,5 +1,6 @@
 with Ada.Strings.Fixed;
 with Ada.Strings.Unbounded;
+with Adacovex;
 with Adacovex.Dashboard_Template;
 
 package body Adacovex.Renderers.HTML is
@@ -88,6 +89,36 @@ package body Adacovex.Renderers.HTML is
       return (Part * 100) / Total;
    end Pct;
 
+   --  0..1 fraction with two decimals ("0.42"), clamped at 1.00.  Charts.css
+   --  pie/bar sizes are unitless turn fractions (--start/--end/--size), NOT
+   --  0..100 percentages -- feeding Pct values here is what made old pie
+   --  slices render as repeated full turns.
+   function Frac (Part, Total : Natural) return String is
+      P : Natural := 0;
+   begin
+      if Total = 0 then
+         return "0.00";
+      end if;
+      P := (Part * 100) / Total;
+      if P >= 100 then
+         return "1.00";
+      end if;
+      if P < 10 then
+         return "0.0" & Img (P);
+      end if;
+      return "0." & Img (P);
+   end Frac;
+
+   --  Signed integer without Ada's leading space (for SVG coordinates).
+   function I_S (N : Integer) return String is
+      S : constant String := Integer'Image (N);
+   begin
+      if S (S'First) = ' ' then
+         return S (S'First + 1 .. S'Last);
+      end if;
+      return S;
+   end I_S;
+
    function Render_Charts
      (Doc_Metrics : Types.Docstring_Metrics;
       Proof       : Types.Proof_Summary;
@@ -102,16 +133,16 @@ package body Adacovex.Renderers.HTML is
          Append (R, S);
       end Put;
 
-      --  A single pie/donut slice: label + start/end (0..100) + value.
+      --  A single pie/donut slice: label + start/end fraction strings.
       procedure Slice_Row
-        (Label : String; Start, Finish : Natural; Value : Natural) is
+        (Label : String; Start_F, End_F : String; Value : Natural) is
       begin
          Put ("<tr><th scope=""row"">");
          Put (Label);
          Put ("</th><td style=""--start:");
-         Put (Img (Start));
+         Put (Start_F);
          Put (";--end:");
-         Put (Img (Finish));
+         Put (End_F);
          Put ("""><span class=""data"">");
          Put (Img (Value));
          Put ("</span></td></tr>");
@@ -125,31 +156,74 @@ package body Adacovex.Renderers.HTML is
          Put (Html_Escape (Label));
          Put ("</th><td style=""--size:");
          if Total = 0 then
-            Put ("0.0");
+            Put ("0.00");
          else
-            Put (Img_Frac (Part, Total));
+            Put (Frac (Part, Total));
          end if;
          Put ("""><span class=""data"">");
          Put (Img (Value));
          Put ("</span></td></tr>");
       end Bar_Row;
+
+      --  "x,y" (SVG coordinates) of radar axis A (1..5, clockwise from the
+      --  top) at Radius.  Centre is (110,100); the exact cos/sin*1000 values
+      --  for angles 90/162/234/306/378 degrees keep the math in integers --
+      --  no floating point in the renderer.
+      Axis_Cos : constant array (1 .. 5) of Integer :=
+        (0, -951, -588, 588, 951);
+      Axis_Sin : constant array (1 .. 5) of Integer :=
+        (1000, 309, -809, -809, 309);
+
+      function Radar_Point (A : Positive; Radius : Natural) return String is
+         X : constant Integer :=
+           110 + ((Integer (Radius) * Axis_Cos (A)) / 1000);
+         Y : constant Integer :=
+           100 - ((Integer (Radius) * Axis_Sin (A)) / 1000);
+      begin
+         return I_S (X) & "," & I_S (Y);
+      end Radar_Point;
+
+      --  "x,y x,y ..." point list for the five radar axes at Radius.
+      function Radar_Points (Radius : Natural) return String is
+         Buf : String (1 .. 128);
+         BL  : Natural := 0;
+      begin
+         for A in 1 .. 5 loop
+            if BL > 0 then
+               BL := BL + 1;
+               Buf (BL) := ' ';
+            end if;
+            declare
+               XY : constant String := Radar_Point (A, Radius);
+            begin
+               for I in XY'Range loop
+                  if BL < Buf'Last then
+                     BL := BL + 1;
+                     Buf (BL) := XY (I);
+                  end if;
+               end loop;
+            end;
+         end loop;
+         return Buf (1 .. BL);
+      end Radar_Points;
    begin
-      --  SPARK proof donut: proved vs unproved (not total) so circle always sums to 100
+      --  SPARK proof donut: proved vs unproved (not total) so the ring sums
+      --  to one.  The hole is pure CSS (.charts-css.pie.donut::after).
       Put ("<div class=""chart-card""><h3>SPARK Proof</h3>");
-      Put ("<table class=""charts-css donut show-labels"">");
+      Put ("<table class=""charts-css pie donut show-labels"">");
       Put ("<caption>SPARK proof progress</caption><tbody>");
       if Proof.Total_VCs > 0 then
          declare
             U : constant Natural := Proof.Total_VCs - Proof.Proved_VCs;
-            P : constant Natural := Pct (Proof.Proved_VCs, Proof.Total_VCs);
+            P : constant String := Frac (Proof.Proved_VCs, Proof.Total_VCs);
          begin
-            Slice_Row ("Proved", 0, P, Proof.Proved_VCs);
+            Slice_Row ("Proved", "0.00", P, Proof.Proved_VCs);
             if U > 0 then
-               Slice_Row ("Unproved", P, 100, U);
+               Slice_Row ("Unproved", P, "1.00", U);
             end if;
          end;
       else
-         Slice_Row ("No VCs", 0, 100, 0);
+         Slice_Row ("No VCs", "0.00", "1.00", 0);
       end if;
       Put ("</tbody></table>");
       Put ("<p style=""color:var(--muted);font-size:.82rem;margin:6px 0 0"">");
@@ -213,22 +287,7 @@ package body Adacovex.Renderers.HTML is
       end if;
       Put ("</tbody></table></div>");
 
-      --  Docstring coverage bar
-      Put ("<div class=""chart-card""><h3>Docstring Coverage</h3>");
-      Put ("<table class=""charts-css bar show-labels"">");
-      Put ("<caption>Documented subprograms</caption><tbody>");
-      if Doc_Metrics.Total_Subprograms = 0 then
-         Bar_Row ("No subprograms", 0, 1, 0);
-      else
-         Bar_Row
-           ("Documented",
-            Doc_Metrics.Documented_Subprogs,
-            Doc_Metrics.Total_Subprograms,
-            Doc_Metrics.Documented_Subprogs);
-      end if;
-      Put ("</tbody></table></div>");
-
-      --  Test pass/fail pie
+      --  Test pass/fail pie (start/end are 0..1 turn fractions)
       Put ("<div class=""chart-card""><h3>Tests Pass/Fail</h3>");
       Put ("<table class=""charts-css pie show-labels"">");
       Put ("<caption>Pass vs fail</caption><tbody>");
@@ -236,21 +295,129 @@ package body Adacovex.Renderers.HTML is
          Total_T : constant Natural := Tests.Total_Passed + Tests.Total_Failed;
       begin
          if Total_T = 0 then
-            Slice_Row ("No tests", 0, 100, 0);
+            Slice_Row ("No tests", "0.00", "1.00", 0);
          else
             declare
-               P : constant Natural := Pct (Tests.Total_Passed, Total_T);
+               P : constant String := Frac (Tests.Total_Passed, Total_T);
             begin
-               Slice_Row ("Passed", 0, P, Tests.Total_Passed);
+               Slice_Row ("Passed", "0.00", P, Tests.Total_Passed);
                if Tests.Total_Failed > 0 then
-                  Slice_Row ("Failed", P, 100, Tests.Total_Failed);
+                  Slice_Row ("Failed", P, "1.00", Tests.Total_Failed);
                end if;
             end;
          end if;
       end;
       Put ("</tbody></table></div>");
 
-      --  Dependency scope pie (if Graph not empty)
+      --  SPARK proof radar: five check categories as a spider polygon.
+      --  Charts.css 1.2.0 ships no radar drawing rules, so grid, axes and
+      --  data shape are inline SVG (integer math, theme CSS variables).
+      declare
+         type Cat_Rec is record
+            Name : String (1 .. 8);
+            Len  : Integer;
+         end record;
+         Cats  : constant array (1 .. 5) of Cat_Rec :=
+           (("Flow    ", 4),
+            ("Init    ", 4),
+            ("Runtime ", 7),
+            ("Assert  ", 6),
+            ("Func    ", 4));
+         Vals  : constant array (1 .. 5) of Natural :=
+           (Proof.Flow_Proved,
+            Proof.Init_Proved,
+            Proof.Runtime_Proved,
+            Proof.Assert_Proved,
+            Proof.Functional_Proved);
+         Max_V : Natural := 1;
+
+         --  "x,y x,y ..." polygon for the five proved counts (0..80 px).
+         function Data_Points return String is
+            Buf : String (1 .. 128);
+            BL  : Natural := 0;
+         begin
+            for K in 1 .. 5 loop
+               if BL > 0 then
+                  BL := BL + 1;
+                  Buf (BL) := ' ';
+               end if;
+               declare
+                  XY : constant String :=
+                    Radar_Point (K, 4 + (Vals (K) * 76) / Max_V);
+               begin
+                  for I in XY'Range loop
+                     if BL < Buf'Last then
+                        BL := BL + 1;
+                        Buf (BL) := XY (I);
+                     end if;
+                  end loop;
+               end;
+            end loop;
+            return Buf (1 .. BL);
+         end Data_Points;
+      begin
+         for K in 1 .. 5 loop
+            if Vals (K) > Max_V then
+               Max_V := Vals (K);
+            end if;
+         end loop;
+         Put ("<div class=""chart-card""><h3>Proof Radar</h3>");
+         if Vals (1) + Vals (2) + Vals (3) + Vals (4) + Vals (5) = 0 then
+            Put ("<p style=""color:var(--muted);font-size:.85rem"">");
+            Put ("No proof data</p></div>");
+         else
+            Put ("<svg viewBox=""0 0 220 220"" width=""100%"" height=""200""");
+            Put
+              (" role=""img"" aria-label=""SPARK proof by check category"">");
+            --  Grid rings at 25%/50%/75%/100% of the max radius (80)
+            for G in 1 .. 4 loop
+               Put ("<polygon points=""");
+               Put (Radar_Points (20 * G));
+               Put (""" fill=""none"" stroke=""var(--border)""");
+               Put (" stroke-width=""1"" opacity="".55""/>");
+            end loop;
+            --  Axes from the centre to each category
+            for A in 1 .. 5 loop
+               Put ("<path d=""M110,100 L");
+               Put (Radar_Point (A, 80));
+               Put (""" stroke=""var(--border)"" stroke-width=""1""/>");
+            end loop;
+            Put ("<polygon points=""");
+            Put (Data_Points);
+            Put (""" fill=""var(--accent)"" fill-opacity="".22""");
+            Put (" stroke=""var(--accent)"" stroke-width=""2""/>");
+            for K in 1 .. 5 loop
+               Put ("<circle transform=""translate(");
+               Put (Radar_Point (K, 4 + (Vals (K) * 76) / Max_V));
+               Put (")"" r=""2.6"" fill=""var(--accent)""/>");
+            end loop;
+            --  Category labels just outside the ring (axis 1 is the top)
+            for A in 1 .. 5 loop
+               Put ("<text transform=""translate(");
+               Put (Radar_Point (A, 96));
+               Put (")"" text-anchor=""");
+               if A = 1 then
+                  Put ("middle"" dy=""-6""");
+               elsif A <= 3 then
+                  Put ("end"" dy=""3.5""");
+               else
+                  Put ("start"" dy=""3.5""");
+               end if;
+               Put (" font-size=""9.5"" fill=""var(--muted)"">");
+               Put (Cats (A).Name (1 .. Cats (A).Len));
+               Put ("</text>");
+            end loop;
+            Put ("</svg>");
+            Put ("<p style=""color:var(--muted);font-size:.82rem;");
+            Put ("text-align:center;margin:6px 0 0"">");
+            Put ("<span style=""color:var(--accent);font-weight:600"">");
+            Put (Img (Proof.Proved_VCs));
+            Put ("</span> proved across five check categories</p></div>");
+         end if;
+      end;
+
+      --  Dependency scope polar ring (conic gradient + CSS hole; the four
+      --  cut points are cumulative percentages, theme colours via variables)
       if not Graph.Is_Empty then
          declare
             Base_Ct  : Natural := 0;
@@ -276,88 +443,62 @@ package body Adacovex.Renderers.HTML is
             declare
                Total : constant Natural :=
                  Base_Ct + Dev_Ct + Trans_Ct + Vend_Ct;
-               Start : Natural := 0;
+               S1    : constant Natural := Pct (Base_Ct, Total);
+               S2    : constant Natural := Pct (Base_Ct + Dev_Ct, Total);
+               S3    : constant Natural :=
+                 Pct (Base_Ct + Dev_Ct + Trans_Ct, Total);
             begin
                if Total > 0 then
                   Put
                     ("<div class=""chart-card""><h3>Dependencies by Scope</h3>");
-                  Put ("<table class=""charts-css pie show-labels"">");
-                  Put ("<caption>Scope distribution</caption><tbody>");
+                  Put ("<div class=""polar-wrap"">");
+                  Put ("<div class=""polar"" role=""img"" aria-label=""");
+                  Put ("Dependency scope distribution"" style=""background:");
+                  Put ("conic-gradient(var(--scope-base) 0% ");
+                  Put (Img (S1));
+                  Put ("%, var(--scope-dev) ");
+                  Put (Img (S1));
+                  Put ("% ");
+                  Put (Img (S2));
+                  Put ("%, var(--scope-trans) ");
+                  Put (Img (S2));
+                  Put ("% ");
+                  Put (Img (S3));
+                  Put ("%, var(--scope-vend) ");
+                  Put (Img (S3));
+                  Put ("% 100%)""</div>");
+                  Put ("<ul class=""polar-legend"">");
                   if Base_Ct > 0 then
-                     declare
-                        F : constant Natural := Pct (Base_Ct, Total);
-                     begin
-                        Slice_Row ("base", Start, Start + F, Base_Ct);
-                        Start := Start + F;
-                     end;
+                     Put ("<li style=""--i:var(--scope-base)""><i></i>base");
+                     Put ("<b>");
+                     Put (Img (Base_Ct));
+                     Put ("</b></li>");
                   end if;
                   if Dev_Ct > 0 then
-                     declare
-                        F : constant Natural := Pct (Dev_Ct, Total);
-                     begin
-                        Slice_Row ("dev", Start, Start + F, Dev_Ct);
-                        Start := Start + F;
-                     end;
+                     Put ("<li style=""--i:var(--scope-dev)""><i></i>dev");
+                     Put ("<b>");
+                     Put (Img (Dev_Ct));
+                     Put ("</b></li>");
                   end if;
                   if Trans_Ct > 0 then
-                     declare
-                        F : constant Natural := Pct (Trans_Ct, Total);
-                     begin
-                        Slice_Row ("transitive", Start, Start + F, Trans_Ct);
-                        Start := Start + F;
-                     end;
+                     Put
+                       ("<li style=""--i:var(--scope-trans)""><i></i>transitive");
+                     Put ("<b>");
+                     Put (Img (Trans_Ct));
+                     Put ("</b></li>");
                   end if;
                   if Vend_Ct > 0 then
-                     declare
-                        F : constant Natural := Pct (Vend_Ct, Total);
-                     begin
-                        Slice_Row ("vendored", Start, Start + F, Vend_Ct);
-                     end;
+                     Put
+                       ("<li style=""--i:var(--scope-vend)""><i></i>vendored");
+                     Put ("<b>");
+                     Put (Img (Vend_Ct));
+                     Put ("</b></li>");
                   end if;
-                  Put ("</tbody></table></div>");
+                  Put ("</ul></div></div>");
                end if;
             end;
          end;
       end if;
-
-      --  Line chart variant for proof categories
-      Put ("<div class=""chart-card""><h3>Proof (line)</h3>");
-      Put
-        ("<table class=""charts-css line show-labels show-primary-axis"" style=""height:180px"">");
-      Put ("<caption>Proof line</caption><tbody>");
-      Bar_Row
-        ("Flow", Proof.Flow_Proved, Proof.Flow_Checks, Proof.Flow_Proved);
-      Bar_Row
-        ("Init", Proof.Init_Proved, Proof.Init_Checks, Proof.Init_Proved);
-      Bar_Row
-        ("Runtime",
-         Proof.Runtime_Proved,
-         Proof.Runtime_Checks,
-         Proof.Runtime_Proved);
-      Bar_Row
-        ("Assert", Proof.Assert_Proved, Proof.Assertions, Proof.Assert_Proved);
-      Bar_Row
-        ("Functional",
-         Proof.Functional_Proved,
-         Proof.Functional_Ct,
-         Proof.Functional_Proved);
-      Put ("</tbody></table></div>");
-
-      --  Area chart for doc coverage (as area)
-      Put ("<div class=""chart-card""><h3>Docs Area</h3>");
-      Put
-        ("<table class=""charts-css area show-labels"" style=""height:160px"">");
-      Put ("<caption>Docs area</caption><tbody>");
-      if Doc_Metrics.Total_Subprograms = 0 then
-         Bar_Row ("No subprograms", 0, 1, 0);
-      else
-         Bar_Row
-           ("Documented",
-            Doc_Metrics.Documented_Subprogs,
-            Doc_Metrics.Total_Subprograms,
-            Doc_Metrics.Documented_Subprogs);
-      end if;
-      Put ("</tbody></table></div>");
 
       return To_String (R);
    end Render_Charts;
@@ -465,39 +606,39 @@ package body Adacovex.Renderers.HTML is
          Put
            ("<strong>"
             & Html_Escape (Info.Name (1 .. Info.Name_Len))
-            & "</strong>");
+            & "</strong> ");
          if Info.Version_Len > 0 then
             Put
               ("<span class=""dep-badge"">"
                & Html_Escape (Info.Version (1 .. Info.Version_Len))
-               & "</span>");
+               & "</span> ");
          end if;
          Put
            ("<span class=""dep-badge "
             & Scope_Class (Info.Scope)
             & """>"
             & Scope_Name (Info.Scope)
-            & "</span>");
+            & "</span> ");
          if Info.Kind = Types.Root_Component then
-            Put ("<span class=""dep-badge"">root</span>");
+            Put ("<span class=""dep-badge"">root</span> ");
          end if;
          if Child_Count (Idx) > 0 then
             Put
               ("<span class=""dep-badge"">"
                & Img (Child_Count (Idx))
-               & " deps</span>");
+               & " deps</span> ");
          end if;
          if Info.License_Len > 0 then
             Put
               ("<span class=""dep-meta"">"
                & Html_Escape (Info.License (1 .. Info.License_Len))
-               & "</span>");
+               & "</span> ");
          end if;
          if Info.PURL_Len > 0 then
             Put
               ("<span class=""dep-meta"" title=""PURL"">"
                & Html_Escape (Info.PURL (1 .. Info.PURL_Len))
-               & "</span>");
+               & "</span> ");
          end if;
 
          if Has_Children then
@@ -541,21 +682,21 @@ package body Adacovex.Renderers.HTML is
          & "placeholder=""Filter by name (e.g. gnatprove)"" "
          & "aria-label=""Filter dependencies"">");
       Put
-        ("<label style=""display:flex;align-items:center;gap:4px;font-size:.85rem"">"
+        ("<label class=""cb"" title=""Show base (alire.toml) deps"">"
          & "<input type=""checkbox"" id=""filter-base"" checked "
-         & "onchange=""filterByScope()""> base</label>");
+         & "onchange=""filterByScope()""><span class=""box""><svg viewBox=""0 0 12 12"" width=""10"" height=""10"" aria-hidden=""true""><path d=""M2 6 l2 2 l6 -6"" stroke=""currentColor"" fill=""none"" stroke-width=""1.5"" stroke-linecap=""round"" stroke-linejoin=""round""/></svg></span> base <svg class=""icon"" viewBox=""0 0 12 12"" aria-hidden=""true""><circle cx=""6"" cy=""6"" r=""5"" stroke=""currentColor"" fill=""none"" stroke-width=""1.2""/><text x=""6"" y=""8"" text-anchor=""middle"" font-size=""7"" font-weight=""700"" fill=""currentColor"">i</text></svg></label>");
       Put
-        ("<label style=""display:flex;align-items:center;gap:4px;font-size:.85rem"">"
+        ("<label class=""cb"" title=""Show dev (alire-dev.toml) deps"">"
          & "<input type=""checkbox"" id=""filter-dev"" checked "
-         & "onchange=""filterByScope()""> dev</label>");
+         & "onchange=""filterByScope()""><span class=""box""><svg viewBox=""0 0 12 12"" width=""10"" height=""10"" aria-hidden=""true""><path d=""M2 6 l2 2 l6 -6"" stroke=""currentColor"" fill=""none"" stroke-width=""1.5"" stroke-linecap=""round"" stroke-linejoin=""round""/></svg></span> dev <svg class=""icon"" viewBox=""0 0 12 12"" aria-hidden=""true""><path d=""M8 2 L3 7 A1.8 1.8 0 0 0 5 10 L10 5 Z"" stroke=""currentColor"" fill=""none"" stroke-width=""1.2"" stroke-linejoin=""round""/></svg></label>");
       Put
-        ("<label style=""display:flex;align-items:center;gap:4px;font-size:.85rem"">"
+        ("<label class=""cb"" title=""Show transitive deps"">"
          & "<input type=""checkbox"" id=""filter-transitive"" checked "
-         & "onchange=""filterByScope()""> transitive</label>");
+         & "onchange=""filterByScope()""><span class=""box""><svg viewBox=""0 0 12 12"" width=""10"" height=""10"" aria-hidden=""true""><path d=""M2 6 l2 2 l6 -6"" stroke=""currentColor"" fill=""none"" stroke-width=""1.5"" stroke-linecap=""round"" stroke-linejoin=""round""/></svg></span> transitive <svg class=""icon"" viewBox=""0 0 12 12"" aria-hidden=""true""><rect x=""2"" y=""3"" width=""7"" height=""5"" rx=""1"" stroke=""currentColor"" fill=""none"" stroke-width=""1.2""/><rect x=""3"" y=""5"" width=""7"" height=""5"" rx=""1"" stroke=""currentColor"" fill=""none"" stroke-width=""1.2""/></svg></label>");
       Put
-        ("<label style=""display:flex;align-items:center;gap:4px;font-size:.85rem"">"
+        ("<label class=""cb"" title=""Show vendored deps"">"
          & "<input type=""checkbox"" id=""filter-vendored"" checked "
-         & "onchange=""filterByScope()""> vendored</label>");
+         & "onchange=""filterByScope()""><span class=""box""><svg viewBox=""0 0 12 12"" width=""10"" height=""10"" aria-hidden=""true""><path d=""M2 6 l2 2 l6 -6"" stroke=""currentColor"" fill=""none"" stroke-width=""1.5"" stroke-linecap=""round"" stroke-linejoin=""round""/></svg></span> vendored <svg class=""icon"" viewBox=""0 0 12 12"" aria-hidden=""true""><path d=""M6 1 L11 10 H1 Z"" stroke=""currentColor"" fill=""none"" stroke-width=""1.2"" stroke-linejoin=""round""/><text x=""6"" y=""8.5"" text-anchor=""middle"" font-size=""7"" font-weight=""700"" fill=""currentColor"">!</text></svg></label>");
       Put
         ("<button class=""theme-toggle"" onclick=""expandDeps(true)"">Expand all</button>");
       Put
@@ -698,54 +839,40 @@ package body Adacovex.Renderers.HTML is
       Put_O ("</table></div>");
       Put_O ("</div>");
 
-      --  Overview collation charts (mini visuals)
+      --  Overview collation charts (mini visuals: donut SPARK, pie tests,
+      --  radial doc-coverage gauge)
       declare
-         procedure Mini_Slice (Lbl : String; St, Fi, V : Natural) is
+         procedure Mini_Slice (Lbl : String; St_F, Fi_F : String; V : Natural)
+         is
          begin
             Put_O ("<tr><th scope=""row"">");
-            Put_O (Lbl);
+            Put_O (Html_Escape (Lbl));
             Put_O ("</th><td style=""--start:");
-            Put_O (Img (St));
+            Put_O (St_F);
             Put_O (";--end:");
-            Put_O (Img (Fi));
+            Put_O (Fi_F);
             Put_O ("""><span class=""data"">");
             Put_O (Img (V));
             Put_O ("</span></td></tr>");
          end Mini_Slice;
-
-         procedure Mini_Bar (Lbl : String; Pt, Tt, V : Natural) is
-         begin
-            Put_O ("<tr><th scope=""row"">");
-            Put_O (Html_Escape (Lbl));
-            Put_O ("</th><td style=""--size:");
-            if Tt = 0 then
-               Put_O ("0.0");
-            else
-               Put_O (Img_Frac (Pt, Tt));
-            end if;
-            Put_O ("""><span class=""data"">");
-            Put_O (Img (V));
-            Put_O ("</span></td></tr>");
-         end Mini_Bar;
-
       begin
          Put_O ("<div class=""chart-grid"" style=""margin-top:14px"">");
          Put_O ("<div class=""chart-card""><h3>SPARK</h3>");
          Put_O
-           ("<table class=""charts-css donut show-labels"" style=""height:150px;max-width:200px;margin:0 auto"">");
+           ("<table class=""charts-css pie donut show-labels"" style=""height:150px;max-width:200px;margin:0 auto"">");
          Put_O ("<caption>SPARK</caption><tbody>");
          if Proof.Total_VCs > 0 then
             declare
                U : constant Natural := Proof.Total_VCs - Proof.Proved_VCs;
-               P : constant Natural := Pct (Proof.Proved_VCs, Proof.Total_VCs);
+               P : constant String := Frac (Proof.Proved_VCs, Proof.Total_VCs);
             begin
-               Mini_Slice ("Proved", 0, P, Proof.Proved_VCs);
+               Mini_Slice ("Proved", "0.00", P, Proof.Proved_VCs);
                if U > 0 then
-                  Mini_Slice ("Unproved", P, 100, U);
+                  Mini_Slice ("Unproved", P, "1.00", U);
                end if;
             end;
          else
-            Mini_Slice ("No VCs", 0, 100, 0);
+            Mini_Slice ("No VCs", "0.00", "1.00", 0);
          end if;
          Put_O ("</tbody></table></div>");
 
@@ -757,34 +884,54 @@ package body Adacovex.Renderers.HTML is
             Tot : constant Natural := Tests.Total_Passed + Tests.Total_Failed;
          begin
             if Tot = 0 then
-               Mini_Slice ("No tests", 0, 100, 0);
+               Mini_Slice ("No tests", "0.00", "1.00", 0);
             else
                declare
-                  P : constant Natural := Pct (Tests.Total_Passed, Tot);
+                  P : constant String := Frac (Tests.Total_Passed, Tot);
                begin
-                  Mini_Slice ("Passed", 0, P, Tests.Total_Passed);
+                  Mini_Slice ("Passed", "0.00", P, Tests.Total_Passed);
                   if Tests.Total_Failed > 0 then
-                     Mini_Slice ("Failed", P, 100, Tests.Total_Failed);
+                     Mini_Slice ("Failed", P, "1.00", Tests.Total_Failed);
                   end if;
                end;
             end if;
          end;
          Put_O ("</tbody></table></div>");
 
-         Put_O ("<div class=""chart-card""><h3>Docs</h3>");
-         Put_O
-           ("<table class=""charts-css bar show-labels"" style=""height:150px"">");
-         Put_O ("<caption>Docs</caption><tbody>");
-         if Doc_Metrics.Total_Subprograms = 0 then
-            Mini_Bar ("No subprograms", 0, 1, 0);
-         else
-            Mini_Bar
-              ("Documented",
-               Doc_Metrics.Documented_Subprogs,
-               Doc_Metrics.Total_Subprograms,
-               Doc_Metrics.Documented_Subprogs);
-         end if;
-         Put_O ("</tbody></table></div>");
+         --  Doc coverage: half-circle radial gauge (SVG arc, dasharray math
+         --  in integers; arc length for r=50 is ~157)
+         Put_O ("<div class=""chart-card""><h3>Doc Coverage</h3>");
+         declare
+            Cov : constant Natural :=
+              Pct
+                (Doc_Metrics.Documented_Subprogs,
+                 Doc_Metrics.Total_Subprograms);
+            Off : constant Natural := 157 - (157 * Cov) / 100;
+         begin
+            Put_O ("<svg viewBox=""0 0 120 68"" width=""100%"" height=""68""");
+            Put_O (" role=""img"" aria-label=""Docstring coverage"">");
+            Put_O ("<path d=""M10 60 A50 50 0 0 1 110 60"" fill=""none""");
+            Put_O (" stroke=""var(--border)"" stroke-width=""11""");
+            Put_O (" stroke-linecap=""round""/>");
+            Put_O ("<path d=""M10 60 A50 50 0 0 1 110 60"" fill=""none""");
+            Put_O (" stroke=""var(--accent)"" stroke-width=""11""");
+            Put_O (" stroke-linecap=""round"" stroke-dasharray=""157""");
+            Put_O (" stroke-dashoffset=""");
+            Put_O (Img (Off));
+            Put_O ("""/>");
+            Put_O ("<text x=""60"" y=""56"" text-anchor=""middle""");
+            Put_O
+              (" font-size=""11"" font-weight=""600"" fill=""var(--fg)"">");
+            Put_O (Img (Cov));
+            Put_O ("%</text></svg>");
+            Put_O ("<p style=""color:var(--muted);font-size:.72rem;");
+            Put_O ("text-align:center;margin:4px 0 0"">");
+            Put_O (Img (Doc_Metrics.Documented_Subprogs));
+            Put_O (" / ");
+            Put_O (Img (Doc_Metrics.Total_Subprograms));
+            Put_O (" documented</p>");
+         end;
+         Put_O ("</div>");
          Put_O ("</div>");
       end;
 
@@ -959,21 +1106,24 @@ package body Adacovex.Renderers.HTML is
                       (Replace_All
                          (Replace_All
                             (Replace_All
-                               (Adacovex.Dashboard_Template.Template,
-                                "__OVERVIEW__",
-                                To_String (Overview)),
-                             "__PROOF__",
-                             To_String (Proof_S)),
-                          "__TESTS__",
-                          To_String (Tests_S)),
-                       "__COMPLIANCE__",
-                       To_String (Compl)),
-                    "__DEPS__",
-                    Render_Deps_HTML (Graph)),
-                 "__CHARTS__",
-                 Render_Charts (Doc_Metrics, Proof, Tests, Graph)),
-              "__GRAPH_JSON__",
-              Render_Deps_JSON (Graph)),
+                               (Replace_All
+                                  (Adacovex.Dashboard_Template.Template,
+                                   "__OVERVIEW__",
+                                   To_String (Overview)),
+                                "__PROOF__",
+                                To_String (Proof_S)),
+                             "__TESTS__",
+                             To_String (Tests_S)),
+                          "__COMPLIANCE__",
+                          To_String (Compl)),
+                       "__DEPS__",
+                       Render_Deps_HTML (Graph)),
+                    "__CHARTS__",
+                    Render_Charts (Doc_Metrics, Proof, Tests, Graph)),
+                 "__GRAPH_JSON__",
+                 Render_Deps_JSON (Graph)),
+              "__VERSION__",
+              Adacovex.Version),
            "__THEME__",
            Types.To_String (Theme));
    end Render_Dashboard_Internal;
