@@ -3,17 +3,17 @@
   "specVersion": "1.5",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-08-23T09:46:21",
+    "timestamp": "2026-08-23T15:31:01",
     "tools": [
-      {"vendor": "bladeacer", "name": "adacovex", "version": "1.21.0"}
+      {"vendor": "bladeacer", "name": "adacovex", "version": "1.23.0"}
     ],
     "component": {
       "type": "application",
-      "bom-ref": "pkg:alire/covex@1.21.0",
+      "bom-ref": "pkg:alire/covex@1.23.0",
       "name": "covex",
-      "version": "1.21.0",
+      "version": "1.23.0",
       "language": "Ada; Assembly; Python",
-      "purl": "pkg:alire/covex@1.21.0",
+      "purl": "pkg:alire/covex@1.23.0",
       "licenses": [{"license": {"id": "Apache-2.0"}}],
       "description": "Ada/SPARK coverage, proof, multi-standard compliance tool",
       "properties": [{"name": "adacovex:proof_level", "value": "Platinum"}, {"name": "adacovex:standard", "value": "DO-178C, ISO 26262, IEC 62304"}, {"name": "adacovex:dal_target", "value": "DAL-C"}, {"name": "adacovex:level", "value": "DAL-C / ASIL B / Class A"}]
@@ -58,6 +58,22 @@
       "name": "charts.min",
       "language": "CSS",
       "purl": "pkg:generic/charts.min",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "vendored"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/@playwright",
+      "name": "@playwright",
+      "language": "JavaScript; TypeScript",
+      "purl": "pkg:generic/@playwright",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "vendored"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/.pnpm",
+      "name": ".pnpm",
+      "language": "JavaScript; TypeScript",
+      "purl": "pkg:generic/.pnpm",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "vendored"}]
       },
     {
@@ -113,6 +129,14 @@
       },
     {
       "type": "library",
+      "bom-ref": "pkg:generic/go",
+      "name": "go",
+      "purl": "pkg:generic/go",
+      "description": "System tool referenced by the project (dev dependency)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
+      },
+    {
+      "type": "library",
       "bom-ref": "pkg:generic/python3",
       "name": "python3",
       "version": "3.14.7",
@@ -144,6 +168,15 @@
       "name": "jj",
       "version": "0.44.0",
       "purl": "pkg:generic/jj",
+      "description": "System tool referenced by the project (dev dependency)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/pnpm",
+      "name": "pnpm",
+      "version": "11.3.0",
+      "purl": "pkg:generic/pnpm",
       "description": "System tool referenced by the project (dev dependency)",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
       },
@@ -182,12 +215,48 @@
       "purl": "pkg:generic/svn",
       "description": "System tool referenced by the project (dev dependency)",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/npm",
+      "name": "npm",
+      "version": "11.19.0",
+      "purl": "pkg:generic/npm",
+      "description": "System tool referenced by the project (dev dependency)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/node",
+      "name": "node",
+      "version": "v26.7.0",
+      "purl": "pkg:generic/node",
+      "description": "System tool referenced by the project (dev dependency)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/g++",
+      "name": "g++",
+      "version": "16.2.1",
+      "purl": "pkg:generic/g++",
+      "description": "System tool referenced by the project (dev dependency)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/cargo",
+      "name": "cargo",
+      "version": "1.98.0",
+      "purl": "pkg:generic/cargo",
+      "description": "System tool referenced by the project (dev dependency)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
       }
   ],
   "dependencies": [
     {
-      "ref": "pkg:alire/covex@1.21.0",
-      "dependsOn": ["pkg:generic/flexsearch", "pkg:generic/dashboard", "pkg:generic/graphre", "pkg:generic/nomnoml", "pkg:generic/charts.min", "pkg:alire/gnatprove", "pkg:alire/gnatdoc_bin", "pkg:alire/gnatformat_bin", "pkg:generic/bash", "pkg:generic/curl", "pkg:generic/alr", "pkg:generic/python3", "pkg:generic/git", "pkg:generic/make", "pkg:generic/jj", "pkg:generic/mandb", "pkg:generic/fossil", "pkg:generic/hg", "pkg:generic/svn"]
+      "ref": "pkg:alire/covex@1.23.0",
+      "dependsOn": ["pkg:generic/flexsearch", "pkg:generic/dashboard", "pkg:generic/graphre", "pkg:generic/nomnoml", "pkg:generic/charts.min", "pkg:generic/@playwright", "pkg:generic/.pnpm", "pkg:alire/gnatprove", "pkg:alire/gnatdoc_bin", "pkg:alire/gnatformat_bin", "pkg:generic/bash", "pkg:generic/curl", "pkg:generic/alr", "pkg:generic/go", "pkg:generic/python3", "pkg:generic/git", "pkg:generic/make", "pkg:generic/jj", "pkg:generic/pnpm", "pkg:generic/mandb", "pkg:generic/fossil", "pkg:generic/hg", "pkg:generic/svn", "pkg:generic/npm", "pkg:generic/node", "pkg:generic/g++", "pkg:generic/cargo"]
     }
   ]
 }

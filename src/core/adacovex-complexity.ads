@@ -27,8 +27,7 @@ package Adacovex.Complexity is
       Subs       : Subprogram_Vectors.Vector;
    end record;
 
-   package File_Vectors is new
-     Ada.Containers.Vectors (Positive, File_Metrics);
+   package File_Vectors is new Ada.Containers.Vectors (Positive, File_Metrics);
 
    type Violation is record
       File_Path : String (1 .. 4096);
@@ -46,23 +45,29 @@ package Adacovex.Complexity is
       Violations : Violation_Vectors.Vector;
    end record;
 
+   --  Scan Target_Dir for Ada source files and return per-file and per-
+   --  subprogram cyclomatic complexity metrics.
    function Analyze_Project (Target_Dir : String) return Complexity_Result;
 
+   --  Evaluate Result against the supplied thresholds and return the list of
+   --  violations (empty when every gate passes).
    function Check_Gates
-     (Result               : Complexity_Result;
-      Max_File_LOC         : Natural;
-      Max_File_Pct         : Natural;
-      Max_Fn_Complexity    : Natural;
-      Max_File_Complexity  : Natural)
-      return Violation_Vectors.Vector;
+     (Result              : Complexity_Result;
+      Max_File_LOC        : Natural;
+      Max_File_Pct        : Natural;
+      Max_Fn_Complexity   : Natural;
+      Max_File_Complexity : Natural) return Violation_Vectors.Vector;
 
+   --  Emit a human-readable report to stdout.  When Check_Mode is True the
+   --  output is gated on Violations being non-empty; otherwise every file
+   --  and subprogram is always printed.
    procedure Print_Report
-     (Result               : Complexity_Result;
-      Check_Mode           : Boolean;
-      Violations           : Violation_Vectors.Vector;
-      Max_File_LOC         : Natural;
-      Max_File_Pct         : Natural;
-      Max_Fn_Complexity    : Natural;
-      Max_File_Complexity  : Natural);
+     (Result              : Complexity_Result;
+      Check_Mode          : Boolean;
+      Violations          : Violation_Vectors.Vector;
+      Max_File_LOC        : Natural;
+      Max_File_Pct        : Natural;
+      Max_Fn_Complexity   : Natural;
+      Max_File_Complexity : Natural);
 
 end Adacovex.Complexity;

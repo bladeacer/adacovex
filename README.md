@@ -69,32 +69,49 @@ itself and `make run-ada-crdt` runs the Ada_CRDT regression.
 
 ## Documentation
 
+### Getting started
+
 | Reference | Description |
 |-----------|-------------|
+| [Installation](docs/installation.md) | Alire / release bundle / source build |
 | [CLI Reference](docs/cli-reference.md) | Full flag table, `--require-*` gates, exit codes |
+| [Target Projects](docs/target-projects.md) | What a project must provide for assessment |
+| [Platforms](docs/platforms.md) | Platform support, CPU core detection, `status` subcommand |
+
+### Usage and configuration
+
+| Reference | Description |
+|-----------|-------------|
 | [Web Dashboard + JSON API](docs/dashboard.md) | `--serve` HTML dashboard, `/api/metrics`, themes |
 | [SBOM](docs/sbom.md) | Proof-aware CycloneDX / SPDX bill of materials |
 | [VCS Support](docs/vcs.md) | Differential modes across git/hg/svn/fossil/jj |
-| [Target Projects](docs/target-projects.md) | What a project must provide for assessment |
-| [CI/CD](docs/ci-cd.md) | GitHub Action, workflows, release bundling |
-| [Standards](docs/standards.md) | DO-178C / ISO 26262 / IEC 62304 abstraction |
-| [Platforms](docs/platforms.md) | Platform support, CPU core detection, `status` subcommand |
+| [Proving and Writing Proofs](docs/proving.md) | How proving works, SPARK contracts, proof patches for vendored deps |
 | [Architecture](docs/architecture.md) | Design decisions, patches, toolchain resolution, overflow contract |
-| [Proving and Writing Proofs](docs/proving.md) | How proving works, writing SPARK contracts, proof patches for vendored deps |
-| [HLR Index](docs/HLR.md) | High-level requirements traceability index |
-| [LLR Mapping](docs/LLR.md) | Low-level requirement-to-HLR mapping |
-| [Installation](docs/installation.md) | Alire manifest / `alr install` / release bundle / source build |
-| [LLM usage](docs/llm-usage.md) | AI disclosure, trust, how LLM agents work under AGENTS.md |
-| [Contributing](CONTRIBUTING.md) | Changelog format, test suite |
-| [Developer Guide](docs/developer-guide.md) | Codebase structure and repo setup for contributors |
-| [Changelog](docs/changelogs/index.md) | Release history |
-| [API Reference](docs/api-docs/index.md) | Auto-generated package API docs |
-| [Docstring Spec](docs/api-docs/adacovex-docstring-spec.md) | Annotation format, placement, conventions |
-| [Test Format](docs/api-docs/adacovex-test-format.md) | Supported test-result output format |
-| [SPARK Levels](docs/api-docs/adacovex-spark-levels.md) | Assurance level objectives (Stone--Platinum) |
+
+### Compliance
+
+| Reference | Description |
+|-----------|-------------|
+| [Standards](docs/standards.md) | DO-178C / ISO 26262 / IEC 62304 abstraction |
 | [DAL Levels](docs/api-docs/adacovex-dal-levels.md) | DO-178C DAL A - E criteria |
 | [ASIL Levels](docs/api-docs/adacovex-asil-levels.md) | ISO 26262 ASIL A - D / QM criteria |
 | [Safety Classes](docs/api-docs/adacovex-class-levels.md) | IEC 62304 Class A - C criteria |
+| [HLR Index](docs/HLR.md) | High-level requirements traceability index |
+| [LLR Mapping](docs/LLR.md) | Low-level requirement-to-HLR mapping |
+
+### Development and auditing
+
+| Reference | Description |
+|-----------|-------------|
+| [Contributing](CONTRIBUTING.md) | Changelog format, test suite |
+| [Developer Guide](docs/developer-guide.md) | Codebase structure and repo setup for contributors |
+| [API Reference](docs/api-docs/index.md) | Auto-generated package API docs (developers / auditors) |
+| [Docstring Spec](docs/api-docs/adacovex-docstring-spec.md) | Annotation format, placement, conventions |
+| [Test Format](docs/api-docs/adacovex-test-format.md) | Supported test-result output format |
+| [SPARK Levels](docs/api-docs/adacovex-spark-levels.md) | Assurance level objectives (Stone--Platinum) |
+| [Changelog](docs/changelogs/index.md) | Release history |
+| [CI/CD](docs/ci-cd.md) | GitHub Action, workflows, release bundling |
+| [LLM usage](docs/llm-usage.md) | AI disclosure, trust, how LLM agents work under AGENTS.md |
 
 ## Installing adacovex
 
@@ -124,6 +141,7 @@ adacovex sbom [--format=cyclonedx-json|spdx-json] [--out=PATH]
 adacovex prove [--target=PATH] [prove options]
 adacovex status [--target=PATH]
 adacovex man [--check|--force] [--dir=PATH]
+adacovex complexity [--target=PATH]
 ```
 
 The full flag table (defaults, modes, `--require-*` CI gates, strict vs
@@ -141,6 +159,7 @@ adacovex --target=. --compare-base=HEAD             # differential assessment
 adacovex prove --target=.                           # run gnatprove, then assess
 adacovex sbom --format=cyclonedx-json --target=.    # proof-aware SBOM
 adacovex status --target=.                          # toolchain + platform report
+adacovex complexity --target=.                      # cyclomatic complexity check
 ```
 
 More examples: [docs/cli-reference.md](docs/cli-reference.md#examples).

@@ -64,7 +64,7 @@ CLI_ONLY: Dict[str, str] = {
     "version": "early-exit --version (the action's `version` input is the release ref, not this flag)",
     "serve": "dashboard serve flag (local only)",
     "theme": "dashboard theme flag (local only)",
-    "port": "dashboard port flag (local only)",
+    "port": "dashboard server port (local only)",
     "emit-svg": "SVG badge output path (CI uses the default <target>/docs/badges)",
     "cache": "result-cache enable is default-on; the action exposes only the negative --no-cache",
     "sbom": "sbom subcommand; the action drives SBOM via generate-sbom + sbom-format inputs",
@@ -74,6 +74,7 @@ CLI_ONLY: Dict[str, str] = {
     "check": "man --check (local)",
     "dir": "man --dir (local)",
     "out": "sbom --out output path (the action uploads the SBOM artifact itself)",
+    "complexity": "complexity subcommand (local quality gate; wired into make complexity-check)",
 }
 
 # Action inputs that intentionally have NO CLI flag (CI plumbing that drives

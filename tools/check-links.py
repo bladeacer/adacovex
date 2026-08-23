@@ -35,6 +35,7 @@ SKIP_DIRS: Tuple[str, ...] = (
     "index",
     "config",
     "docs/badges",
+    "node_modules",
 )
 
 LINK_RE = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
@@ -97,9 +98,10 @@ def strip_code_fences(text: str) -> str:
 def md_files() -> List[Path]:
     """All markdown files to check, in a stable order."""
     files: List[Path] = []
+    skip_parts: set = set(SKIP_DIRS)
     for path in sorted(ROOT.rglob("*.md")):
         rel: Path = path.relative_to(ROOT)
-        if any(rel.is_relative_to(skip) for skip in SKIP_DIRS):
+        if any(part in skip_parts for part in rel.parts):
             continue
         files.append(path)
     return files

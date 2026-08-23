@@ -68,7 +68,7 @@ Enforced rules:
 - Files are pure ASCII; list items indented under a heading use exactly
   three spaces (never 4+).
 - `## Proof Results` states the SPARK level (Stone..Platinum), the exact VC
-  totals (e.g. `720/720 VCs proved across 49 analyzed units`), and calls out
+  totals (e.g. `720/720 VCs proved across 50 analyzed units`), and calls out
   whether any proof metrics changed.
 - `## Traceability` lists any new HLRs by tag name and package, then the
   existing `-- HLR-*` tags covering the changed packages.

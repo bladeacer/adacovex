@@ -522,9 +522,9 @@ You write the proofs yourself, so there is no magic or hidden abstractions here.
 
 When adacovex runs, it executes these steps in sequence:
 
-```
-0. Parse CLI args           -> CLI_Config record (prove / sbom / diff / man / normal)
-0a. Early-exit modes        -> --help / --version / man / status exit before the pipeline
+ ```
+0. Parse CLI args           -> CLI_Config record (prove / sbom / diff / man / complexity / normal)
+0a. Early-exit modes        -> --help / --version / man / status / complexity exit before the pipeline
 1. Determine ANSI color     -> NO_COLOR check
 2. (prove mode) Run GNATprove -> fresh obj/gnatprove/gnatprove.out
 3. Scan source files        -> Package_Vectors.Vector (subprograms, HLR tags, docstrings)
