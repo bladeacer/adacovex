@@ -219,6 +219,9 @@ for paths, and no `pip install` / external imports. Run them with
 `python3 tools/<name>.py`; the sync ones are wired as `make test-count`, `make
 proof-status`, `make doc-links`, and `make link-check` (markdown link
 verification, run as a cheap static gate in `make check`).
+`tools/check-action-parity.py` is a pure check (no writes) wired as
+`make action-parity-check` -- a feature gate in `make check` and CI that
+fails when the GitHub Action stops mirroring the base CLI option set.
 `tools/rst2md.py` (wired as `make doc`) converts gnatdoc RST output into the
 `docs/api-docs/` package pages + index; cross-links to the hand-written
 reference pages live in its `GUIDE_PAGES` / `PACKAGE_GUIDES` tables, **never**
@@ -229,7 +232,7 @@ link URLs).
 
 | Target | Description |
 |--------|-------------|
-| `check` | Full quality gate (CI runs this before release): cheap static gates first (ascii, spark-off, changelog, version, doc-links), then build + tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description) that fail when any live file carries a stale metric |
+| `check` | Full quality gate (CI runs this before release): cheap static gates first (ascii, spark-off, changelog, action-parity, version, doc-links), then build + tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description) that fail when any live file carries a stale metric |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
 | `test` | Build + run the 865-test native suite |
@@ -247,6 +250,7 @@ link URLs).
 | `test-count` | Sync test counts from docs/test_result.md |
 | `doc-links` | Regenerate the AGENTS.md Documentation block from tools/doc-links.map |
 | `changelog-check` | Validate all `docs/changelogs/` against the canonical format (tools/check-changelogs.py) |
+| `action-parity-check` | Fail if the GitHub Action drifts from the base CLI option set or the docs/ci-cd.md input table (tools/check-action-parity.py; feature gate) |
 | `release` | Build, prove, validate, run coverage gate vs last release, bundle + tag & push |
 | `ascii-check` | Verify all source files are pure ASCII |
 | `spark-off-check` | Fail if any `SPARK_Mode (Off)` appears outside the `Types.Implementation` container package |
@@ -269,14 +273,32 @@ GitHub Actions (composite `./action.yml` + `ci.yml` / `pr-check.yml` /
 Installation methods, target-project requirements, and running against another
 project: [README.md](README.md#installing-adacovex).
 
-### GitHub Action = base-CLI feature parity
+### GitHub Action = base-CLI feature parity (feature gate)
+
+**Action/CLI/docs parity is a feature gate, not a convention.**  The
+`tools/check-action-parity.py` script enforces it and is wired into `make
+check` (`action-parity-check`) and the `ci.yml` `action-parity` job, so a
+drift between the base CLI, the composite action, and the docs fails CI.
+The gate checks three directions against three sources of truth: the CLI
+flags (`Known_Flags` in `src/core/adacovex-config.adb`), the action inputs
+(the `inputs:` section of `action.yml`), and the docs/ci-cd.md `### Inputs`
+table.  Every CLI flag must have a matching action input, every action input
+must map back to a CLI flag, and every action input must be documented in
+docs/ci-cd.md (and vice versa).  The mapping rules and the small, documented
+allow-lists of deliberately non-CI flags (`CLI_ONLY` / `ACTION_ONLY` in the
+script -- early-exit `--help`/`--version`, local dashboard `--serve` /
+`--theme` / `--port`, `status`/`man`/`sbom` subcommands, `--out` /
+`--emit-svg` output paths, and action plumbing like `build` / `run-tests` /
+`result-cache`) live in the script; anything else must be wired end to end.
+When a CLI flag is added, add the matching action input **and** its
+docs/ci-cd.md row in the same change -- or the gate fails.
 
 Every CI run (the composite action and the `ci.yml` / `pr-check.yml` /
 `release.yml` workflows) publishes a **Markdown summary** at the bottom of the
 job page via `$GITHUB_STEP_SUMMARY`: the action appends an assessment table
 (version, target, compliance, SPARK level, tests, coverage) plus an
 `always()` run-summary step, and each workflow adds a `summary` job that
-aggregates every job result. **Threshold failures fail loudly**: unmet
+aggregates every job result.  **Threshold failures fail loudly**: unmet
 `--require-*` gates surface as `::error::` annotations, the assessment step
 exits non-zero, the summary shows the unmet gates, and the workflow summary
 job exits 1 when any job failed.
@@ -294,11 +316,12 @@ inputs map 1:1 onto the CLI flags (e.g. `target`/`--target`, `dal`/`--dal`,
 `--no-loop-unrolling` / `--no-inlining` / `--quiet` /
 `--suppress-warnings=SETS` flags).
 
-Keep them in sync: when a CLI flag is added, a matching action input (and the
-docs/ci-cd.md input table) goes with it. The only assessment that is *not*
-reproduced in CI is `make run-ada-crdt` (a local dogfood regression against
-`../Ada_CRDT`); `ci.yml` runs `--standard=all` self-assessment, the native
-tests, and the release-tag coverage gate instead.
+The `action-parity-check` gate above is what keeps these in sync -- a CLI
+flag without its input, an input without its docs row, or a docs row without
+its input all fail CI. The only assessment that is *not* reproduced in CI is
+`make run-ada-crdt` (a local dogfood regression against `../Ada_CRDT`);
+`ci.yml` runs `--standard=all` self-assessment, the native tests, and the
+release-tag coverage gate instead.
 
 ## Verification
 

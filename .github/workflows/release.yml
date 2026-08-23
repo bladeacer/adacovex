@@ -17,6 +17,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Enforce action/CLI/docs parity
+        run: make action-parity-check
+
       - uses: ./
         id: adacovex
         with:

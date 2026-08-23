@@ -4,6 +4,12 @@ A composite action at the repository root (`./action.yml`) runs the full
 adacovex pipeline in CI, and three workflows (`ci.yml`, `pr-check.yml`,
 `release.yml`) cover self-assessment, PR coverage gating, and releases.
 
+**Action/CLI/docs parity is a feature gate**: `ci.yml` runs
+`make action-parity-check` (wired into `make check`), which fails the build
+when the action's inputs stop mirroring the base CLI option set or the
+`### Inputs` table below drifts from `action.yml`. See
+`tools/check-action-parity.py` for the mapping rules.
+
 ## Composite action (`./action.yml`)
 
 Installs Alire via

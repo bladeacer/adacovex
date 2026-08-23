@@ -1,4 +1,4 @@
-.PHONY: help check build test prove doc clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish _dev_cmd agents-tree sbom description proof-status test-count doc-links link-check changelog-check man
+.PHONY: help check build test prove doc clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish _dev_cmd agents-tree sbom description proof-status test-count doc-links link-check changelog-check action-parity-check man
 
 .DEFAULT_GOAL := help
 
@@ -60,9 +60,12 @@ help:
 	@echo '  ascii-check   Verify all source files are pure ASCII'
 	@echo '  spark-off-check  Fail if any SPARK_Mode (Off) appears outside the'
 	@echo '                  Types.Implementation container package'
+	@echo '  action-parity-check  Fail if the GitHub Action drifts from the base'
+	@echo '                  CLI option set or the docs/ci-cd.md input table'
 	@echo ''
 	@echo 'check runs the same gates CI enforces before a release, cheap static'
-	@echo '  gates first (ascii, spark-off, changelog, version, doc-links), then'
+	@echo '  gates first (ascii, spark-off, changelog, version, doc-links,
+	@echo '  action-parity), then'
 	@echo '  build + native tests + SPARK proof (Platinum, 720 VCs) + SVG badges'
 	@echo '  + API docs + SBOM, then tree-wide count-sync checks (test-count,'
 	@echo '  proof-status, description) that fail when any live file carries a'
@@ -152,6 +155,12 @@ coverage-gate: build
 link-check:
 	@python3 tools/check-links.py
 
+# Fail if the GitHub Action drifts from the base CLI option set or the
+# docs/ci-cd.md input table (see tools/check-action-parity.py for the
+# mapping rules).  Cheap static gate wired into make check + CI.
+action-parity-check:
+	@python3 tools/check-action-parity.py
+
 agents-tree:
 	@python3 tools/gen-agents-tree.py > /tmp/agents-tree.out && \
 	python3 tools/apply-agents-tree.py /tmp/agents-tree.out && \
@@ -210,6 +219,7 @@ check:
 	@echo "=== Quality gate: ASCII ==="; $(MAKE) ascii-check
 	@echo "=== Quality gate: SPARK_Mode Off ==="; $(MAKE) spark-off-check
 	@echo "=== Quality gate: changelog format ==="; $(MAKE) changelog-check
+	@echo "=== Quality gate: action/CLI/docs parity ==="; $(MAKE) action-parity-check
 	@echo "=== Quality gate: version source ==="; python3 tools/gen-version.py --check
 	@echo "=== Quality gate: doc links ==="; python3 tools/update-doc-links.py --check
 	@echo "=== Quality gate: markdown links ==="; $(MAKE) link-check
@@ -223,7 +233,7 @@ check:
 	@echo "=== Quality gate: proof metrics in sync ==="; python3 tools/update-proof-status.py --check
 	@echo "=== Quality gate: description sync ==="; python3 tools/update-description.py --check
 	@echo ""
-	@echo "=== Quality gate passed: ascii, spark-off, changelog, version, doc-links, link, build, test, prove, doc, sbom, test-count, proof-status, description ==="
+	@echo "=== Quality gate passed: ascii, spark-off, changelog, action-parity, version, doc-links, link, build, test, prove, doc, sbom, test-count, proof-status, description ==="
 
 # Sync the crate description + long description from the canonical files
 # (alire/description.txt + alire/long-description.txt) into every manifest.

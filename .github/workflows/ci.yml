@@ -48,6 +48,17 @@ jobs:
       - name: Enforce no SPARK_Mode (Off) outside Types.Implementation
         run: make spark-off-check
 
+  action-parity:
+    # Feature gate: the composite action must mirror the base CLI option set
+    # (and the docs/ci-cd.md input table) 1:1.  Fails when a CLI flag, action
+    # input, or docs row drifts out of sync.
+    name: Action/CLI/docs parity gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Enforce action/CLI/docs parity
+        run: make action-parity-check
+
   consumer-run-tests:
     # Regression test for the action's run-tests in a CONSUMER workspace:
     # build:true builds adacovex in a scratch checkout, so the action must
@@ -129,7 +140,7 @@ jobs:
   summary:
     name: CI summary
     if: always()
-    needs: [self-assessment, adacovex-tests, no-spark-off, consumer-run-tests, coverage-gate]
+    needs: [self-assessment, adacovex-tests, no-spark-off, action-parity, consumer-run-tests, coverage-gate]
     runs-on: ubuntu-latest
     steps:
       - name: Write CI summary
@@ -138,6 +149,7 @@ jobs:
           SELF: ${{ needs.self-assessment.result }}
           TESTS: ${{ needs.adacovex-tests.result }}
           OFFOFF: ${{ needs.no-spark-off.result }}
+          PARITY: ${{ needs.action-parity.result }}
           CONSUMER: ${{ needs.consumer-run-tests.result }}
           GATE: ${{ needs.coverage-gate.result }}
         run: |
@@ -151,11 +163,12 @@ jobs:
             echo "| Self-assessment (all standards) | $SELF |"
             echo "| Build + native tests | $TESTS |"
             echo "| SPARK_Mode Off gate | $OFFOFF |"
+            echo "| Action/CLI/docs parity gate | $PARITY |"
             echo "| Action run-tests (consumer workspace) | $CONSUMER |"
             echo "| Coverage gate (push only) | $GATE |"
             echo ''
           } >> "$GITHUB_STEP_SUMMARY"
-          for R in "$SELF" "$TESTS" "$OFFOFF" "$CONSUMER" "$GATE"; do
+          for R in "$SELF" "$TESTS" "$OFFOFF" "$PARITY" "$CONSUMER" "$GATE"; do
             if [ "$R" = "failure" ]; then
               FAILED=1
               echo "::error::A CI job failed -- see the failing job logs and its adacovex assessment summary." >&2

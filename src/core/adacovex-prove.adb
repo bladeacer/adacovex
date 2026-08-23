@@ -938,11 +938,11 @@ package body Adacovex.Prove is
       Set_Ct   : Natural := 0;
 
       type Line_Array is array (1 .. 4) of String (1 .. Max_Line);
-      Bufs           : Line_Array;
-      Lens           : array (1 .. 4) of Natural := (others => 0);
-      Ct             : Natural := 0;
-      Skip_Cont      : Boolean := False;
-      F              : File_Type;
+      Bufs      : Line_Array;
+      Lens      : array (1 .. 4) of Natural := (others => 0);
+      Ct        : Natural := 0;
+      Skip_Cont : Boolean := False;
+      F         : File_Type;
 
       --  First non-blank character of S (' ' when S is blank).
       function Head (S : String) return Character is
@@ -959,7 +959,8 @@ package body Adacovex.Prove is
       function Starts (S : String; Prefix : String) return Boolean is
          T : constant String := Trim (S, Ada.Strings.Both);
       begin
-         return T'Length >= Prefix'Length
+         return
+           T'Length >= Prefix'Length
            and then T (T'First .. T'First + Prefix'Length - 1) = Prefix;
       end Starts;
 
@@ -1002,7 +1003,7 @@ package body Adacovex.Prove is
    begin
       --  Parse the comma-separated set list; empty => default set.
       declare
-         T : constant String :=
+         T     : constant String :=
            (if Sets'Length = 0 then "unrolling-inlining" else Sets);
          Start : Natural := T'First;
       begin
@@ -1015,8 +1016,7 @@ package body Adacovex.Prove is
                   begin
                      Set_Lens (Set_Ct) := Natural'Min (Len, 64);
                      for J in 1 .. Set_Lens (Set_Ct) loop
-                        Set_Bufs (Set_Ct) (J) :=
-                          T (Start + J - 1);
+                        Set_Bufs (Set_Ct) (J) := T (Start + J - 1);
                      end loop;
                   end;
                end if;
@@ -1041,14 +1041,14 @@ package body Adacovex.Prove is
                --  header pair that is still waiting in the buffer.
                if Head (L) = '+' and then Ct >= 2 then
                   if Starts (Bufs (Ct) (1 .. Lens (Ct)), "-->")
-                    and then Starts (Bufs (Ct - 1) (1 .. Lens (Ct - 1)), "info:")
+                    and then Starts
+                               (Bufs (Ct - 1) (1 .. Lens (Ct - 1)), "info:")
                   then
                      Ct := Ct - 2;
                   end if;
                end if;
                Skip_Cont := True;
-            elsif Skip_Cont
-              and then (Head (L) = '-' or else Head (L) = '+')
+            elsif Skip_Cont and then (Head (L) = '-' or else Head (L) = '+')
             then
                --  Location / sub-message continuation of a suppressed block.
                null;
