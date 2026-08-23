@@ -7,6 +7,14 @@ permissions:
   contents: read
 
 jobs:
+  complexity-gate:
+    name: Complexity gate (no god objects)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Enforce complexity + file-size caps
+        run: make complexity-check
+
   coverage-delta:
     name: Docstring coverage delta
     runs-on: ubuntu-latest
@@ -25,12 +33,13 @@ jobs:
   summary:
     name: PR summary
     if: always()
-    needs: [coverage-delta]
+    needs: [complexity-gate, coverage-delta]
     runs-on: ubuntu-latest
     steps:
       - name: Write PR summary
         shell: bash
         env:
+          CX: ${{ needs.complexity-gate.result }}
           DELTA: ${{ needs.coverage-delta.result }}
         run: |
           set -euo pipefail
@@ -39,12 +48,15 @@ jobs:
             echo ''
             echo '| Job | Result |'
             echo '|-----|--------|'
+            echo "| Complexity gate (no god objects) | $CX |"
             echo "| Docstring coverage delta vs base | $DELTA |"
             echo ''
           } >> "$GITHUB_STEP_SUMMARY"
-          if [ "$DELTA" = "failure" ]; then
-            echo "::error::Docstring coverage regressed against the PR base branch." >&2
-            echo '**FAILED: docstring coverage regressed.**' >> "$GITHUB_STEP_SUMMARY"
+          if [ "$CX" = "failure" ] || [ "$DELTA" = "failure" ]; then
+            echo '**FAILED: complexity and/or docstring coverage regressed.**' >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
-          echo 'Coverage gate passed.' >> "$GITHUB_STEP_SUMMARY"
+          if [ "$DELTA" = "failure" ]; then
+            echo "::error::Docstring coverage regressed against the PR base branch." >&2
+          fi
+          echo 'Compliance gates passed.' >> "$GITHUB_STEP_SUMMARY"

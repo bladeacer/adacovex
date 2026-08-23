@@ -64,7 +64,7 @@ categories unchanged. Counts synced with `make test-count`.
 
 ## Proof Results
 
-Platinum, 720/720 VCs proved across 48 analyzed units (unchanged from
+Platinum, 720/720 VCs proved across 49 analyzed units (unchanged from
 1.17.0): the C1/C2 changes touch CLI parsing, the prove option record, and
 the output-replay filter -- all default-off or I/O-bound bodies, so no new
 proof obligations. 0 unproved, 0 justified. Re-verified with

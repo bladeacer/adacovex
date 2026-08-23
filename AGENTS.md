@@ -122,6 +122,7 @@ adacovex sbom [--format=cyclonedx-json|spdx-json] [--out=PATH]
 adacovex prove [--target=PATH] [prove options]
 adacovex status [--target=PATH]
 adacovex man [--check] [--dir=PATH]
+adacovex completion [bash|fish|zsh|pwsh]
 ```
 
 Full flag reference, detailed behavior, CI threshold gates (`--require-*`),
@@ -180,7 +181,8 @@ Execution order: parse CLI -> scan -> patch -> doc metrics -> proof parse ->
 test parse -> DAL assess -> render -> SVG/Markdown/SBOM -> serve -> exit code.
 Step details: [docs/architecture.md](docs/architecture.md#pipeline-execution-order).
 Early-exit modes run before the pipeline: `--help`, `--version`, `man`
-(install/check the man page), `status`, differential modes, and `sbom`.
+(install/check the man page), `status`, `completion` (shell-completion
+scripts), differential modes, and `sbom`.
 
 ## Key constraints
 
@@ -233,7 +235,7 @@ link URLs).
 
 | Target | Description |
 |--------|-------------|
-| `check` | Full quality gate (CI runs this before release): cheap static gates first (ascii, spark-off, changelog, action-parity, version, doc-links), then build + tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description) that fail when any live file carries a stale metric |
+| `check` | Full quality gate (CI runs this before release): cheap static gates first (ascii, complexity, spark-off, changelog, action-parity, version, doc-links), then build + tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description) that fail when any live file carries a stale metric |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
 | `test` | Build + run the 879-test native suite |
@@ -254,6 +256,8 @@ link URLs).
 | `action-parity-check` | Fail if the GitHub Action drifts from the base CLI option set or the docs/ci-cd.md input table (tools/check-action-parity.py; feature gate) |
 | `release` | Build, prove, validate, run coverage gate vs last release, bundle + tag & push |
 | `ascii-check` | Verify all source files are pure ASCII |
+| `complexity-check` | Cyclomatic-complexity + LOC gate: no god objects/functions, no file above its LOC or percentage-of-codebase caps (tools/check-complexity.py; feature gate) |
+| `bench` | Benchmark the pipeline with hyperfine (bash `time` fallback): cold vs warm timings + binary size (docs/perf.md) |
 | `spark-off-check` | Fail if any `SPARK_Mode (Off)` appears outside the `Types.Implementation` container package |
 | `clean` | Remove bin/ obj/ docs/badges/ |
 | `help` | Print available targets |
@@ -373,4 +377,5 @@ Per-category counts and framework details:
 - [Architecture](docs/architecture.md)
 - [HLR index](docs/HLR.md)
 - [LLR mapping](docs/LLR.md)
+- [Performance](docs/perf.md)
 <!-- doc-links:end -->

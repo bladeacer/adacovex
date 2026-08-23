@@ -113,6 +113,29 @@ package Adacovex.Cache is
    --  cap.  Read by the CLI to report cache effectiveness.
    Eviction_Count : Natural := 0;
 
+   --  Probe freshness: how long a cached system-tool version probe stays
+   --  valid.  Tool versions change rarely; re-probing every run costs a
+   --  subprocess spawn per referenced tool (tens of ms each on the SBOM /
+   --  serve paths).  A week-old probe is still a fine answer.
+   Probe_TTL_Days : constant := 7;
+
+   --  Load a cached version-probe result for a system tool ("tool=version"
+   --  files stored under <cache>/probes/).  A probe younger than
+   --  Probe_TTL_Days is served from disk; older or missing probes are
+   --  reported as not found so the caller re-probes.
+   --  @param Tool  Tool name (safe characters only).
+   --  @param Value  Output version string (may be empty).
+   --  @param Val_Len  Length of the version string.
+   --  @param Found  True when a fresh probe existed.
+   procedure Get_Probe
+     (Tool : String; Value : out String; Val_Len : out Natural; Found : out Boolean);
+
+   --  Store a system-tool version probe result on disk (overwrites any
+   --  existing entry for the tool).
+   --  @param Tool  Tool name (safe characters only).
+   --  @param Value  Version string (may be empty).
+   procedure Put_Probe (Tool : String; Value : String);
+
    --  Serialize an arbitrary streamable value to/from a cache-blob String
    --  using an in-memory stream.  Supports any type whose components are
    --  streamable (bounded strings, scalars, enums, Ada.Containers.Vectors of
