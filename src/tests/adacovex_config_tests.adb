@@ -1,6 +1,8 @@
 with Adacovex.Types;  use Adacovex.Types;
 with Adacovex.Config; use Adacovex.Config;
+with Adacovex.Completion;
 with Ada.Strings.Unbounded;
+with Ada.Strings.Fixed;
 
 package body Adacovex_Config_Tests is
 
@@ -717,6 +719,80 @@ package body Adacovex_Config_Tests is
          R.Check (Cfg.Man_Mode, "man --force sets Man_Mode");
          R.Check (Cfg.Man_Force, "--force sets Man_Force");
          R.Check (not Cfg.CLI_Error, "man --force is not a CLI error");
+      end;
+
+      --  completion subcommand: bare form defaults to bash, an explicit
+      --  shell argument is consumed, and --completion=zsh works too.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "completion");
+         Testing.Parse_Args (A, Cfg);
+         R.Check (Cfg.Completion_Mode, "completion sets Completion_Mode");
+         R.Check
+           (Cfg.Completion_Shell_Len = 0,
+            "bare completion defaults the shell (bash)");
+         R.Check (not Cfg.CLI_Error, "completion alone is not a CLI error");
+      end;
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "completion");
+         Add (A, "zsh");
+         Testing.Parse_Args (A, Cfg);
+         R.Check (Cfg.Completion_Mode, "completion zsh sets Completion_Mode");
+         R.Check
+           (Cfg.Completion_Shell_Len = 3
+            and then Cfg.Completion_Shell (1 .. 3) = "zsh",
+            "completion zsh picks the zsh shell");
+      end;
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--completion=fish");
+         Testing.Parse_Args (A, Cfg);
+         R.Check (Cfg.Completion_Mode, "--completion=fish sets mode");
+         R.Check
+           (Cfg.Completion_Shell_Len = 4
+            and then Cfg.Completion_Shell (1 .. 4) = "fish",
+            "--completion=fish picks fish");
+      end;
+
+      --  Completion scripts carry the live flag list (Flag_List is the
+      --  same Known_Flags the suggestion walker uses) and one script per
+      --  supported shell is generated.
+      declare
+         B : constant String :=
+           Adacovex.Completion.Generate ("bash", Flag_List);
+         F : constant String :=
+           Adacovex.Completion.Generate ("FISH", Flag_List);
+         Z : constant String :=
+           Adacovex.Completion.Generate ("zsh", Flag_List);
+         P : constant String :=
+           Adacovex.Completion.Generate ("pwsh", Flag_List);
+         U : constant String :=
+           Adacovex.Completion.Generate ("tcsh", Flag_List);
+      begin
+         R.Check (B'Length > 100, "bash script is non-trivial");
+         R.Check
+           (Ada.Strings.Fixed.Index (B, "target") > 0
+            and then Ada.Strings.Fixed.Index (B, "compgen -W") > 0,
+            "bash script embeds live flags");
+         R.Check
+           (Ada.Strings.Fixed.Index (F, "complete -c adacovex") > 0,
+            "fish script uses fish syntax");
+         R.Check
+           (Ada.Strings.Fixed.Index (Z, "#compdef") > 0,
+            "zsh script starts with compdef");
+         R.Check
+           (Ada.Strings.Fixed.Index (P, "Register-ArgumentCompleter") > 0,
+            "pwsh script registers a completer");
+         R.Check
+           (Ada.Strings.Fixed.Index (U, "_adacovex_complete") > 0,
+            "unknown shell falls back to bash");
       end;
    end Run;
 

@@ -6,6 +6,7 @@ with Ada.Environment_Variables;
 with GNAT.Sockets;
 with Adacovex.Types;
 with Adacovex.Config;
+with Adacovex.Completion;
 with Adacovex.Diff;
 with Adacovex.Prove;
 with Adacovex.Parsers.Source;
@@ -591,7 +592,7 @@ begin
       return;
    end if;
 
-   -- Status mode: report toolchain + platform status and exit (no
+   -- Status mode: print toolchain + platform status and exit (no
    -- assessment, no scanning).  Run_Status never deploys or downloads
    -- anything, so it prints its own header and skips the normal one.
    if Cfg.Status_Mode then
@@ -601,6 +602,24 @@ begin
          Adacovex.Prove.Run_Status (Target (1 .. TLen), OK);
          Ada.Command_Line.Set_Exit_Status (if OK then 0 else 1);
       end;
+      return;
+   end if;
+
+   -- Completion mode: emit a shell completion script (bash/fish/zsh/pwsh)
+   -- for this binary's flag set and exit.  The script is generated from
+   -- Config.Flag_List so it always matches the live CLI options.
+   if Cfg.Completion_Mode then
+      declare
+         Shell : constant String :=
+           (if Cfg.Completion_Shell_Len > 0
+            then Cfg.Completion_Shell (1 .. Cfg.Completion_Shell_Len)
+            else "bash");
+      begin
+         Ada.Text_IO.Put
+           (Adacovex.Completion.Generate
+              (Shell, Adacovex.Config.Flag_List));
+      end;
+      Ada.Command_Line.Set_Exit_Status (0);
       return;
    end if;
 

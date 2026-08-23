@@ -69,6 +69,7 @@ CLI_ONLY: Dict[str, str] = {
     "cache": "result-cache enable is default-on; the action exposes only the negative --no-cache",
     "sbom": "sbom subcommand; the action drives SBOM via generate-sbom + sbom-format inputs",
     "status": "status subcommand (local diagnostics)",
+    "completion": "shell completion subcommand (local shell setup)",
     "man": "man subcommand (local install)",
     "check": "man --check (local)",
     "dir": "man --dir (local)",

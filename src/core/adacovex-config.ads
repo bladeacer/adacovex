@@ -82,6 +82,9 @@ package Adacovex.Config is
       Coverage_Delta_Len : Natural := 0;
       Prove_Mode         : Boolean := False;
       Status_Mode        : Boolean := False;
+      Completion_Mode    : Boolean := False;
+      Completion_Shell   : String (1 .. Types.Max_Filename);
+      Completion_Shell_Len : Natural := 0;
       SBOM_Mode          : Boolean := False;
       SBOM_Format        : Types.SBOM_Format_Kind := Types.CycloneDX_JSON;
       SBOM_Out           : String (1 .. Types.Max_Path);
@@ -173,9 +176,16 @@ package Adacovex.Config is
    --  @param Name  Directory name to add to skip list.
    procedure Add_Skip_Dir (Cfg : in out CLI_Config; Name : String);
 
+   --  All known CLI flag names, space-separated (the same list the
+   --  "did you mean" suggestion walks).  Exposed so the shell-completion
+   --  generator can embed the live flag set into the scripts it emits.
+   --  @return Space-separated flag names (without leading dashes).
+   function Flag_List return String
+   with Post => Flag_List'Result'Length > 0, Global => null;
+
    --  Print usage help text to standard output.
    --  Displays all CLI options, default values, and usage examples.
-   --  @return Prints usage information to stdout.
+   --  @return Print usage information to stdout.
    procedure Print_Usage;
 
    --  Print contextual help for a single flag or subcommand.
