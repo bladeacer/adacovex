@@ -40,8 +40,12 @@ tabs** (hash-routed, keyboard-accessible, persisted in `localStorage`):
 
 - **Overview** -- status badges (live `/badge/*.svg` preview), source overview
   (packages scanned, subprograms, docstring %), and quick stats (SPARK level,
-  VCs proved, tests, compliance, dependency count). The badge row doubles as a
-  preview for the generated `docs/badges/*.svg` files.
+  VCs proved, tests, compliance, dependency count), plus the at-a-glance
+  collation charts below the stats: a **Robustness radar with a tier rating**
+  (S/A/B/C/D from the average of five quality axes), the per-check-type
+  **SPARK radar**, a tests **donut** and a doc-coverage **radial gauge**. The
+  badge row doubles as a preview for the generated `docs/badges/*.svg` files.
+  See [Robustness tier](#robustness-tier) for how the rating is derived.
 - **Proof** -- the SPARK level (Stone..Platinum) and, per check category
   (flow, initialization, runtime, assertions, functional), total and proved
   counts plus total VCs / proved VCs.
@@ -112,11 +116,11 @@ The same data is available headlessly at `/api/deps` and via
 
 ### Metrics charts
 
-The **Charts** tab renders six cards using the vendored
-[Charts.css](https://chartscss.org/) framework (v1.2.0, MIT, inlined into the
-page shell so the page stays self-contained). All values are unitless `0..1`
+The **Charts** tab renders six cards, each a distinct chart type. The
+vendored [Charts.css](https://chartscss.org/) framework (v1.2.0, MIT, inlined
+into the page shell) drives the CSS-only cards; all values are unitless `0..1`
 `--size` / `--start` / `--end` fractions (previously `0..100` made every pie
-slice a full loop) and the donut shows proved vs *unproved* slices
+slice a full circle) and the donut shows proved vs *unproved* slices
 (previously proved vs total duplicated the proved arc):
 
 - **SPARK Proof** -- *donut* of proved vs unproved VCs (`720/720` shows a
@@ -126,21 +130,55 @@ slice a full loop) and the donut shows proved vs *unproved* slices
   total.
 - **Test Results by Category** -- *bar* of per-category test counts
   (normalised to the largest category).
-- **Proof Radar** -- inline SVG radar (spider) of the five check categories.
-  Charts.css 1.2.0 ships no radar drawing rules, so grid rings, axes, the
-  data polygon and labels are drawn directly with integer math and
-  `var(--accent)` fill/stroke, following the active theme.
+- **Docstring Coverage** -- *radial gauge* (half-circle SVG arc) of
+  documented vs total subprograms.
 - **Tests Pass/Fail** -- *pie* of passed vs failed tests.
 - **Dependencies by Scope** -- *polar ring* of base / dev / transitive /
   vendored components (conic-gradient + CSS hole, `--scope-*` theme
   variables) with a legend; skipped when the graph is empty.
 
-No JavaScript is required for the Charts.css cards (pure CSS); the radar and
-scope ring are inline SVG/CSS and follow the light/dark theme automatically.
-The surrounding grid (`chart-grid`) is responsive and the page container is
-`max-width:1180px` so large monitors do not stretch cards.  Pies/rings are
-used where a part-to-whole distribution is the point; bars/columns where a
+Each of the six cards is a different type (donut / column / bar / radial /
+pie / polar) so the tab shows the full feature set of Charts.css without
+duplicating a data story.  The per-check-category SPARK radar lives on the
+**Overview** tab instead (see below).  No JavaScript is required for the
+Charts.css cards (pure CSS); the radial gauge and the scope ring are inline
+SVG/CSS and follow the light/dark theme automatically.  The surrounding grid
+(`chart-grid`) is responsive and the page container is `max-width:1180px` so
+large monitors do not stretch cards.  Pies/rings are used where a
+part-to-whole distribution is the point; bars/columns where a
 max-normalised comparison across categories is the point.
+
+### Robustness tier
+
+The Overview tab leads with a **Robustness** radar spider and a tier rating
+(S / A / B / C / D) so the health of the whole project can be read at a
+glance.  Five quality axes, each a `0..100` percentage:
+
+| Axis | Meaning |
+|------|---------|
+| **Docs**   | Docstring coverage: documented subprograms / total |
+| **Proof**  | SPARK VCs proved / total |
+| **Tests**  | Test pass rate: passed / (passed + failed) |
+| **Comp**   | Compliance gate: `100` when the target standard is Achieved, `0` when Unmet |
+| **Deps**   | Dependency hygiene: (graph components - vendored) / total |
+
+The average of the five axes maps to the tier letter:
+
+| Tier | Average | Colour |
+|------|---------|--------|
+| S | >= 90 | green |
+| A | >= 80 | blue |
+| B | >= 65 | purple |
+| C | >= 50 | orange |
+| D | < 50  | red |
+
+The radar polygon, the per-axis legend with percentages, and the tier chip
+are rendered as inline SVG/CSS with integer math (no floating point in the
+renderer) and use `var(--accent)` plus per-tier CSS variables, so they follow
+the light/dark theme.  Next to it, a small **SPARK radar** shows the proved
+count per check type, also as an inline-SVG spider, and the **Tests** donut
+and **Doc Coverage** radial gauge give the same pass/fail and coverage
+numbers as the full-size charts.
 
 ## Standard-awareness
 

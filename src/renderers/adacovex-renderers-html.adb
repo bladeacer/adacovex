@@ -10,6 +10,7 @@ package body Adacovex.Renderers.HTML is
    use type Types.DAL_Status;
    use type Types.Dashboard_Theme;
    use type Types.Component_Kind;
+   use type Types.Component_Scope;
 
    function Img (N : Natural) return String is
       S : constant String := Natural'Image (N);
@@ -119,6 +120,48 @@ package body Adacovex.Renderers.HTML is
       return S;
    end I_S;
 
+   --  "x,y" (SVG coordinates) of radar axis A (1..5, clockwise from the
+   --  top) at Radius.  Centre is (110,100); the exact cos/sin*1000 values
+   --  for angles 90/162/234/306/378 degrees keep the math in integers --
+   --  no floating point in the renderer.
+   Axis_Cos : constant array (1 .. 5) of Integer :=
+     (0, -951, -588, 588, 951);
+   Axis_Sin : constant array (1 .. 5) of Integer :=
+     (1000, 309, -809, -809, 309);
+
+   function Radar_Point (A : Positive; Radius : Natural) return String is
+      X : constant Integer :=
+        110 + ((Integer (Radius) * Axis_Cos (A)) / 1000);
+      Y : constant Integer :=
+        100 - ((Integer (Radius) * Axis_Sin (A)) / 1000);
+   begin
+      return I_S (X) & "," & I_S (Y);
+   end Radar_Point;
+
+   --  "x,y x,y ..." point list for the five radar axes at Radius.
+   function Radar_Points (Radius : Natural) return String is
+      Buf : String (1 .. 128);
+      BL  : Natural := 0;
+   begin
+      for A in 1 .. 5 loop
+         if BL > 0 then
+            BL := BL + 1;
+            Buf (BL) := ' ';
+         end if;
+         declare
+            XY : constant String := Radar_Point (A, Radius);
+         begin
+            for I in XY'Range loop
+               if BL < Buf'Last then
+                  BL := BL + 1;
+                  Buf (BL) := XY (I);
+               end if;
+            end loop;
+         end;
+      end loop;
+      return Buf (1 .. BL);
+   end Radar_Points;
+
    function Render_Charts
      (Doc_Metrics : Types.Docstring_Metrics;
       Proof       : Types.Proof_Summary;
@@ -165,47 +208,6 @@ package body Adacovex.Renderers.HTML is
          Put ("</span></td></tr>");
       end Bar_Row;
 
-      --  "x,y" (SVG coordinates) of radar axis A (1..5, clockwise from the
-      --  top) at Radius.  Centre is (110,100); the exact cos/sin*1000 values
-      --  for angles 90/162/234/306/378 degrees keep the math in integers --
-      --  no floating point in the renderer.
-      Axis_Cos : constant array (1 .. 5) of Integer :=
-        (0, -951, -588, 588, 951);
-      Axis_Sin : constant array (1 .. 5) of Integer :=
-        (1000, 309, -809, -809, 309);
-
-      function Radar_Point (A : Positive; Radius : Natural) return String is
-         X : constant Integer :=
-           110 + ((Integer (Radius) * Axis_Cos (A)) / 1000);
-         Y : constant Integer :=
-           100 - ((Integer (Radius) * Axis_Sin (A)) / 1000);
-      begin
-         return I_S (X) & "," & I_S (Y);
-      end Radar_Point;
-
-      --  "x,y x,y ..." point list for the five radar axes at Radius.
-      function Radar_Points (Radius : Natural) return String is
-         Buf : String (1 .. 128);
-         BL  : Natural := 0;
-      begin
-         for A in 1 .. 5 loop
-            if BL > 0 then
-               BL := BL + 1;
-               Buf (BL) := ' ';
-            end if;
-            declare
-               XY : constant String := Radar_Point (A, Radius);
-            begin
-               for I in XY'Range loop
-                  if BL < Buf'Last then
-                     BL := BL + 1;
-                     Buf (BL) := XY (I);
-                  end if;
-               end loop;
-            end;
-         end loop;
-         return Buf (1 .. BL);
-      end Radar_Points;
    begin
       --  SPARK proof donut: proved vs unproved (not total) so the ring sums
       --  to one.  The hole is pure CSS (.charts-css.pie.donut::after).
@@ -307,112 +309,44 @@ package body Adacovex.Renderers.HTML is
             end;
          end if;
       end;
-      Put ("</tbody></table></div>");
-
-      --  SPARK proof radar: five check categories as a spider polygon.
-      --  Charts.css 1.2.0 ships no radar drawing rules, so grid, axes and
-      --  data shape are inline SVG (integer math, theme CSS variables).
+      Put ("</tbody></table></div>");      --  Docstring coverage: half-circle radial gauge (SVG arc; the arc
+      --  length for r=50 is ~157, kept as integers).  The per-category
+      --  SPARK radar now lives on the Overview tab, where it reads at a
+      --  glance.
       declare
-         type Cat_Rec is record
-            Name : String (1 .. 8);
-            Len  : Integer;
-         end record;
-         Cats  : constant array (1 .. 5) of Cat_Rec :=
-           (("Flow    ", 4),
-            ("Init    ", 4),
-            ("Runtime ", 7),
-            ("Assert  ", 6),
-            ("Func    ", 4));
-         Vals  : constant array (1 .. 5) of Natural :=
-           (Proof.Flow_Proved,
-            Proof.Init_Proved,
-            Proof.Runtime_Proved,
-            Proof.Assert_Proved,
-            Proof.Functional_Proved);
-         Max_V : Natural := 1;
-
-         --  "x,y x,y ..." polygon for the five proved counts (0..80 px).
-         function Data_Points return String is
-            Buf : String (1 .. 128);
-            BL  : Natural := 0;
-         begin
-            for K in 1 .. 5 loop
-               if BL > 0 then
-                  BL := BL + 1;
-                  Buf (BL) := ' ';
-               end if;
-               declare
-                  XY : constant String :=
-                    Radar_Point (K, 4 + (Vals (K) * 76) / Max_V);
-               begin
-                  for I in XY'Range loop
-                     if BL < Buf'Last then
-                        BL := BL + 1;
-                        Buf (BL) := XY (I);
-                     end if;
-                  end loop;
-               end;
-            end loop;
-            return Buf (1 .. BL);
-         end Data_Points;
+         Cov : constant Natural :=
+           Pct
+             (Doc_Metrics.Documented_Subprogs,
+              Doc_Metrics.Total_Subprograms);
+         Off : constant Natural := 157 - (157 * Cov) / 100;
       begin
-         for K in 1 .. 5 loop
-            if Vals (K) > Max_V then
-               Max_V := Vals (K);
-            end if;
-         end loop;
-         Put ("<div class=""chart-card""><h3>Proof Radar</h3>");
-         if Vals (1) + Vals (2) + Vals (3) + Vals (4) + Vals (5) = 0 then
+         Put ("<div class=""chart-card""><h3>Docstring Coverage</h3>");
+         if Doc_Metrics.Total_Subprograms = 0 then
             Put ("<p style=""color:var(--muted);font-size:.85rem"">");
-            Put ("No proof data</p></div>");
+            Put ("No subprograms</p></div>");
          else
-            Put ("<svg viewBox=""0 0 220 220"" width=""100%"" height=""200""");
+            Put ("<svg viewBox=""0 0 120 68"" width=""100%"" height=""76""");
+            Put (" role=""img"" aria-label=""Docstring coverage"">");
+            Put ("<path d=""M10 60 A50 50 0 0 1 110 60"" fill=""none""");
+            Put (" stroke=""var(--border)"" stroke-width=""11""");
+            Put (" stroke-linecap=""round""/>");
+            Put ("<path d=""M10 60 A50 50 0 0 1 110 60"" fill=""none""");
+            Put (" stroke=""var(--accent)"" stroke-width=""11""");
+            Put (" stroke-linecap=""round"" stroke-dasharray=""157""");
+            Put (" stroke-dashoffset=""");
+            Put (Img (Off));
+            Put ("""/>");
+            Put ("<text x=""60"" y=""56"" text-anchor=""middle""");
             Put
-              (" role=""img"" aria-label=""SPARK proof by check category"">");
-            --  Grid rings at 25%/50%/75%/100% of the max radius (80)
-            for G in 1 .. 4 loop
-               Put ("<polygon points=""");
-               Put (Radar_Points (20 * G));
-               Put (""" fill=""none"" stroke=""var(--border)""");
-               Put (" stroke-width=""1"" opacity="".55""/>");
-            end loop;
-            --  Axes from the centre to each category
-            for A in 1 .. 5 loop
-               Put ("<path d=""M110,100 L");
-               Put (Radar_Point (A, 80));
-               Put (""" stroke=""var(--border)"" stroke-width=""1""/>");
-            end loop;
-            Put ("<polygon points=""");
-            Put (Data_Points);
-            Put (""" fill=""var(--accent)"" fill-opacity="".22""");
-            Put (" stroke=""var(--accent)"" stroke-width=""2""/>");
-            for K in 1 .. 5 loop
-               Put ("<circle transform=""translate(");
-               Put (Radar_Point (K, 4 + (Vals (K) * 76) / Max_V));
-               Put (")"" r=""2.6"" fill=""var(--accent)""/>");
-            end loop;
-            --  Category labels just outside the ring (axis 1 is the top)
-            for A in 1 .. 5 loop
-               Put ("<text transform=""translate(");
-               Put (Radar_Point (A, 96));
-               Put (")"" text-anchor=""");
-               if A = 1 then
-                  Put ("middle"" dy=""-6""");
-               elsif A <= 3 then
-                  Put ("end"" dy=""3.5""");
-               else
-                  Put ("start"" dy=""3.5""");
-               end if;
-               Put (" font-size=""9.5"" fill=""var(--muted)"">");
-               Put (Cats (A).Name (1 .. Cats (A).Len));
-               Put ("</text>");
-            end loop;
-            Put ("</svg>");
-            Put ("<p style=""color:var(--muted);font-size:.82rem;");
-            Put ("text-align:center;margin:6px 0 0"">");
-            Put ("<span style=""color:var(--accent);font-weight:600"">");
-            Put (Img (Proof.Proved_VCs));
-            Put ("</span> proved across five check categories</p></div>");
+              (" font-size=""11"" font-weight=""600"" fill=""var(--fg)"">");
+            Put (Img (Cov));
+            Put ("%</text></svg>");
+            Put ("<p style=""color:var(--muted);font-size: .75rem;");
+            Put ("text-align:center;margin:4px 0 0"">");
+            Put (Img (Doc_Metrics.Documented_Subprogs));
+            Put (" / ");
+            Put (Img (Doc_Metrics.Total_Subprograms));
+            Put (" documented</p></div>");
          end if;
       end;
 
@@ -839,8 +773,9 @@ package body Adacovex.Renderers.HTML is
       Put_O ("</table></div>");
       Put_O ("</div>");
 
-      --  Overview collation charts (mini visuals: donut SPARK, pie tests,
-      --  radial doc-coverage gauge)
+      --  Overview collation charts: robustness radar with a tier rating,
+      --  per-check-type SPARK radar (moved from the Charts tab), tests
+      --  donut and the doc-coverage gauge
       declare
          procedure Mini_Slice (Lbl : String; St_F, Fi_F : String; V : Natural)
          is
@@ -857,28 +792,199 @@ package body Adacovex.Renderers.HTML is
          end Mini_Slice;
       begin
          Put_O ("<div class=""chart-grid"" style=""margin-top:14px"">");
-         Put_O ("<div class=""chart-card""><h3>SPARK</h3>");
-         Put_O
-           ("<table class=""charts-css pie donut show-labels"" style=""height:150px;max-width:200px;margin:0 auto"">");
-         Put_O ("<caption>SPARK</caption><tbody>");
-         if Proof.Total_VCs > 0 then
-            declare
-               U : constant Natural := Proof.Total_VCs - Proof.Proved_VCs;
-               P : constant String := Frac (Proof.Proved_VCs, Proof.Total_VCs);
-            begin
-               Mini_Slice ("Proved", "0.00", P, Proof.Proved_VCs);
-               if U > 0 then
-                  Mini_Slice ("Unproved", P, "1.00", U);
+
+         --  Robustness radar: five quality axes (each 0..100) plus a tier
+         --  rating derived from their average.  The tier thresholds and
+         --  the axis definitions are explained in the note under the radar
+         --  and in docs/dashboard.md.  Same integer-math SVG as the SPARK
+         --  radar; colours follow the theme via CSS variables.
+         declare
+            R_Vals : array (1 .. 5) of Natural := (others => 0);
+            R_Name : constant array (1 .. 5) of String (1 .. 8) :=
+              ("Docs    ", "Proof   ", "Tests   ", "Comp    ", "Deps    ");
+            R_Len  : constant array (1 .. 5) of Natural :=
+              (4, 5, 5, 4, 4);
+            Vend_Ct : Natural := 0;
+            Avg     : Natural := 0;
+            Tier    : Character := 'D';
+         begin
+            R_Vals (1) := Doc_Metrics.Coverage_Pct;
+            R_Vals (2) := Pct (Proof.Proved_VCs, Proof.Total_VCs);
+            R_Vals (3) :=
+              Pct
+                (Tests.Total_Passed,
+                 Tests.Total_Passed + Tests.Total_Failed);
+            R_Vals (4) :=
+              (if DAL_Assess.Status = Types.Achieved then 100 else 0);
+            for I in 1 .. Integer (Graph.Length) loop
+               if Graph (I).Scope = Types.Scope_Vendored then
+                  Vend_Ct := Vend_Ct + 1;
                end if;
-            end;
-         else
-            Mini_Slice ("No VCs", "0.00", "1.00", 0);
-         end if;
-         Put_O ("</tbody></table></div>");
+            end loop;
+            R_Vals (5) :=
+              Pct
+                (Natural (Graph.Length) - Vend_Ct,
+                 Natural (Graph.Length));
+            Avg :=
+              (R_Vals (1) + R_Vals (2) + R_Vals (3) + R_Vals (4)
+               + R_Vals (5)) / 5;
+            if Avg >= 90 then
+               Tier := 'S';
+            elsif Avg >= 80 then
+               Tier := 'A';
+            elsif Avg >= 65 then
+               Tier := 'B';
+            elsif Avg >= 50 then
+               Tier := 'C';
+            end if;
+
+            Put_O ("<div class=""chart-card""><h3>Robustness</h3>");
+            Put_O
+              ("<svg viewBox=""0 0 220 220"" width=""100%"" height=""150""");
+            Put_O
+              (" role=""img"" aria-label=""Robustness radar with tier rating"">");
+            for G in 1 .. 4 loop
+               Put_O ("<polygon points=""");
+               Put_O (Radar_Points (20 * G));
+               Put_O (""" fill=""none"" stroke=""var(--border)""");
+               Put_O (" stroke-width=""1"" opacity="".55""/>");
+            end loop;
+            for K in 1 .. 5 loop
+               Put_O ("<path d=""M110,100 L");
+               Put_O (Radar_Point (K, 80));
+               Put_O (""" stroke=""var(--border)"" stroke-width=""1""/>");
+            end loop;
+            Put_O ("<polygon points=""");
+            for K in 1 .. 5 loop
+               if K > 1 then
+                  Put_O (" ");
+               end if;
+               Put_O (Radar_Point (K, 4 + (R_Vals (K) * 76) / 100));
+            end loop;
+            Put_O (""" fill=""var(--accent)"" fill-opacity=""0.25""");
+            Put_O (" stroke=""var(--accent)"" stroke-width=""2""/>");
+            for K in 1 .. 5 loop
+               Put_O ("<circle transform=""translate(");
+               Put_O (Radar_Point (K, 4 + (R_Vals (K) * 76) / 100));
+               Put_O (")"" r=""2.5"" fill=""var(--accent)""/>");
+            end loop;
+            for K in 1 .. 5 loop
+               Put_O ("<text transform=""translate(");
+               Put_O (Radar_Point (K, 98));
+               Put_O (")"" text-anchor=""");
+               if K = 1 then
+                  Put_O ("middle"" dy=""-5""");
+               elsif K <= 3 then
+                  Put_O ("end"" dy=""3""");
+               else
+                  Put_O ("start"" dy=""3""");
+               end if;
+               Put_O (" font-size=""8.5"" fill=""var(--muted)"">");
+               Put_O (R_Name (K) (1 .. R_Len (K)));
+               Put_O ("</text>");
+            end loop;
+            Put_O ("</svg>");
+            Put_O ("<div class=""tier-wrap"">");
+            Put_O ("<span class=""tier tier-" & Tier & """>" & Tier);
+            Put_O ("</span><span class=""tier-note"">Average ");
+            Put_O (Img (Avg));
+            Put_O ("% &middot; S &ge; 90 &middot; A &ge; 80 &middot; ");
+            Put_O ("B &ge; 65 &middot; C &ge; 50 &middot; D &lt; 50");
+            Put_O ("</span></div>");
+            Put_O ("<ul class=""rob-legend"">");
+            for K in 1 .. 5 loop
+               Put_O ("<li><i style=""--i:var(--accent)""></i>");
+               Put_O (R_Name (K) (1 .. R_Len (K)));
+               Put_O (" <b>");
+               Put_O (Img (R_Vals (K)));
+               Put_O ("%</b></li>");
+            end loop;
+            Put_O ("</ul></div>");
+         end;
+
+         --  SPARK proof per check category (radar moved from the Charts
+         --  tab: it reads at a glance on the Overview).
+         declare
+            type Cat_Rec is record
+               Name : String (1 .. 8);
+               Len  : Natural;
+            end record;
+            Cats : constant array (1 .. 5) of Cat_Rec :=
+              (("Flow    ", 4),
+               ("Init    ", 4),
+               ("Runtime ", 7),
+               ("Assert  ", 6),
+               ("Func    ", 4));
+            Vals : constant array (1 .. 5) of Natural :=
+              (Proof.Flow_Proved,
+               Proof.Init_Proved,
+               Proof.Runtime_Proved,
+               Proof.Assert_Proved,
+               Proof.Functional_Proved);
+            Max_V : Natural := 1;
+         begin
+            for K in 1 .. 5 loop
+               if Vals (K) > Max_V then
+                  Max_V := Vals (K);
+               end if;
+            end loop;
+            Put_O ("<div class=""chart-card""><h3>SPARK Proof</h3>");
+            if Vals (1) + Vals (2) + Vals (3) + Vals (4) + Vals (5) = 0 then
+               Put_O ("<p style=""color:var(--muted);font-size:.85rem"">");
+               Put_O ("No proof data</p>");
+            else
+               Put_O
+                 ("<svg viewBox=""0 0 220 220"" width=""100%"" height=""130""");
+               Put_O
+                 (" role=""img"" aria-label=""SPARK proof by check type"">");
+               for G in 1 .. 4 loop
+                  Put_O ("<polygon points=""");
+                  Put_O (Radar_Points (20 * G));
+                  Put_O (""" fill=""none"" stroke=""var(--border)""");
+                  Put_O (" stroke-width=""1"" opacity=""0.55""/>");
+               end loop;
+               for A in 1 .. 5 loop
+                  Put_O ("<path d=""M110,100 L");
+                  Put_O (Radar_Point (A, 80));
+                  Put_O (""" stroke=""var(--border)"" stroke-width=""1""/>");
+               end loop;
+               Put_O ("<polygon points=""");
+               for K in 1 .. 5 loop
+                  if K > 1 then
+                     Put_O (" ");
+                  end if;
+                  Put_O (Radar_Point (K, 4 + (Vals (K) * 76) / Max_V));
+               end loop;
+               Put_O (""" fill=""var(--accent)"" fill-opacity=""0.25""");
+               Put_O (" stroke=""var(--accent)"" stroke-width=""2""/>");
+               for K in 1 .. 5 loop
+                  Put_O ("<circle transform=""translate(");
+                  Put_O (Radar_Point (K, 4 + (Vals (K) * 76) / Max_V));
+                  Put_O (")"" r=""2.5"" fill=""var(--accent)""/>");
+               end loop;
+               for A in 1 .. 5 loop
+                  Put_O ("<text transform=""translate(");
+                  Put_O (Radar_Point (A, 95));
+                  Put_O (")"" text-anchor=""");
+                  if A = 1 then
+                     Put_O ("middle"" dy=""-5""");
+                  elsif A <= 3 then
+                     Put_O ("end"" dy=""3""");
+                  else
+                     Put_O ("start"" dy=""3""");
+                  end if;
+                  Put_O (" font-size=""8.5"" fill=""var(--muted)"">");
+                  Put_O (Cats (A).Name (1 .. Cats (A).Len));
+                  Put_O ("</text>");
+               end loop;
+               Put_O ("</svg>");
+            end if;
+            Put_O ("</div>");
+         end;
 
          Put_O ("<div class=""chart-card""><h3>Tests</h3>");
          Put_O
-           ("<table class=""charts-css pie show-labels"" style=""height:150px;max-width:200px;margin:0 auto"">");
+           ("<table class=""charts-css pie donut show-labels"" style=""height:150px;max-width:200px;margin:0 auto"">");
          Put_O ("<caption>Tests</caption><tbody>");
          declare
             Tot : constant Natural := Tests.Total_Passed + Tests.Total_Failed;
