@@ -25,16 +25,16 @@ The `prove` subcommand (full options:
    [Proof patches](#proof-patches-proving-vendored-dependencies) below) and
    writes the summary to `<target>/obj/gnatprove/gnatprove.out` -- the same
    location the assessment pipeline discovers.
-3. **Falls through to the full assessment**, which parses the fresh summary:
-   one command both proves and assesses, and the `--require-*` CI gates
+ 3. **Falls through to the full assessment**. The assessment parses the fresh
+    summary. One command both proves and assesses. The `--require-*` CI gates
    apply to the proof run directly (`--require-spark=Platinum
-   --require-proof=100` and friends; see
+    --require-proof=100` and more; see
    [CLI reference -- CI threshold gates](cli-reference.md#ci-threshold-gates---require-)).
 
-The result cache serves unchanged targets so repeated runs are cheap;
-`--force` bypasses the cache and forces a full gnatprove reanalysis. A
-target without a `gnatprove.out` at all is graded `Stone` with proof
-metrics `N/A` -- run `prove` to generate one.
+The result cache serves unchanged targets so repeated runs are cheap.
+`--force` bypasses the cache and forces a full gnatprove reanalysis. A target
+without a `gnatprove.out` at all is graded `Stone` with proof metrics `N/A`.
+Run `prove` to generate one.
 
 ## What a proof contains
 
@@ -51,7 +51,7 @@ summary in `gnatprove.out` breaks them down as:
 | Termination | `Loop_Variant` / recursion bounds (subprograms proved terminating) |
 
 The honest **proved** count is `total - justified - unproved` (flow plus
-provers), and the [assurance level](api-docs/adacovex-spark-levels.md) is
+provers). The [assurance level](api-docs/adacovex-spark-levels.md) is
 derived from how many of each category were discharged:
 
 - **Stone** -- no proof run or nothing analyzable;
@@ -61,10 +61,10 @@ derived from how many of each category were discharged:
 - **Platinum** -- every VC proved: **0 unproved** (and, in adacovex's own
   gate, **0 justified** -- no `pragma Annotate` justifications).
 
-Justified VCs count neither as proved nor as unproved; only unproved VCs
-downgrade the level. For a DAL assessment, the level must meet the
-requirement of the tier (`--dal=C` needs Bronze, `--dal=A` needs Gold, ...)
--- see [DAL levels](api-docs/adacovex-dal-levels.md).
+Justified VCs count neither as proved nor as unproved. Only unproved VCs
+downgrade the level. For a DAL assessment, the level must meet the requirement
+of the tier (`--dal=C` needs Bronze, `--dal=A` needs Gold, and more) -- see
+[DAL levels](api-docs/adacovex-dal-levels.md).
 
 ## Writing proofs: SPARK contracts
 
@@ -89,21 +89,21 @@ Rules that matter in practice:
   both -- adacovex's own source uses package-level On on pure units and
   per-subprogram On aspects inside default-off bodies.
 - **A body is analyzed only when the body itself opts in.** Declaring
-  `SPARK_Mode => On` on the *spec* does not make gnatprove analyze the
-  body; the body must declare it too (on the `package body` line or per
-  subprogram). This is the rule that makes proof patches necessary for
-  vendored code -- see below.
-- **I/O bodies are skipped by design.** A body that calls `Ada.Text_IO`
-  (which is `SPARK_Mode Off`) cannot be analyzed; gnatprove reports the
-  unit out of proof scope. This never drags the assessed level down -- it
-  simply means those bodies are not proved.
+  `SPARK_Mode => On` on the *spec* does not make gnatprove analyze the body.
+  The body must declare it too (on the `package body` line or per subprogram).
+  This is the rule that makes proof patches necessary for vendored code -- see
+  below.
+- **I/O bodies are skipped by design.** A body that calls `Ada.Text_IO` (which
+  is `SPARK_Mode Off`) cannot be analyzed. gnatprove reports the unit out of
+proof scope. This never drags the assessed level down -- it means those
+bodies are not proved.
 - **Contracts are proved against the body.** gnatprove proves that every
-  possible body execution satisfies the declared `Pre`/`Post`; callers must
-  in turn establish the `Pre` before calling.
-- **`--steps` controls the proof budget.** gnatprove's default step limit
-  can produce solver-timeout false negatives; adacovex runs with
-  `--steps 10000` by default so such timeouts are not reported as unproved
-  (an explicit `--steps=N` overrides).
+  possible body execution satisfies the declared `Pre`/`Post`. Callers must in
+  turn establish the `Pre` before calling.
+- **`--steps` controls the proof budget.** gnatprove's default step limit can
+  produce solver-timeout false negatives. adacovex runs with `--steps 10000`
+  by default so such timeouts are not reported as unproved. An explicit
+  `--steps=N` overrides.
 
 The goal for a clean proof: every VC in every category proved, 0 unproved,
 0 justified.
@@ -112,7 +112,7 @@ The goal for a clean proof: every VC in every category proved, 0 unproved,
 
 Patch files at `<target>/.adacovex/patches/` exist so vendored code you
 cannot modify still counts toward the audit. Their best-known job is
-overlaying **docstrings** for strict-mode coverage; a patch can also carry
+overlaying **docstrings** for strict-mode coverage. A patch can also carry
 **SPARK proof aspects** so vendored dependencies participate in the proof
 with real contracts -- without forking or touching their sources.
 
@@ -120,33 +120,32 @@ with real contracts -- without forking or touching their sources.
 
 Three facts force the design:
 
-1. **Strict mode counts vendored code.** By default adacovex scans every
-   directory except the always-excluded ones (`.git`, `obj`, `tests`,
-   `config`, `.adacovex`), so a vendored dependency's missing docstrings
-   and missing contracts count against the target. `--relaxed` skips
-   vendored dirs but drops the audit to a quick pass -- not an option for a
-   compliance assessment.
-2. **gnatprove analyzes a body only when the body itself opts in.** (The
-   rule from [Writing proofs](#writing-proofs-spark-contracts) above.) A
-   vendored spec with no contracts contributes nothing to the proof, and a
-   vendored body without `SPARK_Mode` is skipped entirely.
-3. **The vendored sources are immutable.** The dependency ships as-is; you
-   cannot add contracts to it, and re-publishing a patched fork defeats the
-   point of vendoring.
+ 1. **Strict mode counts vendored code.** By default adacovex scans every
+    directory except the always-excluded ones. The excluded directories are
+    `.git`, `obj`, `tests`, `config`, and `.adacovex`. A vendored dependency's
+    missing docstrings and missing contracts count against the target.
+    `--relaxed` skips vendored dirs but drops the audit to a quick pass -- not
+    an option for a compliance assessment.
+ 2. **gnatprove analyzes a body only when the body itself opts in.** (The
+    rule from [Writing proofs](#writing-proofs-spark-contracts) above.) A
+    vendored spec with no contracts contributes nothing to the proof. A
+    vendored body without `SPARK_Mode` is skipped entirely.
+ 3. **The vendored sources are immutable.** The dependency ships as-is. You
+    cannot add contracts to it. Re-publishing a patched fork defeats the
+    point of vendoring.
 
-A proof patch is the merge of these three constraints: it re-declares the
-vendored spec with contracts (`.ads` patch) and opts the vendored body into
-the proof (`.adb` patch), and the `prove` subcommand merges both into a
-patched tree copy before running gnatprove -- the originals are never
-touched.
+A proof patch is the merge of these three constraints. It re-declares the
+vendored spec with contracts (`.ads` patch). It opts the vendored body into
+the proof (`.adb` patch). The `prove` subcommand merges both into a patched
+tree copy before running gnatprove -- the originals are never touched.
 
 ### How proof patches are applied
 
 1. `Count_Proof_Patches` scans `<target>/.adacovex/patches/` for `.ads` and
    `.adb` files. A patch carrying any of `SPARK_Mode`, `Pre =>`, `Post =>`,
-   or `Global =>` is a *proof patch*; a docstring-only patch never engages
-   the proof machinery. A target with no proof patches is proved against its
-   own tree exactly as before.
+    or `Global =>` is a *proof patch*. A docstring-only patch never engages
+    the proof machinery. A target with no proof patches is proved against its
+    own tree exactly as before.
 2. `Build_Patched_Copy` copies the target tree (excluding `.git`, `obj`,
    and `.adacovex`) into `<target>/obj/adacovex-proof/` and overwrites each
    proof-patched source with its merged form.
@@ -187,7 +186,7 @@ subprogram without disturbing its siblings.
 
 ### Writing a body patch (`.adb`)
 
-The spec patch declares the contracts; the **body patch** is what makes
+The spec patch declares the contracts. The **body patch** is what makes
 gnatprove actually analyze the vendored body (the body-must-opt-in rule). It
 lives at the body's relative path and mirrors the body's declarations with
 *stub bodies* that the merge ignores -- the original implementation is
@@ -210,18 +209,18 @@ The merge replaces the original declaration (up to its `is`) with the
 patch's aspect-carrying declaration and keeps the original body proper, so
 the copy gnatprove sees is `package body Vecmath with SPARK_Mode => On is
 ... <original implementation> ...`. A fully SPARK-clean body needs only the
-package-level aspect; the per-subprogram aspect covers bodies with a mix of
-clean and I/O-bound subprograms.
+ package-level aspect. The per-subprogram aspect covers bodies with a mix of
+ clean and I/O-bound subprograms.
 
 ### Matching rules
 
 The merge matches each patched declaration against the original by **name and
 normalized parameter profile**:
 
-- matching is whitespace-insensitive (a single-line parameter list matches a
-  multi-line one);
-- the default `in` mode is equivalent to a bare mode (`X : in Integer`
-  matches `X : Integer`), while `in out` and `out` are distinct modes;
+- Matching is whitespace-insensitive. A single-line parameter list matches a
+  multi-line one.
+- The default `in` mode is equivalent to a bare mode (`X : in Integer` matches
+  `X : Integer`). `in out` and `out` are distinct modes.
 - an overloaded subprogram patches its exact signature -- a patched
   two-argument `Scroll_Screen` replaces the two-argument original, never a
   same-named sibling;
@@ -259,8 +258,8 @@ end Vecmath;
 ```
 
 The two patch files from above (spec with
-`Pre => Lo <= Hi, Post => Clamp'Result in Lo .. Hi`; body with
-`SPARK_Mode => On`) merge into the copy unchanged in behavior, and gnatprove
+`Pre => Lo <= Hi, Post => Clamp'Result in Lo .. Hi`, and body with
+`SPARK_Mode => On`) merge into the copy unchanged in behavior. gnatprove
 proves the contract: 2 VCs (the `Clamp` postcondition and its termination
 check), 0 unproved. A caller in the target's own code can then rely on the
 contract without the vendored sources ever changing.
@@ -279,18 +278,18 @@ contract without the vendored sources ever changing.
 ### Common pitfalls
 
 - **Spec patch without a body patch.** A SPARK-clean vendored body stays out
-  of proof scope; gnatprove reports "no checks generated" or skips the unit.
+  of proof scope. gnatprove reports "no checks generated" or skips the unit.
   Add the `.adb` patch to opt the body in.
 - **A patched declaration that does not match anything.** Check the name and
-  the parameter list (modes included) against the original; the merge reports
-  `could not be merged ... (unmatched subprogram or oversized file)` and
-  skips the patch.
+  the parameter list (modes included) against the original. The merge reports
+  `could not be merged ... (unmatched subprogram or oversized file)` and skips
+  the patch.
 - **Patching the wrong overload.** The match is profile-aware, so a patch
   entry replaces exactly the signature it re-declares -- verify you wrote the
   same parameter list as the overload you mean.
 - **Expecting contracts to prove against a non-SPARK body.** `Ada.Text_IO`
   and other `SPARK_Mode Off` dependencies cannot be analyzed; the patch still
-  applies, but the proof simply does not cover those bodies.
+  applies, but the proof does not cover those bodies.
 
 ## See also
 

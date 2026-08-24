@@ -15,7 +15,7 @@ levels are called **ASIL** (Automotive Safety Integrity Level), from **QM**
 
 **IEC 62304** is the medical-device software lifecycle standard. It classifies
 software into **safety classes** A, B, and C based on the severity of harm a
-failure could cause.
+failure can cause.
 
 All three demand the same underlying evidence:
 

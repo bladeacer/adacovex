@@ -3,14 +3,14 @@
 ## Dependency Management: Alire
 
 adacovex uses [Alire](https://alire.ada.dev/) as its packaging and delivery
-mechanism. The publishing manifest `alire.toml` declares **zero dependencies**
--- no libraries beyond the GNAT runtime and no tool dependencies. In
-particular `gnatprove` is *not* a declared dependency: adacovex analyzes
-`gnatprove.out` files produced externally, and the `prove` subcommand resolves
-a gnatprove executable at run time (per-project manifest, `$PATH`, cached
-toolchain, or download). Development-only tools (`gnatprove`, `gnatdoc_bin`,
-`gnatformat_bin`) are declared in `alire-dev.toml`, which is never published to
-the Alire community index.
+mechanism. The publishing manifest `alire.toml` declares **zero dependencies**.
+It declares no libraries beyond the GNAT runtime. It declares no tool
+dependencies. In particular `gnatprove` is *not* a declared dependency.
+adacovex analyzes `gnatprove.out` files produced externally. The `prove`
+subcommand resolves a gnatprove executable at run time (per-project manifest,
+`$PATH`, cached toolchain, or download). Development-only tools (`gnatprove`,
+`gnatdoc_bin`, `gnatformat_bin`) are declared in `alire-dev.toml`, which is
+never published to the Alire community index.
 
 ### Manifest distinction (`alire.toml` vs `alire-dev.toml`)
 
@@ -41,29 +41,29 @@ executable in this order:
    `<target>/alire-dev.toml` declares a `gnatprove` dependency, the pinned
    gnatprove binary crate is deployed standalone into `~/.adacovex/toolchain/`
    via `alr -n get gnatprove=<version>` and executed directly (the version-set
-   expression, e.g. `^16.1.0`, is reduced to the bare version alr accepts).
-   This isolates the proof run from the target's other dev-manifest tools and
-   never swaps manifests. A manifest pin always wins: when the pinned version
-   cannot be deployed, the run fails instead of falling back.
+   expression, for example `^16.1.0`, is reduced to the bare version alr
+   accepts). This isolates the proof run from the target's other dev-manifest
+   tools and never swaps manifests. A manifest pin always wins. When the pinned
+   version cannot be deployed, the run fails instead of falling back.
 2. **Global version pin**: the `ADACOVEX_GNATPROVE_VERSION` environment
    variable or the `[prove] gnatprove-version` key in
    `~/.adacovex/adacovex.toml`, deployed standalone via
-   `alr -n get gnatprove=<version>` -- same never-fall-back semantics, folded
-   into the proof result-cache identity.
-3. **`$PATH`**: a `gnatprove` already installed (e.g. `alr install gnatprove`).
-4. **Cached toolchain**: `~/.adacovex/toolchain/` -- the download layout
-   (`<toolchain>/bin/gnatprove`) or a previously `alr get`-deployed
-   `gnatprove_*/` crate.
+   `alr -n get gnatprove=<version>`. It uses the same never-fall-back
+   semantics. It is folded into the proof result-cache identity.
+3. **`$PATH`**: a `gnatprove` already installed (for example `alr install gnatprove`).
+4. **Cached toolchain**: `~/.adacovex/toolchain/`. The download layout
+   (`<toolchain>/bin/gnatprove`) is used. A previously `alr get`-deployed
+   `gnatprove_*/` crate is also used.
 5. **Download**: last-resort platform toolchain bundle.
 
 Effective order: **manifest pin > global pin (config/env) > PATH > cache >
 download**. If a project manifest declares `gnatprove` but `alr` is missing,
-install Alire first; the remaining fallbacks then apply.
+install Alire first. The remaining fallbacks then apply.
 
 The `make doc` / `make fmt` targets still swap `alire-dev.toml` over
 `alire.toml` for the duration of `gnatdoc` / `gnatformat` (the `_dev_cmd`
 Makefile recipe backs up `alire.toml` / `alire.lock` / `alire/`, swaps, runs,
-and restores via a `trap`). `prove` does not use that swap -- it deploys only
+and restores via a `trap`). `prove` does not use that swap. It deploys only
 the single gnatprove crate.
 
 The assessment and SBOM pipeline always scans the publishing `alire.toml`, so
@@ -73,20 +73,20 @@ dev-only tool declarations never leak into dependency graphs or SBOMs.
 
 Beyond the Alire graph, `Discover_System_Dev_Deps` adds the system binaries a
 project interacts with at development time (`python3`, `git`, `gnatprove`,
-`make`, ...) as `Scope_Dev` SBOM components. It scans the project's
+`make`, and more) as `Scope_Dev` SBOM components. It scans the project's
 dev-facing files (Makefile variants, `.sh` / `.py` / `.gpr` / `.yml` /
 `.toml` / `.ads` / `.adb`) for a curated toolchain list and registers every
 referenced tool that is actually installed on `$PATH` under a
 `pkg:generic/<tool>` purl. Tools referenced nowhere in the project, or
-referenced but not installed, are skipped; a Makefile at the project root
+referenced but not installed, are skipped. A Makefile at the project root
 implies `make`. The scan runs after the cached manifest graph is resolved
 (so cache hits and misses agree). Each registered tool's version is probed
 by running `--version` (or a tool-specific subcommand such as fossil's
 `version`) and extracting the version token, so the SBOM records the
-installed version; a probe that fails or prints no digit token leaves the
-version empty. The source file declaring the `System_Tools` table is
-skipped by the scan, otherwise every installed tool on the list would be
-registered as a self-reference.
+installed version. A probe that fails or prints no digit token leaves the
+version empty. The source file declaring the `System_Tools` table is skipped
+by the scan. Otherwise, every installed tool on the list can be registered
+as a self-reference.
 
 ## Unix Philosophy
 
@@ -96,17 +96,17 @@ adacovex follows the Unix philosophy of doing one thing well:
 - **Text-based interfaces**: Input and output are plain text (Ada source, `.out` files, Markdown reports, ANSI terminal output).
 - **No library dependencies**: Only the GNAT runtime is used. No external
   libraries or frameworks. Alire is the packaging/delivery mechanism but adds
-  no runtime dependency: adacovex declares no library or tool dependencies
+  no runtime dependency. adacovex declares no library or tool dependencies
   (gnatprove is resolved at run time by the `prove` subcommand).
 - **Composable tools**: The `prove` subcommand runs GNATprove and then falls through to the standard assessment pipeline. The `sbom` subcommand generates a proof-aware SBOM independently.
 - **Exit codes**: `0` for success (DAL achieved), `1` for compliance failure. This enables straightforward CI integration.
 - **Minimal user code**: users write as little code as possible while getting
-  maximum value. The tool meets third-party and generated code where it is --
-  recognizing common docstring conventions (Ada `--  @param`, Google
-  `Args:`/`Returns:`, Sphinx `:param:`/`:returns:`), common test-result
-  formats (TAP, Automake, Surefire, Unity), and lowering foreign type names
-  (`int32_t`, `size_t`, ...) onto bounded Ada types -- so nothing needs to be
-  rewritten to be assessed.
+  maximum value. The tool meets third-party and generated code where it is. It
+  recognises common docstring conventions (Ada `--  @param`, Google
+  `Args:`/`Returns:`, Sphinx `:param:`/`:returns:`). It recognises common
+  test-result formats (TAP, Automake, Surefire, Unity). It lowers foreign type
+  names (`int32_t`, `size_t`, and more) onto bounded Ada types. Nothing needs
+  to be rewritten to be assessed.
 
 ## Zero-Library-Dependency Design
 
@@ -123,9 +123,9 @@ storage-size dependent and remain fixed.
 
 `Max_Line` is deliberately generous (256 KiB on 64-bit) so that single-line
 declarations from heavily code-generated projects parse cleanly. When a
-physical line *does* exceed the buffer, it is **never truncated and then
-processed** -- that would silently produce a partial (and wrong) result.
-Instead the parser drains the remainder, reports the file and line to
+physical line *does* exceed the buffer, adacovex **never truncates it and
+then processes it**. Truncation can silently produce a partial (and wrong)
+result. Instead the parser drains the remainder, reports the file and line to
 standard error, and fails that parse explicitly. The source scanner counts
 the skipped file in `Skipped_Ct`, which forces the DAL assessment to
 `Unmet` and the exit code to `1` (no compliance claim can be made for
@@ -135,22 +135,22 @@ Alire manifest / lockfile / GPR dependency graphs. An exact buffer-length
 line is not an overflow (it parses normally), and paths exceeding
 `Max_Path` are likewise reported and skipped rather than crashing.
 
-**Overflow contract (two tiers).** Path and line buffers *fail loudly*: an
+**Overflow contract (two tiers).** Path and line buffers *fail loudly*. An
 overlong physical line is drained and reported (`line exceeds Max_Line
-buffer`), the file is not parsed, `Skipped_Ct` increments, and DAL becomes
-`Unmet`; an overlong path is reported and the file/subtree is skipped. No
+buffer`). The file is not parsed. `Skipped_Ct` increments. DAL becomes
+`Unmet`. An overlong path is reported and the file/subtree is skipped. No
 partial results ever flow downstream. Semantic text fields (subprogram names,
 HLR/LLR IDs, descriptions, docstring tag names/values, CLI strings) are
 *clamped* to their fixed buffer with the length field (`Name_Len`, `Id_Len`,
-`D_Len`, ...) recording the recorded prefix, so adversarial or generated input
-can never raise `Constraint_Error`. Clamping keeps the scan correct -- the
-full token is still consumed so following tokens are not misparsed.
+`D_Len`, ...) recording the recorded prefix, so adversarial or generated
+input can never raise `Constraint_Error`. Clamping keeps the scan correct.
+The full token is still consumed so following tokens are not misparsed.
 
-**Why no chunking / LEB128.** adacovex audits in memory: counts (packages,
-subprograms, HLR tags, tests, SBOM components) are unbounded vectors, and each
+**Why no chunking / LEB128.** adacovex audits in memory. Counts (packages,
+subprograms, HLR tags, tests, SBOM components) are unbounded vectors. Each
 scanned unit is processed line-at-a-time into fixed per-item buffers. A single
-Ada declaration does not admit streaming/chunked parsing -- truncating a
-declaration is worse than a loud failure, so chunking would gain nothing.
+Ada declaration does not admit streaming/chunked parsing. Truncating a
+declaration is worse than a loud failure. Chunking can gain nothing.
 LEB128 (variable-length integer encoding) is a serialization concern and does
 not apply to an in-memory CLI audit. The design therefore scales to
 arbitrarily large codebases by dynamic allocation, bounded per-item buffers,
@@ -170,23 +170,25 @@ adacovex itself is SPARK-proven at Platinum level (all VCs proved,
 AoRTE-free). The tool analyzes GNATprove output (`gnatprove.out`) to assess
 SPARK assurance levels (Stone through Platinum) for target projects.
 
-The tool does not perform verification itself -- it parses and reports on proof results produced by GNATprove. This keeps the tool's scope narrow and aligns with the Unix philosophy of composing specialized tools.
+The tool does not perform verification itself. It parses and reports on proof
+results produced by GNATprove. This keeps the tool's scope narrow and aligns
+with the Unix philosophy of composing specialized tools.
 
 ### Proof scope and justification policy
 
 - **Proof scope is the target's own units.** adacovex proves the Ada/SPARK
-  code it is run against, never third-party dependencies. GNATprove units that
-  are skipped (e.g. standard-library or vendor code that GNATprove itself does
-  not analyze) are tracked via `Units_Skipped` and reported in the ANSI and
-  Markdown reports; they are out of proof scope by design, not a proof
-  failure.
+   code it is run against, never third-party dependencies. GNATprove units that
+   are skipped (for example standard-library or vendor code that GNATprove
+   itself does not analyze) are tracked via `Units_Skipped` and reported in the
+   ANSI and Markdown reports. They are out of proof scope by design, not a
+   proof failure.
 - **Justifications are an accepted discharge mechanism.** A `Total` row's
   `Justified` count (GNATprove `pragma Annotate` justifications for decidedly
   unprovable checks, such as non-functional foreign-language calls) is counted
   neither as proved nor as unproved: `Proved = Total - Justified - Unproved`.
-  Justified VCs do **not** downgrade the SPARK level -- only unproved VCs do.
+  Justified VCs do **not** downgrade the SPARK level. Only unproved VCs do.
   This is pinned by unit tests.
-- **Gold is the minimum compliance baseline; Platinum is the ideal.**
+- **Gold is the minimum compliance baseline. Platinum is the ideal.**
   `Min_SPARK_For` thresholds (A=Gold, B=Silver, C=Bronze, D/E=Stone) are the
   gate for DAL compliance. Platinum is achieved and reported when every
   functional contract is proved, but it is a best-effort target, not a
@@ -242,7 +244,7 @@ can still reach 100% docstring coverage without touching the originals.
 ### Why patches exist
 
 In strict mode (default), all directories except `.git`, `obj`, `tests`,
-`config`, and `.adacovex` are scanned. Vendored dependencies (e.g. a copy of
+`config`, and `.adacovex` are scanned. Vendored dependencies (for example a copy of
 vt100 in `demo/deps/vt100/`) are scanned, and their undocumented subprograms
 count against docstring coverage. Patches document them in place.
 
@@ -266,10 +268,10 @@ end VT100;
 ```
 
 Rules:
-1. File name must match the original `.ads` (e.g. `vt100.ads`).
+1. File name must match the original `.ads` (for example `vt100.ads`).
 2. Subprogram names must match the originals exactly.
 3. Only subprograms with preceding docstrings (`--  ` lines) are merged.
-4. Overloaded subprograms: one patch entry per overload; each patches the next
+4. Overloaded subprograms: one patch entry per overload. Each patches the next
    undocumented original with the same name.
 5. The scanner merges `Has_Docstring`, `Doc_Param_Ct`, and `Doc_Return` into
    the matching originals.
@@ -291,9 +293,9 @@ The same `.adacovex/patches/<relative-path>` file can carry **SPARK proof
 aspects** in addition to docstrings, so vendored dependencies participate in
 the SPARK proof without modifying their sources. A patch file that includes
 any of `SPARK_Mode`, `Pre =>`, `Post =>`, or `Global =>` (detected by
-`Adacovex.Prove_Patch.Has_Proof`) is a *proof patch*; a patch with only
+`Adacovex.Prove_Patch.Has_Proof`) is a *proof patch*. A patch with only
 docstrings remains a docstring overlay and never engages the proof
-machinery. This section is the design; for the user-facing guide -- how
+machinery. This section is the design. For the user-facing guide -- how
 proving works, writing SPARK contracts, and the `.ads`/`.adb` patch files
 with worked examples and pitfalls -- see
 [Proving and writing proofs](proving.md).
@@ -313,7 +315,7 @@ end VT100;
 The `prove` subcommand merges proof patches before running gnatprove:
 
 1. `Count_Proof_Patches` scans `<target>/.adacovex/patches/` (`.ads` and
-   `.adb` patch files); a target with no proof patches is proved against
+   `.adb` patch files). A target with no proof patches is proved against
    its own tree exactly as before.
 2. `Build_Patched_Copy` copies the target tree (excluding `.git`, `obj`,
    and `.adacovex`) into `<target>/obj/adacovex-proof/` and overwrites each
@@ -322,8 +324,8 @@ The `prove` subcommand merges proof patches before running gnatprove:
    declaration too), and each aspect-carrying subprogram declaration
    replaced by the patch's declaration block. The merge matches on name
    **and** normalized parameter profile (`Param_Profile`), so an overloaded
-   subprogram patches its exact signature and never a same-named sibling;
-   the default `in` mode is equivalent to a bare mode, while `in out` and
+   subprogram patches its exact signature and never a same-named sibling.
+   The default `in` mode is equivalent to a bare mode. `in out` and
    `out` are distinct. A spec declaration terminates at its `;`, a body
    declaration at its `is` -- so a patched body declaration is replaced
    without touching the body proper. The original vendored sources are
@@ -369,8 +371,8 @@ contracts prove: 2 VCs (the `Clamp` postcondition and its termination
 check), 0 unproved.
 
 Where the vendored body is SPARK-clean and opted in via a body patch,
-gnatprove proves the patched contracts; where it is not (e.g. bodies that
-call `Ada.Text_IO`, which is `SPARK_Mode Off`), gnatprove skips the I/O
+gnatprove proves the patched contracts. Where it is not (for example bodies
+that call `Ada.Text_IO`, which is `SPARK_Mode Off`), gnatprove skips the I/O
 bodies by design and reports the unit out of proof scope -- a proof patch
 never drags the target's proof level down. The Ada_CRDT dogfood target
 proves the mechanism end to end: its
@@ -384,13 +386,13 @@ copy, preserving the target's proof.
 
 adacovex supports multiple output formats:
 
-- **ANSI terminal report**: Color-coded summary for interactive use
+- **ANSI terminal report**: Colour-coded summary for interactive use
 - **SVG badges**: `spark.svg`, `tests.svg`, `docs.svg`, plus `do178c.svg` /
   `iso26262.svg` / `iec62304.svg` compliance badges (`--standard=all` emits all
   three) for CI badges
 - **Markdown reports**: `VERIFICATION.md` and `TRACE.md` for compliance documentation
-- **HTML dashboard**: Interactive web dashboard with JSON API (`--serve`);
-  standard-aware (defaults to all standards like `sbom`) with light/dark
+- **HTML dashboard**: Interactive web dashboard with JSON API (`--serve`).
+   It is standard-aware (defaults to all standards like `sbom`) with light/dark
   theme support (toggle button, respects `prefers-color-scheme`). The static
   page shell (CSS, header, theme script) is a real HTML file,
   `resources/dashboard.html`, bundled into the binary at build time:
@@ -405,15 +407,15 @@ adacovex supports multiple output formats:
 ## Result caching
 
 adacovex persists parsed analysis results on disk so unchanged inputs are not
-re-scanned / re-parsed / re-proved. Source scans, GNATprove summaries, test
+re-scanned, re-parsed, or re-proved. Source scans, GNATprove summaries, test
 summaries, HLR.md/LLR.md requirement parses, the resolved SBOM dependency
 graph, and the differential-mode scans are each keyed by a namespace prefix
-plus the SHA-256 of the artifact(s) they were derived from -- e.g.
-`"scan:" | "prove:" | "tests:" | "hlr:" | "llr:" | "graph:" + digest` -- so
-re-parsing a byte-identical artifact yields a cache hit regardless of the
+plus the SHA-256 of the artifact(s) they were derived from. For example:
+`"scan:" | "prove:" | "tests:" | "hlr:" | "llr:" | "graph:" + digest`.
+Re-parsing a byte-identical artifact yields a cache hit regardless of the
 target directory or command line. An unchanged manifest/lockfile/.gpr set
-serves the cached dependency graph; unchanged HLR.md/LLR.md serve the cached
-requirement parses; and `--compare-base` / `--coverage-delta` reuse cached
+serves the cached dependency graph. Unchanged HLR.md/LLR.md serve the cached
+requirement parses. `--compare-base` / `--coverage-delta` reuse cached
 source scans for the current tree.
 
 - **Schema namespace**: the default cache root is
@@ -424,9 +426,10 @@ source scans for the current tree.
 - **Eviction**: `Put_Cached` evicts oldest-first by modification time when more
   than `--cache-max` entries (default `4096`) accumulate. `Eviction_Count`
   tracks removals and is reported in the ANSI cache line.
-- **Overflow safety**: `Serialize` returns an empty blob when a package would
-  exceed `Max_Cache_Blob`; callers skip storing it and `Deserialize` rejects
-  empty/oversized input, so truncated data can never be served as a hit.
+- **Overflow safety**: `Serialize` returns an empty blob when a package is
+   larger than `Max_Cache_Blob`. Callers skip storing it and `Deserialize`
+   rejects empty/oversized input, so truncated data can never be served as a
+   hit.
 - **`--target` normalization**: `--target` is normalized (`.`/`..` collapsed to
   a canonical absolute path) before scanning, keeping the `File_Path` values in
   cached `Package_Info` consistent across invocations that spell the same
@@ -441,15 +444,15 @@ it. The ANSI report shows a
 
 ## Testing
 
-adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 968 tests across 14 categories. No external test framework (AUnit, etc.) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
+adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 968 tests across 14 categories. No external test framework (AUnit, and more) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
 
 ## Supported Platforms
 
 adacovex supports the same platforms Alire itself supports. Because Alire is
-the packaging and delivery mechanism -- the crate builds via `alr build`, is
-distributed through the Alire community index (`alr install covex`), and the
-release workflow builds it with the Alire toolchain -- adacovex inherits
-Alire's supported-platform matrix:
+the packaging and delivery mechanism, adacovex inherits Alire's
+supported-platform matrix. The crate builds via `alr build`. It is distributed
+through the Alire community index (`alr install covex`). The release workflow
+builds it with the Alire toolchain:
 
 - **Binary distribution**: Linux x86-64, Windows x86-64, and macOS x86-64
   (the platforms for which Alire publishes binary releases and GNAT FSF
@@ -471,18 +474,19 @@ adacovex follows one version across every delivery channel, and each channel is
 version-locked to the same release:
 
 - **Single source of truth**: the `version` field in `alire.toml` /
-  `alire-dev.toml`, resolved by installation method. `tools/gen-version.py`
-  regenerates `src/adacovex_version_info.ads` at build time (and `make
-  bump-version`) from the first available of `ADACOVEX_VERSION` (release
-  builds), `alire-dev.toml` (source checkouts), or `alire.toml`
-  (dependency-managed installs: the published crate builds from its release
-  manifest, so the toml associated with the covex binary for dependency
-  management carries the version), and `Adacovex.Version` in
-  `src/adacovex.ads` re-exports it, so `--version`, the man page, the SBOM
-  tool version, and the result-cache namespace all derive from the manifest
-  and can never drift. Release builds bundle the release tag instead via the
-  `ADACOVEX_VERSION` environment variable (release workflow / `make
-  release`).
+   `alire-dev.toml` is the single source, resolved by installation method.
+   `tools/gen-version.py` regenerates `src/adacovex_version_info.ads` at build
+   time (and `make bump-version`). It reads the first available of
+   `ADACOVEX_VERSION` (release builds), `alire-dev.toml` (source checkouts),
+   or `alire.toml` (dependency-managed installs). For dependency-managed
+   installs, the published crate builds from its release manifest, so the toml
+   associated with the covex binary for dependency management carries the
+   version. `Adacovex.Version` in `src/adacovex.ads` re-exports the version.
+   As a result, `--version`, the man page, the SBOM tool version, and the
+   result-cache namespace all derive from the manifest and can never drift.
+   Release builds bundle the release tag instead via the
+   `ADACOVEX_VERSION` environment variable (release workflow / `make
+   release`).
 - **CI is tied to the release version**: the GitHub Actions composite action
   (`action.yml`) is version-matched to the adacovex binary. The release
   workflow bundles `adacovex-vX.Y.Z.tar.gz` and `adacovex-action-vX.Y.Z.tar.gz`
@@ -514,7 +518,10 @@ It does not make edits in place or on your behalf.
 
 ## Flexible
 
-adacovex lets you write proofs and decide where proofs are pointless (e.g. code that has to involve manual memory management). You just have to justify your rationale. The tool should not be rigid and expect 100% proving for all use cases.
+adacovex lets you write proofs and decide where proofs are pointless (for
+example code that has to involve manual memory management). You just have to
+justify your rationale. The tool is not rigid. It does not expect 100% proving
+for all use cases.
 
 You write the proofs yourself, so there is no magic or hidden abstractions here.
 
@@ -552,9 +559,9 @@ the local man database (`~/.local/share/man`, Linux/WSL) and refreshes it with
 ## Swapping the GNAT compiler (LLVM backend)
 
 adacovex and Alire both default to the GCC-based **GNAT** (`gnat_native`)
-compiler; no action is needed. Only swap if you specifically want an
-LLVM-backend GNAT (e.g. GNAT LLVM) for your target project -- for example to
-exercise dissimilar redundancy via diverse code generation.
+compiler. No action is needed. Only swap if you specifically want an
+LLVM-backend GNAT (for example GNAT LLVM) for your target project -- for
+example to exercise dissimilar redundancy via diverse code generation.
 
 GNAT LLVM is **not** yet packaged as a standard Alire toolchain crate, so two
 paths exist:
@@ -573,7 +580,7 @@ paths exist:
    `alr toolchain --select --disable-assistant` and choosing the LLVM GNAT.
 
 2. **System-installed GNAT LLVM.** Install GNAT LLVM on `$PATH`, then force the
-   Ada toolchain in the root `.gpr` so `gprbuild` doesn't fall back to the
+   Ada toolchain in the root `.gpr` so `gprbuild` does not fall back to the
    GCC GNAT:
 
    ```gpr
@@ -585,8 +592,8 @@ paths exist:
 
 Notes:
 
-- GNAT LLVM and GCC GNAT are not guaranteed ABI-compatible; compile all Ada in
-  a project with the same compiler.
+- GNAT LLVM and GCC GNAT are not guaranteed ABI-compatible. Compile all Ada in
+   a project with the same compiler.
 - GNAT LLVM's `-fstack-check` support is partial and some features
   (`Scalar_Storage_Order`, `Convention C++`) differ from GCC GNAT.
 - SPARK proof results are compiler-independent, so `covex prove` and the
