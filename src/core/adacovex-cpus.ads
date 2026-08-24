@@ -36,13 +36,15 @@ package Adacovex.CPUs is
      (Configured : Integer; In_CI : Boolean) return Natural;
 
    --  Portable system temp directory.  Checks TMPDIR, TEMP, TMP (in that
-   --  order) and falls back to "/tmp".
+   --  order) and falls back to "/tmp".  Reads Ada.Environment_Variables,
+   --  which is outside the SPARK subset, so this stays SPARK_Mode Off.
    function Get_Temp_Directory return String
    with SPARK_Mode => Off;
 
-   --  Default shell executable for spawned commands.
+   --  Default shell executable for spawned commands.  Pure: returns the
+   --  constant "sh", so it is SPARK_Mode On with no global state.
    function Get_Shell_Command return String
-   with SPARK_Mode => Off;
+   with SPARK_Mode => On, Global => null;
 
    --  The auto default: all cores in CI, otherwise max(1, cores - 2) to keep
    --  the developer machine responsive.  Pass the already-detected core count

@@ -83,6 +83,18 @@ package Adacovex.Config is
       Prove_Mode           : Boolean := False;
       Complexity_Mode      : Boolean := False;
       Status_Mode          : Boolean := False;
+
+      --  True when `status --export[=PATH]` was given: the status report is
+      --  written as machine-readable JSON to PATH (or stdout when no path
+      --  is supplied) instead of the human-readable text report.
+      Status_Export         : Boolean := False;
+      Status_Export_Path    : String (1 .. Types.Max_Path);
+      Status_Export_Path_Len : Natural := 0;
+
+      --  True when `status --metrics` was given: the status report is
+      --  printed as a compact key=value metrics summary (one per line) so
+      --  shell scripts and CI can consume it without parsing prose.
+      Status_Metrics        : Boolean := False;
       Completion_Mode      : Boolean := False;
       Completion_Shell     : String (1 .. Types.Max_Filename);
       Completion_Shell_Len : Natural := 0;

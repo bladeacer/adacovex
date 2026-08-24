@@ -94,6 +94,14 @@ package body Adacovex.Config is
         and then S (S'First + 2) in 'l' | 'L';
    end Is_All;
 
+   --  True when S is not a flag token (does not start with '-').  Used to
+   --  decide whether a bare value following a flag is that flag's argument
+   --  (e.g. `status --export out.json`).
+   function Is_Dash_Arg (S : String) return Boolean is
+   begin
+      return S'Length >= 1 and then S (S'First) = '-';
+   end Is_Dash_Arg;
+
    --  True when S names one of the four supported completion shells.
    function Is_Completion_Shell (S : String) return Boolean is
       Lower : String (1 .. 4) := (others => ' ');
@@ -236,7 +244,7 @@ package body Adacovex.Config is
      & "prove status completion man check dir version no-sbom sbom-format format out "
      & "jobs level timeout steps memlimit force no-loop-unrolling "
      & "no-inlining suppress-warnings quiet require-spark require-docstrings "
-     & "require-tests require-proof complexity help";
+     & "require-tests require-proof complexity export metrics help";
 
    --  Expose the flag list for the shell-completion generator (see spec).
    function Flag_List return String is
@@ -789,6 +797,25 @@ package body Adacovex.Config is
                   Cfg.Complexity_Mode := True;
                elsif A = "status" then
                   Cfg.Status_Mode := True;
+               elsif A = "--export" then
+                  --  `status --export` prints the status report as JSON on
+                  --  stdout; `status --export=PATH` writes it to PATH.
+                  Cfg.Status_Export := True;
+                  if I < Count and then not Is_Dash_Arg (Args (I + 1)) then
+                     Set_String
+                       (Cfg.Status_Export_Path,
+                        Cfg.Status_Export_Path_Len,
+                        Args (I + 1));
+                     I := I + 1;
+                  end if;
+               elsif Has_Prefix (A, "--export=") then
+                  Cfg.Status_Export := True;
+                  Set_String
+                    (Cfg.Status_Export_Path,
+                     Cfg.Status_Export_Path_Len,
+                     A (A'First + 9 .. A'Last));
+               elsif A = "--metrics" then
+                  Cfg.Status_Metrics := True;
                elsif A = "completion" then
                   --  `completion [bash|fish|zsh|pwsh]`: the shell name is
                   --  the next argument when it is one of the four known
@@ -1317,6 +1344,15 @@ package body Adacovex.Config is
             & "or --coverage-delta");
       end if;
 
+      -- --export and --metrics are status-mode output selectors: they only
+      -- make sense with the status subcommand.
+      if (Cfg.Status_Export or Cfg.Status_Metrics)
+        and then not Cfg.Status_Mode
+      then
+         Set_Error
+           (Cfg, "--export and --metrics require the status subcommand");
+      end if;
+
       -- Man mode is a standalone installer: it cannot be combined with any
       -- assessment mode (the man page is generated from the bundled version,
       -- it does not need a target).
@@ -1511,9 +1547,19 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("  status                Report toolchain + platform status (no");
       Ada.Text_IO.Put_Line
-        ("                        assessment); exit 0 when alr + gnatprove are");
+        ("                        assessment); exit 0 when alire + gnatprove are");
       Ada.Text_IO.Put_Line
         ("                        available or dependency-managed");
+      Ada.Text_IO.Put_Line
+        ("  --export[=PATH]       With status: write the report as machine-");
+      Ada.Text_IO.Put_Line
+        ("                        readable JSON to PATH (or stdout when no");
+      Ada.Text_IO.Put_Line
+        ("                        path is given)");
+      Ada.Text_IO.Put_Line
+        ("  --metrics             With status: print the report as compact");
+      Ada.Text_IO.Put_Line
+        ("                        key=value metrics lines for shell scripts");
       Ada.Text_IO.Put_Line
         ("  --serve               Start HTTP dashboard on :8080 (standard-aware,");
       Ada.Text_IO.Put_Line
@@ -1937,7 +1983,16 @@ package body Adacovex.Config is
             & ASCII.LF
             & "or downloading anything: alire/gnatprove detectability, CPU"
             & ASCII.LF
-            & "count, CI status, and which VCS tools are on PATH.");
+            & "count, CI status, and which VCS tools are on PATH."
+            & ASCII.LF
+            & ASCII.LF
+            & "--export[=PATH]  write the report as machine-readable JSON to"
+            & ASCII.LF
+            & "                 PATH (or stdout when no path is given)."
+            & ASCII.LF
+            & "--metrics        print the report as a compact key=value"
+            & ASCII.LF
+            & "                 metrics summary (one per line) for scripts.");
       elsif T = "man" or else T = "check" or else T = "dir" or else T = "force"
       then
          Print_Section

@@ -177,4 +177,26 @@ package Adacovex.Prove is
    --  dependency-managed.
    procedure Run_Status (Target_Dir : String; Success : out Boolean);
 
+   --  Write the `adacovex status` report as machine-readable JSON for the
+   --  `status --export[=PATH]` mode: version, target, alire and gnatprove
+   --  detectability (manifest/global pin, PATH, toolchain cache), platform
+   --  (logical CPUs, CI, default -j), the VCS tool report, and the overall
+   --  OK verdict.  Like Run_Status it never deploys or downloads anything.
+   --  When Out_Path is empty the JSON is printed to stdout; otherwise it is
+   --  written to Out_Path (created/overwritten).
+   --  @param Target_Dir  Project root directory.
+   --  @param Out_Path  Output file path, or "" for stdout.
+   --  @param Success  True when the report was gathered and written.
+   procedure Export_Status
+     (Target_Dir : String; Out_Path : String; Success : out Boolean);
+
+   --  Print the `adacovex status --metrics` report: the same data as
+   --  Run_Status as compact key=value lines (one per line, keys lowercase
+   --  with - separators) so shell scripts and CI can consume the report
+   --  without parsing prose.  Never deploys or downloads anything.
+   --  @param Target_Dir  Project root directory.
+   --  @param Success  True when alr + gnatprove are available or
+   --  dependency-managed (same meaning as Run_Status).
+   procedure Run_Status_Metrics (Target_Dir : String; Success : out Boolean);
+
 end Adacovex.Prove;

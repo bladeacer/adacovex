@@ -275,8 +275,10 @@ spark-off-check:
 	if [ -n "$$off" ]; then \
 	  echo "  SPARK_Mode (Off) found outside allowed packages:"; \
 	  echo "$$off"; \
-	  echo "  Only Types.Implementation and Complexity may be SPARK_Mode Off"; \
-	  echo "  (non-formal Ada.Containers are illegal in SPARK_Mode On code)."; \
+	  echo "  Only Types.Implementation, Complexity, and CPUs.Get_Temp_Directory"; \
+	  echo "  may be SPARK_Mode Off (non-formal Ada.Containers and"; \
+	  echo "  Ada.Environment_Variables/GNAT.OS_Lib are illegal in SPARK_Mode On"; \
+	  echo "  code)."; \
 	  exit 1; \
 	fi; \
 	echo "  no SPARK_Mode (Off) outside src/core/adacovex-types.ads, src/core/adacovex-complexity.ads, and src/core/adacovex-cpus.ads"

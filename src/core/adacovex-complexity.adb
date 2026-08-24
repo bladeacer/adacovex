@@ -662,6 +662,7 @@ package body Adacovex.Complexity is
          if Is_Open (F) then
             Close (F);
          end if;
+         return Result;
    end;
 
    --  Scan Target_Dir and return aggregate complexity metrics across all
@@ -788,9 +789,6 @@ package body Adacovex.Complexity is
       Max_Fn_Complexity   : Natural;
       Max_File_Complexity : Natural)
    is
-      pragma
-        Unreferenced
-          (Max_File_LOC, Max_File_Pct, Max_Fn_Complexity, Max_File_Complexity);
       Marker : String (1 .. 40) := (others => ' ');
       MLen   : Natural := 0;
    begin

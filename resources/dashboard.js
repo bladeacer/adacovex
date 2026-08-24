@@ -5,16 +5,56 @@
   var showTrans=document.getElementById('filter-transitive') ? document.getElementById('filter-transitive').checked : true;
   var showVend=document.getElementById('filter-vendored') ? document.getElementById('filter-vendored').checked : true;
   var q=(document.getElementById('dep-filter') ? document.getElementById('dep-filter').value.toLowerCase() : '');
-  document.querySelectorAll('.dep-node').forEach(function(n){
+  function scopeOk(s){ if(s==='base') return showBase; if(s==='dev') return showDev; if(s==='transitive') return showTrans; if(s==='vendored') return showVend; return true; }
+  var nodes=Array.prototype.slice.call(document.querySelectorAll('.dep-node'));
+  var info=new Map();
+  nodes.forEach(function(n){
     var scope=n.getAttribute('data-scope')||'transitive';
     var name=(n.getAttribute('data-name')||'').toLowerCase();
-    var ok=true;
-    if(scope==='base' && !showBase) ok=false;
-    else if(scope==='dev' && !showDev) ok=false;
-    else if(scope==='transitive' && !showTrans) ok=false;
-    else if(scope==='vendored' && !showVend) ok=false;
-    if(q && name.indexOf(q)===-1) ok=false;
-    n.style.display= ok ? '' : 'none';
+    info.set(n, {scope:scope, match: name.indexOf(q)!==-1});
+  });
+  // hasMatch: the node itself or any descendant (scopes matter: a descendant
+  // with a filtered-out scope does not keep the chain visible, but scope is
+  // applied per node below, so a matching descendant only needs its OWN
+  // scope to pass -- compute hasMatch on scope-filtered matches).
+  nodes.slice().reverse().forEach(function(n){
+    var m=info.get(n).match && scopeOk(info.get(n).scope);
+    var kids=n.querySelectorAll(':scope > details > ul > .dep-node');
+    kids.forEach(function(k){ var ik=info.get(k); if(ik && ik.hasMatch) m=true; });
+    info.get(n).hasMatch=m;
+  });
+  var textFilter=q.length>0;
+  // When the text filter starts, snapshot each details' open state so it can
+  // be restored when the filter is cleared (forcing ancestors open while
+  // filtering must not permanently collapse/expand the user's tree).
+  if(!window.__depOpenSnap) window.__depOpenSnap=new Map();
+  nodes.forEach(function(n){
+    var d=n.querySelector(n.tagName==='DETAILS' ? ':scope' : ':scope > details');
+    var open = d ? d.open : false;
+    if(window.__depOpenSnap && !window.__depOpenSnap.has(n) && textFilter){
+      window.__depOpenSnap.set(n, open);
+    }
+    if(!textFilter && window.__depOpenSnap && window.__depOpenSnap.has(n)){
+      if(d) d.open=window.__depOpenSnap.get(n);
+      window.__depOpenSnap.delete(n);
+    }
+  });
+  nodes.forEach(function(n){
+    var show=info[n].hasMatch && scopeOk(info[n].scope);
+    // scope filtering hides a node and its subtree without touching open
+    // state; the text filter auto-opens ancestors so matches stay reachable,
+    // and the open state is restored once the filter is cleared.
+    if(!textFilter && !show){
+      // scope-only hide: keep the user's open state intact
+    }
+    n.style.display= show ? '' : 'none';
+    if(show && textFilter){
+      var p=n.parentElement;
+      while(p && p.classList && !p.classList.contains('dep-tree')){
+        if(p.tagName==='DETAILS' && !p.open) p.open=true;
+        p=p.parentElement;
+      }
+    }
   });
   if(document.getElementById('dep-nomnoml-view') && document.getElementById('dep-nomnoml-view').style.display !== 'none'){
     try{ renderNomnoml(); }catch(e){}

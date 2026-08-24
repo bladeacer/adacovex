@@ -1392,88 +1392,188 @@ package body Adacovex.Prove is
       end if;
    end Status_VCS_Row;
 
-   procedure Run_Status (Target_Dir : String; Success : out Boolean) is
-      T           : constant String := Strip_Trailing_Slash (Target_Dir);
-      Alr         : String_Access := Locate_Exec_On_Path ("alr");
-      Gnatprove   : String_Access := Locate_Exec_On_Path ("gnatprove");
-      Declared    : constant Boolean := Manifest_Declares_GNATprove (T);
-      Pin         : constant String := Global_GNATprove_Pin;
-      Toolchain   : constant String := Home_Dir & Toolchain_Subdir;
-      Cached_Dir  : String (1 .. Types.Max_Path);
-      Cached_Len  : Natural := 0;
-      Cached      : Boolean := False;
-      Cores       : constant Natural := Adacovex.CPUs.Detect_Core_Count;
-      In_CI       : constant Boolean := Adacovex.CPUs.Is_Running_In_CI;
-      Needs_Alr   : constant Boolean := Declared or else Pin'Length > 0;
-      Gnat_Usable : constant Boolean :=
-        Gnatprove /= null
-        or else Cached
-        or else Declared
-        or else Pin'Length > 0;
-      Alr_Ok      : constant Boolean := Alr /= null or else not Needs_Alr;
+   --  Gathered status-report data, shared by the human text report
+   --  (Run_Status), the JSON export (Export_Status) and the key=value
+   --  metrics report (Run_Status_Metrics) so the three outputs never
+   --  drift.  String fields are fixed buffers + a length (0 = empty).
+   type VCS_Tool_Flags is array (1 .. 6) of Boolean;
+   type Status_Data is record
+      Target       : String (1 .. Types.Max_Path) := (others => ' ');
+      Target_Len   : Natural := 0;
+      Alr          : String (1 .. Types.Max_Path) := (others => ' ');
+      Alr_Len      : Natural := 0;   --  0 = not found on PATH
+      Declared     : Boolean := False;
+      Pin          : String (1 .. Types.Max_Path) := (others => ' ');
+      Pin_Len      : Natural := 0;
+      Gnatprove    : String (1 .. Types.Max_Path) := (others => ' ');
+      Gnatprove_Ln : Natural := 0;   --  0 = not found on PATH
+      Cached       : Boolean := False;
+      Cached_Dir   : String (1 .. Types.Max_Path) := (others => ' ');
+      Cached_Len   : Natural := 0;
+      Cores        : Natural := 1;
+      In_CI        : Boolean := False;
+      --  VCS command-line tool availability on PATH in this fixed order:
+      --  git, hg, svn, fossil, jj, mandb.
+      VCS_Tool     : VCS_Tool_Flags := (others => False);
+      Repo_Kind    : String (1 .. 64) := (others => ' ');
+      Repo_Len     : Natural := 0;   --  0 = none detected
+      Repo_Tool    : String (1 .. 64) := (others => ' ');
+      Repo_Tool_Ln : Natural := 0;
+      Repo_Note    : Boolean := False;  --  target repo tool missing on PATH
+      Needs_Alr    : Boolean := False;  --  manifest pin or global pin set
+      Alr_Ok       : Boolean := True;
+      OK           : Boolean := False;  --  overall usable verdict
+   end record;
 
-      --  Print a name/value pair; Name carries the full indentation + label.
-      procedure Row (Name : String; Value : String) is
-      begin
-         Ada.Text_IO.Put_Line (Name & Value);
-      end Row;
+   --  Fill a Status_Data record by probing PATH, the target manifest, the
+   --  global pin, and the toolchain cache.  Never deploys or downloads
+   --  anything (same contract as Run_Status).
+   procedure Gather_Status (Target_Dir : String; S : out Status_Data) is
+      Exe  : String_Access;
+      T    : constant String := Strip_Trailing_Slash (Target_Dir);
+      Kind : constant Adacovex.VCS.VCS_Kind := Adacovex.VCS.Detect (T);
+      Names : constant array (1 .. 6) of String (1 .. 8) :=
+        ("git" & 5 * " ", "hg" & 6 * " ", "svn" & 5 * " ", "fossil" & 2 * " ",
+         "jj" & 6 * " ", "mandb" & 3 * " ");
+      Lens : constant array (1 .. 6) of Natural := (3, 2, 3, 6, 2, 5);
+      KName : constant String := Adacovex.VCS.To_String (Kind);
+      Need : constant String := Adacovex.VCS.Tool_Name (Kind);
    begin
-      Find_Deployed_GNATprove (Toolchain, "", Cached_Dir, Cached_Len, Cached);
+      S := (others => <>);
+      S.Target_Len := T'Length;
+      for I in 1 .. T'Length loop
+         S.Target (I) := T (T'First + I - 1);
+      end loop;
+      S.Declared := Manifest_Declares_GNATprove (T);
+      declare
+         Pin : constant String := Global_GNATprove_Pin;
+      begin
+         S.Pin_Len := Pin'Length;
+         for I in 1 .. Pin'Length loop
+            S.Pin (I) := Pin (Pin'First + I - 1);
+         end loop;
+      end;
+      S.Needs_Alr := S.Declared or else S.Pin_Len > 0;
+
+      Exe := Locate_Exec_On_Path ("alr");
+      if Exe /= null then
+         S.Alr_Len := Exe.all'Length;
+         for I in 1 .. Exe.all'Length loop
+            S.Alr (I) := Exe.all (Exe.all'First + I - 1);
+         end loop;
+         Free (Exe);
+      end if;
+      Exe := Locate_Exec_On_Path ("gnatprove");
+      if Exe /= null then
+         S.Gnatprove_Ln := Exe.all'Length;
+         for I in 1 .. Exe.all'Length loop
+            S.Gnatprove (I) := Exe.all (Exe.all'First + I - 1);
+         end loop;
+         Free (Exe);
+      end if;
+      Find_Deployed_GNATprove
+        (Home_Dir & Toolchain_Subdir, "", S.Cached_Dir, S.Cached_Len, S.Cached);
+      S.Cores := Adacovex.CPUs.Detect_Core_Count;
+      S.In_CI := Adacovex.CPUs.Is_Running_In_CI;
+      for I in 1 .. 6 loop
+         Exe := Locate_Exec_On_Path (Names (I) (1 .. Lens (I)));
+         S.VCS_Tool (I) := Exe /= null;
+         if Exe /= null then
+            Free (Exe);
+         end if;
+      end loop;
+      if KName'Length > 0 then
+         S.Repo_Len := KName'Length;
+         for I in 1 .. KName'Length loop
+            S.Repo_Kind (I) := KName (KName'First + I - 1);
+         end loop;
+      end if;
+      if Need'Length > 0 and then S.Repo_Len > 0 then
+         S.Repo_Tool_Ln := Need'Length;
+         for I in 1 .. Need'Length loop
+            S.Repo_Tool (I) := Need (Need'First + I - 1);
+         end loop;
+         Exe := Locate_Exec_On_Path (Need);
+         if Exe = null then
+            S.Repo_Note := True;
+         else
+            Free (Exe);
+         end if;
+      end if;
+      S.Alr_Ok := S.Alr_Len > 0 or else not S.Needs_Alr;
+      S.OK :=
+        (S.Gnatprove_Ln > 0 or else S.Cached or else S.Declared
+         or else S.Pin_Len > 0)
+        and then S.Alr_Ok;
+   end Gather_Status;
+
+   procedure Run_Status (Target_Dir : String; Success : out Boolean) is
+      S : Status_Data;
+   begin
+      Gather_Status (Target_Dir, S);
 
       Ada.Text_IO.Put_Line ("adacovex v" & Adacovex.Version & " status");
-      Ada.Text_IO.Put_Line ("  target:             " & T);
+      Ada.Text_IO.Put_Line
+        ("  target:             " & S.Target (1 .. S.Target_Len));
 
       --  Alire: only required when the manifest or a global pin drives the
       --  `alr -n get` deployment path; otherwise gnatprove on PATH / cache
       --  suffices.
-      if Alr /= null then
-         Row ("  alire:              installed (", Alr.all & ")");
+      if S.Alr_Len > 0 then
+         Ada.Text_IO.Put_Line
+           ("  alire:              installed (" & S.Alr (1 .. S.Alr_Len) & ")");
       else
-         Row
-           ("  alire:              NOT FOUND on PATH",
-            (if Needs_Alr then " (required: manifest/global pin)" else ""));
+         Ada.Text_IO.Put_Line
+           ("  alire:              NOT FOUND on PATH"
+            & (if S.Needs_Alr
+               then " (required: manifest/global pin)"
+               else ""));
       end if;
 
       --  gnatprove detectability across the resolution tiers, without
       --  downloading anything.
       Ada.Text_IO.Put_Line ("  gnatprove:");
-      if Declared then
+      if S.Declared then
          declare
             Ver  : constant String :=
-              File_GNATprove_Version (T & "/alire-dev.toml");
+              File_GNATprove_Version (S.Target (1 .. S.Target_Len) & "/alire-dev.toml");
             Ver2 : constant String :=
-              File_GNATprove_Version (T & "/alire.toml");
+              File_GNATprove_Version (S.Target (1 .. S.Target_Len) & "/alire.toml");
             Con  : constant String := (if Ver'Length > 0 then Ver else Ver2);
          begin
-            Row
-              ("    manifest pin:     ",
-               (if Con'Length > 0 then Con else "declared"));
+            Ada.Text_IO.Put_Line
+              ("    manifest pin:     "
+               & (if Con'Length > 0 then Con else "declared"));
          end;
       else
-         Row ("    manifest pin:     none", "");
+         Ada.Text_IO.Put_Line ("    manifest pin:     none");
       end if;
-      Row
-        ("    global pin:        ", (if Pin'Length > 0 then Pin else "none"));
-      if Gnatprove /= null then
-         Row ("    on PATH:           ", Gnatprove.all);
+      Ada.Text_IO.Put_Line
+        ("    global pin:        "
+         & (if S.Pin_Len > 0 then S.Pin (1 .. S.Pin_Len) else "none"));
+      if S.Gnatprove_Ln > 0 then
+         Ada.Text_IO.Put_Line
+           ("    on PATH:           " & S.Gnatprove (1 .. S.Gnatprove_Ln));
       else
-         Row ("    on PATH:           not found", "");
+         Ada.Text_IO.Put_Line ("    on PATH:           not found");
       end if;
-      if Cached then
-         Row ("    toolchain cache:   ", Cached_Dir (1 .. Cached_Len));
+      if S.Cached then
+         Ada.Text_IO.Put_Line
+           ("    toolchain cache:   " & S.Cached_Dir (1 .. S.Cached_Len));
       else
-         Row ("    toolchain cache:   empty", "");
+         Ada.Text_IO.Put_Line ("    toolchain cache:   empty");
       end if;
 
       --  Platform support / parallelism basis.
       Ada.Text_IO.Put_Line ("  platform:");
-      Row
-        ("    logical CPUs:      ",
-         Natural'Image (Cores) (2 .. Natural'Image (Cores)'Last));
-      Row ("    CI environment:    ", (if In_CI then "yes" else "no"));
-      Row
-        ("    prove -j default:  ",
-         Adacovex.CPUs.Jobs_Justification (-1, Cores, In_CI));
+      Ada.Text_IO.Put_Line
+        ("    logical CPUs:      "
+         & Natural'Image (S.Cores) (2 .. Natural'Image (S.Cores)'Last));
+      Ada.Text_IO.Put_Line
+        ("    CI environment:    " & (if S.In_CI then "yes" else "no"));
+      Ada.Text_IO.Put_Line
+        ("    prove -j default:  "
+         & Adacovex.CPUs.Jobs_Justification (-1, S.Cores, S.In_CI));
 
       --  VCS support: which VCS tools are available for the differential
       --  modes (--compare-base / --coverage-delta), the VCS managing the
@@ -1485,54 +1585,34 @@ package body Adacovex.Prove is
       Status_VCS_Row ("fossil", "fossil");
       Status_VCS_Row ("jj", "jj");
       Status_VCS_Row ("man page tool", "mandb");
-      declare
-         Mandb : String_Access := Locate_Exec_On_Path ("mandb");
-      begin
-         if Mandb = null then
-            Ada.Text_IO.Put_Line
-              ("    note: man-db (mandb) is not on PATH; `adacovex man`");
-            Ada.Text_IO.Put_Line
-              ("          still installs the page but cannot refresh the");
-            Ada.Text_IO.Put_Line
-              ("          man database (read it with `man -l`).");
-         else
-            Free (Mandb);
-         end if;
-      end;
-      declare
-         Kind  : constant Adacovex.VCS.VCS_Kind := Adacovex.VCS.Detect (T);
-         KName : constant String := Adacovex.VCS.To_String (Kind);
-         Need  : constant String := Adacovex.VCS.Tool_Name (Kind);
-      begin
-         Row
-           ("    target repo:       ",
-            (if KName'Length > 0 then KName else "none detected"));
-         if KName'Length > 0 and then Need'Length > 0 then
-            declare
-               Exe : String_Access := Locate_Exec_On_Path (Need);
-            begin
-               if Exe = null then
-                  Ada.Text_IO.Put_Line
-                    ("    note: '" & Need & "' is not on PATH; differential");
-                  Ada.Text_IO.Put_Line
-                    ("          modes (--compare-base / --coverage-delta)");
-                  Ada.Text_IO.Put_Line
-                    ("          need it to snapshot base revisions.");
-               end if;
-               if Exe /= null then
-                  Free (Exe);
-               end if;
-            end;
-         end if;
-      end;
+      if not S.VCS_Tool (6) then
+         Ada.Text_IO.Put_Line
+           ("    note: man-db (mandb) is not on PATH; `adacovex man`");
+         Ada.Text_IO.Put_Line
+           ("          still installs the page but cannot refresh the");
+         Ada.Text_IO.Put_Line
+           ("          man database (read it with `man -l`).");
+      end if;
+      Ada.Text_IO.Put_Line
+        ("    target repo:       "
+         & (if S.Repo_Len > 0
+            then S.Repo_Kind (1 .. S.Repo_Len)
+            else "none detected"));
+      if S.Repo_Note then
+         Ada.Text_IO.Put_Line
+           ("    note: '"
+            & S.Repo_Tool (1 .. S.Repo_Tool_Ln)
+            & "' is not on PATH; differential");
+         Ada.Text_IO.Put_Line
+           ("          modes (--compare-base / --coverage-delta)");
+         Ada.Text_IO.Put_Line
+           ("          need it to snapshot base revisions.");
+      end if;
 
       Ada.Text_IO.Put_Line
         ("  release note: CI release binary is Linux x86-64 only for now");
 
-      Free (Alr);
-      Free (Gnatprove);
-
-      Success := Gnat_Usable and then Alr_Ok;
+      Success := S.OK;
       if Success then
          Ada.Text_IO.Put_Line
            ("  => OK (alr + gnatprove available or dependency-managed)");
@@ -1540,10 +1620,175 @@ package body Adacovex.Prove is
          Ada.Text_IO.Put_Line
            (Ada.Text_IO.Standard_Error,
             "  => FAIL: gnatprove not detectable without a download"
-            & (if not Alr_Ok
+            & (if not S.Alr_Ok
                then " (and alr is required but missing)"
                else ""));
       end if;
    end Run_Status;
+
+   --  Escape a string value for JSON output (the same pairing rules as
+   --  Adacovex.Renderers.HTML.Json_Escape: backslash and quote are escaped,
+   --  everything else passes through).
+   function Status_Json_Escape (S : String) return String is
+      R : Ada.Strings.Unbounded.Unbounded_String;
+      use Ada.Strings.Unbounded;
+   begin
+      for I in S'Range loop
+         case S (I) is
+            when '"'    =>
+               --  JSON escape: backslash + quote
+               Append (R, "\""");
+            when '\'    =>
+               --  JSON escape: backslash + backslash
+               Append (R, "\\");
+            when others =>
+               Append (R, S (I));
+         end case;
+      end loop;
+      return To_String (R);
+   end Status_Json_Escape;
+
+   procedure Export_Status
+     (Target_Dir : String; Out_Path : String; Success : out Boolean)
+   is
+      S : Status_Data;
+      use Ada.Strings.Unbounded;
+      R : Unbounded_String;
+      F : Ada.Text_IO.File_Type;
+      VCS_Names : constant array (1 .. 6) of String (1 .. 12) :=
+        ("git" & 9 * " ", "hg" & 10 * " ", "svn" & 9 * " ", "fossil" & 6 * " ",
+         "jj" & 10 * " ", "mandb" & 7 * " ");
+      VCS_Lens : constant array (1 .. 6) of Natural :=
+        (3, 2, 3, 6, 2, 5);
+      Label : String (1 .. 12) := (others => ' ');
+      LLen  : Natural := 0;
+
+      --  A single double-quote character, and a string rendering of a
+      --  boolean, used to build the JSON document with Ada's doubled-quote
+      --  string syntax (no backslash escapes needed).
+      Q : constant String := """";
+
+      procedure Put (S : String) is
+      begin
+         Append (R, S);
+      end Put;
+
+      procedure Field (K : String; V : String) is
+      begin
+         Put (Q & K & Q & ":" & Q & Status_Json_Escape (V) & Q);
+      end Field;
+
+      procedure Field_Bool (K : String; B : Boolean) is
+      begin
+         Put (Q & K & Q & ":" & (if B then "true" else "false"));
+      end Field_Bool;
+   begin
+      Gather_Status (Target_Dir, S);
+      Put ("{");
+      Field ("version", Adacovex.Version);
+      Put (",");
+      Field ("target", S.Target (1 .. S.Target_Len));
+      Put (",");
+      if S.Alr_Len > 0 then
+         Field ("alire", S.Alr (1 .. S.Alr_Len));
+      else
+         Field ("alire", "");
+      end if;
+      Put (",");
+      Field_Bool ("gnatprove_declared", S.Declared);
+      Put (",");
+      Field ("gnatprove_pin", S.Pin (1 .. S.Pin_Len));
+      Put (",");
+      Field ("gnatprove_path", S.Gnatprove (1 .. S.Gnatprove_Ln));
+      Put (",");
+      Field_Bool ("gnatprove_cached", S.Cached);
+      Put (",");
+      Put (Q & "logical_cpus" & Q & ":"
+           & Natural'Image (S.Cores) (2 .. Natural'Image (S.Cores)'Last));
+      Put (",");
+      Field_Bool ("ci", S.In_CI);
+      Put (",");
+      --  VCS tool availability as a nested object of booleans.
+      Put (Q & "vcs" & Q & ":{");
+      for I in 1 .. 6 loop
+         if I > 1 then
+            Put (",");
+         end if;
+         LLen := VCS_Lens (I);
+         Label (1 .. LLen) := VCS_Names (I) (1 .. LLen);
+         Put (Q & Label (1 .. LLen) & Q & ":");
+         if S.VCS_Tool (I) then
+            Put ("true");
+         else
+            Put ("false");
+         end if;
+      end loop;
+      Put ("}");
+      Put (",");
+      Field ("target_repo", S.Repo_Kind (1 .. S.Repo_Len));
+      Put (",");
+      Field_Bool ("ok", S.OK);
+      Put ("}");
+
+      if Out_Path'Length = 0 then
+         Ada.Text_IO.Put_Line (To_String (R));
+         Success := True;
+      else
+         begin
+            Ada.Text_IO.Create (F, Ada.Text_IO.Out_File, Out_Path);
+            Ada.Text_IO.Put_Line (F, To_String (R));
+            Ada.Text_IO.Close (F);
+            Success := True;
+         exception
+            when others =>
+               if Ada.Text_IO.Is_Open (F) then
+                  Ada.Text_IO.Close (F);
+               end if;
+               Success := False;
+         end;
+      end if;
+   end Export_Status;
+
+   procedure Run_Status_Metrics (Target_Dir : String; Success : out Boolean) is
+      S : Status_Data;
+      VCS_Names : constant array (1 .. 6) of String (1 .. 12) :=
+        ("git" & 9 * " ", "hg" & 10 * " ", "svn" & 9 * " ", "fossil" & 6 * " ",
+         "jj" & 10 * " ", "mandb" & 7 * " ");
+      VCS_Lens : constant array (1 .. 6) of Natural :=
+        (3, 2, 3, 6, 2, 5);
+   begin
+      Gather_Status (Target_Dir, S);
+      Ada.Text_IO.Put_Line ("version=" & Adacovex.Version);
+      Ada.Text_IO.Put_Line ("target=" & S.Target (1 .. S.Target_Len));
+      Ada.Text_IO.Put_Line
+        ("alire="
+         & (if S.Alr_Len > 0 then S.Alr (1 .. S.Alr_Len) else "missing"));
+      Ada.Text_IO.Put_Line
+        ("gnatprove_declared=" & (if S.Declared then "true" else "false"));
+      Ada.Text_IO.Put_Line
+        ("gnatprove_pin="
+         & (if S.Pin_Len > 0 then S.Pin (1 .. S.Pin_Len) else "none"));
+      Ada.Text_IO.Put_Line
+        ("gnatprove_path="
+         & (if S.Gnatprove_Ln > 0 then S.Gnatprove (1 .. S.Gnatprove_Ln)
+            else "missing"));
+      Ada.Text_IO.Put_Line
+        ("gnatprove_cached=" & (if S.Cached then "yes" else "no"));
+      Ada.Text_IO.Put_Line
+        ("logical_cpus=" & Natural'Image (S.Cores) (2 .. Natural'Image (S.Cores)'Last));
+      Ada.Text_IO.Put_Line ("ci=" & (if S.In_CI then "yes" else "no"));
+      for I in 1 .. 6 loop
+         Ada.Text_IO.Put_Line
+           ("vcs_"
+            & VCS_Names (I) (1 .. VCS_Lens (I))
+            & "="
+            & (if S.VCS_Tool (I) then "yes" else "no"));
+      end loop;
+      Ada.Text_IO.Put_Line
+        ("target_repo="
+         & (if S.Repo_Len > 0 then S.Repo_Kind (1 .. S.Repo_Len) else "none"));
+      Ada.Text_IO.Put_Line ("ok=" & (if S.OK then "yes" else "no"));
+      Success := S.OK;
+   end Run_Status_Metrics;
 
 end Adacovex.Prove;
