@@ -3,20 +3,20 @@
   "specVersion": "1.5",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-08-24T19:02:39",
+    "timestamp": "2026-08-24T21:43:21",
     "tools": [
-      {"vendor": "bladeacer", "name": "adacovex", "version": "1.23.0"}
+      {"vendor": "bladeacer", "name": "adacovex", "version": "1.25.0"}
     ],
     "component": {
       "type": "application",
-      "bom-ref": "pkg:alire/covex@1.23.0",
+      "bom-ref": "pkg:alire/covex@1.25.0",
       "name": "covex",
-      "version": "1.23.0",
+      "version": "1.25.0",
       "language": "Ada; Assembly; Python",
-      "purl": "pkg:alire/covex@1.23.0",
+      "purl": "pkg:alire/covex@1.25.0",
       "licenses": [{"license": {"id": "Apache-2.0"}}],
       "description": "Ada/SPARK coverage, proof, multi-standard compliance tool",
-      "properties": [{"name": "adacovex:proof_level", "value": "Platinum"}, {"name": "adacovex:standard", "value": "DO-178C, ISO 26262, IEC 62304"}, {"name": "adacovex:dal_target", "value": "DAL-C"}, {"name": "adacovex:level", "value": "DAL-C / ASIL B / Class A"}]
+      "properties": [{"name": "adacovex:proof_level", "value": "Platinum"}, {"name": "adacovex:standard", "value": "DO-178C"}, {"name": "adacovex:dal_target", "value": "DAL-C"}, {"name": "adacovex:level", "value": "DAL-C"}]
       }
   },
   "components": [
@@ -255,7 +255,7 @@
   ],
   "dependencies": [
     {
-      "ref": "pkg:alire/covex@1.23.0",
+      "ref": "pkg:alire/covex@1.25.0",
       "dependsOn": ["pkg:generic/flexsearch", "pkg:generic/dashboard", "pkg:generic/graphre", "pkg:generic/nomnoml", "pkg:generic/charts.min", "pkg:generic/@playwright", "pkg:generic/.pnpm", "pkg:alire/gnatprove", "pkg:alire/gnatdoc_bin", "pkg:alire/gnatformat_bin", "pkg:generic/bash", "pkg:generic/curl", "pkg:generic/alr", "pkg:generic/go", "pkg:generic/python3", "pkg:generic/git", "pkg:generic/make", "pkg:generic/jj", "pkg:generic/pnpm", "pkg:generic/mandb", "pkg:generic/fossil", "pkg:generic/hg", "pkg:generic/svn", "pkg:generic/npm", "pkg:generic/node", "pkg:generic/g++", "pkg:generic/cargo"]
     }
   ]

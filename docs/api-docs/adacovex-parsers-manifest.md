@@ -16,6 +16,16 @@ HLR-MANIFEST: Manifest and dependency-graph parsing
 
 > **Note:** All items in this package are public.
 
+## Functions
+
+### function Extension_Language (Name : Standard.String) return Standard.String
+
+| Parameter | Description |
+|-----------|-------------|
+| `Name` | File base name (e.g. "a.py"). |
+
+**Returns:** Language display name ("Python"), or "" for unknown.
+
 ## Procedures
 
 ### procedure Build_Dependency_Graph (Target_Dir : Standard.String; Manifest_Path : Standard.String; Graph : Adacovex.Types.Implementation.Component_Vectors.Vector; Success : Standard.Boolean; Use_Cache : Standard.Boolean) `[Pre]`

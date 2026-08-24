@@ -85,6 +85,14 @@ end record;
 
 ## Procedures
 
+### procedure Export_Status (Target_Dir : Standard.String; Out_Path : Standard.String; Success : Standard.Boolean)
+
+| Parameter | Description |
+|-----------|-------------|
+| `Out_Path` | Output file path, or "" for stdout. |
+| `Success` | True when the report was gathered and written. |
+| `Target_Dir` | Project root directory. |
+
 ### procedure Find_Root_GPR (Target_Dir : Standard.String; GPR_Path : Standard.String; GPR_Len : Standard.Natural; Success : Standard.Boolean)
 
 | Parameter | Description |
@@ -117,6 +125,13 @@ end record;
 | `Target_Dir` | Project root directory. |
 
 ### procedure Run_Status (Target_Dir : Standard.String; Success : Standard.Boolean)
+
+| Parameter | Description |
+|-----------|-------------|
+| `Success` | True when alr + gnatprove are available or |
+| `Target_Dir` | Project root directory. |
+
+### procedure Run_Status_Metrics (Target_Dir : Standard.String; Success : Standard.Boolean)
 
 | Parameter | Description |
 |-----------|-------------|

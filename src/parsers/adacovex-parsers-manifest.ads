@@ -57,4 +57,9 @@ package Adacovex.Parsers.Manifest is
      (Target_Dir : String;
       Graph      : in out Types.Implementation.Component_Vectors.Vector);
 
+   --  Language name for a source file, derived from its extension.
+   --  @param Name  File base name (e.g. "a.py").
+   --  @return Language display name ("Python"), or "" for unknown.
+   function Extension_Language (Name : String) return String;
+
 end Adacovex.Parsers.Manifest;

@@ -16,7 +16,7 @@ help:
 	@echo '    build         Build project (adacovex + test_runner, covex alias);'
 	@echo '                  regenerates src/adacovex_version_info.ads from'
 	@echo '                  alire-dev.toml (or ADACOVEX_VERSION for releases)'
-	@echo '    test          Build and run native test suite (900 tests)'
+	@echo '    test          Build and run native test suite (968 tests)'
 	@echo '    prove         Run SPARK proofs (gnatprove via prove subcommand,'
 	@echo '                  resolved from alire-dev.toml / PATH / cache / download)'
 	@echo '                  (also auto-regenerates SVG badges in docs/badges/)'
@@ -86,7 +86,7 @@ help:
 	@echo 'check runs the same gates CI enforces before a release, cheap static'
 	@echo '  gates first (ascii, spark-off, changelog, version, doc-links,'
 	@echo '  action-parity), then'
-	@echo '  build + native tests + SPARK proof (Platinum, 720 VCs) + SVG badges'
+	@echo '  build + native tests + SPARK proof (Platinum, 722 VCs) + SVG badges'
 	@echo '  + API docs + SBOM, then tree-wide count-sync checks (test-count,'
 	@echo '  proof-status, description) that fail when any live file carries a'
 	@echo '  stale metric. `make prove` / `make run-self` both emit badges, so'
@@ -123,7 +123,7 @@ test: build
 # Self-assessment acceptance gates, defined once so prove/run-self/release stay
 # in sync (and match .github/workflows/ci.yml + AGENTS.md "Dogfood target").
 # --require-tests is the current native test-suite size (docs/test_result.md).
-SELF_ASSESS_ARGS := --dal=C --standard=all --require-spark=Platinum --require-docstrings=100 --require-tests=900 --require-proof=100
+SELF_ASSESS_ARGS := --dal=C --standard=all --require-spark=Platinum --require-docstrings=100 --require-tests=968 --require-proof=100
 
 prove: build
 	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex prove --target=. $(SELF_ASSESS_ARGS) --emit-svg=docs/badges/

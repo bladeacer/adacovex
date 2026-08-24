@@ -307,37 +307,52 @@ package body Adacovex.Renderers.HTML is
          end if;
       end;
       Put
-        ("</tbody></table></div>");      --  Docstring coverage: half-circle radial gauge (SVG arc; the arc
-      --  length for r=50 is ~157, kept as integers).  The per-category
-      --  SPARK radar now lives on the Overview tab, where it reads at a
-      --  glance.
+        ("</tbody></table></div>");      --  Docstring coverage: radial gauge (styled like the robustness and
+      --  SPARK proof radars, compact for the Charts tab).
       declare
          Cov : constant Natural :=
            Pct
              (Doc_Metrics.Documented_Subprogs, Doc_Metrics.Total_Subprograms);
-         Off : constant Natural := 157 - (157 * Cov) / 100;
       begin
          Put ("<div class=""chart-card""><h3>Docstring Coverage</h3>");
          if Doc_Metrics.Total_Subprograms = 0 then
             Put ("<p style=""color:var(--muted);font-size:.85rem"">");
             Put ("No subprograms</p></div>");
          else
-            Put ("<svg viewBox=""0 0 120 68"" width=""100%"" height=""76""");
+            Put ("<svg viewBox=""0 0 220 220"" width=""100%"" height=""160""");
             Put (" role=""img"" aria-label=""Docstring coverage"">");
-            Put ("<path d=""M10 60 A50 50 0 0 1 110 60"" fill=""none""");
-            Put (" stroke=""var(--border)"" stroke-width=""11""");
-            Put (" stroke-linecap=""round""/>");
-            Put ("<path d=""M10 60 A50 50 0 0 1 110 60"" fill=""none""");
-            Put (" stroke=""var(--accent)"" stroke-width=""11""");
-            Put (" stroke-linecap=""round"" stroke-dasharray=""157""");
-            Put (" stroke-dashoffset=""");
-            Put (Img (Off));
-            Put ("""/>");
-            Put ("<text x=""60"" y=""56"" text-anchor=""middle""");
-            Put (" font-size=""11"" font-weight=""600"" fill=""var(--fg)"">");
+            for G in 1 .. 4 loop
+               Put ("<polygon points=""");
+               Put (Radar_Points (20 * G));
+               Put (""" fill=""none"" stroke=""var(--border)""");
+               Put (" stroke-width=""1"" opacity="".55""/>");
+            end loop;
+            Put ("<path d=""M110,100 L");
+            Put (Radar_Point (1, 80));
+            Put (""" stroke=""var(--border)"" stroke-width=""1""/>");
+            Put ("<polygon points=""");
+            Put (Radar_Point (1, 4 + (Cov * 76) / 100));
+            Put (""" fill=""var(--accent)"" fill-opacity=""0.25""");
+            Put (" stroke=""var(--accent)"" stroke-width=""2""/>");
+            Put ("<circle transform=""translate(");
+            Put (Radar_Point (1, 4 + (Cov * 76) / 100));
+            Put (")"" r=""2.5"" fill=""var(--accent)""/>");
+            Put ("<text transform=""translate(");
+            Put (Radar_Point (1, 95));
+            Put (")"" text-anchor=""middle"" dy=""-5""");
+            Put (" font-size=""8.5"" fill=""var(--muted)"">");
+            Put ("Coverage");
+            Put ("</text>");
+            Put ("<text x=""110"" y=""96"" text-anchor=""middle""");
+            Put
+              (" font-size=""28"" font-weight=""700"" fill=""var(--accent)"">");
             Put (Img (Cov));
-            Put ("%</text></svg>");
-            Put ("<p style=""color:var(--muted);font-size: .75rem;");
+            Put ("%</text>");
+            Put ("<text x=""110"" y=""112"" text-anchor=""middle""");
+            Put (" font-size=""8"" fill=""var(--muted)"">");
+            Put ("documented</text>");
+            Put ("</svg>");
+            Put ("<p style=""color:var(--muted);font-size:.75rem;");
             Put ("text-align:center;margin:4px 0 0"">");
             Put (Img (Doc_Metrics.Documented_Subprogs));
             Put (" / ");
@@ -1104,124 +1119,134 @@ package body Adacovex.Renderers.HTML is
             Put_O ("</div></div>");
          end;
 
-          --  SPARK proof per check category (radar moved from the Charts
-          --  tab: it reads at a glance on the Overview).  Styled like the
-          --  Robustness radar: proof rate per category (0..100), tier badge
-          --  in the centre, and a split legend on the right.
-          declare
-             type Cat_Rec is record
-                Name : String (1 .. 8);
-                Len  : Natural;
-             end record;
-             Cats  : constant array (1 .. 5) of Cat_Rec :=
-               (("Flow    ", 4),
-                ("Init    ", 4),
-                ("Runtime ", 7),
-                ("Assert  ", 6),
-                ("Func    ", 4));
-             Rates : constant array (1 .. 5) of Natural :=
-               ((if Proof.Flow_Checks > 0 then (Proof.Flow_Proved * 100) / Proof.Flow_Checks else 0),
-                (if Proof.Init_Checks > 0 then (Proof.Init_Proved * 100) / Proof.Init_Checks else 0),
-                (if Proof.Runtime_Checks > 0 then (Proof.Runtime_Proved * 100) / Proof.Runtime_Checks else 0),
-                (if Proof.Assertions > 0 then (Proof.Assert_Proved * 100) / Proof.Assertions else 0),
-                (if Proof.Functional_Ct > 0 then (Proof.Functional_Proved * 100) / Proof.Functional_Ct else 0));
-             Avg   : Natural := 0;
-             Tier  : Character := 'D';
-          begin
-             for K in 1 .. 5 loop
-                Avg := Avg + Rates (K);
-             end loop;
-             Avg := Avg / 5;
-             if Avg >= 90 then
-                Tier := 'S';
-             elsif Avg >= 80 then
-                Tier := 'A';
-             elsif Avg >= 65 then
-                Tier := 'B';
-             elsif Avg >= 50 then
-                Tier := 'C';
-             end if;
+         --  SPARK proof per check category (radar moved from the Charts
+         --  tab: it reads at a glance on the Overview).  Styled like the
+         --  Robustness radar: proof rate per category (0..100), tier badge
+         --  in the centre, and a split legend on the right.
+         declare
+            type Cat_Rec is record
+               Name : String (1 .. 8);
+               Len  : Natural;
+            end record;
+            Cats  : constant array (1 .. 5) of Cat_Rec :=
+              (("Flow    ", 4),
+               ("Init    ", 4),
+               ("Runtime ", 7),
+               ("Assert  ", 6),
+               ("Func    ", 4));
+            Rates : constant array (1 .. 5) of Natural :=
+              ((if Proof.Flow_Checks > 0
+                then (Proof.Flow_Proved * 100) / Proof.Flow_Checks
+                else 0),
+               (if Proof.Init_Checks > 0
+                then (Proof.Init_Proved * 100) / Proof.Init_Checks
+                else 0),
+               (if Proof.Runtime_Checks > 0
+                then (Proof.Runtime_Proved * 100) / Proof.Runtime_Checks
+                else 0),
+               (if Proof.Assertions > 0
+                then (Proof.Assert_Proved * 100) / Proof.Assertions
+                else 0),
+               (if Proof.Functional_Ct > 0
+                then (Proof.Functional_Proved * 100) / Proof.Functional_Ct
+                else 0));
+            Avg   : Natural := 0;
+            Tier  : Character := 'D';
+         begin
+            for K in 1 .. 5 loop
+               Avg := Avg + Rates (K);
+            end loop;
+            Avg := Avg / 5;
+            if Avg >= 90 then
+               Tier := 'S';
+            elsif Avg >= 80 then
+               Tier := 'A';
+            elsif Avg >= 65 then
+               Tier := 'B';
+            elsif Avg >= 50 then
+               Tier := 'C';
+            end if;
 
-             Put_O ("<div class=""chart-card""><h3>SPARK Proof</h3>");
-             Put_O ("<div class=""radar-split"">");
-             Put_O ("<div class=""radar-chart"">");
-             if Rates (1) + Rates (2) + Rates (3) + Rates (4) + Rates (5) = 0 then
-                Put_O
-                  ("<p style=""color:var(--muted);font-size:.85rem"">");
-                Put_O ("No proof data</p>");
-             else
-                Put_O
-                  ("<svg viewBox=""0 0 220 220"" width=""100%"" height=""200""");
-                Put_O
-                  (" role=""img"" aria-label=""SPARK proof by check type"">");
-                for G in 1 .. 4 loop
-                   Put_O ("<polygon points=""");
-                   Put_O (Radar_Points (20 * G));
-                   Put_O (""" fill=""none"" stroke=""var(--border)""");
-                   Put_O (" stroke-width=""1"" opacity="".55""/>");
-                end loop;
-                for A in 1 .. 5 loop
-                   Put_O ("<path d=""M110,100 L");
-                   Put_O (Radar_Point (A, 80));
-                   Put_O (""" stroke=""var(--border)"" stroke-width=""1""/>");
-                end loop;
-                Put_O ("<polygon points=""");
-                for K in 1 .. 5 loop
-                   if K > 1 then
-                      Put_O (" ");
-                   end if;
-                   Put_O (Radar_Point (K, 4 + (Rates (K) * 76) / 100));
-                end loop;
-                Put_O (""" fill=""var(--accent)"" fill-opacity=""0.25""");
-                Put_O (" stroke=""var(--accent)"" stroke-width=""2""/>");
-                for K in 1 .. 5 loop
-                   Put_O ("<circle transform=""translate(");
-                   Put_O (Radar_Point (K, 4 + (Rates (K) * 76) / 100));
-                   Put_O (")"" r=""2.5"" fill=""var(--accent)""/>");
-                end loop;
-                for A in 1 .. 5 loop
-                   Put_O ("<text transform=""translate(");
-                   Put_O (Radar_Point (A, 95));
-                   Put_O (")"" text-anchor=""");
-                   if A = 1 then
-                      Put_O ("middle"" dy=""-5""");
-                   elsif A <= 3 then
-                      Put_O ("end"" dy=""3""");
-                   else
-                      Put_O ("start"" dy=""3""");
-                   end if;
-                   Put_O (" font-size=""8.5"" fill=""var(--muted)"">");
-                   Put_O (Cats (A).Name (1 .. Cats (A).Len));
-                   Put_O ("</text>");
-                end loop;
-                --  Tier badge inside the chart centre
-                Put_O ("<text x=""110"" y=""96"" text-anchor=""middle""");
-                Put_O
-                  (" font-size=""28"" font-weight=""700"" fill=""var(--accent)"">");
-                Put_O (Tier & "</text>");
-                Put_O ("<text x=""110"" y=""112"" text-anchor=""middle""");
-                Put_O (" font-size=""8"" fill=""var(--muted)"">TIER</text>");
-                Put_O ("</svg>");
-             end if;
-             Put_O ("</div>");
-             Put_O ("<div class=""radar-legend"">");
-             Put_O ("<div class=""tier-wrap"">");
-             Put_O ("<span class=""tier tier-" & Tier & """>" & Tier);
-             Put_O ("</span><span class=""tier-note"">Avg ");
-             Put_O (Img (Avg));
-             Put_O ("% &middot; S&ge;90 A&ge;80 B&ge;65 C&ge;50 D&lt;50");
-             Put_O ("</span></div>");
-             Put_O ("<ul>");
-             for K in 1 .. 5 loop
-                Put_O ("<li><i></i>");
-                Put_O (Cats (K).Name (1 .. Cats (K).Len));
-                Put_O (" <b>");
-                Put_O (Img (Rates (K)));
-                Put_O ("%</b></li>");
-             end loop;
-             Put_O ("</ul></div>");
-             Put_O ("</div></div>");
-          end;
+            Put_O ("<div class=""chart-card""><h3>SPARK Proof</h3>");
+            Put_O ("<div class=""radar-split"">");
+            Put_O ("<div class=""radar-chart"">");
+            if Rates (1) + Rates (2) + Rates (3) + Rates (4) + Rates (5) = 0
+            then
+               Put_O ("<p style=""color:var(--muted);font-size:.85rem"">");
+               Put_O ("No proof data</p>");
+            else
+               Put_O
+                 ("<svg viewBox=""0 0 220 220"" width=""100%"" height=""200""");
+               Put_O
+                 (" role=""img"" aria-label=""SPARK proof by check type"">");
+               for G in 1 .. 4 loop
+                  Put_O ("<polygon points=""");
+                  Put_O (Radar_Points (20 * G));
+                  Put_O (""" fill=""none"" stroke=""var(--border)""");
+                  Put_O (" stroke-width=""1"" opacity="".55""/>");
+               end loop;
+               for A in 1 .. 5 loop
+                  Put_O ("<path d=""M110,100 L");
+                  Put_O (Radar_Point (A, 80));
+                  Put_O (""" stroke=""var(--border)"" stroke-width=""1""/>");
+               end loop;
+               Put_O ("<polygon points=""");
+               for K in 1 .. 5 loop
+                  if K > 1 then
+                     Put_O (" ");
+                  end if;
+                  Put_O (Radar_Point (K, 4 + (Rates (K) * 76) / 100));
+               end loop;
+               Put_O (""" fill=""var(--accent)"" fill-opacity=""0.25""");
+               Put_O (" stroke=""var(--accent)"" stroke-width=""2""/>");
+               for K in 1 .. 5 loop
+                  Put_O ("<circle transform=""translate(");
+                  Put_O (Radar_Point (K, 4 + (Rates (K) * 76) / 100));
+                  Put_O (")"" r=""2.5"" fill=""var(--accent)""/>");
+               end loop;
+               for A in 1 .. 5 loop
+                  Put_O ("<text transform=""translate(");
+                  Put_O (Radar_Point (A, 95));
+                  Put_O (")"" text-anchor=""");
+                  if A = 1 then
+                     Put_O ("middle"" dy=""-5""");
+                  elsif A <= 3 then
+                     Put_O ("end"" dy=""3""");
+                  else
+                     Put_O ("start"" dy=""3""");
+                  end if;
+                  Put_O (" font-size=""8.5"" fill=""var(--muted)"">");
+                  Put_O (Cats (A).Name (1 .. Cats (A).Len));
+                  Put_O ("</text>");
+               end loop;
+               --  Tier badge inside the chart centre
+               Put_O ("<text x=""110"" y=""96"" text-anchor=""middle""");
+               Put_O
+                 (" font-size=""28"" font-weight=""700"" fill=""var(--accent)"">");
+               Put_O (Tier & "</text>");
+               Put_O ("<text x=""110"" y=""112"" text-anchor=""middle""");
+               Put_O (" font-size=""8"" fill=""var(--muted)"">TIER</text>");
+               Put_O ("</svg>");
+            end if;
+            Put_O ("</div>");
+            Put_O ("<div class=""radar-legend"">");
+            Put_O ("<div class=""tier-wrap"">");
+            Put_O ("<span class=""tier tier-" & Tier & """>" & Tier);
+            Put_O ("</span><span class=""tier-note"">Avg ");
+            Put_O (Img (Avg));
+            Put_O ("% &middot; S&ge;90 A&ge;80 B&ge;65 C&ge;50 D&lt;50");
+            Put_O ("</span></div>");
+            Put_O ("<ul>");
+            for K in 1 .. 5 loop
+               Put_O ("<li><i></i>");
+               Put_O (Cats (K).Name (1 .. Cats (K).Len));
+               Put_O (" <b>");
+               Put_O (Img (Rates (K)));
+               Put_O ("%</b></li>");
+            end loop;
+            Put_O ("</ul></div>");
+            Put_O ("</div></div>");
+         end;
 
          --  Tests donut + category column chart side by side
          Put_O ("<div class=""chart-card""><h3>Tests</h3>");
@@ -1246,155 +1271,145 @@ package body Adacovex.Renderers.HTML is
          end;
          Put_O ("</tbody></table></div>");
 
-          --  Test category column chart (visualise per-category counts)
-          Put_O ("<div class=""chart-card""><h3>Test Categories</h3>");
-          if Tests.Categories.Is_Empty then
-             Put_O ("<p style=""color:var(--muted);font-size:.85rem"">");
-             Put_O ("No test categories</p>");
-          else
-             Put_O
-               ("<table class=""charts-css column show-labels show-primary-axis"">");
-             Put_O ("<caption>Tests by category</caption><tbody>");
-             for C in 1 .. Integer (Tests.Categories.Length) loop
-                declare
-                   Cat : Types.Test_Metrics renames Tests.Categories (C);
-                   Pct : constant String :=
-                     (if Cat.Test_Count > 0
-                      then Frac (Cat.Test_Count, Cat.Test_Count)
-                      else "0.00");
-                begin
-                   Put_O ("<tr><th scope=""row"">");
-                   Put_O (Html_Escape (Cat.Category (1 .. Cat.Cat_Len)));
-                   Put_O ("</th><td style=""--size:");
-                   Put_O (Pct);
-                   Put_O ("""><span class=""data"">");
-                   Put_O (Img (Cat.Test_Count));
-                   Put_O ("</span></td></tr>");
-                end;
-             end loop;
-             Put_O ("</tbody></table>");
-          end if;
-          Put_O ("</div>");
+         --  Test category column chart (visualise per-category counts)
+         Put_O ("<div class=""chart-card""><h3>Test Categories</h3>");
+         if Tests.Categories.Is_Empty then
+            Put_O ("<p style=""color:var(--muted);font-size:.85rem"">");
+            Put_O ("No test categories</p>");
+         else
+            Put_O
+              ("<table class=""charts-css column show-labels show-primary-axis"">");
+            Put_O ("<caption>Tests by category</caption><tbody>");
+            for C in 1 .. Integer (Tests.Categories.Length) loop
+               declare
+                  Cat : Types.Test_Metrics renames Tests.Categories (C);
+                  Pct : constant String :=
+                    (if Cat.Test_Count > 0
+                     then Frac (Cat.Test_Count, Cat.Test_Count)
+                     else "0.00");
+               begin
+                  Put_O ("<tr><th scope=""row"">");
+                  Put_O (Html_Escape (Cat.Category (1 .. Cat.Cat_Len)));
+                  Put_O ("</th><td style=""--size:");
+                  Put_O (Pct);
+                  Put_O ("""><span class=""data"">");
+                  Put_O (Img (Cat.Test_Count));
+                  Put_O ("</span></td></tr>");
+               end;
+            end loop;
+            Put_O ("</tbody></table>");
+         end if;
+         Put_O ("</div>");
 
-          --  Doc coverage: radial chart (1 axis, 0..100, styled like the
-          --  robustness and SPARK proof radars).
-          Put_O ("<div class=""chart-card""><h3>Doc Coverage</h3>");
-          declare
-             Cov : constant Natural :=
-               Pct
-                 (Doc_Metrics.Documented_Subprogs,
-                  Doc_Metrics.Total_Subprograms);
-          begin
-             if Doc_Metrics.Total_Subprograms = 0 then
-                Put_O ("<p style=""color:var(--muted);font-size:.85rem"">");
-                Put_O ("No subprograms</p></div>");
-             else
-                Put_O ("<div class=""radar-split"">");
-                Put_O ("<div class=""radar-chart"">");
-                Put_O
-                  ("<svg viewBox=""0 0 220 220"" width=""100%"" height=""200""");
-                Put_O
-                  (" role=""img"" aria-label=""Docstring coverage"">");
-                for G in 1 .. 4 loop
-                   Put_O ("<polygon points=""");
-                   Put_O (Radar_Points (20 * G));
-                   Put_O (""" fill=""none"" stroke=""var(--border)""");
-                   Put_O (" stroke-width=""1"" opacity="".55""/>");
-                end loop;
-                Put_O ("<path d=""M110,100 L");
-                Put_O (Radar_Point (1, 80));
-                Put_O (""" stroke=""var(--border)"" stroke-width=""1""/>");
-                Put_O ("<polygon points=""");
-                Put_O (Radar_Point (1, 4 + (Cov * 76) / 100));
-                Put_O (""" fill=""var(--accent)"" fill-opacity=""0.25""");
-                Put_O (" stroke=""var(--accent)"" stroke-width=""2""/>");
-                Put_O ("<circle transform=""translate(");
-                Put_O (Radar_Point (1, 4 + (Cov * 76) / 100));
-                Put_O (")"" r=""2.5"" fill=""var(--accent)""/>");
-                Put_O ("<text transform=""translate(");
-                Put_O (Radar_Point (1, 95));
-                Put_O (")"" text-anchor=""middle"" dy=""-5""");
-                Put_O (" font-size=""8.5"" fill=""var(--muted)"">");
-                Put_O ("Coverage");
-                Put_O ("</text>");
-                Put_O ("<text x=""110"" y=""96"" text-anchor=""middle""");
-                Put_O
-                  (" font-size=""28"" font-weight=""700"" fill=""var(--accent)"">");
-                Put_O (Img (Cov));
-                Put_O ("%</text>");
-                Put_O ("<text x=""110"" y=""112"" text-anchor=""middle""");
-                Put_O (" font-size=""8"" fill=""var(--muted)"">");
-                Put_O ("documented</text>");
-                Put_O ("</svg>");
-                Put_O ("</div>");
-                Put_O ("<div class=""radar-legend"">");
-                Put_O ("<ul>");
-                Put_O ("<li><i></i>Coverage <b>");
-                Put_O (Img (Cov));
-                Put_O ("%</b></li>");
-                Put_O ("<li><i></i>Total <b>");
-                Put_O (Img (Doc_Metrics.Total_Subprograms));
-                Put_O ("</b></li>");
-                Put_O ("<li><i></i>Documented <b>");
-                Put_O (Img (Doc_Metrics.Documented_Subprogs));
-                Put_O ("</b></li>");
-                Put_O ("</ul></div>");
-                Put_O ("</div></div>");
-             end if;
-          end;
-          Put_O ("</div>");
+         --  Doc coverage: radial chart (1 axis, 0..100, styled like the
+         --  robustness and SPARK proof radars).
+         Put_O ("<div class=""chart-card""><h3>Doc Coverage</h3>");
+         declare
+            Cov : constant Natural :=
+              Pct
+                (Doc_Metrics.Documented_Subprogs,
+                 Doc_Metrics.Total_Subprograms);
+         begin
+            if Doc_Metrics.Total_Subprograms = 0 then
+               Put_O ("<p style=""color:var(--muted);font-size:.85rem"">");
+               Put_O ("No subprograms</p></div>");
+            else
+               Put_O ("<div class=""radar-split"">");
+               Put_O ("<div class=""radar-chart"">");
+               Put_O
+                 ("<svg viewBox=""0 0 220 220"" width=""100%"" height=""200""");
+               Put_O (" role=""img"" aria-label=""Docstring coverage"">");
+               for G in 1 .. 4 loop
+                  Put_O ("<polygon points=""");
+                  Put_O (Radar_Points (20 * G));
+                  Put_O (""" fill=""none"" stroke=""var(--border)""");
+                  Put_O (" stroke-width=""1"" opacity="".55""/>");
+               end loop;
+               Put_O ("<path d=""M110,100 L");
+               Put_O (Radar_Point (1, 80));
+               Put_O (""" stroke=""var(--border)"" stroke-width=""1""/>");
+               Put_O ("<polygon points=""");
+               Put_O (Radar_Point (1, 4 + (Cov * 76) / 100));
+               Put_O (""" fill=""var(--accent)"" fill-opacity=""0.25""");
+               Put_O (" stroke=""var(--accent)"" stroke-width=""2""/>");
+               Put_O ("<circle transform=""translate(");
+               Put_O (Radar_Point (1, 4 + (Cov * 76) / 100));
+               Put_O (")"" r=""2.5"" fill=""var(--accent)""/>");
+               Put_O ("<text transform=""translate(");
+               Put_O (Radar_Point (1, 95));
+               Put_O (")"" text-anchor=""middle"" dy=""-5""");
+               Put_O (" font-size=""8.5"" fill=""var(--muted)"">");
+               Put_O ("Coverage");
+               Put_O ("</text>");
+               Put_O ("<text x=""110"" y=""96"" text-anchor=""middle""");
+               Put_O
+                 (" font-size=""28"" font-weight=""700"" fill=""var(--accent)"">");
+               Put_O (Img (Cov));
+               Put_O ("%</text>");
+               Put_O ("<text x=""110"" y=""112"" text-anchor=""middle""");
+               Put_O (" font-size=""8"" fill=""var(--muted)"">");
+               Put_O ("documented</text>");
+               Put_O ("</svg>");
+               Put_O ("</div>");
+               Put_O ("<div class=""radar-legend"">");
+               Put_O ("<ul>");
+               Put_O ("<li><i></i>Coverage <b>");
+               Put_O (Img (Cov));
+               Put_O ("%</b></li>");
+               Put_O ("<li><i></i>Total <b>");
+               Put_O (Img (Doc_Metrics.Total_Subprograms));
+               Put_O ("</b></li>");
+               Put_O ("<li><i></i>Documented <b>");
+               Put_O (Img (Doc_Metrics.Documented_Subprogs));
+               Put_O ("</b></li>");
+               Put_O ("</ul></div>");
+               Put_O ("</div></div>");
+            end if;
+         end;
+         Put_O ("</div>");
          Put_O ("</div>");
       end;
 
-      --  Proof tab: mini proved/total column at the top
+      --  Proof tab: mini compliance-style gauge at the top
       Put_P ("<div class=""chart-grid"" style=""margin-bottom:14px"">");
-      Put_P ("<div class=""chart-card""><h3>VCs Proved</h3>");
-      Put_P
-        ("<table class=""charts-css column show-labels"" "
-         & "style=""height:110px"">");
-      Put_P ("<caption>Proved / total</caption><tbody>");
-      if Proof.Total_VCs = 0 then
-         Put_P
-           ("<tr><th scope=""row"">No VCs</th><td style=""--size:0.00""><span class=""data"">0</span></td></tr>");
-      else
-         for K in 1 .. 3 loop
-            Put_P ("<tr><th scope=""row"">");
-            case K is
-               when 1      =>
-                  Put_P ("Flow");
-
-               when 2      =>
-                  Put_P ("Init");
-
-               when others =>
-                  Put_P ("Runtime");
-            end case;
-            Put_P ("</th><td style=""--size:");
-            case K is
-               when 1      =>
-                  Put_P (Frac (Proof.Flow_Proved, Proof.Flow_Checks));
-
-               when 2      =>
-                  Put_P (Frac (Proof.Init_Proved, Proof.Init_Checks));
-
-               when others =>
-                  Put_P (Frac (Proof.Runtime_Proved, Proof.Runtime_Checks));
-            end case;
-            Put_P ("""><span class=""data"">");
-            case K is
-               when 1      =>
-                  Put_P (Img (Proof.Flow_Proved));
-
-               when 2      =>
-                  Put_P (Img (Proof.Init_Proved));
-
-               when others =>
-                  Put_P (Img (Proof.Runtime_Proved));
-            end case;
-            Put_P ("</span></td></tr>");
-         end loop;
-      end if;
-      Put_P ("</tbody></table></div></div>");
+      Put_P ("<div class=""chart-card""><h3>Proof Achievement</h3>");
+      declare
+         Proof_Pct : Natural := 0;
+      begin
+         if Proof.Total_VCs > 0 then
+            Proof_Pct := (Proof.Proved_VCs * 100) / Proof.Total_VCs;
+         end if;
+         Put_P ("<div class=""compliance-gauge-wrap"">");
+         Put_P ("<div class=""gauge-chart"">");
+         Put_P ("<svg viewBox=""0 0 120 68"" width=""100%"" height=""66""");
+         Put_P (" role=""img"" aria-label=""Proof achievement"">");
+         Put_P ("<path d=""M10 60 A50 50 0 0 1 110 60"" fill=""none""");
+         Put_P (" stroke=""var(--border)"" stroke-width=""11""");
+         Put_P (" stroke-linecap=""round""/>");
+         Put_P ("<path d=""M10 60 A50 50 0 0 1 110 60"" fill=""none""");
+         Put_P (" stroke=""var(--accent)"" stroke-width=""11""");
+         Put_P (" stroke-linecap=""round"" stroke-dasharray=""157""");
+         Put_P (" stroke-dashoffset=""");
+         Put_P (Img (157 - (157 * Proof_Pct) / 100));
+         Put_P ("""/>");
+         Put_P ("<text x=""60"" y=""56"" text-anchor=""middle""");
+         Put_P (" font-size=""11"" font-weight=""600""");
+         Put_P (" fill=""var(--accent)"">");
+         Put_P (Img (Proof_Pct));
+         Put_P ("%</text></svg>");
+         Put_P ("</div>");
+         Put_P ("<div class=""gauge-info"">");
+         Put_P ("<div class=""gauge-achieved"">");
+         Put_P (Img (Proof.Proved_VCs));
+         Put_P (" / ");
+         Put_P (Img (Proof.Total_VCs));
+         Put_P (" VCs</div>");
+         Put_P ("<div style=""font-size:.82rem;color:var(--muted)"">");
+         Put_P (Types.To_String (Proof.Level));
+         Put_P ("</div>");
+         Put_P ("</div></div></div>");
+      end;
+      Put_P ("</div>");
       Put_P ("<div class=""card""><h2>SPARK Proof Analysis</h2>");
       Put_P
         ("<table><tr><th>Check Type</th><th>Total</th><th>Proved</th></tr>");
@@ -1435,40 +1450,46 @@ package body Adacovex.Renderers.HTML is
       Put_P (Img (Proof.Proved_VCs));
       Put_P ("</td></tr></table></div>");
 
-      --  Tests tab: mini pass/fail donut at the top
+      --  Tests tab: mini compliance-style gauge at the top
       Put_T ("<div class=""chart-grid"" style=""margin-bottom:14px"">");
-      Put_T ("<div class=""chart-card""><h3>Pass / Fail</h3>");
-      Put_T
-        ("<table class=""charts-css pie donut show-labels"" "
-         & "style=""height:110px;max-width:190px;margin:0 auto"">");
-      Put_T ("<caption>Pass / Fail</caption><tbody>");
-      if Tests.Total_Passed + Tests.Total_Failed = 0 then
-         Put_T
-           ("<tr><th scope=""row"">No tests</th>"
-            & "<td style=""--start:0.00;--end:1.00""><span class=""data"">0</span></td></tr>");
-      else
-         declare
-            P : constant String :=
-              Frac
-                (Tests.Total_Passed, Tests.Total_Passed + Tests.Total_Failed);
-         begin
-            Put_T
-              ("<tr><th scope=""row"">Passed</th><td style=""--start:0.00;--end:"
-               & P
-               & """><span class=""data"">"
-               & Img (Tests.Total_Passed)
-               & "</span></td></tr>");
-            if Tests.Total_Failed > 0 then
-               Put_T
-                 ("<tr><th scope=""row"">Failed</th><td style=""--start:"
-                  & P
-                  & ";--end:1.00""><span class=""data"">"
-                  & Img (Tests.Total_Failed)
-                  & "</span></td></tr>");
-            end if;
-         end;
-      end if;
-      Put_T ("</tbody></table></div></div>");
+      Put_T ("<div class=""chart-card""><h3>Test Pass Rate</h3>");
+      declare
+         Pass_Pct : Natural := 0;
+      begin
+         if Tests.Total_Passed + Tests.Total_Failed > 0 then
+            Pass_Pct :=
+              (Tests.Total_Passed * 100)
+              / (Tests.Total_Passed + Tests.Total_Failed);
+         end if;
+         Put_T ("<div class=""compliance-gauge-wrap"">");
+         Put_T ("<div class=""gauge-chart"">");
+         Put_T ("<svg viewBox=""0 0 120 68"" width=""100%"" height=""66""");
+         Put_T (" role=""img"" aria-label=""Test pass rate"">");
+         Put_T ("<path d=""M10 60 A50 50 0 0 1 110 60"" fill=""none""");
+         Put_T (" stroke=""var(--border)"" stroke-width=""11""");
+         Put_T (" stroke-linecap=""round""/>");
+         Put_T ("<path d=""M10 60 A50 50 0 0 1 110 60"" fill=""none""");
+         Put_T (" stroke=""var(--pass)"" stroke-width=""11""");
+         Put_T (" stroke-linecap=""round"" stroke-dasharray=""157""");
+         Put_T (" stroke-dashoffset=""");
+         Put_T (Img (157 - (157 * Pass_Pct) / 100));
+         Put_T ("""/>");
+         Put_T ("<text x=""60"" y=""56"" text-anchor=""middle""");
+         Put_T (" font-size=""11"" font-weight=""600""");
+         Put_T (" fill=""var(--pass)"">");
+         Put_T (Img (Pass_Pct));
+         Put_T ("%</text></svg>");
+         Put_T ("</div>");
+         Put_T ("<div class=""gauge-info"">");
+         Put_T ("<div class=""gauge-achieved"">");
+         Put_T (Img (Tests.Total_Passed));
+         Put_T (" passed</div>");
+         Put_T ("<div style=""font-size:.82rem;color:var(--muted)"">");
+         Put_T (Img (Tests.Total_Failed));
+         Put_T (" failed</div>");
+         Put_T ("</div></div></div>");
+      end;
+      Put_T ("</div>");
       Put_T ("<div class=""card""><h2>Test Results</h2>");
       Put_T ("<table><tr><th>Category</th><th>Tests</th><th>Status</th></tr>");
       for C in 1 .. Integer (Tests.Categories.Length) loop

@@ -230,9 +230,9 @@ inputs/outputs, result caching, and release bundling:
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 900/900 passing |
+| Unit tests | `make test` | 968/968 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
-| SPARK proof | `make prove` | Platinum (720 VCs, 0 unproved under gnatprove 16.1.0) |
+| SPARK proof | `make prove` | Platinum (722 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, DAL-C (strict mode) |
 
 See [changelogs](docs/changelogs/index.md) for full release notes.
@@ -260,6 +260,7 @@ for Alire-managed and system-installed GNAT LLVM options and caveats.
 - **[CycloneDX](https://github.com/CycloneDX/specification)** SBOM specification (CycloneDX 1.5 JSON output)
 - **[SPDX](https://spdx.dev)** Software Package Data Exchange specification (SPDX 2.3 JSON output)
 - **[charts.css](https://github.com/ChartsCSS/charts.css/)**: Open source CSS framework for data visualisation
+- **[Playwright](https://github.com/microsoft/playwright)** End-to-end browser testing (dashboard layout tests)
 
 ## License
 

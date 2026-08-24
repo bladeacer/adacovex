@@ -1429,15 +1429,19 @@ package body Adacovex.Prove is
    --  global pin, and the toolchain cache.  Never deploys or downloads
    --  anything (same contract as Run_Status).
    procedure Gather_Status (Target_Dir : String; S : out Status_Data) is
-      Exe  : String_Access;
-      T    : constant String := Strip_Trailing_Slash (Target_Dir);
-      Kind : constant Adacovex.VCS.VCS_Kind := Adacovex.VCS.Detect (T);
+      Exe   : String_Access;
+      T     : constant String := Strip_Trailing_Slash (Target_Dir);
+      Kind  : constant Adacovex.VCS.VCS_Kind := Adacovex.VCS.Detect (T);
       Names : constant array (1 .. 6) of String (1 .. 8) :=
-        ("git" & 5 * " ", "hg" & 6 * " ", "svn" & 5 * " ", "fossil" & 2 * " ",
-         "jj" & 6 * " ", "mandb" & 3 * " ");
-      Lens : constant array (1 .. 6) of Natural := (3, 2, 3, 6, 2, 5);
+        ("git" & 5 * " ",
+         "hg" & 6 * " ",
+         "svn" & 5 * " ",
+         "fossil" & 2 * " ",
+         "jj" & 6 * " ",
+         "mandb" & 3 * " ");
+      Lens  : constant array (1 .. 6) of Natural := (3, 2, 3, 6, 2, 5);
       KName : constant String := Adacovex.VCS.To_String (Kind);
-      Need : constant String := Adacovex.VCS.Tool_Name (Kind);
+      Need  : constant String := Adacovex.VCS.Tool_Name (Kind);
    begin
       S := (others => <>);
       S.Target_Len := T'Length;
@@ -1472,7 +1476,11 @@ package body Adacovex.Prove is
          Free (Exe);
       end if;
       Find_Deployed_GNATprove
-        (Home_Dir & Toolchain_Subdir, "", S.Cached_Dir, S.Cached_Len, S.Cached);
+        (Home_Dir & Toolchain_Subdir,
+         "",
+         S.Cached_Dir,
+         S.Cached_Len,
+         S.Cached);
       S.Cores := Adacovex.CPUs.Detect_Core_Count;
       S.In_CI := Adacovex.CPUs.Is_Running_In_CI;
       for I in 1 .. 6 loop
@@ -1502,7 +1510,9 @@ package body Adacovex.Prove is
       end if;
       S.Alr_Ok := S.Alr_Len > 0 or else not S.Needs_Alr;
       S.OK :=
-        (S.Gnatprove_Ln > 0 or else S.Cached or else S.Declared
+        (S.Gnatprove_Ln > 0
+         or else S.Cached
+         or else S.Declared
          or else S.Pin_Len > 0)
         and then S.Alr_Ok;
    end Gather_Status;
@@ -1521,7 +1531,9 @@ package body Adacovex.Prove is
       --  suffices.
       if S.Alr_Len > 0 then
          Ada.Text_IO.Put_Line
-           ("  alire:              installed (" & S.Alr (1 .. S.Alr_Len) & ")");
+           ("  alire:              installed ("
+            & S.Alr (1 .. S.Alr_Len)
+            & ")");
       else
          Ada.Text_IO.Put_Line
            ("  alire:              NOT FOUND on PATH"
@@ -1536,9 +1548,11 @@ package body Adacovex.Prove is
       if S.Declared then
          declare
             Ver  : constant String :=
-              File_GNATprove_Version (S.Target (1 .. S.Target_Len) & "/alire-dev.toml");
+              File_GNATprove_Version
+                (S.Target (1 .. S.Target_Len) & "/alire-dev.toml");
             Ver2 : constant String :=
-              File_GNATprove_Version (S.Target (1 .. S.Target_Len) & "/alire.toml");
+              File_GNATprove_Version
+                (S.Target (1 .. S.Target_Len) & "/alire.toml");
             Con  : constant String := (if Ver'Length > 0 then Ver else Ver2);
          begin
             Ada.Text_IO.Put_Line
@@ -1638,9 +1652,11 @@ package body Adacovex.Prove is
             when '"'    =>
                --  JSON escape: backslash + quote
                Append (R, "\""");
+
             when '\'    =>
                --  JSON escape: backslash + backslash
                Append (R, "\\");
+
             when others =>
                Append (R, S (I));
          end case;
@@ -1651,17 +1667,20 @@ package body Adacovex.Prove is
    procedure Export_Status
      (Target_Dir : String; Out_Path : String; Success : out Boolean)
    is
-      S : Status_Data;
+      S         : Status_Data;
       use Ada.Strings.Unbounded;
-      R : Unbounded_String;
-      F : Ada.Text_IO.File_Type;
+      R         : Unbounded_String;
+      F         : Ada.Text_IO.File_Type;
       VCS_Names : constant array (1 .. 6) of String (1 .. 12) :=
-        ("git" & 9 * " ", "hg" & 10 * " ", "svn" & 9 * " ", "fossil" & 6 * " ",
-         "jj" & 10 * " ", "mandb" & 7 * " ");
-      VCS_Lens : constant array (1 .. 6) of Natural :=
-        (3, 2, 3, 6, 2, 5);
-      Label : String (1 .. 12) := (others => ' ');
-      LLen  : Natural := 0;
+        ("git" & 9 * " ",
+         "hg" & 10 * " ",
+         "svn" & 9 * " ",
+         "fossil" & 6 * " ",
+         "jj" & 10 * " ",
+         "mandb" & 7 * " ");
+      VCS_Lens  : constant array (1 .. 6) of Natural := (3, 2, 3, 6, 2, 5);
+      Label     : String (1 .. 12) := (others => ' ');
+      LLen      : Natural := 0;
 
       --  A single double-quote character, and a string rendering of a
       --  boolean, used to build the JSON document with Ada's doubled-quote
@@ -1703,8 +1722,12 @@ package body Adacovex.Prove is
       Put (",");
       Field_Bool ("gnatprove_cached", S.Cached);
       Put (",");
-      Put (Q & "logical_cpus" & Q & ":"
-           & Natural'Image (S.Cores) (2 .. Natural'Image (S.Cores)'Last));
+      Put
+        (Q
+         & "logical_cpus"
+         & Q
+         & ":"
+         & Natural'Image (S.Cores) (2 .. Natural'Image (S.Cores)'Last));
       Put (",");
       Field_Bool ("ci", S.In_CI);
       Put (",");
@@ -1750,12 +1773,15 @@ package body Adacovex.Prove is
    end Export_Status;
 
    procedure Run_Status_Metrics (Target_Dir : String; Success : out Boolean) is
-      S : Status_Data;
+      S         : Status_Data;
       VCS_Names : constant array (1 .. 6) of String (1 .. 12) :=
-        ("git" & 9 * " ", "hg" & 10 * " ", "svn" & 9 * " ", "fossil" & 6 * " ",
-         "jj" & 10 * " ", "mandb" & 7 * " ");
-      VCS_Lens : constant array (1 .. 6) of Natural :=
-        (3, 2, 3, 6, 2, 5);
+        ("git" & 9 * " ",
+         "hg" & 10 * " ",
+         "svn" & 9 * " ",
+         "fossil" & 6 * " ",
+         "jj" & 10 * " ",
+         "mandb" & 7 * " ");
+      VCS_Lens  : constant array (1 .. 6) of Natural := (3, 2, 3, 6, 2, 5);
    begin
       Gather_Status (Target_Dir, S);
       Ada.Text_IO.Put_Line ("version=" & Adacovex.Version);
@@ -1770,12 +1796,14 @@ package body Adacovex.Prove is
          & (if S.Pin_Len > 0 then S.Pin (1 .. S.Pin_Len) else "none"));
       Ada.Text_IO.Put_Line
         ("gnatprove_path="
-         & (if S.Gnatprove_Ln > 0 then S.Gnatprove (1 .. S.Gnatprove_Ln)
+         & (if S.Gnatprove_Ln > 0
+            then S.Gnatprove (1 .. S.Gnatprove_Ln)
             else "missing"));
       Ada.Text_IO.Put_Line
         ("gnatprove_cached=" & (if S.Cached then "yes" else "no"));
       Ada.Text_IO.Put_Line
-        ("logical_cpus=" & Natural'Image (S.Cores) (2 .. Natural'Image (S.Cores)'Last));
+        ("logical_cpus="
+         & Natural'Image (S.Cores) (2 .. Natural'Image (S.Cores)'Last));
       Ada.Text_IO.Put_Line ("ci=" & (if S.In_CI then "yes" else "no"));
       for I in 1 .. 6 loop
          Ada.Text_IO.Put_Line
