@@ -260,6 +260,7 @@ link URLs).
 | `ascii-check` | Verify all source files are pure ASCII |
 | `complexity-check` | Cyclomatic-complexity + LOC gate: no god objects/functions, no file above its LOC or percentage-of-codebase caps (native Ada; gated by make complexity-check) |
 | `bench` | Benchmark the pipeline with hyperfine (bash `time` fallback): cold vs warm timings + binary size (docs/perf.md) |
+| `perf-bench` | Profile the adacovex binary with perf and strace (tools/perf-bench.py; docs/perf.md) |
 | `spark-off-check` | Fail if any `SPARK_Mode (Off)` appears outside the `Types.Implementation` container package |
 | `clean` | Remove bin/ obj/ docs/badges/ |
 | `help` | Print available targets |
@@ -402,6 +403,8 @@ suffices.
 - [Platforms](docs/platforms.md)
 - [Proving and writing proofs](docs/proving.md)
 - [Architecture](docs/architecture.md)
+- [Requirements](docs/requirements.md)
+- [STE100 technical names](docs/ste100-technical-names.md)
 - [HLR index](docs/HLR.md)
 - [LLR mapping](docs/LLR.md)
 - [Performance](docs/perf.md)
@@ -416,10 +419,16 @@ rules apply unless a section says otherwise.
 
 User documentation follows ASD-STE100 Simplified Technical English. Use the
 [SimpleEnglish skill](https://github.com/AminBlg/SimpleEnglish) for guidance. It is vendored
-locally in [`./skills/simple-english/`](skills/simple-english/)
-(`SKILL.md` plus `references/word-swaps.md`, `references/use-cases.md`,
+locally in [`./skills/simple-english/`](skills/simple-english/)(`SKILL.md` plus `references/word-swaps.md`, `references/use-cases.md`,
 `references/checklist.md`) so adacovex dogfooding and CI need no network access
 to apply ASD-STE100 rules. Load it from that path.
+
+The controlled list of Technical Names (non-STE words approved for the
+adacovex domain, with part of speech, definition, and banned synonyms) lives
+in [docs/ste100-technical-names.md](docs/ste100-technical-names.md). Add any
+new Technical Name to that list before you use it in documentation,
+docstrings, or changelogs.
+
 The skill enforces short sentences, active voice, one instruction per
 sentence, consistent terminology, and no AI-slop hedging.
 

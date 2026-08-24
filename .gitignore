@@ -6,6 +6,8 @@ docs/api/
 dist/
 adacovex-*.tar.gz
 *.tmp
+*.TMP
+GNAT-TEMP-*
 .headroom
 alire.toml.bak
 gnatprove
