@@ -9,18 +9,19 @@ package Adacovex.Renderers.HTML is
 
    --  Render a full HTML dashboard page with cards for all metrics.
    --  Produces a self-contained HTML page (with embedded CSS) showing
-   --  SPARK proof status, test results, compliance, and package coverage in
-   --  a card-based layout.  The compliance card is standard-aware: it prints
-   --  the selected standard's level label, or one row per standard when
-   --  All_Standards is True.  The page supports light / dark / system themes:
-   --  colors are driven by CSS custom properties, the initial theme follows
-   --  Theme (System_Theme follows the browser's prefers-color-scheme), a
-   --  header dropdown switches live between light, dark, and system, and a
-   --  Save settings button persists the choice in localStorage.  Theme
-   --  resolution on load: explicit CLI light/dark wins, then localStorage,
-   --  then the system preference.  Content is organised into clickable tabs
-   --  (Overview / Proof / Tests / Compliance / Dependencies / Charts) so the
-   --  dependency graph has its own page instead of sharing the card stack.
+   --  SPARK proof status, test results, compliance, and package coverage.
+   --  The page uses a card-based layout.  The compliance card is
+   --  standard-aware.  It prints the selected standard's level label.  When
+   --  All_Standards is True, it prints one row per standard.  The page
+   --  supports light, dark, and system themes.  Colours come from CSS custom
+   --  properties.  The initial theme follows Theme (System_Theme follows the
+   --  browser's prefers-color-scheme).  A header dropdown switches between
+   --  light, dark, and system.  A Save settings button stores the choice in
+   --  localStorage.  On load, theme resolution selects the explicit CLI
+   --  light/dark first.  Then it uses localStorage.  Then it uses the system
+   --  preference.  Content is organised into clickable tabs (Overview, Proof,
+   --  Tests, Compliance, Dependencies, Charts).  The dependency graph has its
+   --  own page.  It does not share the card stack.
    --  @param Doc_Metrics  Docstring coverage metrics.
    --  @param Proof  GNATprove proof summary.
    --  @param Tests  Test result summary.
@@ -63,14 +64,15 @@ package Adacovex.Renderers.HTML is
    with Post => Render_Dashboard'Result'Length > 0, Global => null;
 
    --  Render the Chart.css metrics section (multiple chart cards) for the
-   --  dashboard: a donut of SPARK proof (proved vs unproved VCs), a column
-   --  chart of proved checks per category, a bar chart of the test
-   --  categories (pass vs fail), a docstring-coverage bar, a pie of
-   --  dependency scopes, and a pie of test pass/fail distribution.  The markup
-   --  uses the vendored Charts.css framework (resources/charts.min.css,
-   --  inlined into the dashboard template) so the page stays
-   --  self-contained and dependency-free at runtime.  Bar sizes are emitted
-   --  as 0..1 fractions (not 0..100) so the CSS scales correctly.
+   --  dashboard.  The section shows a donut of SPARK proof (proved vs
+   --  unproved VCs) and a column chart of proved checks per category.  It
+   --  shows a bar chart of the test categories (pass vs fail).  It shows a
+   --  docstring-coverage bar and a pie of dependency scopes.  It shows a pie
+   --  of test pass/fail distribution.  The markup uses the vendored
+   --  Charts.css framework (resources/charts.min.css, inlined into the
+   --  dashboard template).  The page stays self-contained and dependency-free
+   --  at runtime.  Bar sizes are emitted as 0..1 fractions (not 0..100).  The
+   --  CSS then scales correctly.
    --  @param Doc_Metrics  Docstring coverage metrics.
    --  @param Proof  GNATprove proof summary.
    --  @param Tests  Test result summary.

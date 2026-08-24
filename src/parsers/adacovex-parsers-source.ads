@@ -26,7 +26,7 @@ with Adacovex.Types;
 --    --  one-line summary (single space, `-- `)
 --    --  one-line summary (two spaces, `--  `)
 --    --  one-line summary (tab separator)
---  A bare `--` or `---` divider is not a docstring.  Docstrings may
+--  A bare `--` or `---` divider is not a docstring.  Docstrings can
 --  appear before or after the declaration.
 --
 --  Google style (Doxygen-free Python convention):
@@ -62,12 +62,12 @@ package Adacovex.Parsers.Source is
      Post => (if Success then Pkg.Name_Len > 0);
 
    --  Recursively scan all .ads files under Target_Dir.
-   --  Walks the directory tree rooted at Target_Dir, parsing every .ads file
-   --  found, skipping directories whose simple name appears in Skip_List
-   --  (comma-separated). Appends found packages to the vector. Files whose
+   --  Walk the directory tree rooted at Target_Dir.  Parse every .ads file
+   --  found.  Skip directories whose simple name appears in Skip_List
+   --  (comma-separated).  Append found packages to the vector.  Files whose
    --  physical lines exceed Types.Max_Line, or whose paths exceed
-   --  Types.Max_Path, are reported to standard error and counted in
-   --  Skipped_Ct instead of producing partial results.
+   --  Types.Max_Path, are reported to standard error.  They are counted in
+   --  Skipped_Ct.  They do not produce partial results.
    --  @param Target_Dir  Root directory to scan recursively.
    --  @param Skip_List  Comma-separated directory names to skip (e.g. ".git,obj").
    --  @param Packages  Output vector of parsed packages (appended to).
@@ -80,9 +80,9 @@ package Adacovex.Parsers.Source is
 
    --  Like Scan_Project, but each .ads file is keyed in the on-disk result
    --  cache by its content hash (SHA-256).  Unchanged files are served from
-   --  the cache without re-scanning; changed files are rescanned and the
+   --  the cache without re-scanning.  Changed files are rescanned and the
    --  cache entry is refreshed.  Hits/Misses report how many files were
-   --  served from / written to the cache.
+   --  served from or written to the cache.
    --  @param Target_Dir  Root directory to scan recursively.
    --  @param Skip_List  Comma-separated directory names to skip.
    --  @param Packages  Output vector of parsed packages (appended to).

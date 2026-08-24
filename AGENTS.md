@@ -429,6 +429,7 @@ docstrings in the Ada source, not to the generated `.md` files. The
 `docs/api-docs/index.md` landing page and the root `README.md` are exceptions:
 keep them concise and British, but do not rewrite them to the full STE rules.
 
-Third-party components get credit. Note each third-party project in the
-root `README.md` Credits section and in a `NOTICE` file at the repo root. Do
-not drop third-party attributions.
+Third-party components get credit. Note each third-party project in
+[docs/CREDITS.md](docs/CREDITS.md) and
+[docs/THIRD_PARTY_NOTICES.md](docs/THIRD_PARTY_NOTICES.md). Do not drop
+third-party attributions.

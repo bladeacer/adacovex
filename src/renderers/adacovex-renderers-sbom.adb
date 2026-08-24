@@ -15,15 +15,17 @@ package body Adacovex.Renderers.SBOM is
    is
    begin
       --  Report the honest assessed level (Stone..Platinum).  The proof-level
-      --  property must never overstate certainty: a lower level (e.g. Silver
-      --  with unproved VCs) is reported verbatim rather than collapsed into a
-      --  coarse "Gold", so SBOM consumers see the real assurance state.
+      --  property must never overstate certainty.  A lower level (for example
+      --  Silver with unproved VCs) is reported verbatim.  It is not collapsed
+      --  into a coarse "Gold".  SBOM consumers then see the real assurance
+      --  state.
       return Types.To_String (Level);
    end Proof_Level_Property;
 
    --  Proof level reported for dependency components.  adacovex only
-   --  proves the target project itself; vendored/third-party dependencies
-   --  are not audited, so they must never claim a Gold/Platinum level.
+   --  proves the target project itself.  Vendored and third-party
+   --  dependencies are not audited.  They must never claim a Gold or Platinum
+   --  level.
    Not_Proved : constant String := "Not proved";
 
    function DAL_Property_Value (Level : Types.DAL_Level) return String
@@ -77,9 +79,10 @@ package body Adacovex.Renderers.SBOM is
    end All_Levels_Property;
 
    --  Map a dependency scope to the adacovex:dep_scope property value.
-   --  Base dependencies are declared in the publishing manifest, dev
-   --  dependencies only in the dev manifest, transitive ones in neither,
-   --  and vendored packages are overlaid by a .adacovex/patches/ patch.
+   --  Base dependencies are declared in the publishing manifest.  Dev
+   --  dependencies are declared only in the dev manifest.  Transitive ones are
+   --  in neither.  Vendored packages are overlaid by a .adacovex/patches/
+   --  patch.
    --  @param Scope  Component dependency scope.
    --  @return "base", "dev", "transitive", or "vendored".
    function Scope_Property (Scope : Types.Component_Scope) return String
@@ -101,12 +104,12 @@ package body Adacovex.Renderers.SBOM is
       end case;
    end Scope_Property;
 
-   --  Escape a string for inclusion in a JSON document.  Backslash, quote
-   --  and control characters are escaped so the emitted JSON is always
-   --  well-formed, even for manifest strings containing embedded quotes.
-   --  The output buffer is bounded at six bytes per input byte (the widest
-   --  escape, "\u00xx").  Input length is capped at Max_Esc_Src so the
-   --  6x output bound stays provably within Natural.
+   --  Escape a string for inclusion in a JSON document.  Backslash, quote,
+   --  and control characters are escaped.  The emitted JSON is then always
+   --  well-formed.  This holds even for manifest strings containing embedded
+   --  quotes.  The output buffer is bounded at six bytes per input byte (the
+   --  widest escape, "\u00xx").  Input length is capped at Max_Esc_Src.  The
+   --  6x output bound then stays provably within Natural.
    --  @param S  String to escape.
    --  @return The escaped JSON string.
    --  Escape a string for inclusion in a JSON document.  Backslash, quote
@@ -195,9 +198,9 @@ package body Adacovex.Renderers.SBOM is
       Raw (F, """");
    end JStr;
 
-   --  Decimal string of a non-negative integer.  A fixed 10-character buffer
-   --  holds any Natural (up to 2,147,483,647, ten digits); the loop invariant
-   --  proves the write cursor never underflows the buffer.
+   --  Decimal string of a non-negative integer.  The fixed 10-character
+   --  buffer holds any Natural (up to 2,147,483,647, ten digits).  The loop
+   --  invariant proves the write cursor never underflows the buffer.
    function I2S (N : Natural) return String
    with
      SPARK_Mode   => On,
@@ -252,10 +255,10 @@ package body Adacovex.Renderers.SBOM is
    end Pad2;
 
    --  Assemble the fixed ISO timestamp from its decimal string fields.
-   --  Kept separate from ISO_From_Epoch so the concatenation bounds are
-   --  proved against a small precondition instead of the full calendar-math
-   --  context (which otherwise pushes the concat checks past the solver step
-   --  limit).
+   --  Kept separate from ISO_From_Epoch.  The concatenation bounds are then
+   --  proved against a small precondition.  They use this instead of the full
+   --  calendar-math context.  The full context pushes the concat checks past
+   --  the solver step limit.
    --  @param YrS  Year field.
    --  @param MoS  Month field.
    --  @param DyS  Day field.
@@ -285,11 +288,11 @@ package body Adacovex.Renderers.SBOM is
       return YrS & "-" & MoS & "-" & DyS & "T" & HrS & ":" & MiS & ":" & SdS;
    end Assemble_ISO;
 
-   --  ISO 8601 UTC timestamp from a Unix epoch second count, computed with
-   --  pure integer arithmetic so the result is identical on every machine
-   --  and timezone.  The civil date is extracted by bounded iteration over
-   --  years and months (the epoch span is under ~70 years), so every bound
-   --  is discharged with constant-coefficient arithmetic.
+   --  ISO 8601 UTC timestamp from a Unix epoch second count.  It is computed
+   --  with pure integer arithmetic.  The result is then identical on every
+   --  machine and timezone.  The civil date is extracted by bounded iteration
+   --  over years and months (the epoch span is under ~70 years), so every
+   --  bound is discharged with constant-coefficient arithmetic.
    function ISO_From_Epoch (Epoch_Sec : Natural) return String
    with SPARK_Mode => On
    is
@@ -400,9 +403,9 @@ package body Adacovex.Renderers.SBOM is
    end ISO_From_Epoch;
 
    --  ISO 8601 timestamp (YYYY-MM-DDTHH:MM:SS).
-   --  Honors the SOURCE_DATE_EPOCH environment variable (reproducible-builds
-   --  convention): when set to a Unix epoch second count, the timestamp is
-   --  derived from it (UTC, integer math) so SBOM output is byte-for-byte
+   --  Honours the SOURCE_DATE_EPOCH environment variable (reproducible-builds
+   --  convention).  When set to a Unix epoch second count, it derives the
+   --  timestamp from it (UTC, integer math).  SBOM output is then byte-for-byte
    --  deterministic across runs and machines.  Otherwise the current local
    --  time is used.
    function ISO_Timestamp return String is

@@ -262,11 +262,9 @@ for Alire-managed and system-installed GNAT LLVM options and caveats.
 
 ## Credits
 
-- **[setup-alire](https://github.com/alire-project/setup-alire)** GitHub Action (used in CI)
-- **[CycloneDX](https://github.com/CycloneDX/specification)** SBOM specification (CycloneDX 1.5 JSON output)
-- **[SPDX](https://spdx.dev)** Software Package Data Exchange specification (SPDX 2.3 JSON output)
-- **[charts.css](https://github.com/ChartsCSS/charts.css/)**: open-source CSS framework for data visualisation
-- **[Playwright](https://github.com/microsoft/playwright)** end-to-end browser testing (dashboard layout tests)
+Third-party attributions, licences, and bundled-asset notices: see
+[docs/CREDITS.md](docs/CREDITS.md) and
+[docs/THIRD_PARTY_NOTICES.md](docs/THIRD_PARTY_NOTICES.md).
 
 ## License
 
