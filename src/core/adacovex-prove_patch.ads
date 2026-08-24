@@ -7,16 +7,16 @@
 --  SPARK_Mode on the package declaration and Pre, Post, or SPARK_Mode on
 --  subprogram declarations.  The `prove` subcommand merges them into a copy
 --  of the vendored spec.  When the patch carries one, it also merges the
---  vendored body.  GNATprove then analyzes the vendored unit with the
+--  vendored body.  GNATprove then analyses the vendored unit with the
 --  patched contracts.  It does not modify the original vendored sources.
 --  A .ads patch re-declares the spec with contracts.  A .adb patch opts
---  the body into the proof.  The body is analyzed only when it declares
+--  the body into the proof.  The body is analysed only when it declares
 --  SPARK_Mode On itself.
 --
 --  The merge is textual and line-based.  The patched source is the original
 --  with each patched subprogram declaration replaced by the patch's
 --  declaration block.  The block carries the aspects.  A declaration
---  matches on name and normalized parameter profile.  An overload patches
+--  matches on name and normalised parameter profile.  An overload patches
 --  its exact signature, never a same-named sibling.  The default `in` mode
 --  is equivalent to a bare mode.  `in out` and `out` are distinct.  The
 --  package declaration is given the patch's package-level aspect when

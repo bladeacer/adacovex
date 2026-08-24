@@ -90,7 +90,7 @@ package body Adacovex.Parsers.Manifest is
    end Trim;
 
    --  Whether S begins with the exact character sequence Pre.  The
-   --  precondition gives the function a contract.  gnatprove analyzes the
+   --  precondition gives the function a contract.  gnatprove analyses the
    --  function as a unit.  gnatprove does not re-prove the body at every
    --  call site.
    function Starts_With (S : String; Pre : String) return Boolean
@@ -211,9 +211,9 @@ package body Adacovex.Parsers.Manifest is
          Adacovex.Parsers.Read_Line
            (F, Manifest_Path, Line_Num, Line, Last, Overflow);
          if Overflow then
-         --  A physical line longer than Max_Line is drained and reported by
-         --  Read_Line.  The manifest is not resolved.  No partial dependency
-         --  graph is produced.
+            --  A physical line longer than Max_Line is drained and reported by
+            --  Read_Line.  The manifest is not resolved.  No partial dependency
+            --  graph is produced.
             Close (F);
             return;
          end if;
@@ -880,10 +880,10 @@ package body Adacovex.Parsers.Manifest is
                declare
                   S : Types.Component_Scope := Classify_Scope (Name);
                begin
-               --  A GPR with-clause dependency of the root project is a
-               --  direct build dependency (base).  The exception is a
-               --  dependency named in a manifest.  Classify_Scope already
-               --  decided those.  Deeper with-clauses are transitive.
+                  --  A GPR with-clause dependency of the root project is a
+                  --  direct build dependency (base).  The exception is a
+                  --  dependency named in a manifest.  Classify_Scope already
+                  --  decided those.  Deeper with-clauses are transitive.
                   if S = Types.Scope_Transitive and then Parent = 1 then
                      S := Types.Scope_Base;
                   end if;
@@ -1491,7 +1491,7 @@ package body Adacovex.Parsers.Manifest is
                if NLen > 0 then
                   Close (F);
                   --  Trim non-version decoration from the version (for example
-               --  ">= 12" -> "12").
+                  --  ">= 12" -> "12").
                   begin
                      while VLen > 0 and then V (1) not in '0' .. '9' loop
                         --  Skip "v" prefixes too but keep 'v' starts
@@ -2004,10 +2004,10 @@ package body Adacovex.Parsers.Manifest is
          then Target_Dir (Target_Dir'First .. Target_Dir'Last - 1)
          else Target_Dir)
         & "/resources";
-       --  The vendor/ root itself is not scanned here.  Loose files under it
-       --  must never become components.  Discover_Generic_Vendored turns each
-       --  manifest-carrying or source-carrying vendor subdirectory into one
-       --  component.  The component carries its top-3 language summary.
+      --  The vendor/ root itself is not scanned here.  Loose files under it
+      --  must never become components.  Discover_Generic_Vendored turns each
+      --  manifest-carrying or source-carrying vendor subdirectory into one
+      --  component.  The component carries its top-3 language summary.
       Assets_Root    : constant String :=
         (if Target_Dir'Length > 0 and then Target_Dir (Target_Dir'Last) = '/'
          then Target_Dir (Target_Dir'First .. Target_Dir'Last - 1)
@@ -2066,10 +2066,10 @@ package body Adacovex.Parsers.Manifest is
          end if;
       end Push_Dir;
 
-       --  One component per manifest-carrying (or Ada-source-carrying)
-       --  directory inside a matched vendor root.  The scan is shallow.  It
-       --  uses its own directory-search handles.  It can run while the
-       --  caller's tree walk is mid-search.
+      --  One component per manifest-carrying (or Ada-source-carrying)
+      --  directory inside a matched vendor root.  The scan is shallow.  It
+      --  uses its own directory-search handles.  It can run while the
+      --  caller's tree walk is mid-search.
       procedure Scan_Vendor_Root (Root : String; Max_Levels : Natural) is
          S2 : Search_Type;
          E2 : Directory_Entry_Type;
@@ -2108,9 +2108,9 @@ package body Adacovex.Parsers.Manifest is
                end;
                End_Search (S2);
 
-                --  Component source: ecosystem manifest or source files.
-                --  The vendor root itself (level 0) is not a component.  Only
-                --  its children are components.
+               --  Component source: ecosystem manifest or source files.
+               --  The vendor root itself (level 0) is not a component.  Only
+               --  its children are components.
                if Current.Level > 0 then
                   declare
                      M : Vendor_Manifest;
@@ -2151,10 +2151,10 @@ package body Adacovex.Parsers.Manifest is
                               L);
                         end;
                      else
-                      --  Library vendored without a manifest.  The directory
-                      --  itself is the component.  The language is the top-3
-                      --  summary of its source-file extensions.  Ada-only
-                      --  directories are included.
+                        --  Library vendored without a manifest.  The directory
+                        --  itself is the component.  The language is the top-3
+                        --  summary of its source-file extensions.  Ada-only
+                        --  directories are included.
                         declare
                            L : constant String :=
                              Language_Of_Dir (Dir_Path, 2);
@@ -2430,9 +2430,9 @@ package body Adacovex.Parsers.Manifest is
             null;
       end;
 
-               --  First whitespace/newline-separated token containing a digit, with
-               --  stray trailing punctuation (for example the ")" of "7.2.4)")
-               --  trimmed.
+      --  First whitespace/newline-separated token containing a digit, with
+      --  stray trailing punctuation (for example the ")" of "7.2.4)")
+      --  trimmed.
       declare
          Last : constant Natural := Buf'First + BLen - 1;
          I    : Natural := Buf'First;
@@ -2541,8 +2541,8 @@ package body Adacovex.Parsers.Manifest is
          end if;
       end Push_Dir;
 
-   --  Whether to scan a file for tool references.  Makefile variants are
-   --  scanned by name.  Dev-facing text files are scanned by extension.
+      --  Whether to scan a file for tool references.  Makefile variants are
+      --  scanned by name.  Dev-facing text files are scanned by extension.
       function Should_Scan (Name : String) return Boolean is
          Dot : Natural := 0;
       begin
@@ -2654,10 +2654,10 @@ package body Adacovex.Parsers.Manifest is
                  (Line (1 .. Last), "System_Tools : constant array")
               > 0
             then
-                  --  This file declares the curated tool table.  Every entry is
-                  --  a literal tool name by construction.  References found
-                  --  here can register every installed tool.  This happens
-                  --  regardless of whether the project actually uses the tool.
+               --  This file declares the curated tool table.  Every entry is
+               --  a literal tool name by construction.  References found
+               --  here can register every installed tool.  This happens
+               --  regardless of whether the project actually uses the tool.
                Close (F);
                return;
             end if;
@@ -2764,10 +2764,10 @@ package body Adacovex.Parsers.Manifest is
          begin
             if Exe /= null then
                GNAT.OS_Lib.Free (Exe);
-                  --  Version probing spawns a subprocess per tool.  Cache the
-                  --  result on disk (7-day TTL).  Unchanged toolchains then do
-                  --  not pay tens of milliseconds per referenced tool on every
-                  --  run.
+               --  Version probing spawns a subprocess per tool.  Cache the
+               --  result on disk (7-day TTL).  Unchanged toolchains then do
+               --  not pay tens of milliseconds per referenced tool on every
+               --  run.
                declare
                   Probe : String (1 .. 512) := (others => ' ');
                   PLen  : Natural := 0;

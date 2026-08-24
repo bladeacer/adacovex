@@ -22,11 +22,11 @@ Summary: Capitalized sentence ending with a period.
 Alignment: Two spaces between tag name and description text.
 Placement: Summary lines first, then tag lines, then declaration.
 
-Other standard comment styles are also recognized as docstrings:
+Other standard comment styles are also recognised as docstrings:
 --  one-line summary (single space, ``-- ``)
 --  one-line summary (two spaces, ``--  ``)
 --  one-line summary (tab separator)
-A bare ``--`` or ``---`` divider is not a docstring.  Docstrings may
+A bare ``--`` or ``---`` divider is not a docstring.  Docstrings can
 appear before or after the declaration.
 
 Google style (Doxygen-free Python convention):

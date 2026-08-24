@@ -459,7 +459,7 @@ begin
       return;
    end if;
 
-   --  Determine ANSI color support (assume TTY, overridden by NO_COLOR)
+   --  Determine ANSI colour support (assume TTY, overridden by NO_COLOR)
    Use_Color := not Ada.Environment_Variables.Exists ("NO_COLOR");
 
    TLen := Cfg.Target_Len;

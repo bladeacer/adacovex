@@ -131,7 +131,7 @@ package Adacovex.Diff is
    --  @param Base  Assessment of the base ref.
    --  @param Cur  Assessment of the current working tree.
    --  @param Base_Ref  Human-readable name of the base ref shown in the report.
-   --  @param Use_Color  Enable ANSI color output (default False).
+   --  @param Use_Color  Enable ANSI colour output (default False).
    --  @return True if the current state regressed versus the base.
    function Report_Delta
      (Base      : Assessment_Result;
@@ -146,7 +146,7 @@ package Adacovex.Diff is
    --  @param Base  Coverage of the base ref.
    --  @param Cur  Coverage of the current working tree.
    --  @param Base_Ref  Human-readable name of the base ref.
-   --  @param Use_Color  Enable ANSI color output (default False).
+   --  @param Use_Color  Enable ANSI colour output (default False).
    --  @return True if the current coverage regressed versus the base.
    function Report_Coverage_Delta
      (Base      : Coverage_Result;

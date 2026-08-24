@@ -1,10 +1,10 @@
 # Adacovex.Config.Testing
 
-Testable CLI-parser core.  Kept out of SPARK (it operates on an
-unbounded string vector and reports parse errors to Standard_Error),
-so unit tests can drive flag precedence through Parse_Args without
+Testable CLI-parser core.  Kept out of SPARK.  It operates on an
+unbounded string vector and reports parse errors to Standard_Error.
+Unit tests can drive flag precedence through Parse_Args without
 touching Ada.Command_Line.  Parse_CLI wraps Parse_Args with the real
-command line and then finalizes filesystem defaults.
+command line and then finalises filesystem defaults.
 
 > **Note:** All items in this package are public.
 

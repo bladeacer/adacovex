@@ -1,9 +1,9 @@
 # Adacovex.Server.HTTP
 
 Multi-threaded HTTP/1.1 server built on GNAT.Sockets.
-Uses a bounded Ada task pool for concurrent request handling.
-Supports keep-alive connections and serves the web dashboard,
-JSON API, and SVG badge endpoints.
+The server uses a bounded Ada task pool for concurrent request handling.
+The server supports keep-alive connections. It serves the web dashboard,
+the JSON API, and the SVG badge endpoints.
 HLR-SERVER: HTTP server
 
 **See also:** [Web dashboard](../dashboard.md)

@@ -34,6 +34,7 @@ SKIP_DIRS: Tuple[str, ...] = (
     "alire",
     "index",
     "config",
+    "skills",
     "docs/badges",
     "node_modules",
 )

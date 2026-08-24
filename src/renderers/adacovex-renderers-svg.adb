@@ -258,7 +258,7 @@ package body Adacovex.Renderers.SVG is
       end case;
    end Spark_Color;
 
-   --  Text color with sufficient contrast on the level background.
+   --  Text colour with sufficient contrast on the level background.
    --  Light metals (Platinum, Gold, Silver) take dark text; Bronze and
    --  Stone keep white text.
    function Spark_Text_Color (Level : Types.SPARK_Level) return String
@@ -274,9 +274,9 @@ package body Adacovex.Renderers.SVG is
       end case;
    end Spark_Text_Color;
 
-   --  Text color with sufficient contrast on the value background: dark text
-   --  on the light green (#4c1) and yellow (#dfb317) pass colors, white on
-   --  the dark red (#e05d44) failure color.
+   --  Text colour with sufficient contrast on the value background: dark text
+   --  on the light green (#4c1) and yellow (#dfb317) pass colours, white on
+   --  the dark red (#e05d44) failure colour.
    function Badge_Text_Color (Value_Color : String) return String
    with SPARK_Mode => On, Post => Badge_Text_Color'Result'Length in 4 .. 7
    is

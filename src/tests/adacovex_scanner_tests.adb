@@ -88,8 +88,8 @@ package body Adacovex_Scanner_Tests is
          "Test 1: No_Docs has no docstring");
 
       --  Test 2: scan a file with generic function.
---  `generic` on its own is not a subprogram declaration. Only
---  `function Clone` counts. The pending docstring tags
+      --  `generic` on its own is not a subprogram declaration. Only
+      --  `function Clone` counts. The pending docstring tags
       --  (started before `generic`) attach to Clone via Flush_Pending.
       begin
          declare
@@ -412,8 +412,8 @@ package body Adacovex_Scanner_Tests is
          and then Pkg.Subprograms (2).Has_Docstring,
          "Test 13: @summary sets Has_Docstring");
 
---  Test 14: a single-line declaration longer than 8192 chars is still
---  parsed (buffer constraints no longer silently discard generated lines).
+      --  Test 14: a single-line declaration longer than 8192 chars is still
+      --  parsed (buffer constraints no longer silently discard generated lines).
       begin
          declare
             F    : File_Type;
@@ -540,9 +540,9 @@ package body Adacovex_Scanner_Tests is
         (not Pkg.Subprograms (3).Has_Docstring,
          "Test 16: no docstring without field lists");
 
---  Test 17: a physical line longer than Max_Line is rejected explicitly.
---  The file is not processed. There is no partial AST. Scan_Ads_File
---  returns Success = False.
+      --  Test 17: a physical line longer than Max_Line is rejected explicitly.
+      --  The file is not processed. There is no partial AST. Scan_Ads_File
+      --  returns Success = False.
       begin
          declare
             F    : File_Type;
@@ -572,8 +572,8 @@ package body Adacovex_Scanner_Tests is
         (Natural (Pkg.Subprograms.Length) = 0,
          "Test 17: no partial AST on overflow");
 
---  Test 18: a physical line exactly Max_Line chars long (exact buffer
---  fit) is NOT an overflow. The following lines still parse.
+      --  Test 18: a physical line exactly Max_Line chars long (exact buffer
+      --  fit) is NOT an overflow. The following lines still parse.
       begin
          declare
             F    : File_Type;
@@ -608,8 +608,8 @@ package body Adacovex_Scanner_Tests is
                   = "After_Exact",
          "Test 18: subprogram after exact-fit line is parsed");
 
---  Test 19: Scan_Project counts the files that line overflow skips in
---  Skipped_Ct. It keeps parsing the rest of the tree.
+      --  Test 19: Scan_Project counts the files that line overflow skips in
+      --  Skipped_Ct. It keeps parsing the rest of the tree.
       begin
          declare
             F    : File_Type;
@@ -697,9 +697,9 @@ package body Adacovex_Scanner_Tests is
             "Test 20: subprogram name clamped to Max_Desc_Str");
       end;
 
---  Test 21: word-boundary matching (identifiers prefixed with
---  `function`/`procedure` are not subprograms) and OOP modifiers
---  (`overriding` / `not overriding`) are recognised.
+      --  Test 21: word-boundary matching (identifiers prefixed with
+      --  `function`/`procedure` are not subprograms) and OOP modifiers
+      --  (`overriding` / `not overriding`) are recognised.
       begin
          declare
             F : File_Type;
@@ -738,13 +738,13 @@ package body Adacovex_Scanner_Tests is
          and then Pkg.Subprograms (2).Doc_Return,
          "Test 21: not overriding function parsed with name Value");
 
---  Test 22: a cached scan from a different directory must not leak its
---  File_Path.  Scan entries are keyed by file content hash. A scan of an
---  identical file in a second directory used to hit the cached entry from
---  the first directory. The second directory can be a --coverage-delta or
---  --compare-base base snapshot. The scan then carried the absolute path
---  of that entry. This broke Relative_Path consumers such as Apply_Patches
---  and HLR traceability.
+      --  Test 22: a cached scan from a different directory must not leak its
+      --  File_Path.  Scan entries are keyed by file content hash. A scan of an
+      --  identical file in a second directory used to hit the cached entry from
+      --  the first directory. The second directory can be a --coverage-delta or
+      --  --compare-base base snapshot. The scan then carried the absolute path
+      --  of that entry. This broke Relative_Path consumers such as Apply_Patches
+      --  and HLR traceability.
       begin
          declare
             Cache_A  : constant String :=

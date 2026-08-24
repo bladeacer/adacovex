@@ -3,15 +3,16 @@
 Proof-aware software bill of materials (SBOM) generator.
 Produces CycloneDX 1.5 JSON and SPDX 2.3 JSON documents from the
 dependency graph resolved by Adacovex.Parsers.Manifest.  Only the root
-component -- the project adacovex actually assessed -- carries the
-adacovex:proof_level (Stone..Platinum), adacovex:standard
-("DO-178C" | "ISO 26262" | "IEC 62304"), adacovex:dal_target
-(DAL-A through DAL-D), and adacovex:level (the standard-specific label
-"DAL-C" | "ASIL B" | "Class A") properties.  Dependency components
-report adacovex:proof_level = "Not proved": adacovex only proves the
-target itself, never third-party dependencies.  Every dependency
-component also carries an adacovex:dep_scope property ("base" | "dev" |
-"transitive" | "vendored") distinguishing publishing (alire.toml),
+component carries the adacovex properties.  The root component is the
+project adacovex actually assessed.  It carries adacovex:proof_level
+(Stone..Platinum), adacovex:standard ("DO-178C" | "ISO 26262" |
+"IEC 62304"), adacovex:dal_target (DAL-A through DAL-D), and
+adacovex:level (the standard-specific label "DAL-C" | "ASIL B" |
+"Class A").  Dependency components report adacovex:proof_level =
+"Not proved".  adacovex only proves the target itself.  It never proves
+third-party dependencies.  Every dependency component also carries an
+adacovex:dep_scope property ("base" | "dev" | "transitive" |
+"vendored").  This property distinguishes publishing (alire.toml),
 development-only (alire-dev.toml), transitive, and patched-vendored
 packages.
 HLR-SBOM: SBOM generation

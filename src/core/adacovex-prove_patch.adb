@@ -16,7 +16,7 @@ package body Adacovex.Prove_Patch is
    --  (the patch is skipped and reported) rather than truncating.
    Max_Patch_Subprogs : constant := 64;
 
-   --  A subprogram parameter profile ("(A : in T; B : in U)" normalized) is
+   --  A subprogram parameter profile ("(A : in T; B : in U)" normalised) is
    --  at most a few hundred characters; a small dedicated buffer keeps the
    --  refs array -- 64 entries of Name + Profile -- comfortably on the
    --  stack.  A profile longer than this fails the match loudly (the

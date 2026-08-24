@@ -20,7 +20,7 @@ package Adacovex.Renderers.ANSI is
    --  @param Tests  Test result summary.
    --  @param DAL_Assess  DAL compliance assessment.
    --  @param Packages  Scanned package vector.
-   --  @param Use_Color  Enable ANSI color output (default False).
+   --  @param Use_Color  Enable ANSI colour output (default False).
    --  @param All_Standards  Print every standard (else the selected one).
    --  @param Cache_Hits  Number of analysis results served from the cache.
    --  @param Cache_Misses  Number of results recomputed and re-cached.

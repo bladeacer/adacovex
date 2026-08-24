@@ -106,7 +106,7 @@ package body Adacovex_Renderer_Tests is
 
       --  Dashboard supports light/dark/system themes: CSS custom properties
       --  with a prefers-color-scheme dark default, a header dropdown with
-      --  the three options (the selected one honored as the initial theme),
+      --  the three options (the selected one honoured as the initial theme),
       --  and a data-theme override persisted in localStorage.
       declare
          S : constant String :=
@@ -169,7 +169,7 @@ package body Adacovex_Renderer_Tests is
             "dashboard renders the proof metrics card");
       end;
 
-      --  The --theme flag's initial selection is honored: Dark_Theme renders
+      --  The --theme flag's initial selection is honoured: Dark_Theme renders
       --  a dark option marked selected.
       declare
          S : constant String :=

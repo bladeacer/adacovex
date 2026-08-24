@@ -66,8 +66,8 @@ package body Adacovex_Renderer_SVG_Tests is
       TW   : Natural;
       --  total badge width    (LW + VW)
       LX   : Natural;
-      --  label text x (segment center)
-      VX   : Natural)  --  value text x (segment center)
+      --  label text x (segment centre)
+      VX   : Natural)  --  value text x (segment centre)
    is
    begin
       R.Check (Nth_Attr (SVG, "width", 1) = TW, Name & ": total width");

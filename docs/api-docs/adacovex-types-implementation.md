@@ -1,7 +1,7 @@
 # Adacovex.Types.Implementation
 
-Non-SPARK container types: SPARK forbids instantiating the
-non-formal Ada.Containers in SPARK_Mode On code, so this package
+Non-SPARK container types.  SPARK forbids instantiating the
+non-formal Ada.Containers in SPARK_Mode On code.  This package
 must stay SPARK_Mode Off.  It is the only SPARK_Mode (Off) in the
 codebase.
 

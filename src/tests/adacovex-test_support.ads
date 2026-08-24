@@ -2,9 +2,9 @@ package Adacovex.Test_Support is
 
    type Runner is tagged limited private;
 
---  Record a test result.
---  If Cond is True, the procedure increments the pass count. Otherwise
---  it increments the fail count.
+   --  Record a test result.
+   --  If Cond is True, the procedure increments the pass count. Otherwise
+   --  it increments the fail count.
    --  @param Cond  Test condition (True = pass, False = fail)
    --  @param Msg   Human-readable test description.
    procedure Check (R : in out Runner; Cond : Boolean; Msg : String);

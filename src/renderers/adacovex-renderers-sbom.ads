@@ -106,7 +106,7 @@ package Adacovex.Renderers.SBOM is
    --  Maximum source length Escape_JSON accepts.  Kept well below
    --  Natural'Last / 6 so the 6x output buffer bound is provable with
    --  constant-coefficient arithmetic (no division-floor reasoning needed).
-   --  SBOM field values (names, licenses, descriptions, PURLs) are far
+   --  SBOM field values (names, licences, descriptions, PURLs) are far
    --  smaller than this cap.
    Max_Esc_Src : constant := 200_000;
 
@@ -203,7 +203,7 @@ package Adacovex.Renderers.SBOM is
 
    --  Write a human-readable Markdown SBOM to an already-open file.
    --  Renders a compliance table of every component with its version,
-   --  license, PURL, proof level, standard, and DAL target properties.
+   --  licence, PURL, proof level, standard, and DAL target properties.
    --  @param F  Output file to write the Markdown document to.
    --  @param Graph  Dependency graph (index 1 = root component).
    --  @param Proof_Level  adacovex:proof_level property value.
