@@ -8,42 +8,43 @@
 
 # adacovex
 
-**Zero-dependency Ada/SPARK CLI tool** for coverage analysis, proof
+A zero-dependency Ada/SPARK command line tool for coverage analysis, proof
 verification, test-result parsing, multi-standard safety-compliance assessment
-(DO-178C / ISO 26262 / IEC 62304), and interactive dashboards. No library
-dependencies beyond the GNAT runtime; gnatprove is resolved at run time by the
-`prove` subcommand, so installing adacovex pulls nothing but the binary.
+(DO-178C / ISO 26262 / IEC 62304), and interactive dashboards. It uses only the
+GNAT runtime. The `prove` subcommand resolves gnatprove at run time, so
+installing adacovex installs only the binary.
 
 ## Features
 
-- **Source scanning** -- walks `.ads` files, extracts subprogram declarations,
+- **Source scanning** -- walks `.ads` files; extracts subprogram declarations,
   [docstring annotations](docs/api-docs/adacovex-docstring-spec.md) (Ada
   `@param`/`@return`/`@field`/`@formal`/`@brief`/`@summary`, Google
-  `Args:`/`Returns:`, Sphinx `:param:`/`:returns:`), and HLR traceability tags
+  `Args:`/`Returns:`, Sphinx `:param:`/`:returns:`), and HLR traceability tags.
 - **Proof analysis** -- parses GNATprove `gnatprove.out` summaries; assesses
-  [SPARK assurance levels](docs/api-docs/adacovex-spark-levels.md) (Stone--Platinum)
+  [SPARK assurance levels](docs/api-docs/adacovex-spark-levels.md) (Stone to
+  Platinum).
 - **Test parsing** -- reads [test-result summaries](docs/api-docs/adacovex-test-format.md)
-  from your CI or runner logs: Markdown tables (the native `test_runner`
-  format, with or without an index column), TAP (`ok`/`not ok`), GNU
-  Automake (`PASS:`/`FAIL:`, Maven Surefire (`Tests run: N`), Unity
-  (`N Tests`) and AUnit reports
-- **[Compliance](docs/standards.md)** -- assesses DO-178C DAL A-E criteria
-  (HLR coverage, orphan tags, test status, minimum SPARK proof level),
-  re-labelled for [ISO 26262](docs/api-docs/adacovex-asil-levels.md)
-  (ASIL A--D/QM) and [IEC 62304](docs/api-docs/adacovex-class-levels.md)
-  (classes A--C) with dedicated `--dal` / `--asil` / `--class` flags
+  from CI or runner logs: Markdown tables (the native `test_runner` format, with
+  or without an index column), TAP (`ok`/`not ok`), GNU Automake
+  (`PASS:`/`FAIL:`), Maven Surefire (`Tests run: N`), Unity (`N Tests`), and
+  AUnit reports.
+- **[Compliance](docs/standards.md)** -- assesses DO-178C DAL A-E criteria (HLR
+  coverage, orphan tags, test status, minimum SPARK proof level), re-labelled
+  for [ISO 26262](docs/api-docs/adacovex-asil-levels.md) (ASIL A to D / QM) and
+  [IEC 62304](docs/api-docs/adacovex-class-levels.md) (Class A to C) with
+  dedicated `--dal` / `--asil` / `--class` flags.
 - **Multiple outputs** -- ANSI report, SVG badges, Markdown reports, web
-  dashboard + JSON API, proof-aware SBOM (CycloneDX / SPDX)
+  dashboard + JSON API, and proof-aware SBOM (CycloneDX / SPDX).
 - **[Differential assessment](docs/vcs.md)** -- `--compare-base` /
   `--coverage-delta` snapshot a base revision on **git, Mercurial,
-  Subversion, Fossil, or jj** without touching your working tree
+  Subversion, Fossil, or jj** without touching the working tree.
 - **Result caching** -- a content-addressed on-disk cache (`~/.adacovex/cache`)
-  serves unchanged scan, proof, test, HLR/LLR, and dependency-graph results
-  without re-running the work
-- **Tooling** -- `status` reports toolchain + VCS state, `man` installs a
-  local man page, and `make check` runs the full quality gate in one command
-- **Scalable** -- package/subprogram collections use `Ada.Containers.Vectors`
-  (no compile-time limits on count); fixed-size buffers scale with host word size
+  serves unchanged scan, proof, test, HLR/LLR, and dependency-graph results.
+- **Tooling** -- `status` reports toolchain and VCS state, `man` installs a
+  local man page, and `make check` runs the full quality gate in one command.
+- **Scalable** -- package and subprogram collections use
+  `Ada.Containers.Vectors` (no compile-time count limits); fixed-size buffers
+  scale with host word size.
 
 ## Quick start
 
@@ -64,8 +65,8 @@ adacovex --target=. --serve
 ```
 
 Contributors build from source with `make build` (see
-[Installation](docs/installation.md)); `make run-self` assesses adacovex
-itself and `make run-ada-crdt` runs the Ada_CRDT regression.
+[Installation](docs/installation.md)). `make run-self` assesses adacovex itself.
+`make run-ada-crdt` runs the Ada_CRDT regression.
 
 ## Documentation
 
@@ -93,9 +94,9 @@ itself and `make run-ada-crdt` runs the Ada_CRDT regression.
 | Reference | Description |
 |-----------|-------------|
 | [Standards](docs/standards.md) | DO-178C / ISO 26262 / IEC 62304 abstraction |
-| [DAL Levels](docs/api-docs/adacovex-dal-levels.md) | DO-178C DAL A - E criteria |
-| [ASIL Levels](docs/api-docs/adacovex-asil-levels.md) | ISO 26262 ASIL A - D / QM criteria |
-| [Safety Classes](docs/api-docs/adacovex-class-levels.md) | IEC 62304 Class A - C criteria |
+| [DAL Levels](docs/api-docs/adacovex-dal-levels.md) | DO-178C DAL A to E criteria |
+| [ASIL Levels](docs/api-docs/adacovex-asil-levels.md) | ISO 26262 ASIL A to D / QM criteria |
+| [Safety Classes](docs/api-docs/adacovex-class-levels.md) | IEC 62304 Class A to C criteria |
 | [HLR Index](docs/HLR.md) | High-level requirements traceability index |
 | [LLR Mapping](docs/LLR.md) | Low-level requirement-to-HLR mapping |
 
@@ -108,29 +109,29 @@ itself and `make run-ada-crdt` runs the Ada_CRDT regression.
 | [API Reference](docs/api-docs/index.md) | Auto-generated package API docs (developers / auditors) |
 | [Docstring Spec](docs/api-docs/adacovex-docstring-spec.md) | Annotation format, placement, conventions |
 | [Test Format](docs/api-docs/adacovex-test-format.md) | Supported test-result output format |
-| [SPARK Levels](docs/api-docs/adacovex-spark-levels.md) | Assurance level objectives (Stone--Platinum) |
+| [SPARK Levels](docs/api-docs/adacovex-spark-levels.md) | Assurance level objectives (Stone to Platinum) |
 | [Changelog](docs/changelogs/index.md) | Release history |
 | [CI/CD](docs/ci-cd.md) | GitHub Action, workflows, release bundling |
 | [LLM usage](docs/llm-usage.md) | AI disclosure, trust, how LLM agents work under AGENTS.md |
 
 ## Installing adacovex
 
-Three routes: declare `covex` in your project's `alire-dev.toml`, `alr install
-covex`, or download a release bundle / build from source.
-[Installation](docs/installation.md) covers each in detail, including the
-version source per method and keeping the man page in sync.
+Declare `covex` in your project's `alire-dev.toml`, run `alr install covex`, or
+download a release bundle and build from source.
+[Installation](docs/installation.md) covers each route, including the version
+source per method and the man-page sync.
 
 ## Platforms, toolchain, and VCS
 
-- **Platforms** -- runs anywhere a GNAT/Alire toolchain exists; the release
-  binary is Linux x86-64 only for now (other platforms build from source).
-  [docs/platforms.md](docs/platforms.md)
-- **GNATprove resolution** -- manifest pin > global pin > `$PATH` > cached
-  toolchain > download (a manifest pin is authoritative).
-  [docs/architecture.md](docs/architecture.md#gnatprove-toolchain-resolution-prove-subcommand)
+- **Platforms** -- runs wherever a GNAT/Alire toolchain exists; the release
+  binary is Linux x86-64 only for now (build from source for other platforms).
+  See [docs/platforms.md](docs/platforms.md).
+- **GNATprove resolution** -- manifest pin over global pin over `$PATH` over
+  cached toolchain over download (a manifest pin is authoritative). See
+  [docs/architecture.md](docs/architecture.md#gnatprove-toolchain-resolution-prove-subcommand).
 - **VCS** -- not required for base functionality; only the differential modes
-  need one, and they work across git, hg, svn, fossil, and jj.
-  [docs/vcs.md](docs/vcs.md)
+  need one, and they work across git, hg, svn, fossil, and jj. See
+  [docs/vcs.md](docs/vcs.md).
 
 ## CLI reference
 
@@ -144,10 +145,10 @@ adacovex man [--check|--force] [--dir=PATH]
 adacovex complexity [--target=PATH]
 ```
 
-The full flag table (defaults, modes, `--require-*` CI gates, strict vs
-relaxed mode, exit codes, contextual `help [TOPIC]`, and the `man`
-subcommand) lives in [docs/cli-reference.md](docs/cli-reference.md). The web
-dashboard + JSON API: [docs/dashboard.md](docs/dashboard.md).
+The full flag table (defaults, modes, `--require-*` CI gates, strict vs relaxed
+mode, exit codes, contextual `help [TOPIC]`, and the `man` subcommand) lives in
+[docs/cli-reference.md](docs/cli-reference.md). The web dashboard and JSON API
+are in [docs/dashboard.md](docs/dashboard.md).
 
 ## Examples
 
@@ -167,33 +168,32 @@ More examples: [docs/cli-reference.md](docs/cli-reference.md#examples).
 ## Target project requirements
 
 To run adacovex against a project it needs Ada sources, GNATprove output
-(`gnatprove.out`), a test-summary file, and (for DAL assessment) an
-`HLR.md` document. Missing data shows `N/A`; DAL checks that depend on it
-report `Unmet`. Full requirements, file-discovery rules, and the
-non-Ada-project note: [docs/target-projects.md](docs/target-projects.md).
+(`gnatprove.out`), a test-summary file, and (for DAL assessment) an `HLR.md`
+document. Missing data shows `N/A`; DAL checks that depend on it report
+`Unmet`. Full requirements, file-discovery rules, and the non-Ada-project note:
+[docs/target-projects.md](docs/target-projects.md).
 
 ## Docstrings and patches
 
 Subprograms are documented with `--  @param` / `--  @return` annotations
 ([full spec](docs/api-docs/adacovex-docstring-spec.md)); strict mode requires
 100% coverage. For vendored code you cannot modify, overlay docstrings with
-patch files at `<target>/.adacovex/patches/` -- see
-[Architecture -- Patch System](docs/architecture.md#patch-system).
+patch files at `<target>/.adacovex/patches/` (see
+[Architecture -- Patch System](docs/architecture.md#patch-system)).
 
 The same patch files can carry **SPARK proof aspects** (`SPARK_Mode`, `Pre`,
-`Post`, `Global`): the `prove` subcommand merges them into a patched tree
-copy and proves vendored dependencies against their contracts without
-touching the originals -- a `.ads` patch re-declares the spec with
-contracts, and a `.adb` patch opts a SPARK-clean vendored body into the
-proof. See
+`Post`, `Global`): the `prove` subcommand merges them into a patched tree copy
+and proves vendored dependencies against their contracts without touching the
+originals. A `.ads` patch re-declares the spec with contracts. A `.adb` patch
+opts a SPARK-clean vendored body into the proof. See
 [Architecture -- Proof patches](docs/architecture.md#proof-patches-spark-contracts-over-vendored-dependencies).
 
 ## Compliance levels
 
-The same evidence (proof level, passing tests, HLR traceability) is
-re-labelled for three functionally-equivalent safety standards. Pick a level
-with a standard's own naming, or `--standard=all` to run one assessment at
-the shared tier and emit badges for all three:
+The same evidence (proof level, passing tests, HLR traceability) is re-labelled
+for three functionally-equivalent safety standards. Pick a level with a
+standard's own naming, or pass `--standard=all` to run one assessment at the
+shared tier and emit badges for all three:
 
 | Standard | Level flag | Levels | Example |
 |----------|-----------|--------|---------|
@@ -201,19 +201,25 @@ the shared tier and emit badges for all three:
 | ISO 26262 (automotive) | `--asil=` | A, B, C, D, QM | `--asil=B` = ASIL B |
 | IEC 62304 (medical) | `--class=` | A, B, C | `--class=A` = Class A |
 
-The evidence is identical across standards -- only the integrity-level label
-changes (`DAL-C` vs `ASIL B` vs `Class A`). Full tier mapping:
-[Standards](docs/standards.md); per-level criteria:
+The evidence is identical across standards; only the integrity-level label
+changes (`DAL-C` vs `ASIL B` vs `Class A`).
+
+Full tier mapping:
+[Standards](docs/standards.md).
+
+Per-level criteria:
 [DAL Levels](docs/api-docs/adacovex-dal-levels.md),
 [ASIL Levels](docs/api-docs/adacovex-asil-levels.md), and
 [Safety Classes](docs/api-docs/adacovex-class-levels.md).
 
 ## Development
 
-`make check` runs the full quality gate (cheap static gates first, then build
-+ test + prove + doc + sbom, then tree-wide count-sync checks); other targets
+`make check` runs the full quality gate (cheap static gates first, then build,
+test, prove, doc, sbom, then tree-wide count-sync checks). Other targets
 include `build`, `test`, `prove`, `doc`, `sbom`, `fmt`, `run-self`,
-`run-ada-crdt`, `bump-version`, `release`, and `clean`. Run `make help` or see
+`run-ada-crdt`, `bump-version`, `release`, and `clean`.
+
+Run `make help` or see
 [AGENTS.md](AGENTS.md) for the full table. AI tools were used during
 development; why the code is still trustworthy:
 [docs/llm-usage.md](docs/llm-usage.md).
@@ -222,8 +228,9 @@ development; why the code is still trustworthy:
 
 A composite GitHub Action (`./action.yml`) plus `ci.yml`, `pr-check.yml`, and
 `release.yml` workflows cover the `--standard=all` self-assessment, the native
-test suite, the PR docstring-coverage gate, and releases. Action
-inputs/outputs, result caching, and release bundling:
+test suite, the PR docstring-coverage gate, and releases.
+
+Action inputs/outputs, result caching, and release bundling:
 [docs/ci-cd.md](docs/ci-cd.md).
 
 ## Verification
@@ -242,9 +249,8 @@ See [changelogs](docs/changelogs/index.md) for full release notes.
 - **Alire** >= 2.0
 - **GNAT** Ada compiler (managed by Alire)
 - **Python 3** (build/dev tooling only: `tools/*.py` are pure-stdlib and drive
-  version generation, description sync, test/proof doc sync, changelog
-  checks, and the architecture tree -- the adacovex binary itself has no
-  Python dependency)
+  version generation, description sync, test/proof doc sync, changelog checks,
+  and the architecture tree; the adacovex binary itself has no Python dependency)
 - **GNATprove** (optional; resolved at run time by `prove` -- no declared dependency)
 - **gnatpp** / **gnatdoc** (optional, for fmt/doc targets)
 
@@ -259,8 +265,8 @@ for Alire-managed and system-installed GNAT LLVM options and caveats.
 - **[setup-alire](https://github.com/alire-project/setup-alire)** GitHub Action (used in CI)
 - **[CycloneDX](https://github.com/CycloneDX/specification)** SBOM specification (CycloneDX 1.5 JSON output)
 - **[SPDX](https://spdx.dev)** Software Package Data Exchange specification (SPDX 2.3 JSON output)
-- **[charts.css](https://github.com/ChartsCSS/charts.css/)**: Open source CSS framework for data visualisation
-- **[Playwright](https://github.com/microsoft/playwright)** End-to-end browser testing (dashboard layout tests)
+- **[charts.css](https://github.com/ChartsCSS/charts.css/)**: open-source CSS framework for data visualisation
+- **[Playwright](https://github.com/microsoft/playwright)** end-to-end browser testing (dashboard layout tests)
 
 ## License
 

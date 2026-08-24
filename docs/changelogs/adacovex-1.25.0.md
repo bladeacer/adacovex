@@ -2,7 +2,7 @@
 
 Date: _2026-08-24_
 
-Version bumped 1.23.0 -> 1.25.0.
+Version bumped 1.24.0 -> 1.25.0.
 
 ## Changes
 

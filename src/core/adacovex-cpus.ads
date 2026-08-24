@@ -1,9 +1,9 @@
 --  Host CPU / parallelism helpers for adacovex.
---  Detects the number of logical CPUs across the platforms Alire supports
---  (Linux, macOS, FreeBSD, and Windows) using only the GNAT runtime, so the
---  crate stays zero-dependency.  Also resolves the default GNATprove job
---  count: leave two cores free for system responsiveness on a developer
---  machine, but use every core inside CI.
+--  It detects the number of logical CPUs.  It supports the platforms that
+--  Alire supports: Linux, macOS, FreeBSD, and Windows.  It uses only the
+--  GNAT runtime, so the crate keeps no dependencies.  It also resolves the
+--  default GNATprove job count.  On a developer machine it leaves two cores
+--  free for system responsiveness.  Inside CI it uses every core.
 --  HLR-CPU: Cross-platform CPU core detection
 
 package Adacovex.CPUs is
@@ -15,17 +15,18 @@ package Adacovex.CPUs is
    --    * Linux fallback:   `nproc`
    --    * Windows:          NUMBER_OF_PROCESSORS env var, then
    --                        `powershell Get-CimInstance ... NumberOfLogicalProcessors`
-   --  Any failure at a stage falls through to the next; exhausts to 1.
+   --  Any failure at a stage moves to the next stage.  If every stage fails,
+   --  the result is 1.
    --  @return Logical CPU count (>= 1).
    function Detect_Core_Count return Natural;
 
-   --  True when adacovex is running under a known CI environment.  Detects the
+   --  True when adacovex is running in a known CI environment.  It detects the
    --  markers set by GitHub Actions, GitLab CI, Azure Pipelines, Buildkite,
    --  CircleCI, Travis CI, and generic CI runners (the `CI` variable).
    --  @return True when running inside CI.
    function Is_Running_In_CI return Boolean;
 
-   --  Resolve the GNATprove parallelism to use for a run.
+   --  Resolve the GNATprove parallelism to use for one run.
    --  * Configured < 0  -> auto default (see Default_Prove_Jobs)
    --  * Configured = 0  -> all cores (gnatprove -j0)
    --  * Configured > 0  -> that many jobs
@@ -35,20 +36,22 @@ package Adacovex.CPUs is
    function Resolve_Jobs
      (Configured : Integer; In_CI : Boolean) return Natural;
 
-   --  Portable system temp directory.  Checks TMPDIR, TEMP, TMP (in that
-   --  order) and falls back to "/tmp".  Reads Ada.Environment_Variables,
-   --  which is outside the SPARK subset, so this stays SPARK_Mode Off.
+   --  Portable system temp directory.  It checks TMPDIR, TEMP, TMP (in that
+   --  order) and falls back to "/tmp".  It reads Ada.Environment_Variables.
+   --  This package is outside the SPARK subset, so this function stays
+   --  SPARK_Mode Off.
    function Get_Temp_Directory return String
    with SPARK_Mode => Off;
 
-   --  Default shell executable for spawned commands.  Pure: returns the
-   --  constant "sh", so it is SPARK_Mode On with no global state.
+   --  Default shell executable for spawned commands.  It is a pure function.
+   --  It returns the constant "sh".  It is SPARK_Mode On with no global state.
    function Get_Shell_Command return String
    with SPARK_Mode => On, Global => null;
 
-   --  The auto default: all cores in CI, otherwise max(1, cores - 2) to keep
-   --  the developer machine responsive.  Pass the already-detected core count
-   --  so callers can print the basis for the choice.
+   --  The auto default.  In CI it uses all cores.  Otherwise it uses
+   --  max(1, cores - 2) so the developer machine stays responsive.  Pass the
+   --  already-detected core count.  Callers can then print the basis for the
+   --  choice.
    --  @param Cores  Detected logical CPU count.
    --  @param In_CI  Whether the run is inside CI.
    --  @return Default job count.
@@ -79,8 +82,9 @@ package Adacovex.CPUs is
 private
 
    --  Run a shell command and capture its first stdout line into Out_Line.
-   --  Uses GNAT.OS_Lib to redirect to a temp file; the temp file is removed
-   --  afterwards.  Ok is False when the spawn fails or produces no output.
+   --  It uses GNAT.OS_Lib to redirect to a temp file.  The temp file is
+   --  removed afterwards.  Ok is False when the spawn fails or produces no
+   --  output.
    procedure Run_Capture
      (Cmd      : String;
       Out_Line : out String;
