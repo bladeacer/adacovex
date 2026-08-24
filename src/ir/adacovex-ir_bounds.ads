@@ -2,9 +2,10 @@ with Adacovex.Target_Profiles;
 
 --  Bounds-verification fixture for IR synthesis.
 --  A synthesized-style module whose declaration lines match the output of
---  Adacovex.IR_Synthesiser.Lower_Type_Name for int32_t / int64_t.  The
---  checked-arithmetic functions operate on the bounded IR types, and
---  gnatprove proves absence of integer overflow on their overflow checks.
+--  Adacovex.IR_Synthesiser.Lower_Type_Name for int32_t / int64_t.
+--  The checked-arithmetic functions operate on the bounded IR types.
+--  gnatprove proves absence of integer overflow on the overflow checks of
+--  those functions.
 --  HLR-IR: IR bounds verification
 
 package Adacovex.IR_Bounds is
@@ -27,8 +28,8 @@ package Adacovex.IR_Bounds is
        A in int32_t'First / 2 .. int32_t'Last / 2
        and then B in int32_t'First / 2 .. int32_t'Last / 2;
 
-   --  Bounds-checked addition on the lowered 64-bit type, analogous to
-   --  Add32.
+--  Bounds-checked addition on the lowered 64-bit type.  It is the 64-bit
+--  equivalent of Add32.
    --  @param A  First operand.
    --  @param B  Second operand.
    --  @return The sum of A and B.

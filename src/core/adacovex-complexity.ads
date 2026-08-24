@@ -1,7 +1,8 @@
 --  Cyclomatic complexity checker for Ada source files.
---  Scans a target directory for .ads/.adb files, computes per-file and
---  per-subprogram cyclomatic complexity, and enforces configurable LOC
---  and complexity gates.  Native Ada implementation (zero external deps).
+--  It scans a target directory for .ads/.adb files.  It computes per-file
+--  and per-subprogram cyclomatic complexity.  It enforces configurable
+--  LOC and complexity gates.  The implementation is native Ada with no
+--  external dependencies.
 --  HLR-COMPLEXITY: Cyclomatic complexity analysis
 --
 with Ada.Containers.Vectors;
@@ -51,13 +52,13 @@ package Adacovex.Complexity is
       Violations : Violation_Vectors.Vector;
    end record;
 
-   --  Scan Target_Dir for Ada source files and return per-file and per-
-   --  subprogram cyclomatic complexity metrics.
+   --  Scan Target_Dir for Ada source files.  Return per-file and per-subprogram
+   --  cyclomatic complexity metrics.
    --  @brief Walk Target_Dir and compute complexity for every .ads/.adb file.
    function Analyze_Project (Target_Dir : String) return Complexity_Result;
 
-   --  Evaluate Result against the supplied thresholds and return the list of
-   --  violations (empty when every gate passes).
+   --  Evaluate Result against the supplied thresholds.  Return the list of
+   --  violations.  The list is empty when every gate passes.
    --  @brief Check Result against Max_File_LOC, Max_File_Pct, Max_Fn_Complexity, and Max_File_Complexity.
    function Check_Gates
      (Result              : Complexity_Result;
@@ -66,9 +67,9 @@ package Adacovex.Complexity is
       Max_Fn_Complexity   : Natural;
       Max_File_Complexity : Natural) return Violation_Vectors.Vector;
 
-   --  Emit a human-readable report to stdout.  When Check_Mode is True the
-   --  output is gated on Violations being non-empty; otherwise every file
-   --  and subprogram is always printed.
+   --  Emit a human-readable report to stdout.  When Check_Mode is True, the
+   --  output shows only when Violations is not empty.  Otherwise every file
+   --  and subprogram is printed.
    --  @brief Print a human-readable complexity report to stdout.
    procedure Print_Report
      (Result              : Complexity_Result;
