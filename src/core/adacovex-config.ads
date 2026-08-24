@@ -65,36 +65,36 @@ package Adacovex.Config is
       --  on the flag list instead of a bare one-line error.
       Unknown_No_Suggest : Boolean := False;
 
-      Help_Requested       : Boolean := False;
-      Help_Topic           : String (1 .. Types.Max_Path);
-      Help_Topic_Len       : Natural := 0;
-      Version_Requested    : Boolean := False;
-      Man_Mode             : Boolean := False;
-      Man_Check            : Boolean := False;
-      Man_Force            : Boolean := False;
-      Man_Dir              : String (1 .. Types.Max_Path);
-      Man_Dir_Len          : Natural := 0;
-      Skip_Dir_Ct          : Natural := 0;
-      Skip_Dirs            : Types.Name_Field;
-      Compare_Base         : String (1 .. Types.Max_Path);
-      Compare_Base_Len     : Natural := 0;
-      Coverage_Delta       : String (1 .. Types.Max_Path);
-      Coverage_Delta_Len   : Natural := 0;
-      Prove_Mode           : Boolean := False;
-      Complexity_Mode      : Boolean := False;
-      Status_Mode          : Boolean := False;
+      Help_Requested     : Boolean := False;
+      Help_Topic         : String (1 .. Types.Max_Path);
+      Help_Topic_Len     : Natural := 0;
+      Version_Requested  : Boolean := False;
+      Man_Mode           : Boolean := False;
+      Man_Check          : Boolean := False;
+      Man_Force          : Boolean := False;
+      Man_Dir            : String (1 .. Types.Max_Path);
+      Man_Dir_Len        : Natural := 0;
+      Skip_Dir_Ct        : Natural := 0;
+      Skip_Dirs          : Types.Name_Field;
+      Compare_Base       : String (1 .. Types.Max_Path);
+      Compare_Base_Len   : Natural := 0;
+      Coverage_Delta     : String (1 .. Types.Max_Path);
+      Coverage_Delta_Len : Natural := 0;
+      Prove_Mode         : Boolean := False;
+      Complexity_Mode    : Boolean := False;
+      Status_Mode        : Boolean := False;
 
       --  True when `status --export[=PATH]` was given: the status report is
       --  written as machine-readable JSON to PATH (or stdout when no path
       --  is supplied) instead of the human-readable text report.
-      Status_Export         : Boolean := False;
-      Status_Export_Path    : String (1 .. Types.Max_Path);
+      Status_Export          : Boolean := False;
+      Status_Export_Path     : String (1 .. Types.Max_Path);
       Status_Export_Path_Len : Natural := 0;
 
       --  True when `status --metrics` was given: the status report is
       --  printed as a compact key=value metrics summary (one per line) so
       --  shell scripts and CI can consume it without parsing prose.
-      Status_Metrics        : Boolean := False;
+      Status_Metrics       : Boolean := False;
       Completion_Mode      : Boolean := False;
       Completion_Shell     : String (1 .. Types.Max_Filename);
       Completion_Shell_Len : Natural := 0;

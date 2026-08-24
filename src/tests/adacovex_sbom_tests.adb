@@ -861,6 +861,98 @@ package body Adacovex_SBOM_Tests is
             > 0,
             "mixlib summary lists JavaScript");
       end;
+      --  Markdown SBOM rendering.
+      declare
+         Graph   : Component_Vectors.Vector;
+         Success : Boolean := False;
+         S       : constant String := "obj/sbom_test/compliance.md";
+      begin
+         Make_Demo_Graph (Graph);
+         Write_SBOM
+           (Markdown, S, Graph, "Platinum", DO_178C, DAL_C, False, Success);
+         R.Check (Success, "markdown written");
+         declare
+            T : constant String := Read_All (S);
+         begin
+            R.Check (Contains (T, "DO-178C"), "md standard header");
+            R.Check (Contains (T, "DAL-C"), "md level value");
+            R.Check (Contains (T, "Platinum"), "md proof level");
+            R.Check (Contains (T, "| Component |"), "md table header");
+         end;
+      end;
+
+      --  Extension_Language: direct unit tests for supported language/format
+      --  detection across the full extension table.
+      declare
+         function EL (Name : String) return String is
+         begin
+            return Adacovex.Parsers.Manifest.Extension_Language (Name);
+         end EL;
+      begin
+         R.Check (EL ("main.ads") = "Ada", "ads -> Ada");
+         R.Check (EL ("main.adb") = "Ada", "adb -> Ada");
+         R.Check (EL ("main.ada") = "Ada", "ada -> Ada");
+         R.Check (EL ("demo.gpr") = "Ada", "gpr -> Ada");
+         R.Check (EL ("app.js") = "JavaScript", "js -> JavaScript");
+         R.Check (EL ("app.mjs") = "JavaScript", "mjs -> JavaScript");
+         R.Check (EL ("app.cjs") = "JavaScript", "cjs -> JavaScript");
+         R.Check (EL ("app.ts") = "TypeScript", "ts -> TypeScript");
+         R.Check (EL ("app.tsx") = "TypeScript", "tsx -> TypeScript");
+         R.Check (EL ("style.css") = "CSS", "css -> CSS");
+         R.Check (EL ("page.html") = "HTML", "html -> HTML");
+         R.Check (EL ("page.htm") = "HTML", "htm -> HTML");
+         R.Check (EL ("script.py") = "Python", "py -> Python");
+         R.Check (EL ("main.go") = "Go", "go -> Go");
+         R.Check (EL ("main.rs") = "Rust", "rs -> Rust");
+         R.Check (EL ("main.c") = "C", "c -> C");
+         R.Check (EL ("main.h") = "C", "h -> C");
+         R.Check (EL ("main.cpp") = "C++", "cpp -> C++");
+         R.Check (EL ("main.cc") = "C++", "cc -> C++");
+         R.Check (EL ("main.cxx") = "C++", "cxx -> C++");
+         R.Check (EL ("main.hpp") = "C++", "hpp -> C++");
+         R.Check (EL ("main.hh") = "C++", "hh -> C++");
+         R.Check (EL ("main.hxx") = "C++", "hxx -> C++");
+         R.Check (EL ("main.cs") = "C#", "cs -> C#");
+         R.Check (EL ("Main.java") = "Java", "java -> Java");
+         R.Check (EL ("app.rb") = "Ruby", "rb -> Ruby");
+         R.Check (EL ("app.php") = "PHP", "php -> PHP");
+         R.Check (EL ("main.swift") = "Swift", "swift -> Swift");
+         R.Check (EL ("main.kt") = "Kotlin", "kt -> Kotlin");
+         R.Check (EL ("main.kts") = "Kotlin", "kts -> Kotlin");
+         R.Check (EL ("main.scala") = "Scala", "scala -> Scala");
+         R.Check (EL ("main.ml") = "OCaml", "ml -> OCaml");
+         R.Check (EL ("main.mli") = "OCaml", "mli -> OCaml");
+         R.Check (EL ("script.lua") = "Lua", "lua -> Lua");
+         R.Check (EL ("script.pl") = "Perl", "pl -> Perl");
+         R.Check (EL ("main.hs") = "Haskell", "hs -> Haskell");
+         R.Check (EL ("main.ex") = "Elixir", "ex -> Elixir");
+         R.Check (EL ("main.exs") = "Elixir", "exs -> Elixir");
+         R.Check (EL ("main.erl") = "Erlang", "erl -> Erlang");
+         R.Check (EL ("main.hrl") = "Erlang", "hrl -> Erlang");
+         R.Check (EL ("main.clj") = "Clojure", "clj -> Clojure");
+         R.Check (EL ("main.cljs") = "Clojure", "cljs -> Clojure");
+         R.Check (EL ("main.dart") = "Dart", "dart -> Dart");
+         R.Check (EL ("script.sh") = "Shell", "sh -> Shell");
+         R.Check (EL ("script.bash") = "Shell", "bash -> Shell");
+         R.Check (EL ("script.ps1") = "PowerShell", "ps1 -> PowerShell");
+         R.Check (EL ("query.sql") = "SQL", "sql -> SQL");
+         R.Check (EL ("main.f") = "Fortran", "f -> Fortran");
+         R.Check (EL ("main.f90") = "Fortran", "f90 -> Fortran");
+         R.Check (EL ("main.f95") = "Fortran", "f95 -> Fortran");
+         R.Check (EL ("main.f03") = "Fortran", "f03 -> Fortran");
+         R.Check (EL ("main.s") = "Assembly", "s -> Assembly");
+         R.Check (EL ("main.asm") = "Assembly", "asm -> Assembly");
+         R.Check (EL ("script.r") = "R", "r -> R");
+         R.Check (EL ("main.jl") = "Julia", "jl -> Julia");
+         R.Check (EL ("main.zig") = "Zig", "zig -> Zig");
+         R.Check (EL ("main.vhd") = "VHDL", "vhd -> VHDL");
+         R.Check (EL ("main.vhdl") = "VHDL", "vhdl -> VHDL");
+         R.Check (EL ("script.tcl") = "Tcl", "tcl -> Tcl");
+         R.Check (EL ("noext") = "", "no extension -> empty");
+         R.Check (EL ("noext.") = "", "trailing dot -> empty");
+         R.Check (EL (".hidden") = "", "hidden no-name -> empty");
+         R.Check (EL ("a.unknown") = "", "unknown extension -> empty");
+      end;
    end Run;
 
 end Adacovex_SBOM_Tests;

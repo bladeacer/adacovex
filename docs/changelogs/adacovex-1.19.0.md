@@ -104,8 +104,7 @@ current build: 7.1 MiB, 3.1 MiB stripped (-57%).
 
 ### C6: cyclomatic-complexity gate -- no god objects
 
-New `make complexity-check` static gate
-([tools/check-complexity.py](../../tools/check-complexity.py)), wired into
+New `make complexity-check` static gate (native Ada implementation), wired into
 `make check`, `ci.yml`, `pr-check.yml`, and `release.yml`:
 
 - per-file source LOC cap (2000) and a **percentage-of-codebase cap** (10%)

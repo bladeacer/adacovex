@@ -27,7 +27,7 @@ HLR-CPU: Cross-platform CPU core detection
 
 **Returns:** Logical CPU count (>= 1).
 
-### function Get_Shell_Command return Standard.String `[SPARK]`
+### function Get_Shell_Command return Standard.String `[Global]` `[SPARK]`
 
 ### function Get_Temp_Directory return Standard.String `[SPARK]`
 

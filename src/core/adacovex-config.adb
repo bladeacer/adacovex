@@ -1346,8 +1346,7 @@ package body Adacovex.Config is
 
       -- --export and --metrics are status-mode output selectors: they only
       -- make sense with the status subcommand.
-      if (Cfg.Status_Export or Cfg.Status_Metrics)
-        and then not Cfg.Status_Mode
+      if (Cfg.Status_Export or Cfg.Status_Metrics) and then not Cfg.Status_Mode
       then
          Set_Error
            (Cfg, "--export and --metrics require the status subcommand");
@@ -1554,8 +1553,7 @@ package body Adacovex.Config is
         ("  --export[=PATH]       With status: write the report as machine-");
       Ada.Text_IO.Put_Line
         ("                        readable JSON to PATH (or stdout when no");
-      Ada.Text_IO.Put_Line
-        ("                        path is given)");
+      Ada.Text_IO.Put_Line ("                        path is given)");
       Ada.Text_IO.Put_Line
         ("  --metrics             With status: print the report as compact");
       Ada.Text_IO.Put_Line
