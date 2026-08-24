@@ -253,8 +253,9 @@ package body Adacovex.CPUs is
       end if;
    end Get_Temp_Directory;
 
-   --  Default shell executable for spawned commands.
-   function Get_Shell_Command return String is
+   --  Default shell executable for spawned commands.  Pure constant
+   --  (SPARK_Mode On per the spec): returns "sh" with no global state.
+   function Get_Shell_Command return String with SPARK_Mode => On is
    begin
       return "sh";
    end Get_Shell_Command;

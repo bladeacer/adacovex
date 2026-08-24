@@ -275,6 +275,14 @@ package body Adacovex.Renderers.Man is
                  "Subcommand: run GNATprove then assess (see --jobs/--level/...).";
             elsif Flag = "status" then
                return "Subcommand: report toolchain + platform status.";
+            elsif Flag = "export" then
+               return
+                 "With status: write the report as JSON to PATH "
+                 & "(or stdout when no path is given).";
+            elsif Flag = "metrics" then
+               return
+                 "With status: print compact key=value metrics "
+                 & "lines for shell scripts.";
             elsif Flag = "completion" then
                return
                  "Subcommand: print shell completion script (bash/fish/zsh/pwsh).";

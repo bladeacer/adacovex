@@ -69,11 +69,21 @@ with an in-memory forward-tokenized index that is hydrated from
 `/__GRAPH_JSON__` at page load. The Apache-2.0 license text is preserved in
 the bundle header comment.
 
+## Development and testing tools
+
+| Component | Version | License | Used for |
+|-----------|---------|---------|----------|
+| Playwright | dev-dependency | Apache-2.0 | End-to-end dashboard layout tests (`make e2e`) |
+
+Playwright (https://github.com/microsoft/playwright) is used as a development
+dependency for automated browser testing of the dashboard. It is not vendored
+or redistributed with adacovex releases.
+
 ## Acknowledgments
 
 - The Ada_CRDT audit target (`../Ada_CRDT`) is used solely as a dogfood target.
-- gnatdoc (for `make doc`), gnatformat (for `make fmt`), and Alire (`alr`)
-  are external tools used during development only.
+- gnatdoc (for `make doc`), gnatformat (for `make fmt`), Alire (`alr`), and
+  Playwright (for `make e2e`) are external tools used during development only.
 
 Full license texts are available at:
 - GPL-3.0-or-later: https://www.gnu.org/licenses/gpl-3.0.html

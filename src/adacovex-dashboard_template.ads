@@ -1425,6 +1425,10 @@ package Adacovex.Dashboard_Template is
   & "target=""_blank"" rel=""noopener"">FlexSearch</a></td><td>0.7.31"
   & " / Apache-2.0</td><td>header search index</td></tr>"
   & ASCII.LF
+  & "<tr><td><a href=""https://github.com/microsoft/playwright"" ta"
+  & "rget=""_blank"" rel=""noopener"">Playwright</a></td><td>dev / Ap"
+  & "ache-2.0</td><td>end-to-end dashboard layout tests</td></tr>"
+  & ASCII.LF
   & "</table>"
   & ASCII.LF
   & "<p style=""color:var(--muted);font-size:.85rem;margin-top:8px"
@@ -6281,25 +6285,92 @@ package Adacovex.Dashboard_Template is
   & "var q=(document.getElementById('dep-filter') ? document.getE"
   & "lementById('dep-filter').value.toLowerCase() : '');"
   & ASCII.LF
-  & "document.querySelectorAll('.dep-node').forEach(function(n){"
+  & "function scopeOk(s){ if(s==='base') return showBase; if(s==="
+  & "'dev') return showDev; if(s==='transitive') return showTrans"
+  & "; if(s==='vendored') return showVend; return true; }"
+  & ASCII.LF
+  & "var nodes=Array.prototype.slice.call(document.querySelectorA"
+  & "ll('.dep-node'));"
+  & ASCII.LF
+  & "var info=new Map();"
+  & ASCII.LF
+  & "nodes.forEach(function(n){"
   & ASCII.LF
   & "var scope=n.getAttribute('data-scope')||'transitive';"
   & ASCII.LF
   & "var name=(n.getAttribute('data-name')||'').toLowerCase();"
   & ASCII.LF
-  & "var ok=true;"
+  & "info.set(n, {scope:scope, match: name.indexOf(q)!==-1});"
   & ASCII.LF
-  & "if(scope==='base' && !showBase) ok=false;"
+  & "});"
   & ASCII.LF
-  & "else if(scope==='dev' && !showDev) ok=false;"
+  & "nodes.slice().reverse().forEach(function(n){"
   & ASCII.LF
-  & "else if(scope==='transitive' && !showTrans) ok=false;"
+  & "var m=info.get(n).match && scopeOk(info.get(n).scope);"
   & ASCII.LF
-  & "else if(scope==='vendored' && !showVend) ok=false;"
+  & "var kids=n.querySelectorAll(':scope > details > ul > .dep-no"
+  & "de');"
   & ASCII.LF
-  & "if(q && name.indexOf(q)===-1) ok=false;"
+  & "kids.forEach(function(k){ var ik=info.get(k); if(ik && ik.ha"
+  & "sMatch) m=true; });"
   & ASCII.LF
-  & "n.style.display= ok ? '' : 'none';"
+  & "info.get(n).hasMatch=m;"
+  & ASCII.LF
+  & "});"
+  & ASCII.LF
+  & "var textFilter=q.length>0;"
+  & ASCII.LF
+  & "if(!window.__depOpenSnap) window.__depOpenSnap=new Map();"
+  & ASCII.LF
+  & "nodes.forEach(function(n){"
+  & ASCII.LF
+  & "var d=n.querySelector(n.tagName==='DETAILS' ? ':scope' : ':s"
+  & "cope > details');"
+  & ASCII.LF
+  & "var open = d ? d.open : false;"
+  & ASCII.LF
+  & "if(window.__depOpenSnap && !window.__depOpenSnap.has(n) && t"
+  & "extFilter){"
+  & ASCII.LF
+  & "window.__depOpenSnap.set(n, open);"
+  & ASCII.LF
+  & "}"
+  & ASCII.LF
+  & "if(!textFilter && window.__depOpenSnap && window.__depOpenSn"
+  & "ap.has(n)){"
+  & ASCII.LF
+  & "if(d) d.open=window.__depOpenSnap.get(n);"
+  & ASCII.LF
+  & "window.__depOpenSnap.delete(n);"
+  & ASCII.LF
+  & "}"
+  & ASCII.LF
+  & "});"
+  & ASCII.LF
+  & "nodes.forEach(function(n){"
+  & ASCII.LF
+  & "var show=info[n].hasMatch && scopeOk(info[n].scope);"
+  & ASCII.LF
+  & "if(!textFilter && !show){"
+  & ASCII.LF
+  & "}"
+  & ASCII.LF
+  & "n.style.display= show ? '' : 'none';"
+  & ASCII.LF
+  & "if(show && textFilter){"
+  & ASCII.LF
+  & "var p=n.parentElement;"
+  & ASCII.LF
+  & "while(p && p.classList && !p.classList.contains('dep-tree'))"
+  & "{"
+  & ASCII.LF
+  & "if(p.tagName==='DETAILS' && !p.open) p.open=true;"
+  & ASCII.LF
+  & "p=p.parentElement;"
+  & ASCII.LF
+  & "}"
+  & ASCII.LF
+  & "}"
   & ASCII.LF
   & "});"
   & ASCII.LF

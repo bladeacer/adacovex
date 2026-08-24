@@ -600,7 +600,25 @@ begin
       declare
          OK : Boolean;
       begin
-         Adacovex.Prove.Run_Status (Target (1 .. TLen), OK);
+         --  status --export[=PATH]: machine-readable JSON report (stdout or
+         --  a file); status --metrics: compact key=value lines for scripts.
+         --  Both share the same gathered data as the human report.
+         if Cfg.Status_Export then
+            Adacovex.Prove.Export_Status
+              (Target (1 .. TLen),
+               Cfg.Status_Export_Path (1 .. Cfg.Status_Export_Path_Len),
+               OK);
+            if not OK then
+               Ada.Text_IO.Put_Line
+                 (Ada.Text_IO.Standard_Error,
+                  "Error: could not write status export to "
+                  & Cfg.Status_Export_Path (1 .. Cfg.Status_Export_Path_Len));
+            end if;
+         elsif Cfg.Status_Metrics then
+            Adacovex.Prove.Run_Status_Metrics (Target (1 .. TLen), OK);
+         else
+            Adacovex.Prove.Run_Status (Target (1 .. TLen), OK);
+         end if;
          Ada.Command_Line.Set_Exit_Status (if OK then 0 else 1);
       end;
       return;
