@@ -8,9 +8,9 @@ with Adacovex.Types;
 
 package Adacovex.Server.HTTP is
 
---  The action that a request path routes to.  The HTTP server serves the
---  dashboard, the JSON API, and the SVG badge endpoints. Every other
---  path returns a 404.
+   --  The action that a request path routes to.  The HTTP server serves the
+   --  dashboard, the JSON API, and the SVG badge endpoints. Every other
+   --  path returns a 404.
    type Route_Kind is
      (Route_Dashboard,
       Route_Badge_SPARK,
@@ -22,12 +22,12 @@ package Adacovex.Server.HTTP is
       Route_API_Deps,
       Route_Not_Found);
 
---  Map a request path to its handler action.
---  Returns the Route_Kind for the given path. The dashboard is at "/".
---  The JSON APIs are at "/api/metrics" and "/api/deps". The SVG badge
---  endpoints are at "/badge/*.svg". Every other path returns Route_Not_Found.
---  Routing is pure path routing. The socket dispatch in Handle_Request
---  switches on the result. The native test suite pins every route.
+   --  Map a request path to its handler action.
+   --  Returns the Route_Kind for the given path. The dashboard is at "/".
+   --  The JSON APIs are at "/api/metrics" and "/api/deps". The SVG badge
+   --  endpoints are at "/badge/*.svg". Every other path returns Route_Not_Found.
+   --  Routing is pure path routing. The socket dispatch in Handle_Request
+   --  switches on the result. The native test suite pins every route.
    --  @param Path  Request path (as extracted by Get_Path).
    --  @return Route_Kind for the path.
    function Route (Path : String) return Route_Kind
@@ -61,11 +61,11 @@ package Adacovex.Server.HTTP is
       Theme         : Types.Dashboard_Theme := Types.System_Theme;
    end record;
 
---  Start the HTTP server (runs until Ctrl+C or socket error).
---  The server creates a bounded task pool of 4 workers for concurrent
---  request handling. It supports HTTP/1.1 keep-alive. The server binds to
---  the configured port. It serves the HTML dashboard, the JSON API, and
---  the SVG badge endpoints.
+   --  Start the HTTP server (runs until Ctrl+C or socket error).
+   --  The server creates a bounded task pool of 4 workers for concurrent
+   --  request handling. It supports HTTP/1.1 keep-alive. The server binds to
+   --  the configured port. It serves the HTML dashboard, the JSON API, and
+   --  the SVG badge endpoints.
    --  @param State  Server configuration and metric data.
    procedure Start (State : Server_State)
    with Pre => State.Port > 0;

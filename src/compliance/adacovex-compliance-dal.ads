@@ -16,10 +16,10 @@ package Adacovex.Compliance.DAL is
 
    use type Types.DAL_Level;
 
---  Run DAL compliance assessment for any DAL level (A-E).
---  Evaluates HLR trace coverage, orphan tag absence, test pass rate,
---  and minimum SPARK proof level (per-level criteria). The routine
---  populates Assessment with pass/fail results and detailed failure reasons.
+   --  Run DAL compliance assessment for any DAL level (A-E).
+   --  Evaluates HLR trace coverage, orphan tag absence, test pass rate,
+   --  and minimum SPARK proof level (per-level criteria). The routine
+   --  populates Assessment with pass/fail results and detailed failure reasons.
    --  @param Level  Target DAL level (A-E).
    --  @param Target_Dir  Project root directory.
    --  @param Packages  Scanned package vector.
@@ -38,8 +38,8 @@ package Adacovex.Compliance.DAL is
       Assessment    : out Types.Implementation.DAL_Assessment;
       Use_Cache     : Boolean := False);
 
---  Convenience test: if Assessment.Status = Achieved, return True.
---  Equivalent to Assessment.Status = DAL_Status'Val (0).
+   --  Convenience test: if Assessment.Status = Achieved, return True.
+   --  Equivalent to Assessment.Status = DAL_Status'Val (0).
    --  @param Assessment  DAL assessment record.
    --  @return True if Assessment.Status = Achieved.
    function Is_DAL_Achieved
@@ -56,8 +56,8 @@ package Adacovex.Compliance.DAL is
      Post       => Min_SPARK_For'Result in Types.Stone .. Types.Gold,
      Global     => null;
 
---  Returns True when the DAL level requires a passing test suite. Only
---  DAL-E does not need the test criterion.
+   --  Returns True when the DAL level requires a passing test suite. Only
+   --  DAL-E does not need the test criterion.
    --  @param Level  Target DAL level (A-E).
    --  @return True unless Level is DAL-E.
    function Need_Tests (Level : Types.DAL_Level) return Boolean
@@ -66,10 +66,10 @@ package Adacovex.Compliance.DAL is
      Post       => Need_Tests'Result = not (Level = Types.DAL_E),
      Global     => null;
 
---  Run a standard-aware assessment. The routine delegates to Assess_DAL.
---  The evidence checks are identical across DO-178C, ISO 26262, and
---  IEC 62304. It then records the standard of the level label. Renderers
---  can then print "ASIL B" or "Class A" instead of "DAL C".
+   --  Run a standard-aware assessment. The routine delegates to Assess_DAL.
+   --  The evidence checks are identical across DO-178C, ISO 26262, and
+   --  IEC 62304. It then records the standard of the level label. Renderers
+   --  can then print "ASIL B" or "Class A" instead of "DAL C".
    --  @param Standard  Compliance standard (DO_178C, ISO_26262, IEC_62304).
    --  @param Level  Rigor tier (reused DAL level A-E).
    --  @param Target_Dir  Project root directory.

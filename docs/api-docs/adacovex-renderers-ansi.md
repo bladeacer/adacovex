@@ -23,4 +23,4 @@ HLR-RENDER-ANSI: ANSI rendering
 | `Packages` | Scanned package vector. |
 | `Proof` | GNATprove proof summary. |
 | `Tests` | Test result summary. |
-| `Use_Color` | Enable ANSI color output (default False). |
+| `Use_Color` | Enable ANSI colour output (default False). |

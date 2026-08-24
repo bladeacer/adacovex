@@ -256,18 +256,17 @@ complexity-check: build
 
 ascii-check:
 	@echo "=== ASCII Charset Verification ==="; \
-	error=0; \
-	for ext in ads adb md py toml gpr; do \
-	files=$$(find . -name "*.$$ext" -not -path "./.git/*" -not -path "./alire/*" -not -path "./obj/*" -not -path "*/node_modules/*" 2>/dev/null); \
-	  for f in $$files; do \
-	    if LC_ALL=C grep -q '[^ -~	]' "$$f" 2>/dev/null; then \
-	      echo "  NON-ASCII: $$f"; \
-	      error=$$((error + 1)); \
-	    fi; \
-	  done; \
-	done; \
-	if [ $$error -eq 0 ]; then echo "All source files are pure ASCII."; \
-	else echo "$$error file(s) contain non-ASCII characters."; exit 1; fi
+	bad=$$(LC_ALL=C grep -rIlP --include='*.ads' --include='*.adb' --include='*.md' --include='*.py' --include='*.toml' --include='*.gpr' \
+	  --exclude-dir='.git' --exclude-dir='alire' --exclude-dir='obj' --exclude-dir='skills' --exclude-dir='node_modules' \
+	  '[^\x20-\x7E\t]' . 2>/dev/null || true); \
+	if [ -z "$$bad" ]; then \
+	  echo "All source files are pure ASCII."; \
+	else \
+	  n=$$(printf '%s\n' "$$bad" | sed '/^$$/d' | wc -l); \
+	  printf '%s\n' "$$bad" | sed 's/^/  NON-ASCII: /'; \
+	  echo "$$n file(s) contain non-ASCII characters."; \
+	  exit 1; \
+	fi
 
 # Quality gate: no `SPARK_Mode (Off)` may appear anywhere in src/ except the
 # `Types.Implementation` container package and the `Complexity` checker package --

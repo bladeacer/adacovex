@@ -286,7 +286,7 @@ package body Adacovex.Config is
       return Natural'Min (Row (BLen), 99);
    end Edit_Distance;
 
-   --  Normalize an unknown argument into a comparable flag name: strip a
+   --  Normalise an unknown argument into a comparable flag name: strip a
    --  leading "--", drop any "=value" suffix, lowercase it.
    procedure Normalize_Flag
      (S : String; Out_Buf : out String; Out_Len : out Natural)
@@ -1437,7 +1437,7 @@ package body Adacovex.Config is
                CD : constant String := Ada.Directories.Current_Directory;
                AP : constant String := CD & "/" & Raw;
             begin
-               -- Normalize a trailing "/." (e.g. "--target=.") to the
+               -- Normalise a trailing "/." (e.g. "--target=.") to the
                -- plain directory so display paths stay clean.
                if AP'Length >= 2 and then AP (AP'Last - 1 .. AP'Last) = "/."
                then

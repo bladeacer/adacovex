@@ -1,6 +1,6 @@
 name = "covex"
 description = "Ada/SPARK coverage, proof, multi-standard compliance tool"
-version = "1.25.0"
+version = "1.26.0"
 project-files = ["adacovex.gpr"]
 # When a consumer declares covex as a dependency, auto-with this project so the
 # adacovex executable is compiled into the consumer build (producing bin/adacovex

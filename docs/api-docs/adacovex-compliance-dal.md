@@ -2,8 +2,8 @@
 
 Run DAL compliance assessment for any DAL level (A-E).
 Evaluates HLR trace coverage, orphan tag absence, test pass rate,
-and minimum SPARK proof level (per-level criteria). Populates
-Assessment with pass/fail results and detailed failure reasons.
+and minimum SPARK proof level (per-level criteria). The routine
+populates Assessment with pass/fail results and detailed failure reasons.
 @param Level  Target DAL level (A-E).
 @param Target_Dir  Project root directory.
 @param Packages  Scanned package vector.
@@ -34,7 +34,7 @@ re-parsed (--no-cache).
 |-----------|-------------|
 | `Level` | Target DAL level (A-E). |
 
-**Returns:** The minimum SPARK level that satisfies the level's criteria.
+**Returns:** The minimum SPARK level that satisfies the criteria of the level.
 
 ### function Need_Tests (Level : Adacovex.Types.DAL_Level) return Standard.Boolean `[Post]` `[Global]` `[SPARK]`
 

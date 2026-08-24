@@ -1,6 +1,6 @@
 # Adacovex.IR_Bounds
 
-Lowered 32-bit signed type (synthesized declaration).
+Lowered 32-bit signed type (synthesised declaration).
 
 > **Note:** All items in this package are public.
 

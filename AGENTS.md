@@ -404,8 +404,8 @@ suffices.
 - [Architecture](docs/architecture.md)
 - [HLR index](docs/HLR.md)
 - [LLR mapping](docs/LLR.md)
- - [Performance](docs/perf.md)
- <!-- doc-links:end -->
+- [Performance](docs/perf.md)
+<!-- doc-links:end -->
 
 ## Technical writing
 

@@ -15,7 +15,7 @@ Encode X into a blob string suitable for Store.
 | `S` | Blob string. |
 | `X` | Decoded value. |
 
-**Returns:** True on success; False on malformed input.
+**Returns:** True on success.  False on malformed input.
 
 ### function Serialize (X : Adacovex.Cache.Serialization.T) return Standard.String
 

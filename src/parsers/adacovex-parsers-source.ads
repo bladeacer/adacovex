@@ -22,7 +22,7 @@ with Adacovex.Types;
 --    Alignment: Two spaces between tag name and description text.
 --    Placement: Summary lines first, then tag lines, then declaration.
 --
---  Other standard comment styles are also recognized as docstrings:
+--  Other standard comment styles are also recognised as docstrings:
 --    --  one-line summary (single space, `-- `)
 --    --  one-line summary (two spaces, `--  `)
 --    --  one-line summary (tab separator)

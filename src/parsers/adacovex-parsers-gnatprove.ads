@@ -38,7 +38,7 @@ package Adacovex.Parsers.GNATprove is
 
    --  Return the path of the first existing GNATprove output file under
    --  Target_Dir, or "" if none is present.  Used by the result cache to key
-   --  a cached proof summary to the exact artifact analyzed.
+   --  a cached proof summary to the exact artifact analysed.
    --  @param Target_Dir  Root directory to inspect.
    --  @return Path to a discovered gnatprove.out, or "".
    function Find_Prove_Output (Target_Dir : String) return String

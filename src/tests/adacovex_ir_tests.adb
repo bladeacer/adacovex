@@ -86,7 +86,7 @@ package body Adacovex_IR_Tests is
          and then IR_Type_Name ("INT32_T", Cfg64) = "",
          "Test 6: unrecognized / case-mismatched names are empty");
 
-      --  Test 7: Lower_Type_Name synthesized declarations.
+      --  Test 7: Lower_Type_Name synthesised declarations.
       R.Check
         (Lower_Type_Name ("int32_t", Cfg64)
          = "type int32_t is new Adacovex.Target_Profiles.IR_Int32;",
@@ -133,7 +133,7 @@ package body Adacovex_IR_Tests is
         (Adacovex.Target_Profiles.Checked_Add64 (2**40, 2**40) = 2**41,
          "Test 9: Checked_Add64 sum");
 
-      --  Test 10: IR_Bounds fixture (synthesized-style lowered types).
+      --  Test 10: IR_Bounds fixture (synthesised-style lowered types).
       R.Check
         (Adacovex.IR_Bounds.int32_t'First = -2**31
          and then Adacovex.IR_Bounds.int32_t'Last = 2**31 - 1,

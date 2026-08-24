@@ -27,7 +27,7 @@ package body Adacovex.Prove is
       end if;
    end Home_Dir;
 
-   --  Normalize a trailing '/' off a directory path.
+   --  Normalise a trailing '/' off a directory path.
    function Strip_Trailing_Slash (S : String) return String is
    begin
       if S'Length > 1 and then S (S'Last) = '/' then
@@ -1158,7 +1158,7 @@ package body Adacovex.Prove is
       --  against the copy's root project.  The copy lives under the
       --  target's obj/ (excluded from scanning and hashing) and preserves
       --  the original project structure exactly, so the target's own units
-      --  analyze identically -- only the patched vendored specs differ.
+      --  analyse identically -- only the patched vendored specs differ.
       --  A target with no proof patches is proved against its own tree as
       --  before.
       declare

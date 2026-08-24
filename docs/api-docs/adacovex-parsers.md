@@ -1,12 +1,12 @@
 # Adacovex.Parsers
 
-Read one physical line from F into Line, reporting Last as usual.
-When the physical line is longer than Line'Length, the trailing part is
-drained (discarded) so the file is positioned at the next line,
-Overflow is set True, and an error is reported to standard error naming
-File_Path (with Line_Num when non-zero) and the buffer size.  Callers
-must treat Overflow as an explicit parse failure rather than processing
-the truncated content, which would silently produce partial results.
+Read one physical line from F into Line and report Last as usual.
+When the physical line is longer than Line'Length, drain (discard) the
+trailing part so the file is positioned at the next line.
+Set Overflow to True.  Report an error to standard error that names
+File_Path (with Line_Num when non-zero) and the buffer size.
+Callers must treat Overflow as an explicit parse failure.  Do not
+process the truncated content because it produces partial results.
 @param F  Open input file positioned at the line to read.
 @param File_Path  Path of the file, used in the overflow error message.
 @param Line_Num  Physical line number (1-based), or 0 to omit it.

@@ -286,7 +286,7 @@ package body Adacovex_Prove_Patch_Tests is
          True,
          "default in mode matches bare mode");
 
-      --  `in out` is a real mode: it must NOT be normalized away, and a
+      --  `in out` is a real mode: it must NOT be normalised away, and a
       --  patch declaring `in out` never matches a bare/`in` original.
       Merge_Check
         ("package V is"
@@ -475,7 +475,7 @@ package body Adacovex_Prove_Patch_Tests is
          True,
          "body subprogram declaration replaced, body proper kept");
 
-      --  The merged spec is the shape gnatprove analyzes: package aspect on
+      --  The merged spec is the shape gnatprove analyses: package aspect on
       --  the declaration line, contract on the declaration.
       R.Check
         (Contains (VT100_Expected, "with SPARK_Mode => On"),

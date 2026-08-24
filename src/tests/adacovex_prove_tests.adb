@@ -345,7 +345,7 @@ package body Adacovex_Prove_Tests is
             "Parse_Prove_Out (justified): Level = Platinum");
       end;
 
-      --  Units analyzed/skipped rows are parsed from the .out header.
+      --  Units analysed/skipped rows are parsed from the .out header.
       declare
          F       : File_Type;
          Summary : Proof_Summary;

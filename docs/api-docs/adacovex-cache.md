@@ -1,20 +1,21 @@
 # Adacovex.Cache
 
 Content-addressed result cache for adacovex.
-Stores arbitrary small blobs keyed by the SHA-256 of their *input* (a source
-file's contents, a gnatprove.out, a test-result file, ...).  Because the key
-is derived from the inputs, an unchanged input always hits the same cache
-entry, so re-running adacovex on unchanged code serves results straight
-from disk -- no re-scan, no re-parse, and (for gnatprove) no re-proof.
+The cache stores arbitrary small blobs keyed by the SHA-256 of their input
+(a source file's contents, a gnatprove.out, a test-result file, and more).
+The key is derived from the inputs.  An unchanged input always hits the
+same cache entry.  Re-running adacovex on unchanged code serves results
+straight from disk.  There is no re-scan, no re-parse, and (for gnatprove)
+no re-proof.
 
-The store is split per input: every analyzed unit is cached under its own
-key, so a one-line change only invalidates that unit's entry and rewrites a
-single tiny blob; every other unit is served from cache unchanged.
+The store is split per input.  Every analysed unit is cached under its own
+key.  A one-line change only invalidates that unit's entry and rewrites a
+single tiny blob.  Every other unit is served from cache unchanged.
 
-Storage is a two-level directory tree (<cache>/<aa>/<aabb...>) so a large
+Storage is a two-level directory tree (<cache>/<aa>/<aabb...>).  A large
 project never creates a single directory with millions of entries.  Entries
-are evicted oldest-first once the count exceeds a soft cap, keeping disk
-usage bounded without external dependencies (pure GNAT runtime only).
+are evicted oldest-first once the count exceeds a soft cap.  Disk usage
+stays bounded without external dependencies (pure GNAT runtime only).
 HLR-CACHE: Result caching
 
 **See also:** [Architecture -- result caching](../architecture.md#result-caching)

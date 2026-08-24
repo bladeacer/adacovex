@@ -613,7 +613,7 @@ package body Adacovex.Parsers.Tests is
 
    --  Return the path of the first existing conventional test-result file
    --  under Target_Dir, or "" if none is present.  Used by the result cache
-   --  to key a cached test summary to the exact artifact analyzed.
+   --  to key a cached test summary to the exact artifact analysed.
    function Find_Test_Result (Target_Dir : String) return String is
    begin
       for I in Candidates'Range loop

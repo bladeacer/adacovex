@@ -256,7 +256,7 @@ package body Adacovex.Renderers.HTML is
          Proof.Functional_Proved);
       Put ("</tbody></table></div>");
 
-      --  Test categories bar (each category as its own row, normalized by max)
+      --  Test categories bar (each category as its own row, normalised by max)
       Put ("<div class=""chart-card""><h3>Test Results by Category</h3>");
       Put ("<table class=""charts-css bar show-labels"">");
       Put ("<caption>Test counts by category</caption><tbody>");
@@ -363,7 +363,7 @@ package body Adacovex.Renderers.HTML is
 
       --  Dependency scope polar ring (conic gradient + CSS hole; the four
       --  cut points are cumulative percentages, theme colours via variables).
-      --  Now with a center rating badge and improved legend layout.
+      --  Now with a centre rating badge and improved legend layout.
       if not Graph.Is_Empty then
          declare
             Base_Ct  : Natural := 0;
@@ -413,7 +413,7 @@ package body Adacovex.Renderers.HTML is
                   Put ("%, var(--scope-vend) ");
                   Put (Img (S3));
                   Put ("% 100%)"">");
-                  --  Center hole with total count
+                  --  Centre hole with total count
                   Put ("<div class=""polar-center"">");
                   Put ("<div class=""polar-rating"">");
                   Put (Img (Total));

@@ -108,7 +108,7 @@ package Adacovex.Renderers.HTML is
 
    --  Render the dependency graph as a JSON object for /api/deps.
    --  Serializes the resolved component vector (root at index 1 plus its
-   --  transitive closure) with name, version, scope, license, PURL, kind,
+   --  transitive closure) with name, version, scope, licence, PURL, kind,
    --  and the parent index, so consumers can reconstruct the tree.
    --  @param Graph  Dependency graph component vector.
    --  @return JSON string with a "dependencies" array.

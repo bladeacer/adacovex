@@ -2,8 +2,8 @@
 
 Version-control-system abstraction for differential modes.
 --compare-base and --coverage-delta need a snapshot of a base revision
-without disturbing the working tree.  Legacy codebases may live in
-Mercurial, Subversion, Fossil, or jj rather than git, so the snapshot
+without disturbing the working tree.  Legacy codebases can live in
+Mercurial, Subversion, Fossil, or jj rather than git.  The snapshot
 operations are dispatched per VCS here:
 
   git    - ``git worktree add --detach`` in a linked worktree
@@ -12,11 +12,12 @@ svn    - ``svn info --show-item url`` + ``svn export -r REF URL DIR``
 fossil - copy the repo DB and ``fossil open`` it at REF in a scratch dir
 jj     - ``jj git export`` into the internal git store, then a git
 worktree add against .jj/repo/store/git (jj commits ARE git
-commits, so any change/commit id resolves)
+commits, and any change or commit id resolves)
 
 Detection is marker-file based (.git / .jj / .hg / .svn / .fslckout /
 - FOSSIL*), with a command probe fallback when no marker is present.
-Runs only on Linux/WSL (uses sh -c for CWD-dependent tools like fossil).
+Runs only on Linux/WSL (uses sh -c for CWD-dependent tools such as
+fossil).
 HLR-DIFF: VCS abstraction for differential assessment
 
 **See also:** [VCS support](../vcs.md)

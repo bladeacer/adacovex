@@ -1,6 +1,6 @@
 # Adacovex.IR_Synthesiser
 
-Longest synthesized declaration line.
+Longest synthesised declaration line.
 
 > **Note:** All items in this package are public.
 
@@ -29,7 +29,7 @@ Longest synthesized declaration line.
 | Parameter | Description |
 |-----------|-------------|
 | `Cfg` | Host/target word-size configuration. |
-| `Pkg_Name` | Name of the synthesized package. |
+| `Pkg_Name` | Name of the synthesised package. |
 | `Type_Names` | Comma-separated foreign type names. |
 
-**Returns:** The synthesized package text.
+**Returns:** The synthesised package text.
