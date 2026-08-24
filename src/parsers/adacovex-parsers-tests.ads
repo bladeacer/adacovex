@@ -27,9 +27,9 @@ package Adacovex.Parsers.Tests is
    with Pre => File_Path'Length > 0;
 
    --  Locate and parse the test result file for a target project.
-   --  Searches a conventional list of test-summary file names in the
-   --  project root (and docs/) and parses the first file that exists,
-   --  so adacovex accepts common report conventions beyond test_result.md.
+   --  Search a conventional list of test-summary file names in the project
+   --  root (and docs/).  Parse the first file that exists.  adacovex then
+   --  accepts common report conventions beyond test_result.md.
    --  @param Target_Dir  Target project root directory.
    --  @param Summary  Output test summary record.
    --  @param Success  True if a test result file was found and parsed.

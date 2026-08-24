@@ -27,13 +27,13 @@ help:
 	@echo '    run-ada-crdt  Run against ../Ada_CRDT (strict mode)'
 	@echo '                  (auto-updates ../Ada_CRDT/docs/badges/*.svg)'
 	@echo '    sbom          Generate a proof-aware CycloneDX SBOM (sbom.json)'
- 	@echo '    bench         Benchmark the assessment pipeline + binary size:'
- 	@echo '                  hyperfine when installed (else bash time fallback),'
- 	@echo '                  cold (fresh cache) and warm (cached) timings, and the'
- 	@echo '                  sizes of the raw and stripped binaries'
- 	@echo '    perf-bench   Run perf and strace profiles over the adacovex binary'
- 	@echo '                  (requires linux-tools-common and strace)'
- 	@echo ''
+	@echo '    bench         Benchmark the assessment pipeline + binary size:'
+	@echo '                  hyperfine when installed (else bash time fallback),'
+	@echo '                  cold (fresh cache) and warm (cached) timings, and the'
+	@echo '                  sizes of the raw and stripped binaries'
+	@echo '    perf-bench   Run perf and strace profiles over the adacovex binary'
+	@echo '                  (requires linux-tools-common and strace)'
+	@echo ''
 	@echo '  Docs & sync (use `make sync` to run all):'
 	@echo '    sync          Alias for agents-tree + proof-status + test-count + doc-links + description'
 	@echo '    doc           Generate API docs via gnatdoc + rst2md (alire-dev.toml)'
@@ -159,49 +159,49 @@ sbom: build
 # deliberately generous (hyperfine 10 cold + 15 warm runs, time fallback
 # 5 + 5) so the reported mean is stable; cold runs re-create the cache dir
 # first so every cold sample measures a truly empty result + probe cache.
- bench: build
- 	@bench_cache=$$(mktemp -d /tmp/adacovex-bench.XXXXXX); \
- 	export bench_cache; \
- 	trap 'rm -rf "$$bench_cache"' EXIT; \
- 	if command -v hyperfine >/dev/null 2>&1; then \
- 		echo '=== Cold (fresh result cache + probe cache) ==='; \
- 		hyperfine --runs 10 \
- 		  --prepare 'rm -rf $$bench_cache' \
- 		  "./bin/adacovex --cache-dir=$$bench_cache" \
- 		  --export-markdown /tmp/adacovex-bench-cold.md; \
- 		./bin/adacovex --cache-dir=$$bench_cache >/dev/null 2>&1; \
- 		echo '=== Warm (populated caches) ==='; \
- 		hyperfine --warmup 2 --runs 15 \
- 		  "./bin/adacovex --cache-dir=$$bench_cache" \
- 		  --export-markdown /tmp/adacovex-bench-warm.md; \
- 	else \
- 		echo '== hyperfine not found; using bash time (5 cold + 5 warm) =='; \
- 		for i in 1 2 3 4 5; do \
- 			rm -rf $$bench_cache; \
- 			echo -n "cold run $$i: "; \
- 			time ./bin/adacovex --cache-dir=$$bench_cache >/dev/null 2>&1; \
- 		done; \
- 		./bin/adacovex --cache-dir=$$bench_cache >/dev/null 2>&1; \
- 		for i in 1 2 3 4 5; do \
- 			echo -n "warm run $$i: "; \
- 			time ./bin/adacovex --cache-dir=$$bench_cache >/dev/null 2>&1; \
- 		done; \
- 	fi; \
- 	raw=$$(stat -c %s bin/adacovex); \
- 	cp bin/adacovex /tmp/adacovex-strip-test; \
- 	strip /tmp/adacovex-strip-test; \
- 	stripped=$$(stat -c %s /tmp/adacovex-strip-test); \
- 	rm -f /tmp/adacovex-strip-test; \
- 	echo ''; \
- 	echo "== Binary size =="; \
- 	echo "bin/adacovex          $$(echo $$raw | awk '{printf \"%.1f MiB\", $$1/1048576}') ($$raw bytes)"; \
- 	echo "after strip           $$(echo $$stripped | awk '{printf \"%.1f MiB\", $$1/1048576}') ($$stripped bytes)"; \
- 	echo "savings               $$(echo $$raw $$stripped | awk '{printf \"%.1f%%\", ($$1-$$2)/$$1*100}')"; \
+bench: build
+	@bench_cache=$$(mktemp -d /tmp/adacovex-bench.XXXXXX); \
+	export bench_cache; \
+	trap 'rm -rf "$$bench_cache"' EXIT; \
+	if command -v hyperfine >/dev/null 2>&1; then \
+		echo '=== Cold (fresh result cache + probe cache) ==='; \
+		hyperfine --runs 10 \
+		  --prepare 'rm -rf $$bench_cache' \
+		  "./bin/adacovex --cache-dir=$$bench_cache" \
+		  --export-markdown /tmp/adacovex-bench-cold.md; \
+		./bin/adacovex --cache-dir=$$bench_cache >/dev/null 2>&1; \
+		echo '=== Warm (populated caches) ==='; \
+		hyperfine --warmup 2 --runs 15 \
+		  "./bin/adacovex --cache-dir=$$bench_cache" \
+		  --export-markdown /tmp/adacovex-bench-warm.md; \
+	else \
+		echo '== hyperfine not found; using bash time (5 cold + 5 warm) =='; \
+		for i in 1 2 3 4 5; do \
+			rm -rf $$bench_cache; \
+			echo -n "cold run $$i: "; \
+			time ./bin/adacovex --cache-dir=$$bench_cache >/dev/null 2>&1; \
+		done; \
+		./bin/adacovex --cache-dir=$$bench_cache >/dev/null 2>&1; \
+		for i in 1 2 3 4 5; do \
+			echo -n "warm run $$i: "; \
+			time ./bin/adacovex --cache-dir=$$bench_cache >/dev/null 2>&1; \
+		done; \
+	fi; \
+	raw=$$(stat -c %s bin/adacovex); \
+	cp bin/adacovex /tmp/adacovex-strip-test; \
+	strip /tmp/adacovex-strip-test; \
+	stripped=$$(stat -c %s /tmp/adacovex-strip-test); \
+	rm -f /tmp/adacovex-strip-test; \
+	echo ''; \
+	echo "== Binary size =="; \
+	echo "bin/adacovex          $$(echo $$raw | awk '{printf \"%.1f MiB\", $$1/1048576}') ($$raw bytes)"; \
+	echo "after strip           $$(echo $$stripped | awk '{printf \"%.1f MiB\", $$1/1048576}') ($$stripped bytes)"; \
+	echo "savings               $$(echo $$raw $$stripped | awk '{printf \"%.1f%%\", ($$1-$$2)/$$1*100}')"; \
 
-+perf-bench: build
-+	python3 tools/perf-bench.py
-+
- coverage-gate: build
+perf-bench: build
+	python3 tools/perf-bench.py
+
+coverage-gate: build
 	@tags=$$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$$'); \
 	latest=$$(echo "$$tags" | head -1); \
 	prev=$$(echo "$$tags" | sed -n '2p'); \
@@ -258,7 +258,7 @@ ascii-check:
 	@echo "=== ASCII Charset Verification ==="; \
 	error=0; \
 	for ext in ads adb md py toml gpr; do \
- 	files=$$(find . -name "*.$$ext" -not -path "./.git/*" -not -path "./alire/*" -not -path "./obj/*" -not -path "*/node_modules/*" 2>/dev/null); \
+	files=$$(find . -name "*.$$ext" -not -path "./.git/*" -not -path "./alire/*" -not -path "./obj/*" -not -path "*/node_modules/*" 2>/dev/null); \
 	  for f in $$files; do \
 	    if LC_ALL=C grep -q '[^ -~	]' "$$f" 2>/dev/null; then \
 	      echo "  NON-ASCII: $$f"; \

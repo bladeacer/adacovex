@@ -46,7 +46,7 @@ package Adacovex.Parsers.GNATprove is
 
    --  Parse VC summary from a JSON file containing GNATprove results.
    --  Expects top-level keys: "total_vcs", "proved_vcs", "unproved_vcs",
-   --  "flow_deps", "flow_proved", etc.
+   --  "flow_deps", "flow_proved", and more.
    --  Falls back to Parse_Prove_Out on failure (not yet implemented).
    --  @param File_Path  Path to GNATprove JSON results file.
    --  @param Summary  Output proof summary record.

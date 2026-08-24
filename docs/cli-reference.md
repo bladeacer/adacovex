@@ -1,13 +1,16 @@
 # adacovex CLI Reference
 
-This page is the quick reference: usage, the full flag table, and a concise
-note per flag. Feature-specific detail lives in dedicated pages (linked from
-each section): the [web dashboard](dashboard.md), the
-[`sbom` subcommand](sbom.md), [VCS support](vcs.md), the
-[platforms/`status`](platforms.md#status-subcommand) and
-[installation](installation.md) pages, and
-[Architecture](architecture.md) for design-level detail such as result
-caching and the patch system.
+This page is the quick reference. It shows usage, the full flag table, and a
+short note per flag. Feature-specific detail is in dedicated pages (linked
+from each section):
+
+- the [web dashboard](dashboard.md)
+- the [`sbom` subcommand](sbom.md)
+- [VCS support](vcs.md)
+- the [platforms/`status`](platforms.md#status-subcommand) and
+  [installation](installation.md) pages
+- [Architecture](architecture.md) for design detail such as result caching and
+  the patch system
 
 ## Usage
 
@@ -61,19 +64,20 @@ adacovex completion [bash|fish|zsh|pwsh]
 | `man --dir=PATH` | `~/.local/share/man` | - | Install the man page under `PATH/man1` instead |
 | `--help` | - | both | Print usage and exit |
 
-`prove`-mode flags (also accepted by the main command, validated only in
-prove mode): `--jobs`/`-j`, `--level`, `--timeout`, `--steps`, `--memlimit`,
-`--force`, `--no-loop-unrolling`, `--no-inlining`, `--suppress-warnings`,
-`--quiet` -- see [The `prove` subcommand](#the-prove-subcommand).
+`prove`-mode flags are also accepted by the main command. They are validated
+only in prove mode. The flags are: `--jobs`/`-j`, `--level`, `--timeout`,
+`--steps`, `--memlimit`, `--force`, `--no-loop-unrolling`, `--no-inlining`,
+`--suppress-warnings`, `--quiet`. See
+[The `prove` subcommand](#the-prove-subcommand).
 
 ## Flag details
 
 ### `--target=PATH`
 
-Project to analyze. Relative paths are resolved against the current working
-directory to an absolute path. Determines the root directory for source
-scanning, manifest detection, SVG badge output, and patch file resolution.
-Default: current working directory.
+Project to analyse. Relative paths are resolved against the current working
+directory to an absolute path. The path determines the root directory for
+source scanning, manifest detection, SVG badge output, and patch file
+resolution. Default: the current working directory.
 
 ### `--manifest=PATH`
 
@@ -84,34 +88,34 @@ project metadata for the dependency graph.
 
 ### `--dal=LEVEL`
 
-DO-178C DAL level (and the shared rigor tier): `A`, `B`, `C`, `D`, or `E`
-(case-insensitive). Determines the minimum SPARK proof level required and the
-specific criteria checked. This tier is shared across standards -- `--dal=C`
-is DAL-C under DO-178C, ASIL B under ISO 26262, and safety Class A under
-IEC 62304. See [DAL levels](api-docs/adacovex-dal-levels.md) and
+DO-178C DAL level (and the shared rigour tier): `A`, `B`, `C`, `D`, or `E`
+(case-insensitive). It determines the minimum SPARK proof level required and
+the specific criteria checked. This tier is shared across standards.
+`--dal=C` is DAL-C under DO-178C, ASIL B under ISO 26262, and safety Class A
+under IEC 62304. See [DAL levels](api-docs/adacovex-dal-levels.md) and
 [Standards](standards.md).
 
 ### `--asil=LEVEL`
 
 ISO 26262 Automotive Safety Integrity Level: `A`, `B`, `C`, `D`, or `QM`
-(case-insensitive). Sets the standard to `iso26262` and maps the ASIL level
-to the shared rigor tier (ASIL D -> DAL A, ASIL C -> DAL B, ASIL B -> DAL C,
-ASIL A -> DAL D, QM -> DAL E). `--asil=B` is therefore the clearest spelling
+(case-insensitive). It sets the standard to `iso26262` and maps the ASIL level
+to the shared rigour tier (ASIL D -> DAL A, ASIL C -> DAL B, ASIL B -> DAL C,
+ASIL A -> DAL D, QM -> DAL E). As a result, `--asil=B` is the clearest spelling
 of "assess this project at ASIL B". See
 [ASIL Levels](api-docs/adacovex-asil-levels.md).
 
 ### `--class=LEVEL`
 
-IEC 62304 software safety class: `A`, `B`, or `C` (case-insensitive). Sets
-the standard to `iec62304` and maps the class to the shared rigor tier
-(Class C -> DAL A, Class B -> DAL B, Class A -> DAL C). `--class=A` is the
-clearest spelling of "assess this project at safety Class A". See
-[Safety Classes](api-docs/adacovex-class-levels.md).
+IEC 62304 software safety class: `A`, `B`, or `C` (case-insensitive). It sets
+the standard to `iec62304` and maps the class to the shared rigour tier
+(Class C -> DAL A, Class B -> DAL B, Class A -> DAL C). As a result,
+`--class=A` is the clearest spelling of "assess this project at safety Class
+A". See [Safety Classes](api-docs/adacovex-class-levels.md).
 
 ### `--standard=NAME`
 
 Select the compliance standard used to label the assessment (default
-`do178c`). The evidence checks are identical across standards; only the
+`do178c`). The evidence checks are identical across standards. Only the
 integrity-level names change in the report and badges:
 
 - `do178c` -- DAL A--E (avionics)
@@ -121,33 +125,41 @@ integrity-level names change in the report and badges:
   every standard (`do178c.svg`, `iso26262.svg`, `iec62304.svg`)
 
 Accepted case-insensitively, with or without the hyphen/space (`ISO-26262`,
-`iec62304`, ...). See [Standards](standards.md) for the full tier mapping.
+`iec62304`, and more). See [Standards](standards.md) for the full tier
+mapping.
 
 When both a dedicated level flag (`--asil` / `--class`) and `--standard` are
-passed, the dedicated flag sets the standard and `--standard` is ignored for
-labelling (last-write-wins per field); the shared tier is always whatever the
+passed, the dedicated flag sets the standard. `--standard` is ignored for
+labelling (last-write-wins per field). The shared tier is always whatever the
 level flag (or `--dal`) resolved to.
 
 ### `status`
 
-`adacovex status [--target=PATH]` reports toolchain + platform state without
-running an assessment and without downloading or deploying anything: whether
-Alire is installed, how gnatprove is resolved, the host CPU count and CI
-status (and the resulting default `-j` parallelism), a **VCS report** (which
-VCS tools are on `$PATH` and which manages the target -- see
-[VCS support](vcs.md)), and mandb availability. Exit `0` when a usable
-gnatprove is detectable without a download, `1` otherwise. Full detail:
+`adacovex status [--target=PATH]` reports toolchain and platform state. It
+does not run an assessment. It does not download or deploy anything. It
+reports the following:
+
+- whether Alire is installed
+- how gnatprove is resolved
+- the host CPU count and CI status (and the resulting default `-j`
+  parallelism)
+- a **VCS report** (which VCS tools are on `$PATH` and which manages the
+  target -- see [VCS support](vcs.md))
+- mandb availability
+
+Exit `0` when a usable gnatprove is detectable without a download. Exit `1`
+otherwise. Full detail:
 [Platforms -- `status` subcommand](platforms.md#status-subcommand).
 
 ### `complexity`
 
 `adacovex complexity [--target=PATH]` runs a native Ada cyclomatic-complexity
-check on the target source tree.  It reports per-file LOC, percentage of the
+check on the target source tree. It reports per-file LOC, percentage of the
 codebase, and total cyclomatic complexity, plus per-subprogram complexity for
-functions and procedures.  The gate fails when any file or function exceeds
+functions and procedures. The gate fails when any file or function exceeds
 the configured thresholds (defaults: 4 000 LOC, 20% of codebase, 120
-complexity per function, 600 per file).  Exit `0` when all gates pass, `1`
-otherwise.  This replaces the previous Python `check-complexity.py` script and
+complexity per function, 600 per file). Exit `0` when all gates pass. Exit `1`
+otherwise. This replaces the previous Python `check-complexity.py` script and
 is wired into `make complexity-check`.
 
 ### The `prove` subcommand

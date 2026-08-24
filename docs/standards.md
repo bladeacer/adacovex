@@ -6,7 +6,7 @@
 implement, verify, and certify software that flies airplanes. Every line of
 safety-critical flight software is assessed at one of five **DAL** (Development
 Assurance Level) tiers, from **DAL-E** (no safety effect) to **DAL-A**
-(catastrophic failure would bring down the aircraft).
+(catastrophic failure can bring down the aircraft).
 
 **ISO 26262** is the automotive functional-safety standard. It applies the same
 rigor to road-vehicle software (braking, steering, powertrain). Its integrity
@@ -27,7 +27,7 @@ All three demand the same underlying evidence:
 4. **Minimum SPARK level** -- the formal-proof bar for the selected rigor tier.
 
 adacovex computes all four checks once and re-labels the result per standard.
-The same inputs feed the same outputs; only the integrity-level label changes.
+The same inputs feed the same outputs. Only the integrity-level label changes.
 
 ## When to use which standard
 
@@ -50,10 +50,10 @@ and emits badges and reports for every standard without re-scanning.
 | Minor | DAL D | ASIL A | -- | Stone | Yes | Yes |
 | No safety effect | DAL E | QM | -- | -- | No | Yes |
 
-The tier placement is a per-project policy choice (the standards do not define a
-one-to-one correspondence). adacovex's default mapping is shown above; use
-`--standard=NAME` to select the labelling standard and `--dal=LEVEL` to pin the
-shared rigor tier.
+The tier placement is a per-project policy choice. The standards do not define a
+one-to-one correspondence. adacovex's default mapping is shown above. Use
+`--standard=NAME` to select the labelling standard. Use `--dal=LEVEL` to pin
+the shared rigor tier.
 
 ## Rigor-tier mapping
 
@@ -66,14 +66,14 @@ shared rigor tier.
 | No safety effect | DAL E | QM | -- | -- | No | Yes |
 
 The exact tier placement of each standard's levels is a per-project policy
-choice (the standards do not define a one-to-one correspondence). The table
-above is adacovex's default mapping; `--standard=NAME` selects the labelling
-standard and `--dal=LEVEL` pins the shared rigor tier (see
+choice. The standards do not define a one-to-one correspondence. The table
+above is adacovex's default mapping. `--standard=NAME` selects the labelling
+standard. `--dal=LEVEL` pins the shared rigor tier (see
 [Implementation](#implementation)).
 
 ## Assessment criteria (shared)
 
-The four checks stay identical across standards; only the names change:
+The four checks stay identical across standards. Only the names change:
 
 1. **Requirement traceability** -- every HLR defined in
    `docs/compliance/HLR.md` is traced by a `-- HLR-XXXX` tag in source.
@@ -85,8 +85,8 @@ Because the checks are shared, **the compliance artifacts are identical too**:
 ISO 26262 and IEC 62304 require no different evidence or documents than
 DO-178C. The same inputs (`HLR.md`, source traceability, proof summary, test
 summary) feed the same outputs (`VERIFICATION.md`, `TRACE.md`, the
-proof-aware SBOM, and the compliance SVG badges) for every standard -- only
-the integrity-level label printed inside them changes (`DAL-C`, `ASIL B`,
+proof-aware SBOM, and the compliance SVG badges) for every standard. Only the
+integrity-level label printed inside them changes (`DAL-C`, `ASIL B`,
 `Class A`).
 
 ## Selecting a standard on the CLI
@@ -103,14 +103,14 @@ rigor tier:
 | IEC 62304 | `--class=` | A, B, C | `--class=A` -> Class A (Major) |
 
 You can also use `--standard=iso26262 --dal=C` to get the same result as
-`--asil=B`; the dedicated flags exist so a reader of the command line can see
+`--asil=B`. The dedicated flags exist so a reader of the command line can see
 "ASIL B" (or "Class A") without decoding the shared tier.
 
 `--standard=all` runs **one** assessment at the shared tier and emits badges
 and reports for **every** standard -- `do178c.svg`, `iso26262.svg`, and
 `iec62304.svg` -- without re-scanning, re-proving, or re-parsing anything. The
-evidence is identical across standards, so the three badges always agree on
-Achieved/Unmet; only the level label changes.
+evidence is identical across standards. The three badges therefore always
+agree on Achieved/Unmet. Only the level label changes.
 
 ## Dashboard and SBOM standard-awareness
 
@@ -119,8 +119,8 @@ The served [dashboard](dashboard.md) (`--serve`) and the proof-aware
 label, so a browser or a CycloneDX / SPDX / Markdown consumer sees the right
 name for the selected standard.
 Like the `sbom` subcommand, `--serve` **defaults to all standards** when no
-`--standard` / `--asil` / `--class` flag is given (the dashboard renders
-every standard's level at the shared tier); an explicit standard flag
+`--standard` / `--asil` / `--class` flag is given. The dashboard renders
+every standard's level at the shared tier. An explicit standard flag
 narrows it. The SBOM's `adacovex:standard` / `adacovex:level` properties:
 
 | `--` flag | `adacovex:standard` | `adacovex:level` |
@@ -131,9 +131,9 @@ narrows it. The SBOM's `adacovex:standard` / `adacovex:level` properties:
 | `--standard=all` | `DO-178C, ISO 26262, IEC 62304` | `DAL-C / ASIL B / Class A` |
 
 The `adacovex:dal_target` property always carries the shared tier (`DAL-A`..
-`DAL-D`) regardless of the labelling standard; `--standard=all` joins all
+`DAL-D`) regardless of the labelling standard. `--standard=all` joins all
 three standard names and level labels into the single `adacovex:standard` and
-`adacovex:level` properties so one document carries every standard's
+`adacovex:level` properties. One document carries every standard's
 assessment.
 
 ## Implementation
@@ -142,16 +142,16 @@ assessment.
   `To_String` / `To_Standard` / `Standard_Slug` conversions and the
   dedicated `To_ASIL` / `To_Class` level parsers in `Adacovex.Types`.
 - `--standard=NAME` CLI flag (default `do178c`, plus `all`) selects the
-  labelling standard; `--dal=LEVEL` is the shared rigor tier (A--E), and the
+  labelling standard. `--dal=LEVEL` is the shared rigor tier (A--E). The
   dedicated `--asil=LEVEL` / `--class=LEVEL` flags set both the standard and
   the tier in one step.
 - `Types.Standard_Level_Name` maps a standard + tier to its label (`DAL-C`,
-  `ASIL B`, `Class A`, ...), and `Assess_Standard` runs the same evidence
-  checks as `Assess_DAL` while recording the standard, so every renderer
+  `ASIL B`, `Class A`, and more). `Assess_Standard` runs the same evidence
+  checks as `Assess_DAL` while recording the standard. Every renderer
   (ANSI report, SVG badge, HTML dashboard, JSON API, Markdown report, and
-  SBOM) prints the standard-specific level without re-running scanning, proof
-  parsing, or test parsing.
-- `Min_SPARK_For` still drives the per-tier proof bar; the tiers share one
+  SBOM) then prints the standard-specific level without re-running scanning,
+  proof parsing, or test parsing.
+- `Min_SPARK_For` still drives the per-tier proof bar. The tiers share one
   lookup because the standards only re-label the levels.
 
 Each standard has a dedicated reference page with its level definitions and

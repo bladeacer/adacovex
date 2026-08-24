@@ -36,11 +36,11 @@ package body Adacovex.Parsers.DO178C is
 
    --  Find one requirement entry ("HLR-XXXX: ..." / "LLR-XXXX: ... [...]")
    --  on a markdown line and return the offsets of its parts.
-   --  The Marker prefix ("HLR-" or "LLR-") is located on the line, then the
-   --  id runs to the first space or colon; the (optional) HLR reference
-   --  after the description is detected as "HLR-xxxx" followed by a closer.
-   --  All outputs are 0 when the part is absent; Id_Start > 0 iff the
-   --  marker was found.
+   --  The Marker prefix ("HLR-" or "LLR-") is located on the line.  The
+   --  id runs to the first space or colon.  The optional HLR reference after
+   --  the description is detected as "HLR-xxxx" followed by a closer.
+   --  All outputs are 0 when the part is absent.  Id_Start is more than 0 if
+   --  and only if the marker was found.
    function Find_Entry
      (Line     : String;
       Last     : Natural;
@@ -129,7 +129,7 @@ package body Adacovex.Parsers.DO178C is
    end Copy_Field;
 
    --  Extract one line's parsed entry and append it to an HLR vector.
-   --  Id is the "HLR-xxx" token; the description follows the colon.
+   --  Id is the "HLR-xxx" token.  The description follows the colon.
    procedure Parse_HLR_Line
      (Line : String; Last : Natural; HLRs : in out HLR_Vectors.Vector)
    is
@@ -161,8 +161,8 @@ package body Adacovex.Parsers.DO178C is
       end;
    end Parse_HLR_Line;
 
-   --  Extract one parsed LLR entry; the description runs up to the
-   --  (optional) HLR reference, which is copied into HLR_Ref.
+   --  Extract one parsed LLR entry.  The description runs up to the optional
+   --  HLR reference.  The HLR reference is copied into HLR_Ref.
    procedure Parse_LLR_Line
      (Line : String; Last : Natural; LLRs : in out LLR_Vectors.Vector)
    is
@@ -204,10 +204,10 @@ package body Adacovex.Parsers.DO178C is
    end Parse_LLR_Line;
 
    --  Iterate the lines of an open markdown file and feed each one to the
-   --  shared line parser, so the HLR and LLR parsers share one file-reading
-   --  skeleton while keeping their own entry type.  A line longer than
-   --  Max_Line is drained and reported by Read_Line; parsing stops so no
-   --  partial entry set is ever passed downstream.
+   --  shared line parser.  The HLR and LLR parsers share one file-reading
+   --  skeleton.  Each parser keeps its own entry type.  A line longer than
+   --  Max_Line is drained and reported by Read_Line.  Parsing stops.  No
+   --  partial entry set is passed downstream.
    generic
       type Item_Type is private;
       type Item_Vector is private;

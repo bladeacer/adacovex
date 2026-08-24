@@ -13,7 +13,8 @@ package Adacovex.Renderers.ANSI is
    --  test results, and compliance using ANSI escape sequences.  The
    --  compliance line is standard-aware, or prints one line per standard
    --  when All_Standards is True.  Set Use_Color to False to suppress ANSI
-   --  codes (e.g., redirected output or NO_COLOR environment variable).
+   --  codes.  For example, do this for redirected output or the NO_COLOR
+   --  environment variable.
    --  @param Doc_Metrics  Docstring coverage metrics.
    --  @param Proof  GNATprove proof summary.
    --  @param Tests  Test result summary.

@@ -14,13 +14,13 @@ package Adacovex.Renderers.SVG is
    --  @return SVG badge markup.
    function Render_SPARK_Badge (Level : Types.SPARK_Level) return String
    with Post => Render_SPARK_Badge'Result'Length > 0, Global => null;
-   --  NOTE: the Render_* badge builders are deliberately not SPARK_Mode On:
-   --  Render_Tests_Badge / Render_Compliance_Badge / Render_DO178C_Badge
+   --  NOTE: the Render_* badge builders are deliberately not SPARK_Mode On.
+   --  Render_Tests_Badge, Render_Compliance_Badge, and Render_DO178C_Badge
    --  take parameters of types from the SPARK_Mode Off Types.Implementation
-   --  package (SPARK forbids On subprograms from using them), and the SVG
+   --  package.  SPARK forbids On subprograms from using those types.  The SVG
    --  markup assembly concatenation pushes the provers past the project's
    --  --steps budget (see the Badge_SVG comment in the body).  The proved
-   --  surface is the pure computation: I2S, Glyph_Width, Text_Width,
+   --  surface is the pure computation.  It is I2S, Glyph_Width, Text_Width,
    --  Spark_Color, Spark_Text_Color, and Badge_Text_Color.
 
    --  Render a test-status badge showing passed / failed counts.
@@ -36,7 +36,7 @@ package Adacovex.Renderers.SVG is
    --  standard-specific level + PASS/FAIL as the value, green for Achieved,
    --  red for Unmet.
    --  @param Assess  DAL assessment record (evidence is shared across
-   --                 standards; only the level label changes).
+   --                 standards.  Only the level label changes).
    --  @param Standard  Compliance standard to label the badge with.
    --  @return SVG badge markup.
    function Render_Compliance_Badge
