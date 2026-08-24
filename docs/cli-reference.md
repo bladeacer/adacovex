@@ -30,11 +30,11 @@ adacovex completion [bash|fish|zsh|pwsh]
 |------|---------|------|-------------|
 | `--target=PATH` | `.` (CWD) | both | Target project root directory |
 | `--manifest=PATH` | auto-detected | both | Override project manifest path |
-| `--dal=LEVEL` | `C` | both | DO-178C DAL level (A-E; also the shared rigor tier) |
+| `--dal=LEVEL` | `C` | both | DO-178C DAL level (A-E, also the shared rigour tier) |
 | `--asil=LEVEL` | - | both | ISO 26262 level: `A`\|`B`\|`C`\|`D`\|`QM` |
 | `--class=LEVEL` | - | both | IEC 62304 safety class: `A`\|`B`\|`C` |
 | `--standard=NAME` | `do178c` | both | `do178c`\|`iso26262`\|`iec62304`\|`all` |
-| `--serve` | off | both | Start HTTP dashboard server (standard-aware; light/dark/system themes) |
+| `--serve` | off | both | Start HTTP dashboard server (standard-aware, light/dark/system themes) |
 | `--theme=NAME` | `system` | serve | Dashboard theme: `light`\|`dark`\|`system` |
 | `--port=N` | `8080` | serve | Dashboard server port |
 | `--emit-svg=PATH` | `<target>/docs/badges` | both | Output directory for SVG badges |
@@ -164,47 +164,46 @@ is wired into `make complexity-check`.
 
 ### The `prove` subcommand
 
-`adacovex prove --target=PATH` resolves a gnatprove installation, runs it
-against the target, and then **falls through to the normal assessment
-pipeline**, which parses the freshly generated proof summary -- so one
-command both proves and assesses. For the full guide to proving and
-writing SPARK proofs (contracts, VC categories, proof patches for vendored
-deps), see [Proving and writing proofs](proving.md). gnatprove is resolved
-in this order:
-manifest pin > global pin > `$PATH` > cached toolchain > download, so the
-target does not need to declare gnatprove (full detail:
-[Architecture -- GNATprove toolchain resolution](architecture.md#gnatprove-toolchain-resolution-prove-subcommand)).
+`adacovex prove --target=PATH` resolves a gnatprove installation and runs it
+against the target. It then falls through to the normal assessment pipeline.
+The pipeline parses the freshly generated proof summary. As a result, one
+command both proves and assesses. For the full guide to proving and writing
+SPARK proofs (contracts, VC categories, proof patches for vendored deps), see
+[Proving and writing proofs](proving.md). gnatprove is resolved in this order:
+manifest pin > global pin > `$PATH` > cached toolchain > download. The
+target does not need to declare gnatprove. Full detail:
+[Architecture -- GNATprove toolchain resolution](architecture.md#gnatprove-toolchain-resolution-prove-subcommand).
 
 The proof summary is written to `<target>/obj/gnatprove/gnatprove.out`
-(the same location the assessment discovers), the SVG badges are emitted as
-usual, and the result cache serves unchanged targets -- `--force` bypasses
-the cache and forces a full gnatprove reanalysis. When the target carries
-proof patches (`.adacovex/patches/`), gnatprove runs against a patched tree
-copy at `<target>/obj/adacovex-proof/` so vendored dependencies participate
-in the proof without touching their sources -- see
+(the same location the assessment discovers). The SVG badges are emitted as
+usual. The result cache serves unchanged targets. `--force` bypasses the
+cache and forces a full gnatprove reanalysis. When the target carries proof
+patches (`.adacovex/patches/`), gnatprove runs against a patched tree copy at
+`<target>/obj/adacovex-proof/`. Vendored dependencies then participate in the
+proof without their sources being touched. See
 [Proving and writing proofs](proving.md#proof-patches-proving-vendored-dependencies)
-for how to write them and
+for how to write them, and
 [Architecture -- Proof patches](architecture.md#proof-patches-spark-contracts-over-vendored-dependencies)
 for the design.
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--jobs=N`, `-j N` | auto | GNATprove parallelism: auto-detect (max(1, cores-2); all cores in CI), `0` = all cores, `N` = pin N processes |
+| `--jobs=N`, `-j N` | auto | GNATprove parallelism: auto-detect (max(1, cores-2), all cores in CI), `0` = all cores, `N` = pin N processes |
 | `--level=N` | tool default | GNATprove proof effort, 0-4 |
 | `--timeout=N` | tool default | Per-check prover timeout in seconds |
-| `--steps=N` | `10000` | Max proof steps (reproducible budget; an explicit value overrides the default) |
+| `--steps=N` | `10000` | Max proof steps (reproducible budget, an explicit value overrides the default) |
 | `--memlimit=N` | tool default | Prover memory limit in MB |
-| `--force` | off | Force full gnatprove reanalysis (`-f`); also bypasses the result cache |
-| `--no-loop-unrolling` | always on | Disable automatic loop unrolling. Loop unrolling is always disabled so GNATprove never emits the purely-informational `cannot unroll loop (too many loop iterations) [info-unrolling-inlining]` notice; proof-neutral for the dogfood targets (720/720 adacovex, 589/589 Ada_CRDT VCs, 0 unproved). Flag kept for compatibility |
+| `--force` | off | Force full gnatprove reanalysis (`-f`). Also bypasses the result cache |
+| `--no-loop-unrolling` | always on | Disable automatic loop unrolling. Loop unrolling is always disabled, so GNATprove never emits the purely-informational `cannot unroll loop (too many loop iterations) [info-unrolling-inlining]` notice. It is proof-neutral for the dogfood targets (720/720 adacovex, 589/589 Ada_CRDT VCs, 0 unproved). Flag kept for compatibility |
 | `--no-inlining` | off | Disable contextual analysis inlining |
-| `--quiet` | on | Hide GNATprove's benign info messages (the default suppression set -- the loop-unrolling/inlining notice blocks) from stdout. **Active by default for local runs**; `--verbose` always shows every message and wins over it. CI passes `--verbose`, so CI output stays authoritative. Explicit form of the default |
+| `--quiet` | on | Hide GNATprove's benign info messages (the default suppression set, the loop-unrolling/inlining notice blocks) from stdout. It is active by default for local runs. `--verbose` always shows every message and wins over it. CI passes `--verbose`, so CI output stays authoritative. This is the explicit form of the default |
 | `--suppress-warnings` | on | Alias of `--quiet` (the default suppression set). Kept for compatibility |
-| `--suppress-warnings=SETS` | on | Hide GNATprove info messages whose tags match the comma-separated suppression-set names (e.g. `--suppress-warnings=unrolling-inlining,xyz`). A set name `S` suppresses blocks tagged `[info-S]` (or bare `[S]`). `--verbose` always shows every message |
+| `--suppress-warnings=SETS` | on | Hide GNATprove info messages whose tags match the comma-separated suppression-set names (for example `--suppress-warnings=unrolling-inlining,xyz`). A set name `S` suppresses blocks tagged `[info-S]` (or bare `[S]`). `--verbose` always shows every message |
 
 `prove` accepts all assessment flags too (`--dal`, `--standard`, the
-`--require-*` gates, `--emit-svg`, ...), so CI gates apply to the proof run
-directly. `--force` is shared with `man --force` (see below); the remaining
-prove flags are validated only in prove mode.
+`--require-*` gates, `--emit-svg`, and more), so CI gates apply to the proof
+run directly. `--force` is shared with `man --force` (see below). The
+remaining prove flags are validated only in prove mode.
 
 ### Automatic SBOM (`--no-sbom` / `--sbom-format`)
 
@@ -218,20 +217,20 @@ writes a single SBOM at an explicit path and exits.
 ### `--serve`
 
 After scanning and assessment, start the built-in HTTP/1.1 web dashboard on
-`--port` (default `8080`): an HTML dashboard at `/`, a JSON API at
+`--port` (default `8080`). It serves an HTML dashboard at `/`, a JSON API at
 `/api/metrics`, and the SVG badges at `/badge/*.svg`. The server blocks until
-interrupted. The dashboard is standard-aware (defaults to all standards) and
-supports light / dark / system themes. Full detail, the JSON schema, the
-theme-resolution order, and embedding tips:
+interrupted. The dashboard is standard-aware (it defaults to all standards)
+and supports light, dark, and system themes. Full detail, the JSON schema,
+the theme-resolution order, and embedding tips are in
 [Web dashboard and JSON API](dashboard.md).
 
 ### `--theme=NAME`
 
-Dashboard color theme for `--serve`: `system` (default, follows
-`prefers-color-scheme`), `light`, or `dark` (case-insensitive). Sets the
-initial dropdown selection in the served page; the header dropdown can
-switch live afterwards and **Save settings** persists the choice in
-`localStorage` (no cookies). Only relevant with `--serve`. See
+Dashboard colour theme for `--serve`: `system` (default, follows
+`prefers-color-scheme`), `light`, or `dark` (case-insensitive). It sets the
+initial dropdown selection in the served page. The header dropdown can switch
+live afterwards, and **Save settings** persists the choice in `localStorage`
+(no cookies). Only relevant with `--serve`. See
 [dashboard themes](dashboard.md#themes).
 
 ### `--port=N`
@@ -258,13 +257,13 @@ Suppress all SVG badge output. Overrides `--emit-svg` if both are given.
 
 ### `--emit-metrics=PATH`
 
-After the assessment, writes a machine-readable JSON export to `PATH`:
+After the assessment, it writes a machine-readable JSON export to `PATH`:
 `{"metrics": {...}, "dependencies": {...}}`.  `metrics` is the same
-object the dashboard JSON API serves at `/api/metrics`; `dependencies` is
+object the dashboard JSON API serves at `/api/metrics`.  `dependencies` is
 the resolved dependency graph (name, version, scope, parent, purl, kind) at
-`/api/deps`.  Useful for scripting gates, external dashboards, or archiving
-assessment results; the composite GitHub Action uploads it as a CI artifact
-when `emit-metrics` is set.
+`/api/deps`.  It is useful for scripting gates, external dashboards, or
+archiving assessment results. The composite GitHub Action uploads it as a CI
+artifact when `emit-metrics` is set.
 
 ### `--emit-markdown=PATH`
 
@@ -277,7 +276,7 @@ Write compliance reports to a directory. Creates two files:
 
 Add a directory name to the scanner's skip list (repeatable). Directories whose
 simple name matches an entry are not recursed into during source scanning.
-Only effective in relaxed mode; in strict mode (default) the skip list is
+Only effective in relaxed mode. In strict mode (default) the skip list is
 always empty.
 
 ### `--relaxed`
@@ -291,9 +290,9 @@ any `--skip-dir` entries) and does NOT apply `.adacovex/patches/`. See
 Differential mode: snapshot a base revision and print a side-by-side
 comparison against the current tree (packages, subprograms, docstring %, HLR
 traced, orphan tags, SPARK level, VCs proved, tests, DAL status). Exit `0`
-only if there are no regressions AND the current DAL is Achieved; `1`
-otherwise. Works on **git, Mercurial, Subversion, Fossil, and jj** -- full
-detail and the per-VCS snapshot mechanisms:
+only if there are no regressions AND the current DAL is Achieved. Exit `1`
+otherwise. Works on **git, Mercurial, Subversion, Fossil, and jj**. Full
+detail and the per-VCS snapshot mechanisms are in
 [VCS support and differential assessment](vcs.md).
 
 ### `--coverage-delta=REF`
@@ -302,7 +301,8 @@ Lightweight docstring-coverage gate for PR-style CI checks. Scans sources +
 patches + computes docstring metrics on both a base revision and the current
 tree (no GNATprove/tests/DAL), prints a compact coverage table plus a
 machine-parseable `coverage_delta:` line, and cleans up the snapshot. Exit `0`
-if current docstring coverage is `>=` the base; `1` if coverage regressed.
+if current docstring coverage is `>=` the base. Exit `1` if coverage
+regressed.
 Mutually exclusive with `--compare-base`. See
 [VCS support and differential assessment](vcs.md).
 
@@ -312,15 +312,15 @@ Print the bundled version (`adacovex vX.Y.Z`) and exit, without scanning or
 assessing. The version source depends on the **installation method**
 (`ADACOVEX_VERSION` for release builds, `alire-dev.toml` for source
 checkouts, `alire.toml` for dependency-managed installs). The same constant
-drives the man page, the SBOM tool version, and the result-cache namespace,
-so they can never drift. Full detail:
+drives the man page, the SBOM tool version, and the result-cache namespace.
+As a result, they cannot drift. Full detail:
 [Installation -- version source](installation.md#version-source-per-installation-method).
 
 ### `completion`
 
 `adacovex completion [SHELL]` (also `adacovex --completion[=SHELL]`) prints
 a static shell-completion script to stdout and exits.  `SHELL` is one of
-`bash`, `fish`, `zsh`, `pwsh`; when omitted it is auto-detected from
+`bash`, `fish`, `zsh`, `pwsh`, when omitted it is auto-detected from
 `$SHELL`, falling back to bash for unknown or empty shells.  Typical setup:
 
 ```bash
@@ -332,7 +332,7 @@ adacovex completion pwsh | Invoke-Expression   # PowerShell
 
 The scripts complete the subcommands and every long flag from the binary's
 own flag table, so the completion set cannot drift from the CLI. The flag
-list embeds at generation time; re-run `adacovex completion` after upgrading
+list embeds at generation time. Re-run `adacovex completion` after upgrading
 adacovex (a shell prompt hook that regenerates on version change works well).
 
 ### `man`
@@ -341,26 +341,27 @@ adacovex (a shell prompt hook that regenerates on version change works well).
 The `man` subcommand installs the adacovex man page into the **local man
 database** (Linux/WSL, no root required) and refreshes the index with `mandb`
 when present. `adacovex man --check` exits 0 when the installed page matches
-the binary, 1 otherwise (so a shell prompt hook can auto-update); `--dir=PATH`
-overrides the install root. Full detail, exit codes, and the prompt-hook
-recipe: [Installation -- keeping the man page in sync](installation.md#keeping-the-man-page-in-sync).
+the binary. It exits 1 otherwise (a shell prompt hook can auto-update as a
+result). `--dir=PATH` overrides the install root. Full detail, exit codes,
+and the prompt-hook recipe are in
+[Installation -- keeping the man page in sync](installation.md#keeping-the-man-page-in-sync).
 
 ### VCS support
 
 **A version control system is not required for base adacovex functionality**
 (scanning, proof analysis, test parsing, compliance assessment, SBOM
 generation, dashboards, caching). A VCS is only needed for the differential
-modes (`--compare-base` / `--coverage-delta`), which snapshot a base revision
-across **git, Mercurial, Subversion, Fossil, and jj** without touching the
-working tree. Detection is marker-file based (`.git` / `.jj` / `.hg` / `.svn`
-/ `.fslckout` / `_FOSSIL_`) with a command-probe fallback. Full detail, the
-snapshot mechanism per VCS, and the Subversion/Fossil UX notes:
-[VCS support and differential assessment](vcs.md).
+modes (`--compare-base` / `--coverage-delta`). Those modes snapshot a base
+revision across **git, Mercurial, Subversion, Fossil, and jj** without
+touching the working tree. Detection is marker-file based (`.git` / `.jj` /
+`.hg` / `.svn` / `.fslckout` / `_FOSSIL_`) with a command-probe fallback.
+Full detail, the snapshot mechanism per VCS, and the Subversion/Fossil UX
+notes are in [VCS support and differential assessment](vcs.md).
 
 ### CI threshold gates (`--require-*`)
 
 The four `--require-*` flags add explicit minimum-bar checks on top of the DAL
-criteria. They are off by default; when set, the assessment fails loudly
+criteria. They are off by default. When set, the assessment fails loudly
 (exit code `1`, with an explicit `CI GATE:` reason printed to the report) if the
 target does not meet the required level:
 
@@ -374,21 +375,21 @@ adacovex --target=. --require-spark=Platinum --require-docstrings=100 \
 - `require-tests` takes a count of passing tests.
 
 CI that pins a gnatprove version (manifest or global `adacovex.toml` pin)
-should set these to the values that version actually achieves -- a stricter
-prover can legitimately leave more VCs unproved, so gate on the results of the
-prover you pin.
+must set these to the values that version actually achieves. A stricter
+prover can legitimately leave more VCs unproved. As a result, gate on the
+results of the prover you pin.
 
 ### Result caching (`--cache` / `--no-cache` / `--cache-dir` / `--cache-max`)
 
-adacovex persists parsed analysis results on disk so unchanged inputs are not
-re-scanned / re-parsed / re-proved. Every entry is keyed by a namespace prefix
-plus the SHA-256 of the artifact(s) it was derived from; an unchanged
-manifest/lockfile/.gpr set serves the cached dependency graph, and unchanged
+adacovex persists parsed analysis results on disk, so unchanged inputs are not
+re-scanned, re-parsed, or re-proved. Every entry is keyed by a namespace
+prefix plus the SHA-256 of the artifact(s) it was derived from. An unchanged
+manifest/lockfile/.gpr set serves the cached dependency graph. Unchanged
 HLR.md/LLR.md serve the cached requirement parses. `--no-cache` bypasses it
-entirely, `--cache-dir` relocates it, and `--cache-max` (default `4096`) caps
+entirely. `--cache-dir` relocates it. `--cache-max` (default `4096`) caps
 entries before oldest-first eviction. The ANSI report shows a
 `result cache: X hit(s), Y miss(es), Z evicted` line per run. Full design
-(schema namespace, eviction, overflow safety, `--target` normalization):
+(schema namespace, eviction, overflow safety, `--target` normalization) is in
 [Architecture -- Result caching](architecture.md#result-caching).
 
 ### `--verbose`
@@ -423,14 +424,14 @@ scans or assesses.
 |--------|-----------------|----------------------|
 | Directory exclusions | `.git`, `obj`, `tests`, `config`, `.adacovex` only | Same + `demo,deps,examples` + `--skip-dir` additions |
 | Vendored code | Scanned and counted | Skipped |
-| Patch files | Applied from `.adacovex/patches/` (docstrings always; SPARK proof aspects in prove mode) | Not applied |
+| Patch files | Applied from `.adacovex/patches/` (docstrings always, SPARK proof aspects in prove mode) | Not applied |
 | Use case | Full compliance audit | Quick assessment of production code |
 
-Patch files can carry more than docstrings: a patch with `SPARK_Mode` /
+Patch files can carry more than docstrings. A patch with `SPARK_Mode` /
 `Pre` / `Post` / `Global` aspects is a **proof patch** that adds SPARK
 contracts to vendored code in prove mode (spec patches `.ads`, and body
 patches `.adb` opt the vendored body into the proof). Why they exist, how
-to write them, worked examples, and pitfalls:
+to write them, worked examples, and pitfalls are in
 [Proving and writing proofs -- proof patches](proving.md#proof-patches-proving-vendored-dependencies).
 
 ## Exit codes
@@ -438,22 +439,22 @@ to write them, worked examples, and pitfalls:
 | Code | Meaning |
 |------|---------|
 | `0` | Success (DAL achieved, all checks pass, `--version`, man page installed/up-to-date) |
-| `1` | Compliance failure (DAL unmet, tests failing, a `--require-*` CI gate unmet, differential regression, `man --check` finding a newer version available or none installed, etc.) |
+| `1` | Compliance failure (DAL unmet, tests failing, a `--require-*` CI gate unmet, differential regression, `man --check` finding a newer version available or none installed, and more) |
 
 ## NO_COLOR support
 
 adacovex respects the `NO_COLOR` environment variable. If `NO_COLOR` is set,
-ANSI color codes are suppressed in terminal output. Color is enabled by default.
+ANSI colour codes are suppressed in terminal output. Colour is enabled by default.
 
 ## The `sbom` subcommand
 
 `adacovex sbom` resolves the target project's dependency graph from its Alire
 manifest, `alire/alire.lock`, and the root `.gpr` `with` clauses, then writes
 a proof-aware software bill of materials in CycloneDX 1.5 JSON or SPDX 2.3
-JSON. It is **standard-aware** (defaults to all standards), honors
+JSON. It is **standard-aware** (it defaults to all standards), honours
 `SOURCE_DATE_EPOCH` for byte-for-byte deterministic output, and is mutually
 exclusive with `--compare-base` / `--coverage-delta`. Full detail (usage,
-properties, determinism, exit codes):
+properties, determinism, exit codes) is in
 [The `sbom` subcommand](sbom.md).
 
 ## Examples
@@ -468,7 +469,7 @@ adacovex --target=. --asil=B
 # IEC 62304 assessment at safety Class A (dedicated flag)
 adacovex --target=. --class=A
 
-# ISO 26262 assessment at rigor tier C (ASIL B) via --standard
+# ISO 26262 assessment at rigour tier C (ASIL B) via --standard
 adacovex --target=. --standard=iso26262 --dal=C
 
 # Emit badges for every standard at the shared tier

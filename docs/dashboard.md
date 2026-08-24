@@ -23,26 +23,26 @@ choice.
 
 Start here. The **Robustness tier** (S / A / B / C / D) is a single letter that
 summarises five quality axes: Docs, Proof, Tests, Compliance, and Deps. An **S**
-means the project is healthy across the board; a **D** means one or more axes
+means the project is healthy across the board. A **D** means one or more axes
 are below 50%. Below that:
 
 - **SPARK radar** -- proved verification conditions per check category (flow,
   initialization, runtime, assertions, functional). A balanced polygon means
-  every category has strong coverage; a spike in one corner and a flat line in
+  every category has strong coverage. A spike in one corner and a flat line in
   another means the proof effort is uneven.
 - **Tests donut** -- passed vs failed tests. A full green arc means 100%
-  passing; any red slice means the test suite has failures that must be fixed
+  passing. Any red slice means the test suite has failures that must be fixed
   before the project can be assessed as `Achieved`.
 - **Doc coverage radial gauge** -- documented subprograms as a percentage of
-  total. Strict mode requires 100%; a shortfall here shows exactly how many
+  total. Strict mode requires 100%. A shortfall here shows exactly how many
   subprograms are missing `--` docstrings.
 
 ### Proof tab
 
 Shows the SPARK level (Stone .. Platinum) and per-category VC counts. The
 mini **VCs proved / total** at the top is the headline number. Click into a
-category to see the breakdown; if a category is low, that is where the proof
-effort should focus.
+category to see the breakdown. If a category is low, that is where the proof
+effort must focus.
 
 ### Tests tab
 
@@ -77,10 +77,10 @@ glance.
 - **Green / full arcs** -- the metric is at 100% or close to it.
 - **Red slices or flat corners** -- there is a regression or missing data.
 - **Scope rings** -- a large vendored wedge means strict-mode docstrings are
-  being suppressed by patches; if you see no wedge, vendored code may not be
-  covered.
+  being suppressed by patches. If you see no wedge, vendored code can be
+  uncovered.
 - **Tier letter drops** -- a drop from `A` to `C` means the average across all
-  five axes fell; check the axis table to see which one regressed.
+  five axes fell. Check the axis table to see which one regressed.
 
 The same data is available headlessly at `/api/metrics` and via
 `--emit-metrics=PATH` (`{"metrics":..., "dependencies":...}`).
@@ -106,14 +106,14 @@ serves requests until the process is interrupted (Ctrl-C).
 
 The page is a single self-contained document (no external assets), bundled
 into the binary from **modular resources** -- `resources/dashboard.html` is
-just the page skeleton; `resources/dashboard.css` (author styles),
+just the page skeleton. `resources/dashboard.css` (author styles),
 `resources/dashboard.js` (tabs, theme, search, filters, dep-details popup) and
 the vendored `charts.min.css` / `graphre.js` / `nomnoml.js` /
 `flexsearch.js` are inlined into it at build time by
 `tools/gen-dashboard.py`, which also **minifies** the author CSS/JS
-(comments and whitespace stripped; vendored files are already minified and
+(comments and whitespace stripped, vendored files are already minified and
 inlined byte-for-byte).  Edit the individual `resources/` files, never the
-generated `src/adacovex-dashboard_template.ads`; `make build` regenerates it
+generated `src/adacovex-dashboard_template.ads`. `make build` regenerates it
 and `gen-dashboard.py --check` (wired into `make check`) fails when it
 drifts.  Content is organised into **clickable tabs** (hash-routed,
 keyboard-accessible, persisted in `localStorage`):
@@ -155,24 +155,24 @@ short links to the third-party credits and the `/api/*` endpoints.
 
 The **Dependencies** tab visualises the resolved `alire.toml` / `alire.lock`
 graph that also powers the SBOM (`/api/deps` JSON, `sbom.json`). The server
-resolves the graph at `--serve` start (best-effort; an unresolvable graph
+resolves the graph at `--serve` start (best-effort, an unresolvable graph
 shows an empty state with a link to `/api/deps`).
 
 **Tree view** (default):
 
 - Collapsible tree via `<details>` (root open, children closed) with improved
   text spacing (`line-height: 1.65`, `padding: 8px 12px`, `gap: 10px`,
-  `margin: 6px 0`); **Expand all / Collapse all** buttons.
+   `margin: 6px 0`). **Expand all / Collapse all** buttons.
 - **Filter** input (client-side, case-insensitive by name) hides non-matching
-  nodes; four **scope checkboxes** (`base`, `dev`, `transitive`, `vendored`
+  nodes. Four **scope checkboxes** (`base`, `dev`, `transitive`, `vendored`
   -- all checked by default) hide whole scopes, so vendored and dev deps can
   be distinguished and filtered where required.
 - Scope badges: `base` (alire.toml), `dev` (alire-dev.toml only),
-  `transitive`, `vendored`; `root` badge for the project itself; child count
-  badge; `data-scope` attribute on each `<li>` for JS filtering.  Scope badge
+  `transitive`, `vendored`. `root` badge for the project itself. Child count
+  badge. `data-scope` attribute on each `<li>` for JS filtering.  Scope badge
   colours come from `--scope-base/-dev/-trans/-vend` CSS variables so they
   stay readable in both themes.
-- Each node shows `name`, `version`, `license`, `purl` when available; the
+- Each node shows `name`, `version`, `license`, `purl` when available. The
   licence and PURL text are colour-coded (`--lic` amber, `--purl` muted
   monospace) so vendored/uncommon licences stand out at a glance.
 - **Click a dependency name** to open an inline **detail panel** below the
@@ -193,10 +193,10 @@ shows an empty state with a link to `/api/deps`).
   `nomnoml.draw(canvas, src)`.  The diagram reads the page's CSS custom
   properties (`--card` / `--border` / `--fg`) at draw time and re-renders
   when the light/dark theme changes, so box/arrow colours always match the
-  active theme; the canvas is sized to the container (max-width) and deep
+  active theme. The canvas is sized to the container (max-width) and deep
   graphs scroll inside `.nomnoml-wrap`.  Scope checkboxes filter the diagram
   too (re-render on change).  Buttons **Re-render** and **Download PNG** are
-  provided; the view choice is persisted in `localStorage`
+  provided. The view choice is persisted in `localStorage`
   (`adacovex-dep-view`).
 
 **Two separate searches, similar styling** (per user request):
@@ -205,8 +205,8 @@ shows an empty state with a link to `/api/deps`).
   powered by vendored [FlexSearch 0.7.31](https://github.com/nextapps-de/flexsearch)
   (Apache-2.0, `resources/flexsearch.js`, 16 KB, inlined).  At page load a
   `FlexSearch.Index({tokenize:'forward'})` is hydrated from
-  `ADACOVEX_GRAPH.dependencies` and from rendered `data-name` attributes;
-  queries are served from the index with a DOM fallback, and hits are shown
+  `ADACOVEX_GRAPH.dependencies` and from rendered `data-name` attributes.
+  Queries are served from the index with a DOM fallback, and hits are shown
   in a `search-hits` dropdown that jumps to the tree and seeds `dep-filter`.
 - **Tree filter** (`#dep-filter`, inside the Dependencies tab) is a plain
   client-side name filter over the rendered tree only -- it never touches the
@@ -221,13 +221,13 @@ The same data is available headlessly at `/api/deps` and via
 
 The **Charts** tab renders six cards, each a distinct chart type. The
 vendored [Charts.css](https://chartscss.org/) framework (v1.2.0, MIT, inlined
-into the page shell) drives the CSS-only cards; all values are unitless `0..1`
+into the page shell) drives the CSS-only cards. All values are unitless `0..1`
 `--size` / `--start` / `--end` fractions (previously `0..100` made every pie
 slice a full circle) and the donut shows proved vs *unproved* slices
 (previously proved vs total duplicated the proved arc):
 
 - **SPARK Proof** -- *donut* of proved vs unproved VCs (`720/720` shows a
-  full proved arc; `680/720` shows `94%` proved + `40` unproved).
+  full proved arc. `680/720` shows `94%` proved + `40` unproved).
 - **Proof Check Types** -- *column* of proved checks per category (flow,
   init, runtime, assertions, functional), each bar normalised to its category
   total.
@@ -238,17 +238,17 @@ slice a full circle) and the donut shows proved vs *unproved* slices
 - **Tests Pass/Fail** -- *pie* of passed vs failed tests.
 - **Dependencies by Scope** -- *polar ring* of base / dev / transitive /
   vendored components (conic-gradient + CSS hole, `--scope-*` theme
-  variables) with a legend; skipped when the graph is empty.
+  variables) with a legend. Skipped when the graph is empty.
 
 Each of the six cards is a different type (donut / column / bar / radial /
 pie / polar) so the tab shows the full feature set of Charts.css without
 duplicating a data story.  The per-check-category SPARK radar lives on the
 **Overview** tab instead (see below).  No JavaScript is required for the
-Charts.css cards (pure CSS); the radial gauge and the scope ring are inline
+Charts.css cards (pure CSS). The radial gauge and the scope ring are inline
 SVG/CSS and follow the light/dark theme automatically.  The surrounding grid
 (`chart-grid`) is responsive and the page container is `max-width:1180px` so
 large monitors do not stretch cards.  Pies/rings are used where a
-part-to-whole distribution is the point; bars/columns where a
+part-to-whole distribution is the point. Bars/columns are used where a
 max-normalised comparison across categories is the point.
 
 ### Robustness tier
@@ -286,10 +286,10 @@ numbers as the full-size charts.
 ## Standard-awareness
 
 Like the `sbom` subcommand, the dashboard **defaults to all standards** when
-no `--standard` / `--asil` / `--class` flag is given: the status badges and
+no `--standard` / `--asil` / `--class` flag is given. The status badges and
 the compliance card list every standard's label at the shared tier (DAL-C,
 ASIL B, Class A). An explicit standard flag narrows the dashboard to that
-single standard (e.g. `--asil=B` shows only ISO 26262 at ASIL B). See
+single standard (for example `--asil=B` shows only ISO 26262 at ASIL B). See
 [Standards](standards.md) for the cross-standard tier mapping.
 
 ## The JSON API
@@ -339,21 +339,21 @@ On-disk, the same export is available via `--emit-metrics=PATH`
 
 ## Themes
 
-The dashboard supports **light**, **dark**, and **system** themes. Colors are
+The dashboard supports **light**, **dark**, and **system** themes. Colours are
 driven by CSS custom properties, and a header dropdown switches live between
-them; **Save settings** persists the current selection in `localStorage`
+them. **Save settings** persists the current selection in `localStorage`
 (no cookies, key `adacovex-theme`).
 
 Theme resolution on page load:
 
-1. a `?theme=light|dark|system` query parameter on the dashboard URL --
-   always wins (this is the supported way to pin the theme when embedding
-   the dashboard in an iframe);
-2. otherwise the explicit CLI theme (`--theme=light` / `--theme=dark`);
-3. otherwise the saved `localStorage` choice, if one was saved;
+1. a `?theme=light|dark|system` query parameter on the dashboard URL.
+   It always wins. This is the supported way to pin the theme when embedding
+   the dashboard in an iframe.
+2. otherwise the explicit CLI theme (`--theme=light` / `--theme=dark`).
+3. otherwise the saved `localStorage` choice, if one was saved.
 4. otherwise the system theme (`prefers-color-scheme`).
 
-`--theme` only sets the *initial* selection; the dropdown and Save settings
+`--theme` only sets the *initial* selection. The dropdown and Save settings
 still override it afterwards in the browser.
 
 ## Related CLI flags

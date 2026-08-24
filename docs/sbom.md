@@ -4,7 +4,8 @@
 
 A Software Bill of Materials (SBOM) is a structured inventory of every
 component in your project, plus its provenance, licence, and (in adacovex's
-case) its SPARK proof level and compliance context. You should generate one when:
+case) its SPARK proof level and compliance context. Generate one in these
+cases:
 
 - **Auditing or certifying** -- an SBOM is a standard artifact for safety
   certification (DO-178C, ISO 26262, IEC 62304). It shows the auditor exactly
@@ -29,7 +30,8 @@ or Markdown.
 Choose the format that matches your toolchain:
 
 - **CycloneDX 1.5 JSON** (`--format=cyclonedx-json`) -- drop into any CycloneDX
-  consumer (Dependency-Track, OWASP Dependency-Check, etc.). The root component
+  consumer (Dependency-Track, OWASP Dependency-Check, and more). The root
+  component
   carries `adacovex:proof_level`, `adacovex:standard`, `adacovex:dal_target`,
   and `adacovex:level`. Every dependency has a `language` field inferred from
   file extensions or declared ecosystems.
@@ -45,7 +47,7 @@ Choose the format that matches your toolchain:
 |-------|-----------------|---------|
 | `adacovex:proof_level` | Root component | Assessed SPARK level (`Stone` .. `Platinum`) |
 | `adacovex:standard` | Root component | Compliance standard (`DO-178C`, `ISO 26262`, `IEC 62304`) |
-| `adacovex:dal_target` | Root component | Shared rigor tier (`DAL-A` .. `DAL-E`) |
+| `adacovex:dal_target` | Root component | Shared rigour tier (`DAL-A` .. `DAL-E`) |
 | `adacovex:level` | Root component | Standard-specific label (`DAL-C`, `ASIL B`, `Class A`) |
 | `language` | Every component | Implementation language(s) inferred from file extensions |
 | `purl` | Every component | Package URL for registry linking |
@@ -74,7 +76,7 @@ adacovex sbom [--format=cyclonedx-json|spdx-json|md] [--out=PATH]
 The `sbom` subcommand accepts the same standard flags as the assessment
 (`--standard`, `--dal`, `--asil`, `--class`) and **defaults to all
 standards**: without an explicit standard flag the SBOM carries the joined
-DO-178C / ISO 26262 / IEC 62304 properties at the shared DAL tier;
+DO-178C / ISO 26262 / IEC 62304 properties at the shared DAL tier.
 `--standard=iso26262` / `--asil=B` narrows it to ISO 26262 at ASIL B, and
 `--class=A` to IEC 62304 at Class A. See [Standards](standards.md) for the
 cross-standard tier mapping.
@@ -83,11 +85,11 @@ cross-standard tier mapping.
 
 Only the root component -- the project adacovex actually assessed -- carries:
 
-- `adacovex:proof_level` -- `Stone`..`Platinum`, the honest assessed level;
-- `adacovex:standard` -- `DO-178C` / `ISO 26262` / `IEC 62304`;
-- `adacovex:dal_target` -- `DAL-A`..`DAL-D` (omitted for `DAL-E`);
+- `adacovex:proof_level` -- `Stone`..`Platinum`, the honest assessed level.
+- `adacovex:standard` -- `DO-178C` / `ISO 26262` / `IEC 62304`.
+- `adacovex:dal_target` -- `DAL-A`..`DAL-D` (omitted for `DAL-E`).
 - `adacovex:level` -- the standard-specific label (`DAL-C` / `ASIL B` /
-  `Class A`; omitted for `DAL-E`).
+  `Class A`, omitted for `DAL-E`).
 
 Dependency components report `adacovex:proof_level = "Not proved"` (adacovex
 only proves the target itself, never third-party dependencies). Properties are
@@ -96,11 +98,11 @@ encoded as `attributionTexts` in SPDX.
 ## Determinism
 
 The `metadata.timestamp` / `creationInfo.created` field honors the
-`SOURCE_DATE_EPOCH` environment variable (reproducible-builds convention);
-when set to a Unix epoch second count the timestamp is derived from it in UTC
-via pure integer math, so SBOM output is byte-for-byte deterministic across
-runs and machines. To tie it to a specific git commit, run
-`export SOURCE_DATE_EPOCH=$(git -C <target> log -1 --format=%ct)` before
+`SOURCE_DATE_EPOCH` environment variable (reproducible-builds convention).
+When set to a Unix epoch second count, the timestamp is derived from it in
+UTC via pure integer math. As a result, SBOM output is byte-for-byte
+deterministic across runs and machines. To tie it to a specific git commit,
+run `export SOURCE_DATE_EPOCH=$(git -C <target> log -1 --format=%ct)` before
 adacovex. The bundled `make` targets (`run-self`, `run-ada-crdt`, `prove`,
 `release`, and Ada_CRDT's `prove`/`badges`) already set it from the target's
 git `HEAD` commit time.
@@ -108,8 +110,8 @@ git `HEAD` commit time.
 ## Exclusivity and ordering
 
 `sbom` is mutually exclusive with `--compare-base` and `--coverage-delta`. It
-scans sources, parses proof/test results, and assesses DAL first, so the
-emitted properties reflect the real assessment state.
+scans sources, parses proof/test results, and assesses DAL first. As a
+result, the emitted properties reflect the real assessment state.
 
 Both formats validate against the official
 [CycloneDX 1.5](https://github.com/CycloneDX/specification) and
