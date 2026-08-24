@@ -101,7 +101,7 @@ adacovex follows the Unix philosophy of doing one thing well:
 - **Composable tools**: The `prove` subcommand runs GNATprove and then falls through to the standard assessment pipeline. The `sbom` subcommand generates a proof-aware SBOM independently.
 - **Exit codes**: `0` for success (DAL achieved), `1` for compliance failure. This enables straightforward CI integration.
 - **Minimal user code**: users write as little code as possible while getting
-  maximum value. The tool meets third-party and generated code where it is. It
+  maximum value. The tool accepts third-party and generated code as it is. It
   recognises common docstring conventions (Ada `--  @param`, Google
   `Args:`/`Returns:`, Sphinx `:param:`/`:returns:`). It recognises common
   test-result formats (TAP, Automake, Surefire, Unity). It lowers foreign type

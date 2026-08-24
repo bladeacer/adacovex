@@ -1269,30 +1269,36 @@ package body Adacovex.Prove is
          --  once the run finishes (no live tail) -- quiet is the default
          --  for local runs, never for --verbose or CI (which passes
          --  --verbose).
+         --  The capture file lives in the system temp directory with a
+         --  PID-suffixed name (GNAT.OS_Lib.Create_Temp_File would drop a
+         --  GNAT-TEMP-*.TMP in the current directory instead, which leaks
+         --  into the project tree on interrupted runs).
          declare
-            Fd  : GNAT.OS_Lib.File_Descriptor;
-            Tmp : GNAT.OS_Lib.String_Access;
+            Pid     : constant Integer :=
+              GNAT.OS_Lib.Pid_To_Integer (GNAT.OS_Lib.Current_Process_Id);
+            Pid_Img : constant String := Integer'Image (Pid);
+            Tmp     : constant String :=
+              Adacovex.CPUs.Get_Temp_Directory
+              & "/adacovex-prove-output-"
+              & Pid_Img (2 .. Pid_Img'Last)
+              & ".tmp";
          begin
-            GNAT.OS_Lib.Create_Temp_File (Fd, Tmp);
-            GNAT.OS_Lib.Close (Fd);
             Spawn
               (Exe (1 .. Exe_Len),
                Args (1 .. N),
-               Tmp.all,
+               Tmp,
                OK,
                Code,
                Err_To_Out => True);
-            if Ada.Directories.Exists (Tmp.all) then
+            if Ada.Directories.Exists (Tmp) then
                Replay_Suppressed
-                 (Tmp.all,
-                  Ada.Strings.Unbounded.To_String (Opts.Suppress_Sets));
+                 (Tmp, Ada.Strings.Unbounded.To_String (Opts.Suppress_Sets));
                declare
                   Del_OK : Boolean;
                begin
-                  GNAT.OS_Lib.Delete_File (Tmp.all, Del_OK);
+                  GNAT.OS_Lib.Delete_File (Tmp, Del_OK);
                end;
             end if;
-            GNAT.OS_Lib.Free (Tmp);
          end;
       else
          Spawn (Exe (1 .. Exe_Len), Args (1 .. N), "/dev/stdout", OK, Code);
