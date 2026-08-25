@@ -88,7 +88,7 @@ help:
 	@echo 'check runs the same gates CI enforces before a release, cheap static'
 	@echo '  gates first (ascii, spark-off, changelog, version, doc-links,'
 	@echo '  action-parity), then'
-	@echo '  build + native tests + SPARK proof (Platinum, 722 VCs) + SVG badges'
+	@echo '  build + native tests + SPARK proof (Platinum, 724 VCs) + SVG badges'
 	@echo '  + API docs + SBOM, then tree-wide count-sync checks (test-count,'
 	@echo '  proof-status, description) that fail when any live file carries a'
 	@echo '  stale metric. `make prove` / `make run-self` both emit badges, so'
@@ -271,21 +271,24 @@ ascii-check:
 # Quality gate: no `SPARK_Mode (Off)` may appear anywhere in src/ except the
 # `Types.Implementation` container package and the `Complexity` checker package --
 # SPARK forbids instantiating the non-formal Ada.Containers in SPARK_Mode On
-# code, so those packages are the required exceptions (see AGENTS.md "SPARK
-# proof discipline").
+# code (gnatprove 16.1.0 rejects such instantiations with "not allowed in
+# SPARK (due to entity declared with SPARK_Mode Off)"), so those packages are
+# the two required exceptions (see AGENTS.md "SPARK proof discipline" and
+# docs/proof/16.1.0-ledger.md).  CPUs.Get_Temp_Directory returned to
+# SPARK_Mode On in 1.27.0: gnatprove 16 analyses Ada.Environment_Variables
+# with [assumed-global-null] warnings instead.
 spark-off-check:
 	@echo "=== SPARK_Mode Off verification ==="; \
-	off=$$(grep -rn --include='*.ads' --include='*.adb' -E 'pragma SPARK_Mode \(Off\)|SPARK_Mode => Off' src/ 2>/dev/null | grep -v '^src/core/adacovex-types.ads:' | grep -v '^src/core/adacovex-complexity.ads:' | grep -v '^src/core/adacovex-cpus.ads:' || true); \
+	off=$$(grep -rn --include='*.ads' --include='*.adb' -E 'pragma SPARK_Mode \(Off\)|SPARK_Mode => Off' src/ 2>/dev/null | grep -v '^src/core/adacovex-types.ads:' | grep -v '^src/core/adacovex-complexity.ads:' || true); \
 	if [ -n "$$off" ]; then \
 	  echo "  SPARK_Mode (Off) found outside allowed packages:"; \
 	  echo "$$off"; \
-	  echo "  Only Types.Implementation, Complexity, and CPUs.Get_Temp_Directory"; \
-	  echo "  may be SPARK_Mode Off (non-formal Ada.Containers and"; \
-	  echo "  Ada.Environment_Variables/GNAT.OS_Lib are illegal in SPARK_Mode On"; \
-	  echo "  code)."; \
+	  echo "  Only Types.Implementation and Complexity may be SPARK_Mode Off"; \
+	  echo "  (non-formal Ada.Containers instantiations are illegal in"; \
+	  echo "  SPARK_Mode On code; see docs/proof/16.1.0-ledger.md)."; \
 	  exit 1; \
 	fi; \
-	echo "  no SPARK_Mode (Off) outside src/core/adacovex-types.ads, src/core/adacovex-complexity.ads, and src/core/adacovex-cpus.ads"
+	echo "  no SPARK_Mode (Off) outside src/core/adacovex-types.ads and src/core/adacovex-complexity.ads"
 
 # Quality gate: everything CI enforces before a release.  Cheap static
 # gates run first so a formatting / sync problem fails before the expensive

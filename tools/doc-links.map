@@ -1,3 +1,4 @@
+docs/index.md	Documentation index
 docs/cli-reference.md	CLI reference
 docs/dashboard.md	Web dashboard
 docs/sbom.md	SBOM
@@ -25,3 +26,6 @@ docs/ste100-technical-names.md	STE100 technical names
 docs/HLR.md	HLR index
 docs/LLR.md	LLR mapping
 docs/perf.md	Performance
+docs/proof/index.md	Proof records
+docs/compliance/index.md	Compliance outputs
+docs/badges/index.md	Badges

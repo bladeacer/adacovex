@@ -21,7 +21,7 @@ any Ada/SPARK project.
 
 Self-assessment (`make run-self`) must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
-- Platinum SPARK level (722 VCs under gnatprove 16.1.0, 0 unproved, 0
+- Platinum SPARK level (724 VCs under gnatprove 16.1.0, 0 unproved, 0
   justified; see `docs/proof/16.1.0-ledger.md`)
 - 968/968 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
@@ -201,15 +201,17 @@ scripts), differential modes, and `sbom`.
 - **SPARK proof discipline** (enforced by `make prove` plus the
   `make spark-off-check` gate, both wired into `make check` and CI): every user assertion
   (`pragma Assert`, pre/postconditions, loop invariants) and every runtime
-  check must be proved -- **0 unproved VCs**; there must be **zero justified
-  VCs** (no `pragma Assume` / `pragma Annotate` justifications); and there
-  must be **no `pragma SPARK_Mode (Off)` in `src/` except
-  `Types.Implementation`, `Complexity`, and `CPUs`** -- the three packages
-  that instantiate non-formal `Ada.Containers.Vectors` or call non-SPARK
-  runtime routines (`Ada.Environment_Variables`, `GNAT.OS_Lib`), which SPARK
-  forbids in `SPARK_Mode On` code. I/O- and container-heavy units are
-  default-off bodies or carry per-subprogram `SPARK_Mode => On` aspects; they
-  never carry an explicit Off pragma outside the three exempted packages.
+  check must be proved -- **0 unproved VCs**, **zero justified VCs**
+  (no `pragma Assume` / `pragma Annotate` justifications), and **no
+  `pragma SPARK_Mode (Off)` in `src/` except `Types.Implementation` and
+  `Complexity`** -- the two packages that instantiate non-formal
+  `Ada.Containers.Vectors`, which gnatprove rejects in `SPARK_Mode On` code
+  (verified under gnatprove 16.1.0; see
+  [docs/proof/16.1.0-ledger.md](docs/proof/16.1.0-ledger.md) for the
+  evidence and the `[assumed-global-null]` warnings the recovered
+  `CPUs.Get_Temp_Directory` function carries). I/O- and container-heavy
+  bodies are default-off or SPARK-Mode-On-ensuring packages; they never carry
+  an explicit Off pragma outside the two exempted packages.
 - **Build/dev tooling requires Python 3** (pure-stdlib `tools/*.py`: version
   generation, description sync, test/proof doc sync, changelog checks,
   doc-links, agents-tree). The adacovex binary itself has no Python
@@ -261,7 +263,7 @@ link URLs).
 | `complexity-check` | Cyclomatic-complexity + LOC gate: no god objects/functions, no file above its LOC or percentage-of-codebase caps (native Ada; gated by make complexity-check) |
 | `bench` | Benchmark the pipeline with hyperfine (bash `time` fallback): cold vs warm timings + binary size (docs/perf.md) |
 | `perf-bench` | Profile the adacovex binary with perf and strace (tools/perf-bench.py; docs/perf.md) |
-| `spark-off-check` | Fail if any `SPARK_Mode (Off)` appears outside the `Types.Implementation` container package |
+| `spark-off-check` | Fail if any `SPARK_Mode (Off)` appears outside `Types.Implementation` and `Complexity` (the non-formal `Ada.Containers` instantiations) |
 | `clean` | Remove bin/ obj/ docs/badges/ |
 | `help` | Print available targets |
 
@@ -337,7 +339,7 @@ release-tag coverage gate instead.
 |-------|---------|-------------|
 | Unit tests | `make test` | 968/968 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
-| SPARK proof | `make prove` | Platinum (722 VCs, 0 unproved, 0 justified under gnatprove 16.1.0) |
+| SPARK proof | `make prove` | Platinum (724 VCs, 0 unproved, 0 justified under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
 
 ## Changelog format
@@ -381,6 +383,7 @@ reference, and never inline API details into a user doc when a cross-link
 suffices.
 
 <!-- doc-links:begin -->
+- [Documentation index](docs/index.md)
 - [CLI reference](docs/cli-reference.md)
 - [Web dashboard](docs/dashboard.md)
 - [SBOM](docs/sbom.md)
@@ -408,6 +411,9 @@ suffices.
 - [HLR index](docs/HLR.md)
 - [LLR mapping](docs/LLR.md)
 - [Performance](docs/perf.md)
+- [Proof records](docs/proof/index.md)
+- [Compliance outputs](docs/compliance/index.md)
+- [Badges](docs/badges/index.md)
 <!-- doc-links:end -->
 
 ## Technical writing

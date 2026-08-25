@@ -2311,56 +2311,6 @@ package body Adacovex.Parsers.Manifest is
       Make_Tool ("ada"),
       Make_Tool ("alire"));
 
-   --  Whether Line contains Tool as a whole word.  The match is
-   --  case-sensitive.  It is bounded by characters outside [a-z0-9_-].
-   --  "make" matches in "make build".  "make" does not match in "Makefile"
-   --  (capital M) or "makefile".  "python" does not match inside
-   --  "python3".
-   --  @param Line  Line of text to search.
-   --  @param Tool  Lowercase tool name to look for.
-   --  @return True when Line refers to Tool as a whole word.
-   function Line_Refers_To (Line : String; Tool : String) return Boolean is
-      function Is_Word_Char (C : Character) return Boolean is
-      begin
-         return
-           (C in 'a' .. 'z')
-           or else (C in '0' .. '9')
-           or else C = '_'
-           or else C = '-';
-      end Is_Word_Char;
-
-      function Match_At (I : Natural) return Boolean is
-      begin
-         if I + Tool'Length - 1 > Line'Last then
-            return False;
-         end if;
-         if I > Line'First and then Is_Word_Char (Line (I - 1)) then
-            return False;
-         end if;
-         if I + Tool'Length <= Line'Last
-           and then Is_Word_Char (Line (I + Tool'Length))
-         then
-            return False;
-         end if;
-         for J in Tool'Range loop
-            if Line (I + (J - Tool'First)) /= Tool (J) then
-               return False;
-            end if;
-         end loop;
-         return True;
-      end Match_At;
-   begin
-      if Tool'Length = 0 or else Tool'Length > Line'Length then
-         return False;
-      end if;
-      for I in Line'First .. Line'Last - Tool'Length + 1 loop
-         if Match_At (I) then
-            return True;
-         end if;
-      end loop;
-      return False;
-   end Line_Refers_To;
-
    --  Probe a tool's version by running "<Tool> <Flag>" and extracting the
    --  first whitespace-separated token that contains a digit from the
    --  captured output (for example "2.55.0" from "git version 2.55.0",
@@ -2624,6 +2574,90 @@ package body Adacovex.Parsers.Manifest is
          Add_Dep_Name (Referenced, Tool.Name (1 .. Tool.Len));
       end Note_Tool;
 
+      --  Whether C bounds a tool-name word in a line.  A word is a maximal
+      --  run of lowercase letters, digits, underscore, and hyphen
+      --  ([a-z0-9_-]).  Uppercase letters do not start or continue a word,
+      --  so "Makefile" and "MAKE" never match the lowercase tool "make".
+      function Is_Word_Char (C : Character) return Boolean is
+      begin
+         return
+           (C in 'a' .. 'z')
+           or else (C in '0' .. '9')
+           or else C = '_'
+           or else C = '-';
+      end Is_Word_Char;
+
+      --  When the word at Line (W_First .. W_Last) names one of the curated
+      --  system tools, record it via Note_Tool.  The match is
+      --  case-sensitive.  Only words whose length equals a tool name are
+      --  compared, so a line is scored once per word instead of once per
+      --  tool.  "make" matches in "make build".  "make" does not match in
+      --  "Makefile" (capital M), "makefile", or "makefiles".  "python"
+      --  does not match inside "python3".
+      --  @param Line  Line of text to search.
+      --  @param W_First  First index of the word in Line.
+      --  @param W_Last  Last index of the word in Line.
+      procedure Note_If_Tool
+        (Line : String; W_First : Natural; W_Last : Natural)
+      is
+         W_Len : constant Natural := W_Last - W_First + 1;
+      begin
+         for T in System_Tools'Range loop
+            if System_Tools (T).Len = W_Len then
+               declare
+                  Is_Tool : Boolean := True;
+               begin
+                  for J in 1 .. W_Len loop
+                     if Line (W_First + J - 1) /= System_Tools (T).Name (J)
+                     then
+                        Is_Tool := False;
+                        exit;
+                     end if;
+                  end loop;
+                  if Is_Tool then
+                     Note_Tool (System_Tools (T));
+                     return;
+                  end if;
+               end;
+            end if;
+         end loop;
+      end Note_If_Tool;
+
+      --  Record every system tool that Line references as a whole word.
+      --  The line is walked once, extracting maximal [a-z0-9_-] words, and
+      --  each word is compared against the tool table by length first.
+      --  This replaces a per-tool substring scan (60 tools x line length)
+      --  with a per-word scan (a few words x 60 length checks), which was
+      --  the dominant CPU cost of the SBOM system-dev-dependency discovery
+      --  on every run.
+      --  @param Line  Line of text to search.
+      procedure Note_Referenced_Tools (Line : String) is
+         W_First : Natural := Line'First;
+         W_Last  : Natural;
+      begin
+         if Line'Length < 2 then
+            --  No tool name is one character long; a shorter line cannot
+            --  reference any tool.
+            return;
+         end if;
+         while W_First <= Line'Last loop
+            --  Skip non-word characters (whitespace, quotes, punctuation).
+            while W_First <= Line'Last
+              and then not Is_Word_Char (Line (W_First))
+            loop
+               W_First := W_First + 1;
+            end loop;
+            exit when W_First > Line'Last;
+            W_Last := W_First;
+            while W_Last < Line'Last and then Is_Word_Char (Line (W_Last + 1))
+            loop
+               W_Last := W_Last + 1;
+            end loop;
+            Note_If_Tool (Line, W_First, W_Last);
+            W_First := W_Last + 1;
+         end loop;
+      end Note_Referenced_Tools;
+
       --  Scan one file for every known system tool.
       procedure Scan_File (Path : String) is
          use Ada.Text_IO;
@@ -2661,14 +2695,7 @@ package body Adacovex.Parsers.Manifest is
                Close (F);
                return;
             end if;
-            for T in System_Tools'Range loop
-               if Line_Refers_To
-                    (Line (1 .. Last),
-                     System_Tools (T).Name (1 .. System_Tools (T).Len))
-               then
-                  Note_Tool (System_Tools (T));
-               end if;
-            end loop;
+            Note_Referenced_Tools (Line (1 .. Last));
          end loop;
          Close (F);
       exception
@@ -2716,6 +2743,11 @@ package body Adacovex.Parsers.Manifest is
                           and N /= "config"
                           and N /= ".adacovex"
                           and N /= "alire"
+                          and N /= "gnatprove"
+                          and N /= "__pycache__"
+                          and N /= "node_modules"
+                          and N /= ".headroom"
+                          and N /= ".lccst"
                         then
                            Push_Dir (Path);
                         end if;
