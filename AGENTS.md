@@ -208,8 +208,9 @@ scripts), differential modes, and `sbom`.
   `Ada.Containers.Vectors`, which gnatprove rejects in `SPARK_Mode On` code
   (verified under gnatprove 16.1.0; see
   [docs/proof/16.1.0-ledger.md](docs/proof/16.1.0-ledger.md) for the
-  evidence and the `[assumed-global-null]` warnings the recovered
-  `CPUs.Get_Temp_Directory` function carries). I/O- and container-heavy
+  evidence; `CPUs.Get_Temp_Directory` scopes a `pragma Warnings (Off,
+  "no Global contract available")` around its runtime env-var reads so the
+  run stays warning-free). I/O- and container-heavy
   bodies are default-off or SPARK-Mode-On-ensuring packages; they never carry
   an explicit Off pragma outside the two exempted packages.
 - **Build/dev tooling requires Python 3** (pure-stdlib `tools/*.py`: version
@@ -233,8 +234,13 @@ SFrame log filter, covex symlink), `make bench` runs tools/bench.py
 (hyperfine cold/warm timings + stripped-binary size), `make doc` / `make fmt`
 run their command through tools/dev-cmd.py (the alire-dev.toml swap,
 restored unconditionally), `make coverage-gate` runs tools/coverage-gate.py
-(temp-worktree docstring delta vs the previous release tag), and `make
+(temp-worktree docstring delta vs the previous release tag), `make prove` /
+`make run-self` / `make sbom` / `make run-ada-crdt` all run through
+tools/run.py (the single owner of the SOURCE_DATE_EPOCH + acceptance-gate
+invocation shape; `run.py assess-args` feeds release.py), and `make
 release` runs tools/release.py (`--dry-run` skips commit/tag/push).
+The tools' own pure logic is covered by a stdlib-unittest suite at
+tools/tests.py, wired as the `tools-check` gate in `make check`.
 `tools/check-action-parity.py` is a pure check (no writes) wired as
 `make action-parity-check` -- a feature gate in `make check` and CI that
 fails when the GitHub Action stops mirroring the base CLI option set.
@@ -248,7 +254,7 @@ link URLs).
 
 | Target | Description |
 |--------|-------------|
-| `check` | Full quality gate (CI runs this before release): cheap static gates first (ascii, complexity, spark-off, changelog, action-parity, version, doc-links), then build + tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description) that fail when any live file carries a stale metric |
+| `check` | Full quality gate (CI runs this before release): cheap static gates first (ascii, complexity, spark-off, changelog, action-parity, tools-check, version, doc-links), then build + tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description) that fail when any live file carries a stale metric |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
 | `test` | Build + run the 973-test native suite |
@@ -268,7 +274,8 @@ link URLs).
 | `changelog-check` | Validate all `docs/changelogs/` against the canonical format (tools/check-changelogs.py) |
 | `action-parity-check` | Fail if the GitHub Action drifts from the base CLI option set or the docs/ci-cd.md input table (tools/check-action-parity.py; feature gate) |
 | `release` | Build, prove, validate, run coverage gate vs last release, bundle + tag & push |
-| `ascii-check` | Verify all source files are pure ASCII |
+| `ascii-check` | Verify all source files are pure ASCII (skips generated e2e output: playwright-report / test-results) |
+| `tools-check` | Run the stdlib-unittest suite for the tools/*.py dev scripts (tools/tests.py) |
 | `complexity-check` | Cyclomatic-complexity + LOC gate: no god objects/functions, no file above its LOC or percentage-of-codebase caps (native Ada; gated by make complexity-check) |
 | `bench` | Benchmark the pipeline with hyperfine (bash `time` fallback): cold vs warm timings + binary size (docs/perf.md) |
 | `perf-bench` | Profile the adacovex binary with perf and strace (tools/perf-bench.py; docs/perf.md) |

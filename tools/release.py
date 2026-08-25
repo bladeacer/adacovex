@@ -12,6 +12,10 @@ the flow:
   python3 tools/release.py [--version=x.y.z] [--self-assess-args="..."]
                            [--repo=owner/name] [--dry-run]
 
+`--self-assess-args` overrides the acceptance-gate flags; the default is
+the canonical set owned by tools/run.py (`run.py assess-args`), so a gate
+change lands in one place.
+
 Steps, in order:
 
 1. Prove: `adacovex prove --target=. <self-assess-args> --emit-svg=docs/badges/`
@@ -64,8 +68,8 @@ def resolve_version(arg: str) -> str:
     """Version from --version, else the current alire.toml version."""
     if arg:
         return arg[1:] if arg.startswith("v") else arg
-    result = sh([sys.executable, "tools/versions.py", "current",
-                 "--file", "alire.toml"],
+    result = sh([sys.executable, str(ROOT / "tools" / "versions.py"),
+                 "current", "--file", "alire.toml"],
                 capture_output=True, text=True)
     return result.stdout.strip()
 
@@ -91,8 +95,8 @@ def changelogs_for(version: str, previous: Optional[str]) -> List[str]:
     """Changelog paths between previous release (or earliest) and version."""
     def between(min_v: str, paths: List[str]) -> List[str]:
         result = sh(
-            [sys.executable, "tools/versions.py", "between", min_v, version,
-             "--exclude", version],
+            [sys.executable, str(ROOT / "tools" / "versions.py"), "between",
+             min_v, version, "--exclude", version],
             input="\n".join(paths), capture_output=True, text=True,
         )
         return result.stdout.splitlines()
@@ -169,16 +173,17 @@ def bump_manifests(version: str) -> None:
     index_file = ROOT / "index" / "ad" / "covex" / f"covex-{version}.toml"
     if not index_file.is_file():
         shutil.copy2(ROOT / INDEX_TEMPLATE, index_file)
-    sh([sys.executable, "tools/versions.py", "set-version",
+    sh([sys.executable, str(ROOT / "tools" / "versions.py"), "set-version",
         str(index_file), version], capture_output=True, text=True)
 
     release_file = ROOT / "alire" / "releases" / f"covex-{version}.toml"
     if not release_file.is_file():
         shutil.copy2(ROOT / RELEASE_TEMPLATE, release_file)
-    sh([sys.executable, "tools/versions.py", "set-version",
+    sh([sys.executable, str(ROOT / "tools" / "versions.py"), "set-version",
         str(release_file), version], capture_output=True, text=True)
 
-    sh([sys.executable, "tools/update-description.py"], capture_output=True, text=True)
+    sh([sys.executable, str(ROOT / "tools" / "update-description.py")],
+       capture_output=True, text=True)
     print("  descriptions synced to all manifests")
 
 
@@ -213,7 +218,12 @@ def release(version_arg: str, assess_args: str, repo: str, dry_run: bool) -> int
         # recipe did), so the release manifest carries the new version.
         sh([sys.executable, "tools/versions.py", "set-version",
             "alire.toml", version], capture_output=True, text=True)
-    assess = assess_args.split()
+    if assess_args:
+        assess = assess_args.split()
+    else:
+        result = sh([sys.executable, "tools/run.py", "assess-args"],
+                    capture_output=True, text=True)
+        assess = result.stdout.strip().split()
     print(f"=== Releasing v{version} ===\n")
 
     print("=== Generating proof artifacts ===")

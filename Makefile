@@ -1,4 +1,4 @@
-.PHONY: help check build test prove doc clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish agents-tree sbom description proof-status test-count doc-links link-check changelog-check action-parity-check man bench perf-bench complexity-check sync
+.PHONY: help check build test prove doc clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish agents-tree sbom description proof-status test-count doc-links link-check changelog-check action-parity-check tools-check man bench perf-bench complexity-check sync
 
 .DEFAULT_GOAL := help
 
@@ -10,9 +10,10 @@ help:
 	@echo '  Core:'
 	@echo '    check         Full quality gate (CI before release): cheap'
 	@echo '                  static gates first (ascii, complexity, spark-off,'
-	@echo '                  changelog, version, doc-links, action-parity), then'
-	@echo '                  build+test+prove+doc+sbom, then count-sync checks'
-	@echo '                  (test-count, proof-status, description)'
+	@echo '                  changelog, version, doc-links, action-parity,'
+	@echo '                  tools-check), then build+test+prove+doc+sbom,'
+	@echo '                  then count-sync checks (test-count, proof-status,'
+	@echo '                  description)'
 	@echo '    build         Build project (adacovex + test_runner, covex alias);'
 	@echo '                  regenerates src/adacovex_version_info.ads from'
 	@echo '                  alire-dev.toml (or ADACOVEX_VERSION for releases)'
@@ -58,6 +59,8 @@ help:
 	@echo '                  function exceeds the decision-point cap or a file'
 	@echo '                  exceeds its LOC / percentage-of-codebase caps'
 	@echo '    ascii-check   Verify all source files are pure ASCII'
+	@echo '    tools-check   Run the stdlib-unittest suite for the tools/*.py'
+	@echo '                  dev scripts (tools/tests.py)'
 	@echo '    spark-off-check  Fail if any SPARK_Mode (Off) appears outside the'
 	@echo '                  Types.Implementation container package'
 	@echo '    changelog-check Validate all docs/changelogs follow the canonical'
@@ -87,7 +90,7 @@ help:
 	@echo ''
 	@echo 'check runs the same gates CI enforces before a release, cheap static'
 	@echo '  gates first (ascii, spark-off, changelog, version, doc-links,'
-	@echo '  action-parity), then'
+	@echo '  action-parity, tools), then'
 	@echo '  build + native tests + SPARK proof (Platinum, 724 VCs) + SVG badges'
 	@echo '  + API docs + SBOM, then tree-wide count-sync checks (test-count,'
 	@echo '  proof-status, description) that fail when any live file carries a'
@@ -115,13 +118,8 @@ man: build
 test: build
 	./bin/test_runner
 
-# Self-assessment acceptance gates, defined once so prove/run-self/release stay
-# in sync (and match .github/workflows/ci.yml + AGENTS.md "Dogfood target").
-# --require-tests is the current native test-suite size (docs/test_result.md).
-SELF_ASSESS_ARGS := --dal=C --standard=all --require-spark=Platinum --require-docstrings=100 --require-tests=973 --require-proof=100
-
 prove: build
-	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex prove --target=. $(SELF_ASSESS_ARGS) --emit-svg=docs/badges/
+	@python3 tools/run.py prove
 
 fmt:
 	@python3 tools/dev-cmd.py 'alr exec -- gnatformat -P adacovex.gpr -U' && \
@@ -136,13 +134,13 @@ doc:
 	  rm -f docs/api-docs/test_*.md docs/api-docs/adacovex-test_support.md'
 
 run-self: build
-	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex $(SELF_ASSESS_ARGS) --emit-svg=docs/badges/
+	@python3 tools/run.py self
 
 run-ada-crdt: build
-	SOURCE_DATE_EPOCH=$$(git -C ../Ada_CRDT show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex --target=../Ada_CRDT --dal=C
+	@python3 tools/run.py ada-crdt
 
 sbom: build
-	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex sbom --target=. --dal=C
+	@python3 tools/run.py sbom
 
 # Cold vs warm pipeline timings (hyperfine preferred, measured fallback)
 # plus the binary-size report live in tools/bench.py; see its docstring for
@@ -191,6 +189,9 @@ complexity-check: build
 ascii-check:
 	@python3 tools/ascii-check.py
 
+tools-check:
+	@python3 tools/tests.py
+
 # Quality gate: no `SPARK_Mode (Off)` may appear anywhere in src/ except the
 # `Types.Implementation` container package and the `Complexity` checker package --
 # SPARK forbids instantiating the non-formal Ada.Containers in SPARK_Mode On
@@ -215,6 +216,7 @@ check:
 	@echo "=== Quality gate: SPARK_Mode Off ==="; $(MAKE) spark-off-check
 	@echo "=== Quality gate: changelog format ==="; $(MAKE) changelog-check
 	@echo "=== Quality gate: action/CLI/docs parity ==="; $(MAKE) action-parity-check
+	@echo "=== Quality gate: tools unit tests ==="; $(MAKE) tools-check
 	@echo "=== Quality gate: version source ==="; python3 tools/gen-version.py --check
 	@echo "=== Quality gate: doc links ==="; python3 tools/update-doc-links.py --check
 	@echo "=== Quality gate: markdown links ==="; $(MAKE) link-check
@@ -228,7 +230,7 @@ check:
 	@echo "=== Quality gate: proof metrics in sync ==="; python3 tools/update-proof-status.py --check
 	@echo "=== Quality gate: description sync ==="; python3 tools/update-description.py --check
 	@echo ""
-	@echo "=== Quality gate passed: ascii, complexity, spark-off, changelog, action-parity, version, doc-links, link, build, test, prove, doc, sbom, test-count, proof-status, description ==="
+	@echo "=== Quality gate passed: ascii, complexity, spark-off, changelog, action-parity, tools, version, doc-links, link, build, test, prove, doc, sbom, test-count, proof-status, description ==="
 
 # Sync the crate description + long description from the canonical files
 # (alire/description.txt + alire/long-description.txt) into every manifest.
@@ -244,8 +246,7 @@ bump-version:
 	@python3 tools/bump-version.py "$(VERSION)"
 
 release:
-	@python3 tools/release.py --version="$(VERSION)" \
-		--self-assess-args="$(SELF_ASSESS_ARGS)" $(if $(DRY_RUN),--dry-run,)
+	@python3 tools/release.py --version="$(VERSION)" $(if $(DRY_RUN),--dry-run,)
 publish:
 	@if [ -n "$$(git status --porcelain)" ]; then \
 		echo "Error: working tree is not clean. Commit or stash changes first."; \

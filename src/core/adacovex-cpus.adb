@@ -238,10 +238,12 @@ package body Adacovex.CPUs is
    end Jobs_Justification;
 
    --  Portable system temp directory.  Checks TMPDIR, TEMP, TMP (in that
-   --  order) and falls back to "/tmp".  SPARK_Mode On: gnatprove 16
-   --  analyses the Ada.Environment_Variables calls with
-   --  [assumed-global-null] warnings (recorded in
-   --  docs/proof/16.1.0-ledger.md).
+   --  order) and falls back to "/tmp".  SPARK_Mode On.  The runtime
+   --  Ada.Environment_Variables subprograms carry no Global contracts, so
+   --  gnatprove 16 would emit [assumed-global-null] warnings at each call
+   --  ("no Global contract available"); the pragma below silences exactly
+   --  those messages and is scoped back on immediately after the function.
+   pragma Warnings (Off, "no Global contract available");
    function Get_Temp_Directory return String with SPARK_Mode => On is
       use Ada.Environment_Variables;
    begin
@@ -255,6 +257,7 @@ package body Adacovex.CPUs is
          return "/tmp";
       end if;
    end Get_Temp_Directory;
+   pragma Warnings (On, "no Global contract available");
 
    --  Default shell executable for spawned commands.  Pure constant
    --  (SPARK_Mode On per the spec): returns "sh" with no global state.
