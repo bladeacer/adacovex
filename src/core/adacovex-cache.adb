@@ -300,11 +300,24 @@ package body Adacovex.Cache is
       Load (Key, Data, Len, Found);
    end Get_Cached;
 
+   --  Running number of blob stores since the process started.  Eviction
+   --  runs every Eviction_Interval stores instead of after every store, so
+   --  a cold run that stores one blob per source file walks the cache tree
+   --  once per interval instead of once per file (a full-tree walk is
+   --  O(entries) readdir + stat syscalls; the cap is a soft cap, so a
+   --  bounded overshoot of at most Eviction_Interval - 1 entries between
+   --  evictions is by design).
+   Evict_Interval : constant := 32;
+   Evict_Store_Ct : Natural := 0;
+
    procedure Put_Cached (Key : String; Data : String; Success : out Boolean) is
    begin
       Store (Key, Data, Success);
       if Success then
-         Evict_If_Needed (Cache_Cap);
+         Evict_Store_Ct := Evict_Store_Ct + 1;
+         if Evict_Store_Ct mod Evict_Interval = 0 then
+            Evict_If_Needed (Cache_Cap);
+         end if;
       end if;
    end Put_Cached;
 

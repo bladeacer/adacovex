@@ -238,8 +238,11 @@ package body Adacovex.CPUs is
    end Jobs_Justification;
 
    --  Portable system temp directory.  Checks TMPDIR, TEMP, TMP (in that
-   --  order) and falls back to "/tmp".
-   function Get_Temp_Directory return String is
+   --  order) and falls back to "/tmp".  SPARK_Mode On: gnatprove 16
+   --  analyses the Ada.Environment_Variables calls with
+   --  [assumed-global-null] warnings (recorded in
+   --  docs/proof/16.1.0-ledger.md).
+   function Get_Temp_Directory return String with SPARK_Mode => On is
       use Ada.Environment_Variables;
    begin
       if Exists ("TMPDIR") then

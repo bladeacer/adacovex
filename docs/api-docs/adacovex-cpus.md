@@ -29,7 +29,7 @@ HLR-CPU: Cross-platform CPU core detection
 
 ### function Get_Shell_Command return Standard.String `[Global]` `[SPARK]`
 
-### function Get_Temp_Directory return Standard.String `[SPARK]`
+### function Get_Temp_Directory return Standard.String `[Global]` `[SPARK]`
 
 ### function Is_Running_In_CI return Standard.Boolean
 

@@ -135,9 +135,11 @@ proof tractable:
 
 - Every user assertion and every runtime check must be proved.
 - No `pragma Assume` / `pragma Annotate` justifications.
-- No `pragma SPARK_Mode (Off)` anywhere except `Types.Implementation` (the
-  non-SPARK container package. Non-formal `Ada.Containers` are illegal in
-  SPARK_Mode-On code. `make spark-off-check` enforces this.
+- No `pragma SPARK_Mode (Off)` anywhere except `Types.Implementation` and
+  `Complexity` (the two non-formal-`Ada.Containers` packages. Non-formal
+  `Ada.Containers` are illegal in SPARK_Mode-On code -- gnatprove rejects
+  them; the evidence is in `docs/proof/16.1.0-ledger.md`. `make
+  spark-off-check` enforces this.
 - I/O- and container-heavy units are default-off bodies or carry per-subprogram
   `SPARK_Mode => On` aspects. They never carry an explicit Off pragma.
 

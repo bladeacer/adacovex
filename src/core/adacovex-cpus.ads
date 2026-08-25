@@ -38,10 +38,16 @@ package Adacovex.CPUs is
 
    --  Portable system temp directory.  It checks TMPDIR, TEMP, TMP (in that
    --  order) and falls back to "/tmp".  It reads Ada.Environment_Variables.
-   --  This package is outside the SPARK subset, so this function stays
-   --  SPARK_Mode Off.
+   --  SPARK_Mode On: gnatprove 16 analyses the runtime env-var readers with
+   --  `[assumed-global-null]` warnings (the runtime has no Global
+   --  contracts), so the function stays fully in the SPARK subset.  The six
+   --  warnings are recorded in docs/proof/16.1.0-ledger.md.  The remaining
+   --  SPARK_Mode Off exceptions are the non-formal Ada.Containers
+   --  instantiations (adacovex-types and adacovex-complexity), which
+   --  gnatprove rejects in SPARK_Mode On code; see
+   --  docs/proof/16.1.0-ledger.md.
    function Get_Temp_Directory return String
-   with SPARK_Mode => Off;
+   with SPARK_Mode => On, Global => null;
 
    --  Default shell executable for spawned commands.  It is a pure function.
    --  It returns the constant "sh".  It is SPARK_Mode On with no global state.

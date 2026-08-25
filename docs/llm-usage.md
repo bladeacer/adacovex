@@ -20,7 +20,7 @@ Given the use of AI assistance, healthy skepticism is natural and encouraged.
 Reliability is grounded in proof and design, not implicit trust:
 
 - **Formal Verification:** core Ada logic is formally verified. It is Platinum
-  under `gnatprove` 16.1.0, 722 VCs, 0 unproved (see
+  under `gnatprove` 16.1.0, 724 VCs, 0 unproved (see
   [docs/proof/16.1.0-ledger.md](proof/16.1.0-ledger.md)). The proof is re-run by
   `make prove` on every change. It is a hard gate before any release.
 - **Read-Only Engine:** adacovex assesses input payloads, build artifacts, and
@@ -48,7 +48,9 @@ on the tree must read it first. It must follow it. In particular:
   Keep `tools/*.py` pure-stdlib, `typing`-annotated Python.
 - **SPARK proof discipline** (enforced by `make prove` and the
   `spark-off-check` gate): zero unproved VCs, zero justified VCs, no
-  `SPARK_Mode (Off)` outside the Types.Implementation container package.
+  `SPARK_Mode (Off)` outside the `Types.Implementation` and `Complexity`
+  container packages (non-formal `Ada.Containers` are illegal in
+  SPARK_Mode-On code; see `docs/proof/16.1.0-ledger.md`).
 - **The quality gate is the contract.** `make check` runs the same gates that
   CI enforces before a release. A contribution that fails it is not done.
 - **Generated files are regenerated, not hand-edited.** The version constant,
@@ -120,8 +122,8 @@ AI assistance raises the pace of contribution but does not change the bar:
   contribution. The 100% docstring-coverage gate measures presence. Review
   measures accuracy.
 - Generated code must still pass the SPARK proof. A `pragma Assume` or a
-  `SPARK_Mode (Off)` outside the one allowed container package is rejected by
-  the gates.
+  `SPARK_Mode (Off)` outside the two allowed container packages is rejected
+  by the gates.
 - The changelog, the traceability tags, and the HLRs are written by people.
   They are also written by agents following AGENTS.md. The `changelog-check`
   validator enforces the canonical format. A machine-generated changelog that
