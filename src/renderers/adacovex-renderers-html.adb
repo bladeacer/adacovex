@@ -233,10 +233,14 @@ package body Adacovex.Renderers.HTML is
          & " VCs proved");
       Put ("</p></div>");
 
-      --  Proof categories column (proved vs total per category)
+      --  Proof categories column (proved vs total per category).  Every
+      --  category gnatprove reports (flow, init, runtime, assertions,
+      --  functional, termination) is a bar; the --rows hint sizes the
+      --  chart to its category count.
       Put ("<div class=""chart-card""><h3>Proof Check Types</h3>");
       Put
-        ("<table class=""charts-css column show-labels show-primary-axis"">");
+        ("<table class=""charts-css column show-labels show-primary-axis"" "
+         & "style=""--rows:6"">");
       Put ("<caption>Proved checks by category</caption><tbody>");
       Bar_Row
         ("Flow", Proof.Flow_Proved, Proof.Flow_Checks, Proof.Flow_Proved);
@@ -254,11 +258,20 @@ package body Adacovex.Renderers.HTML is
          Proof.Functional_Proved,
          Proof.Functional_Ct,
          Proof.Functional_Proved);
+      Bar_Row
+        ("Termination",
+         Proof.Termination_Proved,
+         Proof.Termination_Ct,
+         Proof.Termination_Proved);
       Put ("</tbody></table></div>");
 
-      --  Test categories bar (each category as its own row, normalised by max)
+      --  Test categories bar (each category as its own row, normalised by
+      --  max).  The --rows hint sizes the chart height to the category
+      --  count so long suites (14 categories) never clip their last rows.
       Put ("<div class=""chart-card""><h3>Test Results by Category</h3>");
-      Put ("<table class=""charts-css bar show-labels"">");
+      Put ("<table class=""charts-css bar show-labels"" style=""--rows:");
+      Put (Img (Natural (Tests.Categories.Length)));
+      Put (""">");
       Put ("<caption>Test counts by category</caption><tbody>");
       if Tests.Categories.Is_Empty then
          Bar_Row ("No categories", 0, 1, 0);
@@ -1251,7 +1264,7 @@ package body Adacovex.Renderers.HTML is
          --  Tests donut + category column chart side by side
          Put_O ("<div class=""chart-card""><h3>Tests</h3>");
          Put_O
-           ("<table class=""charts-css pie donut show-labels"" style=""height:150px;max-width:200px;margin:0 auto"">");
+           ("<table class=""charts-css pie donut show-labels"" style=""height:200px;max-width:200px;margin:0 auto"">");
          Put_O ("<caption>Tests</caption><tbody>");
          declare
             Tot : constant Natural := Tests.Total_Passed + Tests.Total_Failed;
@@ -1277,8 +1290,16 @@ package body Adacovex.Renderers.HTML is
             Put_O ("<p style=""color:var(--muted);font-size:.85rem"">");
             Put_O ("No test categories</p>");
          else
-            Put_O
-              ("<table class=""charts-css column show-labels show-primary-axis"">");
+            --  Many categories cannot fit readable labels under 24px
+            --  columns; rotate the labels to vertical so every column
+            --  keeps its name (--rows sizes the chart height).
+            Put_O ("<table class=""charts-css column show-labels");
+            if Natural (Tests.Categories.Length) > 8 then
+               Put_O (" rotate-labels");
+            end if;
+            Put_O (" show-primary-axis"" style=""--rows:");
+            Put_O (Img (Natural (Tests.Categories.Length)));
+            Put_O (""">");
             Put_O ("<caption>Tests by category</caption><tbody>");
             for C in 1 .. Integer (Tests.Categories.Length) loop
                declare
@@ -1443,6 +1464,11 @@ package body Adacovex.Renderers.HTML is
       Put_P (Img (Proof.Functional_Ct));
       Put_P ("</td><td>");
       Put_P (Img (Proof.Functional_Proved));
+      Put_P ("</td></tr>");
+      Put_P ("<tr><td>Termination</td><td>");
+      Put_P (Img (Proof.Termination_Ct));
+      Put_P ("</td><td>");
+      Put_P (Img (Proof.Termination_Proved));
       Put_P ("</td></tr>");
       Put_P ("<tr><td>Total VCs</td><td>");
       Put_P (Img (Proof.Total_VCs));

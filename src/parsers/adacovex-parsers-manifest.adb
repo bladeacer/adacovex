@@ -1903,11 +1903,59 @@ package body Adacovex.Parsers.Manifest is
             "Ada");
       end Add_Vendored;
 
+      subtype Lib_Name_Field is String (1 .. 32);
+      --  Return the upstream npm package name and version for a bundled
+      --  dashboard asset, or False for an unknown asset.  The dashboard
+      --  vendors exactly four third-party libraries into the binary
+      --  (resources/*.js|css); their versions are stable build-time
+      --  constants (also listed in the Credits tab and docs/dashboard.md).
+      --  adacovex's own dashboard sources match none of these and never
+      --  become packages.
+      function Bundled_Library
+        (Raw      : String;
+         Npm_Name : out Lib_Name_Field;
+         NN       : out Natural;
+         Lib_Ver  : out Lib_Name_Field;
+         VN       : out Natural) return Boolean
+      is
+         N : String (1 .. 32) := (others => ' ');
+         V : String (1 .. 32) := (others => ' ');
+      begin
+         if Raw = "flexsearch" then
+            N (1 .. 10) := "flexsearch";
+            NN := 10;
+            V (1 .. 6) := "0.7.31";
+            VN := 6;
+         elsif Raw = "nomnoml" then
+            N (1 .. 7) := "nomnoml";
+            NN := 7;
+            V (1 .. 5) := "1.7.0";
+            VN := 5;
+         elsif Raw = "graphre" then
+            N (1 .. 7) := "graphre";
+            NN := 7;
+            V (1 .. 5) := "0.1.3";
+            VN := 5;
+         elsif Raw = "charts.min" then
+            N (1 .. 10) := "charts.css";
+            NN := 10;
+            V (1 .. 5) := "1.2.0";
+            VN := 5;
+         else
+            return False;
+         end if;
+         Npm_Name := N;
+         Lib_Ver := V;
+         return True;
+      end Bundled_Library;
+
       procedure Add_Vendored_Asset (Asset_Path : String) is
-         Base : constant String := Simple_Name (Asset_Path);
-         Dot  : Natural := 0;
-         Name : String (1 .. 64) := (others => ' ');
-         NLen : Natural := 0;
+         Base    : constant String := Simple_Name (Asset_Path);
+         Dot     : Natural := 0;
+         Raw     : String (1 .. 64) := (others => ' ');
+         Raw_Len : Natural := 0;
+         Name    : String (1 .. 64) := (others => ' ');
+         NLen    : Natural := 0;
       begin
          for I in reverse Base'Range loop
             if Base (I) = '.' then
@@ -1918,30 +1966,58 @@ package body Adacovex.Parsers.Manifest is
          if Dot <= Base'First then
             return;
          end if;
+         Raw_Len := Dot - Base'First;
+         if Raw_Len > 64 then
+            Raw_Len := 64;
+         end if;
+         for I in 1 .. Raw_Len loop
+            Raw (I) := Base (Base'First + I - 1);
+         end loop;
+         --  adacovex's own dashboard sources are not a package and never
+         --  become SBOM components.
+         if Raw_Len = 9 and then Raw (1 .. 9) = "dashboard" then
+            return;
+         end if;
+         --  The component name is the raw base name, bounded to 64.
+         NLen := Raw_Len;
+         Name (1 .. NLen) := Raw (1 .. NLen);
+         --  Known bundled libraries get their upstream npm name, version
+         --  and PURL; everything else keeps the generic fallback.  The
+         --  language comes from the asset's extension (.js -> JavaScript,
+         --  .css -> CSS), like every other vendored file.
          declare
-            Raw : constant String := Base (Base'First .. Dot - 1);
+            NN       : Natural := 0;
+            VN       : Natural := 0;
+            Npm_Name : Lib_Name_Field := (others => ' ');
+            Lib_Ver  : Lib_Name_Field := (others => ' ');
          begin
-            if Raw'Length > 64 then
-               NLen := 64;
-               Name (1 .. 64) := Raw (Raw'First .. Raw'First + 63);
+            if Bundled_Library (Raw (1 .. Raw_Len), Npm_Name, NN, Lib_Ver, VN)
+            then
+               Append_Dependency
+                 (Graph,
+                  Npm_Name (1 .. NN),
+                  Lib_Ver (1 .. VN),
+                  "",
+                  "",
+                  "pkg:npm/" & Npm_Name (1 .. NN) & "@" & Lib_Ver (1 .. VN),
+                  1,
+                  False,
+                  Types.Scope_Vendored,
+                  Extension_Language (Base));
             else
-               NLen := Raw'Length;
-               Name (1 .. NLen) := Raw;
+               Append_Dependency
+                 (Graph,
+                  Name (1 .. NLen),
+                  "",
+                  "",
+                  "",
+                  "pkg:generic/" & Name (1 .. NLen),
+                  1,
+                  False,
+                  Types.Scope_Vendored,
+                  Extension_Language (Base));
             end if;
          end;
-         --  Language comes from the asset's extension (.js -> JavaScript,
-         --  .css -> CSS), like every other vendored file.
-         Append_Dependency
-           (Graph,
-            Name (1 .. NLen),
-            "",
-            "",
-            "",
-            "pkg:generic/" & Name (1 .. NLen),
-            1,
-            False,
-            Types.Scope_Vendored,
-            Extension_Language (Base));
       end Add_Vendored_Asset;
 
       procedure Scan_One_Vendored_Root (Root : String) is
@@ -2022,7 +2098,7 @@ package body Adacovex.Parsers.Manifest is
    --  Language-agnostic vendored-component discovery.  Walk the target tree
    --  (excluding VCS, build, and installer noise).  Treat every directory
    --  whose base name is a known vendor directory as a vendored source.
-   --  Scan it shallowly (max 2 levels, 1 for node_modules):
+   --  Scan it shallowly (max 2 levels):
    --    * A directory that carries an ecosystem manifest (package.json,
    --      Cargo.toml, go.mod, pyproject.toml, composer.json, Gemfile,
    --      pom.xml, Package.swift, requirements*.txt) becomes one
@@ -2031,7 +2107,10 @@ package body Adacovex.Parsers.Manifest is
    --    * A directory that holds Ada sources (.ads/.adb) without a manifest
    --      becomes a Scope_Vendored Ada component.  It is named after the
    --      directory (for example a hand-vendored Ada library under
-   --      third_party/).
+   --      third_party/).  npm scope containers (node_modules/@scope without
+   --      a manifest) never become components; the scoped package below
+   --      them does.  pnpm store and shim dirs (.pnpm, .bin) are skipped
+   --      entirely -- they are not packages.
    --  Every component carries its language or languages.  The languages are
    --  detected from file extensions.  The ecosystem language is first.  The
    --  top 3 are used and mixed sources list the leading languages.
@@ -2066,6 +2145,15 @@ package body Adacovex.Parsers.Manifest is
          end if;
       end Push_Dir;
 
+      --  Directory names inside a vendor root that never represent a
+      --  package: pnpm's virtual store (.pnpm holds lock.yaml + the
+      --  resolved store, not a dependency) and the .bin shim dir.  They are
+      --  skipped entirely -- never descended into, never componentised.
+      function Skip_Vendor_Scan_Dir (N : String) return Boolean is
+      begin
+         return N = ".pnpm" or else N = ".bin";
+      end Skip_Vendor_Scan_Dir;
+
       --  One component per manifest-carrying (or Ada-source-carrying)
       --  directory inside a matched vendor root.  The scan is shallow.  It
       --  uses its own directory-search handles.  It can run while the
@@ -2094,6 +2182,7 @@ package body Adacovex.Parsers.Manifest is
                         if Kind (E2) = Directory then
                            if N /= "."
                              and then N /= ".."
+                             and then not Skip_Vendor_Scan_Dir (N)
                              and then Current.Level < Max_Levels
                            then
                               Push_Dir (Scan_Stack, Path, Current.Level + 1);
@@ -2154,19 +2243,26 @@ package body Adacovex.Parsers.Manifest is
                         --  Library vendored without a manifest.  The directory
                         --  itself is the component.  The language is the top-3
                         --  summary of its source-file extensions.  Ada-only
-                        --  directories are included.
+                        --  directories are included.  npm scope containers
+                        --  (a node_modules/@scope directory without its own
+                        --  package.json) are never components themselves --
+                        --  only the scoped package below them is.
                         declare
-                           L : constant String :=
+                           Dir_N : constant String := Simple_Name (Dir_Path);
+                           L     : constant String :=
                              Language_Of_Dir (Dir_Path, 2);
                         begin
-                           if L'Length > 0 then
+                           if L'Length > 0
+                             and then (Dir_N'Length = 0
+                                       or else Dir_N (Dir_N'First) /= '@')
+                           then
                               Append_Dependency
                                 (Graph,
-                                 Simple_Name (Dir_Path),
+                                 Dir_N,
                                  "",
                                  "",
                                  "",
-                                 "pkg:generic/" & Simple_Name (Dir_Path),
+                                 "pkg:generic/" & Dir_N,
                                  1,
                                  False,
                                  Types.Scope_Vendored,
@@ -2201,8 +2297,11 @@ package body Adacovex.Parsers.Manifest is
                           and then not Skip_Walk_Dir (N)
                         then
                            if Is_Vendor_Dir_Name (N) then
-                              Scan_Vendor_Root
-                                (Path, (if N = "node_modules" then 1 else 2));
+                              --  node_modules needs depth 2 so scoped
+                              --  packages (node_modules/@scope/pkg) resolve;
+                              --  the pnpm store (.pnpm) and .bin are skipped
+                              --  inside the scan itself.
+                              Scan_Vendor_Root (Path, 2);
                            else
                               Push_Dir (Tree_Stack, Path, 0);
                            end if;
@@ -2479,6 +2578,24 @@ package body Adacovex.Parsers.Manifest is
       --  Tool names the project's files reference (deduplicated).
       Referenced : Name_Vectors.Vector;
 
+      --  "tool=version" pairs observed for the referenced tools.  Populated
+      --  on a scan (from the version probe) or restored from the tools
+      --  cache blob on a hit, so the SBOM does not need to re-run probes
+      --  for an unchanged project.
+      type Probe_Pair is record
+         Name : Types.Name_Field;
+         NLen : Natural := 0;
+         Ver  : Types.Desc_Field;
+         VLen : Natural := 0;
+      end record;
+      package Probe_Vectors is new
+        Ada.Containers.Vectors (Positive, Probe_Pair);
+      Probes : Probe_Vectors.Vector;
+
+      --  Record a probe result for a referenced tool (deduplicated).
+      --  Forward-declared so Deserialize_Set can call it.
+      procedure Add_Probe (Name : String; Version : String);
+
       procedure Push_Dir (Dir : String) is
          Item : Dir_Entry;
       begin
@@ -2573,6 +2690,162 @@ package body Adacovex.Parsers.Manifest is
       begin
          Add_Dep_Name (Referenced, Tool.Name (1 .. Tool.Len));
       end Note_Tool;
+
+      --  Serialize the referenced-tool set and its probe results to a
+      --  cache blob.  Format: comma-separated tool names, then a ';'
+      --  separator, then comma-separated "name=version" probe pairs (both
+      --  bounded by the 8192-char blob).  The probe section lets a cache
+      --  hit skip re-running version probes and PATH lookups.
+      function Serialize_Set return String is
+         S : String (1 .. 8192);
+         L : Natural := 0;
+
+         procedure Add (Txt : String) is
+         begin
+            if L + Txt'Length <= S'Last then
+               S (L + 1 .. L + Txt'Length) := Txt;
+               L := L + Txt'Length;
+            end if;
+         end Add;
+      begin
+         for I in 1 .. Integer (Referenced.Length) loop
+            declare
+               Nm : constant String :=
+                 Referenced (I).Name (1 .. Referenced (I).Len);
+            begin
+               if L > 0 then
+                  Add (",");
+               end if;
+               Add (Nm);
+            end;
+         end loop;
+         Add ("|");
+         for I in 1 .. Integer (Probes.Length) loop
+            declare
+               Nm : constant String := Probes (I).Name (1 .. Probes (I).NLen);
+               Vr : constant String := Probes (I).Ver (1 .. Probes (I).VLen);
+            begin
+               if L > 0 and then S (L) /= '|' then
+                  Add (",");
+               end if;
+               Add (Nm);
+               Add ("=");
+               Add (Vr);
+            end;
+         end loop;
+         return S (1 .. L);
+      end Serialize_Set;
+
+      --  Deserialize the cache blob into Referenced and Probes.
+      procedure Deserialize_Set (Blob : String) is
+         Sep   : Natural := 0;
+         Start : Natural := Blob'First;
+
+         procedure Add_Name (Nm : String) is
+         begin
+            if Nm'Length > 0 then
+               Add_Dep_Name (Referenced, Nm);
+            end if;
+         end Add_Name;
+      begin
+         --  Split on the '|' separator: names before, probe pairs after.
+         for I in Blob'First .. Blob'Last loop
+            if Blob (I) = '|' then
+               Sep := I;
+               exit;
+            end if;
+         end loop;
+         if Sep = 0 then
+            --  Old-format blob (names only).
+            Start := Blob'First;
+            for I in Blob'First .. Blob'Last loop
+               if Blob (I) = ',' then
+                  Add_Name (Blob (Start .. I - 1));
+                  Start := I + 1;
+               end if;
+            end loop;
+            if Start <= Blob'Last then
+               Add_Name (Blob (Start .. Blob'Last));
+            end if;
+            return;
+         end if;
+
+         --  Names section.
+         Start := Blob'First;
+         for I in Blob'First .. Sep - 1 loop
+            if Blob (I) = ',' then
+               Add_Name (Blob (Start .. I - 1));
+               Start := I + 1;
+            end if;
+         end loop;
+         if Start <= Sep - 1 then
+            Add_Name (Blob (Start .. Sep - 1));
+         end if;
+
+         --  Probe section: parse "name=version" comma-separated pairs.
+         Start := Sep + 1;
+         for I in Sep + 1 .. Blob'Last loop
+            if Blob (I) = ',' then
+               declare
+                  Nm : constant String := Blob (Start .. I - 1);
+                  Eq : Natural := 0;
+               begin
+                  for J in Nm'Range loop
+                     if Nm (J) = '=' then
+                        Eq := J;
+                        exit;
+                     end if;
+                  end loop;
+                  if Eq > Nm'First then
+                     Add_Probe
+                       (Nm (Nm'First .. Eq - 1), Nm (Eq + 1 .. Nm'Last));
+                  end if;
+               end;
+               Start := I + 1;
+            end if;
+         end loop;
+         if Start <= Blob'Last then
+            declare
+               Nm : constant String := Blob (Start .. Blob'Last);
+               Eq : Natural := 0;
+            begin
+               for J in Nm'Range loop
+                  if Nm (J) = '=' then
+                     Eq := J;
+                     exit;
+                  end if;
+               end loop;
+               if Eq > Nm'First then
+                  Add_Probe (Nm (Nm'First .. Eq - 1), Nm (Eq + 1 .. Nm'Last));
+               end if;
+            end;
+         end if;
+      end Deserialize_Set;
+
+      --  Record a probe result for a referenced tool (deduplicated).
+      procedure Add_Probe (Name : String; Version : String) is
+      begin
+         if Name'Length = 0 then
+            return;
+         end if;
+         for I in 1 .. Integer (Probes.Length) loop
+            if Probes (I).NLen = Name'Length
+              and then Probes (I).Name (1 .. Name'Length) = Name
+            then
+               return;
+            end if;
+         end loop;
+         declare
+            P : Probe_Pair;
+         begin
+            P.NLen := Name'Length;
+            P.Name (1 .. Name'Length) := Name (Name'First .. Name'Last);
+            P.VLen := Version'Length;
+            P.Ver (1 .. Version'Length) :=
+              Version (Version'First .. Version'Last);
+            Probes.Append (P);
+         end;
+      end Add_Probe;
 
       --  Whether C bounds a tool-name word in a line.  A word is a maximal
       --  run of lowercase letters, digits, underscore, and hyphen
@@ -2705,6 +2978,147 @@ package body Adacovex.Parsers.Manifest is
             end if;
       end Scan_File;
 
+      --  Input key for the referenced-tools cache.  It combines the same
+      --  content hashes that Graph_Key uses (manifest, dev manifest, lock,
+      --  vendored hash, language summary, GPR files) with the source-tree
+      --  content hash.  The system-tool reference scan reads the same
+      --  project files, so an unchanged project has an unchanged key and the
+      --  cached set is served without re-walking the tree or re-reading a
+      --  file.
+      --  Forward declaration so Tools_Key can call Source_Tree_Hash.
+      function Source_Tree_Hash (Dir : String) return String;
+
+      function Tools_Key (Target_Dir : String) return String is
+         T    : constant String :=
+           (if Target_Dir'Length > 1
+              and then Target_Dir (Target_Dir'Last) = '/'
+            then Target_Dir (Target_Dir'First .. Target_Dir'Last - 1)
+            else Target_Dir);
+         Comb : String (1 .. Types.Max_Path * 2);
+         CLen : Natural := 0;
+         procedure Add (S : String) is
+         begin
+            if S'Length > 0 and then CLen + S'Length <= Comb'Last then
+               Comb (CLen + 1 .. CLen + S'Length) := S;
+               CLen := CLen + S'Length;
+            end if;
+         end Add;
+      begin
+         --  Source_Tree_Hash covers every file the scan reads, so it alone
+         --  determines the referenced-tool set.  The tool-table fingerprint
+         --  (every curated tool name, salted) invalidates the key when the
+         --  System_Tools constant changes within a release.  The "|tools-v2|"
+         --  salt separates this cache namespace from the graph cache and
+         --  from the 1.27-era blob layout.
+         Add (Source_Tree_Hash (T));
+         for I in System_Tools'Range loop
+            Add (System_Tools (I).Name (1 .. System_Tools (I).Len));
+         end loop;
+         Add ("|tools-v2|");
+         if CLen = 0 then
+            return "";
+         end if;
+         return "tools:" & Adacovex.Cache.Hash_String (Comb (1 .. CLen));
+      end Tools_Key;
+
+      --  Source-tree content hash used by Tools_Key.  Walks the same
+      --  directories and files that Discover_System_Dev_Deps scans and
+      --  combines per-file digests.  This is what makes the tool-set cache
+      --  sound: a file edit that adds or removes a tool reference changes
+      --  the hash, so the next run re-scans instead of serving a stale
+      --  set.  The directory-exclusion list matches the main walk exactly.
+      function Source_Tree_Hash (Dir : String) return String is
+         use Ada.Directories;
+         type Dir_Entry is record
+            Path : Types.Path_Field;
+            Len  : Natural := 0;
+         end record;
+         package Hash_Dir_Stacks is new
+           Ada.Containers.Vectors (Positive, Dir_Entry);
+         Stack : Hash_Dir_Stacks.Vector;
+         H     : String (1 .. Types.Max_Path * 8);
+         HLen  : Natural := 0;
+
+         procedure Add (S : String) is
+         begin
+            if S'Length > 0 and then HLen + S'Length <= H'Last then
+               H (HLen + 1 .. HLen + S'Length) := S;
+               HLen := HLen + S'Length;
+            end if;
+         end Add;
+      begin
+         if not Ada.Directories.Exists (Dir) then
+            return "";
+         end if;
+         declare
+            D : Dir_Entry;
+         begin
+            D.Len := Dir'Length;
+            D.Path (1 .. D.Len) := Dir (Dir'First .. Dir'First + D.Len - 1);
+            Stack.Append (D);
+         end;
+         while not Stack.Is_Empty loop
+            declare
+               C  : Dir_Entry := Stack.Last_Element;
+               CP : String renames C.Path (1 .. C.Len);
+               S  : Search_Type;
+               E  : Directory_Entry_Type;
+            begin
+               Stack.Delete_Last;
+               if not Ada.Directories.Exists (CP) then
+                  null;
+               else
+                  Start_Search (S, CP, "");
+                  while More_Entries (S) loop
+                     Get_Next_Entry (S, E);
+                     declare
+                        N : constant String := Simple_Name (E);
+                     begin
+                        if Kind (E) = Directory then
+                           if N /= "."
+                             and then N /= ".."
+                             and then N /= ".git"
+                             and then N /= ".jj"
+                             and then N /= ".hg"
+                             and then N /= ".svn"
+                             and then N /= "obj"
+                             and then N /= "tests"
+                             and then N /= "config"
+                             and then N /= ".adacovex"
+                             and then N /= "alire"
+                             and then N /= "gnatprove"
+                             and then N /= "__pycache__"
+                             and then N /= "node_modules"
+                             and then N /= ".headroom"
+                             and then N /= ".lccst"
+                           then
+                              declare
+                                 NP : constant String := Full_Name (E);
+                                 I  : Dir_Entry;
+                              begin
+                                 I.Len := NP'Length;
+                                 I.Path (1 .. I.Len) :=
+                                   NP (NP'First .. NP'First + I.Len - 1);
+                                 Stack.Append (I);
+                              end;
+                           end if;
+                        elsif Kind (E) = Ordinary_File then
+                           if Should_Scan (Simple_Name (E)) then
+                              Add (Adacovex.Cache.Hash_File (Full_Name (E)));
+                           end if;
+                        end if;
+                     end;
+                  end loop;
+                  End_Search (S);
+               end if;
+            end;
+         end loop;
+         if HLen = 0 then
+            return "";
+         end if;
+         return Adacovex.Cache.Hash_String (H (1 .. HLen));
+      end Source_Tree_Hash;
+
       --  Whether the project root holds a Makefile variant (implies make).
       function Has_Makefile return Boolean is
       begin
@@ -2713,59 +3127,96 @@ package body Adacovex.Parsers.Manifest is
            or else Ada.Directories.Exists (Target_Dir & "/makefile")
            or else Ada.Directories.Exists (Target_Dir & "/GNUmakefile");
       end Has_Makefile;
+
+      --  Whether the referenced-tool set (and its probe results) came from
+      --  the on-disk cache.  Used to skip the PATH walk and version probes.
+      From_Cache : Boolean := False;
+
+      --  Cache key (and its image) for the miss-store below.  Kept at
+      --  procedure level so the store can run after the probe loop.
+      Key_Img : String (1 .. 128) := (others => ' ');
+      Key_Len : Natural := 0;
    begin
-      Push_Dir (Target_Dir);
+      --  Serve the referenced-tool set from the on-disk cache when the
+      --  project's inputs are unchanged.  The key covers every file the
+      --  scan reads, so an unchanged project skips the tree walk and the
+      --  per-file word scan entirely; an edit invalidates the key and the
+      --  next run re-scans.  The key value is kept for the store step that
+      --  runs after a scan.
+      declare
+         K     : constant String := Tools_Key (Target_Dir);
+         Blob  : String (1 .. 8192) := (others => ' ');
+         BLen  : Natural := 0;
+         Found : Boolean := False;
+      begin
+         if K'Length > 0 then
+            if K'Length <= Key_Img'Last then
+               Key_Img (1 .. K'Length) := K;
+               Key_Len := K'Length;
+            end if;
+            Adacovex.Cache.Get_Cached (K, Blob, BLen, Found);
+            if Found and then BLen > 0 then
+               Deserialize_Set (Blob (1 .. BLen));
+               From_Cache := True;
+            end if;
+         end if;
 
-      while not Dir_Stack.Is_Empty loop
-         declare
-            Current  : Dir_Entry := Dir_Stack.Last_Element;
-            Dir_Path : String renames Current.Path (1 .. Current.Len);
-         begin
-            Dir_Stack.Delete_Last;
+         if not From_Cache then
+            Push_Dir (Target_Dir);
 
-            Start_Search (Search, Dir_Path, "");
-            begin
-               while More_Entries (Search) loop
-                  Get_Next_Entry (Search, Ent);
-                  declare
-                     N    : constant String := Simple_Name (Ent);
-                     Path : constant String := Full_Name (Ent);
+            while not Dir_Stack.Is_Empty loop
+               declare
+                  Current  : Dir_Entry := Dir_Stack.Last_Element;
+                  Dir_Path : String renames Current.Path (1 .. Current.Len);
+               begin
+                  Dir_Stack.Delete_Last;
+
+                  Start_Search (Search, Dir_Path, "");
                   begin
-                     if Kind (Ent) = Directory then
-                        if N /= "."
-                          and N /= ".."
-                          and N /= ".git"
-                          and N /= ".jj"
-                          and N /= ".hg"
-                          and N /= ".svn"
-                          and N /= "obj"
-                          and N /= "tests"
-                          and N /= "config"
-                          and N /= ".adacovex"
-                          and N /= "alire"
-                          and N /= "gnatprove"
-                          and N /= "__pycache__"
-                          and N /= "node_modules"
-                          and N /= ".headroom"
-                          and N /= ".lccst"
-                        then
-                           Push_Dir (Path);
-                        end if;
-                     elsif Kind (Ent) = Ordinary_File then
-                        if Should_Scan (N) then
-                           Scan_File (Path);
-                        end if;
-                     end if;
+                     while More_Entries (Search) loop
+                        Get_Next_Entry (Search, Ent);
+                        declare
+                           N    : constant String := Simple_Name (Ent);
+                           Path : constant String := Full_Name (Ent);
+                        begin
+                           if Kind (Ent) = Directory then
+                              if N /= "."
+                                and N /= ".."
+                                and N /= ".git"
+                                and N /= ".jj"
+                                and N /= ".hg"
+                                and N /= ".svn"
+                                and N /= "obj"
+                                and N /= "tests"
+                                and N /= "config"
+                                and N /= ".adacovex"
+                                and N /= "alire"
+                                and N /= "gnatprove"
+                                and N /= "__pycache__"
+                                and N /= "node_modules"
+                                and N /= ".headroom"
+                                and N /= ".lccst"
+                              then
+                                 Push_Dir (Path);
+                              end if;
+                           elsif Kind (Ent) = Ordinary_File then
+                              if Should_Scan (N) then
+                                 Scan_File (Path);
+                              end if;
+                           end if;
+                        end;
+                     end loop;
+                  exception
+                     when others =>
+                        End_Search (Search);
+                        raise;
                   end;
-               end loop;
-            exception
-               when others =>
                   End_Search (Search);
-                  raise;
-            end;
-            End_Search (Search);
-         end;
-      end loop;
+               end;
+            end loop;
+
+         end if;
+      end;
 
       --  A Makefile at the project root implies make even when no recipe
       --  spells out the driver by name.
@@ -2787,61 +3238,96 @@ package body Adacovex.Parsers.Manifest is
       --  Append_Dependency also deduplicates against manifest, lockfile, and
       --  GPR deps (for example gnatprove declared in alire-dev.toml).  A
       --  manifest-pinned tool never appears twice.
-      for I in 1 .. Integer (Referenced.Length) loop
+      --
+      --  Cache hit: the probe results were restored with the set, so
+      --  rebuild the graph from Probes without PATH lookups or subprocess
+      --  probes.
+      if From_Cache then
+         for PI in 1 .. Integer (Probes.Length) loop
+            Append_Dependency
+              (Graph,
+               Probes (PI).Name (1 .. Probes (PI).NLen),
+               Probes (PI).Ver (1 .. Probes (PI).VLen),
+               "",
+               "System tool referenced by the project (dev dependency)",
+               "pkg:generic/" & Probes (PI).Name (1 .. Probes (PI).NLen),
+               1,
+               False,
+               Types.Scope_Dev);
+         end loop;
+      else
+         for I in 1 .. Integer (Referenced.Length) loop
+            declare
+               Name : constant String :=
+                 Referenced (I).Name (1 .. Referenced (I).Len);
+               Exe  : GNAT.OS_Lib.String_Access :=
+                 GNAT.OS_Lib.Locate_Exec_On_Path (Name);
+            begin
+               if Exe /= null then
+                  GNAT.OS_Lib.Free (Exe);
+                  --  Version probing spawns a subprocess per tool.  Cache the
+                  --  result on disk (7-day TTL).  Unchanged toolchains then do
+                  --  not pay tens of milliseconds per referenced tool on every
+                  --  run.
+                  declare
+                     Probe : String (1 .. 512) := (others => ' ');
+                     PLen  : Natural := 0;
+                     Found : Boolean := False;
+                     --  Version text (up to the 4096-char Probe_Version reader
+                     --  cap).  It is copied into a fixed buffer.  The cache-hit
+                     --  and cache-miss paths then share one Append_Dependency
+                     --  call.
+                     VBuf  : String (1 .. 4096);
+                     VLen  : Natural := 0;
+                  begin
+                     Adacovex.Cache.Get_Probe (Name, Probe, PLen, Found);
+                     if Found then
+                        VLen := PLen;
+                        VBuf (1 .. VLen) := Probe (1 .. VLen);
+                     else
+                        declare
+                           V : constant String :=
+                             Probe_Version (Name, Version_Flag (Name));
+                        begin
+                           VLen := V'Length;
+                           if VLen > VBuf'Last then
+                              VLen := VBuf'Last;
+                           end if;
+                           VBuf (1 .. VLen) :=
+                             V (V'First .. V'First + VLen - 1);
+                        end;
+                        Adacovex.Cache.Put_Probe (Name, VBuf (1 .. VLen));
+                     end if;
+                     Add_Probe (Name, VBuf (1 .. VLen));
+                     Append_Dependency
+                       (Graph,
+                        Name,
+                        VBuf (1 .. VLen),
+                        "",
+                        "System tool referenced by the project (dev dependency)",
+                        "pkg:generic/" & Name,
+                        1,
+                        False,
+                        Types.Scope_Dev);
+                  end;
+               end if;
+            end;
+         end loop;
+      end if;
+
+      --  Store the freshly scanned set (now including probe results) for
+      --  the next run.  On a cache hit nothing is stored (the entry is
+      --  still current and complete).
+      if not From_Cache and then Key_Len > 0 then
          declare
-            Name : constant String :=
-              Referenced (I).Name (1 .. Referenced (I).Len);
-            Exe  : GNAT.OS_Lib.String_Access :=
-              GNAT.OS_Lib.Locate_Exec_On_Path (Name);
+            S  : constant String := Serialize_Set;
+            OK : Boolean;
          begin
-            if Exe /= null then
-               GNAT.OS_Lib.Free (Exe);
-               --  Version probing spawns a subprocess per tool.  Cache the
-               --  result on disk (7-day TTL).  Unchanged toolchains then do
-               --  not pay tens of milliseconds per referenced tool on every
-               --  run.
-               declare
-                  Probe : String (1 .. 512) := (others => ' ');
-                  PLen  : Natural := 0;
-                  Found : Boolean := False;
-                  --  Version text (up to the 4096-char Probe_Version reader
-                  --  cap).  It is copied into a fixed buffer.  The cache-hit
-                  --  and cache-miss paths then share one Append_Dependency
-                  --  call.
-                  VBuf  : String (1 .. 4096);
-                  VLen  : Natural := 0;
-               begin
-                  Adacovex.Cache.Get_Probe (Name, Probe, PLen, Found);
-                  if Found then
-                     VLen := PLen;
-                     VBuf (1 .. VLen) := Probe (1 .. VLen);
-                  else
-                     declare
-                        V : constant String :=
-                          Probe_Version (Name, Version_Flag (Name));
-                     begin
-                        VLen := V'Length;
-                        if VLen > VBuf'Last then
-                           VLen := VBuf'Last;
-                        end if;
-                        VBuf (1 .. VLen) := V (V'First .. V'First + VLen - 1);
-                     end;
-                     Adacovex.Cache.Put_Probe (Name, VBuf (1 .. VLen));
-                  end if;
-                  Append_Dependency
-                    (Graph,
-                     Name,
-                     VBuf (1 .. VLen),
-                     "",
-                     "System tool referenced by the project (dev dependency)",
-                     "pkg:generic/" & Name,
-                     1,
-                     False,
-                     Types.Scope_Dev);
-               end;
+            if S'Length > 0 then
+               Adacovex.Cache.Put_Cached (Key_Img (1 .. Key_Len), S, OK);
             end if;
          end;
-      end loop;
+      end if;
    end Discover_System_Dev_Deps;
 
    --  Fingerprint of everything that contributes vendored components to

@@ -2,9 +2,9 @@
 
 adacovex is a zero-dependency CLI. Its hot path is the assessment pipeline
 (scan -> patch -> doc metrics -> proof parse -> test parse -> DAL assess ->
-render). This page documents how to benchmark it. It also documents the
-expected numbers on a typical machine and the optimisations that keep those
-numbers low.
+render, plus the SBOM). This page documents how to benchmark it. It also
+documents the expected numbers on a typical machine and the optimisations
+that keep those numbers low.
 
 ## Benchmarking
 
@@ -23,21 +23,26 @@ numbers low.
 - It reports the raw and stripped binary sizes (the stripped size is measured
   on a `/tmp` copy; the build output is never modified).
 
-Example output (hyperfine, x86-64, 8-core CI-class machine):
+Example output (hyperfine, x86-64, 8-core CI-class machine, 1.28.0):
 
 ```
-=== Cold (fresh result cache + probe cache) ===
-  Time (mean + sigma):     476.7 ms + 13.6 ms    [User: 423.6 ms, System: 40.5 ms]
-  Range (min ... max):     463.7 ms ... 504.8 ms    10 runs
+=== Cold (fresh result cache) ===
+  Time (mean +/- sigma):  88.1 ms +/- 3.8 ms   [User: 62.1 ms, System: 14.0 ms]
+  Range (min ... max):    84.8 ms ... 96.4 ms    10 runs
 === Warm (populated caches) ===
-  Time (mean + sigma):     312.2 ms +  4.6 ms    [User: 293.1 ms, System:  8.0 ms]
-  Range (min ... max):     305.3 ms ... 324.0 ms    15 runs
+  Time (mean +/- sigma):  34.2 ms +/- 2.3 ms   [User: 15.3 ms, System: 8.7 ms]
+  Range (min ... max):    30.9 ms ... 39.2 ms    15 runs
 
 == Binary size ==
-bin/adacovex          7.1 MiB (7486040 bytes)
-after strip           3.1 MiB (3234200 bytes)
-savings               56.8%
+bin/adacovex            9.0 MiB (9461040 bytes)
+after strip             4.3 MiB (4463704 bytes)
+savings                 52.8%
 ```
+
+The numbers shift with the machine and the codebase. What matters is the
+shape: warm is now in the tens of milliseconds, and the cold path is bounded
+by the work that genuinely must happen (hashing the changed sources and
+building the SBOM).
 
 For single-shot timings, plain `time` works the same way:
 
@@ -50,45 +55,109 @@ When you compare two versions, always reset the cache between runs. Use
 `--cache-dir=<fresh dir>` or delete the cache dir. The result cache must not
 hide the real cost.
 
+`make perf-bench` profiles CPU and syscalls directly with `perf` and
+`strace` over `bin/adacovex`. It prints the cache-miss rates and the syscall
+counts so a regression in I/O or data layout is visible before a release.
+
 ## What the numbers mean
 
-Figures below are from `make bench` on this machine (hyperfine, 10 cold + 15
-warm runs, 2 warmup). They shift with the machine and the codebase. What
+Figures below are from `make bench`/`perf-bench` on this machine (hyperfine,
+cold + warm, 2 warmup). They shift with the machine and the codebase. What
 matters is the shape:
 
-- **Cold ~480 ms** on self-assessment: dominated by source scanning (Ada file
-  enumeration), SBOM system-tool probing (spawns a subprocess per referenced
-  tool), and renderers.
-- **Warm ~310 ms**: the on-disk result cache (content-hashed per file,
-  oldest-first eviction) skips re-parsing unchanged sources. The probe cache
-  skips the subprocess spawns.
-- System time is the tell. Cold runs show ~40 ms of system time (process
-  spawns). Warm runs show ~8 ms.
+- **Cold ~0.1 s**: dominated by source scanning (Ada file enumeration and
+  SHA-256 of every scanned file), the SBOM tree walk and word scan, and the
+  renderers. Nothing here can be skipped: the result cache is empty, so
+  every file must be read and hashed at least once. The system-tool version
+  probes are *not* part of cold anymore (they live per-machine and are
+  cached across cache wipes).
+- **Warm ~35 ms**: the on-disk result cache (content-addressed per file,
+  oldest-first eviction) skips re-parsing unchanged sources. The stamp
+  fast-path skips the per-file SHA-256 entirely (a file unchanged in size is
+  not re-hashed). The tools-set cache skips the whole SBOM dev-dependency
+  word scan and the tool probes for an unchanged project. The remaining
+  time is process startup (dynamic loader hwcaps probing, elaboration), the
+  directory walks, and the blob deserialization.
+- System time is the tell. Cold runs show ~13 ms of system time (file I/O);
+  warm runs show ~9 ms.
 
 ## Optimisation history
 
+Kept in reverse-chronological order.  Every entry names the measurement that
+drove it so the next round of work can see whether the previous assumption
+still holds.
+
+### Stamp fast-path hashing (1.28.0)
+
+The warm-path profile showed GNAT.SHA256 at ~48% of CPU: every `.ads` file
+was fully re-read and re-hashed on every run just to compute its cache key,
+even though the content was unchanged. `Hash_File` now keeps an in-memory
+map of path -> (size, digest). A file whose size still matches the recorded
+size serves the recorded digest without opening or reading the file. The
+fast path is used only within one process (the map is not persisted), so a
+content change is always caught (the size differs or the map is empty). The
+same fast path serves the SBOM tree-walk hashing, which re-hashes files the
+source scan already touched in the same run (the two hash passes collapse
+into one real read + one size check). Warm user time dropped roughly a
+third.
+
+### Stable probe store + probe results in the tools blob (1.28.0)
+
+The cold profile was dominated by the system-tool version probes: each
+spawns a subprocess, and node/hg/mandb boot an interpreter (hg alone cost
+~330 ms on this machine; the full probe set ~150 ms end to end). The
+probes were kept under the *result* cache (`<cache-dir>/probes/`), so
+wiping the cache (or pointing `--cache-dir` elsewhere) re-probed every
+tool.
+
+Two changes removed that cost:
+
+- Probes now live in `~/.adacovex/probes/` -- a stable, machine-level
+  store external to the result cache. Wiping the result cache (or using a
+  fresh `--cache-dir`) no longer re-probes; only the 7-day TTL ever
+  re-probes a known toolchain. Cold on a warm-probe machine dropped from
+  ~658 ms to ~86 ms (7.7 x).
+- The tools-set cache blob now also stores each referenced tool's probe
+  result (`tool=version` pairs), and a cache hit rebuilds the SBOM tool
+  edges from those pairs without PATH lookups, probe file reads, or
+  subprocess spawns. Warm dropped from ~39.8 ms to ~34.6 ms. The blob
+  format is names-`|`-version-pairs; `Cache_Schema` was bumped to s6 so
+  old names-only blobs are never served as if complete. Cold and warm
+  SBOM output stays byte-identical.
+
+### File-stamp fast-path and eviction batching (1.27.0)
+
+`Put_Cached` ran eviction after every store; eviction walks the whole cache
+tree. It now runs every 32 stores (bounded overshoot under the soft cap).
+The SBOM dev-dependency word scan was rewritten from a per-tool substring
+match (60 tools x line length) to a single-pass word extraction (per-word x
+distinct tool lengths), and tool-output directories (`gnatprove/`,
+`__pycache__`, `node_modules`, `.headroom`, `.lccst`) were excluded from
+both tree walks so the proof-run output is not enumerated. Those changes
+alone took the warm run from ~1.02 s to ~63 ms (16x) and cold from ~1.4 s
+to ~545 ms, and reduced the warm-run syscall count from ~15k to ~12k.
+
 ### Probe cache
 
-The SBOM builds a *dev-scope* dependency edge for every tool that the target's
-build references. The tool must be installed on `$PATH` (for example `gcc`,
-`alr`, `git`, `make`). The SBOM probes each tool with `<tool> <flag>` to
-capture its version. Each probe spawns a subprocess. The subprocess costs tens
-of milliseconds per referenced tool (`System: 42.8 ms -> 9.1 ms`, ~150 ms end
-to end on an 11-tool toolchain).
-
-The probe cache stores each tool's one-time probed version in
-`<cache-root>/probes/<tool>` with a 7-day TTL. Unchanged toolchains stop paying
-the spawn cost on every run. The TTL means toolchain upgrades are reflected in
-the SBOM within a week even if the machine never re-probes. `--no-cache`
-disables the probe cache as well.
+*(Origin story.)* The SBOM builds a *dev-scope* dependency edge for every tool that the
+target's build references. The tool must be installed on `$PATH` (for
+example `gcc`, `alr`, `git`, `make`). The SBOM probes each tool with
+`<tool> <flag>` to capture its version. Each probe spawns a subprocess. The
+subprocess costs tens of milliseconds per referenced tool (`System: 42 ms ->
+9 ms`, ~150 ms end to end on an 11-tool toolchain).  Originally the
+probed versions were cached under `<cache-root>/probes/<tool>` with a
+7-day TTL.  That location meant a wiped result cache re-probed every tool
+on the next run -- which is why 1.28.0 moved the store and folded the
+probe results into the tools-set cache blob (see above).
 
 ## Binary size
 
-The debug-symbol-carrying build is ~7 MiB. Stripping (`strip bin/adacovex`)
-yields ~3.1 MiB (~57% smaller) without affecting behaviour. GNAT's default
+The debug-symbol-carrying build is ~9 MiB. Stripping (`strip bin/adacovex`)
+yields ~3.6 MiB (~60% smaller) without affecting behaviour. GNAT's default
 build keeps symbols for debugging (`gdb` works). Release artifacts are
 stripped. `make bench` always reports both. Regressions in code size are
-visible in the same command that reports timings.
+visible in the same command that reports timings. If the symbols ever come
+out, the binary size is the same and the page should say so.
 
 ## CI
 
@@ -97,3 +166,13 @@ matters (`--no-cache`-equivalent fresh dirs). The `make` gates are timed
 loosely. Timings are informational only. The `bench` target is not part of
 `make check`. It makes the gate machine-dependent. A slow CI runner must not
 fail a build. The target is run by hand before releases.
+
+## When the numbers regress
+
+Run `make perf-bench` first. It reports the CPU break-down (the wall-clock
+`perf` output) and the strace syscall counts. The single-reader/single-writer
+cache walks are the usual suspects: a new tree walk that re-enumerates a
+directory which a cache already covers, or a new per-file hash that the
+stamp fast path does not cover. The numbers in this page are from the
+self-assessment; the Ada_CRDT target is smaller and exercises the same
+pipeline, so `make run-ada-crdt` is a handy second datapoint.

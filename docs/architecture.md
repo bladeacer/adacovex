@@ -422,7 +422,10 @@ source scans for the current tree.
   `~/.adacovex/cache/<version>/<Cache_Schema>`. `Cache_Schema` (in
   `src/core/adacovex-cache.ads`) is bumped whenever the serialized layout of a
   cached record or the scanner/parser semantics change, so blobs written by an
-  incompatible build are never served as if valid.
+  incompatible build are never served as if valid. System-tool version probes
+  are *not* under the result cache: they live in `~/.adacovex/probes/` (a
+  stable machine-level store; wiping the result cache must not re-probe every
+  tool).
 - **Eviction**: `Put_Cached` evicts oldest-first by modification time when more
   than `--cache-max` entries (default `4096`) accumulate. `Eviction_Count`
   tracks removals and is reported in the ANSI cache line.
@@ -444,7 +447,7 @@ it. The ANSI report shows a
 
 ## Testing
 
-adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 968 tests across 14 categories. No external test framework (AUnit, and more) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
+adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 973 tests across 14 categories. No external test framework (AUnit, and more) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
 
 ## Supported Platforms
 

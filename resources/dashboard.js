@@ -1,5 +1,5 @@
 
-(function(){var K='adacovex-theme',R=document.documentElement,S=document.getElementById('theme-select'),B=document.getElementById('save-theme');var C=R.getAttribute('data-initial-theme')||'system';function apply(t){if(t==='dark')R.setAttribute('data-theme','dark');else if(t==='light')R.setAttribute('data-theme','light');else R.removeAttribute('data-theme');}function pick(){return S?S.value:'system';}var use='system';var q=null;try{q=new URLSearchParams(location.search).get('theme');}catch(e){}if(q==='light'||q==='dark'||q==='system'){use=q;}else if(C==='light'||C==='dark'){use=C;}else{var s=null;try{s=localStorage.getItem(K);}catch(e){}if(s==='light'||s==='dark'||s==='system'){use=s;}}if(S)S.value=use;apply(use);window.themeChanged=function(){apply(pick());};window.saveTheme=function(){var t=pick();try{localStorage.setItem(K,t);}catch(e){}if(B){B.textContent='Saved';setTimeout(function(){B.textContent='Save settings';},1200);}};window.showTab=function(id){var btns=document.querySelectorAll('.tab-btn'),panels=document.querySelectorAll('.tab-panel');btns.forEach(function(b){var a=b.getAttribute('data-tab')===id;b.classList.toggle('active',a);b.setAttribute('aria-selected',a?'true':'false');});panels.forEach(function(p){p.classList.toggle('active',p.id==='tab-'+id);});try{history.replaceState(null,'','#'+id);}catch(e){}try{localStorage.setItem('adacovex-tab',id);}catch(e){}};var init=null;try{init=location.hash.replace('#','');}catch(e){}if(!init)try{init=localStorage.getItem('adacovex-tab');}catch(e){}if(init && document.getElementById('tab-'+init))showTab(init);window.filterByScope=function(){
+(function(){var K='adacovex-theme',R=document.documentElement,S=document.getElementById('theme-select'),B=document.getElementById('save-theme');var C=R.getAttribute('data-initial-theme')||'system';function apply(t){if(t==='dark')R.setAttribute('data-theme','dark');else if(t==='light')R.setAttribute('data-theme','light');else R.removeAttribute('data-theme');}function pick(){return S?S.value:'system';}var use='system';var q=null;try{q=new URLSearchParams(location.search).get('theme');}catch(e){}if(q==='light'||q==='dark'||q==='system'){use=q;}else if(C==='light'||C==='dark'){use=C;}else{var s=null;try{s=localStorage.getItem(K);}catch(e){}if(s==='light'||s==='dark'||s==='system'){use=s;}}if(S)S.value=use;apply(use);window.themeChanged=function(){apply(pick()); if(nomnomlViewActive()) renderNomnoml();};window.saveTheme=function(){var t=pick();try{localStorage.setItem(K,t);}catch(e){}if(B){B.textContent='Saved';setTimeout(function(){B.textContent='Save settings';},1200);}};window.showTab=function(id){var btns=document.querySelectorAll('.tab-btn'),panels=document.querySelectorAll('.tab-panel');btns.forEach(function(b){var a=b.getAttribute('data-tab')===id;b.classList.toggle('active',a);b.setAttribute('aria-selected',a?'true':'false');});panels.forEach(function(p){p.classList.toggle('active',p.id==='tab-'+id);});try{history.replaceState(null,'','#'+id);}catch(e){}try{localStorage.setItem('adacovex-tab',id);}catch(e){}};var init=null;try{init=location.hash.replace('#','');}catch(e){}if(!init)try{init=localStorage.getItem('adacovex-tab');}catch(e){}if(init && document.getElementById('tab-'+init))showTab(init);window.filterByScope=function(){
   var showBase=document.getElementById('filter-base') ? document.getElementById('filter-base').checked : true;
   var showDev=document.getElementById('filter-dev') ? document.getElementById('filter-dev').checked : true;
   var showTrans=document.getElementById('filter-transitive') ? document.getElementById('filter-transitive').checked : true;
@@ -40,13 +40,10 @@
     }
   });
   nodes.forEach(function(n){
-    var show=info[n].hasMatch && scopeOk(info[n].scope);
+    var show=info.get(n).hasMatch && scopeOk(info.get(n).scope);
     // scope filtering hides a node and its subtree without touching open
     // state; the text filter auto-opens ancestors so matches stay reachable,
     // and the open state is restored once the filter is cleared.
-    if(!textFilter && !show){
-      // scope-only hide: keep the user's open state intact
-    }
     n.style.display= show ? '' : 'none';
     if(show && textFilter){
       var p=n.parentElement;
@@ -78,6 +75,21 @@ window.downloadNomnoml=function(){
 };
 // Graph data injected by Ada
 var ADACOVEX_GRAPH=__GRAPH_JSON__;
+// Credits tab: the Playwright row is static in the template (it predates
+// the resolved graph).  Fill its version cell from the graph when the
+// target declares a playwright package (e.g. @playwright/test@1.62.1).
+(function(){
+  var cell=document.getElementById('credits-playwright');
+  if(!cell) return;
+  var g=(ADACOVEX_GRAPH && ADACOVEX_GRAPH.dependencies) ? ADACOVEX_GRAPH.dependencies : [];
+  for(var i=0;i<g.length;i++){
+    var d=g[i];
+    if(d && d.version && (d.name||'').toLowerCase().indexOf('playwright')!==-1){
+      cell.textContent=d.version+' / Apache-2.0';
+      return;
+    }
+  }
+})();
 // Build full-text index from all tab content
 var fullTextIdx=[];
 function buildFullTextIdx(){
@@ -124,6 +136,10 @@ try{
     });
   }
 }catch(e){ console.warn('FlexSearch init failed', e); }
+function nomnomlViewActive(){
+  var v=document.getElementById('dep-nomnoml-view');
+  return !!(v && v.style.display !== 'none');
+}
 function renderNomnoml(){
   try{
     if(typeof nomnoml==='undefined' || !ADACOVEX_GRAPH) return;
@@ -140,8 +156,23 @@ function renderNomnoml(){
       if(!byScope[scope]) byScope[scope]=[];
       byScope[scope].push(d);
     });
-    var cardBg=getComputedStyle(document.documentElement).getPropertyValue('--card').trim()||'#fff';var fg=getComputedStyle(document.documentElement).getPropertyValue('--fg').trim()||'#333';var src='#.box: fill='+cardBg+'\n#.arrow: fill='+fg+'\n#direction: down\n';
-    src += '[<box> adacovex]\n';
+    // Draw the diagram in the active theme: every nomnoml directive is
+    // derived from the dashboard's CSS custom properties, so boxes, arrows,
+    // canvas background and text follow light/dark (the theme select
+    // re-renders via themeChanged()).  The note classifier gets the muted
+    // table-head colour instead of nomnoml's default yellow.
+    var cs=getComputedStyle(document.documentElement);
+    var card=cs.getPropertyValue('--card').trim()||'#ffffff';
+    var bg=cs.getPropertyValue('--bg').trim()||'#ffffff';
+    var fg=cs.getPropertyValue('--fg').trim()||'#222222';
+    var border=cs.getPropertyValue('--border').trim()||'#dddddd';
+    var th=cs.getPropertyValue('--th').trim()||'#f0f0f0';
+    var src='#fill: '+card+'\n#background: '+bg+'\n#stroke: '+border+'\n#lineColor: '+border+'\n#fontColor: '+fg+'\n#fillArrows: false\n#.note: fill='+th+'\n#.note: stroke='+border+'\n#.note: textColor='+fg+'\n#direction: down\n';
+    var root=deps[0]||{name:'root'};
+    for(var i=0;i<deps.length;i++){
+      if(deps[i].kind==='root' || deps[i].parent===0){ root=deps[i]; break; }
+    }
+    src += '['+(root.name||'root')+']\n';
     filtered.forEach(function(d){
       if(d.parent===0 || d.kind==='root') return;
       var parent = deps[d.parent-1] || deps[0];
@@ -255,13 +286,19 @@ window.filterDeps=function(){var e=document.getElementById('dep-filter');if(e)e.
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function purlInfo(purl){
   var p=purl||''; var m=null;
-  m=p.match(/^pkg:github\/([^\/@]+)\/([^\/@]+)/); if(m) return {label:'GitHub', href:'https://github.com/'+m[1]+'/'+m[2].replace(/@.*$/,'')};
-  m=p.match(/^pkg:npm\/([^@]+)/); if(m) return {label:'npm', href:'https://www.npmjs.com/package/'+m[1]};
-  m=p.match(/^pkg:cargo\/([^@]+)/); if(m) return {label:'crates.io', href:'https://crates.io/crates/'+m[1]};
-  m=p.match(/^pkg:pypi\/([^@]+)/); if(m) return {label:'PyPI', href:'https://pypi.org/project/'+m[1]};
-  m=p.match(/^pkg:golang\/([^@]+)/); if(m) return {label:'pkg.go.dev', href:'https://pkg.go.dev/'+m[1]};
-  m=p.match(/^pkg:alire\/([^@]+)/); if(m) return {label:'Alire', href:'https://alire.ada.dev/crates/'+m[1]};
-  if(p) return {label:'GitHub search', href:'https://github.com/search?q='+encodeURIComponent(p)+'&type=repositories'};
+  // Strip a trailing @version (npm scoped names keep their leading @).
+  function stripVer(s){ return s.replace(/@[^@]*$/,''); }
+  m=p.match(/^pkg:github\/([^\/@]+)\/([^\/@]+)/); if(m) return {label:'GitHub', href:'https://github.com/'+m[1]+'/'+stripVer(m[2])};
+  m=p.match(/^pkg:gitlab\/([^\/@]+)\/([^\/@]+)/); if(m) return {label:'GitLab', href:'https://gitlab.com/'+m[1]+'/'+stripVer(m[2])};
+  m=p.match(/^pkg:bitbucket\/([^\/@]+)\/([^\/@]+)/); if(m) return {label:'Bitbucket', href:'https://bitbucket.org/'+m[1]+'/'+stripVer(m[2])};
+  m=p.match(/^pkg:npm\/(@[^\/]+\/[^@]+|[^@]+)/); if(m) return {label:'npm', href:'https://www.npmjs.com/package/'+stripVer(m[1])};
+  m=p.match(/^pkg:cargo\/([^@]+)/); if(m) return {label:'crates.io', href:'https://crates.io/crates/'+stripVer(m[1])};
+  m=p.match(/^pkg:pypi\/([^@]+)/); if(m) return {label:'PyPI', href:'https://pypi.org/project/'+stripVer(m[1])};
+  m=p.match(/^pkg:golang\/([^@]+)/); if(m) return {label:'pkg.go.dev', href:'https://pkg.go.dev/'+stripVer(m[1])};
+  m=p.match(/^pkg:alire\/([^@]+)/); if(m) return {label:'Alire', href:'https://alire.ada.dev/crates/'+stripVer(m[1])};
+  // Unknown ecosystem: there is no reliable direct registry/repo link, so
+  // no link is offered (a GitHub search URL is noise for generic/system
+  // dependencies).
   return null;
 }
 window.showDepDetails=function(idx){

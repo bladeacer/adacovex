@@ -632,6 +632,72 @@ package body Adacovex_SBOM_Tests is
          end;
       end;
 
+      --  Tools-set cache round-trip: the first Discover_System_Dev_Deps
+      --  scans the fixture and stores the referenced-tool set; the second
+      --  call (same cache dir, unchanged fixture) serves the set from the
+      --  on-disk cache instead of re-scanning, and both calls register the
+      --  same dev-scope tool components.
+      declare
+         Pid      : constant String :=
+           Integer'Image
+             (GNAT.OS_Lib.Pid_To_Integer (GNAT.OS_Lib.Current_Process_Id));
+         CDir     : constant String :=
+           "obj/sbom_tools_cache-" & Pid (2 .. Pid'Last);
+         G1       : Component_Vectors.Vector;
+         G2       : Component_Vectors.Vector;
+         Success  : Boolean := False;
+         Prev_Dir : String (1 .. 256) := (others => ' ');
+         Prev_Len : Natural := 0;
+      begin
+         Adacovex.Cache.Cache_Dir (Prev_Dir, Prev_Len);
+         Adacovex.Cache.Set_Cache_Dir (CDir);
+
+         Make_Sysdep_Fixture;
+         Adacovex.Parsers.Manifest.Build_Dependency_Graph
+           ("obj/sbom_sysdep_fixture",
+            "obj/sbom_sysdep_fixture/alire.toml",
+            G1,
+            Success);
+         R.Check (Success, "tools-cache graph build succeeds (miss)");
+         Adacovex.Parsers.Manifest.Discover_System_Dev_Deps
+           ("obj/sbom_sysdep_fixture", G1);
+
+         Adacovex.Parsers.Manifest.Build_Dependency_Graph
+           ("obj/sbom_sysdep_fixture",
+            "obj/sbom_sysdep_fixture/alire.toml",
+            G2,
+            Success);
+         R.Check (Success, "tools-cache graph build succeeds (hit)");
+         Adacovex.Parsers.Manifest.Discover_System_Dev_Deps
+           ("obj/sbom_sysdep_fixture", G2);
+
+         --  The second call must register exactly the same tool set as the
+         --  first (the cache served the stored set).  git and make are
+         --  referenced by the fixture; whether they are installed on PATH
+         --  or not, the cached hit must agree with the scanned miss.
+         R.Check
+           (Count_Name (G2, "git") = Count_Name (G1, "git"),
+            "tools-cache hit agrees on git");
+         R.Check
+           (Count_Name (G2, "make") = Count_Name (G1, "make"),
+            "tools-cache hit agrees on make");
+         R.Check
+           (Count_Name (G2, "alr") = Count_Name (G1, "alr"),
+            "tools-cache hit agrees on alr");
+
+         if Prev_Len > 0 then
+            Adacovex.Cache.Set_Cache_Dir (Prev_Dir (1 .. Prev_Len));
+         end if;
+         begin
+            if Ada.Directories.Exists (CDir) then
+               Ada.Directories.Delete_Tree (CDir);
+            end if;
+         exception
+            when others =>
+               null;
+         end;
+      end;
+
       --  CycloneDX 1.5 JSON rendering.
       declare
          Graph   : Component_Vectors.Vector;

@@ -20,3 +20,5 @@ __pycache__/
 *.pyc
 alire/build_hash_inputs
 node_modules
+tests/e2e/test-results
+tests/e2e/playwright-report

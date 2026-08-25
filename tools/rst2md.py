@@ -12,6 +12,10 @@ from typing import Dict, Iterable, List, Optional, Tuple, TypedDict
 
 RST_DIR = sys.argv[1] if len(sys.argv) > 1 else "obj/gnatdoc-rst"
 OUT_DIR = sys.argv[2] if len(sys.argv) > 2 else "docs/api-docs"
+# When set, drop links to generated test-* and adacovex-test_support pages
+# from docs/api-docs/index.md after rendering (the old Makefile did this
+# with two GNU sed -i calls).
+PRUNE_TEST_PAGES = "--prune-test-pages" in sys.argv
 
 MOJIBAKE_EMDASH = "\u00e2\u0080\u0094"
 
@@ -882,6 +886,18 @@ def render_package(
     return "\n".join(lines)
 
 
+def prune_test_pages(index_path: str) -> None:
+    """Drop links to generated test-* pages from the api-docs index."""
+    with open(index_path, encoding="utf-8") as f:
+        lines = f.read().splitlines()
+    kept = [ln for ln in lines
+            if "](test_" not in ln and "](adacovex-test_support" not in ln]
+    if len(kept) == len(lines):
+        return
+    with open(index_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(kept) + "\n")
+
+
 def main() -> None:
     os.makedirs(OUT_DIR, exist_ok=True)
 
@@ -910,8 +926,11 @@ def main() -> None:
             f.write(render_package(title, desc, blocks, annotations, has_private, private_items, ads_path, type_map, subprog_aspects))
         packages[title] = fn
 
-    with open(join(OUT_DIR, "index.md"), "w") as f:
+    index_path = join(OUT_DIR, "index.md")
+    with open(index_path, "w") as f:
         f.write(render_index(packages))
+    if PRUNE_TEST_PAGES:
+        prune_test_pages(index_path)
 
     print(f"Wrote {len(packages)} package docs + index to {OUT_DIR}/")
 

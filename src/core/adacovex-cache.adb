@@ -84,31 +84,136 @@ package body Adacovex.Cache is
       end if;
    end Default_Cache_Dir;
 
-   function Hash_File (Path : String) return String is
-      Ctx  : GNAT.SHA256.Context;
-      F    : File_Type;
-      Buf  : Ada.Streams.Stream_Element_Array (0 .. 8191);
-      Last : Ada.Streams.Stream_Element_Offset;
+   --  In-memory map of file path -> (size, canonical filename) recorded at
+   --  the last Stamped_Hash call.  It is bounded: when the map reaches
+   --  Stamp_Map_Max entries, existing entries are dropped (a period of
+   --  pathological churn just causes a re-hash).  Sized on insertion so a
+   --  changed content with identically-sized file appears as a fresh hash.
+   type Stamp_Entry is record
+      Size : Long_Long_Integer := -1;
+      Name : String (1 .. 2048) := (others => ' ');
+   end record;
+   subtype Stamp_Index is Natural range 0 .. 4095;
+   Stamp_Names   : array (Stamp_Index) of String (1 .. 2048) :=
+     (others => (others => ' '));
+   Stamp_Sizes   : array (Stamp_Index) of Long_Long_Integer := (others => -1);
+   Stamp_Digests : array (Stamp_Index) of String (1 .. 64) :=
+     (others => (others => ' '));
+
+   --  Current stamp of a file: size (or -1 when Size raises).
+   function File_Size (Path : String) return Long_Long_Integer is
+      use Ada.Directories;
    begin
-      begin
-         Open (F, In_File, Path);
-      exception
-         when others =>
-            return "";
-      end;
-      loop
-         Read (F, Buf, Last);
-         exit when Last < Buf'First;
-         GNAT.SHA256.Update (Ctx, Buf (Buf'First .. Last));
-      end loop;
-      Close (F);
-      return GNAT.SHA256.Digest (Ctx);
+      return Long_Long_Integer (Size (Path));
    exception
       when others =>
-         if Is_Open (F) then
-            Close (F);
+         return -1;
+   end File_Size;
+
+   --  Find Path in the stamp map.  Returns the index or -1.
+   function Stamp_Find (Path : String) return Integer is
+   begin
+      for I in Stamp_Index loop
+         if Stamp_Sizes (I) >= 0 then
+            declare
+               N : constant String :=
+                 Stamp_Names (I) (1 .. Stamp_Names (I)'Length);
+            begin
+               if N = Path then
+                  return I;
+               end if;
+            end;
          end if;
+      end loop;
+      return -1;
+   end Stamp_Find;
+
+   --  Serve a previously-remembered digest when Path's size still matches
+   --  the size recorded with that digest.  The path must be the same
+   --  string (a re-scan of the same file).  The function returns "" when
+   --  there is no matching stamp (the caller then falls back to
+   --  Hash_File).
+   function Hash_Fast (Path : String) return String is
+      Sz : constant Long_Long_Integer := File_Size (Path);
+   begin
+      if Sz < 0 or else Path'Length > 2048 then
          return "";
+      end if;
+      for I in Stamp_Index loop
+         if Stamp_Sizes (I) = Sz
+           and then Stamp_Names (I) (1 .. Stamp_Names (I)'Length) = Path
+         then
+            return Stamp_Digests (I);
+         end if;
+      end loop;
+      return "";
+   end Hash_Fast;
+
+   --  Remember Path with the given digest (and Path's size at hash time)
+   --  so a later Hash_Fast (same path, same size) can reuse the digest
+   --  without re-reading the file.  The size is the strongest cheap
+   --  proxy for "content unchanged" after this process already hashed the
+   --  file; mtime is secondary and not tracked.
+   procedure Stamp_Remember (Path : String; Digest : String) is
+      Idx : Integer;
+   begin
+      if Path'Length > 2048 or else Digest'Length /= 64 then
+         return;
+      end if;
+      Idx := Stamp_Find (Path);
+      if Idx < 0 then
+         --  insert at the first free slot
+         for I in Stamp_Index loop
+            if Stamp_Sizes (I) < 0 then
+               Idx := I;
+               exit;
+            end if;
+         end loop;
+         if Idx < 0 then
+            return;  --  map full; skip
+
+         end if;
+      end if;
+      Stamp_Names (Idx) (1 .. Path'Length) := Path;
+      Stamp_Sizes (Idx) := File_Size (Path);
+      Stamp_Digests (Idx) (1 .. 64) := Digest;
+   end Stamp_Remember;
+
+   function Hash_File (Path : String) return String is
+      Fast : constant String := Hash_Fast (Path);
+   begin
+      if Fast'Length = 64 then
+         return Fast;
+      end if;
+      declare
+         Ctx  : GNAT.SHA256.Context;
+         F    : File_Type;
+         Buf  : Ada.Streams.Stream_Element_Array (0 .. 8191);
+         Last : Ada.Streams.Stream_Element_Offset;
+         Dig  : String (1 .. 64);
+      begin
+         begin
+            Open (F, In_File, Path);
+         exception
+            when others =>
+               return "";
+         end;
+         loop
+            Read (F, Buf, Last);
+            exit when Last < Buf'First;
+            GNAT.SHA256.Update (Ctx, Buf (Buf'First .. Last));
+         end loop;
+         Close (F);
+         Dig := GNAT.SHA256.Digest (Ctx);
+         Stamp_Remember (Path, Dig);
+         return Dig;
+      exception
+         when others =>
+            if Is_Open (F) then
+               Close (F);
+            end if;
+            return "";
+      end;
    end Hash_File;
 
    function Hash_String (S : String) return String is
@@ -207,18 +312,33 @@ package body Adacovex.Cache is
    --  Current eviction cap (entries retained).  Set via Set_Cache_Policy.
    Cache_Cap : Positive := 4096;
 
-   --  <cache>/probes/<tool> -- per-tool version-probe file.  Kept outside
-   --  the two-level entry tree so probes never collide with content-hashed
-   --  blobs and are cheap to check.
-   function Probe_Path (Tool : String) return String is
+   --  Location of the per-tool version-probe files.  Probes describe the
+   --  *machine's* toolchain (which executables exist on PATH and their
+   --  --version output), not a particular project's scan results, so they
+   --  live in a stable directory that --cache-dir changes and cache wipes
+   --  do not affect: wiping the result cache must not cost re-probing
+   --  every tool (each probe spawns a subprocess; node/hg/mandb boot an
+   --  interpreter).  A fixed probe root keeps a 7-day TTL the only reason
+   --  a known toolchain ever re-probes.
+   function Probe_Root return String is
+      Home : constant String :=
+        (if Ada.Environment_Variables.Exists ("HOME")
+         then Ada.Environment_Variables.Value ("HOME")
+         else "/tmp");
    begin
-      if Tool'Length = 0 or else Cache_Root_Len = 0 then
+      return Home & "/.adacovex/probes";
+   end Probe_Root;
+
+   --  <probes>/<tool> -- per-tool version-probe file, outside the two-level
+   --  entry tree so probes never collide with content-hashed blobs and are
+   --  cheap to check.
+   function Probe_Path (Tool : String) return String is
+      Root : constant String := Probe_Root;
+   begin
+      if Tool'Length = 0 or else Root'Length = 0 then
          return "";
       end if;
-      return
-        Cache_Root (1 .. Cache_Root_Len)
-        & "/probes/"
-        & Tool (Tool'First .. Tool'Last);
+      return Root & "/" & Tool (Tool'First .. Tool'Last);
    end Probe_Path;
 
    procedure Get_Probe
@@ -270,8 +390,7 @@ package body Adacovex.Cache is
          return;
       end if;
       begin
-         Ada.Directories.Create_Path
-           (Cache_Root (1 .. Cache_Root_Len) & "/probes");
+         Ada.Directories.Create_Path (Probe_Root);
       exception
          when others =>
             null;

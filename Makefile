@@ -16,7 +16,7 @@ help:
 	@echo '    build         Build project (adacovex + test_runner, covex alias);'
 	@echo '                  regenerates src/adacovex_version_info.ads from'
 	@echo '                  alire-dev.toml (or ADACOVEX_VERSION for releases)'
-	@echo '    test          Build and run native test suite (968 tests)'
+	@echo '    test          Build and run native test suite (973 tests)'
 	@echo '    prove         Run SPARK proofs (gnatprove via prove subcommand,'
 	@echo '                  resolved from alire-dev.toml / PATH / cache / download)'
 	@echo '                  (also auto-regenerates SVG badges in docs/badges/)'
@@ -98,8 +98,9 @@ help:
 	@echo '      of the command, then restore alire.toml and alire.lock untouched.'
 	@echo ''
 	@echo 'Prerequisites: alr (Alire), GNAT toolchain, Python 3 (for the'
-	@echo '              tools/*.py dev scripts: version, description, test/'
-	@echo '              proof doc sync, changelog check, agents-tree)'
+	@echo '              tools/*.py dev scripts: version/description sync, test/'
+	@echo '              proof/doc sync, changelog check, agents-tree, and the'
+	@echo '              parsing ports: ascii/spark-off/bench-size/versions/bump)'
 
 # Filter the benign ld 2.44 SFrame message ("error in ...(.sframe); no
 # .sframe will be created") from the link step.  It is emitted by the Alire
@@ -111,7 +112,7 @@ build:
 	@python3 tools/gen-version.py; \
 	python3 tools/gen-dashboard.py; \
 	alr build > /tmp/alr-build.log 2>&1; rc=$$?; \
-	sed -e '/\.sframe); no \.sframe will be created/d' /tmp/alr-build.log; \
+	python3 tools/filter-sframe.py /tmp/alr-build.log; \
 	rm -f /tmp/alr-build.log; \
 	if [ $$rc -eq 0 ]; then ln -sf adacovex bin/covex; fi; \
 	exit $$rc
@@ -125,7 +126,7 @@ test: build
 # Self-assessment acceptance gates, defined once so prove/run-self/release stay
 # in sync (and match .github/workflows/ci.yml + AGENTS.md "Dogfood target").
 # --require-tests is the current native test-suite size (docs/test_result.md).
-SELF_ASSESS_ARGS := --dal=C --standard=all --require-spark=Platinum --require-docstrings=100 --require-tests=968 --require-proof=100
+SELF_ASSESS_ARGS := --dal=C --standard=all --require-spark=Platinum --require-docstrings=100 --require-tests=973 --require-proof=100
 
 prove: build
 	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex prove --target=. $(SELF_ASSESS_ARGS) --emit-svg=docs/badges/
@@ -139,10 +140,8 @@ doc:
 	@$(MAKE) _dev_cmd CMD='mkdir -p obj && \
 	  alr exec -- gnatdoc -P adacovex.gpr --backend=rst \
 	    --generate private --output-dir=obj/gnatdoc-rst && \
-	  python3 tools/rst2md.py obj/gnatdoc-rst docs/api-docs && \
-	  rm -f docs/api-docs/test_*.md docs/api-docs/adacovex-test_support.md && \
-	  sed -i "/](test_[^)]*\.md)/d" docs/api-docs/index.md 2>/dev/null; \
-	  sed -i "/](adacovex-test_support\.md)/d" docs/api-docs/index.md 2>/dev/null'
+	  python3 tools/rst2md.py obj/gnatdoc-rst docs/api-docs --prune-test-pages && \
+	  rm -f docs/api-docs/test_*.md docs/api-docs/adacovex-test_support.md'
 
 run-self: build
 	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex $(SELF_ASSESS_ARGS) --emit-svg=docs/badges/
@@ -164,7 +163,7 @@ bench: build
 	export bench_cache; \
 	trap 'rm -rf "$$bench_cache"' EXIT; \
 	if command -v hyperfine >/dev/null 2>&1; then \
-		echo '=== Cold (fresh result cache + probe cache) ==='; \
+		echo '=== Cold (fresh result cache) ==='; \
 		hyperfine --runs 10 \
 		  --prepare 'rm -rf $$bench_cache' \
 		  "./bin/adacovex --cache-dir=$$bench_cache" \
@@ -187,24 +186,20 @@ bench: build
 			time ./bin/adacovex --cache-dir=$$bench_cache >/dev/null 2>&1; \
 		done; \
 	fi; \
-	raw=$$(stat -c %s bin/adacovex); \
 	cp bin/adacovex /tmp/adacovex-strip-test; \
 	strip /tmp/adacovex-strip-test; \
-	stripped=$$(stat -c %s /tmp/adacovex-strip-test); \
-	rm -f /tmp/adacovex-strip-test; \
 	echo ''; \
 	echo "== Binary size =="; \
-	echo "bin/adacovex          $$(echo $$raw | awk '{printf \"%.1f MiB\", $$1/1048576}') ($$raw bytes)"; \
-	echo "after strip           $$(echo $$stripped | awk '{printf \"%.1f MiB\", $$1/1048576}') ($$stripped bytes)"; \
-	echo "savings               $$(echo $$raw $$stripped | awk '{printf \"%.1f%%\", ($$1-$$2)/$$1*100}')"; \
+	python3 tools/bench-size.py bin/adacovex /tmp/adacovex-strip-test; \
+	rm -f /tmp/adacovex-strip-test
 
 perf-bench: build
 	python3 tools/perf-bench.py
 
 coverage-gate: build
-	@tags=$$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$$'); \
+	@tags=$$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$'); \
 	latest=$$(echo "$$tags" | head -1); \
-	prev=$$(echo "$$tags" | sed -n '2p'); \
+	prev=$$(echo "$$tags" | tail -n +2 | head -1); \
 	if [ -z "$$latest" ] || [ -z "$$prev" ]; then \
 		echo "  Need at least two release tags to compare."; \
 		exit 1; \
@@ -255,18 +250,7 @@ complexity-check: build
 	./bin/adacovex complexity
 
 ascii-check:
-	@echo "=== ASCII Charset Verification ==="; \
-	bad=$$(LC_ALL=C grep -rIlP --include='*.ads' --include='*.adb' --include='*.md' --include='*.py' --include='*.toml' --include='*.gpr' \
-	  --exclude-dir='.git' --exclude-dir='alire' --exclude-dir='obj' --exclude-dir='skills' --exclude-dir='node_modules' \
-	  '[^\x20-\x7E\t]' . 2>/dev/null || true); \
-	if [ -z "$$bad" ]; then \
-	  echo "All source files are pure ASCII."; \
-	else \
-	  n=$$(printf '%s\n' "$$bad" | sed '/^$$/d' | wc -l); \
-	  printf '%s\n' "$$bad" | sed 's/^/  NON-ASCII: /'; \
-	  echo "$$n file(s) contain non-ASCII characters."; \
-	  exit 1; \
-	fi
+	@python3 tools/ascii-check.py
 
 # Quality gate: no `SPARK_Mode (Off)` may appear anywhere in src/ except the
 # `Types.Implementation` container package and the `Complexity` checker package --
@@ -278,17 +262,7 @@ ascii-check:
 # SPARK_Mode On in 1.27.0: gnatprove 16 analyses Ada.Environment_Variables
 # with [assumed-global-null] warnings instead.
 spark-off-check:
-	@echo "=== SPARK_Mode Off verification ==="; \
-	off=$$(grep -rn --include='*.ads' --include='*.adb' -E 'pragma SPARK_Mode \(Off\)|SPARK_Mode => Off' src/ 2>/dev/null | grep -v '^src/core/adacovex-types.ads:' | grep -v '^src/core/adacovex-complexity.ads:' || true); \
-	if [ -n "$$off" ]; then \
-	  echo "  SPARK_Mode (Off) found outside allowed packages:"; \
-	  echo "$$off"; \
-	  echo "  Only Types.Implementation and Complexity may be SPARK_Mode Off"; \
-	  echo "  (non-formal Ada.Containers instantiations are illegal in"; \
-	  echo "  SPARK_Mode On code; see docs/proof/16.1.0-ledger.md)."; \
-	  exit 1; \
-	fi; \
-	echo "  no SPARK_Mode (Off) outside src/core/adacovex-types.ads and src/core/adacovex-complexity.ads"
+	@python3 tools/spark-off-check.py
 
 # Quality gate: everything CI enforces before a release.  Cheap static
 # gates run first so a formatting / sync problem fails before the expensive
@@ -328,81 +302,14 @@ description:
 	fi
 
 bump-version:
-	@if [ -z "$(VERSION)" ]; then \
-		echo "Usage: make bump-version VERSION=x.y.z"; \
-		exit 1; \
-	fi; \
-	version="$(VERSION)"; \
-	if ! echo "$$version" | grep -q '^[0-9]\+\.[0-9]\+\.[0-9]\+$$'; then \
-		echo "Error: version must be in x.y.z format (got: $$version)"; \
-		exit 1; \
-	fi; \
-	echo "Bumping version to $$version..."; \
-	sed -i 's/^version = ".*"/version = "'$$version'"/' alire.toml; \
-	echo "  alire.toml: version = \"$$version\""; \
-	sed -i 's/^version = ".*"/version = "'$$version'"/' alire-dev.toml; \
-	echo "  alire-dev.toml: version = \"$$version\""; \
-	python3 tools/gen-version.py; \
-	echo "  src/adacovex-version.ads: Version = \"$$version\" (generated)"; \
-	\
-	release_file="alire/releases/covex-$$version.toml"; \
-	if [ ! -f "$$release_file" ]; then \
-		sed 's/^version = ".*"/version = "'$$version'"/' alire/releases/covex-0.0.0.toml > "$$release_file"; \
-		echo "  Created: $$release_file"; \
-	else \
-		sed -i 's/^version = ".*"/version = "'$$version'"/' "$$release_file"; \
-		echo "  Updated: $$release_file"; \
-	fi; \
-	\
-	index_file="index/ad/covex/covex-$$version.toml"; \
-	if [ ! -f "$$index_file" ]; then \
-		sed 's/^version = ".*"/version = "'$$version'"/' index/ad/covex/covex-0.1.0-dev.toml > "$$index_file"; \
-		echo "  Created: $$index_file"; \
-	else \
-		sed -i 's/^version = ".*"/version = "'$$version'"/' "$$index_file"; \
-		echo "  Updated: $$index_file"; \
-	fi; \
-	\
-	changelog="docs/changelogs/adacovex-$$version.md"; \
-	if [ ! -f "$$changelog" ]; then \
-		prev=$$(ls docs/changelogs/adacovex-*.md 2>/dev/null | \
-			sed -n 's/.*adacovex-\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\.md/\1/p' | \
-			sort -t. -k1,1n -k2,2n -k3,3n | tail -1); \
-		if [ -z "$$prev" ]; then prev="0.0.0"; fi; \
-		echo "# adacovex $$version" > "$$changelog"; \
-		echo "" >> "$$changelog"; \
-		echo "Date: _$(shell date +%Y-%m-%d)_" >> "$$changelog"; \
-		echo "" >> "$$changelog"; \
-		echo "Version bumped $$prev -> $$version." >> "$$changelog"; \
-		echo "" >> "$$changelog"; \
-		echo "## Changes" >> "$$changelog"; \
-		echo "" >> "$$changelog"; \
-		echo "### C1: <Title>" >> "$$changelog"; \
-		echo "" >> "$$changelog"; \
-		echo "## Test Suite" >> "$$changelog"; \
-		echo "" >> "$$changelog"; \
-		echo "## Proof Results" >> "$$changelog"; \
-		echo "" >> "$$changelog"; \
-		echo "## Traceability" >> "$$changelog"; \
-		echo "  Created: $$changelog (fill in the ### C1: subsection)"; \
-	else \
-		sed -i 's/^version = ".*"/version = "'$$version'"/' "$$changelog" 2>/dev/null; \
-		echo "  Updated: $$changelog"; \
-	fi; \
-	\
-	python3 tools/update-description.py; \
-	echo "  descriptions synced to all manifests"; \
-	echo "Done. Version bumped to $$version."; \
-	echo "Next: run 'make release VERSION=$$version' to build, prove, validate,"; \
-	echo "bundle, commit, and tag the release (or 'make publish' to submit to the"; \
-	echo "Alire community index once the tag is pushed)."
+	@python3 tools/bump-version.py "$(VERSION)"
 
 release:
 	@if [ -n "$(VERSION)" ]; then \
 		version="$(VERSION)"; \
-		sed -i 's/^version = ".*"/version = "'$$version'"/' alire.toml; \
+		python3 tools/versions.py set-version alire.toml "$$version"; \
 	else \
-		version=$$(sed -n 's/^version = "\(.*\)"/\1/p' alire.toml); \
+		version=$$(python3 tools/versions.py current alire.toml); \
 	fi; \
 	echo "=== Generating proof artifacts ==="; \
 	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex prove --target=. $(SELF_ASSESS_ARGS) --emit-svg=docs/badges/; \
@@ -428,19 +335,14 @@ release:
 	if [ -n "$$prev_tag" ]; then prev_num="$${prev_tag#v}"; \
 	else \
 		prev_num=$$(ls alire/releases/covex-*.toml 2>/dev/null | \
-			sed -n 's/.*covex-\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\.toml/\1/p' | \
-			grep -v "^$$version$$" | sort -V | tail -1); \
+			python3 tools/versions.py between "" "$$version" \
+			  --exclude "$$version" | head -1); \
 	fi; \
-	for f in docs/changelogs/adacovex-*.md; do \
-		cv=$$(basename "$$f" .md | sed 's/^adacovex-//'); \
-		if [ -n "$$prev_num" ]; then \
-			if [ "$$(printf '%s\n%s\n' "$$cv" "$$prev_num" | sort -V | head -1)" = "$$cv" ]; then continue; fi; \
-		fi; \
-		if [ "$$(printf '%s\n%s\n' "$$cv" "$$version" | sort -V | tail -1)" != "$$version" ]; then continue; fi; \
-		printf '%s\n' "$$cv"; \
-	done | sort -V -r | while read cv; do \
-		echo "  - docs/changelogs/adacovex-$$cv.md"; \
-	done; \
+	\
+	ls docs/changelogs/adacovex-*.md 2>/dev/null | \
+		python3 tools/versions.py between "$${prev_num:-}" "$$version" \
+		--exclude "$$version" | \
+		while read cv; do echo "  - $$cv"; done; \
 	echo "=== Bundling release artifacts ==="; \
 	rm -rf dist; \
 	mkdir -p dist; \
@@ -470,14 +372,14 @@ release:
 	commit=$$(git rev-parse HEAD); \
 	index_file="index/ad/covex/covex-$$version.toml"; \
 	if [ ! -f "$$index_file" ]; then \
-		sed 's/^version = ".*"/version = "'$$version'"/' index/ad/covex/covex-0.1.0-dev.toml > "$$index_file"; \
+		cp index/ad/covex/covex-0.1.0-dev.toml "$$index_file"; \
 	fi; \
-	sed -i 's/^version = ".*"/version = "'$$version'"/' "$$index_file"; \
+	python3 tools/versions.py set-version "$$index_file" "$$version"; \
 	release_file="alire/releases/covex-$$version.toml"; \
 	if [ ! -f "$$release_file" ]; then \
-		sed 's/^version = ".*"/version = "'$$version'"/' alire/releases/covex-0.0.0.toml > "$$release_file"; \
+		cp alire/releases/covex-0.0.0.toml "$$release_file"; \
 	fi; \
-	sed -i 's/^version = ".*"/version = "'$$version'"/' "$$release_file"; \
+	python3 tools/versions.py set-version "$$release_file" "$$version"; \
 	python3 tools/update-description.py; \
 	echo "  descriptions synced to all manifests"; \
 	if git rev-parse "v$$version" >/dev/null 2>&1; then \
@@ -503,7 +405,7 @@ publish:
 
 test-publish:
 	@version=$$(git describe --tags --abbrev=0 2>/dev/null || \
-		sed -n 's/^version = "\(.*\)"/\1/p' alire.toml); \
+		python3 tools/versions.py current); \
 	echo "=== test-publish dry-run ==="; \
 	echo "Version:  $$version"; \
 	echo "Action:   alr publish (auto-detects GitHub, test deps excluded)"; \
