@@ -6,7 +6,7 @@ compared them with GNU-only `sort -V`, and rewrote manifests with GNU-only
 `sed -i`.  This script exposes the same operations in pure Python so they
 work identically on Linux, WSL, and macOS:
 
-  python3 tools/versions.py current [FILE]
+  python3 tools/versions.py current [--file=FILE]
       Print the `version = "x.y.z"` line of a toml manifest (default
       alire.toml).  Exit 1 when the file has no version line.
 

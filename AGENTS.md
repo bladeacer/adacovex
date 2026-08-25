@@ -226,6 +226,15 @@ for paths, and no `pip install` / external imports. Run them with
 `python3 tools/<name>.py`; the sync ones are wired as `make test-count`, `make
 proof-status`, `make doc-links`, and `make link-check` (markdown link
 verification, run as a cheap static gate in `make check`).
+The multi-step make targets delegate their orchestration to dedicated
+scripts so the Makefile stays declarative: `make build` runs
+tools/build.py (version + dashboard regeneration, `alr build` with the
+SFrame log filter, covex symlink), `make bench` runs tools/bench.py
+(hyperfine cold/warm timings + stripped-binary size), `make doc` / `make fmt`
+run their command through tools/dev-cmd.py (the alire-dev.toml swap,
+restored unconditionally), `make coverage-gate` runs tools/coverage-gate.py
+(temp-worktree docstring delta vs the previous release tag), and `make
+release` runs tools/release.py (`--dry-run` skips commit/tag/push).
 `tools/check-action-parity.py` is a pure check (no writes) wired as
 `make action-parity-check` -- a feature gate in `make check` and CI that
 fails when the GitHub Action stops mirroring the base CLI option set.
