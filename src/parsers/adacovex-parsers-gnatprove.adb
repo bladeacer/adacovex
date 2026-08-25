@@ -53,6 +53,39 @@ package body Adacovex.Parsers.GNATprove is
    --  unproved count such as `118 (23%)` in the last column, newer ones
    --  `450 (88%)` with a "Provers" column of ".", but the column positions
    --  (Justified = 5, Unproved = 6) are stable across both.
+   --  Count the columns in a gnatprove summary row (same 2+ space run
+   --  rule as Get_Column_Number).  Used to tell legacy 3-column category
+   --  rows (label, total, proved) from the modern 5+ column layout
+   --  (label, total, flow, provers, justified, unproved).
+   function Get_Column_Count (Row : String) return Natural;
+   function Get_Column_Count (Row : String) return Natural is
+      J     : Natural := Row'First;
+      Count : Natural := 0;
+   begin
+      while J <= Row'Last and then Row (J) = ' ' loop
+         J := J + 1;
+      end loop;
+      if J > Row'Last then
+         return 0;
+      end if;
+      Count := 1;
+      loop
+         while J <= Row'Last and then Row (J) /= ' ' loop
+            J := J + 1;
+         end loop;
+         exit when J > Row'Last;
+         --  A run of 2+ spaces separates columns; a single space stays
+         --  inside the field (as in `1 (CVC5)`).
+         if J + 1 <= Row'Last and then Row (J + 1) = ' ' then
+            Count := Count + 1;
+         end if;
+         while J <= Row'Last and then Row (J) = ' ' loop
+            J := J + 1;
+         end loop;
+      end loop;
+      return Count;
+   end Get_Column_Count;
+
    function Get_Column_Number (Row : String; N : Positive) return Natural;
    function Get_Column_Number (Row : String; N : Positive) return Natural is
       Field  : Positive := 1;
@@ -168,42 +201,97 @@ package body Adacovex.Parsers.GNATprove is
                if First_Char > 0 then
                   declare
                      Row : String renames Line (First_Char .. Last);
+
+                     --  Per-category rows share the summary's column layout
+                     --  (Total | Flow | Provers | Justified | Unproved),
+                     --  so the count is column 2 and the proved count is
+                     --  Total - Justified - Unproved -- NOT the Flow column:
+                     --  gnatprove 16 splits flow analysis into "Data
+                     --  Dependencies" (checked) and "Flow Dependencies"
+                     --  (proved implicitly), and Run-time/Assertions/
+                     --  Functional rows carry their proved VCs in the
+                     --  Provers column.  Counting only the Flow column would
+                     --  report those as unproved (and Termination as 73 of
+                     --  94 on the self-target).
+                     --  The checked count is always the Total column
+                     --  (column 2), in every summary layout.
+                     function Row_Count (Row : String) return Natural is
+                     begin
+                        return Get_Column_Number (Row, 2);
+                     end Row_Count;
+
+                     --  The proved count per category: modern summaries
+                     --  (v15/v16, 5+ columns incl. Justified/Unproved) prove
+                     --  every category except flow via the Provers column,
+                     --  so Proved = Total - Justified - Unproved.  Legacy
+                     --  summaries (3 columns: label, total, proved) carry
+                     --  the proved count in column 3 directly.
+                     function Row_Proved (Row : String) return Natural is
+                     begin
+                        if Get_Column_Count (Row) >= 5 then
+                           return
+                             Get_Column_Number (Row, 2)
+                             - Get_Column_Number (Row, 5)
+                             - Get_Column_Number (Row, 6);
+                        else
+                           return Get_Column_Number (Row, 3);
+                        end if;
+                     end Row_Proved;
                   begin
                      if Row'Length >= 17
                        and then Row (Row'First .. Row'First + 4) = "Flow "
                      then
-                        Summary.Flow_Checks := Get_Nth_Number_Raw (Row, 1);
-                        Summary.Flow_Proved := Get_Nth_Number_Raw (Row, 2);
+                        --  Additive like the Data row below: the two rows
+                        --  share the Flow category and gnatprove prints
+                        --  "Data Dependencies" before "Flow Dependencies",
+                        --  so a plain assignment would clobber the sum.
+                        Summary.Flow_Checks :=
+                          Summary.Flow_Checks + Row_Count (Row);
+                        Summary.Flow_Proved :=
+                          Summary.Flow_Proved + Row_Proved (Row);
+                     end if;
+
+                     --  gnatprove 16 reports the checked flow VCs under
+                     --  "Data Dependencies" (the "Flow Dependencies" row is
+                     --  proved implicitly and shows ".").  Both rows belong
+                     --  to the dashboard's single "Flow" category, so they
+                     --  are summed -- gnatprove 15 output has no Data row
+                     --  and is unchanged.
+                     if Row'Length >= 15
+                       and then Row (Row'First .. Row'First + 4) = "Data "
+                     then
+                        Summary.Flow_Checks :=
+                          Summary.Flow_Checks + Row_Count (Row);
+                        Summary.Flow_Proved :=
+                          Summary.Flow_Proved + Row_Proved (Row);
                      end if;
 
                      if Row'Length >= 15
                        and then Row (Row'First .. Row'First + 3) = "Run-"
                      then
-                        Summary.Runtime_Checks := Get_Nth_Number_Raw (Row, 1);
-                        Summary.Runtime_Proved := Get_Nth_Number_Raw (Row, 2);
+                        Summary.Runtime_Checks := Row_Count (Row);
+                        Summary.Runtime_Proved := Row_Proved (Row);
                      end if;
 
                      if Row'Length >= 10
                        and then Row (Row'First .. Row'First + 3) = "Asse"
                      then
-                        Summary.Assertions := Get_Nth_Number_Raw (Row, 1);
-                        Summary.Assert_Proved := Get_Nth_Number_Raw (Row, 2);
+                        Summary.Assertions := Row_Count (Row);
+                        Summary.Assert_Proved := Row_Proved (Row);
                      end if;
 
                      if Row'Length >= 11
                        and then Row (Row'First .. Row'First + 3) = "Func"
                      then
-                        Summary.Functional_Ct := Get_Nth_Number_Raw (Row, 1);
-                        Summary.Functional_Proved :=
-                          Get_Nth_Number_Raw (Row, 2);
+                        Summary.Functional_Ct := Row_Count (Row);
+                        Summary.Functional_Proved := Row_Proved (Row);
                      end if;
 
                      if Row'Length >= 11
                        and then Row (Row'First .. Row'First + 3) = "Term"
                      then
-                        Summary.Termination_Ct := Get_Nth_Number_Raw (Row, 1);
-                        Summary.Termination_Proved :=
-                          Get_Nth_Number_Raw (Row, 2);
+                        Summary.Termination_Ct := Row_Count (Row);
+                        Summary.Termination_Proved := Row_Proved (Row);
                      end if;
 
                      if Row'Length >= 5
@@ -232,8 +320,8 @@ package body Adacovex.Parsers.GNATprove is
                      if Row'Length >= 14
                        and then Row (Row'First .. Row'First + 3) = "Init"
                      then
-                        Summary.Init_Checks := Get_Nth_Number_Raw (Row, 1);
-                        Summary.Init_Proved := Get_Nth_Number_Raw (Row, 2);
+                        Summary.Init_Checks := Row_Count (Row);
+                        Summary.Init_Proved := Row_Proved (Row);
                      end if;
                   end;
                end if;

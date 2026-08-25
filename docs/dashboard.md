@@ -140,7 +140,9 @@ keyboard-accessible, persisted in `localStorage`):
 - **Charts** -- Charts.css metrics (see below).
 - **Credits** -- third-party libraries used by the dashboard (Charts.css,
   nomnoml, graphre, FlexSearch) with versions, licences, links and the
-  THIRD_PARTY_NOTICES pointer.
+  THIRD_PARTY_NOTICES pointer.  The Playwright row (e2e test tooling) fills
+  its version from the resolved dependency graph when the target declares a
+  playwright package (e.g. `@playwright/test@1.62.1`).
 
 Tabs are linkable: `http://localhost:8080/#deps` opens the Dependencies tab
 directly (also `?theme=light#proof` composes with the theme pin). The active
@@ -177,10 +179,12 @@ shows an empty state with a link to `/api/deps`).
   monospace) so vendored/uncommon licences stand out at a glance.
 - **Click a dependency name** to open an inline **detail panel** below the
   node: name, version, scope, licence, PURL, parent, and a **registry link**
-  derived from the PURL (`pkg:github` -> GitHub repo, `pkg:npm` -> npmjs,
-  `pkg:cargo` -> crates.io, `pkg:pypi` -> PyPI, `pkg:golang` -> pkg.go.dev,
-  `pkg:alire` -> alire.ada.dev, otherwise a GitHub search URL).  Close via
-  the `close` chip or by clicking another dependency.
+  derived from the PURL (`pkg:github` -> GitHub repo, `pkg:gitlab` ->
+  GitLab, `pkg:bitbucket` -> Bitbucket, `pkg:npm` -> npmjs (scoped names
+  included), `pkg:cargo` -> crates.io, `pkg:pypi` -> PyPI, `pkg:golang` ->
+  pkg.go.dev, `pkg:alire` -> alire.ada.dev).  Ecosystems without a
+  reliable registry get no link rather than a search URL.  Close via the
+  `close` chip or by clicking another dependency.
 
 **Diagram view** (alternative, toggle **Tree / Diagram**):
 
@@ -190,14 +194,14 @@ shows an empty state with a link to `/api/deps`).
   (`__GRAPH_JSON__` injected by the Ada renderer) is converted to nomnoml
   source (`[parent]-->[child]` edges, `#direction: down` top-to-bottom so deep
   graphs stay within the page width, legend note) and drawn via
-  `nomnoml.draw(canvas, src)`.  The diagram reads the page's CSS custom
-  properties (`--card` / `--border` / `--fg`) at draw time and re-renders
-  when the light/dark theme changes, so box/arrow colours always match the
-  active theme. The canvas is sized to the container (max-width) and deep
-  graphs scroll inside `.nomnoml-wrap`.  Scope checkboxes filter the diagram
-  too (re-render on change).  Buttons **Re-render** and **Download PNG** are
-  provided. The view choice is persisted in `localStorage`
-  (`adacovex-dep-view`).
+  `nomnoml.draw(canvas, src)`.  Every nomnoml directive (fill, background,
+  stroke, line, font and note colours) is derived from the page's CSS custom
+  properties at draw time, and the theme select re-renders the diagram, so
+  box/arrow colours always match the active theme. The canvas is sized to
+  the container (max-width) and deep graphs scroll inside `.nomnoml-wrap`.
+  Scope checkboxes filter the diagram too (re-render on change).  Buttons
+  **Re-render** and **Download PNG** are provided. The view choice is
+  persisted in `localStorage` (`adacovex-dep-view`).
 
 **Two separate searches, similar styling** (per user request):
 
@@ -229,10 +233,15 @@ slice a full circle) and the donut shows proved vs *unproved* slices
 - **SPARK Proof** -- *donut* of proved vs unproved VCs (`720/720` shows a
   full proved arc. `680/720` shows `94%` proved + `40` unproved).
 - **Proof Check Types** -- *column* of proved checks per category (flow,
-  init, runtime, assertions, functional), each bar normalised to its category
-  total.
+  init, runtime, assertions, functional, termination), each bar normalised
+  to its category total.  The numbers mirror gnatprove's own summary table:
+  on gnatprove 16 the Flow category sums the "Data Dependencies" and
+  "Flow Dependencies" rows, and every category's proved count is
+  Total - Justified - Unproved, so the rows sum exactly to the Total.
 - **Test Results by Category** -- *bar* of per-category test counts
-  (normalised to the largest category).
+  (normalised to the largest category; the chart height scales with the
+  category count via a `--rows` hint, so long suites never clip their
+  last rows).
 - **Docstring Coverage** -- *radial gauge* (half-circle SVG arc) of
   documented vs total subprograms.
 - **Tests Pass/Fail** -- *pie* of passed vs failed tests.
@@ -299,7 +308,7 @@ assessment without parsing HTML:
 
 ```json
 {"spark_level":"Platinum","total_vcs":724,"proved_vcs":724,
- "tests_passed":968,"tests_failed":0,"doc_coverage":100,
+ "tests_passed":973,"tests_failed":0,"doc_coverage":100,
  "standard":"all","level":"DAL-C","dal_status":"Achieved",
  "standards":{"DO-178C":{"level":"DAL-C","status":"Achieved"},
                "ISO 26262":{"level":"ASIL B","status":"Achieved"},

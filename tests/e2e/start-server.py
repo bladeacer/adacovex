@@ -5,7 +5,9 @@ import sys
 import os
 
 def main():
-    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    repo_root = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
     adacovex = os.path.join(repo_root, 'bin', 'adacovex')
     
     # Build if needed

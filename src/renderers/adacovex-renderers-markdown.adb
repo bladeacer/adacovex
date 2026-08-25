@@ -49,7 +49,7 @@ package body Adacovex.Renderers.Markdown is
         (F, "| SPARK Level | " & Types.To_String (Proof.Level) & " | - |");
       Ada.Text_IO.Put_Line
         (F,
-         "| Flow Dependencies | "
+         "| Flow (data + flow dependencies) | "
          & Natural'Image (Proof.Flow_Checks)
          & " | "
          & Natural'Image (Proof.Flow_Proved)

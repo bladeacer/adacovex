@@ -1,7 +1,7 @@
+# Template index entry for the Alire community index.
+# Copied and version-replaced by make bump-version / make release.
 name = "covex"
 description = "Ada/SPARK coverage, proof, multi-standard compliance tool"
-version = "1.0.0"
-project-files = ["adacovex.gpr"]
 long-description = """
 Zero-dependency Ada/SPARK CLI tool for coverage analysis, proof verification,
 test-result parsing, multi-standard safety-compliance assessment (DO-178C /
@@ -35,15 +35,17 @@ ISO 26262 / IEC 62304), and interactive dashboards.
 -  Self-assessment: 100% docstring coverage, Platinum SPARK (724/724 VCs proved),
   DAL-C / ASIL B / Class A Achieved, 973/973 native tests passing
 """
+version = "1.28.0"
+project-files = ["adacovex.gpr"]
+auto-gpr-with = true
+executables = ["adacovex"]
+
+[environment]
+PATH.prepend = "${CRATE_ROOT}/bin"
 
 authors = ["bladeacer"]
 maintainers = ["bladeacer <wg.nick.exe@gmail.com>"]
 maintainers-logins = ["bladeacer"]
 licenses = "Apache-2.0"
 website = "https://github.com/bladeacer/adacovex"
-tags = ["ada", "spark", "coverage", "do-178c", "compliance"]
-
-[origin]
-commit = "2c52a79e846b9c6b2f7cb1b1c4762acaf2e9ee09"
-url = "git+https://github.com/bladeacer/adacovex"
-
+tags = ["ada", "spark", "formal-verify", "cli", "gnatprove", "sbom", "tests", "code-coverage", "do-178c", "compliance", "developer-tools"]
