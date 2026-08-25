@@ -146,6 +146,49 @@ showed 73/94 instead of 94/94).  The Proof tab table and the Charts
 numbers sum exactly to gnatprove's Total (56 + 5 + 407 + 107 + 55 +
 94 = 724).  `Cache_Schema` bumped `s6` -> `s7` (parser semantics).
 
+### C10: Makefile orchestration moved to dedicated Python tools
+
+Beyond the pure parsing ports in C5, every multi-step `make` recipe now
+delegates to a dedicated stdlib-Python script, so the Makefile is
+declarative and each flow is individually testable:
+
+- `tools/build.py` -- the build flow (`gen-version` + `gen-dashboard` +
+  `alr build` with the SFrame log filter + the `covex` symlink).
+- `tools/dev-cmd.py` -- the alire-dev.toml swap behind `make doc` /
+  `make fmt`, restored unconditionally (including on Ctrl-C / SIGTERM).
+  The swap uses a fresh-mtime copy: `alr exec` re-synchronises the
+  workspace only when `alire.toml` is strictly newer than
+  `alire/alire.lock`, so a metadata-preserving copy silently skipped the
+  sync and gnatdoc / gnatformat never reached the exec PATH.
+- `tools/bench.py` -- the cold/warm hyperfine (or measured) benchmark
+  plus the stripped-binary-size report.
+- `tools/coverage-gate.py` -- the release-tag docstring delta in a
+  temporary worktree, removed even when the assessment fails.
+- `tools/run.py` -- the single owner of the `prove` / `run-self` / `sbom`
+  / `run-ada-crdt` invocation shape (SOURCE_DATE_EPOCH + acceptance
+  gates); `run.py assess-args` feeds the release flow, so the gate flags
+  live in exactly one place.
+- `tools/release.py` -- the whole release flow (prove, build, validate,
+  coverage gate, changelogs, bundling, attestation, manifest bumps,
+  tag/push), with `make release DRY_RUN=1` running everything except the
+  irreversible commit/tag/push.
+- `tools/tests.py` -- a stdlib-`unittest` suite over the tools' pure
+  logic (26 tests), wired into `make check` as the `tools-check` gate.
+
+The ASCII gate now skips the gitignored generated Playwright output
+(`tests/e2e/playwright-report/`, `tests/e2e/test-results/`), which
+previously tripped the gate after a local `make e2e` run.
+
+### C11: gnatprove run is warning-free
+
+The six `[assumed-global-null]` warnings from
+`CPUs.Get_Temp_Directory`'s `Ada.Environment_Variables` reads are
+silenced in the source: the function scopes a
+`pragma Warnings (Off, "no Global contract available")` around itself
+(re-enabled immediately after), which gnatprove honours by message
+prefix.  The proof surface is unchanged -- still 724/724 VCs, 0
+unproved, 0 justified.
+
 ### C9: Dashboard chart, filter, diagram and credits fixes
 
 - Pie/donut data numbers are upright: Charts.css rotates each slice's
@@ -197,10 +240,10 @@ tests pass via `make e2e`.
 ## Proof Results
 
 Platinum, 724/724 VCs proved under gnatprove 16.1.0. 0 unproved, 0
-justified. `CPUs.Get_Temp_Directory` carries six `[assumed-global-null]`
-warnings (GNAT runtime has no Global contracts for
-`Ada.Environment_Variables`); warnings are not VCs, and the gate stays
-0 / 0.
+justified. `CPUs.Get_Temp_Directory` scopes a
+`pragma Warnings (Off, "no Global contract available")` around its
+`Ada.Environment_Variables` reads (the GNAT runtime carries no Global
+contracts for them), so the run is warning-free.
 
 ## Traceability
 
