@@ -1,4 +1,4 @@
-.PHONY: help check build test prove doc clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish _dev_cmd agents-tree sbom description proof-status test-count doc-links link-check changelog-check action-parity-check man bench perf-bench complexity-check sync
+.PHONY: help check build test prove doc clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish agents-tree sbom description proof-status test-count doc-links link-check changelog-check action-parity-check man bench perf-bench complexity-check sync
 
 .DEFAULT_GOAL := help
 
@@ -27,10 +27,9 @@ help:
 	@echo '    run-ada-crdt  Run against ../Ada_CRDT (strict mode)'
 	@echo '                  (auto-updates ../Ada_CRDT/docs/badges/*.svg)'
 	@echo '    sbom          Generate a proof-aware CycloneDX SBOM (sbom.json)'
-	@echo '    bench         Benchmark the assessment pipeline + binary size:'
-	@echo '                  hyperfine when installed (else bash time fallback),'
-	@echo '                  cold (fresh cache) and warm (cached) timings, and the'
-	@echo '                  sizes of the raw and stripped binaries'
+	@echo '    bench         Benchmark the assessment pipeline + binary size'
+	@echo '                  (tools/bench.py: hyperfine when installed, cold +'
+	@echo '                  warm timings, raw and stripped binary sizes)'
 	@echo '    perf-bench   Run perf and strace profiles over the adacovex binary'
 	@echo '                  (requires linux-tools-common and strace)'
 	@echo ''
@@ -68,16 +67,17 @@ help:
 	@echo ''
 	@echo '  Release:'
 	@echo '    coverage-gate Compare docstring coverage between the latest two'
-	@echo '                  release tags (--coverage-delta in a worktree at'
-	@echo '                  the latest tag; verifies the release gate logic)'
+	@echo '                  release tags (tools/coverage-gate.py: --coverage-delta'
+	@echo '                  in a temporary worktree at the latest tag)'
 	@echo '    bump-version  Bump version across alire.toml, alire-dev.toml,'
 	@echo '                  adacovex.ads, releases, index (VERSION=x.y.z)'
-	@echo '    release       Tag, update releases+index, push. Use VERSION=x.y.z'
-	@echo '                  (Runs a docstring-coverage gate comparing the last'
-	@echo '                   release against the current tree, then CI force-pushes'
-	@echo '                   vMAJOR / vMAJOR.MINOR floating tags so @v1 / @v1.3'
-	@echo '                   refs track the latest release. Release artifacts are'
-	@echo '                   attested via actions/attest.)'
+	@echo '    release       Tag, update releases+index, push (tools/release.py).'
+	@echo '                  Use VERSION=x.y.z; DRY_RUN=1 runs everything except'
+	@echo '                  commit/tag/push. (Runs a docstring-coverage gate'
+	@echo '                  comparing the last release against the current tree,'
+	@echo '                  then CI force-pushes vMAJOR / vMAJOR.MINOR floating'
+	@echo '                  tags so @v1 / @v1.3 refs track the latest release.'
+	@echo '                  Release artifacts are attested via actions/attest.)'
 	@echo '    publish       Publish to Alire community index (run after make release)'
 	@echo '    test-publish  Dry-run showing what make publish would do'
 	@echo '    man           Install the man page into the local man database'
@@ -102,20 +102,12 @@ help:
 	@echo '              proof/doc sync, changelog check, agents-tree, and the'
 	@echo '              parsing ports: ascii/spark-off/bench-size/versions/bump)'
 
-# Filter the benign ld 2.44 SFrame message ("error in ...(.sframe); no
-# .sframe will be created") from the link step.  It is emitted by the Alire
-# GNAT toolchain's bundled ld when it reads the .sframe section newer system
-# binutils wrote into the glibc startup objects; the link still succeeds.  It
-# is the only build output deliberately silenced -- compiler and gnatprove
-# warnings stay fully visible.  See docs/architecture.md.
+# The build steps (gen-version + gen-dashboard + alr build + SFrame log
+# filter + covex symlink) live in tools/build.py; see its docstring for the
+# SFrame note (the benign ld 2.44 message is the only deliberately silenced
+# build output -- compiler and gnatprove warnings stay fully visible).
 build:
-	@python3 tools/gen-version.py; \
-	python3 tools/gen-dashboard.py; \
-	alr build > /tmp/alr-build.log 2>&1; rc=$$?; \
-	python3 tools/filter-sframe.py /tmp/alr-build.log; \
-	rm -f /tmp/alr-build.log; \
-	if [ $$rc -eq 0 ]; then ln -sf adacovex bin/covex; fi; \
-	exit $$rc
+	@python3 tools/build.py
 
 man: build
 	./bin/adacovex man
@@ -132,12 +124,12 @@ prove: build
 	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex prove --target=. $(SELF_ASSESS_ARGS) --emit-svg=docs/badges/
 
 fmt:
-	@$(MAKE) _dev_cmd CMD="alr exec -- gnatformat -P adacovex.gpr -U"; \
-	python3 tools/gen-version.py; \
+	@python3 tools/dev-cmd.py 'alr exec -- gnatformat -P adacovex.gpr -U' && \
+	python3 tools/gen-version.py && \
 	python3 tools/gen-dashboard.py
 
 doc:
-	@$(MAKE) _dev_cmd CMD='mkdir -p obj && \
+	@python3 tools/dev-cmd.py 'mkdir -p obj && \
 	  alr exec -- gnatdoc -P adacovex.gpr --backend=rst \
 	    --generate private --output-dir=obj/gnatdoc-rst && \
 	  python3 tools/rst2md.py obj/gnatdoc-rst docs/api-docs --prune-test-pages && \
@@ -152,70 +144,17 @@ run-ada-crdt: build
 sbom: build
 	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex sbom --target=. --dal=C
 
-# Performance benchmark: cold vs warm pipeline timings (hyperfine preferred,
-# bash `time` as fallback) plus binary-size report (stripped size is measured
-# on a /tmp copy so the build output is never modified).  Sample sizes are
-# deliberately generous (hyperfine 10 cold + 15 warm runs, time fallback
-# 5 + 5) so the reported mean is stable; cold runs re-create the cache dir
-# first so every cold sample measures a truly empty result + probe cache.
+# Cold vs warm pipeline timings (hyperfine preferred, measured fallback)
+# plus the binary-size report live in tools/bench.py; see its docstring for
+# the sample sizes (hyperfine 10 cold + 15 warm, fallback 5 + 5).
 bench: build
-	@bench_cache=$$(mktemp -d /tmp/adacovex-bench.XXXXXX); \
-	export bench_cache; \
-	trap 'rm -rf "$$bench_cache"' EXIT; \
-	if command -v hyperfine >/dev/null 2>&1; then \
-		echo '=== Cold (fresh result cache) ==='; \
-		hyperfine --runs 10 \
-		  --prepare 'rm -rf $$bench_cache' \
-		  "./bin/adacovex --cache-dir=$$bench_cache" \
-		  --export-markdown /tmp/adacovex-bench-cold.md; \
-		./bin/adacovex --cache-dir=$$bench_cache >/dev/null 2>&1; \
-		echo '=== Warm (populated caches) ==='; \
-		hyperfine --warmup 2 --runs 15 \
-		  "./bin/adacovex --cache-dir=$$bench_cache" \
-		  --export-markdown /tmp/adacovex-bench-warm.md; \
-	else \
-		echo '== hyperfine not found; using bash time (5 cold + 5 warm) =='; \
-		for i in 1 2 3 4 5; do \
-			rm -rf $$bench_cache; \
-			echo -n "cold run $$i: "; \
-			time ./bin/adacovex --cache-dir=$$bench_cache >/dev/null 2>&1; \
-		done; \
-		./bin/adacovex --cache-dir=$$bench_cache >/dev/null 2>&1; \
-		for i in 1 2 3 4 5; do \
-			echo -n "warm run $$i: "; \
-			time ./bin/adacovex --cache-dir=$$bench_cache >/dev/null 2>&1; \
-		done; \
-	fi; \
-	cp bin/adacovex /tmp/adacovex-strip-test; \
-	strip /tmp/adacovex-strip-test; \
-	echo ''; \
-	echo "== Binary size =="; \
-	python3 tools/bench-size.py bin/adacovex /tmp/adacovex-strip-test; \
-	rm -f /tmp/adacovex-strip-test
+	@python3 tools/bench.py
 
 perf-bench: build
 	python3 tools/perf-bench.py
 
 coverage-gate: build
-	@tags=$$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$'); \
-	latest=$$(echo "$$tags" | head -1); \
-	prev=$$(echo "$$tags" | tail -n +2 | head -1); \
-	if [ -z "$$latest" ] || [ -z "$$prev" ]; then \
-		echo "  Need at least two release tags to compare."; \
-		exit 1; \
-	fi; \
-	echo "=== Coverage delta gate: $$prev (base) vs $$latest (current) ==="; \
-	tmp=$$(mktemp -d); \
-	if ! git worktree add --detach "$$tmp" "$$latest" >/dev/null 2>&1; then \
-		echo "  ERROR: could not check out $$latest"; \
-		rm -rf "$$tmp"; \
-		exit 1; \
-	fi; \
-	( cd "$$tmp" && "$(CURDIR)/bin/adacovex" --target=. --coverage-delta="$$prev" ); \
-	rc=$$?; \
-	git worktree remove --force "$$tmp" >/dev/null 2>&1; \
-	rmdir "$$tmp" 2>/dev/null || true; \
-	exit $$rc
+	@python3 tools/coverage-gate.py
 
 link-check:
 	@python3 tools/check-links.py
@@ -305,97 +244,8 @@ bump-version:
 	@python3 tools/bump-version.py "$(VERSION)"
 
 release:
-	@if [ -n "$(VERSION)" ]; then \
-		version="$(VERSION)"; \
-		python3 tools/versions.py set-version alire.toml "$$version"; \
-	else \
-		version=$$(python3 tools/versions.py current alire.toml); \
-	fi; \
-	echo "=== Generating proof artifacts ==="; \
-	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex prove --target=. $(SELF_ASSESS_ARGS) --emit-svg=docs/badges/; \
-	echo "=== Building release binary (covex v$$version) ==="; \
-	ADACOVEX_VERSION="$$version" python3 tools/gen-version.py; \
-	alr build --release; \
-	echo "=== Validating self-assessment (DAL-C) ==="; \
-	SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD 2>/dev/null || echo 0) ./bin/adacovex --target=. $(SELF_ASSESS_ARGS) --emit-svg=docs/badges/; \
-	echo "=== Docstring coverage gate (last release vs current) ==="; \
-	prev_tag=$$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$$' | grep -v "^v$$version$$" | head -1); \
-	if [ -z "$$prev_tag" ]; then \
-		echo "  No previous release found; skipping coverage gate"; \
-	else \
-		echo "  Comparing docstring coverage against $$prev_tag"; \
-		./bin/adacovex --target=. --coverage-delta="$$prev_tag"; \
-		if [ $$? -ne 0 ]; then \
-			echo "  ERROR: docstring coverage regressed vs $$prev_tag; aborting release"; \
-			exit 1; \
-		fi; \
-	fi; \
-	echo "=== Changelogs (last release to v$$version) ==="; \
-	prev_num=""; \
-	if [ -n "$$prev_tag" ]; then prev_num="$${prev_tag#v}"; \
-	else \
-		prev_num=$$(ls alire/releases/covex-*.toml 2>/dev/null | \
-			python3 tools/versions.py between "" "$$version" \
-			  --exclude "$$version" | head -1); \
-	fi; \
-	\
-	ls docs/changelogs/adacovex-*.md 2>/dev/null | \
-		python3 tools/versions.py between "$${prev_num:-}" "$$version" \
-		--exclude "$$version" | \
-		while read cv; do echo "  - $$cv"; done; \
-	echo "=== Bundling release artifacts ==="; \
-	rm -rf dist; \
-	mkdir -p dist; \
-	cp bin/adacovex dist/adacovex; \
-	ln -s adacovex dist/covex; \
-	cp install.sh dist/install.sh; \
-	chmod +x dist/install.sh; \
-	cp LICENSE dist/LICENSE; \
-	cp docs/THIRD_PARTY_NOTICES.md dist/THIRD_PARTY_NOTICES.md; \
-	tar -czf "adacovex-v$$version.tar.gz" -C dist .; \
-	tar -czf "adacovex-action-v$$version.tar.gz" -C . action.yml; \
-	echo "  Bundled: adacovex-v$$version.tar.gz, adacovex-action-v$$version.tar.gz"; \
-	echo "=== Attesting release artifacts (actions/attest) ==="; \
-	if command -v gh >/dev/null 2>&1; then \
-		if [ -n "$$GITHUB_TOKEN" ]; then \
-			gh attest "adacovex-v$$version.tar.gz" "adacovex-action-v$$version.tar.gz" \
-				--repo "$${GITHUB_REPOSITORY:-bladeacer/adacovex}" && \
-			echo "  Attestations created locally."; \
-		else \
-			echo "  gh found but GITHUB_TOKEN is not set; skipping local attestation."; \
-			echo "  (CI attests these artifacts with OIDC on the v$$version tag push.)"; \
-		fi; \
-	else \
-		echo "  gh not installed; skipping local attestation."; \
-		echo "  (CI attests these artifacts with OIDC on the v$$version tag push.)"; \
-	fi; \
-	commit=$$(git rev-parse HEAD); \
-	index_file="index/ad/covex/covex-$$version.toml"; \
-	if [ ! -f "$$index_file" ]; then \
-		cp index/ad/covex/covex-0.1.0-dev.toml "$$index_file"; \
-	fi; \
-	python3 tools/versions.py set-version "$$index_file" "$$version"; \
-	release_file="alire/releases/covex-$$version.toml"; \
-	if [ ! -f "$$release_file" ]; then \
-		cp alire/releases/covex-0.0.0.toml "$$release_file"; \
-	fi; \
-	python3 tools/versions.py set-version "$$release_file" "$$version"; \
-	python3 tools/update-description.py; \
-	echo "  descriptions synced to all manifests"; \
-	if git rev-parse "v$$version" >/dev/null 2>&1; then \
-		git tag -d "v$$version" >/dev/null 2>&1 || true; \
-		git push origin :refs/tags/"v$$version" >/dev/null 2>&1 || true; \
-		echo "  Replaced existing tag v$$version"; \
-	fi; \
-	git add -A; \
-	git commit -m "chore: Release $$version" || true; \
-	git tag -a "v$$version" -m "Release $$version"; \
-	echo "Tagged v$$version at $$commit"; \
-	git push origin HEAD && git push origin "v$$version"; \
-	echo "Pushed commit and tag v$$version"; \
-	echo ""; \
-	echo "Next: run 'make publish' to submit to Alire community index."
-
+	@python3 tools/release.py --version="$(VERSION)" \
+		--self-assess-args="$(SELF_ASSESS_ARGS)" $(if $(DRY_RUN),--dry-run,)
 publish:
 	@if [ -n "$$(git status --porcelain)" ]; then \
 		echo "Error: working tree is not clean. Commit or stash changes first."; \
@@ -420,21 +270,3 @@ e2e:
 	pnpm --dir tests/e2e install
 	pnpm --dir tests/e2e exec playwright install chromium
 	pnpm --dir tests/e2e test
-
-_dev_cmd:
-	@tmp=$$(mktemp -d); \
-	cp alire.toml "$$tmp/alire.toml" && cp alire-dev.toml alire.toml; \
-	if [ -d alire ]; then cp -r alire "$$tmp/alire"; fi; \
-	restore() { \
-	  [ -f "$$tmp/alire.toml" ] && mv -f "$$tmp/alire.toml" alire.toml 2>/dev/null; \
-	  if [ -d "$$tmp/alire" ]; then \
-	    rm -rf alire; \
-	    mv -f "$$tmp/alire" alire; \
-	  fi; \
-	  rmdir "$$tmp" 2>/dev/null || true; \
-	}; \
-	trap restore EXIT INT TERM; \
-	$(CMD); status=$$?; \
-	trap - EXIT INT TERM; \
-	restore; \
-	exit $$status
