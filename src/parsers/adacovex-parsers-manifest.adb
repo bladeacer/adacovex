@@ -827,6 +827,101 @@ package body Adacovex.Parsers.Manifest is
       end;
    end Alr_Show_Crate;
 
+   --  Resolve a dependency's licence from its package registry when the
+   --  local manifest does not carry one.  For npm and pnpm ecosystems the
+   --  project's package manager answers `npm view <name> license` (or
+   --  `pnpm show <name> license`); the first non-empty trimmed line is the
+   --  SPDX licence id.  Returns "" when the tool is missing, the package is
+   --  unknown, the field is absent, or the command fails.  Other ecosystems
+   --  have no portable, reliable registry query, so they return "".  This is
+   --  a best-effort, online fallback used only after the offline manifest
+   --  read finds nothing -- vendored packages that ship a licence in their
+   --  manifest never hit the network.
+   procedure Resolve_Ecosystem_License
+     (Kind    : String;
+      Name    : String;
+      License : out Types.Desc_Field;
+      Lic_Len : out Natural)
+   is
+      Pid     : constant Integer := Pid_To_Integer (Current_Process_Id);
+      Pid_Img : constant String := Integer'Image (Pid);
+      Tmp     : constant String :=
+        Adacovex.CPUs.Get_Temp_Directory
+        & "/adacovex-lic-"
+        & Pid_Img (2 .. Pid_Img'Last)
+        & ".out";
+      Buf     : String (1 .. 16384);
+      BLen    : Natural := 0;
+      F       : Ada.Text_IO.File_Type;
+      OK      : Boolean;
+      Code    : Integer;
+
+      procedure Run (Exe_Name, Sub, Pkg : String) is
+         Exe  : String_Access := Locate_Exec_On_Path (Exe_Name);
+         Args : Argument_List (1 .. 2);
+      begin
+         if Exe = null then
+            return;
+         end if;
+         Args (1) := new String'(Sub);
+         Args (2) := new String'(Pkg & " license");
+         Spawn (Exe.all, Args, Tmp, OK, Code, Err_To_Out => True);
+         Free (Exe);
+         Free (Args (1));
+         Free (Args (2));
+      end Run;
+   begin
+      Lic_Len := 0;
+      if Kind'Length = 0 or else Name'Length = 0 then
+         return;
+      end if;
+      if Kind = "npm" then
+         Run ("npm", "view", Name);
+         if not OK then
+            Run ("pnpm", "show", Name);
+         end if;
+      end if;
+      if not OK then
+         return;
+      end if;
+      begin
+         Ada.Text_IO.Open (F, Ada.Text_IO.In_File, Tmp);
+         while not Ada.Text_IO.End_Of_File (F) loop
+            declare
+               Line : constant String := Ada.Text_IO.Get_Line (F);
+               T    : constant String := Trim (Line);
+            begin
+               if T'Length > 0 then
+                  declare
+                     L : Natural := T'Length;
+                  begin
+                     if L > Types.Max_Desc_Str then
+                        L := Types.Max_Desc_Str;
+                     end if;
+                     for I in 1 .. L loop
+                        License (I) := T (T'First + I - 1);
+                     end loop;
+                     Lic_Len := L;
+                  end;
+                  exit;
+               end if;
+            end;
+         end loop;
+         Ada.Text_IO.Close (F);
+      exception
+         when others =>
+            if Ada.Text_IO.Is_Open (F) then
+               Ada.Text_IO.Close (F);
+            end if;
+      end;
+      begin
+         Ada.Directories.Delete_File (Tmp);
+      exception
+         when others =>
+            null;
+      end;
+   end Resolve_Ecosystem_License;
+
    --  Register manifest-declared dependencies that no GPR with-clause or
    --  lockfile resolved (or fill in missing metadata on entries that were).
    --  These are base deps from the publishing manifest (alire.toml) and dev
@@ -1534,6 +1629,8 @@ package body Adacovex.Parsers.Manifest is
       Name_Len         : Natural := 0;
       Version          : Types.Desc_Field;
       Version_Len      : Natural := 0;
+      License          : Types.Desc_Field;
+      License_Len      : Natural := 0;
       PURL_Kind        : String (1 .. 16);
       PURL_Kind_Len    : Natural := 0;
       Primary_Lang     : String (1 .. 16);
@@ -1935,6 +2032,7 @@ package body Adacovex.Parsers.Manifest is
       Info.Primary_Lang_Len := 0;
       Info.Name_Len := 0;
       Info.Version_Len := 0;
+      Info.License_Len := 0;
 
       if Exists (Path ("package.json")) then
          Set_Text
@@ -1945,6 +2043,10 @@ package body Adacovex.Parsers.Manifest is
            (Info.Version,
             Info.Version_Len,
             File_Quoted_Value (Path ("package.json"), "version"));
+         Set_Text
+           (Info.License,
+            Info.License_Len,
+            File_Quoted_Value (Path ("package.json"), "license"));
          Set_Kind ("npm");
          Set_Lang ("JavaScript");
          Info.Found := True;
@@ -1957,6 +2059,10 @@ package body Adacovex.Parsers.Manifest is
            (Info.Version,
             Info.Version_Len,
             File_Quoted_Value (Path ("Cargo.toml"), "version"));
+         Set_Text
+           (Info.License,
+            Info.License_Len,
+            File_Quoted_Value (Path ("Cargo.toml"), "license"));
          Set_Kind ("cargo");
          Set_Lang ("Rust");
          Info.Found := True;
@@ -1974,6 +2080,10 @@ package body Adacovex.Parsers.Manifest is
            (Info.Version,
             Info.Version_Len,
             File_Quoted_Value (Path ("pyproject.toml"), "version"));
+         Set_Text
+           (Info.License,
+            Info.License_Len,
+            File_Quoted_Value (Path ("pyproject.toml"), "license"));
          Set_Kind ("pypi");
          Set_Lang ("Python");
          Info.Found := True;
@@ -1986,6 +2096,10 @@ package body Adacovex.Parsers.Manifest is
            (Info.Version,
             Info.Version_Len,
             File_Quoted_Value (Path ("composer.json"), "version"));
+         Set_Text
+           (Info.License,
+            Info.License_Len,
+            File_Quoted_Value (Path ("composer.json"), "license"));
          Set_Kind ("composer");
          Set_Lang ("PHP");
          Info.Found := True;
@@ -2456,31 +2570,48 @@ package body Adacovex.Parsers.Manifest is
                      Read_Vendor_Manifest (Dir_Path, M);
                      if M.Found then
                         declare
-                           N   : String :=
+                           N       : String :=
                              (if M.Name_Len > 0
                               then M.Name (1 .. M.Name_Len)
                               else Simple_Name (Dir_Path));
-                           V   : String :=
+                           V       : String :=
                              (if M.Version_Len > 0
                               then M.Version (1 .. M.Version_Len)
                               else "");
-                           Pur : String :=
+                           Lic_Buf : Types.Desc_Field;
+                           Lic_Len : Natural := 0;
+                           Pur     : String :=
                              "pkg:"
                              & M.PURL_Kind (1 .. M.PURL_Kind_Len)
                              & "/"
                              & N
                              & (if V'Length > 0 then "@" & V else "");
-                           L   : constant String :=
+                           L       : constant String :=
                              Language_Of_Dir
                                (Dir_Path,
                                 2,
                                 M.Primary_Lang (1 .. M.Primary_Lang_Len));
                         begin
+                           --  Prefer the licence read from the local manifest
+                           --  (offline, reliable).  Fall back to the package
+                           --  registry (`npm view`/`pnpm show`) for npm/pnpm
+                           --  components that ship no licence file.  Other
+                           --  ecosystems keep an empty licence.
+                           if M.License_Len > 0 then
+                              Lic_Len := M.License_Len;
+                              Lic_Buf (1 .. Lic_Len) :=
+                                M.License (1 .. Lic_Len);
+                           elsif M.PURL_Kind_Len = 3
+                             and then M.PURL_Kind (1 .. 3) = "npm"
+                           then
+                              Resolve_Ecosystem_License
+                                ("npm", N, Lic_Buf, Lic_Len);
+                           end if;
                            Append_Dependency
                              (Graph,
                               N,
                               V,
-                              "",
+                              Lic_Buf (1 .. Lic_Len),
                               "",
                               Pur,
                               1,

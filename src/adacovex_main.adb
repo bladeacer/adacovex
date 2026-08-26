@@ -1072,6 +1072,13 @@ begin
             Graph,
             GOK,
             Use_Cache => Cfg.Cache_Enabled);
+         --  Discover system-tool dev dependencies for dashboard parity with
+         --  the SBOM (python3, git, gnatprove, ... referenced by the
+         --  project's build/dev files and present on PATH).
+         if GOK then
+            Adacovex.Parsers.Manifest.Discover_System_Dev_Deps
+              (Target (1 .. TLen), Graph);
+         end if;
          declare
             Metrics_JSON : constant String :=
               Adacovex.Renderers.HTML.Render_Metrics_JSON
@@ -1168,6 +1175,12 @@ begin
             State.Graph,
             GOK,
             Use_Cache => Cfg.Cache_Enabled);
+         --  Discover system-tool dev dependencies so the served dashboard
+         --  shows the same system deps as the SBOM (feature parity).
+         if GOK then
+            Adacovex.Parsers.Manifest.Discover_System_Dev_Deps
+              (Target (1 .. TLen), State.Graph);
+         end if;
          if not GOK then
             Verbose ("serving dashboard with empty dependency graph");
          end if;

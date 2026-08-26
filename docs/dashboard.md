@@ -177,14 +177,22 @@ shows an empty state with a link to `/api/deps`).
 - Each node shows `name`, `version`, `license`, `purl` when available. The
   licence and PURL text are colour-coded (`--lic` amber, `--purl` muted
   monospace) so vendored/uncommon licences stand out at a glance.
-- **Click a dependency name** to open an inline **detail panel** below the
-  node: name, version, scope, licence, PURL, parent, and a **registry link**
-  derived from the PURL (`pkg:github` -> GitHub repo, `pkg:gitlab` ->
-  GitLab, `pkg:bitbucket` -> Bitbucket, `pkg:npm` -> npmjs (scoped names
-  included), `pkg:cargo` -> crates.io, `pkg:pypi` -> PyPI, `pkg:golang` ->
-  pkg.go.dev, `pkg:alire` -> alire.ada.dev).  Ecosystems without a
-  reliable registry get no link rather than a search URL.  Close via the
-  `close` chip or by clicking another dependency.
+- **Click a dependency name** to open a **detail panel** in a split view: the
+  tree or diagram stays on the left and the panel docks on the right (it stacks
+  below on narrow screens). The panel is the single source of detail for every
+  dependency and serves both the Tree and the Diagram views. It shows the name,
+  version, scope, licence, language, PURL, parent, and a **registry link**
+  derived from the PURL (`pkg:github` -> GitHub, `pkg:gitlab` -> GitLab,
+  `pkg:bitbucket` -> Bitbucket, `pkg:npm` -> npmjs, `pkg:cargo` -> crates.io,
+  `pkg:pypi` -> PyPI, `pkg:golang` -> pkg.go.dev, `pkg:alire` -> alire.ada.dev).
+  Ecosystems without a reliable registry get no link rather than a search URL.
+  A **system** badge marks system-tool dependencies (`pkg:generic/*`); their
+  panel adds a note that no external link or licence is provisioned and only
+  the resolved version is shown. Vendored npm/pnpm packages resolve their
+  licence from the local manifest, or from `npm view <pkg> license` /
+  `pnpm show <pkg> license` when the manifest is silent. Close the panel via
+  the `close` chip or by clicking another dependency; closing returns the view
+  to full width.
 
 **Diagram view** (alternative, toggle **Tree / Diagram**):
 
@@ -192,18 +200,21 @@ shows an empty state with a link to `/api/deps`).
   (MIT, `resources/nomnoml.js`, 71 KB, inlined) in a
   `<canvas id="nomnoml-canvas">` inside a `nomnoml-wrap` card.  `ADACOVEX_GRAPH`
   (`__GRAPH_JSON__` injected by the Ada renderer) is converted to nomnoml
-  source (`[parent]-->[child]` edges, `#direction: down` top-to-bottom so deep
-  graphs stay within the page width, legend note) and drawn via
-  `nomnoml.draw(canvas, src)`.  Every nomnoml directive (fill, background,
-  stroke, line, font and note colours) is derived from the page's CSS custom
-  properties at draw time, and the theme select re-renders the diagram, so
-  box/arrow colours always match the active theme. The canvas is sized to
-  the container (max-width) and deep graphs scroll inside `.nomnoml-wrap`.
-  Scope checkboxes filter the diagram too (re-render on change).  Buttons
-  **Re-render** and **Download PNG** are provided. The view choice is
-  persisted in `localStorage` (`adacovex-dep-view`).
+   source (`[parent]-->[child]` edges, `#direction: down` top-to-bottom so deep
+   graphs stay within the page width) and drawn via
+   `nomnoml.draw(canvas, src)`.  Every nomnoml directive (fill, background,
+   stroke, line, font and note colours) is derived from the page's CSS custom
+   properties at draw time, and the theme select re-renders the diagram, so
+   box/arrow colours always match the active theme. The canvas is sized to
+   the container (max-width) and deep graphs scroll inside `.nomnoml-wrap`.
+   Scope checkboxes filter the diagram too (re-render on change).  Buttons
+   **Re-render** and **Download PNG** are provided. The view choice is
+   persisted in `localStorage` (`adacovex-dep-view`).  **Click a box** to open
+   the same split-view detail panel as the Tree view (the canvas is hit-tested
+   against the drawn boxes, with a little slack so the tight text boxes are
+   easy to click).
 
-**Two separate searches, similar styling** (per user request):
+**Two separate searches, similar styling**:
 
 - **Global search** (header, `#global-search`) is the site-wide index: it is
   powered by vendored [FlexSearch 0.7.31](https://github.com/nextapps-de/flexsearch)
@@ -330,18 +341,22 @@ assessment without parsing HTML:
 SBOM embeds, minus the SBOM envelope):
 
 ```json
-[{"name":"gnat_arm_elf","version":"13.2.1","scope":"build",
-  "parent":"adacovex","kind":"(direct)","purl":"pkg:generic/gnat_arm_elf@13.2.1"},
+[{"name":"gnat_arm_elf","version":"13.2.1","scope":"dev",
+  "parent":"adacovex","kind":"dependency","purl":"pkg:generic/gnat_arm_elf@13.2.1",
+  "lang":"","website":"","description":"System tool referenced by the project (dev dependency)"},
  ...]
 ```
 
 | Field | Meaning |
 |-------|---------|
 | `name` / `version` | Component name and version |
-| `scope` | `build` \| `dev` \| `runtime` \| `tool` \| `system` |
-| `parent` | Depending component (empty for the root) |
-| `kind` | Component kind (crate, toolchain tool, system tool, ...) |
+| `scope` | `base` \| `dev` \| `transitive` \| `vendored` (a system tool is a `dev` dependency with a `pkg:generic/*` PURL) |
+| `parent` | Parent component name (`(root)` for the root, or the index as `0`) |
+| `kind` | `root` or `dependency` |
 | `purl` | Package URL when derivable |
+| `lang` | Primary language when known |
+| `website` | Resolved source URL when known |
+| `description` | Short description (for example a system-tool note) when present |
 
 On-disk, the same export is available via `--emit-metrics=PATH`
 (`{"metrics": {...}, "dependencies": [...]}` after any assessment).
