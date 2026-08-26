@@ -154,13 +154,16 @@ otherwise. Full detail:
 ### `complexity`
 
 `adacovex complexity [--target=PATH]` runs a native Ada cyclomatic-complexity
-check on the target source tree. It reports per-file LOC, percentage of the
-codebase, and total cyclomatic complexity, plus per-subprogram complexity for
-functions and procedures. The gate fails when any file or function exceeds
-the configured thresholds (defaults: 4 000 LOC, 20% of codebase, 120
-complexity per function, 600 per file). Exit `0` when all gates pass. Exit `1`
-otherwise. This replaces the previous Python `check-complexity.py` script and
-is wired into `make complexity-check`.
+check on the target source tree. It prints a tokei-style summary (files,
+lines, code, comments, blanks, and codebase loc percentage) followed by a
+per-file table where each row reports `Lines=`, `Code=`, `Comments=`,
+`Blanks=`, the loc percentage, and the cyclomatic complexity `cx=`. The legend
+reads `Per-file (Lines / Code / Comments / Blanks / loc % / cx):`. The gate
+fails when any file or function exceeds the configured thresholds (defaults:
+4 000 LOC, 10% of the codebase per file, 120 complexity per function, 600 per
+file). Exit `0` when all gates pass. Exit `1` otherwise. This replaces the
+previous Python `check-complexity.py` script and is wired into
+`make complexity-check`.
 
 ### The `prove` subcommand
 

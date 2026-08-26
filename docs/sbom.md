@@ -199,24 +199,29 @@ by what it actually contains rather than by a single guess.
 Vendored manifest ecosystems report their licence from the local manifest:
 `package.json` (`license`) for npm/pnpm, `Cargo.toml` for cargo,
 `pyproject.toml` / `composer.json` for pypi / composer. When the local
-manifest carries no licence, adacovex resolves it from the package registry
-as a best-effort, online fallback. The resolver dispatches on the ecosystem
-(the PURL type) through a single static table, so adding a language is one row
-rather than a new code path:
+manifest carries no licence, adacovex resolves the version, website, and
+licence from the package registry as a best-effort, online fallback. The
+resolver dispatches on the ecosystem (the PURL type) through a single static
+table, so adding a language is one row rather than a new code path:
 
-- **npm** -- `npm view <pkg> license`.
-- **pnpm** -- `pnpm show <pkg> license`.
+- **npm** -- `npm view <pkg> version license homepage --json`, parsed for the
+  three fields from one JSON object.
+- **pnpm** -- `pnpm show <pkg> version license homepage --json`, likewise.
 - **cargo** (Rust) -- `cargo search <pkg>`, with the SPDX id read from the
   `(license: ...)` token in the output.
 - **go** and other ecosystems with no portable, reliable registry query keep
   an empty licence; the vendored manifest scanner still reads any in-repo
   licence file for them.
 
-The fallback runs only when the offline read finds nothing, so a vendored
-package that ships a licence never touches the network. The resolved licence
-flows into every SBOM format (CycloneDX `licenses`, SPDX
+The npm and pnpm rows answer for all three fields with a single `--json` call,
+so each component boots node once instead of once per field -- a 3x reduction
+in subprocess starts that keeps the graph build responsive on vendored
+JavaScript trees. The fallback runs only when the offline read finds nothing,
+so a vendored package that ships a licence never touches the network. The
+resolved licence flows into every SBOM format (CycloneDX `licenses`, SPDX
 `licenseConcluded` / `licenseDeclared`, Markdown `License` column) and the
-dashboard detail panel.
+dashboard detail panel; the resolved version and website appear in the
+dashboard detail panel and the `/api/deps` JSON.
 
 Bundled dashboard assets (Charts.css, FlexSearch, nomnoml, graphre) report
 their known upstream licence (MIT or Apache-2.0) from a built-in table, so the
