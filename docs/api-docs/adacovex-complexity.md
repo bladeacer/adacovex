@@ -20,11 +20,17 @@ end record;
 
 ```ada
 type File_Metrics is record
-Path       : String (1 .. 4096);
-Path_Len   : Natural := 0;
-LOC        : Natural := 0;
-Complexity : Natural := 0;
-Subs       : Subprogram_Vectors.Vector;
+Path          : String (1 .. 4096);
+Path_Len      : Natural := 0;
+LOC           : Natural := 0;
+Complexity    : Natural := 0;
+Total_Lines   : Natural := 0;
+Code_Lines    : Natural := 0;
+Comment_Lines : Natural := 0;
+Blank_Lines   : Natural := 0;
+Language      : String (1 .. 16);
+Language_Len  : Natural := 0;
+Subs          : Subprogram_Vectors.Vector;
 end record;
 ```
 
