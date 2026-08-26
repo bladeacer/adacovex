@@ -58,7 +58,7 @@ full range accordingly.
 ### C5: Proof fixes to 0 unproved (Platinum under gnatprove 16.1.0)
 
 Eliminated every unproved VC so the self-assessment reaches **Platinum**:
-**343 VCs, 343 proved, 0 unproved** across 38 analyzed units under gnatprove
+**343 VCs, 343 proved, 0 unproved** across 38 analysed units under gnatprove
 16.1.0, with no `SPARK_Mode(Off)` and no justified VCs. The bulk of the debt
 was solver step-limit timeouts, not genuine proof gaps; the rest needed real
 contract and structure fixes:
@@ -99,11 +99,11 @@ name-only with a `pkg:alire/<name>` purl, exactly like GPR-only deps.
 ### C7: GNATprove info-warning cleanup
 
 Removed the persistent `info:` noise from the standard prove run by making
-gnatprove analyze each flagged subprogram independently:
+gnatprove analyse each flagged subprogram independently:
 
 - `Min_SPARK_For` and `Need_Tests` moved from the body of
   `Adacovex.Compliance.DAL` into the spec (public API with docstrings), so
-  they are no longer "only analyzed in the context of calls".
+  they are no longer "only analysed in the context of calls".
 - `Starts_With` moved from the body of `Adacovex.Parsers.Tests` into the spec,
   dropping its in-context-analysis note.
 
@@ -124,7 +124,7 @@ deps are registered without GPR `with`-clauses or a lockfile.
 ## Proof Results
 
 Self-assessment reports **Platinum**: **343 VCs, 343 proved, 0 unproved** under
-gnatprove 16.1.0 across 38 analyzed units (no justified VCs). gnatprove 16.1.0
+gnatprove 16.1.0 across 38 analysed units (no justified VCs). gnatprove 16.1.0
 generates stricter overflow/counterexample checks than 15.x; after the C1
 parser fix the honest level was Silver, and the C5 proof fixes (plus the
 `--steps=5000` default) then discharged every remaining VC. The interim

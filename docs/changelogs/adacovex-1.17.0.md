@@ -11,12 +11,12 @@ A full `--force` SPARK proof re-run on the current tree re-confirms adacovex's
 own proof discipline end to end. gnatprove 16.1.0 (`--steps=10000`, the
 `Build_Option_String` default since 1.10.0) reports **487 total checks -- 487
 proved (112 flow + 375 by prover), 0 justified, 0 unproved** across 48
-analyzed units, i.e. **Platinum** unchanged from 1.16.0. The 196 skipped units
+analysed units, i.e. **Platinum** unchanged from 1.16.0. The 196 skipped units
 are all default-off `SPARK_Mode => Off` I/O- and container-heavy bodies (file
 I/O, `Ada.Containers`, `Ada.Text_IO`) that are out of proof scope by design --
 the `spark-off-check` gate still passes (no explicit `pragma SPARK_Mode (Off)`
 in `src/` outside `Types.Implementation`, the one non-formal container package
-SPARK forbids analyzing). No source changes were needed to hold the proof; this
+SPARK forbids analysing). No source changes were needed to hold the proof; this
 release records that the 1.16.0 proof surface reproduces on the current HEAD.
 
 ### C2: Ada_CRDT dogfood regression re-verified (Platinum held)
@@ -24,7 +24,7 @@ release records that the 1.16.0 proof surface reproduces on the current HEAD.
 The `make run-ada-crdt` dogfood regression and a fresh `--force` proof of
 `../Ada_CRDT` via the sibling adacovex binary both re-confirm the target's
 Platinum proof: gnatprove 16.1.0 reports **576 total checks -- 576 proved (109
-flow + 467 by prover), 0 justified, 0 unproved** across 48 analyzed units, with
+flow + 467 by prover), 0 justified, 0 unproved** across 48 analysed units, with
 the vendored VT100 demo dependency exercised through the 1.16.0 proof-patch
 pipeline (`SPARK_Mode => On` on the package, the `Scroll_Screen (From, To)`
 scroll-region contract merged into the patched tree copy). The 100 skipped units
@@ -60,7 +60,7 @@ per-subprogram `SPARK_Mode => On` with `Pre`/`Post`/`Global => null` and the
 necessary `Loop_Invariant` / `Loop_Variant` annotations.  All 233 new VCs
 prove at the default `--steps=10000` budget, preserving the clean
 **Platinum (720 VCs, 0 unproved, 0 justified)** gate across the same 48
-analyzed units.  The increase is *analysis* coverage, not new code -- the
+analysed units.  The increase is *analysis* coverage, not new code -- the
 functions existed, they were just previously skipped:
 
 | Unit | Newly proved subprograms | VCs added | Kind |
@@ -81,13 +81,13 @@ re-verification pass made no source changes, so the test surface is untouched;
 
 ## Proof Results
 
-Platinum, 720/720 VCs proved across 48 analyzed units (up from 487 in
+Platinum, 720/720 VCs proved across 48 analysed units (up from 487 in
 1.16.0): 407 run-time checks, 107 assertions, 55 functional contracts, 54
 data-dependency checks, 5 initialization checks, and 92 termination checks
 (71 flow +21 prover), all proved. 0 unproved, 0 justified. Re-verified with
 `adacovex prove --target=. --force` under gnatprove 16.1.0 (`--steps=10000`).
 The Ada_CRDT dogfood target re-verified at Platinum, 576/576 VCs (109 flow
-+ 467 prover), 0 unproved, 0 justified, 48 analyzed units.
++ 467 prover), 0 unproved, 0 justified, 48 analysed units.
 
 ## Traceability
 

@@ -16,9 +16,9 @@ the directory skip list (default: `demo,deps,examples`) and disables patch file
 application. Use case: strict for compliance audits, relaxed for quick dev-cycle
 checks.
 
-This reverses the 0.1.0 relaxed-by-default behavior. Existing commands that
+This reverses the 0.1.0 relaxed-by-default behaviour. Existing commands that
 relied on `demo`/`deps`/`examples` being skipped must add `--relaxed` (or
-`--skip-dir=NAME` explicitly) to keep the old behavior.
+`--skip-dir=NAME` explicitly) to keep the old behaviour.
 
 ### C2: `--skip-dir` flag
 
@@ -39,7 +39,7 @@ scanning.
 
 Previously only `@param`/`@return`/`@field` tags counted as docstrings. Now any
 `--  ` (two dashes + two spaces) comment line before a subprogram declaration
-is recognized as a docstring, even without a tag, so no-param procedures with
+is recognised as a docstring, even without a tag, so no-param procedures with
 only a summary line are correctly counted.
 
 Known scanner quirks at this release: `(null record)` typed parameters are
@@ -57,7 +57,7 @@ labels, package counts, SPARK level, test file path, and output paths
 
 `make bump-version VERSION=x.y.z` bumps the version across `alire.toml`,
 `alire-dev.toml`, `src/adacovex.ads`, and creates/updates the changelog,
-modeled after the `Ada_CRDT` project's bump workflow.
+modelled after the `Ada_CRDT` project's bump workflow.
 
 ### C7: `make run-ada-crdt` strict mode
 
@@ -98,7 +98,7 @@ caused false subprogram declarations. Dead code removed: `Max_Params`,
 
 `--dal=Z` (or any value outside A-E) now prints an error and exits with code 1
 instead of silently defaulting to DAL-C. Related CLI caveat: a relative
-`--target=PATH` is resolved against the CWD, so behavior depends on the
+`--target=PATH` is resolved against the CWD, so behaviour depends on the
 invocation directory.
 
 ### C12: Post-release: Alire crate renamed to `covex`

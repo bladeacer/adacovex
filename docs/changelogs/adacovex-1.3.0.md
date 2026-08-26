@@ -52,7 +52,7 @@ swaps in `alire-dev.toml`, and restores the snapshots on exit via
 leave the manifest or lock files polluted with development dependencies
 (whether or not the lock files are committed). `dev-setup` and `prod-setup`
 were replaced with guidance stubs. `alire.toml` now declares `gnatprove` as
-an explicit dependency (adacovex analyzes `gnatprove.out` and its own
+an explicit dependency (adacovex analyses `gnatprove.out` and its own
 self-assessment runs the proof campaign), so `alr gnatprove` works without a
 dev-manifest swap; `gnatprove` is the only declared dependency beyond the GNAT
 runtime (gnatdoc/gnatformat stay dev-only in `alire-dev.toml`).

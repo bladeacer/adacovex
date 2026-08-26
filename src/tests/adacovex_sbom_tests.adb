@@ -503,9 +503,9 @@ package body Adacovex_SBOM_Tests is
       end;
 
       --  System-tool dev dependencies: tools referenced by the project's
-      --  dev-facing files and installed on PATH are registered as dev-scope
-      --  components of the root; unreferenced or fictional tools are never
-      --  registered.
+      --  dev-facing files and installed on PATH are registered as
+      --  system-scope components of the root; unreferenced or fictional
+      --  tools are never registered.
       declare
          Graph   : Component_Vectors.Vector;
          Success : Boolean := False;
@@ -521,7 +521,7 @@ package body Adacovex_SBOM_Tests is
                  (Count_Name (Graph, Tool) = 1,
                   Tool & " registered (on PATH)");
                C := Find_Name (Graph, Tool);
-               R.Check (C.Scope = Scope_Dev, Tool & " scope = dev");
+               R.Check (C.Scope = Scope_System, Tool & " scope = system");
                R.Check (C.Parent = 1, Tool & " parent = root");
                R.Check
                  (C.PURL_Len = 12 + Tool'Length

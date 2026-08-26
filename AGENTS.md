@@ -13,14 +13,15 @@ test-result parsing, DO-178C DAL compliance assessment, and interactive dashboar
   lives only in the dev manifest for local make targets.
 - **SPARK target**: Platinum. See [SPARK levels](docs/api-docs/adacovex-spark-levels.md).
 - **Dashboard dependency view**: the served dashboard and the SBOM build from
-  one resolved graph that includes system-tool dev dependencies
-  (`pkg:generic/*`, shown with a `system` badge and no guessed link or
-  licence -- only the resolved version). Vendored npm/pnpm (and cargo/pypi/
-  composer) packages resolve their licence from the local manifest, or from
-  `npm view <pkg> license` / `pnpm show <pkg> license` when the manifest is
-  silent. Clicking a dependency in the Tree view or the nomnoml Diagram opens
-  one split-view detail panel (view docked left, detail docked right; full
-  width until a dependency is selected).
+  one resolved graph that includes system-tool dependencies as a first-class
+  `system` scope (`pkg:generic/*`, shown with a `system` badge and no guessed
+  link or licence -- only the resolved version). Vendored npm/pnpm (and
+  cargo/pypi/composer) packages resolve their licence from the local manifest,
+  or from the package registry (`npm view <pkg> license`, `pnpm show <pkg>
+  license`, `cargo search <pkg>`) when the manifest is silent. Clicking a
+  dependency in the Tree view or the nomnoml Diagram opens one split-view
+  detail panel (view docked left, detail docked right; full width until a
+  dependency is selected).
 
 **Keeping this file current:** before each change, check briefly whether
 AGENTS.md still matches the codebase -- the source layout, the CLI flags, the
@@ -121,7 +122,7 @@ The same patch file can carry **SPARK proof aspects** (`SPARK_Mode`, `Pre`,
 copy (`<target>/obj/adacovex-proof/`) and proves the vendored code against it,
 never touching the originals. A `.ads` patch re-declares the vendored spec
 with contracts; a `.adb` patch opts the vendored body into the proof (bodies
-are analyzed only when they declare `SPARK_Mode => On`). How to write them:
+are analysed only when they declare `SPARK_Mode => On`). How to write them:
 [docs/proving.md](docs/proving.md#proof-patches-proving-vendored-dependencies);
 the design: [docs/architecture.md](docs/architecture.md#proof-patches-spark-contracts-over-vendored-dependencies).
 
@@ -140,7 +141,7 @@ adacovex man [--check] [--dir=PATH]
 adacovex completion [bash|fish|zsh|pwsh]
 ```
 
-Full flag reference, detailed behavior, CI threshold gates (`--require-*`),
+Full flag reference, detailed behaviour, CI threshold gates (`--require-*`),
 exit codes, the `sbom` subcommand, the per-standard level flags
 (`--dal`, `--asil`, `--class`), and the `--standard` flag (including
 `--standard=all`): [docs/cli-reference.md](docs/cli-reference.md).

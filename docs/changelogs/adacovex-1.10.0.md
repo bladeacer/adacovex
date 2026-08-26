@@ -31,7 +31,7 @@ workflows, and `agents-tree.map`, then regenerates the AGENTS.md source tree.
 `tools/update-proof-status.py` additionally rewrites the `--require-spark` /
 `require-spark` CI gates in the Makefile, workflows, and docs.
 
-### C3: Source scanner recognizes OOP modifiers and word boundaries
+### C3: Source scanner recognises OOP modifiers and word boundaries
 
 The scanner's `Is_Subprogram_Decl` now understands `overriding` and
 `not overriding` subprogram declarations in addition to plain, generic, and
@@ -40,7 +40,7 @@ function forms, and tab-indented declarations are handled.
 ### C4: Root CONTRIBUTING.md
 
 The contribution guide moved to a root-level `CONTRIBUTING.md` so GitHub
-renders its contributing link; the changelog format and unit-test catalog live
+renders its contributing link; the changelog format and unit-test catalogue live
 there.
 
 ### C5: `adacovex status` subcommand
@@ -154,7 +154,7 @@ Total categories: 10 (was 9).
 
 ## Proof Results
 
-Platinum, 401/401 VCs proved across 44 analyzed units (was 343 at 1.9.0). The
+Platinum, 401/401 VCs proved across 44 analysed units (was 343 at 1.9.0). The
 compliance-standard layer (`Compliance_Standard`, `To_Standard`,
 `Standard_Level_Name`, `Standard_Slug`, `To_ASIL`, `To_Class`) and the SBOM
 `Level_Property` / `All_Standards_Property` helpers added 58 SPARK VCs, all

@@ -153,7 +153,7 @@ route.  A follow-up will add renderer tests for the new chart pies and the
 
 ## Proof Results
 
-Platinum, 720/720 VCs proved across 49 analyzed units (unchanged from
+Platinum, 720/720 VCs proved across 49 analysed units (unchanged from
 1.20.0): the chart pies, dep-tree scope attributes, nomnoml/flexsearch
 inlining (tooling-bundled JS), and the dynamic man page all live in
 default-off bodies or are Python/JS tooling -- no new SPARK obligations.  0

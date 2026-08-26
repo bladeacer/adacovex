@@ -4,8 +4,9 @@
   var showDev=document.getElementById('filter-dev') ? document.getElementById('filter-dev').checked : true;
   var showTrans=document.getElementById('filter-transitive') ? document.getElementById('filter-transitive').checked : true;
   var showVend=document.getElementById('filter-vendored') ? document.getElementById('filter-vendored').checked : true;
+  var showSys=document.getElementById('filter-system') ? document.getElementById('filter-system').checked : true;
   var q=(document.getElementById('dep-filter') ? document.getElementById('dep-filter').value.toLowerCase() : '');
-  function scopeOk(s){ if(s==='base') return showBase; if(s==='dev') return showDev; if(s==='transitive') return showTrans; if(s==='vendored') return showVend; return true; }
+  function scopeOk(s){ if(s==='base') return showBase; if(s==='dev') return showDev; if(s==='transitive') return showTrans; if(s==='vendored') return showVend; if(s==='system') return showSys; return true; }
   var nodes=Array.prototype.slice.call(document.querySelectorAll('.dep-node'));
   var info=new Map();
   nodes.forEach(function(n){
@@ -353,9 +354,9 @@ window.showDepDetails=function(idx){
   var g=(typeof ADACOVEX_GRAPH!=='undefined' && ADACOVEX_GRAPH && ADACOVEX_GRAPH.dependencies) ? ADACOVEX_GRAPH.dependencies : null;
   var d=g ? g[idx-1] : null; if(!d) return;
   var h='<strong>'+ (d.name||'') +'</strong>';
-  if(d.version) h+=' <span class="dep-badge">'+esc(d.version)+'</span>';
-  h+=' <span class="dep-badge '+esc(d.scope||'')+'">'+esc(d.scope||'')+'</span>';
-  if(d.purl && String(d.purl).indexOf('pkg:generic/')===0) h+=' <span class="dep-badge scope-system">system</span>';
+   if(d.version) h+=' <span class="dep-badge">'+esc(d.version)+'</span>';
+   h+=' <span class="dep-badge '+esc(d.scope||'')+'">'+esc(d.scope||'')+'</span>';
+   if(d.scope==='system') h+=' <span class="dep-badge scope-system">system</span>';
   if(d.kind==='root') h+=' <span class="dep-badge">root</span>';
   h+=' <span class="dep-badge dep-details-close" onclick="closeDepDetails()">close &times;</span>';
    h+='<table class="dep-details-table">';
@@ -379,13 +380,13 @@ window.showDepDetails=function(idx){
    }
    h+='<tr><th>Link</th><td>'+(link ? '<a href="'+esc(link.href)+'" target="_blank" rel="noopener">'+esc(link.label)+' &#8599;</a>' : '\u2014')+'</td></tr>';
    h+='</table>';
-   if(d.description) h+='<p class="dep-detail-note">'+esc(d.description)+'</p>';
-   // System tools (pkg:generic/*) are discovered from the project's dev
-   // files + PATH: we provision the resolved version but never a guessed
-   // external link or licence, so say so instead of showing empty fields.
-   if(d.purl && String(d.purl).indexOf('pkg:generic/')===0){
-     h+='<p class="dep-system-note">System tool. Version is resolved from the installed binary on PATH. No external link or licence is provisioned.</p>';
-   }
+    if(d.description) h+='<p class="dep-detail-note">'+esc(d.description)+'</p>';
+    // System tools are discovered from the project's dev files + PATH: we
+    // provision the resolved version but never a guessed external link or
+    // licence, so say so instead of showing empty fields.
+    if(d.scope==='system'){
+      h+='<p class="dep-system-note">System tool. Version is resolved from the installed binary on PATH. No external link or licence is provisioned.</p>';
+    }
   pop.innerHTML=h;
   pop.hidden=false;
   // Activate the split layout: tree/diagram docks left, details right.

@@ -26,7 +26,7 @@ type Component_Kind is (Root_Component, Dependency_Component);
 
 ```ada
 type Component_Scope is
-(Scope_Base, Scope_Dev, Scope_Transitive, Scope_Vendored);
+(Scope_Base, Scope_Dev, Scope_Transitive, Scope_Vendored, Scope_System);
 ```
 
 ### type DAL_Level

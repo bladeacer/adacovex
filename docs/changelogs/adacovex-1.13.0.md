@@ -84,7 +84,7 @@ An unknown flag that has no close-enough known flag (edit distance > 2)
 now prints the full usage text to stdout after the one-line error, so a
 completely unrecognized token lands the user on the flag list instead of a
 bare error. Near-miss typos still get just the "did you mean" hint (no
-usage dump). A new `Unknown_No_Suggest` config flag drives the behavior;
+usage dump). A new `Unknown_No_Suggest` config flag drives the behaviour;
 config tests cover all three cases (no-match flag, near-miss flag, no-match
 bare word).
 
@@ -152,12 +152,12 @@ tool-binary names, and the UX-conversion recommendations.
 
 ## Proof Results
 
-Platinum, 408/408 VCs proved across 45 analyzed units (up from 44): the
+Platinum, 408/408 VCs proved across 45 analysed units (up from 44): the
 `--theme` additions (the `Dashboard_Theme` type and its `To_String` /
 `To_Theme` / `Is_Valid_Theme` conversions in `Adacovex.Types`) reuse the
 already-proved uppercase/parse patterns and add 7 VCs, all proved; the new
 bundled dashboard template package (`Adacovex.Dashboard_Template`, a String
-constant generated from `resources/dashboard.html`) adds one analyzed unit
+constant generated from `resources/dashboard.html`) adds one analysed unit
 with no proof obligations; the CLI config parser (including the
 `Unknown_No_Suggest` field), VCS, and man-page packages are non-SPARK I/O
 code and add no proof obligations. Proven with `make prove` under gnatprove

@@ -1,7 +1,7 @@
 # Supported Test Result Formats
 
 adacovex can parse test results in several standard formats. Parsing is
-additive and best-effort: every line is inspected for any recognized format,
+additive and best-effort: every line is inspected for any recognised format,
 so a file mixing styles (or wrapping a third-party runner's log) still
 produces correct pass/fail totals.
 

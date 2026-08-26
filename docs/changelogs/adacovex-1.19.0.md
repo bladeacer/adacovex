@@ -163,7 +163,7 @@ plain-layout/space-padded table tests. Counts synced with
 
 ## Proof Results
 
-Platinum, 720/720 VCs proved across 48 analyzed units (unchanged from
+Platinum, 720/720 VCs proved across 48 analysed units (unchanged from
 1.18.0): all new code (chart rendering, deps serialization, completion
 scripts, probe cache, complexity tooling, CI wiring) lives in default-off or
 I/O-bound bodies or is Python/bash tooling -- no new proof obligations. 0

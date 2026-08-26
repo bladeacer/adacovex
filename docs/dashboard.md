@@ -59,11 +59,13 @@ is tagged in source and that no tags are orphaned (tagged but not defined in
 
 ### Dependencies tab
 
-An interactive dependency tree (or diagram) of every component in the manifest.
-Use the filter input and scope checkboxes to focus on base, dev, transitive, or
-vendored dependencies. Click a node to see its licence, PURL, parent, and a
-registry link. The diagram view (toggle **Tree / Diagram**) renders the same
-graph as a directed diagram.
+An interactive dependency tree (or diagram) of every component in the graph.
+Use the filter input and scope checkboxes to focus on base, dev, transitive,
+vendored, or system dependencies. Click a node to see its licence, PURL,
+parent, and a registry link. Use this tab to audit your supply chain: confirm
+every vendored licence is compatible, see which system tools the build needs
+(the `system` scope), and trace each component back to its source. The diagram
+view (toggle **Tree / Diagram**) renders the same graph as a directed diagram.
 
 ### Charts tab
 
@@ -166,14 +168,15 @@ shows an empty state with a link to `/api/deps`).
   text spacing (`line-height: 1.65`, `padding: 8px 12px`, `gap: 10px`,
    `margin: 6px 0`). **Expand all / Collapse all** buttons.
 - **Filter** input (client-side, case-insensitive by name) hides non-matching
-  nodes. Four **scope checkboxes** (`base`, `dev`, `transitive`, `vendored`
-  -- all checked by default) hide whole scopes, so vendored and dev deps can
-  be distinguished and filtered where required.
+  nodes. Five **scope checkboxes** (`base`, `dev`, `transitive`, `vendored`,
+  `system` -- all checked by default) hide whole scopes, so vendored, dev, and
+  system deps can be distinguished and filtered where required.
 - Scope badges: `base` (alire.toml), `dev` (alire-dev.toml only),
-  `transitive`, `vendored`. `root` badge for the project itself. Child count
-  badge. `data-scope` attribute on each `<li>` for JS filtering.  Scope badge
-  colours come from `--scope-base/-dev/-trans/-vend` CSS variables so they
-  stay readable in both themes.
+  `transitive`, `vendored`, and `system` (a tool on `PATH` the project
+  references, for example `git` or `python3`). `root` badge for the project
+  itself. Child count badge. `data-scope` attribute on each `<li>` for JS
+  filtering.  Scope badge colours come from `--scope-base/-dev/-trans/-vend/-system`
+  CSS variables so they stay readable in both themes.
 - Each node shows `name`, `version`, `license`, `purl` when available. The
   licence and PURL text are colour-coded (`--lic` amber, `--purl` muted
   monospace) so vendored/uncommon licences stand out at a glance.
@@ -186,11 +189,12 @@ shows an empty state with a link to `/api/deps`).
   `pkg:bitbucket` -> Bitbucket, `pkg:npm` -> npmjs, `pkg:cargo` -> crates.io,
   `pkg:pypi` -> PyPI, `pkg:golang` -> pkg.go.dev, `pkg:alire` -> alire.ada.dev).
   Ecosystems without a reliable registry get no link rather than a search URL.
-  A **system** badge marks system-tool dependencies (`pkg:generic/*`); their
-  panel adds a note that no external link or licence is provisioned and only
-  the resolved version is shown. Vendored npm/pnpm packages resolve their
-  licence from the local manifest, or from `npm view <pkg> license` /
-  `pnpm show <pkg> license` when the manifest is silent. Close the panel via
+  A **system** scope badge marks system-tool dependencies (`pkg:generic/*`
+  with `scope: "system"`); their panel adds a note that no external link or
+  licence is provisioned and only the resolved version is shown. Vendored
+  npm/pnpm/cargo packages resolve their licence from the local manifest, or
+  from the package registry (`npm view <pkg> license`, `pnpm show <pkg>
+  license`, `cargo search <pkg>`) when the manifest is silent. Close the panel via
   the `close` chip or by clicking another dependency; closing returns the view
   to full width.
 
@@ -257,7 +261,7 @@ slice a full circle) and the donut shows proved vs *unproved* slices
   documented vs total subprograms.
 - **Tests Pass/Fail** -- *pie* of passed vs failed tests.
 - **Dependencies by Scope** -- *polar ring* of base / dev / transitive /
-  vendored components (conic-gradient + CSS hole, `--scope-*` theme
+  vendored / system components (conic-gradient + CSS hole, `--scope-*` theme
   variables) with a legend. Skipped when the graph is empty.
 
 Each of the six cards is a different type (donut / column / bar / radial /
@@ -350,7 +354,7 @@ SBOM embeds, minus the SBOM envelope):
 | Field | Meaning |
 |-------|---------|
 | `name` / `version` | Component name and version |
-| `scope` | `base` \| `dev` \| `transitive` \| `vendored` (a system tool is a `dev` dependency with a `pkg:generic/*` PURL) |
+| `scope` | `base` \| `dev` \| `transitive` \| `vendored` \| `system` (a system tool is a `system`-scope dependency with a `pkg:generic/*` PURL) |
 | `parent` | Parent component name (`(root)` for the root, or the index as `0`) |
 | `kind` | `root` or `dependency` |
 | `purl` | Package URL when derivable |

@@ -49,7 +49,7 @@ stays a quick reference instead of accumulating every flag's full detail:
   the `--compare-base` / `--coverage-delta` contracts.
 - **New [Target projects](../target-projects.md)** page -- the target-project
   requirements (sources, `gnatprove.out` discovery order, test-summary file
-  names, HLR.md, missing-data behavior) moved out of the README.
+  names, HLR.md, missing-data behaviour) moved out of the README.
 - **`docs/cli-reference.md` slimmed** to the flag table plus a concise note
   per flag, linking to the dedicated pages; the result-caching design moved
   to [`../architecture.md#result-caching`](../architecture.md#result-caching).
@@ -122,7 +122,7 @@ its own `File_Path`, the first keeps its own).
 
 ## Proof Results
 
-Platinum, 408/408 VCs proved across 45 analyzed units (unchanged from
+Platinum, 408/408 VCs proved across 45 analysed units (unchanged from
 1.13.0): the cache-path fix lives in the non-SPARK `parsers-source` body and
 the regression tests are not proved, so no new proof obligations. Proven
 with `make prove` under gnatprove 16.1.0 (`--steps=10000`).

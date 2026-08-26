@@ -29,7 +29,7 @@ so truncated data can never be served as a cache hit.
 
 ### C3: `--target` path normalization
 
-`--target` is normalized to a canonical absolute path (`.`/`..` collapsed)
+`--target` is normalised to a canonical absolute path (`.`/`..` collapsed)
 before scanning, so the `File_Path` values stored in cached `Package_Info` no
 longer depend on how the target was spelled (e.g. `--target=../Ada_CRDT` vs
 `--target=.`). Docstring patches are matched by the package path relative to
@@ -100,11 +100,11 @@ release).
 
 Self-assessment remains **Platinum** (all VCs proved, 0 unproved, AoRTE-free).
 `make prove` re-ran gnatprove 15.1.0 against the current tree: **503/503** VCs
-proved across 38 analyzed units. The cache, CLI, main-flow, and prove-resolution
+proved across 38 analysed units. The cache, CLI, main-flow, and prove-resolution
 changes live in non-SPARK units (`Adacovex.Cache`, `Adacovex.CPUs`,
 `Adacovex.Config`, `Adacovex.Prove`, `adacovex_main`), so no SPARK proof metrics
 regress. Ada_CRDT re-proved clean too: 584/584 VCs (44 justified) across 34
-analyzed units, Platinum. Proof runs
+analysed units, Platinum. Proof runs
 now deploy gnatprove standalone via `alr -n get gnatprove=15.1.0` into
 `~/.adacovex/toolchain` and execute that binary directly; identical inputs hit
 the newly toolchain-aware result cache (verified: 30 hit(s), 0 miss(es) on

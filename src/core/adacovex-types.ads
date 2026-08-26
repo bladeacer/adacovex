@@ -82,10 +82,13 @@ package Adacovex.Types is
    --  declared only in alire-dev.toml (dev).  A transitive crate is resolved
    --  from alire.lock or GPR with clauses that no manifest names directly
    --  (transitive).  A vendored package is overlaid by a .adacovex/patches/
-   --  docstring patch (vendored).
+   --  docstring patch (vendored).  A system-tool dependency is a program
+   --  installed on PATH that the project's build or dev files reference
+   --  (system) -- for example python3, git, or gnatprove.  System tools
+   --  carry a resolved version but no external link or licence.
    --  HLR-SBOM: SBOM dependency scope
    type Component_Scope is
-     (Scope_Base, Scope_Dev, Scope_Transitive, Scope_Vendored);
+     (Scope_Base, Scope_Dev, Scope_Transitive, Scope_Vendored, Scope_System);
 
    type Subprogram_Info is record
       Name          : Desc_Field;

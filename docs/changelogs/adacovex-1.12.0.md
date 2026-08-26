@@ -148,12 +148,12 @@ UX-conversion recommendations.
 
 ## Proof Results
 
-Platinum, 408/408 VCs proved across 45 analyzed units (up from 44): the
+Platinum, 408/408 VCs proved across 45 analysed units (up from 44): the
 `--theme` additions (the `Dashboard_Theme` type and its `To_String` /
 `To_Theme` / `Is_Valid_Theme` conversions in `Adacovex.Types`) reuse the
 already-proved uppercase/parse patterns and add 7 VCs, all proved; the new
 bundled dashboard template package (`Adacovex.Dashboard_Template`, a String
-constant generated from `resources/dashboard.html`) adds one analyzed unit
+constant generated from `resources/dashboard.html`) adds one analysed unit
 with no proof obligations; the VCS and man-page packages are non-SPARK I/O
 code and add no proof obligations. Proven with `make prove` under gnatprove
 16.1.0 (`--steps=10000`).

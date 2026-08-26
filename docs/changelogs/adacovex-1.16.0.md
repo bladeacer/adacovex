@@ -26,7 +26,7 @@ The `prove` subcommand merges proof patches before running gnatprove
    spliced onto the package declaration line (a `package body ... is`
    declaration included), and each aspect-carrying subprogram declaration
    replaced by the patch's declaration block. The merge engine (`Apply`)
-   matches on name **and** normalized parameter profile, so an overloaded
+   matches on name **and** normalised parameter profile, so an overloaded
    subprogram patches its exact signature and never a same-named sibling;
    the default `in` mode is equivalent to a bare mode (`in out` and `out`
    stay distinct). Spec declarations terminate at their `;`, body
@@ -43,7 +43,7 @@ The `prove` subcommand merges proof patches before running gnatprove
 
 The two patch shapes: a **spec patch** (`.ads`) re-declares the vendored
 spec with contracts; a **body patch** (`.adb`) opts the vendored body into
-the proof -- gnatprove analyzes a unit's body only when the body itself
+the proof -- gnatprove analyses a unit's body only when the body itself
 declares `SPARK_Mode => On`, so a SPARK-clean vendored body needs both.
 Where the body is SPARK-clean and opted in, gnatprove proves the patched
 contracts (the documented `Vecmath.Clamp` worked example proves its
@@ -67,7 +67,7 @@ AGENTS.md's patch-directory section.
 ### C2: server routes made testable
 
 `Adacovex.Server.HTTP` now exposes the request-path mapping as a pure,
-SPARK-analyzed function: `Route_Kind` and `Route (Path)` return the route
+SPARK-analysed function: `Route_Kind` and `Route (Path)` return the route
 kind (`Root`, `Badge_Spark`, `Badge_Tests`, `Badge_DO178C`, `Badge_ISO26262`,
 `Badge_IEC62304`, `API_Metrics`, or `Not_Found`) and `Handle_Request`
 case-dispatches on the result instead of matching path strings inline. The
@@ -121,20 +121,20 @@ lists.
 adds 24 tests (new category) and the C3 `Proof patches` category adds 35
 (new category) -- the only test changes; the SVG renderer category stays at
 161. All other changes (C1/C2) add aspects and contracts without changing
-behavior. The regenerated `docs/badges/*.svg` geometry is unchanged and the
+behaviour. The regenerated `docs/badges/*.svg` geometry is unchanged and the
 `make run-ada-crdt` dogfood regression still passes. Counts synced with
 `make test-count`.
 
 ## Proof Results
 
-Platinum, 487/487 VCs proved across 48 analyzed units (up from 484 at
+Platinum, 487/487 VCs proved across 48 analysed units (up from 484 at
 1.15.0): the C2 `Route` mapping in `server-http` (newly `SPARK_Mode => On`
-with its path-to-route postcondition) and the newly analyzed units
+with its path-to-route postcondition) and the newly analysed units
 (`prove_patch`, `server_tests`, `prove_patch_tests`) added 3 provable checks
 (484 to 487) -- 230 run-time checks, 78 assertions, 52 functional contracts,
 45 data-dependency checks, 4 initialization checks, and 78 termination
 checks, all proved. 0 unproved, 0 justified; the I/O- and container-heavy
-`prove_patch` bodies stay default-off, so gnatprove analyzes only the
+`prove_patch` bodies stay default-off, so gnatprove analyses only the
 SPARK-clean helpers, exactly as before. Proven with `make prove` under
 gnatprove 16.1.0 (`--steps=10000`).
 

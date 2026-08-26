@@ -79,7 +79,7 @@ badges row (which already listed every standard under `--standard=all`).
 
 The Proof tab gains a "How to proceed (Proof Guidance)" card that turns the
 gnatprove unproved counts into concrete next steps per category: Global /
-Initializes aspects, initialisation at declaration, loop invariants and range
+initialises aspects, initialisation at declaration, loop invariants and range
 preconditions, strengthened Pre/Post contracts, Postconditions for functional
 checks, and Measure / Decreasing clauses for termination.  When every VC is
 proved it reads "No unproved VCs -- the proof is complete."  It reminds the
@@ -103,7 +103,7 @@ colour now additionally requires that `CI` is unset.
 ### C10: American English in live docs corrected
 
 Prose Americanisms in the user documentation and API reference were corrected
-to British English (`behavior` -> `behaviour`, `analyze`/`analyze` ->
+to British English (`behaviour` -> `behaviour`, `analyse`/`analyse` ->
 `analyse`) in `docs/architecture.md`, `docs/proving.md`,
 `docs/compliance/HLR.md` and `docs/api-docs/adacovex-test-format.md`.  Code
 identifiers such as `prefers-color-scheme` and `NO_COLOR` are untouched.

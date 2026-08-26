@@ -84,7 +84,7 @@ package body Adacovex.Renderers.SBOM is
    --  in neither.  Vendored packages are overlaid by a .adacovex/patches/
    --  patch.
    --  @param Scope  Component dependency scope.
-   --  @return "base", "dev", "transitive", or "vendored".
+   --  @return "base", "dev", "transitive", "vendored", or "system".
    function Scope_Property (Scope : Types.Component_Scope) return String
    with SPARK_Mode => On
    is
@@ -101,6 +101,9 @@ package body Adacovex.Renderers.SBOM is
 
          when Types.Scope_Vendored   =>
             return "vendored";
+
+         when Types.Scope_System     =>
+            return "system";
       end case;
    end Scope_Property;
 
