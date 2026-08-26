@@ -167,7 +167,7 @@ function renderNomnoml(){
     var fg=cs.getPropertyValue('--fg').trim()||'#222222';
     var border=cs.getPropertyValue('--border').trim()||'#dddddd';
     var th=cs.getPropertyValue('--th').trim()||'#f0f0f0';
-    var src='#fill: '+card+'\n#background: '+bg+'\n#stroke: '+border+'\n#lineColor: '+border+'\n#fontColor: '+fg+'\n#fillArrows: false\n#.note: fill='+th+'\n#.note: stroke='+border+'\n#.note: textColor='+fg+'\n#direction: down\n';
+    var src='#fill: '+card+'\n#background: '+bg+'\n#stroke: '+fg+'\n#lineColor: '+border+'\n#fontColor: '+fg+'\n#fillArrows: false\n#.note: fill='+th+'\n#.note: stroke='+border+'\n#.note: textColor='+fg+'\n#direction: down\n';
     var root=deps[0]||{name:'root'};
     for(var i=0;i<deps.length;i++){
       if(deps[i].kind==='root' || deps[i].parent===0){ root=deps[i]; break; }
@@ -182,7 +182,45 @@ function renderNomnoml(){
     });
     src += '\n[<note> Legend: base=alire.toml, dev=alire-dev.toml, vendored=.adacovex/patches]\n';
     var canvas=document.getElementById('nomnoml-canvas');
-    if(canvas) nomnoml.draw(canvas, src);
+    if(canvas){
+      var out=null;
+      try{ out=nomnoml.draw(canvas, src); }catch(e){ out=null; }
+      // Record node rectangles (center x/y + w/h in layout space) so a click
+      // on the canvas can be hit-tested back to a dependency and open its
+      // detail panel -- the diagram is a single <canvas>, so boxes are not
+      // DOM nodes and need manual hit-testing.
+      window.__nomnomlHits=[];
+      var zoom=(out && out.config && out.config.zoom) ? out.config.zoom : 1;
+      if(out && out.layout && out.layout.nodes){
+        out.layout.nodes.forEach(function(n){
+          if(n && typeof n.x==='number' && n.id!==undefined){
+            // Node x/y are centres in layout space; canvas pixels are
+            // scaled by config.zoom, so store already-scaled rectangles.
+            window.__nomnomlHits.push({name:String(n.id), x:n.x*zoom, y:n.y*zoom, w:(n.width||0)*zoom, h:(n.height||0)*zoom});
+          }
+        });
+      }
+      // One shared click handler transforms CSS coords to canvas pixels and
+      // finds the enclosing box (nodes x/y are centres).
+      if(!canvas.__nomnomlClickAttached){
+        canvas.__nomnomlClickAttached=true;
+        canvas.addEventListener('click', function(ev){
+          var rect=canvas.getBoundingClientRect();
+          var cx=(ev.clientX-rect.left)*(canvas.width/ (rect.width||1));
+          var cy=(ev.clientY-rect.top)*(canvas.height/(rect.height||1));
+          var hits=window.__nomnomlHits||[];
+          for(var i=0;i<hits.length;i++){
+            var h=hits[i];
+            if(cx>=h.x-h.w/2 && cx<=h.x+h.w/2 && cy>=h.y-h.h/2 && cy<=h.y+h.h/2){
+              var g=ADACOVEX_GRAPH.dependencies||[];
+              for(var k=0;k<g.length;k++){
+                if(String(g[k].name)===h.name){ window.showDepDetails(k+1); return; }
+              }
+            }
+          }
+        });
+      }
+    }
   }catch(e){ console.warn('nomnoml render failed',e); }
 }
 var _origShowTab=window.showTab;
@@ -318,10 +356,25 @@ window.showDepDetails=function(idx){
   h+='<tr><th>PURL</th><td class="purl">'+esc(d.purl||'')+'</td></tr>';
   var par = (d.parent && g && g[d.parent-1]) ? g[d.parent-1].name : (d.parent===0 ? '(root)' : '\u2014');
   h+='<tr><th>Parent</th><td>'+esc(par)+'</td></tr>';
-  var info=purlInfo(d.purl);
-  h+='<tr><th>Link</th><td>'+(info ? '<a href="'+info.href+'" target="_blank" rel="noopener">'+info.label+' &#8599;</a>' : '\u2014')+'</td></tr>';
+  // Preferred link: the resolved source repository / project website (from
+  // alr show / the lockfile), which never produces a guessed or dead link.
+  // Fall back to the PURL-derived registry link only when that resolves to a
+  // real, known registry (never a GitHub search page).
+  var link=null;
+  if(d.website && /^https?:\/\//i.test(String(d.website))){
+    link={label:'Source', href:d.website};
+  } else {
+    link=purlInfo(d.purl);
+  }
+  h+='<tr><th>Link</th><td>'+(link ? '<a href="'+esc(link.href)+'" target="_blank" rel="noopener">'+esc(link.label)+' &#8599;</a>' : '\u2014')+'</td></tr>';
   h+='</table>';
   pop.innerHTML=h;
-  pop.hidden=false; pop.scrollIntoView({block:'nearest'});
+  pop.hidden=false;
+  // Activate the split layout: tree/diagram docks left, details right.
+  var shell=document.getElementById('tab-deps'); if(shell) shell.classList.add('dep-split-active');
+  pop.scrollIntoView({block:'nearest'});
 };
-window.closeDepDetails=function(){var pop=document.getElementById('dep-detail-popup'); if(pop) pop.hidden=true;};})();
+window.closeDepDetails=function(){
+  var pop=document.getElementById('dep-detail-popup'); if(pop) pop.hidden=true;
+  var shell=document.getElementById('tab-deps'); if(shell) shell.classList.remove('dep-split-active');
+};})();

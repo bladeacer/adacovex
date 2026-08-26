@@ -179,7 +179,7 @@ with the Unix philosophy of composing specialized tools.
 - **Proof scope is the target's own units.** adacovex proves the Ada/SPARK
    code it is run against, never third-party dependencies. GNATprove units that
    are skipped (for example standard-library or vendor code that GNATprove
-   itself does not analyze) are tracked via `Units_Skipped` and reported in the
+   itself does not analyse) are tracked via `Units_Skipped` and reported in the
    ANSI and Markdown reports. They are out of proof scope by design, not a
    proof failure.
 - **Justifications are an accepted discharge mechanism.** A `Total` row's

@@ -217,6 +217,14 @@ package Adacovex.Types is
          Description_Len : Natural := 0;
          Language        : Desc_Field;
          Language_Len    : Natural := 0;
+         --  Source-code repository or project website of the component, when
+         --  known.  The manifest parser fills it from the Alire release
+         --  metadata (alire.lock `website` / `origin` URL or the local index
+         --  via `alr show`).  The dashboard links a dependency to this URL
+         --  instead of guessing from the PURL, so no garbage links are
+         --  produced.  Empty when the source cannot be resolved.
+         Website         : Path_Field;
+         Website_Len     : Natural := 0;
          Kind            : Component_Kind := Dependency_Component;
          Parent          : Natural := 0;
          From_GPR        : Boolean := False;

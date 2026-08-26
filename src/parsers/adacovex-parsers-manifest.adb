@@ -181,6 +181,8 @@ package body Adacovex.Parsers.Manifest is
       Root_License_Len : out Natural;
       Root_Desc        : out Types.Path_Field;
       Root_Desc_Len    : out Natural;
+      Root_Website     : out Types.Path_Field;
+      Root_Website_Len : out Natural;
       Project_File     : out Types.Path_Field;
       Project_File_Len : out Natural;
       Success          : out Boolean)
@@ -196,6 +198,7 @@ package body Adacovex.Parsers.Manifest is
       Root_Version_Len := 0;
       Root_License_Len := 0;
       Root_Desc_Len := 0;
+      Root_Website_Len := 0;
       Project_File_Len := 0;
       Success := False;
 
@@ -253,6 +256,15 @@ package body Adacovex.Parsers.Manifest is
                begin
                   if V'Length > 0 then
                      Set_Path (Root_Desc, Root_Desc_Len, V);
+                  end if;
+               end;
+            end if;
+            if Root_Website_Len = 0 then
+               declare
+                  V : constant String := Key_Value (T, "website");
+               begin
+                  if V'Length > 0 then
+                     Set_Path (Root_Website, Root_Website_Len, V);
                   end if;
                end;
             end if;
@@ -661,7 +673,8 @@ package body Adacovex.Parsers.Manifest is
       Parent   : Natural;
       From_GPR : Boolean;
       Scope    : Types.Component_Scope;
-      Language : String := "")
+      Language : String := "";
+      Website  : String := "")
    is
       C : Types.Implementation.Component_Info;
    begin
@@ -674,6 +687,7 @@ package body Adacovex.Parsers.Manifest is
       Set_Path (C.Description, C.Description_Len, Desc);
       Set_Path (C.PURL, C.PURL_Len, PURL);
       Set_Path (C.Ref, C.Ref_Len, PURL);
+      Set_Path (C.Website, C.Website_Len, Website);
       Set_Field (C.Language, C.Language_Len, Language);
       C.Kind := Types.Dependency_Component;
       C.Parent := Parent;
@@ -682,35 +696,257 @@ package body Adacovex.Parsers.Manifest is
       Graph.Append (C);
    end Append_Dependency;
 
+   --  Run `alr show <crate>` (optionally `<crate>=<version>`) and extract
+   --  the License and Website fields from its output.  Alire's local index
+   --  answers without network access, so a manifest-declared Alire dep that
+   --  is not in the lockfile still gets its licence and source URL.  Returns
+   --  "" for a field when alr is missing, the crate is unknown, or the field
+   --  is absent.  The purl stays authority-derived; the website is the
+   --  source-repository link the dashboard and SBOM prefer over a guessed
+   --  registry link.
+   procedure Alr_Show_Crate
+     (Crate      : String;
+      Show_Ver   : String;
+      License    : out Types.Desc_Field;
+      Lic_Len    : out Natural;
+      Website    : out Types.Path_Field;
+      Web_Len    : out Natural;
+      Version    : out Types.Desc_Field;
+      Version_Ln : out Natural)
+   is
+      Pid     : constant Integer := Pid_To_Integer (Current_Process_Id);
+      Pid_Img : constant String := Integer'Image (Pid);
+      Tmp     : constant String :=
+        Adacovex.CPUs.Get_Temp_Directory
+        & "/adacovex-alr-"
+        & Pid_Img (2 .. Pid_Img'Last)
+        & ".out";
+      Buf     : String (1 .. 16384);
+      BLen    : Natural := 0;
+      F       : Ada.Text_IO.File_Type;
+      Exe     : String_Access := Locate_Exec_On_Path ("alr");
+      OK      : Boolean;
+      Code    : Integer;
+
+      Args : Argument_List (1 .. 2);
+      Arg  : String_Access :=
+        new String'
+          (Crate & (if Show_Ver'Length > 0 then "=" & Show_Ver else ""));
+   begin
+      Lic_Len := 0;
+      Web_Len := 0;
+      Version_Ln := 0;
+      if Exe = null then
+         return;
+      end if;
+      Args (1) := new String'("show");
+      Args (2) := Arg;
+      Spawn (Exe.all, Args, Tmp, OK, Code, Err_To_Out => True);
+      Free (Exe);
+      Free (Args (1));
+      Free (Arg);
+      --  alr may return a non-zero exit code while still printing the release
+      --  metadata (for example it warns about an index refresh).  Only a
+      --  spawn failure is fatal: parse whatever the local index printed.
+      if not OK then
+         return;
+      end if;
+      begin
+         Ada.Text_IO.Open (F, Ada.Text_IO.In_File, Tmp);
+         while not Ada.Text_IO.End_Of_File (F) loop
+            declare
+               Line : constant String := Ada.Text_IO.Get_Line (F);
+            begin
+               for I in Line'Range loop
+                  if BLen < Buf'Last then
+                     BLen := BLen + 1;
+                     Buf (BLen) := Line (I);
+                  end if;
+               end loop;
+               if BLen < Buf'Last then
+                  BLen := BLen + 1;
+                  Buf (BLen) := ASCII.LF;
+               end if;
+            end;
+         end loop;
+         Ada.Text_IO.Close (F);
+      exception
+         when others =>
+            if Ada.Text_IO.Is_Open (F) then
+               Ada.Text_IO.Close (F);
+            end if;
+            return;
+      end;
+      begin
+         Ada.Directories.Delete_File (Tmp);
+      exception
+         when others =>
+            null;
+      end;
+
+      --  Parse "   License: <value>" and "   Website: <value>" lines.
+      declare
+         S : constant String := Buf (1 .. BLen);
+         I : Natural := S'First;
+      begin
+         while I <= S'Last loop
+            declare
+               J : Natural := I;
+            begin
+               while J <= S'Last and then S (J) /= ASCII.LF loop
+                  J := J + 1;
+               end loop;
+               declare
+                  Line : constant String :=
+                    (if J > S'First then S (I .. J - 1) else "");
+                  T    : constant String := Trim (Line);
+               begin
+                  if Lic_Len = 0
+                    and then T'Length > 8
+                    and then T (T'First .. T'First + 7) = "License:"
+                  then
+                     Set_Field
+                       (License, Lic_Len, Trim (T (T'First + 8 .. T'Last)));
+                  elsif Web_Len = 0
+                    and then T'Length > 8
+                    and then T (T'First .. T'First + 7) = "Website:"
+                  then
+                     Set_Path
+                       (Website, Web_Len, Trim (T (T'First + 8 .. T'Last)));
+                  elsif Version_Ln = 0
+                    and then T'Length > 8
+                    and then T (T'First .. T'First + 7) = "Version:"
+                  then
+                     Set_Field
+                       (Version, Version_Ln, Trim (T (T'First + 8 .. T'Last)));
+                  end if;
+               end;
+               I := J + 1;
+            end;
+         end loop;
+      end;
+   end Alr_Show_Crate;
+
    --  Register manifest-declared dependencies that no GPR with-clause or
-   --  lockfile resolved.  These are base deps from the publishing manifest
-   --  (alire.toml) and dev deps from alire-dev.toml.  Their version
-   --  constraints are not solved (only the crate name is parsed).  They
-   --  appear name-only with a "pkg:alire/<name>" purl, like GPR-only deps.
-   --  Append_Dependency skips already-registered names.
+   --  lockfile resolved (or fill in missing metadata on entries that were).
+   --  These are base deps from the publishing manifest (alire.toml) and dev
+   --  deps from alire-dev.toml.  Append_Dependency adds a name-only
+   --  "pkg:alire/<name>" purl when the crate is not already in the graph.
+   --  For every manifest-declared crate, `alr show` supplies the licence and
+   --  source repository URL from Alire's local index -- filling them onto a
+   --  freshly appended entry or an existing lockfile/GPR one whose source
+   --  could not otherwise be resolved.  No garbage links are produced: a
+   --  URL is only ever taken from the release metadata, never guessed.
    procedure Register_Manifest_Deps
      (Graph      : in out Types.Implementation.Component_Vectors.Vector;
       Base_Names : Name_Vectors.Vector;
       Dev_Names  : Name_Vectors.Vector)
    is
+      --  Fill missing licence/website/version on an existing graph entry.
+      procedure Enrich_Existing
+        (Name    : String;
+         Lic     : Types.Desc_Field;
+         Lic_Len : Natural;
+         Web     : Types.Path_Field;
+         Web_Len : Natural;
+         Ver     : Types.Desc_Field;
+         Ver_Len : Natural) is
+      begin
+         for I in 1 .. Integer (Graph.Length) loop
+            if Graph (I).Name_Len = Name'Length
+              and then Graph (I).Name (1 .. Name'Length) = Name
+            then
+               declare
+                  C : Types.Implementation.Component_Info := Graph (I);
+               begin
+                  if Lic_Len > 0 and C.License_Len = 0 then
+                     for J in 1 .. Lic_Len loop
+                        C.License (J) := Lic (J);
+                     end loop;
+                     C.License_Len := Lic_Len;
+                  end if;
+                  if Web_Len > 0 and C.Website_Len = 0 then
+                     for J in 1 .. Web_Len loop
+                        C.Website (J) := Web (J);
+                     end loop;
+                     C.Website_Len := Web_Len;
+                  end if;
+                  if Ver_Len > 0 and C.Version_Len = 0 then
+                     for J in 1 .. Ver_Len loop
+                        C.Version (J) := Ver (J);
+                     end loop;
+                     C.Version_Len := Ver_Len;
+                  end if;
+                  Graph (I) := C;
+               end;
+               exit;
+            end if;
+         end loop;
+      end Enrich_Existing;
+
       procedure Register
         (Names : Name_Vectors.Vector; Scope : Types.Component_Scope) is
       begin
          for I in 1 .. Integer (Names.Length) loop
             declare
-               Name : constant String := Names (I).Name (1 .. Names (I).Len);
+               Name    : constant String :=
+                 Names (I).Name (1 .. Names (I).Len);
+               Lic     : Types.Desc_Field;
+               Lic_Len : Natural := 0;
+               Web     : Types.Path_Field;
+               Web_Len : Natural := 0;
+               Ver     : Types.Desc_Field;
+               Ver_Len : Natural := 0;
+               Lic_S   : String (1 .. Types.Max_Desc_Str);
+               Lic_SL  : Natural := 0;
+               Web_S   : String (1 .. Types.Max_Path);
+               Web_SL  : Natural := 0;
+               Ver_S   : String (1 .. Types.Max_Desc_Str);
+               Ver_SL  : Natural := 0;
             begin
-               Append_Dependency
-                 (Graph,
-                  Name,
-                  "",
-                  "",
-                  "",
-                  "pkg:alire/" & Name,
-                  1,
-                  False,
-                  Scope,
-                  "Ada");
+               --  Ask the local index for the crate's licence, version and
+               --  source URL (`alr show` answers without network access).
+               --  When the crate is not in the graph yet, bundle them into
+               --  the new entry; otherwise patch them onto the existing one
+               --  so lockfile-resolved dev deps still carry real release
+               --  metadata and a real source link.
+               Alr_Show_Crate
+                 (Name, "", Lic, Lic_Len, Web, Web_Len, Ver, Ver_Len);
+               if Lic_Len > 0 then
+                  Lic_SL := Lic_Len;
+                  for J in 1 .. Lic_Len loop
+                     Lic_S (J) := Lic (J);
+                  end loop;
+               end if;
+               if Web_Len > 0 then
+                  Web_SL := Web_Len;
+                  for J in 1 .. Web_Len loop
+                     Web_S (J) := Web (J);
+                  end loop;
+               end if;
+               if Ver_Len > 0 then
+                  Ver_SL := Ver_Len;
+                  for J in 1 .. Ver_Len loop
+                     Ver_S (J) := Ver (J);
+                  end loop;
+               end if;
+               if Name_In_Graph (Graph, Name) then
+                  Enrich_Existing
+                    (Name, Lic, Lic_Len, Web, Web_Len, Ver, Ver_Len);
+               else
+                  Append_Dependency
+                    (Graph,
+                     Name,
+                     (if Ver_SL > 0 then Ver_S (1 .. Ver_SL) else ""),
+                     (if Lic_SL > 0 then Lic_S (1 .. Lic_SL) else ""),
+                     "",
+                     "pkg:alire/" & Name,
+                     1,
+                     False,
+                     Scope,
+                     "Ada",
+                     (if Web_SL > 0 then Web_S (1 .. Web_SL) else ""));
+               end if;
             end;
          end loop;
       end Register;
@@ -739,6 +975,8 @@ package body Adacovex.Parsers.Manifest is
       Crate_License_Len : Natural := 0;
       Crate_Desc        : Types.Path_Field;
       Crate_Desc_Len    : Natural := 0;
+      Crate_Website     : Types.Path_Field;
+      Crate_Website_Len : Natural := 0;
 
       procedure Flush is
       begin
@@ -767,13 +1005,17 @@ package body Adacovex.Parsers.Manifest is
                   1,
                   False,
                   Classify_Scope (Crate_Name (1 .. Crate_Name_Len)),
-                  "Ada");
+                  "Ada",
+                  (if Crate_Website_Len > 0
+                   then Crate_Website (1 .. Crate_Website_Len)
+                   else ""));
             end;
          end if;
          Crate_Name_Len := 0;
          Crate_Version_Len := 0;
          Crate_License_Len := 0;
          Crate_Desc_Len := 0;
+         Crate_Website_Len := 0;
          Has_Crate := False;
       end Flush;
 
@@ -814,6 +1056,13 @@ package body Adacovex.Parsers.Manifest is
          begin
             if V'Length > 0 then
                Set_Path (Crate_Desc, Crate_Desc_Len, V);
+            end if;
+         end;
+         declare
+            V : constant String := Key_Value (T, "website");
+         begin
+            if V'Length > 0 then
+               Set_Path (Crate_Website, Crate_Website_Len, V);
             end if;
          end;
       end Capture;
@@ -3557,6 +3806,8 @@ package body Adacovex.Parsers.Manifest is
       Root_License_Len : Natural := 0;
       Root_Desc        : Types.Path_Field;
       Root_Desc_Len    : Natural := 0;
+      Root_Website     : Types.Path_Field;
+      Root_Website_Len : Natural := 0;
       Proj_File        : Types.Path_Field;
       Proj_File_Len    : Natural := 0;
       Manifest_OK      : Boolean := False;
@@ -3585,6 +3836,8 @@ package body Adacovex.Parsers.Manifest is
          Root_License_Len,
          Root_Desc,
          Root_Desc_Len,
+         Root_Website,
+         Root_Website_Len,
          Proj_File,
          Proj_File_Len,
          Manifest_OK);
@@ -3717,6 +3970,12 @@ package body Adacovex.Parsers.Manifest is
         (Root.Description,
          Root.Description_Len,
          Root_Desc (1 .. Root_Desc_Len));
+      if Root_Website_Len > 0 then
+         Set_Path
+           (Root.Website,
+            Root.Website_Len,
+            Root_Website (1 .. Root_Website_Len));
+      end if;
       Root.Kind := Types.Root_Component;
       Root.Parent := 0;
       Graph.Append (Root);

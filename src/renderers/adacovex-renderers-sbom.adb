@@ -533,6 +533,21 @@ package body Adacovex.Renderers.SBOM is
       if C.Description_Len > 0 then
          Fld ("description", C.Description (1 .. C.Description_Len), True);
       end if;
+      if C.Website_Len > 0 then
+         --  CycloneDX 1.5 externalReference: source-code repository / project
+         --  homepage.  Preferred over a PURL-derived registry guess so SBOM
+         --  consumers link the real source.
+         if not First_Field then
+            Raw (F, ",");
+         end if;
+         NL (F);
+         Raw (F, Indent);
+         JStr (F, "externalReferences");
+         Raw (F, ": [{""url"": ");
+         JStr (F, C.Website (1 .. C.Website_Len));
+         Raw (F, ", ""type"": ""website""}]");
+         First_Field := False;
+      end if;
       if not First_Field then
          Raw (F, ",");
       end if;
@@ -768,6 +783,12 @@ package body Adacovex.Renderers.SBOM is
       Raw (F, ",");
       NL (F);
       Raw (F, "      ""downloadLocation"": ""NOASSERTION"",");
+      if C.Website_Len > 0 then
+         Raw (F, ",");
+         NL (F);
+         Raw (F, "      ""homepage"": ");
+         JStr (F, C.Website (1 .. C.Website_Len));
+      end if;
       NL (F);
       Raw (F, "      ""filesAnalyzed"": false,");
       NL (F);
@@ -998,6 +1019,15 @@ package body Adacovex.Renderers.SBOM is
          Raw (F, " |");
          NL (F);
       end if;
+      if Root.Website_Len > 0 then
+         Raw (F, "| Source | ");
+         Raw (F, "[");
+         Raw (F, Root.Website (1 .. Root.Website_Len));
+         Raw (F, "](");
+         Raw (F, Root.Website (1 .. Root.Website_Len));
+         Raw (F, ") |");
+         NL (F);
+      end if;
       Raw (F, "| adacovex:proof_level | ");
       Raw (F, Proof_Level);
       Raw (F, " |");
@@ -1027,10 +1057,10 @@ package body Adacovex.Renderers.SBOM is
          Raw
            (F,
             "| Component | Version | Language | License | PURL | Scope | "
-            & "adacovex:proof_level");
+            & "Source | adacovex:proof_level");
          Raw (F, " |");
          NL (F);
-         Raw (F, "|---|---|---|---|---|---|---");
+         Raw (F, "|---|---|---|---|---|---|---|---");
          Raw (F, "|");
          NL (F);
          for I in 2 .. Integer (Graph.Length) loop
@@ -1057,6 +1087,16 @@ package body Adacovex.Renderers.SBOM is
                Raw (F, C.PURL (1 .. C.PURL_Len));
                Raw (F, "` | ");
                Raw (F, Scope_Property (C.Scope));
+               Raw (F, " | ");
+               if C.Website_Len > 0 then
+                  Raw (F, "[");
+                  Raw (F, C.Website (1 .. C.Website_Len));
+                  Raw (F, "](");
+                  Raw (F, C.Website (1 .. C.Website_Len));
+                  Raw (F, ")");
+               else
+                  Raw (F, "-");
+               end if;
                Raw (F, " | ");
                Raw (F, Not_Proved);
                Raw (F, " |");

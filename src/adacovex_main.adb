@@ -459,8 +459,14 @@ begin
       return;
    end if;
 
-   --  Determine ANSI colour support (assume TTY, overridden by NO_COLOR)
-   Use_Color := not Ada.Environment_Variables.Exists ("NO_COLOR");
+   --  Determine ANSI colour support.  Colour is enabled only when the
+   --  environment has not opted out (`NO_COLOR`) and we are not on a CI
+   --  runner (`CI`), so raw ANSI escapes never garble CI logs.  Adacovex
+   --  itself is NO_COLOR-clean elsewhere (dashboards are HTML, SBOMs are
+   --  files); this only governs the terminal summary.
+   Use_Color :=
+     not Ada.Environment_Variables.Exists ("NO_COLOR")
+     and then not Ada.Environment_Variables.Exists ("CI");
 
    TLen := Cfg.Target_Len;
    for I in 1 .. TLen loop
