@@ -144,7 +144,8 @@ is
                         --  licence when the manifest ships none.  Local
                         --  values win; the registry fills the gaps.
                         Resolve_Ecosystem_Metadata
-                          (M.PURL_Kind (1 .. M.PURL_Kind_Len),
+                          (Target_Dir,
+                           M.PURL_Kind (1 .. M.PURL_Kind_Len),
                            N,
                            Lic_Buf,
                            Lic_Len,

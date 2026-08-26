@@ -91,6 +91,32 @@ subprocess starts that removes the main responsiveness cost the dependency
 graph build paid on vendored JavaScript trees (and, by extension, on
 `make prove`, which builds the graph before gnatprove).
 
+### C8: Bundled dashboard assets resolve their licence live
+
+The four vendored dashboard libraries (Charts.css, FlexSearch, nomnoml,
+graphre) no longer carry a hard-coded licence in the SBOM builder.  When a
+loose vendored copy is scanned, the builder resolves the licence (and website)
+from the package registry through `Resolve_Ecosystem_Metadata`, preferring
+`pnpm show <pkg> license` and falling back to `npm`, `yarn`, then `bun` -- the
+same preference chain used for every JavaScript component.  The SBOM and
+Credits tab therefore track the real upstream licence instead of a built-in
+copy that could drift.
+
+### C9: Registry metadata is cached per project, so warm runs skip node
+
+`Resolve_Ecosystem_Metadata` now caches each package's licence, version, and
+website in a per-project store under the project's result cache (the same
+`--cache-dir` the scan uses, so a project that sets its own cache gets an
+isolated meta store), keyed by the target directory as well as the ecosystem
+and package name, with the same 7-day TTL as the system-tool probe cache.  The
+content-addressed result cache does not cover these registry calls (each one
+boots node for npm/pnpm), so a "warm" `adacovex` run still paid for them -- the
+residual slowness on `make prove` after the result cache had already been
+served.  The meta cache removes that cost: the first run resolves and caches,
+and every later run (warm result cache or not) serves the answer from disk with
+zero subprocess spawns.  Keying by the target also means two projects that
+share a cache directory never serve each other's resolved licence or version.
+
 ## Fixes
 
 ### H1: Dependency split-view detail panel works from Tree and Diagram
@@ -151,12 +177,14 @@ is not in `SPARK_Mode On`).
 
   - `HLR-SBOM` -- C1 system dependencies in the dashboard, C2 ecosystem and
     bundled-asset licence resolution, C7 version/website/licence resolution in
-    one JSON call; the SBOM spec carries the resolved licence for vendored
-    packages.
+    one JSON call, C8 live bundled-asset licence via pnpm (then npm/yarn/bun),
+    C9 machine-level registry metadata cache; the SBOM spec carries the
+    resolved licence for vendored packages.
   - `RENDER-HTML` -- C3 detail panel DRY, C4 e2e assertions, H1 split view,
     H2 radar label, H3 doc-coverage caption, H4 nomnoml legend/clicks.
   - `HLR-ARCH` -- C4 e2e tooling reorganisation, C5 10% file-size cap,
-    C6 tokei-style complexity report, H5 single-call registry resolution.
+    C6 tokei-style complexity report, H5 single-call registry resolution,
+    C9 registry metadata machine cache.
   - `HLR-COMPLEXITY` -- C5 file-size cap, C6 tokei report.
 
 See `docs/dashboard.md`, `docs/sbom.md`.

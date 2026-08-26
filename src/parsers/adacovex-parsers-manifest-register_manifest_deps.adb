@@ -10,7 +10,8 @@ separate (Adacovex.Parsers.Manifest)
 --  could not otherwise be resolved.  No garbage links are produced: a
 --  URL is only ever taken from the release metadata, never guessed.
 procedure Register_Manifest_Deps
-  (Graph      : in out Types.Implementation.Component_Vectors.Vector;
+  (Target_Dir : String;
+   Graph      : in out Types.Implementation.Component_Vectors.Vector;
    Base_Names : Name_Vectors.Vector;
    Dev_Names  : Name_Vectors.Vector)
 is
@@ -57,7 +58,9 @@ is
    end Enrich_Existing;
 
    procedure Register
-     (Names : Name_Vectors.Vector; Scope : Types.Component_Scope) is
+     (Target_Dir : String;
+      Names      : Name_Vectors.Vector;
+      Scope      : Types.Component_Scope) is
    begin
       for I in 1 .. Integer (Names.Length) loop
          declare
@@ -83,7 +86,15 @@ is
             --  the existing one so lockfile-resolved dev deps still carry
             --  real release metadata and a real source link.
             Resolve_Ecosystem_Metadata
-              ("alire", Name, Lic, Lic_Len, Ver, Ver_Len, Web, Web_Len);
+              (Target_Dir,
+               "alire",
+               Name,
+               Lic,
+               Lic_Len,
+               Ver,
+               Ver_Len,
+               Web,
+               Web_Len);
             if Lic_Len > 0 then
                Lic_SL := Lic_Len;
                for J in 1 .. Lic_Len loop
@@ -123,6 +134,6 @@ is
       end loop;
    end Register;
 begin
-   Register (Base_Names, Types.Scope_Base);
-   Register (Dev_Names, Types.Scope_Dev);
+   Register (Target_Dir, Base_Names, Types.Scope_Base);
+   Register (Target_Dir, Dev_Names, Types.Scope_Dev);
 end Register_Manifest_Deps;

@@ -1,3 +1,5 @@
+with Ada.Directories;
+
 separate (Adacovex.Parsers.Manifest)
 --  Resolve a component's version, licence and website from its ecosystem
 --  registry CLI, table-driven across every supported ecosystem.  The
@@ -13,8 +15,13 @@ separate (Adacovex.Parsers.Manifest)
 --  rows issue a single `view <pkg> version license homepage --json` call and
 --  parse the JSON, so they boot node only once per component instead of once
 --  per field -- the main responsiveness win for vendored JavaScript trees.
+--
+--  The resolved answer is cached per project (under the project's result
+--  cache, keyed by the target directory) so a warm run never spawns a
+--  registry CLI and one project never serves another's licence or version.
 procedure Resolve_Ecosystem_Metadata
-  (Ecosystem : String;
+  (Target    : String;
+   Ecosystem : String;
    Name      : String;
    License   : out Types.Desc_Field;
    Lic_Len   : out Natural;
@@ -23,6 +30,18 @@ procedure Resolve_Ecosystem_Metadata
    Website   : out Types.Path_Field;
    Web_Len   : out Natural)
 is
+   function Norm_Target (S : String) return String is
+   begin
+      if S'Length = 0 then
+         return S;
+      end if;
+      return Ada.Directories.Full_Name (S);
+   exception
+      when others =>
+         return S;
+   end Norm_Target;
+
+   Target_Norm : constant String := Norm_Target (Target);
    type Eco_Field_Fmt is (Eco_Bare, Eco_Colon, Eco_Token);
 
    type Eco_Field is record
@@ -38,6 +57,8 @@ is
       TLen   : Natural;
       Sub    : String (1 .. 8);
       SLen   : Natural;
+      Sub2   : String (1 .. 8) := (others => ' ');
+      Sub2Ln : Natural := 0;
       V      : Eco_Field;
       L      : Eco_Field;
       W      : Eco_Field;
@@ -45,7 +66,7 @@ is
       Json   : Boolean := False;
    end record;
 
-   Table : constant array (1 .. 5) of Eco_Query :=
+   Table : constant array (1 .. 7) of Eco_Query :=
      (1 =>
         (Kind   => "npm" & (4 .. 7 => ' '),
          KLen   => 3,
@@ -61,6 +82,8 @@ is
            (Field => "homepage" & (9 .. 16 => ' '),
             FLen  => 8,
             Fmt   => Eco_Bare),
+         Sub2   => (others => ' '),
+         Sub2Ln => 0,
          Single => True,
          Json   => True),
       2 =>
@@ -78,9 +101,49 @@ is
            (Field => "homepage" & (9 .. 16 => ' '),
             FLen  => 8,
             Fmt   => Eco_Bare),
+         Sub2   => (others => ' '),
+         Sub2Ln => 0,
          Single => True,
          Json   => True),
       3 =>
+        (Kind   => "yarn" & (5 .. 7 => ' '),
+         KLen   => 4,
+         Tool   => "yarn" & (5 .. 8 => ' '),
+         TLen   => 4,
+         Sub    => "npm" & (4 .. 8 => ' '),
+         SLen   => 3,
+         Sub2   => "info" & (5 .. 8 => ' '),
+         Sub2Ln => 4,
+         V      =>
+           (Field => "version" & (8 .. 16 => ' '), FLen => 7, Fmt => Eco_Bare),
+         L      =>
+           (Field => "license" & (8 .. 16 => ' '), FLen => 7, Fmt => Eco_Bare),
+         W      =>
+           (Field => "homepage" & (9 .. 16 => ' '),
+            FLen  => 8,
+            Fmt   => Eco_Bare),
+         Single => True,
+         Json   => True),
+      4 =>
+        (Kind   => "bun" & (4 .. 7 => ' '),
+         KLen   => 3,
+         Tool   => "bun" & (4 .. 8 => ' '),
+         TLen   => 3,
+         Sub    => "pm" & (3 .. 8 => ' '),
+         SLen   => 2,
+         Sub2   => "view" & (5 .. 8 => ' '),
+         Sub2Ln => 4,
+         V      =>
+           (Field => "version" & (8 .. 16 => ' '), FLen => 7, Fmt => Eco_Bare),
+         L      =>
+           (Field => "license" & (8 .. 16 => ' '), FLen => 7, Fmt => Eco_Bare),
+         W      =>
+           (Field => "homepage" & (9 .. 16 => ' '),
+            FLen  => 8,
+            Fmt   => Eco_Bare),
+         Single => True,
+         Json   => True),
+      5 =>
         (Kind   => "cargo" & (6 .. 7 => ' '),
          KLen   => 5,
          Tool   => "cargo" & (6 .. 8 => ' '),
@@ -93,9 +156,11 @@ is
             FLen  => 7,
             Fmt   => Eco_Token),
          W      => (Field => (others => ' '), FLen => 0, Fmt => Eco_Bare),
+         Sub2   => (others => ' '),
+         Sub2Ln => 0,
          Json   => False,
          Single => False),
-      4 =>
+      6 =>
         (Kind   => "go" & (3 .. 7 => ' '),
          KLen   => 2,
          Tool   => (others => ' '),
@@ -105,9 +170,11 @@ is
          V      => (Field => (others => ' '), FLen => 0, Fmt => Eco_Bare),
          L      => (Field => (others => ' '), FLen => 0, Fmt => Eco_Bare),
          W      => (Field => (others => ' '), FLen => 0, Fmt => Eco_Bare),
+         Sub2   => (others => ' '),
+         Sub2Ln => 0,
          Json   => False,
          Single => False),
-      5 =>
+      7 =>
         (Kind   => "alire" & (6 .. 7 => ' '),
          KLen   => 5,
          Tool   => "alr" & (4 .. 8 => ' '),
@@ -126,6 +193,8 @@ is
            (Field => "Website" & (8 .. 16 => ' '),
             FLen  => 7,
             Fmt   => Eco_Colon),
+         Sub2   => (others => ' '),
+         Sub2Ln => 0,
          Json   => False,
          Single => True));
 
@@ -322,119 +391,208 @@ begin
    if Ecosystem'Length = 0 or else Name'Length = 0 then
       return;
    end if;
-   for I in Table'Range loop
-      if Table (I).KLen = Ecosystem'Length
-        and then Table (I).Kind (1 .. Table (I).KLen) = Ecosystem
-      then
-         if Table (I).TLen = 0 then
+
+   --  Serve from the per-project metadata cache (stored in the project's
+   --  result cache, keyed by the target directory, same 7-day TTL as the
+   --  system-tool probes) so a warm run never spawns a registry CLI.  This
+   --  is what makes `make prove` responsive on the second run: the registry
+   --  calls (node for npm/pnpm) are the one cost the content-addressed
+   --  result cache does not cover, so without this layer they re-ran every
+   --  invocation.
+   declare
+      Found : Boolean;
+   begin
+      Adacovex.Cache.Get_Meta
+        (Target_Norm,
+         Ecosystem,
+         Name,
+         License,
+         Lic_Len,
+         Version,
+         Ver_Len,
+         Website,
+         Web_Len,
+         Found);
+      if Found then
+         return;
+      end if;
+   end;
+
+   declare
+      --  Resolve one table row into the out parameters.  Returns Got = True
+      --  when the spawn produced at least one field (so the caller can stop
+      --  and cache).  Resets the out lengths first so a failed attempt does
+      --  not leak fields from a previous candidate.
+      procedure Resolve_One (J : Positive; Got : out Boolean) is
+      begin
+         Got := False;
+         Lic_Len := 0;
+         Ver_Len := 0;
+         Web_Len := 0;
+         if Table (J).TLen = 0 then
             return;  --  no reliable registry CLI for this ecosystem
 
          end if;
-         Exe := Locate_Exec_On_Path (Table (I).Tool (1 .. Table (I).TLen));
+         Exe := Locate_Exec_On_Path (Table (J).Tool (1 .. Table (J).TLen));
          if Exe = null then
             return;
          end if;
-         if Table (I).Single then
-            if Table (I).Json then
+         if Table (J).Single then
+            if Table (J).Json then
                --  One JSON spawn answers for every field at once, so the
                --  resolver boots node/pnpm only once per component instead of
-               --  once per field.  This is the dominant responsiveness win
-               --  for npm/pnpm vendored trees.
+               --  once per field.  The optional Sub2 (for example yarn's
+               --  `npm info`) is appended before the package name.
                declare
-                  Args : Argument_List (1 .. 6);
+                  Has_Sub2 : constant Boolean := Table (J).Sub2Ln > 0;
+                  Args     : Argument_List (1 .. (if Has_Sub2 then 7 else 6));
+                  N        : Natural := 0;
+                  procedure Add (S : String) is
+                  begin
+                     N := N + 1;
+                     Args (N) := new String'(S);
+                  end Add;
                begin
-                  Args (1) := new String'(Table (I).Sub (1 .. Table (I).SLen));
-                  Args (2) := new String'(Name);
-                  Args (3) := new String'("version");
-                  Args (4) := new String'("license");
-                  Args (5) := new String'("homepage");
-                  Args (6) := new String'("--json");
-                  Capture (Args);
-                  Free (Args (1));
-                  Free (Args (2));
-                  Free (Args (3));
-                  Free (Args (4));
-                  Free (Args (5));
-                  Free (Args (6));
+                  Add (Table (J).Sub (1 .. Table (J).SLen));
+                  if Has_Sub2 then
+                     Add (Table (J).Sub2 (1 .. Table (J).Sub2Ln));
+                  end if;
+                  Add (Name);
+                  Add ("version");
+                  Add ("license");
+                  Add ("homepage");
+                  Add ("--json");
+                  Capture (Args (1 .. N));
+                  for X in 1 .. N loop
+                     Free (Args (X));
+                  end loop;
                end;
-               declare
-                  V : constant String := Json_Value ("version");
-               begin
-                  Set_Field (Version, Ver_Len, V);
-               end;
-               declare
-                  V : constant String := Json_Value ("license");
-               begin
-                  Set_Field (License, Lic_Len, V);
-               end;
-               declare
-                  V : constant String := Json_Value ("homepage");
-               begin
-                  Set_Path (Website, Web_Len, V);
-               end;
+               Set_Field (Version, Ver_Len, Json_Value ("version"));
+               Set_Field (License, Lic_Len, Json_Value ("license"));
+               Set_Path (Website, Web_Len, Json_Value ("homepage"));
             else
                declare
                   Args : Argument_List (1 .. 2);
                begin
-                  Args (1) := new String'(Table (I).Sub (1 .. Table (I).SLen));
+                  Args (1) := new String'(Table (J).Sub (1 .. Table (J).SLen));
                   Args (2) := new String'(Name);
                   Capture (Args);
                   Free (Args (1));
                   Free (Args (2));
                end;
-               Extract_Desc (Table (I).V, Version, Ver_Len);
-               Extract_Desc (Table (I).L, License, Lic_Len);
-               Extract_Path (Table (I).W, Website, Web_Len);
+               Extract_Desc (Table (J).V, Version, Ver_Len);
+               Extract_Desc (Table (J).L, License, Lic_Len);
+               Extract_Path (Table (J).W, Website, Web_Len);
             end if;
          else
-            if Table (I).V.FLen > 0 then
+            if Table (J).V.FLen > 0 then
                declare
                   Args : Argument_List (1 .. 3);
                begin
-                  Args (1) := new String'(Table (I).Sub (1 .. Table (I).SLen));
+                  Args (1) := new String'(Table (J).Sub (1 .. Table (J).SLen));
                   Args (2) := new String'(Name);
                   Args (3) :=
-                    new String'(Table (I).V.Field (1 .. Table (I).V.FLen));
+                    new String'(Table (J).V.Field (1 .. Table (J).V.FLen));
                   Capture (Args);
                   Free (Args (1));
                   Free (Args (2));
                   Free (Args (3));
                end;
-               Extract_Desc (Table (I).V, Version, Ver_Len);
+               Extract_Desc (Table (J).V, Version, Ver_Len);
             end if;
-            if Table (I).L.FLen > 0 then
+            if Table (J).L.FLen > 0 then
                declare
                   Args : Argument_List (1 .. 3);
                begin
-                  Args (1) := new String'(Table (I).Sub (1 .. Table (I).SLen));
+                  Args (1) := new String'(Table (J).Sub (1 .. Table (J).SLen));
                   Args (2) := new String'(Name);
                   Args (3) :=
-                    new String'(Table (I).L.Field (1 .. Table (I).L.FLen));
+                    new String'(Table (J).L.Field (1 .. Table (J).L.FLen));
                   Capture (Args);
                   Free (Args (1));
                   Free (Args (2));
                   Free (Args (3));
                end;
-               Extract_Desc (Table (I).L, License, Lic_Len);
+               Extract_Desc (Table (J).L, License, Lic_Len);
             end if;
-            if Table (I).W.FLen > 0 then
+            if Table (J).W.FLen > 0 then
                declare
                   Args : Argument_List (1 .. 3);
                begin
-                  Args (1) := new String'(Table (I).Sub (1 .. Table (I).SLen));
+                  Args (1) := new String'(Table (J).Sub (1 .. Table (J).SLen));
                   Args (2) := new String'(Name);
                   Args (3) :=
-                    new String'(Table (I).W.Field (1 .. Table (I).W.FLen));
+                    new String'(Table (J).W.Field (1 .. Table (J).W.FLen));
                   Capture (Args);
                   Free (Args (1));
                   Free (Args (2));
                   Free (Args (3));
                end;
-               Extract_Path (Table (I).W, Website, Web_Len);
+               Extract_Path (Table (J).W, Website, Web_Len);
             end if;
          end if;
          Free (Exe);
-         return;
+         Got := (Lic_Len > 0 or else Ver_Len > 0 or else Web_Len > 0);
+      end Resolve_One;
+
+      Is_Js    : constant Boolean :=
+        Ecosystem = "npm"
+        or else Ecosystem = "pnpm"
+        or else Ecosystem = "yarn"
+        or else Ecosystem = "bun";
+      Js_Order : constant array (1 .. 4) of String (1 .. 7) :=
+        ("pnpm   ", "npm    ", "yarn   ", "bun    ");
+      Got      : Boolean := False;
+      J        : Natural := 0;
+   begin
+      if Is_Js then
+         --  JavaScript packages resolve through whichever package manager is
+         --  installed, preferring pnpm, then npm, then yarn, then bun.  The
+         --  first manager that answers wins; a missing or failing manager
+         --  falls through to the next without costing a correct answer.
+         for K in Js_Order'Range loop
+            J := 0;
+            for I in Table'Range loop
+               if Table (I).KLen > 0
+                 and then Table (I).Kind (1 .. Table (I).KLen)
+                          = Js_Order (K) (1 .. Table (I).KLen)
+               then
+                  J := I;
+                  exit;
+               end if;
+            end loop;
+            if J /= 0 then
+               Resolve_One (J, Got);
+               if Got then
+                  Adacovex.Cache.Put_Meta
+                    (Target_Norm,
+                     Ecosystem,
+                     Name,
+                     License (1 .. Lic_Len),
+                     Version (1 .. Ver_Len),
+                     Website (1 .. Web_Len));
+                  return;
+               end if;
+            end if;
+         end loop;
+      else
+         for I in Table'Range loop
+            if Table (I).KLen = Ecosystem'Length
+              and then Table (I).Kind (1 .. Table (I).KLen) = Ecosystem
+            then
+               Resolve_One (I, Got);
+               if Got then
+                  Adacovex.Cache.Put_Meta
+                    (Target_Norm,
+                     Ecosystem,
+                     Name,
+                     License (1 .. Lic_Len),
+                     Version (1 .. Ver_Len),
+                     Website (1 .. Web_Len));
+               end if;
+               return;
+            end if;
+         end loop;
       end if;
-   end loop;
+   end;
 end Resolve_Ecosystem_Metadata;

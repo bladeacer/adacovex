@@ -66,54 +66,45 @@ is
    --  (resources/*.js|css); their versions are stable build-time
    --  constants (also listed in the Credits tab and docs/dashboard.md).
    --  adacovex's own dashboard sources match none of these and never
-   --  become packages.
+   --  become packages.  The licence and website are no longer hard-coded:
+   --  the caller resolves them live from the registry (preferring pnpm,
+   --  then npm, then yarn, then bun) via Resolve_Ecosystem_Metadata, so
+   --  the SBOM and Credits tab track the real upstream licence.
    function Bundled_Library
      (Raw      : String;
       Npm_Name : out Lib_Name_Field;
       NN       : out Natural;
       Lib_Ver  : out Lib_Name_Field;
-      VN       : out Natural;
-      Lib_Lic  : out Lib_Name_Field;
-      LL       : out Natural) return Boolean
+      VN       : out Natural) return Boolean
    is
       N : String (1 .. 32) := (others => ' ');
       V : String (1 .. 32) := (others => ' ');
-      L : String (1 .. 32) := (others => ' ');
    begin
       if Raw = "flexsearch" then
          N (1 .. 10) := "flexsearch";
          NN := 10;
          V (1 .. 6) := "0.7.31";
          VN := 6;
-         L (1 .. 10) := "Apache-2.0";
-         LL := 10;
       elsif Raw = "nomnoml" then
          N (1 .. 7) := "nomnoml";
          NN := 7;
          V (1 .. 5) := "1.7.0";
          VN := 5;
-         L (1 .. 3) := "MIT";
-         LL := 3;
       elsif Raw = "graphre" then
          N (1 .. 7) := "graphre";
          NN := 7;
          V (1 .. 5) := "0.1.3";
          VN := 5;
-         L (1 .. 3) := "MIT";
-         LL := 3;
       elsif Raw = "charts.min" then
          N (1 .. 10) := "charts.css";
          NN := 10;
          V (1 .. 5) := "1.2.0";
          VN := 5;
-         L (1 .. 3) := "MIT";
-         LL := 3;
       else
          return False;
       end if;
       Npm_Name := N;
       Lib_Ver := V;
-      Lib_Lic := L;
       return True;
    end Bundled_Library;
 
@@ -149,27 +140,44 @@ is
       --  The component name is the raw base name, bounded to 64.
       NLen := Raw_Len;
       Name (1 .. NLen) := Raw (1 .. NLen);
-      --  Known bundled libraries get their upstream npm name, version
-      --  and PURL; everything else keeps the generic fallback.  The
-      --  language comes from the asset's extension (.js -> JavaScript,
+      --  Known bundled libraries get their upstream npm name and version,
+      --  and a PURL; everything else keeps the generic fallback.  The
+      --  licence and website are resolved live from the registry (preferring
+      --  pnpm, then npm, then yarn, then bun) so the SBOM and Credits tab
+      --  track the real upstream licence rather than a built-in copy.  The
+      --  version stays the build-time constant (the actual vendored file).
+      --  The language comes from the asset's extension (.js -> JavaScript,
       --  .css -> CSS), like every other vendored file.
       declare
          NN       : Natural := 0;
          VN       : Natural := 0;
-         LN       : Natural := 0;
          Npm_Name : Lib_Name_Field := (others => ' ');
          Lib_Ver  : Lib_Name_Field := (others => ' ');
-         Lib_Lic  : Lib_Name_Field := (others => ' ');
+         Lic      : Types.Desc_Field := (others => ' ');
+         Lic_Len  : Natural := 0;
+         Ver      : Types.Desc_Field := (others => ' ');
+         Ver_Len  : Natural := 0;
+         Web      : Types.Path_Field := (others => ' ');
+         Web_Len  : Natural := 0;
       begin
-         if Bundled_Library
-              (Raw (1 .. Raw_Len), Npm_Name, NN, Lib_Ver, VN, Lib_Lic, LN)
+         if Bundled_Library (Raw (1 .. Raw_Len), Npm_Name, NN, Lib_Ver, VN)
          then
+            Resolve_Ecosystem_Metadata
+              (Target_Dir,
+               "npm",
+               Npm_Name (1 .. NN),
+               Lic,
+               Lic_Len,
+               Ver,
+               Ver_Len,
+               Web,
+               Web_Len);
             Append_Dependency
               (Graph,
                Npm_Name (1 .. NN),
                Lib_Ver (1 .. VN),
-               Lib_Lic (1 .. LN),
-               "",
+               Lic (1 .. Lic_Len),
+               Web (1 .. Web_Len),
                "pkg:npm/" & Npm_Name (1 .. NN) & "@" & Lib_Ver (1 .. VN),
                1,
                False,

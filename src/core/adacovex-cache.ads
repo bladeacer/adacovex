@@ -141,6 +141,54 @@ package Adacovex.Cache is
    --  @param Value  Version string (may be empty).
    procedure Put_Probe (Tool : String; Value : String);
 
+   --  Registry-metadata cache for vendored packages.  The graph builder
+   --  resolves a package's licence, version, and website from its ecosystem
+   --  registry CLI (npm/pnpm/cargo/...).  Those calls boot a subprocess
+   --  (node for npm/pnpm) and are not covered by the content-addressed
+   --  result cache, so a "warm" run still paid for them -- that was the
+   --  main residual slowness on `make prove`.  This cache mirrors the
+   --  system-tool probe cache: the answers live in a machine-local
+   --  `~/.adacovex/meta/` directory, outside the result cache, with the same
+   --  7-day TTL, so a warm run serves them from disk with zero subprocess
+   --  spawns.  A re-resolution (and re-cache) happens only when the entry is
+   --  missing or older than the TTL.
+   --  @param Ecosystem  PURL type (npm, pnpm, cargo, ...).
+   --  @param Name       Package name.
+   --  @param License    Output licence string (may be empty).
+   --  @param Lic_Len    Length of the licence string.
+   --  @param Version    Output version string (may be empty).
+   --  @param Ver_Len    Length of the version string.
+   --  @param Website    Output website string (may be empty).
+   --  @param Web_Len    Length of the website string.
+   --  @param Found      True when a fresh entry existed.
+   procedure Get_Meta
+     (Target    : String;
+      Ecosystem : String;
+      Name      : String;
+      License   : out String;
+      Lic_Len   : out Natural;
+      Version   : out String;
+      Ver_Len   : out Natural;
+      Website   : out String;
+      Web_Len   : out Natural;
+      Found     : out Boolean);
+
+   --  Store a registry-metadata result on disk (overwrites any existing entry
+   --  for the ecosystem/package pair).
+   --  @param Target     Project directory the package belongs to.
+   --  @param Ecosystem  PURL type.
+   --  @param Name       Package name.
+   --  @param License    Licence string (may be empty).
+   --  @param Version    Version string (may be empty).
+   --  @param Website    Website string (may be empty).
+   procedure Put_Meta
+     (Target    : String;
+      Ecosystem : String;
+      Name      : String;
+      License   : String;
+      Version   : String;
+      Website   : String);
+
    --  Serialize an arbitrary streamable value to and from a cache-blob String
    --  using an in-memory stream.  The generic supports any type whose
    --  components are streamable (bounded strings, scalars, enums,
