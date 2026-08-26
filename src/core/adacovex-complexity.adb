@@ -508,6 +508,32 @@ package body Adacovex.Complexity is
       Result.Path_Len := Path'Length;
       Result.Path (1 .. Result.Path_Len) := Path;
 
+      --  Language is derived from the file extension (tokei-style).  The
+      --  complexity scanner only opens Ada sources, so this resolves to "Ada".
+      declare
+         Dot : Natural := 0;
+         Ext : String (1 .. 4);
+         EL  : Natural := 0;
+      begin
+         for I in reverse Path'Range loop
+            if Path (I) = '.' then
+               Dot := I;
+               exit;
+            end if;
+         end loop;
+         if Dot > Path'First and then Path'Last - Dot <= 4 then
+            EL := Path'Last - Dot;
+            Ext (1 .. EL) := Path (Dot + 1 .. Path'Last);
+            if (EL = 3
+                and then (Ext (1 .. 3) = "ads" or else Ext (1 .. 3) = "adb"))
+              or else (EL = 4 and then Ext (1 .. 4) = "ada")
+            then
+               Result.Language_Len := 3;
+               Result.Language (1 .. 3) := "Ada";
+            end if;
+         end if;
+      end;
+
       begin
          Open (F, In_File, Path);
       exception
@@ -538,7 +564,11 @@ package body Adacovex.Complexity is
          begin
             Line_No := Line_No + 1;
             Adacovex.Parsers.Read_Line (F, Path, Line_No, Raw, Last_Raw, Ovl);
+            Result.Total_Lines := Result.Total_Lines + 1;
             if Ovl then
+               --  An over-long line is still one physical line; it carried
+               --  source content, so it counts as code.
+               Result.Code_Lines := Result.Code_Lines + 1;
                goto Next_Line;
             end if;
             RL := Last_Raw;
@@ -565,14 +595,25 @@ package body Adacovex.Complexity is
             begin
                Do_Strip;
             end;
+            declare
+               Raw_T : constant String := Trim (Raw_S (1 .. RL));
+            begin
+               if Raw_T'Length = 0 then
+                  --  Whitespace-only line: a blank line.
+                  Result.Blank_Lines := Result.Blank_Lines + 1;
+               elsif Raw_T (Raw_T'First) = '-'
+                 and then Raw_T (Raw_T'First + 1) = '-'
+               then
+                  --  A line whose only content is a comment.
+                  Result.Comment_Lines := Result.Comment_Lines + 1;
+               else
+                  LOC := LOC + 1;
+                  Result.Code_Lines := Result.Code_Lines + 1;
+               end if;
+            end;
             if CLen = 0 then
                goto Next_Line;
             end if;
-            if Clean (Clean'First) = '-' and then Clean (Clean'First + 1) = '-'
-            then
-               goto Next_Line;
-            end if;
-            LOC := LOC + 1;
             Decisions := Count_Decisions (Raw_S (1 .. RL));
             Detect_Package
               (Clean (Clean'First .. Clean'First + CLen - 1),
@@ -791,13 +832,107 @@ package body Adacovex.Complexity is
    is
       Marker : String (1 .. 40) := (others => ' ');
       MLen   : Natural := 0;
+
+      --  Per-language aggregates for the tokei-style summary block.
+      type Lang_Agg is record
+         Name     : String (1 .. 16);
+         NLen     : Natural := 0;
+         Files    : Natural := 0;
+         Lines    : Natural := 0;
+         Code     : Natural := 0;
+         Comments : Natural := 0;
+         Blanks   : Natural := 0;
+      end record;
+      package Lang_Vecs is new Ada.Containers.Vectors (Positive, Lang_Agg);
+      Langs : Lang_Vecs.Vector;
+
+      function Img (N : Natural) return String
+      is (Trim (Natural'Image (N)));
+
+      procedure Add_Lang (Lang : String; L, C, Comm, B : Natural) is
+      begin
+         for I in 1 .. Integer (Langs.Length) loop
+            if Langs (I).NLen = Lang'Length
+              and then Langs (I).Name (1 .. Lang'Length) = Lang
+            then
+               Langs (I).Files := Langs (I).Files + 1;
+               Langs (I).Lines := Langs (I).Lines + L;
+               Langs (I).Code := Langs (I).Code + C;
+               Langs (I).Comments := Langs (I).Comments + Comm;
+               Langs (I).Blanks := Langs (I).Blanks + B;
+               return;
+            end if;
+         end loop;
+         declare
+            A : Lang_Agg;
+         begin
+            A.NLen := Lang'Length;
+            A.Name (1 .. Lang'Length) := Lang;
+            A.Files := 1;
+            A.Lines := L;
+            A.Code := C;
+            A.Comments := Comm;
+            A.Blanks := B;
+            Langs.Append (A);
+         end;
+      end Add_Lang;
    begin
-      Ada.Text_IO.Put_Line ("file" & (58 - 4 => ' ') & " loc     %   cx");
+      --  Aggregate the tokei-style metrics per programming language.
+      for I in 1 .. Integer (Result.Files.Length) loop
+         declare
+            FM : File_Metrics renames Result.Files (I);
+            L  : constant String :=
+              (if FM.Language_Len > 0
+               then FM.Language (1 .. FM.Language_Len)
+               else "Unknown");
+         begin
+            Add_Lang
+              (L,
+               FM.Total_Lines,
+               FM.Code_Lines,
+               FM.Comment_Lines,
+               FM.Blank_Lines);
+         end;
+      end loop;
+
+      --  Tokei-style summary: one row per language.
+      Ada.Text_IO.Put_Line
+        ("Language              Files      Lines       Code   Comments      Blanks");
+      for I in 1 .. Integer (Langs.Length) loop
+         declare
+            A  : Lang_Agg renames Langs (I);
+            Nm : constant String := A.Name (1 .. A.NLen);
+         begin
+            Ada.Text_IO.Put (Nm);
+            for J in A.NLen + 1 .. 22 loop
+               Ada.Text_IO.Put (' ');
+            end loop;
+            Ada.Text_IO.Put_Line
+              (Img (A.Files)
+               & "   "
+               & Img (A.Lines)
+               & "   "
+               & Img (A.Code)
+               & "   "
+               & Img (A.Comments)
+               & "   "
+               & Img (A.Blanks));
+         end;
+      end loop;
+      Ada.Text_IO.New_Line;
+
+      --  Per-file tokei-style detail: language, total/code/comment/blank
+      --  line counts, then the complexity gate columns.
+      Ada.Text_IO.Put_Line ("Per-file:");
       for I in 1 .. Integer (Result.Files.Length) loop
          declare
             FM    : File_Metrics renames Result.Files (I);
             Pct   : Natural := 0;
             Start : Natural := 1;
+            Lang  : constant String :=
+              (if FM.Language_Len > 0
+               then FM.Language (1 .. FM.Language_Len)
+               else "Unknown");
          begin
             if Result.Total_LOC > 0 then
                Pct := (FM.LOC * 100) / Result.Total_LOC;
@@ -822,19 +957,26 @@ package body Adacovex.Complexity is
                Marker (1 .. 16) := "  <-- god object";
                MLen := 16;
             end if;
-            if FM.Path_Len > 58 then
-               Start := FM.Path_Len - 57;
+            if FM.Path_Len > 60 then
+               Start := FM.Path_Len - 59;
             end if;
             Ada.Text_IO.Put (FM.Path (Start .. FM.Path_Len));
-            for J in FM.Path_Len - Start + 1 .. 58 loop
-               Ada.Text_IO.Put (' ');
-            end loop;
-            Ada.Text_IO.Put (Natural'Image (FM.LOC));
-            Ada.Text_IO.Put (' ');
-            Ada.Text_IO.Put (Natural'Image (Pct));
-            Ada.Text_IO.Put ('%');
-            Ada.Text_IO.Put (' ');
-            Ada.Text_IO.Put (Natural'Image (FM.Complexity));
+            Ada.Text_IO.Put ("  [");
+            Ada.Text_IO.Put (Lang);
+            Ada.Text_IO.Put ("]  L=");
+            Ada.Text_IO.Put (Img (FM.Total_Lines));
+            Ada.Text_IO.Put (" C=");
+            Ada.Text_IO.Put (Img (FM.Code_Lines));
+            Ada.Text_IO.Put (" M=");
+            Ada.Text_IO.Put (Img (FM.Comment_Lines));
+            Ada.Text_IO.Put (" B=");
+            Ada.Text_IO.Put (Img (FM.Blank_Lines));
+            Ada.Text_IO.Put ("  loc=");
+            Ada.Text_IO.Put (Img (FM.LOC));
+            Ada.Text_IO.Put (" (");
+            Ada.Text_IO.Put (Img (Pct));
+            Ada.Text_IO.Put ("%) cx=");
+            Ada.Text_IO.Put (Img (FM.Complexity));
             if MLen > 0 then
                Ada.Text_IO.Put (Marker (1 .. MLen));
             end if;

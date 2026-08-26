@@ -639,7 +639,7 @@ begin
            Adacovex.Complexity.Check_Gates
              (Res,
               Max_File_LOC        => 4000,
-              Max_File_Pct        => 20,
+              Max_File_Pct        => 10,
               Max_Fn_Complexity   => 120,
               Max_File_Complexity => 600);
       begin
@@ -650,7 +650,7 @@ begin
             Check_Mode          => True,
             Violations          => V,
             Max_File_LOC        => 4000,
-            Max_File_Pct        => 20,
+            Max_File_Pct        => 10,
             Max_Fn_Complexity   => 120,
             Max_File_Complexity => 600);
          Ada.Command_Line.Set_Exit_Status
