@@ -9,7 +9,10 @@ separate (Adacovex.Parsers.Manifest)
 --  tool so the resolver returns quietly and the vendored-manifest scanner
 --  still reads any in-repo licence file.  The alr row folds the former
 --  Alr_Show_Crate path into the same table: one `alr show` answers for
---  version, licence and website without network access.
+--  version, licence and website without network access.  The npm and pnpm
+--  rows issue a single `view <pkg> version license homepage --json` call and
+--  parse the JSON, so they boot node only once per component instead of once
+--  per field -- the main responsiveness win for vendored JavaScript trees.
 procedure Resolve_Ecosystem_Metadata
   (Ecosystem : String;
    Name      : String;
@@ -39,6 +42,7 @@ is
       L      : Eco_Field;
       W      : Eco_Field;
       Single : Boolean;
+      Json   : Boolean := False;
    end record;
 
    Table : constant array (1 .. 5) of Eco_Query :=
@@ -57,7 +61,8 @@ is
            (Field => "homepage" & (9 .. 16 => ' '),
             FLen  => 8,
             Fmt   => Eco_Bare),
-         Single => False),
+         Single => True,
+         Json   => True),
       2 =>
         (Kind   => "pnpm" & (5 .. 7 => ' '),
          KLen   => 4,
@@ -73,7 +78,8 @@ is
            (Field => "homepage" & (9 .. 16 => ' '),
             FLen  => 8,
             Fmt   => Eco_Bare),
-         Single => False),
+         Single => True,
+         Json   => True),
       3 =>
         (Kind   => "cargo" & (6 .. 7 => ' '),
          KLen   => 5,
@@ -87,6 +93,7 @@ is
             FLen  => 7,
             Fmt   => Eco_Token),
          W      => (Field => (others => ' '), FLen => 0, Fmt => Eco_Bare),
+         Json   => False,
          Single => False),
       4 =>
         (Kind   => "go" & (3 .. 7 => ' '),
@@ -98,6 +105,7 @@ is
          V      => (Field => (others => ' '), FLen => 0, Fmt => Eco_Bare),
          L      => (Field => (others => ' '), FLen => 0, Fmt => Eco_Bare),
          W      => (Field => (others => ' '), FLen => 0, Fmt => Eco_Bare),
+         Json   => False,
          Single => False),
       5 =>
         (Kind   => "alire" & (6 .. 7 => ' '),
@@ -118,6 +126,7 @@ is
            (Field => "Website" & (8 .. 16 => ' '),
             FLen  => 7,
             Fmt   => Eco_Colon),
+         Json   => False,
          Single => True));
 
    Pid     : constant Integer := Pid_To_Integer (Current_Process_Id);
@@ -268,6 +277,44 @@ is
       end loop;
    end Extract_Path;
 
+   --  Return the quoted string value for "Key" inside a JSON object held in
+   --  Buf (for example "version": "1.2.3").  "" when the key is absent or
+   --  not a string.  A single --json spawn answers for every field, so this
+   --  is the only parse path for npm/pnpm.
+   function Json_Value (Key : String) return String is
+      S  : constant String := Buf (1 .. BLen);
+      KT : constant String := '"' & Key & '"';
+      P  : constant Natural := Ada.Strings.Fixed.Index (S, KT);
+      Q  : Natural;
+      R  : Natural;
+   begin
+      if P = 0 then
+         return "";
+      end if;
+      Q := P + KT'Length;
+      while Q <= S'Last and then S (Q) /= ':' loop
+         Q := Q + 1;
+      end loop;
+      if Q > S'Last then
+         return "";
+      end if;
+      Q := Q + 1;
+      while Q <= S'Last and then (S (Q) = ' ' or else S (Q) = ASCII.HT) loop
+         Q := Q + 1;
+      end loop;
+      if Q > S'Last or else S (Q) /= '"' then
+         return "";
+      end if;
+      R := Q + 1;
+      while R <= S'Last and then S (R) /= '"' loop
+         R := R + 1;
+      end loop;
+      if R > S'Last then
+         return "";
+      end if;
+      return S (Q + 1 .. R - 1);
+   end Json_Value;
+
 begin
    Lic_Len := 0;
    Ver_Len := 0;
@@ -288,18 +335,57 @@ begin
             return;
          end if;
          if Table (I).Single then
-            declare
-               Args : Argument_List (1 .. 2);
-            begin
-               Args (1) := new String'(Table (I).Sub (1 .. Table (I).SLen));
-               Args (2) := new String'(Name);
-               Capture (Args);
-               Free (Args (1));
-               Free (Args (2));
-            end;
-            Extract_Desc (Table (I).V, Version, Ver_Len);
-            Extract_Desc (Table (I).L, License, Lic_Len);
-            Extract_Path (Table (I).W, Website, Web_Len);
+            if Table (I).Json then
+               --  One JSON spawn answers for every field at once, so the
+               --  resolver boots node/pnpm only once per component instead of
+               --  once per field.  This is the dominant responsiveness win
+               --  for npm/pnpm vendored trees.
+               declare
+                  Args : Argument_List (1 .. 6);
+               begin
+                  Args (1) := new String'(Table (I).Sub (1 .. Table (I).SLen));
+                  Args (2) := new String'(Name);
+                  Args (3) := new String'("version");
+                  Args (4) := new String'("license");
+                  Args (5) := new String'("homepage");
+                  Args (6) := new String'("--json");
+                  Capture (Args);
+                  Free (Args (1));
+                  Free (Args (2));
+                  Free (Args (3));
+                  Free (Args (4));
+                  Free (Args (5));
+                  Free (Args (6));
+               end;
+               declare
+                  V : constant String := Json_Value ("version");
+               begin
+                  Set_Field (Version, Ver_Len, V);
+               end;
+               declare
+                  V : constant String := Json_Value ("license");
+               begin
+                  Set_Field (License, Lic_Len, V);
+               end;
+               declare
+                  V : constant String := Json_Value ("homepage");
+               begin
+                  Set_Path (Website, Web_Len, V);
+               end;
+            else
+               declare
+                  Args : Argument_List (1 .. 2);
+               begin
+                  Args (1) := new String'(Table (I).Sub (1 .. Table (I).SLen));
+                  Args (2) := new String'(Name);
+                  Capture (Args);
+                  Free (Args (1));
+                  Free (Args (2));
+               end;
+               Extract_Desc (Table (I).V, Version, Ver_Len);
+               Extract_Desc (Table (I).L, License, Lic_Len);
+               Extract_Path (Table (I).W, Website, Web_Len);
+            end if;
          else
             if Table (I).V.FLen > 0 then
                declare

@@ -60,6 +60,37 @@ The ad-hoc `repro*.mjs` scripts at the root of `tests/e2e/` moved into
 spec, and the server bootstrap. The spec gains assertions for the split-view
 toggle and the system-dependency badge.
 
+### C5: No source file may exceed 10% of the codebase
+
+The complexity gate now rejects any source file that exceeds 10% of the total
+codebase size (the `Max_File_Pct` gate in `adacovex_main.adb`), so a single
+"god object" can no longer dominate the tree. The gate counts only real
+subprogram-bearing code -- comments, blanks, and inline specs are excluded --
+and fails loudly with the offending file and its share; `make complexity-check`
+exits non-zero when the cap is breached.
+
+### C6: Complexity report reads like tokei
+
+`adacovex complexity` now prints a tokei-style summary (total files, lines,
+code, comments, blanks, and the codebase loc percentage) followed by a
+per-file table. Each per-file row reports `Lines=`, `Code=`, `Comments=`,
+`Blanks=`, the loc percentage, and the cyclomatic complexity `cx=`, with a
+legend line `Per-file (Lines / Code / Comments / Blanks / loc % / cx):`.
+Over-long comment blocks and dash-only separator lines are classified as
+comments, not code, so the counts match a plain `wc`-style read.
+
+### C7: Registry lookups fetch version, website, and licence in one call
+
+`Resolve_Ecosystem_Metadata` now resolves the version, website, and licence
+for a vendored package from the registry CLI (previously licence-only), and
+`alr show` is folded into the same dispatch table so the three fields come from
+one place for every ecosystem. The npm and pnpm rows issue a single
+`view <pkg> version license homepage --json` call and parse the JSON, so they
+boot node once per component instead of once per field -- a 3x reduction in
+subprocess starts that removes the main responsiveness cost the dependency
+graph build paid on vendored JavaScript trees (and, by extension, on
+`make prove`, which builds the graph before gnatprove).
+
 ## Fixes
 
 ### H1: Dependency split-view detail panel works from Tree and Diagram
@@ -95,6 +126,14 @@ slack around each box and, when boxes overlap, picks the smallest enclosing
 box, so the tight text boxes are easy to hit and clicks near a boundary open
 the right dependency.
 
+### H5: Dependency graph build no longer spawns three registry calls per npm/pnpm component
+
+1.30.0's licence fallback (C2) spawned one `npm view`/`pnpm show` per field,
+so each vendored JavaScript component started three node processes. The graph
+build now resolves the three fields from one `--json` call (C7), cutting the
+node boots per component by 3x and removing the stall that made `make prove`
+and self-assessment feel slow even with the result cache warm.
+
 ## Test Suite
 
 973 tests passing across 14 categories (unchanged: the dependency enrichment
@@ -111,10 +150,13 @@ is not in `SPARK_Mode On`).
 ## Traceability
 
   - `HLR-SBOM` -- C1 system dependencies in the dashboard, C2 ecosystem and
-    bundled-asset licence resolution; the SBOM spec carries the resolved
-    licence for vendored packages.
+    bundled-asset licence resolution, C7 version/website/licence resolution in
+    one JSON call; the SBOM spec carries the resolved licence for vendored
+    packages.
   - `RENDER-HTML` -- C3 detail panel DRY, C4 e2e assertions, H1 split view,
     H2 radar label, H3 doc-coverage caption, H4 nomnoml legend/clicks.
-  - `HLR-ARCH` -- C4 e2e tooling reorganisation.
+  - `HLR-ARCH` -- C4 e2e tooling reorganisation, C5 10% file-size cap,
+    C6 tokei-style complexity report, H5 single-call registry resolution.
+  - `HLR-COMPLEXITY` -- C5 file-size cap, C6 tokei report.
 
 See `docs/dashboard.md`, `docs/sbom.md`.
