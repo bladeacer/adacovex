@@ -42,6 +42,8 @@ Description     : Path_Field;
 Description_Len : Natural := 0;
 Language        : Desc_Field;
 Language_Len    : Natural := 0;
+Website         : Path_Field;
+Website_Len     : Natural := 0;
 Kind            : Component_Kind := Dependency_Component;
 Parent          : Natural := 0;
 From_GPR        : Boolean := False;

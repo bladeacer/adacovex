@@ -3,19 +3,20 @@
   "specVersion": "1.5",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-08-25T14:05:15",
+    "timestamp": "2026-08-25T14:05:51",
     "tools": [
-      {"vendor": "bladeacer", "name": "adacovex", "version": "1.28.0"}
+      {"vendor": "bladeacer", "name": "adacovex", "version": "1.29.0"}
     ],
     "component": {
       "type": "application",
-      "bom-ref": "pkg:alire/covex@1.28.0",
+      "bom-ref": "pkg:alire/covex@1.29.0",
       "name": "covex",
-      "version": "1.28.0",
+      "version": "1.29.0",
       "language": "Ada; Python; JavaScript",
-      "purl": "pkg:alire/covex@1.28.0",
+      "purl": "pkg:alire/covex@1.29.0",
       "licenses": [{"license": {"id": "Apache-2.0"}}],
       "description": "Ada/SPARK coverage, proof, multi-standard compliance tool",
+      "externalReferences": [{"url": "https://github.com/bladeacer/adacovex", "type": "website"}],
       "properties": [{"name": "adacovex:proof_level", "value": "Platinum"}, {"name": "adacovex:standard", "value": "DO-178C, ISO 26262, IEC 62304"}, {"name": "adacovex:dal_target", "value": "DAL-C"}, {"name": "adacovex:level", "value": "DAL-C / ASIL B / Class A"}]
       }
   },
@@ -69,24 +70,33 @@
       "type": "library",
       "bom-ref": "pkg:alire/gnatprove",
       "name": "gnatprove",
+      "version": "16.1.0",
       "language": "Ada",
       "purl": "pkg:alire/gnatprove",
+      "licenses": [{"license": {"id": "GPL-3.0-or-later"}}],
+      "externalReferences": [{"url": "https://docs.adacore.com/spark2014-docs/html/ug/index.html", "type": "website"}],
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
       },
     {
       "type": "library",
       "bom-ref": "pkg:alire/gnatdoc_bin",
       "name": "gnatdoc_bin",
+      "version": "26.0.0",
       "language": "Ada",
       "purl": "pkg:alire/gnatdoc_bin",
+      "licenses": [{"license": {"id": "GPL-3.0-or-later WITH GCC-exception-3.1"}}],
+      "externalReferences": [{"url": "https://github.com/AdaCore/gnatdoc", "type": "website"}],
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
       },
     {
       "type": "library",
       "bom-ref": "pkg:alire/gnatformat_bin",
       "name": "gnatformat_bin",
+      "version": "26.0.0",
       "language": "Ada",
       "purl": "pkg:alire/gnatformat_bin",
+      "licenses": [{"license": {"id": "GPL-3.0-or-later WITH GCC-exception-3.1"}}],
+      "externalReferences": [{"url": "https://github.com/AdaCore/gnatformat", "type": "website"}],
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
       },
     {
@@ -235,7 +245,7 @@
   ],
   "dependencies": [
     {
-      "ref": "pkg:alire/covex@1.28.0",
+      "ref": "pkg:alire/covex@1.29.0",
       "dependsOn": ["pkg:npm/flexsearch@0.7.31", "pkg:npm/graphre@0.1.3", "pkg:npm/nomnoml@1.7.0", "pkg:npm/charts.css@1.2.0", "pkg:npm/@playwright/test@1.62.1", "pkg:alire/gnatprove", "pkg:alire/gnatdoc_bin", "pkg:alire/gnatformat_bin", "pkg:generic/bash", "pkg:generic/curl", "pkg:generic/alr", "pkg:generic/go", "pkg:generic/python3", "pkg:generic/git", "pkg:generic/make", "pkg:generic/jj", "pkg:generic/npm", "pkg:generic/pnpm", "pkg:generic/mandb", "pkg:generic/fossil", "pkg:generic/hg", "pkg:generic/svn", "pkg:generic/node", "pkg:generic/cargo"]
     }
   ]

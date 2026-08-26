@@ -89,7 +89,7 @@ Rules that matter in practice:
   both -- adacovex's own source uses package-level On on pure units and
   per-subprogram On aspects inside default-off bodies.
 - **A body is analyzed only when the body itself opts in.** Declaring
-  `SPARK_Mode => On` on the *spec* does not make gnatprove analyze the body.
+  `SPARK_Mode => On` on the *spec* does not make gnatprove analyse the body.
   The body must declare it too (on the `package body` line or per subprogram).
   This is the rule that makes proof patches necessary for vendored code -- see
   below.
@@ -187,7 +187,7 @@ subprogram without disturbing its siblings.
 ### Writing a body patch (`.adb`)
 
 The spec patch declares the contracts. The **body patch** is what makes
-gnatprove actually analyze the vendored body (the body-must-opt-in rule). It
+gnatprove actually analyse the vendored body (the body-must-opt-in rule). It
 lives at the body's relative path and mirrors the body's declarations with
 *stub bodies* that the merge ignores -- the original implementation is
 preserved:
@@ -259,7 +259,7 @@ end Vecmath;
 
 The two patch files from above (spec with
 `Pre => Lo <= Hi, Post => Clamp'Result in Lo .. Hi`, and body with
-`SPARK_Mode => On`) merge into the copy unchanged in behavior. gnatprove
+`SPARK_Mode => On`) merge into the copy unchanged in behaviour. gnatprove
 proves the contract: 2 VCs (the `Clamp` postcondition and its termination
 check), 0 unproved. A caller in the target's own code can then rely on the
 contract without the vendored sources ever changing.

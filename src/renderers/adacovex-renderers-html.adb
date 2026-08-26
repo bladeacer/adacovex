@@ -11,6 +11,7 @@ package body Adacovex.Renderers.HTML is
    use type Types.Dashboard_Theme;
    use type Types.Component_Kind;
    use type Types.Component_Scope;
+   use type Types.Compliance_Standard;
 
    function Img (N : Natural) return String is
       S : constant String := Natural'Image (N);
@@ -206,32 +207,8 @@ package body Adacovex.Renderers.HTML is
       end Bar_Row;
 
    begin
-      --  SPARK proof donut: proved vs unproved (not total) so the ring sums
-      --  to one.  The hole is pure CSS (.charts-css.pie.donut::after).
-      Put ("<div class=""chart-card""><h3>SPARK Proof</h3>");
-      Put ("<table class=""charts-css pie donut show-labels"">");
-      Put ("<caption>SPARK proof progress</caption><tbody>");
-      if Proof.Total_VCs > 0 then
-         declare
-            U : constant Natural := Proof.Total_VCs - Proof.Proved_VCs;
-            P : constant String := Frac (Proof.Proved_VCs, Proof.Total_VCs);
-         begin
-            Slice_Row ("Proved", "0.00", P, Proof.Proved_VCs);
-            if U > 0 then
-               Slice_Row ("Unproved", P, "1.00", U);
-            end if;
-         end;
-      else
-         Slice_Row ("No VCs", "0.00", "1.00", 0);
-      end if;
-      Put ("</tbody></table>");
-      Put ("<p style=""color:var(--muted);font-size:.82rem;margin:6px 0 0"">");
-      Put
-        (Img (Proof.Proved_VCs)
-         & " / "
-         & Img (Proof.Total_VCs)
-         & " VCs proved");
-      Put ("</p></div>");
+      --  SPARK proof progress is the Overview-tab radar (and the Proof-tab
+      --  gauge); the Charts gallery does not repeat a proof donut (DRY).
 
       --  Proof categories column (proved vs total per category).  Every
       --  category gnatprove reports (flow, init, runtime, assertions,
@@ -299,80 +276,11 @@ package body Adacovex.Renderers.HTML is
       end if;
       Put ("</tbody></table></div>");
 
-      --  Test pass/fail pie (start/end are 0..1 turn fractions)
-      Put ("<div class=""chart-card""><h3>Tests Pass/Fail</h3>");
-      Put ("<table class=""charts-css pie show-labels"">");
-      Put ("<caption>Pass vs fail</caption><tbody>");
-      declare
-         Total_T : constant Natural := Tests.Total_Passed + Tests.Total_Failed;
-      begin
-         if Total_T = 0 then
-            Slice_Row ("No tests", "0.00", "1.00", 0);
-         else
-            declare
-               P : constant String := Frac (Tests.Total_Passed, Total_T);
-            begin
-               Slice_Row ("Passed", "0.00", P, Tests.Total_Passed);
-               if Tests.Total_Failed > 0 then
-                  Slice_Row ("Failed", P, "1.00", Tests.Total_Failed);
-               end if;
-            end;
-         end if;
-      end;
-      Put
-        ("</tbody></table></div>");      --  Docstring coverage: radial gauge (styled like the robustness and
-      --  SPARK proof radars, compact for the Charts tab).
-      declare
-         Cov : constant Natural :=
-           Pct
-             (Doc_Metrics.Documented_Subprogs, Doc_Metrics.Total_Subprograms);
-      begin
-         Put ("<div class=""chart-card""><h3>Docstring Coverage</h3>");
-         if Doc_Metrics.Total_Subprograms = 0 then
-            Put ("<p style=""color:var(--muted);font-size:.85rem"">");
-            Put ("No subprograms</p></div>");
-         else
-            Put ("<svg viewBox=""0 0 220 220"" width=""100%"" height=""160""");
-            Put (" role=""img"" aria-label=""Docstring coverage"">");
-            for G in 1 .. 4 loop
-               Put ("<polygon points=""");
-               Put (Radar_Points (20 * G));
-               Put (""" fill=""none"" stroke=""var(--border)""");
-               Put (" stroke-width=""1"" opacity="".55""/>");
-            end loop;
-            Put ("<path d=""M110,100 L");
-            Put (Radar_Point (1, 80));
-            Put (""" stroke=""var(--border)"" stroke-width=""1""/>");
-            Put ("<polygon points=""");
-            Put (Radar_Point (1, 4 + (Cov * 76) / 100));
-            Put (""" fill=""var(--accent)"" fill-opacity=""0.25""");
-            Put (" stroke=""var(--accent)"" stroke-width=""2""/>");
-            Put ("<circle transform=""translate(");
-            Put (Radar_Point (1, 4 + (Cov * 76) / 100));
-            Put (")"" r=""2.5"" fill=""var(--accent)""/>");
-            Put ("<text transform=""translate(");
-            Put (Radar_Point (1, 95));
-            Put (")"" text-anchor=""middle"" dy=""-5""");
-            Put (" font-size=""8.5"" fill=""var(--muted)"">");
-            Put ("Coverage");
-            Put ("</text>");
-            Put ("<text x=""110"" y=""96"" text-anchor=""middle""");
-            Put
-              (" font-size=""28"" font-weight=""700"" fill=""var(--accent)"">");
-            Put (Img (Cov));
-            Put ("%</text>");
-            Put ("<text x=""110"" y=""112"" text-anchor=""middle""");
-            Put (" font-size=""8"" fill=""var(--muted)"">");
-            Put ("documented</text>");
-            Put ("</svg>");
-            Put ("<p style=""color:var(--muted);font-size:.75rem;");
-            Put ("text-align:center;margin:4px 0 0"">");
-            Put (Img (Doc_Metrics.Documented_Subprogs));
-            Put (" / ");
-            Put (Img (Doc_Metrics.Total_Subprograms));
-            Put (" documented</p></div>");
-         end if;
-      end;
+      --  Test pass/fail is the Overview-tab Tests donut (and the Tests-tab
+      --  gauge); the Charts gallery does not repeat a pass/fail donut (DRY).
+
+      --  Docstring coverage lives on the Overview tab (donut); the Charts
+      --  gallery does not duplicate it (DRY).
 
       --  Dependency scope polar ring (conic gradient + CSS hole; the four
       --  cut points are cumulative percentages, theme colours via variables).
@@ -466,92 +374,8 @@ package body Adacovex.Renderers.HTML is
          end;
       end if;
 
-      --  Stacked bar chart for dependency scopes (pure CSS, raw numbers)
-      if not Graph.Is_Empty then
-         declare
-            Base_Ct  : Natural := 0;
-            Dev_Ct   : Natural := 0;
-            Trans_Ct : Natural := 0;
-            Vend_Ct  : Natural := 0;
-         begin
-            for I in 1 .. Integer (Graph.Length) loop
-               case Graph (I).Scope is
-                  when Types.Scope_Base       =>
-                     Base_Ct := Base_Ct + 1;
-
-                  when Types.Scope_Dev        =>
-                     Dev_Ct := Dev_Ct + 1;
-
-                  when Types.Scope_Transitive =>
-                     Trans_Ct := Trans_Ct + 1;
-
-                  when Types.Scope_Vendored   =>
-                     Vend_Ct := Vend_Ct + 1;
-               end case;
-            end loop;
-            declare
-               Total : constant Natural :=
-                 Base_Ct + Dev_Ct + Trans_Ct + Vend_Ct;
-               Pct_B : Natural := 0;
-               Pct_D : Natural := 0;
-               Pct_T : Natural := 0;
-               Pct_V : Natural := 0;
-            begin
-               if Total > 0 then
-                  Pct_B := (Base_Ct * 100) / Total;
-                  Pct_D := (Dev_Ct * 100) / Total;
-                  Pct_T := (Trans_Ct * 100) / Total;
-                  Pct_V := 100 - Pct_B - Pct_D - Pct_T;
-                  Put ("<div class=""chart-card""><h3>Scope Breakdown</h3>");
-                  Put ("<div class=""stacked-bar"" role=""img""");
-                  Put (" aria-label=""Dependency scope breakdown"">");
-                  if Pct_B > 0 then
-                     Put ("<i style=""width:");
-                     Put (Img (Pct_B));
-                     Put ("%;background:var(--scope-base)""></i>");
-                  end if;
-                  if Pct_D > 0 then
-                     Put ("<i style=""width:");
-                     Put (Img (Pct_D));
-                     Put ("%;background:var(--scope-dev)""></i>");
-                  end if;
-                  if Pct_T > 0 then
-                     Put ("<i style=""width:");
-                     Put (Img (Pct_T));
-                     Put ("%;background:var(--scope-trans)""></i>");
-                  end if;
-                  if Pct_V > 0 then
-                     Put ("<i style=""width:");
-                     Put (Img (Pct_V));
-                     Put ("%;background:var(--scope-vend)""></i>");
-                  end if;
-                  Put ("</div>");
-                  Put ("<ul class=""scope-legend"" style=""margin-top:8px"">");
-                  Put ("<li><i class=""s-base""></i>base <b>");
-                  Put (Img (Base_Ct));
-                  Put (" (");
-                  Put (Img (Pct_B));
-                  Put ("%)</b></li>");
-                  Put ("<li><i class=""s-dev""></i>dev <b>");
-                  Put (Img (Dev_Ct));
-                  Put (" (");
-                  Put (Img (Pct_D));
-                  Put ("%)</b></li>");
-                  Put ("<li><i class=""s-trans""></i>transitive <b>");
-                  Put (Img (Trans_Ct));
-                  Put (" (");
-                  Put (Img (Pct_T));
-                  Put ("%)</b></li>");
-                  Put ("<li><i class=""s-vend""></i>vendored <b>");
-                  Put (Img (Vend_Ct));
-                  Put (" (");
-                  Put (Img (Pct_V));
-                  Put ("%)</b></li>");
-                  Put ("</ul></div>");
-               end if;
-            end;
-         end;
-      end if;
+      --  The scope distribution is already the polar ring above; no
+      --  duplicate stacked bar is rendered (DRY).
 
       return To_String (R);
    end Render_Charts;
@@ -874,9 +698,6 @@ package body Adacovex.Renderers.HTML is
          end if;
       end;
       Put ("</ul></div>");
-      --  Dep details panel (populated by JS on click)
-      Put ("<div class=""dep-details"" id=""dep-detail-popup"" hidden"">");
-      Put ("</div>");
       Put ("</div>");
       return To_String (R);
    end Render_Deps_HTML;
@@ -1284,46 +1105,12 @@ package body Adacovex.Renderers.HTML is
          end;
          Put_O ("</tbody></table></div>");
 
-         --  Test category column chart (visualise per-category counts)
-         Put_O ("<div class=""chart-card""><h3>Test Categories</h3>");
-         if Tests.Categories.Is_Empty then
-            Put_O ("<p style=""color:var(--muted);font-size:.85rem"">");
-            Put_O ("No test categories</p>");
-         else
-            --  Many categories cannot fit readable labels under 24px
-            --  columns; rotate the labels to vertical so every column
-            --  keeps its name (--rows sizes the chart height).
-            Put_O ("<table class=""charts-css column show-labels");
-            if Natural (Tests.Categories.Length) > 8 then
-               Put_O (" rotate-labels");
-            end if;
-            Put_O (" show-primary-axis"" style=""--rows:");
-            Put_O (Img (Natural (Tests.Categories.Length)));
-            Put_O (""">");
-            Put_O ("<caption>Tests by category</caption><tbody>");
-            for C in 1 .. Integer (Tests.Categories.Length) loop
-               declare
-                  Cat : Types.Test_Metrics renames Tests.Categories (C);
-                  Pct : constant String :=
-                    (if Cat.Test_Count > 0
-                     then Frac (Cat.Test_Count, Cat.Test_Count)
-                     else "0.00");
-               begin
-                  Put_O ("<tr><th scope=""row"">");
-                  Put_O (Html_Escape (Cat.Category (1 .. Cat.Cat_Len)));
-                  Put_O ("</th><td style=""--size:");
-                  Put_O (Pct);
-                  Put_O ("""><span class=""data"">");
-                  Put_O (Img (Cat.Test_Count));
-                  Put_O ("</span></td></tr>");
-               end;
-            end loop;
-            Put_O ("</tbody></table>");
-         end if;
-         Put_O ("</div>");
+         --  Per-category test counts live on the Charts tab ("Test Results
+         --  by Category" bar); the Overview does not duplicate them (DRY).
 
-         --  Doc coverage: radial chart (1 axis, 0..100, styled like the
-         --  robustness and SPARK proof radars).
+         --  Doc coverage donut: documented share as a ring with the
+         --  percentage in the hole (a single-axis radar does not render as
+         --  a coverage gauge).
          Put_O ("<div class=""chart-card""><h3>Doc Coverage</h3>");
          declare
             Cov : constant Natural :=
@@ -1332,59 +1119,42 @@ package body Adacovex.Renderers.HTML is
                  Doc_Metrics.Total_Subprograms);
          begin
             if Doc_Metrics.Total_Subprograms = 0 then
-               Put_O ("<p style=""color:var(--muted);font-size:.85rem"">");
+               Put_O ("<p style=""color:var(--muted);font-size:.8rem"">");
                Put_O ("No subprograms</p></div>");
             else
-               Put_O ("<div class=""radar-split"">");
-               Put_O ("<div class=""radar-chart"">");
                Put_O
-                 ("<svg viewBox=""0 0 220 220"" width=""100%"" height=""200""");
-               Put_O (" role=""img"" aria-label=""Docstring coverage"">");
-               for G in 1 .. 4 loop
-                  Put_O ("<polygon points=""");
-                  Put_O (Radar_Points (20 * G));
-                  Put_O (""" fill=""none"" stroke=""var(--border)""");
-                  Put_O (" stroke-width=""1"" opacity="".55""/>");
-               end loop;
-               Put_O ("<path d=""M110,100 L");
-               Put_O (Radar_Point (1, 80));
-               Put_O (""" stroke=""var(--border)"" stroke-width=""1""/>");
-               Put_O ("<polygon points=""");
-               Put_O (Radar_Point (1, 4 + (Cov * 76) / 100));
-               Put_O (""" fill=""var(--accent)"" fill-opacity=""0.25""");
-               Put_O (" stroke=""var(--accent)"" stroke-width=""2""/>");
-               Put_O ("<circle transform=""translate(");
-               Put_O (Radar_Point (1, 4 + (Cov * 76) / 100));
-               Put_O (")"" r=""2.5"" fill=""var(--accent)""/>");
-               Put_O ("<text transform=""translate(");
-               Put_O (Radar_Point (1, 95));
-               Put_O (")"" text-anchor=""middle"" dy=""-5""");
-               Put_O (" font-size=""8.5"" fill=""var(--muted)"">");
-               Put_O ("Coverage");
-               Put_O ("</text>");
-               Put_O ("<text x=""110"" y=""96"" text-anchor=""middle""");
-               Put_O
-                 (" font-size=""28"" font-weight=""700"" fill=""var(--accent)"">");
+                 ("<table class=""charts-css pie donut show-labels"" "
+                  & "style=""height:190px;max-width:210px;margin:0 auto"">");
+               Put_O ("<caption>Docstring coverage</caption><tbody>");
+               declare
+                  Doc_F : constant String :=
+                    Frac
+                      (Doc_Metrics.Documented_Subprogs,
+                       Doc_Metrics.Total_Subprograms);
+               begin
+                  Mini_Slice
+                    ("Documented",
+                     "0.00",
+                     Doc_F,
+                     Doc_Metrics.Documented_Subprogs);
+                  if Doc_F /= "1.00" then
+                     Mini_Slice
+                       ("Missing",
+                        Doc_F,
+                        "1.00",
+                        Doc_Metrics.Total_Subprograms
+                        - Doc_Metrics.Documented_Subprogs);
+                  end if;
+               end;
+               Put_O ("</tbody></table>");
+               Put_O ("<p style=""color:var(--muted);font-size:.82rem;");
+               Put_O ("text-align:center;margin:6px 0 0"">");
                Put_O (Img (Cov));
-               Put_O ("%</text>");
-               Put_O ("<text x=""110"" y=""112"" text-anchor=""middle""");
-               Put_O (" font-size=""8"" fill=""var(--muted)"">");
-               Put_O ("documented</text>");
-               Put_O ("</svg>");
-               Put_O ("</div>");
-               Put_O ("<div class=""radar-legend"">");
-               Put_O ("<ul>");
-               Put_O ("<li><i></i>Coverage <b>");
-               Put_O (Img (Cov));
-               Put_O ("%</b></li>");
-               Put_O ("<li><i></i>Total <b>");
-               Put_O (Img (Doc_Metrics.Total_Subprograms));
-               Put_O ("</b></li>");
-               Put_O ("<li><i></i>Documented <b>");
+               Put_O ("% documented &middot; ");
                Put_O (Img (Doc_Metrics.Documented_Subprogs));
-               Put_O ("</b></li>");
-               Put_O ("</ul></div>");
-               Put_O ("</div></div>");
+               Put_O ("/");
+               Put_O (Img (Doc_Metrics.Total_Subprograms));
+               Put_O ("</p></div>");
             end if;
          end;
          Put_O ("</div>");
@@ -1476,6 +1246,102 @@ package body Adacovex.Renderers.HTML is
       Put_P (Img (Proof.Proved_VCs));
       Put_P ("</td></tr></table></div>");
 
+      --  Proof guidance: turn the gnatprove unproved counts into concrete next
+      --  steps per category.  Each row names the failing category, how many
+      --  VCs remain, and the proof aspect most likely to close them -- so the
+      --  gnatprove output points the developer at what to do next.
+      declare
+         procedure Guide_Row
+           (Name : String; Unproved : Natural; Advice : String) is
+         begin
+            Put_P ("<tr><td><b>");
+            Put_P (Name);
+            Put_P ("</b></td><td class=""fail"">");
+            Put_P (Img (Unproved));
+            Put_P ("</td><td>");
+            Put_P (Advice (Advice'First .. Advice'Last));
+            Put_P ("</td></tr>");
+         end Guide_Row;
+
+         U_Flow : constant Natural := Proof.Flow_Checks - Proof.Flow_Proved;
+         U_Init : constant Natural := Proof.Init_Checks - Proof.Init_Proved;
+         U_Run  : constant Natural :=
+           Proof.Runtime_Checks - Proof.Runtime_Proved;
+         U_Asrt : constant Natural := Proof.Assertions - Proof.Assert_Proved;
+         U_Func : constant Natural :=
+           Proof.Functional_Ct - Proof.Functional_Proved;
+         U_Term : constant Natural :=
+           Proof.Termination_Ct - Proof.Termination_Proved;
+         Any    : constant Boolean :=
+           U_Flow > 0
+           or else U_Init > 0
+           or else U_Run > 0
+           or else U_Asrt > 0
+           or else U_Func > 0
+           or else U_Term > 0;
+      begin
+         Put_P ("<div class=""card"" style=""margin-top:14px"">");
+         Put_P ("<h2>How to proceed (Proof Guidance)</h2>");
+         if not Any then
+            Put_P ("<p style=""color:var(--pass);font-weight:600"">");
+            Put_P ("No unproved VCs &mdash; the proof is complete.");
+            Put_P ("</p>");
+         else
+            Put_P
+              ("<table><tr><th>Category</th><th>Unproved</th>"
+               & "<th>What to do</th></tr>");
+            if U_Flow > 0 then
+               Guide_Row
+                 ("Flow",
+                  U_Flow,
+                  "Add or strengthen Global (reads/writes) contracts on the "
+                  & "flagged subprogram so gnatprove knows what it touches.");
+            end if;
+            if U_Init > 0 then
+               Guide_Row
+                 ("Init",
+                  U_Init,
+                  "Initialise the variable at declaration or add an "
+                  & "Initializes aspect so every read sees a value.");
+            end if;
+            if U_Run > 0 then
+               Guide_Row
+                 ("Runtime",
+                  U_Run,
+                  "Overflow, division, index or range check: add a loop "
+                  & "invariant or a Pre that bounds the operation.");
+            end if;
+            if U_Asrt > 0 then
+               Guide_Row
+                 ("Assert",
+                  U_Asrt,
+                  "A user assertion or contract is not proved.  Strengthen "
+                  & "Pre/Post or carry the fact through a loop invariant.");
+            end if;
+            if U_Func > 0 then
+               Guide_Row
+                 ("Functional",
+                  U_Func,
+                  "Add a Postcondition that states the result the function "
+                  & "should compute.");
+            end if;
+            if U_Term > 0 then
+               Guide_Row
+                 ("Termination",
+                  U_Term,
+                  "Prove the loop/recursion ends: add a Decreasing clause or "
+                  & "a Measure on the subprogram.");
+            end if;
+            Put_P ("</table>");
+         end if;
+         Put_P
+           ("<p style=""color:var(--muted);font-size:.8rem;margin:8px 0 0"">"
+            & "Run <code>make prove</code> after each change; the numbers "
+            & "above are the same categories gnatprove lists.  A justified VC "
+            & "(pragma Assume) never counts as proved -- close it with a real "
+            & "contract instead.</p></div>");
+      end;
+
       --  Tests tab: mini compliance-style gauge at the top
       Put_T ("<div class=""chart-grid"" style=""margin-bottom:14px"">");
       Put_T ("<div class=""chart-card""><h3>Test Pass Rate</h3>");
@@ -1545,10 +1411,14 @@ package body Adacovex.Renderers.HTML is
       Put_T (Img (Tests.Total_Failed));
       Put_T ("</strong></td></tr></table></div>");
 
-      --  Compliance tab: achievement gauge with target + percent achieved
+      --  Compliance tab: per-standard achievement gauges.  The dashboard is
+      --  standards-aware: every supported standard (DO-178C, ISO 26262,
+      --  IEC 62304) is listed with its own gauge, integrity-level target and
+      --  achieved percentage, whether one standard or all are targeted.
+      --  The percentage is a weighted score across HLR traceability, tests
+      --  passing, SPARK level met, and subprogram coverage -- the same
+      --  evidence every standard shares.
       declare
-         --  Compliance percentage: weighted score across HLR traceability,
-         --  tests passing, SPARK level met, and subprogram coverage.
          HLR_Pct   : Natural := 0;
          Test_Pct  : Natural := 0;
          SPARK_Pct : Natural := 0;
@@ -1569,58 +1439,74 @@ package body Adacovex.Renderers.HTML is
          SPARK_Pct := (if DAL_Assess.Min_SPARK_Level_Met then 100 else 0);
          Compl_Pct := (HLR_Pct + Test_Pct + SPARK_Pct) / 3;
 
-         Put_C
-           ("<div class=""chart-card"" style=""margin-bottom:14px;max-width:400px"">");
-         Put_C ("<h3>Compliance Status</h3>");
-         Put_C ("<div class=""compliance-gauge-wrap"">");
-         Put_C ("<div class=""gauge-chart"">");
-         Put_C ("<svg viewBox=""0 0 120 68"" width=""100%"" height=""66""");
-         Put_C (" role=""img"" aria-label=""Compliance achievement"">");
-         Put_C ("<path d=""M10 60 A50 50 0 0 1 110 60"" fill=""none""");
-         Put_C (" stroke=""var(--border)"" stroke-width=""11""");
-         Put_C (" stroke-linecap=""round""/>");
-         Put_C ("<path d=""M10 60 A50 50 0 0 1 110 60"" fill=""none""");
-         Put_C
-           (" stroke="""
-            & (if DAL_Assess.Status = Types.Achieved
-               then "var(--pass)"
-               else "var(--fail)")
-            & """ stroke-width=""11""");
-         Put_C (" stroke-linecap=""round"" stroke-dasharray=""157""");
-         Put_C (" stroke-dashoffset=""");
-         Put_C (Img (157 - (157 * Compl_Pct) / 100));
-         Put_C ("""/>");
-         Put_C
-           ("<text x=""60"" y=""56"" text-anchor=""middle"" font-size=""11""");
-         Put_C (" font-weight=""600""");
-         Put_C (" fill=""");
-         Put_C
-           (if DAL_Assess.Status = Types.Achieved
-            then "var(--pass)"
-            else "var(--fail)");
-         Put_C (""">");
-         Put_C (Img (Compl_Pct));
-         Put_C ("%</text></svg>");
+         Put_C ("<div class=""chart-grid"" style=""margin-bottom:14px"">");
+         for Std in Types.Compliance_Standard loop
+            declare
+               Active_Std  : constant Boolean :=
+                 All_Standards or else Std = DAL_Assess.Standard;
+               Gauge_Color : constant String :=
+                 (if Active_Std
+                  then
+                    (if DAL_Assess.Status = Types.Achieved
+                     then "var(--pass)"
+                     else "var(--fail)")
+                  else "var(--muted)");
+            begin
+               Put_C
+                 ("<div class=""chart-card"" style=""max-width:360px"" "
+                  & (if Active_Std then "data-active=""true"" " else "")
+                  & ">");
+               Put_C ("<h3>Compliance Status &middot; ");
+               Put_C (Types.To_String (Std));
+               if Active_Std then
+                  Put_C (" <span class=""gauge-target-chip"">target</span>");
+               end if;
+               Put_C ("</h3>");
+               Put_C ("<div class=""compliance-gauge-wrap"">");
+               Put_C ("<div class=""gauge-chart"">");
+               Put_C ("<svg viewBox=""0 0 120 68"" width=""100%"" ");
+               Put_C ("height=""66"" role=""img"" aria-label=""");
+               Put_C (Types.To_String (Std));
+               Put_C (" compliance achievement"">");
+               Put_C ("<path d=""M10 60 A50 50 0 0 1 110 60""");
+               Put_C (" fill=""none"" stroke=""var(--border)""");
+               Put_C (" stroke-width=""11"" stroke-linecap=""round""/>");
+               Put_C ("<path d=""M10 60 A50 50 0 0 1 110 60""");
+               Put_C (" fill=""none"" stroke=""");
+               Put_C (Gauge_Color);
+               Put_C (""" stroke-width=""11"" stroke-linecap=""round""");
+               Put_C (" stroke-dasharray=""157"" stroke-dashoffset=""");
+               Put_C (Img (157 - (157 * Compl_Pct) / 100));
+               Put_C ("""/>");
+               Put_C ("<text x=""60"" y=""56"" text-anchor=""middle""");
+               Put_C (" font-size=""11"" font-weight=""600"" fill=""");
+               Put_C (Gauge_Color);
+               Put_C (""">");
+               Put_C (Img (Compl_Pct));
+               Put_C ("%</text></svg>");
+               Put_C ("</div>");
+               Put_C ("<div class=""gauge-info"">");
+               Put_C ("<div class=""gauge-target"">Target: <b>");
+               Put_C (Types.Standard_Level_Name (Std, DAL_Assess.Target_DAL));
+               Put_C ("</b></div>");
+               Put_C ("<div class=""gauge-achieved"">Achieved: ");
+               Put_C ("<span class=""pct"">");
+               Put_C (Img (Compl_Pct));
+               Put_C ("%</span> &middot; ");
+               Put_C (Types.To_String (DAL_Assess.Status));
+               Put_C ("</div>");
+               Put_C ("<div style=""font-size:.82rem;color:var(--muted)""");
+               Put_C (">HLR ");
+               Put_C (Img (HLR_Pct));
+               Put_C ("% &middot; Tests ");
+               Put_C (Img (Test_Pct));
+               Put_C ("% &middot; SPARK ");
+               Put_C (Img (SPARK_Pct));
+               Put_C ("%</div>");
+               Put_C ("</div></div></div>");
+            end;
+         end loop;
          Put_C ("</div>");
-         Put_C ("<div class=""gauge-info"">");
-         Put_C ("<div class=""gauge-target"">Target: <b>");
-         Put_C
-           (Types.Standard_Level_Name
-              (DAL_Assess.Standard, DAL_Assess.Target_DAL));
-         Put_C ("</b></div>");
-         Put_C
-           ("<div class=""gauge-achieved"">Achieved: <span class=""pct"">");
-         Put_C (Img (Compl_Pct));
-         Put_C ("%</span></div>");
-         Put_C ("<div style=""font-size:.82rem;color:var(--muted)"">");
-         Put_C ("HLR ");
-         Put_C (Img (HLR_Pct));
-         Put_C ("% &middot; Tests ");
-         Put_C (Img (Test_Pct));
-         Put_C ("% &middot; SPARK ");
-         Put_C (Img (SPARK_Pct));
-         Put_C ("%</div>");
-         Put_C ("</div></div></div>");
       end;
       Put_C ("<div class=""card"">");
       if All_Standards then
@@ -1630,32 +1516,35 @@ package body Adacovex.Renderers.HTML is
          Put_C (Types.To_String (DAL_Assess.Standard));
          Put_C (" Compliance</h2>");
       end if;
-      Put_C ("<table><tr><th>Criterion</th><th>Status</th></tr>");
-      if All_Standards then
-         for Std in Types.Compliance_Standard loop
-            Put_C ("<tr><td>");
+      Put_C
+        ("<table><tr><th>Standard</th><th>Integrity Level</th><th>Status</th></tr>");
+      for Std in Types.Compliance_Standard loop
+         declare
+            Active_Std : constant Boolean :=
+              All_Standards or else Std = DAL_Assess.Standard;
+         begin
+            Put_C ("<tr");
+            if Active_Std then
+               Put_C (" class=""active-std""");
+            else
+               Put_C (" class=""other-std""");
+            end if;
+            Put_C (">");
+            Put_C ("<td>");
             Put_C (Types.To_String (Std));
-            Put_C (" level</td><td class=""");
+            if Active_Std then
+               Put_C (" <span class=""gauge-target-chip"">target</span>");
+            end if;
+            Put_C ("</td><td>");
+            Put_C (Types.Standard_Level_Name (Std, DAL_Assess.Target_DAL));
+            Put_C ("</td><td class=""");
             Put_C
               (if DAL_Assess.Status = Types.Achieved then "pass" else "fail");
             Put_C (""">");
-            Put_C (Types.Standard_Level_Name (Std, DAL_Assess.Target_DAL));
-            Put_C (" (");
             Put_C (Types.To_String (DAL_Assess.Status));
-            Put_C (")</td></tr>");
-         end loop;
-      else
-         Put_C ("<tr><td>Target level</td><td>");
-         Put_C
-           (Types.Standard_Level_Name
-              (DAL_Assess.Standard, DAL_Assess.Target_DAL));
-         Put_C ("</td></tr>");
-         Put_C ("<tr><td>Overall Status</td><td class=""");
-         Put_C (if DAL_Assess.Status = Types.Achieved then "pass" else "fail");
-         Put_C (""">");
-         Put_C (Types.To_String (DAL_Assess.Status));
-         Put_C ("</td></tr>");
-      end if;
+            Put_C ("</td></tr>");
+         end;
+      end loop;
       Put_C ("<tr><td>HLR Traced</td><td>");
       Put_C (Img (DAL_Assess.HLR_Found));
       Put_C (" / ");
@@ -1832,6 +1721,8 @@ package body Adacovex.Renderers.HTML is
          Put_Field (Graph (I).Language, Graph (I).Language_Len);
          Put (",""purl"":");
          Put_Field (Graph (I).PURL, Graph (I).PURL_Len);
+         Put (",""website"":");
+         Put_Field (Graph (I).Website, Graph (I).Website_Len);
          Put ("}");
       end loop;
       Put ("]}");

@@ -39,7 +39,7 @@
   each analyzed artifact, serve unchanged files from the cache instead of
   re-scanning / re-parsing / re-proving, evict oldest entries first when the
   configured cap is reached, and report cache hits, misses, and evictions;
-  behavior is controlled by `--cache` / `--no-cache` / `--cache-dir` /
+  behaviour is controlled by `--cache` / `--no-cache` / `--cache-dir` /
   `--cache-max`.
 
 - HLR-CPU: The tool shall detect the host logical CPU count across Linux,

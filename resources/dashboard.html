@@ -29,6 +29,8 @@ __STYLE_CHARTS__
 <button class="theme-toggle active" data-view="tree" onclick="switchDepView('tree')">Tree</button>
 <button class="theme-toggle" data-view="nomnoml" onclick="switchDepView('nomnoml')">Diagram (nomnoml)</button>
 </div>
+<div class="dep-split">
+<div class="dep-main">
 <div id="dep-tree-view">__DEPS__</div>
 <div id="dep-nomnoml-view" style="display:none">
 <div class="card">
@@ -37,6 +39,9 @@ __STYLE_CHARTS__
 <div class="nomnoml-wrap"><canvas id="nomnoml-canvas" width="1000" height="600"></canvas></div>
 <div style="margin-top:8px"><button class="theme-toggle" onclick="downloadNomnoml()">Download SVG</button> <button class="theme-toggle" onclick="renderNomnoml()">Re-render</button></div>
 </div>
+</div>
+</div>
+<div class="dep-details" id="dep-detail-popup" hidden></div>
 </div>
 </div>
 <div id="tab-charts" class="tab-panel"><div class="chart-grid">__CHARTS__</div></div>
