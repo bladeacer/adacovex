@@ -186,7 +186,8 @@ package body Adacovex.Parsers.Manifest is
    --  when the tool is missing, the package is unknown, the field is absent,
    --  or the command fails.
    procedure Resolve_Ecosystem_Metadata
-     (Ecosystem : String;
+     (Target    : String;
+      Ecosystem : String;
       Name      : String;
       License   : out Types.Desc_Field;
       Lic_Len   : out Natural;
@@ -207,7 +208,8 @@ package body Adacovex.Parsers.Manifest is
    --  could not otherwise be resolved.  No garbage links are produced: a
    --  URL is only ever taken from the release metadata, never guessed.
    procedure Register_Manifest_Deps
-     (Graph      : in out Types.Implementation.Component_Vectors.Vector;
+     (Target_Dir : String;
+      Graph      : in out Types.Implementation.Component_Vectors.Vector;
       Base_Names : Name_Vectors.Vector;
       Dev_Names  : Name_Vectors.Vector)
    is separate;
@@ -1698,7 +1700,7 @@ package body Adacovex.Parsers.Manifest is
       --  SBOM captures the declared dependency set.  This applies even for
       --  zero-`with` projects whose toolchain deps live only in the dev
       --  manifest.
-      Register_Manifest_Deps (Graph, Base_Names, Dev_Names);
+      Register_Manifest_Deps (Target_Dir, Graph, Base_Names, Dev_Names);
 
       Success := Root.Name_Len > 0;
 

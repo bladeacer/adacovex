@@ -223,9 +223,23 @@ resolved licence flows into every SBOM format (CycloneDX `licenses`, SPDX
 dashboard detail panel; the resolved version and website appear in the
 dashboard detail panel and the `/api/deps` JSON.
 
-Bundled dashboard assets (Charts.css, FlexSearch, nomnoml, graphre) report
-their known upstream licence (MIT or Apache-2.0) from a built-in table, so the
-Credits tab and the SBOM list them with a licence rather than a blank.
+The resolver caches each answer in a per-project store under the project's
+result cache (the same `--cache-dir` the scan uses), keyed by the target
+directory as well as the ecosystem and package name, with a 7-day TTL, the
+same scheme as the system-tool version probes.  The content-addressed result
+cache does not cover these registry calls (each one boots node for npm/pnpm),
+so without this layer a warm run still re-paid them; the meta cache makes every
+repeat run serve the licence, version, and website from disk with no subprocess
+spawn, and two projects that share a cache directory never serve each other's
+resolved licence or version.
+
+Bundled dashboard assets (Charts.css, FlexSearch, nomnoml, graphre) resolve
+their licence and website live from the package registry when a loose vendored
+copy is scanned, preferring `pnpm show <pkg> license` and falling back to
+`npm`, `yarn`, then `bun` -- the same preference chain as every JavaScript
+component (see [Licence resolution](#licence-resolution)).  The SBOM and the
+Credits tab therefore track the real upstream licence instead of a hard-coded
+copy.
 
 ## System dependencies
 

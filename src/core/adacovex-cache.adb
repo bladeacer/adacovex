@@ -407,6 +407,129 @@ package body Adacovex.Cache is
       end;
    end Put_Probe;
 
+   --  Location of the per-project registry-metadata files.  This lives under
+   --  the configured result cache (per --cache-dir, so the project's own
+   --  cache when one is set), not in a separate machine-local store: the meta
+   --  answer is scoped to the project that owns the package, and clearing the
+   --  project cache clears it too.  The key also carries the target so two
+   --  projects that share a cache directory never serve each other's
+   --  resolved licence or version.
+   function Meta_Root return String is
+      Dir : String (1 .. 1024);
+      Len : Natural := 0;
+   begin
+      Cache_Dir (Dir, Len);
+      if Len = 0 then
+         return "";
+      end if;
+      return Dir (Dir'First .. Dir'First + Len - 1) & "/meta";
+   end Meta_Root;
+
+   --  <meta>/<hash> -- keyed by the SHA-256 of "target|eco|name" so the
+   --  filename is fixed-width, filesystem-safe, and stable per project.
+   function Meta_Path
+     (Target : String; Ecosystem : String; Name : String) return String
+   is
+      Root : constant String := Meta_Root;
+   begin
+      if Ecosystem'Length = 0 or else Name'Length = 0 or else Root'Length = 0
+      then
+         return "";
+      end if;
+      return Root & "/" & Hash_String (Target & "|" & Ecosystem & "|" & Name);
+   end Meta_Path;
+
+   procedure Get_Meta
+     (Target    : String;
+      Ecosystem : String;
+      Name      : String;
+      License   : out String;
+      Lic_Len   : out Natural;
+      Version   : out String;
+      Ver_Len   : out Natural;
+      Website   : out String;
+      Web_Len   : out Natural;
+      Found     : out Boolean)
+   is
+      use Ada.Calendar;
+      Path : constant String := Meta_Path (Target, Ecosystem, Name);
+      F    : Ada.Text_IO.File_Type;
+   begin
+      License := (others => ' ');
+      Version := (others => ' ');
+      Website := (others => ' ');
+      Lic_Len := 0;
+      Ver_Len := 0;
+      Web_Len := 0;
+      Found := False;
+      if Path'Length = 0 or else not Ada.Directories.Exists (Path) then
+         return;
+      end if;
+      --  TTL: a stale entry is reported as not found; the caller re-resolves
+      --  and overwrites via Put_Meta.
+      declare
+         Age : constant Duration :=
+           Clock - Ada.Directories.Modification_Time (Path);
+      begin
+         if Age < 0.0 or else Age > Duration (Probe_TTL_Days * 86_400) then
+            return;
+         end if;
+      end;
+      begin
+         Ada.Text_IO.Open (F, Ada.Text_IO.In_File, Path);
+         if not Ada.Text_IO.End_Of_File (F) then
+            Ada.Text_IO.Get_Line (F, License, Lic_Len);
+         end if;
+         if not Ada.Text_IO.End_Of_File (F) then
+            Ada.Text_IO.Get_Line (F, Version, Ver_Len);
+         end if;
+         if not Ada.Text_IO.End_Of_File (F) then
+            Ada.Text_IO.Get_Line (F, Website, Web_Len);
+         end if;
+         Ada.Text_IO.Close (F);
+         Found := True;
+      exception
+         when others =>
+            if Ada.Text_IO.Is_Open (F) then
+               Ada.Text_IO.Close (F);
+            end if;
+      end;
+   end Get_Meta;
+
+   procedure Put_Meta
+     (Target    : String;
+      Ecosystem : String;
+      Name      : String;
+      License   : String;
+      Version   : String;
+      Website   : String)
+   is
+      P : constant String := Meta_Path (Target, Ecosystem, Name);
+      F : Ada.Text_IO.File_Type;
+   begin
+      if P'Length = 0 then
+         return;
+      end if;
+      begin
+         Ada.Directories.Create_Path (Meta_Root);
+      exception
+         when others =>
+            null;
+      end;
+      begin
+         Ada.Text_IO.Create (F, Ada.Text_IO.Out_File, P);
+         Ada.Text_IO.Put_Line (F, License);
+         Ada.Text_IO.Put_Line (F, Version);
+         Ada.Text_IO.Put_Line (F, Website);
+         Ada.Text_IO.Close (F);
+      exception
+         when others =>
+            if Ada.Text_IO.Is_Open (F) then
+               Ada.Text_IO.Close (F);
+            end if;
+      end;
+   end Put_Meta;
+
    procedure Set_Cache_Policy (Max_Entries : Positive) is
    begin
       Cache_Cap := Max_Entries;

@@ -79,6 +79,21 @@ HLR-CACHE: Result caching
 | `Key` | Cache key. |
 | `Len` | Length of the loaded blob. |
 
+### procedure Get_Meta (Target : Standard.String; Ecosystem : Standard.String; Name : Standard.String; License : Standard.String; Lic_Len : Standard.Natural; Version : Standard.String; Ver_Len : Standard.Natural; Website : Standard.String; Web_Len : Standard.Natural; Found : Standard.Boolean)
+
+| Parameter | Description |
+|-----------|-------------|
+| `Ecosystem` |  |
+| `Found` |  |
+| `Lic_Len` |  |
+| `License` |  |
+| `Name` |  |
+| `Target` |  |
+| `Ver_Len` |  |
+| `Version` |  |
+| `Web_Len` |  |
+| `Website` |  |
+
 ### procedure Get_Probe (Tool : Standard.String; Value : Standard.String; Val_Len : Standard.Natural; Found : Standard.Boolean)
 
 | Parameter | Description |
@@ -104,6 +119,17 @@ HLR-CACHE: Result caching
 | `Data` | Blob payload. |
 | `Key` | Cache key. |
 | `Success` | True if the blob was written. |
+
+### procedure Put_Meta (Target : Standard.String; Ecosystem : Standard.String; Name : Standard.String; License : Standard.String; Version : Standard.String; Website : Standard.String)
+
+| Parameter | Description |
+|-----------|-------------|
+| `Ecosystem` | PURL type. |
+| `License` | Licence string (may be empty). |
+| `Name` | Package name. |
+| `Target` | Project directory the package belongs to. |
+| `Version` | Version string (may be empty). |
+| `Website` | Website string (may be empty). |
 
 ### procedure Put_Probe (Tool : Standard.String; Value : Standard.String)
 
