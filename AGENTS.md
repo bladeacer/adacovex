@@ -12,6 +12,20 @@ test-result parsing, DO-178C DAL compliance assessment, and interactive dashboar
   (per-project manifest, `$PATH`, `~/.adacovex/toolchain/`, or download) and
   lives only in the dev manifest for local make targets.
 - **SPARK target**: Platinum. See [SPARK levels](docs/api-docs/adacovex-spark-levels.md).
+- **Dashboard dependency view**: the served dashboard and the SBOM build from
+  one resolved graph that includes system-tool dev dependencies
+  (`pkg:generic/*`, shown with a `system` badge and no guessed link or
+  licence -- only the resolved version). Vendored npm/pnpm (and cargo/pypi/
+  composer) packages resolve their licence from the local manifest, or from
+  `npm view <pkg> license` / `pnpm show <pkg> license` when the manifest is
+  silent. Clicking a dependency in the Tree view or the nomnoml Diagram opens
+  one split-view detail panel (view docked left, detail docked right; full
+  width until a dependency is selected).
+
+**Keeping this file current:** before each change, check briefly whether
+AGENTS.md still matches the codebase -- the source layout, the CLI flags, the
+SBOM behaviour, and the dashboard features. Update it in the same change when
+it has drifted; do not leave the architecture tree or the feature notes stale.
 
 ## Dogfood target
 

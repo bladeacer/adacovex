@@ -146,6 +146,31 @@ component's origin, most specific first:
   `resources/`, `assets/`, and `.adacovex/patches/`, which are registered as
   file-level components.
 
+## Licence resolution
+
+Vendored manifest ecosystems report their licence from the local manifest:
+`package.json` (`license`) for npm/pnpm, `Cargo.toml` for cargo,
+`pyproject.toml` / `composer.json` for pypi / composer. When the local
+manifest carries no licence and the ecosystem is npm/pnpm, adacovex resolves
+it from the package registry as a best-effort, online fallback --
+`npm view <pkg> license` (or `pnpm show <pkg> license`). The fallback runs
+only when the offline read finds nothing, so a vendored package that ships a
+licence never touches the network. The resolved licence flows into every SBOM
+format (CycloneDX `licenses`, SPDX `licenseConcluded` / `licenseDeclared`,
+Markdown `License` column) and the dashboard detail panel.
+
+## System dependencies
+
+`Discover_System_Dev_Deps` scans the project's build and dev files (Makefiles,
+shell scripts, Python tools, CI workflows, GPR files, Ada sources) for a
+curated set of known system binaries, then keeps only the tools that are
+installed on `PATH`. Each becomes a `dev`-scope component of the root with a
+`pkg:generic/<name>` PURL, a resolved `version` (from `<tool> --version`), and
+no external link or licence -- by design adacovex provisions only the version
+for system tools and never guesses a repository or licence for them. The
+dashboard marks these with a `system` badge and a note in the detail panel;
+the SBOM lists them under `dev` scope with the resolved version.
+
 The result shows up in the dashboard Dependency tab (per-dependency detail
 popup) and in every SBOM renderer: CycloneDX `components[].language`,
 SPDX/JSON `adacovex:language` property, and the Markdown table's

@@ -499,6 +499,10 @@ package body Adacovex.Renderers.HTML is
             & """>"
             & Scope_Name (Info.Scope)
             & "</span> ");
+         if Info.PURL_Len >= 12 and then Info.PURL (1 .. 12) = "pkg:generic/"
+         then
+            Put ("<span class=""dep-badge scope-system"">system</span> ");
+         end if;
          if Info.Kind = Types.Root_Component then
             Put ("<span class=""dep-badge"">root</span> ");
          end if;
@@ -770,8 +774,8 @@ package body Adacovex.Renderers.HTML is
          Put_O (" Badge"">");
       end if;
       Put_O
-        ("</div><p style=""color:var(--muted);font-size:.82rem;"
-         & "margin:8px 0 0"">Badges refresh from "
+        ("</div><p style=""color:var(--muted);font-size:.82rem;margin:8px 0 0"">"
+         & "Badges refresh from "
          & "<code>/badge/*.svg</code> endpoints.</p></div>");
 
       Put_O ("<div class=""tab-grid"">");
@@ -882,7 +886,7 @@ package body Adacovex.Renderers.HTML is
             Put_O ("<div class=""radar-split"">");
             Put_O ("<div class=""radar-chart"">");
             Put_O
-              ("<svg viewBox=""0 0 220 220"" width=""100%"" height=""200""");
+              ("<svg viewBox=""0 -14 220 220"" width=""100%"" height=""200""");
             Put_O
               (" role=""img"" aria-label=""Robustness radar with tier rating"">");
             for G in 1 .. 4 loop
@@ -1010,7 +1014,7 @@ package body Adacovex.Renderers.HTML is
                Put_O ("No proof data</p>");
             else
                Put_O
-                 ("<svg viewBox=""0 0 220 220"" width=""100%"" height=""200""");
+                 ("<svg viewBox=""0 -14 220 220"" width=""100%"" height=""200""");
                Put_O
                  (" role=""img"" aria-label=""SPARK proof by check type"">");
                for G in 1 .. 4 loop
@@ -1147,8 +1151,9 @@ package body Adacovex.Renderers.HTML is
                   end if;
                end;
                Put_O ("</tbody></table>");
-               Put_O ("<p style=""color:var(--muted);font-size:.82rem;");
-               Put_O ("text-align:center;margin:6px 0 0"">");
+               Put_O
+                 ("<p style=""color:var(--muted);font-size:.82rem;"
+                  & "text-align:center;margin:6px 0 0"">");
                Put_O (Img (Cov));
                Put_O ("% documented &middot; ");
                Put_O (Img (Doc_Metrics.Documented_Subprogs));
@@ -1723,6 +1728,8 @@ package body Adacovex.Renderers.HTML is
          Put_Field (Graph (I).PURL, Graph (I).PURL_Len);
          Put (",""website"":");
          Put_Field (Graph (I).Website, Graph (I).Website_Len);
+         Put (",""description"":");
+         Put_Field (Graph (I).Description, Graph (I).Description_Len);
          Put ("}");
       end loop;
       Put ("]}");

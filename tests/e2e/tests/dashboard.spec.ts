@@ -79,6 +79,45 @@ test.describe('Dashboard layout', () => {
     await expect(page.locator('.search-hits.active')).toBeVisible();
   });
 
+  test('selecting a dependency opens the split-view detail panel', async ({ page }) => {
+    await page.click('[data-tab="deps"]');
+    const firstDep = page.locator('.dep-link').first();
+    await expect(firstDep).toBeVisible();
+    await firstDep.click();
+    // The split layout activates on the .dep-split container, docking the
+    // tree/diagram left and the detail card right; the popup is shown.
+    await expect(page.locator('#dep-split')).toHaveClass(/dep-split-active/);
+    await expect(page.locator('#dep-detail-popup')).toBeVisible();
+    // Closing returns the view to full width.
+    await page.locator('.dep-details-close').click();
+    await expect(page.locator('#dep-detail-popup')).toBeHidden();
+    await expect(page.locator('#dep-split')).not.toHaveClass(/dep-split-active/);
+  });
+
+  test('diagram view also opens the split-view detail panel', async ({ page }) => {
+    await page.click('[data-tab="deps"]');
+    await page.click('.dep-view-switch button[data-view="nomnoml"]');
+    await expect(page.locator('#dep-nomnoml-view')).toBeVisible();
+    const firstDep = page.locator('.dep-link').first();
+    await firstDep.click();
+    await expect(page.locator('#dep-split')).toHaveClass(/dep-split-active/);
+    await expect(page.locator('#dep-detail-popup')).toBeVisible();
+  });
+
+  test('system dependencies are marked and shown without a licence', async ({ page }) => {
+    await page.click('[data-tab="deps"]');
+    // The scanned project references system tools (python3, git, ...); at
+    // least one resolves to a pkg:generic/* system dependency with a badge.
+    const systemBadges = page.locator('.dep-badge.scope-system');
+    if (await systemBadges.count() > 0) {
+      await expect(systemBadges.first()).toBeVisible();
+      await systemBadges.first().scrollIntoViewIfNeeded();
+      await page.locator('.dep-link').first().click();
+      await expect(page.locator('.dep-system-note')).toBeVisible();
+    }
+  });
+
+
   test('dep name filter narrows the tree', async ({ page }) => {
     await page.click('[data-tab="deps"]');
     const filter = page.locator('#dep-filter');

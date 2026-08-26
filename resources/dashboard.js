@@ -180,7 +180,7 @@ function renderNomnoml(){
       var pName = parent ? parent.name : 'root';
       src += '['+pName+']-->[ '+d.name+' ]\n';
     });
-    src += '\n[<note> Legend: base=alire.toml, dev=alire-dev.toml, vendored=.adacovex/patches]\n';
+    src += '\n';
     var canvas=document.getElementById('nomnoml-canvas');
     if(canvas){
       var out=null;
@@ -206,16 +206,25 @@ function renderNomnoml(){
         canvas.__nomnomlClickAttached=true;
         canvas.addEventListener('click', function(ev){
           var rect=canvas.getBoundingClientRect();
-          var cx=(ev.clientX-rect.left)*(canvas.width/ (rect.width||1));
-          var cy=(ev.clientY-rect.top)*(canvas.height/(rect.height||1));
+          if(rect.width===0 || rect.height===0) return;
+          var cx=(ev.clientX-rect.left)*(canvas.width/rect.width);
+          var cy=(ev.clientY-rect.top)*(canvas.height/rect.height);
           var hits=window.__nomnomlHits||[];
+          // A little slack makes the tight text boxes easy to hit.  When
+          // boxes overlap, pick the smallest enclosing one (the most specific
+          // node) so clicks near a boundary open the right dependency.
+          var pad=6, best=null, bestArea=Infinity;
           for(var i=0;i<hits.length;i++){
             var h=hits[i];
-            if(cx>=h.x-h.w/2 && cx<=h.x+h.w/2 && cy>=h.y-h.h/2 && cy<=h.y+h.h/2){
-              var g=ADACOVEX_GRAPH.dependencies||[];
-              for(var k=0;k<g.length;k++){
-                if(String(g[k].name)===h.name){ window.showDepDetails(k+1); return; }
-              }
+            if(cx>=h.x-h.w/2-pad && cx<=h.x+h.w/2+pad && cy>=h.y-h.h/2-pad && cy<=h.y+h.h/2+pad){
+              var area=(h.w+2*pad)*(h.h+2*pad);
+              if(area<bestArea){ bestArea=area; best=h; }
+            }
+          }
+          if(best){
+            var g=ADACOVEX_GRAPH.dependencies||[];
+            for(var k=0;k<g.length;k++){
+              if(String(g[k].name)===best.name){ window.showDepDetails(k+1); return; }
             }
           }
         });
@@ -346,35 +355,47 @@ window.showDepDetails=function(idx){
   var h='<strong>'+ (d.name||'') +'</strong>';
   if(d.version) h+=' <span class="dep-badge">'+esc(d.version)+'</span>';
   h+=' <span class="dep-badge '+esc(d.scope||'')+'">'+esc(d.scope||'')+'</span>';
+  if(d.purl && String(d.purl).indexOf('pkg:generic/')===0) h+=' <span class="dep-badge scope-system">system</span>';
   if(d.kind==='root') h+=' <span class="dep-badge">root</span>';
   h+=' <span class="dep-badge dep-details-close" onclick="closeDepDetails()">close &times;</span>';
-  h+='<table class="dep-details-table">';
-  h+='<tr><th>Name</th><td>'+esc(d.name||'')+'</td></tr>';
-  h+='<tr><th>Version</th><td>'+esc(d.version||'')+'</td></tr>';
-  h+='<tr><th>Scope</th><td class="lic">'+esc(d.scope||'')+'</td></tr>';
-  h+='<tr><th>License</th><td class="lic">'+esc(d.license||'')+'</td></tr>';
-  h+='<tr><th>PURL</th><td class="purl">'+esc(d.purl||'')+'</td></tr>';
-  var par = (d.parent && g && g[d.parent-1]) ? g[d.parent-1].name : (d.parent===0 ? '(root)' : '\u2014');
-  h+='<tr><th>Parent</th><td>'+esc(par)+'</td></tr>';
-  // Preferred link: the resolved source repository / project website (from
-  // alr show / the lockfile), which never produces a guessed or dead link.
-  // Fall back to the PURL-derived registry link only when that resolves to a
-  // real, known registry (never a GitHub search page).
-  var link=null;
-  if(d.website && /^https?:\/\//i.test(String(d.website))){
-    link={label:'Source', href:d.website};
-  } else {
-    link=purlInfo(d.purl);
-  }
-  h+='<tr><th>Link</th><td>'+(link ? '<a href="'+esc(link.href)+'" target="_blank" rel="noopener">'+esc(link.label)+' &#8599;</a>' : '\u2014')+'</td></tr>';
-  h+='</table>';
+   h+='<table class="dep-details-table">';
+   h+='<tr><th>Name</th><td>'+esc(d.name||'')+'</td></tr>';
+   h+='<tr><th>Version</th><td>'+esc(d.version||'')+'</td></tr>';
+   h+='<tr><th>Scope</th><td class="lic">'+esc(d.scope||'')+'</td></tr>';
+   h+='<tr><th>License</th><td class="lic">'+esc(d.license||'')+'</td></tr>';
+   if(d.lang) h+='<tr><th>Language</th><td>'+esc(d.lang)+'</td></tr>';
+   h+='<tr><th>PURL</th><td class="purl">'+esc(d.purl||'')+'</td></tr>';
+   var par = (d.parent && g && g[d.parent-1]) ? g[d.parent-1].name : (d.parent===0 ? '(root)' : '\u2014');
+   h+='<tr><th>Parent</th><td>'+esc(par)+'</td></tr>';
+   // Preferred link: the resolved source repository / project website (from
+   // alr show / the lockfile), which never produces a guessed or dead link.
+   // Fall back to the PURL-derived registry link only when that resolves to a
+   // real, known registry (never a GitHub search page).
+   var link=null;
+   if(d.website && /^https?:\/\//i.test(String(d.website))){
+     link={label:'Source', href:d.website};
+   } else {
+     link=purlInfo(d.purl);
+   }
+   h+='<tr><th>Link</th><td>'+(link ? '<a href="'+esc(link.href)+'" target="_blank" rel="noopener">'+esc(link.label)+' &#8599;</a>' : '\u2014')+'</td></tr>';
+   h+='</table>';
+   if(d.description) h+='<p class="dep-detail-note">'+esc(d.description)+'</p>';
+   // System tools (pkg:generic/*) are discovered from the project's dev
+   // files + PATH: we provision the resolved version but never a guessed
+   // external link or licence, so say so instead of showing empty fields.
+   if(d.purl && String(d.purl).indexOf('pkg:generic/')===0){
+     h+='<p class="dep-system-note">System tool. Version is resolved from the installed binary on PATH. No external link or licence is provisioned.</p>';
+   }
   pop.innerHTML=h;
   pop.hidden=false;
   // Activate the split layout: tree/diagram docks left, details right.
-  var shell=document.getElementById('tab-deps'); if(shell) shell.classList.add('dep-split-active');
+  // By default (no selection) the view fills the screen; the split appears
+  // only once a dependency is selected, so the tree or diagram keeps its
+  // full width until then.
+  var shell=document.getElementById('dep-split'); if(shell) shell.classList.add('dep-split-active');
   pop.scrollIntoView({block:'nearest'});
 };
 window.closeDepDetails=function(){
   var pop=document.getElementById('dep-detail-popup'); if(pop) pop.hidden=true;
-  var shell=document.getElementById('tab-deps'); if(shell) shell.classList.remove('dep-split-active');
+  var shell=document.getElementById('dep-split'); if(shell) shell.classList.remove('dep-split-active');
 };})();
