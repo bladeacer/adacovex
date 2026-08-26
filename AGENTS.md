@@ -75,6 +75,41 @@ src/
 |   |-- adacovex-parsers-do178c.ads/.adb      -- HLR/LLR markdown parser + source tag matcher
 |   |-- adacovex-parsers-gnatprove.ads/.adb   -- GNATprove .out parser
 |   |-- adacovex-parsers-manifest.ads/.adb    -- Alire manifest / alire.lock / .gpr dep graph
+|   |-- adacovex-parsers-manifest-add_dep_name.adb-- Append a crate name to a name vector unless already present
+|   |-- adacovex-parsers-manifest-append_dependency.adb-- Append one component node to the dependency graph
+|   |-- adacovex-parsers-manifest-classify_scope.adb-- Classify a dependency name as base/dev/transitive scope
+|   |-- adacovex-parsers-manifest-collect_gpr_files.adb-- Collect every .gpr file under a target directory tree
+|   |-- adacovex-parsers-manifest-detect_languages.adb-- Count source files by language under a directory tree
+|   |-- adacovex-parsers-manifest-discover_generic_vendored.adb-- Discover vendored components via their ecosystem manifests
+|   |-- adacovex-parsers-manifest-discover_vendored_components.adb-- Register vendored patches/resources/assets as scope=vendored SBOM components
+|   |-- adacovex-parsers-manifest-extension_language.adb-- Map a file extension to its language display name
+|   |-- adacovex-parsers-manifest-file_quoted_value.adb-- Extract the first quoted "key"=/"key":" value from a manifest file
+|   |-- adacovex-parsers-manifest-find_gpr.adb-- Locate the .gpr file for a crate name in collected files
+|   |-- adacovex-parsers-manifest-first_list_value.adb-- Extract the first quoted value from a "key = [list]" line
+|   |-- adacovex-parsers-manifest-gem_entry.adb-- Parse the first gem name/version from a Gemfile
+|   |-- adacovex-parsers-manifest-go_module_path.adb-- Read the module path from the first "module" line of go.mod
+|   |-- adacovex-parsers-manifest-has_lang.adb-- Whether a language counter vector already holds a language name
+|   |-- adacovex-parsers-manifest-is_vendor_dir_name.adb-- Whether a directory name denotes a vendored-code root
+|   |-- adacovex-parsers-manifest-key_value.adb-- Extract the quoted "key = value" from a TOML/JSON line
+|   |-- adacovex-parsers-manifest-language_of_dir.adb-- Summarise the source languages under a directory (primary first)
+|   |-- adacovex-parsers-manifest-language_summary.adb-- Rank and join a language counter vector into a summary label
+|   |-- adacovex-parsers-manifest-make_tool.adb-- Build a Tool_Entry (name + version flag) from string literals
+|   |-- adacovex-parsers-manifest-name_in_graph.adb-- Whether a dependency name already exists in the graph
+|   |-- adacovex-parsers-manifest-parse_gpr.adb-- Parse a GNAT project file for project name and with-clauses
+|   |-- adacovex-parsers-manifest-probe_version.adb-- Probe a tool's version by spawning it and parsing its output
+|   |-- adacovex-parsers-manifest-read_alire_lock.adb-- Parse alire.lock [[solution.state]] crate entries into the graph
+|   |-- adacovex-parsers-manifest-read_manifest.adb-- Read root-project metadata from an Alire manifest
+|   |-- adacovex-parsers-manifest-read_manifest_deps.adb-- Collect crate names from a manifest [[depends-on]] section
+|   |-- adacovex-parsers-manifest-read_vendor_manifest.adb-- Read a vendored manifest (table-driven filename -> ecosystem)
+|   |-- adacovex-parsers-manifest-register_manifest_deps.adb-- Register Alire manifest + lockfile dependencies into the graph
+|   |-- adacovex-parsers-manifest-req_entry.adb-- Parse the first requirement (name/version) from a requirements*.txt
+|   |-- adacovex-parsers-manifest-resolve_ecosystem_metadata.adb-- Resolve version/licence/website from the package registry
+|   |-- adacovex-parsers-manifest-resolve_gpr_deps.adb-- Resolve GPR with-clause dependencies into the graph
+|   |-- adacovex-parsers-manifest-set_field.adb-- Copy a string into a bounded Desc_Field (with length cap)
+|   |-- adacovex-parsers-manifest-set_path.adb-- Copy a string into a bounded Path_Field (with length cap)
+|   |-- adacovex-parsers-manifest-skip_walk_dir.adb-- Whether a directory should be skipped during a source walk
+|   |-- adacovex-parsers-manifest-version_flag.adb-- Return the version-probe flag for a registered tool name
+|   |-- adacovex-parsers-manifest-xml_tag_value.adb-- Extract the first <Tag>value</Tag> from an XML file
 |   |-- adacovex-parsers-source.ads/.adb      -- Ada source scanner (procs/funcs/docstrings/HLR)
 |   `-- adacovex-parsers-tests.ads/.adb       -- AUnit test-result parser
 |-- renderers/

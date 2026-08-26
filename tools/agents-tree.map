@@ -50,3 +50,38 @@ src/tests/adacovex_renderer_svg_tests	SVG renderer tests (161)
 src/tests/adacovex_renderer_tests	HTML/Markdown renderer tests (38)
 src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (205)
 src/tests/test_runner	Test suite entry point (973 tests)
+src/parsers/adacovex-parsers-manifest-req_entry	Parse the first requirement (name/version) from a requirements*.txt
+src/parsers/adacovex-parsers-manifest-key_value	Extract the quoted "key = value" from a TOML/JSON line
+src/parsers/adacovex-parsers-manifest-has_lang	Whether a language counter vector already holds a language name
+src/parsers/adacovex-parsers-manifest-discover_vendored_components	Register vendored patches/resources/assets as scope=vendored SBOM components
+src/parsers/adacovex-parsers-manifest-language_of_dir	Summarise the source languages under a directory (primary first)
+src/parsers/adacovex-parsers-manifest-file_quoted_value	Extract the first quoted "key"=/"key":" value from a manifest file
+src/parsers/adacovex-parsers-manifest-register_manifest_deps	Register Alire manifest + lockfile dependencies into the graph
+src/parsers/adacovex-parsers-manifest-set_field	Copy a string into a bounded Desc_Field (with length cap)
+src/parsers/adacovex-parsers-manifest-collect_gpr_files	Collect every .gpr file under a target directory tree
+src/parsers/adacovex-parsers-manifest-gem_entry	Parse the first gem name/version from a Gemfile
+src/parsers/adacovex-parsers-manifest-skip_walk_dir	Whether a directory should be skipped during a source walk
+src/parsers/adacovex-parsers-manifest-first_list_value	Extract the first quoted value from a "key = [list]" line
+src/parsers/adacovex-parsers-manifest-extension_language	Map a file extension to its language display name
+src/parsers/adacovex-parsers-manifest-version_flag	Return the version-probe flag for a registered tool name
+src/parsers/adacovex-parsers-manifest-read_alire_lock	Parse alire.lock [[solution.state]] crate entries into the graph
+src/parsers/adacovex-parsers-manifest-parse_gpr	Parse a GNAT project file for project name and with-clauses
+src/parsers/adacovex-parsers-manifest-set_path	Copy a string into a bounded Path_Field (with length cap)
+src/parsers/adacovex-parsers-manifest-name_in_graph	Whether a dependency name already exists in the graph
+src/parsers/adacovex-parsers-manifest-detect_languages	Count source files by language under a directory tree
+src/parsers/adacovex-parsers-manifest-classify_scope	Classify a dependency name as base/dev/transitive scope
+src/parsers/adacovex-parsers-manifest-append_dependency	Append one component node to the dependency graph
+src/parsers/adacovex-parsers-manifest-is_vendor_dir_name	Whether a directory name denotes a vendored-code root
+src/parsers/adacovex-parsers-manifest-resolve_gpr_deps	Resolve GPR with-clause dependencies into the graph
+src/parsers/adacovex-parsers-manifest-xml_tag_value	Extract the first <Tag>value</Tag> from an XML file
+src/parsers/adacovex-parsers-manifest-discover_generic_vendored	Discover vendored components via their ecosystem manifests
+src/parsers/adacovex-parsers-manifest-read_vendor_manifest	Read a vendored manifest (table-driven filename -> ecosystem)
+src/parsers/adacovex-parsers-manifest-resolve_ecosystem_metadata	Resolve version/licence/website from the package registry
+src/parsers/adacovex-parsers-manifest-find_gpr	Locate the .gpr file for a crate name in collected files
+src/parsers/adacovex-parsers-manifest-read_manifest	Read root-project metadata from an Alire manifest
+src/parsers/adacovex-parsers-manifest-language_summary	Rank and join a language counter vector into a summary label
+src/parsers/adacovex-parsers-manifest-read_manifest_deps	Collect crate names from a manifest [[depends-on]] section
+src/parsers/adacovex-parsers-manifest-add_dep_name	Append a crate name to a name vector unless already present
+src/parsers/adacovex-parsers-manifest-go_module_path	Read the module path from the first "module" line of go.mod
+src/parsers/adacovex-parsers-manifest-probe_version	Probe a tool's version by spawning it and parsing its output
+src/parsers/adacovex-parsers-manifest-make_tool	Build a Tool_Entry (name + version flag) from string literals
