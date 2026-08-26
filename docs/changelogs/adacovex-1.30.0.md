@@ -6,28 +6,44 @@ Version bumped 1.29.0 -> 1.30.0.
 
 ## Changes
 
-### C1: System dependencies appear in the dashboard (SBOM parity)
+### C1: System dependencies get a first-class `system` scope
 
-The served dashboard and the metrics export built their dependency graph
-without `Discover_System_Dev_Deps`, so the system-tool dev dependencies
-(`python3`, `git`, `gnatprove`, and more) that the SBOM lists were absent from
-the dashboard. Both graph builds now run the same system-tool discovery as the
-SBOM, so the dashboard and the SBOM show the same system dependencies.
-A system dependency is marked with a distinct `system` badge (derived from its
-`pkg:generic/` PURL) and, in its detail panel, a note that no external link or
-licence is provisioned -- only the resolved version is shown.
+The dependency graph now models system tools (`python3`, `git`, `gnatprove`,
+and more) as a dedicated `system` scope, distinct from `base`, `dev`,
+`transitive`, and `vendored`. The dashboard gives the scope its own filter
+checkbox, badge colour, and legend entry; the SBOM lists it under `system`
+scope; and the `/api/deps` JSON reports `scope: "system"`. A system
+dependency's detail panel still notes that no external link or licence is
+provisioned -- only the resolved version is shown. Both the dashboard and the
+SBOM run the same `Discover_System_Dev_Deps` discovery, so they show the same
+system dependencies.
 
-### C2: Ecosystem licence resolution for vendored packages
+### C2: Flexible ecosystem licence resolution
 
-`Read_Vendor_Manifest` now reads the `license` field from each vendored
-package manifest (`package.json` for npm/pnpm, `Cargo.toml` for cargo,
-`pyproject.toml`/`composer.json` for pypi/composer). The licence is carried
-onto the SBOM component and the dashboard detail panel. When the local
-manifest carries no licence and the ecosystem is npm/pnpm, adacovex resolves
-it from the package registry as a best-effort, online fallback:
-`npm view <pkg> license` (or `pnpm show <pkg> license`). The fallback only
-runs when the offline read finds nothing, so vendored packages that ship a
-licence never touch the network. Other ecosystems keep an empty licence.
+`Read_Vendor_Manifest` reads the `license` field from each vendored package
+manifest (`package.json` for npm/pnpm, `Cargo.toml` for cargo,
+`pyproject.toml`/`composer.json` for pypi/composer) and carries it onto the
+SBOM component and the dashboard detail panel. When the local manifest carries
+no licence, the new `Resolve_Ecosystem_Metadata` resolver falls back to the
+package registry. The resolver dispatches on the ecosystem (the PURL type)
+through a single static table, so adding a language is one row rather than a
+new code path:
+
+- **npm** -- `npm view <pkg> license`.
+- **pnpm** -- `pnpm show <pkg> license`.
+- **cargo** (Rust) -- `cargo search <pkg>`, with the SPDX id read from the
+  `(license: ...)` token in the output.
+- **go** and other ecosystems with no portable, reliable registry query keep
+  an empty licence; the vendored manifest scanner still reads any in-repo
+  licence file.
+
+The fallback runs only when the offline read finds nothing, so a vendored
+package that ships a licence never touches the network.
+
+The bundled third-party libraries that the dashboard vendors (Charts.css,
+FlexSearch, nomnoml, graphre) now report their known upstream licence (MIT or
+Apache-2.0) from a built-in table. The Credits tab and the SBOM therefore list
+them with a licence rather than a blank.
 
 ### C3: Dependency detail panel is the single, richer source (DRY)
 
@@ -88,15 +104,15 @@ changing the fixture counts).
 ## Proof Results
 
 Platinum, 724/724 VCs proved under gnatprove 16.1.0 (unchanged). The new
-`Resolve_Ecosystem_License` and the dependency enrichment run only at
+`Resolve_Ecosystem_Metadata` and the dependency enrichment run only at
 graph-build time and are outside the proof surface (the manifest parser body
 is not in `SPARK_Mode On`).
 
 ## Traceability
 
-  - `HLR-SBOM` -- C1 system dependencies in the dashboard, C2 ecosystem
-    licence resolution; the SBOM spec carries the resolved licence for
-    vendored packages.
+  - `HLR-SBOM` -- C1 system dependencies in the dashboard, C2 ecosystem and
+    bundled-asset licence resolution; the SBOM spec carries the resolved
+    licence for vendored packages.
   - `RENDER-HTML` -- C3 detail panel DRY, C4 e2e assertions, H1 split view,
     H2 radar label, H3 doc-coverage caption, H4 nomnoml legend/clicks.
   - `HLR-ARCH` -- C4 e2e tooling reorganisation.

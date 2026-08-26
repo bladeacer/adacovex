@@ -73,7 +73,7 @@ dropdown, badge images, `__THEME__` substitution, and the new tab markers).
 
 ## Proof Results
 
-Platinum, 720/720 VCs proved across 48 analyzed units (unchanged from
+Platinum, 720/720 VCs proved across 48 analysed units (unchanged from
 1.19.0): dashboard tabbing, dep-tree rendering, chart fixes, make help
 grouping, and CI/doc updates live in default-off or I/O-bound bodies -- no
 new proof obligations.  0 unproved, 0 justified.  Re-verified with

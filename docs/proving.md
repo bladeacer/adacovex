@@ -83,18 +83,18 @@ end Body_Vec;
 
 Rules that matter in practice:
 
-- **`SPARK_Mode => On` selects what gnatprove analyzes.** Without it a unit
+- **`SPARK_Mode => On` selects what gnatprove analyses.** Without it a unit
   is out of proof scope. It can be declared on the package
   (`package P with SPARK_Mode => On is`), on individual subprograms, or
   both -- adacovex's own source uses package-level On on pure units and
   per-subprogram On aspects inside default-off bodies.
-- **A body is analyzed only when the body itself opts in.** Declaring
+- **A body is analysed only when the body itself opts in.** Declaring
   `SPARK_Mode => On` on the *spec* does not make gnatprove analyse the body.
   The body must declare it too (on the `package body` line or per subprogram).
   This is the rule that makes proof patches necessary for vendored code -- see
   below.
 - **I/O bodies are skipped by design.** A body that calls `Ada.Text_IO` (which
-  is `SPARK_Mode Off`) cannot be analyzed. gnatprove reports the unit out of
+  is `SPARK_Mode Off`) cannot be analysed. gnatprove reports the unit out of
 proof scope. This never drags the assessed level down -- it means those
 bodies are not proved.
 - **Contracts are proved against the body.** gnatprove proves that every
@@ -126,7 +126,7 @@ Three facts force the design:
     missing docstrings and missing contracts count against the target.
     `--relaxed` skips vendored dirs but drops the audit to a quick pass -- not
     an option for a compliance assessment.
- 2. **gnatprove analyzes a body only when the body itself opts in.** (The
+ 2. **gnatprove analyses a body only when the body itself opts in.** (The
     rule from [Writing proofs](#writing-proofs-spark-contracts) above.) A
     vendored spec with no contracts contributes nothing to the proof. A
     vendored body without `SPARK_Mode` is skipped entirely.
@@ -215,7 +215,7 @@ the copy gnatprove sees is `package body Vecmath with SPARK_Mode => On is
 ### Matching rules
 
 The merge matches each patched declaration against the original by **name and
-normalized parameter profile**:
+normalised parameter profile**:
 
 - Matching is whitespace-insensitive. A single-line parameter list matches a
   multi-line one.
@@ -288,7 +288,7 @@ contract without the vendored sources ever changing.
   entry replaces exactly the signature it re-declares -- verify you wrote the
   same parameter list as the overload you mean.
 - **Expecting contracts to prove against a non-SPARK body.** `Ada.Text_IO`
-  and other `SPARK_Mode Off` dependencies cannot be analyzed; the patch still
+  and other `SPARK_Mode Off` dependencies cannot be analysed; the patch still
   applies, but the proof does not cover those bodies.
 
 ## See also

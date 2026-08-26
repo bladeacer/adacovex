@@ -8,11 +8,11 @@ Version bumped 1.4.0 -> 1.5.0.
 
 ### C1: More standard docstring styles
 
-The source scanner now recognizes additional standard docstring conventions,
+The source scanner now recognises additional standard docstring conventions,
 so third-party and code-generated Ada is counted correctly:
 
 - Comment prefixes: besides the canonical `--  ` (two dashes + two spaces),
-  the single-space `-- ` and tab-separated (`--<TAB>`) styles are recognized
+  the single-space `-- ` and tab-separated (`--<TAB>`) styles are recognised
   as docstrings. A bare `--` or `---` divider is still not a docstring.
 - Tag aliases: `@parameter` == `@param`, `@returns` == `@return`.
 - Summary tags: `@brief` and `@summary` mark a subprogram as documented.
@@ -72,7 +72,7 @@ representation for cross-compilation assessments:
 
 ### C6: Google / Sphinx docstring styles
 
-The source scanner now also recognizes the two most common non-Ada docstring
+The source scanner now also recognises the two most common non-Ada docstring
 conventions, so the same subprogram can be documented in Ada, Google, or
 Sphinx style:
 
@@ -80,7 +80,7 @@ Sphinx style:
   (deeper-indented following comment lines count as parameters); a `Returns:`
   header marks the return-value description.
 - **Sphinx**: `:param Name:`, `:parameter Name:`, `:type Name:`, `:return:`,
-  `:returns:`, and `:rtype:` fields are all recognized.
+  `:returns:`, and `:rtype:` fields are all recognised.
 
 ## Fixes
 

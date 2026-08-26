@@ -827,27 +827,91 @@ package body Adacovex.Parsers.Manifest is
       end;
    end Alr_Show_Crate;
 
-   --  Resolve a dependency's licence from its package registry when the
-   --  local manifest does not carry one.  For npm and pnpm ecosystems the
-   --  project's package manager answers `npm view <name> license` (or
-   --  `pnpm show <name> license`); the first non-empty trimmed line is the
-   --  SPDX licence id.  Returns "" when the tool is missing, the package is
-   --  unknown, the field is absent, or the command fails.  Other ecosystems
-   --  have no portable, reliable registry query, so they return "".  This is
-   --  a best-effort, online fallback used only after the offline manifest
-   --  read finds nothing -- vendored packages that ship a licence in their
-   --  manifest never hit the network.
-   procedure Resolve_Ecosystem_License
-     (Kind    : String;
-      Name    : String;
-      License : out Types.Desc_Field;
-      Lic_Len : out Natural)
+   --  Resolve a vendored dependency's licence from its package registry when
+   --  the local manifest does not carry one.  The dispatch is keyed on the
+   --  ecosystem (the PURL type, for example "npm", "pnpm", "cargo", "go"):
+   --  each supported ecosystem names the CLI tool that reports the field,
+   --  the subcommand, and the registry field to read.  A single static
+   --  table drives the dispatch, so adding a language is one row rather than
+   --  a new code path -- the design scales to many ecosystems by
+   --  construction.  The first non-empty trimmed line (Eco_Bare) or the
+   --  value after the "license:" token (Eco_Token) is the SPDX id.  Returns
+   --  "" for a field when the tool is missing, the package is unknown, the
+   --  field is absent, or the command fails.  Ecosystems with no portable,
+   --  reliable registry query leave Tool empty and resolve to "": vendored
+   --  packages that ship a licence in their own manifest never hit the
+   --  network.  This is a best-effort, online fallback used only after the
+   --  offline manifest read finds nothing.
+   type Eco_Format is (Eco_Bare, Eco_Token);
+
+   procedure Resolve_Ecosystem_Metadata
+     (Ecosystem : String;
+      Name      : String;
+      License   : out Types.Desc_Field;
+      Lic_Len   : out Natural)
    is
+      type Eco_Query is record
+         Kind   : String (1 .. 7);
+         KLen   : Natural;
+         Tool   : String (1 .. 8);
+         TLen   : Natural;
+         Sub    : String (1 .. 8);
+         SLen   : Natural;
+         Field  : String (1 .. 16);
+         FLen   : Natural;
+         Format : Eco_Format;
+      end record;
+
+      --  One row per supported ecosystem.  Tool = "" means no reliable
+      --  registry CLI, so the licence stays empty (the vendored manifest
+      --  scanner still reads any in-repo licence file for that ecosystem).
+      Table : constant array (1 .. 4) of Eco_Query :=
+        (1 =>
+           (Kind   => "npm" & (4 .. 7 => ' '),
+            KLen   => 3,
+            Tool   => "npm" & (4 .. 8 => ' '),
+            TLen   => 3,
+            Sub    => "view" & (5 .. 8 => ' '),
+            SLen   => 4,
+            Field  => "license" & (8 .. 16 => ' '),
+            FLen   => 7,
+            Format => Eco_Bare),
+         2 =>
+           (Kind   => "pnpm" & (5 .. 7 => ' '),
+            KLen   => 4,
+            Tool   => "pnpm" & (5 .. 8 => ' '),
+            TLen   => 4,
+            Sub    => "show" & (5 .. 8 => ' '),
+            SLen   => 4,
+            Field  => "license" & (8 .. 16 => ' '),
+            FLen   => 7,
+            Format => Eco_Bare),
+         3 =>
+           (Kind   => "cargo" & (6 .. 7 => ' '),
+            KLen   => 5,
+            Tool   => "cargo" & (6 .. 8 => ' '),
+            TLen   => 5,
+            Sub    => "search" & (7 .. 8 => ' '),
+            SLen   => 6,
+            Field  => (others => ' '),
+            FLen   => 0,
+            Format => Eco_Token),
+         4 =>
+           (Kind   => "go" & (3 .. 7 => ' '),
+            KLen   => 2,
+            Tool   => (others => ' '),
+            TLen   => 0,
+            Sub    => (others => ' '),
+            SLen   => 0,
+            Field  => (others => ' '),
+            FLen   => 0,
+            Format => Eco_Bare));
+
       Pid     : constant Integer := Pid_To_Integer (Current_Process_Id);
       Pid_Img : constant String := Integer'Image (Pid);
       Tmp     : constant String :=
         Adacovex.CPUs.Get_Temp_Directory
-        & "/adacovex-lic-"
+        & "/adacovex-eco-"
         & Pid_Img (2 .. Pid_Img'Last)
         & ".out";
       Buf     : String (1 .. 16384);
@@ -855,33 +919,57 @@ package body Adacovex.Parsers.Manifest is
       F       : Ada.Text_IO.File_Type;
       OK      : Boolean;
       Code    : Integer;
-
-      procedure Run (Exe_Name, Sub, Pkg : String) is
-         Exe  : String_Access := Locate_Exec_On_Path (Exe_Name);
-         Args : Argument_List (1 .. 2);
-      begin
-         if Exe = null then
-            return;
-         end if;
-         Args (1) := new String'(Sub);
-         Args (2) := new String'(Pkg & " license");
-         Spawn (Exe.all, Args, Tmp, OK, Code, Err_To_Out => True);
-         Free (Exe);
-         Free (Args (1));
-         Free (Args (2));
-      end Run;
+      Fmt     : Eco_Format := Eco_Bare;
+      Ran     : Boolean := False;
    begin
       Lic_Len := 0;
-      if Kind'Length = 0 or else Name'Length = 0 then
+      if Ecosystem'Length = 0 or else Name'Length = 0 then
          return;
       end if;
-      if Kind = "npm" then
-         Run ("npm", "view", Name);
-         if not OK then
-            Run ("pnpm", "show", Name);
+      for I in Table'Range loop
+         if Table (I).KLen = Ecosystem'Length
+           and then Table (I).Kind (1 .. Table (I).KLen) = Ecosystem
+         then
+            Fmt := Table (I).Format;
+            if Table (I).TLen = 0 then
+               return;  --  no reliable registry CLI for this ecosystem
+
+            end if;
+            declare
+               Exe  : String_Access :=
+                 Locate_Exec_On_Path (Table (I).Tool (1 .. Table (I).TLen));
+               Args : Argument_List (1 .. 3);
+            begin
+               if Exe = null then
+                  return;
+               end if;
+               Args (1) := new String'(Table (I).Sub (1 .. Table (I).SLen));
+               if Table (I).FLen > 0 then
+                  Args (2) := new String'(Name);
+                  Args (3) :=
+                    new String'(Table (I).Field (1 .. Table (I).FLen));
+                  Spawn (Exe.all, Args, Tmp, OK, Code, Err_To_Out => True);
+                  Free (Args (2));
+                  Free (Args (3));
+               else
+                  Args (2) := new String'(Name);
+                  Spawn
+                    (Exe.all,
+                     Args (1 .. 2),
+                     Tmp,
+                     OK,
+                     Code,
+                     Err_To_Out => True);
+                  Free (Args (2));
+               end if;
+               Free (Exe);
+               Free (Args (1));
+            end;
+            Ran := OK;
+            exit;
          end if;
-      end if;
-      if not OK then
+      end loop;
+      if not Ran then
          return;
       end if;
       begin
@@ -889,21 +977,16 @@ package body Adacovex.Parsers.Manifest is
          while not Ada.Text_IO.End_Of_File (F) loop
             declare
                Line : constant String := Ada.Text_IO.Get_Line (F);
-               T    : constant String := Trim (Line);
             begin
-               if T'Length > 0 then
-                  declare
-                     L : Natural := T'Length;
-                  begin
-                     if L > Types.Max_Desc_Str then
-                        L := Types.Max_Desc_Str;
-                     end if;
-                     for I in 1 .. L loop
-                        License (I) := T (T'First + I - 1);
-                     end loop;
-                     Lic_Len := L;
-                  end;
-                  exit;
+               for C in Line'Range loop
+                  if BLen < Buf'Last then
+                     BLen := BLen + 1;
+                     Buf (BLen) := Line (C);
+                  end if;
+               end loop;
+               if BLen < Buf'Last then
+                  BLen := BLen + 1;
+                  Buf (BLen) := ASCII.LF;
                end if;
             end;
          end loop;
@@ -914,13 +997,90 @@ package body Adacovex.Parsers.Manifest is
                Ada.Text_IO.Close (F);
             end if;
       end;
+      --  Parse the captured registry output into a licence id.
+      declare
+         S : constant String := Buf (1 .. BLen);
+         P : Natural := S'First;
+
+         procedure Copy (A, B : Natural) is
+            L : Natural := B - A + 1;
+         begin
+            if L > Types.Max_Desc_Str then
+               L := Types.Max_Desc_Str;
+            end if;
+            for K in 1 .. L loop
+               License (K) := S (A + K - 1);
+            end loop;
+            Lic_Len := L;
+         end Copy;
+      begin
+         if Fmt = Eco_Bare then
+            while P <= S'Last loop
+               declare
+                  Q : Natural := P;
+               begin
+                  while Q <= S'Last and then S (Q) /= ASCII.LF loop
+                     Q := Q + 1;
+                  end loop;
+                  declare
+                     A : Natural := P;
+                     B : Natural := Q - 1;
+                  begin
+                     while A <= B
+                       and then (S (A) = ' ' or else S (A) = ASCII.HT)
+                     loop
+                        A := A + 1;
+                     end loop;
+                     while B >= A
+                       and then (S (B) = ' ' or else S (B) = ASCII.HT)
+                     loop
+                        B := B - 1;
+                     end loop;
+                     if A <= B then
+                        Copy (A, B);
+                        exit;
+                     end if;
+                  end;
+                  P := Q + 1;
+               end;
+            end loop;
+         else
+            --  Eco_Token: value follows "license:" up to ')'
+            while P <= S'Last loop
+               if S (P) = 'l'
+                 and then P + 7 <= S'Last
+                 and then S (P .. P + 7) = "license:"
+               then
+                  declare
+                     J : Natural := P + 8;
+                  begin
+                     while J <= S'Last and then S (J) = ' ' loop
+                        J := J + 1;
+                     end loop;
+                     declare
+                        K : Natural := J;
+                     begin
+                        while K <= S'Last and then S (K) /= ')' loop
+                           K := K + 1;
+                        end loop;
+                        if K > J then
+                           Copy (J, K - 1);
+                        end if;
+                     end;
+                  end;
+                  exit;
+               end if;
+               P := P + 1;
+            end loop;
+         end if;
+      end;
       begin
          Ada.Directories.Delete_File (Tmp);
       exception
          when others =>
             null;
       end;
-   end Resolve_Ecosystem_License;
+   end Resolve_Ecosystem_Metadata;
 
    --  Register manifest-declared dependencies that no GPR with-clause or
    --  lockfile resolved (or fill in missing metadata on entries that were).
@@ -2279,36 +2439,48 @@ package body Adacovex.Parsers.Manifest is
          Npm_Name : out Lib_Name_Field;
          NN       : out Natural;
          Lib_Ver  : out Lib_Name_Field;
-         VN       : out Natural) return Boolean
+         VN       : out Natural;
+         Lib_Lic  : out Lib_Name_Field;
+         LL       : out Natural) return Boolean
       is
          N : String (1 .. 32) := (others => ' ');
          V : String (1 .. 32) := (others => ' ');
+         L : String (1 .. 32) := (others => ' ');
       begin
          if Raw = "flexsearch" then
             N (1 .. 10) := "flexsearch";
             NN := 10;
             V (1 .. 6) := "0.7.31";
             VN := 6;
+            L (1 .. 10) := "Apache-2.0";
+            LL := 10;
          elsif Raw = "nomnoml" then
             N (1 .. 7) := "nomnoml";
             NN := 7;
             V (1 .. 5) := "1.7.0";
             VN := 5;
+            L (1 .. 3) := "MIT";
+            LL := 3;
          elsif Raw = "graphre" then
             N (1 .. 7) := "graphre";
             NN := 7;
             V (1 .. 5) := "0.1.3";
             VN := 5;
+            L (1 .. 3) := "MIT";
+            LL := 3;
          elsif Raw = "charts.min" then
             N (1 .. 10) := "charts.css";
             NN := 10;
             V (1 .. 5) := "1.2.0";
             VN := 5;
+            L (1 .. 3) := "MIT";
+            LL := 3;
          else
             return False;
          end if;
          Npm_Name := N;
          Lib_Ver := V;
+         Lib_Lic := L;
          return True;
       end Bundled_Library;
 
@@ -2351,16 +2523,19 @@ package body Adacovex.Parsers.Manifest is
          declare
             NN       : Natural := 0;
             VN       : Natural := 0;
+            LN       : Natural := 0;
             Npm_Name : Lib_Name_Field := (others => ' ');
             Lib_Ver  : Lib_Name_Field := (others => ' ');
+            Lib_Lic  : Lib_Name_Field := (others => ' ');
          begin
-            if Bundled_Library (Raw (1 .. Raw_Len), Npm_Name, NN, Lib_Ver, VN)
+            if Bundled_Library
+                 (Raw (1 .. Raw_Len), Npm_Name, NN, Lib_Ver, VN, Lib_Lic, LN)
             then
                Append_Dependency
                  (Graph,
                   Npm_Name (1 .. NN),
                   Lib_Ver (1 .. VN),
-                  "",
+                  Lib_Lic (1 .. LN),
                   "",
                   "pkg:npm/" & Npm_Name (1 .. NN) & "@" & Lib_Ver (1 .. VN),
                   1,
@@ -2594,18 +2769,21 @@ package body Adacovex.Parsers.Manifest is
                         begin
                            --  Prefer the licence read from the local manifest
                            --  (offline, reliable).  Fall back to the package
-                           --  registry (`npm view`/`pnpm show`) for npm/pnpm
-                           --  components that ship no licence file.  Other
-                           --  ecosystems keep an empty licence.
+                           --  registry for any ecosystem the resolver supports
+                           --  (npm, pnpm, and cargo today; add a row to the
+                           --  dispatch table to cover more) when the component
+                           --  ships no licence file.  Ecosystems with no
+                           --  reliable registry CLI keep an empty licence.
                            if M.License_Len > 0 then
                               Lic_Len := M.License_Len;
                               Lic_Buf (1 .. Lic_Len) :=
                                 M.License (1 .. Lic_Len);
-                           elsif M.PURL_Kind_Len = 3
-                             and then M.PURL_Kind (1 .. 3) = "npm"
-                           then
-                              Resolve_Ecosystem_License
-                                ("npm", N, Lic_Buf, Lic_Len);
+                           else
+                              Resolve_Ecosystem_Metadata
+                                (M.PURL_Kind (1 .. M.PURL_Kind_Len),
+                                 N,
+                                 Lic_Buf,
+                                 Lic_Len);
                            end if;
                            Append_Dependency
                              (Graph,
@@ -3633,7 +3811,7 @@ package body Adacovex.Parsers.Manifest is
                "pkg:generic/" & Probes (PI).Name (1 .. Probes (PI).NLen),
                1,
                False,
-               Types.Scope_Dev);
+               Types.Scope_System);
          end loop;
       else
          for I in 1 .. Integer (Referenced.Length) loop
@@ -3688,7 +3866,7 @@ package body Adacovex.Parsers.Manifest is
                         "pkg:generic/" & Name,
                         1,
                         False,
-                        Types.Scope_Dev);
+                        Types.Scope_System);
                   end;
                end if;
             end;

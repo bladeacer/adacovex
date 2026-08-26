@@ -36,7 +36,7 @@
 
 - HLR-CACHE: The tool shall cache per-file analysis results (source scans,
   GNATprove summaries, test summaries) on disk keyed by the SHA-256 hash of
-  each analyzed artifact, serve unchanged files from the cache instead of
+  each analysed artifact, serve unchanged files from the cache instead of
   re-scanning / re-parsing / re-proving, evict oldest entries first when the
   configured cap is reached, and report cache hits, misses, and evictions;
   behaviour is controlled by `--cache` / `--no-cache` / `--cache-dir` /

@@ -13,7 +13,7 @@ silently truncated by the source scanner: the tail of the line was drained and
 discarded, and the remaining (partial) line was parsed as if it were the whole
 line. GNATprove, test-result, HLR/LLR, and manifest parsers had a related bug
 -- a full buffer was drained for the *next* physical line, misreading the
-following content. Both behaviors could silently produce wrong metrics.
+following content. Both behaviours could silently produce wrong metrics.
 
 All parsers now share an overflow-aware `Read_Line` helper on the
 `Adacovex.Parsers` parent package:
@@ -45,7 +45,7 @@ All parsers now share an overflow-aware `Read_Line` helper on the
 - **Proof scope is the target's own units.** GNATprove `Units_Analyzed` and
   `Units_Skipped` were parsed but never surfaced; they now appear in the ANSI
   report and in `VERIFICATION.md`. Skipped units (standard library / vendor
-  code that GNATprove does not analyze) are explicitly out of proof scope, not
+  code that GNATprove does not analyse) are explicitly out of proof scope, not
   a proof failure.
 - **Justifications never downgrade the level.** A `Total` row's `Justified`
   count is counted neither as proved nor as unproved
@@ -104,7 +104,7 @@ Suite extended from 295 to **336 tests**: source scanner (68 -> 79, incl.
 over-Max_Line rejection, exact-buffer-fit acceptance, `Skipped_Ct`, and
 oversized-name/tag/value clamping), DAL compliance (2 -> 7, incl. oversized
 HLR/LLR entry clamping), GNATprove parser (38 -> 52, incl. justified-VCs-keep-
-Platinum, units analyzed/skipped parsing, and overflow rejection), test-result
+Platinum, units analysed/skipped parsing, and overflow rejection), test-result
 parser (40 -> 43, incl. overflow rejection), and CLI config (11 -> 19, incl.
 prove-option defaults). All 336 pass.
 

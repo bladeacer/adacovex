@@ -10,7 +10,7 @@ Version bumped 1.5.0 -> 1.6.0.
 
 The whole SPARK-on codebase is now fully machine-proved. Previously only the
 bounded IR types (`Checked_Add32/64`, `IR_Bounds.Add32/64`) carried complete
-proofs; every other SPARK unit was analyzed but not fully discharged. Now
+proofs; every other SPARK unit was analysed but not fully discharged. Now
 **all 491 VCs prove** with `--prover=z3 --timeout=20`, including the run-time
 range checks, assertions, functional contracts, and loop termination:
 

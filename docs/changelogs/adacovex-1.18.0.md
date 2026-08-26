@@ -22,7 +22,7 @@ Three ways to control it:
 
 - `--quiet` -- explicit request for the default suppression set (which is
   already the default, so this is the documented spelling of the default
-  behavior). Keep it for CI-adjacent scripts that want to say what they mean.
+  behaviour). Keep it for CI-adjacent scripts that want to say what they mean.
 - `--suppress-warnings` -- alias of `--quiet`, kept for compatibility with
   1.17.0.
 - `--suppress-warnings=SETS` -- suppress a custom comma-separated list of
@@ -64,7 +64,7 @@ categories unchanged. Counts synced with `make test-count`.
 
 ## Proof Results
 
-Platinum, 720/720 VCs proved across 49 analyzed units (unchanged from
+Platinum, 720/720 VCs proved across 49 analysed units (unchanged from
 1.17.0): the C1/C2 changes touch CLI parsing, the prove option record, and
 the output-replay filter -- all default-off or I/O-bound bodies, so no new
 proof obligations. 0 unproved, 0 justified. Re-verified with
@@ -74,7 +74,7 @@ unproved, 0 justified.
 
 ## Traceability
 
-No new HLRs. The quiet/suppression behavior extends the existing `HLR-CLI`
+No new HLRs. The quiet/suppression behaviour extends the existing `HLR-CLI`
 tag (`--quiet`, `--suppress-warnings=SETS` parsing in `adacovex-config`) and
 `HLR-PROVE` (`Replay_Suppressed` set-list filtering in `adacovex-prove`),
 covered by the C1 config tests and the `make run-ada-crdt` dogfood

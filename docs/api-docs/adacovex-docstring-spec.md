@@ -20,7 +20,7 @@ compatibility. No blank lines between tags and declaration.
 ## Conventions
 
 - Prefix: `--  ` (two dashes + two spaces) for all doc lines. The single-space
-  `-- ` and tab-separated (`--<TAB>`) comment styles are also recognized, so
+  `-- ` and tab-separated (`--<TAB>`) comment styles are also recognised, so
   generated or third-party code using those conventions counts toward coverage.
   A bare `--` or `---` (divider) line is **not** a docstring.
 - Summary first, then tag lines, then declaration -- no blank lines.
@@ -70,7 +70,7 @@ end Priority_Queue;
 
 ## Google / Sphinx styles
 
-The scanner also recognizes the two most common non-Ada docstring conventions,
+The scanner also recognises the two most common non-Ada docstring conventions,
 so the same subprogram can be documented in Ada, Google, or Sphinx style.
 
 ### Google style
@@ -93,7 +93,7 @@ function Foo (X : Integer) return Integer;
 ### Sphinx style
 
 `:param Name:`, `:parameter Name:`, `:type Name:`, `:return:`, `:returns:`,
-and `:rtype:` fields are all recognized.
+and `:rtype:` fields are all recognised.
 
 ```ada
 -- Do something else.
@@ -107,7 +107,7 @@ function Bar (X : Integer) return Integer;
 
 Docstring coverage measures: documented subprograms / total subprograms.
 A subprogram is "documented" if it has at least one docstring annotation tag,
-a `@brief` / `@summary` tag, or a summary comment line (any recognized prefix)
+a `@brief` / `@summary` tag, or a summary comment line (any recognised prefix)
 immediately preceding or following it.
 
 Coverage is displayed in terminal reports and SVG badges.

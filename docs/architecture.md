@@ -6,7 +6,7 @@ adacovex uses [Alire](https://alire.ada.dev/) as its packaging and delivery
 mechanism. The publishing manifest `alire.toml` declares **zero dependencies**.
 It declares no libraries beyond the GNAT runtime. It declares no tool
 dependencies. In particular `gnatprove` is *not* a declared dependency.
-adacovex analyzes `gnatprove.out` files produced externally. The `prove`
+adacovex analyses `gnatprove.out` files produced externally. The `prove`
 subcommand resolves a gnatprove executable at run time (per-project manifest,
 `$PATH`, cached toolchain, or download). Development-only tools (`gnatprove`,
 `gnatdoc_bin`, `gnatformat_bin`) are declared in `alire-dev.toml`, which is
@@ -167,12 +167,12 @@ toolchain management.
 ## SPARK Formal Verification
 
 adacovex itself is SPARK-proven at Platinum level (all VCs proved,
-AoRTE-free). The tool analyzes GNATprove output (`gnatprove.out`) to assess
+AoRTE-free). The tool analyses GNATprove output (`gnatprove.out`) to assess
 SPARK assurance levels (Stone through Platinum) for target projects.
 
 The tool does not perform verification itself. It parses and reports on proof
 results produced by GNATprove. This keeps the tool's scope narrow and aligns
-with the Unix philosophy of composing specialized tools.
+with the Unix philosophy of composing specialised tools.
 
 ### Proof scope and justification policy
 
@@ -323,7 +323,7 @@ The `prove` subcommand merges proof patches before running gnatprove:
    spliced onto the package declaration line (for a `package body ... is`
    declaration too), and each aspect-carrying subprogram declaration
    replaced by the patch's declaration block. The merge matches on name
-   **and** normalized parameter profile (`Param_Profile`), so an overloaded
+   **and** normalised parameter profile (`Param_Profile`), so an overloaded
    subprogram patches its exact signature and never a same-named sibling.
    The default `in` mode is equivalent to a bare mode. `in out` and
    `out` are distinct. A spec declaration terminates at its `;`, a body
@@ -341,7 +341,7 @@ The `prove` subcommand merges proof patches before running gnatprove:
 #### The two patch shapes
 
 A **spec patch** (`.ads` in the patch directory) re-declares the vendored
-spec with contracts, exactly as the VT100 example above. gnatprove analyzes
+spec with contracts, exactly as the VT100 example above. gnatprove analyses
 a unit's body only when the *body itself* opts in (`SPARK_Mode => On` on
 the package body or a subprogram body), so a SPARK-clean vendored body also
 needs a **body patch** (`.adb` in the patch directory) that declares the
@@ -433,7 +433,7 @@ source scans for the current tree.
    larger than `Max_Cache_Blob`. Callers skip storing it and `Deserialize`
    rejects empty/oversized input, so truncated data can never be served as a
    hit.
-- **`--target` normalization**: `--target` is normalized (`.`/`..` collapsed to
+- **`--target` normalization**: `--target` is normalised (`.`/`..` collapsed to
   a canonical absolute path) before scanning, keeping the `File_Path` values in
   cached `Package_Info` consistent across invocations that spell the same
   directory differently.
