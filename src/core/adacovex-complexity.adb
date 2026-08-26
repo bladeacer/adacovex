@@ -566,9 +566,22 @@ package body Adacovex.Complexity is
             Adacovex.Parsers.Read_Line (F, Path, Line_No, Raw, Last_Raw, Ovl);
             Result.Total_Lines := Result.Total_Lines + 1;
             if Ovl then
-               --  An over-long line is still one physical line; it carried
-               --  source content, so it counts as code.
-               Result.Code_Lines := Result.Code_Lines + 1;
+               --  An over-long line is still one physical line.  Classify it
+               --  by content: a comment-only line counts as a comment; a
+               --  blank or source line counts as code (its length alone
+               --  proves it carries source).
+               declare
+                  T : constant String := Trim (Raw (1 .. Last_Raw));
+               begin
+                  if T'Length >= 2
+                    and then T (T'First) = '-'
+                    and then T (T'First + 1) = '-'
+                  then
+                     Result.Comment_Lines := Result.Comment_Lines + 1;
+                  else
+                     Result.Code_Lines := Result.Code_Lines + 1;
+                  end if;
+               end;
                goto Next_Line;
             end if;
             RL := Last_Raw;
@@ -601,7 +614,8 @@ package body Adacovex.Complexity is
                if Raw_T'Length = 0 then
                   --  Whitespace-only line: a blank line.
                   Result.Blank_Lines := Result.Blank_Lines + 1;
-               elsif Raw_T (Raw_T'First) = '-'
+               elsif Raw_T'Length >= 2
+                 and then Raw_T (Raw_T'First) = '-'
                  and then Raw_T (Raw_T'First + 1) = '-'
                then
                   --  A line whose only content is a comment.
@@ -923,7 +937,8 @@ package body Adacovex.Complexity is
 
       --  Per-file tokei-style detail: language, total/code/comment/blank
       --  line counts, then the complexity gate columns.
-      Ada.Text_IO.Put_Line ("Per-file:");
+      Ada.Text_IO.Put_Line
+        ("Per-file (Lines / Code / Comments / Blanks / loc % / cx):");
       for I in 1 .. Integer (Result.Files.Length) loop
          declare
             FM    : File_Metrics renames Result.Files (I);
@@ -963,13 +978,13 @@ package body Adacovex.Complexity is
             Ada.Text_IO.Put (FM.Path (Start .. FM.Path_Len));
             Ada.Text_IO.Put ("  [");
             Ada.Text_IO.Put (Lang);
-            Ada.Text_IO.Put ("]  L=");
+            Ada.Text_IO.Put ("]  Lines=");
             Ada.Text_IO.Put (Img (FM.Total_Lines));
-            Ada.Text_IO.Put (" C=");
+            Ada.Text_IO.Put ("  Code=");
             Ada.Text_IO.Put (Img (FM.Code_Lines));
-            Ada.Text_IO.Put (" M=");
+            Ada.Text_IO.Put ("  Comments=");
             Ada.Text_IO.Put (Img (FM.Comment_Lines));
-            Ada.Text_IO.Put (" B=");
+            Ada.Text_IO.Put ("  Blanks=");
             Ada.Text_IO.Put (Img (FM.Blank_Lines));
             Ada.Text_IO.Put ("  loc=");
             Ada.Text_IO.Put (Img (FM.LOC));

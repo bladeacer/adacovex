@@ -120,31 +120,79 @@ Both formats validate against the official
 ## Language detection
 
 Every dependency component carries a `language` field (CycloneDX JSON /
-`components[].properties` under `"name": "adacovex:language"`, or
-`packageFileName`-adjacent note in SPDX/Markdown tables) describing the
-implementation language(s) of that dependency.  Detection follows the
-component's origin, most specific first:
+`components[].properties` under `"name": "adacovex:language"`, or the
+Markdown table's `Language` column) describing the implementation language(s)
+of that dependency.  Detection follows the component's origin, most specific
+first.
 
-- **Manifest-declared ecosystems** (`package.json`, `Cargo.toml`, `go.mod`,
-  `pyproject.toml`, `composer.json`, `Gemfile`, ...) map directly onto their
-  language -- `pkg:npm` / `pkg:cargo` / `pkg:golang` / `pkg:pypi` components
-  report the ecosystem's canonical language ("JavaScript", "Rust", "Go",
-  "Python", "PHP", "Ruby").
-- **Alire/GPR components** (Ada ecosystem, `pkg:alire`) report "Ada".
+### Manifest-declared ecosystems
 
-  For everything else -- vendored trees, `vendor/`, `node_modules`,
-  resources, loose source drops -- adacovex infers the language from the
-  **file extensions actually present** in that directory (`.ad[sb]` =>
-  "Ada", `.js` => "JavaScript", `.ts`, `.py`, `.rs`, `.go`, `.c`/`.h`,
-  `.cpp`/`.hpp`, `.java`, `.rb`, `.php`, `.swift`, `.kt`, `.sh`, `.md`).
-  A directory that mixes languages roughly evenly reports its **top 3**
-  languages by file count (e.g. `"C, C++, D"`), so a mixed-language vendored
-  drop is summarised by what it actually contains rather than by a single
-  guess.
+A vendored manifest maps directly onto its language and PURL type:
 
-  The extension-based inference also covers individual loose files inside
-  `resources/`, `assets/`, and `.adacovex/patches/`, which are registered as
-  file-level components.
+| Manifest file       | PURL type      | Language   |
+|---------------------|----------------|------------|
+| `package.json`      | `pkg:npm`      | JavaScript |
+| `Cargo.toml`        | `pkg:cargo`    | Rust       |
+| `go.mod`            | `pkg:golang`   | Go         |
+| `pyproject.toml`    | `pkg:pypi`     | Python     |
+| `requirements*.txt` | `pkg:pypi`     | Python     |
+| `composer.json`     | `pkg:composer` | PHP        |
+| `Gemfile`           | `pkg:gem`      | Ruby       |
+| `pom.xml`           | `pkg:maven`    | Java       |
+| `Package.swift`     | `pkg:swift`    | Swift      |
+| Alire manifest      | `pkg:alire`    | Ada        |
+| `.gpr` project file | `pkg:gpr`      | Ada        |
+
+### Extension-based inference
+
+For every other component -- vendored trees, `vendor/`, `node_modules`,
+resources, loose source drops, and individual files inside `resources/`,
+`assets/`, and `.adacovex/patches/` -- adacovex infers the language from the
+**file extensions actually present**.  The extension is the source of truth: a
+`.py` file reports Python even when a `Cargo.toml` sits next to it, and the
+manifest language only breaks ties.
+
+Supported extensions:
+
+- **Ada**: `.ads`, `.adb`, `.ada`, `.gpr`
+- **JavaScript**: `.js`, `.mjs`, `.cjs`
+- **TypeScript**: `.ts`, `.tsx`
+- **CSS**: `.css`
+- **HTML**: `.html`, `.htm`
+- **Python**: `.py`
+- **Go**: `.go`
+- **Rust**: `.rs`
+- **C**: `.c`, `.h`
+- **C++**: `.cpp`, `.cc`, `.cxx`, `.hpp`, `.hh`, `.hxx`
+- **C#**: `.cs`
+- **Java**: `.java`
+- **Ruby**: `.rb`
+- **PHP**: `.php`
+- **Swift**: `.swift`
+- **Kotlin**: `.kt`, `.kts`
+- **Scala**: `.scala`
+- **OCaml**: `.ml`, `.mli`
+- **Lua**: `.lua`
+- **Perl**: `.pl`
+- **Haskell**: `.hs`
+- **Elixir**: `.ex`, `.exs`
+- **Erlang**: `.erl`, `.hrl`
+- **Clojure**: `.clj`, `.cljs`
+- **Dart**: `.dart`
+- **Shell**: `.sh`, `.bash`
+- **PowerShell**: `.ps1`
+- **SQL**: `.sql`
+- **Fortran**: `.f`, `.f90`, `.f95`, `.f03`
+- **Assembly**: `.s`, `.asm`
+- **R**: `.r`
+- **Julia**: `.jl`
+- **Zig**: `.zig`
+- **VHDL**: `.vhd`, `.vhdl`
+- **Tcl**: `.tcl`
+
+A directory that mixes languages reports its **top 3** languages by file count
+(for example `"Ada; C; C++"`), so a mixed-language vendored drop is summarised
+by what it actually contains rather than by a single guess.
 
 ## Licence resolution
 
