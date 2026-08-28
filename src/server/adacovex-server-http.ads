@@ -26,30 +26,36 @@ package Adacovex.Server.HTTP is
    --  Map a request path to its handler action.
    --  Returns the Route_Kind for the given path. The dashboard is at "/".
    --  The JSON APIs are at "/api/metrics" and "/api/deps". The SVG badge
-   --  endpoints are at "/badge/*.svg". Every other path returns Route_Not_Found.
+   --  endpoints are at "/badge/*.svg". The docs note is at "/docs". Every
+   --  other path returns Route_Not_Found.
    --  Routing is pure path routing. The socket dispatch in Handle_Request
    --  switches on the result. The native test suite pins every route.
+   --  The function is an expression function: its body is the conditional
+   --  mapping, so the implicit postcondition (Result = <mapping>) holds by
+   --  definition and the mapping is proved without case-analysis steps.
    --  @param Path  Request path (as extracted by Get_Path).
    --  @return Route_Kind for the path.
    function Route (Path : String) return Route_Kind
-   with
-     SPARK_Mode => On,
-     Post       =>
-       (Route'Result /= Route_Dashboard or Path = "/")
-       and then (Route'Result /= Route_Badge_SPARK
-                 or Path = "/badge/spark.svg")
-       and then (Route'Result /= Route_Badge_Tests
-                 or Path = "/badge/tests.svg")
-       and then (Route'Result /= Route_Badge_DO178C
-                 or Path = "/badge/do178c.svg")
-       and then (Route'Result /= Route_Badge_ISO26262
-                 or Path = "/badge/iso26262.svg")
-       and then (Route'Result /= Route_Badge_IEC62304
-                 or Path = "/badge/iec62304.svg")
-       and then (Route'Result /= Route_API_Metrics or Path = "/api/metrics")
-       and then       (Route'Result /= Route_API_Deps or Path = "/api/deps")
-       and then (Route'Result /= Route_Docs or Path = "/docs"),
-     Global     => null;
+   is (if Path = "/"
+       then Route_Dashboard
+       elsif Path = "/badge/spark.svg"
+       then Route_Badge_SPARK
+       elsif Path = "/badge/tests.svg"
+       then Route_Badge_Tests
+       elsif Path = "/badge/do178c.svg"
+       then Route_Badge_DO178C
+       elsif Path = "/badge/iso26262.svg"
+       then Route_Badge_ISO26262
+       elsif Path = "/badge/iec62304.svg"
+       then Route_Badge_IEC62304
+       elsif Path = "/api/metrics"
+       then Route_API_Metrics
+       elsif Path = "/api/deps"
+       then Route_API_Deps
+       elsif Path = "/docs"
+       then Route_Docs
+       else Route_Not_Found)
+   with SPARK_Mode => On, Global => null;
 
    type Server_State is record
       Port          : Positive := 8080;

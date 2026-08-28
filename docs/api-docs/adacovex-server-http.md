@@ -24,6 +24,7 @@ Route_Badge_ISO26262,
 Route_Badge_IEC62304,
 Route_API_Metrics,
 Route_API_Deps,
+Route_Docs,
 Route_Not_Found);
 ```
 
@@ -45,7 +46,7 @@ end record;
 
 ## Functions
 
-### function Route (Path : Standard.String) return Adacovex.Server.HTTP.Route_Kind `[Post]` `[Global]` `[SPARK]`
+### function Route (Path : Standard.String) return Adacovex.Server.HTTP.Route_Kind `[Global]` `[SPARK]`
 
 | Parameter | Description |
 |-----------|-------------|

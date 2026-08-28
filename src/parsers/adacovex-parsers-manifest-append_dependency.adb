@@ -49,7 +49,8 @@ begin
    C.Parent := Parent;
    C.From_GPR := From_GPR;
    C.Scope := Scope;
-   C.Scope_Flags.Is_Dev := Scope = Types.Scope_Dev or else Scope = Types.Scope_System;
+   C.Scope_Flags.Is_Dev :=
+     Scope = Types.Scope_Dev or else Scope = Types.Scope_System;
    C.Scope_Flags.Is_System := Scope = Types.Scope_System;
    Graph.Append (C);
 end Append_Dependency;

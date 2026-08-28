@@ -169,7 +169,7 @@ function renderNomnoml(){
     var fg=cs.getPropertyValue('--fg').trim()||'#222222';
     var border=cs.getPropertyValue('--border').trim()||'#dddddd';
     var th=cs.getPropertyValue('--th').trim()||'#f0f0f0';
-    var src='#fill: '+card+'\n#background: '+bg+'\n#stroke: '+fg+'\n#lineColor: '+border+'\n#fontColor: '+fg+'\n#fillArrows: false\n#.note: fill='+th+'\n#.note: stroke='+border+'\n#.note: textColor='+fg+'\n#direction: down\n';
+    var src='#fill: '+card+'\n#background: '+bg+'\n#stroke: '+fg+'\n#lineColor: '+border+'\n#fontColor: '+fg+'\n#fillArrows: false\n#.note: fill='+th+'\n#.note: stroke='+border+'\n#.note: textColor='+fg+'\n#direction: right\n';
     var root=deps[0]||{name:'root'};
     for(var i=0;i<deps.length;i++){
       if(deps[i].kind==='root' || deps[i].parent===0){ root=deps[i]; break; }
@@ -185,6 +185,14 @@ function renderNomnoml(){
     src += '\n';
     var canvas=document.getElementById('nomnoml-canvas');
     if(canvas){
+      // Scale the canvas height with the node count so every box stays large
+      // enough to read and click: root on the left, children stack top-to-bottom
+      // on the right, and each node budgets a fixed vertical slot.
+      var childCount=0;
+      filtered.forEach(function(d){ if(d.parent!==0 && d.kind!=='root') childCount++; });
+      var slot=46, head=72, minH=320;
+      var needH=Math.max(minH, head+childCount*slot);
+      if(canvas.height!==needH){ canvas.height=needH; }
       var out=null;
       try{ out=nomnoml.draw(canvas, src); }catch(e){ out=null; }
       // Record node rectangles (center x/y + w/h in layout space) so a click

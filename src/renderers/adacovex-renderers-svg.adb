@@ -49,7 +49,7 @@ package body Adacovex.Renderers.SVG is
       end loop;
       return Buf (Pos .. 10);
    end I2S;      --  Advance width (px) of one character in the badge font at font-size
-      --  16. The values use rounded representative glyph widths.
+   --  16. The values use rounded representative glyph widths.
 
    function Glyph_Width (C : Character) return Natural
    with SPARK_Mode => On, Post => Glyph_Width'Result in 3 .. 10
@@ -57,29 +57,77 @@ package body Adacovex.Renderers.SVG is
    begin
       case C is
          when ' '
-            | '.' | '/' | '(' | ')' | 'I' | 'J' | 'f' | 'i' | 'j' | 'l' | 't' =>
+            | '.'
+            | '/'
+            | '('
+            | ')'
+            | 'I'
+            | 'J'
+            | 'f'
+            | 'i'
+            | 'j'
+            | 'l'
+            | 't'                         =>
             return 3;
-         when '-' | 'r' =>
+
+         when '-' | 'r'                   =>
             return 4;
-         when 'F' | 'L' | 'Z' | 'a' | 'c' | 'e' | 'k' | 's'
-            | 'v' | 'x' | 'y' | 'z' =>
+
+         when 'F'
+            | 'L'
+            | 'Z'
+            | 'a'
+            | 'c'
+            | 'e'
+            | 'k'
+            | 's'
+            | 'v'
+            | 'x'
+            | 'y'
+            | 'z'                         =>
             return 6;
-         when '0' .. '9' | 'A' | 'B' | 'C' | 'D' | 'E' | 'G'
-            | 'K' | 'P' | 'R' | 'S' | 'T' | 'V' | 'X' | 'Y'
-            | 'b' | 'd' | 'g' | 'h' | 'n' | 'o' | 'p' | 'q' | 'u' =>
+
+         when '0' .. '9'
+            | 'A'
+            | 'B'
+            | 'C'
+            | 'D'
+            | 'E'
+            | 'G'
+            | 'K'
+            | 'P'
+            | 'R'
+            | 'S'
+            | 'T'
+            | 'V'
+            | 'X'
+            | 'Y'
+            | 'b'
+            | 'd'
+            | 'g'
+            | 'h'
+            | 'n'
+            | 'o'
+            | 'p'
+            | 'q'
+            | 'u'                         =>
             return 7;
+
          when 'H' | 'N' | 'O' | 'Q' | 'U' =>
             return 8;
-         when 'M' | 'w' | '%' =>
+
+         when 'M' | 'w' | '%'             =>
             return 9;
-         when 'W' | 'm' =>
+
+         when 'W' | 'm'                   =>
             return 10;
-         when others =>
+
+         when others                      =>
             return 7;
       end case;
    end Glyph_Width;
 
-   --  Total advance width (px) of a badge text run at font-size 16: the
+   --  Total advance width (px) of a badge text run at font-size 11: the
    --  sum of the per-glyph widths.  Replaces the flat 7px-per-character
    --  estimate so every badge carries the same side padding regardless of
    --  its letters -- the old estimate left uppercase-heavy labels (SPARK,
@@ -90,13 +138,13 @@ package body Adacovex.Renderers.SVG is
    with
      SPARK_Mode => On,
      Pre        => S'Length <= Max_Badge_Text,
-     Post       => Text_Width'Result <= Max_Badge_Text * 16
+     Post       => Text_Width'Result <= Max_Badge_Text * 10
    is
       Total : Natural := 0;
    begin
       for I in S'Range loop
          Total := Total + Glyph_Width (S (I));
-         pragma Loop_Invariant (Total <= (I - S'First + 1) * 16);
+         pragma Loop_Invariant (Total <= (I - S'First + 1) * 10);
       end loop;
       return Total;
    end Text_Width;
@@ -117,7 +165,8 @@ package body Adacovex.Renderers.SVG is
       Value_Color      : String := "#4c1";
       Value_Text_Color : String := "#fff") return String
    is
-      --  Keep the established geometry while rendering text at 16px.
+      --  20px of total segment padding (10px each side) gives every badge
+      --  the same comfortable breathing room around its text.
       LW : constant Natural := Text_Width (Label) + 20;
       VW : constant Natural := Text_Width (Value) + 20;
       TW : constant Natural := LW + VW;
@@ -127,41 +176,41 @@ package body Adacovex.Renderers.SVG is
       return
         "<svg xmlns=""http://www.w3.org/2000/svg"" width="""
         & I2S (TW)
-        & """ height=""28"">"
+        & """ height=""20"">"
         & "<linearGradient id=""b"" x2=""0"" y2=""100%"">"
         & "<stop offset=""0"" stop-color=""#bbb"" stop-opacity="".1""/>"
         & "<stop offset=""1"" stop-opacity="".1""/>"
         & "</linearGradient>"
         & "<clipPath id=""r""><rect width="""
         & I2S (TW)
-        & """ height=""28"" rx=""4"" fill=""#fff""/></clipPath>"
+        & """ height=""20"" rx=""3"" fill=""#fff""/></clipPath>"
         & "<g clip-path=""url(#r)"">"
         & "<rect width="""
         & I2S (LW)
-        & """ height=""28"" fill="""
+        & """ height=""20"" fill="""
         & Label_Color
         & """/>"
         & "<rect x="""
         & I2S (LW)
         & """ width="""
         & I2S (VW)
-        & """ height=""28"" fill="""
+        & """ height=""20"" fill="""
         & Value_Color
         & """/>"
         & "<rect width="""
         & I2S (TW)
-        & """ height=""28"" fill=""url(#b)""/>"
+        & """ height=""20"" fill=""url(#b)""/>"
         & "</g>"
-        & "<g fill=""#fff"" font-family=""DejaVu Sans,Verdana,Geneva,sans-serif"""
-        & " font-size=""16"">"
+        & "<g fill=""#fff"" font-family=""DejaVu Sans,Verdana,Geneva,sans-serif"" "
+        & "font-size=""11"">"
         & "<text x="""
         & I2S (LX)
-        & """ y=""20"" text-anchor=""middle"">"
+        & """ y=""14"" text-anchor=""middle"">"
         & Label
         & "</text>"
         & "<text x="""
         & I2S (VX)
-        & """ y=""20"" fill="""
+        & """ y=""14"" fill="""
         & Value_Text_Color
         & """ text-anchor=""middle"">"
         & Value

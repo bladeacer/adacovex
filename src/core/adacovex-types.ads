@@ -240,7 +240,7 @@ package Adacovex.Types is
          Parent          : Natural := 0;
          From_GPR        : Boolean := False;
          Scope           : Component_Scope := Scope_Transitive;
-         Scope_Flags      : Dependency_Scope_Flags;
+         Scope_Flags     : Dependency_Scope_Flags;
       end record;
 
       package Component_Vectors is new

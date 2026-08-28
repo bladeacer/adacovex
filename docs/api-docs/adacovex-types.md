@@ -47,6 +47,15 @@ type DAL_Status is (Achieved, Unmet);
 type Dashboard_Theme is (System_Theme, Light_Theme, Dark_Theme);
 ```
 
+### type Dependency_Scope_Flags
+
+```ada
+type Dependency_Scope_Flags is record
+Is_Dev    : Boolean := False;
+Is_System : Boolean := False;
+end record;
+```
+
 ### type Desc_Field
 
 ```ada

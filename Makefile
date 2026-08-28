@@ -91,7 +91,7 @@ help:
 	@echo 'check runs the same gates CI enforces before a release, cheap static'
 	@echo '  gates first (ascii, spark-off, changelog, version, doc-links,'
 	@echo '  action-parity, tools), then'
-	@echo '  build + native tests + SPARK proof (Platinum, 724 VCs) + SVG badges'
+	@echo '  build + native tests + SPARK proof (Platinum, 723 VCs) + SVG badges'
 	@echo '  + API docs + SBOM, then tree-wide count-sync checks (test-count,'
 	@echo '  proof-status, description) that fail when any live file carries a'
 	@echo '  stale metric. `make prove` / `make run-self` both emit badges, so'

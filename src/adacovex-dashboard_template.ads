@@ -6689,7 +6689,7 @@ package Adacovex.Dashboard_Template is
   & "var src='#fill: '+card+'\n#background: '+bg+'\n#stroke: '+fg"
   & "+'\n#lineColor: '+border+'\n#fontColor: '+fg+'\n#fillArrows:"
   & " false\n#.note: fill='+th+'\n#.note: stroke='+border+'\n#.no"
-  & "te: textColor='+fg+'\n#direction: down\n';"
+  & "te: textColor='+fg+'\n#direction: right\n';"
   & ASCII.LF
   & "var root=deps[0]||{name:'root'};"
   & ASCII.LF
@@ -6721,6 +6721,17 @@ package Adacovex.Dashboard_Template is
   & "var canvas=document.getElementById('nomnoml-canvas');"
   & ASCII.LF
   & "if(canvas){"
+  & ASCII.LF
+  & "var childCount=0;"
+  & ASCII.LF
+  & "filtered.forEach(function(d){ if(d.parent!==0 && d.kind!=='r"
+  & "oot') childCount++; });"
+  & ASCII.LF
+  & "var slot=46, head=72, minH=320;"
+  & ASCII.LF
+  & "var needH=Math.max(minH, head+childCount*slot);"
+  & ASCII.LF
+  & "if(canvas.height!==needH){ canvas.height=needH; }"
   & ASCII.LF
   & "var out=null;"
   & ASCII.LF
