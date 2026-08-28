@@ -1,10 +1,15 @@
 separate (Adacovex.Parsers.Manifest)
 --  Collect the crate names declared in a manifest's [[depends-on]] (or
---  [depends-on]) section.  Missing files are ignored.  A physical line
---  longer than Max_Line clears the collected names.  No partial set is
---  kept.
+--  [depends-on]) section into Names, and the crate names declared under a
+--  [[test-depends-on]] (or [test-depends-on]) section into Test_Names.
+--  Test-depends-on is the manifest label for test-only dependencies: the
+--  parser classifies such crates as Scope_Test.  Missing files are ignored.
+--  A physical line longer than Max_Line clears the collected names.  No
+--  partial set is kept.
 procedure Read_Manifest_Deps
-  (Path : String; Names : in out Name_Vectors.Vector)
+  (Path       : String;
+   Names      : in out Name_Vectors.Vector;
+   Test_Names : in out Name_Vectors.Vector)
 is
    use Ada.Text_IO;
    F          : File_Type;
@@ -12,8 +17,12 @@ is
    Last       : Natural;
    Overflow   : Boolean;
    Line_Num   : Natural := 0;
-   In_Depends : Boolean := False;
+   In_Section : Boolean := False;
+   Is_Test    : Boolean := False;
 begin
+   --  Clear only this procedure's own set.  Test_Names accumulates across
+   --  the publishing and dev manifest reads; the caller clears it once
+   --  per graph build.
    Names.Clear;
 
    if not Ada.Directories.Exists (Path) then
@@ -30,7 +39,7 @@ begin
       Line_Num := Line_Num + 1;
       Adacovex.Parsers.Read_Line (F, Path, Line_Num, Line, Last, Overflow);
       if Overflow then
-         --  No partial dev-dependency set is kept.  Classification falls
+         --  No partial dependency set is kept.  Classification falls
          --  back to base/transitive only.
          Names.Clear;
          Close (F);
@@ -42,17 +51,25 @@ begin
          if T'Length > 2 and then T (T'First) = '[' and then T (T'Last) = ']'
          then
             declare
-               Sec : constant String := T (T'First + 1 .. T'Last - 1);
+               Sec   : constant String := T (T'First + 1 .. T'Last - 1);
+               Inner : constant String :=
+                 (if Sec'Length > 1
+                    and then Sec (Sec'First) = '['
+                    and then Sec (Sec'Last) = ']'
+                  then Trim (Sec (Sec'First + 1 .. Sec'Last - 1))
+                  else Trim (Sec));
             begin
-               In_Depends :=
-                 Trim (Sec) = "depends-on"
-                 or else (Sec'Length > 1
-                          and then Sec (Sec'First) = '['
-                          and then Sec (Sec'Last) = ']'
-                          and then Trim (Sec (Sec'First + 1 .. Sec'Last - 1))
-                                   = "depends-on");
+               if Inner = "depends-on" then
+                  In_Section := True;
+                  Is_Test := False;
+               elsif Inner = "test-depends-on" then
+                  In_Section := True;
+                  Is_Test := True;
+               else
+                  In_Section := False;
+               end if;
             end;
-         elsif In_Depends then
+         elsif In_Section then
             declare
                Eq : Natural := 0;
             begin
@@ -63,7 +80,11 @@ begin
                   end if;
                end loop;
                if Eq > T'First then
-                  Add_Dep_Name (Names, Trim (T (T'First .. Eq - 1)));
+                  if Is_Test then
+                     Add_Dep_Name (Test_Names, Trim (T (T'First .. Eq - 1)));
+                  else
+                     Add_Dep_Name (Names, Trim (T (T'First .. Eq - 1)));
+                  end if;
                end if;
             end;
          end if;

@@ -82,9 +82,10 @@ package body Adacovex.Renderers.SBOM is
    --  Base dependencies are declared in the publishing manifest.  Dev
    --  dependencies are declared only in the dev manifest.  Transitive ones are
    --  in neither.  Vendored packages are overlaid by a .adacovex/patches/
-   --  patch.
+   --  patch.  Test dependencies are declared under a [[test-depends-on]]
+   --  manifest section or with-claused only from test project files.
    --  @param Scope  Component dependency scope.
-   --  @return "base", "dev", "transitive", "vendored", or "system".
+   --  @return "base", "dev", "transitive", "vendored", "system", or "test".
    function Scope_Property (Scope : Types.Component_Scope) return String
    with SPARK_Mode => On
    is
@@ -104,6 +105,9 @@ package body Adacovex.Renderers.SBOM is
 
          when Types.Scope_System     =>
             return "system";
+
+         when Types.Scope_Test       =>
+            return "test";
       end case;
    end Scope_Property;
 

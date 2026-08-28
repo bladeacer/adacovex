@@ -360,6 +360,7 @@ package body Adacovex.Renderers.HTML is
             Trans_Ct : Natural := 0;
             Vend_Ct  : Natural := 0;
             Sys_Ct   : Natural := 0;
+            Test_Ct  : Natural := 0;
          begin
             for I in 1 .. Integer (Graph.Length) loop
                case Graph (I).Scope is
@@ -377,17 +378,22 @@ package body Adacovex.Renderers.HTML is
 
                   when Types.Scope_System     =>
                      Sys_Ct := Sys_Ct + 1;
+
+                  when Types.Scope_Test       =>
+                     Test_Ct := Test_Ct + 1;
                end case;
             end loop;
             declare
                Total : constant Natural :=
-                 Base_Ct + Dev_Ct + Trans_Ct + Vend_Ct + Sys_Ct;
+                 Base_Ct + Dev_Ct + Trans_Ct + Vend_Ct + Sys_Ct + Test_Ct;
                S1    : constant Natural := Pct (Base_Ct, Total);
                S2    : constant Natural := Pct (Base_Ct + Dev_Ct, Total);
                S3    : constant Natural :=
                  Pct (Base_Ct + Dev_Ct + Trans_Ct, Total);
                S4    : constant Natural :=
                  Pct (Base_Ct + Dev_Ct + Trans_Ct + Vend_Ct, Total);
+               S5    : constant Natural :=
+                 Pct (Base_Ct + Dev_Ct + Trans_Ct + Vend_Ct + Sys_Ct, Total);
             begin
                if Total > 0 then
                   Put
@@ -411,6 +417,10 @@ package body Adacovex.Renderers.HTML is
                   Put (Img (S4));
                   Put ("%, var(--scope-system) ");
                   Put (Img (S4));
+                  Put ("% ");
+                  Put (Img (S5));
+                  Put ("%, var(--scope-test) ");
+                  Put (Img (S5));
                   Put ("% 100%)"">");
                   --  Centre hole with total count
                   Put ("<div class=""polar-center"">");
@@ -453,6 +463,12 @@ package body Adacovex.Renderers.HTML is
                      Put (Img (Sys_Ct));
                      Put ("</b></li>");
                   end if;
+                  if Test_Ct > 0 then
+                     Put ("<li style=""--i:var(--scope-test)""><i></i>test");
+                     Put ("<b>");
+                     Put (Img (Test_Ct));
+                     Put ("</b></li>");
+                  end if;
                   Put ("</ul></div></div>");
                end if;
             end;
@@ -484,7 +500,8 @@ package body Adacovex.Renderers.HTML is
            when Types.Scope_Dev        => "dev",
            when Types.Scope_Transitive => "transitive",
            when Types.Scope_Vendored   => "vendored",
-           when Types.Scope_System     => "system");
+           when Types.Scope_System     => "system",
+           when Types.Scope_Test       => "test");
    end Scope_Name;
 
    --  Escape a fixed-width string field for JSON (quotes + backslashes).
@@ -526,7 +543,8 @@ package body Adacovex.Renderers.HTML is
               when Types.Scope_Dev        => "scope-dev",
               when Types.Scope_Transitive => "scope-transitive",
               when Types.Scope_Vendored   => "scope-vendored",
-              when Types.Scope_System     => "scope-system");
+              when Types.Scope_System     => "scope-system",
+              when Types.Scope_Test       => "scope-test");
       end Scope_Class;
 
       --  Count direct children of node Idx
@@ -647,12 +665,14 @@ package body Adacovex.Renderers.HTML is
          C_Trans : Natural := 0;
          C_Vend  : Natural := 0;
          C_Sys   : Natural := 0;
+         C_Test  : Natural := 0;
          Total   : Natural := 0;
          Pct_B   : Natural := 0;
          Pct_D   : Natural := 0;
          Pct_T   : Natural := 0;
          Pct_V   : Natural := 0;
          Pct_S   : Natural := 0;
+         Pct_T2  : Natural := 0;
       begin
          for I in 1 .. Integer (Graph.Length) loop
             case Graph (I).Scope is
@@ -670,6 +690,9 @@ package body Adacovex.Renderers.HTML is
 
                when Types.Scope_System     =>
                   C_Sys := C_Sys + 1;
+
+               when Types.Scope_Test       =>
+                  C_Test := C_Test + 1;
             end case;
             Total := Total + 1;
          end loop;
@@ -678,7 +701,8 @@ package body Adacovex.Renderers.HTML is
             Pct_D := (C_Dev * 100) / Total;
             Pct_T := (C_Trans * 100) / Total;
             Pct_S := (C_Sys * 100) / Total;
-            Pct_V := 100 - Pct_B - Pct_D - Pct_T - Pct_S;
+            Pct_V := (C_Vend * 100) / Total;
+            Pct_T2 := 100 - Pct_B - Pct_D - Pct_T - Pct_S - Pct_V;
          end if;
          Put
            ("<div class=""chart-card"" style=""margin:0 0 14px;max-width:640px"">");
@@ -714,6 +738,12 @@ package body Adacovex.Renderers.HTML is
                & Img (Pct_S)
                & "%""></i>");
          end if;
+         if Pct_T2 > 0 then
+            Put
+              ("<i class=""s-test"" style=""width:"
+               & Img (Pct_T2)
+               & "%""></i>");
+         end if;
          Put ("</div>");
          Put ("<ul class=""scope-legend scope-legend-prominent"">");
          Put ("<li><i class=""s-base""></i>base <b>");
@@ -726,6 +756,8 @@ package body Adacovex.Renderers.HTML is
          Put (Img (C_Vend));
          Put ("</b></li><li><i class=""s-system""></i>system <b>");
          Put (Img (C_Sys));
+         Put ("</b></li><li><i class=""s-test""></i>test <b>");
+         Put (Img (C_Test));
          Put ("</b></li></ul>");
          Put ("</div>");
       end;
@@ -791,6 +823,16 @@ package body Adacovex.Renderers.HTML is
          & "<svg class=""icon"" viewBox=""0 0 12 12"" width=""10"" height=""10"" aria-hidden=""true"">"
          & "<use href=""#i-system""/></svg> system</label>");
       Put
+        ("<label class=""cb"" title=""test = used only by the project's tests"">"
+         & "<input type=""checkbox"" id=""filter-test"" checked "
+         & "onchange=""filterByScope()""><span class=""box"">"
+         & "<svg class=""tick"" viewBox=""0 0 12 12"" width=""11"" height=""11"" aria-hidden=""true"">"
+         & "<path d=""M2 6 L5 9 L10 3"" stroke=""currentColor"" fill=""none"" "
+         & "stroke-width=""2"" stroke-linecap=""round"" stroke-linejoin=""round""/>"
+         & "</svg></span> "
+         & "<svg class=""icon"" viewBox=""0 0 12 12"" width=""10"" height=""10"" aria-hidden=""true"">"
+         & "<use href=""#i-test""/></svg> test</label>");
+      Put
         ("<button class=""theme-toggle"" onclick=""expandDeps(true)"">Expand all</button>");
       Put
         ("<button class=""theme-toggle"" onclick=""expandDeps(false)"">Collapse all</button>");
@@ -835,6 +877,7 @@ package body Adacovex.Renderers.HTML is
       C_Trans : Natural := 0;
       C_Vend  : Natural := 0;
       C_Sys   : Natural := 0;
+      C_Test  : Natural := 0;
       Total   : Natural := 0;
    begin
       for I in 1 .. Integer (Graph.Length) loop
@@ -853,6 +896,9 @@ package body Adacovex.Renderers.HTML is
 
             when Types.Scope_System     =>
                C_Sys := C_Sys + 1;
+
+            when Types.Scope_Test       =>
+               C_Test := C_Test + 1;
          end case;
          Total := Total + 1;
       end loop;
@@ -865,6 +911,8 @@ package body Adacovex.Renderers.HTML is
          S3 : constant Natural := ((C_Base + C_Dev + C_Trans) * 100) / Total;
          S4 : constant Natural :=
            ((C_Base + C_Dev + C_Trans + C_Vend) * 100) / Total;
+         S5 : constant Natural :=
+           ((C_Base + C_Dev + C_Trans + C_Vend + C_Sys) * 100) / Total;
       begin
          Put ("<div class=""chart-card""><h3>Dependency Scope</h3>");
          Put ("<div class=""polar-wrap"">");
@@ -886,6 +934,10 @@ package body Adacovex.Renderers.HTML is
          Put (Img (S4));
          Put ("%, var(--scope-system) ");
          Put (Img (S4));
+         Put ("% ");
+         Put (Img (S5));
+         Put ("%, var(--scope-test) ");
+         Put (Img (S5));
          Put ("% 100%)"">");
          Put ("<div class=""polar-center"">");
          Put ("<div class=""polar-rating"">");
@@ -907,6 +959,8 @@ package body Adacovex.Renderers.HTML is
          Put
            ("</b></li><li style=""--i:var(--scope-system)""><i></i>system <b>");
          Put (Img (C_Sys));
+         Put ("</b></li><li style=""--i:var(--scope-test)""><i></i>test <b>");
+         Put (Img (C_Test));
          Put ("</b></li></ul>");
          Put ("</div></div>");
       end;
@@ -1293,7 +1347,9 @@ package body Adacovex.Renderers.HTML is
             Put_O ("</div></div>");
          end;
 
-         --  Tests donut + category column chart side by side
+         --  Tests donut + category column chart side by side.  The donut is
+         --  followed by a readout line, so the pass/fail numbers stay
+         --  available even when the pie labels have no room.
          Put_O ("<div class=""chart-card""><h3>Tests</h3>");
          Put_O
            ("<table class=""charts-css pie donut show-labels"" style=""height:200px;max-width:200px;margin:0 auto"">");
@@ -1314,7 +1370,14 @@ package body Adacovex.Renderers.HTML is
                end;
             end if;
          end;
-         Put_O ("</tbody></table></div>");
+         Put_O ("</tbody></table>");
+         Put_O
+           ("<p class=""chart-readout""><strong>"
+            & Img (Tests.Total_Passed)
+            & " passed, "
+            & Img (Tests.Total_Failed)
+            & " failed</strong></p>");
+         Put_O ("</div>");
 
          --  Per-category test counts live on the Charts tab ("Test Results
          --  by Category" bar); the Overview does not duplicate them (DRY).

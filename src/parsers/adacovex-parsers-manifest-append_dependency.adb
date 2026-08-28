@@ -31,6 +31,11 @@ begin
             C.Scope := Types.Scope_System;
          elsif Scope = Types.Scope_Dev then
             C.Scope_Flags.Is_Dev := True;
+         elsif Scope = Types.Scope_Test then
+            --  A test-only declaration is the most specific fact about the
+            --  dependency: it wins over a base/dev/transitive label already
+            --  on the component.
+            C.Scope := Types.Scope_Test;
          end if;
          Graph (I) := C;
          return;

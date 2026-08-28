@@ -42,7 +42,7 @@ is
    end Norm_Target;
 
    Target_Norm : constant String := Norm_Target (Target);
-   type Eco_Field_Fmt is (Eco_Bare, Eco_Colon, Eco_Token);
+   type Eco_Field_Fmt is (Eco_Bare, Eco_Colon, Eco_Token, Eco_Alr_Version);
 
    type Eco_Field is record
       Field : String (1 .. 16);
@@ -181,13 +181,15 @@ is
          TLen   => 3,
          Sub    => "show" & (5 .. 8 => ' '),
          SLen   => 4,
+         --  `alr show` prints the release as "<crate>=<version>: <description>"
+         --  on the first line (for example "gnatprove=16.1.0: Automatic
+         --  formal verification of SPARK code"), so the version is the
+         --  token between '=' and ':'.  The licence line is "License:".
          V      =>
-           (Field => "Version" & (8 .. 16 => ' '),
-            FLen  => 7,
-            Fmt   => Eco_Colon),
+           (Field => (others => ' '), FLen => 0, Fmt => Eco_Alr_Version),
          L      =>
-           (Field => "Licenses" & (9 .. 16 => ' '),
-            FLen  => 8,
+           (Field => "License" & (8 .. 16 => ' '),
+            FLen  => 7,
             Fmt   => Eco_Colon),
          W      =>
            (Field => "Website" & (8 .. 16 => ' '),
@@ -265,7 +267,33 @@ is
                  (if J > S'First then Trim (S (I .. J - 1)) else "");
             begin
                if DLn = 0 and then T'Length > 0 then
-                  if Fld.Fmt = Eco_Colon or else Fld.Fmt = Eco_Token then
+                  if Fld.Fmt = Eco_Alr_Version then
+                     --  "<crate>=<version>: <description>" on the first
+                     --  line: the version sits between the first '=' and
+                     --  the ':' that follows it.
+                     declare
+                        Eq : Natural := 0;
+                        Cl : Natural := 0;
+                     begin
+                        for K in T'Range loop
+                           if T (K) = '=' then
+                              Eq := K;
+                              exit;
+                           end if;
+                        end loop;
+                        if Eq > T'First then
+                           for K in Eq + 1 .. T'Last loop
+                              if T (K) = ':' then
+                                 Cl := K;
+                                 exit;
+                              end if;
+                           end loop;
+                        end if;
+                        if Cl > Eq + 1 then
+                           Set_Field (Dst, DLn, Trim (T (Eq + 1 .. Cl - 1)));
+                        end if;
+                     end;
+                  elsif Fld.Fmt = Eco_Colon or else Fld.Fmt = Eco_Token then
                      if T'Length > Fld.FLen + 1
                        and then T (T'First .. T'First + Fld.FLen - 1)
                                 = Fld.Field

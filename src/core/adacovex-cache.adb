@@ -329,16 +329,19 @@ package body Adacovex.Cache is
       return Home & "/.adacovex/probes";
    end Probe_Root;
 
-   --  <probes>/<tool> -- per-tool version-probe file, outside the two-level
-   --  entry tree so probes never collide with content-hashed blobs and are
-   --  cheap to check.
+   --  <probes>/<tool>.v2 -- per-tool version-probe file, outside the
+   --  two-level entry tree so probes never collide with content-hashed blobs
+   --  and are cheap to check.  The ".v2" suffix salts the namespace: the
+   --  1.33 probe behaviour (flag fallbacks, `go version`, v/go token
+   --  stripping) differs from the 1.32 single-flag probe, so old probe
+   --  files must not be served as if they were fresh.
    function Probe_Path (Tool : String) return String is
       Root : constant String := Probe_Root;
    begin
       if Tool'Length = 0 or else Root'Length = 0 then
          return "";
       end if;
-      return Root & "/" & Tool (Tool'First .. Tool'Last);
+      return Root & "/" & Tool (Tool'First .. Tool'Last) & ".v2";
    end Probe_Path;
 
    procedure Get_Probe

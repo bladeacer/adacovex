@@ -85,10 +85,21 @@ package Adacovex.Types is
    --  docstring patch (vendored).  A system-tool dependency is a program
    --  installed on PATH that the project's build or dev files reference
    --  (system) -- for example python3, git, or gnatprove.  System tools
-   --  carry a resolved version but no external link or licence.
+   --  carry a resolved version but no external link or licence.  A test
+   --  dependency is used only by the project's tests: it is declared under
+   --  a [[test-depends-on]] manifest section, or it is with-claused only
+   --  from test project files (a .gpr under a tests/ test/ or t/ directory,
+   --  or a test-named project such as test_runner.gpr).  Scope_Test is last
+   --  so the stream-serialized cache positions of the older scopes stay
+   --  stable across releases.
    --  HLR-SBOM: SBOM dependency scope
    type Component_Scope is
-     (Scope_Base, Scope_Dev, Scope_Transitive, Scope_Vendored, Scope_System);
+     (Scope_Base,
+      Scope_Dev,
+      Scope_Transitive,
+      Scope_Vendored,
+      Scope_System,
+      Scope_Test);
 
    --  Record whether a dependency is declared for development as well as
    --  whether the resolved component is a system tool.  This preserves both

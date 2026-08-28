@@ -29,9 +29,12 @@ package body Adacovex.Parsers.Manifest is
 
    --  Crate-name sets collected from the publishing manifest (alire.toml or
    --  the --manifest override) and the dev manifest (alire-dev.toml).  Used
-   --  to classify every resolved dependency into a Component_Scope.
+   --  to classify every resolved dependency into a Component_Scope.  A name
+   --  declared under a [[test-depends-on]] section of either manifest is
+   --  classified Scope_Test (a test-only dependency).
    Base_Names : Name_Vectors.Vector;
    Dev_Names  : Name_Vectors.Vector;
+   Test_Names : Name_Vectors.Vector;
 
    --  On-disk serialization for the resolved dependency graph.  An
    --  unchanged manifest/lockfile/.gpr set is then served from the result
@@ -145,17 +148,20 @@ package body Adacovex.Parsers.Manifest is
    is separate;
 
    --  Collect the crate names declared in a manifest's [[depends-on]] (or
-   --  [depends-on]) section.  Missing files are ignored.  A physical line
-   --  longer than Max_Line clears the collected names.  No partial set is
-   --  kept.
+   --  [depends-on]) section into Names, and the crate names declared under a
+   --  [[test-depends-on]] (or [test-depends-on]) section into Test_Names.
+   --  Missing files are ignored.  A physical line longer than Max_Line
+   --  clears the collected names.  No partial set is kept.
    procedure Read_Manifest_Deps
-     (Path : String; Names : in out Name_Vectors.Vector)
+     (Path       : String;
+      Names      : in out Name_Vectors.Vector;
+      Test_Names : in out Name_Vectors.Vector)
    is separate;
 
    --  Classify a dependency name into a Component_Scope from the collected
-   --  manifest sets.  A name in the publishing manifest is base.  A name
-   --  declared only in the dev manifest is dev.  Any other name is
-   --  transitive.
+   --  manifest sets.  A name declared under [[test-depends-on]] is test.  A
+   --  name in the publishing manifest is base.  A name declared only in the
+   --  dev manifest is dev.  Any other name is transitive.
    function Classify_Scope (Name : String) return Types.Component_Scope
    is separate;
 
@@ -222,13 +228,17 @@ package body Adacovex.Parsers.Manifest is
    --  Resolve GPR with-clause dependencies into the graph.  Deps already
    --  present in the graph are skipped.  Transitive GPR dependencies are
    --  resolved by parsing the referenced .gpr file (if it lives in the
-   --  project tree), up to a bounded depth to guard against cycles.
+   --  project tree), up to a bounded depth to guard against cycles.  A
+   --  dependency with-claused only from a test project file (a .gpr under
+   --  a tests/ test/ or t/ directory, or a test-named project such as
+   --  test_runner.gpr) is classified Scope_Test.
    procedure Resolve_GPR_Deps
-     (Graph     : in out Types.Implementation.Component_Vectors.Vector;
-      GPR_Files : Path_Vectors.Vector;
-      Deps      : Name_Vectors.Vector;
-      Parent    : Natural;
-      Depth     : Natural)
+     (Graph         : in out Types.Implementation.Component_Vectors.Vector;
+      GPR_Files     : Path_Vectors.Vector;
+      Deps          : Name_Vectors.Vector;
+      Parent        : Natural;
+      Depth         : Natural;
+      From_Test_GPR : Boolean := False)
    is separate;
 
    --  Language name for a source file, derived from its extension.  The
@@ -405,8 +415,10 @@ package body Adacovex.Parsers.Manifest is
 
    --  Build a Tool_Entry from a string literal.  The System_Tools table
    --  stays readable.  VFlag is the version-probe flag or subcommand.
-   --  Every tool here accepts "--version" except fossil and git-lfs.  Those
-   --  two use the "version" subcommand.
+   --  Every tool here accepts "--version" except fossil, git-lfs, and go.
+   --  Those use the "version" subcommand.  The probe falls back through
+   --  "--version", "-v", and "version" when the configured flag fails, so
+   --  a misconfigured entry still resolves.
    --  @param S  Tool name (lowercase, for example "python3").
    --  @param VFlag  Version-probe flag (default "--version").
    --  @return The Tool_Entry holding S.
@@ -458,7 +470,7 @@ package body Adacovex.Parsers.Manifest is
       Make_Tool ("pnpm"),
       Make_Tool ("cargo"),
       Make_Tool ("rustc"),
-      Make_Tool ("go"),
+      Make_Tool ("go", "version"),
       Make_Tool ("gcc"),
       Make_Tool ("g++"),
       Make_Tool ("clang"),
@@ -479,11 +491,13 @@ package body Adacovex.Parsers.Manifest is
    --  Probe a tool's version by running "<Tool> <Flag>" and extracting the
    --  first whitespace-separated token that contains a digit from the
    --  captured output (for example "2.55.0" from "git version 2.55.0",
-   --  "4.4.1" from "GNU Make 4.4.1").  Returns "" when the tool is missing,
-   --  when the probe fails, or when no digit token is found.  A tool that
-   --  does not understand its version flag then reports no version.
+   --  "4.4.1" from "GNU Make 4.4.1", "1.21.5" from "go version go1.21.5").
+   --  Returns "" when the tool is missing, when every probe fails, or when
+   --  no digit token is found.  The configured flag is tried first; when it
+   --  fails the probe falls back through "--version", "-v", and "version"
+   --  and takes the first successful run.
    --  @param Tool  Executable name (must be on PATH).
-   --  @param Flag  Version-probe flag or subcommand.
+   --  @param Flag  Version-probe flag or subcommand (first choice).
    --  @return The extracted version string, or "".
    function Probe_Version (Tool : String; Flag : String) return String
    is separate;
@@ -953,14 +967,16 @@ package body Adacovex.Parsers.Manifest is
          --  Source_Tree_Hash covers every file the scan reads, so it alone
          --  determines the referenced-tool set.  The tool-table fingerprint
          --  (every curated tool name, salted) invalidates the key when the
-         --  System_Tools constant changes within a release.  The "|tools-v2|"
+         --  System_Tools constant changes within a release.  The "|tools-v3|"
          --  salt separates this cache namespace from the graph cache and
-         --  from the 1.27-era blob layout.
+         --  from the 1.27-era blob layout; it was bumped to v3 when the
+         --  version-probe behaviour changed in 1.33 (flag fallbacks, go
+         --  version), so stale 1.32 tool sets are never served.
          Add (Source_Tree_Hash (T));
          for I in System_Tools'Range loop
             Add (System_Tools (I).Name (1 .. System_Tools (I).Len));
          end loop;
-         Add ("|tools-v2|");
+         Add ("|tools-v3|");
          if CLen = 0 then
             return "";
          end if;
@@ -1522,6 +1538,7 @@ package body Adacovex.Parsers.Manifest is
       --  Reset the package-level dependency-scope sets for this resolution.
       Base_Names.Clear;
       Dev_Names.Clear;
+      Test_Names.Clear;
 
       Read_Manifest
         (Manifest_Path,
@@ -1539,9 +1556,10 @@ package body Adacovex.Parsers.Manifest is
          Proj_File_Len,
          Manifest_OK);
 
-      --  Collect the base (publishing manifest) and dev (alire-dev.toml)
-      --  dependency crate sets used to classify every resolved component.
-      Read_Manifest_Deps (Manifest_Path, Base_Names);
+      --  Collect the base (publishing manifest), dev (alire-dev.toml), and
+      --  test ([[test-depends-on]] in either manifest) dependency crate sets
+      --  used to classify every resolved component.
+      Read_Manifest_Deps (Manifest_Path, Base_Names, Test_Names);
       declare
          T : constant String :=
            (if Target_Dir'Length > 0
@@ -1550,7 +1568,7 @@ package body Adacovex.Parsers.Manifest is
             else Target_Dir);
       begin
          if T & "/alire-dev.toml" /= Manifest_Path then
-            Read_Manifest_Deps (T & "/alire-dev.toml", Dev_Names);
+            Read_Manifest_Deps (T & "/alire-dev.toml", Dev_Names, Test_Names);
          end if;
       end;
 

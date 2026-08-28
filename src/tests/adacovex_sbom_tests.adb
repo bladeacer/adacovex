@@ -329,6 +329,81 @@ package body Adacovex_SBOM_Tests is
       Write_File (D & "/vendor/mixlib/c.go", "package main" & ASCII.LF);
    end Make_Vendored_Fixture;
 
+   --  Fixture declaring a base dependency, a [[test-depends-on]] dependency
+   --  in the publishing manifest, and a [[test-depends-on]] dependency in
+   --  the dev manifest: the test-labelled crates must be classified
+   --  Scope_Test regardless of which manifest declared them.
+   procedure Make_Test_Dep_Fixture is
+      D : constant String := "obj/sbom_testdep_fixture";
+   begin
+      Write_File
+        (D & "/alire.toml",
+         "name = ""tdfix"""
+         & ASCII.LF
+         & "version = ""1.0.0"""
+         & ASCII.LF
+         & "project-files = [""tdfix.gpr""]"
+         & ASCII.LF
+         & "[[depends-on]]"
+         & ASCII.LF
+         & "testbase = ""^1.0"""
+         & ASCII.LF
+         & "[[test-depends-on]]"
+         & ASCII.LF
+         & "testrun = ""*"""
+         & ASCII.LF);
+      Write_File
+        (D & "/alire-dev.toml",
+         "name = ""tdfix"""
+         & ASCII.LF
+         & "version = ""1.0.0"""
+         & ASCII.LF
+         & "[[test-depends-on]]"
+         & ASCII.LF
+         & "devtest = ""^2.0"""
+         & ASCII.LF);
+      Write_File
+        (D & "/tdfix.gpr",
+         "project Tdfix is" & ASCII.LF & "end Tdfix;" & ASCII.LF);
+   end Make_Test_Dep_Fixture;
+
+   --  Fixture whose test suite lives in a tests/ directory: the root .gpr
+   --  with-clauses the test harness project (tests/test_suite.gpr), which
+   --  itself with-clauses a library.  The library is referenced only from a
+   --  test project file, so it must be classified Scope_Test.
+   procedure Make_Test_GPR_Fixture is
+      D : constant String := "obj/sbom_testgpr_fixture";
+   begin
+      Write_File
+        (D & "/alire.toml",
+         "name = ""tgfix"""
+         & ASCII.LF
+         & "version = ""1.0.0"""
+         & ASCII.LF
+         & "project-files = [""tgfix.gpr""]"
+         & ASCII.LF);
+      Write_File
+        (D & "/tgfix.gpr",
+         "with ""test_suite"";"
+         & ASCII.LF
+         & "project Tgfix is"
+         & ASCII.LF
+         & "end Tgfix;"
+         & ASCII.LF);
+      Ada.Directories.Create_Path (D & "/tests");
+      Write_File
+        (D & "/tests/test_suite.gpr",
+         "with ""libt"";"
+         & ASCII.LF
+         & "project Test_Suite is"
+         & ASCII.LF
+         & "end Test_Suite;"
+         & ASCII.LF);
+      Write_File
+        (D & "/tests/libt.gpr",
+         "project Libt is" & ASCII.LF & "end Libt;" & ASCII.LF);
+   end Make_Test_GPR_Fixture;
+
    procedure Make_Demo_Graph (Graph : out Component_Vectors.Vector) is
       Root : Component_Info;
       Dep  : Component_Info;
@@ -1019,6 +1094,73 @@ package body Adacovex_SBOM_Tests is
          R.Check (EL (".hidden") = "", "hidden no-name -> empty");
          R.Check (EL ("a.unknown") = "", "unknown extension -> empty");
       end;
+
+      --  Test-scope dependencies: crates declared under a
+      --  [[test-depends-on]] section of alire.toml or alire-dev.toml are
+      --  classified Scope_Test.  Base deps stay base.
+      declare
+         Graph   : Component_Vectors.Vector;
+         Success : Boolean := False;
+         C       : Component_Info;
+      begin
+         Make_Test_Dep_Fixture;
+         Adacovex.Parsers.Manifest.Build_Dependency_Graph
+           ("obj/sbom_testdep_fixture",
+            "obj/sbom_testdep_fixture/alire.toml",
+            Graph,
+            Success);
+         R.Check (Success, "test-dep manifest graph success");
+         R.Check (Count_Name (Graph, "testbase") = 1, "testbase registered");
+         R.Check (Count_Name (Graph, "testrun") = 1, "testrun registered");
+         R.Check (Count_Name (Graph, "devtest") = 1, "devtest registered");
+         C := Find_Name (Graph, "testbase");
+         R.Check (C.Scope = Scope_Base, "testbase scope = base");
+         C := Find_Name (Graph, "testrun");
+         R.Check (C.Scope = Scope_Test, "testrun scope = test");
+         C := Find_Name (Graph, "devtest");
+         R.Check
+           (C.Scope = Scope_Test,
+            "devtest scope = test (declared in dev manifest)");
+      end;
+
+      --  Test-GPR dependencies: a library with-claused only from a test
+      --  project file (a .gpr under tests/) is classified Scope_Test.
+      declare
+         Graph   : Component_Vectors.Vector;
+         Success : Boolean := False;
+         C       : Component_Info;
+      begin
+         Make_Test_GPR_Fixture;
+         Adacovex.Parsers.Manifest.Build_Dependency_Graph
+           ("obj/sbom_testgpr_fixture",
+            "obj/sbom_testgpr_fixture/alire.toml",
+            Graph,
+            Success);
+         R.Check (Success, "test-gpr manifest graph success");
+         R.Check
+           (Count_Name (Graph, "test_suite") = 1,
+            "test_suite harness project registered");
+         C := Find_Name (Graph, "test_suite");
+         R.Check
+           (C.Scope = Scope_Base, "test_suite (root with-clause) = base");
+         R.Check
+           (Count_Name (Graph, "libt") = 1,
+            "libt registered (with-claused by test harness)");
+         C := Find_Name (Graph, "libt");
+         R.Check (C.Scope = Scope_Test, "libt scope = test (test GPR)");
+         R.Check
+           (C.PURL_Len = 12 and C.PURL (1 .. 12) = "pkg:gpr/libt",
+            "libt purl");
+      end;
+
+      --  Scope_Property maps every scope (including test) to its SBOM
+      --  property value.
+      R.Check (Scope_Property (Scope_Test) = "test", "scope test -> test");
+      R.Check
+        (Scope_Property (Scope_System) = "system", "scope system -> system");
+      R.Check
+        (Scope_Property (Scope_Vendored) = "vendored",
+         "scope vendored -> vendored");
    end Run;
 
 end Adacovex_SBOM_Tests;
