@@ -34,7 +34,18 @@ is
                  & Crate_Version (1 .. Crate_Version_Len)
                else Crate_Name (1 .. Crate_Name_Len));
             PURL : constant String := "pkg:alire/" & V;
+            Sc   : Types.Component_Scope :=
+              Classify_Scope (Crate_Name (1 .. Crate_Name_Len));
          begin
+            --  The name heuristic applies to lockfile-resolved crates
+            --  too: a crate the manifest sets leave transitive but whose
+            --  name carries a test label (for example test_utils) is
+            --  classified test.
+            if Sc = Types.Scope_Transitive
+              and then Is_Test_Named (Crate_Name (1 .. Crate_Name_Len))
+            then
+               Sc := Types.Scope_Test;
+            end if;
             Append_Dependency
               (Graph,
                Crate_Name (1 .. Crate_Name_Len),
@@ -48,7 +59,7 @@ is
                PURL,
                1,
                False,
-               Classify_Scope (Crate_Name (1 .. Crate_Name_Len)),
+               Sc,
                "Ada",
                (if Crate_Website_Len > 0
                 then Crate_Website (1 .. Crate_Website_Len)

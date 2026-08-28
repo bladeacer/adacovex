@@ -3,10 +3,16 @@ separate (Adacovex.Parsers.Manifest)
 --  Every supported ecosystem labels its test dependencies in its own way,
 --  and every label carries the literal word "test":
 --    * package.json: a dependency section whose key contains "test" (for
---      example "testDependencies" or "devTestDependencies");
+--      example "testDependencies" or "devTestDependencies"); the name
+--      heuristic also applies to npm lockfile-resolved names
+--      (pnpm-lock.yaml, package-lock.json, yarn.lock);
 --    * Cargo.toml: the [dev-dependencies] section (Cargo's test-only
 --      section), or any section whose name contains "test" (for example a
---      [target.'cfg(test)'.dependencies] section);
+--      [target.'cfg(test)'.dependencies] section); Cargo.lock crate
+--      names carry the name heuristic too;
+--    * go.mod: Go has no native test-only section, so the name heuristic
+--      is the signal -- module paths whose last segment starts or ends
+--      with "test" (for example github.com/stretchr/testify);
 --    * composer.json: the require-dev section, or any key containing
 --      "test";
 --    * Gemfile: gems declared inside a `group :test` block (any group
@@ -14,7 +20,11 @@ separate (Adacovex.Parsers.Manifest)
 --    * pom.xml: <dependency> blocks whose <scope> is test;
 --    * pyproject.toml: optional-dependencies extras whose name contains
 --      "test" (for example the "test" extra), and Poetry group sections
---      such as [tool.poetry.group.test.dependencies].
+--      such as [tool.poetry.group.test.dependencies];
+--    * Package.swift: dependencies declared inside a .testTarget(...)
+--      block;
+--    * requirements*.txt: no native test section, so the name heuristic
+--      is the signal.
 --  The first manifest found in Owner_Dir is used, in the same priority
 --  order as Read_Vendor_Manifest.  Missing or unreadable files leave the
 --  set unchanged.  A physical line longer than Max_Line stops the read;
@@ -597,6 +607,330 @@ is
       Close (F);
    end Collect_Pyproject_Test;
 
+   --  Whether the token after the last '@' in a lockfile name looks like
+   --  a version (digit or ^~>=<): then the '@version' suffix is stripped.
+   --  Scoped npm names keep their leading '@' (position 1 is never a
+   --  version separator), and path-like package-lock keys such as
+   --  "node_modules/@playwright/test" are untouched because the char
+   --  after their '@' is a letter.
+   --  @param N  Lockfile name token.
+   --  @return The name without a trailing '@version' suffix.
+   function Strip_Version (N : String) return String is
+   begin
+      for I in reverse N'Range loop
+         if N (I) = '@' and then I > N'First and then I < N'Last then
+            declare
+               C : constant Character := N (I + 1);
+            begin
+               if C in '0' .. '9'
+                 or else C = '^'
+                 or else C = '~'
+                 or else C = '>'
+                 or else C = '='
+                 or else C = '<'
+                 or else C = 'v'
+               then
+                  return N (N'First .. I - 1);
+               end if;
+            end;
+         end if;
+      end loop;
+      return N;
+   end Strip_Version;
+
+   --  The first key token before the first ':' on a lockfile line, for
+   --  both quote styles and bare YAML keys ("'@playwright/test':",
+   --  """node_modules/x":", "fsevents@2.3.2:").
+   --  @param Line  A lockfile line.
+   --  @return The key token, "" when none exists.
+   function Lock_Key (Line : String) return String is
+   begin
+      if Line'Length = 0 then
+         return "";
+      end if;
+      if Line (Line'First) = '"' or else Line (Line'First) = Character'Val (39)
+      then
+         declare
+            Q : constant Character := Line (Line'First);
+            J : Natural := Line'First + 1;
+         begin
+            while J <= Line'Last and then Line (J) /= Q loop
+               J := J + 1;
+            end loop;
+            if J <= Line'Last then
+               return Line (Line'First + 1 .. J - 1);
+            end if;
+            return "";
+         end;
+      end if;
+      for I in Line'Range loop
+         if Line (I) = ':' then
+            return Trim (Line (Line'First .. I - 1));
+         end if;
+      end loop;
+      return "";
+   end Lock_Key;
+
+   --  Add every test-named name from one lockfile (the name heuristic
+   --  applied to lockfile-resolved names).  The key token of each line
+   --  is taken; a trailing '@version' suffix is stripped; names that
+   --  carry the test label are collected.
+   --  @param Path  Lockfile path.
+   --  @param Names  Collected test-labelled names.
+   procedure Scan_Lock_File (Path : String; Names : in out Name_Vectors.Vector)
+   is
+      F        : File_Type;
+      Line     : String (1 .. Types.Max_Line);
+      Last     : Natural;
+      Overflow : Boolean;
+      Line_Num : Natural := 0;
+   begin
+      begin
+         Open (F, In_File, Path);
+      exception
+         when others =>
+            return;
+      end;
+      while not End_Of_File (F) loop
+         Line_Num := Line_Num + 1;
+         Adacovex.Parsers.Read_Line (F, Path, Line_Num, Line, Last, Overflow);
+         if Overflow then
+            Close (F);
+            return;
+         end if;
+         declare
+            T : constant String := Trim (Line (1 .. Last));
+            K : constant String := Strip_Version (Lock_Key (T));
+         begin
+            if K'Length >= 4 and then Is_Test_Named (K) then
+               Add_Dep_Name (Names, K);
+            end if;
+         end;
+      end loop;
+      Close (F);
+   end Scan_Lock_File;
+
+   --  npm-family lockfiles next to an owner package.json: the name
+   --  heuristic applied to lockfile-resolved names (pnpm-lock.yaml,
+   --  package-lock.json, yarn.lock).  A project can ship more than one;
+   --  every present file is scanned.
+   --  @param Dir  Directory holding the owner package.json.
+   --  @param Names  Collected test-labelled names.
+   procedure Collect_Npm_Lock_Test
+     (Dir : String; Names : in out Name_Vectors.Vector) is
+   begin
+      Scan_Lock_File (Dir & "/pnpm-lock.yaml", Names);
+      Scan_Lock_File (Dir & "/package-lock.json", Names);
+      Scan_Lock_File (Dir & "/yarn.lock", Names);
+   end Collect_Npm_Lock_Test;
+
+   --  Cargo.lock next to an owner Cargo.toml: crate names under
+   --  [[package]] whose name carries the test label are test-labelled
+   --  (the name heuristic applied to lockfile-resolved names).
+   --  @param Path  Cargo.lock path.
+   --  @param Names  Collected test-labelled names.
+   procedure Collect_Cargo_Lock_Test
+     (Path : String; Names : in out Name_Vectors.Vector)
+   is
+      F        : File_Type;
+      Line     : String (1 .. Types.Max_Line);
+      Last     : Natural;
+      Overflow : Boolean;
+      Line_Num : Natural := 0;
+   begin
+      begin
+         Open (F, In_File, Path);
+      exception
+         when others =>
+            return;
+      end;
+      while not End_Of_File (F) loop
+         Line_Num := Line_Num + 1;
+         Adacovex.Parsers.Read_Line (F, Path, Line_Num, Line, Last, Overflow);
+         if Overflow then
+            Close (F);
+            return;
+         end if;
+         declare
+            T : constant String := Trim (Line (1 .. Last));
+         begin
+            if T'Length >= 6 and then T (T'First .. T'First + 5) = "name ="
+            then
+               declare
+                  N : constant String := First_Quoted (T);
+               begin
+                  if N'Length >= 4 and then Is_Test_Named (N) then
+                     Add_Dep_Name (Names, N);
+                  end if;
+               end;
+            end if;
+         end;
+      end loop;
+      Close (F);
+   end Collect_Cargo_Lock_Test;
+
+   --  go.mod: Go has no native test-only section in go.mod, so the name
+   --  heuristic is the test signal -- module paths whose last path
+   --  segment starts or ends with "test" (for example
+   --  github.com/stretchr/testify) are test-labelled.
+   --  @param Path  go.mod path.
+   --  @param Names  Collected test-labelled names.
+   procedure Collect_Go_Test
+     (Path : String; Names : in out Name_Vectors.Vector)
+   is
+      F        : File_Type;
+      Line     : String (1 .. Types.Max_Line);
+      Last     : Natural;
+      Overflow : Boolean;
+      Line_Num : Natural := 0;
+      In_Block : Boolean := False;
+   begin
+      begin
+         Open (F, In_File, Path);
+      exception
+         when others =>
+            return;
+      end;
+      while not End_Of_File (F) loop
+         Line_Num := Line_Num + 1;
+         Adacovex.Parsers.Read_Line (F, Path, Line_Num, Line, Last, Overflow);
+         if Overflow then
+            Close (F);
+            return;
+         end if;
+         declare
+            T : constant String := Trim (Line (1 .. Last));
+         begin
+            if T = "require (" then
+               In_Block := True;
+            elsif T = ")" and then In_Block then
+               In_Block := False;
+            elsif In_Block then
+               --  "<module> <version>" inside a require ( ) block: the
+               --  module path is the first whitespace-delimited token.
+               declare
+                  Sp : Natural := 0;
+               begin
+                  for I in T'Range loop
+                     if T (I) = ' ' or else T (I) = ASCII.HT then
+                        Sp := I;
+                        exit;
+                     end if;
+                  end loop;
+                  if Sp > T'First then
+                     declare
+                        M : constant String := Trim (T (T'First .. Sp - 1));
+                     begin
+                        if M'Length >= 4 and then Is_Test_Named (M) then
+                           Add_Dep_Name (Names, M);
+                        end if;
+                     end;
+                  end if;
+               end;
+            elsif T'Length >= 7 and then T (T'First .. T'First + 6) = "require"
+            then
+               --  Single-line "require <module> <version>".
+               declare
+                  N  : constant String := Trim (T (T'First + 7 .. T'Last));
+                  Sp : Natural := 0;
+               begin
+                  for I in N'Range loop
+                     if N (I) = ' ' or else N (I) = ASCII.HT then
+                        Sp := I;
+                        exit;
+                     end if;
+                  end loop;
+                  if Sp > N'First then
+                     declare
+                        M : constant String := Trim (N (N'First .. Sp - 1));
+                     begin
+                        if M'Length >= 4 and then Is_Test_Named (M) then
+                           Add_Dep_Name (Names, M);
+                        end if;
+                     end;
+                  end if;
+               end;
+            end if;
+         end;
+      end loop;
+      Close (F);
+   end Collect_Go_Test;
+
+   --  Package.swift: dependencies declared inside a .testTarget(...)
+   --  block are Swift Package Manager's test-only dependencies.  Every
+   --  name in the block's dependencies array is test-labelled.
+   --  @param Path  Package.swift path.
+   --  @param Names  Collected test-labelled names.
+   procedure Collect_Swift_Test
+     (Path : String; Names : in out Name_Vectors.Vector)
+   is
+      F           : File_Type;
+      Line        : String (1 .. Types.Max_Line);
+      Last        : Natural;
+      Overflow    : Boolean;
+      Line_Num    : Natural := 0;
+      In_Test_Tgt : Boolean := False;
+      In_Deps     : Boolean := False;
+   begin
+      begin
+         Open (F, In_File, Path);
+      exception
+         when others =>
+            return;
+      end;
+      while not End_Of_File (F) loop
+         Line_Num := Line_Num + 1;
+         Adacovex.Parsers.Read_Line (F, Path, Line_Num, Line, Last, Overflow);
+         if Overflow then
+            Close (F);
+            return;
+         end if;
+         declare
+            T : constant String := Trim (Line (1 .. Last));
+         begin
+            --  A new target directive resets the block state.  Check
+            --  .testTarget first because it contains ".target(" as a
+            --  substring.
+            if Ada.Strings.Fixed.Index (T, ".testTarget(") > 0 then
+               In_Test_Tgt := True;
+               In_Deps := False;
+            elsif Ada.Strings.Fixed.Index (T, ".target(") > 0 then
+               In_Test_Tgt := False;
+               In_Deps := False;
+            end if;
+            if In_Test_Tgt then
+               declare
+                  D : constant Natural :=
+                    Ada.Strings.Fixed.Index (T, "dependencies:");
+               begin
+                  if D > 0 then
+                     In_Deps := True;
+                     --  Collect only after "dependencies:" so the
+                     --  target name on a one-line .testTarget is not
+                     --  captured.
+                     Collect_Quoted_Names (T (D + 13 .. T'Last), Names);
+                     if Ada.Strings.Fixed.Index (T, "]")
+                       > Ada.Strings.Fixed.Index (T, "[")
+                     then
+                        In_Deps := False;
+                        In_Test_Tgt := False;
+                     end if;
+                  elsif In_Deps then
+                     --  Continuation line of a multi-line dependencies
+                     --  array.
+                     Collect_Quoted_Names (T, Names);
+                     if Ada.Strings.Fixed.Index (T, "]") > 0 then
+                        In_Deps := False;
+                        In_Test_Tgt := False;
+                     end if;
+                  end if;
+               end;
+            end if;
+         end;
+      end loop;
+      Close (F);
+   end Collect_Swift_Test;
+
    --  Whether the file or directory P exists on disk.
    --  @param P  Path to probe.
    --  @return True when P exists.
@@ -604,8 +938,15 @@ is
 begin
    if Exists (Owner_Dir & "/package.json") then
       Collect_Npm_Test (Owner_Dir & "/package.json", Test_Names);
+      --  The name heuristic also applies to npm lockfile-resolved names
+      --  (pnpm-lock.yaml, package-lock.json, yarn.lock).
+      Collect_Npm_Lock_Test (Owner_Dir, Test_Names);
    elsif Exists (Owner_Dir & "/Cargo.toml") then
       Collect_Cargo_Test (Owner_Dir & "/Cargo.toml", Test_Names);
+      --  Cargo.lock crate names carry the name heuristic too.
+      Collect_Cargo_Lock_Test (Owner_Dir & "/Cargo.lock", Test_Names);
+   elsif Exists (Owner_Dir & "/go.mod") then
+      Collect_Go_Test (Owner_Dir & "/go.mod", Test_Names);
    elsif Exists (Owner_Dir & "/composer.json") then
       Collect_Composer_Test (Owner_Dir & "/composer.json", Test_Names);
    elsif Exists (Owner_Dir & "/Gemfile") then
@@ -614,5 +955,7 @@ begin
       Collect_Pom_Test (Owner_Dir & "/pom.xml", Test_Names);
    elsif Exists (Owner_Dir & "/pyproject.toml") then
       Collect_Pyproject_Test (Owner_Dir & "/pyproject.toml", Test_Names);
+   elsif Exists (Owner_Dir & "/Package.swift") then
+      Collect_Swift_Test (Owner_Dir & "/Package.swift", Test_Names);
    end if;
 end Collect_Owner_Test_Names;

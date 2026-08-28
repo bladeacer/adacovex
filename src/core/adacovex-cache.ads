@@ -27,7 +27,11 @@ package Adacovex.Cache is
    --  records (Package_Info / Proof_Summary / Test_Summary) or the scanner
    --  and parser semantics change.  Blobs written by an incompatible build
    --  are never served.  Appended to the default cache directory below.
-   Cache_Schema : constant String := "s8";
+   --  s9: test-label classification extended (name heuristic on every
+   --  ecosystem + lockfile-resolved names; go.mod / Package.swift /
+   --  requirements.txt test labels) -- cached graphs from earlier builds
+   --  carry stale scopes.
+   Cache_Schema : constant String := "s9";
 
    --  Soft cap on the number of cache entries kept on disk.  Once exceeded,
    --  the oldest entries are evicted first.

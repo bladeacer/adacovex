@@ -94,10 +94,15 @@ package Adacovex.Types is
    --  is test too: package.json sections whose key contains "test" (for
    --  example "testDependencies"), Cargo's [dev-dependencies] (and any
    --  section containing "test"), composer's require-dev, Gemfile
-   --  `group :test` blocks, pom.xml <scope>test</scope> dependencies, and
-   --  pyproject.toml optional-dependencies extras containing "test".  An
-   --  npm package whose name starts or ends with "test" (for example
-   --  @playwright/test) is test as well.  Scope_Test is last so the
+   --  `group :test` blocks, pom.xml <scope>test</scope> dependencies,
+   --  pyproject.toml optional-dependencies extras containing "test", and
+   --  Package.swift .testTarget dependencies.  A vendored component whose
+   --  name carries the test label (full name or its last segment after any
+   --  '/' or ':', for example @playwright/test,
+   --  github.com/stretchr/testify, org.testng:testng) is test as well,
+   --  and the same heuristic applies to lockfile-resolved names
+   --  (pnpm-lock.yaml, package-lock.json, yarn.lock, Cargo.lock,
+   --  alire.lock).  Scope_Test is last so the
    --  stream-serialized cache positions of the older scopes stay stable
    --  across releases.
    --  HLR-SBOM: SBOM dependency scope

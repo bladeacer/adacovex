@@ -295,6 +295,86 @@ package body Adacovex_Renderer_Tests is
             "charts: no vendored Charts.css markup remains");
       end;
 
+      --  Proof bars scale with the category's magnitude (the test-chart
+      --  convention): with Flow at 2 of 8 runtime checks, the Flow track
+      --  is a quarter width while the green/red split stays inside it.
+      Proof.Runtime_Checks := 8;
+      Proof.Runtime_Proved := 8;
+      declare
+         S : constant String :=
+           Adacovex.Renderers.HTML.Render_Dashboard
+             (Doc, Proof, Tests, Assess, Pkgs);
+      begin
+         R.Check
+           (Contains (S, "class=""hbar-track"" style=""width:25%"""),
+            "proof bar: Flow track scales with the largest category");
+      end;
+
+      --  The dependency-scope ring is a hoverable SVG: each scope segment
+      --  carries a native tooltip with the scope name and count, and the
+      --  Overview pairs the doc-coverage card with the scope card in one
+      --  row (chart-pair).
+      declare
+         Graph : Component_Vectors.Vector;
+         Root  : Component_Info;
+         Dep   : Component_Info;
+      begin
+         Root.Name (1 .. 4) := "root";
+         Root.Name_Len := 4;
+         Root.Kind := Root_Component;
+         Graph.Append (Root);
+         Dep := Root;
+         Dep.Scope := Scope_Base;
+         Dep.Name (1 .. 4) := "base";
+         Dep.Name_Len := 4;
+         Graph.Append (Dep);
+         Dep.Scope := Scope_Test;
+         Dep.Name (1 .. 4) := "test";
+         Dep.Name_Len := 4;
+         Graph.Append (Dep);
+         declare
+            S : constant String :=
+              Adacovex.Renderers.HTML.Render_Dashboard
+                (Doc, Proof, Tests, Assess, Pkgs, Graph);
+         begin
+            R.Check
+              (Contains (S, "class=""chart-pair"""),
+               "overview: doc coverage and dependency scope share a row");
+            R.Check
+              (Contains (S, "class=""polar-seg"""),
+               "scope ring: hoverable SVG segments");
+            R.Check
+              (Contains (S, "<title>test: 1</title>"),
+               "scope ring: test segment tooltip with count");
+            R.Check
+              (Contains (S, "<title>base: 1</title>"),
+               "scope ring: base segment tooltip with count");
+            declare
+               function Count (Str : String; Sub : String) return Natural is
+                  N : Natural := 0;
+                  I : Natural := Str'First;
+               begin
+                  loop
+                     declare
+                        J : constant Natural :=
+                          Ada.Strings.Fixed.Index (Str, Sub, I);
+                     begin
+                        exit when J = 0;
+                        N := N + 1;
+                        I := J + Sub'Length;
+                        exit when I > Str'Last;
+                     end;
+                  end loop;
+                  return N;
+               end Count;
+            begin
+               R.Check
+                 (Count (S, "<div") = Count (S, "</div"),
+                  "dashboard div balance (chart-pair layout)");
+            end;
+         end;
+      end;
+
       --  A partial proof donut splits green (proved) from red (unproved).
       Proof.Proved_VCs := 8;
       Proof.Flow_Proved := 1;

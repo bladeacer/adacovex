@@ -165,14 +165,21 @@ package body Adacovex.Parsers.Manifest is
    function Classify_Scope (Name : String) return Types.Component_Scope
    is separate;
 
-   --  Whether an npm-style package name carries a test label.  The full
-   --  package name is checked first, then the unscoped name after any
-   --  leading "@scope/" prefix.  A name that starts or ends with the
-   --  literal word "test" is test-labelled (for example @playwright/test,
-   --  vitest, supertest).  The vendored-component scan classifies such
-   --  npm packages Scope_Test.
-   --  @param Name  Package name (may be scoped, e.g. "@playwright/test").
-   --  @return True when the package name starts or ends with "test".
+   --  Whether a dependency name carries a test label.  The full name is
+   --  checked first, then the last path segment after any '/' or ':'
+   --  (which covers npm scope prefixes -- "@playwright/test" -- as well
+   --  as Go module paths such as "github.com/stretchr/testify", maven
+   --  groupId:artifactId names such as "org.testng:testng", and composer
+   --  vendor/package names).  A name (or its last segment) that starts or
+   --  ends with the literal word "test" is test-labelled (for example
+   --  @playwright/test, vitest, supertest, testify, testng).  The
+   --  vendored-component scan classifies such components Scope_Test, and
+   --  the lockfile readers apply the same heuristic to lockfile-resolved
+   --  names.
+   --  @param Name  Dependency name (may be scoped, path-like, or
+   --    colon-separated, e.g. "@playwright/test").
+   --  @return True when the name (or its last segment) starts or ends
+   --    with "test".
    function Is_Test_Named (Name : String) return Boolean is separate;
 
    --  Collect the dependency names a project manifest declares as
@@ -181,12 +188,17 @@ package body Adacovex.Parsers.Manifest is
    --  package.json sections whose key contains "test" (for example
    --  "testDependencies"), Cargo's [dev-dependencies] section (and any
    --  section containing "test"), composer's require-dev, Gemfile
-   --  `group :test` blocks, pom.xml <scope>test</scope> dependencies, and
+   --  `group :test` blocks, pom.xml <scope>test</scope> dependencies,
    --  pyproject.toml optional-dependencies extras containing "test" (plus
-   --  Poetry test group sections).  The first manifest found in Owner_Dir
-   --  is used, in the same priority order as Read_Vendor_Manifest.
-   --  Missing or unreadable files leave the set unchanged.  A physical
-   --  line longer than Max_Line stops the read; no partial set is kept.
+   --  Poetry test group sections), and Package.swift .testTarget
+   --  dependencies.  Ecosystems without a native test-only section
+   --  (go.mod, requirements*.txt) rely on the name heuristic, which also
+   --  applies to lockfile-resolved names (pnpm-lock.yaml,
+   --  package-lock.json, yarn.lock, Cargo.lock).  The first manifest
+   --  found in Owner_Dir is used, in the same priority order as
+   --  Read_Vendor_Manifest.  Missing or unreadable files leave the set
+   --  unchanged.  A physical line longer than Max_Line stops the read;
+   --  no partial set is kept.
    --  @param Owner_Dir  Directory holding the project manifest that owns a
    --    vendored directory (for example tests/e2e owns
    --    tests/e2e/node_modules).
@@ -1425,21 +1437,30 @@ package body Adacovex.Parsers.Manifest is
 
       --  Whether a file name is a supported-language project manifest that
       --  can own a vendored directory (the file set Collect_Owner_Test_Names
-      --  reads).  Hashing these files makes the graph key sound: editing the
-      --  owning manifest's test-labelled sections invalidates the cached
-      --  graph so the scope classification is recomputed.
+      --  reads, plus the npm lockfiles it scans).  Hashing these files makes
+      --  the graph key sound: editing the owning manifest's test-labelled
+      --  sections (or its npm lockfiles) invalidates the cached graph so the
+      --  scope classification is recomputed.
       --  @param N  File base name.
-      --  @return True for package.json, Cargo.toml, composer.json, Gemfile,
-      --    pom.xml, or pyproject.toml.
+      --  @return True for package.json, Cargo.toml, Cargo.lock, go.mod,
+      --    composer.json, Gemfile, pom.xml, pyproject.toml, Package.swift,
+      --    and the npm lockfiles pnpm-lock.yaml, package-lock.json, and
+      --    yarn.lock.
       function Is_Owner_Manifest (N : String) return Boolean is
       begin
          return
            N = "package.json"
            or else N = "Cargo.toml"
+           or else N = "Cargo.lock"
+           or else N = "go.mod"
            or else N = "composer.json"
            or else N = "Gemfile"
            or else N = "pom.xml"
-           or else N = "pyproject.toml";
+           or else N = "pyproject.toml"
+           or else N = "Package.swift"
+           or else N = "pnpm-lock.yaml"
+           or else N = "package-lock.json"
+           or else N = "yarn.lock";
       end Is_Owner_Manifest;
    begin
       --  Classic doc roots (.adacovex/patches, resources, vendor, assets).

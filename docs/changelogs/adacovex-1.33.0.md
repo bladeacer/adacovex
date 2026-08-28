@@ -96,10 +96,12 @@ serialises the rendered SVG instead of rasterising the canvas.
 
 The dashboard's metrics charts no longer depend on the vendored
 [Charts.css](https://chartscss.org/) framework (`resources/charts.min.css`
-and the `charts-patch.css` overlay are deleted; the Credits tab and
-THIRD_PARTY_NOTICES drop the entry).  All six chart cards are now
-hand-rolled with plain CSS/SVG, which fixes the rendering problems the
-framework introduced:
+and the `charts-patch.css` overlay are deleted).  The Credits tab and
+THIRD_PARTY_NOTICES still credit Charts.css -- as **inspiration** (MIT,
+not bundled): the dashboard ships its own patched, hand-rolled charts that
+borrow Charts.css's ring-and-segment visual language.  All six chart cards
+are now hand-rolled with plain CSS/SVG, which fixes the rendering problems
+the framework introduced:
 
 - **Donuts** (SPARK Proof, Tests Pass/Fail, Overview Tests, Overview Doc
   Coverage) are conic-gradient rings with a CSS hole -- the same pattern
@@ -131,13 +133,68 @@ hand-rolled donut/bar chart styles).  The page shell inlines each module
 at its own placeholder; `tools/gen-dashboard.py` bundles them in
 dependency order (vendored libraries first, then authored modules).
 
+### C9: Test-labelled vendored dependencies across every ecosystem
+
+C1 classifies `test` scope from Alire manifests and test project files.
+Vendored components (packages under `node_modules`, `vendor/`, and the
+other vendored roots) are now classified `test` the same way, across every
+supported ecosystem:
+
+- **Section labels**: `package.json` sections whose key contains `test`
+  (for example `testDependencies` or `devTestDependencies`), Cargo's
+  `[dev-dependencies]` (Cargo's native test-only section) plus any
+  section containing `test`, composer's `require-dev`, Gemfile
+  `group :test` blocks, `pom.xml` `<scope>test</scope>` dependencies,
+  `pyproject.toml` test extras and Poetry `[tool.poetry.group.test.*]`
+  sections, and `Package.swift` dependencies declared inside a
+  `.testTarget(...)` block.
+- **The name heuristic** (test pre/suffix): a component whose name starts
+  or ends with the literal word `test` is test-labelled.  The heuristic
+  now works across every ecosystem -- not just npm -- by checking the
+  full name and then the last segment after any `/` or `:`, so
+  `@playwright/test`, `test-case`, `github.com/stretchr/testify` and
+  `org.testng:testng` all match.  Ecosystems without a native test-only
+  section (`go.mod`, `requirements*.txt`) rely on this heuristic.
+- **Lockfiles**: the name heuristic also applies to lockfile-resolved
+  names -- `pnpm-lock.yaml` / `package-lock.json` / `yarn.lock` next to
+  an owner `package.json`, `Cargo.lock` crate names, and `alire.lock`
+  crates that the manifest sets leave transitive.
+
+The e2e fixture's `@playwright/test` is the canonical case: it stays a
+`devDependencies` entry of `tests/e2e/package.json` (and a
+`pnpm-lock.yaml` entry) and is classified `test` by name.
+
+### C10: Overview pairing, hoverable scope ring, scaled proof bars, wider diagram
+
+Four dashboard layout improvements:
+
+- **Overview row pairing**: the **Doc Coverage** donut and the
+  **Dependency Scope** ring now share one row (`chart-pair`), so the
+  Overview uses its width better instead of stacking two full-width cards.
+- **Hoverable scope ring**: every coloured segment of the dependency-scope
+  rings (Overview and Charts) is a real SVG arc carrying a native tooltip
+  with the scope name and its component count (for example `test: 3`), and
+  the segment's opacity rises on hover.
+- **Proof Check Types scaling**: the proof-category bars now scale with
+  the category's magnitude exactly like the test-category bars -- the
+  track width is the category's share of the largest category, so a
+  407-VC category reads as a longer bar than a 56-VC one (the green/red
+  proved/unproved split stays inside the track).
+- **Wider nomnoml diagram**: the SVG now fills the width allocated to the
+  diagram card (the space the dependency tree would use) instead of
+  shrinking to the graph's natural size, and centres horizontally inside
+  the card; deep graphs still scroll.
+
 ## Test Suite
 
-Native suite grows to 998 tests (14 categories).  The HTML/Markdown
+Native suite grows to 1063 tests (14 categories).  The HTML/Markdown
 renderer suite adds checks that the dashboard charts are hand-rolled:
 full and partial donut gradients (green at 100%, green+red split for
-partial proof), the bar-row label/track markup, and that no
-`charts-css` markup remains in the served page.
+partial proof), the bar-row label/track markup, proof-bar magnitude
+scaling (a smaller category's track is a percentage of the largest), the
+`chart-pair` Overview row, the hoverable SVG scope ring with its
+per-segment `scope: count` tooltips, and that no `charts-css` markup
+remains in the served page.
 
 
 989 tests (was 973).  The SBOM generator suite gained 16 tests:
@@ -148,17 +205,34 @@ partial proof), the bar-row label/track markup, and that no
   `Scope_Test` with a `pkg:gpr/libt` PURL;
 - `Scope_Property` maps every scope including `test`.
 
-The dashboard e2e suite (22 tests) gained four layout tests: the Overview
-Tests readout, page-content search (`orphan`), clickable SVG diagram nodes,
-and the test-scope filter checkbox.
+It then grew by a further 44 tests for the vendored test labels:
+
+- `@playwright/test` (test-named npm package) and a `testDependencies`
+  section package are `Scope_Test`; a `devDependencies`-only package
+  stays vendored;
+- Cargo `[dev-dependencies]`, Gemfile `group :test`, Maven
+  `<scope>test</scope>`, pyproject `test` extra, composer `require-dev`,
+  and Package.swift `.testTarget` dependencies are `Scope_Test`;
+- the name heuristic across ecosystems: `github.com/stretchr/testify`
+  (go.mod module path) and `test-case` (Cargo.lock crate) are
+  `Scope_Test`;
+- lockfile-resolved names: `@playwright/test` via `pnpm-lock.yaml` and
+  `test_utils` via `alire.lock` are `Scope_Test` (an unlabelled
+  `alire.lock` crate stays transitive).
+
+The dashboard e2e suite (22 tests) gained layout tests: the Overview
+Tests readout, page-content search (`orphan`), clickable SVG diagram
+nodes, the test-scope filter checkbox, and the credits-table rows
+(Playwright as a test dependency, Charts.css credited for inspiration).
 
 ## Proof Results
 
 Platinum, 723/723 VCs proved across 50 analysed units (unchanged at 1.33.0
 -- the parser, cache and renderer changes are in default-off or
-SPARK-Mode-On-ensuring units, and `Scope_Property`'s added branch proves
-without new VCs).  Invocation: `adacovex prove` (`--steps=10000`,
-gnatprove 16.1.0).  0 unproved, 0 justified.
+SPARK-Mode-On-ensuring units; the new `test`-scope branches in the
+manifest parser and the renderer prove without new VCs).  Invocation:
+`adacovex prove` (`--steps=10000`, gnatprove 16.1.0).  0 unproved, 0
+justified.
 
 ## Traceability
 

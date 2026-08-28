@@ -270,16 +270,27 @@ to the Alire `[[test-depends-on]]` sections and test project files:
 
 | Manifest file       | Test label |
 |---------------------|------------|
-| `package.json`      | a dependency section whose key contains `test` (for example `testDependencies` or `devTestDependencies`); an npm package whose unscoped name starts or ends with `test` (for example `@playwright/test`, `vitest`) |
+| `package.json`      | a dependency section whose key contains `test` (for example `testDependencies` or `devTestDependencies`); a name whose last segment starts or ends with `test` (for example `@playwright/test`, `vitest`) |
 | `Cargo.toml`        | the `[dev-dependencies]` section (Cargo's test-only section); any section whose name contains `test` (for example `[target.'cfg(test)'.dependencies]`) |
+| `go.mod`            | no native test-only section: the name heuristic is the signal (a module path whose last path segment starts or ends with `test`, for example `github.com/stretchr/testify`) |
 | `composer.json`     | the `require-dev` section |
 | `Gemfile`           | gems inside a `group :test` block (any group name containing `test`) |
 | `pom.xml`           | `<dependency>` blocks whose `<scope>` is `test` |
 | `pyproject.toml`    | optional-dependencies extras whose name contains `test` (for example the `test` extra); Poetry sections such as `[tool.poetry.group.test.dependencies]` |
+| `Package.swift`     | dependencies declared inside a `.testTarget(...)` block |
+| `requirements*.txt` | no native test section: the name heuristic is the signal |
 
 A vendored component (for example a package under `node_modules` or
 `vendor/`) is classified `test` when the project manifest that owns the
-vendor directory declares it under one of these test labels, or -- for npm
-packages -- when its own name carries the test label.  The e2e fixture's
+vendor directory declares it under one of these test labels, or when its
+name carries the test label.  The name heuristic works across every
+supported ecosystem -- not just npm: it checks the full name and then the
+last segment after any `/` or `:`, so `@playwright/test`, `test-case`,
+`github.com/stretchr/testify` and `org.testng:testng` are all
+test-labelled.  The heuristic also applies to **lockfile-resolved names**:
+`pnpm-lock.yaml` / `package-lock.json` / `yarn.lock` entries next to an
+owner `package.json`, `Cargo.lock` crate names, and `alire.lock` crates
+that the manifest sets leave transitive.  The e2e fixture's
 `@playwright/test` is the canonical example: it stays a `devDependencies`
-entry of `tests/e2e/package.json` and is classified `test` by name.
+entry of `tests/e2e/package.json` (and a `pnpm-lock.yaml` entry) and is
+classified `test` by name.
