@@ -3,17 +3,17 @@
   "specVersion": "1.5",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-08-28T21:50:10",
+    "timestamp": "2026-08-28T22:26:06",
     "tools": [
-      {"vendor": "bladeacer", "name": "adacovex", "version": "1.32.0"}
+      {"vendor": "bladeacer", "name": "adacovex", "version": "1.33.0"}
     ],
     "component": {
       "type": "application",
-      "bom-ref": "pkg:alire/covex@1.32.0",
+      "bom-ref": "pkg:alire/covex@1.33.0",
       "name": "covex",
-      "version": "1.32.0",
+      "version": "1.33.0",
       "language": "Ada; Python; JavaScript",
-      "purl": "pkg:alire/covex@1.32.0",
+      "purl": "pkg:alire/covex@1.33.0",
       "licenses": [{"license": {"id": "Apache-2.0"}}],
       "description": "Ada/SPARK coverage, proof, multi-standard compliance tool",
       "externalReferences": [{"url": "https://github.com/bladeacer/adacovex", "type": "website"}],
@@ -23,46 +23,43 @@
   "components": [
     {
       "type": "library",
-      "bom-ref": "pkg:npm/flexsearch@0.7.31",
+      "bom-ref": "pkg:generic/flexsearch",
       "name": "flexsearch",
       "version": "0.7.31",
       "language": "JavaScript",
-      "purl": "pkg:npm/flexsearch@0.7.31",
+      "purl": "pkg:generic/flexsearch",
       "licenses": [{"license": {"id": "Apache-2.0"}}],
-      "description": "https://github.com/nextapps-de/flexsearch/",
+      "externalReferences": [{"url": "https://github.com/nextapps-de/flexsearch/", "type": "website"}],
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "vendored"}]
       },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/graphre@0.1.3",
+      "bom-ref": "pkg:generic/graphre",
       "name": "graphre",
       "version": "0.1.3",
       "language": "JavaScript",
-      "purl": "pkg:npm/graphre@0.1.3",
+      "purl": "pkg:generic/graphre",
       "licenses": [{"license": {"id": "MIT"}}],
-      "description": "https://github.com/skanaar/graphre#readme",
+      "externalReferences": [{"url": "https://github.com/skanaar/graphre#readme", "type": "website"}],
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "vendored"}]
       },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/nomnoml@1.7.0",
+      "bom-ref": "pkg:generic/nomnoml",
       "name": "nomnoml",
       "version": "1.7.0",
       "language": "JavaScript",
-      "purl": "pkg:npm/nomnoml@1.7.0",
+      "purl": "pkg:generic/nomnoml",
       "licenses": [{"license": {"id": "MIT"}}],
-      "description": "http://www.nomnoml.com",
+      "externalReferences": [{"url": "http://www.nomnoml.com", "type": "website"}],
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "vendored"}]
       },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/charts.css@1.2.0",
-      "name": "charts.css",
-      "version": "1.2.0",
+      "bom-ref": "pkg:generic/charts.min",
+      "name": "charts.min",
       "language": "CSS",
-      "purl": "pkg:npm/charts.css@1.2.0",
-      "licenses": [{"license": {"id": "MIT"}}],
-      "description": "https://ChartsCSS.org/",
+      "purl": "pkg:generic/charts.min",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "vendored"}]
       },
     {
@@ -80,14 +77,16 @@
       "type": "library",
       "bom-ref": "pkg:alire/gnatprove",
       "name": "gnatprove",
+      "version": "16.1.0",
       "language": "Ada",
       "purl": "pkg:alire/gnatprove",
-      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
       },
     {
       "type": "library",
       "bom-ref": "pkg:alire/gnatdoc_bin",
       "name": "gnatdoc_bin",
+      "version": "26.0.0",
       "language": "Ada",
       "purl": "pkg:alire/gnatdoc_bin",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
@@ -96,6 +95,7 @@
       "type": "library",
       "bom-ref": "pkg:alire/gnatformat_bin",
       "name": "gnatformat_bin",
+      "version": "26.0.0",
       "language": "Ada",
       "purl": "pkg:alire/gnatformat_bin",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
@@ -131,6 +131,7 @@
       "type": "library",
       "bom-ref": "pkg:generic/go",
       "name": "go",
+      "version": "1.27.0-X",
       "purl": "pkg:generic/go",
       "description": "System tool referenced by the project (dev dependency)",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
@@ -229,7 +230,7 @@
       "type": "library",
       "bom-ref": "pkg:generic/node",
       "name": "node",
-      "version": "v26.7.0",
+      "version": "26.7.0",
       "purl": "pkg:generic/node",
       "description": "System tool referenced by the project (dev dependency)",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
@@ -246,8 +247,8 @@
   ],
   "dependencies": [
     {
-      "ref": "pkg:alire/covex@1.32.0",
-      "dependsOn": ["pkg:npm/flexsearch@0.7.31", "pkg:npm/graphre@0.1.3", "pkg:npm/nomnoml@1.7.0", "pkg:npm/charts.css@1.2.0", "pkg:npm/@playwright/test@1.62.1", "pkg:alire/gnatprove", "pkg:alire/gnatdoc_bin", "pkg:alire/gnatformat_bin", "pkg:generic/bash", "pkg:generic/curl", "pkg:generic/alr", "pkg:generic/go", "pkg:generic/python3", "pkg:generic/git", "pkg:generic/make", "pkg:generic/jj", "pkg:generic/npm", "pkg:generic/pnpm", "pkg:generic/mandb", "pkg:generic/fossil", "pkg:generic/hg", "pkg:generic/svn", "pkg:generic/node", "pkg:generic/cargo"]
+      "ref": "pkg:alire/covex@1.33.0",
+      "dependsOn": ["pkg:generic/flexsearch", "pkg:generic/graphre", "pkg:generic/nomnoml", "pkg:generic/charts.min", "pkg:npm/@playwright/test@1.62.1", "pkg:alire/gnatprove", "pkg:alire/gnatdoc_bin", "pkg:alire/gnatformat_bin", "pkg:generic/bash", "pkg:generic/curl", "pkg:generic/alr", "pkg:generic/go", "pkg:generic/python3", "pkg:generic/git", "pkg:generic/make", "pkg:generic/jj", "pkg:generic/npm", "pkg:generic/pnpm", "pkg:generic/mandb", "pkg:generic/fossil", "pkg:generic/hg", "pkg:generic/svn", "pkg:generic/node", "pkg:generic/cargo"]
     }
   ]
 }

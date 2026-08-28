@@ -1,8 +1,9 @@
 separate (Adacovex.Parsers.Manifest)
 --  Build a Tool_Entry from a string literal.  The System_Tools table
 --  stays readable.  VFlag is the version-probe flag or subcommand.
---  Every tool here accepts "--version" except fossil and git-lfs.  Those
---  two use the "version" subcommand.
+--  Every tool here accepts "--version" except fossil, git-lfs, and go.
+--  Those use the "version" subcommand.  The probe falls back through
+--  "--version", "-v", and "version" when the configured flag fails.
 --  @param S  Tool name (lowercase, for example "python3").
 --  @param VFlag  Version-probe flag (default "--version").
 --  @return The Tool_Entry holding S.

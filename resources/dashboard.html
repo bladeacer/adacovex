@@ -1,6 +1,7 @@
 <!DOCTYPE html><html lang="en" data-initial-theme="__THEME__"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>adacovex Dashboard</title><style>
 __STYLE_CUSTOM__
 __STYLE_CHARTS__
+__STYLE_PATCH__
 </style></head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="i-base" viewBox="0 0 12 12"><circle cx="6" cy="6" r="4.6" stroke="currentColor" fill="none" stroke-width="1.3"/><path d="M6 3.4 V6.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></symbol>
@@ -8,6 +9,7 @@ __STYLE_CHARTS__
 <symbol id="i-trans" viewBox="0 0 12 12"><path d="M6 1.8 L10.4 4.2 V7.8 L6 10.2 L1.6 7.8 V4.2 Z" stroke="currentColor" fill="none" stroke-width="1.3" stroke-linejoin="round"/><path d="M6 4.2 V10.2 M1.6 4.2 L6 7.8 L10.4 4.2" stroke="currentColor" fill="none" stroke-width="1.1" stroke-linejoin="round"/></symbol>
 <symbol id="i-vend" viewBox="0 0 12 12"><path d="M6 1.6 L10.8 4.1 V7.9 L6 10.4 L1.2 7.9 V4.1 Z" stroke="currentColor" fill="none" stroke-width="1.3" stroke-linejoin="round"/><path d="M6 1.6 L6 10.4 M1.2 4.1 L10.8 4.1 M3 3 L5 1.8 M9 3 L7 1.8" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></symbol>
 <symbol id="i-system" viewBox="0 0 12 12"><rect x="2" y="2.5" width="8" height="7" rx="1.2" stroke="currentColor" fill="none" stroke-width="1.2"/><path d="M3.6 5.4 L5.2 6.6 L3.6 7.8 M6.4 8.2 H8.2" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-test" viewBox="0 0 12 12"><rect x="2.4" y="2.4" width="7.2" height="7.2" rx="1.1" stroke="currentColor" fill="none" stroke-width="1.2"/><path d="M4.6 6 L5.6 7 L7.6 4.9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
 <symbol id="i-search" viewBox="0 0 12 12"><circle cx="5" cy="5" r="3.5" stroke="currentColor" fill="none" stroke-width="1.3"/><path d="M7.5 7.5 L10.5 10.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></symbol>
 <symbol id="i-clear" viewBox="0 0 12 12"><path d="M3 3 L9 9 M9 3 L3 9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></symbol>
 </defs></svg>
@@ -37,7 +39,7 @@ __STYLE_CHARTS__
 <div class="card">
 <h2>Dependency Hierarchy (nomnoml)</h2>
 <p style="color:var(--muted);font-size:.85rem">Rendered with vendored <a href="https://github.com/skanaar/nomnoml" target="_blank" rel="noopener">nomnoml</a>. Boxes are components. Arrows show dependencies. Filter controls affect both views.</p>
-<div class="nomnoml-wrap"><canvas id="nomnoml-canvas" width="1000" height="600"></canvas></div>
+<div class="nomnoml-wrap"><div id="nomnoml-canvas"></div></div>
 <div style="margin-top:8px"><button class="theme-toggle" onclick="downloadNomnoml()">Download SVG</button> <button class="theme-toggle" onclick="renderNomnoml()">Re-render</button></div>
 </div>
 </div>
@@ -64,5 +66,10 @@ __STYLE_CHARTS__
 <script>__JS_GRAPhRE__</script>
 <script>__JS_NOMMONL__</script>
 <script>__JS_FLEXSEARCH__</script>
-<script>__JS_APP__</script>
+<script>__JS_THEME__</script>
+<script>__JS_TABS__</script>
+<script>__JS_DEPS__</script>
+<script>__JS_DETAILS__</script>
+<script>__JS_NOMMONL_APP__</script>
+<script>__JS_SEARCH__</script>
 </body></html>

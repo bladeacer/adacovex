@@ -1,0 +1,26 @@
+/* Charts.css patch: these rules layer on top of the vendored
+   charts.min.css (this file is inlined AFTER it in the dashboard page), so
+   they win the cascade and keep Charts.css aligned with the dashboard
+   theme and card layout.  Charts.css is opinionated about heights, label
+   rotation and data-chip placement; the patch corrects the places where
+   that default styling overflows the dashboard cards. */
+.charts-css{--color:#2e7d32;--color-2:#c62828;--color-1:#2e7d32;max-width:100%;overflow:visible}
+.charts-css.bar{height:calc(var(--rows, 8) * 30px + 24px);min-height:170px}
+.charts-css.bar.show-labels tbody tr th{width:130px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.charts-css.bar tbody tr{height:30px}
+.charts-css.column{height:300px;overflow:visible}
+.charts-css.column.rotate-labels{--labels-size:120px;height:340px}
+.charts-css.column.rotate-labels tbody tr th{writing-mode:vertical-rl;text-orientation:mixed;white-space:nowrap;overflow:visible;text-overflow:clip;max-height:120px;padding:6px 4px 0;line-height:1.15}
+.charts-css.donut{height:200px;max-width:240px;margin:0 auto;position:relative}
+.charts-css.pie.donut::after{content:"";position:absolute;top:50%;left:50%;width:48%;height:48%;background:var(--card);border-radius:50%;transform:translate(-50%,-50%);z-index:1;pointer-events:none}
+.charts-css.pie.donut tbody{position:relative;z-index:0}
+.charts-css .data{color:var(--fg);font-weight:600;font-size:.82rem;padding:0 4px;background:color-mix(in srgb,var(--card) 70%,transparent);border-radius:3px}
+.charts-css th{color:var(--muted);font-size:.78rem}
+/* Keep pie labels upright and reserve a stable readout below the chart. */
+.charts-css.pie tbody tr th,.charts-css.pie tbody tr td,.charts-css.pie tbody tr td .data{transform:none;align-items:center;justify-content:center}
+/* Keep horizontal-bar labels inside the label column. */
+.charts-css.bar.show-labels{--labels-size:130px}
+.charts-css.bar.show-labels tbody tr th{padding-right:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (prefers-color-scheme:dark){.charts-css{--color:#81c784;--color-2:#ef5350}}
+:root[data-theme="dark"] .charts-css{--color:#81c784;--color-2:#ef5350}
+:root[data-theme="light"] .charts-css{--color:#2e7d32;--color-2:#c62828}

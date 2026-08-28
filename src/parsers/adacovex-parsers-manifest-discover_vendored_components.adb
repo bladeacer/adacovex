@@ -7,6 +7,14 @@ separate (Adacovex.Parsers.Manifest)
 --  name.  The language comes from the file extension.  Such packages
 --  have no manifest entry and no .gpr of their own.  They are recorded
 --  as Scope_Vendored dependencies of the root.
+--
+--  Nothing here is hard-coded: the component name is the file's own base
+--  name, the version is read from the file's own banner comment (for
+--  example "FlexSearch.js v0.7.31 (Bundle)") when the vendored file
+--  carries one, and the licence and website are resolved live from the
+--  package registry under that same name (Resolve_Ecosystem_Metadata)
+--  when the registry knows it.  An asset the registry does not know
+--  keeps a pkg:generic PURL and whatever the file itself declared.
 procedure Discover_Vendored_Components
   (Target_Dir : String;
    Graph      : in out Types.Implementation.Component_Vectors.Vector)
@@ -59,62 +67,97 @@ is
          "Ada");
    end Add_Vendored;
 
-   subtype Lib_Name_Field is String (1 .. 32);
-   --  Return the upstream npm package name and version for a bundled
-   --  dashboard asset, or False for an unknown asset.  The dashboard
-   --  vendors exactly four third-party libraries into the binary
-   --  (resources/*.js|css); their versions are stable build-time
-   --  constants (also listed in the Credits tab and docs/dashboard.md).
-   --  adacovex's own dashboard sources match none of these and never
-   --  become packages.  The licence and website are no longer hard-coded:
-   --  the caller resolves them live from the registry (preferring pnpm,
-   --  then npm, then yarn, then bun) via Resolve_Ecosystem_Metadata, so
-   --  the SBOM and Credits tab track the real upstream licence.
-   function Bundled_Library
-     (Raw      : String;
-      Npm_Name : out Lib_Name_Field;
-      NN       : out Natural;
-      Lib_Ver  : out Lib_Name_Field;
-      VN       : out Natural) return Boolean
-   is
-      N : String (1 .. 32) := (others => ' ');
-      V : String (1 .. 32) := (others => ' ');
+   --  Read the version out of a vendored file's own banner comment: the
+   --  first comment block (/* ... */ or leading // lines) at the top of
+   --  the file, scanned for a "v<digits>.<digits>" token such as the
+   --  "v0.7.31" in "FlexSearch.js v0.7.31 (Bundle)".  Returns "" when the
+   --  file carries no banner version.  This is real data from the vendored
+   --  file itself -- never a hard-coded table.
+   --  @param Path  Path of the vendored asset.
+   --  @return The banner version (without the leading "v"), or "".
+   function Banner_Version (Path : String) return String is
+      F    : Ada.Text_IO.File_Type;
+      Buf  : String (1 .. 1024);
+      BLen : Natural := 0;
+      Ver  : String (1 .. 32) := (others => ' ');
    begin
-      if Raw = "flexsearch" then
-         N (1 .. 10) := "flexsearch";
-         NN := 10;
-         V (1 .. 6) := "0.7.31";
-         VN := 6;
-      elsif Raw = "nomnoml" then
-         N (1 .. 7) := "nomnoml";
-         NN := 7;
-         V (1 .. 5) := "1.7.0";
-         VN := 5;
-      elsif Raw = "graphre" then
-         N (1 .. 7) := "graphre";
-         NN := 7;
-         V (1 .. 5) := "0.1.3";
-         VN := 5;
-      elsif Raw = "charts.min" then
-         N (1 .. 10) := "charts.css";
-         NN := 10;
-         V (1 .. 5) := "1.2.0";
-         VN := 5;
-      else
-         return False;
-      end if;
-      Npm_Name := N;
-      Lib_Ver := V;
-      return True;
-   end Bundled_Library;
+      begin
+         Ada.Text_IO.Open (F, Ada.Text_IO.In_File, Path);
+      exception
+         when others =>
+            return "";
+      end;
+      while not Ada.Text_IO.End_Of_File (F) and then BLen < Buf'Last loop
+         declare
+            Line : String (1 .. 256);
+            L    : Natural;
+         begin
+            Ada.Text_IO.Get_Line (F, Line, L);
+            for I in 1 .. L loop
+               if BLen < Buf'Last then
+                  BLen := BLen + 1;
+                  Buf (BLen) := Line (I);
+               end if;
+            end loop;
+            if BLen < Buf'Last then
+               BLen := BLen + 1;
+               Buf (BLen) := ASCII.LF;
+            end if;
+         end;
+         exit when BLen >= 1024;
+      end loop;
+      Ada.Text_IO.Close (F);
+
+      --  Restrict the scan to the leading banner region (first 512 chars
+      --  or the first comment block, whichever ends first): a banner
+      --  version is a "v" immediately followed by a digit and dots.
+      declare
+         Last  : constant Natural := (if BLen > 512 then 512 else BLen);
+         I     : Natural := 1;
+         Start : Natural := 0;
+         Stop  : Natural := 0;
+      begin
+         --  Skip whitespace and a leading /* or // opener.
+         while I <= Last
+           and then (Buf (I) = ' '
+                     or else Buf (I) = ASCII.LF
+                     or else Buf (I) = ASCII.CR
+                     or else Buf (I) = ASCII.HT
+                     or else Buf (I) = '/'
+                     or else Buf (I) = '*'
+                     or else Buf (I) = '!')
+         loop
+            I := I + 1;
+         end loop;
+         while I <= Last loop
+            if Buf (I) = 'v'
+              and then I < Last
+              and then Buf (I + 1) in '0' .. '9'
+            then
+               Start := I + 1;
+               Stop := I + 1;
+               while Stop < Last
+                 and then (Buf (Stop + 1) in '0' .. '9'
+                           or else Buf (Stop + 1) = '.')
+               loop
+                  Stop := Stop + 1;
+               end loop;
+               if Stop - Start + 1 <= Ver'Last then
+                  Ver (1 .. Stop - Start + 1) := Buf (Start .. Stop);
+                  return Ver (1 .. Stop - Start + 1);
+               end if;
+            end if;
+            I := I + 1;
+         end loop;
+      end;
+      return "";
+   end Banner_Version;
 
    procedure Add_Vendored_Asset (Asset_Path : String) is
       Base    : constant String := Simple_Name (Asset_Path);
       Dot     : Natural := 0;
       Raw     : String (1 .. 64) := (others => ' ');
       Raw_Len : Natural := 0;
-      Name    : String (1 .. 64) := (others => ' ');
-      NLen    : Natural := 0;
    begin
       for I in reverse Base'Range loop
          if Base (I) = '.' then
@@ -137,65 +180,58 @@ is
       if Raw_Len = 9 and then Raw (1 .. 9) = "dashboard" then
          return;
       end if;
-      --  The component name is the raw base name, bounded to 64.
-      NLen := Raw_Len;
-      Name (1 .. NLen) := Raw (1 .. NLen);
-      --  Known bundled libraries get their upstream npm name and version,
-      --  and a PURL; everything else keeps the generic fallback.  The
-      --  licence and website are resolved live from the registry (preferring
-      --  pnpm, then npm, then yarn, then bun) so the SBOM and Credits tab
-      --  track the real upstream licence rather than a built-in copy.  The
-      --  version stays the build-time constant (the actual vendored file).
-      --  The language comes from the asset's extension (.js -> JavaScript,
-      --  .css -> CSS), like every other vendored file.
+
+      --  Component data is read from the vendored file itself (name from
+      --  the base name, version from the file's banner comment) and
+      --  gap-filled from the package registry under that same name
+      --  (licence, website, and any missing version).  The registry knows
+      --  the bundled libraries (flexsearch, nomnoml, graphre) under their
+      --  own names; an asset it does not know keeps pkg:generic and the
+      --  banner version (or none).  Nothing is hard-coded here.
       declare
-         NN       : Natural := 0;
-         VN       : Natural := 0;
-         Npm_Name : Lib_Name_Field := (others => ' ');
-         Lib_Ver  : Lib_Name_Field := (others => ' ');
-         Lic      : Types.Desc_Field := (others => ' ');
-         Lic_Len  : Natural := 0;
-         Ver      : Types.Desc_Field := (others => ' ');
-         Ver_Len  : Natural := 0;
-         Web      : Types.Path_Field := (others => ' ');
-         Web_Len  : Natural := 0;
+         B_Ver   : constant String := Banner_Version (Asset_Path);
+         Lic     : Types.Desc_Field := (others => ' ');
+         Lic_Len : Natural := 0;
+         Ver     : Types.Desc_Field := (others => ' ');
+         Ver_Len : Natural := 0;
+         Web     : Types.Path_Field := (others => ' ');
+         Web_Len : Natural := 0;
       begin
-         if Bundled_Library (Raw (1 .. Raw_Len), Npm_Name, NN, Lib_Ver, VN)
-         then
-            Resolve_Ecosystem_Metadata
-              (Target_Dir,
-               "npm",
-               Npm_Name (1 .. NN),
-               Lic,
-               Lic_Len,
-               Ver,
-               Ver_Len,
-               Web,
-               Web_Len);
+         Resolve_Ecosystem_Metadata
+           (Target_Dir,
+            "npm",
+            Raw (1 .. Raw_Len),
+            Lic,
+            Lic_Len,
+            Ver,
+            Ver_Len,
+            Web,
+            Web_Len);
+         declare
+            V : constant String :=
+              (if B_Ver'Length > 0
+               then B_Ver
+               elsif Ver_Len > 0
+               then Ver (1 .. Ver_Len)
+               else "");
+            L : constant String :=
+              (if Lic_Len > 0 then Lic (1 .. Lic_Len) else "");
+            W : constant String :=
+              (if Web_Len > 0 then Web (1 .. Web_Len) else "");
+         begin
             Append_Dependency
               (Graph,
-               Npm_Name (1 .. NN),
-               Lib_Ver (1 .. VN),
-               Lic (1 .. Lic_Len),
-               Web (1 .. Web_Len),
-               "pkg:npm/" & Npm_Name (1 .. NN) & "@" & Lib_Ver (1 .. VN),
+               Raw (1 .. Raw_Len),
+               V,
+               L,
+               "",
+               "pkg:generic/" & Raw (1 .. Raw_Len),
                1,
                False,
                Types.Scope_Vendored,
-               Extension_Language (Base));
-         else
-            Append_Dependency
-              (Graph,
-               Name (1 .. NLen),
-               "",
-               "",
-               "",
-               "pkg:generic/" & Name (1 .. NLen),
-               1,
-               False,
-               Types.Scope_Vendored,
-               Extension_Language (Base));
-         end if;
+               Extension_Language (Base),
+               W);
+         end;
       end;
    end Add_Vendored_Asset;
 
@@ -221,7 +257,17 @@ is
                      Path : constant String := Full_Name (Ent);
                   begin
                      if Kind (Ent) = Directory then
-                        if N /= "." and N /= ".." then
+                        --  css/ and js/ under a vendored root hold the
+                        --  project's own authored modules (the dashboard
+                        --  page splits its style and behaviour into these
+                        --  directories).  They are not vendored packages
+                        --  and must never become components; the vendored
+                        --  bundles sit at the root of resources/.
+                        if N /= "."
+                          and then N /= ".."
+                          and then N /= "css"
+                          and then N /= "js"
+                        then
                            Push_Dir (Path);
                         end if;
                      elsif Kind (Ent) = Ordinary_File then

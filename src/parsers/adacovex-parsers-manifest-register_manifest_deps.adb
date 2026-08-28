@@ -1,8 +1,10 @@
-separate (Adacovex.Parsers.Manifest)
---  Register manifest-declared dependencies that no GPR with-clause or
+separate (Adacovex
+            .Parsers
+            .Manifest)   --  Register manifest-declared dependencies that no GPR with-clause or
 --  lockfile resolved (or fill in missing metadata on entries that were).
---  These are base deps from the publishing manifest (alire.toml) and dev
---  deps from alire-dev.toml.  Append_Dependency adds a name-only
+--  These are base deps from the publishing manifest (alire.toml), dev
+--  deps from alire-dev.toml, and test deps from a [[test-depends-on]]
+--  section of either manifest.  Append_Dependency adds a name-only
 --  "pkg:alire/<name>" purl when the crate is not already in the graph.
 --  For every manifest-declared crate, `alr show` supplies the licence and
 --  source repository URL from Alire's local index -- filling them onto a
@@ -136,4 +138,5 @@ is
 begin
    Register (Target_Dir, Base_Names, Types.Scope_Base);
    Register (Target_Dir, Dev_Names, Types.Scope_Dev);
+   Register (Target_Dir, Test_Names, Types.Scope_Test);
 end Register_Manifest_Deps;

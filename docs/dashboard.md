@@ -108,10 +108,13 @@ serves requests until the process is interrupted (Ctrl-C).
 
 The page is a single self-contained document (no external assets), bundled
 into the binary from **modular resources** -- `resources/dashboard.html` is
-just the page skeleton. `resources/dashboard.css` (author styles),
-`resources/dashboard.js` (tabs, theme, search, filters, dep-details popup) and
-the vendored `charts.min.css` / `graphre.js` / `nomnoml.js` /
-`flexsearch.js` are inlined into it at build time by
+just the page skeleton. Author styles and scripts are split into focused
+modules under `resources/css/` (`dashboard.css`, plus the
+`charts-patch.css` overlay that fixes Charts.css rendering on top of the
+vendored `charts.min.css`) and `resources/js/` (`theme.js`, `tabs.js`,
+`deps.js`, `details.js`, `nomnoml.js`, `search.js`).  The vendored
+`charts.min.css` / `graphre.js` / `nomnoml.js` / `flexsearch.js` sit at
+`resources/` and are inlined into the template at build time by
 `tools/gen-dashboard.py`, which also **minifies** the author CSS/JS
 (comments and whitespace stripped, vendored files are already minified and
 inlined byte-for-byte).  Edit the individual `resources/` files, never the
@@ -168,15 +171,17 @@ shows an empty state with a link to `/api/deps`).
   text spacing (`line-height: 1.65`, `padding: 8px 12px`, `gap: 10px`,
    `margin: 6px 0`). **Expand all / Collapse all** buttons.
 - **Filter** input (client-side, case-insensitive by name) hides non-matching
-  nodes. Five **scope checkboxes** (`base`, `dev`, `transitive`, `vendored`,
-  `system` -- all checked by default) hide whole scopes, so vendored, dev, and
-  system deps can be distinguished and filtered where required.
+  nodes. Six **scope checkboxes** (`base`, `dev`, `transitive`, `vendored`,
+  `system`, `test` -- all checked by default) hide whole scopes, so vendored,
+  dev, system, and test deps can be distinguished and filtered where required.
 - Scope badges: `base` (alire.toml), `dev` (alire-dev.toml only),
-  `transitive`, `vendored`, and `system` (a tool on `PATH` the project
-  references, for example `git` or `python3`). `root` badge for the project
-  itself. Child count badge. `data-scope` attribute on each `<li>` for JS
-  filtering.  Scope badge colours come from `--scope-base/-dev/-trans/-vend/-system`
-  CSS variables so they stay readable in both themes.
+  `transitive`, `vendored`, `system` (a tool on `PATH` the project
+  references, for example `git` or `python3`), and `test` (declared under a
+  `[[test-depends-on]]` section or with-claused only from test project
+  files). `root` badge for the project itself. Child count badge.
+  `data-scope` attribute on each `<li>` for JS filtering.  Scope badge
+  colours come from `--scope-base/-dev/-trans/-vend/-system/-test` CSS
+  variables so they stay readable in both themes.
 - Each node shows `name`, `version`, `license`, `purl` when available. The
   licence and PURL text are colour-coded (`--lic` amber, `--purl` muted
   monospace) so vendored/uncommon licences stand out at a glance.
@@ -201,22 +206,24 @@ shows an empty state with a link to `/api/deps`).
 **Diagram view** (alternative, toggle **Tree / Diagram**):
 
 -  Rendered with vendored [nomnoml 1.7.0](https://github.com/skanaa/nomnoml)
-  (MIT, `resources/nomnoml.js`, 71 KB, inlined) in a
-  `<canvas id="nomnoml-canvas">` inside a `nomnoml-wrap` card.  `ADACOVEX_GRAPH`
-  (`__GRAPH_JSON__` injected by the Ada renderer) is converted to nomnoml
-   source (`[parent]-->[child]` edges, `#direction: down` top-to-bottom so deep
-   graphs stay within the page width) and drawn via
-   `nomnoml.draw(canvas, src)`.  Every nomnoml directive (fill, background,
-   stroke, line, font and note colours) is derived from the page's CSS custom
-   properties at draw time, and the theme select re-renders the diagram, so
-   box/arrow colours always match the active theme. The canvas is sized to
-   the container (max-width) and deep graphs scroll inside `.nomnoml-wrap`.
+  (MIT, `resources/nomnoml.js`, 71 KB, inlined) inside a `nomnoml-wrap`
+  card.  `ADACOVEX_GRAPH` (`__GRAPH_JSON__` injected by the Ada renderer) is
+  converted to nomnoml source (`[parent]-->[child]` edges,
+  `#direction: down` top-to-bottom so deep graphs stay within the page
+  width) and laid out with nomnoml's internal layout engine, then the graph
+  is serialised to an **SVG** (`<svg id="nomnoml-svg">`).  Every node is a
+  real `<g data-name=...>` group with a matching `<rect>` hitbox, so boxes
+  are clickable with exact hit areas (no canvas hit-testing, nothing
+  upside down, no text overflow: node text is clipped to the box width and
+  long labels ellipsise).  Diagram colours (fill, background, stroke, line,
+  font) are derived from the page's CSS custom properties at render time,
+  and the theme select re-renders the diagram, so box/arrow colours always
+  match the active theme. The SVG scales to the container width and deep
+  graphs scroll inside `.nomnoml-wrap`.
    Scope checkboxes filter the diagram too (re-render on change).  Buttons
-   **Re-render** and **Download PNG** are provided. The view choice is
+   **Re-render** and **Download SVG** are provided. The view choice is
    persisted in `localStorage` (`adacovex-dep-view`).  **Click a box** to open
-   the same split-view detail panel as the Tree view (the canvas is hit-tested
-   against the drawn boxes, with a little slack so the tight text boxes are
-   easy to click).
+   the same split-view detail panel as the Tree view.
 
 **Two separate searches, similar styling**:
 
@@ -224,9 +231,11 @@ shows an empty state with a link to `/api/deps`).
   powered by vendored [FlexSearch 0.7.31](https://github.com/nextapps-de/flexsearch)
   (Apache-2.0, `resources/flexsearch.js`, 16 KB, inlined).  At page load a
   `FlexSearch.Index({tokenize:'forward'})` is hydrated from
-  `ADACOVEX_GRAPH.dependencies` and from rendered `data-name` attributes.
-  Queries are served from the index with a DOM fallback, and hits are shown
-  in a `search-hits` dropdown that jumps to the tree and seeds `dep-filter`.
+  `ADACOVEX_GRAPH.dependencies` and from rendered `data-name` attributes,
+  lowercased so page content (dependency names, scope badges, even orphan
+  tags in the compliance table) is searchable regardless of case.  Queries
+  are served from the index with a DOM fallback, and hits are shown in a
+  `search-hits` dropdown that jumps to the tree and seeds `dep-filter`.
 - **Tree filter** (`#dep-filter`, inside the Dependencies tab) is a plain
   client-side name filter over the rendered tree only -- it never touches the
   global index.  The two inputs share the same styling class so they look
@@ -323,7 +332,7 @@ assessment without parsing HTML:
 
 ```json
 {"spark_level":"Platinum","total_vcs":723,"proved_vcs":723,
- "tests_passed":973,"tests_failed":0,"doc_coverage":100,
+ "tests_passed":989,"tests_failed":0,"doc_coverage":100,
  "standard":"all","level":"DAL-C","dal_status":"Achieved",
  "standards":{"DO-178C":{"level":"DAL-C","status":"Achieved"},
                "ISO 26262":{"level":"ASIL B","status":"Achieved"},

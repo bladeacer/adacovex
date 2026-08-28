@@ -21,9 +21,15 @@ test.describe('Dashboard layout', () => {
   test('overview tab shows badges and metrics', async ({ page }) => {
     await page.click('[data-tab="overview"]');
     await expect(page.locator('.badge-container')).toBeVisible();
-    // Six cards: Robustness, SPARK Proof, Tests, Test Categories, Doc Coverage,
-    // Dependency Scope.
+    // Five cards: Robustness, SPARK Proof, Tests, Doc Coverage, Dependency Scope.
     await expect(page.locator('#tab-overview .chart-card')).toHaveCount(5, { timeout: 5000 });
+  });
+
+  test('overview tests chart has a readout line below the donut', async ({ page }) => {
+    await page.click('[data-tab="overview"]');
+    // The Tests chart card always carries a readout with the pass/fail counts.
+    const testsCard = page.locator('#tab-overview .chart-card', { hasText: 'Tests' });
+    await expect(testsCard.locator('.chart-readout')).toBeVisible();
   });
 
   test('proof tab shows SPARK level and VCs', async ({ page }) => {
@@ -80,6 +86,16 @@ test.describe('Dashboard layout', () => {
     await expect(page.locator('.search-hits.active')).toBeVisible();
   });
 
+  test('search finds page content like orphan tags', async ({ page }) => {
+    await page.click('[data-tab="compliance"]');
+    const search = page.locator('#global-search');
+    // The full-text index is case-folded, so a lowercase query matches page
+    // text such as "Orphan Tags" and jumps to the compliance tab.
+    await search.fill('orphan');
+    const hits = page.locator('.search-hits.active .search-hit');
+    await expect(hits.first()).toBeVisible();
+  });
+
   test('selecting a dependency opens the split-view detail panel', async ({ page }) => {
     await page.click('[data-tab="deps"]');
     const firstDep = page.locator('.dep-link').first();
@@ -100,10 +116,31 @@ test.describe('Dashboard layout', () => {
     await page.click('.dep-view-switch button[data-view="nomnoml"]');
     await expect(page.locator('#dep-nomnoml-view')).toBeVisible();
     // The tree is hidden in diagram mode. The shared detail bridge is used
-    // by the canvas hit-test and opens the same panel for either view.
+    // by the SVG node boxes and opens the same panel for either view.
     await page.evaluate(() => (window as any).showDepDetails(1));
     await expect(page.locator('#dep-split')).toHaveClass(/dep-split-active/);
     await expect(page.locator('#dep-detail-popup')).toBeVisible();
+  });
+
+  test('diagram SVG nodes are clickable with real hitboxes', async ({ page }) => {
+    await page.click('[data-tab="deps"]');
+    await page.click('.dep-view-switch button[data-view="nomnoml"]');
+    // The diagram is rendered as SVG; every node's box carries data-name and
+    // opens the detail panel when clicked (no manual canvas hit-testing).
+    const node = page.locator('#nomnoml-canvas [data-name]').first();
+    await expect(node).toBeVisible({ timeout: 5000 });
+    await node.click();
+    await expect(page.locator('#dep-detail-popup')).toBeVisible();
+    await expect(page.locator('#dep-split')).toHaveClass(/dep-split-active/);
+  });
+
+  test('test scope filter checkbox is present', async ({ page }) => {
+    await page.click('[data-tab="deps"]');
+    // The checkbox input itself is visually hidden (opacity 0), so target
+    // its visible label, like the other scope filters.
+    await expect(page.locator('label:has(#filter-test)')).toBeVisible();
+    // The scope legend lists every scope including test.
+    await expect(page.locator('.scope-legend-prominent', { hasText: 'test' })).toBeVisible();
   });
 
   test('system dependencies are marked and shown without a licence', async ({ page }) => {

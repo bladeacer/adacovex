@@ -49,7 +49,6 @@ begin
                        and Name /= ".."
                        and Name /= ".git"
                        and Name /= "obj"
-                       and Name /= "tests"
                        and Name /= "config"
                        and Name /= ".adacovex"
                        and Name /= "alire"

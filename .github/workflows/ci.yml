@@ -28,7 +28,7 @@ jobs:
           verbose: true
           require-spark: Platinum
           require-docstrings: 100
-          require-tests: 973
+          require-tests: 989
           require-proof: 100
 
   adacovex-tests:
