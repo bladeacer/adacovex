@@ -58,7 +58,7 @@ def check(path: Path) -> List[str]:
             paragraph.append(line.strip())
     finish()
     for number, line in enumerate(lines, 1):
-        if "—" in line:
+        if "\u2014" in line:
             errors.append(f"{rel}:{number}: em dash")
         if re.search(r"\b(e\.g\.|i\.e\.|etc\.)\b", line):
             errors.append(f"{rel}:{number}: Latin abbreviation")

@@ -48,6 +48,7 @@ Kind            : Component_Kind := Dependency_Component;
 Parent          : Natural := 0;
 From_GPR        : Boolean := False;
 Scope           : Component_Scope := Scope_Transitive;
+Scope_Flags     : Dependency_Scope_Flags;
 end record;
 ```
 

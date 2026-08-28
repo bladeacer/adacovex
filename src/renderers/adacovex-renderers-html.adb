@@ -237,7 +237,8 @@ package body Adacovex.Renderers.HTML is
       --  functional, termination) is a bar; the --rows hint sizes the
       --  chart to its category count.
       Put ("<div class=""chart-card""><h3>Proof Check Types</h3>");
-      Put         ("<table class=""charts-css column rotate-labels show-labels show-primary-axis"" "
+      Put
+        ("<table class=""charts-css column rotate-labels show-labels show-primary-axis"" "
          & "style=""--rows:6"">");
       Put ("<caption>Proved checks by category</caption><tbody>");
       Bar_Row
@@ -261,9 +262,10 @@ package body Adacovex.Renderers.HTML is
          Proof.Termination_Proved,
          Proof.Termination_Ct,
          Proof.Termination_Proved);
-      Put ("</tbody></table><p class=""chart-readout""><strong>"
-           & "Each bar shows proved checks divided by checks in that category."
-           & "</strong></p></div>");
+      Put
+        ("</tbody></table><p class=""chart-readout""><strong>"
+         & "Each bar shows proved checks divided by checks in that category."
+         & "</strong></p></div>");
 
       --  Test categories bar (each category as its own row, normalised by
       --  max).  The --rows hint sizes the chart height to the category
@@ -297,9 +299,10 @@ package body Adacovex.Renderers.HTML is
             end loop;
          end;
       end if;
-      Put ("</tbody></table><p class=""chart-readout""><strong>"
-           & "Each bar shows the category count."
-           & "</strong></p></div>");
+      Put
+        ("</tbody></table><p class=""chart-readout""><strong>"
+         & "Each bar shows the category count."
+         & "</strong></p></div>");
 
       --  Test pass/fail is also available as a full chart card.
       Put ("<div class=""chart-card""><h3>Tests Pass/Fail</h3>");
@@ -307,7 +310,8 @@ package body Adacovex.Renderers.HTML is
         ("<table class=""charts-css pie"" style=""height:190px;max-width:220px;margin:0 auto"">");
       Put ("<caption>Test results</caption><tbody>");
       declare
-         Total : constant Natural := Tests.Total_Passed + Tests.Total_Failed;
+         Total    : constant Natural :=
+           Tests.Total_Passed + Tests.Total_Failed;
          Passed_F : constant String := Frac (Tests.Total_Passed, Total);
       begin
          Slice_Row ("Passed", "0.00", Passed_F, Tests.Total_Passed);
@@ -315,26 +319,36 @@ package body Adacovex.Renderers.HTML is
             Slice_Row ("Failed", Passed_F, "1.00", Tests.Total_Failed);
          end if;
       end;
-      Put ("</tbody></table><p class=""chart-readout""><strong>"
-           & Img (Tests.Total_Passed) & " passed, "
-           & Img (Tests.Total_Failed) & " failed</strong></p></div>");
+      Put
+        ("</tbody></table><p class=""chart-readout""><strong>"
+         & Img (Tests.Total_Passed)
+         & " passed, "
+         & Img (Tests.Total_Failed)
+         & " failed</strong></p></div>");
 
       --  Docstring coverage uses a radial meter with text outside the SVG.
       Put ("<div class=""chart-card""><h3>Docstring Coverage</h3>");
       declare
          Cov : constant Natural :=
-           Pct (Doc_Metrics.Documented_Subprogs, Doc_Metrics.Total_Subprograms);
+           Pct
+             (Doc_Metrics.Documented_Subprogs, Doc_Metrics.Total_Subprograms);
       begin
-         Put ("<div class=""chart-meter"" role=""img"" aria-label="""
-              & Img (Cov) & "% documented""><span style=""width:"
-              & Img (Cov) & "%""></span><b>" & Img (Cov) & "%</b></div>");
-         Put ("<p class=""chart-readout""><strong>"
-              & Img (Doc_Metrics.Documented_Subprogs) & " / "
-              & Img (Doc_Metrics.Total_Subprograms)
-              & " subprograms documented</strong></p>");
+         Put
+           ("<div class=""chart-meter"" role=""img"" aria-label="""
+            & Img (Cov)
+            & "% documented""><span style=""width:"
+            & Img (Cov)
+            & "%""></span><b>"
+            & Img (Cov)
+            & "%</b></div>");
+         Put
+           ("<p class=""chart-readout""><strong>"
+            & Img (Doc_Metrics.Documented_Subprogs)
+            & " / "
+            & Img (Doc_Metrics.Total_Subprograms)
+            & " subprograms documented</strong></p>");
       end;
       Put ("</div>");
-
 
       --  Dependency scope polar ring (conic gradient + CSS hole; the four
       --  cut points are cumulative percentages, theme colours via variables).
@@ -1808,7 +1822,8 @@ package body Adacovex.Renderers.HTML is
          Put (",""version"":");
          Put_Field (Graph (I).Version, Graph (I).Version_Len);
          Put (",""scope"":");
-         Put_Field (Scope_Name (Graph (I).Scope), Scope_Name (Graph (I).Scope)'Length);
+         Put_Field
+           (Scope_Name (Graph (I).Scope), Scope_Name (Graph (I).Scope)'Length);
          Put (",""dev"":");
          Put (if Graph (I).Scope_Flags.Is_Dev then "true" else "false");
          Put (",""system"":");

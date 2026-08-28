@@ -219,36 +219,9 @@ package body Adacovex.Server.HTTP is
    end Get_Path;
 
    --  Pure path-to-action routing: the socket handler below switches on the
-   --  result, and the native test suite pins every route.  The postcondition
-   --  on the spec characterizes the result exactly (each route kind iff its
-   --  literal path; Not_Found iff none of the seven literals), so the
-   --  mapping is proved rather than just unit-tested.
-   function Route (Path : String) return Route_Kind with SPARK_Mode => On is
-   begin
-      if Path = "/" then
-         return Route_Dashboard;
-      elsif Path = "/badge/spark.svg" then
-         return Route_Badge_SPARK;
-      elsif Path = "/badge/tests.svg" then
-         return Route_Badge_Tests;
-      elsif Path = "/badge/do178c.svg" then
-         return Route_Badge_DO178C;
-      elsif Path = "/badge/iso26262.svg" then
-         return Route_Badge_ISO26262;
-      elsif Path = "/badge/iec62304.svg" then
-         return Route_Badge_IEC62304;
-      elsif Path = "/api/metrics" then
-         return Route_API_Metrics;
-      elsif Path = "/api/deps" then
-         return Route_API_Deps;
-      elsif Path = "/docs" then
-         return Route_Docs;
-      else
-         --  The served-route implications are all vacuous here
-         --  (the result is Route_Not_Found, not a served kind).
-         return Route_Not_Found;
-      end if;
-   end Route;
+   --  result, and the native test suite pins every route.  The function is an
+   --  expression function (see the spec): its body is the conditional mapping,
+   --  so the mapping is proved by definition rather than case analysis.
 
    procedure Handle_Request
      (Channel : Socket_Type; State : Server_State; Keep_Alive : out Boolean)
