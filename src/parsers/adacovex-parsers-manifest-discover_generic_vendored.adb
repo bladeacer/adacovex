@@ -99,9 +99,10 @@ is
    --  directory inside a matched vendor root.  The scan is shallow.  It
    --  uses its own directory-search handles.  It can run while the
    --  caller's tree walk is mid-search.  A component whose project
-   --  manifest labels it a test dependency (or whose npm name carries a
-   --  test label, for example @playwright/test) is classified Scope_Test;
-   --  every other vendored component stays Scope_Vendored.
+   --  manifest labels it a test dependency (or whose name carries a test
+   --  label, for example @playwright/test or github.com/stretchr/testify)
+   --  is classified Scope_Test; every other vendored component stays
+   --  Scope_Vendored.
    procedure Scan_Vendor_Root (Root : String; Max_Levels : Natural) is
       S2 : Search_Type;
       E2 : Directory_Entry_Type;
@@ -229,18 +230,18 @@ is
                            Sc  : Types.Component_Scope := Types.Scope_Vendored;
                         begin
                            --  Classify the component as a test dependency
-                           --  when its npm name carries a test label (for
-                           --  example @playwright/test) or when the owning
-                           --  project manifest declares it under a
-                           --  test-labelled section (for example
-                           --  "testDependencies" in package.json, Cargo's
-                           --  [dev-dependencies], a Gemfile :test group, a
-                           --  Maven test scope, or a pyproject "test"
-                           --  extra).  Everything else stays vendored.
-                           if M.PURL_Kind_Len = 3
-                             and then M.PURL_Kind (1 .. 3) = "npm"
-                             and then Is_Test_Named (N)
-                           then
+                           --  when its name carries a test label (for
+                           --  example @playwright/test, or a Go module
+                           --  path such as github.com/stretchr/testify)
+                           --  or when the owning project manifest
+                           --  declares it under a test-labelled section
+                           --  (for example "testDependencies" in
+                           --  package.json, Cargo's [dev-dependencies], a
+                           --  Gemfile :test group, a Maven test scope, a
+                           --  pyproject "test" extra, or a Package.swift
+                           --  .testTarget).  Everything else stays
+                           --  vendored.
+                           if Is_Test_Named (N) then
                               Sc := Types.Scope_Test;
                            elsif In_Names (Owner_Test_Names, N) then
                               Sc := Types.Scope_Test;

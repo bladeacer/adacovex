@@ -33,9 +33,18 @@ are below 50%. Below that:
 - **Tests donut** -- passed vs failed tests. A full green arc means 100%
   passing. Any red slice means the test suite has failures that must be fixed
   before the project can be assessed as `Achieved`.
-- **Doc coverage radial gauge** -- documented subprograms as a percentage of
+- **Doc coverage donut** -- documented subprograms as a percentage of
   total. Strict mode requires 100%. A shortfall here shows exactly how many
   subprograms are missing `--` docstrings.
+- **Dependency scope ring** -- the resolved graph broken down by scope
+  (base / dev / transitive / vendored / system / test).  It sits in the
+  same row as the doc-coverage donut so the Overview uses its width well.
+  Each coloured segment is hoverable: hovering shows the scope name and
+  its component count (for example `test: 3`).
+
+Proof check bars scale with the category's magnitude, the same way as the
+test-category bars: a 407-VC category reads as a longer bar than a 56-VC
+one, so relative proof effort is visible at a glance.
 
 ### Proof tab
 
@@ -225,8 +234,10 @@ shows an empty state with a link to `/api/deps`).
   long labels ellipsise).  Diagram colours (fill, background, stroke, line,
   font) are derived from the page's CSS custom properties at render time,
   and the theme select re-renders the diagram, so box/arrow colours always
-  match the active theme. The SVG scales to the container width and deep
-  graphs scroll inside `.nomnoml-wrap`.
+  match the active theme. The SVG fills the width allocated to the diagram
+  (it takes up the same space the dependency tree would, rather than
+  shrinking to the graph's natural size) and is centred horizontally inside
+  `.nomnoml-wrap`; deep graphs scroll inside the card.
    Scope checkboxes filter the diagram too (re-render on change).  Buttons
    **Re-render** and **Download SVG** are provided. The view choice is
    persisted in `localStorage` (`adacovex-dep-view`).  **Click a box** to open
@@ -340,7 +351,7 @@ assessment without parsing HTML:
 
 ```json
 {"spark_level":"Platinum","total_vcs":723,"proved_vcs":723,
- "tests_passed":1033,"tests_failed":0,"doc_coverage":100,
+ "tests_passed":1064,"tests_failed":0,"doc_coverage":100,
  "standard":"all","level":"DAL-C","dal_status":"Achieved",
  "standards":{"DO-178C":{"level":"DAL-C","status":"Achieved"},
                "ISO 26262":{"level":"ASIL B","status":"Achieved"},

@@ -111,6 +111,71 @@ package body Adacovex.Renderers.HTML is
       return "0." & Img (P);
    end Frac;
 
+   --  SVG dependency-scope ring markup with hoverable segments.  Each
+   --  non-empty scope is one stroked circle arc rotated to start at 12
+   --  o'clock (stroke-dasharray "DASH 1000" draws a single dash per
+   --  circle; a large gap means only one arc shows).  Every segment
+   --  carries a native tooltip with the scope name and count (for example
+   --  "test: 3") and the CSS raises its opacity on hover.  The centre
+   --  hole carries the ring total.  Used by both the Overview and the
+   --  Charts-tab scope charts; the caller emits the legend.
+   --  @param Base .. Test  Per-scope component counts.
+   --  @param Total  Sum of all scope counts.
+   --  @return The <div class="polar"> ring markup (without the legend).
+   function Scope_Ring_HTML
+     (Base, Dev, Trans, Vend, Sys, Test, Total : Natural) return String
+   is
+      R    : Unbounded_String;
+      Circ : constant Natural := 660;
+
+      procedure Put (S : String) is
+      begin
+         Append (R, S);
+      end Put;
+
+      --  Append one ring segment for Scope with Count components, then
+      --  advance the cumulative offset.  Zero-count scopes are skipped.
+      procedure Seg (Scope : String; Count : Natural; Cum : in out Natural) is
+         Dash : constant Natural := (Count * Circ) / Total;
+      begin
+         if Count > 0 then
+            Put ("<circle class=""polar-seg"" cx=""120"" cy=""120""");
+            Put (" r=""105"" fill=""none"" stroke=""var(--scope-" & Scope);
+            Put (")"" stroke-width=""24"" stroke-dasharray=""");
+            Put (Img (Dash));
+            Put (" 1000"" stroke-dashoffset=""-");
+            Put (Img (Cum));
+            Put (""" transform=""rotate(-90 120 120)""><title>");
+            Put (Scope);
+            Put (": ");
+            Put (Img (Count));
+            Put ("</title></circle>");
+            Cum := Cum + Dash;
+         end if;
+      end Seg;
+   begin
+      Put ("<div class=""polar"" role=""img"" aria-label=""");
+      Put ("Dependency scope distribution"">");
+      Put ("<svg viewBox=""0 0 240 240"" width=""240"" height=""240""");
+      Put (" aria-hidden=""true"">");
+      declare
+         Cum : Natural := 0;
+      begin
+         Seg ("base", Base, Cum);
+         Seg ("dev", Dev, Cum);
+         Seg ("trans", Trans, Cum);
+         Seg ("vend", Vend, Cum);
+         Seg ("system", Sys, Cum);
+         Seg ("test", Test, Cum);
+      end;
+      Put ("</svg>");
+      Put ("<div class=""polar-center""><div class=""polar-rating"">");
+      Put (Img (Total));
+      Put ("</div><div class=""polar-label"">deps</div></div>");
+      Put ("</div>");
+      return To_String (R);
+   end Scope_Ring_HTML;
+
    --  Signed integer without Ada's leading space (for SVG coordinates).
    function I_S (N : Integer) return String is
       S : constant String := Integer'Image (N);
@@ -211,19 +276,32 @@ package body Adacovex.Renderers.HTML is
       --  in CSS), a track with a green fill sized by Part/Total, an
       --  optional red remainder, and the value at the right.  The label
       --  never rotates and long category names ellipsise instead of
-      --  overflowing.
+      --  overflowing.  When Scale_To is given (the largest category), the
+      --  whole track is sized Pct (Total, Scale_To) so the bar length
+      --  scales with the category's magnitude -- the same scaling as the
+      --  test-category chart -- while the green/red split still shows the
+      --  proved share within the category.
       procedure Bar_Row
         (Label    : String;
          Part     : Natural;
          Total    : Natural;
          Value    : Natural;
-         Two_Tone : Boolean := True)
+         Two_Tone : Boolean := True;
+         Scale_To : Natural := 0)
       is
-         P : constant Natural := Pct (Part, Total);
+         P     : constant Natural := Pct (Part, Total);
+         Track : constant Natural :=
+           (if Scale_To > 0 then Pct (Total, Scale_To) else 100);
       begin
          Put ("<div class=""hbar""><span class=""hbar-label"">");
          Put (Html_Escape (Label));
-         Put ("</span><div class=""hbar-track""><i style=""width:");
+         Put ("</span><div class=""hbar-track""");
+         if Track < 100 then
+            Put (" style=""width:");
+            Put (Img (Track));
+            Put ("%""");
+         end if;
+         Put ("><i style=""width:");
          Put (Img (P));
          Put ("%""></i>");
          if Two_Tone and then P < 100 then
@@ -255,32 +333,69 @@ package body Adacovex.Renderers.HTML is
       --  Proof categories (proved vs total per category).  Every category
       --  gnatprove reports (flow, init, runtime, assertions, functional,
       --  termination) is a row; green shows the proved share and red the
-      --  unproved remainder.
+      --  unproved remainder.  Bars scale with the category's magnitude
+      --  (track width = checks / largest category), like the test chart,
+      --  so a 407-VC category reads as a longer bar than a 56-VC one.
       Put ("<div class=""chart-card""><h3>Proof Check Types</h3>");
-      Bar_Row
-        ("Flow", Proof.Flow_Proved, Proof.Flow_Checks, Proof.Flow_Proved);
-      Bar_Row
-        ("Init", Proof.Init_Proved, Proof.Init_Checks, Proof.Init_Proved);
-      Bar_Row
-        ("Runtime",
-         Proof.Runtime_Proved,
-         Proof.Runtime_Checks,
-         Proof.Runtime_Proved);
-      Bar_Row
-        ("Assert", Proof.Assert_Proved, Proof.Assertions, Proof.Assert_Proved);
-      Bar_Row
-        ("Functional",
-         Proof.Functional_Proved,
-         Proof.Functional_Ct,
-         Proof.Functional_Proved);
-      Bar_Row
-        ("Termination",
-         Proof.Termination_Proved,
-         Proof.Termination_Ct,
-         Proof.Termination_Proved);
+      declare
+         Max_Ct : Natural :=
+           (if Proof.Flow_Checks > Proof.Runtime_Checks
+            then Proof.Flow_Checks
+            else Proof.Runtime_Checks);
+      begin
+         if Proof.Init_Checks > Max_Ct then
+            Max_Ct := Proof.Init_Checks;
+         end if;
+         if Proof.Assertions > Max_Ct then
+            Max_Ct := Proof.Assertions;
+         end if;
+         if Proof.Functional_Ct > Max_Ct then
+            Max_Ct := Proof.Functional_Ct;
+         end if;
+         if Proof.Termination_Ct > Max_Ct then
+            Max_Ct := Proof.Termination_Ct;
+         end if;
+         Bar_Row
+           ("Flow",
+            Proof.Flow_Proved,
+            Proof.Flow_Checks,
+            Proof.Flow_Proved,
+            Scale_To => Max_Ct);
+         Bar_Row
+           ("Init",
+            Proof.Init_Proved,
+            Proof.Init_Checks,
+            Proof.Init_Proved,
+            Scale_To => Max_Ct);
+         Bar_Row
+           ("Runtime",
+            Proof.Runtime_Proved,
+            Proof.Runtime_Checks,
+            Proof.Runtime_Proved,
+            Scale_To => Max_Ct);
+         Bar_Row
+           ("Assert",
+            Proof.Assert_Proved,
+            Proof.Assertions,
+            Proof.Assert_Proved,
+            Scale_To => Max_Ct);
+         Bar_Row
+           ("Functional",
+            Proof.Functional_Proved,
+            Proof.Functional_Ct,
+            Proof.Functional_Proved,
+            Scale_To => Max_Ct);
+         Bar_Row
+           ("Termination",
+            Proof.Termination_Proved,
+            Proof.Termination_Ct,
+            Proof.Termination_Proved,
+            Scale_To => Max_Ct);
+      end;
       Put
         ("<p class=""chart-readout""><strong>"
-         & "Each bar shows proved checks divided by checks in that category."
+         & "Bar length scales with the category's share of the largest "
+         & "category; green shows proved checks, red the unproved remainder."
          & "</strong></p></div>");
 
       --  Test categories (each category as its own row, normalised by
@@ -392,49 +507,22 @@ package body Adacovex.Renderers.HTML is
             declare
                Total : constant Natural :=
                  Base_Ct + Dev_Ct + Trans_Ct + Vend_Ct + Sys_Ct + Test_Ct;
-               S1    : constant Natural := Pct (Base_Ct, Total);
-               S2    : constant Natural := Pct (Base_Ct + Dev_Ct, Total);
-               S3    : constant Natural :=
-                 Pct (Base_Ct + Dev_Ct + Trans_Ct, Total);
-               S4    : constant Natural :=
-                 Pct (Base_Ct + Dev_Ct + Trans_Ct + Vend_Ct, Total);
-               S5    : constant Natural :=
-                 Pct (Base_Ct + Dev_Ct + Trans_Ct + Vend_Ct + Sys_Ct, Total);
             begin
                if Total > 0 then
                   Put
                     ("<div class=""chart-card""><h3>Dependencies by Scope</h3>");
                   Put ("<div class=""polar-wrap"">");
-                  Put ("<div class=""polar"" role=""img"" aria-label=""");
-                  Put ("Dependency scope distribution"" style=""background:");
-                  Put ("conic-gradient(var(--scope-base) 0% ");
-                  Put (Img (S1));
-                  Put ("%, var(--scope-dev) ");
-                  Put (Img (S1));
-                  Put ("% ");
-                  Put (Img (S2));
-                  Put ("%, var(--scope-trans) ");
-                  Put (Img (S2));
-                  Put ("% ");
-                  Put (Img (S3));
-                  Put ("%, var(--scope-vend) ");
-                  Put (Img (S3));
-                  Put ("% ");
-                  Put (Img (S4));
-                  Put ("%, var(--scope-system) ");
-                  Put (Img (S4));
-                  Put ("% ");
-                  Put (Img (S5));
-                  Put ("%, var(--scope-test) ");
-                  Put (Img (S5));
-                  Put ("% 100%)"">");
-                  --  Centre hole with total count
-                  Put ("<div class=""polar-center"">");
-                  Put ("<div class=""polar-rating"">");
-                  Put (Img (Total));
-                  Put ("</div>");
-                  Put ("<div class=""polar-label"">deps</div>");
-                  Put ("</div></div>");
+                  --  Hoverable SVG ring: each scope segment shows its name
+                  --  and count on hover (native tooltip).
+                  Put
+                    (Scope_Ring_HTML
+                       (Base_Ct,
+                        Dev_Ct,
+                        Trans_Ct,
+                        Vend_Ct,
+                        Sys_Ct,
+                        Test_Ct,
+                        Total));
                   Put ("<ul class=""polar-legend"">");
                   if Base_Ct > 0 then
                      Put ("<li style=""--i:var(--scope-base)""><i></i>base");
@@ -911,46 +999,14 @@ package body Adacovex.Renderers.HTML is
       if Total = 0 then
          return "";
       end if;
-      declare
-         S1 : constant Natural := (C_Base * 100) / Total;
-         S2 : constant Natural := ((C_Base + C_Dev) * 100) / Total;
-         S3 : constant Natural := ((C_Base + C_Dev + C_Trans) * 100) / Total;
-         S4 : constant Natural :=
-           ((C_Base + C_Dev + C_Trans + C_Vend) * 100) / Total;
-         S5 : constant Natural :=
-           ((C_Base + C_Dev + C_Trans + C_Vend + C_Sys) * 100) / Total;
       begin
          Put ("<div class=""chart-card""><h3>Dependency Scope</h3>");
          Put ("<div class=""polar-wrap"">");
-         Put ("<div class=""polar"" role=""img"" aria-label=""");
-         Put ("Dependency scope distribution"" style=""background:");
-         Put ("conic-gradient(var(--scope-base) 0% ");
-         Put (Img (S1));
-         Put ("%, var(--scope-dev) ");
-         Put (Img (S1));
-         Put ("% ");
-         Put (Img (S2));
-         Put ("%, var(--scope-trans) ");
-         Put (Img (S2));
-         Put ("% ");
-         Put (Img (S3));
-         Put ("%, var(--scope-vend) ");
-         Put (Img (S3));
-         Put ("% ");
-         Put (Img (S4));
-         Put ("%, var(--scope-system) ");
-         Put (Img (S4));
-         Put ("% ");
-         Put (Img (S5));
-         Put ("%, var(--scope-test) ");
-         Put (Img (S5));
-         Put ("% 100%)"">");
-         Put ("<div class=""polar-center"">");
-         Put ("<div class=""polar-rating"">");
-         Put (Img (Total));
-         Put ("</div>");
-         Put ("<div class=""polar-label"">deps</div>");
-         Put ("</div></div>");
+         --  Hoverable SVG ring: each scope segment shows its name and count
+         --  on hover (native tooltip).
+         Put
+           (Scope_Ring_HTML
+              (C_Base, C_Dev, C_Trans, C_Vend, C_Sys, C_Test, Total));
          Put ("<ul class=""polar-legend"">");
          Put ("<li style=""--i:var(--scope-base)""><i></i>base <b>");
          Put (Img (C_Base));
@@ -1393,6 +1449,11 @@ package body Adacovex.Renderers.HTML is
          --  Per-category test counts live on the Charts tab ("Test Results
          --  by Category" bar); the Overview does not duplicate them (DRY).
 
+         --  Doc coverage and dependency scope share one row (chart-pair):
+         --  the two compact cards side by side make better use of the
+         --  Overview spacing than stacking them full-width.
+         Put_O ("<div class=""chart-pair"">");
+
          --  Doc coverage donut: documented share as a ring with the
          --  percentage in the hole (fully green when 100% covered).
          Put_O ("<div class=""chart-card""><h3>Doc Coverage</h3>");
@@ -1420,12 +1481,13 @@ package body Adacovex.Renderers.HTML is
             Put_O (Img (Doc_Metrics.Total_Subprograms));
             Put_O ("</p></div>");
          end if;
-         Put_O ("</div>");
 
          --  Dependency scope distribution (overview): a compact polar ring that
-         --  breaks the resolved graph down by scope at a glance.
+         --  breaks the resolved graph down by scope at a glance.  Shares the
+         --  row with the doc-coverage card above (chart-pair).
          Put_O (Overview_Scope_Chart (Graph));
 
+         --  Close the chart-pair row and the chart-grid.
          Put_O ("</div>");
          Put_O ("</div>");
       end;

@@ -88,6 +88,48 @@ version empty. The source file declaring the `System_Tools` table is skipped
 by the scan. Otherwise, every installed tool on the list can be registered
 as a self-reference.
 
+### Vendored components and test-labelled dependencies (SBOM)
+
+`Discover_Generic_Vendored` walks the target tree for vendor roots
+(`node_modules`, `vendor`, `third_party`, and the other recognised names).
+Each directory inside a vendor root that carries an ecosystem manifest
+(`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, `composer.json`,
+`Gemfile`, `pom.xml`, `Package.swift`, `requirements*.txt`) becomes one
+component with its ecosystem purl (`pkg:npm/...`, `pkg:cargo/...`, and
+more).  Its scope defaults to `vendored`.
+
+A component is classified `test` when the project manifest that owns the
+vendor root declares it under a test-only label:
+
+- `package.json` sections whose key contains `test` (for example
+  `testDependencies`);
+- Cargo `[dev-dependencies]` (Cargo's native test-only section) and any
+  section containing `test`;
+- composer `require-dev`;
+- Gemfile `group :test` blocks;
+- `pom.xml` dependencies whose `<scope>` is `test`;
+- `pyproject.toml` test extras and Poetry `[tool.poetry.group.test.*]`
+  sections;
+- `Package.swift` dependencies declared inside a `.testTarget(...)` block.
+
+The **name heuristic** is the fallback for every ecosystem.  A component
+whose name starts or ends with the literal word `test` is test-labelled.
+The check covers the full name and then the last segment after any `/` or
+`:`, so `@playwright/test`, `test-case`, `github.com/stretchr/testify` and
+`org.testng:testng` all match.  Ecosystems without a native test-only
+section (`go.mod`, `requirements*.txt`) rely on this heuristic.
+
+The heuristic also applies to **lockfile-resolved names**:
+`pnpm-lock.yaml` / `package-lock.json` / `yarn.lock` entries next to an
+owner `package.json`, `Cargo.lock` crate names, and `alire.lock` crates
+that the manifest sets leave transitive.
+
+The scope is surfaced as the SBOM `adacovex:dep_scope` property (`test`)
+and in the dashboard dependency badges, scope filter, legend, and rings.
+The Alire-side `[[test-depends-on]]` sections and test project files are
+the other source of `test` scope; see the
+[SBOM reference](sbom.md#test-dependencies).
+
 ## Unix Philosophy
 
 adacovex follows the Unix philosophy of doing one thing well:
@@ -426,6 +468,13 @@ source scans for the current tree.
   are *not* under the result cache: they live in `~/.adacovex/probes/` (a
   stable machine-level store; wiping the result cache must not re-probe every
   tool).
+- **Graph key**: the dependency-graph key hashes the Alire manifests, the
+  `alire.lock`, every `.gpr`, the vendored trees, and the root language mix.
+  It also hashes the supported-language project manifests that can own a
+  vendored directory (`package.json`, `Cargo.toml`, `Cargo.lock`, `go.mod`,
+  `composer.json`, `Gemfile`, `pom.xml`, `pyproject.toml`, `Package.swift`,
+  and the npm lockfiles), so an edit to a test-labelled section or lockfile
+  invalidates the cached graph and the scope classification is recomputed.
 - **Eviction**: `Put_Cached` evicts oldest-first by modification time when more
   than `--cache-max` entries (default `4096`) accumulate. `Eviction_Count`
   tracks removals and is reported in the ANSI cache line.
@@ -447,7 +496,7 @@ it. The ANSI report shows a
 
 ## Testing
 
-adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 1033 tests across 14 categories. No external test framework (AUnit, and more) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
+adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 1064 tests across 14 categories. No external test framework (AUnit, and more) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
 
 ## Supported Platforms
 
