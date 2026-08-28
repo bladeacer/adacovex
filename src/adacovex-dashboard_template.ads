@@ -498,8 +498,12 @@ package Adacovex.Dashboard_Template is
   & ASCII.LF
   & "<tr><td><a href=""https://github.com/microsoft/playwright"" ta"
   & "rget=""_blank"" rel=""noopener"">Playwright</a></td><td id=""cred"
-  & "its-playwright"">dev / Apache-2.0</td><td>end-to-end dashboar"
-  & "d layout tests</td></tr>"
+  & "its-playwright"">test / Apache-2.0</td><td>end-to-end dashboa"
+  & "rd layout tests</td></tr>"
+  & ASCII.LF
+  & "<tr><td><a href=""https://chartscss.org/"" target=""_blank"" rel"
+  & "=""noopener"">Charts.css</a></td><td>inspiration / MIT</td><td"
+  & ">dashboard charts (our own patched version)</td></tr>"
   & ASCII.LF
   & "</table>"
   & ASCII.LF

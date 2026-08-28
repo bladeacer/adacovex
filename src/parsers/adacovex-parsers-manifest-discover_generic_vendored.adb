@@ -58,14 +58,70 @@ is
       return N = ".pnpm" or else N = ".bin";
    end Skip_Vendor_Scan_Dir;
 
+   --  The directory that contains Path (its last path component
+   --  stripped), "" when Path has no parent.  The vendor walk passes
+   --  full paths, so the owner of a vendor root is its containing
+   --  directory (for example tests/e2e for tests/e2e/node_modules).
+   --  @param Path  Directory path.
+   --  @return The parent directory, or "" when none exists.
+   function Parent_Dir (Path : String) return String is
+   begin
+      for I in reverse Path'Range loop
+         if Path (I) = '/' then
+            if I = Path'First then
+               return "";
+            end if;
+            return Path (Path'First .. I - 1);
+         end if;
+      end loop;
+      return "";
+   end Parent_Dir;
+
+   --  Whether Names holds Name (exact match).  Used to look up the
+   --  owning manifest's test-labelled dependency set.
+   --  @param Names  Name vector to search.
+   --  @param Name  Dependency name.
+   --  @return True when Names holds Name.
+   function In_Names
+     (Names : Name_Vectors.Vector; Name : String) return Boolean is
+   begin
+      for I in 1 .. Integer (Names.Length) loop
+         if Names (I).Len = Name'Length
+           and then Names (I).Name (1 .. Name'Length) = Name
+         then
+            return True;
+         end if;
+      end loop;
+      return False;
+   end In_Names;
+
    --  One component per manifest-carrying (or Ada-source-carrying)
    --  directory inside a matched vendor root.  The scan is shallow.  It
    --  uses its own directory-search handles.  It can run while the
-   --  caller's tree walk is mid-search.
+   --  caller's tree walk is mid-search.  A component whose project
+   --  manifest labels it a test dependency (or whose npm name carries a
+   --  test label, for example @playwright/test) is classified Scope_Test;
+   --  every other vendored component stays Scope_Vendored.
    procedure Scan_Vendor_Root (Root : String; Max_Levels : Natural) is
       S2 : Search_Type;
       E2 : Directory_Entry_Type;
+
+      --  Test-labelled names declared in the project manifest that owns
+      --  this vendor root (for example tests/e2e/package.json owning
+      --  tests/e2e/node_modules).  Collected once per vendor root.
+      Owner_Test_Names : Name_Vectors.Vector;
    begin
+      --  Collect the owning manifest's test-labelled dependency names
+      --  before scanning the root's children, so every component can be
+      --  classified against the same set.
+      declare
+         O : constant String := Parent_Dir (Root);
+      begin
+         if O'Length > 0 then
+            Collect_Owner_Test_Names (O, Owner_Test_Names);
+         end if;
+      end;
+
       Scan_Stack.Clear;
       Push_Dir (Scan_Stack, Root, 0);
       while not Scan_Stack.Is_Empty loop
@@ -170,7 +226,25 @@ is
                              (if Web_Len > 0
                               then Web_Buf (1 .. Web_Len)
                               else "");
+                           Sc  : Types.Component_Scope := Types.Scope_Vendored;
                         begin
+                           --  Classify the component as a test dependency
+                           --  when its npm name carries a test label (for
+                           --  example @playwright/test) or when the owning
+                           --  project manifest declares it under a
+                           --  test-labelled section (for example
+                           --  "testDependencies" in package.json, Cargo's
+                           --  [dev-dependencies], a Gemfile :test group, a
+                           --  Maven test scope, or a pyproject "test"
+                           --  extra).  Everything else stays vendored.
+                           if M.PURL_Kind_Len = 3
+                             and then M.PURL_Kind (1 .. 3) = "npm"
+                             and then Is_Test_Named (N)
+                           then
+                              Sc := Types.Scope_Test;
+                           elsif In_Names (Owner_Test_Names, N) then
+                              Sc := Types.Scope_Test;
+                           end if;
                            Append_Dependency
                              (Graph,
                               N,
@@ -180,7 +254,7 @@ is
                               Pur,
                               1,
                               False,
-                              Types.Scope_Vendored,
+                              Sc,
                               L,
                               Web);
                         end;

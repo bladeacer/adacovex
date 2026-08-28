@@ -27,7 +27,7 @@ package Adacovex.Cache is
    --  records (Package_Info / Proof_Summary / Test_Summary) or the scanner
    --  and parser semantics change.  Blobs written by an incompatible build
    --  are never served.  Appended to the default cache directory below.
-   Cache_Schema : constant String := "s7";
+   Cache_Schema : constant String := "s8";
 
    --  Soft cap on the number of cache entries kept on disk.  Once exceeded,
    --  the oldest entries are evicted first.
