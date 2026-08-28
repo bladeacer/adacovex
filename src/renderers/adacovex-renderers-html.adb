@@ -207,16 +207,37 @@ package body Adacovex.Renderers.HTML is
       end Bar_Row;
 
    begin
-      --  SPARK proof progress is the Overview-tab radar (and the Proof-tab
-      --  gauge); the Charts gallery does not repeat a proof donut (DRY).
+      --  Proof progress is shown as a donut with explicit text below it.
+      --  The text remains available when a chart label has no room.
+      Put ("<div class=""chart-card""><h3>SPARK Proof</h3>");
+      Put
+        ("<table class=""charts-css pie donut"" style=""height:190px;max-width:220px;margin:0 auto"">");
+      Put ("<caption>SPARK proof</caption><tbody>");
+      declare
+         Unproved : constant Natural :=
+           (if Proof.Total_VCs > Proof.Proved_VCs
+            then Proof.Total_VCs - Proof.Proved_VCs
+            else 0);
+         Proved_F : constant String :=
+           Frac (Proof.Proved_VCs, Proof.Total_VCs);
+      begin
+         Slice_Row ("Proved", "0.00", Proved_F, Proof.Proved_VCs);
+         if Unproved > 0 then
+            Slice_Row ("Unproved", Proved_F, "1.00", Unproved);
+         end if;
+      end;
+      Put ("</tbody></table><p class=""chart-readout""><strong>");
+      Put (Img (Proof.Proved_VCs));
+      Put (" / ");
+      Put (Img (Proof.Total_VCs));
+      Put (" VCs proved</strong></p></div>");
 
       --  Proof categories column (proved vs total per category).  Every
       --  category gnatprove reports (flow, init, runtime, assertions,
       --  functional, termination) is a bar; the --rows hint sizes the
       --  chart to its category count.
       Put ("<div class=""chart-card""><h3>Proof Check Types</h3>");
-      Put
-        ("<table class=""charts-css column show-labels show-primary-axis"" "
+      Put         ("<table class=""charts-css column rotate-labels show-labels show-primary-axis"" "
          & "style=""--rows:6"">");
       Put ("<caption>Proved checks by category</caption><tbody>");
       Bar_Row
@@ -240,7 +261,9 @@ package body Adacovex.Renderers.HTML is
          Proof.Termination_Proved,
          Proof.Termination_Ct,
          Proof.Termination_Proved);
-      Put ("</tbody></table></div>");
+      Put ("</tbody></table><p class=""chart-readout""><strong>"
+           & "Each bar shows proved checks divided by checks in that category."
+           & "</strong></p></div>");
 
       --  Test categories bar (each category as its own row, normalised by
       --  max).  The --rows hint sizes the chart height to the category
@@ -274,13 +297,44 @@ package body Adacovex.Renderers.HTML is
             end loop;
          end;
       end if;
-      Put ("</tbody></table></div>");
+      Put ("</tbody></table><p class=""chart-readout""><strong>"
+           & "Each bar shows the category count."
+           & "</strong></p></div>");
 
-      --  Test pass/fail is the Overview-tab Tests donut (and the Tests-tab
-      --  gauge); the Charts gallery does not repeat a pass/fail donut (DRY).
+      --  Test pass/fail is also available as a full chart card.
+      Put ("<div class=""chart-card""><h3>Tests Pass/Fail</h3>");
+      Put
+        ("<table class=""charts-css pie"" style=""height:190px;max-width:220px;margin:0 auto"">");
+      Put ("<caption>Test results</caption><tbody>");
+      declare
+         Total : constant Natural := Tests.Total_Passed + Tests.Total_Failed;
+         Passed_F : constant String := Frac (Tests.Total_Passed, Total);
+      begin
+         Slice_Row ("Passed", "0.00", Passed_F, Tests.Total_Passed);
+         if Tests.Total_Failed > 0 then
+            Slice_Row ("Failed", Passed_F, "1.00", Tests.Total_Failed);
+         end if;
+      end;
+      Put ("</tbody></table><p class=""chart-readout""><strong>"
+           & Img (Tests.Total_Passed) & " passed, "
+           & Img (Tests.Total_Failed) & " failed</strong></p></div>");
 
-      --  Docstring coverage lives on the Overview tab (donut); the Charts
-      --  gallery does not duplicate it (DRY).
+      --  Docstring coverage uses a radial meter with text outside the SVG.
+      Put ("<div class=""chart-card""><h3>Docstring Coverage</h3>");
+      declare
+         Cov : constant Natural :=
+           Pct (Doc_Metrics.Documented_Subprogs, Doc_Metrics.Total_Subprograms);
+      begin
+         Put ("<div class=""chart-meter"" role=""img"" aria-label="""
+              & Img (Cov) & "% documented""><span style=""width:"
+              & Img (Cov) & "%""></span><b>" & Img (Cov) & "%</b></div>");
+         Put ("<p class=""chart-readout""><strong>"
+              & Img (Doc_Metrics.Documented_Subprogs) & " / "
+              & Img (Doc_Metrics.Total_Subprograms)
+              & " subprograms documented</strong></p>");
+      end;
+      Put ("</div>");
+
 
       --  Dependency scope polar ring (conic gradient + CSS hole; the four
       --  cut points are cumulative percentages, theme colours via variables).
@@ -518,8 +572,8 @@ package body Adacovex.Renderers.HTML is
             & """>"
             & Scope_Name (Info.Scope)
             & "</span> ");
-         if Info.Scope = Types.Scope_System then
-            Put ("<span class=""dep-badge scope-system"">system</span> ");
+         if Info.Scope_Flags.Is_Dev and then Info.Scope /= Types.Scope_Dev then
+            Put ("<span class=""dep-badge scope-dev"">dev</span> ");
          end if;
          if Info.Kind = Types.Root_Component then
             Put ("<span class=""dep-badge"">root</span> ");
@@ -1753,9 +1807,13 @@ package body Adacovex.Renderers.HTML is
          Put_Field (Graph (I).Name, Graph (I).Name_Len);
          Put (",""version"":");
          Put_Field (Graph (I).Version, Graph (I).Version_Len);
-         Put (",""scope"":""");
-         Put (Scope_Name (Graph (I).Scope));
-         Put (""",""license"":");
+         Put (",""scope"":");
+         Put_Field (Scope_Name (Graph (I).Scope), Scope_Name (Graph (I).Scope)'Length);
+         Put (",""dev"":");
+         Put (if Graph (I).Scope_Flags.Is_Dev then "true" else "false");
+         Put (",""system"":");
+         Put (if Graph (I).Scope_Flags.Is_System then "true" else "false");
+         Put (",""license"":");
          Put_Field (Graph (I).License, Graph (I).License_Len);
          Put (",""kind"":""");
          Put

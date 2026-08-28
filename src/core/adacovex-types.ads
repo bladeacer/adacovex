@@ -90,6 +90,14 @@ package Adacovex.Types is
    type Component_Scope is
      (Scope_Base, Scope_Dev, Scope_Transitive, Scope_Vendored, Scope_System);
 
+   --  Record whether a dependency is declared for development as well as
+   --  whether the resolved component is a system tool.  This preserves both
+   --  facts when one component is named in a dev manifest and detected on PATH.
+   type Dependency_Scope_Flags is record
+      Is_Dev    : Boolean := False;
+      Is_System : Boolean := False;
+   end record;
+
    type Subprogram_Info is record
       Name          : Desc_Field;
       Name_Len      : Natural := 0;
@@ -232,6 +240,7 @@ package Adacovex.Types is
          Parent          : Natural := 0;
          From_GPR        : Boolean := False;
          Scope           : Component_Scope := Scope_Transitive;
+         Scope_Flags      : Dependency_Scope_Flags;
       end record;
 
       package Component_Vectors is new

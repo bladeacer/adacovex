@@ -14,9 +14,29 @@ procedure Append_Dependency
 is
    C : Types.Implementation.Component_Info;
 begin
-   if Name'Length = 0 or else Name_In_Graph (Graph, Name) then
+   if Name'Length = 0 then
       return;
    end if;
+
+   --  Keep one component when a dev-manifest dependency is also found as a
+   --  system tool.  Store both scope facts on that component.
+   for I in 1 .. Integer (Graph.Length) loop
+      if Graph (I).Name_Len = Name'Length
+        and then Graph (I).Name (1 .. Name'Length) = Name
+      then
+         C := Graph (I);
+         if Scope = Types.Scope_System then
+            C.Scope_Flags.Is_System := True;
+            C.Scope_Flags.Is_Dev := True;
+            C.Scope := Types.Scope_System;
+         elsif Scope = Types.Scope_Dev then
+            C.Scope_Flags.Is_Dev := True;
+         end if;
+         Graph (I) := C;
+         return;
+      end if;
+   end loop;
+
    Set_Field (C.Name, C.Name_Len, Name);
    Set_Field (C.Version, C.Version_Len, Version);
    Set_Field (C.License, C.License_Len, License);
@@ -29,5 +49,7 @@ begin
    C.Parent := Parent;
    C.From_GPR := From_GPR;
    C.Scope := Scope;
+   C.Scope_Flags.Is_Dev := Scope = Types.Scope_Dev or else Scope = Types.Scope_System;
+   C.Scope_Flags.Is_System := Scope = Types.Scope_System;
    Graph.Append (C);
 end Append_Dependency;

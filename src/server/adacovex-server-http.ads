@@ -20,6 +20,7 @@ package Adacovex.Server.HTTP is
       Route_Badge_IEC62304,
       Route_API_Metrics,
       Route_API_Deps,
+      Route_Docs,
       Route_Not_Found);
 
    --  Map a request path to its handler action.
@@ -46,7 +47,8 @@ package Adacovex.Server.HTTP is
        and then (Route'Result /= Route_Badge_IEC62304
                  or Path = "/badge/iec62304.svg")
        and then (Route'Result /= Route_API_Metrics or Path = "/api/metrics")
-       and then (Route'Result /= Route_API_Deps or Path = "/api/deps"),
+       and then       (Route'Result /= Route_API_Deps or Path = "/api/deps")
+       and then (Route'Result /= Route_Docs or Path = "/docs"),
      Global     => null;
 
    type Server_State is record

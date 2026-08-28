@@ -95,7 +95,7 @@ var ADACOVEX_GRAPH=__GRAPH_JSON__;
 var fullTextIdx=[];
 function buildFullTextIdx(){
   if(fullTextIdx.length>0) return;
-  var tabs=['overview','proof','tests','compliance','deps','charts'];
+  var tabs=['overview','proof','tests','compliance','deps','charts','credits'];
   tabs.forEach(function(tab){
     var panel=document.getElementById('tab-'+tab);
     if(!panel) return;
@@ -149,9 +149,10 @@ function renderNomnoml(){
     var showDev=document.getElementById('filter-dev') ? document.getElementById('filter-dev').checked : true;
     var showTrans=document.getElementById('filter-transitive') ? document.getElementById('filter-transitive').checked : true;
     var showVend=document.getElementById('filter-vendored') ? document.getElementById('filter-vendored').checked : true;
-    function scopeOk(s){ if(s==='base') return showBase; if(s==='dev') return showDev; if(s==='transitive') return showTrans; if(s==='vendored') return showVend; return true; }
+    var showSys=document.getElementById('filter-system') ? document.getElementById('filter-system').checked : true;
+    function scopeOk(s){ if(s==='base') return showBase; if(s==='dev') return showDev; if(s==='transitive') return showTrans; if(s==='vendored') return showVend; if(s==='system') return showSys; return true; }
     var filtered=deps.filter(function(d){ return scopeOk(d.scope||'transitive'); });
-    var byScope={base:[],dev:[],transitive:[],vendored:[]};
+    var byScope={base:[],dev:[],transitive:[],vendored:[],system:[]};
     filtered.forEach(function(d){
       var scope=d.scope||'transitive';
       if(!byScope[scope]) byScope[scope]=[];
@@ -352,11 +353,8 @@ function purlInfo(purl){
 window.showDepDetails=function(idx){
   var pop=document.getElementById('dep-detail-popup'); if(!pop) return;
   var g=(typeof ADACOVEX_GRAPH!=='undefined' && ADACOVEX_GRAPH && ADACOVEX_GRAPH.dependencies) ? ADACOVEX_GRAPH.dependencies : null;
-  var d=g ? g[idx-1] : null; if(!d) return;
-  var h='<strong>'+ (d.name||'') +'</strong>';
-   if(d.version) h+=' <span class="dep-badge">'+esc(d.version)+'</span>';
-   h+=' <span class="dep-badge '+esc(d.scope||'')+'">'+esc(d.scope||'')+'</span>';
-   if(d.scope==='system') h+=' <span class="dep-badge scope-system">system</span>';
+  var d=g ? g[idx-1] : null; if(!d) return;   var h='<strong>'+esc(d.name||'')+'</strong>';
+   if(d.version) h+=' <span class="dep-badge">'+esc(d.version)+'</span>';   h+=' <span class="dep-badge scope-'+esc(d.scope||'')+'">'+esc(d.scope||'')+'</span>';   if(d.dev && d.scope!=='dev') h+=' <span class="dep-badge scope-dev">dev</span>';
   if(d.kind==='root') h+=' <span class="dep-badge">root</span>';
   h+=' <span class="dep-badge dep-details-close" onclick="closeDepDetails()">close &times;</span>';
    h+='<table class="dep-details-table">';
@@ -366,7 +364,7 @@ window.showDepDetails=function(idx){
    h+='<tr><th>License</th><td class="lic">'+esc(d.license||'')+'</td></tr>';
    if(d.lang) h+='<tr><th>Language</th><td>'+esc(d.lang)+'</td></tr>';
    h+='<tr><th>PURL</th><td class="purl">'+esc(d.purl||'')+'</td></tr>';
-   var par = (d.parent && g && g[d.parent-1]) ? g[d.parent-1].name : (d.parent===0 ? '(root)' : '\u2014');
+   var par = (d.parent && g && g[d.parent-1]) ? g[d.parent-1].name : (d.parent===0 ? '(root)' : 'not available');
    h+='<tr><th>Parent</th><td>'+esc(par)+'</td></tr>';
    // Preferred link: the resolved source repository / project website (from
    // alr show / the lockfile), which never produces a guessed or dead link.
@@ -378,7 +376,7 @@ window.showDepDetails=function(idx){
    } else {
      link=purlInfo(d.purl);
    }
-   h+='<tr><th>Link</th><td>'+(link ? '<a href="'+esc(link.href)+'" target="_blank" rel="noopener">'+esc(link.label)+' &#8599;</a>' : '\u2014')+'</td></tr>';
+   h+='<tr><th>Link</th><td>'+(link ? '<a href="'+esc(link.href)+'" target="_blank" rel="noopener">'+esc(link.label)+' &#8599;</a>' : 'No link available')+'</td></tr>';
    h+='</table>';
     if(d.description) h+='<p class="dep-detail-note">'+esc(d.description)+'</p>';
     // System tools are discovered from the project's dev files + PATH: we

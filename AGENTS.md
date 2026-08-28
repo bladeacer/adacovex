@@ -474,6 +474,8 @@ suffices.
 - [Architecture](docs/architecture.md)
 - [Requirements](docs/requirements.md)
 - [STE100 technical names](docs/ste100-technical-names.md)
+- [Credits](docs/CREDITS.md)
+- [Third-party notices](docs/THIRD_PARTY_NOTICES.md)
 - [HLR index](docs/HLR.md)
 - [LLR mapping](docs/LLR.md)
 - [Performance](docs/perf.md)

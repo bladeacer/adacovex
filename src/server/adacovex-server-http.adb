@@ -241,6 +241,8 @@ package body Adacovex.Server.HTTP is
          return Route_API_Metrics;
       elsif Path = "/api/deps" then
          return Route_API_Deps;
+      elsif Path = "/docs" then
+         return Route_Docs;
       else
          --  The served-route implications are all vacuous here
          --  (the result is Route_Not_Found, not a served kind).
@@ -429,6 +431,15 @@ package body Adacovex.Server.HTTP is
                "200 OK",
                "application/json",
                Adacovex.Renderers.HTML.Render_Deps_JSON (State.Graph),
+               Is_KA);
+
+         when Route_Docs           =>
+            Send_Response
+              (Channel,
+               "200 OK",
+               "text/plain",
+               "Documentation is available in the repository under docs/. "
+               & "Use a static file server for the Markdown pages.",
                Is_KA);
 
          when Route_Not_Found      =>
