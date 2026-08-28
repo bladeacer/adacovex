@@ -1,4 +1,4 @@
-.PHONY: help check build test prove doc clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish agents-tree sbom description proof-status test-count doc-links link-check changelog-check action-parity-check tools-check man bench perf-bench complexity-check sync
+.PHONY: help check build test prove doc docs-serve clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish agents-tree sbom description proof-status test-count doc-links link-check changelog-check action-parity-check tools-check man bench perf-bench complexity-check sync docs-check
 
 .DEFAULT_GOAL := help
 
@@ -189,6 +189,12 @@ complexity-check: build
 ascii-check:
 	@python3 tools/ascii-check.py
 
+docs-check:
+	@python3 tools/check-docs.py
+
+docs-serve:
+	@python3 -m http.server 8000 --directory docs
+
 tools-check:
 	@python3 tools/tests.py
 
@@ -220,6 +226,7 @@ check:
 	@echo "=== Quality gate: version source ==="; python3 tools/gen-version.py --check
 	@echo "=== Quality gate: doc links ==="; python3 tools/update-doc-links.py --check
 	@echo "=== Quality gate: markdown links ==="; $(MAKE) link-check
+	@echo "=== Quality gate: user documentation ==="; $(MAKE) docs-check
 	@echo "=== Quality gate: build ==="; $(MAKE) build
 	@echo "=== Quality gate: native tests ==="; $(MAKE) test
 	@echo "=== Quality gate: SPARK proof + badges ==="; $(MAKE) prove

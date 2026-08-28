@@ -22,7 +22,7 @@ export default defineConfig({
   ],
   webServer: {
     command: 'python3 start-server.py',
-    url: 'http://localhost:8080',
+    url: 'http://localhost:8080/',
     reuseExistingServer: !process.env.CI,
   },
 });
