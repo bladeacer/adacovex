@@ -404,6 +404,255 @@ package body Adacovex_SBOM_Tests is
          "project Libt is" & ASCII.LF & "end Libt;" & ASCII.LF);
    end Make_Test_GPR_Fixture;
 
+   --  Fixture for test-labelled vendored npm dependencies: a node_modules
+   --  tree owned by a package.json that declares a "testDependencies"
+   --  section alongside devDependencies.  @playwright/test (test-named
+   --  package) and jsdom (declared under testDependencies) must be
+   --  Scope_Test; lodash (devDependencies only) stays vendored.
+   procedure Make_Test_Label_Fixture is
+      D : constant String := "obj/sbom_testlabel_fixture";
+   begin
+      Write_File
+        (D & "/alire.toml",
+         "name = ""tlfx""" & ASCII.LF & "version = ""1.0.0""" & ASCII.LF);
+      Write_File
+        (D & "/package.json",
+         "{"
+         & ASCII.LF
+         & "  ""name"": ""tlfx"","
+         & ASCII.LF
+         & "  ""devDependencies"": {"
+         & ASCII.LF
+         & "    ""@playwright/test"": ""^1.52.0"","
+         & ASCII.LF
+         & "    ""lodash"": ""^4.17.21"""
+         & ASCII.LF
+         & "  },"
+         & ASCII.LF
+         & "  ""testDependencies"": {"
+         & ASCII.LF
+         & "    ""jsdom"": ""^1.0.0"""
+         & ASCII.LF
+         & "  }"
+         & ASCII.LF
+         & "}");
+      Write_File
+        (D & "/node_modules/@playwright/test/package.json",
+         "{""name"":""@playwright/test"",""version"":""1.62.1""}");
+      Write_File
+        (D & "/node_modules/lodash/package.json",
+         "{""name"":""lodash"",""version"":""4.17.21""}");
+      Write_File
+        (D & "/node_modules/jsdom/package.json",
+         "{""name"":""jsdom"",""version"":""1.0.0""}");
+   end Make_Test_Label_Fixture;
+
+   --  Fixture whose owning manifest is a Cargo.toml with [dependencies]
+   --  and [dev-dependencies]: the dev-dependencies crate (Cargo's native
+   --  test-only section) must be Scope_Test, the regular dependency stays
+   --  vendored.
+   procedure Make_Test_Label_Cargo_Fixture is
+      D : constant String := "obj/sbom_testlabel_cargo";
+   begin
+      Write_File
+        (D & "/alire.toml",
+         "name = ""tlcargo""" & ASCII.LF & "version = ""1.0.0""" & ASCII.LF);
+      Write_File
+        (D & "/Cargo.toml",
+         "[package]"
+         & ASCII.LF
+         & "name = ""tlcargo"""
+         & ASCII.LF
+         & "version = ""0.1.0"""
+         & ASCII.LF
+         & "[dependencies]"
+         & ASCII.LF
+         & "serde = ""1.0"""
+         & ASCII.LF
+         & "[dev-dependencies]"
+         & ASCII.LF
+         & "mockall = ""0.13"""
+         & ASCII.LF);
+      Write_File
+        (D & "/vendor/mockall/Cargo.toml",
+         "[package]"
+         & ASCII.LF
+         & "name = ""mockall"""
+         & ASCII.LF
+         & "version = ""0.13.0"""
+         & ASCII.LF);
+      Write_File
+        (D & "/vendor/serde/Cargo.toml",
+         "[package]"
+         & ASCII.LF
+         & "name = ""serde"""
+         & ASCII.LF
+         & "version = ""1.0.200"""
+         & ASCII.LF);
+   end Make_Test_Label_Cargo_Fixture;
+
+   --  Fixture whose owning manifest is a Gemfile: gems inside a
+   --  `group :test` block must be Scope_Test, gems declared outside any
+   --  test group stay vendored.
+   procedure Make_Test_Label_Gem_Fixture is
+      D : constant String := "obj/sbom_testlabel_gem";
+   begin
+      Write_File
+        (D & "/alire.toml",
+         "name = ""tlgem""" & ASCII.LF & "version = ""1.0.0""" & ASCII.LF);
+      Write_File
+        (D & "/Gemfile",
+         "source ""https://rubygems.org"""
+         & ASCII.LF
+         & "gem ""rails"""
+         & ASCII.LF
+         & "group :test do"
+         & ASCII.LF
+         & "  gem ""rspec"""
+         & ASCII.LF
+         & "  gem ""capybara"""
+         & ASCII.LF
+         & "end"
+         & ASCII.LF);
+      Write_File (D & "/vendor/rspec/Gemfile", "gem ""rspec""" & ASCII.LF);
+      Write_File (D & "/vendor/rails/Gemfile", "gem ""rails""" & ASCII.LF);
+   end Make_Test_Label_Gem_Fixture;
+
+   --  Fixture whose owning manifest is a pom.xml: a <dependency> block
+   --  with a <scope>test</scope> must be Scope_Test, a dependency without
+   --  a test scope stays vendored.
+   procedure Make_Test_Label_Maven_Fixture is
+      D : constant String := "obj/sbom_testlabel_maven";
+   begin
+      Write_File
+        (D & "/alire.toml",
+         "name = ""tlmaven""" & ASCII.LF & "version = ""1.0.0""" & ASCII.LF);
+      Write_File
+        (D & "/pom.xml",
+         "<project>"
+         & ASCII.LF
+         & "  <dependencies>"
+         & ASCII.LF
+         & "    <dependency>"
+         & ASCII.LF
+         & "      <groupId>org.mockito</groupId>"
+         & ASCII.LF
+         & "      <artifactId>mockito-core</artifactId>"
+         & ASCII.LF
+         & "      <scope>test</scope>"
+         & ASCII.LF
+         & "    </dependency>"
+         & ASCII.LF
+         & "    <dependency>"
+         & ASCII.LF
+         & "      <groupId>com.example</groupId>"
+         & ASCII.LF
+         & "      <artifactId>core-lib</artifactId>"
+         & ASCII.LF
+         & "    </dependency>"
+         & ASCII.LF
+         & "  </dependencies>"
+         & ASCII.LF
+         & "</project>"
+         & ASCII.LF);
+      Write_File
+        (D & "/vendor/mockito-core/pom.xml",
+         "<project>"
+         & ASCII.LF
+         & "  <artifactId>mockito-core</artifactId>"
+         & ASCII.LF
+         & "</project>"
+         & ASCII.LF);
+      Write_File
+        (D & "/vendor/core-lib/pom.xml",
+         "<project>"
+         & ASCII.LF
+         & "  <artifactId>core-lib</artifactId>"
+         & ASCII.LF
+         & "</project>"
+         & ASCII.LF);
+   end Make_Test_Label_Maven_Fixture;
+
+   --  Fixture whose owning manifest is a pyproject.toml: dependencies
+   --  declared under a "test" optional-dependencies extra must be
+   --  Scope_Test, dependencies under a "dev" extra stay vendored.
+   procedure Make_Test_Label_Pypi_Fixture is
+      D : constant String := "obj/sbom_testlabel_pypi";
+   begin
+      Write_File
+        (D & "/alire.toml",
+         "name = ""tlpypi""" & ASCII.LF & "version = ""1.0.0""" & ASCII.LF);
+      Write_File
+        (D & "/pyproject.toml",
+         "[project.optional-dependencies]"
+         & ASCII.LF
+         & "test = ["
+         & ASCII.LF
+         & "  ""pytest"""
+         & ASCII.LF
+         & "]"
+         & ASCII.LF
+         & "dev = ["
+         & ASCII.LF
+         & "  ""black"""
+         & ASCII.LF
+         & "]"
+         & ASCII.LF);
+      Write_File
+        (D & "/vendor/pytest/pyproject.toml",
+         "[project]"
+         & ASCII.LF
+         & "name = ""pytest"""
+         & ASCII.LF
+         & "version = ""8.0.0"""
+         & ASCII.LF);
+      Write_File
+        (D & "/vendor/black/pyproject.toml",
+         "[project]"
+         & ASCII.LF
+         & "name = ""black"""
+         & ASCII.LF
+         & "version = ""24.0.0"""
+         & ASCII.LF);
+   end Make_Test_Label_Pypi_Fixture;
+
+   --  Fixture whose owning manifest is a composer.json: dependencies
+   --  declared under require-dev must be Scope_Test, dependencies under
+   --  require stay vendored.
+   procedure Make_Test_Label_Composer_Fixture is
+      D : constant String := "obj/sbom_testlabel_composer";
+   begin
+      Write_File
+        (D & "/alire.toml",
+         "name = ""tlcomposer"""
+         & ASCII.LF
+         & "version = ""1.0.0"""
+         & ASCII.LF);
+      Write_File
+        (D & "/composer.json",
+         "{"
+         & ASCII.LF
+         & "  ""require"": {"
+         & ASCII.LF
+         & "    ""monolog/monolog"": ""^2.0"""
+         & ASCII.LF
+         & "  },"
+         & ASCII.LF
+         & "  ""require-dev"": {"
+         & ASCII.LF
+         & "    ""phpunit/phpunit"": ""^9.0"""
+         & ASCII.LF
+         & "  }"
+         & ASCII.LF
+         & "}");
+      Write_File
+        (D & "/vendor/phpunit/phpunit/composer.json",
+         "{""name"":""phpunit/phpunit"",""version"":""9.6.0""}");
+      Write_File
+        (D & "/vendor/monolog/monolog/composer.json",
+         "{""name"":""monolog/monolog"",""version"":""2.9.0""}");
+   end Make_Test_Label_Composer_Fixture;
+
    procedure Make_Demo_Graph (Graph : out Component_Vectors.Vector) is
       Root : Component_Info;
       Dep  : Component_Info;
@@ -1002,6 +1251,176 @@ package body Adacovex_SBOM_Tests is
             > 0,
             "mixlib summary lists JavaScript");
       end;
+
+      --  Test-labelled vendored npm dependencies: a package whose name
+      --  carries the test label (@playwright/test) and a package declared
+      --  under a "testDependencies" section (jsdom) are Scope_Test; a
+      --  devDependencies-only package (lodash) stays vendored.
+      declare
+         Graph   : Component_Vectors.Vector;
+         Success : Boolean := False;
+         C       : Component_Info;
+      begin
+         Make_Test_Label_Fixture;
+         Adacovex.Parsers.Manifest.Build_Dependency_Graph
+           ("obj/sbom_testlabel_fixture",
+            "obj/sbom_testlabel_fixture/alire.toml",
+            Graph,
+            Success);
+         R.Check (Success, "test-label fixture graph success");
+         R.Check
+           (Count_Name (Graph, "@playwright/test") = 1,
+            "@playwright/test registered");
+         R.Check (Count_Name (Graph, "jsdom") = 1, "jsdom registered");
+         R.Check (Count_Name (Graph, "lodash") = 1, "lodash registered");
+         C := Find_Name (Graph, "@playwright/test");
+         R.Check
+           (C.Scope = Scope_Test,
+            "@playwright/test scope = test (test-named package)");
+         C := Find_Name (Graph, "jsdom");
+         R.Check
+           (C.Scope = Scope_Test,
+            "jsdom scope = test (testDependencies section)");
+         C := Find_Name (Graph, "lodash");
+         R.Check
+           (C.Scope = Scope_Vendored,
+            "lodash scope = vendored (devDependencies only)");
+      end;
+
+      --  Cargo [dev-dependencies] is Cargo's native test-only section:
+      --  the mockall crate is Scope_Test, the [dependencies] serde stays
+      --  vendored.
+      declare
+         Graph   : Component_Vectors.Vector;
+         Success : Boolean := False;
+         C       : Component_Info;
+      begin
+         Make_Test_Label_Cargo_Fixture;
+         Adacovex.Parsers.Manifest.Build_Dependency_Graph
+           ("obj/sbom_testlabel_cargo",
+            "obj/sbom_testlabel_cargo/alire.toml",
+            Graph,
+            Success);
+         R.Check (Success, "test-label cargo graph success");
+         R.Check (Count_Name (Graph, "mockall") = 1, "mockall registered");
+         R.Check (Count_Name (Graph, "serde") = 1, "serde registered");
+         C := Find_Name (Graph, "mockall");
+         R.Check
+           (C.Scope = Scope_Test,
+            "mockall scope = test (Cargo dev-dependencies)");
+         C := Find_Name (Graph, "serde");
+         R.Check
+           (C.Scope = Scope_Vendored,
+            "serde scope = vendored (Cargo dependencies)");
+      end;
+
+      --  Gemfile group :test: rspec is Scope_Test, the ungrouped rails gem
+      --  stays vendored.
+      declare
+         Graph   : Component_Vectors.Vector;
+         Success : Boolean := False;
+         C       : Component_Info;
+      begin
+         Make_Test_Label_Gem_Fixture;
+         Adacovex.Parsers.Manifest.Build_Dependency_Graph
+           ("obj/sbom_testlabel_gem",
+            "obj/sbom_testlabel_gem/alire.toml",
+            Graph,
+            Success);
+         R.Check (Success, "test-label gem graph success");
+         R.Check (Count_Name (Graph, "rspec") = 1, "rspec registered");
+         R.Check (Count_Name (Graph, "rails") = 1, "rails registered");
+         C := Find_Name (Graph, "rspec");
+         R.Check
+           (C.Scope = Scope_Test, "rspec scope = test (Gemfile :test group)");
+         C := Find_Name (Graph, "rails");
+         R.Check
+           (C.Scope = Scope_Vendored,
+            "rails scope = vendored (no test group)");
+      end;
+
+      --  pom.xml <scope>test</scope>: mockito-core is Scope_Test, the
+      --  unscoped core-lib stays vendored.
+      declare
+         Graph   : Component_Vectors.Vector;
+         Success : Boolean := False;
+         C       : Component_Info;
+      begin
+         Make_Test_Label_Maven_Fixture;
+         Adacovex.Parsers.Manifest.Build_Dependency_Graph
+           ("obj/sbom_testlabel_maven",
+            "obj/sbom_testlabel_maven/alire.toml",
+            Graph,
+            Success);
+         R.Check (Success, "test-label maven graph success");
+         R.Check
+           (Count_Name (Graph, "mockito-core") = 1, "mockito-core registered");
+         R.Check (Count_Name (Graph, "core-lib") = 1, "core-lib registered");
+         C := Find_Name (Graph, "mockito-core");
+         R.Check
+           (C.Scope = Scope_Test,
+            "mockito-core scope = test (Maven test scope)");
+         C := Find_Name (Graph, "core-lib");
+         R.Check
+           (C.Scope = Scope_Vendored,
+            "core-lib scope = vendored (no test scope)");
+      end;
+
+      --  pyproject.toml "test" extra: pytest is Scope_Test, the "dev"
+      --  extra black stays vendored.
+      declare
+         Graph   : Component_Vectors.Vector;
+         Success : Boolean := False;
+         C       : Component_Info;
+      begin
+         Make_Test_Label_Pypi_Fixture;
+         Adacovex.Parsers.Manifest.Build_Dependency_Graph
+           ("obj/sbom_testlabel_pypi",
+            "obj/sbom_testlabel_pypi/alire.toml",
+            Graph,
+            Success);
+         R.Check (Success, "test-label pypi graph success");
+         R.Check (Count_Name (Graph, "pytest") = 1, "pytest registered");
+         R.Check (Count_Name (Graph, "black") = 1, "black registered");
+         C := Find_Name (Graph, "pytest");
+         R.Check
+           (C.Scope = Scope_Test,
+            "pytest scope = test (pyproject test extra)");
+         C := Find_Name (Graph, "black");
+         R.Check
+           (C.Scope = Scope_Vendored, "black scope = vendored (dev extra)");
+      end;
+
+      --  composer.json require-dev: phpunit/phpunit is Scope_Test, the
+      --  require monolog/monolog stays vendored.
+      declare
+         Graph   : Component_Vectors.Vector;
+         Success : Boolean := False;
+         C       : Component_Info;
+      begin
+         Make_Test_Label_Composer_Fixture;
+         Adacovex.Parsers.Manifest.Build_Dependency_Graph
+           ("obj/sbom_testlabel_composer",
+            "obj/sbom_testlabel_composer/alire.toml",
+            Graph,
+            Success);
+         R.Check (Success, "test-label composer graph success");
+         R.Check
+           (Count_Name (Graph, "phpunit/phpunit") = 1,
+            "phpunit/phpunit registered");
+         R.Check
+           (Count_Name (Graph, "monolog/monolog") = 1,
+            "monolog/monolog registered");
+         C := Find_Name (Graph, "phpunit/phpunit");
+         R.Check
+           (C.Scope = Scope_Test,
+            "phpunit/phpunit scope = test (composer require-dev)");
+         C := Find_Name (Graph, "monolog/monolog");
+         R.Check
+           (C.Scope = Scope_Vendored,
+            "monolog/monolog scope = vendored (composer require)");
+      end;
+
       --  Markdown SBOM rendering.
       declare
          Graph   : Component_Vectors.Vector;

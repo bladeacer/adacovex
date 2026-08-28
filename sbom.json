@@ -3,7 +3,7 @@
   "specVersion": "1.5",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-08-28T22:53:10",
+    "timestamp": "2026-08-28T14:57:05",
     "tools": [
       {"vendor": "bladeacer", "name": "adacovex", "version": "1.33.0"}
     ],
@@ -63,7 +63,7 @@
       "purl": "pkg:npm/@playwright/test@1.62.1",
       "licenses": [{"license": {"id": "Apache-2.0"}}],
       "externalReferences": [{"url": "https://playwright.dev", "type": "website"}],
-      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "vendored"}]
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "test"}]
       },
     {
       "type": "library",
@@ -72,7 +72,7 @@
       "version": "16.1.0",
       "language": "Ada",
       "purl": "pkg:alire/gnatprove",
-      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
       },
     {
       "type": "library",

@@ -89,9 +89,17 @@ package Adacovex.Types is
    --  dependency is used only by the project's tests: it is declared under
    --  a [[test-depends-on]] manifest section, or it is with-claused only
    --  from test project files (a .gpr under a tests/ test/ or t/ directory,
-   --  or a test-named project such as test_runner.gpr).  Scope_Test is last
-   --  so the stream-serialized cache positions of the older scopes stay
-   --  stable across releases.
+   --  or a test-named project such as test_runner.gpr).  A dependency
+   --  declared in a test-labelled section of a supported-language manifest
+   --  is test too: package.json sections whose key contains "test" (for
+   --  example "testDependencies"), Cargo's [dev-dependencies] (and any
+   --  section containing "test"), composer's require-dev, Gemfile
+   --  `group :test` blocks, pom.xml <scope>test</scope> dependencies, and
+   --  pyproject.toml optional-dependencies extras containing "test".  An
+   --  npm package whose name starts or ends with "test" (for example
+   --  @playwright/test) is test as well.  Scope_Test is last so the
+   --  stream-serialized cache positions of the older scopes stay stable
+   --  across releases.
    --  HLR-SBOM: SBOM dependency scope
    type Component_Scope is
      (Scope_Base,

@@ -38,7 +38,7 @@ Self-assessment (`make run-self`) must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
 - Platinum SPARK level (723 VCs under gnatprove 16.1.0, 0 unproved, 0
   justified; see `docs/proof/16.1.0-ledger.md`)
-- 998/998 native tests passing
+- 1033/1033 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
   `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
@@ -79,6 +79,7 @@ src/
 |   |-- adacovex-parsers-manifest-append_dependency.adb-- Append one component node to the dependency graph
 |   |-- adacovex-parsers-manifest-classify_scope.adb-- Classify a dependency name as base/dev/transitive scope
 |   |-- adacovex-parsers-manifest-collect_gpr_files.adb-- Collect every .gpr file under a target directory tree
+|   |-- adacovex-parsers-manifest-collect_owner_test_names.adb-- Collect test-labelled dependency names from supported-language manifests
 |   |-- adacovex-parsers-manifest-detect_languages.adb-- Count source files by language under a directory tree
 |   |-- adacovex-parsers-manifest-discover_generic_vendored.adb-- Discover vendored components via their ecosystem manifests
 |   |-- adacovex-parsers-manifest-discover_vendored_components.adb-- Register vendored patches/resources/assets as scope=vendored SBOM components
@@ -89,6 +90,7 @@ src/
 |   |-- adacovex-parsers-manifest-gem_entry.adb-- Parse the first gem name/version from a Gemfile
 |   |-- adacovex-parsers-manifest-go_module_path.adb-- Read the module path from the first "module" line of go.mod
 |   |-- adacovex-parsers-manifest-has_lang.adb-- Whether a language counter vector already holds a language name
+|   |-- adacovex-parsers-manifest-is_test_named.adb-- Whether an npm package name carries a test label (starts/ends with "test")
 |   |-- adacovex-parsers-manifest-is_vendor_dir_name.adb-- Whether a directory name denotes a vendored-code root
 |   |-- adacovex-parsers-manifest-key_value.adb-- Extract the quoted "key = value" from a TOML/JSON line
 |   |-- adacovex-parsers-manifest-language_of_dir.adb-- Summarise the source languages under a directory (primary first)
@@ -133,14 +135,14 @@ src/
     |-- adacovex_prove_patch_tests.ads/.adb   -- Proof patch merge tests (35)
     |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (64)
     |-- adacovex_renderer_svg_tests.ads/.adb  -- SVG renderer tests (161)
-    |-- adacovex_renderer_tests.ads/.adb      -- HTML/Markdown renderer tests (47)
-    |-- adacovex_sbom_tests.ads/.adb          -- SBOM / manifest graph tests (221)
+    |-- adacovex_renderer_tests.ads/.adb      -- HTML/Markdown renderer tests (50)
+    |-- adacovex_sbom_tests.ads/.adb          -- SBOM / manifest graph tests (253)
     |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (86)
     |-- adacovex_server_tests.ads/.adb        -- Server routing tests (25)
     |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (50)
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (67)
     |-- adacovex_vcs_tests.ads/.adb           -- VCS support tests (29)
-    `-- test_runner.adb                       -- Test suite entry point (998 tests)
+    `-- test_runner.adb                       -- Test suite entry point (1033 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -307,7 +309,7 @@ link URLs).
 | `check` | Full quality gate (CI runs this before release): cheap static gates first (ascii, complexity, spark-off, changelog, action-parity, tools-check, version, doc-links), then build + tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description) that fail when any live file carries a stale metric |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
-| `test` | Build + run the 998-test native suite |
+| `test` | Build + run the 1033-test native suite |
 | `prove` | SPARK proof (Platinum gate) + regenerates SVG badges in `docs/badges/` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
 | `fmt` | Format Ada sources (gnatformat) |
@@ -403,7 +405,7 @@ release-tag coverage gate instead.
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 998/998 passing |
+| Unit tests | `make test` | 1033/1033 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (723 VCs, 0 unproved, 0 justified under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -417,7 +419,7 @@ rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 998 tests across 14 categories).
+Native zero-dependency suite (`src/tests/`, 1033 tests across 14 categories).
 Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests).
 

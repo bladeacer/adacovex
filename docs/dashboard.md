@@ -143,10 +143,13 @@ keyboard-accessible, persisted in `localStorage`):
   an interactive dependency tree/graph (see below).
 - **Charts** -- hand-rolled metrics charts (see below).
 - **Credits** -- third-party libraries used by the dashboard (nomnoml,
-  graphre, FlexSearch) with versions, licences, links and the
-  THIRD_PARTY_NOTICES pointer.  The Playwright row (e2e test tooling) fills
-  its version from the resolved dependency graph when the target declares a
-  playwright package (e.g. `@playwright/test@1.62.1`).
+  graphre, FlexSearch, Charts.css) with versions, licences, links and the
+  THIRD_PARTY_NOTICES pointer.  The Playwright row (e2e test tooling) is
+  labelled `test`: the e2e fixture declares `@playwright/test` under
+  `devDependencies`, and adacovex classifies test-named npm packages (such
+  as `@playwright/test`) as test dependencies.  Charts.css is credited as
+  inspiration -- the dashboard charts are adacovex's own patched version,
+  not the vendored framework.
 
 Tabs are linkable: `http://localhost:8080/#deps` opens the Dependencies tab
 directly (also `?theme=light#proof` composes with the theme pin). The active
@@ -176,8 +179,13 @@ shows an empty state with a link to `/api/deps`).
 - Scope badges: `base` (alire.toml), `dev` (alire-dev.toml only),
   `transitive`, `vendored`, `system` (a tool on `PATH` the project
   references, for example `git` or `python3`), and `test` (declared under a
-  `[[test-depends-on]]` section or with-claused only from test project
-  files). `root` badge for the project itself. Child count badge.
+  `[[test-depends-on]]` section, with-claused only from test project
+  files, declared in a test-labelled section of a supported-language
+  manifest -- for example `testDependencies` in package.json, Cargo's
+  `[dev-dependencies]`, a Gemfile `:test` group, a Maven test scope, or a
+  pyproject `test` extra -- or an npm package whose name starts or ends
+  with "test", such as `@playwright/test`). `root` badge for the project
+  itself. Child count badge.
   `data-scope` attribute on each `<li>` for JS filtering.  Scope badge
   colours come from `--scope-base/-dev/-trans/-vend/-system/-test` CSS
   variables so they stay readable in both themes.
@@ -332,7 +340,7 @@ assessment without parsing HTML:
 
 ```json
 {"spark_level":"Platinum","total_vcs":723,"proved_vcs":723,
- "tests_passed":998,"tests_failed":0,"doc_coverage":100,
+ "tests_passed":1033,"tests_failed":0,"doc_coverage":100,
  "standard":"all","level":"DAL-C","dal_status":"Achieved",
  "standards":{"DO-178C":{"level":"DAL-C","status":"Achieved"},
                "ISO 26262":{"level":"ASIL B","status":"Achieved"},

@@ -165,6 +165,36 @@ package body Adacovex.Parsers.Manifest is
    function Classify_Scope (Name : String) return Types.Component_Scope
    is separate;
 
+   --  Whether an npm-style package name carries a test label.  The full
+   --  package name is checked first, then the unscoped name after any
+   --  leading "@scope/" prefix.  A name that starts or ends with the
+   --  literal word "test" is test-labelled (for example @playwright/test,
+   --  vitest, supertest).  The vendored-component scan classifies such
+   --  npm packages Scope_Test.
+   --  @param Name  Package name (may be scoped, e.g. "@playwright/test").
+   --  @return True when the package name starts or ends with "test".
+   function Is_Test_Named (Name : String) return Boolean is separate;
+
+   --  Collect the dependency names a project manifest declares as
+   --  test-only.  Every supported ecosystem labels its test dependencies
+   --  in its own way, and every label carries the literal word "test":
+   --  package.json sections whose key contains "test" (for example
+   --  "testDependencies"), Cargo's [dev-dependencies] section (and any
+   --  section containing "test"), composer's require-dev, Gemfile
+   --  `group :test` blocks, pom.xml <scope>test</scope> dependencies, and
+   --  pyproject.toml optional-dependencies extras containing "test" (plus
+   --  Poetry test group sections).  The first manifest found in Owner_Dir
+   --  is used, in the same priority order as Read_Vendor_Manifest.
+   --  Missing or unreadable files leave the set unchanged.  A physical
+   --  line longer than Max_Line stops the read; no partial set is kept.
+   --  @param Owner_Dir  Directory holding the project manifest that owns a
+   --    vendored directory (for example tests/e2e owns
+   --    tests/e2e/node_modules).
+   --  @param Test_Names  Collected test-labelled dependency names.
+   procedure Collect_Owner_Test_Names
+     (Owner_Dir : String; Test_Names : in out Name_Vectors.Vector)
+   is separate;
+
    procedure Append_Dependency
      (Graph    : in out Types.Implementation.Component_Vectors.Vector;
       Name     : String;
@@ -1392,6 +1422,25 @@ package body Adacovex.Parsers.Manifest is
             end;
          end loop;
       end Hash_Tree;
+
+      --  Whether a file name is a supported-language project manifest that
+      --  can own a vendored directory (the file set Collect_Owner_Test_Names
+      --  reads).  Hashing these files makes the graph key sound: editing the
+      --  owning manifest's test-labelled sections invalidates the cached
+      --  graph so the scope classification is recomputed.
+      --  @param N  File base name.
+      --  @return True for package.json, Cargo.toml, composer.json, Gemfile,
+      --    pom.xml, or pyproject.toml.
+      function Is_Owner_Manifest (N : String) return Boolean is
+      begin
+         return
+           N = "package.json"
+           or else N = "Cargo.toml"
+           or else N = "composer.json"
+           or else N = "Gemfile"
+           or else N = "pom.xml"
+           or else N = "pyproject.toml";
+      end Is_Owner_Manifest;
    begin
       --  Classic doc roots (.adacovex/patches, resources, vendor, assets).
       --  Every regular file counts, at any depth (curated and small).
@@ -1401,7 +1450,12 @@ package body Adacovex.Parsers.Manifest is
       Hash_Tree (T & "/assets", 99);
 
       --  Language-agnostic vendored directories anywhere in the tree (same
-      --  discovery walk as Discover_Generic_Vendored, shallow).
+      --  discovery walk as Discover_Generic_Vendored, shallow).  Supported-
+      --  language project manifests that can own a vendored directory (for
+      --  example tests/e2e/package.json owning tests/e2e/node_modules) are
+      --  hashed so an edit to their test-labelled sections invalidates the
+      --  cached graph.  The manifests inside vendor roots are already
+      --  covered by the Hash_Tree calls above.
       Dir_Stack.Clear;
       Push_Dir (Dir_Stack, Target_Dir, 0, 99);
       while not Dir_Stack.Is_Empty loop
@@ -1430,6 +1484,10 @@ package body Adacovex.Parsers.Manifest is
                               Push_Dir (Dir_Stack, Path, 0, 99);
                            end if;
                         end if;
+                     elsif Kind (Ent) = Ordinary_File
+                       and then Is_Owner_Manifest (N)
+                     then
+                        Add (Adacovex.Cache.Hash_File (Path));
                      end if;
                   end;
                end loop;

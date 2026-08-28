@@ -47,10 +47,12 @@ src/tests/adacovex_prove_tests	GNATprove parser tests (64)
 src/tests/adacovex_testparser_tests	Test-result parser tests (50)
 src/tests/adacovex_config_tests	CLI config tests (152)
 src/tests/adacovex_renderer_svg_tests	SVG renderer tests (161)
-src/tests/adacovex_renderer_tests	HTML/Markdown renderer tests (47)
-src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (221)
-src/tests/test_runner	Test suite entry point (998 tests)
+src/tests/adacovex_renderer_tests	HTML/Markdown renderer tests (50)
+src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (253)
+src/tests/test_runner	Test suite entry point (1033 tests)
 src/parsers/adacovex-parsers-manifest-req_entry	Parse the first requirement (name/version) from a requirements*.txt
+src/parsers/adacovex-parsers-manifest-is_test_named	Whether an npm package name carries a test label (starts/ends with "test")
+src/parsers/adacovex-parsers-manifest-collect_owner_test_names	Collect test-labelled dependency names from supported-language manifests
 src/parsers/adacovex-parsers-manifest-key_value	Extract the quoted "key = value" from a TOML/JSON line
 src/parsers/adacovex-parsers-manifest-has_lang	Whether a language counter vector already holds a language name
 src/parsers/adacovex-parsers-manifest-discover_vendored_components	Register vendored patches/resources/assets as scope=vendored SBOM components

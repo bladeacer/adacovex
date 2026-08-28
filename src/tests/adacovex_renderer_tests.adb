@@ -188,6 +188,15 @@ package body Adacovex_Renderer_Tests is
          R.Check
            (Contains (S, "Third-Party Credits"),
             "dashboard bundles the template page shell (Credits tab)");
+         R.Check
+           (Contains (S, "Charts.css"),
+            "credits table credits Charts.css as inspiration");
+         R.Check
+           (Contains (S, "test / Apache-2.0"),
+            "credits table labels Playwright a test dependency");
+         R.Check
+           (Contains (S, "our own patched version"),
+            "credits table notes the hand-rolled charts are a patched version");
       end;
 
       --  Light_Theme marks the light option selected.
