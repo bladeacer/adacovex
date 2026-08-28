@@ -91,10 +91,10 @@ package body Adacovex.Renderers.HTML is
       return (Part * 100) / Total;
    end Pct;
 
-   --  0..1 fraction with two decimals ("0.42"), clamped at 1.00.  Charts.css
-   --  pie/bar sizes are unitless turn fractions (--start/--end/--size), NOT
-   --  0..100 percentages -- feeding Pct values here is what made old pie
-   --  slices render as repeated full turns.
+   --  0..1 fraction with two decimals ("0.42"), clamped at 1.00.  Kept for
+   --  the polar-ring cut points and any fraction-emitting helper; the old
+   --  Charts.css pie/bar sizes (--start/--end/--size turn fractions) are
+   --  gone with the Charts.css dependency.
    function Frac (Part, Total : Natural) return String is
       P : Natural := 0;
    begin
@@ -174,73 +174,89 @@ package body Adacovex.Renderers.HTML is
          Append (R, S);
       end Put;
 
-      --  A single pie/donut slice: label + start/end fraction strings.
-      procedure Slice_Row
-        (Label : String; Start_F, End_F : String; Value : Natural) is
+      --  A hand-rolled donut ring (conic gradient + CSS hole, the same
+      --  pattern as the polar chart below): the covered share is green
+      --  (var --pass), the remainder red (var --fail), and the centre
+      --  hole carries the value with a caption.  Part/Total are the
+      --  covered and total counts; the ring is fully green when covered
+      --  reaches total.
+      procedure Donut
+        (Aria  : String;
+         Value : Natural;
+         Sub   : String;
+         Part  : Natural;
+         Total : Natural)
+      is
+         P : constant Natural := Pct (Part, Total);
       begin
-         Put ("<tr><th scope=""row"">");
-         Put (Label);
-         Put ("</th><td style=""--start:");
-         Put (Start_F);
-         Put (";--end:");
-         Put (End_F);
-         Put ("""><span class=""data"">");
-         Put (Img (Value));
-         Put ("</span></td></tr>");
-      end Slice_Row;
-
-      --  A single bar/column row: label + size fraction 0..1 + value.
-      procedure Bar_Row
-        (Label : String; Part : Natural; Total : Natural; Value : Natural) is
-      begin
-         Put ("<tr><th scope=""row"">");
-         Put (Html_Escape (Label));
-         Put ("</th><td style=""--size:");
-         if Total = 0 then
-            Put ("0.00");
-         else
-            Put (Frac (Part, Total));
+         Put ("<div class=""donut"" role=""img"" aria-label=""");
+         Put (Aria);
+         Put (""" style=""background:conic-gradient(var(--pass) 0% ");
+         Put (Img (P));
+         Put ("%");
+         if P < 100 then
+            Put (", var(--fail) ");
+            Put (Img (P));
+            Put ("% 100%");
          end if;
-         Put ("""><span class=""data"">");
+         Put (")"">");
+         Put ("<div class=""donut-center""><b>");
          Put (Img (Value));
-         Put ("</span></td></tr>");
+         Put ("</b><span>");
+         Put (Sub);
+         Put ("</span></div></div>");
+      end Donut;
+
+      --  A hand-rolled horizontal bar row: fixed label column (ellipsised
+      --  in CSS), a track with a green fill sized by Part/Total, an
+      --  optional red remainder, and the value at the right.  The label
+      --  never rotates and long category names ellipsise instead of
+      --  overflowing.
+      procedure Bar_Row
+        (Label    : String;
+         Part     : Natural;
+         Total    : Natural;
+         Value    : Natural;
+         Two_Tone : Boolean := True)
+      is
+         P : constant Natural := Pct (Part, Total);
+      begin
+         Put ("<div class=""hbar""><span class=""hbar-label"">");
+         Put (Html_Escape (Label));
+         Put ("</span><div class=""hbar-track""><i style=""width:");
+         Put (Img (P));
+         Put ("%""></i>");
+         if Two_Tone and then P < 100 then
+            Put ("<em style=""width:");
+            Put (Img (100 - P));
+            Put ("%""></em>");
+         end if;
+         Put ("</div><span class=""hbar-num"">");
+         Put (Img (Value));
+         Put ("</span></div>");
       end Bar_Row;
 
    begin
       --  Proof progress is shown as a donut with explicit text below it.
-      --  The text remains available when a chart label has no room.
+      --  The text remains available when the ring has no room for labels.
       Put ("<div class=""chart-card""><h3>SPARK Proof</h3>");
-      Put
-        ("<table class=""charts-css pie donut"" style=""height:190px;max-width:220px;margin:0 auto"">");
-      Put ("<caption>SPARK proof</caption><tbody>");
-      declare
-         Unproved : constant Natural :=
-           (if Proof.Total_VCs > Proof.Proved_VCs
-            then Proof.Total_VCs - Proof.Proved_VCs
-            else 0);
-         Proved_F : constant String :=
-           Frac (Proof.Proved_VCs, Proof.Total_VCs);
-      begin
-         Slice_Row ("Proved", "0.00", Proved_F, Proof.Proved_VCs);
-         if Unproved > 0 then
-            Slice_Row ("Unproved", Proved_F, "1.00", Unproved);
-         end if;
-      end;
-      Put ("</tbody></table><p class=""chart-readout""><strong>");
+      Donut
+        ("SPARK proof",
+         Proof.Proved_VCs,
+         "VCs proved",
+         Proof.Proved_VCs,
+         Proof.Total_VCs);
+      Put ("<p class=""chart-readout""><strong>");
       Put (Img (Proof.Proved_VCs));
       Put (" / ");
       Put (Img (Proof.Total_VCs));
       Put (" VCs proved</strong></p></div>");
 
-      --  Proof categories column (proved vs total per category).  Every
-      --  category gnatprove reports (flow, init, runtime, assertions,
-      --  functional, termination) is a bar; the --rows hint sizes the
-      --  chart to its category count.
+      --  Proof categories (proved vs total per category).  Every category
+      --  gnatprove reports (flow, init, runtime, assertions, functional,
+      --  termination) is a row; green shows the proved share and red the
+      --  unproved remainder.
       Put ("<div class=""chart-card""><h3>Proof Check Types</h3>");
-      Put
-        ("<table class=""charts-css column rotate-labels show-labels show-primary-axis"" "
-         & "style=""--rows:6"">");
-      Put ("<caption>Proved checks by category</caption><tbody>");
       Bar_Row
         ("Flow", Proof.Flow_Proved, Proof.Flow_Checks, Proof.Flow_Proved);
       Bar_Row
@@ -263,20 +279,16 @@ package body Adacovex.Renderers.HTML is
          Proof.Termination_Ct,
          Proof.Termination_Proved);
       Put
-        ("</tbody></table><p class=""chart-readout""><strong>"
+        ("<p class=""chart-readout""><strong>"
          & "Each bar shows proved checks divided by checks in that category."
          & "</strong></p></div>");
 
-      --  Test categories bar (each category as its own row, normalised by
-      --  max).  The --rows hint sizes the chart height to the category
-      --  count so long suites (14 categories) never clip their last rows.
+      --  Test categories (each category as its own row, normalised by
+      --  max).  A single green fill per row -- no red remainder, because
+      --  the categories are counts, not pass/fail shares.
       Put ("<div class=""chart-card""><h3>Test Results by Category</h3>");
-      Put ("<table class=""charts-css bar show-labels"" style=""--rows:");
-      Put (Img (Natural (Tests.Categories.Length)));
-      Put (""">");
-      Put ("<caption>Test counts by category</caption><tbody>");
       if Tests.Categories.Is_Empty then
-         Bar_Row ("No categories", 0, 1, 0);
+         Bar_Row ("No categories", 0, 1, 0, Two_Tone => False);
       else
          declare
             Max_Ct : Natural := 1;
@@ -294,33 +306,27 @@ package body Adacovex.Renderers.HTML is
                     (Cat.Category (1 .. Cat.Cat_Len),
                      Cat.Test_Count,
                      Max_Ct,
-                     Cat.Test_Count);
+                     Cat.Test_Count,
+                     Two_Tone => False);
                end;
             end loop;
          end;
       end if;
       Put
-        ("</tbody></table><p class=""chart-readout""><strong>"
+        ("<p class=""chart-readout""><strong>"
          & "Each bar shows the category count."
          & "</strong></p></div>");
 
-      --  Test pass/fail is also available as a full chart card.
+      --  Test pass/fail as a full donut card.
       Put ("<div class=""chart-card""><h3>Tests Pass/Fail</h3>");
+      Donut
+        ("Test results",
+         Tests.Total_Passed,
+         "passed",
+         Tests.Total_Passed,
+         Tests.Total_Passed + Tests.Total_Failed);
       Put
-        ("<table class=""charts-css pie"" style=""height:190px;max-width:220px;margin:0 auto"">");
-      Put ("<caption>Test results</caption><tbody>");
-      declare
-         Total    : constant Natural :=
-           Tests.Total_Passed + Tests.Total_Failed;
-         Passed_F : constant String := Frac (Tests.Total_Passed, Total);
-      begin
-         Slice_Row ("Passed", "0.00", Passed_F, Tests.Total_Passed);
-         if Tests.Total_Failed > 0 then
-            Slice_Row ("Failed", Passed_F, "1.00", Tests.Total_Failed);
-         end if;
-      end;
-      Put
-        ("</tbody></table><p class=""chart-readout""><strong>"
+        ("<p class=""chart-readout""><strong>"
          & Img (Tests.Total_Passed)
          & " passed, "
          & Img (Tests.Total_Failed)
@@ -1087,19 +1093,38 @@ package body Adacovex.Renderers.HTML is
       --  per-check-type SPARK radar (moved from the Charts tab), tests
       --  donut and the doc-coverage gauge
       declare
-         procedure Mini_Slice (Lbl : String; St_F, Fi_F : String; V : Natural)
+         --  Compact hand-rolled donut ring (conic gradient + CSS hole):
+         --  green for the covered share, red for the remainder, value and
+         --  caption in the hole.  Same pattern as the full-size donuts on
+         --  the Charts tab; never overlaps the readout line below because
+         --  the ring is a fixed-size block, not an absolutely positioned
+         --  table cell.
+         procedure Mini_Donut
+           (Aria  : String;
+            Value : Natural;
+            Sub   : String;
+            Part  : Natural;
+            Total : Natural)
          is
+            P : constant Natural := Pct (Part, Total);
          begin
-            Put_O ("<tr><th scope=""row"">");
-            Put_O (Html_Escape (Lbl));
-            Put_O ("</th><td style=""--start:");
-            Put_O (St_F);
-            Put_O (";--end:");
-            Put_O (Fi_F);
-            Put_O ("""><span class=""data"">");
-            Put_O (Img (V));
-            Put_O ("</span></td></tr>");
-         end Mini_Slice;
+            Put_O ("<div class=""donut"" role=""img"" aria-label=""");
+            Put_O (Aria);
+            Put_O (""" style=""background:conic-gradient(var(--pass) 0% ");
+            Put_O (Img (P));
+            Put_O ("%");
+            if P < 100 then
+               Put_O (", var(--fail) ");
+               Put_O (Img (P));
+               Put_O ("% 100%");
+            end if;
+            Put_O (")"">");
+            Put_O ("<div class=""donut-center""><b>");
+            Put_O (Img (Value));
+            Put_O ("</b><span>");
+            Put_O (Sub);
+            Put_O ("</span></div></div>");
+         end Mini_Donut;
       begin
          Put_O ("<div class=""chart-grid"" style=""margin-top:14px"">");
 
@@ -1347,30 +1372,16 @@ package body Adacovex.Renderers.HTML is
             Put_O ("</div></div>");
          end;
 
-         --  Tests donut + category column chart side by side.  The donut is
-         --  followed by a readout line, so the pass/fail numbers stay
-         --  available even when the pie labels have no room.
+         --  Tests donut followed by a readout line, so the pass/fail
+         --  numbers stay available and the ring colour reflects coverage
+         --  (fully green when every test passes).
          Put_O ("<div class=""chart-card""><h3>Tests</h3>");
-         Put_O
-           ("<table class=""charts-css pie donut show-labels"" style=""height:200px;max-width:200px;margin:0 auto"">");
-         Put_O ("<caption>Tests</caption><tbody>");
-         declare
-            Tot : constant Natural := Tests.Total_Passed + Tests.Total_Failed;
-         begin
-            if Tot = 0 then
-               Mini_Slice ("No tests", "0.00", "1.00", 0);
-            else
-               declare
-                  P : constant String := Frac (Tests.Total_Passed, Tot);
-               begin
-                  Mini_Slice ("Passed", "0.00", P, Tests.Total_Passed);
-                  if Tests.Total_Failed > 0 then
-                     Mini_Slice ("Failed", P, "1.00", Tests.Total_Failed);
-                  end if;
-               end;
-            end if;
-         end;
-         Put_O ("</tbody></table>");
+         Mini_Donut
+           ("Tests",
+            Tests.Total_Passed,
+            "passed",
+            Tests.Total_Passed,
+            Tests.Total_Passed + Tests.Total_Failed);
          Put_O
            ("<p class=""chart-readout""><strong>"
             & Img (Tests.Total_Passed)
@@ -1383,55 +1394,32 @@ package body Adacovex.Renderers.HTML is
          --  by Category" bar); the Overview does not duplicate them (DRY).
 
          --  Doc coverage donut: documented share as a ring with the
-         --  percentage in the hole (a single-axis radar does not render as
-         --  a coverage gauge).
+         --  percentage in the hole (fully green when 100% covered).
          Put_O ("<div class=""chart-card""><h3>Doc Coverage</h3>");
-         declare
-            Cov : constant Natural :=
-              Pct
-                (Doc_Metrics.Documented_Subprogs,
-                 Doc_Metrics.Total_Subprograms);
-         begin
-            if Doc_Metrics.Total_Subprograms = 0 then
-               Put_O ("<p style=""color:var(--muted);font-size:.8rem"">");
-               Put_O ("No subprograms</p></div>");
-            else
-               Put_O
-                 ("<table class=""charts-css pie donut show-labels"" "
-                  & "style=""height:190px;max-width:210px;margin:0 auto"">");
-               Put_O ("<caption>Docstring coverage</caption><tbody>");
-               declare
-                  Doc_F : constant String :=
-                    Frac
-                      (Doc_Metrics.Documented_Subprogs,
-                       Doc_Metrics.Total_Subprograms);
-               begin
-                  Mini_Slice
-                    ("Documented",
-                     "0.00",
-                     Doc_F,
-                     Doc_Metrics.Documented_Subprogs);
-                  if Doc_F /= "1.00" then
-                     Mini_Slice
-                       ("Missing",
-                        Doc_F,
-                        "1.00",
-                        Doc_Metrics.Total_Subprograms
-                        - Doc_Metrics.Documented_Subprogs);
-                  end if;
-               end;
-               Put_O ("</tbody></table>");
-               Put_O
-                 ("<p style=""color:var(--muted);font-size:.82rem;"
-                  & "text-align:center;margin:6px 0 0"">");
-               Put_O (Img (Cov));
-               Put_O ("% documented &middot; ");
-               Put_O (Img (Doc_Metrics.Documented_Subprogs));
-               Put_O ("/");
-               Put_O (Img (Doc_Metrics.Total_Subprograms));
-               Put_O ("</p></div>");
-            end if;
-         end;
+         if Doc_Metrics.Total_Subprograms = 0 then
+            Put_O ("<p style=""color:var(--muted);font-size:.8rem"">");
+            Put_O ("No subprograms</p></div>");
+         else
+            Mini_Donut
+              ("Docstring coverage",
+               Doc_Metrics.Documented_Subprogs,
+               "documented",
+               Doc_Metrics.Documented_Subprogs,
+               Doc_Metrics.Total_Subprograms);
+            Put_O
+              ("<p style=""color:var(--muted);font-size:.82rem;"
+               & "text-align:center;margin:6px 0 0"">");
+            Put_O
+              (Img
+                 (Pct
+                    (Doc_Metrics.Documented_Subprogs,
+                     Doc_Metrics.Total_Subprograms)));
+            Put_O ("% documented &middot; ");
+            Put_O (Img (Doc_Metrics.Documented_Subprogs));
+            Put_O ("/");
+            Put_O (Img (Doc_Metrics.Total_Subprograms));
+            Put_O ("</p></div>");
+         end if;
          Put_O ("</div>");
 
          --  Dependency scope distribution (overview): a compact polar ring that

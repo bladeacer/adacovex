@@ -27,12 +27,9 @@ The CycloneDX 1.5 JSON and SPDX 2.3 JSON schemas are referenced for validation o
 
 | Component | Version | Licence | Used for |
 |-----------|---------|---------|----------|
-| Charts.css | 1.2.0 | MIT | Dashboard chart styles (`resources/charts.min.css`, inlined into the served dashboard) |
 | nomnoml | 1.7.0 | MIT | Dependency hierarchy diagram alternative view in the dashboard (`resources/nomnoml.js`, inlined into the served dashboard) |
 | graphre | 0.1.3 | MIT | Graph layout engine for nomnoml (`resources/graphre.js`, inlined; required by the UMD wrapper of nomnoml) |
 | FlexSearch | 0.7.31 | Apache-2.0 | Client-side search indexing for packages, HLRs and dependencies in the dashboard (`resources/flexsearch.js`, inlined into the served dashboard) |
-
-[Charts.css](https://chartscss.org/) is bundled in its minified form under `resources/charts.min.css`. It is inlined into the dashboard page shell (`resources/dashboard.html` -> `src/adacovex-dashboard_template.ads`). The MIT licence text is preserved in the bundle header comment.
 
 [nomnoml](https://github.com/skanaar/nomnoml) is bundled under `resources/nomnoml.js` (71 KB, MIT). It is inlined into the dashboard page shell. It renders the dependency hierarchy as a UML-style diagram. The diagram appears in the alternative view of the **Dependencies** tab (Tree / Diagram toggle). The MIT licence text is preserved in the bundle header comment.
 

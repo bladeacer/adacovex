@@ -3,7 +3,7 @@
   "specVersion": "1.5",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-08-28T22:26:06",
+    "timestamp": "2026-08-28T22:53:10",
     "tools": [
       {"vendor": "bladeacer", "name": "adacovex", "version": "1.33.0"}
     ],
@@ -56,14 +56,6 @@
       },
     {
       "type": "library",
-      "bom-ref": "pkg:generic/charts.min",
-      "name": "charts.min",
-      "language": "CSS",
-      "purl": "pkg:generic/charts.min",
-      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "vendored"}]
-      },
-    {
-      "type": "library",
       "bom-ref": "pkg:npm/@playwright/test@1.62.1",
       "name": "@playwright/test",
       "version": "1.62.1",
@@ -80,7 +72,7 @@
       "version": "16.1.0",
       "language": "Ada",
       "purl": "pkg:alire/gnatprove",
-      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
       },
     {
       "type": "library",
@@ -248,7 +240,7 @@
   "dependencies": [
     {
       "ref": "pkg:alire/covex@1.33.0",
-      "dependsOn": ["pkg:generic/flexsearch", "pkg:generic/graphre", "pkg:generic/nomnoml", "pkg:generic/charts.min", "pkg:npm/@playwright/test@1.62.1", "pkg:alire/gnatprove", "pkg:alire/gnatdoc_bin", "pkg:alire/gnatformat_bin", "pkg:generic/bash", "pkg:generic/curl", "pkg:generic/alr", "pkg:generic/go", "pkg:generic/python3", "pkg:generic/git", "pkg:generic/make", "pkg:generic/jj", "pkg:generic/npm", "pkg:generic/pnpm", "pkg:generic/mandb", "pkg:generic/fossil", "pkg:generic/hg", "pkg:generic/svn", "pkg:generic/node", "pkg:generic/cargo"]
+      "dependsOn": ["pkg:generic/flexsearch", "pkg:generic/graphre", "pkg:generic/nomnoml", "pkg:npm/@playwright/test@1.62.1", "pkg:alire/gnatprove", "pkg:alire/gnatdoc_bin", "pkg:alire/gnatformat_bin", "pkg:generic/bash", "pkg:generic/curl", "pkg:generic/alr", "pkg:generic/go", "pkg:generic/python3", "pkg:generic/git", "pkg:generic/make", "pkg:generic/jj", "pkg:generic/npm", "pkg:generic/pnpm", "pkg:generic/mandb", "pkg:generic/fossil", "pkg:generic/hg", "pkg:generic/svn", "pkg:generic/node", "pkg:generic/cargo"]
     }
   ]
 }

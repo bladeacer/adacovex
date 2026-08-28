@@ -249,6 +249,59 @@ package body Adacovex_Renderer_Tests is
                null;
          end;
       end;
+
+      --  Charts tab charts are hand-rolled: the donut ring is a conic
+      --  gradient green for the covered share (fully green at 100%) with a
+      --  CSS hole, and the proof/test bars are flex rows with a fixed label
+      --  column -- no Charts.css tables, no rotated labels.
+      Proof.Total_VCs := 10;
+      Proof.Proved_VCs := 10;
+      Proof.Flow_Checks := 2;
+      Proof.Flow_Proved := 2;
+      declare
+         S : constant String :=
+           Adacovex.Renderers.HTML.Render_Dashboard
+             (Doc, Proof, Tests, Assess, Pkgs);
+      begin
+         R.Check
+           (Contains (S, "class=""donut"""),
+            "charts: hand-rolled donut ring markup");
+         R.Check
+           (Contains (S, "conic-gradient(var(--pass) 0% 100%)"),
+            "charts: full proof donut is fully green");
+         R.Check
+           (Contains (S, "class=""donut-center"""),
+            "charts: donut has a CSS hole for the value");
+         R.Check
+           (Contains (S, "class=""hbar"""),
+            "charts: hand-rolled bar row markup");
+         R.Check
+           (Contains (S, "class=""hbar-label"""),
+            "charts: bar rows carry a fixed label column");
+         R.Check
+           (Contains (S, "class=""hbar-track"""),
+            "charts: bar rows carry a track");
+         R.Check
+           (not Contains (S, "charts-css"),
+            "charts: no vendored Charts.css markup remains");
+      end;
+
+      --  A partial proof donut splits green (proved) from red (unproved).
+      Proof.Proved_VCs := 8;
+      Proof.Flow_Proved := 1;
+      declare
+         S : constant String :=
+           Adacovex.Renderers.HTML.Render_Dashboard
+             (Doc, Proof, Tests, Assess, Pkgs);
+      begin
+         R.Check
+           (Contains
+              (S, "conic-gradient(var(--pass) 0% 80%, var(--fail) 80% 100%)"),
+            "charts: partial proof donut splits green and red");
+         R.Check
+           (Contains (S, "<em style=""width:50%""></em>"),
+            "charts: partial proof bar shows a red remainder");
+      end;
    end Run;
 
 end Adacovex_Renderer_Tests;

@@ -26,7 +26,7 @@ HLR-RENDER-HTML: HTML dashboard and JSON API
 | Parameter | Description |
 |-----------|-------------|
 | `Doc_Metrics` | Docstring coverage metrics. |
-| `Graph` | Dependency graph for scope pie (empty = skip scope chart). |
+| `Graph` | Dependency graph for the scope ring (empty = skip). |
 | `Proof` | GNATprove proof summary. |
 | `Tests` | Test result summary. |
 
