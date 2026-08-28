@@ -28,6 +28,22 @@
 .nomnoml-wrap svg{max-width:100%;height:auto;display:block;font-family:Helvetica,Arial,sans-serif}.nomnoml-wrap svg [data-name]{cursor:pointer}.nomnoml-wrap svg [data-name]:hover text{font-weight:700}.nomnoml-wrap svg text{user-select:none}.dep-empty{color:var(--muted);font-style:italic;padding:12px}
 /* Charts */
 .chart-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}.chart-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;box-shadow:0 1px 2px rgba(0,0,0,.06);min-width:0}.chart-card h3{margin:0 0 6px;font-size:.92rem}.chart-readout{margin:8px 0 0;text-align:center;color:var(--muted);font-size:.85rem;line-height:1.4;overflow-wrap:anywhere}.chart-readout strong{color:var(--fg)}.chart-meter{position:relative;height:22px;margin:18px 0 8px;border:1px solid var(--border);border-radius:999px;background:var(--th);overflow:hidden}.chart-meter span{display:block;height:100%;background:var(--accent)}.chart-meter b{position:absolute;inset:0;display:grid;place-items:center;color:var(--fg);font-size:.78rem}
+/* Hand-rolled donut ring (conic gradient + CSS hole, the polar-ring
+   pattern): green for the covered share, red for the remainder, centre
+   value + caption inside the hole.  No external chart library. */
+.donut{width:200px;height:200px;border-radius:50%;position:relative;margin:0 auto;flex-shrink:0}
+.donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;z-index:2;background:var(--card);border-radius:50%;width:58%;height:58%;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px var(--border)}
+.donut-center b{font-size:1.45rem;line-height:1;color:var(--fg)}
+.donut-center span{font-size:.72rem;color:var(--muted);margin-top:3px;max-width:90%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Hand-rolled horizontal bar rows: fixed label column (ellipsised),
+   a track with a green fill sized by Part/Total, an optional red
+   remainder, and the value at the right.  No rotated text, no overflow. */
+.hbar{display:flex;align-items:center;gap:10px;margin:7px 0}
+.hbar-label{width:112px;flex-shrink:0;font-size:.85rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right}
+.hbar-track{flex:1;height:16px;border-radius:8px;background:var(--th);overflow:hidden;display:flex;border:1px solid var(--border)}
+.hbar-track i{display:block;height:100%;background:var(--pass)}
+.hbar-track em{display:block;height:100%;background:var(--fail)}
+.hbar-num{width:56px;flex-shrink:0;text-align:right;font-size:.85rem;font-weight:600}
 /* Polar area chart */
 .polar-wrap{display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap}.polar{width:240px;height:240px;border-radius:50%;position:relative;flex-shrink:0}.polar-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;z-index:2;background:var(--card);border-radius:50%;width:46%;height:46%;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px var(--border)}
 .polar-center .polar-rating{font-size:2rem;font-weight:700;line-height:1;color:var(--fg)}

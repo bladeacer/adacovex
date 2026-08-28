@@ -109,12 +109,11 @@ serves requests until the process is interrupted (Ctrl-C).
 The page is a single self-contained document (no external assets), bundled
 into the binary from **modular resources** -- `resources/dashboard.html` is
 just the page skeleton. Author styles and scripts are split into focused
-modules under `resources/css/` (`dashboard.css`, plus the
-`charts-patch.css` overlay that fixes Charts.css rendering on top of the
-vendored `charts.min.css`) and `resources/js/` (`theme.js`, `tabs.js`,
-`deps.js`, `details.js`, `nomnoml.js`, `search.js`).  The vendored
-`charts.min.css` / `graphre.js` / `nomnoml.js` / `flexsearch.js` sit at
-`resources/` and are inlined into the template at build time by
+modules under `resources/css/` (`dashboard.css`, which also styles the
+hand-rolled donut rings and bar charts) and `resources/js/` (`theme.js`,
+`tabs.js`, `deps.js`, `details.js`, `nomnoml.js`, `search.js`).  The
+vendored `graphre.js` / `nomnoml.js` / `flexsearch.js` sit at `resources/`
+and are inlined into the template at build time by
 `tools/gen-dashboard.py`, which also **minifies** the author CSS/JS
 (comments and whitespace stripped, vendored files are already minified and
 inlined byte-for-byte).  Edit the individual `resources/` files, never the
@@ -142,9 +141,9 @@ keyboard-accessible, persisted in `localStorage`):
   criterion, and the HLR traceability table (package -> tags).
 - **Dependencies** -- a scope-distribution **stacked bar** at the top, then
   an interactive dependency tree/graph (see below).
-- **Charts** -- Charts.css metrics (see below).
-- **Credits** -- third-party libraries used by the dashboard (Charts.css,
-  nomnoml, graphre, FlexSearch) with versions, licences, links and the
+- **Charts** -- hand-rolled metrics charts (see below).
+- **Credits** -- third-party libraries used by the dashboard (nomnoml,
+  graphre, FlexSearch) with versions, licences, links and the
   THIRD_PARTY_NOTICES pointer.  The Playwright row (e2e test tooling) fills
   its version from the resolved dependency graph when the target declares a
   playwright package (e.g. `@playwright/test@1.62.1`).
@@ -247,42 +246,43 @@ The same data is available headlessly at `/api/deps` and via
 
 ### Metrics charts
 
-The **Charts** tab renders six cards, each a distinct chart type. The
-vendored [Charts.css](https://chartscss.org/) framework (v1.2.0, MIT, inlined
-into the page shell) drives the CSS-only cards. All values are unitless `0..1`
-`--size` / `--start` / `--end` fractions (previously `0..100` made every pie
-slice a full circle) and the donut shows proved vs *unproved* slices
-(previously proved vs total duplicated the proved arc):
+The **Charts** tab renders six cards. The charts are hand-rolled (no
+vendored chart library): donut rings are a conic gradient with a CSS hole
+(the same pattern as the polar ring) and bars are flex rows with a fixed
+label column, so labels never rotate or overflow and the ring colour
+reflects the covered share (fully green at 100%):
 
 - **SPARK Proof** -- *donut* of proved vs unproved VCs (`720/720` shows a
-  full proved arc. `680/720` shows `94%` proved + `40` unproved).
-- **Proof Check Types** -- *column* of proved checks per category (flow,
+  full green ring. `680/720` shows `94%` green + `6%` red unproved).
+- **Proof Check Types** -- *bars* of proved checks per category (flow,
   init, runtime, assertions, functional, termination), each bar normalised
-  to its category total.  The numbers mirror gnatprove's own summary table:
-  on gnatprove 16 the Flow category sums the "Data Dependencies" and
-  "Flow Dependencies" rows, and every category's proved count is
-  Total - Justified - Unproved, so the rows sum exactly to the Total.
-- **Test Results by Category** -- *bar* of per-category test counts
-  (normalised to the largest category; the chart height scales with the
-  category count via a `--rows` hint, so long suites never clip their
-  last rows).
+  to its category total, green proved share with a red unproved remainder.
+  The numbers mirror gnatprove's own summary table: on gnatprove 16 the
+  Flow category sums the "Data Dependencies" and "Flow Dependencies" rows,
+  and every category's proved count is Total - Justified - Unproved, so the
+  rows sum exactly to the Total.
+- **Test Results by Category** -- *bars* of per-category test counts
+  (normalised to the largest category; long category names ellipsise in
+  the fixed label column instead of overflowing).
 - **Docstring Coverage** -- *radial gauge* (half-circle SVG arc) of
   documented vs total subprograms.
-- **Tests Pass/Fail** -- *pie* of passed vs failed tests.
+- **Tests Pass/Fail** -- *donut* of passed vs failed tests (fully green
+  when every test passes).
 - **Dependencies by Scope** -- *polar ring* of base / dev / transitive /
-  vendored / system components (conic-gradient + CSS hole, `--scope-*` theme
-  variables) with a legend. Skipped when the graph is empty.
+  vendored / system / test components (conic-gradient + CSS hole,
+  `--scope-*` theme variables) with a legend. Skipped when the graph is
+  empty.
 
-Each of the six cards is a different type (donut / column / bar / radial /
-pie / polar) so the tab shows the full feature set of Charts.css without
-duplicating a data story.  The per-check-category SPARK radar lives on the
-**Overview** tab instead (see below).  No JavaScript is required for the
-Charts.css cards (pure CSS). The radial gauge and the scope ring are inline
-SVG/CSS and follow the light/dark theme automatically.  The surrounding grid
-(`chart-grid`) is responsive and the page container is `max-width:1180px` so
-large monitors do not stretch cards.  Pies/rings are used where a
-part-to-whole distribution is the point. Bars/columns are used where a
-max-normalised comparison across categories is the point.
+Each of the six cards is a different type (donut / bars / bars / radial /
+donut / polar) so the tab reads at a glance without duplicating a data
+story.  The per-check-category SPARK radar lives on the **Overview** tab
+instead (see below).  No JavaScript is required for the charts (pure
+CSS/SVG). The radial gauge and the scope ring follow the light/dark theme
+automatically via CSS variables.  The surrounding grid (`chart-grid`) is
+responsive and the page container is `max-width:1180px` so large monitors
+do not stretch cards.  Rings are used where a part-to-whole distribution
+is the point. Bars are used where a max-normalised comparison across
+categories is the point.
 
 ### Robustness tier
 
@@ -332,7 +332,7 @@ assessment without parsing HTML:
 
 ```json
 {"spark_level":"Platinum","total_vcs":723,"proved_vcs":723,
- "tests_passed":989,"tests_failed":0,"doc_coverage":100,
+ "tests_passed":998,"tests_failed":0,"doc_coverage":100,
  "standard":"all","level":"DAL-C","dal_status":"Achieved",
  "standards":{"DO-178C":{"level":"DAL-C","status":"Achieved"},
                "ISO 26262":{"level":"ASIL B","status":"Achieved"},

@@ -233,7 +233,7 @@ repeat run serve the licence, version, and website from disk with no subprocess
 spawn, and two projects that share a cache directory never serve each other's
 resolved licence or version.
 
-Bundled dashboard assets (Charts.css, FlexSearch, nomnoml, graphre) resolve
+Bundled dashboard assets (FlexSearch, nomnoml, graphre) resolve
 their licence and website live from the package registry when a loose vendored
 copy is scanned, preferring `pnpm show <pkg> license` and falling back to
 `npm`, `yarn`, then `bun` -- the same preference chain as every JavaScript

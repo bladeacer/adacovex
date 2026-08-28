@@ -63,20 +63,18 @@ package Adacovex.Renderers.HTML is
       return String
    with Post => Render_Dashboard'Result'Length > 0, Global => null;
 
-   --  Render the Chart.css metrics section (multiple chart cards) for the
+   --  Render the metrics charts section (multiple chart cards) for the
    --  dashboard.  The section shows a donut of SPARK proof (proved vs
-   --  unproved VCs) and a column chart of proved checks per category.  It
-   --  shows a bar chart of the test categories (pass vs fail).  It shows a
-   --  docstring-coverage bar and a pie of dependency scopes.  It shows a pie
-   --  of test pass/fail distribution.  The markup uses the vendored
-   --  Charts.css framework (resources/charts.min.css, inlined into the
-   --  dashboard template).  The page stays self-contained and dependency-free
-   --  at runtime.  Bar sizes are emitted as 0..1 fractions (not 0..100).  The
-   --  CSS then scales correctly.
+   --  unproved VCs) and bars of proved checks per category.  It shows a
+   --  bar chart of the test categories and a docstring-coverage meter, a
+   --  donut of test pass/fail distribution, and a polar ring of dependency
+   --  scopes.  The charts are hand-rolled (SVG-less CSS donuts and flex
+   --  bars) so the page stays self-contained and dependency-free at
+   --  runtime -- no external chart library is bundled.
    --  @param Doc_Metrics  Docstring coverage metrics.
    --  @param Proof  GNATprove proof summary.
    --  @param Tests  Test result summary.
-   --  @param Graph  Dependency graph for scope pie (empty = skip scope chart).
+   --  @param Graph  Dependency graph for the scope ring (empty = skip).
    --  @return HTML fragment with the chart cards.
    function Render_Charts
      (Doc_Metrics : Types.Docstring_Metrics;

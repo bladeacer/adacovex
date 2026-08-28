@@ -92,25 +92,53 @@ graph scrolls horizontally inside the card.  Hovering a node shows a
 tooltip with the dependency name and version.  "Download SVG" now
 serialises the rendered SVG instead of rasterising the canvas.
 
-### C7: Overview tests chart readout
+### C7: Hand-rolled charts replace the vendored Charts.css
 
-The Overview tab's Tests donut chart now carries the same readout line as
-the Charts tab (`N passed, M failed` below the ring), so the pass/fail
-numbers stay visible when the pie labels have no room.
+The dashboard's metrics charts no longer depend on the vendored
+[Charts.css](https://chartscss.org/) framework (`resources/charts.min.css`
+and the `charts-patch.css` overlay are deleted; the Credits tab and
+THIRD_PARTY_NOTICES drop the entry).  All six chart cards are now
+hand-rolled with plain CSS/SVG, which fixes the rendering problems the
+framework introduced:
+
+- **Donuts** (SPARK Proof, Tests Pass/Fail, Overview Tests, Overview Doc
+  Coverage) are conic-gradient rings with a CSS hole -- the same pattern
+  as the polar ring.  The ring colour reflects the covered share: fully
+  green at 100% (previously every slice resolved to the same green,
+  so partial coverage never showed red), with green + red segments for
+  partial coverage.  The centre hole carries the value and caption, and
+  because the ring is a fixed-size block (not an absolutely positioned
+  table cell) the readout line below never overlaps the chart.
+- **Proof Check Types** and **Test Results by Category** are flex rows
+  with a fixed, ellipsising label column and a track bar (green proved
+  share with a red unproved remainder for proof categories).  The old
+  column chart rotated its labels with a custom `rotate-labels` class
+  that Charts.css does not define, which produced overlapping label
+  boxes and text overflow; the new rows never rotate and long category
+  names ellipsise instead of overflowing.
+
+The Overview tab's Tests donut also keeps its readout line
+(`N passed, M failed` below the ring), so the pass/fail numbers stay
+visible.  The charts remain dependency-free and follow the theme via CSS
+variables.
 
 ### C8: Dashboard HTML/CSS/JS modularised
 
 The single authored `dashboard.js` and `dashboard.css` are split into
 per-concern modules under `resources/js/` (theme, tabs, deps, details,
-nomnoml diagram, search) and `resources/css/` (base styles plus a
-`charts-patch.css` layered on top of the vendored Charts.css, giving the
-patch an explicit cascade position after the vendored file).  The page
-shell inlines each module at its own placeholder; `tools/gen-dashboard.py`
-bundles them in dependency order (vendored libraries first, then authored
-modules).  The Charts.css patch keeps labels and data chips inside their
-columns, upright pie labels, and theme-correct chart colours.
+nomnoml diagram, search) and `resources/css/` (base styles including the
+hand-rolled donut/bar chart styles).  The page shell inlines each module
+at its own placeholder; `tools/gen-dashboard.py` bundles them in
+dependency order (vendored libraries first, then authored modules).
 
 ## Test Suite
+
+Native suite grows to 998 tests (14 categories).  The HTML/Markdown
+renderer suite adds checks that the dashboard charts are hand-rolled:
+full and partial donut gradients (green at 100%, green+red split for
+partial proof), the bar-row label/track markup, and that no
+`charts-css` markup remains in the served page.
+
 
 989 tests (was 973).  The SBOM generator suite gained 16 tests:
 
