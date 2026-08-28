@@ -3,17 +3,17 @@
   "specVersion": "1.5",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-08-28T21:00:27",
+    "timestamp": "2026-08-28T21:50:10",
     "tools": [
-      {"vendor": "bladeacer", "name": "adacovex", "version": "1.31.0"}
+      {"vendor": "bladeacer", "name": "adacovex", "version": "1.32.0"}
     ],
     "component": {
       "type": "application",
-      "bom-ref": "pkg:alire/covex@1.31.0",
+      "bom-ref": "pkg:alire/covex@1.32.0",
       "name": "covex",
-      "version": "1.31.0",
+      "version": "1.32.0",
       "language": "Ada; Python; JavaScript",
-      "purl": "pkg:alire/covex@1.31.0",
+      "purl": "pkg:alire/covex@1.32.0",
       "licenses": [{"license": {"id": "Apache-2.0"}}],
       "description": "Ada/SPARK coverage, proof, multi-standard compliance tool",
       "externalReferences": [{"url": "https://github.com/bladeacer/adacovex", "type": "website"}],
@@ -82,7 +82,7 @@
       "name": "gnatprove",
       "language": "Ada",
       "purl": "pkg:alire/gnatprove",
-      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
       },
     {
       "type": "library",
@@ -246,7 +246,7 @@
   ],
   "dependencies": [
     {
-      "ref": "pkg:alire/covex@1.31.0",
+      "ref": "pkg:alire/covex@1.32.0",
       "dependsOn": ["pkg:npm/flexsearch@0.7.31", "pkg:npm/graphre@0.1.3", "pkg:npm/nomnoml@1.7.0", "pkg:npm/charts.css@1.2.0", "pkg:npm/@playwright/test@1.62.1", "pkg:alire/gnatprove", "pkg:alire/gnatdoc_bin", "pkg:alire/gnatformat_bin", "pkg:generic/bash", "pkg:generic/curl", "pkg:generic/alr", "pkg:generic/go", "pkg:generic/python3", "pkg:generic/git", "pkg:generic/make", "pkg:generic/jj", "pkg:generic/npm", "pkg:generic/pnpm", "pkg:generic/mandb", "pkg:generic/fossil", "pkg:generic/hg", "pkg:generic/svn", "pkg:generic/node", "pkg:generic/cargo"]
     }
   ]

@@ -21,8 +21,9 @@ test.describe('Dashboard layout', () => {
   test('overview tab shows badges and metrics', async ({ page }) => {
     await page.click('[data-tab="overview"]');
     await expect(page.locator('.badge-container')).toBeVisible();
-    // Five cards: Robustness, SPARK Proof, Tests, Test Categories, Doc Coverage.
-    await expect(page.locator('#tab-overview .chart-card')).toHaveCount(4, { timeout: 5000 });
+    // Six cards: Robustness, SPARK Proof, Tests, Test Categories, Doc Coverage,
+    // Dependency Scope.
+    await expect(page.locator('#tab-overview .chart-card')).toHaveCount(5, { timeout: 5000 });
   });
 
   test('proof tab shows SPARK level and VCs', async ({ page }) => {

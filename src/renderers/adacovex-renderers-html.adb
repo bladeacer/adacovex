@@ -816,6 +816,103 @@ package body Adacovex.Renderers.HTML is
       return To_String (R);
    end Render_Deps_HTML;
 
+   --  Overview dependency-scope polar chart markup.  Extracted from the overview
+   --  builder so the parent stays under the cyclomatic cap.  Returns the
+   --  conic-gradient ring + centre total + per-scope legend, or an empty
+   --  string when the graph has no components.
+   function Overview_Scope_Chart
+     (Graph : Types.Implementation.Component_Vectors.Vector) return String
+   is
+      R : Unbounded_String;
+
+      procedure Put (S : String) is
+      begin
+         Append (R, S);
+      end Put;
+
+      C_Base  : Natural := 0;
+      C_Dev   : Natural := 0;
+      C_Trans : Natural := 0;
+      C_Vend  : Natural := 0;
+      C_Sys   : Natural := 0;
+      Total   : Natural := 0;
+   begin
+      for I in 1 .. Integer (Graph.Length) loop
+         case Graph (I).Scope is
+            when Types.Scope_Base       =>
+               C_Base := C_Base + 1;
+
+            when Types.Scope_Dev        =>
+               C_Dev := C_Dev + 1;
+
+            when Types.Scope_Transitive =>
+               C_Trans := C_Trans + 1;
+
+            when Types.Scope_Vendored   =>
+               C_Vend := C_Vend + 1;
+
+            when Types.Scope_System     =>
+               C_Sys := C_Sys + 1;
+         end case;
+         Total := Total + 1;
+      end loop;
+      if Total = 0 then
+         return "";
+      end if;
+      declare
+         S1 : constant Natural := (C_Base * 100) / Total;
+         S2 : constant Natural := ((C_Base + C_Dev) * 100) / Total;
+         S3 : constant Natural := ((C_Base + C_Dev + C_Trans) * 100) / Total;
+         S4 : constant Natural :=
+           ((C_Base + C_Dev + C_Trans + C_Vend) * 100) / Total;
+      begin
+         Put ("<div class=""chart-card""><h3>Dependency Scope</h3>");
+         Put ("<div class=""polar-wrap"">");
+         Put ("<div class=""polar"" role=""img"" aria-label=""");
+         Put ("Dependency scope distribution"" style=""background:");
+         Put ("conic-gradient(var(--scope-base) 0% ");
+         Put (Img (S1));
+         Put ("%, var(--scope-dev) ");
+         Put (Img (S1));
+         Put ("% ");
+         Put (Img (S2));
+         Put ("%, var(--scope-trans) ");
+         Put (Img (S2));
+         Put ("% ");
+         Put (Img (S3));
+         Put ("%, var(--scope-vend) ");
+         Put (Img (S3));
+         Put ("% ");
+         Put (Img (S4));
+         Put ("%, var(--scope-system) ");
+         Put (Img (S4));
+         Put ("% 100%)"">");
+         Put ("<div class=""polar-center"">");
+         Put ("<div class=""polar-rating"">");
+         Put (Img (Total));
+         Put ("</div>");
+         Put ("<div class=""polar-label"">deps</div>");
+         Put ("</div></div>");
+         Put ("<ul class=""polar-legend"">");
+         Put ("<li style=""--i:var(--scope-base)""><i></i>base <b>");
+         Put (Img (C_Base));
+         Put ("</b></li><li style=""--i:var(--scope-dev)""><i></i>dev <b>");
+         Put (Img (C_Dev));
+         Put
+           ("</b></li><li style=""--i:var(--scope-trans)""><i></i>transitive <b>");
+         Put (Img (C_Trans));
+         Put
+           ("</b></li><li style=""--i:var(--scope-vend)""><i></i>vendored <b>");
+         Put (Img (C_Vend));
+         Put
+           ("</b></li><li style=""--i:var(--scope-system)""><i></i>system <b>");
+         Put (Img (C_Sys));
+         Put ("</b></li></ul>");
+         Put ("</div></div>");
+      end;
+      return To_String (R);
+   end Overview_Scope_Chart;
+
    --  Shared tabbed dashboard builder.
    function Render_Dashboard_Internal
      (Doc_Metrics   : Types.Docstring_Metrics;
@@ -1272,6 +1369,12 @@ package body Adacovex.Renderers.HTML is
                Put_O ("</p></div>");
             end if;
          end;
+         Put_O ("</div>");
+
+         --  Dependency scope distribution (overview): a compact polar ring that
+         --  breaks the resolved graph down by scope at a glance.
+         Put_O (Overview_Scope_Chart (Graph));
+
          Put_O ("</div>");
          Put_O ("</div>");
       end;
