@@ -16,14 +16,19 @@ Steps, in order:
    from alire-dev.toml (or ADACOVEX_VERSION); byte-identical when unchanged.
 2. `python3 tools/gen-dashboard.py` -- regenerate
    src/adacovex-dashboard_template.ads from resources/.
-3. `alr build` with stdout+stderr captured, the log filtered by
+3. `python3 tools/gen-docs.py` -- regenerate
+   src/adacovex-docs_template.ads (the bundled offline manual) from the
+   mdBook docs source; byte-identical when the docs are unchanged.
+4. `alr build` with stdout+stderr captured, the log filtered by
    tools/filter-sframe.py (the benign SFrame notice), and the filtered
    output printed to stdout.
-4. On success only, symlink `bin/covex` -> `bin/adacovex` (the Alire
+5. On success only, symlink `bin/covex` -> `bin/adacovex` (the Alire
    crate alias), so both names resolve to the freshly built binary.
 
 Exit code is alr's (0 on success).  A failure in any earlier step aborts
-the build like the old `&&`-chained recipe did.
+the build like the old `&&`-chained recipe did.  gen-docs.py never fails
+when mdbook is missing (it keeps the committed spec), so the build still
+works on a machine without the docs toolchain.
 """
 
 import argparse
@@ -59,6 +64,11 @@ def build() -> int:
 
     print("=== Regenerating dashboard template ===")
     rc = run([sys.executable, "tools/gen-dashboard.py"])
+    if rc != 0:
+        return rc
+
+    print("=== Regenerating bundled offline manual ===")
+    rc = run([sys.executable, "tools/gen-docs.py"])
     if rc != 0:
         return rc
 

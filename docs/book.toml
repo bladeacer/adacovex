@@ -1,0 +1,27 @@
+# mdBook configuration for the adacovex manual.
+#
+# Read the Docs builds this book (see .readthedocs.yaml: `mdbook build docs`).
+# The source lives in this directory (src = "."), so every Markdown page is
+# the book source and SUMMARY.md at the root is the table of contents.  The
+# generated sub-trees (api-docs/, proof/, compliance/, badges/, changelogs/)
+# are included through their index pages so the table of contents stays small.
+#
+# The default theme is used (the built-in "rus" light / "coal" dark pair);
+# no custom assets are bundled because the manual must build offline with no
+# font or image downloads.
+
+[book]
+title = "adacovex"
+description = "Ada Coverage and Verification Tool manual"
+authors = ["bladeacer"]
+language = "en"
+src = "."
+
+[output.html]
+# Keep the default mdBook look; the theme follows the reader's system
+# preference between the built-in light and dark variants.
+default-theme = "light"
+preferred-dark-theme = "coal"
+
+# Print support: the single print.html page is the basis of the bundled
+# offline manual that --serve exposes at /docs/.

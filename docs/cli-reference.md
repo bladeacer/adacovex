@@ -221,7 +221,7 @@ writes a single SBOM at an explicit path and exits.
 
 ### `--serve`
 
-A **switch**: when given, adacovex scans and assesses the target, then starts the built-in HTTP/1.1 web dashboard on `--port` (default `8080`) and blocks until interrupted. Passing `--serve` is the only way to start the server; omitting it (the default, `off`) renders and exits without serving. There is no `--no-serve`, because the flag already controls it. It serves an HTML dashboard at `/`, a JSON API at `/api/metrics`, and the SVG badges at `/badge/*.svg`.
+A **switch**: when given, adacovex scans and assesses the target, then starts the built-in HTTP/1.1 web dashboard on `--port` (default `8080`) and blocks until interrupted. Passing `--serve` is the only way to start the server; omitting it (the default, `off`) renders and exits without serving. There is no `--no-serve`, because the flag already controls it. It serves an HTML dashboard at `/`, a JSON API at `/api/metrics`, the SVG badges at `/badge/*.svg`, and the bundled offline manual at `/docs`.
 
 The dashboard is standard-aware (it defaults to all standards) and supports light, dark, and system themes.
 
@@ -369,7 +369,7 @@ target does not meet the required level:
 
 ```bash
 adacovex --target=. --require-spark=Platinum --require-docstrings=100 \
-         --require-tests=1169 --require-proof=100
+         --require-tests=1173 --require-proof=100
 ```
 
 - `require-spark` compares the honest assessed SPARK level (Stone..Platinum).

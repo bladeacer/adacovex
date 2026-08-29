@@ -92,8 +92,12 @@ tr.other-std{opacity:.72}
 .stacked-bar{display:flex;height:24px;border-radius:6px;overflow:hidden;border:1px solid var(--border);margin:8px 0}.stacked-bar i{display:block;height:100%}
 /* Responsive */
 @media(max-width:640px){.polar{width:180px;height:180px}.radar-split{flex-direction:column;align-items:flex-start}.compliance-gauge-wrap{flex-direction:column;align-items:flex-start}}
-/* API playground + vendored yace JSON tokens */
+/* API playground + vendored yace JSON tokens.  Token colours follow the
+   active dashboard theme, not the OS: each theme gets an explicit block so a
+   pinned theme (for example ?theme=light on a dark OS) overrides the
+   @media (prefers-color-scheme: dark) block below. */
 :root{--tok-prop:#0b6bcb;--tok-str:#1a7f37;--tok-num:#953800;--tok-kw:#cf222e;--tok-punc:#57606a;--tok-com:#6a737d}
+:root[data-theme="light"]{--tok-prop:#0b6bcb;--tok-str:#1a7f37;--tok-num:#953800;--tok-kw:#cf222e;--tok-punc:#57606a;--tok-com:#6a737d}
 @media (prefers-color-scheme:dark){:root{--tok-prop:#79c0ff;--tok-str:#7ee787;--tok-num:#ffa657;--tok-kw:#ff7b72;--tok-punc:#c9d1d9;--tok-com:#8b949e}}
 :root[data-theme="dark"]{--tok-prop:#79c0ff;--tok-str:#7ee787;--tok-num:#ffa657;--tok-kw:#ff7b72;--tok-punc:#c9d1d9;--tok-com:#8b949e}
 .api-intro{font-size:.88rem;color:var(--muted);margin-bottom:12px;line-height:1.5}
@@ -107,6 +111,8 @@ tr.other-std{opacity:.72}
 .api-btn.active{border-color:var(--accent);background:var(--th)}
 .api-method{font-size:.7rem;font-weight:700;color:var(--pass);border:1px solid var(--pass);border-radius:4px;padding:0 4px;line-height:1.5}
 .api-path{font-family:monospace;font-weight:600;font-size:.86rem}
+.api-path-link{color:var(--accent);text-decoration:none}.api-path-link:hover{text-decoration:underline;color:var(--accent)}
+.api-json-link{color:var(--accent);text-decoration:underline}.api-json-link:hover{color:var(--tok-prop)}
 .api-desc{flex-basis:100%;font-size:.78rem;color:var(--muted)}
 .api-result{border-top:1px solid var(--border);padding-top:16px;margin-top:12px}
 .api-result-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}

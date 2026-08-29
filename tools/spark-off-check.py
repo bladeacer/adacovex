@@ -36,6 +36,17 @@ EXEMPT: Tuple[str, ...] = (
     "src/core/adacovex-complexity.ads",
 )
 
+# Generated template constants: single big string literals that embed the
+# dashboard HTML / offline manual prose (built from resources/ and docs/ by
+# tools/gen-dashboard.py and tools/gen-docs.py).  They are data, not
+# hand-written Ada, and the manual page legitimately quotes the phrase
+# `SPARK_Mode (Off)`; the real source (resources/, docs/) is covered by the
+# CSS/ASCII gates and the docs-check gate instead.
+GENERATED: Tuple[str, ...] = (
+    "src/adacovex-dashboard_template.ads",
+    "src/adacovex-docs_template.ads",
+)
+
 # Matches either the pragma form or the aspect form.
 PATTERN = re.compile(r"pragma\s+SPARK_Mode\s*\(\s*Off\s*\)|SPARK_Mode\s*=>\s*Off")
 
@@ -48,6 +59,9 @@ def violations() -> List[Tuple[str, int, str]]:
         rel = path.relative_to(ROOT).as_posix()
         if any(rel == exempt or rel.startswith(exempt + "/")
                for exempt in EXEMPT):
+            continue
+        if any(rel == generated or rel.startswith(generated + "/")
+               for generated in GENERATED):
             continue
         try:
             text = path.read_text(encoding="utf-8")

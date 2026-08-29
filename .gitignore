@@ -3,6 +3,7 @@ obj/
 .alire/
 config/
 docs/api/
+docs/book/
 dist/
 adacovex-*.tar.gz
 *.tmp

@@ -667,6 +667,7 @@ package body Adacovex.Complexity is
                        and then not Is_Excluded (Ext, Excludes)
                        and then N /= "adacovex_version_info.ads"
                        and then N /= "adacovex-dashboard_template.ads"
+                       and then N /= "adacovex-docs_template.ads"
                      then
                         declare
                            Item : File_Metrics;

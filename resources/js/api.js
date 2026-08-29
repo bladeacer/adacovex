@@ -30,6 +30,24 @@ function prettyJson(s){
   catch (e) { return s; }
 }
 
+// After yace highlighting, turn quoted values that look like this server's
+// endpoint paths (/api/... or /badge/...) into clickable links, so the JSON
+// output side is navigable: a user can jump straight from a URL in the
+// payload to the live endpoint.  Works on the highlighted HTML: a JSON string
+// value renders as a yace-tok--str span, and we wrap its inner text when it
+// begins with a known route prefix.
+function linkifyEndpointPaths(highlighted){
+  return highlighted.replace(/(yace-tok--str\">)((&#34;|&quot;)?\/api\/[^<]+|(&#34;|&quot;)?\/badge\/[^<]+|(&#34;|&quot;)?\/docs)(<\/span>)/g,
+    function(_m, open, path, q1, q2, q3, close){
+      var quote = q1 || q2 || q3 || '';
+      var bare = path.replace(quote, '').trim();
+      if (!bare) return _m;
+      return open + quote + '<a class="api-json-link" href="' + bare +
+        '" target="_blank" rel="noopener">' + bare + '</a>' + close;
+    });
+}
+
+
 function el(tag, cls, text){
   var n = document.createElement(tag);
   if (cls) n.className = cls;
@@ -74,7 +92,19 @@ function addGroup(title, endpoints){
     var b = el('button', 'api-btn');
     b.type = 'button';
     b.appendChild(el('span', 'api-method', e.method));
-    b.appendChild(el('span', 'api-path', e.path));
+    // The path is a real clickable link to the endpoint itself, so the doc
+    // list doubles as navigation: clicking the path opens the raw URL, while
+    // clicking elsewhere on the button still runs it live in the playground.
+    var pathA = document.createElement('a');
+    pathA.className = 'api-path api-path-link';
+    pathA.href = e.path;
+    pathA.textContent = e.path;
+    pathA.setAttribute('target', '_blank');
+    pathA.setAttribute('rel', 'noopener');
+    pathA.title = 'Open ' + e.method + ' ' + e.path + ' in a new tab';
+    pathA.setAttribute('aria-label', 'Open endpoint ' + e.path);
+    pathA.addEventListener('click', function(ev){ ev.stopPropagation(); });
+    b.appendChild(pathA);
     b.appendChild(el('span', 'api-desc', e.description || ''));
     b.addEventListener('click', function(){ run(e, b); });
     list.appendChild(b);
@@ -159,7 +189,7 @@ function run(e, pressedBtn){
     pre.setAttribute('tabindex','0');
     if (req.kind === 'json') {
       var pretty = prettyJson(text);
-      if (HL) pre.innerHTML = HL(pretty);
+      if (HL) pre.innerHTML = linkifyEndpointPaths(HL(pretty));
       else pre.textContent = pretty;
     } else if (req.kind === 'svg') {
       var img = el('div', 'api-svg-preview');

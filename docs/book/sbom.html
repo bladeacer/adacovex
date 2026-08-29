@@ -1,0 +1,525 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>SBOM - adacovex</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Ada Coverage and Verification Tool manual">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-e96d0476.css">
+        <link rel="stylesheet" href="css/chrome-d279d366.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "coal";
+            window.path_to_searchindex_js = "searchindex-10fd9022.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc-22a96a46.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">adacovex</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="the-sbom-subcommand"><a class="header" href="#the-sbom-subcommand">The <code>sbom</code> subcommand</a></h1>
+<h2 id="when-and-why-to-generate-an-sbom"><a class="header" href="#when-and-why-to-generate-an-sbom">When and why to generate an SBOM</a></h2>
+<p>A Software Bill of Materials (SBOM) is a structured inventory of every
+component in your project, plus its provenance, licence, and (in adacovex’s
+case) its SPARK proof level and compliance context. Generate one in these
+cases:</p>
+<ul>
+<li><strong>Auditing or certifying</strong> – an SBOM is a standard artifact for safety
+certification (DO-178C, ISO 26262, IEC 62304). It shows the auditor exactly
+which Ada/Alire components are in scope and which are proved / not proved.</li>
+<li><strong>Shifting left on supply-chain security</strong> – the dependency graph exposes
+transitive dependencies, their licences, and their PURLs so you can review
+them before a release.</li>
+<li><strong>Embedding in CI</strong> – the proof-aware SBOM carries the assessed standard and
+level, so downstream tooling (policy engines, compliance dashboards) can
+consume it without re-parsing markdown reports.</li>
+<li><strong>Reproducible builds</strong> – adacovex honours <code>SOURCE_DATE_EPOCH</code>, so the SBOM
+timestamp is deterministic when tied to a git commit.</li>
+</ul>
+<p><code>adacovex sbom</code> resolves the target project’s dependency graph from its Alire
+manifest (<code>alire.toml</code> / <code>alire-dev.toml</code>), the solved-crate list in
+<code>alire/alire.lock</code>, and the root <code>.gpr</code> <code>with</code> clauses, then writes a
+proof-aware software bill of materials in CycloneDX 1.5 JSON, SPDX 2.3 JSON,
+or Markdown.</p>
+<h2 id="how-to-read-the-output"><a class="header" href="#how-to-read-the-output">How to read the output</a></h2>
+<p>Choose the format that matches your toolchain:</p>
+<ul>
+<li><strong>CycloneDX 1.5 JSON</strong> (<code>--format=cyclonedx-json</code>) – drop into any CycloneDX
+consumer (Dependency-Track, OWASP Dependency-Check, and more). The root
+component
+carries <code>adacovex:proof_level</code>, <code>adacovex:standard</code>, <code>adacovex:dal_target</code>,
+and <code>adacovex:level</code>. Every dependency has a <code>language</code> field inferred from
+file extensions or declared ecosystems.</li>
+<li><strong>SPDX 2.3 JSON</strong> (<code>--format=spdx-json</code>) – compatible with SPDX-aware tools
+(FOSSA, Snyk, ScanCode). The adacovex properties appear as
+<code>attributionTexts</code> on the root package.</li>
+<li><strong>Markdown</strong> (<code>--format=md</code>) – human-readable table, useful for audits and
+reports. Default path is <code>&lt;target&gt;/docs/compliance/SBOM.md</code>.</li>
+</ul>
+<h3 id="key-fields"><a class="header" href="#key-fields">Key fields</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Where it appears</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>adacovex:proof_level</code></td><td>Root component</td><td>Assessed SPARK level (<code>Stone</code> .. <code>Platinum</code>)</td></tr>
+<tr><td><code>adacovex:standard</code></td><td>Root component</td><td>Compliance standard (<code>DO-178C</code>, <code>ISO 26262</code>, <code>IEC 62304</code>)</td></tr>
+<tr><td><code>adacovex:dal_target</code></td><td>Root component</td><td>Shared rigour tier (<code>DAL-A</code> .. <code>DAL-E</code>)</td></tr>
+<tr><td><code>adacovex:level</code></td><td>Root component</td><td>Standard-specific label (<code>DAL-C</code>, <code>ASIL B</code>, <code>Class A</code>)</td></tr>
+<tr><td><code>language</code></td><td>Every component</td><td>Implementation language(s) inferred from file extensions</td></tr>
+<tr><td><code>purl</code></td><td>Every component</td><td>Package URL for registry linking</td></tr>
+</tbody>
+</table>
+</div>
+<p>Dependencies report <code>adacovex:proof_level = "Not proved"</code> because adacovex only
+proves the target itself. The SBOM is mutually exclusive with <code>--compare-base</code>
+and <code>--coverage-delta</code>.</p>
+<h2 id="usage"><a class="header" href="#usage">Usage</a></h2>
+<pre><code>adacovex sbom [--format=cyclonedx-json|spdx-json|md] [--out=PATH]
+           [--standard=NAME|--dal=LEVEL|--asil=LEVEL|--class=LEVEL]
+</code></pre>
+<ul>
+<li><strong>Default output</strong>: <code>&lt;target&gt;/sbom.json</code> for <code>cyclonedx-json</code>,
+<code>&lt;target&gt;/sbom.spdx.json</code> for <code>spdx-json</code>, and
+<code>&lt;target&gt;/docs/compliance/SBOM.md</code> for <code>md</code>. The containing directory is
+created automatically.</li>
+<li><strong>Exit code</strong>: <code>0</code> when the SBOM was written, <code>1</code> otherwise. If the target
+has no Alire manifest the SBOM cannot be generated (the GitHub Action
+reports this as a warning without failing the job).</li>
+</ul>
+<h2 id="standard-awareness"><a class="header" href="#standard-awareness">Standard-awareness</a></h2>
+<p>The <code>sbom</code> subcommand accepts the same standard flags as the assessment
+(<code>--standard</code>, <code>--dal</code>, <code>--asil</code>, <code>--class</code>) and <strong>defaults to all
+standards</strong>: without an explicit standard flag the SBOM carries the joined
+DO-178C / ISO 26262 / IEC 62304 properties at the shared DAL tier.
+<code>--standard=iso26262</code> / <code>--asil=B</code> narrows it to ISO 26262 at ASIL B, and
+<code>--class=A</code> to IEC 62304 at Class A. See <a href="standards.html">Standards</a> for the
+cross-standard tier mapping.</p>
+<h2 id="properties"><a class="header" href="#properties">Properties</a></h2>
+<p>Only the root component – the project adacovex actually assessed – carries:</p>
+<ul>
+<li><code>adacovex:proof_level</code> – <code>Stone</code>..<code>Platinum</code>, the honest assessed level.</li>
+<li><code>adacovex:standard</code> – <code>DO-178C</code> / <code>ISO 26262</code> / <code>IEC 62304</code>.</li>
+<li><code>adacovex:dal_target</code> – <code>DAL-A</code>..<code>DAL-D</code> (omitted for <code>DAL-E</code>).</li>
+<li><code>adacovex:level</code> – the standard-specific label (<code>DAL-C</code> / <code>ASIL B</code> /
+<code>Class A</code>, omitted for <code>DAL-E</code>).</li>
+</ul>
+<p>Dependency components report <code>adacovex:proof_level = "Not proved"</code> (adacovex
+only proves the target itself, never third-party dependencies). Properties are
+encoded as <code>attributionTexts</code> in SPDX.</p>
+<h2 id="determinism"><a class="header" href="#determinism">Determinism</a></h2>
+<p>The <code>metadata.timestamp</code> / <code>creationInfo.created</code> field honors the <code>SOURCE_DATE_EPOCH</code> environment variable (reproducible-builds convention). When set to a Unix epoch second count, the timestamp is derived from it in UTC via pure integer math. As a result, SBOM output is byte-for-byte deterministic across runs and machines. To tie it to a specific git commit, run <code>export SOURCE_DATE_EPOCH=$(git -C &lt;target&gt; log -1 --format=%ct)</code> before adacovex.</p>
+<p>The bundled <code>make</code> targets (<code>run-self</code>, <code>run-ada-crdt</code>, <code>prove</code>, <code>release</code>, and Ada_CRDT’s <code>prove</code>/<code>badges</code>) already set it from the target’s git <code>HEAD</code> commit time.</p>
+<h2 id="exclusivity-and-ordering"><a class="header" href="#exclusivity-and-ordering">Exclusivity and ordering</a></h2>
+<p><code>sbom</code> is mutually exclusive with <code>--compare-base</code> and <code>--coverage-delta</code>. It
+scans sources, parses proof/test results, and assesses DAL first. As a
+result, the emitted properties reflect the real assessment state.</p>
+<p>Both formats validate against the official
+<a href="https://github.com/CycloneDX/specification">CycloneDX 1.5</a> and
+<a href="https://spdx.dev">SPDX 2.3</a> JSON schemas (see
+<a href="THIRD_PARTY_NOTICES.html">THIRD_PARTY_NOTICES.md</a>).</p>
+<h2 id="language-detection"><a class="header" href="#language-detection">Language detection</a></h2>
+<p>Every dependency component carries a <code>language</code> field (CycloneDX JSON /
+<code>components[].properties</code> under <code>"name": "adacovex:language"</code>, or the
+Markdown table’s <code>Language</code> column) describing the implementation language(s)
+of that dependency.  Detection follows the component’s origin, most specific
+first.</p>
+<h3 id="manifest-declared-ecosystems"><a class="header" href="#manifest-declared-ecosystems">Manifest-declared ecosystems</a></h3>
+<p>A vendored manifest maps directly onto its language and PURL type:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Manifest file</th><th>PURL type</th><th>Language</th></tr>
+</thead>
+<tbody>
+<tr><td><code>package.json</code></td><td><code>pkg:npm</code></td><td>JavaScript</td></tr>
+<tr><td><code>Cargo.toml</code></td><td><code>pkg:cargo</code></td><td>Rust</td></tr>
+<tr><td><code>go.mod</code></td><td><code>pkg:golang</code></td><td>Go</td></tr>
+<tr><td><code>pyproject.toml</code></td><td><code>pkg:pypi</code></td><td>Python</td></tr>
+<tr><td><code>requirements*.txt</code></td><td><code>pkg:pypi</code></td><td>Python</td></tr>
+<tr><td><code>composer.json</code></td><td><code>pkg:composer</code></td><td>PHP</td></tr>
+<tr><td><code>Gemfile</code></td><td><code>pkg:gem</code></td><td>Ruby</td></tr>
+<tr><td><code>pom.xml</code></td><td><code>pkg:maven</code></td><td>Java</td></tr>
+<tr><td><code>Package.swift</code></td><td><code>pkg:swift</code></td><td>Swift</td></tr>
+<tr><td>Alire manifest</td><td><code>pkg:alire</code></td><td>Ada</td></tr>
+<tr><td><code>.gpr</code> project file</td><td><code>pkg:gpr</code></td><td>Ada</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="extension-based-inference"><a class="header" href="#extension-based-inference">Extension-based inference</a></h3>
+<p>For every other component – vendored trees, <code>vendor/</code>, <code>node_modules</code>,
+resources, loose source drops, and individual files inside <code>resources/</code>,
+<code>assets/</code>, and <code>.adacovex/patches/</code> – adacovex infers the language from the
+<strong>file extensions actually present</strong>.  The extension is the source of truth: a
+<code>.py</code> file reports Python even when a <code>Cargo.toml</code> sits next to it, and the
+manifest language only breaks ties.</p>
+<p>Supported extensions:</p>
+<ul>
+<li><strong>Ada</strong>: <code>.ads</code>, <code>.adb</code>, <code>.ada</code>, <code>.gpr</code></li>
+<li><strong>JavaScript</strong>: <code>.js</code>, <code>.mjs</code>, <code>.cjs</code></li>
+<li><strong>TypeScript</strong>: <code>.ts</code>, <code>.tsx</code></li>
+<li><strong>CSS</strong>: <code>.css</code></li>
+<li><strong>HTML</strong>: <code>.html</code>, <code>.htm</code></li>
+<li><strong>Python</strong>: <code>.py</code></li>
+<li><strong>Go</strong>: <code>.go</code></li>
+<li><strong>Rust</strong>: <code>.rs</code></li>
+<li><strong>C</strong>: <code>.c</code>, <code>.h</code></li>
+<li><strong>C++</strong>: <code>.cpp</code>, <code>.cc</code>, <code>.cxx</code>, <code>.hpp</code>, <code>.hh</code>, <code>.hxx</code></li>
+<li><strong>C#</strong>: <code>.cs</code></li>
+<li><strong>Java</strong>: <code>.java</code></li>
+<li><strong>Ruby</strong>: <code>.rb</code></li>
+<li><strong>PHP</strong>: <code>.php</code></li>
+<li><strong>Swift</strong>: <code>.swift</code></li>
+<li><strong>Kotlin</strong>: <code>.kt</code>, <code>.kts</code></li>
+<li><strong>Scala</strong>: <code>.scala</code></li>
+<li><strong>OCaml</strong>: <code>.ml</code>, <code>.mli</code></li>
+<li><strong>Lua</strong>: <code>.lua</code></li>
+<li><strong>Perl</strong>: <code>.pl</code></li>
+<li><strong>Haskell</strong>: <code>.hs</code></li>
+<li><strong>Elixir</strong>: <code>.ex</code>, <code>.exs</code></li>
+<li><strong>Erlang</strong>: <code>.erl</code>, <code>.hrl</code></li>
+<li><strong>Clojure</strong>: <code>.clj</code>, <code>.cljs</code></li>
+<li><strong>Dart</strong>: <code>.dart</code></li>
+<li><strong>Shell</strong>: <code>.sh</code>, <code>.bash</code></li>
+<li><strong>PowerShell</strong>: <code>.ps1</code></li>
+<li><strong>SQL</strong>: <code>.sql</code></li>
+<li><strong>Fortran</strong>: <code>.f</code>, <code>.f90</code>, <code>.f95</code>, <code>.f03</code></li>
+<li><strong>Assembly</strong>: <code>.s</code>, <code>.asm</code></li>
+<li><strong>R</strong>: <code>.r</code></li>
+<li><strong>Julia</strong>: <code>.jl</code></li>
+<li><strong>Zig</strong>: <code>.zig</code></li>
+<li><strong>VHDL</strong>: <code>.vhd</code>, <code>.vhdl</code></li>
+<li><strong>Tcl</strong>: <code>.tcl</code></li>
+</ul>
+<p>A directory that mixes languages reports its <strong>top 3</strong> languages by file count
+(for example <code>"Ada; C; C++"</code>), so a mixed-language vendored drop is summarised
+by what it actually contains rather than by a single guess.</p>
+<h2 id="licence-resolution"><a class="header" href="#licence-resolution">Licence resolution</a></h2>
+<p>Vendored manifest ecosystems report their licence from the local manifest:
+<code>package.json</code> (<code>license</code>) for npm/pnpm, <code>Cargo.toml</code> for cargo,
+<code>pyproject.toml</code> / <code>composer.json</code> for pypi / composer. When the local
+manifest carries no licence, adacovex resolves the version, website, and
+licence from the package registry as a best-effort, online fallback. The
+resolver dispatches on the ecosystem (the PURL type) through a single static
+table, so adding a language is one row rather than a new code path:</p>
+<ul>
+<li><strong>npm</strong> – <code>npm view &lt;pkg&gt; version license homepage --json</code>, parsed for the
+three fields from one JSON object.</li>
+<li><strong>pnpm</strong> – <code>pnpm show &lt;pkg&gt; version license homepage --json</code>, likewise.</li>
+<li><strong>cargo</strong> (Rust) – <code>cargo search &lt;pkg&gt;</code>, with the SPDX id read from the
+<code>(license: ...)</code> token in the output.</li>
+<li><strong>go</strong> and other ecosystems with no portable, reliable registry query keep
+an empty licence; the vendored manifest scanner still reads any in-repo
+licence file for them.</li>
+</ul>
+<p>The npm and pnpm rows answer for all three fields with a single <code>--json</code> call,
+so each component boots node once instead of once per field – a 3x reduction
+in subprocess starts that keeps the graph build responsive on vendored
+JavaScript trees. The fallback runs only when the offline read finds nothing,
+so a vendored package that ships a licence never touches the network. The
+resolved licence flows into every SBOM format (CycloneDX <code>licenses</code>, SPDX
+<code>licenseConcluded</code> / <code>licenseDeclared</code>, Markdown <code>License</code> column) and the
+dashboard detail panel; the resolved version and website appear in the
+dashboard detail panel and the <code>/api/deps</code> JSON.</p>
+<p>The resolver caches each answer in a per-project store under the project’s
+result cache (the same <code>--cache-dir</code> the scan uses), keyed by the target
+directory as well as the ecosystem and package name, with a 7-day TTL, the
+same scheme as the system-tool version probes.  The content-addressed result
+cache does not cover these registry calls (each one boots node for npm/pnpm),
+so without this layer a warm run still re-paid them; the meta cache makes every
+repeat run serve the licence, version, and website from disk with no subprocess
+spawn, and two projects that share a cache directory never serve each other’s
+resolved licence or version.</p>
+<p>Bundled dashboard assets (FlexSearch, nomnoml, graphre) resolve
+their licence and website live from the package registry when a loose vendored
+copy is scanned, preferring <code>pnpm show &lt;pkg&gt; license</code> and falling back to
+<code>npm</code>, <code>yarn</code>, then <code>bun</code> – the same preference chain as every JavaScript
+component (see <a href="#licence-resolution">Licence resolution</a>).  The SBOM and the
+Credits tab therefore track the real upstream licence instead of a hard-coded
+copy.</p>
+<h2 id="system-dependencies"><a class="header" href="#system-dependencies">System dependencies</a></h2>
+<p><code>Discover_System_Dev_Deps</code> scans the project’s build and dev files (Makefiles,
+shell scripts, Python tools, CI workflows, GPR files, Ada sources) for a
+curated set of known system binaries, then keeps only the tools that are
+installed on <code>PATH</code>. Each becomes a <code>system</code>-scope component of the root with
+a <code>pkg:generic/&lt;name&gt;</code> PURL, a resolved <code>version</code> (from <code>&lt;tool&gt; --version</code>),
+and no external link or licence – by design adacovex provisions only the
+version for system tools and never guesses a repository or licence for them.
+<code>system</code> is a first-class dependency scope, distinct from <code>base</code>, <code>dev</code>,
+<code>transitive</code>, <code>vendored</code>, and <code>test</code>; the dashboard gives it its own filter
+checkbox, badge colour, and legend entry, and the SBOM lists it under
+<code>system</code> scope.  The dashboard marks these with a <code>system</code> scope badge and a
+note in the detail panel.</p>
+<p>The result shows up in the dashboard Dependency tab (per-dependency detail
+popup) and in every SBOM renderer: CycloneDX <code>components[].language</code>,
+SPDX/JSON <code>adacovex:language</code> property, and the Markdown table’s
+<code>Language</code> column.</p>
+<h2 id="test-dependencies"><a class="header" href="#test-dependencies">Test dependencies</a></h2>
+<p>A dependency used only by the project’s tests is classified <code>test</code> (the
+<code>adacovex:dep_scope</code> property value <code>"test"</code>).  adacovex recognises
+test-only declarations in every supported ecosystem’s manifest, in addition
+to the Alire <code>[[test-depends-on]]</code> sections and test project files:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Manifest file</th><th>Test label</th></tr>
+</thead>
+<tbody>
+<tr><td><code>package.json</code></td><td>a dependency section whose key contains <code>test</code> (for example <code>testDependencies</code> or <code>devTestDependencies</code>); a name whose last segment starts or ends with <code>test</code> (for example <code>@playwright/test</code>, <code>vitest</code>)</td></tr>
+<tr><td><code>Cargo.toml</code></td><td>the <code>[dev-dependencies]</code> section (Cargo’s test-only section); any section whose name contains <code>test</code> (for example <code>[target.'cfg(test)'.dependencies]</code>)</td></tr>
+<tr><td><code>go.mod</code></td><td>no native test-only section: the name heuristic is the signal (a module path whose last path segment starts or ends with <code>test</code>, for example <code>github.com/stretchr/testify</code>)</td></tr>
+<tr><td><code>composer.json</code></td><td>the <code>require-dev</code> section</td></tr>
+<tr><td><code>Gemfile</code></td><td>gems inside a <code>group :test</code> block (any group name containing <code>test</code>)</td></tr>
+<tr><td><code>pom.xml</code></td><td><code>&lt;dependency&gt;</code> blocks whose <code>&lt;scope&gt;</code> is <code>test</code></td></tr>
+<tr><td><code>pyproject.toml</code></td><td>optional-dependencies extras whose name contains <code>test</code> (for example the <code>test</code> extra); Poetry sections such as <code>[tool.poetry.group.test.dependencies]</code></td></tr>
+<tr><td><code>Package.swift</code></td><td>dependencies declared inside a <code>.testTarget(...)</code> block</td></tr>
+<tr><td><code>requirements*.txt</code></td><td>no native test section: the name heuristic is the signal</td></tr>
+</tbody>
+</table>
+</div>
+<p>A vendored component (for example a package under <code>node_modules</code> or
+<code>vendor/</code>) is classified <code>test</code> when the project manifest that owns the
+vendor directory declares it under one of these test labels, or when its
+name carries the test label.  The name heuristic works across every
+supported ecosystem – not just npm: it checks the full name and then the
+last segment after any <code>/</code> or <code>:</code>, so <code>@playwright/test</code>, <code>test-case</code>,
+<code>github.com/stretchr/testify</code> and <code>org.testng:testng</code> are all
+test-labelled.  The heuristic also applies to <strong>lockfile-resolved names</strong>:
+<code>pnpm-lock.yaml</code> / <code>package-lock.json</code> / <code>yarn.lock</code> entries next to an
+owner <code>package.json</code>, <code>Cargo.lock</code> crate names, and <code>alire.lock</code> crates
+that the manifest sets leave transitive.  The e2e fixture’s
+<code>@playwright/test</code> is the canonical example: it stays a <code>devDependencies</code>
+entry of <code>tests/e2e/package.json</code> (and a <code>pnpm-lock.yaml</code> entry) and is
+classified <code>test</code> by name.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="dashboard.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="standards.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="dashboard.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="standards.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-09f2665d.js"></script>
+
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-abc7f01d.js"></script>
+        <script src="book-609e4cb8.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

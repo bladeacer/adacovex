@@ -30,6 +30,12 @@ package body Adacovex_Server_Tests is
         (Route ("/api/endpoints") = Route_API_Endpoints,
          "endpoints catalog route");
 
+      --  The bundled offline manual is served at both /"/docs" (no trailing
+      --  slash) and "/docs/" (trailing slash), so the dashboard footer link
+      --  and a user typing either spelling both reach the manual.
+      R.Check (Route ("/docs") = Route_Docs, "docs route");
+      R.Check (Route ("/docs/") = Route_Docs, "docs trailing-slash route");
+
       --  Query-string and fragment stripping: browsers append ?query and
       --  #fragment to the request path, and routing must ignore both so a
       --  themed dashboard URL (`/?theme=light`) serves the dashboard instead
@@ -69,10 +75,10 @@ package body Adacovex_Server_Tests is
       R.Check
         (Route ("/index.html") = Route_Not_Found, "index.html is not found");
       R.Check
-        (Route ("/favicon.ico") = Route_Not_Found, "favicon.ico is not found");
-      R.Check
-        (Route ("/badge") = Route_Not_Found, "/badge alone is not found");
+        (Route ("/favicon.ico") = Route_Not_Found, "favicon.ico is not found");      R.Check (Route ("/badge") = Route_Not_Found, "/badge alone is not found");
       R.Check (Route ("/badge/") = Route_Not_Found, "/badge/ is not found");
+      R.Check (Route ("/docs2") = Route_Not_Found, "docs-prefixed path is not found");
+      R.Check (Route ("/manual") = Route_Not_Found, "manual alias is not found");
       R.Check
         (Route ("/badge/spark.svg/") = Route_Not_Found,
          "trailing slash on badge is not found");
@@ -113,8 +119,10 @@ package body Adacovex_Server_Tests is
          and then Route ("/badge/iec62304.svg") /= Route_Not_Found
          and then Route ("/api/metrics") /= Route_Not_Found
          and then Route ("/api/deps") /= Route_Not_Found
-         and then Route ("/api/endpoints") /= Route_Not_Found,
-         "all nine served routes are non-404");
+         and then Route ("/api/endpoints") /= Route_Not_Found
+         and then Route ("/docs") /= Route_Not_Found
+         and then Route ("/docs/") /= Route_Not_Found,
+         "all served routes are non-404");
    end Run;
 
 end Adacovex_Server_Tests;

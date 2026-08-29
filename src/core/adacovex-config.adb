@@ -1958,6 +1958,10 @@ package body Adacovex.Config is
             & ASCII.LF
             & "                       iso26262, iec62304)"
             & ASCII.LF
+            & "  GET /docs            bundled offline manual (mdBook HTML,"
+            & ASCII.LF
+            & "                       built into the binary, no external assets)"
+            & ASCII.LF
             & ASCII.LF
             & "Standard-aware: like the sbom subcommand it defaults to all"
             & ASCII.LF

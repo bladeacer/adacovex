@@ -1,4 +1,4 @@
-.PHONY: help check build test prove doc docs-serve clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish agents-tree sbom description proof-status test-count doc-links link-check changelog-check action-parity-check tools-check man bench perf-bench complexity-check csslint-check sync docs-check
+.PHONY: help check build test prove doc book book-serve docs-serve clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish agents-tree sbom description proof-status test-count doc-links link-check changelog-check action-parity-check tools-check man bench perf-bench complexity-check csslint-check sync docs-check
 
 .DEFAULT_GOAL := help
 
@@ -11,13 +11,13 @@ help:
 	@echo '    check         Full quality gate (CI before release): cheap'
 	@echo '                  static gates first (ascii, complexity, spark-off,'
 	@echo '                  changelog, version, doc-links, action-parity,'
-	@echo '                  tools-check), then build+test+prove+doc+sbom,'
+	@echo '                  tools-check), then build+test+prove+doc+book+sbom,'
 	@echo '                  then count-sync checks (test-count, proof-status,'
 	@echo '                  description)'
 	@echo '    build         Build project (adacovex + test_runner, covex alias);'
 	@echo '                  regenerates src/adacovex_version_info.ads from'
 	@echo '                  alire-dev.toml (or ADACOVEX_VERSION for releases)'
-	@echo '    test          Build and run native test suite (1169 tests)'
+	@echo '    test          Build and run native test suite (1173 tests)'
 	@echo '    prove         Run SPARK proofs (gnatprove via prove subcommand,'
 	@echo '                  resolved from alire-dev.toml / PATH / cache / download)'
 	@echo '                  (also auto-regenerates SVG badges in docs/badges/)'
@@ -133,6 +133,13 @@ doc:
 	  python3 tools/rst2md.py obj/gnatdoc-rst docs/api-docs --prune-test-pages && \
 	  rm -f docs/api-docs/test_*.md docs/api-docs/adacovex-test_support.md'
 
+# Build the offline manual from the mdBook docs source and bundle it into the
+# binary.  Regenerates src/adacovex-docs_template.ads (the committed spec the
+# --serve server serves at /docs).  gen-docs.py never fails when mdbook is
+# missing (it keeps the committed spec), so this works on any machine.
+book:
+	@python3 tools/gen-docs.py
+
 run-self: build
 	@python3 tools/run.py self
 
@@ -198,6 +205,12 @@ docs-check:
 docs-serve:
 	@python3 -m http.server 8000 --directory docs
 
+# Build + serve the mdBook manual locally at http://localhost:8000 (requires
+# mdbook on PATH; prints a hint when it is missing).
+book-serve:
+	@cd docs && mdbook serve --port 8000 --open 2>/dev/null \
+	  || echo "mdbook not on PATH; run 'make docs-serve' for a plain HTTP server"
+
 tools-check:
 	@python3 tools/tests.py
 
@@ -236,12 +249,13 @@ check:
 	@echo "=== Quality gate: SPARK proof + badges ==="; $(MAKE) prove
 	@echo "=== Quality gate: fmt ==="; $(MAKE) fmt
 	@echo "=== Quality gate: API docs ==="; $(MAKE) doc
+	@echo "=== Quality gate: offline manual ==="; $(MAKE) book
 	@echo "=== Quality gate: SBOM ==="; $(MAKE) sbom
 	@echo "=== Quality gate: test counts in sync ==="; python3 tools/update-test-count.py --check
 	@echo "=== Quality gate: proof metrics in sync ==="; python3 tools/update-proof-status.py --check
 	@echo "=== Quality gate: description sync ==="; python3 tools/update-description.py --check
 	@echo ""
-	@echo "=== Quality gate passed: ascii, complexity, csslint, spark-off, changelog, action-parity, tools, version, doc-links, link, build, test, prove, doc, sbom, test-count, proof-status, description ==="
+	@echo "=== Quality gate passed: ascii, complexity, csslint, spark-off, changelog, action-parity, tools, version, doc-links, link, build, test, prove, doc, book, sbom, test-count, proof-status, description ==="
 
 # Sync the crate description + long description from the canonical files
 # (alire/description.txt + alire/long-description.txt) into every manifest.
