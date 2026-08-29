@@ -385,19 +385,25 @@ adacovex supports multiple output formats:
   `iso26262.svg` / `iec62304.svg` compliance badges (`--standard=all` emits all
   three) for CI badges
 - **Markdown reports**: `VERIFICATION.md` and `TRACE.md` for compliance documentation
-- **HTML dashboard**: Interactive web dashboard with JSON API (`--serve`).
+ - **HTML dashboard**: Interactive web dashboard with JSON API (`--serve`).
    It is standard-aware (defaults to all standards like `sbom`) with light/dark
-  theme support (toggle button, respects `prefers-color-scheme`). The static
-  page shell (CSS, header, theme script) is a real HTML file,
-  `resources/dashboard.html`, bundled into the binary at build time:
-  `tools/gen-dashboard.py` regenerates
-  `src/adacovex-dashboard_template.ads` (a String constant, committed and
-  byte-identical when unchanged) and `Adacovex.Renderers.HTML` only builds
-  the dynamic card markup, injecting it at the `__CARDS__` placeholder and
-  filling the `__THEME__` initial-theme marker.  The authored CSS and
-  JavaScript are minified at build time (comments stripped, whitespace
-  collapsed); the vendored graph libraries are already minified and are
-  inlined byte-for-byte
+   theme support (toggle button, respects `prefers-color-scheme`). The static
+   page shell (CSS, header, theme script) is a real HTML file,
+   `resources/dashboard.html`, bundled into the binary at build time:
+   `tools/gen-dashboard.py` assembles the authored CSS (`resources/css/dashboard.css`),
+   the authored JS (`resources/js/*.js`), and the vendored graph libraries
+   (`graphre.js`, `nomnoml.js`, `flexsearch.js`) into a single minified page
+   shell. It regenerates `src/adacovex-dashboard_template.ads` (a String
+   constant, committed and byte-identical when unchanged).
+   
+   The Ada compiler includes that constant in the final binary. Every released
+   binary - whether a GitHub release artifact or an Alire crate binary - carries
+   the complete dashboard with no external file dependencies.
+   
+   At runtime, `Adacovex.Renderers.HTML.Render_Dashboard_Internal` only builds
+   the dynamic card markup and injects it at the `__CARDS__` placeholder, filling
+   the `__THEME__` initial-theme marker. The result is a single self-contained
+   HTML document: no CDN, no network requests, works offline.
 - **SBOM**: CycloneDX 1.5, SPDX 2.3, or Markdown format with proof, standard,
   and DAL/level properties
 

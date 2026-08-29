@@ -551,18 +551,22 @@ package body Adacovex.Parsers.Manifest is
    function Version_Flag (Name : String) return String is separate;
 
    --  Discover system-tool dev dependencies referenced by the project.
-   --  Walk the project tree and read dev-facing files.  These files are
-   --  Makefile variants, shell scripts, Python tools, Alire manifests, CI
-   --  workflows, GNAT project files, and Ada sources.  Register every known
-   --  system tool that the files reference and that is actually installed on
-   --  PATH.  Register it as a dev-scope dependency of the root.  A Makefile
-   --  at the project root implies make.  This applies even when no recipe
-   --  spells out the driver by name.
-   --  Docstrings (.md prose) are not scanned.  Prose is not tool
-   --  interaction.  Words like "make" are common in prose.  The source file
-   --  that declares the System_Tools table itself is skipped.  It references
-   --  every curated tool by construction.  Scanning it can register every
-   --  installed tool as a self-reference.
+   --  Walk the project tree and read only dev-facing build files: Makefile
+   --  variants, shell scripts, GNAT project files, CI workflows, and the
+   --  project's build manifests (Cargo.toml, go.mod, pyproject.toml,
+   --  package.json, ...).  Register every known system tool that those files
+   --  reference and that is actually installed on PATH.  Register it as a
+   --  dev-scope dependency of the root.  A Makefile at the project root
+   --  implies make.  This applies even when no recipe spells out the driver
+   --  by name.
+   --  Source files (.ads/.adb/.c/.go/.rs/.js/.ts/...) are NOT scanned.  They
+   --  are not tool invocations: scanning them is a source of false positives
+   --  because identifiers and keywords collide with tool names (every Ada
+   --  source contains the word "ada", which matches the curated "ada" tool;
+   --  a Rust file contains "go"; a C file contains "make").  The detection is
+   --  therefore scoped to files that actually drive a build, never to source
+   --  text.  Docstrings (.md prose) are also skipped: prose is not tool
+   --  interaction and words like "make" are common in it.
    procedure Discover_System_Dev_Deps
      (Target_Dir : String;
       Graph      : in out Types.Implementation.Component_Vectors.Vector)
@@ -610,8 +614,13 @@ package body Adacovex.Parsers.Manifest is
          end if;
       end Push_Dir;
 
-      --  Whether to scan a file for tool references.  Makefile variants are
-      --  scanned by name.  Dev-facing text files are scanned by extension.
+      --  Whether to scan a file for tool references.  Only dev-facing build
+      --  files are scanned: Makefile variants (by name), build manifests
+      --  (package.json, Cargo.toml, go.mod, pyproject.toml, ...), shell
+      --  scripts, GNAT project files, and CI workflows.  Source files are
+      --  deliberately excluded -- scanning them produces false positives
+      --  (identifiers like "ada", "go", "make" collide with tool names) and
+      --  they never invoke build tools by name.
       function Should_Scan (Name : String) return Boolean is
          Dot : Natural := 0;
       begin
@@ -657,33 +666,10 @@ package body Adacovex.Parsers.Manifest is
          begin
             return
               Ext = ".sh"
-              or else Ext = ".py"
               or else Ext = ".gpr"
               or else Ext = ".yml"
               or else Ext = ".yaml"
-              or else Ext = ".toml"
-              or else Ext = ".ads"
-              or else Ext = ".adb"
-              or else Ext = ".c"
-              or else Ext = ".h"
-              or else Ext = ".cpp"
-              or else Ext = ".hpp"
-              or else Ext = ".cc"
-              or else Ext = ".cxx"
-              or else Ext = ".rb"
-              or else Ext = ".cs"
-              or else Ext = ".java"
-              or else Ext = ".rs"
-              or else Ext = ".go"
-              or else Ext = ".js"
-              or else Ext = ".mjs"
-              or else Ext = ".cjs"
-              or else Ext = ".ts"
-              or else Ext = ".mts"
-              or else Ext = ".cts"
-              or else Ext = ".scss"
-              or else Ext = ".css"
-              or else Ext = ".json";
+              or else Ext = ".toml";
          end;
       end Should_Scan;
 
