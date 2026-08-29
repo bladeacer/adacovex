@@ -21,6 +21,8 @@ choice.
 
 ### Overview tab
 
+![Preview of Overview tab](../media/dashboard_preview_overview.png)
+
 Start here. The **Robustness tier** (S / A / B / C / D) is a single letter that
 summarises five quality axes: Docs, Proof, Tests, Compliance, and Deps. An **S**
 means the project is healthy across the board. A **D** means one or more axes
@@ -48,6 +50,8 @@ one, so relative proof effort is visible at a glance.
 
 ### Proof tab
 
+![Preview of Proof tab](../media/dashboard_preview_proof.png)
+
 Shows the SPARK level (Stone .. Platinum) and per-category VC counts. The
 mini **VCs proved / total** at the top is the headline number. Click into a
 category to see the breakdown. If a category is low, that is where the proof
@@ -55,11 +59,15 @@ effort must focus.
 
 ### Tests tab
 
+![Preview of Tests tab](../media/dashboard_preview_tests.png)
+
 Every test category with its count and Pass / Fail. A single failing category
 is enough to fail the compliance gate (`Tests passing` must be `Yes` for every
 tier except QM / DAL-E).
 
 ### Compliance tab
+
+![Preview of Compliance tab](../media/dashboard_preview_compliance.png)
 
 Shows the target integrity level, overall `Achieved` / `Unmet`, HLRs traced,
 orphan-tag state, and every unmet criterion. Use this to verify that every HLR
@@ -67,6 +75,8 @@ is tagged in source and that no tags are orphaned (tagged but not defined in
 `HLR.md`).
 
 ### Dependencies tab
+
+![Preview of Dependencies tab](../media/dashboard_preview_dependencies.png)
 
 An interactive dependency tree (or diagram) of every component in the graph.
 Use the filter input and scope checkboxes to focus on base, dev, transitive,
@@ -77,6 +87,8 @@ every vendored licence is compatible, see which system tools the build needs
 view (toggle **Tree / Diagram**) renders the same graph as a directed diagram.
 
 ### Charts tab
+
+![Preview of Charts tab](../media/dashboard_preview_charts.png)
 
 Six CSS-only cards (donut, column, bar, radial gauge, pie, polar ring) that
 show the same data as the Overview tab in a different format. Use this to
@@ -112,8 +124,6 @@ The server runs a small HTTP/1.1 implementation with a 4-worker task pool and
 serves requests until the process is interrupted (Ctrl-C).
 
 ## The HTML dashboard
-
-![Dashboard Preview Image](../media/dashboard_preview.png)
 
 The page is a single self-contained document (no external assets), bundled
 into the binary from **modular resources** -- `resources/dashboard.html` is
