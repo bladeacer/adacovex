@@ -215,9 +215,11 @@ writes a single SBOM at an explicit path and exits.
 
 ### `--serve`
 
-After scanning and assessment, start the built-in HTTP/1.1 web dashboard on `--port` (default `8080`). It serves an HTML dashboard at `/`, a JSON API at `/api/metrics`, and the SVG badges at `/badge/*.svg`. The server blocks until interrupted. The dashboard is standard-aware (it defaults to all standards) and supports light, dark, and system themes.
+A **switch**: when given, adacovex scans and assesses the target, then starts the built-in HTTP/1.1 web dashboard on `--port` (default `8080`) and blocks until interrupted. Passing `--serve` is the only way to start the server; omitting it (the default, `off`) renders and exits without serving. There is no `--no-serve`, because the flag already controls it. It serves an HTML dashboard at `/`, a JSON API at `/api/metrics`, and the SVG badges at `/badge/*.svg`.
 
-Full detail, the JSON schema, the theme-resolution order, and embedding tips are in [Web dashboard and JSON API](dashboard.md).
+The dashboard is standard-aware (it defaults to all standards) and supports light, dark, and system themes.
+
+Full detail, the JSON schema, the theme-resolution order, and embedding tips are in [Web dashboard and JSON API](dashboard.md). Related flags: `--port`, `--serve-workers`, `--theme`.
 
 ### `--theme=NAME`
 
@@ -361,7 +363,7 @@ target does not meet the required level:
 
 ```bash
 adacovex --target=. --require-spark=Platinum --require-docstrings=100 \
-         --require-tests=1157 --require-proof=100
+         --require-tests=1167 --require-proof=100
 ```
 
 - `require-spark` compares the honest assessed SPARK level (Stone..Platinum).

@@ -179,9 +179,16 @@ package body Adacovex.Renderers.Man is
                return "do178c | iso26262 | iec62304 | all (default: do178c).";
             elsif Flag = "serve" then
                return
-                 "Start the HTTP dashboard on port N "
-                 & "(default 8080). Standard-aware: defaults to all "
-                 & "standards. Also see --port/--theme.";
+                 "Switch: run the pipeline, then spawn the HTTP dashboard "
+                 & "server on the port (default 8080) and block.  Omit it to "
+                 & "render and exit without a server.  Standard-aware: "
+                 & "defaults to all standards.  Also see "
+                 & "--port/--theme/--serve-workers.";
+            elsif Flag = "serve-workers" then
+               return
+                 "HTTP server task-pool worker count for --serve "
+                 & "(default 4, valid Positive, capped at 256).  Related "
+                 & "flag of --serve.";
             elsif Flag = "theme" then
                return
                  "Dashboard theme: light | dark | system (default: system; only with --serve).";

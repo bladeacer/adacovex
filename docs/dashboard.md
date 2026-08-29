@@ -115,8 +115,12 @@ The same data is available headlessly at `/api/metrics` and via
 | `GET /badge/iec62304.svg` | IEC 62304 compliance badge |
 | anything else | `404 Not Found` |
 
-The server runs a small HTTP/1.1 implementation with a 4-worker task pool and
-serves requests until the process is interrupted (Ctrl-C).
+The server runs a small HTTP/1.1 implementation with a 4-worker task pool
+(configurable with `--serve-workers=N`, which is a related flag of
+`--serve`) and serves requests until the process is interrupted (Ctrl-C).
+Query strings and URL fragments are stripped before routing, so
+`/?theme=light`, `/api/metrics?x=1` and `/api/deps#top` reach the same
+handlers as `/`, `/api/metrics` and `/api/deps` instead of 404ing.
 
 ## The HTML dashboard
 
@@ -125,12 +129,13 @@ into the binary from **modular resources** -- `resources/dashboard.html` is
 just the page skeleton. Author styles and scripts are split into focused
 modules under `resources/css/` (`dashboard.css`, which also styles the
 hand-rolled donut rings and bar charts) and `resources/js/` (`theme.js`,
-`tabs.js`, `deps.js`, `details.js`, `nomnoml.js`, `search.js`).  The
-vendored `graphre.js` / `nomnoml.js` / `flexsearch.js` sit at `resources/`
-and are inlined into the template at build time by
-`tools/gen-dashboard.py`, which also **minifies** the author CSS/JS
-(comments and whitespace stripped, vendored files are already minified and
-inlined byte-for-byte).
+`tabs.js`, `deps.js`, `details.js`, `nomnoml.js`, `search.js`, `yace.js`,
+`api.js`).  The vendored `graphre.js` / `nomnoml.js` / `flexsearch.js` sit
+at `resources/` and the vendored `yace.js` sits at `resources/js/`; they are
+inlined into the template at build time by `tools/gen-dashboard.py`, which
+also **minifies** the author CSS/JS (comments and whitespace stripped,
+vendored files are inlined byte-for-byte so their tokenizer regexes stay
+intact).
 
 The resulting `adacovex` binary - whether a GitHub release artifact or an
 Alire crate binary - is completely self-contained. The dashboard has no
@@ -161,10 +166,16 @@ keyboard-accessible, persisted in `localStorage`):
   criterion, and the HLR traceability table (package -> tags).
 - **Dependencies** -- a scope-distribution **stacked bar** at the top, then
   an interactive dependency tree/graph (see below).
-- **Charts** -- hand-rolled metrics charts (see below).
+- **Charts** -- hand-rolled metrics charts, a strict superset of the
+  Overview charts (it includes the Robustness tier radar and the SPARK
+  proof-by-check-type radar, see below).
+- **API** -- an interactive REST API playground: every endpoint the server
+  dispatches on as a clickable, searchable button grouped by purpose, with
+  a pretty-printed, yace-syntax-highlighted JSON preview plus Copy and
+  Download actions (see below).
 - **Credits** -- third-party libraries used by the dashboard (nomnoml,
-  graphre, FlexSearch, Charts.css) with versions, licences, links and the
-  THIRD_PARTY_NOTICES pointer.  The Playwright row (e2e test tooling) is
+  graphre, FlexSearch, yace, Charts.css) with versions, licences, links and
+  the THIRD_PARTY_NOTICES pointer.  The Playwright row (e2e test tooling) is
   labelled `test`: the e2e fixture declares `@playwright/test` under
   `devDependencies`, and adacovex classifies test-named npm packages (such
   as `@playwright/test`) as test dependencies.  Charts.css is credited as
@@ -248,12 +259,20 @@ The same data is available headlessly at `/api/deps` and via
 
 ### Metrics charts
 
-The **Charts** tab renders six cards. The charts are hand-rolled (no
-vendored chart library): donut rings are a conic gradient with a CSS hole
-(the same pattern as the polar ring) and bars are flex rows with a fixed
-label column, so labels never rotate or overflow and the ring colour
-reflects the covered share (fully green at 100%):
+The **Charts** tab renders eight cards and is a **strict superset** of the
+Overview charts: every chart that appears on the Overview also appears
+here. The charts are hand-rolled (no vendored chart library): donut rings
+are a conic gradient with a CSS hole (the same pattern as the polar ring)
+and bars are flex rows with a fixed label column, so labels never rotate
+or overflow and the ring colour reflects the covered share (fully green at
+100%):
 
+- **Robustness** -- the five-axis health radar (Docs, Proof, Tests, Comp,
+  Deps) with the S/A/B/C/D tier rating, the same headline visual as the
+  Overview tab. It is shared with the Overview (one source of truth), so
+  the Charts tab is a superset and the two tabs cannot drift apart.
+- **SPARK Proof by Check Type** -- the per-category proof radar (Flow,
+  Init, Runtime, Assert, Func) shown on the Overview, also shared.
 - **SPARK Proof** -- *donut* of proved vs unproved VCs (`720/720` shows a
   full green ring. `680/720` shows `94%` green + `6%` red unproved).
 - **Proof Check Types** -- *bars* of proved checks per category (flow,
@@ -278,7 +297,7 @@ reflects the covered share (fully green at 100%):
   `--scope-*` theme variables) with a legend. Skipped when the graph is
   empty.
 
-Each of the six cards is a different type (donut / bars / bars / radial / donut / polar) so the tab reads at a glance without duplicating a data story. The per-check-category SPARK radar lives on the **Overview** tab instead (see below). No JavaScript is required for the charts (pure CSS/SVG). The radial gauge and the scope ring follow the light/dark theme automatically via CSS variables.
+Each card is a different type (radar / radar / donut / bars / bars / radial / donut / polar) so the tab reads at a glance without duplicating a data story. The two radars are shared with the Overview, so the Charts tab contains every Overview chart. No JavaScript is required for the charts (pure CSS/SVG). The radial gauge, the scope ring, and the radars follow the light/dark theme automatically via CSS variables.
 
 The surrounding grid (`chart-grid`) is responsive and the page container is `max-width:1180px` so large monitors do not stretch cards. Rings are used where a part-to-whole distribution is the point. Bars are used where a max-normalised comparison across categories is the point.
 
@@ -330,7 +349,7 @@ assessment without parsing HTML:
 
 ```json
 {"spark_level":"Platinum","total_vcs":723,"proved_vcs":723,
- "tests_passed":1157,"tests_failed":0,"doc_coverage":100,
+ "tests_passed":1167,"tests_failed":0,"doc_coverage":100,
  "standard":"all","level":"DAL-C","dal_status":"Achieved",
  "standards":{"DO-178C":{"level":"DAL-C","status":"Achieved"},
                "ISO 26262":{"level":"ASIL B","status":"Achieved"},
@@ -372,6 +391,37 @@ SBOM embeds, minus the SBOM envelope):
 On-disk, the same export is available via `--emit-metrics=PATH`
 (`{"metrics": {...}, "dependencies": [...]}` after any assessment).
 
+## API playground
+
+The **API** tab turns the dashboard into a small interactive REST client.
+Every route the server dispatches on is listed as a clickable button,
+grouped by purpose:
+
+- **Metrics** -- `GET /api/metrics` (JSON).
+- **Dependencies** -- `GET /api/deps` (JSON).
+- **Badges** -- each `GET /badge/*.svg` endpoint (SVG).
+- **Documentation** -- `GET /docs` (plain text).
+
+A filter input searches the endpoints as you type (matching path, purpose,
+and group name), so you can jump straight to `metrics` or `badge`. Clicking
+an endpoint issues a live `fetch` against the serving origin and previews
+the response:
+
+- JSON endpoints are pretty-printed (two-space indent) and
+  **syntax-highlighted** with the vendored [yace](https://github.com/petersolopov/yace)
+  tokenizer (`window.YaceTok`). A JSON-key rule colours object keys
+  separately from string values, so the payload reads like an IDE view.
+- SVG badge endpoints show the live image above the raw markup.
+- The `/docs` endpoint shows its plain-text response.
+
+A toolbar on the result offers **Copy** (clipboard) and **Download** (saves
+the raw response body to a file) for the JSON API response, so the
+playground doubles as a lightweight HTTP client without leaving the browser.
+The first endpoint (`/api/metrics`) runs automatically so the tab always
+opens with a live preview. The endpoint list is static because the server
+surface is fixed; each request is made live against the instance, so what
+you preview is exactly what `curl` returns.
+
 ## Themes
 
 The dashboard supports **light**, **dark**, and **system** themes. Colours are
@@ -383,7 +433,10 @@ Theme resolution on page load:
 
 1. a `?theme=light|dark|system` query parameter on the dashboard URL.
    It always wins. This is the supported way to pin the theme when embedding
-   the dashboard in an iframe.
+   the dashboard in an iframe. The server strips the query string before
+   routing, so `http://localhost:8080/?theme=light` (and
+   `?theme=dark` / `?theme=system`) serves the themed dashboard instead of
+   404ing.
 2. otherwise the explicit CLI theme (`--theme=light` / `--theme=dark`).
 3. otherwise the saved `localStorage` choice, if one was saved.
 4. otherwise the system theme (`prefers-color-scheme`).
@@ -395,6 +448,7 @@ still override it afterwards in the browser.
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--serve` | off | Start the HTTP dashboard server after the assessment |
+| `--serve` | off | Run the pipeline, then spawn the HTTP dashboard server (blocking) on the port. It is a switch: passing `--serve` is the only way to start the server, and omitting it (the default, `off`) renders and exits without serving. There is no `--no-serve`, because a flag already controls it |
 | `--port=N` | `8080` | Server port (a valid `Positive` integer) |
+| `--serve-workers=N` | `4` | HTTP server task-pool worker count for `--serve` (a valid `Positive` integer, capped at 256). Only relevant with `--serve` |
 | `--theme=NAME` | `system` | Initial dashboard theme: `light` \| `dark` \| `system` (case-insensitive) |

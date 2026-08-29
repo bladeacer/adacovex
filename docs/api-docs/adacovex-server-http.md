@@ -53,6 +53,12 @@ end record;
 |-----------|-------------|
 | `Path` |  |
 
+### function Strip_Query (Path : Standard.String) return Standard.String `[Global]` `[SPARK]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `Path` |  |
+
 ## Procedures
 
 ### procedure Start (State : Adacovex.Server.HTTP.Server_State) `[Pre]`

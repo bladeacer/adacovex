@@ -11,20 +11,22 @@ HLR-RENDER-HTML: HTML dashboard and JSON API
 
 ## Functions
 
-### function Render_Charts (Doc_Metrics : Adacovex.Types.Docstring_Metrics; Proof : Adacovex.Types.Proof_Summary; Tests : Adacovex.Types.Implementation.Test_Summary) return Standard.String `[Post]` `[Global]`
+### function Render_Charts (Doc_Metrics : Adacovex.Types.Docstring_Metrics; Proof : Adacovex.Types.Proof_Summary; Tests : Adacovex.Types.Implementation.Test_Summary; DAL_Assess : Adacovex.Types.Implementation.DAL_Assessment) return Standard.String `[Post]` `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|
+| `DAL_Assess` | DAL compliance assessment (Robustness Comp axis). |
 | `Doc_Metrics` | Docstring coverage metrics. |
 | `Proof` | GNATprove proof summary. |
 | `Tests` | Test result summary. |
 
 **Returns:** HTML fragment with the chart cards.
 
-### function Render_Charts (Doc_Metrics : Adacovex.Types.Docstring_Metrics; Proof : Adacovex.Types.Proof_Summary; Tests : Adacovex.Types.Implementation.Test_Summary; Graph : Adacovex.Types.Implementation.Component_Vectors.Vector) return Standard.String `[Post]` `[Global]`
+### function Render_Charts (Doc_Metrics : Adacovex.Types.Docstring_Metrics; Proof : Adacovex.Types.Proof_Summary; Tests : Adacovex.Types.Implementation.Test_Summary; DAL_Assess : Adacovex.Types.Implementation.DAL_Assessment; Graph : Adacovex.Types.Implementation.Component_Vectors.Vector) return Standard.String `[Post]` `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|
+| `DAL_Assess` | DAL compliance assessment (drives the Robustness |
 | `Doc_Metrics` | Docstring coverage metrics. |
 | `Graph` | Dependency graph for the scope ring (empty = skip). |
 | `Proof` | GNATprove proof summary. |

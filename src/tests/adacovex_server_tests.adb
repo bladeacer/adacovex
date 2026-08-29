@@ -27,6 +27,35 @@ package body Adacovex_Server_Tests is
         (Route ("/api/metrics") = Route_API_Metrics, "metrics API route");
       R.Check (Route ("/api/deps") = Route_API_Deps, "deps API route");
 
+      --  Query-string and fragment stripping: browsers append ?query and
+      --  #fragment to the request path, and routing must ignore both so a
+      --  themed dashboard URL (`/?theme=light`) serves the dashboard instead
+      --  of 404ing.
+      R.Check (Strip_Query ("/") = "/", "plain root unchanged");
+      R.Check
+        (Strip_Query ("/?theme=light") = "/",
+         "query string stripped from root");
+      R.Check
+        (Strip_Query ("/?theme=dark") = "/",
+         "dark theme query stripped from root");
+      R.Check
+        (Strip_Query ("/api/metrics?x=1") = "/api/metrics",
+         "query stripped from metrics API");
+      R.Check
+        (Strip_Query ("/api/deps#top") = "/api/deps",
+         "fragment stripped from deps API");
+      R.Check
+        (Strip_Query ("/badge/spark.svg?x=1") = "/badge/spark.svg",
+         "query stripped from badge");
+      R.Check
+        (Strip_Query ("/?theme=light#proof") = "/",
+         "query and fragment both stripped");
+      R.Check (Strip_Query ("") = "", "empty path stays empty");
+      R.Check (Strip_Query ("/badge") = "/badge", "no query means unchanged");
+      R.Check
+        (Strip_Query ("/badge/tests.svg") = "/badge/tests.svg",
+         "no query on badge unchanged");
+
       --  Unknown paths are 404s: empty, near-misses of every literal route
       --  (case, trailing slash, wrong extension, prefix, suffix, query
       --  string), and arbitrary URLs.

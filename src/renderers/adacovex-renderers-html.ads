@@ -74,12 +74,15 @@ package Adacovex.Renderers.HTML is
    --  @param Doc_Metrics  Docstring coverage metrics.
    --  @param Proof  GNATprove proof summary.
    --  @param Tests  Test result summary.
+   --  @param DAL_Assess  DAL compliance assessment (drives the Robustness
+   --  Comp axis).
    --  @param Graph  Dependency graph for the scope ring (empty = skip).
    --  @return HTML fragment with the chart cards.
    function Render_Charts
      (Doc_Metrics : Types.Docstring_Metrics;
       Proof       : Types.Proof_Summary;
       Tests       : Types.Implementation.Test_Summary;
+      DAL_Assess  : Types.Implementation.DAL_Assessment;
       Graph       : Types.Implementation.Component_Vectors.Vector)
       return String
    with Post => Render_Charts'Result'Length > 0, Global => null;
@@ -88,11 +91,13 @@ package Adacovex.Renderers.HTML is
    --  @param Doc_Metrics  Docstring coverage metrics.
    --  @param Proof  GNATprove proof summary.
    --  @param Tests  Test result summary.
+   --  @param DAL_Assess  DAL compliance assessment (Robustness Comp axis).
    --  @return HTML fragment with the chart cards.
    function Render_Charts
      (Doc_Metrics : Types.Docstring_Metrics;
       Proof       : Types.Proof_Summary;
-      Tests       : Types.Implementation.Test_Summary) return String
+      Tests       : Types.Implementation.Test_Summary;
+      DAL_Assess  : Types.Implementation.DAL_Assessment) return String
    with Post => Render_Charts'Result'Length > 0, Global => null;
 
    --  Render the dependency graph as an interactive HTML tree for the

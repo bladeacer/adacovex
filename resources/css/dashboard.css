@@ -92,3 +92,34 @@ tr.other-std{opacity:.72}
 .stacked-bar{display:flex;height:24px;border-radius:6px;overflow:hidden;border:1px solid var(--border);margin:8px 0}.stacked-bar i{display:block;height:100%}
 /* Responsive */
 @media(max-width:640px){.polar{width:180px;height:180px}.radar-split{flex-direction:column;align-items:flex-start}.compliance-gauge-wrap{flex-direction:column;align-items:flex-start}}
+/* API playground + vendored yace JSON tokens */
+:root{--tok-prop:#0b6bcb;--tok-str:#1a7f37;--tok-num:#953800;--tok-kw:#cf222e;--tok-punc:#57606a;--tok-com:#6a737d}
+@media (prefers-color-scheme:dark){:root{--tok-prop:#79c0ff;--tok-str:#7ee787;--tok-num:#ffa657;--tok-kw:#ff7b72;--tok-punc:#c9d1d9;--tok-com:#8b949e}}
+:root[data-theme="dark"]{--tok-prop:#79c0ff;--tok-str:#7ee787;--tok-num:#ffa657;--tok-kw:#ff7b72;--tok-punc:#c9d1d9;--tok-com:#8b949e}
+.api-intro{font-size:.88rem;color:var(--muted);margin-bottom:12px;line-height:1.5}
+.api-search-row{margin-bottom:16px}
+.api-search{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--fg);font:inherit;font-size:.88rem}
+.api-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:16px}
+.api-group h3{font-size:.86rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);border-bottom:1px solid var(--border);padding-bottom:4px}
+.api-endpoints{display:flex;flex-direction:column;gap:8px}
+.api-btn{display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:var(--card);color:var(--fg);border:1px solid var(--border);border-radius:8px;padding:8px 12px;cursor:pointer;font:inherit;text-align:left}
+.api-btn:hover{border-color:var(--accent)}
+.api-btn.active{border-color:var(--accent);background:var(--th)}
+.api-method{font-size:.7rem;font-weight:700;color:var(--pass);border:1px solid var(--pass);border-radius:4px;padding:0 4px;line-height:1.5}
+.api-path{font-family:monospace;font-weight:600;font-size:.86rem}
+.api-desc{flex-basis:100%;font-size:.78rem;color:var(--muted)}
+.api-result{border-top:1px solid var(--border);padding-top:16px;margin-top:12px}
+.api-result-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.api-reqline{font-family:monospace;font-weight:600;font-size:.9rem}
+.api-status{font-size:.82rem;color:var(--muted)}
+.api-toolbar{margin-left:auto;display:flex;gap:8px}
+.api-svg-preview{margin-bottom:12px}
+.api-svg-preview img{height:24px}
+.api-pre{background:var(--th);border:1px solid var(--border);border-radius:8px;padding:12px;overflow:auto;max-height:520px;font-family:Menlo,Consolas,"Liberation Mono",monospace;font-size:.8rem;line-height:1.4;white-space:pre;margin:0}
+.api-empty{color:var(--muted);font-size:.86rem;margin-top:8px}
+.yace-tok--prop{color:var(--tok-prop)}
+.yace-tok--str{color:var(--tok-str)}
+.yace-tok--num{color:var(--tok-num)}
+.yace-tok--kw{color:var(--tok-kw)}
+.yace-tok--punc{color:var(--tok-punc)}
+.yace-tok--com{color:var(--tok-com)}

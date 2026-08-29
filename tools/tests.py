@@ -423,7 +423,7 @@ class TestGenDashboard(unittest.TestCase):
         for placeholder in gen_dashboard.MODULES:
             self.assertNotIn(placeholder, page)
         scripts = re.findall(r"<script>(.*?)</script>", page, re.S)
-        self.assertEqual(len(scripts), 9)
+        self.assertEqual(len(scripts), 11)
 
 
 if __name__ == "__main__":

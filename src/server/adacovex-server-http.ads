@@ -57,6 +57,16 @@ package Adacovex.Server.HTTP is
        else Route_Not_Found)
    with SPARK_Mode => On, Global => null;
 
+   --  Strip the query string and fragment off a request path so a URL such
+   --  as `/?theme=light` or `/api/deps#top` routes to the same handler as
+   --  `/` or `/api/deps`.  Browsers append `?query` and `#fragment` to the
+   --  path; routing and content negotiation must ignore both.  Returns the
+   --  path up to (and excluding) the first '?' or '#'.
+   --  @param Path  Request path as extracted by Get_Path.
+   --  @return The path with any query string (and fragment) removed.
+   function Strip_Query (Path : String) return String
+   with SPARK_Mode => On, Global => null;
+
    type Server_State is record
       Port          : Positive := 8080;
       --  HTTP server task-pool worker count (default 4; --serve-workers=N).

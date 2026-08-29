@@ -225,10 +225,277 @@ package body Adacovex.Renderers.HTML is
       return Buf (1 .. BL);
    end Radar_Points;
 
+   --  Robustness card: a five-axis radar (Docs, Proof, Tests, Comp, Deps)
+   --  with a tier rating (S/A/B/C/D) derived from their average.  Shared by
+   --  the Overview tab and the Charts tab so the Charts tab is a strict
+   --  superset of the Overview charts (DRY -- one source of truth for the
+   --  headline health visual).  The tier badge renders in the chart centre;
+   --  the legend lists each axis and its percentage.
+   --  @param Doc_Metrics  Docstring coverage metrics (Docs axis).
+   --  @param Proof  GNATprove proof summary (Proof axis).
+   --  @param Tests  Test result summary (Tests axis).
+   --  @param DAL_Assess  DAL compliance assessment (Comp axis).
+   --  @param Graph  Resolved dependency graph (Deps axis: % non-vendored).
+   --  @return The `<div class="chart-card"><h3>Robustness</h3>...` card.
+   function Robustness_Radar_HTML
+     (Doc_Metrics : Types.Docstring_Metrics;
+      Proof       : Types.Proof_Summary;
+      Tests       : Types.Implementation.Test_Summary;
+      DAL_Assess  : Types.Implementation.DAL_Assessment;
+      Graph       : Types.Implementation.Component_Vectors.Vector)
+      return String
+   is
+      R : Unbounded_String;
+
+      procedure Put (S : String) is
+      begin
+         Append (R, S);
+      end Put;
+
+      R_Vals  : array (1 .. 5) of Natural := (others => 0);
+      R_Name  : constant array (1 .. 5) of String (1 .. 8) :=
+        ("Docs    ", "Proof   ", "Tests   ", "Comp    ", "Deps    ");
+      R_Len   : constant array (1 .. 5) of Natural := (4, 5, 5, 4, 4);
+      Vend_Ct : Natural := 0;
+      Avg     : Natural := 0;
+      Tier    : Character := 'D';
+   begin
+      R_Vals (1) := Doc_Metrics.Coverage_Pct;
+      R_Vals (2) := Pct (Proof.Proved_VCs, Proof.Total_VCs);
+      R_Vals (3) :=
+        Pct (Tests.Total_Passed, Tests.Total_Passed + Tests.Total_Failed);
+      R_Vals (4) := (if DAL_Assess.Status = Types.Achieved then 100 else 0);
+      for I in 1 .. Integer (Graph.Length) loop
+         if Graph (I).Scope = Types.Scope_Vendored then
+            Vend_Ct := Vend_Ct + 1;
+         end if;
+      end loop;
+      R_Vals (5) :=
+        Pct (Natural (Graph.Length) - Vend_Ct, Natural (Graph.Length));
+      Avg :=
+        (R_Vals (1) + R_Vals (2) + R_Vals (3) + R_Vals (4) + R_Vals (5)) / 5;
+      if Avg >= 90 then
+         Tier := 'S';
+      elsif Avg >= 80 then
+         Tier := 'A';
+      elsif Avg >= 65 then
+         Tier := 'B';
+      elsif Avg >= 50 then
+         Tier := 'C';
+      end if;
+
+      Put ("<div class=""chart-card""><h3>Robustness</h3>");
+      Put ("<div class=""radar-split"">");
+      Put ("<div class=""radar-chart"">");
+      Put ("<svg viewBox=""0 -14 220 220"" width=""100%"" height=""200""");
+      Put (" role=""img"" aria-label=""Robustness radar with tier rating"">");
+      for G in 1 .. 4 loop
+         Put ("<polygon points=""");
+         Put (Radar_Points (20 * G));
+         Put (""" fill=""none"" stroke=""var(--border)""");
+         Put (" stroke-width=""1"" opacity="".55""/>");
+      end loop;
+      for K in 1 .. 5 loop
+         Put ("<path d=""M110,100 L");
+         Put (Radar_Point (K, 80));
+         Put (""" stroke=""var(--border)"" stroke-width=""1""/>");
+      end loop;
+      Put ("<polygon points=""");
+      for K in 1 .. 5 loop
+         if K > 1 then
+            Put (" ");
+         end if;
+         Put (Radar_Point (K, 4 + (R_Vals (K) * 76) / 100));
+      end loop;
+      Put (""" fill=""var(--accent)"" fill-opacity=""0.25""");
+      Put (" stroke=""var(--accent)"" stroke-width=""2""/>");
+      for K in 1 .. 5 loop
+         Put ("<circle transform=""translate(");
+         Put (Radar_Point (K, 4 + (R_Vals (K) * 76) / 100));
+         Put (")"" r=""2.5"" fill=""var(--accent)""/>");
+      end loop;
+      for K in 1 .. 5 loop
+         Put ("<text transform=""translate(");
+         Put (Radar_Point (K, 98));
+         Put (")"" text-anchor=""");
+         if K = 1 then
+            Put ("middle"" dy=""-5""");
+         elsif K <= 3 then
+            Put ("end"" dy=""3""");
+         else
+            Put ("start"" dy=""3""");
+         end if;
+         Put (" font-size=""8.5"" fill=""var(--muted)"">");
+         Put (R_Name (K) (1 .. R_Len (K)));
+         Put ("</text>");
+      end loop;
+      Put ("<text x=""110"" y=""96"" text-anchor=""middle""");
+      Put (" font-size=""28"" font-weight=""700"" fill=""var(--accent)"">");
+      Put (Tier & "</text>");
+      Put ("<text x=""110"" y=""112"" text-anchor=""middle""");
+      Put (" font-size=""8"" fill=""var(--muted)"">TIER</text>");
+      Put ("</svg>");
+      Put ("</div>");
+      Put ("<div class=""radar-legend"">");
+      Put ("<div class=""tier-wrap"">");
+      Put ("<span class=""tier tier-" & Tier & """>" & Tier);
+      Put ("</span><span class=""tier-note"">Avg ");
+      Put (Img (Avg));
+      Put ("% &middot; S&ge;90 A&ge;80 B&ge;65 C&ge;50 D&lt;50");
+      Put ("</span></div>");
+      Put ("<ul>");
+      for K in 1 .. 5 loop
+         Put ("<li><i></i>");
+         Put (R_Name (K) (1 .. R_Len (K)));
+         Put (" <b>");
+         Put (Img (R_Vals (K)));
+         Put ("%</b></li>");
+      end loop;
+      Put ("</ul></div>");
+      Put ("</div></div>");
+      return To_String (R);
+   end Robustness_Radar_HTML;
+
+   --  SPARK proof-by-check-type radar card: proved rate (0..100) for each
+   --  gnatprove category (Flow, Init, Runtime, Assert, Func) plus a tier
+   --  rating from their average.  Shared by the Overview and Charts tabs so
+   --  the Charts tab is a strict superset of the Overview charts (DRY).
+   --  @param Proof  GNATprove proof summary with per-category counts.
+   --  @return The `<div class="chart-card"><h3>SPARK Proof by Check Type</h3>` card.
+   function Spark_Proof_Radar_HTML (Proof : Types.Proof_Summary) return String
+   is
+      R : Unbounded_String;
+
+      procedure Put (S : String) is
+      begin
+         Append (R, S);
+      end Put;
+
+      type Cat_Rec is record
+         Name : String (1 .. 8);
+         Len  : Natural;
+      end record;
+      Cats  : constant array (1 .. 5) of Cat_Rec :=
+        (("Flow    ", 4),
+         ("Init    ", 4),
+         ("Runtime ", 7),
+         ("Assert  ", 6),
+         ("Func    ", 4));
+      Rates : constant array (1 .. 5) of Natural :=
+        ((if Proof.Flow_Checks > 0
+          then (Proof.Flow_Proved * 100) / Proof.Flow_Checks
+          else 0),
+         (if Proof.Init_Checks > 0
+          then (Proof.Init_Proved * 100) / Proof.Init_Checks
+          else 0),
+         (if Proof.Runtime_Checks > 0
+          then (Proof.Runtime_Proved * 100) / Proof.Runtime_Checks
+          else 0),
+         (if Proof.Assertions > 0
+          then (Proof.Assert_Proved * 100) / Proof.Assertions
+          else 0),
+         (if Proof.Functional_Ct > 0
+          then (Proof.Functional_Proved * 100) / Proof.Functional_Ct
+          else 0));
+      Avg   : Natural := 0;
+      Tier  : Character := 'D';
+   begin
+      for K in 1 .. 5 loop
+         Avg := Avg + Rates (K);
+      end loop;
+      Avg := Avg / 5;
+      if Avg >= 90 then
+         Tier := 'S';
+      elsif Avg >= 80 then
+         Tier := 'A';
+      elsif Avg >= 65 then
+         Tier := 'B';
+      elsif Avg >= 50 then
+         Tier := 'C';
+      end if;
+
+      Put ("<div class=""chart-card""><h3>SPARK Proof by Check Type</h3>");
+      Put ("<div class=""radar-split"">");
+      Put ("<div class=""radar-chart"">");
+      if Rates (1) + Rates (2) + Rates (3) + Rates (4) + Rates (5) = 0 then
+         Put ("<p style=""color:var(--muted);font-size:.85rem"">");
+         Put ("No proof data</p>");
+      else
+         Put ("<svg viewBox=""0 -14 220 220"" width=""100%"" height=""200""");
+         Put (" role=""img"" aria-label=""SPARK proof by check type"">");
+         for G in 1 .. 4 loop
+            Put ("<polygon points=""");
+            Put (Radar_Points (20 * G));
+            Put (""" fill=""none"" stroke=""var(--border)""");
+            Put (" stroke-width=""1"" opacity="".55""/>");
+         end loop;
+         for A in 1 .. 5 loop
+            Put ("<path d=""M110,100 L");
+            Put (Radar_Point (A, 80));
+            Put (""" stroke=""var(--border)"" stroke-width=""1""/>");
+         end loop;
+         Put ("<polygon points=""");
+         for K in 1 .. 5 loop
+            if K > 1 then
+               Put (" ");
+            end if;
+            Put (Radar_Point (K, 4 + (Rates (K) * 76) / 100));
+         end loop;
+         Put (""" fill=""var(--accent)"" fill-opacity=""0.25""");
+         Put (" stroke=""var(--accent)"" stroke-width=""2""/>");
+         for K in 1 .. 5 loop
+            Put ("<circle transform=""translate(");
+            Put (Radar_Point (K, 4 + (Rates (K) * 76) / 100));
+            Put (")"" r=""2.5"" fill=""var(--accent)""/>");
+         end loop;
+         for A in 1 .. 5 loop
+            Put ("<text transform=""translate(");
+            Put (Radar_Point (A, 95));
+            Put (")"" text-anchor=""");
+            if A = 1 then
+               Put ("middle"" dy=""-5""");
+            elsif A <= 3 then
+               Put ("end"" dy=""3""");
+            else
+               Put ("start"" dy=""3""");
+            end if;
+            Put (" font-size=""8.5"" fill=""var(--muted)"">");
+            Put (Cats (A).Name (1 .. Cats (A).Len));
+            Put ("</text>");
+         end loop;
+         Put ("<text x=""110"" y=""96"" text-anchor=""middle""");
+         Put (" font-size=""28"" font-weight=""700"" fill=""var(--accent)"">");
+         Put (Tier & "</text>");
+         Put ("<text x=""110"" y=""112"" text-anchor=""middle""");
+         Put (" font-size=""8"" fill=""var(--muted)"">TIER</text>");
+         Put ("</svg>");
+      end if;
+      Put ("</div>");
+      Put ("<div class=""radar-legend"">");
+      Put ("<div class=""tier-wrap"">");
+      Put ("<span class=""tier tier-" & Tier & """>" & Tier);
+      Put ("</span><span class=""tier-note"">Avg ");
+      Put (Img (Avg));
+      Put ("% &middot; S&ge;90 A&ge;80 B&ge;65 C&ge;50 D&lt;50");
+      Put ("</span></div>");
+      Put ("<ul>");
+      for K in 1 .. 5 loop
+         Put ("<li><i></i>");
+         Put (Cats (K).Name (1 .. Cats (K).Len));
+         Put (" <b>");
+         Put (Img (Rates (K)));
+         Put ("%</b></li>");
+      end loop;
+      Put ("</ul></div>");
+      Put ("</div></div>");
+      return To_String (R);
+   end Spark_Proof_Radar_HTML;
+
    function Render_Charts
      (Doc_Metrics : Types.Docstring_Metrics;
       Proof       : Types.Proof_Summary;
       Tests       : Types.Implementation.Test_Summary;
+      DAL_Assess  : Types.Implementation.DAL_Assessment;
       Graph       : Types.Implementation.Component_Vectors.Vector)
       return String
    is
@@ -320,6 +587,14 @@ package body Adacovex.Renderers.HTML is
       end Bar_Row;
 
    begin
+      --  The Charts tab is a strict superset of the Overview charts: it
+      --  leads with the two radars that headline the Overview (Robustness
+      --  tier + SPARK proof-by-check-type) so every Overview chart appears
+      --  here too, then the direction-specific cards below.
+      Put
+        (Robustness_Radar_HTML (Doc_Metrics, Proof, Tests, DAL_Assess, Graph));
+      Put (Spark_Proof_Radar_HTML (Proof));
+
       --  Proof progress is shown as a donut with explicit text below it.
       --  The text remains available when the ring has no room for labels.
       Put ("<div class=""chart-card""><h3>SPARK Proof</h3>");
@@ -584,11 +859,12 @@ package body Adacovex.Renderers.HTML is
    function Render_Charts
      (Doc_Metrics : Types.Docstring_Metrics;
       Proof       : Types.Proof_Summary;
-      Tests       : Types.Implementation.Test_Summary) return String
+      Tests       : Types.Implementation.Test_Summary;
+      DAL_Assess  : Types.Implementation.DAL_Assessment) return String
    is
       Empty : Types.Implementation.Component_Vectors.Vector;
    begin
-      return Render_Charts (Doc_Metrics, Proof, Tests, Empty);
+      return Render_Charts (Doc_Metrics, Proof, Tests, DAL_Assess, Empty);
    end Render_Charts;
 
    --  Machine name of a dependency scope for JSON output.
@@ -1190,249 +1466,14 @@ package body Adacovex.Renderers.HTML is
       begin
          Put_O ("<div class=""chart-grid"" style=""margin-top:14px"">");
 
-         --  Robustness radar: five quality axes (each 0..100) plus a tier
-         --  rating derived from their average.  Split layout: chart on the
-         --  left, rating meanings and per-axis results on the right.  The
-         --  tier badge renders inside the chart centre.
-         declare
-            R_Vals  : array (1 .. 5) of Natural := (others => 0);
-            R_Name  : constant array (1 .. 5) of String (1 .. 8) :=
-              ("Docs    ", "Proof   ", "Tests   ", "Comp    ", "Deps    ");
-            R_Len   : constant array (1 .. 5) of Natural := (4, 5, 5, 4, 4);
-            Vend_Ct : Natural := 0;
-            Avg     : Natural := 0;
-            Tier    : Character := 'D';
-         begin
-            R_Vals (1) := Doc_Metrics.Coverage_Pct;
-            R_Vals (2) := Pct (Proof.Proved_VCs, Proof.Total_VCs);
-            R_Vals (3) :=
-              Pct
-                (Tests.Total_Passed, Tests.Total_Passed + Tests.Total_Failed);
-            R_Vals (4) :=
-              (if DAL_Assess.Status = Types.Achieved then 100 else 0);
-            for I in 1 .. Integer (Graph.Length) loop
-               if Graph (I).Scope = Types.Scope_Vendored then
-                  Vend_Ct := Vend_Ct + 1;
-               end if;
-            end loop;
-            R_Vals (5) :=
-              Pct (Natural (Graph.Length) - Vend_Ct, Natural (Graph.Length));
-            Avg :=
-              (R_Vals (1) + R_Vals (2) + R_Vals (3) + R_Vals (4) + R_Vals (5))
-              / 5;
-            if Avg >= 90 then
-               Tier := 'S';
-            elsif Avg >= 80 then
-               Tier := 'A';
-            elsif Avg >= 65 then
-               Tier := 'B';
-            elsif Avg >= 50 then
-               Tier := 'C';
-            end if;
-
-            Put_O ("<div class=""chart-card""><h3>Robustness</h3>");
-            Put_O ("<div class=""radar-split"">");
-            Put_O ("<div class=""radar-chart"">");
-            Put_O
-              ("<svg viewBox=""0 -14 220 220"" width=""100%"" height=""200""");
-            Put_O
-              (" role=""img"" aria-label=""Robustness radar with tier rating"">");
-            for G in 1 .. 4 loop
-               Put_O ("<polygon points=""");
-               Put_O (Radar_Points (20 * G));
-               Put_O (""" fill=""none"" stroke=""var(--border)""");
-               Put_O (" stroke-width=""1"" opacity="".55""/>");
-            end loop;
-            for K in 1 .. 5 loop
-               Put_O ("<path d=""M110,100 L");
-               Put_O (Radar_Point (K, 80));
-               Put_O (""" stroke=""var(--border)"" stroke-width=""1""/>");
-            end loop;
-            Put_O ("<polygon points=""");
-            for K in 1 .. 5 loop
-               if K > 1 then
-                  Put_O (" ");
-               end if;
-               Put_O (Radar_Point (K, 4 + (R_Vals (K) * 76) / 100));
-            end loop;
-            Put_O (""" fill=""var(--accent)"" fill-opacity=""0.25""");
-            Put_O (" stroke=""var(--accent)"" stroke-width=""2""/>");
-            for K in 1 .. 5 loop
-               Put_O ("<circle transform=""translate(");
-               Put_O (Radar_Point (K, 4 + (R_Vals (K) * 76) / 100));
-               Put_O (")"" r=""2.5"" fill=""var(--accent)""/>");
-            end loop;
-            for K in 1 .. 5 loop
-               Put_O ("<text transform=""translate(");
-               Put_O (Radar_Point (K, 98));
-               Put_O (")"" text-anchor=""");
-               if K = 1 then
-                  Put_O ("middle"" dy=""-5""");
-               elsif K <= 3 then
-                  Put_O ("end"" dy=""3""");
-               else
-                  Put_O ("start"" dy=""3""");
-               end if;
-               Put_O (" font-size=""8.5"" fill=""var(--muted)"">");
-               Put_O (R_Name (K) (1 .. R_Len (K)));
-               Put_O ("</text>");
-            end loop;
-            --  Tier badge inside the chart centre
-            Put_O ("<text x=""110"" y=""96"" text-anchor=""middle""");
-            Put_O
-              (" font-size=""28"" font-weight=""700"" fill=""var(--accent)"">");
-            Put_O (Tier & "</text>");
-            Put_O ("<text x=""110"" y=""112"" text-anchor=""middle""");
-            Put_O (" font-size=""8"" fill=""var(--muted)"">TIER</text>");
-            Put_O ("</svg>");
-            Put_O ("</div>");
-            Put_O ("<div class=""radar-legend"">");
-            Put_O ("<div class=""tier-wrap"">");
-            Put_O ("<span class=""tier tier-" & Tier & """>" & Tier);
-            Put_O ("</span><span class=""tier-note"">Avg ");
-            Put_O (Img (Avg));
-            Put_O ("% &middot; S&ge;90 A&ge;80 B&ge;65 C&ge;50 D&lt;50");
-            Put_O ("</span></div>");
-            Put_O ("<ul>");
-            for K in 1 .. 5 loop
-               Put_O ("<li><i></i>");
-               Put_O (R_Name (K) (1 .. R_Len (K)));
-               Put_O (" <b>");
-               Put_O (Img (R_Vals (K)));
-               Put_O ("%</b></li>");
-            end loop;
-            Put_O ("</ul></div>");
-            Put_O ("</div></div>");
-         end;
-
-         --  SPARK proof per check category (radar moved from the Charts
-         --  tab: it reads at a glance on the Overview).  Styled like the
-         --  Robustness radar: proof rate per category (0..100), tier badge
-         --  in the centre, and a split legend on the right.
-         declare
-            type Cat_Rec is record
-               Name : String (1 .. 8);
-               Len  : Natural;
-            end record;
-            Cats  : constant array (1 .. 5) of Cat_Rec :=
-              (("Flow    ", 4),
-               ("Init    ", 4),
-               ("Runtime ", 7),
-               ("Assert  ", 6),
-               ("Func    ", 4));
-            Rates : constant array (1 .. 5) of Natural :=
-              ((if Proof.Flow_Checks > 0
-                then (Proof.Flow_Proved * 100) / Proof.Flow_Checks
-                else 0),
-               (if Proof.Init_Checks > 0
-                then (Proof.Init_Proved * 100) / Proof.Init_Checks
-                else 0),
-               (if Proof.Runtime_Checks > 0
-                then (Proof.Runtime_Proved * 100) / Proof.Runtime_Checks
-                else 0),
-               (if Proof.Assertions > 0
-                then (Proof.Assert_Proved * 100) / Proof.Assertions
-                else 0),
-               (if Proof.Functional_Ct > 0
-                then (Proof.Functional_Proved * 100) / Proof.Functional_Ct
-                else 0));
-            Avg   : Natural := 0;
-            Tier  : Character := 'D';
-         begin
-            for K in 1 .. 5 loop
-               Avg := Avg + Rates (K);
-            end loop;
-            Avg := Avg / 5;
-            if Avg >= 90 then
-               Tier := 'S';
-            elsif Avg >= 80 then
-               Tier := 'A';
-            elsif Avg >= 65 then
-               Tier := 'B';
-            elsif Avg >= 50 then
-               Tier := 'C';
-            end if;
-
-            Put_O ("<div class=""chart-card""><h3>SPARK Proof</h3>");
-            Put_O ("<div class=""radar-split"">");
-            Put_O ("<div class=""radar-chart"">");
-            if Rates (1) + Rates (2) + Rates (3) + Rates (4) + Rates (5) = 0
-            then
-               Put_O ("<p style=""color:var(--muted);font-size:.85rem"">");
-               Put_O ("No proof data</p>");
-            else
-               Put_O
-                 ("<svg viewBox=""0 -14 220 220"" width=""100%"" height=""200""");
-               Put_O
-                 (" role=""img"" aria-label=""SPARK proof by check type"">");
-               for G in 1 .. 4 loop
-                  Put_O ("<polygon points=""");
-                  Put_O (Radar_Points (20 * G));
-                  Put_O (""" fill=""none"" stroke=""var(--border)""");
-                  Put_O (" stroke-width=""1"" opacity="".55""/>");
-               end loop;
-               for A in 1 .. 5 loop
-                  Put_O ("<path d=""M110,100 L");
-                  Put_O (Radar_Point (A, 80));
-                  Put_O (""" stroke=""var(--border)"" stroke-width=""1""/>");
-               end loop;
-               Put_O ("<polygon points=""");
-               for K in 1 .. 5 loop
-                  if K > 1 then
-                     Put_O (" ");
-                  end if;
-                  Put_O (Radar_Point (K, 4 + (Rates (K) * 76) / 100));
-               end loop;
-               Put_O (""" fill=""var(--accent)"" fill-opacity=""0.25""");
-               Put_O (" stroke=""var(--accent)"" stroke-width=""2""/>");
-               for K in 1 .. 5 loop
-                  Put_O ("<circle transform=""translate(");
-                  Put_O (Radar_Point (K, 4 + (Rates (K) * 76) / 100));
-                  Put_O (")"" r=""2.5"" fill=""var(--accent)""/>");
-               end loop;
-               for A in 1 .. 5 loop
-                  Put_O ("<text transform=""translate(");
-                  Put_O (Radar_Point (A, 95));
-                  Put_O (")"" text-anchor=""");
-                  if A = 1 then
-                     Put_O ("middle"" dy=""-5""");
-                  elsif A <= 3 then
-                     Put_O ("end"" dy=""3""");
-                  else
-                     Put_O ("start"" dy=""3""");
-                  end if;
-                  Put_O (" font-size=""8.5"" fill=""var(--muted)"">");
-                  Put_O (Cats (A).Name (1 .. Cats (A).Len));
-                  Put_O ("</text>");
-               end loop;
-               --  Tier badge inside the chart centre
-               Put_O ("<text x=""110"" y=""96"" text-anchor=""middle""");
-               Put_O
-                 (" font-size=""28"" font-weight=""700"" fill=""var(--accent)"">");
-               Put_O (Tier & "</text>");
-               Put_O ("<text x=""110"" y=""112"" text-anchor=""middle""");
-               Put_O (" font-size=""8"" fill=""var(--muted)"">TIER</text>");
-               Put_O ("</svg>");
-            end if;
-            Put_O ("</div>");
-            Put_O ("<div class=""radar-legend"">");
-            Put_O ("<div class=""tier-wrap"">");
-            Put_O ("<span class=""tier tier-" & Tier & """>" & Tier);
-            Put_O ("</span><span class=""tier-note"">Avg ");
-            Put_O (Img (Avg));
-            Put_O ("% &middot; S&ge;90 A&ge;80 B&ge;65 C&ge;50 D&lt;50");
-            Put_O ("</span></div>");
-            Put_O ("<ul>");
-            for K in 1 .. 5 loop
-               Put_O ("<li><i></i>");
-               Put_O (Cats (K).Name (1 .. Cats (K).Len));
-               Put_O (" <b>");
-               Put_O (Img (Rates (K)));
-               Put_O ("%</b></li>");
-            end loop;
-            Put_O ("</ul></div>");
-            Put_O ("</div></div>");
-         end;
+         --  The Robustness radar and the SPARK proof-by-check-type radar
+         --  are shared with the Charts tab (which is a strict superset of
+         --  the Overview charts); the single source of truth lives in the
+         --  helper functions so the two tabs cannot drift apart.
+         Put_O
+           (Robustness_Radar_HTML
+              (Doc_Metrics, Proof, Tests, DAL_Assess, Graph));
+         Put_O (Spark_Proof_Radar_HTML (Proof));
 
          --  Tests donut followed by a readout line, so the pass/fail
          --  numbers stay available and the ring colour reflects coverage
@@ -1960,7 +2001,8 @@ package body Adacovex.Renderers.HTML is
                        "__DEPS__",
                        Render_Deps_HTML (Graph)),
                     "__CHARTS__",
-                    Render_Charts (Doc_Metrics, Proof, Tests, Graph)),
+                    Render_Charts
+                      (Doc_Metrics, Proof, Tests, DAL_Assess, Graph)),
                  "__GRAPH_JSON__",
                  Render_Deps_JSON (Graph)),
               "__VERSION__",
