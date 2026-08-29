@@ -39,6 +39,7 @@ import run
 import versions
 import csslint
 para_split = importlib.import_module("para-split")
+rst2md = importlib.import_module("rst2md")
 
 GIT_ENV: dict = {
     "GIT_AUTHOR_NAME": "adacovex test",
@@ -76,6 +77,20 @@ def write_manifest(path: Path, version: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(f'name = "covex"\nversion = "{version}"\n',
                     encoding="utf-8")
+
+
+class TestRst2Md(unittest.TestCase):
+    """rst2md sanitisation keeps generated api-docs pure ASCII."""
+
+    def test_mojibake_em_dash_maps_to_colon(self) -> None:
+        self.assertEqual(rst2md.fix_text("a\u00e2\u0080\u0094b"), "a:b")
+
+    def test_unicode_ellipsis_maps_to_dots(self) -> None:
+        # gnatdoc abbreviates long enum declarations with U+2026.
+        self.assertEqual(rst2md.fix_text("a\u2026b"), "a...b")
+
+    def test_plain_ascii_passes_through(self) -> None:
+        self.assertEqual(rst2md.fix_text("type Route_Kind is"), "type Route_Kind is")
 
 
 class TestAsciiCheck(unittest.TestCase):

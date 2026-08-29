@@ -159,6 +159,12 @@ carries. Exit `0` when a usable gnatprove is detectable without a download.
 Exit `1` otherwise; for full detail see
 [Platforms -- `status` subcommand](platforms.md#status-subcommand).
 
+`adacovex status --export` prints the report as machine-readable JSON on
+stdout; `status --export=PATH` writes it to `PATH`. Scripts and CI can
+consume it without parsing prose. `adacovex status --metrics` prints the
+same data as compact `key=value` lines, one per line, for shell scripts.
+Both flags only work with the `status` subcommand.
+
 ### `complexity`
 
 `adacovex complexity [--target=PATH] [--excludes=EXT,EXT]` runs a
