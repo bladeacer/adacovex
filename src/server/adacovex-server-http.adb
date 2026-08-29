@@ -203,6 +203,25 @@ package body Adacovex.Server.HTTP is
       return Buffer (1 .. Last - 2);
    end Read_Request_Line;
 
+   --  Strip the query string and fragment off a request path.  Returns the
+   --  path up to (and excluding) the first '?' or '#'; an empty result when
+   --  the query/fragment starts at the path's first character.  This is
+   --  routine HTTP path normalisation: browsers pass `?theme=light` and
+   --  `#tab` on the same request path, and routing must ignore both.
+   function Strip_Query (Path : String) return String is
+      First : constant Positive := Path'First;
+   begin
+      if Path'Length = 0 then
+         return "";
+      end if;
+      for I in Path'Range loop
+         if Path (I) = '?' or else Path (I) = '#' then
+            return Path (First .. I - 1);
+         end if;
+      end loop;
+      return Path;
+   end Strip_Query;
+
    function Get_Path (Request_Line : String) return String is
       Start : Natural := 0;
       Fin   : Natural := 0;
@@ -330,7 +349,10 @@ package body Adacovex.Server.HTTP is
 
       Keep_Alive := Is_KA;
 
-      case Route (Path) is
+      --  Route on the query-string-stripped path so `/?theme=light`,
+      --  `/api/metrics?x=1` or `/api/deps#top` reach the same handler as
+      --  `/`, `/api/metrics` and `/api/deps`.
+      case Route (Strip_Query (Path)) is
          when Route_Dashboard      =>
             Send_Response
               (Channel,

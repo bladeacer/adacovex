@@ -15,8 +15,8 @@ test.describe('Dashboard layout', () => {
     await expect(page.locator('#global-search')).toBeVisible();
   });
 
-  test('all seven tabs are present', async ({ page }) => {
-    const tabs = ['overview', 'proof', 'tests', 'compliance', 'deps', 'charts', 'credits'];
+  test('all eight tabs are present', async ({ page }) => {
+    const tabs = ['overview', 'proof', 'tests', 'compliance', 'deps', 'charts', 'api', 'credits'];
     for (const tab of tabs) {
       await expect(page.locator(`[data-tab="${tab}"]`)).toBeVisible();
     }

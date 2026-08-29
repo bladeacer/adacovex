@@ -66,7 +66,7 @@ function buildSections(){
   document.querySelectorAll('.dep-node').forEach(function(n){
     addSection('deps', n.getAttribute('data-name')||'', n, n.innerText);
   });
-  var tabs=['overview','proof','tests','compliance','deps','charts','credits'];
+  var tabs=['overview','proof','tests','compliance','deps','charts','api','credits'];
   tabs.forEach(function(tab){
     var panel=document.getElementById('tab-'+tab);
     if(panel) addSection(tab, tab.charAt(0).toUpperCase()+tab.slice(1), panel, panel.innerText);

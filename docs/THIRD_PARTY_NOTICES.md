@@ -32,6 +32,7 @@ The CycloneDX 1.5 JSON and SPDX 2.3 JSON schemas are referenced for validation o
 | nomnoml | 1.7.0 | MIT | Dependency hierarchy diagram alternative view in the dashboard (`resources/nomnoml.js`, inlined into the served dashboard) |
 | graphre | 0.1.3 | MIT | Graph layout engine for nomnoml (`resources/graphre.js`, inlined; required by the UMD wrapper of nomnoml) |
 | FlexSearch | 0.7.31 | Apache-2.0 | Client-side search indexing for packages, HLRs and dependencies in the dashboard (`resources/flexsearch.js`, inlined into the served dashboard) |
+| yace | 1.1.0 | MIT | JSON / code tokenizer highlighter for the API playground (`resources/js/yace.js`, inlined into the served dashboard) |
 | Charts.css | not bundled (inspiration) | MIT | Inspiration for the hand-rolled dashboard charts |
 
 [nomnoml](https://github.com/skanaar/nomnoml) is bundled under `resources/nomnoml.js` (71 KB, MIT). It is inlined into the dashboard page shell. It renders the dependency hierarchy as a UML-style diagram. The diagram appears in the alternative view of the **Dependencies** tab (Tree / Diagram toggle).
@@ -45,6 +46,10 @@ The MIT licence text is preserved in the bundle header comment.
 [FlexSearch](https://github.com/nextapps-de/flexsearch) is bundled under `resources/flexsearch.js` (16 KB, Apache-2.0). It is inlined into the dashboard page shell. It provides the global search box (packages, HLRs, dependencies). The search box uses an in-memory forward-tokenized index.
 
 The index loads from `/__GRAPH_JSON__` at page load. The Apache-2.0 licence text is preserved in the bundle header comment.
+
+[yace](https://github.com/petersolopov/yace) is a tiny, zero-dependency code editor component (under 2 KB) by Peter Solopov. adacovex vendors its `code()` tokenizer highlighter (`src/highlighters/code.ts`, MIT) as `resources/js/yace.js`. The tokenizer logic is unchanged: rules are tried in order at every position, and tokens are emitted as `<span class="yace-tok yace-tok--<type>">` elements with no built-in colours.
+
+The highlighter is adapted from ESM/TypeScript to a single plain-script binding that exposes `window.YaceTok`, so the dashboard can use it without a build step. The dashboard supplies the token colours via CSS. The API playground uses it to syntax-highlight the prettified JSON responses of the `/api/*` endpoints; a JSON-key rule (`"name":`) runs ahead of the built-in string rule so object keys colour differently from string values. The MIT licence text is preserved in the header comment of `resources/js/yace.js`.
 
 [Charts.css](https://chartscss.org/) is **not** bundled or redistributed with adacovex. The dashboard charts were originally rendered with the vendored Charts.css framework (1.2.0, MIT); adacovex now ships its **own patched version** of those charts, hand-rolled with plain CSS and SVG and driven by the theme's CSS variables. Charts.css is credited for inspiration, and its MIT licence terms are acknowledged here.
 
