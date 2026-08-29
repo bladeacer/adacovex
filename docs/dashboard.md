@@ -245,15 +245,17 @@ shows an empty state with a link to `/api/deps`).
 
 **Two separate searches, similar styling**:
 
-- **Global search** (header, `#global-search`) is the site-wide index: it is
-  powered by vendored [FlexSearch 0.7.31](https://github.com/nextapps-de/flexsearch)
-  (Apache-2.0, `resources/flexsearch.js`, 16 KB, inlined).  At page load a
-  `FlexSearch.Index({tokenize:'forward'})` is hydrated from
-  `ADACOVEX_GRAPH.dependencies` and from rendered `data-name` attributes,
-  lowercased so page content (dependency names, scope badges, even orphan
-  tags in the compliance table) is searchable regardless of case.  Queries
-  are served from the index with a DOM fallback, and hits are shown in a
-  `search-hits` dropdown that jumps to the tree and seeds `dep-filter`.
+- **Global search** (header, `#global-search`) is a site-wide **section
+  index**: at page load it walks the rendered DOM and indexes each section --
+  every metric card (labelled by its heading), every compliance-table row,
+  every dependency node, and every HLR-tagged element -- plus one catch-all
+  entry per tab.  Queries are tokenised and every token must appear in a
+  section's lowercased text (AND semantics), so multi-word page text such as
+  "orphan tags" or a section heading like "Proof Check Types" resolves
+  regardless of case.  Selecting a hit switches to that tab and scrolls to
+  (briefly flashing) the exact section, rather than only switching tabs.
+  Dependency names, versions, scopes, licences and PURLs are indexed too, so
+  the box still filters the dependency tree and seeds `dep-filter`.
 - **Tree filter** (`#dep-filter`, inside the Dependencies tab) is a plain
   client-side name filter over the rendered tree only -- it never touches the
   global index.  The two inputs share the same styling class so they look
@@ -274,9 +276,12 @@ reflects the covered share (fully green at 100%):
 - **SPARK Proof** -- *donut* of proved vs unproved VCs (`720/720` shows a
   full green ring. `680/720` shows `94%` green + `6%` red unproved).
 - **Proof Check Types** -- *bars* of proved checks per category (flow,
-  init, runtime, assertions, functional, termination), each bar normalised
-  to its category total, green proved share with a red unproved remainder.
-  The numbers mirror gnatprove's own summary table: on gnatprove 16 the
+  init, runtime, assertions, functional, termination).  The green proved
+  fill and red unproved remainder are sized against the largest category
+  (green + red = the category's share of the biggest), with the grey track
+  showing the scale remainder -- so bars scale with magnitude exactly like
+  the test chart.  The numbers mirror gnatprove's own summary table: on
+  gnatprove 16 the
   Flow category sums the "Data Dependencies" and "Flow Dependencies" rows,
   and every category's proved count is Total - Justified - Unproved, so the
   rows sum exactly to the Total.
@@ -351,7 +356,7 @@ assessment without parsing HTML:
 
 ```json
 {"spark_level":"Platinum","total_vcs":723,"proved_vcs":723,
- "tests_passed":1064,"tests_failed":0,"doc_coverage":100,
+ "tests_passed":1066,"tests_failed":0,"doc_coverage":100,
  "standard":"all","level":"DAL-C","dal_status":"Achieved",
  "standards":{"DO-178C":{"level":"DAL-C","status":"Achieved"},
                "ISO 26262":{"level":"ASIL B","status":"Achieved"},

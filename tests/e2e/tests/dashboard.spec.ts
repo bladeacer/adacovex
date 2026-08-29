@@ -1,6 +1,10 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Dashboard layout', () => {
+  // The dashboard is a single inlined ~220 KB document; cold browser starts
+  // (first load of the session) can exceed the 30 s default, so give each
+  // test a generous budget.
+  test.setTimeout(60000);
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
   });
@@ -196,5 +200,65 @@ test.describe('Dashboard layout', () => {
     await page.setViewportSize({ width: 375, height: 667 });
     await expect(page.locator('h1')).toBeVisible();
     await expect(page.locator('.tabs')).toBeVisible();
+  });
+
+  test('search scrolls to a page section and flashes it', async ({ page }) => {
+    const search = page.locator('#global-search');
+    await search.fill('orphan');
+    const hit = page.locator('.search-hits.active .search-hit').first();
+    await expect(hit).toBeVisible();
+    await hit.click();
+    // Selecting a content hit switches to the compliance tab AND marks the
+    // matched row with the temporary .search-flash marker (scroll target).
+    await expect(page.locator('[data-tab="compliance"]')).toHaveClass(/active/);
+    const flashed = page.locator('#tab-compliance .search-flash');
+    await expect(flashed.first()).toBeVisible();
+  });
+
+  test('overview paired cards share the row 50-50', async ({ page }) => {
+    await page.click('[data-tab="overview"]');
+    const doc = page.locator('#tab-overview .chart-pair .chart-card', { hasText: 'Doc Coverage' });
+    const scope = page.locator('#tab-overview .chart-pair .chart-card', { hasText: 'Dependency Scope' });
+    await expect(doc).toBeVisible();
+    await expect(scope).toBeVisible();
+    const db = await doc.boundingBox();
+    const sb = await scope.boundingBox();
+    expect(db).not.toBeNull();
+    expect(sb).not.toBeNull();
+    // Each card takes about half the row (allow ~5% for gap/rounding).
+    const ratio = db!.width / sb!.width;
+    expect(ratio).toBeGreaterThan(0.95);
+    expect(ratio).toBeLessThan(1.05);
+  });
+
+  test('proof check bars scale with their value', async ({ page }) => {
+    await page.click('[data-tab="charts"]');
+    const card = page.locator('#tab-charts .chart-card', { hasText: 'Proof Check Types' });
+    const tracks = card.locator('.hbar-track');
+    const n = await tracks.count();
+    expect(n).toBeGreaterThanOrEqual(4);
+    // The track itself never carries a width (flex-fills full width); only
+    // the green/red fills scale against the largest category.
+    const styledTracks = await tracks.evaluateAll((els) =>
+      els.filter((t) => t.getAttribute('style')).length
+    );
+    expect(styledTracks).toBe(0);
+    const widths = await tracks.evaluateAll((els) =>
+      els.map((t) => {
+        const i = t.querySelector('i');
+        return i ? parseInt((i.style.width || '0').replace('%', ''), 10) : -1;
+      })
+    );
+    expect(widths.some((w) => w === 100)).toBe(true);        // largest category fills
+    expect(widths.some((w) => w >= 0 && w < 100)).toBe(true); // smaller categories scale
+  });
+
+  test('all dashboard links share the accent colour', async ({ page }) => {
+    const colours = await page.locator('a').evaluateAll((links) =>
+      Array.from(new Set(links.map((a) => getComputedStyle(a).color)))
+    );
+    // A single distinct computed colour means no link falls back to the
+    // browser's default blue/purple.
+    expect(colours.length).toBe(1);
   });
 });

@@ -296,8 +296,11 @@ package body Adacovex_Renderer_Tests is
       end;
 
       --  Proof bars scale with the category's magnitude (the test-chart
-      --  convention): with Flow at 2 of 8 runtime checks, the Flow track
-      --  is a quarter width while the green/red split stays inside it.
+      --  convention): with Flow at 2 of 8 runtime checks, Flow's green fill
+      --  is a quarter of the full-width track (grey track = the scale
+      --  remainder) while Runtime's is the full width.  The track itself
+      --  no longer carries a width -- fills are measured against the
+      --  largest category so the green+red total equals Checks/Max.
       Proof.Runtime_Checks := 8;
       Proof.Runtime_Proved := 8;
       declare
@@ -306,8 +309,14 @@ package body Adacovex_Renderer_Tests is
              (Doc, Proof, Tests, Assess, Pkgs);
       begin
          R.Check
-           (Contains (S, "class=""hbar-track"" style=""width:25%"""),
-            "proof bar: Flow track scales with the largest category");
+           (Contains (S, "class=""hbar-track""><i style=""width:25%"""),
+            "proof bar: Flow's green fill scales with the largest category");
+         R.Check
+           (Contains (S, "<i style=""width:100%""></i>"),
+            "proof bar: the largest category fills the track");
+         R.Check
+           (not Contains (S, "hbar-track"" style=""width:"),
+            "proof bar: the track itself no longer carries a width");
       end;
 
       --  The dependency-scope ring is a hoverable SVG: each scope segment
@@ -388,8 +397,8 @@ package body Adacovex_Renderer_Tests is
               (S, "conic-gradient(var(--pass) 0% 80%, var(--fail) 80% 100%)"),
             "charts: partial proof donut splits green and red");
          R.Check
-           (Contains (S, "<em style=""width:50%""></em>"),
-            "charts: partial proof bar shows a red remainder");
+           (Contains (S, "<em style=""width:12%""></em>"),
+            "charts: partial proof bar shows a red remainder scaled by max");
       end;
    end Run;
 
