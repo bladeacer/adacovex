@@ -2207,9 +2207,11 @@ package body Adacovex.Renderers.HTML is
       Ent
         ("GET",
          "/docs",
-         "text",
+         "html",
          "Documentation",
-         "Plain-text pointer to the repository documentation under docs/.");
+        "The bundled offline manual: the readthedocs Markdown source built by "
+        & "mdBook and served read-only, so users can consult the manual "
+         & "without a network connection.");
       Put (",");
       Ent
         ("GET",

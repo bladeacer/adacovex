@@ -1,0 +1,524 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Proving and writing proofs - adacovex</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Ada Coverage and Verification Tool manual">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-e96d0476.css">
+        <link rel="stylesheet" href="css/chrome-d279d366.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "coal";
+            window.path_to_searchindex_js = "searchindex-10fd9022.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc-22a96a46.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">adacovex</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="proving-and-writing-spark-proofs"><a class="header" href="#proving-and-writing-spark-proofs">Proving and writing SPARK proofs</a></h1>
+<p>adacovex runs gnatprove, reads its summary, and grades the result against
+the <a href="api-docs/adacovex-spark-levels.html">SPARK assurance levels</a>. This page
+is the guide to both halves: <strong>how proving works</strong> under adacovex, and
+<strong>how to write proofs</strong> – contracts in your own code, and – when the code
+is vendored and cannot be modified – <strong>proof patches</strong> that add the
+contracts for you.</p>
+<h2 id="proving-a-project-with-adacovex"><a class="header" href="#proving-a-project-with-adacovex">Proving a project with adacovex</a></h2>
+<pre><code class="language-bash">adacovex prove --target=.
+</code></pre>
+<p>The <code>prove</code> subcommand (full options:
+<a href="cli-reference.html#the-prove-subcommand">CLI reference – the <code>prove</code> subcommand</a>):</p>
+<ol>
+<li><strong>Resolves gnatprove</strong> without requiring the target to declare it:
+manifest pin &gt; global pin &gt; <code>$PATH</code> &gt; cached toolchain &gt; download. Full
+order and per-method detail:
+<a href="architecture.html#gnatprove-toolchain-resolution-prove-subcommand">Architecture – GNATprove toolchain resolution</a>.</li>
+<li><strong>Runs gnatprove</strong> against the target (or against a patched tree copy
+when proof patches are present – see
+<a href="#proof-patches-proving-vendored-dependencies">Proof patches</a> below) and
+writes the summary to <code>&lt;target&gt;/obj/gnatprove/gnatprove.out</code> – the same
+location the assessment pipeline discovers.</li>
+<li><strong>Falls through to the full assessment</strong>. The assessment parses the fresh
+summary. One command both proves and assesses. The <code>--require-*</code> CI gates
+apply to the proof run directly (<code>--require-spark=Platinum --require-proof=100</code> and more; see
+<a href="cli-reference.html#ci-threshold-gates---require-">CLI reference – CI threshold gates</a>).</li>
+</ol>
+<p>The result cache serves unchanged targets so repeated runs are cheap.
+<code>--force</code> bypasses the cache and forces a full gnatprove reanalysis. A target
+without a <code>gnatprove.out</code> at all is graded <code>Stone</code> with proof metrics <code>N/A</code>.
+Run <code>prove</code> to generate one.</p>
+<h2 id="what-a-proof-contains"><a class="header" href="#what-a-proof-contains">What a proof contains</a></h2>
+<p>gnatprove reports verification conditions (VCs) per check category. The
+summary in <code>gnatprove.out</code> breaks them down as:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Category</th><th>What it covers</th></tr>
+</thead>
+<tbody>
+<tr><td>Run-time checks</td><td>Index bounds, overflow, division-by-zero, range checks – absence of run-time errors</td></tr>
+<tr><td>Assertions</td><td>User <code>pragma Assert</code> statements and pre/postcondition checks</td></tr>
+<tr><td>Functional contracts</td><td><code>Pre</code> / <code>Post</code> / <code>Global</code> contract satisfaction</td></tr>
+<tr><td>Data dependencies</td><td>Flow analysis: uninitialized reads, effective <code>Global</code> contracts</td></tr>
+<tr><td>Initialization</td><td>All objects initialized before first use</td></tr>
+<tr><td>Termination</td><td><code>Loop_Variant</code> / recursion bounds (subprograms proved terminating)</td></tr>
+</tbody>
+</table>
+</div>
+<p>The honest <strong>proved</strong> count is <code>total - justified - unproved</code> (flow plus
+provers). The <a href="api-docs/adacovex-spark-levels.html">assurance level</a> is
+derived from how many of each category were discharged:</p>
+<ul>
+<li><strong>Stone</strong> – no proof run or nothing analyzable;</li>
+<li><strong>Bronze</strong> – flow analysis clean (data dependencies, initialization);</li>
+<li><strong>Silver</strong> – run-time checks proved, assertions proved;</li>
+<li><strong>Gold</strong> – functional contracts proved on top;</li>
+<li><strong>Platinum</strong> – every VC proved: <strong>0 unproved</strong> (and, in adacovex’s own
+gate, <strong>0 justified</strong> – no <code>pragma Annotate</code> justifications).</li>
+</ul>
+<p>Justified VCs count neither as proved nor as unproved. Only unproved VCs
+downgrade the level. For a DAL assessment, the level must meet the requirement
+of the tier (<code>--dal=C</code> needs Bronze, <code>--dal=A</code> needs Gold, and more) – see
+<a href="api-docs/adacovex-dal-levels.html">DAL levels</a>.</p>
+<h2 id="writing-proofs-spark-contracts"><a class="header" href="#writing-proofs-spark-contracts">Writing proofs: SPARK contracts</a></h2>
+<p>A proof starts with contracts in the source, written as Ada aspects:</p>
+<pre><code class="language-ada">package Body_Vec is
+
+   function Clamp (Value : in Integer; Lo : in Integer; Hi : in Integer)
+     return Integer
+     with Pre  =&gt; Lo &lt;= Hi,
+          Post =&gt; Clamp'Result in Lo .. Hi;
+
+end Body_Vec;
+</code></pre>
+<p>Rules that matter in practice:</p>
+<ul>
+<li><strong><code>SPARK_Mode =&gt; On</code> selects what gnatprove analyses.</strong> Without it a unit
+is out of proof scope. It can be declared on the package
+(<code>package P with SPARK_Mode =&gt; On is</code>), on individual subprograms, or
+both – adacovex’s own source uses package-level On on pure units and
+per-subprogram On aspects inside default-off bodies.</li>
+<li><strong>A body is analysed only when the body itself opts in.</strong> Declaring
+<code>SPARK_Mode =&gt; On</code> on the <em>spec</em> does not make gnatprove analyse the body.
+The body must declare it too (on the <code>package body</code> line or per subprogram).
+This is the rule that makes proof patches necessary for vendored code – see
+below.</li>
+<li><strong>I/O bodies are skipped by design.</strong> A body that calls <code>Ada.Text_IO</code> (which
+is <code>SPARK_Mode Off</code>) cannot be analysed. gnatprove reports the unit out of
+proof scope. This never drags the assessed level down – it means those
+bodies are not proved.</li>
+<li><strong>Contracts are proved against the body.</strong> gnatprove proves that every
+possible body execution satisfies the declared <code>Pre</code>/<code>Post</code>. Callers must in
+turn establish the <code>Pre</code> before calling.</li>
+<li><strong><code>--steps</code> controls the proof budget.</strong> gnatprove’s default step limit can
+produce solver-timeout false negatives. adacovex runs with <code>--steps 10000</code>
+by default so such timeouts are not reported as unproved. An explicit
+<code>--steps=N</code> overrides.</li>
+</ul>
+<p>The goal for a clean proof: every VC in every category proved, 0 unproved,
+0 justified.</p>
+<h2 id="proof-patches-proving-vendored-dependencies"><a class="header" href="#proof-patches-proving-vendored-dependencies">Proof patches: proving vendored dependencies</a></h2>
+<p>Patch files at <code>&lt;target&gt;/.adacovex/patches/</code> exist so vendored code you
+cannot modify still counts toward the audit. Their best-known job is
+overlaying <strong>docstrings</strong> for strict-mode coverage. A patch can also carry
+<strong>SPARK proof aspects</strong> so vendored dependencies participate in the proof
+with real contracts – without forking or touching their sources.</p>
+<h3 id="why-proof-patches-are-necessary"><a class="header" href="#why-proof-patches-are-necessary">Why proof patches are necessary</a></h3>
+<p>Three facts force the design:</p>
+<ol>
+<li><strong>Strict mode counts vendored code.</strong> By default adacovex scans every
+directory except the always-excluded ones. The excluded directories are
+<code>.git</code>, <code>obj</code>, <code>tests</code>, <code>config</code>, and <code>.adacovex</code>. A vendored dependency’s
+missing docstrings and missing contracts count against the target.
+<code>--relaxed</code> skips vendored dirs but drops the audit to a quick pass – not
+an option for a compliance assessment.</li>
+<li><strong>gnatprove analyses a body only when the body itself opts in.</strong> (The
+rule from <a href="#writing-proofs-spark-contracts">Writing proofs</a> above.) A
+vendored spec with no contracts contributes nothing to the proof. A
+vendored body without <code>SPARK_Mode</code> is skipped entirely.</li>
+<li><strong>The vendored sources are immutable.</strong> The dependency ships as-is. You
+cannot add contracts to it. Re-publishing a patched fork defeats the
+point of vendoring.</li>
+</ol>
+<p>A proof patch is the merge of these three constraints. It re-declares the
+vendored spec with contracts (<code>.ads</code> patch). It opts the vendored body into
+the proof (<code>.adb</code> patch). The <code>prove</code> subcommand merges both into a patched
+tree copy before running gnatprove – the originals are never touched.</p>
+<h3 id="how-proof-patches-are-applied"><a class="header" href="#how-proof-patches-are-applied">How proof patches are applied</a></h3>
+<ol>
+<li><code>Count_Proof_Patches</code> scans <code>&lt;target&gt;/.adacovex/patches/</code> for <code>.ads</code> and
+<code>.adb</code> files. A patch carrying any of <code>SPARK_Mode</code>, <code>Pre =&gt;</code>, <code>Post =&gt;</code>,
+or <code>Global =&gt;</code> is a <em>proof patch</em>. A docstring-only patch never engages
+the proof machinery. A target with no proof patches is proved against its
+own tree exactly as before.</li>
+<li><code>Build_Patched_Copy</code> copies the target tree (excluding <code>.git</code>, <code>obj</code>,
+and <code>.adacovex</code>) into <code>&lt;target&gt;/obj/adacovex-proof/</code> and overwrites each
+proof-patched source with its merged form.</li>
+<li>gnatprove runs against the copy’s root project and the resulting
+<code>gnatprove.out</code> is copied back to <code>&lt;target&gt;/obj/gnatprove/gnatprove.out</code>
+for the assessment pipeline.</li>
+<li>Patch contents are folded into the prove result-cache key, so a patch
+edit invalidates the cached proof and forces a re-prove (<code>--force</code> also
+bypasses the cache).</li>
+</ol>
+<p>The patched copy lives under the target’s <code>obj/</code>, so it is excluded from
+scanning, manifest graphs, and the prove input hash.</p>
+<h3 id="writing-a-spec-patch-ads"><a class="header" href="#writing-a-spec-patch-ads">Writing a spec patch (<code>.ads</code>)</a></h3>
+<p>A spec patch mirrors the vendored spec: same package name, same subprogram
+declarations (with docstrings, since strict mode requires them), plus the
+aspects you want gnatprove to prove:</p>
+<pre><code class="language-ada">--  .adacovex/patches/demo/deps/vt100/vt100.ads
+package VT100 with SPARK_Mode =&gt; On is
+
+   --  Scroll a region of the screen up.
+   --  @param From  Starting line of scroll region.
+   --  @param To    Ending line of scroll region.
+   procedure Scroll_Screen (From : in Natural; To : in Natural)
+     with Pre =&gt; From &lt;= To;
+
+end VT100;
+</code></pre>
+<p>The merge splices the package-level aspect onto the original package
+declaration line and replaces each aspect-carrying subprogram declaration
+with the patch’s declaration block. Subprograms the patch does not re-declare
+with aspects are left untouched, so a patch can add a contract to one
+subprogram without disturbing its siblings.</p>
+<h3 id="writing-a-body-patch-adb"><a class="header" href="#writing-a-body-patch-adb">Writing a body patch (<code>.adb</code>)</a></h3>
+<p>The spec patch declares the contracts. The <strong>body patch</strong> is what makes
+gnatprove actually analyse the vendored body (the body-must-opt-in rule). It
+lives at the body’s relative path and mirrors the body’s declarations with
+<em>stub bodies</em> that the merge ignores – the original implementation is
+preserved:</p>
+<pre><code class="language-ada">--  .adacovex/patches/demo/deps/vecmath/vecmath.adb
+package body Vecmath with SPARK_Mode =&gt; On is
+
+   function Clamp (Value : in Integer; Lo : in Integer; Hi : in Integer)
+     return Integer with SPARK_Mode =&gt; On is
+   begin
+      null;  --  stub: the original body's implementation is kept
+   end Clamp;
+
+end Vecmath;
+</code></pre>
+<p>The merge replaces the original declaration (up to its <code>is</code>) with the
+patch’s aspect-carrying declaration and keeps the original body proper, so
+the copy gnatprove sees is <code>package body Vecmath with SPARK_Mode =&gt; On is ... &lt;original implementation&gt; ...</code>. A fully SPARK-clean body needs only the
+package-level aspect. The per-subprogram aspect covers bodies with a mix of
+clean and I/O-bound subprograms.</p>
+<h3 id="matching-rules"><a class="header" href="#matching-rules">Matching rules</a></h3>
+<p>The merge matches each patched declaration against the original by <strong>name and
+normalised parameter profile</strong>:</p>
+<ul>
+<li>Matching is whitespace-insensitive. A single-line parameter list matches a
+multi-line one.</li>
+<li>The default <code>in</code> mode is equivalent to a bare mode (<code>X : in Integer</code> matches
+<code>X : Integer</code>). <code>in out</code> and <code>out</code> are distinct modes.</li>
+<li>an overloaded subprogram patches its exact signature – a patched
+two-argument <code>Scroll_Screen</code> replaces the two-argument original, never a
+same-named sibling;</li>
+<li>a spec declaration terminates at its <code>;</code>, a body declaration at its <code>is</code>;</li>
+<li>a patched subprogram with <strong>no match</strong> in the original fails loudly (the
+patch is skipped and reported) rather than silently dropping the contract.</li>
+</ul>
+<h3 id="worked-example-vecmathclamp"><a class="header" href="#worked-example-vecmathclamp">Worked example: <code>Vecmath.Clamp</code></a></h3>
+<p>A vendored package whose spec and body carry no contracts:</p>
+<pre><code class="language-ada">--  demo/deps/vecmath/vecmath.ads (vendored, unmodified)
+package Vecmath is
+   function Clamp (Value : in Integer; Lo : in Integer; Hi : in Integer)
+     return Integer;
+end Vecmath;
+</code></pre>
+<pre><code class="language-ada">--  demo/deps/vecmath/vecmath.adb (vendored, unmodified)
+package body Vecmath is
+   function Clamp (Value : in Integer; Lo : in Integer; Hi : in Integer)
+     return Integer is
+   begin
+      if Value &lt; Lo then
+         return Lo;
+      elsif Value &gt; Hi then
+         return Hi;
+      else
+         return Value;
+      end if;
+   end Clamp;
+end Vecmath;
+</code></pre>
+<p>The two patch files from above (spec with
+<code>Pre =&gt; Lo &lt;= Hi, Post =&gt; Clamp'Result in Lo .. Hi</code>, and body with
+<code>SPARK_Mode =&gt; On</code>) merge into the copy unchanged in behaviour. gnatprove
+proves the contract: 2 VCs (the <code>Clamp</code> postcondition and its termination
+check), 0 unproved. A caller in the target’s own code can then rely on the
+contract without the vendored sources ever changing.</p>
+<h3 id="when-contracts-prove--and-when-they-are-skipped"><a class="header" href="#when-contracts-prove--and-when-they-are-skipped">When contracts prove – and when they are skipped</a></h3>
+<ul>
+<li><strong>SPARK-clean body + body patch</strong> – gnatprove proves the patched
+contracts outright (the example above).</li>
+<li><strong>I/O-bound body</strong> (calls <code>Ada.Text_IO</code>, which is <code>SPARK_Mode Off</code>) –
+gnatprove skips the I/O bodies by design and reports the unit out of proof
+scope. The contracts are still <em>declared</em> and the mechanism is exercised,
+but the body is not proved – and crucially, it never drags the target’s
+proof level down. This is the VT100 dogfood case in
+<a href="https://github.com/bladeacer/Ada_CRDT">Ada_CRDT</a>.</li>
+</ul>
+<h3 id="common-pitfalls"><a class="header" href="#common-pitfalls">Common pitfalls</a></h3>
+<ul>
+<li><strong>Spec patch without a body patch.</strong> A SPARK-clean vendored body stays out
+of proof scope. gnatprove reports “no checks generated” or skips the unit.
+Add the <code>.adb</code> patch to opt the body in.</li>
+<li><strong>A patched declaration that does not match anything.</strong> Check the name and
+the parameter list (modes included) against the original. The merge reports
+<code>could not be merged ... (unmatched subprogram or oversized file)</code> and skips
+the patch.</li>
+<li><strong>Patching the wrong overload.</strong> The match is profile-aware, so a patch
+entry replaces exactly the signature it re-declares – verify you wrote the
+same parameter list as the overload you mean.</li>
+<li><strong>Expecting contracts to prove against a non-SPARK body.</strong> <code>Ada.Text_IO</code>
+and other <code>SPARK_Mode Off</code> dependencies cannot be analysed; the patch still
+applies, but the proof does not cover those bodies.</li>
+</ul>
+<h2 id="see-also"><a class="header" href="#see-also">See also</a></h2>
+<ul>
+<li><a href="api-docs/adacovex-spark-levels.html">SPARK assurance levels</a> – Stone to
+Platinum, per-category objectives</li>
+<li><a href="cli-reference.html#the-prove-subcommand">CLI reference – the <code>prove</code> subcommand</a>
+– flags, gnatprove resolution, the fall-through assessment</li>
+<li><a href="cli-reference.html#ci-threshold-gates---require-">CLI reference – CI threshold gates</a>
+– <code>--require-spark</code> / <code>--require-proof</code> / <code>--require-tests</code></li>
+<li><a href="target-projects.html">Target project requirements</a> – what a project must provide</li>
+<li><a href="architecture.html#proof-patches-spark-contracts-over-vendored-dependencies">Architecture – proof patches</a>
+– the design, the merge engine, and the patched-copy pipeline</li>
+<li><a href="proof/16.1.0-ledger.html">The proof ledger</a> – how adacovex’s own 487-VC
+proof is tracked</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="developer-guide.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="architecture.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="developer-guide.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="architecture.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-09f2665d.js"></script>
+
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-abc7f01d.js"></script>
+        <script src="book-609e4cb8.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

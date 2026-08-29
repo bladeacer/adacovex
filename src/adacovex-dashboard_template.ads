@@ -321,47 +321,53 @@ package Adacovex.Dashboard_Template is
   & "irection:column;align-items:flex-start}.compliance-gauge-wra"
   & "p{flex-direction:column;align-items:flex-start}}:root{--tok-"
   & "prop:#0b6bcb;--tok-str:#1a7f37;--tok-num:#953800;--tok-kw:#c"
-  & "f222e;--tok-punc:#57606a;--tok-com:#6a737d}@media (prefers-c"
-  & "olor-scheme:dark){:root{--tok-prop:#79c0ff;--tok-str:#7ee787"
-  & ";--tok-num:#ffa657;--tok-kw:#ff7b72;--tok-punc:#c9d1d9;--tok"
-  & "-com:#8b949e}}:root[data-theme=""dark""]{--tok-prop:#79c0ff;--"
+  & "f222e;--tok-punc:#57606a;--tok-com:#6a737d}:root[data-theme="
+  & """light""]{--tok-prop:#0b6bcb;--tok-str:#1a7f37;--tok-num:#953"
+  & "800;--tok-kw:#cf222e;--tok-punc:#57606a;--tok-com:#6a737d}@m"
+  & "edia (prefers-color-scheme:dark){:root{--tok-prop:#79c0ff;--"
   & "tok-str:#7ee787;--tok-num:#ffa657;--tok-kw:#ff7b72;--tok-pun"
-  & "c:#c9d1d9;--tok-com:#8b949e}.api-intro{font-size:.88rem;colo"
-  & "r:var(--muted);margin-bottom:12px;line-height:1.5}.api-searc"
-  & "h-row{margin-bottom:16px}.api-search{width:100%;padding:8px "
-  & "12px;border:1px solid var(--border);border-radius:8px;backgr"
-  & "ound:var(--card);color:var(--fg);font:inherit;font-size:.88r"
-  & "em}.api-groups{display:grid;grid-template-columns:repeat(aut"
-  & "o-fit,minmax(280px,1fr));gap:16px;margin-bottom:16px}.api-gr"
-  & "oup h3{font-size:.86rem;text-transform:uppercase;letter-spac"
-  & "ing:.04em;color:var(--muted);border-bottom:1px solid var(--b"
-  & "order);padding-bottom:4px}.api-endpoints{display:flex;flex-d"
-  & "irection:column;gap:8px}.api-btn{display:flex;flex-wrap:wrap"
-  & ";align-items:center;gap:8px;background:var(--card);color:var"
-  & "(--fg);border:1px solid var(--border);border-radius:8px;padd"
-  & "ing:8px 12px;cursor:pointer;font:inherit;text-align:left}.ap"
-  & "i-btn:hover{border-color:var(--accent)}.api-btn.active{borde"
-  & "r-color:var(--accent);background:var(--th)}.api-method{font-"
-  & "size:.7rem;font-weight:700;color:var(--pass);border:1px soli"
-  & "d var(--pass);border-radius:4px;padding:0 4px;line-height:1."
-  & "5}.api-path{font-family:monospace;font-weight:600;font-size:"
-  & ".86rem}.api-desc{flex-basis:100%;font-size:.78rem;color:var("
-  & "--muted)}.api-result{border-top:1px solid var(--border);padd"
-  & "ing-top:16px;margin-top:12px}.api-result-head{display:flex;a"
-  & "lign-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}"
-  & ".api-reqline{font-family:monospace;font-weight:600;font-size"
-  & ":.9rem}.api-status{font-size:.82rem;color:var(--muted)}.api-"
-  & "toolbar{margin-left:auto;display:flex;gap:8px}.api-svg-previ"
-  & "ew{margin-bottom:12px}.api-svg-preview img{height:24px}.api-"
-  & "pre{background:var(--th);border:1px solid var(--border);bord"
-  & "er-radius:8px;padding:12px;overflow:auto;max-height:520px;fo"
-  & "nt-family:Menlo,Consolas,""Liberation Mono"",monospace;font-si"
-  & "ze:.8rem;line-height:1.4;white-space:pre;margin:0}.api-empty"
-  & "{color:var(--muted);font-size:.86rem;margin-top:8px}.yace-to"
-  & "k--prop{color:var(--tok-prop)}.yace-tok--str{color:var(--tok"
-  & "-str)}.yace-tok--num{color:var(--tok-num)}.yace-tok--kw{colo"
-  & "r:var(--tok-kw)}.yace-tok--punc{color:var(--tok-punc)}.yace-"
-  & "tok--com{color:var(--tok-com)}"
+  & "c:#c9d1d9;--tok-com:#8b949e}}:root[data-theme=""dark""]{--tok-"
+  & "prop:#79c0ff;--tok-str:#7ee787;--tok-num:#ffa657;--tok-kw:#f"
+  & "f7b72;--tok-punc:#c9d1d9;--tok-com:#8b949e}.api-intro{font-s"
+  & "ize:.88rem;color:var(--muted);margin-bottom:12px;line-height"
+  & ":1.5}.api-search-row{margin-bottom:16px}.api-search{width:10"
+  & "0%;padding:8px 12px;border:1px solid var(--border);border-ra"
+  & "dius:8px;background:var(--card);color:var(--fg);font:inherit"
+  & ";font-size:.88rem}.api-groups{display:grid;grid-template-col"
+  & "umns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bott"
+  & "om:16px}.api-group h3{font-size:.86rem;text-transform:upperc"
+  & "ase;letter-spacing:.04em;color:var(--muted);border-bottom:1p"
+  & "x solid var(--border);padding-bottom:4px}.api-endpoints{disp"
+  & "lay:flex;flex-direction:column;gap:8px}.api-btn{display:flex"
+  & ";flex-wrap:wrap;align-items:center;gap:8px;background:var(--"
+  & "card);color:var(--fg);border:1px solid var(--border);border-"
+  & "radius:8px;padding:8px 12px;cursor:pointer;font:inherit;text"
+  & "-align:left}.api-btn:hover{border-color:var(--accent)}.api-b"
+  & "tn.active{border-color:var(--accent);background:var(--th)}.a"
+  & "pi-method{font-size:.7rem;font-weight:700;color:var(--pass);"
+  & "border:1px solid var(--pass);border-radius:4px;padding:0 4px"
+  & ";line-height:1.5}.api-path{font-family:monospace;font-weight"
+  & ":600;font-size:.86rem}.api-path-link{color:var(--accent);tex"
+  & "t-decoration:none}.api-path-link:hover{text-decoration:under"
+  & "line;color:var(--accent)}.api-json-link{color:var(--accent);"
+  & "text-decoration:underline}.api-json-link:hover{color:var(--t"
+  & "ok-prop)}.api-desc{flex-basis:100%;font-size:.78rem;color:va"
+  & "r(--muted)}.api-result{border-top:1px solid var(--border);pa"
+  & "dding-top:16px;margin-top:12px}.api-result-head{display:flex"
+  & ";align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8p"
+  & "x}.api-reqline{font-family:monospace;font-weight:600;font-si"
+  & "ze:.9rem}.api-status{font-size:.82rem;color:var(--muted)}.ap"
+  & "i-toolbar{margin-left:auto;display:flex;gap:8px}.api-svg-pre"
+  & "view{margin-bottom:12px}.api-svg-preview img{height:24px}.ap"
+  & "i-pre{background:var(--th);border:1px solid var(--border);bo"
+  & "rder-radius:8px;padding:12px;overflow:auto;max-height:520px;"
+  & "font-family:Menlo,Consolas,""Liberation Mono"",monospace;font-"
+  & "size:.8rem;line-height:1.4;white-space:pre;margin:0}.api-emp"
+  & "ty{color:var(--muted);font-size:.86rem;margin-top:8px}.yace-"
+  & "tok--prop{color:var(--tok-prop)}.yace-tok--str{color:var(--t"
+  & "ok-str)}.yace-tok--num{color:var(--tok-num)}.yace-tok--kw{co"
+  & "lor:var(--tok-kw)}.yace-tok--punc{color:var(--tok-punc)}.yac"
+  & "e-tok--com{color:var(--tok-com)}"
   & ASCII.LF
   & "</style></head><body>"
   & ASCII.LF
@@ -587,8 +593,9 @@ package Adacovex.Dashboard_Template is
   & "<div style=""text-align:center"">Generated by adacovex &middot"
   & "; Embed: <code>?theme=light|dark|system</code> &middot; API:"
   & " <a href=""/api/metrics"">/api/metrics</a> &middot; <a href=""/"
-  & "api/deps"">/api/deps</a> &middot; <a href=""#api"" onclick=""sho"
-  & "wTab('api')"">API playground</a></div>"
+  & "api/deps"">/api/deps</a> &middot; <a href=""/docs"" target=""_bl"
+  & "ank"" rel=""noopener"">Manual</a> &middot; <a href=""#api"" oncli"
+  & "ck=""showTab('api')"">API playground</a></div>"
   & ASCII.LF
   & "</footer>"
   & ASCII.LF
@@ -6660,6 +6667,29 @@ package Adacovex.Dashboard_Template is
   & ASCII.LF
   & "}"
   & ASCII.LF
+  & "function linkifyEndpointPaths(highlighted){"
+  & ASCII.LF
+  & "return highlighted.replace(/(yace-tok--str\"">)((&#34;|&quot;"
+  & ")?\/api\/[^<]+|(&#34;|&quot;)?\/badge\/[^<]+|(&#34;|&quot;)?"
+  & "\/docs)(<\/span>)/g,"
+  & ASCII.LF
+  & "function(_m, open, path, q1, q2, q3, close){"
+  & ASCII.LF
+  & "var quote = q1 || q2 || q3 || '';"
+  & ASCII.LF
+  & "var bare = path.replace(quote, '').trim();"
+  & ASCII.LF
+  & "if (!bare) return _m;"
+  & ASCII.LF
+  & "return open + quote + '<a class=""api-json-link"" href=""' + ba"
+  & "re +"
+  & ASCII.LF
+  & "'"" target=""_blank"" rel=""noopener"">' + bare + '</a>' + close;"
+  & ASCII.LF
+  & "});"
+  & ASCII.LF
+  & "}"
+  & ASCII.LF
   & "function el(tag, cls, text){"
   & ASCII.LF
   & "var n = document.createElement(tag);"
@@ -6739,7 +6769,27 @@ package Adacovex.Dashboard_Template is
   & ASCII.LF
   & "b.appendChild(el('span', 'api-method', e.method));"
   & ASCII.LF
-  & "b.appendChild(el('span', 'api-path', e.path));"
+  & "var pathA = document.createElement('a');"
+  & ASCII.LF
+  & "pathA.className = 'api-path api-path-link';"
+  & ASCII.LF
+  & "pathA.href = e.path;"
+  & ASCII.LF
+  & "pathA.textContent = e.path;"
+  & ASCII.LF
+  & "pathA.setAttribute('target', '_blank');"
+  & ASCII.LF
+  & "pathA.setAttribute('rel', 'noopener');"
+  & ASCII.LF
+  & "pathA.title = 'Open ' + e.method + ' ' + e.path + ' in a new"
+  & " tab';"
+  & ASCII.LF
+  & "pathA.setAttribute('aria-label', 'Open endpoint ' + e.path);"
+  & ASCII.LF
+  & "pathA.addEventListener('click', function(ev){ ev.stopPropaga"
+  & "tion(); });"
+  & ASCII.LF
+  & "b.appendChild(pathA);"
   & ASCII.LF
   & "b.appendChild(el('span', 'api-desc', e.description || ''));"
   & ASCII.LF
@@ -6909,7 +6959,7 @@ package Adacovex.Dashboard_Template is
   & ASCII.LF
   & "var pretty = prettyJson(text);"
   & ASCII.LF
-  & "if (HL) pre.innerHTML = HL(pretty);"
+  & "if (HL) pre.innerHTML = linkifyEndpointPaths(HL(pretty));"
   & ASCII.LF
   & "else pre.textContent = pretty;"
   & ASCII.LF

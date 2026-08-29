@@ -3,7 +3,7 @@
   "specVersion": "1.5",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-08-29T23:06:06",
+    "timestamp": "2026-08-30T07:49:43",
     "tools": [
       {"vendor": "bladeacer", "name": "adacovex", "version": "1.37.0"}
     ],
@@ -12,7 +12,7 @@
       "bom-ref": "pkg:alire/covex@1.37.0",
       "name": "covex",
       "version": "1.37.0",
-      "language": "Ada; Python; JavaScript",
+      "language": "Ada; Python; HTML",
       "purl": "pkg:alire/covex@1.37.0",
       "licenses": [{"license": {"id": "Apache-2.0"}}],
       "description": "Ada/SPARK coverage, proof, multi-standard compliance tool",
@@ -45,6 +45,17 @@
       },
     {
       "type": "library",
+      "bom-ref": "pkg:generic/yace",
+      "name": "yace",
+      "version": "1.1.0",
+      "language": "JavaScript",
+      "purl": "pkg:generic/yace",
+      "licenses": [{"license": {"id": "MIT"}}],
+      "externalReferences": [{"url": "https://github.com/petersolopov/yace", "type": "website"}],
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "vendored"}]
+      },
+    {
+      "type": "library",
       "bom-ref": "pkg:generic/nomnoml",
       "name": "nomnoml",
       "version": "1.7.0",
@@ -72,7 +83,7 @@
       "version": "16.1.0",
       "language": "Ada",
       "purl": "pkg:alire/gnatprove",
-      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
       },
     {
       "type": "library",
@@ -166,6 +177,15 @@
       },
     {
       "type": "library",
+      "bom-ref": "pkg:generic/cargo",
+      "name": "cargo",
+      "version": "1.98.0",
+      "purl": "pkg:generic/cargo",
+      "description": "System tool referenced by the project (dev dependency)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
+      },
+    {
+      "type": "library",
       "bom-ref": "pkg:generic/mandb",
       "name": "mandb",
       "version": "2.13.1",
@@ -195,7 +215,7 @@
   "dependencies": [
     {
       "ref": "pkg:alire/covex@1.37.0",
-      "dependsOn": ["pkg:generic/flexsearch", "pkg:generic/graphre", "pkg:generic/nomnoml", "pkg:npm/@playwright/test@1.62.1", "pkg:alire/gnatprove", "pkg:alire/gnatdoc_bin", "pkg:alire/gnatformat_bin", "pkg:generic/bash", "pkg:generic/curl", "pkg:generic/alr", "pkg:generic/go", "pkg:generic/python3", "pkg:generic/git", "pkg:generic/make", "pkg:generic/jj", "pkg:generic/mandb", "pkg:generic/pnpm", "pkg:generic/npm"]
+      "dependsOn": ["pkg:generic/flexsearch", "pkg:generic/graphre", "pkg:generic/yace", "pkg:generic/nomnoml", "pkg:npm/@playwright/test@1.62.1", "pkg:alire/gnatprove", "pkg:alire/gnatdoc_bin", "pkg:alire/gnatformat_bin", "pkg:generic/bash", "pkg:generic/curl", "pkg:generic/alr", "pkg:generic/go", "pkg:generic/python3", "pkg:generic/git", "pkg:generic/make", "pkg:generic/jj", "pkg:generic/cargo", "pkg:generic/mandb", "pkg:generic/pnpm", "pkg:generic/npm"]
     }
   ]
 }

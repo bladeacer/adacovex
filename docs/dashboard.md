@@ -109,6 +109,7 @@ The same data is available headlessly at `/api/metrics` and via
 | `GET /api/metrics` | JSON object with the key assessment metrics |
 | `GET /api/deps` | JSON dependency graph (same data as the Dependencies tab) |
 | `GET /api/endpoints` | JSON endpoint catalog (the list the API playground builds its UI from) |
+| `GET /docs` | The bundled offline manual: the mdBook manual built into the binary (HTML, no external assets) |
 | `GET /badge/spark.svg` | SPARK assurance level badge |
 | `GET /badge/tests.svg` | Test pass/fail badge |
 | `GET /badge/do178c.svg` | DO-178C compliance badge (Achieved / Unmet) |
@@ -123,6 +124,20 @@ Query strings and URL fragments are stripped before routing, so
 `/?theme=light`, `/api/metrics?x=1` and `/api/deps#top` reach the same
 handlers as `/`, `/api/metrics` and `/api/deps` instead of 404ing.
 
+## Bundled offline manual
+
+The `--serve` server also serves the **bundled offline manual** at `/docs`
+(both spellings, with and without the trailing slash, reach the same page).
+The manual is the same Markdown source that powers the Read the Docs site
+(`docs/`, an mdBook project with `book.toml` and `SUMMARY.md`); at build
+time `tools/gen-docs.py` runs `mdbook build` and inlines the resulting
+`print.html` into the binary (`src/adacovex-docs_template.ads`), so the page
+is fully self-contained: stylesheets are inlined, external fonts and
+interactive scripts are dropped, and the HTML stays pure ASCII.  Users on a
+machine without a network connection can still open the manual from the
+dashboard -- the footer **Manual** link and the API playground's
+`/docs` endpoint both point at it.
+
 ## The HTML dashboard
 
 The page is a single self-contained document (no external assets), bundled
@@ -130,13 +145,14 @@ into the binary from **modular resources** -- `resources/dashboard.html` is
 just the page skeleton. Author styles and scripts are split into focused
 modules under `resources/css/` (`dashboard.css`, which also styles the
 hand-rolled donut rings and bar charts) and `resources/js/` (`theme.js`,
-`tabs.js`, `deps.js`, `details.js`, `nomnoml.js`, `search.js`, `yace.js`,
-`api.js`).  The vendored `graphre.js` / `nomnoml.js` / `flexsearch.js` sit
-at `resources/` and the vendored `yace.js` sits at `resources/js/`; they are
-inlined into the template at build time by `tools/gen-dashboard.py`, which
-also **minifies** the author CSS/JS (comments and whitespace stripped,
-vendored files are inlined byte-for-byte so their tokenizer regexes stay
-intact).
+`tabs.js`, `deps.js`, `details.js`, `nomnoml.js`, `search.js`, `api.js`).
+The vendored libraries (`graphre.js` / `nomnoml.js` / `flexsearch.js` /
+`yace.js`) sit at `resources/`, clearly separate from the authored `js/`
+modules so a scan of the tree can tell dependency JavaScript from dashboard
+JavaScript at a glance; they are inlined into the template at build time by
+`tools/gen-dashboard.py`, which also **minifies** the author CSS/JS
+(comments and whitespace stripped, vendored files are inlined byte-for-byte
+so their tokenizer regexes stay intact).
 
 The resulting `adacovex` binary - whether a GitHub release artifact or an
 Alire crate binary - is completely self-contained. The dashboard has no
@@ -350,7 +366,7 @@ assessment without parsing HTML:
 
 ```json
 {"spark_level":"Platinum","total_vcs":723,"proved_vcs":723,
- "tests_passed":1169,"tests_failed":0,"doc_coverage":100,
+ "tests_passed":1173,"tests_failed":0,"doc_coverage":100,
  "standard":"all","level":"DAL-C","dal_status":"Achieved",
  "standards":{"DO-178C":{"level":"DAL-C","status":"Achieved"},
                "ISO 26262":{"level":"ASIL B","status":"Achieved"},
@@ -401,7 +417,7 @@ grouped by purpose:
 - **Metrics** -- `GET /api/metrics` (JSON).
 - **Dependencies** -- `GET /api/deps` (JSON).
 - **Badges** -- each `GET /badge/*.svg` endpoint (SVG).
-- **Documentation** -- `GET /docs` (plain text).
+- **Documentation** -- `GET /docs`, the bundled offline manual (HTML).
 - **API** -- `GET /api/endpoints`, the endpoint catalog the playground is
   built from.
 
@@ -414,8 +430,13 @@ the response:
   **syntax-highlighted** with the vendored [yace](https://github.com/petersolopov/yace)
   tokenizer (`window.YaceTok`). A JSON-key rule colours object keys
   separately from string values, so the payload reads like an IDE view.
+  Endpoint paths that appear inside the JSON payload (for example the
+  `/api/...` and `/badge/...` values in `/api/endpoints`) become clickable
+  links to the live endpoints, and every endpoint button's path is itself a
+  link that opens the raw URL in a new tab.
 - SVG badge endpoints show the live image above the raw markup.
-- The `/docs` endpoint shows its plain-text response.
+- The `/docs` endpoint shows the bundled offline manual (the same page the
+  footer **Manual** link opens).
 
 A toolbar on the result offers **Copy** (clipboard) and **Download** (saves
 the raw response body to a file) for the JSON API response, so the

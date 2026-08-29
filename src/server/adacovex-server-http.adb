@@ -2,6 +2,7 @@ with Ada.Text_IO;
 with Ada.Exceptions;
 with Ada.Streams;
 with GNAT.Sockets;
+with Adacovex.Docs_Template;
 with Adacovex.Renderers.SVG;
 with Adacovex.Renderers.HTML;
 
@@ -445,9 +446,8 @@ package body Adacovex.Server.HTTP is
             Send_Response
               (Channel,
                "200 OK",
-               "text/plain",
-               "Documentation is available in the repository under docs/. "
-               & "Use a static file server for the Markdown pages.",
+               "text/html",
+               Adacovex.Docs_Template.Manual,
                Is_KA);
 
          when Route_Not_Found      =>

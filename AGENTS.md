@@ -65,7 +65,7 @@ Self-assessment (`make run-self`) must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
 - Platinum SPARK level (723 VCs under gnatprove 16.1.0, 0 unproved, 0
   justified; see `docs/proof/16.1.0-ledger.md`)
-- 1169/1169 native tests passing
+- 1173/1173 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
   `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
@@ -76,6 +76,7 @@ Self-assessment (`make run-self`) must always show:
 src/
 |-- adacovex.ads                              -- Version constant
 |-- adacovex-dashboard_template.ads           -- Generated dashboard HTML template constant (from resources/dashboard.html)
+|-- adacovex-docs_template.ads                -- Generated offline manual template constant (from the mdBook docs via tools/gen-docs.py)
 |-- adacovex_main.adb                         -- CLI entry point (builds as bin/adacovex; covex alias)
 |-- adacovex_version_info.ads                 -- Generated version constant (from alire-dev.toml / ADACOVEX_VERSION)
 |-- compliance/
@@ -168,12 +169,12 @@ src/
     |-- adacovex_renderer_tests.ads/.adb      -- HTML/Markdown renderer tests (58)
     |-- adacovex_sbom_tests.ads/.adb          -- SBOM / manifest graph tests (278)
     |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (86)
-    |-- adacovex_server_tests.ads/.adb        -- Server routing tests (37)
+    |-- adacovex_server_tests.ads/.adb        -- Server routing tests (41)
     |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (50)
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (67)
     |-- adacovex_tz_ansi_tests.ads/.adb       -- Timezone + ANSI tests (63)
     |-- adacovex_vcs_tests.ads/.adb           -- VCS support tests (29)
-    `-- test_runner.adb                       -- Test suite entry point (1169 tests)
+    `-- test_runner.adb                       -- Test suite entry point (1173 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -353,6 +354,12 @@ enforced by `make docs-check` via `tools/check-docs.py`).
 reference pages live in its `GUIDE_PAGES` / `PACKAGE_GUIDES` tables, **never**
 in `.ads` docstrings (gnatdoc parses comment text as RST and drops markdown
 link URLs).
+`tools/gen-docs.py` (wired as `make book` and run inside `make build`) runs
+`mdbook build` over `docs/`, inlines the generated `print.html` into a
+self-contained ASCII page, and regenerates `src/adacovex-docs_template.ads`
+(the bundled offline manual the `--serve` server serves at `/docs`).  It is
+safe to run without mdbook installed (the committed spec is kept); the same
+mdBook project powers the Read the Docs site (`.readthedocs.yaml`).
 
 ## Makefile targets
 
@@ -361,9 +368,10 @@ link URLs).
 | `check` | **The single everything-check / verification entry point.** Run it after any change. It runs every gate CI runs before a release: cheap static gates first (ascii, complexity, csslint, spark-off, changelog, action-parity, tools-check, version, doc-links, link, docs-check), then build + native tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description). `make check` resolves `gnatprove` for you (it is fetched into `~/.adacovex/toolchain/` and executed directly when not on `PATH`), so you never have to install or point at a prover by hand -- just run `make check` and it verifies the whole tree end to end. `make prove` is the SPARK sub-gate if you only changed proof-affecting code |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
-| `test` | Build + run the 1169-test native suite |
+| `test` | Build + run the 1173-test native suite |
 | `prove` | SPARK proof (Platinum gate) + regenerates SVG badges in `docs/badges/` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
+| `book` | Build the offline manual from the mdBook docs and regenerate `src/adacovex-docs_template.ads` (tools/gen-docs.py; safe to run without mdbook) |
 | `fmt` | Format Ada sources (gnatformat) |
 | `sbom` | Generate the proof-aware SBOM (`sbom.json`) |
 | `description` | Sync the crate description from alire/description.txt + alire/long-description.txt (`CHECK=1` verifies only) |
@@ -458,7 +466,7 @@ release-tag coverage gate instead.
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 1169/1169 passing |
+| Unit tests | `make test` | 1173/1173 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (723 VCs, 0 unproved, 0 justified under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -472,7 +480,7 @@ rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 1169 tests across 16 categories).
+Native zero-dependency suite (`src/tests/`, 1173 tests across 16 categories).
 Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests).
 
@@ -489,7 +497,14 @@ adacovex has two distinct documentation tiers with different audiences:
   proving workflow.  This tier includes installation, CLI reference, the web
   dashboard, SBOM, VCS support, target projects, CI/CD, contributing,
   standards, platforms, proving, architecture, changelogs, HLR/LLR indexes,
-  and performance guides.
+  and performance guides.  `docs/` is an **mdBook project** (`docs/book.toml`
+  with `src = "."` and a root `docs/SUMMARY.md` table of contents): Read the
+  Docs builds the site from it (see `.readthedocs.yaml`, `mdbook build docs`),
+  and `tools/gen-docs.py` builds the same book into a self-contained offline
+  manual that the `--serve` dashboard exposes at `/docs` (bundled into the
+  binary via `src/adacovex-docs_template.ads`, regenerated by `make book`).
+  Every new or moved doc page must keep its place in `docs/SUMMARY.md`; the
+  `docs/book/` build output is generated and never committed (gitignored).
 
 - **API reference** (`docs/api-docs/` and its sub-pages) -- generated from
   Ada source docstrings via `gnatdoc` + `rst2md` (`make doc`).  Written for

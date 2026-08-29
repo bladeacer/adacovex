@@ -389,11 +389,16 @@ adacovex supports multiple output formats:
    It is standard-aware (defaults to all standards like `sbom`) with light/dark
    theme support (toggle button, respects `prefers-color-scheme`). The static
    page shell (CSS, header, theme script) is a real HTML file,
-   `resources/dashboard.html`, bundled into the binary at build time:
+   `resources/dashboard.html`, bundled into the binary at build time.
    `tools/gen-dashboard.py` assembles the authored CSS (`resources/css/dashboard.css`),
-   the authored JS (`resources/js/*.js`), and the vendored graph libraries
-   (`graphre.js`, `nomnoml.js`, `flexsearch.js`) into a single minified page
-   shell. It regenerates `src/adacovex-dashboard_template.ads` (a String
+   the authored JS (`resources/js/*.js`), and the vendored JavaScript
+   libraries at the `resources/` root (`graphre.js`, `nomnoml.js`,
+   `flexsearch.js`, `yace.js`) into a single minified page shell. The layout
+   separates dependency JavaScript (`resources/` root) from authored dashboard
+   JavaScript (`resources/js/`), which is also how the SBOM asset scanner
+   tells vendored components from the project's own modules.
+
+   The tool regenerates `src/adacovex-dashboard_template.ads` (a String
    constant, committed and byte-identical when unchanged).
    
    The Ada compiler includes that constant in the final binary. Every released
@@ -449,7 +454,7 @@ it. The ANSI report shows a
 
 ## Testing
 
-adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 1169 tests across 16 categories. No external test framework (AUnit, and more) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
+adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 1173 tests across 16 categories. No external test framework (AUnit, and more) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
 
 ## Complexity check
 
@@ -590,7 +595,9 @@ When adacovex runs, it executes these steps in sequence:
 10. Emit SVG badges          -> <svg-dir>/*.svg (if enabled)
 11. Emit Markdown reports    -> <md-dir>/VERIFICATION.md + TRACE.md (if enabled)
 12. Emit automatic SBOM      -> <target>/sbom.json | sbom.spdx.json | docs/compliance/SBOM.md (unless --no-sbom)
-13. Start HTTP server        -> :<port> (if --serve)
+13. Start HTTP server        -> :<port> (if --serve; serves the dashboard,
+                               the JSON API, the SVG badges, and the bundled
+                               offline manual at /docs)
 14. Set exit code            -> 0 if Achieved, 1 if Unmet
 ```
 

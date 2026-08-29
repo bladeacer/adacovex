@@ -73,7 +73,7 @@ MODULES: Dict[str, str] = {
     "__JS_DETAILS__": "js/details.js",          # author JS (minified at build)
     "__JS_NOMMONL_APP__": "js/nomnoml.js",      # author JS (minified at build)
     "__JS_SEARCH__": "js/search.js",            # author JS (minified at build)
-    "__JS_YACE__": "js/yace.js",                # vendored (not minified: tokenizer regexes stay byte-faithful)
+    "__JS_YACE__": "yace.js",                   # vendored (not minified: tokenizer regexes stay byte-faithful)
     "__JS_API__": "js/api.js",                  # author JS (minified at build)
 }
 
