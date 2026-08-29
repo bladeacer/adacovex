@@ -1673,7 +1673,7 @@ package body Adacovex.Renderers.HTML is
          end if;
          Put_P
            ("<p style=""color:var(--muted);font-size:.8rem;margin:8px 0 0"">"
-            & "Run <code>make prove</code> after each change; the numbers "
+            & "Run <code>adacovex prove</code> after each change; the numbers "
             & "above are the same categories gnatprove lists.  A justified VC "
             & "(pragma Assume) never counts as proved -- close it with a real "
             & "contract instead.</p></div>");

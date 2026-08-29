@@ -130,7 +130,13 @@ vendored `graphre.js` / `nomnoml.js` / `flexsearch.js` sit at `resources/`
 and are inlined into the template at build time by
 `tools/gen-dashboard.py`, which also **minifies** the author CSS/JS
 (comments and whitespace stripped, vendored files are already minified and
-inlined byte-for-byte).  Edit the individual `resources/` files, never the
+inlined byte-for-byte).
+
+The resulting `adacovex` binary - whether a GitHub release artifact or an
+Alire crate binary - is completely self-contained. The dashboard has no
+external asset references and works offline.
+
+Edit the individual `resources/` files, never the
 generated `src/adacovex-dashboard_template.ads`. `make build` regenerates it
 and `gen-dashboard.py --check` (wired into `make check`) fails when it
 drifts.  Content is organised into **clickable tabs** (hash-routed,

@@ -297,26 +297,29 @@ package Adacovex.Dashboard_Template is
   & "dits td,.credits th{padding:8px 8px;text-align:left;font-siz"
   & "e:.88rem;border-bottom:1px solid var(--border)}.credits th{c"
   & "olor:var(--muted);font-weight:600;width:40%}.credits a{color"
-  & ":var(--accent)}.footer{margin-top:24px;padding:16px 0;border"
-  & "-top:1px solid var(--border);font-size:.82rem;color:var(--mu"
-  & "ted)}.footer a{color:var(--accent)}.footer code{background:v"
-  & "ar(--th);padding:4px 8px;border-radius:4px;font-size:.78rem}"
-  & ".test-col-grid{display:grid;grid-template-columns:repeat(aut"
-  & "o-fit,minmax(140px,1fr));gap:8px;margin-top:12px}.test-col-i"
-  & "tem{text-align:center;padding:8px;background:var(--th);borde"
-  & "r-radius:8px}.test-col-item .test-col-bar{height:60px;displa"
-  & "y:flex;align-items:flex-end;justify-content:center;margin-bo"
-  & "ttom:8px}.test-col-item .test-col-bar-inner{width:32px;backg"
-  & "round:var(--pass);border-radius:4px 4px 0 0;min-height:4px}."
-  & "test-col-item .test-col-num{font-size:1rem;font-weight:700}."
-  & "test-col-item .test-col-label{font-size:.72rem;color:var(--m"
-  & "uted);margin-top:4px}.stacked-bar{display:flex;height:24px;b"
-  & "order-radius:6px;overflow:hidden;border:1px solid var(--bord"
-  & "er);margin:8px 0}.stacked-bar i{display:block;height:100%}@m"
-  & "edia(max-width:640px){.polar{width:180px;height:180px}.radar"
-  & "-split{flex-direction:column;align-items:flex-start}.complia"
-  & "nce-gauge-wrap{flex-direction:column;align-items:flex-start}"
-  & "}"
+  & ":var(--accent)}#dep-tooltip{position:fixed;z-index:60;displa"
+  & "y:none;pointer-events:none;background:var(--fg);color:var(--"
+  & "bg);padding:4px 8px;border-radius:8px;font-size:.8rem;max-wi"
+  & "dth:280px;line-height:1.3;box-shadow:0 2px 8px rgba(0,0,0,.2"
+  & ")}.footer{margin-top:24px;padding:16px 0;border-top:1px soli"
+  & "d var(--border);font-size:.82rem;color:var(--muted)}.footer "
+  & "a{color:var(--accent)}.footer code{background:var(--th);padd"
+  & "ing:4px 8px;border-radius:4px;font-size:.78rem}.test-col-gri"
+  & "d{display:grid;grid-template-columns:repeat(auto-fit,minmax("
+  & "140px,1fr));gap:8px;margin-top:12px}.test-col-item{text-alig"
+  & "n:center;padding:8px;background:var(--th);border-radius:8px}"
+  & ".test-col-item .test-col-bar{height:60px;display:flex;align-"
+  & "items:flex-end;justify-content:center;margin-bottom:8px}.tes"
+  & "t-col-item .test-col-bar-inner{width:32px;background:var(--p"
+  & "ass);border-radius:4px 4px 0 0;min-height:4px}.test-col-item"
+  & " .test-col-num{font-size:1rem;font-weight:700}.test-col-item"
+  & " .test-col-label{font-size:.72rem;color:var(--muted);margin-"
+  & "top:4px}.stacked-bar{display:flex;height:24px;border-radius:"
+  & "6px;overflow:hidden;border:1px solid var(--border);margin:8p"
+  & "x 0}.stacked-bar i{display:block;height:100%}@media(max-widt"
+  & "h:640px){.polar{width:180px;height:180px}.radar-split{flex-d"
+  & "irection:column;align-items:flex-start}.compliance-gauge-wra"
+  & "p{flex-direction:column;align-items:flex-start}}"
   & ASCII.LF
   & "</style></head><body>"
   & ASCII.LF
@@ -509,12 +512,13 @@ package Adacovex.Dashboard_Template is
   & ASCII.LF
   & "<tr><td><a href=""https://github.com/microsoft/playwright"" ta"
   & "rget=""_blank"" rel=""noopener"">Playwright</a></td><td id=""cred"
-  & "its-playwright"">test / Apache-2.0</td><td>end-to-end dashboa"
-  & "rd layout tests</td></tr>"
+  & "its-playwright"">1.62.1 / Apache-2.0</td><td>end-to-end dashb"
+  & "oard layout tests</td></tr>"
   & ASCII.LF
   & "<tr><td><a href=""https://chartscss.org/"" target=""_blank"" rel"
-  & "=""noopener"">Charts.css</a></td><td>inspiration / MIT</td><td"
-  & ">dashboard charts (our own patched version)</td></tr>"
+  & "=""noopener"">Charts.css</a></td><td>1.2.0 / MIT</td><td>dashb"
+  & "oard charts (our own patched version, credited for inspirati"
+  & "on)</td></tr>"
   & ASCII.LF
   & "</table>"
   & ASCII.LF
@@ -5359,6 +5363,38 @@ package Adacovex.Dashboard_Template is
   & "tItem(K,t);}catch(e){}if(B){B.textContent='Saved';setTimeout"
   & "(function(){B.textContent='Save settings';},1200);}};"
   & ASCII.LF
+  & "})();"
+  & ASCII.LF
+  & "(function(){"
+  & ASCII.LF
+  & "var el=null;"
+  & ASCII.LF
+  & "function ensure(){ if(el) return el; el=document.createEleme"
+  & "nt('div'); el.id='dep-tooltip'; el.setAttribute('role','tool"
+  & "tip'); document.body.appendChild(el); return el; }"
+  & ASCII.LF
+  & "window.DepTooltip={"
+  & ASCII.LF
+  & "show:function(text,x,y){"
+  & ASCII.LF
+  & "var t=ensure(); t.textContent=text; t.style.display='block';"
+  & ASCII.LF
+  & "var w=t.offsetWidth,h=t.offsetHeight,px=x+12,py=y+12;"
+  & ASCII.LF
+  & "if(px+w>window.innerWidth) px=x-w-12;"
+  & ASCII.LF
+  & "if(py+h>window.innerHeight) py=y-h-12;"
+  & ASCII.LF
+  & "if(px<0)px=4; if(py<0)py=4;"
+  & ASCII.LF
+  & "t.style.left=px+'px'; t.style.top=py+'px';"
+  & ASCII.LF
+  & "},"
+  & ASCII.LF
+  & "hide:function(){ if(el) el.style.display='none'; }"
+  & ASCII.LF
+  & "};"
+  & ASCII.LF
   & "})();</script>"
   & ASCII.LF
   & "<script>(function(){"
@@ -5565,6 +5601,51 @@ package Adacovex.Dashboard_Template is
   & ASCII.LF
   & "if(v==='nomnoml') setTimeout(function(){switchDepView('nomno"
   & "ml');}, 300);"
+  & ASCII.LF
+  & "function depTipOf(node){"
+  & ASCII.LF
+  & "var name=node.getAttribute('data-name')||'';"
+  & ASCII.LF
+  & "var scope=node.getAttribute('data-scope')||'';"
+  & ASCII.LF
+  & "return name + (scope ? '  ['+scope+']' : '');"
+  & ASCII.LF
+  & "}"
+  & ASCII.LF
+  & "document.addEventListener('mouseover', function(e){"
+  & ASCII.LF
+  & "var node=e.target && e.target.closest ? e.target.closest('.d"
+  & "ep-node') : null;"
+  & ASCII.LF
+  & "if(!node || node.closest('#nomnoml-canvas')) return;"
+  & ASCII.LF
+  & "if(window.DepTooltip) window.DepTooltip.show(depTipOf(node),"
+  & " e.clientX, e.clientY);"
+  & ASCII.LF
+  & "});"
+  & ASCII.LF
+  & "document.addEventListener('mousemove', function(e){"
+  & ASCII.LF
+  & "var node=e.target && e.target.closest ? e.target.closest('.d"
+  & "ep-node') : null;"
+  & ASCII.LF
+  & "if(!node || node.closest('#nomnoml-canvas')) return;"
+  & ASCII.LF
+  & "if(window.DepTooltip) window.DepTooltip.show(depTipOf(node),"
+  & " e.clientX, e.clientY);"
+  & ASCII.LF
+  & "});"
+  & ASCII.LF
+  & "document.addEventListener('mouseout', function(e){"
+  & ASCII.LF
+  & "var to=e.relatedTarget;"
+  & ASCII.LF
+  & "if(to && to.closest && to.closest('.dep-node') && !to.closes"
+  & "t('#nomnoml-canvas')) return;"
+  & ASCII.LF
+  & "if(window.DepTooltip) window.DepTooltip.hide();"
+  & ASCII.LF
+  & "});"
   & ASCII.LF
   & "})();</script>"
   & ASCII.LF
@@ -5877,12 +5958,26 @@ package Adacovex.Dashboard_Template is
   & ASCII.LF
   & "var tip=(dep && dep.version) ? nm+' @ '+dep.version : nm;"
   & ASCII.LF
-  & "var t=doc.createElementNS('http://www.w3.org/2000/svg','titl"
-  & "e');"
+  & "if(dep && dep.scope) tip+='  ['+dep.scope+']';"
   & ASCII.LF
-  & "t.textContent=tip;"
+  & "for(var g=0;g<els.length;g++){"
   & ASCII.LF
-  & "els[0].appendChild(t);"
+  & "(function(one,tip){"
+  & ASCII.LF
+  & "one.addEventListener('mouseover', function(e){ if(window.Dep"
+  & "Tooltip) window.DepTooltip.show(tip, e.clientX, e.clientY); "
+  & "});"
+  & ASCII.LF
+  & "one.addEventListener('mousemove', function(e){ if(window.Dep"
+  & "Tooltip) window.DepTooltip.show(tip, e.clientX, e.clientY); "
+  & "});"
+  & ASCII.LF
+  & "one.addEventListener('mouseout', function(){ if(window.DepTo"
+  & "oltip) window.DepTooltip.hide(); });"
+  & ASCII.LF
+  & "})(els[g], tip);"
+  & ASCII.LF
+  & "}"
   & ASCII.LF
   & "});"
   & ASCII.LF

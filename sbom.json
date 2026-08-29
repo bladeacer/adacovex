@@ -3,7 +3,7 @@
   "specVersion": "1.5",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-08-29T20:43:07",
+    "timestamp": "2026-08-29T12:47:18",
     "tools": [
       {"vendor": "bladeacer", "name": "adacovex", "version": "1.36.0"}
     ],
@@ -72,7 +72,7 @@
       "version": "16.1.0",
       "language": "Ada",
       "purl": "pkg:alire/gnatprove",
-      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
       },
     {
       "type": "library",
@@ -166,10 +166,10 @@
       },
     {
       "type": "library",
-      "bom-ref": "pkg:generic/npm",
-      "name": "npm",
-      "version": "11.19.0",
-      "purl": "pkg:generic/npm",
+      "bom-ref": "pkg:generic/mandb",
+      "name": "mandb",
+      "version": "2.13.1",
+      "purl": "pkg:generic/mandb",
       "description": "System tool referenced by the project (dev dependency)",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
       },
@@ -184,55 +184,10 @@
       },
     {
       "type": "library",
-      "bom-ref": "pkg:generic/mandb",
-      "name": "mandb",
-      "version": "2.13.1",
-      "purl": "pkg:generic/mandb",
-      "description": "System tool referenced by the project (dev dependency)",
-      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
-      },
-    {
-      "type": "library",
-      "bom-ref": "pkg:generic/fossil",
-      "name": "fossil",
-      "version": "2.28",
-      "purl": "pkg:generic/fossil",
-      "description": "System tool referenced by the project (dev dependency)",
-      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
-      },
-    {
-      "type": "library",
-      "bom-ref": "pkg:generic/hg",
-      "name": "hg",
-      "version": "7.2.4",
-      "purl": "pkg:generic/hg",
-      "description": "System tool referenced by the project (dev dependency)",
-      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
-      },
-    {
-      "type": "library",
-      "bom-ref": "pkg:generic/svn",
-      "name": "svn",
-      "version": "1.14.5",
-      "purl": "pkg:generic/svn",
-      "description": "System tool referenced by the project (dev dependency)",
-      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
-      },
-    {
-      "type": "library",
-      "bom-ref": "pkg:generic/node",
-      "name": "node",
-      "version": "26.7.0",
-      "purl": "pkg:generic/node",
-      "description": "System tool referenced by the project (dev dependency)",
-      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
-      },
-    {
-      "type": "library",
-      "bom-ref": "pkg:generic/cargo",
-      "name": "cargo",
-      "version": "1.98.0",
-      "purl": "pkg:generic/cargo",
+      "bom-ref": "pkg:generic/npm",
+      "name": "npm",
+      "version": "11.19.0",
+      "purl": "pkg:generic/npm",
       "description": "System tool referenced by the project (dev dependency)",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
       }
@@ -240,7 +195,7 @@
   "dependencies": [
     {
       "ref": "pkg:alire/covex@1.36.0",
-      "dependsOn": ["pkg:generic/flexsearch", "pkg:generic/graphre", "pkg:generic/nomnoml", "pkg:npm/@playwright/test@1.62.1", "pkg:alire/gnatprove", "pkg:alire/gnatdoc_bin", "pkg:alire/gnatformat_bin", "pkg:generic/bash", "pkg:generic/curl", "pkg:generic/alr", "pkg:generic/go", "pkg:generic/python3", "pkg:generic/git", "pkg:generic/make", "pkg:generic/jj", "pkg:generic/npm", "pkg:generic/pnpm", "pkg:generic/mandb", "pkg:generic/fossil", "pkg:generic/hg", "pkg:generic/svn", "pkg:generic/node", "pkg:generic/cargo"]
+      "dependsOn": ["pkg:generic/flexsearch", "pkg:generic/graphre", "pkg:generic/nomnoml", "pkg:npm/@playwright/test@1.62.1", "pkg:alire/gnatprove", "pkg:alire/gnatdoc_bin", "pkg:alire/gnatformat_bin", "pkg:generic/bash", "pkg:generic/curl", "pkg:generic/alr", "pkg:generic/go", "pkg:generic/python3", "pkg:generic/git", "pkg:generic/make", "pkg:generic/jj", "pkg:generic/mandb", "pkg:generic/pnpm", "pkg:generic/npm"]
     }
   ]
 }

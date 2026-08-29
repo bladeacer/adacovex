@@ -28,6 +28,13 @@ AGENTS.md still matches the codebase -- the source layout, the CLI flags, the
 SBOM behaviour, and the dashboard features. Update it in the same change when
 it has drifted; do not leave the architecture tree or the feature notes stale.
 
+**User-facing surfaces:** the served dashboard HTML and the CLI `--help` / man
+page are user-facing output.  Never put developer-only commands (for example
+`make prove`, `make check`, `alr build`) in dashboard prose or command help;
+use the user-facing adacovex subcommands instead (`adacovex prove`,
+`adacovex --help`).  The man page is generated from the Ada source constants
+(single source of truth); it stays in sync with the binary automatically.
+
 **Documentation currency (LLM-assisted edits):** adacovex keeps user docs,
 docstrings, and changelogs in step with the code.  Stale docs are a release
 blocker, never a follow-up.  Every change that touches behaviour, flags,
@@ -290,6 +297,17 @@ scripts), differential modes, and `sbom`.
   run stays warning-free). I/O- and container-heavy
   bodies are default-off or SPARK-Mode-On-ensuring packages; they never carry
   an explicit Off pragma outside the two exempted packages.
+- **New code must be fully SPARK-proven.** When adding code, introduce only
+  `SPARK_Mode On` units that reach **0 unproved, 0 justified** under
+  `make prove`. Do not add `pragma SPARK_Mode (Off)` for new code: the only
+  packages permitted to carry it are `Types.Implementation` and `Complexity`
+  (the non-formal `Ada.Containers` instantiations). If a new unit needs the
+  container store, reuse `Types.Implementation` rather than opening a third
+  Off package. Treat any `SPARK_Mode (Off)` outside the two exempt packages as
+  a regression to remove on sight -- see `make spark-off-check`. The
+  long-term plan is to hold `SPARK_Mode (Off)` at exactly these two packages
+  (both irreducible: non-formal `Ada.Containers.Vectors` is illegal in
+  `SPARK_Mode On` code under gnatprove 16.1.0); never let a third appear.
 - **Build/dev tooling requires Python 3** (pure-stdlib `tools/*.py`: version
   generation, description sync, test/proof doc sync, changelog checks,
   doc-links, agents-tree). The adacovex binary itself has no Python
@@ -340,7 +358,7 @@ link URLs).
 
 | Target | Description |
 |--------|-------------|
-| `check` | Full quality gate (CI runs this before release): cheap static gates first (ascii, complexity, csslint, spark-off, changelog, action-parity, tools-check, version, doc-links, link, docs-check), then build + tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description) that fail when any live file carries a stale metric |
+| `check` | **The single everything-check / verification entry point.** Run it after any change. It runs every gate CI runs before a release: cheap static gates first (ascii, complexity, csslint, spark-off, changelog, action-parity, tools-check, version, doc-links, link, docs-check), then build + native tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description). `make check` resolves `gnatprove` for you (it is fetched into `~/.adacovex/toolchain/` and executed directly when not on `PATH`), so you never have to install or point at a prover by hand -- just run `make check` and it verifies the whole tree end to end. `make prove` is the SPARK sub-gate if you only changed proof-affecting code |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
 | `test` | Build + run the 1157-test native suite |

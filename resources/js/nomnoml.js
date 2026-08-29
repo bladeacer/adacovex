@@ -82,12 +82,19 @@ function renderNomnoml(){
           });
         })(els[g]);
       }
-      // Hover tooltip with the dependency name (and version when known).
+      // Fast hover tooltip with the dependency name, scope and version (when
+      // known).  The native SVG <title> has a slow, fixed browser delay, so we
+      // show our own tooltip immediately on mouseover and follow the cursor.
       var dep=deps[idx-1];
       var tip=(dep && dep.version) ? nm+' @ '+dep.version : nm;
-      var t=doc.createElementNS('http://www.w3.org/2000/svg','title');
-      t.textContent=tip;
-      els[0].appendChild(t);
+      if(dep && dep.scope) tip+='  ['+dep.scope+']';
+      for(var g=0;g<els.length;g++){
+        (function(one,tip){
+          one.addEventListener('mouseover', function(e){ if(window.DepTooltip) window.DepTooltip.show(tip, e.clientX, e.clientY); });
+          one.addEventListener('mousemove', function(e){ if(window.DepTooltip) window.DepTooltip.show(tip, e.clientX, e.clientY); });
+          one.addEventListener('mouseout', function(){ if(window.DepTooltip) window.DepTooltip.hide(); });
+        })(els[g], tip);
+      }
     });
     container.innerHTML='';
     container.appendChild(rootSvg);

@@ -85,4 +85,27 @@ window.showTab=function(id){
 };
 var v=null; try{v=localStorage.getItem('adacovex-dep-view');}catch(e){}
 if(v==='nomnoml') setTimeout(function(){switchDepView('nomnoml');}, 300);
+// Fast hover tooltip for the dependency tree: show the name and scope
+// immediately on mouseover (no native title delay).  The diagram nodes carry
+// their own handlers, so skip anything inside the nomnoml canvas.
+function depTipOf(node){
+  var name=node.getAttribute('data-name')||'';
+  var scope=node.getAttribute('data-scope')||'';
+  return name + (scope ? '  ['+scope+']' : '');
+}
+document.addEventListener('mouseover', function(e){
+  var node=e.target && e.target.closest ? e.target.closest('.dep-node') : null;
+  if(!node || node.closest('#nomnoml-canvas')) return;
+  if(window.DepTooltip) window.DepTooltip.show(depTipOf(node), e.clientX, e.clientY);
+});
+document.addEventListener('mousemove', function(e){
+  var node=e.target && e.target.closest ? e.target.closest('.dep-node') : null;
+  if(!node || node.closest('#nomnoml-canvas')) return;
+  if(window.DepTooltip) window.DepTooltip.show(depTipOf(node), e.clientX, e.clientY);
+});
+document.addEventListener('mouseout', function(e){
+  var to=e.relatedTarget;
+  if(to && to.closest && to.closest('.dep-node') && !to.closest('#nomnoml-canvas')) return;
+  if(window.DepTooltip) window.DepTooltip.hide();
+});
 })();

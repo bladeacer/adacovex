@@ -81,6 +81,9 @@ tr.active-std{outline:2px solid var(--accent);outline-offset:-2px}
 tr.other-std{opacity:.72}
 /* Credits */
 .credits{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}.credits .card h2{font-size:1rem;margin:0 0 8px}.credits table{width:100%;border-collapse:collapse}.credits td,.credits th{padding:8px 8px;text-align:left;font-size:.88rem;border-bottom:1px solid var(--border)}.credits th{color:var(--muted);font-weight:600;width:40%}.credits a{color:var(--accent)}
+/* Fast dependency hover tooltip.  Replaces the slow native SVG <title> delay:
+   it appears immediately on mouseover and follows the cursor. */
+#dep-tooltip{position:fixed;z-index:60;display:none;pointer-events:none;background:var(--fg);color:var(--bg);padding:4px 8px;border-radius:8px;font-size:.8rem;max-width:280px;line-height:1.3;box-shadow:0 2px 8px rgba(0,0,0,.2)}
 /* Footer */
 .footer{margin-top:24px;padding:16px 0;border-top:1px solid var(--border);font-size:.82rem;color:var(--muted)}.footer a{color:var(--accent)}.footer code{background:var(--th);padding:4px 8px;border-radius:4px;font-size:.78rem}
 /* Test category columns */

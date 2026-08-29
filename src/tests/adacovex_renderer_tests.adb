@@ -192,8 +192,8 @@ package body Adacovex_Renderer_Tests is
            (Contains (S, "Charts.css"),
             "credits table credits Charts.css as inspiration");
          R.Check
-           (Contains (S, "test / Apache-2.0"),
-            "credits table labels Playwright a test dependency");
+           (Contains (S, "1.62.1 / Apache-2.0"),
+            "credits table shows Playwright actual version");
          R.Check
            (Contains (S, "our own patched version"),
             "credits table notes the hand-rolled charts are a patched version");
