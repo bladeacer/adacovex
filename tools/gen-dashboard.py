@@ -128,10 +128,44 @@ def minify_css(source: str) -> str:
     return text.strip()
 
 
+def _js_regex_context(prev_sig: str, prev_word: str) -> bool:
+    """Decide whether a '/' opens a regular-expression literal (rather than a
+    division) from the previous significant token.  A regex opens when the
+    prior token leaves an expression position (an operator/punctuator) or
+    follows a regex-expecting keyword such as 'return' or 'typeof'.  This keeps
+    '//' or '/*' text that appears *inside* a regex literal (for example
+    /^https?:\\/\\//i) from being mistaken for a comment."""
+    if prev_sig == "":
+        return True
+    if prev_sig in "([{,;:=!&|?<>+-*/%^~":
+        return True
+    if prev_word in (
+        "return",
+        "typeof",
+        "case",
+        "do",
+        "else",
+        "in",
+        "of",
+        "instanceof",
+        "new",
+        "void",
+        "delete",
+        "throw",
+        "await",
+        "yield",
+    ):
+        return True
+    return False
+
+
 def minify_js(source: str) -> str:
     """Minify authored JS: strip // and /* */ comments and leading
     indentation while preserving newlines (ASI-safe).  String contents are
-    left untouched, including regex-literal-looking text."""
+    left untouched.  So are regular-expression literals: a '/' that opens a
+    regex (not a division) is copied verbatim to its closing unescaped '/'
+    (outside a character class), with its flags, so '//' or '/*' text inside a
+    regex is never treated as a comment."""
     lines: List[str] = []
     i: int = 0
     n: int = len(source)
@@ -139,15 +173,15 @@ def minify_js(source: str) -> str:
     in_block_comment: bool = False
     in_str: str = ""
     buf: List[str] = []
-    j: int = 0
+    prev_sig: str = ""          # last significant (non-space) char emitted
+    prev_word: str = ""         # last identifier-like token emitted
 
     def flush_line() -> None:
-        nonlocal buf, j, in_line_comment
+        nonlocal buf, in_line_comment
         text: str = "".join(buf).rstrip()
         if text:
             lines.append(text)
         buf = []
-        j += 1
         in_line_comment = False
 
     while i < n:
@@ -172,6 +206,8 @@ def minify_js(source: str) -> str:
                 continue
             if c == in_str:
                 in_str = ""
+                prev_sig = c
+                prev_word = ""
             i += 1
             continue
         if c == "\n":
@@ -181,15 +217,56 @@ def minify_js(source: str) -> str:
         if c in "\"'":
             in_str = c
             buf.append(c)
+            prev_sig = c
+            prev_word = ""
             i += 1
             continue
-        if source.startswith("//", i):
-            in_line_comment = True
-            i += 2
-            continue
-        if source.startswith("/*", i):
-            in_block_comment = True
-            i += 2
+        if c == "/":
+            if source.startswith("/*", i):
+                in_block_comment = True
+                i += 2
+                continue
+            if source.startswith("//", i):
+                in_line_comment = True
+                i += 2
+                continue
+            if _js_regex_context(prev_sig, prev_word):
+                # Scan the regex literal to its closing unescaped '/' (outside a
+                # character class) and copy it verbatim, flags included, so an
+                # embedded '//' or '/*' is preserved.
+                buf.append("/")
+                j: int = i + 1
+                in_class: bool = False
+                while j < n:
+                    d: str = source[j]
+                    buf.append(d)
+                    if d == "\\":
+                        if j + 1 < n:
+                            buf.append(source[j + 1])
+                            j += 2
+                            continue
+                    elif d == "[":
+                        in_class = True
+                    elif d == "]":
+                        in_class = False
+                    elif d == "/" and not in_class:
+                        j += 1
+                        while j < n and source[j].isalpha():
+                            buf.append(source[j])
+                            j += 1
+                        break
+                    elif d == "\n":
+                        break
+                    j += 1
+                prev_sig = "/"
+                prev_word = ""
+                i = j
+                continue
+            # Division: emit the slash as ordinary code.
+            buf.append(c)
+            prev_sig = c
+            prev_word = ""
+            i += 1
             continue
         if c.isspace():
             # collapse horizontal whitespace to a single space
@@ -199,6 +276,11 @@ def minify_js(source: str) -> str:
                 i += 1
             continue
         buf.append(c)
+        prev_sig = c
+        if c.isascii() and c.isalnum() or c == "_" or c == "$":
+            prev_word = prev_word + c
+        else:
+            prev_word = ""
         i += 1
     flush_line()
     return "\n".join(lines).strip()

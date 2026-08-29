@@ -18,6 +18,7 @@ Exit code 0 when every test passes.
 
 import importlib
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -388,6 +389,41 @@ class ParaSplitTests(unittest.TestCase):
         self.assertFalse(para_split._is_prose("1. item"))
         self.assertFalse(para_split._is_prose("- item"))
         self.assertTrue(para_split._is_prose("a normal line"))
+
+
+gen_dashboard = importlib.import_module("gen-dashboard")
+
+
+class TestGenDashboard(unittest.TestCase):
+    def test_minify_keeps_regex_with_slashes(self) -> None:
+        # A '//' (or '/*') inside a regex literal must not be treated as a
+        # comment, or the dependency detail panel link detection breaks.
+        src = 'if (d.website && /^https?:\\/\\//i.test(d.website)) { return 1; }'
+        out = gen_dashboard.minify_js(src)
+        self.assertIn("/^https?:\\/\\//i", out)
+        self.assertNotIn("//i.test", out.split("/^https?:\\/\\//i", 1)[1])
+
+    def test_minify_keeps_regex_char_class(self) -> None:
+        src = "s.replace(/[&<>\"']/g, esc);"
+        out = gen_dashboard.minify_js(src)
+        self.assertIn("/[&<>\"']/g", out)
+
+    def test_minify_keeps_line_comment(self) -> None:
+        src = "var x = 1; // trailing comment\nvar y = 2;"
+        out = gen_dashboard.minify_js(src)
+        self.assertNotIn("trailing comment", out)
+        self.assertIn("var x = 1;", out)
+        self.assertIn("var y = 2;", out)
+
+    def test_assemble_resources_stay_consistent(self) -> None:
+        # The bundled page must still embed every module (no placeholders left
+        # behind) and the scripts must be syntactically valid JS.
+        root = Path(__file__).resolve().parent.parent
+        page = gen_dashboard.assemble(root / "resources" / "dashboard.html")
+        for placeholder in gen_dashboard.MODULES:
+            self.assertNotIn(placeholder, page)
+        scripts = re.findall(r"<script>(.*?)</script>", page, re.S)
+        self.assertEqual(len(scripts), 9)
 
 
 if __name__ == "__main__":

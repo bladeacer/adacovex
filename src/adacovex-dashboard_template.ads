@@ -5578,178 +5578,136 @@ package Adacovex.Dashboard_Template is
   & ASCII.LF
   & "function purlInfo(purl){"
   & ASCII.LF
-  & "  var p=purl||''; var m=null;"
+  & "var p=purl||''; var m=null;"
   & ASCII.LF
-  & "  // Strip a trailing @version (npm scoped names keep their "
-  & "leading @)."
+  & "function stripVer(s){ return s.replace(/@[^@]*$/,''); }"
   & ASCII.LF
-  & "  function stripVer(s){ return s.replace(/@[^@]*$/,''); }"
+  & "m=p.match(/^pkg:github\/([^\/@]+)\/([^\/@]+)/); if(m) return"
+  & " {label:'GitHub', href:'https://github.com/'+m[1]+'/'+stripV"
+  & "er(m[2])};"
   & ASCII.LF
-  & "  m=p.match(/^pkg:github\/([^\/@]+)\/([^\/@]+)/); if(m) retu"
-  & "rn {label:'GitHub', href:'https://github.com/'+m[1]+'/'+stri"
-  & "pVer(m[2])};"
+  & "m=p.match(/^pkg:gitlab\/([^\/@]+)\/([^\/@]+)/); if(m) return"
+  & " {label:'GitLab', href:'https://gitlab.com/'+m[1]+'/'+stripV"
+  & "er(m[2])};"
   & ASCII.LF
-  & "  m=p.match(/^pkg:gitlab\/([^\/@]+)\/([^\/@]+)/); if(m) retu"
-  & "rn {label:'GitLab', href:'https://gitlab.com/'+m[1]+'/'+stri"
-  & "pVer(m[2])};"
+  & "m=p.match(/^pkg:bitbucket\/([^\/@]+)\/([^\/@]+)/); if(m) ret"
+  & "urn {label:'Bitbucket', href:'https://bitbucket.org/'+m[1]+'"
+  & "/'+stripVer(m[2])};"
   & ASCII.LF
-  & "  m=p.match(/^pkg:bitbucket\/([^\/@]+)\/([^\/@]+)/); if(m) r"
-  & "eturn {label:'Bitbucket', href:'https://bitbucket.org/'+m[1]"
-  & "+'/'+stripVer(m[2])};"
+  & "m=p.match(/^pkg:npm\/(@[^\/]+\/[^@]+|[^@]+)/); if(m) return "
+  & "{label:'npm', href:'https://www.npmjs.com/package/'+stripVer"
+  & "(m[1])};"
   & ASCII.LF
-  & "  m=p.match(/^pkg:npm\/(@[^\/]+\/[^@]+|[^@]+)/); if(m) retur"
-  & "n {label:'npm', href:'https://www.npmjs.com/package/'+stripV"
-  & "er(m[1])};"
+  & "m=p.match(/^pkg:cargo\/([^@]+)/); if(m) return {label:'crate"
+  & "s.io', href:'https://crates.io/crates/'+stripVer(m[1])};"
   & ASCII.LF
-  & "  m=p.match(/^pkg:cargo\/([^@]+)/); if(m) return {label:'cra"
-  & "tes.io', href:'https://crates.io/crates/'+stripVer(m[1])};"
+  & "m=p.match(/^pkg:pypi\/([^@]+)/); if(m) return {label:'PyPI',"
+  & " href:'https://pypi.org/project/'+stripVer(m[1])};"
   & ASCII.LF
-  & "  m=p.match(/^pkg:pypi\/([^@]+)/); if(m) return {label:'PyPI"
-  & "', href:'https://pypi.org/project/'+stripVer(m[1])};"
+  & "m=p.match(/^pkg:golang\/([^@]+)/); if(m) return {label:'pkg."
+  & "go.dev', href:'https://pkg.go.dev/'+stripVer(m[1])};"
   & ASCII.LF
-  & "  m=p.match(/^pkg:golang\/([^@]+)/); if(m) return {label:'pk"
-  & "g.go.dev', href:'https://pkg.go.dev/'+stripVer(m[1])};"
+  & "m=p.match(/^pkg:alire\/([^@]+)/); if(m) return {label:'Alire"
+  & "', href:'https://alire.ada.dev/crates/'+stripVer(m[1])};"
   & ASCII.LF
-  & "  m=p.match(/^pkg:alire\/([^@]+)/); if(m) return {label:'Ali"
-  & "re', href:'https://alire.ada.dev/crates/'+stripVer(m[1])};"
-  & ASCII.LF
-  & "  // Unknown ecosystem: there is no reliable direct registry"
-  & "/repo link, so"
-  & ASCII.LF
-  & "  // no link is offered (a GitHub search URL is noise for ge"
-  & "neric/system"
-  & ASCII.LF
-  & "  // dependencies)."
-  & ASCII.LF
-  & "  return null;"
+  & "return null;"
   & ASCII.LF
   & "}"
   & ASCII.LF
   & "window.showDepDetails=function(idx){"
   & ASCII.LF
-  & "  var pop=document.getElementById('dep-detail-popup'); if(!p"
-  & "op) return;"
+  & "var pop=document.getElementById('dep-detail-popup'); if(!pop"
+  & ") return;"
   & ASCII.LF
-  & "  var g=(typeof ADACOVEX_GRAPH!=='undefined' && ADACOVEX_GRA"
-  & "PH && ADACOVEX_GRAPH.dependencies) ? ADACOVEX_GRAPH.dependen"
-  & "cies : null;"
+  & "var g=(typeof ADACOVEX_GRAPH!=='undefined' && ADACOVEX_GRAPH"
+  & " && ADACOVEX_GRAPH.dependencies) ? ADACOVEX_GRAPH.dependenci"
+  & "es : null;"
   & ASCII.LF
-  & "  var d=g ? g[idx-1] : null; if(!d) return;   var h='<strong"
-  & ">'+esc(d.name||'')+'</strong>';"
+  & "var d=g ? g[idx-1] : null; if(!d) return; var h='<strong>'+e"
+  & "sc(d.name||'')+'</strong>';"
   & ASCII.LF
-  & "   if(d.version) h+=' <span class=""dep-badge"">'+esc(d.versio"
-  & "n)+'</span>';   h+=' <span class=""dep-badge scope-'+esc(d.sc"
-  & "ope||'')+'"">'+esc(d.scope||'')+'</span>';   if(d.dev && d.sc"
-  & "ope!=='dev') h+=' <span class=""dep-badge scope-dev"">dev</spa"
-  & "n>';"
+  & "if(d.version) h+=' <span class=""dep-badge"">'+esc(d.version)+"
+  & "'</span>'; h+=' <span class=""dep-badge scope-'+esc(d.scope||"
+  & "'')+'"">'+esc(d.scope||'')+'</span>'; if(d.dev && d.scope!=='"
+  & "dev') h+=' <span class=""dep-badge scope-dev"">dev</span>';"
   & ASCII.LF
-  & "  if(d.kind==='root') h+=' <span class=""dep-badge"">root</spa"
-  & "n>';"
+  & "if(d.kind==='root') h+=' <span class=""dep-badge"">root</span>"
+  & "';"
   & ASCII.LF
-  & "  h+=' <span class=""dep-badge dep-details-close"" onclick=""cl"
-  & "oseDepDetails()"">close &times;</span>';"
+  & "h+=' <span class=""dep-badge dep-details-close"" onclick=""clos"
+  & "eDepDetails()"">close &times;</span>';"
   & ASCII.LF
-  & "   h+='<table class=""dep-details-table"">';"
+  & "h+='<table class=""dep-details-table"">';"
   & ASCII.LF
-  & "   h+='<tr><th>Name</th><td>'+esc(d.name||'')+'</td></tr>';"
+  & "h+='<tr><th>Name</th><td>'+esc(d.name||'')+'</td></tr>';"
   & ASCII.LF
-  & "   h+='<tr><th>Version</th><td>'+esc(d.version||'')+'</td></"
-  & "tr>';"
+  & "h+='<tr><th>Version</th><td>'+esc(d.version||'')+'</td></tr>"
+  & "';"
   & ASCII.LF
-  & "   h+='<tr><th>Scope</th><td class=""lic"">'+esc(d.scope||'')+"
-  & "'</td></tr>';"
-  & ASCII.LF
-  & "   h+='<tr><th>License</th><td class=""lic"">'+esc(d.license||"
-  & "'')+'</td></tr>';"
-  & ASCII.LF
-  & "   if(d.lang) h+='<tr><th>Language</th><td>'+esc(d.lang)+'</"
+  & "h+='<tr><th>Scope</th><td class=""lic"">'+esc(d.scope||'')+'</"
   & "td></tr>';"
   & ASCII.LF
-  & "   h+='<tr><th>PURL</th><td class=""purl"">'+esc(d.purl||'')+'"
-  & "</td></tr>';"
+  & "h+='<tr><th>License</th><td class=""lic"">'+esc(d.license||'')"
+  & "+'</td></tr>';"
   & ASCII.LF
-  & "   var par = (d.parent && g && g[d.parent-1]) ? g[d.parent-1"
-  & "].name : (d.parent===0 ? '(root)' : 'not available');"
+  & "if(d.lang) h+='<tr><th>Language</th><td>'+esc(d.lang)+'</td>"
+  & "</tr>';"
   & ASCII.LF
-  & "   h+='<tr><th>Parent</th><td>'+esc(par)+'</td></tr>';"
+  & "h+='<tr><th>PURL</th><td class=""purl"">'+esc(d.purl||'')+'</t"
+  & "d></tr>';"
   & ASCII.LF
-  & "   // Preferred link: the resolved source repository / proje"
-  & "ct website (from"
+  & "var par = (d.parent && g && g[d.parent-1]) ? g[d.parent-1].n"
+  & "ame : (d.parent===0 ? '(root)' : 'not available');"
   & ASCII.LF
-  & "   // alr show / the lockfile), which never produces a guess"
-  & "ed or dead link."
+  & "h+='<tr><th>Parent</th><td>'+esc(par)+'</td></tr>';"
   & ASCII.LF
-  & "   // Fall back to the PURL-derived registry link only when "
-  & "that resolves to a"
+  & "var link=null;"
   & ASCII.LF
-  & "   // real, known registry (never a GitHub search page)."
+  & "if(d.website && /^https?:\/\//i.test(String(d.website))){"
   & ASCII.LF
-  & "   var link=null;"
+  & "link={label:'Source', href:d.website};"
   & ASCII.LF
-  & "   if(d.website && /^https?:\/\//i.test(String(d.website))){"
+  & "} else {"
   & ASCII.LF
-  & "     link={label:'Source', href:d.website};"
+  & "link=purlInfo(d.purl);"
   & ASCII.LF
-  & "   } else {"
+  & "}"
   & ASCII.LF
-  & "     link=purlInfo(d.purl);"
+  & "h+='<tr><th>Link</th><td>'+(link ? '<a href=""'+esc(link.href"
+  & ")+'"" target=""_blank"" rel=""noopener"">'+esc(link.label)+' &#85"
+  & "99;</a>' : 'No link available')+'</td></tr>';"
   & ASCII.LF
-  & "   }"
+  & "h+='</table>';"
   & ASCII.LF
-  & "   h+='<tr><th>Link</th><td>'+(link ? '<a href=""'+esc(link.h"
-  & "ref)+'"" target=""_blank"" rel=""noopener"">'+esc(link.label)+' &"
-  & "#8599;</a>' : 'No link available')+'</td></tr>';"
+  & "if(d.description) h+='<p class=""dep-detail-note"">'+esc(d.des"
+  & "cription)+'</p>';"
   & ASCII.LF
-  & "   h+='</table>';"
+  & "if(d.scope==='system'){"
   & ASCII.LF
-  & "    if(d.description) h+='<p class=""dep-detail-note"">'+esc(d"
-  & ".description)+'</p>';"
+  & "h+='<p class=""dep-system-note"">System tool. Version is resol"
+  & "ved from the installed binary on PATH. No external link or l"
+  & "icence is provisioned.</p>';"
   & ASCII.LF
-  & "    // System tools are discovered from the project's dev fi"
-  & "les + PATH: we"
+  & "}"
   & ASCII.LF
-  & "    // provision the resolved version but never a guessed ex"
-  & "ternal link or"
+  & "pop.innerHTML=h;"
   & ASCII.LF
-  & "    // licence, so say so instead of showing empty fields."
+  & "pop.hidden=false;"
   & ASCII.LF
-  & "    if(d.scope==='system'){"
+  & "var shell=document.getElementById('dep-split'); if(shell) sh"
+  & "ell.classList.add('dep-split-active');"
   & ASCII.LF
-  & "      h+='<p class=""dep-system-note"">System tool. Version is"
-  & " resolved from the installed binary on PATH. No external lin"
-  & "k or licence is provisioned.</p>';"
-  & ASCII.LF
-  & "    }"
-  & ASCII.LF
-  & "  pop.innerHTML=h;"
-  & ASCII.LF
-  & "  pop.hidden=false;"
-  & ASCII.LF
-  & "  // Activate the split layout: tree/diagram docks left, det"
-  & "ails right."
-  & ASCII.LF
-  & "  // By default (no selection) the view fills the screen; th"
-  & "e split appears"
-  & ASCII.LF
-  & "  // only once a dependency is selected, so the tree or diag"
-  & "ram keeps its"
-  & ASCII.LF
-  & "  // full width until then."
-  & ASCII.LF
-  & "  var shell=document.getElementById('dep-split'); if(shell) "
-  & "shell.classList.add('dep-split-active');"
-  & ASCII.LF
-  & "  pop.scrollIntoView({block:'nearest'});"
+  & "pop.scrollIntoView({block:'nearest'});"
   & ASCII.LF
   & "};"
   & ASCII.LF
   & "window.closeDepDetails=function(){"
   & ASCII.LF
-  & "  var pop=document.getElementById('dep-detail-popup'); if(po"
-  & "p) pop.hidden=true;"
+  & "var pop=document.getElementById('dep-detail-popup'); if(pop)"
+  & " pop.hidden=true;"
   & ASCII.LF
-  & "  var shell=document.getElementById('dep-split'); if(shell) "
-  & "shell.classList.remove('dep-split-active');"
+  & "var shell=document.getElementById('dep-split'); if(shell) sh"
+  & "ell.classList.remove('dep-split-active');"
   & ASCII.LF
   & "};"
   & ASCII.LF
