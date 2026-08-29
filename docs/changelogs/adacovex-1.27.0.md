@@ -8,15 +8,11 @@ Version bumped 1.26.0 -> 1.27.0.
 
 ### C1: Prove run no longer emits GNAT-TEMP files
 
-The `--suppress-warnings` output capture used
-`GNAT.OS_Lib.Create_Temp_File`, which writes a `GNAT-TEMP-XXXXX.TMP` file
-into the current directory. An interrupted run left that file in the
-project tree, and the `.gitignore` entry `*.tmp` is case-sensitive, so the
-`.TMP` suffix showed up in `git status`. The capture file now lives in the
-system temp directory (`Adacovex.CPUs.Get_Temp_Directory`) under a
-PID-suffixed name, following the existing VCS snapshot convention. A
-defensive `.gitignore` entry for `*.TMP` and `GNAT-TEMP-*` was added as
-well.
+The `--suppress-warnings` output capture used `GNAT. OS_Lib. Create_Temp_File`, which writes a `GNAT-TEMP-XXXXX. TMP` file into the current directory.
+
+An interrupted run left that file in the project tree, and the `.gitignore` entry `*.tmp` is case-sensitive, so the `. TMP` suffix showed up in `git status`. The capture file now lives in the system temp directory (`Adacovex. CPUs.
+
+Get_Temp_Directory`) under a PID-suffixed name, following the existing VCS snapshot convention. A defensive `.gitignore` entry for `*. TMP` and `GNAT-TEMP-*` was added as well.
 
 ### C2: STE100 Technical Names dictionary
 
@@ -39,34 +35,15 @@ was corrected.
 
 ### C4: Documentation index pages for docs and every docs subdirectory
 
-Added `docs/index.md` (the top-level documentation landing page) and
-index pages for the subdirectories that lacked one: `docs/proof/index.md`
-(proof records), `docs/compliance/index.md` (VERIFICATION.md, TRACE.md,
-and the HLR/LLR indexes), and `docs/badges/index.md` (the SVG badge set).
-Every index states that the documentation uses British English and
-ASD-STE100 Simplified Technical English and points at the
-`docs/ste100-technical-names.md` dictionary. The generated API reference
-index (`docs/api-docs/index.md`) now opens with a "How to read this
-reference" section written for end users, contributors, and maintainers;
-it links the CLI reference, the standards pages, the contributing guide,
-the architecture notes, the proof ledger, the changelogs, and the STE100
-dictionary. The API-docs reader guide lives in `tools/rst2md.py` so
-`make doc` regenerates it instead of overwriting a hand-edited file. The
-`tools/doc-links.map` and the AGENTS.md documentation block now list the
-new index pages.
+Added `docs/index.md` (the top-level documentation landing page) and index pages for the subdirectories that lacked one: `docs/proof/index.md` (proof records), `docs/compliance/index.md` (VERIFICATION.md, TRACE.md, and the HLR/LLR indexes), and `docs/badges/index.md` (the SVG badge set). Every index states that the documentation uses British English and ASD-STE100 Simplified Technical English and points at the `docs/ste100-technical-names.md` dictionary. The generated API reference index (`docs/api-docs/index.md`) now opens with a "How to read this reference" section written for end users, contributors, and maintainers; it links the CLI reference, the standards pages, the contributing guide, the architecture notes, the proof ledger, the changelogs, and the STE100 dictionary. The API-docs reader guide lives in `tools/rst2md.py` so `make doc` regenerates it instead of overwriting a hand-edited file.
+
+The `tools/doc-links.map` and the AGENTS.md documentation block now list the new index pages.
 
 ### C5: SBOM system-tool scan rewritten as a single-pass word scan
 
-`Discover_System_Dev_Deps` matched every line against every system tool
-with a per-tool substring loop (60 tools x line length). It dominates the
-whole warm assessment pipeline: profiling showed 76% of warm-path CPU in
-`Line_Refers_To` / `Match_At`. The replacement walks each line once,
-extracts maximal `[a-z0-9_-]` words, and compares each word against the
-tool table by length first. Match semantics are identical and the cmp is
-per-word, so `make` still matches in `make build`, `Makefile` still does
-not match (capital M), and `python` still does not match in `python3`.
-Warm self-assessment dropped from ~1021 ms to ~63 ms (16x) on the
-benchmark machine.
+`Discover_System_Dev_Deps` matched every line against every system tool with a per-tool substring loop (60 tools x line length). It dominates the whole warm assessment pipeline: profiling showed 76% of warm-path CPU in `Line_Refers_To` / `Match_At`. The replacement walks each line once, extracts maximal `[a-z0-9_-]` words, and compares each word against the tool table by length first. Match semantics are identical and the cmp is per-word, so `make` still matches in `make build`, `Makefile` still does not match (capital M), and `python` still does not match in `python3`.
+
+Warm self-assessment dropped from ~1021 ms to ~63 ms (16x) on the benchmark machine.
 
 ### C6: Tool-output directories excluded from both tree walks
 
@@ -92,12 +69,10 @@ twice. This is part of the cold-run improvement (~1.4 s to ~0.55 s).
 was re-verified against gnatprove 16.1.0 with minimal scratch units:
 
 - A `SPARK_Mode => On` unit instantiating non-formal
-  `Ada.Containers.Vectors` is rejected by flow analysis: it says the
-  instantiation is "not allowed in SPARK (due to entity declared with
-  SPARK_Mode Off)". The `Adacovex.Types.Implementation` and
-  `Adacovex.Complexity` container packages are therefore the two
-  irreducible exceptions, and the Makefile `spark-off-check` gate now
-  allows exactly those two.
+`Ada. Containers. Vectors` is rejected by flow analysis: it says the instantiation is "not allowed in SPARK (due to entity declared with SPARK_Mode Off)". The `Adacovex.
+
+Types. Implementation` and `Adacovex. Complexity` container packages are therefore the two irreducible exceptions, and the Makefile `spark-off-check` gate now allows exactly those two.
+
 - `Ada.Environment_Variables` reads were never SPARK-blocked. A
   `SPARK_Mode => On` function calling `Exists` / `Value` proves clean,
   with `[assumed-global-null]` warnings because the runtime has no

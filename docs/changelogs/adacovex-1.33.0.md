@@ -196,7 +196,6 @@ scaling (a smaller category's track is a percentage of the largest), the
 per-segment `scope: count` tooltips, and that no `charts-css` markup
 remains in the served page.
 
-
 989 tests (was 973).  The SBOM generator suite gained 16 tests:
 
 - `[[test-depends-on]]` crates in the publishing and dev manifests are

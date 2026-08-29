@@ -54,19 +54,9 @@ word size instead of being hard-coded to 64-bit assumptions:
 
 ### C3: Conventional test-result file discovery
 
-The test-summary lookup is no longer hard-coded to `<target>/test_result.md`.
-A new `Parse_Test_Result_From_Project` searches a conventional list of
-test-result file names at the project root (and under `docs/`) and parses the
-first file that exists -- `test_result.md`, `test_results.md`,
-`test-result.md`, `test_report.md`, `test_output.md`, the equivalent `.txt`
-and `.log` variants, `tests.md`/`tests.txt`, and the `docs/` mirrors. The
-assessment, `sbom`, and `--compare-base` paths all use the new lookup, so
-adacovex accepts common report conventions (e.g. CI that emits
-`test_results.md` or `test-output.txt`) without configuration. The parser
-itself already understood Markdown tables, plain `Passed:`/`Failed:` summary
-lines, TAP, Automake, Maven Surefire, and Unity formats. The new candidate
-search adds one SPARK-proved helper (`Trim_Right`, fully discharged) and 9 new
-VCs, taking the self-assessment to **500/500 VCs Platinum**.
+The test-summary lookup is no longer hard-coded to `<target>/test_result.md`. A new `Parse_Test_Result_From_Project` searches a conventional list of test-result file names at the project root (and under `docs/`) and parses the first file that exists -- `test_result.md`, `test_results.md`, `test-result.md`, `test_report.md`, `test_output.md`, the equivalent `.txt` and `.log` variants, `tests.md`/`tests.txt`, and the `docs/` mirrors. The assessment, `sbom`, and `--compare-base` paths all use the new lookup, so adacovex accepts common report conventions (e.g. CI that emits `test_results.md` or `test-output.txt`) without configuration.
+
+The parser itself already understood Markdown tables, plain `Passed:`/`Failed:` summary lines, TAP, Automake, Maven Surefire, and Unity formats. The new candidate search adds one SPARK-proved helper (`Trim_Right`, fully discharged) and 9 new VCs, taking the self-assessment to **500/500 VCs Platinum**.
 
 ## Fixes
 
@@ -133,11 +123,10 @@ The same release step now also:
   x86-64, and building from source on any host with GNAT FSF 9.2+ that can
   build Alire. Added to `docs/architecture.md`.
 - **Architecture decision: CI tied to release version.** Documented that the
-  GitHub Actions action is version-matched to the binary (the release workflow
-  bundles `adacovex-vX.Y.Z.tar.gz` for each tag, and the action downloads the
-  binary for the tag it is referenced by, with floating `vMAJOR` / `vMAJOR.MINOR`
-  / `latest` tags force-pushed at release time). CI runs on `ubuntu-latest`
-  with the pinned `gnat-version`.
+GitHub Actions action is version-matched to the binary (the release workflow bundles `adacovex-vX. Y. Z.tar.gz` for each tag, and the action downloads the binary for the tag it is referenced by, with floating `vMAJOR` / `vMAJOR. MINOR` / `latest` tags force-pushed at release time).
+
+CI runs on `ubuntu-latest` with the pinned `gnat-version`.
+
 - **Release/index manifest templates** (`alire/releases/covex-0.0.0.toml`,
   `index/ad/covex/covex-0.1.0-dev.toml`, and the 1.6.0 variants) dropped the
   gnatprove dependency; `alire/alire.lock` regenerated accordingly.
@@ -147,18 +136,10 @@ The same release step now also:
 ### H4: Compiler/proof warning cleanup + gnatprove standard companion
 
 - **Remaining build warnings fixed.**
-  - `Adacovex.Renderers.SBOM`: the compiler inlined `Field` and constant-folded
-    its `Sep /= ASCII.NUL` guard, so the check reported "statement has no
-    effect" at the call sites. Kept the original single-loop form and wrapped
-    it in `pragma Warnings (Off/On, "statement has no effect")`; the
-    two-loop `String` alternative was tried and reverted because it cost 35
-    unproved VCs. Proof remains intact: 500/500 VCs, Platinum, 0 unproved.
-  - `Adacovex.Target_Profiles`: `Host_Word_Size` is now a return-expression
-    `case` (instead of an unreachable multi-branch `case` statement on the
-    64-bit archive host), eliminating the "statement is never reached"
-    warnings at lines 10/13/16.
-  - Forced rebuild: **0 warnings**. `make prove`: **Platinum, 500/500 VCs,
-    0 unproved, 0 justified**. `make test`: **295/295**.
+- `Adacovex. Renderers. SBOM`: the compiler inlined `Field` and constant-folded its `Sep /= ASCII. NUL` guard, so the check reported "statement has no effect" at the call sites.
+
+Kept the original single-loop form and wrapped it in `pragma Warnings (Off/On, "statement has no effect")`; the two-loop `String` alternative was tried and reverted because it cost 35 unproved VCs. Proof remains intact: 500/500 VCs, Platinum, 0 unproved. - `Adacovex. Target_Profiles`: `Host_Word_Size` is now a return-expression `case` (instead of an unreachable multi-branch `case` statement on the 64-bit archive host), eliminating the "statement is never reached" warnings at lines 10/13/16. - Forced rebuild: **0 warnings**. `make prove`: **Platinum, 500/500 VCs, 0 unproved, 0 justified**. `make test`: **295/295**.
+
 - **`gnatprove` is now the standard companion in every covex TOML usage.**
   README (Option 1) and AGENTS (install item 1, dev-manifest usage) declare
   `covex = "*"` with `gnatprove = "^15.1.0"` in the same manifest. The GitHub
@@ -208,10 +189,9 @@ assertions 60/60, functional contracts 13/13, termination 44/44, flow
 
 ## Traceability
 
-No new HLRs. Existing tags continue to cover the changed packages:
-`-- HLR-SCAN` on `Adacovex.Parsers.Source`, `-- HLR-TEST` on
-`Adacovex.Parsers.Tests`, `-- HLR-PROVE` / `-- HLR-METRICS` on
-`Adacovex.Types`, `-- HLR-IR` on `Adacovex.Target_Profiles` and
-`Adacovex.IR_Synthesiser`, `-- HLR-SBOM` on `Adacovex.Renderers.SBOM`.
-The HLR-SBOM wording was tightened to reflect that only the root component
-carries proof-aware properties while dependencies are reported as "Not proved".
+No new HLRs. Existing tags continue to cover the changed packages: `-- HLR-SCAN` on `Adacovex. Parsers. Source`, `-- HLR-TEST` on `Adacovex.
+
+Parsers. Tests`, `-- HLR-PROVE` / `-- HLR-METRICS` on `Adacovex. Types`, `-- HLR-IR` on `Adacovex. Target_Profiles` and `Adacovex.
+
+IR_Synthesiser`, `-- HLR-SBOM` on `Adacovex. Renderers. SBOM`. The HLR-SBOM wording was tightened to reflect that only the root component carries proof-aware properties while dependencies are reported as "Not proved".
+

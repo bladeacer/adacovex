@@ -57,10 +57,12 @@ src/
 |-- core/
 |   |-- adacovex-cache.ads/.adb               -- On-disk result cache (content-hashed per-file, oldest-first eviction, size policy)
 |   |-- adacovex-completion.ads/.adb          -- Shell auto-completion script generator (bash/fish/zsh/pwsh)
-|   |-- adacovex-complexity.ads/.adb          -- Cyclomatic complexity checker (native Ada; gated by make complexity-check)
-|   |-- adacovex-config.ads/.adb              -- CLI argument parser (prove mode, --no-sbom, --sbom-format)
+|   |-- adacovex-config.ads/.adb              -- CLI argument parser (prove mode, --no-sbom, --sbom-format, --tz/--timezone, --serve-workers, complexity --excludes)
 |   |-- adacovex-core.ads                     -- Parent package for core data types and configuration
 |   |-- adacovex-cpus.ads/.adb                -- Host CPU/CI detection + GNATprove parallelism resolution
+|   |-- adacovex-complexity.ads/.adb          -- Cyclomatic complexity checker (multi-language scan; --excludes=EXT,EXT; gated by make complexity-check)
+|   |-- adacovex-ansi.ads/.adb                -- Terminal colour helper (CI / NO_COLOR / TERM-dumb aware)
+|   |-- adacovex-timezones.ads/.adb           -- Timezone resolution + local-time formatting (OS default; --tz/--timezone)
 |   |-- adacovex-diff.ads/.adb                -- Differential assessment (--compare-base / --coverage-delta)
 |   |-- adacovex-prove.ads/.adb               -- GNATprove runner for the `prove` subcommand (alire-first toolchain resolution)
 |   |-- adacovex-prove_patch.ads/.adb         -- Proof patches for vendored deps (SPARK aspect merge + patched proof tree)
@@ -173,7 +175,8 @@ adacovex [options]
 adacovex sbom [--format=cyclonedx-json|spdx-json] [--out=PATH]
            [--standard=NAME|--dal=LEVEL|--asil=LEVEL|--class=LEVEL]
 adacovex prove [--target=PATH] [prove options]
-adacovex status [--target=PATH]
+adacovex status [--target=PATH] [--tz=ZONE]
+adacovex complexity [--target=PATH] [--excludes=EXT,EXT]
 adacovex man [--check] [--dir=PATH]
 adacovex completion [bash|fish|zsh|pwsh]
 ```
@@ -296,6 +299,12 @@ tools/tests.py, wired as the `tools-check` gate in `make check`.
 `tools/check-action-parity.py` is a pure check (no writes) wired as
 `make action-parity-check` -- a feature gate in `make check` and CI that
 fails when the GitHub Action stops mirroring the base CLI option set.
+`tools/csslint.py` enforces the dashboard CSS 4px spacing rule (every
+margin/padding/gap value a multiple of 4px); it is wired as `make
+csslint-check`, run inside `make build`, and part of the `make check` cheap
+gates. `tools/para-split.py` rewraps any paragraph that exceeds four
+sentences into four-sentence paragraphs (the 4-sentence-per-paragraph rule is
+enforced by `make docs-check` via `tools/check-docs.py`).
 `tools/rst2md.py` (wired as `make doc`) converts gnatdoc RST output into the
 `docs/api-docs/` package pages + index; cross-links to the hand-written
 reference pages live in its `GUIDE_PAGES` / `PACKAGE_GUIDES` tables, **never**
@@ -328,7 +337,8 @@ link URLs).
 | `release` | Build, prove, validate, run coverage gate vs last release, bundle + tag & push |
 | `ascii-check` | Verify all source files are pure ASCII (skips generated e2e output: playwright-report / test-results) |
 | `tools-check` | Run the stdlib-unittest suite for the tools/*.py dev scripts (tools/tests.py) |
-| `complexity-check` | Cyclomatic-complexity + LOC gate: no god objects/functions, no file above its LOC or percentage-of-codebase caps (native Ada; gated by make complexity-check) |
+| `csslint-check` | Dashboard CSS 4px spacing gate: every margin/padding/gap must be a multiple of 4px (tools/csslint.py; also run inside `make build`) |
+| `complexity-check` | Cyclomatic-complexity + LOC gate: no god objects/functions, no file above its LOC or percentage-of-codebase caps (multi-language scan via `--excludes=md,rst`; gated by make complexity-check) |
 | `bench` | Benchmark the pipeline with hyperfine (bash `time` fallback): cold vs warm timings + binary size (docs/perf.md) |
 | `perf-bench` | Profile the adacovex binary with perf and strace (tools/perf-bench.py; docs/perf.md) |
 | `spark-off-check` | Fail if any `SPARK_Mode (Off)` appears outside `Types.Implementation` and `Complexity` (the non-formal `Ada.Containers` instantiations) |

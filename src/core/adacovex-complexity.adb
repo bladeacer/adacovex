@@ -4,6 +4,7 @@ with Ada.Text_IO;
 with Ada.Strings.Fixed;
 with Ada.Strings.Unbounded;
 with Ada.Characters.Handling;
+with Adacovex.Ansi;
 with Adacovex.Parsers;
 with Adacovex.Types;
 
@@ -387,9 +388,190 @@ package body Adacovex.Complexity is
       end;
    end Detect_End;
 
-   --  Walk Target_Dir (or its src/ subdirectory) and collect every .ads/.adb
-   --  file except the generated version and dashboard template units.
-   function Scan_Source_Files (Target_Dir : String) return File_Vectors.Vector
+   --  Lowercased filename extension without the dot, up to 8 chars; "" when
+   --  the name has no extension or starts with a dot (hidden file).
+   function Lower_Ext (Name : String) return String is
+      Dot : Integer := 0;
+      Buf : String (1 .. 8);
+      Len : Natural := 0;
+   begin
+      if Name'Length < 2 or else Name (Name'First) = '.' then
+         return "";
+      end if;
+      for I in reverse Name'Range loop
+         if Name (I) = '.' then
+            Dot := I;
+            exit;
+         end if;
+      end loop;
+      if Dot <= Name'First then
+         return "";
+      end if;
+      for I in Dot + 1 .. Name'Last loop
+         exit when Len = 8;
+         Len := Len + 1;
+         Buf (Len) := To_Lower (Name (I));
+      end loop;
+      if Len = 0 then
+         return "";
+      end if;
+      return Buf (1 .. Len);
+   end Lower_Ext;
+
+   --  True when Ext (lowercased, no dot) is one of the scanned extensions:
+   --  Ada, C/C++, C#, Go, Java, JS/TS, Python, Ruby, PHP, Rust, Shell,
+   --  Kotlin, YAML/JSON/TOML/XML, Markdown, or reStructuredText.
+   function Scanned_Ext (Ext : String) return Boolean is
+      List : constant array (1 .. 32) of String (1 .. 4) :=
+        ("ads ", "adb ", "ada ", "gpr ", "c   ", "h   ", "cpp ",
+         "hpp ", "cxx ", "cc  ", "cs  ", "go  ", "java", "js  ",
+         "mjs ", "cjs ", "ts  ", "jsx ", "tsx ", "py  ", "rb  ",
+         "php ", "rs  ", "sh  ", "kt  ", "yaml", "yml ", "json",
+         "toml", "xml ", "md  ", "rst ");
+      Lens : constant array (1 .. 32) of Natural :=
+        (3, 3, 3, 3, 1, 1, 3, 3, 3, 2, 2, 2, 4, 2, 3, 3, 2, 3, 3, 2,
+         2, 3, 2, 2, 2, 4, 3, 4, 4, 3, 2, 3);
+   begin
+      for I in List'Range loop
+         if Ext'Length = Lens (I)
+           and then Ext = List (I) (1 .. Lens (I))
+         then
+            return True;
+         end if;
+      end loop;
+      return False;
+   end Scanned_Ext;
+
+   --  Display language name for a scanned extension (tokei-style).
+   function Lang_Name (Ext : String) return String is
+   begin
+      if Ext = "ads" or else Ext = "adb"
+        or else Ext = "ada" or else Ext = "gpr"
+      then
+         return "Ada";
+      elsif Ext = "c" or else Ext = "h" then
+         return "C";
+      elsif Ext = "cpp" or else Ext = "cxx"
+        or else Ext = "cc" or else Ext = "hpp"
+      then
+         return "C++";
+      elsif Ext = "cs" then
+         return "C#";
+      elsif Ext = "go" then
+         return "Go";
+      elsif Ext = "java" then
+         return "Java";
+      elsif Ext = "js" or else Ext = "mjs"
+        or else Ext = "cjs" or else Ext = "jsx"
+      then
+         return "JavaScript";
+      elsif Ext = "ts" or else Ext = "tsx" then
+         return "TypeScript";
+      elsif Ext = "py" then
+         return "Python";
+      elsif Ext = "rb" then
+         return "Ruby";
+      elsif Ext = "php" then
+         return "PHP";
+      elsif Ext = "rs" then
+         return "Rust";
+      elsif Ext = "sh" then
+         return "Shell";
+      elsif Ext = "kt" then
+         return "Kotlin";
+      elsif Ext = "yaml" or else Ext = "yml" then
+         return "YAML";
+      elsif Ext = "json" then
+         return "JSON";
+      elsif Ext = "toml" then
+         return "TOML";
+      elsif Ext = "xml" then
+         return "XML";
+      elsif Ext = "md" then
+         return "Markdown";
+      elsif Ext = "rst" then
+         return "reStructuredText";
+      else
+         return "Unknown";
+      end if;
+   end Lang_Name;
+
+   --  True when Ext (lowercased, no dot) is listed in the comma-separated
+   --  Excludes list (no leading dots; matched case-insensitively).
+   function Is_Excluded (Ext : String; Excludes : String) return Boolean is
+      Start : Natural := Excludes'First;
+   begin
+      if Excludes'Length = 0 then
+         return False;
+      end if;
+      while Start <= Excludes'Last loop
+         declare
+            Fin : Natural := Start;
+         begin
+            while Fin <= Excludes'Last
+              and then Excludes (Fin) /= ','
+              and then Excludes (Fin) /= ' '
+            loop
+               Fin := Fin + 1;
+            end loop;
+            declare
+               Len : constant Natural := Fin - Start;
+            begin
+               if Len = Ext'Length then
+                  declare
+                     Match : Boolean := True;
+                  begin
+                     for I in 1 .. Len loop
+                        if Ext (Ext'First + I - 1)
+                          /= To_Lower (Excludes (Start + I - 1))
+                        then
+                           Match := False;
+                           exit;
+                        end if;
+                     end loop;
+                     if Match then
+                        return True;
+                     end if;
+                  end;
+               end if;
+            end;
+            exit when Fin > Excludes'Last;
+            Start := Fin + 1;
+         end;
+      end loop;
+      return False;
+   end Is_Excluded;
+
+   --  True when a directory name should be skipped during the walk: version
+   --  control metadata, generated/dependency trees, unit-test suites, and
+   --  vendored assets that are not part of the assessed source.
+   function Skip_Dir (N : String) return Boolean is
+   begin
+      return N = ".git"
+        or else N = ".alire"
+        or else N = ".jj"
+        or else N = ".hg"
+        or else N = ".svn"
+        or else N = "_darcs"
+        or else N = "obj"
+        or else N = "bin"
+        or else N = "dist"
+        or else N = "build"
+        or else N = "node_modules"
+        or else N = "test-results"
+        or else N = "playwright-report"
+        or else N = "tests"
+        or else N = "media"
+        or else N = "index"
+        or else N = "alire"
+        or else N = "skills";
+   end Skip_Dir;
+
+   --  Walk Target_Dir and collect every supported source file except the
+   --  generated version/dashboard units and any extension listed in Excludes.
+   --  Dependency/generated directories (see Skip_Dir) are never descended.
+   function Scan_Source_Files
+     (Target_Dir : String; Excludes : String) return File_Vectors.Vector
    is
       use Ada.Directories;
       Result : File_Vectors.Vector;
@@ -410,34 +592,34 @@ package body Adacovex.Complexity is
                if N = "." or else N = ".." then
                   null;
                elsif Kind (Ent) = Directory then
-                  if N /= ".git"
-                    and then N /= ".alire"
-                    and then N /= "obj"
-                    and then N /= "tests"
-                  then
+                  if not Skip_Dir (N) then
                      Walk (Full_Name (Ent));
                   end if;
                elsif Kind (Ent) = Ordinary_File then
-                  if N'Length > 4 then
-                     declare
-                        Ext : constant String := N (N'Last - 3 .. N'Last);
-                     begin
-                        if Ext = ".ads" or else Ext = ".adb" then
-                           if N /= "adacovex_version_info.ads"
-                             and then N /= "adacovex-dashboard_template.ads"
-                           then
-                              declare
-                                 Item : File_Metrics;
-                                 Full : constant String := Full_Name (Ent);
-                              begin
-                                 Item.Path_Len := Full'Length;
-                                 Item.Path (1 .. Item.Path_Len) := Full;
-                                 Result.Append (Item);
-                              end;
+                  declare
+                     Ext  : constant String := Lower_Ext (N);
+                     Lang : constant String := Lang_Name (Ext);
+                  begin
+                     if Ext'Length > 0
+                       and then Scanned_Ext (Ext)
+                       and then not Is_Excluded (Ext, Excludes)
+                       and then N /= "adacovex_version_info.ads"
+                       and then N /= "adacovex-dashboard_template.ads"
+                     then
+                        declare
+                           Item : File_Metrics;
+                           Full : constant String := Full_Name (Ent);
+                        begin
+                           Item.Path_Len := Full'Length;
+                           Item.Path (1 .. Item.Path_Len) := Full;
+                           Item.Language_Len := Lang'Length;
+                           if Lang'Length > 0 then
+                              Item.Language (1 .. Lang'Length) := Lang;
                            end if;
-                        end if;
-                     end;
-                  end if;
+                           Result.Append (Item);
+                        end;
+                     end if;
+                  end;
                end if;
             end;
          end loop;
@@ -448,8 +630,10 @@ package body Adacovex.Complexity is
       end Walk;
 
    begin
-      if Exists (Abs_Target & "/src") then
-         Walk (Abs_Target & "/src");
+      --  Walk the whole target (not just src/) so non-Ada source files are
+      --  included; Skip_Dir keeps dependency/generated trees out.
+      if Exists (Abs_Target) then
+         Walk (Abs_Target);
       end if;
       return Result;
    end Scan_Source_Files;
@@ -508,29 +692,14 @@ package body Adacovex.Complexity is
       Result.Path_Len := Path'Length;
       Result.Path (1 .. Result.Path_Len) := Path;
 
-      --  Language is derived from the file extension (tokei-style).  The
-      --  complexity scanner only opens Ada sources, so this resolves to "Ada".
+      --  Language is derived from the file extension (tokei-style).
       declare
-         Dot : Natural := 0;
-         Ext : String (1 .. 4);
-         EL  : Natural := 0;
+         Ext  : constant String := Lower_Ext (Path);
+         Lang : constant String := Lang_Name (Ext);
       begin
-         for I in reverse Path'Range loop
-            if Path (I) = '.' then
-               Dot := I;
-               exit;
-            end if;
-         end loop;
-         if Dot > Path'First and then Path'Last - Dot <= 4 then
-            EL := Path'Last - Dot;
-            Ext (1 .. EL) := Path (Dot + 1 .. Path'Last);
-            if (EL = 3
-                and then (Ext (1 .. 3) = "ads" or else Ext (1 .. 3) = "adb"))
-              or else (EL = 4 and then Ext (1 .. 4) = "ada")
-            then
-               Result.Language_Len := 3;
-               Result.Language (1 .. 3) := "Ada";
-            end if;
+         if Lang'Length > 0 then
+            Result.Language_Len := Lang'Length;
+            Result.Language (1 .. Lang'Length) := Lang;
          end if;
       end;
 
@@ -721,9 +890,12 @@ package body Adacovex.Complexity is
    end;
 
    --  Scan Target_Dir and return aggregate complexity metrics across all
-   --  discovered Ada source files.
-   function Analyze_Project (Target_Dir : String) return Complexity_Result is
-      Files : constant File_Vectors.Vector := Scan_Source_Files (Target_Dir);
+   --  discovered source files (skipping any extension listed in Excludes).
+   function Analyze_Project
+     (Target_Dir : String; Excludes : String := "") return Complexity_Result
+   is
+      Files : constant File_Vectors.Vector :=
+        Scan_Source_Files (Target_Dir, Excludes);
       Res   : Complexity_Result;
    begin
       for I in 1 .. Integer (Files.Length) loop
@@ -1008,9 +1180,10 @@ package body Adacovex.Complexity is
       if Check_Mode then
          if Integer (Violations.Length) > 0 then
             Ada.Text_IO.Put_Line
-              ("  Complexity/LOC gate FAILED ("
-               & Trim (Natural'Image (Integer (Violations.Length)))
-               & " violation(s))");
+              (Adacovex.Ansi.Red
+                 ("  Complexity/LOC gate FAILED ("
+                  & Trim (Natural'Image (Integer (Violations.Length)))
+                  & " violation(s))"));
             for I in 1 .. Integer (Violations.Length) loop
                Ada.Text_IO.Put_Line
                  ("  - "
@@ -1018,7 +1191,8 @@ package body Adacovex.Complexity is
                   & Violations (I).Message (1 .. Violations (I).Msg_Len));
             end loop;
          else
-            Ada.Text_IO.Put_Line ("  Complexity/LOC gate passed.");
+            Ada.Text_IO.Put_Line
+              (Adacovex.Ansi.Green ("  Complexity/LOC gate passed."));
          end if;
       end if;
    end Print_Report;

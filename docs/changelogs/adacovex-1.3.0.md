@@ -104,13 +104,9 @@ The compiled CLI is now named `adacovex` (via `for Executable
 symlink alias. All scripts, docs, and workflows reference `bin/adacovex` /
 `covex`; `adacovex_main` remains only as the internal Ada source unit name.
 
-`adacovex.gpr` now sets `for Object_Dir use "obj"`, so `*.o`, `*.ali`,
-`*.cswi`, `*.bexch` no longer accumulate in the repo root. Stray artifacts
-were removed from the working tree. The composite action gained `branding`
-(shield/green) and an `author` so it can be listed on the GitHub Actions
-marketplace; each `vX.Y.Z` release publishes the matching action version.
-`make badges` in `Ada_CRDT` now builds adacovex first if the binary is
-missing and passes an explicit `--target=.`.
+`adacovex.gpr` now sets `for Object_Dir use "obj"`, so `*.o`, `*.ali`, `*.cswi`, `*.bexch` no longer accumulate in the repo root. Stray artifacts were removed from the working tree. The composite action gained `branding` (shield/green) and an `author` so it can be listed on the GitHub Actions marketplace; each `vX. Y.
+
+Z` release publishes the matching action version. `make badges` in `Ada_CRDT` now builds adacovex first if the binary is missing and passes an explicit `--target=.`.
 
 ### C9: All workflows use the single composite action
 

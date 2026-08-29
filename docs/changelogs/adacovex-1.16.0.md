@@ -41,17 +41,9 @@ The `prove` subcommand merges proof patches before running gnatprove
 4. Proof-patch contents are folded into the prove result-cache key, so a
    patch edit invalidates the cached proof and forces a re-prove.
 
-The two patch shapes: a **spec patch** (`.ads`) re-declares the vendored
-spec with contracts; a **body patch** (`.adb`) opts the vendored body into
-the proof -- gnatprove analyses a unit's body only when the body itself
-declares `SPARK_Mode => On`, so a SPARK-clean vendored body needs both.
-Where the body is SPARK-clean and opted in, gnatprove proves the patched
-contracts (the documented `Vecmath.Clamp` worked example proves its
-`Post => Clamp'Result in Lo .. Hi` outright -- all of its VCs proved, none
-unproved); where it is
-not (e.g. bodies that call `Ada.Text_IO`, which is `SPARK_Mode Off`),
-gnatprove skips the I/O bodies by design and reports the unit out of proof
-scope -- a proof patch never drags the target's proof level down.
+The two patch shapes: a **spec patch** (`.ads`) re-declares the vendored spec with contracts; a **body patch** (`.adb`) opts the vendored body into the proof -- gnatprove analyses a unit's body only when the body itself declares `SPARK_Mode => On`, so a SPARK-clean vendored body needs both. Where the body is SPARK-clean and opted in, gnatprove proves the patched contracts (the documented `Vecmath. Clamp` worked example proves its `Post => Clamp'Result in Lo .. Hi` outright -- all of its VCs proved, none unproved); where it is not (e.g. bodies that call `Ada.
+
+Text_IO`, which is `SPARK_Mode Off`), gnatprove skips the I/O bodies by design and reports the unit out of proof scope -- a proof patch never drags the target's proof level down.
 
 The Ada_CRDT dogfood target proves the mechanism end to end: its
 `.adacovex/patches/demo/deps/vt100/vt100.ads` now declares `SPARK_Mode =>
@@ -92,18 +84,9 @@ patch-content hashing for the prove cache key.
 
 ### C4: documentation -- a dedicated proving guide, HLR/LLR links, and full CLI coverage
 
-Proving moved from scattered design notes to a dedicated user-facing page:
-new `docs/proving.md` -- *Proving and writing SPARK proofs* -- covers how
-`adacovex prove` works (gnatprove resolution, the fall-through assessment,
-the result cache), what a proof contains (the VC categories and the
-Stone..Platinum model), how to write SPARK contracts (the
-body-must-opt-in rule, why `Ada.Text_IO` bodies are skipped), and the full
-proof-patch section: **why** patches exist for vendored deps (strict mode
-counts vendored code, bodies must opt in, sources are immutable), **how**
-to write the `.ads` spec patch and `.adb` body patch, the matching rules, a
-worked `Vecmath.Clamp` example that proves its contract, and a pitfalls
-section. The page is linked from the README documentation table, AGENTS.md's
-Documentation block, the CLI reference, target-projects, and architecture.
+Proving moved from scattered design notes to a dedicated user-facing page: new `docs/proving.md` -- *Proving and writing SPARK proofs* -- covers how `adacovex prove` works (gnatprove resolution, the fall-through assessment, the result cache), what a proof contains (the VC categories and the Stone.. Platinum model), how to write SPARK contracts (the body-must-opt-in rule, why `Ada. Text_IO` bodies are skipped), and the full proof-patch section: **why** patches exist for vendored deps (strict mode counts vendored code, bodies must opt in, sources are immutable), **how** to write the `.ads` spec patch and `.adb` body patch, the matching rules, a worked `Vecmath. Clamp` example that proves its contract, and a pitfalls section.
+
+The page is linked from the README documentation table, AGENTS.md's Documentation block, the CLI reference, target-projects, and architecture.
 
 The CLI reference gained the missing first-class surfaces: a full **`prove`
 subcommand** section (its eight options, the fall-through to the assessment
@@ -140,17 +123,7 @@ gnatprove 16.1.0 (`--steps=10000`).
 
 ## Traceability
 
-No new HLRs. The proof-patch machinery extends the existing `HLR-PROVE`
-tag (`src/core/adacovex-prove_patch.ads`/`.adb` alongside
-`adacovex-prove`), covered by the C3 merge-engine tests and the Ada_CRDT
-dogfood regression (`make run-ada-crdt`), and documented in the new
-`docs/proving.md` guide, `docs/architecture.md`, and AGENTS.md. The
-C4 documentation changes are documentation-only (new `proving.md`
-page, README/AGENTS.md link tables, CLI-reference and sbom.md coverage) and
-carry no HLR tags. The C2 route mapping extends
-`HLR-SERVER` / `LLR-SERVER-01`: `Route` is the single pure mapping behind
-every `/`, `/badge/*.svg`, and `/api/metrics` route that `Handle_Request`
-serves, pinned by the C2 `Server routing` tests and proved by its
-postcondition. None of the changes introduce new high-level requirements;
-the two new test categories extend the coverage of the existing
-`HLR-PROVE` and `HLR-SERVER` tags.
+No new HLRs. The proof-patch machinery extends the existing `HLR-PROVE` tag (`src/core/adacovex-prove_patch.ads`/`.adb` alongside `adacovex-prove`), covered by the C3 merge-engine tests and the Ada_CRDT dogfood regression (`make run-ada-crdt`), and documented in the new `docs/proving.md` guide, `docs/architecture.md`, and AGENTS.md. The C4 documentation changes are documentation-only (new `proving.md` page, README/AGENTS.md link tables, CLI-reference and sbom.md coverage) and carry no HLR tags. The C2 route mapping extends `HLR-SERVER` / `LLR-SERVER-01`: `Route` is the single pure mapping behind every `/`, `/badge/*.svg`, and `/api/metrics` route that `Handle_Request` serves, pinned by the C2 `Server routing` tests and proved by its postcondition.
+
+None of the changes introduce new high-level requirements; the two new test categories extend the coverage of the existing `HLR-PROVE` and `HLR-SERVER` tags.
+

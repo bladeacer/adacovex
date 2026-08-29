@@ -30,11 +30,9 @@ make prove        # SPARK proof (Platinum gate) + regenerates docs/badges/
 make check        # the whole quality gate CI runs before a release
 ```
 
-`make check` is the pre-commit gate. It runs cheap static checks first (ASCII,
-SPARK_Mode-Off policy, changelog format, version source, doc-links, markdown
-links). Then it runs build, tests, proof, docs, and SBOM. Then it runs
-tree-wide count-sync checks. Everything must pass. The sync checks fail loudly
-when a count in any documentation file is stale.
+`make check` is the pre-commit gate. It runs cheap static checks first (ASCII, SPARK_Mode-Off policy, changelog format, version source, doc-links, markdown links). Then it runs build, tests, proof, docs, and SBOM. Then it runs tree-wide count-sync checks.
+
+Everything must pass. The sync checks fail loudly when a count in any documentation file is stale.
 
 ## Repository tour
 
@@ -87,25 +85,15 @@ A handful of modes exit before the pipeline: `--help`, `--version`, `man`,
 
 ### API docs and cross-links
 
-`make doc` regenerates `docs/api-docs/` from the `.ads` docstrings via gnatdoc
-+ `tools/rst2md.py`. It produces one page per package plus `index.md`. The six
-hand-written reference pages are never regenerated. They are the docstring
-spec, the test formats, the SPARK levels, and the DAL, ASIL, and Class level
-pages. Cross-links between the generated package pages and the reference pages
-live in `tools/rst2md.py`. `GUIDE_PAGES` builds the index's "Guides" section.
-`PACKAGE_GUIDES` builds the per-package "See also" lines. They do **not** live
-in the `.ads` comments: gnatdoc parses comment text as RST and drops markdown
-link URLs. To add a package cross-link, extend `PACKAGE_GUIDES` in
-`tools/rst2md.py`. Then run `make doc` and `make link-check`.
+`make doc` regenerates `docs/api-docs/` from the `.ads` docstrings via gnatdoc + `tools/rst2md.py`. It produces one page per package plus `index.md`. The six hand-written reference pages are never regenerated. They are the docstring spec, the test formats, the SPARK levels, and the DAL, ASIL, and Class level pages.
+
+Cross-links between the generated package pages and the reference pages live in `tools/rst2md.py`. `GUIDE_PAGES` builds the index's "Guides" section. `PACKAGE_GUIDES` builds the per-package "See also" lines. They do **not** live in the `.ads` comments: gnatdoc parses comment text as RST and drops markdown link URLs. To add a package cross-link, extend `PACKAGE_GUIDES` in `tools/rst2md.py`. Then run `make doc` and `make link-check`.
 
 ## Testing
 
-The test suite is native and zero-dependency. `src/tests/` holds one file per
-category (scanner, config, types, renderers, SBOM, VCS, and more). Each file
-exposes a `Run (R : in out Runner'Class)` procedure wired into
-`src/tests/test_runner.adb`. A test is a `R.Check (Condition, "Description")`
-call. The runner counts them, prints a per-category table, and writes
-`docs/test_result.md`.
+The test suite is native and zero-dependency. `src/tests/` holds one file per category (scanner, config, types, renderers, SBOM, VCS, and more). Each file exposes a `Run (R : in out Runner'Class)` procedure wired into `src/tests/test_runner.adb`. A test is a `R. Check (Condition, "Description")` call.
+
+The runner counts them, prints a per-category table, and writes `docs/test_result.md`.
 
 ```ada
 -- src/tests/adacovex_scanner_tests.adb (pattern to follow)
@@ -121,11 +109,9 @@ make test-count    # sync every anchored count across the repo (AGENTS.md,
                    # README, Makefile, CI workflows, manifests, agents-tree.map)
 ```
 
-The count-sync is enforced by `make check`. A test change that skips the sync
-fails the gate. Tests write to `/tmp` scratch dirs and clean up after
-themselves. The default on-disk result cache (`~/.adacovex/cache`) is shared.
-Tests that exercise caching use content-hashed keys. They never depend on each
-other's state.
+The count-sync is enforced by `make check`. A test change that skips the sync fails the gate. Tests write to `/tmp` scratch dirs and clean up after themselves. The default on-disk result cache (`~/.adacovex/cache`) is shared.
+
+Tests that exercise caching use content-hashed keys. They never depend on each other's state.
 
 ## SPARK proof discipline
 

@@ -80,19 +80,9 @@ relevant only to the patch engine.
 
 ### C10: Production scalability (unbounded)
 
-Packages and subprograms now use `Ada.Containers.Vectors` (heap-allocated, up
-to `Natural'Last` ~ 2.1B); the compile-time `Max_Packages` / `Max_Subprogs`
-bounds are eliminated entirely, so projects of any size are supported without
-recompilation. VC counts use unbounded `Natural` fields (the `Max_VC_Count`
-dead type removed). The line buffer was raised 2048 -> 8192 characters with
-automatic truncation draining (silently skips remaining chars on lines >
-8192), the path buffer 512 -> 4096 (matches `PATH_MAX`), and the filename
-buffer 64 -> 128 (matches Ada's max identifier length). A line-truncation
-guard detects when the buffer was filled (partial read) and drains the
-remainder of the line, preventing stream desynchronisation that previously
-caused false subprogram declarations. Dead code removed: `Max_Params`,
-`Max_VC_Count`, `Max_Badge_Path`, `Max_Metrics`, `Max_Skip_Dirs`, `VC_Info`,
-`VC_Vector`, `Param_Count`.
+Packages and subprograms now use `Ada. Containers. Vectors` (heap-allocated, up to `Natural'Last` ~ 2.1B); the compile-time `Max_Packages` / `Max_Subprogs` bounds are eliminated entirely, so projects of any size are supported without recompilation. VC counts use unbounded `Natural` fields (the `Max_VC_Count` dead type removed).
+
+The line buffer was raised 2048 -> 8192 characters with automatic truncation draining (silently skips remaining chars on lines > 8192), the path buffer 512 -> 4096 (matches `PATH_MAX`), and the filename buffer 64 -> 128 (matches Ada's max identifier length). A line-truncation guard detects when the buffer was filled (partial read) and drains the remainder of the line, preventing stream desynchronisation that previously caused false subprogram declarations. Dead code removed: `Max_Params`, `Max_VC_Count`, `Max_Badge_Path`, `Max_Metrics`, `Max_Skip_Dirs`, `VC_Info`, `VC_Vector`, `Param_Count`.
 
 ### C11: `--dal` validation
 
@@ -159,13 +149,9 @@ preventing FD leaks.
 
 ### H6: Post-release: server graceful shutdown and backoff
 
-Worker tasks now check `Svr_State.Running` at the top of the loop and exit
-when `False`. On `Socket_Error`, workers increment a backoff counter and
-`delay 0.1`; after 100 consecutive errors they set `Running := False` and
-exit, fixing the busy-loop. The main server loop changed from `delay 3600.0`
-to `delay 1.0` with `exit when not Svr_State.Running`, enabling timely
-shutdown, and `Running` is set `False` on any exception in `Start`, ensuring
-socket cleanup via the existing `Close_Socket (Listener)` handler.
+Worker tasks now check `Svr_State. Running` at the top of the loop and exit when `False`. On `Socket_Error`, workers increment a backoff counter and `delay 0.1`; after 100 consecutive errors they set `Running := False` and exit, fixing the busy-loop. The main server loop changed from `delay 3600.0` to `delay 1.0` with `exit when not Svr_State.
+
+Running`, enabling timely shutdown, and `Running` is set `False` on any exception in `Start`, ensuring socket cleanup via the existing `Close_Socket (Listener)` handler.
 
 ### H7: Post-release: iterative directory traversal (no recursion)
 

@@ -17,7 +17,9 @@ adacovex makes no OS-specific assumptions beyond the CPU-core and CI detection d
 
 ## Release binaries
 
-The CI release binary is Linux x86-64 only. The `adacovex-vX.Y.Z.tar.gz` bundle (`adacovex` and the `covex` alias) and the prebuilt GNATprove toolchain asset are built on `ubuntu-latest`. Every other platform builds adacovex from source via Alire (`alr build`). See [Installing adacovex](../README.md#installing-adacovex).
+The CI release binary is Linux x86-64 only. The `adacovex-vX. Y. Z.tar.gz` bundle (`adacovex` and the `covex` alias) and the prebuilt GNATprove toolchain asset are built on `ubuntu-latest`.
+
+Every other platform builds adacovex from source via Alire (`alr build`). See [Installing adacovex](../README.md#installing-adacovex).
 
 ## CPU core-count detection
 
@@ -68,7 +70,9 @@ The status command returns exit code `0` when a usable gnatprove is detectable w
 
 ## Local man page (Linux/WSL)
 
-`adacovex man` installs the man page into the local man database without root. The default root is `$XDG_DATA_HOME/man` when set. Otherwise it is `~/.local/share/man`. This is the standard Linux/WSL per-user man tree. The index is refreshed with `mandb` when `mandb` is present. Ubuntu and WSL ship `mandb`.
+`adacovex man` installs the man page into the local man database without root. The default root is `$XDG_DATA_HOME/man` when set. Otherwise it is `~/.local/share/man`. This is the standard Linux/WSL per-user man tree.
+
+The index is refreshed with `mandb` when `mandb` is present. Ubuntu and WSL ship `mandb`.
 
 When man-db is not installed, or when `mandb` fails, adacovex prints a warning. The warning states that the database was not refreshed. The page is still installed. You can read it with `man -l ~/.local/share/man/man1/adacovex.1`. `adacovex status` reports whether `mandb` is on `$PATH` up front.
 
@@ -76,6 +80,8 @@ When man-db is not installed, or when `mandb` fails, adacovex prints a warning. 
 
 ## VCS support (Linux/WSL)
 
-`--compare-base` and `--coverage-delta` snapshot a base revision across git, Mercurial, Subversion, Fossil, and jj. See [VCS support](vcs.md). The snapshot commands run through `sh -c`, which WSL provides. All temporary snapshots live under `/tmp/adacovex-diff-<pid>`. For VCS with poor snapshot UX (Subversion and Fossil), adacovex prints a note. The note recommends conversion to git.
+`--compare-base` and `--coverage-delta` snapshot a base revision across git, Mercurial, Subversion, Fossil, and jj. See [VCS support](vcs.md). The snapshot commands run through `sh -c`, which WSL provides. All temporary snapshots live under `/tmp/adacovex-diff-<pid>`.
+
+For VCS with poor snapshot UX (Subversion and Fossil), adacovex prints a note. The note recommends conversion to git.
 
 See the [CLI reference](cli-reference.md) for the full flag surface.

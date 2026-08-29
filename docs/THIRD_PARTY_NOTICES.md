@@ -10,7 +10,9 @@ adacovex itself is Apache-2.0 (see `LICENSE`) and depends only on the GNAT runti
 | GNATprove | toolchain-managed | GPL-3.0-or-later | SPARK proof analysis (`covex prove`) |
 | Z3 / Alt-Ergo / CVC5 solvers | bundled with GNATprove | MIT / CeCILL-C / Apache-2.0 respectively | Satisfying SPARK verification conditions |
 
-The GNAT toolchain is **not** embedded in the adacovex release bundle. gnatprove is **not** a declared dependency of the `covex` crate. adacovex resolves gnatprove at run time. `covex prove` prefers the own gnatprove dependency of the target project when the alire.toml / alire-dev.toml of the target project declares one. It runs gnatprove through `alr exec`. adacovex itself then requires only `alr` on `$PATH`. If no dependency is declared, it falls back to a gnatprove on `$PATH`. Then it falls back to a cached `~/.adacovex/toolchain/bin/gnatprove`. Finally it falls back to a platform toolchain download. This download is a GPL-licensed GNAT/gnatprove distribution. Distributing it requires the end user to accept the GPL for that component.
+The GNAT toolchain is **not** embedded in the adacovex release bundle. gnatprove is **not** a declared dependency of the `covex` crate. adacovex resolves gnatprove at run time. `covex prove` prefers the own gnatprove dependency of the target project when the alire.toml / alire-dev.toml of the target project declares one. It runs gnatprove through `alr exec`. adacovex itself then requires only `alr` on `$PATH`. If no dependency is declared, it falls back to a gnatprove on `$PATH`. Then it falls back to a cached `~/.adacovex/toolchain/bin/gnatprove`.
+
+Finally it falls back to a platform toolchain download. This download is a GPL-licensed GNAT/gnatprove distribution. Distributing it requires the end user to accept the GPL for that component.
 
 ## SBOM specifications
 
@@ -32,11 +34,17 @@ The CycloneDX 1.5 JSON and SPDX 2.3 JSON schemas are referenced for validation o
 | FlexSearch | 0.7.31 | Apache-2.0 | Client-side search indexing for packages, HLRs and dependencies in the dashboard (`resources/flexsearch.js`, inlined into the served dashboard) |
 | Charts.css | not bundled (inspiration) | MIT | Inspiration for the hand-rolled dashboard charts |
 
-[nomnoml](https://github.com/skanaar/nomnoml) is bundled under `resources/nomnoml.js` (71 KB, MIT). It is inlined into the dashboard page shell. It renders the dependency hierarchy as a UML-style diagram. The diagram appears in the alternative view of the **Dependencies** tab (Tree / Diagram toggle). The MIT licence text is preserved in the bundle header comment.
+[nomnoml](https://github.com/skanaar/nomnoml) is bundled under `resources/nomnoml.js` (71 KB, MIT). It is inlined into the dashboard page shell. It renders the dependency hierarchy as a UML-style diagram. The diagram appears in the alternative view of the **Dependencies** tab (Tree / Diagram toggle).
 
-[graphre](https://github.com/cytoscape/graphre) is bundled under `resources/graphre.js` (38 KB, MIT). It is inlined before nomnoml. It provides the `graphre.graphlib` and Dagre layout that the UMD wrapper (`global.graphre`) of nomnoml requires. Without it, `nomnoml.draw` throws `graphlib is undefined`. The MIT licence text is preserved in the bundle header comment.
+The MIT licence text is preserved in the bundle header comment.
 
-[FlexSearch](https://github.com/nextapps-de/flexsearch) is bundled under `resources/flexsearch.js` (16 KB, Apache-2.0). It is inlined into the dashboard page shell. It provides the global search box (packages, HLRs, dependencies). The search box uses an in-memory forward-tokenized index. The index loads from `/__GRAPH_JSON__` at page load. The Apache-2.0 licence text is preserved in the bundle header comment.
+[graphre](https://github.com/cytoscape/graphre) is bundled under `resources/graphre.js` (38 KB, MIT). It is inlined before nomnoml. It provides the `graphre.graphlib` and Dagre layout that the UMD wrapper (`global.graphre`) of nomnoml requires. Without it, `nomnoml.draw` throws `graphlib is undefined`.
+
+The MIT licence text is preserved in the bundle header comment.
+
+[FlexSearch](https://github.com/nextapps-de/flexsearch) is bundled under `resources/flexsearch.js` (16 KB, Apache-2.0). It is inlined into the dashboard page shell. It provides the global search box (packages, HLRs, dependencies). The search box uses an in-memory forward-tokenized index.
+
+The index loads from `/__GRAPH_JSON__` at page load. The Apache-2.0 licence text is preserved in the bundle header comment.
 
 [Charts.css](https://chartscss.org/) is **not** bundled or redistributed with adacovex. The dashboard charts were originally rendered with the vendored Charts.css framework (1.2.0, MIT); adacovex now ships its **own patched version** of those charts, hand-rolled with plain CSS and SVG and driven by the theme's CSS variables. Charts.css is credited for inspiration, and its MIT licence terms are acknowledged here.
 

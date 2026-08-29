@@ -16,6 +16,7 @@ with Adacovex.Parsers.DO178C;
 with Adacovex.Parsers.Manifest;
 with Adacovex.Compliance.DAL;
 with Adacovex.Renderers.ANSI;
+with Adacovex.Ansi;
 with Adacovex.Renderers.SVG;
 with Adacovex.Renderers.HTML;
 with Adacovex.Renderers.Markdown;
@@ -460,13 +461,10 @@ begin
    end if;
 
    --  Determine ANSI colour support.  Colour is enabled only when the
-   --  environment has not opted out (`NO_COLOR`) and we are not on a CI
-   --  runner (`CI`), so raw ANSI escapes never garble CI logs.  Adacovex
-   --  itself is NO_COLOR-clean elsewhere (dashboards are HTML, SBOMs are
-   --  files); this only governs the terminal summary.
-   Use_Color :=
-     not Ada.Environment_Variables.Exists ("NO_COLOR")
-     and then not Ada.Environment_Variables.Exists ("CI");
+   --  environment has not opted out (`NO_COLOR` / `TERM=dumb`) and we are not
+   --  on a CI runner (`CI`), so raw ANSI escapes never garble CI logs.
+   Adacovex.Ansi.Init;
+   Use_Color := Adacovex.Ansi.Colour_Enabled;
 
    TLen := Cfg.Target_Len;
    for I in 1 .. TLen loop
@@ -613,6 +611,7 @@ begin
             Adacovex.Prove.Export_Status
               (Target (1 .. TLen),
                Cfg.Status_Export_Path (1 .. Cfg.Status_Export_Path_Len),
+               Cfg.Time_Zone (1 .. Cfg.Time_Zone_Len),
                OK);
             if not OK then
                Ada.Text_IO.Put_Line
@@ -621,9 +620,11 @@ begin
                   & Cfg.Status_Export_Path (1 .. Cfg.Status_Export_Path_Len));
             end if;
          elsif Cfg.Status_Metrics then
-            Adacovex.Prove.Run_Status_Metrics (Target (1 .. TLen), OK);
+            Adacovex.Prove.Run_Status_Metrics
+              (Target (1 .. TLen), Cfg.Time_Zone (1 .. Cfg.Time_Zone_Len), OK);
          else
-            Adacovex.Prove.Run_Status (Target (1 .. TLen), OK);
+            Adacovex.Prove.Run_Status
+              (Target (1 .. TLen), Cfg.Time_Zone (1 .. Cfg.Time_Zone_Len), OK);
          end if;
          Ada.Command_Line.Set_Exit_Status (if OK then 0 else 1);
       end;
@@ -634,7 +635,9 @@ begin
    if Cfg.Complexity_Mode then
       declare
          Res : constant Adacovex.Complexity.Complexity_Result :=
-           Adacovex.Complexity.Analyze_Project (Target (1 .. TLen));
+           Adacovex.Complexity.Analyze_Project
+             (Target (1 .. TLen),
+              Cfg.Complexity_Excludes (1 .. Cfg.Excludes_Len));
          V   : constant Adacovex.Complexity.Violation_Vectors.Vector :=
            Adacovex.Complexity.Check_Gates
              (Res,
@@ -679,7 +682,8 @@ begin
    end if;
 
    Ada.Text_IO.Put_Line
-     ("adacovex v" & Adacovex.Version & " -- " & Target (1 .. TLen));
+     (Adacovex.Ansi.Bold
+        ("adacovex v" & Adacovex.Version & " -- " & Target (1 .. TLen)));
    if Cfg.Manifest_Len > 0 then
       Ada.Text_IO.Put_Line
         (Ada.Text_IO.Standard_Error,
@@ -1160,6 +1164,7 @@ begin
          GOK   : Boolean;
       begin
          State.Port := Cfg.Port;
+         State.Workers := Cfg.Serve_Workers;
          State.Doc_Metrics := Doc_Metrics;
          State.Proof := Proof;
          State.Tests := Tests;
@@ -1192,7 +1197,9 @@ begin
    declare
       Elapsed : constant Duration := Clock - Start_Time;
    begin
-      Ada.Text_IO.Put_Line ("Completed in" & Duration'Image (Elapsed));
+      Ada.Text_IO.Put_Line
+        (Adacovex.Ansi.Dim
+           ("Completed in" & Duration'Image (Elapsed)));
    end;
 
    Ada.Command_Line.Set_Exit_Status (Exit_St);

@@ -52,10 +52,9 @@ one, so relative proof effort is visible at a glance.
 
 ![Preview of Proof tab](../media/dashboard_preview_proof.png)
 
-Shows the SPARK level (Stone .. Platinum) and per-category VC counts. The
-mini **VCs proved / total** at the top is the headline number. Click into a
-category to see the breakdown. If a category is low, that is where the proof
-effort must focus.
+Shows the SPARK level (Stone .. Platinum) and per-category VC counts. The mini **VCs proved / total** at the top is the headline number. Click into a category to see the breakdown.
+
+If a category is low, that is where the proof effort must focus.
 
 ### Tests tab
 
@@ -78,13 +77,9 @@ is tagged in source and that no tags are orphaned (tagged but not defined in
 
 ![Preview of Dependencies tab](../media/dashboard_preview_dependencies.png)
 
-An interactive dependency tree (or diagram) of every component in the graph.
-Use the filter input and scope checkboxes to focus on base, dev, transitive,
-vendored, or system dependencies. Click a node to see its licence, PURL,
-parent, and a registry link. Use this tab to audit your supply chain: confirm
-every vendored licence is compatible, see which system tools the build needs
-(the `system` scope), and trace each component back to its source. The diagram
-view (toggle **Tree / Diagram**) renders the same graph as a directed diagram.
+An interactive dependency tree (or diagram) of every component in the graph. Use the filter input and scope checkboxes to focus on base, dev, transitive, vendored, or system dependencies. Click a node to see its licence, PURL, parent, and a registry link. Use this tab to audit your supply chain: confirm every vendored licence is compatible, see which system tools the build needs (the `system` scope), and trace each component back to its source.
+
+The diagram view (toggle **Tree / Diagram**) renders the same graph as a directed diagram.
 
 ### Charts tab
 
@@ -212,46 +207,16 @@ shows an empty state with a link to `/api/deps`).
   licence and PURL text are colour-coded (`--lic` amber, `--purl` muted
   monospace) so vendored/uncommon licences stand out at a glance.
 - **Click a dependency name** to open a **detail panel** in a split view: the
-  tree or diagram stays on the left and the panel docks on the right (it stacks
-  below on narrow screens). The panel is the single source of detail for every
-  dependency and serves both the Tree and the Diagram views. It shows the name,
-  version, scope, licence, language, PURL, parent, and a **registry link**
-  derived from the PURL (`pkg:github` -> GitHub, `pkg:gitlab` -> GitLab,
-  `pkg:bitbucket` -> Bitbucket, `pkg:npm` -> npmjs, `pkg:cargo` -> crates.io,
-  `pkg:pypi` -> PyPI, `pkg:golang` -> pkg.go.dev, `pkg:alire` -> alire.ada.dev).
-  Ecosystems without a reliable registry get no link rather than a search URL.
-  A **system** scope badge marks system-tool dependencies (`pkg:generic/*`
-  with `scope: "system"`); their panel adds a note that no external link or
-  licence is provisioned and only the resolved version is shown. Vendored
-  npm/pnpm/cargo packages resolve their licence from the local manifest, or
-  from the package registry (`npm view <pkg> license`, `pnpm show <pkg>
-  license`, `cargo search <pkg>`) when the manifest is silent. Close the panel via
-  the `close` chip or by clicking another dependency; closing returns the view
-  to full width.
+tree or diagram stays on the left and the panel docks on the right (it stacks below on narrow screens). The panel is the single source of detail for every dependency and serves both the Tree and the Diagram views. It shows the name, version, scope, licence, language, PURL, parent, and a **registry link** derived from the PURL (`pkg:github` -> GitHub, `pkg:gitlab` -> GitLab, `pkg:bitbucket` -> Bitbucket, `pkg:npm` -> npmjs, `pkg:cargo` -> crates.io, `pkg:pypi` -> PyPI, `pkg:golang` -> pkg.go.dev, `pkg:alire` -> alire.ada.dev). Ecosystems without a reliable registry get no link rather than a search URL.
+
+A **system** scope badge marks system-tool dependencies (`pkg:generic/*` with `scope: "system"`); their panel adds a note that no external link or licence is provisioned and only the resolved version is shown. Vendored npm/pnpm/cargo packages resolve their licence from the local manifest, or from the package registry (`npm view <pkg> license`, `pnpm show <pkg> license`, `cargo search <pkg>`) when the manifest is silent. Close the panel via the `close` chip or by clicking another dependency; closing returns the view to full width.
 
 **Diagram view** (alternative, toggle **Tree / Diagram**):
 
 -  Rendered with vendored [nomnoml 1.7.0](https://github.com/skanaa/nomnoml)
-  (MIT, `resources/nomnoml.js`, 71 KB, inlined) inside a `nomnoml-wrap`
-  card.  `ADACOVEX_GRAPH` (`__GRAPH_JSON__` injected by the Ada renderer) is
-  converted to nomnoml source (`[parent]-->[child]` edges,
-  `#direction: down` top-to-bottom so deep graphs stay within the page
-  width) and laid out with nomnoml's internal layout engine, then the graph
-  is serialised to an **SVG** (`<svg id="nomnoml-svg">`).  Every node is a
-  real `<g data-name=...>` group with a matching `<rect>` hitbox, so boxes
-  are clickable with exact hit areas (no canvas hit-testing, nothing
-  upside down, no text overflow: node text is clipped to the box width and
-  long labels ellipsise).  Diagram colours (fill, background, stroke, line,
-  font) are derived from the page's CSS custom properties at render time,
-  and the theme select re-renders the diagram, so box/arrow colours always
-  match the active theme. The SVG fills the width allocated to the diagram
-  (it takes up the same space the dependency tree would, rather than
-  shrinking to the graph's natural size) and is centred horizontally inside
-  `.nomnoml-wrap`; deep graphs scroll inside the card.
-   Scope checkboxes filter the diagram too (re-render on change).  Buttons
-   **Re-render** and **Download SVG** are provided. The view choice is
-   persisted in `localStorage` (`adacovex-dep-view`).  **Click a box** to open
-   the same split-view detail panel as the Tree view.
+(MIT, `resources/nomnoml.js`, 71 KB, inlined) inside a `nomnoml-wrap` card.  `ADACOVEX_GRAPH` (`__GRAPH_JSON__` injected by the Ada renderer) is converted to nomnoml source (`[parent]-->[child]` edges, `#direction: down` top-to-bottom so deep graphs stay within the page width) and laid out with nomnoml's internal layout engine, then the graph is serialised to an **SVG** (`<svg id="nomnoml-svg">`). Every node is a real `<g data-name=...>` group with a matching `<rect>` hitbox, so boxes are clickable with exact hit areas (no canvas hit-testing, nothing upside down, no text overflow: node text is clipped to the box width and long labels ellipsise). Diagram colours (fill, background, stroke, line, font) are derived from the page's CSS custom properties at render time, and the theme select re-renders the diagram, so box/arrow colours always match the active theme. The SVG fills the width allocated to the diagram (it takes up the same space the dependency tree would, rather than shrinking to the graph's natural size) and is centred horizontally inside `.nomnoml-wrap`; deep graphs scroll inside the card.
+
+Scope checkboxes filter the diagram too (re-render on change). Buttons **Re-render** and **Download SVG** are provided. The view choice is persisted in `localStorage` (`adacovex-dep-view`).  **Click a box** to open the same split-view detail panel as the Tree view.
 
 **Two separate searches, similar styling**:
 
@@ -307,16 +272,9 @@ reflects the covered share (fully green at 100%):
   `--scope-*` theme variables) with a legend. Skipped when the graph is
   empty.
 
-Each of the six cards is a different type (donut / bars / bars / radial /
-donut / polar) so the tab reads at a glance without duplicating a data
-story.  The per-check-category SPARK radar lives on the **Overview** tab
-instead (see below).  No JavaScript is required for the charts (pure
-CSS/SVG). The radial gauge and the scope ring follow the light/dark theme
-automatically via CSS variables.  The surrounding grid (`chart-grid`) is
-responsive and the page container is `max-width:1180px` so large monitors
-do not stretch cards.  Rings are used where a part-to-whole distribution
-is the point. Bars are used where a max-normalised comparison across
-categories is the point.
+Each of the six cards is a different type (donut / bars / bars / radial / donut / polar) so the tab reads at a glance without duplicating a data story. The per-check-category SPARK radar lives on the **Overview** tab instead (see below). No JavaScript is required for the charts (pure CSS/SVG). The radial gauge and the scope ring follow the light/dark theme automatically via CSS variables.
+
+The surrounding grid (`chart-grid`) is responsive and the page container is `max-width:1180px` so large monitors do not stretch cards. Rings are used where a part-to-whole distribution is the point. Bars are used where a max-normalised comparison across categories is the point.
 
 ### Robustness tier
 

@@ -14,7 +14,9 @@ src/core/adacovex-prove_patch	Proof patches for vendored deps (SPARK aspect merg
 src/core/adacovex-cache	On-disk result cache (content-hashed per-file, oldest-first eviction, size policy)
 src/core/adacovex-completion	Shell auto-completion script generator (bash/fish/zsh/pwsh)
 src/core/adacovex-cpus	Host CPU/CI detection + GNATprove parallelism resolution
-src/core/adacovex-complexity	Cyclomatic complexity checker (native Ada; gated by make complexity-check)
+src/core/adacovex-complexity	Cyclomatic complexity checker (multi-language; gated by make complexity-check; --excludes=EXT,EXT)
+src/core/adacovex-ansi	ANSII colour helper (terminal colour support; CI/NO_COLOR/TERM-dumb aware)
+src/core/adacovex-timezones	Timezone resolution + local-time formatting (OS default; --tz/--timezone: IANA name or UTC/GMT offset)
 src/ir/adacovex-target_profiles	Bounded IR scalar types (IR_Int8..IR_Int64 / IR_UInt8..IR_UInt64) + host/target config
 src/ir/adacovex-ir_bounds	Bounds-verification fixture (synthesized lowered types, gnatprove-proved)
 src/ir/adacovex-ir_synthesiser	Future-use IR synthesiser (foreign type-name lowering to bounded Ada)

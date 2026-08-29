@@ -1,6 +1,7 @@
 with Ada.Command_Line;
 with Ada.Directories;
 with Ada.Text_IO;
+with Adacovex.Timezones;
 
 package body Adacovex.Config is
 
@@ -244,7 +245,8 @@ package body Adacovex.Config is
      & "prove status completion man check dir version no-sbom sbom-format format out "
      & "jobs level timeout steps memlimit force no-loop-unrolling "
      & "no-inlining suppress-warnings quiet require-spark require-docstrings "
-     & "require-tests require-proof complexity export metrics help";
+     & "require-tests require-proof complexity export metrics help "
+     & "serve-workers tz timezone excludes";
 
    --  Expose the flag list for the shell-completion generator (see spec).
    function Flag_List return String is
@@ -417,6 +419,8 @@ package body Adacovex.Config is
          Cfg.SBOM_Out_Len := 0;
          Cfg.Cache_Dir_Len := 0;
          Cfg.Man_Dir_Len := 0;
+         Cfg.Time_Zone_Len := 0;
+         Cfg.Excludes_Len := 0;
 
          while I <= Count loop
             declare
@@ -654,6 +658,74 @@ package body Adacovex.Config is
                            & A (A'First + 7 .. A'Last)
                            & ")");
                   end;
+               elsif A = "--serve-workers" then
+                  I := I + 1;
+                  if I <= Count then
+                     begin
+                        Cfg.Serve_Workers := Positive'Value (Args (I));
+                     exception
+                        when Constraint_Error =>
+                           Set_Error
+                             (Cfg,
+                              "--serve-workers must be a positive integer "
+                              & "(got: "
+                              & Args (I)
+                              & ")");
+                     end;
+                  else
+                     Set_Error
+                       (Cfg,
+                        "--serve-workers requires an integer argument");
+                  end if;
+                  Cfg.Serve_Workers_Set := True;
+               elsif Has_Prefix (A, "--serve-workers=") then
+                  begin
+                     Cfg.Serve_Workers :=
+                       Positive'Value (A (A'First + 16 .. A'Last));
+                  exception
+                     when Constraint_Error =>
+                        Set_Error
+                          (Cfg,
+                           "--serve-workers must be a positive integer (got: "
+                           & A (A'First + 16 .. A'Last)
+                           & ")");
+                  end;
+                  Cfg.Serve_Workers_Set := True;
+               elsif A = "--tz" or else A = "--timezone" then
+                  I := I + 1;
+                  if I <= Count then
+                     Set_String (Cfg.Time_Zone, Cfg.Time_Zone_Len, Args (I));
+                  else
+                     Set_Error
+                       (Cfg, (if A = "--tz" then "--tz" else "--timezone")
+                        & " requires a timezone argument");
+                  end if;
+               elsif Has_Prefix (A, "--tz=") then
+                  Set_String
+                    (Cfg.Time_Zone,
+                     Cfg.Time_Zone_Len,
+                     A (A'First + 5 .. A'Last));
+               elsif Has_Prefix (A, "--timezone=") then
+                  Set_String
+                    (Cfg.Time_Zone,
+                     Cfg.Time_Zone_Len,
+                     A (A'First + 11 .. A'Last));
+               elsif A = "--excludes" then
+                  I := I + 1;
+                  if I <= Count then
+                     Set_String
+                       (Cfg.Complexity_Excludes,
+                        Cfg.Excludes_Len,
+                        Args (I));
+                  else
+                     Set_Error
+                       (Cfg, "--excludes requires a comma-separated extension list");
+                  end if;
+               elsif Has_Prefix (A, "--excludes=") then
+                  Set_String
+                    (Cfg.Complexity_Excludes,
+                     Cfg.Excludes_Len,
+                     A (A'First + 11 .. A'Last));
                elsif A = "--emit-svg" then
                   I := I + 1;
                   if I <= Count then
@@ -1288,12 +1360,14 @@ package body Adacovex.Config is
 
    end Testing;
 
-   function Parse_CLI return CLI_Config is
-      Cfg : CLI_Config;
-   begin
-      Testing.Parse_Command_Line (Cfg);
+    function Parse_All
+      (Args : Testing.Arg_Vectors.Vector) return CLI_Config
+    is
+       Cfg : CLI_Config;
+    begin
+       Testing.Parse_Args (Args, Cfg);
 
-      -- Default skip dirs (used in relaxed mode; .git/obj always skipped)
+       -- Default skip dirs (used in relaxed mode; .git/obj always skipped)
       if Cfg.Skip_Dir_Ct = 0 then
          Set_String (Cfg.Skip_Dirs, Cfg.Skip_Dir_Ct, "demo,deps,examples");
       end if;
@@ -1409,6 +1483,39 @@ package body Adacovex.Config is
             & "--suppress-warnings, --quiet) require the prove subcommand");
       end if;
 
+      -- --serve-workers only makes sense with --serve; reject a silent no-op.
+      if Cfg.Serve_Workers_Set and then not Cfg.Serve_Mode then
+         Set_Error
+           (Cfg, "--serve-workers requires the serve subcommand (--serve)");
+      end if;
+
+      -- --excludes only makes sense with the complexity subcommand; it does
+      -- not work on its own (the wording in the usage text makes this clear).
+      if Cfg.Excludes_Len > 0 and then not Cfg.Complexity_Mode then
+         Set_Error
+           (Cfg, "--excludes requires the complexity subcommand");
+      end if;
+
+      -- --tz / --timezone must name a supported timezone (validated loudly
+      -- so a typo never silently falls back to the OS zone.
+      if Cfg.Time_Zone_Len > 0 then
+         declare
+            Info : Adacovex.Timezones.Timezone_Info;
+            OK   : Boolean;
+         begin
+            Adacovex.Timezones.Parse
+              (Cfg.Time_Zone (1 .. Cfg.Time_Zone_Len), Info, OK);
+            if not OK then
+               Set_Error
+                 (Cfg,
+                  "--tz/--timezone must name a supported timezone (got: "
+                  & Cfg.Time_Zone (1 .. Cfg.Time_Zone_Len)
+                  & "); use an IANA name like Asia/Singapore or a UTC/GMT "
+                  & "offset like UTC+8");
+            end if;
+         end;
+      end if;
+
       -- Automatic SBOM at the end of every assessment is skipped only in the
       -- single-purpose modes (differential, coverage gate, sbom) or when
       -- --no-sbom is passed. Prove mode runs gnatprove and then falls through
@@ -1500,8 +1607,17 @@ package body Adacovex.Config is
          end;
       end if;
 
-      return Cfg;
-   end Parse_CLI;
+       return Cfg;
+    end Parse_All;
+
+    function Parse_CLI return CLI_Config is
+       Args : Testing.Arg_Vectors.Vector;
+    begin
+       for I in 1 .. Ada.Command_Line.Argument_Count loop
+          Testing.Arg_Vectors.Append (Args, Ada.Command_Line.Argument (I));
+       end loop;
+       return Testing.Parse_All (Args);
+    end Parse_CLI;
 
    procedure Print_Usage is
    begin
@@ -1570,6 +1686,9 @@ package body Adacovex.Config is
         ("                        (default: system; only with --serve)");
       Ada.Text_IO.Put_Line
         ("  --port=N              HTTP server port (default: 8080)");
+      Ada.Text_IO.Put_Line
+        ("  --serve-workers=N     HTTP server task-pool workers (default: 4;");
+      Ada.Text_IO.Put_Line ("                        only with --serve)");
       Ada.Text_IO.Put_Line
         ("  --emit-svg=PATH       Write SVG badges to directory (default: <target>/docs/badges)");
       Ada.Text_IO.Put_Line
@@ -1682,7 +1801,17 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("  --sbom-format=FMT     Format for the automatic SBOM (cyclonedx-json");
       Ada.Text_IO.Put_Line
-        ("                        | spdx-json | md; default: cyclonedx-json)");
+        ("                        | spdx-json | md; default: cyclonedx-json)");      Ada.Text_IO.Put_Line
+        ("  --tz=ZONE             Display timezone for status reports.  Accepts");
+      Ada.Text_IO.Put_Line
+        ("  --timezone=ZONE       an IANA name (Asia/Singapore) or a fixed UTC/");
+      Ada.Text_IO.Put_Line
+        ("                        GMT offset (UTC+8, GMT+8, UTC+08, GMT+08);");
+      Ada.Text_IO.Put_Line
+        ("                        default: the operating system timezone");
+      Ada.Text_IO.Put_Line
+        ("  --excludes=EXT,EXT    With complexity only: skip file extensions");
+      Ada.Text_IO.Put_Line ("                        (e.g. --excludes=md,rst)");
       Ada.Text_IO.Put_Line ("  --verbose             Verbose diagnostics");
       Ada.Text_IO.Put_Line
         ("  --version             Print the bundled version (read from");
@@ -1863,6 +1992,49 @@ package body Adacovex.Config is
             "HTTP server port for --serve (default 8080).  Must be a valid"
             & ASCII.LF
             & "positive integer.  Only relevant with --serve.");
+      elsif T = "serve-workers" then
+         Print_Section
+           ("--serve-workers=N",
+            "HTTP server task-pool worker count for --serve (default 4)."
+            & ASCII.LF
+            & "Raise it to handle more concurrent dashboard requests; lower"
+            & ASCII.LF
+            & "it to use less memory.  Must be a positive integer.  Only"
+            & ASCII.LF
+            & "relevant with --serve (rejected otherwise)."
+            & ASCII.LF
+            & ASCII.LF
+            & "Related: --serve, --port.");
+      elsif T = "tz" or else T = "timezone" then
+         Print_Section
+           ("--tz=ZONE / --timezone=ZONE",
+            "Display timezone for status reports.  Accepts an IANA zone name"
+            & ASCII.LF
+            & "(Asia/Singapore) or a fixed UTC/GMT offset (UTC+8, GMT+8,"
+            & ASCII.LF
+            & "UTC+08, GMT+08, UTC+08:30).  Without the flag adacovex uses"
+            & ASCII.LF
+            & "the operating system's timezone (the TZ variable and"
+            & ASCII.LF
+            & "/etc/localtime).  Named zones resolve to their standard-time"
+            & ASCII.LF
+            & "offset (no DST), and the value is matched case-insensitively."
+            & ASCII.LF
+            & ASCII.LF
+            & "  adacovex status --tz=Asia/Singapore"
+            & ASCII.LF
+            & "  adacovex status --timezone=UTC+8");
+      elsif T = "excludes" or else T = "complexity" then
+         Print_Section
+           ("complexity --excludes=EXT,EXT",
+            "Basic cyclomatic-complexity and LOC gating.  --excludes skips"
+            & ASCII.LF
+            & "file extensions (e.g. --excludes=md,rst) and only works with"
+            & ASCII.LF
+            & "the complexity subcommand -- it has no effect on its own."
+            & ASCII.LF
+            & ASCII.LF
+            & "  adacovex complexity --target=. --excludes=md,rst");
       elsif T = "standard"
         or else T = "dal"
         or else T = "asil"

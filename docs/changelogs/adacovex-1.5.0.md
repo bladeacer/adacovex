@@ -37,16 +37,9 @@ silently) are parsed in full.
 
 ### C4: Dev-manifest proof swap (`prove` subcommand)
 
-When the target project declares `gnatprove` only in `alire-dev.toml` (keeping
-the publishing `alire.toml` clean), the `prove` subcommand now runs the proof
-through a temporary shell wrapper that backs up `alire.toml` / `alire.lock` /
-`alire/`, swaps the dev manifest over the publishing one, runs
-`alr exec -- gnatprove -P <gpr>`, and restores everything (via `trap ...
-EXIT INT TERM`) even on failure or interruption. The assessment and SBOM
-pipeline always scans the publishing `alire.toml`, so dev-only tool
-declarations never leak into dependency graphs or SBOMs. This fixes
-`make run-ada-crdt` / `make prove` against projects (e.g. Ada_CRDT) that keep
-gnatprove out of their publishing manifest.
+When the target project declares `gnatprove` only in `alire-dev.toml` (keeping the publishing `alire.toml` clean), the `prove` subcommand now runs the proof through a temporary shell wrapper that backs up `alire.toml` / `alire.lock` / `alire/`, swaps the dev manifest over the publishing one, runs `alr exec -- gnatprove -P <gpr>`, and restores everything (via `trap ... EXIT INT TERM`) even on failure or interruption. The assessment and SBOM pipeline always scans the publishing `alire.toml`, so dev-only tool declarations never leak into dependency graphs or SBOMs. This fixes `make run-ada-crdt` / `make prove` against projects (e.g.
+
+Ada_CRDT) that keep gnatprove out of their publishing manifest.
 
 ### C5: IR layer -- bounded target type profiles
 
@@ -109,8 +102,7 @@ proved. Ada_CRDT proof run verified end-to-end via the dev-manifest swap
 
 ## Traceability
 
-New HLR `HLR-IR` (IR type profiles, host/target config, and foreign type-name
-lowering) covers the new `src/ir/` packages. Existing tags continue to cover
-the changed packages (`-- HLR-SCAN` on `Adacovex.Parsers.Source`,
-`-- HLR-TEST` on `Adacovex.Parsers.Tests`, `-- HLR-PROVE` on
-`Adacovex.Core.Prove`).
+New HLR `HLR-IR` (IR type profiles, host/target config, and foreign type-name lowering) covers the new `src/ir/` packages. Existing tags continue to cover the changed packages (`-- HLR-SCAN` on `Adacovex. Parsers. Source`, `-- HLR-TEST` on `Adacovex.
+
+Parsers. Tests`, `-- HLR-PROVE` on `Adacovex. Core. Prove`).
+

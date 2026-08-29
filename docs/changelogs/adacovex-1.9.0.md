@@ -8,18 +8,9 @@ Version bumped 1.8.0 -> 1.9.0.
 
 ### C1: Honest GNATprove parse across gnatprove v15/v16
 
-`Adacovex.Parsers.GNATprove` now reconciles the command-line `Summary of
-SPARK analysis` "Total" row between gnatprove 15.x and 16.x: the row layout
-differs between versions (the prover and unproved columns are centered and
-the "Justified"/"Unproved" columns are blank (`.`) in one format and populated
-in the other). A field-based reader (`Get_Column_Number`) extracts each column
-by its padded column span instead of by "nth number in the line", so a
-justified-VC percentage that was mistaken for the unproved percentage on the
-   shared 15.x/16.x layout no longer corrupts the summary. This fixes the
-   self-assessment: the previous "Platinum / all VCs proved" report was a parser
-   artifact that read the unproved column as zero. The honest level immediately
-   after this fix was Silver; the proof fixes in C5 then closed the real gap, so
-   the self-assessment is genuinely Platinum again (see Proof Results).
+`Adacovex. Parsers. GNATprove` now reconciles the command-line `Summary of SPARK analysis` "Total" row between gnatprove 15.x and 16.x: the row layout differs between versions (the prover and unproved columns are centered and the "Justified"/"Unproved" columns are blank (`.`) in one format and populated in the other). A field-based reader (`Get_Column_Number`) extracts each column by its padded column span instead of by "nth number in the line", so a justified-VC percentage that was mistaken for the unproved percentage on the shared 15.x/16.x layout no longer corrupts the summary.
+
+This fixes the self-assessment: the previous "Platinum / all VCs proved" report was a parser artifact that read the unproved column as zero. The honest level immediately after this fix was Silver; the proof fixes in C5 then closed the real gap, so the self-assessment is genuinely Platinum again (see Proof Results).
 
 ### C2: Global gnatprove version pin (`adacovex.toml` / env)
 
@@ -37,23 +28,15 @@ never mix.
 
 ### C3: CI threshold gates (`--require-spark` / `--require-docstrings` / `--require-tests` / `--require-proof`)
 
-Four `--require-*` flags add explicit minimum-bar checks on top of the DAL
-criteria. Off by default; when set, the assessment fails loudly (exit code 1
-with an explicit `CI GATE:` reason) if the target falls below the required
-level: `--require-spark=LVL` (Stone..Platinum), `--require-docstrings=PCT`
-and `--require-proof=PCT` (percent, 0-100), and `--require-tests=N` (passing
-test count). The GitHub Action exposes matching `require-spark`,
-`require-docstrings`, `require-tests`, and `require-proof` inputs. Because a
-stricter gnatprove can legitimately leave more VCs unproved, the gates are
-designed to be set against the results of the prover actually pinned.
+Four `--require-*` flags add explicit minimum-bar checks on top of the DAL criteria. Off by default; when set, the assessment fails loudly (exit code 1 with an explicit `CI GATE:` reason) if the target falls below the required level: `--require-spark=LVL` (Stone.. Platinum), `--require-docstrings=PCT` and `--require-proof=PCT` (percent, 0-100), and `--require-tests=N` (passing test count). The GitHub Action exposes matching `require-spark`, `require-docstrings`, `require-tests`, and `require-proof` inputs.
+
+Because a stricter gnatprove can legitimately leave more VCs unproved, the gates are designed to be set against the results of the prover actually pinned.
 
 ### C4: Honest SBOM proof level
 
-`Adacovex.Renderers.SBOM.Proof_Level_Property` now reports the assessed level
-verbatim (`Stone`..`Platinum`) instead of collapsing every non-Platinum result
-to `"Gold"`, so an SBOM never overstates assurance (Silver with unproved VCs
-is reported as `"Silver"`). The proof-level postcondition was widened to the
-full range accordingly.
+`Adacovex. Renderers. SBOM. Proof_Level_Property` now reports the assessed level verbatim (`Stone`..`Platinum`) instead of collapsing every non-Platinum result to `"Gold"`, so an SBOM never overstates assurance (Silver with unproved VCs is reported as `"Silver"`).
+
+The proof-level postcondition was widened to the full range accordingly.
 
 ### C5: Proof fixes to 0 unproved (Platinum under gnatprove 16.1.0)
 
@@ -86,15 +69,9 @@ any documented gnatprove invocation and was retired; see
 
 ### C6: Manifest-declared dependencies registered in the SBOM graph
 
-`Adacovex.Parsers.Manifest.Build_Dependency_Graph` now registers every
-dependency declared in the manifests even when no GPR `with`-clause or
-`alire.lock` entry resolves it: base deps from `alire.toml` (scope `base`)
-and dev deps from `alire-dev.toml` (scope `dev`). Previously the manifest was
-parsed only to classify the scope of GPR/lock-resolved components, so a
-zero-`with` project whose toolchain deps live solely in `alire-dev.toml`
-(e.g. adacovex itself: `gnatprove`, `gnatdoc_bin`, `gnatformat_bin`) produced
-an SBOM with no dependency components. Unresolved manifest deps appear
-name-only with a `pkg:alire/<name>` purl, exactly like GPR-only deps.
+`Adacovex. Parsers. Manifest. Build_Dependency_Graph` now registers every dependency declared in the manifests even when no GPR `with`-clause or `alire.lock` entry resolves it: base deps from `alire.toml` (scope `base`) and dev deps from `alire-dev.toml` (scope `dev`).
+
+Previously the manifest was parsed only to classify the scope of GPR/lock-resolved components, so a zero-`with` project whose toolchain deps live solely in `alire-dev.toml` (e.g. adacovex itself: `gnatprove`, `gnatdoc_bin`, `gnatformat_bin`) produced an SBOM with no dependency components. Unresolved manifest deps appear name-only with a `pkg:alire/<name>` purl, exactly like GPR-only deps.
 
 ### C7: GNATprove info-warning cleanup
 

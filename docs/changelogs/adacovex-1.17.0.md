@@ -7,17 +7,9 @@ Version bumped 1.16.0 -> 1.17.0.
 
 ### C1: full SPARK proof re-verification pass (Platinum held)
 
-A full `--force` SPARK proof re-run on the current tree re-confirms adacovex's
-own proof discipline end to end. gnatprove 16.1.0 (`--steps=10000`, the
-`Build_Option_String` default since 1.10.0) reports **487 total checks -- 487
-proved (112 flow + 375 by prover), 0 justified, 0 unproved** across 48
-analysed units, i.e. **Platinum** unchanged from 1.16.0. The 196 skipped units
-are all default-off `SPARK_Mode => Off` I/O- and container-heavy bodies (file
-I/O, `Ada.Containers`, `Ada.Text_IO`) that are out of proof scope by design --
-the `spark-off-check` gate still passes (no explicit `pragma SPARK_Mode (Off)`
-in `src/` outside `Types.Implementation`, the one non-formal container package
-SPARK forbids analysing). No source changes were needed to hold the proof; this
-release records that the 1.16.0 proof surface reproduces on the current HEAD.
+A full `--force` SPARK proof re-run on the current tree re-confirms adacovex's own proof discipline end to end. gnatprove 16.1.0 (`--steps=10000`, the `Build_Option_String` default since 1.10.0) reports **487 total checks -- 487 proved (112 flow + 375 by prover), 0 justified, 0 unproved** across 48 analysed units, i.e. **Platinum** unchanged from 1.16.0. The 196 skipped units are all default-off `SPARK_Mode => Off` I/O- and container-heavy bodies (file I/O, `Ada. Containers`, `Ada. Text_IO`) that are out of proof scope by design -- the `spark-off-check` gate still passes (no explicit `pragma SPARK_Mode (Off)` in `src/` outside `Types.
+
+Implementation`, the one non-formal container package SPARK forbids analysing). No source changes were needed to hold the proof; this release records that the 1.16.0 proof surface reproduces on the current HEAD.
 
 ### C2: Ada_CRDT dogfood regression re-verified (Platinum held)
 
@@ -34,19 +26,10 @@ DAL-C Achieved. This is the Ada_CRDT 1.11.0 verified state.
 
 ### C3: skipped-units proof audit
 
-A full audit of all 196 gnatprove-skipped units in adacovex's
-`gnatprove.out` confirms that every skipped body is either genuinely
-I/O-bound (calls `Ada.Text_IO`, `Ada.Directories`, `GNAT.OS_Lib`,
-`Ada.Environment_Variables`, or spawns external processes -- none of which
-are in the SPARK-analyzable subset) or a default-off pure-logic body whose
-proof would introduce residual init/termination/array-index VCs that break
-the Platinum gate. The 20 candidate pure-logic functions across
-`adacovex-parsers-source.adb` (10), `adacovex-config.adb` (6),
-`adacovex-cpus.adb` (2), and `adacovex-vcs.adb` (2) were opted in with
-`Pre`/`Post`/`Global => null` contracts: the attempt generated 125+ new VCs
-(487 -> 612 total), but 10-60 residual VCs remained unproved (loop
-termination without a dischargeable `Loop_Variant`, array-index checks in
-loops where cursor bounds depend on same-iteration guards). The attempt was
+A full audit of all 196 gnatprove-skipped units in adacovex's `gnatprove.out` confirms that every skipped body is either genuinely I/O-bound (calls `Ada. Text_IO`, `Ada. Directories`, `GNAT. OS_Lib`, `Ada.
+
+Environment_Variables`, or spawns external processes -- none of which are in the SPARK-analyzable subset) or a default-off pure-logic body whose proof would introduce residual init/termination/array-index VCs that break the Platinum gate. The 20 candidate pure-logic functions across `adacovex-parsers-source.adb` (10), `adacovex-config.adb` (6), `adacovex-cpus.adb` (2), and `adacovex-vcs.adb` (2) were opted in with `Pre`/`Post`/`Global => null` contracts: the attempt generated 125+ new VCs (487 -> 612 total), but 10-60 residual VCs remained unproved (loop termination without a dischargeable `Loop_Variant`, array-index checks in loops where cursor bounds depend on same-iteration guards). The attempt was
+
 **reverted** to preserve the clean 487-VC / 0-unproved Platinum gate; the
 findings are documented in `docs/proof/16.1.0-ledger.md` ("Skipped-units
 audit") as tracked proof-debt for future contract-engineering work. No
@@ -71,7 +54,9 @@ functions existed, they were just previously skipped:
 | `adacovex-cpus.adb` | `Jobs_Justification` | **7** | pure `Integer'Image` concatenation with `Global => null` |
 | **Flow increase** | data-dependency + initialization + termination flow | **18** | 45->54 data, 4->5 init, 78->92 termination (71 flow +21 prover) |
 
-Total **487 -> 720 (+233, +48%)**: flow 112->130 (+18), prover 375->590 (+215).  The 100-VC `Escape_JSON` dominates the prover increase (42% of the delta) because its `case` over 8 escape kinds and `Buf(Len+1 .. Len+6)` hex handling generate many run-time checks; the next largest are `Field_Value` (42) and `First_Line` (24).  All 233 checks prove with CVC5 at `--steps=10000` (`max steps used 6677`, unchanged).  The remaining pure-logic candidates (`Is_Subprogram_Decl`, `Comment_Indent`, `Set_String`, `To_SPARK_Level`, `Parse_Natural`, etc.) still leave 1-8 unproved VCs even at `--steps=30000` and stay default-off -- see the updated `docs/proof/16.1.0-ledger.md` "Default-off pure-logic bodies (expanded 2026-08-22)".
+Total **487 -> 720 (+233, +48%)**: flow 112->130 (+18), prover 375->590 (+215). The 100-VC `Escape_JSON` dominates the prover increase (42% of the delta) because its `case` over 8 escape kinds and `Buf(Len+1 .. Len+6)` hex handling generate many run-time checks; the next largest are `Field_Value` (42) and `First_Line` (24). All 233 checks prove with CVC5 at `--steps=10000` (`max steps used 6677`, unchanged).
+
+The remaining pure-logic candidates (`Is_Subprogram_Decl`, `Comment_Indent`, `Set_String`, `To_SPARK_Level`, `Parse_Natural`, etc.) still leave 1-8 unproved VCs even at `--steps=30000` and stay default-off -- see the updated `docs/proof/16.1.0-ledger.md` "Default-off pure-logic bodies (expanded 2026-08-22)".
 
 ## Test Suite
 

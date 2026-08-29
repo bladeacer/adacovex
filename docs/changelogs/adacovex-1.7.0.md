@@ -117,9 +117,11 @@ proof change -- it is now dischargeable and the sbom renderer proves clean.
 
 ## Traceability
 
-No new HLRs. Existing tags continue to cover the changed packages:
-`-- HLR-SCAN` on `Adacovex.Parsers.Source`, `-- HLR-PROOF` on
-`Adacovex.Parsers.GNATprove`, `-- HLR-TEST` on `Adacovex.Parsers.Tests`,
-`-- HLR-COMPLIANCE` on `Adacovex.Types` and `Adacovex.Compliance.DAL`,
-`-- HLR-DIFF` on `Adacovex.Diff`, `-- HLR-RENDER-ANSI` on
-`Adacovex.Renderers.ANSI`, and `-- HLR-SBOM` on `Adacovex.Renderers.SBOM`.
+No new HLRs. Existing tags continue to cover the changed packages: `-- HLR-SCAN` on `Adacovex. Parsers. Source`, `-- HLR-PROOF` on `Adacovex.
+
+Parsers. GNATprove`, `-- HLR-TEST` on `Adacovex. Parsers. Tests`, `-- HLR-COMPLIANCE` on `Adacovex.
+
+Types` and `Adacovex. Compliance. DAL`, `-- HLR-DIFF` on `Adacovex. Diff`, `-- HLR-RENDER-ANSI` on `Adacovex.
+
+Renderers. ANSI`, and `-- HLR-SBOM` on `Adacovex. Renderers. SBOM`.
+

@@ -98,23 +98,15 @@ release).
 
 ## Proof Results
 
-Self-assessment remains **Platinum** (all VCs proved, 0 unproved, AoRTE-free).
-`make prove` re-ran gnatprove 15.1.0 against the current tree: **503/503** VCs
-proved across 38 analysed units. The cache, CLI, main-flow, and prove-resolution
-changes live in non-SPARK units (`Adacovex.Cache`, `Adacovex.CPUs`,
-`Adacovex.Config`, `Adacovex.Prove`, `adacovex_main`), so no SPARK proof metrics
-regress. Ada_CRDT re-proved clean too: 584/584 VCs (44 justified) across 34
-analysed units, Platinum. Proof runs
-now deploy gnatprove standalone via `alr -n get gnatprove=15.1.0` into
-`~/.adacovex/toolchain` and execute that binary directly; identical inputs hit
-the newly toolchain-aware result cache (verified: 30 hit(s), 0 miss(es) on
-re-run).
+Self-assessment remains **Platinum** (all VCs proved, 0 unproved, AoRTE-free). `make prove` re-ran gnatprove 15.1.0 against the current tree: **503/503** VCs proved across 38 analysed units. The cache, CLI, main-flow, and prove-resolution changes live in non-SPARK units (`Adacovex. Cache`, `Adacovex. CPUs`, `Adacovex.
+
+Config`, `Adacovex. Prove`, `adacovex_main`), so no SPARK proof metrics regress. Ada_CRDT re-proved clean too: 584/584 VCs (44 justified) across 34 analysed units, Platinum. Proof runs now deploy gnatprove standalone via `alr -n get gnatprove=15.1.0` into `~/.adacovex/toolchain` and execute that binary directly; identical inputs hit the newly toolchain-aware result cache (verified: 30 hit(s), 0 miss(es) on re-run).
 
 ## Traceability
 
-New HLRs: `-- HLR-CACHE` on `Adacovex.Cache` (Result caching) and
-`-- HLR-CPU` on `Adacovex.CPUs` (Cross-platform CPU core detection). Existing
-tags continue to cover the changed packages: `-- HLR-SCAN` on
-`Adacovex.Parsers.Source` (scanning + patch application), `-- HLR-CLI` on
-`Adacovex.Config` (path normalization, prove options), `-- HLR-PROVE` on
-`Adacovex.Prove`, and `-- HLR-PROOF` on `Adacovex.Parsers.GNATprove`.
+New HLRs: `-- HLR-CACHE` on `Adacovex. Cache` (Result caching) and `-- HLR-CPU` on `Adacovex. CPUs` (Cross-platform CPU core detection). Existing tags continue to cover the changed packages: `-- HLR-SCAN` on `Adacovex.
+
+Parsers. Source` (scanning + patch application), `-- HLR-CLI` on `Adacovex. Config` (path normalization, prove options), `-- HLR-PROVE` on `Adacovex. Prove`, and `-- HLR-PROOF` on `Adacovex.
+
+Parsers. GNATprove`.
+
