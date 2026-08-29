@@ -26,6 +26,9 @@ package body Adacovex_Server_Tests is
       R.Check
         (Route ("/api/metrics") = Route_API_Metrics, "metrics API route");
       R.Check (Route ("/api/deps") = Route_API_Deps, "deps API route");
+      R.Check
+        (Route ("/api/endpoints") = Route_API_Endpoints,
+         "endpoints catalog route");
 
       --  Query-string and fragment stripping: browsers append ?query and
       --  #fragment to the request path, and routing must ignore both so a
@@ -41,6 +44,9 @@ package body Adacovex_Server_Tests is
       R.Check
         (Strip_Query ("/api/metrics?x=1") = "/api/metrics",
          "query stripped from metrics API");
+      R.Check
+        (Strip_Query ("/api/endpoints?x=1") = "/api/endpoints",
+         "query stripped from endpoints catalog");
       R.Check
         (Strip_Query ("/api/deps#top") = "/api/deps",
          "fragment stripped from deps API");
@@ -106,8 +112,9 @@ package body Adacovex_Server_Tests is
          and then Route ("/badge/iso26262.svg") /= Route_Not_Found
          and then Route ("/badge/iec62304.svg") /= Route_Not_Found
          and then Route ("/api/metrics") /= Route_Not_Found
-         and then Route ("/api/deps") /= Route_Not_Found,
-         "all eight served routes are non-404");
+         and then Route ("/api/deps") /= Route_Not_Found
+         and then Route ("/api/endpoints") /= Route_Not_Found,
+         "all nine served routes are non-404");
    end Run;
 
 end Adacovex_Server_Tests;

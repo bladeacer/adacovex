@@ -6644,51 +6644,7 @@ package Adacovex.Dashboard_Template is
   & ASCII.LF
   & "if (!PANEL) return;"
   & ASCII.LF
-  & "var GROUPS = ["
-  & ASCII.LF
-  & "{ title: 'Metrics', endpoints: ["
-  & ASCII.LF
-  & "{ m:'GET', path:'/api/metrics', kind:'json', desc:'Key asses"
-  & "sment metrics: SPARK level, VCs proved, tests passed/failed,"
-  & " docstring coverage, and per-standard compliance status.' }"
-  & ASCII.LF
-  & "]},"
-  & ASCII.LF
-  & "{ title: 'Dependencies', endpoints: ["
-  & ASCII.LF
-  & "{ m:'GET', path:'/api/deps', kind:'json', desc:'Resolved dep"
-  & "endency graph as JSON (name, version, scope, parent, licence"
-  & ", PURL) -- the same data the SBOM embeds.' }"
-  & ASCII.LF
-  & "]},"
-  & ASCII.LF
-  & "{ title: 'Badges', endpoints: ["
-  & ASCII.LF
-  & "{ m:'GET', path:'/badge/spark.svg', kind:'svg', desc:'SPARK "
-  & "assurance-level badge (Stone..Platinum).' },"
-  & ASCII.LF
-  & "{ m:'GET', path:'/badge/tests.svg', kind:'svg', desc:'Test p"
-  & "ass/fail badge.' },"
-  & ASCII.LF
-  & "{ m:'GET', path:'/badge/do178c.svg', kind:'svg', desc:'DO-17"
-  & "8C compliance badge (Achieved / Unmet).' },"
-  & ASCII.LF
-  & "{ m:'GET', path:'/badge/iso26262.svg', kind:'svg', desc:'ISO"
-  & " 26262 compliance badge.' },"
-  & ASCII.LF
-  & "{ m:'GET', path:'/badge/iec62304.svg', kind:'svg', desc:'IEC"
-  & " 62304 compliance badge.' }"
-  & ASCII.LF
-  & "]},"
-  & ASCII.LF
-  & "{ title: 'Documentation', endpoints: ["
-  & ASCII.LF
-  & "{ m:'GET', path:'/docs', kind:'text', desc:'Plain-text point"
-  & "er to the repository documentation under docs/.' }"
-  & ASCII.LF
-  & "]}"
-  & ASCII.LF
-  & "];"
+  & "var groupNodes = [];"
   & ASCII.LF
   & "var keyRule = { type:'prop', pattern: /""(\\.|[^""\\])*""(?=\s*"
   & ":)/ };"
@@ -6724,16 +6680,19 @@ package Adacovex.Dashboard_Template is
   & ASCII.LF
   & "var intro = el('p', 'api-intro',"
   & ASCII.LF
-  & "'Explore the built-in JSON API, dependency graph, SVG badges"
-  & " and docs ' +"
+  & "'Explore the JSON API, dependency graph, SVG badges and docs"
+  & " endpoint ' +"
   & ASCII.LF
-  & "'endpoint served by this adacovex instance. Click an endpoin"
-  & "t (or type to ' +"
+  & "'served by this adacovex instance. Click an endpoint (or typ"
+  & "e to filter), ' +"
   & ASCII.LF
-  & "'filter), then preview the live response. JSON is pretty-pri"
-  & "nted and ' +"
+  & "'then preview the live response. JSON is pretty-printed and "
+  & "' +"
   & ASCII.LF
-  & "'syntax-highlighted with the vendored yace tokenizer.');"
+  & "'syntax-highlighted with the vendored yace tokenizer. The en"
+  & "dpoint list ' +"
+  & ASCII.LF
+  & "'comes from /api/endpoints.');"
   & ASCII.LF
   & "card.appendChild(intro);"
   & ASCII.LF
@@ -6762,37 +6721,33 @@ package Adacovex.Dashboard_Template is
   & ASCII.LF
   & "card.appendChild(result);"
   & ASCII.LF
-  & "var groupNodes = GROUPS.map(function(g){"
+  & "function addGroup(title, endpoints){"
   & ASCII.LF
   & "var gw = el('div', 'api-group');"
   & ASCII.LF
-  & "var title = el('h3', 'api-group-title', g.title);"
+  & "var titleNode = el('h3', 'api-group-title', title);"
   & ASCII.LF
-  & "gw.appendChild(title);"
+  & "gw.appendChild(titleNode);"
   & ASCII.LF
   & "var list = el('div', 'api-endpoints');"
   & ASCII.LF
-  & "g.endpoints.forEach(function(e){"
+  & "var btns = endpoints.map(function(e){"
   & ASCII.LF
   & "var b = el('button', 'api-btn');"
   & ASCII.LF
   & "b.type = 'button';"
   & ASCII.LF
-  & "var method = el('span', 'api-method', e.m);"
+  & "b.appendChild(el('span', 'api-method', e.method));"
   & ASCII.LF
-  & "var path = el('span', 'api-path', e.path);"
+  & "b.appendChild(el('span', 'api-path', e.path));"
   & ASCII.LF
-  & "var d = el('span', 'api-desc', e.desc);"
-  & ASCII.LF
-  & "b.appendChild(method);"
-  & ASCII.LF
-  & "b.appendChild(path);"
-  & ASCII.LF
-  & "b.appendChild(d);"
+  & "b.appendChild(el('span', 'api-desc', e.description || ''));"
   & ASCII.LF
   & "b.addEventListener('click', function(){ run(e, b); });"
   & ASCII.LF
   & "list.appendChild(b);"
+  & ASCII.LF
+  & "return b;"
   & ASCII.LF
   & "});"
   & ASCII.LF
@@ -6800,13 +6755,12 @@ package Adacovex.Dashboard_Template is
   & ASCII.LF
   & "groupsWrap.appendChild(gw);"
   & ASCII.LF
-  & "return { el: gw, titleText: g.title, titleNode: title, list:"
-  & " list,"
+  & "groupNodes.push({ el: gw, titleText: title, titleNode: title"
+  & "Node,"
   & ASCII.LF
-  & "endpoints: g.endpoints, btns: list.querySelectorAll('.api-bt"
-  & "n') };"
+  & "list: list, endpoints: endpoints, btns: btns });"
   & ASCII.LF
-  & "});"
+  & "}"
   & ASCII.LF
   & "function filterGroups(q){"
   & ASCII.LF
@@ -6818,16 +6772,12 @@ package Adacovex.Dashboard_Template is
   & ASCII.LF
   & "var showGroup = false;"
   & ASCII.LF
-  & "var btns = gn.btns;"
-  & ASCII.LF
-  & "var i = 0;"
-  & ASCII.LF
   & "gn.endpoints.forEach(function(e, idx){"
   & ASCII.LF
-  & "var hit = !q || (e.path + ' ' + e.desc + ' ' + gn.titleText)"
-  & ".toLowerCase().indexOf(q) !== -1;"
+  & "var hit = !q || (e.path + ' ' + (e.description || '') + ' ' "
+  & "+ gn.titleText).toLowerCase().indexOf(q) !== -1;"
   & ASCII.LF
-  & "btns[idx].style.display = hit ? '' : 'none';"
+  & "gn.btns[idx].style.display = hit ? '' : 'none';"
   & ASCII.LF
   & "if (hit) showGroup = true;"
   & ASCII.LF
@@ -6840,7 +6790,8 @@ package Adacovex.Dashboard_Template is
   & "});"
   & ASCII.LF
   & "var empty = document.getElementById('api-empty') || el('p', "
-  & "'api-empty', 'No endpoints match your filter.');"
+  & "'api-empty', 'No endpoints match your filter (or /api/endpoi"
+  & "nts has not loaded).');"
   & ASCII.LF
   & "empty.id = 'api-empty';"
   & ASCII.LF
@@ -6876,7 +6827,8 @@ package Adacovex.Dashboard_Template is
   & ASCII.LF
   & "var head = el('div', 'api-result-head');"
   & ASCII.LF
-  & "var reqLine = el('span', 'api-reqline', e.m + ' ' + e.path);"
+  & "var reqLine = el('span', 'api-reqline', e.method + ' ' + e.p"
+  & "ath);"
   & ASCII.LF
   & "var status = el('span', 'api-status', 'loading...');"
   & ASCII.LF
@@ -7050,7 +7002,50 @@ package Adacovex.Dashboard_Template is
   & ASCII.LF
   & "}"
   & ASCII.LF
+  & "fetch('/api/endpoints')"
+  & ASCII.LF
+  & ".then(function(resp){ return resp.json(); })"
+  & ASCII.LF
+  & ".then(function(data){"
+  & ASCII.LF
+  & "var list = (data && data.endpoints) || [];"
+  & ASCII.LF
+  & "var order = [];"
+  & ASCII.LF
+  & "var byGroup = {};"
+  & ASCII.LF
+  & "list.forEach(function(e){"
+  & ASCII.LF
+  & "var g = e.group || 'Other';"
+  & ASCII.LF
+  & "if (!byGroup[g]) { byGroup[g] = []; order.push(g); }"
+  & ASCII.LF
+  & "byGroup[g].push(e);"
+  & ASCII.LF
+  & "});"
+  & ASCII.LF
+  & "order.forEach(function(g){ addGroup(g, byGroup[g]); });"
+  & ASCII.LF
+  & "if (groupNodes.length && groupNodes[0].btns.length) {"
+  & ASCII.LF
   & "groupNodes[0].btns[0].click();"
+  & ASCII.LF
+  & "}"
+  & ASCII.LF
+  & "})"
+  & ASCII.LF
+  & ".catch(function(){"
+  & ASCII.LF
+  & "if (!groupNodes.length) {"
+  & ASCII.LF
+  & "var empty = el('p', 'api-empty api-load-error', 'Could not l"
+  & "oad /api/endpoints.');"
+  & ASCII.LF
+  & "groupsWrap.appendChild(empty);"
+  & ASCII.LF
+  & "}"
+  & ASCII.LF
+  & "});"
   & ASCII.LF
   & "})();</script>"
   & ASCII.LF

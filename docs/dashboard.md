@@ -108,6 +108,7 @@ The same data is available headlessly at `/api/metrics` and via
 | `GET /` | HTML dashboard (tabbed) |
 | `GET /api/metrics` | JSON object with the key assessment metrics |
 | `GET /api/deps` | JSON dependency graph (same data as the Dependencies tab) |
+| `GET /api/endpoints` | JSON endpoint catalog (the list the API playground builds its UI from) |
 | `GET /badge/spark.svg` | SPARK assurance level badge |
 | `GET /badge/tests.svg` | Test pass/fail badge |
 | `GET /badge/do178c.svg` | DO-178C compliance badge (Achieved / Unmet) |
@@ -349,7 +350,7 @@ assessment without parsing HTML:
 
 ```json
 {"spark_level":"Platinum","total_vcs":723,"proved_vcs":723,
- "tests_passed":1167,"tests_failed":0,"doc_coverage":100,
+ "tests_passed":1169,"tests_failed":0,"doc_coverage":100,
  "standard":"all","level":"DAL-C","dal_status":"Achieved",
  "standards":{"DO-178C":{"level":"DAL-C","status":"Achieved"},
                "ISO 26262":{"level":"ASIL B","status":"Achieved"},
@@ -401,6 +402,8 @@ grouped by purpose:
 - **Dependencies** -- `GET /api/deps` (JSON).
 - **Badges** -- each `GET /badge/*.svg` endpoint (SVG).
 - **Documentation** -- `GET /docs` (plain text).
+- **API** -- `GET /api/endpoints`, the endpoint catalog the playground is
+  built from.
 
 A filter input searches the endpoints as you type (matching path, purpose,
 and group name), so you can jump straight to `metrics` or `badge`. Clicking
@@ -418,9 +421,10 @@ A toolbar on the result offers **Copy** (clipboard) and **Download** (saves
 the raw response body to a file) for the JSON API response, so the
 playground doubles as a lightweight HTTP client without leaving the browser.
 The first endpoint (`/api/metrics`) runs automatically so the tab always
-opens with a live preview. The endpoint list is static because the server
-surface is fixed; each request is made live against the instance, so what
-you preview is exactly what `curl` returns.
+opens with a live preview. The endpoint list is **not hardcoded** in client
+JavaScript: the playground fetches it from `GET /api/endpoints`, the single
+source of truth the server declares. Each request is made live against the
+instance, so what you preview is exactly what `curl` returns.
 
 ## Themes
 

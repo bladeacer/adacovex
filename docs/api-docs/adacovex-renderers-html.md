@@ -79,6 +79,10 @@ HLR-RENDER-HTML: HTML dashboard and JSON API
 
 **Returns:** JSON string with a "dependencies" array.
 
+### function Render_Endpoints_JSON return Standard.String `[Post]` `[Global]`
+
+**Returns:** JSON object with an "endpoints" array.
+
 ### function Render_Metrics_JSON (Doc_Metrics : Adacovex.Types.Docstring_Metrics; Proof : Adacovex.Types.Proof_Summary; Tests : Adacovex.Types.Implementation.Test_Summary; DAL_Assess : Adacovex.Types.Implementation.DAL_Assessment; All_Standards : Standard.Boolean) return Standard.String `[Post]` `[Global]`
 
 | Parameter | Description |

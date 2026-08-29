@@ -23,11 +23,10 @@ response body, so the playground doubles as a lightweight HTTP client without
 leaving the browser.
 
 The first endpoint (`/api/metrics`) runs automatically, so the tab always
-opens with a live preview.
-
-The endpoint list is static because the server surface is fixed. Each request
-is made live against the instance, so what you preview is exactly what `curl`
-returns.
+opens with a live preview. The endpoint list is not hardcoded in client
+JavaScript: the playground fetches it from the new `GET /api/endpoints`
+endpoint, the single catalog the server declares. Each request is made live
+against the instance, so what you preview is exactly what `curl` returns.
 
 ### C2: Charts tab is a strict superset of the Overview charts
 
@@ -92,10 +91,11 @@ link to the new API playground. External docs stopped referencing the removed
 
 ## Test Suite
 
-The native suite grows from 1157 to 1167 tests (16 categories). The server
-routing category adds 10 checks covering `Strip_Query`: the themed root URL,
+The native suite grows from 1157 to 1169 tests (16 categories). The server
+routing category adds 12 checks covering `Strip_Query` (the themed root URL,
 query strings and fragments on the JSON API and badge endpoints, the empty
-path, and unchanged paths with no query. All 1167 tests pass.
+path, and unchanged paths with no query) and the new `/api/endpoints` catalog
+route. All 1169 tests pass.
 
 ## Proof Results
 

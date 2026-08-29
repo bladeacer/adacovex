@@ -1,44 +1,26 @@
 // REST API playground.
 //
-// Turns the dashboard into an interactive API explorer.  Every endpoint the
-// --serve server dispatches on is listed as a clickable, searchable button
-// grouped by purpose.  Clicking an endpoint fetches it in the browser and
-// previews the response:
+// Turns the dashboard into an interactive API explorer. The endpoint list is
+// served by the backend at /api/endpoints (the single source of truth), so
+// the playground always reflects the routes this instance dispatches on. Each
+// endpoint renders as a clickable, searchable button grouped by purpose.
+// Clicking an endpoint fetches it in the browser and previews the response:
 //   - JSON endpoints are pretty-printed and syntax-highlighted with the
 //     vendored yace tokenizer (window.YaceTok), with object keys coloured
 //     separately from string values;
 //   - SVG badge endpoints show the live image plus the raw markup;
 //   - the /docs endpoint shows its plain-text response.
 // A toolbar offers Copy and Download for the raw response body, so the
-// playground doubles as a lightweight HTTP client for the JSON API.
-//
-// The endpoint list is static (the surface is fixed), but each request is
-// made live against the serving origin, so what you preview is exactly what
-// curl + jq would receive.
+// playground doubles as a lightweight HTTP client without leaving the browser.
 (function(){
 "use strict";
 
 var PANEL = document.getElementById('tab-api');
 if (!PANEL) return;
 
-var GROUPS = [
-  { title: 'Metrics', endpoints: [
-    { m:'GET', path:'/api/metrics', kind:'json', desc:'Key assessment metrics: SPARK level, VCs proved, tests passed/failed, docstring coverage, and per-standard compliance status.' }
-  ]},
-  { title: 'Dependencies', endpoints: [
-    { m:'GET', path:'/api/deps', kind:'json', desc:'Resolved dependency graph as JSON (name, version, scope, parent, licence, PURL) -- the same data the SBOM embeds.' }
-  ]},
-  { title: 'Badges', endpoints: [
-    { m:'GET', path:'/badge/spark.svg', kind:'svg', desc:'SPARK assurance-level badge (Stone..Platinum).' },
-    { m:'GET', path:'/badge/tests.svg', kind:'svg', desc:'Test pass/fail badge.' },
-    { m:'GET', path:'/badge/do178c.svg', kind:'svg', desc:'DO-178C compliance badge (Achieved / Unmet).' },
-    { m:'GET', path:'/badge/iso26262.svg', kind:'svg', desc:'ISO 26262 compliance badge.' },
-    { m:'GET', path:'/badge/iec62304.svg', kind:'svg', desc:'IEC 62304 compliance badge.' }
-  ]},
-  { title: 'Documentation', endpoints: [
-    { m:'GET', path:'/docs', kind:'text', desc:'Plain-text pointer to the repository documentation under docs/.' }
-  ]}
-];
+// Runtime catalog, populated from /api/endpoints.  Each group is
+// { title, endpoints:[{method,path,kind,group,description}] }.
+var groupNodes = [];
 
 var keyRule = { type:'prop', pattern: /"(\\.|[^"\\])*"(?=\s*:)/ };
 var HL = (window.YaceTok && window.YaceTok.code) ? window.YaceTok.code([keyRule]) : null;
@@ -61,10 +43,11 @@ var card = el('div', 'card api-card');
 PANEL.appendChild(card);
 
 var intro = el('p', 'api-intro',
-  'Explore the built-in JSON API, dependency graph, SVG badges and docs ' +
-  'endpoint served by this adacovex instance. Click an endpoint (or type to ' +
-  'filter), then preview the live response. JSON is pretty-printed and ' +
-  'syntax-highlighted with the vendored yace tokenizer.');
+  'Explore the JSON API, dependency graph, SVG badges and docs endpoint ' +
+  'served by this adacovex instance. Click an endpoint (or type to filter), ' +
+  'then preview the live response. JSON is pretty-printed and ' +
+  'syntax-highlighted with the vendored yace tokenizer. The endpoint list ' +
+  'comes from /api/endpoints.');
 card.appendChild(intro);
 
 var searchRow = el('div', 'api-search-row');
@@ -82,46 +65,41 @@ var result = el('div', 'api-result');
 result.hidden = true;
 card.appendChild(result);
 
-// One .api-group per category; each endpoint is a .api-btn button.
-var groupNodes = GROUPS.map(function(g){
+function addGroup(title, endpoints){
   var gw = el('div', 'api-group');
-  var title = el('h3', 'api-group-title', g.title);
-  gw.appendChild(title);
+  var titleNode = el('h3', 'api-group-title', title);
+  gw.appendChild(titleNode);
   var list = el('div', 'api-endpoints');
-  g.endpoints.forEach(function(e){
+  var btns = endpoints.map(function(e){
     var b = el('button', 'api-btn');
     b.type = 'button';
-    var method = el('span', 'api-method', e.m);
-    var path = el('span', 'api-path', e.path);
-    var d = el('span', 'api-desc', e.desc);
-    b.appendChild(method);
-    b.appendChild(path);
-    b.appendChild(d);
+    b.appendChild(el('span', 'api-method', e.method));
+    b.appendChild(el('span', 'api-path', e.path));
+    b.appendChild(el('span', 'api-desc', e.description || ''));
     b.addEventListener('click', function(){ run(e, b); });
     list.appendChild(b);
+    return b;
   });
   gw.appendChild(list);
   groupsWrap.appendChild(gw);
-  return { el: gw, titleText: g.title, titleNode: title, list: list,
-           endpoints: g.endpoints, btns: list.querySelectorAll('.api-btn') };
-});
+  groupNodes.push({ el: gw, titleText: title, titleNode: titleNode,
+                    list: list, endpoints: endpoints, btns: btns });
+}
 
 function filterGroups(q){
   q = q.trim().toLowerCase();
   var any = false;
   groupNodes.forEach(function(gn){
     var showGroup = false;
-    var btns = gn.btns;
-    var i = 0;
     gn.endpoints.forEach(function(e, idx){
-      var hit = !q || (e.path + ' ' + e.desc + ' ' + gn.titleText).toLowerCase().indexOf(q) !== -1;
-      btns[idx].style.display = hit ? '' : 'none';
+      var hit = !q || (e.path + ' ' + (e.description || '') + ' ' + gn.titleText).toLowerCase().indexOf(q) !== -1;
+      gn.btns[idx].style.display = hit ? '' : 'none';
       if (hit) showGroup = true;
     });
     gn.el.style.display = showGroup ? '' : 'none';
     if (showGroup) any = true;
   });
-  var empty = document.getElementById('api-empty') || el('p', 'api-empty', 'No endpoints match your filter.');
+  var empty = document.getElementById('api-empty') || el('p', 'api-empty', 'No endpoints match your filter (or /api/endpoints has not loaded).');
   empty.id = 'api-empty';
   empty.style.display = any ? 'none' : '';
   if (!any) groupsWrap.appendChild(empty);
@@ -139,7 +117,7 @@ function run(e, pressedBtn){
   result.innerHTML = '';
 
   var head = el('div', 'api-result-head');
-  var reqLine = el('span', 'api-reqline', e.m + ' ' + e.path);
+  var reqLine = el('span', 'api-reqline', e.method + ' ' + e.path);
   var status = el('span', 'api-status', 'loading...');
   status.id = 'api-status';
   head.appendChild(reqLine);
@@ -228,6 +206,28 @@ function copyText(text){
   });
 }
 
-// Run the first endpoint automatically so the tab shows a live preview.
-groupNodes[0].btns[0].click();
+// Load the endpoint catalog from the server, build the group buttons, then
+// run the first endpoint so the tab always opens with a live preview.
+fetch('/api/endpoints')
+  .then(function(resp){ return resp.json(); })
+  .then(function(data){
+    var list = (data && data.endpoints) || [];
+    var order = [];
+    var byGroup = {};
+    list.forEach(function(e){
+      var g = e.group || 'Other';
+      if (!byGroup[g]) { byGroup[g] = []; order.push(g); }
+      byGroup[g].push(e);
+    });
+    order.forEach(function(g){ addGroup(g, byGroup[g]); });
+    if (groupNodes.length && groupNodes[0].btns.length) {
+      groupNodes[0].btns[0].click();
+    }
+  })
+  .catch(function(){
+    if (!groupNodes.length) {
+      var empty = el('p', 'api-empty api-load-error', 'Could not load /api/endpoints.');
+      groupsWrap.appendChild(empty);
+    }
+  });
 })();

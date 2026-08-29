@@ -20,14 +20,16 @@ package Adacovex.Server.HTTP is
       Route_Badge_IEC62304,
       Route_API_Metrics,
       Route_API_Deps,
+      Route_API_Endpoints,
       Route_Docs,
       Route_Not_Found);
 
    --  Map a request path to its handler action.
    --  Returns the Route_Kind for the given path. The dashboard is at "/".
-   --  The JSON APIs are at "/api/metrics" and "/api/deps". The SVG badge
-   --  endpoints are at "/badge/*.svg". The docs note is at "/docs". Every
-   --  other path returns Route_Not_Found.
+   --  The JSON APIs are at "/api/metrics", "/api/deps", and the endpoint
+   --  catalog at "/api/endpoints". The SVG badge endpoints are at
+   --  "/badge/*.svg". The docs note is at "/docs". Every other path
+   --  returns Route_Not_Found.
    --  Routing is pure path routing. The socket dispatch in Handle_Request
    --  switches on the result. The native test suite pins every route.
    --  The function is an expression function: its body is the conditional
@@ -52,6 +54,8 @@ package Adacovex.Server.HTTP is
        then Route_API_Metrics
        elsif Path = "/api/deps"
        then Route_API_Deps
+       elsif Path = "/api/endpoints"
+       then Route_API_Endpoints
        elsif Path = "/docs"
        then Route_Docs
        else Route_Not_Found)
