@@ -261,4 +261,32 @@ test.describe('Dashboard layout', () => {
     // browser's default blue/purple.
     expect(colours.length).toBe(1);
   });
+
+  test('api playground lists endpoints and previews JSON', async ({ page }) => {
+    await page.click('[data-tab="api"]');
+    // The endpoint catalog is fetched live from /api/endpoints, so the group
+    // buttons render asynchronously once the metadata endpoint resolves.
+    const firstBtn = page.locator('.api-btn').first();
+    await expect(firstBtn).toBeVisible({ timeout: 10000 });
+    // Groups are derived from the catalog (Metrics, Dependencies, Badges, ...).
+    const groups = await page.locator('.api-group').count();
+    expect(groups).toBeGreaterThanOrEqual(3);
+    // The first endpoint auto-runs, so a yace-highlighted JSON preview shows.
+    const pre = page.locator('.api-pre');
+    await expect(pre).toBeVisible({ timeout: 10000 });
+    // Clicking a specific endpoint switches the request line and preview.
+    const deps = page.locator('.api-btn', { hasText: '/api/deps' }).first();
+    await deps.click();
+    await expect(page.locator('.api-reqline')).toContainText('/api/deps');
+    // The filter narrows the endpoint buttons by path/description/group.
+    const search = page.locator('.api-search');
+    await search.fill('badge');
+    const visible = await page.locator('.api-btn:visible').allTextContents();
+    expect(visible.length).toBeGreaterThan(0);
+    expect(visible.join(' ').toLowerCase()).toContain('badge');
+    await search.fill('');
+    await expect(page.locator('.api-btn:visible')).toHaveCount(
+      await page.locator('.api-btn').count(),
+    );
+  });
 });

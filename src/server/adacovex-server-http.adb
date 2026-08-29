@@ -433,6 +433,14 @@ package body Adacovex.Server.HTTP is
                Adacovex.Renderers.HTML.Render_Deps_JSON (State.Graph),
                Is_KA);
 
+         when Route_API_Endpoints  =>
+            Send_Response
+              (Channel,
+               "200 OK",
+               "application/json",
+               Adacovex.Renderers.HTML.Render_Endpoints_JSON,
+               Is_KA);
+
          when Route_Docs           =>
             Send_Response
               (Channel,

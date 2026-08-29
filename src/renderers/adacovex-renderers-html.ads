@@ -119,6 +119,15 @@ package Adacovex.Renderers.HTML is
      (Graph : Types.Implementation.Component_Vectors.Vector) return String
    with Post => Render_Deps_JSON'Result'Length > 0, Global => null;
 
+   --  Render the API endpoint catalog as JSON for /api/endpoints.
+   --  Every route the --serve server dispatches on is listed once with its
+   --  HTTP method, path, a machine kind (json / svg / text), its dashboard
+   --  group, and a short description.  It is the single source of truth the
+   --  dashboard's API playground builds its UI from.
+   --  @return JSON object with an "endpoints" array.
+   function Render_Endpoints_JSON return String
+   with Post => Render_Endpoints_JSON'Result'Length > 0, Global => null;
+
    --  Render a JSON object with key metric values.
    --  Produces a lightweight JSON payload containing docstring coverage,
    --  proof results, test summary, and compliance status for programmatic

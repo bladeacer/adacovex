@@ -2116,6 +2116,111 @@ package body Adacovex.Renderers.HTML is
       return To_String (Result);
    end Render_Deps_JSON;
 
+   --  Render the API endpoint catalog as JSON for /api/endpoints.
+   --  Every route the --serve server dispatches on is listed once, with its
+   --  HTTP method, path, a machine kind (json / svg / text), the dashboard
+   --  group it belongs to, and a short description.  This is the single
+   --  source of truth the API playground (api.js) builds its UI from, so the
+   --  endpoint list lives in the server metadata and never hardcodes a path
+   --  in client JavaScript.
+   --  @return JSON object with an "endpoints" array.
+   function Render_Endpoints_JSON return String is
+      Result : Unbounded_String;
+
+      procedure Put (S : String) is
+      begin
+         Append (Result, S);
+      end Put;
+
+      --  Append a quoted JSON field from a bounded slice.
+      procedure Put_Field (F : String; Len : Natural) is
+      begin
+         Put ("""");
+         Put (Json_Escape (F (1 .. Len)));
+         Put ("""");
+      end Put_Field;
+
+      --  Append one endpoint object: method, path, kind, group, description.
+      procedure Ent (Method, Path, Kind, Group, Desc : String) is
+      begin
+         Put ("{""method"":");
+         Put_Field (Method, Method'Length);
+         Put (",""path"":");
+         Put_Field (Path, Path'Length);
+         Put (",""kind"":");
+         Put_Field (Kind, Kind'Length);
+         Put (",""group"":");
+         Put_Field (Group, Group'Length);
+         Put (",""description"":");
+         Put_Field (Desc, Desc'Length);
+         Put ("}");
+      end Ent;
+   begin
+      Put ("{""endpoints"":[");
+      Ent
+        ("GET",
+         "/api/metrics",
+         "json",
+         "Metrics",
+         "Key assessment metrics: SPARK level, VCs proved, test "
+         & "counts, docstring coverage, and per-standard compliance status.");
+      Put (",");
+      Ent
+        ("GET",
+         "/api/deps",
+         "json",
+         "Dependencies",
+         "Resolved dependency graph as JSON: name, version, scope, "
+         & "parent, licence, and PURL -- the same data the SBOM embeds.");
+      Put (",");
+      Ent
+        ("GET",
+         "/badge/spark.svg",
+         "svg",
+         "Badges",
+         "SPARK assurance-level badge (Stone..Platinum).");
+      Put (",");
+      Ent
+        ("GET", "/badge/tests.svg", "svg", "Badges", "Test pass/fail badge.");
+      Put (",");
+      Ent
+        ("GET",
+         "/badge/do178c.svg",
+         "svg",
+         "Badges",
+         "DO-178C compliance badge (Achieved / Unmet).");
+      Put (",");
+      Ent
+        ("GET",
+         "/badge/iso26262.svg",
+         "svg",
+         "Badges",
+         "ISO 26262 compliance badge.");
+      Put (",");
+      Ent
+        ("GET",
+         "/badge/iec62304.svg",
+         "svg",
+         "Badges",
+         "IEC 62304 compliance badge.");
+      Put (",");
+      Ent
+        ("GET",
+         "/docs",
+         "text",
+         "Documentation",
+         "Plain-text pointer to the repository documentation under docs/.");
+      Put (",");
+      Ent
+        ("GET",
+         "/api/endpoints",
+         "json",
+         "API",
+         "This endpoint catalog: every route this instance dispatches on.");
+      Put ("]}");
+      return To_String (Result);
+   end Render_Endpoints_JSON;
+
    function Render_Metrics_JSON
      (Doc_Metrics   : Types.Docstring_Metrics;
       Proof         : Types.Proof_Summary;
