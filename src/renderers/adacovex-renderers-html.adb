@@ -289,24 +289,29 @@ package body Adacovex.Renderers.HTML is
          Two_Tone : Boolean := True;
          Scale_To : Natural := 0)
       is
-         P     : constant Natural := Pct (Part, Total);
-         Track : constant Natural :=
-           (if Scale_To > 0 then Pct (Total, Scale_To) else 100);
+         --  Both fills are measured against the largest category
+         --  (Scale_To): the green fill is Part/Scale_To of the full track
+         --  width and the optional red remainder Total-Part/Scale_To, so a
+         --  bar's green+red total equals Total/Scale_To -- the category's
+         --  share of the biggest.  The track itself is always full width
+         --  (flex:1 in CSS); the leftover renders as the track's grey
+         --  background.  This is the test-category convention, and it makes
+         --  the proof-check-type bars scale with magnitude too instead of
+         --  collapsing to a proved-rate fill of a stretched track.
+         G : constant Natural := Pct (Part, Scale_To);
+         R : constant Natural :=
+           (if Two_Tone and then Part < Total
+            then Pct (Total - Part, Scale_To)
+            else 0);
       begin
          Put ("<div class=""hbar""><span class=""hbar-label"">");
          Put (Html_Escape (Label));
-         Put ("</span><div class=""hbar-track""");
-         if Track < 100 then
-            Put (" style=""width:");
-            Put (Img (Track));
-            Put ("%""");
-         end if;
-         Put ("><i style=""width:");
-         Put (Img (P));
+         Put ("</span><div class=""hbar-track""><i style=""width:");
+         Put (Img (G));
          Put ("%""></i>");
-         if Two_Tone and then P < 100 then
+         if R > 0 then
             Put ("<em style=""width:");
-            Put (Img (100 - P));
+            Put (Img (R));
             Put ("%""></em>");
          end if;
          Put ("</div><span class=""hbar-num"">");
@@ -420,9 +425,10 @@ package body Adacovex.Renderers.HTML is
                   Bar_Row
                     (Cat.Category (1 .. Cat.Cat_Len),
                      Cat.Test_Count,
-                     Max_Ct,
                      Cat.Test_Count,
-                     Two_Tone => False);
+                     Cat.Test_Count,
+                     Two_Tone => False,
+                     Scale_To => Max_Ct);
                end;
             end loop;
          end;

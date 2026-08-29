@@ -237,7 +237,7 @@ Action inputs/outputs, result caching, and release bundling:
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 1064/1064 passing |
+| Unit tests | `make test` | 1066/1066 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (723 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, DAL-C (strict mode) |
@@ -252,7 +252,10 @@ See [changelogs](docs/changelogs/index.md) for full release notes.
   version generation, description sync, test/proof doc sync, changelog checks,
   and the architecture tree; the adacovex binary itself has no Python dependency)
 - **GNATprove** (optional; resolved at run time by `prove` -- no declared dependency)
-- **gnatpp** / **gnatdoc** (optional, for fmt/doc targets)
+- **gnatdoc_bin** and **gnatformat_bin** (dev dependencies managed by Alire,
+  declared in `alire-dev.toml` and run via `alr exec` for the `make doc` and
+  `make fmt` targets -- so the published crate still installs and builds with
+  no toolchain beyond the GNAT compiler)
 
 ## Swapping the GNAT compiler (LLVM backend)
 

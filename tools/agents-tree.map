@@ -47,9 +47,9 @@ src/tests/adacovex_prove_tests	GNATprove parser tests (64)
 src/tests/adacovex_testparser_tests	Test-result parser tests (50)
 src/tests/adacovex_config_tests	CLI config tests (152)
 src/tests/adacovex_renderer_svg_tests	SVG renderer tests (161)
-src/tests/adacovex_renderer_tests	HTML/Markdown renderer tests (56)
+src/tests/adacovex_renderer_tests	HTML/Markdown renderer tests (58)
 src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (278)
-src/tests/test_runner	Test suite entry point (1064 tests)
+src/tests/test_runner	Test suite entry point (1066 tests)
 src/parsers/adacovex-parsers-manifest-req_entry	Parse the first requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-is_test_named	Whether an npm package name carries a test label (starts/ends with "test")
 src/parsers/adacovex-parsers-manifest-collect_owner_test_names	Collect test-labelled dependency names from supported-language manifests

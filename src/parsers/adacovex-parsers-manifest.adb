@@ -1008,17 +1008,25 @@ package body Adacovex.Parsers.Manifest is
       begin
          --  Source_Tree_Hash covers every file the scan reads, so it alone
          --  determines the referenced-tool set.  The tool-table fingerprint
-         --  (every curated tool name, salted) invalidates the key when the
-         --  System_Tools constant changes within a release.  The "|tools-v3|"
-         --  salt separates this cache namespace from the graph cache and
-         --  from the 1.27-era blob layout; it was bumped to v3 when the
-         --  version-probe behaviour changed in 1.33 (flag fallbacks, go
-         --  version), so stale 1.32 tool sets are never served.
+         --  invalidates the key when the System_Tools constant changes within
+         --  a release.  Each tool's version-probe flag and the probe fallback
+         --  chain are folded in too, so editing how a tool's version is read
+         --  self-invalidates the cache -- no hand-maintained "|tools-vN|"
+         --  salt bump to forget.  (The 1.33-era control of that same risk
+         --  relied on a manually bumped salt; a forgotten bump served stale
+         --  probe results within a release.)  The "|probe-fb:...|" token also
+         --  separates this namespace from the graph cache and the 1.27-era
+         --  blob layout, while the flag chain stays part of the digest.
          Add (Source_Tree_Hash (T));
          for I in System_Tools'Range loop
             Add (System_Tools (I).Name (1 .. System_Tools (I).Len));
+            Add ("=");
+            Add (System_Tools (I).Flag (1 .. System_Tools (I).FLen));
+            Add (";");
          end loop;
-         Add ("|tools-v3|");
+         --  The probe fallback chain lives in Probe_Version -- fold its flag
+         --  order in so reordering the fallbacks also busts the cache.
+         Add ("|probe-fb:--version,-v,version|namespace-v4|");
          if CLen = 0 then
             return "";
          end if;
