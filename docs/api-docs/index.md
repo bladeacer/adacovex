@@ -36,6 +36,7 @@ dictionary means the sentence is not yet STE100-clean.
 ## Packages
 
 - [Adacovex](adacovex.md)
+- [Adacovex_Complexity_Tests](adacovex_complexity_tests.md)
 - [Adacovex_Config_Tests](adacovex_config_tests.md)
 - [Adacovex_DAL_Tests](adacovex_dal_tests.md)
 - [Adacovex_IR_Tests](adacovex_ir_tests.md)
@@ -49,8 +50,10 @@ dictionary means the sentence is not yet STE100-clean.
 - [Adacovex_Server_Tests](adacovex_server_tests.md)
 - [Adacovex_TestParser_Tests](adacovex_testparser_tests.md)
 - [Adacovex_Types_Tests](adacovex_types_tests.md)
+- [Adacovex_TZ_ANSI_Tests](adacovex_tz_ansi_tests.md)
 - [Adacovex_VCS_Tests](adacovex_vcs_tests.md)
 - [Adacovex_Version_Info](adacovex_version_info.md)
+- [Adacovex.Ansi](adacovex-ansi.md)
 - [Adacovex.Cache](adacovex-cache.md)
 - [Adacovex.Completion](adacovex-completion.md)
 - [Adacovex.Complexity](adacovex-complexity.md)
@@ -68,6 +71,7 @@ dictionary means the sentence is not yet STE100-clean.
 - [Adacovex.Renderers](adacovex-renderers.md)
 - [Adacovex.Server](adacovex-server.md)
 - [Adacovex.Target_Profiles](adacovex-target_profiles.md)
+- [Adacovex.Timezones](adacovex-timezones.md)
 - [Adacovex.Types](adacovex-types.md)
 - [Adacovex.VCS](adacovex-vcs.md)
 - [Adacovex.Cache.Serialization](adacovex-cache-serialization.md)

@@ -98,7 +98,7 @@ package body Adacovex.Server.HTTP is
       end Worker;
 
       Workers : array (1 .. Max_Workers_Cap) of Worker;
-      Active   : constant Positive :=
+      Active  : constant Positive :=
         Positive'Min (State.Workers, Max_Workers_Cap);
 
    begin

@@ -15,7 +15,7 @@ src/core/adacovex-cache	On-disk result cache (content-hashed per-file, oldest-fi
 src/core/adacovex-completion	Shell auto-completion script generator (bash/fish/zsh/pwsh)
 src/core/adacovex-cpus	Host CPU/CI detection + GNATprove parallelism resolution
 src/core/adacovex-complexity	Cyclomatic complexity checker (multi-language; gated by make complexity-check; --excludes=EXT,EXT)
-src/core/adacovex-ansi	ANSII colour helper (terminal colour support; CI/NO_COLOR/TERM-dumb aware)
+src/core/adacovex-ansi	ANSI colour helper (terminal colour support; CI/NO_COLOR/TERM-dumb aware)
 src/core/adacovex-timezones	Timezone resolution + local-time formatting (OS default; --tz/--timezone: IANA name or UTC/GMT offset)
 src/ir/adacovex-target_profiles	Bounded IR scalar types (IR_Int8..IR_Int64 / IR_UInt8..IR_UInt64) + host/target config
 src/ir/adacovex-ir_bounds	Bounds-verification fixture (synthesized lowered types, gnatprove-proved)
@@ -47,11 +47,13 @@ src/tests/adacovex_server_tests	Server routing tests (25)
 src/tests/adacovex_prove_patch_tests	Proof patch merge tests (35)
 src/tests/adacovex_prove_tests	GNATprove parser tests (64)
 src/tests/adacovex_testparser_tests	Test-result parser tests (50)
-src/tests/adacovex_config_tests	CLI config tests (152)
+src/tests/adacovex_config_tests	CLI config tests (168)
+src/tests/adacovex_tz_ansi_tests	Timezone + ANSI tests (63)
+src/tests/adacovex_complexity_tests	Complexity check tests (12)
 src/tests/adacovex_renderer_svg_tests	SVG renderer tests (161)
 src/tests/adacovex_renderer_tests	HTML/Markdown renderer tests (58)
 src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (278)
-src/tests/test_runner	Test suite entry point (1066 tests)
+src/tests/test_runner	Test suite entry point (1157 tests)
 src/parsers/adacovex-parsers-manifest-req_entry	Parse the first requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-is_test_named	Whether an npm package name carries a test label (starts/ends with "test")
 src/parsers/adacovex-parsers-manifest-collect_owner_test_names	Collect test-labelled dependency names from supported-language manifests

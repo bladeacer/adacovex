@@ -8,6 +8,16 @@ command line and then finalises filesystem defaults.
 
 > **Note:** All items in this package are public.
 
+## Functions
+
+### function Parse_All (Args : Adacovex.Config.Testing.Arg_Vectors.Vector) return Adacovex.Config.CLI_Config
+
+| Parameter | Description |
+|-----------|-------------|
+| `Args` | Argument strings in command-line order. |
+
+**Returns:** Fully populated CLI_Config after validation.
+
 ## Procedures
 
 ### procedure Parse_Args (Args : Adacovex.Config.Testing.Arg_Vectors.Vector; Cfg : Adacovex.Config.CLI_Config)

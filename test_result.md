@@ -5,7 +5,7 @@
   | Source scanner                           |  86 | PASS     |
   | GNATprove parser                         |  64 | PASS     |
   | Test-result parser                       |  50 | PASS     |
-  | CLI config                               |  152 | PASS     |
+  | CLI config                               |  168 | PASS     |
   | SVG renderer                             |  161 | PASS     |
   | HTML/Markdown renderers                  |  58 | PASS     |
   | SBOM generator                           |  278 | PASS     |
@@ -14,6 +14,8 @@
   | VCS support                              |  29 | PASS     |
   | Server routing                           |  25 | PASS     |
   | Proof patches                            |  35 | PASS     |
+  | Timezone + ANSI                          |  63 | PASS     |
+  | Complexity check                         |  12 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 1066  Failed: 0
+  Passed: 1157  Failed: 0

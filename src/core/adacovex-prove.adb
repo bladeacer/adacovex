@@ -1406,31 +1406,32 @@ package body Adacovex.Prove is
    --  drift.  String fields are fixed buffers + a length (0 = empty).
    type VCS_Tool_Flags is array (1 .. 6) of Boolean;
    type Status_Data is record
-      Target       : String (1 .. Types.Max_Path) := (others => ' ');
-      Target_Len   : Natural := 0;
-      Alr          : String (1 .. Types.Max_Path) := (others => ' ');
-      Alr_Len      : Natural := 0;   --  0 = not found on PATH
-      Declared     : Boolean := False;
-      Pin          : String (1 .. Types.Max_Path) := (others => ' ');
-      Pin_Len      : Natural := 0;
-      Gnatprove    : String (1 .. Types.Max_Path) := (others => ' ');
-      Gnatprove_Ln : Natural := 0;   --  0 = not found on PATH
-      Cached       : Boolean := False;
-      Cached_Dir   : String (1 .. Types.Max_Path) := (others => ' ');
-      Cached_Len   : Natural := 0;
-      Cores        : Natural := 1;
-      In_CI        : Boolean := False;
+      Target           : String (1 .. Types.Max_Path) := (others => ' ');
+      Target_Len       : Natural := 0;
+      Alr              : String (1 .. Types.Max_Path) := (others => ' ');
+      Alr_Len          : Natural := 0;   --  0 = not found on PATH
+      Declared         : Boolean := False;
+      Pin              : String (1 .. Types.Max_Path) := (others => ' ');
+      Pin_Len          : Natural := 0;
+      Gnatprove        : String (1 .. Types.Max_Path) := (others => ' ');
+      Gnatprove_Ln     : Natural := 0;   --  0 = not found on PATH
+      Cached           : Boolean := False;
+      Cached_Dir       : String (1 .. Types.Max_Path) := (others => ' ');
+      Cached_Len       : Natural := 0;
+      Cores            : Natural := 1;
+      In_CI            : Boolean := False;
       --  VCS command-line tool availability on PATH in this fixed order:
       --  git, hg, svn, fossil, jj, mandb.
-      VCS_Tool     : VCS_Tool_Flags := (others => False);
-      Repo_Kind    : String (1 .. 64) := (others => ' ');
-      Repo_Len     : Natural := 0;   --  0 = none detected
-      Repo_Tool    : String (1 .. 64) := (others => ' ');
-      Repo_Tool_Ln : Natural := 0;
-      Repo_Note    : Boolean := False;  --  target repo tool missing on PATH
-      Needs_Alr    : Boolean := False;  --  manifest pin or global pin set
-      Alr_Ok       : Boolean := True;
-      OK           : Boolean := False;  --  overall usable verdict
+      VCS_Tool         : VCS_Tool_Flags := (others => False);
+      Repo_Kind        : String (1 .. 64) := (others => ' ');
+      Repo_Len         : Natural := 0;   --  0 = none detected
+      Repo_Tool        : String (1 .. 64) := (others => ' ');
+      Repo_Tool_Ln     : Natural := 0;
+      Repo_Note        : Boolean :=
+        False;  --  target repo tool missing on PATH
+      Needs_Alr        : Boolean := False;  --  manifest pin or global pin set
+      Alr_Ok           : Boolean := True;
+      OK               : Boolean := False;  --  overall usable verdict
       --  Effective display timezone (--tz / --timezone override, else the
       --  operating system's zone) and how many dated release changelogs the
       --  target carries under docs/changelogs.
@@ -1443,7 +1444,8 @@ package body Adacovex.Prove is
    --  anything (same contract as Run_Status).
    --  Resolve the display timezone: an explicit TZ spec wins, else the
    --  operating system's timezone.
-   function Effective_TZ (TZ_Spec : String) return Adacovex.Timezones.Timezone_Info
+   function Effective_TZ
+     (TZ_Spec : String) return Adacovex.Timezones.Timezone_Info
    is
       Info : Adacovex.Timezones.Timezone_Info;
       OK   : Boolean;
@@ -1477,8 +1479,7 @@ package body Adacovex.Prove is
             if Kind (Ent) = Ordinary_File
               and then Nm'Length > 9
               and then Nm (Nm'First .. Nm'First + 8) = "adacovex-"
-              and then
-                Nm (Nm'Last - 2 .. Nm'Last) = ".md"
+              and then Nm (Nm'Last - 2 .. Nm'Last) = ".md"
             then
                N := N + 1;
             end if;
@@ -1603,15 +1604,15 @@ package body Adacovex.Prove is
       Ada.Text_IO.Put_Line
         ("  timezone:           "
          & (if S.Time_Zone.Display_Len > 0
-            then S.Time_Zone.Display
-              (1 .. S.Time_Zone.Display_Len)
+            then S.Time_Zone.Display (1 .. S.Time_Zone.Display_Len)
             else "UTC"));
       Ada.Text_IO.Put_Line
         ("  date/time:          " & Adacovex.Timezones.Now_Text (S.Time_Zone));
       Ada.Text_IO.Put_Line
         ("  dated changelogs:   "
          & Natural'Image (S.Dated_Changelogs)
-         & (if S.Dated_Changelogs = 1 then " release entry"
+         & (if S.Dated_Changelogs = 1
+            then " release entry"
             else " release entries"));
 
       --  Alire: only required when the manifest or a global pin drives the
@@ -1814,8 +1815,8 @@ package body Adacovex.Prove is
          & "dated_changelogs"
          & Q
          & ":"
-         & Natural'Image
-           (S.Dated_Changelogs) (2 .. Natural'Image (S.Dated_Changelogs)'Last));
+         & Natural'Image (S.Dated_Changelogs)
+             (2 .. Natural'Image (S.Dated_Changelogs)'Last));
       Put (",");
       if S.Alr_Len > 0 then
          Field ("alire", S.Alr (1 .. S.Alr_Len));
@@ -1906,8 +1907,8 @@ package body Adacovex.Prove is
         ("date_time=" & Adacovex.Timezones.Now_Text (S.Time_Zone));
       Ada.Text_IO.Put_Line
         ("dated_changelogs="
-         & Natural'Image
-           (S.Dated_Changelogs) (2 .. Natural'Image (S.Dated_Changelogs)'Last));
+         & Natural'Image (S.Dated_Changelogs)
+             (2 .. Natural'Image (S.Dated_Changelogs)'Last));
       Ada.Text_IO.Put_Line
         ("alire="
          & (if S.Alr_Len > 0 then S.Alr (1 .. S.Alr_Len) else "missing"));

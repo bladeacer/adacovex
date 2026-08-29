@@ -1198,8 +1198,7 @@ begin
       Elapsed : constant Duration := Clock - Start_Time;
    begin
       Ada.Text_IO.Put_Line
-        (Adacovex.Ansi.Dim
-           ("Completed in" & Duration'Image (Elapsed)));
+        (Adacovex.Ansi.Dim ("Completed in" & Duration'Image (Elapsed)));
    end;
 
    Ada.Command_Line.Set_Exit_Status (Exit_St);

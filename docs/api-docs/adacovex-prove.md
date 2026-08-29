@@ -88,12 +88,13 @@ end record;
 
 ## Procedures
 
-### procedure Export_Status (Target_Dir : Standard.String; Out_Path : Standard.String; Success : Standard.Boolean)
+### procedure Export_Status (Target_Dir : Standard.String; Out_Path : Standard.String; TZ_Spec : Standard.String; Success : Standard.Boolean)
 
 | Parameter | Description |
 |-----------|-------------|
 | `Out_Path` | Output file path, or "" for stdout. |
 | `Success` | True when the report was gathered and written. |
+| `TZ_Spec` | Display timezone override (--tz / --timezone), or "" |
 | `Target_Dir` | Project root directory. |
 
 ### procedure Find_Root_GPR (Target_Dir : Standard.String; GPR_Path : Standard.String; GPR_Len : Standard.Natural; Success : Standard.Boolean)
@@ -127,16 +128,18 @@ end record;
 | `Success` | True if gnatprove ran and exited 0. |
 | `Target_Dir` | Project root directory. |
 
-### procedure Run_Status (Target_Dir : Standard.String; Success : Standard.Boolean)
+### procedure Run_Status (Target_Dir : Standard.String; TZ_Spec : Standard.String; Success : Standard.Boolean)
 
 | Parameter | Description |
 |-----------|-------------|
 | `Success` | True when alr and gnatprove are available or |
+| `TZ_Spec` | Display timezone override (--tz / --timezone), or "" |
 | `Target_Dir` | Project root directory. |
 
-### procedure Run_Status_Metrics (Target_Dir : Standard.String; Success : Standard.Boolean)
+### procedure Run_Status_Metrics (Target_Dir : Standard.String; TZ_Spec : Standard.String; Success : Standard.Boolean)
 
 | Parameter | Description |
 |-----------|-------------|
 | `Success` | True when alr and gnatprove are available or |
+| `TZ_Spec` | Display timezone override (--tz / --timezone), or "" |
 | `Target_Dir` | Project root directory. |

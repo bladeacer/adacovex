@@ -14,6 +14,8 @@ with Adacovex_Man_Tests;
 with Adacovex_VCS_Tests;
 with Adacovex_Server_Tests;
 with Adacovex_Prove_Patch_Tests;
+with Adacovex_TZ_ANSI_Tests;
+with Adacovex_Complexity_Tests;
 
 procedure Test_Runner is
 
@@ -31,6 +33,8 @@ procedure Test_Runner is
    R_VCS         : Runner;
    R_Server      : Runner;
    R_ProvePatch  : Runner;
+   R_TZANSI      : Runner;
+   R_Complexity  : Runner;
 
    Total_Passed : Natural := 0;
    Total_Failed : Natural := 0;
@@ -73,6 +77,8 @@ procedure Test_Runner is
          Row ("VCS support", R_VCS);
          Row ("Server routing", R_Server);
          Row ("Proof patches", R_ProvePatch);
+         Row ("Timezone + ANSI", R_TZANSI);
+         Row ("Complexity check", R_Complexity);
       end;
 
       Put_Line
@@ -147,6 +153,8 @@ procedure Test_Runner is
          Row ("VCS support", R_VCS);
          Row ("Server routing", R_Server);
          Row ("Proof patches", R_ProvePatch);
+         Row ("Timezone + ANSI", R_TZANSI);
+         Row ("Complexity check", R_Complexity);
       end;
 
       Put_Line
@@ -176,6 +184,8 @@ begin
    Adacovex_VCS_Tests.Run (R_VCS);
    Adacovex_Server_Tests.Run (R_Server);
    Adacovex_Prove_Patch_Tests.Run (R_ProvePatch);
+   Adacovex_TZ_ANSI_Tests.Run (R_TZANSI);
+   Adacovex_Complexity_Tests.Run (R_Complexity);
 
    Total_Passed :=
      R_Types.Passed
@@ -191,7 +201,9 @@ begin
      + R_Man.Passed
      + R_VCS.Passed
      + R_Server.Passed
-     + R_ProvePatch.Passed;
+     + R_ProvePatch.Passed
+     + R_TZANSI.Passed
+     + R_Complexity.Passed;
    Total_Failed :=
      R_Types.Failed
      + R_DAL.Failed
@@ -206,7 +218,9 @@ begin
      + R_Man.Failed
      + R_VCS.Failed
      + R_Server.Failed
-     + R_ProvePatch.Failed;
+     + R_ProvePatch.Failed
+     + R_TZANSI.Failed
+     + R_Complexity.Failed;
 
    Print_Summary;
    Write_Results;

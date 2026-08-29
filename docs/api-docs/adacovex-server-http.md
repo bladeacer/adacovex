@@ -33,6 +33,7 @@ Route_Not_Found);
 ```ada
 type Server_State is record
 Port          : Positive := 8080;
+Workers       : Positive := 4;
 Doc_Metrics   : Types.Docstring_Metrics;
 Proof         : Types.Proof_Summary;
 Tests         : Types.Implementation.Test_Summary;

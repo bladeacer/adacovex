@@ -674,8 +674,7 @@ package body Adacovex.Config is
                      end;
                   else
                      Set_Error
-                       (Cfg,
-                        "--serve-workers requires an integer argument");
+                       (Cfg, "--serve-workers requires an integer argument");
                   end if;
                   Cfg.Serve_Workers_Set := True;
                elsif Has_Prefix (A, "--serve-workers=") then
@@ -697,7 +696,8 @@ package body Adacovex.Config is
                      Set_String (Cfg.Time_Zone, Cfg.Time_Zone_Len, Args (I));
                   else
                      Set_Error
-                       (Cfg, (if A = "--tz" then "--tz" else "--timezone")
+                       (Cfg,
+                        (if A = "--tz" then "--tz" else "--timezone")
                         & " requires a timezone argument");
                   end if;
                elsif Has_Prefix (A, "--tz=") then
@@ -714,12 +714,11 @@ package body Adacovex.Config is
                   I := I + 1;
                   if I <= Count then
                      Set_String
-                       (Cfg.Complexity_Excludes,
-                        Cfg.Excludes_Len,
-                        Args (I));
+                       (Cfg.Complexity_Excludes, Cfg.Excludes_Len, Args (I));
                   else
                      Set_Error
-                       (Cfg, "--excludes requires a comma-separated extension list");
+                       (Cfg,
+                        "--excludes requires a comma-separated extension list");
                   end if;
                elsif Has_Prefix (A, "--excludes=") then
                   Set_String
@@ -1358,266 +1357,270 @@ package body Adacovex.Config is
          Parse_Args (Args, Cfg);
       end Parse_Command_Line;
 
-   end Testing;
-
-    function Parse_All
-      (Args : Testing.Arg_Vectors.Vector) return CLI_Config
-    is
-       Cfg : CLI_Config;
-    begin
-       Testing.Parse_Args (Args, Cfg);
-
-       -- Default skip dirs (used in relaxed mode; .git/obj always skipped)
-      if Cfg.Skip_Dir_Ct = 0 then
-         Set_String (Cfg.Skip_Dirs, Cfg.Skip_Dir_Ct, "demo,deps,examples");
-      end if;
-
-      -- --no-svg overrides --emit-svg
-      if Cfg.No_SVG then
-         Cfg.Emit_SVG := False;
-         Cfg.SVG_Path_Len := 0;
-      end if;
-
-      -- Differential modes are mutually exclusive
-      if Cfg.Compare_Base_Len > 0 and then Cfg.Coverage_Delta_Len > 0 then
-         Set_Error
-           (Cfg, "--compare-base and --coverage-delta are mutually exclusive");
-      end if;
-
-      -- SBOM mode is exclusive with the differential modes
-      if Cfg.SBOM_Mode
-        and then (Cfg.Compare_Base_Len > 0 or Cfg.Coverage_Delta_Len > 0)
-      then
-         Set_Error
-           (Cfg,
-            "sbom cannot be combined with --compare-base/--coverage-delta");
-      end if;
-
-      -- Prove mode is exclusive with the differential modes and sbom mode
-      if Cfg.Prove_Mode
-        and then (Cfg.Compare_Base_Len > 0
-                  or Cfg.Coverage_Delta_Len > 0
-                  or Cfg.SBOM_Mode)
-      then
-         Set_Error
-           (Cfg,
-            "prove cannot be combined with --compare-base, --coverage-delta, "
-            & "or sbom");
-      end if;
-
-      -- Status mode is a pure toolchain/platform report: no assessment runs.
-      if Cfg.Status_Mode
-        and then (Cfg.Prove_Mode
-                  or Cfg.SBOM_Mode
-                  or Cfg.Compare_Base_Len > 0
-                  or Cfg.Coverage_Delta_Len > 0)
-      then
-         Set_Error
-           (Cfg,
-            "status cannot be combined with prove, sbom, --compare-base, "
-            & "or --coverage-delta");
-      end if;
-
-      -- --export and --metrics are status-mode output selectors: they only
-      -- make sense with the status subcommand.
-      if (Cfg.Status_Export or Cfg.Status_Metrics) and then not Cfg.Status_Mode
-      then
-         Set_Error
-           (Cfg, "--export and --metrics require the status subcommand");
-      end if;
-
-      -- Man mode is a standalone installer: it cannot be combined with any
-      -- assessment mode (the man page is generated from the bundled version,
-      -- it does not need a target).
-      if Cfg.Man_Mode
-        and then (Cfg.Status_Mode
-                  or Cfg.Prove_Mode
-                  or Cfg.SBOM_Mode
-                  or Cfg.Compare_Base_Len > 0
-                  or Cfg.Coverage_Delta_Len > 0)
-      then
-         Set_Error
-           (Cfg,
-            "man cannot be combined with status, prove, sbom, --compare-base, "
-            & "or --coverage-delta");
-      end if;
-
-      -- --check and --dir only make sense with the man subcommand; a bare
-      -- `adacovex --check` is almost certainly a typo, so fail loudly rather
-      -- than silently running an assessment that ignores them.
-      if (Cfg.Man_Check or Cfg.Man_Dir_Len > 0) and then not Cfg.Man_Mode then
-         Set_Error (Cfg, "--check and --dir require the man subcommand");
-      end if;
-
-      -- --version is a pure banner: nothing else is meaningful with it.
-      if Cfg.Version_Requested
-        and then (Cfg.Man_Mode
-                  or Cfg.Status_Mode
-                  or Cfg.Prove_Mode
-                  or Cfg.SBOM_Mode
-                  or Cfg.Compare_Base_Len > 0
-                  or Cfg.Coverage_Delta_Len > 0)
-      then
-         Set_Error (Cfg, "--version cannot be combined with other modes");
-      end if;
-
-      -- GNATprove options only make sense in prove mode.  --force is shared
-      -- with the man subcommand (man --force overrides the installed page),
-      -- so it is only an error when neither prove nor man mode is set.
-      if not Cfg.Prove_Mode
-        and then not Cfg.Man_Mode
-        and then (Cfg.Prove_Jobs >= 0
-                  or Cfg.Prove_Level >= 0
-                  or Cfg.Prove_Timeout >= 0
-                  or Cfg.Prove_Steps >= 0
-                  or Cfg.Prove_Memlimit >= 0
-                  or Cfg.Prove_Force
-                  or Cfg.Prove_No_Loop_Unroll
-                  or Cfg.Prove_No_Inlining
-                  or Cfg.Prove_Suppress_Explicit)
-      then
-         Set_Error
-           (Cfg,
-            "prove options (--jobs, --level, --timeout, --steps, --memlimit, "
-            & "--force, --no-loop-unrolling, --no-inlining, "
-            & "--suppress-warnings, --quiet) require the prove subcommand");
-      end if;
-
-      -- --serve-workers only makes sense with --serve; reject a silent no-op.
-      if Cfg.Serve_Workers_Set and then not Cfg.Serve_Mode then
-         Set_Error
-           (Cfg, "--serve-workers requires the serve subcommand (--serve)");
-      end if;
-
-      -- --excludes only makes sense with the complexity subcommand; it does
-      -- not work on its own (the wording in the usage text makes this clear).
-      if Cfg.Excludes_Len > 0 and then not Cfg.Complexity_Mode then
-         Set_Error
-           (Cfg, "--excludes requires the complexity subcommand");
-      end if;
-
-      -- --tz / --timezone must name a supported timezone (validated loudly
-      -- so a typo never silently falls back to the OS zone.
-      if Cfg.Time_Zone_Len > 0 then
-         declare
-            Info : Adacovex.Timezones.Timezone_Info;
-            OK   : Boolean;
-         begin
-            Adacovex.Timezones.Parse
-              (Cfg.Time_Zone (1 .. Cfg.Time_Zone_Len), Info, OK);
-            if not OK then
-               Set_Error
-                 (Cfg,
-                  "--tz/--timezone must name a supported timezone (got: "
-                  & Cfg.Time_Zone (1 .. Cfg.Time_Zone_Len)
-                  & "); use an IANA name like Asia/Singapore or a UTC/GMT "
-                  & "offset like UTC+8");
-            end if;
-         end;
-      end if;
-
-      -- Automatic SBOM at the end of every assessment is skipped only in the
-      -- single-purpose modes (differential, coverage gate, sbom) or when
-      -- --no-sbom is passed. Prove mode runs gnatprove and then falls through
-      -- to the normal assessment, so the automatic SBOM still applies.
-      if Cfg.SBOM_Mode
-        or Cfg.Compare_Base_Len > 0
-        or Cfg.Coverage_Delta_Len > 0
-      then
-         Cfg.No_SBOM := True;
-      end if;
-
-      -- Default target if not provided: current working directory
-      if Cfg.Target_Len = 0 then
-         Set_String
-           (Cfg.Target_Path,
-            Cfg.Target_Len,
-            Ada.Directories.Current_Directory);
-      end if;
-
-      -- Resolve target path to absolute, then derive default manifest
-      declare
-         Raw : constant String := Cfg.Target_Path (1 .. Cfg.Target_Len);
+      function Parse_All (Args : Arg_Vectors.Vector) return CLI_Config is
+         Cfg : CLI_Config;
       begin
-         if Raw'Length > 0 and then Raw (Raw'First) /= '/' then
+         Parse_Args (Args, Cfg);
+
+         -- Default skip dirs (used in relaxed mode; .git/obj always skipped)
+         if Cfg.Skip_Dir_Ct = 0 then
+            Set_String (Cfg.Skip_Dirs, Cfg.Skip_Dir_Ct, "demo,deps,examples");
+         end if;
+
+         -- --no-svg overrides --emit-svg
+         if Cfg.No_SVG then
+            Cfg.Emit_SVG := False;
+            Cfg.SVG_Path_Len := 0;
+         end if;
+
+         -- Differential modes are mutually exclusive
+         if Cfg.Compare_Base_Len > 0 and then Cfg.Coverage_Delta_Len > 0 then
+            Set_Error
+              (Cfg,
+               "--compare-base and --coverage-delta are mutually exclusive");
+         end if;
+
+         -- SBOM mode is exclusive with the differential modes
+         if Cfg.SBOM_Mode
+           and then (Cfg.Compare_Base_Len > 0 or Cfg.Coverage_Delta_Len > 0)
+         then
+            Set_Error
+              (Cfg,
+               "sbom cannot be combined with --compare-base/--coverage-delta");
+         end if;
+
+         -- Prove mode is exclusive with the differential modes and sbom mode
+         if Cfg.Prove_Mode
+           and then (Cfg.Compare_Base_Len > 0
+                     or Cfg.Coverage_Delta_Len > 0
+                     or Cfg.SBOM_Mode)
+         then
+            Set_Error
+              (Cfg,
+               "prove cannot be combined with --compare-base, --coverage-delta, "
+               & "or sbom");
+         end if;
+
+         -- Status mode is a pure toolchain/platform report: no assessment runs.
+         if Cfg.Status_Mode
+           and then (Cfg.Prove_Mode
+                     or Cfg.SBOM_Mode
+                     or Cfg.Compare_Base_Len > 0
+                     or Cfg.Coverage_Delta_Len > 0)
+         then
+            Set_Error
+              (Cfg,
+               "status cannot be combined with prove, sbom, --compare-base, "
+               & "or --coverage-delta");
+         end if;
+
+         -- --export and --metrics are status-mode output selectors: they only
+         -- make sense with the status subcommand.
+         if (Cfg.Status_Export or Cfg.Status_Metrics)
+           and then not Cfg.Status_Mode
+         then
+            Set_Error
+              (Cfg, "--export and --metrics require the status subcommand");
+         end if;
+
+         -- Man mode is a standalone installer: it cannot be combined with any
+         -- assessment mode (the man page is generated from the bundled version,
+         -- it does not need a target).
+         if Cfg.Man_Mode
+           and then (Cfg.Status_Mode
+                     or Cfg.Prove_Mode
+                     or Cfg.SBOM_Mode
+                     or Cfg.Compare_Base_Len > 0
+                     or Cfg.Coverage_Delta_Len > 0)
+         then
+            Set_Error
+              (Cfg,
+               "man cannot be combined with status, prove, sbom, --compare-base, "
+               & "or --coverage-delta");
+         end if;
+
+         -- --check and --dir only make sense with the man subcommand; a bare
+         -- `adacovex --check` is almost certainly a typo, so fail loudly rather
+         -- than silently running an assessment that ignores them.
+         if (Cfg.Man_Check or Cfg.Man_Dir_Len > 0) and then not Cfg.Man_Mode
+         then
+            Set_Error (Cfg, "--check and --dir require the man subcommand");
+         end if;
+
+         -- --version is a pure banner: nothing else is meaningful with it.
+         if Cfg.Version_Requested
+           and then (Cfg.Man_Mode
+                     or Cfg.Status_Mode
+                     or Cfg.Prove_Mode
+                     or Cfg.SBOM_Mode
+                     or Cfg.Compare_Base_Len > 0
+                     or Cfg.Coverage_Delta_Len > 0)
+         then
+            Set_Error (Cfg, "--version cannot be combined with other modes");
+         end if;
+
+         -- GNATprove options only make sense in prove mode.  --force is shared
+         -- with the man subcommand (man --force overrides the installed page),
+         -- so it is only an error when neither prove nor man mode is set.
+         if not Cfg.Prove_Mode
+           and then not Cfg.Man_Mode
+           and then (Cfg.Prove_Jobs >= 0
+                     or Cfg.Prove_Level >= 0
+                     or Cfg.Prove_Timeout >= 0
+                     or Cfg.Prove_Steps >= 0
+                     or Cfg.Prove_Memlimit >= 0
+                     or Cfg.Prove_Force
+                     or Cfg.Prove_No_Loop_Unroll
+                     or Cfg.Prove_No_Inlining
+                     or Cfg.Prove_Suppress_Explicit)
+         then
+            Set_Error
+              (Cfg,
+               "prove options (--jobs, --level, --timeout, --steps, --memlimit, "
+               & "--force, --no-loop-unrolling, --no-inlining, "
+               & "--suppress-warnings, --quiet) require the prove subcommand");
+         end if;
+
+         -- --serve-workers only makes sense with --serve; reject a silent no-op.
+         if Cfg.Serve_Workers_Set and then not Cfg.Serve_Mode then
+            Set_Error
+              (Cfg, "--serve-workers requires the serve subcommand (--serve)");
+         end if;
+
+         -- --excludes only makes sense with the complexity subcommand; it does
+         -- not work on its own (the wording in the usage text makes this clear).
+         if Cfg.Excludes_Len > 0 and then not Cfg.Complexity_Mode then
+            Set_Error (Cfg, "--excludes requires the complexity subcommand");
+         end if;
+
+         -- --tz / --timezone must name a supported timezone (validated loudly
+         -- so a typo never silently falls back to the OS zone.
+         if Cfg.Time_Zone_Len > 0 then
             declare
-               CD : constant String := Ada.Directories.Current_Directory;
-               AP : constant String := CD & "/" & Raw;
+               Info : Adacovex.Timezones.Timezone_Info;
+               OK   : Boolean;
             begin
-               -- Normalise a trailing "/." (e.g. "--target=.") to the
-               -- plain directory so display paths stay clean.
-               if AP'Length >= 2 and then AP (AP'Last - 1 .. AP'Last) = "/."
-               then
-                  Set_String (Cfg.Target_Path, Cfg.Target_Len, CD);
-               else
-                  Set_String (Cfg.Target_Path, Cfg.Target_Len, AP);
+               Adacovex.Timezones.Parse
+                 (Cfg.Time_Zone (1 .. Cfg.Time_Zone_Len), Info, OK);
+               if not OK then
+                  Set_Error
+                    (Cfg,
+                     "--tz/--timezone must name a supported timezone (got: "
+                     & Cfg.Time_Zone (1 .. Cfg.Time_Zone_Len)
+                     & "); use an IANA name like Asia/Singapore or a UTC/GMT "
+                     & "offset like UTC+8");
                end if;
             end;
          end if;
-      end;
 
-      -- Default SVG output path: project-scoped (relative to resolved target)
-      if Cfg.Emit_SVG and then Cfg.SVG_Path_Len = 0 then
-         Set_String
-           (Cfg.SVG_Path,
-            Cfg.SVG_Path_Len,
-            Cfg.Target_Path (1 .. Cfg.Target_Len) & "/docs/badges");
-      end if;
+         -- Automatic SBOM at the end of every assessment is skipped only in the
+         -- single-purpose modes (differential, coverage gate, sbom) or when
+         -- --no-sbom is passed. Prove mode runs gnatprove and then falls through
+         -- to the normal assessment, so the automatic SBOM still applies.
+         if Cfg.SBOM_Mode
+           or Cfg.Compare_Base_Len > 0
+           or Cfg.Coverage_Delta_Len > 0
+         then
+            Cfg.No_SBOM := True;
+         end if;
 
-      -- Default manifest derived from target
-      if Cfg.Manifest_Len = 0 then
+         -- Default target if not provided: current working directory
+         if Cfg.Target_Len = 0 then
+            Set_String
+              (Cfg.Target_Path,
+               Cfg.Target_Len,
+               Ada.Directories.Current_Directory);
+         end if;
+
+         -- Resolve target path to absolute, then derive default manifest
          declare
-            TDir : constant String := Cfg.Target_Path (1 .. Cfg.Target_Len);
+            Raw : constant String := Cfg.Target_Path (1 .. Cfg.Target_Len);
          begin
-            if Ada.Directories.Exists (TDir & "/alire.toml") then
-               Set_String
-                 (Cfg.Manifest_Path, Cfg.Manifest_Len, TDir & "/alire.toml");
-            else
-               Set_String
-                 (Cfg.Manifest_Path,
-                  Cfg.Manifest_Len,
-                  TDir & "/alire-dev.toml");
+            if Raw'Length > 0 and then Raw (Raw'First) /= '/' then
+               declare
+                  CD : constant String := Ada.Directories.Current_Directory;
+                  AP : constant String := CD & "/" & Raw;
+               begin
+                  -- Normalise a trailing "/." (e.g. "--target=.") to the
+                  -- plain directory so display paths stay clean.
+                  if AP'Length >= 2 and then AP (AP'Last - 1 .. AP'Last) = "/."
+                  then
+                     Set_String (Cfg.Target_Path, Cfg.Target_Len, CD);
+                  else
+                     Set_String (Cfg.Target_Path, Cfg.Target_Len, AP);
+                  end if;
+               end;
             end if;
          end;
-      end if;
 
-      -- Default SBOM output path: project-scoped, format-aware.  Applies to
-      -- both the explicit `adacovex sbom` subcommand and the automatic SBOM
-      -- generation that runs at the end of every normal assessment (unless
-      -- disabled with --no-sbom).
-      if Cfg.SBOM_Out_Len = 0 then
-         declare
-            TDir : constant String := Cfg.Target_Path (1 .. Cfg.Target_Len);
-         begin
-            case Cfg.SBOM_Format is
-               when Types.SPDX_JSON =>
+         -- Default SVG output path: project-scoped (relative to resolved target)
+         if Cfg.Emit_SVG and then Cfg.SVG_Path_Len = 0 then
+            Set_String
+              (Cfg.SVG_Path,
+               Cfg.SVG_Path_Len,
+               Cfg.Target_Path (1 .. Cfg.Target_Len) & "/docs/badges");
+         end if;
+
+         -- Default manifest derived from target
+         if Cfg.Manifest_Len = 0 then
+            declare
+               TDir : constant String := Cfg.Target_Path (1 .. Cfg.Target_Len);
+            begin
+               if Ada.Directories.Exists (TDir & "/alire.toml") then
                   Set_String
-                    (Cfg.SBOM_Out, Cfg.SBOM_Out_Len, TDir & "/sbom.spdx.json");
-
-               when Types.Markdown  =>
+                    (Cfg.Manifest_Path,
+                     Cfg.Manifest_Len,
+                     TDir & "/alire.toml");
+               else
                   Set_String
-                    (Cfg.SBOM_Out,
-                     Cfg.SBOM_Out_Len,
-                     TDir & "/docs/compliance/SBOM.md");
+                    (Cfg.Manifest_Path,
+                     Cfg.Manifest_Len,
+                     TDir & "/alire-dev.toml");
+               end if;
+            end;
+         end if;
 
-               when others          =>
-                  Set_String
-                    (Cfg.SBOM_Out, Cfg.SBOM_Out_Len, TDir & "/sbom.json");
-            end case;
-         end;
-      end if;
+         -- Default SBOM output path: project-scoped, format-aware.  Applies to
+         -- both the explicit `adacovex sbom` subcommand and the automatic SBOM
+         -- generation that runs at the end of every normal assessment (unless
+         -- disabled with --no-sbom).
+         if Cfg.SBOM_Out_Len = 0 then
+            declare
+               TDir : constant String := Cfg.Target_Path (1 .. Cfg.Target_Len);
+            begin
+               case Cfg.SBOM_Format is
+                  when Types.SPDX_JSON =>
+                     Set_String
+                       (Cfg.SBOM_Out,
+                        Cfg.SBOM_Out_Len,
+                        TDir & "/sbom.spdx.json");
 
-       return Cfg;
-    end Parse_All;
+                  when Types.Markdown  =>
+                     Set_String
+                       (Cfg.SBOM_Out,
+                        Cfg.SBOM_Out_Len,
+                        TDir & "/docs/compliance/SBOM.md");
 
-    function Parse_CLI return CLI_Config is
-       Args : Testing.Arg_Vectors.Vector;
-    begin
-       for I in 1 .. Ada.Command_Line.Argument_Count loop
-          Testing.Arg_Vectors.Append (Args, Ada.Command_Line.Argument (I));
-       end loop;
-       return Testing.Parse_All (Args);
-    end Parse_CLI;
+                  when others          =>
+                     Set_String
+                       (Cfg.SBOM_Out, Cfg.SBOM_Out_Len, TDir & "/sbom.json");
+               end case;
+            end;
+         end if;
+
+         return Cfg;
+      end Parse_All;
+
+   end Testing;
+
+   function Parse_CLI return CLI_Config is
+      Args : Testing.Arg_Vectors.Vector;
+   begin
+      for I in 1 .. Ada.Command_Line.Argument_Count loop
+         Testing.Arg_Vectors.Append (Args, Ada.Command_Line.Argument (I));
+      end loop;
+      return Testing.Parse_All (Args);
+   end Parse_CLI;
 
    procedure Print_Usage is
    begin
@@ -1801,7 +1804,8 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("  --sbom-format=FMT     Format for the automatic SBOM (cyclonedx-json");
       Ada.Text_IO.Put_Line
-        ("                        | spdx-json | md; default: cyclonedx-json)");      Ada.Text_IO.Put_Line
+        ("                        | spdx-json | md; default: cyclonedx-json)");
+      Ada.Text_IO.Put_Line
         ("  --tz=ZONE             Display timezone for status reports.  Accepts");
       Ada.Text_IO.Put_Line
         ("  --timezone=ZONE       an IANA name (Asia/Singapore) or a fixed UTC/");
@@ -1811,7 +1815,8 @@ package body Adacovex.Config is
         ("                        default: the operating system timezone");
       Ada.Text_IO.Put_Line
         ("  --excludes=EXT,EXT    With complexity only: skip file extensions");
-      Ada.Text_IO.Put_Line ("                        (e.g. --excludes=md,rst)");
+      Ada.Text_IO.Put_Line
+        ("                        (e.g. --excludes=md,rst)");
       Ada.Text_IO.Put_Line ("  --verbose             Verbose diagnostics");
       Ada.Text_IO.Put_Line
         ("  --version             Print the bundled version (read from");

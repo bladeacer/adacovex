@@ -423,19 +423,74 @@ package body Adacovex.Complexity is
    --  Kotlin, YAML/JSON/TOML/XML, Markdown, or reStructuredText.
    function Scanned_Ext (Ext : String) return Boolean is
       List : constant array (1 .. 32) of String (1 .. 4) :=
-        ("ads ", "adb ", "ada ", "gpr ", "c   ", "h   ", "cpp ",
-         "hpp ", "cxx ", "cc  ", "cs  ", "go  ", "java", "js  ",
-         "mjs ", "cjs ", "ts  ", "jsx ", "tsx ", "py  ", "rb  ",
-         "php ", "rs  ", "sh  ", "kt  ", "yaml", "yml ", "json",
-         "toml", "xml ", "md  ", "rst ");
+        ("ads ",
+         "adb ",
+         "ada ",
+         "gpr ",
+         "c   ",
+         "h   ",
+         "cpp ",
+         "hpp ",
+         "cxx ",
+         "cc  ",
+         "cs  ",
+         "go  ",
+         "java",
+         "js  ",
+         "mjs ",
+         "cjs ",
+         "ts  ",
+         "jsx ",
+         "tsx ",
+         "py  ",
+         "rb  ",
+         "php ",
+         "rs  ",
+         "sh  ",
+         "kt  ",
+         "yaml",
+         "yml ",
+         "json",
+         "toml",
+         "xml ",
+         "md  ",
+         "rst ");
       Lens : constant array (1 .. 32) of Natural :=
-        (3, 3, 3, 3, 1, 1, 3, 3, 3, 2, 2, 2, 4, 2, 3, 3, 2, 3, 3, 2,
-         2, 3, 2, 2, 2, 4, 3, 4, 4, 3, 2, 3);
+        (3,
+         3,
+         3,
+         3,
+         1,
+         1,
+         3,
+         3,
+         3,
+         2,
+         2,
+         2,
+         4,
+         2,
+         3,
+         3,
+         2,
+         3,
+         3,
+         2,
+         2,
+         3,
+         2,
+         2,
+         2,
+         4,
+         3,
+         4,
+         4,
+         3,
+         2,
+         3);
    begin
       for I in List'Range loop
-         if Ext'Length = Lens (I)
-           and then Ext = List (I) (1 .. Lens (I))
-         then
+         if Ext'Length = Lens (I) and then Ext = List (I) (1 .. Lens (I)) then
             return True;
          end if;
       end loop;
@@ -445,14 +500,18 @@ package body Adacovex.Complexity is
    --  Display language name for a scanned extension (tokei-style).
    function Lang_Name (Ext : String) return String is
    begin
-      if Ext = "ads" or else Ext = "adb"
-        or else Ext = "ada" or else Ext = "gpr"
+      if Ext = "ads"
+        or else Ext = "adb"
+        or else Ext = "ada"
+        or else Ext = "gpr"
       then
          return "Ada";
       elsif Ext = "c" or else Ext = "h" then
          return "C";
-      elsif Ext = "cpp" or else Ext = "cxx"
-        or else Ext = "cc" or else Ext = "hpp"
+      elsif Ext = "cpp"
+        or else Ext = "cxx"
+        or else Ext = "cc"
+        or else Ext = "hpp"
       then
          return "C++";
       elsif Ext = "cs" then
@@ -461,8 +520,10 @@ package body Adacovex.Complexity is
          return "Go";
       elsif Ext = "java" then
          return "Java";
-      elsif Ext = "js" or else Ext = "mjs"
-        or else Ext = "cjs" or else Ext = "jsx"
+      elsif Ext = "js"
+        or else Ext = "mjs"
+        or else Ext = "cjs"
+        or else Ext = "jsx"
       then
          return "JavaScript";
       elsif Ext = "ts" or else Ext = "tsx" then
@@ -547,7 +608,8 @@ package body Adacovex.Complexity is
    --  vendored assets that are not part of the assessed source.
    function Skip_Dir (N : String) return Boolean is
    begin
-      return N = ".git"
+      return
+        N = ".git"
         or else N = ".alire"
         or else N = ".jj"
         or else N = ".hg"
