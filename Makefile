@@ -1,4 +1,4 @@
-.PHONY: help check build test prove doc docs-serve clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish agents-tree sbom description proof-status test-count doc-links link-check changelog-check action-parity-check tools-check man bench perf-bench complexity-check sync docs-check
+.PHONY: help check build test prove doc docs-serve clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish agents-tree sbom description proof-status test-count doc-links link-check changelog-check action-parity-check tools-check man bench perf-bench complexity-check csslint-check sync docs-check
 
 .DEFAULT_GOAL := help
 
@@ -184,7 +184,10 @@ changelog-check:
 	@python3 tools/check-changelogs.py
 
 complexity-check: build
-	./bin/adacovex complexity
+	./bin/adacovex complexity --excludes=md,rst
+
+csslint-check:
+	@python3 tools/csslint.py --check
 
 ascii-check:
 	@python3 tools/ascii-check.py
@@ -219,6 +222,7 @@ spark-off-check:
 check:
 	@echo "=== Quality gate: ASCII ==="; $(MAKE) ascii-check
 	@echo "=== Quality gate: complexity (no god objects/functions/files) ==="; $(MAKE) complexity-check
+	@echo "=== Quality gate: CSS 4px spacing ==="; $(MAKE) csslint-check
 	@echo "=== Quality gate: SPARK_Mode Off ==="; $(MAKE) spark-off-check
 	@echo "=== Quality gate: changelog format ==="; $(MAKE) changelog-check
 	@echo "=== Quality gate: action/CLI/docs parity ==="; $(MAKE) action-parity-check
@@ -237,7 +241,7 @@ check:
 	@echo "=== Quality gate: proof metrics in sync ==="; python3 tools/update-proof-status.py --check
 	@echo "=== Quality gate: description sync ==="; python3 tools/update-description.py --check
 	@echo ""
-	@echo "=== Quality gate passed: ascii, complexity, spark-off, changelog, action-parity, tools, version, doc-links, link, build, test, prove, doc, sbom, test-count, proof-status, description ==="
+	@echo "=== Quality gate passed: ascii, complexity, csslint, spark-off, changelog, action-parity, tools, version, doc-links, link, build, test, prove, doc, sbom, test-count, proof-status, description ==="
 
 # Sync the crate description + long description from the canonical files
 # (alire/description.txt + alire/long-description.txt) into every manifest.

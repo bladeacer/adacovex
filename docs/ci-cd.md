@@ -59,11 +59,11 @@ jobs:
 
 ### Release workflow
 
-Tag a release. The bundled workflow (`release.yml`) builds the binary and runs
-GNATprove. It validates the self-assessment. It publishes
-`adacovex-vX.Y.Z.tar.gz` and the composite action bundle. Floating tags
-(`@latest`, `@v1`, `@v1.3`) always point at the newest release. Pin `@vX.Y.Z`
-for reproducibility.
+Tag a release. The bundled workflow (`release.yml`) builds the binary and runs GNATprove. It validates the self-assessment. It publishes `adacovex-vX.
+
+Y. Z.tar.gz` and the composite action bundle. Floating tags (`@latest`, `@v1`, `@v1.3`) always point at the newest release. Pin `@vX.
+
+Y. Z` for reproducibility.
 
 ## GitLab CI
 
@@ -133,11 +133,11 @@ In the self-assessment case, the build is an incremental no-op.
 This design keeps `test-command: ./test_crdt`-style usage working in consumer
 repositories such as Ada_CRDT's release workflow.
 
-The action is version-matched to the adacovex binary. The release workflow
-bundles `adacovex-vX.Y.Z.tar.gz` for every `vX.Y.Z` tag. The action downloads
-the binary for the tag it is referenced by. Reference it by a floating tag to
-always get the latest published release. You can pin to an exact release for
-reproducibility:
+The action is version-matched to the adacovex binary. The release workflow bundles `adacovex-vX. Y. Z.tar.gz` for every `vX.
+
+Y. Z` tag. The action downloads the binary for the tag it is referenced by. Reference it by a floating tag to always get the latest published release.
+
+You can pin to an exact release for reproducibility:
 
 ```yaml
 steps:
@@ -300,10 +300,9 @@ When the gate is flaky, start from the artifact, not a local repro.
 
 ### Release version bundling
 
-The release workflow builds the binary from the `vX.Y.Z` tag. It **bundles that
-version into the binary**. The action's build step sets `ADACOVEX_VERSION`
-(from `github.ref_name`). It regenerates `src/adacovex_version_info.ads` before
-`alr build`. The shipped `adacovex --version` reports exactly the tag.
+The release workflow builds the binary from the `vX. Y. Z` tag. It **bundles that version into the binary**.
+
+The action's build step sets `ADACOVEX_VERSION` (from `github.ref_name`). It regenerates `src/adacovex_version_info.ads` before `alr build`. The shipped `adacovex --version` reports exactly the tag.
 
 The download step of the published action verifies this with `adacovex
 --version` after unpacking the release bundle. Locally, `make release
@@ -338,10 +337,9 @@ workflow ships in the repo at `.github/workflows/pr-check.yml`.
 
 ## Release bundling
 
-Every `vX.Y.Z` tag triggers `.github/workflows/release.yml`. The workflow
-calls the composite action with `build`, `release-build`, and `prove`. It
-builds the release binary, runs GNATprove, and validates the self-assessment.
-Then it packages and publishes:
+Every `vX. Y. Z` tag triggers `.github/workflows/release.yml`. The workflow calls the composite action with `build`, `release-build`, and `prove`.
+
+It builds the release binary, runs GNATprove, and validates the self-assessment. Then it packages and publishes:
 
 - `adacovex-vX.Y.Z.tar.gz` -- the version-matched binary (`adacovex` plus the
   `covex` alias). The action downloads this asset for the tag it is referenced
@@ -387,12 +385,11 @@ before compiling. The bundled version is always the build's version.
 
 ## Floating tags
 
-The release workflow force-pushes the floating tags `vMAJOR`, `vMAJOR.MINOR`,
-and `latest`. For example: `v1`, `v1.3`, and `latest` from `v1.3.0`. Reference
-`@latest` to always get the newest published release. Use `@v1` or `@v1.3`
-for the latest release within a major or minor version. Pin an exact `@vX.Y.Z`
-for a fixed version. Once the action is listed on the GitHub Actions
-marketplace, each `vX.Y.Z` tag auto-publishes that version.
+The release workflow force-pushes the floating tags `vMAJOR`, `vMAJOR. MINOR`, and `latest`. For example: `v1`, `v1.3`, and `latest` from `v1.3.0`. Reference `@latest` to always get the newest published release.
+
+Use `@v1` or `@v1.3` for the latest release within a major or minor version. Pin an exact `@vX. Y. Z` for a fixed version.
+
+Once the action is listed on the GitHub Actions marketplace, each `vX. Y. Z` tag auto-publishes that version.
 
 ## Consumer manifest prerequisites (avoid a broken CI)
 

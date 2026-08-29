@@ -5,7 +5,9 @@ with Ada.Text_IO;
 with Ada.Environment_Variables;
 with GNAT.OS_Lib;
 with Adacovex;
+with Adacovex.Ansi;
 with Adacovex.CPUs;
+with Adacovex.Timezones;
 with Adacovex.Cache;
 with Adacovex.VCS;
 with Adacovex.Prove_Patch;
@@ -1429,12 +1431,70 @@ package body Adacovex.Prove is
       Needs_Alr    : Boolean := False;  --  manifest pin or global pin set
       Alr_Ok       : Boolean := True;
       OK           : Boolean := False;  --  overall usable verdict
+      --  Effective display timezone (--tz / --timezone override, else the
+      --  operating system's zone) and how many dated release changelogs the
+      --  target carries under docs/changelogs.
+      Time_Zone        : Adacovex.Timezones.Timezone_Info;
+      Dated_Changelogs : Natural := 0;
    end record;
 
    --  Fill a Status_Data record by probing PATH, the target manifest, the
    --  global pin, and the toolchain cache.  Never deploys or downloads
    --  anything (same contract as Run_Status).
-   procedure Gather_Status (Target_Dir : String; S : out Status_Data) is
+   --  Resolve the display timezone: an explicit TZ spec wins, else the
+   --  operating system's timezone.
+   function Effective_TZ (TZ_Spec : String) return Adacovex.Timezones.Timezone_Info
+   is
+      Info : Adacovex.Timezones.Timezone_Info;
+      OK   : Boolean;
+   begin
+      if TZ_Spec'Length > 0 then
+         Adacovex.Timezones.Parse (TZ_Spec, Info, OK);
+         if OK then
+            return Info;
+         end if;
+      end if;
+      return Adacovex.Timezones.Default;
+   end Effective_TZ;
+
+   --  Count the dated release-changelog files under Dir/changelogs: every
+   --  docs/changelogs/adacovex-*.md file represents one dated release entry.
+   function Count_Dated_Changelogs (Dir : String) return Natural is
+      use Ada.Directories;
+      Search : Search_Type;
+      Ent    : Directory_Entry_Type;
+      N      : Natural := 0;
+   begin
+      if not Exists (Dir & "/docs/changelogs") then
+         return 0;
+      end if;
+      Start_Search (Search, Dir & "/docs/changelogs", "*");
+      while More_Entries (Search) loop
+         Get_Next_Entry (Search, Ent);
+         declare
+            Nm : constant String := Simple_Name (Ent);
+         begin
+            if Kind (Ent) = Ordinary_File
+              and then Nm'Length > 9
+              and then Nm (Nm'First .. Nm'First + 8) = "adacovex-"
+              and then
+                Nm (Nm'Last - 2 .. Nm'Last) = ".md"
+            then
+               N := N + 1;
+            end if;
+         end;
+      end loop;
+      End_Search (Search);
+      return N;
+   exception
+      when others =>
+         End_Search (Search);
+         return 0;
+   end Count_Dated_Changelogs;
+
+   procedure Gather_Status
+     (Target_Dir : String; TZ_Spec : String; S : out Status_Data)
+   is
       Exe   : String_Access;
       T     : constant String := Strip_Trailing_Slash (Target_Dir);
       Kind  : constant Adacovex.VCS.VCS_Kind := Adacovex.VCS.Detect (T);
@@ -1521,16 +1581,38 @@ package body Adacovex.Prove is
          or else S.Declared
          or else S.Pin_Len > 0)
         and then S.Alr_Ok;
+      S.Time_Zone := Effective_TZ (TZ_Spec);
+      S.Dated_Changelogs := Count_Dated_Changelogs (T);
    end Gather_Status;
 
-   procedure Run_Status (Target_Dir : String; Success : out Boolean) is
+   procedure Run_Status
+     (Target_Dir : String; TZ_Spec : String; Success : out Boolean)
+   is
       S : Status_Data;
    begin
-      Gather_Status (Target_Dir, S);
+      Gather_Status (Target_Dir, TZ_Spec, S);
 
-      Ada.Text_IO.Put_Line ("adacovex v" & Adacovex.Version & " status");
+      Ada.Text_IO.Put_Line
+        (Adacovex.Ansi.Bold ("adacovex v" & Adacovex.Version & " status"));
       Ada.Text_IO.Put_Line
         ("  target:             " & S.Target (1 .. S.Target_Len));
+
+      --  Locale/time: the effective timezone, the current wall-clock date and
+      --  time in that zone, and how many dated release changelogs the target
+      --  carries under docs/changelogs.
+      Ada.Text_IO.Put_Line
+        ("  timezone:           "
+         & (if S.Time_Zone.Display_Len > 0
+            then S.Time_Zone.Display
+              (1 .. S.Time_Zone.Display_Len)
+            else "UTC"));
+      Ada.Text_IO.Put_Line
+        ("  date/time:          " & Adacovex.Timezones.Now_Text (S.Time_Zone));
+      Ada.Text_IO.Put_Line
+        ("  dated changelogs:   "
+         & Natural'Image (S.Dated_Changelogs)
+         & (if S.Dated_Changelogs = 1 then " release entry"
+            else " release entries"));
 
       --  Alire: only required when the manifest or a global pin drives the
       --  `alr -n get` deployment path; otherwise gnatprove on PATH / cache
@@ -1635,14 +1717,16 @@ package body Adacovex.Prove is
       Success := S.OK;
       if Success then
          Ada.Text_IO.Put_Line
-           ("  => OK (alr + gnatprove available or dependency-managed)");
+           (Adacovex.Ansi.Green
+              ("  => OK (alr + gnatprove available or dependency-managed)"));
       else
          Ada.Text_IO.Put_Line
            (Ada.Text_IO.Standard_Error,
-            "  => FAIL: gnatprove not detectable without a download"
-            & (if not S.Alr_Ok
-               then " (and alr is required but missing)"
-               else ""));
+            Adacovex.Ansi.Red
+              ("  => FAIL: gnatprove not detectable without a download"
+               & (if not S.Alr_Ok
+                  then " (and alr is required but missing)"
+                  else "")));
       end if;
    end Run_Status;
 
@@ -1671,7 +1755,10 @@ package body Adacovex.Prove is
    end Status_Json_Escape;
 
    procedure Export_Status
-     (Target_Dir : String; Out_Path : String; Success : out Boolean)
+     (Target_Dir : String;
+      Out_Path   : String;
+      TZ_Spec    : String;
+      Success    : out Boolean)
    is
       S         : Status_Data;
       use Ada.Strings.Unbounded;
@@ -1708,11 +1795,27 @@ package body Adacovex.Prove is
          Put (Q & K & Q & ":" & (if B then "true" else "false"));
       end Field_Bool;
    begin
-      Gather_Status (Target_Dir, S);
+      Gather_Status (Target_Dir, TZ_Spec, S);
       Put ("{");
       Field ("version", Adacovex.Version);
       Put (",");
       Field ("target", S.Target (1 .. S.Target_Len));
+      Put (",");
+      Field
+        ("timezone",
+         (if S.Time_Zone.Display_Len > 0
+          then S.Time_Zone.Display (1 .. S.Time_Zone.Display_Len)
+          else "UTC"));
+      Put (",");
+      Field ("date_time", Adacovex.Timezones.Now_Text (S.Time_Zone));
+      Put (",");
+      Put
+        (Q
+         & "dated_changelogs"
+         & Q
+         & ":"
+         & Natural'Image
+           (S.Dated_Changelogs) (2 .. Natural'Image (S.Dated_Changelogs)'Last));
       Put (",");
       if S.Alr_Len > 0 then
          Field ("alire", S.Alr (1 .. S.Alr_Len));
@@ -1778,7 +1881,9 @@ package body Adacovex.Prove is
       end if;
    end Export_Status;
 
-   procedure Run_Status_Metrics (Target_Dir : String; Success : out Boolean) is
+   procedure Run_Status_Metrics
+     (Target_Dir : String; TZ_Spec : String; Success : out Boolean)
+   is
       S         : Status_Data;
       VCS_Names : constant array (1 .. 6) of String (1 .. 12) :=
         ("git" & 9 * " ",
@@ -1789,9 +1894,20 @@ package body Adacovex.Prove is
          "mandb" & 7 * " ");
       VCS_Lens  : constant array (1 .. 6) of Natural := (3, 2, 3, 6, 2, 5);
    begin
-      Gather_Status (Target_Dir, S);
+      Gather_Status (Target_Dir, TZ_Spec, S);
       Ada.Text_IO.Put_Line ("version=" & Adacovex.Version);
       Ada.Text_IO.Put_Line ("target=" & S.Target (1 .. S.Target_Len));
+      Ada.Text_IO.Put_Line
+        ("timezone="
+         & (if S.Time_Zone.Display_Len > 0
+            then S.Time_Zone.Display (1 .. S.Time_Zone.Display_Len)
+            else "UTC"));
+      Ada.Text_IO.Put_Line
+        ("date_time=" & Adacovex.Timezones.Now_Text (S.Time_Zone));
+      Ada.Text_IO.Put_Line
+        ("dated_changelogs="
+         & Natural'Image
+           (S.Dated_Changelogs) (2 .. Natural'Image (S.Dated_Changelogs)'Last));
       Ada.Text_IO.Put_Line
         ("alire="
          & (if S.Alr_Len > 0 then S.Alr (1 .. S.Alr_Len) else "missing"));

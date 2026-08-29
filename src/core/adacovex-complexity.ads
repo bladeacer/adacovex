@@ -58,10 +58,14 @@ package Adacovex.Complexity is
       Violations : Violation_Vectors.Vector;
    end record;
 
-   --  Scan Target_Dir for Ada source files.  Return per-file and per-subprogram
-   --  cyclomatic complexity metrics.
-   --  @brief Walk Target_Dir and compute complexity for every .ads/.adb file.
-   function Analyze_Project (Target_Dir : String) return Complexity_Result;
+   --  Scan Target_Dir for source files across supported languages.  Return
+   --  per-file and per-subprogram cyclomatic complexity metrics.  Excludes is
+   --  a comma-separated list of file extensions to skip (no leading dots),
+   --  for example "md,rst".  Per-subprogram analysis is Ada-specific; the
+   --  other languages contribute file-level LOC and decision counts.
+   --  @brief Walk Target_Dir and compute complexity for every source file.
+   function Analyze_Project
+     (Target_Dir : String; Excludes : String := "") return Complexity_Result;
 
    --  Evaluate Result against the supplied thresholds.  Return the list of
    --  violations.  The list is empty when every gate passes.

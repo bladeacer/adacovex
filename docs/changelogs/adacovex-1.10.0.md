@@ -154,15 +154,9 @@ Total categories: 10 (was 9).
 
 ## Proof Results
 
-Platinum, 401/401 VCs proved across 44 analysed units (was 343 at 1.9.0). The
-compliance-standard layer (`Compliance_Standard`, `To_Standard`,
-`Standard_Level_Name`, `Standard_Slug`, `To_ASIL`, `To_Class`) and the SBOM
-`Level_Property` / `All_Standards_Property` helpers added 58 SPARK VCs, all
-discharged. The `prove` subcommand's
-default proof budget was raised from `--steps=5000` to `--steps=10000` because
-5000 sat on the solver's non-determinism boundary for the enlarged unit; an
-explicit `--steps=...` still overrides it. Changed scanner files remain
-non-SPARK (`Adacovex.Parsers.Source`).
+Platinum, 401/401 VCs proved across 44 analysed units (was 343 at 1.9.0). The compliance-standard layer (`Compliance_Standard`, `To_Standard`, `Standard_Level_Name`, `Standard_Slug`, `To_ASIL`, `To_Class`) and the SBOM `Level_Property` / `All_Standards_Property` helpers added 58 SPARK VCs, all discharged. The `prove` subcommand's default proof budget was raised from `--steps=5000` to `--steps=10000` because 5000 sat on the solver's non-determinism boundary for the enlarged unit; an explicit `--steps=...` still overrides it. Changed scanner files remain non-SPARK (`Adacovex.
+
+Parsers. Source`).
 
 ## Traceability
 

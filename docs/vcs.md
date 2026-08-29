@@ -39,7 +39,9 @@ For colocated git+jj repos, git wins (exact interop). All snapshots land in `/tm
 
 These notes are informational only. The assessment still runs and gates still apply on every supported VCS.
 
-`adacovex status` reports the VCS command-line tools on `$PATH`. These tools are git, mercurial/`hg`, subversion/`svn`, fossil, jj, and `mandb`. It reports the VCS detected for the target repository. It prints a note when the target's VCS tool is missing. See [Platforms](platforms.md#status-subcommand).
+`adacovex status` reports the VCS command-line tools on `$PATH`. These tools are git, mercurial/`hg`, subversion/`svn`, fossil, jj, and `mandb`. It reports the VCS detected for the target repository. It prints a note when the target's VCS tool is missing.
+
+See [Platforms](platforms.md#status-subcommand).
 
 ## `--compare-base=REF`
 
@@ -51,7 +53,9 @@ Exit `0` only if there are no regressions and the current DAL is Achieved. Other
 
 ## `--coverage-delta=REF`
 
-Lightweight docstring-coverage gate for PR-style CI checks. It scans sources, patches, and computes docstring metrics on a base revision and the current tree. It does not use GNATprove, tests, or DAL. Thus it works when the base does not commit build artifacts. It prints a compact coverage table and a machine-parseable `coverage_delta:` line. Then it cleans up the snapshot.
+Lightweight docstring-coverage gate for PR-style CI checks. It scans sources, patches, and computes docstring metrics on a base revision and the current tree. It does not use GNATprove, tests, or DAL. Thus it works when the base does not commit build artifacts.
+
+It prints a compact coverage table and a machine-parseable `coverage_delta:` line. Then it cleans up the snapshot.
 
 Exit `0` if the current docstring coverage is `>=` the base. Exit `0` also if the base has no sources. Exit `1` if coverage regressed. This mode is mutually exclusive with `--compare-base`.
 

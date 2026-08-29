@@ -7,12 +7,9 @@ machine-generated code.
 
 ## AI Assistance Disclosure
 
-AI tools were used during development for boilerplate generation, contract
-drafting, and docstring formatting. This is stated plainly rather than hidden.
-The project's own dogfood target is a zero-dependency, fully documented,
-SPARK-proven Ada codebase. AI-generated contributions must meet the same bar as
-hand-written ones. That bar is 100% docstring coverage, Platinum proof, zero
-justified VCs, and the full `make check` gate before they count.
+AI tools were used during development for boilerplate generation, contract drafting, and docstring formatting. This is stated plainly rather than hidden. The project's own dogfood target is a zero-dependency, fully documented, SPARK-proven Ada codebase. AI-generated contributions must meet the same bar as hand-written ones.
+
+That bar is 100% docstring coverage, Platinum proof, zero justified VCs, and the full `make check` gate before they count.
 
 ## Why trust this code?
 
@@ -58,12 +55,9 @@ on the tree must read it first. It must follow it. In particular:
   and the descriptions all come from `tools/*.py` scripts. Their `--check`
   modes verify they did not drift.
 
-The doc-sync tools (`tools/update-test-count.py` and
-`tools/update-proof-status.py`) derive their file set from the tree itself
-(`tools/live_files.py`). They do not use a hardcoded list. A stale metric
-cannot survive anywhere. Generated outputs and historical records (past-release
-changelogs, past proof ledgers) are excluded. They keep their release-time
-numbers.
+The doc-sync tools (`tools/update-test-count.py` and `tools/update-proof-status.py`) derive their file set from the tree itself (`tools/live_files.py`). They do not use a hardcoded list. A stale metric cannot survive anywhere. Generated outputs and historical records (past-release changelogs, past proof ledgers) are excluded.
+
+They keep their release-time numbers.
 
 ## Verifying claims instead of trusting them
 
@@ -93,26 +87,15 @@ make check                   # full gate: static checks, build, test, prove,
                              # doc, sbom, then tree-wide count-sync checks
 ```
 
-`make check` runs the cheap static gates first (ascii, spark-off, changelog,
-version source, doc links). A formatting or sync problem fails before the
-expensive build and SPARK proof. Then it verifies the count-sync checks
-(`test-count --check`, `proof-status --check`, `description --check`). A stale
-metric anywhere in the tree fails loudly. Regenerated files that are
-byte-identical when nothing changed (the version constant, the dashboard
-template) are left untouched. `git status` stays quiet.
+`make check` runs the cheap static gates first (ascii, spark-off, changelog, version source, doc links). A formatting or sync problem fails before the expensive build and SPARK proof. Then it verifies the count-sync checks (`test-count --check`, `proof-status --check`, `description --check`). A stale metric anywhere in the tree fails loudly.
+
+Regenerated files that are byte-identical when nothing changed (the version constant, the dashboard template) are left untouched. `git status` stays quiet.
 
 ## The served dashboard as a trust surface
 
-`adacovex --serve` renders a live HTML dashboard at `/`. It also renders a JSON
-API at `/api/metrics` and SVG badges at `/badge/*.svg`. The same numbers that
-an agent or reviewer quotes from the CLI are visible and machine-checkable in
-the browser. The dashboard shell is a real file
-(`resources/dashboard.html`). It is bundled at build time by
-`tools/gen-dashboard.py`. Page chrome is a plain HTML edit with no Ada
-knowledge required. The dynamic cards are injected by the Ada renderer. The
-theme resolution chain (query param, then explicit `--theme`, then saved
-`localStorage`, then system preference) and the localStorage-only persistence
-are documented in [dashboard.md](dashboard.md).
+`adacovex --serve` renders a live HTML dashboard at `/`. It also renders a JSON API at `/api/metrics` and SVG badges at `/badge/*.svg`. The same numbers that an agent or reviewer quotes from the CLI are visible and machine-checkable in the browser. The dashboard shell is a real file (`resources/dashboard.html`).
+
+It is bundled at build time by `tools/gen-dashboard.py`. Page chrome is a plain HTML edit with no Ada knowledge required. The dynamic cards are injected by the Ada renderer. The theme resolution chain (query param, then explicit `--theme`, then saved `localStorage`, then system preference) and the localStorage-only persistence are documented in [dashboard.md](dashboard.md).
 
 ## Honest limits
 

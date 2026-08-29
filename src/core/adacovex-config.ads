@@ -32,6 +32,27 @@ package Adacovex.Config is
       Serve_Mode        : Boolean := False;
       Port              : Positive := 8080;
 
+      --  Number of HTTP server task-pool workers for --serve (default: 4).
+      --  --serve-workers=N raises or lowers how many concurrent requests the
+      --  dashboard server handles.  Only relevant with --serve.
+      Serve_Workers    : Positive := 4;
+      Serve_Workers_Set : Boolean := False;
+
+      --  Display timezone override (--tz / --timezone).  Empty means the
+      --  operating system's timezone applies.  Accepted forms: a well-known
+      --  IANA name ("Asia/Singapore") or a fixed UTC/GMT offset
+      --  ("UTC+8", "GMT+8", "UTC+08", "GMT+08", "UTC+08:30").  See
+      --  Adacovex.Timezones.  Consumed by `status` and the local
+      --  date/time reports.
+      Time_Zone      : String (1 .. Types.Max_Filename);
+      Time_Zone_Len  : Natural := 0;
+
+      --  Comma-separated file extensions to skip in `complexity` mode
+      --  (--excludes=md,rst).  Only valid with the complexity subcommand.
+      Complexity_Excludes : String (1 .. Types.Max_Filename);
+      Excludes_Len        : Natural := 0;
+
+
       --  Dashboard colour theme for --serve (system/light/dark).  "system"
       --  follows the browser's prefers-color-scheme.  "light" and "dark"
       --  force a theme.  Relevant only with --serve.
@@ -235,14 +256,24 @@ package Adacovex.Config is
       --  @param Args  Argument strings in command-line order.
       --  @param Cfg  Config record to populate (fields are overwritten in
       --              argument order).
-      procedure Parse_Args
-        (Args : Arg_Vectors.Vector; Cfg : in out CLI_Config);
+       procedure Parse_Args
+         (Args : Arg_Vectors.Vector; Cfg : in out CLI_Config);
 
-      --  Read the real Ada.Command_Line into an argument vector and delegate
-      --  to Parse_Args.  Kept here (non-SPARK).  Parse_CLI's body stays free
-      --  of access-type objects.
-      --  @param Cfg  Config record to populate from the command line.
-      procedure Parse_Command_Line (Cfg : out CLI_Config);
-   end Testing;
+       --  Parse an argument vector and apply every cross-flag validation
+       --  (subcommand gating, --excludes/--serve-workers/--tz rules, derived
+       --  defaults).  This is the testable core of Parse_CLI: the command-line
+       --  reader builds the vector and delegates here, and the unit tests call
+       --  it directly without touching Ada.Command_Line.
+       --  @param Args  Argument strings in command-line order.
+       --  @return Fully populated CLI_Config after validation.
+       function Parse_All
+         (Args : Arg_Vectors.Vector) return CLI_Config;
+
+       --  Read the real Ada.Command_Line into an argument vector and delegate
+       --  to Parse_Args.  Kept here (non-SPARK).  Parse_CLI's body stays free
+       --  of access-type objects.
+       --  @param Cfg  Config record to populate from the command line.
+       procedure Parse_Command_Line (Cfg : out CLI_Config);
+    end Testing;
 
 end Adacovex.Config;

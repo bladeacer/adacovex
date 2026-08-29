@@ -97,15 +97,9 @@ encoded as `attributionTexts` in SPDX.
 
 ## Determinism
 
-The `metadata.timestamp` / `creationInfo.created` field honors the
-`SOURCE_DATE_EPOCH` environment variable (reproducible-builds convention).
-When set to a Unix epoch second count, the timestamp is derived from it in
-UTC via pure integer math. As a result, SBOM output is byte-for-byte
-deterministic across runs and machines. To tie it to a specific git commit,
-run `export SOURCE_DATE_EPOCH=$(git -C <target> log -1 --format=%ct)` before
-adacovex. The bundled `make` targets (`run-self`, `run-ada-crdt`, `prove`,
-`release`, and Ada_CRDT's `prove`/`badges`) already set it from the target's
-git `HEAD` commit time.
+The `metadata.timestamp` / `creationInfo.created` field honors the `SOURCE_DATE_EPOCH` environment variable (reproducible-builds convention). When set to a Unix epoch second count, the timestamp is derived from it in UTC via pure integer math. As a result, SBOM output is byte-for-byte deterministic across runs and machines. To tie it to a specific git commit, run `export SOURCE_DATE_EPOCH=$(git -C <target> log -1 --format=%ct)` before adacovex.
+
+The bundled `make` targets (`run-self`, `run-ada-crdt`, `prove`, `release`, and Ada_CRDT's `prove`/`badges`) already set it from the target's git `HEAD` commit time.
 
 ## Exclusivity and ordering
 

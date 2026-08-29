@@ -8,12 +8,9 @@ Version bumped 1.23.0 -> 1.24.0.
 
 ### C1: Complexity module docstrings and SPARK mode alignment
 
-The `Adacovex.Complexity` package now carries a package-level docstring and
-`@brief` tags on every public subprogram, and all body subprograms have
-docstrings.  The package-level `pragma SPARK_Mode (Off)` remains necessary
-because it instantiates the non-formal `Ada.Containers.Vectors`; the exception
-is now documented consistently across AGENTS.md, the Makefile, and the
-proof-status ledger.
+The `Adacovex. Complexity` package now carries a package-level docstring and `@brief` tags on every public subprogram, and all body subprograms have docstrings. The package-level `pragma SPARK_Mode (Off)` remains necessary because it instantiates the non-formal `Ada. Containers.
+
+Vectors`; the exception is now documented consistently across AGENTS.md, the Makefile, and the proof-status ledger.
 
 ### C2: Complexity gate CI provisions Alire before build
 
@@ -23,11 +20,9 @@ longer fails with `/bin/sh: alr: not found` on a fresh runner.
 
 ### C3: Temp directory and shell abstraction for non-Linux platforms
 
-Hardcoded `/tmp/` paths in `adacovex-cpus`, `adacovex-vcs`, `adacovex-prove`,
-`adacovex-renderers-man`, and `adacovex-parsers-manifest` are replaced by
-`Adacovex.CPUs.Get_Temp_Directory`, which honours `TMPDIR` / `TEMP` / `TMP`
-environment variables and falls back to `/tmp`.  The shell executable is
-similarly abstracted through `Adacovex.CPUs.Get_Shell_Command`.
+Hardcoded `/tmp/` paths in `adacovex-cpus`, `adacovex-vcs`, `adacovex-prove`, `adacovex-renderers-man`, and `adacovex-parsers-manifest` are replaced by `Adacovex. CPUs. Get_Temp_Directory`, which honours `TMPDIR` / `TEMP` / `TMP` environment variables and falls back to `/tmp`. The shell executable is similarly abstracted through `Adacovex.
+
+CPUs. Get_Shell_Command`.
 
 ### C4: GNAT v16.1.0 toolchain rollout
 

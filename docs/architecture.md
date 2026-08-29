@@ -2,15 +2,9 @@
 
 ## Dependency Management: Alire
 
-adacovex uses [Alire](https://alire.ada.dev/) as its packaging and delivery
-mechanism. The publishing manifest `alire.toml` declares **zero dependencies**.
-It declares no libraries beyond the GNAT runtime. It declares no tool
-dependencies. In particular `gnatprove` is *not* a declared dependency.
-adacovex analyses `gnatprove.out` files produced externally. The `prove`
-subcommand resolves a gnatprove executable at run time (per-project manifest,
-`$PATH`, cached toolchain, or download). Development-only tools (`gnatprove`,
-`gnatdoc_bin`, `gnatformat_bin`) are declared in `alire-dev.toml`, which is
-never published to the Alire community index.
+adacovex uses [Alire](https://alire.ada.dev/) as its packaging and delivery mechanism. The publishing manifest `alire.toml` declares **zero dependencies**. It declares no libraries beyond the GNAT runtime. It declares no tool dependencies.
+
+In particular `gnatprove` is *not* a declared dependency. adacovex analyses `gnatprove.out` files produced externally. The `prove` subcommand resolves a gnatprove executable at run time (per-project manifest, `$PATH`, cached toolchain, or download). Development-only tools (`gnatprove`, `gnatdoc_bin`, `gnatformat_bin`) are declared in `alire-dev.toml`, which is never published to the Alire community index.
 
 ### Manifest distinction (`alire.toml` vs `alire-dev.toml`)
 
@@ -71,22 +65,11 @@ dev-only tool declarations never leak into dependency graphs or SBOMs.
 
 ### System-tool dev dependencies (SBOM)
 
-Beyond the Alire graph, `Discover_System_Dev_Deps` adds the system binaries a
-project interacts with at development time (`python3`, `git`, `gnatprove`,
-`make`, and more) as `Scope_Dev` SBOM components. It scans the project's
-dev-facing files (Makefile variants, `.sh` / `.py` / `.gpr` / `.yml` /
-`.toml` / `.ads` / `.adb`) for a curated toolchain list and registers every
-referenced tool that is actually installed on `$PATH` under a
-`pkg:generic/<tool>` purl. Tools referenced nowhere in the project, or
-referenced but not installed, are skipped. A Makefile at the project root
-implies `make`. The scan runs after the cached manifest graph is resolved
-(so cache hits and misses agree). Each registered tool's version is probed
-by running `--version` (or a tool-specific subcommand such as fossil's
-`version`) and extracting the version token, so the SBOM records the
-installed version. A probe that fails or prints no digit token leaves the
-version empty. The source file declaring the `System_Tools` table is skipped
-by the scan. Otherwise, every installed tool on the list can be registered
-as a self-reference.
+Beyond the Alire graph, `Discover_System_Dev_Deps` adds the system binaries a project interacts with at development time (`python3`, `git`, `gnatprove`, `make`, and more) as `Scope_Dev` SBOM components. It scans the project's dev-facing files (Makefile variants, `.sh` / `.py` / `.gpr` / `.yml` / `.toml` / `.ads` / `.adb`) for a curated toolchain list and registers every referenced tool that is actually installed on `$PATH` under a `pkg:generic/<tool>` purl. Tools referenced nowhere in the project, or referenced but not installed, are skipped. A Makefile at the project root implies `make`.
+
+The scan runs after the cached manifest graph is resolved (so cache hits and misses agree). Each registered tool's version is probed by running `--version` (or a tool-specific subcommand such as fossil's `version`) and extracting the version token, so the SBOM records the installed version. A probe that fails or prints no digit token leaves the version empty. The source file declaring the `System_Tools` table is skipped by the scan.
+
+Otherwise, every installed tool on the list can be registered as a self-reference.
 
 ### Vendored components and test-labelled dependencies (SBOM)
 
@@ -143,12 +126,9 @@ adacovex follows the Unix philosophy of doing one thing well:
 - **Composable tools**: The `prove` subcommand runs GNATprove and then falls through to the standard assessment pipeline. The `sbom` subcommand generates a proof-aware SBOM independently.
 - **Exit codes**: `0` for success (DAL achieved), `1` for compliance failure. This enables straightforward CI integration.
 - **Minimal user code**: users write as little code as possible while getting
-  maximum value. The tool accepts third-party and generated code as it is. It
-  recognises common docstring conventions (Ada `--  @param`, Google
-  `Args:`/`Returns:`, Sphinx `:param:`/`:returns:`). It recognises common
-  test-result formats (TAP, Automake, Surefire, Unity). It lowers foreign type
-  names (`int32_t`, `size_t`, and more) onto bounded Ada types. Nothing needs
-  to be rewritten to be assessed.
+maximum value. The tool accepts third-party and generated code as it is. It recognises common docstring conventions (Ada `--  @param`, Google `Args:`/`Returns:`, Sphinx `:param:`/`:returns:`). It recognises common test-result formats (TAP, Automake, Surefire, Unity).
+
+It lowers foreign type names (`int32_t`, `size_t`, and more) onto bounded Ada types. Nothing needs to be rewritten to be assessed.
 
 ## Zero-Library-Dependency Design
 
@@ -163,40 +143,24 @@ hosts while using proportionally smaller limits on narrower machines. The
 semantic limits (`Max_Id_Str`, `Max_Desc_Str`, `Max_Filename`) are not
 storage-size dependent and remain fixed.
 
-`Max_Line` is deliberately generous (256 KiB on 64-bit) so that single-line
-declarations from heavily code-generated projects parse cleanly. When a
-physical line *does* exceed the buffer, adacovex **never truncates it and
-then processes it**. Truncation can silently produce a partial (and wrong)
-result. Instead the parser drains the remainder, reports the file and line to
-standard error, and fails that parse explicitly. The source scanner counts
-the skipped file in `Skipped_Ct`, which forces the DAL assessment to
-`Unmet` and the exit code to `1` (no compliance claim can be made for
-unread code). The same explicit-failure contract applies to every parser:
-HLR/LLR markdown, GNATprove output (text and JSON), test results, and
-Alire manifest / lockfile / GPR dependency graphs. An exact buffer-length
-line is not an overflow (it parses normally), and paths exceeding
-`Max_Path` are likewise reported and skipped rather than crashing.
+`Max_Line` is deliberately generous (256 KiB on 64-bit) so that single-line declarations from heavily code-generated projects parse cleanly. When a physical line *does* exceed the buffer, adacovex **never truncates it and then processes it**. Truncation can silently produce a partial (and wrong) result. Instead the parser drains the remainder, reports the file and line to standard error, and fails that parse explicitly.
+
+The source scanner counts the skipped file in `Skipped_Ct`, which forces the DAL assessment to `Unmet` and the exit code to `1` (no compliance claim can be made for unread code). The same explicit-failure contract applies to every parser: HLR/LLR markdown, GNATprove output (text and JSON), test results, and Alire manifest / lockfile / GPR dependency graphs. An exact buffer-length line is not an overflow (it parses normally), and paths exceeding `Max_Path` are likewise reported and skipped rather than crashing.
 
 **Overflow contract (two tiers).** Path and line buffers *fail loudly*. An
-overlong physical line is drained and reported (`line exceeds Max_Line
-buffer`). The file is not parsed. `Skipped_Ct` increments. DAL becomes
-`Unmet`. An overlong path is reported and the file/subtree is skipped. No
-partial results ever flow downstream. Semantic text fields (subprogram names,
-HLR/LLR IDs, descriptions, docstring tag names/values, CLI strings) are
+overlong physical line is drained and reported (`line exceeds Max_Line buffer`). The file is not parsed. `Skipped_Ct` increments. DAL becomes `Unmet`. An overlong path is reported and the file/subtree is skipped.
+
+No partial results ever flow downstream. Semantic text fields (subprogram names, HLR/LLR IDs, descriptions, docstring tag names/values, CLI strings) are
+
 *clamped* to their fixed buffer with the length field (`Name_Len`, `Id_Len`,
 `D_Len`, ...) recording the recorded prefix, so adversarial or generated
 input can never raise `Constraint_Error`. Clamping keeps the scan correct.
 The full token is still consumed so following tokens are not misparsed.
 
 **Why no chunking / LEB128.** adacovex audits in memory. Counts (packages,
-subprograms, HLR tags, tests, SBOM components) are unbounded vectors. Each
-scanned unit is processed line-at-a-time into fixed per-item buffers. A single
-Ada declaration does not admit streaming/chunked parsing. Truncating a
-declaration is worse than a loud failure. Chunking can gain nothing.
-LEB128 (variable-length integer encoding) is a serialization concern and does
-not apply to an in-memory CLI audit. The design therefore scales to
-arbitrarily large codebases by dynamic allocation, bounded per-item buffers,
-and explicit overflow handling, without streaming encodings.
+subprograms, HLR tags, tests, SBOM components) are unbounded vectors. Each scanned unit is processed line-at-a-time into fixed per-item buffers. A single Ada declaration does not admit streaming/chunked parsing. Truncating a declaration is worse than a loud failure.
+
+Chunking can gain nothing. LEB128 (variable-length integer encoding) is a serialization concern and does not apply to an in-memory CLI audit. The design therefore scales to arbitrarily large codebases by dynamic allocation, bounded per-item buffers, and explicit overflow handling, without streaming encodings.
 
 The bounded-buffer constants are tabulated in
 `docs/api-docs/adacovex-types.md` (`Max_Line`, `Max_Path`, `Max_Desc_Str`,
@@ -331,16 +295,9 @@ directory is always excluded from source scanning.
 
 ### Proof patches: SPARK contracts over vendored dependencies
 
-The same `.adacovex/patches/<relative-path>` file can carry **SPARK proof
-aspects** in addition to docstrings, so vendored dependencies participate in
-the SPARK proof without modifying their sources. A patch file that includes
-any of `SPARK_Mode`, `Pre =>`, `Post =>`, or `Global =>` (detected by
-`Adacovex.Prove_Patch.Has_Proof`) is a *proof patch*. A patch with only
-docstrings remains a docstring overlay and never engages the proof
-machinery. This section is the design. For the user-facing guide -- how
-proving works, writing SPARK contracts, and the `.ads`/`.adb` patch files
-with worked examples and pitfalls -- see
-[Proving and writing proofs](proving.md).
+The same `.adacovex/patches/<relative-path>` file can carry **SPARK proof aspects** in addition to docstrings, so vendored dependencies participate in the SPARK proof without modifying their sources. A patch file that includes any of `SPARK_Mode`, `Pre =>`, `Post =>`, or `Global =>` (detected by `Adacovex. Prove_Patch. Has_Proof`) is a *proof patch*.
+
+A patch with only docstrings remains a docstring overlay and never engages the proof machinery. This section is the design. For the user-facing guide -- how proving works, writing SPARK contracts, and the `.ads`/`.adb` patch files with worked examples and pitfalls -- see [Proving and writing proofs](proving.md).
 
 ```ada
 package VT100 with SPARK_Mode => On is
@@ -360,18 +317,10 @@ The `prove` subcommand merges proof patches before running gnatprove:
    `.adb` patch files). A target with no proof patches is proved against
    its own tree exactly as before.
 2. `Build_Patched_Copy` copies the target tree (excluding `.git`, `obj`,
-   and `.adacovex`) into `<target>/obj/adacovex-proof/` and overwrites each
-   proof-patched source with its merged form -- package-level aspects
-   spliced onto the package declaration line (for a `package body ... is`
-   declaration too), and each aspect-carrying subprogram declaration
-   replaced by the patch's declaration block. The merge matches on name
-   **and** normalised parameter profile (`Param_Profile`), so an overloaded
-   subprogram patches its exact signature and never a same-named sibling.
-   The default `in` mode is equivalent to a bare mode. `in out` and
-   `out` are distinct. A spec declaration terminates at its `;`, a body
-   declaration at its `is` -- so a patched body declaration is replaced
-   without touching the body proper. The original vendored sources are
-   never touched.
+and `.adacovex`) into `<target>/obj/adacovex-proof/` and overwrites each proof-patched source with its merged form -- package-level aspects spliced onto the package declaration line (for a `package body ... is` declaration too), and each aspect-carrying subprogram declaration replaced by the patch's declaration block. The merge matches on name **and** normalised parameter profile (`Param_Profile`), so an overloaded subprogram patches its exact signature and never a same-named sibling. The default `in` mode is equivalent to a bare mode. `in out` and `out` are distinct. A spec declaration terminates at its `;`, a body declaration at its `is` -- so a patched body declaration is replaced without touching the body proper.
+
+The original vendored sources are never touched.
+
 3. gnatprove runs against the copy's root project (`<copy>/<basename>.gpr`)
    and the resulting `gnatprove.out` is copied back to
    `<target>/obj/gnatprove/gnatprove.out` for the assessment pipeline. The
@@ -448,17 +397,9 @@ adacovex supports multiple output formats:
 
 ## Result caching
 
-adacovex persists parsed analysis results on disk so unchanged inputs are not
-re-scanned, re-parsed, or re-proved. Source scans, GNATprove summaries, test
-summaries, HLR.md/LLR.md requirement parses, the resolved SBOM dependency
-graph, and the differential-mode scans are each keyed by a namespace prefix
-plus the SHA-256 of the artifact(s) they were derived from. For example:
-`"scan:" | "prove:" | "tests:" | "hlr:" | "llr:" | "graph:" + digest`.
-Re-parsing a byte-identical artifact yields a cache hit regardless of the
-target directory or command line. An unchanged manifest/lockfile/.gpr set
-serves the cached dependency graph. Unchanged HLR.md/LLR.md serve the cached
-requirement parses. `--compare-base` / `--coverage-delta` reuse cached
-source scans for the current tree.
+adacovex persists parsed analysis results on disk so unchanged inputs are not re-scanned, re-parsed, or re-proved. Source scans, GNATprove summaries, test summaries, HLR.md/LLR.md requirement parses, the resolved SBOM dependency graph, and the differential-mode scans are each keyed by a namespace prefix plus the SHA-256 of the artifact(s) they were derived from. For example: `"scan:" | "prove:" | "tests:" | "hlr:" | "llr:" | "graph:" + digest`. Re-parsing a byte-identical artifact yields a cache hit regardless of the target directory or command line.
+
+An unchanged manifest/lockfile/.gpr set serves the cached dependency graph. Unchanged HLR.md/LLR.md serve the cached requirement parses. `--compare-base` / `--coverage-delta` reuse cached source scans for the current tree.
 
 - **Schema namespace**: the default cache root is
   `~/.adacovex/cache/<version>/<Cache_Schema>`. `Cache_Schema` (in
@@ -526,26 +467,17 @@ adacovex follows one version across every delivery channel, and each channel is
 version-locked to the same release:
 
 - **Single source of truth**: the `version` field in `alire.toml` /
-   `alire-dev.toml` is the single source, resolved by installation method.
-   `tools/gen-version.py` regenerates `src/adacovex_version_info.ads` at build
-   time (and `make bump-version`). It reads the first available of
-   `ADACOVEX_VERSION` (release builds), `alire-dev.toml` (source checkouts),
-   or `alire.toml` (dependency-managed installs). For dependency-managed
-   installs, the published crate builds from its release manifest, so the toml
-   associated with the covex binary for dependency management carries the
-   version. `Adacovex.Version` in `src/adacovex.ads` re-exports the version.
-   As a result, `--version`, the man page, the SBOM tool version, and the
-   result-cache namespace all derive from the manifest and can never drift.
-   Release builds bundle the release tag instead via the
-   `ADACOVEX_VERSION` environment variable (release workflow / `make
-   release`).
+`alire-dev.toml` is the single source, resolved by installation method. `tools/gen-version.py` regenerates `src/adacovex_version_info.ads` at build time (and `make bump-version`). It reads the first available of `ADACOVEX_VERSION` (release builds), `alire-dev.toml` (source checkouts), or `alire.toml` (dependency-managed installs). For dependency-managed installs, the published crate builds from its release manifest, so the toml associated with the covex binary for dependency management carries the version. `Adacovex. Version` in `src/adacovex.ads` re-exports the version.
+
+As a result, `--version`, the man page, the SBOM tool version, and the result-cache namespace all derive from the manifest and can never drift. Release builds bundle the release tag instead via the `ADACOVEX_VERSION` environment variable (release workflow / `make release`).
+
 - **CI is tied to the release version**: the GitHub Actions composite action
-  (`action.yml`) is version-matched to the adacovex binary. The release
-  workflow bundles `adacovex-vX.Y.Z.tar.gz` and `adacovex-action-vX.Y.Z.tar.gz`
-  for every `vX.Y.Z` tag, and the action downloads the binary for the tag it is
-  referenced by (`@vX.Y.Z` runs that exact version). Floating tags
-  (`vMAJOR`, `vMAJOR.MINOR`, `latest`) are force-pushed at release time so
-  `@latest` / `@v1` / `@v1.3` always resolve to the newest matching release.
+(`action.yml`) is version-matched to the adacovex binary. The release workflow bundles `adacovex-vX. Y. Z.tar.gz` and `adacovex-action-vX.
+
+Y. Z.tar.gz` for every `vX. Y. Z` tag, and the action downloads the binary for the tag it is referenced by (`@vX.
+
+Y. Z` runs that exact version). Floating tags (`vMAJOR`, `vMAJOR. MINOR`, `latest`) are force-pushed at release time so `@latest` / `@v1` / `@v1.3` always resolve to the newest matching release.
+
 - **CI platform/compiler**: CI validates the self-assessment (build, prove,
   tests) with the pinned `gnat-version` on `ubuntu-latest`, so the CI-proven
   combination is the released binary built against that exact toolchain.

@@ -181,9 +181,12 @@ package Adacovex.Prove is
    --  only option.  It also prints the release note.  The CI release binary is
    --  Linux x86-64 only for now.
    --  @param Target_Dir  Project root directory.
+   --  @param TZ_Spec  Display timezone override (--tz / --timezone), or ""
+   --  for the operating system's timezone.
    --  @param Success  True when alr and gnatprove are available or
    --  dependency-managed.
-   procedure Run_Status (Target_Dir : String; Success : out Boolean);
+   procedure Run_Status
+     (Target_Dir : String; TZ_Spec : String; Success : out Boolean);
 
    --  Write the `adacovex status` report as machine-readable JSON for the
    --  `status --export[=PATH]` mode.  The JSON holds the version, the target,
@@ -195,17 +198,25 @@ package Adacovex.Prove is
    --  overwritten.
    --  @param Target_Dir  Project root directory.
    --  @param Out_Path  Output file path, or "" for stdout.
+   --  @param TZ_Spec  Display timezone override (--tz / --timezone), or ""
+   --  for the operating system's timezone.
    --  @param Success  True when the report was gathered and written.
    procedure Export_Status
-     (Target_Dir : String; Out_Path : String; Success : out Boolean);
+     (Target_Dir : String;
+      Out_Path   : String;
+      TZ_Spec    : String;
+      Success    : out Boolean);
 
    --  Print the `adacovex status --metrics` report.  It shows the same data
    --  as Run_Status.  It uses compact key=value lines (one per line, keys
    --  lowercase with - separators).  Shell scripts and CI can then consume the
    --  report without parsing prose.  It never deploys or downloads anything.
    --  @param Target_Dir  Project root directory.
+   --  @param TZ_Spec  Display timezone override (--tz / --timezone), or ""
+   --  for the operating system's timezone.
    --  @param Success  True when alr and gnatprove are available or
    --  dependency-managed (same meaning as Run_Status).
-   procedure Run_Status_Metrics (Target_Dir : String; Success : out Boolean);
+   procedure Run_Status_Metrics
+     (Target_Dir : String; TZ_Spec : String; Success : out Boolean);
 
 end Adacovex.Prove;

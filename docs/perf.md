@@ -89,17 +89,9 @@ still holds.
 
 ### Stamp fast-path hashing (1.28.0)
 
-The warm-path profile showed GNAT.SHA256 at ~48% of CPU: every `.ads` file
-was fully re-read and re-hashed on every run just to compute its cache key,
-even though the content was unchanged. `Hash_File` now keeps an in-memory
-map of path -> (size, digest). A file whose size still matches the recorded
-size serves the recorded digest without opening or reading the file. The
-fast path is used only within one process (the map is not persisted), so a
-content change is always caught (the size differs or the map is empty). The
-same fast path serves the SBOM tree-walk hashing, which re-hashes files the
-source scan already touched in the same run (the two hash passes collapse
-into one real read + one size check). Warm user time dropped roughly a
-third.
+The warm-path profile showed GNAT. SHA256 at ~48% of CPU: every `.ads` file was fully re-read and re-hashed on every run just to compute its cache key, even though the content was unchanged. `Hash_File` now keeps an in-memory map of path -> (size, digest). A file whose size still matches the recorded size serves the recorded digest without opening or reading the file. The fast path is used only within one process (the map is not persisted), so a content change is always caught (the size differs or the map is empty).
+
+The same fast path serves the SBOM tree-walk hashing, which re-hashes files the source scan already touched in the same run (the two hash passes collapse into one real read + one size check). Warm user time dropped roughly a third.
 
 ### Stable probe store + probe results in the tools blob (1.28.0)
 
@@ -140,32 +132,21 @@ to ~545 ms, and reduced the warm-run syscall count from ~15k to ~12k.
 ### Probe cache
 
 *(Origin story.)* The SBOM builds a *dev-scope* dependency edge for every tool that the
-target's build references. The tool must be installed on `$PATH` (for
-example `gcc`, `alr`, `git`, `make`). The SBOM probes each tool with
-`<tool> <flag>` to capture its version. Each probe spawns a subprocess. The
-subprocess costs tens of milliseconds per referenced tool (`System: 42 ms ->
-9 ms`, ~150 ms end to end on an 11-tool toolchain).  Originally the
-probed versions were cached under `<cache-root>/probes/<tool>` with a
-7-day TTL.  That location meant a wiped result cache re-probed every tool
-on the next run -- which is why 1.28.0 moved the store and folded the
-probe results into the tools-set cache blob (see above).
+target's build references. The tool must be installed on `$PATH` (for example `gcc`, `alr`, `git`, `make`). The SBOM probes each tool with `<tool> <flag>` to capture its version. Each probe spawns a subprocess.
+
+The subprocess costs tens of milliseconds per referenced tool (`System: 42 ms -> 9 ms`, ~150 ms end to end on an 11-tool toolchain). Originally the probed versions were cached under `<cache-root>/probes/<tool>` with a 7-day TTL. That location meant a wiped result cache re-probed every tool on the next run -- which is why 1.28.0 moved the store and folded the probe results into the tools-set cache blob (see above).
 
 ## Binary size
 
-The debug-symbol-carrying build is ~9 MiB. Stripping (`strip bin/adacovex`)
-yields ~3.6 MiB (~60% smaller) without affecting behaviour. GNAT's default
-build keeps symbols for debugging (`gdb` works). Release artifacts are
-stripped. `make bench` always reports both. Regressions in code size are
-visible in the same command that reports timings. If the symbols ever come
-out, the binary size is the same and the page should say so.
+The debug-symbol-carrying build is ~9 MiB. Stripping (`strip bin/adacovex`) yields ~3.6 MiB (~60% smaller) without affecting behaviour. GNAT's default build keeps symbols for debugging (`gdb` works). Release artifacts are stripped. `make bench` always reports both.
+
+Regressions in code size are visible in the same command that reports timings. If the symbols ever come out, the binary size is the same and the page should say so.
 
 ## CI
 
-CI runs the self-assessment with result caching disabled where determinism
-matters (`--no-cache`-equivalent fresh dirs). The `make` gates are timed
-loosely. Timings are informational only. The `bench` target is not part of
-`make check`. It makes the gate machine-dependent. A slow CI runner must not
-fail a build. The target is run by hand before releases.
+CI runs the self-assessment with result caching disabled where determinism matters (`--no-cache`-equivalent fresh dirs). The `make` gates are timed loosely. Timings are informational only. The `bench` target is not part of `make check`.
+
+It makes the gate machine-dependent. A slow CI runner must not fail a build. The target is run by hand before releases.
 
 ## When the numbers regress
 

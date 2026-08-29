@@ -59,6 +59,8 @@ package Adacovex.Server.HTTP is
 
    type Server_State is record
       Port          : Positive := 8080;
+      --  HTTP server task-pool worker count (default 4; --serve-workers=N).
+      Workers       : Positive := 4;
       Doc_Metrics   : Types.Docstring_Metrics;
       Proof         : Types.Proof_Summary;
       Tests         : Types.Implementation.Test_Summary;

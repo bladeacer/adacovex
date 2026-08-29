@@ -52,6 +52,11 @@ def build() -> int:
     rc = run([sys.executable, "tools/gen-version.py"])
     if rc != 0:
         return rc
+    print("=== CSS 4px spacing gate ===")
+    rc = run([sys.executable, "tools/csslint.py", "--check"])
+    if rc != 0:
+        return rc
+
     print("=== Regenerating dashboard template ===")
     rc = run([sys.executable, "tools/gen-dashboard.py"])
     if rc != 0:

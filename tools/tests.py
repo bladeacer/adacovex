@@ -36,6 +36,8 @@ dev_cmd = importlib.import_module("dev-cmd")
 import release
 import run
 import versions
+import csslint
+para_split = importlib.import_module("para-split")
 
 GIT_ENV: dict = {
     "GIT_AUTHOR_NAME": "adacovex test",
@@ -328,6 +330,64 @@ class TestRun(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0)
         self.assertEqual(result.stdout.strip(), run.SELF_ASSESS_ARGS)
+
+
+class CssSpacingTests(unittest.TestCase):
+    """Pure-logic tests for tools/csslint.py (the 4px spacing gate)."""
+    def test_multiple_of_4(self) -> None:
+        self.assertEqual(csslint.multiple_of_4(0), 0)
+        self.assertEqual(csslint.multiple_of_4(1), 4)
+        self.assertEqual(csslint.multiple_of_4(4), 4)
+        self.assertEqual(csslint.multiple_of_4(6), 8)
+        self.assertEqual(csslint.multiple_of_4(18), 20)
+
+    def test_conform_value(self) -> None:
+        self.assertEqual(csslint.conform_value("0 0 6px"), "0 0 8px")
+        self.assertEqual(csslint.conform_value("4px 12px"), "4px 12px")
+        # Only px tokens change; the property name / units stay untouched.
+        self.assertEqual(csslint.conform_value("padding:8px 10px"),
+                         "padding:8px 12px")
+        self.assertEqual(csslint.conform_value("100%"), "100%")
+
+    def test_lint_ignores_border_px(self) -> None:
+        text = "a{border:1px solid #000;margin:0 0 6px;padding:8px 10px}"
+        bad = csslint.lint(text)
+        self.assertTrue(any(v == "0 0 6px" for v, _ in bad))
+        self.assertTrue(any(v == "8px 10px" for v, _ in bad))
+        # border is not a spacing property, so 1px is never flagged.
+        self.assertFalse(any(v == "1px" for v, _ in bad))
+
+    def test_check_roundtrip(self) -> None:
+        self.assertEqual(csslint.conform_value(
+            csslint.conform_value("7px 12px")), "8px 12px")
+
+
+class ParaSplitTests(unittest.TestCase):
+    """Pure-logic tests for tools/para-split.py (the 4-sentence rule)."""
+    def test_count_sentences(self) -> None:
+        self.assertEqual(para_split._count_sentences("One. Two. Three. Four."),
+                         4)
+        # Decimals and abbreviations are not sentence breaks.
+        self.assertEqual(para_split._count_sentences("v1.21.0 ships. e.g."),
+                         1)
+        self.assertEqual(para_split._count_sentences("No punctuation"), 0)
+
+    def test_chunks_cap_at_four_preserve_text(self) -> None:
+        text = "First. Second. Third. Fourth. Fifth. It ships 1.21.0."
+        out = para_split._chunks(text)
+        self.assertEqual(len(out), 2)
+        self.assertIn("1.21.0", " ".join(out))
+        for chunk in out:
+            self.assertLessEqual(para_split._count_sentences(chunk), 4)
+
+    def test_chunks_under_limit_unchanged(self) -> None:
+        self.assertEqual(para_split._chunks("Just. Two. Sentences."),
+                         ["Just. Two. Sentences."])
+
+    def test_is_prose(self) -> None:
+        self.assertFalse(para_split._is_prose("1. item"))
+        self.assertFalse(para_split._is_prose("- item"))
+        self.assertTrue(para_split._is_prose("a normal line"))
 
 
 if __name__ == "__main__":

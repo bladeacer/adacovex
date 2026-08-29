@@ -1,9 +1,8 @@
 # Target project requirements
 
-adacovex assesses an **Ada/SPARK project**. The target root can be the
-repository root or a subdirectory (via `--target=PATH`). For a meaningful
-report, the target must provide the items that follow. Any missing item shows
-as `N/A`. DAL checks that depend on the missing item report `Unmet`.
+adacovex assesses an **Ada/SPARK project**. The target root can be the repository root or a subdirectory (via `--target=PATH`). For a meaningful report, the target must provide the items that follow. Any missing item shows as `N/A`.
+
+DAL checks that depend on the missing item report `Unmet`.
 
 ## What the target provides
 
@@ -70,12 +69,7 @@ cannot modify, use docstring **patch files** at
 relaxed mode (`--relaxed`, skip dirs, no patches) (see
 [Strict vs relaxed mode](cli-reference.md#strict-vs-relaxed-mode)).
 
-Vendored code can also take part in the **SPARK proof**. A patch carrying
-`SPARK_Mode` / `Pre` / `Post` / `Global` aspects is a *proof patch*. The
-`prove` subcommand merges it into a patched tree copy. The copy uses `.ads`
-spec contracts and `.adb` body patches that opt a SPARK-clean vendored body
-into the proof. See
-[Proving and writing proofs](proving.md#proof-patches-proving-vendored-dependencies)
-for how to write them. See
-[Architecture -- Proof patches](architecture.md#proof-patches-spark-contracts-over-vendored-dependencies)
-for the design.
+Vendored code can also take part in the **SPARK proof**. A patch carrying `SPARK_Mode` / `Pre` / `Post` / `Global` aspects is a *proof patch*. The `prove` subcommand merges it into a patched tree copy. The copy uses `.ads` spec contracts and `.adb` body patches that opt a SPARK-clean vendored body into the proof.
+
+See [Proving and writing proofs](proving.md#proof-patches-proving-vendored-dependencies) for how to write them. See [Architecture -- Proof patches](architecture.md#proof-patches-spark-contracts-over-vendored-dependencies) for the design.
+

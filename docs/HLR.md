@@ -18,6 +18,8 @@
 - HLR-RENDER-MD: Markdown report generation
 - HLR-RENDER-HTML: HTML dashboard and JSON API
 - HLR-SERVER: HTTP server
+- HLR-ANSI: Terminal colour support
+- HLR-TZ: Timezone resolution and local-time formatting
 - HLR-CLI: CLI argument parsing
 - HLR-COMPLEXITY: Cyclomatic complexity and LOC gating
 - HLR-METRICS: Docstring coverage metrics
@@ -58,6 +60,8 @@
 - HLR-RENDER-HTML: The tool shall generate a self-contained HTML dashboard page. It shall generate a JSON metrics API.
 
 - HLR-SERVER: The tool shall serve the dashboard, API, and badge endpoints. It shall use a built-in HTTP/1.1 server on a configurable port.
+- HLR-ANSI: The tool shall colour its terminal output, and shall suppress colour inside CI or when NO_COLOR is set.
+- HLR-TZ: The tool shall resolve a display timezone from the operating system or from a user timezone override, and format the current date and time in that zone.
 
 - HLR-CLI: The tool shall accept CLI arguments in --key=value and --key value forms. It shall use sensible defaults. It shall print usage help on --help.
 

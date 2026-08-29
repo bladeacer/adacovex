@@ -51,8 +51,9 @@ dependency of its own.
 
 ## Option 3: download a release bundle from GitHub
 
-Every `vX.Y.Z` tag publishes `adacovex-vX.Y.Z.tar.gz` on the
-[GitHub Releases page](https://github.com/bladeacer/adacovex/releases).
+Every `vX. Y. Z` tag publishes `adacovex-vX. Y.
+
+Z.tar.gz` on the [GitHub Releases page](https://github.com/bladeacer/adacovex/releases).
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/bladeacer/adacovex/main/install.sh | bash

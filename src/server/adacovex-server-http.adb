@@ -10,7 +10,10 @@ package body Adacovex.Server.HTTP is
    use GNAT.Sockets;
    use type Ada.Streams.Stream_Element_Offset;
 
-   Max_Workers : constant := 4;
+   --  Upper bound for the static task array.  --serve-workers requests a
+   --  smaller pool; the array is sized to the cap and only the requested
+   --  number of tasks are started.
+   Max_Workers_Cap : constant := 256;
 
    procedure Send_Response
      (Channel      : Socket_Type;
@@ -94,14 +97,16 @@ package body Adacovex.Server.HTTP is
          end loop;
       end Worker;
 
-      Workers : array (1 .. Max_Workers) of Worker;
+      Workers : array (1 .. Max_Workers_Cap) of Worker;
+      Active   : constant Positive :=
+        Positive'Min (State.Workers, Max_Workers_Cap);
 
    begin
       Ada.Text_IO.Put_Line
         ("Starting adacovex HTTP server on port"
          & Positive'Image (State.Port)
          & " with"
-         & Positive'Image (Max_Workers)
+         & Positive'Image (Active)
          & " workers...");
 
       Create_Socket (Listener, Family, Socket_Stream);
@@ -116,8 +121,8 @@ package body Adacovex.Server.HTTP is
         ("Server running at http://127.0.0.1:" & Positive'Image (State.Port));
       Ada.Text_IO.Put_Line ("Press Ctrl+C to stop.");
 
-      for W of Workers loop
-         W.Start;
+      for I in 1 .. Active loop
+         Workers (I).Start;
       end loop;
 
       while Running loop

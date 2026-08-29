@@ -36,14 +36,9 @@ saved choice in control.
 
 ### C4: man page rendering fixed (no more runaway gaps)
 
-Two roff bugs made the man page render with broken spacing. The SYNOPSIS
-used the `.RI` macro with separate arguments, which groff concatenates
-without spaces (`[--format=FMT][--out=PATH]`), and long option lines
-interleaved with `.br` caused groff's terminal output to pad the paragraph
-with tab stops (`adacovex<big gap>sbom`). Each SYNOPSIS line is now a single
-quoted `.B` argument, and every MODES / EXIT-STATUS description is a single
-logical line that groff wraps with the proper hanging indent, so the page
-renders cleanly.
+Two roff bugs made the man page render with broken spacing. The SYNOPSIS used the `. RI` macro with separate arguments, which groff concatenates without spaces (`[--format=FMT][--out=PATH]`), and long option lines interleaved with `.br` caused groff's terminal output to pad the paragraph with tab stops (`adacovex<big gap>sbom`). Each SYNOPSIS line is now a single quoted `.
+
+B` argument, and every MODES / EXIT-STATUS description is a single logical line that groff wraps with the proper hanging indent, so the page renders cleanly.
 
 ### C5: JSON API documented and contextual help extended to all flags
 
@@ -123,28 +118,9 @@ the scratch source clone cleans its directory first.
 
 ## Test Suite
 
-647 tests (was 501), across 12 categories (was 10). The CLI-config category
-(112 checks) covers `--version`, the `man` subcommand and its `--check` /
-`--dir` flags, the `sbom` subcommand's and `--serve` dashboard's
-standard-awareness defaults (all standards by default, narrowed by
-`--standard` / `--asil` / `--class`), the `--theme` flag (default `system`,
-light/dark parsing, invalid-value errors), and the contextual `help` keyword
-(topic capture in both orders, bare `help`, and newly documented flags such
-as `--emit-svg` and `--verbose`); the HTML/Markdown renderers category (34
-checks) covers the dashboard's theme dropdown (all three options, the
-`data-initial-theme` CLI-theme marker, the Save settings button, `saveTheme`
-persistence, the `?theme=` query param, the embed hint, the bundled
-template shell, `data-theme` override, `prefers-color-scheme`, and
-`localStorage`, plus no leftover `__CARDS__`/`__THEME__` placeholders) on
-top of the standard-aware dashboard and JSON output; the DAL compliance
-category (16) gained the cached-HLR parse round-trip; the SBOM generator
-category (118) gained the dependency-graph cache round-trip; the Man page
-renderer category (18 checks) covers page structure, the embedded version,
-an install/read-back round-trip, the `Update_Database` man-db contract, and
-a SYNOPSIS regression check (single quoted `.B` lines, no `.RI`
-concatenation); the VCS support category (29 checks) covers marker-file
-detection for every VCS, display and tool-binary names, and the
-UX-conversion recommendations.
+647 tests (was 501), across 12 categories (was 10). The CLI-config category (112 checks) covers `--version`, the `man` subcommand and its `--check` / `--dir` flags, the `sbom` subcommand's and `--serve` dashboard's standard-awareness defaults (all standards by default, narrowed by `--standard` / `--asil` / `--class`), the `--theme` flag (default `system`, light/dark parsing, invalid-value errors), and the contextual `help` keyword (topic capture in both orders, bare `help`, and newly documented flags such as `--emit-svg` and `--verbose`); the HTML/Markdown renderers category (34 checks) covers the dashboard's theme dropdown (all three options, the `data-initial-theme` CLI-theme marker, the Save settings button, `saveTheme` persistence, the `? theme=` query param, the embed hint, the bundled template shell, `data-theme` override, `prefers-color-scheme`, and `localStorage`, plus no leftover `__CARDS__`/`__THEME__` placeholders) on top of the standard-aware dashboard and JSON output; the DAL compliance category (16) gained the cached-HLR parse round-trip; the SBOM generator category (118) gained the dependency-graph cache round-trip; the Man page renderer category (18 checks) covers page structure, the embedded version, an install/read-back round-trip, the `Update_Database` man-db contract, and a SYNOPSIS regression check (single quoted `. B` lines, no `.
+
+RI` concatenation); the VCS support category (29 checks) covers marker-file detection for every VCS, display and tool-binary names, and the UX-conversion recommendations.
 
 ## Proof Results
 

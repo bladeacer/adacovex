@@ -16,20 +16,9 @@ scope badges (`base` / `dev` / `transitive` / `vendored`), child counts, and a
 client-side name filter.  The same graph is already served at `GET /api/deps`
 and via `--emit-metrics`, so the tab is a view, not a new data source.
 
-Charts.css rendering is fixed: bar sizes are now emitted as `0..1` fractions
-(not `0..100`) so `charts.css` scales correctly, and the SPARK donut now
-shows proved vs *unproved* slices (previously proved vs total duplicated the
-proved arc and hid regressions).  Test-category bars are normalised to the
-largest category (previously every bar was `100%`).  The template
-(`resources/dashboard.html`) is now a centered `max-width:1180px` layout with
-a sticky tab bar, `localStorage`-persisted active tab, and hash-routing
-(`#deps`, `#proof`, etc. compose with `?theme=`).  The Ada side
-(`Renderers.HTML`) is split into `Render_Dashboard_Internal` with per-tab
-builders, a new `Render_Deps_HTML` tree builder, and a `Render_Charts`
-overload that takes the graph for future scope pies.  The bundled template
-is regenerated via `tools/gen-dashboard.py` as before.  See
-`docs/dashboard.md` (tabs, Dependencies, Charts) and
-`docs/THIRD_PARTY_NOTICES.md`.
+Charts.css rendering is fixed: bar sizes are now emitted as `0..1` fractions (not `0..100`) so `charts.css` scales correctly, and the SPARK donut now shows proved vs *unproved* slices (previously proved vs total duplicated the proved arc and hid regressions). Test-category bars are normalised to the largest category (previously every bar was `100%`). The template (`resources/dashboard.html`) is now a centered `max-width:1180px` layout with a sticky tab bar, `localStorage`-persisted active tab, and hash-routing (`#deps`, `#proof`, etc. compose with `? theme=`).
+
+The Ada side (`Renderers. HTML`) is split into `Render_Dashboard_Internal` with per-tab builders, a new `Render_Deps_HTML` tree builder, and a `Render_Charts` overload that takes the graph for future scope pies. The bundled template is regenerated via `tools/gen-dashboard.py` as before. See `docs/dashboard.md` (tabs, Dependencies, Charts) and `docs/THIRD_PARTY_NOTICES.md`.
 
 ### C2: Make targets grouped and a `sync` alias
 

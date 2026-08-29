@@ -8,14 +8,10 @@ Version bumped 1.31.0 -> 1.32.0.
 
 ### C1: Proof metrics synced to the honest 723-VC count
 
-The self-assessment proof surface had grown to 723 VCs after the
-`Adacovex.Server.HTTP.Route` postcondition was converted from a nine-clause
-implication chain (which exceeded gnatprove's `--steps` budget once the
-`/docs` route was added) into an expression function. An expression function's
-implicit postcondition (`Result = <mapping>`) holds by definition, so the
-mapping is proved without case-analysis steps. All metric anchors across
-AGENTS.md, README.md, Makefile, the release manifests, and the Alire index
-were refreshed to 723 VCs via `make proof-status`. Proof level remains
+The self-assessment proof surface had grown to 723 VCs after the `Adacovex. Server. HTTP. Route` postcondition was converted from a nine-clause implication chain (which exceeded gnatprove's `--steps` budget once the `/docs` route was added) into an expression function.
+
+An expression function's implicit postcondition (`Result = <mapping>`) holds by definition, so the mapping is proved without case-analysis steps. All metric anchors across AGENTS.md, README.md, Makefile, the release manifests, and the Alire index were refreshed to 723 VCs via `make proof-status`. Proof level remains
+
 **Platinum** (723 VCs, 0 unproved, 0 justified under gnatprove 16.1.0).
 
 ### C2: SVG badges restored to Shields.io proportions
@@ -68,12 +64,9 @@ and the nomnoml direction/height change is client-side JavaScript. The
 
 ## Proof Results
 
-Platinum, 723/723 VCs proved across 50 analysed units (was 724 at 1.31.0).
-The one-VC reduction comes from converting `Adacovex.Server.HTTP.Route` to an
-expression function: the explicit nine-clause postcondition (one VC that sat on
-the solver's step-limit boundary) is replaced by the implicit
-`Result = <mapping>` postcondition, which proves by definition. Invocation:
-`adacovex prove` (`--steps=10000`, gnatprove 16.1.0). 0 unproved, 0 justified.
+Platinum, 723/723 VCs proved across 50 analysed units (was 724 at 1.31.0). The one-VC reduction comes from converting `Adacovex. Server. HTTP.
+
+Route` to an expression function: the explicit nine-clause postcondition (one VC that sat on the solver's step-limit boundary) is replaced by the implicit `Result = <mapping>` postcondition, which proves by definition. Invocation: `adacovex prove` (`--steps=10000`, gnatprove 16.1.0). 0 unproved, 0 justified.
 
 ## Traceability
 

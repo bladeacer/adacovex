@@ -80,7 +80,7 @@ Self-assessment: **Platinum** (28/28 VCs proved, AoRTE-free).
 
 ## Traceability
 
-New `-- HLR-MANIFEST` (manifest and dependency-graph parsing) and `-- HLR-SBOM`
-(SBOM generation) tags on `Adacovex.Parsers.Manifest` and
-`Adacovex.Renderers.SBOM` are defined in `docs/HLR.md` and
-`docs/compliance/HLR.md` and traced by the new SBOM feature.
+New `-- HLR-MANIFEST` (manifest and dependency-graph parsing) and `-- HLR-SBOM` (SBOM generation) tags on `Adacovex. Parsers. Manifest` and `Adacovex. Renderers.
+
+SBOM` are defined in `docs/HLR.md` and `docs/compliance/HLR.md` and traced by the new SBOM feature.
+

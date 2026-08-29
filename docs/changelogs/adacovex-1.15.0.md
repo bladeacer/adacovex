@@ -224,17 +224,7 @@ exactly as before. Proven with `make prove` under gnatprove 16.1.0
 
 ## Traceability
 
-No new HLRs. The badge geometry tests (C4) and the server badge endpoint
-tests (C6) extend the coverage of the existing `HLR-RENDER-SVG` tag
-(`src/renderers/adacovex-renderers-svg.ads`/`.adb` and
-`src/tests/adacovex_renderer_svg_tests.adb`); the C6 endpoint tests also
-pin the badge surface of `LLR-SERVER-01` (`HLR-SERVER`), whose routes are
-served through the same render calls. The SPARK expansions are covered by
-the existing `HLR-COMPLIANCE` / `HLR-DAL-*` tags (`compliance-dal`),
-`HLR-CPU` (`cpus`), `HLR-PROOF` (`parsers-gnatprove`), `HLR-CLI`
-(`config`, including the completed `Is_All` proof), and `HLR-DIFF`
-(`vcs`) -- the contracts extend the subprograms these tags already trace.
-The two fixes (H1/H2) live in release-workflow shell code, the `make
-release` target, the composite action, and docs; the docs change touches
-documentation and `tools/rst2md.py` / `tools/doc-links.map`. None of these
-carry HLR traceability tags.
+No new HLRs. The badge geometry tests (C4) and the server badge endpoint tests (C6) extend the coverage of the existing `HLR-RENDER-SVG` tag (`src/renderers/adacovex-renderers-svg.ads`/`.adb` and `src/tests/adacovex_renderer_svg_tests.adb`); the C6 endpoint tests also pin the badge surface of `LLR-SERVER-01` (`HLR-SERVER`), whose routes are served through the same render calls. The SPARK expansions are covered by the existing `HLR-COMPLIANCE` / `HLR-DAL-*` tags (`compliance-dal`), `HLR-CPU` (`cpus`), `HLR-PROOF` (`parsers-gnatprove`), `HLR-CLI` (`config`, including the completed `Is_All` proof), and `HLR-DIFF` (`vcs`) -- the contracts extend the subprograms these tags already trace. The two fixes (H1/H2) live in release-workflow shell code, the `make release` target, the composite action, and docs; the docs change touches documentation and `tools/rst2md.py` / `tools/doc-links.map`.
+
+None of these carry HLR traceability tags.
+
