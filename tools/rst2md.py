@@ -39,8 +39,12 @@ Block = Tuple[str, str, str, Dict[str, str], str, str]
 TypeMap = Dict[str, Tuple[str, str]]
 
 
+ELLIPSIS = "\u2026"  # gnatdoc abbreviates long type declarations with U+2026
+
+
 def fix_text(text: str) -> str:
-    return text.replace(MOJIBAKE_EMDASH, ":")
+    text = text.replace(MOJIBAKE_EMDASH, ":")
+    return text.replace(ELLIPSIS, "...")
 
 
 def slug(name: str) -> str:

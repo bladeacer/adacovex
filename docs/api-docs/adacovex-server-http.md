@@ -24,7 +24,7 @@ Route_Badge_ISO26262,
 Route_Badge_IEC62304,
 Route_API_Metrics,
 Route_API_Deps,
-…,
+...,
 Route_Not_Found);
 ```
 

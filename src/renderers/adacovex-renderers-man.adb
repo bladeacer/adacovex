@@ -302,6 +302,18 @@ package body Adacovex.Renderers.Man is
             elsif Flag = "dir" then
                return
                  "Man subcommand flag: --dir=PATH installs under PATH/man1.";
+            elsif Flag = "complexity" then
+               return
+                 "Subcommand: cyclomatic-complexity and LOC gate across the "
+                 & "target's source files.  Use --excludes to skip extensions.";
+            elsif Flag = "excludes" then
+               return
+                 "Comma-separated file extensions to skip in --complexity "
+                 & "scans (for example md,rst).";
+            elsif Flag = "tz" or Flag = "timezone" then
+               return
+                 "Display timezone for reports: an IANA name (Europe/London) "
+                 & "or a UTC/GMT offset (UTC+2, GMT-5).";
             else
                return "See --help for details.";
             end if;
