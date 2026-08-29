@@ -324,7 +324,7 @@ assessment without parsing HTML:
 
 ```json
 {"spark_level":"Platinum","total_vcs":723,"proved_vcs":723,
- "tests_passed":1066,"tests_failed":0,"doc_coverage":100,
+ "tests_passed":1157,"tests_failed":0,"doc_coverage":100,
  "standard":"all","level":"DAL-C","dal_status":"Achieved",
  "standards":{"DO-178C":{"level":"DAL-C","status":"Achieved"},
                "ISO 26262":{"level":"ASIL B","status":"Achieved"},

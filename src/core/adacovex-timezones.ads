@@ -6,11 +6,15 @@
 --  fixed UTC/GMT offset ("UTC+8", "GMT+8", "UTC+08", "GMT+08", "UTC+08:30").
 --
 --  The crate has no library dependencies, so it ships no timezone database.
---  Named zones are resolved from a built-in table of common IANA names and
---  their standard-time (non-DST) offsets.  The system default offset comes
---  from the GNAT runtime (GNAT.Calendar.Time_Zone), which honours the TZ
---  environment variable and the operating system's local timezone, so the
---  default is always the operator's wall-clock timezone.
+--  A named zone resolves from a built-in table of common IANA names and
+--  their standard-time (non-DST) offsets.  A zone that may observe daylight
+--  saving time (and any zone the table lacks) is probed against the
+--  platform tzdata -- `zdump` + `date +%z` on Linux/WSL -- for the
+--  DST-correct current offset; the table offset is the fallback when the
+--  probe is unavailable.  The system default offset comes from the standard
+--  Ada runtime (Ada.Calendar.Time_Zones.UTC_Time_Offset), which honours the
+--  TZ environment variable and the operating system's local timezone, so
+--  the default is always the operator's wall-clock timezone.
 --  HLR-TZ: Timezone resolution and local-time formatting
 
 package Adacovex.Timezones is
@@ -34,21 +38,21 @@ package Adacovex.Timezones is
    --  Resolve the timezone adacovex uses.  It honours an explicit TZ
    --  environment variable when that variable names a supported zone or
    --  carries a fixed UTC/GMT offset; otherwise it uses the operating
-   --  system's timezone offset via GNAT.Calendar.Time_Zone.
+   --  system's timezone offset via Ada.Calendar.Time_Zones.UTC_Time_Offset.
    --  @return The effective timezone (nil display on failure).
-   function Default return Timezone_Info;
-
-   --  Parse a user-supplied --tz / --timezone value.  Supported forms:
+   function Default
+      return Timezone_Info;   --  Parse a user-supplied --tz / --timezone value.  Supported forms:
    --    * a named IANA zone ("Asia/Singapore", "Europe/London", "UTC", ...)
    --    * a fixed offset ("UTC+8", "GMT+8", "UTC+08:30", "UTC-5", ...)
-   --  On success OK is True and Info holds the resolved zone; on failure OK
-   --  is False and Info.Result_Valid is False.  The spec is matched
-   --  case-insensitively.
+   --  A named zone resolves from the built-in table first; a zone that may
+   --  observe DST, or one the table lacks, is probed against the platform
+   --  tzdata for the current offset.  On success OK is True and Info holds
+   --  the resolved zone; on failure OK is False and Info.Result_Valid is
+   --  False.  The spec is matched case-insensitively.
    --  @param Spec  The raw --tz / --timezone value to parse.
    --  @param Info  Resolved timezone on success.
    --  @param OK    True when Spec names a supported timezone.
-   procedure Parse
-     (Spec : String; Info : out Timezone_Info; OK : out Boolean);
+   procedure Parse (Spec : String; Info : out Timezone_Info; OK : out Boolean);
 
    --  Render a fixed UTC offset as a display string in the form "UTC+08:00",
    --  "UTC-05:30", or "UTC+00:00".

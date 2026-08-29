@@ -59,6 +59,8 @@ CATEGORY_KEY: Dict[str, str] = {
     "VCS support": "src/tests/adacovex_vcs_tests",
     "Server routing": "src/tests/adacovex_server_tests",
     "Proof patches": "src/tests/adacovex_prove_patch_tests",
+    "Timezone + ANSI": "src/tests/adacovex_tz_ansi_tests",
+    "Complexity check": "src/tests/adacovex_complexity_tests",
 }
 
 TEST_RUNNER_KEY: str = "src/tests/test_runner"
@@ -74,7 +76,7 @@ def parse_result(path: Path) -> Tuple[Dict[str, int], int, int]:
     for raw in text.splitlines():
         line: str = raw.strip()
         m: Optional[re.Match] = re.match(
-            r"\|\s*([A-Za-z /-]+?)\s*\|\s*(\d+)\s*\|", line
+            r"\|\s*([A-Za-z /+\-]+?)\s*\|\s*(\d+)\s*\|", line
         )
         if m:
             name: str = m.group(1).strip()

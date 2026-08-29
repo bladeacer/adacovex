@@ -239,11 +239,17 @@ less memory. It must be a valid `Positive` integer and only works with
 
 ### `--tz=ZONE` / `--timezone=ZONE`
 
-Display timezone for the status report. Accepts a well-known IANA name (for
-example `Asia/Singapore`) or a fixed UTC/GMT offset (`UTC+8`, `GMT+8`,
-`UTC+08`, `GMT+08`, `UTC+08:30`). Without it adacovex uses the operating
-system's timezone. Named zones resolve to their standard-time offset, values
-are matched case-insensitively, and a bad value fails loudly.
+Display timezone for the status report.  Accepts a well-known IANA name
+(for example `Asia/Singapore`) or a fixed UTC/GMT offset (`UTC+8`, `GMT+8`,
+`UTC+08`, `GMT+08`, `UTC+08:30`).  Without it adacovex uses the operating
+system's timezone.
+
+A named zone resolves from a built-in table of common IANA names.  A zone
+that may observe daylight saving time, or one the table lacks, is probed
+against the platform tzdata (`zdump` + `date +%z`) for the DST-correct
+current offset, with the table as the fallback when the probe is
+unavailable.  Values are matched case-insensitively, and a bad value fails
+loudly.
 
 ### `--emit-svg=PATH`
 
@@ -355,7 +361,7 @@ target does not meet the required level:
 
 ```bash
 adacovex --target=. --require-spark=Platinum --require-docstrings=100 \
-         --require-tests=1066 --require-proof=100
+         --require-tests=1157 --require-proof=100
 ```
 
 - `require-spark` compares the honest assessed SPARK level (Stone..Platinum).
@@ -422,10 +428,17 @@ to write them, worked examples, and pitfalls are in
 | `0` | Success (DAL achieved, all checks pass, `--version`, man page installed/up-to-date) |
 | `1` | Compliance failure (DAL unmet, tests failing, a `--require-*` CI gate unmet, differential regression, `man --check` finding a newer version available or none installed, and more) |
 
-## NO_COLOR support
+## Terminal colour
 
-adacovex respects the `NO_COLOR` environment variable. If `NO_COLOR` is set,
-ANSI colour codes are suppressed in terminal output. Colour is enabled by default.
+adacovex colours its terminal output (red for failures, green for passes,
+bold for headings) so the important lines stand out.  Colour is enabled by
+default on a normal terminal.  It is suppressed automatically when the
+output would not take it:
+
+- `NO_COLOR` is set (the cross-tool opt-out convention);
+- a CI variable is set (GitHub Actions, GitLab CI, and more), so CI logs
+  stay plain and machine-readable;
+- `TERM` is `dumb` (or set to an empty value).
 
 ## The `sbom` subcommand
 

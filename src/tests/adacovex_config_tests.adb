@@ -794,6 +794,145 @@ package body Adacovex_Config_Tests is
            (Ada.Strings.Fixed.Index (U, "_adacovex_complete") > 0,
             "unknown shell falls back to bash");
       end;
+
+      --  --excludes only works with the complexity subcommand; it is
+      --  rejected loudly on its own so a silent no-op is impossible.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--excludes=md,rst");
+         Cfg := Testing.Parse_All (A);
+         R.Check (Cfg.CLI_Error, "--excludes without complexity is an error");
+      end;
+
+      --  --excludes with the complexity subcommand is accepted and stored.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "complexity");
+         Add (A, "--excludes=md,rst");
+         Cfg := Testing.Parse_All (A);
+         R.Check (not Cfg.CLI_Error, "complexity --excludes is not an error");
+         R.Check (Cfg.Complexity_Mode, "complexity subcommand sets mode");
+         R.Check
+           (Cfg.Excludes_Len > 0
+            and then Cfg.Complexity_Excludes (1 .. Cfg.Excludes_Len)
+                     = "md,rst",
+            "--excludes value is stored");
+      end;
+
+      --  --excludes with a space-separated value and no subcommand: error.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--excludes");
+         Add (A, "md");
+         Cfg := Testing.Parse_All (A);
+         R.Check
+           (Cfg.CLI_Error,
+            "--excludes without complexity (space form) is an error");
+      end;
+
+      --  --serve-workers only works with --serve; reject a silent no-op.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--serve-workers=8");
+         Cfg := Testing.Parse_All (A);
+         R.Check
+           (Cfg.CLI_Error, "--serve-workers without --serve is an error");
+      end;
+
+      --  --serve-workers with --serve is accepted and stored.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--serve");
+         Add (A, "--serve-workers=8");
+         Cfg := Testing.Parse_All (A);
+         R.Check (not Cfg.CLI_Error, "serve --serve-workers is not an error");
+         R.Check (Cfg.Serve_Workers = 8, "--serve-workers=8 is stored");
+         R.Check
+           (Cfg.Serve_Workers_Set, "--serve-workers marks the field as set");
+      end;
+
+      --  --serve-workers rejects a non-positive value.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--serve");
+         Add (A, "--serve-workers=0");
+         Cfg := Testing.Parse_All (A);
+         R.Check
+           (Cfg.CLI_Error, "--serve-workers=0 is rejected (must be positive)");
+      end;
+
+      --  --serve-workers with a non-numeric value is rejected.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--serve");
+         Add (A, "--serve-workers=many");
+         Cfg := Testing.Parse_All (A);
+         R.Check
+           (Cfg.CLI_Error,
+            "--serve-workers=many is rejected (must be an integer)");
+      end;
+
+      --  --tz / --timezone validate their value loudly.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "status");
+         Add (A, "--tz=Not/AZone");
+         Cfg := Testing.Parse_All (A);
+         R.Check (Cfg.CLI_Error, "--tz with an unknown zone is an error");
+      end;
+
+      --  --tz accepts a named IANA zone.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "status");
+         Add (A, "--tz=Asia/Singapore");
+         Cfg := Testing.Parse_All (A);
+         R.Check (not Cfg.CLI_Error, "--tz=Asia/Singapore is accepted");
+         R.Check
+           (Cfg.Time_Zone_Len > 0
+            and then Cfg.Time_Zone (1 .. Cfg.Time_Zone_Len) = "Asia/Singapore",
+            "--tz value is stored");
+      end;
+
+      --  --tz accepts a fixed UTC/GMT offset in every supported form.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "status");
+         Add (A, "--timezone=UTC+08:30");
+         Cfg := Testing.Parse_All (A);
+         R.Check (not Cfg.CLI_Error, "--timezone=UTC+08:30 is accepted");
+      end;
+
+      --  --timezone is the long form of --tz and is accepted.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "status");
+         Add (A, "--timezone=GMT+8");
+         Cfg := Testing.Parse_All (A);
+         R.Check (not Cfg.CLI_Error, "--timezone=GMT+8 is accepted");
+      end;
    end Run;
 
 end Adacovex_Config_Tests;

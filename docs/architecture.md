@@ -377,7 +377,10 @@ copy, preserving the target's proof.
 
 adacovex supports multiple output formats:
 
-- **ANSI terminal report**: Colour-coded summary for interactive use
+- **ANSI terminal report**: Colour-coded summary for interactive use.
+  Colour is suppressed under CI, `NO_COLOR`, or `TERM=dumb`, so CI logs
+  stay plain (see `Adacovex.Ansi` and its pure decision function
+  `Colour_Allowed`)
 - **SVG badges**: `spark.svg`, `tests.svg`, `docs.svg`, plus `do178c.svg` /
   `iso26262.svg` / `iec62304.svg` compliance badges (`--standard=all` emits all
   three) for CI badges
@@ -391,7 +394,10 @@ adacovex supports multiple output formats:
   `src/adacovex-dashboard_template.ads` (a String constant, committed and
   byte-identical when unchanged) and `Adacovex.Renderers.HTML` only builds
   the dynamic card markup, injecting it at the `__CARDS__` placeholder and
-  filling the `__THEME__` initial-theme marker
+  filling the `__THEME__` initial-theme marker.  The authored CSS and
+  JavaScript are minified at build time (comments stripped, whitespace
+  collapsed); the vendored graph libraries are already minified and are
+  inlined byte-for-byte
 - **SBOM**: CycloneDX 1.5, SPDX 2.3, or Markdown format with proof, standard,
   and DAL/level properties
 
@@ -437,7 +443,57 @@ it. The ANSI report shows a
 
 ## Testing
 
-adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 1066 tests across 14 categories. No external test framework (AUnit, and more) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
+adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 1157 tests across 16 categories. No external test framework (AUnit, and more) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
+
+## Complexity check
+
+The `complexity` subcommand walks the whole target and scores many languages
+(C, C++, C#, Go, Java, JavaScript, TypeScript, Python, Ruby, PHP, Rust,
+Shell, Kotlin, and the YAML/JSON/TOML/XML/Markdown/reStructuredText
+families) alongside Ada.  Per-subprogram analysis stays Ada-specific; the
+other languages contribute file-level lines of code and decision counts.
+`--excludes=EXT,EXT` skips listed file extensions and is rejected unless the
+`complexity` subcommand is given, so it can never run on its own.  `make
+complexity-check` gates the tree through the same thresholds.
+
+## Timezone resolution
+
+adacovex honours the operating system's timezone by default.  The resolved
+offset comes from `Ada.Calendar.Time_Zones.UTC_Time_Offset`, the standard
+Ada runtime, which reads the `TZ` variable and the system timezone through
+the C library, so the default is always the operator's wall clock
+(DST-aware).  `status` reports the effective timezone, the current date and
+time in it, and how many dated release changelogs the target carries under
+`docs/changelogs`.
+
+`--tz` / `--timezone` override the display zone for one invocation.  The
+value is either a well-known IANA name (for example `Asia/Singapore`) or a
+fixed `UTC`/`GMT` offset (`UTC+8`, `GMT+8`, `UTC+08`, `GMT+08`,
+`UTC+08:30`).  adacovex ships no timezone database, so a named zone
+resolves from a built-in table of common IANA names and their standard-time
+offsets.  A zone that may observe daylight saving time (marked in the
+table), or one the table lacks, is probed against the platform tzdata
+(`zdump` validates the name, `date +%z` reads the current offset, both
+through one shell command) for the DST-correct offset; the table offset is
+the fallback when the probe is unavailable.  The date/time rendering
+compensates for GNAT's local-time calendar accessors, so the displayed wall
+clock is correct in every zone.  `HLR-TZ` covers this behaviour.
+
+## Build and documentation gates
+
+Two cheap Python gates keep the dashboard and the hand-written docs in
+step with the code, and both run inside `make check`:
+
+- `tools/csslint.py` (`make csslint-check`) enforces the dashboard spacing
+  convention: every `margin`, `padding`, and `gap` pixel length is a
+  multiple of 4px.  It also runs inside `make build`.
+- `tools/check-docs.py` (`make docs-check`) fails when any paragraph in the
+  user docs, README, or human changelogs exceeds four sentences, and it
+  rejects em dashes and Latin abbreviations (`i.e.`, `e.g.`, `etc.`).
+  `tools/para-split.py` rewraps over-long paragraphs to comply.
+
+The generated `docs/api-docs` pages are excluded from the paragraph rule;
+its source docstrings carry the same rule.
 
 ## Supported Platforms
 

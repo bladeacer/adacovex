@@ -24,7 +24,7 @@ Prerequisites:
 git clone https://github.com/bladeacer/adacovex.git
 cd adacovex
 make build        # compiles bin/adacovex + bin/test_runner (covex alias)
-make test         # builds + runs the native test suite (1066 tests)
+make test         # builds + runs the native test suite (1157 tests)
 make run-self     # assess adacovex itself: 100% docs, Platinum, DAL-C
 make prove        # SPARK proof (Platinum gate) + regenerates docs/badges/
 make check        # the whole quality gate CI runs before a release
@@ -113,6 +113,28 @@ The count-sync is enforced by `make check`. A test change that skips the sync fa
 
 Tests that exercise caching use content-hashed keys. They never depend on each other's state.
 
+## Documentation and dashboard tooling
+
+The pure-stdlib Python gates keep the docs and the dashboard in step with
+the code.  They are the drop-in replacements for the npm tools (stylelint,
+and more) that a JavaScript toolchain would use; adacovex keeps its dev
+tooling Python-only by convention:
+
+- `tools/csslint.py` (`make csslint-check`) enforces the 4px spacing rule:
+  every `margin`, `padding`, and `gap` pixel length is a multiple of 4px.
+  It runs inside `make build` and `make check`.
+- `tools/check-docs.py` (`make docs-check`) fails when any paragraph in the
+  user docs, README, or human changelogs exceeds four sentences, and it
+  rejects em dashes and Latin abbreviations (`i.e.`, `e.g.`, `etc.`).
+  `tools/para-split.py` rewraps over-long paragraphs to comply.
+- `tools/gen-dashboard.py` bundles the dashboard resources into
+  `src/adacovex-dashboard_template.ads` and minifies the authored CSS and
+  JavaScript (comments stripped, whitespace collapsed) before inlining.
+
+Edit the dashboard under `resources/`, never the generated template.  After
+any docs or resource change, run `make docs-check` and `make csslint-check`
+before committing.
+
 ## SPARK proof discipline
 
 `make prove` runs gnatprove through the `prove` subcommand and enforces the
@@ -144,6 +166,11 @@ The proof result is anchored in `docs/proof/` (the per-version VC ledger).
 - **Prepare a release**: `make bump-version VERSION=x.y.z`, write the changelog
   (`docs/changelogs/adacovex-x.y.z.md`, canonical format enforced by `make
   changelog-check`), then `make release VERSION=x.y.z`.
+- **Keep docs current**: every code change updates the relevant user docs,
+  the Ada docstrings that feed `docs/api-docs`, and the changelog, then
+  re-runs the sync gates (`make docs-check`, `make action-parity-check`,
+  `make agents-tree`, `make doc-links`, `make link-check`).  Stale docs are a
+  release blocker.
 - **Debug**: `adacovex --verbose` prints pipeline step diagnostics. `adacovex
   status` reports toolchain + platform state. `--no-cache` bypasses the
   on-disk result cache when inputs changed without content changing.

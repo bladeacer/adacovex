@@ -746,3 +746,41 @@ Every Technical Name in this dictionary has all five fields:
 - **Do Not Use:** Trace table, Mapping file (when TRACE.md is meant)
 - **Correct Example:** *The renderer writes the **traceability matrix** to `TRACE.md`.*
 - **Incorrect Example:** *The renderer writes the mapping file to `TRACE.md`.*
+
+#### Technical Name: Timezone
+- **Part of Speech:** Noun
+- **Definition:** The named region or fixed offset that defines local time
+  for the operator.  It includes IANA names (for example `Asia/Singapore`)
+  and fixed UTC/GMT offsets (for example `UTC+8`).
+- **Approved Form:** Timezone (singular), Timezones (plural)
+- **Do Not Use:** Time zone (two words), Zone (when Timezone is meant)
+- **Correct Example:** *The report shows the time in the operator's **timezone**.*
+- **Incorrect Example:** *The report shows the time in the operator's time zone.*
+
+#### Technical Name: UTC
+- **Part of Speech:** Noun
+- **Definition:** The coordinated universal time standard.  It is the
+  zero-offset reference that adacovex uses to display fixed offsets.
+- **Approved Form:** UTC (exact capitals)
+- **Do Not Use:** Universal time, Greenwich Mean Time (when UTC is meant)
+- **Correct Example:** *The report shows the offset as `UTC+08:00`.*
+- **Incorrect Example:** *The report shows the offset in universal time.*
+
+#### Technical Name: GMT
+- **Part of Speech:** Noun
+- **Definition:** The Greenwich mean time standard.  adacovex accepts `GMT`
+  as a synonym for `UTC` in fixed offset values.
+- **Approved Form:** GMT (exact capitals)
+- **Do Not Use:** Greenwich time, London time
+- **Correct Example:** *`GMT+8` is a valid fixed offset value.*
+- **Incorrect Example:** *`Greenwich time +8` is a valid fixed offset value.*
+
+#### Technical Name: IANA
+- **Part of Speech:** Modifier
+- **Definition:** The Internet Assigned Numbers Authority.  Always use it
+  with the noun name to mean the tz database zone identifiers.
+- **Approved Form:** IANA (exact capitals, as modifier, for example IANA
+  name)
+- **Do Not Use:** Olson, tz database (as a modifier)
+- **Correct Example:** *`Asia/Singapore` is an **IANA** name.*
+- **Incorrect Example:** *`Asia/Singapore` is a tz database name.*

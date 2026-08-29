@@ -40,10 +40,15 @@ rule.
 Accepted forms are an IANA name (`Asia/Singapore`) or a fixed
 `UTC`/`GMT` offset (`UTC+8`, `GMT+8`, `UTC+08`, `GMT+08`, `UTC+08:30`).  With
 no override, adacovex now honours the operating system's wall-clock zone
-through `GNAT.Calendar.Time_Zone` (which reads the `TZ` variable and the
-system timezone) and shows it as `UTC±HH:MM`.  `status`, `status --export`
-and `status --metrics` report the resolved zone, the current date and time,
-and the count of dated release changelogs under the target.
+through `Ada.Calendar.Time_Zones.UTC_Time_Offset` (which reads the `TZ`
+variable and the system timezone) and shows it as `UTC+/-HH:MM`.  A named
+zone resolves from a built-in table of common IANA names; a zone that may
+observe daylight saving time, or one the table lacks, is probed against the
+platform tzdata (`zdump` + `date +%z`) for the DST-correct current offset,
+with the table as the fallback when the probe is unavailable.  `status`,
+`status --export` and `status --metrics` report the resolved zone, the
+current date and time, and the count of dated release changelogs under the
+target.
 
 ### C5: Complexity check extended to non-Ada source
 
@@ -77,8 +82,12 @@ the expectation explicit that LLM-assisted edits keep docs in step with code.
 
 The previous timezone default ignored the system zone and fell back to UTC
 unless a `TZ` variable or a Debian `/etc/timezone` file named a zone.
-`Timezones.Default` now resolves the offset from `GNAT.Calendar.Time_Zone`,
-so the reported time matches the operator's configured wall clock.
+`Timezones.Default` now resolves the offset from
+`Ada.Calendar.Time_Zones.UTC_Time_Offset`, so the reported time matches the
+operator's configured wall clock.  The date/time rendering also compensates
+for GNAT's local-time calendar accessors, so the displayed wall clock is
+correct in every zone (including negative offsets, which the original
+implementation rejected outright).
 
 ### H2: Timezone and ANSI packages stay SPARK-clean
 
@@ -90,11 +99,20 @@ Platinum, zero-unproved status.
 
 ## Test Suite
 
-The native suite gains assertions for timezone parsing and formatting, ANSI
-colour gating, CLI flag gating (`--excludes` requires `complexity`,
-`--serve-workers` requires `--serve`, `--tz` validates its value), and the
-complexity extension with `--excludes`.  The total count is resynced via
-`make test-count` after the additions.
+The native suite grows from 1066 to 1157 tests (16 categories).  The CLI
+config suite gains 16 flag-gating assertions (`--excludes` requires
+`complexity`, `--serve-workers` requires `--serve` and a positive value,
+`--tz`/`--timezone` validates its value and stores it).
+
+A new Timezone + ANSI suite (63 assertions) covers timezone parsing and
+formatting (named IANA zones, `UTC`/`GMT` offsets, malformed values,
+`Now_Text`, the OS default, and the platform probe) and ANSI colour
+coverage (`Colour_Allowed` under CI / NO_COLOR / TERM=dumb, plus the SGR
+wrappers).
+
+A new Complexity check suite (12 assertions) covers the multi-language
+scan and `--excludes` filtering.  The totals are resynced via
+`make test-count`.
 
 ## Proof Results
 

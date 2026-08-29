@@ -59,10 +59,11 @@ end record;
 
 ## Functions
 
-### function Analyze_Project (Target_Dir : Standard.String) return Adacovex.Complexity.Complexity_Result
+### function Analyze_Project (Target_Dir : Standard.String; Excludes : Standard.String) return Adacovex.Complexity.Complexity_Result
 
 | Parameter | Description |
 |-----------|-------------|
+| `Excludes` |  |
 | `Target_Dir` |  |
 
 ### function Check_Gates (Result : Adacovex.Complexity.Complexity_Result; Max_File_LOC : Standard.Natural; Max_File_Pct : Standard.Natural; Max_Fn_Complexity : Standard.Natural; Max_File_Complexity : Standard.Natural) return Adacovex.Complexity.Violation_Vectors.Vector
