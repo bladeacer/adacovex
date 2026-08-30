@@ -144,15 +144,19 @@ The manual is the same Markdown source that powers the Read the Docs site
 (`docs/`, an mdBook project with `book.toml` and `SUMMARY.md`); at build
 time `tools/gen-docs.py` runs `mdbook build` and bundles the resulting site
 into the binary (`src/adacovex-docs_template.ads`) as a lookup table plus
-one static string constant per asset: every page, stylesheet, and script,
-keyed by book-relative path, so the manual is fully self-contained and
-navigable offline (each asset is its own small constant -- a single
-multi-megabyte blob would overflow the gnatprove frontend stack). External fonts, the search machinery, and the PNG screenshots are
-dropped (the screenshots show as notes), and the bundled HTML stays pure
-ASCII (non-ASCII glyphs are encoded as UTF-8 byte values in the Ada
-source).  Users on a machine without a network connection can still open
-the manual from the dashboard -- the footer **Manual** link and the API
-playground's `/docs` endpoint both point at it.
+static string constants: every page, stylesheet, script, and badge, keyed
+by book-relative path, so the manual is fully self-contained and
+navigable offline (each constant stays small -- a single multi-megabyte
+blob would overflow the gnatprove frontend stack, so the search index is
+split into chunks and the server streams them). mdBook's own search
+machinery (elasticlunr, mark, searcher, and the search index) is bundled
+and the search button works exactly as on the online site. External fonts
+and the PNG screenshots are dropped (the screenshots show as notes), and
+the bundled HTML stays pure ASCII (non-ASCII glyphs are encoded as UTF-8
+byte values in the Ada source).  Users on a machine without a network
+connection can still open the manual from the dashboard -- the header
+**Documentation (offline manual)** link and the API playground's `/docs`
+endpoint both point at it.
 
 ## The HTML dashboard
 
@@ -385,7 +389,7 @@ assessment without parsing HTML:
 
 ```json
 {"spark_level":"Platinum","total_vcs":725,"proved_vcs":725,
- " "tests_passed":1178,"tests_failed":0,"doc_coverage":100,
+ " "tests_passed":1181,"tests_failed":0,"doc_coverage":100,
  "standard":"all","level":"DAL-C","dal_status":"Achieved",
  "standards":{"DO-178C":{"level":"DAL-C","status":"Achieved"},
                "ISO 26262":{"level":"ASIL B","status":"Achieved"},

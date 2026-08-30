@@ -2,7 +2,7 @@
   |-----------------------------------------|--------|----------|
   | Types conversions                        |  67 | PASS     |
   | DAL compliance                           |  16 | PASS     |
-  | Source scanner                           |  86 | PASS     |
+  | Source scanner                           |  89 | PASS     |
   | GNATprove parser                         |  64 | PASS     |
   | Test-result parser                       |  50 | PASS     |
   | CLI config                               |  168 | PASS     |
@@ -18,4 +18,4 @@
   | Complexity check                         |  12 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 1178  Failed: 0
+  Passed: 1181  Failed: 0

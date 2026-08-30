@@ -805,6 +805,34 @@ package body Adacovex_Scanner_Tests is
          end;
       end;
 
+      --  Test 23: an HLR-looking tag inside a string literal is not a source
+      --  tag; a real comment tag after a string still is.  Generated assets
+      --  (for example the bundled manual's HTML/JS constants) carry `--
+      --  HLR-XXXX` examples inside strings, and those must not register as
+      --  orphan tags.
+      begin
+         declare
+            F : File_Type;
+         begin
+            Create (F, Out_File, Tmp_File);
+            Put_Line (F, "package Test_Pkg is");
+            Put_Line
+              (F, "   S : constant String := ""--  HLR-SCAN: not a tag"";");
+            Put_Line (F, "   pragma Assert (True);  --  HLR-CACHE: real tag");
+            Put_Line (F, "end Test_Pkg;");
+            Close (F);
+         end;
+         Adacovex.Parsers.Source.Scan_Ads_File (Tmp_File, Pkg, Success);
+         R.Check (Success, "Test 23: parse succeeded");
+         R.Check
+           (Natural (Pkg.HLR_Tags.Length) = 1,
+            "Test 23: string-literal -- HLR-* is not a source tag");
+         R.Check
+           (Pkg.HLR_Tags (1).Len = 5
+            and then Pkg.HLR_Tags (1).Tag (1 .. 5) = "CACHE",
+            "Test 23: comment tag after a string is still found");
+      end;
+
       --  Cleanup
       begin
          Ada.Directories.Delete_File (Tmp_File);

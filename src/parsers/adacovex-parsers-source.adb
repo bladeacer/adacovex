@@ -103,13 +103,26 @@ package body Adacovex.Parsers.Source is
      (Line : String; Tag : out String; Tag_Len : out Natural) return Boolean
    is
       In_Comment : Boolean := False;
+      In_String  : Boolean := False;
       H_Start    : Natural := 0;
       H_End      : Natural := 0;
    begin
       Tag_Len := 0;
       for I in Line'Range loop
          if not In_Comment then
-            if I < Line'Last - 1
+            if In_String then
+               --  Inside a string literal: a quote closes it.  Ada escapes a
+               --  quote as two quotes, which toggles out and back in -- the
+               --  net effect of toggling on every quote is correct.  A `--`
+               --  inside a string is data, not a comment, so HLR tags are
+               --  never extracted from string content (for example generated
+               --  HTML/JS constants embedding `-- HLR-XXXX` examples).
+               if Line (I) = '"' then
+                  In_String := False;
+               end if;
+            elsif Line (I) = '"' then
+               In_String := True;
+            elsif I < Line'Last - 1
               and then Line (I) = '-'
               and then Line (I + 1) = '-'
             then

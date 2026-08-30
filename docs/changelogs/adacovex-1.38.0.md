@@ -93,20 +93,24 @@ donuts, proof and test bars, the docstring radial gauge, and the dependency
 scope polar ring). The screenshots are captured with a Playwright script
 (`tests/e2e/capture-previews.mjs`) against the live `--serve` dashboard.
 
-### C8: Bundled offline manual is now searchable
+### C8: mdBook search works in the bundled offline manual
 
-The bundled manual served at `/docs` works fully **offline** again. In 1.38
-the mdBook search machinery was dropped from the bundle (mdbook's elasticlunr
-search index is a multi-MB single blob that would overflow the gnatprove
-frontend as one Ada string constant) and the search box was hidden, so the
-manual in the binary had no search. `tools/gen-docs.py` now bundles a
-**compact `offline-search.json`** (page title, headings, body excerpt -- a
-few tens of kilobytes for the whole manual) and injects a small
-self-contained search **widget** into every bundled page. The widget resolves
-the manual root from the current URL and does substring search with per-result
-links into the manual; mdbook's own search box stays hidden, so the online
-Read the Docs site keeps its full search while the bundled copy gains a
-working one for machines without a network.
+The bundled manual served at `/docs` is searchable **offline** with mdBook's
+own search. In 1.38 the mdBook search machinery was dropped from the bundle
+(mdbook's elasticlunr search index is a multi-MB single blob that would
+overflow the gnatprove frontend as one Ada string constant) and the search
+box was hidden, so the manual in the binary had no search. `tools/gen-docs.py`
+now bundles the whole mdBook search stack -- `elasticlunr`, `mark`,
+`searcher`, and the search index itself -- and keeps the search box visible.
+The index is split into fixed-size chunks, each its own Ada constant (so
+no single constant exceeds the gnatprove limit), and the server streams the
+chunks back as one response when the page requests it, so no worker task
+materialises a multi-megabyte body.
+
+The search index is now committed with the rest of `docs/book` so the
+bundle stays deterministic. No parallel search index or widget: the search
+button runs mdbook's own code against mdbook's own index, exactly like the
+online site.
 
 ### C9: Dashboard shows obvious docs links and a split API view
 
@@ -191,13 +195,15 @@ its stack (`Storage_Error stack overflow` at `adacovex-docs_template.ads`),
 aborting `make prove` and therefore `make check` and every release.
 Experiments showed the limit is the constant size itself (a single string
 constant over ~1 MB overflows whatever its structure), so the generated
-spec now holds one `aliased constant String` per asset -- 152 bodies, each
-well under the limit, never concatenated into one value -- with an
+spec now holds one `aliased constant String` per asset (the multi-MB
+search index is split into fixed-size chunks, each its own constant -- 166
+bodies in all), each well under the limit, never concatenated into one
+value -- with an
 `Asset_Bodies` access-to-constant table and an `Asset_Index` subtype so
 `Content (Idx)` needs no unchecked bounds reasoning. The served bytes are
 unchanged (each asset constant carries the identical content), the server
-routes through the same `Find`/`Content` API, and the bundle-links check
-still passes.
+routes through the same `Find` lookup and streams the bodies (see C8), and
+the bundle-links check still passes.
 
 ### H2: Dashboard docs links moved from the footer to a top bar
 
@@ -230,11 +236,26 @@ command now resolves the cargo-installed `mdbook` binary (`find` under
 `$HOME`) and prepends its directory to PATH before building, so the build
 survives Rust toolchain upgrades without a hardcoded version path.
 
+### H8: HLR tags are no longer read from string literals
+
+The source scanner extracted HLR traceability tags from `--` sequences
+inside string literals, treating them as comment starts. The bundled
+manual's generated constants embed examples such as `-- HLR-XXXX` in
+HTML and JS string data, so those examples registered as orphan source
+tags and the self-assessment fell to DAL-C Unmet. The scanner now tracks
+string literals (including `""` escapes) and only starts a comment at a
+`--` outside one; tags inside strings are data, not traces. The
+self-assessment returns to DAL-C Achieved.
+
 ## Test Suite
 
 The native suite grows from 1169 to 1173 tests. The server routing category
 adds four checks for the `/docs` and `/docs/` routes and two near-miss paths
-(`/docs2`, `/manual`) that must stay 404s. All 1173 tests pass.
+(`/docs2`, `/manual`) that must stay 404s. The scanner category adds three
+checks that a `-- HLR-*` string literal is not a source tag while a real
+comment tag after a string still is. All 1173 tests pass (1176-1181 when
+mdbook is on PATH, depending on the system-tool assertions in the SBOM
+category).
 
 ## Proof Results
 
@@ -249,7 +270,7 @@ trailing-slash spelling and remains proved by definition.
 ## Traceability
 
 - `HLR-DOC` / `HLR-DASH` -- C1 mdBook manual + Read the Docs, C2 bundled
-  offline manual at `/docs`, C8 bundled offline search, C10 audience
+  offline manual at `/docs`, C8 mdBook search in the bundle, C10 audience
   folders, H2 docs links moved to the top bar, H7 Read the Docs build
   deploy, `tools/gen-docs.py`, and the `make book` target.
 - `HLR-DASH` -- C3 API playground clickable links, C4 yace theme variables,
@@ -262,5 +283,7 @@ trailing-slash spelling and remains proved by definition.
   blob that keeps the bundled manual provable.
 - `HLR-SERVER` -- H3 the `Docs_Subpath` off-by-one fix, H5 the worker-pool
   idle-connection timeout.
+- `HLR-SCAN` -- H8 the string-literal HLR-tag fix (tags inside strings are
+  data, not traces).
 
 See `docs/dashboard.md`, `docs/THIRD_PARTY_NOTICES.md`, and `.readthedocs.yaml`.

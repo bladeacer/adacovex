@@ -35,7 +35,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-83dd89a6.js";
+            window.path_to_searchindex_js = "../searchindex-5363a88b.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-0e6cf2bd.js"></script>
@@ -260,7 +260,8 @@ docs/                              -- all documentation (this guide, CLI referen
 <ul>
 <li><code>mdbook build docs</code> produces the site in <code>docs/book/</code>; <code>make book</code> also
 bundles it into <code>src/adacovex-docs_template.ads</code> (via <code>tools/gen-docs.py</code>,
-which adds the compact offline search).</li>
+which keeps mdBook’s own search machinery – including the chunked search
+index – so the bundled manual is searchable offline).</li>
 <li>The bundled manual is served by <code>--serve</code> at <code>/docs</code>.</li>
 <li><code>make book-links-check</code> fails when the committed <code>docs/book</code> drifts from a
 fresh <code>mdbook build</code>, or when a link in the bundled manual does not
