@@ -244,8 +244,8 @@ Clicking an mdBook search result in the bundled manual returned 404.  The
 `/docs` router dispatched on the query-string-stripped path (so `?highlight=`
 reached the docs route), but the asset lookup that followed read the *raw*
 request path, so every search result carrying `?highlight=...` (mdBook's
-mark-the-search-term parameter) was looked up as `changelogs/….html?highlight=…`
-and never found.  The docs asset key now derives from the query-stripped path,
+mark-the-search-term parameter) was looked up in the wrong book-relative
+shape and never found.  The docs asset key now derives from the query-stripped path,
 so a search-result link such as
 `/docs/usage/cli-reference.html?highlight=serve#--serve` resolves to the page,
 then the browser's own fragment + mark handling scrolls to the heading and
@@ -267,12 +267,11 @@ connection is reaped sooner than before.
 ### H11: Offline manual subpages drop their font links
 
 `tools/gen-docs.py` dropped the bundling-irrelevant font stylesheet link from
-each bundled page, but its pattern only matched the index page's
-`href="fonts/…css"` shape.  Subpages link the same stylesheet with a
-`path_to_root` prefix (`../fonts/…css`), so those kept the reference and the
-browser issued a `/fonts/...css` 404 on every subpage.  The drop now matches
-any leading `../` prefix, so no bundled page references the unbundled font
-asset.
+each bundled page, but its pattern only matched the index page's un-prefixed
+`fonts/` href shape.  Subpages link the same stylesheet with a `path_to_root`
+prefix (for example `../fonts/`), so those kept the reference and the browser
+issued a `/fonts/...css` 404 on every subpage.  The drop now matches any
+leading `../` prefix, so no bundled page references the unbundled font asset.
 
 ### H8: HLR tags are no longer read from string literals
 
