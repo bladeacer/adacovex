@@ -641,8 +641,9 @@ package body Adacovex.Server.HTTP is
                            Is_KA);
                      else
                         declare
-                           A_Idx : constant Adacovex.Docs_Template.Asset_Index :=
-                             Adacovex.Docs_Template.Asset_Index (Idx);
+                           A_Idx :
+                             constant Adacovex.Docs_Template.Asset_Index :=
+                               Adacovex.Docs_Template.Asset_Index (Idx);
                         begin
                            Send_Asset_Response
                              (Channel,
