@@ -24,10 +24,11 @@ subtype Asset_Index is Positive range 1 .. Asset_Count;
 ### type Asset_Ref
 
 ```ada
-type Asset_Ref is record
-Path : String (1 .. Max_Path) := (others => ' ');
-Mime : String (1 .. Max_Mime) := (others => ' ');
-Idx  : Body_Index;
+type Asset_Ref is
+record
+Path  : String (1 .. Max_Path) := (others => ' ');
+Mime  : String (1 .. Max_Mime) := (others => ' ');
+Idx   : Body_Index;
 end record;
 ```
 
