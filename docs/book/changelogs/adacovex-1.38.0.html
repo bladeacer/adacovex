@@ -35,7 +35,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-716d3f4b.js";
+            window.path_to_searchindex_js = "../searchindex-5d8bf1e3.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-4f584999.js"></script>
@@ -268,6 +268,17 @@ resolved.  The six-character prefix is now stripped from the slice’s actual
 first index, so every page, stylesheet, and badge of the bundled manual
 serves (an e2e test pins the exact, nested, and extensionless subpaths plus
 a missing-page 404).</p>
+<h3 id="h5-idle-connections-no-longer-pin-the-server-worker-pool"><a class="header" href="#h5-idle-connections-no-longer-pin-the-server-worker-pool">H5: Idle connections no longer pin the server worker pool</a></h3>
+<p>The dashboard server’s fixed-size worker pool (4 workers) blocks each
+worker on the next request of a keep-alive connection.  Browsers hold
+several idle connections open, so once all four workers were waiting on
+silent connections, the next request queued forever – the e2e suite
+started hitting 60-second timeouts on <code>/docs</code> subpages as it grew.  Each
+accepted socket now carries a 5-second receive timeout, and a timed-out
+(or dropped) connection is closed in the worker’s error path (which
+previously leaked the socket).  A worker frees within seconds, the pool
+recovers, and the request is served; the e2e suite returns to 28 passing
+in ~14 seconds.</p>
 <h3 id="h4-bundled-manual-no-longer-overflows-the-gnatprove-frontend"><a class="header" href="#h4-bundled-manual-no-longer-overflows-the-gnatprove-frontend">H4: Bundled manual no longer overflows the gnatprove frontend</a></h3>
 <p>The complete-book offline manual is a 4 MB asset set, and <code>gen-docs.py</code>
 emitted it as one giant <code>&amp;</code>-concatenation chain (300k+ string literals).
@@ -313,7 +324,8 @@ JavaScript layout separation.</li>
 <li><code>HLR-ARCH</code> – C5 complexity-check <code>book</code> directory exclusion, C7 the
 book-links-check gate and the complete-book restructure, H4 the chunked
 blob that keeps the bundled manual provable.</li>
-<li><code>HLR-SERVER</code> – H3 the <code>Docs_Subpath</code> off-by-one fix.</li>
+<li><code>HLR-SERVER</code> – H3 the <code>Docs_Subpath</code> off-by-one fix, H5 the worker-pool
+idle-connection timeout.</li>
 </ul>
 <p>See <code>docs/dashboard.md</code>, <code>docs/THIRD_PARTY_NOTICES.md</code>, and <code>.readthedocs.yaml</code>.</p>
 

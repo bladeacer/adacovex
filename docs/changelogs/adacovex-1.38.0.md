@@ -116,6 +116,19 @@ first index, so every page, stylesheet, and badge of the bundled manual
 serves (an e2e test pins the exact, nested, and extensionless subpaths plus
 a missing-page 404).
 
+### H5: Idle connections no longer pin the server worker pool
+
+The dashboard server's fixed-size worker pool (4 workers) blocks each
+worker on the next request of a keep-alive connection.  Browsers hold
+several idle connections open, so once all four workers were waiting on
+silent connections, the next request queued forever -- the e2e suite
+started hitting 60-second timeouts on `/docs` subpages as it grew.  Each
+accepted socket now carries a 5-second receive timeout, and a timed-out
+(or dropped) connection is closed in the worker's error path (which
+previously leaked the socket).  A worker frees within seconds, the pool
+recovers, and the request is served; the e2e suite returns to 28 passing
+in ~14 seconds.
+
 ### H4: Bundled manual no longer overflows the gnatprove frontend
 
 The complete-book offline manual is a 4 MB asset set, and `gen-docs.py`
@@ -169,6 +182,7 @@ trailing-slash spelling and remains proved by definition.
 - `HLR-ARCH` -- C5 complexity-check `book` directory exclusion, C7 the
   book-links-check gate and the complete-book restructure, H4 the chunked
   blob that keeps the bundled manual provable.
-- `HLR-SERVER` -- H3 the `Docs_Subpath` off-by-one fix.
+- `HLR-SERVER` -- H3 the `Docs_Subpath` off-by-one fix, H5 the worker-pool
+  idle-connection timeout.
 
 See `docs/dashboard.md`, `docs/THIRD_PARTY_NOTICES.md`, and `.readthedocs.yaml`.

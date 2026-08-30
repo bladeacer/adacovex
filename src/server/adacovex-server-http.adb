@@ -98,19 +98,36 @@ package body Adacovex.Server.HTTP is
          From       : Sock_Addr_Type;
          KA         : Boolean;
          Backoff_Ct : Natural := 0;
+         Has_Conn   : Boolean := False;
       begin
          accept Start;
          while Running loop
             begin
                Accept_Socket (Listener, Channel, From);
+               Has_Conn := True;
                Backoff_Ct := 0;
+               --  Idle connections must never pin a worker forever: the pool
+               --  is fixed-size, so N idle keep-alive (or speculative)
+               --  connections block every worker and hang the next request.
+               --  A receive timeout frees the worker (and closes the socket)
+               --  when a connection goes silent.
+               Set_Socket_Option
+                 (Channel, Socket_Level, (Receive_Timeout, 5.0));
                loop
                   Handle_Request (Channel, Svr_State, KA);
                   exit when not KA;
                end loop;
                Close_Socket (Channel);
+               Has_Conn := False;
             exception
                when GNAT.Sockets.Socket_Error =>
+                  --  The peer vanished or the receive timeout fired on an
+                  --  idle keep-alive connection: close the socket so the
+                  --  worker frees instead of leaking a dead connection.
+                  if Has_Conn then
+                     Close_Socket (Channel);
+                     Has_Conn := False;
+                  end if;
                   Backoff_Ct := Backoff_Ct + 1;
                   delay 0.1;
                   if Backoff_Ct > 100 then
