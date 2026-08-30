@@ -18,7 +18,8 @@ Steps, in order:
    src/adacovex-dashboard_template.ads from resources/.
 3. `python3 tools/gen-docs.py` -- regenerate
    src/adacovex-docs_template.ads (the bundled offline manual) from the
-   mdBook docs source; byte-identical when the docs are unchanged.
+   Sphinx docs source (docs/conf.py + MyST); byte-identical when the docs
+   are unchanged.
 4. `alr build` with stdout+stderr captured, the log filtered by
    tools/filter-sframe.py (the benign SFrame notice), and the filtered
    output printed to stdout.
@@ -27,8 +28,8 @@ Steps, in order:
 
 Exit code is alr's (0 on success).  A failure in any earlier step aborts
 the build like the old `&&`-chained recipe did.  gen-docs.py never fails
-when mdbook is missing (it keeps the committed spec), so the build still
-works on a machine without the docs toolchain.
+when sphinx-build is missing (it keeps the committed spec), so the build
+still works on a machine without the docs toolchain.
 """
 
 import argparse

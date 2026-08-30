@@ -1,39 +1,42 @@
 #!/usr/bin/env python3
-"""Build the mdBook manual and bundle the whole built site into the binary.
+"""Build the Sphinx manual and bundle the whole built site into the binary.
 
-The manual source is the mdBook project at `docs/` (read the `.readthedocs.yaml`
-dependency: the same book powers the Read the Docs site).  This script:
+The manual source is the Sphinx project at `docs/` (read the
+`.readthedocs.yaml` dependency: the same project powers the Read the Docs
+site -- `sphinx.configuration: docs/conf.py` with Markdown via the MyST
+parser, so the pages stay `.md`).  This script:
 
-1. runs `mdbook build docs` (when mdbook is on PATH; the build output lands
-   in `docs/book/`, a local, gitignored build product -- the committed
-   artifact is the generated spec below), then
+1. runs `sphinx-build -b html docs docs/_build/html` (when sphinx-build is
+   resolvable -- on PATH or in the repo's own `.venv/bin`, see
+   `sphinx_build_cmd`; the build output lands in `docs/_build/html`, a
+   local, gitignored build product -- the committed artifact is the
+   generated spec below), then
 2. collects the built site into an offline asset set -- every HTML page, the
-   stylesheets, the local scripts (theme, toc, clipboard, highlight.js), and
-   mdbook's client-side search machinery (elasticlunr, searcher, mark, and the
-   search index) -- and post-processes each page so the offline manual works
-   with no network:
+   stylesheets, the local scripts (doctools, searchtools, sphinx_highlight),
+   and Sphinx's client-side search machinery (base/english stemmers,
+   language_data, searchtools, and the searchindex) -- and post-processes
+   each page so the offline manual works with no network:
 
-   * the font stylesheet and woff2 files are dropped (system fonts are used);
-   * the binary favicon is dropped (the SVG favicon is kept);
-   * the PNG dashboard screenshots are dropped and each `<img>` becomes a
-     short note (the images stay in the online book);
-   * every remaining non-ASCII glyph is escaped as an HTML character
-     reference so the Ada source stays pure ASCII;
+   * the footer "Page source" `_sources/` links and the `_sources/` files
+     are dropped (the raw Markdown adds no offline value);
+   * the PNG dashboard screenshots (`_images/`) are dropped and each `<img>`
+     becomes a short note (the images stay in the online book);
+   * Sphinx's `.doctrees/`, `.buildinfo` and `objects.inv` side-car files
+     are not served pages and are not bundled;
+   * every remaining non-ASCII glyph (for example the paragraph-sign
+     headerlinks Sphinx adds) is escaped as an HTML character reference so
+     the Ada source stays pure ASCII;
 
-   mdbook's own search stays fully functional in the bundle: the search
+   Sphinx's own search stays fully functional in the bundle: the search
    assets are bundled and the search box is left visible.  The search index
-   is a multi-MB single line, far past the ~1 MB per-constant limit of the
-   gnatprove frontend, so it is split into fixed-size chunks, each its own
-   Ada constant, and the server streams the chunks back as one response when
-   the page requests the index.  The index's content-hashed filename
-   (`searchindex-<hash>.js`) is normalised to a stable `searchindex.js` --
-   the asset and every page's reference -- so a docs edit no longer renames
-   the file and each build just overwrites the same entry.  The single-page
-   print view (`print.html`), which mdBook's print button opens and which
-   triggers `window.print()` on load, is bundled too (and chunked like the
-   search index) so the offline and online manuals behave identically.
-   Only the PNG favicon and the PNG dashboard screenshots are dropped (their
-   links/icons are stripped from every page, and the SVG favicon is kept);
+   (a JSON blob `searchindex.js`) is a few hundred KB -- single-line, so it
+   is emitted as fixed-size chunks like any oversized asset, and the server
+   streams the chunks back as one response when the page requests the index.
+   Sphinx names the index `searchindex.js` already (no content hash), so no
+   rename is needed and each build just overwrites the same entry.  The
+   `_downloads/` badge SVGs (from the inline `:download:` links on the
+   badges page) ARE bundled so those links resolve; the Furo theme pulls
+   no web fonts, so nothing needs dropping for fonts.
 3. writes `src/adacovex-docs_template.ads` as a constant table of
    (path, MIME type, body index) assets plus one `aliased constant String`
    per asset body (bodies are never concatenated into one value: a single
@@ -41,14 +44,13 @@ dependency: the same book powers the Read the Docs site).  This script:
    `--serve` exposes the table at `/docs/` so the dashboard links carry a
    fully offline copy of the whole manual inside the binary itself.
 
-The generated spec is committed so the tree builds without running mdbook
-(the project has no mdbook/Markdown runtime dependency).  `docs/book/` itself
-is a local build output (gitignored: mdBook content-hashes its assets, so a
-committed build would churn `searchindex-<hash>.js` and every page reference
-on each docs edit); the spec is the only committed artifact.  `make book` /
-`make build` regenerate it (byte-identical when the docs are unchanged) and
-`--check` fails when it drifts -- exactly the same pattern
-tools/gen-dashboard.py uses.
+The generated spec is committed so the tree builds without running Sphinx
+(the project has no Sphinx/Markdown runtime dependency; sphinx+myst-parser
+are dev / Read the Docs dependencies from `requirements.txt`).
+`docs/_build/` itself is a local build output (gitignored); the spec is the
+only committed artifact.  `make book` / `make build` regenerate it
+(byte-identical when the docs are unchanged) and `--check` fails when it
+drifts -- exactly the same pattern tools/gen-dashboard.py uses.
 
 Usage:
   python3 tools/gen-docs.py [--check] [--out=PATH]
@@ -58,8 +60,9 @@ Usage:
 --out      Output Ada spec path (default: src/adacovex-docs_template.ads).
 
 Exit code 0 on success, 1 on a missing tool/build or a --check mismatch.  When
-mdbook is not on PATH the previously committed spec is left in place and a note
-is printed -- the spec is authored to build without it.
+sphinx-build is not resolvable (neither on PATH nor in the repo's `.venv`)
+the previously committed spec is left in place and a note is printed -- the
+spec is authored to build without it.
 """
 
 import argparse
@@ -72,7 +75,7 @@ from typing import Dict, List, Optional, Tuple
 
 ROOT: Path = Path(__file__).resolve().parent.parent
 DOCS: Path = ROOT / "docs"
-BOOK: Path = DOCS / "book"          # mdbook default dest dir (committed)
+BUILD: Path = DOCS / "_build" / "html"   # sphinx html build output (gitignored)
 OUT: Path = ROOT / "src" / "adacovex-docs_template.ads"
 
 # ---------------------------------------------------------------------------
@@ -80,37 +83,40 @@ OUT: Path = ROOT / "src" / "adacovex-docs_template.ads"
 # the link checker knows which built-site files are deliberately not bundled.
 # ---------------------------------------------------------------------------
 
-# Path prefixes (relative to the book root) that are never bundled: binary
-# fonts and the PNG screenshots.  mdbook's search machinery (elasticlunr-,
-# searcher-, mark-, searchindex-) IS bundled so the manual's own search
-# works offline, and the print view (print.html) is bundled so the print
-# button works exactly as it does online.  The SVG favicon is bundled (the
-# pages link it); only the PNG favicon is dropped (its <link> is stripped
-# from every page below).  The 404 page and the dry book.toml/.nojekyll
-# side-car files are not served pages.
+# Path prefixes (relative to the build root) that are never bundled:
+# Sphinx's non-server build side-cars (.doctrees/, .buildinfo, objects.inv),
+# the raw-source copies under _sources/ (their footer links are stripped from
+# every page), and the copied dashboard screenshots under _images/ (each <img>
+# becomes a note).  Sphinx's search machinery (searchindex.js, searchtools.js,
+# the stemmers, language_data) IS bundled so the manual's own search works
+# offline, and the _downloads/ badge SVGs are bundled so the badges page's
+# download links resolve.  The search results page (search.html) and the
+# alphabetical index page (genindex.html) are linked from every page's footer,
+# so they are bundled too.
 OFFLINE_EXCLUDED_PREFIXES: Tuple[str, ...] = (
-    "fonts/",
-    "media/",
-    "404.html",
-    "book.toml",
-    ".nojekyll",
+    ".doctrees/",
+    "_sources/",
+    "_images/",
+    ".buildinfo",
+    "objects.inv",
 )
 
-# The font stylesheet link (the woff2 files are not bundled).  Matches the
-# `fonts/...` href with any leading path_to_root (`../`) prefix, because a
-# subpage links ``../fonts/fonts-...css`` while the index page links
-# `fonts/fonts-...css` -- the fonts must be dropped on every page or the
-# unbundled asset 404s when the offline manual navigates to a subpage.
-_DROP_FONT_LINK = re.compile(
-    r'<link[^>]*rel="stylesheet"[^>]*href="[^"]*fonts/[^"]+"[^>]*>')
-# The binary favicon link (the SVG favicon link is kept).  The prefixed
-# `favicon-` exclusion above was removed precisely so the SVG icon stays in
-# the bundle; only the PNG shortcut-icon <link> is stripped, and stray PNG
-# favicon assets (not referenced once that link is gone) are skipped below.
-_DROP_PNG_ICON = re.compile(
-    r'<link[^>]*rel="shortcut icon"[^>]*href="[^"]*favicon-[^"]+\.png"[^>]*>')
-# The PNG dashboard screenshots: replaced by a short note.
-_IMG_MEDIA = re.compile(r'<img[^>]*src="media/[^"]+"[^>]*>')
+# The footer "Page source" link that points into _sources (which is not
+# bundled).  Stripped from every page so the offline manual has no dead link.
+_DROP_SOURCE_LINK = re.compile(r'<a[^>]*href="\.?\.?/?_sources/[^"]*"[^>]*>.*?</a>')
+
+# The Furo theme credits itself in every footer ("Made with Sphinx and
+# @pradyunsg's Furo" with links to pradyunsg.me and the Furo GitHub page).
+# adacovex credits Sphinx and Furo in THIRD_PARTY_NOTICES.md, CREDITS.md and
+# the dashboard Credits tab instead, so the theme self-promotion block is
+# stripped from the bundled manual.  The copyright notice above it stays.
+_DROP_FURO_CREDIT = re.compile(
+    r"Made with <a[^>]*>.*?Furo</a>\s*", re.DOTALL)
+
+# The PNG dashboard screenshots: replaced by a short note.  The image lives
+# under _images/ at a relative path from any page (../_images/... on a
+# subpage, _images/... on the index).
+_IMG_IMAGES = re.compile(r"<img[^>]*src=\"(?:\\.\\./)*_images/[^\"]+\"[^>]*>")
 
 _MIME: Dict[str, str] = {
     ".html": "text/html",
@@ -121,8 +127,8 @@ _MIME: Dict[str, str] = {
 
 # Max size of one emitted Ada string constant.  The gnatprove frontend blows
 # its stack on a single constant over ~1 MB (whatever its structure), so every
-# asset body -- and every chunk of the multi-MB search index -- stays well
-# under it.
+# asset body -- and every chunk of the multi-hundred-KB search index -- stays
+# well under it.
 MAX_CONSTANT: int = 400_000
 
 
@@ -130,59 +136,72 @@ def sh(cmd: List[str]) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, cwd=str(ROOT), capture_output=True, text=True)
 
 
-def mdbook_build() -> bool:
-    """Run `mdbook build docs` (output lands in docs/book).  True on success."""
-    if shutil.which("mdbook") is None:
-        print("note: mdbook not on PATH; keeping the existing spec")
+def sphinx_build_cmd() -> Optional[List[str]]:
+    """The sphinx-build command, honouring the repo's own venv.
+
+    Returns [sphinx-build, "-b", "html"] when a usable sphinx-build exists
+    (on PATH, or in the repo's `.venv/bin` -- the checked-in docs toolchain
+    directory), None otherwise.  `make check` therefore never silently
+    skips the docs gates on a machine that has the venv but no system
+    sphinx-build.
+    """
+    exe = shutil.which("sphinx-build")
+    if exe is None:
+        venv = ROOT / ".venv" / "bin" / "sphinx-build"
+        if venv.is_file():
+            exe = str(venv)
+    if exe is None:
+        return None
+    return [exe, "-b", "html"]
+
+
+def sphinx_build() -> bool:
+    """Run `sphinx-build -b html docs docs/_build/html`.  True on success."""
+    cmd = sphinx_build_cmd()
+    if cmd is None:
+        print("note: sphinx-build not on PATH; keeping the existing spec")
         return False
-    result = sh(["mdbook", "build", str(DOCS)])
+    result = sh(cmd + [str(DOCS), str(BUILD)])
     if result.returncode != 0:
-        print(f"note: mdbook build failed ({result.returncode}); "
+        print(f"note: sphinx-build failed ({result.returncode}); "
               f"keeping the existing spec", file=sys.stderr)
         return False
     return True
 
 
 def postprocess_page(html: str) -> str:
-    """Make one built page fully offline: drop fonts/binary favicon and
-    replace the PNG screenshots with notes.  mdbook's search scripts and
+    """Make one built page fully offline: drop the _sources/font footer links
+    and replace the PNG screenshots with notes.  Sphinx's search scripts and
     search box are kept, so search works offline.  Non-ASCII glyphs are
     emitted as raw UTF-8 bytes by the Ada generator."""
-    html = _DROP_FONT_LINK.sub("", html)
-    html = _DROP_PNG_ICON.sub("", html)
+    html = _DROP_SOURCE_LINK.sub("", html)
+    html = _DROP_FURO_CREDIT.sub("", html)
 
     def img_repl(match: "re.Match[str]") -> str:
         alt_m = re.search(r'alt="([^"]*)"', match.group(0))
         alt = alt_m.group(1) if alt_m else "screenshot"
         return f'<em>{alt} -- see the online manual for the image.</em>'
 
-    html = _IMG_MEDIA.sub(img_repl, html)
+    html = _IMG_IMAGES.sub(img_repl, html)
     return html
 
 
-def collect_assets(book: Path) -> List[Tuple[str, str, str]]:
-    """Return [(path, mime, body), ...] for every bundled asset of the book.
+def collect_assets(build: Path) -> List[Tuple[str, str, str]]:
+    """Return [(path, mime, body), ...] for every bundled asset of the build.
 
-    The PNG favicon is deliberately dropped (its <link> is stripped from
-    every page by postprocess_page); the SVG favicon is kept.  Every HTML
-    page -- including print.html, the single-page print view -- is
-    post-processed so the offline manual behaves like the online one (the
-    print button must work, so print.html is bundled, not skipped).  The
-    content-hashed search index (`searchindex-<hash>.js`) is normalised to a
-    stable `searchindex.js` so a build no longer churns the asset name and
-    every page's reference on each docs change.
+    The _downloads/ badge SVGs are deliberately bundled (the badges page links
+    them); Sphinx's search machinery and the search page are bundled too, so
+    search works offline exactly as online.  The .doctrees/, _sources/,
+    _images/, .buildinfo and objects.inv side-cars are excluded (their
+    references are stripped or they carry no served HTML).  Every HTML page
+    is post-processed so the offline manual behaves like the online one.
     """
     assets: List[Tuple[str, str, str]] = []
-    for path in sorted(book.rglob("*")):
+    for path in sorted(build.rglob("*")):
         if not path.is_file():
             continue
-        rel = path.relative_to(book).as_posix()
+        rel = path.relative_to(build).as_posix()
         if any(rel.startswith(p) for p in OFFLINE_EXCLUDED_PREFIXES):
-            continue
-        # The PNG favicon is not referenced once its <link> is stripped from
-        # every page; the SVG icon stays.  The filename is content-hashed by
-        # mdBook (`favicon-<hash>.png` vs `favicon-<hash>.svg`).
-        if rel.startswith("favicon-") and rel.endswith(".png"):
             continue
         mime = _MIME.get(path.suffix.lower())
         if mime is None:
@@ -196,25 +215,8 @@ def collect_assets(book: Path) -> List[Tuple[str, str, str]]:
             body = postprocess_page(body)
         assets.append((rel, mime, body))
 
-    # Normalise the content-hashed search index (`searchindex-<hash>.js`) to
-    # a stable name so the bundle and every page reference do not change hash
-    # on each docs edit.  Rename the asset and rewrite every reference in the
-    # browser-facing bodies (searcher.js default, path_to_searchindex_js
-    # assignments in each page).
-    hashed_index = next(
-        (rel for rel, _, _ in assets if re.match(r"^searchindex-[0-9a-f]+\.js$", rel)),
-        None)
-    if hashed_index:
-        normalised: List[Tuple[str, str, str]] = []
-        for rel, mime, body in assets:
-            if rel == hashed_index:
-                rel = "searchindex.js"
-            normalised.append(
-                (rel, mime, body.replace(hashed_index, "searchindex.js")))
-        assets = normalised
-
     if not assets:
-        raise RuntimeError("no assets collected from the book build")
+        raise RuntimeError("no assets collected from the sphinx build")
     return assets
 
 
@@ -272,6 +274,10 @@ def _asset_body_lines(body: str) -> List[str]:
         lines.append("ASCII.LF")
     if lines and lines[-1] == "ASCII.LF":
         lines.pop()  # no trailing newline after the final line
+    if not lines:
+        # An empty asset body (for example Furo's zero-byte
+        # furo-extensions.js) still needs one operand for the constant.
+        lines.append('""')
     return lines
 
 
@@ -283,16 +289,16 @@ def _split_body(body: str) -> List[str]:
 
 
 def generate(out: Path) -> None:
-    """Build the book (or keep the existing spec when mdbook is missing)
-    and write the Ada spec."""
-    if not mdbook_build() and not BOOK.is_dir():
-        raise RuntimeError("mdbook not on PATH and no docs/book present")
+    """Build the manual (or keep the existing spec when sphinx-build is
+    missing) and write the Ada spec."""
+    if not sphinx_build() and not BUILD.is_dir():
+        raise RuntimeError("sphinx-build not on PATH and no docs/_build/html")
 
-    assets = collect_assets(BOOK)
+    assets = collect_assets(BUILD)
 
-    # Any asset over MAX_CONSTANT (the multi-MB mdBook search index, and the
-    # ~1 MB single-page print view) becomes several smaller constants; every
-    # other asset is one constant.  plan = [(rel, mime, [chunk, ...]), ...].
+    # Any asset over MAX_CONSTANT (the search index and the printed page) is
+    # several smaller constants; every other asset is one constant.
+    # plan = [(rel, mime, [chunk, ...]), ...].
     plan: List[Tuple[str, str, List[str]]] = []
     for rel, mime, body in assets:
         if len(body) > MAX_CONSTANT:
@@ -306,7 +312,7 @@ def generate(out: Path) -> None:
     ]
 
     header = (
-        "--  Generated by tools/gen-docs.py from the mdBook manual (docs/):\n"
+        "--  Generated by tools/gen-docs.py from the Sphinx manual (docs/):\n"
         "--  the whole built site (pages, stylesheets, scripts, badges, search)\n"
         "--  as an offline asset blob + lookup table.  --serve exposes it at\n"
         "--  /docs/.  Do not edit by hand; edit docs/ and run make book.\n"
@@ -361,9 +367,9 @@ def generate(out: Path) -> None:
         lines.append(f"      Asset_{b:03d}'Access{end_ref}")
     lines.append("")
     lines.append("   --  How many bodies a table asset spans.  Every asset spans")
-    lines.append("   --  one body except the oversized ones (the search index and")
-    lines.append("   --  the single-page print view), which are chunked so each")
-    lines.append("   --  constant stays under the gnatprove limit.")
+    lines.append("   --  one body except the oversized ones (for example the search")
+    lines.append("   --  index), which are chunked so each constant stays under the")
+    lines.append("   --  gnatprove limit.")
     if chunked_at:
         overrides = ", ".join(f"{k} => {n}" for k, n in chunked_at)
         lines.append("   Chunk_Count : constant array (Asset_Index) of Natural :=")
@@ -373,7 +379,7 @@ def generate(out: Path) -> None:
         lines.append("     (others => 1);")
     lines.append("")
     lines.append("   --  The whole offline manual, keyed by book-relative path")
-    lines.append('   --  (for example "index.html" or "css/general-e96d0476.css").')
+    lines.append("   --  (for example \"index.html\" or \"_static/styles/furo.css\").")
     lines.append("   Assets : constant Asset_Table :=")
     cum: int = 0
     for i, (rel, mime, chunks) in enumerate(plan):

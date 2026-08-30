@@ -12,7 +12,8 @@ Rules:
   * every text file under the repo root is a candidate;
   * generated outputs are excluded: docs/api-docs/ (gnatdoc), docs/badges/
     (SVG), docs/test_result.md (make test), sbom.json, obj/, bin/,
-    the Alire build state (alire.lock, alire/settings.toml,
+    the docs Sphinx build output (docs/_build), the Python virtualenv
+    (.venv), the Alire build state (alire.lock, alire/settings.toml,
     alire/build_hash_inputs), and the two generated Ada specs
     (src/adacovex_version_info.ads, src/adacovex-dashboard_template.ads);
   * historical records are excluded: past-release changelogs
@@ -39,7 +40,8 @@ ROOT: Path = Path(__file__).resolve().parent.parent
 
 # Directories that never carry live metric phrases.
 GENERATED_DIRS: frozenset = frozenset({
-    ".git", "obj", "bin", "dist", "docs/api-docs", "docs/badges", "tools",
+    ".git", ".venv", "obj", "bin", "dist", "docs/api-docs", "docs/badges",
+    "docs/_build", "tools",
 })
 
 # Individual generated/build-state files.
@@ -99,8 +101,11 @@ def iter_live_files() -> Iterator[Path]:
             continue
         rel: Path = p.relative_to(ROOT)
         parts: tuple = rel.parts
-        # Generated/build/VCS dirs (prefix match on any path segment).
-        if any(part in GENERATED_DIRS for part in parts):
+        # Generated/build/VCS dirs (path-prefix match: an entry matches when
+        # it is an ancestor directory of the file, so both single-segment
+        # ("obj", "bin") and multi-segment ("docs/api-docs",
+        # "docs/_build") entries work).
+        if any(p.is_relative_to(ROOT / d) for d in GENERATED_DIRS):
             continue
         if rel.as_posix() in GENERATED_FILES:
             continue

@@ -1958,7 +1958,7 @@ package body Adacovex.Config is
             & ASCII.LF
             & "                       iso26262, iec62304)"
             & ASCII.LF
-            & "  GET /docs            bundled offline manual (mdBook HTML,"
+            & "  GET /docs            bundled offline manual (Sphinx HTML,"
             & ASCII.LF
             & "                       built into the binary, no external assets)"
             & ASCII.LF

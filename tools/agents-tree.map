@@ -1,7 +1,7 @@
 src/adacovex	Version constant
 src/adacovex_version_info	Generated version constant (from alire-dev.toml / ADACOVEX_VERSION)
 src/adacovex-dashboard_template	Generated dashboard HTML template constant (from resources/dashboard.html)
-src/adacovex-docs_template	Generated offline manual template constant (from the mdBook docs via tools/gen-docs.py)
+src/adacovex-docs_template	Generated offline manual template constant (from the Sphinx docs via tools/gen-docs.py)
 src/adacovex_main	CLI entry point (builds as bin/adacovex; covex alias)
 src/compliance/adacovex-compliance	Parent package for DO-178C compliance assessment
 src/compliance/adacovex-compliance-dal	DAL level assessment logic (DAL-A..E criteria)
@@ -53,9 +53,11 @@ src/tests/adacovex_tz_ansi_tests	Timezone + ANSI tests (63)
 src/tests/adacovex_complexity_tests	Complexity check tests (12)
 src/tests/adacovex_renderer_svg_tests	SVG renderer tests (161)
 src/tests/adacovex_renderer_tests	HTML/Markdown renderer tests (58)
-src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (283)
-src/tests/test_runner	Test suite entry point (1181 tests)
+src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (288)
+src/tests/test_runner	Test suite entry point (1186 tests)
 src/parsers/adacovex-parsers-manifest-req_entry	Parse the first requirement (name/version) from a requirements*.txt
+src/parsers/adacovex-parsers-manifest-collect_req_entries	Collect every requirement (name/version) from a requirements*.txt
+src/parsers/adacovex-parsers-manifest-register_root_python_deps	Register root requirements*.txt entries as dev-scope pypi components
 src/parsers/adacovex-parsers-manifest-is_test_named	Whether an npm package name carries a test label (starts/ends with "test")
 src/parsers/adacovex-parsers-manifest-collect_owner_test_names	Collect test-labelled dependency names from supported-language manifests
 src/parsers/adacovex-parsers-manifest-key_value	Extract the quoted "key = value" from a TOML/JSON line

@@ -42,7 +42,8 @@ is
    end Norm_Target;
 
    Target_Norm : constant String := Norm_Target (Target);
-   type Eco_Field_Fmt is (Eco_Bare, Eco_Colon, Eco_Token, Eco_Alr_Version);
+   type Eco_Field_Fmt is
+     (Eco_Bare, Eco_Colon, Eco_Token, Eco_Alr_Version, Eco_Paren_Version);
 
    type Eco_Field is record
       Field : String (1 .. 16);
@@ -66,7 +67,7 @@ is
       Json   : Boolean := False;
    end record;
 
-   Table : constant array (1 .. 7) of Eco_Query :=
+   Table : constant array (1 .. 8) of Eco_Query :=
      (1 =>
         (Kind   => "npm" & (4 .. 7 => ' '),
          KLen   => 3,
@@ -198,7 +199,28 @@ is
          Sub2   => (others => ' '),
          Sub2Ln => 0,
          Json   => False,
-         Single => True));
+         Single => True),
+      8 =>
+        (Kind   => "pypi" & (5 .. 7 => ' '),
+         KLen   => 4,
+         Tool   => "pip" & (4 .. 8 => ' '),
+         TLen   => 3,
+         Sub    => "index" & (6 .. 8 => ' '),
+         SLen   => 5,
+         --  `pip index versions <name>` prints the latest release first, as
+         --  "<name> (<version>)" (for example "sphinx (9.1.0)"), so the
+         --  version is the parenthesised token (Sub2 carries the "versions"
+         --  subcommand before the package name).  pip has no registry CLI
+         --  for licence or website, so those fields stay empty and are
+         --  never guessed.
+         V      =>
+           (Field => (others => ' '), FLen => 0, Fmt => Eco_Paren_Version),
+         L      => (Field => (others => ' '), FLen => 0, Fmt => Eco_Bare),
+         W      => (Field => (others => ' '), FLen => 0, Fmt => Eco_Bare),
+         Sub2   => "versions" & (9 .. 8 => ' '),
+         Sub2Ln => 8,
+         Json   => False,
+         Single => False));
 
    Pid     : constant Integer := Pid_To_Integer (Current_Process_Id);
    Pid_Img : constant String := Integer'Image (Pid);
@@ -291,6 +313,31 @@ is
                         end if;
                         if Cl > Eq + 1 then
                            Set_Field (Dst, DLn, Trim (T (Eq + 1 .. Cl - 1)));
+                        end if;
+                     end;
+                  elsif Fld.Fmt = Eco_Paren_Version then
+                     --  "sphinx (9.1.0)": the token between the first '(' and
+                     --  the last ')' on the line.
+                     declare
+                        O : Natural := 0;
+                        C : Natural := 0;
+                     begin
+                        for K in T'Range loop
+                           if T (K) = '(' then
+                              O := K;
+                              exit;
+                           end if;
+                        end loop;
+                        if O > T'First then
+                           for K in reverse T'Range loop
+                              if T (K) = ')' then
+                                 C := K;
+                                 exit;
+                              end if;
+                           end loop;
+                        end if;
+                        if O > T'First and then C > O + 1 then
+                           Set_Field (Dst, DLn, Trim (T (O + 1 .. C - 1)));
                         end if;
                      end;
                   elsif Fld.Fmt = Eco_Colon or else Fld.Fmt = Eco_Token then
@@ -513,18 +560,34 @@ begin
                Extract_Path (Table (J).W, Website, Web_Len);
             end if;
          else
-            if Table (J).V.FLen > 0 then
+            if Table (J).V.FLen > 0 or else Table (J).Sub2Ln > 0 then
+               --  The optional Sub2 subcommand slots in before the package
+               --  name (`pip index versions <name>`), the field argument
+               --  after it (`cargo search <name> <field>`).  One row shape
+               --  then serves both CLIs.
                declare
-                  Args : Argument_List (1 .. 3);
+                  Has_Sub2  : constant Boolean := Table (J).Sub2Ln > 0;
+                  Has_Field : constant Boolean := Table (J).V.FLen > 0;
+                  Args      : Argument_List (1 .. 4);
+                  N         : Natural := 0;
+                  procedure Add (S : String) is
+                  begin
+                     N := N + 1;
+                     Args (N) := new String'(S);
+                  end Add;
                begin
-                  Args (1) := new String'(Table (J).Sub (1 .. Table (J).SLen));
-                  Args (2) := new String'(Name);
-                  Args (3) :=
-                    new String'(Table (J).V.Field (1 .. Table (J).V.FLen));
-                  Capture (Args);
-                  Free (Args (1));
-                  Free (Args (2));
-                  Free (Args (3));
+                  Add (Table (J).Sub (1 .. Table (J).SLen));
+                  if Has_Sub2 then
+                     Add (Table (J).Sub2 (1 .. Table (J).Sub2Ln));
+                  end if;
+                  Add (Name);
+                  if Has_Field then
+                     Add (Table (J).V.Field (1 .. Table (J).V.FLen));
+                  end if;
+                  Capture (Args (1 .. N));
+                  for X in 1 .. N loop
+                     Free (Args (X));
+                  end loop;
                end;
                Extract_Desc (Table (J).V, Version, Ver_Len);
             end if;

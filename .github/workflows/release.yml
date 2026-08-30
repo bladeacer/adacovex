@@ -45,7 +45,7 @@ jobs:
           verbose: true
           require-spark: Platinum
           require-docstrings: 100
-          require-tests: 1181
+          require-tests: 1186
           require-proof: 100
 
       - name: Require Platinum SPARK level
@@ -104,7 +104,7 @@ jobs:
             [ "$(printf '%s\n%s\n' "$v" "$CUR" | sort -V | tail -1)" = "$CUR" ] || continue
             printf '%s\n' "$v"
           done | sort -V -r | while read -r v; do
-            # The docs live on Read the Docs (the mdBook site built from
+            # The docs live on Read the Docs (the Sphinx site built from
             # docs/); each release's changelog has a stable page there.
             printf -- '- https://adacovex.readthedocs.io/en/latest/changelogs/adacovex-%s.html\n' "$v"
           done)

@@ -19,6 +19,19 @@ package body Adacovex.Parsers.Manifest is
 
    package Name_Vectors is new Ada.Containers.Vectors (Positive, Name_Item);
 
+   --  One requirement line of a requirements*.txt: package name + optional
+   --  pinned version ("requests==2.28.1" -> name "requests", version
+   --  "2.28.1").  Used to register the project root's Python requirements as
+   --  pypi-scope dependencies.
+   type Req_Item is record
+      Name : Types.Desc_Field;
+      Len  : Natural := 0;
+      Ver  : Types.Desc_Field;
+      VLen : Natural := 0;
+   end record;
+
+   package Req_Vectors is new Ada.Containers.Vectors (Positive, Req_Item);
+
    --  Small local path list used to collect .gpr files in the project tree.
    type Path_Item is record
       Path : Types.Path_Field;
@@ -386,6 +399,27 @@ package body Adacovex.Parsers.Manifest is
       VLen    : out Natural)
    is separate;
 
+   --  Collect every non-comment requirement line of a requirements*.txt
+   --  into Reqs (package name + optional pinned version).  An overlong
+   --  physical line stops the read and keeps the entries collected so far.
+   --  @param Path  Path of the requirements file.
+   --  @param Reqs  Collected requirements (appended).
+   procedure Collect_Req_Entries
+     (Path : String; Reqs : in out Req_Vectors.Vector)
+   is separate;
+
+   --  Register the project root's Python requirements (requirements*.txt
+   --  at Target_Dir) as dev-scope pypi dependencies of the root.  Each
+   --  requirement becomes a pkg:pypi/<name>[@<version>] component; the
+   --  version, licence and website are resolved from the package registry
+   --  (PyPI via `pip index versions`) when the requirements line pins no
+   --  version or the registry answers.  A missing registry or a failing
+   --  resolve keeps the name-only entry -- no licence is ever guessed.
+   procedure Register_Root_Python_Deps
+     (Target_Dir : String;
+      Graph      : in out Types.Implementation.Component_Vectors.Vector)
+   is separate;
+
    --  First <Tag>...</Tag> occurrence on a single line of an XML file
    --  (pom.xml).  Returns the inner text, "" when absent.
    function Xml_Tag_Value (Path : String; Tag : String) return String
@@ -468,7 +502,7 @@ package body Adacovex.Parsers.Manifest is
      (S : String; VFlag : String := "--version") return Tool_Entry
    is separate;
 
-   System_Tools : constant array (1 .. 61) of Tool_Entry :=
+   System_Tools : constant array (1 .. 60) of Tool_Entry :=
      (Make_Tool ("alr"),
       Make_Tool ("make"),
       Make_Tool ("cmake"),
@@ -527,7 +561,6 @@ package body Adacovex.Parsers.Manifest is
       Make_Tool ("rustup"),
       Make_Tool ("cargo-hack"),
       Make_Tool ("cargo-watch"),
-      Make_Tool ("mdbook"),
       Make_Tool ("ada"),
       Make_Tool ("alire"));
 
@@ -1560,6 +1593,25 @@ package body Adacovex.Parsers.Manifest is
       Add (Adacovex.Cache.Hash_File (Manifest_Path));
       Add (Adacovex.Cache.Hash_File (T & "/alire-dev.toml"));
       Add (Adacovex.Cache.Hash_File (T & "/alire/alire.lock"));
+      --  A root requirements*.txt shapes the graph (its entries become
+      --  pypi components), so editing it must invalidate the cached graph.
+      declare
+         use Ada.Directories;
+         Req_Search : Search_Type;
+         Req_Ent    : Directory_Entry_Type;
+      begin
+         Start_Search (Req_Search, T, "requirements*.txt");
+         while More_Entries (Req_Search) loop
+            Get_Next_Entry (Req_Search, Req_Ent);
+            if Kind (Req_Ent) = Ordinary_File then
+               Add (Adacovex.Cache.Hash_File (Full_Name (Req_Ent)));
+            end if;
+         end loop;
+         End_Search (Req_Search);
+      exception
+         when others =>
+            null;
+      end;
       Add (Vendored_Hash (Target_Dir));
       declare
          Langs : Lang_Vectors.Vector;
@@ -1793,6 +1845,10 @@ package body Adacovex.Parsers.Manifest is
       --  zero-`with` projects whose toolchain deps live only in the dev
       --  manifest.
       Register_Manifest_Deps (Target_Dir, Graph, Base_Names, Dev_Names);
+
+      --  Register the root's Python requirements (requirements*.txt) as
+      --  dev-scope pypi dependencies resolved from the package registry.
+      Register_Root_Python_Deps (Target_Dir, Graph);
 
       Success := Root.Name_Len > 0;
 

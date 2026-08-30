@@ -282,7 +282,7 @@ package body Adacovex_SBOM_Tests is
          & "gnatprove -P sysfix.gpr"
          & ASCII.LF
          & ASCII.HT
-         & "mdbook build docs"
+         & "sphinx-build docs _build/html"
          & ASCII.LF);
       Write_File
         (D & "/build.sh",
@@ -303,6 +303,33 @@ package body Adacovex_SBOM_Tests is
          & "      - run: python3 -m pytest"
          & ASCII.LF);
    end Make_Sysdep_Fixture;
+
+   --  Fixture carrying a root requirements.txt: the Python packages it
+   --  names (sphinx, myst-parser) must be registered as dev-scope pypi
+   --  dependencies of the root, resolved from the package registry.
+   procedure Make_Req_Fixture is
+      D : constant String := "obj/sbom_req_fixture";
+   begin
+      Write_File
+        (D & "/alire.toml",
+         "name = ""reqfix"""
+         & ASCII.LF
+         & "version = ""1.0.0"""
+         & ASCII.LF
+         & "project-files = [""reqfix.gpr""]"
+         & ASCII.LF);
+      Write_File
+        (D & "/reqfix.gpr",
+         "project Reqfix is" & ASCII.LF & "end Reqfix;" & ASCII.LF);
+      Write_File
+        (D & "/requirements.txt",
+         "# docs toolchain"
+         & ASCII.LF
+         & "sphinx"
+         & ASCII.LF
+         & "myst-parser"
+         & ASCII.LF);
+   end Make_Req_Fixture;
 
    --  Fixture with language-agnostic vendored dependencies: an npm
    --  node_modules tree (shallow, one component per package) and a generic
@@ -853,7 +880,8 @@ package body Adacovex_SBOM_Tests is
          & ASCII.LF
          & "  '@playwright/test@1.62.1':"
          & ASCII.LF
-         & "    resolution: {integrity: sha512-DTcUc8qii+cpHvtOwggMtBRMjKZHXYWdw8syRYu2vtzuq4Wxphqq4NfCs5Zt44L6mA8rfDfj+PHnxFc/FeK6mQ"
+         & "    resolution: {integrity: "
+         & "sha512-DTcUc8qii+cpHvtOwggMtBRMjKZHXYWdw8syRYu2vtzuq4Wxphqq4NfCs5Zt44L6mA8rfDfj+PHnxFc/FeK6mQ"
          & "==}"
          & ASCII.LF
          & "    hasBin: true"
@@ -1156,13 +1184,62 @@ package body Adacovex_SBOM_Tests is
          Expect_If_Installed ("python3");
          Expect_If_Installed ("alr");
          Expect_If_Installed ("gnatprove");
-         Expect_If_Installed ("mdbook");
+
+         --  sphinx-build is deliberately NOT a system tool: the manual's
+         --  Sphinx build is a Python dependency (sphinx + myst-parser in
+         --  requirements.txt), resolved as pkg:pypi components -- never as
+         --  a pkg:generic system-tool entry.  The fixture references it,
+         --  but it is not in the curated tool table, so it can never be
+         --  registered whatever PATH holds.
+         R.Check
+           (Count_Name (Graph, "sphinx-build") = 0,
+            "sphinx-build never registered (pypi package, not a system tool)");
 
          --  Installed or not, never referenced by the fixture: never
          --  registered.
          R.Check
            (Count_Name (Graph, "pandoc") = 0,
             "unreferenced tool not registered");
+      end;
+
+      --  Root requirements.txt: sphinx and myst-parser become dev-scope
+      --  pypi dependencies of the root (pkg:pypi PURL, Python language),
+      --  with the version resolved from the package registry when possible.
+      declare
+         Graph   : Component_Vectors.Vector;
+         Success : Boolean := False;
+         C       : Component_Info;
+      begin
+         Make_Req_Fixture;
+         Adacovex.Parsers.Manifest.Build_Dependency_Graph
+           ("obj/sbom_req_fixture",
+            "obj/sbom_req_fixture/alire.toml",
+            Graph,
+            Success);
+         R.Check (Success, "requirements graph success");
+         R.Check
+           (Count_Name (Graph, "sphinx") = 1,
+            "sphinx registered from requirements.txt");
+         R.Check
+           (Count_Name (Graph, "myst-parser") = 1,
+            "myst-parser registered from requirements.txt");
+         C := Find_Name (Graph, "sphinx");
+         R.Check (C.Scope = Scope_Dev, "sphinx scope = dev");
+         R.Check
+           (C.PURL_Len >= 11 and then C.PURL (1 .. 11) = "pkg:pypi/sp",
+            "sphinx purl is pkg:pypi");
+         R.Check
+           (C.Language_Len = 6 and then C.Language (1 .. 6) = "Python",
+            "sphinx language = Python");
+         R.Check
+           (C.Version_Len = 0
+            or else Has_Digit (C.Version (1 .. C.Version_Len)),
+            "sphinx version empty or digit-bearing (registry-resolved)");
+         C := Find_Name (Graph, "myst-parser");
+         R.Check (C.Scope = Scope_Dev, "myst-parser scope = dev");
+         R.Check
+           (C.PURL_Len >= 11 and then C.PURL (1 .. 11) = "pkg:pypi/my",
+            "myst-parser purl is pkg:pypi");
       end;
 
       --  Cached dependency-graph round-trip: resolving the same fixture

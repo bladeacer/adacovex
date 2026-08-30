@@ -17,7 +17,7 @@ help:
 	@echo '    build         Build project (adacovex + test_runner, covex alias);'
 	@echo '                  regenerates src/adacovex_version_info.ads from'
 	@echo '                  alire-dev.toml (or ADACOVEX_VERSION for releases)'
-	@echo '    test          Build and run native test suite (1181 tests)'
+	@echo '    test          Build and run native test suite (1186 tests)'
 	@echo '    prove         Run SPARK proofs (gnatprove via prove subcommand,'
 	@echo '                  resolved from alire-dev.toml / PATH / cache / download)'
 	@echo '                  (also auto-regenerates SVG badges in docs/badges/)'
@@ -53,7 +53,7 @@ help:
 	@echo '    link-check    Verify every markdown link in the repo resolves'
 	@echo '                  (tools/check-links.py)'
 	@echo '    book-links-check  Fail when a link in the bundled offline manual'
-	@echo '                  does not resolve (checked against a fresh mdbook'
+	@echo '                  does not resolve (checked against a fresh sphinx'
 	@echo '                  build; tools/check-book-links.py)'
 	@echo ''
 	@echo '  Gates (also run by `make check`):'
@@ -103,10 +103,9 @@ help:
 	@echo 'Note: doc/fmt temporarily swap in alire-dev.toml for the duration'
 	@echo '      of the command, then restore alire.toml and alire.lock untouched.'
 	@echo ''
-	@echo 'Prerequisites: alr (Alire), GNAT toolchain, Python 3 (for the'
-	@echo '              tools/*.py dev scripts: version/description sync, test/'
-	@echo '              proof/doc sync, changelog check, agents-tree, and the'
-	@echo '              parsing ports: ascii/spark-off/bench-size/versions/bump)'
+	@echo 'Prerequisites: alr (Alire), GNAT toolchain, Python 3 (build-time: bundles'
+	@echo '              the dashboard + offline manual into the binary) plus sphinx +'
+	@echo '              myst-parser (requirements.txt) for the docs bundle'
 
 # The build steps (gen-version + gen-dashboard + alr build + SFrame log
 # filter + covex symlink) live in tools/build.py; see its docstring for the
@@ -136,10 +135,11 @@ doc:
 	  python3 tools/rst2md.py obj/gnatdoc-rst docs/api-docs --prune-test-pages && \
 	  rm -f docs/api-docs/test_*.md docs/api-docs/adacovex-test_support.md'
 
-# Build the offline manual from the mdBook docs source and bundle it into the
-# binary.  Regenerates src/adacovex-docs_template.ads (the committed spec the
-# --serve server serves at /docs).  gen-docs.py never fails when mdbook is
-# missing (it keeps the committed spec), so this works on any machine.
+# Build the offline manual from the Sphinx docs source (docs/conf.py + MyST)
+# and bundle it into the binary.  Regenerates src/adacovex-docs_template.ads
+# (the committed spec the --serve server serves at /docs).  gen-docs.py never
+# fails when sphinx-build is missing (it keeps the committed spec), so this
+# works on any machine.
 book:
 	@python3 tools/gen-docs.py
 
@@ -207,11 +207,11 @@ docs-check:
 
 # Quality gate: every link inside the bundled offline manual must resolve to
 # a bundled asset or a deliberately-not-bundled file (the rules shared with
-# tools/gen-docs.py).  The check runs against a fresh `mdbook build` from a
-# temp copy of docs/, so a stale local docs/book (a gitignored build product)
-# can never mask a broken link; when mdbook is missing the local docs/book is
-# checked instead, and when neither exists the check is skipped.  The
-# committed artifact is the generated spec itself, gated by
+# tools/gen-docs.py).  The check runs against a fresh `sphinx-build` from a
+# temp copy of docs/, so a stale local docs/_build/html (a gitignored build
+# product) can never mask a broken link; when sphinx-build is missing the
+# local docs/_build/html is checked instead, and when neither exists the check
+# is skipped.  The committed artifact is the generated spec itself, gated by
 # `python3 tools/gen-docs.py --check`.
 book-links-check:
 	@python3 tools/check-book-links.py
@@ -219,11 +219,11 @@ book-links-check:
 docs-serve:
 	@python3 -m http.server 8000 --directory docs
 
-# Build + serve the mdBook manual locally at http://localhost:8000 (requires
-# mdbook on PATH; prints a hint when it is missing).
-book-serve:
-	@cd docs && mdbook serve --port 8000 --open 2>/dev/null \
-	  || echo "mdbook not on PATH; run 'make docs-serve' for a plain HTTP server"
+# Build the manual with Sphinx and serve the built site locally at
+# http://localhost:8000 (requires sphinx-build on PATH; prints a hint when it
+# is missing).
+book-serve: book
+	@python3 -m http.server 8000 --directory docs/_build/html
 
 tools-check:
 	@python3 tools/tests.py

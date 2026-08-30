@@ -15,10 +15,15 @@ test-result parsing, DO-178C DAL compliance assessment, and interactive dashboar
 - **Dashboard dependency view**: the served dashboard and the SBOM build from
   one resolved graph that includes system-tool dependencies as a first-class
   `system` scope (`pkg:generic/*`, shown with a `system` badge and no guessed
-  link or licence -- only the resolved version). Vendored npm/pnpm (and
-  cargo/pypi/composer) packages resolve their licence from the local manifest,
-  or from the package registry (`npm view <pkg> license`, `pnpm show <pkg>
-  license`, `cargo search <pkg>`) when the manifest is silent. Clicking a
+  link or licence -- only the resolved version). Tools that are really
+  language packages are never system entries: the root project's Python
+  requirements (`requirements*.txt`, for example sphinx and myst-parser)
+  register as dev-scope `pkg:pypi/*` components with their version resolved
+  from the package registry (`pip index versions <pkg>`). Vendored
+  npm/pnpm (and cargo/pypi/composer) packages resolve their licence from the
+  local manifest, or from the package registry (`npm view <pkg> license`,
+  `pnpm show <pkg> license`, `cargo search <pkg>`) when the manifest is
+  silent. Clicking a
   dependency in the Tree view or the nomnoml Diagram opens one split-view
   detail panel (view docked left, detail docked right; full width until a
   dependency is selected).
@@ -78,7 +83,7 @@ Self-assessment (`make run-self`) must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
 - Platinum SPARK level (725 VCs under gnatprove 16.1.0, 0 unproved, 0
   justified; see `docs/proof/16.1.0-ledger.md`)
-- 1181/1181 native tests passing
+- 1186/1186 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
   `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
@@ -89,7 +94,7 @@ Self-assessment (`make run-self`) must always show:
 src/
 |-- adacovex.ads                              -- Version constant
 |-- adacovex-dashboard_template.ads           -- Generated dashboard HTML template constant (from resources/dashboard.html)
-|-- adacovex-docs_template.ads/.adb           -- Generated offline manual template constant (from the mdBook docs via tools/gen-docs.py)
+|-- adacovex-docs_template.ads/.adb           -- Generated offline manual template constant (from the Sphinx docs via tools/gen-docs.py)
 |-- adacovex_main.adb                         -- CLI entry point (builds as bin/adacovex; covex alias)
 |-- adacovex_version_info.ads                 -- Generated version constant (from alire-dev.toml / ADACOVEX_VERSION)
 |-- compliance/
@@ -123,6 +128,7 @@ src/
 |   |-- adacovex-parsers-manifest-classify_scope.adb-- Classify a dependency name as base/dev/transitive scope
 |   |-- adacovex-parsers-manifest-collect_gpr_files.adb-- Collect every .gpr file under a target directory tree
 |   |-- adacovex-parsers-manifest-collect_owner_test_names.adb-- Collect test-labelled dependency names from supported-language manifests
+|   |-- adacovex-parsers-manifest-collect_req_entries.adb-- Collect every requirement (name/version) from a requirements*.txt
 |   |-- adacovex-parsers-manifest-detect_languages.adb-- Count source files by language under a directory tree
 |   |-- adacovex-parsers-manifest-discover_generic_vendored.adb-- Discover vendored components via their ecosystem manifests
 |   |-- adacovex-parsers-manifest-discover_vendored_components.adb-- Register vendored patches/resources/assets as scope=vendored SBOM components
@@ -147,6 +153,7 @@ src/
 |   |-- adacovex-parsers-manifest-read_manifest_deps.adb-- Collect crate names from a manifest [[depends-on]] section
 |   |-- adacovex-parsers-manifest-read_vendor_manifest.adb-- Read a vendored manifest (table-driven filename -> ecosystem)
 |   |-- adacovex-parsers-manifest-register_manifest_deps.adb-- Register Alire manifest + lockfile dependencies into the graph
+|   |-- adacovex-parsers-manifest-register_root_python_deps.adb-- Register root requirements*.txt entries as dev-scope pypi components
 |   |-- adacovex-parsers-manifest-req_entry.adb-- Parse the first requirement (name/version) from a requirements*.txt
 |   |-- adacovex-parsers-manifest-resolve_ecosystem_metadata.adb-- Resolve version/licence/website from the package registry
 |   |-- adacovex-parsers-manifest-resolve_gpr_deps.adb-- Resolve GPR with-clause dependencies into the graph
@@ -180,14 +187,14 @@ src/
     |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (64)
     |-- adacovex_renderer_svg_tests.ads/.adb  -- SVG renderer tests (161)
     |-- adacovex_renderer_tests.ads/.adb      -- HTML/Markdown renderer tests (58)
-    |-- adacovex_sbom_tests.ads/.adb          -- SBOM / manifest graph tests (283)
+    |-- adacovex_sbom_tests.ads/.adb          -- SBOM / manifest graph tests (288)
     |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (89)
     |-- adacovex_server_tests.ads/.adb        -- Server routing tests (41)
     |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (50)
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (67)
     |-- adacovex_tz_ansi_tests.ads/.adb       -- Timezone + ANSI tests (63)
     |-- adacovex_vcs_tests.ads/.adb           -- VCS support tests (29)
-    `-- test_runner.adb                       -- Test suite entry point (1181 tests)
+    `-- test_runner.adb                       -- Test suite entry point (1186 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -322,10 +329,15 @@ scripts), differential modes, and `sbom`.
   long-term plan is to hold `SPARK_Mode (Off)` at exactly these two packages
   (both irreducible: non-formal `Ada.Containers.Vectors` is illegal in
   `SPARK_Mode On` code under gnatprove 16.1.0); never let a third appear.
-- **Build/dev tooling requires Python 3** (pure-stdlib `tools/*.py`: version
-  generation, description sync, test/proof doc sync, changelog checks,
-  doc-links, agents-tree). The adacovex binary itself has no Python
-  dependency.
+- **Python 3 is a build-time dependency**: it is required to bundle the
+  dashboard and the offline manual into the binary via
+  `tools/gen-dashboard.py` and `tools/gen-docs.py`. The pure-stdlib `tools/*.py`
+  (version generation, description sync, test/proof doc sync, changelog checks,
+  doc-links, agents-tree) all run on Python 3; `tools/gen-docs.py` additionally
+  needs `sphinx` + `myst-parser` + `furo` (see `requirements.txt`) to build
+  the manual
+  from `docs/`. The released binary itself embeds the manual as generated Ada
+  string constants and has **no runtime Python dependency**.
 
 ## Tool scripts
 
@@ -368,20 +380,21 @@ reference pages live in its `GUIDE_PAGES` / `PACKAGE_GUIDES` tables, **never**
 in `.ads` docstrings (gnatdoc parses comment text as RST and drops markdown
 link URLs).
 `tools/gen-docs.py` (wired as `make book` and run inside `make build`) runs
-`mdbook build` over `docs/` and bundles the built site -- every page,
-stylesheet, script, badge, mdBook's search machinery (with the search index
-normalised to a stable `searchindex.js`), and the single-page print view
-`print.html` -- into `src/adacovex-docs_template.ads` as a path-keyed asset
-table (the bundled offline manual the `--serve` server serves at `/docs`,
-where search and the print button work exactly as online).  It is safe to
-run without mdbook installed (the committed spec is kept); the same mdBook
-project powers the Read the Docs site (`.readthedocs.yaml`).
+`sphinx-build` over `docs/` (with `docs/conf.py`, the Furo theme, and the
+MyST Markdown parser) and bundles the built site -- every page,
+stylesheet, script, and badge -- into `src/adacovex-docs_template.ads` as a
+path-keyed asset table (the bundled offline manual the `--serve` server
+serves at `/docs`, where search works exactly as online).  It is safe to
+run without sphinx installed (the committed spec is kept); the same Sphinx
+project powers the Read the Docs site (`.readthedocs.yaml`, installing
+docs deps from `requirements.txt`).
 `tools/check-book-links.py` (wired as `make book-links-check`, a cheap gate
 in `make check`) verifies every link inside the bundled offline manual
 resolves against the bundled assets or the deliberately-not-bundled prefixes
 shared with `tools/gen-docs.py` (`OFFLINE_EXCLUDED_PREFIXES`); the check
-runs against a fresh `mdbook build` from a temp copy of `docs/`, so a stale
-local `docs/book` (a gitignored build product) can never mask a broken link.
+runs against a fresh `sphinx-build` from a temp copy of `docs/`, so a stale
+local Sphinx build output (a gitignored build product) can never mask a
+broken link.
 The committed artifact is the generated spec itself, gated by
 `python3 tools/gen-docs.py --check` (also in `make check`), so `docs/` edits
 must be followed by `make book`.
@@ -393,10 +406,10 @@ must be followed by `make book`.
 | `check` | **The single everything-check / verification entry point.** Run it after any change. It runs every gate CI runs before a release: cheap static gates first (ascii, complexity, csslint, spark-off, changelog, action-parity, tools-check, version, doc-links, link, docs-check, book-links), then build + native tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description). `make check` resolves `gnatprove` for you (it is fetched into `~/.adacovex/toolchain/` and executed directly when not on `PATH`), so you never have to install or point at a prover by hand -- just run `make check` and it verifies the whole tree end to end. `make prove` is the SPARK sub-gate if you only changed proof-affecting code |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
-| `test` | Build + run the 1181-test native suite |
+| `test` | Build + run the 1186-test native suite |
 | `prove` | SPARK proof (Platinum gate) + regenerates SVG badges in `docs/badges/` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
-| `book` | Build the offline manual from the mdBook docs and regenerate `src/adacovex-docs_template.ads` (tools/gen-docs.py; safe to run without mdbook) |
+| `book` | Build the offline manual from the Sphinx docs and regenerate `src/adacovex-docs_template.ads` (tools/gen-docs.py; safe to run without sphinx) |
 | `fmt` | Format Ada sources (gnatformat) |
 | `sbom` | Generate the proof-aware SBOM (`sbom.json`) |
 | `description` | Sync the crate description from alire/description.txt + alire/long-description.txt (`CHECK=1` verifies only) |
@@ -415,7 +428,7 @@ must be followed by `make book`.
 | `tools-check` | Run the stdlib-unittest suite for the tools/*.py dev scripts (tools/tests.py) |
 | `csslint-check` | Dashboard CSS 4px spacing gate: every margin/padding/gap must be a multiple of 4px (tools/csslint.py; also run inside `make build`) |
 | `complexity-check` | Cyclomatic-complexity + LOC gate: no god objects/functions, no file above its LOC or percentage-of-codebase caps (multi-language scan via `--excludes=md,rst`; gated by make complexity-check) |
-| `book-links-check` | Fail when a link inside the bundled offline manual does not resolve (checked against a fresh `mdbook build` from a temp copy of `docs/`; tools/check-book-links.py; shares the offline-asset rules with tools/gen-docs.py). `make check` also runs `python3 tools/gen-docs.py --check`, which fails when the committed spec `src/adacovex-docs_template.ads` drifts from a fresh build |
+| `book-links-check` | Fail when a link inside the bundled offline manual does not resolve (checked against a fresh `sphinx-build` from a temp copy of `docs/`; tools/check-book-links.py; shares the offline-asset rules with tools/gen-docs.py). `make check` also runs `python3 tools/gen-docs.py --check`, which fails when the committed spec `src/adacovex-docs_template.ads` drifts from a fresh build |
 | `bench` | Benchmark the pipeline with hyperfine (bash `time` fallback): cold vs warm timings + binary size (docs/contributing/perf.md) |
 | `perf-bench` | Profile the adacovex binary with perf and strace (tools/perf-bench.py; docs/contributing/perf.md) |
 | `spark-off-check` | Fail if any `SPARK_Mode (Off)` appears outside `Types.Implementation` and `Complexity` (the non-formal `Ada.Containers` instantiations) |
@@ -492,7 +505,7 @@ release-tag coverage gate instead.
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 1181/1181 passing |
+| Unit tests | `make test` | 1186/1186 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (725 VCs, 0 unproved, 0 justified under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -506,7 +519,7 @@ rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 1181 tests across 16 categories).
+Native zero-dependency suite (`src/tests/`, 1186 tests across 16 categories).
 Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests).
 
@@ -523,20 +536,20 @@ adacovex has two distinct documentation tiers with different audiences:
   proving workflow.  This tier includes installation, CLI reference, the web
   dashboard, SBOM, VCS support, target projects, CI/CD, contributing,
   standards, platforms, proving, architecture, changelogs, HLR/LLR indexes,
-  and performance guides.  `docs/` is an **mdBook project** (`docs/book.toml`
-  with `src = "."` and a root `docs/SUMMARY.md` table of contents): Read the
-  Docs builds the site from it (see `.readthedocs.yaml`, `mdbook build docs`),
-  and `tools/gen-docs.py` builds the same book into a self-contained offline
-  manual that the `--serve` dashboard exposes at `/docs` (bundled into the
-  binary via `src/adacovex-docs_template.ads`, regenerated by `make book`).
-  Every new or moved doc page must keep its place in `docs/SUMMARY.md`.
-  The `docs/book/` build output is a local, gitignored product (mdBook
-  content-hashes its assets, so committing the build would churn
-  `searchindex-<hash>.js` and every page reference on each docs edit); the
-  committed artifact is the generated spec `src/adacovex-docs_template.ads`,
-  so regenerate it with `make book` whenever `docs/` changes and keep the
-  committed spec in sync (`make check` enforces this via
-  `tools/gen-docs.py --check`).
+  and performance guides.  `docs/` is a **Sphinx project** (`docs/conf.py`,
+  the **Furo** theme, and the MyST Markdown parser; build deps are pinned in
+  `requirements.txt`): Read the Docs builds the site from it (see
+  `.readthedocs.yaml`), and `tools/gen-docs.py` builds the same project into a
+  self-contained offline manual that the `--serve` dashboard exposes at
+  `/docs` (bundled into the binary via `src/adacovex-docs_template.ads`,
+  regenerated by `make book`).  Every new or moved doc page must be reachable
+  from a `:toctree:` (the hidden toctrees in `docs/index.md` pull in `usage/`,
+  `contributing/`, `api-docs/`, `changelogs/`, `proof/`, `compliance/`, and
+  `badges/` but not auto-discovered pages).  The Sphinx build output
+  (`docs/_build/`) is a local, gitignored product; the committed artifact is
+  the generated spec `src/adacovex-docs_template.ads`, so regenerate it with
+  `make book` whenever `docs/` changes and keep the committed spec in sync
+  (`make check` enforces this via `tools/gen-docs.py --check`).
 
 - **API reference** (`docs/api-docs/` and its sub-pages) -- generated from
   Ada source docstrings via `gnatdoc` + `rst2md` (`make doc`).  Written for

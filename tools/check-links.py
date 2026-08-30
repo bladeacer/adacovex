@@ -30,6 +30,7 @@ ROOT: Path = Path(__file__).resolve().parent.parent
 # vendored index copies).
 SKIP_DIRS: Tuple[str, ...] = (
     ".git",
+    ".venv",
     "obj",
     "alire",
     "index",

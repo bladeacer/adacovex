@@ -8,6 +8,9 @@ adacovex itself is Apache-2.0 (see `LICENSE`) and depends only on the GNAT runti
 |-----------|---------|---------|----------|
 | GNAT compiler (GNAT Community / FSF GNAT) | toolchain-managed | GPL-3.0-or-later (with GCC Runtime Library Exception for runtime) | Compiling adacovex and target projects |
 | GNATprove | toolchain-managed | GPL-3.0-or-later | SPARK proof analysis (`covex prove`) |
+| Python 3 | toolchain-managed | PSF-2.0 | Build-time only: `tools/gen-docs.py` bundles the offline manual into the binary |
+
+Python 3 is required at **build time** to bundle the docs into the binary, but the shipped binary itself has no Python dependency -- the manual is embedded as generated Ada string constants. Sphinx, MyST and Furo (below) run inside Python to produce that manual; Python itself is not bundled or redistributed.
 | Z3 / Alt-Ergo / CVC5 solvers | bundled with GNATprove | MIT / CeCILL-C / Apache-2.0 respectively | Satisfying SPARK verification conditions |
 
 The GNAT toolchain is **not** embedded in the adacovex release bundle. gnatprove is **not** a declared dependency of the `covex` crate. adacovex resolves gnatprove at run time. `covex prove` prefers the own gnatprove dependency of the target project when the alire.toml / alire-dev.toml of the target project declares one. It runs gnatprove through `alr exec`. adacovex itself then requires only `alr` on `$PATH`. If no dependency is declared, it falls back to a gnatprove on `$PATH`. Then it falls back to a cached `~/.adacovex/toolchain/bin/gnatprove`.
@@ -52,6 +55,24 @@ The index loads from `/__GRAPH_JSON__` at page load. The Apache-2.0 licence text
 The highlighter is adapted from ESM/TypeScript to a single plain-script binding that exposes `window.YaceTok`, so the dashboard can use it without a build step. The dashboard supplies the token colours via CSS. The API playground uses it to syntax-highlight the prettified JSON responses of the `/api/*` endpoints; a JSON-key rule (`"name":`) runs ahead of the built-in string rule so object keys colour differently from string values. The MIT licence text is preserved in the header comment of `resources/yace.js`.
 
 [Charts.css](https://chartscss.org/) is **not** bundled or redistributed with adacovex. The dashboard charts were originally rendered with the vendored Charts.css framework (1.2.0, MIT); adacovex now ships its **own patched version** of those charts, hand-rolled with plain CSS and SVG and driven by the theme's CSS variables. Charts.css is credited for inspiration, and its MIT licence terms are acknowledged here.
+
+## Documentation build tools
+
+| Component | Version | Licence | Used for |
+|-----------|---------|---------|----------|
+| Sphinx | toolchain-managed | BSD-3-Clause | Building the manual from `docs/` (Furo theme + MyST) for the deployed site and the bundled offline manual |
+| MyST-Parser | toolchain-managed | MIT | Reading the `docs/*.md` pages unchanged inside Sphinx (no reStructuredText conversion) |
+| Furo | toolchain-managed | MIT | The Sphinx HTML theme used by the manual (light/dark, no external assets) |
+
+Sphinx, MyST-Parser and Furo are build-time tools (pinned in `requirements.txt`, installed into the Python venv). They compile the Markdown manual; their output is embedded into the binary as Ada strings. They are not bundled or redistributed with adacovex. The user-facing documentation, and the offline manual served at `/docs`, credit Sphinx as the docs generator and Furo as the theme.
+
+## Site hosting
+
+| Service | Used for |
+|---------|----------|
+| Read the Docs (https://readthedocs.org) | Hosting the deployed online manual at `https://adacovex.readthedocs.io` |
+
+The online manual is hosted on Read the Docs, a free documentation service. The same Sphinx project also builds into the offline manual bundled with the binary.
 
 ## Development and testing tools
 
