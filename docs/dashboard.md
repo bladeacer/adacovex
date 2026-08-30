@@ -21,7 +21,7 @@ choice.
 
 ### Overview tab
 
-![Preview of Overview tab](../media/dashboard_preview_overview.png)
+![Preview of Overview tab](media/dashboard_preview_overview.png)
 
 Start here. The **Robustness tier** (S / A / B / C / D) is a single letter that
 summarises five quality axes: Docs, Proof, Tests, Compliance, and Deps. An **S**
@@ -50,7 +50,7 @@ one, so relative proof effort is visible at a glance.
 
 ### Proof tab
 
-![Preview of Proof tab](../media/dashboard_preview_proof.png)
+![Preview of Proof tab](media/dashboard_preview_proof.png)
 
 Shows the SPARK level (Stone .. Platinum) and per-category VC counts. The mini **VCs proved / total** at the top is the headline number. Click into a category to see the breakdown.
 
@@ -58,7 +58,7 @@ If a category is low, that is where the proof effort must focus.
 
 ### Tests tab
 
-![Preview of Tests tab](../media/dashboard_preview_tests.png)
+![Preview of Tests tab](media/dashboard_preview_tests.png)
 
 Every test category with its count and Pass / Fail. A single failing category
 is enough to fail the compliance gate (`Tests passing` must be `Yes` for every
@@ -66,7 +66,7 @@ tier except QM / DAL-E).
 
 ### Compliance tab
 
-![Preview of Compliance tab](../media/dashboard_preview_compliance.png)
+![Preview of Compliance tab](media/dashboard_preview_compliance.png)
 
 Shows the target integrity level, overall `Achieved` / `Unmet`, HLRs traced,
 orphan-tag state, and every unmet criterion. Use this to verify that every HLR
@@ -75,7 +75,7 @@ is tagged in source and that no tags are orphaned (tagged but not defined in
 
 ### Dependencies tab
 
-![Preview of Dependencies tab](../media/dashboard_preview_dependencies.png)
+![Preview of Dependencies tab](media/dashboard_preview_dependencies.png)
 
 An interactive dependency tree (or diagram) of every component in the graph. Use the filter input and scope checkboxes to focus on base, dev, transitive, vendored, or system dependencies. Click a node to see its licence, PURL, parent, and a registry link. Use this tab to audit your supply chain: confirm every vendored licence is compatible, see which system tools the build needs (the `system` scope), and trace each component back to its source.
 
@@ -83,12 +83,24 @@ The diagram view (toggle **Tree / Diagram**) renders the same graph as a directe
 
 ### Charts tab
 
-![Preview of Charts tab](../media/dashboard_preview_charts.png)
+![Preview of Charts tab](media/dashboard_preview_charts.png)
 
-Six CSS-only cards (donut, column, bar, radial gauge, pie, polar ring) that
-show the same data as the Overview tab in a different format. Use this to
-compare SPARK proof, test results, doc coverage, and dependency scope at a
-glance.
+Eight CSS-only cards show the same data as the Overview tab in a different
+format: the two shared radars (Robustness and SPARK Proof by Check Type),
+proof and test donuts, proof and test bar charts, the docstring radial
+gauge, and the dependency scope polar ring. Use this to compare SPARK
+proof, test results, doc coverage, and dependency scope at a glance. See
+[Metrics charts](#metrics-charts) for the full card-by-card breakdown.
+
+### API tab
+
+![Preview of API tab](media/dashboard_preview_api.png)
+
+An interactive REST API playground: every endpoint the server dispatches on
+as a searchable, clickable button, with a pretty-printed, syntax-highlighted
+JSON preview. The first endpoint (`/api/metrics`) runs automatically, so
+the tab opens with a live preview. See [API playground](#api-playground)
+for the full detail.
 
 ## Interpreting the charts
 
@@ -365,7 +377,7 @@ single standard (for example `--asil=B` shows only ISO 26262 at ASIL B). See
 assessment without parsing HTML:
 
 ```json
-{"spark_level":"Platinum","total_vcs":723,"proved_vcs":723,
+{"spark_level":"Platinum","total_vcs":725,"proved_vcs":725,
  "tests_passed":1173,"tests_failed":0,"doc_coverage":100,
  "standard":"all","level":"DAL-C","dal_status":"Achieved",
  "standards":{"DO-178C":{"level":"DAL-C","status":"Achieved"},

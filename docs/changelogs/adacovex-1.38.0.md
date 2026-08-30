@@ -13,7 +13,9 @@ The user documentation under `docs/` is now a proper **mdBook** project:
 contents. Read the Docs builds the public manual from it (`.readthedocs.yaml`,
 `mdbook build docs`), so the deployed site, the repository pages, and the
 bundled offline manual all share one source of truth. The generated `docs/book/`
-build output is gitignored. `make book-serve` serves the manual locally at
+build output is now **committed with the source** (the `.gitignore` entry was
+dropped), so `make book` keeps it in sync and the built site travels with the
+repository. `make book-serve` serves the manual locally at
 `http://localhost:8000`; `make docs-serve` keeps serving the raw Markdown.
 
 ### C2: Bundled offline manual served at /docs
@@ -48,6 +50,29 @@ so a user who pinned the light theme on a dark OS still saw dark token
 colours. The CSS now defines the token colours explicitly per theme
 (`:root`, `[data-theme="light"]`, `[data-theme="dark"]`), so the highlighted
 JSON always matches the active dashboard theme, not the OS.
+
+### C5: complexity-check skips the mdBook build output
+
+The `complexity` subcommand's directory walk now skips `book` directories,
+so the committed mdBook build output (`docs/book/`) is excluded from the
+source-quality scan. The build output contains minified single-line
+JavaScript (the search index alone is a 1.4 MB line, far beyond the
+`Max_Line` buffer), which printed a spurious "line exceeds Max_Line buffer"
+error on every scan and, in constrained environments, could push the scan
+into heap exhaustion. The gate now scans assessed source only, matching the
+existing `obj` / `bin` / `dist` / `build` exclusions.
+
+### C6: Dashboard preview screenshots refreshed and API tab added
+
+The Charts tab preview (`docs/media/dashboard_preview_charts.png`) is
+regenerated from the live dashboard, and a new API tab preview
+(`docs/media/dashboard_preview_api.png`) is captured and added to the
+dashboard walk-through in `docs/dashboard.md`. The walk-through now covers
+all eight tabs in header order, and the Charts tab description is corrected
+from "six cards" to the real eight (the two shared radars, proof and test
+donuts, proof and test bars, the docstring radial gauge, and the dependency
+scope polar ring). The screenshots are captured with a Playwright script
+(`tests/e2e/capture-previews.mjs`) against the live `--serve` dashboard.
 
 ## Fixes
 
@@ -88,8 +113,11 @@ trailing-slash spelling and remains proved by definition.
 - `HLR-DOC` / `HLR-DASH` -- C1 mdBook manual + Read the Docs, C2 bundled
   offline manual at `/docs`, H2 footer links, `tools/gen-docs.py`, and the
   `make book` target.
-- `HLR-DASH` -- C3 API playground clickable links, C4 yace theme variables.
+- `HLR-DASH` -- C3 API playground clickable links, C4 yace theme variables,
+  C6 refreshed Charts preview + new API tab preview and the completed
+  dashboard walk-through.
 - `HLR-SBOM` -- H1 vendored yace.js in the SBOM and the vendored/dashboard
   JavaScript layout separation.
+- `HLR-ARCH` -- C5 complexity-check `book` directory exclusion.
 
 See `docs/dashboard.md`, `docs/THIRD_PARTY_NOTICES.md`, and `.readthedocs.yaml`.

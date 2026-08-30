@@ -23,6 +23,9 @@ package body Adacovex.Server.HTTP is
       Resp_Body    : String;
       Keep_Alive   : Boolean);
 
+   procedure Send_Redirect
+     (Channel : Socket_Type; Location : String; Keep_Alive : Boolean);
+
    function Read_Request_Line (Channel : Socket_Type) return String;
 
    function Get_Path (Request_Line : String) return String;
@@ -30,6 +33,11 @@ package body Adacovex.Server.HTTP is
    function To_Lower (C : Character) return Character;
 
    function Is_Header (Line : String; Name : String) return Boolean;
+
+   --  The docs asset key for a routed path: strip the "/docs" prefix (the
+   --  dashboard links carry a trailing slash) and map the bare "/docs" to
+   --  the manual index page.
+   function Docs_Subpath (Path : String) return String;
 
    procedure Handle_Request
      (Channel : Socket_Type; State : Server_State; Keep_Alive : out Boolean);
@@ -41,6 +49,19 @@ package body Adacovex.Server.HTTP is
       end if;
       return C;
    end To_Lower;
+
+   --  The docs asset key for a routed path.  The path is one of "/docs",
+   --  "/docs/", or "/docs/<subpath>"; the table is keyed by book-relative
+   --  paths ("index.html", "css/general.css", ...), so the prefix is
+   --  stripped and the bare manual root maps to the index page.
+   function Docs_Subpath (Path : String) return String is
+   begin
+      if Path = "/docs" or else Path = "/docs/" then
+         return "index.html";
+      end if;
+      --  "/docs/" is six characters; the subpath starts at Path'First + 5.
+      return Path (Path'First + 5 .. Path'Last);
+   end Docs_Subpath;
 
    function Is_Header (Line : String; Name : String) return Boolean is
    begin
@@ -139,6 +160,40 @@ package body Adacovex.Server.HTTP is
            ("Server error: " & Ada.Exceptions.Exception_Message (E));
          Close_Socket (Listener);
    end Start;
+
+   procedure Send_Redirect
+     (Channel : Socket_Type; Location : String; Keep_Alive : Boolean)
+   is
+      Conn_Val : constant String :=
+        (if Keep_Alive then "keep-alive" else "close");
+      Response : constant String :=
+        "HTTP/1.1 301 Moved Permanently"
+        & ASCII.CR
+        & ASCII.LF
+        & "Location: "
+        & Location
+        & ASCII.CR
+        & ASCII.LF
+        & "Content-Length: 0"
+        & ASCII.CR
+        & ASCII.LF
+        & "Connection: "
+        & Conn_Val
+        & ASCII.CR
+        & ASCII.LF
+        & ASCII.CR
+        & ASCII.LF;
+      SEA      :
+        Ada.Streams.Stream_Element_Array
+          (1 .. Ada.Streams.Stream_Element_Offset (Response'Length));
+      Last     : Ada.Streams.Stream_Element_Offset;
+   begin
+      for I in Response'Range loop
+         SEA (Ada.Streams.Stream_Element_Offset (I)) :=
+           Ada.Streams.Stream_Element (Character'Pos (Response (I)));
+      end loop;
+      Send_Socket (Channel, SEA, Last);
+   end Send_Redirect;
 
    procedure Send_Response
      (Channel      : Socket_Type;
@@ -443,12 +498,32 @@ package body Adacovex.Server.HTTP is
                Is_KA);
 
          when Route_Docs           =>
-            Send_Response
-              (Channel,
-               "200 OK",
-               "text/html",
-               Adacovex.Docs_Template.Manual,
-               Is_KA);
+            if Path = "/docs" then
+               --  The bare /docs URL: redirect to the trailing-slash form so
+               --  the page's relative asset links resolve against /docs/.
+               Send_Redirect (Channel, "/docs/", Is_KA);
+            else
+               declare
+                  Idx : constant Natural :=
+                    Adacovex.Docs_Template.Find (Docs_Subpath (Path));
+               begin
+                  if Idx = 0 then
+                     Send_Response
+                       (Channel,
+                        "404 Not Found",
+                        "text/plain",
+                        "Not Found: " & Path,
+                        Is_KA);
+                  else
+                     Send_Response
+                       (Channel,
+                        "200 OK",
+                        Adacovex.Docs_Template.Assets (Idx).Mime,
+                        Adacovex.Docs_Template.Content (Idx),
+                        Is_KA);
+                  end if;
+               end;
+            end if;
 
          when Route_Not_Found      =>
             Send_Response

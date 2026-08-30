@@ -2209,8 +2209,8 @@ package body Adacovex.Renderers.HTML is
          "/docs",
          "html",
          "Documentation",
-        "The bundled offline manual: the readthedocs Markdown source built by "
-        & "mdBook and served read-only, so users can consult the manual "
+         "The bundled offline manual: the readthedocs Markdown source built by "
+         & "mdBook and served read-only, so users can consult the manual "
          & "without a network connection.");
       Put (",");
       Ent

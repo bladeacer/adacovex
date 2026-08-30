@@ -34,8 +34,8 @@
         <script>
             const path_to_root = "";
             const default_light_theme = "light";
-            const default_dark_theme = "coal";
-            window.path_to_searchindex_js = "searchindex-10fd9022.js";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "searchindex-1ed1a718.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-22a96a46.js"></script>
@@ -243,6 +243,7 @@ docs/                              -- all documentation (this guide, CLI referen
 <tr><td>Change assessment criteria</td><td><code>src/compliance/adacovex-compliance-dal.adb</code> (+ the DAL levels doc)</td></tr>
 <tr><td>Add tests</td><td><code>src/tests/</code> – see below</td></tr>
 <tr><td>Regenerate API docs</td><td><code>make doc</code> (gnatdoc -&gt; <code>tools/rst2md.py</code> -&gt; <code>docs/api-docs/</code>)</td></tr>
+<tr><td>Regenerate the offline manual</td><td><code>make book</code> (mdBook -&gt; <code>tools/gen-docs.py</code> -&gt; <code>src/adacovex-docs_template.ads</code>)</td></tr>
 <tr><td>Sync test counts</td><td><code>make test-count</code> (reads <code>docs/test_result.md</code>, rewrites every anchored count)</td></tr>
 <tr><td>Sync proof metrics</td><td><code>make proof-status</code></td></tr>
 <tr><td>Regenerate AGENTS.md blocks</td><td><code>make agents-tree</code> (src tree) and <code>make doc-links</code> (docs list)</td></tr>
@@ -253,6 +254,8 @@ docs/                              -- all documentation (this guide, CLI referen
 <h3 id="api-docs-and-cross-links"><a class="header" href="#api-docs-and-cross-links">API docs and cross-links</a></h3>
 <p><code>make doc</code> regenerates <code>docs/api-docs/</code> from the <code>.ads</code> docstrings via gnatdoc + <code>tools/rst2md.py</code>. It produces one page per package plus <code>index.md</code>. The six hand-written reference pages are never regenerated. They are the docstring spec, the test formats, the SPARK levels, and the DAL, ASIL, and Class level pages.</p>
 <p>Cross-links between the generated package pages and the reference pages live in <code>tools/rst2md.py</code>. <code>GUIDE_PAGES</code> builds the index’s “Guides” section. <code>PACKAGE_GUIDES</code> builds the per-package “See also” lines. They do <strong>not</strong> live in the <code>.ads</code> comments: gnatdoc parses comment text as RST and drops markdown link URLs. To add a package cross-link, extend <code>PACKAGE_GUIDES</code> in <code>tools/rst2md.py</code>. Then run <code>make doc</code> and <code>make link-check</code>.</p>
+<h3 id="offline-manual-and-read-the-docs"><a class="header" href="#offline-manual-and-read-the-docs">Offline manual and Read the Docs</a></h3>
+<p><code>docs/</code> is an mdBook project (<code>docs/book.toml</code> with <code>src = "."</code> and a root <code>docs/SUMMARY.md</code>). Read the Docs builds the public site from it; the same book is bundled into the binary as the offline manual. When you add, move, or rename a doc page, update <code>docs/SUMMARY.md</code> in the same change. Then run <code>make book</code> (regenerates <code>src/adacovex-docs_template.ads</code>), <code>make link-check</code>, and <code>make docs-check</code>. <code>make book-serve</code> serves the manual locally with mdBook’s live server.</p>
 <h2 id="testing"><a class="header" href="#testing">Testing</a></h2>
 <p>The test suite is native and zero-dependency. <code>src/tests/</code> holds one file per category (scanner, config, types, renderers, SBOM, VCS, and more). Each file exposes a <code>Run (R : in out Runner'Class)</code> procedure wired into <code>src/tests/test_runner.adb</code>. A test is a <code>R. Check (Condition, "Description")</code> call.</p>
 <p>The runner counts them, prints a per-category table, and writes <code>docs/test_result.md</code>.</p>
@@ -368,22 +371,6 @@ reference pages (docstring spec, test formats, SPARK/DAL/ASIL/Class levels)</li>
         <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
         <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
 
-        <!-- Livereload script (if served using the cli tool) -->
-        <script>
-            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
-            const socket = new WebSocket(wsAddress);
-            socket.onmessage = function (event) {
-                if (event.data === "reload") {
-                    socket.close();
-                    location.reload();
-                }
-            };
-
-            window.onbeforeunload = function() {
-                socket.close();
-            }
-        </script>
 
 
         <script>
