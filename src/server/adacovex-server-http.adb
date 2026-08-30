@@ -54,13 +54,15 @@ package body Adacovex.Server.HTTP is
    --  "/docs/", or "/docs/<subpath>"; the table is keyed by book-relative
    --  paths ("index.html", "css/general.css", ...), so the prefix is
    --  stripped and the bare manual root maps to the index page.
+   --  Path is a slice of the request line, so its First is not 1: the
+   --  "/docs/" prefix is exactly six characters wherever the slice starts.
    function Docs_Subpath (Path : String) return String is
    begin
       if Path = "/docs" or else Path = "/docs/" then
          return "index.html";
       end if;
-      --  "/docs/" is six characters; the subpath starts at Path'First + 5.
-      return Path (Path'First + 5 .. Path'Last);
+      --  "/docs/" is six characters; the subpath starts at Path'First + 6.
+      return Path (Path'First + 6 .. Path'Last);
    end Docs_Subpath;
 
    function Is_Header (Line : String; Name : String) return Boolean is

@@ -62,6 +62,25 @@ error on every scan and, in constrained environments, could push the scan
 into heap exhaustion. The gate now scans assessed source only, matching the
 existing `obj` / `bin` / `dist` / `build` exclusions.
 
+### C7: book-links-check gate keeps the committed manual in sync
+
+A new `make book-links-check` gate (wired into `make check`, via
+`tools/check-book-links.py`) stops the committed mdBook build output
+(`docs/book/`) from drifting from the `docs/` source.  It rebuilds the book
+from a temp copy of `docs/` and fails when the committed output differs
+byte for byte.  It also verifies that every link inside the bundled offline
+manual resolves against the bundled assets or the deliberately-not-bundled
+prefixes shared with `tools/gen-docs.py`.
+
+The manual is now **complete**: every page under `docs/` (the 64
+API-reference pages, the 39 changelogs, the compliance outputs, the proof
+ledger, the test report, credits, and third-party notices) is a book
+chapter, so the index pages no longer link to pages the book never builds
+(previously 131 broken links in the built site).  Links from the manual to
+repo-root files (`README.md`, `CONTRIBUTING.md`, `AGENTS.md`) now point at
+the repository URLs instead of `../` paths that cannot resolve inside the
+book.  The tools unit tests grow from 41 to 48.
+
 ### C6: Dashboard preview screenshots refreshed and API tab added
 
 The Charts tab preview (`docs/media/dashboard_preview_charts.png`) is
@@ -87,6 +106,16 @@ yace never became a dependency component. `yace.js` now sits at the
 separates dependency JavaScript from dashboard JavaScript, and the SBOM lists
 yace (MIT, v1.1.0, `pkg:generic/yace`) alongside the other bundled libraries.
 
+### H3: /docs subpages are served again
+
+The `Docs_Subpath` slicing assumed the request path started at index 1, but
+`Get_Path` returns a slice of the request line, so every `/docs/<subpath>`
+kept a leading slash and returned 404 -- only `/docs` and `/docs/`
+resolved.  The six-character prefix is now stripped from the slice's actual
+first index, so every page, stylesheet, and badge of the bundled manual
+serves (an e2e test pins the exact, nested, and extensionless subpaths plus
+a missing-page 404).
+
 ### H2: Dashboard footer links updated
 
 The footer's API links now include the bundled manual:
@@ -102,8 +131,10 @@ adds four checks for the `/docs` and `/docs/` routes and two near-miss paths
 
 ## Proof Results
 
-Platinum, 0 unproved, 0 justified, 723 VCs unchanged under gnatprove 16.1.0.
-The manual-bundling, dashboard, and SBOM changes are build-time or I/O-bound
+Platinum, 0 unproved, 0 justified, 725 VCs (725 proved) under gnatprove
+16.1.0 -- the total reported by `adacovex prove` and mirrored in
+`/api/metrics`, the 16.1.0 proof ledger, and the self-assessment docs. The
+manual-bundling, dashboard, and SBOM changes are build-time or I/O-bound
 code that adds no analysed Ada, so the VC total stays at the Platinum bar.
 The `Route` expression function gains one more `elsif` for the `/docs/`
 trailing-slash spelling and remains proved by definition.
@@ -118,6 +149,8 @@ trailing-slash spelling and remains proved by definition.
   dashboard walk-through.
 - `HLR-SBOM` -- H1 vendored yace.js in the SBOM and the vendored/dashboard
   JavaScript layout separation.
-- `HLR-ARCH` -- C5 complexity-check `book` directory exclusion.
+- `HLR-ARCH` -- C5 complexity-check `book` directory exclusion, C7 the
+  book-links-check gate and the complete-book restructure.
+- `HLR-SERVER` -- H3 the `Docs_Subpath` off-by-one fix.
 
 See `docs/dashboard.md`, `docs/THIRD_PARTY_NOTICES.md`, and `.readthedocs.yaml`.

@@ -6,6 +6,12 @@
 # generated sub-trees (api-docs/, proof/, compliance/, badges/, changelogs/)
 # are included through their index pages so the table of contents stays small.
 #
+# Every page under docs/ is a chapter (see SUMMARY.md): the API reference,
+# changelogs, compliance outputs, proof ledger, and test report are all
+# built into the book so every link resolves -- `make book-links-check` fails
+# when a committed page is missing or a link points at a page that is not a
+# chapter.
+#
 # The default theme is used (the built-in "rus" light / "coal" dark pair);
 # no custom assets are bundled because the manual must build offline with no
 # font or image downloads.

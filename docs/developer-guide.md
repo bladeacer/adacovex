@@ -2,7 +2,7 @@
 
 This page is a human-readable tour of the adacovex codebase for people who want
 to build, test, or modify it. It supplements
-[CONTRIBUTING.md](../CONTRIBUTING.md) (process, changelog format, PR rules).
+[CONTRIBUTING.md](https://github.com/bladeacer/adacovex/blob/main/CONTRIBUTING.md) (process, changelog format, PR rules).
 This page is about **how the code is organised and how to get a working
 development environment**. `AGENTS.md` is the machine-facing version of the
 same information.
@@ -189,4 +189,4 @@ The proof result is anchored in `docs/proof/` (the per-version VC ledger).
   compliance model
 - [API reference](api-docs/index.md) -- generated package docs and the
   reference pages (docstring spec, test formats, SPARK/DAL/ASIL/Class levels)
-- [CONTRIBUTING.md](../CONTRIBUTING.md) -- contribution process and changelog format
+- [CONTRIBUTING.md](https://github.com/bladeacer/adacovex/blob/main/CONTRIBUTING.md) -- contribution process and changelog format

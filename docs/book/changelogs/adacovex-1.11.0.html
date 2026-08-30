@@ -1,0 +1,330 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>adacovex 1.11.0 - adacovex</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Ada Coverage and Verification Tool manual">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../css/general-e96d0476.css">
+        <link rel="stylesheet" href="../css/chrome-d279d366.css">
+        <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex-6b54bdb0.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc-4f584999.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">adacovex</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="adacovex-1110"><a class="header" href="#adacovex-1110">adacovex 1.11.0</a></h1>
+<p>Date: <em>2026-08-17</em>
+Version bumped 1.10.0 -&gt; 1.11.0.</p>
+<h2 id="changes"><a class="header" href="#changes">Changes</a></h2>
+<h3 id="c1---version-flag-with-the-version-source-tied-to-the-installation-method"><a class="header" href="#c1---version-flag-with-the-version-source-tied-to-the-installation-method">C1: <code>--version</code> flag with the version source tied to the installation method</a></h3>
+<p><code>adacovex --version</code> prints the bundled version (<code>adacovex vX. Y. Z</code>) and exits. The version’s source depends on how the binary was installed: a new <code>tools/gen-version.py</code> (pure stdlib, <code>argparse</code>/<code>pathlib</code>, typed) resolves it from the first available of <code>ADACOVEX_VERSION</code> (release builds – the release workflow and <code>make release VERSION=x.y.z</code> set it from the `vX.</p>
+<p>Y. Z<code>tag, and the action's build step regenerates the version file from it, so the shipped binary always reports exactly the tag it was built from),</code>alire/alire-dev.toml<code>(source checkouts), or</code>alire.toml<code>(dependency-managed installs: when covex is built as an Alire crate the binary is compiled from the published crate source, whose</code>alire.toml<code>-- the toml associated with the covex binary for dependency management -- carries the release-manifest version;</code>alire-dev.toml<code>may not exist in that tree). The script regenerates</code>src/adacovex_version_info.ads<code>on every</code>make build<code>(byte-identical when nothing changed), and</code>Adacovex. Version<code>in</code>src/adacovex.ads<code>re-exports the generated constant, so</code>–version<code>, the man page, the SBOM tool version, and the result-cache namespace can never drift. </code>make bump-version<code>no longer hand-edits</code>src/adacovex.ads`.</p>
+<h3 id="c2-man-subcommand-with-a-versioned-man-page"><a class="header" href="#c2-man-subcommand-with-a-versioned-man-page">C2: <code>man</code> subcommand with a versioned man page</a></h3>
+<p><code>adacovex man</code> installs the man page into the <strong>local man database</strong> (Linux/WSL, no root): the default root is <code>$XDG_DATA_HOME/man</code> or <code>~/.local/share/man</code>, <code>--dir=PATH</code> overrides it, and the index is refreshed with <code>mandb</code> when present. The page is generated by a new <code>Adacovex. Renderers. Man</code> package and embeds the binary version (in the `.</p>
+<p>TH<code>header and a</code>VERSION<code>section).</code>adacovex man –check<code>parses the installed page and exits</code>0<code>when it matches the binary,</code>1<code>when a newer version is available or none is installed, so a shell prompt hook can run</code>adacovex man –check<code>and auto-install the man page when the machine detects a newer version.</code>make man<code>builds and installs. CLI hygiene: a bare</code>–check<code>/</code>–dir<code>without the</code>man` subcommand is now a loud error instead of being silently ignored.</p>
+<h3 id="c3-multi-vcs-differential-modes-mercurial-subversion-fossil-jj"><a class="header" href="#c3-multi-vcs-differential-modes-mercurial-subversion-fossil-jj">C3: Multi-VCS differential modes (Mercurial, Subversion, Fossil, jj)</a></h3>
+<p><code>--compare-base</code> and <code>--coverage-delta</code> no longer require git. A new <code>Adacovex. VCS</code> package detects the target’s VCS by marker file (<code>.git</code> / <code>.jj</code> / <code>.hg</code> / <code>.svn</code> / <code>.fslckout</code> / <code>_FOSSIL_</code>, with a command-tool probe fallback) and snapshots a base revision without touching the working tree: git <code>worktree add --detach</code>, hg <code>archive -r</code>, svn <code>info --show-item url</code> + <code>export -r</code>, fossil <code>open</code> on a copied repo DB, and jj via <code>jj git export</code> into its internal git store followed by a git worktree against <code>.jj/repo/store/git</code> (jj commits are git commits). All snapshot commands run through <code>sh -c</code>, so the feature works on Linux and WSL.</p>
+<p>For VCS whose snapshot UX is poor – Subversion (no local history, network-dependent checkouts) and Fossil (niche tooling) – adacovex prints a note recommending the developers convert the repository to git (or a git-compatible VCS); git and jj (colocated jj+git resolves as git) give the best experience.</p>
+<h3 id="c4-adacovex-status-reports-vcs-availability"><a class="header" href="#c4-adacovex-status-reports-vcs-availability">C4: <code>adacovex status</code> reports VCS availability</a></h3>
+<p><code>adacovex status</code> now has a <code>vcs:</code> section listing which VCS command-line
+tools are available on PATH for the differential modes – git, mercurial
+(<code>hg</code>), subversion (<code>svn</code>), fossil, jj, and the man-page tool (<code>mandb</code>) –
+plus the VCS detected for the target repository. When the target’s VCS tool is
+missing from PATH, status prints a note that <code>--compare-base</code> /
+<code>--coverage-delta</code> will need it. The exit code remains prove-toolchain-driven;
+the VCS report is informational.</p>
+<h3 id="c5-markdown-summaries-on-every-ci-run-with-loud-threshold-failures"><a class="header" href="#c5-markdown-summaries-on-every-ci-run-with-loud-threshold-failures">C5: Markdown summaries on every CI run, with loud threshold failures</a></h3>
+<p>Every CI run now leaves a Markdown summary at the bottom of the job page. The composite action’s assessment step writes an <code>## adacovex assessment</code> table (target, bundled version, compliance label, SPARK level, tests, coverage) with a PASSED/FAILED verdict, and a new <code>if: always()</code> <strong>Write run summary</strong> step appends a run-overview table on success and failure. The <code>ci.yml</code>, <code>pr-check.yml</code>, and <code>release.yml</code> workflows each gained a <code>summary</code> job (<code>if: always()</code>, <code>needs:</code> all other jobs) that aggregates every job result into one table. Threshold failures fail loudly at every layer: unmet <code>--require-*</code> gates exit non-zero, are re-surfaced as GitHub <code>::error::</code> annotations, are listed in the FAILED summary, and the workflow <code>summary</code> job exits <code>1</code> when any of its dependencies failed.</p>
+<p>The action’s build step also verifies the downloaded/built binary with <code>--version</code>.</p>
+<h3 id="c6-man-db-mandb-detection-in-man-and-status"><a class="header" href="#c6-man-db-mandb-detection-in-man-and-status">C6: man-db (mandb) detection in <code>man</code> and <code>status</code></a></h3>
+<p><code>adacovex man</code> now tells the user when man-db is missing instead of silently
+skipping the database refresh: <code>Update_Database</code> returns whether mandb was
+found and exited 0, and a missing/failed mandb prints a warning that the
+page is still installed and readable via <code>man -l</code>. <code>adacovex status</code> gained a
+note in the <code>vcs:</code> section explaining that <code>adacovex man</code> cannot refresh the
+man database when mandb is absent from PATH, so users know up front.</p>
+<h3 id="c7-make-check-quality-gate--single-source-crate-description"><a class="header" href="#c7-make-check-quality-gate--single-source-crate-description">C7: <code>make check</code> quality gate + single-source crate description</a></h3>
+<p>A new <code>make check</code> target runs the full quality gate in one command – build,
+native tests, SPARK proof, SVG badges, API docs, SBOM, ASCII, changelog
+format, and description sync – and the obsolete <code>dev-setup</code> / <code>prod-setup</code>
+stubs were removed. The crate description now has a single source of truth:
+<code>alire/description.txt</code> + <code>alire/long-description.txt</code>, propagated to every
+manifest (<code>alire.toml</code>, release manifests, index entries) by a new
+<code>tools/update-description.py</code> (<code>make description</code>, <code>CHECK=1</code> to verify),
+wired into <code>make bump-version</code> / <code>make release</code> so a new release always ships
+the current description. The <code>release</code> output (and the GitHub release body)
+now links every changelog from the last release tag up to the released
+version. Build/dev prerequisites now list <strong>Python 3</strong> for the pure-stdlib
+<code>tools/*.py</code> scripts.</p>
+<h3 id="c8-result-caching-extended-to-hlrllr-parses-the-sbom-graph-and-diffs"><a class="header" href="#c8-result-caching-extended-to-hlrllr-parses-the-sbom-graph-and-diffs">C8: Result caching extended to HLR/LLR parses, the SBOM graph, and diffs</a></h3>
+<p>The on-disk result cache now also covers the DO-178C HLR.md/LLR.md parses
+(<code>hlr:</code>/<code>llr:</code> keys, served into the DAL assessment), the resolved SBOM
+dependency graph (<code>graph:</code> key over the manifests, lockfile, every .gpr file,
+and the <code>.adacovex/patches/</code> dir), and the <code>--compare-base</code> /
+<code>--coverage-delta</code> source scans (via <code>Scan_Project_Cached</code>), so unchanged
+inputs are not re-parsed across runs.</p>
+<h3 id="c9-sbom-subcommand-is-standard-aware-and-defaults-to-all-standards"><a class="header" href="#c9-sbom-subcommand-is-standard-aware-and-defaults-to-all-standards">C9: <code>sbom</code> subcommand is standard-aware and defaults to all standards</a></h3>
+<p>The <code>sbom</code> subcommand accepts the standard flags (<code>--standard</code>, <code>--dal</code>,
+<code>--asil</code>, <code>--class</code>) and <strong>defaults to all standards</strong>: without an explicit
+standard flag the SBOM carries the joined DO-178C / ISO 26262 / IEC 62304
+properties at the shared DAL tier; <code>--standard=iso26262</code> / <code>--asil=B</code> narrows
+it to ISO 26262 at ASIL B, <code>--class=A</code> to IEC 62304 at Class A. The usage,
+man page, README, and CLI reference document the new form.</p>
+<h3 id="c10---serve-dashboard-is-standard-aware-with-lightdark-themes"><a class="header" href="#c10---serve-dashboard-is-standard-aware-with-lightdark-themes">C10: <code>--serve</code> dashboard is standard-aware with light/dark themes</a></h3>
+<p>The served dashboard (<code>--serve</code>) is standard-aware like the <code>sbom</code>
+subcommand: without an explicit <code>--standard</code> / <code>--asil</code> / <code>--class</code> it
+renders every standard’s compliance level (DAL-C, ASIL B, Class A) at the
+shared tier, and an explicit standard flag narrows it to that single
+standard. The dashboard page also supports <strong>light and dark themes</strong>: colors
+are driven by CSS custom properties, the initial theme follows the browser’s
+<code>prefers-color-scheme</code>, and a header button toggles between light and dark
+(persisted in <code>localStorage</code>).</p>
+<h2 id="test-suite"><a class="header" href="#test-suite">Test Suite</a></h2>
+<p>616 tests (was 501), across 12 categories (was 10). The CLI-config category
+covers <code>--version</code>, the <code>man</code> subcommand and its <code>--check</code> / <code>--dir</code> flags,
+and the standard-awareness defaults for the <code>sbom</code> subcommand and the
+<code>--serve</code> dashboard (all standards by default, narrowed by <code>--standard</code> /
+<code>--asil</code> / <code>--class</code>); the HTML/Markdown renderers category covers the
+standard-aware dashboard with the light/dark theme toggle,
+<code>prefers-color-scheme</code>, and the JSON output; the DAL compliance category
+(16) gained the cached-HLR parse round-trip; the SBOM generator category
+(118) gained the dependency-graph cache round-trip; the Man page renderer
+category covers page structure, the embedded version, an install/read-back
+round-trip, and the <code>Update_Database</code> man-db contract; the VCS support
+category (29) covers marker-file detection for every VCS, display and
+tool-binary names, and the UX-conversion recommendations.</p>
+<h2 id="proof-results"><a class="header" href="#proof-results">Proof Results</a></h2>
+<p>Platinum, 401/401 VCs proved (unchanged from 1.10.0), 0 unproved, 0
+justified: the <code>--serve</code> standard-awareness and light/dark theming work
+touched the config defaults and the HTML renderer only and added no proof
+obligations. Proven with <code>make prove</code> under gnatprove 16.1.0
+(<code>--steps=10000</code>).</p>
+<h2 id="traceability"><a class="header" href="#traceability">Traceability</a></h2>
+<p>No new HLRs. The VCS abstraction reuses the existing <code>-- HLR-DIFF</code> tag
+(<code>src/core/adacovex-vcs.ads</code>, <code>src/core/adacovex-diff.ads</code>); the changed CLI,
+prove/status, and root packages stay covered by the existing <code>HLR-CLI</code>
+(<code>src/core/adacovex-config.ads</code>), <code>HLR-PROVE</code> (<code>src/core/adacovex-prove.ads</code>),
+<code>HLR-CACHE</code> (<code>src/core/adacovex-cache.ads</code>, also tagging the new HLR/LLR
+parse-cache and SBOM graph-cache paths in <code>src/parsers/adacovex-parsers- do178c.adb</code> / <code>src/parsers/adacovex-parsers-manifest.adb</code>), <code>HLR-SBOM</code>
+(<code>src/parsers/adacovex-parsers-manifest.ads</code>), and <code>HLR-ARCH</code>
+(<code>src/adacovex.ads</code>) tags.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../changelogs/adacovex-1.12.0.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../changelogs/adacovex-1.10.0.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../changelogs/adacovex-1.12.0.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../changelogs/adacovex-1.10.0.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-09f2665d.js"></script>
+
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-abc7f01d.js"></script>
+        <script src="../book-609e4cb8.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>
