@@ -53,8 +53,8 @@ src/tests/adacovex_tz_ansi_tests	Timezone + ANSI tests (63)
 src/tests/adacovex_complexity_tests	Complexity check tests (12)
 src/tests/adacovex_renderer_svg_tests	SVG renderer tests (161)
 src/tests/adacovex_renderer_tests	HTML/Markdown renderer tests (58)
-src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (278)
-src/tests/test_runner	Test suite entry point (1173 tests)
+src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (283)
+src/tests/test_runner	Test suite entry point (1178 tests)
 src/parsers/adacovex-parsers-manifest-req_entry	Parse the first requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-is_test_named	Whether an npm package name carries a test label (starts/ends with "test")
 src/parsers/adacovex-parsers-manifest-collect_owner_test_names	Collect test-labelled dependency names from supported-language manifests
