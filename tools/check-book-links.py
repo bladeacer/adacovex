@@ -1,27 +1,26 @@
 #!/usr/bin/env python3
-"""Check the committed mdBook build output (docs/book) against the docs source.
+"""Check the bundled offline manual's links against a fresh mdBook build.
 
-Two checks, both wired as `make book-links-check` (part of `make check`):
+Wired as `make book-links-check` (part of `make check`):
 
-1. **Drift**: a fresh `mdbook build` from a temp copy of docs/ (without the
-   committed book output, so the build does not copy it into itself) must
-   reproduce the committed docs/book byte for byte.  Any difference means
-   docs/ changed without `make book` being re-run, so the committed site is
-   stale.  When mdbook is not on PATH the rebuild is skipped with a note and
-   only the bundle-link check runs -- the committed book is the fallback,
-   exactly like tools/gen-docs.py.
+Every link inside the bundled offline manual (the pages tools/gen-docs.py
+post-processes and embeds in src/adacovex-docs_template.ads) must resolve to a
+bundled asset or to a file that is deliberately not bundled.  The deliberate
+exclusions are the OFFLINE_EXCLUDED_PREFIXES shared with tools/gen-docs.py
+(media/, fonts/, 404.html, book.toml, .nojekyll), so the checker never flags
+the files gen-docs.py intentionally drops or replaces with a note.  The print
+view (print.html), the SVG favicon, and mdbook's search machinery (elasticlunr-,
+mark-, searcher-, searchindex-) ARE bundled -- the print button works and
+offline search resolves -- so their links must resolve like any other
+asset.  External links and in-page anchors are skipped.
 
-2. **Bundle links**: every link inside the bundled offline manual (the pages
-   tools/gen-docs.py post-processes and embeds in
-   src/adacovex-docs_template.ads) must resolve to a bundled asset or to a
-   file that is deliberately not bundled.  The deliberate exclusions are the
-   OFFLINE_EXCLUDED_PREFIXES shared with tools/gen-docs.py (media/, fonts/,
-   print.html, 404.html, book.toml, .nojekyll), so the checker never flags
-   the files gen-docs.py intentionally drops or replaces with a note.
-   mdbook's search machinery (elasticlunr-, mark-, searcher-, searchindex-)
-   IS bundled -- the manual's own search works offline -- so its links
-   resolve like any other asset.  External links and in-page anchors are
-   skipped.
+The check runs against a **fresh** `mdbook build` from a temp copy of docs/
+(the output docs/book is a local, gitignored build product -- the committed
+artifact is the generated spec, gated by `python3 tools/gen-docs.py --check`),
+so a stale local docs/book can never mask a broken link.  When mdbook is not
+on PATH the local docs/book is checked instead (with a note), and when neither
+exists the check is skipped -- the committed spec is the fallback, exactly
+like tools/gen-docs.py.
 
 Usage:
   python3 tools/check-book-links.py
@@ -36,7 +35,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
+from typing import List, Optional, Set, Tuple
 
 ROOT: Path = Path(__file__).resolve().parent.parent
 BOOK: Path = ROOT / "docs" / "book"
@@ -81,8 +80,8 @@ def check_bundle_links(assets: List[Tuple[str, str, str]]) -> List[str]:
     assets is gen_docs.collect_assets() output: (book-relative path, MIME,
     post-processed body).  Every internal target of every HTML asset must be
     another bundled asset, or sit under a deliberately-not-bundled prefix
-    (media/, fonts/, print.html, 404.html, book.toml, .nojekyll -- the files
-    the post-processing drops or replaces).
+    (media/, fonts/, 404.html, book.toml, .nojekyll -- the files the
+    post-processing drops or replaces).
     """
     paths: Set[str] = {rel for rel, _, _ in assets}
     errors: List[str] = []
@@ -98,54 +97,55 @@ def check_bundle_links(assets: List[Tuple[str, str, str]]) -> List[str]:
     return errors
 
 
-def dir_differences(fresh: Path, committed: Path) -> List[str]:
-    """File-set and byte differences between two directory trees."""
-    def file_set(d: Path) -> Set[str]:
-        return {p.relative_to(d).as_posix() for p in d.rglob("*") if p.is_file()}
+def fresh_build(dest: Path) -> bool:
+    """Build the book into dest/out from a temp copy of docs/.
 
-    fresh_files: Set[str] = file_set(fresh)
-    committed_files: Set[str] = file_set(committed)
-    diffs: List[str] = []
-    for rel in sorted(fresh_files - committed_files):
-        diffs.append(f"only in fresh build: {rel}")
-    for rel in sorted(committed_files - fresh_files):
-        diffs.append(f"only in committed docs/book: {rel}")
-    for rel in sorted(fresh_files & committed_files):
-        if (fresh / rel).read_bytes() != (committed / rel).read_bytes():
-            diffs.append(f"content differs: {rel}")
-    return diffs
-
-
-def check_drift() -> Tuple[bool, List[str], str]:
-    """Rebuild the book from docs/ and compare with the committed docs/book.
-
-    Returns (ok, diffs, note).  When mdbook is not on PATH the rebuild is
-    skipped: ok stays True, diffs is empty, and note explains the skip.
+    Returns False when mdbook is not on PATH or the build fails.  The copy
+    excludes the local docs/book output so the build never folds a stale
+    book into itself.
     """
     if shutil.which("mdbook") is None:
-        return True, [], "note: mdbook not on PATH; drift check skipped (link check still ran)"
-    with tempfile.TemporaryDirectory(prefix="adacovex-book-") as td:
-        tmp: Path = Path(td)
-        src: Path = tmp / "src"
-        out: Path = tmp / "out"
-        # Copy docs/ without the committed book output so the build does not
-        # copy the stale book into itself.
-        shutil.copytree(ROOT / "docs", src, ignore=shutil.ignore_patterns("book"))
-        result = subprocess.run(
-            ["mdbook", "build", str(src), "--dest-dir", str(out)],
-            capture_output=True, text=True)
-        if result.returncode != 0:
-            return False, [f"mdbook build failed: {result.stderr.strip()[-500:]}"], ""
-        return len(dir_differences(out, BOOK)) == 0, dir_differences(out, BOOK), ""
+        return False
+    src: Path = dest / "src"
+    out: Path = dest / "out"
+    shutil.copytree(ROOT / "docs", src, ignore=shutil.ignore_patterns("book"))
+    result = subprocess.run(
+        ["mdbook", "build", str(src), "--dest-dir", str(out)],
+        capture_output=True, text=True)
+    if result.returncode != 0:
+        print(f"note: mdbook build failed: {result.stderr.strip()[-500:]}",
+              file=sys.stderr)
+        return False
+    return True
 
 
 def main(argv: List[str]) -> int:
-    ap: argparse.ArgumentParser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap: argparse.ArgumentParser = argparse.ArgumentParser(
+        description=__doc__.splitlines()[0])
     ap.parse_args(argv)
 
-    # Bundle-link check: always runs (no mdbook needed).
-    assets: List[Tuple[str, str, str]] = gen_docs.collect_assets(BOOK)
-    errors: List[str] = check_bundle_links(assets)
+    # The link check runs against a fresh temp build when mdbook is present
+    # (a stale local docs/book can never mask a broken link); otherwise it
+    # falls back to the local build output, and when neither exists it is
+    # skipped -- the committed spec is the fallback, like tools/gen-docs.py.
+    with tempfile.TemporaryDirectory(prefix="adacovex-book-") as td:
+        tmp: Path = Path(td)
+        book_dir: Optional[Path] = None
+        if fresh_build(tmp):
+            book_dir = tmp / "out"
+            print("  Checking links against a fresh mdbook build.")
+        elif BOOK.is_dir():
+            book_dir = BOOK
+            print("  note: mdbook not on PATH; checking the local docs/book",
+                  file=sys.stderr)
+        else:
+            print("note: mdbook not on PATH and no local docs/book -- "
+                  "link check skipped", file=sys.stderr)
+            return 0
+
+        assets: List[Tuple[str, str, str]] = gen_docs.collect_assets(book_dir)
+        errors: List[str] = check_bundle_links(assets)
+
     if errors:
         for e in errors:
             print(f"  ERROR: {e}", file=sys.stderr)
@@ -153,18 +153,6 @@ def main(argv: List[str]) -> int:
               file=sys.stderr)
         return 1
     print("  All links resolve in the bundled offline manual.")
-
-    # Drift check: the committed book must equal a fresh mdbook build.
-    ok, diffs, note = check_drift()
-    if note:
-        print(f"  {note}")
-    if not ok:
-        for d in diffs:
-            print(f"  ERROR: {d}", file=sys.stderr)
-        print("  ERROR: docs/book is stale -- run `make book` and commit the rebuilt site",
-              file=sys.stderr)
-        return 1
-    print("  docs/book is current (a fresh mdbook build reproduces it).")
     return 0
 
 

@@ -23,3 +23,7 @@ node_modules
 tests/e2e/test-results
 tests/e2e/playwright-report
 
+
+# mdBook build output: regenerated locally by `make book` (gitignored so the
+# content-hashed search index and per-page references never pollute git).
+docs/book/

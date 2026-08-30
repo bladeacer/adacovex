@@ -9,8 +9,7 @@
 # Every page under docs/ is a chapter (see SUMMARY.md): the API reference,
 # changelogs, compliance outputs, proof ledger, and test report are all
 # built into the book so every link resolves -- `make book-links-check` fails
-# when a committed page is missing or a link points at a page that is not a
-# chapter.
+# when a page is missing or a link points at a page that is not a chapter.
 #
 # The default theme is used (the built-in "rus" light / "coal" dark pair);
 # no custom assets are bundled because the manual must build offline with no
@@ -29,5 +28,6 @@ src = "."
 default-theme = "light"
 preferred-dark-theme = "navy"
 
-# Print support: the single print.html page is the basis of the bundled
-# offline manual that --serve exposes at /docs/.
+# Print support: the print button opens the single-page print.html, which is
+# bundled into the offline manual that --serve exposes at /docs/, so printing
+# works offline exactly as it does online.

@@ -474,6 +474,58 @@ class TestGenDocsAssets(unittest.TestCase):
         self.assertEqual(gen_docs._asset_body_lines("a\n\nb"),
                          ['"a"', "ASCII.LF", '""', "ASCII.LF", '"b"'])
 
+    def test_collect_assets_normalises_searchindex(self) -> None:
+        # The content-hashed searchindex-<hash>.js must become the stable
+        # searchindex.js, and every page reference must follow, so a docs
+        # edit no longer churns the asset name and the whole template.
+        with tempfile.TemporaryDirectory() as tmp:
+            book = Path(tmp) / "book"
+            book.mkdir()
+            (book / "index.html").write_text(
+                '<script>window.path_to_searchindex_js = '
+                '"searchindex-abc123.js";</script>',
+                encoding="utf-8")
+            (book / "searcher-abc123.js").write_text("// searcher",
+                                                      encoding="utf-8")
+            (book / "searchindex-abc123.js").write_text("{}",
+                                                         encoding="utf-8")
+            assets = gen_docs.collect_assets(book)
+            rels = {rel for rel, _, _ in assets}
+            self.assertIn("searchindex.js", rels)
+            self.assertNotIn("searchindex-abc123.js", rels)
+            index_body = next(
+                body for rel, _, body in assets if rel == "index.html")
+            self.assertIn('path_to_searchindex_js = "searchindex.js"',
+                          index_body)
+
+    def test_collect_assets_bundles_print_and_keeps_svg_icon(self) -> None:
+        # print.html (the print button's target) must be bundled so the print
+        # button works offline, the SVG favicon must stay, and only the PNG
+        # favicon may be dropped.
+        with tempfile.TemporaryDirectory() as tmp:
+            book = Path(tmp) / "book"
+            book.mkdir()
+            (book / "index.html").write_text(
+                '<link rel="icon" href="favicon-de23e50b.svg">'
+                '<link rel="shortcut icon" href="favicon-8114d1fc.png">'
+                '<a href="print.html">print this book</a>',
+                encoding="utf-8")
+            (book / "print.html").write_text(
+                '<p>the whole book</p>', encoding="utf-8")
+            (book / "favicon-de23e50b.svg").write_text("<svg/>",
+                                                         encoding="utf-8")
+            (book / "favicon-8114d1fc.png").write_bytes(b"\x89PNG\r\n")
+            assets = gen_docs.collect_assets(book)
+            rels = {rel for rel, _, _ in assets}
+            self.assertIn("print.html", rels)
+            self.assertIn("favicon-de23e50b.svg", rels)
+            self.assertNotIn("favicon-8114d1fc.png", rels)
+            index_body = next(
+                body for rel, _, body in assets if rel == "index.html")
+            self.assertNotIn("shortcut icon", index_body)
+            self.assertIn('rel="icon" href="favicon-de23e50b.svg"',
+                          index_body)
+
 
 class TestCheckBookLinks(unittest.TestCase):
     """Pure-logic tests for tools/check-book-links.py (book drift + links)."""
@@ -511,30 +563,47 @@ class TestCheckBookLinks(unittest.TestCase):
         self.assertIn("missing.html", errors[0])
 
     def test_bundle_links_tolerates_excluded_prefix(self) -> None:
-        # media/, fonts/, print.html etc. are deliberately not bundled.
-        html = ('<img src="media/dashboard_preview_api.png"> '
-                '<a href="print.html">print</a>')
-        assets = [("index.html", "text/html", html),
+        # media/ and fonts/ are deliberately not bundled; a link to them in a
+        # produced page must not fail the check.  A subpage references them
+        # with a leading ../ (matching real mdBook output), and print.html
+        # resolves to a bundled asset.
+        html = ('<img src="../media/dashboard_preview_overview.png"> '
+                '<a href="../fonts/fonts-x.css">f</a> '
+                '<a href="../css/print-x.css">ok</a>')
+        assets = [("usage/dashboard.html", "text/html", html),
+                  ("css/print-x.css", "text/css", "body{}"),
                   ("architecture.html", "text/html", "<p>arch</p>")]
         self.assertEqual(check_book_links.check_bundle_links(assets), [])
 
-    def test_dir_differences(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            fresh = Path(tmp) / "fresh"
-            committed = Path(tmp) / "committed"
-            fresh.mkdir()
-            committed.mkdir()
-            (fresh / "a.html").write_text("same", encoding="utf-8")
-            (committed / "a.html").write_text("same", encoding="utf-8")
-            (fresh / "b.html").write_text("x", encoding="utf-8")  # only fresh
-            (committed / "c.html").write_text("x", encoding="utf-8")  # only committed
-            (fresh / "d.html").write_text("new", encoding="utf-8")
-            (committed / "d.html").write_text("old", encoding="utf-8")
-            diffs = check_book_links.dir_differences(fresh, committed)
-            self.assertIn("only in fresh build: b.html", diffs)
-            self.assertIn("only in committed docs/book: c.html", diffs)
-            self.assertIn("content differs: d.html", diffs)
-            self.assertNotIn("a.html", " ".join(diffs))
+    def test_bundle_links_requires_print_asset(self) -> None:
+        # print.html is bundled now (so the print button works offline), so a
+        # link to it is only sound when the asset is present -- a missing one
+        # is reported, exactly like any other missing bundled asset.
+        assets = [("index.html", "text/html",
+                   '<a href="print.html">print this book</a>')]
+        errors = check_book_links.check_bundle_links(assets)
+        self.assertEqual(len(errors), 1)
+        self.assertIn("print.html", errors[0])
+        assets_ok = [("index.html", "text/html",
+                      '<a href="print.html">print this book</a>'),
+                     ("print.html", "text/html", "<p>full book</p>")]
+        self.assertEqual(check_book_links.check_bundle_links(assets_ok), [])
+
+    def test_fresh_build_produces_whole_book(self) -> None:
+        # The link check runs against a fresh temp build (docs/book is a
+        # local, gitignored product): a stale local build must never mask a
+        # broken link.  Requires mdbook, exactly like the gate itself.
+        if shutil.which("mdbook") is None:
+            self.skipTest("mdbook not on PATH")
+        with tempfile.TemporaryDirectory(prefix="adacovex-book-") as td:
+            dest = Path(td)
+            self.assertTrue(check_book_links.fresh_build(dest))
+            out = dest / "out"
+            self.assertTrue((out / "index.html").is_file())
+            self.assertTrue((out / "print.html").is_file())
+            # The fresh build carries the same self-contained link surface.
+            assets = gen_docs.collect_assets(out)
+            self.assertEqual(check_book_links.check_bundle_links(assets), [])
 
 
 if __name__ == "__main__":
