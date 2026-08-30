@@ -6,9 +6,17 @@ build:
     rust: latest
   jobs:
     install:
+      # cargo install writes the mdbook binary into the active Rust
+      # toolchain's bin dir, which is NOT on PATH when Read the Docs runs
+      # the build job below. We still install it here (so the build fails
+      # fast if the crate cannot be compiled), then resolve its location in
+      # the build command.
       - cargo install mdbook
     build:
       html:
-        # For an example book..
-        # - mdbook init docs
-        - mdbook build docs --dest-dir $READTHEDOCS_OUTPUT/html
+        # Prepend the directory that actually holds the cargo-installed
+        # mdbook binary (the Rust toolchain bin or ~/.cargo/bin) to PATH,
+        # then build the book into the output directory Read the Docs
+        # expects. This keeps the build working across Rust toolchain
+        # upgrades without hardcoding a version-specific path.
+        - export PATH="$(dirname "$(find "$HOME" -type f -name mdbook 2>/dev/null | head -n1)"):$PATH" && mdbook build docs --dest-dir "$READTHEDOCS_OUTPUT/html"

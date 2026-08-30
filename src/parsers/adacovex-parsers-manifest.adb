@@ -468,7 +468,7 @@ package body Adacovex.Parsers.Manifest is
      (S : String; VFlag : String := "--version") return Tool_Entry
    is separate;
 
-   System_Tools : constant array (1 .. 60) of Tool_Entry :=
+   System_Tools : constant array (1 .. 61) of Tool_Entry :=
      (Make_Tool ("alr"),
       Make_Tool ("make"),
       Make_Tool ("cmake"),
@@ -527,6 +527,7 @@ package body Adacovex.Parsers.Manifest is
       Make_Tool ("rustup"),
       Make_Tool ("cargo-hack"),
       Make_Tool ("cargo-watch"),
+      Make_Tool ("mdbook"),
       Make_Tool ("ada"),
       Make_Tool ("alire"));
 
