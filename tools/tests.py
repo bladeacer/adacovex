@@ -40,6 +40,7 @@ import versions
 import csslint
 para_split = importlib.import_module("para-split")
 rst2md = importlib.import_module("rst2md")
+check_book_links = importlib.import_module("check-book-links")
 
 GIT_ENV: dict = {
     "GIT_AUTHOR_NAME": "adacovex test",
@@ -439,6 +440,68 @@ class TestGenDashboard(unittest.TestCase):
             self.assertNotIn(placeholder, page)
         scripts = re.findall(r"<script>(.*?)</script>", page, re.S)
         self.assertEqual(len(scripts), 11)
+
+
+class TestCheckBookLinks(unittest.TestCase):
+    """Pure-logic tests for tools/check-book-links.py (book drift + links)."""
+
+    def test_internal_targets_resolves_relative(self) -> None:
+        html = '<a href="../architecture.html">arch</a>'
+        self.assertEqual(check_book_links.internal_targets(html, "api-docs/index.html"),
+                         ["architecture.html"])
+
+    def test_internal_targets_strips_anchor_and_query(self) -> None:
+        html = '<a href="dashboard.html#charts">c</a> <a href="sbom.html?x=1">s</a>'
+        self.assertEqual(check_book_links.internal_targets(html, "index.html"),
+                         ["dashboard.html", "sbom.html"])
+
+    def test_internal_targets_skips_external(self) -> None:
+        html = ('<a href="https://example.com/x">e</a> '
+                '<a href="mailto:a@b.c">m</a> '
+                '<a href="data:text/plain,x">d</a> '
+                '<a href="//cdn.example/x">p</a> '
+                '<a href="#local">a</a>')
+        self.assertEqual(check_book_links.internal_targets(html, "index.html"), [])
+
+    def test_bundle_links_ok(self) -> None:
+        assets = [("index.html", "text/html",
+                   '<a href="architecture.html">a</a><a href="#top">t</a>'),
+                  ("architecture.html", "text/html", "<p>arch</p>")]
+        self.assertEqual(check_book_links.check_bundle_links(assets), [])
+
+    def test_bundle_links_broken_detected(self) -> None:
+        assets = [("index.html", "text/html",
+                   '<a href="missing.html">m</a>'),
+                  ("architecture.html", "text/html", "<p>arch</p>")]
+        errors = check_book_links.check_bundle_links(assets)
+        self.assertEqual(len(errors), 1)
+        self.assertIn("missing.html", errors[0])
+
+    def test_bundle_links_tolerates_excluded_prefix(self) -> None:
+        # media/, fonts/, print.html etc. are deliberately not bundled.
+        html = ('<img src="media/dashboard_preview_api.png"> '
+                '<a href="print.html">print</a>')
+        assets = [("index.html", "text/html", html),
+                  ("architecture.html", "text/html", "<p>arch</p>")]
+        self.assertEqual(check_book_links.check_bundle_links(assets), [])
+
+    def test_dir_differences(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            fresh = Path(tmp) / "fresh"
+            committed = Path(tmp) / "committed"
+            fresh.mkdir()
+            committed.mkdir()
+            (fresh / "a.html").write_text("same", encoding="utf-8")
+            (committed / "a.html").write_text("same", encoding="utf-8")
+            (fresh / "b.html").write_text("x", encoding="utf-8")  # only fresh
+            (committed / "c.html").write_text("x", encoding="utf-8")  # only committed
+            (fresh / "d.html").write_text("new", encoding="utf-8")
+            (committed / "d.html").write_text("old", encoding="utf-8")
+            diffs = check_book_links.dir_differences(fresh, committed)
+            self.assertIn("only in fresh build: b.html", diffs)
+            self.assertIn("only in committed docs/book: c.html", diffs)
+            self.assertIn("content differs: d.html", diffs)
+            self.assertNotIn("a.html", " ".join(diffs))
 
 
 if __name__ == "__main__":

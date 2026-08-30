@@ -1,4 +1,4 @@
-.PHONY: help check build test prove doc book book-serve docs-serve clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish agents-tree sbom description proof-status test-count doc-links link-check changelog-check action-parity-check tools-check man bench perf-bench complexity-check csslint-check sync docs-check
+.PHONY: help check build test prove doc book book-serve docs-serve clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish agents-tree sbom description proof-status test-count doc-links link-check changelog-check action-parity-check tools-check man bench perf-bench complexity-check csslint-check sync docs-check book-links-check
 
 .DEFAULT_GOAL := help
 
@@ -52,6 +52,9 @@ help:
 	@echo '                  add CHECK=1 for a verify-only run)'
 	@echo '    link-check    Verify every markdown link in the repo resolves'
 	@echo '                  (tools/check-links.py)'
+	@echo '    book-links-check  Fail when docs/book drifts from docs/ (fresh mdbook'
+	@echo '                  build) or a bundled-manual link is broken'
+	@echo '                  (tools/check-book-links.py)'
 	@echo ''
 	@echo '  Gates (also run by `make check`):'
 	@echo '    complexity-check  Cyclomatic-complexity + LOC gate (no god objects,'
@@ -202,6 +205,15 @@ ascii-check:
 docs-check:
 	@python3 tools/check-docs.py
 
+# Quality gate: the committed mdBook build output (docs/book) must equal a
+# fresh `mdbook build` from docs/ (any diff means docs/ changed without
+# `make book`), and every link inside the bundled offline manual must resolve
+# to a bundled asset or a deliberately-not-bundled file (the rules shared
+# with tools/gen-docs.py).  When mdbook is missing the drift half is skipped
+# with a note and only the bundle-link check runs.
+book-links-check:
+	@python3 tools/check-book-links.py
+
 docs-serve:
 	@python3 -m http.server 8000 --directory docs
 
@@ -244,6 +256,7 @@ check:
 	@echo "=== Quality gate: doc links ==="; python3 tools/update-doc-links.py --check
 	@echo "=== Quality gate: markdown links ==="; $(MAKE) link-check
 	@echo "=== Quality gate: user documentation ==="; $(MAKE) docs-check
+	@echo "=== Quality gate: committed mdBook build output ==="; $(MAKE) book-links-check
 	@echo "=== Quality gate: build ==="; $(MAKE) build
 	@echo "=== Quality gate: native tests ==="; $(MAKE) test
 	@echo "=== Quality gate: SPARK proof + badges ==="; $(MAKE) prove

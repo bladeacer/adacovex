@@ -19,7 +19,7 @@ adacovex makes no OS-specific assumptions beyond the CPU-core and CI detection d
 
 The CI release binary is Linux x86-64 only. The `adacovex-vX. Y. Z.tar.gz` bundle (`adacovex` and the `covex` alias) and the prebuilt GNATprove toolchain asset are built on `ubuntu-latest`.
 
-Every other platform builds adacovex from source via Alire (`alr build`). See [Installing adacovex](../README.md#installing-adacovex).
+Every other platform builds adacovex from source via Alire (`alr build`). See [Installing adacovex](https://github.com/bladeacer/adacovex/blob/main/README.md#installing-adacovex).
 
 ## CPU core-count detection
 

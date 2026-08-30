@@ -1,0 +1,408 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>adacovex 1.6.0 - adacovex</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Ada Coverage and Verification Tool manual">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../css/general-e96d0476.css">
+        <link rel="stylesheet" href="../css/chrome-d279d366.css">
+        <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex-6b54bdb0.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc-4f584999.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">adacovex</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="adacovex-160"><a class="header" href="#adacovex-160">adacovex 1.6.0</a></h1>
+<p>Date: <em>2026-08-05</em></p>
+<p>Version bumped 1.5.0 -&gt; 1.6.0.</p>
+<h2 id="changes"><a class="header" href="#changes">Changes</a></h2>
+<h3 id="c1-full-spark-proof-coverage-platinum-0-unproved"><a class="header" href="#c1-full-spark-proof-coverage-platinum-0-unproved">C1: Full SPARK proof coverage (Platinum, 0 unproved)</a></h3>
+<p>The whole SPARK-on codebase is now fully machine-proved. Previously only the
+bounded IR types (<code>Checked_Add32/64</code>, <code>IR_Bounds.Add32/64</code>) carried complete
+proofs; every other SPARK unit was analysed but not fully discharged. Now
+<strong>all 491 VCs prove</strong> with <code>--prover=z3 --timeout=20</code>, including the run-time
+range checks, assertions, functional contracts, and loop termination:</p>
+<ul>
+<li><strong>Renderers</strong>: <code>I2S</code> (fixed <code>10**Pos</code> overflow by replacing exponentiation
+with a constant <code>Pow10</code> power table, loop invariants carrying the digit
+count and value bound, <code>Buf</code> initialized), <code>Pad2</code> and <code>Escape_JSON</code>
+(uninitialized-buffer fixes via <code>(others =&gt; ' ')</code>), and <code>ISO_From_Epoch</code>
+(chained <code>&amp;</code> concatenation upper-bound proofs replaced by a bounded
+<code>Field</code>-copy buffer procedure). Postconditions now document the result
+lengths (<code>I2S'Result'Length in 1 .. 10</code>, <code>Pad2'Result'Length in 1 .. 11</code>).</li>
+<li><strong>Parsers</strong>: <code>Trim</code>, <code>Trim_Left</code>, <code>Number_After</code>, and <code>Number_Before_Word</code>
+gained <code>Pre =&gt; S'First &gt;= 1 and S'Last &lt; Natural'Last</code> preconditions plus
+strengthened loop invariants (carried array-index bounds and the digit-run
+range <code>for all Q in DStart .. K =&gt; S (Q) in '0' .. '9'</code>).</li>
+<li><strong>IR synthesiser</strong>: <code>Bits</code>, <code>IR_Type_Name</code> (<code>Post =&gt; 'Result'Length &lt;= 9</code>),
+<code>Lower_Type_Name</code>, and <code>Synthesize_Package</code> (buffer bounds, <code>Sub</code>/<code>Result</code>
+initialization, and <code>J &gt;= I</code> for the outer-loop variant) all proved.</li>
+<li><strong>Termination</strong>: every <code>while</code> loop across the codebase now carries an
+explicit <code>Loop_Variant</code> (increasing or decreasing bound), so the implicit
+<code>Always_Terminates</code> aspects discharge – no loop is left as potentially
+non-terminating.</li>
+</ul>
+<p>The self-assessment is now: 26 packages, 59 subprograms, 100% docstrings,
+<strong>Platinum (500/500 VCs, 0 unproved)</strong>, 295/295 tests, DAL-C Achieved.</p>
+<h3 id="c2-host-word-size-auto-detection"><a class="header" href="#c2-host-word-size-auto-detection">C2: Host word-size auto-detection</a></h3>
+<p>Fixed-size buffers and the IR host model are now derived from the actual host
+word size instead of being hard-coded to 64-bit assumptions:</p>
+<ul>
+<li><code>Adacovex.Types.Host_Word_Bits : constant := System.Word_Size</code>; the
+<code>Max_Path</code> / <code>Max_Line</code> path and line buffers scale with it
+(<code>64 * Host_Word_Bits</code> = 4096, <code>4096 * Host_Word_Bits</code> = 262144 on a 64-bit
+host), so builds on narrower hosts use proportionally smaller limits. The
+semantic limits (<code>Max_Id_Str</code>, <code>Max_Desc_Str</code>, <code>Max_Filename</code>) stay fixed.</li>
+<li><code>Adacovex.Target_Profiles.Host_Word_Size</code> auto-detects the host word size
+(8/16/32/64) from the Ada runtime for <code>Target_Config.Host_Bits</code>, with the
+dead-branch warning resolved by a <code>case System.Word_Size</code> structure.</li>
+<li>Test suite extended: 6 new checks (Types conversion + IR host-word-size
+detection). The suite is now <strong>295 tests</strong>.</li>
+</ul>
+<h3 id="c3-conventional-test-result-file-discovery"><a class="header" href="#c3-conventional-test-result-file-discovery">C3: Conventional test-result file discovery</a></h3>
+<p>The test-summary lookup is no longer hard-coded to <code>&lt;target&gt;/test_result.md</code>. A new <code>Parse_Test_Result_From_Project</code> searches a conventional list of test-result file names at the project root (and under <code>docs/</code>) and parses the first file that exists – <code>test_result.md</code>, <code>test_results.md</code>, <code>test-result.md</code>, <code>test_report.md</code>, <code>test_output.md</code>, the equivalent <code>.txt</code> and <code>.log</code> variants, <code>tests.md</code>/<code>tests.txt</code>, and the <code>docs/</code> mirrors. The assessment, <code>sbom</code>, and <code>--compare-base</code> paths all use the new lookup, so adacovex accepts common report conventions (e.g. CI that emits <code>test_results.md</code> or <code>test-output.txt</code>) without configuration.</p>
+<p>The parser itself already understood Markdown tables, plain <code>Passed:</code>/<code>Failed:</code> summary lines, TAP, Automake, Maven Surefire, and Unity formats. The new candidate search adds one SPARK-proved helper (<code>Trim_Right</code>, fully discharged) and 9 new VCs, taking the self-assessment to <strong>500/500 VCs Platinum</strong>.</p>
+<h2 id="fixes"><a class="header" href="#fixes">Fixes</a></h2>
+<h3 id="h1-changelog-link-in-the-release-workflow"><a class="header" href="#h1-changelog-link-in-the-release-workflow">H1: Changelog link in the release workflow</a></h3>
+<p><code>.github/workflows/release.yml</code> built the changelog permalink from the raw tag
+name (<code>v1.6.0</code>), producing a broken <code>/docs/changelogs/adacovex-v1.6.0.md</code>
+URL. The link now strips the leading <code>v</code> (<code>${VERSION#v}</code>) so it points at
+<code>docs/changelogs/adacovex-1.6.0.md</code>.</p>
+<p>The same release step now also:</p>
+<ul>
+<li><strong>Links the build-provenance attestation</strong> in the release notes. The
+<code>actions/attest@v4</code> step is captured (<code>id: attest</code>) and its
+<code>attestation-url</code> output is included as a <em>Build Provenance Attestation</em>
+entry, so consumers can jump straight from the release to the signed
+SLSA provenance bundle.</li>
+<li><strong>Fixes the <em>Git Changelog</em> compare link</strong> to use the tag form
+<code>compare/v1.5.0...v1.6.0</code> (previous version keeps its <code>v</code> prefix), matching
+GitHub’s tag-to-tag compare URL convention instead of the version-only form
+produced by stripping the <code>v</code>.</li>
+</ul>
+<h3 id="h2-honest-sbom-proof-levels--badge-contrast--install-docs"><a class="header" href="#h2-honest-sbom-proof-levels--badge-contrast--install-docs">H2: Honest SBOM proof levels + badge contrast + install docs</a></h3>
+<ul>
+<li><strong>SBOM proof levels</strong>: Only the root component – the project adacovex
+actually assessed – now carries <code>adacovex:proof_level</code>
+(<code>Gold</code>/<code>Platinum</code>) and <code>adacovex:dal_target</code>. Dependency components report
+<code>adacovex:proof_level = "Not proved"</code>: adacovex only proves the target
+itself, never third-party dependencies, so they no longer claim a
+Gold/Platinum level they did not earn. Applied to CycloneDX, SPDX, and
+Markdown outputs; the <code>Write_SBOM</code> summary line now says “root proof level”.</li>
+<li><strong>Platinum badge contrast</strong>: the SPARK badge used white text on the light
+platinum background (<code>#E5E4E2</code>), which failed contrast. Added a
+<code>Spark_Text_Color</code> selector (<code>#1a1a1a</code> on Platinum/Gold/Silver, white on
+Bronze/Stone) and a <code>Value_Text_Color</code> parameter to <code>Badge_SVG</code>.</li>
+<li><strong>Installation docs</strong>: README now documents installing adacovex via
+<code>alr install covex gnatprove</code> (add Alire’s bin dir to <code>$PATH</code>), downloading
+the version-matched release bundle with <code>curl</code> from the GitHub Releases page
+(verifiable with <code>gh attestation verify</code>), or building from source. The
+<code>prove</code>-mode GNATprove toolchain resolution order
+(per-project manifest -&gt; <code>$PATH</code> -&gt; cached toolchain -&gt; download) is
+documented, including the “install Alire first” fallback when a manifest
+declares gnatprove but <code>alr</code> is missing.</li>
+<li><strong>SBOM timestamp to git commit</strong>: documented how to tie the deterministic
+<code>SOURCE_DATE_EPOCH</code> timestamp to the exact commit (<code>git -C &lt;target&gt; log -1 --format=%ct</code>); the make targets already do this from <code>HEAD</code>.</li>
+</ul>
+<h3 id="h3-back-to-zero-dependency--gnatprove-moved-out-of-aliretoml"><a class="header" href="#h3-back-to-zero-dependency--gnatprove-moved-out-of-aliretoml">H3: Back to zero-dependency – gnatprove moved out of <code>alire.toml</code></a></h3>
+<ul>
+<li><strong><code>alire.toml</code> no longer declares gnatprove.</strong> The covex crate is once again
+fully zero-dependency: no library or tool dependencies. <code>gnatprove</code> lives
+only in <code>alire-dev.toml</code> (used by the local make targets), and the <code>prove</code>
+subcommand resolves it at run time via the dev-manifest swap, <code>$PATH</code>,
+<code>~/.adacovex/toolchain/</code>, or a download. Installing <code>covex</code> no longer drags
+in gnatprove or the proof solvers.</li>
+<li><strong>Install docs prefer the per-project manifest.</strong> README/AGENTS now lead
+with declaring <code>covex</code> (plus <code>gnatprove</code> when proofs are wanted) in the
+project’s <code>alire-dev.toml</code>, keeping <code>alr install covex gnatprove</code> as the
+documented global alternative, alongside the GitHub release bundle and
+from-source installs.</li>
+<li><strong>Architecture decision: supported platforms.</strong> Since Alire is the packaging
+and delivery mechanism, adacovex supports the platforms Alire itself
+supports – binary distribution on Linux x86-64, Windows x86-64, and macOS
+x86-64, and building from source on any host with GNAT FSF 9.2+ that can
+build Alire. Added to <code>docs/architecture.md</code>.</li>
+<li><strong>Architecture decision: CI tied to release version.</strong> Documented that the
+GitHub Actions action is version-matched to the binary (the release workflow bundles <code>adacovex-vX. Y. Z.tar.gz</code> for each tag, and the action downloads the binary for the tag it is referenced by, with floating <code>vMAJOR</code> / <code>vMAJOR. MINOR</code> / <code>latest</code> tags force-pushed at release time).</li>
+</ul>
+<p>CI runs on <code>ubuntu-latest</code> with the pinned <code>gnat-version</code>.</p>
+<ul>
+<li><strong>Release/index manifest templates</strong> (<code>alire/releases/covex-0.0.0.toml</code>,
+<code>index/ad/covex/covex-0.1.0-dev.toml</code>, and the 1.6.0 variants) dropped the
+gnatprove dependency; <code>alire/alire.lock</code> regenerated accordingly.</li>
+<li>The toolchain-resolution and THIRD_PARTY_NOTICES wording now state plainly
+that adacovex declares no gnatprove dependency and resolves it at run time.</li>
+</ul>
+<h3 id="h4-compilerproof-warning-cleanup--gnatprove-standard-companion"><a class="header" href="#h4-compilerproof-warning-cleanup--gnatprove-standard-companion">H4: Compiler/proof warning cleanup + gnatprove standard companion</a></h3>
+<ul>
+<li><strong>Remaining build warnings fixed.</strong></li>
+<li><code>Adacovex. Renderers. SBOM</code>: the compiler inlined <code>Field</code> and constant-folded its <code>Sep /= ASCII. NUL</code> guard, so the check reported “statement has no effect” at the call sites.</li>
+</ul>
+<p>Kept the original single-loop form and wrapped it in <code>pragma Warnings (Off/On, "statement has no effect")</code>; the two-loop <code>String</code> alternative was tried and reverted because it cost 35 unproved VCs. Proof remains intact: 500/500 VCs, Platinum, 0 unproved. - <code>Adacovex. Target_Profiles</code>: <code>Host_Word_Size</code> is now a return-expression <code>case</code> (instead of an unreachable multi-branch <code>case</code> statement on the 64-bit archive host), eliminating the “statement is never reached” warnings at lines 10/13/16. - Forced rebuild: <strong>0 warnings</strong>. <code>make prove</code>: <strong>Platinum, 500/500 VCs, 0 unproved, 0 justified</strong>. <code>make test</code>: <strong>295/295</strong>.</p>
+<ul>
+<li><strong><code>gnatprove</code> is now the standard companion in every covex TOML usage.</strong>
+README (Option 1) and AGENTS (install item 1, dev-manifest usage) declare
+<code>covex = "*"</code> with <code>gnatprove = "^15.1.0"</code> in the same manifest. The GitHub
+Actions <code>action.yml</code> no longer passes <code>gnatprove</code> to <code>alr toolchain</code>
+(<code>gnatprove</code> is not a toolchain component; that failed CI with “The requested
+crate is not a toolchain component”) – it selects only <code>gnat_native</code> and
+<code>gprbuild</code>, and the <code>prove</code> subcommand resolves gnatprove via the target
+project’s <code>alire-dev.toml</code> (README-preferred method), falling back to
+<code>$PATH</code>, the cached toolchain, or download. The “if you also want proof runs”
+phrasing was removed.</li>
+<li><strong>GitHub Actions attestation migrated to <code>actions/attest</code>.</strong> The release
+workflow now uses <code>actions/attest@v4</code> with <code>subject-path: adacovex-*.tar.gz</code> (kept <code>id: attest</code> + <code>attestation-url</code> output);
+<code>attest-build-provenance@v2</code> is gone. All prose references (README, AGENTS,
+<code>docs/architecture.md</code>, Makefile) updated.</li>
+<li><strong>Crate tags expanded to 11</strong> across <code>alire.toml</code>, <code>alire-dev.toml</code>, the
+release templates, and the index templates: <code>ada</code>, <code>spark</code>,
+<code>formal-verify</code>, <code>cli</code>, <code>gnatprove</code>, <code>sbom</code>, <code>tests</code>, <code>code-coverage</code>,
+<code>do-178c</code>, <code>compliance</code>, <code>developer-tools</code>. (<code>formal-verify</code> is used because
+Alire caps tag strings at 15 characters.)</li>
+<li><strong>Remaining badge contrast fixed.</strong> The bright-green (<code>#4c1</code>) and yellow
+(<code>#dfb317</code>) badge values used white text. Added a <code>Badge_Text_Color</code>
+selector: dark <code>#1a1a1a</code> text on <code>#4c1</code>/<code>#dfb317</code>, white on the red
+<code>#e05d44</code>, matching the SPARK badge’s approach. <code>tests.svg</code>, <code>do178c.svg</code>,
+and <code>docs.svg</code> regenerate with dark value text; SVG tests still pass.</li>
+<li><strong><code>install.sh</code> documents <code>curl | bash</code> and checks for Alire.</strong> README Option
+3 now leads with the one-liner
+(<code>curl -fsSL .../main/install.sh | bash</code>), and the script warns when <code>alr</code>
+is missing from <code>$PATH</code>, pointing at <code>curl https://alire.ada.dev -sSf | sh</code>
+and the remaining gnatprove fallbacks (<code>$PATH</code>, cached toolchain, download).</li>
+<li><strong>“zero-library-dependency” -&gt; “zero-dependency”.</strong> Renamed across README,
+AGENTS, and the <code>alire.toml</code> long-description (the published 1.0.0-1.5.0
+release records keep their historical wording).</li>
+</ul>
+<h2 id="test-suite"><a class="header" href="#test-suite">Test Suite</a></h2>
+<p>Test suite extended: IR synthesis 26 -&gt; <strong>27</strong> checks plus six new word-size
+checks (Types conversion + IR host-word-size detection); the suite is now
+<strong>295 tests</strong> (passing).</p>
+<h2 id="proof-results"><a class="header" href="#proof-results">Proof Results</a></h2>
+<p>Self-assessment: <strong>Platinum</strong> (500/500 VCs proved, 0 unproved, AoRTE-free).
+Every SPARK-on unit is fully discharged – run-time checks 358/358,
+assertions 60/60, functional contracts 13/13, termination 44/44, flow
+69/69. Proof invocation: <code>gnatprove -P adacovex.gpr --prover=z3 --timeout=20</code>.</p>
+<h2 id="traceability"><a class="header" href="#traceability">Traceability</a></h2>
+<p>No new HLRs. Existing tags continue to cover the changed packages: <code>-- HLR-SCAN</code> on <code>Adacovex. Parsers. Source</code>, <code>-- HLR-TEST</code> on `Adacovex.</p>
+<p>Parsers. Tests<code>, </code>– HLR-PROVE<code>/</code>– HLR-METRICS<code>on</code>Adacovex. Types<code>, </code>– HLR-IR<code>on</code>Adacovex. Target_Profiles<code>and</code>Adacovex.</p>
+<p>IR_Synthesiser<code>, </code>– HLR-SBOM<code>on</code>Adacovex. Renderers. SBOM`. The HLR-SBOM wording was tightened to reflect that only the root component carries proof-aware properties while dependencies are reported as “Not proved”.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../changelogs/adacovex-1.7.0.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../changelogs/adacovex-1.5.0.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../changelogs/adacovex-1.7.0.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../changelogs/adacovex-1.5.0.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-09f2665d.js"></script>
+
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-abc7f01d.js"></script>
+        <script src="../book-609e4cb8.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

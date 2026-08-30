@@ -289,4 +289,20 @@ test.describe('Dashboard layout', () => {
       await page.locator('.api-btn').count(),
     );
   });
+
+  test('manual subpages are served at /docs/...', async ({ page }) => {
+    // The bundled manual serves every book asset under /docs/, not just the
+    // index: an exact page, a nested API-reference page, an extensionless
+    // leaf (Find's normalisation), and a missing page that must 404.
+    const pageResp = await page.request.get('/docs/architecture.html');
+    expect(pageResp.status()).toBe(200);
+    expect(await pageResp.text()).toContain('Architecture');
+    const nested = await page.request.get('/docs/api-docs/adacovex-types.html');
+    expect(nested.status()).toBe(200);
+    const extless = await page.request.get('/docs/api-docs/adacovex-types');
+    expect(extless.status()).toBe(200);
+    expect(await extless.text()).toContain('Adacovex.Types');
+    const missing = await page.request.get('/docs/no-such-page');
+    expect(missing.status()).toBe(404);
+  });
 });

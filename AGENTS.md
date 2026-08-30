@@ -60,9 +60,11 @@ same change, exactly like an action input).
 
 Finish the change by re-running the sync gates: `make docs-check`,
 `make action-parity-check`, `make agents-tree` (when the source tree
-changes), `make doc-links`, and `make link-check`.  After `make test` and
-`make prove`, also run the count-sync checks (`make test-count`,
-`make proof-status`).  The generated files they rewrite (AGENTS.md source
+changes), `make doc-links`, `make link-check`, and `make book-links-check`
+(when `docs/` or `docs/book/` changed -- it fails when the committed book
+drifts from a fresh `mdbook build` or a bundled-manual link breaks).  After
+`make test` and `make prove`, also run the count-sync checks (`make
+test-count`, `make proof-status`).  The generated files they rewrite (AGENTS.md source
 tree, `docs/api-docs`, `sbom.json`, `docs/badges`) are committed as-is.
 
 ## Dogfood target
@@ -370,12 +372,18 @@ self-contained ASCII page, and regenerates `src/adacovex-docs_template.ads`
 (the bundled offline manual the `--serve` server serves at `/docs`).  It is
 safe to run without mdbook installed (the committed spec is kept); the same
 mdBook project powers the Read the Docs site (`.readthedocs.yaml`).
+`tools/check-book-links.py` (wired as `make book-links-check`, a cheap gate
+in `make check`) verifies the committed `docs/book` equals a fresh
+`mdbook build` from `docs/` (so `docs/` edits must be followed by
+`make book`) and that every link inside the bundled offline manual resolves
+against the bundled assets or the deliberately-not-bundled prefixes shared
+with `tools/gen-docs.py` (`OFFLINE_EXCLUDED_PREFIXES`).
 
 ## Makefile targets
 
 | Target | Description |
 |--------|-------------|
-| `check` | **The single everything-check / verification entry point.** Run it after any change. It runs every gate CI runs before a release: cheap static gates first (ascii, complexity, csslint, spark-off, changelog, action-parity, tools-check, version, doc-links, link, docs-check), then build + native tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description). `make check` resolves `gnatprove` for you (it is fetched into `~/.adacovex/toolchain/` and executed directly when not on `PATH`), so you never have to install or point at a prover by hand -- just run `make check` and it verifies the whole tree end to end. `make prove` is the SPARK sub-gate if you only changed proof-affecting code |
+| `check` | **The single everything-check / verification entry point.** Run it after any change. It runs every gate CI runs before a release: cheap static gates first (ascii, complexity, csslint, spark-off, changelog, action-parity, tools-check, version, doc-links, link, docs-check, book-links), then build + native tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description). `make check` resolves `gnatprove` for you (it is fetched into `~/.adacovex/toolchain/` and executed directly when not on `PATH`), so you never have to install or point at a prover by hand -- just run `make check` and it verifies the whole tree end to end. `make prove` is the SPARK sub-gate if you only changed proof-affecting code |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
 | `test` | Build + run the 1173-test native suite |
@@ -400,6 +408,7 @@ mdBook project powers the Read the Docs site (`.readthedocs.yaml`).
 | `tools-check` | Run the stdlib-unittest suite for the tools/*.py dev scripts (tools/tests.py) |
 | `csslint-check` | Dashboard CSS 4px spacing gate: every margin/padding/gap must be a multiple of 4px (tools/csslint.py; also run inside `make build`) |
 | `complexity-check` | Cyclomatic-complexity + LOC gate: no god objects/functions, no file above its LOC or percentage-of-codebase caps (multi-language scan via `--excludes=md,rst`; gated by make complexity-check) |
+| `book-links-check` | Fail when the committed mdBook build output (`docs/book`) drifts from a fresh `mdbook build` of `docs/`, or when a link inside the bundled offline manual does not resolve (tools/check-book-links.py; shares the offline-asset rules with tools/gen-docs.py) |
 | `bench` | Benchmark the pipeline with hyperfine (bash `time` fallback): cold vs warm timings + binary size (docs/perf.md) |
 | `perf-bench` | Profile the adacovex binary with perf and strace (tools/perf-bench.py; docs/perf.md) |
 | `spark-off-check` | Fail if any `SPARK_Mode (Off)` appears outside `Types.Implementation` and `Complexity` (the non-formal `Ada.Containers` instantiations) |

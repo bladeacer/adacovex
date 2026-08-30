@@ -34,7 +34,7 @@ Reliability is grounded in proof and design, not implicit trust:
 
 ## How LLM agents work on this codebase
 
-[`AGENTS.md`](../AGENTS.md) at the repo root is the machine-readable project
+[`AGENTS.md`](https://github.com/bladeacer/adacovex/blob/main/AGENTS.md) at the repo root is the machine-readable project
 brief. It carries the architecture tree, the pipeline, the SPARK discipline,
 the Makefile targets, and the verification gates. An agent (or human) working
 on the tree must read it first. It must follow it. In particular:
