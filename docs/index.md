@@ -1,7 +1,7 @@
 # adacovex Documentation
 
-This page is the index for all adacovex documentation.  Pick a section for
-your role, or read the pages in the order below.
+This page is the index for all adacovex documentation.  Pick a section 
+relevant to you, or read the pages in the order below.
 
 All documentation uses British English and ASD-STE100 Simplified Technical
 English.  The controlled Technical Names dictionary lives in

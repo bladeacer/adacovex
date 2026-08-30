@@ -10,7 +10,7 @@ It is generated from the source docstrings by `make doc`.
   describes every flag.  The [standards guide](../standards.md)
   explains the compliance levels.
 - **Contributors** use this reference together with the
-  [contributing guide](https://github.com/bladeacer/adacovex/blob/main/CONTRIBUTING.md) and the
+  [contributing guide](../../CONTRIBUTING.md) and the
   [architecture notes](../architecture.md).  The [docstring
   spec](adacovex-docstring-spec.md) defines the annotation
   format.

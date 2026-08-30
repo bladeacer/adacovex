@@ -6,11 +6,11 @@
 
 package body Adacovex.Docs_Template is
 
-   --  The asset body for a table index: the Blob slice described by the ref.
-   function Content (Idx : Positive) return String is
+   --  The asset body for a table index: the body constant selected by the
+   --  ref (one static constant per asset -- see the spec's Asset_Bodies).
+   function Content (Idx : Asset_Index) return String is
    begin
-      return
-        Blob (Assets (Idx).Start .. Assets (Idx).Start + Assets (Idx).Len - 1);
+      return Asset_Bodies (Idx).all;
    end Content;
 
    --  The table index whose (space-padded) Path equals Key, or 0.

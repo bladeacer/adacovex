@@ -35,7 +35,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-6b54bdb0.js";
+            window.path_to_searchindex_js = "../searchindex-716d3f4b.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-4f584999.js"></script>
@@ -268,6 +268,21 @@ resolved.  The six-character prefix is now stripped from the slice’s actual
 first index, so every page, stylesheet, and badge of the bundled manual
 serves (an e2e test pins the exact, nested, and extensionless subpaths plus
 a missing-page 404).</p>
+<h3 id="h4-bundled-manual-no-longer-overflows-the-gnatprove-frontend"><a class="header" href="#h4-bundled-manual-no-longer-overflows-the-gnatprove-frontend">H4: Bundled manual no longer overflows the gnatprove frontend</a></h3>
+<p>The complete-book offline manual is a 4 MB asset set, and <code>gen-docs.py</code>
+emitted it as one giant <code>&amp;</code>-concatenation chain (300k+ string literals).
+GNAT’s frontend parses that tree fine, but gnatprove’s flow analysis blew
+its stack (<code>Storage_Error stack overflow</code> at <code>adacovex-docs_template.ads</code>),
+aborting <code>make prove</code> and therefore <code>make check</code> and every release.
+Experiments showed the limit is the constant size itself (a single string
+constant over ~1 MB overflows whatever its structure), so the generated
+spec now holds one <code>aliased constant String</code> per asset – 152 bodies, each
+well under the limit, never concatenated into one value – with an
+<code>Asset_Bodies</code> access-to-constant table and an <code>Asset_Index</code> subtype so
+<code>Content (Idx)</code> needs no unchecked bounds reasoning. The served bytes are
+unchanged (each asset constant carries the identical content), the server
+routes through the same <code>Find</code>/<code>Content</code> API, and the bundle-links check
+still passes.</p>
 <h3 id="h2-dashboard-footer-links-updated"><a class="header" href="#h2-dashboard-footer-links-updated">H2: Dashboard footer links updated</a></h3>
 <p>The footer’s API links now include the bundled manual:
 <code>API: /api/metrics /api/deps Manual API playground</code>, with the Manual link
@@ -296,7 +311,8 @@ dashboard walk-through.</li>
 <li><code>HLR-SBOM</code> – H1 vendored yace.js in the SBOM and the vendored/dashboard
 JavaScript layout separation.</li>
 <li><code>HLR-ARCH</code> – C5 complexity-check <code>book</code> directory exclusion, C7 the
-book-links-check gate and the complete-book restructure.</li>
+book-links-check gate and the complete-book restructure, H4 the chunked
+blob that keeps the bundled manual provable.</li>
 <li><code>HLR-SERVER</code> – H3 the <code>Docs_Subpath</code> off-by-one fix.</li>
 </ul>
 <p>See <code>docs/dashboard.md</code>, <code>docs/THIRD_PARTY_NOTICES.md</code>, and <code>.readthedocs.yaml</code>.</p>

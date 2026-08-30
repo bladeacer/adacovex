@@ -142,13 +142,17 @@ The `--serve` server also serves the **bundled offline manual** at `/docs`
 (both spellings, with and without the trailing slash, reach the same page).
 The manual is the same Markdown source that powers the Read the Docs site
 (`docs/`, an mdBook project with `book.toml` and `SUMMARY.md`); at build
-time `tools/gen-docs.py` runs `mdbook build` and inlines the resulting
-`print.html` into the binary (`src/adacovex-docs_template.ads`), so the page
-is fully self-contained: stylesheets are inlined, external fonts and
-interactive scripts are dropped, and the HTML stays pure ASCII.  Users on a
-machine without a network connection can still open the manual from the
-dashboard -- the footer **Manual** link and the API playground's
-`/docs` endpoint both point at it.
+time `tools/gen-docs.py` runs `mdbook build` and bundles the resulting site
+into the binary (`src/adacovex-docs_template.ads`) as a lookup table plus
+one static string constant per asset: every page, stylesheet, and script,
+keyed by book-relative path, so the manual is fully self-contained and
+navigable offline (each asset is its own small constant -- a single
+multi-megabyte blob would overflow the gnatprove frontend stack). External fonts, the search machinery, and the PNG screenshots are
+dropped (the screenshots show as notes), and the bundled HTML stays pure
+ASCII (non-ASCII glyphs are encoded as UTF-8 byte values in the Ada
+source).  Users on a machine without a network connection can still open
+the manual from the dashboard -- the footer **Manual** link and the API
+playground's `/docs` endpoint both point at it.
 
 ## The HTML dashboard
 
