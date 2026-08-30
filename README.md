@@ -11,25 +11,25 @@ installing adacovex installs only the binary.
 ## Features
 
 - **Source scanning** -- walks `.ads` files; extracts subprogram declarations,
-  [docstring annotations](docs/api-docs/adacovex-docstring-spec.md) (Ada
+  [docstring annotations](https://adacovex.readthedocs.io/en/latest/api-docs/adacovex-docstring-spec.html) (Ada
   `@param`/`@return`/`@field`/`@formal`/`@brief`/`@summary`, Google
   `Args:`/`Returns:`, Sphinx `:param:`/`:returns:`), and HLR traceability tags.
 - **Proof analysis** -- parses GNATprove `gnatprove.out` summaries; assesses
-  [SPARK assurance levels](docs/api-docs/adacovex-spark-levels.md) (Stone to
+  [SPARK assurance levels](https://adacovex.readthedocs.io/en/latest/api-docs/adacovex-spark-levels.html) (Stone to
   Platinum).
-- **Test parsing** -- reads [test-result summaries](docs/api-docs/adacovex-test-format.md)
+- **Test parsing** -- reads [test-result summaries](https://adacovex.readthedocs.io/en/latest/api-docs/adacovex-test-format.html)
   from CI or runner logs: Markdown tables (the native `test_runner` format, with
   or without an index column), TAP (`ok`/`not ok`), GNU Automake
   (`PASS:`/`FAIL:`), Maven Surefire (`Tests run: N`), Unity (`N Tests`), and
   AUnit reports.
-- **[Compliance](docs/usage/standards.md)** -- assesses DO-178C DAL A-E criteria (HLR
+- **[Compliance](https://adacovex.readthedocs.io/en/latest/usage/standards.html)** -- assesses DO-178C DAL A-E criteria (HLR
   coverage, orphan tags, test status, minimum SPARK proof level), re-labelled
-  for [ISO 26262](docs/api-docs/adacovex-asil-levels.md) (ASIL A to D / QM) and
-  [IEC 62304](docs/api-docs/adacovex-class-levels.md) (Class A to C) with
+  for [ISO 26262](https://adacovex.readthedocs.io/en/latest/api-docs/adacovex-asil-levels.html) (ASIL A to D / QM) and
+  [IEC 62304](https://adacovex.readthedocs.io/en/latest/api-docs/adacovex-class-levels.html) (Class A to C) with
   dedicated `--dal` / `--asil` / `--class` flags.
 - **Multiple outputs** -- ANSI report, SVG badges, Markdown reports, web
   dashboard + JSON API, and proof-aware SBOM (CycloneDX / SPDX).
-- **[Differential assessment](docs/usage/vcs.md)** -- `--compare-base` /
+- **[Differential assessment](https://adacovex.readthedocs.io/en/latest/usage/vcs.html)** -- `--compare-base` /
   `--coverage-delta` snapshot a base revision on **git, Mercurial,
   Subversion, Fossil, or jj** without touching the working tree.
 - **Result caching** -- a content-addressed on-disk cache (`~/.adacovex/cache`)
@@ -59,7 +59,7 @@ adacovex --target=. --serve
 ```
 
 Contributors build from source with `make build` (see
-[Installation](docs/usage/installation.md)). `make run-self` assesses adacovex itself.
+[Installation](https://adacovex.readthedocs.io/en/latest/usage/installation.html)). `make run-self` assesses adacovex itself.
 `make run-ada-crdt` runs the Ada_CRDT regression.
 
 ## Documentation
@@ -68,64 +68,64 @@ Contributors build from source with `make build` (see
 
 | Reference | Description |
 |-----------|-------------|
-| [Installation](docs/usage/installation.md) | Alire / release bundle / source build |
-| [CLI Reference](docs/usage/cli-reference.md) | Full flag table, `--require-*` gates, exit codes |
-| [Target Projects](docs/usage/target-projects.md) | What a project must provide for assessment |
-| [Platforms](docs/usage/platforms.md) | Platform support, CPU core detection, `status` subcommand |
+| [Installation](https://adacovex.readthedocs.io/en/latest/usage/installation.html) | Alire / release bundle / source build |
+| [CLI Reference](https://adacovex.readthedocs.io/en/latest/usage/cli-reference.html) | Full flag table, `--require-*` gates, exit codes |
+| [Target Projects](https://adacovex.readthedocs.io/en/latest/usage/target-projects.html) | What a project must provide for assessment |
+| [Platforms](https://adacovex.readthedocs.io/en/latest/usage/platforms.html) | Platform support, CPU core detection, `status` subcommand |
 
 ### Usage and configuration
 
 | Reference | Description |
 |-----------|-------------|
-| [Web Dashboard + JSON API](docs/usage/dashboard.md) | `--serve` HTML dashboard, `/api/metrics`, themes |
-| [SBOM](docs/usage/sbom.md) | Proof-aware CycloneDX / SPDX bill of materials |
-| [VCS Support](docs/usage/vcs.md) | Differential modes across git/hg/svn/fossil/jj |
-| [Proving and Writing Proofs](docs/contributing/proving.md) | How proving works, SPARK contracts, proof patches for vendored deps |
-| [Architecture](docs/contributing/architecture.md) | Design decisions, patches, toolchain resolution, overflow contract |
+| [Web Dashboard + JSON API](https://adacovex.readthedocs.io/en/latest/usage/dashboard.html) | `--serve` HTML dashboard, `/api/metrics`, themes |
+| [SBOM](https://adacovex.readthedocs.io/en/latest/usage/sbom.html) | Proof-aware CycloneDX / SPDX bill of materials |
+| [VCS Support](https://adacovex.readthedocs.io/en/latest/usage/vcs.html) | Differential modes across git/hg/svn/fossil/jj |
+| [Proving and Writing Proofs](https://adacovex.readthedocs.io/en/latest/contributing/proving.html) | How proving works, SPARK contracts, proof patches for vendored deps |
+| [Architecture](https://adacovex.readthedocs.io/en/latest/contributing/architecture.html) | Design decisions, patches, toolchain resolution, overflow contract |
 
 ### Compliance
 
 | Reference | Description |
 |-----------|-------------|
-| [Standards](docs/usage/standards.md) | DO-178C / ISO 26262 / IEC 62304 abstraction |
-| [DAL Levels](docs/api-docs/adacovex-dal-levels.md) | DO-178C DAL A to E criteria |
-| [ASIL Levels](docs/api-docs/adacovex-asil-levels.md) | ISO 26262 ASIL A to D / QM criteria |
-| [Safety Classes](docs/api-docs/adacovex-class-levels.md) | IEC 62304 Class A to C criteria |
-| [HLR Index](docs/HLR.md) | High-level requirements traceability index |
-| [LLR Mapping](docs/LLR.md) | Low-level requirement-to-HLR mapping |
+| [Standards](https://adacovex.readthedocs.io/en/latest/usage/standards.html) | DO-178C / ISO 26262 / IEC 62304 abstraction |
+| [DAL Levels](https://adacovex.readthedocs.io/en/latest/api-docs/adacovex-dal-levels.html) | DO-178C DAL A to E criteria |
+| [ASIL Levels](https://adacovex.readthedocs.io/en/latest/api-docs/adacovex-asil-levels.html) | ISO 26262 ASIL A to D / QM criteria |
+| [Safety Classes](https://adacovex.readthedocs.io/en/latest/api-docs/adacovex-class-levels.html) | IEC 62304 Class A to C criteria |
+| [HLR Index](https://adacovex.readthedocs.io/en/latest/HLR.html) | High-level requirements traceability index |
+| [LLR Mapping](https://adacovex.readthedocs.io/en/latest/LLR.html) | Low-level requirement-to-HLR mapping |
 
 ### Development and auditing
 
 | Reference | Description |
 |-----------|-------------|
 | [Contributing](CONTRIBUTING.md) | Changelog format, test suite |
-| [Developer Guide](docs/contributing/developer-guide.md) | Codebase structure and repo setup for contributors |
-| [API Reference](docs/api-docs/index.md) | Auto-generated package API docs (developers / auditors) |
-| [Docstring Spec](docs/api-docs/adacovex-docstring-spec.md) | Annotation format, placement, conventions |
-| [Test Format](docs/api-docs/adacovex-test-format.md) | Supported test-result output format |
-| [SPARK Levels](docs/api-docs/adacovex-spark-levels.md) | Assurance level objectives (Stone to Platinum) |
-| [Changelog](docs/changelogs/index.md) | Release history |
-| [CI/CD](docs/usage/ci-cd.md) | GitHub Action, workflows, release bundling |
-| [LLM usage](docs/contributing/llm-usage.md) | AI disclosure, trust, how LLM agents work under AGENTS.md |
+| [Developer Guide](https://adacovex.readthedocs.io/en/latest/contributing/developer-guide.html) | Codebase structure and repo setup for contributors |
+| [API Reference](https://adacovex.readthedocs.io/en/latest/api-docs/index.html) | Auto-generated package API docs (developers / auditors) |
+| [Docstring Spec](https://adacovex.readthedocs.io/en/latest/api-docs/adacovex-docstring-spec.html) | Annotation format, placement, conventions |
+| [Test Format](https://adacovex.readthedocs.io/en/latest/api-docs/adacovex-test-format.html) | Supported test-result output format |
+| [SPARK Levels](https://adacovex.readthedocs.io/en/latest/api-docs/adacovex-spark-levels.html) | Assurance level objectives (Stone to Platinum) |
+| [Changelog](https://adacovex.readthedocs.io/en/latest/changelogs/index.html) | Release history |
+| [CI/CD](https://adacovex.readthedocs.io/en/latest/usage/ci-cd.html) | GitHub Action, workflows, release bundling |
+| [LLM usage](https://adacovex.readthedocs.io/en/latest/contributing/llm-usage.html) | AI disclosure, trust, how LLM agents work under AGENTS.md |
 
 ## Installing adacovex
 
 Declare `covex` in your project's `alire-dev.toml`, run `alr install covex`, or
 download a release bundle and build from source.
-[Installation](docs/usage/installation.md) covers each route, including the version
+[Installation](https://adacovex.readthedocs.io/en/latest/usage/installation.html) covers each route, including the version
 source per method and the man-page sync.
 
 ## Platforms, toolchain, and VCS
 
 - **Platforms** -- runs wherever a GNAT/Alire toolchain exists; the release
   binary is Linux x86-64 only for now (build from source for other platforms).
-  See [docs/usage/platforms.md](docs/usage/platforms.md).
+  See [https://adacovex.readthedocs.io/en/latest/usage/platforms.html](https://adacovex.readthedocs.io/en/latest/usage/platforms.html).
 - **GNATprove resolution** -- manifest pin over global pin over `$PATH` over
   cached toolchain over download (a manifest pin is authoritative). See
-  [docs/contributing/architecture.md](docs/contributing/architecture.md#gnatprove-toolchain-resolution-prove-subcommand).
+  [https://adacovex.readthedocs.io/en/latest/contributing/architecture.html](https://adacovex.readthedocs.io/en/latest/contributing/architecture.html#gnatprove-toolchain-resolution-prove-subcommand).
 - **VCS** -- not required for base functionality; only the differential modes
   need one, and they work across git, hg, svn, fossil, and jj. See
-  [docs/usage/vcs.md](docs/usage/vcs.md).
+  [https://adacovex.readthedocs.io/en/latest/usage/vcs.html](https://adacovex.readthedocs.io/en/latest/usage/vcs.html).
 
 ## CLI reference
 
@@ -141,8 +141,8 @@ adacovex complexity [--target=PATH]
 
 The full flag table (defaults, modes, `--require-*` CI gates, strict vs relaxed
 mode, exit codes, contextual `help [TOPIC]`, and the `man` subcommand) lives in
-[docs/usage/cli-reference.md](docs/usage/cli-reference.md). The web dashboard and JSON API
-are in [docs/usage/dashboard.md](docs/usage/dashboard.md).
+[https://adacovex.readthedocs.io/en/latest/usage/cli-reference.html](https://adacovex.readthedocs.io/en/latest/usage/cli-reference.html). The web dashboard and JSON API
+are in [https://adacovex.readthedocs.io/en/latest/usage/dashboard.html](https://adacovex.readthedocs.io/en/latest/usage/dashboard.html).
 
 ## Examples
 
@@ -157,7 +157,7 @@ adacovex status --target=.                          # toolchain + platform repor
 adacovex complexity --target=.                      # cyclomatic complexity check
 ```
 
-More examples: [docs/usage/cli-reference.md](docs/usage/cli-reference.md#examples).
+More examples: [https://adacovex.readthedocs.io/en/latest/usage/cli-reference.html](https://adacovex.readthedocs.io/en/latest/usage/cli-reference.html#examples).
 
 ## Target project requirements
 
@@ -165,22 +165,22 @@ To run adacovex against a project it needs Ada sources, GNATprove output
 (`gnatprove.out`), a test-summary file, and (for DAL assessment) an `HLR.md`
 document. Missing data shows `N/A`; DAL checks that depend on it report
 `Unmet`. Full requirements, file-discovery rules, and the non-Ada-project note:
-[docs/usage/target-projects.md](docs/usage/target-projects.md).
+[https://adacovex.readthedocs.io/en/latest/usage/target-projects.html](https://adacovex.readthedocs.io/en/latest/usage/target-projects.html).
 
 ## Docstrings and patches
 
 Subprograms are documented with `--  @param` / `--  @return` annotations
-([full spec](docs/api-docs/adacovex-docstring-spec.md)); strict mode requires
+([full spec](https://adacovex.readthedocs.io/en/latest/api-docs/adacovex-docstring-spec.html)); strict mode requires
 100% coverage. For vendored code you cannot modify, overlay docstrings with
 patch files at `<target>/.adacovex/patches/` (see
-[Architecture -- Patch System](docs/contributing/architecture.md#patch-system)).
+[Architecture -- Patch System](https://adacovex.readthedocs.io/en/latest/contributing/architecture.html#patch-system)).
 
 The same patch files can carry **SPARK proof aspects** (`SPARK_Mode`, `Pre`,
 `Post`, `Global`): the `prove` subcommand merges them into a patched tree copy
 and proves vendored dependencies against their contracts without touching the
 originals. A `.ads` patch re-declares the spec with contracts. A `.adb` patch
 opts a SPARK-clean vendored body into the proof. See
-[Architecture -- Proof patches](docs/contributing/architecture.md#proof-patches-spark-contracts-over-vendored-dependencies).
+[Architecture -- Proof patches](https://adacovex.readthedocs.io/en/latest/contributing/architecture.html#proof-patches-spark-contracts-over-vendored-dependencies).
 
 ## Compliance levels
 
@@ -199,12 +199,12 @@ The evidence is identical across standards; only the integrity-level label
 changes (`DAL-C` vs `ASIL B` vs `Class A`).
 
 Full tier mapping:
-[Standards](docs/usage/standards.md).
+[Standards](https://adacovex.readthedocs.io/en/latest/usage/standards.html).
 
 Per-level criteria:
-[DAL Levels](docs/api-docs/adacovex-dal-levels.md),
-[ASIL Levels](docs/api-docs/adacovex-asil-levels.md), and
-[Safety Classes](docs/api-docs/adacovex-class-levels.md).
+[DAL Levels](https://adacovex.readthedocs.io/en/latest/api-docs/adacovex-dal-levels.html),
+[ASIL Levels](https://adacovex.readthedocs.io/en/latest/api-docs/adacovex-asil-levels.html), and
+[Safety Classes](https://adacovex.readthedocs.io/en/latest/api-docs/adacovex-class-levels.html).
 
 ## Development
 
@@ -216,7 +216,7 @@ include `build`, `test`, `prove`, `doc`, `sbom`, `fmt`, `run-self`,
 Run `make help` or see
 [AGENTS.md](AGENTS.md) for the full table. AI tools were used during
 development; why the code is still trustworthy:
-[docs/contributing/llm-usage.md](docs/contributing/llm-usage.md).
+[https://adacovex.readthedocs.io/en/latest/contributing/llm-usage.html](https://adacovex.readthedocs.io/en/latest/contributing/llm-usage.html).
 
 ## CI/CD
 
@@ -225,7 +225,7 @@ A composite GitHub Action (`./action.yml`) plus `ci.yml`, `pr-check.yml`, and
 test suite, the PR docstring-coverage gate, and releases.
 
 Action inputs/outputs, result caching, and release bundling:
-[docs/usage/ci-cd.md](docs/usage/ci-cd.md).
+[https://adacovex.readthedocs.io/en/latest/usage/ci-cd.html](https://adacovex.readthedocs.io/en/latest/usage/ci-cd.html).
 
 ## Verification
 
@@ -236,7 +236,7 @@ Action inputs/outputs, result caching, and release bundling:
 | SPARK proof | `make prove` | Platinum (725 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, DAL-C (strict mode) |
 
-See [changelogs](docs/changelogs/index.md) for full release notes.
+See [changelogs](https://adacovex.readthedocs.io/en/latest/changelogs/index.html) for full release notes.
 
 ## Requirements
 
@@ -254,14 +254,14 @@ See [changelogs](docs/changelogs/index.md) for full release notes.
 ## Swapping the GNAT compiler (LLVM backend)
 
 See
-[docs/contributing/architecture.md](docs/contributing/architecture.md#swapping-the-gnat-compiler-llvm-backend)
+[https://adacovex.readthedocs.io/en/latest/contributing/architecture.html](https://adacovex.readthedocs.io/en/latest/contributing/architecture.html#swapping-the-gnat-compiler-llvm-backend)
 for Alire-managed and system-installed GNAT LLVM options and caveats.
 
 ## Credits
 
 Third-party attributions, licences, and bundled-asset notices: see
-[docs/CREDITS.md](docs/CREDITS.md) and
-[docs/THIRD_PARTY_NOTICES.md](docs/THIRD_PARTY_NOTICES.md).
+[https://adacovex.readthedocs.io/en/latest/CREDITS.html](https://adacovex.readthedocs.io/en/latest/CREDITS.html) and
+[https://adacovex.readthedocs.io/en/latest/THIRD_PARTY_NOTICES.html](https://adacovex.readthedocs.io/en/latest/THIRD_PARTY_NOTICES.html).
 
 ## License
 

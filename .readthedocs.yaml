@@ -2,17 +2,13 @@ version: 2
 
 build:
   os: ubuntu-lts-latest
+  tools:
+    rust: latest
   jobs:
     install:
-      # Use the prebuilt mdbook binary from the GitHub Releases page instead
-      # of `cargo install`. It is deterministic and fast: it does not need
-      # the Rust toolchain, and it avoids the ~2.5-minute compile that
-      # `cargo install` performs on every build. The binary is extracted to
-      # a fixed location and later invoked by absolute path, so there is no
-      # PATH discovery to get wrong.
-      - mkdir -p "$HOME/.mdbook"
-      - curl -sSL https://github.com/rust-lang/mdBook/releases/download/v0.5.4/mdbook-v0.5.4-x86_64-unknown-linux-gnu.tar.gz | tar -xz --directory="$HOME/.mdbook"
-      - chmod +x "$HOME/.mdbook/mdbook"
+      - cargo install mdbook
     build:
       html:
-        - '"$HOME/.mdbook/mdbook" build docs --dest-dir "$READTHEDOCS_OUTPUT/html"'
+        # For an example book..
+        # - mdbook init docs
+        - mdbook build docs --dest-dir $READTHEDOCS_OUTPUT/html

@@ -101,6 +101,7 @@
   - [Adacovex_VCS_Tests](api-docs/adacovex_vcs_tests.md)
   - [Adacovex_Version_Info](api-docs/adacovex_version_info.md)
 - [Changelogs](changelogs/index.md)
+  - [adacovex 1.39.0](changelogs/adacovex-1.39.0.md)
   - [adacovex 1.38.0](changelogs/adacovex-1.38.0.md)
   - [adacovex 1.37.0](changelogs/adacovex-1.37.0.md)
   - [adacovex 1.36.0](changelogs/adacovex-1.36.0.md)
