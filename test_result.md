@@ -8,7 +8,7 @@
   | CLI config                               |  168 | PASS     |
   | SVG renderer                             |  161 | PASS     |
   | HTML/Markdown renderers                  |  58 | PASS     |
-  | SBOM generator                           |  283 | PASS     |
+  | SBOM generator                           |  288 | PASS     |
   | IR synthesis                             |  27 | PASS     |
   | Man page renderer                        |  18 | PASS     |
   | VCS support                              |  29 | PASS     |
@@ -18,4 +18,4 @@
   | Complexity check                         |  12 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 1181  Failed: 0
+  Passed: 1186  Failed: 0

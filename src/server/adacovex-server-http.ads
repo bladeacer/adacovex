@@ -31,7 +31,7 @@ package Adacovex.Server.HTTP is
    --  catalog at "/api/endpoints". The SVG badge endpoints are at
    --  "/badge/*.svg". The bundled offline manual is at "/docs" and every
    --  path under "/docs/" (each page, stylesheet, script, and badge of the
-   --  bundled mdBook site). Every other path returns Route_Not_Found.
+   --  bundled Sphinx site). Every other path returns Route_Not_Found.
    --  Routing is pure path routing. The socket dispatch in Handle_Request
    --  switches on the result. The native test suite pins every route.
    --  The function is an expression function: its body is the conditional

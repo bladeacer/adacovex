@@ -231,7 +231,7 @@ Action inputs/outputs, result caching, and release bundling:
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 1181/1181 passing |
+| Unit tests | `make test` | 1186/1186 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (725 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, DAL-C (strict mode) |
@@ -242,9 +242,10 @@ See [changelogs](https://adacovex.readthedocs.io/en/latest/changelogs/index.html
 
 - **Alire** >= 2.0
 - **GNAT** Ada compiler (managed by Alire)
-- **Python 3** (build/dev tooling only: `tools/*.py` are pure-stdlib and drive
-  version generation, description sync, test/proof doc sync, changelog checks,
-  and the architecture tree; the adacovex binary itself has no Python dependency)
+- **Python 3** (required at **build time** to bundle the dashboard and the offline
+  manual into the binary via `tools/gen-dashboard.py` and `tools/gen-docs.py`, the
+  latter needing `sphinx` + `myst-parser` + `furo` from `requirements.txt`; the
+  released binary itself has no Python or runtime dependency)
 - **GNATprove** (optional; resolved at run time by `prove` -- no declared dependency)
 - **gnatdoc_bin** and **gnatformat_bin** (dev dependencies managed by Alire,
   declared in `alire-dev.toml` and run via `alr exec` for the `make doc` and

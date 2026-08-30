@@ -605,15 +605,19 @@ package body Adacovex.Complexity is
 
    --  True when a directory name should be skipped during the walk: version
    --  control metadata, generated/dependency trees, unit-test suites, and
-   --  vendored assets that are not part of the assessed source.  `book` is
-   --  the mdBook build output (docs/book): it is generated site HTML/JS
+   --  vendored assets that are not part of the assessed source.  `.venv` is
+   --  the Python virtualenv (Sphinx + MyST for the docs build) -- vendored
+   --  dependency trees, never assessed source.  `_build` is the Sphinx build
+   --  output (docs/_build): it is generated site HTML/JS
    --  (including single-line search indexes far beyond Max_Line), so it is
    --  never assessed source and would only bloat the gate's memory and
-   --  noise.
+   --  noise.  `book` is the retired mdBook output and is kept in the skip
+   --  list so a leftover docs/book from an older checkout is never scanned.
    function Skip_Dir (N : String) return Boolean is
    begin
       return
         N = ".git"
+        or else N = ".venv"
         or else N = ".alire"
         or else N = ".jj"
         or else N = ".hg"
@@ -623,6 +627,7 @@ package body Adacovex.Complexity is
         or else N = "bin"
         or else N = "dist"
         or else N = "build"
+        or else N = "_build"
         or else N = "book"
         or else N = "node_modules"
         or else N = "test-results"

@@ -9,8 +9,9 @@ outside the printable-ASCII range (plus tab), matching the old gate's
 semantics exactly:
 
 - scanned extensions: .ads .adb .md .py .toml .gpr
-- excluded directories: `.git`, `alire`, `obj`, `skills`, `node_modules`,
-  `playwright-report`, `test-results` (generated e2e output)
+- excluded directories: `.git`, `.venv` (docs-build virtualenv),
+  `alire`, `obj`, `skills`, `node_modules`, `playwright-report`,
+  `test-results` (generated e2e output)
 - tabs (\\t) and printable ASCII (0x20..0x7E) are allowed; anything else
   (including CRLF line endings and UTF-8 multi-byte characters) is a
   violation.
@@ -35,6 +36,7 @@ ROOT: Path = Path(__file__).resolve().parent.parent
 
 SKIP_DIRS: Tuple[str, ...] = (
     ".git",
+    ".venv",
     "alire",
     "obj",
     "skills",

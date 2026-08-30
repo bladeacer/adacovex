@@ -28,7 +28,7 @@ declares `build.tools`, so validation passes and the manual deploys again.
 
 ## Test Suite
 
-The native suite is unchanged: 1181 tests across 16 categories still pass.
+The native suite is unchanged: 1186 tests across 16 categories still pass.
 This release changes documentation and build configuration only, so it adds
 no native assertions.
 

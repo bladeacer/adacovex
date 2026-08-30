@@ -3,7 +3,7 @@
   "specVersion": "1.5",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-08-30T10:38:34",
+    "timestamp": "2026-08-30T12:10:32",
     "tools": [
       {"vendor": "bladeacer", "name": "adacovex", "version": "1.39.0"}
     ],
@@ -12,7 +12,7 @@
       "bom-ref": "pkg:alire/covex@1.39.0",
       "name": "covex",
       "version": "1.39.0",
-      "language": "Ada; HTML; Python",
+      "language": "Ada; Python; JavaScript",
       "purl": "pkg:alire/covex@1.39.0",
       "licenses": [{"license": {"id": "Apache-2.0"}}],
       "description": "Ada/SPARK coverage, proof, multi-standard compliance tool",
@@ -67,6 +67,30 @@
       },
     {
       "type": "library",
+      "bom-ref": "pkg:generic/python3.14",
+      "name": "python3.14",
+      "language": "Python; HTML; C",
+      "purl": "pkg:generic/python3.14",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "vendored"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/site-packages",
+      "name": "site-packages",
+      "language": "Python; HTML; C",
+      "purl": "pkg:generic/site-packages",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "vendored"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/emscripten",
+      "name": "emscripten",
+      "language": "Python; JavaScript",
+      "purl": "pkg:generic/emscripten",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "vendored"}]
+      },
+    {
+      "type": "library",
       "bom-ref": "pkg:npm/@playwright/test@1.62.1",
       "name": "@playwright/test",
       "version": "1.62.1",
@@ -102,6 +126,45 @@
       "language": "Ada",
       "purl": "pkg:alire/gnatformat_bin",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/sphinx@9.1.0",
+      "name": "sphinx",
+      "version": "9.1.0",
+      "language": "Python",
+      "purl": "pkg:pypi/sphinx@9.1.0",
+      "description": "Python package referenced by the project (requirements.txt)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/myst-parser@5.1.0",
+      "name": "myst-parser",
+      "version": "5.1.0",
+      "language": "Python",
+      "purl": "pkg:pypi/myst-parser@5.1.0",
+      "description": "Python package referenced by the project (requirements.txt)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/furo@2025.12.19",
+      "name": "furo",
+      "version": "2025.12.19",
+      "language": "Python",
+      "purl": "pkg:pypi/furo@2025.12.19",
+      "description": "Python package referenced by the project (requirements.txt)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/python",
+      "name": "python",
+      "version": "3.14.7",
+      "purl": "pkg:generic/python",
+      "description": "System tool referenced by the project (dev dependency)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
       },
     {
       "type": "library",
@@ -177,24 +240,6 @@
       },
     {
       "type": "library",
-      "bom-ref": "pkg:generic/cargo",
-      "name": "cargo",
-      "version": "1.98.0",
-      "purl": "pkg:generic/cargo",
-      "description": "System tool referenced by the project (dev dependency)",
-      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
-      },
-    {
-      "type": "library",
-      "bom-ref": "pkg:generic/mdbook",
-      "name": "mdbook",
-      "version": "0.5.4",
-      "purl": "pkg:generic/mdbook",
-      "description": "System tool referenced by the project (dev dependency)",
-      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
-      },
-    {
-      "type": "library",
       "bom-ref": "pkg:generic/mandb",
       "name": "mandb",
       "version": "2.13.1",
@@ -224,7 +269,7 @@
   "dependencies": [
     {
       "ref": "pkg:alire/covex@1.39.0",
-      "dependsOn": ["pkg:generic/flexsearch", "pkg:generic/graphre", "pkg:generic/yace", "pkg:generic/nomnoml", "pkg:npm/@playwright/test@1.62.1", "pkg:alire/gnatprove", "pkg:alire/gnatdoc_bin", "pkg:alire/gnatformat_bin", "pkg:generic/bash", "pkg:generic/curl", "pkg:generic/alr", "pkg:generic/go", "pkg:generic/python3", "pkg:generic/git", "pkg:generic/make", "pkg:generic/jj", "pkg:generic/cargo", "pkg:generic/mdbook", "pkg:generic/mandb", "pkg:generic/pnpm", "pkg:generic/npm"]
+      "dependsOn": ["pkg:generic/flexsearch", "pkg:generic/graphre", "pkg:generic/yace", "pkg:generic/nomnoml", "pkg:generic/python3.14", "pkg:generic/site-packages", "pkg:generic/emscripten", "pkg:npm/@playwright/test@1.62.1", "pkg:alire/gnatprove", "pkg:alire/gnatdoc_bin", "pkg:alire/gnatformat_bin", "pkg:pypi/sphinx@9.1.0", "pkg:pypi/myst-parser@5.1.0", "pkg:pypi/furo@2025.12.19", "pkg:generic/python", "pkg:generic/bash", "pkg:generic/curl", "pkg:generic/alr", "pkg:generic/go", "pkg:generic/python3", "pkg:generic/git", "pkg:generic/make", "pkg:generic/jj", "pkg:generic/mandb", "pkg:generic/pnpm", "pkg:generic/npm"]
     }
   ]
 }

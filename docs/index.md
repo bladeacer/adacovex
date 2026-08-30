@@ -57,11 +57,65 @@ before you use a technical word in any doc, docstring, or changelog.
 - [API reference](api-docs/index.md) -- the generated package
   documentation.
 
-The docs live under `docs/` as an **mdBook** project (`book.toml` with
-`src = "."` and a root `SUMMARY.md`).  The pages are grouped by audience:
-`docs/usage/` for end users, `docs/contributing/` for contributors, and the
-top-level references plus `docs/proof/`, `docs/compliance/`, and
-`docs/badges/` for maintainers.  How to build the book, regenerate the
-bundled offline manual, and keep the generated outputs in sync is covered in
-the [developer guide](contributing/developer-guide.md), not here: this index
+The docs live under `docs/` as a **Sphinx** project (`docs/conf.py` with
+MyST, plus a root `docs/index.md` holding the toctree).  The pages are
+grouped by audience: `docs/usage/` for end users, `docs/contributing/` for
+contributors, and the top-level references plus `docs/proof/`,
+`docs/compliance/`, and `docs/badges/` for maintainers.  How to build the
+manual, regenerate the bundled offline manual, and keep the generated
+outputs in sync is covered in the
+[developer guide](contributing/developer-guide.md), not here: this index
 stays focused on what each page contains.
+
+```{toctree}
+:caption: Getting started
+:maxdepth: 1
+:hidden:
+
+usage/installation
+usage/target-projects
+```
+
+```{toctree}
+:caption: Using adacovex
+:maxdepth: 1
+:hidden:
+
+usage/cli-reference
+usage/dashboard
+usage/sbom
+usage/standards
+usage/platforms
+usage/vcs
+usage/ci-cd
+changelogs/index
+```
+
+```{toctree}
+:caption: Contributing to adacovex
+:maxdepth: 1
+:hidden:
+
+contributing/developer-guide
+contributing/proving
+contributing/architecture
+contributing/requirements
+contributing/perf
+contributing/ste100-technical-names
+contributing/llm-usage
+```
+
+```{toctree}
+:caption: Maintainer references
+:maxdepth: 1
+:hidden:
+
+HLR
+LLR
+proof/index
+compliance/index
+badges/index
+api-docs/index
+CREDITS
+THIRD_PARTY_NOTICES
+```

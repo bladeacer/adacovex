@@ -23,7 +23,8 @@ These are required to develop, test, or document adacovex.
 | gnatprove | Development | Alire (dev) | Required for `make prove`. |
 | gnatdoc | Development | Alire (dev) | Required for `make doc`. |
 | gnatformat | Development | Alire (dev) | Required for `make fmt`. |
-| Python 3 | Development | System | Required for tools/*.py scripts. |
+| Python 3 | Development | System | Build-time requirement: bundles the dashboard + offline manual into the binary (`tools/gen-dashboard.py` / `tools/gen-docs.py`). The released binary has no runtime Python. |
+| Sphinx + MyST | Development | Python venv (`requirements.txt`) | Build-time requirement for `tools/gen-docs.py`: builds the manual from `docs/` into `docs/_build`. |
 | Playwright | Development | npm/pnpm | Required for `make e2e`. |
 
 ## Good to have

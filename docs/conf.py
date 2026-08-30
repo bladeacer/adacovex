@@ -8,12 +8,13 @@
 # unchanged, so no page is ever converted to reStructuredText.
 #
 # Only the Toolchain requires Python.  The adacovex binary itself has no
-# Python or docs dependency; sphinx + myst-parser are dev/toolchain
+# Python or docs dependency; sphinx + myst-parser + furo are dev/toolchain
 # dependencies (docs/../requirements.txt) used by `tools/gen-docs.py`, the
 # `make book` / `book-links-check` targets, and Read the Docs.
 #
-# The built-in default theme (alabaster) is used -- no third-party theme, so
-# the build works offline with nothing more than sphinx + myst-parser.
+# The Furo theme is used (https://github.com/pradyunsg/furo): a clean,
+# modern Sphinx theme.  Furo pulls no web fonts and no images, so the
+# offline manual builds and bundles with nothing beyond the three packages.
 
 import os
 
@@ -56,13 +57,14 @@ exclude_patterns = [
 # the offline manual.
 suppress_warnings = ["toc.not_included"]
 
-# -- HTML output (default theme) ---------------------------------------------
+# -- HTML output (Furo theme) ------------------------------------------------
 
-# The built-in default theme (alabaster).  No extra dependency.
-html_theme = "alabaster"
+# The Furo theme (https://github.com/pradyunsg/furo).  It is declared in
+# requirements.txt alongside sphinx and myst-parser.
+html_theme = "furo"
 
 # Canonical URL for Read the Docs (no effect on the local/offline build).
 html_baseurl = os.environ.get("READTHEDOCS_CANONICAL_URL", "/")
 
-# The offline manual must build purely from source with no network: the
-# default theme pulls no fonts or images, so nothing else needs bundling.
+# The offline manual must build purely from source with no network: Furo
+# pulls no fonts or images, so nothing else needs bundling.

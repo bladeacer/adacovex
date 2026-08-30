@@ -12,7 +12,11 @@ patch).  The result is a component vector suitable for SBOM generation.
 Discover_System_Dev_Deps finds system-tool dev dependencies on top of
 the manifest graph.  These are tools (python3, git, gnatprove, and
 more) that the project's build or dev files reference and that are
-installed on PATH.
+installed on PATH.  Tools that are really language packages are never
+registered as system tools: the root's Python requirements
+(requirements*.txt, for example sphinx and myst-parser) are registered
+as dev-scope pypi components resolved from the package registry
+instead.
 HLR-MANIFEST: Manifest and dependency-graph parsing
 
 > **Note:** All items in this package are public.

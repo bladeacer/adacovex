@@ -1,8 +1,9 @@
 # Read the Docs build dependencies for the adacovex manual.
 #
-# The docs live under docs/ as Markdown and are built with Sphinx (default
-# theme) using the MyST parser so the existing .md pages compile unchanged.
+# The docs live under docs/ as Markdown and are built with Sphinx using the
+# Furo theme and the MyST parser so the existing .md pages compile unchanged.
 # Read the Docs installs these (see .readthedocs.yaml, `python.install`) to
 # run `sphinx-build` over docs/.
 sphinx
 myst-parser
+furo

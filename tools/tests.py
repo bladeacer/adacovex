@@ -474,57 +474,65 @@ class TestGenDocsAssets(unittest.TestCase):
         self.assertEqual(gen_docs._asset_body_lines("a\n\nb"),
                          ['"a"', "ASCII.LF", '""', "ASCII.LF", '"b"'])
 
-    def test_collect_assets_normalises_searchindex(self) -> None:
-        # The content-hashed searchindex-<hash>.js must become the stable
-        # searchindex.js, and every page reference must follow, so a docs
-        # edit no longer churns the asset name and the whole template.
+    def test_collect_assets_bundles_sphinx_searchindex(self) -> None:
+        # Sphinx names the index searchindex.js already (no content hash), so
+        # it must be bundled as-is with every page's reference intact.
         with tempfile.TemporaryDirectory() as tmp:
-            book = Path(tmp) / "book"
-            book.mkdir()
-            (book / "index.html").write_text(
-                '<script>window.path_to_searchindex_js = '
-                '"searchindex-abc123.js";</script>',
+            build = Path(tmp) / "build"
+            build.mkdir()
+            (build / "index.html").write_text(
+                '<script src="_static/searchtools.js"></script>'
+                '<script src="searchindex.js"></script>',
                 encoding="utf-8")
-            (book / "searcher-abc123.js").write_text("// searcher",
-                                                      encoding="utf-8")
-            (book / "searchindex-abc123.js").write_text("{}",
-                                                         encoding="utf-8")
-            assets = gen_docs.collect_assets(book)
+            (build / "searchindex.js").write_text("{}", encoding="utf-8")
+            assets = gen_docs.collect_assets(build)
             rels = {rel for rel, _, _ in assets}
             self.assertIn("searchindex.js", rels)
-            self.assertNotIn("searchindex-abc123.js", rels)
-            index_body = next(
-                body for rel, _, body in assets if rel == "index.html")
-            self.assertIn('path_to_searchindex_js = "searchindex.js"',
-                          index_body)
 
-    def test_collect_assets_bundles_print_and_keeps_svg_icon(self) -> None:
-        # print.html (the print button's target) must be bundled so the print
-        # button works offline, the SVG favicon must stay, and only the PNG
-        # favicon may be dropped.
+    def test_collect_assets_drops_sources_and_images(self) -> None:
+        # The raw-source _sources/ copies and the PNG _images/ screenshots are
+        # deliberately not bundled (their references are stripped below), the
+        # _downloads/ badge SVGs are, and the footer Page source link and the
+        # Furo theme self-promotion block ("Made with Sphinx and @pradyunsg's
+        # Furo") are removed from every page (the copyright above them stays;
+        # Sphinx and Furo are credited in THIRD_PARTY_NOTICES.md instead).
         with tempfile.TemporaryDirectory() as tmp:
-            book = Path(tmp) / "book"
-            book.mkdir()
-            (book / "index.html").write_text(
-                '<link rel="icon" href="favicon-de23e50b.svg">'
-                '<link rel="shortcut icon" href="favicon-8114d1fc.png">'
-                '<a href="print.html">print this book</a>',
+            build = Path(tmp) / "build"
+            build.mkdir()
+            (build / "index.html").write_text(
+                '<a href="_sources/index.md.txt">Page source</a>'
+                '<img src="_images/dashboard_preview_overview.png" '
+                'alt="Preview of Overview tab">'
+                '<div class="copyright">Copyright \u00a9 bladeacer</div>'
+                'Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> '
+                'and <a class="muted-link" href="https://pradyunsg.me">'
+                '@pradyunsg</a>\'s '
+                '<a href="https://github.com/pradyunsg/furo">Furo</a>'
+                'Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>',
                 encoding="utf-8")
-            (book / "print.html").write_text(
-                '<p>the whole book</p>', encoding="utf-8")
-            (book / "favicon-de23e50b.svg").write_text("<svg/>",
-                                                         encoding="utf-8")
-            (book / "favicon-8114d1fc.png").write_bytes(b"\x89PNG\r\n")
-            assets = gen_docs.collect_assets(book)
+            (build / "_sources").mkdir()
+            (build / "_sources" / "index.md.txt").write_text(
+                "# hi", encoding="utf-8")
+            (build / "_images").mkdir()
+            (build / "_images" / "dashboard_preview_overview.png").write_bytes(
+                b"\x89PNG\r\n")
+            (build / "_downloads").mkdir()
+            (build / "_downloads" / "spark.svg").write_text(
+                "<svg/>", encoding="utf-8")
+            assets = gen_docs.collect_assets(build)
             rels = {rel for rel, _, _ in assets}
-            self.assertIn("print.html", rels)
-            self.assertIn("favicon-de23e50b.svg", rels)
-            self.assertNotIn("favicon-8114d1fc.png", rels)
-            index_body = next(
-                body for rel, _, body in assets if rel == "index.html")
-            self.assertNotIn("shortcut icon", index_body)
-            self.assertIn('rel="icon" href="favicon-de23e50b.svg"',
-                          index_body)
+            self.assertIn("_downloads/spark.svg", rels)
+            self.assertNotIn("_sources/index.md.txt", rels)
+            self.assertNotIn("_images/dashboard_preview_overview.png", rels)
+            index_body = next(body for rel, _, body in assets
+                              if rel == "index.html")
+            self.assertNotIn("Page source", index_body)
+            self.assertNotIn("<img", index_body)
+            self.assertIn("see the online manual", index_body)
+            self.assertNotIn("pradyunsg", index_body)
+            self.assertNotIn("github.com/pradyunsg/furo", index_body)
+            self.assertIn("Copyright \u00a9 bladeacer", index_body)
+            self.assertIn("sphinx-doc.org", index_body)
 
 
 class TestCheckBookLinks(unittest.TestCase):
@@ -563,44 +571,39 @@ class TestCheckBookLinks(unittest.TestCase):
         self.assertIn("missing.html", errors[0])
 
     def test_bundle_links_tolerates_excluded_prefix(self) -> None:
-        # media/ and fonts/ are deliberately not bundled; a link to them in a
-        # produced page must not fail the check.  A subpage references them
-        # with a leading ../ (matching real mdBook output), and print.html
-        # resolves to a bundled asset.
-        html = ('<img src="../media/dashboard_preview_overview.png"> '
-                '<a href="../fonts/fonts-x.css">f</a> '
-                '<a href="../css/print-x.css">ok</a>')
+        # _sources/ and _images/ are deliberately not bundled; a link to them
+        # in a produced page must not fail the check.  A subpage references
+        # them with a leading ../ (matching real Sphinx output), and the
+        # _downloads/ badge SVG resolves to a bundled asset.
+        html = ('<a href="../_sources/usage/dashboard.md.txt">src</a> '
+                '<img src="../_images/dashboard_preview_overview.png"> '
+                '<a href="../_downloads/spark.svg">badge</a>')
         assets = [("usage/dashboard.html", "text/html", html),
-                  ("css/print-x.css", "text/css", "body{}"),
-                  ("architecture.html", "text/html", "<p>arch</p>")]
+                  ("_downloads/spark.svg", "image/svg+xml", "<svg/>")]
         self.assertEqual(check_book_links.check_bundle_links(assets), [])
 
-    def test_bundle_links_requires_print_asset(self) -> None:
-        # print.html is bundled now (so the print button works offline), so a
-        # link to it is only sound when the asset is present -- a missing one
-        # is reported, exactly like any other missing bundled asset.
-        assets = [("index.html", "text/html",
-                   '<a href="print.html">print this book</a>')]
-        errors = check_book_links.check_bundle_links(assets)
-        self.assertEqual(len(errors), 1)
-        self.assertIn("print.html", errors[0])
-        assets_ok = [("index.html", "text/html",
-                      '<a href="print.html">print this book</a>'),
-                     ("print.html", "text/html", "<p>full book</p>")]
-        self.assertEqual(check_book_links.check_bundle_links(assets_ok), [])
+    def test_bundle_links_resolves_sphinx_rooted_paths(self) -> None:
+        # A theme can link the top of the TOC as an absolute root-relative
+        # path (href="/index.html"), which must resolve against the bundled
+        # root regardless of the current page's depth.
+        assets = [("usage/dashboard.html", "text/html",
+                   '<a href="/index.html">home</a>'
+                   '<a href="../index.html">i</a>'),
+                  ("index.html", "text/html", "<p>home</p>")]
+        self.assertEqual(check_book_links.check_bundle_links(assets), [])
 
     def test_fresh_build_produces_whole_book(self) -> None:
-        # The link check runs against a fresh temp build (docs/book is a
-        # local, gitignored product): a stale local build must never mask a
-        # broken link.  Requires mdbook, exactly like the gate itself.
-        if shutil.which("mdbook") is None:
-            self.skipTest("mdbook not on PATH")
+        # The link check runs against a fresh temp build (docs/_build/html is
+        # a local, gitignored product): a stale local build must never mask a
+        # broken link.  Requires sphinx-build, exactly like the gate itself.
+        if gen_docs.sphinx_build_cmd() is None:
+            self.skipTest("sphinx-build not resolvable (PATH or .venv)")
         with tempfile.TemporaryDirectory(prefix="adacovex-book-") as td:
             dest = Path(td)
-            self.assertTrue(check_book_links.fresh_build(dest))
+            self.assertTrue(check_book_links.sphinx_build_into(dest))
             out = dest / "out"
             self.assertTrue((out / "index.html").is_file())
-            self.assertTrue((out / "print.html").is_file())
+            self.assertTrue((out / "searchindex.js").is_file())
             # The fresh build carries the same self-contained link surface.
             assets = gen_docs.collect_assets(out)
             self.assertEqual(check_book_links.check_bundle_links(assets), [])

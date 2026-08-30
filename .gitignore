@@ -18,12 +18,14 @@ b__*
 
 __pycache__/
 *.pyc
+.venv/
+.venv
 alire/build_hash_inputs
 node_modules
 tests/e2e/test-results
 tests/e2e/playwright-report
 
 
-# mdBook build output: regenerated locally by `make book` (gitignored so the
-# content-hashed search index and per-page references never pollute git).
-docs/book/
+# Sphinx build output: regenerated locally by `make book` (gitignored so the
+# generated _sources/ copies and .doctrees/ side-car files never pollute git).
+docs/_build/

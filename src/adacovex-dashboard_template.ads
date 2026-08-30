@@ -594,14 +594,24 @@ package Adacovex.Dashboard_Template is
   & "t=""_blank"" rel=""noopener"">yace</a></td><td>1.1.0 / MIT</td><"
   & "td>JSON syntax highlighting in the API playground</td></tr>"
   & ASCII.LF
+  & "<tr><td><a href=""https://www.sphinx-doc.org/"" target=""_blank"
+  & """ rel=""noopener"">Sphinx</a></td><td>build-time / BSD-3-Claus"
+  & "e</td><td>docs generation (manual built with Sphinx + MyST a"
+  & "t build time)</td></tr>"
+  & ASCII.LF
+  & "<tr><td><a href=""https://readthedocs.org/"" target=""_blank"" r"
+  & "el=""noopener"">Read the Docs</a></td><td>hosting service</td>"
+  & "<td>hosting the online manual</td></tr>"
+  & ASCII.LF
   & "</table>"
   & ASCII.LF
   & "<p style=""color:var(--muted);font-size:.85rem;margin-top:8px"
   & """>Read the full legal texts in <a href=""https://github.com/b"
   & "ladeacer/adacovex/blob/main/docs/THIRD_PARTY_NOTICES.md"" tar"
-  & "get=""_blank"" rel=""noopener"">THIRD_PARTY_NOTICES.md</a>. All "
-  & "libraries are bundled in this page. The dashboard works offl"
-  & "ine.</p>"
+  & "get=""_blank"" rel=""noopener"">THIRD_PARTY_NOTICES.md</a>. The "
+  & "JavaScript libraries listed above are bundled in this page; "
+  & "Sphinx, MyST, and the Read the Docs hosting service are buil"
+  & "d-time tools, not bundled. The dashboard works offline.</p>"
   & ASCII.LF
   & "</div></div></div>"
   & ASCII.LF

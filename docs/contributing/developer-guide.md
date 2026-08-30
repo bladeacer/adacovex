@@ -14,8 +14,11 @@ Prerequisites:
 - **Alire** >= 2.0 (`alr`) -- the Ada package manager. It downloads and manages
   the GNAT toolchain for you.
 - **GNAT** Ada compiler -- managed by Alire (`alr` pulls `gnat_native`).
-- **Python 3** -- only for build/dev tooling (`tools/*.py`). The shipped binary
-  has no Python dependency.
+- **Python 3** -- required at **build time** to bundle the dashboard and the
+  offline manual into the binary (`tools/gen-dashboard.py` and
+  `tools/gen-docs.py`). The docs bundle additionally needs `sphinx` +
+  `myst-parser` (see `requirements.txt`). The shipped binary itself has no
+  Python or other runtime dependency.
 - **gnatprove** -- optional for *using* adacovex, required for `make prove`.
   It is resolved at run time (manifest pin, `$PATH`, cached toolchain, or
   download). It lives in the dev manifest, never the published one.
@@ -24,7 +27,7 @@ Prerequisites:
 git clone https://github.com/bladeacer/adacovex.git
 cd adacovex
 make build        # compiles bin/adacovex + bin/test_runner (covex alias)
-make test         # builds + runs the native test suite (1181 tests)
+make test         # builds + runs the native test suite (1186 tests)
 make run-self     # assess adacovex itself: 100% docs, Platinum, DAL-C
 make prove        # SPARK proof (Platinum gate) + regenerates docs/badges/
 make check        # the whole quality gate CI runs before a release
@@ -78,7 +81,7 @@ A handful of modes exit before the pipeline: `--help`, `--version`, `man`,
 | Change assessment criteria | `src/compliance/adacovex-compliance-dal.adb` (+ the DAL levels doc) |
 | Add tests | `src/tests/` -- see below |
 | Regenerate API docs | `make doc` (gnatdoc -> `tools/rst2md.py` -> `docs/api-docs/`) |
-| Regenerate the offline manual | `make book` (mdBook -> `tools/gen-docs.py` -> `src/adacovex-docs_template.ads`) |
+| Regenerate the offline manual | `make book` (Sphinx -> `tools/gen-docs.py` -> `src/adacovex-docs_template.ads`) |
 | Sync test counts | `make test-count` (reads `docs/test_result.md`, rewrites every anchored count) |
 | Sync proof metrics | `make proof-status` |
 | Regenerate AGENTS.md blocks | `make agents-tree` (src tree) and `make doc-links` (docs list) |
@@ -92,21 +95,24 @@ Cross-links between the generated package pages and the reference pages live in 
 
 ### Offline manual and Read the Docs
 
-`docs/` is an mdBook project (`docs/book.toml` with `src = "."` and a root `docs/SUMMARY.md`). Read the Docs builds the public site from it (`.readthedocs.yaml`, `mdbook build docs`); the same book is bundled into the binary as the offline manual. When you add, move, or rename a doc page, update `docs/SUMMARY.md` in the same change. Then run `make book` (regenerates `src/adacovex-docs_template.ads`), `make link-check`, and `make docs-check`. `make book-serve` serves the manual locally with mdBook's live server; `make docs-serve` serves the raw Markdown over plain HTTP.
+`docs/` is a Sphinx project (`docs/conf.py` with the Furo theme, using the MyST parser so every page stays Markdown). Read the Docs builds the public site from it (`.readthedocs.yaml`, `sphinx.configuration: docs/conf.py`); the same docs are bundled into the binary as the offline manual. When you add, move, or rename a doc page, update the relevant `{toctree}` in `docs/index.md` in the same change. Then run `make book` (regenerates `src/adacovex-docs_template.ads`), `make link-check`, and `make docs-check`. `make book-serve` builds with Sphinx and serves the built site locally; `make docs-serve` serves the raw Markdown over plain HTTP.
 
 ### Building the manual
 
-- `mdbook build docs` produces the site in `docs/book/` (a local,
-  gitignored build product); `make book` also bundles it into
-  `src/adacovex-docs_template.ads` (via `tools/gen-docs.py`, which keeps
-  mdBook's own search machinery -- including the chunked search index, under
-  a stable `searchindex.js` name -- so the bundled manual is searchable
-  offline and the committed spec never churns its asset names).
+- `make book` runs `tools/gen-docs.py`, which first runs `sphinx-build -b
+  html docs docs/_build/html` (when sphinx-build is on PATH) and then bundles
+  the built site into `src/adacovex-docs_template.ads` (keeping Sphinx's own
+  search machinery -- searchindex.js, searchtools.js, the stemmers -- so the
+  bundled manual is searchable offline and the committed spec never churns
+  its asset names).  The docs build dependencies (sphinx + myst-parser) are
+  the Read the Docs installation requirements in `requirements.txt`.  The
+  pages are never converted to reStructuredText.
 - The bundled manual is served by `--serve` at `/docs`.
 - `make book-links-check` fails when a link in the bundled manual does not
-  resolve (checked against a fresh `mdbook build`, so a stale local
-  `docs/book` cannot mask a broken link); `python3 tools/gen-docs.py --check`
-  (also in `make check`) fails when the committed spec is stale.
+  resolve (checked against a fresh `sphinx-build`, so a stale local
+  `docs/_build/html` cannot mask a broken link);
+  `python3 tools/gen-docs.py --check` (also in `make check`) fails when the
+  committed spec is stale.
 
 ### Generated outputs
 
@@ -115,10 +121,11 @@ Cross-links between the generated package pages and the reference pages live in 
   target.
 - `docs/badges/*.svg` are regenerated by `make run-self` and `make prove`.
 - `docs/api-docs/` is regenerated by `make doc`.
-- `docs/book/` is the mdBook build output and is **not** committed (it is
-  gitignored, so mdBook's content-hashed asset names never pollute git);
-  regenerate it locally with `make book` whenever `docs/` changes.  The
-  committed artifact is the generated spec `src/adacovex-docs_template.ads`.
+- `docs/_build/` is the Sphinx build output and is **not** committed (it is
+  gitignored, so the generated `_sources/` copies and `.doctrees/` side-car
+  files never pollute git); regenerate it locally with `make book` whenever
+  `docs/` changes.  The committed artifact is the generated spec
+  `src/adacovex-docs_template.ads`.
 
 Do not edit generated files by hand; regenerate them instead.
 

@@ -6,16 +6,18 @@ Version bumped 1.39.0 -> 1.40.0.
 
 ## Changes
 
-### C1: The manual now builds with Sphinx and the default theme
+### C1: The manual now builds with Sphinx and the Furo theme
 
 The user documentation under `docs/` is now a **Sphinx** project, not an
-mdBook one. `docs/conf.py` selects the Sphinx **default theme** (alabaster)
-and the **MyST Markdown parser** (`myst_parser`), so the docs stay written in
-Markdown exactly as they were -- there is no conversion to reStructuredText.
-The build dependencies are pinned in a new top-level `requirements.txt`
-(`sphinx` + `myst-parser`), and `.readthedocs.yaml` now points at
-`docs/conf.py` and installs those deps, so the Read the Docs deploy that broke
-under mdBook builds cleanly again.
+mdBook one. `docs/conf.py` selects the **Furo** HTML theme
+(https://github.com/pradyunsg/furo) and the **MyST Markdown parser**
+(`myst_parser`), so the docs stay written in Markdown exactly as they were --
+there is no conversion to reStructuredText. Furo is a clean, modern theme
+with light/dark support and no external assets, so the offline manual stays
+self-contained. The build dependencies are pinned in a new top-level
+`requirements.txt` (`sphinx` + `myst-parser` + `furo`), and
+`.readthedocs.yaml` now points at `docs/conf.py` and installs those deps, so
+the Read the Docs deploy that broke under mdBook builds cleanly again.
 
 ### C2: Offline manual bundling rebuilt around Sphinx
 
@@ -42,11 +44,45 @@ not auto-discovered; new doc pages must be linked from one.
 ### C4: Build and source tooling updated
 
 The Makefile `book` / `book-links-check` targets, the `make help` text, the
-`complexity-check` source-walk excludes (`docs/_build/`), the manifest tool
-registration (`sphinx-build` replaces `mdbook`), and the SBOM fixture/tests all
-reference the Sphinx toolchain. The generated `sbom.json`, `docs/api-docs`,
-the modern-dashboard prose, and `tools/agents-tree.map` were regenerated or
-updated in step so the tree stays internally consistent.
+`complexity-check` source-walk excludes (`.venv/` and `docs/_build/` added), the
+manifest tool registration (`sphinx-build` replaces `mdbook`), and the SBOM
+fixture/tests all reference the Sphinx toolchain. The generated `sbom.json`,
+`docs/api-docs`, the modern-dashboard prose, and `tools/agents-tree.map` were
+regenerated or updated in step so the tree stays internally consistent.
+
+### C7: Python requirements resolve as pypi SBOM dependencies
+
+`sphinx-build` is a Python package entry point, not a system binary, so it is
+no longer registered as a `pkg:generic/*` system-tool dependency. The root
+project's `requirements*.txt` entries (sphinx, myst-parser, and any others)
+now register as **dev-scope `pkg:pypi/*` dependencies** with their language
+set to Python. Versions are resolved from the package registry (`pip index
+versions <pkg>`) when the requirements line pins none; a missing pip or an
+offline machine keeps the name-only entry -- no version or licence is ever
+guessed. `tools/gen-docs.py` and `tools/check-book-links.py` also now find
+`sphinx-build` inside the repo's own `.venv/bin` when it is not on PATH, so
+`make check` runs the docs gates (and the tools unit tests) on any machine
+that has the venv, instead of silently skipping them.
+
+### C5: Python is now a documented build-time dependency
+
+The manual is built at compile time and bundled into the released binary, so
+Python 3 is now a **build-time** requirement: `tools/gen-dashboard.py` and
+`tools/gen-docs.py` (the latter needing `sphinx` + `myst-parser` + `furo`
+from `requirements.txt`) embed the dashboard and offline manual into the
+binary as generated Ada string constants. The released binary itself still
+has **no runtime Python dependency**. The README, developer guide,
+requirements table, Makefile help, and `THIRD_PARTY_NOTICES` all state this
+clearly.
+
+### C6: Sphinx, Furo, MyST, and Read the Docs credited
+
+The third-party notices (`THIRD_PARTY_NOTICES.md`) and the dashboard **Credits**
+tab now credit **Sphinx**, **Furo** and **MyST-Parser** as the documentation
+build tools and **Read the Docs** as the online hosting service. Furo's own
+footer self-promotion block ("Made with Sphinx and @pradyunsg's Furo") is
+stripped from the bundled manual (`tools/gen-docs.py`); the copyright notice
+stays, and Sphinx and Furo are credited in the notices instead.
 
 ## Fixes
 
@@ -60,20 +96,23 @@ binary.
 
 ## Test Suite
 
-The native suite is unchanged: 1181 tests across 16 categories still pass.
-This release changes documentation, build tooling, and SBOM graph metadata
-only, so it adds no native assertions.
+The native suite grows to 1186 tests across 16 categories: the SBOM tests add
+assertions that `sphinx-build` is never registered as a system tool, and that
+root `requirements*.txt` entries (sphinx, myst-parser) register as dev-scope
+`pkg:pypi/*` dependencies with a registry-resolved version.
 
 ## Proof Results
 
 Platinum, 0 unproved, 0 justified, 725 VCs (725 proved) under gnatprove
-16.1.0. No analysed Ada changed in this release (the edited Ada files are
-comments, strings, and the complexity skip-list only), so the totals are
-unchanged.
+16.1.0. The edited Ada units (the manifest parser and its new subunits) are
+not SPARK-analysed (the package is default-off; only `Trim` opts in), so the
+totals are unchanged.
 
 ## Traceability
 
 - No new HLRs. The release touches documentation and build infrastructure
   only.
 - `HLR-DOC` -- C1 the Sphinx project, C2 the rebundled offline manual, C3 the
-  toctree navigation, C4 the tooling updates, and H1 the Read the Docs fix.
+  toctree navigation, C4 the tooling updates, C5 the Python build dependency,
+  C6 the Sphinx/Furo/MyST/Read the Docs credits, C7 the pypi SBOM
+  dependencies, and H1 the Read the Docs fix.

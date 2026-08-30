@@ -255,6 +255,15 @@ popup) and in every SBOM renderer: CycloneDX `components[].language`,
 SPDX/JSON `adacovex:language` property, and the Markdown table's
 `Language` column.
 
+Tools that are really **language packages** are never registered as system
+tools.  The root project's Python requirements (`requirements*.txt`, for
+example `sphinx` and `myst-parser`) register as `dev`-scope `pkg:pypi/*`
+components with the language set to Python.  A version pinned in the
+requirements line wins; otherwise the package registry answers
+(`pip index versions <pkg>`) when `pip` is installed and online.  A missing
+registry or a failing resolve keeps the name-only entry -- no version or
+licence is ever guessed.
+
 ## Test dependencies
 
 A dependency used only by the project's tests is classified `test` (the

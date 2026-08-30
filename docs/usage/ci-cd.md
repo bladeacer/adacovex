@@ -25,7 +25,7 @@ jobs:
           standard: all          # DO-178C + ISO 26262 + IEC 62304
           require-spark: Platinum
           require-docstrings: 100
-          require-tests: 1181
+          require-tests: 1186
           run-tests: true
           generate-sbom: true
 ```
@@ -375,7 +375,7 @@ tags. A version that was never released has no entry. A release that skips
 versions still links every changelog in the range. Each entry links the
 release's changelog page on the deployed **Read the Docs** site
 (`https://adacovex.readthedocs.io/en/latest/changelogs/adacovex-<v>.html`),
-not a GitHub blob URL: the manual is an mdBook project and the changelogs are
+not a GitHub blob URL: the manual is a Sphinx project and the changelogs are
 part of the published book.
 
 **The CI release binary is Linux x86-64 only for now.** The release workflow
