@@ -8,8 +8,9 @@ package body Adacovex.Docs_Template is
 
    --  The asset body for a table index: the first body constant selected by
    --  the ref (one static constant per asset -- see the spec's Asset_Bodies).
-   --  For the chunked search index this is its first chunk; the server
-   --  streams the remaining chunks via Chunk_Count + Asset_Bodies.
+   --  For the chunked assets (the search index and the print view) this is
+   --  their first chunk; the server streams the remaining chunks via
+   --  Chunk_Count + Asset_Bodies.
    function Content (Idx : Asset_Index) return String is
    begin
       return Asset_Bodies (Assets (Idx).Idx).all;
