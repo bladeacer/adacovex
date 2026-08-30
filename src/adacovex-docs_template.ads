@@ -107,7 +107,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -775,7 +775,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -1745,7 +1745,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -2524,7 +2524,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -3384,7 +3384,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -4271,7 +4271,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -5200,7 +5200,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -5925,7 +5925,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -7141,7 +7141,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -8041,7 +8041,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -8764,7 +8764,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -9632,7 +9632,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -10522,7 +10522,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -11186,7 +11186,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -11945,7 +11945,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -12879,7 +12879,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -13543,7 +13543,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -14399,7 +14399,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -15340,7 +15340,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -16027,7 +16027,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -17091,7 +17091,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -17855,7 +17855,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -18793,7 +18793,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -19537,7 +19537,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -20347,7 +20347,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -21176,7 +21176,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -22014,7 +22014,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -22834,7 +22834,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -23885,7 +23885,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -24770,7 +24770,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -25522,7 +25522,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -26637,7 +26637,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -27560,7 +27560,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -28295,7 +28295,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -29298,7 +29298,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -30127,7 +30127,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -30877,7 +30877,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -32245,7 +32245,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -33097,7 +33097,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -33763,7 +33763,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -34575,7 +34575,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -35241,7 +35241,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -35907,7 +35907,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -36798,7 +36798,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -37625,7 +37625,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -38607,7 +38607,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -39524,7 +39524,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -40348,7 +40348,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -41675,7 +41675,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -42636,7 +42636,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -43305,7 +43305,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -43995,7 +43995,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -44685,7 +44685,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -45375,7 +45375,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -46073,7 +46073,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -46763,7 +46763,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -47453,7 +47453,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -48143,7 +48143,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -48833,7 +48833,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -49523,7 +49523,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -50219,7 +50219,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -50909,7 +50909,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -51599,7 +51599,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -52289,7 +52289,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -52979,7 +52979,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -53669,7 +53669,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -54359,7 +54359,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -55040,7 +55040,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -55891,7 +55891,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -58378,7 +58378,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -60941,7 +60941,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -61717,7 +61717,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -62774,7 +62774,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -63685,7 +63685,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -64780,7 +64780,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -65822,7 +65822,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -66900,7 +66900,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -68020,7 +68020,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -69055,7 +69055,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -70421,7 +70421,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -71464,7 +71464,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -72396,7 +72396,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -73290,7 +73290,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -74475,7 +74475,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -75318,7 +75318,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -76334,7 +76334,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -77431,7 +77431,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -78390,7 +78390,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -79214,7 +79214,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -80016,7 +80016,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -80825,7 +80825,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -81769,7 +81769,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -83108,7 +83108,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -84135,7 +84135,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -85198,7 +85198,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -86365,7 +86365,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -87099,7 +87099,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -87956,7 +87956,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -89269,7 +89269,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -90207,7 +90207,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -91168,7 +91168,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -92025,7 +92025,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -92930,7 +92930,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -94069,7 +94069,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -94899,7 +94899,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -95811,7 +95811,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -97084,7 +97084,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -98067,7 +98067,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -98968,7 +98968,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -100022,7 +100022,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -100755,7 +100755,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -102505,7 +102505,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -104604,7 +104604,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -105688,7 +105688,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -106468,7 +106468,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -107182,7 +107182,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -107960,7 +107960,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -112082,7 +112082,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -113025,17 +113025,31 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "tab is saved as <code>adacovex-tab</code> in <code>localStorage</code>.</p>"
        & ASCII.LF
-       & "<p>The page <strong>footer</strong> carries the copyright line (<code>(c) 20"
-       & "26 bladeacer</code>,"
+       & "<p>The page <strong>footer</strong> carries a "
+       & Character'Val(226)
+       & Character'Val(128)
+       & Character'Val(156)
+       & "Generated by adacovex"
+       & Character'Val(226)
+       & Character'Val(128)
+       & Character'Val(157)
+       & " line with two obvious"
        & ASCII.LF
-       & "Apache-2.0), the <strong>repository link</strong> (<code>github.com/bladeace"
-       & "r/adacovex</code>), the"
+       & "links: <strong>Documentation (offline manual)</strong> at <code>/docs</code>"
+       & " (the bundled mdBook"
        & ASCII.LF
-       & "binary <strong>version</strong> (<code>v__VERSION__</code>, injected from <c"
-       & "ode>Adacovex.Version</code>) and"
+       & "manual) and <strong>Explore the API</strong> (jumps to the API playground ta"
+       & "b). The raw"
        & ASCII.LF
-       & "short links to the third-party credits and the <code>/api/*</code> endpoints"
-       & ".</p>"
+       & "<code>/api/*</code> URIs are deliberately not listed in the footer "
+       & Character'Val(226)
+       & Character'Val(128)
+       & Character'Val(147)
+       & " the API playground"
+       & ASCII.LF
+       & "is the single place to discover and exercise every endpoint (see"
+       & ASCII.LF
+       & "<a href=""#api-playground"">API playground</a>).</p>"
        & ASCII.LF
        & "<h3 id=""dependencies-tab-and-alternative-diagram""><a class=""header"" href=""#d"
        & "ependencies-tab-and-alternative-diagram"">Dependencies tab and alternative di"
@@ -113573,7 +113587,7 @@ package Adacovex.Docs_Template is
        & "<pre><code class=""language-json"">{""spark_level"":""Platinum"",""total_vcs"":725,"""
        & "proved_vcs"":725,"
        & ASCII.LF
-       & " ""tests_passed"":1173,""tests_failed"":0,""doc_coverage"":100,"
+       & " "" ""tests_passed"":1173,""tests_failed"":0,""doc_coverage"":100,"
        & ASCII.LF
        & " ""standard"":""all"",""level"":""DAL-C"",""dal_status"":""Achieved"","
        & ASCII.LF
@@ -113744,16 +113758,32 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "</ul>"
        & ASCII.LF
-       & "<p>A filter input searches the endpoints as you type (matching path, purpose"
-       & ","
+       & "<p>The playground uses a <strong>split-screen layout</strong>: the clickable"
+       & " endpoints,"
        & ASCII.LF
-       & "and group name), so you can jump straight to <code>metrics</code> or <code>b"
-       & "adge</code>. Clicking"
+       & "grouped by purpose, sit in a left-hand nav, and the live response preview"
        & ASCII.LF
-       & "an endpoint issues a live <code>fetch</code> against the serving origin and "
-       & "previews"
+       & "docks on the right "
+       & Character'Val(226)
+       & Character'Val(128)
+       & Character'Val(147)
+       & " the same pattern as the Dependencies tab"
+       & Character'Val(226)
+       & Character'Val(128)
+       & Character'Val(153)
+       & "s"
        & ASCII.LF
-       & "the response:</p>"
+       & "tree/diagram + detail panel. On narrow screens the panes stack vertically."
+       & ASCII.LF
+       & "A filter input searches the endpoint nav as you type (matching path,"
+       & ASCII.LF
+       & "purpose, and group name), so you can jump straight to <code>metrics</code> o"
+       & "r <code>badge</code>."
+       & ASCII.LF
+       & "Clicking an endpoint issues a live <code>fetch</code> against the serving or"
+       & "igin and"
+       & ASCII.LF
+       & "previews the response:</p>"
        & ASCII.LF
        & "<ul>"
        & ASCII.LF
@@ -114173,7 +114203,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -117471,7 +117501,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -118333,7 +118363,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -119194,7 +119224,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -120121,7 +120151,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -121116,7 +121146,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -122014,7 +122044,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -123431,7 +123461,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""../searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""../searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -124142,7 +124172,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -125648,7 +125678,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -126415,7 +126445,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -127883,7 +127913,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -129061,7 +129091,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -131886,7 +131916,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -132762,7 +132792,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF
@@ -135484,7 +135514,7 @@ package Adacovex.Docs_Template is
        & ASCII.LF
        & "            const default_dark_theme = ""navy"";"
        & ASCII.LF
-       & "            window.path_to_searchindex_js = ""searchindex-5d8bf1e3.js"";"
+       & "            window.path_to_searchindex_js = ""searchindex-7ab69955.js"";"
        & ASCII.LF
        & "        </script>"
        & ASCII.LF

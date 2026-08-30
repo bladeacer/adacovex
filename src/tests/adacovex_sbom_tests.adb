@@ -280,6 +280,9 @@ package body Adacovex_SBOM_Tests is
          & ASCII.LF
          & ASCII.HT
          & "gnatprove -P sysfix.gpr"
+         & ASCII.LF
+         & ASCII.HT
+         & "mdbook build docs"
          & ASCII.LF);
       Write_File
         (D & "/build.sh",
@@ -1153,6 +1156,7 @@ package body Adacovex_SBOM_Tests is
          Expect_If_Installed ("python3");
          Expect_If_Installed ("alr");
          Expect_If_Installed ("gnatprove");
+         Expect_If_Installed ("mdbook");
 
          --  Installed or not, never referenced by the fixture: never
          --  registered.

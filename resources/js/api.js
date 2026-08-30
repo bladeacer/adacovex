@@ -76,12 +76,16 @@ search.setAttribute('aria-label', 'Filter API endpoints');
 searchRow.appendChild(search);
 card.appendChild(searchRow);
 
+// Split-screen layout: endpoint list on the left, live response on the
+// right (mirrors the Dependencies tab's tree/diagram + detail panel).  The
+// two panes stack on narrow screens.
+var split = el('div', 'api-split');
 var groupsWrap = el('div', 'api-groups');
-card.appendChild(groupsWrap);
-
 var result = el('div', 'api-result');
 result.hidden = true;
-card.appendChild(result);
+split.appendChild(groupsWrap);
+split.appendChild(result);
+card.appendChild(split);
 
 function addGroup(title, endpoints){
   var gw = el('div', 'api-group');
