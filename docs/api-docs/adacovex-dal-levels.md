@@ -85,7 +85,7 @@ Min SPARK level met: Yes
 
 ## See also
 
-- [Standards](../standards.md) -- the cross-standard rigor-tier mapping
+- [Standards](../usage/standards.md) -- the cross-standard rigor-tier mapping
   (DO-178C / ISO 26262 / IEC 62304)
 - [ASIL Levels](adacovex-asil-levels.md) -- the ISO 26262 levels this page's
   criteria are re-labelled for

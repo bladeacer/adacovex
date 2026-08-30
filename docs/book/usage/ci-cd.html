@@ -1,0 +1,624 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>adacovex CI/CD - adacovex</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Ada Coverage and Verification Tool manual">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../css/general-e96d0476.css">
+        <link rel="stylesheet" href="../css/chrome-d279d366.css">
+        <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex-83dd89a6.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc-0e6cf2bd.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">adacovex</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="adacovex-cicd"><a class="header" href="#adacovex-cicd">adacovex CI/CD</a></h1>
+<h2 id="github-actions"><a class="header" href="#github-actions">GitHub Actions</a></h2>
+<p>The composite action at <code>./action.yml</code> mirrors the base CLI. CI can drive every
+assessment feature the same way the binary does.</p>
+<h3 id="quick-start"><a class="header" href="#quick-start">Quick start</a></h3>
+<pre><code class="language-yaml"># .github/workflows/adacovex.yml
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  adacovex:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: bladeacer/adacovex@v1
+        with:
+          target: .
+          standard: all          # DO-178C + ISO 26262 + IEC 62304
+          require-spark: Platinum
+          require-docstrings: 100
+          require-tests: 1178
+          run-tests: true
+          generate-sbom: true
+</code></pre>
+<p>This job builds adacovex. It runs the target’s native tests and the full
+assessment. It gates on Platinum SPARK, 100% docstring coverage, and 900
+passing tests. On failure, the job publishes <code>adacovex-assessment</code> artifacts
+and Markdown summaries.</p>
+<h3 id="pr-coverage-gate"><a class="header" href="#pr-coverage-gate">PR coverage gate</a></h3>
+<p>Use <code>--coverage-delta</code> to fail PRs that drop docstring coverage:</p>
+<pre><code class="language-yaml"># .github/workflows/pr-coverage.yml
+on:
+  pull_request:
+
+jobs:
+  coverage-delta:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: bladeacer/adacovex@v1
+        with:
+          target: .
+          coverage-delta: ${{ github.event.pull_request.base.sha }}
+</code></pre>
+<h3 id="release-workflow"><a class="header" href="#release-workflow">Release workflow</a></h3>
+<p>Tag a release. The bundled workflow (<code>release.yml</code>) builds the binary and runs GNATprove. It validates the self-assessment. It publishes `adacovex-vX.</p>
+<p>Y. Z.tar.gz<code> and the composite action bundle. Floating tags (</code>@latest<code>, </code>@v1<code>, </code>@v1.3<code>) always point at the newest release. Pin </code>@vX.</p>
+<p>Y. Z` for reproducibility.</p>
+<h2 id="gitlab-ci"><a class="header" href="#gitlab-ci">GitLab CI</a></h2>
+<p>The same inputs map to GitLab CI variables:</p>
+<pre><code class="language-yaml"># .gitlab-ci.yml
+adacovex:
+  image: ubuntu:latest
+  before_script:
+    - apt-get update -qq &amp;&amp; apt-get install -y -qq curl
+    - curl -fsSL https://raw.githubusercontent.com/bladeacer/adacovex/main/install.sh | bash
+  script:
+    - adacovex --target=. --standard=all --dal=C --require-spark=Platinum --require-docstrings=100
+  artifacts:
+    when: always
+    paths:
+      - sbom.json
+      - docs/badges/*.svg
+</code></pre>
+<p>If your runner already has Alire, replace the <code>install.sh</code> step with
+<code>alr install covex gnatprove</code>.</p>
+<h2 id="other-ci-systems"><a class="header" href="#other-ci-systems">Other CI systems</a></h2>
+<p>The action is a pure composite of shell steps. It works on any runner that can
+run <code>bash</code> and install Alire:</p>
+<ol>
+<li>Install Alire + GNAT (<code>alr toolchain --install gnat_native</code>).</li>
+<li>Download the release bundle or build from source.</li>
+<li>Run <code>adacovex</code> with the same flags as the GitHub Action inputs.</li>
+</ol>
+<p>The JSON API (<code>/api/metrics</code> when using <code>--serve</code>, or <code>--emit-metrics</code>) lets
+you parse results in any language.</p>
+<p><strong>Action/CLI/docs parity is a feature gate.</strong> CI runs the action-parity
+check (<code>tools/check-action-parity.py</code>), which fails when the action’s inputs
+stop mirroring the base CLI option set, and also fails when the <code>### Inputs</code>
+table below drifts from <code>action.yml</code>. See <code>tools/check-action-parity.py</code> for
+the mapping rules (maintainers run the same check locally via
+<code>make action-parity-check</code>; see the <a href="../contributing/developer-guide.html">developer guide</a>).</p>
+<h2 id="composite-action-actionyml"><a class="header" href="#composite-action-actionyml">Composite action (<code>./action.yml</code>)</a></h2>
+<p>The composite action installs Alire via
+<a href="https://github.com/alire-project/setup-alire"><code>alire-project/setup-alire</code></a>.
+GNAT comes from <code>gnat-version</code> plus <code>gprbuild</code>. <code>gnatprove</code> is NOT an
+<code>alr toolchain</code> component. The <code>prove</code> subcommand resolves it through the
+target project’s manifest, <code>$PATH</code>, cached toolchain, or download.</p>
+<p>The action obtains the version-matched adacovex binary. It downloads the
+release bundle by default. You can set <code>build: true</code> to build from source.</p>
+<p>Optionally, the action runs GNATprove (<code>prove</code>) and the native tests
+(<code>run-tests</code>). Then it runs the assessment. It generates a proof-aware SBOM
+(<code>generate-sbom</code>, default <code>true</code>). It publishes a Markdown step summary,
+machine-readable outputs, and SVG badge artifacts.</p>
+<p><code>run-tests</code> <strong>builds the target’s native test suite first</strong>. In a consumer
+workspace, the <code>build: true</code> step builds adacovex in a scratch checkout. It
+leaves the target untouched.</p>
+<p>The action runs <code>alr build</code> in the target root before executing
+<code>test-command</code>. The target root is a subdirectory when <code>target</code> points at one.
+In the self-assessment case, the build is an incremental no-op.</p>
+<p>This design keeps <code>test-command: ./test_crdt</code>-style usage working in consumer
+repositories such as Ada_CRDT’s release workflow.</p>
+<p>The action is version-matched to the adacovex binary. The release workflow bundles <code>adacovex-vX. Y. Z.tar.gz</code> for every `vX.</p>
+<p>Y. Z` tag. The action downloads the binary for the tag it is referenced by. Reference it by a floating tag to always get the latest published release.</p>
+<p>You can pin to an exact release for reproducibility:</p>
+<pre><code class="language-yaml">steps:
+  - uses: actions/checkout@v7
+  - uses: bladeacer/adacovex@v1
+    with:
+      target: .
+      standard: all   # badges/reports for DO-178C + ISO 26262 + IEC 62304
+</code></pre>
+<h3 id="inputs"><a class="header" href="#inputs">Inputs</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Input</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>target</code></td><td><code>.</code></td><td>Target project root (relative to workspace root)</td></tr>
+<tr><td><code>dal</code></td><td><code>C</code></td><td>DO-178C DAL level to assess (A-E); also the shared rigor tier</td></tr>
+<tr><td><code>standard</code></td><td><code>''</code></td><td>Compliance standard: <code>do178c</code>, <code>iso26262</code>, <code>iec62304</code>, or <code>all</code> (badges/reports for every standard)</td></tr>
+<tr><td><code>asil</code></td><td><code>''</code></td><td>ISO 26262 ASIL level (A-D, QM); sets the standard and tier</td></tr>
+<tr><td><code>class</code></td><td><code>''</code></td><td>IEC 62304 safety class (A-C); sets the standard and tier</td></tr>
+<tr><td><code>gnat-version</code></td><td><code>16.1.0</code></td><td>GNAT toolchain version to select via <code>alr</code></td></tr>
+<tr><td><code>version</code></td><td><code>''</code></td><td>adacovex version; defaults to the tag the action is referenced by</td></tr>
+<tr><td><code>build</code></td><td><code>false</code></td><td>Build adacovex from source instead of downloading the version-matched binary</td></tr>
+<tr><td><code>prove</code></td><td><code>false</code></td><td>Run GNATprove before assessing, for repos that don’t commit <code>gnatprove.out</code></td></tr>
+<tr><td><code>require-spark</code></td><td><code>''</code></td><td>Minimum SPARK level (Stone..Platinum); CI threshold gate</td></tr>
+<tr><td><code>require-docstrings</code></td><td><code>''</code></td><td>Minimum docstring coverage % (0-100); CI threshold gate</td></tr>
+<tr><td><code>require-tests</code></td><td><code>''</code></td><td>Minimum passing test count; CI threshold gate</td></tr>
+<tr><td><code>require-proof</code></td><td><code>''</code></td><td>Minimum proved-VC coverage % (0-100); CI threshold gate</td></tr>
+<tr><td><code>run-tests</code></td><td><code>false</code></td><td>Build the target’s native test suite and run it (requires <code>build: true</code>; the action runs <code>alr build</code> in the target root first)</td></tr>
+<tr><td><code>test-command</code></td><td><code>./bin/test_runner</code></td><td>Command (relative to workspace root) that runs the target’s test suite</td></tr>
+<tr><td><code>release-build</code></td><td><code>false</code></td><td>Pass <code>--release</code> to <code>alr build</code></td></tr>
+<tr><td><code>assess</code></td><td><code>true</code></td><td>Run the assessment and publish outputs/badges (<code>false</code> for build/test-only jobs)</td></tr>
+<tr><td><code>compare-base</code></td><td><code>''</code></td><td>Git ref to run <code>--compare-base</code> against (fails on regression)</td></tr>
+<tr><td><code>coverage-delta</code></td><td><code>''</code></td><td>Git ref to run <code>--coverage-delta</code> against (fails if coverage dropped)</td></tr>
+<tr><td><code>emit-markdown</code></td><td><code>''</code></td><td>Write <code>VERIFICATION.md</code> + <code>TRACE.md</code> into this directory</td></tr>
+<tr><td><code>emit-metrics</code></td><td><code>''</code></td><td>Write a JSON export of assessment metrics + the dependency graph to this file</td></tr>
+<tr><td><code>generate-sbom</code></td><td><code>true</code></td><td>Generate a proof-aware SBOM after the assessment and upload it</td></tr>
+<tr><td><code>sbom-format</code></td><td><code>cyclonedx-json</code></td><td>SBOM format: <code>cyclonedx-json</code>, <code>spdx-json</code>, or <code>md</code></td></tr>
+<tr><td><code>cache</code></td><td><code>true</code></td><td>Cache Alire toolchain/deps with <code>actions/cache</code></td></tr>
+<tr><td><code>result-cache</code></td><td><code>true</code></td><td>Persist adacovex’s on-disk result cache across runs</td></tr>
+<tr><td><code>manifest</code></td><td><code>''</code></td><td>Override the target project manifest path</td></tr>
+<tr><td><code>no-svg</code></td><td><code>false</code></td><td>Suppress SVG badge generation</td></tr>
+<tr><td><code>relaxed</code></td><td><code>false</code></td><td>Disable strict mode (skip dirs, no patches)</td></tr>
+<tr><td><code>skip-dir</code></td><td><code>''</code></td><td>Directory name to skip in relaxed mode (repeatable, comma-separated)</td></tr>
+<tr><td><code>verbose</code></td><td><code>false</code></td><td>Verbose diagnostics on stderr</td></tr>
+<tr><td><code>no-cache</code></td><td><code>false</code></td><td>Disable adacovex on-disk result caching</td></tr>
+<tr><td><code>cache-dir</code></td><td><code>''</code></td><td>Override adacovex result cache directory</td></tr>
+<tr><td><code>cache-max</code></td><td><code>''</code></td><td>Max adacovex result-cache entries before eviction</td></tr>
+<tr><td><code>prove-jobs</code></td><td><code>''</code></td><td>GNATprove parallelism for the <code>prove</code> subcommand</td></tr>
+<tr><td><code>prove-level</code></td><td><code>''</code></td><td>GNATprove proof effort 0-4</td></tr>
+<tr><td><code>prove-timeout</code></td><td><code>''</code></td><td>GNATprove per-check prover timeout in seconds</td></tr>
+<tr><td><code>prove-steps</code></td><td><code>''</code></td><td>GNATprove max proof steps</td></tr>
+<tr><td><code>prove-memlimit</code></td><td><code>''</code></td><td>GNATprove prover memory limit in MB</td></tr>
+<tr><td><code>prove-force</code></td><td><code>false</code></td><td>Force full GNATprove reanalysis (<code>-f</code>)</td></tr>
+<tr><td><code>prove-no-loop-unrolling</code></td><td><code>false</code></td><td>Disable GNATprove automatic loop unrolling</td></tr>
+<tr><td><code>prove-no-inlining</code></td><td><code>false</code></td><td>Disable GNATprove contextual-analysis inlining</td></tr>
+<tr><td><code>prove-quiet</code></td><td><code>false</code></td><td>Suppress GNATprove benign info messages (the default set) from prove output. Quiet is already the default for local runs; this is the explicit prove-mode form. <code>--verbose</code> wins</td></tr>
+<tr><td><code>prove-suppress-warnings</code></td><td><code>''</code></td><td>Comma-separated GNATprove info tags to suppress from prove output (for example <code>unrolling-inlining,xyz</code>); a tag <code>S</code> suppresses blocks tagged <code>[info-S]</code> (or <code>[S]</code>). <code>--verbose</code> wins</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="outputs"><a class="header" href="#outputs">Outputs</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Output</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>dal-status</code></td><td><code>Achieved</code> or <code>Unmet</code></td></tr>
+<tr><td><code>spark-level</code></td><td>SPARK level detected (Stone..Platinum)</td></tr>
+<tr><td><code>test-count</code></td><td>Number of passing tests</td></tr>
+<tr><td><code>coverage-pct</code></td><td>Current docstring coverage (in <code>--coverage-delta</code> mode)</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="result-caching"><a class="header" href="#result-caching">Result caching</a></h3>
+<p>The action restores <code>~/.adacovex/cache</code> before running adacovex. It saves the
+cache when the job finishes (<code>result-cache</code>, default <code>true</code>).</p>
+<p>Every entry is keyed by its artifact’s SHA-256 content hash. Restoring a cache
+from an earlier run or commit is always safe. Only files that are byte-for-byte
+unchanged are served from it. The remaining files are rescanned and re-parsed
+automatically.</p>
+<h2 id="workflows"><a class="header" href="#workflows">Workflows</a></h2>
+<ul>
+<li><strong><code>.github/workflows/ci.yml</code></strong> – three jobs on push to <code>main</code> and pull
+requests:
+<ul>
+<li><code>self-assessment</code> – build + prove + assess at <code>--standard=all</code> (so the
+DO-178C, ISO 26262, and IEC 62304 badges/reports are all emitted and
+gated), with the Platinum / 100% docstrings / test-count / 100% proof
+thresholds.</li>
+<li><code>adacovex-tests</code> – build + native test suite (<code>run-tests</code>, <code>assess: false</code>).</li>
+<li><code>coverage-gate</code> (push only) – runs the coverage gate, comparing
+docstring coverage between the latest two release tags (a maintainer
+step; see the <a href="../contributing/developer-guide.html">developer guide</a>).</li>
+</ul>
+</li>
+<li><strong><code>.github/workflows/pr-check.yml</code></strong> – runs <code>--coverage-delta</code> against
+<code>pull_request.base.sha</code> to fail PRs that drop docstring coverage.</li>
+<li><strong><code>.github/workflows/release.yml</code></strong> – on a <code>v*</code> tag, builds the release
+binary, runs GNATprove, validates the <code>--standard=all</code> self-assessment, and
+publishes the GitHub Release (see <a href="#release-bundling">Release bundling</a>).</li>
+</ul>
+<h3 id="markdown-summaries-and-loud-failures"><a class="header" href="#markdown-summaries-and-loud-failures">Markdown summaries and loud failures</a></h3>
+<p>Every CI run leaves a <strong>Markdown summary at the bottom of the job page</strong>
+(<code>$GITHUB_STEP_SUMMARY</code>):</p>
+<ul>
+<li>The composite action’s assessment step writes an <code>## adacovex assessment</code>
+table. The table shows target, bundled version, compliance label, SPARK
+level, tests, and coverage. It also writes the full raw output.</li>
+<li>An <code>if: always()</code> <strong>Write run summary</strong> step appends a run-overview table.
+The table shows version, target, standard, DAL, and job result.</li>
+<li>Each workflow adds a <strong><code>summary</code> job</strong> (<code>if: always()</code>, <code>needs:</code> all other
+jobs) that aggregates every job result into one table at the bottom of the
+run.</li>
+</ul>
+<p>Diagnostics are layered so a failure is debuggable from the Actions UI without
+re-running locally:</p>
+<ul>
+<li>The assessment output is folded into a GitHub <strong>log group</strong>
+(<code>::group::</code>). The step result stays visible. The detail stays one click
+away.</li>
+<li><code>WARNING</code> lines are re-surfaced as <code>::notice::</code> annotations.</li>
+<li>An <strong><code>adacovex-assessment</code> artifact</strong> (uploaded <code>if: always()</code>) carries the
+full, untruncated assessment output. It also carries the <code>--emit-metrics</code>
+JSON export when <code>emit-metrics</code> is set. A flaky or unmet gate never requires
+a re-run to reproduce.</li>
+<li>Badge and SBOM artifacts are uploaded even when the step failed
+(<code>if: always()</code>). Partially produced reports stay inspectable.</li>
+</ul>
+<p>Threshold failures <strong>fail loudly</strong> at every layer:</p>
+<ol>
+<li>Unmet <code>--require-*</code> gates make the adacovex binary exit non-zero.</li>
+<li>The assessment step re-surfaces each <code>CI GATE:</code> line as a GitHub
+<code>::error::</code> annotation. The annotation is visible at the top of the job
+page, not just in the log. The step marks the summary table <strong>FAILED</strong> with
+the unmet gates.</li>
+<li>The action’s <code>Write run summary</code> step (runs on failure too) reports the
+failed job result.</li>
+<li>The workflow <code>summary</code> job exits <code>1</code> when any dependency failed. The whole
+run is red even if the failing job was retried. An <code>if: always()</code> cleanup
+step does not mask this.</li>
+</ol>
+<h3 id="debugging-guide-what-to-do-when-you-see-"><a class="header" href="#debugging-guide-what-to-do-when-you-see-">Debugging guide: what to do when you see …</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Output</th><th>Meaning</th><th>Action</th></tr>
+</thead>
+<tbody>
+<tr><td><code>CI GATE: SPARK level X below required Y (--require-spark)</code></td><td>Proven VCs or <code>gnatprove</code> version drift below the pinned gate</td><td>Check the <code>gnatprove</code> pin or the <code>gnat-version</code> input. Re-run <code>adacovex prove</code>. Update <code>--require-spark</code> only if the prover legitimately tightened</td></tr>
+<tr><td><code>CI GATE: docstring coverage N% below required M% (--require-docstrings)</code></td><td>Missing <code>--</code> docstrings or patches</td><td>Run <code>adacovex --verbose</code> to list undocumented subprogs. Add patches under <code>.adacovex/patches/</code></td></tr>
+<tr><td><code>CI GATE: proved-VC coverage N% below required M% (--require-proof)</code></td><td>Some VCs unproved/justified</td><td>Inspect <code>gnatprove.out</code>. Add contracts or fix <code>SPARK_Mode</code></td></tr>
+<tr><td><code>Warning: N source file(s) skipped: line exceeds Max_Line</code></td><td>A physical line &gt; <code>Max_Line</code> (262144 on 64-bit)</td><td>Split the declaration. DAL becomes <code>Unmet</code> by design (<code>docs/architecture.md#overflow-contract</code>)</td></tr>
+<tr><td><code>result cache: X hit(s), Y miss(es), Z evicted</code></td><td>Cache stats per run</td><td><code>Z&gt;0</code> means <code>--cache-max</code> evicted the oldest entries. Increase <code>--cache-max</code>. Pass <code>--no-cache</code> to force a full rescan</td></tr>
+<tr><td><code>Unknown option --foo (did you mean --bar?)</code></td><td>Typo</td><td>Use <code>adacovex --help</code> or <code>adacovex help &lt;topic&gt;</code></td></tr>
+<tr><td><code>::notice::WARNING ...</code> annotation</td><td>Non-fatal warning surfaced from <code>adacovex.out</code></td><td>Download the <code>adacovex-assessment</code> artifact for the full log. Warnings do not fail the gate. They indicate missing tests or proof</td></tr>
+<tr><td><code>complexity-check</code> failed</td><td>File or function exceeds caps (<code>--max-file-loc</code>/<code>--max-file-pct</code>/<code>--max-fn-complexity</code>)</td><td>Run <code>adacovex complexity --help</code>. Split god objects or functions</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Better debugging output contract.</strong> <code>ci.yml</code> now has <code>timeout-minutes</code>,
+<code>concurrency.cancel-in-progress</code>, <code>fetch-tags: true</code>, and <code>actions/cache</code> for
+both toolchain and result-cache. After these brittleness fixes, every failure
+leaves three things without a re-run:</p>
+<ol>
+<li>The <code>::error</code>/<code>::notice</code> annotations at the top of the job page.</li>
+<li>The <code>## adacovex assessment</code> Markdown table in <code>GITHUB_STEP_SUMMARY</code>.</li>
+<li>The <code>adacovex-assessment</code> artifact (full untruncated <code>adacovex.out</code> +
+<code>adacovex-metrics.json</code> when <code>emit-metrics</code> is set).</li>
+</ol>
+<p>When the gate is flaky, start from the artifact, not a local repro.</p>
+<h3 id="release-version-bundling"><a class="header" href="#release-version-bundling">Release version bundling</a></h3>
+<p>The release workflow builds the binary from the <code>vX. Y. Z</code> tag. It <strong>bundles that version into the binary</strong>.</p>
+<p>The action’s build step sets <code>ADACOVEX_VERSION</code> (from <code>github.ref_name</code>). It regenerates <code>src/adacovex_version_info.ads</code> before <code>alr build</code>. The shipped <code>adacovex --version</code> reports exactly the tag.</p>
+<p>The download step of the published action verifies this with <code>adacovex --version</code> after unpacking the release bundle. Maintainers reproduce the
+release locally with <code>make release VERSION=x.y.z</code> (see the
+<a href="../contributing/developer-guide.html">developer guide</a>); a normal source build
+reads the version from <code>alire-dev.toml</code> instead.</p>
+<h3 id="pr-coverage-gate-1"><a class="header" href="#pr-coverage-gate-1">PR coverage gate</a></h3>
+<p>Gate every pull request so docstring coverage does not regress against the
+base branch. This is exactly what <code>--coverage-delta</code> was built for:</p>
+<pre><code class="language-yaml"># .github/workflows/pr-check.yml
+on:
+  pull_request:
+jobs:
+  coverage-delta:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: bladeacer/adacovex@v1
+        with:
+          target: .
+          standard: all
+          coverage-delta: ${{ github.event.pull_request.base.sha }}
+</code></pre>
+<p>The action exits non-zero when coverage drops, failing the check. This
+workflow ships in the repo at <code>.github/workflows/pr-check.yml</code>.</p>
+<h2 id="release-bundling"><a class="header" href="#release-bundling">Release bundling</a></h2>
+<p>Every <code>vX. Y. Z</code> tag triggers <code>.github/workflows/release.yml</code>. The workflow calls the composite action with <code>build</code>, <code>release-build</code>, and <code>prove</code>.</p>
+<p>It builds the release binary, runs GNATprove, and validates the self-assessment. Then it packages and publishes:</p>
+<ul>
+<li><code>adacovex-vX.Y.Z.tar.gz</code> – the version-matched binary (<code>adacovex</code> plus the
+<code>covex</code> alias). The action downloads this asset for the tag it is referenced
+by, so <code>@v1.9.0</code> runs adacovex <code>v1.9.0</code>.</li>
+<li><code>adacovex-action-vX.Y.Z.tar.gz</code> – a copy of the composite action itself for
+vendoring or air-gapped use.</li>
+</ul>
+<p>Both bundles are attested with
+<a href="https://github.com/actions/attest"><code>actions/attest</code></a>
+on every tag. OIDC attestations appear under the release’s attestations tab.
+The release notes link the signed attestation via the action’s
+<code>attestation-url</code> output. They also link a <em>Git Changelog</em> compare link
+(<code>compare/v1.9.0...v1.14.0</code>) and the human-readable changelogs.</p>
+<p><strong>Changelog listing.</strong> The <code>Create GitHub Release</code> step derives the changelog
+list from the available <code>docs/changelogs/adacovex-*.md</code> entries. The entries
+are between the previous release tag and the released version.</p>
+<p>It resolves the previous three-component release tag
+(<code>git tag --sort=-version:refname</code>, for example <code>v1.9.0</code> when releasing
+<code>v1.14.0</code>). Then it lists every changelog whose version is strictly above the
+previous release and at or below the released version. Releasing <code>v1.14.0</code>
+after <code>v1.9.0</code> links the <code>1.10.0</code>..<code>1.14.0</code> changelogs in one release.</p>
+<p>The list is emitted <strong>newest-first</strong> (version-sorted, not shell glob order).
+The entries read <code>1.14.0</code> down to <code>1.10.0</code>.</p>
+<p>The list is derived from the changelog files present in the tree, not from
+tags. A version that was never released has no entry. A release that skips
+versions still links every changelog in the range. Each entry links the
+release’s changelog page on the deployed <strong>Read the Docs</strong> site
+(<code>https://adacovex.readthedocs.io/en/latest/changelogs/adacovex-&lt;v&gt;.html</code>),
+not a GitHub blob URL: the manual is an mdBook project and the changelogs are
+part of the published book.</p>
+<p><strong>The CI release binary is Linux x86-64 only for now.</strong> The release workflow
+runs on <code>ubuntu-latest</code>. It packages the Linux binary and the prebuilt
+GNATprove toolchain bundle for that target. macOS, FreeBSD, Windows, and Linux
+aarch64 build adacovex from source via Alire instead. See
+<a href="platforms.html#release-binaries">Platforms</a>.</p>
+<p>Maintainers reproduce the release locally with <code>make release VERSION=x.y.z</code>
+(see the <a href="../contributing/developer-guide.html">developer guide</a>): it builds
+<code>--release</code>, generates proofs, validates DAL-C, and bundles <code>dist/</code>, then
+tags and pushes to trigger the workflow. The bundled version is always the
+build’s version (<code>src/adacovex_version_info.ads</code> comes from <code>alire-dev.toml</code>
+or <code>ADACOVEX_VERSION</code> at build time).</p>
+<h2 id="floating-tags"><a class="header" href="#floating-tags">Floating tags</a></h2>
+<p>The release workflow force-pushes the floating tags <code>vMAJOR</code>, <code>vMAJOR. MINOR</code>, and <code>latest</code>. For example: <code>v1</code>, <code>v1.3</code>, and <code>latest</code> from <code>v1.3.0</code>. Reference <code>@latest</code> to always get the newest published release.</p>
+<p>Use <code>@v1</code> or <code>@v1.3</code> for the latest release within a major or minor version. Pin an exact <code>@vX. Y. Z</code> for a fixed version.</p>
+<p>Once the action is listed on the GitHub Actions marketplace, each <code>vX. Y. Z</code> tag auto-publishes that version.</p>
+<h2 id="consumer-manifest-prerequisites-avoid-a-broken-ci"><a class="header" href="#consumer-manifest-prerequisites-avoid-a-broken-ci">Consumer manifest prerequisites (avoid a broken CI)</a></h2>
+<p>adacovex’s <code>prove</code> subcommand and the GitHub Action resolve <code>gnatprove</code>
+through the <em>target project’s</em> manifest. The pinned gnatprove crate is
+deployed via <code>alr -n get gnatprove=&lt;version&gt;</code>. It is run directly, with no
+<code>alr exec</code> over the whole workspace.</p>
+<p>For the command to succeed in a clean checkout or on CI, the consumer’s
+manifests must follow two rules:</p>
+<ol>
+<li>
+<p><strong><code>alire.toml</code> must be the clean publishing manifest.</strong> It must contain no
+dev tooling (<code>gnatprove</code>, <code>gnatdoc_bin</code>, <code>gnatformat_bin</code>, <code>covex</code>). It must
+contain <strong>no <code>[[pins]]</code></strong>. Alire reads this manifest when the action runs
+<code>alr build</code>. It must resolve with nothing but Alire + GNAT.</p>
+</li>
+<li>
+<p><strong><code>alire-dev.toml</code> must declare <code>covex</code> as a normal index dependency</strong>
+(<code>covex = "*"</code>). It must never be pinned to a local path such as
+<code>covex = { path = "../adacovex" }</code>. A path pin resolves only on the machine
+that has the sibling checkout. In a consumer workspace or on CI, Alire
+fails the whole workspace load with a confusing error. This happens before
+adacovex or <code>alr</code> runs:</p>
+<pre><code>ERROR: Failed to load alire.toml:
+ERROR:    pins:
+ERROR:    covex:
+ERROR:    Pin path is not a valid directory: /home/runner/work/&lt;repo&gt;/&lt;repo&gt;/../adacovex
+</code></pre>
+</li>
+</ol>
+<p>If you see that, drop the <code>covex</code> path pin. Use <code>covex = "*"</code>. Strip the dev
+deps and pins out of <code>alire.toml</code>. Keep them only in <code>alire-dev.toml</code>.</p>
+<p>The Makefile pattern in many projects keeps the published <code>alire.toml</code> clean.
+It swaps <code>alire-dev.toml</code> over <code>alire.toml</code> only for the duration of a
+<code>prove</code>/<code>fmt</code>/<code>doc</code> target, then restores it. This gives local tooling the dev
+deps.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../usage/vcs.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../contributing/developer-guide.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../usage/vcs.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../contributing/developer-guide.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-09f2665d.js"></script>
+
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-abc7f01d.js"></script>
+        <script src="../book-609e4cb8.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

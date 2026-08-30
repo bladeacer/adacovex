@@ -2,25 +2,27 @@
 
 - [Adacovex manual](index.md)
 
-## User guides
-- [Installing adacovex](installation.md)
-- [adacovex CLI Reference](cli-reference.md)
-- [Target project requirements](target-projects.md)
-- [Web dashboard and JSON API](dashboard.md)
-- [The `sbom` subcommand](sbom.md)
-- [Compliance Standards (DO-178C / ISO 26262 / IEC 62304)](standards.md)
-- [Platform support](platforms.md)
-- [VCS support and differential assessment](vcs.md)
-- [adacovex CI/CD](ci-cd.md)
+## Getting started
+- [Installing adacovex](usage/installation.md)
+- [Target project requirements](usage/target-projects.md)
 
-## Developer guides
-- [Contributor guide: codebase structure and setup](developer-guide.md)
-- [Proving and writing SPARK proofs](proving.md)
-- [adacovex Architecture Decisions](architecture.md)
-- [Dependencies](requirements.md)
-- [Performance](perf.md)
-- [STE100 Technical Names for adacovex](ste100-technical-names.md)
-- [AI / LLM Usage in this Project](llm-usage.md)
+## Using adacovex
+- [adacovex CLI Reference](usage/cli-reference.md)
+- [Web dashboard and JSON API](usage/dashboard.md)
+- [The `sbom` subcommand](usage/sbom.md)
+- [Compliance Standards (DO-178C / ISO 26262 / IEC 62304)](usage/standards.md)
+- [Platform support](usage/platforms.md)
+- [VCS support and differential assessment](usage/vcs.md)
+- [adacovex CI/CD](usage/ci-cd.md)
+
+## Contributing to adacovex
+- [Contributor guide: codebase structure and setup](contributing/developer-guide.md)
+- [Proving and writing SPARK proofs](contributing/proving.md)
+- [adacovex Architecture Decisions](contributing/architecture.md)
+- [Dependencies](contributing/requirements.md)
+- [Performance](contributing/perf.md)
+- [STE100 Technical Names for adacovex](contributing/ste100-technical-names.md)
+- [AI / LLM Usage in this Project](contributing/llm-usage.md)
 
 ## Maintainer references
 - [HLR index](HLR.md)

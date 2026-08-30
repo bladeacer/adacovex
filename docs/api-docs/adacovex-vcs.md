@@ -20,7 +20,7 @@ Runs only on Linux/WSL (uses sh -c for CWD-dependent tools such as
 fossil).
 HLR-DIFF: VCS abstraction for differential assessment
 
-**See also:** [VCS support](../vcs.md)
+**See also:** [VCS support](../usage/vcs.md)
 
 > **Note:** All items in this package are public.
 

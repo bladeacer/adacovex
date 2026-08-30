@@ -7,7 +7,7 @@ start, please take a moment to read and understand our
 By contributing, you **agree to abide by its terms.**
 
 **New to the codebase?** Read the
-[Contributor guide: codebase structure and setup](docs/developer-guide.md)
+[Contributor guide: codebase structure and setup](docs/contributing/developer-guide.md)
 first -- it tours the source layout, explains how to set up a development
 environment, and shows where each kind of change lives.
 
@@ -95,7 +95,7 @@ Pull requests should follow the following conventions.
   (1178 tests across 16 categories) and run `make test`.
 - Keep all source files pure ASCII: `make ascii-check`.
 - If a new CLI flag is added, mirror it as a matching GitHub Action input in
-  `./action.yml` and document it in `docs/cli-reference.md` and the README
+  `./action.yml` and document it in `docs/usage/cli-reference.md` and the README
   (see AGENTS.md, "GitHub Action = base-CLI feature parity").
 - When adding a release changelog, follow the format above and pass
   `make changelog-check`.

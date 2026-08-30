@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-62a4e086.js";
+            window.path_to_searchindex_js = "../searchindex-83dd89a6.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-4f584999.js"></script>
+        <script src="../toc-0e6cf2bd.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -207,19 +207,19 @@ deterministic across repeated <code>build -&gt; fmt -&gt; doc</code> chains.</p>
 <p>The docs were reorganized around one page per feature so the CLI reference
 stays a quick reference instead of accumulating every flag’s full detail:</p>
 <ul>
-<li><strong>New <a href="../dashboard.html">Web dashboard + JSON API</a></strong> page – endpoints,
+<li><strong>New <a href="../usage/dashboard.html">Web dashboard + JSON API</a></strong> page – endpoints,
 dashboard cards, the <code>/api/metrics</code> JSON schema, and the theme-resolution
 order (<code>?theme=</code> &gt; <code>--theme=</code> &gt; saved <code>localStorage</code> &gt; system).</li>
-<li><strong>New <a href="../sbom.html">SBOM</a></strong> page – usage, standard-awareness, component
+<li><strong>New <a href="../usage/sbom.html">SBOM</a></strong> page – usage, standard-awareness, component
 properties, and <code>SOURCE_DATE_EPOCH</code> determinism.</li>
-<li><strong>New <a href="../vcs.html">VCS support</a></strong> page – the per-VCS snapshot mechanisms and
+<li><strong>New <a href="../usage/vcs.html">VCS support</a></strong> page – the per-VCS snapshot mechanisms and
 the <code>--compare-base</code> / <code>--coverage-delta</code> contracts.</li>
-<li><strong>New <a href="../target-projects.html">Target projects</a></strong> page – the target-project
+<li><strong>New <a href="../usage/target-projects.html">Target projects</a></strong> page – the target-project
 requirements (sources, <code>gnatprove.out</code> discovery order, test-summary file
 names, HLR.md, missing-data behaviour) moved out of the README.</li>
 <li><strong><code>docs/cli-reference.md</code> slimmed</strong> to the flag table plus a concise note
 per flag, linking to the dedicated pages; the result-caching design moved
-to <a href="../architecture.html#result-caching"><code>../architecture.md#result-caching</code></a>.</li>
+to <a href="../contributing/architecture.html#result-caching"><code>../architecture.md#result-caching</code></a>.</li>
 <li><strong>README condensed and its Quick start rewritten</strong>: the Quick start now
 shows the end-user flow (install -&gt; assess -&gt; <code>status</code> -&gt; <code>--serve</code>)
 instead of contributor build targets, the documentation table moved to the
@@ -229,7 +229,7 @@ toolchain resolution, VCS, AI disclosure, dashboard) now point at them.</li>
 </ul>
 <h3 id="c4-contributor-guide-link-checker-and-a-tighter-readme"><a class="header" href="#c4-contributor-guide-link-checker-and-a-tighter-readme">C4: contributor guide, link checker, and a tighter README</a></h3>
 <ul>
-<li><strong>New <a href="../developer-guide.html">Contributor guide</a></strong> page – a human-readable
+<li><strong>New <a href="../contributing/developer-guide.html">Contributor guide</a></strong> page – a human-readable
 tour of the codebase (repository layout, pipeline, where each kind of
 change lives, testing and SPARK discipline, common workflows) to
 supplement CONTRIBUTING.md, linked from it, the README docs table, and the

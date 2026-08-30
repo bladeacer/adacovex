@@ -132,9 +132,9 @@ in-source tags against that index for the DO-178C traceability assessment.
 
 ## See also
 
-- [Target projects](../target-projects.md) -- what a target must provide, and
+- [Target projects](../usage/target-projects.md) -- what a target must provide, and
   how strict mode counts vendored code
-- [Architecture -- Patch System](../architecture.md#patch-system) -- overlay
+- [Architecture -- Patch System](../contributing/architecture.md#patch-system) -- overlay
   docstrings on vendored code without modifying the originals
 - [DAL Levels](adacovex-dal-levels.md) -- how HLR tags feed the traceability
   criterion of the compliance assessment

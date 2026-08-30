@@ -1,14 +1,14 @@
 docs/index.md	Documentation index
-docs/cli-reference.md	CLI reference
-docs/dashboard.md	Web dashboard
-docs/sbom.md	SBOM
-docs/vcs.md	VCS support
-docs/target-projects.md	Target projects
-docs/ci-cd.md	CI/CD
+docs/usage/cli-reference.md	CLI reference
+docs/usage/dashboard.md	Web dashboard
+docs/usage/sbom.md	SBOM
+docs/usage/vcs.md	VCS support
+docs/usage/target-projects.md	Target projects
+docs/usage/ci-cd.md	CI/CD
 CONTRIBUTING.md	Contributing
-docs/developer-guide.md	Developer guide
-docs/installation.md	Installation
-docs/llm-usage.md	LLM usage
+docs/contributing/developer-guide.md	Developer guide
+docs/usage/installation.md	Installation
+docs/contributing/llm-usage.md	LLM usage
 docs/changelogs/index.md	Changelog
 docs/api-docs/index.md	API reference
 docs/api-docs/adacovex-docstring-spec.md	Docstring spec
@@ -17,17 +17,17 @@ docs/api-docs/adacovex-spark-levels.md	SPARK levels
 docs/api-docs/adacovex-dal-levels.md	DAL levels
 docs/api-docs/adacovex-asil-levels.md	ASIL levels
 docs/api-docs/adacovex-class-levels.md	Safety classes
-docs/standards.md	Standards
-docs/platforms.md	Platforms
-docs/proving.md	Proving and writing proofs
-docs/architecture.md	Architecture
-docs/requirements.md	Requirements
-docs/ste100-technical-names.md	STE100 technical names
+docs/usage/standards.md	Standards
+docs/usage/platforms.md	Platforms
+docs/contributing/proving.md	Proving and writing proofs
+docs/contributing/architecture.md	Architecture
+docs/contributing/requirements.md	Requirements
+docs/contributing/ste100-technical-names.md	STE100 technical names
 docs/CREDITS.md	Credits
 docs/THIRD_PARTY_NOTICES.md	Third-party notices
 docs/HLR.md	HLR index
 docs/LLR.md	LLR mapping
-docs/perf.md	Performance
+docs/contributing/perf.md	Performance
 docs/proof/index.md	Proof records
 docs/compliance/index.md	Compliance outputs
 docs/badges/index.md	Badges

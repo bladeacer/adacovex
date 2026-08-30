@@ -16,10 +16,10 @@ generates for its target.
 
 The Markdown renderer writes these files when the assessment runs
 (`--emit-markdown=PATH`).  They are generated per target.  The full file
-formats are documented in [Target projects](../target-projects.md) and
-[CLI reference](../cli-reference.md).
+formats are documented in [Target projects](../usage/target-projects.md) and
+[CLI reference](../usage/cli-reference.md).
 
 The rendered text uses British English and ASD-STE100 Simplified Technical
 English.  Technical terms follow the [STE100 Technical Names
-dictionary](../ste100-technical-names.md).  Audit the generated prose
+dictionary](../contributing/ste100-technical-names.md).  Audit the generated prose
 against the dictionary before you use a new word in these reports.

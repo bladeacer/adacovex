@@ -22,14 +22,14 @@ installing adacovex installs only the binary.
   or without an index column), TAP (`ok`/`not ok`), GNU Automake
   (`PASS:`/`FAIL:`), Maven Surefire (`Tests run: N`), Unity (`N Tests`), and
   AUnit reports.
-- **[Compliance](docs/standards.md)** -- assesses DO-178C DAL A-E criteria (HLR
+- **[Compliance](docs/usage/standards.md)** -- assesses DO-178C DAL A-E criteria (HLR
   coverage, orphan tags, test status, minimum SPARK proof level), re-labelled
   for [ISO 26262](docs/api-docs/adacovex-asil-levels.md) (ASIL A to D / QM) and
   [IEC 62304](docs/api-docs/adacovex-class-levels.md) (Class A to C) with
   dedicated `--dal` / `--asil` / `--class` flags.
 - **Multiple outputs** -- ANSI report, SVG badges, Markdown reports, web
   dashboard + JSON API, and proof-aware SBOM (CycloneDX / SPDX).
-- **[Differential assessment](docs/vcs.md)** -- `--compare-base` /
+- **[Differential assessment](docs/usage/vcs.md)** -- `--compare-base` /
   `--coverage-delta` snapshot a base revision on **git, Mercurial,
   Subversion, Fossil, or jj** without touching the working tree.
 - **Result caching** -- a content-addressed on-disk cache (`~/.adacovex/cache`)
@@ -59,7 +59,7 @@ adacovex --target=. --serve
 ```
 
 Contributors build from source with `make build` (see
-[Installation](docs/installation.md)). `make run-self` assesses adacovex itself.
+[Installation](docs/usage/installation.md)). `make run-self` assesses adacovex itself.
 `make run-ada-crdt` runs the Ada_CRDT regression.
 
 ## Documentation
@@ -68,26 +68,26 @@ Contributors build from source with `make build` (see
 
 | Reference | Description |
 |-----------|-------------|
-| [Installation](docs/installation.md) | Alire / release bundle / source build |
-| [CLI Reference](docs/cli-reference.md) | Full flag table, `--require-*` gates, exit codes |
-| [Target Projects](docs/target-projects.md) | What a project must provide for assessment |
-| [Platforms](docs/platforms.md) | Platform support, CPU core detection, `status` subcommand |
+| [Installation](docs/usage/installation.md) | Alire / release bundle / source build |
+| [CLI Reference](docs/usage/cli-reference.md) | Full flag table, `--require-*` gates, exit codes |
+| [Target Projects](docs/usage/target-projects.md) | What a project must provide for assessment |
+| [Platforms](docs/usage/platforms.md) | Platform support, CPU core detection, `status` subcommand |
 
 ### Usage and configuration
 
 | Reference | Description |
 |-----------|-------------|
-| [Web Dashboard + JSON API](docs/dashboard.md) | `--serve` HTML dashboard, `/api/metrics`, themes |
-| [SBOM](docs/sbom.md) | Proof-aware CycloneDX / SPDX bill of materials |
-| [VCS Support](docs/vcs.md) | Differential modes across git/hg/svn/fossil/jj |
-| [Proving and Writing Proofs](docs/proving.md) | How proving works, SPARK contracts, proof patches for vendored deps |
-| [Architecture](docs/architecture.md) | Design decisions, patches, toolchain resolution, overflow contract |
+| [Web Dashboard + JSON API](docs/usage/dashboard.md) | `--serve` HTML dashboard, `/api/metrics`, themes |
+| [SBOM](docs/usage/sbom.md) | Proof-aware CycloneDX / SPDX bill of materials |
+| [VCS Support](docs/usage/vcs.md) | Differential modes across git/hg/svn/fossil/jj |
+| [Proving and Writing Proofs](docs/contributing/proving.md) | How proving works, SPARK contracts, proof patches for vendored deps |
+| [Architecture](docs/contributing/architecture.md) | Design decisions, patches, toolchain resolution, overflow contract |
 
 ### Compliance
 
 | Reference | Description |
 |-----------|-------------|
-| [Standards](docs/standards.md) | DO-178C / ISO 26262 / IEC 62304 abstraction |
+| [Standards](docs/usage/standards.md) | DO-178C / ISO 26262 / IEC 62304 abstraction |
 | [DAL Levels](docs/api-docs/adacovex-dal-levels.md) | DO-178C DAL A to E criteria |
 | [ASIL Levels](docs/api-docs/adacovex-asil-levels.md) | ISO 26262 ASIL A to D / QM criteria |
 | [Safety Classes](docs/api-docs/adacovex-class-levels.md) | IEC 62304 Class A to C criteria |
@@ -99,33 +99,33 @@ Contributors build from source with `make build` (see
 | Reference | Description |
 |-----------|-------------|
 | [Contributing](CONTRIBUTING.md) | Changelog format, test suite |
-| [Developer Guide](docs/developer-guide.md) | Codebase structure and repo setup for contributors |
+| [Developer Guide](docs/contributing/developer-guide.md) | Codebase structure and repo setup for contributors |
 | [API Reference](docs/api-docs/index.md) | Auto-generated package API docs (developers / auditors) |
 | [Docstring Spec](docs/api-docs/adacovex-docstring-spec.md) | Annotation format, placement, conventions |
 | [Test Format](docs/api-docs/adacovex-test-format.md) | Supported test-result output format |
 | [SPARK Levels](docs/api-docs/adacovex-spark-levels.md) | Assurance level objectives (Stone to Platinum) |
 | [Changelog](docs/changelogs/index.md) | Release history |
-| [CI/CD](docs/ci-cd.md) | GitHub Action, workflows, release bundling |
-| [LLM usage](docs/llm-usage.md) | AI disclosure, trust, how LLM agents work under AGENTS.md |
+| [CI/CD](docs/usage/ci-cd.md) | GitHub Action, workflows, release bundling |
+| [LLM usage](docs/contributing/llm-usage.md) | AI disclosure, trust, how LLM agents work under AGENTS.md |
 
 ## Installing adacovex
 
 Declare `covex` in your project's `alire-dev.toml`, run `alr install covex`, or
 download a release bundle and build from source.
-[Installation](docs/installation.md) covers each route, including the version
+[Installation](docs/usage/installation.md) covers each route, including the version
 source per method and the man-page sync.
 
 ## Platforms, toolchain, and VCS
 
 - **Platforms** -- runs wherever a GNAT/Alire toolchain exists; the release
   binary is Linux x86-64 only for now (build from source for other platforms).
-  See [docs/platforms.md](docs/platforms.md).
+  See [docs/usage/platforms.md](docs/usage/platforms.md).
 - **GNATprove resolution** -- manifest pin over global pin over `$PATH` over
   cached toolchain over download (a manifest pin is authoritative). See
-  [docs/architecture.md](docs/architecture.md#gnatprove-toolchain-resolution-prove-subcommand).
+  [docs/contributing/architecture.md](docs/contributing/architecture.md#gnatprove-toolchain-resolution-prove-subcommand).
 - **VCS** -- not required for base functionality; only the differential modes
   need one, and they work across git, hg, svn, fossil, and jj. See
-  [docs/vcs.md](docs/vcs.md).
+  [docs/usage/vcs.md](docs/usage/vcs.md).
 
 ## CLI reference
 
@@ -141,8 +141,8 @@ adacovex complexity [--target=PATH]
 
 The full flag table (defaults, modes, `--require-*` CI gates, strict vs relaxed
 mode, exit codes, contextual `help [TOPIC]`, and the `man` subcommand) lives in
-[docs/cli-reference.md](docs/cli-reference.md). The web dashboard and JSON API
-are in [docs/dashboard.md](docs/dashboard.md).
+[docs/usage/cli-reference.md](docs/usage/cli-reference.md). The web dashboard and JSON API
+are in [docs/usage/dashboard.md](docs/usage/dashboard.md).
 
 ## Examples
 
@@ -157,7 +157,7 @@ adacovex status --target=.                          # toolchain + platform repor
 adacovex complexity --target=.                      # cyclomatic complexity check
 ```
 
-More examples: [docs/cli-reference.md](docs/cli-reference.md#examples).
+More examples: [docs/usage/cli-reference.md](docs/usage/cli-reference.md#examples).
 
 ## Target project requirements
 
@@ -165,7 +165,7 @@ To run adacovex against a project it needs Ada sources, GNATprove output
 (`gnatprove.out`), a test-summary file, and (for DAL assessment) an `HLR.md`
 document. Missing data shows `N/A`; DAL checks that depend on it report
 `Unmet`. Full requirements, file-discovery rules, and the non-Ada-project note:
-[docs/target-projects.md](docs/target-projects.md).
+[docs/usage/target-projects.md](docs/usage/target-projects.md).
 
 ## Docstrings and patches
 
@@ -173,14 +173,14 @@ Subprograms are documented with `--  @param` / `--  @return` annotations
 ([full spec](docs/api-docs/adacovex-docstring-spec.md)); strict mode requires
 100% coverage. For vendored code you cannot modify, overlay docstrings with
 patch files at `<target>/.adacovex/patches/` (see
-[Architecture -- Patch System](docs/architecture.md#patch-system)).
+[Architecture -- Patch System](docs/contributing/architecture.md#patch-system)).
 
 The same patch files can carry **SPARK proof aspects** (`SPARK_Mode`, `Pre`,
 `Post`, `Global`): the `prove` subcommand merges them into a patched tree copy
 and proves vendored dependencies against their contracts without touching the
 originals. A `.ads` patch re-declares the spec with contracts. A `.adb` patch
 opts a SPARK-clean vendored body into the proof. See
-[Architecture -- Proof patches](docs/architecture.md#proof-patches-spark-contracts-over-vendored-dependencies).
+[Architecture -- Proof patches](docs/contributing/architecture.md#proof-patches-spark-contracts-over-vendored-dependencies).
 
 ## Compliance levels
 
@@ -199,7 +199,7 @@ The evidence is identical across standards; only the integrity-level label
 changes (`DAL-C` vs `ASIL B` vs `Class A`).
 
 Full tier mapping:
-[Standards](docs/standards.md).
+[Standards](docs/usage/standards.md).
 
 Per-level criteria:
 [DAL Levels](docs/api-docs/adacovex-dal-levels.md),
@@ -216,7 +216,7 @@ include `build`, `test`, `prove`, `doc`, `sbom`, `fmt`, `run-self`,
 Run `make help` or see
 [AGENTS.md](AGENTS.md) for the full table. AI tools were used during
 development; why the code is still trustworthy:
-[docs/llm-usage.md](docs/llm-usage.md).
+[docs/contributing/llm-usage.md](docs/contributing/llm-usage.md).
 
 ## CI/CD
 
@@ -225,7 +225,7 @@ A composite GitHub Action (`./action.yml`) plus `ci.yml`, `pr-check.yml`, and
 test suite, the PR docstring-coverage gate, and releases.
 
 Action inputs/outputs, result caching, and release bundling:
-[docs/ci-cd.md](docs/ci-cd.md).
+[docs/usage/ci-cd.md](docs/usage/ci-cd.md).
 
 ## Verification
 
@@ -254,7 +254,7 @@ See [changelogs](docs/changelogs/index.md) for full release notes.
 ## Swapping the GNAT compiler (LLVM backend)
 
 See
-[docs/architecture.md](docs/architecture.md#swapping-the-gnat-compiler-llvm-backend)
+[docs/contributing/architecture.md](docs/contributing/architecture.md#swapping-the-gnat-compiler-llvm-backend)
 for Alire-managed and system-installed GNAT LLVM options and caveats.
 
 ## Credits

@@ -9,7 +9,7 @@ level, test results, HLR traceability, and DO-178C DAL status.  The
 report helps you catch local regressions before you push.
 HLR-DIFF: Differential assessment
 
-**See also:** [VCS support](../vcs.md)
+**See also:** [VCS support](../usage/vcs.md)
 
 > **Note:** All items in this package are public.
 

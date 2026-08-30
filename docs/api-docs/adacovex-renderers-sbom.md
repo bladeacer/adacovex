@@ -17,7 +17,7 @@ development-only (alire-dev.toml), transitive, and patched-vendored
 packages.
 HLR-SBOM: SBOM generation
 
-**See also:** [SBOM](../sbom.md)
+**See also:** [SBOM](../usage/sbom.md)
 
 > **Note:** All items in this package are public.
 

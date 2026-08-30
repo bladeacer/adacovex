@@ -14,7 +14,7 @@ populates Assessment with pass/fail results and detailed failure reasons.
 the on-disk result cache when unchanged; when False they are always
 re-parsed (--no-cache).
 
-**See also:** [DAL Levels](adacovex-dal-levels.md) | [Standards](../standards.md)
+**See also:** [DAL Levels](adacovex-dal-levels.md) | [Standards](../usage/standards.md)
 
 > **Note:** All items in this package are public.
 

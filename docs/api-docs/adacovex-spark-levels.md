@@ -69,7 +69,7 @@ adacovex --target=../Ada_CRDT --dal=C
 
 ## See also
 
-- [Standards](../standards.md) -- the minimum proof bar per rigor tier across
+- [Standards](../usage/standards.md) -- the minimum proof bar per rigor tier across
   DO-178C / ISO 26262 / IEC 62304
 - [DAL Levels](adacovex-dal-levels.md) -- the per-level SPARK gates
   (Gold / Silver / Bronze / Stone)

@@ -5,13 +5,13 @@ Per AGENTS.md "GitHub Action = base-CLI feature parity", the composite action
 (`action.yml`) must mirror the base CLI option set so CI can drive every
 assessment feature the same way the binary does.  This script is the gate
 that enforces the rule -- it fails when a CLI flag, action input, or
-docs/ci-cd.md table row drifts out of sync:
+docs/usage/ci-cd.md table row drifts out of sync:
 
 - every CLI flag (except the documented early-exit / dashboard / subcommand
   flags) has a matching action input;
 - every action input (except the documented CI-plumbing inputs) maps back to
   a CLI flag;
-- every action input is documented in the docs/ci-cd.md `### Inputs` table
+- every action input is documented in the docs/usage/ci-cd.md `### Inputs` table
   and every row in that table is a real input.
 
 Sources of truth:
@@ -20,7 +20,7 @@ Sources of truth:
   (the same list the "did you mean" suggestion walks, so Parse_Args and this
   gate share one definition);
 - action inputs: the top-level `inputs:` section of action.yml;
-- documentation: the `### Inputs` table in docs/ci-cd.md.
+- documentation: the `### Inputs` table in docs/usage/ci-cd.md.
 
 Mapping rules:
 
@@ -32,7 +32,7 @@ Mapping rules:
 - `--format` is the CLI alias of `--sbom-format` (the action exposes only
   `sbom-format`).
 
-When adding a CLI flag: add the matching action input (and its docs/ci-cd.md
+When adding a CLI flag: add the matching action input (and its docs/usage/ci-cd.md
 row) -- or, only when the flag is genuinely not CI-driveable (early-exit
 `--help`/`--version`, local dashboard `--serve`/`--theme`/`--port`,
 subcommands `status`/`man`/`sbom`, or the `--out`/`--emit-svg` output
@@ -58,7 +58,7 @@ ROOT: Path = Path(__file__).resolve().parent.parent
 
 # CLI flags that intentionally have NO action input.  Keep this list to the
 # genuinely non-CI flags only; anything else must be wired into action.yml
-# and docs/ci-cd.md instead of listed here.
+# and docs/usage/ci-cd.md instead of listed here.
 CLI_ONLY: Dict[str, str] = {
     "help": "early-exit --help",
     "version": "early-exit --version (the action's `version` input is the release ref, not this flag)",
@@ -156,8 +156,8 @@ def action_inputs() -> Set[str]:
 
 
 def docs_inputs() -> Set[str]:
-    """Extract the input names from the docs/ci-cd.md `### Inputs` table."""
-    path: Path = ROOT / "docs" / "ci-cd.md"
+    """Extract the input names from the docs/usage/ci-cd.md `### Inputs` table."""
+    path: Path = ROOT / "docs" / "usage" / "ci-cd.md"
     text: str = path.read_text(encoding="utf-8")
     m = re.search(r"### Inputs\n(.*?)(?:^### |\Z)", text, re.M | re.S)
     if m is None:
@@ -207,7 +207,7 @@ def check() -> int:
             errors.append(
                 f"CLI flag `--{flag}` has no action input "
                 f"(expected `{expected_input(flag)}`). Add the input + "
-                f"docs/ci-cd.md row, or document the flag in CLI_ONLY.")
+                f"docs/usage/ci-cd.md row, or document the flag in CLI_ONLY.")
 
     # 2. Every action input (except documented ACTION_ONLY) maps back to a
     #    CLI flag.
@@ -220,16 +220,16 @@ def check() -> int:
                 f"(`--{expected_flag(inp)}` not in Known_Flags). Add the "
                 f"flag, or document the input in ACTION_ONLY.")
 
-    # 3. Every action input is documented in docs/ci-cd.md and vice versa.
+    # 3. Every action input is documented in docs/usage/ci-cd.md and vice versa.
     for inp in sorted(inputs):
         if inp not in docs:
             errors.append(
-                f"action input `{inp}` is missing from the docs/ci-cd.md "
+                f"action input `{inp}` is missing from the docs/usage/ci-cd.md "
                 f"`### Inputs` table.")
     for doc in sorted(docs):
         if doc not in inputs:
             errors.append(
-                f"docs/ci-cd.md lists `{doc}`, which is not an action input "
+                f"docs/usage/ci-cd.md lists `{doc}`, which is not an action input "
                 f"in action.yml.")
 
     if errors:

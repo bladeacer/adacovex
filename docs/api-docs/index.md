@@ -6,13 +6,13 @@ This reference documents the Ada packages that implement adacovex.
 It is generated from the source docstrings by `make doc`.
 
 - **End users** need the CLI reference, the dashboard guide, and
-  the standards pages.  The [CLI reference](../cli-reference.md)
-  describes every flag.  The [standards guide](../standards.md)
+  the standards pages.  The [CLI reference](../usage/cli-reference.md)
+  describes every flag.  The [standards guide](../usage/standards.md)
   explains the compliance levels.
 - **Contributors** use this reference together with the
   [contributing guide](
   https://github.com/bladeacer/adacovex/blob/main/CONTRIBUTING.md)
-  and the [architecture notes](../architecture.md).  The
+  and the [architecture notes](../contributing/architecture.md).  The
   [docstring spec](adacovex-docstring-spec.md) defines the
   annotation format.
 - **Maintainers** read the [proof ledger](../proof/index.md) for the
@@ -20,7 +20,7 @@ It is generated from the source docstrings by `make doc`.
   for the release history.
 
 Technical terms follow the controlled dictionary in
-[STE100 Technical Names](../ste100-technical-names.md).  All
+[STE100 Technical Names](../contributing/ste100-technical-names.md).  All
 documentation, including these pages, uses British English and
 ASD-STE100 Simplified Technical English.  A word not in the
 dictionary means the sentence is not yet STE100-clean.
