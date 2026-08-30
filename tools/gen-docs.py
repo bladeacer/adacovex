@@ -20,9 +20,11 @@ dependency: the same book powers the Read the Docs site).  This script:
    * every remaining non-ASCII glyph is escaped as an HTML character
      reference so the Ada source stays pure ASCII;
 3. writes `src/adacovex-docs_template.ads` as a constant table of
-   (path, MIME type, body) assets.  `--serve` exposes the table at `/docs/`
-   so the dashboard links carry a fully offline copy of the whole manual
-   inside the binary itself.
+   (path, MIME type, body index) assets plus one `aliased constant String`
+   per asset body (bodies are never concatenated into one value: a single
+   multi-megabyte string constant overflows the gnatprove frontend stack).
+   `--serve` exposes the table at `/docs/` so the dashboard links carry a
+   fully offline copy of the whole manual inside the binary itself.
 
 The generated spec is committed so the tree builds without running mdbook
 (the project has no mdbook/Markdown runtime dependency).  `make book` / `make
@@ -183,20 +185,20 @@ def _tokenize(line: str) -> List[object]:
     return tokens
 
 
-def _body_lines(body: str) -> List[str]:
-    """The Ada expression lines for one asset body.
+def _asset_body_lines(body: str) -> List[str]:
+    """The Ada concatenation operands for one asset body.
 
     Ada string literals cannot span physical lines, so the body is emitted one
     literal per source line (ASCII runs), with control and non-ASCII glyphs as
     Character'Val byte runs; source lines are joined with `& ASCII.LF` so the
     embedded newlines stay faithful.  The final trailing newline is dropped.
-    The first line is a bare literal; every later line carries `& `.
+    Each returned operand is bare (no leading spaces, no `& `) -- the caller
+    adds the indentation and the `& ` chain prefix.
     """
     body_lines: List[str] = body.split("\n")
     if body_lines and body_lines[-1] == "":
         body_lines.pop()
     lines: List[str] = []
-    first: bool = True
     for bl in body_lines:
         tokens: List[object] = _tokenize(bl) or [""]
         for token in tokens:
@@ -206,28 +208,14 @@ def _body_lines(body: str) -> List[str]:
                 pieces = [token[i:i + 76]
                           for i in range(0, len(token), 76)] or [""]
                 for piece in pieces:
-                    prefix = "           " if first else "           & "
-                    lines.append(prefix + '"' + piece.replace('"', '""') + '"')
-                    first = False
+                    lines.append('"' + piece.replace('"', '""') + '"')
             else:
                 for byte in token:
-                    prefix = "           " if first else "           & "
-                    lines.append(prefix + f"Character'Val({byte})")
-                    first = False
-        lines.append("           & ASCII.LF")
-    if lines and lines[-1].strip() == "& ASCII.LF":
+                    lines.append(f"Character'Val({byte})")
+        lines.append("ASCII.LF")
+    if lines and lines[-1] == "ASCII.LF":
         lines.pop()  # no trailing newline after the final line
     return lines
-
-
-def _body_bytes(body: str) -> int:
-    """The emitted Ada string length for a body: UTF-8 byte length minus the
-    dropped trailing newline (non-ASCII glyphs become one Character'Val per
-    UTF-8 byte)."""
-    body_bytes = len(body.encode("utf-8"))
-    if body.endswith("\n"):
-        body_bytes -= 1
-    return body_bytes
 
 
 def generate(out: Path) -> None:
@@ -247,31 +235,52 @@ def generate(out: Path) -> None:
     lines.append("package Adacovex.Docs_Template is")
     lines.append("")
     lines.append("   --  One entry of the lookup table.  The path and MIME type")
-    lines.append("   --  are fixed-size (space-padded) strings; Start/Len index")
-    lines.append("   --  the Blob.  Fixed-size components keep the aggregate a")
-    lines.append("   --  plain static constant (a discriminated-record array is")
-    lines.append("   --  dynamically elaborated by GNAT and blows the heap).")
+    lines.append("   --  are fixed-size (space-padded) strings; Idx selects the")
+    lines.append("   --  asset body via Asset_Bodies.  Fixed-size components keep")
+    lines.append("   --  the aggregate a plain static constant (a discriminated-")
+    lines.append("   --  record array is dynamically elaborated by GNAT and blows")
+    lines.append("   --  the heap).")
     lines.append("   Max_Path : constant := 80;")
     lines.append("   Max_Mime : constant := 32;")
+    lines.append(f"   Asset_Count : constant := {len(assets)};")
+    lines.append("   subtype Asset_Index is Positive range 1 .. Asset_Count;")
     lines.append("   type Asset_Ref is")
     lines.append("      record")
     lines.append("         Path  : String (1 .. Max_Path) := (others => ' ');")
     lines.append("         Mime  : String (1 .. Max_Mime) := (others => ' ');")
-    lines.append("         Start : Positive;")
-    lines.append("         Len   : Natural;")
+    lines.append("         Idx   : Asset_Index;")
     lines.append("      end record;")
     lines.append("")
     lines.append("   type Asset_Table is array (Positive range <>) of Asset_Ref;")
     lines.append("")
+    lines.append("   --  Every asset body as its own static constant.  One constant")
+    lines.append("   --  per asset keeps each string small: a single multi-")
+    lines.append("   --  megabyte blob constant overflows the gnatprove frontend")
+    lines.append("   --  stack (Storage_Error) whatever its structure, so the")
+    lines.append("   --  bodies are never concatenated into one value.")
+    for i, (rel, mime, body) in enumerate(assets):
+        lines.append(f"   Asset_{i:03d} : aliased constant String :=")
+        asset_lines = _asset_body_lines(body)
+        for ei, al in enumerate(asset_lines):
+            prefix = "       " if ei == 0 else "       & "
+            lines.append(prefix + al.strip())
+        lines.append("       ;")
+        lines.append("")
+    lines.append("   type Asset_Body is access constant String;")
+    lines.append("")
+    lines.append("   --  The bodies by table index: Asset_NNN'Access, in order.")
+    lines.append("   Asset_Bodies : constant array (Asset_Index) of Asset_Body :=\n     (")
+    for i in range(len(assets)):
+        end_ref = ");" if i == len(assets) - 1 else ","
+        lines.append(f"      Asset_{i:03d}'Access{end_ref}")
+    lines.append("")
     lines.append("   --  The whole offline manual, keyed by book-relative path")
     lines.append('   --  (for example "index.html" or "css/general-e96d0476.css").')
     lines.append("   Assets : constant Asset_Table :=")
-    offset = 1
     for i, (rel, mime, body) in enumerate(assets):
         # The line template closes the Asset_Ref' qualified aggregate with
         # `)`; end_ref closes the array aggregate for the final ref.
         end_ref = ");" if i == len(assets) - 1 else ","
-        body_bytes = _body_bytes(body)
         if len(rel) > 80 or len(mime) > 32:
             raise RuntimeError(f"asset {rel!r} exceeds fixed-size bounds")
         pad_path = rel.ljust(80)
@@ -279,30 +288,10 @@ def generate(out: Path) -> None:
         lines.append("     (Asset_Ref'" if i == 0 else "      Asset_Ref'")
         lines.append(f'        (Path  => "{pad_path}",')
         lines.append(f'         Mime  => "{pad_mime}",')
-        lines.append(f"         Start => {offset},")
-        lines.append(f"         Len   => {body_bytes}){end_ref}")
-        offset += body_bytes
+        lines.append(f"         Idx   => {i + 1}){end_ref}")
     lines.append("")
-    lines.append("   --  The concatenated bodies of every asset, in Assets order.")
-    lines.append("   --  A single static string (like the pre-bundle manual page)")
-    lines.append("   --  so the constant lives in the read-only data section.")
-    lines.append("   Blob : constant String :=")
-    first_body: bool = True
-    for rel, mime, body in assets:
-        body_lines = _body_lines(body)
-        for idx, bl in enumerate(body_lines):
-            if first_body:
-                lines.append("       " + bl)
-                first_body = False
-            elif idx == 0:
-                # first line of a later body continues the chain: add "& "
-                lines.append("       & " + bl.strip())
-            else:
-                lines.append("       " + bl)
-    lines.append("       ;")
-    lines.append("")
-    lines.append("   --  The asset body for a table index (the Blob slice).")
-    lines.append("   function Content (Idx : Positive) return String;")
+    lines.append("   --  The asset body for a table index.")
+    lines.append("   function Content (Idx : Asset_Index) return String;")
     lines.append("")
     lines.append("   --  Find the asset for a request subpath.  Normalises:")
     lines.append('   --  "" and "/" map to index.html, a trailing slash appends')

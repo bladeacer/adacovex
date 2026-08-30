@@ -35,7 +35,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-6b54bdb0.js";
+            window.path_to_searchindex_js = "searchindex-716d3f4b.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-4f584999.js"></script>
@@ -292,13 +292,17 @@ handlers as <code>/</code>, <code>/api/metrics</code> and <code>/api/deps</code>
 (both spellings, with and without the trailing slash, reach the same page).
 The manual is the same Markdown source that powers the Read the Docs site
 (<code>docs/</code>, an mdBook project with <code>book.toml</code> and <code>SUMMARY.md</code>); at build
-time <code>tools/gen-docs.py</code> runs <code>mdbook build</code> and inlines the resulting
-<code>print.html</code> into the binary (<code>src/adacovex-docs_template.ads</code>), so the page
-is fully self-contained: stylesheets are inlined, external fonts and
-interactive scripts are dropped, and the HTML stays pure ASCII.  Users on a
-machine without a network connection can still open the manual from the
-dashboard – the footer <strong>Manual</strong> link and the API playground’s
-<code>/docs</code> endpoint both point at it.</p>
+time <code>tools/gen-docs.py</code> runs <code>mdbook build</code> and bundles the resulting site
+into the binary (<code>src/adacovex-docs_template.ads</code>) as a lookup table plus
+one static string constant per asset: every page, stylesheet, and script,
+keyed by book-relative path, so the manual is fully self-contained and
+navigable offline (each asset is its own small constant – a single
+multi-megabyte blob would overflow the gnatprove frontend stack). External fonts, the search machinery, and the PNG screenshots are
+dropped (the screenshots show as notes), and the bundled HTML stays pure
+ASCII (non-ASCII glyphs are encoded as UTF-8 byte values in the Ada
+source).  Users on a machine without a network connection can still open
+the manual from the dashboard – the footer <strong>Manual</strong> link and the API
+playground’s <code>/docs</code> endpoint both point at it.</p>
 <h2 id="the-html-dashboard"><a class="header" href="#the-html-dashboard">The HTML dashboard</a></h2>
 <p>The page is a single self-contained document (no external assets), bundled
 into the binary from <strong>modular resources</strong> – <code>resources/dashboard.html</code> is

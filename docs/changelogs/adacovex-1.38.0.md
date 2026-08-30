@@ -116,6 +116,23 @@ first index, so every page, stylesheet, and badge of the bundled manual
 serves (an e2e test pins the exact, nested, and extensionless subpaths plus
 a missing-page 404).
 
+### H4: Bundled manual no longer overflows the gnatprove frontend
+
+The complete-book offline manual is a 4 MB asset set, and `gen-docs.py`
+emitted it as one giant `&`-concatenation chain (300k+ string literals).
+GNAT's frontend parses that tree fine, but gnatprove's flow analysis blew
+its stack (`Storage_Error stack overflow` at `adacovex-docs_template.ads`),
+aborting `make prove` and therefore `make check` and every release.
+Experiments showed the limit is the constant size itself (a single string
+constant over ~1 MB overflows whatever its structure), so the generated
+spec now holds one `aliased constant String` per asset -- 152 bodies, each
+well under the limit, never concatenated into one value -- with an
+`Asset_Bodies` access-to-constant table and an `Asset_Index` subtype so
+`Content (Idx)` needs no unchecked bounds reasoning. The served bytes are
+unchanged (each asset constant carries the identical content), the server
+routes through the same `Find`/`Content` API, and the bundle-links check
+still passes.
+
 ### H2: Dashboard footer links updated
 
 The footer's API links now include the bundled manual:
@@ -150,7 +167,8 @@ trailing-slash spelling and remains proved by definition.
 - `HLR-SBOM` -- H1 vendored yace.js in the SBOM and the vendored/dashboard
   JavaScript layout separation.
 - `HLR-ARCH` -- C5 complexity-check `book` directory exclusion, C7 the
-  book-links-check gate and the complete-book restructure.
+  book-links-check gate and the complete-book restructure, H4 the chunked
+  blob that keeps the bundled manual provable.
 - `HLR-SERVER` -- H3 the `Docs_Subpath` off-by-one fix.
 
 See `docs/dashboard.md`, `docs/THIRD_PARTY_NOTICES.md`, and `.readthedocs.yaml`.

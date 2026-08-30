@@ -36,7 +36,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-6b54bdb0.js";
+            window.path_to_searchindex_js = "searchindex-716d3f4b.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-4f584999.js"></script>
@@ -176,8 +176,8 @@
                 <div id="mdbook-content" class="content">
                     <main>
                         <h1 id="adacovex-documentation"><a class="header" href="#adacovex-documentation">adacovex Documentation</a></h1>
-<p>This page is the index for all adacovex documentation.  Pick a section for
-your role, or read the pages in the order below.</p>
+<p>This page is the index for all adacovex documentation.  Pick a section
+relevant to you, or read the pages in the order below.</p>
 <p>All documentation uses British English and ASD-STE100 Simplified Technical
 English.  The controlled Technical Names dictionary lives in
 <a href="#ste100-technical-names-for-adacovex">STE100 Technical Names</a>.  Use it before you use
@@ -952,13 +952,17 @@ handlers as <code>/</code>, <code>/api/metrics</code> and <code>/api/deps</code>
 (both spellings, with and without the trailing slash, reach the same page).
 The manual is the same Markdown source that powers the Read the Docs site
 (<code>docs/</code>, an mdBook project with <code>book.toml</code> and <code>SUMMARY.md</code>); at build
-time <code>tools/gen-docs.py</code> runs <code>mdbook build</code> and inlines the resulting
-<code>print.html</code> into the binary (<code>src/adacovex-docs_template.ads</code>), so the page
-is fully self-contained: stylesheets are inlined, external fonts and
-interactive scripts are dropped, and the HTML stays pure ASCII.  Users on a
-machine without a network connection can still open the manual from the
-dashboard – the footer <strong>Manual</strong> link and the API playground’s
-<code>/docs</code> endpoint both point at it.</p>
+time <code>tools/gen-docs.py</code> runs <code>mdbook build</code> and bundles the resulting site
+into the binary (<code>src/adacovex-docs_template.ads</code>) as a lookup table plus
+one static string constant per asset: every page, stylesheet, and script,
+keyed by book-relative path, so the manual is fully self-contained and
+navigable offline (each asset is its own small constant – a single
+multi-megabyte blob would overflow the gnatprove frontend stack). External fonts, the search machinery, and the PNG screenshots are
+dropped (the screenshots show as notes), and the bundled HTML stays pure
+ASCII (non-ASCII glyphs are encoded as UTF-8 byte values in the Ada
+source).  Users on a machine without a network connection can still open
+the manual from the dashboard – the footer <strong>Manual</strong> link and the API
+playground’s <code>/docs</code> endpoint both point at it.</p>
 <h2 id="the-html-dashboard"><a class="header" href="#the-html-dashboard">The HTML dashboard</a></h2>
 <p>The page is a single self-contained document (no external assets), bundled
 into the binary from <strong>modular resources</strong> – <code>resources/dashboard.html</code> is
@@ -5184,7 +5188,7 @@ the standards pages.  The <a href="#adacovex-cli-reference">CLI reference</a>
 describes every flag.  The <a href="#compliance-standards-do-178c--iso-26262--iec-62304">standards guide</a>
 explains the compliance levels.</li>
 <li><strong>Contributors</strong> use this reference together with the
-<a href="https://github.com/bladeacer/adacovex/blob/main/CONTRIBUTING.md">contributing guide</a> and the
+<a href="../CONTRIBUTING.html">contributing guide</a> and the
 <a href="#adacovex-architecture-decisions">architecture notes</a>.  The <a href="#docstring-annotation-specification">docstring
 spec</a> defines the annotation
 format.</li>
@@ -6961,20 +6965,24 @@ as an offline asset blob + lookup table.  –serve exposes it at
 <p><strong>Note:</strong> All items in this package are public.</p>
 </blockquote>
 <h2 id="types-3"><a class="header" href="#types-3">Types</a></h2>
+<h3 id="type-asset_body"><a class="header" href="#type-asset_body">type Asset_Body</a></h3>
+<pre><code class="language-ada">type Asset_Body is access constant String;
+</code></pre>
+<h3 id="type-asset_index"><a class="header" href="#type-asset_index">type Asset_Index</a></h3>
+<pre><code class="language-ada">subtype Asset_Index is Positive range 1 .. Asset_Count;
+</code></pre>
 <h3 id="type-asset_ref"><a class="header" href="#type-asset_ref">type Asset_Ref</a></h3>
-<pre><code class="language-ada">type Asset_Ref is
-record
-Path  : String (1 .. Max_Path) := (others =&gt; ' ');
-Mime  : String (1 .. Max_Mime) := (others =&gt; ' ');
-Start : Positive;
-Len   : Natural;
+<pre><code class="language-ada">type Asset_Ref is record
+Path : String (1 .. Max_Path) := (others =&gt; ' ');
+Mime : String (1 .. Max_Mime) := (others =&gt; ' ');
+Idx  : Asset_Index;
 end record;
 </code></pre>
 <h3 id="type-asset_table"><a class="header" href="#type-asset_table">type Asset_Table</a></h3>
 <pre><code class="language-ada">type Asset_Table is array (Positive range &lt;&gt;) of Asset_Ref;
 </code></pre>
 <h2 id="functions-10"><a class="header" href="#functions-10">Functions</a></h2>
-<h3 id="function-content-idx--standardpositive-return-standardstring"><a class="header" href="#function-content-idx--standardpositive-return-standardstring">function Content (Idx : Standard.Positive) return Standard.String</a></h3>
+<h3 id="function-content-idx--adacovexdocs_templateasset_index-return-standardstring"><a class="header" href="#function-content-idx--adacovexdocs_templateasset_index-return-standardstring">function Content (Idx : Adacovex.Docs_Template.Asset_Index) return Standard.String</a></h3>
 <div class="table-wrapper">
 <table>
 <thead>
@@ -9495,6 +9503,21 @@ resolved.  The six-character prefix is now stripped from the slice’s actual
 first index, so every page, stylesheet, and badge of the bundled manual
 serves (an e2e test pins the exact, nested, and extensionless subpaths plus
 a missing-page 404).</p>
+<h3 id="h4-bundled-manual-no-longer-overflows-the-gnatprove-frontend"><a class="header" href="#h4-bundled-manual-no-longer-overflows-the-gnatprove-frontend">H4: Bundled manual no longer overflows the gnatprove frontend</a></h3>
+<p>The complete-book offline manual is a 4 MB asset set, and <code>gen-docs.py</code>
+emitted it as one giant <code>&amp;</code>-concatenation chain (300k+ string literals).
+GNAT’s frontend parses that tree fine, but gnatprove’s flow analysis blew
+its stack (<code>Storage_Error stack overflow</code> at <code>adacovex-docs_template.ads</code>),
+aborting <code>make prove</code> and therefore <code>make check</code> and every release.
+Experiments showed the limit is the constant size itself (a single string
+constant over ~1 MB overflows whatever its structure), so the generated
+spec now holds one <code>aliased constant String</code> per asset – 152 bodies, each
+well under the limit, never concatenated into one value – with an
+<code>Asset_Bodies</code> access-to-constant table and an <code>Asset_Index</code> subtype so
+<code>Content (Idx)</code> needs no unchecked bounds reasoning. The served bytes are
+unchanged (each asset constant carries the identical content), the server
+routes through the same <code>Find</code>/<code>Content</code> API, and the bundle-links check
+still passes.</p>
 <h3 id="h2-dashboard-footer-links-updated"><a class="header" href="#h2-dashboard-footer-links-updated">H2: Dashboard footer links updated</a></h3>
 <p>The footer’s API links now include the bundled manual:
 <code>API: /api/metrics /api/deps Manual API playground</code>, with the Manual link
@@ -9523,7 +9546,8 @@ dashboard walk-through.</li>
 <li><code>HLR-SBOM</code> – H1 vendored yace.js in the SBOM and the vendored/dashboard
 JavaScript layout separation.</li>
 <li><code>HLR-ARCH</code> – C5 complexity-check <code>book</code> directory exclusion, C7 the
-book-links-check gate and the complete-book restructure.</li>
+book-links-check gate and the complete-book restructure, H4 the chunked
+blob that keeps the bundled manual provable.</li>
 <li><code>HLR-SERVER</code> – H3 the <code>Docs_Subpath</code> off-by-one fix.</li>
 </ul>
 <p>See <code>docs/dashboard.md</code>, <code>docs/THIRD_PARTY_NOTICES.md</code>, and <code>.readthedocs.yaml</code>.</p>

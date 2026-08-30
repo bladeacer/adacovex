@@ -517,12 +517,17 @@ package body Adacovex.Server.HTTP is
                         "Not Found: " & Path,
                         Is_KA);
                   else
-                     Send_Response
-                       (Channel,
-                        "200 OK",
-                        Adacovex.Docs_Template.Assets (Idx).Mime,
-                        Adacovex.Docs_Template.Content (Idx),
-                        Is_KA);
+                     declare
+                        A_Idx : constant Adacovex.Docs_Template.Asset_Index :=
+                          Adacovex.Docs_Template.Asset_Index (Idx);
+                     begin
+                        Send_Response
+                          (Channel,
+                           "200 OK",
+                           Adacovex.Docs_Template.Assets (A_Idx).Mime,
+                           Adacovex.Docs_Template.Content (A_Idx),
+                           Is_KA);
+                     end;
                   end if;
                end;
             end if;

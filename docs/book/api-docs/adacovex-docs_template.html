@@ -35,7 +35,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-6b54bdb0.js";
+            window.path_to_searchindex_js = "../searchindex-716d3f4b.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-4f584999.js"></script>
@@ -183,20 +183,24 @@ as an offline asset blob + lookup table.  –serve exposes it at
 <p><strong>Note:</strong> All items in this package are public.</p>
 </blockquote>
 <h2 id="types"><a class="header" href="#types">Types</a></h2>
+<h3 id="type-asset_body"><a class="header" href="#type-asset_body">type Asset_Body</a></h3>
+<pre><code class="language-ada">type Asset_Body is access constant String;
+</code></pre>
+<h3 id="type-asset_index"><a class="header" href="#type-asset_index">type Asset_Index</a></h3>
+<pre><code class="language-ada">subtype Asset_Index is Positive range 1 .. Asset_Count;
+</code></pre>
 <h3 id="type-asset_ref"><a class="header" href="#type-asset_ref">type Asset_Ref</a></h3>
-<pre><code class="language-ada">type Asset_Ref is
-record
-Path  : String (1 .. Max_Path) := (others =&gt; ' ');
-Mime  : String (1 .. Max_Mime) := (others =&gt; ' ');
-Start : Positive;
-Len   : Natural;
+<pre><code class="language-ada">type Asset_Ref is record
+Path : String (1 .. Max_Path) := (others =&gt; ' ');
+Mime : String (1 .. Max_Mime) := (others =&gt; ' ');
+Idx  : Asset_Index;
 end record;
 </code></pre>
 <h3 id="type-asset_table"><a class="header" href="#type-asset_table">type Asset_Table</a></h3>
 <pre><code class="language-ada">type Asset_Table is array (Positive range &lt;&gt;) of Asset_Ref;
 </code></pre>
 <h2 id="functions"><a class="header" href="#functions">Functions</a></h2>
-<h3 id="function-content-idx--standardpositive-return-standardstring"><a class="header" href="#function-content-idx--standardpositive-return-standardstring">function Content (Idx : Standard.Positive) return Standard.String</a></h3>
+<h3 id="function-content-idx--adacovexdocs_templateasset_index-return-standardstring"><a class="header" href="#function-content-idx--adacovexdocs_templateasset_index-return-standardstring">function Content (Idx : Adacovex.Docs_Template.Asset_Index) return Standard.String</a></h3>
 <div class="table-wrapper">
 <table>
 <thead>

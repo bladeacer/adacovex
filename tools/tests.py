@@ -34,6 +34,7 @@ sys.path.insert(0, str(TOOLS))
 ascii_check = importlib.import_module("ascii-check")
 coverage_gate = importlib.import_module("coverage-gate")
 dev_cmd = importlib.import_module("dev-cmd")
+gen_docs = importlib.import_module("gen-docs")
 import release
 import run
 import versions
@@ -440,6 +441,38 @@ class TestGenDashboard(unittest.TestCase):
             self.assertNotIn(placeholder, page)
         scripts = re.findall(r"<script>(.*?)</script>", page, re.S)
         self.assertEqual(len(scripts), 11)
+
+
+class TestGenDocsAssets(unittest.TestCase):
+    """gen-docs.py per-asset emission (H4: gnatprove stack overflow fix)."""
+
+    def test_operands_drop_trailing_newline(self) -> None:
+        # one\ntwo -> literal "one", ASCII.LF, literal "two" (newline dropped)
+        self.assertEqual(gen_docs._asset_body_lines("one\ntwo\n"),
+                         ['"one"', "ASCII.LF", '"two"'])
+
+    def test_operands_escape_quotes_and_non_ascii(self) -> None:
+        lines = gen_docs._asset_body_lines('say "hi"\n\u00e9')
+        self.assertIn('"say ""hi"""', lines)
+        # U+00E9 is two UTF-8 bytes -> two Character'Val byte operands
+        self.assertEqual(lines.count("ASCII.LF"), 1)
+        self.assertEqual(len([l for l in lines
+                              if l.startswith("Character'Val(")]), 2)
+
+    def test_long_run_split_into_short_literals(self) -> None:
+        body = "x" * 400
+        lines = gen_docs._asset_body_lines(body)
+        for l in lines:
+            self.assertLessEqual(len(l), 80)  # -gnatyM120 with indentation
+        joined = "".join(
+            l[1:-1].replace('""', '"') if l.startswith('"') else chr(int(
+                l[l.index("(") + 1:l.index(")")]))
+            for l in lines)
+        self.assertEqual(joined, body)
+
+    def test_empty_line_becomes_empty_literal(self) -> None:
+        self.assertEqual(gen_docs._asset_body_lines("a\n\nb"),
+                         ['"a"', "ASCII.LF", '""', "ASCII.LF", '"b"'])
 
 
 class TestCheckBookLinks(unittest.TestCase):

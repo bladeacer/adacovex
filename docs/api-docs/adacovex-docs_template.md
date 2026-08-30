@@ -9,15 +9,25 @@ as an offline asset blob + lookup table.  --serve exposes it at
 
 ## Types
 
+### type Asset_Body
+
+```ada
+type Asset_Body is access constant String;
+```
+
+### type Asset_Index
+
+```ada
+subtype Asset_Index is Positive range 1 .. Asset_Count;
+```
+
 ### type Asset_Ref
 
 ```ada
-type Asset_Ref is
-record
-Path  : String (1 .. Max_Path) := (others => ' ');
-Mime  : String (1 .. Max_Mime) := (others => ' ');
-Start : Positive;
-Len   : Natural;
+type Asset_Ref is record
+Path : String (1 .. Max_Path) := (others => ' ');
+Mime : String (1 .. Max_Mime) := (others => ' ');
+Idx  : Asset_Index;
 end record;
 ```
 
@@ -29,7 +39,7 @@ type Asset_Table is array (Positive range <>) of Asset_Ref;
 
 ## Functions
 
-### function Content (Idx : Standard.Positive) return Standard.String
+### function Content (Idx : Adacovex.Docs_Template.Asset_Index) return Standard.String
 
 | Parameter | Description |
 |-----------|-------------|
