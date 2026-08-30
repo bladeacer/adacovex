@@ -35,7 +35,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-b8df906a.js";
+            window.path_to_searchindex_js = "../searchindex-11394d52.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-0e6cf2bd.js"></script>
@@ -376,8 +376,8 @@ survives Rust toolchain upgrades without a hardcoded version path.</p>
 <code>/docs</code> router dispatched on the query-string-stripped path (so <code>?highlight=</code>
 reached the docs route), but the asset lookup that followed read the <em>raw</em>
 request path, so every search result carrying <code>?highlight=...</code> (mdBook’s
-mark-the-search-term parameter) was looked up as <code>changelogs/….html?highlight=…</code>
-and never found.  The docs asset key now derives from the query-stripped path,
+mark-the-search-term parameter) was looked up in the wrong book-relative
+shape and never found.  The docs asset key now derives from the query-stripped path,
 so a search-result link such as
 <code>/docs/usage/cli-reference.html?highlight=serve#--serve</code> resolves to the page,
 then the browser’s own fragment + mark handling scrolls to the heading and
@@ -395,12 +395,11 @@ released faster on idle connections, which also means a stale or abandoned
 connection is reaped sooner than before.</p>
 <h3 id="h11-offline-manual-subpages-drop-their-font-links"><a class="header" href="#h11-offline-manual-subpages-drop-their-font-links">H11: Offline manual subpages drop their font links</a></h3>
 <p><code>tools/gen-docs.py</code> dropped the bundling-irrelevant font stylesheet link from
-each bundled page, but its pattern only matched the index page’s
-<code>href="fonts/…css"</code> shape.  Subpages link the same stylesheet with a
-<code>path_to_root</code> prefix (<code>../fonts/…css</code>), so those kept the reference and the
-browser issued a <code>/fonts/...css</code> 404 on every subpage.  The drop now matches
-any leading <code>../</code> prefix, so no bundled page references the unbundled font
-asset.</p>
+each bundled page, but its pattern only matched the index page’s un-prefixed
+<code>fonts/</code> href shape.  Subpages link the same stylesheet with a <code>path_to_root</code>
+prefix (for example <code>../fonts/</code>), so those kept the reference and the browser
+issued a <code>/fonts/...css</code> 404 on every subpage.  The drop now matches any
+leading <code>../</code> prefix, so no bundled page references the unbundled font asset.</p>
 <h3 id="h8-hlr-tags-are-no-longer-read-from-string-literals"><a class="header" href="#h8-hlr-tags-are-no-longer-read-from-string-literals">H8: HLR tags are no longer read from string literals</a></h3>
 <p>The source scanner extracted HLR traceability tags from <code>--</code> sequences
 inside string literals, treating them as comment starts. The bundled
