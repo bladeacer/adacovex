@@ -75,6 +75,49 @@ has **no runtime Python dependency**. The README, developer guide,
 requirements table, Makefile help, and `THIRD_PARTY_NOTICES` all state this
 clearly.
 
+### C8: Offline manual bundle served gzip-compressed
+
+The 184,507-line god-object spec is gone. `tools/gen-docs.py` now gzip-
+compresses every Sphinx asset at build time and stores a **compact base64
+chunk per asset** in `src/adacovex-docs_template.ads`: the spec shrank from
+184,507 lines / 7.6 MB to about 20,000 lines / 1.7 MB (160 assets, 1.4 MB
+compressed from 4.7 MB of source). The `--serve` server sends the raw gzip
+stream with `Content-Encoding: gzip`, so the browser inflates it. The binary
+still needs only the GNAT runtime -- no inflate routine, no Python or JS
+runtime dependency. A small base64 decoder in the `Docs_Template` body
+reconstructs each compressed chunk for the streaming send path.
+
+### C9: Language support documented with explicit tiers
+
+`target-projects.md` now explains the language support instead of the
+"watch for updates" placeholder. The tiers are: **first-class**
+(Ada/SPARK: scanning, docstrings, complexity, proof, DAL);
+**manifest-aware ecosystems** whose manifests build the SBOM dependency
+graph; **extension-detected languages** used for component language
+detection, `complexity` scoring, and test-dependency classification; and the
+**flexible `requirements*.txt`** handling (a literal `requirements.txt` wins;
+adacovex falls back to the first `requirements*.txt` glob in the directory).
+
+### C10: Third-party notices link Sphinx, MyST, Furo, and Playwright
+
+`THIRD_PARTY_NOTICES.md` renders the documentation-build tools -- Sphinx,
+MyST-Parser, and Furo -- and the Playwright test dependency as **clickable
+links** to their upstream projects, matching the bundled-asset components
+that already link out.
+
+### C11: Manual index is now a top-level sidebar entry
+
+The documentation index page could not be found in the sidebar: Furo's
+navigation tree comes only from the root document's toctrees, and the root
+document cannot reference itself (Sphinx rejects it), so only the sidebar
+brand linked to the front page. A small, contained Sphinx hook in
+`docs/conf.py` now prepends a labelled "adacovex Documentation"
+"Documentation index" link to the navigation tree on every page, so the
+index is a clickable top-level sidebar entry. The hook runs after Furo
+computes the tree (priority 800), reuses Sphinx's own caption/toctree
+markup, and works identically for the Read the Docs build and the bundled
+offline manual.
+
 ### C6: Sphinx, Furo, MyST, and Read the Docs credited
 
 The third-party notices (`THIRD_PARTY_NOTICES.md`) and the dashboard **Credits**
@@ -99,14 +142,21 @@ binary.
 The native suite grows to 1186 tests across 16 categories: the SBOM tests add
 assertions that `sphinx-build` is never registered as a system tool, and that
 root `requirements*.txt` entries (sphinx, myst-parser) register as dev-scope
-`pkg:pypi/*` dependencies with a registry-resolved version.
+`pkg:pypi/*` dependencies with a registry-resolved version. The docs
+serving path still streams through the existing server-routing tests (41 pass);
+no native assertions were added for the gzip encode/decode, which is
+non-SPARK runtime data plumbing (the base64 decoder lives in the
+`Docs_Template` body and is rounded-trip tested by the served pages in `make
+e2e`).
 
 ## Proof Results
 
 Platinum, 0 unproved, 0 justified, 725 VCs (725 proved) under gnatprove
-16.1.0. The edited Ada units (the manifest parser and its new subunits) are
-not SPARK-analysed (the package is default-off; only `Trim` opts in), so the
-totals are unchanged.
+16.1.0. The edited Ada units (the manifest parser subtrees, the
+`Docs_Template` body base64 decoder, and the HTTP server's gzip header and
+chunk-decoding path) are all plain runtime bodies -- none opt into
+`SPARK_Mode On` -- so no verification conditions were added and the totals are
+unchanged.
 
 ## Traceability
 
@@ -115,4 +165,6 @@ totals are unchanged.
 - `HLR-DOC` -- C1 the Sphinx project, C2 the rebundled offline manual, C3 the
   toctree navigation, C4 the tooling updates, C5 the Python build dependency,
   C6 the Sphinx/Furo/MyST/Read the Docs credits, C7 the pypi SBOM
-  dependencies, and H1 the Read the Docs fix.
+  dependencies, C8 the gzip-compressed offline bundle, C9 the documented
+  language-support tiers, C10 the clickable third-party links, C11 the
+  sidebar index entry, and H1 the Read the Docs fix.

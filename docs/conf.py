@@ -68,3 +68,40 @@ html_baseurl = os.environ.get("READTHEDOCS_CANONICAL_URL", "/")
 
 # The offline manual must build purely from source with no network: Furo
 # pulls no fonts or images, so nothing else needs bundling.
+
+# ---------------------------------------------------------------------------
+# Show the manual index in the sidebar
+# ---------------------------------------------------------------------------
+#
+# Furo's global navigation tree comes from the root document's toctrees, so the
+# root document itself (the manual index) is never listed -- only the brand link
+# in the sidebar header points back to it.  Sphinx forbids a toctree referencing
+# its own master document, so the canonical index entry is injected here with a
+# tiny, contained html-page-context hook that prepends a clearly-labelled
+# "Documentation index" link to the top of the navigation tree on every page.
+# The entry reuses the caption/`toctree-l1` markup Sphinx emits, so it needs no
+# custom CSS and matches the theme's indentation.  The hook runs after Furo
+# computes furo_navigation_tree (priority 800 > Furo's 500) and works identically
+# for the Read the Docs build and the bundled offline manual.
+
+
+def _prepend_index_to_sidebar(
+    app, pagename, templatename, context, doctree
+):
+    tree = context.get("furo_navigation_tree")
+    if tree is None:
+        return
+    root = app.config.root_doc or "index"
+    href = context["pathto"](root)
+    index_entry = (
+        '<p class="caption" role="heading">'
+        '<span class="caption-text">adacovex Documentation</span></p>'
+        "<ul><li class=\"toctree-l1\">"
+        f'<a class="reference internal" href="{href}">'
+        "Documentation index</a></li></ul>"
+    )
+    context["furo_navigation_tree"] = index_entry + tree
+
+
+def setup(app):
+    app.connect("html-page-context", _prepend_index_to_sidebar, 800)

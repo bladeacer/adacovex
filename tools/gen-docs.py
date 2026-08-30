@@ -37,12 +37,18 @@ parser, so the pages stay `.md`).  This script:
    `_downloads/` badge SVGs (from the inline `:download:` links on the
    badges page) ARE bundled so those links resolve; the Furo theme pulls
    no web fonts, so nothing needs dropping for fonts.
-3. writes `src/adacovex-docs_template.ads` as a constant table of
-   (path, MIME type, body index) assets plus one `aliased constant String`
-   per asset body (bodies are never concatenated into one value: a single
-   multi-megabyte string constant overflows the gnatprove frontend stack).
-   `--serve` exposes the table at `/docs/` so the dashboard links carry a
-   fully offline copy of the whole manual inside the binary itself.
+3. gzip-compresses every asset body at build time and writes
+   `src/adacovex-docs_template.ads` as a constant table of (path, MIME type,
+   body index, gzip flag) assets plus one `aliased constant String` per
+   compressed chunk, base64-encoded so the Ada source stays pure ASCII.
+   Bodies are never concatenated into one value: a single multi-megabyte
+   string constant overflows the gnatprove frontend stack, so each compressed
+   chunk stays small and the server streams the chunks back as one response.
+   The offline manual is served with `Content-Encoding: gzip`; the browser
+   decompresses it, so the shipped binary never needs an inflate routine or a
+   Python/JS runtime dependency -- only the GNAT runtime.  `--serve` exposes
+   the table at `/docs/` so the dashboard links carry a fully offline copy of
+   the whole manual inside the binary itself.
 
 The generated spec is committed so the tree builds without running Sphinx
 (the project has no Sphinx/Markdown runtime dependency; sphinx+myst-parser
@@ -66,10 +72,12 @@ spec is authored to build without it.
 """
 
 import argparse
+import base64
 import re
 import shutil
 import subprocess
 import sys
+import zlib
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -125,11 +133,13 @@ _MIME: Dict[str, str] = {
     ".svg": "image/svg+xml",
 }
 
-# Max size of one emitted Ada string constant.  The gnatprove frontend blows
-# its stack on a single constant over ~1 MB (whatever its structure), so every
-# asset body -- and every chunk of the multi-hundred-KB search index -- stays
-# well under it.
-MAX_CONSTANT: int = 400_000
+# Max compressed bytes stored in one emitted Ada string constant.  gzip is
+# applied at build time (see below), then each compressed chunk is base64-
+# encoded, so the Ada literal for one chunk is ~4/3 of its compressed size.
+# The gnatprove frontend blows its stack on a single constant over ~1 MB
+# (whatever its structure), so every chunk -- and its base64 expansion --
+# stays well under it.
+MAX_CHUNK_BYTES: int = 300_000
 
 
 def sh(cmd: List[str]) -> subprocess.CompletedProcess:
@@ -281,11 +291,22 @@ def _asset_body_lines(body: str) -> List[str]:
     return lines
 
 
-def _split_body(body: str) -> List[str]:
-    """Split one asset body into MAX_CONSTANT-size chunks (at least one)."""
-    return ([body[i:i + MAX_CONSTANT]
-             for i in range(0, len(body), MAX_CONSTANT)]
-            or [""])
+def _gzip(data: bytes) -> bytes:
+    """gzip (RFC 1952 wrapper) compress a byte string, max compression."""
+    c = zlib.compressobj(9, zlib.DEFLATED, 16 + zlib.MAX_WBITS)
+    return c.compress(data) + c.flush()
+
+
+def _b64_chunks(body: str) -> List[str]:
+    """The base64 Ada bodies for one asset: gzip the text, split the compressed
+    bytes into MAX_CHUNK_BYTES-sized chunks, and base64-encode each chunk.
+    Returns at least one chunk (an empty asset gzips to a non-empty header).
+    """
+    gz = _gzip(body.encode("utf-8"))
+    return [
+        base64.b64encode(gz[i:i + MAX_CHUNK_BYTES]).decode("ascii")
+        for i in range(0, len(gz), MAX_CHUNK_BYTES)
+    ]
 
 
 def generate(out: Path) -> None:
@@ -296,15 +317,16 @@ def generate(out: Path) -> None:
 
     assets = collect_assets(BUILD)
 
-    # Any asset over MAX_CONSTANT (the search index and the printed page) is
-    # several smaller constants; every other asset is one constant.
-    # plan = [(rel, mime, [chunk, ...]), ...].
-    plan: List[Tuple[str, str, List[str]]] = []
-    for rel, mime, body in assets:
-        if len(body) > MAX_CONSTANT:
-            plan.append((rel, mime, _split_body(body)))
-        else:
-            plan.append((rel, mime, [body]))
+    # Every asset body is gzip-compressed and base64-encoded into one or more
+    # chunks; each chunk becomes its own `Asset_NNN` constant.  Sphinx pages
+    # reuse the same stylesheets and scripts, so gzip collapses that
+    # redundancy -- the generated spec is ~1/7th the size of the old
+    # verbatim-per-line encoding -- and the server sends the compressed bytes
+    # with `Content-Encoding: gzip` for browsers to inflate.
+    # plan = [(rel, mime, [base64 chunk, ...]), ...].
+    plan: List[Tuple[str, str, List[str]]] = [
+        (rel, mime, _b64_chunks(body)) for rel, mime, body in assets
+    ]
     body_count: int = sum(len(chunks) for _, _, chunks in plan)
     chunked_at: List[Tuple[int, int]] = [  # (table index, chunk count)
         (i + 1, len(chunks))
@@ -314,18 +336,21 @@ def generate(out: Path) -> None:
     header = (
         "--  Generated by tools/gen-docs.py from the Sphinx manual (docs/):\n"
         "--  the whole built site (pages, stylesheets, scripts, badges, search)\n"
-        "--  as an offline asset blob + lookup table.  --serve exposes it at\n"
-        "--  /docs/.  Do not edit by hand; edit docs/ and run make book.\n"
+        "--  as a gzip-compressed, base64-encoded offline asset blob + lookup\n"
+        "--  table.  --serve exposes it at /docs/ with Content-Encoding: gzip\n"
+        "--  (the browser inflates it).  Do not edit by hand; edit docs/ and\n"
+        "--  run make book.\n"
     )
     lines: List[str] = header.splitlines()
     lines.append("package Adacovex.Docs_Template is")
     lines.append("")
     lines.append("   --  One entry of the lookup table.  The path and MIME type")
     lines.append("   --  are fixed-size (space-padded) strings; Idx selects the")
-    lines.append("   --  first body of the asset via Asset_Bodies.  Fixed-size")
-    lines.append("   --  components keep the aggregate a plain static constant")
-    lines.append("   --  (a discriminated-record array is dynamically elaborated")
-    lines.append("   --  by GNAT and blows the heap).")
+    lines.append("   --  first body of the asset via Asset_Bodies; Gzip says the")
+    lines.append("   --  body holds base64 gzip bytes served with Content-Encoding:")
+    lines.append("   --  gzip.  Fixed-size components keep the aggregate a plain")
+    lines.append("   --  static constant (a discriminated-record array is")
+    lines.append("   --  dynamically elaborated by GNAT and blows the heap).")
     lines.append("   Max_Path : constant := 80;")
     lines.append("   Max_Mime : constant := 32;")
     lines.append(f"   Asset_Count : constant := {len(plan)};")
@@ -337,16 +362,17 @@ def generate(out: Path) -> None:
     lines.append("         Path  : String (1 .. Max_Path) := (others => ' ');")
     lines.append("         Mime  : String (1 .. Max_Mime) := (others => ' ');")
     lines.append("         Idx   : Body_Index;")
+    lines.append("         Gzip  : Boolean;")
     lines.append("      end record;")
     lines.append("")
     lines.append("   type Asset_Table is array (Positive range <>) of Asset_Ref;")
     lines.append("")
-    lines.append("   --  Every asset body (or search-index chunk) as its own")
-    lines.append("   --  static constant.  One constant per body keeps each")
-    lines.append("   --  string small: a single multi-megabyte blob constant")
-    lines.append("   --  overflows the gnatprove frontend stack (Storage_Error)")
-    lines.append("   --  whatever its structure, so the bodies are never")
-    lines.append("   --  concatenated into one value.")
+    lines.append("   --  Every asset body (or compressed chunk) as its own")
+    lines.append("   --  static constant of base64 text.  One constant per body")
+    lines.append("   --  keeps each string small: a single multi-megabyte blob")
+    lines.append("   --  constant overflows the gnatprove frontend stack")
+    lines.append("   --  (Storage_Error) whatever its structure, so the bodies are")
+    lines.append("   --  never concatenated into one value.")
     body_idx: int = 0
     for rel, mime, chunks in plan:
         for chunk in chunks:
@@ -393,11 +419,20 @@ def generate(out: Path) -> None:
         lines.append("     (Asset_Ref'" if i == 0 else "      Asset_Ref'")
         lines.append(f'        (Path  => "{pad_path}",')
         lines.append(f'         Mime  => "{pad_mime}",')
-        lines.append(f"         Idx   => {cum + 1}){end_ref}")
+        lines.append(f"         Idx   => {cum + 1},")
+        lines.append(f"         Gzip  => True){end_ref}")
         cum += len(chunks)
     lines.append("")
-    lines.append("   --  The first body of a table asset (its only body for")
-    lines.append("   --  every asset except the chunked search index).")
+    lines.append("   --  The decoded bytes of one body: base64-decoded (the gzip")
+    lines.append("   --  stream, served with Content-Encoding: gzip) when Is_Gzip,")
+    lines.append("   --  otherwise the body verbatim.  The server streams one chunk")
+    lines.append("   --  at a time, so no worker ever materialises a multi-megabyte")
+    lines.append("   --  body.")
+    lines.append("   function Body_Bytes (B : Body_Index; Is_Gzip : Boolean)")
+    lines.append("     return String;")
+    lines.append("")
+    lines.append("   --  The decoded first body of a table asset (its only body for")
+    lines.append("   --  every asset unless a compressed chunk split it).")
     lines.append("   function Content (Idx : Asset_Index) return String;")
     lines.append("")
     lines.append("   --  Find the asset for a request subpath.  Normalises:")
@@ -410,8 +445,9 @@ def generate(out: Path) -> None:
     lines.append("end Adacovex.Docs_Template;")
     out.write_text("\n".join(lines) + "\n", encoding="ascii")
     total = sum(len(b) for _, _, b in assets)
+    gz_total = sum(len(c) for _, _, chunks in plan for c in chunks)
     print(f"{out.name} regenerated ({len(plan)} assets, {body_count} bodies, "
-          f"{total} bytes).")
+          f"{gz_total} compressed bytes, {total} original bytes).")
 
 
 def parse_args(argv: List[str]) -> argparse.Namespace:
