@@ -102,7 +102,7 @@ package Adacovex.Parsers.Source is
 
    --  Apply docstring patches to scanned packages.
    --  For each package, checks for a patch file at
-   --  <Target_Dir>/.adacovex/patches/<relative-path> and merges its
+   --  ``<Target_Dir>/.adacovex/patches/<relative-path>`` and merges its
    --  docstring info into the original package's subprograms.
    --  @param Target_Dir  Root directory used for patch path resolution.
    --  @param Packages  In/out vector of scanned packages to patch.

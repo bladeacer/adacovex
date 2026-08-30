@@ -35,7 +35,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-5363a88b.js";
+            window.path_to_searchindex_js = "../searchindex-b8df906a.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-0e6cf2bd.js"></script>
@@ -178,7 +178,7 @@
 <p>Proof patches for vendored dependencies.</p>
 <p>The docstring patch system (Adacovex.Parsers.Source.Apply_Patches)
 overlays documentation onto vendored .ads files.  This package extends
-the same .adacovex/patches/<relative-path> layout with SPARK proof
+the same <code>.adacovex/patches/&lt;relative-path&gt;</code> layout with SPARK proof
 support.  A patch file can carry SPARK aspects.  The aspects are
 SPARK_Mode on the package declaration and Pre, Post, or SPARK_Mode on
 subprogram declarations.  The <code>prove</code> subcommand merges them into a copy
@@ -187,7 +187,7 @@ vendored body.  GNATprove then analyses the vendored unit with the
 patched contracts.  It does not modify the original vendored sources.
 A .ads patch re-declares the spec with contracts.  A .adb patch opts
 the body into the proof.  The body is analysed only when it declares
-SPARK_Mode On itself.</relative-path></p>
+SPARK_Mode On itself.</p>
 <p>The merge is textual and line-based.  The patched source is the original
 with each patched subprogram declaration replaced by the patch’s
 declaration block.  The block carries the aspects.  A declaration

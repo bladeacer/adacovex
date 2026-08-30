@@ -182,9 +182,11 @@ silent connections, the next request queued forever -- the e2e suite
 started hitting 60-second timeouts on `/docs` subpages as it grew.  Each
 accepted socket now carries a 5-second receive timeout, and a timed-out
 (or dropped) connection is closed in the worker's error path (which
-previously leaked the socket).  A worker frees within seconds, the pool
-recovers, and the request is served; the e2e suite returns to 28 passing
-in ~14 seconds.
+previously leaked the socket).  A worker frees instead of pinning the pool forever,
+and the request is served.  (The timeout was originally 5s; H10 below
+shortens it to half a second so a multi-asset docs burst fans out across
+the pool instead of waiting one timeout per queued connection.)  The e2e
+suite returns to 28 passing in ~14 seconds.
 
 ### H4: Bundled manual no longer overflows the gnatprove frontend
 
@@ -236,6 +238,42 @@ command now resolves the cargo-installed `mdbook` binary (`find` under
 `$HOME`) and prepends its directory to PATH before building, so the build
 survives Rust toolchain upgrades without a hardcoded version path.
 
+### H9: Docs search-result links resolve again
+
+Clicking an mdBook search result in the bundled manual returned 404.  The
+`/docs` router dispatched on the query-string-stripped path (so `?highlight=`
+reached the docs route), but the asset lookup that followed read the *raw*
+request path, so every search result carrying `?highlight=...` (mdBook's
+mark-the-search-term parameter) was looked up as `changelogs/….html?highlight=…`
+and never found.  The docs asset key now derives from the query-stripped path,
+so a search-result link such as
+`/docs/usage/cli-reference.html?highlight=serve#--serve` resolves to the page,
+then the browser's own fragment + mark handling scrolls to the heading and
+highlights the term -- exactly as it does under `mdbook serve`.
+
+### H10: Docs pages load quickly again
+
+The bundled manual felt slow to open: a ~15-asset page (HTML + several CSS +
+JS) took roughly six seconds to load.  The 4-worker server pool pinned each
+worker to its keep-alive connection for a 5-second idle receive timeout, so
+once four sockets were held by the browser's parallel asset requests, the
+remaining connections queued in the accept backlog for ~5s until a worker
+released.  The idle timeout is now half a second: a worker that finishes a
+keep-alive exchange returns to `Accept_Socket` quickly, the burst fan-outs
+across the pool, and a docs page loads in well under a second.  Workers are
+released faster on idle connections, which also means a stale or abandoned
+connection is reaped sooner than before.
+
+### H11: Offline manual subpages drop their font links
+
+`tools/gen-docs.py` dropped the bundling-irrelevant font stylesheet link from
+each bundled page, but its pattern only matched the index page's
+`href="fonts/…css"` shape.  Subpages link the same stylesheet with a
+`path_to_root` prefix (`../fonts/…css`), so those kept the reference and the
+browser issued a `/fonts/...css` 404 on every subpage.  The drop now matches
+any leading `../` prefix, so no bundled page references the unbundled font
+asset.
+
 ### H8: HLR tags are no longer read from string literals
 
 The source scanner extracted HLR traceability tags from `--` sequences
@@ -253,9 +291,14 @@ The native suite grows from 1169 to 1173 tests. The server routing category
 adds four checks for the `/docs` and `/docs/` routes and two near-miss paths
 (`/docs2`, `/manual`) that must stay 404s. The scanner category adds three
 checks that a `-- HLR-*` string literal is not a source tag while a real
-comment tag after a string still is. All 1173 tests pass (1176-1181 when
-mdbook is on PATH, depending on the system-tool assertions in the SBOM
-category).
+comment tag after a string still is.  H9's query-string handling adds no
+native assertions (the routing table already pins `/docs` and the
+`Strip_Query` path), and H10's timeout is timing behaviour the suite
+cannot assert deterministically -- both are covered manually and by the
+dashboard e2e suite.
+
+All 1173 tests pass (1176-1181 when mdbook is on PATH, depending on the
+system-tool assertions in the SBOM category).
 
 ## Proof Results
 
@@ -282,8 +325,12 @@ trailing-slash spelling and remains proved by definition.
   book-links-check gate and the complete-book restructure, H4 the chunked
   blob that keeps the bundled manual provable.
 - `HLR-SERVER` -- H3 the `Docs_Subpath` off-by-one fix, H5 the worker-pool
-  idle-connection timeout.
+  idle-connection timeout, H9 the query-stripped docs asset lookup, H10 the
+  shorter idle timeout that stops the worker pool serialising a page burst.
 - `HLR-SCAN` -- H8 the string-literal HLR-tag fix (tags inside strings are
   data, not traces).
+- `HLR-DOC` -- H11 the font-link drop that works on subpages (HTML tags
+  wrapped in inline code so `mdbook` stops warning on the unclosed `<mapping>`
+  / `<aa>` / `<cache>` / `<relative-path>` spans in the generated pages).
 
 See `docs/dashboard.md`, `docs/THIRD_PARTY_NOTICES.md`, and `.readthedocs.yaml`.

@@ -35,7 +35,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-5363a88b.js";
+            window.path_to_searchindex_js = "../searchindex-b8df906a.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-0e6cf2bd.js"></script>
@@ -389,7 +389,7 @@ SPARK_Mode Off)   [violation of aspect SPARK_Mode]
 <pre><code class="language-text">Success: all checks proved (1 check).
 </code></pre>
 <p><code>Adacovex. CPUs. Get_Temp_Directory</code> therefore returned to <code>SPARK_Mode =&gt; On</code> in 1.27.0 (spec and body), with <code>Global =&gt; null</code>. The runtime `Ada.</p>
-<p>Environment_Variables<code>subprograms carry no Global contracts, so gnatprove 16 emits six</code>[assumed-global-null]<code> warnings (</code>Exists<code>/</code>Value<code>x</code>TMPDIR<code>/</code>TEMP<code>/</code>TMP<code>) -- warnings, not VCs: the gate remains 0 unproved, 0 justified. In 1.28.0 the function scopes a </code>pragma Warnings (Off, “no Global contract available”)<code>around itself (re-enabled immediately after), which gnatprove honors by message prefix, so the run is warning-free. The proof surface contracted by 1 VC (724 -&gt; 723) when</code>Route<code>was converted to an expression function (the explicit case-analysis postcondition is now the implicit</code>Result = <mapping>`, which proves by definition).</mapping></p>
+<p>Environment_Variables<code>subprograms carry no Global contracts, so gnatprove 16 emits six</code>[assumed-global-null]<code> warnings (</code>Exists<code>/</code>Value<code>x</code>TMPDIR<code>/</code>TEMP<code>/</code>TMP<code>) -- warnings, not VCs: the gate remains 0 unproved, 0 justified. In 1.28.0 the function scopes a </code>pragma Warnings (Off, “no Global contract available”)<code>around itself (re-enabled immediately after), which gnatprove honors by message prefix, so the run is warning-free. The proof surface contracted by 1 VC (724 -&gt; 723) when</code>Route` was converted to an expression function (the explicit case-analysis postcondition is now the implicit <code>Result = &lt;mapping&gt;</code>, which proves by definition).</p>
 <h2 id="formal-containers-experiment-the-complexity-exception-stays-2026-08-25"><a class="header" href="#formal-containers-experiment-the-complexity-exception-stays-2026-08-25">Formal-containers experiment: the Complexity exception stays (<em>2026-08-25</em>)</a></h2>
 <p>1.28.0 attempted to prove <code>Adacovex.Complexity</code> by switching its private
 vectors to the formal (SPARK-approved) containers.  The attempt fails on
