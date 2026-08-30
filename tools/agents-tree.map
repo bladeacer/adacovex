@@ -40,7 +40,7 @@ src/server/adacovex-server-router	Parent package for HTTP request routing (futur
 src/tests/adacovex-test_support	Native test Runner type
 src/tests/adacovex_dal_tests	DAL compliance tests (16)
 src/tests/adacovex_types_tests	Type conversion tests (67)
-src/tests/adacovex_scanner_tests	Source scanner tests (86)
+src/tests/adacovex_scanner_tests	Source scanner tests (89)
 src/tests/adacovex_ir_tests	IR synthesis tests (27)
 src/tests/adacovex_man_tests	Man page renderer tests (18)
 src/tests/adacovex_vcs_tests	VCS support tests (29)
@@ -54,7 +54,7 @@ src/tests/adacovex_complexity_tests	Complexity check tests (12)
 src/tests/adacovex_renderer_svg_tests	SVG renderer tests (161)
 src/tests/adacovex_renderer_tests	HTML/Markdown renderer tests (58)
 src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (283)
-src/tests/test_runner	Test suite entry point (1178 tests)
+src/tests/test_runner	Test suite entry point (1181 tests)
 src/parsers/adacovex-parsers-manifest-req_entry	Parse the first requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-is_test_named	Whether an npm package name carries a test label (starts/ends with "test")
 src/parsers/adacovex-parsers-manifest-collect_owner_test_names	Collect test-labelled dependency names from supported-language manifests

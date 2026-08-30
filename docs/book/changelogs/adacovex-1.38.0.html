@@ -35,7 +35,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-83dd89a6.js";
+            window.path_to_searchindex_js = "../searchindex-5363a88b.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-0e6cf2bd.js"></script>
@@ -250,19 +250,22 @@ from “six cards” to the real eight (the two shared radars, proof and test
 donuts, proof and test bars, the docstring radial gauge, and the dependency
 scope polar ring). The screenshots are captured with a Playwright script
 (<code>tests/e2e/capture-previews.mjs</code>) against the live <code>--serve</code> dashboard.</p>
-<h3 id="c8-bundled-offline-manual-is-now-searchable"><a class="header" href="#c8-bundled-offline-manual-is-now-searchable">C8: Bundled offline manual is now searchable</a></h3>
-<p>The bundled manual served at <code>/docs</code> works fully <strong>offline</strong> again. In 1.38
-the mdBook search machinery was dropped from the bundle (mdbook’s elasticlunr
-search index is a multi-MB single blob that would overflow the gnatprove
-frontend as one Ada string constant) and the search box was hidden, so the
-manual in the binary had no search. <code>tools/gen-docs.py</code> now bundles a
-<strong>compact <code>offline-search.json</code></strong> (page title, headings, body excerpt – a
-few tens of kilobytes for the whole manual) and injects a small
-self-contained search <strong>widget</strong> into every bundled page. The widget resolves
-the manual root from the current URL and does substring search with per-result
-links into the manual; mdbook’s own search box stays hidden, so the online
-Read the Docs site keeps its full search while the bundled copy gains a
-working one for machines without a network.</p>
+<h3 id="c8-mdbook-search-works-in-the-bundled-offline-manual"><a class="header" href="#c8-mdbook-search-works-in-the-bundled-offline-manual">C8: mdBook search works in the bundled offline manual</a></h3>
+<p>The bundled manual served at <code>/docs</code> is searchable <strong>offline</strong> with mdBook’s
+own search. In 1.38 the mdBook search machinery was dropped from the bundle
+(mdbook’s elasticlunr search index is a multi-MB single blob that would
+overflow the gnatprove frontend as one Ada string constant) and the search
+box was hidden, so the manual in the binary had no search. <code>tools/gen-docs.py</code>
+now bundles the whole mdBook search stack – <code>elasticlunr</code>, <code>mark</code>,
+<code>searcher</code>, and the search index itself – and keeps the search box visible.
+The index is split into fixed-size chunks, each its own Ada constant (so
+no single constant exceeds the gnatprove limit), and the server streams the
+chunks back as one response when the page requests it, so no worker task
+materialises a multi-megabyte body.</p>
+<p>The search index is now committed with the rest of <code>docs/book</code> so the
+bundle stays deterministic. No parallel search index or widget: the search
+button runs mdbook’s own code against mdbook’s own index, exactly like the
+online site.</p>
 <h3 id="c9-dashboard-shows-obvious-docs-links-and-a-split-api-view"><a class="header" href="#c9-dashboard-shows-obvious-docs-links-and-a-split-api-view">C9: Dashboard shows obvious docs links and a split API view</a></h3>
 <p>The dashboard header gains a prominent <strong>docs links bar</strong> below the
 title/actions and above the tab selection. The API playground is rearranged
@@ -332,13 +335,15 @@ its stack (<code>Storage_Error stack overflow</code> at <code>adacovex-docs_temp
 aborting <code>make prove</code> and therefore <code>make check</code> and every release.
 Experiments showed the limit is the constant size itself (a single string
 constant over ~1 MB overflows whatever its structure), so the generated
-spec now holds one <code>aliased constant String</code> per asset – 152 bodies, each
-well under the limit, never concatenated into one value – with an
+spec now holds one <code>aliased constant String</code> per asset (the multi-MB
+search index is split into fixed-size chunks, each its own constant – 166
+bodies in all), each well under the limit, never concatenated into one
+value – with an
 <code>Asset_Bodies</code> access-to-constant table and an <code>Asset_Index</code> subtype so
 <code>Content (Idx)</code> needs no unchecked bounds reasoning. The served bytes are
 unchanged (each asset constant carries the identical content), the server
-routes through the same <code>Find</code>/<code>Content</code> API, and the bundle-links check
-still passes.</p>
+routes through the same <code>Find</code> lookup and streams the bodies (see C8), and
+the bundle-links check still passes.</p>
 <h3 id="h2-dashboard-docs-links-moved-from-the-footer-to-a-top-bar"><a class="header" href="#h2-dashboard-docs-links-moved-from-the-footer-to-a-top-bar">H2: Dashboard docs links moved from the footer to a top bar</a></h3>
 <p>The dashboard no longer lists the raw <code>/api/*</code> URIs or the <code>?theme=</code> embed
 hint in the footer. The footer now carries a single “Generated by adacovex”
@@ -364,10 +369,23 @@ toolchain’s bin directory, which is not on the build job’s PATH. The build
 command now resolves the cargo-installed <code>mdbook</code> binary (<code>find</code> under
 <code>$HOME</code>) and prepends its directory to PATH before building, so the build
 survives Rust toolchain upgrades without a hardcoded version path.</p>
+<h3 id="h8-hlr-tags-are-no-longer-read-from-string-literals"><a class="header" href="#h8-hlr-tags-are-no-longer-read-from-string-literals">H8: HLR tags are no longer read from string literals</a></h3>
+<p>The source scanner extracted HLR traceability tags from <code>--</code> sequences
+inside string literals, treating them as comment starts. The bundled
+manual’s generated constants embed examples such as <code>-- HLR-XXXX</code> in
+HTML and JS string data, so those examples registered as orphan source
+tags and the self-assessment fell to DAL-C Unmet. The scanner now tracks
+string literals (including <code>""</code> escapes) and only starts a comment at a
+<code>--</code> outside one; tags inside strings are data, not traces. The
+self-assessment returns to DAL-C Achieved.</p>
 <h2 id="test-suite"><a class="header" href="#test-suite">Test Suite</a></h2>
 <p>The native suite grows from 1169 to 1173 tests. The server routing category
 adds four checks for the <code>/docs</code> and <code>/docs/</code> routes and two near-miss paths
-(<code>/docs2</code>, <code>/manual</code>) that must stay 404s. All 1173 tests pass.</p>
+(<code>/docs2</code>, <code>/manual</code>) that must stay 404s. The scanner category adds three
+checks that a <code>-- HLR-*</code> string literal is not a source tag while a real
+comment tag after a string still is. All 1173 tests pass (1176-1181 when
+mdbook is on PATH, depending on the system-tool assertions in the SBOM
+category).</p>
 <h2 id="proof-results"><a class="header" href="#proof-results">Proof Results</a></h2>
 <p>Platinum, 0 unproved, 0 justified, 725 VCs (725 proved) under gnatprove
 16.1.0 – the total reported by <code>adacovex prove</code> and mirrored in
@@ -379,7 +397,7 @@ trailing-slash spelling and remains proved by definition.</p>
 <h2 id="traceability"><a class="header" href="#traceability">Traceability</a></h2>
 <ul>
 <li><code>HLR-DOC</code> / <code>HLR-DASH</code> – C1 mdBook manual + Read the Docs, C2 bundled
-offline manual at <code>/docs</code>, C8 bundled offline search, C10 audience
+offline manual at <code>/docs</code>, C8 mdBook search in the bundle, C10 audience
 folders, H2 docs links moved to the top bar, H7 Read the Docs build
 deploy, <code>tools/gen-docs.py</code>, and the <code>make book</code> target.</li>
 <li><code>HLR-DASH</code> – C3 API playground clickable links, C4 yace theme variables,
@@ -392,6 +410,8 @@ book-links-check gate and the complete-book restructure, H4 the chunked
 blob that keeps the bundled manual provable.</li>
 <li><code>HLR-SERVER</code> – H3 the <code>Docs_Subpath</code> off-by-one fix, H5 the worker-pool
 idle-connection timeout.</li>
+<li><code>HLR-SCAN</code> – H8 the string-literal HLR-tag fix (tags inside strings are
+data, not traces).</li>
 </ul>
 <p>See <code>docs/dashboard.md</code>, <code>docs/THIRD_PARTY_NOTICES.md</code>, and <code>.readthedocs.yaml</code>.</p>
 

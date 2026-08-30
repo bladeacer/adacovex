@@ -35,7 +35,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-83dd89a6.js";
+            window.path_to_searchindex_js = "../searchindex-5363a88b.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-0e6cf2bd.js"></script>
@@ -294,15 +294,19 @@ The manual is the same Markdown source that powers the Read the Docs site
 (<code>docs/</code>, an mdBook project with <code>book.toml</code> and <code>SUMMARY.md</code>); at build
 time <code>tools/gen-docs.py</code> runs <code>mdbook build</code> and bundles the resulting site
 into the binary (<code>src/adacovex-docs_template.ads</code>) as a lookup table plus
-one static string constant per asset: every page, stylesheet, and script,
-keyed by book-relative path, so the manual is fully self-contained and
-navigable offline (each asset is its own small constant – a single
-multi-megabyte blob would overflow the gnatprove frontend stack). External fonts, the search machinery, and the PNG screenshots are
-dropped (the screenshots show as notes), and the bundled HTML stays pure
-ASCII (non-ASCII glyphs are encoded as UTF-8 byte values in the Ada
-source).  Users on a machine without a network connection can still open
-the manual from the dashboard – the footer <strong>Manual</strong> link and the API
-playground’s <code>/docs</code> endpoint both point at it.</p>
+static string constants: every page, stylesheet, script, and badge, keyed
+by book-relative path, so the manual is fully self-contained and
+navigable offline (each constant stays small – a single multi-megabyte
+blob would overflow the gnatprove frontend stack, so the search index is
+split into chunks and the server streams them). mdBook’s own search
+machinery (elasticlunr, mark, searcher, and the search index) is bundled
+and the search button works exactly as on the online site. External fonts
+and the PNG screenshots are dropped (the screenshots show as notes), and
+the bundled HTML stays pure ASCII (non-ASCII glyphs are encoded as UTF-8
+byte values in the Ada source).  Users on a machine without a network
+connection can still open the manual from the dashboard – the header
+<strong>Documentation (offline manual)</strong> link and the API playground’s <code>/docs</code>
+endpoint both point at it.</p>
 <h2 id="the-html-dashboard"><a class="header" href="#the-html-dashboard">The HTML dashboard</a></h2>
 <p>The page is a single self-contained document (no external assets), bundled
 into the binary from <strong>modular resources</strong> – <code>resources/dashboard.html</code> is

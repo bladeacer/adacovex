@@ -16,9 +16,12 @@ Two checks, both wired as `make book-links-check` (part of `make check`):
    src/adacovex-docs_template.ads) must resolve to a bundled asset or to a
    file that is deliberately not bundled.  The deliberate exclusions are the
    OFFLINE_EXCLUDED_PREFIXES shared with tools/gen-docs.py (media/, fonts/,
-   the search machinery, print.html, 404.html, book.toml, .nojekyll), so the
-   checker never flags the files gen-docs.py intentionally drops or replaces
-   with a note.  External links and in-page anchors are skipped.
+   print.html, 404.html, book.toml, .nojekyll), so the checker never flags
+   the files gen-docs.py intentionally drops or replaces with a note.
+   mdbook's search machinery (elasticlunr-, mark-, searcher-, searchindex-)
+   IS bundled -- the manual's own search works offline -- so its links
+   resolve like any other asset.  External links and in-page anchors are
+   skipped.
 
 Usage:
   python3 tools/check-book-links.py
@@ -78,8 +81,8 @@ def check_bundle_links(assets: List[Tuple[str, str, str]]) -> List[str]:
     assets is gen_docs.collect_assets() output: (book-relative path, MIME,
     post-processed body).  Every internal target of every HTML asset must be
     another bundled asset, or sit under a deliberately-not-bundled prefix
-    (media/, fonts/, the search machinery, print.html, 404.html, book.toml,
-    .nojekyll -- the files the post-processing drops or replaces).
+    (media/, fonts/, print.html, 404.html, book.toml, .nojekyll -- the files
+    the post-processing drops or replaces).
     """
     paths: Set[str] = {rel for rel, _, _ in assets}
     errors: List[str] = []

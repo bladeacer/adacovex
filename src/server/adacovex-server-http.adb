@@ -255,6 +255,96 @@ package body Adacovex.Server.HTTP is
       Send_Socket (Channel, SEA, Last);
    end Send_Response;
 
+   --  Send one docs asset with its HTTP header, streaming the body in
+   --  fixed-size slices.  Every asset is a single constant except the
+   --  multi-MB search index, which the generator chunks; the chunks are
+   --  streamed back as one response so no worker task ever materialises a
+   --  multi-megabyte body (or its stream array) on its stack.
+   procedure Send_Asset_Response
+     (Channel      : Socket_Type;
+      Status       : String;
+      Content_Type : String;
+      Idx          : Adacovex.Docs_Template.Asset_Index;
+      Keep_Alive   : Boolean)
+   is
+      Conn_Val : constant String :=
+        (if Keep_Alive then "keep-alive" else "close");
+      First    : constant Adacovex.Docs_Template.Body_Index :=
+        Adacovex.Docs_Template.Assets (Idx).Idx;
+      Total    : Natural := 0;
+   begin
+      for K in 0 .. Adacovex.Docs_Template.Chunk_Count (Idx) - 1 loop
+         Total :=
+           Total
+           + Adacovex.Docs_Template.Asset_Bodies
+               (Adacovex.Docs_Template.Body_Index
+                  (Natural (First) + K)).all'Length;
+      end loop;
+      declare
+         Response : constant String :=
+           "HTTP/1.1 "
+           & Status
+           & ASCII.CR
+           & ASCII.LF
+           & "Content-Type: "
+           & Content_Type
+           & ASCII.CR
+           & ASCII.LF
+           & "Content-Length:"
+           & Integer'Image (Total)
+           & ASCII.CR
+           & ASCII.LF
+           & "Connection: "
+           & Conn_Val
+           & ASCII.CR
+           & ASCII.LF
+           & ASCII.CR
+           & ASCII.LF;
+         SEA      :
+           Ada.Streams.Stream_Element_Array
+             (1 .. Ada.Streams.Stream_Element_Offset (Response'Length));
+         Last     : Ada.Streams.Stream_Element_Offset;
+      begin
+         for I in Response'Range loop
+            SEA (Ada.Streams.Stream_Element_Offset (I)) :=
+              Ada.Streams.Stream_Element (Character'Pos (Response (I)));
+         end loop;
+         Send_Socket (Channel, SEA, Last);
+      end;
+      declare
+         Slice : Ada.Streams.Stream_Element_Array (1 .. 8192);
+         Last  : Ada.Streams.Stream_Element_Offset;
+      begin
+         for K in 0 .. Adacovex.Docs_Template.Chunk_Count (Idx) - 1 loop
+            declare
+               B   : constant String :=
+                 Adacovex.Docs_Template.Asset_Bodies
+                   (Adacovex.Docs_Template.Body_Index
+                      (Natural (First) + K)).all;
+               Off : Natural := B'First;
+            begin
+               while Off <= B'Last loop
+                  declare
+                     N : constant Natural :=
+                       Natural'Min (B'Last - Off + 1, Slice'Length);
+                  begin
+                     for I in 1 .. N loop
+                        Slice (Ada.Streams.Stream_Element_Offset (I)) :=
+                          Ada.Streams.Stream_Element
+                            (Character'Pos (B (Off + I - 1)));
+                     end loop;
+                     Send_Socket
+                       (Channel,
+                        Slice (1 .. Ada.Streams.Stream_Element_Offset (N)),
+                        Last);
+                     Off := Off + N;
+                  end;
+               end loop;
+            end;
+         end loop;
+      end;
+   end Send_Asset_Response;
+
    function Read_Request_Line (Channel : Socket_Type) return String is
       Buffer : String (1 .. 4096);
       Last   : Natural := 0;
@@ -538,11 +628,11 @@ package body Adacovex.Server.HTTP is
                         A_Idx : constant Adacovex.Docs_Template.Asset_Index :=
                           Adacovex.Docs_Template.Asset_Index (Idx);
                      begin
-                        Send_Response
+                        Send_Asset_Response
                           (Channel,
                            "200 OK",
                            Adacovex.Docs_Template.Assets (A_Idx).Mime,
-                           Adacovex.Docs_Template.Content (A_Idx),
+                           A_Idx,
                            Is_KA);
                      end;
                   end if;

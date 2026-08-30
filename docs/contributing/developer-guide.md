@@ -24,7 +24,7 @@ Prerequisites:
 git clone https://github.com/bladeacer/adacovex.git
 cd adacovex
 make build        # compiles bin/adacovex + bin/test_runner (covex alias)
-make test         # builds + runs the native test suite (1178 tests)
+make test         # builds + runs the native test suite (1181 tests)
 make run-self     # assess adacovex itself: 100% docs, Platinum, DAL-C
 make prove        # SPARK proof (Platinum gate) + regenerates docs/badges/
 make check        # the whole quality gate CI runs before a release
@@ -98,7 +98,8 @@ Cross-links between the generated package pages and the reference pages live in 
 
 - `mdbook build docs` produces the site in `docs/book/`; `make book` also
   bundles it into `src/adacovex-docs_template.ads` (via `tools/gen-docs.py`,
-  which adds the compact offline search).
+  which keeps mdBook's own search machinery -- including the chunked search
+  index -- so the bundled manual is searchable offline).
 - The bundled manual is served by `--serve` at `/docs`.
 - `make book-links-check` fails when the committed `docs/book` drifts from a
   fresh `mdbook build`, or when a link in the bundled manual does not
