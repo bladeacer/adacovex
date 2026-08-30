@@ -60,9 +60,9 @@ The highlighter is adapted from ESM/TypeScript to a single plain-script binding 
 
 | Component | Version | Licence | Used for |
 |-----------|---------|---------|----------|
-| Sphinx | toolchain-managed | BSD-3-Clause | Building the manual from `docs/` (Furo theme + MyST) for the deployed site and the bundled offline manual |
-| MyST-Parser | toolchain-managed | MIT | Reading the `docs/*.md` pages unchanged inside Sphinx (no reStructuredText conversion) |
-| Furo | toolchain-managed | MIT | The Sphinx HTML theme used by the manual (light/dark, no external assets) |
+| [Sphinx](https://www.sphinx-doc.org) | toolchain-managed | BSD-3-Clause | Building the manual from `docs/` (Furo theme + MyST) for the deployed site and the bundled offline manual |
+| [MyST-Parser](https://github.com/executablebooks/MyST-Parser) | toolchain-managed | MIT | Reading the `docs/*.md` pages unchanged inside Sphinx (no reStructuredText conversion) |
+| [Furo](https://github.com/pradyunsg/furo) | toolchain-managed | MIT | The Sphinx HTML theme used by the manual (light/dark, no external assets) |
 
 Sphinx, MyST-Parser and Furo are build-time tools (pinned in `requirements.txt`, installed into the Python venv). They compile the Markdown manual; their output is embedded into the binary as Ada strings. They are not bundled or redistributed with adacovex. The user-facing documentation, and the offline manual served at `/docs`, credit Sphinx as the docs generator and Furo as the theme.
 
@@ -78,7 +78,7 @@ The online manual is hosted on Read the Docs, a free documentation service. The 
 
 | Component | Version | Licence | Used for |
 |-----------|---------|---------|----------|
-| Playwright | test dependency | Apache-2.0 | End-to-end dashboard layout tests (`make e2e`) |
+| [Playwright](https://github.com/microsoft/playwright) | test dependency | Apache-2.0 | End-to-end dashboard layout tests (`make e2e`) |
 
 Playwright (https://github.com/microsoft/playwright) is a development dependency of the e2e fixture (`tests/e2e/package.json`, `devDependencies`). It runs automated browser tests of the dashboard. adacovex classifies it as a **test** dependency: the package name `@playwright/test` carries the test label. It is not vendored or redistributed with adacovex releases.
 

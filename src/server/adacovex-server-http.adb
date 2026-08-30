@@ -262,15 +262,18 @@ package body Adacovex.Server.HTTP is
    end Send_Response;
 
    --  Send one docs asset with its HTTP header, streaming the body in
-   --  fixed-size slices.  Every asset is a single constant except the
-   --  multi-MB search index, which the generator chunks; the chunks are
-   --  streamed back as one response so no worker task ever materialises a
-   --  multi-megabyte body (or its stream array) on its stack.
+   --  fixed-size slices.  Assets are stored gzip-compressed and base64-encoded
+   --  (see tools/gen-docs.py); the generator chunks every asset into fixed
+   --  small bodies so no worker task ever materialises a whole multi-megabyte
+   --  body (or its stream array) on its stack.  Each chunk is decoded here
+   --  and streamed; when Gzipped, the raw gzip bytes go out with a
+   --  `Content-Encoding: gzip` header and the browser inflates them.
    procedure Send_Asset_Response
      (Channel      : Socket_Type;
       Status       : String;
       Content_Type : String;
       Idx          : Adacovex.Docs_Template.Asset_Index;
+      Gzipped      : Boolean;
       Keep_Alive   : Boolean)
    is
       Conn_Val : constant String :=
@@ -282,9 +285,9 @@ package body Adacovex.Server.HTTP is
       for K in 0 .. Adacovex.Docs_Template.Chunk_Count (Idx) - 1 loop
          Total :=
            Total
-           + Adacovex.Docs_Template.Asset_Bodies
-               (Adacovex.Docs_Template.Body_Index
-                  (Natural (First) + K)).all'Length;
+           + Adacovex.Docs_Template.Body_Bytes
+               (Adacovex.Docs_Template.Body_Index (Natural (First) + K),
+                Gzipped)'Length;
       end loop;
       declare
          Response : constant String :=
@@ -296,6 +299,9 @@ package body Adacovex.Server.HTTP is
            & Content_Type
            & ASCII.CR
            & ASCII.LF
+           & (if Gzipped
+              then "Content-Encoding: gzip" & ASCII.CR & ASCII.LF
+              else "")
            & "Content-Length:"
            & Integer'Image (Total)
            & ASCII.CR
@@ -324,9 +330,9 @@ package body Adacovex.Server.HTTP is
          for K in 0 .. Adacovex.Docs_Template.Chunk_Count (Idx) - 1 loop
             declare
                B   : constant String :=
-                 Adacovex.Docs_Template.Asset_Bodies
-                   (Adacovex.Docs_Template.Body_Index
-                      (Natural (First) + K)).all;
+                 Adacovex.Docs_Template.Body_Bytes
+                   (Adacovex.Docs_Template.Body_Index (Natural (First) + K),
+                    Gzipped);
                Off : Natural := B'First;
             begin
                while Off <= B'Last loop
@@ -650,6 +656,7 @@ package body Adacovex.Server.HTTP is
                               "200 OK",
                               Adacovex.Docs_Template.Assets (A_Idx).Mime,
                               A_Idx,
+                              Adacovex.Docs_Template.Assets (A_Idx).Gzip,
                               Is_KA);
                         end;
                      end if;
