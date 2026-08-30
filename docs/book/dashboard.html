@@ -34,8 +34,8 @@
         <script>
             const path_to_root = "";
             const default_light_theme = "light";
-            const default_dark_theme = "coal";
-            window.path_to_searchindex_js = "searchindex-10fd9022.js";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "searchindex-1ed1a718.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-22a96a46.js"></script>
@@ -190,7 +190,7 @@ document (no external assets) with hash-routed tabs. Use the header dropdown to
 switch themes (light / dark / system) and <strong>Save settings</strong> to persist your
 choice.</p>
 <h3 id="overview-tab"><a class="header" href="#overview-tab">Overview tab</a></h3>
-<p><label class="checkbox-label"><input class="checkbox-img" type="checkbox"><img src="../media/dashboard_preview_overview.png" alt="Preview of Overview tab"><span class="img-wrapper"><img src="../media/dashboard_preview_overview.png" alt="Preview of Overview tab"></span></label></p>
+<p><label class="checkbox-label"><input class="checkbox-img" type="checkbox"><img src="media/dashboard_preview_overview.png" alt="Preview of Overview tab"><span class="img-wrapper"><img src="media/dashboard_preview_overview.png" alt="Preview of Overview tab"></span></label></p>
 <p>Start here. The <strong>Robustness tier</strong> (S / A / B / C / D) is a single letter that
 summarises five quality axes: Docs, Proof, Tests, Compliance, and Deps. An <strong>S</strong>
 means the project is healthy across the board. A <strong>D</strong> means one or more axes
@@ -216,30 +216,39 @@ its component count (for example <code>test: 3</code>).</li>
 test-category bars: a 407-VC category reads as a longer bar than a 56-VC
 one, so relative proof effort is visible at a glance.</p>
 <h3 id="proof-tab"><a class="header" href="#proof-tab">Proof tab</a></h3>
-<p><label class="checkbox-label"><input class="checkbox-img" type="checkbox"><img src="../media/dashboard_preview_proof.png" alt="Preview of Proof tab"><span class="img-wrapper"><img src="../media/dashboard_preview_proof.png" alt="Preview of Proof tab"></span></label></p>
+<p><label class="checkbox-label"><input class="checkbox-img" type="checkbox"><img src="media/dashboard_preview_proof.png" alt="Preview of Proof tab"><span class="img-wrapper"><img src="media/dashboard_preview_proof.png" alt="Preview of Proof tab"></span></label></p>
 <p>Shows the SPARK level (Stone .. Platinum) and per-category VC counts. The mini <strong>VCs proved / total</strong> at the top is the headline number. Click into a category to see the breakdown.</p>
 <p>If a category is low, that is where the proof effort must focus.</p>
 <h3 id="tests-tab"><a class="header" href="#tests-tab">Tests tab</a></h3>
-<p><label class="checkbox-label"><input class="checkbox-img" type="checkbox"><img src="../media/dashboard_preview_tests.png" alt="Preview of Tests tab"><span class="img-wrapper"><img src="../media/dashboard_preview_tests.png" alt="Preview of Tests tab"></span></label></p>
+<p><label class="checkbox-label"><input class="checkbox-img" type="checkbox"><img src="media/dashboard_preview_tests.png" alt="Preview of Tests tab"><span class="img-wrapper"><img src="media/dashboard_preview_tests.png" alt="Preview of Tests tab"></span></label></p>
 <p>Every test category with its count and Pass / Fail. A single failing category
 is enough to fail the compliance gate (<code>Tests passing</code> must be <code>Yes</code> for every
 tier except QM / DAL-E).</p>
 <h3 id="compliance-tab"><a class="header" href="#compliance-tab">Compliance tab</a></h3>
-<p><label class="checkbox-label"><input class="checkbox-img" type="checkbox"><img src="../media/dashboard_preview_compliance.png" alt="Preview of Compliance tab"><span class="img-wrapper"><img src="../media/dashboard_preview_compliance.png" alt="Preview of Compliance tab"></span></label></p>
+<p><label class="checkbox-label"><input class="checkbox-img" type="checkbox"><img src="media/dashboard_preview_compliance.png" alt="Preview of Compliance tab"><span class="img-wrapper"><img src="media/dashboard_preview_compliance.png" alt="Preview of Compliance tab"></span></label></p>
 <p>Shows the target integrity level, overall <code>Achieved</code> / <code>Unmet</code>, HLRs traced,
 orphan-tag state, and every unmet criterion. Use this to verify that every HLR
 is tagged in source and that no tags are orphaned (tagged but not defined in
 <code>HLR.md</code>).</p>
 <h3 id="dependencies-tab"><a class="header" href="#dependencies-tab">Dependencies tab</a></h3>
-<p><label class="checkbox-label"><input class="checkbox-img" type="checkbox"><img src="../media/dashboard_preview_dependencies.png" alt="Preview of Dependencies tab"><span class="img-wrapper"><img src="../media/dashboard_preview_dependencies.png" alt="Preview of Dependencies tab"></span></label></p>
+<p><label class="checkbox-label"><input class="checkbox-img" type="checkbox"><img src="media/dashboard_preview_dependencies.png" alt="Preview of Dependencies tab"><span class="img-wrapper"><img src="media/dashboard_preview_dependencies.png" alt="Preview of Dependencies tab"></span></label></p>
 <p>An interactive dependency tree (or diagram) of every component in the graph. Use the filter input and scope checkboxes to focus on base, dev, transitive, vendored, or system dependencies. Click a node to see its licence, PURL, parent, and a registry link. Use this tab to audit your supply chain: confirm every vendored licence is compatible, see which system tools the build needs (the <code>system</code> scope), and trace each component back to its source.</p>
 <p>The diagram view (toggle <strong>Tree / Diagram</strong>) renders the same graph as a directed diagram.</p>
 <h3 id="charts-tab"><a class="header" href="#charts-tab">Charts tab</a></h3>
-<p><label class="checkbox-label"><input class="checkbox-img" type="checkbox"><img src="../media/dashboard_preview_charts.png" alt="Preview of Charts tab"><span class="img-wrapper"><img src="../media/dashboard_preview_charts.png" alt="Preview of Charts tab"></span></label></p>
-<p>Six CSS-only cards (donut, column, bar, radial gauge, pie, polar ring) that
-show the same data as the Overview tab in a different format. Use this to
-compare SPARK proof, test results, doc coverage, and dependency scope at a
-glance.</p>
+<p><label class="checkbox-label"><input class="checkbox-img" type="checkbox"><img src="media/dashboard_preview_charts.png" alt="Preview of Charts tab"><span class="img-wrapper"><img src="media/dashboard_preview_charts.png" alt="Preview of Charts tab"></span></label></p>
+<p>Eight CSS-only cards show the same data as the Overview tab in a different
+format: the two shared radars (Robustness and SPARK Proof by Check Type),
+proof and test donuts, proof and test bar charts, the docstring radial
+gauge, and the dependency scope polar ring. Use this to compare SPARK
+proof, test results, doc coverage, and dependency scope at a glance. See
+<a href="#metrics-charts">Metrics charts</a> for the full card-by-card breakdown.</p>
+<h3 id="api-tab"><a class="header" href="#api-tab">API tab</a></h3>
+<p><label class="checkbox-label"><input class="checkbox-img" type="checkbox"><img src="media/dashboard_preview_api.png" alt="Preview of API tab"><span class="img-wrapper"><img src="media/dashboard_preview_api.png" alt="Preview of API tab"></span></label></p>
+<p>An interactive REST API playground: every endpoint the server dispatches on
+as a searchable, clickable button, with a pretty-printed, syntax-highlighted
+JSON preview. The first endpoint (<code>/api/metrics</code>) runs automatically, so
+the tab opens with a live preview. See <a href="#api-playground">API playground</a>
+for the full detail.</p>
 <h2 id="interpreting-the-charts"><a class="header" href="#interpreting-the-charts">Interpreting the charts</a></h2>
 <ul>
 <li><strong>Green / full arcs</strong> – the metric is at 100% or close to it.</li>
@@ -507,7 +516,7 @@ single standard (for example <code>--asil=B</code> shows only ISO 26262 at ASIL 
 <h2 id="the-json-api"><a class="header" href="#the-json-api">The JSON API</a></h2>
 <p><code>/api/metrics</code> is a plain HTTP GET, so scripts and CI can consume the
 assessment without parsing HTML:</p>
-<pre><code class="language-json">{"spark_level":"Platinum","total_vcs":723,"proved_vcs":723,
+<pre><code class="language-json">{"spark_level":"Platinum","total_vcs":725,"proved_vcs":725,
  "tests_passed":1173,"tests_failed":0,"doc_coverage":100,
  "standard":"all","level":"DAL-C","dal_status":"Achieved",
  "standards":{"DO-178C":{"level":"DAL-C","status":"Achieved"},
@@ -663,22 +672,6 @@ still override it afterwards in the browser.</p>
         <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
         <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
 
-        <!-- Livereload script (if served using the cli tool) -->
-        <script>
-            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
-            const socket = new WebSocket(wsAddress);
-            socket.onmessage = function (event) {
-                if (event.data === "reload") {
-                    socket.close();
-                    location.reload();
-                }
-            };
-
-            window.onbeforeunload = function() {
-                socket.close();
-            }
-        </script>
 
 
         <script>

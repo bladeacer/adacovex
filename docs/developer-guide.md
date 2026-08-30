@@ -78,6 +78,7 @@ A handful of modes exit before the pipeline: `--help`, `--version`, `man`,
 | Change assessment criteria | `src/compliance/adacovex-compliance-dal.adb` (+ the DAL levels doc) |
 | Add tests | `src/tests/` -- see below |
 | Regenerate API docs | `make doc` (gnatdoc -> `tools/rst2md.py` -> `docs/api-docs/`) |
+| Regenerate the offline manual | `make book` (mdBook -> `tools/gen-docs.py` -> `src/adacovex-docs_template.ads`) |
 | Sync test counts | `make test-count` (reads `docs/test_result.md`, rewrites every anchored count) |
 | Sync proof metrics | `make proof-status` |
 | Regenerate AGENTS.md blocks | `make agents-tree` (src tree) and `make doc-links` (docs list) |
@@ -88,6 +89,10 @@ A handful of modes exit before the pipeline: `--help`, `--version`, `man`,
 `make doc` regenerates `docs/api-docs/` from the `.ads` docstrings via gnatdoc + `tools/rst2md.py`. It produces one page per package plus `index.md`. The six hand-written reference pages are never regenerated. They are the docstring spec, the test formats, the SPARK levels, and the DAL, ASIL, and Class level pages.
 
 Cross-links between the generated package pages and the reference pages live in `tools/rst2md.py`. `GUIDE_PAGES` builds the index's "Guides" section. `PACKAGE_GUIDES` builds the per-package "See also" lines. They do **not** live in the `.ads` comments: gnatdoc parses comment text as RST and drops markdown link URLs. To add a package cross-link, extend `PACKAGE_GUIDES` in `tools/rst2md.py`. Then run `make doc` and `make link-check`.
+
+### Offline manual and Read the Docs
+
+`docs/` is an mdBook project (`docs/book.toml` with `src = "."` and a root `docs/SUMMARY.md`). Read the Docs builds the public site from it; the same book is bundled into the binary as the offline manual. When you add, move, or rename a doc page, update `docs/SUMMARY.md` in the same change. Then run `make book` (regenerates `src/adacovex-docs_template.ads`), `make link-check`, and `make docs-check`. `make book-serve` serves the manual locally with mdBook's live server.
 
 ## Testing
 

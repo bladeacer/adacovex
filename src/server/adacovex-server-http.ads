@@ -9,8 +9,9 @@ with Adacovex.Types;
 package Adacovex.Server.HTTP is
 
    --  The action that a request path routes to.  The HTTP server serves the
-   --  dashboard, the JSON API, and the SVG badge endpoints. Every other
-   --  path returns a 404.
+   --  dashboard, the JSON API, the SVG badge endpoints, and the bundled
+   --  offline manual (every path under /docs/). Every other path returns a
+   --  404.
    type Route_Kind is
      (Route_Dashboard,
       Route_Badge_SPARK,
@@ -28,9 +29,9 @@ package Adacovex.Server.HTTP is
    --  Returns the Route_Kind for the given path. The dashboard is at "/".
    --  The JSON APIs are at "/api/metrics", "/api/deps", and the endpoint
    --  catalog at "/api/endpoints". The SVG badge endpoints are at
-   --  "/badge/*.svg". The bundled offline manual is at "/docs". Every other
-   --  path
-   --  returns Route_Not_Found.
+   --  "/badge/*.svg". The bundled offline manual is at "/docs" and every
+   --  path under "/docs/" (each page, stylesheet, script, and badge of the
+   --  bundled mdBook site). Every other path returns Route_Not_Found.
    --  Routing is pure path routing. The socket dispatch in Handle_Request
    --  switches on the result. The native test suite pins every route.
    --  The function is an expression function: its body is the conditional
@@ -59,7 +60,8 @@ package Adacovex.Server.HTTP is
        then Route_API_Endpoints
        elsif Path = "/docs"
        then Route_Docs
-       elsif Path = "/docs/"
+       elsif Path'Length >= 6
+         and then Path (Path'First .. Path'First + 5) = "/docs/"
        then Route_Docs
        else Route_Not_Found)
    with SPARK_Mode => On, Global => null;

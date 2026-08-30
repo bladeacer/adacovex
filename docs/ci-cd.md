@@ -369,7 +369,11 @@ The entries read `1.14.0` down to `1.10.0`.
 
 The list is derived from the changelog files present in the tree, not from
 tags. A version that was never released has no entry. A release that skips
-versions still links every changelog in the range.
+versions still links every changelog in the range. Each entry links the
+release's changelog page on the deployed **Read the Docs** site
+(`https://adacovex.readthedocs.io/en/latest/changelogs/adacovex-<v>.html`),
+not a GitHub blob URL: the manual is an mdBook project and the changelogs are
+part of the published book.
 
 **The CI release binary is Linux x86-64 only for now.** The release workflow
 runs on `ubuntu-latest`. It packages the Linux binary and the prebuilt

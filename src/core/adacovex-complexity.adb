@@ -605,7 +605,11 @@ package body Adacovex.Complexity is
 
    --  True when a directory name should be skipped during the walk: version
    --  control metadata, generated/dependency trees, unit-test suites, and
-   --  vendored assets that are not part of the assessed source.
+   --  vendored assets that are not part of the assessed source.  `book` is
+   --  the mdBook build output (docs/book): it is generated site HTML/JS
+   --  (including single-line search indexes far beyond Max_Line), so it is
+   --  never assessed source and would only bloat the gate's memory and
+   --  noise.
    function Skip_Dir (N : String) return Boolean is
    begin
       return
@@ -619,6 +623,7 @@ package body Adacovex.Complexity is
         or else N = "bin"
         or else N = "dist"
         or else N = "build"
+        or else N = "book"
         or else N = "node_modules"
         or else N = "test-results"
         or else N = "playwright-report"

@@ -75,10 +75,15 @@ package body Adacovex_Server_Tests is
       R.Check
         (Route ("/index.html") = Route_Not_Found, "index.html is not found");
       R.Check
-        (Route ("/favicon.ico") = Route_Not_Found, "favicon.ico is not found");      R.Check (Route ("/badge") = Route_Not_Found, "/badge alone is not found");
+        (Route ("/favicon.ico") = Route_Not_Found, "favicon.ico is not found");
+      R.Check
+        (Route ("/badge") = Route_Not_Found, "/badge alone is not found");
       R.Check (Route ("/badge/") = Route_Not_Found, "/badge/ is not found");
-      R.Check (Route ("/docs2") = Route_Not_Found, "docs-prefixed path is not found");
-      R.Check (Route ("/manual") = Route_Not_Found, "manual alias is not found");
+      R.Check
+        (Route ("/docs2") = Route_Not_Found,
+         "docs-prefixed path is not found");
+      R.Check
+        (Route ("/manual") = Route_Not_Found, "manual alias is not found");
       R.Check
         (Route ("/badge/spark.svg/") = Route_Not_Found,
          "trailing slash on badge is not found");

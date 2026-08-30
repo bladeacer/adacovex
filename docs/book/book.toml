@@ -21,7 +21,7 @@ src = "."
 # Keep the default mdBook look; the theme follows the reader's system
 # preference between the built-in light and dark variants.
 default-theme = "light"
-preferred-dark-theme = "coal"
+preferred-dark-theme = "navy"
 
 # Print support: the single print.html page is the basis of the bundled
 # offline manual that --serve exposes at /docs/.
