@@ -30,4 +30,4 @@ exact expectations.
 
 Badge text uses British English and ASD-STE100 Simplified Technical
 English.  Technical terms follow the [STE100 Technical Names
-dictionary](../ste100-technical-names.md).
+dictionary](../contributing/ste100-technical-names.md).

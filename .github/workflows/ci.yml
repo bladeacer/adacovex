@@ -72,7 +72,7 @@ jobs:
 
   action-parity:
     # Feature gate: the composite action must mirror the base CLI option set
-    # (and the docs/ci-cd.md input table) 1:1.  Fails when a CLI flag, action
+    # (and the docs/usage/ci-cd.md input table) 1:1.  Fails when a CLI flag, action
     # input, or docs row drifts out of sync.
     name: Action/CLI/docs parity gate
     runs-on: ubuntu-latest

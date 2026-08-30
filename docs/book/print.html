@@ -36,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-62a4e086.js";
+            window.path_to_searchindex_js = "searchindex-83dd89a6.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-4f584999.js"></script>
+        <script src="toc-0e6cf2bd.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -180,65 +180,65 @@
 relevant to you, or read the pages in the order below.</p>
 <p>All documentation uses British English and ASD-STE100 Simplified Technical
 English.  The controlled Technical Names dictionary lives in
-<a href="#ste100-technical-names-for-adacovex">STE100 Technical Names</a>.  Use it before you use
-a technical word in any doc, docstring, or changelog.</p>
-<h2 id="for-end-users"><a class="header" href="#for-end-users">For end users</a></h2>
+<a href="#ste100-technical-names-for-adacovex">STE100 Technical Names</a>.  Use it
+before you use a technical word in any doc, docstring, or changelog.</p>
+<h2 id="getting-started"><a class="header" href="#getting-started">Getting started</a></h2>
 <ul>
 <li><a href="#installing-adacovex">Installation</a> – install the binary or the GitHub
 Action.</li>
-<li><a href="#adacovex-cli-reference">CLI reference</a> – every command, flag, and exit code.</li>
 <li><a href="#target-project-requirements">Target projects</a> – what a target project must
 contain.</li>
+</ul>
+<h2 id="using-adacovex"><a class="header" href="#using-adacovex">Using adacovex</a></h2>
+<ul>
+<li><a href="#adacovex-cli-reference">CLI reference</a> – every command, flag, and exit
+code.</li>
 <li><a href="#web-dashboard-and-json-api">Web dashboard</a> – the HTML report and JSON API.</li>
 <li><a href="#the-sbom-subcommand-1">SBOM</a> – the software-bill-of-materials generator.</li>
-<li><a href="#compliance-standards-do-178c--iso-26262--iec-62304">Standards</a> – DO-178C, ISO 26262, and IEC 62304 levels.</li>
-<li><a href="#platform-support">Platforms</a> – supported platforms and toolchain state.</li>
-<li><a href="#vcs-support-and-differential-assessment">VCS support</a> – differential assessment across git, hg, svn,
-fossil, and jj.</li>
+<li><a href="#compliance-standards-do-178c--iso-26262--iec-62304">Standards</a> – DO-178C, ISO 26262, and IEC 62304
+levels.</li>
+<li><a href="#platform-support">Platforms</a> – supported platforms and toolchain
+state.</li>
+<li><a href="#vcs-support-and-differential-assessment">VCS support</a> – differential assessment across git, hg,
+svn, fossil, and jj.</li>
 <li><a href="#adacovex-cicd">CI/CD</a> – the GitHub Action and the workflow summary.</li>
 <li><a href="#adacovex-changelogs">Changelog</a> – release history.</li>
 </ul>
-<h2 id="for-contributors"><a class="header" href="#for-contributors">For contributors</a></h2>
-<h3 id="developer-guides"><a class="header" href="#developer-guides">Developer guides</a></h3>
+<h2 id="contributing-to-adacovex"><a class="header" href="#contributing-to-adacovex">Contributing to adacovex</a></h2>
 <ul>
-<li><a href="#contributor-guide-codebase-structure-and-setup">Developer guide</a> – the short contributor handbook.</li>
-<li><a href="https://github.com/bladeacer/adacovex/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a> – tests, changelog format, and
-gate rules.</li>
+<li><a href="#contributor-guide-codebase-structure-and-setup">Developer guide</a> – the contributor
+handbook: setup, codebase tour, gates, and release workflow.</li>
+<li><a href="#proving-and-writing-spark-proofs">Proving and writing proofs</a> – how to run and
+write SPARK proofs, including proof patches.</li>
+<li><a href="#adacovex-architecture-decisions">Architecture</a> – the full technical
+design.</li>
+<li><a href="#dependencies">Requirements</a> – the dependency
+categorisation.</li>
+<li><a href="#performance">Performance</a> – benchmarking and optimisation
+history.</li>
+<li><a href="#ste100-technical-names-for-adacovex">STE100 Technical Names</a> – the
+controlled dictionary.</li>
 <li><a href="#ai--llm-usage-in-this-project">LLM usage</a> – guidance for AI agents.</li>
-<li><a href="#proving-and-writing-spark-proofs">Proving and writing proofs</a> – how to run and write SPARK
-proofs, including proof patches.</li>
-<li><a href="#adacovex-architecture-decisions">Architecture</a> – the full technical design.</li>
-<li><a href="#dependencies">Requirements</a> – the dependency categorisation.</li>
-<li><a href="#ste100-technical-names-for-adacovex">STE100 Technical Names</a> – the controlled
-dictionary.</li>
-<li><a href="#performance">Performance</a> – benchmarking and optimisation history.</li>
 </ul>
-<h2 id="for-maintainers"><a class="header" href="#for-maintainers">For maintainers</a></h2>
+<h2 id="maintainer-references"><a class="header" href="#maintainer-references">Maintainer references</a></h2>
 <ul>
 <li><a href="#proof-records">Proof ledger</a> – the verified-VC history and the skipped
 units audit.</li>
 <li><a href="#compliance-outputs">Compliance outputs</a> – VERIFICATION.md, TRACE.md,
 and the HLR/LLR indexes.</li>
 <li><a href="#high-level-requirements--adacovex">HLR index</a> and <a href="#low-level-requirements--adacovex">LLR mapping</a>.</li>
-<li><a href="#badges">Badges</a> – the badge set <code>make run-self</code> emits.</li>
-<li><a href="#adacovex-api-reference">API reference</a> – the generated package documentation.</li>
+<li><a href="#badges">Badges</a> – the badge set the self-assessment emits.</li>
+<li><a href="#adacovex-api-reference">API reference</a> – the generated package
+documentation.</li>
 </ul>
-<h2 id="building-the-manual"><a class="header" href="#building-the-manual">Building the manual</a></h2>
-<p><code>docs/</code> is an <strong>mdBook</strong> project (<code>book.toml</code> with <code>src = "."</code>, root
-<code>SUMMARY.md</code>).  Read the Docs builds the public site from it (see
-<code>.readthedocs.yaml</code>).  Build it locally with <code>mdbook build docs</code>, serve it
-with <code>make book-serve</code> (mdBook’s live server) or <code>make docs-serve</code> (a plain
-HTTP server), and bundle it into the binary as the offline manual with
-<code>make book</code> (or <code>make build</code>, which runs it).  The <code>--serve</code> dashboard serves
-the bundled manual at <code>/docs</code>.</p>
-<h2 id="generated-outputs"><a class="header" href="#generated-outputs">Generated outputs</a></h2>
-<p><code>docs/compliance/VERIFICATION.md</code>, <code>docs/compliance/TRACE.md</code>,
-<code>docs/compliance/HLR.md</code>, and <code>docs/compliance/LLR.md</code> are generated per
-target.  <code>docs/badges/*.svg</code> are regenerated by <code>make run-self</code> and
-<code>make prove</code>.  <code>docs/api-docs/</code> is regenerated by <code>make doc</code>.  <code>docs/book/</code>
-is the mdBook build output and is committed with the source (regenerate it
-with <code>make book</code> whenever <code>docs/</code> changes; <code>make book-links-check</code> fails when
-it drifts).  Do not edit generated files by hand; regenerate them instead.</p>
+<p>The docs live under <code>docs/</code> as an <strong>mdBook</strong> project (<code>book.toml</code> with
+<code>src = "."</code> and a root <code>SUMMARY.md</code>).  The pages are grouped by audience:
+<code>docs/usage/</code> for end users, <code>docs/contributing/</code> for contributors, and the
+top-level references plus <code>docs/proof/</code>, <code>docs/compliance/</code>, and
+<code>docs/badges/</code> for maintainers.  How to build the book, regenerate the
+bundled offline manual, and keep the generated outputs in sync is covered in
+the <a href="#contributor-guide-codebase-structure-and-setup">developer guide</a>, not here: this index
+stays focused on what each page contains.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="installing-adacovex"><a class="header" href="#installing-adacovex">Installing adacovex</a></h1>
 <h2 id="quick-start"><a class="header" href="#quick-start">Quick start</a></h2>
@@ -289,11 +289,12 @@ via Alire (see <a href="#platform-support">Platforms</a>).</p>
 </blockquote>
 <h2 id="building-from-source"><a class="header" href="#building-from-source">Building from source</a></h2>
 <pre><code class="language-bash">git clone --depth 1 https://github.com/bladeacer/adacovex.git
-cd adacovex &amp;&amp; make build   # or: --branch vX.Y.Z for a released tag
+cd adacovex &amp;&amp; alr build   # or: --branch vX.Y.Z for a released tag
 </code></pre>
-<p><code>make build</code> produces <code>bin/adacovex</code> (with a <code>bin/covex</code> alias). A stock Alire
+<p><code>alr build</code> produces <code>bin/adacovex</code> (with a <code>bin/covex</code> alias). A stock Alire
 toolchain (<code>gnat_native</code> + <code>gprbuild</code>) plus the standard GNAT runtime is all
-that is needed. No other dependencies.</p>
+that is needed. No other dependencies. (Contributors use the richer
+<code>make build</code> workflow; see the <a href="#contributor-guide-codebase-structure-and-setup">developer guide</a>.)</p>
 <h2 id="version-source-per-installation-method"><a class="header" href="#version-source-per-installation-method">Version source per installation method</a></h2>
 <p><code>adacovex --version</code> (and the man page, the SBOM tool version, and the result
 cache namespace) resolve the version from <code>tools/gen-version.py</code>. The version
@@ -314,6 +315,88 @@ to repair a hand-edited one).</p>
 <code>man -l ~/.local/share/man/man1/adacovex.1</code>. <code>adacovex status</code> reports mandb
 availability up front. See <a href="#local-man-page-linuxwsl">Platforms – local man page</a>
 for the install roots and man-db behaviour.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="target-project-requirements"><a class="header" href="#target-project-requirements">Target project requirements</a></h1>
+<p>adacovex assesses an <strong>Ada/SPARK project</strong>. The target root can be the repository root or a subdirectory (via <code>--target=PATH</code>). For a meaningful report, the target must provide the items that follow. Any missing item shows as <code>N/A</code>.</p>
+<p>DAL checks that depend on the missing item report <code>Unmet</code>.</p>
+<h2 id="what-the-target-provides"><a class="header" href="#what-the-target-provides">What the target provides</a></h2>
+<ol>
+<li>
+<p><strong>Ada source files</strong> (<code>.ads</code>) under the target root – scanned for
+subprogram declarations, docstrings, and HLR traceability tags. See the
+<a href="#docstring-annotation-specification">docstring spec</a> for the annotation
+format and coverage rules.</p>
+</li>
+<li>
+<p><strong>GNATprove output</strong> – a <code>gnatprove.out</code> summary, discovered in this
+order:</p>
+<ul>
+<li><code>&lt;target&gt;/obj/gnatprove/gnatprove.out</code></li>
+<li><code>&lt;target&gt;/gnatprove.out</code></li>
+<li><code>&lt;target&gt;/gnatprove/gnatprove.out</code></li>
+</ul>
+<p>Or run <code>adacovex prove</code> (or the GitHub Action with <code>prove: true</code>) to
+generate a fresh summary before you assess.</p>
+</li>
+<li>
+<p><strong>Test results</strong> – a test-summary file, auto-discovered from a
+conventional name at the project root or under <code>docs/</code> (for example
+<code>test_result.md</code>, <code>test_results.md</code>, <code>test-result.md</code>, <code>tests.md</code>,
+<code>test_result.txt</code>, <code>test_results.log</code>, <code>docs/test_result.md</code>, …).
+Supported formats come from your runner’s log or a summary file:</p>
+<ul>
+<li>Markdown tables: the native <code>test_runner</code> layout
+<code>| Category | N | PASS |</code> and the AUnit-report layout
+<code>| - | Category | N | PASS |</code></li>
+<li>TAP (<code>ok</code>/<code>not ok</code>)</li>
+<li>GNU Automake (<code>PASS:</code>/<code>FAIL:</code>)</li>
+<li>Maven Surefire (<code>Tests run: N</code>)</li>
+<li>Unity (<code>N Tests M Failures</code>)</li>
+</ul>
+<p>See the <a href="#supported-test-result-formats">test format spec</a> for the
+detailed rules (what each line looks like and which line wins when formats
+mix).</p>
+</li>
+<li>
+<p><strong>HLR / LLR documents</strong> (for DAL assessment) –
+<code>&lt;target&gt;/docs/compliance/HLR.md</code> and optionally
+<code>&lt;target&gt;/docs/compliance/LLR.md</code>, following the
+<a href="#hlr-traceability-tags">HLR traceability-tag format</a>.</p>
+</li>
+</ol>
+<h2 id="missing-data"><a class="header" href="#missing-data">Missing data</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Missing</th><th>Effect</th></tr>
+</thead>
+<tbody>
+<tr><td>No <code>.ads</code> sources</td><td>No packages scanned; metrics report zero</td></tr>
+<tr><td>No <code>gnatprove.out</code></td><td>SPARK level <code>Stone</code>, proof metrics <code>N/A</code></td></tr>
+<tr><td>No test summary</td><td>Test metrics <code>N/A</code>; DAL <code>Tests passing</code> criterion <code>Unmet</code></td></tr>
+<tr><td>No <code>HLR.md</code></td><td>HLR coverage <code>N/A</code>; DAL traceability criteria <code>Unmet</code></td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="non-ada-projects"><a class="header" href="#non-ada-projects">Non-Ada projects</a></h2>
+<p>adacovex currently targets Ada/SPARK sources. Non-Ada projects (C/C++, Python,
+JS, and more) that want the compliance/SBOM tooling provide their own
+<code>alire.toml</code> / <code>alire-dev.toml</code> to manage the Ada dependencies needed to build
+adacovex itself. Running <code>adacovex</code> from such a repo scans it and uses its
+manifest.</p>
+<blockquote>
+<p>We are working on support for other languages. Watch for updates.</p>
+</blockquote>
+<h2 id="vendored-code-and-strict-mode"><a class="header" href="#vendored-code-and-strict-mode">Vendored code and strict mode</a></h2>
+<p>By default (strict mode) adacovex scans and counts every directory except the
+always-excluded ones. Vendored code is included. For third-party code you
+cannot modify, use docstring <strong>patch files</strong> at
+<code>&lt;target&gt;/.adacovex/patches/&lt;relative-path&gt;</code> (see
+<a href="#patch-system">Architecture – Patch System</a>). Or run in
+relaxed mode (<code>--relaxed</code>, skip dirs, no patches) (see
+<a href="#strict-vs-relaxed-mode">Strict vs relaxed mode</a>).</p>
+<p>Vendored code can also take part in the <strong>SPARK proof</strong>. A patch carrying <code>SPARK_Mode</code> / <code>Pre</code> / <code>Post</code> / <code>Global</code> aspects is a <em>proof patch</em>. The <code>prove</code> subcommand merges it into a patched tree copy. The copy uses <code>.ads</code> spec contracts and <code>.adb</code> body patches that opt a SPARK-clean vendored body into the proof.</p>
+<p>See <a href="#proof-patches-proving-vendored-dependencies">Proving and writing proofs</a> for how to write them. See <a href="#proof-patches-spark-contracts-over-vendored-dependencies">Architecture – Proof patches</a> for the design.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="adacovex-cli-reference"><a class="header" href="#adacovex-cli-reference">adacovex CLI Reference</a></h1>
 <p>This page is the quick reference. It shows usage, the full flag table, and a
@@ -476,8 +559,9 @@ percentage, and the cyclomatic complexity <code>cx=</code>. The gate fails when 
 or function exceeds the thresholds (defaults: 4 000 LOC, 10% of codebase per
 file, 120 per function, 600 per file).</p>
 <p>Exit <code>0</code> when all gates pass. Exit <code>1</code> otherwise. This replaces the
-previous Python <code>check-complexity.py</code> script and is wired into
-<code>make complexity-check</code>.</p>
+previous Python <code>check-complexity.py</code> script. Maintainers wire the same gate
+into their CI via <code>adacovex complexity --excludes=...</code>; see the
+<a href="#contributor-guide-codebase-structure-and-setup">developer guide</a> for the workflow.</p>
 <h3 id="the-prove-subcommand"><a class="header" href="#the-prove-subcommand">The <code>prove</code> subcommand</a></h3>
 <p><code>adacovex prove --target=PATH</code> resolves a gnatprove installation and runs it against the target. It then falls through to the normal assessment pipeline. The pipeline parses the freshly generated proof summary. As a result, one command both proves and assesses.</p>
 <p>For the full guide to proving and writing SPARK proofs (contracts, VC categories, proof patches for vendored deps), see <a href="#proving-and-writing-spark-proofs">Proving and writing proofs</a>. gnatprove is resolved in this order: manifest pin &gt; global pin &gt; <code>$PATH</code> &gt; cached toolchain &gt; download. The target does not need to declare gnatprove. Full detail: <a href="#gnatprove-toolchain-resolution-prove-subcommand">Architecture – GNATprove toolchain resolution</a>.</p>
@@ -617,7 +701,7 @@ criteria. They are off by default. When set, the assessment fails loudly
 (exit code <code>1</code>, with an explicit <code>CI GATE:</code> reason printed to the report) if the
 target does not meet the required level:</p>
 <pre><code class="language-bash">adacovex --target=. --require-spark=Platinum --require-docstrings=100 \
-         --require-tests=1173 --require-proof=100
+         --require-tests=1178 --require-proof=100
 </code></pre>
 <ul>
 <li><code>require-spark</code> compares the honest assessed SPARK level (Stone..Platinum).</li>
@@ -751,88 +835,6 @@ adacovex sbom --format=spdx-json --target=. --class=A --out=sbom.spdx.json
 # Proof-aware SBOM (SPDX 2.3 JSON) at a custom path
 adacovex sbom --format=spdx-json --out=docs/compliance/sbom.spdx.json
 </code></pre>
-<div style="break-before: page; page-break-before: always;"></div>
-<h1 id="target-project-requirements"><a class="header" href="#target-project-requirements">Target project requirements</a></h1>
-<p>adacovex assesses an <strong>Ada/SPARK project</strong>. The target root can be the repository root or a subdirectory (via <code>--target=PATH</code>). For a meaningful report, the target must provide the items that follow. Any missing item shows as <code>N/A</code>.</p>
-<p>DAL checks that depend on the missing item report <code>Unmet</code>.</p>
-<h2 id="what-the-target-provides"><a class="header" href="#what-the-target-provides">What the target provides</a></h2>
-<ol>
-<li>
-<p><strong>Ada source files</strong> (<code>.ads</code>) under the target root – scanned for
-subprogram declarations, docstrings, and HLR traceability tags. See the
-<a href="#docstring-annotation-specification">docstring spec</a> for the annotation
-format and coverage rules.</p>
-</li>
-<li>
-<p><strong>GNATprove output</strong> – a <code>gnatprove.out</code> summary, discovered in this
-order:</p>
-<ul>
-<li><code>&lt;target&gt;/obj/gnatprove/gnatprove.out</code></li>
-<li><code>&lt;target&gt;/gnatprove.out</code></li>
-<li><code>&lt;target&gt;/gnatprove/gnatprove.out</code></li>
-</ul>
-<p>Or run <code>adacovex prove</code> (or the GitHub Action with <code>prove: true</code>) to
-generate a fresh summary before you assess.</p>
-</li>
-<li>
-<p><strong>Test results</strong> – a test-summary file, auto-discovered from a
-conventional name at the project root or under <code>docs/</code> (for example
-<code>test_result.md</code>, <code>test_results.md</code>, <code>test-result.md</code>, <code>tests.md</code>,
-<code>test_result.txt</code>, <code>test_results.log</code>, <code>docs/test_result.md</code>, …).
-Supported formats come from your runner’s log or a summary file:</p>
-<ul>
-<li>Markdown tables: the native <code>test_runner</code> layout
-<code>| Category | N | PASS |</code> and the AUnit-report layout
-<code>| - | Category | N | PASS |</code></li>
-<li>TAP (<code>ok</code>/<code>not ok</code>)</li>
-<li>GNU Automake (<code>PASS:</code>/<code>FAIL:</code>)</li>
-<li>Maven Surefire (<code>Tests run: N</code>)</li>
-<li>Unity (<code>N Tests M Failures</code>)</li>
-</ul>
-<p>See the <a href="#supported-test-result-formats">test format spec</a> for the
-detailed rules (what each line looks like and which line wins when formats
-mix).</p>
-</li>
-<li>
-<p><strong>HLR / LLR documents</strong> (for DAL assessment) –
-<code>&lt;target&gt;/docs/compliance/HLR.md</code> and optionally
-<code>&lt;target&gt;/docs/compliance/LLR.md</code>, following the
-<a href="#hlr-traceability-tags">HLR traceability-tag format</a>.</p>
-</li>
-</ol>
-<h2 id="missing-data"><a class="header" href="#missing-data">Missing data</a></h2>
-<div class="table-wrapper">
-<table>
-<thead>
-<tr><th>Missing</th><th>Effect</th></tr>
-</thead>
-<tbody>
-<tr><td>No <code>.ads</code> sources</td><td>No packages scanned; metrics report zero</td></tr>
-<tr><td>No <code>gnatprove.out</code></td><td>SPARK level <code>Stone</code>, proof metrics <code>N/A</code></td></tr>
-<tr><td>No test summary</td><td>Test metrics <code>N/A</code>; DAL <code>Tests passing</code> criterion <code>Unmet</code></td></tr>
-<tr><td>No <code>HLR.md</code></td><td>HLR coverage <code>N/A</code>; DAL traceability criteria <code>Unmet</code></td></tr>
-</tbody>
-</table>
-</div>
-<h2 id="non-ada-projects"><a class="header" href="#non-ada-projects">Non-Ada projects</a></h2>
-<p>adacovex currently targets Ada/SPARK sources. Non-Ada projects (C/C++, Python,
-JS, and more) that want the compliance/SBOM tooling provide their own
-<code>alire.toml</code> / <code>alire-dev.toml</code> to manage the Ada dependencies needed to build
-adacovex itself. Running <code>adacovex</code> from such a repo scans it and uses its
-manifest.</p>
-<blockquote>
-<p>We are working on support for other languages. Watch for updates.</p>
-</blockquote>
-<h2 id="vendored-code-and-strict-mode"><a class="header" href="#vendored-code-and-strict-mode">Vendored code and strict mode</a></h2>
-<p>By default (strict mode) adacovex scans and counts every directory except the
-always-excluded ones. Vendored code is included. For third-party code you
-cannot modify, use docstring <strong>patch files</strong> at
-<code>&lt;target&gt;/.adacovex/patches/&lt;relative-path&gt;</code> (see
-<a href="#patch-system">Architecture – Patch System</a>). Or run in
-relaxed mode (<code>--relaxed</code>, skip dirs, no patches) (see
-<a href="#strict-vs-relaxed-mode">Strict vs relaxed mode</a>).</p>
-<p>Vendored code can also take part in the <strong>SPARK proof</strong>. A patch carrying <code>SPARK_Mode</code> / <code>Pre</code> / <code>Post</code> / <code>Global</code> aspects is a <em>proof patch</em>. The <code>prove</code> subcommand merges it into a patched tree copy. The copy uses <code>.ads</code> spec contracts and <code>.adb</code> body patches that opt a SPARK-clean vendored body into the proof.</p>
-<p>See <a href="#proof-patches-proving-vendored-dependencies">Proving and writing proofs</a> for how to write them. See <a href="#proof-patches-spark-contracts-over-vendored-dependencies">Architecture – Proof patches</a> for the design.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="web-dashboard-and-json-api"><a class="header" href="#web-dashboard-and-json-api">Web dashboard and JSON API</a></h1>
 <p><code>adacovex --target=. --serve --port=8080</code> runs the full assessment and then
@@ -981,9 +983,10 @@ so their tokenizer regexes stay intact).</p>
 Alire crate binary - is completely self-contained. The dashboard has no
 external asset references and works offline.</p>
 <p>Edit the individual <code>resources/</code> files, never the
-generated <code>src/adacovex-dashboard_template.ads</code>. <code>make build</code> regenerates it
-and <code>gen-dashboard.py --check</code> (wired into <code>make check</code>) fails when it
-drifts.  Content is organised into <strong>clickable tabs</strong> (hash-routed,
+generated <code>src/adacovex-dashboard_template.ads</code> – the template is regenerated
+from them at build time and a drift-check fails when it is stale (the
+<a href="#contributor-guide-codebase-structure-and-setup">developer guide</a> documents that contributor workflow).
+Content is organised into <strong>clickable tabs</strong> (hash-routed,
 keyboard-accessible, persisted in <code>localStorage</code>):</p>
 <ul>
 <li><strong>Overview</strong> – status badges (live <code>/badge/*.svg</code> preview), source overview
@@ -1183,7 +1186,7 @@ single standard (for example <code>--asil=B</code> shows only ISO 26262 at ASIL 
 <p><code>/api/metrics</code> is a plain HTTP GET, so scripts and CI can consume the
 assessment without parsing HTML:</p>
 <pre><code class="language-json">{"spark_level":"Platinum","total_vcs":725,"proved_vcs":725,
- " "tests_passed":1173,"tests_failed":0,"doc_coverage":100,
+ " "tests_passed":1178,"tests_failed":0,"doc_coverage":100,
  "standard":"all","level":"DAL-C","dal_status":"Achieved",
  "standards":{"DO-178C":{"level":"DAL-C","status":"Achieved"},
                "ISO 26262":{"level":"ASIL B","status":"Achieved"},
@@ -1870,7 +1873,10 @@ criteria:</p>
 <p>Lightweight docstring-coverage gate for PR-style CI checks. It scans sources, patches, and computes docstring metrics on a base revision and the current tree. It does not use GNATprove, tests, or DAL. Thus it works when the base does not commit build artifacts.</p>
 <p>It prints a compact coverage table and a machine-parseable <code>coverage_delta:</code> line. Then it cleans up the snapshot.</p>
 <p>Exit <code>0</code> if the current docstring coverage is <code>&gt;=</code> the base. Exit <code>0</code> also if the base has no sources. Exit <code>1</code> if coverage regressed. This mode is mutually exclusive with <code>--compare-base</code>.</p>
-<p><code>make release</code> runs the same gate against the last release tag. For example, <code>--coverage-delta=v1.1.0</code> aborts if docstring coverage regressed between releases.</p>
+<p>The release workflow runs the same gate against the last release tag (a
+maintainer-only step; the <a href="#contributor-guide-codebase-structure-and-setup">developer guide</a> covers it).
+For example, <code>--coverage-delta=v1.1.0</code> aborts if docstring coverage regressed
+between two tags you compare at the command line.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="adacovex-cicd"><a class="header" href="#adacovex-cicd">adacovex CI/CD</a></h1>
 <h2 id="github-actions"><a class="header" href="#github-actions">GitHub Actions</a></h2>
@@ -1894,7 +1900,7 @@ jobs:
           standard: all          # DO-178C + ISO 26262 + IEC 62304
           require-spark: Platinum
           require-docstrings: 100
-          require-tests: 1173
+          require-tests: 1178
           run-tests: true
           generate-sbom: true
 </code></pre>
@@ -1952,11 +1958,12 @@ run <code>bash</code> and install Alire:</p>
 </ol>
 <p>The JSON API (<code>/api/metrics</code> when using <code>--serve</code>, or <code>--emit-metrics</code>) lets
 you parse results in any language.</p>
-<p><strong>Action/CLI/docs parity is a feature gate.</strong> <code>ci.yml</code> runs
-<code>make action-parity-check</code> (wired into <code>make check</code>). The build fails when the
-action’s inputs stop mirroring the base CLI option set. The build also fails
-when the <code>### Inputs</code> table below drifts from <code>action.yml</code>. See
-<code>tools/check-action-parity.py</code> for the mapping rules.</p>
+<p><strong>Action/CLI/docs parity is a feature gate.</strong> CI runs the action-parity
+check (<code>tools/check-action-parity.py</code>), which fails when the action’s inputs
+stop mirroring the base CLI option set, and also fails when the <code>### Inputs</code>
+table below drifts from <code>action.yml</code>. See <code>tools/check-action-parity.py</code> for
+the mapping rules (maintainers run the same check locally via
+<code>make action-parity-check</code>; see the <a href="#contributor-guide-codebase-structure-and-setup">developer guide</a>).</p>
 <h2 id="composite-action-actionyml"><a class="header" href="#composite-action-actionyml">Composite action (<code>./action.yml</code>)</a></h2>
 <p>The composite action installs Alire via
 <a href="https://github.com/alire-project/setup-alire"><code>alire-project/setup-alire</code></a>.
@@ -2071,8 +2078,9 @@ DO-178C, ISO 26262, and IEC 62304 badges/reports are all emitted and
 gated), with the Platinum / 100% docstrings / test-count / 100% proof
 thresholds.</li>
 <li><code>adacovex-tests</code> – build + native test suite (<code>run-tests</code>, <code>assess: false</code>).</li>
-<li><code>coverage-gate</code> (push only) – runs <code>make coverage-gate</code>, comparing
-docstring coverage between the latest two release tags.</li>
+<li><code>coverage-gate</code> (push only) – runs the coverage gate, comparing
+docstring coverage between the latest two release tags (a maintainer
+step; see the <a href="#contributor-guide-codebase-structure-and-setup">developer guide</a>).</li>
 </ul>
 </li>
 <li><strong><code>.github/workflows/pr-check.yml</code></strong> – runs <code>--coverage-delta</code> against
@@ -2128,14 +2136,14 @@ step does not mask this.</li>
 <tr><th>Output</th><th>Meaning</th><th>Action</th></tr>
 </thead>
 <tbody>
-<tr><td><code>CI GATE: SPARK level X below required Y (--require-spark)</code></td><td>Proven VCs or <code>gnatprove</code> version drift below the pinned gate</td><td>Check the <code>gnatprove</code> pin in <code>alire-dev.toml</code> or the <code>gnat-version</code> input. Re-run <code>make prove</code>. Update <code>--require-spark</code> only if the prover legitimately tightened</td></tr>
+<tr><td><code>CI GATE: SPARK level X below required Y (--require-spark)</code></td><td>Proven VCs or <code>gnatprove</code> version drift below the pinned gate</td><td>Check the <code>gnatprove</code> pin or the <code>gnat-version</code> input. Re-run <code>adacovex prove</code>. Update <code>--require-spark</code> only if the prover legitimately tightened</td></tr>
 <tr><td><code>CI GATE: docstring coverage N% below required M% (--require-docstrings)</code></td><td>Missing <code>--</code> docstrings or patches</td><td>Run <code>adacovex --verbose</code> to list undocumented subprogs. Add patches under <code>.adacovex/patches/</code></td></tr>
 <tr><td><code>CI GATE: proved-VC coverage N% below required M% (--require-proof)</code></td><td>Some VCs unproved/justified</td><td>Inspect <code>gnatprove.out</code>. Add contracts or fix <code>SPARK_Mode</code></td></tr>
 <tr><td><code>Warning: N source file(s) skipped: line exceeds Max_Line</code></td><td>A physical line &gt; <code>Max_Line</code> (262144 on 64-bit)</td><td>Split the declaration. DAL becomes <code>Unmet</code> by design (<code>docs/architecture.md#overflow-contract</code>)</td></tr>
 <tr><td><code>result cache: X hit(s), Y miss(es), Z evicted</code></td><td>Cache stats per run</td><td><code>Z&gt;0</code> means <code>--cache-max</code> evicted the oldest entries. Increase <code>--cache-max</code>. Pass <code>--no-cache</code> to force a full rescan</td></tr>
 <tr><td><code>Unknown option --foo (did you mean --bar?)</code></td><td>Typo</td><td>Use <code>adacovex --help</code> or <code>adacovex help &lt;topic&gt;</code></td></tr>
 <tr><td><code>::notice::WARNING ...</code> annotation</td><td>Non-fatal warning surfaced from <code>adacovex.out</code></td><td>Download the <code>adacovex-assessment</code> artifact for the full log. Warnings do not fail the gate. They indicate missing tests or proof</td></tr>
-<tr><td><code>make complexity-check</code> failed</td><td>File or function exceeds caps (<code>--max-file-loc</code>/<code>--max-file-pct</code>/<code>--max-fn-complexity</code>)</td><td>Run <code>./bin/adacovex complexity --help</code>. Split god objects or functions</td></tr>
+<tr><td><code>complexity-check</code> failed</td><td>File or function exceeds caps (<code>--max-file-loc</code>/<code>--max-file-pct</code>/<code>--max-fn-complexity</code>)</td><td>Run <code>adacovex complexity --help</code>. Split god objects or functions</td></tr>
 </tbody>
 </table>
 </div>
@@ -2153,8 +2161,10 @@ leaves three things without a re-run:</p>
 <h3 id="release-version-bundling"><a class="header" href="#release-version-bundling">Release version bundling</a></h3>
 <p>The release workflow builds the binary from the <code>vX. Y. Z</code> tag. It <strong>bundles that version into the binary</strong>.</p>
 <p>The action’s build step sets <code>ADACOVEX_VERSION</code> (from <code>github.ref_name</code>). It regenerates <code>src/adacovex_version_info.ads</code> before <code>alr build</code>. The shipped <code>adacovex --version</code> reports exactly the tag.</p>
-<p>The download step of the published action verifies this with <code>adacovex --version</code> after unpacking the release bundle. Locally, <code>make release VERSION=x.y.z</code> does the same. Normal <code>make build</code> reads the version from
-<code>alire-dev.toml</code> instead.</p>
+<p>The download step of the published action verifies this with <code>adacovex --version</code> after unpacking the release bundle. Maintainers reproduce the
+release locally with <code>make release VERSION=x.y.z</code> (see the
+<a href="#contributor-guide-codebase-structure-and-setup">developer guide</a>); a normal source build
+reads the version from <code>alire-dev.toml</code> instead.</p>
 <h3 id="pr-coverage-gate-1"><a class="header" href="#pr-coverage-gate-1">PR coverage gate</a></h3>
 <p>Gate every pull request so docstring coverage does not regress against the
 base branch. This is exactly what <code>--coverage-delta</code> was built for:</p>
@@ -2214,11 +2224,12 @@ runs on <code>ubuntu-latest</code>. It packages the Linux binary and the prebuil
 GNATprove toolchain bundle for that target. macOS, FreeBSD, Windows, and Linux
 aarch64 build adacovex from source via Alire instead. See
 <a href="#release-binaries">Platforms</a>.</p>
-<p><code>make release VERSION=x.y.z</code> does the same locally. It builds <code>--release</code>,
-generates proofs, validates DAL-C, and bundles <code>dist/</code>. Then it tags and
-pushes to trigger the workflow. <code>make build</code> regenerates
-<code>src/adacovex_version_info.ads</code> from <code>alire-dev.toml</code> (or <code>ADACOVEX_VERSION</code>)
-before compiling. The bundled version is always the build’s version.</p>
+<p>Maintainers reproduce the release locally with <code>make release VERSION=x.y.z</code>
+(see the <a href="#contributor-guide-codebase-structure-and-setup">developer guide</a>): it builds
+<code>--release</code>, generates proofs, validates DAL-C, and bundles <code>dist/</code>, then
+tags and pushes to trigger the workflow. The bundled version is always the
+build’s version (<code>src/adacovex_version_info.ads</code> comes from <code>alire-dev.toml</code>
+or <code>ADACOVEX_VERSION</code> at build time).</p>
 <h2 id="floating-tags"><a class="header" href="#floating-tags">Floating tags</a></h2>
 <p>The release workflow force-pushes the floating tags <code>vMAJOR</code>, <code>vMAJOR. MINOR</code>, and <code>latest</code>. For example: <code>v1</code>, <code>v1.3</code>, and <code>latest</code> from <code>v1.3.0</code>. Reference <code>@latest</code> to always get the newest published release.</p>
 <p>Use <code>@v1</code> or <code>@v1.3</code> for the latest release within a major or minor version. Pin an exact <code>@vX. Y. Z</code> for a fixed version.</p>
@@ -2280,7 +2291,7 @@ download). It lives in the dev manifest, never the published one.</li>
 <pre><code class="language-bash">git clone https://github.com/bladeacer/adacovex.git
 cd adacovex
 make build        # compiles bin/adacovex + bin/test_runner (covex alias)
-make test         # builds + runs the native test suite (1173 tests)
+make test         # builds + runs the native test suite (1178 tests)
 make run-self     # assess adacovex itself: 100% docs, Platinum, DAL-C
 make prove        # SPARK proof (Platinum gate) + regenerates docs/badges/
 make check        # the whole quality gate CI runs before a release
@@ -2339,7 +2350,28 @@ docs/                              -- all documentation (this guide, CLI referen
 <p><code>make doc</code> regenerates <code>docs/api-docs/</code> from the <code>.ads</code> docstrings via gnatdoc + <code>tools/rst2md.py</code>. It produces one page per package plus <code>index.md</code>. The six hand-written reference pages are never regenerated. They are the docstring spec, the test formats, the SPARK levels, and the DAL, ASIL, and Class level pages.</p>
 <p>Cross-links between the generated package pages and the reference pages live in <code>tools/rst2md.py</code>. <code>GUIDE_PAGES</code> builds the index’s “Guides” section. <code>PACKAGE_GUIDES</code> builds the per-package “See also” lines. They do <strong>not</strong> live in the <code>.ads</code> comments: gnatdoc parses comment text as RST and drops markdown link URLs. To add a package cross-link, extend <code>PACKAGE_GUIDES</code> in <code>tools/rst2md.py</code>. Then run <code>make doc</code> and <code>make link-check</code>.</p>
 <h3 id="offline-manual-and-read-the-docs"><a class="header" href="#offline-manual-and-read-the-docs">Offline manual and Read the Docs</a></h3>
-<p><code>docs/</code> is an mdBook project (<code>docs/book.toml</code> with <code>src = "."</code> and a root <code>docs/SUMMARY.md</code>). Read the Docs builds the public site from it; the same book is bundled into the binary as the offline manual. When you add, move, or rename a doc page, update <code>docs/SUMMARY.md</code> in the same change. Then run <code>make book</code> (regenerates <code>src/adacovex-docs_template.ads</code>), <code>make link-check</code>, and <code>make docs-check</code>. <code>make book-serve</code> serves the manual locally with mdBook’s live server.</p>
+<p><code>docs/</code> is an mdBook project (<code>docs/book.toml</code> with <code>src = "."</code> and a root <code>docs/SUMMARY.md</code>). Read the Docs builds the public site from it (<code>.readthedocs.yaml</code>, <code>mdbook build docs</code>); the same book is bundled into the binary as the offline manual. When you add, move, or rename a doc page, update <code>docs/SUMMARY.md</code> in the same change. Then run <code>make book</code> (regenerates <code>src/adacovex-docs_template.ads</code>), <code>make link-check</code>, and <code>make docs-check</code>. <code>make book-serve</code> serves the manual locally with mdBook’s live server; <code>make docs-serve</code> serves the raw Markdown over plain HTTP.</p>
+<h3 id="building-the-manual"><a class="header" href="#building-the-manual">Building the manual</a></h3>
+<ul>
+<li><code>mdbook build docs</code> produces the site in <code>docs/book/</code>; <code>make book</code> also
+bundles it into <code>src/adacovex-docs_template.ads</code> (via <code>tools/gen-docs.py</code>,
+which adds the compact offline search).</li>
+<li>The bundled manual is served by <code>--serve</code> at <code>/docs</code>.</li>
+<li><code>make book-links-check</code> fails when the committed <code>docs/book</code> drifts from a
+fresh <code>mdbook build</code>, or when a link in the bundled manual does not
+resolve.</li>
+</ul>
+<h3 id="generated-outputs"><a class="header" href="#generated-outputs">Generated outputs</a></h3>
+<ul>
+<li><code>docs/compliance/VERIFICATION.md</code>, <code>docs/compliance/TRACE.md</code>,
+<code>docs/compliance/HLR.md</code>, and <code>docs/compliance/LLR.md</code> are generated per
+target.</li>
+<li><code>docs/badges/*.svg</code> are regenerated by <code>make run-self</code> and <code>make prove</code>.</li>
+<li><code>docs/api-docs/</code> is regenerated by <code>make doc</code>.</li>
+<li><code>docs/book/</code> is the mdBook build output and is committed with the source
+(regenerate it with <code>make book</code> whenever <code>docs/</code> changes).</li>
+</ul>
+<p>Do not edit generated files by hand; regenerate them instead.</p>
 <h2 id="testing"><a class="header" href="#testing">Testing</a></h2>
 <p>The test suite is native and zero-dependency. <code>src/tests/</code> holds one file per category (scanner, config, types, renderers, SBOM, VCS, and more). Each file exposes a <code>Run (R : in out Runner'Class)</code> procedure wired into <code>src/tests/test_runner.adb</code>. A test is a <code>R. Check (Condition, "Description")</code> call.</p>
 <p>The runner counts them, prints a per-category table, and writes <code>docs/test_result.md</code>.</p>
@@ -3092,7 +3124,7 @@ content hash changing, or to measure rescan cost) and <code>--cache-dir</code> r
 it. The ANSI report shows a
 <code>result cache: X hit(s), Y miss(es), Z evicted</code> line per run.</p>
 <h2 id="testing-1"><a class="header" href="#testing-1">Testing</a></h2>
-<p>adacovex uses a native zero-dependency test framework (<code>Adacovex.Test_Support</code>) with 1173 tests across 16 categories. No external test framework (AUnit, and more) is required. Test results are written to <code>docs/test_result.md</code> in a parseable Markdown table format.</p>
+<p>adacovex uses a native zero-dependency test framework (<code>Adacovex.Test_Support</code>) with 1178 tests across 16 categories. No external test framework (AUnit, and more) is required. Test results are written to <code>docs/test_result.md</code> in a parseable Markdown table format.</p>
 <h2 id="complexity-check"><a class="header" href="#complexity-check">Complexity check</a></h2>
 <p>The <code>complexity</code> subcommand walks the whole target and scores many languages
 (C, C++, C#, Go, Java, JavaScript, TypeScript, Python, Ruby, PHP, Rust,
@@ -9491,6 +9523,51 @@ from “six cards” to the real eight (the two shared radars, proof and test
 donuts, proof and test bars, the docstring radial gauge, and the dependency
 scope polar ring). The screenshots are captured with a Playwright script
 (<code>tests/e2e/capture-previews.mjs</code>) against the live <code>--serve</code> dashboard.</p>
+<h3 id="c8-bundled-offline-manual-is-now-searchable"><a class="header" href="#c8-bundled-offline-manual-is-now-searchable">C8: Bundled offline manual is now searchable</a></h3>
+<p>The bundled manual served at <code>/docs</code> works fully <strong>offline</strong> again. In 1.38
+the mdBook search machinery was dropped from the bundle (mdbook’s elasticlunr
+search index is a multi-MB single blob that would overflow the gnatprove
+frontend as one Ada string constant) and the search box was hidden, so the
+manual in the binary had no search. <code>tools/gen-docs.py</code> now bundles a
+<strong>compact <code>offline-search.json</code></strong> (page title, headings, body excerpt – a
+few tens of kilobytes for the whole manual) and injects a small
+self-contained search <strong>widget</strong> into every bundled page. The widget resolves
+the manual root from the current URL and does substring search with per-result
+links into the manual; mdbook’s own search box stays hidden, so the online
+Read the Docs site keeps its full search while the bundled copy gains a
+working one for machines without a network.</p>
+<h3 id="c9-dashboard-shows-obvious-docs-links-and-a-split-api-view"><a class="header" href="#c9-dashboard-shows-obvious-docs-links-and-a-split-api-view">C9: Dashboard shows obvious docs links and a split API view</a></h3>
+<p>The dashboard header gains a prominent <strong>docs links bar</strong> below the
+title/actions and above the tab selection. The API playground is rearranged
+into a split-screen layout (endpoint nav left, live response preview right),
+and the footer no longer carries the raw <code>/api/*</code> links or the <code>?theme=</code>
+embed hint – see H2.</p>
+<h3 id="c10-docs-reorganised-into-audience-folders"><a class="header" href="#c10-docs-reorganised-into-audience-folders">C10: Docs reorganised into audience folders</a></h3>
+<p>The manual pages now live in folders that mirror their audience, so the
+navigation shows the structure at a glance: <code>docs/usage/</code> holds the
+end-user guides (installation, CLI reference, dashboard, SBOM, standards,
+platforms, VCS, CI/CD, target projects), <code>docs/contributing/</code> holds the
+contributor and maintainer guides (developer guide, proving, architecture,
+requirements, performance, STE100, LLM usage), and the top level keeps the
+index plus the maintainer references (HLR/LLR, test report, credits,
+third-party notices) next to the <code>proof/</code>, <code>compliance/</code>, <code>badges/</code>,
+<code>api-docs/</code>, and <code>changelogs/</code> outputs.  <code>docs/SUMMARY.md</code> groups the TOC
+into Getting started / Using adacovex / Contributing / Maintainer
+references, and every cross-link, README link, AGENTS.md doc-links entry,
+<code>tools/doc-links.map</code>, <code>tools/rst2md.py</code> guide table, and generated
+<code>api-docs</code> page was updated in the same change.  The manual index no
+longer carries the maintainer-only build and generated-output instructions;
+those moved to the developer guide (<code>docs/contributing/developer-guide.md</code>)
+so end-user pages stay focused on using adacovex.</p>
+<h3 id="c11-maintainer-only-make-targets-scoped-out-of-end-user-docs"><a class="header" href="#c11-maintainer-only-make-targets-scoped-out-of-end-user-docs">C11: Maintainer-only make targets scoped out of end-user docs</a></h3>
+<p>End-user pages no longer reference <code>make</code>/dev targets: <code>ci-cd.md</code> scopes
+<code>make action-parity-check</code>, <code>make coverage-gate</code>, <code>make release</code>, and the
+release workflow to the developer guide and swaps the debugging-guide
+<code>make prove</code> for the user-facing <code>adacovex prove</code>; <code>installation.md</code> builds
+from source with <code>alr build</code> (the user-facing route) instead of
+<code>make build</code>; and <code>cli-reference.md</code> points contributors at the developer
+guide instead of <code>make complexity-check</code>.  The action’s own <code>alr build</code>
+steps remain, since they describe what the action does for the user.</p>
 <h2 id="fixes"><a class="header" href="#fixes">Fixes</a></h2>
 <h3 id="h1-vendored-yacejs-now-appears-in-the-sbom"><a class="header" href="#h1-vendored-yacejs-now-appears-in-the-sbom">H1: Vendored yace.js now appears in the SBOM</a></h3>
 <p>The vendored JavaScript bundles (<code>graphre.js</code>, <code>nomnoml.js</code>, <code>flexsearch.js</code>,
@@ -9535,11 +9612,31 @@ well under the limit, never concatenated into one value – with an
 unchanged (each asset constant carries the identical content), the server
 routes through the same <code>Find</code>/<code>Content</code> API, and the bundle-links check
 still passes.</p>
-<h3 id="h2-dashboard-footer-links-updated"><a class="header" href="#h2-dashboard-footer-links-updated">H2: Dashboard footer links updated</a></h3>
-<p>The footer’s API links now include the bundled manual:
-<code>API: /api/metrics /api/deps Manual API playground</code>, with the Manual link
-opening <code>/docs</code> in a new tab. The <code>adacovex help serve</code> text and the dashboard docs list the
-<code>/docs</code> endpoint alongside the JSON API and badge endpoints.</p>
+<h3 id="h2-dashboard-docs-links-moved-from-the-footer-to-a-top-bar"><a class="header" href="#h2-dashboard-docs-links-moved-from-the-footer-to-a-top-bar">H2: Dashboard docs links moved from the footer to a top bar</a></h3>
+<p>The dashboard no longer lists the raw <code>/api/*</code> URIs or the <code>?theme=</code> embed
+hint in the footer. The footer now carries a single “Generated by adacovex”
+line, and two obvious links – <strong>Documentation (offline manual)</strong> (<code>/docs</code>)
+and <strong>Explore the API</strong> (jumps to the API tab) – sit in a prominent bar at
+the <strong>top of the page</strong>, below the dashboard title and above the tab
+selection, where a user sees them immediately. The API playground is now a
+<strong>split-screen</strong> layout mirroring the Dependencies tab: endpoints grouped by
+purpose in a left-hand nav, live JSON/SVG/HTML response preview docked on
+the right (stacking on narrow screens).</p>
+<h3 id="h6-mdbook-detected-as-a-system-dev-dependency"><a class="header" href="#h6-mdbook-detected-as-a-system-dev-dependency">H6: mdbook detected as a system dev dependency</a></h3>
+<p>The SBOM’s system-tool discovery now recognises <strong>mdbook</strong>: it joined the
+curated <code>System_Tools</code> table, so a project whose build files reference
+<code>mdbook</code> (for example a Markdown manual’s <code>mdbook build</code>) gets it registered
+as a <code>system</code>-scope dev dependency (<code>pkg:generic/mdbook</code>). The detection
+stays data-driven – adding a tool is one table entry, and the scan remains a
+generic word-match over build files, not a hardcoded call site.</p>
+<h3 id="h7-read-the-docs-build-deploys-again"><a class="header" href="#h7-read-the-docs-build-deploys-again">H7: Read the Docs build deploys again</a></h3>
+<p>The <code>.readthedocs.yaml</code> build failed in CI with <code>mdbook: not found</code> even
+though <code>cargo install mdbook</code> succeeded. Read the Docs runs the install and
+build jobs in separate shells, and cargo writes the binary into the Rust
+toolchain’s bin directory, which is not on the build job’s PATH. The build
+command now resolves the cargo-installed <code>mdbook</code> binary (<code>find</code> under
+<code>$HOME</code>) and prepends its directory to PATH before building, so the build
+survives Rust toolchain upgrades without a hardcoded version path.</p>
 <h2 id="test-suite"><a class="header" href="#test-suite">Test Suite</a></h2>
 <p>The native suite grows from 1169 to 1173 tests. The server routing category
 adds four checks for the <code>/docs</code> and <code>/docs/</code> routes and two near-miss paths
@@ -9555,13 +9652,14 @@ trailing-slash spelling and remains proved by definition.</p>
 <h2 id="traceability"><a class="header" href="#traceability">Traceability</a></h2>
 <ul>
 <li><code>HLR-DOC</code> / <code>HLR-DASH</code> – C1 mdBook manual + Read the Docs, C2 bundled
-offline manual at <code>/docs</code>, H2 footer links, <code>tools/gen-docs.py</code>, and the
-<code>make book</code> target.</li>
+offline manual at <code>/docs</code>, C8 bundled offline search, C10 audience
+folders, H2 docs links moved to the top bar, H7 Read the Docs build
+deploy, <code>tools/gen-docs.py</code>, and the <code>make book</code> target.</li>
 <li><code>HLR-DASH</code> – C3 API playground clickable links, C4 yace theme variables,
 C6 refreshed Charts preview + new API tab preview and the completed
-dashboard walk-through.</li>
-<li><code>HLR-SBOM</code> – H1 vendored yace.js in the SBOM and the vendored/dashboard
-JavaScript layout separation.</li>
+dashboard walk-through, C9 the docs-links bar and split API view.</li>
+<li><code>HLR-SBOM</code> – H1 vendored yace.js in the SBOM, H6 mdbook as a system dev
+dependency, and the vendored/dashboard JavaScript layout separation.</li>
 <li><code>HLR-ARCH</code> – C5 complexity-check <code>book</code> directory exclusion, C7 the
 book-links-check gate and the complete-book restructure, H4 the chunked
 blob that keeps the bundled manual provable.</li>

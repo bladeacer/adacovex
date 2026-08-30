@@ -45,7 +45,7 @@ Sphinx style (reStructuredText field lists):
 documented return value, and ":type"/":rtype" mark the subprogram as
 documented.
 
-**See also:** [Docstring Spec](adacovex-docstring-spec.md) | [Architecture -- Patch System](../architecture.md#patch-system)
+**See also:** [Docstring Spec](adacovex-docstring-spec.md) | [Architecture -- Patch System](../contributing/architecture.md#patch-system)
 
 > **Note:** All items in this package are public.
 

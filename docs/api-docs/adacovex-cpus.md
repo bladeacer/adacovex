@@ -8,7 +8,7 @@ default GNATprove job count.  On a developer machine it leaves two cores
 free for system responsiveness.  Inside CI it uses every core.
 HLR-CPU: Cross-platform CPU core detection
 
-**See also:** [Platforms](../platforms.md)
+**See also:** [Platforms](../usage/platforms.md)
 
 > **Note:** 8 public item(s) shown below; 4 private internal item(s) are in the `private` section.
 

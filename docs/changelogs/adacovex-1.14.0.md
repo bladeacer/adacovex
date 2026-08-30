@@ -40,19 +40,19 @@ deterministic across repeated `build -> fmt -> doc` chains.
 The docs were reorganized around one page per feature so the CLI reference
 stays a quick reference instead of accumulating every flag's full detail:
 
-- **New [Web dashboard + JSON API](../dashboard.md)** page -- endpoints,
+- **New [Web dashboard + JSON API](../usage/dashboard.md)** page -- endpoints,
   dashboard cards, the `/api/metrics` JSON schema, and the theme-resolution
   order (`?theme=` > `--theme=` > saved `localStorage` > system).
-- **New [SBOM](../sbom.md)** page -- usage, standard-awareness, component
+- **New [SBOM](../usage/sbom.md)** page -- usage, standard-awareness, component
   properties, and `SOURCE_DATE_EPOCH` determinism.
-- **New [VCS support](../vcs.md)** page -- the per-VCS snapshot mechanisms and
+- **New [VCS support](../usage/vcs.md)** page -- the per-VCS snapshot mechanisms and
   the `--compare-base` / `--coverage-delta` contracts.
-- **New [Target projects](../target-projects.md)** page -- the target-project
+- **New [Target projects](../usage/target-projects.md)** page -- the target-project
   requirements (sources, `gnatprove.out` discovery order, test-summary file
   names, HLR.md, missing-data behaviour) moved out of the README.
 - **`docs/cli-reference.md` slimmed** to the flag table plus a concise note
   per flag, linking to the dedicated pages; the result-caching design moved
-  to [`../architecture.md#result-caching`](../architecture.md#result-caching).
+  to [`../architecture.md#result-caching`](../contributing/architecture.md#result-caching).
 - **README condensed and its Quick start rewritten**: the Quick start now
   shows the end-user flow (install -> assess -> `status` -> `--serve`)
   instead of contributor build targets, the documentation table moved to the
@@ -62,7 +62,7 @@ stays a quick reference instead of accumulating every flag's full detail:
 
 ### C4: contributor guide, link checker, and a tighter README
 
-- **New [Contributor guide](../developer-guide.md)** page -- a human-readable
+- **New [Contributor guide](../contributing/developer-guide.md)** page -- a human-readable
   tour of the codebase (repository layout, pipeline, where each kind of
   change lives, testing and SPARK discipline, common workflows) to
   supplement CONTRIBUTING.md, linked from it, the README docs table, and the

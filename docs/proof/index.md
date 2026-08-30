@@ -23,9 +23,9 @@ subcommand and enforces the Platinum gate: 0 unproved VCs and 0 justified
 VCs.  `make proof-status` then syncs the measured counts into the docs.
 
 The full proving workflow, including proof patches over vendored
-dependencies, lives in [Proving and writing proofs](../proving.md).
+dependencies, lives in [Proving and writing proofs](../contributing/proving.md).
 
 Documentation in this directory uses British English and ASD-STE100
 Simplified Technical English.  See the [STE100 Technical Names
-dictionary](../ste100-technical-names.md) for the approved terms about
+dictionary](../contributing/ste100-technical-names.md) for the approved terms about
 proof, verification condition, and SPARK.

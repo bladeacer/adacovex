@@ -133,7 +133,7 @@ adacovex --target=../Ada_CRDT
 
 ## See also
 
-- [Target projects](../target-projects.md) -- the test-summary file
+- [Target projects](../usage/target-projects.md) -- the test-summary file
   auto-discovery rules and missing-data behaviour
 - [Test parser API](adacovex-parsers-tests.md) -- `Adacovex.Parsers.Tests`
 - [DAL Levels](adacovex-dal-levels.md) -- how the passing-tests criterion

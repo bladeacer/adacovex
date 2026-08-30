@@ -13,8 +13,13 @@ dependency: the same book powers the Read the Docs site).  This script:
 
    * the font stylesheet and woff2 files are dropped (system fonts are used);
    * the binary favicon is dropped (the SVG favicon is kept);
-   * the search assets (elasticlunr, searcher, mark, the large search index)
-     are dropped and the search box is hidden -- search stays online-only;
+   * mdbook's client-side search assets are *not* bundled -- its elasticlunr
+     search index is a 4 MB single blob that would overflow the gnatprove
+     frontend stack as one Ada string constant.  Instead a compact
+     `offline-search.json` index (page title, headings, body excerpt) is
+     generated from the docs source and a small self-contained search widget
+     is injected into every bundled page, so the offline manual is searchable
+     with no network; mdbook's own search box stays hidden;
    * the PNG dashboard screenshots are dropped and each `<img>` becomes a
      short note (the images stay in the online book);
    * every remaining non-ASCII glyph is escaped as an HTML character
@@ -44,12 +49,13 @@ is printed -- the spec is authored to build without it.
 """
 
 import argparse
+import json
 import re
 import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 ROOT: Path = Path(__file__).resolve().parent.parent
 DOCS: Path = ROOT / "docs"
@@ -92,10 +98,145 @@ _DROP_PNG_ICON = re.compile(
 _IMG_MEDIA = re.compile(r'<img[^>]*src="media/[^"]+"[^>]*>')
 _SEARCH_HIDE = '<style>.search-wrapper{display:none!important}</style>'
 
+# ---- Offline search -------------------------------------------------------
+# mdbook ships a client-side search driven by elasticlunr, but its searchindex
+# is a few-MB single blob that cannot be one Ada string constant (the bundler
+# splits bodies per-asset precisely to keep each under the gnatprove frontend
+# limit).  We bundle a compact index (page title, headings, body excerpt) and a
+# small self-contained widget instead, so the bundled manual is searchable
+# with no network.  The widget fetches /docs/offline-search.json (served from
+# the asset table) and does simple substring search over title + headings +
+# excerpt, ranking heading matches first.
+
+# The widget is injected after <body> on every bundled HTML page.  It is
+# deliberately self-contained (no external JS/CSS assets) so post-processing
+# needs no book changes beyond the inject.
+_OFFLINE_SEARCH_ID = "acx-search"
+# Raw string on purpose: the JS uses regex literals (\s+); a normal string
+# would let the re.sub replacement interpret them as escapes.
+_OFFLINE_SEARCH_WIDGET = r'''
+<div id="acx-search"><input id="acx-search-input" type="search" placeholder="Search the manual..." aria-label="Search the manual"><div id="acx-search-results"></div></div>
+<style>
+#acx-search{position:relative;max-width:520px;margin:0 0 20px}
+#acx-search input{width:100%;box-sizing:border-box;padding:10px 14px;border:1px solid #ccc;border-radius:8px;font:inherit;font-size:.95rem}
+#acx-search-results{display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ccc;border-radius:8px;max-height:380px;overflow:auto;z-index:50;box-shadow:0 4px 12px rgba(0,0,0,.18)}
+#acx-search .acx-sr{display:block;padding:8px 12px;font-size:.88rem;border-bottom:1px solid #f0f0f0}
+#acx-search .acx-sr:last-child{border-bottom:none}
+a.acx-sr{text-decoration:none;color:#333}
+a.acx-sr:hover{background:#f5f5f5}
+.acx-hdr{font-size:.78rem;color:#888}
+.acx-sr-t{font-weight:600}
+.acx-sr-d{font-size:.8rem;color:#666;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+</style>
+<script>
+(function(){
+var w=document,id="acx-search";
+var inp=w.getElementById(id+"-input");
+var res=w.getElementById(id+"-results");
+// Resolve the manual root at run time from the current page URL (each
+// bundled page is served under a root-relative /docs/<page>), so the widget
+// source carries no root-absolute href/src literal for the link checker to
+// mis-resolve.
+var base=(function(){var p=location.pathname;var i=p.lastIndexOf("/docs/");return i>=0?p.slice(0,i+6):"";})();
+var idx=null;
+function load(){if(idx!==null)return;var x=new XMLHttpRequest();
+x.open("GET",base+"offline-search.json");
+x.onload=function(){if(x.status===200){try{idx=JSON.parse(x.responseText);}catch(e){}}};
+x.send();}
+if(w.addEventListener){w.addEventListener("DOMContentLoaded",load);}
+function draw(q){
+res.innerHTML="";
+var terms=q.toLowerCase().split(/\s+/);
+var out=[];
+for(var p in idx){var e=idx[p];
+var hay=(e.t+" "+(e.h?e.h.join(" "):"")+" "+(e.b||"")).toLowerCase();
+var ok=true;
+for(var k=0;k<terms.length;k++){if(hay.indexOf(terms[k])===-1){ok=false;break;}}
+if(ok)out.push([p,e]);}
+out.sort(function(a,b){return a[1].t.localeCompare(b[1].t);});
+var h=w.createElement("div");h.className="acx-sr acx-hdr";
+h.textContent=out.length+" result"+(out.length===1?"":"s");res.appendChild(h);
+var n=Math.min(out.length,10);
+for(var i=0;i<n;i++){var a=w.createElement("a");a.className="acx-sr";
+a.href=base+out[i][0];
+var t=w.createElement("div");t.className="acx-sr-t";t.textContent=out[i][1].t;a.appendChild(t);
+var d=w.createElement("div");d.className="acx-sr-d";
+d.textContent=(out[i][1].h&&out[i][1].h.length?out[i][1].h[0]:"");a.appendChild(d);
+res.appendChild(a);}
+res.style.display="block";}
+inp.addEventListener("input",function(){var q=inp.value.trim();
+if(!q||idx===null){res.innerHTML="";res.style.display="none";return;}draw(q);});
+w.addEventListener("click",function(ev){var n=ev.target;
+if(n!==inp&&n!==res&&!res.contains(n)){res.style.display="none";}});
+})();
+</script>
+'''
+
+# Strip markdown link/markup to plain display text for the search index.
+def _plain(text: str) -> str:
+    s = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", text)
+    s = s.replace("`", "").replace("*", "").replace("_", "")
+    s = re.sub(r"[#~|]+|^>\s*", " ", s)
+    return " ".join(s.split())
+
+
+def _page_meta(md_text: str) -> Tuple[str, List[str], str]:
+    """Return (title, headings, excerpt) for one markdown page."""
+    title = ""
+    headings: List[str] = []
+    body: List[str] = []
+    in_code = False
+    for raw in md_text.splitlines():
+        line = raw.strip()
+        if line.startswith("```"):
+            in_code = not in_code
+            continue
+        if in_code or not line:
+            continue
+        if not title and line.startswith("# "):
+            title = _plain(line[2:])
+            continue
+        if line.startswith("## "):
+            headings.append(_plain(line[3:]))
+            continue
+        if line.startswith("#"):
+            continue
+        if set(line) <= set("-="):
+            continue
+        p = _plain(line)
+        if p:
+            body.append(p)
+    excerpt = " ".join(body)
+    return title, headings, excerpt[:300]
+
+
+# Compact search index:  {html-path: {t: title, h: [headings], b: excerpt}}.
+# Deterministic (sorted pages and keys) so gen-docs --check is stable.  Only
+# pages that exist in the built book are indexed (their links must resolve).
+def build_search_index(book_html: Set[str]) -> str:
+    idx: Dict[str, Dict[str, object]] = {}
+    for md in sorted(DOCS.rglob("*.md")):
+        rel = md.relative_to(DOCS).as_posix()
+        if rel.startswith("book/"):
+            continue
+        html = rel[:-3] + ".html"  # docs/x.md -> x.html; proof/index.md -> proof/index.html
+        if html not in book_html:
+            continue
+        try:
+            text = md.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        title, headings, excerpt = _page_meta(text)
+        if not title:
+            title = md.stem.replace("_", " ").title()
+        idx[html] = {"t": title, "h": headings, "b": excerpt}
+    return json.dumps(idx, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
+
 _MIME: Dict[str, str] = {
     ".html": "text/html",
     ".css": "text/css",
     ".js": "application/javascript",
+    ".json": "application/json",
     ".svg": "image/svg+xml",
 }
 
@@ -131,14 +272,22 @@ def postprocess_page(html: str) -> str:
         return f'<em>{alt} -- see the online manual for the image.</em>'
 
     html = _IMG_MEDIA.sub(img_repl, html)
-    # Hide the (non-functional) search box; search stays online-only.
+    # Hide mdbook's own (non-functional in the bundle) search box, then add
+    # the compact self-contained search widget, so the offline manual is
+    # searchable with no network.
     html = re.sub(r"(?i)<head>", "<head>" + _SEARCH_HIDE, html, count=1)
+    # A function replacement keeps the widget's literal backslashes (JS
+    # regexes like /\s+/) from being interpreted as re escapes.
+    html = re.sub(r"(?i)<body[^>]*>",
+                  lambda m: m.group(0) + _OFFLINE_SEARCH_WIDGET,
+                  html, count=1)
     return html
 
 
 def collect_assets(book: Path) -> List[Tuple[str, str, str]]:
     """Return [(path, mime, body), ...] for every bundled asset of the book."""
     assets: List[Tuple[str, str, str]] = []
+    html_paths: Set[str] = set()
     for path in sorted(book.rglob("*")):
         if not path.is_file():
             continue
@@ -148,6 +297,8 @@ def collect_assets(book: Path) -> List[Tuple[str, str, str]]:
         mime = _MIME.get(path.suffix.lower())
         if mime is None:
             continue
+        if rel.endswith(".html") and rel != "print.html":
+            html_paths.add(rel)
         try:
             body = path.read_text(encoding="utf-8")
         except (UnicodeDecodeError, OSError):
@@ -156,6 +307,11 @@ def collect_assets(book: Path) -> List[Tuple[str, str, str]]:
         if mime == "text/html" and rel != "print.html":
             body = postprocess_page(body)
         assets.append((rel, mime, body))
+    # Compact offline search index: generated from the docs source and served
+    # (like every asset) from the lookup table.  The widget injected into each
+    # page fetches this at /docs/offline-search.json.
+    assets.append(("offline-search.json", "application/json",
+                   build_search_index(html_paths)))
     if not assets:
         raise RuntimeError("no assets collected from the book build")
     return assets
