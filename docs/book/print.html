@@ -36,7 +36,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-5363a88b.js";
+            window.path_to_searchindex_js = "searchindex-b8df906a.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-0e6cf2bd.js"></script>
@@ -701,7 +701,7 @@ criteria. They are off by default. When set, the assessment fails loudly
 (exit code <code>1</code>, with an explicit <code>CI GATE:</code> reason printed to the report) if the
 target does not meet the required level:</p>
 <pre><code class="language-bash">adacovex --target=. --require-spark=Platinum --require-docstrings=100 \
-         --require-tests=1178 --require-proof=100
+         --require-tests=1181 --require-proof=100
 </code></pre>
 <ul>
 <li><code>require-spark</code> compares the honest assessed SPARK level (Stone..Platinum).</li>
@@ -1190,7 +1190,7 @@ single standard (for example <code>--asil=B</code> shows only ISO 26262 at ASIL 
 <p><code>/api/metrics</code> is a plain HTTP GET, so scripts and CI can consume the
 assessment without parsing HTML:</p>
 <pre><code class="language-json">{"spark_level":"Platinum","total_vcs":725,"proved_vcs":725,
- " "tests_passed":1178,"tests_failed":0,"doc_coverage":100,
+ " "tests_passed":1181,"tests_failed":0,"doc_coverage":100,
  "standard":"all","level":"DAL-C","dal_status":"Achieved",
  "standards":{"DO-178C":{"level":"DAL-C","status":"Achieved"},
                "ISO 26262":{"level":"ASIL B","status":"Achieved"},
@@ -1904,7 +1904,7 @@ jobs:
           standard: all          # DO-178C + ISO 26262 + IEC 62304
           require-spark: Platinum
           require-docstrings: 100
-          require-tests: 1178
+          require-tests: 1181
           run-tests: true
           generate-sbom: true
 </code></pre>
@@ -2295,7 +2295,7 @@ download). It lives in the dev manifest, never the published one.</li>
 <pre><code class="language-bash">git clone https://github.com/bladeacer/adacovex.git
 cd adacovex
 make build        # compiles bin/adacovex + bin/test_runner (covex alias)
-make test         # builds + runs the native test suite (1178 tests)
+make test         # builds + runs the native test suite (1181 tests)
 make run-self     # assess adacovex itself: 100% docs, Platinum, DAL-C
 make prove        # SPARK proof (Platinum gate) + regenerates docs/badges/
 make check        # the whole quality gate CI runs before a release
@@ -3129,7 +3129,7 @@ content hash changing, or to measure rescan cost) and <code>--cache-dir</code> r
 it. The ANSI report shows a
 <code>result cache: X hit(s), Y miss(es), Z evicted</code> line per run.</p>
 <h2 id="testing-1"><a class="header" href="#testing-1">Testing</a></h2>
-<p>adacovex uses a native zero-dependency test framework (<code>Adacovex.Test_Support</code>) with 1178 tests across 16 categories. No external test framework (AUnit, and more) is required. Test results are written to <code>docs/test_result.md</code> in a parseable Markdown table format.</p>
+<p>adacovex uses a native zero-dependency test framework (<code>Adacovex.Test_Support</code>) with 1181 tests across 16 categories. No external test framework (AUnit, and more) is required. Test results are written to <code>docs/test_result.md</code> in a parseable Markdown table format.</p>
 <h2 id="complexity-check"><a class="header" href="#complexity-check">Complexity check</a></h2>
 <p>The <code>complexity</code> subcommand walks the whole target and scores many languages
 (C, C++, C#, Go, Java, JavaScript, TypeScript, Python, Ruby, PHP, Rust,
@@ -4809,7 +4809,7 @@ SPARK_Mode Off)   [violation of aspect SPARK_Mode]
 <pre><code class="language-text">Success: all checks proved (1 check).
 </code></pre>
 <p><code>Adacovex. CPUs. Get_Temp_Directory</code> therefore returned to <code>SPARK_Mode =&gt; On</code> in 1.27.0 (spec and body), with <code>Global =&gt; null</code>. The runtime `Ada.</p>
-<p>Environment_Variables<code>subprograms carry no Global contracts, so gnatprove 16 emits six</code>[assumed-global-null]<code> warnings (</code>Exists<code>/</code>Value<code>x</code>TMPDIR<code>/</code>TEMP<code>/</code>TMP<code>) -- warnings, not VCs: the gate remains 0 unproved, 0 justified. In 1.28.0 the function scopes a </code>pragma Warnings (Off, “no Global contract available”)<code>around itself (re-enabled immediately after), which gnatprove honors by message prefix, so the run is warning-free. The proof surface contracted by 1 VC (724 -&gt; 723) when</code>Route<code>was converted to an expression function (the explicit case-analysis postcondition is now the implicit</code>Result = <mapping>`, which proves by definition).</mapping></p>
+<p>Environment_Variables<code>subprograms carry no Global contracts, so gnatprove 16 emits six</code>[assumed-global-null]<code> warnings (</code>Exists<code>/</code>Value<code>x</code>TMPDIR<code>/</code>TEMP<code>/</code>TMP<code>) -- warnings, not VCs: the gate remains 0 unproved, 0 justified. In 1.28.0 the function scopes a </code>pragma Warnings (Off, “no Global contract available”)<code>around itself (re-enabled immediately after), which gnatprove honors by message prefix, so the run is warning-free. The proof surface contracted by 1 VC (724 -&gt; 723) when</code>Route` was converted to an expression function (the explicit case-analysis postcondition is now the implicit <code>Result = &lt;mapping&gt;</code>, which proves by definition).</p>
 <h2 id="formal-containers-experiment-the-complexity-exception-stays-2026-08-25"><a class="header" href="#formal-containers-experiment-the-complexity-exception-stays-2026-08-25">Formal-containers experiment: the Complexity exception stays (<em>2026-08-25</em>)</a></h2>
 <p>1.28.0 attempted to prove <code>Adacovex.Complexity</code> by switching its private
 vectors to the formal (SPARK-approved) containers.  The attempt fails on
@@ -6114,11 +6114,11 @@ no re-proof.</p>
 <p>The store is split per input.  Every analysed unit is cached under its own
 key.  A one-line change only invalidates that unit’s entry and rewrites a
 single tiny blob.  Every other unit is served from cache unchanged.</p>
-<p>Storage is a two-level directory tree (<cache>/<aa>/&lt;aabb…&gt;).  A large
+<p>Storage is a two-level directory tree (<code>&lt;cache&gt;/&lt;aa&gt;/&lt;aabb...&gt;</code>).  A large
 project never creates a single directory with millions of entries.  Entries
 are evicted oldest-first once the count exceeds a soft cap.  Disk usage
 stays bounded without external dependencies (pure GNAT runtime only).
-HLR-CACHE: Result caching</aa></cache></p>
+HLR-CACHE: Result caching</p>
 <p><strong>See also:</strong> <a href="#result-caching-1">Architecture – result caching</a></p>
 <blockquote>
 <p><strong>Note:</strong> All items in this package are public.</p>
@@ -7733,7 +7733,7 @@ end record;
 <p>Proof patches for vendored dependencies.</p>
 <p>The docstring patch system (Adacovex.Parsers.Source.Apply_Patches)
 overlays documentation onto vendored .ads files.  This package extends
-the same .adacovex/patches/<relative-path> layout with SPARK proof
+the same <code>.adacovex/patches/&lt;relative-path&gt;</code> layout with SPARK proof
 support.  A patch file can carry SPARK aspects.  The aspects are
 SPARK_Mode on the package declaration and Pre, Post, or SPARK_Mode on
 subprogram declarations.  The <code>prove</code> subcommand merges them into a copy
@@ -7742,7 +7742,7 @@ vendored body.  GNATprove then analyses the vendored unit with the
 patched contracts.  It does not modify the original vendored sources.
 A .ads patch re-declares the spec with contracts.  A .adb patch opts
 the body into the proof.  The body is analysed only when it declares
-SPARK_Mode On itself.</relative-path></p>
+SPARK_Mode On itself.</p>
 <p>The merge is textual and line-based.  The patched source is the original
 with each patched subprogram declaration replaced by the patch’s
 declaration block.  The block carries the aspects.  A declaration
@@ -9605,9 +9605,11 @@ silent connections, the next request queued forever – the e2e suite
 started hitting 60-second timeouts on <code>/docs</code> subpages as it grew.  Each
 accepted socket now carries a 5-second receive timeout, and a timed-out
 (or dropped) connection is closed in the worker’s error path (which
-previously leaked the socket).  A worker frees within seconds, the pool
-recovers, and the request is served; the e2e suite returns to 28 passing
-in ~14 seconds.</p>
+previously leaked the socket).  A worker frees instead of pinning the pool forever,
+and the request is served.  (The timeout was originally 5s; H10 below
+shortens it to half a second so a multi-asset docs burst fans out across
+the pool instead of waiting one timeout per queued connection.)  The e2e
+suite returns to 28 passing in ~14 seconds.</p>
 <h3 id="h4-bundled-manual-no-longer-overflows-the-gnatprove-frontend"><a class="header" href="#h4-bundled-manual-no-longer-overflows-the-gnatprove-frontend">H4: Bundled manual no longer overflows the gnatprove frontend</a></h3>
 <p>The complete-book offline manual is a 4 MB asset set, and <code>gen-docs.py</code>
 emitted it as one giant <code>&amp;</code>-concatenation chain (300k+ string literals).
@@ -9650,6 +9652,36 @@ toolchain’s bin directory, which is not on the build job’s PATH. The build
 command now resolves the cargo-installed <code>mdbook</code> binary (<code>find</code> under
 <code>$HOME</code>) and prepends its directory to PATH before building, so the build
 survives Rust toolchain upgrades without a hardcoded version path.</p>
+<h3 id="h9-docs-search-result-links-resolve-again"><a class="header" href="#h9-docs-search-result-links-resolve-again">H9: Docs search-result links resolve again</a></h3>
+<p>Clicking an mdBook search result in the bundled manual returned 404.  The
+<code>/docs</code> router dispatched on the query-string-stripped path (so <code>?highlight=</code>
+reached the docs route), but the asset lookup that followed read the <em>raw</em>
+request path, so every search result carrying <code>?highlight=...</code> (mdBook’s
+mark-the-search-term parameter) was looked up as <code>changelogs/….html?highlight=…</code>
+and never found.  The docs asset key now derives from the query-stripped path,
+so a search-result link such as
+<code>/docs/usage/cli-reference.html?highlight=serve#--serve</code> resolves to the page,
+then the browser’s own fragment + mark handling scrolls to the heading and
+highlights the term – exactly as it does under <code>mdbook serve</code>.</p>
+<h3 id="h10-docs-pages-load-quickly-again"><a class="header" href="#h10-docs-pages-load-quickly-again">H10: Docs pages load quickly again</a></h3>
+<p>The bundled manual felt slow to open: a ~15-asset page (HTML + several CSS +
+JS) took roughly six seconds to load.  The 4-worker server pool pinned each
+worker to its keep-alive connection for a 5-second idle receive timeout, so
+once four sockets were held by the browser’s parallel asset requests, the
+remaining connections queued in the accept backlog for ~5s until a worker
+released.  The idle timeout is now half a second: a worker that finishes a
+keep-alive exchange returns to <code>Accept_Socket</code> quickly, the burst fan-outs
+across the pool, and a docs page loads in well under a second.  Workers are
+released faster on idle connections, which also means a stale or abandoned
+connection is reaped sooner than before.</p>
+<h3 id="h11-offline-manual-subpages-drop-their-font-links"><a class="header" href="#h11-offline-manual-subpages-drop-their-font-links">H11: Offline manual subpages drop their font links</a></h3>
+<p><code>tools/gen-docs.py</code> dropped the bundling-irrelevant font stylesheet link from
+each bundled page, but its pattern only matched the index page’s
+<code>href="fonts/…css"</code> shape.  Subpages link the same stylesheet with a
+<code>path_to_root</code> prefix (<code>../fonts/…css</code>), so those kept the reference and the
+browser issued a <code>/fonts/...css</code> 404 on every subpage.  The drop now matches
+any leading <code>../</code> prefix, so no bundled page references the unbundled font
+asset.</p>
 <h3 id="h8-hlr-tags-are-no-longer-read-from-string-literals"><a class="header" href="#h8-hlr-tags-are-no-longer-read-from-string-literals">H8: HLR tags are no longer read from string literals</a></h3>
 <p>The source scanner extracted HLR traceability tags from <code>--</code> sequences
 inside string literals, treating them as comment starts. The bundled
@@ -9664,9 +9696,13 @@ self-assessment returns to DAL-C Achieved.</p>
 adds four checks for the <code>/docs</code> and <code>/docs/</code> routes and two near-miss paths
 (<code>/docs2</code>, <code>/manual</code>) that must stay 404s. The scanner category adds three
 checks that a <code>-- HLR-*</code> string literal is not a source tag while a real
-comment tag after a string still is. All 1173 tests pass (1176-1181 when
-mdbook is on PATH, depending on the system-tool assertions in the SBOM
-category).</p>
+comment tag after a string still is.  H9’s query-string handling adds no
+native assertions (the routing table already pins <code>/docs</code> and the
+<code>Strip_Query</code> path), and H10’s timeout is timing behaviour the suite
+cannot assert deterministically – both are covered manually and by the
+dashboard e2e suite.</p>
+<p>All 1173 tests pass (1176-1181 when mdbook is on PATH, depending on the
+system-tool assertions in the SBOM category).</p>
 <h2 id="proof-results"><a class="header" href="#proof-results">Proof Results</a></h2>
 <p>Platinum, 0 unproved, 0 justified, 725 VCs (725 proved) under gnatprove
 16.1.0 – the total reported by <code>adacovex prove</code> and mirrored in
@@ -9690,9 +9726,13 @@ dependency, and the vendored/dashboard JavaScript layout separation.</li>
 book-links-check gate and the complete-book restructure, H4 the chunked
 blob that keeps the bundled manual provable.</li>
 <li><code>HLR-SERVER</code> – H3 the <code>Docs_Subpath</code> off-by-one fix, H5 the worker-pool
-idle-connection timeout.</li>
+idle-connection timeout, H9 the query-stripped docs asset lookup, H10 the
+shorter idle timeout that stops the worker pool serialising a page burst.</li>
 <li><code>HLR-SCAN</code> – H8 the string-literal HLR-tag fix (tags inside strings are
 data, not traces).</li>
+<li><code>HLR-DOC</code> – H11 the font-link drop that works on subpages (HTML tags
+wrapped in inline code so <code>mdbook</code> stops warning on the unclosed <code>&lt;mapping&gt;</code>
+/ <code>&lt;aa&gt;</code> / <code>&lt;cache&gt;</code> / <code>&lt;relative-path&gt;</code> spans in the generated pages).</li>
 </ul>
 <p>See <code>docs/dashboard.md</code>, <code>docs/THIRD_PARTY_NOTICES.md</code>, and <code>.readthedocs.yaml</code>.</p>
 <div style="break-before: page; page-break-before: always;"></div>
@@ -10315,7 +10355,7 @@ and the nomnoml direction/height change is client-side JavaScript. The
 <code>dashboard.spec.ts</code> overview assertion was updated to expect five chart cards.</p>
 <h2 id="proof-results-6"><a class="header" href="#proof-results-6">Proof Results</a></h2>
 <p>Platinum, 723/723 VCs proved across 50 analysed units (was 724 at 1.31.0). The one-VC reduction comes from converting `Adacovex. Server. HTTP.</p>
-<p>Route<code>to an expression function: the explicit nine-clause postcondition (one VC that sat on the solver's step-limit boundary) is replaced by the implicit</code>Result = <mapping><code>postcondition, which proves by definition. Invocation:</code>adacovex prove<code> (</code>–steps=10000`, gnatprove 16.1.0). 0 unproved, 0 justified.</mapping></p>
+<p>Route<code>to an expression function: the explicit nine-clause postcondition (one VC that sat on the solver's step-limit boundary) is replaced by the implicit ``Result = &lt;mapping&gt;`` postcondition, which proves by definition. Invocation:</code>adacovex prove<code> (</code>–steps=10000`, gnatprove 16.1.0). 0 unproved, 0 justified.</p>
 <h2 id="traceability-6"><a class="header" href="#traceability-6">Traceability</a></h2>
 <p>No new HLRs. The server routing change is covered by the existing
 <code>-- HLR-SERVER</code> tag in <code>src/server/adacovex-server-http.ads</code>; the badge,

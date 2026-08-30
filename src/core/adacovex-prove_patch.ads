@@ -2,7 +2,7 @@
 --
 --  The docstring patch system (Adacovex.Parsers.Source.Apply_Patches)
 --  overlays documentation onto vendored .ads files.  This package extends
---  the same .adacovex/patches/<relative-path> layout with SPARK proof
+--  the same ``.adacovex/patches/<relative-path>`` layout with SPARK proof
 --  support.  A patch file can carry SPARK aspects.  The aspects are
 --  SPARK_Mode on the package declaration and Pre, Post, or SPARK_Mode on
 --  subprogram declarations.  The `prove` subcommand merges them into a copy

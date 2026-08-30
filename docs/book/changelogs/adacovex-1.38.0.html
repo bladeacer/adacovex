@@ -35,7 +35,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-5363a88b.js";
+            window.path_to_searchindex_js = "../searchindex-b8df906a.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-0e6cf2bd.js"></script>
@@ -324,9 +324,11 @@ silent connections, the next request queued forever – the e2e suite
 started hitting 60-second timeouts on <code>/docs</code> subpages as it grew.  Each
 accepted socket now carries a 5-second receive timeout, and a timed-out
 (or dropped) connection is closed in the worker’s error path (which
-previously leaked the socket).  A worker frees within seconds, the pool
-recovers, and the request is served; the e2e suite returns to 28 passing
-in ~14 seconds.</p>
+previously leaked the socket).  A worker frees instead of pinning the pool forever,
+and the request is served.  (The timeout was originally 5s; H10 below
+shortens it to half a second so a multi-asset docs burst fans out across
+the pool instead of waiting one timeout per queued connection.)  The e2e
+suite returns to 28 passing in ~14 seconds.</p>
 <h3 id="h4-bundled-manual-no-longer-overflows-the-gnatprove-frontend"><a class="header" href="#h4-bundled-manual-no-longer-overflows-the-gnatprove-frontend">H4: Bundled manual no longer overflows the gnatprove frontend</a></h3>
 <p>The complete-book offline manual is a 4 MB asset set, and <code>gen-docs.py</code>
 emitted it as one giant <code>&amp;</code>-concatenation chain (300k+ string literals).
@@ -369,6 +371,36 @@ toolchain’s bin directory, which is not on the build job’s PATH. The build
 command now resolves the cargo-installed <code>mdbook</code> binary (<code>find</code> under
 <code>$HOME</code>) and prepends its directory to PATH before building, so the build
 survives Rust toolchain upgrades without a hardcoded version path.</p>
+<h3 id="h9-docs-search-result-links-resolve-again"><a class="header" href="#h9-docs-search-result-links-resolve-again">H9: Docs search-result links resolve again</a></h3>
+<p>Clicking an mdBook search result in the bundled manual returned 404.  The
+<code>/docs</code> router dispatched on the query-string-stripped path (so <code>?highlight=</code>
+reached the docs route), but the asset lookup that followed read the <em>raw</em>
+request path, so every search result carrying <code>?highlight=...</code> (mdBook’s
+mark-the-search-term parameter) was looked up as <code>changelogs/….html?highlight=…</code>
+and never found.  The docs asset key now derives from the query-stripped path,
+so a search-result link such as
+<code>/docs/usage/cli-reference.html?highlight=serve#--serve</code> resolves to the page,
+then the browser’s own fragment + mark handling scrolls to the heading and
+highlights the term – exactly as it does under <code>mdbook serve</code>.</p>
+<h3 id="h10-docs-pages-load-quickly-again"><a class="header" href="#h10-docs-pages-load-quickly-again">H10: Docs pages load quickly again</a></h3>
+<p>The bundled manual felt slow to open: a ~15-asset page (HTML + several CSS +
+JS) took roughly six seconds to load.  The 4-worker server pool pinned each
+worker to its keep-alive connection for a 5-second idle receive timeout, so
+once four sockets were held by the browser’s parallel asset requests, the
+remaining connections queued in the accept backlog for ~5s until a worker
+released.  The idle timeout is now half a second: a worker that finishes a
+keep-alive exchange returns to <code>Accept_Socket</code> quickly, the burst fan-outs
+across the pool, and a docs page loads in well under a second.  Workers are
+released faster on idle connections, which also means a stale or abandoned
+connection is reaped sooner than before.</p>
+<h3 id="h11-offline-manual-subpages-drop-their-font-links"><a class="header" href="#h11-offline-manual-subpages-drop-their-font-links">H11: Offline manual subpages drop their font links</a></h3>
+<p><code>tools/gen-docs.py</code> dropped the bundling-irrelevant font stylesheet link from
+each bundled page, but its pattern only matched the index page’s
+<code>href="fonts/…css"</code> shape.  Subpages link the same stylesheet with a
+<code>path_to_root</code> prefix (<code>../fonts/…css</code>), so those kept the reference and the
+browser issued a <code>/fonts/...css</code> 404 on every subpage.  The drop now matches
+any leading <code>../</code> prefix, so no bundled page references the unbundled font
+asset.</p>
 <h3 id="h8-hlr-tags-are-no-longer-read-from-string-literals"><a class="header" href="#h8-hlr-tags-are-no-longer-read-from-string-literals">H8: HLR tags are no longer read from string literals</a></h3>
 <p>The source scanner extracted HLR traceability tags from <code>--</code> sequences
 inside string literals, treating them as comment starts. The bundled
@@ -383,9 +415,13 @@ self-assessment returns to DAL-C Achieved.</p>
 adds four checks for the <code>/docs</code> and <code>/docs/</code> routes and two near-miss paths
 (<code>/docs2</code>, <code>/manual</code>) that must stay 404s. The scanner category adds three
 checks that a <code>-- HLR-*</code> string literal is not a source tag while a real
-comment tag after a string still is. All 1173 tests pass (1176-1181 when
-mdbook is on PATH, depending on the system-tool assertions in the SBOM
-category).</p>
+comment tag after a string still is.  H9’s query-string handling adds no
+native assertions (the routing table already pins <code>/docs</code> and the
+<code>Strip_Query</code> path), and H10’s timeout is timing behaviour the suite
+cannot assert deterministically – both are covered manually and by the
+dashboard e2e suite.</p>
+<p>All 1173 tests pass (1176-1181 when mdbook is on PATH, depending on the
+system-tool assertions in the SBOM category).</p>
 <h2 id="proof-results"><a class="header" href="#proof-results">Proof Results</a></h2>
 <p>Platinum, 0 unproved, 0 justified, 725 VCs (725 proved) under gnatprove
 16.1.0 – the total reported by <code>adacovex prove</code> and mirrored in
@@ -409,9 +445,13 @@ dependency, and the vendored/dashboard JavaScript layout separation.</li>
 book-links-check gate and the complete-book restructure, H4 the chunked
 blob that keeps the bundled manual provable.</li>
 <li><code>HLR-SERVER</code> – H3 the <code>Docs_Subpath</code> off-by-one fix, H5 the worker-pool
-idle-connection timeout.</li>
+idle-connection timeout, H9 the query-stripped docs asset lookup, H10 the
+shorter idle timeout that stops the worker pool serialising a page burst.</li>
 <li><code>HLR-SCAN</code> – H8 the string-literal HLR-tag fix (tags inside strings are
 data, not traces).</li>
+<li><code>HLR-DOC</code> – H11 the font-link drop that works on subpages (HTML tags
+wrapped in inline code so <code>mdbook</code> stops warning on the unclosed <code>&lt;mapping&gt;</code>
+/ <code>&lt;aa&gt;</code> / <code>&lt;cache&gt;</code> / <code>&lt;relative-path&gt;</code> spans in the generated pages).</li>
 </ul>
 <p>See <code>docs/dashboard.md</code>, <code>docs/THIRD_PARTY_NOTICES.md</code>, and <code>.readthedocs.yaml</code>.</p>
 

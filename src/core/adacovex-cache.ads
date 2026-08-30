@@ -10,7 +10,7 @@
 --  key.  A one-line change only invalidates that unit's entry and rewrites a
 --  single tiny blob.  Every other unit is served from cache unchanged.
 --
---  Storage is a two-level directory tree (<cache>/<aa>/<aabb...>).  A large
+--  Storage is a two-level directory tree (``<cache>/<aa>/<aabb...>``).  A large
 --  project never creates a single directory with millions of entries.  Entries
 --  are evicted oldest-first once the count exceeds a soft cap.  Disk usage
 --  stays bounded without external dependencies (pure GNAT runtime only).

@@ -106,13 +106,19 @@ package body Adacovex.Server.HTTP is
                Accept_Socket (Listener, Channel, From);
                Has_Conn := True;
                Backoff_Ct := 0;
-               --  Idle connections must never pin a worker forever: the pool
-               --  is fixed-size, so N idle keep-alive (or speculative)
-               --  connections block every worker and hang the next request.
-               --  A receive timeout frees the worker (and closes the socket)
-               --  when a connection goes silent.
+               --  Idle connections must never pin a worker: the pool is
+               --  fixed-size, so idle keep-alive connections block every
+               --  worker and stall the next request.  A receive timeout frees
+               --  the worker (and closes the socket) when a connection goes
+               --  silent.  The window is kept short (half a second): a
+               --  browser opening a page issues many parallel asset requests,
+               --  and the pool only has a few workers to serve them from the
+               --  accept queue, so a long idle timeout serialises the burst
+               --  behind 4 keep-alive sockets and loads pages slowly.  Short
+               --  means workers recycle back to Accept_Socket promptly while
+               --  a quickly-reused connection still serves its burst.
                Set_Socket_Option
-                 (Channel, Socket_Level, (Receive_Timeout, 5.0));
+                 (Channel, Socket_Level, (Receive_Timeout, 0.5));
                loop
                   Handle_Request (Channel, Svr_State, KA);
                   exit when not KA;
@@ -607,37 +613,48 @@ package body Adacovex.Server.HTTP is
                Is_KA);
 
          when Route_Docs           =>
-            if Path = "/docs" then
-               --  The bare /docs URL: redirect to the trailing-slash form so
-               --  the page's relative asset links resolve against /docs/.
-               Send_Redirect (Channel, "/docs/", Is_KA);
-            else
-               declare
-                  Idx : constant Natural :=
-                    Adacovex.Docs_Template.Find (Docs_Subpath (Path));
-               begin
-                  if Idx = 0 then
-                     Send_Response
-                       (Channel,
-                        "404 Not Found",
-                        "text/plain",
-                        "Not Found: " & Path,
-                        Is_KA);
-                  else
-                     declare
-                        A_Idx : constant Adacovex.Docs_Template.Asset_Index :=
-                          Adacovex.Docs_Template.Asset_Index (Idx);
-                     begin
-                        Send_Asset_Response
+            --  The asset lookup must strip the query string: search result
+            --  links carry `?highlight=...`, and the fragment (already
+            --  stripped by the route) must not leak into the asset key.
+            --  Routing already dispatched on Strip_Query (Path), so re-apply
+            --  it here for the subpath so `?theme`, `?highlight`, and
+            --  `#anchor` never make a requested page 404.
+            declare
+               Root_Path : constant String := Strip_Query (Path);
+            begin
+               if Root_Path = "/docs" then
+                  --  The bare /docs URL: redirect to the trailing-slash form
+                  --  so the page's relative asset links resolve against
+                  --  /docs/.
+                  Send_Redirect (Channel, "/docs/", Is_KA);
+               else
+                  declare
+                     Idx : constant Natural :=
+                       Adacovex.Docs_Template.Find (Docs_Subpath (Root_Path));
+                  begin
+                     if Idx = 0 then
+                        Send_Response
                           (Channel,
-                           "200 OK",
-                           Adacovex.Docs_Template.Assets (A_Idx).Mime,
-                           A_Idx,
+                           "404 Not Found",
+                           "text/plain",
+                           "Not Found: " & Path,
                            Is_KA);
-                     end;
-                  end if;
-               end;
-            end if;
+                     else
+                        declare
+                           A_Idx : constant Adacovex.Docs_Template.Asset_Index :=
+                             Adacovex.Docs_Template.Asset_Index (Idx);
+                        begin
+                           Send_Asset_Response
+                             (Channel,
+                              "200 OK",
+                              Adacovex.Docs_Template.Assets (A_Idx).Mime,
+                              A_Idx,
+                              Is_KA);
+                        end;
+                     end if;
+                  end;
+               end if;
+            end;
 
          when Route_Not_Found      =>
             Send_Response

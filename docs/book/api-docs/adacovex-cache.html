@@ -35,7 +35,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-5363a88b.js";
+            window.path_to_searchindex_js = "../searchindex-b8df906a.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-0e6cf2bd.js"></script>
@@ -185,11 +185,11 @@ no re-proof.</p>
 <p>The store is split per input.  Every analysed unit is cached under its own
 key.  A one-line change only invalidates that unit’s entry and rewrites a
 single tiny blob.  Every other unit is served from cache unchanged.</p>
-<p>Storage is a two-level directory tree (<cache>/<aa>/&lt;aabb…&gt;).  A large
+<p>Storage is a two-level directory tree (<code>&lt;cache&gt;/&lt;aa&gt;/&lt;aabb...&gt;</code>).  A large
 project never creates a single directory with millions of entries.  Entries
 are evicted oldest-first once the count exceeds a soft cap.  Disk usage
 stays bounded without external dependencies (pure GNAT runtime only).
-HLR-CACHE: Result caching</aa></cache></p>
+HLR-CACHE: Result caching</p>
 <p><strong>See also:</strong> <a href="../contributing/architecture.html#result-caching">Architecture – result caching</a></p>
 <blockquote>
 <p><strong>Note:</strong> All items in this package are public.</p>

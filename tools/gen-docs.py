@@ -81,9 +81,13 @@ OFFLINE_EXCLUDED_PREFIXES: Tuple[str, ...] = (
     ".nojekyll",
 )
 
-# The font stylesheet link (the woff2 files are not bundled).
+# The font stylesheet link (the woff2 files are not bundled).  Matches the
+# `fonts/...` href with any leading path_to_root (`../`) prefix, because a
+# subpage links ``../fonts/fonts-...css`` while the index page links
+# `fonts/fonts-...css` -- the fonts must be dropped on every page or the
+# unbundled asset 404s when the offline manual navigates to a subpage.
 _DROP_FONT_LINK = re.compile(
-    r'<link[^>]*rel="stylesheet"[^>]*href="fonts/[^"]+"[^>]*>')
+    r'<link[^>]*rel="stylesheet"[^>]*href="[^"]*fonts/[^"]+"[^>]*>')
 # The binary favicon link (the SVG favicon link is kept).
 _DROP_PNG_ICON = re.compile(
     r'<link[^>]*rel="shortcut icon"[^>]*href="favicon-[^"]+\.png"[^>]*>')
