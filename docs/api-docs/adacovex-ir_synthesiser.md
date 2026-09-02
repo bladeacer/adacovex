@@ -29,7 +29,7 @@ Longest synthesised declaration line.
 | Parameter | Description |
 |-----------|-------------|
 | `Name` | Subprogram name (an Ada identifier). |
-| `Param_List` | Comma-separated "P:Type" pairs, no spaces.  Type |
+| `Param_List` | One "P:Type" pair, no spaces.  Type is an IR_* |
 | `Return_Type` | IR_* name of the result; "" emits a procedure. |
 
 **Returns:** The synthesised spec text (a function or procedure spec with

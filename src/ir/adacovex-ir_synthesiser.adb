@@ -153,7 +153,11 @@ package body Adacovex.IR_Synthesiser is
    end Synthesize_Package;
    --  True when T is one of the signed bounded IR types (unsigned modular
    --  types need no overflow guard; wrapping arithmetic cannot raise).
-   function Is_Signed_IR (T : String) return Boolean is
+   --  The Global contract makes gnatprove analyse the equality chain once
+   --  as a unit instead of contextually re-proving it at every call site
+   --  (the re-analysis is what prints the "analyzing call ... in context"
+   --  info notes and repeats the string-equality VCs per caller).
+   function Is_Signed_IR (T : String) return Boolean with Global => null is
    begin
       return
         T = "IR_Int8"
@@ -165,7 +169,8 @@ package body Adacovex.IR_Synthesiser is
    --  True when T is one of the bounded IR scalar type names (the signed
    --  types above plus the unsigned modular types).  A parameter type must
    --  be one of these names for the pair to lower onto a bounded scalar.
-   function Is_IR_Type (T : String) return Boolean is
+   --  Global contract as for Is_Signed_IR.
+   function Is_IR_Type (T : String) return Boolean with Global => null is
    begin
       return
         Is_Signed_IR (T)
@@ -321,4 +326,3 @@ package body Adacovex.IR_Synthesiser is
    end Synthesize_Bounded_Function;
 
 end Adacovex.IR_Synthesiser;
-

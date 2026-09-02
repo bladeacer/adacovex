@@ -81,11 +81,53 @@ matters is the shape:
 - System time is the tell. Cold runs show ~13 ms of system time (file I/O);
   warm runs show ~9 ms.
 
+## `make prove` timing
+
+`make prove` (gnatprove 16.1.0, 12 logical cores, 10 proof jobs) on the
+1.41.0 tree:
+
+| Scenario | 1.40.0 | 1.41.0 |
+|----------|--------|--------|
+| Idle (no source change) | 1.6 s | 2.5 s |
+| Full cache miss (cold) | 39.0 s / 725 VCs | 42.8 s / 791 VCs |
+
+Idle wall time is the prove result-cache short-circuit: the source tree is
+content-hashed once, and unchanged inputs serve the stored proof instead of
+spawning gnatprove. A real edit re-proves through gnatprove's own session
+store (`obj/gnatprove/`, preserved between runs), which re-analyses only the
+changed unit and its dependents -- measured at roughly 6-9 s wall for a
+body-only edit on this machine.
+
+The cold gap (39.0 s -> 42.8 s) tracks the VC count (+9% VCs, +10% wall);
+it is the price of the proved IR slice added in 1.41.0 (see
+[ir.md](ir.md)). CPU use stays bounded on developer machines: the default
+job count is `cores - 2` (all cores inside CI), so gnatprove never starves
+the desktop.
+
 ## Optimisation history
 
 Kept in reverse-chronological order.  Every entry names the measurement that
 drove it so the next round of work can see whether the previous assumption
 still holds.
+
+### Result-cache stamp map + CPU detection fixes (1.41.0)
+
+The warm-path stamp fast path never fired: the lookup compared the stored
+full fixed-size name buffer (2048 chars) against the real path, so the
+lengths never matched and every file was re-read and re-hashed on every
+run. The map is now open-addressed on a 32-bit FNV-1a hash of the path
+(probes one or two slots instead of scanning the map), with the compact
+scalar arrays (hash, size, length) probed first and the name buffer touched
+only when all three scalars match. `Stamp_Hits` / `Stamp_Misses` counters
+make a silent fast-path regression visible in tests and diagnostics, and a
+new Result-cache test category (21 tests) pins the behaviour.
+
+The CPU-count probe now memoises its result for the process: `make prove`
+and `adacovex status` called `Detect_Core_Count` repeatedly, re-reading
+`/proc/cpuinfo` every time. Python virtual environments (`.venv`) were also
+excluded from the SBOM and source walks, so a virtualenv of thousands of
+files is never enumerated -- the `requirements*.txt` file is the source of
+truth for the Python dependency graph.
 
 ### Stamp fast-path hashing (1.28.0)
 

@@ -194,7 +194,8 @@ package body Adacovex_IR_Tests is
       --  degrades to an empty string (never a malformed spec).
       R.Check
         (Synthesize_Bounded_Function
-           ("Mix", "A:IR_UInt64,B:IR_Int64", "IR_Int64") = "",
+           ("Mix", "A:IR_UInt64,B:IR_Int64", "IR_Int64")
+         = "",
          "Test 14: multi-pair lists are outside the lean slice");
 
       --  Test 15: an empty Return_Type emits a procedure spec.

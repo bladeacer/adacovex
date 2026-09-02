@@ -139,7 +139,7 @@ binary.
 
 ## Test Suite
 
-The native suite grows to 1213 tests across 17 categories: the SBOM tests add
+The native suite grows to 1186 tests across 16 categories: the SBOM tests add
 assertions that `sphinx-build` is never registered as a system tool, and that
 root `requirements*.txt` entries (sphinx, myst-parser) register as dev-scope
 `pkg:pypi/*` dependencies with a registry-resolved version. The docs

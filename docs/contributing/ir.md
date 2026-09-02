@@ -72,10 +72,11 @@ each pass re-proved the slice arithmetic.
 
 The single-pair form needs no comma-splitting pass. It scans for one colon,
 slices the pair once into named constants, and emits the spec in straight
-line. The lean slice adds about 57 VCs (789 total versus 725 at 1.40.0), and
-every check proves. The extra proof cost is the price of keeping a *proved*
-slice: gnatprove must discharge the same arithmetic the generated text will
-carry.
+line. The slice and its helpers add about 57 VCs to the synthesiser unit
+(128 versus 71 at 1.40.0); the whole-tree total is 791 versus 725 at 1.40.0,
+and every check proves. The extra proof cost is the price of keeping a
+*proved* slice: gnatprove must discharge the same arithmetic the generated
+text will carry.
 
 ### The multi-pair design, deferred
 
@@ -128,15 +129,15 @@ proof jobs, cold caches):
 
 | Tree | VCs | Cold `make prove` wall |
 |------|-----|------------------------|
-| 1.40.0 | 725 | 35.2 s |
+| 1.40.0 | 725 | 39.0 s |
 | 1.41.0, multi-pair prototype | 850 | 43.6 s |
-| 1.41.0, lean slice | 789 | 39.6 s |
+| 1.41.0, lean slice | 791 | 42.8 s |
 
 The lean slice keeps the exploration concrete and proved. The remaining gap
 to 1.40.0 is the cost of the new proved code; it is documented rather than
 hidden. The pipeline and cache work in the same release (see
 [Performance](perf.md)) more than offsets it for the runs developers make
-most often: an idle `make prove` short-circuits in about 2.4 s, and a warm
+most often: an idle `make prove` short-circuits in about 2.5 s, and a warm
 cache-hit run re-proves only the changed units.
 
 ## Where the IR could go next
