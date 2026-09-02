@@ -5,6 +5,7 @@ with Ada.Streams.Stream_IO;
 with Ada.Environment_Variables;
 with Ada.Text_IO;
 with GNAT.SHA256;
+with Interfaces;
 
 package body Adacovex.Cache is
 
@@ -12,6 +13,7 @@ package body Adacovex.Cache is
    use Ada.Calendar;
    use Ada.Streams;
    use Ada.Streams.Stream_IO;
+   use Interfaces;
 
    --  Configured cache root (absolute).  Defaults to Default_Cache_Dir at
    --  elaboration; overridden by Set_Cache_Dir (--cache-dir).
@@ -84,21 +86,45 @@ package body Adacovex.Cache is
       end if;
    end Default_Cache_Dir;
 
-   --  In-memory map of file path -> (size, canonical filename) recorded at
-   --  the last Stamped_Hash call.  It is bounded: when the map reaches
-   --  Stamp_Map_Max entries, existing entries are dropped (a period of
-   --  pathological churn just causes a re-hash).  Sized on insertion so a
-   --  changed content with identically-sized file appears as a fresh hash.
-   type Stamp_Entry is record
-      Size : Long_Long_Integer := -1;
-      Name : String (1 .. 2048) := (others => ' ');
-   end record;
-   subtype Stamp_Index is Natural range 0 .. 4095;
+   --  In-memory map of file path -> (size, digest) recorded at the last
+   --  Hash_File call.  It is bounded: when the map reaches Stamp_Map_Cap
+   --  entries, new paths are not inserted (a period of pathological churn
+   --  just causes a re-hash).  The size is recorded on insertion, so a
+   --  changed content with an identically-sized file is served the stale
+   --  digest only within one process and one run -- the map is never
+   --  persisted, and a size change always forces a fresh hash.
+   --
+   --  Layout is cache-line friendly.  Lookups probe the compact scalar
+   --  arrays (hash, size, length) and touch the 2048-byte name buffer only
+   --  when all three scalars match a candidate.  The table is
+   --  open-addressed on a 32-bit FNV-1a hash of the path, so a hit probes
+   --  one or two slots instead of scanning the whole map.  A slot whose
+   --  Stamp_Hash is Empty_Hash is free.
+   Stamp_Map_Cap : constant := 4096;  --  power of two
+   subtype Stamp_Index is Natural range 0 .. Stamp_Map_Cap - 1;
+   Empty_Hash    : constant Integer := -1;
+   Stamp_Hash    : array (Stamp_Index) of Integer := (others => Empty_Hash);
+   Stamp_Size    : array (Stamp_Index) of Long_Long_Integer := (others => -1);
+   Stamp_Len     : array (Stamp_Index) of Natural := (others => 0);
    Stamp_Names   : array (Stamp_Index) of String (1 .. 2048) :=
      (others => (others => ' '));
-   Stamp_Sizes   : array (Stamp_Index) of Long_Long_Integer := (others => -1);
-   Stamp_Digests : array (Stamp_Index) of String (1 .. 64) :=
+   Stamp_Digest  : array (Stamp_Index) of String (1 .. 64) :=
      (others => (others => ' '));
+
+   --  FNV-1a hash of Path, folded into the table range.  The wrapping
+   --  Unsigned_32 arithmetic keeps the multiply in range; the fold is a
+   --  power-of-two mask (Stamp_Map_Cap is a power of two), which the
+   --  compiler turns into a simple and.
+   function Stamp_Hash_Of (Path : String) return Integer is
+      H : Interfaces.Unsigned_32 := 16#811c9dc5#;
+   begin
+      for I in Path'Range loop
+         H :=
+           (H xor Interfaces.Unsigned_32 (Character'Pos (Path (I))))
+           * 16#01000193#;
+      end loop;
+      return Integer (H and Interfaces.Unsigned_32 (Stamp_Map_Cap - 1));
+   end Stamp_Hash_Of;
 
    --  Current stamp of a file: size (or -1 when Size raises).
    function File_Size (Path : String) return Long_Long_Integer is
@@ -110,20 +136,32 @@ package body Adacovex.Cache is
          return -1;
    end File_Size;
 
-   --  Find Path in the stamp map.  Returns the index or -1.
+   --  Find Path in the stamp map.  Returns the index or -1.  Open
+   --  addressing with linear probing: the probe starts at the path hash
+   --  and walks forward until an empty slot (not present) or a full match
+   --  (hash value, stored length, then the stored name slice of exactly
+   --  that length).  The earlier bug compared the full fixed-size name
+   --  buffer (2048 chars) against the real path, so the length never
+   --  matched and the fast path silently never fired -- every file was
+   --  re-read and re-hashed on every run.
    function Stamp_Find (Path : String) return Integer is
+      H      : Integer := Stamp_Hash_Of (Path);
+      Target : constant Integer := H;
    begin
-      for I in Stamp_Index loop
-         if Stamp_Sizes (I) >= 0 then
-            declare
-               N : constant String :=
-                 Stamp_Names (I) (1 .. Stamp_Names (I)'Length);
-            begin
-               if N = Path then
-                  return I;
-               end if;
-            end;
+      if Path'Length = 0 or else Path'Length > Stamp_Names (0)'Length then
+         return -1;
+      end if;
+      for Seen in 0 .. Stamp_Map_Cap - 1 loop
+         if Stamp_Hash (H) = Empty_Hash then
+            return -1;
          end if;
+         if Stamp_Hash (H) = Target
+           and then Stamp_Len (H) = Path'Length
+           and then Stamp_Names (H) (1 .. Path'Length) = Path
+         then
+            return H;
+         end if;
+         H := (H + 1) mod Stamp_Map_Cap;
       end loop;
       return -1;
    end Stamp_Find;
@@ -132,20 +170,25 @@ package body Adacovex.Cache is
    --  the size recorded with that digest.  The path must be the same
    --  string (a re-scan of the same file).  The function returns "" when
    --  there is no matching stamp (the caller then falls back to
-   --  Hash_File).
+   --  Hash_File).  Stamp_Hits / Stamp_Misses count both outcomes so tests
+   --  and diagnostics can see whether the fast path fired.
    function Hash_Fast (Path : String) return String is
-      Sz : constant Long_Long_Integer := File_Size (Path);
+      Sz  : constant Long_Long_Integer := File_Size (Path);
+      Idx : Integer;
    begin
-      if Sz < 0 or else Path'Length > 2048 then
+      if Sz < 0 or else Path'Length = 0 or else Path'Length > 2048 then
          return "";
       end if;
-      for I in Stamp_Index loop
-         if Stamp_Sizes (I) = Sz
-           and then Stamp_Names (I) (1 .. Stamp_Names (I)'Length) = Path
-         then
-            return Stamp_Digests (I);
-         end if;
-      end loop;
+      Idx := Stamp_Find (Path);
+      if Idx < 0 then
+         Stamp_Misses := Stamp_Misses + 1;
+         return "";
+      end if;
+      if Stamp_Size (Idx) = Sz then
+         Stamp_Hits := Stamp_Hits + 1;
+         return Stamp_Digest (Idx);
+      end if;
+      Stamp_Misses := Stamp_Misses + 1;
       return "";
    end Hash_Fast;
 
@@ -155,29 +198,41 @@ package body Adacovex.Cache is
    --  proxy for "content unchanged" after this process already hashed the
    --  file; mtime is secondary and not tracked.
    procedure Stamp_Remember (Path : String; Digest : String) is
-      Idx : Integer;
+      H      : Integer := Stamp_Hash_Of (Path);
+      Target : constant Integer := H;
    begin
-      if Path'Length > 2048 or else Digest'Length /= 64 then
+      if Path'Length = 0
+        or else Path'Length > Stamp_Names (0)'Length
+        or else Digest'Length /= 64
+      then
          return;
       end if;
-      Idx := Stamp_Find (Path);
-      if Idx < 0 then
-         --  insert at the first free slot
-         for I in Stamp_Index loop
-            if Stamp_Sizes (I) < 0 then
-               Idx := I;
-               exit;
-            end if;
-         end loop;
-         if Idx < 0 then
-            return;  --  map full; skip
-
+      --  Reuse the entry when present; otherwise occupy the first empty
+      --  slot on the probe chain (insertions agree with Stamp_Find's probe
+      --  order, so later lookups converge on the same slot).
+      for Seen in 0 .. Stamp_Map_Cap - 1 loop
+         if Stamp_Hash (H) = Empty_Hash
+           or else (Stamp_Hash (H) = Target
+                    and then Stamp_Len (H) = Path'Length
+                    and then Stamp_Names (H) (1 .. Path'Length) = Path)
+         then
+            Stamp_Hash (H) := Target;
+            Stamp_Len (H) := Path'Length;
+            Stamp_Names (H) (1 .. Path'Length) := Path;
+            Stamp_Size (H) := File_Size (Path);
+            Stamp_Digest (H) (1 .. 64) := Digest;
+            return;
          end if;
-      end if;
-      Stamp_Names (Idx) (1 .. Path'Length) := Path;
-      Stamp_Sizes (Idx) := File_Size (Path);
-      Stamp_Digests (Idx) (1 .. 64) := Digest;
+         H := (H + 1) mod Stamp_Map_Cap;
+      end loop;
+   --  Map full and Path not present: skip the insert.  Pathological
+   --  churn just re-hashes.
    end Stamp_Remember;
+
+   --  Read chunk for Hash_File.  64 KiB keeps the read syscall rate low on
+   --  large source trees (the previous 8 KiB chunk octupled the read
+   --  syscalls on big files).
+   Hash_Chunk : constant := 65_536;
 
    function Hash_File (Path : String) return String is
       Fast : constant String := Hash_Fast (Path);
@@ -188,7 +243,7 @@ package body Adacovex.Cache is
       declare
          Ctx  : GNAT.SHA256.Context;
          F    : File_Type;
-         Buf  : Ada.Streams.Stream_Element_Array (0 .. 8191);
+         Buf  : Ada.Streams.Stream_Element_Array (0 .. Hash_Chunk - 1);
          Last : Ada.Streams.Stream_Element_Offset;
          Dig  : String (1 .. 64);
       begin
@@ -566,67 +621,98 @@ package body Adacovex.Cache is
       end if;
    end Put_Cached;
 
-   function Oldest_File (Dir : String) return String is
+   --  Visit every ordinary file under Root at depth <= 2 -- the fixed cache
+   --  layout is <root>/<aa>/<key> plus <root>/meta/<hash> -- and track the
+   --  one with the oldest modification time.  Iterative, not recursive: the
+   --  two-level layout means a flat walk always finds every entry, and it
+   --  avoids the recursion and the extra stat traffic of the old tree walk
+   --  (eviction runs in a loop, so per-step overhead multiplies).  Returns
+   --  "" when Root holds no files.  A deeper nesting is a layout violation
+   --  and is skipped.
+   function Oldest_File (Root : String) return String is
       Search : Search_Type;
       Ent    : Directory_Entry_Type;
       Best   : String (1 .. 4096) := (others => ' ');
       BLen   : Natural := 0;
       Best_T : Ada.Calendar.Time := Ada.Calendar.Clock;
       First  : Boolean := True;
+
+      --  Remember Path when it is older than the current best.
+      procedure Latest (Path : String) is
+         T : Ada.Calendar.Time;
+      begin
+         begin
+            T := Ada.Directories.Modification_Time (Path);
+         exception
+            when others =>
+               return;
+         end;
+         if First or else (T - Best_T) < 0.0 then
+            if Path'Length <= Best'Length then
+               Best_T := T;
+               BLen := Path'Length;
+               Best (1 .. BLen) := Path;
+               First := False;
+            end if;
+         end if;
+      end Latest;
    begin
       begin
-         if Kind (Dir) /= Directory then
+         if Kind (Root) /= Directory then
             return "";
          end if;
       exception
          when others =>
             return "";
       end;
-      Start_Search (Search, Dir, "");
+      Start_Search (Search, Root, "");
       while More_Entries (Search) loop
          Get_Next_Entry (Search, Ent);
          declare
-            N : constant String := Full_Name (Ent);
-            K : File_Kind;
+            N  : constant String := Full_Name (Ent);
+            Sn : constant String := Simple_Name (Ent);
+            K  : File_Kind := Ordinary_File;
          begin
-            K := Kind (N);
-            if K = Directory then
-               if Simple_Name (Ent) /= "." and then Simple_Name (Ent) /= ".."
-               then
+            begin
+               K := Kind (N);
+            exception
+               when others =>
+                  K := Ordinary_File;
+            end;
+            if Sn /= "." and then Sn /= ".." then
+               if K = Ordinary_File then
+                  Latest (N);
+               elsif K = Directory then
+                  --  Second (and final) level: cache blobs and meta files.
+                  --  Files qualify; anything deeper is skipped.
                   declare
-                     Sub : constant String := Oldest_File (N);
+                     S2 : Search_Type;
+                     E2 : Directory_Entry_Type;
                   begin
-                     if Sub'Length > 0 then
+                     Start_Search (S2, N, "");
+                     while More_Entries (S2) loop
+                        Get_Next_Entry (S2, E2);
                         declare
-                           T : constant Ada.Calendar.Time :=
-                             Ada.Directories.Modification_Time (Sub);
+                           N2 : constant String := Full_Name (E2);
+                           K2 : File_Kind := Ordinary_File;
                         begin
-                           if First or else (T - Best_T) < 0.0 then
-                              Best_T := T;
-                              if Sub'Length <= Best'Length then
-                                 BLen := Sub'Length;
-                                 Best (1 .. BLen) := Sub;
-                              end if;
-                              First := False;
+                           begin
+                              K2 := Kind (N2);
+                           exception
+                              when others =>
+                                 K2 := Ordinary_File;
+                           end;
+                           if K2 = Ordinary_File
+                             and then Simple_Name (E2) /= "."
+                             and then Simple_Name (E2) /= ".."
+                           then
+                              Latest (N2);
                            end if;
                         end;
-                     end if;
+                     end loop;
+                     End_Search (S2);
                   end;
                end if;
-            elsif K = Ordinary_File then
-               declare
-                  T : constant Ada.Calendar.Time :=
-                    Ada.Directories.Modification_Time (N);
-               begin
-                  if First or else (T - Best_T) < 0.0 then
-                     Best_T := T;
-                     if N'Length <= Best'Length then
-                        BLen := N'Length;
-                        Best (1 .. BLen) := N;
-                     end if;
-                     First := False;
-                  end if;
-               end;
             end if;
          end;
       end loop;
@@ -634,34 +720,66 @@ package body Adacovex.Cache is
       return Best (1 .. BLen);
    end Oldest_File;
 
-   function Count_Files (Dir : String) return Natural is
+   --  Count the cache entries on disk (ordinary files at depth <= 2 under
+   --  Root, metadata files included).  Flat and iterative for the same
+   --  reason as Oldest_File: eviction calls it repeatedly, so every saved
+   --  stat is a saved syscall.
+   function Count_Files (Root : String) return Natural is
       Search : Search_Type;
       Ent    : Directory_Entry_Type;
       Total  : Natural := 0;
    begin
       begin
-         if Kind (Dir) /= Directory then
+         if Kind (Root) /= Directory then
             return 0;
          end if;
       exception
          when others =>
             return 0;
       end;
-      Start_Search (Search, Dir, "");
+      Start_Search (Search, Root, "");
       while More_Entries (Search) loop
          Get_Next_Entry (Search, Ent);
          declare
-            N : constant String := Full_Name (Ent);
-            K : File_Kind;
+            N  : constant String := Full_Name (Ent);
+            Sn : constant String := Simple_Name (Ent);
+            K  : File_Kind := Ordinary_File;
          begin
-            K := Kind (N);
-            if K = Directory then
-               if Simple_Name (Ent) /= "." and then Simple_Name (Ent) /= ".."
-               then
-                  Total := Total + Count_Files (N);
+            begin
+               K := Kind (N);
+            exception
+               when others =>
+                  K := Ordinary_File;
+            end;
+            if Sn /= "." and then Sn /= ".." then
+               if K = Ordinary_File then
+                  Total := Total + 1;
+               elsif K = Directory then
+                  declare
+                     S2 : Search_Type;
+                     E2 : Directory_Entry_Type;
+                  begin
+                     Start_Search (S2, N, "");
+                     while More_Entries (S2) loop
+                        Get_Next_Entry (S2, E2);
+                        declare
+                           N2 : constant String := Full_Name (E2);
+                           K2 : File_Kind := Ordinary_File;
+                        begin
+                           begin
+                              K2 := Kind (N2);
+                           exception
+                              when others =>
+                                 K2 := Ordinary_File;
+                           end;
+                           if K2 = Ordinary_File then
+                              Total := Total + 1;
+                           end if;
+                        end;
+                     end loop;
+                     End_Search (S2);
+                  end;
                end if;
-            elsif K = Ordinary_File then
-               Total := Total + 1;
             end if;
          end;
       end loop;

@@ -152,6 +152,99 @@ package body Adacovex_IR_Tests is
                   and then Host_Word_Size = Bits_32)
          or else (System.Word_Size > 32 and then Host_Word_Size = Bits_64),
          "Test 11: Host_Word_Size matches System.Word_Size");
+
+      --  Test 12: Synthesize_Bounded_Function emits the checked-add shape:
+      --  bounded types plus the half-range Pre guards gnatprove discharges
+      --  (the same guards as Checked_Add32 / IR_Bounds.Add32).
+      declare
+         Spec : constant String :=
+           Synthesize_Bounded_Function
+             ("Add32", "A:IR_Int32,B:IR_Int32", "IR_Int32");
+         Want : constant String :=
+           "function Add32 (A : IR_Int32; B : IR_Int32) return IR_Int32"
+           & ASCII.LF
+           & "with"
+           & ASCII.LF
+           & "  Pre => A in IR_Int32'First / 2 .. IR_Int32'Last / 2"
+           & ASCII.LF
+           & "         and then B in IR_Int32'First / 2 .. IR_Int32'Last / 2"
+           & ASCII.LF
+           & ";"
+           & ASCII.LF;
+      begin
+         R.Check
+           (Spec'Length <= 4096 and then Spec = Want,
+            "Test 12: bounded function spec with half-range Pre guards");
+      end;
+
+      --  Test 13: unsigned (modular) parameters carry no overflow guard.
+      declare
+         Spec : constant String :=
+           Synthesize_Bounded_Function ("Wrap", "X:IR_UInt32", "IR_UInt32");
+         Want : constant String :=
+           "function Wrap (X : IR_UInt32) return IR_UInt32"
+           & ASCII.LF
+           & ";"
+           & ASCII.LF;
+      begin
+         R.Check
+           (Spec = Want, "Test 13: unsigned-only spec has no Pre contract");
+      end;
+
+      --  Test 14: mixed signed/unsigned parameters guard only the signed
+      --  ones.
+      declare
+         Spec : constant String :=
+           Synthesize_Bounded_Function
+             ("Mix", "A:IR_UInt64,B:IR_Int64", "IR_Int64");
+         Want : constant String :=
+           "function Mix (A : IR_UInt64; B : IR_Int64) return IR_Int64"
+           & ASCII.LF
+           & "with"
+           & ASCII.LF
+           & "  Pre => B in IR_Int64'First / 2 .. IR_Int64'Last / 2"
+           & ASCII.LF
+           & ";"
+           & ASCII.LF;
+      begin
+         R.Check
+           (Spec = Want,
+            "Test 14: only signed parameters receive a Pre guard");
+      end;
+
+      --  Test 15: an empty Return_Type emits a procedure spec.
+      declare
+         Spec : constant String :=
+           Synthesize_Bounded_Function ("ResetState", "S:IR_Int32", "");
+         Want : constant String :=
+           "procedure ResetState (S : IR_Int32)"
+           & ASCII.LF
+           & "with"
+           & ASCII.LF
+           & "  Pre => S in IR_Int32'First / 2 .. IR_Int32'Last / 2"
+           & ASCII.LF
+           & ";"
+           & ASCII.LF;
+      begin
+         R.Check
+           (Spec = Want, "Test 15: empty return type synthesises a procedure");
+      end;
+
+      --  Test 16: empty names and malformed parameter pairs degrade
+      --  gracefully (empty result or a nullary spec, never an exception).
+      R.Check
+        (Synthesize_Bounded_Function ("", "A:IR_Int32", "IR_Int32") = "",
+         "Test 16: empty subprogram name returns an empty string");
+      declare
+         Spec : constant String :=
+           Synthesize_Bounded_Function ("F", "broken-pair", "IR_Int32");
+         Want : constant String :=
+           "function F return IR_Int32" & ASCII.LF & ";" & ASCII.LF;
+      begin
+         R.Check
+           (Spec = Want,
+            "Test 16: pair without a colon degrades to a nullary spec");
+      end;
    end Run;
 
 end Adacovex_IR_Tests;

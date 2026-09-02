@@ -119,6 +119,17 @@ package Adacovex.Cache is
    --  cap.  The CLI reads it to report cache effectiveness.
    Eviction_Count : Natural := 0;
 
+   --  Stamp-map effectiveness counters.  Hash_File serves a previously
+   --  recorded digest without opening the file when the path and size are
+   --  unchanged within this process (the in-memory stamp map, never
+   --  persisted).  Stamp_Hits counts the file reads avoided; Stamp_Misses
+   --  counts the fallbacks to a real read.  They let tests and diagnostics
+   --  prove the fast path actually fired -- a silent fast-path regression
+   --  (like the 1.28 name-length bug that made every lookup miss) is then
+   --  visible as Stamp_Hits = 0 with a non-empty map.
+   Stamp_Hits   : Natural := 0;
+   Stamp_Misses : Natural := 0;
+
    --  Probe freshness.  This is how long a cached system-tool version probe
    --  stays valid.  Tool versions change rarely.  Re-probing every run costs
    --  a subprocess spawn per referenced tool (tens of ms each on the SBOM and

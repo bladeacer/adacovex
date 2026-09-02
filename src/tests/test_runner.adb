@@ -9,6 +9,7 @@ with Adacovex_Config_Tests;
 with Adacovex_Renderer_SVG_Tests;
 with Adacovex_Renderer_Tests;
 with Adacovex_SBOM_Tests;
+with Adacovex_Cache_Tests;
 with Adacovex_IR_Tests;
 with Adacovex_Man_Tests;
 with Adacovex_VCS_Tests;
@@ -28,6 +29,7 @@ procedure Test_Runner is
    R_RendererSVG : Runner;
    R_Renderers   : Runner;
    R_SBOM        : Runner;
+   R_Cache       : Runner;
    R_IR          : Runner;
    R_Man         : Runner;
    R_VCS         : Runner;
@@ -72,6 +74,7 @@ procedure Test_Runner is
          Row ("SVG renderer", R_RendererSVG);
          Row ("HTML/Markdown renderers", R_Renderers);
          Row ("SBOM generator", R_SBOM);
+         Row ("Result cache", R_Cache);
          Row ("IR synthesis", R_IR);
          Row ("Man page renderer", R_Man);
          Row ("VCS support", R_VCS);
@@ -148,6 +151,7 @@ procedure Test_Runner is
          Row ("SVG renderer", R_RendererSVG);
          Row ("HTML/Markdown renderers", R_Renderers);
          Row ("SBOM generator", R_SBOM);
+         Row ("Result cache", R_Cache);
          Row ("IR synthesis", R_IR);
          Row ("Man page renderer", R_Man);
          Row ("VCS support", R_VCS);
@@ -179,6 +183,7 @@ begin
    Adacovex_Renderer_SVG_Tests.Run (R_RendererSVG);
    Adacovex_Renderer_Tests.Run (R_Renderers);
    Adacovex_SBOM_Tests.Run (R_SBOM);
+   Adacovex_Cache_Tests.Run (R_Cache);
    Adacovex_IR_Tests.Run (R_IR);
    Adacovex_Man_Tests.Run (R_Man);
    Adacovex_VCS_Tests.Run (R_VCS);
@@ -197,6 +202,7 @@ begin
      + R_RendererSVG.Passed
      + R_Renderers.Passed
      + R_SBOM.Passed
+     + R_Cache.Passed
      + R_IR.Passed
      + R_Man.Passed
      + R_VCS.Passed
@@ -214,6 +220,7 @@ begin
      + R_RendererSVG.Failed
      + R_Renderers.Failed
      + R_SBOM.Failed
+     + R_Cache.Failed
      + R_IR.Failed
      + R_Man.Failed
      + R_VCS.Failed

@@ -37,6 +37,7 @@ dictionary means the sentence is not yet STE100-clean.
 ## Packages
 
 - [Adacovex](adacovex.md)
+- [Adacovex_Cache_Tests](adacovex_cache_tests.md)
 - [Adacovex_Complexity_Tests](adacovex_complexity_tests.md)
 - [Adacovex_Config_Tests](adacovex_config_tests.md)
 - [Adacovex_DAL_Tests](adacovex_dal_tests.md)

@@ -91,85 +91,112 @@ package body Adacovex.CPUs is
       end;
    end Run_Capture;
 
+   --  Memoised core count.  Detect_Core_Count is called from the prove and
+   --  status paths (Run_Prove resolves jobs and prints the justification,
+   --  Resolve_Jobs auto-detects, status reports the platform) and every
+   --  call re-reads /proc/cpuinfo.  The machine topology cannot change
+   --  inside one run, so the first successful detection is cached.  The
+   --  unit is I/O-bound and skipped by gnatprove (see
+   --  docs/proof/16.1.0-ledger.md), so the memoised state adds no proof
+   --  surface.  The fallback 1 is deliberately not memoised: a transient
+   --  probe failure should not poison every later call.
+   Memoized_Cores : Natural := 0;
+
    function Detect_Core_Count return Natural is
-      use Ada.Text_IO;
-      F        : File_Type;
-      Count    : Natural := 0;
-      Line     : String (1 .. 256);
-      LLen     : Natural;
-      Captured : String (1 .. 32);
-      CLen     : Natural;
-      Ok       : Boolean;
-      N        : Integer;
-   begin
-      --  Linux: count "processor" entries in /proc/cpuinfo.
+      --  The detection cascade, extracted so the memo wrapper is a single
+      --  call site.  Returns a real core count or 1 when nothing is
+      --  detectable.
+      function Compute return Natural is
+         use Ada.Text_IO;
+         F        : File_Type;
+         Count    : Natural := 0;
+         Line     : String (1 .. 256);
+         LLen     : Natural;
+         Captured : String (1 .. 32);
+         CLen     : Natural;
+         Ok       : Boolean;
+         N        : Integer;
       begin
-         Open (F, In_File, "/proc/cpuinfo");
-         while not End_Of_File (F) loop
-            Get_Line (F, Line, LLen);
-            if LLen >= 9
-              and then Line (Line'First .. Line'First + 8) = "processor"
-            then
-               Count := Count + 1;
-            end if;
-         end loop;
-         Close (F);
-         if Count > 0 then
-            return Count;
-         end if;
-      exception
-         when others =>
-            if Is_Open (F) then
-               Close (F);
-            end if;
-      end;
-
-      --  macOS / FreeBSD: sysctl -n hw.ncpu
-      Run_Capture ("sysctl -n hw.ncpu", Captured, CLen, Ok);
-      if Ok then
-         N := Parse_Natural (Captured (1 .. CLen));
-         if N > 0 then
-            return Natural (N);
-         end if;
-      end if;
-
-      --  Linux fallback: nproc
-      Run_Capture ("nproc", Captured, CLen, Ok);
-      if Ok then
-         N := Parse_Natural (Captured (1 .. CLen));
-         if N > 0 then
-            return Natural (N);
-         end if;
-      end if;
-
-      --  Windows: NUMBER_OF_PROCESSORS env var.
-      if Ada.Environment_Variables.Exists ("NUMBER_OF_PROCESSORS") then
-         declare
-            V : constant String :=
-              Ada.Environment_Variables.Value ("NUMBER_OF_PROCESSORS");
+         --  Linux: count "processor" entries in /proc/cpuinfo.
          begin
-            N := Parse_Natural (V);
+            Open (F, In_File, "/proc/cpuinfo");
+            while not End_Of_File (F) loop
+               Get_Line (F, Line, LLen);
+               if LLen >= 9
+                 and then Line (Line'First .. Line'First + 8) = "processor"
+               then
+                  Count := Count + 1;
+               end if;
+            end loop;
+            Close (F);
+            if Count > 0 then
+               return Count;
+            end if;
+         exception
+            when others =>
+               if Is_Open (F) then
+                  Close (F);
+               end if;
+         end;
+
+         --  macOS / FreeBSD: sysctl -n hw.ncpu
+         Run_Capture ("sysctl -n hw.ncpu", Captured, CLen, Ok);
+         if Ok then
+            N := Parse_Natural (Captured (1 .. CLen));
             if N > 0 then
                return Natural (N);
             end if;
-         end;
-      end if;
-
-      --  Windows fallback: PowerShell CIM query.
-      Run_Capture
-        ("powershell -NoProfile -Command "
-         & """(Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors""",
-         Captured,
-         CLen,
-         Ok);
-      if Ok then
-         N := Parse_Natural (Captured (1 .. CLen));
-         if N > 0 then
-            return Natural (N);
          end if;
-      end if;
 
-      return 1;
+         --  Linux fallback: nproc
+         Run_Capture ("nproc", Captured, CLen, Ok);
+         if Ok then
+            N := Parse_Natural (Captured (1 .. CLen));
+            if N > 0 then
+               return Natural (N);
+            end if;
+         end if;
+
+         --  Windows: NUMBER_OF_PROCESSORS env var.
+         if Ada.Environment_Variables.Exists ("NUMBER_OF_PROCESSORS") then
+            declare
+               V : constant String :=
+                 Ada.Environment_Variables.Value ("NUMBER_OF_PROCESSORS");
+            begin
+               N := Parse_Natural (V);
+               if N > 0 then
+                  return Natural (N);
+               end if;
+            end;
+         end if;
+
+         --  Windows fallback: PowerShell CIM query.
+         Run_Capture
+           ("powershell -NoProfile -Command "
+            & """(Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors""",
+            Captured,
+            CLen,
+            Ok);
+         if Ok then
+            N := Parse_Natural (Captured (1 .. CLen));
+            if N > 0 then
+               return Natural (N);
+            end if;
+         end if;
+
+         return 1;
+      end Compute;
+
+      Result : Natural;
+   begin
+      if Memoized_Cores > 0 then
+         return Memoized_Cores;
+      end if;
+      Result := Compute;
+      if Result > 1 then
+         Memoized_Cores := Result;
+      end if;
+      return Result;
    end Detect_Core_Count;
 
    function Is_Running_In_CI return Boolean is

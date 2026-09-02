@@ -54,6 +54,7 @@ CATEGORY_KEY: Dict[str, str] = {
     "SVG renderer": "src/tests/adacovex_renderer_svg_tests",
     "HTML/Markdown renderers": "src/tests/adacovex_renderer_tests",
     "SBOM generator": "src/tests/adacovex_sbom_tests",
+    "Result cache": "src/tests/adacovex_cache_tests",
     "IR synthesis": "src/tests/adacovex_ir_tests",
     "Man page renderer": "src/tests/adacovex_man_tests",
     "VCS support": "src/tests/adacovex_vcs_tests",

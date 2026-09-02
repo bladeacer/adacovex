@@ -728,6 +728,7 @@ package body Adacovex.Parsers.Source is
                           and Name /= "gnatprove"
                           and Name /= "__pycache__"
                           and Name /= "node_modules"
+                          and Name /= ".venv"
                           and Name /= ".headroom"
                           and Name /= ".lccst"
                           and not Is_Skipped_Dir (Name, Skip_List)
@@ -1016,6 +1017,7 @@ package body Adacovex.Parsers.Source is
                           and Name /= "gnatprove"
                           and Name /= "__pycache__"
                           and Name /= "node_modules"
+                          and Name /= ".venv"
                           and Name /= ".headroom"
                           and Name /= ".lccst"
                           and not Is_Skipped_Dir (Name, Skip_List)

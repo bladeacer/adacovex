@@ -1121,6 +1121,7 @@ package body Adacovex.Parsers.Manifest is
                              and then N /= "gnatprove"
                              and then N /= "__pycache__"
                              and then N /= "node_modules"
+                             and then N /= ".venv"
                              and then N /= ".headroom"
                              and then N /= ".lccst"
                            then
@@ -1226,6 +1227,7 @@ package body Adacovex.Parsers.Manifest is
                                 and N /= "gnatprove"
                                 and N /= "__pycache__"
                                 and N /= "node_modules"
+                                and N /= ".venv"
                                 and N /= ".headroom"
                                 and N /= ".lccst"
                               then
