@@ -28,6 +28,7 @@ docs/THIRD_PARTY_NOTICES.md	Third-party notices
 docs/HLR.md	HLR index
 docs/LLR.md	LLR mapping
 docs/contributing/perf.md	Performance
+docs/contributing/ir.md	gnatprove-friendly IR
 docs/proof/index.md	Proof records
 docs/compliance/index.md	Compliance outputs
 docs/badges/index.md	Badges

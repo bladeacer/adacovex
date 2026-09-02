@@ -595,6 +595,7 @@ suffices.
 - [HLR index](docs/HLR.md)
 - [LLR mapping](docs/LLR.md)
 - [Performance](docs/contributing/perf.md)
+- [gnatprove-friendly IR](docs/contributing/ir.md)
 - [Proof records](docs/proof/index.md)
 - [Compliance outputs](docs/compliance/index.md)
 - [Badges](docs/badges/index.md)

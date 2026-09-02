@@ -42,6 +42,8 @@ before you use a technical word in any doc, docstring, or changelog.
   categorisation.
 - [Performance](contributing/perf.md) -- benchmarking and optimisation
   history.
+- [gnatprove-friendly IR](contributing/ir.md) -- the design exploration for
+  synthesising bounded, contract-carrying code.
 - [STE100 Technical Names](contributing/ste100-technical-names.md) -- the
   controlled dictionary.
 - [LLM usage](contributing/llm-usage.md) -- guidance for AI agents.
@@ -101,6 +103,7 @@ contributing/proving
 contributing/architecture
 contributing/requirements
 contributing/perf
+contributing/ir
 contributing/ste100-technical-names
 contributing/llm-usage
 ```

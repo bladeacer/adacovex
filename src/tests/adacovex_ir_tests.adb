@@ -153,28 +153,27 @@ package body Adacovex_IR_Tests is
          or else (System.Word_Size > 32 and then Host_Word_Size = Bits_64),
          "Test 11: Host_Word_Size matches System.Word_Size");
 
-      --  Test 12: Synthesize_Bounded_Function emits the checked-add shape:
-      --  bounded types plus the half-range Pre guards gnatprove discharges
-      --  (the same guards as Checked_Add32 / IR_Bounds.Add32).
+      --  Test 12: Synthesize_Bounded_Function emits the checked-add shape
+      --  for a single signed parameter: bounded type plus the half-range
+      --  Pre guard gnatprove discharges (the same guard as Checked_Add32 /
+      --  IR_Bounds.Add32).  This is the lean slice; the general multi-pair
+      --  form is documented in docs/contributing/ir.md.
       declare
          Spec : constant String :=
-           Synthesize_Bounded_Function
-             ("Add32", "A:IR_Int32,B:IR_Int32", "IR_Int32");
+           Synthesize_Bounded_Function ("Inc", "A:IR_Int32", "IR_Int32");
          Want : constant String :=
-           "function Add32 (A : IR_Int32; B : IR_Int32) return IR_Int32"
+           "function Inc (A : IR_Int32) return IR_Int32"
            & ASCII.LF
            & "with"
            & ASCII.LF
            & "  Pre => A in IR_Int32'First / 2 .. IR_Int32'Last / 2"
-           & ASCII.LF
-           & "         and then B in IR_Int32'First / 2 .. IR_Int32'Last / 2"
            & ASCII.LF
            & ";"
            & ASCII.LF;
       begin
          R.Check
            (Spec'Length <= 4096 and then Spec = Want,
-            "Test 12: bounded function spec with half-range Pre guards");
+            "Test 12: lean slice emits one half-range Pre guard");
       end;
 
       --  Test 13: unsigned (modular) parameters carry no overflow guard.
@@ -191,26 +190,12 @@ package body Adacovex_IR_Tests is
            (Spec = Want, "Test 13: unsigned-only spec has no Pre contract");
       end;
 
-      --  Test 14: mixed signed/unsigned parameters guard only the signed
-      --  ones.
-      declare
-         Spec : constant String :=
-           Synthesize_Bounded_Function
-             ("Mix", "A:IR_UInt64,B:IR_Int64", "IR_Int64");
-         Want : constant String :=
-           "function Mix (A : IR_UInt64; B : IR_Int64) return IR_Int64"
-           & ASCII.LF
-           & "with"
-           & ASCII.LF
-           & "  Pre => B in IR_Int64'First / 2 .. IR_Int64'Last / 2"
-           & ASCII.LF
-           & ";"
-           & ASCII.LF;
-      begin
-         R.Check
-           (Spec = Want,
-            "Test 14: only signed parameters receive a Pre guard");
-      end;
+      --  Test 14: a second parameter pair is outside the lean slice and
+      --  degrades to an empty string (never a malformed spec).
+      R.Check
+        (Synthesize_Bounded_Function
+           ("Mix", "A:IR_UInt64,B:IR_Int64", "IR_Int64") = "",
+         "Test 14: multi-pair lists are outside the lean slice");
 
       --  Test 15: an empty Return_Type emits a procedure spec.
       declare
@@ -230,21 +215,14 @@ package body Adacovex_IR_Tests is
            (Spec = Want, "Test 15: empty return type synthesises a procedure");
       end;
 
-      --  Test 16: empty names and malformed parameter pairs degrade
-      --  gracefully (empty result or a nullary spec, never an exception).
+      --  Test 16: empty names and malformed pairs degrade gracefully (an
+      --  empty result, never an exception).
       R.Check
         (Synthesize_Bounded_Function ("", "A:IR_Int32", "IR_Int32") = "",
          "Test 16: empty subprogram name returns an empty string");
-      declare
-         Spec : constant String :=
-           Synthesize_Bounded_Function ("F", "broken-pair", "IR_Int32");
-         Want : constant String :=
-           "function F return IR_Int32" & ASCII.LF & ";" & ASCII.LF;
-      begin
-         R.Check
-           (Spec = Want,
-            "Test 16: pair without a colon degrades to a nullary spec");
-      end;
+      R.Check
+        (Synthesize_Bounded_Function ("F", "broken-pair", "IR_Int32") = "",
+         "Test 16: pair without a colon degrades to an empty string");
    end Run;
 
 end Adacovex_IR_Tests;

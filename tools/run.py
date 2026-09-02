@@ -34,7 +34,7 @@ ROOT: Path = Path(__file__).resolve().parent.parent
 # --require-tests is the current native test-suite size (docs/test_result.md).
 SELF_ASSESS_ARGS: str = (
     "--dal=C --standard=all --require-spark=Platinum "
-    "--require-docstrings=100 --require-tests=1033 --require-proof=100"
+    "--require-docstrings=100 --require-tests=1213 --require-proof=100"
 )
 
 

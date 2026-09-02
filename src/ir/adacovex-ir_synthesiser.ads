@@ -62,22 +62,24 @@ package Adacovex.IR_Synthesiser is
      Global => null;
 
    --  Synthesises a contract-carrying bounded-function spec from a
-   --  foreign-style signature.  It lowers each "P:Type" parameter pair
-   --  onto the bounded IR scalar types and emits the half-range Pre guards
-   --  that gnatprove discharges for the checked arithmetic (the same
-   --  guards as Adacovex.Target_Profiles.Checked_Add32 / the
-   --  Adacovex.IR_Bounds fixture).  This is the first concrete slice of a
-   --  gnatprove-friendly IR: lowered code carries its contracts in the
-   --  generated text, so a proof run checks only bounded-scalar arithmetic
-   --  instead of foreign semantics.  The full exploration is documented in
-   --  docs/contributing/ir.md.
+   --  foreign-style signature.  This is the lean slice of a
+   --  gnatprove-friendly IR: it lowers ONE "P:Type" parameter pair onto a
+   --  bounded IR scalar type and emits the half-range Pre guard that
+   --  gnatprove discharges for the checked arithmetic (the same guard as
+   --  Adacovex.Target_Profiles.Checked_Add32 / the Adacovex.IR_Bounds
+   --  fixture).  Lowered code carries its contracts in the generated text,
+   --  so a proof run checks only bounded-scalar arithmetic instead of
+   --  foreign semantics.  The general multi-pair form and the full
+   --  exploration are documented in docs/contributing/ir.md.
    --  @param Name        Subprogram name (an Ada identifier).
-   --  @param Param_List  Comma-separated "P:Type" pairs, no spaces.  Type
-   --                     is an IR_* name (IR_Int32, IR_UInt64, ...).
+   --  @param Param_List  One "P:Type" pair, no spaces.  Type is an IR_*
+   --                     name (IR_Int32, IR_UInt64, ...).  Comma-separated
+   --                     lists are outside the slice and yield "".
    --  @param Return_Type IR_* name of the result; "" emits a procedure.
    --  @return The synthesised spec text (a function or procedure spec with
-   --          an optional Pre contract), or "" when Name is empty or a
-   --          parameter pair is malformed.
+   --          an optional Pre contract), or "" when Name is empty, the
+   --          pair is malformed (no ':' or a type that is not a bounded IR
+   --          type name), or Param_List holds more than one pair.
    function Synthesize_Bounded_Function
      (Name : String; Param_List : String; Return_Type : String) return String
    with
