@@ -63,8 +63,9 @@ feature gate; the cli-reference and dashboard coverage is a manual audit to
 repeat whenever the option set or the route set changes (add the doc in the
 same change, exactly like an action input).
 
-Finish the change by re-running the sync gates: `make docs-check`,
-`make action-parity-check`, `make agents-tree` (when the source tree
+Finish the change by re-running the sync gates, or invoke wrapper directly
+instead `make check`:
+`make docs-check`, `make action-parity-check`, `make agents-tree` (when the source tree
 changes), `make doc-links`, `make link-check`, and `make book-links-check`
 plus `python3 tools/gen-docs.py --check` (when `docs/` changed -- they fail
 on a broken bundled-manual link or a stale committed spec; the spec is the
@@ -353,7 +354,7 @@ The multi-step make targets delegate their orchestration to dedicated
 scripts so the Makefile stays declarative: `make build` runs
 tools/build.py (version + dashboard regeneration, `alr build` with the
 SFrame log filter, covex symlink), `make bench` runs tools/bench.py
-(hyperfine cold/warm timings + stripped-binary size), `make doc` / `make fmt`
+(hyperfine cold/warm timings for the pipeline and the prove subcommand + stripped-binary size), `make doc` / `make fmt`
 run their command through tools/dev-cmd.py (the alire-dev.toml swap,
 restored unconditionally), `make coverage-gate` runs tools/coverage-gate.py
 (temp-worktree docstring delta vs the previous release tag), `make prove` /
@@ -430,7 +431,7 @@ must be followed by `make book`.
 | `csslint-check` | Dashboard CSS 4px spacing gate: every margin/padding/gap must be a multiple of 4px (tools/csslint.py; also run inside `make build`) |
 | `complexity-check` | Cyclomatic-complexity + LOC gate: no god objects/functions, no file above its LOC or percentage-of-codebase caps (multi-language scan via `--excludes=md,rst`; gated by make complexity-check) |
 | `book-links-check` | Fail when a link inside the bundled offline manual does not resolve (checked against a fresh `sphinx-build` from a temp copy of `docs/`; tools/check-book-links.py; shares the offline-asset rules with tools/gen-docs.py). `make check` also runs `python3 tools/gen-docs.py --check`, which fails when the committed spec `src/adacovex-docs_template.ads` drifts from a fresh build |
-| `bench` | Benchmark the pipeline with hyperfine (bash `time` fallback): cold vs warm timings + binary size (docs/contributing/perf.md) |
+| `bench` | Benchmark the pipeline and the `prove` subcommand with hyperfine (bash `time` fallback): pipeline cold/warm, prove cold (`prove --no-cache`), prove warm, + binary size (docs/contributing/perf.md) |
 | `perf-bench` | Profile the adacovex binary with perf and strace (tools/perf-bench.py; docs/contributing/perf.md) |
 | `spark-off-check` | Fail if any `SPARK_Mode (Off)` appears outside `Types.Implementation` and `Complexity` (the non-formal `Ada.Containers` instantiations) |
 | `clean` | Remove bin/ obj/ docs/badges/ |
@@ -510,6 +511,16 @@ release-tag coverage gate instead.
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (876 VCs, 0 unproved, 0 justified under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
+
+**The true test of proof performance is the `prove` subcommand at the
+binary level** (`./bin/covex prove`), not just the gnatprove level. The
+warm shape is `./bin/covex prove` with the result cache populated (~51 ms);
+the cold shape is `./bin/covex prove --no-cache` against a fresh cache dir
+(~1.3 s with the gnatprove session store intact). `make bench` samples both
+with hyperfine. A run where `obj/gnatprove/` is also wiped pays a one-time
+from-scratch solver run (~42 s at 876 VCs) and is not a per-run property.
+Current figures and the version comparison table:
+[docs/contributing/perf.md](docs/contributing/perf.md).
 
 ## Changelog format
 

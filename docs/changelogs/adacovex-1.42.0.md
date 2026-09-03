@@ -49,7 +49,20 @@ now lives in `~/.adacovex/meta/`, beside the version-probe store: it is
 machine-level state with the same TTL model, so a cold result cache is no
 longer a cold registry. `Cache_Schema` moved to s7 for the layout change.
 
-### C4: Multi-pair contract synthesis ships in the IR synthesiser
+### C4: `make bench` samples the prove subcommand, cold and warm
+
+The benchmark script now times four hyperfine scenarios: the assessment
+pipeline cold and warm, and the `prove` subcommand cold (`prove --no-cache`
+against a fresh cache dir) and warm. The prove scenarios are the true test
+of proof performance: they measure the adacovex binary's proving path
+(input-hash walk, proof parse, pipeline re-run, SBOM) rather than the
+gnatprove level alone. The measured 1.42.0 figures: pipeline warm ~43 ms,
+prove warm ~51 ms, prove cold ~1.3 s (with the gnatprove session store
+intact), and a one-time fully cold solver run of ~42 s when
+`obj/gnatprove/` is wiped too. The performance guide documents the three
+shapes so the numbers are never read as the wrong thing.
+
+### C5: Multi-pair contract synthesis ships in the IR synthesiser
 
 `Synthesize_Bounded_Function` takes a comma-separated `P:Type` parameter
 list and emits the contract-carrying bounded-function spec: pass one
@@ -94,20 +107,21 @@ Platinum, 0 unproved, 0 justified, 876 VCs (876 proved) under gnatprove
 16.1.0 across 56 analysed units. The multi-pair slice adds 85 VCs over
 the 1.41.0 lean slice; the bounded length subtypes keep the loop VCs
 tractable, so the general form proved without justifications or
-`SPARK_Mode (Off)` additions. The cold full-cache-miss `make prove` drops
-from 42.8 s to about 4.5 s on the measurement machine (the walk-skip and
-metadata work, not the prover); an idle run with unchanged inputs still
-short-circuits in about 2.4 s. A warm assessment run is ~41 ms (from
-~104 ms in 1.41.0).
+`SPARK_Mode (Off)` additions. Measured at the binary level (`make bench`,
+hyperfine): prove warm ~51 ms (from ~2.5 s at 1.41.0), prove cold
+(`prove --no-cache`, gnatprove session intact) ~1.3 s, and a one-time fully
+cold solver run of ~42 s when `obj/gnatprove/` is wiped too. A warm
+assessment run is ~43 ms (from ~104 ms in 1.41.0).
 
 ## Traceability
 
 - No new HLRs. The release changes performance internals, the IR
   synthesiser, and documentation only; the existing tags below cover it.
 - `HLR-ARCH` -- C1 the block-copy cache I/O, C3 the machine-level
-  metadata store, and the H2 stamp-lookup fix (the on-disk result cache
-  is build/architecture infrastructure).
-- `HLR-IR` -- C4 the multi-pair three-pass synthesis and the IR design
+  metadata store, C4 the prove-scenario benchmarks, and the H2
+  stamp-lookup fix (the on-disk result cache is build/architecture
+  infrastructure).
+- `HLR-IR` -- C5 the multi-pair three-pass synthesis and the IR design
   doc update.
 - `HLR-SCAN` / `HLR-MANIFEST` -- C2 the completed walk skip sets.
 - `HLR-ARCH` -- the perf and IR documentation refresh and this changelog
