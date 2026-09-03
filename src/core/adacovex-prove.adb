@@ -113,9 +113,10 @@ package body Adacovex.Prove is
                Get_Next_Entry (S, E);
                declare
                   N : constant String := Full_Name (E);
-                  K : File_Kind;
+                  --  Kind (E) reuses the dirent data readdir already
+                  --  fetched; Kind (N) would stat the path again.
+                  K : constant File_Kind := Kind (E);
                begin
-                  K := Kind (N);
                   if K = Directory then
                      if Simple_Name (E) /= "."
                        and then Simple_Name (E) /= ".."

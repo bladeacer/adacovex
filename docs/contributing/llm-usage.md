@@ -17,7 +17,7 @@ Given the use of AI assistance, healthy skepticism is natural and encouraged.
 Reliability is grounded in proof and design, not implicit trust:
 
 - **Formal Verification:** core Ada logic is formally verified. It is Platinum
-  under `gnatprove` 16.1.0, 791 VCs, 0 unproved (see
+  under `gnatprove` 16.1.0, 876 VCs, 0 unproved (see
   [docs/proof/16.1.0-ledger.md](../proof/16.1.0-ledger.md)). The proof is re-run by
   `make prove` on every change. It is a hard gate before any release.
 - **Read-Only Engine:** adacovex assesses input payloads, build artifacts, and

@@ -69,8 +69,6 @@ begin
                        and Name /= ".headroom"
                        and Name /= ".lccst"
                        and Name /= "bin"
-                       and Name /= "tests"
-                       and Name /= "docs"
                      then
                         Push_Dir (Path);
                      end if;

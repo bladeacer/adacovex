@@ -151,13 +151,10 @@ package body Adacovex_IR_Tests is
          or else (System.Word_Size in 17 .. 32
                   and then Host_Word_Size = Bits_32)
          or else (System.Word_Size > 32 and then Host_Word_Size = Bits_64),
-         "Test 11: Host_Word_Size matches System.Word_Size");
-
-      --  Test 12: Synthesize_Bounded_Function emits the checked-add shape
+         "Test 11: Host_Word_Size matches System.Word_Size");      --  Test 12: Synthesize_Bounded_Function emits the checked-add shape
       --  for a single signed parameter: bounded type plus the half-range
       --  Pre guard gnatprove discharges (the same guard as Checked_Add32 /
-      --  IR_Bounds.Add32).  This is the lean slice; the general multi-pair
-      --  form is documented in docs/contributing/ir.md.
+      --  IR_Bounds.Add32).  A one-pair list is the minimal multi-pair case.
       declare
          Spec : constant String :=
            Synthesize_Bounded_Function ("Inc", "A:IR_Int32", "IR_Int32");
@@ -173,7 +170,7 @@ package body Adacovex_IR_Tests is
       begin
          R.Check
            (Spec'Length <= 4096 and then Spec = Want,
-            "Test 12: lean slice emits one half-range Pre guard");
+            "Test 12: one-pair list emits one half-range Pre guard");
       end;
 
       --  Test 13: unsigned (modular) parameters carry no overflow guard.
@@ -186,17 +183,30 @@ package body Adacovex_IR_Tests is
            & ";"
            & ASCII.LF;
       begin
-         R.Check
-           (Spec = Want, "Test 13: unsigned-only spec has no Pre contract");
+         R.Check (Spec = Want, "Test 13: unsigned-only spec has no Pre contract");
       end;
 
-      --  Test 14: a second parameter pair is outside the lean slice and
-      --  degrades to an empty string (never a malformed spec).
-      R.Check
-        (Synthesize_Bounded_Function
-           ("Mix", "A:IR_UInt64,B:IR_Int64", "IR_Int64")
-         = "",
-         "Test 14: multi-pair lists are outside the lean slice");
+      --  Test 14: the multi-pair form lowers a comma-separated list: the
+      --  signed pair carries the half-range guard, the unsigned pair does
+      --  not, and the signature joins the pairs with "; ".
+      declare
+         Spec : constant String :=
+           Synthesize_Bounded_Function
+             ("Mix", "A:IR_UInt64,B:IR_Int64", "IR_Int64");
+         Want : constant String :=
+           "function Mix (A : IR_UInt64; B : IR_Int64) return IR_Int64"
+           & ASCII.LF
+           & "with"
+           & ASCII.LF
+           & "  Pre => B in IR_Int64'First / 2 .. IR_Int64'Last / 2"
+           & ASCII.LF
+           & ";"
+           & ASCII.LF;
+      begin
+         R.Check
+           (Spec = Want,
+            "Test 14: multi-pair list lowers and emits the signed guard");
+      end;
 
       --  Test 15: an empty Return_Type emits a procedure spec.
       declare
@@ -212,8 +222,7 @@ package body Adacovex_IR_Tests is
            & ";"
            & ASCII.LF;
       begin
-         R.Check
-           (Spec = Want, "Test 15: empty return type synthesises a procedure");
+         R.Check (Spec = Want, "Test 15: empty return type synthesises a procedure");
       end;
 
       --  Test 16: empty names and malformed pairs degrade gracefully (an
@@ -224,6 +233,115 @@ package body Adacovex_IR_Tests is
       R.Check
         (Synthesize_Bounded_Function ("F", "broken-pair", "IR_Int32") = "",
          "Test 16: pair without a colon degrades to an empty string");
+
+      --  Test 17: two signed pairs join their guards with "and then" on
+      --  one contract chain, one guard per signed parameter in list order.
+      --  The connector ends the guard line; the next guard starts on the
+      --  continuation indent.
+      declare
+         Spec : constant String :=
+           Synthesize_Bounded_Function
+             ("Add", "A:IR_Int32,B:IR_Int32", "IR_Int32");
+         Want : constant String :=
+           "function Add (A : IR_Int32; B : IR_Int32) return IR_Int32"
+           & ASCII.LF
+           & "with"
+           & ASCII.LF
+           & "  Pre => A in IR_Int32'First / 2 .. IR_Int32'Last / 2"
+           & " and then"
+           & ASCII.LF
+           & "        B in IR_Int32'First / 2 .. IR_Int32'Last / 2"
+           & ASCII.LF
+           & ";"
+           & ASCII.LF;
+      begin
+         R.Check
+           (Spec = Want,
+            "Test 17: two signed pairs join guards with and-then");
+      end;
+
+      --  Test 18: three pairs, signed-unsigned-signed: the guard chain
+      --  skips the unsigned pair and keeps list order.
+      declare
+         Spec : constant String :=
+           Synthesize_Bounded_Function
+             ("Scale", "A:IR_Int16,S:IR_UInt8,C:IR_Int16", "IR_Int16");
+         Want : constant String :=
+           "function Scale (A : IR_Int16; S : IR_UInt8; C : IR_Int16)"
+           & " return IR_Int16"
+           & ASCII.LF
+           & "with"
+           & ASCII.LF
+           & "  Pre => A in IR_Int16'First / 2 .. IR_Int16'Last / 2"
+           & " and then"
+           & ASCII.LF
+           & "        C in IR_Int16'First / 2 .. IR_Int16'Last / 2"
+           & ASCII.LF
+           & ";"
+           & ASCII.LF;
+      begin
+         R.Check
+           (Spec = Want,
+            "Test 18: three-pair list guards only the signed pairs");
+      end;
+
+      --  Test 19: degradation cases stay empty (never a malformed spec).
+      R.Check
+        (Synthesize_Bounded_Function
+           ("F", "A:IR_Int32,B:float", "IR_Int32")
+         = "",
+         "Test 19: one foreign type poisons the whole list");
+      R.Check
+        (Synthesize_Bounded_Function
+           ("F", "A:IR_Int32,,B:IR_Int32", "IR_Int32")
+         = "",
+         "Test 19: an empty pair poisons the whole list");
+      R.Check
+        (Synthesize_Bounded_Function
+           ("F", "A:IR_Int32, B:IR_Int32", "IR_Int32")
+         = "",
+         "Test 19: a space inside a pair poisons the whole list");
+      R.Check
+        (Synthesize_Bounded_Function
+           ("F", "A:IR_Int32,B:IR_Int32,C:IR_Int32,D:IR_Int32"
+            & ",E:IR_Int32,F:IR_Int32,G:IR_Int32,H:IR_Int32"
+            & ",I:IR_Int32,J:IR_Int32,K:IR_Int32,L:IR_Int32"
+            & ",M:IR_Int32,N:IR_Int32,O:IR_Int32,P:IR_Int32"
+            & ",Q:IR_Int32,R:IR_Int32,S:IR_Int32,T:IR_Int32"
+            & ",U:IR_Int32,V:IR_Int32,W:IR_Int32,X:IR_Int32"
+            & ",Y:IR_Int32,Z:IR_Int32,AA:IR_Int32,AB:IR_Int32"
+            & ",AC:IR_Int32,AD:IR_Int32,AE:IR_Int32,AF:IR_Int32"
+            & ",AG:IR_Int32,AH:IR_Int32,AI:IR_Int32,AJ:IR_Int32"
+            & ",AK:IR_Int32,AL:IR_Int32,AM:IR_Int32,AN:IR_Int32"
+            & ",AO:IR_Int32,AP:IR_Int32", "IR_Int32")
+         = "",
+         "Test 19: a list longer than 32 pairs degrades to empty");
+
+      --  Test 20: a 32-pair list is accepted and every guard is emitted.
+      declare
+         In_List  : constant String :=
+           "A:IR_Int8,B:IR_Int8,C:IR_Int8,D:IR_Int8"
+           & ",E:IR_Int8,F:IR_Int8,G:IR_Int8,H:IR_Int8"
+           & ",I:IR_Int8,J:IR_Int8,K:IR_Int8,L:IR_Int8"
+           & ",M:IR_Int8,N:IR_Int8,O:IR_Int8,P:IR_Int8"
+           & ",Q:IR_Int8,R:IR_Int8,S:IR_Int8,T:IR_Int8"
+           & ",U:IR_Int8,V:IR_Int8,W:IR_Int8,X:IR_Int8"
+           & ",Y:IR_Int8,Z:IR_Int8,AA:IR_Int8,AB:IR_Int8"
+           & ",AC:IR_Int8,AD:IR_Int8,AE:IR_Int8,AF:IR_Int8";
+         Spec     : constant String :=
+           Synthesize_Bounded_Function ("Wide", In_List, "IR_Int8");
+      begin
+         R.Check
+           (Spec'Length > 0 and then Spec'Length <= 4096,
+            "Test 20: a full 32-pair list synthesises a bounded spec");
+         R.Check
+           (Ada.Strings.Fixed.Index (Spec, "; ") = 0
+            or else Ada.Strings.Fixed.Index (Spec, "; ") > 0,
+            "Test 20: spec is a text result (sanity)");
+         R.Check
+           (Ada.Strings.Fixed.Count (Spec, "and then") = 31,
+            "Test 20: 32 signed pairs join with 31 and-then links");
+      end;
    end Run;
 
 end Adacovex_IR_Tests;

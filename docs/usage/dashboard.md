@@ -389,8 +389,8 @@ single standard (for example `--asil=B` shows only ISO 26262 at ASIL B). See
 assessment without parsing HTML:
 
 ```json
-{"spark_level":"Platinum","total_vcs":791,"proved_vcs":791,
- " "tests_passed":1213,"tests_failed":0,"doc_coverage":100,
+{"spark_level":"Platinum","total_vcs":876,"proved_vcs":876,
+ " "tests_passed":1222,"tests_failed":0,"doc_coverage":100,
  "standard":"all","level":"DAL-C","dal_status":"Achieved",
  "standards":{"DO-178C":{"level":"DAL-C","status":"Achieved"},
                "ISO 26262":{"level":"ASIL B","status":"Achieved"},

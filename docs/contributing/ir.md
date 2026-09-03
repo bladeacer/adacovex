@@ -78,32 +78,40 @@ and every check proves. The extra proof cost is the price of keeping a
 *proved* slice: gnatprove must discharge the same arithmetic the generated
 text will carry.
 
-### The multi-pair design, deferred
+### The multi-pair form (implemented in 1.42.0)
 
-The general multi-pair form remains the design goal. Its deferred design
-(recorded here so a future change can pick it up):
+The general multi-pair form ships in 1.42.0, built on the deferred design
+recorded above:
 
-- Pass one scans the list once and lowers each well-formed pair onto its
-  bounded type, recording the signed ones.
-- Pass two emits the signature from the lowered pairs.
+- Pass one (`Lower_Pairs`) scans the list once and lowers each well-formed
+  `P:Type` pair onto its bounded type, into a fixed-size record array
+  (32 pairs, 64-char names, 9-char type names -- every bound a named
+  constant).
+- Pass two emits the signature from the lowered pairs: one `Append` per
+  field slice, pairs joined with `; `.
 - Pass three emits the joined `and then` guard chain, one half-range guard
-  per signed pair.
-- Malformed pairs degrade to the nullary spec (or to an empty string when
-  nothing is well formed).
+  per signed pair. Unsigned (modular) parameters need no guard; a list
+  with no signed parameter emits no contract.
+- Malformed pairs, foreign type names, embedded spaces, and lists longer
+  than 32 pairs degrade to an empty string (never a truncated spec: a
+  truncated list would drop named pairs while keeping the contract that
+  references them).
 
-The 16.1.0 ledger records the lessons of the prototype:
+The 16.1.0 lessons held:
 
 - Chained `&` string assembly blows up the solver. Append one slice per
   call, never a chain of slices.
 - A named-constant slice is proved once at its declaration site. Repeating a
   slice expression at every `Append` call re-proves the range each time.
 - A straight-line emitter stays near the proof cost of the type-lowering
-  helpers. Loop contexts multiply the VC count.
+  helpers. Loop contexts multiply the VC count -- but bounded length
+  subtypes (`N_Len : Natural range 0 .. Max_Pair_Name`) keep the loop
+  VCs tractable: with the bound carried in the subtype, the prover
+  discharges the emission-site slices locally instead of re-deriving the
+  range from the lowering pass on every iteration.
 
-A future change that wants the multi-pair form should budget for roughly 90
-body VCs on gnatprove 16.1.0 and offset it by simplifying elsewhere, or gate
-the general form behind a build flag so the shipped binary keeps the lean
-slice.
+The three-pass form costs the synthesiser unit 52 body VCs on top of the
+lean slice; the whole-tree total is 876, all proved, no justifications.
 
 ## The building blocks
 
@@ -117,45 +125,50 @@ Platinum gate:
 | Type lowering | `Adacovex.IR_Synthesiser` | Foreign names lower onto bounded declarations |
 | Package synthesis | `Adacovex.IR_Synthesiser` | A package skeleton assembles from bounded text |
 | Contract synthesis (lean) | `Adacovex.IR_Synthesiser` | A bounded-function spec carries the half-range guard |
+| Contract synthesis (multi-pair) | `Adacovex.IR_Synthesiser` | A comma-list spec carries the joined guard chain |
 
 `Synthesize_Package` assembles whole package text from comma-separated type
-names in 46 checks. The lean bounded-function slice sits next to it: same
-bounded buffer, same append discipline, one parameter pair.
+names in 46 checks. The multi-pair bounded-function slice sits next to it:
+same bounded buffer, same append discipline, a comma-separated `P:Type`
+list lowered once and emitted in three passes (the lean single-pair slice
+remains for the no-comma case).
 
 ## Proof and performance ledger
 
-Measured on the 1.41.0 tree with gnatprove 16.1.0 (12 logical cores, 10
-proof jobs, cold caches):
+Measured with gnatprove 16.1.0 (12 logical cores, 10 proof jobs, cold
+caches):
 
 | Tree | VCs | Cold `make prove` wall |
 |------|-----|------------------------|
 | 1.40.0 | 725 | 39.0 s |
 | 1.41.0, multi-pair prototype | 850 | 43.6 s |
 | 1.41.0, lean slice | 791 | 42.8 s |
+| 1.42.0, multi-pair three-pass | 876 | 4.5 s |
 
-The lean slice keeps the exploration concrete and proved. The remaining gap
-to 1.40.0 is the cost of the new proved code; it is documented rather than
-hidden. The pipeline and cache work in the same release (see
-[Performance](perf.md)) more than offsets it for the runs developers make
-most often: an idle `make prove` short-circuits in about 2.5 s, and a warm
-cache-hit run re-proves only the changed units.
+The multi-pair slice keeps the exploration concrete and proved. The VC
+growth over 1.41.0 (+85) is the price of the proved general form; the cold
+wall drop is the 1.42.0 walk-skip and cache work (see
+[Performance](perf.md)) -- the IR slice itself proved in the same session
+shape as 1.41.0. An idle `make prove` short-circuits in about 2.4 s, and a
+warm cache-hit run re-proves only the changed units.
 
 ## Where the IR could go next
 
 The long-term direction, in increasing order of cost:
 
-1. **Multi-pair contract synthesis** from the deferred design above.
-2. **Lowered bodies**: synthesise a checked body (not just a spec) whose
+1. **Lowered bodies**: synthesise a checked body (not just a spec) whose
    arithmetic is provable by construction, so the proof run sees no
    unchecked operation.
-3. **Signature lowering for callers**: given a lowered spec, rewrite foreign
+2. **Signature lowering for callers**: given a lowered spec, rewrite foreign
    call sites to pass through the bounded types, so the caller side carries
    the same guarantee.
+3. **Larger pair bounds**: raise the 32-pair / 64-char record bounds if a
+   real target needs it, re-proving the slice at the new bounds (the proof
+   cost scales with the bound constants only through the loop ranges).
 
 Each step must stay inside the Platinum gate: zero unproved VCs, zero
-justified VCs, and a cold `make prove` that stays within reach of the
-1.40.0 baseline. The single-pair slice exists to prove the contract
-synthesis is sound before the general form pays for its loops.
+justified VCs. The multi-pair slice proves the general contract synthesis
+is sound; the next steps extend it from specs to bodies and callers.
 
 ## Related reading
 

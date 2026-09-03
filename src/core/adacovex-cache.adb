@@ -491,22 +491,26 @@ package body Adacovex.Cache is
       end;
    end Put_Probe;
 
-   --  Location of the per-project registry-metadata files.  This lives under
-   --  the configured result cache (per --cache-dir, so the project's own
-   --  cache when one is set), not in a separate machine-local store: the meta
-   --  answer is scoped to the project that owns the package, and clearing the
-   --  project cache clears it too.  The key also carries the target so two
-   --  projects that share a cache directory never serve each other's
-   --  resolved licence or version.
+   --  Location of the registry-metadata files.  Machine-local
+   --  (~/.adacovex/meta/), outside the result cache, exactly like the
+   --  system-tool probe store: a resolved registry answer describes the
+   --  package at its recorded version, not the project's scan state, so
+   --  wiping the result cache (or pointing --cache-dir at a fresh
+   --  directory) must not cost a full re-resolution.  Measured on the
+   --  self-audit tree: a full-cold run spent ~3.9 s of ~4.0 s wall inside
+   --  the 11 registry CLI spawns (pnpm view, pip index versions, alr
+   --  show); with the machine-local meta store warm, the same cold run
+   --  drops to tens of milliseconds.  A stale or edited answer
+   --  self-heals via the 7-day TTL (Probe_TTL_Days).  The key carries the
+   --  target so two projects that share the machine store never serve
+   --  each other's resolved licence or version.
    function Meta_Root return String is
-      Dir : String (1 .. 1024);
-      Len : Natural := 0;
+      Home : constant String :=
+        (if Ada.Environment_Variables.Exists ("HOME")
+         then Ada.Environment_Variables.Value ("HOME")
+         else "/tmp");
    begin
-      Cache_Dir (Dir, Len);
-      if Len = 0 then
-         return "";
-      end if;
-      return Dir (Dir'First .. Dir'First + Len - 1) & "/meta";
+      return Home & "/.adacovex/meta";
    end Meta_Root;
 
    --  <meta>/<hash> -- keyed by the SHA-256 of "target|eco|name" so the

@@ -31,7 +31,11 @@ package Adacovex.Cache is
    --  ecosystem + lockfile-resolved names; go.mod / Package.swift /
    --  requirements.txt test labels) -- cached graphs from earlier builds
    --  carry stale scopes.
-   Cache_Schema : constant String := "s9";
+   --  s10: registry-metadata store moved to the machine-local
+   --  ~/.adacovex/meta/ directory (outside the result cache, 7-day TTL),
+   --  so a wiped or redirected result cache never re-spawns the registry
+   --  CLIs; s9-era meta entries under <cache>/meta/ are simply abandoned.
+   Cache_Schema : constant String := "s10";
 
    --  Soft cap on the number of cache entries kept on disk.  Once exceeded,
    --  the oldest entries are evicted first.
@@ -165,9 +169,10 @@ package Adacovex.Cache is
    --  system-tool probe cache: the answers live in a machine-local
    --  `~/.adacovex/meta/` directory, outside the result cache, with the same
    --  7-day TTL, so a warm run serves them from disk with zero subprocess
-   --  spawns.  A re-resolution (and re-cache) happens only when the entry is
+   --  spawns and a wiped or redirected result cache never re-resolves.
+   --  A re-resolution (and re-cache) happens only when the entry is
    --  missing or older than the TTL.
-   --  @param Ecosystem  PURL type (npm, pnpm, cargo, ...).
+   --  @param Ecosystem  PURL type (npm, pypi, cargo, ...).
    --  @param Name       Package name.
    --  @param License    Output licence string (may be empty).
    --  @param Lic_Len    Length of the licence string.

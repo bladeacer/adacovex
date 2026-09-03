@@ -21,22 +21,20 @@ that keep those numbers low.
   the cache dir first. This measures a truly empty result and probe cache. The
   `time` fallback runs **5 cold + 5 warm**.
 - It reports the raw and stripped binary sizes (the stripped size is measured
-  on a `/tmp` copy; the build output is never modified).
-
-Example output (hyperfine, x86-64, 8-core CI-class machine, 1.28.0):
+  on a `/tmp` copy; the build output is never modified).Example output (hyperfine, x86-64, 8-core CI-class machine, 1.42.0):
 
 ```
 === Cold (fresh result cache) ===
-  Time (mean +/- sigma):  88.1 ms +/- 3.8 ms   [User: 62.1 ms, System: 14.0 ms]
-  Range (min ... max):    84.8 ms ... 96.4 ms    10 runs
+  Time (mean +/- sigma):  94.3 ms +/- 4.4 ms   [User: 62.2 ms, System: 21.1 ms]
+  Range (min ... max):    88.8 ms ... 104.3 ms  10 runs
 === Warm (populated caches) ===
-  Time (mean +/- sigma):  34.2 ms +/- 2.3 ms   [User: 15.3 ms, System: 8.7 ms]
-  Range (min ... max):    30.9 ms ... 39.2 ms    15 runs
+  Time (mean +/- sigma):  40.3 ms +/- 2.9 ms   [User: 16.2 ms, System: 13.4 ms]
+  Range (min ... max):    36.5 ms ... 45.9 ms  15 runs
 
 == Binary size ==
-bin/adacovex            9.0 MiB (9461040 bytes)
-after strip             4.3 MiB (4463704 bytes)
-savings                 52.8%
+bin/adacovex            11.1 MiB (11677936 bytes)
+after strip             6.1 MiB (6360312 bytes)
+savings                 45.5%
 ```
 
 The numbers shift with the machine and the codebase. What matters is the
@@ -69,8 +67,9 @@ matters is the shape:
   SHA-256 of every scanned file), the SBOM tree walk and word scan, and the
   renderers. Nothing here can be skipped: the result cache is empty, so
   every file must be read and hashed at least once. The system-tool version
-  probes are *not* part of cold anymore (they live per-machine and are
-  cached across cache wipes).
+  probes and the ecosystem-metadata registry lookups are *not* part of cold
+  anymore (both live per-machine, outside the result cache, and are cached
+  across cache wipes).
 - **Warm ~35 ms**: the on-disk result cache (content-addressed per file,
   oldest-first eviction) skips re-parsing unchanged sources. The stamp
   fast-path skips the per-file SHA-256 entirely (a file unchanged in size is
@@ -83,13 +82,14 @@ matters is the shape:
 
 ## `make prove` timing
 
-`make prove` (gnatprove 16.1.0, 12 logical cores, 10 proof jobs) on the
-1.41.0 tree:
+`make prove` (gnatprove 16.1.0, 12 logical cores, 10 proof jobs) across the
+last three trees:
 
-| Scenario | 1.40.0 | 1.41.0 |
-|----------|--------|--------|
-| Idle (no source change) | 1.6 s | 2.5 s |
-| Full cache miss (cold) | 39.0 s / 725 VCs | 42.8 s / 791 VCs |
+| Scenario | 1.40.0 | 1.41.0 | 1.42.0 |
+|----------|--------|--------|--------|
+| Idle (no source change) | 1.6 s | 2.5 s | 2.4 s |
+| Full cache miss (cold) | 39.0 s / 725 VCs | 42.8 s / 791 VCs | 4.5 s / 876 VCs |
+| Warm result cache (unchanged tree) | -- | ~0.05 s | ~0.05 s |
 
 Idle wall time is the prove result-cache short-circuit: the source tree is
 content-hashed once, and unchanged inputs serve the stored proof instead of
@@ -98,8 +98,11 @@ store (`obj/gnatprove/`, preserved between runs), which re-analyses only the
 changed unit and its dependents -- measured at roughly 6-9 s wall for a
 body-only edit on this machine.
 
-The cold gap (39.0 s -> 42.8 s) tracks the VC count (+9% VCs, +10% wall);
-it is the price of the proved IR slice added in 1.41.0 (see
+The 1.42.0 cold drop (42.8 s -> 4.5 s despite +11% VCs) is not gnatprove
+getting faster: it is the prove-input hash walk no longer enumerating
+`.venv`/`node_modules`/installer/doc trees, and the ecosystem-metadata
+registry lookups moving out of cold (see the 1.42.0 entries below). The
+VC-count growth (+85) tracks the proved multi-pair IR slice (see
 [ir.md](ir.md)). CPU use stays bounded on developer machines: the default
 job count is `cores - 2` (all cores inside CI), so gnatprove never starves
 the desktop.
@@ -109,6 +112,35 @@ the desktop.
 Kept in reverse-chronological order.  Every entry names the measurement that
 drove it so the next round of work can see whether the previous assumption
 still holds.
+
+### Cache I/O block copies + walk-skip set completion (1.42.0)
+
+The strace profile showed the warm assessment run making ~218k `newfstatat`
+calls in 1.41.0. Three walks were the culprits, and all three missed the
+`.venv`/`node_modules`/installer-tree skip set that the SBOM walk already
+had: the per-run `.gpr` collection walk (which runs *before* the cached-graph
+lookup, so it was paid warm and cold), the vendored-component discovery
+walk, and the prove-input hash walk. Completing their skip sets dropped the
+warm syscall count to ~15k (14.8x) and the warm wall time from ~104 ms to
+~41 ms.
+
+Two cache-layer changes cut the remaining I/O cost:
+
+- `Store`/`Load` copied every cached blob byte-by-byte through
+  `Ada.Streams.Stream_Element` conversion loops. Both now build one
+  `Stream_Element_Array` and issue a single `Write`/`Read` (the allocator
+  copies once, the kernel transfers once).
+- The `Exists` + `Size` double stat in `Load` collapsed into the single
+  stat that `Open` already needs, and the per-file hash fast path keeps a
+  size-stamped digest map so an unchanged file is never opened twice in
+  one run.
+
+Ecosystem-metadata resolution (the `npm view`/`pip index`/`cargo search`
+registry spawns that fill licence/website fields on a fully cold run) now
+lives in `~/.adacovex/meta/`, beside the probe store: wiping the result
+cache no longer re-spawns 13 interpreter boots (~4 s). The perf profile of
+1.41.0 showed 66% of cold CPU inside `node` and 17% inside `python` --
+adacovex's own code was ~3%; the rest was subprocess interpreters.
 
 ### Result-cache stamp map + CPU detection fixes (1.41.0)
 
