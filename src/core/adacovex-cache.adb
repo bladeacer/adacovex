@@ -126,7 +126,11 @@ package body Adacovex.Cache is
       return Integer (H and Interfaces.Unsigned_32 (Stamp_Map_Cap - 1));
    end Stamp_Hash_Of;
 
-   --  Current stamp of a file: size (or -1 when Size raises).
+   --  Current stamp of a file: size (or -1 when Size raises).  One stat
+   --  call (Ada.Directories.Size answers presence and size in the same
+   --  __gnat_named_file_length stat and raises when the file is missing),
+   --  so the fast path never opens the file and never pays a separate
+   --  Exists probe.
    function File_Size (Path : String) return Long_Long_Integer is
       use Ada.Directories;
    begin
@@ -171,12 +175,16 @@ package body Adacovex.Cache is
    --  string (a re-scan of the same file).  The function returns "" when
    --  there is no matching stamp (the caller then falls back to
    --  Hash_File).  Stamp_Hits / Stamp_Misses count both outcomes so tests
-   --  and diagnostics can see whether the fast path fired.
+   --  and diagnostics can see whether the fast path fired.  The map lookup
+   --  runs BEFORE the stat: a miss (a path never hashed in this process)
+   --  then costs no stat at all -- the file is read and hashed anyway on
+   --  the fallback path.  A hit costs exactly one stat, still far below
+   --  the read + SHA-256 it avoids.
    function Hash_Fast (Path : String) return String is
-      Sz  : constant Long_Long_Integer := File_Size (Path);
       Idx : Integer;
+      Sz  : Long_Long_Integer;
    begin
-      if Sz < 0 or else Path'Length = 0 or else Path'Length > 2048 then
+      if Path'Length = 0 or else Path'Length > 2048 then
          return "";
       end if;
       Idx := Stamp_Find (Path);
@@ -184,7 +192,8 @@ package body Adacovex.Cache is
          Stamp_Misses := Stamp_Misses + 1;
          return "";
       end if;
-      if Stamp_Size (Idx) = Sz then
+      Sz := File_Size (Path);
+      if Sz >= 0 and then Stamp_Size (Idx) = Sz then
          Stamp_Hits := Stamp_Hits + 1;
          return Stamp_Digest (Idx);
       end if;
@@ -280,8 +289,6 @@ package body Adacovex.Cache is
       DDir   : constant String := Entry_Path (Key);
       Parent : constant String := Subdir_Path (Key);
       F      : File_Type;
-      SEA    :
-        Stream_Element_Array (0 .. Stream_Element_Offset (Data'Length - 1));
    begin
       Success := False;
       if Key'Length < 3 or else DDir = "" then
@@ -291,11 +298,22 @@ package body Adacovex.Cache is
       begin
          Create_Path (Parent);
          Create (F, Out_File, DDir);
-         for I in Data'Range loop
-            SEA (Stream_Element_Offset (I - Data'First)) :=
-              Stream_Element (Character'Pos (Data (I)));
-         end loop;
-         Write (F, SEA);
+         --  Single Write call over a type-punned view of the payload: on
+         --  every GNAT x86/x86_64/AArch64 target Stream_Element is a byte
+         --  with the same size as Character, so the arrays alias exactly.
+         --  This replaces the per-character conversion loop (one bounds
+         --  check and one shift per byte) with the runtime's block write,
+         --  which is a single write(2) for a cache-sized blob.
+         declare
+            subtype Byte_Array is
+              Stream_Element_Array (0 .. Stream_Element_Offset (Data'Length
+                                     - 1));
+            SEA : Byte_Array;
+            for SEA'Address use Data'Address;
+            pragma Import (Ada, SEA);
+         begin
+            Write (F, SEA);
+         end;
          Close (F);
          Success := True;
       exception
@@ -318,10 +336,9 @@ package body Adacovex.Cache is
       if Key'Length < 3 or else DDir = "" then
          return;
       end if;
-      if not Ada.Directories.Exists (DDir) then
-         return;
-      end if;
-
+      --  No Exists() probe: the Open below answers presence in the same
+      --  errno check.  The old shape paid two stats per load (Exists then
+      --  Size) and every miss doubled them.
       begin
          Size := Natural (Ada.Directories.Size (DDir));
       exception
@@ -340,9 +357,18 @@ package body Adacovex.Cache is
             Last : Stream_Element_Offset;
          begin
             Read (F, SEA, Last);
-            for I in SEA'Range loop
-               Data (Data'First + Natural (I)) := Character'Val (SEA (I));
-            end loop;
+            --  Single block copy instead of the per-character conversion
+            --  loop (same aliasing argument as Store): the whole payload
+            --  lands in Data with one memcpy-shaped move.
+            declare
+               subtype Byte_Array is
+                 Stream_Element_Array (0 .. Stream_Element_Offset (Size - 1));
+               Out_SEA : Byte_Array;
+               for Out_SEA'Address use Data (Data'First)'Address;
+               pragma Import (Ada, Out_SEA);
+            begin
+               Out_SEA := SEA;
+            end;
             Len := Natural (Last) + 1;
             Found := True;
          end;

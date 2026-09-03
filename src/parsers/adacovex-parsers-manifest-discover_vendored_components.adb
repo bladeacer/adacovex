@@ -235,6 +235,32 @@ is
       end;
    end Add_Vendored_Asset;
 
+   --  Always-excluded directories inside a vendored root: the css/ and
+   --  js/ subdirectories of a vendored root hold the project's own
+   --  authored modules (the dashboard page splits its style and behaviour
+   --  into these directories), and every always-excluded directory name
+   --  is likewise never a vendored package.
+   function Skip_Vendored_Walk_Dir (N : String) return Boolean is
+   begin
+      return
+        N = "css"
+        or else N = "js"
+        or else N = ".git"
+        or else N = ".jj"
+        or else N = ".hg"
+        or else N = ".svn"
+        or else N = "obj"
+        or else N = "config"
+        or else N = ".adacovex"
+        or else N = "alire"
+        or else N = "gnatprove"
+        or else N = "__pycache__"
+        or else N = "node_modules"
+        or else N = ".venv"
+        or else N = ".headroom"
+        or else N = ".lccst";
+   end Skip_Vendored_Walk_Dir;
+
    procedure Scan_One_Vendored_Root (Root : String) is
    begin
       if not Ada.Directories.Exists (Root) then
@@ -265,8 +291,7 @@ is
                         --  bundles sit at the root of resources/.
                         if N /= "."
                           and then N /= ".."
-                          and then N /= "css"
-                          and then N /= "js"
+                          and then not Skip_Vendored_Walk_Dir (N)
                         then
                            Push_Dir (Path);
                         end if;

@@ -1,6 +1,11 @@
 separate (Adacovex.Parsers.Manifest)
 --  Collect every .gpr file under Target_Dir (excluding obj, alire, and
---  more).
+--  more).  The walk skips every always-excluded directory (VCS metadata,
+--  virtual environments, installer/build outputs, and node_modules), so a
+--  target with a .venv of thousands of files is never enumerated just to
+--  find its .gpr files.  This walk runs on every graph build (before the
+--  cached-graph lookup), so its skip set is the difference between a
+--  bounded walk and a whole-tree crawl.
 procedure Collect_GPR_Files
   (Target_Dir : String; Files : in out Path_Vectors.Vector)
 is
@@ -48,10 +53,24 @@ begin
                      if Name /= "."
                        and Name /= ".."
                        and Name /= ".git"
+                       and Name /= ".jj"
+                       and Name /= ".hg"
+                       and Name /= ".svn"
+                       and Name /= ".fslckout"
+                       and Name /= "_FOSSIL_"
                        and Name /= "obj"
                        and Name /= "config"
                        and Name /= ".adacovex"
                        and Name /= "alire"
+                       and Name /= "gnatprove"
+                       and Name /= "__pycache__"
+                       and Name /= "node_modules"
+                       and Name /= ".venv"
+                       and Name /= ".headroom"
+                       and Name /= ".lccst"
+                       and Name /= "bin"
+                       and Name /= "tests"
+                       and Name /= "docs"
                      then
                         Push_Dir (Path);
                      end if;

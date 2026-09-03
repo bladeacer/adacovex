@@ -65,14 +65,39 @@ package body Adacovex.Prove is
    is
       use Ada.Directories;
 
+      --  Always-excluded directories for the proof-input walk.  The walk
+      --  hashes every .ads/.adb under the target on every prove run (cold
+      --  or warm), so its skip set must cover every directory that cannot
+      --  hold project proof units: VCS metadata, build/proof outputs,
+      --  installer and doc trees, vendored dependency stores, and Python
+      --  virtual environments (a .venv mirrors the requirements*.txt
+      --  declared packages in thousands of installed files that are never
+      --  part of the proof surface).
       function Skip (Name : String) return Boolean is
       begin
          return
            Name = ".git"
+           or else Name = ".jj"
+           or else Name = ".hg"
+           or else Name = ".svn"
+           or else Name = ".fslckout"
+           or else Name = "_FOSSIL_"
            or else Name = "obj"
+           or else Name = "bin"
            or else Name = "tests"
            or else Name = "config"
-           or else Name = ".adacovex";
+           or else Name = ".adacovex"
+           or else Name = "alire"
+           or else Name = "gnatprove"
+           or else Name = "__pycache__"
+           or else Name = "node_modules"
+           or else Name = ".venv"
+           or else Name = ".headroom"
+           or else Name = ".lccst"
+           or else Name = "dist"
+           or else Name = "index"
+           or else Name = "resources"
+           or else Name = "docs";
       end Skip;
 
       function Walk (Dir : String) return String is
