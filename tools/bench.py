@@ -13,11 +13,11 @@ was easy to break.  This script owns the same flow:
 - Pipeline warm timing: one warm-up run to populate the caches, then
   hyperfine with 2 warm-ups + 15 runs (or 5 Python-measured runs).
 - Prove cold timing: `prove --no-cache` against a freshly emptied result
-  cache, hyperfine with 1 warm-up + 10 runs.  The gnatprove session store
-  (obj/gnatprove/) stays populated, so this measures the adacovex-side
-  cold cost -- the input-hash walk, the proof parse, and the SBOM -- not a
-  from-scratch solver run.  A run with the session store also wiped lands
-  in the tens of seconds; see docs/contributing/perf.md.
+  cache AND a wiped gnatprove session store (obj/gnatprove/), hyperfine
+  with 3 runs.  This is the truly cold shape: every repetition pays a
+  from-scratch solver run, as a first CI invocation on a bare runner
+  would.  It is expensive by construction; see docs/contributing/perf.md
+  for the cheaper adacovex-side-only cold shape.
 - Prove warm timing: `prove` with the result cache populated, hyperfine
   with 2 warm-ups + 15 runs.  This is the true proof-performance number:
   the short-circuit path a developer hits on an unchanged tree.
@@ -46,7 +46,7 @@ ROOT: Path = Path(__file__).resolve().parent.parent
 
 COLD_RUNS: int = 10
 WARM_RUNS: int = 15
-PROVE_COLD_RUNS: int = 10
+PROVE_COLD_RUNS: int = 3
 PROVE_WARM_RUNS: int = 15
 FALLBACK_RUNS: int = 5
 
@@ -91,11 +91,41 @@ def run_warm_hyperfine(cache: str) -> None:
     subprocess.run(cmd, cwd=str(ROOT), check=True)
 
 
+def ensure_proof_output() -> None:
+    """Make sure <target>/obj/gnatprove/gnatprove.out exists.
+
+    The pipeline scenarios grade the proof summary; without one the run
+    grades Stone, DAL goes Unmet, and the binary exits 1 -- which hyperfine
+    reports as a benchmark failure.  Generate the summary once (a full
+    prove --no-cache) when it is missing so the pipeline scenarios measure
+    the pipeline, not the absence of a proof.
+    """
+    out = ROOT / "obj" / "gnatprove" / "gnatprove.out"
+    if out.is_file():
+        return
+    print("== proof summary missing; generating via one prove --no-cache ==")
+    subprocess.run(
+        [str(ROOT / "bin" / "adacovex"), "prove", "--no-cache"],
+        cwd=str(ROOT),
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+
 def run_prove_cold_hyperfine(cache: str) -> None:
-    print("=== Prove cold (--no-cache, fresh result cache) ===")
+    # Truly cold: every repetition wipes the adacovex result cache AND the
+    # gnatprove session store (obj/gnatprove/), so each run pays a full
+    # from-scratch solver run -- the shape a first CI invocation on a bare
+    # runner sees.  This is expensive (tens of seconds per repetition), so
+    # the sample count is small.  The last repetition leaves a fresh
+    # gnatprove.out behind, which the next run's ensure_proof_output picks
+    # up (but a session wiped by THIS scenario does not hurt: the prove
+    # subcommand regenerates everything it needs).
+    print("=== Prove cold (--no-cache, result cache + gnatprove session wiped) ===")
     cmd = [
-        "hyperfine", "--warmup", "1", "--runs", str(PROVE_COLD_RUNS),
-        "--prepare", f"rm -rf {cache}",
+        "hyperfine", "--runs", str(PROVE_COLD_RUNS),
+        "--prepare",
+        f"rm -rf {cache} {ROOT}/obj/gnatprove",
         f"./bin/adacovex prove --no-cache --cache-dir={cache}",
         "--export-markdown", "/tmp/adacovex-bench-prove-cold.md",
     ]
@@ -161,6 +191,7 @@ def bench() -> int:
     cache = tempfile.mkdtemp(prefix="adacovex-bench-")
     prove_cache = tempfile.mkdtemp(prefix="adacovex-bench-prove-")
     try:
+        ensure_proof_output()
         if hyperfine_available():
             run_cold_hyperfine(cache)
             run_warm_hyperfine(cache)

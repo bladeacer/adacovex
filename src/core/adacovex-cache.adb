@@ -306,8 +306,8 @@ package body Adacovex.Cache is
          --  which is a single write(2) for a cache-sized blob.
          declare
             subtype Byte_Array is
-              Stream_Element_Array (0 .. Stream_Element_Offset (Data'Length
-                                     - 1));
+              Stream_Element_Array
+                (0 .. Stream_Element_Offset (Data'Length - 1));
             SEA : Byte_Array;
             for SEA'Address use Data'Address;
             pragma Import (Ada, SEA);

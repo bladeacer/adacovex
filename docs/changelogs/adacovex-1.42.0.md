@@ -52,15 +52,21 @@ longer a cold registry. `Cache_Schema` moved to s7 for the layout change.
 ### C4: `make bench` samples the prove subcommand, cold and warm
 
 The benchmark script now times four hyperfine scenarios: the assessment
-pipeline cold and warm, and the `prove` subcommand cold (`prove --no-cache`
-against a fresh cache dir) and warm. The prove scenarios are the true test
-of proof performance: they measure the adacovex binary's proving path
-(input-hash walk, proof parse, pipeline re-run, SBOM) rather than the
-gnatprove level alone. The measured 1.42.0 figures: pipeline warm ~43 ms,
-prove warm ~51 ms, prove cold ~1.3 s (with the gnatprove session store
-intact), and a one-time fully cold solver run of ~42 s when
-`obj/gnatprove/` is wiped too. The performance guide documents the three
-shapes so the numbers are never read as the wrong thing.
+pipeline cold and warm, and the `prove` subcommand cold and warm. The
+prove-cold scenario is truly cold: every repetition wipes the result cache
+and the gnatprove session store (`obj/gnatprove/`), so each run pays a
+full from-scratch solver run -- the shape a first CI invocation sees.
+The prove-warm scenario is the populated-cache short-circuit.
+
+The prove scenarios are the true test of proof performance: they measure
+the adacovex binary's proving path at the binary level, not just the
+gnatprove level. The measured 1.42.0 figures: pipeline warm ~42 ms,
+prove warm ~47 ms (stable across 20 consecutive runs), prove cold ~39.3 s
+(dominated by the 876-VC solver run). The performance guide now carries a
+benchmark-category reference table defining every scenario by which cache
+is populated, and documents the partial-session state that made
+`make prove` timings alternate between instant and multi-second on this
+machine.
 
 ### C5: Multi-pair contract synthesis ships in the IR synthesiser
 
@@ -111,7 +117,7 @@ tractable, so the general form proved without justifications or
 hyperfine): prove warm ~51 ms (from ~2.5 s at 1.41.0), prove cold
 (`prove --no-cache`, gnatprove session intact) ~1.3 s, and a one-time fully
 cold solver run of ~42 s when `obj/gnatprove/` is wiped too. A warm
-assessment run is ~43 ms (from ~104 ms in 1.41.0).
+assessment run is ~40 ms (from ~104 ms in 1.41.0).
 
 ## Traceability
 

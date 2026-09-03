@@ -206,9 +206,8 @@ package body Adacovex.IR_Synthesiser is
    --  accepted only in the canonical space-free form, so a pair carrying
    --  whitespace never lowers (it would silently emit a signature whose
    --  spelling gnatprove cannot parse).
-   function Has_Space (S : String) return Boolean with
-     Global => null,
-     Pre    => S'First >= 1 and S'Last < Natural'Last
+   function Has_Space (S : String) return Boolean
+   with Global => null, Pre => S'First >= 1 and S'Last < Natural'Last
    is
    begin
       for I in S'Range loop
@@ -264,8 +263,7 @@ package body Adacovex.IR_Synthesiser is
       All_Valid  : out Boolean)
    with
      Global => null,
-     Pre    => Param_List'First >= 1
-               and then Param_List'Last < Natural'Last
+     Pre    => Param_List'First >= 1 and then Param_List'Last < Natural'Last
    is
       I : Natural := Param_List'First;
    begin
@@ -292,11 +290,10 @@ package body Adacovex.IR_Synthesiser is
             --  Colon probe runs only when the pair is non-empty, because
             --  Find_Char's precondition requires Start in S'First ..
             --  S'Last and a null slice cannot satisfy it.
-            Comma : constant Natural :=
-              Find_Char (Param_List, I, ',');
-            Last  : constant Natural := Comma - 1;
+            Comma    : constant Natural := Find_Char (Param_List, I, ',');
+            Last     : constant Natural := Comma - 1;
             Nonempty : constant Boolean := I <= Last;
-            Colon : constant Natural :=
+            Colon    : constant Natural :=
               (if Nonempty
                then Find_Char (Param_List (I .. Last), I, ':')
                else I);
@@ -312,12 +309,12 @@ package body Adacovex.IR_Synthesiser is
                  and then Param_List (Colon + 1 .. Last)'Length <= 9
                then
                   declare
-                     Sub_Name : constant String :=
-                       Param_List (I .. Colon - 1);
+                     Sub_Name : constant String := Param_List (I .. Colon - 1);
                      Sub_Type : constant String :=
                        Param_List (Colon + 1 .. Last);
                   begin
-                     if Has_Space (Sub_Name) or else Has_Space (Sub_Type)
+                     if Has_Space (Sub_Name)
+                       or else Has_Space (Sub_Type)
                        or else not Is_IR_Type (Sub_Type)
                      then
                         Pairs (Count) := (Valid => False, others => <>);
@@ -478,14 +475,11 @@ package body Adacovex.IR_Synthesiser is
                         Append (String'(1 => ASCII.LF));
                         Append ("        ");
                      end if;
-                     Append (Pairs (P).P_Name
-                               (1 .. Pairs (P).N_Len));
+                     Append (Pairs (P).P_Name (1 .. Pairs (P).N_Len));
                      Append (" in ");
-                     Append (Pairs (P).P_Type
-                               (1 .. Pairs (P).T_Len));
+                     Append (Pairs (P).P_Type (1 .. Pairs (P).T_Len));
                      Append ("'First / 2 .. ");
-                     Append (Pairs (P).P_Type
-                               (1 .. Pairs (P).T_Len));
+                     Append (Pairs (P).P_Type (1 .. Pairs (P).T_Len));
                      Append ("'Last / 2");
                   end if;
                end loop;

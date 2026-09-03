@@ -183,7 +183,8 @@ package body Adacovex_IR_Tests is
            & ";"
            & ASCII.LF;
       begin
-         R.Check (Spec = Want, "Test 13: unsigned-only spec has no Pre contract");
+         R.Check
+           (Spec = Want, "Test 13: unsigned-only spec has no Pre contract");
       end;
 
       --  Test 14: the multi-pair form lowers a comma-separated list: the
@@ -222,7 +223,8 @@ package body Adacovex_IR_Tests is
            & ";"
            & ASCII.LF;
       begin
-         R.Check (Spec = Want, "Test 15: empty return type synthesises a procedure");
+         R.Check
+           (Spec = Want, "Test 15: empty return type synthesises a procedure");
       end;
 
       --  Test 16: empty names and malformed pairs degrade gracefully (an
@@ -287,8 +289,7 @@ package body Adacovex_IR_Tests is
 
       --  Test 19: degradation cases stay empty (never a malformed spec).
       R.Check
-        (Synthesize_Bounded_Function
-           ("F", "A:IR_Int32,B:float", "IR_Int32")
+        (Synthesize_Bounded_Function ("F", "A:IR_Int32,B:float", "IR_Int32")
          = "",
          "Test 19: one foreign type poisons the whole list");
       R.Check
@@ -303,7 +304,8 @@ package body Adacovex_IR_Tests is
          "Test 19: a space inside a pair poisons the whole list");
       R.Check
         (Synthesize_Bounded_Function
-           ("F", "A:IR_Int32,B:IR_Int32,C:IR_Int32,D:IR_Int32"
+           ("F",
+            "A:IR_Int32,B:IR_Int32,C:IR_Int32,D:IR_Int32"
             & ",E:IR_Int32,F:IR_Int32,G:IR_Int32,H:IR_Int32"
             & ",I:IR_Int32,J:IR_Int32,K:IR_Int32,L:IR_Int32"
             & ",M:IR_Int32,N:IR_Int32,O:IR_Int32,P:IR_Int32"
@@ -313,13 +315,14 @@ package body Adacovex_IR_Tests is
             & ",AC:IR_Int32,AD:IR_Int32,AE:IR_Int32,AF:IR_Int32"
             & ",AG:IR_Int32,AH:IR_Int32,AI:IR_Int32,AJ:IR_Int32"
             & ",AK:IR_Int32,AL:IR_Int32,AM:IR_Int32,AN:IR_Int32"
-            & ",AO:IR_Int32,AP:IR_Int32", "IR_Int32")
+            & ",AO:IR_Int32,AP:IR_Int32",
+            "IR_Int32")
          = "",
          "Test 19: a list longer than 32 pairs degrades to empty");
 
       --  Test 20: a 32-pair list is accepted and every guard is emitted.
       declare
-         In_List  : constant String :=
+         In_List : constant String :=
            "A:IR_Int8,B:IR_Int8,C:IR_Int8,D:IR_Int8"
            & ",E:IR_Int8,F:IR_Int8,G:IR_Int8,H:IR_Int8"
            & ",I:IR_Int8,J:IR_Int8,K:IR_Int8,L:IR_Int8"
@@ -328,7 +331,7 @@ package body Adacovex_IR_Tests is
            & ",U:IR_Int8,V:IR_Int8,W:IR_Int8,X:IR_Int8"
            & ",Y:IR_Int8,Z:IR_Int8,AA:IR_Int8,AB:IR_Int8"
            & ",AC:IR_Int8,AD:IR_Int8,AE:IR_Int8,AF:IR_Int8";
-         Spec     : constant String :=
+         Spec    : constant String :=
            Synthesize_Bounded_Function ("Wide", In_List, "IR_Int8");
       begin
          R.Check

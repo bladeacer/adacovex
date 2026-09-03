@@ -431,7 +431,7 @@ must be followed by `make book`.
 | `csslint-check` | Dashboard CSS 4px spacing gate: every margin/padding/gap must be a multiple of 4px (tools/csslint.py; also run inside `make build`) |
 | `complexity-check` | Cyclomatic-complexity + LOC gate: no god objects/functions, no file above its LOC or percentage-of-codebase caps (multi-language scan via `--excludes=md,rst`; gated by make complexity-check) |
 | `book-links-check` | Fail when a link inside the bundled offline manual does not resolve (checked against a fresh `sphinx-build` from a temp copy of `docs/`; tools/check-book-links.py; shares the offline-asset rules with tools/gen-docs.py). `make check` also runs `python3 tools/gen-docs.py --check`, which fails when the committed spec `src/adacovex-docs_template.ads` drifts from a fresh build |
-| `bench` | Benchmark the pipeline and the `prove` subcommand with hyperfine (bash `time` fallback): pipeline cold/warm, prove cold (`prove --no-cache`), prove warm, + binary size (docs/contributing/perf.md) |
+| `bench` | Benchmark the pipeline and the `prove` subcommand with hyperfine (bash `time` fallback): pipeline cold/warm, prove cold (`prove --no-cache`, result cache + gnatprove session wiped), prove warm, + binary size (docs/contributing/perf.md) |
 | `perf-bench` | Profile the adacovex binary with perf and strace (tools/perf-bench.py; docs/contributing/perf.md) |
 | `spark-off-check` | Fail if any `SPARK_Mode (Off)` appears outside `Types.Implementation` and `Complexity` (the non-formal `Ada.Containers` instantiations) |
 | `clean` | Remove bin/ obj/ docs/badges/ |
@@ -514,12 +514,17 @@ release-tag coverage gate instead.
 
 **The true test of proof performance is the `prove` subcommand at the
 binary level** (`./bin/covex prove`), not just the gnatprove level. The
-warm shape is `./bin/covex prove` with the result cache populated (~51 ms);
-the cold shape is `./bin/covex prove --no-cache` against a fresh cache dir
-(~1.3 s with the gnatprove session store intact). `make bench` samples both
-with hyperfine. A run where `obj/gnatprove/` is also wiped pays a one-time
-from-scratch solver run (~42 s at 876 VCs) and is not a per-run property.
-Current figures and the version comparison table:
+warm shape is `./bin/covex prove` with the result cache populated (~47 ms;
+stable across consecutive runs -- a `make prove` wall of ~2.5 s is the
+`alr build` dependency, not the proof); the truly cold shape is
+`./bin/covex prove --no-cache` with the result cache *and* the gnatprove
+session store (`obj/gnatprove/`) wiped (~39 s at 876 VCs, dominated by the
+solver). `make bench` samples both with hyperfine (prove-cold repetitions
+wipe `obj/gnatprove/` in their `--prepare`). A partial gnatprove session
+(for example after a targeted `gnatprove -u` run) makes a prove miss land
+between the shapes -- that is the origin of the 0.02 s / 5.47 s
+alternation once seen on this machine, not a cache fault.
+Benchmark-category reference table and the version comparison:
 [docs/contributing/perf.md](docs/contributing/perf.md).
 
 ## Changelog format

@@ -36,6 +36,47 @@ The result cache serves unchanged targets so repeated runs are cheap.
 without a `gnatprove.out` at all is graded `Stone` with proof metrics `N/A`.
 Run `prove` to generate one.
 
+### The two caches -- why prove timings vary
+
+`prove` interacts with two independent caches, and knowing which one is
+cold explains every timing you will see:
+
+- The **result cache** (`~/.adacovex/cache/<version>/`, or `--cache-dir`)
+  is adacovex's own store, keyed on the content hash of the proof inputs
+  (every `.ads`/`.adb` under the target plus the `.gpr` and the option
+  string). A hit serves the stored proof and skips gnatprove entirely --
+  this is the short-circuit that makes an unchanged tree prove in tens of
+  milliseconds.
+- The **gnatprove session store** (`<target>/obj/gnatprove/`) is
+  gnatprove's internal per-unit session. When adacovex does spawn
+  gnatprove (a result-cache miss), the session decides the cost: a
+  complete session re-analyses only changed units; a wiped or partial
+  session re-analyses from scratch.
+
+Concretely, for an unchanged target:
+
+| Result cache | gnatprove session | What a `prove` run costs |
+|--------------|-------------------|--------------------------|
+| hit | any | ~tens of ms -- the short-circuit |
+| miss | complete | a few seconds -- gnatprove re-verifies quickly, then re-stores |
+| miss | wiped | the full solver run -- tens of seconds on a large proof |
+| miss | partial | lands between the two -- gnatprove re-analyses the missing units |
+
+The partial-session row is the easy one to misread: a targeted
+`gnatprove -u <unit>` run, a killed proof, or a hand-delete under
+`obj/gnatprove/` leaves the session incomplete, and the next result-cache
+miss re-proves just the gap -- so consecutive runs alternate between
+instant and multi-second. Once one full `prove` completes, the session is
+complete again and back-to-back runs stay at the short-circuit. This is
+content-keyed cache behaviour, not a cache fault: any source edit (or a
+docs edit that changes the bundled manual in `src/`) legitimately changes
+the key and re-proves once.
+
+`make bench` samples both extremes (prove warm = hit; prove cold = result
+cache *and* session wiped), so its numbers are always one of the stable
+shapes. Category definitions and current figures:
+[Performance](perf.md).
+
 ## What a proof contains
 
 gnatprove reports verification conditions (VCs) per check category. The
@@ -302,5 +343,7 @@ contract without the vendored sources ever changing.
 - [Target project requirements](../usage/target-projects.md) -- what a project must provide
 - [Architecture -- proof patches](architecture.md#proof-patches-spark-contracts-over-vendored-dependencies)
   -- the design, the merge engine, and the patched-copy pipeline
-- [The proof ledger](../proof/16.1.0-ledger.md) -- how adacovex's own 487-VC
-  proof is tracked
+- [Performance](perf.md) -- benchmark categories for the prove scenarios and
+  the current timings
+- [The proof ledger](../proof/16.1.0-ledger.md) -- how adacovex's own proof
+  is tracked

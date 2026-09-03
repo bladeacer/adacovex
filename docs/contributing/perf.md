@@ -13,57 +13,83 @@ and reports binary size:
 
 - It builds the project, then times `./bin/adacovex` and
   `./bin/adacovex prove` against the repo itself.
-- **cold** runs (fresh result cache + probe cache) and **warm** runs
-  (populated caches) are measured separately for both the pipeline and the
-  prove subcommand. The prove cold scenario is `prove --no-cache` against a
-  fresh cache dir; the prove warm scenario is `prove` with the cache
-  populated. The four scenarios together are the true performance test:
-  the pipeline numbers cover the assessment path, and the prove numbers
-  cover the adacovex-side proving path (input-hash walk, proof parse,
-  SBOM) at the binary level -- not just the gnatprove level.
+- **Four scenarios** are measured, and each has a precise meaning (see the
+  category reference below). The pipeline scenarios time the assessment
+  path; the prove scenarios time the `prove` subcommand -- the true test of
+  proof performance, measured at the adacovex-binary level, not just the
+  gnatprove level.
 - `make bench` uses [hyperfine](https://github.com/sharkdp/hyperfine) when
   installed. It falls back to the bash `time` builtin otherwise. No tooling is
   required.
 - It samples generously so the reported mean is stable. Hyperfine runs **10
-  pipeline-cold + 15 pipeline-warm + 10 prove-cold + 15 prove-warm**
-  repetitions (2 warmup runs; 1 for the prove-cold scenario). Each cold
-  repetition deletes the cache dir first. This measures a truly empty result
-  and probe cache. The `time` fallback runs **5 + 5** per scenario.
+  pipeline-cold + 15 pipeline-warm + 3 prove-cold + 15 prove-warm**
+  repetitions (2 warmup runs; none for prove-cold, where every repetition
+  is expensive by construction). Each cold repetition deletes the cache dir
+  first; the prove-cold repetitions also delete the gnatprove session store
+  (`obj/gnatprove/`). The `time` fallback runs **5 + 5** per scenario.
 - It reports the raw and stripped binary sizes (the stripped size is measured
   on a `/tmp` copy; the build output is never modified).
 
-Example output (hyperfine, x86-64, 12-core machine, 1.42.0):
+### Benchmark category reference
+
+adacovex has two *caches* and one *build step*, and every benchmark
+category is defined by which of them are populated:
+
+- the **result cache** (`~/.adacovex/cache/<version>/`, or `--cache-dir`):
+  adacovex's own content-addressed store of scan, graph, and prove
+  results;
+- the **gnatprove session store** (`<target>/obj/gnatprove/`): gnatprove's
+  internal per-unit session, which re-analyses only changed units;
+- the **build** (`alr build`, run by every `make` recipe that proves): a
+  no-op takes ~0.3 s when the tree is built; `make clean` forces a full
+  recompile.
+
+| Category | Command | Result cache | gnatprove session | What it measures |
+|----------|---------|--------------|-------------------|------------------|
+| Pipeline cold | `adacovex --cache-dir=<fresh>` | empty | n/a (not spawned) | Scan, parse, DAL, SBOM, render with no cached results |
+| Pipeline warm | `adacovex --cache-dir=<populated>` | hit | n/a | Cache-hit path: startup, walks, blob deserialisation |
+| Prove cold | `adacovex prove --no-cache --cache-dir=<fresh>` | empty | **wiped** | Truly cold proving: full solver run + everything in pipeline cold. The shape a first CI invocation on a bare runner sees |
+| Prove warm | `adacovex prove --cache-dir=<populated>` | hit | n/a | The short-circuit: one content-hash of the inputs, then serve the stored proof. The number a developer hits on an unchanged tree |
+
+Two further shapes exist and are worth recognising (they are *not*
+benchmarked because they are one-time-per-session states, not steady
+states):
+
+- *adacovex-side cold*: `prove --no-cache` with the result cache wiped but
+  `obj/gnatprove/` populated. gnatprove's session absorbs the solver cost;
+  the run re-does only the adacovex-side work (~1.3 s here). This is what
+  a `--cache-dir` change on a built machine costs.
+- *partial session*: `obj/gnatprove/` holds only some units (for example
+  after a targeted `gnatprove -u` run). A prove miss then re-analyses the
+  missing units and lands anywhere between the two cold shapes -- the
+  0.02 s / 5.47 s alternation reported on this machine came from exactly
+  this state. A full `make prove` always ends with a complete session, so
+  back-to-back `make prove` runs are stable at the prove-warm shape.
+
+### Sample output (hyperfine, x86-64, 12-core machine, 1.42.0)
 
 ```
 === Pipeline cold (fresh result cache) ===
-  Time (mean +/- sigma):  93.0 ms +/- 3.7 ms    [User: 62.9 ms, System: 19.6 ms]
-  Range (min ... max):    87.7 ms ... 99.7 ms   10 runs
+  Time (mean +/- sigma):  91.4 ms +/- 2.0 ms    [User: 59.8 ms, System: 21.0 ms]
+  Range (min ... max):    88.8 ms ... 94.9 ms   10 runs
 
 === Pipeline warm (populated caches) ===
-  Time (mean +/- sigma):  43.1 ms +/- 3.4 ms    [User: 18.1 ms, System: 14.3 ms]
-  Range (min ... max):    37.7 ms ... 48.5 ms   15 runs
+  Time (mean +/- sigma):  39.9 ms +/- 2.2 ms    [User: 15.9 ms, System: 13.7 ms]
+  Range (min ... max):    35.9 ms ... 43.2 ms   15 runs
 
-=== Prove cold (--no-cache, fresh result cache) ===
-  Time (mean +/- sigma):  1.346 s +/- 0.041 s   [User: 1.569 s, System: 0.192 s]
-  Range (min ... max):    1.298 s ... 1.424 s   10 runs
+=== Prove cold (--no-cache, result cache + gnatprove session wiped) ===
+  Time (mean +/- sigma):  39.291 s +/- 0.763 s  [User: 198.950 s, System: 11.734 s]
+  Range (min ... max):    38.411 s ... 39.767 s 3 runs
 
 === Prove warm (populated prove cache) ===
-  Time (mean +/- sigma):  50.7 ms +/- 6.0 ms    [User: 22.6 ms, System: 17.5 ms]
-  Range (min ... max):    42.0 ms ... 62.5 ms   15 runs
+  Time (mean +/- sigma):  47.4 ms +/- 2.3 ms    [User: 20.1 ms, System: 16.2 ms]
+  Range (min ... max):    42.7 ms ... 51.3 ms   15 runs
 
 == Binary size ==
-bin/adacovex            11.1 MiB (11689888 bytes)
-after strip             6.1 MiB (6372600 bytes)
+bin/adacovex            11.2 MiB (11694008 bytes)
+after strip             6.1 MiB (6376696 bytes)
 savings                 45.5%
 ```
-
-The prove-cold number is stable only because the gnatprove session store
-(`obj/gnatprove/`, gnatprove's own cache) survives the wipe: it measures the
-adacovex-side cold cost. A run where the session store is *also* wiped -- a
-first CI run on a bare runner, or `rm -rf obj/gnatprove` locally -- pays a
-from-scratch solver run and lands in the tens of seconds; it is a one-time
-cost per session, not a per-run property, so `make bench` does not sample it.
-See the `make prove` section below for both shapes.
 
 The numbers shift with the machine and the codebase. What matters is the
 shape: the warm paths (pipeline and prove) sit in the tens of
@@ -98,29 +124,30 @@ Figures below are from `make bench`/`perf-bench` on this machine (hyperfine,
 cold + warm per scenario, warmups as listed above). They shift with the
 machine and the codebase. What matters is the shape:
 
-- **Pipeline cold ~0.1 s**: dominated by source scanning (Ada file
+- **Pipeline cold ~91 ms**: dominated by source scanning (Ada file
   enumeration and SHA-256 of every scanned file), the SBOM tree walk and
   word scan, and the renderers. Nothing here can be skipped: the result
   cache is empty, so every file must be read and hashed at least once. The
   system-tool version probes and the ecosystem-metadata registry lookups
   are *not* part of cold anymore (both live per-machine, outside the result
   cache, and are cached across cache wipes).
-- **Pipeline warm ~43 ms**: the on-disk result cache (content-addressed per
+- **Pipeline warm ~40 ms**: the on-disk result cache (content-addressed per
   file, oldest-first eviction) skips re-parsing unchanged sources. The
   stamp fast-path skips the per-file SHA-256 entirely (a file unchanged in
   size is not re-hashed). The tools-set cache skips the whole SBOM
   dev-dependency word scan and the tool probes for an unchanged project.
   The remaining time is process startup (dynamic loader hwcaps probing,
   elaboration), the directory walks, and the blob deserialization.
-- **Prove cold (--no-cache) ~1.3 s**: the prove-input hash walk (every
-  `.ads`/`.adb` under the target, one stat per entry), the proof-parse of
-  `gnatprove.out`, the full pipeline re-run (the prove path runs the
-  assessment too), and the SBOM. The gnatprove session store absorbs the
-  solver cost, so this is the adacovex-side cold cost; the strace profile
-  shows ~30k `newfstatat` and ~6k `openat` calls for the whole run.
-- **Prove warm ~51 ms**: the prove result cache serves the stored proof
+- **Prove cold ~39.3 s**: a from-scratch solver run over 876 VCs plus the
+  whole pipeline. This is dominated by gnatprove itself (note the ~202 s
+  of user CPU across 10 proof jobs) and is paid once per gnatprove
+  session, not per run.
+- **Prove warm ~47 ms**: the prove result cache serves the stored proof
   after one content-hash of the input tree. This is the number a developer
   hits on an unchanged tree, and the one the perf targets below refer to.
+  Back-to-back `make prove` runs sit here (measured: 20 consecutive runs,
+  max 2.9 s wall for `make prove` including the ~2.5 s `alr build`; the
+  adacovex run itself is ~0.03 s).
 - System time is the tell. Pipeline cold runs show ~20 ms of system time
   (file I/O); pipeline warm runs show ~14 ms.
 
@@ -128,48 +155,32 @@ machine and the codebase. What matters is the shape:
 
 The true test of proof performance is the `prove` subcommand --
 `./bin/covex prove` -- measured at the adacovex-binary level, not just at
-the gnatprove level. Two cold shapes exist, and both are documented so a
-number is never read as the wrong thing:
-
-- `./bin/covex prove` (result cache populated) is the warm short-circuit.
-- `./bin/covex prove --no-cache` (fresh result cache) is the adacovex-side
-  cold run; the gnatprove session store stays populated.
-- `./bin/covex prove --no-cache` with `obj/gnatprove/` *also* wiped is the
-  fully cold run a first CI invocation sees: a from-scratch solver run.
-
-`make bench` samples the first two shapes with hyperfine; the third is a
-one-time-per-session cost reported here for reference.
-
-Measured across the last three trees (gnatprove 16.1.0, 12 logical cores,
-10 proof jobs; the 1.42.0 column is the hyperfine output above):
+the gnatprove level. The benchmark categories above define the shapes
+precisely; the table compares them across the last three trees
+(gnatprove 16.1.0, 12 logical cores, 10 proof jobs; the 1.42.0 column is
+the hyperfine output above):
 
 | Scenario | 1.40.0 | 1.41.0 | 1.42.0 |
 |----------|--------|--------|--------|
-| Prove warm (result-cache short-circuit) | 1.6 s | 2.5 s | 51 ms |
-| Prove cold `--no-cache`, session intact | ~40 s* | ~43 s* | 1.3 s |
-| Prove fully cold (session also wiped) | 39.0 s / 725 VCs | 42.8 s / 791 VCs | 42.2 s / 876 VCs |
-
-\* The 1.40.0/1.41.0 rows mixed the shapes: the reported "cold" numbers
-were dominated by from-scratch gnatprove runs, because the metadata and
-probe stores lived under the result cache and every wipe re-probed the
-toolchain. The 1.42.0 row separates them.
+| Prove warm (result-cache short-circuit) | 1.6 s | 2.5 s | 47 ms |
+| Prove cold (result cache + session wiped) | 39.0 s / 725 VCs | 42.8 s / 791 VCs | 39.3 s / 876 VCs |
 
 Reading the table:
 
-- The warm short-circuit dropped from seconds to ~51 ms: the 1.41.0 stamp
+- The warm short-circuit dropped from seconds to ~47 ms: the 1.41.0 stamp
   map plus the 1.42.0 walk-skip sets (the 1.40.0/1.41.0 "idle" runs of
   1.6-2.5 s were dominated by the per-run `.gpr` walk enumerating `.venv`).
-- The adacovex-side cold run is ~1.3 s: the input-hash walk, the proof
-  parse, the pipeline re-run, and the SBOM. The 1.41.0 profile put 66% of
-  cold CPU inside spawned `node`/`python` interpreters (ecosystem-metadata
-  registry lookups under the result cache); moving the store to
-  `~/.adacovex/meta/` is what removed the ~4 s of re-probes from this row.
-- The fully cold row is gnatprove's own cost and tracks the VC count:
-  42.2 s at 876 VCs on a wiped `obj/gnatprove/` (the +85 VCs over 1.41.0
-  are the proved multi-pair IR slice, see [ir.md](ir.md)). It is paid once
-  per session, not per run; gnatprove's session store re-analyses only the
-  changed unit and its dependents afterwards (roughly 6-9 s wall for a
-  body-only edit on this machine).
+  Once the cache is populated, consecutive `make prove` runs are
+  consistently instant -- measured across 20 consecutive runs, the
+  adacovex step stays at ~0.03 s (the 2.4-2.9 s `make prove` wall is the
+  `alr build` dependency, not the proof).
+- The prove-cold row is gnatprove's own cost and tracks the VC count
+  (39.1 s at 876 VCs; the +85 VCs over 1.41.0 are the proved multi-pair
+  IR slice, see [ir.md](ir.md)). It is paid once per session, not per run:
+  with the result cache wiped but the gnatprove session intact, the same
+  run is ~1.3 s, and gnatprove's session store re-analyses only the
+  changed unit and its dependents after a real edit (roughly 6-9 s wall
+  for a body-only edit on this machine).
 
 CPU use stays bounded on developer machines: the default job count is
 `cores - 2` (all cores inside CI), so gnatprove never starves the desktop.
