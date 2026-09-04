@@ -67,37 +67,68 @@ begin
       declare
          Current  : Dir_Entry := Dir_Stack.Last_Element;
          Dir_Path : String renames Current.Path (1 .. Current.Len);
+         Snap     : Adacovex.Dir_Cache.Dir_Entry_List;
+         SCt      : Natural;
+         STrunc   : Boolean;
+         SOK      : Boolean;
       begin
          Dir_Stack.Delete_Last;
-         Start_Search (Search, Dir_Path, "");
-         begin
-            while More_Entries (Search) loop
-               Get_Next_Entry (Search, Ent);
+         --  Shared snapshot first (one enumeration per directory per
+         --  process across every walker); direct enumeration only on the
+         --  fallback path (over-cap tree or unreadable snapshot).
+         Adacovex.Dir_Cache.Snapshot (Dir_Path, Snap, SCt, STrunc, SOK);
+         if SOK and then not STrunc then
+            for SI in 1 .. SCt loop
                declare
-                  N    : constant String := Simple_Name (Ent);
-                  Path : constant String := Full_Name (Ent);
+                  N    : constant String :=
+                    Snap (SI).Name (1 .. Snap (SI).Name_Len);
+                  Is_D : constant Boolean :=
+                    Adacovex.Dir_Cache.Is_Directory (Snap (SI).Kind);
                begin
-                  if Kind (Ent) = Directory then
-                     if N /= "."
-                       and then N /= ".."
-                       and then Current.Level < Max_Levels
+                  if Is_D then
+                     if Current.Level < Max_Levels
                        and then not Skip_Walk_Dir (N)
                        and then (not Skip_Vendored
                                  or else not Is_Vendor_Dir_Name (N))
                      then
-                        Push_Dir (Path, Current.Level + 1);
+                        Push_Dir (Dir_Path & "/" & N, Current.Level + 1);
                      end if;
-                  elsif Kind (Ent) = Ordinary_File then
+                  else
                      Count_File (N);
                   end if;
                end;
             end loop;
-         exception
-            when others =>
-               End_Search (Search);
-               raise;
-         end;
-         End_Search (Search);
+         else
+            Start_Search (Search, Dir_Path, "");
+            begin
+               while More_Entries (Search) loop
+                  Get_Next_Entry (Search, Ent);
+                  declare
+                     N    : constant String := Simple_Name (Ent);
+                     Path : constant String := Full_Name (Ent);
+                  begin
+                     if Kind (Ent) = Directory then
+                        if N /= "."
+                          and then N /= ".."
+                          and then Current.Level < Max_Levels
+                          and then not Skip_Walk_Dir (N)
+                          and then (not Skip_Vendored
+                                    or else not Is_Vendor_Dir_Name (N))
+                        then
+                           Push_Dir (Path, Current.Level + 1);
+                        end if;
+                     elsif Kind (Ent) = Ordinary_File then
+                        Count_File (N);
+                     end if;
+                  end;
+               end loop;
+            exception
+               when others =>
+                  End_Search (Search);
+                  raise;
+            end;
+            End_Search (Search);
+         end if;
       end;
    end loop;
 end Detect_Languages;

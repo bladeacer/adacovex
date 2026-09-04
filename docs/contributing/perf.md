@@ -8,6 +8,31 @@ that keep those numbers low.
 
 ## Benchmarking
 
+### Benchmark machine
+
+Every figure in this document was measured on the adacovex development
+machine. Only the specs that plausibly affect a CLI benchmark are listed;
+the GPU(s) are omitted on purpose (adacovex is CPU/I/O-bound; no code path
+touches a GPU):
+
+| Component | Spec |
+|-----------|------|
+| OS | EndeavourOS x86_64, Linux 7.2.2-arch1-1 |
+| CPU | 12th Gen Intel Core i7-1255U (4P+8E, 12 threads) @ 4.70 GHz max |
+| L1 cache | 8x32 KiB data + 8x64 KiB instruction (P-cores); 2x48 KiB data + 2x32 KiB instruction (E-cores) |
+| L2 cache | 2x2.0 MiB + 2x1.25 MiB |
+| L3 cache | 12 MiB shared |
+| Memory | 16 GiB DDR4 (15.33 GiB visible) |
+| Storage | SK hynix BC711 512 GiB NVMe SSD |
+| Toolchain | gnatprove 16.1.0 (via Alire), hyperfine 1.20, perf 7.2, strace 7.0 |
+
+The i7-1255U is a hybrid laptop part: 10 of the 12 threads are E-cores,
+and gnatprove's solver jobs fan out across all of them. Single-threaded
+pipeline figures (warm/cold) are dominated by P-core behaviour; the
+prove-cold solver floor depends on the E-core fleet. Lower-thread
+machines pay more per solver run; the warm paths (tens of ms) stay warm
+anywhere.
+
 `make bench` benchmarks the assessment pipeline, the `prove` subcommand,
 and reports binary size:
 
@@ -156,21 +181,31 @@ machine and the codebase. What matters is the shape:
 The true test of proof performance is the `prove` subcommand --
 `./bin/covex prove` -- measured at the adacovex-binary level, not just at
 the gnatprove level. The benchmark categories above define the shapes
-precisely; the table compares them across the last five trees
+precisely; the table compares them across the last six trees
 (gnatprove 16.1.0, 12 logical cores, 10 proof jobs; the 1.42.0 column is
-the hyperfine output above, the 1.43.0/1.44.0 columns are hyperfine on
+the hyperfine output above, the 1.43.0 onward columns are hyperfine on
 each tree):
 
-| Scenario | 1.40.0 | 1.41.0 | 1.42.0 | 1.43.0 | 1.44.0 |
-|----------|--------|--------|--------|--------|--------|
-| Pipeline warm | ~1.02 s* | ~104 ms | 40 ms | 35 ms | 23 ms |
-| Pipeline cold | ~1.4 s* | ~545 ms* | 91 ms | 86 ms | 60 ms |
-| Prove warm (result-cache short-circuit) | 1.6 s | 2.5 s | 47 ms | 40 ms | 44 ms |
-| Prove cold (result cache + session wiped) | 39.0 s / 725 VCs | 42.8 s / 791 VCs | 39.3 s / 876 VCs | 39.4 s / 876 VCs | 36.4 s / 876 VCs |
-| Warm-run syscalls (`newfstatat`, strace) | ~218k | ~15k | ~21k | ~12k | ~2k |
+| Scenario | 1.40.0 | 1.41.0 | 1.42.0 | 1.43.0 | 1.44.0 | 1.45.0 |
+|----------|--------|--------|--------|--------|--------|--------|
+| Pipeline warm | ~1.02 s* | ~104 ms | 40 ms | 35 ms | 23 ms | 41 ms |
+| Pipeline cold | ~1.4 s* | ~545 ms* | 91 ms | 86 ms | 60 ms | 84 ms |
+| Prove warm (result-cache short-circuit) | 1.6 s | 2.5 s | 47 ms | 40 ms | 44 ms | 46 ms |
+| Prove cold (result cache + session wiped) | 39.0 s / 725 VCs | 42.8 s / 791 VCs | 39.3 s / 876 VCs | 39.4 s / 876 VCs | 36.4 s / 876 VCs | 36.8 s / 876 VCs |
+| Warm-run syscalls (`newfstatat`, strace) | ~218k | ~15k | ~21k | ~12k | ~2k | ~6k |
 
 \* 1.40.0/1.41.0 pipeline figures predate the four-scenario bench script
 (single-shot `time` runs, coarser sampling).
+
+The 1.45.0 warm/cold wall figures carry new safety work, not a
+regression in the I/O layer: the correct-version probe validation (each
+cached system-tool version is re-validated against the identity digest
+of the installed binary) re-resolves every tool's PATH entry per run,
+and the absolute-path memo keys make the shared directory snapshot serve
+more walkers. The syscall column still shows the real I/O story: ~6k
+stats versus 1.43.0's ~12k, with `docs/_build` (a Sphinx build product,
+~750 stats/run) now excluded from every walk. Prove cold stays pinned at
+the solver floor (36.8 s at 876 VCs), and prove warm stays under 50 ms.
 
 Reading the table:
 
@@ -219,11 +254,43 @@ Reading the table:
 CPU use stays bounded on developer machines: the default job count is
 `cores - 2` (all cores inside CI), so gnatprove never starves the desktop.
 
-## Optimisation history
-
-Kept in reverse-chronological order.  Every entry names the measurement that
+## Optimisation historyKept in reverse-chronological order. Every entry names the measurement that
 drove it so the next round of work can see whether the previous assumption
 still holds.
+
+### Shared directory-snapshot memo + correct-version probe validation (1.45.0)
+
+Two findings drove 1.45.0, both from strace profiles of the warm path
+after 1.44.0:
+
+1. **Same directory, different memo key.** The walkers spelled the same
+   directories differently (`"."`, `"src"`, `"/abs/src"`), so the 1.44.0
+   snapshot memo served hits only within one spelling. The memo now
+   resolves every key to its absolute image (the process working
+   directory is read once), and the slot table grew from 64 to 256 (the
+   self tree enumerates ~120 distinct directories). Warm hits rose from
+   43/82 to 107/58 on the self audit, and `Collect_GPR_Files` joined the
+   shared-snapshot walkers.
+2. **`docs/_build` was still walked.** The shared `Skip_Walk_Dir` did not
+   exclude it, so the vendored-discovery walk enumerated ~750 Sphinx
+   build-product files per run. A build-product tree can never be a
+   vendored package, so `_build` joined the shared skip set.
+
+The same release fixed a correctness bug the perf work exposed: cached
+system-tool versions were keyed only on the tool name and a 7-day TTL,
+so an upgraded binary kept its old version in the SBOM for up to a week.
+Both cache layers (the probe store and the tools-set blob) now carry the
+identity digest of the installed binary (path + size + mtime, SHA-256
+folded); a changed digest re-probes exactly once, then serves from cache
+again. Verified with a PATH shim whose `jj --version` changes between
+runs: run 1 probes 0.44.0, run 2 (upgraded shim) re-probes 0.50.0 in a
+fully warm cache, run 3 serves 0.50.0 from cache (49 ms), run 4 (real
+binary restored) re-probes 0.45.1.
+
+Net effect on the table: warm syscalls ~6k (docs/_build gone, but the
+PATH re-resolution and wider memo cost a few stats), warm wall 41 ms
+(1.44.0's 23 ms plus the safety work), prove cold unchanged at the
+solver floor.
 
 ### Persistent stat-stamp store, learned from language servers (1.44.0)
 

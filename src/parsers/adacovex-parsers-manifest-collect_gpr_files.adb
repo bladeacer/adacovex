@@ -5,7 +5,10 @@ separate (Adacovex.Parsers.Manifest)
 --  target with a .venv of thousands of files is never enumerated just to
 --  find its .gpr files.  This walk runs on every graph build (before the
 --  cached-graph lookup), so its skip set is the difference between a
---  bounded walk and a whole-tree crawl.
+--  bounded walk and a whole-tree crawl.  Enumerations are served from the
+--  shared per-process snapshot memo: the graph build runs several walks
+--  over the same directories, and the memo makes the later ones pay one
+--  mtime stat instead of a full enumeration.
 procedure Collect_GPR_Files
   (Target_Dir : String; Files : in out Path_Vectors.Vector)
 is
@@ -37,22 +40,26 @@ begin
       declare
          Current  : Dir_Entry := Dir_Stack.Last_Element;
          Dir_Path : String renames Current.Path (1 .. Current.Len);
+         Snap     : Adacovex.Dir_Cache.Dir_Entry_List;
+         SCt      : Natural;
+         STrunc   : Boolean;
+         SOK      : Boolean;
       begin
          Dir_Stack.Delete_Last;
 
-         Start_Search (Search, Dir_Path, "");
-         begin
-            while More_Entries (Search) loop
-               Get_Next_Entry (Search, Ent);
+         --  Shared snapshot first; direct enumeration only on the
+         --  fallback path (over-cap tree or unreadable snapshot).
+         Adacovex.Dir_Cache.Snapshot (Dir_Path, Snap, SCt, STrunc, SOK);
+         if SOK and then not STrunc then
+            for SI in 1 .. SCt loop
                declare
-                  Name : constant String := Simple_Name (Ent);
-                  Path : constant String := Full_Name (Ent);
+                  Name : constant String :=
+                    Snap (SI).Name (1 .. Snap (SI).Name_Len);
+                  Path : constant String := Dir_Path & "/" & Name;
                   Dot  : Natural := 0;
                begin
-                  if Kind (Ent) = Directory then
-                     if Name /= "."
-                       and Name /= ".."
-                       and Name /= ".git"
+                  if Adacovex.Dir_Cache.Is_Directory (Snap (SI).Kind) then
+                     if Name /= ".git"
                        and Name /= ".jj"
                        and Name /= ".hg"
                        and Name /= ".svn"
@@ -73,7 +80,7 @@ begin
                      then
                         Push_Dir (Path);
                      end if;
-                  elsif Kind (Ent) = Ordinary_File then
+                  else
                      for I in reverse Name'Range loop
                         if Name (I) = '.' then
                            Dot := I;
@@ -94,12 +101,69 @@ begin
                   end if;
                end;
             end loop;
-         exception
-            when others =>
-               End_Search (Search);
-               raise;
-         end;
-         End_Search (Search);
+         else
+            Start_Search (Search, Dir_Path, "");
+            begin
+               while More_Entries (Search) loop
+                  Get_Next_Entry (Search, Ent);
+                  declare
+                     Name : constant String := Simple_Name (Ent);
+                     Path : constant String := Full_Name (Ent);
+                     Dot  : Natural := 0;
+                  begin
+                     if Kind (Ent) = Directory then
+                        if Name /= "."
+                          and Name /= ".."
+                          and Name /= ".git"
+                          and Name /= ".jj"
+                          and Name /= ".hg"
+                          and Name /= ".svn"
+                          and Name /= ".fslckout"
+                          and Name /= "_FOSSIL_"
+                          and Name /= "obj"
+                          and Name /= "config"
+                          and Name /= ".adacovex"
+                          and Name /= "alire"
+                          and Name /= "gnatprove"
+                          and Name /= "__pycache__"
+                          and Name /= "node_modules"
+                          and Name /= ".venv"
+                          and Name /= ".headroom"
+                          and Name /= ".lccst"
+                          and Name /= "bin"
+                          and Name /= "_build"
+                        then
+                           Push_Dir (Path);
+                        end if;
+                     elsif Kind (Ent) = Ordinary_File then
+                        for I in reverse Name'Range loop
+                           if Name (I) = '.' then
+                              Dot := I;
+                              exit;
+                           end if;
+                        end loop;
+                        if Dot > 0 and then Name (Dot .. Name'Last) = ".gpr"
+                        then
+                           declare
+                              Item : Path_Item;
+                           begin
+                              Item.Len := Path'Length;
+                              for I in Path'Range loop
+                                 Item.Path (I - Path'First + 1) := Path (I);
+                              end loop;
+                              Files.Append (Item);
+                           end;
+                        end if;
+                     end if;
+                  end;
+               end loop;
+            exception
+               when others =>
+                  End_Search (Search);
+                  raise;
+            end;
+            End_Search (Search);
+         end if;
       end;
    end loop;
 end Collect_GPR_Files;

@@ -1,4 +1,4 @@
-# Template index entry for the Alire community index.
+# Template release manifest.
 # Copied and version-replaced by make bump-version / make release.
 name = "covex"
 description = "Ada/SPARK coverage, proof, multi-standard compliance tool"
@@ -35,9 +35,9 @@ ISO 26262 / IEC 62304), and interactive dashboards.
 -  Self-assessment: 100% docstring coverage, Platinum SPARK (876/876 VCs proved),
   DAL-C / ASIL B / Class A Achieved, 1229/1229 native tests passing
 """
-version = "1.43.0"
+version = "1.45.0"
 project-files = ["adacovex.gpr"]
-auto-gpr-with = true
+auto-gpr-with = "adacovex.gpr"
 executables = ["adacovex"]
 
 [environment]

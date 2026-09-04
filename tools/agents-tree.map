@@ -12,7 +12,8 @@ src/core/adacovex-config	CLI argument parser (prove mode, --no-sbom, --sbom-form
 src/core/adacovex-diff	Differential assessment (--compare-base / --coverage-delta)
 src/core/adacovex-prove	GNATprove runner for the `prove` subcommand (alire-first toolchain resolution)
 src/core/adacovex-prove_patch	Proof patches for vendored deps (SPARK aspect merge + patched proof tree)
-src/core/adacovex-cache	On-disk result cache (content-hashed per-file, oldest-first eviction, size policy)
+src/core/adacovex-cache	On-disk result cache (content-hashed per-file, oldest-first eviction, size policy) + persistent stat-stamp index + per-process directory snapshot memo
+src/core/adacovex-dir_cache	Per-process directory-snapshot memo (one enumeration + stat set shared by all walkers; LSP-style shared snapshot)
 src/core/adacovex-completion	Shell auto-completion script generator (bash/fish/zsh/pwsh)
 src/core/adacovex-cpus	Host CPU/CI detection + GNATprove parallelism resolution
 src/core/adacovex-complexity	Cyclomatic complexity checker (multi-language; gated by make complexity-check; --excludes=EXT,EXT)
@@ -41,7 +42,7 @@ src/tests/adacovex-test_support	Native test Runner type
 src/tests/adacovex_dal_tests	DAL compliance tests (16)
 src/tests/adacovex_types_tests	Type conversion tests (67)
 src/tests/adacovex_scanner_tests	Source scanner tests (89)
-src/tests/adacovex_cache_tests	Result-cache tests (27)
+src/tests/adacovex_cache_tests	Result-cache tests (28)
 src/tests/adacovex_ir_tests	IR synthesis tests (42)
 src/tests/adacovex_man_tests	Man page renderer tests (18)
 src/tests/adacovex_vcs_tests	VCS support tests (29)
@@ -55,7 +56,7 @@ src/tests/adacovex_complexity_tests	Complexity check tests (12)
 src/tests/adacovex_renderer_svg_tests	SVG renderer tests (161)
 src/tests/adacovex_renderer_tests	HTML/Markdown renderer tests (58)
 src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (288)
-src/tests/test_runner	Test suite entry point (1228 tests)
+src/tests/test_runner	Test suite entry point (1229 tests)
 src/parsers/adacovex-parsers-manifest-req_entry	Parse the first requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-collect_req_entries	Collect every requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-register_root_python_deps	Register root requirements*.txt entries as dev-scope pypi components
@@ -73,7 +74,6 @@ src/parsers/adacovex-parsers-manifest-gem_entry	Parse the first gem name/version
 src/parsers/adacovex-parsers-manifest-skip_walk_dir	Whether a directory should be skipped during a source walk
 src/parsers/adacovex-parsers-manifest-first_list_value	Extract the first quoted value from a "key = [list]" line
 src/parsers/adacovex-parsers-manifest-extension_language	Map a file extension to its language display name
-src/parsers/adacovex-parsers-manifest-version_flag	Return the version-probe flag for a registered tool name
 src/parsers/adacovex-parsers-manifest-read_alire_lock	Parse alire.lock [[solution.state]] crate entries into the graph
 src/parsers/adacovex-parsers-manifest-parse_gpr	Parse a GNAT project file for project name and with-clauses
 src/parsers/adacovex-parsers-manifest-set_path	Copy a string into a bounded Path_Field (with length cap)
@@ -94,4 +94,4 @@ src/parsers/adacovex-parsers-manifest-read_manifest_deps	Collect crate names fro
 src/parsers/adacovex-parsers-manifest-add_dep_name	Append a crate name to a name vector unless already present
 src/parsers/adacovex-parsers-manifest-go_module_path	Read the module path from the first "module" line of go.mod
 src/parsers/adacovex-parsers-manifest-probe_version	Probe a tool's version by spawning it and parsing its output
-src/parsers/adacovex-parsers-manifest-make_tool	Build a Tool_Entry (name + version flag) from string literals
+src/parsers/adacovex-parsers-manifest-make_tool	Build a Tool_Entry (name + category) from string literals

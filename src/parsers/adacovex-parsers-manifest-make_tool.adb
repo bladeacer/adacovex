@@ -1,14 +1,15 @@
 separate (Adacovex.Parsers.Manifest)
 --  Build a Tool_Entry from a string literal.  The System_Tools table
---  stays readable.  VFlag is the version-probe flag or subcommand.
---  Every tool here accepts "--version" except fossil, git-lfs, and go.
---  Those use the "version" subcommand.  The probe falls back through
---  "--version", "-v", and "version" when the configured flag fails.
+--  stays readable.  The version-probe flag is deliberately NOT stored:
+--  Probe_Version infers it at run time by trying the standard chain
+--  ("--version", then "-v", then "version") and taking the first flag
+--  that yields a version token, so a tool that only understands a
+--  subcommand (go, fossil, git-lfs) needs no special-cased column here
+--  and a misconfigured entry cannot exist.
 --  @param S  Tool name (lowercase, for example "python3").
---  @param VFlag  Version-probe flag (default "--version").
+--  @param C  Category (default C_Build).
 --  @return The Tool_Entry holding S.
-function Make_Tool
-  (S : String; VFlag : String := "--version") return Tool_Entry
+function Make_Tool (S : String; C : Tool_Category := C_Build) return Tool_Entry
 is
    E : Tool_Entry;
 begin
@@ -16,9 +17,6 @@ begin
    for I in 1 .. S'Length loop
       E.Name (I) := S (S'First + I - 1);
    end loop;
-   E.FLen := VFlag'Length;
-   for I in 1 .. VFlag'Length loop
-      E.Flag (I) := VFlag (VFlag'First + I - 1);
-   end loop;
+   E.Cat := C;
    return E;
 end Make_Tool;

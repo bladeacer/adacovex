@@ -65,6 +65,7 @@ dictionary means the sentence is not yet STE100-clean.
 - [Adacovex.CPUs](adacovex-cpus.md)
 - [Adacovex.Dashboard_Template](adacovex-dashboard_template.md)
 - [Adacovex.Diff](adacovex-diff.md)
+- [Adacovex.Dir_Cache](adacovex-dir_cache.md)
 - [Adacovex.Docs_Template](adacovex-docs_template.md)
 - [Adacovex.IR_Bounds](adacovex-ir_bounds.md)
 - [Adacovex.IR_Synthesiser](adacovex-ir_synthesiser.md)

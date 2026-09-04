@@ -48,6 +48,14 @@ HLR-CACHE: Result caching
 
 **Returns:** 64-character lowercase hex digest.
 
+### function Tool_Fingerprint (Exe_Path : Standard.String) return Standard.String
+
+| Parameter | Description |
+|-----------|-------------|
+| `Exe_Path` | Absolute path of the tool executable (as returned |
+
+**Returns:** The fingerprint image; the path alone when stat fails; ""
+
 ## Procedures
 
 ### procedure Cache_Dir (Dir : Standard.String; Len : Standard.Natural)
@@ -94,11 +102,12 @@ HLR-CACHE: Result caching
 | `Web_Len` |  |
 | `Website` |  |
 
-### procedure Get_Probe (Tool : Standard.String; Value : Standard.String; Val_Len : Standard.Natural; Found : Standard.Boolean)
+### procedure Get_Probe (Tool : Standard.String; Fingerprint : Standard.String; Value : Standard.String; Val_Len : Standard.Natural; Found : Standard.Boolean)
 
 | Parameter | Description |
 |-----------|-------------|
-| `Found` | True when a fresh probe existed. |
+| `Fingerprint` | Binary identity image ("<exe>|<size>|<mtime>"; |
+| `Found` | True when a fresh probe existed for THIS binary. |
 | `Tool` | Tool name (safe characters only). |
 | `Val_Len` | Length of the version string. |
 | `Value` | Output version string (may be empty). |
@@ -131,12 +140,15 @@ HLR-CACHE: Result caching
 | `Version` | Version string (may be empty). |
 | `Website` | Website string (may be empty). |
 
-### procedure Put_Probe (Tool : Standard.String; Value : Standard.String)
+### procedure Put_Probe (Tool : Standard.String; Fingerprint : Standard.String; Value : Standard.String)
 
 | Parameter | Description |
 |-----------|-------------|
+| `Fingerprint` | Binary identity image. |
 | `Tool` | Tool name (safe characters only). |
 | `Value` | Version string (may be empty). |
+
+### procedure Reset_Process_Stamps
 
 ### procedure Set_Cache_Dir (Dir : Standard.String)
 

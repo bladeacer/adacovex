@@ -149,14 +149,16 @@ package Adacovex.Cache is
    Stamp_Hits   : Natural := 0;
    Stamp_Misses : Natural := 0;
 
-   --  Persistent stat-stamp store effectiveness counters.  Hash_File serves
-   --  a previously recorded digest from the machine-local stamp store
-   --  (~/.adacovex/stamps) without opening the file when BOTH its size and
-   --  its mtime still match the recorded pair -- the same cross-session
+   --  Persistent stat-stamp index effectiveness counters.  Hash_File
+   --  serves a previously recorded digest from the machine-local index
+   --  (~/.adacovex/stamps/index.bin, one packed file, loaded once per
+   --  process) without opening the file when BOTH its size and its mtime
+   --  still match the recorded pair -- the same cross-session
    --  dirty-tracking language servers use to skip re-parsing unchanged
-   --  files.  Persistent_Stamp_Hits counts the re-hashes avoided across
-   --  runs; Persistent_Stamp_Misses counts the fallbacks to a real read
-   --  (first-ever file, size or mtime change, or an entry past its TTL).
+   --  files, in the single-file shape of git's index.  Persistent_Stamp_Hits
+   --  counts the re-hashes avoided across runs; Persistent_Stamp_Misses
+   --  counts the fallbacks to a real read (first-ever file, size or mtime
+   --  change, or a record past its 30-day TTL).
    Persistent_Stamp_Hits   : Natural := 0;
    Persistent_Stamp_Misses : Natural := 0;
 
@@ -170,21 +172,45 @@ package Adacovex.Cache is
    --  files stored under <cache>/probes/).  A probe younger than
    --  Probe_TTL_Days is served from disk.  Older or missing probes are
    --  reported as not found.  The caller then re-probes.
+   --
+   --  The cached answer is validated against the fingerprint of the tool's
+   --  installed binary (its PATH location plus size and mtime) before it
+   --  is served: Fingerprint must be the image Locate_Exec_On_Path returned
+   --  for the tool in THIS run.  An upgraded or replaced binary changes
+   --  the fingerprint, the stored answer is discarded, and the caller
+   --  re-probes -- a probe cache keyed only on the tool name and a time
+   --  TTL served stale versions for up to a week after an upgrade.
    --  @param Tool  Tool name (safe characters only).
+   --  @param Fingerprint  Binary identity image ("<exe>|<size>|<mtime>";
+   --  the caller obtains it with Cache.Tool_Fingerprint).
    --  @param Value  Output version string (may be empty).
    --  @param Val_Len  Length of the version string.
-   --  @param Found  True when a fresh probe existed.
+   --  @param Found  True when a fresh probe existed for THIS binary.
    procedure Get_Probe
-     (Tool    : String;
-      Value   : out String;
-      Val_Len : out Natural;
-      Found   : out Boolean);
+     (Tool        : String;
+      Fingerprint : String;
+      Value       : out String;
+      Val_Len     : out Natural;
+      Found       : out Boolean);
 
    --  Store a system-tool version probe result on disk (overwrites any
-   --  existing entry for the tool).
+   --  existing entry for the tool).  Fingerprint is the identity of the
+   --  binary the version was probed from; Get_Probe serves the answer only
+   --  while the fingerprint matches.
    --  @param Tool  Tool name (safe characters only).
+   --  @param Fingerprint  Binary identity image.
    --  @param Value  Version string (may be empty).
-   procedure Put_Probe (Tool : String; Value : String);
+   procedure Put_Probe (Tool : String; Fingerprint : String; Value : String);
+
+   --  Identity of a tool's installed binary: the PATH-resolved executable
+   --  path, its size, and its mtime, joined with '|'.  The probe cache
+   --  stores this image next to the version it probed; Get_Probe serves
+   --  the stored answer only while the live binary's fingerprint matches.
+   --  @param Exe_Path  Absolute path of the tool executable (as returned
+   --    by Locate_Exec_On_Path).
+   --  @return The fingerprint image; the path alone when stat fails; ""
+   --    when Exe_Path is empty.
+   function Tool_Fingerprint (Exe_Path : String) return String;
 
    --  Registry-metadata cache for vendored packages.  The graph builder
    --  resolves a package's licence, version, and website from its ecosystem

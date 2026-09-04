@@ -9,7 +9,7 @@
   | SVG renderer                             |  161 | PASS     |
   | HTML/Markdown renderers                  |  58 | PASS     |
   | SBOM generator                           |  288 | PASS     |
-  | Result cache                             |  27 | PASS     |
+  | Result cache                             |  28 | PASS     |
   | IR synthesis                             |  42 | PASS     |
   | Man page renderer                        |  18 | PASS     |
   | VCS support                              |  29 | PASS     |
@@ -19,4 +19,4 @@
   | Complexity check                         |  12 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 1228  Failed: 0
+  Passed: 1229  Failed: 0

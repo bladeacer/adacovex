@@ -3,21 +3,21 @@
   "specVersion": "1.5",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-09-04T07:27:15",
+    "timestamp": "2026-09-04T18:41:07",
     "tools": [
-      {"vendor": "bladeacer", "name": "adacovex", "version": "1.44.0"}
+      {"vendor": "bladeacer", "name": "adacovex", "version": "1.45.0"}
     ],
     "component": {
       "type": "application",
-      "bom-ref": "pkg:alire/covex@1.44.0",
+      "bom-ref": "pkg:alire/covex@1.45.0",
       "name": "covex",
-      "version": "1.44.0",
+      "version": "1.45.0",
       "language": "Ada; Python; JavaScript",
-      "purl": "pkg:alire/covex@1.44.0",
+      "purl": "pkg:alire/covex@1.45.0",
       "licenses": [{"license": {"id": "Apache-2.0"}}],
       "description": "Ada/SPARK coverage, proof, multi-standard compliance tool",
       "externalReferences": [{"url": "https://github.com/bladeacer/adacovex", "type": "website"}],
-      "properties": [{"name": "adacovex:proof_level", "value": "Platinum"}, {"name": "adacovex:standard", "value": "DO-178C, ISO 26262, IEC 62304"}, {"name": "adacovex:dal_target", "value": "DAL-C"}, {"name": "adacovex:level", "value": "DAL-C / ASIL B / Class A"}]
+      "properties": [{"name": "adacovex:proof_level", "value": "Platinum"}, {"name": "adacovex:standard", "value": "DO-178C"}, {"name": "adacovex:dal_target", "value": "DAL-C"}, {"name": "adacovex:level", "value": "DAL-C"}]
       }
   },
   "components": [
@@ -83,7 +83,7 @@
       "version": "16.1.0",
       "language": "Ada",
       "purl": "pkg:alire/gnatprove",
-      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
       },
     {
       "type": "library",
@@ -209,8 +209,35 @@
       "type": "library",
       "bom-ref": "pkg:generic/jj",
       "name": "jj",
-      "version": "0.44.0",
+      "version": "0.45.1",
       "purl": "pkg:generic/jj",
+      "description": "System tool referenced by the project (dev dependency)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/hyperfine",
+      "name": "hyperfine",
+      "version": "1.20.0",
+      "purl": "pkg:generic/hyperfine",
+      "description": "System tool referenced by the project (dev dependency)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/perf",
+      "name": "perf",
+      "version": "7.2.3-1",
+      "purl": "pkg:generic/perf",
+      "description": "System tool referenced by the project (dev dependency)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/strace",
+      "name": "strace",
+      "version": "7.0",
+      "purl": "pkg:generic/strace",
       "description": "System tool referenced by the project (dev dependency)",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
       },
@@ -244,8 +271,8 @@
   ],
   "dependencies": [
     {
-      "ref": "pkg:alire/covex@1.44.0",
-      "dependsOn": ["pkg:generic/flexsearch", "pkg:generic/graphre", "pkg:generic/yace", "pkg:generic/nomnoml", "pkg:npm/@playwright/test@1.62.1", "pkg:alire/gnatprove", "pkg:alire/gnatdoc_bin", "pkg:alire/gnatformat_bin", "pkg:pypi/sphinx@9.1.0", "pkg:pypi/myst-parser@5.1.0", "pkg:pypi/furo@2025.12.19", "pkg:generic/python", "pkg:generic/bash", "pkg:generic/curl", "pkg:generic/alr", "pkg:generic/go", "pkg:generic/python3", "pkg:generic/git", "pkg:generic/make", "pkg:generic/jj", "pkg:generic/mandb", "pkg:generic/pnpm", "pkg:generic/npm"]
+      "ref": "pkg:alire/covex@1.45.0",
+      "dependsOn": ["pkg:generic/flexsearch", "pkg:generic/graphre", "pkg:generic/yace", "pkg:generic/nomnoml", "pkg:npm/@playwright/test@1.62.1", "pkg:alire/gnatprove", "pkg:alire/gnatdoc_bin", "pkg:alire/gnatformat_bin", "pkg:pypi/sphinx@9.1.0", "pkg:pypi/myst-parser@5.1.0", "pkg:pypi/furo@2025.12.19", "pkg:generic/python", "pkg:generic/bash", "pkg:generic/curl", "pkg:generic/alr", "pkg:generic/go", "pkg:generic/python3", "pkg:generic/git", "pkg:generic/make", "pkg:generic/jj", "pkg:generic/hyperfine", "pkg:generic/perf", "pkg:generic/strace", "pkg:generic/mandb", "pkg:generic/pnpm", "pkg:generic/npm"]
     }
   ]
 }

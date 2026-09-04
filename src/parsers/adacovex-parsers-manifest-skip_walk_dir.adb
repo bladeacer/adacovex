@@ -8,12 +8,16 @@ separate (Adacovex.Parsers.Manifest)
 --  truth for the Python dependency graph (the complexity check excludes it
 --  for the same reason since 1.40.0).
 --
+--  `_build` is the shared convention for Sphinx (docs/_build), Meson, Dune,
+--  and GNAT collinear build outputs.  A build-product tree can never be a
+--  vendored package (no ecosystem manifest is authored there), so every
+--  consumer of this predicate can skip it safely -- measured on the
+--  self-audit tree at ~750 stats per run for docs/_build alone (1.45.0).
+--
 --  Deliberately NOT here: `node_modules` (a vendor root the generic
---  vendored discovery must descend into) and `_build` is likewise left to
---  the walkers that own the skip decision per site -- the tools scan, the
---  graph-key language probe, and the GPR collection carry their own
---  extended skip sets so build-product trees are never enumerated while
---  vendor roots stay discoverable.
+--  vendored discovery must descend into) -- the walkers that own the skip
+--  decision per site add their own extended entries so build-product trees
+--  are never enumerated while vendor roots stay discoverable.
 function Skip_Walk_Dir (N : String) return Boolean is
 begin
    return
@@ -24,5 +28,6 @@ begin
      or else N = ".venv"
      or else N = "alire"
      or else N = "obj"
-     or else N = "bin";
+     or else N = "bin"
+     or else N = "_build";
 end Skip_Walk_Dir;

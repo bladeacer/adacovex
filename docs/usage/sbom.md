@@ -241,13 +241,36 @@ copy.
 shell scripts, Python tools, CI workflows, GPR files, Ada sources) for a
 curated set of known system binaries, then keeps only the tools that are
 installed on `PATH`. Each becomes a `system`-scope component of the root with
-a `pkg:generic/<name>` PURL, a resolved `version` (from `<tool> --version`),
-and no external link or licence -- by design adacovex provisions only the
-version for system tools and never guesses a repository or licence for them.
+a `pkg:generic/<name>` PURL, a resolved `version`, and no external link or
+licence -- by design adacovex provisions only the version for system tools
+and never guesses a repository or licence for them.
+
+The table is deny-by-default and grouped by category (build drivers, language
+implementations and package managers, VCS, documentation tooling, CI and
+container plumbing, performance engineering). A tool lands in the SBOM only
+when (a) its exact lowercase name appears as a whole word in one of the
+scanned build files, and (b) it is installed on `PATH`; whole-word matching
+keeps "makefile" from registering "make". The table stores only the name and
+category: the version-probe flag is inferred at run time by trying
+`--version`, then `-v`, then the `version` subcommand, and taking the first
+flag that yields a version token -- so a subcommand-only tool (go, fossil,
+git-lfs) needs no special-cased column and a misconfigured entry cannot
+exist.
+
+Resolved versions are never hardcoded. Each probe result is cached per
+machine (outside the result cache) together with the identity of the
+binary it was probed from: the PATH-resolved executable path plus its size
+and mtime. Before a cached version is served, adacovex re-resolves the
+tool on `PATH` and compares the binary identity -- an upgraded, replaced,
+or PATH-shadowed binary re-probes on the next run, and an unchanged
+toolchain serves from cache with no subprocess spawns. A version in the
+SBOM therefore always describes the binary that is installed now, not the
+binary that happened to be installed when the cache was filled.
+
 `system` is a first-class dependency scope, distinct from `base`, `dev`,
 `transitive`, `vendored`, and `test`; the dashboard gives it its own filter
 checkbox, badge colour, and legend entry, and the SBOM lists it under
-`system` scope.  The dashboard marks these with a `system` scope badge and a
+`system` scope. The dashboard marks these with a `system` scope badge and a
 note in the detail panel.
 
 The result shows up in the dashboard Dependency tab (per-dependency detail

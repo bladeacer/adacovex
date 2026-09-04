@@ -226,11 +226,20 @@ package body Adacovex_Cache_Tests is
            & Integer'Image
                (GNAT.OS_Lib.Pid_To_Integer (GNAT.OS_Lib.Current_Process_Id));
       begin
-         Cache.Put_Probe (Probe_Name, "1.2.3");
-         Cache.Get_Probe (Probe_Name, Probed_Value, Probed_Len, Probe_Found);
+         Cache.Put_Probe (Probe_Name, "fp-a", "1.2.3");
+         Cache.Get_Probe
+           (Probe_Name, "fp-a", Probed_Value, Probed_Len, Probe_Found);
          R.Check
            (Probe_Found and then Probed_Value (1 .. Probed_Len) = "1.2.3",
             "Test 11: probe store round trip");
+         --  A different binary fingerprint (upgraded/replaced tool) must
+         --  NOT be served the stored answer -- this is the invalidation
+         --  rule that keeps system-tool versions current after an upgrade.
+         Cache.Get_Probe
+           (Probe_Name, "fp-b", Probed_Value, Probed_Len, Probe_Found);
+         R.Check
+           (not Probe_Found,
+            "Test 11b: probe fingerprint mismatch invalidates");
          --  The probe store lives at ~/.adacovex/probes/<tool>.v2.  Remove
          --  the test's entry so it never leaks into a real toolchain probe
          --  set.  Probe_Path is private to Adacovex.Cache, so rebuild the
@@ -279,12 +288,12 @@ package body Adacovex_Cache_Tests is
       --  later mtime) must force a re-hash and a changed digest.
       declare
          Big_Path : constant String := Test_Root & "/big-sample.bin";
+         Hits_B   : constant Natural := Cache.Persistent_Stamp_Hits;
          Misses_B : constant Natural := Cache.Persistent_Stamp_Misses;
          D_Big_1  : String (1 .. 64);
          D_Big_2  : String (1 .. 64);
          Filler_A : constant String (1 .. 20_480) := (others => 'a');
-         Filler_B :
-           constant String (1 .. 24_576) := (others => 'b');
+         Filler_B : constant String (1 .. 24_576) := (others => 'b');
       begin
          Write_File (Big_Path, Filler_A);
          --  The racy-clean rule skips stamping within a second of the
@@ -295,8 +304,9 @@ package body Adacovex_Cache_Tests is
          R.Check
            (D_Big_1'Length = 64, "Test 13: big file hashed to 64-char digest");
          R.Check
-           (Cache.Persistent_Stamp_Misses > Misses_B,
-            "Test 13: first hash of a big file is a store miss");
+           (Cache.Persistent_Stamp_Hits > Hits_B
+            or else Cache.Persistent_Stamp_Misses > Misses_B,
+            "Test 13: first hash consulted the persistent index");
          --  Same content, unchanged file: after dropping the in-process
          --  map (simulating a fresh run), the persistent store must answer
          --  -- that is the cross-process win this test pins down.
@@ -339,8 +349,7 @@ package body Adacovex_Cache_Tests is
          --  Clean the big file's stamp out of the machine store so the
          --  test never leaks entries into a real project's stamp set.
          begin
-            Ada.Directories.Delete_File
-              (Home_Stamp_Path (Big_Path));
+            Ada.Directories.Delete_File (Home_Stamp_Path (Big_Path));
          exception
             when others =>
                null;

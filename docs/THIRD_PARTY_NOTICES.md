@@ -106,7 +106,7 @@ is linked into adacovex:
 The size/mtime stamp validation additionally follows the same shape as
 git's index dirty tracking, including the racy-clean guard against files
 modified within the same second as the record: [git](https://git-scm.com/)
-(https://github.com/git/git, GPL-2.0).
+(GPL-2.0).
 
 ## Acknowledgments
 

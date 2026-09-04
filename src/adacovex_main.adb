@@ -5,6 +5,7 @@ with Ada.Calendar;
 with Ada.Environment_Variables;
 with GNAT.Sockets;
 with Adacovex.Types;
+with Adacovex.Dir_Cache;
 with Adacovex.Config;
 with Adacovex.Completion;
 with Adacovex.Diff;
@@ -1200,6 +1201,12 @@ begin
       Ada.Text_IO.Put_Line
         (Adacovex.Ansi.Dim ("Completed in" & Duration'Image (Elapsed)));
    end;
+
+   Verbose
+     ("dir-cache: hits="
+      & Natural'Image (Adacovex.Dir_Cache.Hits)
+      & " misses="
+      & Natural'Image (Adacovex.Dir_Cache.Misses));
 
    Ada.Command_Line.Set_Exit_Status (Exit_St);
 

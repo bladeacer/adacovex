@@ -43,6 +43,7 @@ from pathlib import Path
 from typing import List
 
 ROOT: Path = Path(__file__).resolve().parent.parent
+SECONDARY: Path = ROOT.parent / "Ada_CRDT"
 
 COLD_RUNS: int = 10
 WARM_RUNS: int = 15
@@ -63,35 +64,38 @@ def hyperfine_available() -> bool:
     return shutil.which("hyperfine") is not None
 
 
-def run_cold_hyperfine(cache: str) -> None:
-    print("=== Pipeline cold (fresh result cache) ===")
+def run_cold_hyperfine(cache: str, target_args: List[str] = None,
+                       label: str = "Pipeline cold (fresh result cache)") -> None:
+    print(f"=== {label} ===")
     cmd = [
         "hyperfine", "--runs", str(COLD_RUNS),
         "--prepare", f"rm -rf {cache}",
-        f"./bin/adacovex --cache-dir={cache}",
+        "./bin/adacovex " + " ".join(target_args or []) + f" --cache-dir={cache}",
         "--export-markdown", "/tmp/adacovex-bench-cold.md",
     ]
     subprocess.run(cmd, cwd=str(ROOT), check=True)
 
 
-def run_warm_hyperfine(cache: str) -> None:
+def run_warm_hyperfine(cache: str, target_args: List[str] = None,
+                       label: str = "Pipeline warm (populated caches)") -> None:
     # One warm-up run populates the result + probe caches.
     subprocess.run(
-        [str(ROOT / "bin" / "adacovex"), f"--cache-dir={cache}"],
+        [str(ROOT / "bin" / "adacovex")] + (target_args or [])
+        + [f"--cache-dir={cache}"],
         cwd=str(ROOT),
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
-    print("=== Pipeline warm (populated caches) ===")
+    print(f"=== {label} ===")
     cmd = [
         "hyperfine", "--warmup", "2", "--runs", str(WARM_RUNS),
-        f"./bin/adacovex --cache-dir={cache}",
+        "./bin/adacovex " + " ".join(target_args or []) + f" --cache-dir={cache}",
         "--export-markdown", "/tmp/adacovex-bench-warm.md",
     ]
     subprocess.run(cmd, cwd=str(ROOT), check=True)
 
 
-def ensure_proof_output() -> None:
+def ensure_proof_output(target: Path = ROOT) -> None:
     """Make sure <target>/obj/gnatprove/gnatprove.out exists.
 
     The pipeline scenarios grade the proof summary; without one the run
@@ -100,12 +104,13 @@ def ensure_proof_output() -> None:
     prove --no-cache) when it is missing so the pipeline scenarios measure
     the pipeline, not the absence of a proof.
     """
-    out = ROOT / "obj" / "gnatprove" / "gnatprove.out"
+    out = target / "obj" / "gnatprove" / "gnatprove.out"
     if out.is_file():
         return
-    print("== proof summary missing; generating via one prove --no-cache ==")
+    print(f"== proof summary missing for {target.name}; one prove --no-cache ==")
     subprocess.run(
-        [str(ROOT / "bin" / "adacovex"), "prove", "--no-cache"],
+        [str(ROOT / "bin" / "adacovex"), "prove", "--no-cache",
+         f"--target={target}"],
         cwd=str(ROOT),
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
@@ -218,6 +223,37 @@ def bench() -> int:
                 stderr=subprocess.DEVNULL,
             )
             time_runs(prove_cache, "prove warm", FALLBACK_RUNS, reset=False)
+        # Secondary target: the Ada_CRDT dogfood tree exercises a second
+        # codebase shape (different file mix, vendored layout, manifest set)
+        # so a regression tied to one project's structure cannot hide behind
+        # self-assessment numbers.  Pipeline shapes only -- the prove shapes
+        # are already covered against the primary tree.
+        if SECONDARY.is_dir():
+            sec_cache = tempfile.mkdtemp(prefix="adacovex-bench-crdt-")
+            try:
+                ensure_proof_output(SECONDARY)
+                sec_args = [f"--target={SECONDARY}"]
+                if hyperfine_available():
+                    run_cold_hyperfine(sec_cache, sec_args,
+                                       f"Pipeline cold, secondary target {SECONDARY.name}")
+                    run_warm_hyperfine(sec_cache, sec_args,
+                                       f"Pipeline warm, secondary target {SECONDARY.name}")
+                else:
+                    time_runs(sec_cache, f"cold ({SECONDARY.name})",
+                              FALLBACK_RUNS, reset=True, extra_args=sec_args)
+                    subprocess.run(
+                        [str(ROOT / "bin" / "adacovex")] + sec_args
+                        + [f"--cache-dir={sec_cache}"],
+                        cwd=str(ROOT),
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                    )
+                    time_runs(sec_cache, f"warm ({SECONDARY.name})",
+                              FALLBACK_RUNS, reset=False, extra_args=sec_args)
+            finally:
+                shutil.rmtree(sec_cache, ignore_errors=True)
+        else:
+            print(f"== secondary target {SECONDARY} not present; skipped ==")
         print()
         return report_binary_size()
     finally:
