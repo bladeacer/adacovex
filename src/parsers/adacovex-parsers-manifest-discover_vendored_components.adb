@@ -258,7 +258,8 @@ is
         or else N = "node_modules"
         or else N = ".venv"
         or else N = ".headroom"
-        or else N = ".lccst";
+        or else N = ".lccst"
+        or else N = "_build";
    end Skip_Vendored_Walk_Dir;
 
    procedure Scan_One_Vendored_Root (Root : String) is

@@ -7,6 +7,13 @@ separate (Adacovex.Parsers.Manifest)
 --  walk must not enumerate it -- the requirements file is the source of
 --  truth for the Python dependency graph (the complexity check excludes it
 --  for the same reason since 1.40.0).
+--
+--  Deliberately NOT here: `node_modules` (a vendor root the generic
+--  vendored discovery must descend into) and `_build` is likewise left to
+--  the walkers that own the skip decision per site -- the tools scan, the
+--  graph-key language probe, and the GPR collection carry their own
+--  extended skip sets so build-product trees are never enumerated while
+--  vendor roots stay discoverable.
 function Skip_Walk_Dir (N : String) return Boolean is
 begin
    return

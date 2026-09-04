@@ -1124,6 +1124,7 @@ package body Adacovex.Parsers.Manifest is
                              and then N /= ".venv"
                              and then N /= ".headroom"
                              and then N /= ".lccst"
+                             and then N /= "_build"
                            then
                               declare
                                  NP : constant String := Full_Name (E);
@@ -1230,6 +1231,7 @@ package body Adacovex.Parsers.Manifest is
                                 and N /= ".venv"
                                 and N /= ".headroom"
                                 and N /= ".lccst"
+                                and N /= "_build"
                               then
                                  Push_Dir (Path);
                               end if;
@@ -1446,7 +1448,11 @@ package body Adacovex.Parsers.Manifest is
                         Path : constant String := Full_Name (H_Ent);
                      begin
                         if Kind (H_Ent) = Directory then
-                           if N /= "." and N /= ".." then
+                           if N /= "."
+                             and then N /= ".."
+                             and then N /= "_build"
+                             and then not Skip_Walk_Dir (N)
+                           then
                               Push_Dir
                                 (H_Stack, Path, Current.Level + 1, Max_Levels);
                            end if;

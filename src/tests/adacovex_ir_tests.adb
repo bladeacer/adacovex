@@ -151,7 +151,9 @@ package body Adacovex_IR_Tests is
          or else (System.Word_Size in 17 .. 32
                   and then Host_Word_Size = Bits_32)
          or else (System.Word_Size > 32 and then Host_Word_Size = Bits_64),
-         "Test 11: Host_Word_Size matches System.Word_Size");      --  Test 12: Synthesize_Bounded_Function emits the checked-add shape
+         "Test 11: Host_Word_Size matches System.Word_Size");
+
+      --  Test 12: Synthesize_Bounded_Function emits the checked-add shape
       --  for a single signed parameter: bounded type plus the half-range
       --  Pre guard gnatprove discharges (the same guard as Checked_Add32 /
       --  IR_Bounds.Add32).  A one-pair list is the minimal multi-pair case.

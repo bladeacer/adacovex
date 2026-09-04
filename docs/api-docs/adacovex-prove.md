@@ -22,7 +22,12 @@ manifest-declared prover is authoritative.  When it cannot be
 deployed, the run fails instead of falling back.  A different
 gnatprove version can change which VCs are discharged.  Results must
 always come from the pinned prover.  Priorities 2 to 5 apply only to
-projects whose manifest does not declare gnatprove.
+projects whose manifest does not declare gnatprove.  The first
+deployment downloads a ~130 MB bundle through alr (one-time per
+version; a progress line says so up front).  Every later run reuses
+the deployed crate under ~/.adacovex/toolchain with no download, and
+two projects pinning different versions keep both toolchains side
+by side there.
 
 #. A gnatprove version pinned globally.  The pin comes from the
 ADACOVEX_GNATPROVE_VERSION environment variable or the

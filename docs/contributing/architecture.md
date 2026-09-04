@@ -14,8 +14,10 @@ In particular `gnatprove` is *not* a declared dependency. adacovex analyses `gna
   graph scanning.
 - **`alire-dev.toml`**: The development manifest. Extends `alire.toml` with
   dev-only tools (`gnatprove`, `gnatdoc_bin`, `gnatformat_bin`) needed for
-  `make prove`, `make doc`, and `make fmt`. Used for toolchain resolution when
-  running `alr exec`.
+  `make prove`, `make doc`, and `make fmt`. The `prove` subcommand reads the
+  gnatprove pin from it and deploys that exact version into
+  `~/.adacovex/toolchain/` via `alr -n get` (reused after the first run);
+  `make doc`/`make fmt` run their tools through `alr exec`.
 
 When both files exist, `Build_Dependency_Graph` reads **both**: a dependency
 declared in `alire.toml` is classified `Scope_Base` (explicit/clean dep) and

@@ -36,6 +36,45 @@ alr build
 ./bin/adacovex prove --target=.   # deploys gnatprove via alr get, then runs it
 ```
 
+### How `prove` resolves gnatprove (Option 1)
+
+The manifest pin is **authoritative**: when `alire-dev.toml` or `alire.toml`
+declares `gnatprove`, `covex prove` always runs that version and never falls
+back to another prover (a prover-version drift can change which VCs are
+discharged, so results must always come from the pinned toolchain).  The
+resolution works like this:
+
+1. The version constraint is read from the manifest (`^16.1.0` -> `16.1.0`;
+   the leading operator is stripped because `alr -n get` accepts a bare
+   version only).
+2. adacovex looks for an already-deployed `gnatprove_<version>_<hash>/`
+   crate under `~/.adacovex/toolchain/`.  One found, it is reused directly
+   -- no download, no `alr exec`, and no composition of your project's
+   whole dependency set (flaky third-party downloads can never fail a
+   proof run).
+3. Not deployed yet: adacovex runs `alr -n get gnatprove=<version>`
+   **into `~/.adacovex/toolchain/`** (not into your project's workspace)
+   and prints a progress line -- the first deployment downloads a ~130 MB
+   bundle and may take a minute on a slow link.  It is one-time per
+   version: every later run (and every other project pinning the same
+   version) reuses the deployed binary.  A deployment that fails is a
+   failed run, never a silent fallback.
+4. The deployed gnatprove is run with its `bin/` prepended to `PATH` so
+   the solvers it ships (Z3, CVC5, Alt-Ergo) resolve.
+
+The deployment is keyed by the exact version, so two projects pinning
+different gnatprove versions keep both toolchains side by side under
+`~/.adacovex/toolchain/` without interfering.  A manifest that declares
+gnatprove with an unparseable version expression fails loudly rather than
+guessing.
+
+Projects that do *not* declare gnatprove fall back to (in order): a global
+pin (`ADACOVEX_GNATPROVE_VERSION`, or `[prove] gnatprove-version` in
+`~/.adacovex/adacovex.toml`, deployed through the same `alr -n get` path),
+a gnatprove on `$PATH`, a cached toolchain in `~/.adacovex/toolchain/`, and
+finally the platform toolchain download.  `adacovex status` reports which
+tier applies without deploying anything.
+
 ## Option 2: `alr install` (global, to `$PATH`)
 
 ```bash

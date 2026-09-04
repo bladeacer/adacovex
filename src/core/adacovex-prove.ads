@@ -22,7 +22,12 @@ with Ada.Strings.Unbounded;
 --       deployed, the run fails instead of falling back.  A different
 --       gnatprove version can change which VCs are discharged.  Results must
 --       always come from the pinned prover.  Priorities 2 to 5 apply only to
---       projects whose manifest does not declare gnatprove.
+--       projects whose manifest does not declare gnatprove.  The first
+--       deployment downloads a ~130 MB bundle through alr (one-time per
+--       version; a progress line says so up front).  Every later run reuses
+--       the deployed crate under ~/.adacovex/toolchain with no download, and
+--       two projects pinning different versions keep both toolchains side
+--       by side there.
 --    2. A gnatprove version pinned globally.  The pin comes from the
 --       ADACOVEX_GNATPROVE_VERSION environment variable or the
 --       `[prove] gnatprove-version = "16.1.0"` key in
@@ -159,8 +164,12 @@ package Adacovex.Prove is
    --  already on PATH, it prepends the toolchain bin directory to PATH for the
    --  child.  The options (jobs, level, timeout, steps, memlimit, force,
    --  unrolling, inlining) are forwarded to gnatprove.  On success, gnatprove
-   --  writes a fresh <target>/obj/gnatprove/gnatprove.out.  The command's
-   --  stdout and stderr stream to the parent's terminal.
+   --  writes a fresh <target>/obj/gnatprove/gnatprove.out, and both the
+   --  success marker and the summary content go into the proof result cache.
+   --  A later run over unchanged inputs short-circuits: it restores the
+   --  cached gnatprove.out (so the assessment pipeline can parse it even
+   --  when obj/gnatprove/ was wiped) and skips the prover entirely.  The
+   --  command's stdout and stderr stream to the parent's terminal.
    --  @param Target_Dir  Project root directory.
    --  @param Opts  GNATprove invocation options.
    --  @param Success  True if gnatprove ran and exited 0.

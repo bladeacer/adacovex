@@ -3,6 +3,8 @@ with Ada.Strings.Fixed;
 with Ada.Strings.Unbounded;
 with Ada.Text_IO;
 with Ada.Environment_Variables;
+with Ada.Streams;
+with Ada.Streams.Stream_IO;
 with GNAT.OS_Lib;
 with Adacovex;
 with Adacovex.Ansi;
@@ -94,6 +96,7 @@ package body Adacovex.Prove is
            or else Name = ".venv"
            or else Name = ".headroom"
            or else Name = ".lccst"
+           or else Name = "_build"
            or else Name = "dist"
            or else Name = "index"
            or else Name = "resources"
@@ -584,6 +587,16 @@ package body Adacovex.Prove is
          return;
       end if;
 
+      --  First deployment of this gnatprove version: alr downloads a
+      --  ~130 MB toolchain bundle and unpacks it, which can take a minute
+      --  on a slow link.  Say so up front -- a silent minute of nothing
+      --  looks like a hang.  The deployment is one-time per version: every
+      --  later run reuses the deployed crate above without any download.
+      Ada.Text_IO.Put_Line
+        ("  deploy:    gnatprove "
+         & Bare
+         & " not in ~/.adacovex/toolchain -- downloading via alr"
+         & " (one-time, may take a minute)...");
       Ada.Directories.Create_Path (Dst);
       Run_Command
         ((new String'("-c"),
@@ -1147,6 +1160,61 @@ package body Adacovex.Prove is
                      GPR (1 .. GLen),
                      Options (1 .. OLen)));
       end Prove_Cache_Key;
+
+      --  Namespace the cached gnatprove.out *content* under the input hash.
+      --  Two blobs are stored per proved input: the "1" marker under the
+      --  bare input hash (a cheap hit probe) and the summary text under this
+      --  derived key.  A warm hit restores the summary the assessment
+      --  pipeline parses even when obj/gnatprove/ was wiped.
+      function Proof_Output_Key (Input_Hash : String) return String is
+      begin
+         return "proveout:" & Input_Hash;
+      end Proof_Output_Key;
+
+      --  Write the cached gnatprove.out content back to the canonical path
+      --  the assessment pipeline parses (<target>/obj/gnatprove/gnatprove.out)
+      --  when the cached summary exists.  A no-op (silently) when the
+      --  summary blob is missing, oversized, or the write fails -- the
+      --  pipeline then reports Stone/0-VC exactly as before this restore
+      --  existed, never a corrupt summary.
+      procedure Restore_Proof_Output (Dir : String; Input_Hash : String) is
+         Blob     : String (1 .. Adacovex.Cache.Max_Cache_Blob);
+         BLen     : Natural := 0;
+         Found    : Boolean := False;
+         Out_Path : constant String :=
+           Strip_Trailing_Slash (Dir) & "/obj/gnatprove/gnatprove.out";
+      begin
+         Adacovex.Cache.Get_Cached
+           (Proof_Output_Key (Input_Hash), Blob, BLen, Found);
+         if not Found or else BLen = 0 then
+            return;
+         end if;
+         declare
+            use Ada.Streams.Stream_IO;
+            F   : File_Type;
+            SEA :
+              Ada.Streams.Stream_Element_Array
+                (0 .. Ada.Streams.Stream_Element_Offset (BLen - 1));
+         begin
+            Ada.Directories.Create_Path
+              (Strip_Trailing_Slash (Dir) & "/obj/gnatprove");
+            if Ada.Directories.Exists (Out_Path) then
+               Ada.Directories.Delete_File (Out_Path);
+            end if;
+            Create (F, Out_File, Out_Path);
+            for I in 1 .. BLen loop
+               SEA (Ada.Streams.Stream_Element_Offset (I - 1)) :=
+                 Ada.Streams.Stream_Element (Character'Pos (Blob (I)));
+            end loop;
+            Write (F, SEA);
+            Close (F);
+         exception
+            when others =>
+               if Is_Open (F) then
+                  Close (F);
+               end if;
+         end;
+      end Restore_Proof_Output;
    begin
       declare
          Pin : constant String := Global_GNATprove_Pin;
@@ -1245,18 +1313,21 @@ package body Adacovex.Prove is
               Adacovex.CPUs.Is_Running_In_CI));
 
       --  Result-cache short-circuit: if the exact set of inputs (source tree
-      --  content + .gpr + options) has been proved before, reuse the prior
+      --  content + .gpr + options) has been proved before, restore the prior
       --  gnatprove.out instead of re-running the prover.  This is the single
       --  biggest CI speedup: an unchanged project serves the proof from disk.
+      --  The cached blob carries the gnatprove.out content itself (stored
+      --  after a successful run, below), so a warm hit rebuilds the summary
+      --  file the assessment pipeline parses even when obj/gnatprove/ was
+      --  wiped -- without the restore, a warm hit on a wiped tree left
+      --  Stone/0-VC output and a failing assessment.
       if Opts.Cache then
          declare
             In_Hash : constant String := Prove_Cache_Key;
-            Dst     : String (1 .. Types.Max_Path);
-            DLen    : Natural := 0;
             Hit     : Boolean := Adacovex.Cache.Exists (In_Hash);
-            pragma Unreferenced (Dst, DLen);
          begin
             if Hit then
+               Restore_Proof_Output (Target_Dir, In_Hash);
                Ada.Text_IO.Put_Line
                  ("  cache:     gnatprove inputs unchanged -- reusing prior"
                   & " proof (gnatprove.out served from cache)");
@@ -1388,13 +1459,66 @@ package body Adacovex.Prove is
          end if;
          if Opts.Cache then
             declare
-               In_Hash : constant String := Prove_Cache_Key;
-               OK2     : Boolean;
+               In_Hash  : constant String := Prove_Cache_Key;
+               OK2      : Boolean;
+               Out_Buf  : String (1 .. Adacovex.Cache.Max_Cache_Blob);
+               Out_Len  : Natural := 0;
+               Read_Ok  : Boolean := False;
+               Out_Path : constant String :=
+                 Strip_Trailing_Slash (Target_Dir)
+                 & "/obj/gnatprove/gnatprove.out";
             begin
+               --  Read the freshly generated gnatprove.out and store its
+               --  content under a summary key derived from the input hash.
+               --  A later warm hit (possibly on a tree whose obj/gnatprove/
+               --  was wiped) then restores the exact summary the pipeline
+               --  parses.
+               begin
+                  if Ada.Directories.Exists (Out_Path) then
+                     Out_Len := Natural (Ada.Directories.Size (Out_Path));
+                     if Out_Len > 0 and then Out_Len <= Out_Buf'Length then
+                        declare
+                           use Ada.Streams.Stream_IO;
+                           F    : File_Type;
+                           SEA  :
+                             Ada.Streams.Stream_Element_Array
+                               (0
+                                .. Ada.Streams.Stream_Element_Offset
+                                     (Out_Len - 1));
+                           Last : Ada.Streams.Stream_Element_Offset;
+                        begin
+                           Open (F, In_File, Out_Path);
+                           Read (F, SEA, Last);
+                           Close (F);
+                           Out_Len := Natural (Last) + 1 - Natural (SEA'First);
+                           for I in 1 .. Out_Len loop
+                              Out_Buf (I) :=
+                                Character'Val
+                                  (SEA
+                                     (Ada.Streams.Stream_Element_Offset
+                                        (I - 1)));
+                           end loop;
+                           Read_Ok := True;
+                        exception
+                           when others =>
+                              if Is_Open (F) then
+                                 Close (F);
+                              end if;
+                        end;
+                     end if;
+                  end if;
+               exception
+                  when others =>
+                     null;
+               end;
                Adacovex.Cache.Store (In_Hash, "1", OK2);
                if OK2 then
                   Ada.Text_IO.Put_Line
                     ("  cache:     gnatprove result cached for these inputs");
+               end if;
+               if Read_Ok then
+                  Adacovex.Cache.Store
+                    (Proof_Output_Key (In_Hash), Out_Buf (1 .. Out_Len), OK2);
                end if;
             end;
          end if;

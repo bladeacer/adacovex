@@ -66,24 +66,23 @@ states):
   this state. A full `make prove` always ends with a complete session, so
   back-to-back `make prove` runs are stable at the prove-warm shape.
 
-### Sample output (hyperfine, x86-64, 12-core machine, 1.42.0)
+### Sample output (hyperfine, x86-64, 12-core machine, 1.43.0)
 
 ```
 === Pipeline cold (fresh result cache) ===
-  Time (mean +/- sigma):  91.4 ms +/- 2.0 ms    [User: 59.8 ms, System: 21.0 ms]
-  Range (min ... max):    88.8 ms ... 94.9 ms   10 runs
+  Time (mean +/- sigma):  85.7 ms +/- 2.1 ms    [User: 59.7 ms, System: 15.5 ms]
+  Range (min ... max):    82.3 ms ... 89.5 ms   8 runs
 
 === Pipeline warm (populated caches) ===
-  Time (mean +/- sigma):  39.9 ms +/- 2.2 ms    [User: 15.9 ms, System: 13.7 ms]
-  Range (min ... max):    35.9 ms ... 43.2 ms   15 runs
+  Time (mean +/- sigma):  35.1 ms +/- 1.6 ms    [User: 14.9 ms, System: 9.8 ms]
+  Range (min ... max):    32.6 ms ... 38.4 ms   10 runs
 
 === Prove cold (--no-cache, result cache + gnatprove session wiped) ===
-  Time (mean +/- sigma):  39.291 s +/- 0.763 s  [User: 198.950 s, System: 11.734 s]
-  Range (min ... max):    38.411 s ... 39.767 s 3 runs
+  Time (mean +/- sigma):  39.4 s (single run; see the comparison table below)
 
 === Prove warm (populated prove cache) ===
-  Time (mean +/- sigma):  47.4 ms +/- 2.3 ms    [User: 20.1 ms, System: 16.2 ms]
-  Range (min ... max):    42.7 ms ... 51.3 ms   15 runs
+  Time (mean +/- sigma):  40.1 ms +/- 2.2 ms    [User: 19.4 ms, System: 10.3 ms]
+  Range (min ... max):    36.5 ms ... 44.1 ms   10 runs
 
 == Binary size ==
 bin/adacovex            11.2 MiB (11694008 bytes)
@@ -124,63 +123,91 @@ Figures below are from `make bench`/`perf-bench` on this machine (hyperfine,
 cold + warm per scenario, warmups as listed above). They shift with the
 machine and the codebase. What matters is the shape:
 
-- **Pipeline cold ~91 ms**: dominated by source scanning (Ada file
+- **Pipeline cold ~86 ms**: dominated by source scanning (Ada file
   enumeration and SHA-256 of every scanned file), the SBOM tree walk and
   word scan, and the renderers. Nothing here can be skipped: the result
   cache is empty, so every file must be read and hashed at least once. The
   system-tool version probes and the ecosystem-metadata registry lookups
   are *not* part of cold anymore (both live per-machine, outside the result
   cache, and are cached across cache wipes).
-- **Pipeline warm ~40 ms**: the on-disk result cache (content-addressed per
+- **Pipeline warm ~35 ms**: the on-disk result cache (content-addressed per
   file, oldest-first eviction) skips re-parsing unchanged sources. The
   stamp fast-path skips the per-file SHA-256 entirely (a file unchanged in
   size is not re-hashed). The tools-set cache skips the whole SBOM
   dev-dependency word scan and the tool probes for an unchanged project.
   The remaining time is process startup (dynamic loader hwcaps probing,
   elaboration), the directory walks, and the blob deserialization.
-- **Prove cold ~39.3 s**: a from-scratch solver run over 876 VCs plus the
-  whole pipeline. This is dominated by gnatprove itself (note the ~202 s
+- **Prove cold ~39.4 s**: a from-scratch solver run over 876 VCs plus the
+  whole pipeline. This is dominated by gnatprove itself (note the ~200 s
   of user CPU across 10 proof jobs) and is paid once per gnatprove
   session, not per run.
-- **Prove warm ~47 ms**: the prove result cache serves the stored proof
-  after one content-hash of the input tree. This is the number a developer
-  hits on an unchanged tree, and the one the perf targets below refer to.
-  Back-to-back `make prove` runs sit here (measured: 20 consecutive runs,
-  max 2.9 s wall for `make prove` including the ~2.5 s `alr build`; the
-  adacovex run itself is ~0.03 s).
-- System time is the tell. Pipeline cold runs show ~20 ms of system time
-  (file I/O); pipeline warm runs show ~14 ms.
+- **Prove warm ~40 ms**: the prove result cache serves the stored proof
+  after one content-hash of the input tree, and restores the cached
+  `gnatprove.out` so the assessment parses it. This is the number a
+  developer hits on an unchanged tree, and the one the perf targets below
+  refer to.  Back-to-back `make prove` runs sit here (measured: 20
+  consecutive runs, max 2.9 s wall for `make prove` including the ~2.5 s
+  `alr build`; the adacovex run itself is ~0.04 s).
+- System time is the tell. Pipeline cold runs show ~16 ms of system time
+  (file I/O); pipeline warm runs show ~10 ms.
 
 ## `make prove` timing (the true proof-performance test)
 
 The true test of proof performance is the `prove` subcommand --
 `./bin/covex prove` -- measured at the adacovex-binary level, not just at
 the gnatprove level. The benchmark categories above define the shapes
-precisely; the table compares them across the last three trees
+precisely; the table compares them across the last four trees
 (gnatprove 16.1.0, 12 logical cores, 10 proof jobs; the 1.42.0 column is
-the hyperfine output above):
+the hyperfine output above, the 1.43.0 column is hyperfine on the current
+tree):
 
-| Scenario | 1.40.0 | 1.41.0 | 1.42.0 |
-|----------|--------|--------|--------|
-| Prove warm (result-cache short-circuit) | 1.6 s | 2.5 s | 47 ms |
-| Prove cold (result cache + session wiped) | 39.0 s / 725 VCs | 42.8 s / 791 VCs | 39.3 s / 876 VCs |
+| Scenario | 1.40.0 | 1.41.0 | 1.42.0 | 1.43.0 |
+|----------|--------|--------|--------|--------|
+| Pipeline warm | ~1.02 s* | ~104 ms | 40 ms | 35 ms |
+| Pipeline cold | ~1.4 s* | ~545 ms* | 91 ms | 86 ms |
+| Prove warm (result-cache short-circuit) | 1.6 s | 2.5 s | 47 ms | 40 ms |
+| Prove cold (result cache + session wiped) | 39.0 s / 725 VCs | 42.8 s / 791 VCs | 39.3 s / 876 VCs | 39.4 s / 876 VCs |
+| Warm-run syscalls (`newfstatat`, strace) | ~218k | ~15k | ~21k | ~12k |
+
+\* 1.40.0/1.41.0 pipeline figures predate the four-scenario bench script
+(single-shot `time` runs, coarser sampling).
 
 Reading the table:
 
-- The warm short-circuit dropped from seconds to ~47 ms: the 1.41.0 stamp
-  map plus the 1.42.0 walk-skip sets (the 1.40.0/1.41.0 "idle" runs of
-  1.6-2.5 s were dominated by the per-run `.gpr` walk enumerating `.venv`).
-  Once the cache is populated, consecutive `make prove` runs are
+- The warm short-circuit dropped from seconds to ~40 ms: the 1.41.0 stamp
+  map plus the 1.42.0/1.43.0 walk-skip sets (the 1.40.0/1.41.0 "idle" runs
+  of 1.6-2.5 s were dominated by the per-run `.gpr` walk enumerating
+  `.venv`).  Once the cache is populated, consecutive `make prove` runs are
   consistently instant -- measured across 20 consecutive runs, the
-  adacovex step stays at ~0.03 s (the 2.4-2.9 s `make prove` wall is the
+  adacovex step stays at ~0.04 s (the 2.4-2.9 s `make prove` wall is the
   `alr build` dependency, not the proof).
+- The 1.43.0 walk-skip work cut the warm syscall count again (~21k to
+  ~12k) by keeping the Sphinx build tree (`docs/_build`) and the installer
+  trees out of every walker: the strace profile showed ~14 distinct walkers
+  re-enumerating `docs/_build` for ~53% of all warm-run stat syscalls on
+  this repo.  Warm wall dropped 40 ms to 35 ms and warm system time from
+  ~16 ms to ~10 ms.
 - The prove-cold row is gnatprove's own cost and tracks the VC count
   (39.1 s at 876 VCs; the +85 VCs over 1.41.0 are the proved multi-pair
   IR slice, see [ir.md](ir.md)). It is paid once per session, not per run:
   with the result cache wiped but the gnatprove session intact, the same
-  run is ~1.3 s, and gnatprove's session store re-analyses only the
+  run is ~1.1 s, and gnatprove's session store re-analyses only the
   changed unit and its dependents after a real edit (roughly 6-9 s wall
   for a body-only edit on this machine).
+- **A warm hit now restores `gnatprove.out`.**  In 1.42.0 the cache stored
+  only a success marker, so a warm hit on a tree whose `obj/gnatprove/`
+  had been wiped reported Stone / 0 VCs (the pipeline had no summary to
+  parse) and the assessment failed.  Since 1.43.0 the cache also stores
+  the summary content, and a warm hit writes it back to
+  `<target>/obj/gnatprove/gnatprove.out` -- the restored run reports
+  Platinum / 876 VCs exactly like the run that produced it.
+- **Proof effort is a solver-time dial.**  `--level=1` cold doubles the
+  from-scratch wall (~35 s default -> ~68 s at `-j0` on this machine) at
+  the same 876 VCs: level 1 re-tries each check with stronger solver
+  configurations.  Lower levels are not strictly faster; `--level=0`
+  cold is ~35 s.  A cold run's cost is dominated by the solver either
+  way -- the adacovex-side share of a prove-cold run is ~1 s of the
+  ~39 s.
 
 CPU use stays bounded on developer machines: the default job count is
 `cores - 2` (all cores inside CI), so gnatprove never starves the desktop.
@@ -190,6 +217,48 @@ CPU use stays bounded on developer machines: the default job count is
 Kept in reverse-chronological order.  Every entry names the measurement that
 drove it so the next round of work can see whether the previous assumption
 still holds.
+
+### Walker-skip completion + cached-proof restore (1.43.0)
+
+The 1.43.0 strace profile of a warm run showed ~21k `newfstatat` calls,
+and 13.3k of them (~53%) hit `docs/_build` -- the Sphinx build tree of
+the bundled offline manual, a gitignored build product with 461 files.
+Fourteen distinct walkers re-enumerated it per run: the tools-key source
+tree hash, the vendored discovery walk, the graph-key language probe and
+vendored hash, the GPR collection walk, and more.  Four changes cut the
+warm syscall count to ~12k and warm wall to ~35 ms:
+
+- The shared `Skip_Walk_Dir`-governed walks (tools scan, graph key,
+  vendored hash) plus the scanner, GPR-collection, and vendored-component
+  walks now skip `_build` explicitly.  `Skip_Walk_Dir` itself deliberately
+  does *not* skip `node_modules`: the generic vendored discovery descends
+  into it to find package manifests, and its own vendor-scan skip list is
+  unchanged.  A build-product tree is a per-walker decision, not a global
+  one -- vendor roots must stay discoverable.
+- The `Vendored_Hash` internal tree hash now honours `Skip_Walk_Dir`, so
+  the graph-key walk never descends into `.venv`/`alire`/build trees
+  either.
+- The prove-input walk skips `_build` (its skip set already covered
+  `docs/` and the installer trees).
+- `Restore_Proof_Output` (see the table notes above): a warm prove hit
+  writes the cached `gnatprove.out` content back to
+  `<target>/obj/gnatprove/`, so a wiped session store no longer turns a
+  cache hit into a Stone/0-VC assessment failure.
+
+`make perf-bench` itself had two reporting bugs fixed while profiling
+this: `perf stat` writes its counter table to stderr, which the old
+`capture_output` + `print(stdout)` shape discarded (the perf sections
+printed adacovex output but no counters), and the `strace ... 2>&1 |
+tail -20` pipe interleaved the workload's stdout with the table and cut
+the header rows.  Both tables now print in full, and a missing `perf` or
+`strace` fails loudly instead of silently printing nothing.
+
+Deploying a manifest-pinned gnatprove prints a progress line (`deploy:
+gnatprove <v> not in ~/.adacovex/toolchain -- downloading via alr
+(one-time, may take a minute)...`) -- the first deployment downloads a
+~130 MB bundle through `alr -n get` and a silent minute of nothing read
+as a hang.  The deployment is one-time per version; every later run
+reuses the deployed crate with no download.
 
 ### Cache I/O block copies + walk-skip set completion (1.42.0)
 
@@ -283,7 +352,7 @@ distinct tool lengths), and tool-output directories (`gnatprove/`,
 `__pycache__`, `node_modules`, `.headroom`, `.lccst`) were excluded from
 both tree walks so the proof-run output is not enumerated. Those changes
 alone took the warm run from ~1.02 s to ~63 ms (16x) and cold from ~1.4 s
-to ~545 ms, and reduced the warm-run syscall count from ~15k to ~12k.
+to ~545 ms, and reduced the warm-run syscall count to ~12k.
 
 ### Probe cache
 
