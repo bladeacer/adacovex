@@ -156,18 +156,18 @@ machine and the codebase. What matters is the shape:
 The true test of proof performance is the `prove` subcommand --
 `./bin/covex prove` -- measured at the adacovex-binary level, not just at
 the gnatprove level. The benchmark categories above define the shapes
-precisely; the table compares them across the last four trees
+precisely; the table compares them across the last five trees
 (gnatprove 16.1.0, 12 logical cores, 10 proof jobs; the 1.42.0 column is
-the hyperfine output above, the 1.43.0 column is hyperfine on the current
-tree):
+the hyperfine output above, the 1.43.0/1.44.0 columns are hyperfine on
+each tree):
 
-| Scenario | 1.40.0 | 1.41.0 | 1.42.0 | 1.43.0 |
-|----------|--------|--------|--------|--------|
-| Pipeline warm | ~1.02 s* | ~104 ms | 40 ms | 35 ms |
-| Pipeline cold | ~1.4 s* | ~545 ms* | 91 ms | 86 ms |
-| Prove warm (result-cache short-circuit) | 1.6 s | 2.5 s | 47 ms | 40 ms |
-| Prove cold (result cache + session wiped) | 39.0 s / 725 VCs | 42.8 s / 791 VCs | 39.3 s / 876 VCs | 39.4 s / 876 VCs |
-| Warm-run syscalls (`newfstatat`, strace) | ~218k | ~15k | ~21k | ~12k |
+| Scenario | 1.40.0 | 1.41.0 | 1.42.0 | 1.43.0 | 1.44.0 |
+|----------|--------|--------|--------|--------|--------|
+| Pipeline warm | ~1.02 s* | ~104 ms | 40 ms | 35 ms | 23 ms |
+| Pipeline cold | ~1.4 s* | ~545 ms* | 91 ms | 86 ms | 60 ms |
+| Prove warm (result-cache short-circuit) | 1.6 s | 2.5 s | 47 ms | 40 ms | 44 ms |
+| Prove cold (result cache + session wiped) | 39.0 s / 725 VCs | 42.8 s / 791 VCs | 39.3 s / 876 VCs | 39.4 s / 876 VCs | 36.4 s / 876 VCs |
+| Warm-run syscalls (`newfstatat`, strace) | ~218k | ~15k | ~21k | ~12k | ~2k |
 
 \* 1.40.0/1.41.0 pipeline figures predate the four-scenario bench script
 (single-shot `time` runs, coarser sampling).
@@ -187,6 +187,13 @@ Reading the table:
   re-enumerating `docs/_build` for ~53% of all warm-run stat syscalls on
   this repo.  Warm wall dropped 40 ms to 35 ms and warm system time from
   ~16 ms to ~10 ms.
+- The 1.44.0 persistent stat-stamp store (below) cut the remaining warm
+  stat traffic another 6x (~12k to ~2k): every walker now stats each
+  directory entry once, and unchanged files are never re-read across
+  runs.  Pipeline warm dropped 35 ms to 23 ms; a *wiped result cache* on
+  a stamped machine re-serialises instead of re-hashing, so pipeline cold
+  dropped 86 ms to 60 ms and prove-cold's adacovex-side share shrank
+  again (the solver keeps the 36.4 s floor).
 - The prove-cold row is gnatprove's own cost and tracks the VC count
   (39.1 s at 876 VCs; the +85 VCs over 1.41.0 are the proved multi-pair
   IR slice, see [ir.md](ir.md)). It is paid once per session, not per run:
@@ -217,6 +224,44 @@ CPU use stays bounded on developer machines: the default job count is
 Kept in reverse-chronological order.  Every entry names the measurement that
 drove it so the next round of work can see whether the previous assumption
 still holds.
+
+### Persistent stat-stamp store, learned from language servers (1.44.0)
+
+The 1.43.0 warm profile still showed ~2k stats per file per run: every
+adacovex invocation re-opened and re-hashed every unchanged file (sources
+for scan keys, manifests and vendored trees for graph keys) because the
+1.28.0 stamp map dies with the process.  Language servers solved this
+class of problem years ago: the
+[Ada Language Server](https://github.com/AdaCore/ada_language_server)
+keeps a persistent indexed file set and re-parses only files whose on-disk
+state changed between sessions
+(`lsp-ada_file_sets.ads`, studied in the local checkout), and
+[tree-sitter](https://github.com/tree-sitter/tree-sitter) keeps its parse
+input in a single reusable buffer (`TSInput`, `tree_sitter/api.h`).
+adacovex adopts the first technique directly:
+
+- `Hash_File` gained a second fast path backed by a **persistent
+  stat-stamp store** at `~/.adacovex/stamps/` (machine-local, like the
+  probe and meta stores, so `--cache-dir` wipes never cost re-hashes).
+  A record is `<sha-256-of-path>` holding size, mtime, record time, and
+  the digest; a lookup is one open + four short reads and validates two
+  stats (size + mtime) against the stored pair.
+- The store is **size-gated at 16 KiB**.  Measured on the self-audit
+  tree, stamping the 38 small `.ads` sources made warm runs *slower*
+  (a lookup costs more than re-hashing a 10 KB file); the gate keeps the
+  store for the payloads where re-hashing actually dominates -- vendored
+  manifests, lockfiles, generated assets.  This is the same cost model
+  language servers apply when deciding whether dirty-tracking pays.
+- Two git-proven safety rules keep a stale digest from ever being served:
+  the size AND mtime must both match, and a file modified during the
+  second the record was written is never recorded (git's racy-clean
+  rule).  A `Reset_Process_Stamps` diagnostic lets tests (and long-lived
+  `--serve` processes) re-walk files as a fresh run would.
+- Result: warm syscalls ~12k -> ~2k (`newfstatat` ~26.8k -> ~2k on a
+  stamped tree), pipeline warm 35 -> 23 ms, pipeline cold 86 -> 60 ms
+  (a wiped result cache re-serialises instead of re-hashing).
+  `Persistent_Stamp_Hits` / `Persistent_Stamp_Misses` counters make the
+  fast path testable (Result-cache tests 22+).
 
 ### Walker-skip completion + cached-proof restore (1.43.0)
 

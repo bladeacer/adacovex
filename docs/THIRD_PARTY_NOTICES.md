@@ -82,6 +82,32 @@ The online manual is hosted on Read the Docs, a free documentation service. The 
 
 Playwright (https://github.com/microsoft/playwright) is a development dependency of the e2e fixture (`tests/e2e/package.json`, `devDependencies`). It runs automated browser tests of the dashboard. adacovex classifies it as a **test** dependency: the package name `@playwright/test` carries the test label. It is not vendored or redistributed with adacovex releases.
 
+## Performance-engineering tools
+
+These tools profile adacovex during development. adacovex does not
+redistribute or depend on any of them; `make bench` and `make perf-bench`
+degrade gracefully when they are missing.
+
+| Component | Website / source | Licence | Used for |
+|-----------|------------------|---------|----------|
+| [perf](https://perfwiki.github.io/main/) (Linux `tools/perf`) | https://www.kernel.org/ (shipped with the [Linux kernel](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/)) | GPL-2.0 | CPU profiling and hardware-counter sampling (`make perf-bench`: cache-miss rates, per-symbol wall clock) |
+| [strace](https://strace.io/) | https://github.com/strace/strace | LGPL-2.1-or-later | Syscall tracing of warm/cold runs (`make perf-bench`: the `newfstatat`/`openat`/`getdents64` profiles that drove the walk-skip and stamp-store work) |
+| [hyperfine](https://github.com/sharkdp/hyperfine) | https://github.com/sharkdp/hyperfine | Apache-2.0 OR MIT | Statistical command benchmarking (`make bench`: cold/warm pipeline and prove timings with mean +/- sigma) |
+
+The design of the persistent stat-stamp store (1.44.0) was informed by
+two projects studied for their incremental-processing techniques; neither
+is linked into adacovex:
+
+| Project | Website / source | Licence | What adacovex learned |
+|---------|------------------|---------|----------------------|
+| [Ada Language Server](https://github.com/AdaCore/ada_language_server) | https://github.com/AdaCore/ada_language_server | GPL-3.0-or-later (with GNAT runtime exception for its runtime) | Persistent indexed file sets and cross-session dirty tracking: re-parse only files whose on-disk state changed (see `docs/contributing/perf.md`, optimisation history 1.44.0) |
+| [tree-sitter](https://tree-sitter.github.io/) | https://github.com/tree-sitter/tree-sitter | MIT | Reusable single-buffer parse input (`TSInput`) and incremental re-parse cost modelling |
+
+The size/mtime stamp validation additionally follows the same shape as
+git's index dirty tracking, including the racy-clean guard against files
+modified within the same second as the record: [git](https://git-scm.com/)
+(https://github.com/git/git, GPL-2.0).
+
 ## Acknowledgments
 
 - The Ada_CRDT audit target (`../Ada_CRDT`) is used solely as a dogfood target.

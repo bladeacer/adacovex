@@ -62,6 +62,13 @@ package Adacovex.Cache is
    --  binary chunks.  Each chunk is fed to the hasher.  The digest is stable
    --  across runs for identical content.  The function returns the empty
    --  string when the file cannot be read.
+   --
+   --  Two fast paths avoid the read entirely:
+   --  * the in-process stamp map (same path, same size, this run);
+   --  * the persistent stat-stamp store (same path, same size AND mtime,
+   --    any run) -- two stats replace the open/read/close/hash cycle.
+   --  A freshly hashed file is recorded in both stores.
+   --
    --  @param Path  File to hash.
    --  @return 64-character lowercase hex digest, or "" on error.
    function Hash_File (Path : String) return String;
@@ -95,6 +102,14 @@ package Adacovex.Cache is
    --  Configure the eviction cap used by Put_Cached.  Defaults to 4096.
    --  @param Max_Entries  Soft cap on retained cache entries.
    procedure Set_Cache_Policy (Max_Entries : Positive);
+
+   --  Forget every in-process stamp (the path -> digest map that dies with
+   --  the run anyway).  The next Hash_File re-validates each file against
+   --  the persistent stat-stamp store or re-hashes it.  Meant for tests and
+   --  diagnostics -- and for long-lived processes (the --serve dashboard)
+   --  that want a later assessment in the same process to re-walk files as
+   --  a fresh run would.
+   procedure Reset_Process_Stamps;
 
    --  Load a cached blob.  The procedure returns whether it was present and
    --  fit in the output buffer.  Convenience wrapper over Load.
@@ -133,6 +148,17 @@ package Adacovex.Cache is
    --  visible as Stamp_Hits = 0 with a non-empty map.
    Stamp_Hits   : Natural := 0;
    Stamp_Misses : Natural := 0;
+
+   --  Persistent stat-stamp store effectiveness counters.  Hash_File serves
+   --  a previously recorded digest from the machine-local stamp store
+   --  (~/.adacovex/stamps) without opening the file when BOTH its size and
+   --  its mtime still match the recorded pair -- the same cross-session
+   --  dirty-tracking language servers use to skip re-parsing unchanged
+   --  files.  Persistent_Stamp_Hits counts the re-hashes avoided across
+   --  runs; Persistent_Stamp_Misses counts the fallbacks to a real read
+   --  (first-ever file, size or mtime change, or an entry past its TTL).
+   Persistent_Stamp_Hits   : Natural := 0;
+   Persistent_Stamp_Misses : Natural := 0;
 
    --  Probe freshness.  This is how long a cached system-tool version probe
    --  stays valid.  Tool versions change rarely.  Re-probing every run costs

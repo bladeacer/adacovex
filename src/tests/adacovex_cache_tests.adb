@@ -31,6 +31,19 @@ package body Adacovex_Cache_Tests is
       return Test_Root & "/cache";
    end Test_Cache_Dir;
 
+   --  Documented persistent-stamp layout: ~/.adacovex/stamps/<sha-256-of
+   --  -path>.  Adacovex.Cache owns the real builder privately; the tests
+   --  rebuild it from the documented layout (same pattern as the probe
+   --  store test above).
+   function Home_Stamp_Path (For_Path : String) return String is
+      Home : constant String :=
+        (if Ada.Environment_Variables.Exists ("HOME")
+         then Ada.Environment_Variables.Value ("HOME")
+         else "/tmp");
+   begin
+      return Home & "/.adacovex/stamps/" & Cache.Hash_String (For_Path);
+   end Home_Stamp_Path;
+
    --  Write Content into a fresh file at Path.  Binary Stream_IO, so the
    --  bytes on disk are exactly Content (the native Text_IO of this GNAT
    --  build appends a line terminator after every Put, which would corrupt
@@ -257,6 +270,82 @@ package body Adacovex_Cache_Tests is
          and then Meta_Ver (1 .. Meta_Ver_Len) = "9.9.9"
          and then Meta_Web (1 .. Meta_Web_Len) = "https://example.test",
          "Test 12: registry-metadata store round trip");
+
+      --  Test 13: persistent stat-stamp store.  A file at or above the
+      --  16 KiB size gate is stamped at first hash; a second hash of the
+      --  unchanged file (in a fresh process state -- the in-process map is
+      --  bypassed by hashing a different path first) is served from the
+      --  store, growing Persistent_Stamp_Hits.  An edited file (same size,
+      --  later mtime) must force a re-hash and a changed digest.
+      declare
+         Big_Path : constant String := Test_Root & "/big-sample.bin";
+         Misses_B : constant Natural := Cache.Persistent_Stamp_Misses;
+         D_Big_1  : String (1 .. 64);
+         D_Big_2  : String (1 .. 64);
+         Filler_A : constant String (1 .. 20_480) := (others => 'a');
+         Filler_B :
+           constant String (1 .. 24_576) := (others => 'b');
+      begin
+         Write_File (Big_Path, Filler_A);
+         --  The racy-clean rule skips stamping within a second of the
+         --  write, so let the file settle before the first hash: this test
+         --  needs the record to be written.
+         delay 1.1;
+         D_Big_1 := Cache.Hash_File (Big_Path);
+         R.Check
+           (D_Big_1'Length = 64, "Test 13: big file hashed to 64-char digest");
+         R.Check
+           (Cache.Persistent_Stamp_Misses > Misses_B,
+            "Test 13: first hash of a big file is a store miss");
+         --  Same content, unchanged file: after dropping the in-process
+         --  map (simulating a fresh run), the persistent store must answer
+         --  -- that is the cross-process win this test pins down.
+         declare
+            H_Before : constant Natural := Cache.Persistent_Stamp_Hits;
+         begin
+            Cache.Reset_Process_Stamps;
+            D_Big_2 := Cache.Hash_File (Big_Path);
+            R.Check
+              (D_Big_2 = D_Big_1,
+               "Test 13: unchanged big file hashes identically");
+            R.Check
+              (Cache.Persistent_Stamp_Hits > H_Before,
+               "Test 13: persistent stamp served the digest");
+         end;
+         --  Grown file (size change): the stored pair no longer matches, so
+         --  the digest must change.  The in-process stamp map serves same-
+         --  size files by design, so the edit must move the size to be
+         --  observable here.  The racy-clean rule skips stamping within a
+         --  second of the write, so sleep first to make the new state
+         --  deterministically stampable for the re-record.
+         delay 1.1;
+         Write_File (Big_Path, Filler_B);
+         D_Big_2 := Cache.Hash_File (Big_Path);
+         R.Check
+           (D_Big_2 /= D_Big_1,
+            "Test 13: size change forced a re-hash (digest changed)");
+         --  Small files never enter the store: a 10-byte file must not
+         --  create a stamp entry.  Rebuild the documented path layout to
+         --  check.
+         declare
+            Small_Path : constant String := Test_Root & "/small.txt";
+         begin
+            Write_File (Small_Path, "tiny");
+            D_Big_2 := Cache.Hash_File (Small_Path);
+            R.Check
+              (not Ada.Directories.Exists (Home_Stamp_Path (Small_Path)),
+               "Test 13: sub-gate file is not stamped");
+         end;
+         --  Clean the big file's stamp out of the machine store so the
+         --  test never leaks entries into a real project's stamp set.
+         begin
+            Ada.Directories.Delete_File
+              (Home_Stamp_Path (Big_Path));
+         exception
+            when others =>
+               null;
+         end;
+      end;
 
       --  Restore whatever cache directory the caller had configured.
       if Original_Len > 0 then

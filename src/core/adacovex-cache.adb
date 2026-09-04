@@ -6,6 +6,7 @@ with Ada.Environment_Variables;
 with Ada.Text_IO;
 with GNAT.SHA256;
 with Interfaces;
+with System.OS_Lib;
 
 package body Adacovex.Cache is
 
@@ -243,12 +244,248 @@ package body Adacovex.Cache is
    --  syscalls on big files).
    Hash_Chunk : constant := 65_536;
 
+   --  Persistent stat-stamp store -- the cross-process extension of the
+   --  in-process stamp map above.  The in-process map dies with the run, so
+   --  every warm adacovex invocation still opened and re-hashed every
+   --  unchanged file (source files for scan keys, manifest files and whole
+   --  vendored trees for graph keys).  This store keeps the (size, mtime,
+   --  digest) triples on disk in a machine-local directory (exactly like
+   --  the probe and meta stores, so --cache-dir redirection and cache wipes
+   --  never cost a re-hash), which is the same dirty-tracking shape language
+   --  servers use to avoid re-parsing unchanged files between sessions.
+   --
+   --  Layout: <stamps>/<sha-256-of-path>.  The content-addressed filename is
+   --  fixed-width, filesystem-safe, and stable per path; the payload is three
+   --  text lines (size, mtime seconds, 64-char digest).  Validation is two
+   --  stats (size + mtime) against the stored pair -- far below the
+   --  open/read/close plus SHA-256 of a re-hash.  A size or mtime change
+   --  invalidates the entry; the entry then re-hashes and re-records.
+   --
+   --  Two safety rules keep a stale digest from ever being served for edited
+   --  content:
+   --  * size and mtime must BOTH match the stored pair (an edit that keeps
+   --    the size must move the mtime);
+   --  * a file written during the second the stamp was recorded is never
+   --    recorded at all (git's racy-clean rule: the mtime has not yet
+   --    provably stabilised, so the file stays uncached for that run and is
+   --    stampable on the next one).
+   --  Residual exposure is an edit that restores both the size and the
+   --  second-granularity mtime of the stamped state -- the same class of
+   --  trade every dirty-tracker accepts, and it self-heals on the next
+   --  size or mtime change.
+   --
+   --  The store is SIZE-GATED.  A stamp hit costs two stats plus one open,
+   --  read, and close; a re-hash costs the same open, read, close plus the
+   --  SHA-256 over the content.  For a small source file the re-hash is
+   --  cheaper than the stamp machinery (measured: consulting the store for
+   --  the 38 self-audit .ads files made the warm run slower, not faster),
+   --  so files below PStamp_Min_Size are never recorded and never looked
+   --  up -- exactly the cost model language servers apply when they decide
+   --  whether dirty-tracking pays for a given document.  The store only
+   --  earns its keep on big payloads: vendored manifests, lockfiles,
+   --  generated assets, and other multi-hundred-KB blobs whose re-hash
+   --  dominates a cold-cache run.
+   Stamp_TTL_Days : constant := 30;
+
+   --  Minimum file size for the persistent store (16 KiB).  Below it the
+   --  re-hash is cheaper than the stamp lookup.
+   PStamp_Min_Size : constant Long_Long_Integer := 16_384;
+
+   --  <HOME>/.adacovex/stamps -- machine-local, outside the result cache.
+   function Stamp_Store_Root return String is
+      Home : constant String :=
+        (if Ada.Environment_Variables.Exists ("HOME")
+         then Ada.Environment_Variables.Value ("HOME")
+         else "/tmp");
+   begin
+      return Home & "/.adacovex/stamps";
+   end Stamp_Store_Root;
+
+   --  <stamps>/<sha-256-of-path>: content-addressed by the full path so two
+   --  projects that share the machine store never serve each other's stamps
+   --  (a path is only ever compared against the stamp recorded for it).
+   function PStamp_Path (Path : String) return String is
+   begin
+      if Path'Length = 0 then
+         return "";
+      end if;
+      return Stamp_Store_Root & "/" & Hash_String (Path);
+   end PStamp_Path;
+
+   --  Look up Path in the persistent store.  Sz is the file's current size
+   --  and Mt its mtime in OS seconds (both captured by the caller before
+   --  the lookup).  The stored (size, mtime) pair must match exactly and
+   --  the record must be younger than Stamp_TTL_Days; anything else is a
+   --  miss ("" return).  Cost: one open plus four short reads -- the record
+   --  carries its own write time, so the TTL check needs no extra stat.
+   function PStamp_Lookup
+     (Path : String; Sz : Long_Long_Integer; Mt : Long_Long_Integer)
+      return String
+   is
+      use Ada.Calendar;
+      P    : constant String := PStamp_Path (Path);
+      F    : Ada.Text_IO.File_Type;
+      SSz  : String (1 .. 32);
+      SSzL : Natural;
+      SMt  : String (1 .. 32);
+      SMtL : Natural;
+      SRec : String (1 .. 32);
+      SRecL : Natural;
+      Dig  : String (1 .. 64);
+      DigL : Natural;
+   begin
+      if P'Length = 0 or else Sz < PStamp_Min_Size then
+         return "";
+      end if;
+      begin
+         Ada.Text_IO.Open (F, Ada.Text_IO.In_File, P);
+         Ada.Text_IO.Get_Line (F, SSz, SSzL);
+         Ada.Text_IO.Get_Line (F, SMt, SMtL);
+         Ada.Text_IO.Get_Line (F, SRec, SRecL);
+         Ada.Text_IO.Get_Line (F, Dig, DigL);
+         Ada.Text_IO.Close (F);
+      exception
+         when others =>
+            if Ada.Text_IO.Is_Open (F) then
+               Ada.Text_IO.Close (F);
+            end if;
+            return "";
+      end;
+      if DigL /= 64 or else SSzL = 0 or else SMtL = 0 or else SRecL = 0 then
+         return "";
+      end if;
+      --  TTL from the record's own write time (integer OS seconds, same
+      --  epoch as the mtime field).
+      declare
+         Now : constant Long_Long_Integer :=
+           System.OS_Lib.To_C (System.OS_Lib.Current_Time);
+         Age : constant Long_Long_Integer :=
+           Now - Long_Long_Integer'Value (SRec (1 .. SRecL));
+      begin
+         if Age < 0 or else Age > Stamp_TTL_Days * 86_400 then
+            return "";
+         end if;
+      exception
+         when others =>
+            return "";
+      end;
+      if Long_Long_Integer'Value (SSz (1 .. SSzL)) /= Sz
+        or else Long_Long_Integer'Value (SMt (1 .. SMtL)) /= Mt
+      then
+         return "";
+      end if;
+      Persistent_Stamp_Hits := Persistent_Stamp_Hits + 1;
+      return Dig (1 .. DigL);
+   end PStamp_Lookup;
+
+   --  Record Path's (size, mtime, digest) triple.  Files modified during the
+   --  current second are skipped (git's racy-clean rule): their mtime has
+   --  not yet provably stabilised, so recording now could serve a digest of
+   --  pre-edit content on the next run.  The file simply stays uncached for
+   --  this run and becomes stampable on the next.
+   procedure PStamp_Record
+     (Path : String;
+      Sz   : Long_Long_Integer;
+      Mt   : Long_Long_Integer;
+      Dig  : String)
+   is
+      P       : constant String := PStamp_Path (Path);
+      F       : Ada.Text_IO.File_Type;
+      --  Record time as integer OS seconds (same epoch as the mtime field,
+      --  so the TTL check in PStamp_Lookup needs no calendar reasoning).
+      Now_Sec : constant Long_Long_Integer :=
+        System.OS_Lib.To_C (System.OS_Lib.Current_Time);
+   begin
+      if P'Length = 0
+        or else Sz < PStamp_Min_Size
+        or else Mt < 0
+        or else Dig'Length /= 64
+      then
+         return;
+      end if;
+      --  Racy-clean guard: both times are Ada.Calendar.Time values, so the
+      --  difference needs no epoch anchor and no time-zone reasoning.
+      begin
+         if Clock - Ada.Directories.Modification_Time (Path) < 1.0 then
+            return;
+         end if;
+      exception
+         when others =>
+            return;
+      end;
+      begin
+         Ada.Directories.Create_Path (Stamp_Store_Root);
+      exception
+         when others =>
+            null;
+      end;
+      begin
+         Ada.Text_IO.Create (F, Ada.Text_IO.Out_File, P);
+         Ada.Text_IO.Put_Line (F, Long_Long_Integer'Image (Sz));
+         Ada.Text_IO.Put_Line (F, Long_Long_Integer'Image (Mt));
+         Ada.Text_IO.Put_Line (F, Long_Long_Integer'Image (Now_Sec));
+         Ada.Text_IO.Put_Line (F, Dig);
+         Ada.Text_IO.Close (F);
+      exception
+         when others =>
+            if Ada.Text_IO.Is_Open (F) then
+               Ada.Text_IO.Close (F);
+            end if;
+      end;
+   end PStamp_Record;
+
+   --  Current stat of Path as a pair: size plus mtime in OS seconds.  Both
+   --  are read by the two single-syscall probes (Ada.Directories.Size and
+   --  System.OS_Lib.File_Time_Stamp); a missing file reports size -1.
+   --  Returning both from one place keeps the Hash_File fast path honest
+   --  about its cost: exactly two stats, never an open.
+   procedure File_Stat_Pair
+     (Path : String; Sz : out Long_Long_Integer; Mt : out Long_Long_Integer)
+   is
+   begin
+      Sz := File_Size (Path);
+      if Sz < 0 then
+         Mt := -1;
+         return;
+      end if;
+      Mt := System.OS_Lib.To_C (System.OS_Lib.File_Time_Stamp (Path));
+   exception
+      when others =>
+         Mt := -1;
+   end File_Stat_Pair;
+
    function Hash_File (Path : String) return String is
       Fast : constant String := Hash_Fast (Path);
    begin
       if Fast'Length = 64 then
          return Fast;
       end if;
+      --  Second fast path: the persistent stat-stamp store.  For files at
+      --  or above PStamp_Min_Size, two stats (size + mtime) against the
+      --  stored pair replace the open, read, close, and SHA-256 of a
+      --  re-hash -- the big win on vendored manifests, lockfiles, and
+      --  generated assets that a cold result cache would otherwise re-hash
+      --  on every run.  Smaller files skip the store entirely (the re-hash
+      --  is cheaper).
+      declare
+         Sz  : Long_Long_Integer := -1;
+         Mt  : Long_Long_Integer := -1;
+      begin
+         File_Stat_Pair (Path, Sz, Mt);
+         if Sz >= PStamp_Min_Size and then Mt >= 0 then
+            declare
+               PDig : constant String := PStamp_Lookup (Path, Sz, Mt);
+            begin
+               if PDig'Length = 64 then
+                  Stamp_Remember (Path, PDig);
+                  return PDig;
+               end if;
+               --  Consulted but not answered (first-ever file, size/mtime
+               --  change, or stale record): a real read follows.
+               Persistent_Stamp_Misses := Persistent_Stamp_Misses + 1;
+            end;
+         end if;
+      end;
       declare
          Ctx  : GNAT.SHA256.Context;
          F    : File_Type;
@@ -270,6 +507,16 @@ package body Adacovex.Cache is
          Close (F);
          Dig := GNAT.SHA256.Digest (Ctx);
          Stamp_Remember (Path, Dig);
+         declare
+            Sz : Long_Long_Integer := -1;
+            Mt : Long_Long_Integer := -1;
+         begin
+            File_Stat_Pair (Path, Sz, Mt);
+            PStamp_Record (Path, Sz, Mt, Dig);
+         exception
+            when others =>
+               null;
+         end;
          return Dig;
       exception
          when others =>
@@ -622,6 +869,17 @@ package body Adacovex.Cache is
    begin
       Cache_Cap := Max_Entries;
    end Set_Cache_Policy;
+
+   procedure Reset_Process_Stamps is
+   begin
+      Stamp_Hash := (others => Empty_Hash);
+      Stamp_Size := (others => -1);
+      Stamp_Len := (others => 0);
+      Stamp_Names := (others => (others => ' '));
+      Stamp_Digest := (others => (others => ' '));
+      Stamp_Misses := 0;
+      --  Stamp_Hits is deliberately kept: it is a cumulative diagnostic.
+   end Reset_Process_Stamps;
 
    procedure Get_Cached
      (Key : String; Data : out String; Len : out Natural; Found : out Boolean)
