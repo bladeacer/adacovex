@@ -83,7 +83,7 @@ The four checks stay identical across standards. Only the names change:
 
 Because the checks are shared, **the compliance artifacts are identical too**:
 ISO 26262 and IEC 62304 require no different evidence or documents than
-DO-178C. The same inputs (`HLR.md`, source traceability, proof summary, test
+DO-178C. The same inputs (`compliance/HLR.md`, source traceability, proof summary, test
 summary) feed the same outputs (`VERIFICATION.md`, `TRACE.md`, the
 proof-aware SBOM, and the compliance SVG badges) for every standard. Only the
 integrity-level label printed inside them changes (`DAL-C`, `ASIL B`,

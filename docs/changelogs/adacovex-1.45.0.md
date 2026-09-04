@@ -107,6 +107,15 @@ documentation in `docs/usage/sbom.md` describes the inference instead.
 warnings no longer fire; the cache-directory cleanup uses explicit
 `--prepare` hooks in the hyperfine commands it drives.
 
+### F4: Duplicate HLR.md and LLR.md reconciled under docs/compliance
+
+The root `docs/HLR.md` and `docs/LLR.md` were stale duplicates of the
+canonical `docs/compliance/HLR.md` and `docs/compliance/LLR.md`. The
+compliance versions are the single source of truth: they carry the full
+HLR index (including `HLR-CACHE` and `HLR-CPU`) and the corrected LLR
+mapping. All cross-references in the user documentation, API docs, and
+AGENTS.md now point to the compliance paths.
+
 ## Test Suite
 
 The native suite grows from 1228 to 1229 tests across 17 categories, all

@@ -29,7 +29,7 @@ and the minimum proof bar change.
 
 | Class | Requirement |
 |-------|-------------|
-| A--C | Every in-source HLR tag must correspond to a defined HLR in HLR.md |
+| A--C | Every in-source HLR tag must correspond to a defined HLR in `compliance/HLR.md` |
 
 ### 3. Test Pass/Fail
 

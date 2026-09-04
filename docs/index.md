@@ -54,7 +54,7 @@ before you use a technical word in any doc, docstring, or changelog.
   units audit.
 - [Compliance outputs](compliance/index.md) -- VERIFICATION.md, TRACE.md,
   and the HLR/LLR indexes.
-- [HLR index](HLR.md) and [LLR mapping](LLR.md).
+- [HLR index](compliance/HLR.md) and [LLR mapping](compliance/LLR.md).
 - [Badges](badges/index.md) -- the badge set the self-assessment emits.
 - [API reference](api-docs/index.md) -- the generated package
   documentation.

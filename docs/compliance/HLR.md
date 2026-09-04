@@ -111,10 +111,7 @@
   gates (max file LOC, max file percentage of codebase, max function
   complexity, max file complexity).
 
-- HLR-DIFF: The tool shall support differential assessment via --compare-base,
-  comparing the target at a git base ref against its current working tree and
-  reporting deltas in docstring coverage, HLR traceability, SPARK proof level,
-  test results, and DAL status.
+- HLR-DIFF: The tool shall support differential assessment via `--compare-base`. The tool shall compare the target at a git base ref against its current working tree. The tool shall report deltas in docstring coverage, HLR traceability, SPARK proof level, test results, and DAL status. The tool shall also support a lightweight docstring-coverage gate via `--coverage-delta`.
 
 - HLR-METRICS: The tool shall compute docstring coverage as a percentage of
   documented subprograms over total subprograms.

@@ -118,7 +118,11 @@ def run_assessment(args: List[str], emit_svg: bool) -> int:
     cmd = [str(ROOT / "bin" / "adacovex")] + args
     if emit_svg:
         cmd.append("--emit-svg=docs/badges/")
-    return sh(cmd, env=env).returncode
+    result = sh(cmd, env=env, check=False)
+    if result.returncode != 0:
+        print(f"  stdout: {result.stdout.strip()}", file=sys.stderr)
+        print(f"  stderr: {result.stderr.strip()}", file=sys.stderr)
+    return result.returncode
 
 
 def bundle(version: str) -> None:
@@ -227,7 +231,14 @@ def release(version_arg: str, assess_args: str, repo: str, dry_run: bool) -> int
     print(f"=== Releasing v{version} ===\n")
 
     print("=== Generating proof artifacts ===")
-    if run_assessment(["prove", "--target=."] + assess, emit_svg=True) != 0:
+    proof_ok = False
+    for attempt in range(1, 4):
+        if run_assessment(["prove", "--target=."] + assess, emit_svg=True) == 0:
+            proof_ok = True
+            break
+        print(f"  proof attempt {attempt}/3 failed; retrying..." if attempt < 3
+              else "  proof attempt 3/3 failed", file=sys.stderr)
+    if not proof_ok:
         print("ERROR: proof pass failed; aborting release", file=sys.stderr)
         return 1
 

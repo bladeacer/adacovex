@@ -47,7 +47,7 @@ DAL checks that depend on the missing item report `Unmet`.
 | No `.ads` sources | No packages scanned; metrics report zero |
 | No `gnatprove.out` | SPARK level `Stone`, proof metrics `N/A` |
 | No test summary | Test metrics `N/A`; DAL `Tests passing` criterion `Unmet` |
-| No `HLR.md` | HLR coverage `N/A`; DAL traceability criteria `Unmet` |
+| No `docs/compliance/HLR.md` | HLR coverage `N/A`; DAL traceability criteria `Unmet` |
 
 ## Language support
 

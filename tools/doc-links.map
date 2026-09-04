@@ -25,8 +25,8 @@ docs/contributing/requirements.md	Requirements
 docs/contributing/ste100-technical-names.md	STE100 technical names
 docs/CREDITS.md	Credits
 docs/THIRD_PARTY_NOTICES.md	Third-party notices
-docs/HLR.md	HLR index
-docs/LLR.md	LLR mapping
+docs/compliance/HLR.md	HLR index
+docs/compliance/LLR.md	LLR mapping
 docs/contributing/perf.md	Performance
 docs/contributing/ir.md	gnatprove-friendly IR
 docs/proof/index.md	Proof records

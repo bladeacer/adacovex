@@ -29,7 +29,7 @@ adacovex evaluates four criteria for each DAL level:
 
 | DAL | Requirement |
 |-----|-------------|
-| A--C | Every in-source HLR tag must correspond to a defined HLR in HLR.md |
+| A--C | Every in-source HLR tag must correspond to a defined HLR in `compliance/HLR.md` |
 | D--E | Recommended but not enforced |
 
 ### 3. Test Pass/Fail

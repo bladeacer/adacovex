@@ -32,7 +32,7 @@ and the minimum proof bar change.
 
 | ASIL | Requirement |
 |------|-------------|
-| A--D | Every in-source HLR tag must correspond to a defined HLR in HLR.md |
+| A--D | Every in-source HLR tag must correspond to a defined HLR in `compliance/HLR.md` |
 | QM | Recommended but not enforced |
 
 ### 3. Test Pass/Fail

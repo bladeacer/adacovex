@@ -162,7 +162,7 @@ More examples: [https://adacovex.readthedocs.io/en/latest/usage/cli-reference.ht
 ## Target project requirements
 
 To run adacovex against a project it needs Ada sources, GNATprove output
-(`gnatprove.out`), a test-summary file, and (for DAL assessment) an `HLR.md`
+(`gnatprove.out`), a test-summary file, and (for DAL assessment) an `docs/compliance/HLR.md`
 document. Missing data shows `N/A`; DAL checks that depend on it report
 `Unmet`. Full requirements, file-discovery rules, and the non-Ada-project note:
 [https://adacovex.readthedocs.io/en/latest/usage/target-projects.html](https://adacovex.readthedocs.io/en/latest/usage/target-projects.html).

@@ -416,9 +416,9 @@ adacovex supports multiple output formats:
 
 ## Result caching
 
-adacovex persists parsed analysis results on disk so unchanged inputs are not re-scanned, re-parsed, or re-proved. Source scans, GNATprove summaries, test summaries, HLR.md/LLR.md requirement parses, the resolved SBOM dependency graph, and the differential-mode scans are each keyed by a namespace prefix plus the SHA-256 of the artifact(s) they were derived from. For example: `"scan:" | "prove:" | "tests:" | "hlr:" | "llr:" | "graph:" + digest`. Re-parsing a byte-identical artifact yields a cache hit regardless of the target directory or command line.
+adacovex persists parsed analysis results on disk so unchanged inputs are not re-scanned, re-parsed, or re-proved. Source scans, GNATprove summaries, test summaries, `compliance/HLR.md`/`compliance/LLR.md` requirement parses, the resolved SBOM dependency graph, and the differential-mode scans are each keyed by a namespace prefix plus the SHA-256 of the artifact(s) they were derived from. For example: `"scan:" | "prove:" | "tests:" | "hlr:" | "llr:" | "graph:" + digest`. Re-parsing a byte-identical artifact yields a cache hit regardless of the target directory or command line.
 
-An unchanged manifest/lockfile/.gpr set serves the cached dependency graph. Unchanged HLR.md/LLR.md serve the cached requirement parses. `--compare-base` / `--coverage-delta` reuse cached source scans for the current tree.
+An unchanged manifest/lockfile/.gpr set serves the cached dependency graph. Unchanged `compliance/HLR.md`/`compliance/LLR.md` serve the cached requirement parses. `--compare-base` / `--coverage-delta` reuse cached source scans for the current tree.
 
 - **Schema namespace**: the default cache root is
   `~/.adacovex/cache/<version>/<Cache_Schema>`. `Cache_Schema` (in

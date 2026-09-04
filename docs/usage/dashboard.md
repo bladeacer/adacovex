@@ -71,7 +71,7 @@ tier except QM / DAL-E).
 Shows the target integrity level, overall `Achieved` / `Unmet`, HLRs traced,
 orphan-tag state, and every unmet criterion. Use this to verify that every HLR
 is tagged in source and that no tags are orphaned (tagged but not defined in
-`HLR.md`).
+`compliance/HLR.md`).
 
 ### Dependencies tab
 

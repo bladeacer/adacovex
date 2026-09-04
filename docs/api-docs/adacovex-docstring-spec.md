@@ -127,7 +127,7 @@ Multiple HLR tags can appear on one line:
 --  HLR-ARCH: Version constant  HLR-ARCH: Package hierarchy
 ```
 
-Tag IDs map to the requirement index in `docs/HLR.md`; the scanner matches
+Tag IDs map to the requirement index in `docs/compliance/HLR.md`; the scanner matches
 in-source tags against that index for the DO-178C traceability assessment.
 
 ## See also
