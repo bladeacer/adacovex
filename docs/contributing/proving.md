@@ -5,7 +5,7 @@ the [SPARK assurance levels](../api-docs/adacovex-spark-levels.md). This page
 is the guide to both halves: **how proving works** under adacovex, and
 **how to write proofs** -- contracts in your own code, and -- when the code
 is vendored and cannot be modified -- **proof patches** that add the
-contracts for you.
+contracts for you (see [Proof patches over vendored code](proving-patches.md)).
 
 ## Proving a project with adacovex
 
@@ -22,8 +22,8 @@ The `prove` subcommand (full options:
    [Architecture -- GNATprove toolchain resolution](architecture.md#gnatprove-toolchain-resolution-prove-subcommand).
 2. **Runs gnatprove** against the target (or against a patched tree copy
    when proof patches are present -- see
-   [Proof patches](#proof-patches-proving-vendored-dependencies) below) and
-   writes the summary to `<target>/obj/gnatprove/gnatprove.out` -- the same
+   [Proof patches over vendored code](proving-patches.md#proof-patches-proving-vendored-dependencies))
+   and writes the summary to `<target>/obj/gnatprove/gnatprove.out` -- the same
    location the assessment pipeline discovers.
  3. **Falls through to the full assessment**. The assessment parses the fresh
     summary. One command both proves and assesses. The `--require-*` CI gates
@@ -151,6 +151,9 @@ The goal for a clean proof: every VC in every category proved, 0 unproved,
 
 ## See also
 
+- [Proof patches over vendored code](proving-patches.md) -- the full guide
+  to `.ads`/`.adb` patches that add SPARK contracts over vendored
+  dependencies
 - [SPARK assurance levels](../api-docs/adacovex-spark-levels.md) -- Stone to
   Platinum, per-category objectives
 - [CLI reference -- the `prove` subcommand](../usage/cli-reference-flags.md#the-prove-subcommand)

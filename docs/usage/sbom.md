@@ -187,3 +187,7 @@ Supported extensions:
 A directory that mixes languages reports its **top 3** languages by file count
 (for example `"Ada; C; C++"`), so a mixed-language vendored drop is summarised
 by what it actually contains rather than by a single guess.
+
+The remaining sections of the original guide -- licence resolution, system
+dependencies, and test-dependency classification -- are covered on
+[SBOM dependency resolution](sbom-resolution.md).

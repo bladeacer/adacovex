@@ -96,7 +96,7 @@ always empty.
 
 Disable strict mode. Enables the skip list (default `demo,deps,examples` plus
 any `--skip-dir` entries) and does NOT apply `.adacovex/patches/`. See
-[Strict vs relaxed mode](#strict-vs-relaxed-mode).
+[Strict vs relaxed mode](cli-reference.md#strict-vs-relaxed-mode).
 
 ### `--compare-base=REF`
 

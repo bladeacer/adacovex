@@ -111,9 +111,9 @@ states):
   Range (min ... max):    40.5 ms ... 51.9 ms   15 runs
 
 == Binary size ==
-bin/adacovex            11.5 MiB (12053808 bytes)
-after strip             6.4 MiB (6674808 bytes)
-savings                 44.6%
+bin/adacovex            11.6 MiB (12171168 bytes)
+after strip             6.5 MiB (6789496 bytes)
+savings                 44.2%
 ```
 
 The numbers shift with the machine and the codebase. What matters is the
@@ -142,6 +142,15 @@ counts so a regression in I/O or data layout is visible before a release.
 For a prove-path profile, point it at the same command `make bench` times:
 `strace -c -f ./bin/covex prove --no-cache --cache-dir=/tmp/aperf` shows the
 per-syscall breakdown of the adacovex-side cold run.
+
+A second datapoint rides along with every `make bench`: when the Ada_CRDT
+dogfood tree (`../Ada_CRDT`) is present, the two pipeline scenarios repeat
+against it. It is a smaller target (~80 specs, its own vendored layout and
+manifest set), so a regression tied to one project's structure cannot hide
+behind the self-assessment numbers. On 1.46.0 that tree measured ~39 ms
+cold / ~31 ms warm -- the same I/O-bound shape at roughly half the self
+tree's size. The prove scenarios are not repeated there; the solver floor
+is already covered by the self run.
 
 ## What the numbers mean
 
@@ -177,6 +186,12 @@ machine and the codebase. What matters is the shape:
 - System time is the tell. Pipeline cold runs show ~16 ms of system time
   (file I/O); pipeline warm runs show ~10 ms.
 
+The detailed `make prove` timing table -- the seven-tree comparison,
+per-version notes, and the 1.46.0 SIMD and optimisation-candidate review
+-- is on [Prove timing and the optimisation review](perf-prove-timing.md).
+The reverse-chronological record of the optimisations behind these numbers
+is on [Performance optimisation history](perf-optimisation-history.md).
+
 ## Probe cache
 
 *(Origin story.)* The SBOM builds a *dev-scope* dependency edge for every tool that the
@@ -186,7 +201,7 @@ The subprocess costs tens of milliseconds per referenced tool (`System: 42 ms ->
 
 ## Binary size
 
-The debug-symbol-carrying build is ~11.5 MiB. Stripping (`strip bin/adacovex`) yields ~6.4 MiB (~45% smaller) without affecting behaviour. GNAT's default build keeps symbols for debugging (`gdb` works). Release artifacts are stripped. `make bench` always reports both.
+The debug-symbol-carrying build is ~11.6 MiB. Stripping (`strip bin/adacovex`) yields ~6.5 MiB (~44% smaller) without affecting behaviour. GNAT's default build keeps symbols for debugging (`gdb` works). Release artifacts are stripped. `make bench` always reports both.
 
 Regressions in code size are visible in the same command that reports timings. If the symbols ever come out, the binary size is the same and the page should say so.
 

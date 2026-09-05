@@ -72,7 +72,17 @@ adacovex completion [bash|fish|zsh|pwsh]
 only in prove mode. The flags are: `--jobs`/`-j`, `--level`, `--timeout`,
 `--steps`, `--memlimit`, `--force`, `--no-loop-unrolling`, `--no-inlining`,
 `--args`, `--suppress-warnings`, `--quiet`. See
-[The `prove` subcommand](#the-prove-subcommand).
+[The `prove` subcommand](cli-reference-flags.md#the-prove-subcommand).
+
+Every flag is detailed with its default, constraints, and examples on two
+companion pages:
+
+- [Assessment flags and subcommands](cli-reference-flags.md) -- `--target`,
+  the per-standard level flags, `status`, `complexity`, the `prove`
+  subcommand, and the per-file opt-out markers.
+- [Output, serving, and CI options](cli-reference-options.md) -- SBOM
+  control, `--serve`/`--theme`/`--port`, `--emit-*`, differential
+  assessment, the `--require-*` gates, caching, and help.
 
 ## Strict vs relaxed mode
 

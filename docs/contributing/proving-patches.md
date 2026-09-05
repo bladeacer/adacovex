@@ -21,7 +21,7 @@ Three facts force the design:
     `--relaxed` skips vendored dirs but drops the audit to a quick pass -- not
     an option for a compliance assessment.
  2. **gnatprove analyses a body only when the body itself opts in.** (The
-    rule from [Writing proofs](#writing-proofs-spark-contracts) above.) A
+    rule from [Writing proofs](proving.md#writing-proofs-spark-contracts).) A
     vendored spec with no contracts contributes nothing to the proof. A
     vendored body without `SPARK_Mode` is skipped entirely.
  3. **The vendored sources are immutable.** The dependency ships as-is. You

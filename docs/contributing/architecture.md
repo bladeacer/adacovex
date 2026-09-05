@@ -1,5 +1,11 @@
 # adacovex Architecture Decisions
 
+adacovex's architecture spans three pages. This page records the design
+decisions: dependency management, the zero-dependency rule, the
+formal-verification policy, and result caching. The companion pages cover
+[verification and proof patches](architecture-verification.md) and
+[outputs, pipeline, and delivery](architecture-outputs.md).
+
 ## Dependency Management: Alire
 
 adacovex uses [Alire](https://alire.ada.dev/) as its packaging and delivery mechanism. The publishing manifest `alire.toml` declares **zero dependencies**. It declares no libraries beyond the GNAT runtime. It declares no tool dependencies.

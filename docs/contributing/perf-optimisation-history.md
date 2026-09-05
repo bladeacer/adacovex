@@ -1,6 +1,6 @@
 # Performance optimisation history
 
-Reverse-chronological record of the optimisations that keep the pipeline and prove paths fast.  Each entry names the measurement that drove it.  Benchmark methodology and current figures are on [Performance](perf.md).
+Reverse-chronological record of the optimisations that keep the pipeline and prove paths fast.  Each entry names the measurement that drove it.  Benchmark methodology and current figures are on [Performance](perf.md); the `make prove` timing table is on [Prove timing and the optimisation review](perf-prove-timing.md).
 
 ## Optimisation history
 

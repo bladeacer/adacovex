@@ -36,7 +36,8 @@ keyboard-accessible, persisted in `localStorage`):
   (S/A/B/C/D from the average of five quality axes), the per-check-type
   **SPARK radar**, a tests **donut** and a doc-coverage **radial gauge**. The
   badge row doubles as a preview for the generated `docs/badges/*.svg` files.
-  See [Robustness tier](#robustness-tier) for how the rating is derived.
+  See [Robustness tier](dashboard.md#robustness-tier) for how the rating is
+  derived.
 - **Proof** -- the SPARK level (Stone..Platinum) and, per check category
   (flow, initialization, runtime, assertions, functional), total and proved
   counts plus a mini **VCs proved/total** column at the top of the tab.
@@ -73,7 +74,7 @@ links: **Documentation (offline manual)** at `/docs` (the bundled Sphinx
 manual) and **Explore the API** (jumps to the API playground tab). The raw
 `/api/*` URIs are deliberately not listed in the footer -- the API playground
 is the single place to discover and exercise every endpoint (see
-[API playground](#api-playground)).
+[The API playground](dashboard-api.md#api-playground)).
 
 ### Dependencies tab and alternative diagram
 

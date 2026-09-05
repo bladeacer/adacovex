@@ -12,6 +12,16 @@ adacovex --target=. --serve --port=8080
 curl http://localhost:8080/api/metrics
 ```
 
+The dashboard guide is split across three pages. This page covers using
+the served dashboard and reading its charts (the Overview/Proof/Tests/
+Compliance/Charts/API tabs, the metrics charts, and the robustness tier).
+The dashboard document itself -- the tab structure, the dependencies tab
+and its alternative diagram, the split-view detail panel, global search,
+and the tree filter -- is on
+[The dashboard document and its dependency views](dashboard-html.md).
+The JSON API, the API playground, and the themes are on
+[The dashboard JSON API, playground, and themes](dashboard-api.md).
+
 ## How to use the dashboard
 
 Open `http://localhost:8080` in a browser. The page is a single self-contained
@@ -99,8 +109,8 @@ proof, test results, doc coverage, and dependency scope at a glance. See
 An interactive REST API playground: every endpoint the server dispatches on
 as a searchable, clickable button, with a pretty-printed, syntax-highlighted
 JSON preview. The first endpoint (`/api/metrics`) runs automatically, so
-the tab opens with a live preview. See [API playground](#api-playground)
-for the full detail.
+the tab opens with a live preview. See
+[The API playground](dashboard-api.md#api-playground) for the full detail.
 
 ## Interpreting the charts
 

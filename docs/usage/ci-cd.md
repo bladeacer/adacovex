@@ -216,3 +216,8 @@ Every entry is keyed by its artifact's SHA-256 content hash. Restoring a cache
 from an earlier run or commit is always safe. Only files that are byte-for-byte
 unchanged are served from it. The remaining files are rescanned and re-parsed
 automatically.
+
+The workflows themselves -- the `.github` workflow files, the Markdown
+summaries and loud failures, the debugging guide, release version bundling,
+floating tags, and the consumer-manifest prerequisites -- are covered on
+[CI/CD workflows, summaries, and release bundling](ci-cd-workflows.md).
