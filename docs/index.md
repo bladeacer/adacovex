@@ -18,9 +18,16 @@ before you use a technical word in any doc, docstring, or changelog.
 ## Using adacovex
 
 - [CLI reference](usage/cli-reference.md) -- every command, flag, and exit
-  code.
-- [Web dashboard](usage/dashboard.md) -- the HTML report and JSON API.
-- [SBOM](usage/sbom.md) -- the software-bill-of-materials generator.
+  code.  The detailed flag pages are
+  [assessment flags and subcommands](usage/cli-reference-flags.md) and
+  [output and CI options](usage/cli-reference-options.md).
+- [Web dashboard](usage/dashboard.md) -- the HTML report and JSON API.  The
+  deeper pages are
+  [the dashboard document and its dependency views](usage/dashboard-html.md)
+  and [the JSON API, playground, and themes](usage/dashboard-api.md).
+- [SBOM](usage/sbom.md) -- the software-bill-of-materials generator.  Licence
+  and dependency resolution is on
+  [SBOM dependency resolution](usage/sbom-resolution.md).
 - [Standards](usage/standards.md) -- DO-178C, ISO 26262, and IEC 62304
   levels.
 - [Platforms](usage/platforms.md) -- supported platforms and toolchain
@@ -28,6 +35,8 @@ before you use a technical word in any doc, docstring, or changelog.
 - [VCS support](usage/vcs.md) -- differential assessment across git, hg,
   svn, fossil, and jj.
 - [CI/CD](usage/ci-cd.md) -- the GitHub Action and the workflow summary.
+  The workflow internals are on
+  [CI/CD workflows, summaries, and release bundling](usage/ci-cd-workflows.md).
 - [Changelog](changelogs/index.md) -- release history.
 
 ## Contributing to adacovex
@@ -35,13 +44,19 @@ before you use a technical word in any doc, docstring, or changelog.
 - [Developer guide](contributing/developer-guide.md) -- the contributor
   handbook: setup, codebase tour, gates, and release workflow.
 - [Proving and writing proofs](contributing/proving.md) -- how to run and
-  write SPARK proofs, including proof patches.
+  write SPARK proofs.  Writing proof patches over vendored code is on
+  [Proof patches](contributing/proving-patches.md).
 - [Architecture](contributing/architecture.md) -- the full technical
-  design.
+  design.  The deeper pages are
+  [verification and proof patches](contributing/architecture-verification.md)
+  and [outputs, pipeline, and delivery](contributing/architecture-outputs.md).
 - [Requirements](contributing/requirements.md) -- the dependency
   categorisation.
-- [Performance](contributing/perf.md) -- benchmarking and optimisation
-  history.
+- [Performance](contributing/perf.md) -- benchmarking and the current
+  numbers.  [Prove timing and the optimisation review]
+  (contributing/perf-prove-timing.md) and
+  [the optimisation history](contributing/perf-optimisation-history.md)
+  cover the detail.
 - [gnatprove-friendly IR](contributing/ir.md) -- the design exploration for
   synthesising bounded, contract-carrying code.
 - [STE100 Technical Names](contributing/ste100-technical-names.md) -- the
@@ -84,12 +99,18 @@ usage/target-projects
 :hidden:
 
 usage/cli-reference
+usage/cli-reference-flags
+usage/cli-reference-options
 usage/dashboard
+usage/dashboard-html
+usage/dashboard-api
 usage/sbom
+usage/sbom-resolution
 usage/standards
 usage/platforms
 usage/vcs
 usage/ci-cd
+usage/ci-cd-workflows
 changelogs/index
 ```
 
@@ -100,9 +121,14 @@ changelogs/index
 
 contributing/developer-guide
 contributing/proving
+contributing/proving-patches
 contributing/architecture
+contributing/architecture-verification
+contributing/architecture-outputs
 contributing/requirements
 contributing/perf
+contributing/perf-prove-timing
+contributing/perf-optimisation-history
 contributing/ir
 contributing/ste100-technical-names
 contributing/llm-usage

@@ -70,14 +70,46 @@ CI, and the docs/usage/ci-cd.md `### Inputs` table documents it.
 ### C6: SIMD and optimisation review
 
 `docs/contributing/perf.md` records a 1.46.0 review of SIMD and other
-low-level optimisation candidates. The measurements show the pipeline is
-I/O- and cache-bound, not compute-bound (a cold self-assessment is ~76 ms,
-a warm one ~36 ms on an unoptimised local build), and a `prove` run is
-dominated by the gnatprove solver floor. No SIMD or assembly is added; the
-per-byte scanning loops are the only candidates and they gain little from
-auto-vectorisation on short lines. The documented speed path stays the
-existing one: `-O2` release builds, the shared directory-snapshot memo,
-and the content-hashed result cache.
+low-level optimisation candidates, backed by a fresh `make bench` run on
+the release tree and a `make perf-bench` profile. The measurements show
+the pipeline is I/O- and cache-bound, not compute-bound (a cold
+self-assessment is ~88 ms, a warm one ~41 ms on an unoptimised local
+build; L1-dcache miss rates of 0.1-0.7% sit far under the level where
+data-layout work pays), and a `prove` run is dominated by the gnatprove
+solver floor (~37.3 s cold at 876 VCs; warm runs serve the cached proof
+in ~46 ms). No SIMD or assembly is added; the per-byte scanning loops are
+the only candidates and they gain little from auto-vectorisation on short
+lines. The documented speed path stays the existing one: `-O2` release
+builds, the shared directory-snapshot memo, and the content-hashed result
+cache.
+
+### C7: Guide pages split under 250 lines
+
+The living guide pages over 250 lines were split into sibling pages, so
+every hand-written page in the manual stays at or under the docs-check
+line budget. True moves, with every inbound link retargeted: `architecture`
+gained `architecture-verification` and `architecture-outputs`; `perf`
+gained `perf-prove-timing` and `perf-optimisation-history`; `proving`
+gained `proving-patches`; `cli-reference` gained `cli-reference-flags`
+and `cli-reference-options`; `dashboard` gained `dashboard-html` and
+`dashboard-api`; `ci-cd` gained `ci-cd-workflows`; `sbom` gained
+`sbom-resolution`. The new pages register in the `docs/index.md` toctrees
+and the AGENTS.md doc-links block. Changelogs, the STE100 technical-names
+vocabulary, and the dated 16.1.0 proof ledger stay whole (they are
+immutable records, and changelog anchors pin sections of `architecture`,
+`perf`, and `dashboard` in place).
+
+### C8: Dead scanner proof-probe removal
+
+While profiling the 1.46.0 opt-out machinery, a dead probe surfaced: the
+Ada source scanner called the opt-out detector twice per scanned spec
+(docstring marker + SPARK-proof marker), but the proof flag it wrote was
+never read anywhere -- the `prove` subcommand probes the markers itself
+for its `-u` unit list. The redundant probe and its `Package_Info` field
+were removed, saving one `open` plus one header read per scanned spec on
+every cold scan (~160 -> ~120 source-file opens on the cold
+self-assessment). The `Package_Info` stream layout change bumped
+`Cache_Schema` to s11, so stale scans are never served.
 
 ## Test Suite
 
@@ -109,5 +141,10 @@ surface is introduced and no justified VCs appear.
   complexity opt-out marker.
 - `HLR-METRICS` -- C3 the `no-covex-docstrings` exclusion from the
   docstring-coverage metrics.
-- `HLR-ARCH` -- C6 the SIMD/optimisation review documentation and the
-  AGENTS.md/docs refresh.
+- `HLR-ARCH` -- C6 the SIMD/optimisation review documentation, C7 the
+  guide-page split, C8 the scanner probe removal, and the AGENTS.md/docs
+  refresh.
+- `HLR-SCAN` -- C8 the redundant opt-out probe removal in the Ada source
+  scanner.
+- `HLR-CACHE` -- C8 the `Cache_Schema` s11 bump for the changed
+  `Package_Info` stream layout.

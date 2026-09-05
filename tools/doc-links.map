@@ -1,10 +1,16 @@
 docs/index.md	Documentation index
 docs/usage/cli-reference.md	CLI reference
+docs/usage/cli-reference-flags.md	CLI flag details: assessment flags and subcommands
+docs/usage/cli-reference-options.md	CLI flag details: output and CI options
 docs/usage/dashboard.md	Web dashboard
+docs/usage/dashboard-html.md	Dashboard document and dependency views
+docs/usage/dashboard-api.md	Dashboard JSON API and playground
 docs/usage/sbom.md	SBOM
+docs/usage/sbom-resolution.md	SBOM dependency resolution
 docs/usage/vcs.md	VCS support
 docs/usage/target-projects.md	Target projects
 docs/usage/ci-cd.md	CI/CD
+docs/usage/ci-cd-workflows.md	CI/CD workflows and release bundling
 CONTRIBUTING.md	Contributing
 docs/contributing/developer-guide.md	Developer guide
 docs/usage/installation.md	Installation
@@ -20,7 +26,10 @@ docs/api-docs/adacovex-class-levels.md	Safety classes
 docs/usage/standards.md	Standards
 docs/usage/platforms.md	Platforms
 docs/contributing/proving.md	Proving and writing proofs
+docs/contributing/proving-patches.md	Proof patches over vendored code
 docs/contributing/architecture.md	Architecture
+docs/contributing/architecture-verification.md	Architecture: verification and proof patches
+docs/contributing/architecture-outputs.md	Architecture: outputs and pipeline
 docs/contributing/requirements.md	Requirements
 docs/contributing/ste100-technical-names.md	STE100 technical names
 docs/CREDITS.md	Credits
@@ -28,6 +37,8 @@ docs/THIRD_PARTY_NOTICES.md	Third-party notices
 docs/compliance/HLR.md	HLR index
 docs/compliance/LLR.md	LLR mapping
 docs/contributing/perf.md	Performance
+docs/contributing/perf-prove-timing.md	Prove timing and optimisation review
+docs/contributing/perf-optimisation-history.md	Performance optimisation history
 docs/contributing/ir.md	gnatprove-friendly IR
 docs/proof/index.md	Proof records
 docs/compliance/index.md	Compliance outputs

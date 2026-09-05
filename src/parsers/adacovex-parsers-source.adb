@@ -483,21 +483,19 @@ package body Adacovex.Parsers.Source is
          Pkg.File_Path (I - File_Path'First + 1) := File_Path (I);
       end loop;
 
-      --  Per-file opt-out markers (no-covex-docstrings / no-covex-spark-
-      --  proof / no-covex-analysis) in the leading comment block remove
-      --  the file from the docstring-coverage metrics and, in prove mode,
-      --  from the SPARK proof run.  See Adacovex.Opt_Outs.  Detection runs
-      --  before Open below: a second GNAT Text_IO handle on the same file
-      --  cannot read while the scanner's own handle holds it open.
+      --  Per-file opt-out marker (no-covex-docstrings / no-covex-analysis)
+      --  in the leading comment block removes the file from the
+      --  docstring-coverage metrics.  See Adacovex.Opt_Outs.  Only the
+      --  docstring gate is probed here: the SPARK-proof opt-out is enforced
+      --  by the prove runner's own -u unit walk (which probes the marker
+      --  itself), so a second header read in the scanner would be dead
+      --  work on every cold scan.  Detection runs before Open below: a
+      --  second GNAT Text_IO handle on the same file cannot read while the
+      --  scanner's own handle holds it open.
       if Adacovex.Opt_Outs.File_Opts_Out
            (File_Path, Adacovex.Opt_Outs.Docstrings)
       then
          Pkg.Docstrings_Opt_Out := True;
-      end if;
-      if Adacovex.Opt_Outs.File_Opts_Out
-           (File_Path, Adacovex.Opt_Outs.SPARK_Proof)
-      then
-         Pkg.Proof_Opt_Out := True;
       end if;
 
       begin

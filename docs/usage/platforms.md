@@ -76,7 +76,7 @@ The index is refreshed with `mandb` when `mandb` is present. Ubuntu and WSL ship
 
 When man-db is not installed, or when `mandb` fails, adacovex prints a warning. The warning states that the database was not refreshed. The page is still installed. You can read it with `man -l ~/.local/share/man/man1/adacovex.1`. `adacovex status` reports whether `mandb` is on `$PATH` up front.
 
-`--dir=PATH` overrides the root. The page embeds the binary version. `adacovex man --check` compares it to the installed page and exits `0` or `1`. As a result, a prompt hook can auto-install when a newer version is available. See [CLI reference](cli-reference.md#man).
+`--dir=PATH` overrides the root. The page embeds the binary version. `adacovex man --check` compares it to the installed page and exits `0` or `1`. As a result, a prompt hook can auto-install when a newer version is available. See [CLI reference](cli-reference-options.md#man).
 
 ## VCS support (Linux/WSL)
 

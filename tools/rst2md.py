@@ -600,7 +600,7 @@ GUIDE_PAGES: List[Tuple[str, str]] = [
 PACKAGE_GUIDES: Dict[str, List[Tuple[str, str]]] = {
     "Adacovex.Parsers.Source": [
         ("Docstring Spec", "adacovex-docstring-spec.md"),
-        ("Architecture -- Patch System", "../contributing/architecture.md#patch-system"),
+        ("Architecture -- Patch System", "../contributing/architecture-verification.md#patch-system"),
     ],
     "Adacovex.Parsers.Tests": [
         ("Test Result Formats", "adacovex-test-format.md"),

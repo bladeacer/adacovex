@@ -35,7 +35,11 @@ package Adacovex.Cache is
    --  ~/.adacovex/meta/ directory (outside the result cache, 7-day TTL),
    --  so a wiped or redirected result cache never re-spawns the registry
    --  CLIs; s9-era meta entries under <cache>/meta/ are simply abandoned.
-   Cache_Schema : constant String := "s10";
+   --  s11: Package_Info scan blobs dropped the Proof_Opt_Out flag (the
+   --  SPARK-proof opt-out is enforced by the prove runner's -u unit walk,
+   --  never through the scan records) -- cached scan blobs from earlier
+   --  builds carry a field the current layout no longer has.
+   Cache_Schema : constant String := "s11";
 
    --  Soft cap on the number of cache entries kept on disk.  Once exceeded,
    --  the oldest entries are evicted first.

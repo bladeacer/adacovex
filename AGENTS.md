@@ -216,11 +216,11 @@ copy (`<target>/obj/adacovex-proof/`) and proves the vendored code against it,
 never touching the originals. A `.ads` patch re-declares the vendored spec
 with contracts; a `.adb` patch opts the vendored body into the proof (bodies
 are analysed only when they declare `SPARK_Mode => On`). How to write them:
-[docs/contributing/proving.md](docs/contributing/proving.md#proof-patches-proving-vendored-dependencies);
-the design: [docs/contributing/architecture.md](docs/contributing/architecture.md#proof-patches-spark-contracts-over-vendored-dependencies).
+[docs/contributing/proving-patches.md](docs/contributing/proving-patches.md#proof-patches-proving-vendored-dependencies);
+the design: [docs/contributing/architecture-verification.md](docs/contributing/architecture-verification.md#proof-patches-spark-contracts-over-vendored-dependencies).
 
 Full format, rules, and examples:
-[docs/contributing/architecture.md](docs/contributing/architecture.md#patch-system).
+[docs/contributing/architecture-verification.md](docs/contributing/architecture-verification.md#patch-system).
 
 ## CLI reference
 
@@ -289,7 +289,7 @@ git-compatible VCS) for the best experience. See
 
 Execution order: parse CLI -> scan -> patch -> doc metrics -> proof parse ->
 test parse -> DAL assess -> render -> SVG/Markdown/SBOM -> serve -> exit code.
-Step details: [docs/contributing/architecture.md](docs/contributing/architecture.md#pipeline-execution-order).
+Step details: [docs/contributing/architecture-outputs.md](docs/contributing/architecture-outputs.md#pipeline-execution-order).
 Early-exit modes run before the pipeline: `--help`, `--version`, `man`
 (install/check the man page), `status`, `completion` (shell-completion
 scripts), differential modes, and `sbom`.
@@ -585,11 +585,17 @@ suffices.
 <!-- doc-links:begin -->
 - [Documentation index](docs/index.md)
 - [CLI reference](docs/usage/cli-reference.md)
+- [CLI flag details: assessment flags and subcommands](docs/usage/cli-reference-flags.md)
+- [CLI flag details: output and CI options](docs/usage/cli-reference-options.md)
 - [Web dashboard](docs/usage/dashboard.md)
+- [Dashboard document and dependency views](docs/usage/dashboard-html.md)
+- [Dashboard JSON API and playground](docs/usage/dashboard-api.md)
 - [SBOM](docs/usage/sbom.md)
+- [SBOM dependency resolution](docs/usage/sbom-resolution.md)
 - [VCS support](docs/usage/vcs.md)
 - [Target projects](docs/usage/target-projects.md)
 - [CI/CD](docs/usage/ci-cd.md)
+- [CI/CD workflows and release bundling](docs/usage/ci-cd-workflows.md)
 - [Contributing](CONTRIBUTING.md)
 - [Developer guide](docs/contributing/developer-guide.md)
 - [Installation](docs/usage/installation.md)
@@ -605,7 +611,10 @@ suffices.
 - [Standards](docs/usage/standards.md)
 - [Platforms](docs/usage/platforms.md)
 - [Proving and writing proofs](docs/contributing/proving.md)
+- [Proof patches over vendored code](docs/contributing/proving-patches.md)
 - [Architecture](docs/contributing/architecture.md)
+- [Architecture: verification and proof patches](docs/contributing/architecture-verification.md)
+- [Architecture: outputs and pipeline](docs/contributing/architecture-outputs.md)
 - [Requirements](docs/contributing/requirements.md)
 - [STE100 technical names](docs/contributing/ste100-technical-names.md)
 - [Credits](docs/CREDITS.md)
@@ -613,6 +622,8 @@ suffices.
 - [HLR index](docs/compliance/HLR.md)
 - [LLR mapping](docs/compliance/LLR.md)
 - [Performance](docs/contributing/perf.md)
+- [Prove timing and optimisation review](docs/contributing/perf-prove-timing.md)
+- [Performance optimisation history](docs/contributing/perf-optimisation-history.md)
 - [gnatprove-friendly IR](docs/contributing/ir.md)
 - [Proof records](docs/proof/index.md)
 - [Compliance outputs](docs/compliance/index.md)

@@ -82,7 +82,6 @@ Path_Len    : Natural := 0;
 Subprograms : Subprogram_Vectors.Vector;
 HLR_Tags    : HLR_Tag_Vectors.Vector;
 Docstrings_Opt_Out : Boolean := False;
-Proof_Opt_Out      : Boolean := False;
 end record;
 ```
 

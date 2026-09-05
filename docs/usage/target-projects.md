@@ -130,11 +130,11 @@ By default (strict mode) adacovex scans and counts every directory except the
 always-excluded ones. Vendored code is included. For third-party code you
 cannot modify, use docstring **patch files** at
 `<target>/.adacovex/patches/<relative-path>` (see
-[Architecture -- Patch System](../contributing/architecture.md#patch-system)). Or run in
+[Architecture -- Patch System](../contributing/architecture-verification.md#patch-system)). Or run in
 relaxed mode (`--relaxed`, skip dirs, no patches) (see
 [Strict vs relaxed mode](cli-reference.md#strict-vs-relaxed-mode)).
 
 Vendored code can also take part in the **SPARK proof**. A patch carrying `SPARK_Mode` / `Pre` / `Post` / `Global` aspects is a *proof patch*. The `prove` subcommand merges it into a patched tree copy. The copy uses `.ads` spec contracts and `.adb` body patches that opt a SPARK-clean vendored body into the proof.
 
-See [Proving and writing proofs](../contributing/proving.md#proof-patches-proving-vendored-dependencies) for how to write them. See [Architecture -- Proof patches](../contributing/architecture.md#proof-patches-spark-contracts-over-vendored-dependencies) for the design.
+See [Proving and writing proofs](../contributing/proving-patches.md#proof-patches-proving-vendored-dependencies) for how to write them. See [Architecture -- Proof patches](../contributing/architecture-verification.md#proof-patches-spark-contracts-over-vendored-dependencies) for the design.
 
