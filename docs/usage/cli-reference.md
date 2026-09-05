@@ -40,6 +40,7 @@ adacovex completion [bash|fish|zsh|pwsh]
 | `--port=N` | `8080` | serve | Dashboard server port |
 | `--tz=ZONE` / `--timezone=ZONE` | OS timezone | both | Display timezone (IANA name or UTC/GMT offset) |
 | `--excludes=EXT,EXT` | empty | complexity | Skip comma-separated file extensions |
+| `--skip-path=PATH` | empty | complexity | Skip any file whose path contains PATH (repeatable) |
 | `--emit-svg=PATH` | `<target>/docs/badges` | both | Output directory for SVG badges |
 | `--no-svg` | off | both | Suppress SVG badge output |
 | `--emit-markdown=PATH` | off | both | Output directory for Markdown reports |
@@ -70,7 +71,7 @@ adacovex completion [bash|fish|zsh|pwsh]
 `prove`-mode flags are also accepted by the main command. They are validated
 only in prove mode. The flags are: `--jobs`/`-j`, `--level`, `--timeout`,
 `--steps`, `--memlimit`, `--force`, `--no-loop-unrolling`, `--no-inlining`,
-`--suppress-warnings`, `--quiet`. See
+`--args`, `--suppress-warnings`, `--quiet`. See
 [The `prove` subcommand](#the-prove-subcommand).
 
 ## Flag details
@@ -169,13 +170,17 @@ Both flags only work with the `status` subcommand.
 
 `adacovex complexity [--target=PATH] [--excludes=EXT,EXT]` runs a
 cyclomatic-complexity and LOC check across the target's source files in many
-languages. `--excludes=EXT,EXT` skips comma-separated file extensions (for
-example `md,rst`) and only works with the `complexity` subcommand. It prints
+languages, Markdown and reStructuredText included by default. `--excludes=EXT,EXT`
+skips comma-separated file extensions (for example `--excludes=md,rst`) and only
+works with the `complexity` subcommand. `--skip-path=PATH` skips any file
+whose full path contains the given fragment and is repeatable; it is useful
+for generated trees that are committed next to hand-written source (for example `--skip-path=docs/api-docs`). It prints
 a tokei-style summary (files, lines, code, comments, blanks) plus a per-file
 table of `Lines=`, `Code=`, `Comments=`, `Blanks=`, the codebase loc
-percentage, and the cyclomatic complexity `cx=`. The gate fails when a file
-or function exceeds the thresholds (defaults: 4 000 LOC, 10% of codebase per
-file, 120 per function, 600 per file).
+percentage, and the cyclomatic complexity `cx=`.
+
+The gate fails when a file or function exceeds the thresholds (defaults:
+4 000 LOC, 10% of codebase per file, 120 per function, 600 per file).
 
 Exit `0` when all gates pass. Exit `1` otherwise. This replaces the
 previous Python `check-complexity.py` script. Maintainers wire the same gate
@@ -202,6 +207,7 @@ Vendored dependencies then participate in the proof without their sources being 
 | `--force` | off | Force full gnatprove reanalysis (`-f`). Also bypasses the result cache |
 | `--no-loop-unrolling` | always on | Disable automatic loop unrolling. Loop unrolling is always disabled, so GNATprove never emits the purely-informational `cannot unroll loop (too many loop iterations) [info-unrolling-inlining]` notice. It is proof-neutral for the dogfood targets (720/720 adacovex, 589/589 Ada_CRDT VCs, 0 unproved). Flag kept for compatibility |
 | `--no-inlining` | off | Disable contextual analysis inlining |
+| `--args=FLAGS` | empty | Extra raw GNATprove flags passed through verbatim. The value is space-split into individual gnatprove arguments appended after the options above (for example `--args="--prover=cvc5 --timeout=5"`) |
 | `--quiet` | on | Hide GNATprove's benign info messages (the default suppression set, the loop-unrolling/inlining notice blocks) from stdout. It is active by default for local runs. `--verbose` always shows every message and wins over it. CI passes `--verbose`, so CI output stays authoritative. This is the explicit form of the default |
 | `--suppress-warnings` | on | Alias of `--quiet` (the default suppression set). Kept for compatibility |
 | `--suppress-warnings=SETS` | on | Hide GNATprove info messages whose tags match the comma-separated suppression-set names (for example `--suppress-warnings=unrolling-inlining,xyz`). A set name `S` suppresses blocks tagged `[info-S]` (or bare `[S]`). `--verbose` always shows every message |
@@ -210,6 +216,41 @@ Vendored dependencies then participate in the proof without their sources being 
 `--require-*` gates, `--emit-svg`, and more), so CI gates apply to the proof
 run directly. `--force` is shared with `man --force` (see below). The
 remaining prove flags are validated only in prove mode.
+
+### Per-file opt-out markers
+
+A source, documentation, or data file can opt out of one adacovex analysis
+gate with a marker in its **leading comment block** (the run of blank and
+comment lines at the top of the file; the first non-comment line ends it):
+
+| Marker | Effect |
+|--------|--------|
+| `no-covex-complexity-scan` | the file is excluded from the complexity/LOC gate |
+| `no-covex-docstrings` | the file is excluded from the docstring-coverage metrics and the `--require-docstrings` gate |
+| `no-covex-spark-proof` | the file's unit is excluded from the gnatprove run of `prove` (its checks no longer count against the proof metrics) |
+| `no-covex-analysis` | all three above |
+
+The marker sits on a comment line and follows the file's own comment
+syntax, so the same marker text works in every language:
+
+```ada
+--  no-covex-complexity-scan
+package Generated is
+   ...
+```
+
+```markdown
+<!-- no-covex-docstrings -->
+
+# Generated reference page
+```
+
+Matching is case-insensitive. The `prove` opt-out marker belongs on the
+unit's `.ads` spec; the body is excluded with it. The complexity and
+prove opt-outs only take effect for files the root project actually scans
+or proves, so markers on files outside the project are inert. Use these
+sparingly: they are escape hatches for generated or vendored content, not a
+substitute for documenting or proving real source.
 
 ### Automatic SBOM (`--no-sbom` / `--sbom-format`)
 
@@ -370,7 +411,7 @@ target does not meet the required level:
 
 ```bash
 adacovex --target=. --require-spark=Platinum --require-docstrings=100 \
-         --require-tests=1229 --require-proof=100
+         --require-tests=1235 --require-proof=100
 ```
 
 - `require-spark` compares the honest assessed SPARK level (Stone..Platinum).

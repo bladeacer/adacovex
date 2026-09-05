@@ -5,6 +5,7 @@ with Ada.Strings.Fixed;
 with Ada.Strings.Unbounded;
 with Ada.Characters.Handling;
 with Adacovex.Ansi;
+with Adacovex.Opt_Outs;
 with Adacovex.Parsers;
 with Adacovex.Types;
 
@@ -639,11 +640,72 @@ package body Adacovex.Complexity is
         or else N = "skills";
    end Skip_Dir;
 
+   --  True when the full file path contains any comma-separated Skip_Paths
+   --  fragment.  Matching is a plain substring test on the whole path (for
+   --  example "docs/api-docs" or "generated/foo.adb"), so a fragment can
+   --  name a file, a directory, or a distinctive path part.
+   function Is_Path_Skipped (Path : String; Skip_Paths : String) return Boolean
+   is
+      Start : Natural := Skip_Paths'First;
+   begin
+      if Skip_Paths'Length = 0 or else Path'Length = 0 then
+         return False;
+      end if;
+      while Start <= Skip_Paths'Last loop
+         declare
+            Fin : Natural := Start;
+         begin
+            while Fin <= Skip_Paths'Last
+              and then Skip_Paths (Fin) /= ','
+              and then Skip_Paths (Fin) /= ' '
+            loop
+               Fin := Fin + 1;
+            end loop;
+            declare
+               Tok : constant String := Skip_Paths (Start .. Fin - 1);
+            begin
+               if Tok'Length > 0 then
+                  for I in Path'First .. Path'Last - Tok'Length + 1 loop
+                     declare
+                        Match : Boolean := True;
+                     begin
+                        for J in Tok'Range loop
+                           if Path (I + (J - Tok'First)) /= Tok (J) then
+                              Match := False;
+                              exit;
+                           end if;
+                        end loop;
+                        if Match then
+                           return True;
+                        end if;
+                     end;
+                  end loop;
+               end if;
+            end;
+            exit when Fin > Skip_Paths'Last;
+            Start := Fin + 1;
+         end;
+      end loop;
+      return False;
+   end Is_Path_Skipped;
+
+   --  True when the file at Full opts out of the complexity gate through a
+   --  top-of-file marker (no-covex-complexity-scan / no-covex-analysis).
+   function Complexity_Opt_Out (Full : String) return Boolean is
+   begin
+      return
+        Adacovex.Opt_Outs.File_Opts_Out
+          (Full, Adacovex.Opt_Outs.Complexity_Scan);
+   end Complexity_Opt_Out;
+
    --  Walk Target_Dir and collect every supported source file except the
-   --  generated version/dashboard units and any extension listed in Excludes.
+   --  generated version/dashboard units, any extension listed in Excludes,
+   --  any path matching a Skip_Paths fragment, and any file whose header
+   --  carries a complexity opt-out marker.
    --  Dependency/generated directories (see Skip_Dir) are never descended.
    function Scan_Source_Files
-     (Target_Dir : String; Excludes : String) return File_Vectors.Vector
+     (Target_Dir : String; Excludes : String; Skip_Paths : String)
+      return File_Vectors.Vector
    is
       use Ada.Directories;
       Result : File_Vectors.Vector;
@@ -671,17 +733,19 @@ package body Adacovex.Complexity is
                   declare
                      Ext  : constant String := Lower_Ext (N);
                      Lang : constant String := Lang_Name (Ext);
+                     Full : constant String := Full_Name (Ent);
                   begin
                      if Ext'Length > 0
                        and then Scanned_Ext (Ext)
                        and then not Is_Excluded (Ext, Excludes)
+                       and then not Is_Path_Skipped (Full, Skip_Paths)
+                       and then not Complexity_Opt_Out (Full)
                        and then N /= "adacovex_version_info.ads"
                        and then N /= "adacovex-dashboard_template.ads"
                        and then N /= "adacovex-docs_template.ads"
                      then
                         declare
                            Item : File_Metrics;
-                           Full : constant String := Full_Name (Ent);
                         begin
                            Item.Path_Len := Full'Length;
                            Item.Path (1 .. Item.Path_Len) := Full;
@@ -963,12 +1027,15 @@ package body Adacovex.Complexity is
    end;
 
    --  Scan Target_Dir and return aggregate complexity metrics across all
-   --  discovered source files (skipping any extension listed in Excludes).
+   --  discovered source files (skipping any extension listed in Excludes,
+   --  any path matching a Skip_Paths fragment, and any header-annotated
+   --  complexity opt-out file).
    function Analyze_Project
-     (Target_Dir : String; Excludes : String := "") return Complexity_Result
+     (Target_Dir : String; Excludes : String := ""; Skip_Paths : String := "")
+      return Complexity_Result
    is
       Files : constant File_Vectors.Vector :=
-        Scan_Source_Files (Target_Dir, Excludes);
+        Scan_Source_Files (Target_Dir, Excludes, Skip_Paths);
       Res   : Complexity_Result;
    begin
       for I in 1 .. Integer (Files.Length) loop

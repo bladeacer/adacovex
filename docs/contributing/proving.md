@@ -316,6 +316,28 @@ contract without the vendored sources ever changing.
   proof level down. This is the VT100 dogfood case in
   [Ada_CRDT](https://github.com/bladeacer/Ada_CRDT).
 
+### Opting a unit out of the proof (`no-covex-spark-proof`)
+
+A unit that must not participate in the proof can opt out with a marker in
+its leading comment block: `no-covex-spark-proof` (or `no-covex-analysis`
+for every gate). Put the marker on the unit's `.ads` spec; the body is
+excluded with it.
+
+```ada
+--  no-covex-spark-proof
+package Generated_Spec is
+   ...
+```
+
+`adacovex prove` then runs gnatprove with `-u` plus every project unit
+except the opted-out ones, so the unit's checks never appear in the output
+and never count against the proof metrics. The exclusion works for units of
+the root project (those under the root `.gpr`'s literal `Source_Dirs`); when
+the `Source_Dirs` attribute is not a plain literal list, adacovex cannot
+enumerate the project safely and warns that the opt-out was not applied.
+This is the escape hatch for generated or legacy units that cannot be
+brought into SPARK -- prefer a proof patch when the unit *can* be proved.
+
 ### Common pitfalls
 
 - **Spec patch without a body patch.** A SPARK-clean vendored body stays out

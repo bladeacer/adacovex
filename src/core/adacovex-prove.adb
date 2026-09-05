@@ -1,4 +1,5 @@
 with Ada.Directories;
+with Ada.Characters.Handling;
 with Ada.Strings.Fixed;
 with Ada.Strings.Unbounded;
 with Ada.Text_IO;
@@ -13,6 +14,7 @@ with Adacovex.Timezones;
 with Adacovex.Cache;
 with Adacovex.VCS;
 with Adacovex.Prove_Patch;
+with Adacovex.Opt_Outs;
 
 package body Adacovex.Prove is
 
@@ -183,16 +185,23 @@ package body Adacovex.Prove is
    function Build_Option_String
      (Opts : Prove_Options; Jobs : Natural) return String
    is
-      S : String (1 .. 512);
+      S : String (1 .. 4096);
       P : Natural := 0;
 
       procedure App (T : String) is
       begin
+         if P >= S'Last then
+            return;
+         end if;
          if P > 0 then
             P := P + 1;
+            if P > S'Last then
+               return;
+            end if;
             S (P) := ' ';
          end if;
          for I in T'Range loop
+            exit when P >= S'Last;
             P := P + 1;
             S (P) := T (I);
          end loop;
@@ -234,6 +243,16 @@ package body Adacovex.Prove is
       if Opts.No_Inlining then
          App ("--no-inlining");
       end if;
+      --  Raw --args passthrough: any extra GNATprove switches the user
+      --  supplied are appended verbatim at the end of the option list.
+      declare
+         EA : constant String :=
+           Ada.Strings.Unbounded.To_String (Opts.Extra_Args);
+      begin
+         if EA'Length > 0 then
+            App (EA);
+         end if;
+      end;
       return S (1 .. P);
    end Build_Option_String;
 
@@ -263,6 +282,409 @@ package body Adacovex.Prove is
          end;
       end loop;
    end Append_Option_Tokens;
+
+   --  True when a directory name is generated or dependency content that a
+   --  unit-file walk must never descend into (the proof tree copies live
+   --  under obj/, and .adacovex/ holds patches and toolchain state, never
+   --  project units).
+   function Proof_Skip_Dir (N : String) return Boolean is
+   begin
+      return
+        N = ".git"
+        or else N = ".hg"
+        or else N = ".svn"
+        or else N = ".jj"
+        or else N = "_darcs"
+        or else N = ".alire"
+        or else N = ".venv"
+        or else N = ".adacovex"
+        or else N = "obj"
+        or else N = "bin"
+        or else N = "dist"
+        or else N = "build"
+        or else N = "_build"
+        or else N = "node_modules"
+        or else N = "alire"
+        or else N = "index"
+        or else N = "media";
+   end Proof_Skip_Dir;
+
+   --  Extract the literal Source_Dirs attribute of a GNAT project file into
+   --  Dirs as a comma-separated list of directories (relative to the
+   --  project).  GNATprove analyses only the current project's own units,
+   --  which live under those directories, so the -u include list for the
+   --  per-file proof opt-outs must be drawn from them: gnatprove rejects a
+   --  -u file that is not a unit of the project.  When the attribute is
+   --  absent the GNAT default (the project directory) applies.  Returns
+   --  False when the attribute exists but is not a plain list of string
+   --  literals (variables or concatenation) -- the caller then proves the
+   --  whole project and warns instead of guessing membership.
+   function GPR_Source_Dirs
+     (GPR_Path : String; Dirs : out String; Dirs_Len : out Natural)
+      return Boolean
+   is
+      use Ada.Text_IO;
+      F           : File_Type;
+      Content     : String (1 .. 131_072);
+      CLen        : Natural := 0;
+      Parsed      : Boolean := True;
+      Found_Attr  : Boolean := False;
+      Open_Paren  : Natural := 0;
+      Close_Paren : Natural := 0;
+      I           : Natural;
+   begin
+      Dirs_Len := 0;
+      begin
+         Open (F, In_File, GPR_Path);
+         while not End_Of_File (F) and then CLen < Content'Last loop
+            declare
+               Buf : String (1 .. 4096);
+               BL  : Natural;
+            begin
+               Get_Line (F, Buf, BL);
+               if CLen + BL <= Content'Last then
+                  for J in 1 .. BL loop
+                     CLen := CLen + 1;
+                     Content (CLen) := Buf (J);
+                  end loop;
+               end if;
+            end;
+         end loop;
+         Close (F);
+      exception
+         when others =>
+            if Is_Open (F) then
+               Close (F);
+            end if;
+            return False;
+      end;
+
+      --  Locate `for Source_Dirs use (` (case-insensitive, attributes are
+      --  case-insensitive in GNAT project files) and its closing paren.
+      I := 1;
+      while I <= CLen - 19 loop
+         declare
+            Up : String (1 .. 20) := (others => ' ');
+         begin
+            for J in 1 .. 20 loop
+               Up (J) :=
+                 Ada.Characters.Handling.To_Lower (Content (I + J - 1));
+            end loop;
+            if Up = "for source_dirs use " then
+               Found_Attr := True;
+               exit;
+            end if;
+         end;
+         I := I + 1;
+      end loop;
+      if not Found_Attr then
+         --  GNAT default source directory: the project directory itself.
+         if Dirs'Length >= 1 then
+            Dirs (1) := '.';
+            Dirs_Len := 1;
+         end if;
+         return True;
+      end if;
+      I := I + 20;
+      while I <= CLen and then Content (I) /= '(' loop
+         I := I + 1;
+      end loop;
+      if I > CLen then
+         return False;
+      end if;
+      Open_Paren := I;
+      Close_Paren := Open_Paren;
+      while Close_Paren <= CLen and then Content (Close_Paren) /= ')' loop
+         Close_Paren := Close_Paren + 1;
+      end loop;
+      if Close_Paren > CLen then
+         return False;
+      end if;
+
+      --  Walk the parenthesised body: collect quoted string literals as
+      --  source directories; anything outside quotes other than commas,
+      --  blanks, and the parens makes the attribute non-literal.
+      I := Open_Paren + 1;
+      while I < Close_Paren loop
+         if Content (I) = '"' then
+            declare
+               J   : Natural := I + 1;
+               Tok : String (1 .. 4096);
+               TL  : Natural := 0;
+            begin
+               while J < Close_Paren and then Content (J) /= '"' loop
+                  if TL < Tok'Last then
+                     TL := TL + 1;
+                     Tok (TL) := Content (J);
+                  end if;
+                  J := J + 1;
+               end loop;
+               if J >= Close_Paren then
+                  return False;
+               end if;
+               if TL > 0 then
+                  if Dirs_Len > 0 and then Dirs_Len < Dirs'Length then
+                     Dirs_Len := Dirs_Len + 1;
+                     Dirs (Dirs_Len) := ',';
+                  end if;
+                  for K in 1 .. TL loop
+                     exit when Dirs_Len >= Dirs'Length;
+                     Dirs_Len := Dirs_Len + 1;
+                     Dirs (Dirs_Len) := Tok (K);
+                  end loop;
+               end if;
+               I := J + 1;
+            end;
+         elsif Content (I) = ' '
+           or else Content (I) = ASCII.HT
+           or else Content (I) = ','
+         then
+            I := I + 1;
+         elsif Content (I) = '&' or else Content (I) = '<' then
+            Parsed := False;
+            exit;
+         else
+            I := I + 1;
+         end if;
+      end loop;
+      return Parsed and then Dirs_Len > 0;
+   end GPR_Source_Dirs;
+
+   --  Append `-u` plus every .ads/.adb unit file of the project (absolute
+   --  paths) to the gnatprove argument list, except unit files whose
+   --  leading comment block carries the no-covex-spark-proof (or
+   --  no-covex-analysis) marker.  The marker belongs on the unit's .ads
+   --  spec: gnatprove selects a whole unit from its spec, so a body of an
+   --  opted-out spec is dropped from the list too even when the body
+   --  itself carries no marker.  Project membership comes from the literal
+   --  Source_Dirs attribute of the root project file at GPR_Path.  When the
+   --  attribute is non-literal, nothing is appended, Parsed is False and
+   --  Applied is False (the caller then proves the whole project and
+   --  warns).  Opted_Out is the number of marker-carrying unit files
+   --  found; Included is the number of -u paths appended.
+   procedure Append_Unit_List
+     (GPR_Path  : String;
+      Args      : in out GNAT.OS_Lib.Argument_List;
+      N         : in out Natural;
+      Parsed    : out Boolean;
+      Applied   : out Boolean;
+      Opted_Out : out Natural;
+      Included  : out Natural)
+   is
+      use Ada.Directories;
+      use Ada.Characters.Handling;
+      Dirs     : String (1 .. Types.Max_Path);
+      Dirs_Len : Natural := 0;
+      Root     : Natural := GPR_Path'First;
+      Opted    : Natural := 0;
+      Keep     : Natural := 0;
+   begin
+      Applied := False;
+      Parsed := False;
+      Opted_Out := 0;
+      Included := 0;
+      for I in reverse GPR_Path'Range loop
+         if GPR_Path (I) = '/' then
+            Root := I;
+            exit;
+         end if;
+      end loop;
+      if Root < GPR_Path'First then
+         return;
+      end if;
+      if not GPR_Source_Dirs (GPR_Path, Dirs, Dirs_Len) then
+         return;
+      end if;
+      Parsed := True;
+
+      --  Walk a source directory tree, counting opt-out markers (Mode
+      --  Count) or appending the non-opted-out unit paths to Args (Mode
+      --  Append).
+      declare
+         type Walk_Mode is (Count, Append);
+
+         function Lower_Ext (Nm : String) return String is
+            Dot : Integer := 0;
+         begin
+            for I in reverse Nm'Range loop
+               if Nm (I) = '.' then
+                  Dot := I;
+                  exit;
+               end if;
+            end loop;
+            if Dot <= Nm'First then
+               return "";
+            end if;
+            declare
+               Buf : String (1 .. 4);
+               Len : Natural := 0;
+            begin
+               for I in Dot + 1 .. Nm'Last loop
+                  exit when Len = 4;
+                  Len := Len + 1;
+                  Buf (Len) := To_Lower (Nm (I));
+               end loop;
+               return Buf (1 .. Len);
+            end;
+         end Lower_Ext;
+
+         procedure Walk (Dir : String; Mode : Walk_Mode) is
+            Search : Search_Type;
+            Ent    : Directory_Entry_Type;
+         begin
+            Start_Search (Search, Dir, "");
+            while More_Entries (Search) loop
+               Get_Next_Entry (Search, Ent);
+               declare
+                  Nm : constant String := Simple_Name (Ent);
+               begin
+                  if Nm = "." or else Nm = ".." then
+                     null;
+                  elsif Kind (Ent) = Directory then
+                     if (Nm'Length = 0 or else Nm (Nm'First) /= '.')
+                       and then not Proof_Skip_Dir (Nm)
+                     then
+                        Walk (Full_Name (Ent), Mode);
+                     end if;
+                  elsif Kind (Ent) = Ordinary_File then
+                     declare
+                        Ext : constant String := Lower_Ext (Nm);
+                     begin
+                        if Ext = "ads" or else Ext = "adb" then
+                           declare
+                              Full : constant String := Full_Name (Ent);
+                           begin
+                              if Adacovex.Opt_Outs.File_Opts_Out
+                                   (Full, Adacovex.Opt_Outs.SPARK_Proof)
+                              then
+                                 if Mode = Count then
+                                    Opted := Opted + 1;
+                                 end if;
+                              elsif Mode = Append then
+                                 declare
+                                    Skip_Unit : Boolean := False;
+                                 begin
+                                    if Ext = "adb" then
+                                       --  A body whose spec opts out is
+                                       --  part of the excluded unit; never
+                                       --  list it alone under -u.
+                                       declare
+                                          Spec_Path :
+                                            String (1 .. Types.Max_Path);
+                                          SPL       : Natural := 0;
+                                       begin
+                                          for I in Full'Range loop
+                                             if SPL < Spec_Path'Last then
+                                                SPL := SPL + 1;
+                                                Spec_Path (SPL) := Full (I);
+                                             end if;
+                                          end loop;
+                                          if SPL >= 4 then
+                                             Spec_Path (SPL - 3 .. SPL) :=
+                                               ".ads";
+                                          end if;
+                                          if SPL > 0
+                                            and then Ada.Directories.Exists
+                                                       (Spec_Path (1 .. SPL))
+                                            and then Adacovex
+                                                       .Opt_Outs
+                                                       .File_Opts_Out
+                                                          (Spec_Path
+                                                             (1 .. SPL),
+                                                           Adacovex
+                                                             .Opt_Outs
+                                                             .SPARK_Proof)
+                                          then
+                                             Skip_Unit := True;
+                                          end if;
+                                       end;
+                                    end if;
+                                    if not Skip_Unit then
+                                       Keep := Keep + 1;
+                                       N := N + 1;
+                                       if N <= Args'Last then
+                                          Args (N) := new String'(Full);
+                                       end if;
+                                    end if;
+                                 end;
+                              end if;
+                           end;
+                        end if;
+                     end;
+                  end if;
+               end;
+            end loop;
+            End_Search (Search);
+         exception
+            when others =>
+               null;
+         end Walk;
+
+         D_Start : Natural := Dirs'First;
+      begin
+         while D_Start <= Dirs'First + Dirs_Len - 1 loop
+            declare
+               D_End : Natural := D_Start;
+            begin
+               while D_End <= Dirs'First + Dirs_Len - 1
+                 and then Dirs (D_End) /= ','
+               loop
+                  D_End := D_End + 1;
+               end loop;
+               declare
+                  Rel      : constant String := Dirs (D_Start .. D_End - 1);
+                  --  Root points at the '/' before the project file name,
+                  --  so the slice includes the trailing separator.
+                  Full_Dir : constant String :=
+                    GPR_Path (GPR_Path'First .. Root) & Rel;
+               begin
+                  if Exists (Full_Dir) then
+                     Walk (Full_Dir, Count);
+                  end if;
+               end;
+               exit when D_End > Dirs'First + Dirs_Len - 1;
+               D_Start := D_End + 1;
+            end;
+         end loop;
+
+         --  Only when at least one unit opts out does the run switch to the
+         --  -u include list (a plain project keeps its exact invocation).
+         if Opted > 0 then
+            N := N + 1;
+            if N <= Args'Last then
+               Args (N) := new String'("-u");
+            end if;
+            D_Start := Dirs'First;
+            while D_Start <= Dirs'First + Dirs_Len - 1 loop
+               declare
+                  D_End : Natural := D_Start;
+               begin
+                  while D_End <= Dirs'First + Dirs_Len - 1
+                    and then Dirs (D_End) /= ','
+                  loop
+                     D_End := D_End + 1;
+                  end loop;
+                  declare
+                     Rel      : constant String := Dirs (D_Start .. D_End - 1);
+                     --  Root points at the '/' before the project file
+                     --  name, so the slice includes the trailing separator.
+                     Full_Dir : constant String :=
+                       GPR_Path (GPR_Path'First .. Root) & Rel;
+                  begin
+                     if Exists (Full_Dir) then
+                        Walk (Full_Dir, Append);
+                     end if;
+                  end;
+                  exit when D_End > Dirs'First + Dirs_Len - 1;
+                  D_Start := D_End + 1;
+               end;
+            end loop;
+            Applied := True;
+         end if;
+      end;
+      Opted_Out := Opted;
+      Included := Keep;
+   end Append_Unit_List;
 
    procedure Run_Command
      (Args        : GNAT.OS_Lib.Argument_List;
@@ -1127,7 +1549,7 @@ package body Adacovex.Prove is
       VLen    : Natural := 0;
       OK      : Boolean;
       Code    : Integer;
-      Args    : GNAT.OS_Lib.Argument_List (1 .. 40);
+      Args    : GNAT.OS_Lib.Argument_List (1 .. 2048);
       N       : Natural := 0;
       Jobs    : Natural := 0;
       Options : String (1 .. 512);
@@ -1359,6 +1781,47 @@ package body Adacovex.Prove is
       Args (2) := new String'(GPR (1 .. GLen));
       N := 2;
       Append_Option_Tokens (Args, N, Options (1 .. OLen));
+
+      --  Per-file proof opt-outs (no-covex-spark-proof / no-covex-analysis
+      --  markers in a file's leading comment block): when any unit file of
+      --  the project opts out, gnatprove runs with -u plus every project
+      --  unit except the opted-out ones, so their checks never appear in
+      --  the output and never count against the proof metrics.  The marker
+      --  lives in the file's content, which is part of the prove input
+      --  hash, so a cache hit always reflects the current opt-out set.
+      --  A project whose Source_Dirs attribute is not literal (variables
+      --  or concatenation) cannot be enumerated safely: gnatprove rejects
+      --  -u paths outside the project, so such a project is proved whole
+      --  with a warning instead of guessing membership.
+      declare
+         Opt_Parsed  : Boolean := False;
+         Opt_Applied : Boolean := False;
+         Opt_Count   : Natural := 0;
+         Inc_Count   : Natural := 0;
+      begin
+         Append_Unit_List
+           (GPR (1 .. GLen),
+            Args,
+            N,
+            Opt_Parsed,
+            Opt_Applied,
+            Opt_Count,
+            Inc_Count);
+         if not Opt_Parsed then
+            Ada.Text_IO.Put_Line
+              (Ada.Text_IO.Standard_Error,
+               "  Warning: .gpr Source_Dirs is not a plain literal list; "
+               & "per-file no-covex-spark-proof opt-outs were not applied "
+               & "(the project is proved whole)");
+         elsif Opt_Applied then
+            Ada.Text_IO.Put_Line
+              ("  proof opt-outs:"
+               & Natural'Image (Opt_Count)
+               & " unit file(s) excluded from this proof run ("
+               & Natural'Image (Inc_Count)
+               & " analysed)");
+         end if;
+      end;
       if Opts.Suppress_Warnings then
          --  Capture gnatprove's combined output, replay it to stdout with
          --  the configured suppression sets (default: the

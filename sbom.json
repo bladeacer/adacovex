@@ -3,17 +3,17 @@
   "specVersion": "1.5",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-09-04T10:41:43",
+    "timestamp": "2026-09-04T11:38:36",
     "tools": [
-      {"vendor": "bladeacer", "name": "adacovex", "version": "1.45.0"}
+      {"vendor": "bladeacer", "name": "adacovex", "version": "1.46.0"}
     ],
     "component": {
       "type": "application",
-      "bom-ref": "pkg:alire/covex@1.45.0",
+      "bom-ref": "pkg:alire/covex@1.46.0",
       "name": "covex",
-      "version": "1.45.0",
+      "version": "1.46.0",
       "language": "Ada; Python; JavaScript",
-      "purl": "pkg:alire/covex@1.45.0",
+      "purl": "pkg:alire/covex@1.46.0",
       "licenses": [{"license": {"id": "Apache-2.0"}}],
       "description": "Ada/SPARK coverage, proof, multi-standard compliance tool",
       "externalReferences": [{"url": "https://github.com/bladeacer/adacovex", "type": "website"}],
@@ -271,7 +271,7 @@
   ],
   "dependencies": [
     {
-      "ref": "pkg:alire/covex@1.45.0",
+      "ref": "pkg:alire/covex@1.46.0",
       "dependsOn": ["pkg:generic/flexsearch", "pkg:generic/graphre", "pkg:generic/yace", "pkg:generic/nomnoml", "pkg:npm/@playwright/test@1.62.1", "pkg:alire/gnatprove", "pkg:alire/gnatdoc_bin", "pkg:alire/gnatformat_bin", "pkg:pypi/sphinx@9.1.0", "pkg:pypi/myst-parser@5.1.0", "pkg:pypi/furo@2025.12.19", "pkg:generic/python", "pkg:generic/bash", "pkg:generic/curl", "pkg:generic/alr", "pkg:generic/go", "pkg:generic/python3", "pkg:generic/git", "pkg:generic/make", "pkg:generic/jj", "pkg:generic/hyperfine", "pkg:generic/perf", "pkg:generic/strace", "pkg:generic/mandb", "pkg:generic/pnpm", "pkg:generic/npm"]
     }
   ]

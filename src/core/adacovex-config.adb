@@ -136,6 +136,35 @@ package body Adacovex.Config is
       end loop;
    end Set_String;
 
+   --  Append Name to a comma-separated list in a fixed buffer, inserting a
+   --  ',' separator before it when the list is already non-empty.  Overlong
+   --  names are clamped to the destination buffer.
+   procedure Add_Comma_Item
+     (Dst : in out String; Dst_Len : in out Natural; Name : String) is
+   begin
+      if Dst_Len > 0 and then Dst_Len < Dst'Length then
+         Dst_Len := Dst_Len + 1;
+         Dst (Dst_Len) := ',';
+      end if;
+      for I in Name'Range loop
+         exit when Dst_Len >= Dst'Length;
+         Dst_Len := Dst_Len + 1;
+         Dst (Dst_Len) := Name (I);
+      end loop;
+   end Add_Comma_Item;
+
+   --  Append a raw gnatprove argument string to the prove --args list.
+   --  Repeats accumulate with a single-space separator, so
+   --  --args="--level=2" --args="--prover=cvc5" stays two distinct
+   --  option groups on the gnatprove command line.
+   procedure Append_Args (Cfg : in out CLI_Config; S : String) is
+   begin
+      if Ada.Strings.Unbounded.Length (Cfg.Prove_Args) > 0 then
+         Ada.Strings.Unbounded.Append (Cfg.Prove_Args, ' ');
+      end if;
+      Ada.Strings.Unbounded.Append (Cfg.Prove_Args, S);
+   end Append_Args;
+
    procedure Add_Skip_Dir (Cfg : in out CLI_Config; Name : String) is
    begin
       if Cfg.Skip_Dir_Ct > 0 then
@@ -244,9 +273,9 @@ package body Adacovex.Config is
      & "cache-dir cache-max skip-dir compare-base coverage-delta sbom "
      & "prove status completion man check dir version no-sbom sbom-format format out "
      & "jobs level timeout steps memlimit force no-loop-unrolling "
-     & "no-inlining suppress-warnings quiet require-spark require-docstrings "
+     & "no-inlining args suppress-warnings quiet require-spark require-docstrings "
      & "require-tests require-proof complexity export metrics help "
-     & "serve-workers tz timezone excludes";
+     & "serve-workers tz timezone excludes skip-path";
 
    --  Expose the flag list for the shell-completion generator (see spec).
    function Flag_List return String is
@@ -421,6 +450,8 @@ package body Adacovex.Config is
          Cfg.Man_Dir_Len := 0;
          Cfg.Time_Zone_Len := 0;
          Cfg.Excludes_Len := 0;
+         Cfg.Skip_Paths_Len := 0;
+         Cfg.Prove_Args := Ada.Strings.Unbounded.Null_Unbounded_String;
 
          while I <= Count loop
             declare
@@ -725,6 +756,22 @@ package body Adacovex.Config is
                     (Cfg.Complexity_Excludes,
                      Cfg.Excludes_Len,
                      A (A'First + 11 .. A'Last));
+               elsif A = "--skip-path" then
+                  I := I + 1;
+                  if I <= Count then
+                     Add_Comma_Item
+                       (Cfg.Complexity_Skip_Paths,
+                        Cfg.Skip_Paths_Len,
+                        Args (I));
+                  else
+                     Set_Error
+                       (Cfg, "--skip-path requires a path fragment argument");
+                  end if;
+               elsif Has_Prefix (A, "--skip-path=") then
+                  Add_Comma_Item
+                    (Cfg.Complexity_Skip_Paths,
+                     Cfg.Skip_Paths_Len,
+                     A (A'First + 12 .. A'Last));
                elsif A = "--emit-svg" then
                   I := I + 1;
                   if I <= Count then
@@ -1162,6 +1209,16 @@ package body Adacovex.Config is
                   Cfg.Prove_No_Loop_Unroll := True;
                elsif A = "--no-inlining" then
                   Cfg.Prove_No_Inlining := True;
+               elsif A = "--args" then
+                  I := I + 1;
+                  if I <= Count then
+                     Append_Args (Cfg, Args (I));
+                  else
+                     Set_Error
+                       (Cfg, "--args requires a gnatprove option string");
+                  end if;
+               elsif Has_Prefix (A, "--args=") then
+                  Append_Args (Cfg, A (A'First + 7 .. A'Last));
                elsif A = "--quiet" or else A = "--suppress-warnings" then
                   --  --quiet and bare --suppress-warnings select the
                   --  default suppression set (unrolling-inlining).  Quiet
@@ -1472,13 +1529,15 @@ package body Adacovex.Config is
                      or Cfg.Prove_Force
                      or Cfg.Prove_No_Loop_Unroll
                      or Cfg.Prove_No_Inlining
-                     or Cfg.Prove_Suppress_Explicit)
+                     or Cfg.Prove_Suppress_Explicit
+                     or Ada.Strings.Unbounded.Length (Cfg.Prove_Args) > 0)
          then
             Set_Error
               (Cfg,
                "prove options (--jobs, --level, --timeout, --steps, --memlimit, "
                & "--force, --no-loop-unrolling, --no-inlining, "
-               & "--suppress-warnings, --quiet) require the prove subcommand");
+               & "--args, --suppress-warnings, --quiet) require the prove "
+               & "subcommand");
          end if;
 
          -- --serve-workers only makes sense with --serve; reject a silent no-op.
@@ -1487,10 +1546,15 @@ package body Adacovex.Config is
               (Cfg, "--serve-workers requires the serve subcommand (--serve)");
          end if;
 
-         -- --excludes only makes sense with the complexity subcommand; it does
-         -- not work on its own (the wording in the usage text makes this clear).
-         if Cfg.Excludes_Len > 0 and then not Cfg.Complexity_Mode then
-            Set_Error (Cfg, "--excludes requires the complexity subcommand");
+         -- --excludes and --skip-path only make sense with the complexity
+         -- subcommand; they do not work on their own (the wording in the
+         -- usage text makes this clear).
+         if (Cfg.Excludes_Len > 0 or Cfg.Skip_Paths_Len > 0)
+           and then not Cfg.Complexity_Mode
+         then
+            Set_Error
+              (Cfg,
+               "--excludes and --skip-path require the complexity subcommand");
          end if;
 
          -- --tz / --timezone must name a supported timezone (validated loudly
@@ -1759,6 +1823,16 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("  --no-inlining         Disable contextual analysis inlining");
       Ada.Text_IO.Put_Line
+        ("  --args=FLAGS          Pass extra raw GNATprove flags verbatim (e.g.");
+      Ada.Text_IO.Put_Line
+        ("                        --args='--prover=cvc5 --timeout=5');");
+      Ada.Text_IO.Put_Line
+        ("                        space-split into gnatprove arguments; a file");
+      Ada.Text_IO.Put_Line
+        ("                        can opt out of the proof with a");
+      Ada.Text_IO.Put_Line
+        ("                        no-covex-spark-proof header marker");
+      Ada.Text_IO.Put_Line
         ("  --quiet               Hide GNATprove's benign info messages (the");
       Ada.Text_IO.Put_Line
         ("                        default suppression set: loop-unrolling/");
@@ -1816,7 +1890,17 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("  --excludes=EXT,EXT    With complexity only: skip file extensions");
       Ada.Text_IO.Put_Line
-        ("                        (e.g. --excludes=md,rst)");
+        ("                        (e.g. --excludes=md,rst); a file can also");
+      Ada.Text_IO.Put_Line
+        ("                        opt out with a no-covex-complexity-scan");
+      Ada.Text_IO.Put_Line
+        ("                        marker in its leading comment block");
+      Ada.Text_IO.Put_Line
+        ("  --skip-path=PATH      With complexity only: skip any file whose");
+      Ada.Text_IO.Put_Line
+        ("                        path contains PATH (repeatable; e.g.");
+      Ada.Text_IO.Put_Line
+        ("                        --skip-path=docs/api-docs)");
       Ada.Text_IO.Put_Line ("  --verbose             Verbose diagnostics");
       Ada.Text_IO.Put_Line
         ("  --version             Print the bundled version (read from");
@@ -2033,17 +2117,33 @@ package body Adacovex.Config is
             & "  adacovex status --tz=Asia/Singapore"
             & ASCII.LF
             & "  adacovex status --timezone=UTC+8");
-      elsif T = "excludes" or else T = "complexity" then
+      elsif T = "excludes" or else T = "complexity" or else T = "skip-path"
+      then
          Print_Section
-           ("complexity --excludes=EXT,EXT",
-            "Basic cyclomatic-complexity and LOC gating.  --excludes skips"
+           ("complexity --excludes / --skip-path",
+            "Cyclomatic-complexity + LOC gating.  The complexity subcommand"
             & ASCII.LF
-            & "file extensions (e.g. --excludes=md,rst) and only works with"
+            & "scans every supported source file (Ada, C-family, Python,"
             & ASCII.LF
-            & "the complexity subcommand -- it has no effect on its own."
+            & "Rust, Markdown, and more).  --excludes=EXT,EXT skips file"
+            & ASCII.LF
+            & "extensions (e.g. --excludes=md,rst); --skip-path=PATH skips"
+            & ASCII.LF
+            & "any file whose full path contains PATH and is repeatable."
+            & ASCII.LF
+            & "Both only work with the complexity subcommand."
             & ASCII.LF
             & ASCII.LF
-            & "  adacovex complexity --target=. --excludes=md,rst");
+            & "A file can also opt out of the gate with a marker in its"
+            & ASCII.LF
+            & "leading comment block: no-covex-complexity-scan (or"
+            & ASCII.LF
+            & "no-covex-analysis for every gate)."
+            & ASCII.LF
+            & ASCII.LF
+            & "  adacovex complexity --target=. --excludes=md,rst"
+            & ASCII.LF
+            & "  adacovex complexity --target=. --skip-path=docs/api-docs");
       elsif T = "standard"
         or else T = "dal"
         or else T = "asil"
@@ -2134,6 +2234,7 @@ package body Adacovex.Config is
         or else T = "no-inlining"
         or else T = "suppress-warnings"
         or else T = "quiet"
+        or else T = "args"
       then
          Print_Section
            ("adacovex prove",
@@ -2148,13 +2249,26 @@ package body Adacovex.Config is
             & ASCII.LF
             & "--memlimit, --force (bypass the result cache),"
             & ASCII.LF
-            & "--no-loop-unrolling (always on), --no-inlining, and"
+            & "--no-loop-unrolling (always on), --no-inlining,"
             & ASCII.LF
-            & "--suppress-warnings[=SETS] / --quiet (hide benign GNATprove info"
+            & "--args=FLAGS (extra raw GNATprove flags, space-split and"
             & ASCII.LF
-            & "notices from stdout; quiet is the default for local runs and"
+            & "passed verbatim), and --suppress-warnings[=SETS] / --quiet"
             & ASCII.LF
-            & "--verbose shows everything).");
+            & "(hide benign GNATprove info notices from stdout; quiet is the"
+            & ASCII.LF
+            & "default for local runs and --verbose shows everything)."
+            & ASCII.LF
+            & ASCII.LF
+            & "A source file can opt out of the proof with a"
+            & ASCII.LF
+            & "no-covex-spark-proof (or no-covex-analysis) marker in its"
+            & ASCII.LF
+            & "leading comment block; `adacovex prove` then excludes it"
+            & ASCII.LF
+            & "from the gnatprove run via -u and its checks no longer count"
+            & ASCII.LF
+            & "against the proof metrics.");
       elsif T = "status" then
          Print_Section
            ("adacovex status",

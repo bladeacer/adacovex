@@ -638,7 +638,8 @@ begin
          Res : constant Adacovex.Complexity.Complexity_Result :=
            Adacovex.Complexity.Analyze_Project
              (Target (1 .. TLen),
-              Cfg.Complexity_Excludes (1 .. Cfg.Excludes_Len));
+              Cfg.Complexity_Excludes (1 .. Cfg.Excludes_Len),
+              Cfg.Complexity_Skip_Paths (1 .. Cfg.Skip_Paths_Len));
          V   : constant Adacovex.Complexity.Violation_Vectors.Vector :=
            Adacovex.Complexity.Check_Gates
              (Res,
@@ -721,6 +722,8 @@ begin
             Memlimit          => Cfg.Prove_Memlimit,
             Force             => Cfg.Prove_Force,
             No_Inlining       => Cfg.Prove_No_Inlining,
+            --  Raw gnatprove flags from --args="...", forwarded verbatim.
+            Extra_Args        => Cfg.Prove_Args,
             --  Quiet is the default (local runs suppress the default set);
             --  --quiet / --suppress-warnings[=SETS] pick the sets, and
             --  --verbose always shows every message.

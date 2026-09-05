@@ -192,6 +192,15 @@ package Adacovex.Types is
          Path_Len    : Natural := 0;
          Subprograms : Subprogram_Vectors.Vector;
          HLR_Tags    : HLR_Tag_Vectors.Vector;
+
+         --  Per-file opt-out markers carried by the file's leading comment
+         --  block (see Adacovex.Opt_Outs).  Docstrings_Opt_Out removes the
+         --  package from the docstring-coverage metrics; Proof_Opt_Out
+         --  removes it from the SPARK proof run and the proof metrics.
+         --  Both are set by the source scanner when it reads the file
+         --  header and are False otherwise.
+         Docstrings_Opt_Out : Boolean := False;
+         Proof_Opt_Out      : Boolean := False;
       end record;
 
       package Package_Vectors is new

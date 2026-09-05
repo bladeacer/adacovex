@@ -243,6 +243,8 @@ The scanner walks the target directory tree, skipping always-excluded directorie
 
 In strict mode (default), the scanner also applies docstring patches from `.adacovex/patches/` to document vendored/third-party code without modifying the originals.
 
+A file can opt out of an individual analysis gate with a marker in its leading comment block: `no-covex-complexity-scan`, `no-covex-docstrings`, `no-covex-spark-proof`, or `no-covex-analysis` for all three. The scanner honours the docstring and proof markers when it reads each `.ads` header; the complexity checker applies the complexity marker to every scanned language, and the `prove` subcommand applies the proof marker to the root project's units (via gnatprove `-u`). See the [CLI reference -- per-file opt-out markers](../usage/cli-reference.md#per-file-opt-out-markers) and `Adacovex.Opt_Outs`.
+
 ## Patch System
 
 The `.adacovex/patches/` directory overlays docstring information onto
@@ -456,7 +458,7 @@ it. The ANSI report shows a
 
 ## Testing
 
-adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 1229 tests across 17 categories. No external test framework (AUnit, and more) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
+adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 1235 tests across 17 categories. No external test framework (AUnit, and more) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
 
 ## Complexity check
 

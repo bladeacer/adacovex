@@ -199,6 +199,10 @@ inputs:
     description: 'Disable GNATprove contextual-analysis inlining.'
     required: false
     default: 'false'
+  prove-args:
+    description: 'Extra raw GNATprove flags to pass through verbatim to the prove subcommand (e.g. --prover=cvc5 --timeout=5). The value is space-split into gnatprove arguments.'
+    required: false
+    default: ''
   prove-quiet:
     description: 'Suppress GNATprove benign info messages (the default set) from prove output. Quiet is already the default for local runs; this input is the explicit prove-mode form. --verbose wins and shows everything.'
     required: false
@@ -440,6 +444,9 @@ runs:
         fi
         if [ -n "${{ inputs.prove-suppress-warnings }}" ]; then
           PROVE_ARGS+=(--suppress-warnings="${{ inputs.prove-suppress-warnings }}")
+        fi
+        if [ -n "${{ inputs.prove-args }}" ]; then
+          PROVE_ARGS+=(--args="${{ inputs.prove-args }}")
         fi
         if [ "${{ inputs.verbose }}" == 'true' ]; then
           PROVE_ARGS+=(--verbose)

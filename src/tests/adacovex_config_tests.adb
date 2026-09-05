@@ -933,6 +933,61 @@ package body Adacovex_Config_Tests is
          Cfg := Testing.Parse_All (A);
          R.Check (not Cfg.CLI_Error, "--timezone=GMT+8 is accepted");
       end;
+
+      --  --skip-path only works with the complexity subcommand.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--skip-path=docs/api-docs");
+         Cfg := Testing.Parse_All (A);
+         R.Check (Cfg.CLI_Error, "--skip-path without complexity is an error");
+      end;
+
+      --  complexity --skip-path is accepted and stored (repeatable).
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "complexity");
+         Add (A, "--skip-path=docs/api-docs");
+         Add (A, "--skip-path");
+         Add (A, "generated");
+         Cfg := Testing.Parse_All (A);
+         R.Check (not Cfg.CLI_Error, "complexity --skip-path is not an error");
+         R.Check
+           (Cfg.Skip_Paths_Len > 0
+            and then Cfg.Complexity_Skip_Paths (1 .. Cfg.Skip_Paths_Len)
+                     = "docs/api-docs,generated",
+            "--skip-path values accumulate comma-separated");
+      end;
+
+      --  --args only works with the prove subcommand.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--args=--prover=cvc5");
+         Cfg := Testing.Parse_All (A);
+         R.Check (Cfg.CLI_Error, "--args without prove is an error");
+      end;
+
+      --  prove --args is accepted and accumulates across repeats.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "prove");
+         Add (A, "--args=--prover=cvc5 --timeout=5");
+         Add (A, "--args");
+         Add (A, "--report=all");
+         Cfg := Testing.Parse_All (A);
+         R.Check (not Cfg.CLI_Error, "prove --args is not an error");
+         R.Check
+           (Ada.Strings.Unbounded.To_String (Cfg.Prove_Args)
+            = "--prover=cvc5 --timeout=5 --report=all",
+            "prove --args accumulates space-joined raw gnatprove flags");
+      end;
    end Run;
 
 end Adacovex_Config_Tests;

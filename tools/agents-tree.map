@@ -8,22 +8,23 @@ src/compliance/adacovex-compliance-dal	DAL level assessment logic (DAL-A..E crit
 src/core/adacovex-core	Parent package for core data types and configuration
 src/core/adacovex-types	All domain types + conversion functions
 src/core/adacovex-vcs	VCS abstraction (git/hg/svn/fossil/jj detection + base snapshots)
-src/core/adacovex-config	CLI argument parser (prove mode, --no-sbom, --sbom-format)
+src/core/adacovex-config	CLI argument parser (prove --args, complexity --excludes/--skip-path, --no-sbom, --sbom-format)
 src/core/adacovex-diff	Differential assessment (--compare-base / --coverage-delta)
-src/core/adacovex-prove	GNATprove runner for the `prove` subcommand (alire-first toolchain resolution)
+src/core/adacovex-prove	GNATprove runner for the `prove` subcommand (alire-first toolchain resolution; --args passthrough; no-covex-spark-proof unit opt-outs via -u)
 src/core/adacovex-prove_patch	Proof patches for vendored deps (SPARK aspect merge + patched proof tree)
 src/core/adacovex-cache	On-disk result cache (content-hashed per-file, oldest-first eviction, size policy) + persistent stat-stamp index + per-process directory snapshot memo
 src/core/adacovex-dir_cache	Per-process directory-snapshot memo (one enumeration + stat set shared by all walkers; LSP-style shared snapshot)
 src/core/adacovex-completion	Shell auto-completion script generator (bash/fish/zsh/pwsh)
 src/core/adacovex-cpus	Host CPU/CI detection + GNATprove parallelism resolution
-src/core/adacovex-complexity	Cyclomatic complexity checker (multi-language; gated by make complexity-check; --excludes=EXT,EXT)
+src/core/adacovex-opt_outs	Per-file opt-out annotation detector (no-covex-complexity-scan / -docstrings / -spark-proof / -analysis header markers)
+src/core/adacovex-complexity	Cyclomatic complexity checker (multi-language incl. Markdown; LOC/cx gates; --excludes / --skip-path / header opt-out markers; wired into make complexity-check)
 src/core/adacovex-ansi	ANSI colour helper (terminal colour support; CI/NO_COLOR/TERM-dumb aware)
 src/core/adacovex-timezones	Timezone resolution + local-time formatting (OS default; --tz/--timezone: IANA name or UTC/GMT offset)
 src/ir/adacovex-target_profiles	Bounded IR scalar types (IR_Int8..IR_Int64 / IR_UInt8..IR_UInt64) + host/target config
 src/ir/adacovex-ir_bounds	Bounds-verification fixture (synthesized lowered types, gnatprove-proved)
 src/ir/adacovex-ir_synthesiser	Future-use IR synthesiser (foreign type-name lowering to bounded Ada)
 src/parsers/adacovex-parsers	Parent package for all input-file parsers
-src/parsers/adacovex-parsers-source	Ada source scanner (procs/funcs/docstrings/HLR)
+src/parsers/adacovex-parsers-source	Ada source scanner (procs/funcs/docstrings/HLR; per-file no-covex-docstrings / no-covex-spark-proof markers)
 src/parsers/adacovex-parsers-gnatprove	GNATprove .out parser
 src/parsers/adacovex-parsers-tests	AUnit test-result parser
 src/parsers/adacovex-parsers-do178c	HLR/LLR markdown parser + source tag matcher
@@ -50,13 +51,13 @@ src/tests/adacovex_server_tests	Server routing tests (41)
 src/tests/adacovex_prove_patch_tests	Proof patch merge tests (35)
 src/tests/adacovex_prove_tests	GNATprove parser tests (64)
 src/tests/adacovex_testparser_tests	Test-result parser tests (50)
-src/tests/adacovex_config_tests	CLI config tests (168)
+src/tests/adacovex_config_tests	CLI config tests (174)
 src/tests/adacovex_tz_ansi_tests	Timezone + ANSI tests (63)
 src/tests/adacovex_complexity_tests	Complexity check tests (12)
 src/tests/adacovex_renderer_svg_tests	SVG renderer tests (161)
 src/tests/adacovex_renderer_tests	HTML/Markdown renderer tests (58)
 src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (288)
-src/tests/test_runner	Test suite entry point (1229 tests)
+src/tests/test_runner	Test suite entry point (1235 tests)
 src/parsers/adacovex-parsers-manifest-req_entry	Parse the first requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-collect_req_entries	Collect every requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-register_root_python_deps	Register root requirements*.txt entries as dev-scope pypi components

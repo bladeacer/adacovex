@@ -33,7 +33,7 @@ ISO 26262 / IEC 62304), and interactive dashboards.
   (per-project manifest, PATH, cached toolchain, or download), so the covex
   crate installs and builds with no toolchain beyond the GNAT compiler
 -  Self-assessment: 100% docstring coverage, Platinum SPARK (876/876 VCs proved),
-  DAL-C / ASIL B / Class A Achieved, 1229/1229 native tests passing
+  DAL-C / ASIL B / Class A Achieved, 1235/1235 native tests passing
 """
 version = "1.41.0"
 project-files = ["adacovex.gpr"]

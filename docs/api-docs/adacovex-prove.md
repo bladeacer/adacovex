@@ -69,6 +69,8 @@ Steps       : Integer := -1;
 Memlimit    : Integer := -1;
 Force       : Boolean := False;
 No_Inlining : Boolean := False;
+Extra_Args : Ada.Strings.Unbounded.Unbounded_String :=
+Ada.Strings.Unbounded.Null_Unbounded_String;
 Suppress_Warnings : Boolean := True;
 Suppress_Sets : Ada.Strings.Unbounded.Unbounded_String :=
 Ada.Strings.Unbounded.Null_Unbounded_String;

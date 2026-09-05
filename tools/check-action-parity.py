@@ -69,6 +69,7 @@ CLI_ONLY: Dict[str, str] = {
     "tz": "display timezone override (local diagnostics)",
     "timezone": "display timezone override (alias of --tz; local diagnostics)",
     "excludes": "complexity --excludes extension skip (local quality gate)",
+    "skip-path": "complexity --skip-path per-path exclusion (local quality gate)",
     "emit-svg": "SVG badge output path (CI uses the default <target>/docs/badges)",
     "cache": "result-cache enable is default-on; the action exposes only the negative --no-cache",
     "sbom": "sbom subcommand; the action drives SBOM via generate-sbom + sbom-format inputs",
@@ -109,6 +110,7 @@ PROVE_PREFIXED: Set[str] = {
     "no-inlining",
     "suppress-warnings",
     "quiet",
+    "args",
 }
 
 # CLI flag -> differently-named action input (inverted / alias forms).

@@ -17,7 +17,7 @@ help:
 	@echo '    build         Build project (adacovex + test_runner, covex alias);'
 	@echo '                  regenerates src/adacovex_version_info.ads from'
 	@echo '                  alire-dev.toml (or ADACOVEX_VERSION for releases)'
-	@echo '    test          Build and run native test suite (1229 tests)'
+	@echo '    test          Build and run native test suite (1235 tests)'
 	@echo '    prove         Run SPARK proofs (gnatprove via prove subcommand,'
 	@echo '                  resolved from alire-dev.toml / PATH / cache / download)'
 	@echo '                  (also auto-regenerates SVG badges in docs/badges/)'
@@ -194,7 +194,11 @@ changelog-check:
 	@python3 tools/check-changelogs.py
 
 complexity-check: build
-	./bin/adacovex complexity --excludes=md,rst
+	# Markdown is scanned by the complexity gate (the max-lines / LOC and
+	# percentage caps then cover the docs tree too).  reStructuredText and the
+	# generated API reference (docs/api-docs) stay excluded: the API pages are
+	# regenerated from Ada docstrings by make doc, never hand-written source.
+	./bin/adacovex complexity --excludes=rst --skip-path=docs/api-docs
 
 csslint-check:
 	@python3 tools/csslint.py --check

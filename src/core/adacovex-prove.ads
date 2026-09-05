@@ -65,6 +65,14 @@ package Adacovex.Prove is
       Force       : Boolean := False;
       No_Inlining : Boolean := False;
 
+      --  Raw extra GNATprove arguments (--args="..."), space-split into
+      --  individual tokens and appended to the gnatprove command line
+      --  after the options Build_Option_String produces.  Empty by default.
+      --  A value is forwarded verbatim: the caller is responsible for it
+      --  being a valid gnatprove switch group.
+      Extra_Args : Ada.Strings.Unbounded.Unbounded_String :=
+        Ada.Strings.Unbounded.Null_Unbounded_String;
+
       --  True when gnatprove's benign informational messages are hidden from
       --  stdout.  It is quiet by default for local runs.  It is always off
       --  under --verbose.  CI passes --verbose, so the CI output stays
@@ -97,7 +105,8 @@ package Adacovex.Prove is
    --  are 720/720 adacovex and 589/589 Ada_CRDT VCs with 0 unproved either
    --  way.  Level, timeout, steps, and memlimit are included only when
    --  configured.  --force and --no-inlining map to the corresponding gnatprove
-   --  switches.
+   --  switches.  Any raw --args value in Opts.Extra_Args is appended
+   --  verbatim (space-split) at the end.
    --  @param Opts  GNATprove options.
    --  @param Jobs  Resolved job count to forward (-j value).
    --  @return Space-separated gnatprove option string.

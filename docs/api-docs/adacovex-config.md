@@ -29,6 +29,8 @@ Time_Zone     : String (1 .. Types.Max_Filename);
 Time_Zone_Len : Natural := 0;
 Complexity_Excludes : String (1 .. Types.Max_Filename);
 Excludes_Len        : Natural := 0;
+Complexity_Skip_Paths : String (1 .. Types.Max_Path);
+Skip_Paths_Len        : Natural := 0;
 Theme            : Types.Dashboard_Theme := Types.System_Theme;
 No_SVG           : Boolean := False;
 Emit_SVG         : Boolean := True;
@@ -90,6 +92,8 @@ Prove_Suppress_Warnings : Boolean := True;
 Prove_Suppress_Sets : Ada.Strings.Unbounded.Unbounded_String :=
 Ada.Strings.Unbounded.Null_Unbounded_String;
 Prove_Suppress_Explicit : Boolean := False;
+Prove_Args : Ada.Strings.Unbounded.Unbounded_String :=
+Ada.Strings.Unbounded.Null_Unbounded_String;
 Require_SPARK          : Types.SPARK_Level := Types.Stone;
 Require_SPARK_Set      : Boolean := False;
 Require_Docstrings     : Natural := 0;

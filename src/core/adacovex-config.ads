@@ -52,6 +52,13 @@ package Adacovex.Config is
       Complexity_Excludes : String (1 .. Types.Max_Filename);
       Excludes_Len        : Natural := 0;
 
+      --  Comma-separated path fragments to skip in `complexity` mode
+      --  (--skip-path=PATH, repeatable).  A file whose full path contains
+      --  one of the fragments is excluded from the complexity/LOC gate.
+      --  Only valid with the complexity subcommand.
+      Complexity_Skip_Paths : String (1 .. Types.Max_Path);
+      Skip_Paths_Len        : Natural := 0;
+
       --  Dashboard colour theme for --serve (system/light/dark).  "system"
       --  follows the browser's prefers-color-scheme.  "light" and "dark"
       --  force a theme.  Relevant only with --serve.
@@ -164,6 +171,13 @@ package Adacovex.Config is
       --  form is a prove-mode flag for the "requires the prove subcommand"
       --  validation.  A plain local run never trips it.
       Prove_Suppress_Explicit : Boolean := False;
+
+      --  Raw GNATprove arguments passed through verbatim (--args="...").
+      --  The value is space-split into individual gnatprove command-line
+      --  tokens and appended to the option list the prove subcommand
+      --  builds.  Only valid with the prove subcommand.
+      Prove_Args : Ada.Strings.Unbounded.Unbounded_String :=
+        Ada.Strings.Unbounded.Null_Unbounded_String;
 
       --  CI threshold gates (default: all off).  When set, the assessment
       --  fails with exit code 1 and an explicit reason if the target does

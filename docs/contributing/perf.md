@@ -91,28 +91,29 @@ states):
   this state. A full `make prove` always ends with a complete session, so
   back-to-back `make prove` runs are stable at the prove-warm shape.
 
-### Sample output (hyperfine, x86-64, 12-core machine, 1.43.0)
+### Sample output (hyperfine, x86-64, 12-core machine, 1.46.0)
 
 ```
 === Pipeline cold (fresh result cache) ===
-  Time (mean +/- sigma):  85.7 ms +/- 2.1 ms    [User: 59.7 ms, System: 15.5 ms]
-  Range (min ... max):    82.3 ms ... 89.5 ms   8 runs
+  Time (mean +/- sigma):  87.6 ms +/- 4.6 ms    [User: 61.6 ms, System: 15.4 ms]
+  Range (min ... max):    81.7 ms ... 97.4 ms   10 runs
 
 === Pipeline warm (populated caches) ===
-  Time (mean +/- sigma):  35.1 ms +/- 1.6 ms    [User: 14.9 ms, System: 9.8 ms]
-  Range (min ... max):    32.6 ms ... 38.4 ms   10 runs
+  Time (mean +/- sigma):  40.7 ms +/- 3.8 ms    [User: 16.7 ms, System: 13.5 ms]
+  Range (min ... max):    36.1 ms ... 47.5 ms   15 runs
 
 === Prove cold (--no-cache, result cache + gnatprove session wiped) ===
-  Time (mean +/- sigma):  39.4 s (single run; see the comparison table below)
+  Time (mean +/- sigma):  37.349 s +/- 1.479 s   [User: 195.612 s, System: 11.331 s]
+  Range (min ... max):    35.642 s ... 38.232 s   3 runs
 
 === Prove warm (populated prove cache) ===
-  Time (mean +/- sigma):  40.1 ms +/- 2.2 ms    [User: 19.4 ms, System: 10.3 ms]
-  Range (min ... max):    36.5 ms ... 44.1 ms   10 runs
+  Time (mean +/- sigma):  45.9 ms +/- 3.1 ms    [User: 19.8 ms, System: 15.8 ms]
+  Range (min ... max):    40.5 ms ... 51.9 ms   15 runs
 
 == Binary size ==
-bin/adacovex            11.2 MiB (11694008 bytes)
-after strip             6.1 MiB (6376696 bytes)
-savings                 45.5%
+bin/adacovex            11.5 MiB (12053808 bytes)
+after strip             6.4 MiB (6674808 bytes)
+savings                 44.6%
 ```
 
 The numbers shift with the machine and the codebase. What matters is the
@@ -181,18 +182,18 @@ machine and the codebase. What matters is the shape:
 The true test of proof performance is the `prove` subcommand --
 `./bin/covex prove` -- measured at the adacovex-binary level, not just at
 the gnatprove level. The benchmark categories above define the shapes
-precisely; the table compares them across the last six trees
+precisely; the table compares them across the last seven trees
 (gnatprove 16.1.0, 12 logical cores, 10 proof jobs; the 1.42.0 column is
 the hyperfine output above, the 1.43.0 onward columns are hyperfine on
 each tree):
 
-| Scenario | 1.40.0 | 1.41.0 | 1.42.0 | 1.43.0 | 1.44.0 | 1.45.0 |
-|----------|--------|--------|--------|--------|--------|--------|
-| Pipeline warm | ~1.02 s* | ~104 ms | 40 ms | 35 ms | 23 ms | 41 ms |
-| Pipeline cold | ~1.4 s* | ~545 ms* | 91 ms | 86 ms | 60 ms | 84 ms |
-| Prove warm (result-cache short-circuit) | 1.6 s | 2.5 s | 47 ms | 40 ms | 44 ms | 46 ms |
-| Prove cold (result cache + session wiped) | 39.0 s / 725 VCs | 42.8 s / 791 VCs | 39.3 s / 876 VCs | 39.4 s / 876 VCs | 36.4 s / 876 VCs | 36.8 s / 876 VCs |
-| Warm-run syscalls (`newfstatat`, strace) | ~218k | ~15k | ~21k | ~12k | ~2k | ~6k |
+| Scenario | 1.40.0 | 1.41.0 | 1.42.0 | 1.43.0 | 1.44.0 | 1.45.0 | 1.46.0 |
+|----------|--------|--------|--------|--------|--------|--------|--------|
+| Pipeline warm | ~1.02 s* | ~104 ms | 40 ms | 35 ms | 23 ms | 41 ms | 41 ms |
+| Pipeline cold | ~1.4 s* | ~545 ms* | 91 ms | 86 ms | 60 ms | 84 ms | 88 ms |
+| Prove warm (result-cache short-circuit) | 1.6 s | 2.5 s | 47 ms | 40 ms | 44 ms | 46 ms | 46 ms |
+| Prove cold (result cache + session wiped) | 39.0 s / 725 VCs | 42.8 s / 791 VCs | 39.3 s / 876 VCs | 39.4 s / 876 VCs | 36.4 s / 876 VCs | 36.8 s / 876 VCs | 37.3 s / 876 VCs |
+| Warm-run syscalls (`newfstatat`, strace) | ~218k | ~15k | ~21k | ~12k | ~2k | ~6k | ~6k |
 
 \* 1.40.0/1.41.0 pipeline figures predate the four-scenario bench script
 (single-shot `time` runs, coarser sampling).
@@ -206,6 +207,18 @@ more walkers. The syscall column still shows the real I/O story: ~6k
 stats versus 1.43.0's ~12k, with `docs/_build` (a Sphinx build product,
 ~750 stats/run) now excluded from every walk. Prove cold stays pinned at
 the solver floor (36.8 s at 876 VCs), and prove warm stays under 50 ms.
+
+The 1.46.0 column is flat because the per-file opt-out machinery is
+invisible to every warm shape.  The `no-covex-spark-proof` marker scan
+(`Append_Unit_List` walking the project's source directories) runs only
+after the result-cache lookup misses, so a warm prove hit returns before
+the walk starts (46 ms prove warm, unchanged).  A cold prove pays the
+count walk once, but it is a directory enumeration over the same trees
+the cold run already hashes -- noise against the 37.3 s solver floor at
+the same 876 VCs.  Pipeline warm and cold are likewise flat (41 ms /
+88 ms): the complexity gate now scans Markdown, but that gate is a
+separate subcommand and is not part of the assessed pipeline, and the
+marker scan in the source scanner adds no per-byte cost to a warm run.
 
 Reading the table:
 
@@ -253,6 +266,30 @@ Reading the table:
 
 CPU use stays bounded on developer machines: the default job count is
 `cores - 2` (all cores inside CI), so gnatprove never starves the desktop.
+
+## SIMD and other optimisation candidates (1.46.0)
+
+An optimisation review in 1.46.0 asked whether SIMD or other low-level
+speed-ups could improve the pipeline. The measurements say no:
+
+- A cold self-assessment (no result cache, ~250 source files) completes in
+  ~88 ms and a warm one in ~41 ms on the dev machine (hyperfine, 1.46.0),
+  even though the local build profile is unoptimised (no `-O` flags). The
+  pipeline is I/O-bound and cache-bound, not compute-bound.
+- A `prove` run is dominated by the gnatprove solver floor (~39 s cold;
+  warm runs serve the cached proof in milliseconds). The adacovex-side share
+  of a cold prove run is about a second.
+- The per-byte scanning loops (comment stripping, decision counting, HLR
+  tags) are the only SIMD candidates. They process short lines one byte at
+  a time; auto-vectorisation needs `-O3` (or `-ftree-vectorize`) and gains
+  little on data this small, at the cost of the zero-dependency build's
+  simplicity.
+
+Conclusion: no SIMD or assembly is added. The sanctioned path to more
+speed is the existing one -- higher optimisation in release profiles
+(`alr` release builds already enable `-O2`), the shared directory snapshot
+memo, and the content-hashed result cache. If a future profile shows the
+scanner hot, the first move is whole-file buffered reads, not SIMD.
 
 ## Optimisation historyKept in reverse-chronological order. Every entry names the measurement that
 drove it so the next round of work can see whether the previous assumption
@@ -475,7 +512,7 @@ The subprocess costs tens of milliseconds per referenced tool (`System: 42 ms ->
 
 ## Binary size
 
-The debug-symbol-carrying build is ~11.1 MiB. Stripping (`strip bin/adacovex`) yields ~6.1 MiB (~45% smaller) without affecting behaviour. GNAT's default build keeps symbols for debugging (`gdb` works). Release artifacts are stripped. `make bench` always reports both.
+The debug-symbol-carrying build is ~11.5 MiB. Stripping (`strip bin/adacovex`) yields ~6.4 MiB (~45% smaller) without affecting behaviour. GNAT's default build keeps symbols for debugging (`gdb` works). Release artifacts are stripped. `make bench` always reports both.
 
 Regressions in code size are visible in the same command that reports timings. If the symbols ever come out, the binary size is the same and the page should say so.
 

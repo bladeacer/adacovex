@@ -63,9 +63,18 @@ package Adacovex.Complexity is
    --  a comma-separated list of file extensions to skip (no leading dots),
    --  for example "md,rst".  Per-subprogram analysis is Ada-specific; the
    --  other languages contribute file-level LOC and decision counts.
+   --  Skip_Paths is a comma-separated list of path fragments; any file
+   --  whose full path contains one of them is skipped.  A file whose
+   --  leading comment block carries the no-covex-complexity-scan marker
+   --  (or no-covex-analysis) is skipped too -- see Adacovex.Opt_Outs.
    --  @brief Walk Target_Dir and compute complexity for every source file.
+   --  @param Target_Dir  Project root directory to scan.
+   --  @param Excludes  Comma-separated file extensions to skip.
+   --  @param Skip_Paths  Comma-separated path fragments to skip.
+   --  @return Aggregate complexity metrics for the scanned files.
    function Analyze_Project
-     (Target_Dir : String; Excludes : String := "") return Complexity_Result;
+     (Target_Dir : String; Excludes : String := ""; Skip_Paths : String := "")
+      return Complexity_Result;
 
    --  Evaluate Result against the supplied thresholds.  Return the list of
    --  violations.  The list is empty when every gate passes.

@@ -3,6 +3,7 @@ with Ada.Directories;
 with Adacovex.Dir_Cache;
 with Ada.Containers.Vectors;
 with Adacovex.Cache;
+with Adacovex.Opt_Outs;
 
 package body Adacovex.Parsers.Source is
 
@@ -482,6 +483,23 @@ package body Adacovex.Parsers.Source is
          Pkg.File_Path (I - File_Path'First + 1) := File_Path (I);
       end loop;
 
+      --  Per-file opt-out markers (no-covex-docstrings / no-covex-spark-
+      --  proof / no-covex-analysis) in the leading comment block remove
+      --  the file from the docstring-coverage metrics and, in prove mode,
+      --  from the SPARK proof run.  See Adacovex.Opt_Outs.  Detection runs
+      --  before Open below: a second GNAT Text_IO handle on the same file
+      --  cannot read while the scanner's own handle holds it open.
+      if Adacovex.Opt_Outs.File_Opts_Out
+           (File_Path, Adacovex.Opt_Outs.Docstrings)
+      then
+         Pkg.Docstrings_Opt_Out := True;
+      end if;
+      if Adacovex.Opt_Outs.File_Opts_Out
+           (File_Path, Adacovex.Opt_Outs.SPARK_Proof)
+      then
+         Pkg.Proof_Opt_Out := True;
+      end if;
+
       begin
          Open (F, In_File, File_Path);
       exception
@@ -916,6 +934,13 @@ package body Adacovex.Parsers.Source is
       end loop;
    end Apply_Patches;
 
+   --  Compute aggregate docstring-coverage metrics from scanned packages.
+   --  Tallies documented vs. undocumented subprograms, parameters, and return
+   --  values across all scanned packages.  Packages whose file carries the
+   --  no-covex-docstrings (or no-covex-analysis) marker are excluded from
+   --  both the numerator and the denominator.
+   --  @param Packages  Vector of scanned packages.
+   --  @return Aggregate docstring-coverage metrics.
    function Compute_Docstring_Metrics
      (Packages : Types.Implementation.Package_Vectors.Vector)
       return Types.Docstring_Metrics
@@ -923,12 +948,15 @@ package body Adacovex.Parsers.Source is
       Metrics : Types.Docstring_Metrics;
    begin
       for P in 1 .. Integer (Packages.Length) loop
-         for S in 1 .. Integer (Packages (P).Subprograms.Length) loop
-            Metrics.Total_Subprograms := Metrics.Total_Subprograms + 1;
-            if Packages (P).Subprograms (S).Has_Docstring then
-               Metrics.Documented_Subprogs := Metrics.Documented_Subprogs + 1;
-            end if;
-         end loop;
+         if not Packages (P).Docstrings_Opt_Out then
+            for S in 1 .. Integer (Packages (P).Subprograms.Length) loop
+               Metrics.Total_Subprograms := Metrics.Total_Subprograms + 1;
+               if Packages (P).Subprograms (S).Has_Docstring then
+                  Metrics.Documented_Subprogs :=
+                    Metrics.Documented_Subprogs + 1;
+               end if;
+            end loop;
+         end if;
       end loop;
 
       if Metrics.Total_Subprograms > 0 then

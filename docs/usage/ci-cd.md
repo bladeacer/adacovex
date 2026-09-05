@@ -25,7 +25,7 @@ jobs:
           standard: all          # DO-178C + ISO 26262 + IEC 62304
           require-spark: Platinum
           require-docstrings: 100
-          require-tests: 1229
+          require-tests: 1235
           run-tests: true
           generate-sbom: true
 ```
@@ -194,6 +194,7 @@ steps:
 | `prove-force` | `false` | Force full GNATprove reanalysis (`-f`) |
 | `prove-no-loop-unrolling` | `false` | Disable GNATprove automatic loop unrolling |
 | `prove-no-inlining` | `false` | Disable GNATprove contextual-analysis inlining |
+| `prove-args` | `''` | Extra raw GNATprove flags passed through verbatim to the `prove` subcommand (`--args=...`, for example `--prover=cvc5 --timeout=5`); the value is space-split into gnatprove arguments |
 | `prove-quiet` | `false` | Suppress GNATprove benign info messages (the default set) from prove output. Quiet is already the default for local runs; this is the explicit prove-mode form. `--verbose` wins |
 | `prove-suppress-warnings` | `''` | Comma-separated GNATprove info tags to suppress from prove output (for example `unrolling-inlining,xyz`); a tag `S` suppresses blocks tagged `[info-S]` (or `[S]`). `--verbose` wins |
 
