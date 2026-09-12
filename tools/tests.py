@@ -22,10 +22,13 @@ import re
 import shutil
 import subprocess
 import sys
+import contextlib
+import io
 import tarfile
 import tempfile
 import unittest
 from pathlib import Path
+from typing import List, Tuple
 
 TOOLS: Path = Path(__file__).resolve().parent
 sys.path.insert(0, str(TOOLS))
@@ -42,6 +45,7 @@ import csslint
 para_split = importlib.import_module("para-split")
 rst2md = importlib.import_module("rst2md")
 check_book_links = importlib.import_module("check-book-links")
+check_docs = importlib.import_module("check-docs")
 
 GIT_ENV: dict = {
     "GIT_AUTHOR_NAME": "adacovex test",
@@ -533,6 +537,57 @@ class TestGenDocsAssets(unittest.TestCase):
             self.assertNotIn("github.com/pradyunsg/furo", index_body)
             self.assertIn("Copyright \u00a9 bladeacer", index_body)
             self.assertIn("sphinx-doc.org", index_body)
+
+
+class TestCheckDocs(unittest.TestCase):
+    """Pure-logic tests for tools/check-docs.py (docs gate + loc opt-out)."""
+
+    def setUp(self) -> None:
+        self._root = check_docs.ROOT
+
+    def tearDown(self) -> None:
+        check_docs.ROOT = self._root
+
+    def _check(self, tmp: str, text: str) -> Tuple[List[str], str]:
+        # check() resolves the path against ROOT; point it at the temp dir.
+        check_docs.ROOT = Path(tmp)
+        p = Path(tmp) / "page.md"
+        p.write_text(text, encoding="utf-8")
+        with contextlib.redirect_stderr(io.StringIO()) as err:
+            errors = check_docs.check(p)
+        return errors, err.getvalue()
+
+    def test_loc_cap_warns_without_marker(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            _, err = self._check(tmp, "# Page\n\n" + "- bullet\n" * 260)
+            self.assertIn("lines (maximum", err)
+
+    def test_loc_cap_opted_out_with_marker(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            errors, err = self._check(
+                tmp, "<!-- no-covex-docs-loc: reference dictionary -->\n"
+                     "# Page\n\n" + "- bullet\n" * 260)
+            self.assertEqual(errors, [])
+            self.assertEqual(err, "")
+
+    def test_marker_only_scanned_near_top(self) -> None:
+        # A marker beyond the scan window does not opt the file out.
+        with tempfile.TemporaryDirectory() as tmp:
+            filler = "\n" * (check_docs.LOC_MARKER_SCAN + 5)
+            _, err = self._check(
+                tmp, "# Page" + filler + "<!-- no-covex-docs-loc -->\n"
+                     + "- bullet\n" * 260)
+            self.assertIn("lines (maximum", err)
+
+    def test_paragraph_cap_still_hard_under_marker(self) -> None:
+        # The opt-out covers the line cap only; the paragraph rule stays a
+        # hard error even in an opted-out page.
+        with tempfile.TemporaryDirectory() as tmp:
+            errors, _ = self._check(
+                tmp, "<!-- no-covex-docs-loc -->\n# Page\n\n"
+                     "One. Two. Three. Four. Five.\n")
+            self.assertEqual(len(errors), 1)
+            self.assertIn("5 sentences", errors[0])
 
 
 class TestCheckBookLinks(unittest.TestCase):

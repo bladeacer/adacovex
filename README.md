@@ -64,46 +64,25 @@ Contributors build from source with `make build` (see
 
 ## Documentation
 
-### Getting started
+The full index lives at
+[adacovex.readthedocs.io](https://adacovex.readthedocs.io/en/latest/). Highlights:
 
 | Reference | Description |
 |-----------|-------------|
 | [Installation](https://adacovex.readthedocs.io/en/latest/usage/installation.html) | Alire / release bundle / source build |
 | [CLI Reference](https://adacovex.readthedocs.io/en/latest/usage/cli-reference.html) | Full flag table, `--require-*` gates, exit codes |
-| [Target Projects](https://adacovex.readthedocs.io/en/latest/usage/target-projects.html) | What a project must provide for assessment |
-| [Platforms](https://adacovex.readthedocs.io/en/latest/usage/platforms.html) | Platform support, CPU core detection, `status` subcommand |
-
-### Usage and configuration
-
-| Reference | Description |
-|-----------|-------------|
 | [Web Dashboard + JSON API](https://adacovex.readthedocs.io/en/latest/usage/dashboard.html) | `--serve` HTML dashboard, `/api/metrics`, themes |
 | [SBOM](https://adacovex.readthedocs.io/en/latest/usage/sbom.html) | Proof-aware CycloneDX / SPDX bill of materials |
 | [VCS Support](https://adacovex.readthedocs.io/en/latest/usage/vcs.html) | Differential modes across git/hg/svn/fossil/jj |
-| [Proving and Writing Proofs](https://adacovex.readthedocs.io/en/latest/contributing/proving.html) | How proving works, SPARK contracts, proof patches for vendored deps |
-| [Architecture](https://adacovex.readthedocs.io/en/latest/contributing/architecture.html) | Design decisions, patches, toolchain resolution, overflow contract |
-
-### Compliance
-
-| Reference | Description |
-|-----------|-------------|
-| [Standards](https://adacovex.readthedocs.io/en/latest/usage/standards.html) | DO-178C / ISO 26262 / IEC 62304 abstraction |
-| [DAL Levels](https://adacovex.readthedocs.io/en/latest/api-docs/adacovex-dal-levels.html) | DO-178C DAL A to E criteria |
-| [ASIL Levels](https://adacovex.readthedocs.io/en/latest/api-docs/adacovex-asil-levels.html) | ISO 26262 ASIL A to D / QM criteria |
-| [Safety Classes](https://adacovex.readthedocs.io/en/latest/api-docs/adacovex-class-levels.html) | IEC 62304 Class A to C criteria |
+| [Standards](https://adacovex.readthedocs.io/en/latest/usage/standards.html) | DO-178C / ISO 26262 / IEC 62304 abstraction, per-level criteria |
 | [HLR Index](https://adacovex.readthedocs.io/en/latest/HLR.html) | High-level requirements traceability index |
 | [LLR Mapping](https://adacovex.readthedocs.io/en/latest/LLR.html) | Low-level requirement-to-HLR mapping |
-
-### Development and auditing
-
-| Reference | Description |
-|-----------|-------------|
-| [Contributing](CONTRIBUTING.md) | Changelog format, test suite |
+| [Proving and Writing Proofs](https://adacovex.readthedocs.io/en/latest/contributing/proving.html) | How proving works, SPARK contracts, proof patches for vendored deps |
+| [Architecture](https://adacovex.readthedocs.io/en/latest/contributing/architecture.html) | Design decisions, patches, toolchain resolution, overflow contract |
 | [Developer Guide](https://adacovex.readthedocs.io/en/latest/contributing/developer-guide.html) | Codebase structure and repo setup for contributors |
 | [API Reference](https://adacovex.readthedocs.io/en/latest/api-docs/index.html) | Auto-generated package API docs (developers / auditors) |
 | [Docstring Spec](https://adacovex.readthedocs.io/en/latest/api-docs/adacovex-docstring-spec.html) | Annotation format, placement, conventions |
 | [Test Format](https://adacovex.readthedocs.io/en/latest/api-docs/adacovex-test-format.html) | Supported test-result output format |
-| [SPARK Levels](https://adacovex.readthedocs.io/en/latest/api-docs/adacovex-spark-levels.html) | Assurance level objectives (Stone to Platinum) |
 | [Changelog](https://adacovex.readthedocs.io/en/latest/changelogs/index.html) | Release history |
 | [CI/CD](https://adacovex.readthedocs.io/en/latest/usage/ci-cd.html) | GitHub Action, workflows, release bundling |
 | [LLM usage](https://adacovex.readthedocs.io/en/latest/contributing/llm-usage.html) | AI disclosure, trust, how LLM agents work under AGENTS.md |
@@ -171,16 +150,12 @@ document. Missing data shows `N/A`; DAL checks that depend on it report
 
 Subprograms are documented with `--  @param` / `--  @return` annotations
 ([full spec](https://adacovex.readthedocs.io/en/latest/api-docs/adacovex-docstring-spec.html)); strict mode requires
-100% coverage. For vendored code you cannot modify, overlay docstrings with
-patch files at `<target>/.adacovex/patches/` (see
-[Architecture -- Patch System](https://adacovex.readthedocs.io/en/latest/contributing/architecture.html#patch-system)).
-
-The same patch files can carry **SPARK proof aspects** (`SPARK_Mode`, `Pre`,
-`Post`, `Global`): the `prove` subcommand merges them into a patched tree copy
-and proves vendored dependencies against their contracts without touching the
-originals. A `.ads` patch re-declares the spec with contracts. A `.adb` patch
-opts a SPARK-clean vendored body into the proof. See
-[Architecture -- Proof patches](https://adacovex.readthedocs.io/en/latest/contributing/architecture.html#proof-patches-spark-contracts-over-vendored-dependencies).
+100% coverage. For vendored code you cannot modify, patch files at
+`<target>/.adacovex/patches/` overlay docstrings and **SPARK proof aspects**
+(`SPARK_Mode`, `Pre`, `Post`, `Global`): the `prove` subcommand merges them
+into a patched tree copy and proves the vendored dependencies against their
+contracts without touching the originals. See
+[Architecture -- Patch System](https://adacovex.readthedocs.io/en/latest/contributing/architecture.html#patch-system).
 
 ## Compliance levels
 
@@ -196,15 +171,8 @@ shared tier and emit badges for all three:
 | IEC 62304 (medical) | `--class=` | A, B, C | `--class=A` = Class A |
 
 The evidence is identical across standards; only the integrity-level label
-changes (`DAL-C` vs `ASIL B` vs `Class A`).
-
-Full tier mapping:
+changes. Full tier mapping and per-level criteria:
 [Standards](https://adacovex.readthedocs.io/en/latest/usage/standards.html).
-
-Per-level criteria:
-[DAL Levels](https://adacovex.readthedocs.io/en/latest/api-docs/adacovex-dal-levels.html),
-[ASIL Levels](https://adacovex.readthedocs.io/en/latest/api-docs/adacovex-asil-levels.html), and
-[Safety Classes](https://adacovex.readthedocs.io/en/latest/api-docs/adacovex-class-levels.html).
 
 ## Development
 

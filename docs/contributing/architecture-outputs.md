@@ -90,7 +90,10 @@ step with the code, and both run inside `make check`:
 - `tools/check-docs.py` (`make docs-check`) fails when any paragraph in the
   user docs, README, or human changelogs exceeds four sentences, and it
   rejects em dashes and Latin abbreviations (`i.e.`, `e.g.`, `etc.`).
-  `tools/para-split.py` rewraps over-long paragraphs to comply.
+  `tools/para-split.py` rewraps over-long paragraphs to comply.  Pages are
+  also kept under 250 lines; a reference dictionary or historical record can
+  opt out of the line cap (never the paragraph rule) with a
+  `no-covex-docs-loc` HTML comment near the top of the file.
 
 The generated `docs/api-docs` pages are excluded from the paragraph rule;
 its source docstrings carry the same rule.

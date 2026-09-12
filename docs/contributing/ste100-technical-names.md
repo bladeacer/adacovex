@@ -1,5 +1,7 @@
 # STE100 Technical Names for adacovex
 
+<!-- no-covex-docs-loc: reference dictionary, line cap does not apply -->
+
 ASD-STE100 Simplified Technical English (Section 1, "Words") defines a
 controlled vocabulary. Most words in that vocabulary are standard STE words.
 Some concepts have no accurate standard STE word. For those concepts, the

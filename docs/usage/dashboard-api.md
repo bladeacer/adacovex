@@ -36,6 +36,16 @@ assessment without parsing HTML:
 | `dal_status` | `Achieved` or `Unmet` |
 | `standards` | Per-standard `level` / `status` object (present when `standard` is `all`) |
 
+A benchmark reference for the endpoints, on the same machine as the
+[performance page](../contributing/perf.md) figures (hyperfine over curl,
+local loopback, 4-worker server): `GET /api/metrics` ~7 ms, `GET /` ~13 ms,
+`GET /docs/` ~5 ms per request. The JSON endpoints are two orders of
+magnitude under the millisecond-scale of the in-process data they serialise;
+the wall time is socket setup (curl spawns, connects, and closes per
+request), so keep-alive client libraries see far lower per-request costs.
+The dashboard renders the page from the immutable assessment state on each
+request, which is microseconds of CPU -- no response cache is needed.
+
 `/api/deps` serves the resolved dependency graph as JSON (the same data the
 SBOM embeds, minus the SBOM envelope):
 

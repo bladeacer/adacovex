@@ -28,8 +28,11 @@ GNAT default `-O0`. This is the release-grade optimisation the perf docs
 already described as the speed path, but the built project file never
 carried it -- local and CI binaries ran unoptimised (the 1.46.0 perf
 review measured a ~41 ms warm self-assessment on such a build). The
-switches apply to both executables from the same project file, and the
-proof is unaffected (gnatprove analyses source, not object code).
+switches apply to both executables from the same project file, andthe proof is unaffected (gnatprove analyses source, not object code).
+Benchmarked (hyperfine, same-session A/B on the Ada_CRDT dogfood target):
+the pipeline cold path drops from ~39 ms to ~33 ms and the stripped binary
+shrinks from 6.49 MiB to 5.39 MiB; the warm path is unchanged within noise
+and the solver-dominated prove-cold shape does not move.
 
 ### C3: Dashboard guide de-duplicated across its three pages
 
@@ -44,7 +47,43 @@ stays in the dashboard home page's server paragraph, and standard
 awareness is documented once on the Standards page. Spelling was also
 swept to British "rigour" on the affected pages.
 
-### C4: Compression review of the offline manual and cache
+### C4: Docs gate clean: line-cap opt-out marker + README trim
+
+`make docs-check` had four standing line-cap overruns (README, the 1.38.0
+changelog, the STE100 technical-names dictionary, and the 16.1.0 proof
+ledger) plus one paragraph-rule failure carried in this release. The
+paragraph failure is fixed in place, the README is trimmed to the budget
+by folding its four documentation tables into one and tightening the
+patch and standards sections, and the three reference/history pages gain
+a `no-covex-docs-loc` opt-out marker -- the same convention the
+complexity gate uses -- understood by `tools/check-docs.py` as an HTML
+comment near the top of the file. The marker suspends only the 250-line
+cap; the paragraph rule stays a hard error everywhere, and the marker is
+covered by new unit tests in `tools/tests.py`.
+
+### C5: Buffered request reader on the serve path
+
+The HTTP request reader pulled one byte per `Receive_Socket` call, so a
+typical request's request line and headers cost ~300 receive syscalls on
+a worker before the handler ran. The reader now fills a 4 KiB
+per-connection buffer per receive and hands out complete CRLF-terminated
+lines from it, cutting the request-read cost to a couple of receives per
+request. The buffer lives in one worker task for the life of one
+keep-alive connection, so it needs no locking; receive timeouts and
+vanished peers surface as an empty line, exactly like the EOF cases the
+old reader handled.
+
+End to end (hyperfine over curl on the same server): `/api/metrics` ~7
+ms, `/` ~13 ms, `/docs/` ~5 ms per request, with the wall time dominated
+by curl's own process cycle. Under sustained concurrent keep-alive load
+(a new pure-stdlib load generator, `tools/load_test.py`, 20-second runs),
+the JSON and badge endpoints saturate the 4-worker pool at ~94k requests
+per second with sub-millisecond tail latency and hold it with 16 clients,
+while the dashboard page and the manual index hold flat latency under the
+same load. The perf page records the endpoint figures, the syscall split,
+and the capacity analysis.
+
+### C6: Compression review of the offline manual and cache
 
 The compression options for the bundled offline manual and the result
 cache were re-examined and the current design kept. The manual already
@@ -56,7 +95,7 @@ decompress faster, but only the browser decompresses here, so binary CPU
 cost is zero either way, and LZ4's lower ratio would grow the embedded
 blob and the shipped binary. The result cache stays uncompressed: its
 blobs are tiny per-unit records where a compress/decompress cycle would
-cost more than the I/O it saves. The trade-off is documented on the
+cost more than the I/O it saves; the trade-off is documented on the
 dashboard page's offline-manual section.
 
 ## Test Suite
@@ -64,7 +103,11 @@ dashboard page's offline-manual section.
 The native suite grows from 1235 to 1239 tests across 17 categories, all
 passing. CLI-config tests pin the tilde contract: `--target=~/x` expands
 to `HOME/x`, `--target=~` resolves to the home directory itself, and a
-`~user` form passes through unexpanded.
+`~user` form passes through unexpanded. The stdlib suite for the dev
+tools (`tools/tests.py`) grows to 59 tests with four for the
+`no-covex-docs-loc` marker: the cap warns without the marker, is silent
+with it, ignores a marker beyond the scan window, and keeps the paragraph
+rule a hard error under the marker.
 
 ## Proof Results
 
@@ -82,4 +125,6 @@ the existing proof with no justified VCs.
 - `HLR-CLI` -- C1 the `--target` tilde expansion in the CLI parser
   (Parse_All path resolution) and its unit tests.
 - `HLR-ARCH` -- C2 the `-O2 -gnatn` project switches, C3 the dashboard
-  guide de-duplication, and C4 the compression review documentation.
+  guide de-duplication, C4 the docs-gate opt-out marker and README trim,
+  C5 the buffered request reader on the serve path, and C6 the
+  compression review documentation.

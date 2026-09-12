@@ -173,8 +173,6 @@ per-unit records where compression costs more than it saves.
 
 ## Metrics charts
 
-![Preview of Metrics tab](../media/dashboard_preview_charts.png)
-
 The **Charts** tab renders eight cards and is a **strict superset** of the
 Overview charts. The charts are hand-rolled (no vendored chart library):
 donut rings are a conic gradient with a CSS hole (the same pattern as the

@@ -166,7 +166,10 @@ tooling Python-only by convention:
 - `tools/check-docs.py` (`make docs-check`) fails when any paragraph in the
   user docs, README, or human changelogs exceeds four sentences, and it
   rejects em dashes and Latin abbreviations (`i.e.`, `e.g.`, `etc.`).
-  `tools/para-split.py` rewraps over-long paragraphs to comply.
+  `tools/para-split.py` rewraps over-long paragraphs to comply.  Pages are
+  also kept under 250 lines; a page that is a reference dictionary or a
+  historical record may opt out of the line cap (never the paragraph rule)
+  with a `no-covex-docs-loc` HTML comment near the top of the file.
 - `tools/gen-dashboard.py` bundles the dashboard resources into
   `src/adacovex-dashboard_template.ads` and minifies the authored CSS and
   JavaScript (comments stripped, whitespace collapsed) before inlining.

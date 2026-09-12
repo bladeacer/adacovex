@@ -26,13 +26,32 @@ package body Adacovex.Server.HTTP is
    procedure Send_Redirect
      (Channel : Socket_Type; Location : String; Keep_Alive : Boolean);
 
-   function Read_Request_Line (Channel : Socket_Type) return String;
-
    function Get_Path (Request_Line : String) return String;
 
    function To_Lower (C : Character) return Character;
 
    function Is_Header (Line : String; Name : String) return Boolean;
+
+   --  A per-connection receive buffer.  Request lines and headers are read
+   --  through it so one Receive_Socket call fills many lines: reading one
+   --  byte per syscall made a typical request (~300 bytes of request line
+   --  plus headers) cost ~300 receive syscalls on the worker.  The reader
+   --  pulls 4 KiB at a time and hands out complete CRLF-terminated lines
+   --  from the buffer, refilling only when it runs dry.  A buffer lives in
+   --  one Worker task for the life of one keep-alive connection, so it
+   --  needs no locking.
+   type Line_Reader is limited record
+      Channel : Socket_Type;
+      Buffer  : String (1 .. 4096);
+      Pos     : Natural := 1;  --  next unread byte in Buffer
+      Filled  : Natural := 0;  --  bytes valid in Buffer (0 = refill needed)
+      Eof     : Boolean := False;
+   end record;
+
+   --  Read one CRLF-terminated line through Reader.  Returns "" on EOF,
+   --  socket error, or an over-long line.  The CRLF is stripped.
+   procedure Read_Line
+     (Reader : in out Line_Reader; Line : out String; Last : out Natural);
 
    --  The docs asset key for a routed path: strip the "/docs" prefix (the
    --  dashboard links carry a trailing slash) and map the bare "/docs" to
@@ -357,28 +376,69 @@ package body Adacovex.Server.HTTP is
       end;
    end Send_Asset_Response;
 
-   function Read_Request_Line (Channel : Socket_Type) return String is
-      Buffer : String (1 .. 4096);
-      Last   : Natural := 0;
-      SEA    : Ada.Streams.Stream_Element_Array (1 .. 1);
-      Len    : Ada.Streams.Stream_Element_Offset;
+   procedure Read_Line
+     (Reader : in out Line_Reader; Line : out String; Last : out Natural)
+   is
+      SEA : Ada.Streams.Stream_Element_Array (1 .. Reader.Buffer'Length);
+      Len : Ada.Streams.Stream_Element_Offset;
    begin
+      Last := 0;
       loop
-         Receive_Socket (Channel, SEA, Len);
-         exit when Len < SEA'First;
-         Last := Last + 1;
-         Buffer (Last) := Character'Val (SEA (SEA'First));
-         exit when
-           Last >= 2
-           and then Buffer (Last - 1) = ASCII.CR
-           and then Buffer (Last) = ASCII.LF;
-         exit when Last >= Buffer'Length;
+         --  Refill when the buffer is drained.  A receive timeout or a
+         --  vanished peer surfaces here as Eof, which the caller turns
+         --  into an empty line and a closed connection.
+         if Reader.Pos > Reader.Filled then
+            if Reader.Eof then
+               return;
+            end if;
+            begin
+               Receive_Socket (Reader.Channel, SEA, Len);
+            exception
+               when GNAT.Sockets.Socket_Error =>
+                  Reader.Eof := True;
+                  return;
+            end;
+            if Len < SEA'First then
+               Reader.Eof := True;
+               return;
+            end if;
+            for I in SEA'First .. Len loop
+               Reader.Buffer (Reader.Buffer'First + Natural (I - SEA'First)) :=
+                 Character'Val (SEA (I));
+            end loop;
+            Reader.Pos := Reader.Buffer'First;
+            Reader.Filled := Reader.Buffer'First + Natural (Len) - 1;
+         end if;
+
+         --  Consume buffered bytes up to (and including) the CRLF terminator.
+         declare
+            I : Natural := Reader.Pos;
+         begin
+            while I <= Reader.Filled loop
+               exit when Last >= Line'Last - 1;
+               Last := Last + 1;
+               Line (Last) := Reader.Buffer (I);
+               if Last >= 2
+                 and then Line (Last - 1) = ASCII.CR
+                 and then Line (Last) = ASCII.LF
+               then
+                  Reader.Pos := I + 1;
+                  Last := Last - 2;
+                  return;
+               end if;
+               I := I + 1;
+            end loop;
+            --  Buffer drained without a terminator: either the line is
+            --  over-long (caller's Line is full) or we must refill.
+            if Last >= Line'Last - 1 then
+               Reader.Eof := True;  --  signal: over-long line -> empty
+               Last := 0;
+               return;
+            end if;
+            Reader.Pos := Reader.Filled + 1;
+         end;
       end loop;
-      if Last < 2 or else Last >= Buffer'Length then
-         return "";
-      end if;
-      return Buffer (1 .. Last - 2);
-   end Read_Request_Line;
+   end Read_Line;
 
    --  Strip the query string and fragment off a request path.  Returns the
    --  path up to (and excluding) the first '?' or '#'; an empty result when
@@ -427,32 +487,57 @@ package body Adacovex.Server.HTTP is
    procedure Handle_Request
      (Channel : Socket_Type; State : Server_State; Keep_Alive : out Boolean)
    is
-      Request : constant String := Read_Request_Line (Channel);
-      Path    : constant String := Get_Path (Request);
-      Is_KA   : Boolean;
-      CLen    : Natural := 0;
+      Reader   : Line_Reader := (Channel => Channel, others => <>);
+      LineBuf  : String (1 .. 4096);
+      Last     : Natural := 0;
+      Is_KA    : Boolean;
+      CLen     : Natural := 0;
+      Path     : String (1 .. 2048);
+      Path_Len : Natural := 0;
    begin
-      if Request'Length = 0 then
+      --  The request line: METHOD SP PATH SP HTTP/x.x CRLF.  An empty line
+      --  (EOF, receive timeout, or an over-long line) closes the socket.
+      Read_Line (Reader, LineBuf, Last);
+      if Last = 0 then
          Keep_Alive := False;
          return;
       end if;
 
       --  Determine HTTP version: HTTP/1.1 defaults to keep-alive
-      if Request'Length >= 8
-        and then Request (Request'Last - 7 .. Request'Last) = "HTTP/1.1"
-      then
+      if Last >= 8 and then LineBuf (Last - 7 .. Last) = "HTTP/1.1" then
          Is_KA := True;
       else
          Is_KA := False;
       end if;
 
+      --  Extract the request path (the second space-separated token) into
+      --  Path (1 .. Path_Len).  A malformed request line closes the socket:
+      --  Get_Path declared its own buffer copy below.
+      declare
+         Request : constant String := LineBuf (1 .. Last);
+         P       : constant String := Get_Path (Request);
+      begin
+         if P'Length > Path'Length then
+            Keep_Alive := False;
+            return;
+         end if;
+         Path (1 .. P'Length) := P;
+         Path_Len := P'Length;
+      end;
+
       --  Read headers
       loop
-         declare
-            Hdr : constant String := Read_Request_Line (Channel);
          begin
-            exit when Hdr'Length = 0;
-
+            Read_Line (Reader, LineBuf, Last);
+         exception
+            when others =>
+               Keep_Alive := False;
+               return;
+         end;
+         exit when Last = 0;
+         declare
+            Hdr : constant String := LineBuf (1 .. Last);
+         begin
             if Is_Header (Hdr, "Connection") then
                for I in Hdr'Range loop
                   if Hdr (I) = ':' then
@@ -529,7 +614,7 @@ package body Adacovex.Server.HTTP is
       --  Route on the query-string-stripped path so `/?theme=light`,
       --  `/api/metrics?x=1` or `/api/deps#top` reach the same handler as
       --  `/`, `/api/metrics` and `/api/deps`.
-      case Route (Strip_Query (Path)) is
+      case Route (Strip_Query (Path (1 .. Path_Len))) is
          when Route_Dashboard      =>
             Send_Response
               (Channel,
@@ -626,7 +711,8 @@ package body Adacovex.Server.HTTP is
             --  it here for the subpath so `?theme`, `?highlight`, and
             --  `#anchor` never make a requested page 404.
             declare
-               Root_Path : constant String := Strip_Query (Path);
+               Root_Path : constant String :=
+                 Strip_Query (Path (1 .. Path_Len));
             begin
                if Root_Path = "/docs" then
                   --  The bare /docs URL: redirect to the trailing-slash form
@@ -643,7 +729,7 @@ package body Adacovex.Server.HTTP is
                           (Channel,
                            "404 Not Found",
                            "text/plain",
-                           "Not Found: " & Path,
+                           "Not Found: " & Path (1 .. Path_Len),
                            Is_KA);
                      else
                         declare
@@ -669,7 +755,7 @@ package body Adacovex.Server.HTTP is
               (Channel,
                "404 Not Found",
                "text/plain",
-               "Not Found: " & Path,
+               "Not Found: " & Path (1 .. Path_Len),
                Is_KA);
       end case;
    end Handle_Request;

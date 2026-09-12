@@ -4,6 +4,8 @@ Date: _2026-08-30_
 
 Version bumped 1.37.0 -> 1.38.0.
 
+<!-- no-covex-docs-loc: historical release record, line cap does not apply -->
+
 ## Changes
 
 ### C1: Manual is now an mdBook project with a Read the Docs site

@@ -1020,8 +1020,8 @@ package body Adacovex_Config_Tests is
 
       --  --target=~ alone resolves to the home directory itself.
       declare
-         Cfg : CLI_Config;
-         A   : Testing.Arg_Vectors.Vector;
+         Cfg  : CLI_Config;
+         A    : Testing.Arg_Vectors.Vector;
          Home : constant String :=
            (if Ada.Environment_Variables.Exists ("HOME")
             then Ada.Environment_Variables.Value ("HOME")

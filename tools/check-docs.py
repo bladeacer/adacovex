@@ -14,6 +14,13 @@ under docs/, the human changelogs under docs/changelogs/, and the root
 README.md.  docs/api-docs is excluded because `make doc` regenerates those
 pages from Ada source docstrings (the paragraph rule there belongs in the
 source docstrings, not the generated output).
+
+The 250-line cap is a soft gate: an overrun prints a warning but does not fail
+the check.  A page may opt out of the line cap with a
+`no-covex-docs-loc` marker in an HTML comment near the top of the file (the
+same opt-out convention the complexity checker uses).  It is meant for
+reference dictionaries and historical records whose length is their content,
+not prose that grew by accident.
 """
 
 import re
@@ -26,6 +33,10 @@ ROOT = Path(__file__).resolve().parent.parent
 # by hand; the paragraph rule applies to their source docstrings instead.
 EXCLUDED = {"api-docs"}
 MAX_LOC = 250
+# Opt-out marker for the line cap (see module docstring).  Matched against the
+# first LOC_MARKER_SCAN lines of a file so the marker stays near the top.
+LOC_MARKER = "no-covex-docs-loc"
+LOC_MARKER_SCAN = 12
 
 # A decimal point between digits is not a sentence break (e.g. 1.21.0).
 _DECIMAL = re.compile(r"(?<=\d)\.(?=\d)")
@@ -50,12 +61,21 @@ def count_sentences(text: str) -> int:
     return len(_SENTENCE.findall(_DECIMAL.sub("", text)))
 
 
+def has_loc_opt_out(path: Path) -> bool:
+    """Whether the file opts out of the line cap with a no-covex-docs-loc marker."""
+    with path.open(encoding="utf-8") as fp:
+        for _, line in zip(range(LOC_MARKER_SCAN), fp):
+            if LOC_MARKER in line:
+                return True
+    return False
+
+
 def check(path: Path) -> List[str]:
     """Return violations (hard errors) for one documentation file."""
     rel = path.relative_to(ROOT)
     lines = path.read_text(encoding="utf-8").splitlines()
     errors: List[str] = []
-    if len(lines) > MAX_LOC:
+    if len(lines) > MAX_LOC and not has_loc_opt_out(path):
         print(f"{rel}: {len(lines)} lines (maximum {MAX_LOC})", file=sys.stderr)
     in_fence = False
     paragraph: List[str] = []
