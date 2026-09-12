@@ -4,12 +4,12 @@ This page covers the JSON API endpoints, the API playground, themes, and the das
 
 ## Standard-awareness
 
-Like the `sbom` subcommand, the dashboard **defaults to all standards** when
-no `--standard` / `--asil` / `--class` flag is given. The status badges and
-the compliance card list every standard's label at the shared tier (DAL-C,
-ASIL B, Class A). An explicit standard flag narrows the dashboard to that
-single standard (for example `--asil=B` shows only ISO 26262 at ASIL B). See
-[Standards](standards.md) for the cross-standard tier mapping.
+The dashboard **defaults to all standards** when no `--standard` / `--asil` /
+`--class` flag is given -- the same behaviour as the `sbom` subcommand, which
+[Standards](standards.md) documents once for both. The status badges and the
+compliance card list every standard's label at the shared tier (DAL-C, ASIL
+B, Class A). An explicit standard flag narrows the dashboard to that single
+standard (for example `--asil=B` shows only ISO 26262 at ASIL B).
 
 ## The JSON API
 
@@ -18,7 +18,7 @@ assessment without parsing HTML:
 
 ```json
 {"spark_level":"Platinum","total_vcs":876,"proved_vcs":876,
- " "tests_passed":1235,"tests_failed":0,"doc_coverage":100,
+ " "tests_passed":1239,"tests_failed":0,"doc_coverage":100,
  "standard":"all","level":"DAL-C","dal_status":"Achieved",
  "standards":{"DO-178C":{"level":"DAL-C","status":"Achieved"},
                "ISO 26262":{"level":"ASIL B","status":"Achieved"},
@@ -114,10 +114,8 @@ Theme resolution on page load:
 
 1. a `?theme=light|dark|system` query parameter on the dashboard URL.
    It always wins. This is the supported way to pin the theme when embedding
-   the dashboard in an iframe. The server strips the query string before
-   routing, so `http://localhost:8080/?theme=light` (and
-   `?theme=dark` / `?theme=system`) serves the themed dashboard instead of
-   404ing.
+   the dashboard in an iframe (the server routes the query form correctly,
+   see [query strings and fragments](dashboard.md#how-to-use-the-dashboard)).
 2. otherwise the explicit CLI theme (`--theme=light` / `--theme=dark`).
 3. otherwise the saved `localStorage` choice, if one was saved.
 4. otherwise the system theme (`prefers-color-scheme`).
@@ -127,9 +125,17 @@ still override it afterwards in the browser.
 
 ## Related CLI flags
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--serve` | off | Run the pipeline, then spawn the HTTP dashboard server (blocking) on the port. It is a switch: passing `--serve` is the only way to start the server, and omitting it (the default, `off`) renders and exits without serving. There is no `--no-serve`, because a flag already controls it |
-| `--port=N` | `8080` | Server port (a valid `Positive` integer) |
-| `--serve-workers=N` | `4` | HTTP server task-pool worker count for `--serve` (a valid `Positive` integer, capped at 256). Only relevant with `--serve` |
-| `--theme=NAME` | `system` | Initial dashboard theme: `light` \| `dark` \| `system` (case-insensitive) |
+The dashboard-related flags are documented once in the CLI reference:
+
+- [`--serve`](cli-reference-options.md#--serve) -- start the server (a
+  switch; default off).
+- [`--port=N`](cli-reference-options.md#--portn) -- server port (default
+  `8080`).
+- [`--serve-workers=N`](cli-reference-options.md#--serve-workersn) -- HTTP
+  server task-pool worker count (default `4`, capped at 256).
+- [`--theme=NAME`](cli-reference-options.md#--themename) -- initial
+  dashboard theme: `light` \| `dark` \| `system` (case-insensitive, default
+  `system`).
+
+Full detail, the JSON schema, and the theme-resolution order are in
+[Web dashboard and JSON API](dashboard.md).

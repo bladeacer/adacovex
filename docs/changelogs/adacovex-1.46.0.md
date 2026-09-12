@@ -113,7 +113,7 @@ self-assessment). The `Package_Info` stream layout change bumped
 
 ## Test Suite
 
-The native suite grows from 1229 to 1235 tests across 17 categories, all
+The native suite grows from 1229 to 1239 tests across 17 categories, all
 passing. CLI-config tests pin the new flag contracts: `--skip-path`
 requires the complexity subcommand and accumulates comma-separated, and
 `--args` requires the prove subcommand and accumulates space-joined raw

@@ -25,7 +25,7 @@ jobs:
           standard: all          # DO-178C + ISO 26262 + IEC 62304
           require-spark: Platinum
           require-docstrings: 100
-          require-tests: 1235
+          require-tests: 1239
           run-tests: true
           generate-sbom: true
 ```
@@ -154,7 +154,7 @@ steps:
 | Input | Default | Description |
 |-------|---------|-------------|
 | `target` | `.` | Target project root (relative to workspace root) |
-| `dal` | `C` | DO-178C DAL level to assess (A-E); also the shared rigor tier |
+| `dal` | `C` | DO-178C DAL level to assess (A-E); also the shared rigour tier |
 | `standard` | `''` | Compliance standard: `do178c`, `iso26262`, `iec62304`, or `all` (badges/reports for every standard) |
 | `asil` | `''` | ISO 26262 ASIL level (A-D, QM); sets the standard and tier |
 | `class` | `''` | IEC 62304 safety class (A-C); sets the standard and tier |

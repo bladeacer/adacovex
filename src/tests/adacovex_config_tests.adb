@@ -3,6 +3,7 @@ with Adacovex.Config; use Adacovex.Config;
 with Adacovex.Completion;
 with Ada.Strings.Unbounded;
 with Ada.Strings.Fixed;
+with Ada.Environment_Variables;
 
 package body Adacovex_Config_Tests is
 
@@ -987,6 +988,79 @@ package body Adacovex_Config_Tests is
            (Ada.Strings.Unbounded.To_String (Cfg.Prove_Args)
             = "--prover=cvc5 --timeout=5 --report=all",
             "prove --args accumulates space-joined raw gnatprove flags");
+      end;
+
+      --  --target=~/... expands the tilde to HOME before the cwd-join, so
+      --  the resolved target starts with HOME (never "$CWD/~/...").
+      declare
+         Cfg  : CLI_Config;
+         A    : Testing.Arg_Vectors.Vector;
+         Home : constant String :=
+           (if Ada.Environment_Variables.Exists ("HOME")
+            then Ada.Environment_Variables.Value ("HOME")
+            else "/tmp");
+      begin
+         Add (A, "--target=~/some-project");
+         Cfg := Testing.Parse_All (A);
+         declare
+            Resolved : constant String :=
+              Cfg.Target_Path (1 .. Cfg.Target_Len);
+         begin
+            R.Check
+              (Cfg.Target_Len >= Home'Length
+               and then Cfg.Target_Path (1 .. Home'Length) = Home,
+               "--target=~/some-project expands to HOME/some-project");
+            R.Check
+              (Resolved'Length >= 13
+               and then Resolved (Resolved'Last - 12 .. Resolved'Last)
+                        = "/some-project",
+               "tilde-expanded target keeps the path tail");
+         end;
+      end;
+
+      --  --target=~ alone resolves to the home directory itself.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+         Home : constant String :=
+           (if Ada.Environment_Variables.Exists ("HOME")
+            then Ada.Environment_Variables.Value ("HOME")
+            else "/tmp");
+      begin
+         Add (A, "--target=~");
+         Cfg := Testing.Parse_All (A);
+         R.Check
+           (Cfg.Target_Path (1 .. Cfg.Target_Len) = Home,
+            "--target=~ resolves to the home directory");
+      end;
+
+      --  A ~name form (another user's home) is left untouched: only the
+      --  shell can resolve it, and adacovex must not mangle it into
+      --  "$HOME/name".  It still gets the cwd-join (unchanged behaviour).
+      declare
+         Cfg  : CLI_Config;
+         A    : Testing.Arg_Vectors.Vector;
+         Home : constant String :=
+           (if Ada.Environment_Variables.Exists ("HOME")
+            then Ada.Environment_Variables.Value ("HOME")
+            else "/tmp");
+      begin
+         Add (A, "--target=~other/code");
+         Cfg := Testing.Parse_All (A);
+         declare
+            Resolved : constant String :=
+              Cfg.Target_Path (1 .. Cfg.Target_Len);
+         begin
+            --  The untouched tilde path still gets the cwd-join, so the
+            --  resolved value ends with the literal "~other/code" tail
+            --  (a tilde at a NON-leading position is an ordinary
+            --  character) instead of HOME's prefix + "/code".
+            R.Check
+              (Resolved'Length >= 11
+               and then Resolved (Resolved'Last - 10 .. Resolved'Last)
+                        = "~other/code",
+               "--target=~other/code is not home-expanded");
+         end;
       end;
    end Run;
 

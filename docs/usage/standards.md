@@ -9,7 +9,7 @@ Assurance Level) tiers, from **DAL-E** (no safety effect) to **DAL-A**
 (catastrophic failure can bring down the aircraft).
 
 **ISO 26262** is the automotive functional-safety standard. It applies the same
-rigor to road-vehicle software (braking, steering, powertrain). Its integrity
+rigour to road-vehicle software (braking, steering, powertrain). Its integrity
 levels are called **ASIL** (Automotive Safety Integrity Level), from **QM**
 (quality management, no hazard) to **ASIL D** (highest hazard).
 
@@ -24,7 +24,7 @@ All three demand the same underlying evidence:
 2. **No orphan tags** -- every tag in source maps to a defined HLR.
 3. **Tests passing** -- the test suite has zero failures (except at the lowest
    tier).
-4. **Minimum SPARK level** -- the formal-proof bar for the selected rigor tier.
+4. **Minimum SPARK level** -- the formal-proof bar for the selected rigour tier.
 
 adacovex computes all four checks once and re-labels the result per standard.
 The same inputs feed the same outputs. Only the integrity-level label changes.
@@ -40,7 +40,7 @@ The same inputs feed the same outputs. Only the integrity-level label changes.
 If your project targets multiple domains, `--standard=all` runs one assessment
 and emits badges and reports for every standard without re-scanning.
 
-## What the rigor tiers mean
+## What the rigour tiers mean
 
 | Rigor tier | DO-178C | ISO 26262 | IEC 62304 | Min SPARK | Tests | HLRs |
 |------------|---------|-----------|-----------|-----------|-------|------|
@@ -53,7 +53,7 @@ and emits badges and reports for every standard without re-scanning.
 The tier placement is a per-project policy choice. The standards do not define a
 one-to-one correspondence. adacovex's default mapping is shown above. Use
 `--standard=NAME` to select the labelling standard. Use `--dal=LEVEL` to pin
-the shared rigor tier.
+the shared rigour tier.
 
 ## Rigor-tier mapping
 
@@ -68,7 +68,7 @@ the shared rigor tier.
 The exact tier placement of each standard's levels is a per-project policy
 choice. The standards do not define a one-to-one correspondence. The table
 above is adacovex's default mapping. `--standard=NAME` selects the labelling
-standard. `--dal=LEVEL` pins the shared rigor tier (see
+standard. `--dal=LEVEL` pins the shared rigour tier (see
 [Implementation](#implementation)).
 
 ## Assessment criteria (shared)
@@ -79,7 +79,7 @@ The four checks stay identical across standards. Only the names change:
    `docs/compliance/HLR.md` is traced by a `-- HLR-XXXX` tag in source.
 2. **No orphan tags** -- every in-source HLR maps to a defined HLR.
 3. **Tests passing** -- zero failures (not enforced at the lowest tier).
-4. **Minimum SPARK level** -- the proof bar for the selected rigor tier.
+4. **Minimum SPARK level** -- the proof bar for the selected rigour tier.
 
 Because the checks are shared, **the compliance artifacts are identical too**:
 ISO 26262 and IEC 62304 require no different evidence or documents than
@@ -94,7 +94,7 @@ integrity-level label printed inside them changes (`DAL-C`, `ASIL B`,
 Each standard has a dedicated level flag, so your intent is unambiguous on the
 command line (full flag details in the
 [CLI reference](cli-reference.md)). The flags all resolve to the same shared
-rigor tier:
+rigour tier:
 
 | Standard | Flag | Levels | Example (tier) |
 |----------|------|--------|----------------|
@@ -142,7 +142,7 @@ assessment.
   `To_String` / `To_Standard` / `Standard_Slug` conversions and the
   dedicated `To_ASIL` / `To_Class` level parsers in `Adacovex.Types`.
 - `--standard=NAME` CLI flag (default `do178c`, plus `all`) selects the
-  labelling standard. `--dal=LEVEL` is the shared rigor tier (A--E). The
+  labelling standard. `--dal=LEVEL` is the shared rigour tier (A--E). The
   dedicated `--asil=LEVEL` / `--class=LEVEL` flags set both the standard and
   the tier in one step.
 - `Types.Standard_Level_Name` maps a standard + tier to its label (`DAL-C`,

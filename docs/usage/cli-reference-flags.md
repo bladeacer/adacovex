@@ -7,9 +7,14 @@ This page details the assessment flags (`--target`, `--dal`, `--standard`, and t
 ### `--target=PATH`
 
 Project to analyse. Relative paths are resolved against the current working
-directory to an absolute path. The path determines the root directory for
-source scanning, manifest detection, SVG badge output, and patch file
-resolution. Default: the current working directory.
+directory to an absolute path. A leading `~` (as in `--target=~/projects/demo`
+or `--target=~`) expands to your home directory first -- the shell does not
+expand a tilde inside `--target=...` or a quoted argument.
+
+A `~user` form is left unchanged; only the shell can resolve another user's
+home. The path determines the root directory for source scanning, manifest
+detection, SVG badge output, and patch file resolution. Default: the current
+working directory.
 
 ### `--manifest=PATH`
 

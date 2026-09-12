@@ -9,7 +9,8 @@ project Adacovex is
    package Compiler is
       for Default_Switches ("Ada") use
         ("-gnatwa", "-gnat12", "-gnata", "-gnatwF", "-gnatwsh",
-         "-gnatW8", "-gnatyM120");
+         "-gnatW8", "-gnatyM120",
+         "-O2", "-gnatn");
    end Compiler;
 
    package Builder is
