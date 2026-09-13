@@ -141,6 +141,35 @@ def write_project(path: Path, packages: int) -> None:
         )
 
 
+def write_documented_project(path: Path, packages: int) -> None:
+    """Scaffold a project whose subprograms all carry a docstring."""
+    src = path / "src"
+    src.mkdir(parents=True, exist_ok=True)
+    (path / "demo.gpr").write_text(
+        'project Demo is\n'
+        '   for Source_Dirs use ("src");\n'
+        '   for Object_Dir use "obj";\n'
+        'end Demo;\n',
+        encoding="utf-8",
+    )
+    for i in range(1, packages + 1):
+        name = f"P{i:02d}"
+        (src / f"p{i:02d}.ads").write_text(
+            f"package {name} is\n"
+            f"   --  Run the {name} step.\n"
+            f"   procedure Go;\n"
+            f"end {name};\n",
+            encoding="utf-8",
+        )
+        (src / f"p{i:02d}.adb").write_text(
+            f"package body {name} is\n"
+            f"   --  Run the {name} step.\n"
+            f"   procedure Go is\n   begin\n      null;\n   end Go;\n"
+            f"end {name};\n",
+            encoding="utf-8",
+        )
+
+
 def git_init_commit(path: Path) -> bool:
     """Init a git repo at path and commit the tree; False when git is absent."""
     if shutil.which("git") is None:
@@ -262,22 +291,25 @@ def check_markdown_output(r: Results, tmp: Path) -> None:
     )
 
 
-def check_serve_shorthands(r: Results, tmp: Path) -> None:
-    port = free_port()
+def serve_get(port: int, args: List[str], path: str = "/") -> Optional[str]:
+    """Start the binary with args, GET path from the dashboard, stop it.
+
+    Returns the response body, or None when the server never answers.  The
+    process is always terminated, whatever the outcome.
+    """
     proc = subprocess.Popen(
-        [BIN, "serve", "-t", str(tmp), "-p", str(port), "--workers=2",
-         "--no-sbom", "--no-svg", "--no-md", "--no-cache"],
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, cwd=str(ROOT),
+        [BIN] + args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        cwd=str(ROOT),
     )
-    payload: Optional[dict] = None
-    url = f"http://127.0.0.1:{port}/api/metrics"
+    body: Optional[str] = None
+    url = f"http://127.0.0.1:{port}{path}"
     try:
         for _ in range(60):
             if proc.poll() is not None:
                 break
             try:
                 with urllib.request.urlopen(url, timeout=2) as resp:
-                    payload = json.loads(resp.read().decode("utf-8"))
+                    body = resp.read().decode("utf-8", "replace")
                 break
             except (urllib.error.URLError, OSError, ValueError):
                 time.sleep(0.2)
@@ -288,12 +320,62 @@ def check_serve_shorthands(r: Results, tmp: Path) -> None:
         except subprocess.TimeoutExpired:
             proc.kill()
             proc.wait(timeout=10)
+    return body
+
+
+def check_serve_shorthands(r: Results, tmp: Path) -> None:
+    port = free_port()
+    body = serve_get(
+        port,
+        ["serve", "-t", str(tmp), "-p", str(port), "--workers=2",
+         "--no-sbom", "--no-svg", "--no-md", "--no-cache"],
+        "/api/metrics",
+    )
+    payload: Optional[dict] = None
+    if body is not None:
+        try:
+            payload = json.loads(body)
+        except ValueError:
+            payload = None
     r.check(
         payload is not None
         and "spark_level" in payload
         and "standard" in payload,
         "serve -s/-p/--workers starts the dashboard and answers /api/metrics",
     )
+
+
+def check_theme_and_port(r: Results, tmp: Path) -> None:
+    # An unknown theme and a missing theme value fail loudly at parse time.
+    bad = run(["--theme=neon"])
+    r.check(
+        bad.returncode == 1
+        and "--theme must be light, dark, or system" in bad.stderr,
+        "rejects an unknown --theme value",
+    )
+    missing = run(["--theme"])
+    r.check(
+        missing.returncode == 1
+        and "--theme requires a value" in missing.stderr,
+        "rejects --theme without a value",
+    )
+
+    # The CLI theme reaches the served dashboard, and the port shorthand
+    # works in both the "=" and the glued form.
+    for theme, form in (("dark", "-p=PORT"), ("light", "-pPORT")):
+        port = free_port()
+        port_arg = f"-p={port}" if form == "-p=PORT" else f"-p{port}"
+        body = serve_get(
+            port,
+            ["serve", "-t", str(tmp), port_arg, f"--theme={theme}",
+             "--workers=2", "--no-sbom", "--no-svg", "--no-md", "--no-cache"],
+            "/",
+        )
+        r.check(
+            body is not None
+            and f'data-initial-theme="{theme}"' in body,
+            f"serve applies --theme={theme} with the {form} port shorthand",
+        )
 
 
 def check_complexity(r: Results, tmp: Path) -> None:
@@ -406,6 +488,110 @@ def check_differential(r: Results, tmp: Path) -> None:
     )
 
 
+def check_differential_regression(r: Results, tmp: Path) -> None:
+    repo = tmp / "diff-regression"
+    write_documented_project(repo, 1)
+    if not git_init_commit(repo):
+        print("  SKIP: git not available; the regression checks need a VCS")
+        return
+
+    clean = run(["-t", str(repo), "--coverage-delta=HEAD"])
+    r.check(
+        clean.returncode == 0 and "regressed=no" in clean.stdout,
+        "--coverage-delta reports no regression on an unchanged tree",
+    )
+
+    # Add an undocumented subprogram: docstring coverage drops 100% -> 50%.
+    src = repo / "src"
+    (src / "p01.ads").write_text(
+        "package P01 is\n"
+        "   --  Run the P01 step.\n"
+        "   procedure Go;\n"
+        "   procedure Extra;\n"
+        "end P01;\n",
+        encoding="utf-8",
+    )
+    (src / "p01.adb").write_text(
+        "package body P01 is\n"
+        "   --  Run the P01 step.\n"
+        "   procedure Go is\n   begin\n      null;\n   end Go;\n"
+        "   procedure Extra is\n   begin\n      null;\n   end Extra;\n"
+        "end P01;\n",
+        encoding="utf-8",
+    )
+
+    delta = run(["-t", str(repo), "--coverage-delta=HEAD"])
+    r.check(
+        delta.returncode == 1
+        and "COVERAGE REGRESSION" in delta.stdout
+        and "regressed=yes" in delta.stdout,
+        "--coverage-delta flags a docstring-coverage drop and exits 1",
+    )
+
+    compare = run(["-t", str(repo), "--compare-base=HEAD",
+                   "--no-sbom", "--no-svg", "--no-md", "--no-cache"])
+    r.check(
+        compare.returncode == 1
+        and "REGRESSION DETECTED" in compare.stdout,
+        "--compare-base reports REGRESSION DETECTED for a coverage drop",
+    )
+
+
+def check_prove(r: Results, tmp: Path) -> None:
+    # A target with no .gpr file makes prove fail after argument parsing and
+    # before gnatprove runs, so the flags can be exercised without a prover
+    # or a network download.
+    nope = tmp / "prove-target"
+    nope.mkdir(parents=True, exist_ok=True)
+    no_gpr = "no root .gpr project file found"
+
+    accepted = run(["prove", "-t", str(nope), "-l", "2", "-j", "2",
+                    "--timeout=60", "--steps=1000", "--memlimit=100",
+                    "--quiet", "--no-loop-unrolling", "--no-inlining"])
+    r.check(
+        accepted.returncode == 1 and no_gpr in accepted.stderr,
+        "prove parses -t/-l/-j and the full prove option set",
+    )
+
+    short = run(["prove", "-t", str(nope), "-l=2", "-j=2"])
+    long_form = run(["prove", "--target", str(nope), "--level=2", "--jobs=2"])
+    r.check(
+        short.returncode == long_form.returncode
+        and short.stderr == long_form.stderr,
+        "prove -t/-l/-j shorthands equal their long forms",
+    )
+
+    rejects: Tuple[Tuple[List[str], str, str], ...] = (
+        (["--level=bogus"], "--level must be an integer",
+         "a non-numeric --level"),
+        (["-l", "99"], "--level must be in", "an out-of-range --level"),
+        (["--jobs=99999"], "--jobs must be in", "an out-of-range --jobs"),
+        (["--timeout=-1"], "--timeout must be in",
+         "an out-of-range --timeout"),
+        (["--memlimit=0"], "--memlimit must be in",
+         "an out-of-range --memlimit"),
+    )
+    for args, needle, label in rejects:
+        proc = run(["prove", "-t", str(nope), *args])
+        r.check(
+            proc.returncode == 1 and needle in proc.stderr,
+            f"prove rejects {label} with '{needle}'",
+        )
+
+    for args, label in (
+        (["-j", "2"], "the -j shorthand"),
+        (["--force"], "--force"),
+        (["--steps=100"], "--steps"),
+        (["-l", "1"], "the -l shorthand"),
+    ):
+        proc = run(args)
+        r.check(
+            proc.returncode == 1
+            and "require the prove subcommand" in proc.stderr,
+            f"rejects {label} outside the prove subcommand",
+        )
+
+
 def main() -> int:
     if not Path(BIN).is_file():
         print(f"error: {BIN} not found; run `make build` first",
@@ -424,7 +610,10 @@ def main() -> int:
         check_markdown_output(r, tmp)
         check_complexity(r, tmp)
         check_differential(r, tmp)
+        check_differential_regression(r, tmp)
+        check_prove(r, tmp)
         check_serve_shorthands(r, tmp)
+        check_theme_and_port(r, tmp)
     return r.report()
 
 

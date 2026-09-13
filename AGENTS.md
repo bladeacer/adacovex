@@ -85,7 +85,7 @@ Self-assessment (`make run-self`) must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
 - Platinum SPARK level (880 VCs under gnatprove 16.1.0, 0 unproved, 0
   justified; see `docs/proof/16.1.0-ledger.md`)
-- 1357/1357 native tests passing
+- 1404/1404 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
   `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
@@ -183,7 +183,7 @@ src/
     |-- adacovex-test_support.ads/.adb        -- Native test Runner type
     |-- adacovex_cache_tests.ads/.adb         -- Result-cache tests (28)
     |-- adacovex_complexity_tests.ads/.adb    -- Complexity check tests (12)
-    |-- adacovex_config_tests.ads/.adb        -- CLI config tests (296)
+    |-- adacovex_config_tests.ads/.adb        -- CLI config tests (343)
     |-- adacovex_dal_tests.ads/.adb           -- DAL compliance tests (16)
     |-- adacovex_ir_tests.ads/.adb            -- IR synthesis tests (42)
     |-- adacovex_man_tests.ads/.adb           -- Man page renderer tests (18)
@@ -198,7 +198,7 @@ src/
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (67)
     |-- adacovex_tz_ansi_tests.ads/.adb       -- Timezone + ANSI tests (63)
     |-- adacovex_vcs_tests.ads/.adb           -- VCS support tests (29)
-    `-- test_runner.adb                       -- Test suite entry point (1357 tests)
+    `-- test_runner.adb                       -- Test suite entry point (1404 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -426,7 +426,7 @@ must be followed by `make book`.
 | `check` | **The single everything-check / verification entry point.** Run it after any change. It runs every gate CI runs before a release: cheap static gates first (ascii, complexity, csslint, spark-off, changelog, action-parity, tools-check, cli-e2e, version, doc-links, link, docs-check, book-links), then build + native tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description). `make check` resolves `gnatprove` for you (it is fetched into `~/.adacovex/toolchain/` and executed directly when not on `PATH`), so you never have to install or point at a prover by hand -- just run `make check` and it verifies the whole tree end to end. `make prove` is the SPARK sub-gate if you only changed proof-affecting code |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
-| `test` | Build + run the 1357-test native suite |
+| `test` | Build + run the 1404-test native suite |
 | `prove` | SPARK proof (Platinum gate) + regenerates SVG badges in `docs/badges/` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
 | `book` | Build the offline manual from the Sphinx docs and regenerate `src/adacovex-docs_template.ads` (tools/gen-docs.py; safe to run without sphinx) |
@@ -446,7 +446,7 @@ must be followed by `make book`.
 | `release` | Build, prove, validate, run coverage gate vs last release, bundle + tag & push |
 | `ascii-check` | Verify all source files are pure ASCII (skips generated e2e output: playwright-report / test-results) |
 | `tools-check` | Run the stdlib-unittest suite for the tools/*.py dev scripts (tools/tests.py) |
-| `cli-e2e` | Run the CLI end-to-end checks against the real binary (tests/e2e/cli_flags.py): shorthands, long aliases, `--standard` tier tokens, the reject paths, the `complexity` subcommand (gates, `--excludes`, `--skip-path`), the `--compare-base` / `--coverage-delta` differential modes (alias equivalence + the not-a-repository failure), and the shorthand serve flags. No browser; part of `make check` |
+| `cli-e2e` | Run the CLI end-to-end checks against the real binary (tests/e2e/cli_flags.py): shorthands, long aliases, `--standard` tier tokens, the reject paths, the `complexity` subcommand (gates, `--excludes`, `--skip-path`), the `--compare-base` / `--coverage-delta` differential modes (alias equivalence, a real coverage regression, and the not-a-repository failure), the `prove` subcommand (`-t`/`-l`/`-j` shorthands, the accepted option set, and the range/subcommand reject paths), and the serve shorthands, the `--theme` values, and the `-p` port forms. No browser; part of `make check` |
 | `e2e` | Run `cli-e2e`, then the Playwright dashboard layout tests (pnpm + chromium) |
 | `csslint-check` | Dashboard CSS 4px spacing gate: every margin/padding/gap must be a multiple of 4px (tools/csslint.py; also run inside `make build`) |
 | `complexity-check` | Cyclomatic-complexity + LOC gate: no god objects/functions, no file above its LOC or percentage-of-codebase caps (multi-language scan incl. Markdown; `--excludes=rst --skip-path=docs/api-docs`; files can opt out with a `no-covex-complexity-scan` header marker; gated by make complexity-check) |
@@ -527,7 +527,7 @@ release-tag coverage gate instead.
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 1357/1357 passing |
+| Unit tests | `make test` | 1404/1404 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (880 VCs, 0 unproved, 0 justified under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -556,7 +556,7 @@ rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 1357 tests across 17 categories).
+Native zero-dependency suite (`src/tests/`, 1404 tests across 17 categories).
 Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests).
 

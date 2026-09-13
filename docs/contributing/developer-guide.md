@@ -27,7 +27,7 @@ Prerequisites:
 git clone https://github.com/bladeacer/adacovex.git
 cd adacovex
 make build        # compiles bin/adacovex + bin/test_runner (covex alias)
-make test         # builds + runs the native test suite (1357 tests)
+make test         # builds + runs the native test suite (1404 tests)
 make run-self     # assess adacovex itself: 100% docs, Platinum, DAL-C
 make prove        # SPARK proof (Platinum gate) + regenerates docs/badges/
 make check        # the whole quality gate CI runs before a release
@@ -156,12 +156,14 @@ Tests that exercise caching use content-hashed keys. They never depend on each o
 The CLI end-to-end suite (`make cli-e2e`, `tests/e2e/cli_flags.py`) runs the
 real binary and checks the shorthands, the long aliases, the `--standard`
 tier tokens, the reject paths, the `complexity` subcommand (its pass and
-fail gates, `--excludes`, and `--skip-path`), and the VCS differential
-modes (`--compare-base` / `--coverage-delta` and every alias, including the
-not-a-repository failure). It needs no browser and runs inside `make
-check`. The differential checks skip themselves when `git` is missing. The
-browser suite (`make e2e`) adds the Playwright dashboard layout tests on
-top.
+fail gates, `--excludes`, and `--skip-path`), the VCS differential modes
+(`--compare-base` / `--coverage-delta`, every alias, a docstring-coverage
+regression, and the not-a-repository failure), the `prove` subcommand (its
+`-t`/`-l`/`-j` shorthands, the accepted option set, and the range and
+subcommand reject paths), and the serve `--theme` values and `-p` port
+forms. It needs no browser and runs inside `make check`.
+The differential checks skip themselves when `git` is missing. The browser
+suite (`make e2e`) adds the Playwright dashboard layout tests on top.
 
 ## Documentation and dashboard tooling
 

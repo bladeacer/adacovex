@@ -17,7 +17,7 @@ help:
 	@echo '    build         Build project (adacovex + test_runner, covex alias);'
 	@echo '                  regenerates src/adacovex_version_info.ads from'
 	@echo '                  alire-dev.toml (or ADACOVEX_VERSION for releases)'
-	@echo '    test          Build and run native test suite (1357 tests)'
+	@echo '    test          Build and run native test suite (1404 tests)'
 	@echo '    prove         Run SPARK proofs (gnatprove via prove subcommand,'
 	@echo '                  resolved from alire-dev.toml / PATH / cache / download)'
 	@echo '                  (also auto-regenerates SVG badges in docs/badges/)'
@@ -89,8 +89,8 @@ help:
 	@echo '    man           Install the man page into the local man database'
 	@echo '                  (~/.local/share/man, Linux/WSL) and refresh mandb'
 	@echo '    cli-e2e       Run the CLI end-to-end checks (shorthands, aliases,'
-	@echo '                  tier tokens, complexity, differential modes,'
-	@echo '                  serve flags; tests/e2e/cli_flags.py)'
+	@echo '                  tier tokens, complexity, differential, prove,'
+	@echo '                  serve/theme flags; tests/e2e/cli_flags.py)'
 	@echo '    e2e           Run cli-e2e, then the Playwright dashboard tests (pnpm)'
 	@echo '    clean         Remove build artifacts'
 	@echo ''
@@ -318,8 +318,8 @@ clean:
 
 # Pure-stdlib CLI end-to-end checks (no browser): the shorthands, the long
 # aliases, the --standard tier tokens, the complexity subcommand, the VCS
-# differential modes, and the shorthand serve flags against the real binary
-# (tests/e2e/cli_flags.py).
+# differential modes, the prove subcommand, and the serve shorthands, theme
+# values, and port forms against the real binary (tests/e2e/cli_flags.py).
 cli-e2e: build
 	@python3 tests/e2e/cli_flags.py
 

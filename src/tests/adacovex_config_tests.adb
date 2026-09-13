@@ -100,6 +100,33 @@ package body Adacovex_Config_Tests is
       R.Check (Same_Options (A, B), Msg & ": same option state");
    end Check_Equivalent;
 
+   --  Shorthand form matrix: parse one spelling of a short flag and assert it
+   --  leaves the same option state as the canonical long spelling.  Prefix is
+   --  a required subcommand ("" when the shorthand needs none); Alias_2 is ""
+   --  for a single-token form.  The prefix is added to both sides, so only
+   --  the spelling under test differs.
+   procedure Check_Short_Form
+     (Prefix    : String;
+      Alias_1   : String;
+      Alias_2   : String;
+      Canonical : String;
+      Msg       : String;
+      R         : in out Adacovex.Test_Support.Runner'Class)
+   is
+      A, C : Testing.Arg_Vectors.Vector;
+   begin
+      if Prefix /= "" then
+         Add (A, Prefix);
+         Add (C, Prefix);
+      end if;
+      Add (A, Alias_1);
+      if Alias_2 /= "" then
+         Add (A, Alias_2);
+      end if;
+      Add (C, Canonical);
+      Check_Equivalent (A, C, R, Msg);
+   end Check_Short_Form;
+
    procedure Run (R : in out Adacovex.Test_Support.Runner'Class) is
    begin
       --  Test 1: default config has Emit_SVG = True and SVG_Path_Len = 0.
@@ -1562,6 +1589,16 @@ package body Adacovex_Config_Tests is
       declare
          A, C : Testing.Arg_Vectors.Vector;
       begin
+         Add (A, "prove");
+         Add (A, "-j=4");
+         Add (C, "prove");
+         Add (C, "--jobs=4");
+         Check_Equivalent (A, C, R, "-j=N == --jobs=N");
+      end;
+
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
          Add (A, "-r");
          Add (A, "100");
          Add (C, "--require-proof=100");
@@ -1682,6 +1719,107 @@ package body Adacovex_Config_Tests is
          Add (A, "--no-md");
          Add (C, "--no-md");
          Check_Equivalent (A, C, R, "--no-md overrides --emit-md");
+      end;
+
+      --  Shorthand form matrix.  Numeric shorthands (-p, -l, -r, -j) accept
+      --  the detached, glued (-pN), and = forms.  Value shorthands (-t, -m,
+      --  -b, -d) accept the detached and = forms; a glued value is rejected
+      --  (it would swallow the single-dash long-form typo, for example
+      --  -target).  Flag shorthands (-s, -c) take no value.
+      Check_Short_Form
+        ("", "-t", "demo", "--target=demo", "-t forms == --target", R);
+      Check_Short_Form
+        ("", "-t=demo", "", "--target=demo", "-t= forms == --target", R);
+      Check_Short_Form
+        ("", "-m", "m.toml", "--manifest=m.toml", "-m forms == --manifest", R);
+      Check_Short_Form
+        ("",
+         "-m=m.toml",
+         "",
+         "--manifest=m.toml",
+         "-m= forms == --manifest",
+         R);
+      Check_Short_Form
+        ("serve", "-p", "9090", "--port=9090", "-p forms == --port", R);
+      Check_Short_Form
+        ("serve", "-p9090", "", "--port=9090", "glued -pN == --port", R);
+      Check_Short_Form
+        ("serve", "-p=9090", "", "--port=9090", "-p= forms == --port", R);
+      Check_Short_Form
+        ("prove", "-l", "2", "--level=2", "-l forms == --level", R);
+      Check_Short_Form
+        ("prove", "-l2", "", "--level=2", "glued -lN == --level", R);
+      Check_Short_Form
+        ("prove", "-l=2", "", "--level=2", "-l= forms == --level", R);
+      Check_Short_Form
+        ("prove", "-j", "4", "--jobs=4", "-j forms == --jobs", R);
+      Check_Short_Form
+        ("prove", "-j4", "", "--jobs=4", "glued -jN == --jobs", R);
+      Check_Short_Form
+        ("prove", "-j=4", "", "--jobs=4", "-j= forms == --jobs", R);
+      Check_Short_Form
+        ("",
+         "-r",
+         "100",
+         "--require-proof=100",
+         "-r forms == --require-proof",
+         R);
+      Check_Short_Form
+        ("",
+         "-r100",
+         "",
+         "--require-proof=100",
+         "glued -rN == --require-proof",
+         R);
+      Check_Short_Form
+        ("",
+         "-r=100",
+         "",
+         "--require-proof=100",
+         "-r= forms == --require-proof",
+         R);
+      Check_Short_Form
+        ("",
+         "-b",
+         "HEAD",
+         "--compare-base=HEAD",
+         "-b forms == --compare-base",
+         R);
+      Check_Short_Form
+        ("",
+         "-b=HEAD",
+         "",
+         "--compare-base=HEAD",
+         "-b= forms == --compare-base",
+         R);
+      Check_Short_Form
+        ("",
+         "-d",
+         "HEAD",
+         "--coverage-delta=HEAD",
+         "-d forms == --coverage-delta",
+         R);
+      Check_Short_Form
+        ("",
+         "-d=HEAD",
+         "",
+         "--coverage-delta=HEAD",
+         "-d= forms == --coverage-delta",
+         R);
+      Check_Short_Form ("", "-s", "", "--serve", "-s == --serve", R);
+      Check_Short_Form ("", "-c", "", "--cache", "-c == --cache", R);
+
+      --  A glued value shorthand is deliberately rejected, so a single-dash
+      --  long-form typo still gets a "did you mean" suggestion.
+      declare
+         A   : Testing.Arg_Vectors.Vector;
+         Cfg : CLI_Config;
+      begin
+         Add (A, "-target");
+         Cfg := Testing.Parse_All (A);
+         R.Check
+           (Cfg.CLI_Error and then not Cfg.Unknown_No_Suggest,
+            "-target is rejected with a suggestion, not glued as -t arget");
       end;
 
       --  Every shorthand / alias spelling is advertised to the shell

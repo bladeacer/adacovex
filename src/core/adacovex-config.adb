@@ -612,6 +612,15 @@ package body Adacovex.Config is
             Takes_Val := True;
             Numeric := True;
             return "--require-proof";
+         elsif S = "-j"
+           or else Has_Prefix (S, "-j=")
+           or else (Has_Prefix (S, "-j")
+                    and then S (S'First + 2) in '0' .. '9')
+         then
+            Alias_Len := 2;
+            Takes_Val := True;
+            Numeric := True;
+            return "--jobs";
          elsif S = "-b" or else Has_Prefix (S, "-b=") then
             Alias_Len := 2;
             Takes_Val := True;
@@ -1402,7 +1411,7 @@ package body Adacovex.Config is
                        (Cfg.SBOM_Out,
                         Cfg.SBOM_Out_Len,
                         A (A'First + 6 .. A'Last));
-                  elsif A = "--jobs" or A = "-j" then
+                  elsif A = "--jobs" then
                      I := I + 1;
                      if I <= Count then
                         Set_Prove_Int
@@ -1418,15 +1427,6 @@ package body Adacovex.Config is
                         -1,
                         1024,
                         "--jobs");
-                  elsif Has_Prefix (A, "-j") and then A'Length > 2 then
-                     --  Combined short form: -j12
-                     Set_Prove_Int
-                       (Cfg,
-                        Cfg.Prove_Jobs,
-                        A (A'First + 2 .. A'Last),
-                        -1,
-                        1024,
-                        "-j");
                   elsif A = "--level" then
                      I := I + 1;
                      if I <= Count then

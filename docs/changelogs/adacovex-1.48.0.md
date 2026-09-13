@@ -26,6 +26,14 @@ is never rewritten, and the topic lookup itself accepts a shorthand, so
 `adacovex help serve` and `adacovex help -r` both resolve their topic.
 `-l` is the GNATprove proof level only: compliance selection stays on
 `--standard` and its level companions `--dal`, `--asil`, and `--class`.
+The numeric shorthands (`-p`, `-l`, `-r`, `-j`) share one path, so `-j N`,
+`-jN`, and `-j=N` all parse alike (`-j` used to reject the `=` form).
+
+All short flags run through the one alias table. The numeric shorthands
+accept the detached, glued, and `=` forms. The value shorthands accept the
+detached and `=` forms. A glued value (`-tPATH`) is deliberately not
+accepted, so a single-dash typo such as `-target` still gets a `did you
+mean` suggestion rather than silently parsing as `-t arget`.
 
 ### C2: `--standard` accepts a combined tier token
 
@@ -67,24 +75,32 @@ Action, so the action/CLI/docs parity gate stays green.
 A new pure-stdlib CLI suite (`tests/e2e/cli_flags.py`, `make cli-e2e`) runs
 the real binary and checks the shorthands, the long aliases, the
 `--standard` tier tokens, the reject paths, the `complexity` subcommand
-(its pass and fail gates, `--excludes`, and `--skip-path`), and the VCS
+(its pass and fail gates, `--excludes`, and `--skip-path`), the VCS
 differential modes (each `--compare-base` / `--coverage-delta` alias
-equivalence and the not-a-repository failure), plus the shorthand serve
-flags against a live dashboard. It needs no browser and runs inside `make
+equivalence, a real docstring-coverage regression, and the
+not-a-repository failure), the `prove` subcommand (its `-t`/`-l`/`-j`
+shorthands, the accepted option set, and the range and subcommand reject
+paths), and the serve shorthands, the `--theme` values, and the `-p` port
+forms against a live dashboard. It needs no browser and runs inside `make
 check` and in the `e2e` target ahead of the Playwright run. The native
 config suite gains equivalence tests: every alias must produce exactly the
-same parsed option state as its canonical long spelling.
+same parsed option state as its canonical long spelling. A shorthand form
+matrix covers every short flag: the numeric ones (`-p`, `-l`, `-r`, `-j`)
+accept the detached, glued, and `=` spellings, the value ones (`-t`, `-m`,
+`-b`, `-d`) the detached and `=` spellings, and a glued value is rejected
+so a single-dash typo still gets a suggestion.
 
 ## Test Suite
 
-The native suite grows from 1287 to 1357 tests across 17 categories, all
-passing. The CLI-config category carries the new shorthand, alias, and
-tier-token checks, and the alias-equivalence checks assert that an alias
-and its canonical spelling leave the same option state. The new CLI
-end-to-end suite adds 50 checks against the built binary (34 option checks
-plus 16 for `complexity` and the differential modes). The stdlib suite
-for the dev tools stays at 59 tests, with its `assess-args` shape check
-updated for the shorthand invocation.
+The native suite grows from 1287 to 1404 tests across 17 categories, all
+passing. The CLI-config category carries the new shorthand, alias,
+tier-token, and form-matrix checks, and the alias-equivalence checks assert
+that an alias and its canonical spelling leave the same option state. The
+new CLI end-to-end suite adds 68 checks against the built binary (34 option
+checks, 16 for `complexity` and the differential modes, 14 for `prove`, and
+4 for the `--theme` values plus the `-p` port forms). The stdlib suite for
+the dev tools stays at 59 tests, with its `assess-args` shape check updated
+for the shorthand invocation.
 
 ## Proof Results
 
