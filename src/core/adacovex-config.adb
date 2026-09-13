@@ -2321,8 +2321,10 @@ package body Adacovex.Config is
         ("compliance assessment (DAL / ASIL / safety-class levels)");
    end Print_Usage;
 
-   --  Lowercase a string, stripping a leading "--" and any "=value" suffix
-   --  so "--standard=all", "--Serve", and "standard" all match "standard".
+   --  Lowercase a string, stripping a leading "--"/"-" and any "=value"
+   --  suffix so "--standard=all", "--Serve", "-r", and "standard" all
+   --  match a canonical topic.  A single shorthand letter resolves to its
+   --  canonical flag name, so `help -r` prints the require-proof section.
    function Normalize_Topic (Topic : String) return String is
       First : Natural := Topic'First;
       Last  : Natural := Topic'Last;
@@ -2334,6 +2336,8 @@ package body Adacovex.Config is
         and then Topic (First + 1) = '-'
       then
          First := First + 2;
+      elsif Last - First + 1 >= 1 and then Topic (First) = '-' then
+         First := First + 1;
       end if;
       for I in First .. Last loop
          exit when Topic (I) = '=';
@@ -2345,6 +2349,42 @@ package body Adacovex.Config is
             Buf (I) := Character'Val (Character'Pos (Buf (I)) + 32);
          end if;
       end loop;
+      if Len = 1 then
+         case Buf (1) is
+            when 't'    =>
+               return "target";
+
+            when 'm'    =>
+               return "manifest";
+
+            when 's'    =>
+               return "serve";
+
+            when 'p'    =>
+               return "port";
+
+            when 'c'    =>
+               return "cache";
+
+            when 'b'    =>
+               return "compare-base";
+
+            when 'd'    =>
+               return "coverage-delta";
+
+            when 'l'    =>
+               return "level";
+
+            when 'r'    =>
+               return "require-proof";
+
+            when 'j'    =>
+               return "jobs";
+
+            when others =>
+               null;
+         end case;
+      end if;
       return Buf (1 .. Len);
    end Normalize_Topic;
 

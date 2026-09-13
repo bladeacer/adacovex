@@ -1,4 +1,4 @@
-.PHONY: help check build test prove doc book book-serve docs-serve clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish agents-tree sbom description proof-status test-count doc-links link-check changelog-check action-parity-check tools-check man bench perf-bench complexity-check csslint-check sync docs-check book-links-check
+.PHONY: help check build test prove doc book book-serve docs-serve clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish agents-tree sbom description proof-status test-count doc-links link-check changelog-check action-parity-check tools-check man bench perf-bench complexity-check csslint-check sync docs-check book-links-check cli-e2e e2e
 
 .DEFAULT_GOAL := help
 
@@ -17,7 +17,7 @@ help:
 	@echo '    build         Build project (adacovex + test_runner, covex alias);'
 	@echo '                  regenerates src/adacovex_version_info.ads from'
 	@echo '                  alire-dev.toml (or ADACOVEX_VERSION for releases)'
-	@echo '    test          Build and run native test suite (1287 tests)'
+	@echo '    test          Build and run native test suite (1357 tests)'
 	@echo '    prove         Run SPARK proofs (gnatprove via prove subcommand,'
 	@echo '                  resolved from alire-dev.toml / PATH / cache / download)'
 	@echo '                  (also auto-regenerates SVG badges in docs/badges/)'
@@ -88,7 +88,10 @@ help:
 	@echo '    test-publish  Dry-run showing what make publish would do'
 	@echo '    man           Install the man page into the local man database'
 	@echo '                  (~/.local/share/man, Linux/WSL) and refresh mandb'
-	@echo '    e2e           Run Playwright dashboard layout tests (pnpm)'
+	@echo '    cli-e2e       Run the CLI end-to-end checks (shorthands, aliases,'
+	@echo '                  tier tokens, complexity, differential modes,'
+	@echo '                  serve flags; tests/e2e/cli_flags.py)'
+	@echo '    e2e           Run cli-e2e, then the Playwright dashboard tests (pnpm)'
 	@echo '    clean         Remove build artifacts'
 	@echo ''
 	@echo 'check runs the same gates CI enforces before a release, cheap static'
@@ -258,6 +261,7 @@ check:
 	@echo "=== Quality gate: changelog format ==="; $(MAKE) changelog-check
 	@echo "=== Quality gate: action/CLI/docs parity ==="; $(MAKE) action-parity-check
 	@echo "=== Quality gate: tools unit tests ==="; $(MAKE) tools-check
+	@echo "=== Quality gate: CLI end-to-end ==="; $(MAKE) cli-e2e
 	@echo "=== Quality gate: version source ==="; python3 tools/gen-version.py --check
 	@echo "=== Quality gate: doc links ==="; python3 tools/update-doc-links.py --check
 	@echo "=== Quality gate: markdown links ==="; $(MAKE) link-check
@@ -275,7 +279,7 @@ check:
 	@echo "=== Quality gate: proof metrics in sync ==="; python3 tools/update-proof-status.py --check
 	@echo "=== Quality gate: description sync ==="; python3 tools/update-description.py --check
 	@echo ""
-	@echo "=== Quality gate passed: ascii, complexity, csslint, spark-off, changelog, action-parity, tools, version, doc-links, link, build, test, prove, doc, book, sbom, test-count, proof-status, description ==="
+	@echo "=== Quality gate passed: ascii, complexity, csslint, spark-off, changelog, action-parity, tools, cli-e2e, version, doc-links, link, docs-check, book-links, build, test, prove, doc, book, sbom, test-count, proof-status, description ==="
 
 # Sync the crate description + long description from the canonical files
 # (alire/description.txt + alire/long-description.txt) into every manifest.
@@ -312,7 +316,17 @@ test-publish:
 clean:
 	alr clean 2>/dev/null; rm -rf bin/ obj/ docs/badges/ docs/api/
 
-e2e:
+# Pure-stdlib CLI end-to-end checks (no browser): the shorthands, the long
+# aliases, the --standard tier tokens, the complexity subcommand, the VCS
+# differential modes, and the shorthand serve flags against the real binary
+# (tests/e2e/cli_flags.py).
+cli-e2e: build
+	@python3 tests/e2e/cli_flags.py
+
+# Browser end-to-end for the served dashboard.  The CLI suite runs first: it
+# needs no browser, so the command line stays covered when playwright cannot
+# install.
+e2e: cli-e2e
 	pnpm --dir tests/e2e install
 	pnpm --dir tests/e2e exec playwright install chromium
 	pnpm --dir tests/e2e test

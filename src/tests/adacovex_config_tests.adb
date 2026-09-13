@@ -30,6 +30,76 @@ package body Adacovex_Config_Tests is
       R.Check (Cfg.Standard_All = All_Std, Msg & ": all-standards");
    end Check_Args;
 
+   --  True when two parsed configs carry the same user-visible option state.
+   --  Only the option fields are compared: the fixed path buffers past their
+   --  length are uninitialised, so a plain record equality would read
+   --  garbage.
+   function Same_Options (A, B : CLI_Config) return Boolean is
+   begin
+      return
+        A.DAL_Target = B.DAL_Target
+        and then A.Standard_Target = B.Standard_Target
+        and then A.Standard_All = B.Standard_All
+        and then A.Standard_Explicit = B.Standard_Explicit
+        and then A.Serve_Mode = B.Serve_Mode
+        and then A.Port = B.Port
+        and then A.Serve_Workers = B.Serve_Workers
+        and then A.Serve_Workers_Set = B.Serve_Workers_Set
+        and then A.Theme = B.Theme
+        and then A.No_SVG = B.No_SVG
+        and then A.Emit_SVG = B.Emit_SVG
+        and then A.Emit_Markdown = B.Emit_Markdown
+        and then A.No_Markdown = B.No_Markdown
+        and then A.Verbose = B.Verbose
+        and then A.Strict_Mode = B.Strict_Mode
+        and then A.Cache_Enabled = B.Cache_Enabled
+        and then A.Cache_Max_Entries = B.Cache_Max_Entries
+        and then A.Skip_Dir_Ct = B.Skip_Dir_Ct
+        and then A.Prove_Mode = B.Prove_Mode
+        and then A.Prove_Level = B.Prove_Level
+        and then A.Prove_Jobs = B.Prove_Jobs
+        and then A.Prove_Timeout = B.Prove_Timeout
+        and then A.Prove_Steps = B.Prove_Steps
+        and then A.Prove_Memlimit = B.Prove_Memlimit
+        and then A.Prove_Force = B.Prove_Force
+        and then A.Prove_No_Loop_Unroll = B.Prove_No_Loop_Unroll
+        and then A.Prove_No_Inlining = B.Prove_No_Inlining
+        and then A.Prove_Suppress_Warnings = B.Prove_Suppress_Warnings
+        and then A.Prove_Suppress_Explicit = B.Prove_Suppress_Explicit
+        and then A.Require_SPARK = B.Require_SPARK
+        and then A.Require_SPARK_Set = B.Require_SPARK_Set
+        and then A.Require_Docstrings = B.Require_Docstrings
+        and then A.Require_Docstrings_Set = B.Require_Docstrings_Set
+        and then A.Require_Tests = B.Require_Tests
+        and then A.Require_Tests_Set = B.Require_Tests_Set
+        and then A.Require_Proof = B.Require_Proof
+        and then A.Require_Proof_Set = B.Require_Proof_Set
+        and then A.CLI_Error = B.CLI_Error
+        and then A.Target_Len = B.Target_Len
+        and then A.Manifest_Len = B.Manifest_Len
+        and then A.SVG_Path_Len = B.SVG_Path_Len
+        and then A.MD_Path_Len = B.MD_Path_Len
+        and then A.Compare_Base_Len = B.Compare_Base_Len
+        and then A.Coverage_Delta_Len = B.Coverage_Delta_Len;
+   end Same_Options;
+
+   --  Parse two argument lists with Parse_All and assert the alias produces
+   --  the same option state as its canonical long spelling.
+   procedure Check_Equivalent
+     (Alias     : Testing.Arg_Vectors.Vector;
+      Canonical : Testing.Arg_Vectors.Vector;
+      R         : in out Adacovex.Test_Support.Runner'Class;
+      Msg       : String)
+   is
+      A : CLI_Config;
+      B : CLI_Config;
+   begin
+      A := Testing.Parse_All (Alias);
+      B := Testing.Parse_All (Canonical);
+      R.Check (not A.CLI_Error and then not B.CLI_Error, Msg & ": parses");
+      R.Check (Same_Options (A, B), Msg & ": same option state");
+   end Check_Equivalent;
+
    procedure Run (R : in out Adacovex.Test_Support.Runner'Class) is
    begin
       --  Test 1: default config has Emit_SVG = True and SVG_Path_Len = 0.
@@ -1357,6 +1427,287 @@ package body Adacovex_Config_Tests is
          Add (A, "--standard=bogus");
          Cfg := Testing.Parse_All (A);
          R.Check (Cfg.CLI_Error, "--standard with an unknown value errors");
+      end;
+
+      --  Shorthand / alias equivalence: every alias produces exactly the
+      --  same parsed option state as its canonical long spelling.
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "-t=.");
+         Add (C, "--target=.");
+         Check_Equivalent (A, C, R, "-t == --target");
+      end;
+
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "-m=x.toml");
+         Add (C, "--manifest=x.toml");
+         Check_Equivalent (A, C, R, "-m == --manifest");
+      end;
+
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "serve");
+         Add (C, "--serve");
+         Check_Equivalent (A, C, R, "bare serve == --serve");
+      end;
+
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "-s");
+         Add (C, "--serve");
+         Check_Equivalent (A, C, R, "-s == --serve");
+      end;
+
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "-c");
+         Add (C, "--cache");
+         Check_Equivalent (A, C, R, "-c == --cache");
+      end;
+
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "relaxed");
+         Add (C, "--relaxed");
+         Check_Equivalent (A, C, R, "bare relaxed == --relaxed");
+      end;
+
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--strict");
+         Check_Equivalent (A, C, R, "--strict == the strict default");
+      end;
+
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "serve");
+         Add (A, "-p");
+         Add (A, "9090");
+         Add (C, "serve");
+         Add (C, "--port=9090");
+         Check_Equivalent (A, C, R, "-p N == --port=N");
+      end;
+
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "serve");
+         Add (A, "-p9091");
+         Add (C, "serve");
+         Add (C, "--port=9091");
+         Check_Equivalent (A, C, R, "glued -pN == --port=N");
+      end;
+
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "serve");
+         Add (A, "--workers=6");
+         Add (C, "serve");
+         Add (C, "--serve-workers=6");
+         Check_Equivalent (A, C, R, "--workers == --serve-workers");
+      end;
+
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "prove");
+         Add (A, "-l");
+         Add (A, "2");
+         Add (C, "prove");
+         Add (C, "--level=2");
+         Check_Equivalent (A, C, R, "-l N == --level=N");
+      end;
+
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "prove");
+         Add (A, "-l3");
+         Add (C, "prove");
+         Add (C, "--level=3");
+         Check_Equivalent (A, C, R, "glued -lN == --level=N");
+      end;
+
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "prove");
+         Add (A, "-j");
+         Add (A, "4");
+         Add (C, "prove");
+         Add (C, "--jobs=4");
+         Check_Equivalent (A, C, R, "-j N == --jobs=N");
+      end;
+
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "prove");
+         Add (A, "-j4");
+         Add (C, "prove");
+         Add (C, "--jobs=4");
+         Check_Equivalent (A, C, R, "glued -jN == --jobs=N");
+      end;
+
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "-r");
+         Add (A, "100");
+         Add (C, "--require-proof=100");
+         Check_Equivalent (A, C, R, "-r N == --require-proof=N");
+      end;
+
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "-r=100");
+         Add (C, "--require-proof=100");
+         Check_Equivalent (A, C, R, "-r=N == --require-proof=N");
+      end;
+
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--spark=Gold");
+         Add (C, "--require-spark=Gold");
+         Check_Equivalent (A, C, R, "--spark == --require-spark");
+      end;
+
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--docstrs=90");
+         Add (C, "--require-docstrings=90");
+         Check_Equivalent (A, C, R, "--docstrs == --require-docstrings");
+      end;
+
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--tests=500");
+         Add (C, "--require-tests=500");
+         Check_Equivalent (A, C, R, "--tests == --require-tests");
+      end;
+
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--diff=main");
+         Add (C, "--compare-base=main");
+         Check_Equivalent (A, C, R, "--diff == --compare-base");
+      end;
+
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--base");
+         Add (A, "main");
+         Add (C, "--compare-base=main");
+         Check_Equivalent (A, C, R, "--base REF == --compare-base=REF");
+      end;
+
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "-b");
+         Add (A, "main");
+         Add (C, "--compare-base=main");
+         Check_Equivalent (A, C, R, "-b REF == --compare-base=REF");
+      end;
+
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "-d=main");
+         Add (C, "--coverage-delta=main");
+         Check_Equivalent (A, C, R, "-d == --coverage-delta");
+      end;
+
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--delta=main");
+         Add (C, "--coverage-delta=main");
+         Check_Equivalent (A, C, R, "--delta == --coverage-delta");
+      end;
+
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--svg-path=out/b");
+         Add (C, "--emit-svg=out/b");
+         Check_Equivalent (A, C, R, "--svg-path == --emit-svg");
+      end;
+
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--md-path=out/m");
+         Add (C, "--emit-markdown=out/m");
+         Check_Equivalent (A, C, R, "--md-path == --emit-markdown");
+      end;
+
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--emit-md=out/m");
+         Add (C, "--emit-markdown=out/m");
+         Check_Equivalent (A, C, R, "--emit-md == --emit-markdown");
+      end;
+
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--emit-md");
+         Add (C, "--emit-markdown");
+         Check_Equivalent (A, C, R, "bare --emit-md == bare --emit-markdown");
+      end;
+
+      --  --no-md wins over an emit form, whether or not a path is present.
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--emit-md=out/m");
+         Add (A, "--no-md");
+         Add (C, "--no-md");
+         Check_Equivalent (A, C, R, "--no-md overrides --emit-md");
+      end;
+
+      --  Every shorthand / alias spelling is advertised to the shell
+      --  completion scripts and the "did you mean" walker, which share the
+      --  Flag_List table.
+      declare
+         Names  : constant String :=
+           "workers svg-path md-path emit-md no-md strict diff base delta "
+           & "spark docstrs tests";
+         Padded : constant String := " " & Flag_List & " ";
+         Start  : Natural := Names'First;
+         Fin    : Natural;
+      begin
+         while Start <= Names'Last loop
+            Fin := Start;
+            while Fin <= Names'Last and then Names (Fin) /= ' ' loop
+               Fin := Fin + 1;
+            end loop;
+            R.Check
+              (Ada.Strings.Fixed.Index
+                 (Padded, " " & Names (Start .. Fin - 1) & " ")
+               > 0,
+               Names (Start .. Fin - 1) & " is advertised in Flag_List");
+            exit when Fin > Names'Last;
+            Start := Fin + 1;
+         end loop;
       end;
    end Run;
 
