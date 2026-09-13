@@ -242,6 +242,19 @@ package body Adacovex.CPUs is
       end if;
    end Resolve_Jobs;
 
+   function Default_Serve_Workers (Cores : Natural) return Positive
+   with SPARK_Mode => On
+   is
+   begin
+      if Cores < 2 then
+         return 2;
+      elsif Cores > 8 then
+         return 8;
+      else
+         return Positive (Cores);
+      end if;
+   end Default_Serve_Workers;
+
    function Jobs_Justification
      (Configured : Integer; Cores : Natural; In_CI : Boolean) return String
    with SPARK_Mode => On

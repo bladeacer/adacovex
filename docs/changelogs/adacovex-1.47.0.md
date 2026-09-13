@@ -100,7 +100,7 @@ dashboard page's offline-manual section.
 
 ## Test Suite
 
-The native suite grows from 1235 to 1239 tests across 17 categories, all
+The native suite grows from 1235 to 1287 tests across 17 categories, all
 passing. CLI-config tests pin the tilde contract: `--target=~/x` expands
 to `HOME/x`, `--target=~` resolves to the home directory itself, and a
 `~user` form passes through unexpanded. The stdlib suite for the dev

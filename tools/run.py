@@ -6,10 +6,10 @@ targets (prove, run-self, sbom, run-ada-crdt) and passed the gate flags
 to release.py separately -- so a gate change had to land in several
 places at once.  This script is the single owner of that shape:
 
-  python3 tools/run.py prove       -- adacovex prove --target=. <gates> --emit-svg=docs/badges/
-  python3 tools/run.py self        -- adacovex --target=. <gates> --emit-svg=docs/badges/
-  python3 tools/run.py sbom        -- adacovex sbom --target=. --dal=C
-  python3 tools/run.py ada-crdt    -- adacovex --target=../Ada_CRDT --dal=C
+  python3 tools/run.py prove       -- adacovex prove -t=. <gates> --svg-path=docs/badges/
+  python3 tools/run.py self        -- adacovex -t=. <gates> --svg-path=docs/badges/
+  python3 tools/run.py sbom        -- adacovex sbom -t=. --dal=C
+  python3 tools/run.py ada-crdt    -- adacovex -t=../Ada_CRDT --dal=C
   python3 tools/run.py assess-args -- print the acceptance-gate flags
                                      (consumed by tools/release.py)
 
@@ -32,9 +32,13 @@ ROOT: Path = Path(__file__).resolve().parent.parent
 # Self-assessment acceptance gates, defined once so prove / self / release /
 # CI stay in sync (and match the AGENTS.md "Dogfood target" section).
 # --require-tests is the current native test-suite size (docs/test_result.md).
+# Every token is a single -flag=value / --flag=value word so the string can
+# be shell-split without knowing which flags take a separate value; the
+# shorthand spellings (--spark, --docstrs, -r) are the ones the CLI parser
+# expands into the canonical long flags.
 SELF_ASSESS_ARGS: str = (
-    "--dal=C --standard=all --require-spark=Platinum "
-    "--require-docstrings=100 --require-tests=1213 --require-proof=100"
+    "--standard=all --dal=C --spark=Platinum "
+    "--docstrs=100 --require-tests=1287 -r=100"
 )
 
 
@@ -59,20 +63,20 @@ def run(command: str) -> int:
     if command == "prove":
         return adacovex(
             ROOT,
-            ["prove", "--target=."] + SELF_ASSESS_ARGS.split()
-            + ["--emit-svg=docs/badges/"],
+            ["prove", "-t=."] + SELF_ASSESS_ARGS.split()
+            + ["--svg-path=docs/badges/"],
         )
     if command == "self":
         return adacovex(
             ROOT,
-            ["--target=."] + SELF_ASSESS_ARGS.split()
-            + ["--emit-svg=docs/badges/"],
+            ["-t=."] + SELF_ASSESS_ARGS.split()
+            + ["--svg-path=docs/badges/"],
         )
     if command == "sbom":
-        return adacovex(ROOT, ["sbom", "--target=.", "--dal=C"])
+        return adacovex(ROOT, ["sbom", "-t=.", "--dal=C"])
     if command == "ada-crdt":
         return adacovex(
-            ROOT.parent / "Ada_CRDT", ["--target=../Ada_CRDT", "--dal=C"]
+            ROOT.parent / "Ada_CRDT", ["-t=../Ada_CRDT", "--dal=C"]
         )
     # assess-args is handled in main() before dispatch.
     raise SystemExit(f"error: unknown command: {command}")

@@ -71,6 +71,19 @@ package Adacovex.CPUs is
         else Default_Prove_Jobs'Result = Natural'Max (1, Cores - 2)),
      Global     => null;
 
+   --  Sensible default task-pool size for the --serve dashboard.  It scales
+   --  with the host's logical CPU count and stays within 2 .. 8, so a small
+   --  machine does not over-subscribe and a large one does not spawn an
+   --  excessive pool.  Used when --serve is given without an explicit
+   --  --serve-workers / --workers value.
+   --  @param Cores  Detected logical CPU count.
+   --  @return Worker count in 2 .. 8.
+   function Default_Serve_Workers (Cores : Natural) return Positive
+   with
+     SPARK_Mode => On,
+     Post       => Default_Serve_Workers'Result in 2 .. 8,
+     Global     => null;
+
    --  A human-readable justification for the resolved job count, suitable for
    --  the verbose pipeline log.  Examples:
    --    "auto default (CI): using all 8 cores"

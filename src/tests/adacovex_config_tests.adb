@@ -1062,6 +1062,302 @@ package body Adacovex_Config_Tests is
                "--target=~other/code is not home-expanded");
          end;
       end;
+      --  Short-flag and alias shorthands resolve to their canonical flags:
+      --  -t / -t=PATH for --target, -m for --manifest.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "-t");
+         Add (A, ".");
+         Cfg := Testing.Parse_All (A);
+         R.Check (not Cfg.CLI_Error, "-t . parses");
+         R.Check (Cfg.Target_Len > 0, "-t sets the target path");
+      end;
+
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "-t=.");
+         Cfg := Testing.Parse_All (A);
+         R.Check (not Cfg.CLI_Error, "-t=. parses");
+         R.Check (Cfg.Target_Len > 0, "-t=. sets the target path");
+      end;
+
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "-m=my.toml");
+         Cfg := Testing.Parse_All (A);
+         R.Check
+           (not Cfg.CLI_Error
+            and then Cfg.Manifest_Len > 0
+            and then Cfg.Manifest_Path (1 .. Cfg.Manifest_Len) = "my.toml",
+            "-m=my.toml sets the manifest path");
+      end;
+
+      --  Bare serve / cache / relaxed words and the -s / -c shorts.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "serve");
+         Cfg := Testing.Parse_All (A);
+         R.Check (Cfg.Serve_Mode, "bare serve starts serve mode");
+         R.Check (not Cfg.CLI_Error, "bare serve is not an error");
+      end;
+
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "-s");
+         Cfg := Testing.Parse_All (A);
+         R.Check (Cfg.Serve_Mode, "-s starts serve mode");
+      end;
+
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "-c");
+         Cfg := Testing.Parse_All (A);
+         R.Check (Cfg.Cache_Enabled, "-c keeps the cache on");
+      end;
+
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "relaxed");
+         Cfg := Testing.Parse_All (A);
+         R.Check (not Cfg.Strict_Mode, "bare relaxed disables strict mode");
+      end;
+
+      --  --strict re-enables strict mode after a bare relaxed.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "relaxed");
+         Add (A, "--strict");
+         Cfg := Testing.Parse_All (A);
+         R.Check (Cfg.Strict_Mode, "--strict re-enables strict mode");
+      end;
+
+      --  -p / -pN set the port (with --serve).
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "serve");
+         Add (A, "-p");
+         Add (A, "9090");
+         Cfg := Testing.Parse_All (A);
+         R.Check (not Cfg.CLI_Error, "serve -p 9090 parses");
+         R.Check (Cfg.Port = 9090, "-p N sets the port");
+      end;
+
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "serve");
+         Add (A, "-p9091");
+         Cfg := Testing.Parse_All (A);
+         R.Check (Cfg.Port = 9091, "glued -pN sets the port");
+      end;
+
+      --  --workers is an alias of --serve-workers.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "serve");
+         Add (A, "--workers=6");
+         Cfg := Testing.Parse_All (A);
+         R.Check (not Cfg.CLI_Error, "serve --workers=6 parses");
+         R.Check (Cfg.Serve_Workers = 6, "--workers sets the worker count");
+         R.Check (Cfg.Serve_Workers_Set, "--workers marks the field as set");
+      end;
+
+      --  -l is the GNATprove proof level only.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "prove");
+         Add (A, "-l");
+         Add (A, "2");
+         Cfg := Testing.Parse_All (A);
+         R.Check (not Cfg.CLI_Error, "prove -l 2 parses");
+         R.Check (Cfg.Prove_Level = 2, "-l sets the proof level");
+      end;
+
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "-l3");
+         Cfg := Testing.Parse_All (A);
+         R.Check
+           (Cfg.CLI_Error,
+            "glued -l3 outside prove mode is a prove-option error");
+      end;
+
+      --  -r is the require-proof gate shorthand.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "-r=100");
+         Cfg := Testing.Parse_All (A);
+         R.Check (not Cfg.CLI_Error, "-r=100 parses");
+         R.Check
+           (Cfg.Require_Proof_Set and then Cfg.Require_Proof = 100,
+            "-r sets the require-proof gate");
+      end;
+
+      --  --spark / --docstrs / --tests alias the require-* gates.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--spark=Gold");
+         Add (A, "--docstrs=90");
+         Add (A, "--tests=500");
+         Cfg := Testing.Parse_All (A);
+         R.Check (not Cfg.CLI_Error, "require-gate aliases parse");
+         R.Check
+           (Cfg.Require_SPARK_Set and then Cfg.Require_SPARK = Gold,
+            "--spark sets the SPARK gate");
+         R.Check
+           (Cfg.Require_Docstrings_Set and then Cfg.Require_Docstrings = 90,
+            "--docstrs sets the docstring gate");
+         R.Check
+           (Cfg.Require_Tests_Set and then Cfg.Require_Tests = 500,
+            "--tests sets the test gate");
+      end;
+
+      --  --diff / --base / -b are compare-base aliases; -d is a
+      --  coverage-delta alias.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--diff=main");
+         Cfg := Testing.Parse_All (A);
+         R.Check
+           (Cfg.Compare_Base_Len > 0
+            and then Cfg.Compare_Base (1 .. Cfg.Compare_Base_Len) = "main",
+            "--diff sets the compare-base ref");
+      end;
+
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--base");
+         Add (A, "v1.0.0");
+         Cfg := Testing.Parse_All (A);
+         R.Check
+           (Cfg.Compare_Base_Len > 0
+            and then Cfg.Compare_Base (1 .. Cfg.Compare_Base_Len) = "v1.0.0",
+            "--base REF sets the compare-base ref");
+      end;
+
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "-d=main");
+         Cfg := Testing.Parse_All (A);
+         R.Check
+           (Cfg.Coverage_Delta_Len > 0
+            and then Cfg.Coverage_Delta (1 .. Cfg.Coverage_Delta_Len) = "main",
+            "-d sets the coverage-delta ref");
+      end;
+
+      --  --svg-path / --emit-md / --no-md.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--svg-path=out/badges");
+         Cfg := Testing.Parse_All (A);
+         R.Check (Cfg.Emit_SVG, "--svg-path enables SVG output");
+         R.Check
+           (Cfg.SVG_Path_Len > 0
+            and then Cfg.SVG_Path (1 .. Cfg.SVG_Path_Len) = "out/badges",
+            "--svg-path sets the badge directory");
+      end;
+
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--emit-md");
+         Cfg := Testing.Parse_All (A);
+         R.Check (Cfg.Emit_Markdown, "bare --emit-md enables Markdown output");
+         R.Check
+           (Cfg.MD_Path_Len > 4
+            and then Cfg.MD_Path (Cfg.MD_Path_Len - 4 .. Cfg.MD_Path_Len)
+                     = "/docs",
+            "bare --emit-md uses the default <target>/docs directory");
+      end;
+
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--emit-md=out/md");
+         Add (A, "--no-md");
+         Cfg := Testing.Parse_All (A);
+         R.Check
+           (not Cfg.Emit_Markdown, "--no-md overrides --emit-md with a path");
+         R.Check (Cfg.MD_Path_Len = 0, "--no-md clears the Markdown path");
+      end;
+
+      --  --standard=NAME also accepts a combined standard + tier token.
+      declare
+         A : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--standard=dal-a");
+         Check_Args (A, R, DO_178C, DAL_A, False, "--standard=dal-a");
+      end;
+
+      declare
+         A : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--standard=asil-b");
+         Check_Args (A, R, ISO_26262, DAL_C, False, "--standard=asil-b");
+      end;
+
+      declare
+         A : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--standard=class-c");
+         Check_Args (A, R, IEC_62304, DAL_A, False, "--standard=class-c");
+      end;
+
+      declare
+         A : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--standard=ASIL-QM");
+         Check_Args (A, R, ISO_26262, DAL_E, False, "--standard=ASIL-QM");
+      end;
+
+      --  An unknown --standard value is rejected loudly.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--standard=bogus");
+         Cfg := Testing.Parse_All (A);
+         R.Check (Cfg.CLI_Error, "--standard with an unknown value errors");
+      end;
    end Run;
 
 end Adacovex_Config_Tests;

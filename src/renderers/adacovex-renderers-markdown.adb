@@ -1,3 +1,4 @@
+with Ada.Directories;
 with Ada.Text_IO;
 
 package body Adacovex.Renderers.Markdown is
@@ -13,6 +14,11 @@ package body Adacovex.Renderers.Markdown is
    is
       F : Ada.Text_IO.File_Type;
    begin
+      --  Create the output directory when it is missing, so a bare
+      --  --emit-md (default <target>/docs) works on a fresh project (the
+      --  SVG and SBOM writers do the same).
+      Ada.Directories.Create_Path
+        (Ada.Directories.Containing_Directory (Path));
       Ada.Text_IO.Create (F, Ada.Text_IO.Out_File, Path);
       Ada.Text_IO.Put_Line (F, "# adacovex Verification Report");
       Ada.Text_IO.Put_Line (F, "");
@@ -212,6 +218,8 @@ package body Adacovex.Renderers.Markdown is
    is
       F : Ada.Text_IO.File_Type;
    begin
+      Ada.Directories.Create_Path
+        (Ada.Directories.Containing_Directory (Path));
       Ada.Text_IO.Create (F, Ada.Text_IO.Out_File, Path);
       Ada.Text_IO.Put_Line (F, "# Traceability Matrix");
       Ada.Text_IO.Put_Line (F, "");

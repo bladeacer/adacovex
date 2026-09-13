@@ -786,3 +786,32 @@ Every Technical Name in this dictionary has all five fields:
 - **Do Not Use:** Olson, tz database (as a modifier)
 - **Correct Example:** *`Asia/Singapore` is an **IANA** name.*
 - **Incorrect Example:** *`Asia/Singapore` is a tz database name.*
+
+#### Technical Name: Alias
+- **Part of Speech:** Noun
+- **Definition:** A second long spelling for the same command-line flag.
+  An alias has the same effect as the canonical flag (for example
+  `--workers` is an alias of `--serve-workers`).
+- **Approved Form:** Alias (singular), Aliases (plural)
+- **Do Not Use:** Synonym flag, Alternate name
+- **Correct Example:** *`--workers` is an **alias** of `--serve-workers`.*
+- **Incorrect Example:** *`--workers` is a synonym flag for `--serve-workers`.*
+
+#### Technical Name: Shorthand
+- **Part of Speech:** Noun
+- **Definition:** A short single-letter form of a command-line flag (for
+  example `-t` for `--target`).  A shorthand takes the same value as the
+  canonical flag.
+- **Approved Form:** Shorthand (singular), Shorthands (plural)
+- **Do Not Use:** Shortcut, Abbreviation
+- **Correct Example:** *Use the **shorthand** `-t` for `--target`.*
+- **Incorrect Example:** *Use the shortcut `-t` for `--target`.*
+
+#### Technical Name: Tier Token
+- **Part of Speech:** Noun
+- **Definition:** A value for `--standard` that names a standard together
+  with a rigour tier (for example `dal-B`, `asil-b`, or `class-c`).
+- **Approved Form:** Tier token (singular), Tier tokens (plural)
+- **Do Not Use:** Level token, Compliance token
+- **Correct Example:** *`--standard=asil-b` is a **tier token**.*
+- **Incorrect Example:** *`--standard=asil-b` is a level token.*

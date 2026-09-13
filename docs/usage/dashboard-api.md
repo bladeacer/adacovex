@@ -17,8 +17,8 @@ standard (for example `--asil=B` shows only ISO 26262 at ASIL B).
 assessment without parsing HTML:
 
 ```json
-{"spark_level":"Platinum","total_vcs":876,"proved_vcs":876,
- " "tests_passed":1239,"tests_failed":0,"doc_coverage":100,
+{"spark_level":"Platinum","total_vcs":880,"proved_vcs":880,
+ " "tests_passed":1287,"tests_failed":0,"doc_coverage":100,
  "standard":"all","level":"DAL-C","dal_status":"Achieved",
  "standards":{"DO-178C":{"level":"DAL-C","status":"Achieved"},
                "ISO 26262":{"level":"ASIL B","status":"Achieved"},
@@ -142,7 +142,8 @@ The dashboard-related flags are documented once in the CLI reference:
 - [`--port=N`](cli-reference-options.md#--portn) -- server port (default
   `8080`).
 - [`--serve-workers=N`](cli-reference-options.md#--serve-workersn) -- HTTP
-  server task-pool worker count (default `4`, capped at 256).
+  server task-pool worker count (alias `--workers=N`; default scales to the
+  CPU count within `2`..`8`, capped at 256).
 - [`--theme=NAME`](cli-reference-options.md#--themename) -- initial
   dashboard theme: `light` \| `dark` \| `system` (case-insensitive, default
   `system`).

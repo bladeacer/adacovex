@@ -82,6 +82,21 @@ CLI_ONLY: Dict[str, str] = {
     "dir": "man --dir (local)",
     "out": "sbom --out output path (the action uploads the SBOM artifact itself)",
     "complexity": "complexity subcommand (local quality gate; wired into make complexity-check)",
+    # CLI-alias shorthand spellings.  These all map onto a canonical flag that
+    # either has a matching action input already or is itself CLI_ONLY above;
+    # the action does not gain a second input per alias.
+    "workers": "alias of --serve-workers (local dashboard only)",
+    "svg-path": "alias of --emit-svg (CI uses the default <target>/docs/badges)",
+    "md-path": "alias of --emit-markdown (CLI alias)",
+    "emit-md": "alias of --emit-markdown (CLI alias)",
+    "no-md": "Markdown-report off switch (the action does not drive emit-markdown)",
+    "strict": "explicit strict-mode flag (strict is the default)",
+    "diff": "alias of --compare-base",
+    "base": "alias of --compare-base",
+    "delta": "alias of --coverage-delta",
+    "spark": "alias of --require-spark",
+    "docstrs": "alias of --require-docstrings",
+    "tests": "alias of --require-tests",
 }
 
 # Action inputs that intentionally have NO CLI flag (CI plumbing that drives

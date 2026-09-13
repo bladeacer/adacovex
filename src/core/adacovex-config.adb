@@ -2,6 +2,7 @@ with Ada.Command_Line;
 with Ada.Directories;
 with Ada.Text_IO;
 with Ada.Environment_Variables;
+with Adacovex.CPUs;
 with Adacovex.Timezones;
 
 package body Adacovex.Config is
@@ -279,6 +280,84 @@ package body Adacovex.Config is
       return S'Length = 1 and then (S (S'First) in 'A' .. 'E' | 'a' .. 'e');
    end Is_Valid_DAL;
 
+   --  Apply a --standard value.  Three forms are accepted
+   --  (case-insensitive):
+   --    * a standard name -- do178c, iso26262, or iec62304;
+   --    * a combined tier token -- dal-A..dal-E, asil-A..asil-D, asil-QM,
+   --      class-A..class-C -- which selects the standard together with the
+   --      rigour tier (so --standard=asil-b is the same as --asil=B);
+   --    * all -- every standard at the shared tier.
+   --  '-' and '_' are interchangeable inside a tier token.  An unknown
+   --  value is rejected loudly: a silent fall back to DO-178C would hide a
+   --  typo.  Standard selection stays on --standard (the -l shorthand is
+   --  the GNATprove proof level).  Default-off helper (the package body is
+   --  not in SPARK), like Set_Error / Set_Prove_Int.
+   procedure Set_Standard_Value (Cfg : in out CLI_Config; Val : String) is
+      Up : String (1 .. Val'Length) := (others => ' ');
+   begin
+      for I in Val'Range loop
+         if Val (I) in 'a' .. 'z' then
+            Up (I - Val'First + 1) :=
+              Character'Val (Character'Pos (Val (I)) - 32);
+         elsif Val (I) = '-' then
+            Up (I - Val'First + 1) := '_';
+         else
+            Up (I - Val'First + 1) := Val (I);
+         end if;
+      end loop;
+
+      if Is_All (Val) then
+         Cfg.Standard_All := True;
+         Cfg.Standard_Target := Types.DO_178C;
+         Cfg.Standard_Explicit := True;
+      elsif Up'Length = 5
+        and then Has_Prefix (Up, "DAL_")
+        and then Up (5) in 'A' .. 'E'
+      then
+         Cfg.Standard_All := False;
+         Cfg.Standard_Target := Types.DO_178C;
+         Cfg.DAL_Target := Types.To_DAL (Up (5 .. 5));
+         Cfg.Standard_Explicit := True;
+      elsif (Up'Length = 6
+             and then Has_Prefix (Up, "ASIL_")
+             and then Types.Is_Valid_ASIL (Up (6 .. 6)))
+        or else (Up'Length = 7 and then Has_Prefix (Up, "ASIL_QM"))
+      then
+         Cfg.Standard_All := False;
+         Cfg.Standard_Target := Types.ISO_26262;
+         Cfg.DAL_Target := Types.To_ASIL (Up (6 .. Up'Last));
+         Cfg.Standard_Explicit := True;
+      elsif Up'Length = 7
+        and then Has_Prefix (Up, "CLASS_")
+        and then Types.Is_Valid_Class (Up (7 .. 7))
+      then
+         Cfg.Standard_All := False;
+         Cfg.Standard_Target := Types.IEC_62304;
+         Cfg.DAL_Target := Types.To_Class (Up (7 .. 7));
+         Cfg.Standard_Explicit := True;
+      elsif Up = "DO_178C" or else Up = "DO178C" then
+         Cfg.Standard_All := False;
+         Cfg.Standard_Target := Types.DO_178C;
+         Cfg.Standard_Explicit := True;
+      elsif Up = "ISO_26262" or else Up = "ISO26262" then
+         Cfg.Standard_All := False;
+         Cfg.Standard_Target := Types.ISO_26262;
+         Cfg.Standard_Explicit := True;
+      elsif Up = "IEC_62304" or else Up = "IEC62304" then
+         Cfg.Standard_All := False;
+         Cfg.Standard_Target := Types.IEC_62304;
+         Cfg.Standard_Explicit := True;
+      else
+         Set_Error
+           (Cfg,
+            "--standard must be do178c, iso26262, iec62304, all, or a tier "
+            & "token (dal-A..dal-E, asil-A..asil-D, asil-QM, class-A..class-C) "
+            & "(got: "
+            & Val
+            & ")");
+      end if;
+   end Set_Standard_Value;
+
    --  Parse an integer prove option into a config field, validating its
    --  range.  On a bad value or out-of-range value the config is flagged as
    --  an error and Field is left untouched.
@@ -322,7 +401,9 @@ package body Adacovex.Config is
      & "jobs level timeout steps memlimit force no-loop-unrolling "
      & "no-inlining args suppress-warnings quiet require-spark require-docstrings "
      & "require-tests require-proof complexity export metrics help "
-     & "serve-workers tz timezone excludes skip-path";
+     & "serve-workers tz timezone excludes skip-path "
+     & "workers svg-path md-path emit-md no-md strict diff base delta spark "
+     & "docstrs tests";
 
    --  Expose the flag list for the shell-completion generator (see spec).
    function Flag_List return String is
@@ -480,60 +561,258 @@ package body Adacovex.Config is
 
    package body Testing is
 
+      --  Canonical long flag for a short flag or long alias.  Returns ""
+      --  when S is not an alias.  Alias_Len is the length of the matched
+      --  alias text; Takes_Val reports whether the canonical flag takes a
+      --  value (so the caller folds a following argument into the
+      --  --flag=VALUE form); Numeric flags also accept the glued form
+      --  (-p8080, -l2, -r100).  Default-off helper.
+      function Alias_Canonical
+        (S         : String;
+         Alias_Len : out Natural;
+         Takes_Val : out Boolean;
+         Numeric   : out Boolean) return String is
+      begin
+         Alias_Len := 0;
+         Takes_Val := False;
+         Numeric := False;
+
+         if S = "-t" or else Has_Prefix (S, "-t=") then
+            Alias_Len := 2;
+            Takes_Val := True;
+            return "--target";
+         elsif S = "-m" or else Has_Prefix (S, "-m=") then
+            Alias_Len := 2;
+            Takes_Val := True;
+            return "--manifest";
+         elsif S = "-p"
+           or else Has_Prefix (S, "-p=")
+           or else (Has_Prefix (S, "-p")
+                    and then S (S'First + 2) in '0' .. '9')
+         then
+            Alias_Len := 2;
+            Takes_Val := True;
+            Numeric := True;
+            return "--port";
+         elsif S = "-l"
+           or else Has_Prefix (S, "-l=")
+           or else (Has_Prefix (S, "-l")
+                    and then S (S'First + 2) in '0' .. '9')
+         then
+            Alias_Len := 2;
+            Takes_Val := True;
+            Numeric := True;
+            return "--level";
+         elsif S = "-r"
+           or else Has_Prefix (S, "-r=")
+           or else (Has_Prefix (S, "-r")
+                    and then S (S'First + 2) in '0' .. '9')
+         then
+            Alias_Len := 2;
+            Takes_Val := True;
+            Numeric := True;
+            return "--require-proof";
+         elsif S = "-b" or else Has_Prefix (S, "-b=") then
+            Alias_Len := 2;
+            Takes_Val := True;
+            return "--compare-base";
+         elsif S = "-d" or else Has_Prefix (S, "-d=") then
+            Alias_Len := 2;
+            Takes_Val := True;
+            return "--coverage-delta";
+         elsif S = "-s" then
+            Alias_Len := 2;
+            return "--serve";
+         elsif S = "-c" then
+            Alias_Len := 2;
+            return "--cache";
+         elsif S = "serve" then
+            Alias_Len := 5;
+            return "--serve";
+         elsif S = "cache" then
+            Alias_Len := 5;
+            return "--cache";
+         elsif S = "relaxed" then
+            Alias_Len := 7;
+            return "--relaxed";
+         elsif S = "--workers" or else Has_Prefix (S, "--workers=") then
+            Alias_Len := 9;
+            Takes_Val := True;
+            return "--serve-workers";
+         elsif S = "--svg-path" or else Has_Prefix (S, "--svg-path=") then
+            Alias_Len := 10;
+            Takes_Val := True;
+            return "--emit-svg";
+         elsif S = "--md-path" or else Has_Prefix (S, "--md-path=") then
+            Alias_Len := 9;
+            Takes_Val := True;
+            return "--emit-markdown";
+         elsif S = "--emit-md" or else Has_Prefix (S, "--emit-md=") then
+            Alias_Len := 9;
+            Takes_Val := True;
+            return "--emit-markdown";
+         elsif S = "--diff" or else Has_Prefix (S, "--diff=") then
+            Alias_Len := 6;
+            Takes_Val := True;
+            return "--compare-base";
+         elsif S = "--base" or else Has_Prefix (S, "--base=") then
+            Alias_Len := 6;
+            Takes_Val := True;
+            return "--compare-base";
+         elsif S = "--delta" or else Has_Prefix (S, "--delta=") then
+            Alias_Len := 7;
+            Takes_Val := True;
+            return "--coverage-delta";
+         elsif S = "--spark" or else Has_Prefix (S, "--spark=") then
+            Alias_Len := 7;
+            Takes_Val := True;
+            return "--require-spark";
+         elsif S = "--docstrs" or else Has_Prefix (S, "--docstrs=") then
+            Alias_Len := 9;
+            Takes_Val := True;
+            return "--require-docstrings";
+         elsif S = "--tests" or else Has_Prefix (S, "--tests=") then
+            Alias_Len := 7;
+            Takes_Val := True;
+            return "--require-tests";
+         else
+            return "";
+         end if;
+      end Alias_Canonical;
+
+      --  Expand short flags and long aliases into their canonical long forms
+      --  before the token loop, so Parse_Tokens keeps one spelling per
+      --  option.  A value-taking alias (for example `-t PATH` or
+      --  `--workers=4`) folds its value into the canonical `--flag=VALUE`
+      --  form; a value-less alias (`-s`, `serve`, `cache`, `relaxed`)
+      --  becomes the canonical flag.  A following token that starts with
+      --  '-' is never consumed, so an optional-value alias such as
+      --  `--emit-md` works bare.  Unknown tokens pass through unchanged (the
+      --  token loop rejects them with a suggestion).
+      procedure Normalize_Aliases
+        (Args : Arg_Vectors.Vector; NArgs : in out Arg_Vectors.Vector)
+      is
+         N         : constant Natural := Natural (Args.Length);
+         I         : Positive := 1;
+         Prev_Help : Boolean := False;
+      begin
+         while I <= N loop
+            declare
+               S     : constant String := Args (I);
+               ALen  : Natural;
+               Has_V : Boolean;
+               Num   : Boolean;
+               Canon : constant String :=
+                 Alias_Canonical (S, ALen, Has_V, Num);
+            begin
+               --  A token right after `help` names a help topic, not a flag
+               --  (`help serve`), so it is never rewritten into an alias.
+               if Prev_Help then
+                  NArgs.Append (S);
+               elsif Canon = "" then
+                  NArgs.Append (S);
+               elsif not Has_V then
+                  NArgs.Append (Canon);
+               elsif S'Length = ALen then
+                  if I < N and then not Is_Dash_Arg (Args (I + 1)) then
+                     I := I + 1;
+                     NArgs.Append (Canon & "=" & Args (I));
+                  else
+                     NArgs.Append (Canon);
+                  end if;
+               elsif S (S'First + ALen) = '=' then
+                  NArgs.Append (Canon & S (S'First + ALen .. S'Last));
+               elsif Num then
+                  NArgs.Append (Canon & "=" & S (S'First + ALen .. S'Last));
+               else
+                  NArgs.Append (S);
+               end if;
+               Prev_Help := S = "help";
+            end;
+            I := I + 1;
+         end loop;
+      end Normalize_Aliases;
+
+      --  Expand the aliases, then run the raw token loop over the rewritten
+      --  argument list.  The loop lives in a nested procedure so the alias
+      --  rewrite stays out of the per-function cyclomatic-complexity budget.
       procedure Parse_Args (Args : Arg_Vectors.Vector; Cfg : in out CLI_Config)
       is
-         Count : constant Natural := Natural (Args.Length);
-         I     : Positive := 1;
-      begin
-         Cfg.Target_Len := 0;
-         Cfg.Manifest_Len := 0;
-         Cfg.SVG_Path_Len := 0;
-         Cfg.MD_Path_Len := 0;
-         Cfg.Skip_Dir_Ct := 0;
-         Cfg.Compare_Base_Len := 0;
-         Cfg.Coverage_Delta_Len := 0;
-         Cfg.SBOM_Out_Len := 0;
-         Cfg.Cache_Dir_Len := 0;
-         Cfg.Man_Dir_Len := 0;
-         Cfg.Time_Zone_Len := 0;
-         Cfg.Excludes_Len := 0;
-         Cfg.Skip_Paths_Len := 0;
-         Cfg.Prove_Args := Ada.Strings.Unbounded.Null_Unbounded_String;
+         NA : Arg_Vectors.Vector;
 
-         while I <= Count loop
-            declare
-               A : constant String := Args (I);
-            begin
-               if A = "--target" then
-                  I := I + 1;
-                  if I <= Count then
-                     Set_String (Cfg.Target_Path, Cfg.Target_Len, Args (I));
-                  else
-                     Set_Error (Cfg, "--target requires a path argument");
-                  end if;
-               elsif Has_Prefix (A, "--target=") then
-                  Set_String
-                    (Cfg.Target_Path,
-                     Cfg.Target_Len,
-                     A (A'First + 9 .. A'Last));
-               elsif A = "--manifest" then
-                  I := I + 1;
-                  if I <= Count then
+         procedure Parse_Tokens
+           (Args : Arg_Vectors.Vector; Cfg : in out CLI_Config)
+         is
+            Count : constant Natural := Natural (Args.Length);
+            I     : Positive := 1;
+         begin
+            Cfg.Target_Len := 0;
+            Cfg.Manifest_Len := 0;
+            Cfg.SVG_Path_Len := 0;
+            Cfg.MD_Path_Len := 0;
+            Cfg.Skip_Dir_Ct := 0;
+            Cfg.Compare_Base_Len := 0;
+            Cfg.Coverage_Delta_Len := 0;
+            Cfg.SBOM_Out_Len := 0;
+            Cfg.Cache_Dir_Len := 0;
+            Cfg.Man_Dir_Len := 0;
+            Cfg.Time_Zone_Len := 0;
+            Cfg.Excludes_Len := 0;
+            Cfg.Skip_Paths_Len := 0;
+            Cfg.Prove_Args := Ada.Strings.Unbounded.Null_Unbounded_String;
+
+            while I <= Count loop
+               declare
+                  A : constant String := Args (I);
+               begin
+                  if A = "--target" then
+                     I := I + 1;
+                     if I <= Count then
+                        Set_String (Cfg.Target_Path, Cfg.Target_Len, Args (I));
+                     else
+                        Set_Error (Cfg, "--target requires a path argument");
+                     end if;
+                  elsif Has_Prefix (A, "--target=") then
                      Set_String
-                       (Cfg.Manifest_Path, Cfg.Manifest_Len, Args (I));
-                  else
-                     Set_Error (Cfg, "--manifest requires a path argument");
-                  end if;
-               elsif Has_Prefix (A, "--manifest=") then
-                  Set_String
-                    (Cfg.Manifest_Path,
-                     Cfg.Manifest_Len,
-                     A (A'First + 11 .. A'Last));
-               elsif A = "--dal" then
-                  I := I + 1;
-                  if I <= Count then
+                       (Cfg.Target_Path,
+                        Cfg.Target_Len,
+                        A (A'First + 9 .. A'Last));
+                  elsif A = "--manifest" then
+                     I := I + 1;
+                     if I <= Count then
+                        Set_String
+                          (Cfg.Manifest_Path, Cfg.Manifest_Len, Args (I));
+                     else
+                        Set_Error (Cfg, "--manifest requires a path argument");
+                     end if;
+                  elsif Has_Prefix (A, "--manifest=") then
+                     Set_String
+                       (Cfg.Manifest_Path,
+                        Cfg.Manifest_Len,
+                        A (A'First + 11 .. A'Last));
+                  elsif A = "--dal" then
+                     I := I + 1;
+                     if I <= Count then
+                        declare
+                           Val : constant String := Args (I);
+                        begin
+                           if Is_Valid_DAL (Val) then
+                              Cfg.DAL_Target := Types.To_DAL (Val);
+                           else
+                              Set_Error
+                                (Cfg,
+                                 "--dal must be A, B, C, D, or E (got: "
+                                 & Val
+                                 & ")");
+                           end if;
+                        end;
+                     else
+                        Set_Error
+                          (Cfg, "--dal requires a level argument (A-E)");
+                     end if;
+                  elsif Has_Prefix (A, "--dal=") then
                      declare
-                        Val : constant String := Args (I);
+                        Val : constant String := A (A'First + 6 .. A'Last);
                      begin
                         if Is_Valid_DAL (Val) then
                            Cfg.DAL_Target := Types.To_DAL (Val);
@@ -545,28 +824,33 @@ package body Adacovex.Config is
                               & ")");
                         end if;
                      end;
-                  else
-                     Set_Error (Cfg, "--dal requires a level argument (A-E)");
-                  end if;
-               elsif Has_Prefix (A, "--dal=") then
-                  declare
-                     Val : constant String := A (A'First + 6 .. A'Last);
-                  begin
-                     if Is_Valid_DAL (Val) then
-                        Cfg.DAL_Target := Types.To_DAL (Val);
+                  elsif A = "--asil" then
+                     I := I + 1;
+                     if I <= Count then
+                        declare
+                           Val : constant String := Args (I);
+                        begin
+                           if Types.Is_Valid_ASIL (Val) then
+                              Cfg.Standard_Target := Types.ISO_26262;
+                              Cfg.DAL_Target := Types.To_ASIL (Val);
+                              Cfg.Standard_All := False;
+                              Cfg.Standard_Explicit := True;
+                           else
+                              Set_Error
+                                (Cfg,
+                                 "--asil must be A, B, C, D, or QM (got: "
+                                 & Val
+                                 & ")");
+                           end if;
+                        end;
                      else
                         Set_Error
                           (Cfg,
-                           "--dal must be A, B, C, D, or E (got: "
-                           & Val
-                           & ")");
+                           "--asil requires a level argument (A-D or QM)");
                      end if;
-                  end;
-               elsif A = "--asil" then
-                  I := I + 1;
-                  if I <= Count then
+                  elsif Has_Prefix (A, "--asil=") then
                      declare
-                        Val : constant String := Args (I);
+                        Val : constant String := A (A'First + 7 .. A'Last);
                      begin
                         if Types.Is_Valid_ASIL (Val) then
                            Cfg.Standard_Target := Types.ISO_26262;
@@ -581,32 +865,32 @@ package body Adacovex.Config is
                               & ")");
                         end if;
                      end;
-                  else
-                     Set_Error
-                       (Cfg, "--asil requires a level argument (A-D or QM)");
-                  end if;
-               elsif Has_Prefix (A, "--asil=") then
-                  declare
-                     Val : constant String := A (A'First + 7 .. A'Last);
-                  begin
-                     if Types.Is_Valid_ASIL (Val) then
-                        Cfg.Standard_Target := Types.ISO_26262;
-                        Cfg.DAL_Target := Types.To_ASIL (Val);
-                        Cfg.Standard_All := False;
-                        Cfg.Standard_Explicit := True;
+                  elsif A = "--class" then
+                     I := I + 1;
+                     if I <= Count then
+                        declare
+                           Val : constant String := Args (I);
+                        begin
+                           if Types.Is_Valid_Class (Val) then
+                              Cfg.Standard_Target := Types.IEC_62304;
+                              Cfg.DAL_Target := Types.To_Class (Val);
+                              Cfg.Standard_All := False;
+                              Cfg.Standard_Explicit := True;
+                           else
+                              Set_Error
+                                (Cfg,
+                                 "--class must be A, B, or C (got: "
+                                 & Val
+                                 & ")");
+                           end if;
+                        end;
                      else
                         Set_Error
-                          (Cfg,
-                           "--asil must be A, B, C, D, or QM (got: "
-                           & Val
-                           & ")");
+                          (Cfg, "--class requires a level argument (A-C)");
                      end if;
-                  end;
-               elsif A = "--class" then
-                  I := I + 1;
-                  if I <= Count then
+                  elsif Has_Prefix (A, "--class=") then
                      declare
-                        Val : constant String := Args (I);
+                        Val : constant String := A (A'First + 8 .. A'Last);
                      begin
                         if Types.Is_Valid_Class (Val) then
                            Cfg.Standard_Target := Types.IEC_62304;
@@ -619,66 +903,44 @@ package body Adacovex.Config is
                               "--class must be A, B, or C (got: " & Val & ")");
                         end if;
                      end;
-                  else
-                     Set_Error
-                       (Cfg, "--class requires a level argument (A-C)");
-                  end if;
-               elsif Has_Prefix (A, "--class=") then
-                  declare
-                     Val : constant String := A (A'First + 8 .. A'Last);
-                  begin
-                     if Types.Is_Valid_Class (Val) then
-                        Cfg.Standard_Target := Types.IEC_62304;
-                        Cfg.DAL_Target := Types.To_Class (Val);
-                        Cfg.Standard_All := False;
-                        Cfg.Standard_Explicit := True;
+                  elsif A = "--standard" then
+                     I := I + 1;
+                     if I <= Count then
+                        Set_Standard_Value (Cfg, Args (I));
                      else
                         Set_Error
                           (Cfg,
-                           "--class must be A, B, or C (got: " & Val & ")");
+                           "--standard requires a name (do178c, iso26262, iec62304, "
+                           & "all) or a tier token (dal-A, asil-B, class-C)");
                      end if;
-                  end;
-               elsif A = "--standard" then
-                  I := I + 1;
-                  if I <= Count then
-                     declare
-                        Val : constant String := Args (I);
-                     begin
-                        if Is_All (Val) then
-                           Cfg.Standard_All := True;
-                           Cfg.Standard_Target := Types.DO_178C;
-                        else
-                           Cfg.Standard_All := False;
-                           Cfg.Standard_Target := Types.To_Standard (Val);
-                        end if;
-                        Cfg.Standard_Explicit := True;
-                     end;
-                  else
-                     Set_Error
-                       (Cfg,
-                        "--standard requires a name (do178c, iso26262, iec62304, "
-                        & "all)");
-                  end if;
-               elsif Has_Prefix (A, "--standard=") then
-                  declare
-                     Val : constant String := A (A'First + 11 .. A'Last);
-                  begin
-                     if Is_All (Val) then
-                        Cfg.Standard_All := True;
-                        Cfg.Standard_Target := Types.DO_178C;
+                  elsif Has_Prefix (A, "--standard=") then
+                     Set_Standard_Value (Cfg, A (A'First + 11 .. A'Last));
+                  elsif A = "--serve" then
+                     Cfg.Serve_Mode := True;
+                  elsif A = "--theme" then
+                     I := I + 1;
+                     if I <= Count then
+                        declare
+                           Val : constant String := Args (I);
+                        begin
+                           if Types.Is_Valid_Theme (Val) then
+                              Cfg.Theme := Types.To_Theme (Val);
+                           else
+                              Set_Error
+                                (Cfg,
+                                 "--theme must be light, dark, or system (got: "
+                                 & Val
+                                 & ")");
+                           end if;
+                        end;
                      else
-                        Cfg.Standard_All := False;
-                        Cfg.Standard_Target := Types.To_Standard (Val);
+                        Set_Error
+                          (Cfg,
+                           "--theme requires a value (light | dark | system)");
                      end if;
-                     Cfg.Standard_Explicit := True;
-                  end;
-               elsif A = "--serve" then
-                  Cfg.Serve_Mode := True;
-               elsif A = "--theme" then
-                  I := I + 1;
-                  if I <= Count then
+                  elsif Has_Prefix (A, "--theme=") then
                      declare
-                        Val : constant String := Args (I);
+                        Val : constant String := A (A'First + 8 .. A'Last);
                      begin
                         if Types.Is_Valid_Theme (Val) then
                            Cfg.Theme := Types.To_Theme (Val);
@@ -690,361 +952,385 @@ package body Adacovex.Config is
                               & ")");
                         end if;
                      end;
-                  else
-                     Set_Error
-                       (Cfg,
-                        "--theme requires a value (light | dark | system)");
-                  end if;
-               elsif Has_Prefix (A, "--theme=") then
-                  declare
-                     Val : constant String := A (A'First + 8 .. A'Last);
-                  begin
-                     if Types.Is_Valid_Theme (Val) then
-                        Cfg.Theme := Types.To_Theme (Val);
+                  elsif A = "--port" then
+                     I := I + 1;
+                     if I <= Count then
+                        begin
+                           Cfg.Port := Positive'Value (Args (I));
+                        exception
+                           when Constraint_Error =>
+                              Set_Error
+                                (Cfg,
+                                 "--port must be a positive integer (got: "
+                                 & Args (I)
+                                 & ")");
+                        end;
                      else
-                        Set_Error
-                          (Cfg,
-                           "--theme must be light, dark, or system (got: "
-                           & Val
-                           & ")");
+                        Set_Error (Cfg, "--port requires an integer argument");
                      end if;
-                  end;
-               elsif A = "--port" then
-                  I := I + 1;
-                  if I <= Count then
+                  elsif Has_Prefix (A, "--port=") then
                      begin
-                        Cfg.Port := Positive'Value (Args (I));
+                        Cfg.Port := Positive'Value (A (A'First + 7 .. A'Last));
                      exception
                         when Constraint_Error =>
                            Set_Error
                              (Cfg,
                               "--port must be a positive integer (got: "
-                              & Args (I)
+                              & A (A'First + 7 .. A'Last)
                               & ")");
                      end;
-                  else
-                     Set_Error (Cfg, "--port requires an integer argument");
-                  end if;
-               elsif Has_Prefix (A, "--port=") then
-                  begin
-                     Cfg.Port := Positive'Value (A (A'First + 7 .. A'Last));
-                  exception
-                     when Constraint_Error =>
+                  elsif A = "--serve-workers" then
+                     I := I + 1;
+                     if I <= Count then
+                        begin
+                           Cfg.Serve_Workers := Positive'Value (Args (I));
+                        exception
+                           when Constraint_Error =>
+                              Set_Error
+                                (Cfg,
+                                 "--serve-workers must be a positive integer "
+                                 & "(got: "
+                                 & Args (I)
+                                 & ")");
+                        end;
+                     else
                         Set_Error
                           (Cfg,
-                           "--port must be a positive integer (got: "
-                           & A (A'First + 7 .. A'Last)
-                           & ")");
-                  end;
-               elsif A = "--serve-workers" then
-                  I := I + 1;
-                  if I <= Count then
+                           "--serve-workers requires an integer argument");
+                     end if;
+                     Cfg.Serve_Workers_Set := True;
+                  elsif Has_Prefix (A, "--serve-workers=") then
                      begin
-                        Cfg.Serve_Workers := Positive'Value (Args (I));
+                        Cfg.Serve_Workers :=
+                          Positive'Value (A (A'First + 16 .. A'Last));
                      exception
                         when Constraint_Error =>
                            Set_Error
                              (Cfg,
-                              "--serve-workers must be a positive integer "
-                              & "(got: "
-                              & Args (I)
+                              "--serve-workers must be a positive integer (got: "
+                              & A (A'First + 16 .. A'Last)
                               & ")");
                      end;
-                  else
-                     Set_Error
-                       (Cfg, "--serve-workers requires an integer argument");
-                  end if;
-                  Cfg.Serve_Workers_Set := True;
-               elsif Has_Prefix (A, "--serve-workers=") then
-                  begin
-                     Cfg.Serve_Workers :=
-                       Positive'Value (A (A'First + 16 .. A'Last));
-                  exception
-                     when Constraint_Error =>
+                     Cfg.Serve_Workers_Set := True;
+                  elsif A = "--tz" or else A = "--timezone" then
+                     I := I + 1;
+                     if I <= Count then
+                        Set_String
+                          (Cfg.Time_Zone, Cfg.Time_Zone_Len, Args (I));
+                     else
                         Set_Error
                           (Cfg,
-                           "--serve-workers must be a positive integer (got: "
-                           & A (A'First + 16 .. A'Last)
-                           & ")");
-                  end;
-                  Cfg.Serve_Workers_Set := True;
-               elsif A = "--tz" or else A = "--timezone" then
-                  I := I + 1;
-                  if I <= Count then
-                     Set_String (Cfg.Time_Zone, Cfg.Time_Zone_Len, Args (I));
-                  else
-                     Set_Error
-                       (Cfg,
-                        (if A = "--tz" then "--tz" else "--timezone")
-                        & " requires a timezone argument");
-                  end if;
-               elsif Has_Prefix (A, "--tz=") then
-                  Set_String
-                    (Cfg.Time_Zone,
-                     Cfg.Time_Zone_Len,
-                     A (A'First + 5 .. A'Last));
-               elsif Has_Prefix (A, "--timezone=") then
-                  Set_String
-                    (Cfg.Time_Zone,
-                     Cfg.Time_Zone_Len,
-                     A (A'First + 11 .. A'Last));
-               elsif A = "--excludes" then
-                  I := I + 1;
-                  if I <= Count then
+                           (if A = "--tz" then "--tz" else "--timezone")
+                           & " requires a timezone argument");
+                     end if;
+                  elsif Has_Prefix (A, "--tz=") then
                      Set_String
-                       (Cfg.Complexity_Excludes, Cfg.Excludes_Len, Args (I));
-                  else
-                     Set_Error
-                       (Cfg,
-                        "--excludes requires a comma-separated extension list");
-                  end if;
-               elsif Has_Prefix (A, "--excludes=") then
-                  Set_String
-                    (Cfg.Complexity_Excludes,
-                     Cfg.Excludes_Len,
-                     A (A'First + 11 .. A'Last));
-               elsif A = "--skip-path" then
-                  I := I + 1;
-                  if I <= Count then
+                       (Cfg.Time_Zone,
+                        Cfg.Time_Zone_Len,
+                        A (A'First + 5 .. A'Last));
+                  elsif Has_Prefix (A, "--timezone=") then
+                     Set_String
+                       (Cfg.Time_Zone,
+                        Cfg.Time_Zone_Len,
+                        A (A'First + 11 .. A'Last));
+                  elsif A = "--excludes" then
+                     I := I + 1;
+                     if I <= Count then
+                        Set_String
+                          (Cfg.Complexity_Excludes,
+                           Cfg.Excludes_Len,
+                           Args (I));
+                     else
+                        Set_Error
+                          (Cfg,
+                           "--excludes requires a comma-separated extension list");
+                     end if;
+                  elsif Has_Prefix (A, "--excludes=") then
+                     Set_String
+                       (Cfg.Complexity_Excludes,
+                        Cfg.Excludes_Len,
+                        A (A'First + 11 .. A'Last));
+                  elsif A = "--skip-path" then
+                     I := I + 1;
+                     if I <= Count then
+                        Add_Comma_Item
+                          (Cfg.Complexity_Skip_Paths,
+                           Cfg.Skip_Paths_Len,
+                           Args (I));
+                     else
+                        Set_Error
+                          (Cfg,
+                           "--skip-path requires a path fragment argument");
+                     end if;
+                  elsif Has_Prefix (A, "--skip-path=") then
                      Add_Comma_Item
                        (Cfg.Complexity_Skip_Paths,
                         Cfg.Skip_Paths_Len,
-                        Args (I));
-                  else
-                     Set_Error
-                       (Cfg, "--skip-path requires a path fragment argument");
-                  end if;
-               elsif Has_Prefix (A, "--skip-path=") then
-                  Add_Comma_Item
-                    (Cfg.Complexity_Skip_Paths,
-                     Cfg.Skip_Paths_Len,
-                     A (A'First + 12 .. A'Last));
-               elsif A = "--emit-svg" then
-                  I := I + 1;
-                  if I <= Count then
+                        A (A'First + 12 .. A'Last));
+                  elsif A = "--emit-svg" then
+                     --  Optional value: bare --emit-svg (and the --svg-path
+                     --  alias) write to the default <target>/docs/badges
+                     --  directory resolved in Parse_All.
                      Cfg.Emit_SVG := True;
-                     Set_String (Cfg.SVG_Path, Cfg.SVG_Path_Len, Args (I));
-                  else
-                     Set_Error
-                       (Cfg, "--emit-svg requires a directory argument");
-                  end if;
-               elsif Has_Prefix (A, "--emit-svg=") then
-                  Cfg.Emit_SVG := True;
-                  Set_String
-                    (Cfg.SVG_Path,
-                     Cfg.SVG_Path_Len,
-                     A (A'First + 11 .. A'Last));
-               elsif A = "--emit-markdown" then
-                  I := I + 1;
-                  if I <= Count then
+                     if I < Count and then not Is_Dash_Arg (Args (I + 1)) then
+                        I := I + 1;
+                        Set_String (Cfg.SVG_Path, Cfg.SVG_Path_Len, Args (I));
+                     end if;
+                  elsif Has_Prefix (A, "--emit-svg=") then
+                     Cfg.Emit_SVG := True;
+                     Set_String
+                       (Cfg.SVG_Path,
+                        Cfg.SVG_Path_Len,
+                        A (A'First + 11 .. A'Last));
+                  elsif A = "--emit-markdown" then
+                     --  Optional value: bare --emit-markdown (and the
+                     --  --emit-md / --md-path aliases) write to the default
+                     --  <target>/docs directory resolved in Parse_All.
                      Cfg.Emit_Markdown := True;
-                     Set_String (Cfg.MD_Path, Cfg.MD_Path_Len, Args (I));
-                  else
-                     Set_Error
-                       (Cfg, "--emit-markdown requires a directory argument");
-                  end if;
-               elsif Has_Prefix (A, "--emit-markdown=") then
-                  Cfg.Emit_Markdown := True;
-                  Set_String
-                    (Cfg.MD_Path, Cfg.MD_Path_Len, A (A'First + 16 .. A'Last));
-               elsif A = "--emit-metrics" then
-                  I := I + 1;
-                  if I <= Count then
+                     if I < Count and then not Is_Dash_Arg (Args (I + 1)) then
+                        I := I + 1;
+                        Set_String (Cfg.MD_Path, Cfg.MD_Path_Len, Args (I));
+                     end if;
+                  elsif Has_Prefix (A, "--emit-markdown=") then
+                     Cfg.Emit_Markdown := True;
+                     Set_String
+                       (Cfg.MD_Path,
+                        Cfg.MD_Path_Len,
+                        A (A'First + 16 .. A'Last));
+                  elsif A = "--emit-metrics" then
+                     I := I + 1;
+                     if I <= Count then
+                        Cfg.Emit_Metrics := True;
+                        Set_String
+                          (Cfg.Metrics_Path, Cfg.Metrics_Path_Len, Args (I));
+                     else
+                        Set_Error
+                          (Cfg,
+                           "--emit-metrics requires a file path argument");
+                     end if;
+                  elsif Has_Prefix (A, "--emit-metrics=") then
                      Cfg.Emit_Metrics := True;
                      Set_String
-                       (Cfg.Metrics_Path, Cfg.Metrics_Path_Len, Args (I));
-                  else
-                     Set_Error
-                       (Cfg, "--emit-metrics requires a file path argument");
-                  end if;
-               elsif Has_Prefix (A, "--emit-metrics=") then
-                  Cfg.Emit_Metrics := True;
-                  Set_String
-                    (Cfg.Metrics_Path,
-                     Cfg.Metrics_Path_Len,
-                     A (A'First + 15 .. A'Last));
-               elsif A = "--no-svg" then
-                  Cfg.No_SVG := True;
-               elsif A = "--verbose" then
-                  Cfg.Verbose := True;
-               elsif A = "--relaxed" then
-                  Cfg.Strict_Mode := False;
-               elsif A = "--cache" then
-                  Cfg.Cache_Enabled := True;
-               elsif A = "--no-cache" then
-                  Cfg.Cache_Enabled := False;
-               elsif A = "--cache-dir" then
-                  I := I + 1;
-                  if I <= Count then
-                     Set_String (Cfg.Cache_Dir, Cfg.Cache_Dir_Len, Args (I));
-                  else
-                     Set_Error
-                       (Cfg, "--cache-dir requires a directory argument");
-                  end if;
-               elsif Has_Prefix (A, "--cache-dir=") then
-                  Set_String
-                    (Cfg.Cache_Dir,
-                     Cfg.Cache_Dir_Len,
-                     A (A'First + 12 .. A'Last));
-               elsif A = "--cache-max" then
-                  I := I + 1;
-                  if I <= Count then
+                       (Cfg.Metrics_Path,
+                        Cfg.Metrics_Path_Len,
+                        A (A'First + 15 .. A'Last));
+                  elsif A = "--no-svg" then
+                     Cfg.No_SVG := True;
+                  elsif A = "--no-md" then
+                     Cfg.No_Markdown := True;
+                  elsif A = "--verbose" then
+                     Cfg.Verbose := True;
+                  elsif A = "--relaxed" then
+                     Cfg.Strict_Mode := False;
+                  elsif A = "--strict" then
+                     Cfg.Strict_Mode := True;
+                  elsif A = "--cache" then
+                     Cfg.Cache_Enabled := True;
+                  elsif A = "--no-cache" then
+                     Cfg.Cache_Enabled := False;
+                  elsif A = "--cache-dir" then
+                     I := I + 1;
+                     if I <= Count then
+                        Set_String
+                          (Cfg.Cache_Dir, Cfg.Cache_Dir_Len, Args (I));
+                     else
+                        Set_Error
+                          (Cfg, "--cache-dir requires a directory argument");
+                     end if;
+                  elsif Has_Prefix (A, "--cache-dir=") then
+                     Set_String
+                       (Cfg.Cache_Dir,
+                        Cfg.Cache_Dir_Len,
+                        A (A'First + 12 .. A'Last));
+                  elsif A = "--cache-max" then
+                     I := I + 1;
+                     if I <= Count then
+                        begin
+                           Cfg.Cache_Max_Entries := Natural'Value (Args (I));
+                        exception
+                           when Constraint_Error =>
+                              Set_Error
+                                (Cfg,
+                                 "--cache-max must be a positive integer (got: "
+                                 & Args (I)
+                                 & ")");
+                        end;
+                     else
+                        Set_Error
+                          (Cfg, "--cache-max requires an integer argument");
+                     end if;
+                  elsif Has_Prefix (A, "--cache-max=") then
                      begin
-                        Cfg.Cache_Max_Entries := Natural'Value (Args (I));
+                        Cfg.Cache_Max_Entries :=
+                          Natural'Value (A (A'First + 12 .. A'Last));
                      exception
                         when Constraint_Error =>
                            Set_Error
                              (Cfg,
                               "--cache-max must be a positive integer (got: "
-                              & Args (I)
+                              & A (A'First + 12 .. A'Last)
                               & ")");
                      end;
-                  else
-                     Set_Error
-                       (Cfg, "--cache-max requires an integer argument");
-                  end if;
-               elsif Has_Prefix (A, "--cache-max=") then
-                  begin
-                     Cfg.Cache_Max_Entries :=
-                       Natural'Value (A (A'First + 12 .. A'Last));
-                  exception
-                     when Constraint_Error =>
+                  elsif A = "--skip-dir" then
+                     I := I + 1;
+                     if I <= Count then
+                        Add_Skip_Dir (Cfg, Args (I));
+                     else
+                        Set_Error
+                          (Cfg, "--skip-dir requires a directory name");
+                     end if;
+                  elsif Has_Prefix (A, "--skip-dir=") then
+                     Add_Skip_Dir (Cfg, A (A'First + 10 .. A'Last));
+                  elsif A = "--compare-base" then
+                     I := I + 1;
+                     if I <= Count then
+                        Set_String
+                          (Cfg.Compare_Base, Cfg.Compare_Base_Len, Args (I));
+                     else
                         Set_Error
                           (Cfg,
-                           "--cache-max must be a positive integer (got: "
-                           & A (A'First + 12 .. A'Last)
-                           & ")");
-                  end;
-               elsif A = "--skip-dir" then
-                  I := I + 1;
-                  if I <= Count then
-                     Add_Skip_Dir (Cfg, Args (I));
-                  else
-                     Set_Error (Cfg, "--skip-dir requires a directory name");
-                  end if;
-               elsif Has_Prefix (A, "--skip-dir=") then
-                  Add_Skip_Dir (Cfg, A (A'First + 10 .. A'Last));
-               elsif A = "--compare-base" then
-                  I := I + 1;
-                  if I <= Count then
+                           "--compare-base requires a branch/commit argument");
+                     end if;
+                  elsif Has_Prefix (A, "--compare-base=") then
                      Set_String
-                       (Cfg.Compare_Base, Cfg.Compare_Base_Len, Args (I));
-                  else
-                     Set_Error
-                       (Cfg,
-                        "--compare-base requires a branch/commit argument");
-                  end if;
-               elsif Has_Prefix (A, "--compare-base=") then
-                  Set_String
-                    (Cfg.Compare_Base,
-                     Cfg.Compare_Base_Len,
-                     A (A'First + 15 .. A'Last));
-               elsif A = "--coverage-delta" then
-                  I := I + 1;
-                  if I <= Count then
+                       (Cfg.Compare_Base,
+                        Cfg.Compare_Base_Len,
+                        A (A'First + 15 .. A'Last));
+                  elsif A = "--coverage-delta" then
+                     I := I + 1;
+                     if I <= Count then
+                        Set_String
+                          (Cfg.Coverage_Delta,
+                           Cfg.Coverage_Delta_Len,
+                           Args (I));
+                     else
+                        Set_Error
+                          (Cfg,
+                           "--coverage-delta requires a branch/commit argument");
+                     end if;
+                  elsif Has_Prefix (A, "--coverage-delta=") then
                      Set_String
-                       (Cfg.Coverage_Delta, Cfg.Coverage_Delta_Len, Args (I));
-                  else
-                     Set_Error
-                       (Cfg,
-                        "--coverage-delta requires a branch/commit argument");
-                  end if;
-               elsif Has_Prefix (A, "--coverage-delta=") then
-                  Set_String
-                    (Cfg.Coverage_Delta,
-                     Cfg.Coverage_Delta_Len,
-                     A (A'First + 17 .. A'Last));
-               elsif A = "sbom" then
-                  Cfg.SBOM_Mode := True;
-               elsif A = "prove" then
-                  Cfg.Prove_Mode := True;
-               elsif A = "complexity" then
-                  Cfg.Complexity_Mode := True;
-               elsif A = "status" then
-                  Cfg.Status_Mode := True;
-               elsif A = "--export" then
-                  --  `status --export` prints the status report as JSON on
-                  --  stdout; `status --export=PATH` writes it to PATH.
-                  Cfg.Status_Export := True;
-                  if I < Count and then not Is_Dash_Arg (Args (I + 1)) then
+                       (Cfg.Coverage_Delta,
+                        Cfg.Coverage_Delta_Len,
+                        A (A'First + 17 .. A'Last));
+                  elsif A = "sbom" then
+                     Cfg.SBOM_Mode := True;
+                  elsif A = "prove" then
+                     Cfg.Prove_Mode := True;
+                  elsif A = "complexity" then
+                     Cfg.Complexity_Mode := True;
+                  elsif A = "status" then
+                     Cfg.Status_Mode := True;
+                  elsif A = "--export" then
+                     --  `status --export` prints the status report as JSON on
+                     --  stdout; `status --export=PATH` writes it to PATH.
+                     Cfg.Status_Export := True;
+                     if I < Count and then not Is_Dash_Arg (Args (I + 1)) then
+                        Set_String
+                          (Cfg.Status_Export_Path,
+                           Cfg.Status_Export_Path_Len,
+                           Args (I + 1));
+                        I := I + 1;
+                     end if;
+                  elsif Has_Prefix (A, "--export=") then
+                     Cfg.Status_Export := True;
                      Set_String
                        (Cfg.Status_Export_Path,
                         Cfg.Status_Export_Path_Len,
-                        Args (I + 1));
-                     I := I + 1;
-                  end if;
-               elsif Has_Prefix (A, "--export=") then
-                  Cfg.Status_Export := True;
-                  Set_String
-                    (Cfg.Status_Export_Path,
-                     Cfg.Status_Export_Path_Len,
-                     A (A'First + 9 .. A'Last));
-               elsif A = "--metrics" then
-                  Cfg.Status_Metrics := True;
-               elsif A = "completion" then
-                  --  `completion [bash|fish|zsh|pwsh]`: the shell name is
-                  --  the next argument when it is one of the four known
-                  --  shells; without one, the default (bash) is used.
-                  Cfg.Completion_Mode := True;
-                  if I < Count and then Is_Completion_Shell (Args (I + 1)) then
+                        A (A'First + 9 .. A'Last));
+                  elsif A = "--metrics" then
+                     Cfg.Status_Metrics := True;
+                  elsif A = "completion" then
+                     --  `completion [bash|fish|zsh|pwsh]`: the shell name is
+                     --  the next argument when it is one of the four known
+                     --  shells; without one, the default (bash) is used.
+                     Cfg.Completion_Mode := True;
+                     if I < Count and then Is_Completion_Shell (Args (I + 1))
+                     then
+                        Set_String
+                          (Cfg.Completion_Shell,
+                           Cfg.Completion_Shell_Len,
+                           Args (I + 1));
+                        I := I + 1;
+                     end if;
+                  elsif Has_Prefix (A, "--completion=") then
+                     Cfg.Completion_Mode := True;
                      Set_String
                        (Cfg.Completion_Shell,
                         Cfg.Completion_Shell_Len,
-                        Args (I + 1));
+                        A (A'First + 13 .. A'Last));
+                  elsif A = "--completion" then
+                     Cfg.Completion_Mode := True;
+                     if I < Count and then Is_Completion_Shell (Args (I + 1))
+                     then
+                        Set_String
+                          (Cfg.Completion_Shell,
+                           Cfg.Completion_Shell_Len,
+                           Args (I + 1));
+                        I := I + 1;
+                     end if;
+                  elsif A = "man" then
+                     Cfg.Man_Mode := True;
+                  elsif A = "help" then
+                     --  Contextual help: `help --serve`, `help serve`, or
+                     --  `--serve help` all print flag-specific help.  The topic
+                     --  is the next argument when it looks like one, else the
+                     --  previous argument when it was a flag (--serve help).
+                     Cfg.Help_Requested := True;
+                     if I < Count and then Is_Help_Topic (Args (I + 1)) then
+                        Set_String
+                          (Cfg.Help_Topic, Cfg.Help_Topic_Len, Args (I + 1));
+                        I := I + 1;
+                     elsif I > 1 and then Is_Help_Topic (Args (I - 1)) then
+                        Set_String
+                          (Cfg.Help_Topic, Cfg.Help_Topic_Len, Args (I - 1));
+                     end if;
+                  elsif A = "--check" then
+                     Cfg.Man_Check := True;
+                  elsif A = "--dir" then
                      I := I + 1;
-                  end if;
-               elsif Has_Prefix (A, "--completion=") then
-                  Cfg.Completion_Mode := True;
-                  Set_String
-                    (Cfg.Completion_Shell,
-                     Cfg.Completion_Shell_Len,
-                     A (A'First + 13 .. A'Last));
-               elsif A = "--completion" then
-                  Cfg.Completion_Mode := True;
-                  if I < Count and then Is_Completion_Shell (Args (I + 1)) then
+                     if I <= Count then
+                        Set_String (Cfg.Man_Dir, Cfg.Man_Dir_Len, Args (I));
+                     else
+                        Set_Error (Cfg, "--dir requires a directory argument");
+                     end if;
+                  elsif Has_Prefix (A, "--dir=") then
                      Set_String
-                       (Cfg.Completion_Shell,
-                        Cfg.Completion_Shell_Len,
-                        Args (I + 1));
+                       (Cfg.Man_Dir,
+                        Cfg.Man_Dir_Len,
+                        A (A'First + 6 .. A'Last));
+                  elsif A = "--version" then
+                     Cfg.Version_Requested := True;
+                  elsif A = "--no-sbom" then
+                     Cfg.No_SBOM := True;
+                  elsif A = "--sbom-format" then
                      I := I + 1;
-                  end if;
-               elsif A = "man" then
-                  Cfg.Man_Mode := True;
-               elsif A = "help" then
-                  --  Contextual help: `help --serve`, `help serve`, or
-                  --  `--serve help` all print flag-specific help.  The topic
-                  --  is the next argument when it looks like one, else the
-                  --  previous argument when it was a flag (--serve help).
-                  Cfg.Help_Requested := True;
-                  if I < Count and then Is_Help_Topic (Args (I + 1)) then
-                     Set_String
-                       (Cfg.Help_Topic, Cfg.Help_Topic_Len, Args (I + 1));
-                     I := I + 1;
-                  elsif I > 1 and then Is_Help_Topic (Args (I - 1)) then
-                     Set_String
-                       (Cfg.Help_Topic, Cfg.Help_Topic_Len, Args (I - 1));
-                  end if;
-               elsif A = "--check" then
-                  Cfg.Man_Check := True;
-               elsif A = "--dir" then
-                  I := I + 1;
-                  if I <= Count then
-                     Set_String (Cfg.Man_Dir, Cfg.Man_Dir_Len, Args (I));
-                  else
-                     Set_Error (Cfg, "--dir requires a directory argument");
-                  end if;
-               elsif Has_Prefix (A, "--dir=") then
-                  Set_String
-                    (Cfg.Man_Dir, Cfg.Man_Dir_Len, A (A'First + 6 .. A'Last));
-               elsif A = "--version" then
-                  Cfg.Version_Requested := True;
-               elsif A = "--no-sbom" then
-                  Cfg.No_SBOM := True;
-               elsif A = "--sbom-format" then
-                  I := I + 1;
-                  if I <= Count then
+                     if I <= Count then
+                        declare
+                           Val : constant String := Args (I);
+                        begin
+                           if Val = "cyclonedx-json" then
+                              Cfg.SBOM_Format := Types.CycloneDX_JSON;
+                           elsif Val = "spdx-json" then
+                              Cfg.SBOM_Format := Types.SPDX_JSON;
+                           elsif Val = "md" then
+                              Cfg.SBOM_Format := Types.Markdown;
+                           else
+                              Set_Error
+                                (Cfg,
+                                 "--sbom-format must be cyclonedx-json, spdx-json, "
+                                 & "or md (got: "
+                                 & Val
+                                 & ")");
+                           end if;
+                        end;
+                     else
+                        Set_Error
+                          (Cfg, "--sbom-format requires a format argument");
+                     end if;
+                  elsif Has_Prefix (A, "--sbom-format=") then
                      declare
-                        Val : constant String := Args (I);
+                        Val : constant String := A (A'First + 14 .. A'Last);
                      begin
                         if Val = "cyclonedx-json" then
                            Cfg.SBOM_Format := Types.CycloneDX_JSON;
@@ -1061,34 +1347,33 @@ package body Adacovex.Config is
                               & ")");
                         end if;
                      end;
-                  else
-                     Set_Error
-                       (Cfg, "--sbom-format requires a format argument");
-                  end if;
-               elsif Has_Prefix (A, "--sbom-format=") then
-                  declare
-                     Val : constant String := A (A'First + 14 .. A'Last);
-                  begin
-                     if Val = "cyclonedx-json" then
-                        Cfg.SBOM_Format := Types.CycloneDX_JSON;
-                     elsif Val = "spdx-json" then
-                        Cfg.SBOM_Format := Types.SPDX_JSON;
-                     elsif Val = "md" then
-                        Cfg.SBOM_Format := Types.Markdown;
+                  elsif A = "--format" then
+                     I := I + 1;
+                     if I <= Count then
+                        declare
+                           Val : constant String := Args (I);
+                        begin
+                           if Val = "cyclonedx-json" then
+                              Cfg.SBOM_Format := Types.CycloneDX_JSON;
+                           elsif Val = "spdx-json" then
+                              Cfg.SBOM_Format := Types.SPDX_JSON;
+                           elsif Val = "md" then
+                              Cfg.SBOM_Format := Types.Markdown;
+                           else
+                              Set_Error
+                                (Cfg,
+                                 "--format must be cyclonedx-json, spdx-json, or "
+                                 & "md (got: "
+                                 & Val
+                                 & ")");
+                           end if;
+                        end;
                      else
-                        Set_Error
-                          (Cfg,
-                           "--sbom-format must be cyclonedx-json, spdx-json, "
-                           & "or md (got: "
-                           & Val
-                           & ")");
+                        Set_Error (Cfg, "--format requires a format argument");
                      end if;
-                  end;
-               elsif A = "--format" then
-                  I := I + 1;
-                  if I <= Count then
+                  elsif Has_Prefix (A, "--format=") then
                      declare
-                        Val : constant String := Args (I);
+                        Val : constant String := A (A'First + 9 .. A'Last);
                      begin
                         if Val = "cyclonedx-json" then
                            Cfg.SBOM_Format := Types.CycloneDX_JSON;
@@ -1105,187 +1390,191 @@ package body Adacovex.Config is
                               & ")");
                         end if;
                      end;
-                  else
-                     Set_Error (Cfg, "--format requires a format argument");
-                  end if;
-               elsif Has_Prefix (A, "--format=") then
-                  declare
-                     Val : constant String := A (A'First + 9 .. A'Last);
-                  begin
-                     if Val = "cyclonedx-json" then
-                        Cfg.SBOM_Format := Types.CycloneDX_JSON;
-                     elsif Val = "spdx-json" then
-                        Cfg.SBOM_Format := Types.SPDX_JSON;
-                     elsif Val = "md" then
-                        Cfg.SBOM_Format := Types.Markdown;
+                  elsif A = "--out" then
+                     I := I + 1;
+                     if I <= Count then
+                        Set_String (Cfg.SBOM_Out, Cfg.SBOM_Out_Len, Args (I));
+                     else
+                        Set_Error (Cfg, "--out requires a path argument");
+                     end if;
+                  elsif Has_Prefix (A, "--out=") then
+                     Set_String
+                       (Cfg.SBOM_Out,
+                        Cfg.SBOM_Out_Len,
+                        A (A'First + 6 .. A'Last));
+                  elsif A = "--jobs" or A = "-j" then
+                     I := I + 1;
+                     if I <= Count then
+                        Set_Prove_Int
+                          (Cfg, Cfg.Prove_Jobs, Args (I), -1, 1024, "--jobs");
+                     else
+                        Set_Error (Cfg, "--jobs requires an integer argument");
+                     end if;
+                  elsif Has_Prefix (A, "--jobs=") then
+                     Set_Prove_Int
+                       (Cfg,
+                        Cfg.Prove_Jobs,
+                        A (A'First + 7 .. A'Last),
+                        -1,
+                        1024,
+                        "--jobs");
+                  elsif Has_Prefix (A, "-j") and then A'Length > 2 then
+                     --  Combined short form: -j12
+                     Set_Prove_Int
+                       (Cfg,
+                        Cfg.Prove_Jobs,
+                        A (A'First + 2 .. A'Last),
+                        -1,
+                        1024,
+                        "-j");
+                  elsif A = "--level" then
+                     I := I + 1;
+                     if I <= Count then
+                        Set_Prove_Int
+                          (Cfg, Cfg.Prove_Level, Args (I), 0, 4, "--level");
                      else
                         Set_Error
-                          (Cfg,
-                           "--format must be cyclonedx-json, spdx-json, or "
-                           & "md (got: "
-                           & Val
-                           & ")");
+                          (Cfg, "--level requires an integer argument");
                      end if;
-                  end;
-               elsif A = "--out" then
-                  I := I + 1;
-                  if I <= Count then
-                     Set_String (Cfg.SBOM_Out, Cfg.SBOM_Out_Len, Args (I));
-                  else
-                     Set_Error (Cfg, "--out requires a path argument");
-                  end if;
-               elsif Has_Prefix (A, "--out=") then
-                  Set_String
-                    (Cfg.SBOM_Out,
-                     Cfg.SBOM_Out_Len,
-                     A (A'First + 6 .. A'Last));
-               elsif A = "--jobs" or A = "-j" then
-                  I := I + 1;
-                  if I <= Count then
+                  elsif Has_Prefix (A, "--level=") then
                      Set_Prove_Int
-                       (Cfg, Cfg.Prove_Jobs, Args (I), -1, 1024, "--jobs");
-                  else
-                     Set_Error (Cfg, "--jobs requires an integer argument");
-                  end if;
-               elsif Has_Prefix (A, "--jobs=") then
-                  Set_Prove_Int
-                    (Cfg,
-                     Cfg.Prove_Jobs,
-                     A (A'First + 7 .. A'Last),
-                     -1,
-                     1024,
-                     "--jobs");
-               elsif Has_Prefix (A, "-j") and then A'Length > 2 then
-                  --  Combined short form: -j12
-                  Set_Prove_Int
-                    (Cfg,
-                     Cfg.Prove_Jobs,
-                     A (A'First + 2 .. A'Last),
-                     -1,
-                     1024,
-                     "-j");
-               elsif A = "--level" then
-                  I := I + 1;
-                  if I <= Count then
-                     Set_Prove_Int
-                       (Cfg, Cfg.Prove_Level, Args (I), 0, 4, "--level");
-                  else
-                     Set_Error (Cfg, "--level requires an integer argument");
-                  end if;
-               elsif Has_Prefix (A, "--level=") then
-                  Set_Prove_Int
-                    (Cfg,
-                     Cfg.Prove_Level,
-                     A (A'First + 8 .. A'Last),
-                     0,
-                     4,
-                     "--level");
-               elsif A = "--timeout" then
-                  I := I + 1;
-                  if I <= Count then
+                       (Cfg,
+                        Cfg.Prove_Level,
+                        A (A'First + 8 .. A'Last),
+                        0,
+                        4,
+                        "--level");
+                  elsif A = "--timeout" then
+                     I := I + 1;
+                     if I <= Count then
+                        Set_Prove_Int
+                          (Cfg,
+                           Cfg.Prove_Timeout,
+                           Args (I),
+                           1,
+                           3600,
+                           "--timeout");
+                     else
+                        Set_Error
+                          (Cfg, "--timeout requires an integer argument");
+                     end if;
+                  elsif Has_Prefix (A, "--timeout=") then
                      Set_Prove_Int
                        (Cfg,
                         Cfg.Prove_Timeout,
-                        Args (I),
+                        A (A'First + 10 .. A'Last),
                         1,
                         3600,
                         "--timeout");
-                  else
-                     Set_Error (Cfg, "--timeout requires an integer argument");
-                  end if;
-               elsif Has_Prefix (A, "--timeout=") then
-                  Set_Prove_Int
-                    (Cfg,
-                     Cfg.Prove_Timeout,
-                     A (A'First + 10 .. A'Last),
-                     1,
-                     3600,
-                     "--timeout");
-               elsif A = "--steps" then
-                  I := I + 1;
-                  if I <= Count then
+                  elsif A = "--steps" then
+                     I := I + 1;
+                     if I <= Count then
+                        Set_Prove_Int
+                          (Cfg,
+                           Cfg.Prove_Steps,
+                           Args (I),
+                           1,
+                           100_000_000,
+                           "--steps");
+                     else
+                        Set_Error
+                          (Cfg, "--steps requires an integer argument");
+                     end if;
+                  elsif Has_Prefix (A, "--steps=") then
                      Set_Prove_Int
                        (Cfg,
                         Cfg.Prove_Steps,
-                        Args (I),
+                        A (A'First + 8 .. A'Last),
                         1,
                         100_000_000,
                         "--steps");
-                  else
-                     Set_Error (Cfg, "--steps requires an integer argument");
-                  end if;
-               elsif Has_Prefix (A, "--steps=") then
-                  Set_Prove_Int
-                    (Cfg,
-                     Cfg.Prove_Steps,
-                     A (A'First + 8 .. A'Last),
-                     1,
-                     100_000_000,
-                     "--steps");
-               elsif A = "--memlimit" then
-                  I := I + 1;
-                  if I <= Count then
+                  elsif A = "--memlimit" then
+                     I := I + 1;
+                     if I <= Count then
+                        Set_Prove_Int
+                          (Cfg,
+                           Cfg.Prove_Memlimit,
+                           Args (I),
+                           1,
+                           1_000_000,
+                           "--memlimit");
+                     else
+                        Set_Error
+                          (Cfg, "--memlimit requires an integer argument");
+                     end if;
+                  elsif Has_Prefix (A, "--memlimit=") then
                      Set_Prove_Int
                        (Cfg,
                         Cfg.Prove_Memlimit,
-                        Args (I),
+                        A (A'First + 11 .. A'Last),
                         1,
                         1_000_000,
                         "--memlimit");
-                  else
-                     Set_Error
-                       (Cfg, "--memlimit requires an integer argument");
-                  end if;
-               elsif Has_Prefix (A, "--memlimit=") then
-                  Set_Prove_Int
-                    (Cfg,
-                     Cfg.Prove_Memlimit,
-                     A (A'First + 11 .. A'Last),
-                     1,
-                     1_000_000,
-                     "--memlimit");
-               elsif A = "--force" then
-                  --  --force is shared between prove (bypass the result cache)
-                  --  and man (override an existing/up-to-date man page).
-                  Cfg.Prove_Force := True;
-                  Cfg.Man_Force := True;
-               elsif A = "--no-loop-unrolling" then
-                  --  Loop unrolling is always disabled by the prove
-                  --  subcommand (see Adacovex.Prove.Build_Option_String);
-                  --  the flag is accepted for compatibility.
-                  Cfg.Prove_No_Loop_Unroll := True;
-               elsif A = "--no-inlining" then
-                  Cfg.Prove_No_Inlining := True;
-               elsif A = "--args" then
-                  I := I + 1;
-                  if I <= Count then
-                     Append_Args (Cfg, Args (I));
-                  else
-                     Set_Error
-                       (Cfg, "--args requires a gnatprove option string");
-                  end if;
-               elsif Has_Prefix (A, "--args=") then
-                  Append_Args (Cfg, A (A'First + 7 .. A'Last));
-               elsif A = "--quiet" or else A = "--suppress-warnings" then
-                  --  --quiet and bare --suppress-warnings select the
-                  --  default suppression set (unrolling-inlining).  Quiet
-                  --  is already the default for local runs, so this is an
-                  --  explicit request (and a prove-mode flag).
-                  Cfg.Prove_Suppress_Warnings := True;
-                  Cfg.Prove_Suppress_Sets :=
-                    Ada.Strings.Unbounded.Null_Unbounded_String;
-                  Cfg.Prove_Suppress_Explicit := True;
-               elsif Has_Prefix (A, "--suppress-warnings=") then
-                  Cfg.Prove_Suppress_Warnings := True;
-                  Cfg.Prove_Suppress_Sets :=
-                    Ada.Strings.Unbounded.To_Unbounded_String
-                      (A (A'First + 20 .. A'Last));
-                  Cfg.Prove_Suppress_Explicit := True;
-               elsif A = "--require-spark" then
-                  I := I + 1;
-                  if I <= Count then
+                  elsif A = "--force" then
+                     --  --force is shared between prove (bypass the result cache)
+                     --  and man (override an existing/up-to-date man page).
+                     Cfg.Prove_Force := True;
+                     Cfg.Man_Force := True;
+                  elsif A = "--no-loop-unrolling" then
+                     --  Loop unrolling is always disabled by the prove
+                     --  subcommand (see Adacovex.Prove.Build_Option_String);
+                     --  the flag is accepted for compatibility.
+                     Cfg.Prove_No_Loop_Unroll := True;
+                  elsif A = "--no-inlining" then
+                     Cfg.Prove_No_Inlining := True;
+                  elsif A = "--args" then
+                     I := I + 1;
+                     if I <= Count then
+                        Append_Args (Cfg, Args (I));
+                     else
+                        Set_Error
+                          (Cfg, "--args requires a gnatprove option string");
+                     end if;
+                  elsif Has_Prefix (A, "--args=") then
+                     Append_Args (Cfg, A (A'First + 7 .. A'Last));
+                  elsif A = "--quiet" or else A = "--suppress-warnings" then
+                     --  --quiet and bare --suppress-warnings select the
+                     --  default suppression set (unrolling-inlining).  Quiet
+                     --  is already the default for local runs, so this is an
+                     --  explicit request (and a prove-mode flag).
+                     Cfg.Prove_Suppress_Warnings := True;
+                     Cfg.Prove_Suppress_Sets :=
+                       Ada.Strings.Unbounded.Null_Unbounded_String;
+                     Cfg.Prove_Suppress_Explicit := True;
+                  elsif Has_Prefix (A, "--suppress-warnings=") then
+                     Cfg.Prove_Suppress_Warnings := True;
+                     Cfg.Prove_Suppress_Sets :=
+                       Ada.Strings.Unbounded.To_Unbounded_String
+                         (A (A'First + 20 .. A'Last));
+                     Cfg.Prove_Suppress_Explicit := True;
+                  elsif A = "--require-spark" then
+                     I := I + 1;
+                     if I <= Count then
+                        declare
+                           Val : constant String := Args (I);
+                           Lvl : Types.SPARK_Level;
+                           OK  : Boolean;
+                        begin
+                           To_SPARK_Level (Val, Lvl, OK);
+                           if OK then
+                              Cfg.Require_SPARK := Lvl;
+                              Cfg.Require_SPARK_Set := True;
+                           else
+                              Set_Error
+                                (Cfg,
+                                 "--require-spark must be Stone, Bronze, Silver, "
+                                 & "Gold, or Platinum (got: "
+                                 & Val
+                                 & ")");
+                           end if;
+                        end;
+                     else
+                        Set_Error
+                          (Cfg, "--require-spark requires a level argument");
+                     end if;
+                  elsif Has_Prefix (A, "--require-spark=") then
                      declare
-                        Val : constant String := Args (I);
+                        Val : constant String := A (A'First + 16 .. A'Last);
                         Lvl : Types.SPARK_Level;
                         OK  : Boolean;
                      begin
@@ -1302,154 +1591,138 @@ package body Adacovex.Config is
                               & ")");
                         end if;
                      end;
-                  else
-                     Set_Error
-                       (Cfg, "--require-spark requires a level argument");
-                  end if;
-               elsif Has_Prefix (A, "--require-spark=") then
-                  declare
-                     Val : constant String := A (A'First + 16 .. A'Last);
-                     Lvl : Types.SPARK_Level;
-                     OK  : Boolean;
-                  begin
-                     To_SPARK_Level (Val, Lvl, OK);
-                     if OK then
-                        Cfg.Require_SPARK := Lvl;
-                        Cfg.Require_SPARK_Set := True;
+                  elsif A = "--require-docstrings" then
+                     I := I + 1;
+                     if I <= Count then
+                        Set_Prove_Int
+                          (Cfg,
+                           Cfg.Require_Docstrings,
+                           Args (I),
+                           0,
+                           100,
+                           "--require-docstrings");
+                        if not Cfg.CLI_Error then
+                           Cfg.Require_Docstrings_Set := True;
+                        end if;
                      else
                         Set_Error
                           (Cfg,
-                           "--require-spark must be Stone, Bronze, Silver, "
-                           & "Gold, or Platinum (got: "
-                           & Val
-                           & ")");
+                           "--require-docstrings requires a percentage argument");
                      end if;
-                  end;
-               elsif A = "--require-docstrings" then
-                  I := I + 1;
-                  if I <= Count then
+                  elsif Has_Prefix (A, "--require-docstrings=") then
                      Set_Prove_Int
                        (Cfg,
                         Cfg.Require_Docstrings,
-                        Args (I),
+                        A (A'First + 21 .. A'Last),
                         0,
                         100,
                         "--require-docstrings");
                      if not Cfg.CLI_Error then
                         Cfg.Require_Docstrings_Set := True;
                      end if;
-                  else
-                     Set_Error
-                       (Cfg,
-                        "--require-docstrings requires a percentage argument");
-                  end if;
-               elsif Has_Prefix (A, "--require-docstrings=") then
-                  Set_Prove_Int
-                    (Cfg,
-                     Cfg.Require_Docstrings,
-                     A (A'First + 21 .. A'Last),
-                     0,
-                     100,
-                     "--require-docstrings");
-                  if not Cfg.CLI_Error then
-                     Cfg.Require_Docstrings_Set := True;
-                  end if;
-               elsif A = "--require-tests" then
-                  I := I + 1;
-                  if I <= Count then
+                  elsif A = "--require-tests" then
+                     I := I + 1;
+                     if I <= Count then
+                        Set_Prove_Int
+                          (Cfg,
+                           Cfg.Require_Tests,
+                           Args (I),
+                           0,
+                           1_000_000,
+                           "--require-tests");
+                        if not Cfg.CLI_Error then
+                           Cfg.Require_Tests_Set := True;
+                        end if;
+                     else
+                        Set_Error
+                          (Cfg, "--require-tests requires a count argument");
+                     end if;
+                  elsif Has_Prefix (A, "--require-tests=") then
                      Set_Prove_Int
                        (Cfg,
                         Cfg.Require_Tests,
-                        Args (I),
+                        A (A'First + 16 .. A'Last),
                         0,
                         1_000_000,
                         "--require-tests");
                      if not Cfg.CLI_Error then
                         Cfg.Require_Tests_Set := True;
                      end if;
-                  else
-                     Set_Error
-                       (Cfg, "--require-tests requires a count argument");
-                  end if;
-               elsif Has_Prefix (A, "--require-tests=") then
-                  Set_Prove_Int
-                    (Cfg,
-                     Cfg.Require_Tests,
-                     A (A'First + 16 .. A'Last),
-                     0,
-                     1_000_000,
-                     "--require-tests");
-                  if not Cfg.CLI_Error then
-                     Cfg.Require_Tests_Set := True;
-                  end if;
-               elsif A = "--require-proof" then
-                  I := I + 1;
-                  if I <= Count then
+                  elsif A = "--require-proof" then
+                     I := I + 1;
+                     if I <= Count then
+                        Set_Prove_Int
+                          (Cfg,
+                           Cfg.Require_Proof,
+                           Args (I),
+                           0,
+                           100,
+                           "--require-proof");
+                        if not Cfg.CLI_Error then
+                           Cfg.Require_Proof_Set := True;
+                        end if;
+                     else
+                        Set_Error
+                          (Cfg,
+                           "--require-proof requires a percentage argument");
+                     end if;
+                  elsif Has_Prefix (A, "--require-proof=") then
                      Set_Prove_Int
                        (Cfg,
                         Cfg.Require_Proof,
-                        Args (I),
+                        A (A'First + 16 .. A'Last),
                         0,
                         100,
                         "--require-proof");
                      if not Cfg.CLI_Error then
                         Cfg.Require_Proof_Set := True;
                      end if;
+                  elsif A = "--help" then
+                     --  Full usage is printed by the caller (main / tests) when
+                     --  Help_Requested is set, so `--help`, `help`, and
+                     --  `help TOPIC` share one printing path.
+                     Cfg.Help_Requested := True;
                   else
-                     Set_Error
-                       (Cfg, "--require-proof requires a percentage argument");
+                     --  Unknown token: reject loudly instead of silently running
+                     --  an assessment.  Flag-like tokens (--foo) and bare words
+                     --  (a typo'd subcommand) both get a "did you mean" hint.
+                     --  When no similar flag exists the hint is empty; the main
+                     --  program then prints the full usage so the user lands on
+                     --  the flag list instead of a bare one-line error.
+                     declare
+                        Hint : constant String := Suggest_Flags (A);
+                     begin
+                        if A'Length >= 1 and then A (A'First) = '-' then
+                           Set_Error
+                             (Cfg, "unknown option '" & A & "'" & Hint);
+                        else
+                           Set_Error
+                             (Cfg, "unknown argument '" & A & "'" & Hint);
+                        end if;
+                        if Hint'Length = 0 then
+                           Cfg.Unknown_No_Suggest := True;
+                        end if;
+                     end;
                   end if;
-               elsif Has_Prefix (A, "--require-proof=") then
-                  Set_Prove_Int
-                    (Cfg,
-                     Cfg.Require_Proof,
-                     A (A'First + 16 .. A'Last),
-                     0,
-                     100,
-                     "--require-proof");
-                  if not Cfg.CLI_Error then
-                     Cfg.Require_Proof_Set := True;
-                  end if;
-               elsif A = "--help" then
-                  --  Full usage is printed by the caller (main / tests) when
-                  --  Help_Requested is set, so `--help`, `help`, and
-                  --  `help TOPIC` share one printing path.
-                  Cfg.Help_Requested := True;
-               else
-                  --  Unknown token: reject loudly instead of silently running
-                  --  an assessment.  Flag-like tokens (--foo) and bare words
-                  --  (a typo'd subcommand) both get a "did you mean" hint.
-                  --  When no similar flag exists the hint is empty; the main
-                  --  program then prints the full usage so the user lands on
-                  --  the flag list instead of a bare one-line error.
-                  declare
-                     Hint : constant String := Suggest_Flags (A);
-                  begin
-                     if A'Length >= 1 and then A (A'First) = '-' then
-                        Set_Error (Cfg, "unknown option '" & A & "'" & Hint);
-                     else
-                        Set_Error (Cfg, "unknown argument '" & A & "'" & Hint);
-                     end if;
-                     if Hint'Length = 0 then
-                        Cfg.Unknown_No_Suggest := True;
-                     end if;
-                  end;
-               end if;
-            end;
-            I := I + 1;
-         end loop;
+               end;
+               I := I + 1;
+            end loop;
 
-         --  The sbom subcommand and the serve dashboard are standard-aware:
-         --  without an explicit --standard / --asil / --class they default to
-         --  all standards, so the SBOM carries the joined DO-178C / ISO
-         --  26262 / IEC 62304 properties at the shared DAL tier and the
-         --  served dashboard renders every standard's compliance level.  An
-         --  explicit standard flag narrows them to that single standard
-         --  (e.g. --asil=B -> ISO 26262 at ASIL B).
-         if (Cfg.SBOM_Mode or Cfg.Serve_Mode) and not Cfg.Standard_Explicit
-         then
-            Cfg.Standard_All := True;
-         end if;
+            --  The sbom subcommand and the serve dashboard are standard-aware:
+            --  without an explicit --standard / --asil / --class they default to
+            --  all standards, so the SBOM carries the joined DO-178C / ISO
+            --  26262 / IEC 62304 properties at the shared DAL tier and the
+            --  served dashboard renders every standard's compliance level.  An
+            --  explicit standard flag narrows them to that single standard
+            --  (e.g. --asil=B -> ISO 26262 at ASIL B).
+            if (Cfg.SBOM_Mode or Cfg.Serve_Mode) and not Cfg.Standard_Explicit
+            then
+               Cfg.Standard_All := True;
+            end if;
+         end Parse_Tokens;
+      begin
+         Normalize_Aliases (Args, NA);
+         Parse_Tokens (NA, Cfg);
       end Parse_Args;
 
       procedure Parse_Command_Line (Cfg : out CLI_Config) is
@@ -1475,6 +1748,21 @@ package body Adacovex.Config is
          if Cfg.No_SVG then
             Cfg.Emit_SVG := False;
             Cfg.SVG_Path_Len := 0;
+         end if;
+
+         -- --no-md overrides --emit-markdown / --emit-md / --md-path
+         if Cfg.No_Markdown then
+            Cfg.Emit_Markdown := False;
+            Cfg.MD_Path_Len := 0;
+         end if;
+
+         -- --serve without an explicit --serve-workers / --workers uses a
+         -- sensible pool size derived from the host's logical CPU count
+         -- (2..8 workers; see Adacovex.CPUs.Default_Serve_Workers).
+         if Cfg.Serve_Mode and then not Cfg.Serve_Workers_Set then
+            Cfg.Serve_Workers :=
+              Adacovex.CPUs.Default_Serve_Workers
+                (Adacovex.CPUs.Detect_Core_Count);
          end if;
 
          -- Differential modes are mutually exclusive
@@ -1680,6 +1968,16 @@ package body Adacovex.Config is
                Cfg.Target_Path (1 .. Cfg.Target_Len) & "/docs/badges");
          end if;
 
+         -- Default Markdown output path: project-scoped.  A bare
+         -- --emit-markdown / --emit-md (or --md-path without a value) writes
+         -- VERIFICATION.md and TRACE.md into <target>/docs.
+         if Cfg.Emit_Markdown and then Cfg.MD_Path_Len = 0 then
+            Set_String
+              (Cfg.MD_Path,
+               Cfg.MD_Path_Len,
+               Cfg.Target_Path (1 .. Cfg.Target_Len) & "/docs");
+         end if;
+
          -- Default manifest derived from target
          if Cfg.Manifest_Len = 0 then
             declare
@@ -1760,9 +2058,9 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line ("");
       Ada.Text_IO.Put_Line ("Options:");
       Ada.Text_IO.Put_Line
-        ("  --target=PATH         Target project path (default: current directory)");
+        ("  --target=PATH, -t PATH  Target project path (default: current directory)");
       Ada.Text_IO.Put_Line
-        ("  --manifest=PATH       Target manifest file override");
+        ("  --manifest=PATH, -m PATH  Target manifest file override");
       Ada.Text_IO.Put_Line
         ("  --dal=LEVEL           DO-178C DAL level: A | B | C | D | E");
       Ada.Text_IO.Put_Line
@@ -1780,7 +2078,13 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("                        iec62304 | all (default: do178c); all emits");
       Ada.Text_IO.Put_Line
-        ("                        badges for every standard at the same tier");
+        ("                        badges for every standard at the same tier.");
+      Ada.Text_IO.Put_Line
+        ("                        Also accepts a combined tier token: dal-A..E,");
+      Ada.Text_IO.Put_Line
+        ("                        asil-A..D, asil-QM, class-A..C (e.g.");
+      Ada.Text_IO.Put_Line
+        ("                        --standard=asil-b == --asil=B)");
       Ada.Text_IO.Put_Line
         ("  status                Report toolchain + platform status (no");
       Ada.Text_IO.Put_Line
@@ -1797,7 +2101,7 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("                        key=value metrics lines for shell scripts");
       Ada.Text_IO.Put_Line
-        ("  --serve               Start HTTP dashboard on :8080 (standard-aware,");
+        ("  --serve, -s, serve    Start HTTP dashboard on :8080 (standard-aware,");
       Ada.Text_IO.Put_Line
         ("                        defaults to all standards; light/dark/system");
       Ada.Text_IO.Put_Line
@@ -1807,16 +2111,26 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("                        (default: system; only with --serve)");
       Ada.Text_IO.Put_Line
-        ("  --port=N              HTTP server port (default: 8080)");
+        ("  --port=N, -p N        HTTP server port (default: 8080)");
       Ada.Text_IO.Put_Line
-        ("  --serve-workers=N     HTTP server task-pool workers (default: 4;");
-      Ada.Text_IO.Put_Line ("                        only with --serve)");
+        ("  --serve-workers=N     HTTP server task-pool workers (alias --workers;");
       Ada.Text_IO.Put_Line
-        ("  --emit-svg=PATH       Write SVG badges to directory (default: <target>/docs/badges)");
+        ("                        default: 2..8 scaled to the CPU count; only");
+      Ada.Text_IO.Put_Line ("                        with --serve)");
       Ada.Text_IO.Put_Line
-        ("  --no-svg              Suppress automatic SVG output");
+        ("  --emit-svg[=PATH]     Write SVG badges to directory (alias --svg-path;");
       Ada.Text_IO.Put_Line
-        ("  --emit-markdown=PATH  Write VERIFICATION.md + TRACE.md");
+        ("                        default: <target>/docs/badges when no path)");
+      Ada.Text_IO.Put_Line
+        ("  --no-svg              Suppress automatic SVG output (wins over the");
+      Ada.Text_IO.Put_Line ("                        emit form)");
+      Ada.Text_IO.Put_Line
+        ("  --emit-markdown[=PATH] Write VERIFICATION.md + TRACE.md (aliases");
+      Ada.Text_IO.Put_Line
+        ("                        --emit-md, --md-path; default <target>/docs)");
+      Ada.Text_IO.Put_Line
+        ("  --no-md               Suppress Markdown report output (wins over the");
+      Ada.Text_IO.Put_Line ("                        emit form)");
       Ada.Text_IO.Put_Line
         ("  --emit-metrics=FILE   Write a JSON metrics + dependency export");
       Ada.Text_IO.Put_Line
@@ -1824,9 +2138,11 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("  --skip-dir=NAME       Add directory name to skip list (repeatable)");
       Ada.Text_IO.Put_Line
-        ("  --relaxed             Disable strict mode (skip dirs, no patches); strict is default");
+        ("  --relaxed, relaxed    Disable strict mode (skip dirs, no patches);");
       Ada.Text_IO.Put_Line
-        ("  --cache               Enable result caching (default: on)");
+        ("                        strict is default (--strict re-enables it)");
+      Ada.Text_IO.Put_Line
+        ("  --cache, -c, cache    Enable result caching (default: on)");
       Ada.Text_IO.Put_Line
         ("  --no-cache            Disable result caching (always re-scan/re-prove)");
       Ada.Text_IO.Put_Line
@@ -1834,19 +2150,20 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("  --cache-max=N         Max cache entries before eviction (default: 4096)");
       Ada.Text_IO.Put_Line
-        ("  --compare-base=REF    Differential mode: compare against a base");
+        ("  --compare-base=REF    Differential mode (aliases --diff, --base, -b):");
       Ada.Text_IO.Put_Line
-        ("                        revision (branch/commit/rev) in a temporary");
+        ("                        compare against a base revision (branch/commit/");
       Ada.Text_IO.Put_Line
-        ("                        snapshot and report VC/DAL delta (supports");
+        ("                        rev) in a temporary snapshot and report VC/DAL");
       Ada.Text_IO.Put_Line
-        ("                        git, mercurial, subversion, fossil, jj)");
+        ("                        delta (supports git, mercurial, subversion,");
+      Ada.Text_IO.Put_Line ("                        fossil, jj)");
       Ada.Text_IO.Put_Line
-        ("  --coverage-delta=REF  Docstring coverage gate: exit non-zero if");
+        ("  --coverage-delta=REF  Docstring coverage gate (alias --delta, -d):");
       Ada.Text_IO.Put_Line
-        ("                        current docstring coverage is below the base");
+        ("                        exit non-zero if current docstring coverage is");
       Ada.Text_IO.Put_Line
-        ("                        (any supported VCS; git, hg, svn, fossil, jj)");
+        ("                        below the base (any supported VCS)");
       Ada.Text_IO.Put_Line
         ("  prove --target=PATH   Run GNATprove on the target project, then");
       Ada.Text_IO.Put_Line
@@ -1858,7 +2175,7 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("                        CPU count; 0 = all cores; e.g. -j12)");
       Ada.Text_IO.Put_Line
-        ("  --level=N             GNATprove proof effort 0-4 (default: tool default)");
+        ("  --level=N, -l N       GNATprove proof effort 0-4 (default: tool default)");
       Ada.Text_IO.Put_Line
         ("  --timeout=N           Per-check prover timeout in seconds");
       Ada.Text_IO.Put_Line
@@ -1907,13 +2224,13 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("                        always shows every message");
       Ada.Text_IO.Put_Line
-        ("  --require-spark=LVL   Fail if SPARK level < LVL (Stone..Platinum)");
+        ("  --require-spark=LVL   Fail if SPARK level < LVL (alias --spark)");
       Ada.Text_IO.Put_Line
-        ("  --require-docstrings=PCT Fail if docstring coverage < PCT% (0-100)");
+        ("  --require-docstrings=PCT Fail if docstring coverage < PCT% (alias --docstrs)");
       Ada.Text_IO.Put_Line
-        ("  --require-tests=N     Fail if passing test count < N");
+        ("  --require-tests=N     Fail if passing test count < N (alias --tests)");
       Ada.Text_IO.Put_Line
-        ("  --require-proof=PCT   Fail if proved-VC coverage < PCT% (0-100)");
+        ("  --require-proof=PCT   Fail if proved-VC coverage < PCT% (alias -r)");
       Ada.Text_IO.Put_Line
         ("                        (CI gates: default off, fail loudly when set)");
       Ada.Text_IO.Put_Line
@@ -2140,10 +2457,12 @@ package body Adacovex.Config is
             "HTTP server port for --serve (default 8080).  Must be a valid"
             & ASCII.LF
             & "positive integer.  Only relevant with --serve.");
-      elsif T = "serve-workers" then
+      elsif T = "serve-workers" or else T = "workers" then
          Print_Section
-           ("--serve-workers=N",
-            "HTTP server task-pool worker count for --serve (default 4)."
+           ("--serve-workers=N / --workers=N",
+            "HTTP server task-pool worker count for --serve.  Default: 2..8"
+            & ASCII.LF
+            & "scaled to the host's logical CPU count."
             & ASCII.LF
             & "Raise it to handle more concurrent dashboard requests; lower"
             & ASCII.LF
@@ -2206,7 +2525,11 @@ package body Adacovex.Config is
       then
          Print_Section
            ("--standard / --dal / --asil / --class",
-            "Select the compliance standard and integrity level.  The"
+            "Select the compliance standard and integrity level.  Standard"
+            & ASCII.LF
+            & "selection stays on --standard (the -l shorthand is the"
+            & ASCII.LF
+            & "GNATprove proof level, not a compliance tier).  The"
             & ASCII.LF
             & "evidence checks are identical across standards; only the"
             & ASCII.LF
@@ -2221,6 +2544,12 @@ package body Adacovex.Config is
             & ASCII.LF
             & "  --standard=all       all standards at the shared tier"
             & ASCII.LF
+            & "  --standard=DAL-B     combined standard + tier token"
+            & ASCII.LF
+            & "  --standard=asil-b    same as --asil=B"
+            & ASCII.LF
+            & "  --standard=class-c   same as --class=C"
+            & ASCII.LF
             & "  --dal=LEVEL          shared rigor tier A-E"
             & ASCII.LF
             & "  --asil=LEVEL         ISO 26262 level (sets standard + tier)"
@@ -2234,17 +2563,27 @@ package body Adacovex.Config is
       elsif T = "target" or else T = "manifest" then
          Print_Section
            ("--target / --manifest",
-            "--target=PATH sets the project root to scan and assess (default"
+            "--target=PATH (shorthand -t) sets the project root to scan and"
             & ASCII.LF
-            & "current directory); relative paths are resolved to absolute."
+            & "assess (default current directory); relative paths are resolved"
             & ASCII.LF
-            & "--manifest=PATH overrides the auto-detected Alire manifest"
+            & "to absolute.  --manifest=PATH (shorthand -m) overrides the"
             & ASCII.LF
-            & "(alire-dev.toml, then alire.toml).");
-      elsif T = "compare-base" or else T = "coverage-delta" then
+            & "auto-detected Alire manifest (alire-dev.toml, then alire.toml).");
+      elsif T = "compare-base"
+        or else T = "coverage-delta"
+        or else T = "diff"
+        or else T = "base"
+        or else T = "delta"
+      then
          Print_Section
            ("--compare-base / --coverage-delta",
-            "Differential modes: snapshot a base revision in a temporary"
+            "Shorthands: --compare-base has the aliases --diff and --base"
+            & ASCII.LF
+            & "(and -b); --coverage-delta has the alias --delta (and -d)."
+            & ASCII.LF
+            & ASCII.LF
+            & "Differential modes: snapshot a base revision in a temporary"
             & ASCII.LF
             & "directory and compare it against the current working tree"
             & ASCII.LF
@@ -2298,7 +2637,7 @@ package body Adacovex.Config is
             & "download), run it on the target, then assess the result."
             & ASCII.LF
             & ASCII.LF
-            & "Options: --jobs/-j (parallelism), --level (proof level),"
+            & "Options: --jobs/-j (parallelism), --level/-l (proof level),"
             & ASCII.LF
             & "--timeout (seconds per proof), --steps (max steps),"
             & ASCII.LF
@@ -2359,20 +2698,32 @@ package body Adacovex.Config is
             & "already matches this binary -- use it to repair a hand-edited"
             & ASCII.LF
             & "or corrupt installed page.");
-      elsif T = "emit-svg" or else T = "no-svg" then
+      elsif T = "emit-svg" or else T = "no-svg" or else T = "svg-path" then
          Print_Section
            ("--emit-svg / --no-svg",
             "Write SVG badges (spark, tests, do178c, iso26262, iec62304) into"
             & ASCII.LF
-            & "a directory (default <target>/docs/badges).  --no-svg"
+            & "a directory.  The value is optional: bare --emit-svg (or the"
             & ASCII.LF
-            & "suppresses badge output.");
-      elsif T = "emit-markdown" then
+            & "--svg-path=PATH alias) uses the default <target>/docs/badges."
+            & ASCII.LF
+            & "--no-svg suppresses badge output and wins over the emit form.");
+      elsif T = "emit-markdown"
+        or else T = "emit-md"
+        or else T = "md-path"
+        or else T = "no-md"
+      then
          Print_Section
-           ("--emit-markdown=PATH",
+           ("--emit-markdown[=PATH] / --no-md",
             "Write the Markdown verification report (VERIFICATION.md) and"
             & ASCII.LF
-            & "traceability report (TRACE.md) into the given directory.");
+            & "traceability report (TRACE.md) into the given directory."
+            & ASCII.LF
+            & "Aliases: --emit-md[=PATH] and --md-path=PATH.  The value is"
+            & ASCII.LF
+            & "optional: bare forms use the default <target>/docs."
+            & ASCII.LF
+            & "--no-md suppresses the reports and wins over the emit forms.");
       elsif T = "emit-metrics" then
          Print_Section
            ("--emit-metrics=FILE",
@@ -2397,7 +2748,7 @@ package body Adacovex.Config is
             & "completes the live flag set (the same list the 'did you mean'"
             & ASCII.LF
             & "suggestion walks) plus the subcommands.");
-      elsif T = "skip-dir" or else T = "relaxed" then
+      elsif T = "skip-dir" or else T = "relaxed" or else T = "strict" then
          Print_Section
            ("--skip-dir / --relaxed",
             "--relaxed disables strict mode (docstrings then only count in"
@@ -2435,14 +2786,19 @@ package body Adacovex.Config is
         or else T = "require-docstrings"
         or else T = "require-tests"
         or else T = "require-proof"
+        or else T = "spark"
+        or else T = "docstrs"
+        or else T = "tests"
       then
          Print_Section
            ("--require-* CI gates",
             "Fail loudly (exit 1) when a pinned minimum is not met:"
             & ASCII.LF
-            & "--require-spark=LVL, --require-docstrings=PCT,"
+            & "--require-spark=LVL (alias --spark), --require-docstrings=PCT"
             & ASCII.LF
-            & "--require-tests=N, --require-proof=PCT.  Default off.");
+            & "(alias --docstrs), --require-tests=N (alias --tests),"
+            & ASCII.LF
+            & "--require-proof=PCT (shorthand -r).  Default off.");
       else
          Print_Usage;
          Ada.Text_IO.Put_Line

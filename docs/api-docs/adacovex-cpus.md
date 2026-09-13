@@ -10,7 +10,7 @@ HLR-CPU: Cross-platform CPU core detection
 
 **See also:** [Platforms](../usage/platforms.md)
 
-> **Note:** 8 public item(s) shown below; 4 private internal item(s) are in the `private` section.
+> **Note:** 9 public item(s) shown below; 4 private internal item(s) are in the `private` section.
 
 ## Functions
 
@@ -22,6 +22,14 @@ HLR-CPU: Cross-platform CPU core detection
 | `In_CI` | Whether the run is inside CI. |
 
 **Returns:** Default job count.
+
+### function Default_Serve_Workers (Cores : Standard.Natural) return Standard.Positive `[Post]` `[Global]` `[SPARK]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `Cores` | Detected logical CPU count. |
+
+**Returns:** Worker count in 2 .. 8.
 
 ### function Detect_Core_Count return Standard.Natural
 

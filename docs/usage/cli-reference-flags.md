@@ -6,10 +6,11 @@ This page details the assessment flags (`--target`, `--dal`, `--standard`, and t
 
 ### `--target=PATH`
 
-Project to analyse. Relative paths are resolved against the current working
-directory to an absolute path. A leading `~` (as in `--target=~/projects/demo`
-or `--target=~`) expands to your home directory first -- the shell does not
-expand a tilde inside `--target=...` or a quoted argument.
+Shorthand: `-t PATH` (or `-t=PATH`). Project to analyse. Relative paths are
+resolved against the current working directory to an absolute path. A leading
+`~` (as in `--target=~/projects/demo` or `--target=~`) expands to your home
+directory first -- the shell does not expand a tilde inside `--target=...`
+or a quoted argument.
 
 A `~user` form is left unchanged; only the shell can resolve another user's
 home. The path determines the root directory for source scanning, manifest
@@ -18,7 +19,7 @@ working directory.
 
 ### `--manifest=PATH`
 
-Override the project manifest file. Auto-detected from
+Shorthand: `-m PATH`. Override the project manifest file. Auto-detected from
 `<target>/alire-dev.toml` or `<target>/alire.toml` (dev first). The manifest
 path is shown in stderr output and used by `adacovex sbom` to resolve the root
 project metadata for the dependency graph.
@@ -64,6 +65,19 @@ integrity-level names change in the report and badges:
 Accepted case-insensitively, with or without the hyphen/space (`ISO-26262`,
 `iec62304`, and more). See [Standards](standards.md) for the full tier
 mapping.
+
+`--standard` also accepts a **combined standard + tier token**. The token
+names the standard together with the rigour tier, so one flag replaces two:
+
+- `dal-A`..`dal-E` -- DO-178C at that DAL tier
+- `asil-A`..`asil-D`, `asil-QM` -- ISO 26262 at that ASIL
+- `class-A`..`class-C` -- IEC 62304 at that class
+
+The token is case-insensitive, and `-` and `_` are interchangeable
+(`--standard=asil-b` == `--standard=ASIL_B` == `--asil=B`). An unknown value
+is rejected loudly. `-l` is never a compliance tier: it is the GNATprove
+proof level. Standard selection always stays on `--standard` and its level
+companions.
 
 When both a dedicated level flag (`--asil` / `--class`) and `--standard` are
 passed, the dedicated flag sets the standard. `--standard` is ignored for
@@ -133,7 +147,7 @@ Vendored dependencies then participate in the proof without their sources being 
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--jobs=N`, `-j N` | auto | GNATprove parallelism: auto-detect (max(1, cores-2), all cores in CI), `0` = all cores, `N` = pin N processes |
-| `--level=N` | tool default | GNATprove proof effort, 0-4 |
+| `--level=N`, `-l N` | tool default | GNATprove proof effort, 0-4 (never a compliance tier) |
 | `--timeout=N` | tool default | Per-check prover timeout in seconds |
 | `--steps=N` | `10000` | Max proof steps (reproducible budget, an explicit value overrides the default) |
 | `--memlimit=N` | tool default | Prover memory limit in MB |

@@ -112,11 +112,17 @@ source per method and the man-page sync.
 adacovex [options]
 adacovex sbom [--format=cyclonedx-json|spdx-json] [--out=PATH]
            [--standard=NAME|--dal=LEVEL|--asil=LEVEL|--class=LEVEL]
-adacovex prove [--target=PATH] [prove options]
-adacovex status [--target=PATH]
+adacovex prove [-t=PATH] [prove options]
+adacovex status [-t=PATH]
 adacovex man [--check|--force] [--dir=PATH]
-adacovex complexity [--target=PATH]
+adacovex complexity [-t=PATH]
 ```
+
+Shorthands read well interactively: `-t` (`--target`), `-m` (`--manifest`),
+`-s` (`--serve`), `-p` (`--port`), `-c` (`--cache`), `-b`
+(`--compare-base`), `-d` (`--coverage-delta`), `-l` (`--level`, the GNATprove
+proof level), `-r` (`--require-proof`), and `-j` (`--jobs`). `--standard=`
+also takes a combined tier token, so `--standard=asil-b` means `--asil=B`.
 
 The full flag table (defaults, modes, `--require-*` CI gates, strict vs relaxed
 mode, exit codes, contextual `help [TOPIC]`, and the `man` subcommand) lives in
@@ -199,9 +205,9 @@ Action inputs/outputs, result caching, and release bundling:
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 1239/1239 passing |
+| Unit tests | `make test` | 1287/1287 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
-| SPARK proof | `make prove` | Platinum (876 VCs, 0 unproved under gnatprove 16.1.0) |
+| SPARK proof | `make prove` | Platinum (880 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, DAL-C (strict mode) |
 
 See [changelogs](https://adacovex.readthedocs.io/en/latest/changelogs/index.html) for full release notes.

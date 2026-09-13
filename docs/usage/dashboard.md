@@ -134,9 +134,10 @@ The same data is headlessly available at `/api/metrics` and via
 | `GET /badge/iec62304.svg` | IEC 62304 compliance badge |
 | anything else | `404 Not Found` |
 
-The server runs a small HTTP/1.1 implementation with a 4-worker task pool
-(configurable with
-[`--serve-workers=N`](cli-reference-options.md#--serve-workersn)) and serves
+The server runs a small HTTP/1.1 implementation with a task pool that
+scales to the host's logical CPU count within `2`..`8` workers (configurable
+with [`--serve-workers=N`](cli-reference-options.md#--serve-workersn) or its
+`--workers=N` alias) and serves
 requests until the process is interrupted (Ctrl-C).  Query strings and URL
 fragments are stripped before routing, so `/?theme=light`,
 `/api/metrics?x=1` and `/api/deps#top` reach the same handlers as `/`,

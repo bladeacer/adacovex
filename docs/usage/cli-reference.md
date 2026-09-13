@@ -18,48 +18,61 @@ from each section):
 adacovex [options]
 adacovex sbom [--format=cyclonedx-json|spdx-json|md] [--out=PATH]
            [--standard=NAME|--dal=LEVEL|--asil=LEVEL|--class=LEVEL]
-adacovex prove [--target=PATH] [prove options]
-adacovex status [--target=PATH]
+adacovex prove [-t=PATH] [prove options]
+adacovex status [-t=PATH]
 adacovex man [--check|--force] [--dir=PATH]
 adacovex completion [bash|fish|zsh|pwsh]
 ```
+
+Every flag has the explicit long spelling and, where it reads better, a
+shorthand. The shorthands are `-t` (`--target`), `-m` (`--manifest`), `-s`
+(`--serve`), `-p` (`--port`), `-c` (`--cache`), `-b` (`--compare-base`),
+`-d` (`--coverage-delta`), `-l` (`--level`), `-r` (`--require-proof`), and
+`-j` (`--jobs`). The bare words `serve`, `cache`, and `relaxed` also select
+their flag. Use the explicit long forms in scripts and non-trivial cases;
+the shorthands are for interactive use.
+
+`-l` is **only** the GNATprove proof level. It is never a compliance tier.
+Compliance selection stays on `--standard` and its level companions
+`--dal`, `--asil`, and `--class`.
 
 ## Flags
 
 | Flag | Default | Mode | Description |
 |------|---------|------|-------------|
-| `--target=PATH` | `.` (CWD) | both | Target project root directory |
-| `--manifest=PATH` | auto-detected | both | Override project manifest path |
+| `--target=PATH`, `-t PATH` | `.` (CWD) | both | Target project root directory |
+| `--manifest=PATH`, `-m PATH` | auto-detected | both | Override project manifest path |
 | `--dal=LEVEL` | `C` | both | DO-178C DAL level (A-E, also the shared rigour tier) |
 | `--asil=LEVEL` | - | both | ISO 26262 level: `A`\|`B`\|`C`\|`D`\|`QM` |
 | `--class=LEVEL` | - | both | IEC 62304 safety class: `A`\|`B`\|`C` |
-| `--standard=NAME` | `do178c` | both | `do178c`\|`iso26262`\|`iec62304`\|`all` |
-| `--serve` | off | both | Start HTTP dashboard server (standard-aware, light/dark/system themes) |
-| `--serve-workers=N` | `4` | serve | HTTP server task-pool worker count |
+| `--standard=NAME` | `do178c` | both | `do178c`\|`iso26262`\|`iec62304`\|`all`, or a combined tier token (`dal-A..E`, `asil-A..D`, `asil-QM`, `class-A..C`) |
+| `--serve`, `-s`, `serve` | off | both | Start HTTP dashboard server (standard-aware, light/dark/system themes) |
+| `--serve-workers=N`, `--workers=N` | CPU-scaled (2-8) | serve | HTTP server task-pool worker count |
 | `--theme=NAME` | `system` | serve | Dashboard theme: `light`\|`dark`\|`system` |
-| `--port=N` | `8080` | serve | Dashboard server port |
+| `--port=N`, `-p N` | `8080` | serve | Dashboard server port |
 | `--tz=ZONE` / `--timezone=ZONE` | OS timezone | both | Display timezone (IANA name or UTC/GMT offset) |
 | `--excludes=EXT,EXT` | empty | complexity | Skip comma-separated file extensions |
 | `--skip-path=PATH` | empty | complexity | Skip any file whose path contains PATH (repeatable) |
-| `--emit-svg=PATH` | `<target>/docs/badges` | both | Output directory for SVG badges |
-| `--no-svg` | off | both | Suppress SVG badge output |
-| `--emit-markdown=PATH` | off | both | Output directory for Markdown reports |
+| `--emit-svg[=PATH]`, `--svg-path=PATH` | `<target>/docs/badges` | both | Output directory for SVG badges |
+| `--no-svg` | off | both | Suppress SVG badge output (wins over the emit form) |
+| `--emit-markdown[=PATH]`, `--emit-md[=PATH]`, `--md-path=PATH` | `<target>/docs` | both | Output directory for Markdown reports |
+| `--no-md` | off | both | Suppress Markdown report output (wins over the emit form) |
 | `--emit-metrics=PATH` | off | both | Write a JSON export of metrics + dependency graph to PATH |
 | `--completion[=SHELL]` | - | - | Print shell completion script (bash/fish/zsh/pwsh, auto-detected) and exit |
 | `--skip-dir=NAME` | `demo,deps,examples` | relaxed | Directory name to skip (repeatable) |
-| `--relaxed` | off | both | Disable strict mode (skip dirs, no patches) |
-| `--compare-base=REF` | off | both | Differential mode vs a base rev (git/hg/svn/fossil/jj) |
-| `--coverage-delta=REF` | off | both | Docstring-coverage gate vs a base rev (git/hg/svn/fossil/jj) |
-| `--cache` | on | both | Enable on-disk result caching |
+| `--relaxed`, `relaxed` / `--strict` | off | both | Disable / re-enable strict mode (skip dirs, no patches) |
+| `--compare-base=REF`, `--diff=REF`, `--base=REF`, `-b REF` | off | both | Differential mode vs a base rev (git/hg/svn/fossil/jj) |
+| `--coverage-delta=REF`, `--delta=REF`, `-d REF` | off | both | Docstring-coverage gate vs a base rev (git/hg/svn/fossil/jj) |
+| `--cache`, `-c`, `cache` | on | both | Enable on-disk result caching |
 | `--no-cache` | off | both | Disable result caching (always re-scan/re-parse/re-prove) |
 | `--cache-dir=PATH` | `~/.adacovex/cache/<ver>/<schema>` | both | Cache directory for analysis results |
 | `--cache-max=N` | `4096` | both | Max cache entries before oldest-first eviction |
 | `--no-sbom` | off | both | Skip the automatic SBOM written at the end of every assessment |
 | `--sbom-format=FMT` | `cyclonedx-json` | both | Format of the automatic SBOM: `cyclonedx-json`\|`spdx-json`\|`md` |
-| `--require-spark=LVL` | off | both | Fail loudly (exit 1) if SPARK level < LVL (Stone..Platinum) |
-| `--require-docstrings=PCT` | off | both | Fail loudly if docstring coverage < PCT% (0-100) |
-| `--require-tests=N` | off | both | Fail loudly if passing test count < N |
-| `--require-proof=PCT` | off | both | Fail loudly if proved-VC coverage < PCT% (0-100) |
+| `--require-spark=LVL`, `--spark=LVL` | off | both | Fail loudly (exit 1) if SPARK level < LVL (Stone..Platinum) |
+| `--require-docstrings=PCT`, `--docstrs=PCT` | off | both | Fail loudly if docstring coverage < PCT% (0-100) |
+| `--require-tests=N`, `--tests=N` | off | both | Fail loudly if passing test count < N |
+| `--require-proof=PCT`, `-r PCT` | off | both | Fail loudly if proved-VC coverage < PCT% (0-100) |
 | `--verbose` | off | both | Verbose diagnostics |
 | `--version` | - | - | Print the bundled version and exit |
 | `man` | - | - | Install the man page into the local man database |
@@ -69,9 +82,9 @@ adacovex completion [bash|fish|zsh|pwsh]
 | `--help` | - | both | Print usage and exit |
 
 `prove`-mode flags are also accepted by the main command. They are validated
-only in prove mode. The flags are: `--jobs`/`-j`, `--level`, `--timeout`,
-`--steps`, `--memlimit`, `--force`, `--no-loop-unrolling`, `--no-inlining`,
-`--args`, `--suppress-warnings`, `--quiet`. See
+only in prove mode. The flags are: `--jobs`/`-j`, `--level`/`-l`,
+`--timeout`, `--steps`, `--memlimit`, `--force`, `--no-loop-unrolling`,
+`--no-inlining`, `--args`, `--suppress-warnings`, `--quiet`. See
 [The `prove` subcommand](cli-reference-flags.md#the-prove-subcommand).
 
 Every flag is detailed with its default, constraints, and examples on two
@@ -166,8 +179,14 @@ adacovex --target=../Ada_CRDT --relaxed --skip-dir=vendor
 # With Markdown reports
 adacovex --target=. --emit-markdown=docs/compliance
 
-# Web dashboard on custom port
-adacovex --target=. --serve --port=9090
+# Web dashboard on custom port (shorthand: -t, -s, -p)
+adacovex -t=. -s -p 9090
+
+# Combined standard + tier token
+adacovex --standard=asil-b
+
+# Bare --emit-md writes to the default <target>/docs directory
+adacovex --target=. --emit-md
 
 # Differential assessment vs a git base revision
 adacovex --target=. --compare-base=HEAD

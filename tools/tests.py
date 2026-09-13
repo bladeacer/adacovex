@@ -331,10 +331,14 @@ class TestRun(unittest.TestCase):
         flags = run.SELF_ASSESS_ARGS.split()
         self.assertTrue(len(flags) >= 5)
         for flag in flags:
-            self.assertTrue(flag.startswith("--"))
+            # Single -flag=value words (long or shorthand), so the string can
+            # be shell-split without a value-arity table.
+            self.assertTrue(flag.startswith("-"))
             self.assertIn("=", flag)
-        self.assertIn("--require-spark=Platinum", flags)
+        self.assertIn("--spark=Platinum", flags)
         self.assertIn("--dal=C", flags)
+        self.assertIn("-r=100", flags)
+        self.assertIn("--docstrs=100", flags)
 
     def test_source_date_epoch(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

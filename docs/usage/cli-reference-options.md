@@ -13,6 +13,8 @@ writes a single SBOM at an explicit path and exits.
 
 ### `--serve`
 
+Shorthands: `-s` and the bare word `serve`.
+
 A **switch**: when given, adacovex scans and assesses the target, then starts the built-in HTTP/1.1 web dashboard on `--port` (default `8080`) and blocks until interrupted. Passing `--serve` is the only way to start the server; omitting it (the default, `off`) renders and exits without serving. There is no `--no-serve`, because the flag already controls it. It serves an HTML dashboard at `/`, a JSON API at `/api/metrics`, the SVG badges at `/badge/*.svg`, and the bundled offline manual at `/docs`.
 
 The dashboard is standard-aware (it defaults to all standards) and supports light, dark, and system themes.
@@ -27,14 +29,18 @@ See [dashboard themes](dashboard-api.md#themes).
 
 ### `--port=N`
 
-HTTP server port when `--serve` is used. Must be a valid `Positive` integer.
-Only relevant with `--serve`.
+Shorthand: `-p N` (or `-pN`). HTTP server port when `--serve` is used. Must be
+a valid `Positive` integer. Only relevant with `--serve`.
 
 ### `--serve-workers=N`
 
-HTTP server task-pool worker count when `--serve` is used. Default is `4`.
-Raise it to handle more concurrent dashboard requests, or lower it to use
-less memory. It must be a valid `Positive` integer and only works with
+Alias: `--workers=N`.
+
+HTTP server task-pool worker count when `--serve` is used. The default scales
+with the host's logical CPU count and stays within `2`..`8`, so a small
+machine is not over-subscribed and a large one does not spawn an excessive
+pool. Raise it to handle more concurrent dashboard requests, or lower it to
+use less memory. It must be a valid `Positive` integer and only works with
 `--serve`.
 
 ### `--tz=ZONE` / `--timezone=ZONE`
@@ -51,10 +57,11 @@ current offset, with the table as the fallback when the probe is
 unavailable.  Values are matched case-insensitively, and a bad value fails
 loudly.
 
-### `--emit-svg=PATH`
+### `--emit-svg[=PATH]`
 
-Write SVG badges to a directory. Default `<target>/docs/badges`
-(project-scoped). Creates:
+Alias: `--svg-path=PATH`. Write SVG badges to a directory. Default
+`<target>/docs/badges` (project-scoped). The value is optional: bare
+`--emit-svg` uses the default directory. Creates:
 
 - `spark.svg` -- SPARK assurance level (Stone through Platinum)
 - `tests.svg` -- test pass/fail count
@@ -78,12 +85,19 @@ the resolved dependency graph (name, version, scope, parent, purl, kind) at
 archiving assessment results. The composite GitHub Action uploads it as a CI
 artifact when `emit-metrics` is set.
 
-### `--emit-markdown=PATH`
+### `--emit-markdown[=PATH]`
 
-Write compliance reports to a directory. Creates two files:
+Aliases: `--emit-md[=PATH]` and `--md-path=PATH`. Write compliance reports to
+a directory (default `<target>/docs`; the value is optional, so bare
+`--emit-md` uses the default). Creates two files:
 
 - `VERIFICATION.md` -- full verification report with all metrics
 - `TRACE.md` -- HLR traceability matrix (source-to-requirement mapping)
+
+### `--no-md`
+
+Suppress all Markdown report output. Overrides `--emit-markdown` /
+`--emit-md` / `--md-path` if both are given.
 
 ### `--skip-dir=NAME`
 
@@ -94,17 +108,23 @@ always empty.
 
 ### `--relaxed`
 
-Disable strict mode. Enables the skip list (default `demo,deps,examples` plus
-any `--skip-dir` entries) and does NOT apply `.adacovex/patches/`. See
+Alias: the bare word `relaxed`. Disable strict mode. Enables the skip list
+(default `demo,deps,examples` plus any `--skip-dir` entries) and does NOT
+apply `.adacovex/patches/`. `--strict` re-enables strict mode. See
 [Strict vs relaxed mode](cli-reference.md#strict-vs-relaxed-mode).
 
 ### `--compare-base=REF`
 
-Differential mode: snapshot a base revision and print a side-by-side comparison against the current tree (packages, subprograms, docstring %, HLR traced, orphan tags, SPARK level, VCs proved, tests, DAL status). Exit `0` only if there are no regressions AND the current DAL is Achieved. Exit `1` otherwise. Works on **git, Mercurial, Subversion, Fossil, and jj**.
+Aliases: `--diff=REF`, `--base=REF`, and `-b REF`.
+
+Differential mode: snapshot a base revision and print a side-by-side
+comparison against the current tree (packages, subprograms, docstring %, HLR traced, orphan tags, SPARK level, VCs proved, tests, DAL status). Exit `0` only if there are no regressions AND the current DAL is Achieved. Exit `1` otherwise. Works on **git, Mercurial, Subversion, Fossil, and jj**.
 
 Full detail and the per-VCS snapshot mechanisms are in [VCS support and differential assessment](vcs.md).
 
 ### `--coverage-delta=REF`
+
+Alias: `--delta=REF` (and `-d REF`).
 
 Lightweight docstring-coverage gate for PR-style CI checks. Scans sources + patches + computes docstring metrics on both a base revision and the current tree (no GNATprove/tests/DAL), prints a compact coverage table plus a machine-parseable `coverage_delta:` line, and cleans up the snapshot. Exit `0` if current docstring coverage is `>=` the base. Exit `1` if coverage regressed.
 
@@ -160,13 +180,14 @@ criteria. They are off by default. When set, the assessment fails loudly
 target does not meet the required level:
 
 ```bash
-adacovex --target=. --require-spark=Platinum --require-docstrings=100 \
-         --require-tests=1239 --require-proof=100
+adacovex --target=. --spark=Platinum --docstrs=100 --tests=1287 -r 100
 ```
 
-- `require-spark` compares the honest assessed SPARK level (Stone..Platinum).
-- `require-docstrings` and `require-proof` take a percentage (0-100).
-- `require-tests` takes a count of passing tests.
+- `require-spark` (alias `--spark`) compares the honest assessed SPARK level
+  (Stone..Platinum).
+- `require-docstrings` (alias `--docstrs`) and `require-proof` (shorthand
+  `-r`) take a percentage (0-100).
+- `require-tests` (alias `--tests`) takes a count of passing tests.
 
 CI that pins a gnatprove version (manifest or global `adacovex.toml` pin)
 must set these to the values that version actually achieves. A stricter
@@ -175,7 +196,8 @@ results of the prover you pin.
 
 ### Result caching (`--cache` / `--no-cache` / `--cache-dir` / `--cache-max`)
 
-adacovex persists parsed analysis results on disk, so unchanged inputs are not re-scanned, re-parsed, or re-proved. Every entry is keyed by a namespace prefix plus the SHA-256 of the artifact(s) it was derived from. An unchanged manifest/lockfile/.gpr set serves the cached dependency graph. Unchanged `compliance/HLR.md` and `compliance/LLR.md` serve the cached requirement parses. `--no-cache` bypasses it entirely. `--cache-dir` relocates it. `--cache-max` (default `4096`) caps entries before oldest-first eviction.
+Shorthands: `-c` and the bare word `cache`. adacovex persists parsed
+analysis results on disk, so unchanged inputs are not re-scanned, re-parsed, or re-proved. Every entry is keyed by a namespace prefix plus the SHA-256 of the artifact(s) it was derived from. An unchanged manifest/lockfile/.gpr set serves the cached dependency graph. Unchanged `compliance/HLR.md` and `compliance/LLR.md` serve the cached requirement parses. `--no-cache` bypasses it entirely. `--cache-dir` relocates it. `--cache-max` (default `4096`) caps entries before oldest-first eviction.
 
 The ANSI report shows a `result cache: X hit(s), Y miss(es), Z evicted` line per run. Full design (schema namespace, eviction, overflow safety, `--target` normalization) is in [Architecture -- Result caching](../contributing/architecture.md#result-caching).
 

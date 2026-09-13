@@ -62,14 +62,19 @@ package Adacovex.Config is
       --  Dashboard colour theme for --serve (system/light/dark).  "system"
       --  follows the browser's prefers-color-scheme.  "light" and "dark"
       --  force a theme.  Relevant only with --serve.
-      Theme            : Types.Dashboard_Theme := Types.System_Theme;
-      No_SVG           : Boolean := False;
-      Emit_SVG         : Boolean := True;
-      SVG_Path         : String (1 .. Types.Max_Path);
-      SVG_Path_Len     : Natural := 0;
-      Emit_Markdown    : Boolean := False;
-      MD_Path          : String (1 .. Types.Max_Path);
-      MD_Path_Len      : Natural := 0;
+      Theme         : Types.Dashboard_Theme := Types.System_Theme;
+      No_SVG        : Boolean := False;
+      Emit_SVG      : Boolean := True;
+      SVG_Path      : String (1 .. Types.Max_Path);
+      SVG_Path_Len  : Natural := 0;
+      Emit_Markdown : Boolean := False;
+      MD_Path       : String (1 .. Types.Max_Path);
+      MD_Path_Len   : Natural := 0;
+
+      --  True when --no-md is given.  Like --no-svg it wins over the emit
+      --  forms: no Markdown report is written even when --emit-markdown,
+      --  --emit-md, or --md-path is also present.
+      No_Markdown      : Boolean := False;
       Emit_Metrics     : Boolean := False;
       Metrics_Path     : String (1 .. Types.Max_Path);
       Metrics_Path_Len : Natural := 0;

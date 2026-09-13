@@ -83,9 +83,9 @@ any Ada/SPARK project.
 
 Self-assessment (`make run-self`) must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
-- Platinum SPARK level (876 VCs under gnatprove 16.1.0, 0 unproved, 0
+- Platinum SPARK level (880 VCs under gnatprove 16.1.0, 0 unproved, 0
   justified; see `docs/proof/16.1.0-ledger.md`)
-- 1239/1239 native tests passing
+- 1287/1287 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
   `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
@@ -183,7 +183,7 @@ src/
     |-- adacovex-test_support.ads/.adb        -- Native test Runner type
     |-- adacovex_cache_tests.ads/.adb         -- Result-cache tests (28)
     |-- adacovex_complexity_tests.ads/.adb    -- Complexity check tests (12)
-    |-- adacovex_config_tests.ads/.adb        -- CLI config tests (178)
+    |-- adacovex_config_tests.ads/.adb        -- CLI config tests (226)
     |-- adacovex_dal_tests.ads/.adb           -- DAL compliance tests (16)
     |-- adacovex_ir_tests.ads/.adb            -- IR synthesis tests (42)
     |-- adacovex_man_tests.ads/.adb           -- Man page renderer tests (18)
@@ -198,7 +198,7 @@ src/
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (67)
     |-- adacovex_tz_ansi_tests.ads/.adb       -- Timezone + ANSI tests (63)
     |-- adacovex_vcs_tests.ads/.adb           -- VCS support tests (29)
-    `-- test_runner.adb                       -- Test suite entry point (1239 tests)
+    `-- test_runner.adb                       -- Test suite entry point (1287 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -228,12 +228,28 @@ Full format, rules, and examples:
 adacovex [options]
 adacovex sbom [--format=cyclonedx-json|spdx-json] [--out=PATH]
            [--standard=NAME|--dal=LEVEL|--asil=LEVEL|--class=LEVEL]
-adacovex prove [--target=PATH] [prove options]
-adacovex status [--target=PATH] [--tz=ZONE]
-adacovex complexity [--target=PATH] [--excludes=EXT,EXT]
+adacovex prove [-t=PATH] [prove options]
+adacovex status [-t=PATH] [--tz=ZONE]
+adacovex complexity [-t=PATH] [--excludes=EXT,EXT]
 adacovex man [--check] [--dir=PATH]
 adacovex completion [bash|fish|zsh|pwsh]
 ```
+
+Every flag has an explicit long spelling. The shorthands are `-t`
+(`--target`), `-m` (`--manifest`), `-s` (`--serve`), `-p` (`--port`), `-c`
+(`--cache`), `-b` (`--compare-base`), `-d` (`--coverage-delta`), `-l`
+(`--level`, the GNATprove proof level -- never a compliance tier), `-r`
+(`--require-proof`), and `-j` (`--jobs`). The bare words `serve`, `cache`,
+and `relaxed` also select their flag. Long aliases: `--workers`
+(`--serve-workers`), `--svg-path` (`--emit-svg`), `--emit-md` / `--md-path`
+(`--emit-markdown`), `--no-md`, `--diff` / `--base` (`--compare-base`),
+`--delta` (`--coverage-delta`), `--spark` / `--docstrs` / `--tests` (the
+`--require-*` gates), and `--strict` (`--relaxed`'s inverse). Compliance
+selection stays on `--standard` (which also accepts a combined tier token
+such as `dal-B`, `asil-b`, or `class-c`) plus `--dal` / `--asil` /
+`--class`. The alias set is expanded by `Normalize_Aliases` in
+`src/core/adacovex-config.adb`; `Known_Flags` carries every alias so
+completion and the typo suggestion know them.
 
 Full flag reference, detailed behaviour, CI threshold gates (`--require-*`),
 exit codes, the `sbom` subcommand, the per-standard level flags
@@ -410,7 +426,7 @@ must be followed by `make book`.
 | `check` | **The single everything-check / verification entry point.** Run it after any change. It runs every gate CI runs before a release: cheap static gates first (ascii, complexity, csslint, spark-off, changelog, action-parity, tools-check, version, doc-links, link, docs-check, book-links), then build + native tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description). `make check` resolves `gnatprove` for you (it is fetched into `~/.adacovex/toolchain/` and executed directly when not on `PATH`), so you never have to install or point at a prover by hand -- just run `make check` and it verifies the whole tree end to end. `make prove` is the SPARK sub-gate if you only changed proof-affecting code |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
-| `test` | Build + run the 1239-test native suite |
+| `test` | Build + run the 1287-test native suite |
 | `prove` | SPARK proof (Platinum gate) + regenerates SVG badges in `docs/badges/` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
 | `book` | Build the offline manual from the Sphinx docs and regenerate `src/adacovex-docs_template.ads` (tools/gen-docs.py; safe to run without sphinx) |
@@ -509,9 +525,9 @@ release-tag coverage gate instead.
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 1239/1239 passing |
+| Unit tests | `make test` | 1287/1287 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
-| SPARK proof | `make prove` | Platinum (876 VCs, 0 unproved, 0 justified under gnatprove 16.1.0) |
+| SPARK proof | `make prove` | Platinum (880 VCs, 0 unproved, 0 justified under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
 
 **The true test of proof performance is the `prove` subcommand at the
@@ -538,7 +554,7 @@ rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 1239 tests across 17 categories).
+Native zero-dependency suite (`src/tests/`, 1287 tests across 17 categories).
 Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests).
 
