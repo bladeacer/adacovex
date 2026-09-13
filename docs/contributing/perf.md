@@ -236,7 +236,10 @@ regression is visible in the same command as the timings.
 
 ## CI
 
-CI runs the self-assessment with result caching disabled where determinism matters (`--no-cache`-equivalent fresh dirs). The `make` gates are timed loosely: timings are informational only, because a gate that fails on a slow runner helps nobody. The `bench` target is not part of `make check`; it is run by hand before releases.
+CI runs the self-assessment with result caching disabled where determinism matters
+(`--no-cache`-equivalent fresh dirs). The `make` gates are timed loosely: timings
+are informational only, because a gate that fails on a slow runner helps nobody.
+The `bench` target is not part of `make check`; it is run by hand before releases.
 
 ## When the numbers regress
 
