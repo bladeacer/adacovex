@@ -98,7 +98,7 @@ Self-assessment (`make run-self`) must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
 - Platinum SPARK level (880 VCs under gnatprove 16.1.0, 0 unproved, 0
   justified; see `docs/proof/16.1.0-ledger.md`)
-- 1518/1518 native tests passing
+- 1599/1599 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
   `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
@@ -196,11 +196,14 @@ src/
     |-- adacovex-test_support.ads/.adb        -- Native test Runner type
     |-- adacovex_ansi_tests.ads/.adb          -- ANSI terminal report tests (28)
     |-- adacovex_cache_tests.ads/.adb         -- Result-cache tests (28)
+    |-- adacovex_completion_tests.ads/.adb    -- Shell completion script tests (24)
     |-- adacovex_complexity_tests.ads/.adb    -- Complexity check tests (12)
     |-- adacovex_config_tests.ads/.adb        -- CLI config tests (343)
+    |-- adacovex_cpus_tests.ads/.adb          -- Host CPU and job-resolution tests (24)
     |-- adacovex_dal_tests.ads/.adb           -- DAL compliance tests (16)
     |-- adacovex_diff_tests.ads/.adb          -- Differential-report regression tests (36)
     |-- adacovex_dir_cache_tests.ads/.adb     -- Directory-snapshot memo tests (22)
+    |-- adacovex_do178c_tests.ads/.adb        -- HLR/LLR parsing and line-reader tests (33)
     |-- adacovex_ir_tests.ads/.adb            -- IR synthesis tests (42)
     |-- adacovex_man_tests.ads/.adb           -- Man page renderer tests (18)
     |-- adacovex_opt_outs_tests.ads/.adb      -- Per-file opt-out marker tests (16)
@@ -216,7 +219,7 @@ src/
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (67)
     |-- adacovex_tz_ansi_tests.ads/.adb       -- Timezone + ANSI tests (63)
     |-- adacovex_vcs_tests.ads/.adb           -- VCS support tests (29)
-    `-- test_runner.adb                       -- Test suite entry point (1518 tests)
+    `-- test_runner.adb                       -- Test suite entry point (1599 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -323,7 +326,7 @@ git-compatible VCS) for the best experience. See
 
 Execution order: parse CLI -> scan -> patch -> doc metrics -> proof parse ->
 test parse -> DAL assess -> render -> SVG/Markdown/SBOM -> serve -> exit code.
-Step details: [docs/contributing/architecture-outputs.md](docs/contributing/architecture-outputs.md#pipeline-execution-order).
+Step details: [docs/contributing/architecture-pipeline.md](docs/contributing/architecture-pipeline.md#pipeline-execution-order).
 Early-exit modes run before the pipeline: `--help`, `--version`, `man`
 (install/check the man page), `status`, `completion` (shell-completion
 scripts), differential modes, and `sbom`.
@@ -444,7 +447,7 @@ must be followed by `make book`.
 | `check` | **The single everything-check / verification entry point.** Run it after any change. It runs every gate CI runs before a release: cheap static gates first (ascii, complexity, csslint, spark-off, changelog, action-parity, tools-check, cli-e2e, version, doc-links, link, docs-check, book-links), then build + native tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description). `make check` resolves `gnatprove` for you (it is fetched into `~/.adacovex/toolchain/` and executed directly when not on `PATH`), so you never have to install or point at a prover by hand -- just run `make check` and it verifies the whole tree end to end. `make prove` is the SPARK sub-gate if you only changed proof-affecting code |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
-| `test` | Build + run the 1518-test native suite |
+| `test` | Build + run the 1599-test native suite |
 | `prove` | SPARK proof (Platinum gate) + regenerates SVG badges in `docs/badges/` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
 | `book` | Build the offline manual from the Sphinx docs and regenerate `src/adacovex-docs_template.ads` (tools/gen-docs.py; safe to run without sphinx) |
@@ -545,7 +548,7 @@ release-tag coverage gate instead.
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 1518/1518 passing |
+| Unit tests | `make test` | 1599/1599 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (880 VCs, 0 unproved, 0 justified under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -577,7 +580,7 @@ rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 1518 tests across 22 categories).
+Native zero-dependency suite (`src/tests/`, 1599 tests across 25 categories).
 Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests).
 
@@ -631,7 +634,8 @@ suffices.
 - [Documentation index](docs/index.md)
 - [CLI reference](docs/usage/cli-reference.md)
 - [CLI flag details: assessment flags and subcommands](docs/usage/cli-reference-flags.md)
-- [CLI flag details: output and CI options](docs/usage/cli-reference-options.md)
+- [CLI flag details: serving, CI, and tool options](docs/usage/cli-reference-options.md)
+- [CLI flag details: emitted reports and differential modes](docs/usage/cli-reference-emit.md)
 - [Web dashboard](docs/usage/dashboard.md)
 - [Dashboard document and dependency views](docs/usage/dashboard-html.md)
 - [Dashboard JSON API and playground](docs/usage/dashboard-api.md)
@@ -644,6 +648,7 @@ suffices.
 - [CI/CD workflows and release bundling](docs/usage/ci-cd-workflows.md)
 - [Contributing](CONTRIBUTING.md)
 - [Developer guide](docs/contributing/developer-guide.md)
+- [Developer guide: repository layout](docs/contributing/developer-guide-layout.md)
 - [Installation](docs/usage/installation.md)
 - [LLM usage](docs/contributing/llm-usage.md)
 - [Changelog](docs/changelogs/index.md)
@@ -661,7 +666,8 @@ suffices.
 - [Architecture](docs/contributing/architecture.md)
 - [Architecture: dependency management and toolchain](docs/contributing/architecture-dependencies.md)
 - [Architecture: verification and proof patches](docs/contributing/architecture-verification.md)
-- [Architecture: outputs and pipeline](docs/contributing/architecture-outputs.md)
+- [Architecture: outputs and formats](docs/contributing/architecture-outputs.md)
+- [Architecture: pipeline, platforms, and delivery](docs/contributing/architecture-pipeline.md)
 - [Requirements](docs/contributing/requirements.md)
 - [STE100 technical names](docs/contributing/ste100/index.md)
 - [STE100: Ada language constructs](docs/contributing/ste100/ada-terms.md)
@@ -678,6 +684,7 @@ suffices.
 - [Benchmarking adacovex](docs/contributing/perf/benchmarks.md)
 - [Prove timing and optimisation review](docs/contributing/perf/prove-timing.md)
 - [Performance optimisation history](docs/contributing/perf/optimisation-history.md)
+- [Performance optimisation history: earlier releases](docs/contributing/perf/optimisation-history-archive.md)
 - [gnatprove-friendly IR](docs/contributing/ir.md)
 - [Proof records](docs/proof/index.md)
 - [Compliance outputs](docs/compliance/index.md)

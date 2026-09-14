@@ -22,6 +22,9 @@
   | Diff reports                             |  36 | PASS     |
   | Prove runner                             |  12 | PASS     |
   | ANSI terminal report                     |  28 | PASS     |
+  | CPU and jobs                             |  24 | PASS     |
+  | HLR/LLR parsing                          |  33 | PASS     |
+  | Completion scripts                       |  24 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 1518  Failed: 0
+  Passed: 1599  Failed: 0

@@ -22,6 +22,9 @@ with Adacovex_Dir_Cache_Tests;
 with Adacovex_Diff_Tests;
 with Adacovex_Prove_Runner_Tests;
 with Adacovex_ANSI_Tests;
+with Adacovex_CPUs_Tests;
+with Adacovex_Do178C_Tests;
+with Adacovex_Completion_Tests;
 
 procedure Test_Runner is
 
@@ -47,6 +50,9 @@ procedure Test_Runner is
    R_Diff        : Runner;
    R_ProveRunner : Runner;
    R_ANSI        : Runner;
+   R_CPUs        : Runner;
+   R_Do178C      : Runner;
+   R_Completion  : Runner;
 
    Total_Passed : Natural := 0;
    Total_Failed : Natural := 0;
@@ -97,6 +103,9 @@ procedure Test_Runner is
          Row ("Diff reports", R_Diff);
          Row ("Prove runner", R_ProveRunner);
          Row ("ANSI terminal report", R_ANSI);
+         Row ("CPU and jobs", R_CPUs);
+         Row ("HLR/LLR parsing", R_Do178C);
+         Row ("Completion scripts", R_Completion);
       end;
 
       Put_Line
@@ -179,6 +188,9 @@ procedure Test_Runner is
          Row ("Diff reports", R_Diff);
          Row ("Prove runner", R_ProveRunner);
          Row ("ANSI terminal report", R_ANSI);
+         Row ("CPU and jobs", R_CPUs);
+         Row ("HLR/LLR parsing", R_Do178C);
+         Row ("Completion scripts", R_Completion);
       end;
 
       Put_Line
@@ -216,6 +228,9 @@ begin
    Adacovex_Diff_Tests.Run (R_Diff);
    Adacovex_Prove_Runner_Tests.Run (R_ProveRunner);
    Adacovex_ANSI_Tests.Run (R_ANSI);
+   Adacovex_CPUs_Tests.Run (R_CPUs);
+   Adacovex_Do178C_Tests.Run (R_Do178C);
+   Adacovex_Completion_Tests.Run (R_Completion);
 
    Total_Passed :=
      R_Types.Passed
@@ -239,7 +254,10 @@ begin
      + R_DirCache.Passed
      + R_Diff.Passed
      + R_ProveRunner.Passed
-     + R_ANSI.Passed;
+     + R_ANSI.Passed
+     + R_CPUs.Passed
+     + R_Do178C.Passed
+     + R_Completion.Passed;
    Total_Failed :=
      R_Types.Failed
      + R_DAL.Failed
@@ -262,7 +280,10 @@ begin
      + R_DirCache.Failed
      + R_Diff.Failed
      + R_ProveRunner.Failed
-     + R_ANSI.Failed;
+     + R_ANSI.Failed
+     + R_CPUs.Failed
+     + R_Do178C.Failed
+     + R_Completion.Failed;
 
    Print_Summary;
    Write_Results;

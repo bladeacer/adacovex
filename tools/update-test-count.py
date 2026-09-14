@@ -67,6 +67,9 @@ CATEGORY_KEY: Dict[str, str] = {
     "Diff reports": "src/tests/adacovex_diff_tests",
     "Prove runner": "src/tests/adacovex_prove_runner_tests",
     "ANSI terminal report": "src/tests/adacovex_ansi_tests",
+    "CPU and jobs": "src/tests/adacovex_cpus_tests",
+    "HLR/LLR parsing": "src/tests/adacovex_do178c_tests",
+    "Completion scripts": "src/tests/adacovex_completion_tests",
 }
 
 TEST_RUNNER_KEY: str = "src/tests/test_runner"

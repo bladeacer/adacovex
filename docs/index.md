@@ -19,8 +19,9 @@ before you use a technical word in any doc, docstring, or changelog.
 
 - [CLI reference](usage/cli-reference.md) -- every command, flag, and exit
   code.  The detailed flag pages are
-  [assessment flags and subcommands](usage/cli-reference-flags.md) and
-  [output and CI options](usage/cli-reference-options.md).
+  [assessment flags and subcommands](usage/cli-reference-flags.md),
+  [serving, CI, and tool options](usage/cli-reference-options.md), and
+  [emitted reports and differential modes](usage/cli-reference-emit.md).
 - [Web dashboard](usage/dashboard.md) -- the HTML report and JSON API.  The
   deeper pages are
   [the dashboard document and its dependency views](usage/dashboard-html.md),
@@ -43,7 +44,9 @@ before you use a technical word in any doc, docstring, or changelog.
 ## Contributing to adacovex
 
 - [Developer guide](contributing/developer-guide.md) -- the contributor
-  handbook: setup, codebase tour, gates, and release workflow.
+  handbook: setup, gates, and release workflow.  The source layout, the
+  pipeline, and the generated artifacts are on the
+  [repository layout](contributing/developer-guide-layout.md).
 - [Proving and writing proofs](contributing/proving.md) -- how to run and
   write SPARK proofs.  Writing proof patches over vendored code is on
   [Proof patches](contributing/proving-patches.md).
@@ -51,7 +54,8 @@ before you use a technical word in any doc, docstring, or changelog.
   design.  The deeper pages are
   [dependency management and the toolchain](contributing/architecture-dependencies.md),
   [verification and proof patches](contributing/architecture-verification.md),
-  and [outputs, pipeline, and delivery](contributing/architecture-outputs.md).
+  [outputs and formats](contributing/architecture-outputs.md), and
+  [pipeline, platforms, and delivery](contributing/architecture-pipeline.md).
 - [Requirements](contributing/requirements.md) -- the dependency
   categorisation.
 - [Performance](contributing/perf/index.md) -- the benchmark categories and
@@ -60,7 +64,9 @@ before you use a technical word in any doc, docstring, or changelog.
   output, [Prove timing and the optimisation
   review](contributing/perf/prove-timing.md) holds the per-phase timing
   table, and [the optimisation
-  history](contributing/perf/optimisation-history.md) covers the work.
+  history](contributing/perf/optimisation-history.md) covers the work (with
+  [earlier releases](contributing/perf/optimisation-history-archive.md)
+  archived separately).
 - [gnatprove-friendly IR](contributing/ir.md) -- the design exploration for
   synthesising bounded, contract-carrying code.
 - [STE100 Technical Names](contributing/ste100/index.md) -- the controlled
@@ -111,6 +117,7 @@ usage/target-projects
 usage/cli-reference
 usage/cli-reference-flags
 usage/cli-reference-options
+usage/cli-reference-emit
 usage/dashboard
 usage/dashboard-html
 usage/dashboard-api
@@ -131,17 +138,20 @@ changelogs/index
 :hidden:
 
 contributing/developer-guide
+contributing/developer-guide-layout
 contributing/proving
 contributing/proving-patches
 contributing/architecture
 contributing/architecture-dependencies
 contributing/architecture-verification
 contributing/architecture-outputs
+contributing/architecture-pipeline
 contributing/requirements
 contributing/perf/index
 contributing/perf/benchmarks
 contributing/perf/prove-timing
 contributing/perf/optimisation-history
+contributing/perf/optimisation-history-archive
 contributing/ir
 contributing/ste100/index
 contributing/ste100/ada-terms

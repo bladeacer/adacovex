@@ -1,7 +1,8 @@
 docs/index.md	Documentation index
 docs/usage/cli-reference.md	CLI reference
 docs/usage/cli-reference-flags.md	CLI flag details: assessment flags and subcommands
-docs/usage/cli-reference-options.md	CLI flag details: output and CI options
+docs/usage/cli-reference-options.md	CLI flag details: serving, CI, and tool options
+docs/usage/cli-reference-emit.md	CLI flag details: emitted reports and differential modes
 docs/usage/dashboard.md	Web dashboard
 docs/usage/dashboard-html.md	Dashboard document and dependency views
 docs/usage/dashboard-api.md	Dashboard JSON API and playground
@@ -14,6 +15,7 @@ docs/usage/ci-cd.md	CI/CD
 docs/usage/ci-cd-workflows.md	CI/CD workflows and release bundling
 CONTRIBUTING.md	Contributing
 docs/contributing/developer-guide.md	Developer guide
+docs/contributing/developer-guide-layout.md	Developer guide: repository layout
 docs/usage/installation.md	Installation
 docs/contributing/llm-usage.md	LLM usage
 docs/changelogs/index.md	Changelog
@@ -31,7 +33,8 @@ docs/contributing/proving-patches.md	Proof patches over vendored code
 docs/contributing/architecture.md	Architecture
 docs/contributing/architecture-dependencies.md	Architecture: dependency management and toolchain
 docs/contributing/architecture-verification.md	Architecture: verification and proof patches
-docs/contributing/architecture-outputs.md	Architecture: outputs and pipeline
+docs/contributing/architecture-outputs.md	Architecture: outputs and formats
+docs/contributing/architecture-pipeline.md	Architecture: pipeline, platforms, and delivery
 docs/contributing/requirements.md	Requirements
 docs/contributing/ste100/index.md	STE100 technical names
 docs/contributing/ste100/ada-terms.md	STE100: Ada language constructs
@@ -48,6 +51,7 @@ docs/contributing/perf/index.md	Performance
 docs/contributing/perf/benchmarks.md	Benchmarking adacovex
 docs/contributing/perf/prove-timing.md	Prove timing and optimisation review
 docs/contributing/perf/optimisation-history.md	Performance optimisation history
+docs/contributing/perf/optimisation-history-archive.md	Performance optimisation history: earlier releases
 docs/contributing/ir.md	gnatprove-friendly IR
 docs/proof/index.md	Proof records
 docs/compliance/index.md	Compliance outputs

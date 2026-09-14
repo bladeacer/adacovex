@@ -7,6 +7,9 @@ Set Overflow to True.  Report an error to standard error that names
 File_Path (with Line_Num when non-zero) and the buffer size.
 Callers must treat Overflow as an explicit parse failure.  Do not
 process the truncated content because it produces partial results.
+A line that exactly fills Line is not an overflow: the reader consumes
+the line terminator, so the next call starts at the next physical line
+and never reports a spurious empty line.
 @param F  Open input file positioned at the line to read.
 @param File_Path  Path of the file, used in the overflow error message.
 @param Line_Num  Physical line number (1-based), or 0 to omit it.

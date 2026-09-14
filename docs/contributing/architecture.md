@@ -39,7 +39,7 @@ storage-size dependent and remain fixed.
 
 `Max_Line` is deliberately generous (256 KiB on 64-bit) so that single-line declarations from heavily code-generated projects parse cleanly. When a physical line *does* exceed the buffer, adacovex **never truncates it and then processes it**. Truncation can silently produce a partial (and wrong) result. Instead the parser drains the remainder, reports the file and line to standard error, and fails that parse explicitly.
 
-The source scanner counts the skipped file in `Skipped_Ct`, which forces the DAL assessment to `Unmet` and the exit code to `1` (no compliance claim can be made for unread code). The same explicit-failure contract applies to every parser: HLR/LLR markdown, GNATprove output (text and JSON), test results, and Alire manifest / lockfile / GPR dependency graphs. An exact buffer-length line is not an overflow (it parses normally), and paths exceeding `Max_Path` are likewise reported and skipped rather than crashing.
+The source scanner counts the skipped file in `Skipped_Ct`, which forces the DAL assessment to `Unmet` and the exit code to `1` (no compliance claim can be made for unread code). The same explicit-failure contract applies to every parser: HLR/LLR markdown, GNATprove output (text and JSON), test results, and Alire manifest / lockfile / GPR dependency graphs. An exact buffer-length line is not an overflow (it parses normally), and the reader consumes its line terminator so the following line is never seen as a spurious empty one. Paths exceeding `Max_Path` are likewise reported and skipped rather than crashing.
 
 **Overflow contract (two tiers).** Path and line buffers *fail loudly*. An
 overlong physical line is drained and reported (`line exceeds Max_Line buffer`). The file is not parsed. `Skipped_Ct` increments. DAL becomes `Unmet`. An overlong path is reported and the file/subtree is skipped.
@@ -129,7 +129,28 @@ An unchanged manifest/lockfile/.gpr set serves the cached dependency graph. Unch
 - **CI**: the GitHub action persists `~/.adacovex/cache` between workflow runs
   (`result-cache` input, default true).
 
-`--no-cache` bypasses it entirely (useful when artifacts change without their
-content hash changing, or to measure rescan cost) and `--cache-dir` relocates
-it. The ANSI report shows a
+### Shared directory snapshot
+
+One assessment walks the target tree several times: the source scanner, the
+tools-key hash, the graph-key language probe, the vendored discovery and hash
+walks, the `.gpr` walk, and the complexity checker all enumerate the same
+directories.  `Adacovex.Dir_Cache` keeps one per-process snapshot per
+directory, so the first walker enumerates a directory and every later walker
+in the same process pays one mtime stat instead.  The memo never touches disk,
+holds at most 256 directories, and serves a snapshot only while the
+directory's mtime is unchanged.
+
+A directory the memo cannot hold is reported as truncated, and the caller then
+falls back to direct enumeration instead of trusting the snapshot.  That
+covers a directory with more entries than the memo holds and a directory
+holding an entry name longer than the 120-character key.  A truncated
+directory must never look empty, because every walker that trusts an empty
+snapshot skips the whole subtree.  Version 1.49.0 fixed
+`Adacovex.Dir_Cache.Snapshot`, which reported `Count => 0` with `Truncated =>
+False` for an over-long entry name; the fix is pinned by the Dir cache test
+category.
+
+`--no-cache` bypasses the result cache entirely (useful when artifacts change
+without their content hash changing, or to measure rescan cost) and
+`--cache-dir` relocates it. The ANSI report shows a
 `result cache: X hit(s), Y miss(es), Z evicted` line per run.
