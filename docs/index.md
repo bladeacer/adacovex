@@ -52,15 +52,22 @@ before you use a technical word in any doc, docstring, or changelog.
   and [outputs, pipeline, and delivery](contributing/architecture-outputs.md).
 - [Requirements](contributing/requirements.md) -- the dependency
   categorisation.
-- [Performance](contributing/perf.md) -- benchmarking and the current
-  numbers.  [Prove timing and the optimisation review]
-  (contributing/perf-prove-timing.md) and
-  [the optimisation history](contributing/perf-optimisation-history.md)
-  cover the detail.
+- [Performance](contributing/perf.md) -- the benchmark categories and the
+  current numbers.  [Benchmarking adacovex](contributing/perf-benchmarks.md)
+  covers the how-to and the raw output, [Prove timing and the optimisation
+  review](contributing/perf-prove-timing.md) holds the per-phase timing
+  table, and [the optimisation
+  history](contributing/perf-optimisation-history.md) covers the work.
 - [gnatprove-friendly IR](contributing/ir.md) -- the design exploration for
   synthesising bounded, contract-carrying code.
 - [STE100 Technical Names](contributing/ste100-technical-names.md) -- the
-  controlled dictionary.
+  controlled dictionary of rules and entries, split into the
+  [Ada language](contributing/ste100-ada-terms.md),
+  [proof and compliance](contributing/ste100-proof-terms.md),
+  [tooling](contributing/ste100-tooling-terms.md),
+  [hardware](contributing/ste100-entities.md),
+  [tool and file](contributing/ste100-identifiers.md), and
+  [report and concept](contributing/ste100-concepts.md) lexicons.
 - [LLM usage](contributing/llm-usage.md) -- guidance for AI agents.
 
 ## Maintainer references
@@ -127,10 +134,17 @@ contributing/architecture-verification
 contributing/architecture-outputs
 contributing/requirements
 contributing/perf
+contributing/perf-benchmarks
 contributing/perf-prove-timing
 contributing/perf-optimisation-history
 contributing/ir
 contributing/ste100-technical-names
+contributing/ste100-ada-terms
+contributing/ste100-proof-terms
+contributing/ste100-tooling-terms
+contributing/ste100-entities
+contributing/ste100-identifiers
+contributing/ste100-concepts
 contributing/llm-usage
 ```
 

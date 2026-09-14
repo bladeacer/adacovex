@@ -82,7 +82,7 @@ Measured on an 11-tool toolchain (self-assessment, this repo):
 `--no-cache` disables the probe cache too (it lives under the cache root).
 The TTL means a toolchain upgrade shows up in the SBOM within a week even on
 machines that never re-probe explicitly.  See
-[docs/perf.md](../contributing/perf.md#probe-cache).
+[docs/perf-benchmarks.md](../contributing/perf-benchmarks.md#probe-cache).
 
 ### C5: `make bench` -- hyperfine timings + binary size
 

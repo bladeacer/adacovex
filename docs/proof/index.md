@@ -5,9 +5,10 @@ This directory holds the record of every SPARK proof run for adacovex.
 ## Reading the ledger
 
 The [gnatprove 16.1.0 ledger](16.1.0-ledger.md) documents the current
-verified surface:
+verified surface: the VC counts (currently 880 VCs, 0 unproved, 0
+justified, Platinum) and the per-package fixes that reach them.  The
+[proof-debt audit](16.1.0-ledger-audit.md) records the rest:
 
-- the VC counts (currently 724 VCs, 0 unproved, 0 justified, Platinum);
 - the audit of the skipped units and the reason each stays SPARK_Mode Off;
 - the empirical evidence that the non-formal `Ada.Containers`
   instantiations in `Adacovex.Types.Implementation` and
