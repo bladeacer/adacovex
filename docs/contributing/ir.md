@@ -148,7 +148,7 @@ caches):
 The multi-pair slice keeps the exploration concrete and proved. The VC
 growth over 1.41.0 (+85) is the price of the proved general form; the cold
 wall drop is the 1.42.0 walk-skip and cache work (see
-[Performance](perf.md)) -- the IR slice itself proved in the same session
+[Performance](perf/index.md)) -- the IR slice itself proved in the same session
 shape as 1.41.0. An idle `make prove` short-circuits in about 2.4 s, and a
 warm cache-hit run re-proves only the changed units.
 
@@ -177,4 +177,4 @@ is sound; the next steps extend it from specs to bodies and callers.
 - [Bounded IR types](../api-docs/adacovex-target_profiles.md) -- the `IR_*`
   scalar types.
 - [Proving and writing proofs](proving.md) -- how the proof gate works.
-- [Performance](perf.md) -- the pipeline and proof timings.
+- [Performance](perf/index.md) -- the pipeline and proof timings.

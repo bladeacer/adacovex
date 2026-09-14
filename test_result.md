@@ -17,6 +17,11 @@
   | Proof patches                            |  35 | PASS     |
   | Timezone + ANSI                          |  63 | PASS     |
   | Complexity check                         |  12 | PASS     |
+  | Opt-out markers                          |  16 | PASS     |
+  | Dir cache                                |  22 | PASS     |
+  | Diff reports                             |  36 | PASS     |
+  | Prove runner                             |  12 | PASS     |
+  | ANSI terminal report                     |  28 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 1404  Failed: 0
+  Passed: 1518  Failed: 0

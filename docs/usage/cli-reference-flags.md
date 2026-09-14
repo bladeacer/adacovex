@@ -138,7 +138,7 @@ into their CI via `adacovex complexity --excludes=...`; see the
 
 `adacovex prove --target=PATH` resolves a gnatprove installation and runs it against the target. It then falls through to the normal assessment pipeline. The pipeline parses the freshly generated proof summary. As a result, one command both proves and assesses.
 
-For the full guide to proving and writing SPARK proofs (contracts, VC categories, proof patches for vendored deps), see [Proving and writing proofs](../contributing/proving.md). gnatprove is resolved in this order: manifest pin > global pin > `$PATH` > cached toolchain > download. The target does not need to declare gnatprove. Full detail: [Architecture -- GNATprove toolchain resolution](../contributing/architecture.md#gnatprove-toolchain-resolution-prove-subcommand).
+For the full guide to proving and writing SPARK proofs (contracts, VC categories, proof patches for vendored deps), see [Proving and writing proofs](../contributing/proving.md). gnatprove is resolved in this order: manifest pin > global pin > `$PATH` > cached toolchain > download. The target does not need to declare gnatprove. Full detail: [Architecture -- GNATprove toolchain resolution](../contributing/architecture-dependencies.md#gnatprove-toolchain-resolution-prove-subcommand).
 
 The proof summary is written to `<target>/obj/gnatprove/gnatprove.out` (the same location the assessment discovers). The SVG badges are emitted as usual. The result cache serves unchanged targets. `--force` bypasses the cache and forces a full gnatprove reanalysis. When the target carries proof patches (`.adacovex/patches/`), gnatprove runs against a patched tree copy at `<target>/obj/adacovex-proof/`.
 

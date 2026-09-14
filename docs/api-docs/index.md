@@ -20,7 +20,7 @@ It is generated from the source docstrings by `make doc`.
   for the release history.
 
 Technical terms follow the controlled dictionary in
-[STE100 Technical Names](../contributing/ste100-technical-names.md).  All
+[STE100 Technical Names](../contributing/ste100/index.md).  All
 documentation, including these pages, uses British English and
 ASD-STE100 Simplified Technical English.  A word not in the
 dictionary means the sentence is not yet STE100-clean.
@@ -37,13 +37,18 @@ dictionary means the sentence is not yet STE100-clean.
 ## Packages
 
 - [Adacovex](adacovex.md)
+- [Adacovex_ANSI_Tests](adacovex_ansi_tests.md)
 - [Adacovex_Cache_Tests](adacovex_cache_tests.md)
 - [Adacovex_Complexity_Tests](adacovex_complexity_tests.md)
 - [Adacovex_Config_Tests](adacovex_config_tests.md)
 - [Adacovex_DAL_Tests](adacovex_dal_tests.md)
+- [Adacovex_Diff_Tests](adacovex_diff_tests.md)
+- [Adacovex_Dir_Cache_Tests](adacovex_dir_cache_tests.md)
 - [Adacovex_IR_Tests](adacovex_ir_tests.md)
 - [Adacovex_Man_Tests](adacovex_man_tests.md)
+- [Adacovex_Opt_Outs_Tests](adacovex_opt_outs_tests.md)
 - [Adacovex_Prove_Patch_Tests](adacovex_prove_patch_tests.md)
+- [Adacovex_Prove_Runner_Tests](adacovex_prove_runner_tests.md)
 - [Adacovex_Prove_Tests](adacovex_prove_tests.md)
 - [Adacovex_Renderer_SVG_Tests](adacovex_renderer_svg_tests.md)
 - [Adacovex_Renderer_Tests](adacovex_renderer_tests.md)

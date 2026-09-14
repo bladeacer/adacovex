@@ -52,7 +52,7 @@ So the order is: manifest pin > global pin (config/env) > PATH > cache >
 download.
 HLR-PROVE: GNATprove subcommand
 
-**See also:** [Architecture -- toolchain resolution](../contributing/architecture.md#gnatprove-toolchain-resolution-prove-subcommand)
+**See also:** [Architecture -- toolchain resolution](../contributing/architecture-dependencies.md#gnatprove-toolchain-resolution-prove-subcommand)
 
 > **Note:** All items in this package are public.
 

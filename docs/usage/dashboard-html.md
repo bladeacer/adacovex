@@ -36,7 +36,7 @@ keyboard-accessible, persisted in `localStorage`):
   (S/A/B/C/D from the average of five quality axes), the per-check-type
   **SPARK radar**, a tests **donut** and a doc-coverage **radial gauge**. The
   badge row doubles as a preview for the generated `docs/badges/*.svg` files.
-  See [Robustness tier](dashboard.md#robustness-tier) for how the rating is
+  See [Robustness tier](dashboard-charts.md#robustness-tier) for how the rating is
   derived.
 - **Proof** -- the SPARK level (Stone..Platinum) and, per check category
   (flow, initialization, runtime, assertions, functional), total and proved

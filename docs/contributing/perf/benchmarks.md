@@ -3,7 +3,7 @@
 This page documents how to benchmark the pipeline and the `prove`
 subcommand, the benchmark machine, and the raw sample output.  The
 benchmark categories and the expected numbers are on
-[Performance](perf.md).
+[Performance](index.md).
 
 ## Benchmark machine
 
@@ -33,7 +33,7 @@ and reports binary size:
 - It builds the project, then times `./bin/adacovex` and
   `./bin/adacovex prove` against the repo itself.
 - **Four scenarios** are measured, each with a precise meaning (see the
-  category reference on [Performance](perf.md)).  The prove scenarios time
+  category reference on [Performance](index.md)).  The prove scenarios time
   the `prove` subcommand -- the true test of proof performance, measured at
   the adacovex-binary level, not just the gnatprove level.
 - `make bench` uses [hyperfine](https://github.com/sharkdp/hyperfine) when

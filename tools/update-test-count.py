@@ -62,6 +62,11 @@ CATEGORY_KEY: Dict[str, str] = {
     "Proof patches": "src/tests/adacovex_prove_patch_tests",
     "Timezone + ANSI": "src/tests/adacovex_tz_ansi_tests",
     "Complexity check": "src/tests/adacovex_complexity_tests",
+    "Opt-out markers": "src/tests/adacovex_opt_outs_tests",
+    "Dir cache": "src/tests/adacovex_dir_cache_tests",
+    "Diff reports": "src/tests/adacovex_diff_tests",
+    "Prove runner": "src/tests/adacovex_prove_runner_tests",
+    "ANSI terminal report": "src/tests/adacovex_ansi_tests",
 }
 
 TEST_RUNNER_KEY: str = "src/tests/test_runner"

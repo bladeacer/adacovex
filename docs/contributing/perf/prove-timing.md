@@ -2,9 +2,9 @@
 
 This page covers the `make prove` timing table (the true proof-performance
 test) and the 1.46.0 SIMD and optimisation candidate review.  Benchmark
-methodology and current figures are on [Performance](perf.md); the full
+methodology and current figures are on [Performance](index.md); the full
 optimisation history is on [Performance optimisation
-history](perf-optimisation-history.md).
+history](optimisation-history.md).
 
 ## How the phase table works
 
@@ -105,7 +105,7 @@ jobs) unless a note says otherwise.
 
 - The prove-cold row is gnatprove's own cost and tracks the VC count (39.1 s
   at 876 VCs; the +85 VCs over 1.41.0 are the proved multi-pair IR slice,
-  see [ir.md](ir.md)).  It is paid once per session, not per run: with the
+  see [ir.md](../ir.md)).  It is paid once per session, not per run: with the
   result cache wiped but the gnatprove session intact, the same run is
   ~1.1 s, and gnatprove's session store re-analyses only the changed unit
   and its dependents after a real edit (roughly 6-9 s wall for a body-only

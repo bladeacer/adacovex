@@ -18,7 +18,7 @@ assessment without parsing HTML:
 
 ```json
 {"spark_level":"Platinum","total_vcs":880,"proved_vcs":880,
- " "tests_passed":1404,"tests_failed":0,"doc_coverage":100,
+ " "tests_passed":1518,"tests_failed":0,"doc_coverage":100,
  "standard":"all","level":"DAL-C","dal_status":"Achieved",
  "standards":{"DO-178C":{"level":"DAL-C","status":"Achieved"},
                "ISO 26262":{"level":"ASIL B","status":"Achieved"},
@@ -37,7 +37,7 @@ assessment without parsing HTML:
 | `standards` | Per-standard `level` / `status` object (present when `standard` is `all`) |
 
 A benchmark reference for the endpoints, on the same machine as the
-[performance page](../contributing/perf.md) figures (hyperfine over curl,
+[performance page](../contributing/perf/index.md) figures (hyperfine over curl,
 local loopback, 4-worker server): `GET /api/metrics` ~7 ms, `GET /` ~13 ms,
 `GET /docs/` ~5 ms per request. The JSON endpoints are two orders of
 magnitude under the millisecond-scale of the in-process data they serialise;

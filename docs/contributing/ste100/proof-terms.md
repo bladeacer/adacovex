@@ -1,7 +1,7 @@
 # STE100 Technical Names: proof and compliance terms
 
 The **proof and compliance** terms of the [STE100 Technical Names]
-(ste100-technical-names.md) dictionary.  These terms name the verification,
+(index.md) dictionary.  These terms name the verification,
 requirement, and safety-standard concepts of the adacovex domain.
 
 ## Technical Name: Verification Condition (VC)

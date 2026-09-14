@@ -17,6 +17,11 @@ with Adacovex_Server_Tests;
 with Adacovex_Prove_Patch_Tests;
 with Adacovex_TZ_ANSI_Tests;
 with Adacovex_Complexity_Tests;
+with Adacovex_Opt_Outs_Tests;
+with Adacovex_Dir_Cache_Tests;
+with Adacovex_Diff_Tests;
+with Adacovex_Prove_Runner_Tests;
+with Adacovex_ANSI_Tests;
 
 procedure Test_Runner is
 
@@ -37,6 +42,11 @@ procedure Test_Runner is
    R_ProvePatch  : Runner;
    R_TZANSI      : Runner;
    R_Complexity  : Runner;
+   R_OptOuts     : Runner;
+   R_DirCache    : Runner;
+   R_Diff        : Runner;
+   R_ProveRunner : Runner;
+   R_ANSI        : Runner;
 
    Total_Passed : Natural := 0;
    Total_Failed : Natural := 0;
@@ -82,6 +92,11 @@ procedure Test_Runner is
          Row ("Proof patches", R_ProvePatch);
          Row ("Timezone + ANSI", R_TZANSI);
          Row ("Complexity check", R_Complexity);
+         Row ("Opt-out markers", R_OptOuts);
+         Row ("Dir cache", R_DirCache);
+         Row ("Diff reports", R_Diff);
+         Row ("Prove runner", R_ProveRunner);
+         Row ("ANSI terminal report", R_ANSI);
       end;
 
       Put_Line
@@ -159,6 +174,11 @@ procedure Test_Runner is
          Row ("Proof patches", R_ProvePatch);
          Row ("Timezone + ANSI", R_TZANSI);
          Row ("Complexity check", R_Complexity);
+         Row ("Opt-out markers", R_OptOuts);
+         Row ("Dir cache", R_DirCache);
+         Row ("Diff reports", R_Diff);
+         Row ("Prove runner", R_ProveRunner);
+         Row ("ANSI terminal report", R_ANSI);
       end;
 
       Put_Line
@@ -191,6 +211,11 @@ begin
    Adacovex_Prove_Patch_Tests.Run (R_ProvePatch);
    Adacovex_TZ_ANSI_Tests.Run (R_TZANSI);
    Adacovex_Complexity_Tests.Run (R_Complexity);
+   Adacovex_Opt_Outs_Tests.Run (R_OptOuts);
+   Adacovex_Dir_Cache_Tests.Run (R_DirCache);
+   Adacovex_Diff_Tests.Run (R_Diff);
+   Adacovex_Prove_Runner_Tests.Run (R_ProveRunner);
+   Adacovex_ANSI_Tests.Run (R_ANSI);
 
    Total_Passed :=
      R_Types.Passed
@@ -209,7 +234,12 @@ begin
      + R_Server.Passed
      + R_ProvePatch.Passed
      + R_TZANSI.Passed
-     + R_Complexity.Passed;
+     + R_Complexity.Passed
+     + R_OptOuts.Passed
+     + R_DirCache.Passed
+     + R_Diff.Passed
+     + R_ProveRunner.Passed
+     + R_ANSI.Passed;
    Total_Failed :=
      R_Types.Failed
      + R_DAL.Failed
@@ -227,7 +257,12 @@ begin
      + R_Server.Failed
      + R_ProvePatch.Failed
      + R_TZANSI.Failed
-     + R_Complexity.Failed;
+     + R_Complexity.Failed
+     + R_OptOuts.Failed
+     + R_DirCache.Failed
+     + R_Diff.Failed
+     + R_ProveRunner.Failed
+     + R_ANSI.Failed;
 
    Print_Summary;
    Write_Results;

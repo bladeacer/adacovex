@@ -23,22 +23,22 @@ Each category has its own lexicon page:
 - **Ada Language Constructs** -- specific language features that generic
   English words cannot replace without losing technical precision. For
   example, pragma, discriminant, rendezvous, task.  Lexicon:
-  [Ada language constructs](ste100-ada-terms.md).
+  [Ada language constructs](ada-terms.md).
 - **Proof and compliance terms** -- the verification, requirement, and
   standard concepts of the adacovex domain. For example, verification
   condition, high-level requirement, design assurance level.  Lexicon:
-  [proof and compliance terms](ste100-proof-terms.md).
+  [proof and compliance terms](proof-terms.md).
 - **Tooling and workflow terms** -- the commands, flags, files, and
   artefacts of the tool. For example, subcommand, flag, badge, result
-  cache.  Lexicon: [tooling and workflow terms](ste100-tooling-terms.md).
+  cache.  Lexicon: [tooling and workflow terms](tooling-terms.md).
 - **Hardware and System Entities** -- physical components, buses, or
   microarchitectures that the Ada code interacts with. For example, CPU
-  core.  Lexicon: [hardware and system entities](ste100-entities.md).
+  core.  Lexicon: [hardware and system entities](entities.md).
 - **Code Identifier Names** -- exact package, type, subtype, subprogram,
   tool, and file names as declared in the source code or used by the
   toolchain. For example, `System.Storage_Elements`, `gnatprove`, `Alire`.
-  Lexicons: [tools and files](ste100-identifiers.md) and
-  [reports and concepts](ste100-concepts.md).
+  Lexicons: [tools and files](identifiers.md) and
+  [reports and concepts](concepts.md).
 
 ## Required data fields for each entry
 

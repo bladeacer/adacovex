@@ -1,10 +1,10 @@
 # STE100 Technical Names: reports and concepts
 
 The **reports and concepts** half of the **Code Identifier Names** category
-of the [STE100 Technical Names](ste100-technical-names.md) dictionary.  These
+of the [STE100 Technical Names](index.md) dictionary.  These
 terms name the generated report files, the time standards, and the
 command-line spellings.  The tool and file identifiers are on
-[tools and files](ste100-identifiers.md).
+[tools and files](identifiers.md).
 
 ## Technical Name: Verification Report
 - **Part of Speech:** Noun

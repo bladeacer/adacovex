@@ -28,5 +28,5 @@ dependencies, lives in [Proving and writing proofs](../contributing/proving.md).
 
 Documentation in this directory uses British English and ASD-STE100
 Simplified Technical English.  See the [STE100 Technical Names
-dictionary](../contributing/ste100-technical-names.md) for the approved terms about
+dictionary](../contributing/ste100/index.md) for the approved terms about
 proof, verification condition, and SPARK.

@@ -12,7 +12,7 @@ User documentation follows ASD-STE100 Simplified Technical English. The [SimpleE
 
 ## Performance engineering
 
-The benchmark and profiling work in [docs/contributing/perf.md](contributing/perf.md)
+The benchmark and profiling work in [docs/contributing/perf/index.md](contributing/perf/index.md)
 uses [perf](https://perfwiki.github.io/main/), [strace](https://strace.io/), and
 [hyperfine](https://github.com/sharkdp/hyperfine). The incremental-caching design
 (drawn from the [Ada Language Server](https://github.com/AdaCore/ada_language_server)

@@ -16,7 +16,7 @@ was easy to break.  This script owns the same flow:
   cache AND a wiped gnatprove session store (obj/gnatprove/), hyperfine
   with 3 runs.  This is the truly cold shape: every repetition pays a
   from-scratch solver run, as a first CI invocation on a bare runner
-  would.  It is expensive by construction; see docs/contributing/perf.md
+  would.  It is expensive by construction; see docs/contributing/perf/prove-timing.md
   for the cheaper adacovex-side-only cold shape.
 - Prove warm timing: `prove` with the result cache populated, hyperfine
   with 2 warm-ups + 15 runs.  This is the true proof-performance number:

@@ -56,7 +56,7 @@ adacovex status --target=PATH
 It checks and prints:
 
 - **Alire** (`alr`) is installed on `$PATH`.
-- **gnatprove** is dependency-managed (target manifest pin) or detectable (global pin, on `$PATH`, or cached in `~/.adacovex/toolchain`). See [Architecture -- toolchain resolution](../contributing/architecture.md#gnatprove-toolchain-resolution-prove-subcommand).
+- **gnatprove** is dependency-managed (target manifest pin) or detectable (global pin, on `$PATH`, or cached in `~/.adacovex/toolchain`). See [Architecture -- toolchain resolution](../contributing/architecture-dependencies.md#gnatprove-toolchain-resolution-prove-subcommand).
 - The **logical CPU count**, **CI status**, and the resulting default `-j` parallelism are reported.
 - A **VCS report** lists the VCS command-line tools available on `$PATH` for the differential modes. The tools are git, mercurial/`hg`, subversion/`svn`, fossil, jj, and the man-page tool `mandb`.
 - The VCS report shows the VCS detected for the target repository.

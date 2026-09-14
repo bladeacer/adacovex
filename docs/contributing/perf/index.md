@@ -6,11 +6,11 @@ render, plus the SBOM).  This page defines the benchmark categories and the
 expected numbers on a typical machine.
 
 The benchmark how-to and the raw sample output are on
-[Benchmarking](perf-benchmarks.md).  The per-release `make prove` timings,
+[Benchmarking](benchmarks.md).  The per-release `make prove` timings,
 grouped into phases, are on [Prove timing and the optimisation
-review](perf-prove-timing.md); the reverse-chronological record of the work
+review](prove-timing.md); the reverse-chronological record of the work
 behind the numbers is on [Performance optimisation
-history](perf-optimisation-history.md).
+history](optimisation-history.md).
 
 ## Benchmark category reference
 
@@ -76,7 +76,7 @@ codebase; what matters is the shape:
 
 ## How the timing table is kept
 
-`docs/contributing/perf-prove-timing.md` keeps one column per **phase**: a
+`docs/contributing/perf/prove-timing.md` keeps one column per **phase**: a
 range of versions whose implementation methodology is largely similar.  Each
 phase carries one representative version that supplies the phase's complete
 metric set.  A new version folds into the open phase while the methodology

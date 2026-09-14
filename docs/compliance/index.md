@@ -21,5 +21,5 @@ formats are documented in [Target projects](../usage/target-projects.md) and
 
 The rendered text uses British English and ASD-STE100 Simplified Technical
 English.  Technical terms follow the [STE100 Technical Names
-dictionary](../contributing/ste100-technical-names.md).  Audit the generated prose
+dictionary](../contributing/ste100/index.md).  Audit the generated prose
 against the dictionary before you use a new word in these reports.

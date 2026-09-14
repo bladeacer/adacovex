@@ -100,7 +100,7 @@ is linked into adacovex:
 
 | Project | Website / source | Licence | What adacovex learned |
 |---------|------------------|---------|----------------------|
-| [Ada Language Server](https://github.com/AdaCore/ada_language_server) | https://github.com/AdaCore/ada_language_server | GPL-3.0-or-later (with GNAT runtime exception for its runtime) | Persistent indexed file sets and cross-session dirty tracking: re-parse only files whose on-disk state changed (see `docs/contributing/perf.md`, optimisation history 1.44.0) |
+| [Ada Language Server](https://github.com/AdaCore/ada_language_server) | https://github.com/AdaCore/ada_language_server | GPL-3.0-or-later (with GNAT runtime exception for its runtime) | Persistent indexed file sets and cross-session dirty tracking: re-parse only files whose on-disk state changed (see `docs/contributing/perf/index.md`, optimisation history 1.44.0) |
 | [tree-sitter](https://tree-sitter.github.io/) | https://github.com/tree-sitter/tree-sitter | MIT | Reusable single-buffer parse input (`TSInput`) and incremental re-parse cost modelling |
 
 The size/mtime stamp validation additionally follows the same shape as

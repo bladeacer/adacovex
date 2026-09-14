@@ -122,7 +122,12 @@ package body Adacovex.Dir_Cache is
                if N /= "." and then N /= ".." then
                   if Count < Max_Dir_Entries then
                      if N'Length > Max_Name_Len then
-                        Count := 0;
+                        --  An entry name the memo cannot hold: report the
+                        --  directory as over-cap (one past the maximum) so
+                        --  the caller falls back to direct enumeration.
+                        --  Returning an empty snapshot instead would hide
+                        --  every sibling entry of the long-named file.
+                        Count := Max_Dir_Entries + 1;
                         End_Search (Search);
                         return True;   -- over-long name: truncated
 

@@ -19,7 +19,7 @@ The `prove` subcommand (full options:
 1. **Resolves gnatprove** without requiring the target to declare it:
    manifest pin > global pin > `$PATH` > cached toolchain > download. Full
    order and per-method detail:
-   [Architecture -- GNATprove toolchain resolution](architecture.md#gnatprove-toolchain-resolution-prove-subcommand).
+   [Architecture -- GNATprove toolchain resolution](architecture-dependencies.md#gnatprove-toolchain-resolution-prove-subcommand).
 2. **Runs gnatprove** against the target (or against a patched tree copy
    when proof patches are present -- see
    [Proof patches over vendored code](proving-patches.md#proof-patches-proving-vendored-dependencies))
@@ -75,7 +75,7 @@ the key and re-proves once.
 `make bench` samples both extremes (prove warm = hit; prove cold = result
 cache *and* session wiped), so its numbers are always one of the stable
 shapes. Category definitions and current figures:
-[Performance](perf.md).
+[Performance](perf/index.md).
 
 ## What a proof contains
 
@@ -163,7 +163,7 @@ The goal for a clean proof: every VC in every category proved, 0 unproved,
 - [Target project requirements](../usage/target-projects.md) -- what a project must provide
 - [Architecture -- proof patches](architecture-verification.md#proof-patches-spark-contracts-over-vendored-dependencies)
   -- the design, the merge engine, and the patched-copy pipeline
-- [Performance](perf.md) -- benchmark categories for the prove scenarios and
+- [Performance](perf/index.md) -- benchmark categories for the prove scenarios and
   the current timings
 - [The proof ledger](../proof/16.1.0-ledger.md) -- how adacovex's own proof
   is tracked
