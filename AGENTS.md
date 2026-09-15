@@ -72,14 +72,18 @@ codebase's current surface: every `Known_Flags` entry is documented in
 route the server dispatches on appears in `docs/usage/dashboard.md`, and every
 action input has a row in the `docs/usage/ci-cd.md` `### Inputs` table.
 `make action-parity-check` enforces the CLI/action/docs-input triangle as a
-feature gate; the cli-reference and dashboard coverage is a manual audit to
-repeat whenever the option set or the route set changes (add the doc in the
-same change, exactly like an action input).
+feature gate, and `make docs-coverage-check` enforces the cli-reference and
+dashboard coverage: every `Known_Flags` entry, every route the server
+dispatches on, and every hand-written `docs/usage/` or `docs/contributing/`
+page (which a `{toctree}` in `docs/index.md` must name) is checked, so a
+missing doc fails CI instead of waiting for the next manual audit.  Add the
+doc in the same change, exactly like an action input.
 
 Finish every change in the same response that made it: update the relevant
 docs and re-run the sync gates at the end of that response, or invoke the
 wrapper directly instead `make check`:
-`make docs-check`, `make action-parity-check`, `make agents-tree` (when the source tree
+`make docs-check`, `make action-parity-check`, `make docs-coverage-check`,
+`make agents-tree` (when the source tree
 changes), `make doc-links`, `make link-check`, and `make book-links-check`
 plus `python3 tools/gen-docs.py --check` (when `docs/` changed -- they fail
 on a broken bundled-manual link or a stale committed spec; the spec is the
@@ -406,6 +410,10 @@ tools/tests.py, wired as the `tools-check` gate in `make check`.
 `tools/check-action-parity.py` is a pure check (no writes) wired as
 `make action-parity-check` -- a feature gate in `make check` and CI that
 fails when the GitHub Action stops mirroring the base CLI option set.
+`tools/check-docs-coverage.py` is the sibling gate (`make
+docs-coverage-check`, and the `ci.yml` `docs-coverage` job): it fails when a
+CLI flag, a dispatched server route, or a hand-written usage/contributing
+page is missing from the user docs.
 `tools/csslint.py` enforces the dashboard CSS 4px spacing rule (every
 margin/padding/gap value a multiple of 4px); it is wired as `make
 csslint-check`, run inside `make build`, and part of the `make check` cheap
@@ -437,8 +445,9 @@ bytes to 5 characters where base64 needs 5.33), served with
 `Content-Encoding: gzip` so the browser inflates it and the binary carries
 no inflate routine.  The Furo sidebar is not repeated per page: each page
 keeps a stub and the toctree is stored once per branch under `_nav/`, filled
-in by `resources/js/book-nav.js` (bundled as `_static/adacovex-nav.js`), so
-navigation needs JavaScript exactly as search already did.  Sphinx runs only
+in by `resources/js/book-nav.js` (bundled as `_static/adacovex-nav.js`),
+which also scrolls the open entry into the drawer without moving the page,
+so navigation needs JavaScript exactly as search already did.  Sphinx runs only
 when the docs sources changed (a SHA-256 fingerprint stamp beside the build),
 and the build itself is always clean, so a renamed or deleted page can never
 survive as a stale page in the bundle.  The spec is written only when its
@@ -463,7 +472,7 @@ must be followed by `make book`.
 
 | Target | Description |
 |--------|-------------|
-| `check` | **The single everything-check / verification entry point.** Run it after any change. It runs every gate CI runs before a release: cheap static gates first (ascii, complexity, csslint, spark-off, changelog, action-parity, tools-check, cli-e2e, version, doc-links, link, docs-check, para-split, book-links), then build + native tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description). `make check` resolves `gnatprove` for you (it is fetched into `~/.adacovex/toolchain/` and executed directly when not on `PATH`), so you never have to install or point at a prover by hand -- just run `make check` and it verifies the whole tree end to end. `make prove` is the SPARK sub-gate if you only changed proof-affecting code |
+| `check` | **The single everything-check / verification entry point.** Run it after any change. It runs every gate CI runs before a release: cheap static gates first (ascii, complexity, csslint, spark-off, changelog, action-parity, docs-coverage, tools-check, cli-e2e, version, doc-links, link, docs-check, para-split, book-links), then build + native tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description). `make check` resolves `gnatprove` for you (it is fetched into `~/.adacovex/toolchain/` and executed directly when not on `PATH`), so you never have to install or point at a prover by hand -- just run `make check` and it verifies the whole tree end to end. `make prove` is the SPARK sub-gate if you only changed proof-affecting code |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
 | `test` | Build + run the 1614-test native suite |
@@ -484,6 +493,7 @@ must be followed by `make book`.
 | `doc-links` | Regenerate the AGENTS.md Documentation block from tools/doc-links.map |
 | `changelog-check` | Validate all `docs/changelogs/` against the canonical format (tools/check-changelogs.py) |
 | `action-parity-check` | Fail if the GitHub Action drifts from the base CLI option set or the docs/usage/ci-cd.md input table (tools/check-action-parity.py; feature gate) |
+| `docs-coverage-check` | Fail when a `Known_Flags` entry, a dispatched server route, or a hand-written usage/contributing page is missing from the user docs (tools/check-docs-coverage.py; feature gate) |
 | `release` | Build, prove, validate, run coverage gate vs last release, bundle + tag & push |
 | `ascii-check` | Verify all source files are pure ASCII (skips generated e2e output: playwright-report / test-results) |
 | `tools-check` | Run the stdlib-unittest suite for the tools/*.py dev scripts (tools/tests.py) |
@@ -691,6 +701,10 @@ suffices.
 - [ASIL levels](docs/api-docs/adacovex-asil-levels.md)
 - [Safety classes](docs/api-docs/adacovex-class-levels.md)
 - [Standards](docs/usage/standards.md)
+- [Standards: DO-178C and the DAL levels](docs/usage/standards-do-178c.md)
+- [Standards: ISO 26262 and the ASIL levels](docs/usage/standards-iso-26262.md)
+- [Standards: IEC 62304 and the safety classes](docs/usage/standards-iec-62304.md)
+- [Standards: selecting a standard](docs/usage/standards-selection.md)
 - [Platforms](docs/usage/platforms.md)
 - [Proving and writing proofs](docs/contributing/proving.md)
 - [Proof patches over vendored code](docs/contributing/proving-patches.md)
@@ -713,6 +727,9 @@ suffices.
 - [LLR mapping](docs/compliance/LLR.md)
 - [Performance](docs/contributing/perf/index.md)
 - [Benchmarking adacovex](docs/contributing/perf/benchmarks.md)
+- [Benchmarks: pipeline and prove timings](docs/contributing/perf/benchmarks-timings.md)
+- [Benchmarks: binary size and the bundled manual](docs/contributing/perf/benchmarks-binary-size.md)
+- [Benchmarks: server throughput and latency](docs/contributing/perf/benchmarks-server.md)
 - [Prove timing and optimisation review](docs/contributing/perf/prove-timing.md)
 - [Performance optimisation history](docs/contributing/perf/optimisation-history.md)
 - [Performance optimisation history: earlier releases](docs/contributing/perf/optimisation-history-archive.md)

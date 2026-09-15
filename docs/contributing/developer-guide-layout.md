@@ -84,7 +84,11 @@ Cross-links between the generated package pages and the reference pages live in 
   binary needs no inflate routine.
 - The Furo sidebar is stored once per branch under `_nav/` and every page
   keeps a stub that `resources/js/book-nav.js` fills in, so the same 8 kB
-  toctree is not repeated in all 184 pages.
+  toctree is not repeated in all 191 pages.  The stored asset is the
+  container's inner markup, so the injected tree lands inside one
+  `.sidebar-container` and the sticky sidebar keeps its own scrollbar.  The
+  injector also scrolls the open entry into the drawer (instantly, so a
+  heavy page cannot delay the reveal), and it never scrolls the page.
 - The bundled manual is served by `--serve` at `/docs`.
 - `make book-links-check` fails when a link in the bundled manual does not
   resolve (checked against a fresh `sphinx-build`, so a stale local

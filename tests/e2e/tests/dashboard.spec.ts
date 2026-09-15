@@ -340,6 +340,131 @@ test.describe('Dashboard layout', () => {
     }
   });
 
+  test('the injected manual sidebar keeps its own sticky scrollbar', async ({ page }) => {
+    // The stub keeps the .sidebar-container element and the shared _nav tree
+    // is its inner markup, so injection leaves exactly one container.  Furo's
+    // layout relies on that single element: the flex-stretched drawer column
+    // is the containing block of the sticky sidebar.  A nested container (the
+    // pre-1.51.0 bug) collapsed that block to 100vh, so the sidebar scrolled
+    // away with the page instead of sticking with its own scrollbar.
+    await page.setViewportSize({ width: 1400, height: 800 });
+    await page.goto('/docs/usage/dashboard.html');
+    await expect(page.locator('.sidebar-container a.sidebar-brand'))
+      .toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.sidebar-container')).toHaveCount(1);
+    // The toctree is taller than the viewport, so the sidebar scrolls on its
+    // own (overflow: auto) rather than stretching the page.
+    const scroll = page.locator('.sidebar-scroll');
+    await expect(scroll).toBeVisible();
+    expect(await scroll.evaluate((el) => getComputedStyle(el).overflowY))
+      .toBe('auto');
+    expect(await scroll.evaluate((el) => el.scrollHeight > el.clientHeight))
+      .toBe(true);
+    // With the main content scrolled well past the sidebar's own scrollbar,
+    // the sticky sidebar stays pinned at the top of the viewport.
+    await page.evaluate(() => window.scrollTo(0, 3000));
+    await page.waitForTimeout(200);
+    const top = await page.locator('.sidebar-sticky')
+      .evaluate((el) => el.getBoundingClientRect().top);
+    expect(Math.abs(top)).toBeLessThan(2);
+  });
+
+  test('the manual sidebar reveals the open entry in the drawer', async ({ page }) => {
+    // The tree is 60-odd entries tall, so a reader who clicks a late entry
+    // lands on a page whose own entry sits below the drawer's fold.  Furo
+    // reveals its right-hand TOC only, so the injector must reveal the entry
+    // it just marked -- inside .sidebar-scroll, leaving the page at the top.
+    await page.setViewportSize({ width: 1400, height: 800 });
+    await page.goto('/docs/THIRD_PARTY_NOTICES.html');
+    await expect(page.locator('.sidebar-container a.sidebar-brand'))
+      .toBeVisible({ timeout: 10000 });
+    const current = page.locator('.sidebar-container a[aria-current="page"]')
+      .first();
+    await expect(current).toBeVisible();
+    const scroll = page.locator('.sidebar-scroll');
+    // The reveal is instant (the injector overrides Furo's smooth scrolling),
+    // so the drawer is already positioned once the tree is in the DOM.
+    expect(await scroll.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+    const inside = await scroll.evaluate((el) => {
+      const view = el.getBoundingClientRect();
+      const link = el.querySelector('a[aria-current="page"]')!;
+      const item = link.getBoundingClientRect();
+      return item.top >= view.top - 1 && item.bottom <= view.bottom + 1;
+    });
+    expect(inside).toBe(true);
+    // Only the drawer moved: the page itself is still at its own top.
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    // An entry that is already in view leaves the drawer where it is, so the
+    // reveal never moves the drawer under a reader who is already at the top
+    // (the manual index is the first entry of every tree).
+    await page.goto('/docs/index.html');
+    await expect(page.locator('.sidebar-container a.sidebar-brand'))
+      .toBeVisible({ timeout: 10000 });
+    expect(await page.locator('.sidebar-scroll')
+      .evaluate((el) => el.scrollTop)).toBe(0);
+  });
+
+  test('the manual sidebar exposes every documentation category', async ({ page }) => {
+    await page.goto('/docs/index.html');
+    await expect(page.locator('.sidebar-container a.sidebar-brand'))
+      .toBeVisible({ timeout: 10000 });
+    // Furo upper-cases captions in CSS, so compare case-insensitively.  A
+    // category that loses its toctree caption drops out of this list.
+    const captions = await page.locator('.sidebar-container .caption-text')
+      .allInnerTexts();
+    const normalised = captions.map((c) => c.trim().toLowerCase());
+    for (const want of ['getting started', 'using adacovex', 'standards',
+                        'contributing to adacovex', 'architecture',
+                        'proving and proofs', 'performance',
+                        'ste100 technical names', 'maintainer references']) {
+      expect(normalised, `sidebar caption "${want}"`).toContain(want);
+    }
+  });
+
+  test('every link the manual sidebar shows resolves', async ({ page }) => {
+    // The shared _nav/ tree is filled in by script, so a tree rebased for the
+    // wrong base shows up as a 404 here.  The check walks the tree once
+    // instead of naming every entry, so a new category or page is covered as
+    // soon as it is bundled.
+    await page.goto('/docs/index.html');
+    await expect(page.locator('.sidebar-container a.sidebar-brand'))
+      .toBeVisible({ timeout: 10000 });
+    const origin = new URL(page.url()).origin;
+    const hrefs = await page.locator('.sidebar-container a[href]')
+      .evaluateAll((links) => Array.from(new Set(
+        links.map((a) => new URL((a as HTMLAnchorElement).href).href),
+      )));
+    const internal = hrefs.filter((h) => h.startsWith(origin));
+    expect(internal.length).toBeGreaterThan(20);
+    for (const href of internal) {
+      const resp = await page.request.get(href);
+      expect(resp.status(), href).toBe(200);
+    }
+  });
+
+  test('the benchmarks category pages are served and render', async ({ page }) => {
+    for (const [path, h1] of [
+      ['/docs/contributing/perf/benchmarks.html', 'Benchmarking adacovex'],
+      ['/docs/contributing/perf/benchmarks-timings.html', 'Pipeline and prove timings'],
+      ['/docs/contributing/perf/benchmarks-binary-size.html', 'Binary size and the bundled manual'],
+      ['/docs/contributing/perf/benchmarks-server.html', 'Server throughput and latency'],
+    ]) {
+      await page.goto(path);
+      await expect(page.locator('h1').first()).toContainText(h1, { timeout: 10000 });
+      // Wait for the injected tree: the current-page marking is added with it.
+      await expect(page.locator('.sidebar-container a.sidebar-brand'))
+        .toBeVisible({ timeout: 10000 });
+      await expect(page.locator('.sidebar-container')).toHaveCount(1);
+      const marked = await page.locator('.sidebar-container a[aria-current="page"]')
+        .evaluateAll((links) => links.map(
+          (a) => new URL((a as HTMLAnchorElement).href).pathname,
+        ));
+      expect(marked.length, path).toBeGreaterThan(0);
+      expect(marked.every((p) => p === new URL(page.url()).pathname),
+        `${path} current-page marking`).toBe(true);
+    }
+  });
+
   test('manual subpages are served at /docs/...', async ({ page }) => {
     // The bundled manual serves every book asset under /docs/, not just the
     // index: an exact page, a nested API-reference page, an extensionless

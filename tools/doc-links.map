@@ -28,6 +28,10 @@ docs/api-docs/adacovex-dal-levels.md	DAL levels
 docs/api-docs/adacovex-asil-levels.md	ASIL levels
 docs/api-docs/adacovex-class-levels.md	Safety classes
 docs/usage/standards.md	Standards
+docs/usage/standards-do-178c.md	Standards: DO-178C and the DAL levels
+docs/usage/standards-iso-26262.md	Standards: ISO 26262 and the ASIL levels
+docs/usage/standards-iec-62304.md	Standards: IEC 62304 and the safety classes
+docs/usage/standards-selection.md	Standards: selecting a standard
 docs/usage/platforms.md	Platforms
 docs/contributing/proving.md	Proving and writing proofs
 docs/contributing/proving-patches.md	Proof patches over vendored code
@@ -50,6 +54,9 @@ docs/compliance/HLR.md	HLR index
 docs/compliance/LLR.md	LLR mapping
 docs/contributing/perf/index.md	Performance
 docs/contributing/perf/benchmarks.md	Benchmarking adacovex
+docs/contributing/perf/benchmarks-timings.md	Benchmarks: pipeline and prove timings
+docs/contributing/perf/benchmarks-binary-size.md	Benchmarks: binary size and the bundled manual
+docs/contributing/perf/benchmarks-server.md	Benchmarks: server throughput and latency
 docs/contributing/perf/prove-timing.md	Prove timing and optimisation review
 docs/contributing/perf/optimisation-history.md	Performance optimisation history
 docs/contributing/perf/optimisation-history-archive.md	Performance optimisation history: earlier releases

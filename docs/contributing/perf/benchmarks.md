@@ -5,6 +5,12 @@ subcommand, the benchmark machine, and the raw sample output.  The
 benchmark categories and the expected numbers are on
 [Performance](index.md).
 
+The measurements are split by what they measure.  The pipeline and `prove`
+timings are on [Pipeline and prove timings](benchmarks-timings.md), the
+binary size and the bundled manual are on [Binary size and the bundled
+manual](benchmarks-binary-size.md), and the served dashboard is on
+[Server throughput and latency](benchmarks-server.md).
+
 ## Benchmark machine
 
 Every figure in this document was measured on the adacovex development
@@ -46,48 +52,6 @@ and reports binary size:
 - It reports the raw and stripped binary sizes (the stripped size is measured
   on a `/tmp` copy; the build output is never modified).
 
-## Sample output (hyperfine, x86-64, 12-core machine)
-
-1.47.0 is the first release compiled with `-O2 -gnatn` (1.46.0 and earlier
-used GNAT's default `-O0`).  The 1.46.0 figures are kept for comparison;
-they were measured in the same session so the load conditions match.  The
-1.50.0 column was measured on a later session, so read it for shape, not
-for a millisecond-level A/B against 1.47.0:
-
-| Scenario | 1.46.0 (`-O0`) | 1.47.0 (`-O2`) | 1.50.0 |
-|----------|-----------------|----------------|--------|
-| Pipeline cold, self tree | -- | 73.9 +/- 5.8 ms | 73.2 +/- 5.3 ms |
-| Pipeline warm, self tree | -- | 43.4 +/- 2.8 ms | 46.3 +/- 4.0 ms |
-| Pipeline cold, Ada_CRDT | 39.3 +/- 4.3 ms | 33.4 +/- 3.5 ms (-15%) | 42.7 +/- 13.1 ms |
-| Pipeline warm, Ada_CRDT | 38.4 +/- 4.7 ms | 40.8 +/- 4.7 ms (noise) | 31.6 +/- 2.9 ms |
-| Prove cold, session wiped | -- | 80.9 +/- 5.3 s | 87.6 +/- 0.6 s |
-| Prove warm | -- | 52.8 +/- 4.5 ms | 55.4 +/- 4.3 ms |
-| Stripped binary | 6.49 MiB | 5.39 MiB (-17%) | 5.3 MiB |
-
-The 1.50.0 column is also the first with the smaller manual encoding, so
-its 5.3 MiB stripped binary is the only row that moves by design (see
-[Bundled offline manual](#bundled-offline-manual)).
-
-The 1.50.0 shapes are deliberately flat: the phase's work removes failed
-work (a rewrite of the generated manual, a recompile and relink, and a
-re-proved tree), not steady work.  The headline 1.50.0 number is therefore
-not in this table: `make prove` on an unchanged tree measures ~1.0 s (five
-runs), because `alr build` is now a true no-op instead of recompiling the
-28k-line generated manual on every run.
-
-The prove-cold figure is solver-bound and machine-load sensitive: repeat
-single-shot runs of the identical 1.47.0 tree measured between 67 s and
-109 s as background load varied (a matched-load A/B settled at 69.9 s vs
-67.3 s).  The 1.50.0 tree behaves the same way (single shots of 61 s and
-67 s against a three-run sample of 87.6 s).  Treat ~40-110 s as the
-observed range; the compiler switches do not move it.
-
-The numbers shift with the machine and the codebase.  What matters is the
-shape: the warm paths sit in the tens of milliseconds, and the cold paths
-are bounded by work that genuinely must happen (hashing the changed
-sources, parsing the proof, building the SBOM) -- a from-scratch solver
-run happens once per gnatprove session, not once per run.
-
 ## Running a single shot
 
 For single-shot timings, plain `time` over the same commands (`--no-cache`
@@ -98,91 +62,6 @@ the cache between runs so the result cache cannot hide the real cost.
 `make perf-bench` profiles CPU and syscalls directly with `perf` and
 `strace` over `bin/adacovex`, printing cache-miss rates and syscall counts
 so a regression in I/O or data layout is visible before a release.
-
-A second datapoint rides along with every `make bench`: when the Ada_CRDT
-dogfood tree (`../Ada_CRDT`) is present, the two pipeline scenarios repeat
-against it.  It is a smaller target (~80 specs, its own vendored layout and
-manifest set), so a regression tied to one project's structure cannot hide
-behind the self-assessment numbers.  1.46.0 measured ~39 ms cold / ~31 ms
-warm there (the `-O0` baseline); 1.47.0 measures ~33 ms / ~41 ms and 1.50.0
-~43 ms / ~32 ms (the 1.50.0 cold sample is noisy, one 80 ms first run).
-The prove scenarios are not repeated (the solver floor is covered by the
-self run).
-
-## Binary size
-
-The debug-symbol-carrying build is ~14.0 MiB at `-O2` on the 1.50.0 tree
-(it was ~11.6 MiB at the `-O0` default; optimisation unrolls and inlines,
-which costs binary size in the symbol-carrying build).  Stripping (`strip
-bin/adacovex`) yields ~5.3 MiB (~62% smaller, and ~17% smaller than
-1.46.0's stripped ~6.5 MiB) without affecting behaviour.  That is below
-1.47.0's ~5.4 MiB: the 1.50.0 manual encoding (see below) gave back more
-than the code added since.  GNAT keeps symbols by default for debugging;
-release artifacts are stripped.  `make bench` reports both, so a size
-regression is visible in the same command as the timings.
-
-### Bundled offline manual
-
-The offline manual is the largest single payload in the binary, so it was
-measured on the 1.50.0 tree through the generator's own pipeline.  The
-bundled site holds 214 assets over 184 pages (about 5.28 MB of source);
-gzip compresses it to about 1.24 MB, base85 spreads that to about 1.55 MB of
-Ada text, and the generated spec is 1.86 MB.  That is 20.6% smaller than the
-2.34 MB spec of 1.49.0, for a saving of about 0.46 MB in the stripped
-binary (the spec is about 34% of it).  No two assets share their content, so
-what remains is dense.
-
-Two changes made the reduction, and both are in the generator.
-
-- **base85 instead of base64.**  The quote-free Z85 alphabet packs 4 bytes
-  into 5 characters where base64 needs 5.33, so the payload drops from
-  1,648,796 to 1,545,555 characters: about 103 kB, 6.3% of the payload.  The
-  browser still inflates gzip; only the ASCII wrapper changed, and the small
-  decoder in `src/adacovex-docs_template.adb` is plain runtime code with no
-  proof surface.
-- **One shared sidebar per tree.**  The Furo global toctree is about 8 kB of
-  markup, and Furo wrote a full copy into all 184 pages.  Each page now keeps
-  a stub and the tree is stored 7 times under `_nav/` (once per branch, at a
-  few kB each), which the deferred `_static/adacovex-nav.js` injects.
-  Navigation therefore needs JavaScript, as the manual's search already did.
-
-The figures are rounded, because this page is itself a bundled asset: an
-edit here shifts the payload by well under one percent.  The shares below
-are the stable part of the measurement, and each is rounded to 0.1%.
-
-| Group | Assets | gzip size | Share |
-|-------|--------|-----------|-------|
-| Changelogs (history) | 52 | 381 kB | 30.8% |
-| API reference (generated) | 75 | 321 kB | 26.0% |
-| Contributing pages | 24 | 170 kB | 13.8% |
-| Usage pages | 18 | 138 kB | 11.1% |
-| Search index | 1 | 95 kB | 7.7% |
-| Root, theme, compliance, proof, badges, shared sidebar | 44 | 130 kB | 10.5% |
-
-The generator compresses each asset on its own, because the server sends one
-asset per URL with its own `Content-Encoding: gzip` header.  The LZ4
-comparison used the same basis: `lz4 -9` gives about 1.63 MB, about 32% more
-than gzip, and the Ada runtime has no LZ4 decompressor.  A single shared
-stream would compress better (about 0.97 MB for the whole site), but one
-stream cannot be cut into independently decodable per-URL bodies.
-
-Two further shrink options were measured and rejected.
-
-- **A stronger compressor (brotli or zstd class, about 15% smaller)**: about
-  0.29 MB saved, but the compression runs at build time and the pure Python
-  tools must stay stdlib-only (brotli is not in the standard library).  A
-  browser can inflate both, but the build dependency breaks the
-  zero-dependency tooling rule, and brotli output varies by version, so the
-  committed spec would stop being byte-reproducible.
-- **Dropping the changelog history (30.8%) or the generated API reference
-  (26.0%)**: the only large reductions available, but Sphinx's search index
-  covers every page, so a removed page leaves a clickable search result that
-  leads nowhere offline.  Stale cross-links would also need rewriting to an
-  absolute site URL.
-
-The bundle therefore stays as it is: gzip-max compression, base85 in the Ada
-source, one shared sidebar per tree, and a fully working offline manual with
-search.  Re-measure here before adding a page family to the tree.
 
 ## Probe cache
 
@@ -195,54 +74,4 @@ probed versions were first cached under `<cache-root>/probes/<tool>` with
 a 7-day TTL, so a wiped result cache re-probed every tool on the next
 run -- 1.28.0 moved the store into the tools-set cache blob.
 
-## The serve dashboard API
-
-The `--serve` endpoints were benchmarked with hyperfine over curl on the
-same machine (local loopback, 4-worker server, one curl process per
-request):
-
-| Endpoint | Mean | Notes |
-|----------|------|-------|
-| `GET /api/metrics` | ~6-7 ms | JSON, ~0.5 KB response |
-| `GET /` | ~10-13 ms | HTML, ~245 KB response |
-| `GET /docs/` | ~5 ms | gzip manual page, ~6 KB response |
-
-The numbers are dominated by curl's own process startup and connection
-cycle (its strace shows ~390 syscalls per invocation, nearly all dynamic
-loader `mmap`/`openat` work), so keep-alive client libraries see far lower
-per-request costs.  The server-side share is small: the JSON endpoints
-serialise in-process data (microseconds of CPU), and the dashboard page is
-rebuilt per request from the immutable assessment state.  1.47.0 removed
-the largest server-side syscall cost: the request reader used to pull one
-byte per `Receive_Socket` call, ~300 receive syscalls per request; it now
-fills a 4 KiB per-connection buffer per receive and hands out complete
-CRLF lines from it.
-
-### Concurrent load (keep-alive clients, 20 s runs)
-
-`tools/load_test.py` (pure-stdlib asyncio) streams sequential keep-alive
-GETs from N parallel client connections, so the 4-worker pool is the
-capacity being measured:
-
-| Scenario | Throughput | Latency p50 / p99 |
-|----------|-----------|-------------------|
-| `/api/metrics`, 1 client | ~45k req/s | 0.02 / 0.07 ms |
-| `/api/metrics`, 4 clients | ~94k req/s | 0.04 / 0.14 ms |
-| `/api/metrics`, 16 clients | ~84k req/s | 0.04 / 0.15 ms |
-| `/badge/spark.svg`, 8 clients | ~97k req/s | 0.03 / 0.13 ms |
-| `/`, 4 clients | ~530 req/s | 6.3 / 13.6 ms |
-| `/docs/`, 4 clients | ~97 req/s | 41 / 43 ms |
-
-JSON and badge endpoints scale near-linearly to the worker count (4
-requests in flight = 4 workers saturated) and hold ~84-97k req/s with 16
-clients, because extra clients queue in the accept backlog instead of
-consuming server resources.  Tail latency stays sub-millisecond; the ~4 s
-max above the worker count is a load-generator deadline artifact (one
-straggler request per connection at the cutoff), not server behaviour.
-`perf stat` under load shows no cache-miss or IPC anomaly; `strace -c`
-splits the request cost evenly between `recvfrom` and `sendto` at ~16 us
-each, with `futex` (worker parking) leading wall clock only because the
-load is light for four workers.  The dashboard page (~245 KB rendered per
-request) and the manual index are throughput-bound on response assembly
-and socket copies; both hold flat latency under load.  Capacity is far
-above single-operator needs; `--serve-workers=N` raises the pool.
+Re-measure here before adding a page family to the tree.

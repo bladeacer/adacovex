@@ -4,6 +4,8 @@ Date: _2026-09-15_
 
 Version bumped 1.49.0 -> 1.50.0.
 
+<!-- no-covex-docs-loc: historical release record, line cap does not apply -->
+
 ## Changes
 
 ### C1: Deterministic, incremental doc bundling (the `make prove` bottleneck)
@@ -52,36 +54,40 @@ directories (result cache, toolchain, probes, registry metadata, stat-stamp
 index), and how to reset each one.  The installation, CLI-options, and docs
 index pages link it.
 
-### C3: The bundled offline manual is 20.6% smaller
+### C3: The bundled offline manual is 17.3% smaller
 
 The manual is the largest single payload in the binary, so 1.50.0 shrank it
 on two axes and re-measured the whole bundle through the generator's own
 pipeline.  Together the two changes take
-`src/adacovex-docs_template.ads` from 2,339,756 to 1,857,143 bytes, **20.6%
+`src/adacovex-docs_template.ads` from 2.34 MB to about 1.93 MB, **17.3%
 smaller**, and the stripped binary from about 5.7 MiB to about 5.3 MiB.
 
 The asset bodies moved from base64 to **base85** on the quote-free Z85
 alphabet: 4 bytes become 5 characters instead of 5.33, so the encoded
-payload fell from 1,648,796 to 1,545,555 characters, about 103 kB or 6.3%.
-A small hand-written decoder in `src/adacovex-docs_template.adb` reverses it,
-and the browser still inflates the gzip stream, so the binary carries no
-inflate routine.
+payload fell from about 1.72 MB to 1.61 MB of characters, about 107 kB or
+6.3%.  A small hand-written decoder in `src/adacovex-docs_template.adb`
+reverses it, and the browser still inflates the gzip stream, so the binary
+carries no inflate routine.
 
 The Furo sidebar no longer repeats.  The global toctree is about 8 kB of
-markup and Furo wrote a full copy into all 184 pages.  Each page now keeps a
-stub, the tree is stored seven times under `_nav/` (once per branch), and
-the deferred `_static/adacovex-nav.js` fills the stub in.  Navigation
-therefore needs JavaScript, as the manual's search already did.
+markup and Furo wrote a full copy into all 191 pages.  Each page now keeps
+a stub, the tree is stored twelve times under `_nav/` (once per branch), and
+the deferred `_static/adacovex-nav.js` fills the stub in.
 
-The bundled site is now 214 assets over 184 pages (about 5.28 MB of source),
-which gzip compresses to about 1.24 MB.  LZ4 was re-measured and rejected:
+Navigation therefore needs JavaScript, as the manual's search already did.
+The stub keeps the `.sidebar-container` element and the shared tree is its
+inner markup, so the injected tree lands inside that one container (see H7).
+
+The bundled site is now 226 assets over 191 pages (about 5.49 MB of source),
+which gzip compresses to about 1.29 MB.  LZ4 was re-measured and rejected:
 `lz4 -9` gives about 1.63 MB for the same asset set, about 32% larger than
 gzip, and the Ada runtime has no LZ4 decompressor.  A stronger build-time
 compressor such as brotli would save more, but it is not in the Python
 standard library and its output varies by version, so the committed spec
-would stop being byte-reproducible.  The full numbers are on [Benchmarking
--- bundled offline
-manual](../contributing/perf/benchmarks.md#bundled-offline-manual), and the
+would stop being byte-reproducible.  The full numbers are on [Binary size
+and the bundled
+manual](../contributing/perf/benchmarks-binary-size.md#bundled-offline-manual),
+and the
 LZ4 comparison is on the [dashboard page](../usage/dashboard.md).
 
 ### C4: A `make compliance` target and a derived test gate
@@ -132,6 +138,46 @@ inside `make check`.  `docs-check` already enforces the 4-sentence rule;
 running the splitter too keeps the tool a maintainer reaches for on a
 failure provably in step with the gate, so a drift fails the gate instead of
 rewriting a page wrongly.
+
+### C7: Documentation coverage is now a gate, and two new doc categories
+
+AGENTS.md called the CLI-reference and dashboard coverage a manual audit.
+`tools/check-docs-coverage.py` now enforces it, wired as `make
+docs-coverage-check` in `make check`, as the `ci.yml` `docs-coverage` job,
+and in the release workflow.  The gate fails when a
+`Known_Flags` entry is absent from the `docs/usage/cli-reference*` pages,
+when a path the server dispatches on is absent from the
+`docs/usage/dashboard.md` endpoint table, when a hand-written `docs/usage/`
+or `docs/contributing/` page is not named by a `{toctree}` in
+`docs/index.md`, or when a `{toctree}` entry names a document that does not
+exist (H8).
+
+The standards page split into a category.  `docs/usage/standards.md` is now
+the overview, and the per-standard detail lives on
+`standards-do-178c.md`, `standards-iso-26262.md`, `standards-iec-62304.md`,
+and `standards-selection.md`.  The split also removes a table the old page
+carried twice.  The performance pages (`contributing/perf/*`) moved to their
+own category.  Both categories are new `{toctree}` captions in
+`docs/index.md`.
+
+### C8: A benchmarks category, three more manual categories, and the e2e cover to match
+
+The largest remaining contributor page, `docs/contributing/perf/benchmarks.md`
+(250 lines), split by what it measures.  The landing keeps the machine and the
+harness, and the three measurement sets moved beside it: [Pipeline and prove
+timings](../contributing/perf/benchmarks-timings.md), [Binary size and the
+bundled manual](../contributing/perf/benchmarks-binary-size.md), and [Server
+throughput and latency](../contributing/perf/benchmarks-server.md).
+
+The manual now groups its contributor pages into four more sidebar
+categories: **Architecture**, **Proving and proofs**, **Performance**, and
+**STE100 technical names**.  A reader scanning the sidebar sees nine topic
+groups instead of one long list.
+
+The dashboard e2e suite grows from 30 to 33 checks.  Three are new: the
+sidebar exposes every category caption, every link the sidebar shows resolves
+(one walk, so a new category or page is covered as soon as it is bundled),
+and the four benchmarks pages serve, render, and mark themselves current.
 
 ## Fixes
 
@@ -191,6 +237,72 @@ between, and it never cuts inside an inline construct (a code span, a link,
 or a badge).  A paragraph whose four sentences all lie inside one such
 construct is reported rather than cut.
 
+### H7: The bundled manual sidebar scrolled away instead of sticking
+
+Each bundled page keeps a `<div class="sidebar-container" data-nav="N">`
+stub, and `resources/js/book-nav.js` filled it from the shared `_nav/`
+asset.  The stored asset was the *whole* `.sidebar-container` element, so
+injection nested a second container.  `.sidebar-sticky` is `position:
+sticky`, and its containing block became that inner container, whose height
+is exactly the sticky element's `100vh`: sticky had no room to move.  The
+sidebar therefore scrolled away with the page, and `.sidebar-scroll` never
+got its own scrollbar.  Furo renders one container, where the sidebar sticks
+with an independent scrollbar.
+
+`tools/gen-docs.py` now stores only the container's inner markup, so the
+injected tree replaces the stub's children in place and exactly one
+`.sidebar-container` remains.  Measured in Chromium at 1400x800 on
+`/docs/usage/dashboard.html`: the sidebar stays at `top: 0` after the main
+content scrolls 3000 px, and `.sidebar-scroll` reports a 2275 px scroll
+height over a 668 px box, its own scrollbar exactly as Furo renders it.
+
+Regression cover: `tools/tests.py` pins the inner-markup-only bundling, and
+the Playwright dashboard suite gains a sticky-sidebar check (the single
+container, the `overflow: auto` scrollbar, and the pinned position).
+
+### H8: The index toctree named two documents that do not exist
+
+`docs/index.md` listed `HLR` and `LLR` in the maintainer-references toctree,
+but the pages are `docs/compliance/HLR.md` and `docs/compliance/LLR.md`.
+Sphinx reported `toc.not_readable` for both, and the sidebar silently never
+rendered them.  The entries now read `compliance/HLR` and `compliance/LLR`,
+and the coverage gate (C7) fails on any dangling toctree entry.
+
+### H9: The generated docs-template API page was stale
+
+`docs/api-docs/adacovex-docs_template.md` still carried the pre-1.50.0
+compact form of the `Asset_Ref` record (`type Asset_Ref is record`), while
+the committed spec and `tools/gen-docs.py` both emit the multi-line form.
+The page is generated by `make doc`, and it now matches the committed spec.
+
+### H10: The open entry of the manual sidebar was off screen
+
+The manual is a page per section, so the stored toctree is taller than the
+drawer.  A reader who clicked a late entry landed on a page whose own entry
+sat below the drawer's fold, which made a sidebar click feel like it had
+gone nowhere.  Furo reveals its right-hand table of contents only, so
+nothing moved the drawer.
+
+`resources/js/book-nav.js` now scrolls the entry it marks into the drawer
+once the tree is injected.  The drawer is the only element that moves: the
+page itself stays at its own top.  An entry that is already in view leaves
+the drawer where it is, so the manual index (the first entry of every tree)
+never nudges it.
+
+The reveal overrides Furo's `scroll-behavior: smooth` with an inline
+`auto`, because the smooth animation started about two seconds late on
+`/docs/THIRD_PARTY_NOTICES.html` -- after the reader was already looking at
+a drawer that had not moved.  Measured in Chromium at 1400x800: the drawer
+lands at its maximum scroll with the entry 628 px down the box, and the
+page's own `window.scrollY` stays 0.
+
+Regression cover: the Playwright suite gains a reveal check (the drawer
+scrolls, the marked entry ends inside it, the page does not move, and the
+manual index leaves the drawer at its top), and `tools/tests.py` pins the
+injector's contract (the reveal is wired to the mark, it touches
+`.sidebar-scroll` only, it overrides the smooth behaviour, and it never
+calls `scrollIntoView` or scrolls the window).
+
 ## Test Suite
 
 The native suite grows from 1599 to 1614 checks across 25 categories, all
@@ -203,14 +315,20 @@ every bundled asset, assert the base85 body decodes to a gzip stream of the
 packed length, and assert the shared sidebar variants and the injector are
 bundled (C3).
 
-The stdlib suite for the dev tools (`tools/tests.py`) grows from 59 to 79
-tests.  It covers the derived test gate, it adds four doc-bundling guards
-(the source fingerprint ignores build output, a stale build page forces a
-clean rebuild, the spec is written only on a change, and `--check` never
-rewrites the committed spec), it pins the paragraph splitter against the
-`docs-check` gate (H5), and it pins the base85 packing, the alphabet, three
-known vectors, the single-rebase sidebar normalisation, and the stub depth
-rule (C3).
+The Playwright dashboard suite grows from 29 to 34 checks: the sticky-sidebar
+check (H7), the sidebar reveal check (H10), the category-caption check, the
+sidebar-link walk, and the benchmarks-page check (C8).
+
+The stdlib suite for the dev tools (`tools/tests.py`) grows from 59 to 87
+tests.  It covers the derived test gate, and it adds four doc-bundling
+guards: the source fingerprint ignores build output, a stale build page
+forces a clean rebuild, the spec is written only on a change, and `--check`
+never rewrites the committed spec.  It adds two checks for the sidebar fix
+(H7), one for the injector's reveal contract (H10), and five for the
+documentation-coverage gate (C7, H8).  It also pins the
+paragraph splitter against the `docs-check` gate (H5), and the base85
+packing, the alphabet, three known vectors, the single-rebase sidebar
+normalisation, and the stub depth rule (C3).
 
 ## Proof Results
 
@@ -225,15 +343,21 @@ changes live outside `src/`.  No proof metric regressed.
   documents the global configuration, and refreshes the compliance reports.
 - `HLR-ARCH` -- C1 the deterministic doc bundling and the clean-build stamp,
   C2 the global-configuration page, C3 the base85 encoding and the shared
-  sidebar, C5 the new timing phase, C6 the splitter gate, and H5 the
-  gate-aligned, construct-safe paragraph splitter.
-- `HLR-SERVER` -- C3's shared sidebar and H6's corrected manual check both
-  cover the `--serve` manual under `/docs`.
+  sidebar, C5 the new timing phase, C6 the splitter gate, C7 the
+  documentation-coverage gate and the two new doc categories, C8 the
+  benchmarks split and the four more sidebar categories, H5 the
+  gate-aligned, construct-safe paragraph splitter, and H9 the regenerated
+  docs-template API page.
+- `HLR-SERVER` -- C3's shared sidebar, C7's dispatched-route coverage, and
+  H6's corrected manual check, H7's sticky sidebar, and H10's entry reveal
+  all cover the `--serve` manual under `/docs`.
 - `HLR-CACHE` -- C1 keeps the proof result cache warm across a no-op build
   and across a real docs edit (the generated bundle specs are excluded from
   the proof-input hash).
 - `HLR-PROVE` -- the generated-bundle exclusion lives in the `prove`
   subcommand's input-hash walk.
-- `HLR-CLI` -- C4's derived test gate and H4's corrected example.
-- `HLR-COMPLIANCE` -- C4's `make compliance` target and H3's regenerated
-  verification report and traceability matrix.
+- `HLR-CLI` -- C4's derived test gate, C7's `Known_Flags` coverage, and
+  H4's corrected example.
+- `HLR-COMPLIANCE` -- C4's `make compliance` target, H3's regenerated
+  verification report and traceability matrix, and H8's corrected
+  maintainer toctree entries.

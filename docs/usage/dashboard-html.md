@@ -22,7 +22,10 @@ One more authored module lives under `resources/js/`:
 `resources/js/book-nav.js` is the offline manual's shared-sidebar injector,
 not a dashboard module.  It is bundled by `tools/gen-docs.py` as
 `_static/adacovex-nav.js`, and its place under `js/` keeps the SBOM asset
-scan reading it as project code rather than a vendored library.
+scan reading it as project code rather than a vendored library.  The
+injector marks the open page's entry, then scrolls that entry into the
+drawer, so a reader who clicks a late entry finds it in view on the page
+that opens.
 
 The resulting `adacovex` binary - whether a GitHub release artifact or an
 Alire crate binary - is completely self-contained. The dashboard has no

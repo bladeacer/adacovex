@@ -123,7 +123,7 @@ otherwise.  The 1.48.0-1.50.0 column was measured on the 1.50.0 tree.
 - The phase also carries the manual-encoding change: the asset bodies are
   base85 instead of base64 and the Furo sidebar is stored once per branch
   instead of once per page.  `src/adacovex-docs_template.ads` falls from
-  2.34 MB to 1.86 MB, so the phase's stripped binary is the smallest of the
+  2.34 MB to 1.93 MB, so the phase's stripped binary is the smallest of the
   three columns (5.3 MiB).
 - The binary-level shapes are flat by design: pipeline warm 46 ms and prove
   warm 55 ms sit within noise of 1.47.0, and warm `newfstatat` is ~6.9k, the

@@ -34,7 +34,11 @@ before you use a technical word in any doc, docstring, or changelog.
   `~/.adacovex/adacovex.toml` file, the environment variables, and the cache
   and toolchain directories.
 - [Standards](usage/standards.md) -- DO-178C, ISO 26262, and IEC 62304
-  levels.
+  levels.  The per-standard detail is on
+  [DO-178C and the DAL levels](usage/standards-do-178c.md),
+  [ISO 26262 and the ASIL levels](usage/standards-iso-26262.md),
+  [IEC 62304 and the safety classes](usage/standards-iec-62304.md), and
+  [Selecting a standard](usage/standards-selection.md).
 - [Platforms](usage/platforms.md) -- supported platforms and toolchain
   state.
 - [VCS support](usage/vcs.md) -- differential assessment across git, hg,
@@ -63,8 +67,12 @@ before you use a technical word in any doc, docstring, or changelog.
   categorisation.
 - [Performance](contributing/perf/index.md) -- the benchmark categories and
   the current numbers.  [Benchmarking
-  adacovex](contributing/perf/benchmarks.md) covers the how-to and the raw
-  output, [Prove timing and the optimisation
+  adacovex](contributing/perf/benchmarks.md) covers the how-to, with
+  [pipeline and prove timings](contributing/perf/benchmarks-timings.md),
+  [binary size and the bundled
+  manual](contributing/perf/benchmarks-binary-size.md), and [server
+  throughput](contributing/perf/benchmarks-server.md) alongside it.  [Prove
+  timing and the optimisation
   review](contributing/perf/prove-timing.md) holds the per-phase timing
   table, and [the optimisation
   history](contributing/perf/optimisation-history.md) covers the work (with
@@ -128,12 +136,23 @@ usage/dashboard-charts
 usage/sbom
 usage/sbom-resolution
 usage/configuration
-usage/standards
 usage/platforms
 usage/vcs
 usage/ci-cd
 usage/ci-cd-workflows
 changelogs/index
+```
+
+```{toctree}
+:caption: Standards
+:maxdepth: 1
+:hidden:
+
+usage/standards
+usage/standards-do-178c
+usage/standards-iso-26262
+usage/standards-iec-62304
+usage/standards-selection
 ```
 
 ```{toctree}
@@ -143,20 +162,52 @@ changelogs/index
 
 contributing/developer-guide
 contributing/developer-guide-layout
-contributing/proving
-contributing/proving-patches
+contributing/requirements
+contributing/ir
+contributing/llm-usage
+```
+
+```{toctree}
+:caption: Architecture
+:maxdepth: 1
+:hidden:
+
 contributing/architecture
 contributing/architecture-dependencies
 contributing/architecture-verification
 contributing/architecture-outputs
 contributing/architecture-pipeline
-contributing/requirements
+```
+
+```{toctree}
+:caption: Proving and proofs
+:maxdepth: 1
+:hidden:
+
+contributing/proving
+contributing/proving-patches
+```
+
+```{toctree}
+:caption: Performance
+:maxdepth: 1
+:hidden:
+
 contributing/perf/index
 contributing/perf/benchmarks
+contributing/perf/benchmarks-timings
+contributing/perf/benchmarks-binary-size
+contributing/perf/benchmarks-server
 contributing/perf/prove-timing
 contributing/perf/optimisation-history
 contributing/perf/optimisation-history-archive
-contributing/ir
+```
+
+```{toctree}
+:caption: STE100 technical names
+:maxdepth: 1
+:hidden:
+
 contributing/ste100/index
 contributing/ste100/ada-terms
 contributing/ste100/proof-terms
@@ -164,7 +215,6 @@ contributing/ste100/tooling-terms
 contributing/ste100/entities
 contributing/ste100/identifiers
 contributing/ste100/concepts
-contributing/llm-usage
 ```
 
 ```{toctree}
@@ -172,8 +222,8 @@ contributing/llm-usage
 :maxdepth: 1
 :hidden:
 
-HLR
-LLR
+compliance/HLR
+compliance/LLR
 proof/index
 compliance/index
 badges/index

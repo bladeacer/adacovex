@@ -30,10 +30,16 @@ parser, so the pages stay `.md`).  This script:
    * the sidebar (the Furo global toctree) is removed from every page and
      stored once per distinct tree under `_nav/`; the page keeps a
      `<div class="sidebar-container" data-nav="N">` stub and a deferred
-     `_static/adacovex-nav.js` fills it from that shared asset and marks the
-     current page.  Furo repeats the whole 8 KB toctree in all 184 pages, so
-     the pages are what a per-page gzip stream cannot dedupe -- see the
-     bundle review in docs/contributing/perf/benchmarks.md;
+     `_static/adacovex-nav.js` fills it from that shared asset, marks the
+     current page, and scrolls that entry into the drawer.  Only the
+     container's *inner* markup is stored, so the script fills the stub in
+     place; a stored container would nest a second `.sidebar-container` when
+     injected, and a nested container collapses the sticky element's
+     containing block to 100vh so the sidebar scrolls away with the page
+     instead of sticking with its own scrollbar.  Furo repeats the whole
+     8 KB toctree in all 191 pages, so the pages are what a per-page gzip
+     stream cannot dedupe -- see the bundle review in
+     docs/contributing/perf/benchmarks-binary-size.md;
 
    Sphinx's own search stays fully functional in the bundle: the search
    assets are bundled and the search box is left visible.  The search index
@@ -185,7 +191,8 @@ B85: str = ("0123456789abcdefghijklmnopqrstuvwxyz"
 # The shared sidebar: every page keeps a stub that a small deferred script
 # fills from one of these (build-relative) assets.  The tree is identical for
 # all pages of a section, so the toctree is stored a handful of times instead
-# of 184 times (see the bundle review in docs/contributing/perf/benchmarks.md).
+# of 191 times (see the bundle review in
+# docs/contributing/perf/benchmarks-binary-size.md).
 NAV_DIR: str = "_nav"
 NAV_SCRIPT: str = "_static/adacovex-nav.js"
 # The injector is authored project code, so it lives under resources/js/ (the
@@ -376,7 +383,7 @@ def collect_assets(build: Path) -> List[Tuple[str, str, str]]:
             span = _sidebar_span(body)
             if span is not None:
                 body = (body[:span[0]]
-                        + _nav_stub(body[span[0]:span[1]], rel, variants)
+                        + _nav_stub(_sidebar_inner(body, span), rel, variants)
                         + body[span[1]:])
         assets.append((rel, mime, body))
 
@@ -384,6 +391,21 @@ def collect_assets(build: Path) -> List[Tuple[str, str, str]]:
         raise RuntimeError("no assets collected from the sphinx build")
     assets.extend(_nav_assets(variants))
     return assets
+
+
+def _sidebar_inner(html: str, span: Tuple[int, int]) -> str:
+    """The inner markup of the sidebar element, its container excluded.
+
+    `_sidebar_span` covers the whole `<div class="sidebar-container">`
+    element.  Only its contents are shared: the stub keeps the container
+    element itself, so the injected tree lands inside it instead of nesting a
+    second container.  A nested `.sidebar-container` collapses the sticky
+    element's containing block to its own 100vh height, which leaves
+    `position: sticky` no room to move -- the sidebar then scrolls away with
+    the page and loses Furo's independent scrollbar.
+    """
+    start, end = span
+    return html[start + len(_SIDEBAR_START):end - len("</div>")]
 
 
 def _tokenize(line: str) -> List[object]:
@@ -509,7 +531,7 @@ _NAV_CURRENT = ("current", "current-page")
 def _nav_variant(block: str, page_rel: str) -> str:
     """The page-independent form of one page's sidebar.
 
-    Two normalisations make the toctree of 184 pages collapse into the
+    Two normalisations make the toctree of 191 pages collapse into the
     handful of distinct trees it really is.  The current-page highlight
     classes are dropped and the current page's own entry -- the single
     `href="#"` Furo renders for it -- gets that page's path back, so the
@@ -547,8 +569,16 @@ def _nav_variant(block: str, page_rel: str) -> str:
 
 
 def _nav_stub(block: str, page_rel: str, variants: Dict[str, int]) -> str:
-    """The stub that replaces one page's sidebar: the variant index plus the
-    deferred script that fills it in (see resources/js/book-nav.js)."""
+    """The stub that replaces the *contents* of one page's sidebar: the
+    variant index plus the deferred script that fills it in.
+
+    `block` is the container's inner markup (see `_sidebar_inner`), never the
+    container element itself.  The stub keeps a single
+    `<div class="sidebar-container">`, so the injected tree is its direct
+    child exactly as Furo renders it -- the sticky element then keeps the
+    flex-stretched container as its containing block and scrolls
+    independently (see resources/js/book-nav.js).
+    """
     key: str = _nav_variant(block, page_rel)
     if key not in variants:
         variants[key] = len(variants)

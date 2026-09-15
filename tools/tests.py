@@ -47,6 +47,7 @@ para_split = importlib.import_module("para-split")
 rst2md = importlib.import_module("rst2md")
 check_book_links = importlib.import_module("check-book-links")
 check_docs = importlib.import_module("check-docs")
+check_docs_coverage = importlib.import_module("check-docs-coverage")
 
 GIT_ENV: dict = {
     "GIT_AUTHOR_NAME": "adacovex test",
@@ -697,6 +698,21 @@ class TestGenDocsCodec(unittest.TestCase):
                          + '<div><div>deep</div></div>after</div>')
         self.assertIsNone(gen_docs._sidebar_span("<p>no sidebar</p>"))
 
+    def test_sidebar_inner_excludes_the_container_element(self) -> None:
+        # The stub keeps the .sidebar-container element itself, so only the
+        # inner markup is shared.  Storing the wrapper would nest a second
+        # container on injection and break the sticky sidebar (see
+        # test_bundled_sidebar_stores_inner_markup_only).
+        html = ('<p>before</p>'
+                + gen_docs._SIDEBAR_START
+                + '<div class="sidebar-sticky">tree</div></div>'
+                + '<p>after</p>')
+        span = gen_docs._sidebar_span(html)
+        self.assertIsNotNone(span)
+        inner = gen_docs._sidebar_inner(html, span)
+        self.assertEqual(inner, '<div class="sidebar-sticky">tree</div>')
+        self.assertNotIn("sidebar-container", inner)
+
     def test_nav_variant_is_page_independent(self) -> None:
         # Two pages of one tree highlight different entries; after the
         # normalisation their stored trees must be byte-identical, or the
@@ -761,6 +777,24 @@ class TestGenDocsCodec(unittest.TestCase):
         self.assertIn('"' + gen_docs.NAV_SCRIPT + '"', top)
         self.assertNotIn("../", top)
 
+    def test_injector_reveals_the_open_entry_in_the_drawer(self) -> None:
+        # Regression for the invisible open entry: the tree is 60-odd entries
+        # tall, so the entry a reader clicks sits below the drawer's fold on
+        # the page it lands on.  Furo reveals its right-hand TOC only, so the
+        # injector must reveal the entry it just marked -- and only in the
+        # drawer: scrollIntoView (or a window scroll) would move the page.
+        script = gen_docs.NAV_SCRIPT_SRC.read_text(encoding="utf-8")
+        self.assertIn("reveal(mark(el))", script)
+        self.assertIn('link.closest(".sidebar-scroll")', script)
+        self.assertIn("box.scrollTop", script)
+        # Furo's smooth scrolling must be overridden for the write: a smooth
+        # reveal starts seconds late on a heavy page, i.e. after the reader
+        # already sees a drawer that never moved.
+        self.assertIn('box.style.scrollBehavior = "auto"', script)
+        self.assertNotIn("scrollIntoView", script)
+        self.assertNotIn("window.scroll", script)
+        self.assertNotIn("documentElement.scrollTop", script)
+
 
 class TestGenDocsBundling(unittest.TestCase):
     """The clean-build stamp and write-on-change guards (1.50.0).
@@ -812,6 +846,31 @@ class TestGenDocsBundling(unittest.TestCase):
         stale.parent.mkdir()
         stale.write_text("<html>dead</html>", encoding="utf-8")
         self.assertFalse(gen_docs.build_is_current(fp))
+
+    def test_bundled_sidebar_stores_inner_markup_only(self) -> None:
+        # Regression for the overflowing sidebar: the stub must keep the
+        # .sidebar-container element and the shared _nav asset must carry only
+        # its inner markup.  A stored container nests a second one on
+        # injection, which collapses the sticky element's containing block to
+        # 100vh: the sidebar then scrolls away with the page instead of
+        # sticking with its own scrollbar (the built-in Furo behaviour).
+        page = ('<html><body>'
+                + gen_docs._SIDEBAR_START
+                + '<div class="sidebar-sticky"><div class="sidebar-scroll">'
+                  '<a href="index.html">Home</a></div></div></div>'
+                + '<article>body</article></body></html>')
+        (self.build / "index.html").write_text(page, encoding="utf-8")
+        rels = {rel: body for rel, _, body in gen_docs.collect_assets(self.build)}
+        # The page carries exactly one container, as the stub's own class.
+        self.assertEqual(rels["index.html"].count('class="sidebar-container"'),
+                         1)
+        self.assertIn('data-nav="0"', rels["index.html"])
+        # The stored tree is the container's inner markup: no wrapper, so the
+        # injected tree cannot nest a second container.
+        stored = rels[f"{gen_docs.NAV_DIR}/0.html"]
+        self.assertNotIn("sidebar-container", stored)
+        self.assertIn("sidebar-sticky", stored)
+        self.assertIn("sidebar-scroll", stored)
 
     def test_generate_writes_the_spec_only_on_change(self) -> None:
         out = self.docs / "adacovex-docs_template.ads"
@@ -899,6 +958,79 @@ class TestCheckDocs(unittest.TestCase):
                      "One. Two. Three. Four. Five.\n")
             self.assertEqual(len(errors), 1)
             self.assertIn("5 sentences", errors[0])
+
+
+class TestCheckDocsCoverage(unittest.TestCase):
+    """The documentation-coverage gate (tools/check-docs-coverage.py).
+
+    The gate turns the manual CLI-reference / dashboard audit into a check:
+    every CLI flag, every server route, and every hand-written usage or
+    contributing page must be covered by the user documentation.
+    """
+
+    def test_flag_documented_accepts_both_spellings(self) -> None:
+        docs = "Use `--target=PATH`. Run `status` for the toolchain."
+        self.assertTrue(check_docs_coverage._flag_documented("target", docs))
+        # A bare subcommand word, in backticks, counts too.
+        self.assertTrue(check_docs_coverage._flag_documented("status", docs))
+        self.assertFalse(check_docs_coverage._flag_documented("serve", docs))
+        # A prefix of another flag must not count as documented.
+        self.assertFalse(check_docs_coverage._flag_documented("tar", docs))
+
+    def test_route_paths_normalise_the_trailing_slash(self) -> None:
+        routes = check_docs_coverage.route_paths()
+        # `/docs/` and `/docs` reach the same handler, so the set holds the
+        # canonical form and the dashboard table needs one row.
+        self.assertIn("/docs", routes)
+        self.assertNotIn("/docs/", routes)
+        self.assertIn("/", routes)
+        for expected in ("/api/metrics", "/api/deps", "/api/endpoints",
+                         "/badge/spark.svg", "/badge/tests.svg",
+                         "/badge/do178c.svg", "/badge/iso26262.svg",
+                         "/badge/iec62304.svg"):
+            self.assertIn(expected, routes)
+
+    def test_the_standards_split_pages_are_reachable(self) -> None:
+        # The new category pages must be named by a {toctree} in
+        # docs/index.md, or the sidebar never shows them.
+        entries = check_docs_coverage.toctree_entries()
+        for docname in ("usage/standards", "usage/standards-do-178c",
+                        "usage/standards-iso-26262",
+                        "usage/standards-iec-62304",
+                        "usage/standards-selection"):
+            self.assertIn(docname, entries)
+        # The performance pages moved to their own category, and the
+        # benchmarks page split into a sub-category.
+        for docname in ("contributing/perf/index",
+                        "contributing/perf/benchmarks",
+                        "contributing/perf/benchmarks-timings",
+                        "contributing/perf/benchmarks-binary-size",
+                        "contributing/perf/benchmarks-server",
+                        "contributing/perf/prove-timing"):
+            self.assertIn(docname, entries)
+        # The architecture, proving, and STE100 pages each have a category.
+        for docname in ("contributing/architecture",
+                        "contributing/architecture-pipeline",
+                        "contributing/proving",
+                        "contributing/proving-patches",
+                        "contributing/ste100/index",
+                        "contributing/ste100/concepts"):
+            self.assertIn(docname, entries)
+
+    def test_index_toctree_entries_all_resolve(self) -> None:
+        # A dangling entry (the `HLR` / `LLR` case: the pages live at
+        # compliance/HLR.md) makes Sphinx report `toc.not_readable`, and the
+        # sidebar silently drops the page.
+        self.assertEqual(check_docs_coverage.missing_toctree_targets(), [])
+        entries = check_docs_coverage.toctree_entries()
+        self.assertIn("compliance/HLR", entries)
+        self.assertIn("compliance/LLR", entries)
+
+    def test_the_current_tree_passes_the_gate(self) -> None:
+        # The real tree is the fixture: every flag, route, and page is
+        # covered.
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(check_docs_coverage.check(), 0)
 
 
 class TestCheckBookLinks(unittest.TestCase):

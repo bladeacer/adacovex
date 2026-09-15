@@ -81,6 +81,18 @@ jobs:
       - name: Enforce action/CLI/docs parity
         run: make action-parity-check
 
+  docs-coverage:
+    # Feature gate: the user documentation must cover the base CLI option set,
+    # the served route set, and every hand-written usage/contributing page
+    # (each named by a {toctree}).  Fails when a flag, route, or page is
+    # missing from the docs.
+    name: Documentation coverage gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Enforce documentation coverage
+        run: make docs-coverage-check
+
   consumer-run-tests:
     timeout-minutes: 15
     # Regression test for the action's run-tests in a CONSUMER workspace:
@@ -165,7 +177,7 @@ jobs:
   summary:
     name: CI summary
     if: always()
-    needs: [self-assessment, adacovex-tests, no-spark-off, complexity-gate, action-parity, consumer-run-tests, coverage-gate]
+    needs: [self-assessment, adacovex-tests, no-spark-off, complexity-gate, action-parity, docs-coverage, consumer-run-tests, coverage-gate]
     runs-on: ubuntu-latest
     steps:
       - name: Write CI summary
@@ -176,6 +188,7 @@ jobs:
           OFFOFF: ${{ needs.no-spark-off.result }}
           COMPLEX: ${{ needs.complexity-gate.result }}
           PARITY: ${{ needs.action-parity.result }}
+          DOCS: ${{ needs.docs-coverage.result }}
           CONSUMER: ${{ needs.consumer-run-tests.result }}
           GATE: ${{ needs.coverage-gate.result }}
         run: |
@@ -191,11 +204,12 @@ jobs:
             echo "| SPARK_Mode Off gate | $OFFOFF |"
             echo "| Complexity gate (no god objects) | $COMPLEX |"
             echo "| Action/CLI/docs parity gate | $PARITY |"
+            echo "| Documentation coverage gate | $DOCS |"
             echo "| Action run-tests (consumer workspace) | $CONSUMER |"
             echo "| Coverage gate (push only) | $GATE |"
             echo ''
           } >> "$GITHUB_STEP_SUMMARY"
-          for R in "$SELF" "$TESTS" "$OFFOFF" "$PARITY" "$CONSUMER" "$GATE"; do
+          for R in "$SELF" "$TESTS" "$OFFOFF" "$COMPLEX" "$PARITY" "$DOCS" "$CONSUMER" "$GATE"; do
             if [ "$R" = "failure" ]; then
               FAILED=1
               echo "::error::A CI job failed -- see the failing job logs and its adacovex assessment summary." >&2

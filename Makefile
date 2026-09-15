@@ -1,4 +1,4 @@
-.PHONY: help check build test prove doc book book-serve docs-serve clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish agents-tree sbom compliance description proof-status test-count doc-links link-check changelog-check action-parity-check tools-check man bench perf-bench complexity-check csslint-check sync docs-check para-split-check book-links-check cli-e2e e2e
+.PHONY: help check build test prove doc book book-serve docs-serve clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish agents-tree sbom compliance description proof-status test-count doc-links link-check changelog-check action-parity-check docs-coverage-check tools-check man bench perf-bench complexity-check csslint-check sync docs-check para-split-check book-links-check cli-e2e e2e
 
 .DEFAULT_GOAL := help
 
@@ -11,7 +11,8 @@ help:
 	@echo '    check         Full quality gate (CI before release): cheap'
 	@echo '                  static gates first (ascii, complexity, spark-off,'
 	@echo '                  changelog, version, doc-links, action-parity,'
-	@echo '                  tools-check), then build+test+prove+doc+book+sbom,'
+	@echo '                  docs-coverage, tools-check), then'
+	@echo '                  build+test+prove+doc+book+sbom,'
 	@echo '                  then count-sync checks (test-count, proof-status,'
 	@echo '                  description)'
 	@echo '    build         Build project (adacovex + test_runner, covex alias);'
@@ -71,6 +72,9 @@ help:
 	@echo '                  format (tools/check-changelogs.py)'
 	@echo '    action-parity-check  Fail if the GitHub Action drifts from the base'
 	@echo '                  CLI option set or the docs/ci-cd.md input table'
+	@echo '    docs-coverage-check  Fail when a CLI flag, a server route, or a'
+	@echo '                  usage/contributing page is missing from the user docs'
+	@echo '                  (tools/check-docs-coverage.py)'
 	@echo ''
 	@echo '  Release:'
 	@echo '    coverage-gate Compare docstring coverage between the latest two'
@@ -97,7 +101,7 @@ help:
 	@echo ''
 	@echo 'check runs the same gates CI enforces before a release, cheap static'
 	@echo '  gates first (ascii, spark-off, changelog, version, doc-links,'
-	@echo '  action-parity, tools), then'
+	@echo '  action-parity, docs-coverage, tools), then'
 	@echo '  build + native tests + SPARK proof (Platinum, 880 VCs) + SVG badges'
 	@echo '  + API docs + SBOM, then tree-wide count-sync checks (test-count,'
 	@echo '  proof-status, description) that fail when any live file carries a'
@@ -188,6 +192,13 @@ link-check:
 # mapping rules).  Cheap static gate wired into make check + CI.
 action-parity-check:
 	@python3 tools/check-action-parity.py
+
+# Quality gate: the user documentation must cover the CLI option set, the
+# server route set, and every hand-written usage/contributing page (each must
+# be named by a {toctree}).  AGENTS.md calls this a manual audit; the gate
+# makes it fail loudly instead.  Cheap static gate wired into make check + CI.
+docs-coverage-check:
+	@python3 tools/check-docs-coverage.py
 
 agents-tree:
 	@python3 tools/gen-agents-tree.py > /tmp/agents-tree.out && \
@@ -282,6 +293,7 @@ check:
 	@echo "=== Quality gate: SPARK_Mode Off ==="; $(MAKE) spark-off-check
 	@echo "=== Quality gate: changelog format ==="; $(MAKE) changelog-check
 	@echo "=== Quality gate: action/CLI/docs parity ==="; $(MAKE) action-parity-check
+	@echo "=== Quality gate: documentation coverage ==="; $(MAKE) docs-coverage-check
 	@echo "=== Quality gate: tools unit tests ==="; $(MAKE) tools-check
 	@echo "=== Quality gate: CLI end-to-end ==="; $(MAKE) cli-e2e
 	@echo "=== Quality gate: version source ==="; python3 tools/gen-version.py --check
@@ -302,7 +314,7 @@ check:
 	@echo "=== Quality gate: proof metrics in sync ==="; python3 tools/update-proof-status.py --check
 	@echo "=== Quality gate: description sync ==="; python3 tools/update-description.py --check
 	@echo ""
-	@echo "=== Quality gate passed: ascii, complexity, csslint, spark-off, changelog, action-parity, tools, cli-e2e, version, doc-links, link, docs-check, para-split, book-links, build, test, prove, doc, book, sbom, test-count, proof-status, description ==="
+	@echo "=== Quality gate passed: ascii, complexity, csslint, spark-off, changelog, action-parity, docs-coverage, tools, cli-e2e, version, doc-links, link, docs-check, para-split, book-links, build, test, prove, doc, book, sbom, test-count, proof-status, description ==="
 
 # Sync the crate description + long description from the canonical files
 # (alire/description.txt + alire/long-description.txt) into every manifest.
