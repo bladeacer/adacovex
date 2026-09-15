@@ -9,6 +9,7 @@ docs/usage/dashboard-api.md	Dashboard JSON API and playground
 docs/usage/dashboard-charts.md	Dashboard metric charts and robustness tier
 docs/usage/sbom.md	SBOM
 docs/usage/sbom-resolution.md	SBOM dependency resolution
+docs/usage/configuration.md	Global configuration and state
 docs/usage/vcs.md	VCS support
 docs/usage/target-projects.md	Target projects
 docs/usage/ci-cd.md	CI/CD

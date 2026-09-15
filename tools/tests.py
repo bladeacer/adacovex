@@ -27,6 +27,7 @@ import io
 import tarfile
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 from typing import List, Tuple
 
@@ -328,7 +329,7 @@ class TestVersions(unittest.TestCase):
 
 class TestRun(unittest.TestCase):
     def test_assess_args_are_flags(self) -> None:
-        flags = run.SELF_ASSESS_ARGS.split()
+        flags = run.self_assess_args().split()
         self.assertTrue(len(flags) >= 5)
         for flag in flags:
             # Single -flag=value words (long or shorthand), so the string can
@@ -339,6 +340,13 @@ class TestRun(unittest.TestCase):
         self.assertIn("--dal=C", flags)
         self.assertIn("-r=100", flags)
         self.assertIn("--docstrs=100", flags)
+        # The test gate is derived from docs/test_result.md, never hardcoded.
+        self.assertIn(f"--require-tests={run.native_test_count()}", flags)
+
+    def test_native_test_count_reads_the_result_file(self) -> None:
+        self.assertGreater(run.native_test_count(), 0)
+        self.assertIn(
+            "--require-tests=", run.self_assess_args())
 
     def test_source_date_epoch(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -355,7 +363,7 @@ class TestRun(unittest.TestCase):
             capture_output=True, text=True,
         )
         self.assertEqual(result.returncode, 0)
-        self.assertEqual(result.stdout.strip(), run.SELF_ASSESS_ARGS)
+        self.assertEqual(result.stdout.strip(), run.self_assess_args())
 
 
 class CssSpacingTests(unittest.TestCase):
@@ -389,7 +397,20 @@ class CssSpacingTests(unittest.TestCase):
 
 
 class ParaSplitTests(unittest.TestCase):
-    """Pure-logic tests for tools/para-split.py (the 4-sentence rule)."""
+    """Pure-logic tests for tools/para-split.py (the 4-sentence rule).
+
+    The splitter must agree with the check-docs.py gate, and it must never
+    cut inside an inline Markdown construct (a code span, a link, or a
+    badge), which would corrupt the prose.
+    """
+
+    @staticmethod
+    def _paragraph_counts(lines: List[str]) -> List[int]:
+        """The sentence count of every prose paragraph in `lines`."""
+        return [para_split._count_sentences(" ".join(block.lines))
+                for block in para_split._walk(lines)
+                if not isinstance(block, str)]
+
     def test_count_sentences(self) -> None:
         self.assertEqual(para_split._count_sentences("One. Two. Three. Four."),
                          4)
@@ -397,22 +418,101 @@ class ParaSplitTests(unittest.TestCase):
         self.assertEqual(para_split._count_sentences("v1.21.0 ships. e.g."),
                          1)
         self.assertEqual(para_split._count_sentences("No punctuation"), 0)
+        # An identifier, a version, and a link query are not breaks.
+        self.assertEqual(
+            para_split._count_sentences("Ada.Text_IO is a package."), 1)
+        self.assertEqual(
+            para_split._count_sentences("See https://x.example/p?url=y now."),
+            1)
+        # Badge syntax holds no sentence at all.
+        self.assertEqual(
+            para_split._count_sentences("![tests](a.svg) ![docs](b.svg)"), 0)
+        # A real ! or ? does end a sentence before a capital letter.
+        self.assertEqual(para_split._count_sentences("Done! Next."), 2)
+        self.assertEqual(para_split._count_sentences("Why? Because."), 2)
 
-    def test_chunks_cap_at_four_preserve_text(self) -> None:
-        text = "First. Second. Third. Fourth. Fifth. It ships 1.21.0."
-        out = para_split._chunks(text)
-        self.assertEqual(len(out), 2)
-        self.assertIn("1.21.0", " ".join(out))
-        for chunk in out:
-            self.assertLessEqual(para_split._count_sentences(chunk), 4)
+    def test_count_matches_the_check_docs_gate(self) -> None:
+        # check-docs.py counts with its own regex; a drift between the two
+        # made the splitter report files the gate accepts (and the other way).
+        samples = ["One. Two. Three.", "v1.21.0 ships. e.g.", "Ada.Text_IO ok.",
+                   "![b](x.svg) ![c](y.svg)", "Done! Next? Yes.",
+                   "Trailing space. ", "A `code. Span` here."]
+        for text in samples:
+            self.assertEqual(para_split._count_sentences(text),
+                             check_docs.count_sentences(text), text)
 
-    def test_chunks_under_limit_unchanged(self) -> None:
-        self.assertEqual(para_split._chunks("Just. Two. Sentences."),
-                         ["Just. Two. Sentences."])
+    def test_repo_check_agrees_with_docs_check(self) -> None:
+        # The gate is the source of truth: the splitter flags a file exactly
+        # when the gate reports a paragraph over four sentences.
+        for path in para_split._doc_files():
+            lines = path.read_text(encoding="utf-8").splitlines()
+            with contextlib.redirect_stderr(io.StringIO()):
+                gate = [e for e in check_docs.check(path)
+                        if "paragraph has" in e]
+            self.assertEqual(para_split._split_lines(lines) != lines,
+                             bool(gate), str(path))
+
+    def test_split_inserts_a_blank_line(self) -> None:
+        out = para_split._split_block(["One. Two. Three. Four. Five. Six."])
+        self.assertEqual([x for x in out if x],
+                         ["One. Two. Three. Four.", "Five. Six."])
+        self.assertEqual(out.count(""), 1)
+        for part in out:
+            self.assertLessEqual(para_split._count_sentences(part), 4)
+
+    def test_split_keeps_whole_lines_verbatim(self) -> None:
+        # A break falls between two lines; every other line stays as it was,
+        # so the file keeps its wrapping instead of being unwrapped.
+        block = ["One sentence that runs over", "two lines. Second. Third.",
+                 "Fourth here. Fifth closes it."]
+        self.assertEqual(
+            para_split._split_block(block),
+            ["One sentence that runs over", "two lines. Second. Third.",
+             "Fourth here.", "", "Fifth closes it."])
+
+    def test_break_never_inside_an_inline_construct(self) -> None:
+        text = "`A. B.` `C. D.` `E. F.` `G. H.` I. J."
+        out = para_split._split_block([text])
+        # The text is unchanged apart from the inserted break, and every code
+        # span stays whole (balanced backticks).
+        self.assertEqual(" ".join(x for x in out if x), text)
+        for line in out:
+            self.assertEqual(line.count("`") % 2, 0, line)
+        self.assertEqual(self._paragraph_counts(out), [3, 3])
+
+    def test_identifier_and_badge_are_never_mangled(self) -> None:
+        lines = ["![tests](docs/badges/tests.svg) ![docs](docs/badges/docs.svg)",
+                 "",
+                 "The type `Adacovex.Target_Profiles` holds the range. "
+                 "Second. Third. Fourth. Fifth."]
+        out = para_split._split_lines(lines)
+        joined = "\n".join(out)
+        self.assertIn("![tests](docs/badges/tests.svg)", joined)
+        self.assertIn("`Adacovex.Target_Profiles`", joined)
+        self.assertNotIn("! [", joined)
+        self.assertNotIn("Adacovex. ", joined)
+        for count in self._paragraph_counts(out):
+            self.assertLessEqual(count, 4)
+
+    def test_unsplittable_paragraph_is_left_alone(self) -> None:
+        # Every sentence lies inside one code span: a break would corrupt it,
+        # so the paragraph is reported instead of cut.
+        text = "`One. Two. Three. Four. Five. Six.`"
+        errors = io.StringIO()
+        with contextlib.redirect_stderr(errors):
+            out = para_split._split_block([text])
+        self.assertEqual(out, [text])
+        self.assertIn("split it by hand", errors.getvalue())
+
+    def test_compliant_paragraph_unchanged(self) -> None:
+        lines = ["Just. Two. Sentences.", "On two lines.", "", "Next one."]
+        self.assertEqual(para_split._split_lines(list(lines)), lines)
 
     def test_is_prose(self) -> None:
         self.assertFalse(para_split._is_prose("1. item"))
         self.assertFalse(para_split._is_prose("- item"))
+        self.assertFalse(para_split._is_prose("| table | row |"))
+        self.assertFalse(para_split._is_prose(""))
         self.assertTrue(para_split._is_prose("a normal line"))
 
 
@@ -541,6 +641,94 @@ class TestGenDocsAssets(unittest.TestCase):
             self.assertNotIn("github.com/pradyunsg/furo", index_body)
             self.assertIn("Copyright \u00a9 bladeacer", index_body)
             self.assertIn("sphinx-doc.org", index_body)
+
+
+class TestGenDocsBundling(unittest.TestCase):
+    """The clean-build stamp and write-on-change guards (1.50.0).
+
+    Regression cover for the stale-page bug: the bundled manual used to be
+    collected from an incremental Sphinx build directory, so pages left dead
+    by a rename stayed in the bundle.  A developer tree produced 217 assets
+    and a fresh clone 204, and the changed spec invalidated the cached SPARK
+    proof.  A build is now reused only when both the docs-source fingerprint
+    and the built file list match, and the spec is written only on a change.
+    """
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        root = Path(self._tmp.name)
+        self.docs = root / "docs"
+        self.build = self.docs / "_build" / "html"
+        self.stamp = self.docs / "_build" / ".adacovex-docs-sources"
+        self.docs.mkdir(parents=True)
+        self.build.mkdir(parents=True)
+        (self.docs / "index.md").write_text("# index\n", encoding="utf-8")
+        (self.build / "index.html").write_text("<html></html>",
+                                              encoding="utf-8")
+        self._saved = (gen_docs.DOCS, gen_docs.BUILD, gen_docs.STAMP)
+        gen_docs.DOCS, gen_docs.BUILD, gen_docs.STAMP = (
+            self.docs, self.build, self.stamp)
+
+    def tearDown(self) -> None:
+        gen_docs.DOCS, gen_docs.BUILD, gen_docs.STAMP = self._saved
+        self._tmp.cleanup()
+
+    def test_fingerprint_tracks_sources_not_build_output(self) -> None:
+        first = gen_docs.docs_source_fingerprint()
+        # A build product never moves the fingerprint ...
+        (self.build / "stale.html").write_text("stale", encoding="utf-8")
+        self.assertEqual(gen_docs.docs_source_fingerprint(), first)
+        # ... a docs source change does.
+        (self.docs / "index.md").write_text("# changed\n", encoding="utf-8")
+        self.assertNotEqual(gen_docs.docs_source_fingerprint(), first)
+
+    def test_a_stale_build_page_forces_a_clean_rebuild(self) -> None:
+        fp = gen_docs.docs_source_fingerprint()
+        self.assertFalse(gen_docs.build_is_current(fp))  # no stamp yet
+        gen_docs.write_stamp(fp)
+        self.assertTrue(gen_docs.build_is_current(fp))
+        # The 13-dead-pages bug: an extra page in the build output must not
+        # be reused (it would ship in the bundle as a stale page).
+        stale = self.build / "contributing" / "perf.html"
+        stale.parent.mkdir()
+        stale.write_text("<html>dead</html>", encoding="utf-8")
+        self.assertFalse(gen_docs.build_is_current(fp))
+
+    def test_generate_writes_the_spec_only_on_change(self) -> None:
+        out = self.docs / "adacovex-docs_template.ads"
+        with mock.patch.object(gen_docs, "build_spec",
+                               return_value=("first", "stats")):
+            with contextlib.redirect_stdout(io.StringIO()):
+                gen_docs.generate(out)
+        self.assertEqual(out.read_text(encoding="ascii"), "first")
+        os.utime(out, (1_000_000, 1_000_000))
+        before = out.stat().st_mtime_ns
+        with mock.patch.object(gen_docs, "build_spec",
+                               return_value=("first", "stats")):
+            with contextlib.redirect_stdout(io.StringIO()):
+                gen_docs.generate(out)
+        self.assertEqual(out.stat().st_mtime_ns, before,
+                         "an unchanged spec must not be rewritten")
+        with mock.patch.object(gen_docs, "build_spec",
+                               return_value=("second", "stats")):
+            with contextlib.redirect_stdout(io.StringIO()):
+                gen_docs.generate(out)
+        self.assertEqual(out.read_text(encoding="ascii"), "second")
+
+    def test_check_is_read_only(self) -> None:
+        out = self.docs / "adacovex-docs_template.ads"
+        out.write_text("committed", encoding="ascii")
+        with mock.patch.object(gen_docs, "build_spec",
+                               return_value=("different", "stats")):
+            with contextlib.redirect_stdout(io.StringIO()):
+                with contextlib.redirect_stderr(io.StringIO()):
+                    self.assertFalse(gen_docs.check(out))
+        self.assertEqual(out.read_text(encoding="ascii"), "committed",
+                         "--check must never rewrite the committed spec")
+        with mock.patch.object(gen_docs, "build_spec",
+                               return_value=("committed", "stats")):
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertTrue(gen_docs.check(out))
 
 
 class TestCheckDocs(unittest.TestCase):

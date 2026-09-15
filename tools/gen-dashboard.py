@@ -322,8 +322,13 @@ def assemble(template: Path) -> str:
     return page
 
 
-def generate(out: Path, template: Path) -> None:
-    """Write the Ada package spec embedding the assembled page."""
+def generate(out: Path, template: Path) -> bool:
+    """Write the Ada package spec embedding the assembled page.
+
+    Writes only when the content actually changed; an unchanged template
+    keeps the file's mtime, so `alr build` does not recompile the generated
+    unit (and everything depending on it) on every `make build` / `make
+    prove`.  Returns True when the file was (re)written."""
     page: str = assemble(template)
     # Ada string literals cannot span lines, and GNAT truncates over-long
     # source lines (the style gate is -gnatyM120), so each page line is
@@ -351,7 +356,7 @@ def generate(out: Path, template: Path) -> None:
         "--  also fills the __THEME__ placeholder with the initial dashboard\n"
         "--  theme).  Do not edit by hand; edit resources/ and run make build.\n"
     )
-    out.write_text(
+    content: str = (
         header
         + "package Adacovex.Dashboard_Template is\n"
         + "\n"
@@ -361,9 +366,15 @@ def generate(out: Path, template: Path) -> None:
         + "   Template : constant String :=\n"
         + body
         + ";\n"
-        + "end Adacovex.Dashboard_Template;\n",
-        encoding="ascii",
+        + "end Adacovex.Dashboard_Template;\n"
     )
+    # Write only on a real change: rewriting a byte-identical file bumps its
+    # mtime and makes the GNAT incremental build recompile the generated
+    # unit on every run (the generated 7k-line template is not cheap).
+    if out.is_file() and out.read_text(encoding="ascii") == content:
+        return False
+    out.write_text(content, encoding="ascii")
+    return True
 
 
 def build_page(template: Path) -> str:
@@ -404,8 +415,10 @@ def main(argv: List[str]) -> int:
         print(f"error: template not found: {template}", file=sys.stderr)
         return 1
     if not args.check:
-        generate(out, template)
-        print(f"{out.name} regenerated.")
+        if generate(out, template):
+            print(f"{out.name} regenerated.")
+        else:
+            print(f"{out.name} up to date.")
         return 0
     before: str = out.read_text(encoding="ascii") if out.is_file() else ""
     generate(out, template)

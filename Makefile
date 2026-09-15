@@ -1,4 +1,4 @@
-.PHONY: help check build test prove doc book book-serve docs-serve clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish agents-tree sbom description proof-status test-count doc-links link-check changelog-check action-parity-check tools-check man bench perf-bench complexity-check csslint-check sync docs-check book-links-check cli-e2e e2e
+.PHONY: help check build test prove doc book book-serve docs-serve clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish agents-tree sbom compliance description proof-status test-count doc-links link-check changelog-check action-parity-check tools-check man bench perf-bench complexity-check csslint-check sync docs-check book-links-check cli-e2e e2e
 
 .DEFAULT_GOAL := help
 
@@ -17,7 +17,7 @@ help:
 	@echo '    build         Build project (adacovex + test_runner, covex alias);'
 	@echo '                  regenerates src/adacovex_version_info.ads from'
 	@echo '                  alire-dev.toml (or ADACOVEX_VERSION for releases)'
-	@echo '    test          Build and run native test suite (1599 tests)'
+	@echo '    test          Build and run native test suite (1607 tests)'
 	@echo '    prove         Run SPARK proofs (gnatprove via prove subcommand,'
 	@echo '                  resolved from alire-dev.toml / PATH / cache / download)'
 	@echo '                  (also auto-regenerates SVG badges in docs/badges/)'
@@ -28,6 +28,7 @@ help:
 	@echo '    run-ada-crdt  Run against ../Ada_CRDT (strict mode)'
 	@echo '                  (auto-updates ../Ada_CRDT/docs/badges/*.svg)'
 	@echo '    sbom          Generate a proof-aware CycloneDX SBOM (sbom.json)'
+	@echo '    compliance    Regenerate docs/compliance/VERIFICATION.md + TRACE.md'
 	@echo '    bench         Benchmark the assessment pipeline + binary size'
 	@echo '                  (tools/bench.py: hyperfine when installed, cold +'
 	@echo '                  warm timings, raw and stripped binary sizes)'
@@ -154,6 +155,18 @@ run-ada-crdt: build
 
 sbom: build
 	@python3 tools/run.py sbom
+
+# Regenerate the committed verification report (docs/compliance/VERIFICATION.md)
+# and traceability matrix (docs/compliance/TRACE.md) for the self tree.  Both
+# are generated artifacts: run this after a metric change and commit the
+# result.  It is deliberately NOT part of `make prove` -- the reports live
+# under docs/ and are bundled into the offline manual, so emitting them inside
+# a prove run would change the bundled template and invalidate the cached
+# proof on the next run.
+compliance: build
+	@SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD) \
+	  ./bin/covex -t=. --dal=C --emit-markdown=docs/compliance \
+	  --no-svg --no-sbom
 
 # Cold vs warm pipeline timings (hyperfine preferred, measured fallback)
 # plus the binary-size report live in tools/bench.py; see its docstring for

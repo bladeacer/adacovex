@@ -8,6 +8,43 @@ Kept in reverse-chronological order. Every entry names the measurement that
 drove it so the next round of work can see whether the previous assumption
 still holds.
 
+### Deterministic doc bundling + no-op builds (1.50.0)
+
+The driver was the `make prove` wall: on an unchanged tree it still took
+seconds, and sometimes tens of seconds, even with a warm result cache.
+The suspect was the embedded offline manual (`tools/gen-docs.py` ->
+`src/adacovex-docs_template.ads`), and the profile confirmed it:
+
+- **The generated spec was not stable.** `gen-docs.py` collected assets
+  from the *incremental* Sphinx build directory, so pages that a doc move
+  had left behind stayed in the bundle.  A developer tree shipped 217
+  assets while a fresh clone produced 204 (thirteen dead pages from the
+  pre-1.49.0 layout), and `gen-docs.py --check` failed on a fresh clone.
+  Because the spec is a proof input, any content change invalidated the
+  cached SPARK proof and made `make prove` run gnatprove again (a
+  20-88 s session).
+- **The fix removes the failed work.** Sphinx now builds clean whenever a
+  SHA-256 fingerprint of `docs/` changes, and both generators write their
+  Ada spec only when the content changed.  A no-op run keeps the spec's
+  mtime, so `alr build` is a true no-op (`gprbuild: "adacovex" up to
+date`, ~0.38 s) instead of recompiling the 28k-line unit and relinking.
+- **Measured effect.** `make prove` on an unchanged tree fell from
+  seconds (the recompile plus relink; 20-52 s when the spec flipped and
+  the proof re-ran) to **~1.0 s** (five runs), with the result cache at
+  42 hits and 0 misses.  The binary-level benchmark shapes are otherwise
+  flat: pipeline warm 46 ms, prove warm 55 ms, warm `newfstatat` ~6.9k.
+- **The proof input stopped carrying the bundle.** Even with a stable
+  spec, a real documentation edit changed the bundled manual and therefore
+  the proof-input hash, so every docs edit cost a fresh proof.  The two
+  generated bundle specs (`adacovex-docs_template.ads`,
+  `adacovex-dashboard_template.ads`) are now excluded from that hash: they
+  are multi-thousand-line string constants with no subprogram and no check.
+  Verified by editing a docs page and re-running `make prove`: the spec was
+  regenerated and the cache line still read `gnatprove inputs unchanged`.
+- **A second, smaller win.** Sphinx itself now runs only when the docs
+  sources changed (the fingerprint stamp): a no-op `make build` spends
+  ~0.4 s in the generator instead of ~5.9 s in a clean Sphinx rebuild.
+
 ### Opt-out marker machinery + the dead proof-probe removal (1.46.0)
 
 The 1.46.0 per-file opt-out markers added two new per-file probes to the

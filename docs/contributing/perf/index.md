@@ -50,23 +50,23 @@ Figures are from `make bench`/`perf-bench` on the benchmark machine
 (hyperfine, cold + warm per scenario).  They shift with the machine and the
 codebase; what matters is the shape:
 
-- **Pipeline cold ~74 ms**: dominated by source scanning (Ada file
+- **Pipeline cold ~73 ms**: dominated by source scanning (Ada file
   enumeration and SHA-256 of every scanned file), the SBOM tree walk and
   word scan, and the renderers.  Nothing here can be skipped: the result
   cache is empty, so every file must be read and hashed at least once
   (tool-version probes and ecosystem-metadata lookups live per-machine,
   outside the result cache, and survive cache wipes).
-- **Pipeline warm ~43 ms**: the on-disk result cache skips re-parsing
+- **Pipeline warm ~46 ms**: the on-disk result cache skips re-parsing
   unchanged sources; the stamp fast-path skips the per-file SHA-256
   entirely (a file unchanged in size is not re-hashed); the tools-set
   cache skips the SBOM dev-dependency word scan and the tool probes.  The
   remaining time is process startup, directory walks, and blob
   deserialization.
-- **Prove cold ~40-110 s** (load-dependent on this desktop): a from-scratch
-  solver run over 876 VCs plus the whole pipeline, dominated by gnatprove
-  itself (the ~196 s of user CPU across the proof jobs is the stable part)
-  and paid once per gnatprove session, not per run.
-- **Prove warm ~53 ms**: the prove result cache serves the stored proof
+- **Prove cold ~61-88 s** (load-dependent on this desktop): a from-scratch
+  solver run over 880 VCs plus the whole pipeline, dominated by gnatprove
+  itself (the CPU time across the proof jobs is the stable part) and paid
+  once per gnatprove session, not per run.
+- **Prove warm ~55 ms**: the prove result cache serves the stored proof
   after one content-hash of the input tree, and restores the cached
   `gnatprove.out` so the assessment parses it -- the number a developer
   hits on an unchanged tree.  Back-to-back `make prove` runs sit here (the
@@ -80,7 +80,10 @@ codebase; what matters is the shape:
 range of versions whose implementation methodology is largely similar.  Each
 phase carries one representative version that supplies the phase's complete
 metric set.  A new version folds into the open phase while the methodology
-holds; a methodology shift closes the phase and opens a new one.
+holds; a methodology shift closes the phase and opens a new one.  The
+current open phase is 1.48.0-1.50.0, represented by 1.50.0; its
+methodology shift is the deterministic, incremental doc bundling, which
+keeps the cached proof warm across a no-op build.
 
 ## CI
 

@@ -30,6 +30,9 @@ before you use a technical word in any doc, docstring, or changelog.
 - [SBOM](usage/sbom.md) -- the software-bill-of-materials generator.  Licence
   and dependency resolution is on
   [SBOM dependency resolution](usage/sbom-resolution.md).
+- [Global configuration and state](usage/configuration.md) -- the optional
+  `~/.adacovex/adacovex.toml` file, the environment variables, and the cache
+  and toolchain directories.
 - [Standards](usage/standards.md) -- DO-178C, ISO 26262, and IEC 62304
   levels.
 - [Platforms](usage/platforms.md) -- supported platforms and toolchain
@@ -124,6 +127,7 @@ usage/dashboard-api
 usage/dashboard-charts
 usage/sbom
 usage/sbom-resolution
+usage/configuration
 usage/standards
 usage/platforms
 usage/vcs

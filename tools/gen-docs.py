@@ -58,6 +58,19 @@ only committed artifact.  `make book` / `make build` regenerate it
 (byte-identical when the docs are unchanged) and `--check` fails when it
 drifts -- exactly the same pattern tools/gen-dashboard.py uses.
 
+Determinism and incremental builds:
+
+* the Sphinx output directory is built **clean** whenever the docs sources
+  change (a SHA-256 fingerprint of `docs/` is stamped beside the build), so a
+  renamed or deleted page can never leave a stale page in the bundle -- that
+  stale-HTML case made the spec differ between an incremental developer tree
+  and a fresh clone, and a changed spec invalidates the cached SPARK proof;
+* the spec is written **only when its content changed**, so a no-op run keeps
+  the file's mtime and `alr build` does not recompile the generated 28k-line
+  unit (nor relink) on every `make build` / `make prove`;
+* `--check` is read-only: it builds into memory and never rewrites the
+  committed spec.
+
 Usage:
   python3 tools/gen-docs.py [--check] [--out=PATH]
 
@@ -73,6 +86,7 @@ spec is authored to build without it.
 
 import argparse
 import base64
+import hashlib
 import re
 import shutil
 import subprocess
@@ -85,6 +99,14 @@ ROOT: Path = Path(__file__).resolve().parent.parent
 DOCS: Path = ROOT / "docs"
 BUILD: Path = DOCS / "_build" / "html"   # sphinx html build output (gitignored)
 OUT: Path = ROOT / "src" / "adacovex-docs_template.ads"
+
+# Stamp written after a clean Sphinx build, holding the fingerprint of the
+# docs sources that produced it.  An unchanged fingerprint lets the next run
+# reuse the build directory without re-running Sphinx; a changed one forces a
+# CLEAN rebuild, so a renamed or deleted page can never leave a stale page in
+# the bundle (Sphinx's incremental output does not always remove stale HTML).
+# The stamp lives inside the (gitignored) build directory.
+STAMP: Path = DOCS / "_build" / ".adacovex-docs-sources"
 
 # ---------------------------------------------------------------------------
 # Offline asset rules.  Shared with tools/check-book-links.py (imported), so
@@ -165,12 +187,85 @@ def sphinx_build_cmd() -> Optional[List[str]]:
     return [exe, "-b", "html"]
 
 
+def docs_source_fingerprint() -> str:
+    """SHA-256 over every docs source file (relative path + content).
+
+    The build directory (`docs/_build/`) is excluded: it is the artifact under
+    validation, never an input.  Two runs over the same sources yield the same
+    digest, so a build can be reused only when it was produced from exactly
+    these sources.
+    """
+    h = hashlib.sha256()
+    for path in sorted(DOCS.rglob("*")):
+        rel = path.relative_to(DOCS).as_posix()
+        if rel.startswith("_build/") or not path.is_file():
+            continue
+        h.update(rel.encode("utf-8"))
+        h.update(b"\0")
+        h.update(path.read_bytes())
+        h.update(b"\0")
+    return h.hexdigest()
+
+
+def _build_relative_paths() -> List[str]:
+    """Every file under the build directory, as sorted relative paths."""
+    if not BUILD.is_dir():
+        return []
+    return sorted(
+        p.relative_to(BUILD).as_posix()
+        for p in BUILD.rglob("*")
+        if p.is_file()
+    )
+
+
+def build_is_current(fingerprint: str) -> bool:
+    """True when docs/_build/html is exactly the clean build of these sources.
+
+    Guards the Sphinx rebuild.  The stamp records both the source fingerprint
+    and the file list the clean build produced, so the build directory is
+    reused only when it still holds exactly that output.  A renamed or deleted
+    page (a changed fingerprint) and a stale or externally added file (a
+    changed file list) both force a clean rebuild -- the stale-HTML case that
+    used to make the generated spec differ between an incremental developer
+    tree and a fresh clone.
+    """
+    if not BUILD.is_dir() or not STAMP.is_file():
+        return False
+    try:
+        lines = STAMP.read_text(encoding="ascii").splitlines()
+    except OSError:
+        return False
+    if not lines or lines[0] != fingerprint:
+        return False
+    return lines[1:] == _build_relative_paths()
+
+
+def write_stamp(fingerprint: str) -> None:
+    """Record the source fingerprint and output file list of the clean build."""
+    try:
+        STAMP.parent.mkdir(parents=True, exist_ok=True)
+        STAMP.write_text(
+            "\n".join([fingerprint] + _build_relative_paths()) + "\n",
+            encoding="ascii",
+        )
+    except OSError:
+        pass
+
+
 def sphinx_build() -> bool:
-    """Run `sphinx-build -b html docs docs/_build/html`.  True on success."""
+    """Run `sphinx-build -b html docs docs/_build/html`.  True on success.
+
+    The output directory is removed first, so the built site is a pure
+    function of `docs/` and never accumulates pages that a rename or a
+    deletion left behind.  A stale page in the incremental output used to
+    change the generated spec between a developer machine and a fresh clone
+    (which in turn invalidated the cached SPARK proof).
+    """
     cmd = sphinx_build_cmd()
     if cmd is None:
         print("note: sphinx-build not on PATH; keeping the existing spec")
         return False
+    shutil.rmtree(BUILD, ignore_errors=True)
     result = sh(cmd + [str(DOCS), str(BUILD)])
     if result.returncode != 0:
         print(f"note: sphinx-build failed ({result.returncode}); "
@@ -309,11 +404,21 @@ def _b64_chunks(body: str) -> List[str]:
     ]
 
 
-def generate(out: Path) -> None:
-    """Build the manual (or keep the existing spec when sphinx-build is
-    missing) and write the Ada spec."""
-    if not sphinx_build() and not BUILD.is_dir():
-        raise RuntimeError("sphinx-build not on PATH and no docs/_build/html")
+def build_spec() -> Tuple[str, str]:
+    """Build the manual and return (Ada spec text, human-readable stats).
+
+    Sphinx runs only when the docs sources changed since the last build (the
+    fingerprint stamp); an unchanged tree reuses the clean build directory.
+    No file is written here, so the caller can both write the spec and check
+    it (without mutating the committed file).
+    """
+    fingerprint = docs_source_fingerprint()
+    if not build_is_current(fingerprint):
+        if sphinx_build():
+            write_stamp(fingerprint)
+        elif not BUILD.is_dir():
+            raise RuntimeError(
+                "sphinx-build not on PATH and no docs/_build/html")
 
     assets = collect_assets(BUILD)
 
@@ -443,11 +548,43 @@ def generate(out: Path) -> None:
     lines.append("   function Find (Subpath : String) return Natural;")
     lines.append("")
     lines.append("end Adacovex.Docs_Template;")
-    out.write_text("\n".join(lines) + "\n", encoding="ascii")
+    content: str = "\n".join(lines) + "\n"
     total = sum(len(b) for _, _, b in assets)
     gz_total = sum(len(c) for _, _, chunks in plan for c in chunks)
-    print(f"{out.name} regenerated ({len(plan)} assets, {body_count} bodies, "
-          f"{gz_total} compressed bytes, {total} original bytes).")
+    stats = (f"{len(plan)} assets, {body_count} bodies, "
+             f"{gz_total} compressed bytes, {total} original bytes")
+    return content, stats
+
+
+def generate(out: Path) -> None:
+    """Build the manual and write the spec, but only when it changed.
+
+    An unconditional rewrite bumps the mtime of this 28k-line spec and makes
+    `alr build` recompile it (and relink) on every run -- and a content change
+    here also invalidates the cached SPARK proof.  Skipping the write on a
+    no-op run keeps both the incremental build and the prove cache warm.
+    """
+    content, stats = build_spec()
+    existing: Optional[str] = (
+        out.read_text(encoding="ascii") if out.is_file() else None)
+    if existing == content:
+        print(f"{out.name} up to date ({stats}).")
+    else:
+        out.write_text(content, encoding="ascii")
+        print(f"{out.name} regenerated ({stats}).")
+
+
+def check(out: Path) -> bool:
+    """True when the committed spec matches a fresh build; never writes."""
+    content, stats = build_spec()
+    existing: Optional[str] = (
+        out.read_text(encoding="ascii") if out.is_file() else None)
+    if existing == content:
+        print(f"{out.name} is up to date ({stats}).")
+        return True
+    print(f"error: {out.name} is stale -- run tools/gen-docs.py (or make book)",
+          file=sys.stderr)
+    return False
 
 
 def parse_args(argv: List[str]) -> argparse.Namespace:
@@ -461,23 +598,16 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
 def main(argv: List[str]) -> int:
     args = parse_args(argv)
     out: Path = Path(args.out).resolve()
-    before: Optional[str] = out.read_text(encoding="ascii") if out.is_file() else None
     try:
+        if args.check:
+            return 0 if check(out) else 1
         generate(out)
+        return 0
     except RuntimeError as e:
         # Keep the previously committed spec; the build must not fail when the
         # docs toolchain is missing.
         print(f"note: {e}; keeping existing {out.name}")
         return 0
-    if not args.check:
-        return 0
-    after: str = out.read_text(encoding="ascii")
-    if before is not None and before == after:
-        print(f"{out.name} is up to date.")
-        return 0
-    print(f"error: {out.name} is stale -- run tools/gen-docs.py (or make book)",
-          file=sys.stderr)
-    return 1
 
 
 if __name__ == "__main__":

@@ -93,6 +93,14 @@ end record;
 
 **Returns:** Number of logical processors (>= 1).
 
+### function Is_Proof_Input (Name : Standard.String) return Standard.Boolean
+
+| Parameter | Description |
+|-----------|-------------|
+| `Name` | File base name, with extension. |
+
+**Returns:** True when the file is hashed into the proof-input digest.
+
 ## Procedures
 
 ### procedure Export_Status (Target_Dir : Standard.String; Out_Path : Standard.String; TZ_Spec : Standard.String; Success : Standard.Boolean)

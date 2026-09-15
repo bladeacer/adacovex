@@ -73,7 +73,9 @@ pin (`ADACOVEX_GNATPROVE_VERSION`, or `[prove] gnatprove-version` in
 `~/.adacovex/adacovex.toml`, deployed through the same `alr -n get` path),
 a gnatprove on `$PATH`, a cached toolchain in `~/.adacovex/toolchain/`, and
 finally the platform toolchain download.  `adacovex status` reports which
-tier applies without deploying anything.
+tier applies without deploying anything.  The global pin, the environment
+variables, and the state directories are documented in full on
+[Global configuration and state](configuration.md).
 
 ## Option 2: `alr install` (global, to `$PATH`)
 
@@ -122,7 +124,9 @@ cache namespace) resolve the version from `tools/gen-version.py`. The version
 depends on the installation method:
 
 1. `ADACOVEX_VERSION` -- release builds (the shipped binary always reports the
-   tag it was built from).
+   tag it was built from).  See
+   [Global configuration and state](configuration.md) for every environment
+   variable adacovex reads.
 2. `alire/alire-dev.toml` -- source checkouts (`version = "x.y.z"`).
 3. `alire.toml` -- dependency-managed installs: the toml associated with the
    `covex` binary for dependency management carries the release version.

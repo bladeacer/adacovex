@@ -156,6 +156,16 @@ flags, artefacts, and quality gates of the adacovex tool.
 - **Correct Example:** *The **result cache** serves the proof when the inputs are unchanged.*
 - **Incorrect Example:** *The artifact store serves the proof when the inputs are unchanged.*
 
+## Technical Name: Stat-Stamp Index
+- **Part of Speech:** Noun
+- **Definition:** The persistent on-disk index of file size, modification
+  time, and content hash. adacovex consults it to skip re-hashing a file that
+  did not change since the last run.
+- **Approved Form:** Stat-Stamp Index (singular), Stat-Stamp Indexes (plural)
+- **Do Not Use:** Hash index, File index, Stamp store
+- **Correct Example:** *The **stat-stamp index** serves the digest without re-reading the file.*
+- **Incorrect Example:** *The hash index serves the digest without re-reading the file.*
+
 ## Technical Name: Safety Class
 - **Part of Speech:** Noun
 - **Definition:** One of the IEC 62304 classes (A, B, or C) that classify the

@@ -66,6 +66,34 @@ package body Adacovex_Prove_Runner_Tests is
         (Adacovex.Prove.Detect_Core_Count >= 1,
          "the detected core count is at least one");
 
+      --  The generated bundle specs carry no proof surface and are excluded
+      --  from the proof-input hash, so a docs or dashboard regeneration does
+      --  not invalidate the cached proof.  Every other source file is in.
+      R.Check
+        (not Adacovex.Prove.Is_Proof_Input ("adacovex-docs_template.ads"),
+         "the bundled manual spec is excluded from the proof input");
+      R.Check
+        (not Adacovex.Prove.Is_Proof_Input ("adacovex-dashboard_template.ads"),
+         "the dashboard template spec is excluded from the proof input");
+      R.Check
+        (Adacovex.Prove.Is_Proof_Input ("adacovex-prove.adb"),
+         "an ordinary project body is part of the proof input");
+      R.Check
+        (Adacovex.Prove.Is_Proof_Input ("adacovex-prove.ads"),
+         "an ordinary project spec is part of the proof input");
+      R.Check
+        (Adacovex.Prove.Is_Proof_Input ("adacovex-docs_template.adb"),
+         "the hand-written manual decoder body stays in the proof input");
+      R.Check
+        (Adacovex.Prove.Is_Proof_Input ("docs_template.ads"),
+         "only the exact generated base name is excluded");
+      R.Check
+        (Adacovex.Prove.Is_Proof_Input ("Adacovex-Docs_Template.ads"),
+         "the exclusion match is case-sensitive");
+      R.Check
+        (Adacovex.Prove.Is_Proof_Input (""),
+         "an empty name counts as an ordinary source file");
+
       declare
          S : constant String := Adacovex.Prove.Build_Option_String (O, 8);
       begin

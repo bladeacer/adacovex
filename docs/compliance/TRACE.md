@@ -17,8 +17,17 @@
 | adacovex-parsers-source | SCAN |
 | adacovex-parsers-gnatprove | PROOF |
 | adacovex-compliance-dal | COMPLIANCE, DAL-A, DAL-B, DAL-C, DAL-D, DAL-E |
-| adacovex-types | METRICS, PROOF, TEST, COMPLIANCE, DAL-A, DAL-B, DAL-C, DAL-D, DAL-E, SBOM, SBOM, SBOM |
+| adacovex-vcs | DIFF |
+| adacovex-types | METRICS, PROOF, TEST, COMPLIANCE, DAL-A, DAL-B, DAL-C, DAL-D, DAL-E, SBOM, SBOM, SBOM, SBOM |
+| adacovex-ansi | ANSI |
+| adacovex-complexity | COMPLEXITY |
+| adacovex-completion | CLI |
 | adacovex-config | CLI |
+| adacovex-prove_patch | PROVE |
 | adacovex-diff | DIFF |
+| adacovex-cpus | CPU |
+| adacovex-cache | CACHE |
 | adacovex-prove | PROVE |
+| adacovex-opt_outs | SCAN |
+| adacovex-timezones | TZ |
 | adacovex-server-http | SERVER |

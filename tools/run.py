@@ -22,6 +22,7 @@ Exit code is adacovex's.
 
 import argparse
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -29,17 +30,42 @@ from typing import List
 
 ROOT: Path = Path(__file__).resolve().parent.parent
 
-# Self-assessment acceptance gates, defined once so prove / self / release /
-# CI stay in sync (and match the AGENTS.md "Dogfood target" section).
-# --require-tests is the current native test-suite size (docs/test_result.md).
-# Every token is a single -flag=value / --flag=value word so the string can
-# be shell-split without knowing which flags take a separate value; the
-# shorthand spellings (--spark, --docstrs, -r) are the ones the CLI parser
-# expands into the canonical long flags.
-SELF_ASSESS_ARGS: str = (
-    "--standard=all --dal=C --spark=Platinum "
-    "--docstrs=100 --require-tests=1287 -r=100"
-)
+# docs/test_result.md is the single source of truth for the native test count:
+# `make test` writes it and tools/update-test-count.py syncs every other file
+# from it.  The acceptance gate derives --require-tests from this file at run
+# time, so the gate can never drift from the suite again.
+TEST_RESULT: Path = ROOT / "docs" / "test_result.md"
+
+
+def native_test_count() -> int:
+    """Return the passing native-test count from docs/test_result.md.
+
+    Raises SystemExit with a clear message when the file is missing or
+    unreadable, so a release never silently drops the test gate.
+    """
+    rel: str = str(TEST_RESULT.relative_to(ROOT))
+    if not TEST_RESULT.is_file():
+        raise SystemExit(f"error: {rel} is missing; run `make test` first")
+    m = re.search(r"Passed:\s*(\d+)", TEST_RESULT.read_text(errors="replace"))
+    if m is None:
+        raise SystemExit(f"error: no 'Passed: N' line in {rel}")
+    return int(m.group(1))
+
+
+def self_assess_args() -> str:
+    """The self-assessment acceptance gates, defined once for every caller.
+
+    These flags match the AGENTS.md "Dogfood target" section.  Every token is
+    a single -flag=value / --flag=value word so the string can be shell-split
+    without knowing which flags take a separate value; the shorthand spellings
+    (--spark, --docstrs, -r) are the ones the CLI parser expands into the
+    canonical long flags.  --require-tests comes from docs/test_result.md, so
+    a suite-size change updates the gate automatically.
+    """
+    return (
+        "--standard=all --dal=C --spark=Platinum "
+        f"--docstrs=100 --require-tests={native_test_count()} -r=100"
+    )
 
 
 def source_date_epoch(target: Path) -> str:
@@ -63,13 +89,13 @@ def run(command: str) -> int:
     if command == "prove":
         return adacovex(
             ROOT,
-            ["prove", "-t=."] + SELF_ASSESS_ARGS.split()
+            ["prove", "-t=."] + self_assess_args().split()
             + ["--svg-path=docs/badges/"],
         )
     if command == "self":
         return adacovex(
             ROOT,
-            ["-t=."] + SELF_ASSESS_ARGS.split()
+            ["-t=."] + self_assess_args().split()
             + ["--svg-path=docs/badges/"],
         )
     if command == "sbom":
@@ -95,7 +121,7 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
 def main() -> int:
     args = parse_args(sys.argv[1:])
     if args.command == "assess-args":
-        print(SELF_ASSESS_ARGS)
+        print(self_assess_args())
         return 0
     return run(args.command)
 

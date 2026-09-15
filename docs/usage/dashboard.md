@@ -170,10 +170,24 @@ playground's `/docs` endpoint both open it.
 The manual is served **pre-compressed**: every asset is gzip-compressed at
 build time (in `tools/gen-docs.py`, base64-encoded into the generated spec)
 and goes out with `Content-Encoding: gzip`, so the browser inflates it and
-the binary carries no inflate routine. LZ4 was considered and rejected:
-only the browser decompresses here, and its lower ratio would grow the
-embedded blob. The result cache stays uncompressed -- its blobs are tiny
-per-unit records where compression costs more than it saves.
+the binary carries no inflate routine.
+
+LZ4 was measured again and rejected. On the self tree the bundled site is
+about 6.66 MB of source; gzip compresses it to about 1.47 MB (ratio 0.22)
+and `lz4 -9` to about 1.93 MB (ratio 0.29). LZ4 is therefore **31% larger**
+than gzip here, which would add about 0.6 MB to the embedded base64 blob.
+
+Two further points settle it: the Ada runtime has no LZ4 decompressor (a
+roll-your-own decoder would add code and SPARK proof surface), and gzip
+needs no decoder at all in the binary because the browser inflates the
+stream. gzip stays.
+
+The result cache also stays uncompressed -- its blobs are tiny per-unit
+records where compression costs more than it saves.
+
+The full composition of the bundled site, and the other size options
+measured, are on [Benchmarking adacovex -- bundled offline
+manual](../contributing/perf/benchmarks.md#bundled-offline-manual).
 
 ## Charts
 

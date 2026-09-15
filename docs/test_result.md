@@ -20,11 +20,11 @@
   | Opt-out markers                          |  16 | PASS     |
   | Dir cache                                |  22 | PASS     |
   | Diff reports                             |  36 | PASS     |
-  | Prove runner                             |  12 | PASS     |
+  | Prove runner                             |  20 | PASS     |
   | ANSI terminal report                     |  28 | PASS     |
   | CPU and jobs                             |  24 | PASS     |
   | HLR/LLR parsing                          |  33 | PASS     |
   | Completion scripts                       |  24 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 1599  Failed: 0
+  Passed: 1607  Failed: 0

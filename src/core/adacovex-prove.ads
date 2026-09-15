@@ -95,6 +95,18 @@ package Adacovex.Prove is
    --  @return Number of logical processors (>= 1).
    function Detect_Core_Count return Natural;
 
+   --  Whether an Ada source file participates in the proof-input hash.  Every
+   --  project source does, except the generated bundle specs
+   --  (`adacovex-docs_template.ads` and `adacovex-dashboard_template.ads`).
+   --  Both are multi-thousand-line string constants (base64 gzip chunks and
+   --  inlined HTML/CSS/JS) with no subprogram and no check, so a docs or
+   --  dashboard regeneration cannot change a proof result.  Excluding them
+   --  keeps a documentation edit from invalidating the cached proof.  The
+   --  match is exact and case-sensitive on the file base name.
+   --  @param Name  File base name, with extension.
+   --  @return True when the file is hashed into the proof-input digest.
+   function Is_Proof_Input (Name : String) return Boolean;
+
    --  Build the gnatprove option arguments as a space-separated string.
    --  Exclude the -P <project> pair.  Always include `-j <jobs>` and
    --  `--no-loop-unrolling`.  Pass the resolved job count

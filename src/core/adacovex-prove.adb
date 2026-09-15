@@ -59,11 +59,20 @@ package body Adacovex.Prove is
       return Adacovex.CPUs.Detect_Core_Count;
    end Detect_Core_Count;
 
+   function Is_Proof_Input (Name : String) return Boolean is
+   begin
+      return
+        Name /= "adacovex-docs_template.ads"
+        and then Name /= "adacovex-dashboard_template.ads";
+   end Is_Proof_Input;
+
    --  Combined SHA-256 of everything that determines a gnatprove run: the
    --  root .gpr path, the resolved option string, and the content hash of
-   --  every Ada source file under the target (skipping the always-excluded
-   --  directories).  Two runs with identical inputs produce the same digest,
-   --  so an unchanged project reuses a prior proof via the result cache.
+   --  every prove-relevant Ada source file under the target (skipping the
+   --  always-excluded directories and the generated bundle specs, see
+   --  Is_Proof_Input).  Two runs with identical inputs produce the same
+   --  digest, so an unchanged project reuses a prior proof via the result
+   --  cache.
    function Compute_Prove_Input_Hash
      (Target_Dir : String; GPR : String; Options : String) return String
    is
@@ -146,7 +155,9 @@ package body Adacovex.Prove is
                               E2 : constant String :=
                                 Ext (Last + 1 .. Ext'Last);
                            begin
-                              if E2 = "ads" or else E2 = "adb" then
+                              if (E2 = "ads" or else E2 = "adb")
+                                and then Is_Proof_Input (Ext)
+                              then
                                  Hash := Adacovex.Cache.Hash_File (N);
                                  Comb :=
                                    Adacovex.Cache.Hash_String (Comb & Hash);

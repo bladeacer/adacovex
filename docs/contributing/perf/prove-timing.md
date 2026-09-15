@@ -19,16 +19,16 @@ the best value of each row across different versions.  When the metrics
 trade off, the reading notes name the representative and the reason for the
 pick.
 
-The measured phases are 1.40.0-1.41.0, 1.42.0-1.44.0, and 1.45.0-1.47.0.  A
-version joins the open phase while the methodology is unchanged; a
-methodology shift closes the phase and opens a new one.
+The measured phases are 1.40.0-1.41.0, 1.42.0-1.44.0, 1.45.0-1.47.0, and
+1.48.0-1.50.0.  A version joins the open phase while the methodology is
+unchanged; a methodology shift closes the phase and opens a new one.
 
-**The 1.48.0 phase is open.**  1.48.0 and 1.49.0 add no
-performance-methodology change, so the tables carry no column for them yet.
-The open phase takes its representative version only when `make bench` runs
-on the tree that first shifts the methodology.  Every number below is
-hyperfine on the self tree (gnatprove 16.1.0, 12 logical cores, 10 proof
-jobs) unless a note says otherwise.
+**The 1.48.0-1.50.0 phase is open, and 1.50.0 is its representative.**  The
+phase's methodology shift is the deterministic, incremental doc bundling of
+1.50.0; 1.48.0 and 1.49.0 fold into the phase because they changed no
+performance methodology.  Every number below is hyperfine on the self tree
+(gnatprove 16.1.0, 12 logical cores, 10 proof jobs) unless a note says
+otherwise.  The 1.48.0-1.50.0 column was measured on the 1.50.0 tree.
 
 ## Pipeline timing by phase
 
@@ -37,6 +37,7 @@ jobs) unless a note says otherwise.
 | 1.40.0-1.41.0 | 1.41.0 | ~104 ms | ~545 ms* |
 | 1.42.0-1.44.0 | 1.44.0 | 23 ms | 60 ms |
 | 1.45.0-1.47.0 | 1.47.0 | ~43 ms | ~74 ms |
+| 1.48.0-1.50.0 | 1.50.0 | 46 ms | 73 ms |
 
 \* The 1.40.0/1.41.0 pipeline figures predate the four-scenario bench script
 (single-shot `time` runs, coarser sampling).
@@ -48,6 +49,7 @@ jobs) unless a note says otherwise.
 | 1.40.0-1.41.0 | 1.41.0 | 2.5 s | 42.8 s / 791 VCs |
 | 1.42.0-1.44.0 | 1.44.0 | 44 ms | 36.4 s / 876 VCs |
 | 1.45.0-1.47.0 | 1.47.0 | ~53 ms | ~37 s / 876 VCs (40-110 s load-dependent) |
+| 1.48.0-1.50.0 | 1.50.0 | 55 ms | 61-88 s / 880 VCs (load-dependent) |
 
 ## Warm-run syscalls by phase
 
@@ -56,6 +58,7 @@ jobs) unless a note says otherwise.
 | 1.40.0-1.41.0 | 1.41.0 | ~15k |
 | 1.42.0-1.44.0 | 1.44.0 | ~2k |
 | 1.45.0-1.47.0 | 1.47.0 | ~6k |
+| 1.48.0-1.50.0 | 1.50.0 | ~6.9k |
 
 ## Reading the numbers
 
@@ -100,6 +103,30 @@ jobs) unless a note says otherwise.
   6.49 MiB to 5.39 MiB.  The solver-dominated prove-cold shape does not
   move.  The phase's warm/cold syscall count stays at ~6k, half of 1.43.0's
   ~12k.
+
+### 1.48.0-1.50.0 (representative 1.50.0)
+
+- The phase's methodology shift is in the build, not in the binary.  The
+  doc bundling became deterministic and incremental: `tools/gen-docs.py`
+  builds the Sphinx output clean and writes
+  `src/adacovex-docs_template.ads` only when its content changed.  The
+  generated spec therefore no longer differs between an incremental
+  developer tree and a fresh clone, and a no-op build no longer rewrites it.
+- The cached proof now survives a docs change.  The generated bundle specs
+  are excluded from the proof-input hash, because a string of base64 gzip
+  chunks has no proof surface.  Before this phase a changed spec invalidated
+  the proof result cache, so `make prove` paid a full gnatprove session (tens
+  of seconds) after what looked like an unchanged tree; the phase also adds
+  generated-file writing only on a change.  The measured developer loop is
+  `make prove` at ~1.0 s on an unchanged tree with a 42-hit, 0-miss result
+  cache, and a real documentation edit reuses the cached proof too.
+- The binary-level shapes are flat by design: pipeline warm 46 ms and prove
+  warm 55 ms sit within noise of 1.47.0, and warm `newfstatat` is ~6.9k, the
+  tree's I/O floor.  The fix removes failed work (a recompile and relink
+  plus a re-proof), not steady work.
+- The prove-cold row is solver-bound and load-dependent as always: single
+  shots measured 61 s and 67 s, and a three-run hyperfine sample under load
+  measured 87.6 s, all at 880 VCs.  Treat 61-88 s as the observed range.
 
 ### Across every phase
 

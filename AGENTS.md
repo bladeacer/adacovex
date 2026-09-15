@@ -98,7 +98,7 @@ Self-assessment (`make run-self`) must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
 - Platinum SPARK level (880 VCs under gnatprove 16.1.0, 0 unproved, 0
   justified; see `docs/proof/16.1.0-ledger.md`)
-- 1599/1599 native tests passing
+- 1607/1607 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
   `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
@@ -208,7 +208,7 @@ src/
     |-- adacovex_man_tests.ads/.adb           -- Man page renderer tests (18)
     |-- adacovex_opt_outs_tests.ads/.adb      -- Per-file opt-out marker tests (16)
     |-- adacovex_prove_patch_tests.ads/.adb   -- Proof patch merge tests (35)
-    |-- adacovex_prove_runner_tests.ads/.adb  -- GNATprove runner option/GPR tests (12)
+    |-- adacovex_prove_runner_tests.ads/.adb  -- GNATprove runner option/GPR tests (20)
     |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (64)
     |-- adacovex_renderer_svg_tests.ads/.adb  -- SVG renderer tests (161)
     |-- adacovex_renderer_tests.ads/.adb      -- HTML/Markdown renderer tests (58)
@@ -219,7 +219,7 @@ src/
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (67)
     |-- adacovex_tz_ansi_tests.ads/.adb       -- Timezone + ANSI tests (63)
     |-- adacovex_vcs_tests.ads/.adb           -- VCS support tests (29)
-    `-- test_runner.adb                       -- Test suite entry point (1599 tests)
+    `-- test_runner.adb                       -- Test suite entry point (1607 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -412,9 +412,15 @@ csslint-check`, run inside `make build`, and part of the `make check` cheap
 gates.  It is the pure-stdlib Python drop-in replacement for stylelint
 (the dev tooling is Python-only by convention; no npm dependency is added),
 and `tools/gen-dashboard.py` performs the equivalent CSS/JS minification at
-build time. `tools/para-split.py` rewraps any paragraph that exceeds four
+build time. `tools/para-split.py` splits any paragraph that exceeds four
 sentences into four-sentence paragraphs (the 4-sentence-per-paragraph rule is
-enforced by `make docs-check` via `tools/check-docs.py`).
+enforced by `make docs-check` via `tools/check-docs.py`).  It applies that
+page's own sentence rule and paragraph segmentation, so it flags a file
+exactly when the gate does, and it inserts blank lines only: it never cuts
+inside an inline construct (a code span, a link, or a badge), and it keeps
+the existing line wrapping at every line a break does not fall between.  It
+is a manual helper (not part of `make check`); the report names a paragraph
+it cannot split without corrupting the Markdown.
 `tools/rst2md.py` (wired as `make doc`) converts gnatdoc RST output into the
 `docs/api-docs/` package pages + index; cross-links to the hand-written
 reference pages live in its `GUIDE_PAGES` / `PACKAGE_GUIDES` tables, **never**
@@ -425,7 +431,12 @@ link URLs).
 MyST Markdown parser) and bundles the built site -- every page,
 stylesheet, script, and badge -- into `src/adacovex-docs_template.ads` as a
 path-keyed asset table (the bundled offline manual the `--serve` server
-serves at `/docs`, where search works exactly as online).  It is safe to
+serves at `/docs`, where search works exactly as online).  Sphinx runs only
+when the docs sources changed (a SHA-256 fingerprint stamp beside the build),
+and the build itself is always clean, so a renamed or deleted page can never
+survive as a stale page in the bundle.  The spec is written only when its
+content changed, so a no-op build never rewrites it (a rewrite would
+recompile the 28k-line unit and invalidate the cached proof).  It is safe to
 run without sphinx installed (the committed spec is kept); the same Sphinx
 project powers the Read the Docs site (`.readthedocs.yaml`, installing
 docs deps from `requirements.txt`).
@@ -447,12 +458,13 @@ must be followed by `make book`.
 | `check` | **The single everything-check / verification entry point.** Run it after any change. It runs every gate CI runs before a release: cheap static gates first (ascii, complexity, csslint, spark-off, changelog, action-parity, tools-check, cli-e2e, version, doc-links, link, docs-check, book-links), then build + native tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description). `make check` resolves `gnatprove` for you (it is fetched into `~/.adacovex/toolchain/` and executed directly when not on `PATH`), so you never have to install or point at a prover by hand -- just run `make check` and it verifies the whole tree end to end. `make prove` is the SPARK sub-gate if you only changed proof-affecting code |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
-| `test` | Build + run the 1599-test native suite |
+| `test` | Build + run the 1607-test native suite |
 | `prove` | SPARK proof (Platinum gate) + regenerates SVG badges in `docs/badges/` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
 | `book` | Build the offline manual from the Sphinx docs and regenerate `src/adacovex-docs_template.ads` (tools/gen-docs.py; safe to run without sphinx) |
 | `fmt` | Format Ada sources (gnatformat) |
 | `sbom` | Generate the proof-aware SBOM (`sbom.json`) |
+| `compliance` | Regenerate the committed `docs/compliance/VERIFICATION.md` + `TRACE.md` for the self tree (kept out of `make prove` so the bundled-report template cannot invalidate the proof cache) |
 | `description` | Sync the crate description from alire/description.txt + alire/long-description.txt (`CHECK=1` verifies only) |
 | `run-self` | Run against adacovex itself (default target: cwd) |
 | `run-ada-crdt` | Run against `../Ada_CRDT` (strict mode) |
@@ -482,8 +494,12 @@ Running `alr build` / `make build` / `make test` / `make run-self` rewrites a
 few generated files as a normal side effect: `alire/settings.toml` and
 `alire/build_hash_inputs` (Alire build-profile state), `sbom.json` (SBOM
 output), and `src/adacovex_version_info.ads` (regenerated from
-`alire-dev.toml`; byte-identical when the version did not change). These are
-expected and should be left as-is -- do not revert them.
+`alire-dev.toml`).  The generated Ada specs (`src/adacovex_version_info.ads`,
+`src/adacovex-dashboard_template.ads`, `src/adacovex-docs_template.ads`) are
+written only when their content changed, so a no-op build keeps their mtimes
+and `alr build` stays a true no-op; the Sphinx manual is rebuilt only when
+the docs sources change.  These are expected and should be left as-is -- do
+not revert them.
 
 ## Workflows
 
@@ -548,23 +564,28 @@ release-tag coverage gate instead.
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 1599/1599 passing |
+| Unit tests | `make test` | 1607/1607 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (880 VCs, 0 unproved, 0 justified under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
 
 **The true test of proof performance is the `prove` subcommand at the
 binary level** (`./bin/covex prove`), not just the gnatprove level. The
-warm shape is `./bin/covex prove` with the result cache populated (~47 ms;
-stable across consecutive runs -- a `make prove` wall of ~2.5 s is the
-`alr build` dependency, not the proof); the truly cold shape is
+warm shape is `./bin/covex prove` with the result cache populated (~55 ms;
+stable across consecutive runs -- a `make prove` wall of ~1.0 s is the
+no-op `alr build`, not the proof, because the generators write their Ada
+specs only when the content changed since 1.50.0); the truly cold shape is
 `./bin/covex prove --no-cache` with the result cache *and* the gnatprove
-session store (`obj/gnatprove/`) wiped (~39 s at 876 VCs, dominated by the
-solver). `make bench` samples both with hyperfine (prove-cold repetitions
-wipe `obj/gnatprove/` in their `--prepare`). A partial gnatprove session
-(for example after a targeted `gnatprove -u` run) makes a prove miss land
-between the shapes -- that is the origin of the 0.02 s / 5.47 s
-alternation once seen on this machine, not a cache fault.
+session store (`obj/gnatprove/`) wiped (61-88 s at 880 VCs on the dev
+machine, dominated by the solver). `make bench` samples both with hyperfine
+(prove-cold repetitions wipe `obj/gnatprove/` in their `--prepare`). A
+partial gnatprove session (for example after a targeted `gnatprove -u`
+run) makes a prove miss land between the shapes -- that is the origin of
+the 0.02 s / 5.47 s alternation once seen on this machine, not a cache
+fault. The proof-input hash excludes the generated bundle specs
+(`adacovex-docs_template.ads`, `adacovex-dashboard_template.ads`): they are
+data-only string constants with no proof surface, so a docs or dashboard
+edit never invalidates a cached proof.
 Benchmark-category reference table and the version comparison:
 [docs/contributing/perf/index.md](docs/contributing/perf/index.md); the
 per-phase `make prove` timing table and its representative-version rule are
@@ -580,7 +601,7 @@ rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 1599 tests across 25 categories).
+Native zero-dependency suite (`src/tests/`, 1607 tests across 25 categories).
 Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests).
 
@@ -642,6 +663,7 @@ suffices.
 - [Dashboard metric charts and robustness tier](docs/usage/dashboard-charts.md)
 - [SBOM](docs/usage/sbom.md)
 - [SBOM dependency resolution](docs/usage/sbom-resolution.md)
+- [Global configuration and state](docs/usage/configuration.md)
 - [VCS support](docs/usage/vcs.md)
 - [Target projects](docs/usage/target-projects.md)
 - [CI/CD](docs/usage/ci-cd.md)
