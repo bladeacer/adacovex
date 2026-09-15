@@ -384,7 +384,7 @@ package body Adacovex_Prove_Tests is
       --  gnatprove v16 real-world row: the Provers column holds "." and the
       --  Flow column carries a percentage, but field positions are stable, so
       --  the field-based extractor must read Total=3, Justified=. (0) and
-      --  Unproved=1 (33%) off the same row.  This is exactly the output both
+      --  Unproved=1 (33%) off the same row. This is exactly the output both
       --  gnatprove 15.1.0 and 16.1.0 produce (verified against both).
       declare
          F       : File_Type;

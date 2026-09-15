@@ -1,6 +1,6 @@
 # The dashboard document and its dependency views
 
-This page covers the dashboard document itself: the tab structure, the dependencies tab and alternative diagram, the split-view detail panel, the global search, and the tree filter.  The at-a-glance charts, robustness tier, JSON API, playground, and themes are on the [Web dashboard home page](dashboard.md) and [The dashboard JSON API and playground](dashboard-api.md).
+This page covers the dashboard document itself: the tab structure, the dependencies tab and alternative diagram, the split-view detail panel, the global search, and the tree filter. The at-a-glance charts, robustness tier, JSON API, playground, and themes are on the [Web dashboard home page](dashboard.md) and [The dashboard JSON API and playground](dashboard-api.md).
 
 ## The HTML dashboard
 
@@ -20,9 +20,9 @@ so their tokenizer regexes stay intact).
 
 One more authored module lives under `resources/js/`:
 `resources/js/book-nav.js` is the offline manual's shared-sidebar injector,
-not a dashboard module.  It is bundled by `tools/gen-docs.py` as
+not a dashboard module. It is bundled by `tools/gen-docs.py` as
 `_static/adacovex-nav.js`, and its place under `js/` keeps the SBOM asset
-scan reading it as project code rather than a vendored library.  The
+scan reading it as project code rather than a vendored library. The
 injector marks the open page's entry, then scrolls that entry into the
 drawer, so a reader who clicks a late entry finds it in view on the page
 that opens.
@@ -67,10 +67,10 @@ keyboard-accessible, persisted in `localStorage`):
   Download actions (see below).
 - **Credits** -- third-party libraries used by the dashboard (nomnoml,
   graphre, FlexSearch, yace, Charts.css) with versions, licences, links and
-  the THIRD_PARTY_NOTICES pointer.  The Playwright row (e2e test tooling) is
+  the THIRD_PARTY_NOTICES pointer. The Playwright row (e2e test tooling) is
   labelled `test`: the e2e fixture declares `@playwright/test` under
   `devDependencies`, and adacovex classifies test-named npm packages (such
-  as `@playwright/test`) as test dependencies.  Charts.css is credited as
+  as `@playwright/test`) as test dependencies. Charts.css is credited as
   inspiration -- the dashboard charts are adacovex's own patched version,
   not the vendored framework.
 
@@ -111,7 +111,7 @@ shows an empty state with a link to `/api/deps`).
   pyproject `test` extra -- or an npm package whose name starts or ends
   with "test", such as `@playwright/test`). `root` badge for the project
   itself. Child count badge.
-  `data-scope` attribute on each `<li>` for JS filtering.  Scope badge
+  `data-scope` attribute on each `<li>` for JS filtering. Scope badge
   colours come from `--scope-base/-dev/-trans/-vend/-system/-test` CSS
   variables so they stay readable in both themes.
 - Each node shows `name`, `version`, `license`, `purl` when available. The
@@ -125,9 +125,9 @@ A **system** scope badge marks system-tool dependencies (`pkg:generic/*` with `s
 **Diagram view** (alternative, toggle **Tree / Diagram**):
 
 -  Rendered with vendored [nomnoml 1.7.0](https://github.com/skanaa/nomnoml)
-(MIT, `resources/nomnoml.js`, 71 KB, inlined) inside a `nomnoml-wrap` card.  `ADACOVEX_GRAPH` (`__GRAPH_JSON__` injected by the Ada renderer) is converted to nomnoml source (`[parent]-->[child]` edges, `#direction: down` top-to-bottom so deep graphs stay within the page width) and laid out with nomnoml's internal layout engine, then the graph is serialised to an **SVG** (`<svg id="nomnoml-svg">`). Every node is a real `<g data-name=...>` group with a matching `<rect>` hitbox, so boxes are clickable with exact hit areas (no canvas hit-testing, nothing upside down, no text overflow: node text is clipped to the box width and long labels ellipsise). Diagram colours (fill, background, stroke, line, font) are derived from the page's CSS custom properties at render time, and the theme select re-renders the diagram, so box/arrow colours always match the active theme. The SVG fills the width allocated to the diagram (it takes up the same space the dependency tree would, rather than shrinking to the graph's natural size) and is centred horizontally inside `.nomnoml-wrap`; deep graphs scroll inside the card.
+(MIT, `resources/nomnoml.js`, 71 KB, inlined) inside a `nomnoml-wrap` card. `ADACOVEX_GRAPH` (`__GRAPH_JSON__` injected by the Ada renderer) is converted to nomnoml source (`[parent]-->[child]` edges, `#direction: down` top-to-bottom so deep graphs stay within the page width) and laid out with nomnoml's internal layout engine, then the graph is serialised to an **SVG** (`<svg id="nomnoml-svg">`). Every node is a real `<g data-name=...>` group with a matching `<rect>` hitbox, so boxes are clickable with exact hit areas (no canvas hit-testing, nothing upside down, no text overflow: node text is clipped to the box width and long labels ellipsise). Diagram colours (fill, background, stroke, line, font) are derived from the page's CSS custom properties at render time, and the theme select re-renders the diagram, so box/arrow colours always match the active theme. The SVG fills the width allocated to the diagram (it takes up the same space the dependency tree would, rather than shrinking to the graph's natural size) and is centred horizontally inside `.nomnoml-wrap`; deep graphs scroll inside the card.
 
-Scope checkboxes filter the diagram too (re-render on change). Buttons **Re-render** and **Download SVG** are provided. The view choice is persisted in `localStorage` (`adacovex-dep-view`).  **Click a box** to open the same split-view detail panel as the Tree view.
+Scope checkboxes filter the diagram too (re-render on change). Buttons **Re-render** and **Download SVG** are provided. The view choice is persisted in `localStorage` (`adacovex-dep-view`). **Click a box** to open the same split-view detail panel as the Tree view.
 
 **Two separate searches, similar styling**:
 
@@ -135,16 +135,16 @@ Scope checkboxes filter the diagram too (re-render on change). Buttons **Re-rend
   index**: at page load it walks the rendered DOM and indexes each section --
   every metric card (labelled by its heading), every compliance-table row,
   every dependency node, and every HLR-tagged element -- plus one catch-all
-  entry per tab.  Queries are tokenised and every token must appear in a
+  entry per tab. Queries are tokenised and every token must appear in a
   section's lowercased text (AND semantics), so multi-word page text such as
   "orphan tags" or a section heading like "Proof Check Types" resolves
-  regardless of case.  Selecting a hit switches to that tab and scrolls to
+  regardless of case. Selecting a hit switches to that tab and scrolls to
   (briefly flashing) the exact section, rather than only switching tabs.
   Dependency names, versions, scopes, licences and PURLs are indexed too, so
   the box still filters the dependency tree and seeds `dep-filter`.
 - **Tree filter** (`#dep-filter`, inside the Dependencies tab) is a plain
   client-side name filter over the rendered tree only -- it never touches the
-  global index.  The two inputs share the same styling class so they look
+  global index. The two inputs share the same styling class so they look
   consistent, but they are functionally independent (typing in one does not
   affect the other until a global hit is clicked).
 

@@ -14,17 +14,17 @@ package body Adacovex.Renderers.SBOM is
    with SPARK_Mode => On
    is
    begin
-      --  Report the honest assessed level (Stone..Platinum).  The proof-level
-      --  property must never overstate certainty.  A lower level (for example
-      --  Silver with unproved VCs) is reported verbatim.  It is not collapsed
-      --  into a coarse "Gold".  SBOM consumers then see the real assurance
+      --  Report the honest assessed level (Stone..Platinum). The proof-level
+      --  property must never overstate certainty. A lower level (for example
+      --  Silver with unproved VCs) is reported verbatim. It is not collapsed
+      --  into a coarse "Gold". SBOM consumers then see the real assurance
       --  state.
       return Types.To_String (Level);
    end Proof_Level_Property;
 
-   --  Proof level reported for dependency components.  adacovex only
-   --  proves the target project itself.  Vendored and third-party
-   --  dependencies are not audited.  They must never claim a Gold or Platinum
+   --  Proof level reported for dependency components. adacovex only
+   --  proves the target project itself. Vendored and third-party
+   --  dependencies are not audited. They must never claim a Gold or Platinum
    --  level.
    Not_Proved : constant String := "Not proved";
 
@@ -79,10 +79,10 @@ package body Adacovex.Renderers.SBOM is
    end All_Levels_Property;
 
    --  Map a dependency scope to the adacovex:dep_scope property value.
-   --  Base dependencies are declared in the publishing manifest.  Dev
-   --  dependencies are declared only in the dev manifest.  Transitive ones are
-   --  in neither.  Vendored packages are overlaid by a .adacovex/patches/
-   --  patch.  Test dependencies are declared under a [[test-depends-on]]
+   --  Base dependencies are declared in the publishing manifest. Dev
+   --  dependencies are declared only in the dev manifest. Transitive ones are
+   --  in neither. Vendored packages are overlaid by a .adacovex/patches/
+   --  patch. Test dependencies are declared under a [[test-depends-on]]
    --  manifest section or with-claused only from test project files.
    --  @param Scope  Component dependency scope.
    --  @return "base", "dev", "transitive", "vendored", "system", or "test".
@@ -111,15 +111,15 @@ package body Adacovex.Renderers.SBOM is
       end case;
    end Scope_Property;
 
-   --  Escape a string for inclusion in a JSON document.  Backslash, quote,
-   --  and control characters are escaped.  The emitted JSON is then always
-   --  well-formed.  This holds even for manifest strings containing embedded
-   --  quotes.  The output buffer is bounded at six bytes per input byte (the
-   --  widest escape, "\u00xx").  Input length is capped at Max_Esc_Src.  The
+   --  Escape a string for inclusion in a JSON document. Backslash, quote,
+   --  and control characters are escaped. The emitted JSON is then always
+   --  well-formed. This holds even for manifest strings containing embedded
+   --  quotes. The output buffer is bounded at six bytes per input byte (the
+   --  widest escape, "\u00xx"). Input length is capped at Max_Esc_Src. The
    --  6x output bound then stays provably within Natural.
    --  @param S  String to escape.
    --  @return The escaped JSON string.
-   --  Escape a string for inclusion in a JSON document.  Backslash, quote
+   --  Escape a string for inclusion in a JSON document. Backslash, quote
    --  and control characters are escaped so the emitted JSON is always
    --  well-formed, even for manifest strings containing embedded quotes.
    --  The output buffer is bounded at six bytes per input byte (the widest
@@ -205,8 +205,8 @@ package body Adacovex.Renderers.SBOM is
       Raw (F, """");
    end JStr;
 
-   --  Decimal string of a non-negative integer.  The fixed 10-character
-   --  buffer holds any Natural (up to 2,147,483,647, ten digits).  The loop
+   --  Decimal string of a non-negative integer. The fixed 10-character
+   --  buffer holds any Natural (up to 2,147,483,647, ten digits). The loop
    --  invariant proves the write cursor never underflows the buffer.
    function I2S (N : Natural) return String
    with
@@ -262,9 +262,9 @@ package body Adacovex.Renderers.SBOM is
    end Pad2;
 
    --  Assemble the fixed ISO timestamp from its decimal string fields.
-   --  Kept separate from ISO_From_Epoch.  The concatenation bounds are then
-   --  proved against a small precondition.  They use this instead of the full
-   --  calendar-math context.  The full context pushes the concat checks past
+   --  Kept separate from ISO_From_Epoch. The concatenation bounds are then
+   --  proved against a small precondition. They use this instead of the full
+   --  calendar-math context. The full context pushes the concat checks past
    --  the solver step limit.
    --  @param YrS  Year field.
    --  @param MoS  Month field.
@@ -295,9 +295,9 @@ package body Adacovex.Renderers.SBOM is
       return YrS & "-" & MoS & "-" & DyS & "T" & HrS & ":" & MiS & ":" & SdS;
    end Assemble_ISO;
 
-   --  ISO 8601 UTC timestamp from a Unix epoch second count.  It is computed
-   --  with pure integer arithmetic.  The result is then identical on every
-   --  machine and timezone.  The civil date is extracted by bounded iteration
+   --  ISO 8601 UTC timestamp from a Unix epoch second count. It is computed
+   --  with pure integer arithmetic. The result is then identical on every
+   --  machine and timezone. The civil date is extracted by bounded iteration
    --  over years and months (the epoch span is under ~70 years), so every
    --  bound is discharged with constant-coefficient arithmetic.
    function ISO_From_Epoch (Epoch_Sec : Natural) return String
@@ -318,7 +318,7 @@ package body Adacovex.Renderers.SBOM is
             when others         => 31)
       with Post => Days_In_Month'Result in 28 .. 31, Global => null;
 
-      --  Days left in the year from the start of month M (inclusive).  With
+      --  Days left in the year from the start of month M (inclusive). With
       --  the leap day already folded out of Din, February counts 28 days, so
       --  Days_Remaining (1) = 365 and Days_Remaining (Mo+1) =
       --  Days_Remaining (Mo) - Days_In_Month (Mo).
@@ -411,9 +411,9 @@ package body Adacovex.Renderers.SBOM is
 
    --  ISO 8601 timestamp (YYYY-MM-DDTHH:MM:SS).
    --  Honours the SOURCE_DATE_EPOCH environment variable (reproducible-builds
-   --  convention).  When set to a Unix epoch second count, it derives the
-   --  timestamp from it (UTC, integer math).  SBOM output is then byte-for-byte
-   --  deterministic across runs and machines.  Otherwise the current local
+   --  convention). When set to a Unix epoch second count, it derives the
+   --  timestamp from it (UTC, integer math). SBOM output is then byte-for-byte
+   --  deterministic across runs and machines. Otherwise the current local
    --  time is used.
    function ISO_Timestamp return String is
       use Ada.Calendar;
@@ -477,7 +477,7 @@ package body Adacovex.Renderers.SBOM is
       end;
    end ISO_Timestamp;
 
-   --  Emit a single CycloneDX component object.  Used for the root component
+   --  Emit a single CycloneDX component object. Used for the root component
    --  in metadata and for every dependency in the components array.
    procedure Write_CDX_Component
      (F             : in out Ada.Text_IO.File_Type;
@@ -542,7 +542,7 @@ package body Adacovex.Renderers.SBOM is
       end if;
       if C.Website_Len > 0 then
          --  CycloneDX 1.5 externalReference: source-code repository / project
-         --  homepage.  Preferred over a PURL-derived registry guess so SBOM
+         --  homepage. Preferred over a PURL-derived registry guess so SBOM
          --  consumers link the real source.
          if not First_Field then
             Raw (F, ",");

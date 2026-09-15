@@ -1,7 +1,7 @@
 # STE100 Technical Names: Ada language constructs
 
 The **Ada Language Constructs** category of the [STE100 Technical Names]
-(index.md) dictionary.  These terms name Ada language
+(index.md) dictionary. These terms name Ada language
 features that generic English words cannot replace without losing technical
 precision.
 

@@ -34,34 +34,34 @@ package Adacovex.Config is
 
       --  Number of HTTP server task-pool workers for --serve (default: 4).
       --  --serve-workers=N raises or lowers how many concurrent requests the
-      --  dashboard server handles.  Only relevant with --serve.
+      --  dashboard server handles. Only relevant with --serve.
       Serve_Workers     : Positive := 4;
       Serve_Workers_Set : Boolean := False;
 
-      --  Display timezone override (--tz / --timezone).  Empty means the
-      --  operating system's timezone applies.  Accepted forms: a well-known
+      --  Display timezone override (--tz / --timezone). Empty means the
+      --  operating system's timezone applies. Accepted forms: a well-known
       --  IANA name ("Asia/Singapore") or a fixed UTC/GMT offset
-      --  ("UTC+8", "GMT+8", "UTC+08", "GMT+08", "UTC+08:30").  See
-      --  Adacovex.Timezones.  Consumed by `status` and the local
+      --  ("UTC+8", "GMT+8", "UTC+08", "GMT+08", "UTC+08:30"). See
+      --  Adacovex.Timezones. Consumed by `status` and the local
       --  date/time reports.
       Time_Zone     : String (1 .. Types.Max_Filename);
       Time_Zone_Len : Natural := 0;
 
       --  Comma-separated file extensions to skip in `complexity` mode
-      --  (--excludes=md,rst).  Only valid with the complexity subcommand.
+      --  (--excludes=md,rst). Only valid with the complexity subcommand.
       Complexity_Excludes : String (1 .. Types.Max_Filename);
       Excludes_Len        : Natural := 0;
 
       --  Comma-separated path fragments to skip in `complexity` mode
-      --  (--skip-path=PATH, repeatable).  A file whose full path contains
+      --  (--skip-path=PATH, repeatable). A file whose full path contains
       --  one of the fragments is excluded from the complexity/LOC gate.
       --  Only valid with the complexity subcommand.
       Complexity_Skip_Paths : String (1 .. Types.Max_Path);
       Skip_Paths_Len        : Natural := 0;
 
-      --  Dashboard colour theme for --serve (system/light/dark).  "system"
-      --  follows the browser's prefers-color-scheme.  "light" and "dark"
-      --  force a theme.  Relevant only with --serve.
+      --  Dashboard colour theme for --serve (system/light/dark). "system"
+      --  follows the browser's prefers-color-scheme. "light" and "dark"
+      --  force a theme. Relevant only with --serve.
       Theme         : Types.Dashboard_Theme := Types.System_Theme;
       No_SVG        : Boolean := False;
       Emit_SVG      : Boolean := True;
@@ -71,7 +71,7 @@ package Adacovex.Config is
       MD_Path       : String (1 .. Types.Max_Path);
       MD_Path_Len   : Natural := 0;
 
-      --  True when --no-md is given.  Like --no-svg it wins over the emit
+      --  True when --no-md is given. Like --no-svg it wins over the emit
       --  forms: no Markdown report is written even when --emit-markdown,
       --  --emit-md, or --md-path is also present.
       No_Markdown      : Boolean := False;
@@ -81,8 +81,8 @@ package Adacovex.Config is
       Verbose          : Boolean := False;
       Strict_Mode      : Boolean := True;
 
-      --  Result caching (see Adacovex.Cache).  Enabled by default.  The
-      --  cache is keyed by the SHA-256 of each analysed input.  Unchanged
+      --  Result caching (see Adacovex.Cache). Enabled by default. The
+      --  cache is keyed by the SHA-256 of each analysed input. Unchanged
       --  code is served from disk instead of re-scanned, re-parsed, or
       --  re-proved.
       Cache_Enabled     : Boolean := True;
@@ -93,7 +93,7 @@ package Adacovex.Config is
       CLI_Error : Boolean := False;
 
       --  True when an unknown flag or argument is rejected and no similar
-      --  known flag is found to suggest (Suggest_Flags returned "").  The
+      --  known flag is found to suggest (Suggest_Flags returned ""). The
       --  main program prints the full usage text to stdout after the error.
       --  A totally unrecognised token still lands the user on the flag list
       --  instead of a bare one-line error.
@@ -118,14 +118,14 @@ package Adacovex.Config is
       Complexity_Mode    : Boolean := False;
       Status_Mode        : Boolean := False;
 
-      --  True when the user gives `status --export[=PATH]`.  The status
+      --  True when the user gives `status --export[=PATH]`. The status
       --  report is written as machine-readable JSON to PATH (or stdout when
-      --  no path is supplied).  It replaces the human-readable text report.
+      --  no path is supplied). It replaces the human-readable text report.
       Status_Export          : Boolean := False;
       Status_Export_Path     : String (1 .. Types.Max_Path);
       Status_Export_Path_Len : Natural := 0;
 
-      --  True when the user gives `status --metrics`.  The status report is
+      --  True when the user gives `status --metrics`. The status report is
       --  printed as a compact key=value metrics summary (one per line).
       --  Shell scripts and CI can consume it without parsing prose.
       Status_Metrics       : Boolean := False;
@@ -138,12 +138,12 @@ package Adacovex.Config is
       SBOM_Out_Len         : Natural := 0;
       No_SBOM              : Boolean := False;
 
-      --  GNATprove invocation options (prove mode).  A value of -1 means
-      --  "not configured".  --jobs auto-detects the core count.  The level,
+      --  GNATprove invocation options (prove mode). A value of -1 means
+      --  "not configured". --jobs auto-detects the core count. The level,
       --  timeout, steps, and memlimit options are not passed to gnatprove.
-      --  --jobs=0 forwards -j0 (all cores).  The prove subcommand applies
+      --  --jobs=0 forwards -j0 (all cores). The prove subcommand applies
       --  its own --steps=10000 default when --steps is not passed (see
-      --  Build_Option_String).  Proofs then get a reproducible budget
+      --  Build_Option_String). Proofs then get a reproducible budget
       --  instead of gnatprove's step-limit false negatives.
       Prove_Jobs           : Integer := -1;
       Prove_Level          : Integer := -1;
@@ -154,40 +154,40 @@ package Adacovex.Config is
       Prove_No_Loop_Unroll : Boolean := False;
       Prove_No_Inlining    : Boolean := False;
 
-      --  Quiet-by-default prove output.  Unless --verbose is given, the
+      --  Quiet-by-default prove output. Unless --verbose is given, the
       --  prove subcommand hides GNATprove's benign informational messages
-      --  from stdout.  The hidden set is the default suppression set
-      --  (loop-unrolling and inlining notices).  --verbose always wins over
-      --  it and shows every message.  CI passes --verbose because CI output
-      --  stays authoritative.  The default is True.  Local runs are quiet
+      --  from stdout. The hidden set is the default suppression set
+      --  (loop-unrolling and inlining notices). --verbose always wins over
+      --  it and shows every message. CI passes --verbose because CI output
+      --  stays authoritative. The default is True. Local runs are quiet
       --  without any flag.
       Prove_Suppress_Warnings : Boolean := True;
 
       --  Comma-separated suppression-set names for --suppress-warnings=SETS
-      --  (and --quiet, which is the default set).  Empty means the default
-      --  set (unrolling-inlining).  A set name suppresses gnatprove info
-      --  tags `[info-<SET>]` (or `[<SET>]`).  See
+      --  (and --quiet, which is the default set). Empty means the default
+      --  set (unrolling-inlining). A set name suppresses gnatprove info
+      --  tags `[info-<SET>]` (or `[<SET>]`). See
       --  Adacovex.Prove.Replay_Suppressed.
       Prove_Suppress_Sets : Ada.Strings.Unbounded.Unbounded_String :=
         Ada.Strings.Unbounded.Null_Unbounded_String;
 
       --  True when the user explicitly passes --quiet or --suppress-warnings.
-      --  This differs from the quiet-by-default state.  Only the explicit
+      --  This differs from the quiet-by-default state. Only the explicit
       --  form is a prove-mode flag for the "requires the prove subcommand"
-      --  validation.  A plain local run never trips it.
+      --  validation. A plain local run never trips it.
       Prove_Suppress_Explicit : Boolean := False;
 
       --  Raw GNATprove arguments passed through verbatim (--args="...").
       --  The value is space-split into individual gnatprove command-line
       --  tokens and appended to the option list the prove subcommand
-      --  builds.  Only valid with the prove subcommand.
+      --  builds. Only valid with the prove subcommand.
       Prove_Args : Ada.Strings.Unbounded.Unbounded_String :=
         Ada.Strings.Unbounded.Null_Unbounded_String;
 
-      --  CI threshold gates (default: all off).  When set, the assessment
+      --  CI threshold gates (default: all off). When set, the assessment
       --  fails with exit code 1 and an explicit reason if the target does
-      --  not meet the minimum required level.  These are extra gates on top
-      --  of the DAL criteria.  A CI workflow pins these values to stop a
+      --  not meet the minimum required level. These are extra gates on top
+      --  of the DAL criteria. A CI workflow pins these values to stop a
       --  regression from slipping through unnoticed.
       Require_SPARK          : Types.SPARK_Level := Types.Stone;
       Require_SPARK_Set      : Boolean := False;
@@ -201,8 +201,8 @@ package Adacovex.Config is
 
    --  Parse Ada.Command_Line arguments and return a fully populated config.
    --  The parser reads command-line arguments via Ada.Command_Line.
-   --  Default values are used for any option not provided.  It resolves
-   --  relative target paths to absolute paths.  It checks that the target's
+   --  Default values are used for any option not provided. It resolves
+   --  relative target paths to absolute paths. It checks that the target's
    --  manifest file exists.
    --  @return Fully populated CLI_Config from parsed command-line arguments.
    function Parse_CLI return CLI_Config
@@ -227,14 +227,14 @@ package Adacovex.Config is
        and then Parse_CLI'Result.Help_Topic_Len <= Types.Max_Path;
 
    --  Add a directory name to the comma-separated skip list.
-   --  The procedure appends Name to the Skip_Dirs field.  It inserts a ','
+   --  The procedure appends Name to the Skip_Dirs field. It inserts a ','
    --  separator if the list is non-empty.
    --  @param Cfg  Config record to modify.
    --  @param Name  Directory name to add to skip list.
    procedure Add_Skip_Dir (Cfg : in out CLI_Config; Name : String);
 
-   --  All known CLI flag names, space-separated.  The "did you mean"
-   --  suggestion walks the same list.  The shell-completion generator
+   --  All known CLI flag names, space-separated. The "did you mean"
+   --  suggestion walks the same list. The shell-completion generator
    --  embeds the live flag set into the scripts it emits.
    --  @return Space-separated flag names (without leading dashes).
    function Flag_List return String
@@ -249,28 +249,28 @@ package Adacovex.Config is
    --  Print contextual help for a single flag or subcommand.
    --  The procedure matches Topic case-insensitively, with or without the
    --  leading "--" (for example "serve", "--serve", "standard",
-   --  "--standard").  It prints flag-specific detail (purpose, accepted
-   --  values, related flags) for known topics.  It prints the full usage
-   --  text for "help" itself.  For anything else it prints a short
+   --  "--standard"). It prints flag-specific detail (purpose, accepted
+   --  values, related flags) for known topics. It prints the full usage
+   --  text for "help" itself. For anything else it prints a short
    --  "unknown topic" notice followed by the full usage.
    --  @param Topic  Flag or subcommand name to explain.
    procedure Print_Topic_Help (Topic : String);
 
-   --  Testable CLI-parser core.  Kept out of SPARK.  It operates on an
+   --  Testable CLI-parser core. Kept out of SPARK. It operates on an
    --  unbounded string vector and reports parse errors to Standard_Error.
    --  Unit tests can drive flag precedence through Parse_Args without
-   --  touching Ada.Command_Line.  Parse_CLI wraps Parse_Args with the real
+   --  touching Ada.Command_Line. Parse_CLI wraps Parse_Args with the real
    --  command line and then finalises filesystem defaults.
    package Testing is
 
       package Arg_Vectors is new
         Ada.Containers.Indefinite_Vectors (Positive, String);
 
-      --  Parse an argument vector into Cfg.  The procedure applies each
-      --  argument (--flag=value and --flag value forms) in order.  Flag
-      --  precedence is last-write-wins per field.  --dal sets only the
-      --  shared tier.  --asil and --class set both the standard and the
-      --  tier.  --standard sets only the standard (or the "all" expansion).
+      --  Parse an argument vector into Cfg. The procedure applies each
+      --  argument (--flag=value and --flag value forms) in order. Flag
+      --  precedence is last-write-wins per field. --dal sets only the
+      --  shared tier. --asil and --class set both the standard and the
+      --  tier. --standard sets only the standard (or the "all" expansion).
       --  @param Args  Argument strings in command-line order.
       --  @param Cfg  Config record to populate (fields are overwritten in
       --              argument order).
@@ -279,7 +279,7 @@ package Adacovex.Config is
 
       --  Parse an argument vector and apply every cross-flag validation
       --  (subcommand gating, --excludes/--serve-workers/--tz rules, derived
-      --  defaults).  This is the testable core of Parse_CLI: the command-line
+      --  defaults). This is the testable core of Parse_CLI: the command-line
       --  reader builds the vector and delegates here, and the unit tests call
       --  it directly without touching Ada.Command_Line.
       --  @param Args  Argument strings in command-line order.
@@ -287,7 +287,7 @@ package Adacovex.Config is
       function Parse_All (Args : Arg_Vectors.Vector) return CLI_Config;
 
       --  Read the real Ada.Command_Line into an argument vector and delegate
-      --  to Parse_Args.  Kept here (non-SPARK).  Parse_CLI's body stays free
+      --  to Parse_Args. Kept here (non-SPARK). Parse_CLI's body stays free
       --  of access-type objects.
       --  @param Cfg  Config record to populate from the command line.
       procedure Parse_Command_Line (Cfg : out CLI_Config);

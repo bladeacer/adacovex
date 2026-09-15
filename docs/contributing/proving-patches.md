@@ -1,6 +1,6 @@
 # Proof patches: SPARK contracts over vendored code
 
-This page is the guide to proof patches: why they exist, how the `prove` subcommand applies them, writing `.ads` and `.adb` patches, matching rules, worked examples, and the common pitfalls.  The design (the merge engine and patched-copy pipeline) is on [Architecture: verification and proof patches](architecture-verification.md).  Proving a project and writing SPARK contracts are on [Proving and writing SPARK proofs](proving.md).
+This page is the guide to proof patches: why they exist, how the `prove` subcommand applies them, writing `.ads` and `.adb` patches, matching rules, worked examples, and the common pitfalls. The design (the merge engine and patched-copy pipeline) is on [Architecture: verification and proof patches](architecture-verification.md). Proving a project and writing SPARK contracts are on [Proving and writing SPARK proofs](proving.md).
 
 ## Proof patches: proving vendored dependencies
 

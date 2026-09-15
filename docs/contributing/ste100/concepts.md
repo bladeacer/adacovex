@@ -1,9 +1,9 @@
 # STE100 Technical Names: reports and concepts
 
 The **reports and concepts** half of the **Code Identifier Names** category
-of the [STE100 Technical Names](index.md) dictionary.  These
+of the [STE100 Technical Names](index.md) dictionary. These
 terms name the generated report files, the time standards, and the
-command-line spellings.  The tool and file identifiers are on
+command-line spellings. The tool and file identifiers are on
 [tools and files](identifiers.md).
 
 ## Technical Name: Verification Report
@@ -30,7 +30,7 @@ command-line spellings.  The tool and file identifiers are on
 ## Technical Name: Timezone
 - **Part of Speech:** Noun
 - **Definition:** The named region or fixed offset that defines local time
-  for the operator.  It includes IANA names (for example `Asia/Singapore`)
+  for the operator. It includes IANA names (for example `Asia/Singapore`)
   and fixed UTC/GMT offsets (for example `UTC+8`).
 - **Approved Form:** Timezone (singular), Timezones (plural)
 - **Do Not Use:** Time zone (two words), Zone (when Timezone is meant)
@@ -39,7 +39,7 @@ command-line spellings.  The tool and file identifiers are on
 
 ## Technical Name: UTC
 - **Part of Speech:** Noun
-- **Definition:** The coordinated universal time standard.  It is the
+- **Definition:** The coordinated universal time standard. It is the
   zero-offset reference that adacovex uses to display fixed offsets.
 - **Approved Form:** UTC (exact capitals)
 - **Do Not Use:** Universal time, Greenwich Mean Time (when UTC is meant)
@@ -48,7 +48,7 @@ command-line spellings.  The tool and file identifiers are on
 
 ## Technical Name: GMT
 - **Part of Speech:** Noun
-- **Definition:** The Greenwich mean time standard.  adacovex accepts `GMT`
+- **Definition:** The Greenwich mean time standard. adacovex accepts `GMT`
   as a synonym for `UTC` in fixed offset values.
 - **Approved Form:** GMT (exact capitals)
 - **Do Not Use:** Greenwich time, London time
@@ -57,7 +57,7 @@ command-line spellings.  The tool and file identifiers are on
 
 ## Technical Name: IANA
 - **Part of Speech:** Modifier
-- **Definition:** The Internet Assigned Numbers Authority.  Always use it
+- **Definition:** The Internet Assigned Numbers Authority. Always use it
   with the noun name to mean the tz database zone identifiers.
 - **Approved Form:** IANA (exact capitals, as modifier, for example IANA
   name)
@@ -78,7 +78,7 @@ command-line spellings.  The tool and file identifiers are on
 ## Technical Name: Shorthand
 - **Part of Speech:** Noun
 - **Definition:** A short single-letter form of a command-line flag (for
-  example `-t` for `--target`).  A shorthand takes the same value as the
+  example `-t` for `--target`). A shorthand takes the same value as the
   canonical flag.
 - **Approved Form:** Shorthand (singular), Shorthands (plural)
 - **Do Not Use:** Shortcut, Abbreviation

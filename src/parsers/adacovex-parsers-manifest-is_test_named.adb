@@ -1,10 +1,10 @@
 separate (Adacovex.Parsers.Manifest)
---  Whether a dependency name carries a test label.  The full name is
+--  Whether a dependency name carries a test label. The full name is
 --  checked first, then the last path segment after any '/' or ':' (which
 --  covers npm scope prefixes -- "@playwright/test" -- as well as Go
 --  module paths such as "github.com/stretchr/testify", maven
 --  groupId:artifactId names such as "org.testng:testng", and composer
---  vendor/package names).  A name (or its last segment) that starts or
+--  vendor/package names). A name (or its last segment) that starts or
 --  ends with the literal word "test" is test-labelled (for example
 --  @playwright/test, vitest, supertest, testify, testng).
 --  @param Name  Dependency name (may be scoped, path-like, or

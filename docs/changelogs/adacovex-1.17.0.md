@@ -40,10 +40,10 @@ source changes remain -- the audit is documentation-only.
 The audit's proof-debt was partially retired: nine high-value pure-logic
 bodies that previously required `SPARK_Mode => Off` are now opted in
 per-subprogram `SPARK_Mode => On` with `Pre`/`Post`/`Global => null` and the
-necessary `Loop_Invariant` / `Loop_Variant` annotations.  All 233 new VCs
+necessary `Loop_Invariant` / `Loop_Variant` annotations. All 233 new VCs
 prove at the default `--steps=10000` budget, preserving the clean
 **Platinum (720 VCs, 0 unproved, 0 justified)** gate across the same 48
-analysed units.  The increase is *analysis* coverage, not new code -- the
+analysed units. The increase is *analysis* coverage, not new code -- the
 functions existed, they were just previously skipped:
 
 | Unit | Newly proved subprograms | VCs added | Kind |

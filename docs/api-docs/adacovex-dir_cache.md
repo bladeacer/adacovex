@@ -5,16 +5,16 @@ Shared per-process directory-snapshot memo.
 Every adacovex assessment walks the target tree several times: the
 source scanner, the SBOM tools-key hash, the graph-key language probe,
 the vendored discovery and hash walks, the GPR collection walk, and the
-complexity checker.  Each walk re-enumerated the same directories and
+complexity checker. Each walk re-enumerated the same directories and
 re-stat'ed every entry (Ada.Directories' Kind on an entry costs one
 stat), so a warm run paid the enumeration cost five times over --
 measured at 11 stats per source file on the self-audit tree.
 
-This package is the single shared snapshot those walkers consult.  The
+This package is the single shared snapshot those walkers consult. The
 first walker to touch a directory enumerates it once, records every
 entry's (name, kind), and stamps the record with the directory's mtime;
 every later walker in the same process serves the snapshot after one
-mtime stat validates it.  This is the same shape a language server's
+mtime stat validates it. This is the same shape a language server's
 indexed file set takes: one authoritative view of the workspace that
 every subsystem reads, invalidated from cheap stat probes rather than
 re-enumerated from scratch.

@@ -76,7 +76,7 @@ package body Adacovex_SBOM_Tests is
       return Count mod 2 = 0;
    end Quotes_Balanced;
 
-   --  Braces and brackets must balance across the document.  The fixtures
+   --  Braces and brackets must balance across the document. The fixtures
    --  used here never put braces inside string values.
    function Braces_Balanced (S : String) return Boolean is
       Depth : Integer := 0;
@@ -399,7 +399,7 @@ package body Adacovex_SBOM_Tests is
 
    --  Fixture whose test suite lives in a tests/ directory: the root .gpr
    --  with-clauses the test harness project (tests/test_suite.gpr), which
-   --  itself with-clauses a library.  The library is referenced only from a
+   --  itself with-clauses a library. The library is referenced only from a
    --  test project file, so it must be classified Scope_Test.
    procedure Make_Test_GPR_Fixture is
       D : constant String := "obj/sbom_testgpr_fixture";
@@ -436,7 +436,7 @@ package body Adacovex_SBOM_Tests is
 
    --  Fixture for test-labelled vendored npm dependencies: a node_modules
    --  tree owned by a package.json that declares a "testDependencies"
-   --  section alongside devDependencies.  @playwright/test (test-named
+   --  section alongside devDependencies. @playwright/test (test-named
    --  package) and jsdom (declared under testDependencies) must be
    --  Scope_Test; lodash (devDependencies only) stays vendored.
    procedure Make_Test_Label_Fixture is
@@ -733,7 +733,7 @@ package body Adacovex_SBOM_Tests is
    end Make_Test_Label_Swift_Fixture;
 
    --  Fixture whose owning manifest is a go.mod: Go has no native
-   --  test-only section, so the name heuristic is the signal.  A module
+   --  test-only section, so the name heuristic is the signal. A module
    --  path whose last segment starts or ends with "test"
    --  (github.com/stretchr/testify) must be Scope_Test; a regular module
    --  stays vendored.
@@ -1188,7 +1188,7 @@ package body Adacovex_SBOM_Tests is
          --  sphinx-build is deliberately NOT a system tool: the manual's
          --  Sphinx build is a Python dependency (sphinx + myst-parser in
          --  requirements.txt), resolved as pkg:pypi components -- never as
-         --  a pkg:generic system-tool entry.  The fixture references it,
+         --  a pkg:generic system-tool entry. The fixture references it,
          --  but it is not in the curated tool table, so it can never be
          --  registered whatever PATH holds.
          R.Check
@@ -1342,7 +1342,7 @@ package body Adacovex_SBOM_Tests is
            ("obj/sbom_sysdep_fixture", G2);
 
          --  The second call must register exactly the same tool set as the
-         --  first (the cache served the stored set).  git and make are
+         --  first (the cache served the stored set). git and make are
          --  referenced by the fixture; whether they are installed on PATH
          --  or not, the cached hit must agree with the scanned miss.
          R.Check
@@ -1544,7 +1544,7 @@ package body Adacovex_SBOM_Tests is
       --  Language-agnostic vendored discovery: npm packages under
       --  node_modules (shallow, pkg:npm PURLs, versioned) and a generic
       --  vendor/ library without a manifest (one component, top-3 language
-      --  summary from source extensions).  Loose files under vendor/ must
+      --  summary from source extensions). Loose files under vendor/ must
       --  never become components.
       declare
          Graph   : Component_Vectors.Vector;
@@ -2008,7 +2008,7 @@ package body Adacovex_SBOM_Tests is
 
       --  Test-scope dependencies: crates declared under a
       --  [[test-depends-on]] section of alire.toml or alire-dev.toml are
-      --  classified Scope_Test.  Base deps stay base.
+      --  classified Scope_Test. Base deps stay base.
       declare
          Graph   : Component_Vectors.Vector;
          Success : Boolean := False;

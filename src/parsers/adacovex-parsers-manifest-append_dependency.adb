@@ -19,7 +19,7 @@ begin
    end if;
 
    --  Keep one component when a dev-manifest dependency is also found as a
-   --  system tool.  Store both scope facts on that component.
+   --  system tool. Store both scope facts on that component.
    for I in 1 .. Integer (Graph.Length) loop
       if Graph (I).Name_Len = Name'Length
         and then Graph (I).Name (1 .. Name'Length) = Name

@@ -1,6 +1,6 @@
 # CLI flag details: assessment flags and subcommands
 
-This page details the assessment flags (`--target`, `--dal`, `--standard`, and the rest), the `status` and `complexity` subcommands, the `prove` subcommand, and the per-file opt-out markers.  The flag summary table, exit codes, the `sbom` subcommand, and worked examples are on the [CLI reference](cli-reference.md); the output, serving, differential, and gate flags are on [CLI flag details: output and CI options](cli-reference-options.md).
+This page details the assessment flags (`--target`, `--dal`, `--standard`, and the rest), the `status` and `complexity` subcommands, the `prove` subcommand, and the per-file opt-out markers. The flag summary table, exit codes, the `sbom` subcommand, and worked examples are on the [CLI reference](cli-reference.md); the output, serving, differential, and gate flags are on [CLI flag details: output and CI options](cli-reference-options.md).
 
 ## Flag details
 

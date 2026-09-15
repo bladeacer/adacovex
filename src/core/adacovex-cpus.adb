@@ -11,7 +11,7 @@ package body Adacovex.CPUs is
    use GNAT.OS_Lib;
 
    --  Parse a non-negative integer from the leading digits of S, ignoring
-   --  trailing whitespace/garbage.  Returns -1 when no digit is found.
+   --  trailing whitespace/garbage. Returns -1 when no digit is found.
    function Parse_Natural (S : String) return Integer is
       Start : Natural := S'First;
       Stop  : Natural := S'First;
@@ -91,20 +91,20 @@ package body Adacovex.CPUs is
       end;
    end Run_Capture;
 
-   --  Memoised core count.  Detect_Core_Count is called from the prove and
+   --  Memoised core count. Detect_Core_Count is called from the prove and
    --  status paths (Run_Prove resolves jobs and prints the justification,
    --  Resolve_Jobs auto-detects, status reports the platform) and every
-   --  call re-reads /proc/cpuinfo.  The machine topology cannot change
-   --  inside one run, so the first successful detection is cached.  The
+   --  call re-reads /proc/cpuinfo. The machine topology cannot change
+   --  inside one run, so the first successful detection is cached. The
    --  unit is I/O-bound and skipped by gnatprove (see
    --  docs/proof/16.1.0-ledger.md), so the memoised state adds no proof
-   --  surface.  The fallback 1 is deliberately not memoised: a transient
+   --  surface. The fallback 1 is deliberately not memoised: a transient
    --  probe failure should not poison every later call.
    Memoized_Cores : Natural := 0;
 
    function Detect_Core_Count return Natural is
       --  The detection cascade, extracted so the memo wrapper is a single
-      --  call site.  Returns a real core count or 1 when nothing is
+      --  call site. Returns a real core count or 1 when nothing is
       --  detectable.
       function Compute return Natural is
          use Ada.Text_IO;
@@ -277,8 +277,8 @@ package body Adacovex.CPUs is
       end if;
    end Jobs_Justification;
 
-   --  Portable system temp directory.  Checks TMPDIR, TEMP, TMP (in that
-   --  order) and falls back to "/tmp".  SPARK_Mode On.  The runtime
+   --  Portable system temp directory. Checks TMPDIR, TEMP, TMP (in that
+   --  order) and falls back to "/tmp". SPARK_Mode On. The runtime
    --  Ada.Environment_Variables subprograms carry no Global contracts, so
    --  gnatprove 16 would emit [assumed-global-null] warnings at each call
    --  ("no Global contract available"); the pragma below silences exactly
@@ -299,7 +299,7 @@ package body Adacovex.CPUs is
    end Get_Temp_Directory;
    pragma Warnings (On, "no Global contract available");
 
-   --  Default shell executable for spawned commands.  Pure constant
+   --  Default shell executable for spawned commands. Pure constant
    --  (SPARK_Mode On per the spec): returns "sh" with no global state.
    function Get_Shell_Command return String with SPARK_Mode => On is
    begin

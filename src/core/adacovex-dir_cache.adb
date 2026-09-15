@@ -7,7 +7,7 @@ package body Adacovex.Dir_Cache is
 
    --  Memoised snapshot for one directory: the entry list, the live count,
    --  and the directory mtime the snapshot was taken at (integer OS
-   --  seconds, the same epoch the stamp store uses).  The path image is
+   --  seconds, the same epoch the stamp store uses). The path image is
    --  stored inline so a hit needs no re-allocation.
    type Slot is record
       Used     : Boolean := False;
@@ -21,14 +21,14 @@ package body Adacovex.Dir_Cache is
    Table       : array (1 .. Memo_Slots) of Slot;
    Next_Victim : Natural := 1;
 
-   --  The process working directory, resolved once and reused.  Walkers
+   --  The process working directory, resolved once and reused. Walkers
    --  spell the same directory differently (".", "src", "/abs/src",
    --  "./src"); resolving every key to its absolute image makes them all
-   --  share one memo slot.  Len = 0 means "not resolved yet".
+   --  share one memo slot. Len = 0 means "not resolved yet".
    Cwd_Len : Natural := 0;
    Cwd_Img : String (1 .. 1024) := (others => ' ');
 
-   --  Hash a path into the table range.  FNV-1a over the bytes.
+   --  Hash a path into the table range. FNV-1a over the bytes.
    function Slot_Of (Path : String) return Natural is
       use type Interfaces.Unsigned_32;
       H : Interfaces.Unsigned_32 := 16#811c9dc5#;
@@ -54,7 +54,7 @@ package body Adacovex.Dir_Cache is
 
    --  Absolute image of Key: Key itself when already absolute, otherwise
    --  the cached working directory joined with Key (with "." and a lone
-   --  "/" separator folded away).  Returns Key unchanged when it does not
+   --  "/" separator folded away). Returns Key unchanged when it does not
    --  fit the buffer -- the caller then memoises under the raw spelling,
    --  which is correct (just less shareable).
    function Abs_Key (Key : String) return String is
@@ -104,7 +104,7 @@ package body Adacovex.Dir_Cache is
       Key   : constant String := Abs_Key (Dir);
       Now_M : constant Long_Long_Integer := Dir_Mtime (Key);
 
-      --  Read the directory straight into the caller's buffer.  Returns
+      --  Read the directory straight into the caller's buffer. Returns
       --  True when the read succeeded (OK then holds True and Count the
       --  live entry count -- possibly > Max_Dir_Entries, which is
       --  Truncated).

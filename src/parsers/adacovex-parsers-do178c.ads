@@ -30,9 +30,9 @@ package Adacovex.Parsers.DO178C is
 
    --  Parse an HLR.md file, extracting HLR entries and descriptions.
    --  Scans a Markdown file for lines matching "HLR_xxxx: Description",
-   --  storing entries in the output vector.  With Use_Cache the parsed
+   --  storing entries in the output vector. With Use_Cache the parsed
    --  vector is keyed in the on-disk result cache by the file's content hash
-   --  (SHA-256).  An unchanged HLR.md is then served without re-parsing.
+   --  (SHA-256). An unchanged HLR.md is then served without re-parsing.
    --  @param File_Path  Path to HLR.md markdown file.
    --  @param HLRs  Output vector of HLR entries (appended to).
    --  @param Success  True if file was parsed successfully.
@@ -47,8 +47,8 @@ package Adacovex.Parsers.DO178C is
 
    --  Parse an LLR.md file, extracting LLR_xxxx entries with HLR references.
    --  Scans a Markdown file for lines matching "LLR_xxxx: Description".
-   --  The HLR_xxxx reference is included.  Entries are stored in the output
-   --  vector.  With Use_Cache the parsed vector is keyed in the on-disk
+   --  The HLR_xxxx reference is included. Entries are stored in the output
+   --  vector. With Use_Cache the parsed vector is keyed in the on-disk
    --  result cache by the file's content hash (SHA-256).
    --  @param File_Path  Path to LLR.md markdown file.
    --  @param LLRs  Output vector of LLR entries (appended to).

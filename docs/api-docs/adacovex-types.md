@@ -1,7 +1,7 @@
 # Adacovex.Types
 
 Host machine word size in bits, auto-detected from the Ada runtime
-(8, 16, 32, or 64).  Fixed-size path and line buffers scale with it.
+(8, 16, 32, or 64). Fixed-size path and line buffers scale with it.
 Builds on narrower hosts use proportionally smaller limits.
 
 **See also:** [Standards](../usage/standards.md) | [DAL Levels](adacovex-dal-levels.md)

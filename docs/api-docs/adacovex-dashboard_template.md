@@ -8,6 +8,6 @@ a single bundled dashboard page shell for --serve: the static
 HTML/CSS/JS (dynamic metric cards are injected at the **CARDS**
 placeholder by Adacovex.Renderers.HTML.Render_Dashboard, which
 also fills the **THEME** placeholder with the initial dashboard
-theme).  Do not edit by hand; edit resources/ and run make build.
+theme). Do not edit by hand; edit resources/ and run make build.
 
 > **Note:** All items in this package are public.

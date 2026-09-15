@@ -1,6 +1,6 @@
 # The dashboard JSON API, playground, and themes
 
-This page covers the JSON API endpoints, the API playground, themes, and the dashboard-related CLI flags.  The tabs and charts are on the [Web dashboard home page](dashboard.md); the dashboard internals and dependency views are on [The dashboard document and its dependency views](dashboard-html.md).
+This page covers the JSON API endpoints, the API playground, themes, and the dashboard-related CLI flags. The tabs and charts are on the [Web dashboard home page](dashboard.md); the dashboard internals and dependency views are on [The dashboard document and its dependency views](dashboard-html.md).
 
 ## Standard-awareness
 
@@ -16,20 +16,53 @@ standard (for example `--asil=B` shows only ISO 26262 at ASIL B).
 `/api/metrics` is a plain HTTP GET, so scripts and CI can consume the
 assessment without parsing HTML:
 
+The response is pretty-printed (two-space indent, one field per line), so
+`curl` output reads the same as the playground preview:
+
 ```json
-{"spark_level":"Platinum","total_vcs":880,"proved_vcs":880,
- " "tests_passed":1614,"tests_failed":0,"doc_coverage":100,
- "standard":"all","level":"DAL-C","dal_status":"Achieved",
- "standards":{"DO-178C":{"level":"DAL-C","status":"Achieved"},
-               "ISO 26262":{"level":"ASIL B","status":"Achieved"},
-               "IEC 62304":{"level":"Class A","status":"Achieved"}}}
+{
+  "spark_level": "Platinum",
+  "total_vcs": 880,
+  "proved_vcs": 880,
+  "tests_passed": 1614,
+  "tests_failed": 0,
+  "test_categories": [
+    {
+      "name": "ANSI",
+      "count": 28,
+      "status": "PASS"
+    }
+  ],
+  "doc_coverage": 100,
+  "standard": "all",
+  "level": "DAL-C",
+  "dal_status": "Achieved",
+  "standards": {
+    "DO-178C": {
+      "level": "DAL-C",
+      "status": "Achieved"
+    },
+    "ISO 26262": {
+      "level": "ASIL B",
+      "status": "Achieved"
+    },
+    "IEC 62304": {
+      "level": "Class A",
+      "status": "Achieved"
+    }
+  }
+}
 ```
+
+The `test_categories` array holds one object per test category; it is a
+single entry here for brevity.
 
 | Field | Meaning |
 |-------|---------|
 | `spark_level` | Assessed SPARK level (`Stone`..`Platinum`) |
 | `total_vcs` / `proved_vcs` | GNATprove verification-condition counts |
 | `tests_passed` / `tests_failed` | Test-result counts |
+| `test_categories` | Per-category test metrics: `name`, `count`, `status` (`PASS` / `FAIL`) |
 | `doc_coverage` | Docstring coverage, 0-100 |
 | `standard` | `do178c` \| `iso26262` \| `iec62304` \| `all` |
 | `level` | Level label for the top-level target (`DAL-C`, `ASIL B`, ...) |
@@ -50,18 +83,34 @@ request, which is microseconds of CPU -- no response cache is needed.
 SBOM embeds, minus the SBOM envelope):
 
 ```json
-[{"name":"gnat_arm_elf","version":"13.2.1","scope":"dev",
-  "parent":"adacovex","kind":"dependency","purl":"pkg:generic/gnat_arm_elf@13.2.1",
-  "lang":"","website":"","description":"System tool referenced by the project (dev dependency)"},
- ...]
+{
+  "dependencies": [
+    {
+      "name": "gnat_arm_elf",
+      "version": "13.2.1",
+      "scope": "dev",
+      "dev": true,
+      "system": false,
+      "license": "",
+      "kind": "dependency",
+      "parent": 1,
+      "lang": "",
+      "purl": "pkg:generic/gnat_arm_elf@13.2.1",
+      "website": "",
+      "description": "System tool referenced by the project (dev dependency)"
+    }
+  ]
+}
 ```
 
 | Field | Meaning |
 |-------|---------|
 | `name` / `version` | Component name and version |
 | `scope` | `base` \| `dev` \| `transitive` \| `vendored` \| `system` (a system tool is a `system`-scope dependency with a `pkg:generic/*` PURL) |
-| `parent` | Parent component name (`(root)` for the root, or the index as `0`) |
+| `dev` / `system` | Scope flags for the dev and system scopes |
+| `license` | Resolved licence, or empty when none is known |
 | `kind` | `root` or `dependency` |
+| `parent` | Parent component index in the array (`1` is the root) |
 | `purl` | Package URL when derivable |
 | `lang` | Primary language when known |
 | `website` | Resolved source URL when known |
@@ -92,10 +141,12 @@ purpose, and group name), so you can jump straight to `metrics` or `badge`.
 Clicking an endpoint issues a live `fetch` against the serving origin and
 previews the response:
 
-- JSON endpoints are pretty-printed (two-space indent) and
-  **syntax-highlighted** with the vendored [yace](https://github.com/petersolopov/yace)
-  tokenizer (`window.YaceTok`). A JSON-key rule colours object keys
-  separately from string values, so the payload reads like an IDE view.
+- JSON endpoints arrive pretty-printed by the server (two-space indent,
+  one field per line) and are **syntax-highlighted** with the vendored
+  [yace](https://github.com/petersolopov/yace) tokenizer (`window.YaceTok`).
+  A JSON-key rule colours object keys separately from string values, so the
+  payload reads like an IDE view, and the **Copy** / **Download** actions
+  export that same pretty text.
   Endpoint paths that appear inside the JSON payload (for example the
   `/api/...` and `/badge/...` values in `/api/endpoints`) become clickable
   links to the live endpoints, and every endpoint button's path is itself a

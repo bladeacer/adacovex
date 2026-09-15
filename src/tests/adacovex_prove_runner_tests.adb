@@ -68,7 +68,7 @@ package body Adacovex_Prove_Runner_Tests is
 
       --  The generated bundle specs carry no proof surface and are excluded
       --  from the proof-input hash, so a docs or dashboard regeneration does
-      --  not invalidate the cached proof.  Every other source file is in.
+      --  not invalidate the cached proof. Every other source file is in.
       R.Check
         (not Adacovex.Prove.Is_Proof_Input ("adacovex-docs_template.ads"),
          "the bundled manual spec is excluded from the proof input");

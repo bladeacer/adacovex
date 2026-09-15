@@ -2,18 +2,18 @@
 
 Timezone resolution and local-time formatting for adacovex.
 
-adacovex respects the operating system's timezone by default.  Users can
-override it for a single invocation with --tz / --timezone.  Accepted
+adacovex respects the operating system's timezone by default. Users can
+override it for a single invocation with --tz / --timezone. Accepted
 forms are a well-known IANA zone name (for example "Asia/Singapore") or a
 fixed UTC/GMT offset ("UTC+8", "GMT+8", "UTC+08", "GMT+08", "UTC+08:30").
 
 The crate has no library dependencies, so it ships no timezone database.
 A named zone resolves from a built-in table of common IANA names and
-their standard-time (non-DST) offsets.  A zone that may observe daylight
+their standard-time (non-DST) offsets. A zone that may observe daylight
 saving time (and any zone the table lacks) is probed against the
 platform tzdata -- ``zdump`` + ``date +%z`` on Linux/WSL -- for the
 DST-correct current offset; the table offset is the fallback when the
-probe is unavailable.  The system default offset comes from the standard
+probe is unavailable. The system default offset comes from the standard
 Ada runtime (Ada.Calendar.Time_Zones.UTC_Time_Offset), which honours the
 TZ environment variable and the operating system's local timezone, so
 the default is always the operator's wall-clock timezone.
@@ -39,7 +39,7 @@ end record;
 
 ### function Default return Adacovex.Timezones.Timezone_Info
 
-**Returns:**  Parse a user-supplied --tz / --timezone value.  Supported forms:
+**Returns:**  Parse a user-supplied --tz / --timezone value. Supported forms:
 
 ### function Now_Text (Info : Adacovex.Timezones.Timezone_Info) return Standard.String
 

@@ -134,18 +134,18 @@ An unchanged manifest/lockfile/.gpr set serves the cached dependency graph. Unch
 One assessment walks the target tree several times: the source scanner, the
 tools-key hash, the graph-key language probe, the vendored discovery and hash
 walks, the `.gpr` walk, and the complexity checker all enumerate the same
-directories.  `Adacovex.Dir_Cache` keeps one per-process snapshot per
+directories. `Adacovex.Dir_Cache` keeps one per-process snapshot per
 directory, so the first walker enumerates a directory and every later walker
-in the same process pays one mtime stat instead.  The memo never touches disk,
+in the same process pays one mtime stat instead. The memo never touches disk,
 holds at most 256 directories, and serves a snapshot only while the
 directory's mtime is unchanged.
 
 A directory the memo cannot hold is reported as truncated, and the caller then
-falls back to direct enumeration instead of trusting the snapshot.  That
+falls back to direct enumeration instead of trusting the snapshot. That
 covers a directory with more entries than the memo holds and a directory
-holding an entry name longer than the 120-character key.  A truncated
+holding an entry name longer than the 120-character key. A truncated
 directory must never look empty, because every walker that trusts an empty
-snapshot skips the whole subtree.  Version 1.49.0 fixed
+snapshot skips the whole subtree. Version 1.49.0 fixed
 `Adacovex.Dir_Cache.Snapshot`, which reported `Count => 0` with `Truncated =>
 False` for an over-long entry name; the fix is pinned by the Dir cache test
 category.

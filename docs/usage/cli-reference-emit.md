@@ -3,7 +3,7 @@
 This page details the flags that write artifacts (the automatic SBOM and the
 `--emit-*` family), the scan-scope flags (`--skip-dir`, `--relaxed`), and the
 differential assessment modes (`--compare-base`, `--coverage-delta`) with
-their VCS support.  The serving, CI, and tool flags are on [CLI flag details:
+their VCS support. The serving, CI, and tool flags are on [CLI flag details:
 serving, CI, and tool options](cli-reference-options.md); the flag summary
 table is on the [CLI reference](cli-reference.md).
 
@@ -37,10 +37,10 @@ Suppress all SVG badge output. Overrides `--emit-svg` if both are given.
 ### `--emit-metrics=PATH`
 
 After the assessment, it writes a machine-readable JSON export to `PATH`:
-`{"metrics": {...}, "dependencies": {...}}`.  `metrics` is the same
-object the dashboard JSON API serves at `/api/metrics`.  `dependencies` is
+`{"metrics": {...}, "dependencies": {...}}`. `metrics` is the same
+object the dashboard JSON API serves at `/api/metrics`. `dependencies` is
 the resolved dependency graph (name, version, scope, parent, purl, kind) at
-`/api/deps`.  It is useful for scripting gates, external dashboards, or
+`/api/deps`. It is useful for scripting gates, external dashboards, or
 archiving assessment results. The composite GitHub Action uploads it as a CI
 artifact when `emit-metrics` is set.
 

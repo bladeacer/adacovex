@@ -3,9 +3,9 @@
 --  (unbounded, up to Natural'Last ~ 2.1B). Fixed-size buffers
 --  (Max_Path, Max_Line, Max_Desc_Str, and more) are bounded at compile time
 --  with generous production-suitable limits (Max_Path=4096, Max_Line=262144
---  on a 64-bit host).  Max_Path and Max_Line scale with the host word size
---  (System.Word_Size).  Builds on narrower hosts use proportionally smaller
---  limits.  Max_Line is large enough to read single-line declarations from
+--  on a 64-bit host). Max_Path and Max_Line scale with the host word size
+--  (System.Word_Size). Builds on narrower hosts use proportionally smaller
+--  limits. Max_Line is large enough to read single-line declarations from
 --  heavily generated Ada sources without silently draining them.
 --  HLR-METRICS: Docstring_Metrics type
 --  HLR-PROOF: Proof_Summary type
@@ -25,12 +25,12 @@ package Adacovex.Types is
    pragma SPARK_Mode (On);
 
    --  Host machine word size in bits, auto-detected from the Ada runtime
-   --  (8, 16, 32, or 64).  Fixed-size path and line buffers scale with it.
+   --  (8, 16, 32, or 64). Fixed-size path and line buffers scale with it.
    --  Builds on narrower hosts use proportionally smaller limits.
    Host_Word_Bits : constant := System.Word_Size;
 
-   --  Path and line buffers scale with the host word size.  On a 64-bit host
-   --  they keep their classic values (4096 / 262144).  Identifier and
+   --  Path and line buffers scale with the host word size. On a 64-bit host
+   --  they keep their classic values (4096 / 262144). Identifier and
    --  description limits (Max_Id_Str, Max_Desc_Str, Max_Filename) are
    --  semantic, not storage-size dependent, and remain fixed.
    Max_Path     : constant := 64 * Host_Word_Bits;
@@ -52,10 +52,10 @@ package Adacovex.Types is
 
    type DAL_Level is (DAL_A, DAL_B, DAL_C, DAL_D, DAL_E);
 
-   --  Compliance standard target for the assessment.  DO_178C covers
-   --  avionics software.  ISO_26262 covers automotive functional safety.
-   --  IEC_62304 covers medical-device software.  All three share the same
-   --  evidence (SPARK proof level, passing tests, HLR traceability).  The
+   --  Compliance standard target for the assessment. DO_178C covers
+   --  avionics software. ISO_26262 covers automotive functional safety.
+   --  IEC_62304 covers medical-device software. All three share the same
+   --  evidence (SPARK proof level, passing tests, HLR traceability). The
    --  standard only re-labels the integrity levels.
    type Compliance_Standard is (DO_178C, ISO_26262, IEC_62304);
 
@@ -63,46 +63,46 @@ package Adacovex.Types is
 
    type Test_Status is (Pass, Fail);
 
-   --  Dashboard colour theme for --serve.  System_Theme follows the
-   --  browser's prefers-color-scheme.  Light_Theme and Dark_Theme force a
+   --  Dashboard colour theme for --serve. System_Theme follows the
+   --  browser's prefers-color-scheme. Light_Theme and Dark_Theme force a
    --  specific theme regardless of the OS preference.
    type Dashboard_Theme is (System_Theme, Light_Theme, Dark_Theme);
 
-   --  SBOM output format.  CycloneDX_JSON and SPDX_JSON emit machine-readable
-   --  JSON documents.  Markdown emits a human-readable compliance table.
+   --  SBOM output format. CycloneDX_JSON and SPDX_JSON emit machine-readable
+   --  JSON documents. Markdown emits a human-readable compliance table.
    --  HLR-SBOM: SBOM format kind
    type SBOM_Format_Kind is (CycloneDX_JSON, SPDX_JSON, Markdown);
 
-   --  SBOM component kind.  The root project is the project being described.
+   --  SBOM component kind. The root project is the project being described.
    --  A library dependency is resolved from the dependency graph.
    type Component_Kind is (Root_Component, Dependency_Component);
 
-   --  Dependency scope for an SBOM component.  A publishing dependency is
-   --  declared in alire.toml (base).  A development-only dependency is
-   --  declared only in alire-dev.toml (dev).  A transitive crate is resolved
+   --  Dependency scope for an SBOM component. A publishing dependency is
+   --  declared in alire.toml (base). A development-only dependency is
+   --  declared only in alire-dev.toml (dev). A transitive crate is resolved
    --  from alire.lock or GPR with clauses that no manifest names directly
-   --  (transitive).  A vendored package is overlaid by a .adacovex/patches/
-   --  docstring patch (vendored).  A system-tool dependency is a program
+   --  (transitive). A vendored package is overlaid by a .adacovex/patches/
+   --  docstring patch (vendored). A system-tool dependency is a program
    --  installed on PATH that the project's build or dev files reference
-   --  (system) -- for example python3, git, or gnatprove.  System tools
-   --  carry a resolved version but no external link or licence.  A test
+   --  (system) -- for example python3, git, or gnatprove. System tools
+   --  carry a resolved version but no external link or licence. A test
    --  dependency is used only by the project's tests: it is declared under
    --  a [[test-depends-on]] manifest section, or it is with-claused only
    --  from test project files (a .gpr under a tests/ test/ or t/ directory,
-   --  or a test-named project such as test_runner.gpr).  A dependency
+   --  or a test-named project such as test_runner.gpr). A dependency
    --  declared in a test-labelled section of a supported-language manifest
    --  is test too: package.json sections whose key contains "test" (for
    --  example "testDependencies"), Cargo's [dev-dependencies] (and any
    --  section containing "test"), composer's require-dev, Gemfile
    --  `group :test` blocks, pom.xml <scope>test</scope> dependencies,
    --  pyproject.toml optional-dependencies extras containing "test", and
-   --  Package.swift .testTarget dependencies.  A vendored component whose
+   --  Package.swift .testTarget dependencies. A vendored component whose
    --  name carries the test label (full name or its last segment after any
    --  '/' or ':', for example @playwright/test,
    --  github.com/stretchr/testify, org.testng:testng) is test as well,
    --  and the same heuristic applies to lockfile-resolved names
    --  (pnpm-lock.yaml, package-lock.json, yarn.lock, Cargo.lock,
-   --  alire.lock).  Scope_Test is last so the
+   --  alire.lock). Scope_Test is last so the
    --  stream-serialized cache positions of the older scopes stay stable
    --  across releases.
    --  HLR-SBOM: SBOM dependency scope
@@ -115,7 +115,7 @@ package Adacovex.Types is
       Scope_Test);
 
    --  Record whether a dependency is declared for development as well as
-   --  whether the resolved component is a system tool.  This preserves both
+   --  whether the resolved component is a system tool. This preserves both
    --  facts when one component is named in a dev manifest and detected on PATH.
    type Dependency_Scope_Flags is record
       Is_Dev    : Boolean := False;
@@ -172,10 +172,10 @@ package Adacovex.Types is
    end record;
 
    package Implementation is
-      --  Non-SPARK container types.  SPARK forbids instantiating the
+      --  Non-SPARK container types. SPARK forbids instantiating the
       --  non-formal Ada.Containers in SPARK_Mode On code: gnatprove rejects
       --  such instantiations ("not allowed in SPARK (due to entity declared
-      --  with SPARK_Mode Off)"; see docs/proof/16.1.0-ledger.md).  This
+      --  with SPARK_Mode Off)"; see docs/proof/16.1.0-ledger.md). This
       --  package and Adacovex.Complexity are the only two SPARK_Mode (Off)
       --  packages in the codebase, both for the same reason.
       pragma SPARK_Mode (Off);
@@ -194,10 +194,10 @@ package Adacovex.Types is
          HLR_Tags    : HLR_Tag_Vectors.Vector;
 
          --  Per-file opt-out marker carried by the file's leading comment
-         --  block (see Adacovex.Opt_Outs).  Docstrings_Opt_Out removes the
-         --  package from the docstring-coverage metrics.  It is set by the
+         --  block (see Adacovex.Opt_Outs). Docstrings_Opt_Out removes the
+         --  package from the docstring-coverage metrics. It is set by the
          --  source scanner when it reads the file header and is False
-         --  otherwise.  (The SPARK-proof opt-out is enforced by the prove
+         --  otherwise. (The SPARK-proof opt-out is enforced by the prove
          --  runner's own -u unit walk, never through the scan records.)
          Docstrings_Opt_Out : Boolean := False;
       end record;
@@ -242,7 +242,7 @@ package Adacovex.Types is
       end record;
 
       --  A single component of a software bill of materials (SBOM).
-      --  The root project occupies index 1.  Dependency components reference
+      --  The root project occupies index 1. Dependency components reference
       --  their parent by vector index (0 = direct dependency of the root).
       --  HLR-SBOM: SBOM component record
       type Component_Info is record
@@ -261,11 +261,11 @@ package Adacovex.Types is
          Language        : Desc_Field;
          Language_Len    : Natural := 0;
          --  Source-code repository or project website of the component, when
-         --  known.  The manifest parser fills it from the Alire release
+         --  known. The manifest parser fills it from the Alire release
          --  metadata (alire.lock `website` / `origin` URL or the local index
-         --  via `alr show`).  The dashboard links a dependency to this URL
+         --  via `alr show`). The dashboard links a dependency to this URL
          --  instead of guessing from the PURL, so no garbage links are
-         --  produced.  Empty when the source cannot be resolved.
+         --  produced. Empty when the source cannot be resolved.
          Website         : Path_Field;
          Website_Len     : Natural := 0;
          Kind            : Component_Kind := Dependency_Component;
@@ -299,7 +299,7 @@ package Adacovex.Types is
    with Post => To_String'Result'Length = 1, Global => null;
 
    --  Parse a single-letter DAL code string into a DAL_Level.
-   --  The function accepts both upper and lower case.  It defaults to DAL_C
+   --  The function accepts both upper and lower case. It defaults to DAL_C
    --  on parse failure.
    --  @param S  Single-letter DAL code (A-E, case-insensitive).
    --  @return Converted DAL_Level (defaults to DAL_C on failure).
@@ -316,9 +316,9 @@ package Adacovex.Types is
        or else To_String'Result = "IEC 62304",
      Global => null;
 
-   --  Parse a standard name into a Compliance_Standard.  The function
+   --  Parse a standard name into a Compliance_Standard. The function
    --  accepts "do178c"/"do-178c", "iso26262"/"iso-26262", and
-   --  "iec62304"/"iec-62304" (case-insensitive).  It defaults to DO_178C on
+   --  "iec62304"/"iec-62304" (case-insensitive). It defaults to DO_178C on
    --  parse failure.
    --  @param S  Standard name.
    --  @return Converted Compliance_Standard (defaults to DO_178C).
@@ -326,8 +326,8 @@ package Adacovex.Types is
    with Global => null;
 
    --  Human-readable integrity-level label for a standard and a rigour tier.
-   --  DO-178C keeps "DAL-A".."DAL-E".  ISO 26262 maps A..E to "ASIL D",
-   --  "ASIL C", "ASIL B", "ASIL A", "QM".  IEC 62304 maps to "Class C",
+   --  DO-178C keeps "DAL-A".."DAL-E". ISO 26262 maps A..E to "ASIL D",
+   --  "ASIL C", "ASIL B", "ASIL A", "QM". IEC 62304 maps to "Class C",
    --  "Class B", "Class A", "No class", "No class".
    --  @param Standard  Compliance standard.
    --  @param Level  Rigour tier (reused DAL level).
@@ -336,10 +336,10 @@ package Adacovex.Types is
      (Standard : Compliance_Standard; Level : DAL_Level) return String
    with Post => Standard_Level_Name'Result'Length in 1 .. 8, Global => null;
 
-   --  Parse an ASIL level into the shared rigour tier.  ASIL A--D map to
-   --  DAL_D--DAL_A (ASIL D is the most rigorous).  QM maps to DAL_E (no
-   --  safety effect).  The function accepts "A".."D" and "QM"
-   --  case-insensitively.  It defaults to DAL_C (ASIL B) on parse failure.
+   --  Parse an ASIL level into the shared rigour tier. ASIL A--D map to
+   --  DAL_D--DAL_A (ASIL D is the most rigorous). QM maps to DAL_E (no
+   --  safety effect). The function accepts "A".."D" and "QM"
+   --  case-insensitively. It defaults to DAL_C (ASIL B) on parse failure.
    --  @param S  ASIL level (A-D or QM, case-insensitive).
    --  @return Shared rigour tier (defaults to DAL_C on failure).
    function To_ASIL (S : String) return DAL_Level
@@ -352,8 +352,8 @@ package Adacovex.Types is
    with Global => null;
 
    --  Parse an IEC 62304 software safety class into the shared rigour tier.
-   --  Class A--C map to DAL_C--DAL_A (Class C is the most rigorous).  The
-   --  function accepts "A".."C" case-insensitively.  It defaults to DAL_C
+   --  Class A--C map to DAL_C--DAL_A (Class C is the most rigorous). The
+   --  function accepts "A".."C" case-insensitively. It defaults to DAL_C
    --  (Class A) on parse failure.
    --  @param S  Safety class (A-C, case-insensitive).
    --  @return Shared rigour tier (defaults to DAL_C on failure).
@@ -367,14 +367,14 @@ package Adacovex.Types is
    function Is_Valid_Class (S : String) return Boolean
    with Global => null;
 
-   --  Lowercase filename slug for a standard's badge file.  The slug is
+   --  Lowercase filename slug for a standard's badge file. The slug is
    --  "do178c", "iso26262", or "iec62304".
    --  @param S  Compliance standard.
    --  @return The standard's badge-file slug.
    function Standard_Slug (S : Compliance_Standard) return String
    with Post => Standard_Slug'Result'Length > 0, Global => null;
 
-   --  Convert a Dashboard_Theme to its CLI value.  The value is "system",
+   --  Convert a Dashboard_Theme to its CLI value. The value is "system",
    --  "light", or "dark".
    --  @param T  Dashboard theme.
    --  @return The theme's CLI name.
@@ -386,8 +386,8 @@ package Adacovex.Types is
        or else To_String'Result = "dark",
      Global => null;
 
-   --  Parse a dashboard theme name into a Dashboard_Theme.  The function
-   --  accepts "system", "light", and "dark" case-insensitively.  It defaults
+   --  Parse a dashboard theme name into a Dashboard_Theme. The function
+   --  accepts "system", "light", and "dark" case-insensitively. It defaults
    --  to System_Theme on parse failure.
    --  @param S  Theme name.
    --  @return Converted Dashboard_Theme (defaults to System_Theme).

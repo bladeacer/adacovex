@@ -643,6 +643,346 @@ class TestGenDocsAssets(unittest.TestCase):
             self.assertIn("Copyright \u00a9 bladeacer", index_body)
             self.assertIn("sphinx-doc.org", index_body)
 
+    def test_collect_assets_bundles_badge_svgs_and_notes_pngs(self) -> None:
+        # The badge previews on the badges page are SVG: they are bundled so
+        # the inline preview works offline, while a raster screenshot keeps
+        # the note fallback (the PNGs stay out of the bundle).
+        with tempfile.TemporaryDirectory() as tmp:
+            build = Path(tmp) / "build"
+            (build / "_images").mkdir(parents=True)
+            (build / "index.html").write_text(
+                '<img src="_images/spark.svg" alt="badge">'
+                '<img src="../_images/shot.png" alt="Preview of Overview tab">',
+                encoding="utf-8")
+            (build / "_images" / "spark.svg").write_text(
+                "<svg/>", encoding="utf-8")
+            (build / "_images" / "shot.png").write_bytes(b"\x89PNG\r\n")
+            assets = gen_docs.collect_assets(build)
+            rels = {rel for rel, _, _ in assets}
+            self.assertIn("_images/spark.svg", rels)
+            self.assertNotIn("_images/shot.png", rels)
+            index_body = next(body for rel, _, body in assets
+                              if rel == "index.html")
+            self.assertIn("spark.svg", index_body)
+            self.assertNotIn("shot.png", index_body)
+            self.assertIn("see the online manual", index_body)
+
+
+class TestGenDocsEncodeCache(unittest.TestCase):
+    """The content-hash encode cache and the parallel encoder (1.51.0).
+
+    gzip+base85 is the only per-asset work a no-op run still repeats.  Each
+    body's chunks are cached by SHA-256 under obj/, so a docs edit re-encodes
+    only the pages it touched, and the uncached bodies encode in parallel.
+    Both are pure speed-ups: the emitted spec stays byte-identical.
+    """
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self._saved = gen_docs.ENCODE_CACHE
+        gen_docs.ENCODE_CACHE = Path(self._tmp.name) / "cache"
+
+    def tearDown(self) -> None:
+        gen_docs.ENCODE_CACHE = self._saved
+        self._tmp.cleanup()
+
+    def test_cached_chunks_round_trip(self) -> None:
+        chunks = ["abc", "def"]
+        gen_docs._store_cached_chunks("deadbeef", chunks)
+        self.assertEqual(gen_docs._cached_chunks("deadbeef"), chunks)
+        self.assertIsNone(gen_docs._cached_chunks("missing"))
+
+    def test_unchanged_bodies_are_not_re_encoded(self) -> None:
+        assets = [("a.html", "text/html", "<a>one</a>"),
+                  ("b.html", "text/html", "<b>two</b>")]
+        first = gen_docs.encode_assets(assets, jobs=1)
+        # A second run must read the cache, never call the encoder.
+        with mock.patch.object(gen_docs, "_b85_chunks",
+                               side_effect=AssertionError("re-encoded")):
+            second = gen_docs.encode_assets(assets, jobs=1)
+        self.assertEqual(first, second)
+
+    def test_a_changed_body_re_encodes_and_prunes_the_old_entry(self) -> None:
+        gen_docs.encode_assets([("a.html", "text/html", "<a>one</a>")],
+                               jobs=1)
+        old = {p.name for p in gen_docs.ENCODE_CACHE.glob("*.b85")}
+        gen_docs.encode_assets([("a.html", "text/html", "<a>changed</a>")],
+                               jobs=1)
+        new = {p.name for p in gen_docs.ENCODE_CACHE.glob("*.b85")}
+        self.assertEqual(len(new), 1)
+        self.assertFalse(old & new, "the stale cache entry must be pruned")
+
+    def test_parallel_encode_matches_the_serial_one(self) -> None:
+        assets = [(f"{i}.html", "text/html", f"<p>{i}</p>" * 50)
+                  for i in range(8)]
+        gen_docs.ENCODE_CACHE = Path(self._tmp.name) / "serial"
+        serial = gen_docs.encode_assets(assets, jobs=1)
+        gen_docs.ENCODE_CACHE = Path(self._tmp.name) / "parallel"
+        parallel = gen_docs.encode_assets(assets, jobs=4)
+        self.assertEqual(serial, parallel)
+
+    def test_default_jobs_is_bounded(self) -> None:
+        self.assertGreaterEqual(gen_docs.default_jobs(), 1)
+        self.assertLessEqual(gen_docs.default_jobs(), gen_docs.MAX_ENCODE_JOBS)
+
+
+class TestGenDocsIncrementalBuild(unittest.TestCase):
+    """The incremental Sphinx build and its correctness guards (1.51.0).
+
+    Sphinx runs only when the docs sources changed, re-reads only the changed
+    pages, and rewrites every page when the navigation moved.  A removed page
+    is swept and the page set is checked against the sources, so the build
+    directory is always a pure function of docs/ -- a fallback clean rebuild
+    when the check fails, and --fresh to force one.
+    """
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        root = Path(self._tmp.name)
+        self.docs = root / "docs"
+        (self.docs / "usage").mkdir(parents=True)
+        self._saved = (gen_docs.DOCS, gen_docs.BUILD, gen_docs.STAMP)
+        gen_docs.DOCS = self.docs
+        gen_docs.BUILD = self.docs / "_build" / "html"
+        gen_docs.STAMP = self.docs / "_build" / ".adacovex-docs-sources"
+        self.write("index.md", "# Index\n\n```{toctree}\nusage/a\n```\n")
+        self.write("usage/a.md", "# A\n\nOne. Two.\n")
+        self.write("usage/b.md", "# B\n")
+
+    def tearDown(self) -> None:
+        gen_docs.DOCS, gen_docs.BUILD, gen_docs.STAMP = self._saved
+        self._tmp.cleanup()
+
+    def write(self, rel: str, text: str) -> None:
+        path = self.docs / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+
+    def install_fake_sphinx(self) -> List[bool]:
+        """Replace Sphinx: write a page per source, honouring `-a`."""
+        calls: List[bool] = []
+
+        def fake(all_pages: bool = False) -> bool:
+            calls.append(all_pages)
+            gen_docs.BUILD.mkdir(parents=True, exist_ok=True)
+            for rel in sorted(gen_docs.docs_source_digests()):
+                if not gen_docs.is_page_source(rel):
+                    continue
+                docname = rel[: rel.rindex(".")]
+                page = gen_docs.BUILD / (docname + ".html")
+                source = gen_docs.DOCS / rel
+                fresh = (all_pages or not page.exists()
+                         or source.stat().st_mtime_ns
+                         >= page.stat().st_mtime_ns)
+                if fresh:
+                    page.parent.mkdir(parents=True, exist_ok=True)
+                    page.write_text(f"<p>{rel}</p>", encoding="utf-8")
+                    side = gen_docs.BUILD / "_sources" / f"{docname}.md.txt"
+                    side.parent.mkdir(parents=True, exist_ok=True)
+                    side.write_text(rel, encoding="utf-8")
+                    tree = gen_docs.BUILD / ".doctrees" / f"{docname}.doctree"
+                    tree.parent.mkdir(parents=True, exist_ok=True)
+                    tree.write_text(rel, encoding="utf-8")
+            for name in gen_docs.GENERATED_PAGES:
+                (gen_docs.BUILD / name).write_text(name, encoding="utf-8")
+            return True
+
+        patcher = mock.patch.object(gen_docs, "sphinx_build", fake)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        return calls
+
+    def test_unchanged_tree_skips_sphinx(self) -> None:
+        calls = self.install_fake_sphinx()
+        self.assertTrue(gen_docs.ensure_build())
+        self.assertTrue(gen_docs.ensure_build())
+        self.assertEqual(calls, [False], "a no-op run must not rebuild")
+
+    def test_edited_page_rebuilds_only_that_page(self) -> None:
+        calls = self.install_fake_sphinx()
+        gen_docs.ensure_build()
+        untouched = gen_docs.BUILD / "usage/index.html"
+        before = (gen_docs.BUILD / "index.html").read_bytes()
+        self.write("usage/a.md", "# A\n\nEdited.\n")
+        self.assertTrue(gen_docs.ensure_build())
+        self.assertEqual(calls, [False, False], "no -a for a prose edit")
+        self.assertEqual((gen_docs.BUILD / "index.html").read_bytes(), before)
+        self.assertFalse(untouched.exists())
+
+    def test_added_page_rewrites_every_page(self) -> None:
+        calls = self.install_fake_sphinx()
+        gen_docs.ensure_build()
+        self.write("usage/c.md", "# C\n")
+        self.assertTrue(gen_docs.ensure_build())
+        self.assertEqual(calls, [False, True], "a new page moves the nav")
+        self.assertTrue((gen_docs.BUILD / "usage/c.html").exists())
+
+    def test_toctree_edit_rewrites_every_page(self) -> None:
+        calls = self.install_fake_sphinx()
+        gen_docs.ensure_build()
+        self.write("index.md", "# Index\n\n```{toctree}\nusage/a\nusage/b\n```\n")
+        self.assertTrue(gen_docs.ensure_build())
+        self.assertEqual(calls, [False, True], "a toctree edit moves the nav")
+
+    def test_removed_page_is_swept(self) -> None:
+        self.install_fake_sphinx()
+        gen_docs.ensure_build()
+        (self.docs / "usage" / "b.md").unlink()
+        self.assertTrue(gen_docs.ensure_build())
+        self.assertFalse((gen_docs.BUILD / "usage/b.html").exists())
+        self.assertFalse(
+            (gen_docs.BUILD / "_sources" / "usage/b.md.txt").exists())
+        self.assertFalse(
+            (gen_docs.BUILD / ".doctrees" / "usage/b.doctree").exists())
+
+    def test_stray_page_falls_back_to_a_clean_build(self) -> None:
+        self.install_fake_sphinx()
+        gen_docs.ensure_build()
+        (gen_docs.BUILD / "stray.html").write_text("x", encoding="utf-8")
+        self.assertTrue(gen_docs.ensure_build())
+        self.assertFalse((gen_docs.BUILD / "stray.html").exists())
+        self.assertTrue((gen_docs.BUILD / "index.html").exists())
+
+    def test_fresh_forces_a_clean_rebuild(self) -> None:
+        calls = self.install_fake_sphinx()
+        gen_docs.ensure_build()
+        self.assertTrue(gen_docs.ensure_build(fresh=True))
+        self.assertEqual(calls, [False, False])
+        self.assertTrue((gen_docs.BUILD / "usage/a.html").exists())
+
+    def test_build_write_is_skipped_when_the_sources_are_unchanged(self) -> None:
+        self.install_fake_sphinx()
+        gen_docs.ensure_build()
+        stamp = gen_docs.read_stamp()
+        self.assertIsNotNone(stamp)
+        self.assertEqual(stamp.digests,
+                         gen_docs.docs_source_digests())
+
+
+class TestGenDocsBuildHelpers(unittest.TestCase):
+    """The pure helpers behind the incremental docs build decisions."""
+
+    def test_changed_and_removed_sources(self) -> None:
+        current = {"a.md": "1", "b/c.md": "2"}
+        previous = {"a.md": "1", "b/c.md": "X", "gone.md": "3"}
+        self.assertEqual(gen_docs.changed_sources(current, previous),
+                         {"b/c.md"})
+        self.assertEqual(gen_docs.removed_sources(current, previous),
+                         {"gone.md"})
+        self.assertEqual(gen_docs.changed_sources(current, None), set(current))
+        self.assertEqual(gen_docs.removed_sources(current, None), set())
+
+    def test_source_page_outputs_keeps_index_names(self) -> None:
+        pages = gen_docs.source_page_outputs(
+            ["index.md", "usage/index.md", "usage/a.rst", "badges/x.svg"])
+        self.assertEqual(pages, {"index.html", "usage/index.html",
+                                 "usage/a.html"})
+
+    def test_stale_source_outputs_covers_pages_and_images(self) -> None:
+        paths, names = gen_docs.stale_source_outputs(
+            ["usage/a.md", "badges/spark.svg"])
+        self.assertEqual(paths, ["usage/a.html",
+                                 "_sources/usage/a.md.txt",
+                                 ".doctrees/usage/a.doctree",
+                                 "_images/spark.svg"])
+        self.assertEqual(names, ["spark.svg"])
+
+    def test_sweep_removes_the_files_and_download_copies(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            build = Path(tmp)
+            for rel in ("_images/spark.svg", "_downloads/abc/spark.svg",
+                        "_downloads/abc/keep.svg"):
+                path = build / rel
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("x", encoding="utf-8")
+            saved = gen_docs.BUILD
+            gen_docs.BUILD = build
+            try:
+                gen_docs.sweep_stale_outputs(["badges/spark.svg"])
+            finally:
+                gen_docs.BUILD = saved
+            self.assertFalse((build / "_images/spark.svg").exists())
+            self.assertFalse((build / "_downloads/abc/spark.svg").exists())
+            self.assertTrue((build / "_downloads/abc/keep.svg").exists())
+
+    def test_build_problems_reports_missing_unexpected_and_images(self) -> None:
+        sources = ["index.md", "usage/a.md"]
+        files = ["usage/a.html", "genindex.html", "search.html",
+                 "_images/ghost.svg", "style.css"]
+        problems = gen_docs.build_problems(files, sources)
+        self.assertIn("missing page: index.html", problems)
+        self.assertIn("unjustified image: _images/ghost.svg", problems)
+        self.assertEqual(
+            [p for p in problems if p.startswith("unexpected")], [])
+        problems = gen_docs.build_problems(
+            files + ["index.html", "stray.html"], sources)
+        self.assertIn("unexpected page: stray.html", problems)
+        self.assertNotIn("missing page: index.html", problems)
+
+    def test_build_problems_accepts_a_clean_build(self) -> None:
+        sources = ["index.md", "usage/a.md", "badges/spark.svg"]
+        files = ["index.html", "usage/a.html", "genindex.html",
+                 "search.html", "_images/spark.svg",
+                 "_downloads/abc/spark.svg", "_static/basic.css",
+                 "searchindex.js"]
+        self.assertEqual(gen_docs.build_problems(files, sources), [])
+
+    def test_stamp_round_trip_and_legacy_format(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            saved = gen_docs.STAMP
+            gen_docs.STAMP = Path(tmp) / ".stamp"
+            build = Path(tmp) / "html"
+            build.mkdir()
+            (build / "index.html").write_text("x", encoding="utf-8")
+            saved_build = gen_docs.BUILD
+            gen_docs.BUILD = build
+            try:
+                digests = {"index.md": "abc"}
+                gen_docs.write_stamp("fp", digests)
+                stamp = gen_docs.read_stamp()
+                self.assertEqual(stamp.fingerprint, "fp")
+                self.assertEqual(stamp.digests, digests)
+                self.assertEqual(list(stamp.outputs), ["index.html"])
+                # A stamp written before the sources section existed must be
+                # read as "digests unknown", not as "nothing changed".
+                gen_docs.STAMP.write_text("fp\n# outputs\nindex.html\n",
+                                          encoding="ascii")
+                self.assertIsNone(gen_docs.read_stamp().digests)
+            finally:
+                gen_docs.STAMP = saved
+                gen_docs.BUILD = saved_build
+
+    def test_is_page_source_and_toctree_detection(self) -> None:
+        self.assertTrue(gen_docs.is_page_source("usage/a.md"))
+        self.assertTrue(gen_docs.is_page_source("notes.rst"))
+        self.assertFalse(gen_docs.is_page_source("badges/spark.svg"))
+        with tempfile.TemporaryDirectory() as tmp:
+            docs = Path(tmp)
+            (docs / "index.md").write_text(
+                "```{toctree}\nusage/a\n```\n", encoding="utf-8")
+            (docs / "usage").mkdir()
+            (docs / "usage" / "a.md").write_text("# A\n", encoding="utf-8")
+            (docs / "notes.rst").write_text(
+                ".. toctree::\n\n   usage/a\n", encoding="utf-8")
+            # Prose that mentions the directive is not a toctree host.
+            (docs / "howto.md").write_text(
+                "Update the relevant `{toctree}` in `index.md`.\n",
+                encoding="utf-8")
+            saved = gen_docs.DOCS
+            gen_docs.DOCS = docs
+            try:
+                marked = gen_docs.toctree_sources()
+            finally:
+                gen_docs.DOCS = saved
+            self.assertEqual(marked, {"index.md", "notes.rst"})
+
+    def test_tree_fingerprint_follows_the_digests(self) -> None:
+        one = gen_docs.tree_fingerprint({"a.md": "1", "b.md": "2"})
+        self.assertEqual(one, gen_docs.tree_fingerprint(
+            {"b.md": "2", "a.md": "1"}), "order must not matter")
+        self.assertNotEqual(one, gen_docs.tree_fingerprint(
+            {"a.md": "1", "b.md": "3"}))
+
 
 class TestGenDocsCodec(unittest.TestCase):
     """The base85 body encoding and the shared sidebar (1.50.0).
@@ -803,8 +1143,10 @@ class TestGenDocsBundling(unittest.TestCase):
     collected from an incremental Sphinx build directory, so pages left dead
     by a rename stayed in the bundle.  A developer tree produced 217 assets
     and a fresh clone 204, and the changed spec invalidated the cached SPARK
-    proof.  A build is now reused only when both the docs-source fingerprint
-    and the built file list match, and the spec is written only on a change.
+    proof.  A build is now reused only when the docs-source digests, the
+    fingerprint and the built file list all match, a changed tree rebuilds
+    incrementally (sweeping what a removed source left and rewiring the nav
+    when a page moved), and the spec is written only on a change.
     """
 
     def setUp(self) -> None:
@@ -827,25 +1169,29 @@ class TestGenDocsBundling(unittest.TestCase):
         self._tmp.cleanup()
 
     def test_fingerprint_tracks_sources_not_build_output(self) -> None:
-        first = gen_docs.docs_source_fingerprint()
+        digests = gen_docs.docs_source_digests()
+        first = gen_docs.tree_fingerprint(digests)
         # A build product never moves the fingerprint ...
         (self.build / "stale.html").write_text("stale", encoding="utf-8")
-        self.assertEqual(gen_docs.docs_source_fingerprint(), first)
+        self.assertEqual(
+            gen_docs.tree_fingerprint(gen_docs.docs_source_digests()), first)
         # ... a docs source change does.
         (self.docs / "index.md").write_text("# changed\n", encoding="utf-8")
-        self.assertNotEqual(gen_docs.docs_source_fingerprint(), first)
+        self.assertNotEqual(
+            gen_docs.tree_fingerprint(gen_docs.docs_source_digests()), first)
 
     def test_a_stale_build_page_forces_a_clean_rebuild(self) -> None:
-        fp = gen_docs.docs_source_fingerprint()
-        self.assertFalse(gen_docs.build_is_current(fp))  # no stamp yet
-        gen_docs.write_stamp(fp)
-        self.assertTrue(gen_docs.build_is_current(fp))
+        digests = gen_docs.docs_source_digests()
+        fp = gen_docs.tree_fingerprint(digests)
+        self.assertFalse(gen_docs.build_is_current(fp, digests))  # no stamp
+        gen_docs.write_stamp(fp, digests)
+        self.assertTrue(gen_docs.build_is_current(fp, digests))
         # The 13-dead-pages bug: an extra page in the build output must not
         # be reused (it would ship in the bundle as a stale page).
         stale = self.build / "contributing" / "perf.html"
         stale.parent.mkdir()
         stale.write_text("<html>dead</html>", encoding="utf-8")
-        self.assertFalse(gen_docs.build_is_current(fp))
+        self.assertFalse(gen_docs.build_is_current(fp, digests))
 
     def test_bundled_sidebar_stores_inner_markup_only(self) -> None:
         # Regression for the overflowing sidebar: the stub must keep the
@@ -958,6 +1304,102 @@ class TestCheckDocs(unittest.TestCase):
                      "One. Two. Three. Four. Five.\n")
             self.assertEqual(len(errors), 1)
             self.assertIn("5 sentences", errors[0])
+
+    def test_two_spaces_after_a_sentence_is_flagged(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            errors, _ = self._check(tmp, "# Page\n\nOne.  Two.\n")
+            self.assertEqual(len(errors), 1)
+            self.assertIn("two spaces after a sentence", errors[0])
+
+    def test_single_space_after_a_sentence_is_clean(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            errors, _ = self._check(tmp, "# Page\n\nOne. Two.  Three.\n")
+            # `Two.  Three` is still a double space; only a fully single-spaced
+            # line passes.
+            self.assertEqual(len(errors), 1)
+            errors, _ = self._check(tmp, "# Page\n\nOne. Two. Three.\n")
+            self.assertEqual(errors, [])
+
+    def test_hard_break_and_ada_prefix_are_not_flagged(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            # A markdown hard break is a trailing double space (no next
+            # character), and the Ada docstring prefix in a code span is not
+            # sentence punctuation.
+            errors, _ = self._check(
+                tmp, "# Page\n\nA hard break follows.  \nnext line.\n"
+                     "Use ``--  `` as the comment prefix.\n")
+            self.assertEqual(errors, [])
+
+    def test_fixer_collapses_and_agrees_with_the_gate(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            check_docs.ROOT = Path(tmp)
+            docs = Path(tmp) / "docs"
+            docs.mkdir()
+            page = docs / "page.md"
+            page.write_text("# Page\n\nOne.  Two.  Three.\n", encoding="utf-8")
+            rel = page.relative_to(check_docs.ROOT)
+            before = check_docs.spacing_errors(
+                rel, page.read_text(encoding="utf-8").splitlines())
+            self.assertTrue(before, "the gate must flag the double spaces")
+            with contextlib.redirect_stdout(io.StringIO()):
+                check_docs.fix()
+            self.assertEqual(page.read_text(encoding="utf-8"),
+                             "# Page\n\nOne. Two. Three.\n")
+            after = check_docs.spacing_errors(
+                rel, page.read_text(encoding="utf-8").splitlines())
+            self.assertEqual(after, [])
+            # The fixer is idempotent.
+            with contextlib.redirect_stdout(io.StringIO()):
+                check_docs.fix()
+            self.assertEqual(page.read_text(encoding="utf-8"),
+                             "# Page\n\nOne. Two. Three.\n")
+
+    def test_ada_comment_double_space_is_flagged(self) -> None:
+        errors = check_docs.source_spacing_errors(
+            "src/x.ads", ["   --  One.  Two.",
+                          "   A : constant := 1;",
+                          "   B : Integer := 1;  --  Three.  Four."])
+        self.assertEqual(len(errors), 2)
+        self.assertIn("src/x.ads:1", errors[0])
+        self.assertIn("src/x.ads:3", errors[1])
+
+    def test_ada_code_and_string_literals_are_not_flagged(self) -> None:
+        # Code alignment, and a `--` inside a string literal, are not prose.
+        errors = check_docs.source_spacing_errors(
+            "src/x.adb",
+            ['   S : String := "One.  Two.";',
+             '   S2 : String := "-- not a comment";',
+             "   A : Integer := 1;  --  clean comment"])
+        self.assertEqual(errors, [])
+
+    def test_ada_comment_start_tracks_string_state(self) -> None:
+        self.assertEqual(check_docs.ada_comment_start("   --  doc"), 3)
+        self.assertEqual(
+            check_docs.ada_comment_start('   S : String := "-- x";'), -1)
+        self.assertEqual(
+            check_docs.ada_comment_start('   S : String := "a""b";  --  c'), 26)
+        self.assertEqual(check_docs.ada_comment_start("   plain code"), -1)
+
+    def test_ada_fixer_keeps_the_code_byte_for_byte(self) -> None:
+        text = ('   A : constant := 1;  --  One.  Two.\n'
+                '   --  Three.  Four.\n'
+                '   B : Integer := 2;\n')
+        self.assertEqual(
+            check_docs.collapse_comment_spaces(text),
+            '   A : constant := 1;  --  One. Two.\n'
+            '   --  Three. Four.\n'
+            '   B : Integer := 2;\n')
+
+    def test_collapse_touches_only_the_sentence_gap(self) -> None:
+        # The pure normaliser behind the fixer: indentation, a markdown hard
+        # break, and a fenced block all stay byte-for-byte as they were.
+        text = ("One.  Two.\n"
+                "Indent:  keep.\n"
+                "Hard break.  \n"
+                "```\nCode.  Keep.\n```\n")
+        self.assertEqual(
+            check_docs.collapse_sentence_spaces(text),
+            "One. Two.\nIndent:  keep.\nHard break.  \n```\nCode.  Keep.\n```\n")
 
 
 class TestCheckDocsCoverage(unittest.TestCase):

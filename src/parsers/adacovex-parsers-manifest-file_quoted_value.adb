@@ -1,7 +1,7 @@
 separate (Adacovex.Parsers.Manifest)
 --  Read the first "<Key>" quoted value from a key=value or key:value
 --  file (TOML or JSON, quoted key or bare): locate Key followed by '='
---  or ':', then the next double-quoted string.  "" when absent.
+--  or ':', then the next double-quoted string. "" when absent.
 function File_Quoted_Value (Path : String; Key : String) return String is
    use Ada.Text_IO;
    F        : File_Type;

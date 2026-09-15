@@ -113,9 +113,9 @@ package body Adacovex.Parsers.Source is
       for I in Line'Range loop
          if not In_Comment then
             if In_String then
-               --  Inside a string literal: a quote closes it.  Ada escapes a
+               --  Inside a string literal: a quote closes it. Ada escapes a
                --  quote as two quotes, which toggles out and back in -- the
-               --  net effect of toggling on every quote is correct.  A `--`
+               --  net effect of toggling on every quote is correct. A `--`
                --  inside a string is data, not a comment, so HLR tags are
                --  never extracted from string content (for example generated
                --  HTML/JS constants embedding `-- HLR-XXXX` examples).
@@ -254,7 +254,7 @@ package body Adacovex.Parsers.Source is
 
    --  True when Line is a docstring summary line: an Ada comment (`--`)
    --  followed by at least one space or tab and then at least one non-blank
-   --  character.  Accepts both the canonical `--  ` prefix and the common
+   --  character. Accepts both the canonical `--  ` prefix and the common
    --  single-space `-- ` / tab-separated styles found in generated code.
    --  A bare `--` or `---` (three dashes) is not a docstring.
    function Is_Docstring_Line (Line : String) return Boolean is
@@ -280,7 +280,7 @@ package body Adacovex.Parsers.Source is
    --  True when the comment portion of Line contains a Sphinx
    --  (reStructuredText) field-list entry of the form ":Keyword" where
    --  Keyword is followed by a space (":param name:") or a colon
-   --  (":returns:").  The scan is restricted to Ada comment text.
+   --  (":returns:"). The scan is restricted to Ada comment text.
    function Has_Sphinx_Field (Line : String; Keyword : String) return Boolean
    is
       In_Comment : Boolean := False;
@@ -334,7 +334,7 @@ package body Adacovex.Parsers.Source is
 
    --  Number of leading space/tab characters between the `--` marker and the
    --  first non-blank character of an Ada comment line, or -1 when Line is
-   --  not such a comment line.  A canonical `--  text` line yields 2.
+   --  not such a comment line. A canonical `--  text` line yields 2.
    function Comment_Indent (Line : String) return Integer is
    begin
       for I in Line'First .. Line'Last - 1 loop
@@ -362,7 +362,7 @@ package body Adacovex.Parsers.Source is
 
    --  Extract the subprogram name from a declaration line (after
    --  Is_Subprogram_Decl already validated the leading keywords) into the
-   --  fixed buffer; returns the clamped name length.  Works on the raw line
+   --  fixed buffer; returns the clamped name length. Works on the raw line
    --  (blanks intact) so the name never merges with a following `return`.
    function Subprogram_Name (L : String; SName : out String) return Natural is
       Pos   : Natural := L'First;
@@ -485,11 +485,11 @@ package body Adacovex.Parsers.Source is
 
       --  Per-file opt-out marker (no-covex-docstrings / no-covex-analysis)
       --  in the leading comment block removes the file from the
-      --  docstring-coverage metrics.  See Adacovex.Opt_Outs.  Only the
+      --  docstring-coverage metrics. See Adacovex.Opt_Outs. Only the
       --  docstring gate is probed here: the SPARK-proof opt-out is enforced
       --  by the prove runner's own -u unit walk (which probes the marker
       --  itself), so a second header read in the scanner would be dead
-      --  work on every cold scan.  Detection runs before Open below: a
+      --  work on every cold scan. Detection runs before Open below: a
       --  second GNAT Text_IO handle on the same file cannot read while the
       --  scanner's own handle holds it open.
       if Adacovex.Opt_Outs.File_Opts_Out
@@ -598,7 +598,7 @@ package body Adacovex.Parsers.Source is
                Pending_Has_Doc := True;
             end if;
 
-            --  Google-style "Args:" / "Returns:" sections.  An "Args:"
+            --  Google-style "Args:" / "Returns:" sections. An "Args:"
             --  header opens a block; deeper-indented comment lines within
             --  it count as parameter entries until the indent returns to
             --  the header level (or the block is closed by a declaration).
@@ -934,7 +934,7 @@ package body Adacovex.Parsers.Source is
 
    --  Compute aggregate docstring-coverage metrics from scanned packages.
    --  Tallies documented vs. undocumented subprograms, parameters, and return
-   --  values across all scanned packages.  Packages whose file carries the
+   --  values across all scanned packages. Packages whose file carries the
    --  no-covex-docstrings (or no-covex-analysis) marker are excluded from
    --  both the numerator and the denominator.
    --  @param Packages  Vector of scanned packages.
@@ -1014,7 +1014,7 @@ package body Adacovex.Parsers.Source is
       end Push_Dir;
 
       --  Handle one directory entry of the walk: push a non-skipped
-      --  subdirectory, or scan/cache one .ads file.  Is_Dir decides the
+      --  subdirectory, or scan/cache one .ads file. Is_Dir decides the
       --  branch (the caller reads it from the shared snapshot, or from the
       --  directory entry on the fallback path).
       --  @param Dir_Path  Parent directory (absolute).
@@ -1181,7 +1181,7 @@ package body Adacovex.Parsers.Source is
             --  One shared snapshot per directory per process: the first
             --  walker to touch a directory enumerates it; the rest (tools
             --  hash, graph key, vendored discovery, ...) serve the memo
-            --  after one mtime stat.  A truncated or unreadable snapshot
+            --  after one mtime stat. A truncated or unreadable snapshot
             --  falls back to direct enumeration below.
             Dir_Cache.Snapshot (Dir_Path, Snap, SCt, STrunc, SOK);
             if SOK and then not STrunc then

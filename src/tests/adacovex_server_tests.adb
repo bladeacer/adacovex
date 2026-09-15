@@ -8,7 +8,7 @@ package body Adacovex_Server_Tests is
 
    procedure Run (R : in out Adacovex.Test_Support.Runner'Class) is
    begin
-      --  The seven literal routes the server dispatches on.  Route is the
+      --  The seven literal routes the server dispatches on. Route is the
       --  pure path-to-action mapping behind Handle_Request's case statement
       --  (LLR-SERVER-01's dashboard / API / badge surface), so every route
       --  the socket handler can serve is pinned here.
@@ -136,7 +136,7 @@ package body Adacovex_Server_Tests is
       --  decodes to a gzip stream, so each one must carry the gzip magic
       --  number the browser's inflater expects, and its decoded length must
       --  match the base85 packing (five characters per four bytes, one
-      --  shorter final group).  Walking the whole table pins the encoder and
+      --  shorter final group). Walking the whole table pins the encoder and
       --  the decoder together: a truncated, shifted, or misaligned body
       --  fails here instead of in the browser.
       declare

@@ -1,11 +1,11 @@
 separate (Adacovex.Parsers.Manifest)
---  Resolve GPR with-clause dependencies into the graph.  Deps already
---  present in the graph are skipped.  Transitive GPR dependencies are
+--  Resolve GPR with-clause dependencies into the graph. Deps already
+--  present in the graph are skipped. Transitive GPR dependencies are
 --  resolved by parsing the referenced .gpr file (if it lives in the
 --  project tree), up to a bounded depth to guard against cycles.
 --  A dependency with-claused only from a test project file (a .gpr under a
 --  tests/ test/ or t/ directory, or a test-named project such as
---  test_runner.gpr) is classified Scope_Test.  The test classification
+--  test_runner.gpr) is classified Scope_Test. The test classification
 --  propagates to everything the test project pulls in transitively.
 procedure Resolve_GPR_Deps
   (Graph         : in out Types.Implementation.Component_Vectors.Vector;
@@ -62,10 +62,10 @@ begin
                S : Types.Component_Scope := Classify_Scope (Name);
             begin
                --  A dependency with-claused only from a test project file is
-               --  a test dependency.  A GPR with-clause dependency of the
-               --  root project is a direct build dependency (base).  The
+               --  a test dependency. A GPR with-clause dependency of the
+               --  root project is a direct build dependency (base). The
                --  exception is a dependency named in a manifest.
-               --  Classify_Scope already decided those.  Deeper with-clauses
+               --  Classify_Scope already decided those. Deeper with-clauses
                --  are transitive.
                if S = Types.Scope_Transitive and then From_Test_GPR then
                   S := Types.Scope_Test;

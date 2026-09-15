@@ -94,11 +94,11 @@ graph build paid on vendored JavaScript trees (and, by extension, on
 ### C8: Bundled dashboard assets resolve their licence live
 
 The four vendored dashboard libraries (Charts.css, FlexSearch, nomnoml,
-graphre) no longer carry a hard-coded licence in the SBOM builder.  When a
+graphre) no longer carry a hard-coded licence in the SBOM builder. When a
 loose vendored copy is scanned, the builder resolves the licence (and website)
 from the package registry through `Resolve_Ecosystem_Metadata`, preferring
 `pnpm show <pkg> license` and falling back to `npm`, `yarn`, then `bun` -- the
-same preference chain used for every JavaScript component.  The SBOM and
+same preference chain used for every JavaScript component. The SBOM and
 Credits tab therefore track the real upstream licence instead of a built-in
 copy that could drift.
 
@@ -108,13 +108,13 @@ copy that could drift.
 website in a per-project store under the project's result cache (the same
 `--cache-dir` the scan uses, so a project that sets its own cache gets an
 isolated meta store), keyed by the target directory as well as the ecosystem
-and package name, with the same 7-day TTL as the system-tool probe cache.  The
+and package name, with the same 7-day TTL as the system-tool probe cache. The
 content-addressed result cache does not cover these registry calls (each one
 boots node for npm/pnpm), so a "warm" `adacovex` run still paid for them -- the
 residual slowness on `make prove` after the result cache had already been
-served.  The meta cache removes that cost: the first run resolves and caches,
+served. The meta cache removes that cost: the first run resolves and caches,
 and every later run (warm result cache or not) serves the answer from disk with
-zero subprocess spawns.  Keying by the target also means two projects that
+zero subprocess spawns. Keying by the target also means two projects that
 share a cache directory never serve each other's resolved licence or version.
 
 ## Fixes

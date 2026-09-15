@@ -15,6 +15,17 @@ assessment.
 | [iec62304.svg](iec62304.svg) | IEC 62304 | the safety-class assessment badge |
 | [docs.svg](docs.svg) | docstring coverage | the percentage of documented subprograms |
 
+## Previews
+
+Each badge renders below, so you can check it before you download the file.
+
+![SPARK level badge](spark.svg)
+![Test badge](tests.svg)
+![DO-178C badge](do178c.svg)
+![ISO 26262 badge](iso26262.svg)
+![IEC 62304 badge](iec62304.svg)
+![Documentation coverage badge](docs.svg)
+
 ## How to regenerate
 
 ```bash
@@ -23,11 +34,11 @@ make run-self   # full self-assessment + badges
 ```
 
 The SVG renderer is documented in the
-[API reference](../api-docs/adacovex-renderers-svg.md).  Badge fields,
+[API reference](../api-docs/adacovex-renderers-svg.md). Badge fields,
 colours, and shapes are part of the renderer contract; see the
 [renderer tests](../api-docs/adacovex_renderer_svg_tests.md) for the
 exact expectations.
 
 Badge text uses British English and ASD-STE100 Simplified Technical
-English.  Technical terms follow the [STE100 Technical Names
+English. Technical terms follow the [STE100 Technical Names
 dictionary](../contributing/ste100/index.md).

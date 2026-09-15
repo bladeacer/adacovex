@@ -141,7 +141,7 @@ The server runs a small HTTP/1.1 implementation with a task pool that
 scales to the host's logical CPU count within `2`..`8` workers (configurable
 with [`--serve-workers=N`](cli-reference-options.md#--serve-workersn) or its
 `--workers=N` alias) and serves
-requests until the process is interrupted (Ctrl-C).  Query strings and URL
+requests until the process is interrupted (Ctrl-C). Query strings and URL
 fragments are stripped before routing, so `/?theme=light`,
 `/api/metrics?x=1` and `/api/deps#top` reach the same handlers as `/`,
 `/api/metrics` and `/api/deps` instead of 404ing.
@@ -167,28 +167,36 @@ ASCII (non-ASCII glyphs are encoded as UTF-8 byte values in the Ada
 source). The header **Documentation (offline manual)** link and the API
 playground's `/docs` endpoint both open it.
 
+### Reading the manual and the dashboard
+
+The manual and the dashboard share one server, so the two are one click
+apart. When you read this manual inside a running `--serve` server, open
+`/` (the server root) to see the live metrics for the target. The online
+manual carries no live data: run adacovex on your project first, then open
+the dashboard to see its metrics.
+
 The manual is served **pre-compressed**: every asset is gzip-compressed at
 build time in `tools/gen-docs.py`, base85-encoded into the generated spec,
 and sent with `Content-Encoding: gzip`, so the browser inflates it and the
-binary carries no inflate routine.  base85 (the quote-free Z85 alphabet)
+binary carries no inflate routine. base85 (the quote-free Z85 alphabet)
 replaced base64 in 1.50.0: it packs 4 bytes into 5 characters instead of
 5.33, which took the encoded payload from 1.72 MB to 1.61 MB.
 
 Each page keeps only a stub for the Furo sidebar; the toctree itself is
 stored once per branch under `_nav/` and a small deferred script fills the
-stub in.  That removed 191 copies of the same 8 kB markup.
+stub in. That removed 191 copies of the same 8 kB markup.
 
 The stored tree is the sidebar container's inner markup, so the injected
-tree replaces the stub's children in place.  The single
+tree replaces the stub's children in place. The single
 `.sidebar-container` therefore stays Furo's flex-stretched drawer column:
 the sidebar sticks while the page scrolls, and `.sidebar-scroll` keeps its
-own scrollbar.  Navigation needs JavaScript, exactly as the search box
+own scrollbar. Navigation needs JavaScript, exactly as the search box
 already did.
 
-The injector also scrolls the open page's entry into the drawer.  The tree
+The injector also scrolls the open page's entry into the drawer. The tree
 is taller than the drawer now that the manual is a page per section, so the
 entry a reader clicks sits below the drawer's fold on the page it lands on,
-and Furo reveals its right-hand table of contents only.  The drawer moves
+and Furo reveals its right-hand table of contents only. The drawer moves
 alone: the page itself stays at its own top, and an entry that is already
 in view leaves the drawer where it is.
 

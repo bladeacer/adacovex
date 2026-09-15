@@ -1,7 +1,7 @@
 --  Version-control-system abstraction for differential modes.
 --  --compare-base and --coverage-delta need a snapshot of a base revision
---  without disturbing the working tree.  Legacy codebases can live in
---  Mercurial, Subversion, Fossil, or jj rather than git.  The snapshot
+--  without disturbing the working tree. Legacy codebases can live in
+--  Mercurial, Subversion, Fossil, or jj rather than git. The snapshot
 --  operations are dispatched per VCS here:
 --
 --    git    - `git worktree add --detach` in a linked worktree
@@ -23,8 +23,8 @@ package Adacovex.VCS is
    type VCS_Kind is (Unknown, Git, Mercurial, Subversion, Fossil, Jujutsu);
 
    --  Detect the VCS managing Target_Dir.
-   --  Marker files take priority (deterministic, no subprocesses).  When no
-   --  marker is present, the VCS command-line tools are probed.  Git wins
+   --  Marker files take priority (deterministic, no subprocesses). When no
+   --  marker is present, the VCS command-line tools are probed. Git wins
    --  over jj for colocated repos (git interop is exact there).
    --  @param Target_Dir  Directory to inspect.
    --  @return Detected VCS kind (Unknown when none is found).
@@ -51,7 +51,7 @@ package Adacovex.VCS is
      Global     => null;
 
    --  Command-line tool binary that drives a VCS kind ("git", "hg",
-   --  "svn", "fossil", "jj"), or "" for Unknown.  `adacovex status` uses it
+   --  "svn", "fossil", "jj"), or "" for Unknown. `adacovex status` uses it
    --  to report which VCS tools are available on PATH for the differential
    --  modes.
    --  @param Kind  VCS kind.
@@ -68,10 +68,10 @@ package Adacovex.VCS is
        or else Tool_Name'Result = "",
      Global     => null;
 
-   --  UX guidance for a VCS kind.  "" means a fully supported VCS.  For
+   --  UX guidance for a VCS kind. "" means a fully supported VCS. For
    --  legacy VCS whose snapshot UX is poor, the note recommends that the
    --  developers convert the repository to git (or a git-compatible VCS).
-   --  Subversion has no local history and is network-dependent.  Fossil has
+   --  Subversion has no local history and is network-dependent. Fossil has
    --  niche tooling.
    --  @param Kind  VCS kind.
    --  @return Recommendation text ("" when no note is needed).
@@ -86,8 +86,8 @@ package Adacovex.VCS is
 
    --  Snapshot Base_Ref of the Target_Dir repository into a temporary
    --  directory (Tmp_Path), without touching the working tree.
-   --  The temp path is /tmp/adacovex-diff-<pid> (Linux/WSL).  On failure
-   --  Tmp_Len is 0.  A stale snapshot at the same path is removed first.
+   --  The temp path is /tmp/adacovex-diff-<pid> (Linux/WSL). On failure
+   --  Tmp_Len is 0. A stale snapshot at the same path is removed first.
    --  @param Target_Dir  Root of the target repository.
    --  @param Kind  Detected VCS kind (from Detect).
    --  @param Base_Ref  Revision to snapshot (branch/commit/rev/tag).
@@ -103,8 +103,8 @@ package Adacovex.VCS is
       Success    : out Boolean);
 
    --  Remove a snapshot created by Make_Snapshot.
-   --  Deregisters VCS worktrees (git/jj) and deletes the directory.  Best
-   --  effort.  Failures are ignored.
+   --  Deregisters VCS worktrees (git/jj) and deletes the directory. Best
+   --  effort. Failures are ignored.
    --  @param Target_Dir  Root of the target repository.
    --  @param Kind  VCS kind the snapshot was created with.
    --  @param Tmp_Path  Snapshot directory to remove.

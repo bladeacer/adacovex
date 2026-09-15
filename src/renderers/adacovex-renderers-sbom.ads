@@ -3,17 +3,17 @@ with Adacovex.Types;
 
 --  Proof-aware software bill of materials (SBOM) generator.
 --  Produces CycloneDX 1.5 JSON and SPDX 2.3 JSON documents from the
---  dependency graph resolved by Adacovex.Parsers.Manifest.  Only the root
---  component carries the adacovex properties.  The root component is the
---  project adacovex actually assessed.  It carries adacovex:proof_level
+--  dependency graph resolved by Adacovex.Parsers.Manifest. Only the root
+--  component carries the adacovex properties. The root component is the
+--  project adacovex actually assessed. It carries adacovex:proof_level
 --  (Stone..Platinum), adacovex:standard ("DO-178C" | "ISO 26262" |
 --  "IEC 62304"), adacovex:dal_target (DAL-A through DAL-D), and
 --  adacovex:level (the standard-specific label "DAL-C" | "ASIL B" |
---  "Class A").  Dependency components report adacovex:proof_level =
---  "Not proved".  adacovex only proves the target itself.  It never proves
---  third-party dependencies.  Every dependency component also carries an
+--  "Class A"). Dependency components report adacovex:proof_level =
+--  "Not proved". adacovex only proves the target itself. It never proves
+--  third-party dependencies. Every dependency component also carries an
 --  adacovex:dep_scope property ("base" | "dev" | "transitive" |
---  "vendored").  This property distinguishes publishing (alire.toml),
+--  "vendored"). This property distinguishes publishing (alire.toml),
 --  development-only (alire-dev.toml), transitive, and patched-vendored
 --  packages.
 --  HLR-SBOM: SBOM generation
@@ -21,9 +21,9 @@ with Adacovex.Types;
 package Adacovex.Renderers.SBOM is
 
    --  Map an assessed SPARK level to the binary proof-level property value.
-   --  Reports the honest assessed level (Stone..Platinum) verbatim.  It does
-   --  not collapse to a coarse "Gold" or "Platinum" tier.  SBOM consumers
-   --  then never overstate the assurance state.  For example, Silver with
+   --  Reports the honest assessed level (Stone..Platinum) verbatim. It does
+   --  not collapse to a coarse "Gold" or "Platinum" tier. SBOM consumers
+   --  then never overstate the assurance state. For example, Silver with
    --  unproved VCs is reported as "Silver", never "Gold".
    --  @param Level  Assessed SPARK level.
    --  @return "Stone", "Bronze", "Silver", "Gold", or "Platinum".
@@ -34,7 +34,7 @@ package Adacovex.Renderers.SBOM is
      Global     => null;
 
    --  Map a DAL level to the dal_target property value ("DAL-A".."DAL-D").
-   --  Returns an empty string for DAL-E.  DAL-E has no safety effect.  As a
+   --  Returns an empty string for DAL-E. DAL-E has no safety effect. As a
    --  result, it is not asserted in the SBOM.
    --  @param Level  Target DAL level.
    --  @return "DAL-A".."DAL-D", or "" for DAL-E.
@@ -45,7 +45,7 @@ package Adacovex.Renderers.SBOM is
      Global     => null;
 
    --  Standard-specific level label for the root component's adacovex:level
-   --  property ("DAL-C", "ASIL B", "Class A", ...).  Returns an empty
+   --  property ("DAL-C", "ASIL B", "Class A", ...). Returns an empty
    --  string for the no-safety-effect tier (DAL-E), matching
    --  DAL_Property_Value's omission of DAL-E.
    --  @param Standard  Compliance standard labelling the level.
@@ -57,7 +57,7 @@ package Adacovex.Renderers.SBOM is
    with SPARK_Mode => On, Global => null;
 
    --  Comma-joined standard names for the "all standards" SBOM property.
-   --  The value is "DO-178C, ISO 26262, IEC 62304".  Used for
+   --  The value is "DO-178C, ISO 26262, IEC 62304". Used for
    --  adacovex:standard when --standard=all runs one assessment against
    --  every standard.
    --  @return The comma-joined standard names.
@@ -68,17 +68,17 @@ package Adacovex.Renderers.SBOM is
      Global     => null;
 
    --  Slash-joined standard-specific level labels for the "all standards"
-   --  SBOM property.  For example, "DAL-C / ASIL B / Class A".  Each
-   --  standard's native label is used.  An ISO 26262 or IEC 62304 reader sees
+   --  SBOM property. For example, "DAL-C / ASIL B / Class A". Each
+   --  standard's native label is used. An ISO 26262 or IEC 62304 reader sees
    --  "ASIL B" or "Class A" without decoding the shared tier.
    --  @param Level  Shared rigor tier.
    --  @return The slash-joined level labels for all three standards.
    function All_Levels_Property (Level : Types.DAL_Level) return String;
 
    --  Map a dependency scope to the adacovex:dep_scope property value
-   --  ("base", "dev", "transitive", or "vendored").  Base dependencies are
-   --  declared in the publishing alire.toml.  Dev dependencies are declared
-   --  only in alire-dev.toml.  Transitive ones are in neither manifest.
+   --  ("base", "dev", "transitive", or "vendored"). Base dependencies are
+   --  declared in the publishing alire.toml. Dev dependencies are declared
+   --  only in alire-dev.toml. Transitive ones are in neither manifest.
    --  Vendored packages are overlaid by a .adacovex/patches/ docstring patch.
    --  @param Scope  Component dependency scope.
    --  @return "base" (4), "dev" (3), "transitive" (10), or "vendored" (8).
@@ -88,11 +88,11 @@ package Adacovex.Renderers.SBOM is
      Post       => Scope_Property'Result'Length in 3 .. 10,
      Global     => null;
 
-   --  Escape a string for inclusion in a JSON document.  Backslash, quote,
-   --  and control characters are escaped.  The emitted JSON is then always
-   --  well-formed.  This holds even for manifest strings containing embedded
-   --  quotes.  The output buffer is bounded at six bytes per input byte (the
-   --  widest escape, "\u00xx").  Source length is capped at Max_Esc_Src.
+   --  Escape a string for inclusion in a JSON document. Backslash, quote,
+   --  and control characters are escaped. The emitted JSON is then always
+   --  well-formed. This holds even for manifest strings containing embedded
+   --  quotes. The output buffer is bounded at six bytes per input byte (the
+   --  widest escape, "\u00xx"). Source length is capped at Max_Esc_Src.
    --  The 6x output bound then stays provably within Natural.
    --  @param S  String to escape.
    --  @return The escaped JSON string.
@@ -103,15 +103,15 @@ package Adacovex.Renderers.SBOM is
      Post       => Escape_JSON'Result'Length <= 6 * S'Length,
      Global     => null;
 
-   --  Maximum source length Escape_JSON accepts.  Kept well below
+   --  Maximum source length Escape_JSON accepts. Kept well below
    --  Natural'Last / 6 so the 6x output buffer bound is provable with
    --  constant-coefficient arithmetic (no division-floor reasoning needed).
    --  SBOM field values (names, licences, descriptions, PURLs) are far
    --  smaller than this cap.
    Max_Esc_Src : constant := 200_000;
 
-   --  Decimal string of a non-negative integer.  The fixed 10-character
-   --  buffer holds any Natural (up to 2,147,483,647, ten digits).  The loop
+   --  Decimal string of a non-negative integer. The fixed 10-character
+   --  buffer holds any Natural (up to 2,147,483,647, ten digits). The loop
    --  invariant proves the write cursor never underflows the buffer.
    --  @param N  Non-negative integer to format.
    --  @return The decimal string, 1-10 characters, no leading zeros.
@@ -138,8 +138,8 @@ package Adacovex.Renderers.SBOM is
      Global     => null;
 
    --  ISO 8601 UTC timestamp (YYYY-MM-DDTHH:MM:SS) from a Unix epoch second
-   --  count.  It is computed with pure integer arithmetic (Howard Hinnant's
-   --  civil-from-days algorithm).  The result is then identical on every
+   --  count. It is computed with pure integer arithmetic (Howard Hinnant's
+   --  civil-from-days algorithm). The result is then identical on every
    --  machine and timezone.
    --  @param Epoch_Sec  Unix epoch seconds since 1970-01-01T00:00:00Z.
    --  @return The fixed-length ISO 8601 timestamp string.

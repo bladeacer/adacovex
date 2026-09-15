@@ -1,9 +1,9 @@
 # Adacovex.Types.Implementation
 
-Non-SPARK container types.  SPARK forbids instantiating the
+Non-SPARK container types. SPARK forbids instantiating the
 non-formal Ada.Containers in SPARK_Mode On code: gnatprove rejects
 such instantiations ("not allowed in SPARK (due to entity declared
-with SPARK_Mode Off)"; see docs/proof/16.1.0-ledger.md).  This
+with SPARK_Mode Off)"; see docs/proof/16.1.0-ledger.md). This
 package and Adacovex.Complexity are the only two SPARK_Mode (Off)
 packages in the codebase, both for the same reason.
 

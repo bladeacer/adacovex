@@ -59,8 +59,10 @@ docs/contributing/perf/benchmarks-binary-size.md	Benchmarks: binary size and the
 docs/contributing/perf/benchmarks-server.md	Benchmarks: server throughput and latency
 docs/contributing/perf/prove-timing.md	Prove timing and optimisation review
 docs/contributing/perf/optimisation-history.md	Performance optimisation history
-docs/contributing/perf/optimisation-history-archive.md	Performance optimisation history: earlier releases
 docs/contributing/ir.md	gnatprove-friendly IR
 docs/proof/index.md	Proof records
 docs/compliance/index.md	Compliance outputs
 docs/badges/index.md	Badges
+docs/archive/index.md	Archive
+docs/archive/16.1.0-ledger-audit.md	Archive: gnatprove 16.1.0 proof-debt audit
+docs/archive/optimisation-history-archive.md	Archive: performance optimisation history (earlier releases)

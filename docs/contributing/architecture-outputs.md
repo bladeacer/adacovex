@@ -1,6 +1,6 @@
 # Architecture: outputs and formats
 
-This page covers the output formats, the build and documentation gates, and the reading contract.  The dependency and proof-level design is on [Architecture Decisions](architecture.md); the IR, DAL, scanning, and patch system are on [Architecture: verification and proof patches](architecture-verification.md); the pipeline order, the platforms, and the delivery channels are on [Architecture: pipeline, platforms, and delivery](architecture-pipeline.md).
+This page covers the output formats, the build and documentation gates, and the reading contract. The dependency and proof-level design is on [Architecture Decisions](architecture.md); the IR, DAL, scanning, and patch system are on [Architecture: verification and proof patches](architecture-verification.md); the pipeline order, the platforms, and the delivery channels are on [Architecture: pipeline, platforms, and delivery](architecture-pipeline.md).
 
 ## Output Formats
 
@@ -50,34 +50,34 @@ adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) 
 The `complexity` subcommand walks the whole target and scores many languages
 (C, C++, C#, Go, Java, JavaScript, TypeScript, Python, Ruby, PHP, Rust,
 Shell, Kotlin, and the YAML/JSON/TOML/XML/Markdown/reStructuredText
-families) alongside Ada.  Per-subprogram analysis stays Ada-specific; the
+families) alongside Ada. Per-subprogram analysis stays Ada-specific; the
 other languages contribute file-level lines of code and decision counts.
 `--excludes=EXT,EXT` skips listed file extensions and is rejected unless the
-`complexity` subcommand is given, so it can never run on its own.  `make
+`complexity` subcommand is given, so it can never run on its own. `make
 complexity-check` gates the tree through the same thresholds.
 
 ## Timezone resolution
 
-adacovex honours the operating system's timezone by default.  The resolved
+adacovex honours the operating system's timezone by default. The resolved
 offset comes from `Ada.Calendar.Time_Zones.UTC_Time_Offset`, the standard
 Ada runtime, which reads the `TZ` variable and the system timezone through
 the C library, so the default is always the operator's wall clock
-(DST-aware).  `status` reports the effective timezone, the current date and
+(DST-aware). `status` reports the effective timezone, the current date and
 time in it, and how many dated release changelogs the target carries under
 `docs/changelogs`.
 
-`--tz` / `--timezone` override the display zone for one invocation.  The
+`--tz` / `--timezone` override the display zone for one invocation. The
 value is either a well-known IANA name (for example `Asia/Singapore`) or a
 fixed `UTC`/`GMT` offset (`UTC+8`, `GMT+8`, `UTC+08`, `GMT+08`,
-`UTC+08:30`).  adacovex ships no timezone database, so a named zone
+`UTC+08:30`). adacovex ships no timezone database, so a named zone
 resolves from a built-in table of common IANA names and their standard-time
-offsets.  A zone that may observe daylight saving time (marked in the
+offsets. A zone that may observe daylight saving time (marked in the
 table), or one the table lacks, is probed against the platform tzdata
 (`zdump` validates the name, `date +%z` reads the current offset, both
 through one shell command) for the DST-correct offset; the table offset is
-the fallback when the probe is unavailable.  The date/time rendering
+the fallback when the probe is unavailable. The date/time rendering
 compensates for GNAT's local-time calendar accessors, so the displayed wall
-clock is correct in every zone.  `HLR-TZ` covers this behaviour.
+clock is correct in every zone. `HLR-TZ` covers this behaviour.
 
 ## Build and documentation gates
 
@@ -86,11 +86,11 @@ step with the code, and both run inside `make check`:
 
 - `tools/csslint.py` (`make csslint-check`) enforces the dashboard spacing
   convention: every `margin`, `padding`, and `gap` pixel length is a
-  multiple of 4px.  It also runs inside `make build`.
+  multiple of 4px. It also runs inside `make build`.
 - `tools/check-docs.py` (`make docs-check`) fails when any paragraph in the
   user docs, README, or human changelogs exceeds four sentences, and it
   rejects em dashes and Latin abbreviations (`i.e.`, `e.g.`, `etc.`).
-  `tools/para-split.py` rewraps over-long paragraphs to comply.  Pages are
+  `tools/para-split.py` rewraps over-long paragraphs to comply. Pages are
   also kept under 250 lines; a reference dictionary or historical record can
   opt out of the line cap (never the paragraph rule) with a
   `no-covex-docs-loc` HTML comment near the top of the file.

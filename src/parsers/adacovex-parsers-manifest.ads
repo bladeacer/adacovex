@@ -4,15 +4,15 @@ with Adacovex.Types;
 --  Resolves the project dependency graph from alire.lock (solved crates),
 --  alire.toml / alire-dev.toml (root project metadata and base or dev
 --  dependency scopes), and the root .gpr project file (with clauses).
---  Every dependency component carries a Component_Scope.  The scopes are
+--  Every dependency component carries a Component_Scope. The scopes are
 --  base (declared in alire.toml), dev (declared only in alire-dev.toml),
 --  transitive (resolved from the lock or a GPR with clause but named in no
 --  manifest), or vendored (overlaid by a .adacovex/patches/ docstring
---  patch).  The result is a component vector suitable for SBOM generation.
+--  patch). The result is a component vector suitable for SBOM generation.
 --  Discover_System_Dev_Deps finds system-tool dev dependencies on top of
---  the manifest graph.  These are tools (python3, git, gnatprove, and
+--  the manifest graph. These are tools (python3, git, gnatprove, and
 --  more) that the project's build or dev files reference and that are
---  installed on PATH.  Tools that are really language packages are never
+--  installed on PATH. Tools that are really language packages are never
 --  registered as system tools: the root's Python requirements
 --  (requirements*.txt, for example sphinx and myst-parser) are registered
 --  as dev-scope pypi components resolved from the package registry
@@ -24,7 +24,7 @@ package Adacovex.Parsers.Manifest is
    --  Build the dependency graph for a project rooted at Target_Dir.
    --  Read alire.toml / alire-dev.toml (root metadata), alire.lock
    --  (solved dependencies), and the root .gpr file (project name and
-   --  with clauses).  The root component is stored at index 1.
+   --  with clauses). The root component is stored at index 1.
    --  Dependency components reference their parent via the Parent field.
    --  @param Target_Dir  Project root directory.
    --  @param Manifest_Path  Path to the Alire manifest (alire.toml or dev).
@@ -44,17 +44,17 @@ package Adacovex.Parsers.Manifest is
    with Pre => Target_Dir'Length > 0;
 
    --  Discover system-tool dev dependencies referenced by the project.
-   --  Scan the project's dev-facing files.  These files are Makefiles,
+   --  Scan the project's dev-facing files. These files are Makefiles,
    --  shell scripts, Python tools, Alire manifests, CI workflows, GNAT
-   --  project files, and Ada sources.  Look for a curated set of known
-   --  system binaries.  Append every tool that the files reference and that
-   --  is actually installed on PATH to the graph.  Append it as a dev-scope
-   --  dependency of the root.  Tools referenced nowhere in the project, or
-   --  referenced but not installed, are not registered.  The SBOM lists only
+   --  project files, and Ada sources. Look for a curated set of known
+   --  system binaries. Append every tool that the files reference and that
+   --  is actually installed on PATH to the graph. Append it as a dev-scope
+   --  dependency of the root. Tools referenced nowhere in the project, or
+   --  referenced but not installed, are not registered. The SBOM lists only
    --  system tools that the project really interacts with and that are
-   --  actually present.  Probe each registered tool's version by running
-   --  "<Tool> --version" (or the tool-specific subcommand).  Extract the
-   --  version token.  The SBOM then carries the installed version.  Tools
+   --  actually present. Probe each registered tool's version by running
+   --  "<Tool> --version" (or the tool-specific subcommand). Extract the
+   --  version token. The SBOM then carries the installed version. Tools
    --  whose probe fails report no version.
    --  @param Target_Dir  Project root directory to scan.
    --  @param Graph  Dependency graph to extend (root at index 1).

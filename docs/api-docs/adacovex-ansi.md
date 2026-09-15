@@ -3,9 +3,9 @@
 Shared ANSI colour helper for adacovex stdout.
 
 adacovex colours its terminal output to make the important lines stand
-out.  Colour is disabled automatically when the output would not take it:
-inside CI (``CI``), under ``NO_COLOR``, or with ``TERM=dumb``.  This keeps CI
-logs plain and machine-readable.  adacovex is NO_COLOR-clean and never
+out. Colour is disabled automatically when the output would not take it:
+inside CI (``CI``), under ``NO_COLOR``, or with ``TERM=dumb``. This keeps CI
+logs plain and machine-readable. adacovex is NO_COLOR-clean and never
 emits escape codes when the environment opts out.
 HLR-ANSI: Terminal colour support
 

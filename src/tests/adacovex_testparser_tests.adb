@@ -99,7 +99,7 @@ package body Adacovex_TestParser_Tests is
 
       --  Test 2b: plain table without the leading index cell
       --  ("| Category | N | PASS |") -- the layout adacovex's own
-      --  docs/test_result.md uses.  The count cell is detected by its
+      --  docs/test_result.md uses. The count cell is detected by its
       --  digits regardless of the index column, so categories parse.
       begin
          Create (F, Out_File, Tmp_Path);

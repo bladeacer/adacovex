@@ -33,10 +33,10 @@ package body Adacovex.Parsers is
                exit when DLast < Line'Length;
             end loop;
          else
-            --  The line exactly fills the buffer.  Get_Line stops at the
+            --  The line exactly fills the buffer. Get_Line stops at the
             --  buffer bound and leaves the line terminator pending, so the
             --  next Get_Line would report a spurious empty line (and shift
-            --  every later line number).  Consume the terminator now: the
+            --  every later line number). Consume the terminator now: the
             --  reader is then positioned at the next physical line, exactly
             --  as it is after a drain.
             Skip_Line (F);

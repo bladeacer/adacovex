@@ -3,7 +3,7 @@
 This page details the serving flags (`--serve`, `--theme`, `--port`,
 `--serve-workers`, `--tz`), the subcommands with flags of their own
 (`completion`, `man`), the CI threshold gates (`--require-*`), result caching,
-`--verbose`, and `--help`.  The flag summary table and worked examples are on
+`--verbose`, and `--help`. The flag summary table and worked examples are on
 the [CLI reference](cli-reference.md); the assessment flags and subcommands
 are on [CLI flag details: assessment flags and
 subcommands](cli-reference-flags.md); the emitted reports, the scan-scope
@@ -44,16 +44,16 @@ use less memory. It must be a valid `Positive` integer and only works with
 
 ### `--tz=ZONE` / `--timezone=ZONE`
 
-Display timezone for the status report.  Accepts a well-known IANA name
+Display timezone for the status report. Accepts a well-known IANA name
 (for example `Asia/Singapore`) or a fixed UTC/GMT offset (`UTC+8`, `GMT+8`,
-`UTC+08`, `GMT+08`, `UTC+08:30`).  Without it adacovex uses the operating
+`UTC+08`, `GMT+08`, `UTC+08:30`). Without it adacovex uses the operating
 system's timezone.
 
-A named zone resolves from a built-in table of common IANA names.  A zone
+A named zone resolves from a built-in table of common IANA names. A zone
 that may observe daylight saving time, or one the table lacks, is probed
 against the platform tzdata (`zdump` + `date +%z`) for the DST-correct
 current offset, with the table as the fallback when the probe is
-unavailable.  Values are matched case-insensitively, and a bad value fails
+unavailable. Values are matched case-insensitively, and a bad value fails
 loudly.
 
 ### `--version`
@@ -65,9 +65,9 @@ The same constant drives the man page, the SBOM tool version, and the result-cac
 ### `completion`
 
 `adacovex completion [SHELL]` (also `adacovex --completion[=SHELL]`) prints
-a static shell-completion script to stdout and exits.  `SHELL` is one of
+a static shell-completion script to stdout and exits. `SHELL` is one of
 `bash`, `fish`, `zsh`, `pwsh`, when omitted it is auto-detected from
-`$SHELL`, falling back to bash for unknown or empty shells.  Typical setup:
+`$SHELL`, falling back to bash for unknown or empty shells. Typical setup:
 
 ```bash
 eval "$(adacovex completion)"        # bash (default)

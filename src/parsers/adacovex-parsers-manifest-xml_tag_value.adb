@@ -1,6 +1,6 @@
 separate (Adacovex.Parsers.Manifest)
 --  First <Tag>...</Tag> occurrence on a single line of an XML file
---  (pom.xml).  Returns the inner text, "" when absent.
+--  (pom.xml). Returns the inner text, "" when absent.
 function Xml_Tag_Value (Path : String; Tag : String) return String is
    use Ada.Text_IO;
    F        : File_Type;

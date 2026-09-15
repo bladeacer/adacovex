@@ -66,7 +66,7 @@ package body Adacovex_VCS_Tests is
       R.Check
         (UX_Note (Fossil)'Length > 0, "fossil carries a UX recommendation");
 
-      --  Marker-file detection.  Each candidate gets its own scratch
+      --  Marker-file detection. Each candidate gets its own scratch
       --  directory so detection is unambiguous (git wins over colocated jj).
       begin
          Create_Path (Base & "/git/.git");

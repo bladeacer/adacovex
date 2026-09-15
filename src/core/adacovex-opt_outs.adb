@@ -37,7 +37,7 @@ package body Adacovex.Opt_Outs is
 
    --  True when the trimmed line looks like a comment: it begins with a
    --  recognised comment prefix (--, #, //, /*, *, <!--, .., ;, ', ", or
-   --  {%).  A Markdown ATX heading (a bare '# title') is not a comment:
+   --  {%). A Markdown ATX heading (a bare '# title') is not a comment:
    --  the prefix must be followed by a space or the end of the line.
    function Is_Comment_Line (T : String) return Boolean is
    begin
@@ -82,7 +82,7 @@ package body Adacovex.Opt_Outs is
    --  directive: the token appears (case-insensitively) and everything
    --  before and after it is comment decoration only -- spaces, the comment
    --  prefix (--, #, //, <!--, ...), and its closer (-->), but no letters
-   --  or digits.  A prose line that merely *mentions* a marker (for example
+   --  or digits. A prose line that merely *mentions* a marker (for example
    --  this unit's own header documentation, or a docs page explaining the
    --  markers) therefore never opts the file out; the marker must sit on a
    --  comment line of its own.

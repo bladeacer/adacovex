@@ -2,8 +2,8 @@
 
 Version-control-system abstraction for differential modes.
 --compare-base and --coverage-delta need a snapshot of a base revision
-without disturbing the working tree.  Legacy codebases can live in
-Mercurial, Subversion, Fossil, or jj rather than git.  The snapshot
+without disturbing the working tree. Legacy codebases can live in
+Mercurial, Subversion, Fossil, or jj rather than git. The snapshot
 operations are dispatched per VCS here:
 
   git    - ``git worktree add --detach`` in a linked worktree

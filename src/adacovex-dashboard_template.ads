@@ -6,10 +6,10 @@
 --  HTML/CSS/JS (dynamic metric cards are injected at the __CARDS__
 --  placeholder by Adacovex.Renderers.HTML.Render_Dashboard, which
 --  also fills the __THEME__ placeholder with the initial dashboard
---  theme).  Do not edit by hand; edit resources/ and run make build.
+--  theme). Do not edit by hand; edit resources/ and run make build.
 package Adacovex.Dashboard_Template is
 
-   -- The full dashboard page shell.  __CARDS__ marks where the
+   -- The full dashboard page shell. __CARDS__ marks where the
    -- dynamic card markup is injected; __THEME__ is replaced with
    -- the initial theme (system / light / dark).
    Template : constant String :=

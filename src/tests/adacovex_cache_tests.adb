@@ -13,7 +13,7 @@ package body Adacovex_Cache_Tests is
    use Ada.Directories;
 
    --  Overall test root under the system temp directory, unique per PID so
-   --  parallel or repeated runs never collide.  Tests create files under
+   --  parallel or repeated runs never collide. Tests create files under
    --  it and leave it there (ephemeral /tmp content).
    function Test_Root return String is
       Pid : constant Integer :=
@@ -32,7 +32,7 @@ package body Adacovex_Cache_Tests is
    end Test_Cache_Dir;
 
    --  Documented persistent-stamp layout: ~/.adacovex/stamps/<sha-256-of
-   --  -path>.  Adacovex.Cache owns the real builder privately; the tests
+   --  -path>. Adacovex.Cache owns the real builder privately; the tests
    --  rebuild it from the documented layout (same pattern as the probe
    --  store test above).
    function Home_Stamp_Path (For_Path : String) return String is
@@ -44,7 +44,7 @@ package body Adacovex_Cache_Tests is
       return Home & "/.adacovex/stamps/" & Cache.Hash_String (For_Path);
    end Home_Stamp_Path;
 
-   --  Write Content into a fresh file at Path.  Binary Stream_IO, so the
+   --  Write Content into a fresh file at Path. Binary Stream_IO, so the
    --  bytes on disk are exactly Content (the native Text_IO of this GNAT
    --  build appends a line terminator after every Put, which would corrupt
    --  hashes and sizes in these tests).
@@ -198,7 +198,7 @@ package body Adacovex_Cache_Tests is
         (Found and then BLen = 13 and then Blob (1 .. BLen) = "payload-three",
          "Test 9: get returns the put payload");
 
-      --  Test 10: oldest-first eviction under a small cap.  Put_Cached
+      --  Test 10: oldest-first eviction under a small cap. Put_Cached
       --  evicts every 32 stores, so 40 stores with a cap of 8 must evict
       --  the oldest entries and keep the newest reachable.
       Cache.Set_Cache_Policy (8);
@@ -217,7 +217,7 @@ package body Adacovex_Cache_Tests is
          "Test 10: newest entry survived eviction");
       Cache.Set_Cache_Policy (4096);
 
-      --  Test 11: system-tool probe store round trip.  The probe root is
+      --  Test 11: system-tool probe store round trip. The probe root is
       --  machine-local (outside the result cache), so the test cleans its
       --  entry up afterwards.
       declare
@@ -240,9 +240,9 @@ package body Adacovex_Cache_Tests is
          R.Check
            (not Probe_Found,
             "Test 11b: probe fingerprint mismatch invalidates");
-         --  The probe store lives at ~/.adacovex/probes/<tool>.v2.  Remove
+         --  The probe store lives at ~/.adacovex/probes/<tool>.v2. Remove
          --  the test's entry so it never leaks into a real toolchain probe
-         --  set.  Probe_Path is private to Adacovex.Cache, so rebuild the
+         --  set. Probe_Path is private to Adacovex.Cache, so rebuild the
          --  path here from the documented layout.
          declare
             Home : constant String :=
@@ -280,11 +280,11 @@ package body Adacovex_Cache_Tests is
          and then Meta_Web (1 .. Meta_Web_Len) = "https://example.test",
          "Test 12: registry-metadata store round trip");
 
-      --  Test 13: persistent stat-stamp store.  A file at or above the
+      --  Test 13: persistent stat-stamp store. A file at or above the
       --  16 KiB size gate is stamped at first hash; a second hash of the
       --  unchanged file (in a fresh process state -- the in-process map is
       --  bypassed by hashing a different path first) is served from the
-      --  store, growing Persistent_Stamp_Hits.  An edited file (same size,
+      --  store, growing Persistent_Stamp_Hits. An edited file (same size,
       --  later mtime) must force a re-hash and a changed digest.
       declare
          Big_Path : constant String := Test_Root & "/big-sample.bin";
@@ -323,9 +323,9 @@ package body Adacovex_Cache_Tests is
                "Test 13: persistent stamp served the digest");
          end;
          --  Grown file (size change): the stored pair no longer matches, so
-         --  the digest must change.  The in-process stamp map serves same-
+         --  the digest must change. The in-process stamp map serves same-
          --  size files by design, so the edit must move the size to be
-         --  observable here.  The racy-clean rule skips stamping within a
+         --  observable here. The racy-clean rule skips stamping within a
          --  second of the write, so sleep first to make the new state
          --  deterministically stampable for the re-record.
          delay 1.1;
@@ -335,7 +335,7 @@ package body Adacovex_Cache_Tests is
            (D_Big_2 /= D_Big_1,
             "Test 13: size change forced a re-hash (digest changed)");
          --  Small files never enter the store: a 10-byte file must not
-         --  create a stamp entry.  Rebuild the documented path layout to
+         --  create a stamp entry. Rebuild the documented path layout to
          --  check.
          declare
             Small_Path : constant String := Test_Root & "/small.txt";

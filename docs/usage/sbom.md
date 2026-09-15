@@ -116,7 +116,7 @@ Both formats validate against the official
 Every dependency component carries a `language` field (CycloneDX JSON /
 `components[].properties` under `"name": "adacovex:language"`, or the
 Markdown table's `Language` column) describing the implementation language(s)
-of that dependency.  Detection follows the component's origin, most specific
+of that dependency. Detection follows the component's origin, most specific
 first.
 
 ### Manifest-declared ecosystems
@@ -142,7 +142,7 @@ A vendored manifest maps directly onto its language and PURL type:
 For every other component -- vendored trees, `vendor/`, `node_modules`,
 resources, loose source drops, and individual files inside `resources/`,
 `assets/`, and `.adacovex/patches/` -- adacovex infers the language from the
-**file extensions actually present**.  The extension is the source of truth: a
+**file extensions actually present**. The extension is the source of truth: a
 `.py` file reports Python even when a `Cargo.toml` sits next to it, and the
 manifest language only breaks ties.
 

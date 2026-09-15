@@ -10,10 +10,10 @@ package Adacovex.Renderers.ANSI is
 
    --  Print a formatted report to standard output.
    --  Displays a colour-coded summary of docstring coverage, proof results,
-   --  test results, and compliance using ANSI escape sequences.  The
+   --  test results, and compliance using ANSI escape sequences. The
    --  compliance line is standard-aware, or prints one line per standard
-   --  when All_Standards is True.  Set Use_Color to False to suppress ANSI
-   --  codes.  For example, do this for redirected output or the NO_COLOR
+   --  when All_Standards is True. Set Use_Color to False to suppress ANSI
+   --  codes. For example, do this for redirected output or the NO_COLOR
    --  environment variable.
    --  @param Doc_Metrics  Docstring coverage metrics.
    --  @param Proof  GNATprove proof summary.

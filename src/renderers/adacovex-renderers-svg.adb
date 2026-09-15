@@ -5,12 +5,12 @@ package body Adacovex.Renderers.SVG is
 
    use type Types.DAL_Status;
 
-   --  Maximum length of a badge label or value text run.  Badge segments
+   --  Maximum length of a badge label or value text run. Badge segments
    --  are sized from measured glyph widths; bounding the text length keeps
    --  the width arithmetic provably within Natural.
    Max_Badge_Text : constant := 64;
 
-   --  Decimal string of a non-negative integer.  The fixed 10-character
+   --  Decimal string of a non-negative integer. The fixed 10-character
    --  buffer and the loop invariant prove the write cursor never underflows.
    function I2S (N : Natural) return String
    with
@@ -128,7 +128,7 @@ package body Adacovex.Renderers.SVG is
    end Glyph_Width;
 
    --  Total advance width (px) of a badge text run at font-size 11: the
-   --  sum of the per-glyph widths.  Replaces the flat 7px-per-character
+   --  sum of the per-glyph widths. Replaces the flat 7px-per-character
    --  estimate so every badge carries the same side padding regardless of
    --  its letters -- the old estimate left uppercase-heavy labels (SPARK,
    --  DO-178C) nearly flush against their segment edge while narrow

@@ -20,7 +20,9 @@ parser, so the pages stay `.md`).  This script:
    * the footer "Page source" `_sources/` links and the `_sources/` files
      are dropped (the raw Markdown adds no offline value);
    * the PNG dashboard screenshots (`_images/`) are dropped and each `<img>`
-     becomes a short note (the images stay in the online book);
+     becomes a short note (the images stay in the online book), while the
+     SVG images copied there -- the badge previews on the badges page -- ARE
+     bundled, so an inline badge preview works offline exactly as online;
    * Sphinx's `.doctrees/`, `.buildinfo` and `objects.inv` side-car files
      are not served pages and are not bundled;
    * every remaining non-ASCII glyph (for example the paragraph-sign
@@ -77,23 +79,38 @@ drifts -- exactly the same pattern tools/gen-dashboard.py uses.
 
 Determinism and incremental builds:
 
-* the Sphinx output directory is built **clean** whenever the docs sources
-  change (a SHA-256 fingerprint of `docs/` is stamped beside the build), so a
-  renamed or deleted page can never leave a stale page in the bundle -- that
-  stale-HTML case made the spec differ between an incremental developer tree
-  and a fresh clone, and a changed spec invalidates the cached SPARK proof;
+* the Sphinx build is **incremental but verified**: a SHA-256 fingerprint of
+  `docs/` plus the per-source digests and the output file list are stamped
+  beside the build, an unchanged tree skips Sphinx completely, and a changed
+  one re-reads only the changed pages (their mtimes are refreshed first, so
+  Sphinx cannot serve a stale doctree), and a navigation change -- a page
+  added or removed, or a toctree'd source edited -- rewrites every page so the
+  sidebars follow the new toctree.  The removed sources' outputs are swept,
+  and the page set is checked against the sources afterwards; a check failure
+  falls back to a clean rebuild (`--fresh` forces it).  The build
+  directory therefore stays a pure function of `docs/`, so a renamed or
+  deleted page can never leave a stale page in the bundle -- that stale-HTML
+  case made the spec differ between an incremental developer tree and a fresh
+  clone, and a changed spec invalidates the cached SPARK proof;
 * the spec is written **only when its content changed**, so a no-op run keeps
   the file's mtime and `alr build` does not recompile the generated 28k-line
   unit (nor relink) on every `make build` / `make prove`;
+* each asset's gzip+base85 result is cached by SHA-256 under
+  `obj/adacovex-docs-encode/`, so a docs edit re-encodes only the pages it
+  touched, and the uncached bodies are encoded in parallel across the CPU
+  cores (both are pure speed-ups: the emitted spec is byte-identical);
 * `--check` is read-only: it builds into memory and never rewrites the
   committed spec.
 
 Usage:
-  python3 tools/gen-docs.py [--check] [--out=PATH]
+  python3 tools/gen-docs.py [--check] [--out=PATH] [--jobs=N] [--fresh]
 
 --check    Verify the generated spec matches the current resources; exit 1 on
            mismatch (used by CI so the committed file never goes stale).
 --out      Output Ada spec path (default: src/adacovex-docs_template.ads).
+--jobs     Encoder worker processes (default: the CPU count, capped at 8).
+--fresh    Rebuild the Sphinx site from scratch instead of reusing the
+           incremental build directory (the escape hatch).
 
 Exit code 0 on success, 1 on a missing tool/build or a --check mismatch.  When
 sphinx-build is not resolvable (neither on PATH nor in the repo's `.venv`)
@@ -102,7 +119,9 @@ spec is authored to build without it.
 """
 
 import argparse
+import concurrent.futures
 import hashlib
+import os
 import posixpath
 import re
 import shutil
@@ -110,20 +129,35 @@ import subprocess
 import sys
 import zlib
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Iterable, List, NamedTuple, Optional, Set, Tuple
 
 ROOT: Path = Path(__file__).resolve().parent.parent
 DOCS: Path = ROOT / "docs"
 BUILD: Path = DOCS / "_build" / "html"   # sphinx html build output (gitignored)
 OUT: Path = ROOT / "src" / "adacovex-docs_template.ads"
 
-# Stamp written after a clean Sphinx build, holding the fingerprint of the
-# docs sources that produced it.  An unchanged fingerprint lets the next run
-# reuse the build directory without re-running Sphinx; a changed one forces a
-# CLEAN rebuild, so a renamed or deleted page can never leave a stale page in
-# the bundle (Sphinx's incremental output does not always remove stale HTML).
-# The stamp lives inside the (gitignored) build directory.
+# Stamp written after a Sphinx build, holding the fingerprint of the docs
+# sources that produced it, the per-source digests, and the output file list.
+# An unchanged stamp lets the next run reuse the build directory without
+# re-running Sphinx; a changed one rebuilds incrementally and the stamp's
+# digests say which sources Sphinx must re-read and which outputs are now
+# stale.  The stamp lives inside the (gitignored) build directory.
 STAMP: Path = DOCS / "_build" / ".adacovex-docs-sources"
+_STAMP_OUTPUTS: str = "# outputs"
+_STAMP_SOURCES: str = "# sources"
+
+# Source suffixes Sphinx renders as a page (`foo/bar.md` -> `foo/bar.html`).
+PAGE_SUFFIXES: Tuple[str, ...] = (".md", ".rst", ".txt")
+
+# Image suffixes Sphinx copies into the build (under `_images/` for a
+# referenced image, under `_downloads/<digest>/` for a download link).
+IMAGE_SUFFIXES: Tuple[str, ...] = (
+    ".svg", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".tiff",
+)
+
+# Pages Sphinx generates from the toctree and the configuration rather than
+# from a page source of their own: the alphabetical index and the search page.
+GENERATED_PAGES: Tuple[str, ...] = ("genindex.html", "search.html")
 
 # ---------------------------------------------------------------------------
 # Offline asset rules.  Shared with tools/check-book-links.py (imported), so
@@ -148,6 +182,25 @@ OFFLINE_EXCLUDED_PREFIXES: Tuple[str, ...] = (
     "objects.inv",
 )
 
+# `_images/` is excluded above, but the SVG images copied there (the badge set
+# the badges page previews inline) ARE bundled: SVG is text, so it compresses
+# like any other asset and the preview works offline exactly as online.  The
+# PNG screenshots keep the note fallback below.
+_IMAGES_PREFIX: str = "_images/"
+_IMAGES_BUNDLED_SUFFIX: str = ".svg"
+
+# Content-hash encode cache.  gzip + base85 is the only per-asset work a no-op
+# run still repeats, and a docs edit touches a handful of pages, so each
+# (body hash -> encoded chunks) pair is stored under obj/ (gitignored and
+# stable across a clean Sphinx rebuild) and reused until its body changes.
+ENCODE_CACHE: Path = ROOT / "obj" / "adacovex-docs-encode"
+_CACHE_SUFFIX: str = ".b85"
+
+# Cap on the encoder worker processes: more than a handful never helps for
+# assets this small, and the crate must stay dependency-free (the pool is the
+# stdlib concurrent.futures).
+MAX_ENCODE_JOBS: int = 8
+
 # The footer "Page source" link that points into _sources (which is not
 # bundled).  Stripped from every page so the offline manual has no dead link.
 _DROP_SOURCE_LINK = re.compile(r'<a[^>]*href="\.?\.?/?_sources/[^"]*"[^>]*>.*?</a>')
@@ -162,8 +215,12 @@ _DROP_FURO_CREDIT = re.compile(
 
 # The PNG dashboard screenshots: replaced by a short note.  The image lives
 # under _images/ at a relative path from any page (../_images/... on a
-# subpage, _images/... on the index).
-_IMG_IMAGES = re.compile(r"<img[^>]*src=\"(?:\\.\\./)*_images/[^\"]+\"[^>]*>")
+# subpage, _images/... on the index).  Only raster images are replaced: a
+# referenced SVG (the bundled badge previews) stays in the page.
+_IMG_IMAGES = re.compile(
+    r"<img[^>]*src=\"(?:[.][.]/)*_images/[^\"]+"
+    r"\.(?:png|jpe?g|gif|webp|bmp|tiff?)\"[^>]*>",
+    re.IGNORECASE)
 
 _MIME: Dict[str, str] = {
     ".html": "text/html",
@@ -248,24 +305,40 @@ def sphinx_build_cmd() -> Optional[List[str]]:
     return [exe, "-b", "html"]
 
 
-def docs_source_fingerprint() -> str:
-    """SHA-256 over every docs source file (relative path + content).
+def docs_source_digests() -> Dict[str, str]:
+    """SHA-256 of every docs source file, keyed by relative posix path.
 
     The build directory (`docs/_build/`) is excluded: it is the artifact under
-    validation, never an input.  Two runs over the same sources yield the same
-    digest, so a build can be reused only when it was produced from exactly
-    these sources.
+    validation, never an input.
     """
-    h = hashlib.sha256()
+    digests: Dict[str, str] = {}
     for path in sorted(DOCS.rglob("*")):
-        rel = path.relative_to(DOCS).as_posix()
-        if rel.startswith("_build/") or not path.is_file():
+        if not path.is_file():
             continue
+        rel = path.relative_to(DOCS).as_posix()
+        if rel.startswith("_build/"):
+            continue
+        digests[rel] = hashlib.sha256(path.read_bytes()).hexdigest()
+    return digests
+
+
+def tree_fingerprint(digests: Dict[str, str]) -> str:
+    """One SHA-256 over every source digest, so a tree has a single value."""
+    h = hashlib.sha256()
+    for rel in sorted(digests):
         h.update(rel.encode("utf-8"))
         h.update(b"\0")
-        h.update(path.read_bytes())
+        h.update(digests[rel].encode("ascii"))
         h.update(b"\0")
     return h.hexdigest()
+
+
+class Stamp(NamedTuple):
+    """One recorded build: the sources that produced it and its output."""
+
+    fingerprint: str
+    outputs: Tuple[str, ...]
+    digests: Optional[Dict[str, str]]
 
 
 def _build_relative_paths() -> List[str]:
@@ -279,59 +352,315 @@ def _build_relative_paths() -> List[str]:
     )
 
 
-def build_is_current(fingerprint: str) -> bool:
-    """True when docs/_build/html is exactly the clean build of these sources.
+def read_stamp() -> Optional[Stamp]:
+    """The recorded build, or None when there is no usable stamp.
 
-    Guards the Sphinx rebuild.  The stamp records both the source fingerprint
-    and the file list the clean build produced, so the build directory is
-    reused only when it still holds exactly that output.  A renamed or deleted
-    page (a changed fingerprint) and a stale or externally added file (a
-    changed file list) both force a clean rebuild -- the stale-HTML case that
-    used to make the generated spec differ between an incremental developer
-    tree and a fresh clone.
+    A stamp written before the sources section existed carries no per-source
+    digests; it is read as digests=None, which tells the caller to rebuild
+    clean rather than guess which pages Sphinx must re-read.
     """
-    if not BUILD.is_dir() or not STAMP.is_file():
-        return False
+    if not STAMP.is_file():
+        return None
     try:
         lines = STAMP.read_text(encoding="ascii").splitlines()
     except OSError:
-        return False
-    if not lines or lines[0] != fingerprint:
-        return False
-    return lines[1:] == _build_relative_paths()
+        return None
+    if not lines:
+        return None
+    try:
+        out_at = lines.index(_STAMP_OUTPUTS)
+    except ValueError:
+        return None
+    src_at = lines.index(_STAMP_SOURCES) if _STAMP_SOURCES in lines else None
+    outputs = tuple(lines[out_at + 1:src_at] if src_at else lines[out_at + 1:])
+    digests: Optional[Dict[str, str]] = None
+    if src_at is not None:
+        digests = {}
+        for line in lines[src_at + 1:]:
+            digest, _, rel = line.partition("\t")
+            if rel:
+                digests[rel] = digest
+    return Stamp(lines[0], outputs, digests)
 
 
-def write_stamp(fingerprint: str) -> None:
-    """Record the source fingerprint and output file list of the clean build."""
+def write_stamp(fingerprint: str, digests: Dict[str, str]) -> None:
+    """Record the sources and the output file list of the build just run."""
+    lines = [fingerprint, _STAMP_OUTPUTS] + _build_relative_paths()
+    lines.append(_STAMP_SOURCES)
+    lines.extend(f"{digests[rel]}\t{rel}" for rel in sorted(digests))
     try:
         STAMP.parent.mkdir(parents=True, exist_ok=True)
-        STAMP.write_text(
-            "\n".join([fingerprint] + _build_relative_paths()) + "\n",
-            encoding="ascii",
-        )
+        STAMP.write_text("\n".join(lines) + "\n", encoding="ascii")
     except OSError:
         pass
 
 
-def sphinx_build() -> bool:
+def build_is_current(fingerprint: str, digests: Dict[str, str]) -> bool:
+    """True when docs/_build/html is exactly the build of these sources."""
+    stamp = read_stamp()
+    if stamp is None or not BUILD.is_dir():
+        return False
+    if stamp.digests != digests or stamp.fingerprint != fingerprint:
+        return False
+    return list(stamp.outputs) == _build_relative_paths()
+
+
+def changed_sources(current: Dict[str, str],
+                    previous: Optional[Dict[str, str]]) -> Set[str]:
+    """Sources whose content digest differs from the recorded build.
+
+    A missing record (None) reports every source as changed: with nothing to
+    compare against, the caller must not trust a single page.
+    """
+    if previous is None:
+        return set(current)
+    return {rel for rel, digest in current.items()
+            if previous.get(rel) != digest}
+
+
+def removed_sources(current: Dict[str, str],
+                    previous: Optional[Dict[str, str]]) -> Set[str]:
+    """Sources the recorded build had and the current tree does not."""
+    if previous is None:
+        return set()
+    return set(previous) - set(current)
+
+
+# A toctree'd source changes the sidebar of *every* page, so its edits need
+# the whole-page rewrite (`sphinx-build -a`) even though only one page source
+# changed: Sphinx re-reads the one file but leaves the other pages' sidebars
+# stale otherwise.  The directive form is required -- a page that merely
+# mentions `{toctree}` in prose does not carry one.
+_TOCTREE_MARKER = re.compile(
+    r"^\s*(?:`{3,}|:{3,})?\{toctree\}|^\.\. toctree::", re.MULTILINE)
+
+
+def is_page_source(rel: str) -> bool:
+    """Whether a docs source file is rendered as a page (not an image)."""
+    return any(rel.endswith(suffix) for suffix in PAGE_SUFFIXES)
+
+
+def source_page_outputs(sources: Iterable[str]) -> Set[str]:
+    """The built page each page source produces (`foo/bar.md` -> `foo/bar.html`).
+
+    Sphinx maps a docname to `<docname>.html`, and a docname is the source path
+    with its suffix removed, so the mapping needs no special cases: `index.md`
+    and `usage/index.md` both keep their `index`.
+    """
+    pages: Set[str] = set()
+    for rel in sources:
+        if rel.startswith("_build/"):
+            continue
+        if is_page_source(rel):
+            pages.add(rel[: rel.rindex(".")] + ".html")
+    return pages
+
+
+def toctree_sources() -> Set[str]:
+    """The page sources that carry a toctree directive.
+
+    Every page's sidebar renders the global toctree, so a change to one of
+    these sources (a new entry, a caption, a moved page) has to rewrite every
+    page, not just the one that changed.
+    """
+    marked: Set[str] = set()
+    for path in sorted(DOCS.rglob("*")):
+        if not path.is_file():
+            continue
+        rel = path.relative_to(DOCS).as_posix()
+        if rel.startswith("_build/") or not is_page_source(rel):
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, OSError):
+            continue
+        if _TOCTREE_MARKER.search(text):
+            marked.add(rel)
+    return marked
+
+
+def stale_source_outputs(removed: Iterable[str]) -> Tuple[List[str], List[str]]:
+    """What a removed docs source leaves behind in the build.
+
+    Returns (build-relative paths, image file names).  Sphinx does not remove
+    the output of a page whose source is gone, so the incremental build has to:
+    the page itself, its `_sources/` copy and its doctree.  A removed image
+    also leaves its copies under `_images/` and under the digest directories of
+    `_downloads/`, which are matched by file name -- the part Sphinx keeps.
+    """
+    paths: List[str] = []
+    image_names: List[str] = []
+    for rel in removed:
+        if rel.startswith("_build/"):
+            continue
+        for suffix in PAGE_SUFFIXES:
+            if rel.endswith(suffix):
+                docname = rel[: -len(suffix)]
+                paths.append(docname + ".html")
+                paths.append(f"_sources/{docname}{suffix}.txt")
+                paths.append(f".doctrees/{docname}.doctree")
+                break
+        else:
+            name = posixpath.basename(rel)
+            if name.lower().endswith(IMAGE_SUFFIXES):
+                paths.append(f"_images/{name}")
+                image_names.append(name)
+    return paths, image_names
+
+
+def build_problems(files: Iterable[str], sources: Iterable[str]) -> List[str]:
+    """Bundle-relevant build files the current sources do not justify.
+
+    A pure check on an incremental build: the page set must be exactly the
+    pages the sources produce, plus Sphinx's generated index and search pages,
+    and every copied image must share a file name with a current source.  Any
+    other page or image is a leftover of a renamed or deleted source, and a
+    missing page means Sphinx skipped a source it should have re-read, so the
+    caller falls back to a clean rebuild.
+    """
+    present: Set[str] = set(files)
+    expected: Set[str] = source_page_outputs(sources)
+    names: Set[str] = {posixpath.basename(s) for s in sources}
+    problems: List[str] = []
+
+    for page in sorted(expected - present):
+        problems.append(f"missing page: {page}")
+    for page in sorted(present - expected - set(GENERATED_PAGES)):
+        if page.endswith(".html"):
+            problems.append(f"unexpected page: {page}")
+    for rel in sorted(present):
+        if rel.startswith("_images/") or rel.startswith("_downloads/"):
+            if posixpath.basename(rel) not in names:
+                problems.append(f"unjustified image: {rel}")
+    return problems
+
+
+def sphinx_build(all_pages: bool = False) -> bool:
     """Run `sphinx-build -b html docs docs/_build/html`.  True on success.
 
-    The output directory is removed first, so the built site is a pure
-    function of `docs/` and never accumulates pages that a rename or a
-    deletion left behind.  A stale page in the incremental output used to
-    change the generated spec between a developer machine and a fresh clone
-    (which in turn invalidated the cached SPARK proof).
+    The output directory is left in place: the caller chooses between the
+    incremental path (reuse it and sweep what the removed sources left) and the
+    clean path (`clean_build` removes it first).  `all_pages` adds `-a`, which
+    rewrites every page from the current environment -- needed when the
+    navigation moved, because Sphinx only rewrites the pages it re-read.
     """
     cmd = sphinx_build_cmd()
     if cmd is None:
         print("note: sphinx-build not on PATH; keeping the existing spec")
         return False
-    shutil.rmtree(BUILD, ignore_errors=True)
+    if all_pages:
+        cmd = cmd + ["-a"]
     result = sh(cmd + [str(DOCS), str(BUILD)])
     if result.returncode != 0:
         print(f"note: sphinx-build failed ({result.returncode}); "
               f"keeping the existing spec", file=sys.stderr)
         return False
+    return True
+
+
+def clean_build() -> bool:
+    """Remove the build directory and rebuild the whole site from scratch."""
+    shutil.rmtree(BUILD, ignore_errors=True)
+    return sphinx_build()
+
+
+def touch_sources(sources: Iterable[str]) -> None:
+    """Give the changed sources a current mtime, so Sphinx re-reads them.
+
+    Sphinx decides what to re-read by comparing the source mtime with its
+    doctree's.  A source whose content changed but whose timestamp did not (a
+    restore or a copy that preserves times) would be served from its stale
+    doctree; refreshing the mtime makes that decision follow the content.
+    """
+    for rel in sorted(sources):
+        try:
+            os.utime(DOCS / rel, None)
+        except OSError:
+            pass
+
+
+def sweep_stale_outputs(removed: Iterable[str]) -> None:
+    """Delete what the removed sources left in the build directory."""
+    paths, names = stale_source_outputs(removed)
+    for rel in paths:
+        try:
+            (BUILD / rel).unlink()
+        except OSError:
+            pass
+    if not names:
+        return
+    wanted = set(names)
+    downloads = BUILD / "_downloads"
+    if downloads.is_dir():
+        for path in downloads.rglob("*"):
+            if path.is_file() and path.name in wanted:
+                try:
+                    path.unlink()
+                except OSError:
+                    pass
+
+
+def _prune_empty_dirs(root: Path) -> None:
+    """Remove the directories a sweep emptied, deepest first."""
+    if not root.is_dir():
+        return
+    for path in sorted(root.rglob("*"), key=lambda p: len(p.parts),
+                      reverse=True):
+        if path.is_dir():
+            try:
+                path.rmdir()
+            except OSError:
+                pass
+
+
+def ensure_build(fresh: bool = False) -> bool:
+    """Make docs/_build/html the faithful build of the current docs sources.
+
+    An unchanged tree (recorded fingerprint, digests and output list) skips
+    Sphinx completely.  A changed one is rebuilt incrementally: the changed
+    sources' mtimes are refreshed, Sphinx re-reads them, the removed sources'
+    outputs are swept, and the page set is checked against the sources.  A
+    navigation change (a page added or removed, or a toctree'd source edited)
+    rewrites every page, so the sidebar of every page follows the new toctree.
+    `fresh` forces the clean rebuild, and a check failure falls back to it, so
+    the build directory stays a pure function of `docs/` exactly as the clean
+    path guarantees.  True when a usable build directory exists afterwards
+    (Sphinx missing is not an error: the committed spec stays in place).
+    """
+    digests = docs_source_digests()
+    fingerprint = tree_fingerprint(digests)
+    if not fresh and build_is_current(fingerprint, digests):
+        return True
+
+    stamp = read_stamp()
+    reusable = (
+        not fresh
+        and stamp is not None
+        and stamp.digests is not None
+        and BUILD.is_dir()
+    )
+    if not reusable:
+        ok = clean_build()
+    else:
+        previous = stamp.digests
+        changed = changed_sources(digests, previous)
+        moved_pages = {rel for rel in set(digests) ^ set(previous)
+                       if is_page_source(rel)}
+        nav_moved = bool((changed & toctree_sources()) or moved_pages)
+        touch_sources(changed)
+        ok = sphinx_build(all_pages=nav_moved)
+        if ok:
+            sweep_stale_outputs(removed_sources(digests, previous))
+            _prune_empty_dirs(BUILD)
+            problems = build_problems(_build_relative_paths(), digests)
+            if problems:
+                print(f"note: incremental docs build incomplete "
+                      f"({problems[0]}); rebuilding clean", file=sys.stderr)
+                ok = clean_build()
+
+    if not ok:
+        return BUILD.is_dir()
+    write_stamp(fingerprint, digests)
     return True
 
 
@@ -369,7 +698,11 @@ def collect_assets(build: Path) -> List[Tuple[str, str, str]]:
             continue
         rel = path.relative_to(build).as_posix()
         if any(rel.startswith(p) for p in OFFLINE_EXCLUDED_PREFIXES):
-            continue
+            # The SVG images under _images/ (badge previews) are the one
+            # exception: they are text and compress like any other asset.
+            if not (rel.startswith(_IMAGES_PREFIX)
+                    and rel.endswith(_IMAGES_BUNDLED_SUFFIX)):
+                continue
         mime = _MIME.get(path.suffix.lower())
         if mime is None:
             continue
@@ -487,6 +820,106 @@ def _b85_chunks(body: str) -> List[str]:
     ]
 
 
+def _body_hash(body: str) -> str:
+    """SHA-256 of one asset body: the encode-cache key."""
+    return hashlib.sha256(body.encode("utf-8")).hexdigest()
+
+
+def _cached_chunks(digest: str) -> Optional[List[str]]:
+    """The encoded chunks stored for `digest`, or None when not cached.
+
+    The base85 alphabet has no newline, so the chunks round-trip as
+    newline-separated text and the cache file is pure ASCII.
+    """
+    path: Path = ENCODE_CACHE / (digest + _CACHE_SUFFIX)
+    if not path.is_file():
+        return None
+    try:
+        text: str = path.read_text(encoding="ascii")
+    except OSError:
+        return None
+    return text.split("\n") if text else None
+
+
+def _store_cached_chunks(digest: str, chunks: List[str]) -> None:
+    """Write one cache entry; a cache failure never fails the build."""
+    try:
+        ENCODE_CACHE.mkdir(parents=True, exist_ok=True)
+        (ENCODE_CACHE / (digest + _CACHE_SUFFIX)).write_text(
+            "\n".join(chunks), encoding="ascii")
+    except OSError:
+        pass
+
+
+def _prune_cache(keep: Set[str]) -> None:
+    """Delete cache entries the current bundle no longer references."""
+    try:
+        entries: List[Path] = list(ENCODE_CACHE.glob("*" + _CACHE_SUFFIX))
+    except OSError:
+        return
+    for path in entries:
+        if path.name[:-len(_CACHE_SUFFIX)] not in keep:
+            try:
+                path.unlink()
+            except OSError:
+                pass
+
+
+def default_jobs() -> int:
+    """Encoder worker count (capped at MAX_ENCODE_JOBS, never below one)."""
+    return max(1, min(os.cpu_count() or 1, MAX_ENCODE_JOBS))
+
+
+def _encode_bodies(bodies: List[str], jobs: int) -> List[List[str]]:
+    """gzip+base85 every body, in order, across up to `jobs` processes.
+
+    The result is byte-identical to the serial encode: each body is encoded
+    independently and the list keeps the input order.  The pool is only a
+    speed-up, so any failure (a worker that cannot start, for example) falls
+    back to the serial path rather than failing the build.
+    """
+    if jobs <= 1 or len(bodies) < 2:
+        return [_b85_chunks(body) for body in bodies]
+    try:
+        with concurrent.futures.ProcessPoolExecutor(max_workers=jobs) as pool:
+            return list(pool.map(_b85_chunks, bodies, chunksize=1))
+    except (OSError, RuntimeError, ValueError):
+        return [_b85_chunks(body) for body in bodies]
+
+
+def encode_assets(
+    assets: List[Tuple[str, str, str]],
+    jobs: Optional[int] = None,
+) -> List[Tuple[str, str, List[str]]]:
+    """Return [(path, mime, [base85 chunk, ...]), ...] for every asset.
+
+    Each body's gzip+base85 result is cached by SHA-256, so a docs edit
+    re-encodes only the pages it touched; the uncached bodies are encoded in
+    parallel.  The cache is pruned to the hashes present in this bundle, so
+    it never grows without bound.
+    """
+    if jobs is None:
+        jobs = default_jobs()
+    digests: List[str] = [_body_hash(body) for _, _, body in assets]
+    plans: List[Optional[List[str]]] = [None] * len(assets)
+    pending: List[int] = []
+    for index, digest in enumerate(digests):
+        cached: Optional[List[str]] = _cached_chunks(digest)
+        if cached:
+            plans[index] = cached
+        else:
+            pending.append(index)
+    if pending:
+        encoded: List[List[str]] = _encode_bodies(
+            [assets[i][2] for i in pending], jobs)
+        for index, chunks in zip(pending, encoded):
+            plans[index] = chunks
+            _store_cached_chunks(digests[index], chunks)
+    _prune_cache(set(digests))
+    return [(assets[i][0], assets[i][1], plans[i] or [""])
+            for i in range(len(assets))]
+
+
 def _sidebar_span(html: str) -> Optional[Tuple[int, int]]:
     """The [start, end) span of the Furo sidebar element, or None.
 
@@ -602,21 +1035,20 @@ def _nav_assets(variants: Dict[str, int]) -> List[Tuple[str, str, str]]:
     return assets
 
 
-def build_spec() -> Tuple[str, str]:
+def build_spec(jobs: Optional[int] = None,
+               fresh: bool = False) -> Tuple[str, str]:
     """Build the manual and return (Ada spec text, human-readable stats).
 
     Sphinx runs only when the docs sources changed since the last build (the
-    fingerprint stamp); an unchanged tree reuses the clean build directory.
-    No file is written here, so the caller can both write the spec and check
-    it (without mutating the committed file).
+    fingerprint stamp); an unchanged tree reuses the build directory, and a
+    changed one is rebuilt incrementally and verified (`ensure_build`).  No
+    file is written here, so the caller can both write the spec and check it
+    (without mutating the committed file).  `jobs` caps the encoder worker
+    processes (None picks the default); `fresh` forces a clean Sphinx build.
     """
-    fingerprint = docs_source_fingerprint()
-    if not build_is_current(fingerprint):
-        if sphinx_build():
-            write_stamp(fingerprint)
-        elif not BUILD.is_dir():
-            raise RuntimeError(
-                "sphinx-build not on PATH and no docs/_build/html")
+    if not ensure_build(fresh):
+        raise RuntimeError(
+            "sphinx-build not on PATH and no docs/_build/html")
 
     assets = collect_assets(BUILD)
 
@@ -625,11 +1057,11 @@ def build_spec() -> Tuple[str, str]:
     # reuse the same stylesheets and scripts, so gzip collapses that
     # redundancy -- the generated spec is ~1/7th the size of the old
     # verbatim-per-line encoding -- and the server sends the compressed bytes
-    # with `Content-Encoding: gzip` for browsers to inflate.
+    # with `Content-Encoding: gzip` for browsers to inflate.  The encode is
+    # cached per body and parallel across cores (encode_assets), so a run
+    # after a small docs edit re-encodes only the pages it touched.
     # plan = [(rel, mime, [base85 chunk, ...]), ...].
-    plan: List[Tuple[str, str, List[str]]] = [
-        (rel, mime, _b85_chunks(body)) for rel, mime, body in assets
-    ]
+    plan: List[Tuple[str, str, List[str]]] = encode_assets(assets, jobs)
     body_count: int = sum(len(chunks) for _, _, chunks in plan)
     chunked_at: List[Tuple[int, int]] = [  # (table index, chunk count)
         (i + 1, len(chunks))
@@ -640,19 +1072,19 @@ def build_spec() -> Tuple[str, str]:
         "--  Generated by tools/gen-docs.py from the Sphinx manual (docs/):\n"
         "--  the whole built site (pages, stylesheets, scripts, badges, search)\n"
         "--  as a gzip-compressed, base85-encoded offline asset blob + lookup\n"
-        "--  table.  --serve exposes it at /docs/ with Content-Encoding: gzip\n"
-        "--  (the browser inflates it).  The shared sidebar variants live\n"
-        "--  under _nav/ and are filled in by _static/adacovex-nav.js.  Do not\n"
+        "--  table. --serve exposes it at /docs/ with Content-Encoding: gzip\n"
+        "--  (the browser inflates it). The shared sidebar variants live\n"
+        "--  under _nav/ and are filled in by _static/adacovex-nav.js. Do not\n"
         "--  edit by hand; edit docs/ and run make book.\n"
     )
     lines: List[str] = header.splitlines()
     lines.append("package Adacovex.Docs_Template is")
     lines.append("")
-    lines.append("   --  One entry of the lookup table.  The path and MIME type")
+    lines.append("   --  One entry of the lookup table. The path and MIME type")
     lines.append("   --  are fixed-size (space-padded) strings; Idx selects the")
     lines.append("   --  first body of the asset via Asset_Bodies; Gzip says the")
     lines.append("   --  body holds base85 gzip bytes served with Content-Encoding:")
-    lines.append("   --  gzip.  Fixed-size components keep the aggregate a plain")
+    lines.append("   --  gzip. Fixed-size components keep the aggregate a plain")
     lines.append("   --  static constant (a discriminated-record array is")
     lines.append("   --  dynamically elaborated by GNAT and blows the heap).")
     lines.append("   Max_Path : constant := 80;")
@@ -672,7 +1104,7 @@ def build_spec() -> Tuple[str, str]:
     lines.append("   type Asset_Table is array (Positive range <>) of Asset_Ref;")
     lines.append("")
     lines.append("   --  Every asset body (or compressed chunk) as its own")
-    lines.append("   --  static constant of base64 text.  One constant per body")
+    lines.append("   --  static constant of base64 text. One constant per body")
     lines.append("   --  keeps each string small: a single multi-megabyte blob")
     lines.append("   --  constant overflows the gnatprove frontend stack")
     lines.append("   --  (Storage_Error) whatever its structure, so the bodies are")
@@ -696,7 +1128,7 @@ def build_spec() -> Tuple[str, str]:
         end_ref = ");" if b == body_count - 1 else ","
         lines.append(f"      Asset_{b:03d}'Access{end_ref}")
     lines.append("")
-    lines.append("   --  How many bodies a table asset spans.  Every asset spans")
+    lines.append("   --  How many bodies a table asset spans. Every asset spans")
     lines.append("   --  one body except the oversized ones (for example the search")
     lines.append("   --  index), which are chunked so each constant stays under the")
     lines.append("   --  gnatprove limit.")
@@ -729,7 +1161,7 @@ def build_spec() -> Tuple[str, str]:
     lines.append("")
     lines.append("   --  The decoded bytes of one body: base64-decoded (the gzip")
     lines.append("   --  stream, served with Content-Encoding: gzip) when Is_Gzip,")
-    lines.append("   --  otherwise the body verbatim.  The server streams one chunk")
+    lines.append("   --  otherwise the body verbatim. The server streams one chunk")
     lines.append("   --  at a time, so no worker ever materialises a multi-megabyte")
     lines.append("   --  body.")
     lines.append("   function Body_Bytes (B : Body_Index; Is_Gzip : Boolean)")
@@ -739,10 +1171,10 @@ def build_spec() -> Tuple[str, str]:
     lines.append("   --  every asset unless a compressed chunk split it).")
     lines.append("   function Content (Idx : Asset_Index) return String;")
     lines.append("")
-    lines.append("   --  Find the asset for a request subpath.  Normalises:")
+    lines.append("   --  Find the asset for a request subpath. Normalises:")
     lines.append('   --  "" and "/" map to index.html, a trailing slash appends')
     lines.append("   --  index.html, and an extensionless leaf tries leaf.html")
-    lines.append("   --  then leaf/index.html.  Returns 0 when absent.")
+    lines.append("   --  then leaf/index.html. Returns 0 when absent.")
     lines.append("")
     lines.append("   function Find (Subpath : String) return Natural;")
     lines.append("")
@@ -758,7 +1190,8 @@ def build_spec() -> Tuple[str, str]:
     return content, stats
 
 
-def generate(out: Path) -> None:
+def generate(out: Path, jobs: Optional[int] = None,
+             fresh: bool = False) -> None:
     """Build the manual and write the spec, but only when it changed.
 
     An unconditional rewrite bumps the mtime of this 28k-line spec and makes
@@ -766,7 +1199,7 @@ def generate(out: Path) -> None:
     here also invalidates the cached SPARK proof.  Skipping the write on a
     no-op run keeps both the incremental build and the prove cache warm.
     """
-    content, stats = build_spec()
+    content, stats = build_spec(jobs, fresh)
     existing: Optional[str] = (
         out.read_text(encoding="ascii") if out.is_file() else None)
     if existing == content:
@@ -776,9 +1209,10 @@ def generate(out: Path) -> None:
         print(f"{out.name} regenerated ({stats}).")
 
 
-def check(out: Path) -> bool:
+def check(out: Path, jobs: Optional[int] = None,
+          fresh: bool = False) -> bool:
     """True when the committed spec matches a fresh build; never writes."""
-    content, stats = build_spec()
+    content, stats = build_spec(jobs, fresh)
     existing: Optional[str] = (
         out.read_text(encoding="ascii") if out.is_file() else None)
     if existing == content:
@@ -794,6 +1228,13 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
     parser.add_argument("--check", action="store_true",
                         help="verify the committed spec is current")
     parser.add_argument("--out", default=str(OUT), help="output Ada spec path")
+    parser.add_argument(
+        "--jobs", type=int, default=None,
+        help="encoder worker processes (default: the CPU count, capped at 8)")
+    parser.add_argument(
+        "--fresh", action="store_true",
+        help="rebuild the Sphinx site from scratch instead of reusing the "
+             "incremental build directory")
     return parser.parse_args(argv)
 
 
@@ -802,8 +1243,8 @@ def main(argv: List[str]) -> int:
     out: Path = Path(args.out).resolve()
     try:
         if args.check:
-            return 0 if check(out) else 1
-        generate(out)
+            return 0 if check(out, args.jobs, args.fresh) else 1
+        generate(out, args.jobs, args.fresh)
         return 0
     except RuntimeError as e:
         # Keep the previously committed spec; the build must not fail when the

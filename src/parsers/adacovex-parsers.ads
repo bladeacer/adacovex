@@ -10,9 +10,9 @@ package Adacovex.Parsers is
    --  Read one physical line from F into Line and report Last as usual.
    --  When the physical line is longer than Line'Length, drain (discard) the
    --  trailing part so the file is positioned at the next line.
-   --  Set Overflow to True.  Report an error to standard error that names
+   --  Set Overflow to True. Report an error to standard error that names
    --  File_Path (with Line_Num when non-zero) and the buffer size.
-   --  Callers must treat Overflow as an explicit parse failure.  Do not
+   --  Callers must treat Overflow as an explicit parse failure. Do not
    --  process the truncated content because it produces partial results.
    --  A line that exactly fills Line is not an overflow: the reader consumes
    --  the line terminator, so the next call starts at the next physical line

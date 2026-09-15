@@ -121,7 +121,7 @@ package body Adacovex.Types is
       end if;
    end To_Standard;
 
-   --  Uppercase a string (ASCII only).  Reused by the dedicated level
+   --  Uppercase a string (ASCII only). Reused by the dedicated level
    --  parsers below; mirrors the loop already proved in To_Standard.
    function To_Upper (S : String) return String
    with Post => To_Upper'Result'Length = S'Length

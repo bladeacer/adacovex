@@ -36,9 +36,9 @@ package body Adacovex.Config is
    end Has_Prefix;
 
    --  True when S looks like a help-topic token: a --flag or a bare
-   --  word (letters/hyphens only).  Used by the `help` keyword to decide
+   --  word (letters/hyphens only). Used by the `help` keyword to decide
    --  whether the neighboring argument names the topic (help --serve,
-   --  help serve, --serve help).  Unknown words are still accepted and
+   --  help serve, --serve help). Unknown words are still accepted and
    --  Print_Topic_Help reports them as unknown rather than crashing.
    function Is_Help_Topic (S : String) return Boolean
    with
@@ -72,10 +72,10 @@ package body Adacovex.Config is
       return True;
    end Is_Help_Topic;
 
-   --  Expand a leading ~ in Path to the user's home directory.  Accepted
+   --  Expand a leading ~ in Path to the user's home directory. Accepted
    --  forms: "~/rest" and "~" (the tilde alone); a tilde not in leading
    --  position, or a "~user" form, is returned unchanged -- only the shell
-   --  can resolve other users' homes.  HOME unset falls back to /tmp (the
+   --  can resolve other users' homes. HOME unset falls back to /tmp (the
    --  same convention as Adacovex.Cache.Default_Cache_Dir), so a home-less
    --  environment still produces a usable path instead of a literal "~/".
    --  The runtime Ada.Environment_Variables subprograms carry no Global
@@ -143,7 +143,7 @@ package body Adacovex.Config is
         and then S (S'First + 2) in 'l' | 'L';
    end Is_All;
 
-   --  True when S is not a flag token (does not start with '-').  Used to
+   --  True when S is not a flag token (does not start with '-'). Used to
    --  decide whether a bare value following a flag is that flag's argument
    --  (e.g. `status --export out.json`).
    function Is_Dash_Arg (S : String) return Boolean is
@@ -185,7 +185,7 @@ package body Adacovex.Config is
    end Set_String;
 
    --  Append Name to a comma-separated list in a fixed buffer, inserting a
-   --  ',' separator before it when the list is already non-empty.  Overlong
+   --  ',' separator before it when the list is already non-empty. Overlong
    --  names are clamped to the destination buffer.
    procedure Add_Comma_Item
      (Dst : in out String; Dst_Len : in out Natural; Name : String) is
@@ -236,9 +236,9 @@ package body Adacovex.Config is
       Cfg.CLI_Error := True;
    end Set_Error;
 
-   --  Parse a SPARK level name into a Types.SPARK_Level.  Accepts the exact
+   --  Parse a SPARK level name into a Types.SPARK_Level. Accepts the exact
    --  names returned by Types.To_String (case matters) or ignores case for
-   --  convenience.  Sets Valid False and Result to Stone on parse failure.
+   --  convenience. Sets Valid False and Result to Stone on parse failure.
    procedure To_SPARK_Level
      (S : String; Result : out Types.SPARK_Level; Valid : out Boolean)
    is
@@ -280,17 +280,17 @@ package body Adacovex.Config is
       return S'Length = 1 and then (S (S'First) in 'A' .. 'E' | 'a' .. 'e');
    end Is_Valid_DAL;
 
-   --  Apply a --standard value.  Three forms are accepted
+   --  Apply a --standard value. Three forms are accepted
    --  (case-insensitive):
    --    * a standard name -- do178c, iso26262, or iec62304;
    --    * a combined tier token -- dal-A..dal-E, asil-A..asil-D, asil-QM,
    --      class-A..class-C -- which selects the standard together with the
    --      rigour tier (so --standard=asil-b is the same as --asil=B);
    --    * all -- every standard at the shared tier.
-   --  '-' and '_' are interchangeable inside a tier token.  An unknown
+   --  '-' and '_' are interchangeable inside a tier token. An unknown
    --  value is rejected loudly: a silent fall back to DO-178C would hide a
-   --  typo.  Standard selection stays on --standard (the -l shorthand is
-   --  the GNATprove proof level).  Default-off helper (the package body is
+   --  typo. Standard selection stays on --standard (the -l shorthand is
+   --  the GNATprove proof level). Default-off helper (the package body is
    --  not in SPARK), like Set_Error / Set_Prove_Int.
    procedure Set_Standard_Value (Cfg : in out CLI_Config; Val : String) is
       Up : String (1 .. Val'Length) := (others => ' ');
@@ -359,7 +359,7 @@ package body Adacovex.Config is
    end Set_Standard_Value;
 
    --  Parse an integer prove option into a config field, validating its
-   --  range.  On a bad value or out-of-range value the config is flagged as
+   --  range. On a bad value or out-of-range value the config is flagged as
    --  an error and Field is left untouched.
    procedure Set_Prove_Int
      (Cfg   : in out CLI_Config;
@@ -391,7 +391,7 @@ package body Adacovex.Config is
    end Set_Prove_Int;
 
    --  Known CLI flags (without leading dashes), space-separated, used for
-   --  the "did you mean" suggestion when the user typos a flag name.  Kept
+   --  the "did you mean" suggestion when the user typos a flag name. Kept
    --  in sync with the Parse_Args branches below.
    Known_Flags : constant String :=
      "target manifest dal asil class standard serve theme port "
@@ -478,7 +478,7 @@ package body Adacovex.Config is
    end Normalize_Flag;
 
    --  Return " (did you mean --xxx?)" (or " --xxx or --yyy") for an
-   --  unknown token, or "" when no known flag is close enough.  The caller
+   --  unknown token, or "" when no known flag is close enough. The caller
    --  appends this to the "unknown option/argument" error message.
    function Suggest_Flags (S : String) return String is
       Buf     : String (1 .. 128) := (others => ' ');
@@ -561,12 +561,12 @@ package body Adacovex.Config is
 
    package body Testing is
 
-      --  Canonical long flag for a short flag or long alias.  Returns ""
-      --  when S is not an alias.  Alias_Len is the length of the matched
+      --  Canonical long flag for a short flag or long alias. Returns ""
+      --  when S is not an alias. Alias_Len is the length of the matched
       --  alias text; Takes_Val reports whether the canonical flag takes a
       --  value (so the caller folds a following argument into the
       --  --flag=VALUE form); Numeric flags also accept the glued form
-      --  (-p8080, -l2, -r100).  Default-off helper.
+      --  (-p8080, -l2, -r100). Default-off helper.
       function Alias_Canonical
         (S         : String;
          Alias_Len : out Natural;
@@ -691,12 +691,12 @@ package body Adacovex.Config is
 
       --  Expand short flags and long aliases into their canonical long forms
       --  before the token loop, so Parse_Tokens keeps one spelling per
-      --  option.  A value-taking alias (for example `-t PATH` or
+      --  option. A value-taking alias (for example `-t PATH` or
       --  `--workers=4`) folds its value into the canonical `--flag=VALUE`
       --  form; a value-less alias (`-s`, `serve`, `cache`, `relaxed`)
-      --  becomes the canonical flag.  A following token that starts with
+      --  becomes the canonical flag. A following token that starts with
       --  '-' is never consumed, so an optional-value alias such as
-      --  `--emit-md` works bare.  Unknown tokens pass through unchanged (the
+      --  `--emit-md` works bare. Unknown tokens pass through unchanged (the
       --  token loop rejects them with a suggestion).
       procedure Normalize_Aliases
         (Args : Arg_Vectors.Vector; NArgs : in out Arg_Vectors.Vector)
@@ -743,7 +743,7 @@ package body Adacovex.Config is
       end Normalize_Aliases;
 
       --  Expand the aliases, then run the raw token loop over the rewritten
-      --  argument list.  The loop lives in a nested procedure so the alias
+      --  argument list. The loop lives in a nested procedure so the alias
       --  rewrite stays out of the per-function cyclomatic-complexity budget.
       procedure Parse_Args (Args : Arg_Vectors.Vector; Cfg : in out CLI_Config)
       is
@@ -1282,7 +1282,7 @@ package body Adacovex.Config is
                      Cfg.Man_Mode := True;
                   elsif A = "help" then
                      --  Contextual help: `help --serve`, `help serve`, or
-                     --  `--serve help` all print flag-specific help.  The topic
+                     --  `--serve help` all print flag-specific help. The topic
                      --  is the next argument when it looks like one, else the
                      --  previous argument when it was a flag (--serve help).
                      Cfg.Help_Requested := True;
@@ -1534,7 +1534,7 @@ package body Adacovex.Config is
                      Append_Args (Cfg, A (A'First + 7 .. A'Last));
                   elsif A = "--quiet" or else A = "--suppress-warnings" then
                      --  --quiet and bare --suppress-warnings select the
-                     --  default suppression set (unrolling-inlining).  Quiet
+                     --  default suppression set (unrolling-inlining). Quiet
                      --  is already the default for local runs, so this is an
                      --  explicit request (and a prove-mode flag).
                      Cfg.Prove_Suppress_Warnings := True;
@@ -1684,7 +1684,7 @@ package body Adacovex.Config is
                      Cfg.Help_Requested := True;
                   else
                      --  Unknown token: reject loudly instead of silently running
-                     --  an assessment.  Flag-like tokens (--foo) and bare words
+                     --  an assessment. Flag-like tokens (--foo) and bare words
                      --  (a typo'd subcommand) both get a "did you mean" hint.
                      --  When no similar flag exists the hint is empty; the main
                      --  program then prints the full usage so the user lands on
@@ -1712,7 +1712,7 @@ package body Adacovex.Config is
             --  without an explicit --standard / --asil / --class they default to
             --  all standards, so the SBOM carries the joined DO-178C / ISO
             --  26262 / IEC 62304 properties at the shared DAL tier and the
-            --  served dashboard renders every standard's compliance level.  An
+            --  served dashboard renders every standard's compliance level. An
             --  explicit standard flag narrows them to that single standard
             --  (e.g. --asil=B -> ISO 26262 at ASIL B).
             if (Cfg.SBOM_Mode or Cfg.Serve_Mode) and not Cfg.Standard_Explicit
@@ -1851,7 +1851,7 @@ package body Adacovex.Config is
             Set_Error (Cfg, "--version cannot be combined with other modes");
          end if;
 
-         -- GNATprove options only make sense in prove mode.  --force is shared
+         -- GNATprove options only make sense in prove mode. --force is shared
          -- with the man subcommand (man --force overrides the installed page),
          -- so it is only an error when neither prove nor man mode is set.
          if not Cfg.Prove_Mode
@@ -1968,7 +1968,7 @@ package body Adacovex.Config is
                Cfg.Target_Path (1 .. Cfg.Target_Len) & "/docs/badges");
          end if;
 
-         -- Default Markdown output path: project-scoped.  A bare
+         -- Default Markdown output path: project-scoped. A bare
          -- --emit-markdown / --emit-md (or --md-path without a value) writes
          -- VERIFICATION.md and TRACE.md into <target>/docs.
          if Cfg.Emit_Markdown and then Cfg.MD_Path_Len = 0 then
@@ -1997,7 +1997,7 @@ package body Adacovex.Config is
             end;
          end if;
 
-         -- Default SBOM output path: project-scoped, format-aware.  Applies to
+         -- Default SBOM output path: project-scoped, format-aware. Applies to
          -- both the explicit `adacovex sbom` subcommand and the automatic SBOM
          -- generation that runs at the end of every normal assessment (unless
          -- disabled with --no-sbom).
@@ -2323,7 +2323,7 @@ package body Adacovex.Config is
 
    --  Lowercase a string, stripping a leading "--"/"-" and any "=value"
    --  suffix so "--standard=all", "--Serve", "-r", and "standard" all
-   --  match a canonical topic.  A single shorthand letter resolves to its
+   --  match a canonical topic. A single shorthand letter resolves to its
    --  canonical flag name, so `help -r` prints the require-proof section.
    function Normalize_Topic (Topic : String) return String is
       First : Natural := Topic'First;

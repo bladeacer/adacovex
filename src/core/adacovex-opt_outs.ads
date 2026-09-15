@@ -3,7 +3,7 @@
 --  its leading comment block to opt out of one adacovex analysis gate.
 --  The directive is a marker token on a comment line near the top of the
 --  file (the first non-comment, non-blank line ends the header block, so
---  prose or code further down never counts).  The comment syntax follows
+--  prose or code further down never counts). The comment syntax follows
 --  the file's own language:
 --
 --    --  no-covex-complexity-scan    (Ada: --, YAML/Python/Shell: #,
@@ -27,14 +27,14 @@ package Adacovex.Opt_Outs is
 
    --  The analysis gate a top-of-file marker can disable for one file.
    --  Complexity_Scan covers the cyclomatic-complexity/LOC gate
-   --  (`adacovex complexity`).  Docstrings covers the docstring-coverage
-   --  metrics and the --require-docstrings gate.  SPARK_Proof covers the
+   --  (`adacovex complexity`). Docstrings covers the docstring-coverage
+   --  metrics and the --require-docstrings gate. SPARK_Proof covers the
    --  gnatprove run and the proof metrics of the `prove` subcommand.
    type Gate is (Complexity_Scan, Docstrings, SPARK_Proof);
 
    --  True when the file at Path carries an opt-out marker for the given
-   --  gate in its leading comment block.  Missing or unreadable files
-   --  report False (never raise).  The header block is the run of blank
+   --  gate in its leading comment block. Missing or unreadable files
+   --  report False (never raise). The header block is the run of blank
    --  and comment lines at the top of the file; the first non-comment,
    --  non-blank line ends it, and at most 24 physical lines are examined.
    --  @param Path  File path to inspect.

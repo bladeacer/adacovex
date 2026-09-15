@@ -34,15 +34,15 @@ SBOM behaviour, and the dashboard features. Update it in the same change when
 it has drifted; do not leave the architecture tree or the feature notes stale.
 
 **User-facing surfaces:** the served dashboard HTML and the CLI `--help` / man
-page are user-facing output.  Never put developer-only commands (for example
+page are user-facing output. Never put developer-only commands (for example
 `make prove`, `make check`, `alr build`) in dashboard prose or command help;
 use the user-facing adacovex subcommands instead (`adacovex prove`,
-`adacovex --help`).  The man page is generated from the Ada source constants
+`adacovex --help`). The man page is generated from the Ada source constants
 (single source of truth); it stays in sync with the binary automatically.
 
 **Documentation currency (LLM-assisted edits):** adacovex keeps user docs,
-docstrings, and changelogs in step with the code.  Stale docs are a release
-blocker, never a follow-up.  Every change that touches behaviour, flags,
+docstrings, and changelogs in step with the code. Stale docs are a release
+blocker, never a follow-up. Every change that touches behaviour, flags,
 tools, or output must also update, in the same change:
 
 - the relevant user documentation under `docs/` (CLI reference, dashboard,
@@ -58,12 +58,12 @@ tools, or output must also update, in the same change:
 **Proof-timing phases.**  `docs/contributing/perf/prove-timing.md` keeps the
 `make prove` timing table as one column per **phase**, never one per release.
 A phase is a range of versions whose implementation methodology is largely
-similar (so far 1.40.0-1.41.0, 1.42.0-1.44.0, 1.45.0-1.47.0).  Fold each new
-version into the open phase while the methodology holds; close the phase and
-open a new one on a methodology shift.  Each phase carries exactly one
+similar (so far 1.40.0-1.41.0, 1.42.0-1.44.0, 1.45.0-1.47.0, 1.48.0-1.51.0).
+Fold each new version into the open phase while the methodology holds; close
+the phase and open a new one on a methodology shift. Each phase carries exactly one
 representative version, and the table uses that version's *complete* metric
 set -- never the best value picked row by row from different versions in the
-phase.  When the metrics trade off, weigh them, choose the representative,
+phase. When the metrics trade off, weigh them, choose the representative,
 and state the reason in the page's reading notes.
 
 Before finishing, re-verify that the user-facing docs still cover the
@@ -76,7 +76,7 @@ feature gate, and `make docs-coverage-check` enforces the cli-reference and
 dashboard coverage: every `Known_Flags` entry, every route the server
 dispatches on, and every hand-written `docs/usage/` or `docs/contributing/`
 page (which a `{toctree}` in `docs/index.md` must name) is checked, so a
-missing doc fails CI instead of waiting for the next manual audit.  Add the
+missing doc fails CI instead of waiting for the next manual audit. Add the
 doc in the same change, exactly like an action input.
 
 Finish every change in the same response that made it: update the relevant
@@ -87,9 +87,9 @@ wrapper directly instead `make check`:
 changes), `make doc-links`, `make link-check`, and `make book-links-check`
 plus `python3 tools/gen-docs.py --check` (when `docs/` changed -- they fail
 on a broken bundled-manual link or a stale committed spec; the spec is the
-committed artifact, so `docs/` edits must be followed by `make book`).  After
+committed artifact, so `docs/` edits must be followed by `make book`). After
 `make test` and `make prove`, also run the count-sync checks (`make
-test-count`, `make proof-status`).  The generated files they rewrite (AGENTS.md source
+test-count`, `make proof-status`). The generated files they rewrite (AGENTS.md source
 tree, `docs/api-docs`, `sbom.json`, `docs/badges`) are committed as-is.
 
 ## Dogfood target
@@ -417,18 +417,29 @@ page is missing from the user docs.
 `tools/csslint.py` enforces the dashboard CSS 4px spacing rule (every
 margin/padding/gap value a multiple of 4px); it is wired as `make
 csslint-check`, run inside `make build`, and part of the `make check` cheap
-gates.  It is the pure-stdlib Python drop-in replacement for stylelint
+gates. It is the pure-stdlib Python drop-in replacement for stylelint
 (the dev tooling is Python-only by convention; no npm dependency is added),
 and `tools/gen-dashboard.py` performs the equivalent CSS/JS minification at
 build time. `tools/para-split.py` splits any paragraph that exceeds four
 sentences into four-sentence paragraphs (the 4-sentence-per-paragraph rule is
-enforced by `make docs-check` via `tools/check-docs.py`).  It applies that
+enforced by `make docs-check` via `tools/check-docs.py`). It applies that
 page's own sentence rule and paragraph segmentation, so it flags a file
 exactly when the gate does, and it inserts blank lines only: it never cuts
 inside an inline construct (a code span, a link, or a badge), and it keeps
-the existing line wrapping at every line a break does not fall between.  It
+the existing line wrapping at every line a break does not fall between. It
 is a manual helper (not part of `make check`); the report names a paragraph
 it cannot split without corrupting the Markdown.
+`tools/check-docs.py` also enforces **one space after a sentence** (a `.`, `!`,
+or `?` followed by two or more spaces and more text is an error) over the
+docs, the changelogs, `README.md`, `AGENTS.md`, `CONTRIBUTING.md`, and the
+comment text of every `src/**/*.ads` / `src/**/*.adb` file -- a docstring is
+prose too. An Ada line is read from its `--` marker on (a `--` inside a
+string literal is not a comment), so code alignment is never flagged and
+never rewritten; the generated units (`adacovex-docs_template`,
+`adacovex-dashboard_template`, `adacovex_version_info`) are excluded, because
+their generators emit single-spaced comments already and a hand edit there is
+overwritten by the next `make build`. Its `--fix` mode collapses a double
+space in exactly those places, so the gate and the fixer always agree.
 `tools/rst2md.py` (wired as `make doc`) converts gnatdoc RST output into the
 `docs/api-docs/` package pages + index; cross-links to the hand-written
 reference pages live in its `GUIDE_PAGES` / `PACKAGE_GUIDES` tables, **never**
@@ -439,20 +450,33 @@ link URLs).
 MyST Markdown parser) and bundles the built site -- every page,
 stylesheet, script, and badge -- into `src/adacovex-docs_template.ads` as a
 path-keyed asset table (the bundled offline manual the `--serve` server
-serves at `/docs`, where search works exactly as online).  Every body is
+serves at `/docs`, where search works exactly as online). Every body is
 gzip-compressed and then **base85**-encoded (the quote-free Z85 alphabet: 4
 bytes to 5 characters where base64 needs 5.33), served with
 `Content-Encoding: gzip` so the browser inflates it and the binary carries
-no inflate routine.  The Furo sidebar is not repeated per page: each page
+no inflate routine. The Furo sidebar is not repeated per page: each page
 keeps a stub and the toctree is stored once per branch under `_nav/`, filled
 in by `resources/js/book-nav.js` (bundled as `_static/adacovex-nav.js`),
 which also scrolls the open entry into the drawer without moving the page,
-so navigation needs JavaScript exactly as search already did.  Sphinx runs only
-when the docs sources changed (a SHA-256 fingerprint stamp beside the build),
-and the build itself is always clean, so a renamed or deleted page can never
-survive as a stale page in the bundle.  The spec is written only when its
-content changed, so a no-op build never rewrites it (a rewrite would
-recompile the 28k-line unit and invalidate the cached proof).  It is safe to
+so navigation needs JavaScript exactly as search already did. Sphinx runs only
+when the docs sources changed (a SHA-256 stamp of the source digests, the
+fingerprint, and the output file list beside the build), and a changed tree
+rebuilds **incrementally but verified**: only the changed pages are re-read
+(their mtimes are refreshed first, so Sphinx cannot serve a stale doctree),
+the outputs of a removed page are swept, and a navigation change (a page
+added or removed, or a `{toctree}` edit) rewrites every page with `-a` so no
+sidebar keeps a stale entry. The page set is then checked against the
+sources, and a check failure falls back to a clean rebuild
+(`tools/gen-docs.py --fresh` forces one), so a renamed or deleted page can
+still never survive as a stale page in the bundle. The spec is written only
+when its content changed, so a no-op build never rewrites it (a rewrite would
+recompile the 28k-line unit and invalidate the cached proof). The SVG images
+under `_images/` (the badge previews) ARE bundled, while the PNG screenshots
+keep the note fallback. Each asset's gzip+base85 result is cached by SHA-256
+under `obj/adacovex-docs-encode/` and the uncached bodies encode in parallel
+across the CPU cores (`--jobs` caps the worker count at 8), so a docs edit
+re-encodes only the pages it touched; both are pure speed-ups and the
+emitted spec stays byte-identical. It is safe to
 run without sphinx installed (the committed spec is kept); the same Sphinx
 project powers the Read the Docs site (`.readthedocs.yaml`, installing
 docs deps from `requirements.txt`).
@@ -478,7 +502,7 @@ must be followed by `make book`.
 | `test` | Build + run the 1614-test native suite |
 | `prove` | SPARK proof (Platinum gate) + regenerates SVG badges in `docs/badges/` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
-| `book` | Build the offline manual from the Sphinx docs and regenerate `src/adacovex-docs_template.ads` (tools/gen-docs.py; safe to run without sphinx) |
+| `book` | Build the offline manual from the Sphinx docs and regenerate `src/adacovex-docs_template.ads` (tools/gen-docs.py; incremental + verified Sphinx build, `--fresh` forces a clean one; safe to run without sphinx) |
 | `fmt` | Format Ada sources (gnatformat) |
 | `sbom` | Generate the proof-aware SBOM (`sbom.json`) |
 | `compliance` | Regenerate the committed `docs/compliance/VERIFICATION.md` + `TRACE.md` for the self tree (kept out of `make prove` so the bundled-report template cannot invalidate the proof cache) |
@@ -513,11 +537,11 @@ Running `alr build` / `make build` / `make test` / `make run-self` rewrites a
 few generated files as a normal side effect: `alire/settings.toml` and
 `alire/build_hash_inputs` (Alire build-profile state), `sbom.json` (SBOM
 output), and `src/adacovex_version_info.ads` (regenerated from
-`alire-dev.toml`).  The generated Ada specs (`src/adacovex_version_info.ads`,
+`alire-dev.toml`). The generated Ada specs (`src/adacovex_version_info.ads`,
 `src/adacovex-dashboard_template.ads`, `src/adacovex-docs_template.ads`) are
 written only when their content changed, so a no-op build keeps their mtimes
 and `alr build` stays a true no-op; the Sphinx manual is rebuilt only when
-the docs sources change.  These are expected and should be left as-is -- do
+the docs sources change. These are expected and should be left as-is -- do
 not revert them.
 
 ## Workflows
@@ -538,9 +562,9 @@ drift between the base CLI, the composite action, and the docs fails CI.
 The gate checks three directions against three sources of truth: the CLI
 flags (`Known_Flags` in `src/core/adacovex-config.adb`), the action inputs
 (the `inputs:` section of `action.yml`), and the docs/usage/ci-cd.md `### Inputs`
-table.  Every CLI flag must have a matching action input, every action input
+table. Every CLI flag must have a matching action input, every action input
 must map back to a CLI flag, and every action input must be documented in
-docs/usage/ci-cd.md (and vice versa).  The mapping rules and the small, documented
+docs/usage/ci-cd.md (and vice versa). The mapping rules and the small, documented
 allow-lists of deliberately non-CI flags (`CLI_ONLY` / `ACTION_ONLY` in the
 script -- early-exit `--help`/`--version`, local dashboard `--serve` /
 `--theme` / `--port`, `status`/`man`/`sbom` subcommands, `--out` /
@@ -554,7 +578,7 @@ Every CI run (the composite action and the `ci.yml` / `pr-check.yml` /
 job page via `$GITHUB_STEP_SUMMARY`: the action appends an assessment table
 (version, target, compliance, SPARK level, tests, coverage) plus an
 `always()` run-summary step, and each workflow adds a `summary` job that
-aggregates every job result.  **Threshold failures fail loudly**: unmet
+aggregates every job result. **Threshold failures fail loudly**: unmet
 `--require-*` gates surface as `::error::` annotations, the assessment step
 exits non-zero, the summary shows the unmet gates, and the workflow summary
 job exits 1 when any job failed.
@@ -636,30 +660,34 @@ adacovex has two distinct documentation tiers with different audiences:
 
 - **User documentation** (`docs/*.md` except `api-docs/`) -- written for end
   users, safety engineers, and auditors who need to install, configure, run,
-  and interpret adacovex assessments.  After reading these pages a user should
+  and interpret adacovex assessments. After reading these pages a user should
   understand the full project lifecycle: setup, CLI usage, dashboard
   interpretation, SBOM generation, VCS differential modes, CI/CD integration,
   compliance standards (DO-178C / ISO 26262 / IEC 62304), and the SPARK
-  proving workflow.  This tier includes installation, CLI reference, the web
+  proving workflow. This tier includes installation, CLI reference, the web
   dashboard, SBOM, VCS support, target projects, CI/CD, contributing,
   standards, platforms, proving, architecture, changelogs, HLR/LLR indexes,
-  and performance guides.  `docs/` is a **Sphinx project** (`docs/conf.py`,
+  and performance guides. The dated records live in `docs/archive/` (the
+  proof-debt audit and the earlier optimisation history), each with an
+  archived-record banner; `tools/live_files.py` excludes that directory from
+  the metric sync, so an archived page keeps the release-time numbers it
+  records. `docs/` is a **Sphinx project** (`docs/conf.py`,
   the **Furo** theme, and the MyST Markdown parser; build deps are pinned in
   `requirements.txt`): Read the Docs builds the site from it (see
   `.readthedocs.yaml`), and `tools/gen-docs.py` builds the same project into a
   self-contained offline manual that the `--serve` dashboard exposes at
   `/docs` (bundled into the binary via `src/adacovex-docs_template.ads`,
-  regenerated by `make book`).  Every new or moved doc page must be reachable
+  regenerated by `make book`). Every new or moved doc page must be reachable
   from a `:toctree:` (the hidden toctrees in `docs/index.md` pull in `usage/`,
-  `contributing/`, `api-docs/`, `changelogs/`, `proof/`, `compliance/`, and
-  `badges/` but not auto-discovered pages).  The Sphinx build output
+  `contributing/`, `api-docs/`, `changelogs/`, `proof/`, `compliance/`,
+  `badges/`, and `archive/` but not auto-discovered pages). The Sphinx build output
   (`docs/_build/`) is a local, gitignored product; the committed artifact is
   the generated spec `src/adacovex-docs_template.ads`, so regenerate it with
   `make book` whenever `docs/` changes and keep the committed spec in sync
   (`make check` enforces this via `tools/gen-docs.py --check`).
 
 - **API reference** (`docs/api-docs/` and its sub-pages) -- generated from
-  Ada source docstrings via `gnatdoc` + `rst2md` (`make doc`).  Written for
+  Ada source docstrings via `gnatdoc` + `rst2md` (`make doc`). Written for
   contributors, developers, and code auditors who need package-level detail,
   type definitions, subprogram contracts, and SPARK proof annotations.
   Cross-links from the API pages point back to the hand-written user guides
@@ -732,11 +760,13 @@ suffices.
 - [Benchmarks: server throughput and latency](docs/contributing/perf/benchmarks-server.md)
 - [Prove timing and optimisation review](docs/contributing/perf/prove-timing.md)
 - [Performance optimisation history](docs/contributing/perf/optimisation-history.md)
-- [Performance optimisation history: earlier releases](docs/contributing/perf/optimisation-history-archive.md)
 - [gnatprove-friendly IR](docs/contributing/ir.md)
 - [Proof records](docs/proof/index.md)
 - [Compliance outputs](docs/compliance/index.md)
 - [Badges](docs/badges/index.md)
+- [Archive](docs/archive/index.md)
+- [Archive: gnatprove 16.1.0 proof-debt audit](docs/archive/16.1.0-ledger-audit.md)
+- [Archive: performance optimisation history (earlier releases)](docs/archive/optimisation-history-archive.md)
 <!-- doc-links:end -->
 
 ## Technical writing

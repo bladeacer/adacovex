@@ -1,7 +1,7 @@
 # STE100 Technical Names: hardware and system entities
 
 The **Hardware and System Entities** category of the [STE100 Technical
-Names](index.md) dictionary.  These terms name the physical
+Names](index.md) dictionary. These terms name the physical
 components and machines that the Ada code interacts with.
 
 ## Technical Name: CPU Core

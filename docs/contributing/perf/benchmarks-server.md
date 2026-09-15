@@ -1,8 +1,8 @@
 # Server throughput and latency
 
-`--serve` runs a small HTTP/1.1 server with a worker pool.  This page
+`--serve` runs a small HTTP/1.1 server with a worker pool. This page
 records its per-request cost and its throughput under concurrent
-keep-alive load.  The machine and the harness are on
+keep-alive load. The machine and the harness are on
 [Benchmarking adacovex](benchmarks.md).
 
 ## The serve dashboard API
@@ -20,9 +20,9 @@ request):
 The numbers are dominated by curl's own process startup and connection
 cycle (its strace shows ~390 syscalls per invocation, nearly all dynamic
 loader `mmap`/`openat` work), so keep-alive client libraries see far lower
-per-request costs.  The server-side share is small: the JSON endpoints
+per-request costs. The server-side share is small: the JSON endpoints
 serialise in-process data (microseconds of CPU), and the dashboard page is
-rebuilt per request from the immutable assessment state.  1.47.0 removed
+rebuilt per request from the immutable assessment state. 1.47.0 removed
 the largest server-side syscall cost: the request reader used to pull one
 byte per `Receive_Socket` call, ~300 receive syscalls per request; it now
 fills a 4 KiB per-connection buffer per receive and hands out complete
@@ -46,15 +46,15 @@ capacity being measured:
 JSON and badge endpoints scale near-linearly to the worker count (4
 requests in flight = 4 workers saturated) and hold ~84-97k req/s with 16
 clients, because extra clients queue in the accept backlog instead of
-consuming server resources.  Tail latency stays sub-millisecond; the ~4 s
+consuming server resources. Tail latency stays sub-millisecond; the ~4 s
 max above the worker count is a load-generator deadline artifact (one
 straggler request per connection at the cutoff), not server behaviour.
 `perf stat` under load shows no cache-miss or IPC anomaly; `strace -c`
 splits the request cost evenly between `recvfrom` and `sendto` at ~16 us
 each, with `futex` (worker parking) leading wall clock only because the
-load is light for four workers.  The dashboard page (~245 KB rendered per
+load is light for four workers. The dashboard page (~245 KB rendered per
 request) and the manual index are throughput-bound on response assembly
-and socket copies; both hold flat latency under load.  Capacity is far
+and socket copies; both hold flat latency under load. Capacity is far
 above single-operator needs; `--serve-workers=N` raises the pool.
 
 ## See also

@@ -27,7 +27,7 @@ CPUs. Get_Shell_Command`.
 ### C4: GNAT v16.1.0 toolchain rollout
 
 The composite action default, CI workflow pins, and documentation now all
-target `gnat_native=16.1.0` (previous default was `15.2.1`).  The action
+target `gnat_native=16.1.0` (previous default was `15.2.1`). The action
 input default, `ci.yml`, `pr-check.yml`, `release.yml`, `docs/ci-cd.md`, and
 `docs/architecture.md` are updated so consumers do not inherit a stale
 toolchain pin.
@@ -67,11 +67,11 @@ as the native Ada implementation.
 
 ## Proof Results
 
-Platinum, 720/720 VCs proved under gnatprove 16.1.0.  0 unproved, 0 justified.
+Platinum, 720/720 VCs proved under gnatprove 16.1.0. 0 unproved, 0 justified.
 
 ## Traceability
 
-No new HLRs.  Coverage:
+No new HLRs. Coverage:
 
    - `HLR-COMPLEXITY` -- C1 docstrings and SPARK exception documentation for
      the complexity checker; C6 added to HLR indexes;

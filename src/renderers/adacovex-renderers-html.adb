@@ -13,6 +13,16 @@ package body Adacovex.Renderers.HTML is
    use type Types.Component_Scope;
    use type Types.Compliance_Standard;
 
+   --  Pretty-print building blocks for the JSON API. The served payloads
+   --  use the json.dumps(indent=2) layout (one field per line), so `curl`
+   --  output, the API playground preview, and the docs samples all read the
+   --  same. Fixed indentation strings keep the emission loop-free and the
+   --  no-overflow proof trivial.
+   Json_LF : constant String (1 .. 1) := (1 => ASCII.LF);
+   Json_I1 : constant String := "  ";
+   Json_I2 : constant String := "    ";
+   Json_I3 : constant String := "      ";
+
    function Img (N : Natural) return String is
       S : constant String := Natural'Image (N);
    begin
@@ -81,7 +91,7 @@ package body Adacovex.Renderers.HTML is
       return To_String (R);
    end Html_Escape;
 
-   --  Percentage of N in M, rounded down, clamped to 0..100.  Chart sizes
+   --  Percentage of N in M, rounded down, clamped to 0..100. Chart sizes
    --  are unitless 0..1 fractions: divide by 100.
    function Pct (Part, Total : Natural) return Natural is
    begin
@@ -91,7 +101,7 @@ package body Adacovex.Renderers.HTML is
       return (Part * 100) / Total;
    end Pct;
 
-   --  0..1 fraction with two decimals ("0.42"), clamped at 1.00.  Kept for
+   --  0..1 fraction with two decimals ("0.42"), clamped at 1.00. Kept for
    --  the polar-ring cut points and any fraction-emitting helper; the old
    --  Charts.css pie/bar sizes (--start/--end/--size turn fractions) are
    --  gone with the Charts.css dependency.
@@ -111,13 +121,13 @@ package body Adacovex.Renderers.HTML is
       return "0." & Img (P);
    end Frac;
 
-   --  SVG dependency-scope ring markup with hoverable segments.  Each
+   --  SVG dependency-scope ring markup with hoverable segments. Each
    --  non-empty scope is one stroked circle arc rotated to start at 12
    --  o'clock (stroke-dasharray "DASH 1000" draws a single dash per
-   --  circle; a large gap means only one arc shows).  Every segment
+   --  circle; a large gap means only one arc shows). Every segment
    --  carries a native tooltip with the scope name and count (for example
-   --  "test: 3") and the CSS raises its opacity on hover.  The centre
-   --  hole carries the ring total.  Used by both the Overview and the
+   --  "test: 3") and the CSS raises its opacity on hover. The centre
+   --  hole carries the ring total. Used by both the Overview and the
    --  Charts-tab scope charts; the caller emits the legend.
    --  @param Base .. Test  Per-scope component counts.
    --  @param Total  Sum of all scope counts.
@@ -134,7 +144,7 @@ package body Adacovex.Renderers.HTML is
       end Put;
 
       --  Append one ring segment for Scope with Count components, then
-      --  advance the cumulative offset.  Zero-count scopes are skipped.
+      --  advance the cumulative offset. Zero-count scopes are skipped.
       procedure Seg (Scope : String; Count : Natural; Cum : in out Natural) is
          Dash : constant Natural := (Count * Circ) / Total;
       begin
@@ -187,7 +197,7 @@ package body Adacovex.Renderers.HTML is
    end I_S;
 
    --  "x,y" (SVG coordinates) of radar axis A (1..5, clockwise from the
-   --  top) at Radius.  Centre is (110,100); the exact cos/sin*1000 values
+   --  top) at Radius. Centre is (110,100); the exact cos/sin*1000 values
    --  for angles 90/162/234/306/378 degrees keep the math in integers --
    --  no floating point in the renderer.
    Axis_Cos : constant array (1 .. 5) of Integer := (0, -951, -588, 588, 951);
@@ -226,10 +236,10 @@ package body Adacovex.Renderers.HTML is
    end Radar_Points;
 
    --  Robustness card: a five-axis radar (Docs, Proof, Tests, Comp, Deps)
-   --  with a tier rating (S/A/B/C/D) derived from their average.  Shared by
+   --  with a tier rating (S/A/B/C/D) derived from their average. Shared by
    --  the Overview tab and the Charts tab so the Charts tab is a strict
    --  superset of the Overview charts (DRY -- one source of truth for the
-   --  headline health visual).  The tier badge renders in the chart centre;
+   --  headline health visual). The tier badge renders in the chart centre;
    --  the legend lists each axis and its percentage.
    --  @param Doc_Metrics  Docstring coverage metrics (Docs axis).
    --  @param Proof  GNATprove proof summary (Proof axis).
@@ -358,7 +368,7 @@ package body Adacovex.Renderers.HTML is
 
    --  SPARK proof-by-check-type radar card: proved rate (0..100) for each
    --  gnatprove category (Flow, Init, Runtime, Assert, Func) plus a tier
-   --  rating from their average.  Shared by the Overview and Charts tabs so
+   --  rating from their average. Shared by the Overview and Charts tabs so
    --  the Charts tab is a strict superset of the Overview charts (DRY).
    --  @param Proof  GNATprove proof summary with per-category counts.
    --  @return The `<div class="chart-card"><h3>SPARK Proof by Check Type</h3>` card.
@@ -509,7 +519,7 @@ package body Adacovex.Renderers.HTML is
       --  A hand-rolled donut ring (conic gradient + CSS hole, the same
       --  pattern as the polar chart below): the covered share is green
       --  (var --pass), the remainder red (var --fail), and the centre
-      --  hole carries the value with a caption.  Part/Total are the
+      --  hole carries the value with a caption. Part/Total are the
       --  covered and total counts; the ring is fully green when covered
       --  reaches total.
       procedure Donut
@@ -541,9 +551,9 @@ package body Adacovex.Renderers.HTML is
 
       --  A hand-rolled horizontal bar row: fixed label column (ellipsised
       --  in CSS), a track with a green fill sized by Part/Total, an
-      --  optional red remainder, and the value at the right.  The label
+      --  optional red remainder, and the value at the right. The label
       --  never rotates and long category names ellipsise instead of
-      --  overflowing.  When Scale_To is given (the largest category), the
+      --  overflowing. When Scale_To is given (the largest category), the
       --  whole track is sized Pct (Total, Scale_To) so the bar length
       --  scales with the category's magnitude -- the same scaling as the
       --  test-category chart -- while the green/red split still shows the
@@ -560,9 +570,9 @@ package body Adacovex.Renderers.HTML is
          --  (Scale_To): the green fill is Part/Scale_To of the full track
          --  width and the optional red remainder Total-Part/Scale_To, so a
          --  bar's green+red total equals Total/Scale_To -- the category's
-         --  share of the biggest.  The track itself is always full width
+         --  share of the biggest. The track itself is always full width
          --  (flex:1 in CSS); the leftover renders as the track's grey
-         --  background.  This is the test-category convention, and it makes
+         --  background. This is the test-category convention, and it makes
          --  the proof-check-type bars scale with magnitude too instead of
          --  collapsing to a proved-rate fill of a stretched track.
          G : constant Natural := Pct (Part, Scale_To);
@@ -610,10 +620,10 @@ package body Adacovex.Renderers.HTML is
       Put (Img (Proof.Total_VCs));
       Put (" VCs proved</strong></p></div>");
 
-      --  Proof categories (proved vs total per category).  Every category
+      --  Proof categories (proved vs total per category). Every category
       --  gnatprove reports (flow, init, runtime, assertions, functional,
       --  termination) is a row; green shows the proved share and red the
-      --  unproved remainder.  Bars scale with the category's magnitude
+      --  unproved remainder. Bars scale with the category's magnitude
       --  (track width = checks / largest category), like the test chart,
       --  so a 407-VC category reads as a longer bar than a 56-VC one.
       Put ("<div class=""chart-card""><h3>Proof Check Types</h3>");
@@ -679,7 +689,7 @@ package body Adacovex.Renderers.HTML is
          & "</strong></p></div>");
 
       --  Test categories (each category as its own row, normalised by
-      --  max).  A single green fill per row -- no red remainder, because
+      --  max). A single green fill per row -- no red remainder, because
       --  the categories are counts, not pass/fail shares.
       Put ("<div class=""chart-card""><h3>Test Results by Category</h3>");
       if Tests.Categories.Is_Empty then
@@ -1234,8 +1244,8 @@ package body Adacovex.Renderers.HTML is
       return To_String (R);
    end Render_Deps_HTML;
 
-   --  Overview dependency-scope polar chart markup.  Extracted from the overview
-   --  builder so the parent stays under the cyclomatic cap.  Returns the
+   --  Overview dependency-scope polar chart markup. Extracted from the overview
+   --  builder so the parent stays under the cyclomatic cap. Returns the
    --  conic-gradient ring + centre total + per-scope legend, or an empty
    --  string when the graph has no components.
    function Overview_Scope_Chart
@@ -1433,7 +1443,7 @@ package body Adacovex.Renderers.HTML is
       declare
          --  Compact hand-rolled donut ring (conic gradient + CSS hole):
          --  green for the covered share, red for the remainder, value and
-         --  caption in the hole.  Same pattern as the full-size donuts on
+         --  caption in the hole. Same pattern as the full-size donuts on
          --  the Charts tab; never overlaps the readout line below because
          --  the ring is a fixed-size block, not an absolutely positioned
          --  table cell.
@@ -1530,7 +1540,7 @@ package body Adacovex.Renderers.HTML is
          end if;
 
          --  Dependency scope distribution (overview): a compact polar ring that
-         --  breaks the resolved graph down by scope at a glance.  Shares the
+         --  breaks the resolved graph down by scope at a glance. Shares the
          --  row with the doc-coverage card above (chart-pair).
          Put_O (Overview_Scope_Chart (Graph));
 
@@ -1625,7 +1635,7 @@ package body Adacovex.Renderers.HTML is
       Put_P ("</td></tr></table></div>");
 
       --  Proof guidance: turn the gnatprove unproved counts into concrete next
-      --  steps per category.  Each row names the failing category, how many
+      --  steps per category. Each row names the failing category, how many
       --  VCs remain, and the proof aspect most likely to close them -- so the
       --  gnatprove output points the developer at what to do next.
       declare
@@ -1789,7 +1799,7 @@ package body Adacovex.Renderers.HTML is
       Put_T (Img (Tests.Total_Failed));
       Put_T ("</strong></td></tr></table></div>");
 
-      --  Compliance tab: per-standard achievement gauges.  The dashboard is
+      --  Compliance tab: per-standard achievement gauges. The dashboard is
       --  standards-aware: every supported standard (DO-178C, ISO 26262,
       --  IEC 62304) is listed with its own gauge, integrity-level target and
       --  achieved percentage, whether one standard or all are targeted.
@@ -2076,42 +2086,46 @@ package body Adacovex.Renderers.HTML is
          Put ("""");
       end Put_Field;
    begin
-      Put ("{""dependencies"":[");
+      Put ("{" & Json_LF & Json_I1 & """dependencies"": [");
       for I in 1 .. Integer (Graph.Length) loop
          if I > 1 then
             Put (",");
          end if;
-         Put ("{""name"":");
+         Put (Json_LF & Json_I2 & "{" & Json_LF & Json_I3 & """name"": ");
          Put_Field (Graph (I).Name, Graph (I).Name_Len);
-         Put (",""version"":");
+         Put ("," & Json_LF & Json_I3 & """version"": ");
          Put_Field (Graph (I).Version, Graph (I).Version_Len);
-         Put (",""scope"":");
+         Put ("," & Json_LF & Json_I3 & """scope"": ");
          Put_Field
            (Scope_Name (Graph (I).Scope), Scope_Name (Graph (I).Scope)'Length);
-         Put (",""dev"":");
+         Put ("," & Json_LF & Json_I3 & """dev"": ");
          Put (if Graph (I).Scope_Flags.Is_Dev then "true" else "false");
-         Put (",""system"":");
+         Put ("," & Json_LF & Json_I3 & """system"": ");
          Put (if Graph (I).Scope_Flags.Is_System then "true" else "false");
-         Put (",""license"":");
+         Put ("," & Json_LF & Json_I3 & """license"": ");
          Put_Field (Graph (I).License, Graph (I).License_Len);
-         Put (",""kind"":""");
-         Put
-           (if Types.Component_Kind'(Graph (I).Kind) = Types.Root_Component
-            then "root"
-            else "dependency");
-         Put (""",""parent"":");
+         Put ("," & Json_LF & Json_I3 & """kind"": ");
+         if Types.Component_Kind'(Graph (I).Kind) = Types.Root_Component then
+            Put ("""root""");
+         else
+            Put ("""dependency""");
+         end if;
+         Put ("," & Json_LF & Json_I3 & """parent"": ");
          Put (Img (Graph (I).Parent));
-         Put (",""lang"":");
+         Put ("," & Json_LF & Json_I3 & """lang"": ");
          Put_Field (Graph (I).Language, Graph (I).Language_Len);
-         Put (",""purl"":");
+         Put ("," & Json_LF & Json_I3 & """purl"": ");
          Put_Field (Graph (I).PURL, Graph (I).PURL_Len);
-         Put (",""website"":");
+         Put ("," & Json_LF & Json_I3 & """website"": ");
          Put_Field (Graph (I).Website, Graph (I).Website_Len);
-         Put (",""description"":");
+         Put ("," & Json_LF & Json_I3 & """description"": ");
          Put_Field (Graph (I).Description, Graph (I).Description_Len);
-         Put ("}");
+         Put (Json_LF & Json_I2 & "}");
       end loop;
-      Put ("]}");
+      if not Graph.Is_Empty then
+         Put (Json_LF);
+      end if;
+      Put (Json_I1 & "]" & Json_LF & "}");
 
       return To_String (Result);
    end Render_Deps_JSON;
@@ -2119,7 +2133,7 @@ package body Adacovex.Renderers.HTML is
    --  Render the API endpoint catalog as JSON for /api/endpoints.
    --  Every route the --serve server dispatches on is listed once, with its
    --  HTTP method, path, a machine kind (json / svg / text), the dashboard
-   --  group it belongs to, and a short description.  This is the single
+   --  group it belongs to, and a short description. This is the single
    --  source of truth the API playground (api.js) builds its UI from, so the
    --  endpoint list lives in the server metadata and never hardcodes a path
    --  in client JavaScript.
@@ -2143,20 +2157,20 @@ package body Adacovex.Renderers.HTML is
       --  Append one endpoint object: method, path, kind, group, description.
       procedure Ent (Method, Path, Kind, Group, Desc : String) is
       begin
-         Put ("{""method"":");
+         Put (Json_LF & Json_I2 & "{" & Json_LF & Json_I3 & """method"": ");
          Put_Field (Method, Method'Length);
-         Put (",""path"":");
+         Put ("," & Json_LF & Json_I3 & """path"": ");
          Put_Field (Path, Path'Length);
-         Put (",""kind"":");
+         Put ("," & Json_LF & Json_I3 & """kind"": ");
          Put_Field (Kind, Kind'Length);
-         Put (",""group"":");
+         Put ("," & Json_LF & Json_I3 & """group"": ");
          Put_Field (Group, Group'Length);
-         Put (",""description"":");
+         Put ("," & Json_LF & Json_I3 & """description"": ");
          Put_Field (Desc, Desc'Length);
-         Put ("}");
+         Put (Json_LF & Json_I2 & "}");
       end Ent;
    begin
-      Put ("{""endpoints"":[");
+      Put ("{" & Json_LF & Json_I1 & """endpoints"": [");
       Ent
         ("GET",
          "/api/metrics",
@@ -2219,7 +2233,7 @@ package body Adacovex.Renderers.HTML is
          "json",
          "API",
          "This endpoint catalog: every route this instance dispatches on.");
-      Put ("]}");
+      Put (Json_LF & Json_I1 & "]" & Json_LF & "}");
       return To_String (Result);
    end Render_Endpoints_JSON;
 
@@ -2236,76 +2250,69 @@ package body Adacovex.Renderers.HTML is
       begin
          Append (Result, S);
       end Put;
+
+      --  Append a quoted string value.
+      procedure Put_Str (S : String) is
+      begin
+         Put ("""" & S & """");
+      end Put_Str;
    begin
-      Put ("{");
-      Put ("""spark_level"":""");
-      Put (Types.To_String (Proof.Level));
-      Put (""",");
-      Put ("""total_vcs"":");
+      Put ("{" & Json_LF);
+      Put (Json_I1 & """spark_level"": ");
+      Put_Str (Types.To_String (Proof.Level));
+      Put ("," & Json_LF & Json_I1 & """total_vcs"": ");
       Put (Img (Proof.Total_VCs));
-      Put (",");
-      Put ("""proved_vcs"":");
+      Put ("," & Json_LF & Json_I1 & """proved_vcs"": ");
       Put (Img (Proof.Proved_VCs));
-      Put (",");
-      Put ("""tests_passed"":");
+      Put ("," & Json_LF & Json_I1 & """tests_passed"": ");
       Put (Img (Tests.Total_Passed));
-      Put (",");
-      Put ("""tests_failed"":");
+      Put ("," & Json_LF & Json_I1 & """tests_failed"": ");
       Put (Img (Tests.Total_Failed));
-      Put (",");
       --  Per-category test metrics (name, count, PASS/FAIL status) -- the
       --  same data the dashboard Tests chart renders, exported for
-      --  scripting and archiving.  Empty when the target has no category
+      --  scripting and archiving. Empty when the target has no category
       --  rows (e.g. TAP/Automake-only summaries).
-      Put ("""test_categories"":[");
-      declare
-         First_Cat : Boolean := True;
-      begin
-         for C in 1 .. Integer (Tests.Categories.Length) loop
-            declare
-               Cat : Types.Test_Metrics renames Tests.Categories (C);
-            begin
-               if not First_Cat then
-                  Put (",");
-               end if;
-               First_Cat := False;
-               Put ("{""name"":""");
-               Put (Cat.Category (1 .. Cat.Cat_Len));
-               Put (""",""count"":");
-               Put (Img (Cat.Test_Count));
-               Put (",""status"":""");
-               Put (Types.To_String (Cat.Status));
-               Put ("""}");
-            end;
-         end loop;
-      end;
-      Put ("]");
-      Put (",");
-      Put ("""doc_coverage"":");
-      Put (Img (Doc_Metrics.Coverage_Pct));
-      Put (",");
-      Put ("""standard"":""");
-      if All_Standards then
-         Put ("all");
-      else
-         Put (Types.To_String (DAL_Assess.Standard));
+      Put ("," & Json_LF & Json_I1 & """test_categories"": [");
+      for C in 1 .. Integer (Tests.Categories.Length) loop
+         declare
+            Cat : Types.Test_Metrics renames Tests.Categories (C);
+         begin
+            if C > 1 then
+               Put (",");
+            end if;
+            Put (Json_LF & Json_I2 & "{" & Json_LF & Json_I3 & """name"": ");
+            Put_Str (Cat.Category (1 .. Cat.Cat_Len));
+            Put ("," & Json_LF & Json_I3 & """count"": ");
+            Put (Img (Cat.Test_Count));
+            Put ("," & Json_LF & Json_I3 & """status"": ");
+            Put_Str (Types.To_String (Cat.Status));
+            Put (Json_LF & Json_I2 & "}");
+         end;
+      end loop;
+      if not Tests.Categories.Is_Empty then
+         Put (Json_LF);
       end if;
-      Put (""",");
-      Put ("""level"":""");
+      Put (Json_I1 & "]," & Json_LF & Json_I1 & """doc_coverage"": ");
+      Put (Img (Doc_Metrics.Coverage_Pct));
+      Put ("," & Json_LF & Json_I1 & """standard"": ");
       if All_Standards then
-         Put
+         Put_Str ("all");
+      else
+         Put_Str (Types.To_String (DAL_Assess.Standard));
+      end if;
+      Put ("," & Json_LF & Json_I1 & """level"": ");
+      if All_Standards then
+         Put_Str
            (Types.Standard_Level_Name (Types.DO_178C, DAL_Assess.Target_DAL));
       else
-         Put
+         Put_Str
            (Types.Standard_Level_Name
               (DAL_Assess.Standard, DAL_Assess.Target_DAL));
       end if;
-      Put (""",");
-      Put ("""dal_status"":""");
-      Put (Types.To_String (DAL_Assess.Status));
-      Put ("""");
+      Put ("," & Json_LF & Json_I1 & """dal_status"": ");
+      Put_Str (Types.To_String (DAL_Assess.Status));
       if All_Standards then
-         Put (",""standards"":{");
+         Put ("," & Json_LF & Json_I1 & """standards"": {");
          declare
             First : Boolean := True;
          begin
@@ -2314,18 +2321,19 @@ package body Adacovex.Renderers.HTML is
                   Put (",");
                end if;
                First := False;
-               Put ("""");
-               Put (Types.To_String (Std));
-               Put (""":{""level"":""");
-               Put (Types.Standard_Level_Name (Std, DAL_Assess.Target_DAL));
-               Put (""",""status"":""");
-               Put (Types.To_String (DAL_Assess.Status));
-               Put ("""}");
+               Put (Json_LF & Json_I2);
+               Put_Str (Types.To_String (Std));
+               Put (": {" & Json_LF & Json_I3 & """level"": ");
+               Put_Str
+                 (Types.Standard_Level_Name (Std, DAL_Assess.Target_DAL));
+               Put ("," & Json_LF & Json_I3 & """status"": ");
+               Put_Str (Types.To_String (DAL_Assess.Status));
+               Put (Json_LF & Json_I2 & "}");
             end loop;
          end;
-         Put ("}");
+         Put (Json_LF & Json_I1 & "}");
       end if;
-      Put ("}");
+      Put (Json_LF & "}");
 
       return To_String (Result);
    end Render_Metrics_JSON;

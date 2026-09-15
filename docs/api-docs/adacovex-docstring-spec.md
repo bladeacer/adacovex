@@ -25,7 +25,11 @@ compatibility. No blank lines between tags and declaration.
   A bare `--` or `---` (divider) line is **not** a docstring.
 - Summary first, then tag lines, then declaration -- no blank lines.
 - Descriptions capitalized, end with period.
-- Two spaces between tag name and description (alignment padding).
+- One space after a sentence. A `.`, `!`, or `?` followed by two or more
+  spaces is a violation, in the docs and in the Ada comment text alike.
+  `python3 tools/check-docs.py --fix` collapses it and `make docs-check`
+  gates it. The two spaces between a tag name and its description are
+  alignment padding, not sentence spacing, so they stay.
 - A plain summary line (`--  Does a thing.`) is sufficient to mark a subprogram
   as documented; tags are not required for no-param procedures.
 

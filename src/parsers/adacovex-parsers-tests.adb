@@ -35,7 +35,7 @@ package body Adacovex.Parsers.Tests is
       return True;
    end Starts_With;
 
-   --  Numeric value of a decimal digit character (0 .. 9).  A case
+   --  Numeric value of a decimal digit character (0 .. 9). A case
    --  statement avoids the Character'Pos subtraction so the range check is
    --  discharged by plain case analysis instead of character arithmetic.
    function Digit_Value (C : Character) return Natural
@@ -82,7 +82,7 @@ package body Adacovex.Parsers.Tests is
    end Digit_Value;
 
    --  Parse the integer that immediately follows a keyword in a line,
-   --  skipping any intervening spaces.  Returns 0 when absent.  Digit runs
+   --  skipping any intervening spaces. Returns 0 when absent. Digit runs
    --  longer than the Natural capacity stop accumulating (previously the
    --  unguarded accumulation raised Constraint_Error at runtime).
    function Number_After (S : String; Key : String) return Natural
@@ -132,8 +132,8 @@ package body Adacovex.Parsers.Tests is
 
    --  Parse the integer that immediately precedes a whole word in a line.
    --  The word must be preceded by digits and followed by a non-letter
-   --  (or end of line).  Returns 0 when absent.  Used for the
-   --  "N Tests M Failures" summary style.  Digit runs longer than the
+   --  (or end of line). Returns 0 when absent. Used for the
+   --  "N Tests M Failures" summary style. Digit runs longer than the
    --  Natural capacity stop accumulating (previously a runtime
    --  Constraint_Error on overflow).
    function Number_Before_Word (S : String; Word : String) return Natural
@@ -208,7 +208,7 @@ package body Adacovex.Parsers.Tests is
       return 0;
    end Number_Before_Word;
 
-   --  A markdown table row split into its `|`-separated cells.  Cells are
+   --  A markdown table row split into its `|`-separated cells. Cells are
    --  capped at Types.Max_Desc_Str; longer cells are truncated, and cells
    --  past the 5th are ignored.
    Max_Cells : constant := 5;
@@ -217,7 +217,7 @@ package body Adacovex.Parsers.Tests is
    type Part_Len_Array is array (1 .. Max_Cells) of Natural;
 
    --  Length of the cell at Idx with trailing spaces trimmed (0 when the
-   --  cell is empty or all spaces).  Markdown tables right-pad cells to the
+   --  cell is empty or all spaces). Markdown tables right-pad cells to the
    --  column separator, so a `| 67 |` count cell is stored as "67 ".
    function Cell_Trimmed_Len
      (Parts : Parts_Array; Part_Len : Part_Len_Array; Idx : Natural)
@@ -232,7 +232,7 @@ package body Adacovex.Parsers.Tests is
    end Cell_Trimmed_Len;
 
    --  True when the cell at Idx holds only digits (ignoring padding
-   --  spaces) -- i.e. it is a test count.  Empty cells and cells with any
+   --  spaces) -- i.e. it is a test count. Empty cells and cells with any
    --  non-digit (a category name, a PASS/FAIL status, a `|---|---|`
    --  separator, a header row) are not counts, so headers and separators
    --  are skipped naturally.
@@ -253,7 +253,7 @@ package body Adacovex.Parsers.Tests is
       return True;
    end Is_Number_Cell;
 
-   --  Numeric value of the digit-only cell at Idx (0 when empty).  Callers
+   --  Numeric value of the digit-only cell at Idx (0 when empty). Callers
    --  guard with Is_Number_Cell first.
    function Cell_Count
      (Parts : Parts_Array; Part_Len : Part_Len_Array; Idx : Natural)
@@ -268,7 +268,7 @@ package body Adacovex.Parsers.Tests is
    end Cell_Count;
 
    --  Parse one markdown table row and append it to Summary.Categories
-   --  when it carries a positive test count.  Two layouts are accepted:
+   --  when it carries a positive test count. Two layouts are accepted:
    --
    --    A: "| - | Category | N | PASS |" -- the AUnit-style report layout
    --       with a leading index cell; the count is cell 3.
@@ -277,7 +277,7 @@ package body Adacovex.Parsers.Tests is
    --  In both layouts the count cell must be all digits (so header and
    --  separator rows are skipped regardless of layout), the category name
    --  is the cell before the count, and the status is the cell after it
-   --  (any non-"PASS" status counts as FAIL).  Category rows ADD their
+   --  (any non-"PASS" status counts as FAIL). Category rows ADD their
    --  counts to the totals; a trailing "Passed:"/"Failed:" footer line
    --  overrides the totals (see Parse_Passed_Failed_Line).
    procedure Parse_Table_Row
@@ -329,8 +329,8 @@ package body Adacovex.Parsers.Tests is
          end loop;
 
          --  Locate the numeric count cell: layout A puts it at cell 3,
-         --  layout B at cell 2.  A header/separator row has no numeric
-         --  cell and is skipped.  (A row where BOTH cells 2 and 3 are
+         --  layout B at cell 2. A header/separator row has no numeric
+         --  cell and is skipped. (A row where BOTH cells 2 and 3 are
          --  numeric is layout A -- a numeric index cell with a numeric
          --  category name is not a realistic case.)
          declare
@@ -386,7 +386,7 @@ package body Adacovex.Parsers.Tests is
    end Parse_Table_Row;
 
    --  Parse the "Passed:" / "Failed:" summary lines (adacovex native
-   --  test_result.md footer).  The last occurrence wins.
+   --  test_result.md footer). The last occurrence wins.
    procedure Parse_Passed_Failed_Line
      (Line    : String;
       Last    : Natural;
@@ -565,7 +565,7 @@ package body Adacovex.Parsers.Tests is
    end Parse_Test_Result;
 
    --  Conventional test-result file names, tried in order at the project
-   --  root and under docs/.  Covers common Markdown, plain-text and log
+   --  root and under docs/. Covers common Markdown, plain-text and log
    --  summary conventions in addition to adacovex's native test_result.md.
    type Name_Array is array (Positive range <>) of String (1 .. 24);
    Candidates : constant Name_Array :=
@@ -612,7 +612,7 @@ package body Adacovex.Parsers.Tests is
    end Trim_Right;
 
    --  Return the path of the first existing conventional test-result file
-   --  under Target_Dir, or "" if none is present.  Used by the result cache
+   --  under Target_Dir, or "" if none is present. Used by the result cache
    --  to key a cached test summary to the exact artifact analysed.
    function Find_Test_Result (Target_Dir : String) return String is
    begin

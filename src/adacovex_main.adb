@@ -67,7 +67,7 @@ procedure Adacovex_Main is
 
    --  Collapse "." and ".." segments out of an absolute path so File_Path
    --  values stored in the result cache do not depend on how --target was
-   --  spelled (e.g. "./.." vs ".").  Keeps the leading slash and clamps ".."
+   --  spelled (e.g. "./.." vs "."). Keeps the leading slash and clamps ".."
    --  at the filesystem root.
    function Normalize_Path (S : String) return String is
       Out_Buf : String (1 .. Max_Path) := (others => ' ');
@@ -148,7 +148,7 @@ procedure Adacovex_Main is
 
    --  Differential mode (--compare-base): assess the target at a base
    --  revision and at the current working tree, report the delta, and set
-   --  the exit code to 1 on regression or current DAL failure.  Works on
+   --  the exit code to 1 on regression or current DAL failure. Works on
    --  git, mercurial, subversion, fossil, and jj repositories.
    procedure Run_Diff is
       Base_Ref  : constant String :=
@@ -268,9 +268,9 @@ procedure Adacovex_Main is
    end Run_Coverage;
 
    --  Generate an SBOM for the target using the assessment state already
-   --  computed (Packages, Proof, DAL_Assess).  Used by both the explicit
+   --  computed (Packages, Proof, DAL_Assess). Used by both the explicit
    --  `adacovex sbom` subcommand and the automatic SBOM emitted at the end
-   --  of every assessment.  Prints the SBOM location on success; never
+   --  of every assessment. Prints the SBOM location on success; never
    --  raises and never changes the assessment exit code (failures are
    --  warnings only).
    procedure Generate_SBOM
@@ -351,7 +351,7 @@ procedure Adacovex_Main is
                      (Cfg.Standard_Target, Cfg.DAL_Target))
             & ")");
       --  Do NOT touch Exit_St here: the automatic SBOM (Fail_Hard False)
-      --  must never change the assessment exit code.  Only the explicit
+      --  must never change the assessment exit code. Only the explicit
       --  `adacovex sbom` subcommand (Fail_Hard True) leaves the default 0
       --  on success.
 
@@ -372,7 +372,7 @@ procedure Adacovex_Main is
    --  SBOM mode (adacovex sbom): run the assessment pipeline to derive the
    --  proof-aware properties, resolve the dependency graph from the Alire
    --  manifest / alire.lock / .gpr files, and emit a CycloneDX 1.5, SPDX
-   --  2.3, or Markdown document.  Exit code is 0 when the SBOM is written,
+   --  2.3, or Markdown document. Exit code is 0 when the SBOM is written,
    --  1 on failure; the DAL status is informational only.
    procedure Run_SBOM is
       Skip_List : String (1 .. Max_Path);
@@ -461,7 +461,7 @@ begin
       return;
    end if;
 
-   --  Determine ANSI colour support.  Colour is enabled only when the
+   --  Determine ANSI colour support. Colour is enabled only when the
    --  environment has not opted out (`NO_COLOR` / `TERM=dumb`) and we are not
    --  on a CI runner (`CI`), so raw ANSI escapes never garble CI logs.
    Adacovex.Ansi.Init;
@@ -501,7 +501,7 @@ begin
 
    -- Man mode: install the man page into the local man database (default
    -- ~/.local/share/man on Linux/WSL, or --dir=PATH) and refresh it with
-   -- mandb.  --check exits 0 when the installed page matches this binary's
+   -- mandb. --check exits 0 when the installed page matches this binary's
    -- version, 1 when a newer version is available or none is installed.
    -- --force always (re)writes the page even when the installed one already
    -- matches this binary (e.g. to repair a hand-edited page).
@@ -599,7 +599,7 @@ begin
    end if;
 
    -- Status mode: print toolchain + platform status and exit (no
-   -- assessment, no scanning).  Run_Status never deploys or downloads
+   -- assessment, no scanning). Run_Status never deploys or downloads
    -- anything, so it prints its own header and skips the normal one.
    if Cfg.Status_Mode then
       declare
@@ -667,7 +667,7 @@ begin
    end if;
 
    -- Completion mode: emit a shell completion script (bash/fish/zsh/pwsh)
-   -- for this binary's flag set and exit.  The script is generated from
+   -- for this binary's flag set and exit. The script is generated from
    -- Config.Flag_List so it always matches the live CLI options.
    if Cfg.Completion_Mode then
       declare
@@ -921,7 +921,7 @@ begin
    Verbose ("  dal status: " & Adacovex.Types.To_String (DAL_Assess.Status));
 
    --  CI threshold gates (--require-spark / --require-docstrings /
-   --  --require-tests / --require-proof).  When set, the assessment fails
+   --  --require-tests / --require-proof). When set, the assessment fails
    --  loudly (exit code 1, explicit reason) if the target is below the
    --  pinned minimum -- an extra gate on top of the DAL criteria that lets a
    --  workflow require e.g. Platinum SPARK, 100% docstrings, 336 passing

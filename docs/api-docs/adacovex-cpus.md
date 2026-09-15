@@ -1,11 +1,11 @@
 # Adacovex.CPUs
 
 Host CPU / parallelism helpers for adacovex.
-It detects the number of logical CPUs.  It supports the platforms that
-Alire supports: Linux, macOS, FreeBSD, and Windows.  It uses only the
-GNAT runtime, so the crate keeps no dependencies.  It also resolves the
-default GNATprove job count.  On a developer machine it leaves two cores
-free for system responsiveness.  Inside CI it uses every core.
+It detects the number of logical CPUs. It supports the platforms that
+Alire supports: Linux, macOS, FreeBSD, and Windows. It uses only the
+GNAT runtime, so the crate keeps no dependencies. It also resolves the
+default GNATprove job count. On a developer machine it leaves two cores
+free for system responsiveness. Inside CI it uses every core.
 HLR-CPU: Cross-platform CPU core detection
 
 **See also:** [Platforms](../usage/platforms.md)

@@ -10,18 +10,18 @@ package Adacovex.Renderers.HTML is
    --  Render a full HTML dashboard page with cards for all metrics.
    --  Produces a self-contained HTML page (with embedded CSS) showing
    --  SPARK proof status, test results, compliance, and package coverage.
-   --  The page uses a card-based layout.  The compliance card is
-   --  standard-aware.  It prints the selected standard's level label.  When
-   --  All_Standards is True, it prints one row per standard.  The page
-   --  supports light, dark, and system themes.  Colours come from CSS custom
-   --  properties.  The initial theme follows Theme (System_Theme follows the
-   --  browser's prefers-color-scheme).  A header dropdown switches between
-   --  light, dark, and system.  A Save settings button stores the choice in
-   --  localStorage.  On load, theme resolution selects the explicit CLI
-   --  light/dark first.  Then it uses localStorage.  Then it uses the system
-   --  preference.  Content is organised into clickable tabs (Overview, Proof,
-   --  Tests, Compliance, Dependencies, Charts).  The dependency graph has its
-   --  own page.  It does not share the card stack.
+   --  The page uses a card-based layout. The compliance card is
+   --  standard-aware. It prints the selected standard's level label. When
+   --  All_Standards is True, it prints one row per standard. The page
+   --  supports light, dark, and system themes. Colours come from CSS custom
+   --  properties. The initial theme follows Theme (System_Theme follows the
+   --  browser's prefers-color-scheme). A header dropdown switches between
+   --  light, dark, and system. A Save settings button stores the choice in
+   --  localStorage. On load, theme resolution selects the explicit CLI
+   --  light/dark first. Then it uses localStorage. Then it uses the system
+   --  preference. Content is organised into clickable tabs (Overview, Proof,
+   --  Tests, Compliance, Dependencies, Charts). The dependency graph has its
+   --  own page. It does not share the card stack.
    --  @param Doc_Metrics  Docstring coverage metrics.
    --  @param Proof  GNATprove proof summary.
    --  @param Tests  Test result summary.
@@ -64,11 +64,11 @@ package Adacovex.Renderers.HTML is
    with Post => Render_Dashboard'Result'Length > 0, Global => null;
 
    --  Render the metrics charts section (multiple chart cards) for the
-   --  dashboard.  The section shows a donut of SPARK proof (proved vs
-   --  unproved VCs) and bars of proved checks per category.  It shows a
+   --  dashboard. The section shows a donut of SPARK proof (proved vs
+   --  unproved VCs) and bars of proved checks per category. It shows a
    --  bar chart of the test categories and a docstring-coverage meter, a
    --  donut of test pass/fail distribution, and a polar ring of dependency
-   --  scopes.  The charts are hand-rolled (SVG-less CSS donuts and flex
+   --  scopes. The charts are hand-rolled (SVG-less CSS donuts and flex
    --  bars) so the page stays self-contained and dependency-free at
    --  runtime -- no external chart library is bundled.
    --  @param Doc_Metrics  Docstring coverage metrics.
@@ -101,7 +101,7 @@ package Adacovex.Renderers.HTML is
    with Post => Render_Charts'Result'Length > 0, Global => null;
 
    --  Render the dependency graph as an interactive HTML tree for the
-   --  Dependencies tab.  Groups components by parent index into a collapsible
+   --  Dependencies tab. Groups components by parent index into a collapsible
    --  <details> tree with scope badges and a client-side filter input.
    --  @param Graph  Dependency graph component vector.
    --  @return HTML fragment for the deps tab.
@@ -122,7 +122,7 @@ package Adacovex.Renderers.HTML is
    --  Render the API endpoint catalog as JSON for /api/endpoints.
    --  Every route the --serve server dispatches on is listed once with its
    --  HTTP method, path, a machine kind (json / svg / text), its dashboard
-   --  group, and a short description.  It is the single source of truth the
+   --  group, and a short description. It is the single source of truth the
    --  dashboard's API playground builds its UI from.
    --  @return JSON object with an "endpoints" array.
    function Render_Endpoints_JSON return String
@@ -131,7 +131,7 @@ package Adacovex.Renderers.HTML is
    --  Render a JSON object with key metric values.
    --  Produces a lightweight JSON payload containing docstring coverage,
    --  proof results, test summary, and compliance status for programmatic
-   --  consumption by the API endpoint.  Includes the selected standard and
+   --  consumption by the API endpoint. Includes the selected standard and
    --  its level label, plus a per-standard "standards" object when
    --  All_Standards is True.
    --  @param Doc_Metrics  Docstring coverage metrics.

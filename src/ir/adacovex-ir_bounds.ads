@@ -17,7 +17,7 @@ package Adacovex.IR_Bounds is
    --  Lowered 64-bit signed type (synthesised declaration).
    type int64_t is new Adacovex.Target_Profiles.IR_Int64;
 
-   --  Bounds-checked addition on the lowered 32-bit type.  The
+   --  Bounds-checked addition on the lowered 32-bit type. The
    --  inner-half precondition makes the overflow check provably safe.
    --  @param A  First operand.
    --  @param B  Second operand.
@@ -28,7 +28,7 @@ package Adacovex.IR_Bounds is
        A in int32_t'First / 2 .. int32_t'Last / 2
        and then B in int32_t'First / 2 .. int32_t'Last / 2;
 
-   --  Bounds-checked addition on the lowered 64-bit type.  It is the 64-bit
+   --  Bounds-checked addition on the lowered 64-bit type. It is the 64-bit
    --  equivalent of Add32.
    --  @param A  First operand.
    --  @param B  Second operand.

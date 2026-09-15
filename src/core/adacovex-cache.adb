@@ -16,12 +16,12 @@ package body Adacovex.Cache is
    use Ada.Streams.Stream_IO;
    use Interfaces;
 
-   --  Configured cache root (absolute).  Defaults to Default_Cache_Dir at
+   --  Configured cache root (absolute). Defaults to Default_Cache_Dir at
    --  elaboration; overridden by Set_Cache_Dir (--cache-dir).
    Cache_Root     : String (1 .. 4096) := (others => ' ');
    Cache_Root_Len : Natural := 0;
 
-   --  Full path of a cache entry: <root>/<aa>/<key>.  Cache_Root is stored
+   --  Full path of a cache entry: <root>/<aa>/<key>. Cache_Root is stored
    --  without a trailing separator; Entry_Path adds the joining slashes.
    function Entry_Path (Key : String) return String is
    begin
@@ -88,18 +88,18 @@ package body Adacovex.Cache is
    end Default_Cache_Dir;
 
    --  In-memory map of file path -> (size, digest) recorded at the last
-   --  Hash_File call.  It is bounded: when the map reaches Stamp_Map_Cap
+   --  Hash_File call. It is bounded: when the map reaches Stamp_Map_Cap
    --  entries, new paths are not inserted (a period of pathological churn
-   --  just causes a re-hash).  The size is recorded on insertion, so a
+   --  just causes a re-hash). The size is recorded on insertion, so a
    --  changed content with an identically-sized file is served the stale
    --  digest only within one process and one run -- the map is never
    --  persisted, and a size change always forces a fresh hash.
    --
-   --  Layout is cache-line friendly.  Lookups probe the compact scalar
+   --  Layout is cache-line friendly. Lookups probe the compact scalar
    --  arrays (hash, size, length) and touch the 2048-byte name buffer only
-   --  when all three scalars match a candidate.  The table is
+   --  when all three scalars match a candidate. The table is
    --  open-addressed on a 32-bit FNV-1a hash of the path, so a hit probes
-   --  one or two slots instead of scanning the whole map.  A slot whose
+   --  one or two slots instead of scanning the whole map. A slot whose
    --  Stamp_Hash is Empty_Hash is free.
    Stamp_Map_Cap : constant := 4096;  --  power of two
    subtype Stamp_Index is Natural range 0 .. Stamp_Map_Cap - 1;
@@ -112,7 +112,7 @@ package body Adacovex.Cache is
    Stamp_Digest  : array (Stamp_Index) of String (1 .. 64) :=
      (others => (others => ' '));
 
-   --  FNV-1a hash of Path, folded into the table range.  The wrapping
+   --  FNV-1a hash of Path, folded into the table range. The wrapping
    --  Unsigned_32 arithmetic keeps the multiply in range; the fold is a
    --  power-of-two mask (Stamp_Map_Cap is a power of two), which the
    --  compiler turns into a simple and.
@@ -127,7 +127,7 @@ package body Adacovex.Cache is
       return Integer (H and Interfaces.Unsigned_32 (Stamp_Map_Cap - 1));
    end Stamp_Hash_Of;
 
-   --  Current stamp of a file: size (or -1 when Size raises).  One stat
+   --  Current stamp of a file: size (or -1 when Size raises). One stat
    --  call (Ada.Directories.Size answers presence and size in the same
    --  __gnat_named_file_length stat and raises when the file is missing),
    --  so the fast path never opens the file and never pays a separate
@@ -141,11 +141,11 @@ package body Adacovex.Cache is
          return -1;
    end File_Size;
 
-   --  Find Path in the stamp map.  Returns the index or -1.  Open
+   --  Find Path in the stamp map. Returns the index or -1. Open
    --  addressing with linear probing: the probe starts at the path hash
    --  and walks forward until an empty slot (not present) or a full match
    --  (hash value, stored length, then the stored name slice of exactly
-   --  that length).  The earlier bug compared the full fixed-size name
+   --  that length). The earlier bug compared the full fixed-size name
    --  buffer (2048 chars) against the real path, so the length never
    --  matched and the fast path silently never fired -- every file was
    --  re-read and re-hashed on every run.
@@ -172,14 +172,14 @@ package body Adacovex.Cache is
    end Stamp_Find;
 
    --  Serve a previously-remembered digest when Path's size still matches
-   --  the size recorded with that digest.  The path must be the same
-   --  string (a re-scan of the same file).  The function returns "" when
+   --  the size recorded with that digest. The path must be the same
+   --  string (a re-scan of the same file). The function returns "" when
    --  there is no matching stamp (the caller then falls back to
-   --  Hash_File).  Stamp_Hits / Stamp_Misses count both outcomes so tests
-   --  and diagnostics can see whether the fast path fired.  The map lookup
+   --  Hash_File). Stamp_Hits / Stamp_Misses count both outcomes so tests
+   --  and diagnostics can see whether the fast path fired. The map lookup
    --  runs BEFORE the stat: a miss (a path never hashed in this process)
    --  then costs no stat at all -- the file is read and hashed anyway on
-   --  the fallback path.  A hit costs exactly one stat, still far below
+   --  the fallback path. A hit costs exactly one stat, still far below
    --  the read + SHA-256 it avoids.
    function Hash_Fast (Path : String) return String is
       Idx : Integer;
@@ -204,7 +204,7 @@ package body Adacovex.Cache is
 
    --  Remember Path with the given digest (and Path's size at hash time)
    --  so a later Hash_Fast (same path, same size) can reuse the digest
-   --  without re-reading the file.  The size is the strongest cheap
+   --  without re-reading the file. The size is the strongest cheap
    --  proxy for "content unchanged" after this process already hashed the
    --  file; mtime is secondary and not tracked.
    procedure Stamp_Remember (Path : String; Digest : String) is
@@ -235,34 +235,34 @@ package body Adacovex.Cache is
          end if;
          H := (H + 1) mod Stamp_Map_Cap;
       end loop;
-   --  Map full and Path not present: skip the insert.  Pathological
+   --  Map full and Path not present: skip the insert. Pathological
    --  churn just re-hashes.
    end Stamp_Remember;
 
-   --  Read chunk for Hash_File.  64 KiB keeps the read syscall rate low on
+   --  Read chunk for Hash_File. 64 KiB keeps the read syscall rate low on
    --  large source trees (the previous 8 KiB chunk octupled the read
    --  syscalls on big files).
    Hash_Chunk : constant := 65_536;
 
    --  Persistent stat-stamp index -- the cross-process extension of the
-   --  in-process stamp map above.  The in-process map dies with the run, so
+   --  in-process stamp map above. The in-process map dies with the run, so
    --  every warm adacovex invocation still opened and re-hashed every
    --  unchanged file (source files for scan keys, manifest files and whole
-   --  vendored trees for graph keys).  This index keeps the (size, mtime,
+   --  vendored trees for graph keys). This index keeps the (size, mtime,
    --  digest) triples on disk in ONE machine-local file (exactly like
    --  git's index, or a language server's workspace snapshot), so
    --  --cache-dir redirection and cache wipes never cost a re-hash, and a
    --  lookup costs ZERO extra syscalls after the one-time load.
    --
    --  1.44.0 first shipped a per-file store (<stamps>/<sha-256-of-path>,
-   --  one text record per file).  Its warm-run measurement on this tree
+   --  one text record per file). Its warm-run measurement on this tree
    --  exposed the flaw: each lookup paid an open + four short reads, so
    --  stamping SMALL files was a net loss (the lookup cost more than the
    --  re-hash) and the store was size-gated at 16 KiB, which left the 36
-   --  warm re-reads of the .ads sources on the table.  Packing all records
+   --  warm re-reads of the .ads sources on the table. Packing all records
    --  into one binary index (loaded once, flushed in bulk) drives the
    --  per-lookup cost to zero, so every file -- small sources included --
-   --  is worth stamping.  This mirrors git's own evolution: the index is
+   --  is worth stamping. This mirrors git's own evolution: the index is
    --  one file, not one file per path.
    --
    --  Two safety rules keep a stale digest from ever being served for
@@ -272,7 +272,7 @@ package body Adacovex.Cache is
    --  * a file modified during the second the record was taken is never
    --    recorded (git's racy-clean rule -- the mtime has not yet provably
    --    stabilised).
-   --  Records expire after 30 days.  Residual exposure is an edit that
+   --  Records expire after 30 days. Residual exposure is an edit that
    --  restores both the size and the second-granularity mtime of the
    --  stamped state -- the same class of trade every dirty-tracker
    --  accepts, and it self-heals on the next size or mtime change.
@@ -288,7 +288,7 @@ package body Adacovex.Cache is
       return Home & "/.adacovex/stamps";
    end Stamp_Store_Root;
 
-   --  The single index file: <stamps>/index.bin.  Binary layout (little-
+   --  The single index file: <stamps>/index.bin. Binary layout (little-
    --  endian via Stream_Element writes, one flat buffer):
    --    magic "ADASTMP1" (8 bytes)
    --    per slot (fixed 4096 slots, probed in the same order as the
@@ -403,7 +403,7 @@ package body Adacovex.Cache is
       return Long_Long_Integer (X);
    end Get_U64;
 
-   --  Load the index once per process.  A missing, stale-magic, or corrupt
+   --  Load the index once per process. A missing, stale-magic, or corrupt
    --  file leaves the table empty (everything re-hashes and re-records;
    --  no error is surfaced -- the index is a cache, never a truth source).
    procedure PStamp_Load is
@@ -525,7 +525,7 @@ package body Adacovex.Cache is
    end PStamp_Load;
 
    --  Flush the whole persistent table to the single index file (one
-   --  write).  Called after every PStamp_Flush_Every records; a process
+   --  write). Called after every PStamp_Flush_Every records; a process
    --  exit before a flush only loses recent stamps (they re-hash once).
    procedure PStamp_Flush is
       use Ada.Streams;
@@ -579,11 +579,11 @@ package body Adacovex.Cache is
       end;
    end PStamp_Flush;
 
-   --  Look up Path in the persistent index.  Sz is the file's current size
+   --  Look up Path in the persistent index. Sz is the file's current size
    --  and Mt its mtime in OS seconds (both captured by the caller before
-   --  the lookup).  The stored (size, mtime) pair must match exactly and
+   --  the lookup). The stored (size, mtime) pair must match exactly and
    --  the record must be younger than Stamp_TTL_Days; anything else is a
-   --  miss (Dig_Len = 0).  Cost after the one-time load: pure memory -- no
+   --  miss (Dig_Len = 0). Cost after the one-time load: pure memory -- no
    --  syscalls at all.
    procedure PStamp_Lookup
      (Path    : String;
@@ -630,7 +630,7 @@ package body Adacovex.Cache is
    --  Files modified during the current second are skipped (git's
    --  racy-clean rule): their mtime has not yet provably stabilised, so
    --  recording now could serve a digest of pre-edit content on the next
-   --  run.  The file simply stays uncached for this run and becomes
+   --  run. The file simply stays uncached for this run and becomes
    --  stampable on the next.
    procedure PStamp_Record
      (Path : String;
@@ -680,7 +680,7 @@ package body Adacovex.Cache is
    end PStamp_Record;
 
    --  Pending record from the pre-read decision in Hash_File: the path,
-   --  and the (size, mtime) pair captured BEFORE the file was read.  When
+   --  and the (size, mtime) pair captured BEFORE the file was read. When
    --  the read succeeds, the digest joins the pair and the record is
    --  complete -- no stats after the read.
    P_Stash_Valid : Boolean := False;
@@ -720,7 +720,7 @@ package body Adacovex.Cache is
    end PStamp_Record_Stashed;
 
    --  Drop every in-process stamp and every persistent record still
-   --  unflushed, then rewrite the index.  Used by Reset_Process_Stamps and
+   --  unflushed, then rewrite the index. Used by Reset_Process_Stamps and
    --  by the serve-mode refresh path.
    procedure PStamp_Reset_All is
    begin
@@ -740,11 +740,11 @@ package body Adacovex.Cache is
       if Fast'Length = 64 then
          return Fast;
       end if;
-      --  Second fast path: the persistent stat-stamp index.  Two stats
+      --  Second fast path: the persistent stat-stamp index. Two stats
       --  (size + mtime) against the stored pair replace the open, read,
       --  close, and SHA-256 of a re-hash -- for EVERY file size, small
       --  sources included, because the packed index makes a lookup free
-      --  after its one-time load.  The captured (Sz, Mt) pair is carried
+      --  after its one-time load. The captured (Sz, Mt) pair is carried
       --  into the record path below, so a miss costs NO extra stats.
       declare
          Sz   : Long_Long_Integer := -1;
@@ -766,10 +766,10 @@ package body Adacovex.Cache is
             --  Consulted but not answered (first-ever file, size/mtime
             --  change, or stale record): a real read follows.
             Persistent_Stamp_Misses := Persistent_Stamp_Misses + 1;
-            --  Miss.  Before the real read, take the racy-clean decision
+            --  Miss. Before the real read, take the racy-clean decision
             --  ONCE here (one Modification_Time stat): a file modified
             --  during the current second is hashed fresh and never
-            --  recorded; anything older is recordable.  The pair (Sz, Mt)
+            --  recorded; anything older is recordable. The pair (Sz, Mt)
             --  was captured before the read, so the record describes the
             --  file as it was read.
             declare
@@ -882,7 +882,7 @@ package body Adacovex.Cache is
          return;
       end if;
       --  No Exists() probe: the Open below answers presence in the same
-      --  errno check.  The old shape paid two stats per load (Exists then
+      --  errno check. The old shape paid two stats per load (Exists then
       --  Size) and every miss doubled them.
       begin
          Size := Natural (Ada.Directories.Size (DDir));
@@ -935,16 +935,16 @@ package body Adacovex.Cache is
       return Ada.Directories.Exists (DDir);
    end Exists;
 
-   --  Current eviction cap (entries retained).  Set via Set_Cache_Policy.
+   --  Current eviction cap (entries retained). Set via Set_Cache_Policy.
    Cache_Cap : Positive := 4096;
 
-   --  Location of the per-tool version-probe files.  Probes describe the
+   --  Location of the per-tool version-probe files. Probes describe the
    --  *machine's* toolchain (which executables exist on PATH and their
    --  --version output), not a particular project's scan results, so they
    --  live in a stable directory that --cache-dir changes and cache wipes
    --  do not affect: wiping the result cache must not cost re-probing
    --  every tool (each probe spawns a subprocess; node/hg/mandb boot an
-   --  interpreter).  A fixed probe root keeps a 7-day TTL the only reason
+   --  interpreter). A fixed probe root keeps a 7-day TTL the only reason
    --  a known toolchain ever re-probes.
    function Probe_Root return String is
       Home : constant String :=
@@ -956,13 +956,13 @@ package body Adacovex.Cache is
    end Probe_Root;
 
    --  Identity of a tool's installed binary: the PATH-resolved executable
-   --  path, its size, and its mtime, joined with '|'.  The probe cache
+   --  path, its size, and its mtime, joined with '|'. The probe cache
    --  stores this image next to the version it probed; a later lookup that
    --  presents a different image (binary upgraded, replaced, or shadowed
-   --  by a PATH change) invalidates the stored answer.  This is the same
+   --  by a PATH change) invalidates the stored answer. This is the same
    --  identity rule the persistent stamp index uses for source files:
    --  cache entries are only as valid as the stat identity of the object
-   --  they describe.  "" when the tool is not on PATH (the caller then
+   --  they describe. "" when the tool is not on PATH (the caller then
    --  never probes).
    function Tool_Fingerprint (Exe_Path : String) return String is
       Sz : Long_Long_Integer := -1;
@@ -996,7 +996,7 @@ package body Adacovex.Cache is
 
    --  <probes>/<tool>.v2 -- per-tool version-probe file, outside the
    --  two-level entry tree so probes never collide with content-hashed blobs
-   --  and are cheap to check.  The ".v2" suffix salts the namespace: the
+   --  and are cheap to check. The ".v2" suffix salts the namespace: the
    --  1.33 probe behaviour (flag fallbacks, `go version`, v/go token
    --  stripping) differs from the 1.32 single-flag probe, so old probe
    --  files must not be served as if they were fresh.
@@ -1042,7 +1042,7 @@ package body Adacovex.Cache is
       begin
          Ada.Text_IO.Open (F, Ada.Text_IO.In_File, Path);
          --  Line 1: the binary fingerprint the answer was probed from.
-         --  Line 2: the version.  A fingerprint mismatch (upgraded or
+         --  Line 2: the version. A fingerprint mismatch (upgraded or
          --  replaced binary, PATH shadowing) discards the stored answer.
          --  A pre-fingerprint file (one line, v1.45.0 and earlier) has no
          --  second line and no match: reported as not found.
@@ -1105,17 +1105,17 @@ package body Adacovex.Cache is
       end;
    end Put_Probe;
 
-   --  Location of the registry-metadata files.  Machine-local
+   --  Location of the registry-metadata files. Machine-local
    --  (~/.adacovex/meta/), outside the result cache, exactly like the
    --  system-tool probe store: a resolved registry answer describes the
    --  package at its recorded version, not the project's scan state, so
    --  wiping the result cache (or pointing --cache-dir at a fresh
-   --  directory) must not cost a full re-resolution.  Measured on the
+   --  directory) must not cost a full re-resolution. Measured on the
    --  self-audit tree: a full-cold run spent ~3.9 s of ~4.0 s wall inside
    --  the 11 registry CLI spawns (pnpm view, pip index versions, alr
    --  show); with the machine-local meta store warm, the same cold run
-   --  drops to tens of milliseconds.  A stale or edited answer
-   --  self-heals via the 7-day TTL (Probe_TTL_Days).  The key carries the
+   --  drops to tens of milliseconds. A stale or edited answer
+   --  self-heals via the 7-day TTL (Probe_TTL_Days). The key carries the
    --  target so two projects that share the machine store never serve
    --  each other's resolved licence or version.
    function Meta_Root return String is
@@ -1258,7 +1258,7 @@ package body Adacovex.Cache is
       Load (Key, Data, Len, Found);
    end Get_Cached;
 
-   --  Running number of blob stores since the process started.  Eviction
+   --  Running number of blob stores since the process started. Eviction
    --  runs every Eviction_Interval stores instead of after every store, so
    --  a cold run that stores one blob per source file walks the cache tree
    --  once per interval instead of once per file (a full-tree walk is
@@ -1281,11 +1281,11 @@ package body Adacovex.Cache is
 
    --  Visit every ordinary file under Root at depth <= 2 -- the fixed cache
    --  layout is <root>/<aa>/<key> plus <root>/meta/<hash> -- and track the
-   --  one with the oldest modification time.  Iterative, not recursive: the
+   --  one with the oldest modification time. Iterative, not recursive: the
    --  two-level layout means a flat walk always finds every entry, and it
    --  avoids the recursion and the extra stat traffic of the old tree walk
-   --  (eviction runs in a loop, so per-step overhead multiplies).  Returns
-   --  "" when Root holds no files.  A deeper nesting is a layout violation
+   --  (eviction runs in a loop, so per-step overhead multiplies). Returns
+   --  "" when Root holds no files. A deeper nesting is a layout violation
    --  and is skipped.
    function Oldest_File (Root : String) return String is
       Search : Search_Type;
@@ -1379,7 +1379,7 @@ package body Adacovex.Cache is
    end Oldest_File;
 
    --  Count the cache entries on disk (ordinary files at depth <= 2 under
-   --  Root, metadata files included).  Flat and iterative for the same
+   --  Root, metadata files included). Flat and iterative for the same
    --  reason as Oldest_File: eviction calls it repeatedly, so every saved
    --  stat is a saved syscall.
    function Count_Files (Root : String) return Natural is

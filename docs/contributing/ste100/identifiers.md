@@ -1,9 +1,9 @@
 # STE100 Technical Names: tools and files
 
 The **tools and files** half of the **Code Identifier Names** category of the
-[STE100 Technical Names](index.md) dictionary.  These terms
+[STE100 Technical Names](index.md) dictionary. These terms
 name the exact tool, command, and file identifiers that appear in the
-documentation.  The report and concept identifiers are on
+documentation. The report and concept identifiers are on
 [reports and concepts](concepts.md).
 
 ## Technical Name: adacovex

@@ -1,7 +1,7 @@
 separate (Adacovex.Parsers.Manifest)
---  Language name for a source file, derived from its extension.  The
---  extension is the source of truth.  A .py file is Python even when a
---  Cargo.toml sits next to it.  The manifest language only breaks ties.
+--  Language name for a source file, derived from its extension. The
+--  extension is the source of truth. A .py file is Python even when a
+--  Cargo.toml sits next to it. The manifest language only breaks ties.
 --  @param Name  File base name (for example "a.py").
 --  @return Language display name ("Python"), or "" for unknown.
 function Extension_Language (Name : String) return String is

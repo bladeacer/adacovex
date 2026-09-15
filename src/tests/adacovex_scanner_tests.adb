@@ -739,7 +739,7 @@ package body Adacovex_Scanner_Tests is
          "Test 21: not overriding function parsed with name Value");
 
       --  Test 22: a cached scan from a different directory must not leak its
-      --  File_Path.  Scan entries are keyed by file content hash. A scan of an
+      --  File_Path. Scan entries are keyed by file content hash. A scan of an
       --  identical file in a second directory used to hit the cached entry from
       --  the first directory. The second directory can be a --coverage-delta or
       --  --compare-base base snapshot. The scan then carried the absolute path
@@ -806,7 +806,7 @@ package body Adacovex_Scanner_Tests is
       end;
 
       --  Test 23: an HLR-looking tag inside a string literal is not a source
-      --  tag; a real comment tag after a string still is.  Generated assets
+      --  tag; a real comment tag after a string still is. Generated assets
       --  (for example the bundled manual's HTML/JS constants) carry `--
       --  HLR-XXXX` examples inside strings, and those must not register as
       --  orphan tags.

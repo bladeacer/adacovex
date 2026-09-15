@@ -1,9 +1,9 @@
 separate (Adacovex.Parsers.Manifest)
 --  Classify a dependency name into a Component_Scope from the collected
---  manifest sets.  A name declared under a [[test-depends-on]] section is
+--  manifest sets. A name declared under a [[test-depends-on]] section is
 --  test (a test-only dependency, regardless of which manifest declared it).
---  A name in the publishing manifest is base.  A name declared only in the
---  dev manifest is dev.  Any other name is transitive.
+--  A name in the publishing manifest is base. A name declared only in the
+--  dev manifest is dev. Any other name is transitive.
 function Classify_Scope (Name : String) return Types.Component_Scope is
 begin
    for I in 1 .. Integer (Test_Names.Length) loop

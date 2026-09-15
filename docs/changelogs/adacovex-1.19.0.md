@@ -26,7 +26,7 @@ The dependency graph the SBOM builds is no longer locked inside `sbom.json`:
 
 - **`GET /api/deps`** on the `--serve` dashboard returns the full dependency
   graph as JSON (name, version, scope, parent, purl, kind), matching the
-  existing `/api/metrics` endpoint style.  The server state now carries the
+  existing `/api/metrics` endpoint style. The server state now carries the
   resolved graph, populated once in serve mode.
 - **`--emit-metrics=PATH`** writes a combined machine-readable export after
   the assessment:
@@ -34,8 +34,8 @@ The dependency graph the SBOM builds is no longer locked inside `sbom.json`:
   API serves, on disk for scripting, dashboards, or archiving.
 
 Both are wired end to end: `emit-metrics` action input, docs/ci-cd.md row,
-and the action-parity gate.  `--emit-metrics` output is uploaded as a CI
-artifact (see C7).  One new server-routing test pins the `/api/deps` route.
+and the action-parity gate. `--emit-metrics` output is uploaded as a CI
+artifact (see C7). One new server-routing test pins the `/api/deps` route.
 
 ### C3: shell auto-completion -- `adacovex completion`
 
@@ -53,20 +53,20 @@ adacovex completion pwsh | Invoke-Expression   # PowerShell
 ```
 
 Zero dependencies: bash uses `compgen`, zsh `_arguments`, fish a
-`complete`-based function, pwsh `Register-ArgumentCompleter`.  The scripts
+`complete`-based function, pwsh `Register-ArgumentCompleter`. The scripts
 complete the current word with a prefix filter against the flag list and
-subcommand names, appending nothing for bare-flag completion.  The new
+subcommand names, appending nothing for bare-flag completion. The new
 `Adacovex.Completion` package (spec + body, docstring-complete, no SPARK
 aspects -- pure string emission) is covered by 13 new CLI-config tests
 (script presence per shell, embedded flag-list check, unknown-shell
-fallback).  `completion` is deliberately a **CLI-only** early-exit mode in
+fallback). `completion` is deliberately a **CLI-only** early-exit mode in
 the action-parity allow-list (like `status` / `man` / `sbom`): CI does not
 need an interactive shell.
 
 ### C4: system-tool probe cache (SBOM speedup)
 
 The SBOM's dev-scope dependency scan probes every referenced system tool's
-version by spawning `<tool> <flag>` -- tens of milliseconds per tool.  The
+version by spawning `<tool> <flag>` -- tens of milliseconds per tool. The
 result is now cached on disk under `<cache-root>/probes/<tool>` with a
 **7-day TTL**, so unchanged toolchains stop paying the spawn cost on every
 run.
@@ -81,7 +81,7 @@ Measured on an 11-tool toolchain (self-assessment, this repo):
 
 `--no-cache` disables the probe cache too (it lives under the cache root).
 The TTL means a toolchain upgrade shows up in the SBOM within a week even on
-machines that never re-probe explicitly.  See
+machines that never re-probe explicitly. See
 [docs/perf-benchmarks.md](../contributing/perf/benchmarks.md#probe-cache).
 
 ### C5: `make bench` -- hyperfine timings + binary size
@@ -90,10 +90,10 @@ A new `bench` target times the assessment pipeline with **hyperfine** when
 installed (bash `time` fallback: no tooling required), measuring cold
 (fresh result + probe cache) and warm (populated caches) runs, and reports
 the **binary size** -- raw and stripped (strip measured on a `/tmp` copy, so
-the build output is never modified).  Numbers are machine-dependent on
+the build output is never modified). Numbers are machine-dependent on
 purpose: the target is a deterministic *recipe*, and it is intentionally
 *not* part of `make check` (a slow CI runner must not fail a build).
-Documented in [docs/perf.md](../contributing/perf/index.md).  Binary size check on the
+Documented in [docs/perf.md](../contributing/perf/index.md). Binary size check on the
 current build: 7.1 MiB, 3.1 MiB stripped (-57%).
 
 ### C6: cyclomatic-complexity gate -- no god objects
@@ -113,7 +113,7 @@ scanner's file-reading loop was extracted into a shared generic line-parser
 `Parse_Table_Row`; the test-result parser's big loop was split into six
 line-style handlers (`Passed`/`Failed`, TAP, Automake, Surefire, Unity)
 plus the category-helper; and the source scanner's file-name extraction
-became a helper.  Worst function complexity fell from 57 to 49, and the
+became a helper. Worst function complexity fell from 57 to 49, and the
 highest-complexity file dropped under the file cap. All thresholds are
 configurable flags and are documented in the tool's module docstring.
 

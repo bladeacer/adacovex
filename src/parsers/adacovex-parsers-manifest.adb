@@ -22,7 +22,7 @@ package body Adacovex.Parsers.Manifest is
 
    --  One requirement line of a requirements*.txt: package name + optional
    --  pinned version ("requests==2.28.1" -> name "requests", version
-   --  "2.28.1").  Used to register the project root's Python requirements as
+   --  "2.28.1"). Used to register the project root's Python requirements as
    --  pypi-scope dependencies.
    type Req_Item is record
       Name : Types.Desc_Field;
@@ -42,15 +42,15 @@ package body Adacovex.Parsers.Manifest is
    package Path_Vectors is new Ada.Containers.Vectors (Positive, Path_Item);
 
    --  Crate-name sets collected from the publishing manifest (alire.toml or
-   --  the --manifest override) and the dev manifest (alire-dev.toml).  Used
-   --  to classify every resolved dependency into a Component_Scope.  A name
+   --  the --manifest override) and the dev manifest (alire-dev.toml). Used
+   --  to classify every resolved dependency into a Component_Scope. A name
    --  declared under a [[test-depends-on]] section of either manifest is
    --  classified Scope_Test (a test-only dependency).
    Base_Names : Name_Vectors.Vector;
    Dev_Names  : Name_Vectors.Vector;
    Test_Names : Name_Vectors.Vector;
 
-   --  On-disk serialization for the resolved dependency graph.  An
+   --  On-disk serialization for the resolved dependency graph. An
    --  unchanged manifest/lockfile/.gpr set is then served from the result
    --  cache without re-parsing (HLR-SBOM: dependency-graph caching).
    package Graph_Store is new
@@ -90,9 +90,9 @@ package body Adacovex.Parsers.Manifest is
       return S (F .. L);
    end Trim;
 
-   --  Whether S begins with the exact character sequence Pre.  The
-   --  precondition gives the function a contract.  gnatprove analyses the
-   --  function as a unit.  gnatprove does not re-prove the body at every
+   --  Whether S begins with the exact character sequence Pre. The
+   --  precondition gives the function a contract. gnatprove analyses the
+   --  function as a unit. gnatprove does not re-prove the body at every
    --  call site.
    function Starts_With (S : String; Pre : String) return Boolean
    with SPARK_Mode => On, Pre => S'First >= 1 and S'Last < Natural'Last
@@ -164,8 +164,8 @@ package body Adacovex.Parsers.Manifest is
    --  Collect the crate names declared in a manifest's [[depends-on]] (or
    --  [depends-on]) section into Names, and the crate names declared under a
    --  [[test-depends-on]] (or [test-depends-on]) section into Test_Names.
-   --  Missing files are ignored.  A physical line longer than Max_Line
-   --  clears the collected names.  No partial set is kept.
+   --  Missing files are ignored. A physical line longer than Max_Line
+   --  clears the collected names. No partial set is kept.
    procedure Read_Manifest_Deps
      (Path       : String;
       Names      : in out Name_Vectors.Vector;
@@ -173,20 +173,20 @@ package body Adacovex.Parsers.Manifest is
    is separate;
 
    --  Classify a dependency name into a Component_Scope from the collected
-   --  manifest sets.  A name declared under [[test-depends-on]] is test.  A
-   --  name in the publishing manifest is base.  A name declared only in the
-   --  dev manifest is dev.  Any other name is transitive.
+   --  manifest sets. A name declared under [[test-depends-on]] is test. A
+   --  name in the publishing manifest is base. A name declared only in the
+   --  dev manifest is dev. Any other name is transitive.
    function Classify_Scope (Name : String) return Types.Component_Scope
    is separate;
 
-   --  Whether a dependency name carries a test label.  The full name is
+   --  Whether a dependency name carries a test label. The full name is
    --  checked first, then the last path segment after any '/' or ':'
    --  (which covers npm scope prefixes -- "@playwright/test" -- as well
    --  as Go module paths such as "github.com/stretchr/testify", maven
    --  groupId:artifactId names such as "org.testng:testng", and composer
-   --  vendor/package names).  A name (or its last segment) that starts or
+   --  vendor/package names). A name (or its last segment) that starts or
    --  ends with the literal word "test" is test-labelled (for example
-   --  @playwright/test, vitest, supertest, testify, testng).  The
+   --  @playwright/test, vitest, supertest, testify, testng). The
    --  vendored-component scan classifies such components Scope_Test, and
    --  the lockfile readers apply the same heuristic to lockfile-resolved
    --  names.
@@ -197,7 +197,7 @@ package body Adacovex.Parsers.Manifest is
    function Is_Test_Named (Name : String) return Boolean is separate;
 
    --  Collect the dependency names a project manifest declares as
-   --  test-only.  Every supported ecosystem labels its test dependencies
+   --  test-only. Every supported ecosystem labels its test dependencies
    --  in its own way, and every label carries the literal word "test":
    --  package.json sections whose key contains "test" (for example
    --  "testDependencies"), Cargo's [dev-dependencies] section (and any
@@ -205,13 +205,13 @@ package body Adacovex.Parsers.Manifest is
    --  `group :test` blocks, pom.xml <scope>test</scope> dependencies,
    --  pyproject.toml optional-dependencies extras containing "test" (plus
    --  Poetry test group sections), and Package.swift .testTarget
-   --  dependencies.  Ecosystems without a native test-only section
+   --  dependencies. Ecosystems without a native test-only section
    --  (go.mod, requirements*.txt) rely on the name heuristic, which also
    --  applies to lockfile-resolved names (pnpm-lock.yaml,
-   --  package-lock.json, yarn.lock, Cargo.lock).  The first manifest
+   --  package-lock.json, yarn.lock, Cargo.lock). The first manifest
    --  found in Owner_Dir is used, in the same priority order as
-   --  Read_Vendor_Manifest.  Missing or unreadable files leave the set
-   --  unchanged.  A physical line longer than Max_Line stops the read;
+   --  Read_Vendor_Manifest. Missing or unreadable files leave the set
+   --  unchanged. A physical line longer than Max_Line stops the read;
    --  no partial set is kept.
    --  @param Owner_Dir  Directory holding the project manifest that owns a
    --    vendored directory (for example tests/e2e owns
@@ -237,14 +237,14 @@ package body Adacovex.Parsers.Manifest is
 
    --  Resolve a component's version, licence and website from its ecosystem
    --  registry CLI, table-driven across every supported ecosystem (npm,
-   --  pnpm, cargo, go, alr).  Each table row names the CLI tool, its
+   --  pnpm, cargo, go, alr). Each table row names the CLI tool, its
    --  subcommand, and -- per metadata field -- the registry key to query and
-   --  how to parse the value from the command output.  Adding an ecosystem
-   --  is a one-row edit.  Ecosystems with no reliable registry CLI carry an
+   --  how to parse the value from the command output. Adding an ecosystem
+   --  is a one-row edit. Ecosystems with no reliable registry CLI carry an
    --  empty tool and resolve to "": the vendored-manifest scanner still reads
-   --  any in-repo licence file.  This is a best-effort, online fallback used
+   --  any in-repo licence file. This is a best-effort, online fallback used
    --  only when the offline manifest read finds nothing (for the licence) or
-   --  to enrich with registry version and website.  Returns "" for a field
+   --  to enrich with registry version and website. Returns "" for a field
    --  when the tool is missing, the package is unknown, the field is absent,
    --  or the command fails.
    procedure Resolve_Ecosystem_Metadata
@@ -262,12 +262,12 @@ package body Adacovex.Parsers.Manifest is
    --  Register manifest-declared dependencies that no GPR with-clause or
    --  lockfile resolved (or fill in missing metadata on entries that were).
    --  These are base deps from the publishing manifest (alire.toml) and dev
-   --  deps from alire-dev.toml.  Append_Dependency adds a name-only
+   --  deps from alire-dev.toml. Append_Dependency adds a name-only
    --  "pkg:alire/<name>" purl when the crate is not already in the graph.
    --  For every manifest-declared crate, `alr show` supplies the licence and
    --  source repository URL from Alire's local index -- filling them onto a
    --  freshly appended entry or an existing lockfile/GPR one whose source
-   --  could not otherwise be resolved.  No garbage links are produced: a
+   --  could not otherwise be resolved. No garbage links are produced: a
    --  URL is only ever taken from the release metadata, never guessed.
    procedure Register_Manifest_Deps
      (Target_Dir : String;
@@ -281,10 +281,10 @@ package body Adacovex.Parsers.Manifest is
       Graph     : in out Types.Implementation.Component_Vectors.Vector)
    is separate;
 
-   --  Resolve GPR with-clause dependencies into the graph.  Deps already
-   --  present in the graph are skipped.  Transitive GPR dependencies are
+   --  Resolve GPR with-clause dependencies into the graph. Deps already
+   --  present in the graph are skipped. Transitive GPR dependencies are
    --  resolved by parsing the referenced .gpr file (if it lives in the
-   --  project tree), up to a bounded depth to guard against cycles.  A
+   --  project tree), up to a bounded depth to guard against cycles. A
    --  dependency with-claused only from a test project file (a .gpr under
    --  a tests/ test/ or t/ directory, or a test-named project such as
    --  test_runner.gpr) is classified Scope_Test.
@@ -297,9 +297,9 @@ package body Adacovex.Parsers.Manifest is
       From_Test_GPR : Boolean := False)
    is separate;
 
-   --  Language name for a source file, derived from its extension.  The
-   --  extension is the source of truth.  A .py file is Python even when a
-   --  Cargo.toml sits next to it.  The manifest language only breaks ties.
+   --  Language name for a source file, derived from its extension. The
+   --  extension is the source of truth. A .py file is Python even when a
+   --  Cargo.toml sits next to it. The manifest language only breaks ties.
    --  @param Name  File base name (for example "a.py").
    --  @return Language display name ("Python"), or "" for unknown.
    function Extension_Language (Name : String) return String is separate;
@@ -329,8 +329,8 @@ package body Adacovex.Parsers.Manifest is
    function Skip_Walk_Dir (N : String) return Boolean is separate;
 
    --  Count the source files under Root by language, descending at most
-   --  Max_Levels subdirectories (0 = Root's direct children only).  Only
-   --  file names are read (no content), so this is cheap.  When Skip_Vend
+   --  Max_Levels subdirectories (0 = Root's direct children only). Only
+   --  file names are read (no content), so this is cheap. When Skip_Vend
    --  is True, vendored directories are not descended into -- used for the
    --  root project's own language so vendored code is never attributed to
    --  the owning project.
@@ -341,11 +341,11 @@ package body Adacovex.Parsers.Manifest is
       Skip_Vendored : Boolean := False)
    is separate;
 
-   --  Rank a detected language counter vector.  The primary language is
-   --  first.  The primary language is the ecosystem manifest's language (for
-   --  example Rust for Cargo.toml).  The remaining languages follow by file
-   --  count descending.  Ties follow by name ascending.  Join up to 3 with
-   --  " - ".  Mixed-language sources list the top ~3 languages.  This keeps
+   --  Rank a detected language counter vector. The primary language is
+   --  first. The primary language is the ecosystem manifest's language (for
+   --  example Rust for Cargo.toml). The remaining languages follow by file
+   --  count descending. Ties follow by name ascending. Join up to 3 with
+   --  " - ". Mixed-language sources list the top ~3 languages. This keeps
    --  "Ada; C; C++" style labels bounded.
    --  @param Langs  Detected language counters (must be sorted into rank).
    --  @param Primary  Ecosystem language, or "" to rank by file count only.
@@ -373,7 +373,7 @@ package body Adacovex.Parsers.Manifest is
 
    --  Read the first "<Key>" quoted value from a key=value or key:value
    --  file (TOML or JSON, quoted key or bare): locate Key followed by '='
-   --  or ':', then the next double-quoted string.  "" when absent.
+   --  or ':', then the next double-quoted string. "" when absent.
    function File_Quoted_Value (Path : String; Key : String) return String
    is separate;
 
@@ -401,7 +401,7 @@ package body Adacovex.Parsers.Manifest is
    is separate;
 
    --  Collect every non-comment requirement line of a requirements*.txt
-   --  into Reqs (package name + optional pinned version).  An overlong
+   --  into Reqs (package name + optional pinned version). An overlong
    --  physical line stops the read and keeps the entries collected so far.
    --  @param Path  Path of the requirements file.
    --  @param Reqs  Collected requirements (appended).
@@ -410,11 +410,11 @@ package body Adacovex.Parsers.Manifest is
    is separate;
 
    --  Register the project root's Python requirements (requirements*.txt
-   --  at Target_Dir) as dev-scope pypi dependencies of the root.  Each
+   --  at Target_Dir) as dev-scope pypi dependencies of the root. Each
    --  requirement becomes a pkg:pypi/<name>[@<version>] component; the
    --  version, licence and website are resolved from the package registry
    --  (PyPI via `pip index versions`) when the requirements line pins no
-   --  version or the registry answers.  A missing registry or a failing
+   --  version or the registry answers. A missing registry or a failing
    --  resolve keeps the name-only entry -- no licence is ever guessed.
    procedure Register_Root_Python_Deps
      (Target_Dir : String;
@@ -422,7 +422,7 @@ package body Adacovex.Parsers.Manifest is
    is separate;
 
    --  First <Tag>...</Tag> occurrence on a single line of an XML file
-   --  (pom.xml).  Returns the inner text, "" when absent.
+   --  (pom.xml). Returns the inner text, "" when absent.
    function Xml_Tag_Value (Path : String; Tag : String) return String
    is separate;
 
@@ -430,14 +430,14 @@ package body Adacovex.Parsers.Manifest is
    --  priority order): package.json (npm), Cargo.toml (cargo), go.mod
    --  (golang), pyproject.toml (pypi), composer.json (composer), Gemfile
    --  (gem), pom.xml (maven), requirements*.txt (pypi), Package.swift
-   --  (swift).  Name and version come from the manifest when present.  The
+   --  (swift). Name and version come from the manifest when present. The
    --  caller falls back to the directory name or "" otherwise.
    procedure Read_Vendor_Manifest (Dir : String; Info : out Vendor_Manifest)
    is separate;
 
-   --  Language summary of the source files under a directory.  The primary
-   --  (ecosystem) language is first when given.  The top detected languages
-   --  follow by file count.  Join them with "; " (max 3 labels).
+   --  Language summary of the source files under a directory. The primary
+   --  (ecosystem) language is first when given. The top detected languages
+   --  follow by file count. Join them with "; " (max 3 labels).
    --  @param Root  Directory tree to scan (file names only, no content).
    --  @param Max_Levels  Subdirectory depth to descend into.
    --  @param Primary_Kind  Ecosystem primary language or "".
@@ -448,36 +448,36 @@ package body Adacovex.Parsers.Manifest is
    is separate;
 
    --  Add a component for every vendored package overlaid by a docstring
-   --  patch under <target>/.adacovex/patches/.  Add a component for every
-   --  web asset under resources/ or assets/.  Add a component for every
+   --  patch under <target>/.adacovex/patches/. Add a component for every
+   --  web asset under resources/ or assets/. Add a component for every
    --  source file under vendor/ (the classic Alire-era vendored roots).
    --  Each file becomes a scope=vendored component named after its base
-   --  name.  The language comes from the file extension.  Such packages
-   --  have no manifest entry and no .gpr of their own.  They are recorded
+   --  name. The language comes from the file extension. Such packages
+   --  have no manifest entry and no .gpr of their own. They are recorded
    --  as Scope_Vendored dependencies of the root.
    procedure Discover_Vendored_Components
      (Target_Dir : String;
       Graph      : in out Types.Implementation.Component_Vectors.Vector)
    is separate;
 
-   --  Language-agnostic vendored-component discovery.  Walk the target tree
-   --  (excluding VCS, build, and installer noise).  Treat every directory
+   --  Language-agnostic vendored-component discovery. Walk the target tree
+   --  (excluding VCS, build, and installer noise). Treat every directory
    --  whose base name is a known vendor directory as a vendored source.
    --  Scan it shallowly (max 2 levels):
    --    * A directory that carries an ecosystem manifest (package.json,
    --      Cargo.toml, go.mod, pyproject.toml, composer.json, Gemfile,
    --      pom.xml, Package.swift, requirements*.txt) becomes one
-   --      Scope_Vendored component.  The manifest names and versions it.
+   --      Scope_Vendored component. The manifest names and versions it.
    --      Its ecosystem PURL is pkg:npm/... or pkg:cargo/... and more.
    --    * A directory that holds Ada sources (.ads/.adb) without a manifest
-   --      becomes a Scope_Vendored Ada component.  It is named after the
+   --      becomes a Scope_Vendored Ada component. It is named after the
    --      directory (for example a hand-vendored Ada library under
-   --      third_party/).  npm scope containers (node_modules/@scope without
+   --      third_party/). npm scope containers (node_modules/@scope without
    --      a manifest) never become components; the scoped package below
-   --      them does.  pnpm store and shim dirs (.pnpm, .bin) are skipped
+   --      them does. pnpm store and shim dirs (.pnpm, .bin) are skipped
    --      entirely -- they are not packages.
-   --  Every component carries its language or languages.  The languages are
-   --  detected from file extensions.  The ecosystem language is first.  The
+   --  Every component carries its language or languages. The languages are
+   --  detected from file extensions. The ecosystem language is first. The
    --  top 3 are used and mixed sources list the leading languages.
    procedure Discover_Generic_Vendored
      (Target_Dir : String;
@@ -497,7 +497,7 @@ package body Adacovex.Parsers.Manifest is
       Cat  : Tool_Category := C_Build;
    end record;
 
-   --  Build a Tool_Entry from a string literal.  The version-probe flag is
+   --  Build a Tool_Entry from a string literal. The version-probe flag is
    --  deliberately NOT stored: Probe_Version infers it at run time by
    --  trying the standard chain ("--version", then "-v", then "version")
    --  and taking the first flag that yields a version token, so a tool
@@ -512,14 +512,14 @@ package body Adacovex.Parsers.Manifest is
      (S : String; C : Tool_Category := C_Build) return Tool_Entry
    is separate;
 
-   --  The curated system-tool table.  This is a DENY-BY-DEFAULT list, not
+   --  The curated system-tool table. This is a DENY-BY-DEFAULT list, not
    --  a registry of everything on PATH: a tool lands in the SBOM only when
    --  (a) its exact lowercase name appears as a whole word in one of the
    --  project's dev-facing build files (see Should_Scan), and (b) it is
-   --  installed on PATH.  Whole-word matching keeps "makefile" from
+   --  installed on PATH. Whole-word matching keeps "makefile" from
    --  matching "make" and "python3" from matching "python"; scoping the
    --  scan to build files keeps prose and source identifiers from
-   --  registering phantom tools.  Add an entry when a project's build
+   --  registering phantom tools. Add an entry when a project's build
    --  files reference the tool by name -- keep the list alphabetical
    --  within each category.
    System_Tools : constant array (1 .. 63) of Tool_Entry :=
@@ -601,7 +601,7 @@ package body Adacovex.Parsers.Manifest is
    --  captured output (for example "2.55.0" from "git version 2.55.0",
    --  "4.4.1" from "GNU Make 4.4.1", "1.21.5" from "go version go1.21.5").
    --  Returns "" when the tool is missing, when every probe fails, or when
-   --  no digit token is found.  The configured flag is tried first; when it
+   --  no digit token is found. The configured flag is tried first; when it
    --  fails the probe falls back through "--version", "-v", and "version"
    --  and takes the first successful run.
    --  @param Tool  Executable name (must be on PATH).
@@ -614,18 +614,18 @@ package body Adacovex.Parsers.Manifest is
    --  Walk the project tree and read only dev-facing build files: Makefile
    --  variants, shell scripts, GNAT project files, CI workflows, and the
    --  project's build manifests (Cargo.toml, go.mod, pyproject.toml,
-   --  package.json, ...).  Register every known system tool that those files
-   --  reference and that is actually installed on PATH.  Register it as a
-   --  dev-scope dependency of the root.  A Makefile at the project root
-   --  implies make.  This applies even when no recipe spells out the driver
+   --  package.json, ...). Register every known system tool that those files
+   --  reference and that is actually installed on PATH. Register it as a
+   --  dev-scope dependency of the root. A Makefile at the project root
+   --  implies make. This applies even when no recipe spells out the driver
    --  by name.
-   --  Source files (.ads/.adb/.c/.go/.rs/.js/.ts/...) are NOT scanned.  They
+   --  Source files (.ads/.adb/.c/.go/.rs/.js/.ts/...) are NOT scanned. They
    --  are not tool invocations: scanning them is a source of false positives
    --  because identifiers and keywords collide with tool names (every Ada
    --  source contains the word "ada", which matches the curated "ada" tool;
-   --  a Rust file contains "go"; a C file contains "make").  The detection is
+   --  a Rust file contains "go"; a C file contains "make"). The detection is
    --  therefore scoped to files that actually drive a build, never to source
-   --  text.  Docstrings (.md prose) are also skipped: prose is not tool
+   --  text. Docstrings (.md prose) are also skipped: prose is not tool
    --  interaction and words like "make" are common in it.
    procedure Discover_System_Dev_Deps
      (Target_Dir : String;
@@ -644,7 +644,7 @@ package body Adacovex.Parsers.Manifest is
       --  Tool names the project's files reference (deduplicated).
       Referenced : Name_Vectors.Vector;
 
-      --  "tool=version" pairs observed for the referenced tools.  Populated
+      --  "tool=version" pairs observed for the referenced tools. Populated
       --  on a scan (from the version probe) or restored from the tools
       --  cache blob on a hit, so the SBOM does not need to re-run probes
       --  for an unchanged project.
@@ -654,9 +654,9 @@ package body Adacovex.Parsers.Manifest is
          Ver   : Types.Desc_Field;
          VLen  : Natural := 0;
          --  Identity digest of the binary the version was probed from
-         --  (SHA-256 of the fingerprint image).  Restored-from-cache probe
+         --  (SHA-256 of the fingerprint image). Restored-from-cache probe
          --  entries are re-validated against the live binary: a mismatch
-         --  re-probes.  Length 0 = pre-fingerprint blob entry, which never
+         --  re-probes. Length 0 = pre-fingerprint blob entry, which never
          --  validates.
          Fp    : Types.Desc_Field;
          FpLen : Natural := 0;
@@ -750,10 +750,10 @@ package body Adacovex.Parsers.Manifest is
          end if;
       end Push_Dir;
 
-      --  Whether to scan a file for tool references.  Only dev-facing build
+      --  Whether to scan a file for tool references. Only dev-facing build
       --  files are scanned: Makefile variants (by name), build manifests
       --  (package.json, Cargo.toml, go.mod, pyproject.toml, ...), shell
-      --  scripts, GNAT project files, and CI workflows.  Source files are
+      --  scripts, GNAT project files, and CI workflows. Source files are
       --  deliberately excluded -- scanning them produces false positives
       --  (identifiers like "ada", "go", "make" collide with tool names) and
       --  they never invoke build tools by name.
@@ -816,9 +816,9 @@ package body Adacovex.Parsers.Manifest is
       end Note_Tool;
 
       --  Serialize the referenced-tool set and its probe results to a
-      --  cache blob.  Format: comma-separated tool names, then a ';'
+      --  cache blob. Format: comma-separated tool names, then a ';'
       --  separator, then comma-separated "name=version" probe pairs (both
-      --  bounded by the 8192-char blob).  The probe section lets a cache
+      --  bounded by the 8192-char blob). The probe section lets a cache
       --  hit skip re-running version probes and PATH lookups.
       function Serialize_Set return String is
          S : String (1 .. 8192);
@@ -857,7 +857,7 @@ package body Adacovex.Parsers.Manifest is
                Add ("=");
                Add (Vr);
                --  Binary-identity digest so a cache hit can re-validate
-               --  each probe against the installed binary.  Entries without
+               --  each probe against the installed binary. Entries without
                --  one (never in a v2 blob) would fail validation on load.
                Add ("@");
                Add (Fd);
@@ -913,7 +913,7 @@ package body Adacovex.Parsers.Manifest is
          end if;
 
          --  Probe section: parse "name=version@fpdigest" comma-separated
-         --  pairs.  A pair without '@' (pre-fingerprint blob) keeps an
+         --  pairs. A pair without '@' (pre-fingerprint blob) keeps an
          --  empty digest, which never validates -- the tool re-probes.
          Start := Sep + 1;
          for I in Sep + 1 .. Blob'Last loop
@@ -977,9 +977,9 @@ package body Adacovex.Parsers.Manifest is
 
       --  Record a probe result for a referenced tool (deduplicated).
 
-      --  Whether C bounds a tool-name word in a line.  A word is a maximal
+      --  Whether C bounds a tool-name word in a line. A word is a maximal
       --  run of lowercase letters, digits, underscore, and hyphen
-      --  ([a-z0-9_-]).  Uppercase letters do not start or continue a word,
+      --  ([a-z0-9_-]). Uppercase letters do not start or continue a word,
       --  so "Makefile" and "MAKE" never match the lowercase tool "make".
       function Is_Word_Char (C : Character) return Boolean is
       begin
@@ -991,11 +991,11 @@ package body Adacovex.Parsers.Manifest is
       end Is_Word_Char;
 
       --  When the word at Line (W_First .. W_Last) names one of the curated
-      --  system tools, record it via Note_Tool.  The match is
-      --  case-sensitive.  Only words whose length equals a tool name are
+      --  system tools, record it via Note_Tool. The match is
+      --  case-sensitive. Only words whose length equals a tool name are
       --  compared, so a line is scored once per word instead of once per
-      --  tool.  "make" matches in "make build".  "make" does not match in
-      --  "Makefile" (capital M), "makefile", or "makefiles".  "python"
+      --  tool. "make" matches in "make build". "make" does not match in
+      --  "Makefile" (capital M), "makefile", or "makefiles". "python"
       --  does not match inside "python3".
       --  @param Line  Line of text to search.
       --  @param W_First  First index of the word in Line.
@@ -1081,8 +1081,8 @@ package body Adacovex.Parsers.Manifest is
             Adacovex.Parsers.Read_Line
               (F, Path, Line_Num, Line, Last, Overflow);
             if Overflow then
-               --  A physical line longer than Max_Line.  Stop scanning this
-               --  file.  A truncated file then never yields a partial tool
+               --  A physical line longer than Max_Line. Stop scanning this
+               --  file. A truncated file then never yields a partial tool
                --  set.
                Close (F);
                return;
@@ -1091,9 +1091,9 @@ package body Adacovex.Parsers.Manifest is
                  (Line (1 .. Last), "System_Tools : constant array")
               > 0
             then
-               --  This file declares the curated tool table.  Every entry is
-               --  a literal tool name by construction.  References found
-               --  here can register every installed tool.  This happens
+               --  This file declares the curated tool table. Every entry is
+               --  a literal tool name by construction. References found
+               --  here can register every installed tool. This happens
                --  regardless of whether the project actually uses the tool.
                Close (F);
                return;
@@ -1108,10 +1108,10 @@ package body Adacovex.Parsers.Manifest is
             end if;
       end Scan_File;
 
-      --  Input key for the referenced-tools cache.  It combines the same
+      --  Input key for the referenced-tools cache. It combines the same
       --  content hashes that Graph_Key uses (manifest, dev manifest, lock,
       --  vendored hash, language summary, GPR files) with the source-tree
-      --  content hash.  The system-tool reference scan reads the same
+      --  content hash. The system-tool reference scan reads the same
       --  project files, so an unchanged project has an unchanged key and the
       --  cached set is served without re-walking the tree or re-reading a
       --  file.
@@ -1135,12 +1135,12 @@ package body Adacovex.Parsers.Manifest is
          end Add;
       begin
          --  Source_Tree_Hash covers every file the scan reads, so it alone
-         --  determines the referenced-tool set.  The tool-table fingerprint
+         --  determines the referenced-tool set. The tool-table fingerprint
          --  invalidates the key when the System_Tools constant changes within
-         --  a release.  Names and categories are folded in (the stored
+         --  a release. Names and categories are folded in (the stored
          --  version-probe flag is gone: Probe_Version infers it at run
          --  time), so editing the table self-invalidates the cache -- no
-         --  hand-maintained "|tools-vN|" salt bump to forget.  (The 1.33-era
+         --  hand-maintained "|tools-vN|" salt bump to forget. (The 1.33-era
          --  control of that same risk relied on a manually bumped salt; a
          --  forgotten bump served stale probe results within a release.)
          --  The "|probe-fb:...|" token also separates this namespace from
@@ -1162,12 +1162,12 @@ package body Adacovex.Parsers.Manifest is
          return "tools:" & Adacovex.Cache.Hash_String (Comb (1 .. CLen));
       end Tools_Key;
 
-      --  Source-tree content hash used by Tools_Key.  Walks the same
+      --  Source-tree content hash used by Tools_Key. Walks the same
       --  directories and files that Discover_System_Dev_Deps scans and
-      --  combines per-file digests.  This is what makes the tool-set cache
+      --  combines per-file digests. This is what makes the tool-set cache
       --  sound: a file edit that adds or removes a tool reference changes
       --  the hash, so the next run re-scans instead of serving a stale
-      --  set.  The directory-exclusion list matches the main walk exactly.
+      --  set. The directory-exclusion list matches the main walk exactly.
       function Source_Tree_Hash (Dir : String) return String is
          use Ada.Directories;
          type Dir_Entry is record
@@ -1329,19 +1329,19 @@ package body Adacovex.Parsers.Manifest is
       end Has_Makefile;
 
       --  Whether the referenced-tool set (and its probe results) came from
-      --  the on-disk cache.  Used to skip the PATH walk and version probes.
+      --  the on-disk cache. Used to skip the PATH walk and version probes.
       From_Cache : Boolean := False;
 
-      --  Cache key (and its image) for the miss-store below.  Kept at
+      --  Cache key (and its image) for the miss-store below. Kept at
       --  procedure level so the store can run after the probe loop.
       Key_Img : String (1 .. 128) := (others => ' ');
       Key_Len : Natural := 0;
    begin
       --  Serve the referenced-tool set from the on-disk cache when the
-      --  project's inputs are unchanged.  The key covers every file the
+      --  project's inputs are unchanged. The key covers every file the
       --  scan reads, so an unchanged project skips the tree walk and the
       --  per-file word scan entirely; an edit invalidates the key and the
-      --  next run re-scans.  The key value is kept for the store step that
+      --  next run re-scans. The key value is kept for the store step that
       --  runs after a scan.
       declare
          K     : constant String := Tools_Key (Target_Dir);
@@ -1478,14 +1478,14 @@ package body Adacovex.Parsers.Manifest is
       end if;
 
       --  Register every referenced tool that is actually installed on PATH.
-      --  Register it as a dev-scope dependency of the root.  Probe its
-      --  version ("<Tool> <flag>") when possible.  Tools the project does
+      --  Register it as a dev-scope dependency of the root. Probe its
+      --  version ("<Tool> <flag>") when possible. Tools the project does
       --  not reference, or that are not installed, are skipped.
       --  Append_Dependency also deduplicates against manifest, lockfile, and
-      --  GPR deps (for example gnatprove declared in alire-dev.toml).  A
+      --  GPR deps (for example gnatprove declared in alire-dev.toml). A
       --  manifest-pinned tool never appears twice.
       --
-      --  Cache hit: the probe results were restored with the set.  Each
+      --  Cache hit: the probe results were restored with the set. Each
       --  restored probe is re-validated against the identity digest of the
       --  tool's installed binary before its version is trusted: a tool
       --  upgraded since the set was cached re-probes here (and refreshes
@@ -1571,9 +1571,9 @@ package body Adacovex.Parsers.Manifest is
                        Adacovex.Cache.Tool_Fingerprint (Exe.all);
                   begin
                      GNAT.OS_Lib.Free (Exe);
-                     --  Version probing spawns a subprocess per tool.  Cache
+                     --  Version probing spawns a subprocess per tool. Cache
                      --  the result on disk (7-day TTL), validated against
-                     --  the binary fingerprint.  Unchanged toolchains then do
+                     --  the binary fingerprint. Unchanged toolchains then do
                      --  not pay tens of milliseconds per referenced tool on
                      --  every run; an upgrade re-probes exactly once.
                      declare
@@ -1581,7 +1581,7 @@ package body Adacovex.Parsers.Manifest is
                         PLen  : Natural := 0;
                         Found : Boolean := False;
                         --  Version text (up to the 4096-char Probe_Version
-                        --  reader cap).  It is copied into a fixed buffer.
+                        --  reader cap). It is copied into a fixed buffer.
                         --  The cache-hit and cache-miss paths then share one
                         --  Append_Dependency call.
                         VBuf  : String (1 .. 4096);
@@ -1629,7 +1629,7 @@ package body Adacovex.Parsers.Manifest is
       end if;
 
       --  Store the freshly scanned set (now including probe results) for
-      --  the next run.  On a cache hit nothing is stored (the entry is
+      --  the next run. On a cache hit nothing is stored (the entry is
       --  still current and complete).
       if not From_Cache and then Key_Len > 0 then
          declare
@@ -1644,12 +1644,12 @@ package body Adacovex.Parsers.Manifest is
    end Discover_System_Dev_Deps;
 
    --  Fingerprint of everything that contributes vendored components to
-   --  the graph.  Every file under the classic vendored roots
+   --  the graph. Every file under the classic vendored roots
    --  (<target>/.adacovex/patches, resources, vendor, assets) is included.
    --  Every file under the language-agnostic vendored directories that
    --  Discover_Generic_Vendored discovers is included (deps, third_party,
-   --  node_modules, and more, hashed to depth 3).  Adding, removing, or
-   --  editing any of those files changes the digest.  The cached graph is
+   --  node_modules, and more, hashed to depth 3). Adding, removing, or
+   --  editing any of those files changes the digest. The cached graph is
    --  then invalidated correctly.
    --  Returns "" when no vendored input exists.
    --  @param Target_Dir  Project root directory.
@@ -1699,7 +1699,7 @@ package body Adacovex.Parsers.Manifest is
       end Add;
 
       --  Hash every regular file under Root, descending at most Max_Levels
-      --  subdirectories.  It uses its own stack.  The outer vendor walk is
+      --  subdirectories. It uses its own stack. The outer vendor walk is
       --  then unaffected.
       procedure Hash_Tree (Root : String; Max_Levels : Natural) is
          H_Stack  : Dir_Stacks.Vector;
@@ -1780,7 +1780,7 @@ package body Adacovex.Parsers.Manifest is
 
       --  Whether a file name is a supported-language project manifest that
       --  can own a vendored directory (the file set Collect_Owner_Test_Names
-      --  reads, plus the npm lockfiles it scans).  Hashing these files makes
+      --  reads, plus the npm lockfiles it scans). Hashing these files makes
       --  the graph key sound: editing the owning manifest's test-labelled
       --  sections (or its npm lockfiles) invalidates the cached graph so the
       --  scope classification is recomputed.
@@ -1814,11 +1814,11 @@ package body Adacovex.Parsers.Manifest is
       Hash_Tree (T & "/assets", 99);
 
       --  Language-agnostic vendored directories anywhere in the tree (same
-      --  discovery walk as Discover_Generic_Vendored, shallow).  Supported-
+      --  discovery walk as Discover_Generic_Vendored, shallow). Supported-
       --  language project manifests that can own a vendored directory (for
       --  example tests/e2e/package.json owning tests/e2e/node_modules) are
       --  hashed so an edit to their test-labelled sections invalidates the
-      --  cached graph.  The manifests inside vendor roots are already
+      --  cached graph. The manifests inside vendor roots are already
       --  covered by the Hash_Tree calls above.
       Dir_Stack.Clear;
       Push_Dir (Dir_Stack, Target_Dir, 0, 99);
@@ -1872,12 +1872,12 @@ package body Adacovex.Parsers.Manifest is
 
    --  Combined content hash of everything that shapes the dependency graph.
    --  The publishing manifest, the dev manifest, and the alire.lock are
-   --  included.  Every .gpr file collected from the project tree is
-   --  included.  The vendored directories (classic roots and language-
-   --  agnostic vendor dirs) are included.  The root project's detected
-   --  language mix is included.  It is a cheap probe of the source tree's
-   --  file-name distribution.  A source-language change then invalidates
-   --  the cached graph too.  Returns "" when no input could be hashed.
+   --  included. Every .gpr file collected from the project tree is
+   --  included. The vendored directories (classic roots and language-
+   --  agnostic vendor dirs) are included. The root project's detected
+   --  language mix is included. It is a cheap probe of the source tree's
+   --  file-name distribution. A source-language change then invalidates
+   --  the cached graph too. Returns "" when no input could be hashed.
    --  Nothing is cached in that case.
    --  @param Target_Dir  Project root directory (for alire-dev.toml,
    --    alire/alire.lock, the vendored dirs, and the root language probe,
@@ -2017,7 +2017,7 @@ package body Adacovex.Parsers.Manifest is
 
       --  Serve a previously resolved (unchanged) graph straight from the
       --  on-disk result cache instead of re-parsing the lockfile and every
-      --  .gpr file.  The directory walk above is cheap.  The recursive GPR
+      --  .gpr file. The directory walk above is cheap. The recursive GPR
       --  and lock parsing that it saves is not cheap.
       if Use_Cache then
          declare
@@ -2039,8 +2039,8 @@ package body Adacovex.Parsers.Manifest is
          end;
       end if;
 
-      --  Locate the root .gpr.  Use the manifest project-files entry if
-      --  present.  Otherwise use a .gpr whose project name matches the
+      --  Locate the root .gpr. Use the manifest project-files entry if
+      --  present. Otherwise use a .gpr whose project name matches the
       --  manifest crate name.
       if Proj_File_Len > 0 then
          declare
@@ -2070,7 +2070,7 @@ package body Adacovex.Parsers.Manifest is
            (Root_GPR (1 .. Root_GPR_Len), GPR_Name, GPR_Name_Len, GPR_Deps);
       end if;
 
-      --  Root component (index 1).  Name falls back to the GPR project name.
+      --  Root component (index 1). Name falls back to the GPR project name.
       if Root_Name_Len = 0 then
          if GPR_Name_Len > 0 then
             Set_Field (Root_Name, Root_Name_Len, GPR_Name (1 .. GPR_Name_Len));
@@ -2094,8 +2094,8 @@ package body Adacovex.Parsers.Manifest is
          Set_Path (Root.PURL, Root.PURL_Len, "pkg:alire/" & V);
          Set_Path (Root.Ref, Root.Ref_Len, "pkg:alire/" & V);
       end;
-      --  Root language.  The top languages of the project's own sources are
-      --  used (vendored directories excluded).  The SBOM root component then
+      --  Root language. The top languages of the project's own sources are
+      --  used (vendored directories excluded). The SBOM root component then
       --  records the language mix that created it (top 3 for mixed trees).
       declare
          Root_T     : constant String :=
@@ -2147,16 +2147,16 @@ package body Adacovex.Parsers.Manifest is
       --  scope=vendored dependencies of the root.
       Discover_Vendored_Components (Target_Dir, Graph);
 
-      --  Add language-agnostic vendored components.  These are ecosystem
+      --  Add language-agnostic vendored components. These are ecosystem
       --  manifests (package.json, Cargo.toml, and more) and Ada library dirs
       --  under any vendor-named directory (third_party, deps, node_modules,
-      --  and more).  Each has its ecosystem PURL and detected language or
+      --  and more). Each has its ecosystem PURL and detected language or
       --  languages.
       Discover_Generic_Vendored (Target_Dir, Graph);
 
       --  Register manifest-declared deps (base from alire.toml, dev from
-      --  alire-dev.toml) that no GPR with-clause or lockfile resolved.  The
-      --  SBOM captures the declared dependency set.  This applies even for
+      --  alire-dev.toml) that no GPR with-clause or lockfile resolved. The
+      --  SBOM captures the declared dependency set. This applies even for
       --  zero-`with` projects whose toolchain deps live only in the dev
       --  manifest.
       Register_Manifest_Deps (Target_Dir, Graph, Base_Names, Dev_Names);
@@ -2167,8 +2167,8 @@ package body Adacovex.Parsers.Manifest is
 
       Success := Root.Name_Len > 0;
 
-      --  Store the freshly resolved graph for the next run.  Store it only on
-      --  success.  A partial graph is then never cached.
+      --  Store the freshly resolved graph for the next run. Store it only on
+      --  success. A partial graph is then never cached.
       if Use_Cache then
          declare
             K  : constant String :=

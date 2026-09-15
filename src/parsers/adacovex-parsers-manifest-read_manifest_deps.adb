@@ -3,8 +3,8 @@ separate (Adacovex.Parsers.Manifest)
 --  [depends-on]) section into Names, and the crate names declared under a
 --  [[test-depends-on]] (or [test-depends-on]) section into Test_Names.
 --  Test-depends-on is the manifest label for test-only dependencies: the
---  parser classifies such crates as Scope_Test.  Missing files are ignored.
---  A physical line longer than Max_Line clears the collected names.  No
+--  parser classifies such crates as Scope_Test. Missing files are ignored.
+--  A physical line longer than Max_Line clears the collected names. No
 --  partial set is kept.
 procedure Read_Manifest_Deps
   (Path       : String;
@@ -20,7 +20,7 @@ is
    In_Section : Boolean := False;
    Is_Test    : Boolean := False;
 begin
-   --  Clear only this procedure's own set.  Test_Names accumulates across
+   --  Clear only this procedure's own set. Test_Names accumulates across
    --  the publishing and dev manifest reads; the caller clears it once
    --  per graph build.
    Names.Clear;
@@ -39,7 +39,7 @@ begin
       Line_Num := Line_Num + 1;
       Adacovex.Parsers.Read_Line (F, Path, Line_Num, Line, Last, Overflow);
       if Overflow then
-         --  No partial dependency set is kept.  Classification falls
+         --  No partial dependency set is kept. Classification falls
          --  back to base/transitive only.
          Names.Clear;
          Close (F);

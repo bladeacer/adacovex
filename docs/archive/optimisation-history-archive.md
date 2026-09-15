@@ -1,10 +1,15 @@
 # Performance optimisation history: earlier releases
 
+> **Archived record.**  These entries cover releases 1.27.0 to 1.42.0.
+> The live history continues on the
+> [optimisation history](../contributing/perf/optimisation-history.md).
+
 This page is the earlier half of the [performance optimisation
-history](optimisation-history.md), from 1.42.0 back to 1.27.0.  Each entry
-names the measurement that drove it.  The 1.43.0 and later entries, and the
-benchmark methodology, are on the [optimisation history](optimisation-history.md)
-and the [performance page](index.md).
+history](../contributing/perf/optimisation-history.md), from 1.42.0 back to
+1.27.0. Each entry names the measurement that drove it. The 1.43.0 and later
+entries, and the benchmark methodology, are on the [optimisation
+history](../contributing/perf/optimisation-history.md) and the [performance
+page](../contributing/perf/index.md).
 
 ### Cache I/O block copies + walk-skip set completion (1.42.0)
 

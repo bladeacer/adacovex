@@ -1,7 +1,7 @@
 separate (Adacovex.Parsers.Manifest)
---  Language summary of the source files under a directory.  The primary
---  (ecosystem) language is first when given.  The top detected languages
---  follow by file count.  Join them with "; " (max 3 labels).
+--  Language summary of the source files under a directory. The primary
+--  (ecosystem) language is first when given. The top detected languages
+--  follow by file count. Join them with "; " (max 3 labels).
 --  @param Root  Directory tree to scan (file names only, no content).
 --  @param Max_Levels  Subdirectory depth to descend into.
 --  @param Primary_Kind  Ecosystem primary language or "".

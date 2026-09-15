@@ -4,12 +4,12 @@ separate (Adacovex
 --  lockfile resolved (or fill in missing metadata on entries that were).
 --  These are base deps from the publishing manifest (alire.toml), dev
 --  deps from alire-dev.toml, and test deps from a [[test-depends-on]]
---  section of either manifest.  Append_Dependency adds a name-only
+--  section of either manifest. Append_Dependency adds a name-only
 --  "pkg:alire/<name>" purl when the crate is not already in the graph.
 --  For every manifest-declared crate, `alr show` supplies the licence and
 --  source repository URL from Alire's local index -- filling them onto a
 --  freshly appended entry or an existing lockfile/GPR one whose source
---  could not otherwise be resolved.  No garbage links are produced: a
+--  could not otherwise be resolved. No garbage links are produced: a
 --  URL is only ever taken from the release metadata, never guessed.
 procedure Register_Manifest_Deps
   (Target_Dir : String;
@@ -83,7 +83,7 @@ is
             --  Ask the local index for the crate's licence, version and
             --  source URL (`alr show` answers without network access).
             --  The unified registry resolver tables alire alongside the
-            --  other ecosystems.  When the crate is not in the graph yet,
+            --  other ecosystems. When the crate is not in the graph yet,
             --  bundle them into the new entry; otherwise patch them onto
             --  the existing one so lockfile-resolved dev deps still carry
             --  real release metadata and a real source link.

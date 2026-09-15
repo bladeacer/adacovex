@@ -1,7 +1,7 @@
 separate (Adacovex.Parsers.Manifest)
 --  Collect every non-comment requirement line of a requirements*.txt:
 --  \"requests==2.28.1\" -> name \"requests\", version \"2.28.1\"; a bare
---  \"requests\" -> name \"requests\", empty version.  An overlong physical
+--  \"requests\" -> name \"requests\", empty version. An overlong physical
 --  line stops the read (the file is never partially trusted beyond the
 --  entries already collected).
 procedure Collect_Req_Entries (Path : String; Reqs : in out Req_Vectors.Vector)

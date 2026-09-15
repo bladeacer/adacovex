@@ -64,11 +64,11 @@ rather than only the single active standard.
 
 ## Proof Results
 
-Platinum, 720/720 VCs proved under gnatprove 16.1.0.  0 unproved, 0 justified.
+Platinum, 720/720 VCs proved under gnatprove 16.1.0. 0 unproved, 0 justified.
 
 ## Traceability
 
-No new HLRs.  Coverage:
+No new HLRs. Coverage:
 
    - `HLR-COMPLEXITY` -- C1 warning hygiene in the complexity checker;
    - `HLR-DASH` -- C2 Playwright credit, C3 filter state preservation,

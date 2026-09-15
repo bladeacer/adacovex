@@ -354,13 +354,13 @@ def generate(out: Path, template: Path) -> bool:
         "--  HTML/CSS/JS (dynamic metric cards are injected at the __CARDS__\n"
         "--  placeholder by Adacovex.Renderers.HTML.Render_Dashboard, which\n"
         "--  also fills the __THEME__ placeholder with the initial dashboard\n"
-        "--  theme).  Do not edit by hand; edit resources/ and run make build.\n"
+        "--  theme). Do not edit by hand; edit resources/ and run make build.\n"
     )
     content: str = (
         header
         + "package Adacovex.Dashboard_Template is\n"
         + "\n"
-        + "   -- The full dashboard page shell.  __CARDS__ marks where the\n"
+        + "   -- The full dashboard page shell. __CARDS__ marks where the\n"
         + "   -- dynamic card markup is injected; __THEME__ is replaced with\n"
         + "   -- the initial theme (system / light / dark).\n"
         + "   Template : constant String :=\n"

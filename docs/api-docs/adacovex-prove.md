@@ -1,42 +1,42 @@
 # Adacovex.Prove
 
 GNATprove runner for the ``adacovex prove`` subcommand.
-It resolves a gnatprove executable.  It runs it against a target
-project's root .gpr file.  It leaves a fresh obj/gnatprove/gnatprove.out
+It resolves a gnatprove executable. It runs it against a target
+project's root .gpr file. It leaves a fresh obj/gnatprove/gnatprove.out
 for the standard assessment pipeline to parse.
 
 Resolution priority (lightweight: adacovex only requires ``alr`` on PATH):
 
 #. If the target's alire.toml or alire-dev.toml declares gnatprove as
-a dependency, deploy only the gnatprove binary crate.  This crate is
-a self-contained bundle with no dependencies.  Deploy it into
+a dependency, deploy only the gnatprove binary crate. This crate is
+a self-contained bundle with no dependencies. Deploy it into
 ~/.adacovex/toolchain via ``alr -n get gnatprove=<version>``, then run
-it directly.  This avoids the fragile ``alr exec`` path.  That path
+it directly. This avoids the fragile ``alr exec`` path. That path
 used to compose the target's entire dev-manifest dependency set
-(covex, gnatdoc_bin, gnatformat_bin, and more).  Flaky third-party
-downloads in CI cannot fail a proof run.  No dev-manifest swap is
-ever needed.  The manifest can declare the version as a rich set
-expression (``^15.1.0``, ``~15.1.0``, and more).  The leading operator is
-stripped to yield the bare version that alr accepts.  A
-manifest-declared prover is authoritative.  When it cannot be
-deployed, the run fails instead of falling back.  A different
-gnatprove version can change which VCs are discharged.  Results must
-always come from the pinned prover.  Priorities 2 to 5 apply only to
-projects whose manifest does not declare gnatprove.  The first
+(covex, gnatdoc_bin, gnatformat_bin, and more). Flaky third-party
+downloads in CI cannot fail a proof run. No dev-manifest swap is
+ever needed. The manifest can declare the version as a rich set
+expression (``^15.1.0``, ``~15.1.0``, and more). The leading operator is
+stripped to yield the bare version that alr accepts. A
+manifest-declared prover is authoritative. When it cannot be
+deployed, the run fails instead of falling back. A different
+gnatprove version can change which VCs are discharged. Results must
+always come from the pinned prover. Priorities 2 to 5 apply only to
+projects whose manifest does not declare gnatprove. The first
 deployment downloads a ~130 MB bundle through alr (one-time per
-version; a progress line says so up front).  Every later run reuses
+version; a progress line says so up front). Every later run reuses
 the deployed crate under ~/.adacovex/toolchain with no download, and
 two projects pinning different versions keep both toolchains side
 by side there.
 
-#. A gnatprove version pinned globally.  The pin comes from the
+#. A gnatprove version pinned globally. The pin comes from the
 ADACOVEX_GNATPROVE_VERSION environment variable or the
 ``[prove] gnatprove-version = "16.1.0"`` key in
-~/.adacovex/adacovex.toml.  Run_Prove reads it and passes it in as
-Pinned_Version.  The exact version is deployed via
-``alr -n get gnatprove=<version>`` and run directly.  Like the manifest
-pin, it is authoritative.  A failure to deploy is a failure to run.
-It is folded into the proof result-cache identity.  A different pinned
+~/.adacovex/adacovex.toml. Run_Prove reads it and passes it in as
+Pinned_Version. The exact version is deployed via
+``alr -n get gnatprove=<version>`` and run directly. Like the manifest
+pin, it is authoritative. A failure to deploy is a failure to run.
+It is folded into the proof result-cache identity. A different pinned
 version can never reuse a stale proof.
 
 #. A gnatprove already on $PATH.
@@ -44,7 +44,7 @@ version can never reuse a stale proof.
 #. A cached gnatprove in ~/.adacovex/toolchain/bin (download layout) or a
 previously ``alr get``-deployed gnatprove_*/ crate under the same dir.
 
-#. Last resort: a platform toolchain download.  It uses curl.  It is
+#. Last resort: a platform toolchain download. It uses curl. It is
 used only when no deployable, on-PATH, or cached gnatprove is
 available.
 
@@ -130,7 +130,7 @@ end record;
 | `Exe_Path` | Output buffer for the executable path. |
 | `Ident_Len` | Length of the identity fingerprint. |
 | `Identity` | Output buffer for the prover identity fingerprint. |
-| `Pinned_Version` | Global gnatprove version pin ("" = none.  The |
+| `Pinned_Version` | Global gnatprove version pin ("" = none. The |
 | `Success` | True if a usable gnatprove was found. |
 | `Target_Dir` | Project root directory. |
 | `Toolchain_Dir` | Output buffer for the toolchain bin directory. |

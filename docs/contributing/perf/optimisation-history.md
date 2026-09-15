@@ -1,6 +1,6 @@
 # Performance optimisation history
 
-Reverse-chronological record of the optimisations that keep the pipeline and prove paths fast.  Each entry names the measurement that drove it.  Benchmark methodology and current figures are on [Performance](index.md); the `make prove` timing table is on [Prove timing and the optimisation review](prove-timing.md).
+Reverse-chronological record of the optimisations that keep the pipeline and prove paths fast. Each entry names the measurement that drove it. Benchmark methodology and current figures are on [Performance](index.md); the `make prove` timing table is on [Prove timing and the optimisation review](prove-timing.md).
 
 ## Optimisation history
 
@@ -17,7 +17,7 @@ The suspect was the embedded offline manual (`tools/gen-docs.py` ->
 
 - **The generated spec was not stable.** `gen-docs.py` collected assets
   from the *incremental* Sphinx build directory, so pages that a doc move
-  had left behind stayed in the bundle.  A developer tree shipped 217
+  had left behind stayed in the bundle. A developer tree shipped 217
   assets while a fresh clone produced 204 (thirteen dead pages from the
   pre-1.49.0 layout), and `gen-docs.py --check` failed on a fresh clone.
   Because the spec is a proof input, any content change invalidated the
@@ -25,17 +25,17 @@ The suspect was the embedded offline manual (`tools/gen-docs.py` ->
   20-88 s session).
 - **The fix removes the failed work.** Sphinx now builds clean whenever a
   SHA-256 fingerprint of `docs/` changes, and both generators write their
-  Ada spec only when the content changed.  A no-op run keeps the spec's
+  Ada spec only when the content changed. A no-op run keeps the spec's
   mtime, so `alr build` is a true no-op (`gprbuild: "adacovex" up to
 date`, ~0.38 s) instead of recompiling the 28k-line unit and relinking.
 - **Measured effect.** `make prove` on an unchanged tree fell from
   seconds (the recompile plus relink; 20-52 s when the spec flipped and
   the proof re-ran) to **~1.0 s** (five runs), with the result cache at
-  42 hits and 0 misses.  The binary-level benchmark shapes are otherwise
+  42 hits and 0 misses. The binary-level benchmark shapes are otherwise
   flat: pipeline warm 46 ms, prove warm 55 ms, warm `newfstatat` ~6.9k.
 - **The proof input stopped carrying the bundle.** Even with a stable
   spec, a real documentation edit changed the bundled manual and therefore
-  the proof-input hash, so every docs edit cost a fresh proof.  The two
+  the proof-input hash, so every docs edit cost a fresh proof. The two
   generated bundle specs (`adacovex-docs_template.ads`,
   `adacovex-dashboard_template.ads`) are now excluded from that hash: they
   are multi-thousand-line string constants with no subprogram and no check.
@@ -47,7 +47,7 @@ date`, ~0.38 s) instead of recompiling the 28k-line unit and relinking.
 - **The payload itself shrank.** The asset bodies moved from base64 to
   base85 (4 bytes to 5 characters instead of 5.33), and the Furo sidebar
   is stored once per branch under `_nav/` instead of once in each of the
-  191 pages, filled in by `resources/js/book-nav.js`.  Together they take
+  191 pages, filled in by `resources/js/book-nav.js`. Together they take
   the generated spec from 2.34 MB to 1.93 MB (17.3%) and the stripped
   binary from ~5.7 MiB to ~5.3 MiB, against the phase's otherwise flat
   shapes.
@@ -117,7 +117,7 @@ solver floor.
 The 1.43.0 warm profile still showed ~2k stats per file per run: every
 adacovex invocation re-opened and re-hashed every unchanged file (sources
 for scan keys, manifests and vendored trees for graph keys) because the
-1.28.0 stamp map dies with the process.  Language servers solved this
+1.28.0 stamp map dies with the process. Language servers solved this
 class of problem years ago: the
 [Ada Language Server](https://github.com/AdaCore/ada_language_server)
 keeps a persistent indexed file set and re-parses only files whose on-disk
@@ -133,16 +133,16 @@ adacovex adopts the first technique directly:
   A record is `<sha-256-of-path>` holding size, mtime, record time, and
   the digest; a lookup is one open + four short reads and validates two
   stats (size + mtime) against the stored pair.
-- The store is **size-gated at 16 KiB**.  Measured on the self-audit
+- The store is **size-gated at 16 KiB**. Measured on the self-audit
   tree, stamping the 38 small `.ads` sources made warm runs *slower*
   (a lookup costs more than re-hashing a 10 KB file); the gate keeps the
   store for the payloads where re-hashing actually dominates -- vendored
-  manifests, lockfiles, generated assets.  This is the same cost model
+  manifests, lockfiles, generated assets. This is the same cost model
   language servers apply when deciding whether dirty-tracking pays.
 - Two git-proven safety rules keep a stale digest from ever being served:
   the size AND mtime must both match, and a file modified during the
   second the record was written is never recorded (git's racy-clean
-  rule).  A `Reset_Process_Stamps` diagnostic lets tests (and long-lived
+  rule). A `Reset_Process_Stamps` diagnostic lets tests (and long-lived
   `--serve` processes) re-walk files as a fresh run would.
 - Result: warm syscalls ~12k -> ~2k (`newfstatat` ~26.8k -> ~2k on a
   stamped tree), pipeline warm 35 -> 23 ms, pipeline cold 86 -> 60 ms
@@ -157,15 +157,15 @@ and 13.3k of them (~53%) hit `docs/_build` -- the Sphinx build tree of
 the bundled offline manual, a gitignored build product with 461 files.
 Fourteen distinct walkers re-enumerated it per run: the tools-key source
 tree hash, the vendored discovery walk, the graph-key language probe and
-vendored hash, the GPR collection walk, and more.  Four changes cut the
+vendored hash, the GPR collection walk, and more. Four changes cut the
 warm syscall count to ~12k and warm wall to ~35 ms:
 
 - The shared `Skip_Walk_Dir`-governed walks (tools scan, graph key,
   vendored hash) plus the scanner, GPR-collection, and vendored-component
-  walks now skip `_build` explicitly.  `Skip_Walk_Dir` itself deliberately
+  walks now skip `_build` explicitly. `Skip_Walk_Dir` itself deliberately
   does *not* skip `node_modules`: the generic vendored discovery descends
   into it to find package manifests, and its own vendor-scan skip list is
-  unchanged.  A build-product tree is a per-walker decision, not a global
+  unchanged. A build-product tree is a per-walker decision, not a global
   one -- vendor roots must stay discoverable.
 - The `Vendored_Hash` internal tree hash now honours `Skip_Walk_Dir`, so
   the graph-key walk never descends into `.venv`/`alire`/build trees
@@ -182,15 +182,15 @@ this: `perf stat` writes its counter table to stderr, which the old
 `capture_output` + `print(stdout)` shape discarded (the perf sections
 printed adacovex output but no counters), and the `strace ... 2>&1 |
 tail -20` pipe interleaved the workload's stdout with the table and cut
-the header rows.  Both tables now print in full, and a missing `perf` or
+the header rows. Both tables now print in full, and a missing `perf` or
 `strace` fails loudly instead of silently printing nothing.
 
 Deploying a manifest-pinned gnatprove prints a progress line (`deploy:
 gnatprove <v> not in ~/.adacovex/toolchain -- downloading via alr
 (one-time, may take a minute)...`) -- the first deployment downloads a
 ~130 MB bundle through `alr -n get` and a silent minute of nothing read
-as a hang.  The deployment is one-time per version; every later run
+as a hang. The deployment is one-time per version; every later run
 reuses the deployed crate with no download.
 
 Entries from 1.42.0 back to 1.27.0 are on [Performance optimisation
-history: earlier releases](optimisation-history-archive.md).
+history: earlier releases](../../archive/optimisation-history-archive.md).

@@ -55,9 +55,9 @@ click on a box opens its dependency detail panel.
 
 ### C5: Chart text is upright, bounded and readable
 
-- Pie/donut labels and values no longer rotate with each slice.  Charts.css
+- Pie/donut labels and values no longer rotate with each slice. Charts.css
   rotates custom properties by the slice midpoint angle, which flipped numbers
-  in large or non-half slices upside down.  They now render with no transform.
+  in large or non-half slices upside down. They now render with no transform.
 - Horizontal bar category labels are width-bounded with an ellipsis and the
   rows have a minimum height, so long test-category names no longer clip or
   spill off the left edge of the dashboard.
@@ -81,7 +81,7 @@ The Proof tab gains a "How to proceed (Proof Guidance)" card that turns the
 gnatprove unproved counts into concrete next steps per category: Global /
 initialises aspects, initialisation at declaration, loop invariants and range
 preconditions, strengthened Pre/Post contracts, Postconditions for functional
-checks, and Measure / Decreasing clauses for termination.  When every VC is
+checks, and Measure / Decreasing clauses for termination. When every VC is
 proved it reads "No unproved VCs -- the proof is complete."  It reminds the
 reader that a justified VC (`pragma Assume`) never counts as proved.
 
@@ -91,7 +91,7 @@ The Charts gallery no longer repeats information shown on the Overview,
 Proof and Tests tabs: the SPARK-proof donut (duplicated the Overview radar),
 the tests pass/fail donut (duplicated the Overview Tests donut and the Tests
 gauge), the scope stacked bar (duplicated the polar ring) and the docstring
-radar (duplicated the Overview coverage donut).  Every chart in the dashboard
+radar (duplicated the Overview coverage donut). Every chart in the dashboard
 now displays a distinct view of the data.
 
 ### C9: Terminal colour suppressed in CI
@@ -105,7 +105,7 @@ colour now additionally requires that `CI` is unset.
 Prose Americanisms in the user documentation and API reference were corrected
 to British English (`behaviour` -> `behaviour`, `analyse`/`analyse` ->
 `analyse`) in `docs/architecture.md`, `docs/proving.md`,
-`docs/compliance/HLR.md` and `docs/api-docs/adacovex-test-format.md`.  Code
+`docs/compliance/HLR.md` and `docs/api-docs/adacovex-test-format.md`. Code
 identifiers such as `prefers-color-scheme` and `NO_COLOR` are untouched.
 
 ## Fixes
@@ -113,7 +113,7 @@ identifiers such as `prefers-color-scheme` and `NO_COLOR` are untouched.
 ### H1: Dev dependencies report a real licence, version and source URL
 
 Before this release a dev dependency such as `gnatdoc_bin` appeared in the SBOM
-as `NOASSERTION` licence, no version and no source.  `alr show` now supplies
+as `NOASSERTION` licence, no version and no source. `alr show` now supplies
 `GPL-3.0-or-later WITH GCC-exception-3.1`, version `26.0.0` and the
 `https://github.com/AdaCore/gnatdoc` repository, so consumers can identify and
 licence-scan the exact release.
@@ -121,7 +121,7 @@ licence-scan the exact release.
 ### H2: The dependency detail popup is reachable from the diagram view
 
 The detail popup previously lived inside the tree card, so it could not show
-when the nomnoml diagram was the active view.  It now lives at the
+when the nomnoml diagram was the active view. It now lives at the
 `#tab-deps` level and serves any view; combined with the new clickable boxes an
 item can be selected from either view.
 

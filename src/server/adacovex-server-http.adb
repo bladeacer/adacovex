@@ -11,7 +11,7 @@ package body Adacovex.Server.HTTP is
    use GNAT.Sockets;
    use type Ada.Streams.Stream_Element_Offset;
 
-   --  Upper bound for the static task array.  --serve-workers requests a
+   --  Upper bound for the static task array. --serve-workers requests a
    --  smaller pool; the array is sized to the cap and only the requested
    --  number of tasks are started.
    Max_Workers_Cap : constant := 256;
@@ -32,12 +32,12 @@ package body Adacovex.Server.HTTP is
 
    function Is_Header (Line : String; Name : String) return Boolean;
 
-   --  A per-connection receive buffer.  Request lines and headers are read
+   --  A per-connection receive buffer. Request lines and headers are read
    --  through it so one Receive_Socket call fills many lines: reading one
    --  byte per syscall made a typical request (~300 bytes of request line
-   --  plus headers) cost ~300 receive syscalls on the worker.  The reader
+   --  plus headers) cost ~300 receive syscalls on the worker. The reader
    --  pulls 4 KiB at a time and hands out complete CRLF-terminated lines
-   --  from the buffer, refilling only when it runs dry.  A buffer lives in
+   --  from the buffer, refilling only when it runs dry. A buffer lives in
    --  one Worker task for the life of one keep-alive connection, so it
    --  needs no locking.
    type Line_Reader is limited record
@@ -48,8 +48,8 @@ package body Adacovex.Server.HTTP is
       Eof     : Boolean := False;
    end record;
 
-   --  Read one CRLF-terminated line through Reader.  Returns "" on EOF,
-   --  socket error, or an over-long line.  The CRLF is stripped.
+   --  Read one CRLF-terminated line through Reader. Returns "" on EOF,
+   --  socket error, or an over-long line. The CRLF is stripped.
    procedure Read_Line
      (Reader : in out Line_Reader; Line : out String; Last : out Natural);
 
@@ -69,7 +69,7 @@ package body Adacovex.Server.HTTP is
       return C;
    end To_Lower;
 
-   --  The docs asset key for a routed path.  The path is one of "/docs",
+   --  The docs asset key for a routed path. The path is one of "/docs",
    --  "/docs/", or "/docs/<subpath>"; the table is keyed by book-relative
    --  paths ("index.html", "css/general.css", ...), so the prefix is
    --  stripped and the bare manual root maps to the index page.
@@ -127,13 +127,13 @@ package body Adacovex.Server.HTTP is
                Backoff_Ct := 0;
                --  Idle connections must never pin a worker: the pool is
                --  fixed-size, so idle keep-alive connections block every
-               --  worker and stall the next request.  A receive timeout frees
+               --  worker and stall the next request. A receive timeout frees
                --  the worker (and closes the socket) when a connection goes
-               --  silent.  The window is kept short (half a second): a
+               --  silent. The window is kept short (half a second): a
                --  browser opening a page issues many parallel asset requests,
                --  and the pool only has a few workers to serve them from the
                --  accept queue, so a long idle timeout serialises the burst
-               --  behind 4 keep-alive sockets and loads pages slowly.  Short
+               --  behind 4 keep-alive sockets and loads pages slowly. Short
                --  means workers recycle back to Accept_Socket promptly while
                --  a quickly-reused connection still serves its burst.
                Set_Socket_Option
@@ -281,10 +281,10 @@ package body Adacovex.Server.HTTP is
    end Send_Response;
 
    --  Send one docs asset with its HTTP header, streaming the body in
-   --  fixed-size slices.  Assets are stored gzip-compressed and base64-encoded
+   --  fixed-size slices. Assets are stored gzip-compressed and base64-encoded
    --  (see tools/gen-docs.py); the generator chunks every asset into fixed
    --  small bodies so no worker task ever materialises a whole multi-megabyte
-   --  body (or its stream array) on its stack.  Each chunk is decoded here
+   --  body (or its stream array) on its stack. Each chunk is decoded here
    --  and streamed; when Gzipped, the raw gzip bytes go out with a
    --  `Content-Encoding: gzip` header and the browser inflates them.
    procedure Send_Asset_Response
@@ -384,7 +384,7 @@ package body Adacovex.Server.HTTP is
    begin
       Last := 0;
       loop
-         --  Refill when the buffer is drained.  A receive timeout or a
+         --  Refill when the buffer is drained. A receive timeout or a
          --  vanished peer surfaces here as Eof, which the caller turns
          --  into an empty line and a closed connection.
          if Reader.Pos > Reader.Filled then
@@ -440,9 +440,9 @@ package body Adacovex.Server.HTTP is
       end loop;
    end Read_Line;
 
-   --  Strip the query string and fragment off a request path.  Returns the
+   --  Strip the query string and fragment off a request path. Returns the
    --  path up to (and excluding) the first '?' or '#'; an empty result when
-   --  the query/fragment starts at the path's first character.  This is
+   --  the query/fragment starts at the path's first character. This is
    --  routine HTTP path normalisation: browsers pass `?theme=light` and
    --  `#tab` on the same request path, and routing must ignore both.
    function Strip_Query (Path : String) return String is
@@ -480,7 +480,7 @@ package body Adacovex.Server.HTTP is
    end Get_Path;
 
    --  Pure path-to-action routing: the socket handler below switches on the
-   --  result, and the native test suite pins every route.  The function is an
+   --  result, and the native test suite pins every route. The function is an
    --  expression function (see the spec): its body is the conditional mapping,
    --  so the mapping is proved by definition rather than case analysis.
 
@@ -495,7 +495,7 @@ package body Adacovex.Server.HTTP is
       Path     : String (1 .. 2048);
       Path_Len : Natural := 0;
    begin
-      --  The request line: METHOD SP PATH SP HTTP/x.x CRLF.  An empty line
+      --  The request line: METHOD SP PATH SP HTTP/x.x CRLF. An empty line
       --  (EOF, receive timeout, or an over-long line) closes the socket.
       Read_Line (Reader, LineBuf, Last);
       if Last = 0 then
@@ -511,7 +511,7 @@ package body Adacovex.Server.HTTP is
       end if;
 
       --  Extract the request path (the second space-separated token) into
-      --  Path (1 .. Path_Len).  A malformed request line closes the socket:
+      --  Path (1 .. Path_Len). A malformed request line closes the socket:
       --  Get_Path declared its own buffer copy below.
       declare
          Request : constant String := LineBuf (1 .. Last);

@@ -18,9 +18,10 @@ Rules:
     (src/adacovex_version_info.ads, src/adacovex-dashboard_template.ads);
   * historical records are excluded: past-release changelogs
     (docs/changelogs/adacovex-<v>.md other than the current dev changelog
-    derived from the version in alire-dev.toml) and past proof ledgers
+    derived from the version in alire-dev.toml), past proof ledgers
     (docs/proof/*-ledger.md other than the one for the gnatprove version
-    pinned in alire-dev.toml) -- those must keep their release-time numbers;
+    pinned in alire-dev.toml), and the docs/archive/ pages -- those must keep
+    their release-time numbers;
   * the tool scripts themselves (tools/*.py) are excluded: they contain the
     anchored patterns as regex source and must never be rewritten.
 
@@ -38,10 +39,12 @@ from typing import Iterator, Optional
 
 ROOT: Path = Path(__file__).resolve().parent.parent
 
-# Directories that never carry live metric phrases.
+# Directories that never carry live metric phrases: generated output,
+# build state, and the dated records under docs/archive/ (their figures are
+# the release-time numbers the archive preserves).
 GENERATED_DIRS: frozenset = frozenset({
     ".git", ".venv", "obj", "bin", "dist", "docs/api-docs", "docs/badges",
-    "docs/_build", "tools",
+    "docs/_build", "docs/archive", "tools",
 })
 
 # Individual generated/build-state files.

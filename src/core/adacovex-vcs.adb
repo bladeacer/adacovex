@@ -10,7 +10,7 @@ package body Adacovex.VCS is
    Max_Capture : constant := 4096;
 
    --  Spawn the default shell with `-c Cmd`, redirecting stdout+stderr to
-   --  Out_File.  The shell is used so CWD-dependent tools (fossil open, svn)
+   --  Out_File. The shell is used so CWD-dependent tools (fossil open, svn)
    --  can be driven with a `cd ... &&` prefix without changing the process
    --  directory.
    procedure Run_Cmd
@@ -135,7 +135,7 @@ package body Adacovex.VCS is
 
    --  Value of the first "Keyword: value" line in the captured output
    --  (e.g. svn's "URL: ..." or fossil's "repository: ..."), or "" when the
-   --  keyword is absent.  The value runs to the end of the line.
+   --  keyword is absent. The value runs to the end of the line.
    function Field_Value
      (Buf : String; BLen : Natural; Keyword : String) return String
    with
@@ -364,7 +364,7 @@ package body Adacovex.VCS is
          end;
       end if;      --  jj templates changed syntax across versions: 0.44+ wants the bare
       --  keyword (`-T commit_id`), older jj wants the braced form
-      --  (`-T '{commit_id}'`).  Try the new form first, then the legacy one
+      --  (`-T '{commit_id}'`). Try the new form first, then the legacy one
       --  so both jj generations resolve change ids.
       Run_Capture
         ("jj -R '"

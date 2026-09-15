@@ -156,7 +156,7 @@ package body Adacovex_IR_Tests is
       --  Test 12: Synthesize_Bounded_Function emits the checked-add shape
       --  for a single signed parameter: bounded type plus the half-range
       --  Pre guard gnatprove discharges (the same guard as Checked_Add32 /
-      --  IR_Bounds.Add32).  A one-pair list is the minimal multi-pair case.
+      --  IR_Bounds.Add32). A one-pair list is the minimal multi-pair case.
       declare
          Spec : constant String :=
            Synthesize_Bounded_Function ("Inc", "A:IR_Int32", "IR_Int32");

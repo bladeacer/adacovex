@@ -11,11 +11,11 @@ Version bumped 1.20.0 -> 1.21.0.
 The dashboard page shell (`resources/dashboard.html`) had a duplicated
 `</style>` tag: the custom dashboard CSS was closed, the vendored
 `charts.min.css` was then inlined *outside* any `<style>` block, and a
-second `</style>` closed the head.  Browsers rendered the entire vendored
-CSS as literal text at the top of the page.  The template is now a single
+second `</style>` closed the head. Browsers rendered the entire vendored
+CSS as literal text at the top of the page. The template is now a single
 `<style>` block (custom CSS + vendored Charts.css + a single `</style>`)
 regenerated via `tools/gen-dashboard.py`, so the page is self-contained and
-valid HTML again.  No visual change beyond the bug being gone.
+valid HTML again. No visual change beyond the bug being gone.
 
 ### C2: Dependency tree text spacing, scope filtering, and overview collation
 
@@ -41,16 +41,16 @@ emits four new visuals in the **Charts** tab (now 8 cards total):
 
 Existing charts are kept (SPARK donut now proved vs unproved, proof
 categories column, test categories bar normalised to the max, doc coverage
-bar) and now correctly use `0..1` `--size` fractions.  The chart grid stays
-`repeat(auto-fit, minmax(280px, 1fr))` inside the tab panel.  The **Overview**
+bar) and now correctly use `0..1` `--size` fractions. The chart grid stays
+`repeat(auto-fit, minmax(280px, 1fr))` inside the tab panel. The **Overview**
 tab also gains a collation row with three mini charts (SPARK donut, Tests
-pie, Docs bar) for a quick summary without leaving the overview.  See
+pie, Docs bar) for a quick summary without leaving the overview. See
 `docs/dashboard.md#metrics-charts`.
 
 ### C4: Dependency hierarchy alternative view with vendored nomnoml and graphre
 
 The **Dependencies** tab gains a second view: **Tree** (default) vs
-**Diagram (nomnoml)**.  The diagram is rendered with vendored
+**Diagram (nomnoml)**. The diagram is rendered with vendored
 [nomnoml 1.7.0](https://github.com/skanaar/nomnoml) (MIT, `resources/nomnoml.js`, 71 KB) plus its layout engine [graphre 0.1.3](https://github.com/cytoscape/graphre) (MIT, `resources/graphre.js`, 38 KB, inlined before nomnoml as `global.graphre`). Without graphre, `nomnoml.draw` throws `graphlib is undefined` (the UMD wrapper `require('graphre')` expects `global.graphre`). Both are inlined into the single-file dashboard template so the diagram works offline. `ADACOVEX_GRAPH` (injected as `__GRAPH_JSON__` by the Ada renderer) is converted to nomnoml source (`[parent]-->[child]` edges, `#direction: right`, plus a legend note) and drawn via `nomnoml.draw(canvas, src)`. The view switch is persisted in `localStorage` (`adacovex-dep-view`) and hash-routed, with **Re-render** and **Download PNG** buttons.
 
 Scope checkboxes filter both views (tree hides nodes via `data-scope`, diagram re-renders from the filtered set after `filterByScope()`). Control characters (`\x01`) in the vendored graphre bundle are sanitized to `\x01` escapes so the Ada template remains pure ASCII and `make ascii-check` passes. Credits and license updated in `docs/THIRD_PARTY_NOTICES.md`.
@@ -73,13 +73,13 @@ A future `tools/gen-man.py` generator (parity with `gen-dashboard.py` / `gen-ver
 
 `Discover_Vendored_Components` in `parsers-manifest.adb` now scans
 `resources/` (and `vendor/` / `assets/` if present) for `*.js` / `*.css`
-assets in addition to `.adacovex/patches/*.ads`.  Each `charts.min.css`,
+assets in addition to `.adacovex/patches/*.ads`. Each `charts.min.css`,
 `nomnoml.js`, `graphre.js`, and `flexsearch.js` is added as a
 `Scope_Vendored` `pkg:generic/<name>` dependency of the root, so
 `adacovex --target=.` (and `--emit-metrics` / `/api/deps`) now lists the
-vendored JS/CSS that the dashboard inlines.  The dashboard's scope pie and
+vendored JS/CSS that the dashboard inlines. The dashboard's scope pie and
 its filter checkboxes therefore show vendored vs dev vs transitive vs base
-correctly, and `make check` can gate on vendored presence.  The result-cache
+correctly, and `make check` can gate on vendored presence. The result-cache
 schema is bumped `s3` -> `s4` so stale graphs without vendored assets are
 never served.
 
@@ -88,9 +88,9 @@ never served.
 ### H1: Dashboard served valid HTML again and nomnoml no longer throws
 
 Covered by C1: the duplicated `</style>` that caused the vendored CSS to be
-rendered as text is removed.  `make ascii-check` and `tools/gen-dashboard.py
+rendered as text is removed. `make ascii-check` and `tools/gen-dashboard.py
 --check` both pass; the served page at `http://127.0.0.1:8080/` now shows
-styled cards, not raw CSS.  Covered by C4: vendored `graphre.js` is now
+styled cards, not raw CSS. Covered by C4: vendored `graphre.js` is now
 inlined before `nomnoml.js` so `nomnoml.draw` no longer throws
 `graphlib is undefined` (`global.graphre` is defined by the UMD wrapper).
 Control characters (`\x01`) in the graphre bundle are sanitized to `\x01`
@@ -99,10 +99,10 @@ errors with `control character not allowed in string`.
 
 ## Test Suite
 
-886 tests passing (unchanged) across 14 categories.  No new test categories
+886 tests passing (unchanged) across 14 categories. No new test categories
 added in this release; the existing HTML rendering, man page, and server
 routing expectations continue to pin the dashboard shell and the `/api/deps`
-route.  A follow-up will add renderer tests for the new chart pies and the
+route. A follow-up will add renderer tests for the new chart pies and the
 `data-scope` attribute.
 
 ## Proof Results
@@ -110,13 +110,13 @@ route.  A follow-up will add renderer tests for the new chart pies and the
 Platinum, 720/720 VCs proved across 49 analysed units (unchanged from
 1.20.0): the chart pies, dep-tree scope attributes, nomnoml/flexsearch
 inlining (tooling-bundled JS), and the dynamic man page all live in
-default-off bodies or are Python/JS tooling -- no new SPARK obligations.  0
-unproved, 0 justified.  Re-verified with `adacovex prove --target=.
+default-off bodies or are Python/JS tooling -- no new SPARK obligations. 0
+unproved, 0 justified. Re-verified with `adacovex prove --target=.
 --force` under gnatprove 16.1.0 (`--steps=10000`).
 
 ## Traceability
 
-No new HLRs.  Coverage:
+No new HLRs. Coverage:
 
    - `HLR-DASH` -- C1 raw-CSS fix, C2 tree spacing, C3 scope/test pies, C4
      nomnoml diagram, C5 FlexSearch indexing (renderer, dashboard docs,

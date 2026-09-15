@@ -11,14 +11,14 @@ Version bumped 1.21.0 -> 1.22.0.
 The **Charts** tab now shows six cards, each a different type: SPARK proof
 donut, proof check types column, test results by category bar, docstring
 coverage radial gauge, tests pass/fail pie, and the dependencies-by-scope
-polar ring.  The duplicated proof line/area variants are gone and the
+polar ring. The duplicated proof line/area variants are gone and the
 docstring coverage visual is back on the Charts tab as a half-circle radial
 gauge.
 
 The long-standing "pie <U+2260> pie" bug is fixed at the root: Charts.css
 `--start`/`--end` are unitless `0..1` turn fractions, but every pie/donut
 slice was fed `0..100` percentages, so each slice rendered as a full circle
-(and stacked opaque over the previous one).  All pie values now go through a
+(and stacked opaque over the previous one). All pie values now go through a
 `Frac` helper that clamps to `0..1`, and the donut hole is a pure-CSS
 `.charts-css.pie.donut::after` circle instead of an invalid `donut` class.
 
@@ -27,14 +27,14 @@ slice was fed `0..100` percentages, so each slice rendered as a full circle
 The Overview tab now leads with a **Robustness** radar spider and a tier
 rating (S / A / B / C / D) computed as the average of five `0..100` axes:
 Docstrings (coverage), Proof (VCs proved), Tests (pass rate), Compliance
-(gate achieved), and Deps (non-vendored share of the graph).  The tier chip
+(gate achieved), and Deps (non-vendored share of the graph). The tier chip
 is colour-coded per theme, the legend lists each axis with its percentage,
 and the thresholds (S >= 90, A >= 80, B >= 65, C >= 50, D < 50) plus axis
 definitions are documented in `docs/dashboard.md` and shown in the card.
 
 The per-check-type **SPARK radar** moved from the Charts tab to the Overview
 (miniature), the tests visual is now a donut, and the doc-coverage gauge
-completes the collation.  All overview visuals are inline SVG/CSS with
+completes the collation. All overview visuals are inline SVG/CSS with
 integer math (no floating point in the renderer) and follow the active
 light/dark theme.
 
@@ -44,7 +44,7 @@ The single-line footer is now a semantic `<footer class="footer">` grid with
 three sections: copyright + license + repository + the injected
 `v1.22.0` version, the third-party credits summary (Charts.css, nomnoml, graphre, FlexSearch)
 linking to `docs/THIRD_PARTY_NOTICES.md`, and
-the API endpoints (`/api/metrics`, `/api/deps`, `/badge/*.svg`).  The
+the API endpoints (`/api/metrics`, `/api/deps`, `/badge/*.svg`). The
 version is injected next to `__THEME__`/`__GRAPH_JSON__` by the Ada
 renderer from `Adacovex.Version`, so the footer always matches the binary.
 
@@ -53,7 +53,7 @@ renderer from `Adacovex.Version`, so the footer always matches the binary.
 The dependency diagram now lays out with `#direction: down` (a vertical
 tree that stays within the page width on wide dep graphs) and reads the
 page's CSS custom properties (`--card`, `--border`, `--fg`) at draw time,
-re-rendering on theme change so the box/arrow colours always match.  The
+re-rendering on theme change so the box/arrow colours always match. The
 canvas is sized to its container and deep graphs scroll inside
 `.nomnoml-wrap` instead of overflowing the layout.
 
@@ -80,14 +80,14 @@ The dependency graph now discovers vendored components beyond Alire/GPR:
 `pkg:npm/...@version`), `vendor`, `third_party`, `deps`, `submodules`, etc.
 carrying `Cargo.toml`/`Cargo.lock` (pkg:cargo), `go.mod` (pkg:golang),
 `pyproject.toml`/`requirements*.txt` (pkg:pypi), `composer.json` (pkg:composer),
-`Gemfile` (pkg:gem), and plain source libraries.  A directory without a
+`Gemfile` (pkg:gem), and plain source libraries. A directory without a
 manifest becomes ONE component whose language is the top-3 summary of its
 source-extension distribution (e.g. `Go; Python; JavaScript`) -- loose files
 under a vendor root never become components.
 
 Every SBOM component now carries `language` in CycloneDX (and the Markdown
 table), inferred from the file extension or manifest, with mobile
-fallbacks.  The graph cache key hashes vendored trees and lockfiles too
+fallbacks. The graph cache key hashes vendored trees and lockfiles too
 (`Vendored_Hash`), so adding/removing vendored code invalidates the cached
 graph.
 
@@ -102,7 +102,7 @@ concern: `resources/dashboard.css` (author styles), `resources/dashboard.js`
 time via `__STYLE_CUSTOM__` / `__STYLE_CHARTS__` / `__JS_*`
 placeholders and **minifies the author CSS/JS** (comments and whitespace
 stripped; vendored bundles are already minified and inlined byte-for-byte,
-license headers preserved).  `gen-dashboard.py --check` (wired into
+license headers preserved). `gen-dashboard.py --check` (wired into
 `make check`) fails when the committed generated spec drifts.
 
 ### C9: Per-dependency detail panel with registry links
@@ -112,7 +112,7 @@ detail panel: name, version, scope, licence, PURL, parent, and a
 registry link derived from the PURL (`pkg:github` -> GitHub repo,
 `pkg:npm` -> npmjs, `pkg:cargo` -> crates.io, `pkg:pypi` -> PyPI,
 `pkg:golang` -> pkg.go.dev, `pkg:alire` -> alire.ada.dev, otherwise a
-GitHub search).  Licence and PURL text in the tree is colour-coded
+GitHub search). Licence and PURL text in the tree is colour-coded
 (`--lic` amber, `--purl` muted monospace) so vendored/uncommon licences
 stand out; `lang` is exposed in `/api/deps` JSON per component.
 
@@ -120,7 +120,7 @@ stand out; `lang` is exposed in `/api/deps` JSON per component.
 
 Each tab now leads with a small visual: Proof gets a VCs-proved/total
 column, Tests a pass/fail donut, Compliance an achievement radial gauge, and
-Dependencies a scope-distribution stacked bar with legend.  The header
+Dependencies a scope-distribution stacked bar with legend. The header
 **global search** (FlexSearch index over packages/HLRs/deps) and the
 Dependencies tab **tree filter** (plain DOM filter over the rendered tree)
 are separate mechanisms sharing one styling class, so they look consistent
@@ -149,12 +149,12 @@ Both reported regressions from 1.21.0 are fixed:
 
 ## Test Suite
 
-900 tests passing (886 -> 900) across 14 categories.  New `SBOM generator`
+900 tests passing (886 -> 900) across 14 categories. New `SBOM generator`
 checks pin the language-agnostic vendored discovery: npm packages under
 `node_modules` register as `pkg:npm/...@version` (shallow), a mixed-language
 `vendor/` directory becomes one component whose `Language` lists the top-3
 source-extension languages, and loose files under a vendor root never become
-components.  The dashboard renderer test that pinned a stale template
+components. The dashboard renderer test that pinned a stale template
 heading now pins the Credits tab content instead (the template was
 reorganised in this release).
 
@@ -164,12 +164,12 @@ Platinum, 720/720 VCs proved (unchanged from 1.21.0): the radar, radial
 gauge, tier, and removal digs all live in default-off renderer bodies or are
 pure CSS in the inlined dashboard template, and the vendored-discovery code
 sits in the parser's I/O/container-heavy default-off body -- not new SPARK
-obligations.  0 unproved, 0 justified.  Re-verified with
+obligations. 0 unproved, 0 justified. Re-verified with
 `adacovex prove --target=. --force` under gnatprove 16.1.0.
 
 ## Traceability
 
-No new HLRs.  Coverage:
+No new HLRs. Coverage:
 
    - `HLR-DASH` -- C1 chart variety/pie, C2 robustness radar + tier
      rating, C3 footer, C4 nomnoml, C5 spacing/badges, C6 checkbox icons,

@@ -2,12 +2,12 @@
 
 Man-page renderer and installer.
 Generates a roff (man 1) page for adacovex and installs it into the
-local man database.  ``man adacovex`` then works without root.  The page
+local man database. ``man adacovex`` then works without root. The page
 embeds the bundled binary version (in the .TH header and a VERSION
-section).  ``adacovex man --check`` can detect that a newer man page is
-available than the one on disk.  A shell prompt hook can also detect
-this.  The tool targets Linux and WSL.  The default install root is
-$XDG_DATA_HOME/man or ~/.local/share/man.  The database updates with
+section). ``adacovex man --check`` can detect that a newer man page is
+available than the one on disk. A shell prompt hook can also detect
+this. The tool targets Linux and WSL. The default install root is
+$XDG_DATA_HOME/man or ~/.local/share/man. The database updates with
 ``mandb`` when it is present.
 
 > **Note:** All items in this package are public.

@@ -80,7 +80,7 @@ suite (`make e2e`) adds the Playwright dashboard layout tests on top.
 ## Documentation and dashboard tooling
 
 The pure-stdlib Python gates keep the docs and the dashboard in step with
-the code.  They are the drop-in replacements for the npm tools (stylelint,
+the code. They are the drop-in replacements for the npm tools (stylelint,
 and more) that a JavaScript toolchain would use; adacovex keeps its dev
 tooling Python-only by convention:
 
@@ -89,8 +89,13 @@ tooling Python-only by convention:
   It runs inside `make build` and `make check`.
 - `tools/check-docs.py` (`make docs-check`) fails when any paragraph in the
   user docs, README, or human changelogs exceeds four sentences, and it
-  rejects em dashes and Latin abbreviations (`i.e.`, `e.g.`, `etc.`).
-  `tools/para-split.py` rewraps over-long paragraphs to comply.  Pages are
+  rejects em dashes and Latin abbreviations (`i.e.`, `e.g.`, `etc.`). It also
+  enforces one space after a sentence in the docs, the changelogs, the root
+  `AGENTS.md` and `CONTRIBUTING.md`, and the Ada comment text under `src/`
+  (a `.`, `!`, or `?` followed by two or more spaces and more text);
+  `python3 tools/check-docs.py --fix` collapses the gap in exactly those
+  places and never touches Ada code.
+  `tools/para-split.py` rewraps over-long paragraphs to comply. Pages are
   also kept under 250 lines; a page that is a reference dictionary or a
   historical record may opt out of the line cap (never the paragraph rule)
   with a `no-covex-docs-loc` HTML comment near the top of the file.
@@ -98,7 +103,7 @@ tooling Python-only by convention:
   `src/adacovex-dashboard_template.ads` and minifies the authored CSS and
   JavaScript (comments stripped, whitespace collapsed) before inlining.
 
-Edit the dashboard under `resources/`, never the generated template.  After
+Edit the dashboard under `resources/`, never the generated template. After
 any docs or resource change, run `make docs-check` and `make csslint-check`
 before committing.
 
@@ -136,7 +141,7 @@ The proof result is anchored in `docs/proof/` (the per-version VC ledger).
 - **Keep docs current**: every code change updates the relevant user docs,
   the Ada docstrings that feed `docs/api-docs`, and the changelog, then
   re-runs the sync gates (`make docs-check`, `make action-parity-check`,
-  `make agents-tree`, `make doc-links`, `make link-check`).  Stale docs are a
+  `make agents-tree`, `make doc-links`, `make link-check`). Stale docs are a
   release blocker.
 - **Debug**: `adacovex --verbose` prints pipeline step diagnostics. `adacovex
   status` reports toolchain + platform state. `--no-cache` bypasses the

@@ -1,6 +1,6 @@
 # SBOM dependency resolution
 
-This page covers licence resolution (local manifests and the package registry), system dependencies, and test dependency classification.  The output formats, usage, standard awareness, and language detection are on [The `sbom` subcommand](sbom.md).
+This page covers licence resolution (local manifests and the package registry), system dependencies, and test dependency classification. The output formats, usage, standard awareness, and language detection are on [The `sbom` subcommand](sbom.md).
 
 ## Licence resolution
 
@@ -34,7 +34,7 @@ dashboard detail panel and the `/api/deps` JSON.
 The resolver caches each answer in a per-project store under the project's
 result cache (the same `--cache-dir` the scan uses), keyed by the target
 directory as well as the ecosystem and package name, with a 7-day TTL, the
-same scheme as the system-tool version probes.  The content-addressed result
+same scheme as the system-tool version probes. The content-addressed result
 cache does not cover these registry calls (each one boots node for npm/pnpm),
 so without this layer a warm run still re-paid them; the meta cache makes every
 repeat run serve the licence, version, and website from disk with no subprocess
@@ -45,7 +45,7 @@ Bundled dashboard assets (FlexSearch, nomnoml, graphre) resolve
 their licence and website live from the package registry when a loose vendored
 copy is scanned, preferring `pnpm show <pkg> license` and falling back to
 `npm`, `yarn`, then `bun` -- the same preference chain as every JavaScript
-component (see [Licence resolution](#licence-resolution)).  The SBOM and the
+component (see [Licence resolution](#licence-resolution)). The SBOM and the
 Credits tab therefore track the real upstream licence instead of a hard-coded
 copy.
 
@@ -93,18 +93,18 @@ SPDX/JSON `adacovex:language` property, and the Markdown table's
 `Language` column.
 
 Tools that are really **language packages** are never registered as system
-tools.  The root project's Python requirements (`requirements*.txt`, for
+tools. The root project's Python requirements (`requirements*.txt`, for
 example `sphinx` and `myst-parser`) register as `dev`-scope `pkg:pypi/*`
-components with the language set to Python.  A version pinned in the
+components with the language set to Python. A version pinned in the
 requirements line wins; otherwise the package registry answers
-(`pip index versions <pkg>`) when `pip` is installed and online.  A missing
+(`pip index versions <pkg>`) when `pip` is installed and online. A missing
 registry or a failing resolve keeps the name-only entry -- no version or
 licence is ever guessed.
 
 ## Test dependencies
 
 A dependency used only by the project's tests is classified `test` (the
-`adacovex:dep_scope` property value `"test"`).  adacovex recognises
+`adacovex:dep_scope` property value `"test"`). adacovex recognises
 test-only declarations in every supported ecosystem's manifest, in addition
 to the Alire `[[test-depends-on]]` sections and test project files:
 
@@ -123,14 +123,14 @@ to the Alire `[[test-depends-on]]` sections and test project files:
 A vendored component (for example a package under `node_modules` or
 `vendor/`) is classified `test` when the project manifest that owns the
 vendor directory declares it under one of these test labels, or when its
-name carries the test label.  The name heuristic works across every
+name carries the test label. The name heuristic works across every
 supported ecosystem -- not just npm: it checks the full name and then the
 last segment after any `/` or `:`, so `@playwright/test`, `test-case`,
 `github.com/stretchr/testify` and `org.testng:testng` are all
-test-labelled.  The heuristic also applies to **lockfile-resolved names**:
+test-labelled. The heuristic also applies to **lockfile-resolved names**:
 `pnpm-lock.yaml` / `package-lock.json` / `yarn.lock` entries next to an
 owner `package.json`, `Cargo.lock` crate names, and `alire.lock` crates
-that the manifest sets leave transitive.  The e2e fixture's
+that the manifest sets leave transitive. The e2e fixture's
 `@playwright/test` is the canonical example: it stays a `devDependencies`
 entry of `tests/e2e/package.json` (and a `pnpm-lock.yaml` entry) and is
 classified `test` by name.

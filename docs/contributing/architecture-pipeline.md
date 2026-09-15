@@ -2,7 +2,7 @@
 
 This page covers the exact pipeline execution order, the supported platforms,
 the delivery and versioning channels, the build-time linker output, and how to
-swap the GNAT compiler for an LLVM-backend GNAT.  The output formats, the
+swap the GNAT compiler for an LLVM-backend GNAT. The output formats, the
 build and documentation gates, and the reading contract are on [Architecture:
 outputs and formats](architecture-outputs.md).
 

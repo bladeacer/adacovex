@@ -1,6 +1,6 @@
 # CI/CD workflows, summaries, and release bundling
 
-This page covers the GitHub Actions workflows, the Markdown summaries and loud failures, the release version bundling, floating tags, and the consumer manifest prerequisites.  The composite action, its inputs and outputs, and result caching are on [the CI/CD home page](ci-cd.md).
+This page covers the GitHub Actions workflows, the Markdown summaries and loud failures, the release version bundling, floating tags, and the consumer manifest prerequisites. The composite action, its inputs and outputs, and result caching are on [the CI/CD home page](ci-cd.md).
 
 ## Workflows
 

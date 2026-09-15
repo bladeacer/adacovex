@@ -207,9 +207,11 @@ def replacements(m: Metrics) -> List[Tuple[Pattern[str], str]]:
         # "require-spark: Platinum" (workflows).
         (re.compile(rf"--require-spark={LEVEL_RE}"), f"--require-spark={lvl}"),
         (re.compile(rf"require-spark: {LEVEL_RE}"), f"require-spark: {lvl}"),
-        # JSON API sample response in README / cli-reference.
-        (re.compile(r'"total_vcs":\d+'), f'"total_vcs":{t}'),
-        (re.compile(r'"proved_vcs":\d+'), f'"proved_vcs":{p}'),
+        # JSON API sample response in the user docs.  The served payload is
+        # pretty-printed (a space after the colon), so the pattern allows and
+        # the replacement keeps it.
+        (re.compile(r'"total_vcs":\s*\d+'), f'"total_vcs": {t}'),
+        (re.compile(r'"proved_vcs":\s*\d+'), f'"proved_vcs": {p}'),
     ]
 
 

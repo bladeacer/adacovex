@@ -3,13 +3,13 @@ with Adacovex.Target_Profiles; use Adacovex.Target_Profiles;
 --  IR synthesiser (future use).
 --  Lowers foreign type names found while parsing Ada sources (usize, size_t,
 --  int32_t, int64_t, and more) onto the bounded target types in
---  Adacovex.Target_Profiles.  It synthesises bounded Ada declarations and
+--  Adacovex.Target_Profiles. It synthesises bounded Ada declarations and
 --  package skeletons from them.
 --  Currently provides the type-lowering layer.
 --  The full AST-to-IR pipeline is planned to build on it.
---  The package is SPARK-proved.  gnatprove discharges the bounds checks on
---  the synthesised text buffers.  Result lengths never exceed the fixed-size
---  output buffer.  String generation on the lowered types is machine-checked
+--  The package is SPARK-proved. gnatprove discharges the bounds checks on
+--  the synthesised text buffers. Result lengths never exceed the fixed-size
+--  output buffer. String generation on the lowered types is machine-checked
 --  like the bounded IR types.
 --  HLR-IR: IR type synthesis
 
@@ -62,21 +62,21 @@ package Adacovex.IR_Synthesiser is
      Global => null;
 
    --  Synthesises a contract-carrying bounded-function spec from a
-   --  foreign-style signature.  This is the multi-pair form of a
+   --  foreign-style signature. This is the multi-pair form of a
    --  gnatprove-friendly IR: it lowers every comma-separated "P:Type"
    --  parameter pair onto a bounded IR scalar type and joins the signed
    --  pairs' half-range Pre guards with "and then" into one contract
    --  chain, the guard shape gnatprove discharges for the checked
    --  arithmetic (the same guard as Adacovex.Target_Profiles.Checked_Add32
-   --  / the Adacovex.IR_Bounds fixture).  Unsigned (modular) parameters
-   --  carry no guard.  Lowered code carries its contracts in the
+   --  / the Adacovex.IR_Bounds fixture). Unsigned (modular) parameters
+   --  carry no guard. Lowered code carries its contracts in the
    --  generated text, so a proof run checks only bounded-scalar
-   --  arithmetic instead of foreign semantics.  The three-pass design and
+   --  arithmetic instead of foreign semantics. The three-pass design and
    --  the full exploration are documented in docs/contributing/ir.md.
    --  @param Name        Subprogram name (an Ada identifier).
    --  @param Param_List  Comma-separated "P:Type" pairs, no spaces, at
-   --                     most 32 pairs.  Each Type is an IR_* name
-   --                     (IR_Int32, IR_UInt64, ...).  An empty list emits
+   --                     most 32 pairs. Each Type is an IR_* name
+   --                     (IR_Int32, IR_UInt64, ...). An empty list emits
    --                     the nullary spec.
    --  @param Return_Type IR_* name of the result; "" emits a procedure.
    --  @return The synthesised spec text (a function or procedure spec with

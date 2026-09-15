@@ -1,7 +1,7 @@
 # Adacovex.Target_Profiles
 
-Signed two's-complement fixed-width integer types.  Each carries an
-explicit Size.  IR values map one-to-one onto target machine types.
+Signed two's-complement fixed-width integer types. Each carries an
+explicit Size. IR values map one-to-one onto target machine types.
 
 > **Note:** All items in this package are public.
 

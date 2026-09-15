@@ -101,9 +101,9 @@ package body Adacovex_Config_Tests is
    end Check_Equivalent;
 
    --  Shorthand form matrix: parse one spelling of a short flag and assert it
-   --  leaves the same option state as the canonical long spelling.  Prefix is
+   --  leaves the same option state as the canonical long spelling. Prefix is
    --  a required subcommand ("" when the shorthand needs none); Alias_2 is ""
-   --  for a single-token form.  The prefix is added to both sides, so only
+   --  for a single-token form. The prefix is added to both sides, so only
    --  the spelling under test differs.
    procedure Check_Short_Form
      (Prefix    : String;
@@ -324,7 +324,7 @@ package body Adacovex_Config_Tests is
 
       --  Flag precedence (1.10.0): dedicated level flags set both the
       --  standard and the shared tier; --dal sets only the tier; --standard
-      --  sets only the standard (or the "all" expansion).  Sequential
+      --  sets only the standard (or the "all" expansion). Sequential
       --  application is last-write-wins per field.
       declare
          A : Testing.Arg_Vectors.Vector;
@@ -1133,7 +1133,7 @@ package body Adacovex_Config_Tests is
 
       --  A ~name form (another user's home) is left untouched: only the
       --  shell can resolve it, and adacovex must not mangle it into
-      --  "$HOME/name".  It still gets the cwd-join (unchanged behaviour).
+      --  "$HOME/name". It still gets the cwd-join (unchanged behaviour).
       declare
          Cfg  : CLI_Config;
          A    : Testing.Arg_Vectors.Vector;
@@ -1721,11 +1721,11 @@ package body Adacovex_Config_Tests is
          Check_Equivalent (A, C, R, "--no-md overrides --emit-md");
       end;
 
-      --  Shorthand form matrix.  Numeric shorthands (-p, -l, -r, -j) accept
-      --  the detached, glued (-pN), and = forms.  Value shorthands (-t, -m,
+      --  Shorthand form matrix. Numeric shorthands (-p, -l, -r, -j) accept
+      --  the detached, glued (-pN), and = forms. Value shorthands (-t, -m,
       --  -b, -d) accept the detached and = forms; a glued value is rejected
       --  (it would swallow the single-dash long-form typo, for example
-      --  -target).  Flag shorthands (-s, -c) take no value.
+      --  -target). Flag shorthands (-s, -c) take no value.
       Check_Short_Form
         ("", "-t", "demo", "--target=demo", "-t forms == --target", R);
       Check_Short_Form

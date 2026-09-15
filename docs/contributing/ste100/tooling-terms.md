@@ -1,7 +1,7 @@
 # STE100 Technical Names: tooling and workflow terms
 
 The **tooling and workflow** terms of the [STE100 Technical Names]
-(index.md) dictionary.  These terms name the commands,
+(index.md) dictionary. These terms name the commands,
 flags, artefacts, and quality gates of the adacovex tool.
 
 ## Technical Name: Software Bill of Materials (SBOM)

@@ -15,11 +15,11 @@ generates for its target.
 ## How they are produced
 
 The Markdown renderer writes these files when the assessment runs
-(`--emit-markdown=PATH`).  They are generated per target.  The full file
+(`--emit-markdown=PATH`). They are generated per target. The full file
 formats are documented in [Target projects](../usage/target-projects.md) and
 [CLI reference](../usage/cli-reference.md).
 
 The rendered text uses British English and ASD-STE100 Simplified Technical
-English.  Technical terms follow the [STE100 Technical Names
-dictionary](../contributing/ste100/index.md).  Audit the generated prose
+English. Technical terms follow the [STE100 Technical Names
+dictionary](../contributing/ste100/index.md). Audit the generated prose
 against the dictionary before you use a new word in these reports.

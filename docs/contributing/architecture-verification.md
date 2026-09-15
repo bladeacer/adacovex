@@ -1,6 +1,6 @@
 # Architecture: verification and proof patches
 
-This page covers the verification machinery: the IR synthesiser, the DO-178C DAL assessment criteria, source scanning, and the patch system (including proof patches that add SPARK contracts over vendored dependencies).  The dependency and proof-level design is on [Architecture Decisions](architecture.md); the renderers, caching, delivery, and execution order are on [Architecture: outputs and pipeline](architecture-outputs.md).
+This page covers the verification machinery: the IR synthesiser, the DO-178C DAL assessment criteria, source scanning, and the patch system (including proof patches that add SPARK contracts over vendored dependencies). The dependency and proof-level design is on [Architecture Decisions](architecture.md); the renderers, caching, delivery, and execution order are on [Architecture: outputs and pipeline](architecture-outputs.md).
 
 ## IR Synthesiser
 

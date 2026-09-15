@@ -2,16 +2,16 @@ with Ada.Directories;
 
 separate (Adacovex.Parsers.Manifest)
 --  Resolve a component's version, licence and website from its ecosystem
---  registry CLI, table-driven across every supported ecosystem.  The
+--  registry CLI, table-driven across every supported ecosystem. The
 --  dispatch table below lists the CLI tool, its subcommand, and -- per
 --  metadata field -- the registry key to query and how to parse the value
---  out of the command output.  Adding an ecosystem is a one-row edit.
+--  out of the command output. Adding an ecosystem is a one-row edit.
 --
 --  Ecosystems with no reliable registry CLI (for example go) carry an empty
 --  tool so the resolver returns quietly and the vendored-manifest scanner
---  still reads any in-repo licence file.  The alr row folds the former
+--  still reads any in-repo licence file. The alr row folds the former
 --  Alr_Show_Crate path into the same table: one `alr show` answers for
---  version, licence and website without network access.  The npm and pnpm
+--  version, licence and website without network access. The npm and pnpm
 --  rows issue a single `view <pkg> version license homepage --json` call and
 --  parse the JSON, so they boot node only once per component instead of once
 --  per field -- the main responsiveness win for vendored JavaScript trees.
@@ -185,7 +185,7 @@ is
          --  `alr show` prints the release as "<crate>=<version>: <description>"
          --  on the first line (for example "gnatprove=16.1.0: Automatic
          --  formal verification of SPARK code"), so the version is the
-         --  token between '=' and ':'.  The licence line is "License:".
+         --  token between '=' and ':'. The licence line is "License:".
          V      =>
            (Field => (others => ' '), FLen => 0, Fmt => Eco_Alr_Version),
          L      =>
@@ -210,7 +210,7 @@ is
          --  `pip index versions <name>` prints the latest release first, as
          --  "<name> (<version>)" (for example "sphinx (9.1.0)"), so the
          --  version is the parenthesised token (Sub2 carries the "versions"
-         --  subcommand before the package name).  pip has no registry CLI
+         --  subcommand before the package name). pip has no registry CLI
          --  for licence or website, so those fields stay empty and are
          --  never guessed.
          V      =>
@@ -422,8 +422,8 @@ is
    end Extract_Path;
 
    --  Return the quoted string value for "Key" inside a JSON object held in
-   --  Buf (for example "version": "1.2.3").  "" when the key is absent or
-   --  not a string.  A single --json spawn answers for every field, so this
+   --  Buf (for example "version": "1.2.3"). "" when the key is absent or
+   --  not a string. A single --json spawn answers for every field, so this
    --  is the only parse path for npm/pnpm.
    function Json_Value (Key : String) return String is
       S  : constant String := Buf (1 .. BLen);
@@ -469,7 +469,7 @@ begin
 
    --  Serve from the per-project metadata cache (stored in the project's
    --  result cache, keyed by the target directory, same 7-day TTL as the
-   --  system-tool probes) so a warm run never spawns a registry CLI.  This
+   --  system-tool probes) so a warm run never spawns a registry CLI. This
    --  is what makes `make prove` responsive on the second run: the registry
    --  calls (node for npm/pnpm) are the one cost the content-addressed
    --  result cache does not cover, so without this layer they re-ran every
@@ -494,9 +494,9 @@ begin
    end;
 
    declare
-      --  Resolve one table row into the out parameters.  Returns Got = True
+      --  Resolve one table row into the out parameters. Returns Got = True
       --  when the spawn produced at least one field (so the caller can stop
-      --  and cache).  Resets the out lengths first so a failed attempt does
+      --  and cache). Resets the out lengths first so a failed attempt does
       --  not leak fields from a previous candidate.
       procedure Resolve_One (J : Positive; Got : out Boolean) is
       begin
@@ -516,7 +516,7 @@ begin
             if Table (J).Json then
                --  One JSON spawn answers for every field at once, so the
                --  resolver boots node/pnpm only once per component instead of
-               --  once per field.  The optional Sub2 (for example yarn's
+               --  once per field. The optional Sub2 (for example yarn's
                --  `npm info`) is appended before the package name.
                declare
                   Has_Sub2 : constant Boolean := Table (J).Sub2Ln > 0;
@@ -563,7 +563,7 @@ begin
             if Table (J).V.FLen > 0 or else Table (J).Sub2Ln > 0 then
                --  The optional Sub2 subcommand slots in before the package
                --  name (`pip index versions <name>`), the field argument
-               --  after it (`cargo search <name> <field>`).  One row shape
+               --  after it (`cargo search <name> <field>`). One row shape
                --  then serves both CLIs.
                declare
                   Has_Sub2  : constant Boolean := Table (J).Sub2Ln > 0;
@@ -638,7 +638,7 @@ begin
    begin
       if Is_Js then
          --  JavaScript packages resolve through whichever package manager is
-         --  installed, preferring pnpm, then npm, then yarn, then bun.  The
+         --  installed, preferring pnpm, then npm, then yarn, then bun. The
          --  first manager that answers wins; a missing or failing manager
          --  falls through to the next without costing a correct answer.
          for K in Js_Order'Range loop

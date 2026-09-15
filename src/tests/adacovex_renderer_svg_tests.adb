@@ -11,10 +11,10 @@ package body Adacovex_Renderer_SVG_Tests is
    end Contains;
 
    --  Numeric value of the Nth occurrence of an `Attr="..."` in the SVG
-   --  markup (1-based).  Badge_SVG emits five `width=` attributes (svg,
+   --  markup (1-based). Badge_SVG emits five `width=` attributes (svg,
    --  clipPath rect, label rect, value rect, shade rect) and three `x=`
    --  attributes (value rect, label text, value text), so Nth_Attr can
-   --  pick out each dimension from the generated markup.  Returns 0 when
+   --  pick out each dimension from the generated markup. Returns 0 when
    --  the occurrence is missing -- a failure, surfaced by the caller's
    --  R.Check.
    function Nth_Attr (S : String; Attr : String; N : Positive) return Natural
@@ -51,7 +51,7 @@ package body Adacovex_Renderer_SVG_Tests is
    --  Assert the pixel geometry of a badge: the total width, the label and
    --  value segment widths, the value segment's x offset (it must start
    --  exactly where the label segment ends), and the two centered text
-   --  positions.  These numbers pin the per-glyph advance-width table and
+   --  positions. These numbers pin the per-glyph advance-width table and
    --  the fixed 20px total segment padding that Badge_SVG sizes segments
    --  with, so a regression in either fails loudly instead of silently
    --  producing flush or lopsided badges.
@@ -238,7 +238,7 @@ package body Adacovex_Renderer_SVG_Tests is
       --  Server badge endpoints: the exact render calls the /badge/*.svg
       --  routes in adacovex-server-http.adb make, pinned so the LLR-SERVER-01
       --  badge surface (spark, tests, do178c, iso26262, iec62304) cannot
-      --  regress without a test failure.  The routes serve
+      --  regress without a test failure. The routes serve
       --  Render_SPARK_Badge (Proof.Level), Render_Tests_Badge (Tests), and
       --  Render_Compliance_Badge (Assess, DO_178C / ISO_26262 / IEC_62304)
       --  respectively; do178c.svg goes through the standard-parameterized

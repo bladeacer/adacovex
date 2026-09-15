@@ -1,7 +1,7 @@
 separate (Adacovex.Parsers.Manifest)
 --  Count the source files under Root by language, descending at most
---  Max_Levels subdirectories (0 = Root's direct children only).  Only
---  file names are read (no content), so this is cheap.  When Skip_Vend
+--  Max_Levels subdirectories (0 = Root's direct children only). Only
+--  file names are read (no content), so this is cheap. When Skip_Vend
 --  is True, vendored directories are not descended into -- used for the
 --  root project's own language so vendored code is never attributed to
 --  the owning project.

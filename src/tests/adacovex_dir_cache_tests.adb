@@ -38,7 +38,7 @@ package body Adacovex_Dir_Cache_Tests is
       Ada.Text_IO.Close (F);
    end Touch;
 
-   --  Whether Entries (1 ..  Count) holds Name classified as Kind.
+   --  Whether Entries (1 .. Count) holds Name classified as Kind.
    --  @param Entries  Snapshot entry list.
    --  @param Count  Number of valid entries.
    --  @param Name  Entry name to look for.

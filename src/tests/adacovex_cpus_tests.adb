@@ -19,7 +19,7 @@ package body Adacovex_CPUs_Tests is
       end if;
    end Expected_Temp_Dir;
 
-   --  True when any documented CI marker variable is present.  The marker
+   --  True when any documented CI marker variable is present. The marker
    --  list mirrors the package contract, so a marker that stops being
    --  honoured fails this test.
    --  @return Expected Is_Running_In_CI verdict for this environment.

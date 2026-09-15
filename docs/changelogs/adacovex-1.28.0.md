@@ -93,15 +93,15 @@ version and a direct registry link:
 
 - The four vendored dashboard libraries (FlexSearch, nomnoml, graphre,
   Charts.css) are now versioned (`0.7.31` / `1.7.0` / `0.1.3` / `1.2.0`)
-  with `pkg:npm` PURLs.  adacovex's own dashboard sources
+  with `pkg:npm` PURLs. adacovex's own dashboard sources
   (`resources/dashboard.*`) are not a package and never become
   components.
 - `node_modules` scanning resolves scoped packages
   (`node_modules/@scope/pkg` becomes `@scope/pkg@<version>` from its
   `package.json`, so the e2e fixture yields `@playwright/test@1.62.1`)
   and skips pnpm's virtual store and shim dirs (`.pnpm`, `.bin`)
-  entirely.  `.pnpm` is not a dependency; the `pnpm` binary is, and stays
-  the dev tool.  The SBOM and the dashboard now render the same list.
+  entirely. `.pnpm` is not a dependency; the `pnpm` binary is, and stays
+  the dev tool. The SBOM and the dashboard now render the same list.
 - The dep-details Link row builds direct GitHub / GitLab / Bitbucket /
   npm / crates.io / PyPI / pkg.go.dev / Alire links from the PURL
   (scoped npm names included) and no longer falls back to a GitHub
@@ -112,13 +112,13 @@ version and a direct registry link:
 gnatprove 16 reports flow analysis as "Data Dependencies" (checked) plus
 "Flow Dependencies" (proved implicitly), and the dashboard's Flow row
 read only the Flow Dependencies row -- showing 0/0 on the self-target
-while gnatprove showed 56 checked data-dependency VCs.  The parser now
+while gnatprove showed 56 checked data-dependency VCs. The parser now
 sums both rows into the Flow category and computes every category's
 proved count as Total - Justified - Unproved (Termination previously
-showed 73/94 instead of 94/94).  The Proof tab table and the Charts
+showed 73/94 instead of 94/94). The Proof tab table and the Charts
 "Proof Check Types" column gained a Termination row, so the per-category
 numbers sum exactly to gnatprove's Total (56 + 5 + 407 + 107 + 55 +
-94 = 724).  `Cache_Schema` bumped `s6` -> `s7` (parser semantics).
+94 = 724). `Cache_Schema` bumped `s6` -> `s7` (parser semantics).
 
 ### C10: Makefile orchestration moved to dedicated Python tools
 
@@ -160,23 +160,23 @@ The six `[assumed-global-null]` warnings from
 silenced in the source: the function scopes a
 `pragma Warnings (Off, "no Global contract available")` around itself
 (re-enabled immediately after), which gnatprove honours by message
-prefix.  The proof surface is unchanged -- still 724/724 VCs, 0
+prefix. The proof surface is unchanged -- still 724/724 VCs, 0
 unproved, 0 justified.
 
 ### C9: Dashboard chart, filter, diagram and credits fixes
 
 - Pie/donut data numbers are upright: Charts.css rotates each slice's
   value by its midpoint angle, so a full proved ring (0..1 turn)
-  rendered the "724 VCs" number rotated 180 degrees.  Overridden to
+  rendered the "724 VCs" number rotated 180 degrees. Overridden to
   `transform: none`.
 - The test-category bar chart is sized to its category count (`--rows`),
   so a 14-category suite no longer clips its last rows; column charts
   with more than eight categories rotate their labels vertically instead
-  of overlapping.  The Overview tests donut no longer overflows its card.
+  of overlapping. The Overview tests donut no longer overflows its card.
 - The dep name filter and scope checkboxes actually work: the filter
   used `Map` bracket access (`info[n]`), which threw on every keystroke
   and aborted the run, so typing a name or unchecking a scope changed
-  nothing.  Fixed to `info.get(n)`.
+  nothing. Fixed to `info.get(n)`.
 - The nomnoml diagram now derives every colour (fill, background,
   stroke, line, font, note) from the active theme's CSS custom
   properties and re-renders when the theme changes, so light and dark
@@ -196,19 +196,19 @@ with warm probes skips every spawn. First-run-on-machine cost unchanged.
 
 The Playwright web-server wiring referenced a script that does not
 exist (`tools/start-dashboard-server.py`), and the launcher computed the
-repository root one level too deep -- both fixed.  The suite now runs
+repository root one level too deep -- both fixed. The suite now runs
 serially (a single-process dashboard server cannot serve a fully
 parallel browser swarm), and the stale layout expectations were updated
 for the current dashboard (card counts, scope badges, chart count,
 credits links), plus new coverage for the dep name filter and the scope
-checkboxes fixed in C9.  15 e2e tests pass.
+checkboxes fixed in C9. 15 e2e tests pass.
 
 ## Test Suite
 
 973 tests passing across 14 categories (5 new: the tools-set cache
 round-trip in the SBOM suite; the probe-store change keeps the same
-count).  The GNATprove parser tests cover both summary layouts (legacy
-3-column and modern 6-column rows).  15 Playwright dashboard layout
+count). The GNATprove parser tests cover both summary layouts (legacy
+3-column and modern 6-column rows). 15 Playwright dashboard layout
 tests pass via `make e2e`.
 
 ## Proof Results

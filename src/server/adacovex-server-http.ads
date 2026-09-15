@@ -8,7 +8,7 @@ with Adacovex.Types;
 
 package Adacovex.Server.HTTP is
 
-   --  The action that a request path routes to.  The HTTP server serves the
+   --  The action that a request path routes to. The HTTP server serves the
    --  dashboard, the JSON API, the SVG badge endpoints, and the bundled
    --  offline manual (every path under /docs/). Every other path returns a
    --  404.
@@ -68,8 +68,8 @@ package Adacovex.Server.HTTP is
 
    --  Strip the query string and fragment off a request path so a URL such
    --  as `/?theme=light` or `/api/deps#top` routes to the same handler as
-   --  `/` or `/api/deps`.  Browsers append `?query` and `#fragment` to the
-   --  path; routing and content negotiation must ignore both.  Returns the
+   --  `/` or `/api/deps`. Browsers append `?query` and `#fragment` to the
+   --  path; routing and content negotiation must ignore both. Returns the
    --  path up to (and excluding) the first '?' or '#'.
    --  @param Path  Request path as extracted by Get_Path.
    --  @return The path with any query string (and fragment) removed.

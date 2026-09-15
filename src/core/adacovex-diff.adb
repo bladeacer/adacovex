@@ -27,7 +27,7 @@ package body Adacovex.Diff is
       Misses : Natural := 0;
    begin
       --  Reuse the cached scan when enabled so an unchanged working tree is
-      --  not re-scanned on every differential run.  The base worktree is a
+      --  not re-scanned on every differential run. The base worktree is a
       --  throwaway snapshot, but its entries are content-hashed and evicted
       --  oldest-first, so caching them too is harmless.
       Adacovex.Parsers.Source.Scan_Project_Cached

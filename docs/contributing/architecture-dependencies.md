@@ -1,9 +1,9 @@
 # Architecture: dependency management and the toolchain
 
 adacovex keeps its publishing manifest dependency-free and resolves its proof
-toolchain at run time.  This page records the dependency-management
+toolchain at run time. This page records the dependency-management
 decisions: the Alire manifests, the gnatprove resolution order, and the
-system and vendored tools the SBOM records.  The companion pages are
+system and vendored tools the SBOM records. The companion pages are
 [the architecture decisions](architecture.md),
 [verification and proof patches](architecture-verification.md), and
 [outputs, pipeline, and delivery](architecture-outputs.md).
@@ -89,7 +89,7 @@ Each directory inside a vendor root that carries an ecosystem manifest
 (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, `composer.json`,
 `Gemfile`, `pom.xml`, `Package.swift`, `requirements*.txt`) becomes one
 component with its ecosystem purl (`pkg:npm/...`, `pkg:cargo/...`, and
-more).  Its scope defaults to `vendored`.
+more). Its scope defaults to `vendored`.
 
 A component is classified `test` when the project manifest that owns the
 vendor root declares it under a test-only label:
@@ -105,11 +105,11 @@ vendor root declares it under a test-only label:
   sections;
 - `Package.swift` dependencies declared inside a `.testTarget(...)` block.
 
-The **name heuristic** is the fallback for every ecosystem.  A component
+The **name heuristic** is the fallback for every ecosystem. A component
 whose name starts or ends with the literal word `test` is test-labelled.
 The check covers the full name and then the last segment after any `/` or
 `:`, so `@playwright/test`, `test-case`, `github.com/stretchr/testify` and
-`org.testng:testng` all match.  Ecosystems without a native test-only
+`org.testng:testng` all match. Ecosystems without a native test-only
 section (`go.mod`, `requirements*.txt`) rely on this heuristic.
 
 The heuristic also applies to **lockfile-resolved names**:

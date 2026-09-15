@@ -18,13 +18,13 @@ package body Adacovex.Timezones is
    --  Built-in table of common IANA zone names -> standard-time offsets.
    --  Entries are "Name+OFFSET[~];" where OFFSET is a whole or half hour
    --  ("+8", "-5.5") and the optional "~" marks a zone that may observe
-   --  daylight saving time.  adacovex ships no timezone database, so the
-   --  table gives standard (non-DST) offsets.  A zone marked "~" is probed
+   --  daylight saving time. adacovex ships no timezone database, so the
+   --  table gives standard (non-DST) offsets. A zone marked "~" is probed
    --  against the platform tzdata (via `zdump` and `date +%z`) so its
    --  resolved offset is DST-correct on Linux/WSL; the table offset is the
-   --  fallback when the probe is unavailable.  A named zone not in the table
+   --  fallback when the probe is unavailable. A named zone not in the table
    --  is probed the same way and rejected when the platform does not know
-   --  it.  Hand-written to keep the crate dependency-free; extend it for new
+   --  it. Hand-written to keep the crate dependency-free; extend it for new
    --  zone names as needed.
    Zones_Table : constant String :=
      "Asia/Singapore+8;Asia/Shanghai+8;Asia/Hong_Kong+8;Asia/Taipei+8;"
@@ -123,8 +123,8 @@ package body Adacovex.Timezones is
 
    --  Probe the platform tzdata for the current UTC offset of a named zone.
    --  One shell command validates the zone with `zdump` (which fails on
-   --  unknown zones) and reads the offset from `date +%z`.  This is the
-   --  DST-correct path on Linux/WSL.  When the probe is unavailable (no
+   --  unknown zones) and reads the offset from `date +%z`. This is the
+   --  DST-correct path on Linux/WSL. When the probe is unavailable (no
    --  zdump/date on PATH) or the zone is unknown, OK is False and the caller
    --  falls back to the built-in table (or rejects the name).
    function Probe_Offset (Name : String; OK : out Boolean) return Integer is
@@ -155,7 +155,7 @@ package body Adacovex.Timezones is
       Res  : Integer := 0;
    begin
       OK := False;
-      --  Only multi-component names (containing '/') are probed.  A bare
+      --  Only multi-component names (containing '/') are probed. A bare
       --  name is ambiguous: glibc would accept it as a POSIX-style TZ
       --  specification (for example "UTCX+8"), which is not a documented
       --  input form and must stay rejected.
@@ -226,7 +226,7 @@ package body Adacovex.Timezones is
       return Res;
    end Probe_Offset;
 
-   --  Look up an IANA name in the built-in table.  Found is True and the
+   --  Look up an IANA name in the built-in table. Found is True and the
    --  returned value is the offset in seconds when the name is present
    --  (the offset may be negative, so Found is the only presence test).
    --  May_DST is True when the table entry is marked "~" (the zone may
@@ -307,7 +307,7 @@ package body Adacovex.Timezones is
    end Lookup_Named;
 
    --  Parse a fixed UTC/GMT offset spec ("UTC+8", "GMT-5", "UTC+08:30", or
-   --  a bare "UTC" / "GMT").  Found is True and the returned value is the
+   --  a bare "UTC" / "GMT"). Found is True and the returned value is the
    --  offset in seconds when the spec is a valid fixed offset (the offset
    --  may be negative, so Found is the only presence test).
    function Parse_UTC_GMT (Spec : String; Found : out Boolean) return Integer
@@ -392,10 +392,10 @@ package body Adacovex.Timezones is
          OK := False;
          return;
       end if;
-      --  Named IANA zones resolve through the built-in table first.  A zone
+      --  Named IANA zones resolve through the built-in table first. A zone
       --  marked "~" may observe DST, so its current offset is probed against
       --  the platform tzdata (the table's standard-time offset is the
-      --  fallback when the probe is unavailable).  The table may hold
+      --  fallback when the probe is unavailable). The table may hold
       --  negative offsets, so presence is tested with Found, never with the
       --  offset sign.
       Offset := Lookup_Named (Spec (F .. L), Found, May_DST);
@@ -425,7 +425,7 @@ package body Adacovex.Timezones is
          OK := True;
          return;
       end if;
-      --  A name the table lacks: ask the platform tzdata.  The probe
+      --  A name the table lacks: ask the platform tzdata. The probe
       --  validates the zone, so an unknown name is rejected loudly.
       declare
          POK : Boolean;
@@ -458,10 +458,10 @@ package body Adacovex.Timezones is
          end if;
       end if;
       --  No explicit TZ override: honour the operating system's configured
-      --  zone.  Ada.Calendar.Time_Zones.UTC_Time_Offset returns the current
+      --  zone. Ada.Calendar.Time_Zones.UTC_Time_Offset returns the current
       --  local-time offset in minutes (it honours the TZ variable and the
       --  system timezone), so the default is always the operator's wall-clock
-      --  zone.  The env-var read above is the only non-SPARK construct; its
+      --  zone. The env-var read above is the only non-SPARK construct; its
       --  Global-contract absence is suppressed, matching
       --  CPUs.Get_Temp_Directory.
       declare
@@ -520,7 +520,7 @@ package body Adacovex.Timezones is
    function Now_Text (Info : Timezone_Info) return String is
       --  Ada.Calendar.Clock is UTC-based, but GNAT's accessors (Seconds,
       --  Year, Month, Day) return the components in the process's local
-      --  time zone (the C library's tzset offset), not UTC.  To render the
+      --  time zone (the C library's tzset offset), not UTC. To render the
       --  wall-clock time in the resolved zone, shift the clock by the
       --  difference between the resolved offset and the local offset before
       --  splitting; the accessors then report the resolved zone's time.

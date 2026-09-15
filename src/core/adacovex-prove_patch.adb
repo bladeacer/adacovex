@@ -11,7 +11,7 @@ package body Adacovex.Prove_Patch is
 
    --  Maximum number of subprogram declarations a patch may re-declare
    --  with aspects, and the fixed buffer bound for the merged spec and for
-   --  reading vendored sources.  Patch files mirror single .ads files, so
+   --  reading vendored sources. Patch files mirror single .ads files, so
    --  these bounds are generous; an oversized patch or spec fails loudly
    --  (the patch is skipped and reported) rather than truncating.
    Max_Patch_Subprogs : constant := 64;
@@ -19,7 +19,7 @@ package body Adacovex.Prove_Patch is
    --  A subprogram parameter profile ("(A : in T; B : in U)" normalised) is
    --  at most a few hundred characters; a small dedicated buffer keeps the
    --  refs array -- 64 entries of Name + Profile -- comfortably on the
-   --  stack.  A profile longer than this fails the match loudly (the
+   --  stack. A profile longer than this fails the match loudly (the
    --  patch entry stays unmatched and Apply reports it).
    Max_Profile : constant := 512;
 
@@ -81,7 +81,7 @@ package body Adacovex.Prove_Patch is
    --  starts (after an optional overriding prefix) with "procedure" /
    --  "function", followed by the exact Name and a non-identifier
    --  character (or end of line), so "Move_Cursor" never matches
-   --  "Move_Cursor_To".  Same name-matching rule as Apply_Patches.
+   --  "Move_Cursor_To". Same name-matching rule as Apply_Patches.
    function Decl_Name_At (Line : String; Name : String) return Boolean is
       T : constant String := Trim (Line, Ada.Strings.Both);
       P : Natural := T'First;
@@ -128,16 +128,16 @@ package body Adacovex.Prove_Patch is
    --  Normalized parameter profile of the declaration whose span starts at
    --  Start and ends at Span_End: the text from the first '(' after the
    --  subprogram name through its matching ')', with all whitespace
-   --  removed.  A parameterless declaration yields "".  Scans only within
+   --  removed. A parameterless declaration yields "". Scans only within
    --  the declaration span so a parameterless Reset never picks up the
-   --  parentheses of a later sibling declaration.  Used to match a patch
+   --  parentheses of a later sibling declaration. Used to match a patch
    --  entry to the exact overload it re-declares -- a patched
    --  two-argument Scroll_Screen replaces the two-argument original,
    --  never a same-named sibling.
    --  Remove the default `in` mode from a raw parameter list so profile
    --  matching is insensitive to whether the mode is written out: the
-   --  default mode is exactly equivalent to writing `in`.  `in out` and
-   --  `out` are real modes and are left untouched.  Colons inside
+   --  default mode is exactly equivalent to writing `in`. `in out` and
+   --  `out` are real modes and are left untouched. Colons inside
    --  character literals (e.g. `X : Character := ':'`) are never treated
    --  as parameter-mode colons because no mode word follows them.
    function Normalize_Modes (Raw : String) return String is
@@ -295,7 +295,7 @@ package body Adacovex.Prove_Patch is
    end Is_Subprog_Decl;
 
    --  Identifier of the subprogram declared by Line (the token after
-   --  "procedure"/"function").  Only valid when Is_Subprog_Decl is True.
+   --  "procedure"/"function"). Only valid when Is_Subprog_Decl is True.
    procedure Subprog_Name
      (Line : String; Name : out String; Name_Len : out Natural)
    is
@@ -343,7 +343,7 @@ package body Adacovex.Prove_Patch is
 
    --  True when the trimmed line ends with the keyword `is` (a body
    --  declaration terminator: "function F (...) return T is" / "procedure
-   --  P (...) is").  The `is` must be its own word -- "Paris" or
+   --  P (...) is"). The `is` must be its own word -- "Paris" or
    --  "Valid_Is" never terminate a declaration.
    function Line_Ends_With_Is (T : String) return Boolean is
    begin
@@ -354,9 +354,9 @@ package body Adacovex.Prove_Patch is
    --  declaration starting at Start: the first line (at paren depth 0)
    --  whose trimmed text ends with ';' (a spec declaration or a null
    --  body) or with the keyword `is` (a body declaration -- the body
-   --  proper follows on later lines).  Aspect clauses and multi-line
+   --  proper follows on later lines). Aspect clauses and multi-line
    --  parameter lists stay inside the span because their parentheses
-   --  balance before the terminator.  The span text is therefore
+   --  balance before the terminator. The span text is therefore
    --  Text (Start .. Decl_Span_End), with no trailing line terminator.
    function Decl_Span_End (Text : String; Start : Natural) return Natural is
       Pos    : Natural := Start;
@@ -780,7 +780,7 @@ package body Adacovex.Prove_Patch is
    end Relative_Path;
 
    --  Walk <root>/.adacovex/patches/ recursively; apply Proc to each file
-   --  (Full path and its path relative to the patches root).  The base
+   --  (Full path and its path relative to the patches root). The base
    --  root stays fixed across recursion so nested patch files report paths
    --  like "demo/deps/vt100/vt100.ads" rather than the basename only --
    --  the merge engine resolves the original source via that relative path.

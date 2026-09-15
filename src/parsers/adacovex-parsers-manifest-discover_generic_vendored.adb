@@ -1,22 +1,22 @@
 separate (Adacovex.Parsers.Manifest)
---  Language-agnostic vendored-component discovery.  Walk the target tree
---  (excluding VCS, build, and installer noise).  Treat every directory
+--  Language-agnostic vendored-component discovery. Walk the target tree
+--  (excluding VCS, build, and installer noise). Treat every directory
 --  whose base name is a known vendor directory as a vendored source.
 --  Scan it shallowly (max 2 levels):
 --    * A directory that carries an ecosystem manifest (package.json,
 --      Cargo.toml, go.mod, pyproject.toml, composer.json, Gemfile,
 --      pom.xml, Package.swift, requirements*.txt) becomes one
---      Scope_Vendored component.  The manifest names and versions it.
+--      Scope_Vendored component. The manifest names and versions it.
 --      Its ecosystem PURL is pkg:npm/... or pkg:cargo/... and more.
 --    * A directory that holds Ada sources (.ads/.adb) without a manifest
---      becomes a Scope_Vendored Ada component.  It is named after the
+--      becomes a Scope_Vendored Ada component. It is named after the
 --      directory (for example a hand-vendored Ada library under
---      third_party/).  npm scope containers (node_modules/@scope without
+--      third_party/). npm scope containers (node_modules/@scope without
 --      a manifest) never become components; the scoped package below
---      them does.  pnpm store and shim dirs (.pnpm, .bin) are skipped
+--      them does. pnpm store and shim dirs (.pnpm, .bin) are skipped
 --      entirely -- they are not packages.
---  Every component carries its language or languages.  The languages are
---  detected from file extensions.  The ecosystem language is first.  The
+--  Every component carries its language or languages. The languages are
+--  detected from file extensions. The ecosystem language is first. The
 --  top 3 are used and mixed sources list the leading languages.
 procedure Discover_Generic_Vendored
   (Target_Dir : String;
@@ -51,7 +51,7 @@ is
 
    --  Directory names inside a vendor root that never represent a
    --  package: pnpm's virtual store (.pnpm holds lock.yaml + the
-   --  resolved store, not a dependency) and the .bin shim dir.  They are
+   --  resolved store, not a dependency) and the .bin shim dir. They are
    --  skipped entirely -- never descended into, never componentised.
    function Skip_Vendor_Scan_Dir (N : String) return Boolean is
    begin
@@ -59,7 +59,7 @@ is
    end Skip_Vendor_Scan_Dir;
 
    --  The directory that contains Path (its last path component
-   --  stripped), "" when Path has no parent.  The vendor walk passes
+   --  stripped), "" when Path has no parent. The vendor walk passes
    --  full paths, so the owner of a vendor root is its containing
    --  directory (for example tests/e2e for tests/e2e/node_modules).
    --  @param Path  Directory path.
@@ -77,7 +77,7 @@ is
       return "";
    end Parent_Dir;
 
-   --  Whether Names holds Name (exact match).  Used to look up the
+   --  Whether Names holds Name (exact match). Used to look up the
    --  owning manifest's test-labelled dependency set.
    --  @param Names  Name vector to search.
    --  @param Name  Dependency name.
@@ -96,9 +96,9 @@ is
    end In_Names;
 
    --  One component per manifest-carrying (or Ada-source-carrying)
-   --  directory inside a matched vendor root.  The scan is shallow.  It
-   --  uses its own directory-search handles.  It can run while the
-   --  caller's tree walk is mid-search.  A component whose project
+   --  directory inside a matched vendor root. The scan is shallow. It
+   --  uses its own directory-search handles. It can run while the
+   --  caller's tree walk is mid-search. A component whose project
    --  manifest labels it a test dependency (or whose name carries a test
    --  label, for example @playwright/test or github.com/stretchr/testify)
    --  is classified Scope_Test; every other vendored component stays
@@ -109,7 +109,7 @@ is
 
       --  Test-labelled names declared in the project manifest that owns
       --  this vendor root (for example tests/e2e/package.json owning
-      --  tests/e2e/node_modules).  Collected once per vendor root.
+      --  tests/e2e/node_modules). Collected once per vendor root.
       Owner_Test_Names : Name_Vectors.Vector;
    begin
       --  Collect the owning manifest's test-labelled dependency names
@@ -159,7 +159,7 @@ is
             End_Search (S2);
 
             --  Component source: ecosystem manifest or source files.
-            --  The vendor root itself (level 0) is not a component.  Only
+            --  The vendor root itself (level 0) is not a component. Only
             --  its children are components.
             if Current.Level > 0 then
                declare
@@ -195,10 +195,10 @@ is
                              M.Primary_Lang (1 .. M.Primary_Lang_Len));
                      begin
                         --  The vendored-manifest scanner reads name and
-                        --  version offline.  The registry resolver enriches
+                        --  version offline. The registry resolver enriches
                         --  with version and website (which the in-repo
                         --  scanner does not capture) and supplies the
-                        --  licence when the manifest ships none.  Local
+                        --  licence when the manifest ships none. Local
                         --  values win; the registry fills the gaps.
                         Resolve_Ecosystem_Metadata
                           (Target_Dir,
@@ -239,7 +239,7 @@ is
                            --  package.json, Cargo's [dev-dependencies], a
                            --  Gemfile :test group, a Maven test scope, a
                            --  pyproject "test" extra, or a Package.swift
-                           --  .testTarget).  Everything else stays
+                           --  .testTarget). Everything else stays
                            --  vendored.
                            if Is_Test_Named (N) then
                               Sc := Types.Scope_Test;
@@ -261,10 +261,10 @@ is
                         end;
                      end;
                   else
-                     --  Library vendored without a manifest.  The directory
-                     --  itself is the component.  The language is the top-3
-                     --  summary of its source-file extensions.  Ada-only
-                     --  directories are included.  npm scope containers
+                     --  Library vendored without a manifest. The directory
+                     --  itself is the component. The language is the top-3
+                     --  summary of its source-file extensions. Ada-only
+                     --  directories are included. npm scope containers
                      --  (a node_modules/@scope directory without its own
                      --  package.json) are never components themselves --
                      --  only the scoped package below them is.

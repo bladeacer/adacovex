@@ -72,9 +72,9 @@ existing `obj` / `bin` / `dist` / `build` exclusions.
 A new `make book-links-check` gate (wired into `make check`, via
 `tools/check-book-links.py`) verifies that every link inside the bundled
 offline manual resolves against the bundled assets or the
-deliberately-not-bundled prefixes shared with `tools/gen-docs.py`.  The
+deliberately-not-bundled prefixes shared with `tools/gen-docs.py`. The
 check runs against a **fresh** `mdbook build` from a temp copy of `docs/`,
-so a stale local `docs/book` can never mask a broken link.  The committed
+so a stale local `docs/book` can never mask a broken link. The committed
 artifact is the generated spec itself, gated by
 `python3 tools/gen-docs.py --check` (also wired into `make check`), which
 rebuilds the book and fails when `src/adacovex-docs_template.ads` is stale.
@@ -83,10 +83,10 @@ The manual is now **complete**: every page under `docs/` (the 64
 API-reference pages, the 39 changelogs, the compliance outputs, the proof
 ledger, the test report, credits, and third-party notices) is a book
 chapter, so the index pages no longer link to pages the book never builds
-(previously 131 broken links in the built site).  Links from the manual to
+(previously 131 broken links in the built site). Links from the manual to
 repo-root files (`README.md`, `CONTRIBUTING.md`, `AGENTS.md`) now point at
 the repository URLs instead of `../` paths that cannot resolve inside the
-book.  The tools unit tests grow from 41 to 48.
+book. The tools unit tests grow from 41 to 48.
 
 ### C6: Dashboard preview screenshots refreshed and API tab added
 
@@ -138,11 +138,11 @@ contributor and maintainer guides (developer guide, proving, architecture,
 requirements, performance, STE100, LLM usage), and the top level keeps the
 index plus the maintainer references (HLR/LLR, test report, credits,
 third-party notices) next to the `proof/`, `compliance/`, `badges/`,
-`api-docs/`, and `changelogs/` outputs.  `docs/SUMMARY.md` groups the TOC
+`api-docs/`, and `changelogs/` outputs. `docs/SUMMARY.md` groups the TOC
 into Getting started / Using adacovex / Contributing / Maintainer
 references, and every cross-link, README link, AGENTS.md doc-links entry,
 `tools/doc-links.map`, `tools/rst2md.py` guide table, and generated
-`api-docs` page was updated in the same change.  The manual index no
+`api-docs` page was updated in the same change. The manual index no
 longer carries the maintainer-only build and generated-output instructions;
 those moved to the developer guide (`docs/contributing/developer-guide.md`)
 so end-user pages stay focused on using adacovex.
@@ -155,18 +155,18 @@ release workflow to the developer guide and swaps the debugging-guide
 `make prove` for the user-facing `adacovex prove`; `installation.md` builds
 from source with `alr build` (the user-facing route) instead of
 `make build`; and `cli-reference.md` points contributors at the developer
-guide instead of `make complexity-check`.  The action's own `alr build`
+guide instead of `make complexity-check`. The action's own `alr build`
 steps remain, since they describe what the action does for the user.
 
 ### C13: docs/book no longer committed; the generated spec is the artifact
 
-The mdBook build output (`docs/book/`) is no longer committed.  mdBook
+The mdBook build output (`docs/book/`) is no longer committed. mdBook
 content-hashes its assets, so the build churned `searchindex-<hash>.js` and
 every page's reference to it on each docs edit -- pure version-control
-noise.  `docs/book/` is now gitignored and regenerated locally by
+noise. `docs/book/` is now gitignored and regenerated locally by
 `make book`; the committed artifact is the generated spec
 `src/adacovex-docs_template.ads`, which is stable (see C8 and C12) and is
-gated by `python3 tools/gen-docs.py --check` inside `make check`.  The
+gated by `python3 tools/gen-docs.py --check` inside `make check`. The
 manual's own search and print work identically offline and online, and a
 fresh clone builds the binary without mdbook (the committed spec is kept
 until `make book` regenerates it).
@@ -174,16 +174,16 @@ until `make book` regenerates it).
 ### C12: Offline manual print button works and the search index name is stable
 
 The offline manual at `/docs` now behaves exactly like the online one when
-printing.  mdBook's print view (`print.html` -- the single-page rendering
+printing. mdBook's print view (`print.html` -- the single-page rendering
 the print button opens and which triggers the print dialog on load) and its
 print stylesheet are bundled with the rest of the site, so **Print this
-book** works offline instead of returning 404.  The SVG favicon is bundled
+book** works offline instead of returning 404. The SVG favicon is bundled
 too; only the PNG favicon and the PNG dashboard screenshots are dropped.
 
 The bundled search index no longer churns its name on every docs edit.
 mdBook content-hashes the index (`searchindex-<hash>.js`), and the hash
 changes whenever the manual text changes, so each rebuild renamed the asset
-and rewrote the reference on every page.  `tools/gen-docs.py` now normalises
+and rewrote the reference on every page. `tools/gen-docs.py` now normalises
 the index to a stable `searchindex.js` -- the asset and every page's
 reference -- so a docs edit updates the same entry in place and the
 generated spec stops diffing on the file name.
@@ -206,7 +206,7 @@ yace (MIT, v1.1.0, `pkg:generic/yace`) alongside the other bundled libraries.
 The `Docs_Subpath` slicing assumed the request path started at index 1, but
 `Get_Path` returns a slice of the request line, so every `/docs/<subpath>`
 kept a leading slash and returned 404 -- only `/docs` and `/docs/`
-resolved.  The six-character prefix is now stripped from the slice's actual
+resolved. The six-character prefix is now stripped from the slice's actual
 first index, so every page, stylesheet, and badge of the bundled manual
 serves (an e2e test pins the exact, nested, and extensionless subpaths plus
 a missing-page 404).
@@ -214,14 +214,14 @@ a missing-page 404).
 ### H5: Idle connections no longer pin the server worker pool
 
 The dashboard server's fixed-size worker pool (4 workers) blocks each
-worker on the next request of a keep-alive connection.  Browsers hold
+worker on the next request of a keep-alive connection. Browsers hold
 several idle connections open, so once all four workers were waiting on
 silent connections, the next request queued forever -- the e2e suite
-started hitting 60-second timeouts on `/docs` subpages as it grew.  Each
+started hitting 60-second timeouts on `/docs` subpages as it grew. Each
 accepted socket now carries a 5-second receive timeout, and a timed-out
 (or dropped) connection is closed in the worker's error path (which
-previously leaked the socket).  A worker frees instead of pinning the pool forever,
-and the request is served.  (The timeout was originally 5s; H10 below
+previously leaked the socket). A worker frees instead of pinning the pool forever,
+and the request is served. (The timeout was originally 5s; H10 below
 shortens it to half a second so a multi-asset docs burst fans out across
 the pool instead of waiting one timeout per queued connection.)  The e2e
 suite returns to 28 passing in ~14 seconds.
@@ -278,12 +278,12 @@ survives Rust toolchain upgrades without a hardcoded version path.
 
 ### H9: Docs search-result links resolve again
 
-Clicking an mdBook search result in the bundled manual returned 404.  The
+Clicking an mdBook search result in the bundled manual returned 404. The
 `/docs` router dispatched on the query-string-stripped path (so `?highlight=`
 reached the docs route), but the asset lookup that followed read the *raw*
 request path, so every search result carrying `?highlight=...` (mdBook's
 mark-the-search-term parameter) was looked up in the wrong book-relative
-shape and never found.  The docs asset key now derives from the query-stripped path,
+shape and never found. The docs asset key now derives from the query-stripped path,
 so a search-result link such as
 `/docs/usage/cli-reference.html?highlight=serve#--serve` resolves to the page,
 then the browser's own fragment + mark handling scrolls to the heading and
@@ -292,13 +292,13 @@ highlights the term -- exactly as it does under `mdbook serve`.
 ### H10: Docs pages load quickly again
 
 The bundled manual felt slow to open: a ~15-asset page (HTML + several CSS +
-JS) took roughly six seconds to load.  The 4-worker server pool pinned each
+JS) took roughly six seconds to load. The 4-worker server pool pinned each
 worker to its keep-alive connection for a 5-second idle receive timeout, so
 once four sockets were held by the browser's parallel asset requests, the
 remaining connections queued in the accept backlog for ~5s until a worker
-released.  The idle timeout is now half a second: a worker that finishes a
+released. The idle timeout is now half a second: a worker that finishes a
 keep-alive exchange returns to `Accept_Socket` quickly, the burst fan-outs
-across the pool, and a docs page loads in well under a second.  Workers are
+across the pool, and a docs page loads in well under a second. Workers are
 released faster on idle connections, which also means a stale or abandoned
 connection is reaped sooner than before.
 
@@ -306,9 +306,9 @@ connection is reaped sooner than before.
 
 `tools/gen-docs.py` dropped the bundling-irrelevant font stylesheet link from
 each bundled page, but its pattern only matched the index page's un-prefixed
-`fonts/` href shape.  Subpages link the same stylesheet with a `path_to_root`
+`fonts/` href shape. Subpages link the same stylesheet with a `path_to_root`
 prefix (for example `../fonts/`), so those kept the reference and the browser
-issued a `/fonts/...css` 404 on every subpage.  The drop now matches any
+issued a `/fonts/...css` 404 on every subpage. The drop now matches any
 leading `../` prefix, so no bundled page references the unbundled font asset.
 
 ### H8: HLR tags are no longer read from string literals
@@ -328,7 +328,7 @@ The native suite grows from 1169 to 1173 tests. The server routing category
 adds four checks for the `/docs` and `/docs/` routes and two near-miss paths
 (`/docs2`, `/manual`) that must stay 404s. The scanner category adds three
 checks that a `-- HLR-*` string literal is not a source tag while a real
-comment tag after a string still is.  H9's query-string handling adds no
+comment tag after a string still is. H9's query-string handling adds no
 native assertions (the routing table already pins `/docs` and the
 `Strip_Query` path), and H10's timeout is timing behaviour the suite
 cannot assert deterministically -- both are covered manually and by the

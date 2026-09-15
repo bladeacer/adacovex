@@ -1,11 +1,11 @@
 # Adacovex.Diff
 
 Differential assessment for --compare-base.
-It assesses a target project at a base revision.  The base revision is a
+It assesses a target project at a base revision. The base revision is a
 branch, commit, rev, or tag in git, mercurial, subversion, fossil, or
-jj (see Adacovex.VCS).  It also assesses the current working tree.  It
+jj (see Adacovex.VCS). It also assesses the current working tree. It
 then reports a side-by-side delta of docstring coverage, SPARK proof
-level, test results, HLR traceability, and DO-178C DAL status.  The
+level, test results, HLR traceability, and DO-178C DAL status. The
 report helps you catch local regressions before you push.
 HLR-DIFF: Differential assessment
 
@@ -123,7 +123,7 @@ end record;
 | Parameter | Description |
 |-----------|-------------|
 | `Base_Ref` | Branch/commit/rev/tag to check out. |
-| `Success` | True if the snapshot was created.  False on failure. |
+| `Success` | True if the snapshot was created. False on failure. |
 | `Target_Dir` | Root of the target repository. |
 | `Tmp_Len` | Length of the snapshot path on success. |
 | `Tmp_Path` | Output buffer receiving the snapshot path. |

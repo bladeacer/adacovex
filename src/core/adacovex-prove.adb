@@ -51,7 +51,7 @@ package body Adacovex.Prove is
       end loop;
    end Copy_To;
 
-   --  Detect the number of logical CPUs on the host.  Delegates to the
+   --  Detect the number of logical CPUs on the host. Delegates to the
    --  cross-platform Adacovex.CPUs implementation (Linux /proc/cpuinfo,
    --  macOS/FreeBSD sysctl, Windows env, fallback 1).
    function Detect_Core_Count return Natural is
@@ -70,7 +70,7 @@ package body Adacovex.Prove is
    --  root .gpr path, the resolved option string, and the content hash of
    --  every prove-relevant Ada source file under the target (skipping the
    --  always-excluded directories and the generated bundle specs, see
-   --  Is_Proof_Input).  Two runs with identical inputs produce the same
+   --  Is_Proof_Input). Two runs with identical inputs produce the same
    --  digest, so an unchanged project reuses a prior proof via the result
    --  cache.
    function Compute_Prove_Input_Hash
@@ -78,7 +78,7 @@ package body Adacovex.Prove is
    is
       use Ada.Directories;
 
-      --  Always-excluded directories for the proof-input walk.  The walk
+      --  Always-excluded directories for the proof-input walk. The walk
       --  hashes every .ads/.adb under the target on every prove run (cold
       --  or warm), so its skip set must cover every directory that cannot
       --  hold project proof units: VCS metadata, build/proof outputs,
@@ -190,7 +190,7 @@ package body Adacovex.Prove is
 
    --  Build the gnatprove option string (without the -P project pair).
    --  Always forwards -j <jobs>; the resolved job count is passed in by the
-   --  caller (Opts.Jobs when >= 0, else a detected core count).  The other
+   --  caller (Opts.Jobs when >= 0, else a detected core count). The other
    --  switches are appended only when configured, so a default invocation
    --  still parallelizes while remaining minimal.
    function Build_Option_String
@@ -230,7 +230,7 @@ package body Adacovex.Prove is
       else
          --  Default proof budget, well above gnatprove's own step limit, so
          --  solver-timeout false negatives are not reported as unproved.
-         --  An explicit --steps=... always overrides this default.  Raised
+         --  An explicit --steps=... always overrides this default. Raised
          --  from 5000 to 10000 in 1.10.0 when the multi-standard type layer
          --  grew the proof surface; 5000 sat on the solver's non-determinism
          --  boundary and intermittently left a trivial string contract
@@ -247,7 +247,7 @@ package body Adacovex.Prove is
       --  informational "cannot unroll loop (too many loop iterations)"
       --  notice for loops it would like to unroll but cannot, which is
       --  noise in every proof run (e.g. Ada_CRDT's Find_Actor / LEB128
-      --  loops and generic instantiations).  Disabling unrolling removes
+      --  loops and generic instantiations). Disabling unrolling removes
       --  the notice entirely and is proof-neutral for the dogfood targets
       --  (720/720 adacovex and 589/589 Ada_CRDT VCs, 0 unproved).
       App ("--no-loop-unrolling");
@@ -268,7 +268,7 @@ package body Adacovex.Prove is
    end Build_Option_String;
 
    --  Split a space-separated option string into individual Argument_List
-   --  entries (option values never contain spaces).  Appends to Args at N.
+   --  entries (option values never contain spaces). Appends to Args at N.
    procedure Append_Option_Tokens
      (Args   : in out GNAT.OS_Lib.Argument_List;
       N      : in out Natural;
@@ -322,11 +322,11 @@ package body Adacovex.Prove is
 
    --  Extract the literal Source_Dirs attribute of a GNAT project file into
    --  Dirs as a comma-separated list of directories (relative to the
-   --  project).  GNATprove analyses only the current project's own units,
+   --  project). GNATprove analyses only the current project's own units,
    --  which live under those directories, so the -u include list for the
    --  per-file proof opt-outs must be drawn from them: gnatprove rejects a
-   --  -u file that is not a unit of the project.  When the attribute is
-   --  absent the GNAT default (the project directory) applies.  Returns
+   --  -u file that is not a unit of the project. When the attribute is
+   --  absent the GNAT default (the project directory) applies. Returns
    --  False when the attribute exists but is not a plain list of string
    --  literals (variables or concatenation) -- the caller then proves the
    --  whole project and warns instead of guessing membership.
@@ -464,14 +464,14 @@ package body Adacovex.Prove is
    --  Append `-u` plus every .ads/.adb unit file of the project (absolute
    --  paths) to the gnatprove argument list, except unit files whose
    --  leading comment block carries the no-covex-spark-proof (or
-   --  no-covex-analysis) marker.  The marker belongs on the unit's .ads
+   --  no-covex-analysis) marker. The marker belongs on the unit's .ads
    --  spec: gnatprove selects a whole unit from its spec, so a body of an
    --  opted-out spec is dropped from the list too even when the body
-   --  itself carries no marker.  Project membership comes from the literal
-   --  Source_Dirs attribute of the root project file at GPR_Path.  When the
+   --  itself carries no marker. Project membership comes from the literal
+   --  Source_Dirs attribute of the root project file at GPR_Path. When the
    --  attribute is non-literal, nothing is appended, Parsed is False and
    --  Applied is False (the caller then proves the whole project and
-   --  warns).  Opted_Out is the number of marker-carrying unit files
+   --  warns). Opted_Out is the number of marker-carrying unit files
    --  found; Included is the number of -u paths appended.
    procedure Append_Unit_List
      (GPR_Path  : String;
@@ -717,10 +717,10 @@ package body Adacovex.Prove is
 
    --  Return the gnatprove version constraint declared in the manifest file
    --  at Path (the `gnatprove = "..."` value inside `[[depends-on]]`), or ""
-   --  when the manifest does not declare gnatprove.  A simple TOML scan:
+   --  when the manifest does not declare gnatprove. A simple TOML scan:
    --  section headers are `[name]` lines and dependency entries are
-   --  `name = "version"` lines inside `[[depends-on]]`.  Missing files report
-   --  "".  Used to fold the prover identity into the proof result cache key so
+   --  `name = "version"` lines inside `[[depends-on]]`. Missing files report
+   --  "". Used to fold the prover identity into the proof result cache key so
    --  a different pinned gnatprove version can never reuse a stale proof.
    function File_GNATprove_Version (Path : String) return String is
       use Ada.Text_IO;
@@ -806,15 +806,15 @@ package body Adacovex.Prove is
    end File_GNATprove_Version;
 
    --  True when the manifest file at Path declares a gnatprove dependency in
-   --  its `[[depends-on]]` section.  See File_GNATprove_Version for the scan
-   --  rules.  Missing files report False.
+   --  its `[[depends-on]]` section. See File_GNATprove_Version for the scan
+   --  rules. Missing files report False.
    function File_Declares_GNATprove (Path : String) return Boolean is
    begin
       return File_GNATprove_Version (Path) /= "";
    end File_Declares_GNATprove;
 
    --  True when <target>/alire-dev.toml or <target>/alire.toml declares a
-   --  gnatprove dependency.  The dev manifest is consulted first because it
+   --  gnatprove dependency. The dev manifest is consulted first because it
    --  extends alire.toml with the proof toolchain for local make targets.
    function Manifest_Declares_GNATprove (Target_Dir : String) return Boolean is
    begin
@@ -826,9 +826,9 @@ package body Adacovex.Prove is
    end Manifest_Declares_GNATprove;
 
    --  Download and unpack the platform toolchain bundle into
-   --  ~/.adacovex/toolchain/.  Last-resort fallback only: used when neither
+   --  ~/.adacovex/toolchain/. Last-resort fallback only: used when neither
    --  an alire-managed gnatprove nor a gnatprove on $PATH nor a cached
-   --  toolchain is available.  Uses the ADACOVEX_TOOLCHAIN_URL environment
+   --  toolchain is available. Uses the ADACOVEX_TOOLCHAIN_URL environment
    --  variable if set, otherwise the default GitHub release asset
    --  adacovex-toolchain-<os>-<arch>.tar.gz from the project's releases.
    procedure Download_Toolchain (Success : out Boolean) is
@@ -912,7 +912,7 @@ package body Adacovex.Prove is
    --  Strip a version-set expression (`^15.1.0`, `~15.1.0`, `>=16.0.0`,
    --  `15.1.0`) down to the bare numeric version alr accepts on the
    --  `alr get gnatprove=<v>` command line: skip leading operators/spaces,
-   --  then take digits and dots up to the first other character.  Returns ""
+   --  then take digits and dots up to the first other character. Returns ""
    --  when no version could be extracted.
    function Bare_Version (Con : String) return String is
       Start : Natural := Con'First;
@@ -937,7 +937,7 @@ package body Adacovex.Prove is
    --  a `gnatprove_<version>_<hash>/` directory containing bin/gnatprove.
    --  When Version is non-empty only directories with that exact version
    --  prefix match; when empty, any gnatprove_* crate qualifies (the greatest
-   --  name wins -- a later version/hash).  Returns the crate directory.
+   --  name wins -- a later version/hash). Returns the crate directory.
    procedure Find_Deployed_GNATprove
      (Root    : String;
       Version : String;
@@ -991,11 +991,11 @@ package body Adacovex.Prove is
    --  Deploy ONLY the gnatprove binary crate (a self-contained bundle, no
    --  dependencies) into ~/.adacovex/toolchain/ via
    --  `alr -n get gnatprove=<bare-version>` when the target manifest declares
-   --  gnatprove.  The deployed binary -- not the `alr` wrapper -- is what
+   --  gnatprove. The deployed binary -- not the `alr` wrapper -- is what
    --  Run_Prove executes, so no dev-manifest swap and no composition of the
    --  target's whole dependency set is ever needed (the previous `alr exec`
    --  path pulled in covex/gnatdoc_bin/gnatformat_bin etc., whose flaky
-   --  downloads could fail CI proof runs).  Idempotent: an existing crate for
+   --  downloads could fail CI proof runs). Idempotent: an existing crate for
    --  the same version is reused without re-running alr, so a restored
    --  toolchain cache never re-downloads.
    procedure Deploy_GNATprove
@@ -1022,8 +1022,8 @@ package body Adacovex.Prove is
 
       --  First deployment of this gnatprove version: alr downloads a
       --  ~130 MB toolchain bundle and unpacks it, which can take a minute
-      --  on a slow link.  Say so up front -- a silent minute of nothing
-      --  looks like a hang.  The deployment is one-time per version: every
+      --  on a slow link. Say so up front -- a silent minute of nothing
+      --  looks like a hang. The deployment is one-time per version: every
       --  later run reuses the deployed crate above without any download.
       Ada.Text_IO.Put_Line
         ("  deploy:    gnatprove "
@@ -1134,10 +1134,10 @@ package body Adacovex.Prove is
       --  ADACOVEX_GNATPROVE_VERSION environment variable or the
       --  `[prove] gnatprove-version` key in ~/.adacovex/adacovex.toml, read by
       --  Global_GNATprove_Pin): deploy ONLY that gnatprove version and run it
-      --  directly.  Authoritative -- a failure to deploy the pinned version is
+      --  directly. Authoritative -- a failure to deploy the pinned version is
       --  a failure to run, because a different gnatprove can change which VCs
       --  are discharged (results must always come from the pinned prover, and
-      --  reproducibility is the whole point of pinning).  The manifest pin
+      --  reproducibility is the whole point of pinning). The manifest pin
       --  above always wins; this applies only to projects that do not declare
       --  gnatprove themselves.
       if Pinned_Version'Length > 0 then
@@ -1291,10 +1291,10 @@ package body Adacovex.Prove is
 
    --  Read the global gnatprove version pin -- the version Run_Prove passes to
    --  Resolve_GNATprove for projects that do not declare gnatprove in their
-   --  own manifest.  Empty means "no global pin" (fall back to PATH / cache /
-   --  download).  Priority: the ADACOVEX_GNATPROVE_VERSION environment
+   --  own manifest. Empty means "no global pin" (fall back to PATH / cache /
+   --  download). Priority: the ADACOVEX_GNATPROVE_VERSION environment
    --  variable, then the `[prove] gnatprove-version = "X.Y.Z"` key in
-   --  ~/.adacovex/adacovex.toml.  The returned value is clamped to
+   --  ~/.adacovex/adacovex.toml. The returned value is clamped to
    --  Types.Max_Id_Str like every other CLI/config string.
    function Global_GNATprove_Pin return String is
       use Ada.Text_IO;
@@ -1380,11 +1380,11 @@ package body Adacovex.Prove is
    end Global_GNATprove_Pin;
 
    --  Replay a captured gnatprove output file to stdout, dropping the
-   --  suppressed informational-message blocks.  Sets is a comma-separated
+   --  suppressed informational-message blocks. Sets is a comma-separated
    --  list of suppression-set names (empty = the default set,
    --  "unrolling-inlining"); a set name S suppresses every message block
    --  carrying the `[info-S]` tag (or a bare `[S]` tag) -- purely
-   --  informational notices, the proof outcome is unaffected.  A block
+   --  informational notices, the proof outcome is unaffected. A block
    --  appears in two shapes:
    --
    --     info: cannot unroll loop (too many loop iterations) [info-unrolling-inlining]
@@ -1512,7 +1512,7 @@ package body Adacovex.Prove is
             L : constant String := Get_Line (F);
          begin
             if Is_Suppressed (L) then
-               --  Tagged line: drop it.  For a "+" sub-message (the
+               --  Tagged line: drop it. For a "+" sub-message (the
                --  in-instantiation shape) also drop its "info:" + "-->"
                --  header pair that is still waiting in the buffer.
                if Head (L) = '+' and then Ct >= 2 then
@@ -1567,18 +1567,18 @@ package body Adacovex.Prove is
       OLen    : Natural := 0;
 
       --  True when proof patches were applied and gnatprove ran against the
-      --  patched proof tree instead of the target itself.  When set, the
+      --  patched proof tree instead of the target itself. When set, the
       --  freshly generated gnatprove.out is copied back to the canonical
       --  <target>/obj/gnatprove/ path after a successful run so the
       --  assessment pipeline finds it.
       GPR_Patched : Boolean := False;
 
-      --  Build the proof result-cache key.  It must capture everything that
+      --  Build the proof result-cache key. It must capture everything that
       --  can change the (cached) gnatprove.out: the source tree content, the
-      --  .gpr, the options, AND the prover identity.  Folding the prover
+      --  .gpr, the options, AND the prover identity. Folding the prover
       --  identity in means a different gnatprove deployment (pinned version,
       --  on-PATH upgrade, or re-downloaded toolchain) can never reuse a stale
-      --  proof from a previous toolchain.  Stale cache entries simply miss and
+      --  proof from a previous toolchain. Stale cache entries simply miss and
       --  are transparently re-proved, so no explicit cache invalidation is
       --  needed when the toolchain changes.
       function Prove_Cache_Key return String is
@@ -1597,7 +1597,7 @@ package body Adacovex.Prove is
       --  Namespace the cached gnatprove.out *content* under the input hash.
       --  Two blobs are stored per proved input: the "1" marker under the
       --  bare input hash (a cheap hit probe) and the summary text under this
-      --  derived key.  A warm hit restores the summary the assessment
+      --  derived key. A warm hit restores the summary the assessment
       --  pipeline parses even when obj/gnatprove/ was wiped.
       function Proof_Output_Key (Input_Hash : String) return String is
       begin
@@ -1606,7 +1606,7 @@ package body Adacovex.Prove is
 
       --  Write the cached gnatprove.out content back to the canonical path
       --  the assessment pipeline parses (<target>/obj/gnatprove/gnatprove.out)
-      --  when the cached summary exists.  A no-op (silently) when the
+      --  when the cached summary exists. A no-op (silently) when the
       --  summary blob is missing, oversized, or the write fails -- the
       --  pipeline then reports Stone/0-VC exactly as before this restore
       --  existed, never a corrupt summary.
@@ -1684,7 +1684,7 @@ package body Adacovex.Prove is
       --  Proof patches (SPARK aspects carried by .adacovex/patches files)
       --  make the vendored specs part of the proof: build a patched copy of
       --  the target tree (with the merged specs in place) and run gnatprove
-      --  against the copy's root project.  The copy lives under the
+      --  against the copy's root project. The copy lives under the
       --  target's obj/ (excluded from scanning and hashing) and preserves
       --  the original project structure exactly, so the target's own units
       --  analyse identically -- only the patched vendored specs differ.
@@ -1726,9 +1726,9 @@ package body Adacovex.Prove is
          end if;
       end;
 
-      --  Resolve the parallelism.  Default (Opts.Jobs < 0) uses
+      --  Resolve the parallelism. Default (Opts.Jobs < 0) uses
       --  max(1, cores-2) on a developer machine but all cores inside CI;
-      --  --jobs=0 means all cores; --jobs=N pins N processes.  The chosen
+      --  --jobs=0 means all cores; --jobs=N pins N processes. The chosen
       --  basis is printed so the run is auditable ("which check is
       --  justified" by the environment).
       Jobs :=
@@ -1747,7 +1747,7 @@ package body Adacovex.Prove is
 
       --  Result-cache short-circuit: if the exact set of inputs (source tree
       --  content + .gpr + options) has been proved before, restore the prior
-      --  gnatprove.out instead of re-running the prover.  This is the single
+      --  gnatprove.out instead of re-running the prover. This is the single
       --  biggest CI speedup: an unchanged project serves the proof from disk.
       --  The cached blob carries the gnatprove.out content itself (stored
       --  after a successful run, below), so a warm hit rebuilds the summary
@@ -1772,7 +1772,7 @@ package body Adacovex.Prove is
 
       --  Resolve_GNATprove always returns a directly-executable gnatprove binary
       --  (the `alr get` deployment path runs the deployed binary itself, never
-      --  the alr wrapper), so there is exactly one spawn shape.  Prepend the
+      --  the alr wrapper), so there is exactly one spawn shape. Prepend the
       --  toolchain bin dir to PATH so gnatprove finds its solvers
       --  (Z3/CVC5/Alt-Ergo), which live in the deployment's bin/libexec dirs.
       if TLen > 0 then
@@ -1797,7 +1797,7 @@ package body Adacovex.Prove is
       --  markers in a file's leading comment block): when any unit file of
       --  the project opts out, gnatprove runs with -u plus every project
       --  unit except the opted-out ones, so their checks never appear in
-      --  the output and never count against the proof metrics.  The marker
+      --  the output and never count against the proof metrics. The marker
       --  lives in the file's content, which is part of the prove input
       --  hash, so a cache hit always reflects the current opt-out set.
       --  A project whose Source_Dirs attribute is not literal (variables
@@ -1837,8 +1837,8 @@ package body Adacovex.Prove is
          --  Capture gnatprove's combined output, replay it to stdout with
          --  the configured suppression sets (default: the
          --  [info-unrolling-inlining] blocks) filtered out, then remove the
-         --  capture file.  The summary / check results always pass through
-         --  -- only the benign info notices are hidden.  Output appears
+         --  capture file. The summary / check results always pass through
+         --  -- only the benign info notices are hidden. Output appears
          --  once the run finishes (no live tail) -- quiet is the default
          --  for local runs, never for --verbose or CI (which passes
          --  --verbose).
@@ -2027,7 +2027,7 @@ package body Adacovex.Prove is
    --  Gathered status-report data, shared by the human text report
    --  (Run_Status), the JSON export (Export_Status) and the key=value
    --  metrics report (Run_Status_Metrics) so the three outputs never
-   --  drift.  String fields are fixed buffers + a length (0 = empty).
+   --  drift. String fields are fixed buffers + a length (0 = empty).
    type VCS_Tool_Flags is array (1 .. 6) of Boolean;
    type Status_Data is record
       Target           : String (1 .. Types.Max_Path) := (others => ' ');
@@ -2064,7 +2064,7 @@ package body Adacovex.Prove is
    end record;
 
    --  Fill a Status_Data record by probing PATH, the target manifest, the
-   --  global pin, and the toolchain cache.  Never deploys or downloads
+   --  global pin, and the toolchain cache. Never deploys or downloads
    --  anything (same contract as Run_Status).
    --  Resolve the display timezone: an explicit TZ spec wins, else the
    --  operating system's timezone.

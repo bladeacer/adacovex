@@ -88,9 +88,10 @@ package body Adacovex_Renderer_Tests is
              (Doc, Proof, Tests, Assess);
       begin
          R.Check
-           (Contains (S, """standard"":""IEC 62304"""),
+           (Contains (S, """standard"": ""IEC 62304"""),
             "json standard IEC 62304");
-         R.Check (Contains (S, """level"":""Class A"""), "json level Class A");
+         R.Check
+           (Contains (S, """level"": ""Class A"""), "json level Class A");
       end;
 
       --  JSON API all-standards mode emits a per-standard breakdown.
@@ -99,8 +100,8 @@ package body Adacovex_Renderer_Tests is
            Adacovex.Renderers.HTML.Render_Metrics_JSON
              (Doc, Proof, Tests, Assess, All_Standards => True);
       begin
-         R.Check (Contains (S, """standard"":""all"""), "json standard all");
-         R.Check (Contains (S, """standards"":"), "json standards object");
+         R.Check (Contains (S, """standard"": ""all"""), "json standard all");
+         R.Check (Contains (S, """standards"": {"), "json standards object");
          R.Check (Contains (S, "ASIL B"), "json all: ASIL B");
       end;
 
@@ -153,7 +154,7 @@ package body Adacovex_Renderer_Tests is
          --  placeholder in an HTML comment (<!--__CARDS__-->), so after
          --  substitution the whole cards block stayed commented out and the
          --  served dashboard showed only the header + footer (no badges, no
-         --  metrics).  The rendered page must contain the actual card markup
+         --  metrics). The rendered page must contain the actual card markup
          --  as live elements, not hidden inside <!-- ... -->.
          R.Check
            (not Contains (S, "<!--"),
@@ -298,7 +299,7 @@ package body Adacovex_Renderer_Tests is
       --  Proof bars scale with the category's magnitude (the test-chart
       --  convention): with Flow at 2 of 8 runtime checks, Flow's green fill
       --  is a quarter of the full-width track (grey track = the scale
-      --  remainder) while Runtime's is the full width.  The track itself
+      --  remainder) while Runtime's is the full width. The track itself
       --  no longer carries a width -- fills are measured against the
       --  largest category so the green+red total equals Checks/Max.
       Proof.Runtime_Checks := 8;

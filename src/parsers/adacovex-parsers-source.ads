@@ -7,10 +7,10 @@ with Adacovex.Types;
 --
 --  Supported docstring annotations (placed immediately before a
 --  subprogram declaration, no intervening blank lines):
---    @param Name  Description.       -- Document a formal parameter
---    @return Description.            -- Document a function return value
---    @field Description.             -- Document a record component
---    @formal Name  Description.      -- Document a generic formal
+--    @param Name  Description. -- Document a formal parameter
+--    @return Description. -- Document a function return value
+--    @field Description. -- Document a record component
+--    @formal Name  Description. -- Document a generic formal
 --
 --  Standard tag aliases are accepted (`@parameter` == `@param`,
 --  `@returns` == `@return`), and the summary tags `@brief` / `@summary`
@@ -26,7 +26,7 @@ with Adacovex.Types;
 --    --  one-line summary (single space, `-- `)
 --    --  one-line summary (two spaces, `--  `)
 --    --  one-line summary (tab separator)
---  A bare `--` or `---` divider is not a docstring.  Docstrings can
+--  A bare `--` or `---` divider is not a docstring. Docstrings can
 --  appear before or after the declaration.
 --
 --  Google style (Doxygen-free Python convention):
@@ -35,7 +35,7 @@ with Adacovex.Types;
 --    --  Returns:
 --    --      The sum.
 --  An "Args:" header opens a parameter block: deeper-indented comment lines
---  inside it count as parameter entries.  "Returns:" marks a documented
+--  inside it count as parameter entries. "Returns:" marks a documented
 --  return value.
 --
 --  Sphinx style (reStructuredText field lists):
@@ -62,12 +62,12 @@ package Adacovex.Parsers.Source is
      Post => (if Success then Pkg.Name_Len > 0);
 
    --  Recursively scan all .ads files under Target_Dir.
-   --  Walk the directory tree rooted at Target_Dir.  Parse every .ads file
-   --  found.  Skip directories whose simple name appears in Skip_List
-   --  (comma-separated).  Append found packages to the vector.  Files whose
+   --  Walk the directory tree rooted at Target_Dir. Parse every .ads file
+   --  found. Skip directories whose simple name appears in Skip_List
+   --  (comma-separated). Append found packages to the vector. Files whose
    --  physical lines exceed Types.Max_Line, or whose paths exceed
-   --  Types.Max_Path, are reported to standard error.  They are counted in
-   --  Skipped_Ct.  They do not produce partial results.
+   --  Types.Max_Path, are reported to standard error. They are counted in
+   --  Skipped_Ct. They do not produce partial results.
    --  @param Target_Dir  Root directory to scan recursively.
    --  @param Skip_List  Comma-separated directory names to skip (e.g. ".git,obj").
    --  @param Packages  Output vector of parsed packages (appended to).
@@ -79,9 +79,9 @@ package Adacovex.Parsers.Source is
       Skipped_Ct : out Natural);
 
    --  Like Scan_Project, but each .ads file is keyed in the on-disk result
-   --  cache by its content hash (SHA-256).  Unchanged files are served from
-   --  the cache without re-scanning.  Changed files are rescanned and the
-   --  cache entry is refreshed.  Hits/Misses report how many files were
+   --  cache by its content hash (SHA-256). Unchanged files are served from
+   --  the cache without re-scanning. Changed files are rescanned and the
+   --  cache entry is refreshed. Hits/Misses report how many files were
    --  served from or written to the cache.
    --  @param Target_Dir  Root directory to scan recursively.
    --  @param Skip_List  Comma-separated directory names to skip.

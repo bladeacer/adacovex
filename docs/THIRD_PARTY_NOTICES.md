@@ -23,8 +23,8 @@ The proof-aware SBOMs that adacovex emits conform to these open specifications:
 
 | Specification | Version | Licence | Reference |
 |---------------|---------|---------|-----------|
-| CycloneDX Software Bill of Materials | 1.5 | Apache-2.0 | https://github.com/CycloneDX/specification |
-| SPDX (Software Package Data Exchange) | 2.3 | CC0-1.0 | https://spdx.dev |
+| [CycloneDX Software Bill of Materials](https://cyclonedx.org/) | 1.5 | Apache-2.0 | [specification repository](https://github.com/CycloneDX/specification) |
+| [SPDX (Software Package Data Exchange)](https://spdx.dev) | 2.3 | CC0-1.0 | [spdx.dev](https://spdx.dev) |
 
 The CycloneDX 1.5 JSON and SPDX 2.3 JSON schemas are referenced for validation only. adacovex does not vendor or redistribute them.
 
@@ -70,7 +70,7 @@ Sphinx, MyST-Parser and Furo are build-time tools (pinned in `requirements.txt`,
 
 | Service | Used for |
 |---------|----------|
-| Read the Docs (https://readthedocs.org) | Hosting the deployed online manual at `https://adacovex.readthedocs.io` |
+| [Read the Docs](https://readthedocs.org) | Hosting the deployed online manual at [adacovex.readthedocs.io](https://adacovex.readthedocs.io) |
 
 The online manual is hosted on Read the Docs, a free documentation service. The same Sphinx project also builds into the offline manual bundled with the binary.
 
@@ -80,7 +80,7 @@ The online manual is hosted on Read the Docs, a free documentation service. The 
 |-----------|---------|---------|----------|
 | [Playwright](https://github.com/microsoft/playwright) | test dependency | Apache-2.0 | End-to-end dashboard layout tests (`make e2e`) |
 
-Playwright (https://github.com/microsoft/playwright) is a development dependency of the e2e fixture (`tests/e2e/package.json`, `devDependencies`). It runs automated browser tests of the dashboard. adacovex classifies it as a **test** dependency: the package name `@playwright/test` carries the test label. It is not vendored or redistributed with adacovex releases.
+[Playwright](https://github.com/microsoft/playwright) is a development dependency of the e2e fixture (`tests/e2e/package.json`, `devDependencies`). It runs automated browser tests of the dashboard. adacovex classifies it as a **test** dependency: the package name `@playwright/test` carries the test label. It is not vendored or redistributed with adacovex releases.
 
 ## Performance-engineering tools
 
@@ -90,9 +90,9 @@ degrade gracefully when they are missing.
 
 | Component | Website / source | Licence | Used for |
 |-----------|------------------|---------|----------|
-| [perf](https://perfwiki.github.io/main/) (Linux `tools/perf`) | https://www.kernel.org/ (shipped with the [Linux kernel](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/)) | GPL-2.0 | CPU profiling and hardware-counter sampling (`make perf-bench`: cache-miss rates, per-symbol wall clock) |
-| [strace](https://strace.io/) | https://github.com/strace/strace | LGPL-2.1-or-later | Syscall tracing of warm/cold runs (`make perf-bench`: the `newfstatat`/`openat`/`getdents64` profiles that drove the walk-skip and stamp-store work) |
-| [hyperfine](https://github.com/sharkdp/hyperfine) | https://github.com/sharkdp/hyperfine | Apache-2.0 OR MIT | Statistical command benchmarking (`make bench`: cold/warm pipeline and prove timings with mean +/- sigma) |
+| [perf](https://perfwiki.github.io/main/) (Linux `tools/perf`) | [kernel.org](https://www.kernel.org/) (shipped with the [Linux kernel](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/)) | GPL-2.0 | CPU profiling and hardware-counter sampling (`make perf-bench`: cache-miss rates, per-symbol wall clock) |
+| [strace](https://strace.io/) | [github.com/strace/strace](https://github.com/strace/strace) | LGPL-2.1-or-later | Syscall tracing of warm/cold runs (`make perf-bench`: the `newfstatat`/`openat`/`getdents64` profiles that drove the walk-skip and stamp-store work) |
+| [hyperfine](https://github.com/sharkdp/hyperfine) | [github.com/sharkdp/hyperfine](https://github.com/sharkdp/hyperfine) | Apache-2.0 OR MIT | Statistical command benchmarking (`make bench`: cold/warm pipeline and prove timings with mean +/- sigma) |
 
 The design of the persistent stat-stamp store (1.44.0) was informed by
 two projects studied for their incremental-processing techniques; neither
@@ -100,8 +100,8 @@ is linked into adacovex:
 
 | Project | Website / source | Licence | What adacovex learned |
 |---------|------------------|---------|----------------------|
-| [Ada Language Server](https://github.com/AdaCore/ada_language_server) | https://github.com/AdaCore/ada_language_server | GPL-3.0-or-later (with GNAT runtime exception for its runtime) | Persistent indexed file sets and cross-session dirty tracking: re-parse only files whose on-disk state changed (see `docs/contributing/perf/index.md`, optimisation history 1.44.0) |
-| [tree-sitter](https://tree-sitter.github.io/) | https://github.com/tree-sitter/tree-sitter | MIT | Reusable single-buffer parse input (`TSInput`) and incremental re-parse cost modelling |
+| [Ada Language Server](https://github.com/AdaCore/ada_language_server) | [github.com/AdaCore/ada_language_server](https://github.com/AdaCore/ada_language_server) | GPL-3.0-or-later (with GNAT runtime exception for its runtime) | Persistent indexed file sets and cross-session dirty tracking: re-parse only files whose on-disk state changed (see `docs/contributing/perf/index.md`, optimisation history 1.44.0) |
+| [tree-sitter](https://tree-sitter.github.io/) | [github.com/tree-sitter/tree-sitter](https://github.com/tree-sitter/tree-sitter) | MIT | Reusable single-buffer parse input (`TSInput`) and incremental re-parse cost modelling |
 
 The size/mtime stamp validation additionally follows the same shape as
 git's index dirty tracking, including the racy-clean guard against files
@@ -114,5 +114,5 @@ modified within the same second as the record: [git](https://git-scm.com/)
 - gnatdoc (for `make doc`), gnatformat (for `make fmt`), Alire (`alr`), and Playwright (for `make e2e`) are external tools. They are used during development only.
 
 Full licence texts are available at:
-- GPL-3.0-or-later: https://www.gnu.org/licenses/gpl-3.0.html
-- GCC Runtime Library Exception: https://www.gnu.org/licenses/gcc-exception-3.1.html
+- [GPL-3.0-or-later](https://www.gnu.org/licenses/gpl-3.0.html)
+- [GCC Runtime Library Exception](https://www.gnu.org/licenses/gcc-exception-3.1.html)

@@ -1,11 +1,11 @@
 separate (Adacovex.Parsers.Manifest)
 --  Probe Dir for the first recognised ecosystem manifest, in the defined
---  priority order.  The manifest filename maps to an ecosystem through a
+--  priority order. The manifest filename maps to an ecosystem through a
 --  static table (filename -> PURL kind, primary language, reader); adding
---  an ecosystem is a one-row edit, not a new branch.  Name and version come
---  from the manifest when present.  The caller enriches with licence,
+--  an ecosystem is a one-row edit, not a new branch. Name and version come
+--  from the manifest when present. The caller enriches with licence,
 --  version and website from the package registry when the manifest is
---  silent.  requirements*.txt is matched by glob as a final fallback
+--  silent. requirements*.txt is matched by glob as a final fallback
 --  because it is not a fixed filename.
 procedure Read_Vendor_Manifest (Dir : String; Info : out Vendor_Manifest) is
    use Ada.Directories;

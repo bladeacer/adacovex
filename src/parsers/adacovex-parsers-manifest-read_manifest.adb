@@ -44,7 +44,7 @@ begin
         (F, Manifest_Path, Line_Num, Line, Last, Overflow);
       if Overflow then
          --  A physical line longer than Max_Line is drained and reported by
-         --  Read_Line.  The manifest is not resolved.  No partial dependency
+         --  Read_Line. The manifest is not resolved. No partial dependency
          --  graph is produced.
          Close (F);
          return;

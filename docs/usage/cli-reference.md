@@ -123,8 +123,8 @@ to write them, worked examples, and pitfalls are in
 ## Terminal colour
 
 adacovex colours its terminal output (red for failures, green for passes,
-bold for headings) so the important lines stand out.  Colour is enabled by
-default on a normal terminal.  It is suppressed automatically when the
+bold for headings) so the important lines stand out. Colour is enabled by
+default on a normal terminal. It is suppressed automatically when the
 output would not take it:
 
 - `NO_COLOR` is set (the cross-tool opt-out convention);

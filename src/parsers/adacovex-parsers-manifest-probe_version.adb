@@ -86,9 +86,9 @@ function Probe_Version (Tool : String; Flag : String) return String is
 
       --  First whitespace/newline-separated token containing a digit, with
       --  stray trailing punctuation (for example the ")" of "7.2.4)")
-      --  trimmed.  A leading "v" (node prints "v26.7.0") and a leading
+      --  trimmed. A leading "v" (node prints "v26.7.0") and a leading
       --  "go" (go prints "go1.21.5") are stripped so the version is the
-      --  bare number.  go build tags ("go1.27.0-X:nodwarf5") are cut at
+      --  bare number. go build tags ("go1.27.0-X:nodwarf5") are cut at
       --  the ':' separator.
       declare
          Last : constant Natural := Buf'First + BLen - 1;
@@ -179,7 +179,7 @@ function Probe_Version (Tool : String; Flag : String) return String is
    end Probe_One;
 
    --  Fallback flags tried in order after the configured flag: the common
-   --  GNU-style long flag, the short flag, and the bare subcommand.  go
+   --  GNU-style long flag, the short flag, and the bare subcommand. go
    --  understands only "version"; fossil and git-lfs also use "version".
    Fallbacks    : constant array (1 .. 3) of String (1 .. 16) :=
      ("--version       ", "-v              ", "version         ");
@@ -190,7 +190,7 @@ begin
    end if;
 
    --  Configured flag first, then each fallback not already tried, in the
-   --  order --version, -v, version.  The first successful run wins.
+   --  order --version, -v, version. The first successful run wins.
    declare
       One : constant String := Probe_One (Flag);
    begin

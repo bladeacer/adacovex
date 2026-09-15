@@ -1,11 +1,11 @@
 separate (Adacovex.Parsers.Manifest)
 --  Add a component for every vendored package overlaid by a docstring
---  patch under <target>/.adacovex/patches/.  Add a component for every
---  web asset under resources/ or assets/.  Add a component for every
+--  patch under <target>/.adacovex/patches/. Add a component for every
+--  web asset under resources/ or assets/. Add a component for every
 --  source file under vendor/ (the classic Alire-era vendored roots).
 --  Each file becomes a scope=vendored component named after its base
---  name.  The language comes from the file extension.  Such packages
---  have no manifest entry and no .gpr of their own.  They are recorded
+--  name. The language comes from the file extension. Such packages
+--  have no manifest entry and no .gpr of their own. They are recorded
 --  as Scope_Vendored dependencies of the root.
 --
 --  Nothing here is hard-coded: the component name is the file's own base
@@ -13,7 +13,7 @@ separate (Adacovex.Parsers.Manifest)
 --  example "FlexSearch.js v0.7.31 (Bundle)") when the vendored file
 --  carries one, and the licence and website are resolved live from the
 --  package registry under that same name (Resolve_Ecosystem_Metadata)
---  when the registry knows it.  An asset the registry does not know
+--  when the registry knows it. An asset the registry does not know
 --  keeps a pkg:generic PURL and whatever the file itself declared.
 procedure Discover_Vendored_Components
   (Target_Dir : String;
@@ -70,8 +70,8 @@ is
    --  Read the version out of a vendored file's own banner comment: the
    --  first comment block (/* ... */ or leading // lines) at the top of
    --  the file, scanned for a "v<digits>.<digits>" token such as the
-   --  "v0.7.31" in "FlexSearch.js v0.7.31 (Bundle)".  Returns "" when the
-   --  file carries no banner version.  This is real data from the vendored
+   --  "v0.7.31" in "FlexSearch.js v0.7.31 (Bundle)". Returns "" when the
+   --  file carries no banner version. This is real data from the vendored
    --  file itself -- never a hard-coded table.
    --  @param Path  Path of the vendored asset.
    --  @return The banner version (without the leading "v"), or "".
@@ -184,10 +184,10 @@ is
       --  Component data is read from the vendored file itself (name from
       --  the base name, version from the file's banner comment) and
       --  gap-filled from the package registry under that same name
-      --  (licence, website, and any missing version).  The registry knows
+      --  (licence, website, and any missing version). The registry knows
       --  the bundled libraries (flexsearch, nomnoml, graphre) under their
       --  own names; an asset it does not know keeps pkg:generic and the
-      --  banner version (or none).  Nothing is hard-coded here.
+      --  banner version (or none). Nothing is hard-coded here.
       declare
          B_Ver   : constant String := Banner_Version (Asset_Path);
          Lic     : Types.Desc_Field := (others => ' ');
@@ -287,7 +287,7 @@ is
                         --  css/ and js/ under a vendored root hold the
                         --  project's own authored modules (the dashboard
                         --  page splits its style and behaviour into these
-                        --  directories).  They are not vendored packages
+                        --  directories). They are not vendored packages
                         --  and must never become components; the vendored
                         --  bundles sit at the root of resources/.
                         if N /= "."
@@ -330,10 +330,10 @@ is
       then Target_Dir (Target_Dir'First .. Target_Dir'Last - 1)
       else Target_Dir)
      & "/resources";
-   --  The vendor/ root itself is not scanned here.  Loose files under it
-   --  must never become components.  Discover_Generic_Vendored turns each
+   --  The vendor/ root itself is not scanned here. Loose files under it
+   --  must never become components. Discover_Generic_Vendored turns each
    --  manifest-carrying or source-carrying vendor subdirectory into one
-   --  component.  The component carries its top-3 language summary.
+   --  component. The component carries its top-3 language summary.
    Assets_Root    : constant String :=
      (if Target_Dir'Length > 0 and then Target_Dir (Target_Dir'Last) = '/'
       then Target_Dir (Target_Dir'First .. Target_Dir'Last - 1)

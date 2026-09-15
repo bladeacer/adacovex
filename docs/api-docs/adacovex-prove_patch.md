@@ -3,33 +3,33 @@
 Proof patches for vendored dependencies.
 
 The docstring patch system (Adacovex.Parsers.Source.Apply_Patches)
-overlays documentation onto vendored .ads files.  This package extends
+overlays documentation onto vendored .ads files. This package extends
 the same ``.adacovex/patches/<relative-path>`` layout with SPARK proof
-support.  A patch file can carry SPARK aspects.  The aspects are
+support. A patch file can carry SPARK aspects. The aspects are
 SPARK_Mode on the package declaration and Pre, Post, or SPARK_Mode on
-subprogram declarations.  The ``prove`` subcommand merges them into a copy
-of the vendored spec.  When the patch carries one, it also merges the
-vendored body.  GNATprove then analyses the vendored unit with the
-patched contracts.  It does not modify the original vendored sources.
-A .ads patch re-declares the spec with contracts.  A .adb patch opts
-the body into the proof.  The body is analysed only when it declares
+subprogram declarations. The ``prove`` subcommand merges them into a copy
+of the vendored spec. When the patch carries one, it also merges the
+vendored body. GNATprove then analyses the vendored unit with the
+patched contracts. It does not modify the original vendored sources.
+A .ads patch re-declares the spec with contracts. A .adb patch opts
+the body into the proof. The body is analysed only when it declares
 SPARK_Mode On itself.
 
-The merge is textual and line-based.  The patched source is the original
+The merge is textual and line-based. The patched source is the original
 with each patched subprogram declaration replaced by the patch's
-declaration block.  The block carries the aspects.  A declaration
-matches on name and normalised parameter profile.  An overload patches
-its exact signature, never a same-named sibling.  The default ``in`` mode
-is equivalent to a bare mode.  ``in out`` and ``out`` are distinct.  The
+declaration block. The block carries the aspects. A declaration
+matches on name and normalised parameter profile. An overload patches
+its exact signature, never a same-named sibling. The default ``in`` mode
+is equivalent to a bare mode. ``in out`` and ``out`` are distinct. The
 package declaration is given the patch's package-level aspect when
-present.  Subprogram declarations terminate at the ';' of a spec
-declaration or at the ``is`` of a body declaration.  A patched body
+present. Subprogram declarations terminate at the ';' of a spec
+declaration or at the ``is`` of a body declaration. A patched body
 declaration is replaced without touching the body proper.
 
 When the vendored body is SPARK-clean and opted in via a body patch,
-GNATprove proves the patched contracts.  When it is not, for example
-Ada.Text_IO callers, GNATprove skips the I/O bodies by design.  The
-unit is then reported as out of proof scope.  A proof patch never drags
+GNATprove proves the patched contracts. When it is not, for example
+Ada.Text_IO callers, GNATprove skips the I/O bodies by design. The
+unit is then reported as out of proof scope. A proof patch never drags
 the target's proof level down.
 HLR-PROVE: GNATprove runner and proof patches
 

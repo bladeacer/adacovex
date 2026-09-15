@@ -79,9 +79,9 @@ package body Adacovex.IR_Synthesiser is
       Result : String (1 .. Max_Pkg_Len) := (others => ' ');
       RLen   : Natural range 0 .. Max_Pkg_Len := 0;
 
-      --  Appends a string to the synthesised text buffer.  The buffer is
-      --  bounded.  Appended text is truncated (it never overflows) at the
-      --  fixed-size limit.  The precondition gives the procedure a contract.
+      --  Appends a string to the synthesised text buffer. The buffer is
+      --  bounded. Appended text is truncated (it never overflows) at the
+      --  fixed-size limit. The precondition gives the procedure a contract.
       --  gnatprove then analyses it as a unit instead of re-proving the body
       --  at every call site.
       --  @param S  Text to append.
@@ -167,7 +167,7 @@ package body Adacovex.IR_Synthesiser is
    end Is_Signed_IR;
 
    --  True when T is one of the bounded IR scalar type names (the signed
-   --  types above plus the unsigned modular types).  A parameter type must
+   --  types above plus the unsigned modular types). A parameter type must
    --  be one of these names for the pair to lower onto a bounded scalar.
    --  Global contract as for Is_Signed_IR.
    function Is_IR_Type (T : String) return Boolean with Global => null is
@@ -181,7 +181,7 @@ package body Adacovex.IR_Synthesiser is
    end Is_IR_Type;
 
    --  Index of the first C at or after Start in S, or S'Last + 1 when C
-   --  does not occur.  Single-condition scan loop, the same canonical shape
+   --  does not occur. Single-condition scan loop, the same canonical shape
    --  gnatprove discharges in Skip_Blanks / Subprogram_Name: the Pre bounds
    --  every "+1" on the cursor, the Post gives callers the bounds they need
    --  for slices and "past the token" arithmetic.
@@ -202,7 +202,7 @@ package body Adacovex.IR_Synthesiser is
       return I;
    end Find_Char;
 
-   --  True when S holds a space or tab anywhere.  Parameter pairs are
+   --  True when S holds a space or tab anywhere. Parameter pairs are
    --  accepted only in the canonical space-free form, so a pair carrying
    --  whitespace never lowers (it would silently emit a signature whose
    --  spelling gnatprove cannot parse).
@@ -222,8 +222,8 @@ package body Adacovex.IR_Synthesiser is
 
    --  One lowered parameter pair: the parameter name and the bounded IR
    --  type name it lowers onto, both in fixed-size buffers with lengths
-   --  (0 = empty).  Signed records whether the type is a signed IR scalar
-   --  (unsigned modular types need no overflow guard).  A pair whose type
+   --  (0 = empty). Signed records whether the type is a signed IR scalar
+   --  (unsigned modular types need no overflow guard). A pair whose type
    --  is not a bounded IR name carries Valid => False and the whole
    --  synthesis degrades to the nullary spec (or ""), never a malformed
    --  spec text.
@@ -241,7 +241,7 @@ package body Adacovex.IR_Synthesiser is
       T_Len  : Natural range 0 .. 9 := 0;
    end record;
 
-   --  Upper bound on pairs held in one synthesised parameter list.  The
+   --  Upper bound on pairs held in one synthesised parameter list. The
    --  list must fit the Max_Pkg_Len output buffer with one line per pair
    --  (each line is well under 96 characters), so 32 pairs is a generous
    --  ceiling; a longer list degrades to "" (never a truncated spec).
@@ -250,10 +250,10 @@ package body Adacovex.IR_Synthesiser is
 
    --  Pass one of the multi-pair form: scan Param_List once, splitting on
    --  commas, and lower every well-formed "P:Type" pair onto its bounded
-   --  IR scalar.  Pairs holds the lowered result; Count is the number of
+   --  IR scalar. Pairs holds the lowered result; Count is the number of
    --  pairs seen; All_Valid reports whether every seen pair lowered (a
    --  single malformed or foreign-typed pair makes the whole list
-   --  invalid).  Spaces inside a pair are rejected: the canonical input
+   --  invalid). Spaces inside a pair are rejected: the canonical input
    --  form is space-free ("A:IR_Int32,B:IR_UInt8"), and tolerating spaces
    --  would silently emit a signature gnatprove cannot parse.
    procedure Lower_Pairs
@@ -286,7 +286,7 @@ package body Adacovex.IR_Synthesiser is
          declare
             --  The pair ends at the next ',' (or the end of the list).
             --  An empty pair (",," or a trailing ',') is malformed: it is
-            --  recorded invalid and scan continues after the comma.  The
+            --  recorded invalid and scan continues after the comma. The
             --  Colon probe runs only when the pair is non-empty, because
             --  Find_Char's precondition requires Start in S'First ..
             --  S'Last and a null slice cannot satisfy it.
@@ -347,15 +347,15 @@ package body Adacovex.IR_Synthesiser is
 
    --  Multi-pair form of the gnatprove-friendly IR: synthesises a
    --  contract-carrying bounded-function spec from a comma-separated
-   --  "P:Type" parameter list.  Each pair lowers onto a bounded IR scalar
+   --  "P:Type" parameter list. Each pair lowers onto a bounded IR scalar
    --  type; the signed ones contribute a half-range Pre guard, joined
    --  with "and then" into one contract chain (the same guard shape
    --  gnatprove discharges for Adacovex.Target_Profiles.Checked_Add32 /
-   --  the Adacovex.IR_Bounds fixture).  The three passes follow the
+   --  the Adacovex.IR_Bounds fixture). The three passes follow the
    --  recorded design: pass one lowers every pair exactly once (no
    --  re-proving of slices per emission site), pass two emits the
-   --  signature, pass three emits the guard chain.  An empty list emits
-   --  the nullary spec.  Malformed pairs, foreign type names, embedded
+   --  signature, pass three emits the guard chain. An empty list emits
+   --  the nullary spec. Malformed pairs, foreign type names, embedded
    --  spaces, and lists longer than Max_Pairs degrade to "" (never a
    --  malformed spec).
    function Synthesize_Bounded_Function
@@ -364,9 +364,9 @@ package body Adacovex.IR_Synthesiser is
       Result : String (1 .. Max_Pkg_Len) := (others => ' ');
       RLen   : Natural range 0 .. Max_Pkg_Len := 0;
 
-      --  Appends a string to the synthesised text buffer.  The buffer is
-      --  bounded.  Appended text is truncated (it never overflows) at the
-      --  fixed-size limit.  Same contract as Synthesize_Package.Append: the
+      --  Appends a string to the synthesised text buffer. The buffer is
+      --  bounded. Appended text is truncated (it never overflows) at the
+      --  fixed-size limit. Same contract as Synthesize_Package.Append: the
       --  precondition makes gnatprove analyse this procedure as a unit
       --  instead of re-proving (and inlining) the body at every call site.
       procedure Append (S : String)
@@ -414,8 +414,8 @@ package body Adacovex.IR_Synthesiser is
          return "";
       end if;
 
-      --  Pass two: the signature.  Pairs are "name : type", joined with
-      --  "; ".  Whole strings or single-character literals only: no
+      --  Pass two: the signature. Pairs are "name : type", joined with
+      --  "; ". Whole strings or single-character literals only: no
       --  chained '&' assembly of slices (the recorded 16.1.0 lesson).
       if Return_Type'Length > 0 then
          Append ("function ");
@@ -442,7 +442,7 @@ package body Adacovex.IR_Synthesiser is
       Append (String'(1 => ASCII.LF));
 
       --  Pass three: the guard chain, one half-range guard per signed
-      --  parameter, joined with "and then".  Unsigned (modular)
+      --  parameter, joined with "and then". Unsigned (modular)
       --  parameters need no guard; a list with no signed parameter emits
       --  no contract at all.
       declare

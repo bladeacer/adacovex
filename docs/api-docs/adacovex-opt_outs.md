@@ -5,7 +5,7 @@ A source, documentation, or data file can carry a marker directive in
 its leading comment block to opt out of one adacovex analysis gate.
 The directive is a marker token on a comment line near the top of the
 file (the first non-comment, non-blank line ends the header block, so
-prose or code further down never counts).  The comment syntax follows
+prose or code further down never counts). The comment syntax follows
 the file's own language:
 
   --  no-covex-complexity-scan    (Ada: --, YAML/Python/Shell: #,

@@ -1,9 +1,9 @@
 separate (Adacovex.Parsers.Manifest)
---  Rank a detected language counter vector.  The primary language is
---  first.  The primary language is the ecosystem manifest's language (for
---  example Rust for Cargo.toml).  The remaining languages follow by file
---  count descending.  Ties follow by name ascending.  Join up to 3 with
---  " - ".  Mixed-language sources list the top ~3 languages.  This keeps
+--  Rank a detected language counter vector. The primary language is
+--  first. The primary language is the ecosystem manifest's language (for
+--  example Rust for Cargo.toml). The remaining languages follow by file
+--  count descending. Ties follow by name ascending. Join up to 3 with
+--  " - ". Mixed-language sources list the top ~3 languages. This keeps
 --  "Ada; C; C++" style labels bounded.
 --  @param Langs  Detected language counters (must be sorted into rank).
 --  @param Primary  Ecosystem language, or "" to rank by file count only.

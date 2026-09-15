@@ -11,7 +11,7 @@ package body Adacovex_Complexity_Tests is
      Adacovex.CPUs.Get_Temp_Directory & "/adacovex_cx_test";
 
    --  Write a small fixture tree: one Ada source, one Markdown page, and
-   --  one Python script.  The Markdown page exists only to be excluded.
+   --  one Python script. The Markdown page exists only to be excluded.
    procedure Make_Fixture is
       F : File_Type;
    begin

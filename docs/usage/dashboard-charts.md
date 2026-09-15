@@ -1,7 +1,7 @@
 # Dashboard metric charts and the robustness tier
 
 This page documents the eight chart cards the dashboard renders and the
-robustness tier that rates them.  Using the dashboard, its tabs, and the
+robustness tier that rates them. Using the dashboard, its tabs, and the
 endpoint table are on [Web dashboard and JSON API](dashboard.md).
 
 ## Metrics charts
@@ -23,7 +23,7 @@ never rotate or overflow and the ring colour reflects the covered share
 - **Proof Check Types** -- *bars* of proved checks per category (flow,
   init, runtime, assertions, functional, termination), sized against the
   largest category so bars scale with magnitude exactly like the test
-  chart.  The numbers mirror gnatprove's own summary table: on gnatprove 16
+  chart. The numbers mirror gnatprove's own summary table: on gnatprove 16
   the Flow category sums the "Data Dependencies" and "Flow Dependencies"
   rows, and every category's proved count is Total - Justified - Unproved,
   so the rows sum to the Total.
@@ -53,7 +53,7 @@ comparisons across categories.
 ## Robustness tier
 
 The Overview tab leads with a **Robustness** radar spider and a tier rating
-(S / A / B / C / D).  Five quality axes, each a `0..100` percentage:
+(S / A / B / C / D). Five quality axes, each a `0..100` percentage:
 
 | Axis | Meaning |
 |------|---------|
@@ -76,6 +76,6 @@ The average of the five axes maps to the tier letter:
 The radar polygon, the per-axis legend with percentages, and the tier chip
 are rendered as inline SVG/CSS with integer math (no floating point in the
 renderer) and use `var(--accent)` plus per-tier CSS variables, so they
-follow the light/dark theme.  Next to it, a small **SPARK radar** shows the
+follow the light/dark theme. Next to it, a small **SPARK radar** shows the
 proved count per check type, and the **Tests** donut and **Doc Coverage**
 radial gauge give the same numbers as the full-size charts.

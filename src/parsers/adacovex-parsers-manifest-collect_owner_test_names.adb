@@ -26,8 +26,8 @@ separate (Adacovex.Parsers.Manifest)
 --    * requirements*.txt: no native test section, so the name heuristic
 --      is the signal.
 --  The first manifest found in Owner_Dir is used, in the same priority
---  order as Read_Vendor_Manifest.  Missing or unreadable files leave the
---  set unchanged.  A physical line longer than Max_Line stops the read;
+--  order as Read_Vendor_Manifest. Missing or unreadable files leave the
+--  set unchanged. A physical line longer than Max_Line stops the read;
 --  no partial set is kept.
 --  @param Owner_Dir  Directory holding the project manifest that owns a
 --    vendored directory (for example tests/e2e owns
@@ -163,7 +163,7 @@ is
    end Line_Tag_Value;
 
    --  package.json: a dependency section whose key contains "test" (for
-   --  example "testDependencies" or "devTestDependencies").  The names
+   --  example "testDependencies" or "devTestDependencies"). The names
    --  under such a section are test-labelled.
    procedure Collect_Npm_Test
      (Path : String; Names : in out Name_Vectors.Vector)
@@ -216,7 +216,7 @@ is
    end Collect_Npm_Test;
 
    --  Cargo.toml: the [dev-dependencies] section is Cargo's test-only
-   --  section.  Any section whose name contains "test" (for example a
+   --  section. Any section whose name contains "test" (for example a
    --  [target.'cfg(test)'.dependencies] section) is test-labelled too.
    procedure Collect_Cargo_Test
      (Path : String; Names : in out Name_Vectors.Vector)
@@ -283,7 +283,7 @@ is
    end Collect_Cargo_Test;
 
    --  composer.json: the require-dev section is the native test-only
-   --  section.  Any key containing "test" is test-labelled too.
+   --  section. Any key containing "test" is test-labelled too.
    procedure Collect_Composer_Test
      (Path : String; Names : in out Name_Vectors.Vector)
    is
@@ -419,7 +419,7 @@ is
    end Collect_Gemfile_Test;
 
    --  pom.xml: a <dependency> block whose <scope> is test declares a
-   --  test-labelled dependency.  Both the bare artifactId and the
+   --  test-labelled dependency. Both the bare artifactId and the
    --  groupId:artifactId forms are recorded so the vendored component
    --  name (which may carry either form) matches.
    procedure Collect_Pom_Test
@@ -672,7 +672,7 @@ is
    end Lock_Key;
 
    --  Add every test-named name from one lockfile (the name heuristic
-   --  applied to lockfile-resolved names).  The key token of each line
+   --  applied to lockfile-resolved names). The key token of each line
    --  is taken; a trailing '@version' suffix is stripped; names that
    --  carry the test label are collected.
    --  @param Path  Lockfile path.
@@ -712,7 +712,7 @@ is
 
    --  npm-family lockfiles next to an owner package.json: the name
    --  heuristic applied to lockfile-resolved names (pnpm-lock.yaml,
-   --  package-lock.json, yarn.lock).  A project can ship more than one;
+   --  package-lock.json, yarn.lock). A project can ship more than one;
    --  every present file is scanned.
    --  @param Dir  Directory holding the owner package.json.
    --  @param Names  Collected test-labelled names.
@@ -857,7 +857,7 @@ is
    end Collect_Go_Test;
 
    --  Package.swift: dependencies declared inside a .testTarget(...)
-   --  block are Swift Package Manager's test-only dependencies.  Every
+   --  block are Swift Package Manager's test-only dependencies. Every
    --  name in the block's dependencies array is test-labelled.
    --  @param Path  Package.swift path.
    --  @param Names  Collected test-labelled names.
@@ -888,7 +888,7 @@ is
          declare
             T : constant String := Trim (Line (1 .. Last));
          begin
-            --  A new target directive resets the block state.  Check
+            --  A new target directive resets the block state. Check
             --  .testTarget first because it contains ".target(" as a
             --  substring.
             if Ada.Strings.Fixed.Index (T, ".testTarget(") > 0 then

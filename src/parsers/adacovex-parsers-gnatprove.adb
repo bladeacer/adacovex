@@ -43,18 +43,18 @@ package body Adacovex.Parsers.GNATprove is
    end Get_Nth_Number_Raw;
 
    --  Return the numeric value in the N-th column of a gnatprove summary row
-   --  (1-based, so column 1 is the leading label).  Columns are delimited by
+   --  (1-based, so column 1 is the leading label). Columns are delimited by
    --  runs of two or more spaces, which is how gnatprove aligns its summary
    --  table regardless of version: every layout since the modern headers
    --  (`Total | Flow | Provers | Justified | Unproved`) pads to at least two
    --  separators between fields, while a single space stays inside a field
-   --  (as in `59 (12%)` or `326 (65%)`).  A "." or absent column returns 0.
+   --  (as in `59 (12%)` or `326 (65%)`). A "." or absent column returns 0.
    --  This reconciles gnatprove v15 vs v16 output: older releases report an
    --  unproved count such as `118 (23%)` in the last column, newer ones
    --  `450 (88%)` with a "Provers" column of ".", but the column positions
    --  (Justified = 5, Unproved = 6) are stable across both.
    --  Count the columns in a gnatprove summary row (same 2+ space run
-   --  rule as Get_Column_Number).  Used to tell legacy 3-column category
+   --  rule as Get_Column_Number). Used to tell legacy 3-column category
    --  rows (label, total, proved) from the modern 5+ column layout
    --  (label, total, flow, provers, justified, unproved).
    function Get_Column_Count (Row : String) return Natural;
@@ -210,7 +210,7 @@ package body Adacovex.Parsers.GNATprove is
                      --  Dependencies" (checked) and "Flow Dependencies"
                      --  (proved implicitly), and Run-time/Assertions/
                      --  Functional rows carry their proved VCs in the
-                     --  Provers column.  Counting only the Flow column would
+                     --  Provers column. Counting only the Flow column would
                      --  report those as unproved (and Termination as 73 of
                      --  94 on the self-target).
                      --  The checked count is always the Total column
@@ -223,7 +223,7 @@ package body Adacovex.Parsers.GNATprove is
                      --  The proved count per category: modern summaries
                      --  (v15/v16, 5+ columns incl. Justified/Unproved) prove
                      --  every category except flow via the Provers column,
-                     --  so Proved = Total - Justified - Unproved.  Legacy
+                     --  so Proved = Total - Justified - Unproved. Legacy
                      --  summaries (3 columns: label, total, proved) carry
                      --  the proved count in column 3 directly.
                      function Row_Proved (Row : String) return Natural is
@@ -253,7 +253,7 @@ package body Adacovex.Parsers.GNATprove is
 
                      --  gnatprove 16 reports the checked flow VCs under
                      --  "Data Dependencies" (the "Flow Dependencies" row is
-                     --  proved implicitly and shows ".").  Both rows belong
+                     --  proved implicitly and shows "."). Both rows belong
                      --  to the dashboard's single "Flow" category, so they
                      --  are summed -- gnatprove 15 output has no Data row
                      --  and is unchanged.

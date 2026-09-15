@@ -1,8 +1,8 @@
 separate (Adacovex.Parsers.Manifest)
 --  Register the project root's Python requirements (requirements*.txt at
---  the target root) as dev-scope pypi dependencies of the root.  The SBOM
+--  the target root) as dev-scope pypi dependencies of the root. The SBOM
 --  then names the actual packages (sphinx, myst-parser, ...) instead of a
---  generic system tool, with a proper pkg:pypi PURL.  The version pinned
+--  generic system tool, with a proper pkg:pypi PURL. The version pinned
 --  in the requirements line wins; otherwise (or to enrich) the package
 --  registry is asked via the pypi resolver row (`pip index versions`).
 --  A missing pip, an offline machine, or an unknown package keeps the

@@ -22,7 +22,7 @@ package body Adacovex.Renderers.Man is
       end if;
    end Strip_Trailing_Slash;
 
-   --  Append a line (plus newline) to the page buffer.  The generated page
+   --  Append a line (plus newline) to the page buffer. The generated page
    --  is fixed, curated content well under Max_Page, so App truncates
    --  silently only as a last-resort overflow guard.
    procedure App (Buf : in out String; Len : in out Natural; Line : String) is
@@ -39,10 +39,10 @@ package body Adacovex.Renderers.Man is
    end App;
 
    --  Render one .TP option entry: the option name line followed by the
-   --  description.  The description must NOT be indented with a literal tab:
+   --  description. The description must NOT be indented with a literal tab:
    --  groff's .TP macro computes the hanging indent itself, and a leading tab
    --  pushes the first line to a tab stop while wrapped lines go back to the
-   --  .TP indent -- the "random extra spaces" bug.  A plain following line
+   --  .TP indent -- the "random extra spaces" bug. A plain following line
    --  renders first and wrapped lines at the same indent.
    procedure App_Option
      (Buf : in out String; Len : in out Natural; Name : String; Desc : String)
@@ -150,7 +150,7 @@ package body Adacovex.Renderers.Man is
       --  Single source of truth: derive the option list from
       --  Config.Flag_List (the same Known_Flags that drives
       --  --help and shell completion), so the man page never drifts
-      --  from the binary.  Descriptions are mapped centrally here;
+      --  from the binary. Descriptions are mapped centrally here;
       --  adding a flag to Known_Flags automatically adds a .TP entry
       --  (with a fallback generic line) even before a bespoke
       --  description is added.

@@ -9,9 +9,9 @@ package Adacovex.Renderers.Markdown is
 
    --  Write a full verification report to the given file path.
    --  Generates a VERIFICATION.md file with sections for coverage analysis,
-   --  proof results table, test summary, and compliance status.  The
-   --  compliance section is standard-aware.  It prints the selected
-   --  standard's level label.  When All_Standards is True, it prints one row
+   --  proof results table, test summary, and compliance status. The
+   --  compliance section is standard-aware. It prints the selected
+   --  standard's level label. When All_Standards is True, it prints one row
    --  per standard.
    --  @param Path  Output file path for VERIFICATION.md.
    --  @param Doc_Metrics  Docstring coverage metrics.

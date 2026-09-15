@@ -20,7 +20,7 @@ package body Adacovex_Opt_Outs_Tests is
    end Write_File;
 
    --  Write a file whose first 30 lines are comments and whose marker line
-   --  is given.  The header window is 24 physical lines.
+   --  is given. The header window is 24 physical lines.
    --  @param Name  File name inside the fixture directory.
    --  @param Marker_Line  Line number that carries the marker.
    procedure Write_Numbered (Name : String; Marker_Line : Natural) is

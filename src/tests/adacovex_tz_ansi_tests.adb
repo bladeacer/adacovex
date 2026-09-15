@@ -6,7 +6,7 @@ with Ada.Strings.Fixed;
 package body Adacovex_TZ_ANSI_Tests is
 
    --  Parse Spec and check that it is accepted with the exact Expected
-   --  offset (seconds).  The expected offset may be negative, so acceptance
+   --  offset (seconds). The expected offset may be negative, so acceptance
    --  is always asserted separately.
    --  @param R  Test runner.
    --  @param Spec  Raw --tz / --timezone value.
@@ -60,7 +60,7 @@ package body Adacovex_TZ_ANSI_Tests is
       Check_Parse (R, "asia/singapore", 8 * 3600, "asia/singapore");
 
       --  DST-observing zones probe the platform tzdata for the current
-      --  offset.  The result is either the standard or the DST offset,
+      --  offset. The result is either the standard or the DST offset,
       --  depending on the season (and falls back to the table's standard
       --  offset when the probe is unavailable).
       Adacovex.Timezones.Parse ("Europe/London", Info, OK);
@@ -166,7 +166,7 @@ package body Adacovex_TZ_ANSI_Tests is
       end;
 
       --  ANSI colour gating: the pure decision function is off under CI,
-      --  NO_COLOR, or TERM=dumb, and on otherwise.  This is deterministic
+      --  NO_COLOR, or TERM=dumb, and on otherwise. This is deterministic
       --  and does not depend on the surrounding test runner's environment.
       R.Check
         (Adacovex.Ansi.Colour_Allowed (False, False, False),
@@ -184,7 +184,7 @@ package body Adacovex_TZ_ANSI_Tests is
         (not Adacovex.Ansi.Colour_Allowed (True, True, True),
          "colour off when every signal is set");
 
-      --  With colour enabled, wrappers emit SGR escapes.  The prefix is
+      --  With colour enabled, wrappers emit SGR escapes. The prefix is
       --  ESC + "[" + code + "m" and the suffix is ESC + "[0m".
       Adacovex.Ansi.Colour_Enabled := True;
       R.Check

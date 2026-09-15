@@ -606,13 +606,13 @@ package body Adacovex.Complexity is
 
    --  True when a directory name should be skipped during the walk: version
    --  control metadata, generated/dependency trees, unit-test suites, and
-   --  vendored assets that are not part of the assessed source.  `.venv` is
+   --  vendored assets that are not part of the assessed source. `.venv` is
    --  the Python virtualenv (Sphinx + MyST for the docs build) -- vendored
-   --  dependency trees, never assessed source.  `_build` is the Sphinx build
+   --  dependency trees, never assessed source. `_build` is the Sphinx build
    --  output (docs/_build): it is generated site HTML/JS
    --  (including single-line search indexes far beyond Max_Line), so it is
    --  never assessed source and would only bloat the gate's memory and
-   --  noise.  `book` is the retired mdBook output and is kept in the skip
+   --  noise. `book` is the retired mdBook output and is kept in the skip
    --  list so a leftover docs/book from an older checkout is never scanned.
    function Skip_Dir (N : String) return Boolean is
    begin
@@ -641,7 +641,7 @@ package body Adacovex.Complexity is
    end Skip_Dir;
 
    --  True when the full file path contains any comma-separated Skip_Paths
-   --  fragment.  Matching is a plain substring test on the whole path (for
+   --  fragment. Matching is a plain substring test on the whole path (for
    --  example "docs/api-docs" or "generated/foo.adb"), so a fragment can
    --  name a file, a directory, or a distinctive path part.
    function Is_Path_Skipped (Path : String; Skip_Paths : String) return Boolean
@@ -872,7 +872,7 @@ package body Adacovex.Complexity is
             Adacovex.Parsers.Read_Line (F, Path, Line_No, Raw, Last_Raw, Ovl);
             Result.Total_Lines := Result.Total_Lines + 1;
             if Ovl then
-               --  An over-long line is still one physical line.  Classify it
+               --  An over-long line is still one physical line. Classify it
                --  by content: a comment-only line counts as a comment; a
                --  blank or source line counts as code (its length alone
                --  proves it carries source).
@@ -1144,7 +1144,7 @@ package body Adacovex.Complexity is
       return V;
    end Check_Gates;
 
-   --  Emit a human-readable report to stdout.  When Check_Mode is True the
+   --  Emit a human-readable report to stdout. When Check_Mode is True the
    --  output is gated on Violations being non-empty; otherwise every file
    --  and subprogram is always printed.
    procedure Print_Report

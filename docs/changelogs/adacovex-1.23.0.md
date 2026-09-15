@@ -10,8 +10,8 @@ Version bumped 1.22.0 -> 1.23.0.
 
 The header search box now indexes **full text content across every tab**
 (Overview, Proof, Tests, Compliance, Dependencies, Charts) instead of only
-dependency names.  Search hits show a context snippet and a tab badge, and
-clicking a hit navigates to the correct tab.  The search input is wrapped in
+dependency names. Search hits show a context snippet and a tab badge, and
+clicking a hit navigates to the correct tab. The search input is wrapped in
 `.search-wrap` with a magnifying-glass icon and a clear button, styled to
 match the existing `.theme-toggle` button family so it no longer reads as a
 bare `<input>`.
@@ -20,14 +20,14 @@ bare `<input>`.
 
 The Compliance tab now leads with a gauge that displays the **target level**
 (e.g. `Target: DAL-C`) and the **achieved percentage** (weighted average of
-HLR traceability, tests passing, and SPARK level met).  The SVG arc reflects
+HLR traceability, tests passing, and SPARK level met). The SVG arc reflects
 the actual percentage, and the breakdown (`HLR 85% / Tests 100% / SPARK 100%`)
 is shown below the gauge.
 
 ### C3: Overview tab visualises tests with column chart
 
 The Overview tab now includes a **test category column chart** alongside the
-existing collation cards.  Each category is a vertical bar proportional to
+existing collation cards. Each category is a vertical bar proportional to
 its test count, with the raw number displayed below the label and colour-coded
 by pass/fail status.
 
@@ -46,7 +46,7 @@ made up.
 ### C5: Dependency tree spacing, checkbox size, and icon scale fixed
 
 The dependency tree nodes now have `margin: 8px 0` and `padding: 10px 14px`
-for comfortable reading.  The scope-filter checkboxes are larger (`18x18px`
+for comfortable reading. The scope-filter checkboxes are larger (`18x18px`
 `.box`) for better touch targets, and the inline SVG scope pictograms are
 scaled down to `10x10px` so they no longer dominate the label.
 
@@ -75,8 +75,8 @@ The `covex complexity` subcommand now runs cyclomatic-complexity analysis
 directly inside the adacovex binary (previously a standalone Python script).
 The checker scans `src/*.ads` and `src/*.adb`, attributes decision points to
 top-level subprograms, and enforces the same gates as `tools/check-complexity.py`
-(max-file-loc, max-file-pct, max-fn-complexity, max-file-complexity).  Exit
-code is 1 when any gate is violated.  `make complexity-check` now invokes
+(max-file-loc, max-file-pct, max-fn-complexity, max-file-complexity). Exit
+code is 1 when any gate is violated. `make complexity-check` now invokes
 `./bin/adacovex complexity`.
 
 ### C9: Dependency detection expanded for more languages
@@ -84,9 +84,9 @@ code is 1 when any gate is violated.  `make complexity-check` now invokes
 `Discover_System_Dev_Deps` now scans source files for C/C++ (.c, .h, .cpp,
 .hpp, .cc, .cxx), Ruby (.rb), C# (.cs), Java (.java), Rust (.rs), Go (.go),
 JavaScript/TypeScript (.js, .mjs, .cjs, .ts, .mts, .cts), SCSS/CSS (.scss,
-.css), and Ada (.ads, .adb).  Package-manifest detection covers package.json,
+.css), and Ada (.ads, .adb). Package-manifest detection covers package.json,
 Cargo.toml/go.mod, requirements.txt/pyproject.toml, Gemfile, pom.xml,
-build.gradle, *.csproj, and lockfiles.  The `System_Tools` table grew from 37
+build.gradle, *.csproj, and lockfiles. The `System_Tools` table grew from 37
 to 60 entries (npm, cargo, rustc, go, gcc, g++, clang, javac, mvn, gradle,
 ruby, dotnet, tsc, sass, scss, rustup, cargo-hack, cargo-watch, ada, alire,
 etc.).
@@ -95,7 +95,7 @@ etc.).
 
 A Playwright test suite was added under `tests/e2e/` (managed with `pnpm`).
 It verifies dashboard header, all seven tabs, theme switching, search box
-presence, footer content, and responsive layout.  Run with `make e2e`.
+presence, footer content, and responsive layout. Run with `make e2e`.
 
 ## Fixes
 
@@ -110,11 +110,11 @@ checkbox markup and the test pass/fail donut row, restoring the style check.
 
 ## Proof Results
 
-Platinum, 720/720 VCs proved under gnatprove 16.1.0.  0 unproved, 0 justified.
+Platinum, 720/720 VCs proved under gnatprove 16.1.0. 0 unproved, 0 justified.
 
 ## Traceability
 
-No new HLRs.  Coverage:
+No new HLRs. Coverage:
 
    - `HLR-DASH` -- C1 full-text search, C2 compliance gauge, C3 test columns,
      C4 polar ring + stacked bar, C5 spacing/checkbox/icon fixes, C6 footer +

@@ -7,10 +7,10 @@ HLR-SCAN: Source scanning
 
 Supported docstring annotations (placed immediately before a
 subprogram declaration, no intervening blank lines):
-@param Name  Description.       -- Document a formal parameter
-@return Description.            -- Document a function return value
-@field Description.             -- Document a record component
-@formal Name  Description.      -- Document a generic formal
+@param Name  Description. -- Document a formal parameter
+@return Description. -- Document a function return value
+@field Description. -- Document a record component
+@formal Name  Description. -- Document a generic formal
 
 Standard tag aliases are accepted (``@parameter`` == ``@param``,
 ``@returns`` == ``@return``), and the summary tags ``@brief`` / ``@summary``
@@ -26,7 +26,7 @@ Other standard comment styles are also recognised as docstrings:
 --  one-line summary (single space, ``-- ``)
 --  one-line summary (two spaces, ``--  ``)
 --  one-line summary (tab separator)
-A bare ``--`` or ``---`` divider is not a docstring.  Docstrings can
+A bare ``--`` or ``---`` divider is not a docstring. Docstrings can
 appear before or after the declaration.
 
 Google style (Doxygen-free Python convention):
@@ -35,7 +35,7 @@ Google style (Doxygen-free Python convention):
 --  Returns:
 --      The sum.
 An "Args:" header opens a parameter block: deeper-indented comment lines
-inside it count as parameter entries.  "Returns:" marks a documented
+inside it count as parameter entries. "Returns:" marks a documented
 return value.
 
 Sphinx style (reStructuredText field lists):

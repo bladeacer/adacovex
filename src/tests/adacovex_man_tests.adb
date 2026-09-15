@@ -41,7 +41,7 @@ package body Adacovex_Man_Tests is
       --  SYNOPSIS rendering regression: the old .RI multi-argument macro
       --  concatenated tokens without spaces ([--format=FMT][--out=PATH]) and
       --  .br-interleaved lines made groff pad the paragraph with tab stops
-      --  ("adacovex<gap>sbom").  Every SYNOPSIS line must now be a single
+      --  ("adacovex<gap>sbom"). Every SYNOPSIS line must now be a single
       --  quoted .B argument that preserves spaces, and no .RI may remain.
       R.Check
         (Index (Page, ".RI") = 0, "SYNOPSIS no longer uses .RI concatenation");
@@ -78,7 +78,7 @@ package body Adacovex_Man_Tests is
 
       --  Update_Database reports whether the man database was refreshed and
       --  must never report True when man-db (mandb) is absent from PATH --
-      --  that is the contract `adacovex man` warns about.  The value when
+      --  that is the contract `adacovex man` warns about. The value when
       --  mandb IS present depends on the exit code, so only the missing-tool
       --  direction is asserted (deterministic in any environment).
       declare
