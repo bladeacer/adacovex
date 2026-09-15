@@ -13,7 +13,7 @@
   | IR synthesis                             |  42 | PASS     |
   | Man page renderer                        |  18 | PASS     |
   | VCS support                              |  29 | PASS     |
-  | Server routing                           |  41 | PASS     |
+  | Server routing                           |  48 | PASS     |
   | Proof patches                            |  35 | PASS     |
   | Timezone + ANSI                          |  63 | PASS     |
   | Complexity check                         |  12 | PASS     |
@@ -27,4 +27,4 @@
   | Completion scripts                       |  24 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 1607  Failed: 0
+  Passed: 1614  Failed: 0

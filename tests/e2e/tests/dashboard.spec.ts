@@ -290,11 +290,63 @@ test.describe('Dashboard layout', () => {
     );
   });
 
+  // Every page carries only a stub for the Furo global toctree: one copy of
+  // the tree is stored under _nav/ and resources/js/book-nav.js injects it, so
+  // the stored links must resolve from the page that displays them, at every
+  // directory depth (the tree is shared between them).
+  test('the injected manual sidebar links resolve at every page depth', async ({ page }) => {
+    for (const path of [
+      '/docs/index.html',
+      '/docs/usage/dashboard.html',
+      '/docs/contributing/perf/index.html',
+      '/docs/api-docs/index.html',
+    ]) {
+      await page.goto(path);
+      const brand = page.locator('.sidebar-container a.sidebar-brand');
+      await expect(brand).toBeVisible({ timeout: 10000 });
+      // The brand always links back to the manual index, which is the first
+      // entry of every stored tree; a stub that is never filled (or a tree
+      // rebased for the wrong base) leaves this 404 or off the manual.
+      const href = await brand.getAttribute('href');
+      expect(href).toBeTruthy();
+      const resolved = new URL(href!, page.url());
+      expect(resolved.pathname).toContain('/docs/');
+      const resp = await page.request.get(resolved.href);
+      expect(resp.status(), `${path} brand -> ${href}`).toBe(200);
+      // A nested entry from the same tree, so a tree that only fixes its
+      // first link still fails.
+      const nested = page.locator('.sidebar-container a', {
+        hasText: 'CLI reference',
+      }).first();
+      await expect(nested).toBeVisible({ timeout: 5000 });
+      const nestedResp = await page.request.get(
+        new URL((await nested.getAttribute('href'))!, page.url()).href,
+      );
+      expect(nestedResp.status(), `${path} nested`).toBe(200);
+      // The stored tree carries no per-page highlight, so the script must add
+      // it for the open page: at least one entry is marked current, and every
+      // marked entry points at this page (the brand repeats the manual index
+      // on that page, which is why the count is not pinned to one).
+      const current = page.locator('.sidebar-container a[aria-current="page"]');
+      await expect(current.first()).toBeVisible();
+      const marked = await current.evaluateAll((links) =>
+        links.map((a) => new URL((a as HTMLAnchorElement).href).pathname),
+      );
+      expect(marked.length).toBeGreaterThan(0);
+      const here = new URL(page.url()).pathname;
+      for (const target of marked) {
+        expect(target, `${path} marks ${target}`).toBe(here);
+      }
+    }
+  });
+
   test('manual subpages are served at /docs/...', async ({ page }) => {
     // The bundled manual serves every book asset under /docs/, not just the
     // index: an exact page, a nested API-reference page, an extensionless
     // leaf (Find's normalisation), and a missing page that must 404.
-    const pageResp = await page.request.get('/docs/architecture.html');
+    // The page moved under contributing/ with the 1.49.0 docs restructure,
+    // so an exact path that tracks docs/ is what this pins.
+    const pageResp = await page.request.get('/docs/contributing/architecture.html');
     expect(pageResp.status()).toBe(200);
     expect(await pageResp.text()).toContain('Architecture');
     const nested = await page.request.get('/docs/api-docs/adacovex-types.html');

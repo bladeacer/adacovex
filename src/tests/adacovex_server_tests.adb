@@ -1,3 +1,6 @@
+with Ada.Exceptions;
+with Ada.Text_IO;
+with Adacovex.Docs_Template;
 with Adacovex.Test_Support;
 with Adacovex.Server.HTTP; use Adacovex.Server.HTTP;
 
@@ -128,6 +131,92 @@ package body Adacovex_Server_Tests is
          and then Route ("/docs") /= Route_Not_Found
          and then Route ("/docs/") /= Route_Not_Found,
          "all served routes are non-404");
+
+      --  The bundled offline manual: every asset body is base85 text that
+      --  decodes to a gzip stream, so each one must carry the gzip magic
+      --  number the browser's inflater expects, and its decoded length must
+      --  match the base85 packing (five characters per four bytes, one
+      --  shorter final group).  Walking the whole table pins the encoder and
+      --  the decoder together: a truncated, shifted, or misaligned body
+      --  fails here instead of in the browser.
+      declare
+         Not_Gzip   : Natural := 0;
+         Wrong_Size : Natural := 0;
+         Failures   : Natural := 0;
+         First_Bad  : String (1 .. 80) := (others => ' ');
+         First_At   : Natural := 0;
+      begin
+         for I in Adacovex.Docs_Template.Asset_Index loop
+            begin
+               declare
+                  L        : constant Natural :=
+                    Adacovex.Docs_Template.Asset_Bodies
+                      (Adacovex.Docs_Template.Assets (I).Idx).all'Length;
+                  B        : constant String :=
+                    Adacovex.Docs_Template.Content (I);
+                  Expected : constant Natural :=
+                    (if L mod 5 = 0
+                     then (L / 5) * 4
+                     else (L / 5) * 4 + (L mod 5) - 1);
+               begin
+                  if not Adacovex.Docs_Template.Assets (I).Gzip
+                    or else B'Length < 2
+                    or else B (B'First) /= Character'Val (16#1F#)
+                    or else B (B'First + 1) /= Character'Val (16#8B#)
+                  then
+                     Not_Gzip := Not_Gzip + 1;
+                  end if;
+                  if B'Length /= Expected then
+                     Wrong_Size := Wrong_Size + 1;
+                  end if;
+               end;
+            exception
+               when E : others =>
+                  Failures := Failures + 1;
+                  if First_At = 0 then
+                     First_Bad := Adacovex.Docs_Template.Assets (I).Path;
+                     First_At := Natural (I);
+                     Ada.Text_IO.Put_Line
+                       ("  base85 probe: "
+                        & Ada.Exceptions.Exception_Name (E)
+                        & " / "
+                        & Ada.Exceptions.Exception_Message (E)
+                        & " text len"
+                        & Natural'Image
+                            (Adacovex.Docs_Template.Asset_Bodies
+                               (Adacovex.Docs_Template.Assets (I)
+                                  .Idx).all'Length));
+                  end if;
+            end;
+         end loop;
+         if Failures > 0 then
+            Ada.Text_IO.Put_Line
+              ("  base85 probe: first failing asset"
+               & Positive'Image (First_At)
+               & " = "
+               & First_Bad);
+         end if;
+         R.Check
+           (Adacovex.Docs_Template.Asset_Count > 100,
+            "the manual bundles its whole asset set");
+         R.Check (Failures = 0, "every bundled asset body decodes");
+         R.Check (Not_Gzip = 0, "every bundled asset body is a gzip stream");
+         R.Check
+           (Wrong_Size = 0, "every base85 body decodes to its packed length");
+      end;
+
+      --  The shared sidebar: the pages carry a stub, and the toctree itself
+      --  plus the script that fills it are bundled assets (so a stub can
+      --  always resolve, and a page never links a missing file).
+      R.Check
+        (Adacovex.Docs_Template.Find ("index.html") /= 0,
+         "the manual index is bundled");
+      R.Check
+        (Adacovex.Docs_Template.Find ("_nav/0.html") /= 0,
+         "the shared sidebar variants are bundled");
+      R.Check
+        (Adacovex.Docs_Template.Find ("_static/adacovex-nav.js") /= 0,
+         "the sidebar script is bundled");
    end Run;
 
 end Adacovex_Server_Tests;

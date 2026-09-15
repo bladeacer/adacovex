@@ -47,7 +47,7 @@ src/tests/adacovex_cache_tests	Result-cache tests (28)
 src/tests/adacovex_ir_tests	IR synthesis tests (42)
 src/tests/adacovex_man_tests	Man page renderer tests (18)
 src/tests/adacovex_vcs_tests	VCS support tests (29)
-src/tests/adacovex_server_tests	Server routing tests (41)
+src/tests/adacovex_server_tests	Server routing tests (48)
 src/tests/adacovex_prove_patch_tests	Proof patch merge tests (35)
 src/tests/adacovex_prove_tests	GNATprove parser tests (64)
 src/tests/adacovex_testparser_tests	Test-result parser tests (50)
@@ -65,7 +65,7 @@ src/tests/adacovex_completion_tests	Shell completion script tests (24)
 src/tests/adacovex_renderer_svg_tests	SVG renderer tests (161)
 src/tests/adacovex_renderer_tests	HTML/Markdown renderer tests (58)
 src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (288)
-src/tests/test_runner	Test suite entry point (1607 tests)
+src/tests/test_runner	Test suite entry point (1614 tests)
 src/parsers/adacovex-parsers-manifest-req_entry	Parse the first requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-collect_req_entries	Collect every requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-register_root_python_deps	Register root requirements*.txt entries as dev-scope pypi components

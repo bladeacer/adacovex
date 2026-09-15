@@ -19,6 +19,7 @@ src/
 |-- ir/                            -- bounded IR types + future-use synthesiser
 `-- tests/                         -- the native test suite (test_runner entry point)
 resources/dashboard.html           -- the served dashboard's page shell (plain HTML, bundled at build time)
+resources/js/book-nav.js           -- the offline manual's shared-sidebar injector (bundled as _static/adacovex-nav.js)
 tools/*.py                         -- pure-stdlib Python: doc sync, count sync, generators, validators
 docs/                              -- all documentation (this guide, CLI reference, standards, and more)
 ```
@@ -46,6 +47,7 @@ A handful of modes exit before the pipeline: `--help`, `--version`, `man`,
 | Add a parser for a new input | New file under `src/parsers/`, wired into the pipeline in `adacovex_main.adb` |
 | Add an output format | New renderer under `src/renderers/`, called from the pipeline |
 | Change the dashboard page | Edit `resources/dashboard.html` (plain HTML/CSS/JS), then run `tools/gen-dashboard.py` to regenerate `src/adacovex-dashboard_template.ads` |
+| Change the offline manual's sidebar | Edit `resources/js/book-nav.js`, then run `make book` to bundle it as `_static/adacovex-nav.js` |
 | Change assessment criteria | `src/compliance/adacovex-compliance-dal.adb` (+ the DAL levels doc) |
 | Add tests | `src/tests/` -- see the [contributor guide](developer-guide.md#testing) |
 | Regenerate API docs | `make doc` (gnatdoc -> `tools/rst2md.py` -> `docs/api-docs/`) |
@@ -75,6 +77,14 @@ Cross-links between the generated package pages and the reference pages live in 
   its asset names).  The docs build dependencies (sphinx + myst-parser) are
   the Read the Docs installation requirements in `requirements.txt`.  The
   pages are never converted to reStructuredText.
+- Every asset body is gzip-compressed, then base85-encoded (the quote-free
+  Z85 alphabet, which packs 4 bytes into 5 characters where base64 needs
+  5.33) into one or more Ada string constants.  The server sends the gzip
+  bytes with `Content-Encoding: gzip`, so the browser inflates them and the
+  binary needs no inflate routine.
+- The Furo sidebar is stored once per branch under `_nav/` and every page
+  keeps a stub that `resources/js/book-nav.js` fills in, so the same 8 kB
+  toctree is not repeated in all 184 pages.
 - The bundled manual is served by `--serve` at `/docs`.
 - `make book-links-check` fails when a link in the bundled manual does not
   resolve (checked against a fresh `sphinx-build`, so a stale local

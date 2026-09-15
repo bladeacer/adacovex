@@ -643,6 +643,125 @@ class TestGenDocsAssets(unittest.TestCase):
             self.assertIn("sphinx-doc.org", index_body)
 
 
+class TestGenDocsCodec(unittest.TestCase):
+    """The base85 body encoding and the shared sidebar (1.50.0).
+
+    Every asset body is gzip bytes base85-encoded onto the quote-free Z85
+    alphabet, and every page carries a sidebar stub instead of the repeated
+    Furo toctree.  Both are pinned here: the packing rule against the Ada
+    decoder in src/adacovex-docs_template.adb, and the dedup against the
+    page-independence the sharing depends on.
+    """
+
+    def test_ascii85_packing_and_length(self) -> None:
+        # 4 bytes -> 5 characters; a final 1..3-byte group -> n+1 characters.
+        for size in range(0, 21):
+            data = bytes(range(size))
+            enc = gen_docs._b85_encode(data)
+            self.assertEqual(len(enc), (size * 5 + 3) // 4)
+            self.assertTrue(all(c in gen_docs.B85 for c in enc))
+
+    def test_alphabet_is_the_quote_free_z85_run(self) -> None:
+        # A quote or a backslash would need escaping inside the Ada literal,
+        # and a non-printable byte would break the pure-ASCII source rule.
+        self.assertEqual(len(gen_docs.B85), 85)
+        self.assertEqual(len(set(gen_docs.B85)), 85)
+        self.assertFalse(any(c in gen_docs.B85 for c in '"\\'))
+        self.assertTrue(all(32 < ord(c) < 127 for c in gen_docs.B85))
+
+    def test_known_vectors(self) -> None:
+        # Pinned against the Ada decoder: a change on either side fails here.
+        self.assertEqual(gen_docs._b85_encode(b"Hello"), "nm=QNzV")
+        self.assertEqual(gen_docs._b85_encode(b"\x1f\x8b\x08\x00"), "abZy8")
+        self.assertEqual(gen_docs._b85_encode(b""), "")
+
+    def test_gzip_bodies_keep_the_gzip_magic(self) -> None:
+        # What the Ada side asserts on the real bundle: the decoded bytes are
+        # a gzip stream, so the server's Content-Encoding: gzip is honest.
+        chunks = gen_docs._b85_chunks("<html>hello</html>")
+        self.assertGreaterEqual(len(chunks), 1)
+        self.assertTrue(all(len(c) <= gen_docs.MAX_CHUNK_BYTES * 5 // 4 + 5
+                            for c in chunks))
+        self.assertEqual(chunks[0][:3], gen_docs._b85_encode(b"\x1f\x8b"))
+
+    def test_sidebar_span_covers_nested_divs(self) -> None:
+        html = ('<p>before</p>'
+                + gen_docs._SIDEBAR_START
+                + '<div><div>deep</div></div>after</div>'
+                + '<p>after</p>')
+        span = gen_docs._sidebar_span(html)
+        self.assertIsNotNone(span)
+        start, end = span
+        self.assertEqual(html[start:end],
+                         gen_docs._SIDEBAR_START
+                         + '<div><div>deep</div></div>after</div>')
+        self.assertIsNone(gen_docs._sidebar_span("<p>no sidebar</p>"))
+
+    def test_nav_variant_is_page_independent(self) -> None:
+        # Two pages of one tree highlight different entries; after the
+        # normalisation their stored trees must be byte-identical, or the
+        # sharing collapses into one variant per page.
+        first = ('<div class="sidebar-container"><ul>'
+                 '<li class="toctree-l1 current current-page">'
+                 '<a class="current reference internal" href="#">A</a></li>'
+                 '<li class="toctree-l1">'
+                 '<a class="reference internal" href="b.html">B</a></li>'
+                 '</ul></div>')
+        second = ('<div class="sidebar-container"><ul>'
+                  '<li class="toctree-l1">'
+                  '<a class="reference internal" href="a.html">A</a></li>'
+                  '<li class="toctree-l1 current current-page">'
+                  '<a class="current reference internal" href="#">B</a></li>'
+                  '</ul></div>')
+        self.assertEqual(gen_docs._nav_variant(first, "sub/a.html"),
+                         gen_docs._nav_variant(second, "sub/b.html"))
+
+    def test_nav_variant_rebases_every_link_exactly_once(self) -> None:
+        # The stored tree is fetched from _nav/, so its links are rebased onto
+        # that directory.  The restored self-link must not be rebased again
+        # (the doubled path this test pins was reachable before).
+        block = ('<div class="sidebar-container"><ul>'
+                 '<li class="toctree-l1 current current-page">'
+                 '<a class="current reference internal" href="#">Here</a></li>'
+                 '<li class="toctree-l1">'
+                 '<a class="reference internal" href="../../root.html">Root</a>'
+                 '</li></ul></div>')
+        out = gen_docs._nav_variant(block, "a/b/here.html")
+        self.assertIn('href="../a/b/here.html"', out)
+        self.assertIn('href="../root.html"', out)
+        self.assertNotIn("a/b/a/b/", out)
+        self.assertNotIn('class="toctree-l1 current current-page"', out)
+
+    def test_nav_assets_carry_every_variant_and_the_script(self) -> None:
+        variants = {"<tree a>": 0, "<tree b>": 1}
+        assets = gen_docs._nav_assets(variants)
+        rels = {rel: body for rel, _, body in assets}
+        self.assertEqual(rels[f"{gen_docs.NAV_DIR}/0.html"], "<tree a>")
+        self.assertEqual(rels[f"{gen_docs.NAV_DIR}/1.html"], "<tree b>")
+        self.assertIn(gen_docs.NAV_SCRIPT, rels)
+        # The script is bundled verbatim from resources/, never inlined here.
+        self.assertEqual(rels[gen_docs.NAV_SCRIPT],
+                         gen_docs.NAV_SCRIPT_SRC.read_text(encoding="utf-8"))
+        # It is authored project code, so it must live under resources/js/:
+        # the SBOM asset scan reads the resources/ root as vendored libraries
+        # and resources/js/ as the project's own modules.
+        self.assertEqual(gen_docs.NAV_SCRIPT_SRC.parent.name, "js")
+        self.assertEqual(gen_docs.NAV_SCRIPT_SRC.parent.parent.name,
+                         "resources")
+
+    def test_nav_stub_points_at_the_script_from_its_own_depth(self) -> None:
+        # A page two directories deep needs ../../_static/... to reach the
+        # script, and a top-level page just the plain path.
+        block = gen_docs._SIDEBAR_START + "</div>"
+        deep = gen_docs._nav_stub(block, "a/b/page.html", {})
+        self.assertIn("../" * 2 + gen_docs.NAV_SCRIPT, deep)
+        self.assertIn('data-nav="0"', deep)
+        self.assertNotIn("../" * 3, deep)
+        top = gen_docs._nav_stub(block, "page.html", {})
+        self.assertIn('"' + gen_docs.NAV_SCRIPT + '"', top)
+        self.assertNotIn("../", top)
+
+
 class TestGenDocsBundling(unittest.TestCase):
     """The clean-build stamp and write-on-change guards (1.50.0).
 

@@ -98,7 +98,7 @@ Self-assessment (`make run-self`) must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
 - Platinum SPARK level (880 VCs under gnatprove 16.1.0, 0 unproved, 0
   justified; see `docs/proof/16.1.0-ledger.md`)
-- 1607/1607 native tests passing
+- 1614/1614 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
   `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
@@ -214,12 +214,12 @@ src/
     |-- adacovex_renderer_tests.ads/.adb      -- HTML/Markdown renderer tests (58)
     |-- adacovex_sbom_tests.ads/.adb          -- SBOM / manifest graph tests (288)
     |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (89)
-    |-- adacovex_server_tests.ads/.adb        -- Server routing tests (41)
+    |-- adacovex_server_tests.ads/.adb        -- Server routing tests (48)
     |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (50)
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (67)
     |-- adacovex_tz_ansi_tests.ads/.adb       -- Timezone + ANSI tests (63)
     |-- adacovex_vcs_tests.ads/.adb           -- VCS support tests (29)
-    `-- test_runner.adb                       -- Test suite entry point (1607 tests)
+    `-- test_runner.adb                       -- Test suite entry point (1614 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -431,7 +431,14 @@ link URLs).
 MyST Markdown parser) and bundles the built site -- every page,
 stylesheet, script, and badge -- into `src/adacovex-docs_template.ads` as a
 path-keyed asset table (the bundled offline manual the `--serve` server
-serves at `/docs`, where search works exactly as online).  Sphinx runs only
+serves at `/docs`, where search works exactly as online).  Every body is
+gzip-compressed and then **base85**-encoded (the quote-free Z85 alphabet: 4
+bytes to 5 characters where base64 needs 5.33), served with
+`Content-Encoding: gzip` so the browser inflates it and the binary carries
+no inflate routine.  The Furo sidebar is not repeated per page: each page
+keeps a stub and the toctree is stored once per branch under `_nav/`, filled
+in by `resources/js/book-nav.js` (bundled as `_static/adacovex-nav.js`), so
+navigation needs JavaScript exactly as search already did.  Sphinx runs only
 when the docs sources changed (a SHA-256 fingerprint stamp beside the build),
 and the build itself is always clean, so a renamed or deleted page can never
 survive as a stale page in the bundle.  The spec is written only when its
@@ -442,6 +449,7 @@ project powers the Read the Docs site (`.readthedocs.yaml`, installing
 docs deps from `requirements.txt`).
 `tools/check-book-links.py` (wired as `make book-links-check`, a cheap gate
 in `make check`) verifies every link inside the bundled offline manual
+(including the shared `_nav/` trees, whose links are relative to `_nav/`)
 resolves against the bundled assets or the deliberately-not-bundled prefixes
 shared with `tools/gen-docs.py` (`OFFLINE_EXCLUDED_PREFIXES`); the check
 runs against a fresh `sphinx-build` from a temp copy of `docs/`, so a stale
@@ -455,10 +463,10 @@ must be followed by `make book`.
 
 | Target | Description |
 |--------|-------------|
-| `check` | **The single everything-check / verification entry point.** Run it after any change. It runs every gate CI runs before a release: cheap static gates first (ascii, complexity, csslint, spark-off, changelog, action-parity, tools-check, cli-e2e, version, doc-links, link, docs-check, book-links), then build + native tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description). `make check` resolves `gnatprove` for you (it is fetched into `~/.adacovex/toolchain/` and executed directly when not on `PATH`), so you never have to install or point at a prover by hand -- just run `make check` and it verifies the whole tree end to end. `make prove` is the SPARK sub-gate if you only changed proof-affecting code |
+| `check` | **The single everything-check / verification entry point.** Run it after any change. It runs every gate CI runs before a release: cheap static gates first (ascii, complexity, csslint, spark-off, changelog, action-parity, tools-check, cli-e2e, version, doc-links, link, docs-check, para-split, book-links), then build + native tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description). `make check` resolves `gnatprove` for you (it is fetched into `~/.adacovex/toolchain/` and executed directly when not on `PATH`), so you never have to install or point at a prover by hand -- just run `make check` and it verifies the whole tree end to end. `make prove` is the SPARK sub-gate if you only changed proof-affecting code |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
-| `test` | Build + run the 1607-test native suite |
+| `test` | Build + run the 1614-test native suite |
 | `prove` | SPARK proof (Platinum gate) + regenerates SVG badges in `docs/badges/` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
 | `book` | Build the offline manual from the Sphinx docs and regenerate `src/adacovex-docs_template.ads` (tools/gen-docs.py; safe to run without sphinx) |
@@ -483,6 +491,7 @@ must be followed by `make book`.
 | `e2e` | Run `cli-e2e`, then the Playwright dashboard layout tests (pnpm + chromium) |
 | `csslint-check` | Dashboard CSS 4px spacing gate: every margin/padding/gap must be a multiple of 4px (tools/csslint.py; also run inside `make build`) |
 | `complexity-check` | Cyclomatic-complexity + LOC gate: no god objects/functions, no file above its LOC or percentage-of-codebase caps (multi-language scan incl. Markdown; `--excludes=rst --skip-path=docs/api-docs`; files can opt out with a `no-covex-complexity-scan` header marker; gated by make complexity-check) |
+| `para-split-check` | Paragraph splitter gate: report every paragraph over the 4-sentence rule by name (tools/para-split.py --check, its non-mutating mode). `docs-check` enforces the same rule; running the splitter here keeps the tool that advises on a failure provably in step with the gate (a drift fails the gate instead of rewriting a page wrongly) |
 | `book-links-check` | Fail when a link inside the bundled offline manual does not resolve (checked against a fresh `sphinx-build` from a temp copy of `docs/`; tools/check-book-links.py; shares the offline-asset rules with tools/gen-docs.py). `make check` also runs `python3 tools/gen-docs.py --check`, which fails when the committed spec `src/adacovex-docs_template.ads` drifts from a fresh build |
 | `bench` | Benchmark the pipeline and the `prove` subcommand with hyperfine (bash `time` fallback): pipeline cold/warm, prove cold (`prove --no-cache`, result cache + gnatprove session wiped), prove warm, + binary size (docs/contributing/perf/index.md) |
 | `perf-bench` | Profile the adacovex binary with perf and strace (tools/perf-bench.py; docs/contributing/perf/index.md) |
@@ -564,7 +573,7 @@ release-tag coverage gate instead.
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 1607/1607 passing |
+| Unit tests | `make test` | 1614/1614 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (880 VCs, 0 unproved, 0 justified under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -601,7 +610,7 @@ rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 1607 tests across 25 categories).
+Native zero-dependency suite (`src/tests/`, 1614 tests across 25 categories).
 Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests).
 

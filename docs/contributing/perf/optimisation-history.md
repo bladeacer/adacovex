@@ -44,6 +44,13 @@ date`, ~0.38 s) instead of recompiling the 28k-line unit and relinking.
 - **A second, smaller win.** Sphinx itself now runs only when the docs
   sources changed (the fingerprint stamp): a no-op `make build` spends
   ~0.4 s in the generator instead of ~5.9 s in a clean Sphinx rebuild.
+- **The payload itself shrank.** The asset bodies moved from base64 to
+  base85 (4 bytes to 5 characters instead of 5.33), and the Furo sidebar
+  is stored once per branch under `_nav/` instead of once in each of the
+  184 pages, filled in by `resources/js/book-nav.js`.  Together they take
+  the generated spec from 2.34 MB to 1.86 MB (20.6%) and the stripped
+  binary from ~5.7 MiB to ~5.3 MiB, against the phase's otherwise flat
+  shapes.
 
 ### Opt-out marker machinery + the dead proof-probe removal (1.46.0)
 

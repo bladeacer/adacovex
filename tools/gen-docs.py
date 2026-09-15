@@ -27,6 +27,14 @@ parser, so the pages stay `.md`).  This script:
      headerlinks Sphinx adds) is escaped as an HTML character reference so
      the Ada source stays pure ASCII;
 
+   * the sidebar (the Furo global toctree) is removed from every page and
+     stored once per distinct tree under `_nav/`; the page keeps a
+     `<div class="sidebar-container" data-nav="N">` stub and a deferred
+     `_static/adacovex-nav.js` fills it from that shared asset and marks the
+     current page.  Furo repeats the whole 8 KB toctree in all 184 pages, so
+     the pages are what a per-page gzip stream cannot dedupe -- see the
+     bundle review in docs/contributing/perf/benchmarks.md;
+
    Sphinx's own search stays fully functional in the bundle: the search
    assets are bundled and the search box is left visible.  The search index
    (a JSON blob `searchindex.js`) is a few hundred KB -- single-line, so it
@@ -40,7 +48,10 @@ parser, so the pages stay `.md`).  This script:
 3. gzip-compresses every asset body at build time and writes
    `src/adacovex-docs_template.ads` as a constant table of (path, MIME type,
    body index, gzip flag) assets plus one `aliased constant String` per
-   compressed chunk, base64-encoded so the Ada source stays pure ASCII.
+   compressed chunk, base85-encoded so the Ada source stays pure ASCII.
+   base85 (the same 4 bytes -> 5 characters packing as ASCII85, on the
+   quote-free Z85 alphabet) costs 1.25 characters per byte where base64 costs
+   1.333, which is 6.2% off the largest payload in the binary.
    Bodies are never concatenated into one value: a single multi-megabyte
    string constant overflows the gnatprove frontend stack, so each compressed
    chunk stays small and the server streams the chunks back as one response.
@@ -85,8 +96,8 @@ spec is authored to build without it.
 """
 
 import argparse
-import base64
 import hashlib
+import posixpath
 import re
 import shutil
 import subprocess
@@ -156,12 +167,55 @@ _MIME: Dict[str, str] = {
 }
 
 # Max compressed bytes stored in one emitted Ada string constant.  gzip is
-# applied at build time (see below), then each compressed chunk is base64-
-# encoded, so the Ada literal for one chunk is ~4/3 of its compressed size.
+# applied at build time (see below), then each compressed chunk is base85-
+# encoded, so the Ada literal for one chunk is ~5/4 of its compressed size.
 # The gnatprove frontend blows its stack on a single constant over ~1 MB
-# (whatever its structure), so every chunk -- and its base64 expansion --
+# (whatever its structure), so every chunk -- and its base85 expansion --
 # stays well under it.
 MAX_CHUNK_BYTES: int = 300_000
+
+# The base85 alphabet: the quote-free Z85 character set, so an emitted Ada
+# string literal never needs escaping and the source stays pure ASCII.  The
+# Ada decoder in src/adacovex-docs_template.adb hard-codes the same order
+# (digits, lower case, upper case, then the punctuation run).
+B85: str = ("0123456789abcdefghijklmnopqrstuvwxyz"
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            ".-:+=^!/*?&<>()[]{}@%$#")
+
+# The shared sidebar: every page keeps a stub that a small deferred script
+# fills from one of these (build-relative) assets.  The tree is identical for
+# all pages of a section, so the toctree is stored a handful of times instead
+# of 184 times (see the bundle review in docs/contributing/perf/benchmarks.md).
+NAV_DIR: str = "_nav"
+NAV_SCRIPT: str = "_static/adacovex-nav.js"
+# The injector is authored project code, so it lives under resources/js/ (the
+# SBOM asset scan reads the resources/ root as vendored libraries and
+# resources/js/ as the project's own modules).
+NAV_SCRIPT_SRC: Path = ROOT / "resources" / "js" / "book-nav.js"
+_SIDEBAR_START: str = '<div class="sidebar-container">'
+_TAG_CLASS: str = "class="
+
+
+def _b85_encode(data: bytes) -> str:
+    """Encode bytes as base85 on the Z85 alphabet (ASCII85 packing).
+
+    Four bytes become five characters, most significant first.  A final group
+    of 1..3 bytes is zero-padded to 4 bytes and emitted as n+1 characters,
+    which is the ASCII85 rule the Ada decoder mirrors (it pads the missing
+    characters with the last alphabet value and drops the padding bytes).
+    """
+    out: List[str] = []
+    for i in range(0, len(data), 4):
+        group: bytes = data[i:i + 4]
+        n: int = len(group)
+        value: int = int.from_bytes(group + b"\0" * (4 - n), "big")
+        digits: List[int] = []
+        for _ in range(5):
+            digits.append(value % 85)
+            value //= 85
+        digits.reverse()                       # most significant first
+        out.extend(B85[d] for d in digits[:n + 1])
+    return "".join(out)
 
 
 def sh(cmd: List[str]) -> subprocess.CompletedProcess:
@@ -302,6 +356,7 @@ def collect_assets(build: Path) -> List[Tuple[str, str, str]]:
     is post-processed so the offline manual behaves like the online one.
     """
     assets: List[Tuple[str, str, str]] = []
+    variants: Dict[str, int] = {}
     for path in sorted(build.rglob("*")):
         if not path.is_file():
             continue
@@ -318,10 +373,16 @@ def collect_assets(build: Path) -> List[Tuple[str, str, str]]:
             continue
         if mime == "text/html":
             body = postprocess_page(body)
+            span = _sidebar_span(body)
+            if span is not None:
+                body = (body[:span[0]]
+                        + _nav_stub(body[span[0]:span[1]], rel, variants)
+                        + body[span[1]:])
         assets.append((rel, mime, body))
 
     if not assets:
         raise RuntimeError("no assets collected from the sphinx build")
+    assets.extend(_nav_assets(variants))
     return assets
 
 
@@ -392,16 +453,123 @@ def _gzip(data: bytes) -> bytes:
     return c.compress(data) + c.flush()
 
 
-def _b64_chunks(body: str) -> List[str]:
-    """The base64 Ada bodies for one asset: gzip the text, split the compressed
-    bytes into MAX_CHUNK_BYTES-sized chunks, and base64-encode each chunk.
+def _b85_chunks(body: str) -> List[str]:
+    """The base85 Ada bodies for one asset: gzip the text, split the compressed
+    bytes into MAX_CHUNK_BYTES-sized chunks, and base85-encode each chunk.
     Returns at least one chunk (an empty asset gzips to a non-empty header).
     """
     gz = _gzip(body.encode("utf-8"))
     return [
-        base64.b64encode(gz[i:i + MAX_CHUNK_BYTES]).decode("ascii")
+        _b85_encode(gz[i:i + MAX_CHUNK_BYTES])
         for i in range(0, len(gz), MAX_CHUNK_BYTES)
     ]
+
+
+def _sidebar_span(html: str) -> Optional[Tuple[int, int]]:
+    """The [start, end) span of the Furo sidebar element, or None.
+
+    The span is found by counting the nested `<div>` elements, so it covers
+    the whole `<div class="sidebar-container">` element however Furo nests
+    its contents (a regex cannot, and a wrong span would corrupt the page).
+    """
+    start: int = html.find(_SIDEBAR_START)
+    if start < 0:
+        return None
+    depth: int = 0
+    at: int = start
+    while True:
+        open_at: int = html.find("<div", at)
+        close_at: int = html.find("</div>", at)
+        if close_at < 0:
+            return None
+        if 0 <= open_at < close_at:
+            depth += 1
+            at = open_at + 4
+        else:
+            depth -= 1
+            at = close_at + 6
+            if depth == 0:
+                return start, at
+        if at > len(html):
+            return None
+
+
+_NAV_ATTR = re.compile(r'\b(href|src|action)="([^"]*)"')
+_NAV_CLASS = re.compile(r'\bclass="([^"]*)"')
+#  The current page's own entry: Furo gives it `href="#"` inside the one
+#  `current-page` list item, and the stored tree carries that page's real
+#  path there instead (see _nav_variant).
+_NAV_SELF = re.compile(
+    r'(<li class="[^"]*current-page[^"]*">\s*<a class="[^"]*" href=")#(")')
+_NAV_EXTERNAL = ("http://", "https://", "mailto:", "data:", "javascript:",
+                 "tel:", "//")
+_NAV_CURRENT = ("current", "current-page")
+
+
+def _nav_variant(block: str, page_rel: str) -> str:
+    """The page-independent form of one page's sidebar.
+
+    Two normalisations make the toctree of 184 pages collapse into the
+    handful of distinct trees it really is.  The current-page highlight
+    classes are dropped and the current page's own entry -- the single
+    `href="#"` Furo renders for it -- gets that page's path back, so the
+    stored tree is the tree every page of the same branch renders, no matter
+    which entry is the open one (resources/js/book-nav.js re-adds the highlight
+    for the page that is actually open).  The later rebase must not see the
+    restored path, so the path is written after the rebase, not before.
+
+    Every href, src, and action is rebased onto `_nav/`, the directory the
+    stored tree is fetched from and the base the injected markup needs.
+    """
+    page_dir: str = posixpath.dirname(page_rel)
+
+    def rebase(match: "re.Match[str]") -> str:
+        url: str = match.group(2)
+        if not url or url.startswith("#") or url.startswith(_NAV_EXTERNAL):
+            return match.group(0)
+        target: str = url.split("#", 1)[0]
+        fragment: str = url[len(target):]
+        if target.startswith("/"):
+            build_rel: str = posixpath.normpath(target.lstrip("/"))
+        else:
+            build_rel = posixpath.normpath(posixpath.join(page_dir, target))
+        return '%s="%s%s"' % (match.group(1),
+                               posixpath.relpath(build_rel, NAV_DIR), fragment)
+
+    block = _NAV_ATTR.sub(rebase, block)
+    own: str = posixpath.relpath(posixpath.normpath(page_rel), NAV_DIR)
+    block = _NAV_SELF.sub(lambda m: m.group(1) + own + m.group(2), block,
+                          count=1)
+    return _NAV_CLASS.sub(
+        lambda m: '%s"%s"' % (_TAG_CLASS, " ".join(
+            t for t in m.group(1).split() if t not in _NAV_CURRENT)),
+        block)
+
+
+def _nav_stub(block: str, page_rel: str, variants: Dict[str, int]) -> str:
+    """The stub that replaces one page's sidebar: the variant index plus the
+    deferred script that fills it in (see resources/js/book-nav.js)."""
+    key: str = _nav_variant(block, page_rel)
+    if key not in variants:
+        variants[key] = len(variants)
+    depth: int = page_rel.count("/")
+    src: str = "../" * depth + NAV_SCRIPT
+    return (f'<div class="sidebar-container" data-nav="{variants[key]}">'
+            f'<script defer src="{src}"></script></div>')
+
+
+def _nav_assets(variants: Dict[str, int]) -> List[Tuple[str, str, str]]:
+    """The shared sidebar variants and the script that injects them."""
+    assets: List[Tuple[str, str, str]] = [
+        (f"{NAV_DIR}/{index}.html", "text/html", key)
+        for key, index in sorted(variants.items(), key=lambda kv: kv[1])
+    ]
+    try:
+        script: str = NAV_SCRIPT_SRC.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise RuntimeError(f"cannot read {NAV_SCRIPT_SRC}: {exc}")
+    assets.append((NAV_SCRIPT, "application/javascript", script))
+    return assets
 
 
 def build_spec() -> Tuple[str, str]:
@@ -422,15 +590,15 @@ def build_spec() -> Tuple[str, str]:
 
     assets = collect_assets(BUILD)
 
-    # Every asset body is gzip-compressed and base64-encoded into one or more
+    # Every asset body is gzip-compressed and base85-encoded into one or more
     # chunks; each chunk becomes its own `Asset_NNN` constant.  Sphinx pages
     # reuse the same stylesheets and scripts, so gzip collapses that
     # redundancy -- the generated spec is ~1/7th the size of the old
     # verbatim-per-line encoding -- and the server sends the compressed bytes
     # with `Content-Encoding: gzip` for browsers to inflate.
-    # plan = [(rel, mime, [base64 chunk, ...]), ...].
+    # plan = [(rel, mime, [base85 chunk, ...]), ...].
     plan: List[Tuple[str, str, List[str]]] = [
-        (rel, mime, _b64_chunks(body)) for rel, mime, body in assets
+        (rel, mime, _b85_chunks(body)) for rel, mime, body in assets
     ]
     body_count: int = sum(len(chunks) for _, _, chunks in plan)
     chunked_at: List[Tuple[int, int]] = [  # (table index, chunk count)
@@ -441,10 +609,11 @@ def build_spec() -> Tuple[str, str]:
     header = (
         "--  Generated by tools/gen-docs.py from the Sphinx manual (docs/):\n"
         "--  the whole built site (pages, stylesheets, scripts, badges, search)\n"
-        "--  as a gzip-compressed, base64-encoded offline asset blob + lookup\n"
+        "--  as a gzip-compressed, base85-encoded offline asset blob + lookup\n"
         "--  table.  --serve exposes it at /docs/ with Content-Encoding: gzip\n"
-        "--  (the browser inflates it).  Do not edit by hand; edit docs/ and\n"
-        "--  run make book.\n"
+        "--  (the browser inflates it).  The shared sidebar variants live\n"
+        "--  under _nav/ and are filled in by _static/adacovex-nav.js.  Do not\n"
+        "--  edit by hand; edit docs/ and run make book.\n"
     )
     lines: List[str] = header.splitlines()
     lines.append("package Adacovex.Docs_Template is")
@@ -452,7 +621,7 @@ def build_spec() -> Tuple[str, str]:
     lines.append("   --  One entry of the lookup table.  The path and MIME type")
     lines.append("   --  are fixed-size (space-padded) strings; Idx selects the")
     lines.append("   --  first body of the asset via Asset_Bodies; Gzip says the")
-    lines.append("   --  body holds base64 gzip bytes served with Content-Encoding:")
+    lines.append("   --  body holds base85 gzip bytes served with Content-Encoding:")
     lines.append("   --  gzip.  Fixed-size components keep the aggregate a plain")
     lines.append("   --  static constant (a discriminated-record array is")
     lines.append("   --  dynamically elaborated by GNAT and blows the heap).")
@@ -550,9 +719,12 @@ def build_spec() -> Tuple[str, str]:
     lines.append("end Adacovex.Docs_Template;")
     content: str = "\n".join(lines) + "\n"
     total = sum(len(b) for _, _, b in assets)
-    gz_total = sum(len(c) for _, _, chunks in plan for c in chunks)
+    # The emitted bodies are base85 text, so this is the encoded size, not the
+    # gzip size (base85 costs 1.25 characters per compressed byte, base64
+    # costs 1.333).
+    encoded = sum(len(c) for _, _, chunks in plan for c in chunks)
     stats = (f"{len(plan)} assets, {body_count} bodies, "
-             f"{gz_total} compressed bytes, {total} original bytes")
+             f"{encoded} base85 bytes, {total} original bytes")
     return content, stats
 
 

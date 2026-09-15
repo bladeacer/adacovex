@@ -1,4 +1,4 @@
-.PHONY: help check build test prove doc book book-serve docs-serve clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish agents-tree sbom compliance description proof-status test-count doc-links link-check changelog-check action-parity-check tools-check man bench perf-bench complexity-check csslint-check sync docs-check book-links-check cli-e2e e2e
+.PHONY: help check build test prove doc book book-serve docs-serve clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish agents-tree sbom compliance description proof-status test-count doc-links link-check changelog-check action-parity-check tools-check man bench perf-bench complexity-check csslint-check sync docs-check para-split-check book-links-check cli-e2e e2e
 
 .DEFAULT_GOAL := help
 
@@ -17,7 +17,7 @@ help:
 	@echo '    build         Build project (adacovex + test_runner, covex alias);'
 	@echo '                  regenerates src/adacovex_version_info.ads from'
 	@echo '                  alire-dev.toml (or ADACOVEX_VERSION for releases)'
-	@echo '    test          Build and run native test suite (1607 tests)'
+	@echo '    test          Build and run native test suite (1614 tests)'
 	@echo '    prove         Run SPARK proofs (gnatprove via prove subcommand,'
 	@echo '                  resolved from alire-dev.toml / PATH / cache / download)'
 	@echo '                  (also auto-regenerates SVG badges in docs/badges/)'
@@ -225,6 +225,15 @@ ascii-check:
 docs-check:
 	@python3 tools/check-docs.py
 
+# The paragraph splitter gate: the 4-sentence rule is enforced by docs-check,
+# and this reports the same paragraphs by name through tools/para-split.py
+# --check (its non-mutating mode).  Running it in make check keeps the
+# splitter -- the tool a maintainer reaches for when docs-check fails --
+# provably in step with the gate it advises on; a drift fails here instead of
+# rewriting a page wrongly.
+para-split-check:
+	@python3 tools/para-split.py --check
+
 # Quality gate: every link inside the bundled offline manual must resolve to
 # a bundled asset or a deliberately-not-bundled file (the rules shared with
 # tools/gen-docs.py).  The check runs against a fresh `sphinx-build` from a
@@ -279,6 +288,7 @@ check:
 	@echo "=== Quality gate: doc links ==="; python3 tools/update-doc-links.py --check
 	@echo "=== Quality gate: markdown links ==="; $(MAKE) link-check
 	@echo "=== Quality gate: user documentation ==="; $(MAKE) docs-check
+	@echo "=== Quality gate: paragraph splitter ==="; $(MAKE) para-split-check
 	@echo "=== Quality gate: bundled offline manual links ==="; $(MAKE) book-links-check
 	@echo "=== Quality gate: bundled offline manual spec ==="; python3 tools/gen-docs.py --check
 	@echo "=== Quality gate: build ==="; $(MAKE) build
@@ -292,7 +302,7 @@ check:
 	@echo "=== Quality gate: proof metrics in sync ==="; python3 tools/update-proof-status.py --check
 	@echo "=== Quality gate: description sync ==="; python3 tools/update-description.py --check
 	@echo ""
-	@echo "=== Quality gate passed: ascii, complexity, csslint, spark-off, changelog, action-parity, tools, cli-e2e, version, doc-links, link, docs-check, book-links, build, test, prove, doc, book, sbom, test-count, proof-status, description ==="
+	@echo "=== Quality gate passed: ascii, complexity, csslint, spark-off, changelog, action-parity, tools, cli-e2e, version, doc-links, link, docs-check, para-split, book-links, build, test, prove, doc, book, sbom, test-count, proof-status, description ==="
 
 # Sync the crate description + long description from the canonical files
 # (alire/description.txt + alire/long-description.txt) into every manifest.

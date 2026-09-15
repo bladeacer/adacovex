@@ -62,7 +62,11 @@ for a millisecond-level A/B against 1.47.0:
 | Pipeline warm, Ada_CRDT | 38.4 +/- 4.7 ms | 40.8 +/- 4.7 ms (noise) | 31.6 +/- 2.9 ms |
 | Prove cold, session wiped | -- | 80.9 +/- 5.3 s | 87.6 +/- 0.6 s |
 | Prove warm | -- | 52.8 +/- 4.5 ms | 55.4 +/- 4.3 ms |
-| Stripped binary | 6.49 MiB | 5.39 MiB (-17%) | 5.7 MiB |
+| Stripped binary | 6.49 MiB | 5.39 MiB (-17%) | 5.3 MiB |
+
+The 1.50.0 column is also the first with the smaller manual encoding, so
+its 5.3 MiB stripped binary is the only row that moves by design (see
+[Bundled offline manual](#bundled-offline-manual)).
 
 The 1.50.0 shapes are deliberately flat: the phase's work removes failed
 work (a rewrite of the generated manual, a recompile and relink, and a
@@ -107,12 +111,13 @@ self run).
 
 ## Binary size
 
-The debug-symbol-carrying build is ~14.3 MiB at `-O2` on the 1.50.0 tree
+The debug-symbol-carrying build is ~14.0 MiB at `-O2` on the 1.50.0 tree
 (it was ~11.6 MiB at the `-O0` default; optimisation unrolls and inlines,
 which costs binary size in the symbol-carrying build).  Stripping (`strip
-bin/adacovex`) yields ~5.7 MiB (~60% smaller, comparable with 1.47.0's
-~5.4 MiB and ~17% smaller than 1.46.0's stripped ~6.5 MiB) without
-affecting behaviour.  GNAT keeps symbols by default for debugging;
+bin/adacovex`) yields ~5.3 MiB (~62% smaller, and ~17% smaller than
+1.46.0's stripped ~6.5 MiB) without affecting behaviour.  That is below
+1.47.0's ~5.4 MiB: the 1.50.0 manual encoding (see below) gave back more
+than the code added since.  GNAT keeps symbols by default for debugging;
 release artifacts are stripped.  `make bench` reports both, so a size
 regression is visible in the same command as the timings.
 
@@ -120,10 +125,26 @@ regression is visible in the same command as the timings.
 
 The offline manual is the largest single payload in the binary, so it was
 measured on the 1.50.0 tree through the generator's own pipeline.  The
-bundled site holds 206 assets (about 6.66 MB of source); gzip compresses it
-to about 1.47 MB, and the base64 Ada source carries about 1.96 MB, about
-33% of the 5.68 MiB stripped binary.  No two assets share their content, so
-the payload is already dense.
+bundled site holds 214 assets over 184 pages (about 5.28 MB of source);
+gzip compresses it to about 1.24 MB, base85 spreads that to about 1.55 MB of
+Ada text, and the generated spec is 1.86 MB.  That is 20.6% smaller than the
+2.34 MB spec of 1.49.0, for a saving of about 0.46 MB in the stripped
+binary (the spec is about 34% of it).  No two assets share their content, so
+what remains is dense.
+
+Two changes made the reduction, and both are in the generator.
+
+- **base85 instead of base64.**  The quote-free Z85 alphabet packs 4 bytes
+  into 5 characters where base64 needs 5.33, so the payload drops from
+  1,648,796 to 1,545,555 characters: about 103 kB, 6.3% of the payload.  The
+  browser still inflates gzip; only the ASCII wrapper changed, and the small
+  decoder in `src/adacovex-docs_template.adb` is plain runtime code with no
+  proof surface.
+- **One shared sidebar per tree.**  The Furo global toctree is about 8 kB of
+  markup, and Furo wrote a full copy into all 184 pages.  Each page now keeps
+  a stub and the tree is stored 7 times under `_nav/` (once per branch, at a
+  few kB each), which the deferred `_static/adacovex-nav.js` injects.
+  Navigation therefore needs JavaScript, as the manual's search already did.
 
 The figures are rounded, because this page is itself a bundled asset: an
 edit here shifts the payload by well under one percent.  The shares below
@@ -131,39 +152,37 @@ are the stable part of the measurement, and each is rounded to 0.1%.
 
 | Group | Assets | gzip size | Share |
 |-------|--------|-----------|-------|
-| Changelogs (history) | 52 | 450 kB | 30.6% |
-| API reference (generated) | 75 | 427 kB | 29.0% |
-| Contributing pages | 24 | 202 kB | 13.7% |
-| Usage pages | 18 | 161 kB | 10.9% |
-| Search index | 1 | 95 kB | 6.5% |
-| Root, theme, compliance, proof, badges | 36 | 138 kB | 9.4% |
+| Changelogs (history) | 52 | 381 kB | 30.8% |
+| API reference (generated) | 75 | 321 kB | 26.0% |
+| Contributing pages | 24 | 170 kB | 13.8% |
+| Usage pages | 18 | 138 kB | 11.1% |
+| Search index | 1 | 95 kB | 7.7% |
+| Root, theme, compliance, proof, badges, shared sidebar | 44 | 130 kB | 10.5% |
 
 The generator compresses each asset on its own, because the server sends one
 asset per URL with its own `Content-Encoding: gzip` header.  The LZ4
-comparison used the same basis: `lz4 -9` gives about 1.93 MB, about 31% more
+comparison used the same basis: `lz4 -9` gives about 1.63 MB, about 32% more
 than gzip, and the Ada runtime has no LZ4 decompressor.  A single shared
 stream would compress better (about 0.97 MB for the whole site), but one
 stream cannot be cut into independently decodable per-URL bodies.
 
-Three shrink options were measured and rejected.
+Two further shrink options were measured and rejected.
 
-- **base85 instead of base64**: about 0.12 MB saved (about 6% of the
-  payload, about 2% of the stripped binary).  This needs a new hand-written
-  decoder and a new generator encoding for a two-percent gain.
 - **A stronger compressor (brotli or zstd class, about 15% smaller)**: about
-  0.29 MB saved, but the compression runs at build time and the Pure
-  Python tools must stay stdlib-only (brotli is not in the standard
-  library).  A browser can inflate brotli, but the build dependency breaks
-  the zero-dependency tooling rule.
-- **Dropping the changelog history (30.6%) or the generated API reference
-  (29.0%)**: the only large reductions available, but Sphinx's search index
+  0.29 MB saved, but the compression runs at build time and the pure Python
+  tools must stay stdlib-only (brotli is not in the standard library).  A
+  browser can inflate both, but the build dependency breaks the
+  zero-dependency tooling rule, and brotli output varies by version, so the
+  committed spec would stop being byte-reproducible.
+- **Dropping the changelog history (30.8%) or the generated API reference
+  (26.0%)**: the only large reductions available, but Sphinx's search index
   covers every page, so a removed page leaves a clickable search result that
   leads nowhere offline.  Stale cross-links would also need rewriting to an
   absolute site URL.
 
-The bundle therefore stays as it is: gzip-max compression, base64 in the Ada
-source, and a fully working offline manual with search.  Re-measure here
-before adding a page family to the tree.
+The bundle therefore stays as it is: gzip-max compression, base85 in the Ada
+source, one shared sidebar per tree, and a fully working offline manual with
+search.  Re-measure here before adding a page family to the tree.
 
 ## Probe cache
 

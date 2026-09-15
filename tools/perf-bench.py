@@ -14,9 +14,10 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from typing import List, Optional
 
 
-def run(cmd, description):
+def run(cmd: str, description: str) -> None:
     print(f"=== {description} ===")
     result = subprocess.run(
         cmd,
@@ -51,8 +52,9 @@ def run(cmd, description):
     print()
 
 
-def main(argv):
-    parser = argparse.ArgumentParser()
+def main(argv: Optional[List[str]] = None) -> int:
+    parser: argparse.ArgumentParser = argparse.ArgumentParser(
+        description=__doc__.splitlines()[0])
     parser.add_argument("--target", default=".", help="Target project path")
     parser.add_argument("--runs", type=int, default=3, help="Sample size")
     parser.add_argument(
@@ -60,10 +62,10 @@ def main(argv):
         default="bin/adacovex",
         help="Path to the adacovex binary",
     )
-    args = parser.parse_args(argv)
+    args: argparse.Namespace = parser.parse_args(argv)
 
-    root = Path(__file__).resolve().parent.parent
-    binary = root / args.binary
+    root: Path = Path(__file__).resolve().parent.parent
+    binary: Path = root / args.binary
     if not binary.exists():
         print(f"error: {binary} not found; run make build first")
         return 1

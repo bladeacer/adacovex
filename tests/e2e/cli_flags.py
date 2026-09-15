@@ -19,6 +19,7 @@ Exit code 0 when every check passes, 1 otherwise.
 """
 
 import json
+import os
 import re
 import shutil
 import socket
@@ -29,10 +30,25 @@ import time
 import urllib.error
 import urllib.request
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 ROOT: Path = Path(__file__).resolve().parents[2]
 BIN: str = str(ROOT / "bin" / "adacovex")
+
+# The throwaway repositories this script creates must not depend on the
+# developer's git configuration: a global `commit.gpgsign = true` makes the
+# setup commit fail without a signing agent, and a global template or hook can
+# change the fixture.  The empty global/system config files pin the identity
+# and the signing policy to the command line alone (the same isolation
+# tools/tests.py uses).
+GIT_ENV: Dict[str, str] = {
+    "GIT_AUTHOR_NAME": "adacovex e2e",
+    "GIT_AUTHOR_EMAIL": "e2e@adacovex.invalid",
+    "GIT_COMMITTER_NAME": "adacovex e2e",
+    "GIT_COMMITTER_EMAIL": "e2e@adacovex.invalid",
+    "GIT_CONFIG_GLOBAL": os.devnull,
+    "GIT_CONFIG_SYSTEM": os.devnull,
+}
 
 # Alias / shorthand topic -> a string that must appear in `help TOPIC`.
 HELP_TOPICS: Tuple[Tuple[str, str], ...] = (
@@ -171,16 +187,23 @@ def write_documented_project(path: Path, packages: int) -> None:
 
 
 def git_init_commit(path: Path) -> bool:
-    """Init a git repo at path and commit the tree; False when git is absent."""
+    """Init a git repo at path and commit the tree; False when git is absent.
+
+    The repository is created with GIT_ENV (an empty global and system config),
+    so the developer's own git settings can never break the fixture.
+    """
     if shutil.which("git") is None:
         return False
-    ident = ["-c", "user.email=e2e@example.com", "-c", "user.name=e2e"]
-    subprocess.run(["git", "init", "-q"], cwd=path, check=True,
-                   capture_output=True)
-    subprocess.run(["git", *ident, "add", "-A"], cwd=path, check=True,
-                   capture_output=True)
-    subprocess.run(["git", *ident, "commit", "-qm", "init"], cwd=path,
-                   check=True, capture_output=True)
+    env: Dict[str, str] = dict(os.environ)
+    env.update(GIT_ENV)
+
+    def git(*args: str) -> None:
+        subprocess.run(["git", *args], cwd=path, env=env, check=True,
+                       capture_output=True)
+
+    git("init", "-q", "-b", "main")
+    git("add", "-A")
+    git("commit", "-qm", "init")
     return True
 
 

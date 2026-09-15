@@ -168,14 +168,21 @@ source). The header **Documentation (offline manual)** link and the API
 playground's `/docs` endpoint both open it.
 
 The manual is served **pre-compressed**: every asset is gzip-compressed at
-build time (in `tools/gen-docs.py`, base64-encoded into the generated spec)
-and goes out with `Content-Encoding: gzip`, so the browser inflates it and
-the binary carries no inflate routine.
+build time in `tools/gen-docs.py`, base85-encoded into the generated spec,
+and sent with `Content-Encoding: gzip`, so the browser inflates it and the
+binary carries no inflate routine.  base85 (the quote-free Z85 alphabet)
+replaced base64 in 1.50.0: it packs 4 bytes into 5 characters instead of
+5.33, which took the encoded payload from 1.65 MB to 1.55 MB.
+
+Each page keeps only a stub for the Furo sidebar; the toctree itself is
+stored once per branch under `_nav/` and a small deferred script fills the
+stub in.  That removed 184 copies of the same 8 kB markup.  Navigation
+needs JavaScript, exactly as the search box already did.
 
 LZ4 was measured again and rejected. On the self tree the bundled site is
-about 6.66 MB of source; gzip compresses it to about 1.47 MB (ratio 0.22)
-and `lz4 -9` to about 1.93 MB (ratio 0.29). LZ4 is therefore **31% larger**
-than gzip here, which would add about 0.6 MB to the embedded base64 blob.
+about 5.28 MB of source; gzip compresses it to about 1.24 MB (ratio 0.23)
+and `lz4 -9` to about 1.63 MB (ratio 0.31). LZ4 is therefore about 32%
+larger than gzip here, which would add about 0.5 MB to the embedded blob.
 
 Two further points settle it: the Ada runtime has no LZ4 decompressor (a
 roll-your-own decoder would add code and SPARK proof surface), and gzip

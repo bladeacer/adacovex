@@ -18,6 +18,12 @@ JavaScript at a glance; they are inlined into the template at build time by
 (comments and whitespace stripped, vendored files are inlined byte-for-byte
 so their tokenizer regexes stay intact).
 
+One more authored module lives under `resources/js/`:
+`resources/js/book-nav.js` is the offline manual's shared-sidebar injector,
+not a dashboard module.  It is bundled by `tools/gen-docs.py` as
+`_static/adacovex-nav.js`, and its place under `js/` keeps the SBOM asset
+scan reading it as project code rather than a vendored library.
+
 The resulting `adacovex` binary - whether a GitHub release artifact or an
 Alire crate binary - is completely self-contained. The dashboard has no
 external asset references and works offline.

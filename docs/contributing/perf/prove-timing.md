@@ -113,13 +113,18 @@ otherwise.  The 1.48.0-1.50.0 column was measured on the 1.50.0 tree.
   generated spec therefore no longer differs between an incremental
   developer tree and a fresh clone, and a no-op build no longer rewrites it.
 - The cached proof now survives a docs change.  The generated bundle specs
-  are excluded from the proof-input hash, because a string of base64 gzip
+  are excluded from the proof-input hash, because a string of base85 gzip
   chunks has no proof surface.  Before this phase a changed spec invalidated
   the proof result cache, so `make prove` paid a full gnatprove session (tens
   of seconds) after what looked like an unchanged tree; the phase also adds
   generated-file writing only on a change.  The measured developer loop is
   `make prove` at ~1.0 s on an unchanged tree with a 42-hit, 0-miss result
   cache, and a real documentation edit reuses the cached proof too.
+- The phase also carries the manual-encoding change: the asset bodies are
+  base85 instead of base64 and the Furo sidebar is stored once per branch
+  instead of once per page.  `src/adacovex-docs_template.ads` falls from
+  2.34 MB to 1.86 MB, so the phase's stripped binary is the smallest of the
+  three columns (5.3 MiB).
 - The binary-level shapes are flat by design: pipeline warm 46 ms and prove
   warm 55 ms sit within noise of 1.47.0, and warm `newfstatat` is ~6.9k, the
   tree's I/O floor.  The fix removes failed work (a recompile and relink

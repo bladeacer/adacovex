@@ -165,6 +165,19 @@ documentation.  The report and concept identifiers are on
 - **Correct Example:** *The report uses **ANSI** escape codes for colour.*
 - **Incorrect Example:** *The report uses terminal codes for colour.*
 
+## Technical Name: base85
+- **Part of Speech:** Noun
+- **Definition:** The ASCII encoding of the bundled offline manual's gzip
+  asset bodies. The generator packs 4 bytes into 5 characters on the
+  quote-free Z85 alphabet, which is what the decoder in the generated spec
+  reverses.
+- **Approved Form:** base85 (lower case)
+- **Do Not Use:** Base85, base-85, ascii85 (when the Z85 alphabet is meant)
+- **Correct Example:** *The asset bodies are **base85** text that decodes to
+  a gzip stream.*
+- **Incorrect Example:** *The asset bodies are Base-85 text that decodes to a
+  gzip stream.*
+
 ## Technical Name: NO_COLOR
 - **Part of Speech:** Noun
 - **Definition:** The environment variable that disables colour output. When
