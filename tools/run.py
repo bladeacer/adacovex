@@ -89,7 +89,7 @@ def run(command: str) -> int:
     if command == "prove":
         return adacovex(
             ROOT,
-            ["prove", "-t=."] + self_assess_args().split()
+            ["prove", "-t=.", "-l=4"] + self_assess_args().split()
             + ["--svg-path=docs/badges/"],
         )
     if command == "self":

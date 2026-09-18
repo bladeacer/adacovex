@@ -383,6 +383,76 @@ package body Adacovex.Parsers.GNATprove is
       return Types.Stone;
    end Determine_SPARK_Level;
 
+   --  Extract the Unproved column value from one Total summary row.
+   --  Columns are runs of text separated by two or more spaces; the
+   --  Unproved cell is the last column and is either "." (nothing
+   --  unproved) or "N (P%)". Only the last field is read, so a "." or a
+   --  number in an earlier column can never leak into the result.
+   --  @param Row  One Total row line.
+   --  @return The unproved-VC count (0 when the cell is "." or missing).
+   function Total_Row_Unproved (Row : String) return Natural is
+      Field_Start      : Natural := Row'First;
+      Last_Field_Start : Natural := Row'First;
+      Last_Field_End   : Natural := Row'First - 1;
+      I                : Natural := Row'First;
+      Run_Of           : Natural;
+   begin
+      --  Locate the last field: scan the row, remembering where each
+      --  2+-space-separated field starts. Single spaces stay inside a
+      --  field (e.g. `15 (2%)`).
+      while I <= Row'Last and then Row (I) = ' ' loop
+         I := I + 1;
+      end loop;
+      Field_Start := I;
+      while I <= Row'Last loop
+         if Row (I) /= ' ' then
+            I := I + 1;
+         else
+            Run_Of := 1;
+            while I + Run_Of <= Row'Last and then Row (I + Run_Of) = ' ' loop
+               Run_Of := Run_Of + 1;
+            end loop;
+            if Run_Of >= 2 then
+               --  Field ends at I - 1; the next field starts after the run.
+               if Field_Start <= I - 1 then
+                  Last_Field_Start := Field_Start;
+                  Last_Field_End := I - 1;
+               end if;
+               I := I + Run_Of;
+               Field_Start := I;
+            else
+               I := I + 1;
+            end if;
+         end if;
+      end loop;
+      --  The final field runs to the end of the row.
+      if Field_Start <= Row'Last then
+         Last_Field_Start := Field_Start;
+         Last_Field_End := Row'Last;
+      end if;
+      if Last_Field_End < Last_Field_Start then
+         return 0;
+      end if;
+      --  Read the leading number of the last field. "." is not a digit,
+      --  so an all-proved row returns 0 without special-casing.
+      declare
+         Val : Natural := 0;
+         Got : Boolean := False;
+      begin
+         for Idx in Last_Field_Start .. Last_Field_End loop
+            exit when Row (Idx) not in '0' .. '9';
+            exit when Val > Natural'Last / 10 - 1;
+            Val :=
+              Val * 10 + (Character'Pos (Row (Idx)) - Character'Pos ('0'));
+            Got := True;
+         end loop;
+         if not Got then
+            return 0;
+         end if;
+         return Val;
+      end;
+   end Total_Row_Unproved;
+
    procedure Parse_Prove_From_Project
      (Target_Dir : String;
       Summary    : out Types.Proof_Summary;

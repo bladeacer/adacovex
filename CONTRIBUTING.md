@@ -68,7 +68,7 @@ Enforced rules:
 - Files are pure ASCII; list items indented under a heading use exactly
   three spaces (never 4+).
 - `## Proof Results` states the SPARK level (Stone..Platinum), the exact VC
-  totals (e.g. `880/880 VCs proved across 66 analyzed units`), and calls out
+  totals (e.g. `878/878 VCs proved across 66 analyzed units`), and calls out
   whether any proof metrics changed.
 - `## Traceability` lists any new HLRs by tag name and package, then the
   existing `-- HLR-*` tags covering the changed packages.
@@ -88,11 +88,11 @@ Pull requests should follow the following conventions.
   beyond the GNAT runtime.
 - Keep the SPARK proof at Platinum: run `make prove` and make sure the VC
   counts match [docs/proof/16.1.0-ledger.md](docs/proof/16.1.0-ledger.md)
-  (880 VCs, 0 unproved under gnatprove 16.1.0).
+  (878 VCs, 0 unproved under gnatprove 16.1.0).
 - Keep docstring coverage at 100% (strict mode, cannot be disabled):
   `make run-self` must show Platinum, 100% docs, and DAL-C Achieved.
 - If you add or change behavior, extend the native test suite in `src/tests/`
-  (1614 tests across 25 categories) and run `make test`.
+  (1637 tests across 25 categories) and run `make test`.
 - Keep all source files pure ASCII: `make ascii-check`.
 - If a new CLI flag is added, mirror it as a matching GitHub Action input in
   `./action.yml` and document it in `docs/usage/cli-reference.md` and the README
@@ -151,9 +151,9 @@ adacovex itself parses.
 | Types conversions | 67 |
 | DAL compliance | 16 |
 | Source scanner | 89 |
-| GNATprove parser | 64 |
+| GNATprove parser | 72 |
 | Test-result parser | 50 |
-| CLI config | 343 |
+| CLI config | 349 |
 | SVG renderer | 161 |
 | HTML/Markdown renderers | 58 |
 | SBOM generator | 288 |
@@ -161,9 +161,9 @@ adacovex itself parses.
 | Opt-out markers | 16 |
 | Dir cache | 22 |
 | Diff reports | 36 |
-| Prove runner | 20 |
+| Prove runner | 24 |
 | ANSI terminal report | 28 |
 | CPU and jobs | 24 |
 | HLR/LLR parsing | 33 |
 | Completion scripts | 24 |
-| **Total** | **1614** |
+| **Total** | **1637** |

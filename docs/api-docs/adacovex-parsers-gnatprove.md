@@ -27,6 +27,14 @@ record with proved/unproved VC counts per category.
 
 **Returns:** Path to a discovered gnatprove.out, or "".
 
+### function Total_Row_Unproved (Row : Standard.String) return Standard.Natural `[Pre]` `[Global]` `[SPARK]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `Row` | One Total row line (no trailing newline). |
+
+**Returns:** The unproved-VC count (0 when the cell is "." or missing).
+
 ## Procedures
 
 ### procedure Parse_Prove_From_Project (Target_Dir : Standard.String; Summary : Adacovex.Types.Proof_Summary; Success : Standard.Boolean) `[Pre]`

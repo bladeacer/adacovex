@@ -7,13 +7,16 @@ docs/usage/dashboard.md	Web dashboard
 docs/usage/dashboard-html.md	Dashboard document and dependency views
 docs/usage/dashboard-api.md	Dashboard JSON API and playground
 docs/usage/dashboard-charts.md	Dashboard metric charts and robustness tier
+docs/usage/dashboard-docs.md	Dashboard: the bundled offline manual
 docs/usage/sbom.md	SBOM
 docs/usage/sbom-resolution.md	SBOM dependency resolution
 docs/usage/configuration.md	Global configuration and state
 docs/usage/vcs.md	VCS support
 docs/usage/target-projects.md	Target projects
 docs/usage/ci-cd.md	CI/CD
+docs/usage/ci-cd-action.md	CI/CD: the composite action
 docs/usage/ci-cd-workflows.md	CI/CD workflows and release bundling
+docs/usage/ci-cd-release.md	CI/CD: release bundling, tags, and consumer manifests
 CONTRIBUTING.md	Contributing
 docs/contributing/developer-guide.md	Developer guide
 docs/contributing/developer-guide-layout.md	Developer guide: repository layout

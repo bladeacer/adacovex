@@ -1565,6 +1565,51 @@ package body Adacovex_Config_Tests is
          Check_Equivalent (A, C, R, "glued -lN == --level=N");
       end;
 
+      --  Maximum proof effort: --level=4 parses and stores as the deepest
+      --  GNATprove effort level (also reachable as -l 4 / -l4 / -l=4).
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "prove");
+         Add (A, "-l");
+         Add (A, "4");
+         Add (C, "prove");
+         Add (C, "--level=4");
+         Check_Equivalent (A, C, R, "-l 4 == --level=4 (maximum effort)");
+      end;
+
+      declare
+         A, C : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "prove");
+         Add (A, "-l4");
+         Add (C, "prove");
+         Add (C, "--level=4");
+         Check_Equivalent (A, C, R, "glued -l4 == --level=4");
+      end;
+
+      --  The effort range is bounded: 5 is outside 0..4 and is rejected.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "prove");
+         Add (A, "--level=5");
+         Cfg := Testing.Parse_All (A);
+         R.Check (Cfg.CLI_Error, "--level=5 is rejected (range is 0..4)");
+      end;
+
+      --  A negative level is not an effort value and is rejected.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "prove");
+         Add (A, "--level=-1");
+         Cfg := Testing.Parse_All (A);
+         R.Check (Cfg.CLI_Error, "--level=-1 is rejected (range is 0..4)");
+      end;
+
       declare
          A, C : Testing.Arg_Vectors.Vector;
       begin

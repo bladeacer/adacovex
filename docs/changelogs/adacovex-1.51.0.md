@@ -114,7 +114,7 @@ changelog links were updated in the same pass.
 ### C6: The manual tells the reader where the dashboard is
 
 The manual and the dashboard share one server. The
-[Bundled offline manual](../usage/dashboard.md#bundled-offline-manual)
+[Bundled offline manual](../usage/dashboard-docs.md#what-gets-bundled)
 section now says so: when the reader is inside a running `--serve` server,
 opening `/` shows the live metrics for the target, and the online manual,
 which carries no live data, tells the reader to run adacovex on their

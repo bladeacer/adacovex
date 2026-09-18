@@ -523,6 +523,49 @@ package body Adacovex_Prove_Tests is
            (Summary.Total_VCs = 0,
             "Parse_Prove_Out (overflow): no partial VC counts");
       end;
+
+      --  Total_Row_Unproved: the cache-poison guard reads the Unproved
+      --  column of a Total summary row. A healthy row's cell is "."; a
+      --  degraded row's cell is "N (P%)". Earlier cells hold numbers too,
+      --  so the last-column rule is what the tests pin down.
+      --  A short local alias keeps the assertions readable.
+      declare
+         function P (S : String) return Natural
+         renames Adacovex.Parsers.GNATprove.Total_Row_Unproved;
+      begin
+         R.Check
+           (P
+              ("Total                         28  10 (36%)  18 (64%)"
+               & "           .          .")
+            = 0,
+            "Total_Row_Unproved: an all-proved row reports 0");
+         R.Check
+           (P
+              ("Total                         29       0      26       0"
+               & "       3")
+            = 3,
+            "Total_Row_Unproved: a bare N cell is read");
+         R.Check
+           (P
+              ("Total                         878    152 (17%)"
+               & "                             711 (81%)           ."
+               & "    15 (2%)")
+            = 15,
+            "Total_Row_Unproved: the N (P%) cell keeps its count");
+         R.Check
+           (P ("Total    29    .") = 0,
+            "Total_Row_Unproved: a dot cell never leaks as a count");
+         R.Check
+           (P ("Total    29    15") = 15,
+            "Total_Row_Unproved: a bare trailing cell is read");
+         R.Check
+           (P ("Total") = 0,
+            "Total_Row_Unproved: a header-only row reports 0");
+         R.Check (P ("") = 0, "Total_Row_Unproved: an empty row reports 0");
+         R.Check
+           (P ("Total                             711 (81%)") = 711,
+            "Total_Row_Unproved: the leading number of the last cell is read");
+      end;
    end Run;
 
 end Adacovex_Prove_Tests;

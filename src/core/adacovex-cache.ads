@@ -103,6 +103,15 @@ package Adacovex.Cache is
    --  @return True if the entry is present.
    function Exists (Key : String) return Boolean;
 
+   --  Remove the entry stored under Key, when one exists. Used by the
+   --  prove runner's cache-poison guard: a stored proof summary that
+   --  itself reports unproved VCs must be dropped instead of served, so
+   --  the next run re-proves and overwrites the store with a healthy one.
+   --  @param Key  Cache key.
+   --  @param Success  True when the entry was found and removed (or was
+   --    already absent).
+   procedure Delete (Key : String; Success : out Boolean);
+
    --  Configure the eviction cap used by Put_Cached. Defaults to 4096.
    --  @param Max_Entries  Soft cap on retained cache entries.
    procedure Set_Cache_Policy (Max_Entries : Positive);

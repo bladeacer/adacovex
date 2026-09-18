@@ -11,6 +11,8 @@ Rules enforced here:
   hand-written docs, the changelogs, and the Ada comment text under src/ use
   single spacing; `--fix` collapses a double space after a sentence in the
   same places the gate covers, and nowhere else (Ada code is never touched).
+  The same comment rule covers every Ada patch file under `.adacovex/patches/`
+  (here and in any other project): a patch docstring is prose too.
 
 The paragraph rule is a hard gate: exceeding four sentences in any paragraph
 fails the check with exit 1.  It covers the hand-written user documentation
@@ -216,6 +218,25 @@ def source_files() -> List[Path]:
             files.extend(
                 p for p in root.rglob(suffix)
                 if p.is_file() and p.stem not in generated)
+    files.extend(patch_files())
+    return sorted(files)
+
+
+def patch_files() -> List[Path]:
+    """Ada patch files under .adacovex/patches/ (this repository's layout).
+
+    A patch file re-declares a vendored spec or body with docstrings and
+    proof contracts, so its comment text is user-visible prose exactly like
+    a src/ docstring.  The gate runs per repository, so only this tree's
+    patch directory is in scope; a sibling target audited with -t is out of
+    scope here.
+    """
+    files: List[Path] = []
+    patch_root = ROOT / ".adacovex" / "patches"
+    if not patch_root.is_dir():
+        return files
+    for suffix in ("*.ads", "*.adb"):
+        files.extend(p for p in patch_root.rglob(suffix) if p.is_file())
     return sorted(files)
 
 
@@ -322,8 +343,9 @@ def main(argv: List[str]) -> int:
     if errors:
         print("\n".join(errors))
         return 1
-    print(f"Documentation check passed for {len(files)} hand-written pages "
-          f"and {len(sources)} Ada sources.")
+    patches = patch_files()
+    print(f"Documentation check passed for {len(files)} hand-written pages, "
+          f"{len(sources)} Ada sources, and {len(patches)} patch files.")
     return 0
 
 

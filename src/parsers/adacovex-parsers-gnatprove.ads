@@ -44,6 +44,21 @@ package Adacovex.Parsers.GNATprove is
    function Find_Prove_Output (Target_Dir : String) return String
    with Pre => Target_Dir'Length > 0;
 
+   --  Extract the Unproved column value from one Total summary row.
+   --  The row is the space-aligned "Total | Flow | Provers | Justified |
+   --  Unproved" line of the gnatprove.out summary table; columns are runs
+   --  separated by two or more spaces and the Unproved cell is either
+   --  "." (all proved) or "N (P%)". The result-cache layer uses this to
+   --  refuse to serve a stored summary that reports unproved VCs, because
+   --  gnatprove exits 0 even when solver timeouts leave checks unproved.
+   --  @param Row  One Total row line (no trailing newline).
+   --  @return The unproved-VC count (0 when the cell is "." or missing).
+   function Total_Row_Unproved (Row : String) return Natural
+   with
+     SPARK_Mode => On,
+     Global     => null,
+     Pre        => Row'First >= 1 and Row'Last < Natural'Last;
+
    --  Parse VC summary from a JSON file containing GNATprove results.
    --  Expects top-level keys: "total_vcs", "proved_vcs", "unproved_vcs",
    --  "flow_deps", "flow_proved", and more.

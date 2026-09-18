@@ -20,18 +20,25 @@ trade off, the reading notes name the representative and the reason for the
 pick.
 
 The measured phases are 1.40.0-1.41.0, 1.42.0-1.44.0, 1.45.0-1.47.0, and
-1.48.0-1.51.0. A version joins the open phase while the methodology is
+1.48.0-1.52.0. A version joins the open phase while the methodology is
 unchanged; a methodology shift closes the phase and opens a new one.
 
-**The 1.48.0-1.51.0 phase is open, and 1.50.0 is its representative.**  The
+**The 1.48.0-1.52.0 phase is open, and 1.50.0 is its representative.**  The
 phase's methodology shift is the deterministic, incremental doc bundling of
 1.50.0; 1.48.0 and 1.49.0 fold into the phase because they changed no
-performance methodology, and 1.51.0 folds in because the manual-encode cache
+performance methodology, 1.51.0 folds in because the manual-encode cache
 and the parallel encoder are build-side speed-ups that leave every measured
-shape flat. 1.50.0 supplies the phase's complete metric set and stays the
-representative. Every number below is hyperfine on the self tree
+shape flat, and 1.52.0 folds in because raising the `make prove` gate to
+gnatprove `--level=4` is a gate setting, not an adacovex methodology change:
+the prove subcommand forwards `--level` verbatim, so the overhead is
+gnatprove's own and every adacovex-side shape stays flat (the 1.52.0 bench
+column on [benchmarks-timings](benchmarks-timings.md) confirms it). 1.50.0
+supplies the phase's complete metric set and stays the
+representative -- the phase's numbers are read at the default proof level,
+and the level-4 cost is a solver-side dial documented in the reading notes
+below. Every number below is hyperfine on the self tree
 (gnatprove 16.1.0, 12 logical cores, 10 proof jobs) unless a note says
-otherwise. The 1.48.0-1.51.0 column was measured on the 1.50.0 tree.
+otherwise. The 1.48.0-1.52.0 column was measured on the 1.50.0 tree.
 
 ## Pipeline timing by phase
 
@@ -40,7 +47,7 @@ otherwise. The 1.48.0-1.51.0 column was measured on the 1.50.0 tree.
 | 1.40.0-1.41.0 | 1.41.0 | ~104 ms | ~545 ms* |
 | 1.42.0-1.44.0 | 1.44.0 | 23 ms | 60 ms |
 | 1.45.0-1.47.0 | 1.47.0 | ~43 ms | ~74 ms |
-| 1.48.0-1.51.0 | 1.50.0 | 46 ms | 73 ms |
+| 1.48.0-1.52.0 | 1.50.0 | 46 ms | 73 ms |
 
 \* The 1.40.0/1.41.0 pipeline figures predate the four-scenario bench script
 (single-shot `time` runs, coarser sampling).
@@ -52,7 +59,7 @@ otherwise. The 1.48.0-1.51.0 column was measured on the 1.50.0 tree.
 | 1.40.0-1.41.0 | 1.41.0 | 2.5 s | 42.8 s / 791 VCs |
 | 1.42.0-1.44.0 | 1.44.0 | 44 ms | 36.4 s / 876 VCs |
 | 1.45.0-1.47.0 | 1.47.0 | ~53 ms | ~37 s / 876 VCs (40-110 s load-dependent) |
-| 1.48.0-1.51.0 | 1.50.0 | 55 ms | 61-88 s / 880 VCs (load-dependent) |
+| 1.48.0-1.52.0 | 1.50.0 | 55 ms | 61-88 s / 880 VCs (load-dependent; 878 VCs from 1.52.0) |
 
 ## Warm-run syscalls by phase
 
@@ -61,7 +68,7 @@ otherwise. The 1.48.0-1.51.0 column was measured on the 1.50.0 tree.
 | 1.40.0-1.41.0 | 1.41.0 | ~15k |
 | 1.42.0-1.44.0 | 1.44.0 | ~2k |
 | 1.45.0-1.47.0 | 1.47.0 | ~6k |
-| 1.48.0-1.51.0 | 1.50.0 | ~6.9k |
+| 1.48.0-1.52.0 | 1.50.0 | ~6.9k |
 
 ## Reading the numbers
 
@@ -107,7 +114,7 @@ otherwise. The 1.48.0-1.51.0 column was measured on the 1.50.0 tree.
   move. The phase's warm/cold syscall count stays at ~6k, half of 1.43.0's
   ~12k.
 
-### 1.48.0-1.51.0 (representative 1.50.0)
+### 1.48.0-1.52.0 (representative 1.50.0)
 
 - The phase's methodology shift is in the build, not in the binary. The
   doc bundling became deterministic and incremental: `tools/gen-docs.py`
@@ -143,6 +150,21 @@ otherwise. The 1.48.0-1.51.0 column was measured on the 1.50.0 tree.
   full-page rewrite). The emitted spec stays byte-identical, and the pipeline
   and prove shapes above are unchanged, which is why 1.50.0 keeps the
   representative slot.
+- 1.52.0 verifies the tree at gnatprove **level 4** (the deepest effort) and
+  proves clean there with no new VCs: the same 878 checks pass, two dead
+  branches level 4's flow analysis flagged as unreachable were removed, and
+  the adacovex-side shapes stay flat. Level 4 costs solver time on a cold
+  run (one full-tree level-4 session measured ~19 s against ~14 s at the
+  default level on this machine), but the warm short-circuit is a cache hit
+  and does not move: `./bin/covex prove` after a level-4 session still
+  serves the stored proof in tens of milliseconds (the 1.52.0 bench session
+  measured 45.6 +/- 3.0 ms, within noise of the phase's 55 ms). The prove
+  subcommand passes `--level` through verbatim, so a level-4 run costs
+  exactly gnatprove's overhead and nothing from adacovex. The same release
+  also hardens the warm path itself: a stored summary that reports unproved
+  VCs (a degraded run can store one, because gnatprove exits 0 on solver
+  timeouts) is now dropped and re-proved instead of served, so the
+  short-circuit can no longer silently downgrade a healthy tree.
 
 ### Across every phase
 

@@ -100,9 +100,9 @@ any Ada/SPARK project.
 
 Self-assessment (`make run-self`) must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
-- Platinum SPARK level (880 VCs under gnatprove 16.1.0, 0 unproved, 0
+- Platinum SPARK level (878 VCs under gnatprove 16.1.0, 0 unproved, 0
   justified; see `docs/proof/16.1.0-ledger.md`)
-- 1614/1614 native tests passing
+- 1637/1637 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
   `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
@@ -199,10 +199,10 @@ src/
 `-- tests/
     |-- adacovex-test_support.ads/.adb        -- Native test Runner type
     |-- adacovex_ansi_tests.ads/.adb          -- ANSI terminal report tests (28)
-    |-- adacovex_cache_tests.ads/.adb         -- Result-cache tests (28)
+    |-- adacovex_cache_tests.ads/.adb         -- Result-cache tests (33)
     |-- adacovex_completion_tests.ads/.adb    -- Shell completion script tests (24)
     |-- adacovex_complexity_tests.ads/.adb    -- Complexity check tests (12)
-    |-- adacovex_config_tests.ads/.adb        -- CLI config tests (343)
+    |-- adacovex_config_tests.ads/.adb        -- CLI config tests (349)
     |-- adacovex_cpus_tests.ads/.adb          -- Host CPU and job-resolution tests (24)
     |-- adacovex_dal_tests.ads/.adb           -- DAL compliance tests (16)
     |-- adacovex_diff_tests.ads/.adb          -- Differential-report regression tests (36)
@@ -212,8 +212,8 @@ src/
     |-- adacovex_man_tests.ads/.adb           -- Man page renderer tests (18)
     |-- adacovex_opt_outs_tests.ads/.adb      -- Per-file opt-out marker tests (16)
     |-- adacovex_prove_patch_tests.ads/.adb   -- Proof patch merge tests (35)
-    |-- adacovex_prove_runner_tests.ads/.adb  -- GNATprove runner option/GPR tests (20)
-    |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (64)
+    |-- adacovex_prove_runner_tests.ads/.adb  -- GNATprove runner option/GPR tests (24)
+    |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (72)
     |-- adacovex_renderer_svg_tests.ads/.adb  -- SVG renderer tests (161)
     |-- adacovex_renderer_tests.ads/.adb      -- HTML/Markdown renderer tests (58)
     |-- adacovex_sbom_tests.ads/.adb          -- SBOM / manifest graph tests (288)
@@ -223,7 +223,7 @@ src/
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (67)
     |-- adacovex_tz_ansi_tests.ads/.adb       -- Timezone + ANSI tests (63)
     |-- adacovex_vcs_tests.ads/.adb           -- VCS support tests (29)
-    `-- test_runner.adb                       -- Test suite entry point (1614 tests)
+    `-- test_runner.adb                       -- Test suite entry point (1637 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -431,8 +431,10 @@ is a manual helper (not part of `make check`); the report names a paragraph
 it cannot split without corrupting the Markdown.
 `tools/check-docs.py` also enforces **one space after a sentence** (a `.`, `!`,
 or `?` followed by two or more spaces and more text is an error) over the
-docs, the changelogs, `README.md`, `AGENTS.md`, `CONTRIBUTING.md`, and the
-comment text of every `src/**/*.ads` / `src/**/*.adb` file -- a docstring is
+docs, the changelogs, `README.md`, `AGENTS.md`, `CONTRIBUTING.md`, the
+comment text of every `src/**/*.ads` / `src/**/*.adb` file, and the comment
+text of every Ada patch file under `.adacovex/patches/` (a patch docstring
+is prose too) -- a docstring is
 prose too. An Ada line is read from its `--` marker on (a `--` inside a
 string literal is not a comment), so code alignment is never flagged and
 never rewritten; the generated units (`adacovex-docs_template`,
@@ -499,8 +501,8 @@ must be followed by `make book`.
 | `check` | **The single everything-check / verification entry point.** Run it after any change. It runs every gate CI runs before a release: cheap static gates first (ascii, complexity, csslint, spark-off, changelog, action-parity, docs-coverage, tools-check, cli-e2e, version, doc-links, link, docs-check, para-split, book-links), then build + native tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description). `make check` resolves `gnatprove` for you (it is fetched into `~/.adacovex/toolchain/` and executed directly when not on `PATH`), so you never have to install or point at a prover by hand -- just run `make check` and it verifies the whole tree end to end. `make prove` is the SPARK sub-gate if you only changed proof-affecting code |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
-| `test` | Build + run the 1614-test native suite |
-| `prove` | SPARK proof (Platinum gate) + regenerates SVG badges in `docs/badges/` |
+| `test` | Build + run the 1637-test native suite |
+| `prove` | SPARK proof at gnatprove `--level=4` (Platinum gate) + regenerates SVG badges in `docs/badges/` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
 | `book` | Build the offline manual from the Sphinx docs and regenerate `src/adacovex-docs_template.ads` (tools/gen-docs.py; incremental + verified Sphinx build, `--fresh` forces a clean one; safe to run without sphinx) |
 | `fmt` | Format Ada sources (gnatformat) |
@@ -527,7 +529,7 @@ must be followed by `make book`.
 | `complexity-check` | Cyclomatic-complexity + LOC gate: no god objects/functions, no file above its LOC or percentage-of-codebase caps (multi-language scan incl. Markdown; `--excludes=rst --skip-path=docs/api-docs`; files can opt out with a `no-covex-complexity-scan` header marker; gated by make complexity-check) |
 | `para-split-check` | Paragraph splitter gate: report every paragraph over the 4-sentence rule by name (tools/para-split.py --check, its non-mutating mode). `docs-check` enforces the same rule; running the splitter here keeps the tool that advises on a failure provably in step with the gate (a drift fails the gate instead of rewriting a page wrongly) |
 | `book-links-check` | Fail when a link inside the bundled offline manual does not resolve (checked against a fresh `sphinx-build` from a temp copy of `docs/`; tools/check-book-links.py; shares the offline-asset rules with tools/gen-docs.py). `make check` also runs `python3 tools/gen-docs.py --check`, which fails when the committed spec `src/adacovex-docs_template.ads` drifts from a fresh build |
-| `bench` | Benchmark the pipeline and the `prove` subcommand with hyperfine (bash `time` fallback): pipeline cold/warm, prove cold (`prove --no-cache`, result cache + gnatprove session wiped), prove warm, + binary size (docs/contributing/perf/index.md) |
+| `bench` | Benchmark the pipeline and the `prove` subcommand with hyperfine (bash `time` fallback): pipeline cold/warm, prove cold (`prove --no-cache`, result cache + gnatprove session wiped), prove warm, prove cold clone (fresh tree: no cache, no session, no summary), + binary size (docs/contributing/perf/index.md) |
 | `perf-bench` | Profile the adacovex binary with perf and strace (tools/perf-bench.py; docs/contributing/perf/index.md) |
 | `spark-off-check` | Fail if any `SPARK_Mode (Off)` appears outside `Types.Implementation` and `Complexity` (the non-formal `Ada.Containers` instantiations) |
 | `clean` | Remove bin/ obj/ docs/badges/ |
@@ -607,9 +609,9 @@ release-tag coverage gate instead.
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 1614/1614 passing |
+| Unit tests | `make test` | 1637/1637 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
-| SPARK proof | `make prove` | Platinum (880 VCs, 0 unproved, 0 justified under gnatprove 16.1.0) |
+| SPARK proof | `make prove` | Platinum (878 VCs, 0 unproved, 0 justified under gnatprove 16.1.0), verified at `--level=4` (the deepest effort; the prove subcommand forwards `--level` verbatim, so the overhead is gnatprove's own) |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
 
 **The true test of proof performance is the `prove` subcommand at the
@@ -619,13 +621,15 @@ stable across consecutive runs -- a `make prove` wall of ~1.0 s is the
 no-op `alr build`, not the proof, because the generators write their Ada
 specs only when the content changed since 1.50.0); the truly cold shape is
 `./bin/covex prove --no-cache` with the result cache *and* the gnatprove
-session store (`obj/gnatprove/`) wiped (61-88 s at 880 VCs on the dev
+session store (`obj/gnatprove/`) wiped (61-88 s at 878 VCs on the dev
 machine, dominated by the solver). `make bench` samples both with hyperfine
-(prove-cold repetitions wipe `obj/gnatprove/` in their `--prepare`). A
-partial gnatprove session (for example after a targeted `gnatprove -u`
-run) makes a prove miss land between the shapes -- that is the origin of
-the 0.02 s / 5.47 s alternation once seen on this machine, not a cache
-fault. The proof-input hash excludes the generated bundle specs
+(prove-cold repetitions wipe `obj/gnatprove/` in their `--prepare`), plus a
+fifth cold-clone scenario: prove against a fresh copy of the tree with no
+cache, no session, and no `gnatprove.out` -- the first-run-on-a-new-checkout
+shape. The prove result cache never serves a stored summary whose Total row
+reports unproved VCs (a degraded run, for example one killed mid-session,
+can store one because gnatprove exits 0 on solver timeouts); such a blob is
+dropped and re-proved instead. The proof-input hash excludes the generated bundle specs
 (`adacovex-docs_template.ads`, `adacovex-dashboard_template.ads`): they are
 data-only string constants with no proof surface, so a docs or dashboard
 edit never invalidates a cached proof.
@@ -644,7 +648,7 @@ rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 1614 tests across 25 categories).
+Native zero-dependency suite (`src/tests/`, 1637 tests across 25 categories).
 Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests).
 
@@ -708,13 +712,16 @@ suffices.
 - [Dashboard document and dependency views](docs/usage/dashboard-html.md)
 - [Dashboard JSON API and playground](docs/usage/dashboard-api.md)
 - [Dashboard metric charts and robustness tier](docs/usage/dashboard-charts.md)
+- [Dashboard: the bundled offline manual](docs/usage/dashboard-docs.md)
 - [SBOM](docs/usage/sbom.md)
 - [SBOM dependency resolution](docs/usage/sbom-resolution.md)
 - [Global configuration and state](docs/usage/configuration.md)
 - [VCS support](docs/usage/vcs.md)
 - [Target projects](docs/usage/target-projects.md)
 - [CI/CD](docs/usage/ci-cd.md)
+- [CI/CD: the composite action](docs/usage/ci-cd-action.md)
 - [CI/CD workflows and release bundling](docs/usage/ci-cd-workflows.md)
+- [CI/CD: release bundling, tags, and consumer manifests](docs/usage/ci-cd-release.md)
 - [Contributing](CONTRIBUTING.md)
 - [Developer guide](docs/contributing/developer-guide.md)
 - [Developer guide: repository layout](docs/contributing/developer-guide-layout.md)

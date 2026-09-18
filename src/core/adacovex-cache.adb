@@ -1258,6 +1258,32 @@ package body Adacovex.Cache is
       Load (Key, Data, Len, Found);
    end Get_Cached;
 
+   --  Remove the entry stored under Key, when one exists. A missing entry
+   --  counts as success (the post-condition state is "key absent"); only
+   --  an unexpected filesystem failure reports failure. The Directories
+   --  calls are qualified: an unqualified Exists here would resolve to
+   --  this package's own Exists (direct visibility beats use-visibility),
+   --  which reads a path as a key and never sees the entry.
+   procedure Delete (Key : String; Success : out Boolean) is
+      Path : constant String := Entry_Path (Key);
+   begin
+      Success := True;
+      if Path = "" then
+         Success := False;
+         return;
+      end if;
+      if Ada.Directories.Exists (Path)
+        and then Ada.Directories.Kind (Path) = Ada.Directories.Ordinary_File
+      then
+         begin
+            Ada.Directories.Delete_File (Path);
+         exception
+            when others =>
+               Success := False;
+         end;
+      end if;
+   end Delete;
+
    --  Running number of blob stores since the process started. Eviction
    --  runs every Eviction_Interval stores instead of after every store, so
    --  a cold run that stores one blob per source file walks the cache tree

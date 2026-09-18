@@ -32,11 +32,11 @@ defined by which of them are populated:
 | Pipeline cold | `adacovex --cache-dir=<fresh>` | empty | n/a (not spawned) | Scan, parse, DAL, SBOM, render with no cached results |
 | Pipeline warm | `adacovex --cache-dir=<populated>` | hit | n/a | Cache-hit path: startup, walks, blob deserialisation |
 | Prove cold | `adacovex prove --no-cache --cache-dir=<fresh>` | empty | **wiped** | Truly cold proving: full solver run + everything in pipeline cold (a first CI invocation on a bare runner) |
+| Prove cold clone | `adacovex prove --cache-dir=<fresh> --target=<fresh copy>` | empty | absent (fresh tree) | A first run on a freshly cloned checkout: no cache, no session, and no `gnatprove.out` yet -- the proof, the summary parse, and the pipeline all from zero |
 | Prove warm | `adacovex prove --cache-dir=<populated>` | hit | n/a | The short-circuit: one content-hash of the inputs, then serve the stored proof (a developer on an unchanged tree) |
 
 Two further shapes exist and are worth recognising (one-time-per-session
 states, not steady states, so they are not benchmarked):
-
 - *adacovex-side cold*: `prove --no-cache` with the result cache wiped but
   `obj/gnatprove/` populated. gnatprove's session absorbs the solver cost;
   the run re-does only the adacovex-side work (~1.3 s here) -- what a
@@ -73,6 +73,10 @@ codebase; what matters is the shape:
   `gnatprove.out` so the assessment parses it -- the number a developer
   hits on an unchanged tree. Back-to-back `make prove` runs sit here (the
   adacovex run is ~0.05 s; the rest of the wall is `alr build`).
+- **Prove cold clone**: bounded by the same solver run as prove cold plus
+  one tree copy; the only structural difference is that the clone starts
+  without even a `gnatprove.out`, so the run cannot short-circuit anything.
+  Read it as the first-invocation cost a new machine or CI runner pays.
 - System time is the tell: ~22 ms on pipeline cold (file I/O), ~14 ms on
   pipeline warm.
 
@@ -83,11 +87,13 @@ range of versions whose implementation methodology is largely similar. Each
 phase carries one representative version that supplies the phase's complete
 metric set. A new version folds into the open phase while the methodology
 holds; a methodology shift closes the phase and opens a new one. The
-current open phase is 1.48.0-1.51.0, represented by 1.50.0; its
+current open phase is 1.48.0-1.52.0, represented by 1.50.0; its
 methodology shift is the deterministic, incremental doc bundling, which
 keeps the cached proof warm across a no-op build. 1.51.0 folds into the
 phase, because its manual-encode cache and parallel encoder are build-side
-speed-ups that move no measured shape.
+speed-ups that move no measured shape. 1.52.0 folds in too: raising the
+prove gate to gnatprove `--level=4` is a gate setting the prove subcommand
+forwards verbatim, so the overhead is gnatprove's own.
 
 ## CI
 

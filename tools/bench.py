@@ -21,6 +21,14 @@ was easy to break.  This script owns the same flow:
 - Prove warm timing: `prove` with the result cache populated, hyperfine
   with 2 warm-ups + 15 runs.  This is the true proof-performance number:
   the short-circuit path a developer hits on an unchanged tree.
+- Prove cold-clone timing: `prove` against a fresh copy of the target
+  tree with no result cache, no gnatprove session, and no gnatprove.out
+  (2 runs).  This is the shape a first run on a freshly cloned checkout
+  sees: nothing is populated, and the proof summary the assessment
+  grades does not even exist yet.  A copy of the working tree is used
+  instead of a real `git clone` so the scenario also runs on a tree with
+  no git history and cannot pick up build state; the measured work is
+  the same.
 - Binary size: a /tmp copy of bin/adacovex is stripped and both sizes are
   reported via tools/bench-size.py, so the build output is never modified.
 
@@ -40,7 +48,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 ROOT: Path = Path(__file__).resolve().parent.parent
 SECONDARY: Path = ROOT.parent / "Ada_CRDT"
@@ -49,6 +57,7 @@ COLD_RUNS: int = 10
 WARM_RUNS: int = 15
 PROVE_COLD_RUNS: int = 3
 PROVE_WARM_RUNS: int = 15
+PROVE_CLONE_RUNS: int = 2
 FALLBACK_RUNS: int = 5
 
 
@@ -154,6 +163,44 @@ def run_prove_warm_hyperfine(cache: str) -> None:
     subprocess.run(cmd, cwd=str(ROOT), check=True)
 
 
+def make_clone(target: Path) -> Optional[Path]:
+    """Copy the target tree to /tmp without its build or VCS state.
+
+    The cold-clone scenario needs a tree that carries no cached proof work:
+    no obj/ (gnatprove session), no bin/ (build output), no .git, and no
+    committed .adacovex result-cache state.  Everything else (sources,
+    manifests, docs) is copied, because those are exactly what a fresh
+    checkout would carry.
+    """
+    clone = Path(tempfile.mkdtemp(prefix="adacovex-bench-clone-")) / target.name
+    shutil.copytree(
+        str(target), str(clone),
+        ignore=shutil.ignore_patterns("obj", "bin", ".git", ".adacovex"),
+    )
+    return clone
+
+
+def run_prove_clone_hyperfine(cache: str, target: Path = ROOT) -> None:
+    # Cold clone: a fresh copy of the tree with no result cache, no
+    # gnatprove session, and no gnatprove.out.  Every repetition recopies
+    # the clone and wipes the result cache, so each run pays the full
+    # first-run cost: pipeline + session-less solver run + summary parse.
+    clone = make_clone(target)
+    try:
+        print("=== Prove cold clone (fresh tree: no cache, no session, "
+              "no summary) ===")
+        cmd = [
+            "hyperfine", "--runs", str(PROVE_CLONE_RUNS),
+            "--prepare",
+            f"rm -rf {cache} {clone}/obj {clone}/bin {clone}/.adacovex",
+            f"./bin/adacovex prove --cache-dir={cache} --target={clone}",
+            "--export-markdown", "/tmp/adacovex-bench-prove-clone.md",
+        ]
+        subprocess.run(cmd, cwd=str(ROOT), check=True)
+    finally:
+        shutil.rmtree(clone.parent, ignore_errors=True)
+
+
 def time_runs(cache: str, label: str, count: int, reset: bool,
               extra_args: List[str] = None) -> None:
     """Fallback timing loop using perf_counter (no hyperfine installed)."""
@@ -172,6 +219,31 @@ def time_runs(cache: str, label: str, count: int, reset: bool,
         )
         elapsed = time.perf_counter() - start
         print(f"{label} run {i}: {elapsed:.3f} s")
+
+
+def time_prove_clone(cache: str, target: Path) -> None:
+    """Fallback timing loop for the cold-clone prove shape."""
+    clone = make_clone(target)
+    try:
+        print(f"== hyperfine not found; using bash time (prove cold clone) ==")
+        binary = str(ROOT / "bin" / "adacovex")
+        for i in range(1, PROVE_CLONE_RUNS + 1):
+            shutil.rmtree(cache, ignore_errors=True)
+            shutil.rmtree(clone / "obj", ignore_errors=True)
+            shutil.rmtree(clone / "bin", ignore_errors=True)
+            shutil.rmtree(clone / ".adacovex", ignore_errors=True)
+            start = time.perf_counter()
+            subprocess.run(
+                [binary, "prove", f"--cache-dir={cache}",
+                 f"--target={clone}"],
+                cwd=str(ROOT),
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            elapsed = time.perf_counter() - start
+            print(f"prove cold clone run {i}: {elapsed:.3f} s")
+    finally:
+        shutil.rmtree(clone.parent, ignore_errors=True)
 
 
 def report_binary_size() -> int:
@@ -202,6 +274,7 @@ def bench() -> int:
             run_warm_hyperfine(cache)
             run_prove_cold_hyperfine(prove_cache)
             run_prove_warm_hyperfine(prove_cache)
+            run_prove_clone_hyperfine(prove_cache)
         else:
             time_runs(cache, "cold", FALLBACK_RUNS, reset=True)
             # Warm-up run populates the caches before the warm samples.
@@ -223,6 +296,7 @@ def bench() -> int:
                 stderr=subprocess.DEVNULL,
             )
             time_runs(prove_cache, "prove warm", FALLBACK_RUNS, reset=False)
+            time_prove_clone(prove_cache, ROOT)
         # Secondary target: the Ada_CRDT dogfood tree exercises a second
         # codebase shape (different file mix, vendored layout, manifest set)
         # so a regression tied to one project's structure cannot hide behind

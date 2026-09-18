@@ -72,6 +72,13 @@ HLR-CACHE: Result caching
 | `Dir` | Output buffer for the directory path. |
 | `Len` | Length of the written path. |
 
+### procedure Delete (Key : Standard.String; Success : Standard.Boolean)
+
+| Parameter | Description |
+|-----------|-------------|
+| `Key` | Cache key. |
+| `Success` | True when the entry was found and removed (or was |
+
 ### procedure Evict_If_Needed (Max_Entries : Standard.Positive)
 
 | Parameter | Description |

@@ -11,7 +11,8 @@ docs/usage/ci-cd.md table row drifts out of sync:
   flags) has a matching action input;
 - every action input (except the documented CI-plumbing inputs) maps back to
   a CLI flag;
-- every action input is documented in the docs/usage/ci-cd.md `### Inputs` table
+- every action input is documented in the docs/usage/ci-cd-action.md
+  `### Inputs` table
   and every row in that table is a real input.
 
 Sources of truth:
@@ -20,7 +21,7 @@ Sources of truth:
   (the same list the "did you mean" suggestion walks, so Parse_Args and this
   gate share one definition);
 - action inputs: the top-level `inputs:` section of action.yml;
-- documentation: the `### Inputs` table in docs/usage/ci-cd.md.
+- documentation: the `### Inputs` table in docs/usage/ci-cd-action.md.
 
 Mapping rules:
 
@@ -173,8 +174,8 @@ def action_inputs() -> Set[str]:
 
 
 def docs_inputs() -> Set[str]:
-    """Extract the input names from the docs/usage/ci-cd.md `### Inputs` table."""
-    path: Path = ROOT / "docs" / "usage" / "ci-cd.md"
+    """Extract the input names from the docs/usage/ci-cd-action.md `### Inputs` table."""
+    path: Path = ROOT / "docs" / "usage" / "ci-cd-action.md"
     text: str = path.read_text(encoding="utf-8")
     m = re.search(r"### Inputs\n(.*?)(?:^### |\Z)", text, re.M | re.S)
     if m is None:

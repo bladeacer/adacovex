@@ -38,17 +38,19 @@ and reports binary size:
 
 - It builds the project, then times `./bin/adacovex` and
   `./bin/adacovex prove` against the repo itself.
-- **Four scenarios** are measured, each with a precise meaning (see the
+- **Five scenarios** are measured, each with a precise meaning (see the
   category reference on [Performance](index.md)). The prove scenarios time
   the `prove` subcommand -- the true test of proof performance, measured at
   the adacovex-binary level, not just the gnatprove level.
 - `make bench` uses [hyperfine](https://github.com/sharkdp/hyperfine) when
   installed; otherwise it falls back to the bash `time` builtin. It samples
   generously so the reported mean is stable: **10 pipeline-cold +
-  15 pipeline-warm + 3 prove-cold + 15 prove-warm** repetitions (2 warmups;
-  none for prove-cold). Each cold repetition deletes the cache dir first;
-  the prove-cold repetitions also delete the gnatprove session store
-  (`obj/gnatprove/`). The `time` fallback runs **5 + 5** per scenario.
+  15 pipeline-warm + 3 prove-cold + 15 prove-warm + 2 prove-cold-clone**
+  repetitions (2 warmups; none for the cold shapes). Each cold repetition
+  deletes the cache dir first; the prove-cold repetitions also delete the
+  gnatprove session store (`obj/gnatprove/`), and each prove-cold-clone
+  repetition recopies the target tree so it starts without a session or a
+  `gnatprove.out`. The `time` fallback runs **5 + 5** per scenario.
 - It reports the raw and stripped binary sizes (the stripped size is measured
   on a `/tmp` copy; the build output is never modified).
 

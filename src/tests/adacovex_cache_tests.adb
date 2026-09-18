@@ -356,6 +356,36 @@ package body Adacovex_Cache_Tests is
          end;
       end;
 
+      --  Test 14: Delete removes an entry and reports it. The prove
+      --  runner's cache-poison guard uses Delete to drop a stored proof
+      --  summary that reports unproved VCs.
+      declare
+         Key_A : constant String := Cache.Hash_String ("delete-test-a");
+         Key_B : constant String := Cache.Hash_String ("delete-test-b");
+         Buf   : String (1 .. 64);
+         Len   : Natural;
+         Found : Boolean;
+         OK    : Boolean;
+      begin
+         Cache.Store (Key_A, "payload-a", OK);
+         R.Check (OK, "Test 14: store succeeds before delete");
+         Cache.Delete (Key_A, OK);
+         R.Check (OK, "Test 14: deleting a present entry succeeds");
+         Cache.Load (Key_A, Buf, Len, Found);
+         R.Check (not Found, "Test 14: the deleted entry is gone");
+         --  Deleting an absent key is a success (the post-state is "key
+         --  absent" either way), and never raises.
+         Cache.Delete (Key_B, OK);
+         R.Check (OK, "Test 14: deleting an absent entry succeeds");
+         --  A deleted key can be stored again (the guard drops a poisoned
+         --  blob so the next prove run overwrites it with a healthy one).
+         Cache.Store (Key_A, "payload-a2", OK);
+         Cache.Load (Key_A, Buf, Len, Found);
+         R.Check
+           (Found and then Buf (1 .. Len) = "payload-a2",
+            "Test 14: the key is reusable after delete");
+      end;
+
       --  Restore whatever cache directory the caller had configured.
       if Original_Len > 0 then
          Cache.Set_Cache_Dir (Original_Dir (1 .. Original_Len));

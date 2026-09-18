@@ -367,6 +367,57 @@ class TestRun(unittest.TestCase):
         self.assertEqual(result.stdout.strip(), run.self_assess_args())
 
 
+class BenchCloneTests(unittest.TestCase):
+    """Pure-logic tests for the cold-clone benchmark shape (tools/bench.py)."""
+
+    def test_make_clone_strips_build_and_vcs_state(self) -> None:
+        # The clone carries sources and manifests but none of the state the
+        # cold-clone scenario must not start with: obj/ (gnatprove session),
+        # bin/ (build output), .git, and .adacovex (result-cache state).
+        import bench
+        with tempfile.TemporaryDirectory() as tmp:
+            src = Path(tmp) / "proj"
+            (src / "src").mkdir(parents=True)
+            (src / "obj" / "gnatprove").mkdir(parents=True)
+            (src / "bin").mkdir()
+            (src / ".git").mkdir()
+            (src / ".adacovex" / "cache").mkdir(parents=True)
+            (src / "src" / "main.adb").write_text("procedure M is\n"
+                                                   "begin null; end M;\n",
+                                                   encoding="utf-8")
+            (src / "alire.toml").write_text('name = "p"\n', encoding="utf-8")
+            (src / "obj" / "gnatprove" / "gnatprove.out").write_text(
+                "summary\n", encoding="utf-8")
+            clone = bench.make_clone(src)
+            try:
+                self.assertTrue((clone / "src" / "main.adb").is_file())
+                self.assertTrue((clone / "alire.toml").is_file())
+                self.assertFalse((clone / "obj").exists())
+                self.assertFalse((clone / "bin").exists())
+                self.assertFalse((clone / ".git").exists())
+                self.assertFalse((clone / ".adacovex").exists())
+            finally:
+                shutil.rmtree(clone.parent, ignore_errors=True)
+
+    def test_make_clone_copies_the_tree_not_a_link(self) -> None:
+        import bench
+        with tempfile.TemporaryDirectory() as tmp:
+            src = Path(tmp) / "proj"
+            src.mkdir()
+            (src / "a.txt").write_text("x", encoding="utf-8")
+            clone = bench.make_clone(src)
+            try:
+                self.assertTrue(clone.is_dir())
+                self.assertNotEqual(clone, src)
+                self.assertEqual(clone.name, "proj")
+                # Mutating the clone never touches the source tree.
+                (clone / "a.txt").write_text("y", encoding="utf-8")
+                self.assertEqual((src / "a.txt").read_text(encoding="utf-8"),
+                                 "x")
+            finally:
+                shutil.rmtree(clone.parent, ignore_errors=True)
+
+
 class CssSpacingTests(unittest.TestCase):
     """Pure-logic tests for tools/csslint.py (the 4px spacing gate)."""
     def test_multiple_of_4(self) -> None:
@@ -1400,6 +1451,56 @@ class TestCheckDocs(unittest.TestCase):
         self.assertEqual(
             check_docs.collapse_sentence_spaces(text),
             "One. Two.\nIndent:  keep.\nHard break.  \n```\nCode.  Keep.\n```\n")
+
+    def test_patch_files_are_in_scope(self) -> None:
+        # .adacovex/patches/*.ads|adb join the rule's file set; a patch
+        # docstring is prose exactly like a src/ docstring.
+        with tempfile.TemporaryDirectory() as tmp:
+            check_docs.ROOT = Path(tmp)
+            patches = Path(tmp) / ".adacovex" / "patches"
+            patches.mkdir(parents=True)
+            self.assertEqual(check_docs.patch_files(), [])
+            spec = patches / "vendored.ads"
+            spec.write_text("package Vendored is\nend Vendored;\n",
+                            encoding="utf-8")
+            body = patches / "nested" / "vendored.adb"
+            body.parent.mkdir()
+            body.write_text("package body Vendored is\nend Vendored;\n",
+                            encoding="utf-8")
+            other = Path(tmp) / "docs" / "note.ads"
+            other.parent.mkdir()
+            other.write_text("package Note is\nend Note;\n", encoding="utf-8")
+            found = check_docs.patch_files()
+            self.assertEqual(sorted(found), sorted([spec, body]))
+            # source_files() folds the patch set in.
+            self.assertIn(spec, check_docs.source_files())
+
+    def test_patch_comment_double_space_is_flagged_and_fixed(self) -> None:
+        # The gate flags a double space after a sentence in patch comment
+        # text, and --fix collapses it without touching the code.
+        with tempfile.TemporaryDirectory() as tmp:
+            check_docs.ROOT = Path(tmp)
+            patches = Path(tmp) / ".adacovex" / "patches"
+            patches.mkdir(parents=True)
+            spec = patches / "vendored.ads"
+            spec.write_text("   --  Sentence one.  Sentence two.\n"
+                            "   X : Integer := 1;\n", encoding="utf-8")
+            errors = check_docs.source_spacing_errors(
+                spec.relative_to(check_docs.ROOT),
+                spec.read_text(encoding="utf-8").splitlines())
+            self.assertEqual(len(errors), 1)
+            with contextlib.redirect_stdout(io.StringIO()):
+                check_docs.fix()
+            self.assertEqual(
+                spec.read_text(encoding="utf-8"),
+                "   --  Sentence one. Sentence two.\n   X : Integer := 1;\n")
+
+    def test_patch_files_out_of_scope_when_directory_missing(self) -> None:
+        # A repository without .adacovex/patches reports no patch files (and
+        # the gate still passes).
+        with tempfile.TemporaryDirectory() as tmp:
+            check_docs.ROOT = Path(tmp)
+            self.assertEqual(check_docs.patch_files(), [])
 
 
 class TestCheckDocsCoverage(unittest.TestCase):

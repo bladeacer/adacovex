@@ -38,46 +38,45 @@ package body Adacovex.Parsers.Tests is
    --  Numeric value of a decimal digit character (0 .. 9). A case
    --  statement avoids the Character'Pos subtraction so the range check is
    --  discharged by plain case analysis instead of character arithmetic.
-   function Digit_Value (C : Character) return Natural
-   with
-     SPARK_Mode => On,
-     Pre        => C in '0' .. '9',
-     Post       => Digit_Value'Result <= 9
+   --  The parameter is the static Digit subtype, so the ten branches cover
+   --  it exactly: no `when others` arm is needed, and level 4's deeper
+   --  flow analysis finds no unreachable code.
+   subtype Digit is Character range '0' .. '9';
+
+   function Digit_Value (C : Digit) return Natural
+   with SPARK_Mode => On, Post => Digit_Value'Result <= 9
    is
    begin
       case C is
-         when '0'    =>
+         when '0' =>
             return 0;
 
-         when '1'    =>
+         when '1' =>
             return 1;
 
-         when '2'    =>
+         when '2' =>
             return 2;
 
-         when '3'    =>
+         when '3' =>
             return 3;
 
-         when '4'    =>
+         when '4' =>
             return 4;
 
-         when '5'    =>
+         when '5' =>
             return 5;
 
-         when '6'    =>
+         when '6' =>
             return 6;
 
-         when '7'    =>
+         when '7' =>
             return 7;
 
-         when '8'    =>
+         when '8' =>
             return 8;
 
-         when '9'    =>
+         when '9' =>
             return 9;
-
-         when others =>
-            return 0;
       end case;
    end Digit_Value;
 

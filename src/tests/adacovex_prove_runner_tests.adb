@@ -132,6 +132,39 @@ package body Adacovex_Prove_Runner_Tests is
         (Has_Text (Adacovex.Prove.Build_Option_String (O, 4), "--steps 2000"),
          "an explicit step budget replaces the default");
 
+      --  Maximum proof effort: --level=4 forwards unchanged, so a gnatprove
+      --  level-4 run (the deepest flow analysis) is reproducible from the
+      --  same option string the runner builds.
+      declare
+         L4 : Adacovex.Prove.Prove_Options := O;
+      begin
+         L4.Level := 4;
+         declare
+            S : constant String := Adacovex.Prove.Build_Option_String (L4, 8);
+         begin
+            R.Check
+              (Has_Text (S, "--level 4"),
+               "--level=4 forwards as the maximum proof effort");
+            R.Check
+              (Has_Text (S, "--steps 2000"),
+               "the level-4 string keeps an explicit step budget");
+            R.Check
+              (Has_Text (S, "--no-loop-unrolling"),
+               "the level-4 string still disables loop unrolling");
+         end;
+      end;
+
+      --  Level 0 (fastest, least effort) also forwards unchanged, so the
+      --  full 0..4 effort range is reproducible.
+      declare
+         L0 : Adacovex.Prove.Prove_Options := O;
+      begin
+         L0.Level := 0;
+         R.Check
+           (Has_Text (Adacovex.Prove.Build_Option_String (L0, 8), "--level 0"),
+            "--level=0 forwards as the lowest proof effort");
+      end;
+
       --  Raw --args passthrough lands after the built options.
       O.Extra_Args := To_Unbounded_String ("--counterexamples=on");
       declare

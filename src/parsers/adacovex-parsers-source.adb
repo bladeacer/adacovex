@@ -41,9 +41,9 @@ package body Adacovex.Parsers.Source is
       if S (Pos .. Pos + Kw'Length - 1) /= Kw then
          return False;
       end if;
-      if Pos > Natural'Last - Kw'Length then
-         return True;
-      end if;
+      --  Pos + Kw'Length cannot overflow: the Pre keeps Kw'Last (hence
+      --  Kw'Length) below Natural'Last and the match above keeps
+      --  Pos + Kw'Length - 1 <= S'Last < Natural'Last.
       Nxt := Pos + Kw'Length;
       if Nxt > S'Last then
          return True;

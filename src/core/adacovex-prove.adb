@@ -12,6 +12,7 @@ with Adacovex.Ansi;
 with Adacovex.CPUs;
 with Adacovex.Timezones;
 with Adacovex.Cache;
+with Adacovex.Parsers.GNATprove;
 with Adacovex.VCS;
 with Adacovex.Prove_Patch;
 with Adacovex.Opt_Outs;
@@ -1604,6 +1605,53 @@ package body Adacovex.Prove is
          return "proveout:" & Input_Hash;
       end Proof_Output_Key;
 
+      --  True when a gnatprove.out text carries a summary row with a
+      --  non-zero Unproved column. A summary like that must never be
+      --  served from the cache: gnatprove exits 0 on solver timeouts (the
+      --  "not proved" rows stay in the output), so a run interrupted or
+      --  degraded by a partial session can store a bad summary under an
+      --  input hash that a later healthy run shares. Serving it would
+      --  silently downgrade the assessment (observed as Silver/15-unproved
+      --  after a killed level-4 session). Such a blob is dropped on hit.
+      --  @param Blob  Cached gnatprove.out text (first BLen characters).
+      --  @param BLen  Blob length.
+      --  @return True when the blob's Total row reports unproved VCs.
+      function Summary_Has_Unproved
+        (Blob : String; BLen : Natural) return Boolean
+      is
+         Line_Start : Positive := Blob'First;
+         Line_End   : Natural;
+      begin
+         --  Bounded scan: the summary table sits in the first ~30 lines of
+         --  gnatprove.out, so the loop stops at the first blank line after
+         --  the Total row (or after 200 lines, whichever comes first).
+         for Line_Num in 1 .. 200 loop
+            exit when Line_Start > Blob'First + BLen - 1;
+            Line_End := Line_Start;
+            while Line_End < Blob'First + BLen - 1
+              and then Blob (Line_End) /= ASCII.LF
+            loop
+               Line_End := Line_End + 1;
+            end loop;
+            declare
+               Row : constant String := Blob (Line_Start .. Line_End - 1);
+            begin
+               if Row'Length >= 5
+                 and then Row (Row'First .. Row'First + 4) = "Total"
+               then
+                  --  The Total row is "Total | Flow | Provers | Justified
+                  --  | Unproved". A healthy all-proved row ends with "."
+                  --  in the Unproved column; any number there is unproved.
+                  return
+                    Adacovex.Parsers.GNATprove.Total_Row_Unproved (Row) > 0;
+               end if;
+            end;
+            exit when Line_End >= Blob'First + BLen - 1;
+            Line_Start := Line_End + 1;
+         end loop;
+         return False;
+      end Summary_Has_Unproved;
+
       --  Write the cached gnatprove.out content back to the canonical path
       --  the assessment pipeline parses (<target>/obj/gnatprove/gnatprove.out)
       --  when the cached summary exists. A no-op (silently) when the
@@ -1620,6 +1668,25 @@ package body Adacovex.Prove is
          Adacovex.Cache.Get_Cached
            (Proof_Output_Key (Input_Hash), Blob, BLen, Found);
          if not Found or else BLen = 0 then
+            return;
+         end if;
+         --  Cache-poison guard: a stored summary that itself reports
+         --  unproved VCs comes from a degraded run (solver timeouts kept
+         --  gnatprove's exit code 0). Drop the poisoned blobs -- the hit
+         --  marker and the summary -- so the caller falls through to a
+         --  real gnatprove run instead of serving the bad proof. The
+         --  freshly run prover then overwrites the store with a healthy
+         --  summary under the same input hash.
+         if Summary_Has_Unproved (Blob, BLen) then
+            declare
+               OK : Boolean := False;
+            begin
+               Adacovex.Cache.Delete (Input_Hash, OK);
+               Adacovex.Cache.Delete (Proof_Output_Key (Input_Hash), OK);
+            end;
+            Ada.Text_IO.Put_Line
+              ("  cache:     stored summary reports unproved VCs --"
+               & " discarding it and re-proving");
             return;
          end if;
          declare

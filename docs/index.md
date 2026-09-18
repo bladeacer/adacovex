@@ -25,8 +25,9 @@ before you use a technical word in any doc, docstring, or changelog.
 - [Web dashboard](usage/dashboard.md) -- the HTML report and JSON API. The
   deeper pages are
   [the dashboard document and its dependency views](usage/dashboard-html.md),
-  [the JSON API, playground, and themes](usage/dashboard-api.md), and
-  [the metric charts and robustness tier](usage/dashboard-charts.md).
+  [the JSON API, playground, and themes](usage/dashboard-api.md),
+  [the metric charts and robustness tier](usage/dashboard-charts.md), and
+  [the bundled offline manual](usage/dashboard-docs.md).
 - [SBOM](usage/sbom.md) -- the software-bill-of-materials generator. Licence
   and dependency resolution is on
   [SBOM dependency resolution](usage/sbom-resolution.md).
@@ -45,7 +46,11 @@ before you use a technical word in any doc, docstring, or changelog.
   svn, fossil, and jj.
 - [CI/CD](usage/ci-cd.md) -- the GitHub Action and the workflow summary.
   The workflow internals are on
-  [CI/CD workflows, summaries, and release bundling](usage/ci-cd-workflows.md).
+  [CI/CD workflows, summaries, and release bundling](usage/ci-cd-workflows.md),
+  the action's inputs and outputs are on
+  [the composite action](usage/ci-cd-action.md), and the release bundling,
+  floating tags, and consumer manifests are on
+  [Release bundling, tags, and consumer manifests](usage/ci-cd-release.md).
 - [Changelog](changelogs/index.md) -- release history.
 
 ## Contributing to adacovex
@@ -107,11 +112,8 @@ The docs live under `docs/` as a **Sphinx** project (`docs/conf.py` with
 MyST, plus a root `docs/index.md` holding the toctree). The pages are
 grouped by audience: `docs/usage/` for end users, `docs/contributing/` for
 contributors, and the top-level references plus `docs/proof/`,
-`docs/compliance/`, and `docs/badges/` for maintainers. How to build the
-manual, regenerate the bundled offline manual, and keep the generated
-outputs in sync is covered in the
-[developer guide](contributing/developer-guide.md), not here: this index
-stays focused on what each page contains.
+`docs/compliance/`, and `docs/badges/` for maintainers. Build and sync
+instructions live in the [developer guide](contributing/developer-guide.md).
 
 ```{toctree}
 :caption: Getting started
@@ -135,13 +137,16 @@ usage/dashboard
 usage/dashboard-html
 usage/dashboard-api
 usage/dashboard-charts
+usage/dashboard-docs
 usage/sbom
 usage/sbom-resolution
 usage/configuration
 usage/platforms
 usage/vcs
 usage/ci-cd
+usage/ci-cd-action
 usage/ci-cd-workflows
+usage/ci-cd-release
 changelogs/index
 ```
 
