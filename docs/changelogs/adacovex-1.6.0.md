@@ -4,6 +4,8 @@ Date: _2026-08-05_
 
 Version bumped 1.5.0 -> 1.6.0.
 
+GitHub: [adacovex 1.6.0 release](https://github.com/bladeacer/adacovex/releases/tag/v1.6.0)
+
 ## Changes
 
 ### C1: Full SPARK proof coverage (Platinum, 0 unproved)

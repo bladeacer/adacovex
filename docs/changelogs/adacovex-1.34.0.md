@@ -4,6 +4,8 @@ Date: _2026-08-29_
 
 Version bumped 1.33.0 -> 1.34.0.
 
+GitHub: [adacovex 1.34.0 release](https://github.com/bladeacer/adacovex/releases/tag/v1.34.0)
+
 ## Changes
 
 ### C1: Overview paired cards now fill 50-50

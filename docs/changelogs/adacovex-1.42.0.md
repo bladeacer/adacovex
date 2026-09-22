@@ -4,6 +4,8 @@ Date: _2026-09-03_
 
 Version bumped 1.41.0 -> 1.42.0.
 
+GitHub: [adacovex 1.42.0 release](https://github.com/bladeacer/adacovex/releases/tag/v1.42.0)
+
 ## Changes
 
 ### C1: The result-cache read/write path moves whole blobs in one call

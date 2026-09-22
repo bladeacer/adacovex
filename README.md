@@ -1,4 +1,4 @@
-[![covex Alire crate badge](https://img.shields.io/endpoint?url=https://alire.ada.dev/badges/covex.json)](https://alire.ada.dev/crates/covex) ![SPARK](docs/badges/spark.svg) ![DO-178C](docs/badges/do178c.svg) ![ISO 26262](docs/badges/iso26262.svg) ![IEC 62304](docs/badges/iec62304.svg) ![Tests](docs/badges/tests.svg) ![docs](docs/badges/docs.svg)
+[![covex Alire crate badge](https://img.shields.io/endpoint?url=https://alire.ada.dev/badges/covex.json)](https://alire.ada.dev/crates/covex) [![SPARK](docs/badges/spark.svg)](https://adacovex.readthedocs.io/en/latest/badges/index.html) [![DO-178C](docs/badges/do178c.svg)](https://adacovex.readthedocs.io/en/latest/badges/index.html) [![ISO 26262](docs/badges/iso26262.svg)](https://adacovex.readthedocs.io/en/latest/badges/index.html) [![IEC 62304](docs/badges/iec62304.svg)](https://adacovex.readthedocs.io/en/latest/badges/index.html) [![Tests](docs/badges/tests.svg)](https://adacovex.readthedocs.io/en/latest/badges/index.html) [![docs](docs/badges/docs.svg)](https://adacovex.readthedocs.io/en/latest/badges/index.html)
 
 # adacovex
 
@@ -7,6 +7,13 @@ verification, test-result parsing, multi-standard safety-compliance assessment
 (DO-178C / ISO 26262 / IEC 62304), and interactive dashboards. It uses only the
 GNAT runtime. The `prove` subcommand resolves gnatprove at run time, so
 installing adacovex installs only the binary.
+
+## Badges
+
+The badges above reflect adacovex's self-assessment: SPARK proof level,
+test pass count, and DO-178C / ISO 26262 / IEC 62304 compliance tiers.
+Click any badge for the badge set, meanings, and regeneration guide in
+the [docs](https://adacovex.readthedocs.io/en/latest/badges/index.html).
 
 ## Features
 
@@ -98,13 +105,13 @@ source per method and the man-page sync.
 
 - **Platforms** -- runs wherever a GNAT/Alire toolchain exists; the release
   binary is Linux x86-64 only for now (build from source for other platforms).
-  See [https://adacovex.readthedocs.io/en/latest/usage/platforms.html](https://adacovex.readthedocs.io/en/latest/usage/platforms.html).
+  See [platforms](https://adacovex.readthedocs.io/en/latest/usage/platforms.html).
 - **GNATprove resolution** -- manifest pin over global pin over `$PATH` over
   cached toolchain over download (a manifest pin is authoritative). See
-  [https://adacovex.readthedocs.io/en/latest/contributing/architecture.html](https://adacovex.readthedocs.io/en/latest/contributing/architecture.html#gnatprove-toolchain-resolution-prove-subcommand).
+  [GNATprove resolution](https://adacovex.readthedocs.io/en/latest/contributing/architecture.html#gnatprove-toolchain-resolution-prove-subcommand).
 - **VCS** -- not required for base functionality; only the differential modes
   need one, and they work across git, hg, svn, fossil, and jj. See
-  [https://adacovex.readthedocs.io/en/latest/usage/vcs.html](https://adacovex.readthedocs.io/en/latest/usage/vcs.html).
+  [VCS](https://adacovex.readthedocs.io/en/latest/usage/vcs.html).
 
 ## CLI reference
 
@@ -126,8 +133,8 @@ also takes a combined tier token, so `--standard=asil-b` means `--asil=B`.
 
 The full flag table (defaults, modes, `--require-*` CI gates, strict vs relaxed
 mode, exit codes, contextual `help [TOPIC]`, and the `man` subcommand) lives in
-[https://adacovex.readthedocs.io/en/latest/usage/cli-reference.html](https://adacovex.readthedocs.io/en/latest/usage/cli-reference.html). The web dashboard and JSON API
-are in [https://adacovex.readthedocs.io/en/latest/usage/dashboard.html](https://adacovex.readthedocs.io/en/latest/usage/dashboard.html).
+[CLI reference](https://adacovex.readthedocs.io/en/latest/usage/cli-reference.html). The web dashboard and JSON API
+are in [the web dashboard](https://adacovex.readthedocs.io/en/latest/usage/dashboard.html).
 
 ## Examples
 
@@ -142,7 +149,7 @@ adacovex status --target=.                          # toolchain + platform repor
 adacovex complexity --target=.                      # cyclomatic complexity check
 ```
 
-More examples: [https://adacovex.readthedocs.io/en/latest/usage/cli-reference.html](https://adacovex.readthedocs.io/en/latest/usage/cli-reference.html#examples).
+More examples: [examples](https://adacovex.readthedocs.io/en/latest/usage/cli-reference.html#examples).
 
 ## Target project requirements
 
@@ -150,7 +157,7 @@ To run adacovex against a project it needs Ada sources, GNATprove output
 (`gnatprove.out`), a test-summary file, and (for DAL assessment) an `docs/compliance/HLR.md`
 document. Missing data shows `N/A`; DAL checks that depend on it report
 `Unmet`. Full requirements, file-discovery rules, and the non-Ada-project note:
-[https://adacovex.readthedocs.io/en/latest/usage/target-projects.html](https://adacovex.readthedocs.io/en/latest/usage/target-projects.html).
+[target projects](https://adacovex.readthedocs.io/en/latest/usage/target-projects.html).
 
 ## Docstrings and patches
 
@@ -190,7 +197,7 @@ include `build`, `test`, `prove`, `doc`, `sbom`, `fmt`, `run-self`,
 Run `make help` or see
 [AGENTS.md](AGENTS.md) for the full table. AI tools were used during
 development; why the code is still trustworthy:
-[https://adacovex.readthedocs.io/en/latest/contributing/llm-usage.html](https://adacovex.readthedocs.io/en/latest/contributing/llm-usage.html).
+[LLM usage](https://adacovex.readthedocs.io/en/latest/contributing/llm-usage.html).
 
 ## CI/CD
 
@@ -199,7 +206,7 @@ A composite GitHub Action (`./action.yml`) plus `ci.yml`, `pr-check.yml`, and
 test suite, the PR docstring-coverage gate, and releases.
 
 Action inputs/outputs, result caching, and release bundling:
-[https://adacovex.readthedocs.io/en/latest/usage/ci-cd.html](https://adacovex.readthedocs.io/en/latest/usage/ci-cd.html).
+[CI/CD](https://adacovex.readthedocs.io/en/latest/usage/ci-cd.html).
 
 ## Verification
 
@@ -229,14 +236,14 @@ See [changelogs](https://adacovex.readthedocs.io/en/latest/changelogs/index.html
 ## Swapping the GNAT compiler (LLVM backend)
 
 See
-[https://adacovex.readthedocs.io/en/latest/contributing/architecture.html](https://adacovex.readthedocs.io/en/latest/contributing/architecture.html#swapping-the-gnat-compiler-llvm-backend)
+  [swapping the GNAT compiler](https://adacovex.readthedocs.io/en/latest/contributing/architecture.html#swapping-the-gnat-compiler-llvm-backend)
 for Alire-managed and system-installed GNAT LLVM options and caveats.
 
 ## Credits
 
 Third-party attributions, licences, and bundled-asset notices: see
-[https://adacovex.readthedocs.io/en/latest/CREDITS.html](https://adacovex.readthedocs.io/en/latest/CREDITS.html) and
-[https://adacovex.readthedocs.io/en/latest/THIRD_PARTY_NOTICES.html](https://adacovex.readthedocs.io/en/latest/THIRD_PARTY_NOTICES.html).
+[Credits](https://adacovex.readthedocs.io/en/latest/CREDITS.html) and
+[third-party notices](https://adacovex.readthedocs.io/en/latest/THIRD_PARTY_NOTICES.html).
 
 ## License
 

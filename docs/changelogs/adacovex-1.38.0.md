@@ -4,6 +4,8 @@ Date: _2026-08-30_
 
 Version bumped 1.37.0 -> 1.38.0.
 
+GitHub: [adacovex 1.38.0 release](https://github.com/bladeacer/adacovex/releases/tag/v1.38.0)
+
 <!-- no-covex-docs-loc: historical release record, line cap does not apply -->
 
 ## Changes

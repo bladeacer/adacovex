@@ -4,6 +4,8 @@ Date: _2026-08-01_
 
 Version bumped 1.1.0 -> 1.3.0.
 
+GitHub: [adacovex 1.3.0 release](https://github.com/bladeacer/adacovex/releases/tag/v1.3.0)
+
 ## Changes
 
 ### C1: Default target changed to the current working directory

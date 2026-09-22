@@ -3,7 +3,7 @@
   "specVersion": "1.5",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-09-15T22:42:52",
+    "timestamp": "2026-09-18T12:52:39",
     "tools": [
       {"vendor": "bladeacer", "name": "adacovex", "version": "1.52.0"}
     ],
@@ -146,7 +146,7 @@
       "type": "library",
       "bom-ref": "pkg:generic/bash",
       "name": "bash",
-      "version": "5.3.15(1)-release",
+      "version": "5.3.20(1)-release",
       "purl": "pkg:generic/bash",
       "description": "System tool referenced by the project (dev dependency)",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
@@ -227,7 +227,7 @@
       "type": "library",
       "bom-ref": "pkg:generic/perf",
       "name": "perf",
-      "version": "7.2.6-1",
+      "version": "7.2.7-1",
       "purl": "pkg:generic/perf",
       "description": "System tool referenced by the project (dev dependency)",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]

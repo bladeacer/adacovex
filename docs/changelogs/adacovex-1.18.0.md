@@ -3,6 +3,8 @@
 Date: _2026-08-23_
 Version bumped 1.17.0 -> 1.18.0.
 
+GitHub: [adacovex 1.18.0 release](https://github.com/bladeacer/adacovex/releases/tag/v1.18.0)
+
 ## Changes
 
 ### C1: quiet-by-default prove output -- `--quiet` and `--suppress-warnings=SETS`

@@ -4,6 +4,8 @@ Date: _2026-08-30_
 
 Version bumped 1.39.0 -> 1.40.0.
 
+GitHub: [adacovex 1.40.0 release](https://github.com/bladeacer/adacovex/releases/tag/v1.40.0)
+
 ## Changes
 
 ### C1: The manual now builds with Sphinx and the Furo theme

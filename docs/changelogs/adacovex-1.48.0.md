@@ -4,6 +4,8 @@ Date: _2026-09-14_
 
 Version bumped 1.47.0 -> 1.48.0.
 
+GitHub: [adacovex 1.48.0 release](https://github.com/bladeacer/adacovex/releases/tag/v1.48.0)
+
 ## Changes
 
 ### C1: CLI shorthands and long aliases

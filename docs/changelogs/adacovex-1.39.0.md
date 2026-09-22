@@ -4,6 +4,8 @@ Date: _2026-08-30_
 
 Version bumped 1.38.0 -> 1.39.0.
 
+GitHub: [adacovex 1.39.0 release](https://github.com/bladeacer/adacovex/releases/tag/v1.39.0)
+
 ## Changes
 
 ### C1: README links point to the deployed manual

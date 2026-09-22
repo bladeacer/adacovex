@@ -4,6 +4,8 @@ Date: _2026-08-25_
 
 Version bumped 1.27.0 -> 1.28.0.
 
+GitHub: [adacovex 1.28.0 release](https://github.com/bladeacer/adacovex/releases/tag/v1.28.0)
+
 ## Changes
 
 ### C1: perf.md updated with measured numbers and optimisation history

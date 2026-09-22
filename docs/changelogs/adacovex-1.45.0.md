@@ -4,6 +4,8 @@ Date: _2026-09-04_
 
 Version bumped 1.44.0 -> 1.45.0.
 
+GitHub: [adacovex 1.45.0 release](https://github.com/bladeacer/adacovex/releases/tag/v1.45.0)
+
 ## Changes
 
 ### C1: Single-file persistent stamp index (git-index shape)

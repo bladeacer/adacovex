@@ -3,6 +3,8 @@
 Date: _2026-08-18_
 Version bumped 1.13.0 -> 1.14.0.
 
+GitHub: [adacovex 1.14.0 release](https://github.com/bladeacer/adacovex/releases/tag/v1.14.0)
+
 ## Changes
 
 ### C1: `--serve` dashboard rendered only the header and footer (fatal fix)

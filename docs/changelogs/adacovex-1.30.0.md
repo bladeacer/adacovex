@@ -4,6 +4,8 @@ Date: _2026-08-26_
 
 Version bumped 1.29.0 -> 1.30.0.
 
+GitHub: [adacovex 1.30.0 release](https://github.com/bladeacer/adacovex/releases/tag/v1.30.0)
+
 ## Changes
 
 ### C1: System dependencies get a first-class `system` scope

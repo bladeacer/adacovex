@@ -4,6 +4,8 @@ Date: _2026-07-29_
 
 Version bumped 0.1.0 -> 1.0.0.
 
+GitHub: [adacovex 1.0.0 release](https://github.com/bladeacer/adacovex/releases/tag/v1.0.0)
+
 ## Changes
 
 ### C1: Strict mode (default) + `--relaxed` flag

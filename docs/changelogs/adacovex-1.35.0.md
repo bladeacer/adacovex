@@ -4,6 +4,8 @@ Date: _2026-08-29_
 
 Version bumped 1.34.0 -> 1.35.0.
 
+GitHub: [adacovex 1.35.0 release](https://github.com/bladeacer/adacovex/releases/tag/v1.35.0)
+
 ## Changes
 
 ### C1: Configurable dashboard worker count

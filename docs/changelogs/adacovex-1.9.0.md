@@ -4,6 +4,8 @@ Date: _2026-08-14_
 
 Version bumped 1.8.0 -> 1.9.0.
 
+GitHub: [adacovex 1.9.0 release](https://github.com/bladeacer/adacovex/releases/tag/v1.9.0)
+
 ## Changes
 
 ### C1: Honest GNATprove parse across gnatprove v15/v16

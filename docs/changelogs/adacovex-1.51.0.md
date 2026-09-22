@@ -4,6 +4,8 @@ Date: _2026-09-16_
 
 Version bumped 1.50.0 -> 1.51.0.
 
+GitHub: [adacovex 1.51.0 release](https://github.com/bladeacer/adacovex/releases/tag/v1.51.0)
+
 <!-- no-covex-docs-loc: historical release record, line cap does not apply -->
 
 ## Changes
