@@ -35,10 +35,27 @@ The full-URL markdown links in `CODE_OF_CONDUCT.md` were rewritten to concise
 alias text: `[Contributor Covenant, version 3.0]`, `[CC BY-SA 4.0]`, `[FAQ]`,
 `[translations]`, and `[resources]`.
 
+### C5: Read the Docs link previews follow the active theme
+
+`docs/_static/rtd-linkpreviews.css` re-points the Read the Docs "link previews"
+hover popup at Furo's own colour variables, and `docs/conf.py` loads it through
+`html_css_files`. The addon appends the popup to `document.body` and paints it
+with hard-coded light colours, so on a Furo page in dark mode the excerpt
+rendered dark-theme text on a white box and could not be read. The popup now
+uses `--color-background-primary` and `--color-content-foreground`, so it
+follows the light, dark, and auto toggle. Every selector carries a `body`
+prefix, because the addon installs its stylesheet through
+`document.adoptedStyleSheets` and adopted stylesheets apply after all author
+stylesheets.
+
+The defect is in the Read the Docs addon rather than in Furo or Sphinx, and
+the same popup is affected on every theme that has a dark mode.
+
 ## Test Suite
 
 1637/1637 native tests pass across 25 categories. No test code changed -- this
-release is documentation only.
+release changes Markdown, one stylesheet, and `docs/conf.py` only, never an Ada
+source, so the suite is untouched.
 
 ## Proof Results
 
@@ -49,9 +66,9 @@ unaffected.
 
 ## Traceability
 
-- No new HLRs. The release improves documentation link readability and
-  badge discoverability.
-- `HLR-ARCH` -- C1 through C4 are documentation-only changes to changelogs,
-  README, and CODE_OF_CONDUCT.
+- No new HLRs. The release improves documentation link readability, badge
+  discoverability, and dark-mode legibility of the hosted documentation.
+- `HLR-ARCH` -- C1 through C5 are documentation-only changes to changelogs,
+  README, CODE_OF_CONDUCT, and the Sphinx project under `docs/`.
 - `HLR-RENDER-SVG` -- C3's badge links point to the badges docs page that
   describes the SVG renderer output.

@@ -1,0 +1,41 @@
+/* Read the Docs link previews: follow the active Furo theme.
+ *
+ * The Link Previews addon injects a hover preview into document.body and
+ * paints it with hard-coded light colours (background #fff, text #8d8d8d,
+ * from src/linkpreviews.css in readthedocs/addons).  Furo's dark palette is
+ * defined on body[data-theme], which the preview inherits, so in dark mode
+ * the preview shows dark-theme text on a white box and cannot be read.
+ *
+ * Re-point those colours at Furo's own variables.  Every selector carries a
+ * `body` prefix because the addon installs its stylesheet through
+ * document.adoptedStyleSheets, and adopted stylesheets apply after every
+ * author stylesheet, so a plain `.tooltip` rule would lose at equal
+ * specificity.  The preview is always the last child of document.body, so
+ * the prefix is safe.
+ *
+ * The box-shadow alpha is raised from the addon's 0.1, which is invisible
+ * against a dark page.  0.18 reads acceptably on both light and dark.
+ *
+ * The colours inside the preview need no rules of their own.  The injected
+ * markup is the target page's own article element, so code blocks, tables,
+ * links and admonitions already resolve from Furo's variables once the
+ * background is correct.
+ *
+ * If Read the Docs themes the addon properly in future, their
+ * :root[data-readthedocs-tool-theme] rules outrank these and this file goes
+ * inert.
+ */
+
+body .tooltip {
+  background: var(--color-background-primary);
+  color: var(--color-content-foreground);
+  box-shadow: 0 0 10px 6px rgba(0, 0, 0, 0.18);
+}
+
+body .tooltip .arrow {
+  background: var(--color-background-primary);
+}
+
+body .tooltip .tooltip-content {
+  color: var(--color-content-foreground);
+}

@@ -70,6 +70,24 @@ html_baseurl = os.environ.get("READTHEDOCS_CANONICAL_URL", "/")
 # pulls no fonts or images, so nothing else needs bundling.
 
 # ---------------------------------------------------------------------------
+# Match the Read the Docs link previews to the active theme
+# ---------------------------------------------------------------------------
+#
+# Read the Docs injects its "link previews" hover popup into document.body and
+# paints it with hard-coded light colours.  Furo's dark palette is defined on
+# body[data-theme], which the popup inherits, so in dark mode the popup shows
+# dark-theme text on a white box and the excerpt cannot be read.
+#
+# rtd-linkpreviews.css re-points the popup at Furo's own variables, so it
+# follows the light/dark/auto toggle.  html_static_path is required because
+# Sphinx resolves html_css_files against the output _static directory but only
+# copies the files listed in html_static_path.  The same stylesheet ships in
+# the bundled offline manual, where no addon runs, so it has no effect there.
+
+html_static_path = ["_static"]
+html_css_files = ["rtd-linkpreviews.css"]
+
+# ---------------------------------------------------------------------------
 # Show the manual index in the sidebar
 # ---------------------------------------------------------------------------
 #
