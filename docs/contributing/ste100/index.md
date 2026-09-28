@@ -39,6 +39,9 @@ Each category has its own lexicon page:
   toolchain. For example, `System.Storage_Elements`, `gnatprove`, `Alire`.
   Lexicons: [tools and files](identifiers.md) and
   [reports and concepts](concepts.md).
+- **Web Site Terms** -- what the online manual records about a reader, and what
+  the dashboard serves on the local machine. For example, hosting provider,
+  page view, search index. Lexicon: [web site terms](web-terms.md).
 
 ## Required data fields for each entry
 

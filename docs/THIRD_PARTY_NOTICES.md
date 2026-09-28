@@ -74,6 +74,8 @@ Sphinx, MyST-Parser and Furo are build-time tools (pinned in `requirements.txt`,
 
 The online manual is hosted on Read the Docs, a free documentation service. The same Sphinx project also builds into the offline manual bundled with the binary.
 
+The hosting provider injects its own link-preview popup, its analytics, and its advertising slots into the online pages. The project restyles the popup in `docs/_static/rtd-linkpreviews.css`, adds no code of its own, and adds no analytics tag. The project owner disabled paid advertising and the flyout menu in the provider dashboard. The reader-facing statement is in `docs/site-transparency.md`.
+
 ## Development and testing tools
 
 | Component | Version | Licence | Used for |

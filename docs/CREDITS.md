@@ -23,3 +23,5 @@ dirty-tracking of [git](https://git-scm.com/)) is credited in full in the
 ## Docs generation and hosting
 
 The manual at `docs/` is built with [Sphinx](https://www.sphinx-doc.org/) (using the [Furo](https://github.com/pradyunsg/furo) theme and the [MyST](https://myst-parser.readthedocs.io/) Markdown parser) and the online copy is hosted by [Read the Docs](https://readthedocs.org/). Sphinx, Furo and MyST are credited in full in the [Third-Party Notices](THIRD_PARTY_NOTICES.md). The pages are offered under the adacovex licence.
+
+The manual states what the online site records about a reader in [site transparency](site-transparency.md). The hosting provider counts page views in aggregate with its own analytics, and the project adds no tracker of its own.

@@ -88,6 +88,38 @@ html_static_path = ["_static"]
 html_css_files = ["rtd-linkpreviews.css"]
 
 # ---------------------------------------------------------------------------
+# Search
+# ---------------------------------------------------------------------------
+#
+# Sphinx builds search into the HTML builder, so there is no extension to list
+# and no extra dependency.  The sidebar search box is a deliberate part of the
+# online manual, so html_search_language pins the stemmer to English instead
+# of letting it follow `language`.  A future change to `language` therefore
+# cannot quietly break the matching of English words.
+#
+# The search index is a static file that the build writes and the browser
+# searches, so a search word never reaches a server.  The reader-facing
+# statement is on the site transparency page (docs/site-transparency.md).
+
+html_search_language = "en"
+
+# ---------------------------------------------------------------------------
+# No tracking script in the build
+# ---------------------------------------------------------------------------
+#
+# This configuration adds no analytics tag, no tracker, and no consent banner
+# to the generated HTML, and it must stay that way.  The only traffic
+# measurement on the online manual is the hosting provider's own cookieless
+# aggregate page-view counting, which the provider injects and the project
+# cannot switch off.  The bundled offline manual that `--serve` exposes at
+# /docs carries no analytics at all, because the same HTML is embedded in the
+# binary.
+#
+# The reader-facing statement of all this lives in
+# docs/site-transparency.md.  If you add a tag to this file, update that page
+# in the same change, or the manual stops matching what it promises.
+
+# ---------------------------------------------------------------------------
 # Show the manual index in the sidebar
 # ---------------------------------------------------------------------------
 #

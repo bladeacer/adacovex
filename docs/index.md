@@ -10,13 +10,15 @@ before you use a technical word in any doc, docstring, or changelog.
 
 ## Getting started
 
-- [Installation](usage/installation.md) -- install the binary or the GitHub
-  Action.
-- [Target projects](usage/target-projects.md) -- what a target project must
-  contain.
+- [Installation](usage/installation.md) -- install the binary or the action.
+- [Target projects](usage/target-projects.md) -- what a target needs.
 
 ## Using adacovex
 
+- [Usage guide](usage/index.md) -- the self-contained user guide, grouped by
+  task: install and run, assess a project, read the results, publish in CI,
+  and manage the toolchain. Start at
+  [installation](usage/installation.md).
 - [CLI reference](usage/cli-reference.md) -- every command, flag, and exit
   code. The detailed flag pages are
   [assessment flags and subcommands](usage/cli-reference-flags.md),
@@ -71,29 +73,25 @@ before you use a technical word in any doc, docstring, or changelog.
 - [Requirements](contributing/requirements.md) -- the dependency
   categorisation.
 - [Performance](contributing/perf/index.md) -- the benchmark categories and
-  the current numbers. [Benchmarking
-  adacovex](contributing/perf/benchmarks.md) covers the how-to, with
-  [pipeline and prove timings](contributing/perf/benchmarks-timings.md),
-  [binary size and the bundled
-  manual](contributing/perf/benchmarks-binary-size.md), and [server
-  throughput](contributing/perf/benchmarks-server.md) alongside it. [Prove
-  timing and the optimisation
-  review](contributing/perf/prove-timing.md) holds the per-phase timing
-  table, and [the optimisation
-  history](contributing/perf/optimisation-history.md) covers the work (with
-  [earlier releases](archive/optimisation-history-archive.md) in the
-  [Archive](archive/index.md)).
+  the current numbers, with [how to run them](contributing/perf/benchmarks.md),
+  the [per-phase prove timings](contributing/perf/prove-timing.md), and the
+  [optimisation history](contributing/perf/optimisation-history.md).
 - [gnatprove-friendly IR](contributing/ir.md) -- the design exploration for
   synthesising bounded, contract-carrying code.
 - [STE100 Technical Names](contributing/ste100/index.md) -- the controlled
-  dictionary of rules and entries, split into the
+  dictionary of rules and entries, split into seven lexicons: the
   [Ada language](contributing/ste100/ada-terms.md),
   [proof and compliance](contributing/ste100/proof-terms.md),
   [tooling](contributing/ste100/tooling-terms.md),
-  [hardware](contributing/ste100/entities.md),
-  [tool and file](contributing/ste100/identifiers.md), and
-  [report and concept](contributing/ste100/concepts.md) lexicons.
+  [hardware](contributing/ste100/entities.md), the [tools and
+  files](contributing/ste100/identifiers.md), the [reports and
+  concepts](contributing/ste100/concepts.md), and the [web site
+  terms](contributing/ste100/web-terms.md).
 - [LLM usage](contributing/llm-usage.md) -- guidance for AI agents.
+- [Site transparency](site-transparency.md) -- what the online manual records
+  when you read it: search, traffic analytics, advertising, and the flyout
+  menu. It also covers what the `--serve` dashboard keeps, and the loopback bind
+  that keeps the server on your own machine.
 
 ## Maintainer references
 
@@ -103,8 +101,7 @@ before you use a technical word in any doc, docstring, or changelog.
   and the HLR/LLR indexes.
 - [HLR index](compliance/HLR.md) and [LLR mapping](compliance/LLR.md).
 - [Badges](badges/index.md) -- the badge set the self-assessment emits.
-- [Archive](archive/index.md) -- dated records kept for traceability: the
-  proof-debt audit and the earlier optimisation history.
+- [Archive](archive/index.md) -- dated records kept for traceability.
 - [API reference](api-docs/index.md) -- the generated package
   documentation.
 
@@ -120,6 +117,7 @@ instructions live in the [developer guide](contributing/developer-guide.md).
 :maxdepth: 1
 :hidden:
 
+usage/index
 usage/installation
 usage/target-projects
 ```
@@ -221,6 +219,7 @@ contributing/ste100/tooling-terms
 contributing/ste100/entities
 contributing/ste100/identifiers
 contributing/ste100/concepts
+contributing/ste100/web-terms
 ```
 
 ```{toctree}
@@ -234,6 +233,7 @@ proof/index
 compliance/index
 badges/index
 api-docs/index
+site-transparency
 CREDITS
 THIRD_PARTY_NOTICES
 ```

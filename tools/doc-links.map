@@ -1,4 +1,6 @@
 docs/index.md	Documentation index
+docs/site-transparency.md	Site transparency
+docs/usage/index.md	Usage guide
 docs/usage/cli-reference.md	CLI reference
 docs/usage/cli-reference-flags.md	CLI flag details: assessment flags and subcommands
 docs/usage/cli-reference-options.md	CLI flag details: serving, CI, and tool options
@@ -51,6 +53,7 @@ docs/contributing/ste100/tooling-terms.md	STE100: tooling and workflow terms
 docs/contributing/ste100/entities.md	STE100: hardware and system entities
 docs/contributing/ste100/identifiers.md	STE100: tools and files
 docs/contributing/ste100/concepts.md	STE100: reports and concepts
+docs/contributing/ste100/web-terms.md	STE100: web site terms
 docs/CREDITS.md	Credits
 docs/THIRD_PARTY_NOTICES.md	Third-party notices
 docs/compliance/HLR.md	HLR index

@@ -704,6 +704,8 @@ suffices.
 
 <!-- doc-links:begin -->
 - [Documentation index](docs/index.md)
+- [Site transparency](docs/site-transparency.md)
+- [Usage guide](docs/usage/index.md)
 - [CLI reference](docs/usage/cli-reference.md)
 - [CLI flag details: assessment flags and subcommands](docs/usage/cli-reference-flags.md)
 - [CLI flag details: serving, CI, and tool options](docs/usage/cli-reference-options.md)
@@ -756,6 +758,7 @@ suffices.
 - [STE100: hardware and system entities](docs/contributing/ste100/entities.md)
 - [STE100: tools and files](docs/contributing/ste100/identifiers.md)
 - [STE100: reports and concepts](docs/contributing/ste100/concepts.md)
+- [STE100: web site terms](docs/contributing/ste100/web-terms.md)
 - [Credits](docs/CREDITS.md)
 - [Third-party notices](docs/THIRD_PARTY_NOTICES.md)
 - [HLR index](docs/compliance/HLR.md)
