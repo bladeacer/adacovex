@@ -3,6 +3,11 @@
 This page is the index for all adacovex documentation. Pick a section
 relevant to you, or read the pages in the order below.
 
+**Read [Site transparency](site-transparency.md) first.** The page is the first
+entry in the sidebar, so you can reach it from every page. It states what the
+online manual records when you read it: search, traffic analytics,
+advertising, and the flyout menu.
+
 All documentation uses British English and ASD-STE100 Simplified Technical
 English. The controlled Technical Names dictionary lives in
 [STE100 Technical Names](contributing/ste100/index.md). Use it
@@ -24,12 +29,9 @@ before you use a technical word in any doc, docstring, or changelog.
   [assessment flags and subcommands](usage/cli-reference-flags.md),
   [serving, CI, and tool options](usage/cli-reference-options.md), and
   [emitted reports and differential modes](usage/cli-reference-emit.md).
-- [Web dashboard](usage/dashboard.md) -- the HTML report and JSON API. The
-  deeper pages are
-  [the dashboard document and its dependency views](usage/dashboard-html.md),
-  [the JSON API, playground, and themes](usage/dashboard-api.md),
-  [the metric charts and robustness tier](usage/dashboard-charts.md), and
-  [the bundled offline manual](usage/dashboard-docs.md).
+- [Web dashboard](usage/dashboard.md) -- the HTML report, the JSON API, the
+  dependency views, the metric charts, the themes, and the bundled offline
+  manual.
 - [SBOM](usage/sbom.md) -- the software-bill-of-materials generator. Licence
   and dependency resolution is on
   [SBOM dependency resolution](usage/sbom-resolution.md).
@@ -79,19 +81,10 @@ before you use a technical word in any doc, docstring, or changelog.
 - [gnatprove-friendly IR](contributing/ir.md) -- the design exploration for
   synthesising bounded, contract-carrying code.
 - [STE100 Technical Names](contributing/ste100/index.md) -- the controlled
-  dictionary of rules and entries, split into seven lexicons: the
-  [Ada language](contributing/ste100/ada-terms.md),
-  [proof and compliance](contributing/ste100/proof-terms.md),
-  [tooling](contributing/ste100/tooling-terms.md),
-  [hardware](contributing/ste100/entities.md), the [tools and
-  files](contributing/ste100/identifiers.md), the [reports and
-  concepts](contributing/ste100/concepts.md), and the [web site
-  terms](contributing/ste100/web-terms.md).
+  dictionary of rules and entries, split into seven lexicons: the Ada
+  language, proof and compliance, tooling, hardware, the tools and files, the
+  reports and concepts, and the web site terms.
 - [LLM usage](contributing/llm-usage.md) -- guidance for AI agents.
-- [Site transparency](site-transparency.md) -- what the online manual records
-  when you read it: search, traffic analytics, advertising, and the flyout
-  menu. It also covers what the `--serve` dashboard keeps, and the loopback bind
-  that keeps the server on your own machine.
 
 ## Maintainer references
 
@@ -106,11 +99,19 @@ before you use a technical word in any doc, docstring, or changelog.
   documentation.
 
 The docs live under `docs/` as a **Sphinx** project (`docs/conf.py` with
-MyST, plus a root `docs/index.md` holding the toctree). The pages are
-grouped by audience: `docs/usage/` for end users, `docs/contributing/` for
+MyST, plus a root `docs/index.md` holding the toctree). The pages are grouped
+by audience: `docs/usage/` for end users, `docs/contributing/` for
 contributors, and the top-level references plus `docs/proof/`,
 `docs/compliance/`, and `docs/badges/` for maintainers. Build and sync
 instructions live in the [developer guide](contributing/developer-guide.md).
+
+```{toctree}
+:caption: Read this first
+:maxdepth: 1
+:hidden:
+
+site-transparency
+```
 
 ```{toctree}
 :caption: Getting started
@@ -231,11 +232,10 @@ compliance/HLR
 compliance/LLR
 proof/index
 compliance/index
-badges/index
-api-docs/index
-site-transparency
-CREDITS
-THIRD_PARTY_NOTICES
+  badges/index
+  api-docs/index
+  CREDITS
+  THIRD_PARTY_NOTICES
 ```
 
 ```{toctree}
