@@ -4,8 +4,8 @@ This page covers the GitHub Actions workflows, the Markdown summaries and loud f
 
 ## Workflows
 
-- **`.github/workflows/ci.yml`** -- three jobs on push to `main` and pull
-  requests:
+- **`.github/workflows/ci.yml`** -- the gate jobs on push to `main` and pull
+  requests, then one `summary` job that aggregates their results:
   - `self-assessment` -- build + prove + assess at `--standard=all` (so the
     DO-178C, ISO 26262, and IEC 62304 badges/reports are all emitted and
     gated), with the Platinum / 100% docstrings / test-count / 100% proof
@@ -14,6 +14,21 @@ This page covers the GitHub Actions workflows, the Markdown summaries and loud f
   - `coverage-gate` (push only) -- runs the coverage gate, comparing
     docstring coverage between the latest two release tags (a maintainer
     step; see the [developer guide](../contributing/developer-guide.md)).
+  - `no-spark-off` -- fails when a `SPARK_Mode (Off)` pragma appears outside
+    the two permitted container packages.
+  - `complexity-gate` -- fails on a god object, a god function, or a file
+    above its line or percentage cap.
+  - `action-parity` -- fails when the composite action stops mirroring the
+    base CLI option set.
+  - `docs-coverage` -- fails when a CLI flag, a served route, or a
+    hand-written usage or contributing page is missing from the user docs.
+  - `version-consistency` -- fails when a manifest, the generated version
+    spec, the built binary, and the committed `sbom.json` name different
+    versions. See [Delivery and versioning](../contributing/architecture-pipeline.md#delivery-and-versioning).
+  - `consumer-run-tests` -- runs the action's test step in a restructured
+    consumer workspace.
+  - `summary` -- writes the Markdown summary table and exits 1 when any gate
+    job failed.
 - **`.github/workflows/pr-check.yml`** -- runs `--coverage-delta` against
   `pull_request.base.sha` to fail PRs that drop docstring coverage.
 - **`.github/workflows/release.yml`** -- on a `v*` tag, builds the release

@@ -38,6 +38,10 @@ version-locked to the same release:
 
 As a result, `--version`, the man page, the SBOM tool version, and the result-cache namespace all derive from the manifest and can never drift. Release builds bundle the release tag instead via the `ADACOVEX_VERSION` environment variable (release workflow / `make release`).
 
+A version reaches four places -- the two manifests, the generated Ada constant the binary compiles, the built binary itself, and the committed `sbom.json` -- and each one derives from a different source, so they can drift apart. The SBOM shows the split most clearly: its `metadata.tools` version comes from the binary that wrote the file, while its root component version is read from the manifest.
+
+`make release` therefore builds the release binary first and checks that `bin/adacovex --version` reports the tag before it proves anything, because every later step shells out to that binary. Proving first would prove the previous release's build, and every artifact that pass writes would carry the old version. The tree-wide backstop is `make version-consistency-check` (`tools/check-version-consistency.py`), wired into `make check`: it fails when a manifest, the version spec, the binary, or the committed SBOM names a different version. A check that needs a build product is skipped when that product is absent, so the gate is meaningful in a fresh checkout.
+
 - **CI is tied to the release version**: the GitHub Actions composite action
 (`action.yml`) is version-matched to the adacovex binary. The release workflow bundles `adacovex-vX. Y. Z.tar.gz` and `adacovex-action-vX.
 

@@ -82,12 +82,64 @@ manual link matters for the reader who wants the same pages with no hosting
 provider in the path, and the notices link carries the licences of the toolchain
 that builds the site the page describes.
 
+## Fixes
+
+### H1: `make release` proved the tree before it built the release binary
+
+`tools/release.py` ran its proof pass first, against whatever `bin/adacovex`
+happened to be on disk, and built the release binary only afterwards. Three
+things followed from that order:
+
+- The proof pass ran the **previous release's binary**, so the release proved
+  code it was not shipping. The banner made it visible: `make release` for
+  v1.54.0 printed `adacovex v1.53.0 -- ...` under the heading
+  `=== Releasing v1.54.0 ===`.
+- The proof pass used the **previous version's result cache**, because the
+  cache namespace is the compiled-in version
+  (`~/.adacovex/cache/<version>/`). A release therefore read a cache the
+  release binary could not use.
+- Every artifact that pass wrote carried the old version. The committed
+  v1.54.0 tree held the result: `sbom.json` named tool version `1.53.0`
+  against root component version `1.54.0`, two versions in one file.
+
+The release now builds first, verifies, and only then proves. Two changes
+land with it:
+
+- `tools/build.py` takes `--release`, so the release runs the same
+  regeneration steps as a dev build (version spec, CSS gate, dashboard
+  template, bundled offline manual) and only the `alr` profile differs. The
+  old flow called `alr build --release` directly, so a release could ship a
+  binary whose bundled dashboard or offline manual predated the source that
+  produced it.
+- `release.verify_binary_version` runs `bin/adacovex --version` and aborts
+  the release when the reported version is not the tag. The check is
+  unconditional because a release that bundles one version and proves
+  another is the whole failure.
+
+### H2: New `version-consistency-check` gate for version drift
+
+A version reaches four places, each from a different source: the two
+manifests, the generated Ada constant the binary compiles, the built binary,
+and the committed `sbom.json` (whose `metadata.tools` entry comes from the
+binary that wrote it, while its root component version is read from the
+manifest). Nothing compared them, so the drift in H1 stayed in the tree.
+
+`tools/check-version-consistency.py` (wired as `make
+version-consistency-check`, and into `make check`) fails when any of them
+names a different version, and separately when the SBOM disagrees with
+itself. A check that needs a build product is skipped when that product is
+absent, so the gate is meaningful in a fresh checkout before `make build`.
+The gate is pure-stdlib Python with `argparse`/`pathlib` and full `typing`,
+matching the other `tools/*.py` scripts.
+
 ## Test Suite
 
 1637/1637 native tests pass across 25 categories, the same counts as 1.53.0.
-This release changes Markdown, `docs/conf.py`, and the generated offline
-manual spec, never an assessed Ada source, so it adds no test and changes no
-result.
+No assessed Ada source changed, so the native suite is unchanged. The
+`tools/tests.py` suite for the dev scripts grows by 13 cases (137 in total)
+covering the new build flag, the version guard, the release step order, and
+each branch of the consistency gate, including the exact stale-SBOM pair that
+the 1.54.0 tree carried.
 
 ## Proof Results
 
@@ -98,10 +150,20 @@ those of 1.53.0.
 
 ## Traceability
 
-- No new HLRs. The release adds documentation only: one reader-facing policy
-  page, one user-guide landing page, one Technical Name lexicon, and the
-  regenerated offline manual.
+- No new HLRs. The release adds one reader-facing policy page, one user-guide
+  landing page, one Technical Name lexicon, the regenerated offline manual,
+  and two release-tooling fixes that touch no assessed Ada source.
 - `HLR-ARCH` -- C3 and C5 are documentation-configuration changes to
-  `docs/conf.py`, `README.md`, and `docs/index.md`.
-- `HLR-RENDER-MANUAL` -- C1 and C4 keep the online manual and the offline
+  `docs/conf.py`, `README.md`, and `docs/index.md`. H1 and H2 change the
+  release and quality-gate tooling (`tools/release.py`, `tools/build.py`,
+  `tools/check-version-consistency.py`, the `Makefile` gate list, and
+  `tools/tests.py`), which sits under the same architecture tag.
+- `HLR-RENDER-HTML` -- C1 and C4 keep the online manual and the offline
   manual in step, and C4 regenerates the bundled spec from the same source.
+  H1 routes the release build through the same `tools/build.py` that
+  regenerates the bundled spec, so a release can no longer ship a manual
+  older than its source.
+- `HLR-SBOM` -- H2 reads the committed `sbom.json` and fails when its tool
+  entry (written by the binary) and its root component entry (read from the
+  manifest) name different versions, which is the pair the 1.54.0 tree
+  shipped.

@@ -18,17 +18,29 @@ change lands in one place.
 
 Steps, in order:
 
-1. Prove: `adacovex prove --target=. <self-assess-args> --emit-svg=docs/badges/`
-2. Build the release binary (ADACOVEX_VERSION forces the tag version into
-   src/adacovex_version_info.ads, then `alr build --release`).
-3. Validate: self-assessment with the same acceptance gates.
-4. Coverage gate: `--coverage-delta` against the previous release tag.
-5. List the changelogs covered by this release.
-6. Bundle dist/ + the two tarballs (binary + action).
-7. Attest the tarballs with `gh attest` when gh + GITHUB_TOKEN are present.
-8. Bump the index + release manifests, sync descriptions, tag and push.
+1. Build the release binary: `ADACOVEX_VERSION` forces the tag version into
+   src/adacovex_version_info.ads, then `tools/build.py --release` runs the
+   same regeneration steps as a dev build (version spec, CSS gate,
+   dashboard, bundled manual) and `alr build --release`.
+2. Verify the built binary reports the release version.
+3. Prove: `adacovex prove --target=. <self-assess-args> --emit-svg=docs/badges/`
+4. Validate: self-assessment with the same acceptance gates.
+5. Coverage gate: `--coverage-delta` against the previous release tag.
+6. List the changelogs covered by this release.
+7. Bundle dist/ + the two tarballs (binary + action).
+8. Attest the tarballs with `gh attest` when gh + GITHUB_TOKEN are present.
+9. Bump the index + release manifests, sync descriptions, tag and push.
 
-`--dry-run` runs steps 1-7 and the manifest bumps, but prints (and skips)
+The build runs first on purpose.  Every later step shells out to
+`bin/adacovex`, so proving before building proves the *previous* release's
+binary: its banner reports the old version, its result cache is the old
+version's namespace, and any artifact it writes (sbom.json, docs/badges/*.svg)
+records that old version while the manifests already carry the new one.  The
+committed 1.54.0 tree held exactly that pair (SBOM tool version 1.53.0
+against component version 1.54.0).  `verify_binary_version` turns any
+residual drift into a hard abort instead of a wrong artifact.
+
+`--dry-run` runs steps 1-8 and the manifest bumps, but prints (and skips)
 the irreversible git commit / tag / push operations -- use it to verify a
 release before it goes out.  `--repo` overrides the attestation repo
 (default: the GITHUB_REPOSITORY env var or bladeacer/adacovex).
@@ -123,6 +135,42 @@ def run_assessment(args: List[str], emit_svg: bool) -> int:
         print(f"  stdout: {result.stdout.strip()}", file=sys.stderr)
         print(f"  stderr: {result.stderr.strip()}", file=sys.stderr)
     return result.returncode
+
+
+def build_release_binary(version: str) -> int:
+    """Build the release binary with the tag version forced into the spec.
+
+    Delegates to tools/build.py --release so the release runs the same
+    regeneration steps as a dev build (version spec, CSS gate, dashboard
+    template, bundled offline manual) and only the `alr` profile differs.
+    """
+    env = dict(os.environ)
+    env["ADACOVEX_VERSION"] = version
+    return sh([sys.executable, "tools/build.py", "--release"],
+              env=env).returncode
+
+
+def verify_binary_version(version: str) -> bool:
+    """Fail when bin/adacovex does not report the release version.
+
+    A release that bundles one version and proves another is the exact
+    failure this guard exists for, so the check is cheap and unconditional:
+    run `--version` and compare the token the banner prints.
+    """
+    result = sh([str(ROOT / "bin" / "adacovex"), "--version"],
+                check=False, capture_output=True, text=True)
+    if result.returncode != 0:
+        print(f"ERROR: bin/adacovex --version failed (rc={result.returncode})",
+              file=sys.stderr)
+        return False
+    reported = result.stdout.strip().split()[-1].lstrip("v")
+    if reported != version:
+        print(f"ERROR: bin/adacovex reports v{reported} but the release is "
+              f"v{version}; the binary is stale. Rebuild with "
+              f"'make build' and retry.", file=sys.stderr)
+        return False
+    print(f"  bin/adacovex reports v{reported}: matches the release version.")
+    return True
 
 
 def bundle(version: str) -> None:
@@ -230,6 +278,15 @@ def release(version_arg: str, assess_args: str, repo: str, dry_run: bool) -> int
         assess = result.stdout.strip().split()
     print(f"=== Releasing v{version} ===\n")
 
+    print(f"=== Building release binary (covex v{version}) ===")
+    if build_release_binary(version) != 0:
+        print("ERROR: release build failed; aborting release", file=sys.stderr)
+        return 1
+
+    print("=== Verifying the release binary version ===")
+    if not verify_binary_version(version):
+        return 1
+
     print("=== Generating proof artifacts ===")
     proof_ok = False
     for attempt in range(1, 4):
@@ -240,14 +297,6 @@ def release(version_arg: str, assess_args: str, repo: str, dry_run: bool) -> int
               else "  proof attempt 3/3 failed", file=sys.stderr)
     if not proof_ok:
         print("ERROR: proof pass failed; aborting release", file=sys.stderr)
-        return 1
-
-    print(f"=== Building release binary (covex v{version}) ===")
-    env = dict(os.environ)
-    env["ADACOVEX_VERSION"] = version
-    if sh([sys.executable, "tools/gen-version.py"], env=env).returncode != 0:
-        return 1
-    if sh(["alr", "build", "--release"], env=env).returncode != 0:
         return 1
 
     print("=== Validating self-assessment (DAL-C) ===")
@@ -264,7 +313,7 @@ def release(version_arg: str, assess_args: str, repo: str, dry_run: bool) -> int
         delta = sh(
             [str(ROOT / "bin" / "adacovex"), "--target=.",
              f"--coverage-delta={previous}"],
-            env=env, check=False,
+            check=False,
         ).returncode
         if delta != 0:
             print(f"  ERROR: docstring coverage regressed vs {previous}; "

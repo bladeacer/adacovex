@@ -137,7 +137,12 @@ The proof result is anchored in `docs/proof/` (the per-version VC ledger).
   coverage between the latest two release tags.
 - **Prepare a release**: `make bump-version VERSION=x.y.z`, write the changelog
   (`docs/changelogs/adacovex-x.y.z.md`, canonical format enforced by `make
-  changelog-check`), then `make release VERSION=x.y.z`.
+  changelog-check`), then `make release VERSION=x.y.z`. The release builds the
+  release binary and checks that it reports the tag before it proves anything,
+  so the proof pass, the result cache, and every committed artifact come from
+  the binary being released. Run `make check` first: its
+  `version-consistency-check` gate fails when a manifest, the version spec,
+  the binary, or the committed SBOM names a different version.
 - **Keep docs current**: every code change updates the relevant user docs,
   the Ada docstrings that feed `docs/api-docs`, and the changelog, then
   re-runs the sync gates (`make docs-check`, `make action-parity-check`,

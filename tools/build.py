@@ -8,7 +8,7 @@ message out of the log, drop the temp file, and symlink `bin/covex` to
 `bin/adacovex` when the build succeeded.  That chain is easy to break with
 a stray quoting or `set -e` change, so this script owns it:
 
-  python3 tools/build.py
+  python3 tools/build.py [--release]
 
 Steps, in order:
 
@@ -20,11 +20,17 @@ Steps, in order:
    src/adacovex-docs_template.ads (the bundled offline manual) from the
    Sphinx docs source (docs/conf.py + MyST); byte-identical when the docs
    are unchanged.
-4. `alr build` with stdout+stderr captured, the log filtered by
-   tools/filter-sframe.py (the benign SFrame notice), and the filtered
-   output printed to stdout.
+4. `alr build` (or `alr build --release` with `--release`) with stdout+stderr
+   captured, the log filtered by tools/filter-sframe.py (the benign SFrame
+   notice), and the filtered output printed to stdout.
 5. On success only, symlink `bin/covex` -> `bin/adacovex` (the Alire
    crate alias), so both names resolve to the freshly built binary.
+
+`--release` selects the release profile and is the single build entry point
+for `make release`, so a release build runs exactly the same regeneration
+steps (version spec, CSS gate, dashboard, bundled manual) as a dev build.  A
+release build that skipped them could ship a binary whose bundled dashboard
+or offline manual predates the source that produced it.
 
 Exit code is alr's (0 on success).  A failure in any earlier step aborts
 the build like the old `&&`-chained recipe did.  gen-docs.py never fails
@@ -53,7 +59,7 @@ def run_capture(cmd: List[str]) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, cwd=str(ROOT), capture_output=True, text=True)
 
 
-def build() -> int:
+def build(release: bool = False) -> int:
     print("=== Regenerating version info ===")
     rc = run([sys.executable, "tools/gen-version.py"])
     if rc != 0:
@@ -73,8 +79,9 @@ def build() -> int:
     if rc != 0:
         return rc
 
-    print("=== alr build ===")
-    result = run_capture(["alr", "build"])
+    command = ["alr", "build"] + (["--release"] if release else [])
+    print(f"=== alr build{' --release' if release else ''} ===")
+    result = run_capture(command)
     with tempfile.NamedTemporaryFile(
         mode="w", suffix=".log", delete=False
     ) as log:
@@ -108,13 +115,15 @@ def build() -> int:
 
 
 def parse_args(argv: List[str]) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    return parser.parse_args(argv)
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--release", action="store_true",
+                    help="build the release profile (what `make release` uses)")
+    return ap.parse_args(argv)
 
 
 def main() -> int:
-    parse_args(sys.argv[1:])
-    return build()
+    args = parse_args(sys.argv[1:])
+    return build(args.release)
 
 
 if __name__ == "__main__":

@@ -93,6 +93,21 @@ jobs:
       - name: Enforce documentation coverage
         run: make docs-coverage-check
 
+  version-consistency:
+    # Feature gate: the two manifests, the generated Ada version spec, the
+    # built binary, and the committed sbom.json must all name the same
+    # version.  make release used to prove the tree before it built the
+    # release binary, so the proof pass and every artifact it wrote came
+    # from the previous release's binary.  This is the tree-wide backstop.
+    name: Version consistency gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Enforce one version across every source
+        run: |
+          python3 tools/gen-version.py --check
+          make version-consistency-check
+
   consumer-run-tests:
     timeout-minutes: 15
     # Regression test for the action's run-tests in a CONSUMER workspace:
@@ -177,7 +192,7 @@ jobs:
   summary:
     name: CI summary
     if: always()
-    needs: [self-assessment, adacovex-tests, no-spark-off, complexity-gate, action-parity, docs-coverage, consumer-run-tests, coverage-gate]
+    needs: [self-assessment, adacovex-tests, no-spark-off, complexity-gate, action-parity, docs-coverage, version-consistency, consumer-run-tests, coverage-gate]
     runs-on: ubuntu-latest
     steps:
       - name: Write CI summary
@@ -189,6 +204,7 @@ jobs:
           COMPLEX: ${{ needs.complexity-gate.result }}
           PARITY: ${{ needs.action-parity.result }}
           DOCS: ${{ needs.docs-coverage.result }}
+          VERSION: ${{ needs.version-consistency.result }}
           CONSUMER: ${{ needs.consumer-run-tests.result }}
           GATE: ${{ needs.coverage-gate.result }}
         run: |
@@ -205,6 +221,7 @@ jobs:
             echo "| Complexity gate (no god objects) | $COMPLEX |"
             echo "| Action/CLI/docs parity gate | $PARITY |"
             echo "| Documentation coverage gate | $DOCS |"
+            echo "| Version consistency gate | $VERSION |"
             echo "| Action run-tests (consumer workspace) | $CONSUMER |"
             echo "| Coverage gate (push only) | $GATE |"
             echo ''

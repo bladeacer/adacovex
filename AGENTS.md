@@ -410,6 +410,14 @@ tools/tests.py, wired as the `tools-check` gate in `make check`.
 `tools/check-action-parity.py` is a pure check (no writes) wired as
 `make action-parity-check` -- a feature gate in `make check` and CI that
 fails when the GitHub Action stops mirroring the base CLI option set.
+`tools/check-version-consistency.py` is the sibling gate (`make
+version-consistency-check`, also in `make check`): it fails when
+`alire.toml`, `alire-dev.toml`, `src/adacovex_version_info.ads`,
+`bin/adacovex --version`, or the committed `sbom.json` name different
+versions. A version reaches each of those from a different source, so
+they can drift; `make release` builds the release binary before it proves
+so the binary under test is the one being released, and this gate catches
+the residue tree-wide.
 `tools/check-docs-coverage.py` is the sibling gate (`make
 docs-coverage-check`, and the `ci.yml` `docs-coverage` job): it fails when a
 CLI flag, a dispatched server route, or a hand-written usage/contributing
@@ -498,7 +506,7 @@ must be followed by `make book`.
 
 | Target | Description |
 |--------|-------------|
-| `check` | **The single everything-check / verification entry point.** Run it after any change. It runs every gate CI runs before a release: cheap static gates first (ascii, complexity, csslint, spark-off, changelog, action-parity, docs-coverage, tools-check, cli-e2e, version, doc-links, link, docs-check, para-split, book-links), then build + native tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description). `make check` resolves `gnatprove` for you (it is fetched into `~/.adacovex/toolchain/` and executed directly when not on `PATH`), so you never have to install or point at a prover by hand -- just run `make check` and it verifies the whole tree end to end. `make prove` is the SPARK sub-gate if you only changed proof-affecting code |
+| `check` | **The single everything-check / verification entry point.** Run it after any change. It runs every gate CI runs before a release: cheap static gates first (ascii, complexity, csslint, spark-off, changelog, action-parity, docs-coverage, tools-check, cli-e2e, version, version-consistency, doc-links, link, docs-check, para-split, book-links), then build + native tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description). `make check` resolves `gnatprove` for you (it is fetched into `~/.adacovex/toolchain/` and executed directly when not on `PATH`), so you never have to install or point at a prover by hand -- just run `make check` and it verifies the whole tree end to end. `make prove` is the SPARK sub-gate if you only changed proof-affecting code |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
 | `test` | Build + run the 1637-test native suite |
@@ -520,7 +528,8 @@ must be followed by `make book`.
 | `changelog-check` | Validate all `docs/changelogs/` against the canonical format (tools/check-changelogs.py) |
 | `action-parity-check` | Fail if the GitHub Action drifts from the base CLI option set or the docs/usage/ci-cd.md input table (tools/check-action-parity.py; feature gate) |
 | `docs-coverage-check` | Fail when a `Known_Flags` entry, a dispatched server route, or a hand-written usage/contributing page is missing from the user docs (tools/check-docs-coverage.py; feature gate) |
-| `release` | Build, prove, validate, run coverage gate vs last release, bundle + tag & push |
+| `version-consistency-check` | Fail when a manifest, the generated version spec, the built binary, or the committed SBOM names a different version (tools/check-version-consistency.py; feature gate) |
+| `release` | Build the release binary and verify its version, prove, validate, run coverage gate vs last release, bundle + tag & push |
 | `ascii-check` | Verify all source files are pure ASCII (skips generated e2e output: playwright-report / test-results) |
 | `tools-check` | Run the stdlib-unittest suite for the tools/*.py dev scripts (tools/tests.py) |
 | `cli-e2e` | Run the CLI end-to-end checks against the real binary (tests/e2e/cli_flags.py): shorthands, long aliases, `--standard` tier tokens, the reject paths, the `complexity` subcommand (gates, `--excludes`, `--skip-path`), the `--compare-base` / `--coverage-delta` differential modes (alias equivalence, a real coverage regression, and the not-a-repository failure), the `prove` subcommand (`-t`/`-l`/`-j` shorthands, the accepted option set, and the range/subcommand reject paths), and the serve shorthands, the `--theme` values, and the `-p` port forms. No browser; part of `make check` |

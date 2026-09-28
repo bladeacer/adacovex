@@ -1,4 +1,4 @@
-.PHONY: help check build test prove doc book book-serve docs-serve clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish agents-tree sbom compliance description proof-status test-count doc-links link-check changelog-check action-parity-check docs-coverage-check tools-check man bench perf-bench complexity-check csslint-check sync docs-check para-split-check book-links-check cli-e2e e2e
+.PHONY: help check build test prove doc book book-serve docs-serve clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish agents-tree sbom compliance description proof-status test-count doc-links link-check changelog-check action-parity-check docs-coverage-check tools-check man bench perf-bench complexity-check csslint-check version-consistency-check sync docs-check para-split-check book-links-check cli-e2e e2e
 
 .DEFAULT_GOAL := help
 
@@ -10,8 +10,8 @@ help:
 	@echo '  Core:'
 	@echo '    check         Full quality gate (CI before release): cheap'
 	@echo '                  static gates first (ascii, complexity, spark-off,'
-	@echo '                  changelog, version, doc-links, action-parity,'
-	@echo '                  docs-coverage, tools-check), then'
+	@echo '                  changelog, version, version-consistency, doc-links,'
+	@echo '                  action-parity, docs-coverage, tools-check), then'
 	@echo '                  build+test+prove+doc+book+sbom,'
 	@echo '                  then count-sync checks (test-count, proof-status,'
 	@echo '                  description)'
@@ -75,6 +75,10 @@ help:
 	@echo '    docs-coverage-check  Fail when a CLI flag, a server route, or a'
 	@echo '                  usage/contributing page is missing from the user docs'
 	@echo '                  (tools/check-docs-coverage.py)'
+	@echo '    version-consistency-check  Fail when a manifest, the generated'
+	@echo '                  version spec, the built binary, or the committed SBOM'
+	@echo '                  name a different version'
+	@echo '                  (tools/check-version-consistency.py)'
 	@echo ''
 	@echo '  Release:'
 	@echo '    coverage-gate Compare docstring coverage between the latest two'
@@ -82,7 +86,10 @@ help:
 	@echo '                  in a temporary worktree at the latest tag)'
 	@echo '    bump-version  Bump version across alire.toml, alire-dev.toml,'
 	@echo '                  adacovex.ads, releases, index (VERSION=x.y.z)'
-	@echo '    release       Tag, update releases+index, push (tools/release.py).'
+	@echo '    release       Build, verify, prove, tag, update releases+index,'
+	@echo '                  push (tools/release.py). The release binary is'
+	@echo '                  built and version-checked first, so the proof'
+	@echo '                  pass runs the binary being released.'
 	@echo '                  Use VERSION=x.y.z; DRY_RUN=1 runs everything except'
 	@echo '                  commit/tag/push. (Runs a docstring-coverage gate'
 	@echo '                  comparing the last release against the current tree,'
@@ -100,8 +107,9 @@ help:
 	@echo '    clean         Remove build artifacts'
 	@echo ''
 	@echo 'check runs the same gates CI enforces before a release, cheap static'
-	@echo '  gates first (ascii, spark-off, changelog, version, doc-links,'
-	@echo '  action-parity, docs-coverage, tools), then'
+	@echo '  gates first (ascii, spark-off, changelog, version,'
+	@echo '  version-consistency, doc-links, action-parity, docs-coverage,'
+	@echo '  tools), then'
 	@echo '  build + native tests + SPARK proof (Platinum, 878 VCs) + SVG badges'
 	@echo '  + API docs + SBOM, then tree-wide count-sync checks (test-count,'
 	@echo '  proof-status, description) that fail when any live file carries a'
@@ -297,6 +305,7 @@ check:
 	@echo "=== Quality gate: tools unit tests ==="; $(MAKE) tools-check
 	@echo "=== Quality gate: CLI end-to-end ==="; $(MAKE) cli-e2e
 	@echo "=== Quality gate: version source ==="; python3 tools/gen-version.py --check
+	@echo "=== Quality gate: version consistency ==="; $(MAKE) version-consistency-check
 	@echo "=== Quality gate: doc links ==="; python3 tools/update-doc-links.py --check
 	@echo "=== Quality gate: markdown links ==="; $(MAKE) link-check
 	@echo "=== Quality gate: user documentation ==="; $(MAKE) docs-check
@@ -314,7 +323,15 @@ check:
 	@echo "=== Quality gate: proof metrics in sync ==="; python3 tools/update-proof-status.py --check
 	@echo "=== Quality gate: description sync ==="; python3 tools/update-description.py --check
 	@echo ""
-	@echo "=== Quality gate passed: ascii, complexity, csslint, spark-off, changelog, action-parity, docs-coverage, tools, cli-e2e, version, doc-links, link, docs-check, para-split, book-links, build, test, prove, doc, book, sbom, test-count, proof-status, description ==="
+	@echo "=== Quality gate passed: ascii, complexity, csslint, spark-off, changelog, action-parity, docs-coverage, tools, cli-e2e, version, version-consistency, doc-links, link, docs-check, para-split, book-links, build, test, prove, doc, book, sbom, test-count, proof-status, description ==="
+
+# Quality gate: alire.toml, alire-dev.toml, the generated Ada version spec,
+# the built binary, and the committed SBOM must all name the same version.
+# A stale binary or an un-regenerated spec otherwise slips through: make
+# release once proved the tree before it built the release binary, so the
+# proof pass and every artifact it wrote came from the previous release.
+version-consistency-check:
+	@python3 tools/check-version-consistency.py
 
 # Sync the crate description + long description from the canonical files
 # (alire/description.txt + alire/long-description.txt) into every manifest.

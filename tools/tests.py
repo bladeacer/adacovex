@@ -48,6 +48,7 @@ rst2md = importlib.import_module("rst2md")
 check_book_links = importlib.import_module("check-book-links")
 check_docs = importlib.import_module("check-docs")
 check_docs_coverage = importlib.import_module("check-docs-coverage")
+check_version = importlib.import_module("check-version-consistency")
 
 GIT_ENV: dict = {
     "GIT_AUTHOR_NAME": "adacovex test",
@@ -229,6 +230,169 @@ class TestRelease(unittest.TestCase):
         with tarfile.open(self._root / "adacovex-action-v1.2.3.tar.gz",
                           "r:gz") as tar:
             self.assertIn("action.yml", tar.getnames())
+
+    def _fake_binary(self, version: str, rc: int = 0) -> None:
+        """Write a bin/adacovex stub that reports `version` like the real one."""
+        (self._root / "bin").mkdir(exist_ok=True)
+        (self._root / "bin" / "adacovex").write_text(
+            "#!/bin/sh\n"
+            f"if [ \"$1\" = \"--version\" ]; then echo 'adacovex v{version}'; "
+            f"exit {rc}; fi\n"
+            "exit 1\n", encoding="utf-8")
+        (self._root / "bin" / "adacovex").chmod(0o755)
+
+    def test_verify_binary_version_match(self) -> None:
+        self._fake_binary("1.2.3")
+        with contextlib.redirect_stderr(io.StringIO()):
+            self.assertTrue(release.verify_binary_version("1.2.3"))
+
+    def test_verify_binary_version_rejects_stale_binary(self) -> None:
+        # The release-ordering regression: the binary under test still
+        # reports the previous release's version.
+        self._fake_binary("1.2.2")
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            self.assertFalse(release.verify_binary_version("1.2.3"))
+        self.assertIn("v1.2.2", err.getvalue())
+
+    def test_verify_binary_version_rejects_failed_probe(self) -> None:
+        self._fake_binary("1.2.3", rc=2)
+        with contextlib.redirect_stderr(io.StringIO()):
+            self.assertFalse(release.verify_binary_version("1.2.3"))
+
+    def test_build_release_binary_forces_the_tag_version(self) -> None:
+        # The release must build through tools/build.py --release with
+        # ADACOVEX_VERSION set, so the regeneration steps (CSS gate,
+        # dashboard, bundled manual) run exactly as they do for a dev build.
+        tools_dir = self._root / "tools"
+        (tools_dir / "build.py").write_text("", encoding="utf-8")
+        seen: dict = {}
+
+        def fake_sh(cmd: List[str], check: bool = True, **kwargs) -> object:
+            seen["cmd"] = cmd
+            seen["env"] = kwargs.get("env", {})
+            return subprocess.CompletedProcess(cmd, 0)
+
+        with mock.patch.object(release, "sh", fake_sh):
+            self.assertEqual(release.build_release_binary("1.2.3"), 0)
+        self.assertIn("tools/build.py", seen["cmd"])
+        self.assertIn("--release", seen["cmd"])
+        self.assertEqual(seen["env"]["ADACOVEX_VERSION"], "1.2.3")
+
+    def test_release_builds_before_proving(self) -> None:
+        # make release proved the tree before it built the release binary,
+        # so the proof pass ran the previous release's binary.  Pin the
+        # order: build, verify, then prove.
+        order: List[str] = []
+
+        def fake_sh(cmd: List[str], check: bool = True, **kwargs) -> object:
+            joined = " ".join(cmd)
+            for step in ("tools/build.py", "--version", "prove", "coverage-delta"):
+                if step in joined:
+                    order.append(step)
+                    break
+            return subprocess.CompletedProcess(
+                cmd, 0, stdout="adacovex v1.2.3\n")
+
+        with mock.patch.object(release, "sh", fake_sh), \
+                mock.patch.object(release, "previous_tag", return_value=None), \
+                mock.patch.object(release, "changelogs_for", return_value=[]), \
+                mock.patch.object(release, "bundle"), \
+                mock.patch.object(release, "attest"), \
+                mock.patch.object(release, "bump_manifests"), \
+                mock.patch.object(release, "git_tag_ops"):
+            self.assertEqual(release.release("1.2.3", "", "o/r", True), 0)
+        self.assertLess(order.index("tools/build.py"), order.index("--version"))
+        self.assertLess(order.index("--version"), order.index("prove"))
+
+
+class TestVersionConsistency(unittest.TestCase):
+    """Every version source must name the same version."""
+
+    def setUp(self) -> None:
+        self._orig_root = check_version.ROOT
+        self._orig = (check_version.MANIFESTS, check_version.VERSION_SPEC,
+                      check_version.BINARY, check_version.SBOM)
+        self._tmp = tempfile.TemporaryDirectory()
+        self._root = Path(self._tmp.name)
+        check_version.ROOT = self._root
+        (self._root / "src").mkdir()
+        (self._root / "bin").mkdir()
+        check_version.MANIFESTS = (self._root / "alire.toml",
+                                   self._root / "alire-dev.toml")
+        check_version.VERSION_SPEC = self._root / "src" / "adacovex_version_info.ads"
+        check_version.BINARY = self._root / "bin" / "adacovex"
+        check_version.SBOM = self._root / "sbom.json"
+
+    def tearDown(self) -> None:
+        check_version.ROOT = self._orig_root
+        (check_version.MANIFESTS, check_version.VERSION_SPEC,
+         check_version.BINARY, check_version.SBOM) = self._orig
+        self._tmp.cleanup()
+
+    def _write(self, version: str, dev: str = None, spec: str = None,
+               sbom_tool: str = None, sbom_root: str = None) -> None:
+        """Write a consistent tree, then override the parts under test."""
+        dev = dev or version
+        spec = spec or version
+        sbom_tool = sbom_tool or version
+        sbom_root = sbom_root or version
+        (self._root / "alire.toml").write_text(f'version = "{version}"\n',
+                                              encoding="utf-8")
+        (self._root / "alire-dev.toml").write_text(f'version = "{dev}"\n',
+                                                   encoding="utf-8")
+        (self._root / "src" / "adacovex_version_info.ads").write_text(
+            f'   Version : constant String := "{spec}";\n', encoding="utf-8")
+        (self._root / "sbom.json").write_text(
+            '{"name": "adacovex", "version": "%s"}, '
+            '"purl": "pkg:alire/covex@%s"\n' % (sbom_tool, sbom_root),
+            encoding="utf-8")
+
+    def test_consistent_tree_passes(self) -> None:
+        self._write("1.2.3")
+        self.assertEqual(check_version.check("1.2.3"), [])
+
+    def test_unbuilt_binary_is_skipped(self) -> None:
+        # The gate must be meaningful in a fresh checkout before make build.
+        self._write("1.2.3")
+        self.assertIsNone(check_version.binary_version())
+        self.assertEqual(check_version.check("1.2.3"), [])
+
+    def test_dev_manifest_drift(self) -> None:
+        self._write("1.2.3", dev="1.2.2")
+        problems = check_version.check("1.2.3")
+        self.assertTrue(any("alire-dev.toml" in p for p in problems))
+
+    def test_stale_version_spec(self) -> None:
+        self._write("1.2.3", spec="1.2.2")
+        problems = check_version.check("1.2.3")
+        self.assertTrue(any("gen-version.py" in p for p in problems))
+
+    def test_stale_binary(self) -> None:
+        self._write("1.2.3")
+        (self._root / "bin" / "adacovex").write_text(
+            "#!/bin/sh\necho 'adacovex v1.2.2'\n", encoding="utf-8")
+        (self._root / "bin" / "adacovex").chmod(0o755)
+        problems = check_version.check("1.2.3")
+        self.assertTrue(any("is stale" in p for p in problems))
+
+    def test_sbom_tool_version_behind_release(self) -> None:
+        # The exact defect the committed 1.54.0 tree carried.
+        self._write("1.2.3", sbom_tool="1.2.2")
+        problems = check_version.check("1.2.3")
+        self.assertTrue(any("make sbom" in p for p in problems))
+
+    def test_sbom_internal_disagreement(self) -> None:
+        self._write("1.2.3", sbom_root="1.2.2")
+        problems = check_version.check("1.2.3")
+        self.assertTrue(any("root component" in p for p in problems))
+
+    def test_readers(self) -> None:
+        self._write("1.2.3")
+        self.assertEqual(check_version.manifest_version(self._root / "alire.toml"),
+                         "1.2.3")
+        self.assertEqual(check_version.spec_version(), "1.2.3")
+        self.assertEqual(check_version.sbom_versions(), ("1.2.3", "1.2.3"))
 
 
 class TestDevCmd(unittest.TestCase):
