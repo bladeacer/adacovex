@@ -82,7 +82,7 @@ begin
          --  resolved latest version when none is pinned, and the licence
          --  and website when the resolver's CLI answers.
          Resolve_Ecosystem_Metadata
-           (T, "pypi", N, Lic, L_Ln, Vb, V_Ln, Web, W_Ln);
+           (T, "pypi", N, V'Length > 0, False, Lic, L_Ln, Vb, V_Ln, Web, W_Ln);
          declare
             Ver   : constant String :=
               (if V'Length > 0

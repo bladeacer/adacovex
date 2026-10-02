@@ -1798,20 +1798,60 @@ class TestCheckBookLinks(unittest.TestCase):
         self.assertEqual(check_book_links.check_bundle_links(assets), [])
 
     def test_fresh_build_produces_whole_book(self) -> None:
-        # The link check runs against a fresh temp build (docs/_build/html is
-        # a local, gitignored product): a stale local build must never mask a
+        # The link check runs against a fresh build (docs/_build/html is a
+        # local, gitignored product): a stale local build must never mask a
         # broken link.  Requires sphinx-build, exactly like the gate itself.
+        #
+        # `make check` builds the manual twice -- once for the
+        # book-links-check gate and once here -- and a full Sphinx build was
+        # the most expensive thing in the gate list (measured 17.6-31.8 s for
+        # the gate and 18.57 s for this case).  Both now go through
+        # check_book_links.fresh_book(), whose cache is keyed by the docs
+        # content digest plus the Sphinx build identity, so the first caller
+        # builds and the second reuses.  A changed docs/ tree still rebuilds,
+        # which is the property that keeps a stale build from masking a
+        # broken link.
         if gen_docs.sphinx_build_cmd() is None:
             self.skipTest("sphinx-build not resolvable (PATH or .venv)")
-        with tempfile.TemporaryDirectory(prefix="adacovex-book-") as td:
-            dest = Path(td)
-            self.assertTrue(check_book_links.sphinx_build_into(dest))
-            out = dest / "out"
-            self.assertTrue((out / "index.html").is_file())
-            self.assertTrue((out / "searchindex.js").is_file())
-            # The fresh build carries the same self-contained link surface.
-            assets = gen_docs.collect_assets(out)
-            self.assertEqual(check_book_links.check_bundle_links(assets), [])
+        out = check_book_links.fresh_book()
+        self.assertIsNotNone(out, "a fresh manual build is available")
+        assert out is not None
+        self.assertTrue((out / "index.html").is_file())
+        self.assertTrue((out / "searchindex.js").is_file())
+        # The fresh build carries the same self-contained link surface.
+        assets = gen_docs.collect_assets(out)
+        self.assertEqual(check_book_links.check_bundle_links(assets), [])
+
+    def test_fresh_build_is_cached_by_content(self) -> None:
+        # The shared build must be keyed by the docs content, so a second
+        # call reuses it and a changed tree does not.
+        if gen_docs.sphinx_build_cmd() is None:
+            self.skipTest("sphinx-build not resolvable (PATH or .venv)")
+        key = check_book_links.book_build_key()
+        self.assertIsNotNone(key)
+        assert key is not None
+        self.assertEqual(key, check_book_links.book_build_key(),
+                         "the build key is stable for an unchanged tree")
+        # The key carries the sphinx-build path, so it is sanitised where it
+        # becomes a directory name; the sanitised name must stay one level.
+        safe = re.sub(r"[^A-Za-z0-9._-]", "_", key)
+        self.assertNotIn("/", safe, "the cache entry name is one level")
+        self.assertNotIn(os.sep, safe, "the cache entry name has no separator")
+
+    def test_cached_build_survives_a_docs_change(self) -> None:
+        # A docs/ edit must change the key, so the cached build is never
+        # served for content it was not built from.
+        if gen_docs.sphinx_build_cmd() is None:
+            self.skipTest("sphinx-build not resolvable (PATH or .venv)")
+        before = check_book_links.book_build_key()
+        marker = check_book_links.ROOT / "docs" / "_book_key_probe.md"
+        try:
+            marker.write_text("cache key probe\n", encoding="utf-8")
+            after = check_book_links.book_build_key()
+        finally:
+            marker.unlink(missing_ok=True)
+        self.assertNotEqual(before, after,
+                            "a new docs page changes the build key")
 
 
 if __name__ == "__main__":

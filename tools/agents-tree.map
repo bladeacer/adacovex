@@ -64,8 +64,8 @@ src/tests/adacovex_do178c_tests	HLR/LLR parsing and line-reader tests (33)
 src/tests/adacovex_completion_tests	Shell completion script tests (24)
 src/tests/adacovex_renderer_svg_tests	SVG renderer tests (161)
 src/tests/adacovex_renderer_tests	HTML/Markdown renderer tests (58)
-src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (288)
-src/tests/test_runner	Test suite entry point (1637 tests)
+src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (308)
+src/tests/test_runner	Test suite entry point (1657 tests)
 src/parsers/adacovex-parsers-manifest-req_entry	Parse the first requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-collect_req_entries	Collect every requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-register_root_python_deps	Register root requirements*.txt entries as dev-scope pypi components
@@ -102,5 +102,7 @@ src/parsers/adacovex-parsers-manifest-language_summary	Rank and join a language 
 src/parsers/adacovex-parsers-manifest-read_manifest_deps	Collect crate names from a manifest [[depends-on]] section
 src/parsers/adacovex-parsers-manifest-add_dep_name	Append a crate name to a name vector unless already present
 src/parsers/adacovex-parsers-manifest-go_module_path	Read the module path from the first "module" line of go.mod
+src/parsers/adacovex-parsers-manifest-go_module_version	Read a Go module's version from a vendor/modules.txt entry
+src/parsers/adacovex-parsers-manifest-license_id	Classify a sibling licence file into an SPDX identifier
 src/parsers/adacovex-parsers-manifest-probe_version	Probe a tool's version by spawning it and parsing its output
 src/parsers/adacovex-parsers-manifest-make_tool	Build a Tool_Entry (name + category) from string literals

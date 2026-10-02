@@ -142,6 +142,74 @@ package body Adacovex_SBOM_Tests is
          end if;
    end Write_File;
 
+   --  Path of the cached referenced-tool set inside Dir, or "" when no
+   --  such entry exists. A cache entry lives at <root>/<2 chars>/<key>,
+   --  and the tool set is the one keyed "tools:...", so the two-character
+   --  bucket is "to". Locating the entry is what lets the fingerprint
+   --  healing test corrupt a stored fingerprint the way a replaced binary
+   --  would.
+   function Tools_Set_Path (Dir : String) return String is
+      use Ada.Directories;
+      S : Search_Type;
+      E : Directory_Entry_Type;
+   begin
+      if not Exists (Dir & "/to") then
+         return "";
+      end if;
+      Start_Search (S, Dir & "/to", "");
+      while More_Entries (S) loop
+         Get_Next_Entry (S, E);
+         declare
+            N : constant String := Simple_Name (E);
+         begin
+            if Kind (E) = Ordinary_File
+              and then N'Length > 6
+              and then N (N'First .. N'First + 5) = "tools:"
+            then
+               declare
+                  R : constant String := Full_Name (E);
+               begin
+                  End_Search (S);
+                  return R;
+               end;
+            end if;
+         end;
+      end loop;
+      End_Search (S);
+      return "";
+   end Tools_Set_Path;
+
+   function Read_Whole (Path : String) return String is
+      F    : Ada.Text_IO.File_Type;
+      R    : String (1 .. 8192) := (others => ' ');
+      Used : Natural := 0;
+   begin
+      if Path'Length = 0 then
+         return "";
+      end if;
+      Ada.Text_IO.Open (F, Ada.Text_IO.In_File, Path);
+      while not Ada.Text_IO.End_Of_File (F) loop
+         declare
+            Line : constant String := Ada.Text_IO.Get_Line (F);
+         begin
+            for C in Line'Range loop
+               if Used < R'Last then
+                  Used := Used + 1;
+                  R (Used) := Line (C);
+               end if;
+            end loop;
+         end;
+      end loop;
+      Ada.Text_IO.Close (F);
+      return R (1 .. Used);
+   exception
+      when others =>
+         if Ada.Text_IO.Is_Open (F) then
+            Ada.Text_IO.Close (F);
+         end if;
+         return "";
+   end Read_Whole;
+
    procedure Make_Fixture is
    begin
       Ada.Directories.Create_Path (Fixture & "/alire");
@@ -770,6 +838,139 @@ package body Adacovex_SBOM_Tests is
          "module github.com/foo/bar" & ASCII.LF & "go 1.21" & ASCII.LF);
    end Make_Test_Label_Go_Fixture;
 
+   --  Fixture whose vendored Go tree ships a module manifest and licence
+   --  files. A vendored module's own go.mod states the module path but
+   --  never its own version, so the version comes from the vendor root's
+   --  modules.txt and the licence from the classified licence file. Both
+   --  answers are offline and forge-independent.
+   procedure Make_Go_Resolve_Fixture is
+      D : constant String := "obj/sbom_go_resolve";
+   begin
+      Write_File
+        (D & "/alire.toml",
+         "name = ""gores""" & ASCII.LF & "version = ""1.0.0""" & ASCII.LF);
+      Write_File
+        (D & "/go.mod",
+         "module example.com/app"
+         & ASCII.LF
+         & "go 1.21"
+         & ASCII.LF
+         & "require github.com/stretchr/testify v1.8.4"
+         & ASCII.LF);
+      Write_File
+        (D & "/vendor/modules.txt",
+         "# github.com/stretchr/testify v1.8.4"
+         & ASCII.LF
+         & "## explicit; go 1.20"
+         & ASCII.LF
+         & "github.com/stretchr/testify/assert"
+         & ASCII.LF
+         & "# example.com/bsd4 v1.0.0"
+         & ASCII.LF
+         & "## explicit; go 1.11"
+         & ASCII.LF
+         & "example.com/bsd4"
+         & ASCII.LF
+         & "# gopkg.in/yaml.v3 v3.0.1"
+         & ASCII.LF
+         & "## explicit; go 1.11"
+         & ASCII.LF
+         & "gopkg.in/yaml.v3"
+         & ASCII.LF);
+      Write_File
+        (D & "/vendor/testify/go.mod",
+         "module github.com/stretchr/testify"
+         & ASCII.LF
+         & "go 1.21"
+         & ASCII.LF);
+      Write_File
+        (D & "/vendor/testify/LICENSE",
+         "MIT License"
+         & ASCII.LF
+         & ASCII.LF
+         & "Copyright (c) 2012-2020 Mat Ryer and contributors."
+         & ASCII.LF
+         & ASCII.LF
+         & "Permission is hereby granted, free of charge, to any person"
+         & ASCII.LF
+         & "obtaining a copy of this software and associated documentation"
+         & ASCII.LF
+         & "files (the ""Software""), to deal in the Software without"
+         & ASCII.LF
+         & "restriction, including without limitation the rights to use,"
+         & ASCII.LF
+         & "copy, modify, merge, publish, distribute, sublicense, and/or"
+         & ASCII.LF
+         & "sell copies of the Software."
+         & ASCII.LF
+         & ASCII.LF
+         & "THE SOFTWARE IS PROVIDED ""AS IS"", WITHOUT WARRANTY OF ANY KIND,"
+         & ASCII.LF
+         & "EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES"
+         & ASCII.LF
+         & "OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND"
+         & ASCII.LF
+         & "NONINFRINGEMENT."
+         & ASCII.LF);
+      Write_File
+        (D & "/vendor/gopkg.in/yaml.v3/go.mod",
+         "module gopkg.in/yaml.v3" & ASCII.LF & "go 1.11" & ASCII.LF);
+      Write_File
+        (D & "/vendor/gopkg.in/yaml.v3/LICENSE",
+         "Copyright 2009 The Go Authors."
+         & ASCII.LF
+         & ASCII.LF
+         & "Redistribution and use in source and binary forms, with or"
+         & ASCII.LF
+         & "without modification, are permitted provided that the"
+         & ASCII.LF
+         & "following conditions are met:"
+         & ASCII.LF
+         & ASCII.LF
+         & "   * Neither the name of Google LLC nor the names of its"
+         & ASCII.LF
+         & "     contributors may be used to endorse or promote products"
+         & ASCII.LF
+         & "     derived from this software without specific prior"
+         & ASCII.LF
+         & "     written permission."
+         & ASCII.LF);
+      --  A module with no licence file: a licence is never guessed, so the
+      --  component keeps an empty licence.
+      Write_File
+        (D & "/vendor/apacheish/go.mod",
+         "module example.com/apacheish" & ASCII.LF & "go 1.21" & ASCII.LF);
+      --  A four-clause BSD text carries the three-clause marker and the
+      --  advertising clause. Reporting BSD-3-Clause for it would be wrong,
+      --  so the exclusion rule must leave the licence empty instead.
+      Write_File
+        (D & "/vendor/bsd4/go.mod",
+         "module example.com/bsd4" & ASCII.LF & "go 1.11" & ASCII.LF);
+      Write_File
+        (D & "/vendor/bsd4/LICENSE",
+         "Redistribution and use in source and binary forms, with or"
+         & ASCII.LF
+         & "without modification, are permitted provided that the"
+         & ASCII.LF
+         & "following conditions are met:"
+         & ASCII.LF
+         & ASCII.LF
+         & "   * All advertising materials mentioning features or use of"
+         & ASCII.LF
+         & "     this software must display the following acknowledgement:"
+         & ASCII.LF
+         & "       This product includes software developed by Example."
+         & ASCII.LF
+         & "   * Neither the name of Example nor the names of its"
+         & ASCII.LF
+         & "     contributors may be used to endorse or promote products"
+         & ASCII.LF
+         & "     derived from this software without specific prior"
+         & ASCII.LF
+         & "     written permission."
+         & ASCII.LF);
+   end Make_Go_Resolve_Fixture;
+
    --  Fixture whose owning manifest is a Cargo.toml without a
    --  [dev-dependencies] section, plus a Cargo.lock: the name heuristic
    --  applies to lockfile-resolved crate names, so the test-case crate
@@ -1368,6 +1569,148 @@ package body Adacovex_SBOM_Tests is
          end;
       end;
 
+      --  A stored fingerprint that no longer matches the installed binary
+      --  must heal after exactly one run. The referenced-tool set is cached
+      --  with each probe's binary-identity fingerprint, and a cache hit
+      --  re-validates every fingerprint: a mismatch means the tool was
+      --  upgraded, so it re-probes. The refreshed fingerprints must then be
+      --  written back. When they were not, the stale entry survived, the
+      --  mismatch was detected again on the next run, and every later run
+      --  re-probed the same tool forever (measured: a warm run at 976 ms
+      --  against 57 ms for an unchanged tree). This test corrupts one
+      --  stored fingerprint the way a replaced binary would and pins that
+      --  the stored entry is rewritten, so the stale fingerprint cannot
+      --  survive a second run.
+      declare
+         Pid       : constant String :=
+           Integer'Image
+             (GNAT.OS_Lib.Pid_To_Integer (GNAT.OS_Lib.Current_Process_Id));
+         CDir      : constant String :=
+           "obj/sbom_tools_heal-" & Pid (2 .. Pid'Last);
+         G         : Component_Vectors.Vector;
+         Success   : Boolean := False;
+         Prev_Dir  : String (1 .. 256) := (others => ' ');
+         Prev_Len  : Natural := 0;
+         Blob_File : String (1 .. 512) := (others => ' ');
+         BFLen     : Natural := 0;
+         At_Pos    : Natural := 0;
+         Zeros     : constant String := String'(1 .. 64 => '0');
+      begin
+         Adacovex.Cache.Cache_Dir (Prev_Dir, Prev_Len);
+         Adacovex.Cache.Set_Cache_Dir (CDir);
+
+         Make_Sysdep_Fixture;
+
+         --  Miss: scan the fixture and store the set.
+         Adacovex.Parsers.Manifest.Build_Dependency_Graph
+           ("obj/sbom_sysdep_fixture",
+            "obj/sbom_sysdep_fixture/alire.toml",
+            G,
+            Success);
+         R.Check (Success, "tools-heal graph build succeeds (miss)");
+         Adacovex.Parsers.Manifest.Discover_System_Dev_Deps
+           ("obj/sbom_sysdep_fixture", G);
+
+         --  Locate the stored set. A fixture that probes nothing installed
+         --  stores no fingerprints, so the healing case cannot be exercised
+         --  and the remaining checks are skipped rather than failed.
+         declare
+            Raw : constant String := Tools_Set_Path (CDir);
+         begin
+            if Raw'Length <= Blob_File'Length then
+               for I in Raw'Range loop
+                  Blob_File (I) := Raw (I);
+               end loop;
+               BFLen := Raw'Length;
+            end if;
+         end;
+         R.Check (BFLen > 0, "tools-heal stored set is locatable");
+
+         if BFLen > 0 then
+            --  Corrupt the first stored fingerprint: rewrite the 64
+            --  characters after the first '@' with a value no live binary
+            --  can produce, exactly as a replaced binary would.
+            declare
+               T : constant String := Read_Whole (Blob_File (1 .. BFLen));
+               F : Ada.Text_IO.File_Type;
+            begin
+               for I in T'Range loop
+                  if T (I) = '@' then
+                     At_Pos := I;
+                     exit;
+                  end if;
+               end loop;
+               if At_Pos > 0 and then At_Pos + 64 <= T'Last then
+                  begin
+                     Ada.Text_IO.Create
+                       (F, Ada.Text_IO.Out_File, Blob_File (1 .. BFLen));
+                     for I in T'Range loop
+                        if I >= At_Pos + 1 and then I <= At_Pos + 64 then
+                           Ada.Text_IO.Put (F, '0');
+                        else
+                           Ada.Text_IO.Put (F, T (I));
+                        end if;
+                     end loop;
+                     Ada.Text_IO.Close (F);
+                  exception
+                     when others =>
+                        if Ada.Text_IO.Is_Open (F) then
+                           Ada.Text_IO.Close (F);
+                        end if;
+                  end;
+               end if;
+            end;
+
+            R.Check
+              (At_Pos > 0
+               and then Contains (Read_Whole (Blob_File (1 .. BFLen)), Zeros),
+               "a stored fingerprint can be made stale");
+
+            --  Hit with the stale fingerprint: the tool re-probes and the
+            --  refreshed set must be written back.
+            G.Clear;
+            Adacovex.Parsers.Manifest.Build_Dependency_Graph
+              ("obj/sbom_sysdep_fixture",
+               "obj/sbom_sysdep_fixture/alire.toml",
+               G,
+               Success);
+            R.Check (Success, "tools-heal graph build succeeds (hit)");
+            Adacovex.Parsers.Manifest.Discover_System_Dev_Deps
+              ("obj/sbom_sysdep_fixture", G);
+
+            declare
+               After : constant String := Read_Whole (Blob_File (1 .. BFLen));
+            begin
+               --  The injected fingerprint must be gone: the healed entry
+               --  no longer carries it.
+               R.Check
+                 (not Contains (After, Zeros),
+                  "a re-probed fingerprint is written back to the cache");
+
+               --  And the refreshed entry must still be a well-formed set:
+               --  names, the '|' separator, then name=version@digest pairs.
+               R.Check
+                 (Contains (After, "|"),
+                  "the healed tool set keeps its probe separator");
+               R.Check
+                 (Contains (After, "@"),
+                  "the healed tool set keeps a fingerprint");
+            end;
+         end if;
+
+         if Prev_Len > 0 then
+            Adacovex.Cache.Set_Cache_Dir (Prev_Dir (1 .. Prev_Len));
+         end if;
+         begin
+            if Ada.Directories.Exists (CDir) then
+               Ada.Directories.Delete_Tree (CDir);
+            end if;
+         exception
+            when others =>
+               null;
+         end;
+      end;
+
       --  CycloneDX 1.5 JSON rendering.
       declare
          Graph   : Component_Vectors.Vector;
@@ -1825,6 +2168,66 @@ package body Adacovex_SBOM_Tests is
          R.Check
            (C.Scope = Scope_Vendored,
             "foo/bar scope = vendored (regular module)");
+      end;
+
+      --  Go resolution: a vendored module's version comes from the vendor
+      --  root's modules.txt (its own go.mod never states it) and its
+      --  licence from the classified licence file beside the manifest. Both
+      --  are offline, so the assertions hold with no network and no `go`
+      --  on PATH. A module with no licence file keeps an empty licence:
+      --  a licence is never guessed.
+      declare
+         Graph   : Component_Vectors.Vector;
+         Success : Boolean := False;
+         C       : Component_Info;
+      begin
+         Make_Go_Resolve_Fixture;
+         Adacovex.Parsers.Manifest.Build_Dependency_Graph
+           ("obj/sbom_go_resolve",
+            "obj/sbom_go_resolve/alire.toml",
+            Graph,
+            Success);
+         R.Check (Success, "go resolve graph success");
+         C := Find_Name (Graph, "github.com/stretchr/testify");
+         R.Check (C.Name_Len > 0, "testify module registered");
+         R.Check
+           (C.Version_Len = 6
+            and then C.Version (1 .. C.Version_Len) = "v1.8.4",
+            "testify version from modules.txt");
+         R.Check
+           (C.License_Len = 3 and then C.License (1 .. C.License_Len) = "MIT",
+            "testify licence classified from LICENSE");
+         R.Check
+           (Ada.Strings.Fixed.Index
+              (C.PURL (1 .. C.PURL_Len),
+               "pkg:golang/github.com/stretchr/testify")
+            > 0,
+            "testify purl keeps the golang type");
+         --  A vanity import path (no forge host) resolves the same way.
+         C := Find_Name (Graph, "gopkg.in/yaml.v3");
+         R.Check (C.Name_Len > 0, "yaml.v3 module registered");
+         R.Check
+           (C.Version_Len = 6
+            and then C.Version (1 .. C.Version_Len) = "v3.0.1",
+            "yaml.v3 version from modules.txt");
+         R.Check
+           (C.License_Len = 12
+            and then C.License (1 .. C.License_Len) = "BSD-3-Clause",
+            "yaml.v3 licence classified as BSD-3-Clause");
+         C := Find_Name (Graph, "example.com/bsd4");
+         R.Check (C.Name_Len > 0, "bsd4 module registered");
+         R.Check
+           (C.License_Len = 0,
+            "four-clause BSD text reports no licence (never misreported"
+            & " as BSD-3-Clause)");
+         C := Find_Name (Graph, "example.com/apacheish");
+         R.Check (C.Name_Len > 0, "licenceless module registered");
+         R.Check
+           (C.Version_Len = 0,
+            "licenceless module has no version (absent from modules.txt)");
+         R.Check
+           (C.License_Len = 0,
+            "licenceless module keeps an empty licence (never guessed)");
       end;
 
       --  Cargo.lock: the name heuristic applies to lockfile-resolved crate

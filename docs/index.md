@@ -3,15 +3,15 @@
 This page is the index for all adacovex documentation. Pick a section
 relevant to you, or read the pages in the order below.
 
-**Read [Site transparency](site-transparency.md) first.** The page is the first
-entry in the sidebar, so you can reach it from every page. It states what the
-online manual records when you read it: search, traffic analytics,
-advertising, and the flyout menu.
+**Read [Site transparency](site-transparency.md) first.** It is the first entry
+in the sidebar, so you can reach it from every page. It states what the online
+manual records when you read it: search, traffic analytics, advertising, and
+the flyout menu.
 
 All documentation uses British English and ASD-STE100 Simplified Technical
 English. The controlled Technical Names dictionary lives in
-[STE100 Technical Names](contributing/ste100/index.md). Use it
-before you use a technical word in any doc, docstring, or changelog.
+[STE100 Technical Names](contributing/ste100/index.md); use it before you use
+a technical word in any doc, docstring, or changelog.
 
 ## Getting started
 
@@ -32,9 +32,8 @@ before you use a technical word in any doc, docstring, or changelog.
 - [Web dashboard](usage/dashboard.md) -- the HTML report, the JSON API, the
   dependency views, the metric charts, the themes, and the bundled offline
   manual.
-- [SBOM](usage/sbom.md) -- the software-bill-of-materials generator. Licence
-  and dependency resolution is on
-  [SBOM dependency resolution](usage/sbom-resolution.md).
+- [SBOM](usage/sbom.md) -- the bill-of-materials generator, with
+  [dependency resolution](usage/sbom-resolution.md) for licences and versions.
 - [Global configuration and state](usage/configuration.md) -- the optional
   `~/.adacovex/adacovex.toml` file, the environment variables, and the cache
   and toolchain directories.
@@ -76,7 +75,8 @@ before you use a technical word in any doc, docstring, or changelog.
   categorisation.
 - [Performance](contributing/perf/index.md) -- the benchmark categories and
   the current numbers, with [how to run them](contributing/perf/benchmarks.md),
-  the [per-phase prove timings](contributing/perf/prove-timing.md), and the
+  the [per-phase prove timings](contributing/perf/prove-timing.md) and its
+  [1.55.0 re-baseline](contributing/perf/prove-rebaseline.md), plus the
   [optimisation history](contributing/perf/optimisation-history.md).
 - [gnatprove-friendly IR](contributing/ir.md) -- the design exploration for
   synthesising bounded, contract-carrying code.
@@ -205,6 +205,7 @@ contributing/perf/benchmarks-timings
 contributing/perf/benchmarks-binary-size
 contributing/perf/benchmarks-server
 contributing/perf/prove-timing
+contributing/perf/prove-rebaseline
 contributing/perf/optimisation-history
 ```
 

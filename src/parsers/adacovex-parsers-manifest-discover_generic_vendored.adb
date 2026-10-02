@@ -165,7 +165,7 @@ is
                declare
                   M : Vendor_Manifest;
                begin
-                  Read_Vendor_Manifest (Dir_Path, M);
+                  Read_Vendor_Manifest (Dir_Path, Root, M);
                   if M.Found then
                      declare
                         N       : String :=
@@ -202,8 +202,10 @@ is
                         --  values win; the registry fills the gaps.
                         Resolve_Ecosystem_Metadata
                           (Target_Dir,
-                           M.PURL_Kind (1 .. M.PURL_Kind_Len),
+                           M.Eco (1 .. M.Eco_Len),
                            N,
+                           V'Length > 0,
+                           M.License_Len > 0,
                            Lic_Buf,
                            Lic_Len,
                            Ver_Buf,

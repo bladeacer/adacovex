@@ -7,28 +7,39 @@ separate (Adacovex.Parsers.Manifest)
 --  metadata field -- the registry key to query and how to parse the value
 --  out of the command output. Adding an ecosystem is a one-row edit.
 --
---  Ecosystems with no reliable registry CLI (for example go) carry an empty
---  tool so the resolver returns quietly and the vendored-manifest scanner
---  still reads any in-repo licence file. The alr row folds the former
---  Alr_Show_Crate path into the same table: one `alr show` answers for
---  version, licence and website without network access. The npm and pnpm
---  rows issue a single `view <pkg> version license homepage --json` call and
---  parse the JSON, so they boot node only once per component instead of once
---  per field -- the main responsiveness win for vendored JavaScript trees.
+--  Ecosystems with no reliable registry CLI carry an empty tool so the
+--  resolver returns quietly and the vendored-manifest scanner still reads
+--  any in-repo licence file. The alr row folds the former Alr_Show_Crate
+--  path into the same table: one `alr show` answers for version, licence
+--  and website without network access. The npm and pnpm rows issue a single
+--  `view <pkg> version license homepage --json` call and parse the JSON, so
+--  they boot node only once per component instead of once per field -- the
+--  main responsiveness win for vendored JavaScript trees. The go row uses
+--  the module-query shape (`go list -m -json <mod>@latest`) and reads only
+--  the version: the Go toolchain reports no licence and no website, and
+--  adacovex never guesses either.
 --
 --  The resolved answer is cached per project (under the project's result
 --  cache, keyed by the target directory) so a warm run never spawns a
 --  registry CLI and one project never serves another's licence or version.
+--
+--  A spawn is skipped when the row's table entry can add nothing the caller
+--  does not already hold: Have_Version and Have_License report what the
+--  offline manifest read answered, so a complete offline read (a Go vendor
+--  tree with modules.txt and licence files) never pays one registry spawn
+--  per component for an answer it would discard.
 procedure Resolve_Ecosystem_Metadata
-  (Target    : String;
-   Ecosystem : String;
-   Name      : String;
-   License   : out Types.Desc_Field;
-   Lic_Len   : out Natural;
-   Version   : out Types.Desc_Field;
-   Ver_Len   : out Natural;
-   Website   : out Types.Path_Field;
-   Web_Len   : out Natural)
+  (Target       : String;
+   Ecosystem    : String;
+   Name         : String;
+   Have_Version : Boolean;
+   Have_License : Boolean;
+   License      : out Types.Desc_Field;
+   Lic_Len      : out Natural;
+   Version      : out Types.Desc_Field;
+   Ver_Len      : out Natural;
+   Website      : out Types.Path_Field;
+   Web_Len      : out Natural)
 is
    function Norm_Target (S : String) return String is
    begin
@@ -52,175 +63,199 @@ is
    end record;
 
    type Eco_Query is record
-      Kind   : String (1 .. 7);
-      KLen   : Natural;
-      Tool   : String (1 .. 8);
-      TLen   : Natural;
-      Sub    : String (1 .. 8);
-      SLen   : Natural;
-      Sub2   : String (1 .. 8) := (others => ' ');
-      Sub2Ln : Natural := 0;
-      V      : Eco_Field;
-      L      : Eco_Field;
-      W      : Eco_Field;
-      Single : Boolean;
-      Json   : Boolean := False;
+      Kind      : String (1 .. 7);
+      KLen      : Natural;
+      Tool      : String (1 .. 8);
+      TLen      : Natural;
+      Sub       : String (1 .. 8);
+      SLen      : Natural;
+      Sub2      : String (1 .. 8) := (others => ' ');
+      Sub2Ln    : Natural := 0;
+      V         : Eco_Field;
+      L         : Eco_Field;
+      W         : Eco_Field;
+      Single    : Boolean;
+      Json      : Boolean := False;
+      --  Whether the JSON spawn takes the registry module query shape
+      --  ("<tool> <sub> <sub2> --json <name>@latest") instead of the
+      --  npm/pnpm view shape. The field keys then come from the row.
+      Mod_Query : Boolean := False;
    end record;
 
    Table : constant array (1 .. 8) of Eco_Query :=
      (1 =>
-        (Kind   => "npm" & (4 .. 7 => ' '),
-         KLen   => 3,
-         Tool   => "npm" & (4 .. 8 => ' '),
-         TLen   => 3,
-         Sub    => "view" & (5 .. 8 => ' '),
-         SLen   => 4,
-         V      =>
+        (Kind      => "npm" & (4 .. 7 => ' '),
+         KLen      => 3,
+         Tool      => "npm" & (4 .. 8 => ' '),
+         TLen      => 3,
+         Sub       => "view" & (5 .. 8 => ' '),
+         SLen      => 4,
+         V         =>
            (Field => "version" & (8 .. 16 => ' '), FLen => 7, Fmt => Eco_Bare),
-         L      =>
+         L         =>
            (Field => "license" & (8 .. 16 => ' '), FLen => 7, Fmt => Eco_Bare),
-         W      =>
+         W         =>
            (Field => "homepage" & (9 .. 16 => ' '),
             FLen  => 8,
             Fmt   => Eco_Bare),
-         Sub2   => (others => ' '),
-         Sub2Ln => 0,
-         Single => True,
-         Json   => True),
+         Sub2      => (others => ' '),
+         Sub2Ln    => 0,
+         Single    => True,
+         Json      => True,
+         Mod_Query => False),
       2 =>
-        (Kind   => "pnpm" & (5 .. 7 => ' '),
-         KLen   => 4,
-         Tool   => "pnpm" & (5 .. 8 => ' '),
-         TLen   => 4,
-         Sub    => "view" & (5 .. 8 => ' '),
-         SLen   => 4,
-         V      =>
+        (Kind      => "pnpm" & (5 .. 7 => ' '),
+         KLen      => 4,
+         Tool      => "pnpm" & (5 .. 8 => ' '),
+         TLen      => 4,
+         Sub       => "view" & (5 .. 8 => ' '),
+         SLen      => 4,
+         V         =>
            (Field => "version" & (8 .. 16 => ' '), FLen => 7, Fmt => Eco_Bare),
-         L      =>
+         L         =>
            (Field => "license" & (8 .. 16 => ' '), FLen => 7, Fmt => Eco_Bare),
-         W      =>
+         W         =>
            (Field => "homepage" & (9 .. 16 => ' '),
             FLen  => 8,
             Fmt   => Eco_Bare),
-         Sub2   => (others => ' '),
-         Sub2Ln => 0,
-         Single => True,
-         Json   => True),
+         Sub2      => (others => ' '),
+         Sub2Ln    => 0,
+         Single    => True,
+         Json      => True,
+         Mod_Query => False),
       3 =>
-        (Kind   => "yarn" & (5 .. 7 => ' '),
-         KLen   => 4,
-         Tool   => "yarn" & (5 .. 8 => ' '),
-         TLen   => 4,
-         Sub    => "npm" & (4 .. 8 => ' '),
-         SLen   => 3,
-         Sub2   => "info" & (5 .. 8 => ' '),
-         Sub2Ln => 4,
-         V      =>
+        (Kind      => "yarn" & (5 .. 7 => ' '),
+         KLen      => 4,
+         Tool      => "yarn" & (5 .. 8 => ' '),
+         TLen      => 4,
+         Sub       => "npm" & (4 .. 8 => ' '),
+         SLen      => 3,
+         Sub2      => "info" & (5 .. 8 => ' '),
+         Sub2Ln    => 4,
+         V         =>
            (Field => "version" & (8 .. 16 => ' '), FLen => 7, Fmt => Eco_Bare),
-         L      =>
+         L         =>
            (Field => "license" & (8 .. 16 => ' '), FLen => 7, Fmt => Eco_Bare),
-         W      =>
+         W         =>
            (Field => "homepage" & (9 .. 16 => ' '),
             FLen  => 8,
             Fmt   => Eco_Bare),
-         Single => True,
-         Json   => True),
+         Single    => True,
+         Json      => True,
+         Mod_Query => False),
       4 =>
-        (Kind   => "bun" & (4 .. 7 => ' '),
-         KLen   => 3,
-         Tool   => "bun" & (4 .. 8 => ' '),
-         TLen   => 3,
-         Sub    => "pm" & (3 .. 8 => ' '),
-         SLen   => 2,
-         Sub2   => "view" & (5 .. 8 => ' '),
-         Sub2Ln => 4,
-         V      =>
+        (Kind      => "bun" & (4 .. 7 => ' '),
+         KLen      => 3,
+         Tool      => "bun" & (4 .. 8 => ' '),
+         TLen      => 3,
+         Sub       => "pm" & (3 .. 8 => ' '),
+         SLen      => 2,
+         Sub2      => "view" & (5 .. 8 => ' '),
+         Sub2Ln    => 4,
+         V         =>
            (Field => "version" & (8 .. 16 => ' '), FLen => 7, Fmt => Eco_Bare),
-         L      =>
+         L         =>
            (Field => "license" & (8 .. 16 => ' '), FLen => 7, Fmt => Eco_Bare),
-         W      =>
+         W         =>
            (Field => "homepage" & (9 .. 16 => ' '),
             FLen  => 8,
             Fmt   => Eco_Bare),
-         Single => True,
-         Json   => True),
+         Single    => True,
+         Json      => True,
+         Mod_Query => False),
       5 =>
-        (Kind   => "cargo" & (6 .. 7 => ' '),
-         KLen   => 5,
-         Tool   => "cargo" & (6 .. 8 => ' '),
-         TLen   => 5,
-         Sub    => "search" & (7 .. 8 => ' '),
-         SLen   => 6,
-         V      => (Field => (others => ' '), FLen => 0, Fmt => Eco_Bare),
-         L      =>
+        (Kind      => "cargo" & (6 .. 7 => ' '),
+         KLen      => 5,
+         Tool      => "cargo" & (6 .. 8 => ' '),
+         TLen      => 5,
+         Sub       => "search" & (7 .. 8 => ' '),
+         SLen      => 6,
+         V         => (Field => (others => ' '), FLen => 0, Fmt => Eco_Bare),
+         L         =>
            (Field => "license" & (8 .. 16 => ' '),
             FLen  => 7,
             Fmt   => Eco_Token),
-         W      => (Field => (others => ' '), FLen => 0, Fmt => Eco_Bare),
-         Sub2   => (others => ' '),
-         Sub2Ln => 0,
-         Json   => False,
-         Single => False),
+         W         => (Field => (others => ' '), FLen => 0, Fmt => Eco_Bare),
+         Sub2      => (others => ' '),
+         Sub2Ln    => 0,
+         Json      => False,
+         Single    => False,
+         Mod_Query => False),
       6 =>
-        (Kind   => "go" & (3 .. 7 => ' '),
-         KLen   => 2,
-         Tool   => (others => ' '),
-         TLen   => 0,
-         Sub    => (others => ' '),
-         SLen   => 0,
-         V      => (Field => (others => ' '), FLen => 0, Fmt => Eco_Bare),
-         L      => (Field => (others => ' '), FLen => 0, Fmt => Eco_Bare),
-         W      => (Field => (others => ' '), FLen => 0, Fmt => Eco_Bare),
-         Sub2   => (others => ' '),
-         Sub2Ln => 0,
-         Json   => False,
-         Single => False),
+        --  `go list -m -json <mod>@latest` answers the version. The row is
+        --  keyed "go" (the Go toolchain name) while the component's PURL
+        --  type is "golang"; the vendored-manifest reader carries both
+        --  tokens so this row is reachable. The query is forge-agnostic:
+        --  it goes through whatever module proxy GOPROXY names (public,
+        --  private, or direct), and adacovex never names a forge host.
+        --  There is no licence field: the Go toolchain reports none, and a
+        --  licence is only ever read from a file. The website stays empty
+        --  because `go list -m` has no website field and its Origin.URL is
+        --  a forge-specific VCS endpoint, not a project home page. Both
+        --  answers come from the offline read instead.
+        (Kind      => "go" & (3 .. 7 => ' '),
+         KLen      => 2,
+         Tool      => "go" & (3 .. 8 => ' '),
+         TLen      => 2,
+         Sub       => "list" & (5 .. 8 => ' '),
+         SLen      => 4,
+         V         =>
+           (Field => "Version" & (8 .. 16 => ' '), FLen => 7, Fmt => Eco_Bare),
+         L         => (Field => (others => ' '), FLen => 0, Fmt => Eco_Bare),
+         W         => (Field => (others => ' '), FLen => 0, Fmt => Eco_Bare),
+         Sub2      => "-m" & (3 .. 8 => ' '),
+         Sub2Ln    => 2,
+         Json      => True,
+         Single    => True,
+         Mod_Query => True),
       7 =>
-        (Kind   => "alire" & (6 .. 7 => ' '),
-         KLen   => 5,
-         Tool   => "alr" & (4 .. 8 => ' '),
-         TLen   => 3,
-         Sub    => "show" & (5 .. 8 => ' '),
-         SLen   => 4,
+        (Kind      => "alire" & (6 .. 7 => ' '),
+         KLen      => 5,
+         Tool      => "alr" & (4 .. 8 => ' '),
+         TLen      => 3,
+         Sub       => "show" & (5 .. 8 => ' '),
+         SLen      => 4,
          --  `alr show` prints the release as "<crate>=<version>: <description>"
          --  on the first line (for example "gnatprove=16.1.0: Automatic
          --  formal verification of SPARK code"), so the version is the
          --  token between '=' and ':'. The licence line is "License:".
-         V      =>
+         V         =>
            (Field => (others => ' '), FLen => 0, Fmt => Eco_Alr_Version),
-         L      =>
+         L         =>
            (Field => "License" & (8 .. 16 => ' '),
             FLen  => 7,
             Fmt   => Eco_Colon),
-         W      =>
+         W         =>
            (Field => "Website" & (8 .. 16 => ' '),
             FLen  => 7,
             Fmt   => Eco_Colon),
-         Sub2   => (others => ' '),
-         Sub2Ln => 0,
-         Json   => False,
-         Single => True),
+         Sub2      => (others => ' '),
+         Sub2Ln    => 0,
+         Json      => False,
+         Single    => True,
+         Mod_Query => False),
       8 =>
-        (Kind   => "pypi" & (5 .. 7 => ' '),
-         KLen   => 4,
-         Tool   => "pip" & (4 .. 8 => ' '),
-         TLen   => 3,
-         Sub    => "index" & (6 .. 8 => ' '),
-         SLen   => 5,
+        (Kind      => "pypi" & (5 .. 7 => ' '),
+         KLen      => 4,
+         Tool      => "pip" & (4 .. 8 => ' '),
+         TLen      => 3,
+         Sub       => "index" & (6 .. 8 => ' '),
+         SLen      => 5,
          --  `pip index versions <name>` prints the latest release first, as
          --  "<name> (<version>)" (for example "sphinx (9.1.0)"), so the
          --  version is the parenthesised token (Sub2 carries the "versions"
          --  subcommand before the package name). pip has no registry CLI
          --  for licence or website, so those fields stay empty and are
          --  never guessed.
-         V      =>
+         V         =>
            (Field => (others => ' '), FLen => 0, Fmt => Eco_Paren_Version),
-         L      => (Field => (others => ' '), FLen => 0, Fmt => Eco_Bare),
-         W      => (Field => (others => ' '), FLen => 0, Fmt => Eco_Bare),
-         Sub2   => "versions" & (9 .. 8 => ' '),
-         Sub2Ln => 8,
-         Json   => False,
-         Single => False));
+         L         => (Field => (others => ' '), FLen => 0, Fmt => Eco_Bare),
+         W         => (Field => (others => ' '), FLen => 0, Fmt => Eco_Bare),
+         Sub2      => "versions" & (9 .. 8 => ' '),
+         Sub2Ln    => 8,
+         Json      => False,
+         Single    => False,
+         Mod_Query => False));
 
    Pid     : constant Integer := Pid_To_Integer (Current_Process_Id);
    Pid_Img : constant String := Integer'Image (Pid);
@@ -508,12 +543,65 @@ begin
             return;  --  no reliable registry CLI for this ecosystem
 
          end if;
+         --  Skip the spawn when this row can supply nothing the caller does
+         --  not already hold. Every field the row names is either already
+         --  known offline or absent from the row, so the call could only
+         --  return a value the caller discards. This is what keeps a
+         --  complete offline read (a Go vendor tree with modules.txt and
+         --  licence files) from paying one registry spawn per component.
+         if (Have_Version or else Table (J).V.FLen = 0)
+           and then (Have_License or else Table (J).L.FLen = 0)
+           and then (Web_Len > 0 or else Table (J).W.FLen = 0)
+         then
+            return;
+         end if;
          Exe := Locate_Exec_On_Path (Table (J).Tool (1 .. Table (J).TLen));
          if Exe = null then
             return;
          end if;
          if Table (J).Single then
-            if Table (J).Json then
+            if Table (J).Mod_Query then
+               --  The registry module query: one spawn answers the version
+               --  from the module's own JSON object. Only the fields the row
+               --  names are read, so an ecosystem whose tool reports no
+               --  licence or website costs nothing and never guesses one.
+               declare
+                  Args : Argument_List (1 .. 4);
+                  N    : Natural := 0;
+                  procedure Add (S : String) is
+                  begin
+                     N := N + 1;
+                     Args (N) := new String'(S);
+                  end Add;
+               begin
+                  Add (Table (J).Sub (1 .. Table (J).SLen));
+                  Add (Table (J).Sub2 (1 .. Table (J).Sub2Ln));
+                  Add ("--json");
+                  Add (Name & "@latest");
+                  Capture (Args (1 .. N));
+                  for X in 1 .. N loop
+                     Free (Args (X));
+                  end loop;
+               end;
+               if Table (J).V.FLen > 0 then
+                  Set_Field
+                    (Version,
+                     Ver_Len,
+                     Json_Value (Table (J).V.Field (1 .. Table (J).V.FLen)));
+               end if;
+               if Table (J).L.FLen > 0 then
+                  Set_Field
+                    (License,
+                     Lic_Len,
+                     Json_Value (Table (J).L.Field (1 .. Table (J).L.FLen)));
+               end if;
+               if Table (J).W.FLen > 0 then
+                  Set_Path
+                    (Website,
+                     Web_Len,
+                     Json_Value (Table (J).W.Field (1 .. Table (J).W.FLen)));
+               end if;
+            elsif Table (J).Json then
                --  One JSON spawn answers for every field at once, so the
                --  resolver boots node/pnpm only once per component instead of
                --  once per field. The optional Sub2 (for example yarn's

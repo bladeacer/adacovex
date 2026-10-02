@@ -24,12 +24,25 @@ docs/_build/html is checked instead (with a note), and when neither exists the
 check is skipped -- the committed spec is the fallback, exactly like
 tools/gen-docs.py.
 
+The fresh build is kept in a **content-keyed cache** under
+`obj/book-links-check/<fingerprint>/out`, keyed by the SHA-256 of every
+docs source file plus the Sphinx build identity.  `make check` builds the
+manual twice -- once for this gate and once for the tools unit test that
+asserts a fresh build produces the whole book -- and the full Sphinx build
+was the two most expensive things in the gate list (measured: 17.6-31.8 s
+for this script and 18.57 s for that one test case).  Keying the cache by the
+docs content preserves the property that matters: a changed docs/ tree always
+rebuilds, so a stale build can never mask a broken link, and the gate is not
+weakened by reusing a build the tools test already made.  Pass `--fresh` to
+ignore the cache and rebuild unconditionally.
+
 Usage:
-  python3 tools/check-book-links.py
+  python3 tools/check-book-links.py [--fresh]
 """
 
 import argparse
 import importlib
+import os
 import posixpath
 import re
 import shutil
@@ -41,6 +54,8 @@ from typing import List, Optional, Set, Tuple
 
 ROOT: Path = Path(__file__).resolve().parent.parent
 BUILD: Path = ROOT / "docs" / "_build" / "html"
+# Content-keyed cache of the fresh manual build (see the module docstring).
+BOOK_CACHE: Path = ROOT / "obj" / "book-links-check"
 
 # tools/gen-docs.py shares the offline asset rules with this checker (see the
 # comment block there), so import them rather than duplicating the list.
@@ -129,33 +144,89 @@ def sphinx_build_into(dest: Path) -> bool:
     return True
 
 
+def book_build_key() -> Optional[str]:
+    """Cache key for the fresh manual build, or None without sphinx-build.
+
+    The key covers every docs source file (via the digests gen-docs.py
+    already computes for its own stamp), the Sphinx build command, and the
+    Sphinx version.  A changed page, a changed toolchain, or a changed build
+    command therefore all miss the cache and rebuild.
+    """
+    cmd = gen_docs.sphinx_build_cmd()
+    if cmd is None:
+        return None
+    version = ""
+    try:
+        import sphinx
+        version = sphinx.__version__
+    except Exception:  # pragma: no cover - sphinx always present here
+        version = "unknown"
+    return f"{gen_docs.tree_fingerprint(gen_docs.docs_source_digests())}-" \
+           f"{'-'.join(cmd)}-{version}"
+
+
+def fresh_book(fresh: bool = False) -> Optional[Path]:
+    """Path of a freshly built manual, reusing the content-keyed cache.
+
+    Returns the cached build when the key matches and the build is still
+    there, otherwise builds from a temp copy of docs/ and moves the result
+    into the cache.  Returns None when sphinx-build is unresolvable or the
+    build fails; a failed build never falls back to the cached one, so a
+    broken docs/ tree can never be masked.
+    """
+    key = book_build_key()
+    if key is None:
+        return None
+    safe = re.sub(r"[^A-Za-z0-9._-]", "_", key)
+    dest = BOOK_CACHE / safe
+    # The cache entry directory *is* the build output, so the key covers the
+    # whole tree and a reader sees either the old complete build or the new
+    # one, never a half-written tree.
+    if not fresh and (dest / "index.html").is_file():
+        return dest
+    with tempfile.TemporaryDirectory(prefix="adacovex-book-") as td:
+        if not sphinx_build_into(Path(td)):
+            return None
+        staged = Path(td) / "out"
+        BOOK_CACHE.mkdir(parents=True, exist_ok=True)
+        incoming = BOOK_CACHE / f".incoming-{os.getpid()}"
+        if incoming.exists():
+            shutil.rmtree(incoming, ignore_errors=True)
+        shutil.move(str(staged), str(incoming))
+        if dest.exists():
+            shutil.rmtree(dest, ignore_errors=True)
+        incoming.rename(dest)
+    return dest if (dest / "index.html").is_file() else None
+
+
 def main(argv: List[str]) -> int:
     ap: argparse.ArgumentParser = argparse.ArgumentParser(
         description=__doc__.splitlines()[0])
-    ap.parse_args(argv)
+    ap.add_argument("--fresh", action="store_true",
+                    help="rebuild the manual even when the "
+                         "content-keyed cache is current")
+    args = ap.parse_args(argv)
 
-    # The link check runs against a fresh temp build when sphinx-build is
-    # present (a stale local docs/_build/html can never mask a broken link);
-    # otherwise it falls back to the local build output, and when neither
-    # exists it is skipped -- the committed spec is the fallback, like
-    # tools/gen-docs.py.
-    with tempfile.TemporaryDirectory(prefix="adacovex-book-") as td:
-        tmp: Path = Path(td)
-        book_dir: Optional[Path] = None
-        if sphinx_build_into(tmp):
-            book_dir = tmp / "out"
-            print("  Checking links against a fresh sphinx-build.")
-        elif BUILD.is_dir():
-            book_dir = BUILD
-            print("  note: sphinx-build not on PATH; checking the local "
-                  "docs/_build/html", file=sys.stderr)
-        else:
-            print("note: sphinx-build not on PATH and no local "
-                  "docs/_build/html -- link check skipped", file=sys.stderr)
-            return 0
+    # The link check runs against a fresh build when sphinx-build is present
+    # (a stale local docs/_build/html can never mask a broken link); the
+    # fresh build is cached by the docs content digest so the gate and the
+    # tools unit test share one build.  Otherwise it falls back to the local
+    # build output, and when neither exists it is skipped -- the committed
+    # spec is the fallback, like tools/gen-docs.py.
+    book_dir: Optional[Path] = fresh_book(fresh=args.fresh)
+    if book_dir is not None:
+        print("  Checking links against a fresh sphinx-build.")
+    elif BUILD.is_dir():
+        book_dir = BUILD
+        print("  note: sphinx-build not on PATH; checking the local "
+              "docs/_build/html", file=sys.stderr)
+    else:
+        print("note: sphinx-build not on PATH and no local "
+              "docs/_build/html -- link check skipped", file=sys.stderr)
+        return 0
 
-        assets: List[Tuple[str, str, str]] = gen_docs.collect_assets(book_dir)
-        errors: List[str] = check_bundle_links(assets)
+    assets: List[Tuple[str, str, str]] = gen_docs.collect_assets(book_dir)
+    errors: List[str] = check_bundle_links(assets)
 
     if errors:
         for e in errors:

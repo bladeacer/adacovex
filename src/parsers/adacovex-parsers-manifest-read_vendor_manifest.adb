@@ -1,13 +1,19 @@
 separate (Adacovex.Parsers.Manifest)
 --  Probe Dir for the first recognised ecosystem manifest, in the defined
 --  priority order. The manifest filename maps to an ecosystem through a
---  static table (filename -> PURL kind, primary language, reader); adding
---  an ecosystem is a one-row edit, not a new branch. Name and version come
---  from the manifest when present. The caller enriches with licence,
+--  static table (filename -> PURL kind, registry token, primary language,
+--  reader); adding an ecosystem is a one-row edit, not a new branch. The
+--  registry token is the PURL kind except for Go, whose PURL type is
+--  "golang" while its registry CLI is "go"; Eco holds it so the resolver
+--  dispatches on the token its table is keyed by. Name and version come
+--  from the manifest when present, and a licence file beside the manifest
+--  is classified into an SPDX identifier. The caller enriches with
 --  version and website from the package registry when the manifest is
 --  silent. requirements*.txt is matched by glob as a final fallback
 --  because it is not a fixed filename.
-procedure Read_Vendor_Manifest (Dir : String; Info : out Vendor_Manifest) is
+procedure Read_Vendor_Manifest
+  (Dir : String; Root : String; Info : out Vendor_Manifest)
+is
    use Ada.Directories;
 
    type Manifest_Reader is (R_Json, R_Go, R_Gem, R_Maven, R_Swift);
@@ -16,17 +22,23 @@ procedure Read_Vendor_Manifest (Dir : String; Info : out Vendor_Manifest) is
       FLen    : Natural;
       Kind    : String (1 .. 8);
       KLen    : Natural;
+      Eco     : String (1 .. 8);
+      ELen    : Natural;
       Lang    : String (1 .. 16);
       LangLen : Natural;
       Reader  : Manifest_Reader;
    end record;
 
+   --  The registry token equals the PURL kind on every row but Go, whose
+   --  token is the Go toolchain name.
    Table : constant array (1 .. 8) of Manifest_Row :=
      (1 =>
         (File    => "package.json" & (13 .. 16 => ' '),
          FLen    => 12,
          Kind    => "npm" & (4 .. 8 => ' '),
          KLen    => 3,
+         Eco     => (others => ' '),
+         ELen    => 0,
          Lang    => "JavaScript" & (11 .. 16 => ' '),
          LangLen => 10,
          Reader  => R_Json),
@@ -35,6 +47,8 @@ procedure Read_Vendor_Manifest (Dir : String; Info : out Vendor_Manifest) is
          FLen    => 10,
          Kind    => "cargo" & (6 .. 8 => ' '),
          KLen    => 5,
+         Eco     => (others => ' '),
+         ELen    => 0,
          Lang    => "Rust" & (5 .. 16 => ' '),
          LangLen => 4,
          Reader  => R_Json),
@@ -43,6 +57,8 @@ procedure Read_Vendor_Manifest (Dir : String; Info : out Vendor_Manifest) is
          FLen    => 6,
          Kind    => "golang" & (7 .. 8 => ' '),
          KLen    => 6,
+         Eco     => "go" & (3 .. 8 => ' '),
+         ELen    => 2,
          Lang    => "Go" & (3 .. 16 => ' '),
          LangLen => 2,
          Reader  => R_Go),
@@ -51,6 +67,8 @@ procedure Read_Vendor_Manifest (Dir : String; Info : out Vendor_Manifest) is
          FLen    => 14,
          Kind    => "pypi" & (5 .. 8 => ' '),
          KLen    => 4,
+         Eco     => (others => ' '),
+         ELen    => 0,
          Lang    => "Python" & (7 .. 16 => ' '),
          LangLen => 6,
          Reader  => R_Json),
@@ -59,6 +77,8 @@ procedure Read_Vendor_Manifest (Dir : String; Info : out Vendor_Manifest) is
          FLen    => 13,
          Kind    => "composer",
          KLen    => 8,
+         Eco     => (others => ' '),
+         ELen    => 0,
          Lang    => "PHP" & (4 .. 16 => ' '),
          LangLen => 3,
          Reader  => R_Json),
@@ -67,6 +87,8 @@ procedure Read_Vendor_Manifest (Dir : String; Info : out Vendor_Manifest) is
          FLen    => 7,
          Kind    => "gem" & (4 .. 8 => ' '),
          KLen    => 3,
+         Eco     => (others => ' '),
+         ELen    => 0,
          Lang    => "Ruby" & (5 .. 16 => ' '),
          LangLen => 4,
          Reader  => R_Gem),
@@ -75,6 +97,8 @@ procedure Read_Vendor_Manifest (Dir : String; Info : out Vendor_Manifest) is
          FLen    => 7,
          Kind    => "maven" & (6 .. 8 => ' '),
          KLen    => 5,
+         Eco     => (others => ' '),
+         ELen    => 0,
          Lang    => "Java" & (5 .. 16 => ' '),
          LangLen => 4,
          Reader  => R_Maven),
@@ -83,6 +107,8 @@ procedure Read_Vendor_Manifest (Dir : String; Info : out Vendor_Manifest) is
          FLen    => 13,
          Kind    => "swift" & (6 .. 8 => ' '),
          KLen    => 5,
+         Eco     => (others => ' '),
+         ELen    => 0,
          Lang    => "Swift" & (6 .. 16 => ' '),
          LangLen => 5,
          Reader  => R_Swift));
@@ -115,6 +141,20 @@ procedure Read_Vendor_Manifest (Dir : String; Info : out Vendor_Manifest) is
       end if;
    end Set_Lang;
 
+   --  Set the registry token: the row's own token when it carries one, the
+   --  PURL kind otherwise.
+   procedure Set_Eco (E : String; ELen : Natural) is
+   begin
+      if ELen > 0 and then ELen <= Info.Eco'Last then
+         Info.Eco_Len := ELen;
+         Info.Eco (1 .. ELen) := E (E'First .. E'First + ELen - 1);
+      else
+         Info.Eco_Len := Info.PURL_Kind_Len;
+         Info.Eco (1 .. Info.PURL_Kind_Len) :=
+           Info.PURL_Kind (1 .. Info.PURL_Kind_Len);
+      end if;
+   end Set_Eco;
+
    function Path (N : String) return String is
    begin
       return Dir & "/" & N;
@@ -123,6 +163,7 @@ procedure Read_Vendor_Manifest (Dir : String; Info : out Vendor_Manifest) is
 begin
    Info.Found := False;
    Info.PURL_Kind_Len := 0;
+   Info.Eco_Len := 0;
    Info.Primary_Lang_Len := 0;
    Info.Name_Len := 0;
    Info.Version_Len := 0;
@@ -131,6 +172,7 @@ begin
    for I in Table'Range loop
       if Exists (Path (Table (I).File (1 .. Table (I).FLen))) then
          Set_Kind (Table (I).Kind (1 .. Table (I).KLen));
+         Set_Eco (Table (I).Eco, Table (I).ELen);
          Set_Lang (Table (I).Lang (1 .. Table (I).LangLen));
          case Table (I).Reader is
             when R_Json  =>
@@ -151,11 +193,24 @@ begin
                     (Path (Table (I).File (1 .. Table (I).FLen)), "license"));
 
             when R_Go    =>
-               Set_Text
-                 (Info.Name,
-                  Info.Name_Len,
-                  Go_Module_Path
-                    (Path (Table (I).File (1 .. Table (I).FLen))));
+               declare
+                  Mod_Path : constant String :=
+                    Go_Module_Path
+                      (Path (Table (I).File (1 .. Table (I).FLen)));
+               begin
+                  Set_Text (Info.Name, Info.Name_Len, Mod_Path);
+                  --  A module's own go.mod states its path but never its
+                  --  version, so the version comes from the vendored
+                  --  tree's module manifest. It is absent for a module
+                  --  outside a Go vendor tree, and the registry resolver
+                  --  then supplies it.
+                  if Mod_Path'Length > 0 and then Root'Length > 0 then
+                     Set_Text
+                       (Info.Version,
+                        Info.Version_Len,
+                        Go_Module_Version (Root & "/modules.txt", Mod_Path));
+                  end if;
+               end;
 
             when R_Gem   =>
                declare
@@ -198,6 +253,12 @@ begin
             when R_Swift =>
                null;
          end case;
+         --  A licence file beside the manifest classifies into an SPDX
+         --  identifier. It runs last so a licence the manifest states
+         --  explicitly (for example a package.json "license" field) wins.
+         if Info.License_Len = 0 then
+            Set_Text (Info.License, Info.License_Len, License_Id (Dir));
+         end if;
          Info.Found := True;
          return;
       end if;
@@ -224,7 +285,11 @@ begin
                Set_Text (Info.Version, Info.Version_Len, R_V (1 .. V_L));
             end;
             Set_Kind ("pypi");
+            Set_Eco ("", 0);
             Set_Lang ("Python");
+            if Info.License_Len = 0 then
+               Set_Text (Info.License, Info.License_Len, License_Id (Dir));
+            end if;
             Info.Found := True;
             Found := True;
          end if;

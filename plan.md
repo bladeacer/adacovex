@@ -114,7 +114,7 @@ or the count-sync gates fail:
    description. `tools/gen-agents-tree.py` **rejects a source file with no
    entry**.
 4. `CONTRIBUTING.md` - the "Unit tests" category table row, and the totals
-   in the prose above it (`1637 tests across 25 categories`).
+   in the prose above it (`1657 tests across 25 categories`).
 
 A **new** category also needs `docs/test_result.md` written by `make test`
 and the AGENTS.md architecture tree updated by `make agents-tree`. Items 4
@@ -946,7 +946,7 @@ out over-cap page now fails).
 
 ### Baseline
 
-1637 tests across 25 categories (`CONTRIBUTING.md`, `docs/test_result.md`).
+1657 tests across 25 categories (`CONTRIBUTING.md`, `docs/test_result.md`).
 Per-category counts:
 
 | Category | Tests | Category | Tests |
@@ -1058,6 +1058,45 @@ line, and the Verification table).
 ---
 
 ## Measured baselines (2026-10-02, this machine)
+
+### Re-baseline taken with the 1.55.0 work (evening session)
+
+Recorded after the three changes landed, with `/proc/loadavg` beside every
+figure. The box was busier in the evening than in the morning (load
+reached 21.9), which is exactly why the load is part of each row.
+
+| Shape | Command | Result | Load | Note |
+|-------|---------|--------|------|------|
+| Prove warm | `bin/covex prove` (hyperfine n=15) | **58.2 ms +/- 7.7 ms** | 2.8 | 47.1-68.5 ms; within noise of the phase's 55 ms |
+| Pipeline warm | `bin/adacovex --no-svg --no-md` (n=15) | **44.1 ms +/- 3.2 ms** | 2.8 | 39.8-50.2 ms; phase figure 46 ms |
+| Pipeline cold | same, result cache wiped (n=10) | **75.5 ms +/- 4.1 ms** | 2.8 | 70.3-81.6 ms; phase figure 73 ms |
+| **Prove fully cold** | `bin/covex prove --no-cache`, `obj/gnatprove/` + result cache wiped | **80.2 s** | 7.2 | 878 VCs, 0 unproved, 0 justified |
+| **Prove fully cold** | same, repeated | **81.7 s** | 2.3 | agrees with the 80.2 s sample within 2% |
+| **Prove fully cold** | same, repeated | **120.6 s** | 21.9 | 50% slower on the same binary; load, not code |
+| `make prove` warm | unchanged tree, 3 runs | **2.3-2.5 s** | 3.8 | not the prove short-circuit: it also regenerates the manual and dashboard |
+| Warm syscalls | `strace -f -e newfstatat` | **8,844** | 3.7 | phase floor is ~6.9k |
+| Stripped binary | `strip` copy of `bin/adacovex` | **5.47 MiB** | - | phase figure 5.3 MiB |
+| Manual spec | `src/adacovex-docs_template.ads` | **1.97 MiB** | - | phase figure 1.93 MiB |
+
+**The fully cold row is the answer the phase table could not give.** The
+existing "prove cold" column wipes the result cache *and* the session store
+but was measured as three hyperfine repetitions at an unstated load. This
+session measured the same shape three times with the load recorded: the two
+low-load samples agree within 2 percent, so **80-82 s is the idle-machine
+figure and 121 s is the heavy-load figure**. Any published cold number on
+this box without a load column is not comparable.
+
+**Nothing else moved.** Warm prove, warm pipeline, cold pipeline, and the
+stripped size all sit on the 1.50.0 phase column within noise, so 1.50.0
+keeps the representative slot and 1.55.0 folds into the open phase. The
+three code changes are off the measured shapes: the probe-cache fix returns a
+corrupted-fingerprint run to the healthy warm floor (976 ms / 11 spawns to
+57 ms / 1 spawn), the Sphinx dedup takes the book-links gate from ~18.6 s to
+0.44 s warm, and Go resolution adds two offline file reads per vendored Go
+component, invisible in the warm pipeline because the result cache
+short-circuits before the walk.
+
+### Morning session (item 1 baseline)
 
 Machine: 12 logical cores, Linux, GNAT toolchain via Alire, gnatprove 16.1.0
 (resolved into `~/.adacovex/toolchain/`), Sphinx 9.1.0, Python 3.14.7,

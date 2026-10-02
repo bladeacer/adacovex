@@ -242,21 +242,28 @@ package body Adacovex.Parsers.Manifest is
    --  how to parse the value from the command output. Adding an ecosystem
    --  is a one-row edit. Ecosystems with no reliable registry CLI carry an
    --  empty tool and resolve to "": the vendored-manifest scanner still reads
-   --  any in-repo licence file. This is a best-effort, online fallback used
-   --  only when the offline manifest read finds nothing (for the licence) or
-   --  to enrich with registry version and website. Returns "" for a field
-   --  when the tool is missing, the package is unknown, the field is absent,
-   --  or the command fails.
+   --  any in-repo licence file.
+   --
+   --  This is a best-effort, online fallback. Have_Version and Have_License
+   --  report what the offline manifest read already answered. A spawn is
+   --  skipped when the row's table entry can add nothing the caller lacks,
+   --  which is the whole cost of a registry call on a tree where the offline
+   --  read is complete: a Go vendor tree with a modules.txt and licence files
+   --  would otherwise spawn `go` once per component and discard every answer.
+   --  Returns "" for a field when the tool is missing, the package is
+   --  unknown, the field is absent, or the command fails.
    procedure Resolve_Ecosystem_Metadata
-     (Target    : String;
-      Ecosystem : String;
-      Name      : String;
-      License   : out Types.Desc_Field;
-      Lic_Len   : out Natural;
-      Version   : out Types.Desc_Field;
-      Ver_Len   : out Natural;
-      Website   : out Types.Path_Field;
-      Web_Len   : out Natural)
+     (Target       : String;
+      Ecosystem    : String;
+      Name         : String;
+      Have_Version : Boolean;
+      Have_License : Boolean;
+      License      : out Types.Desc_Field;
+      Lic_Len      : out Natural;
+      Version      : out Types.Desc_Field;
+      Ver_Len      : out Natural;
+      Website      : out Types.Path_Field;
+      Web_Len      : out Natural)
    is separate;
 
    --  Register manifest-declared dependencies that no GPR with-clause or
@@ -369,6 +376,13 @@ package body Adacovex.Parsers.Manifest is
       PURL_Kind_Len    : Natural := 0;
       Primary_Lang     : String (1 .. 16);
       Primary_Lang_Len : Natural := 0;
+      --  The registry ecosystem token the resolver dispatches on. It is
+      --  the PURL type except where the two differ: a Go component's PURL
+      --  type is "golang" (the package-url specification) while the
+      --  registry CLI is "go", so the two tokens are kept apart rather
+      --  than forced to match.
+      Eco              : String (1 .. 16);
+      Eco_Len          : Natural := 0;
    end record;
 
    --  Read the first "<Key>" quoted value from a key=value or key:value
@@ -380,6 +394,19 @@ package body Adacovex.Parsers.Manifest is
    --  Read the first "module <path>" line of a go.mod (the module path is
    --  the Go component's canonical name).
    function Go_Module_Path (Path : String) return String is separate;
+
+   --  Version of a Go module from a vendor/modules.txt file, the manifest
+   --  `go mod vendor` writes beside the vendored tree. The file is the only
+   --  offline source of a vendored module's version: the module's own
+   --  go.mod states the module path but never its own version.
+   function Go_Module_Version (Path : String; Module : String) return String
+   is separate;
+
+   --  SPDX identifier for the licence file that ships beside an ecosystem
+   --  manifest, classified from the licence text. "" when no licence file
+   --  is present or the text matches no known marker; a licence is never
+   --  guessed.
+   function License_Id (Dir : String) return String is separate;
 
    --  First "gem " entry of a Gemfile: name and cleaned version.
    procedure Gem_Entry
@@ -430,9 +457,12 @@ package body Adacovex.Parsers.Manifest is
    --  priority order): package.json (npm), Cargo.toml (cargo), go.mod
    --  (golang), pyproject.toml (pypi), composer.json (composer), Gemfile
    --  (gem), pom.xml (maven), requirements*.txt (pypi), Package.swift
-   --  (swift). Name and version come from the manifest when present. The
-   --  caller falls back to the directory name or "" otherwise.
-   procedure Read_Vendor_Manifest (Dir : String; Info : out Vendor_Manifest)
+   --  (swift). Name and version come from the manifest when present. Root
+   --  is the vendor root the component was found under, used to reach the
+   --  vendored tree's Go module manifest. The caller falls back to the
+   --  directory name or "" otherwise.
+   procedure Read_Vendor_Manifest
+     (Dir : String; Root : String; Info : out Vendor_Manifest)
    is separate;
 
    --  Language summary of the source files under a directory. The primary
@@ -1332,6 +1362,14 @@ package body Adacovex.Parsers.Manifest is
       --  the on-disk cache. Used to skip the PATH walk and version probes.
       From_Cache : Boolean := False;
 
+      --  Whether a cache hit re-validated a probe and had to re-probe a
+      --  tool whose installed binary no longer matches the cached
+      --  fingerprint. The refreshed set must then be written back, or the
+      --  stale blob survives and every later run re-probes the same tool
+      --  again. An unchanged toolchain leaves this False and still stores
+      --  nothing on a hit.
+      Refreshed : Boolean := False;
+
       --  Cache key (and its image) for the miss-store below. Kept at
       --  procedure level so the store can run after the probe loop.
       Key_Img : String (1 .. 128) := (others => ' ');
@@ -1538,6 +1576,7 @@ package body Adacovex.Parsers.Manifest is
                         GNAT.OS_Lib.Free (Exe);
                         Store;
                         Add_Probe_Fp (Nm, V, Adacovex.Cache.Hash_String (Fp));
+                        Refreshed := True;
                         Append_Dependency
                           (Graph,
                            Nm,
@@ -1629,9 +1668,12 @@ package body Adacovex.Parsers.Manifest is
       end if;
 
       --  Store the freshly scanned set (now including probe results) for
-      --  the next run. On a cache hit nothing is stored (the entry is
-      --  still current and complete).
-      if not From_Cache and then Key_Len > 0 then
+      --  the next run. On a cache hit nothing is stored, because the entry
+      --  is still current and complete -- unless a re-validation
+      --  re-probed a replaced binary, in which case the corrected
+      --  fingerprints must be written back or the stale blob re-probes on
+      --  every later run (Refreshed).
+      if (not From_Cache or else Refreshed) and then Key_Len > 0 then
          declare
             S  : constant String := Serialize_Set;
             OK : Boolean;

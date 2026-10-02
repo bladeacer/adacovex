@@ -8,7 +8,7 @@
   | CLI config                               |  349 | PASS     |
   | SVG renderer                             |  161 | PASS     |
   | HTML/Markdown renderers                  |  58 | PASS     |
-  | SBOM generator                           |  288 | PASS     |
+  | SBOM generator                           |  308 | PASS     |
   | Result cache                             |  33 | PASS     |
   | IR synthesis                             |  42 | PASS     |
   | Man page renderer                        |  18 | PASS     |
@@ -27,4 +27,4 @@
   | Completion scripts                       |  24 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 1637  Failed: 0
+  Passed: 1657  Failed: 0

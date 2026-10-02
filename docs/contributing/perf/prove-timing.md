@@ -20,10 +20,10 @@ trade off, the reading notes name the representative and the reason for the
 pick.
 
 The measured phases are 1.40.0-1.41.0, 1.42.0-1.44.0, 1.45.0-1.47.0, and
-1.48.0-1.52.0. A version joins the open phase while the methodology is
+1.48.0-1.55.0. A version joins the open phase while the methodology is
 unchanged; a methodology shift closes the phase and opens a new one.
 
-**The 1.48.0-1.52.0 phase is open, and 1.50.0 is its representative.**  The
+**The 1.48.0-1.55.0 phase is open, and 1.50.0 is its representative.**  The
 phase's methodology shift is the deterministic, incremental doc bundling of
 1.50.0; 1.48.0 and 1.49.0 fold into the phase because they changed no
 performance methodology, 1.51.0 folds in because the manual-encode cache
@@ -32,7 +32,11 @@ shape flat, and 1.52.0 folds in because raising the `make prove` gate to
 gnatprove `--level=4` is a gate setting, not an adacovex methodology change:
 the prove subcommand forwards `--level` verbatim, so the overhead is
 gnatprove's own and every adacovex-side shape stays flat (the 1.52.0 bench
-column on [benchmarks-timings](benchmarks-timings.md) confirms it). 1.50.0
+column on [benchmarks-timings](benchmarks-timings.md) confirms it), and
+1.53.0 through 1.55.0 fold in because they change no performance
+methodology: 1.55.0's tool-probe cache fix, its deduplicated manual link
+check, and its Go dependency resolution are all off the measured shapes or
+fix failed work. 1.50.0
 supplies the phase's complete metric set and stays the
 representative -- the phase's numbers are read at the default proof level,
 and the level-4 cost is a solver-side dial documented in the reading notes
@@ -47,11 +51,9 @@ otherwise. The 1.48.0-1.52.0 column was measured on the 1.50.0 tree.
 | 1.40.0-1.41.0 | 1.41.0 | ~104 ms | ~545 ms* |
 | 1.42.0-1.44.0 | 1.44.0 | 23 ms | 60 ms |
 | 1.45.0-1.47.0 | 1.47.0 | ~43 ms | ~74 ms |
-| 1.48.0-1.52.0 | 1.50.0 | 46 ms | 73 ms |
+| 1.48.0-1.55.0 | 1.50.0 | 46 ms | 73 ms |
 
-\* The 1.40.0/1.41.0 pipeline figures predate the four-scenario bench script
-(single-shot `time` runs, coarser sampling).
-
+\* The 1.40.0/1.41.0 pipeline figures predate the four-scenario bench script.
 ## Prove timing by phase
 
 | Phase | Representative | Prove warm (cache short-circuit) | Prove cold (result cache + session wiped) |
@@ -59,7 +61,7 @@ otherwise. The 1.48.0-1.52.0 column was measured on the 1.50.0 tree.
 | 1.40.0-1.41.0 | 1.41.0 | 2.5 s | 42.8 s / 791 VCs |
 | 1.42.0-1.44.0 | 1.44.0 | 44 ms | 36.4 s / 876 VCs |
 | 1.45.0-1.47.0 | 1.47.0 | ~53 ms | ~37 s / 876 VCs (40-110 s load-dependent) |
-| 1.48.0-1.52.0 | 1.50.0 | 55 ms | 61-88 s / 880 VCs (load-dependent; 878 VCs from 1.52.0) |
+| 1.48.0-1.55.0 | 1.50.0 | 55 ms | 61-88 s / 880 VCs (load-dependent; 878 VCs from 1.52.0) |
 
 ## Warm-run syscalls by phase
 
@@ -68,53 +70,50 @@ otherwise. The 1.48.0-1.52.0 column was measured on the 1.50.0 tree.
 | 1.40.0-1.41.0 | 1.41.0 | ~15k |
 | 1.42.0-1.44.0 | 1.44.0 | ~2k |
 | 1.45.0-1.47.0 | 1.47.0 | ~6k |
-| 1.48.0-1.52.0 | 1.50.0 | ~6.9k |
+| 1.48.0-1.55.0 | 1.50.0 | ~6.9k |
 
 ## Reading the numbers
 
 ### 1.40.0-1.41.0 (representative 1.41.0)
 
 - The warm short-circuit dropped from seconds to tens of milliseconds: the
-  1.41.0 stamp map removed the per-run re-hash. The 1.40.0/1.41.0 "idle"
-  runs of 1.6-2.5 s were dominated by the per-run `.gpr` walk enumerating
-  `.venv`, not by the proof. Both pipeline figures are single-shot `time`
-  runs, because the four-scenario bench script did not exist yet.
+  1.41.0 stamp map removed the per-run re-hash. The 1.40.0/1.41.0 "idle" runs
+  of 1.6-2.5 s were dominated by the per-run `.gpr` walk enumerating `.venv`,
+  not by the proof. Both pipeline figures are single-shot `time` runs,
+  because the four-scenario bench script did not exist yet.
 
 ### 1.42.0-1.44.0 (representative 1.44.0)
 
 - The 1.43.0 walk-skip work cut the warm syscall count from ~21k to ~12k by
-  keeping the Sphinx build tree (`docs/_build`) and the installer trees out
-  of every walker. The strace profile showed ~14 distinct walkers
-  re-enumerating `docs/_build` for ~53% of all warm-run stat syscalls on
-  this repo.
+  keeping the Sphinx build tree (`docs/_build`) and the installer trees out of
+  every walker. The strace profile showed ~14 walkers re-enumerating
+  `docs/_build` for ~53% of all warm-run stat syscalls on this repo.
 - The 1.44.0 persistent stat-stamp store cut the remaining warm stat traffic
-  another 6x (~12k to ~2k): every walker stats each directory entry once,
-  and unchanged files are never re-read across runs. Pipeline warm dropped
-  35 ms to 23 ms, and a *wiped result cache* on a stamped machine
-  re-serialises instead of re-hashing, so pipeline cold dropped 86 ms to
-  60 ms.
+  another 6x (~12k to ~2k): every walker stats each directory entry once, and
+  unchanged files are never re-read across runs. Pipeline warm dropped 35 ms
+  to 23 ms, and a *wiped result cache* on a stamped machine re-serialises
+  instead of re-hashing, so pipeline cold dropped 86 ms to 60 ms.
 
 ### 1.45.0-1.47.0 (representative 1.47.0)
 
-- The phase opens with new safety work, not a regression in the I/O layer:
-  the correct-version probe validation re-validates each cached system-tool
+- The phase opens with new safety work, not a regression in the I/O layer: the
+  correct-version probe validation re-validates each cached system-tool
   version against the identity digest of the installed binary, so a run
   re-resolves every tool's PATH entry. The absolute-path memo keys make the
-  shared directory snapshot serve more walkers, while `docs/_build` stays
+  shared directory snapshot serve more walkers, and `docs/_build` stays
   excluded from every walk.
 - The 1.46.0 opt-out machinery is invisible to every warm shape. The
   `no-covex-spark-proof` marker scan runs only after the result-cache lookup
   misses, so a warm prove hit returns before the walk starts (46 ms prove
   warm, unchanged). A cold prove pays the count walk once, which is noise
-  against the solver floor at the same 876 VCs.
-- The 1.47.0 `-O2 -gnatn` release build is why 1.47.0 represents the phase:
-  the previously unoptimised build becomes the release build, pipeline cold
-  reaches its best figure (~74 ms), and the stripped binary shrinks from
-  6.49 MiB to 5.39 MiB. The solver-dominated prove-cold shape does not
-  move. The phase's warm/cold syscall count stays at ~6k, half of 1.43.0's
-  ~12k.
+  against the solver floor at 876 VCs.
+- The 1.47.0 `-O2 -gnatn` release build is why 1.47.0 represents the phase: the
+  previously unoptimised build becomes the release build, pipeline cold
+  reaches its best figure (~74 ms), and the stripped binary shrinks from 6.49
+  MiB to 5.39 MiB. The solver-dominated prove-cold shape does not move. The
+  phase's syscall count stays at ~6k, half of 1.43.0's ~12k.
 
-### 1.48.0-1.52.0 (representative 1.50.0)
+### 1.48.0-1.55.0 (representative 1.50.0)
 
 - The phase's methodology shift is in the build, not in the binary. The
   doc bundling became deterministic and incremental: `tools/gen-docs.py`
@@ -165,6 +164,23 @@ otherwise. The 1.48.0-1.52.0 column was measured on the 1.50.0 tree.
   VCs (a degraded run can store one, because gnatprove exits 0 on solver
   timeouts) is now dropped and re-proved instead of served, so the
   short-circuit can no longer silently downgrade a healthy tree.
+- 1.55.0 changes no measured shape, and the re-baseline taken with it confirms
+  the phase column. All three changes sit off the hot paths. The tool-probe
+  cache fix returns a corrupted-fingerprint run to the healthy warm floor (11
+  subprocess spawns and 976 ms become one spawn and 57 ms).
+- The re-baseline re-measured every shape with the machine load recorded
+  beside it, because this box is shared and the load moves the cold row by
+  50 percent or more. Prove warm reads 58.2 ms, pipeline warm 44.1 ms, and
+  pipeline cold 75.5 ms at load 2.8, all within noise of the phase's 1.50.0
+  figures, so 1.50.0 keeps the representative slot.
+- The manual link check now shares one content-keyed Sphinx build with the
+  offline-manual generator, so the gate goes from about 18.6 s to 0.44 s warm
+  and still rejects a broken link. Go dependency resolution adds two offline
+  file reads per vendored Go component, invisible in the warm pipeline because
+  the result cache short-circuits before the walk.
+- The one figure that moved is the prove-cold row, and it moved because the
+  load moved, not because the code changed. The full method and every figure
+  are on [The 1.55.0 timing re-baseline](prove-rebaseline.md).
 
 ### Across every phase
 
@@ -175,6 +191,21 @@ otherwise. The 1.48.0-1.52.0 column was measured on the 1.50.0 tree.
   ~1.1 s, and gnatprove's session store re-analyses only the changed unit
   and its dependents after a real edit (roughly 6-9 s wall for a body-only
   edit on this machine).
+- The **fully cold** shape is the one to read for a first run on a new
+  checkout. The result cache, the gnatprove session store, and the proof
+  summary are all absent, so every run pays a from-scratch solver session.
+  Re-baselined for 1.55.0 it reads 80.2 s at load 7.2, 81.7 s at load 2.3,
+  and 120.6 s at load 21.9, all at 878 VCs.
+- Read that row as 80-82 s at an idle machine and up to 121 s under heavy
+  load. The method and the full table are on [The 1.55.0 timing
+  re-baseline](prove-rebaseline.md).
+- A cold first run on a fresh clone lands in the same band, because a clone
+  has no result cache and no session either. The extra work over this shape is
+  only the assessment that follows the proof, about 45 ms.
+- `make prove` on an unchanged tree is not the same shape as the warm prove
+  short-circuit. The target also regenerates the bundled manual and the
+  dashboard template and re-checks the generators, so it costs about 2.3-2.5 s
+  at load 3.8 where `./bin/covex prove` alone costs 58 ms.
 - A warm hit restores `gnatprove.out` since 1.43.0: the cache stores the
   summary content, so a hit on a tree whose `obj/gnatprove/` was wiped
   reports Platinum / 876 VCs exactly like the run that produced it. Before
@@ -194,15 +225,14 @@ An optimisation review in 1.46.0 asked whether SIMD or other low-level
 speed-ups could improve the pipeline. The measurements say no:
 
 - A cold self-assessment (no result cache, ~250 source files) completes in
-  ~88 ms and a warm one in ~41 ms on the dev machine (hyperfine, 1.46.0),
-  even though the local build profile is unoptimised (no `-O` flags). The
-  pipeline is I/O-bound and cache-bound, not compute-bound.
+  ~88 ms and a warm one in ~41 ms on the dev machine (hyperfine, 1.46.0), even
+  with an unoptimised local build profile (no `-O` flags). The pipeline is
+  I/O-bound and cache-bound, not compute-bound.
 - `make perf-bench` (perf + strace over the same tree, 1.46.0) shows the
-  cache is healthy: L1-dcache miss rates of 0.1-0.7% sit far under the
-  ~5% level where data-layout work pays, so no struct packing or
-  prefetching is warranted. The I/O story is the same as the last
-  release: ~6.3k `newfstatat` on a warm run (~67% of syscall time) is
-  the walk floor, and the cold scan opens each source file once.
+  cache is healthy: L1-dcache miss rates of 0.1-0.7% sit far under the ~5%
+  level where data-layout work pays, so no struct packing or prefetching is
+  warranted. The I/O story is unchanged: ~6.3k `newfstatat` on a warm run
+  (~67% of syscall time) is the walk floor.
 - A `prove` run is dominated by the gnatprove solver floor (~39 s cold;
   warm runs serve the cached proof in milliseconds). The adacovex-side share
   of a cold prove run is about a second.
@@ -212,8 +242,8 @@ speed-ups could improve the pipeline. The measurements say no:
   little on data this small, at the cost of the zero-dependency build's
   simplicity.
 
-Conclusion: no SIMD or assembly is added. The sanctioned path to more
-speed is the existing one -- higher optimisation in release profiles
-(`alr` release builds already enable `-O2`), the shared directory snapshot
-memo, and the content-hashed result cache. If a future profile shows the
-scanner hot, the first move is whole-file buffered reads, not SIMD.
+Conclusion: no SIMD or assembly is added. The sanctioned path to more speed
+is the existing one: higher optimisation in release profiles (`alr` release
+builds already enable `-O2`), the shared directory snapshot memo, and the
+content-hashed result cache. If a future profile shows the scanner hot, the
+first move is whole-file buffered reads, not SIMD.

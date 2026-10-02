@@ -6,9 +6,11 @@ This page covers licence resolution (local manifests and the package registry), 
 
 Vendored manifest ecosystems report their licence from the local manifest:
 `package.json` (`license`) for npm/pnpm, `Cargo.toml` for cargo,
-`pyproject.toml` / `composer.json` for pypi / composer. When the local
-manifest carries no licence, adacovex resolves the version, website, and
-licence from the package registry as a best-effort, online fallback. The
+`pyproject.toml` / `composer.json` for pypi / composer. A licence file
+beside the manifest is also classified into an SPDX identifier when the
+manifest itself carries no licence. When the local manifest and licence
+file carry no licence, adacovex resolves the version, website, and licence
+from the package registry as a best-effort, online fallback. The
 resolver dispatches on the ecosystem (the PURL type) through a single static
 table, so adding a language is one row rather than a new code path:
 
@@ -17,15 +19,65 @@ table, so adding a language is one row rather than a new code path:
 - **pnpm** -- `pnpm show <pkg> version license homepage --json`, likewise.
 - **cargo** (Rust) -- `cargo search <pkg>`, with the SPDX id read from the
   `(license: ...)` token in the output.
-- **go** and other ecosystems with no portable, reliable registry query keep
-  an empty licence; the vendored manifest scanner still reads any in-repo
-  licence file for them.
+- **go** -- `go list -m --json <module>@latest`, with the version read from
+  the `Version` field. See [Go modules](#go-modules) below: the Go toolchain
+  reports no licence and no website, so both come from files instead.
+- An ecosystem with no portable, reliable registry query keeps an empty
+  licence, version, and website; nothing is ever guessed.
+
+### Go modules
+
+A vendored Go component resolves its version and licence **offline**, from
+files, and only falls back to the registry for the version. Nothing in this
+path names a forge, so the same code serves a module on GitHub, GitLab,
+Gitea, Codeberg, or a private mirror.
+
+- **Version, offline.** The component's own `go.mod` states the module path
+  but never the module's own version: its `require` block lists that
+  module's *dependencies*, not the module itself. The version therefore
+  comes from the vendor root's `modules.txt`, the manifest `go mod vendor`
+  writes for every vendored module, as a `# <module> <version>` line. This
+  is the only offline source of a vendored module's pinned version.
+- **Version, fallback.** When `modules.txt` is absent, `go list -m --json
+  <module>@latest` supplies the latest published version. The query goes
+  through whatever module proxy `GOPROXY` names, so the Go toolchain decides
+  which source answers and adacovex never constructs a host name.
+- **Licence.** The Go toolchain reports no licence in any form, so the
+  licence is read from the licence file beside the manifest (`LICENSE`,
+  `LICENCE`, or `COPYING`, each with an optional `.md` or `.txt` suffix) and
+  classified into an SPDX identifier by matching marker phrases from the
+  licence text: Apache-2.0, MIT, MPL-2.0, ISC, Unlicense, and the two- and
+  three-clause BSD variants. A row matches only when every marker it
+  requires is present and no marker it excludes is present, so a
+  four-clause BSD text (which carries the three-clause marker *and* the
+  advertising clause) reports **no** licence rather than the wrong one. A
+  text that matches nothing -- the GPL family, for example, where the
+  only-versus-or-later choice is not visible in the text -- also reports no
+  licence. **A licence is never guessed.**
+- **Website.** Always empty. `go list -m` has no website field, and its
+  `Origin.URL` is a forge-specific VCS endpoint (`go.googlesource.com` for
+  `golang.org/x/text`, a forge host for everything else), not a project home
+  page, so adacovex does not surface it.
+
+A vanity import path (one whose first element is not a forge host, such as
+`golang.org/x/text`, `gopkg.in/yaml.v3`, or `k8s.io/api`) resolves the same
+way as a forge-hosted path: the version and the licence come from files, and
+no URL is ever constructed from the import path.
+
+The PURL type stays `pkg:golang` and the PURL is
+`pkg:golang/<module path>@<version>`. The registry ecosystem token is `go`,
+not `golang`, so the vendored-manifest reader carries both: the PURL type
+follows the package-url specification while the resolver dispatches on the
+name of the CLI it spawns.
 
 The npm and pnpm rows answer for all three fields with a single `--json` call,
 so each component boots node once instead of once per field -- a 3x reduction
 in subprocess starts that keeps the graph build responsive on vendored
 JavaScript trees. The fallback runs only when the offline read finds nothing,
-so a vendored package that ships a licence never touches the network. The
+so a vendored package that ships a licence never touches the network. A Go
+component likewise never reaches the registry when its vendor tree carries a
+`modules.txt` and a licence file, which is the normal shape of a vendored Go
+tree. The
 resolved licence flows into every SBOM format (CycloneDX `licenses`, SPDX
 `licenseConcluded` / `licenseDeclared`, Markdown `License` column) and the
 dashboard detail panel; the resolved version and website appear in the
