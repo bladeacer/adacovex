@@ -1,6 +1,8 @@
 # adacovex 1.55.0 implementation plan
 
-Status: **plan only**. No code in this change.
+Status: **partly implemented**. Items 1a, 2, and the Sphinx dedup of item 5
+landed and `make check` passes. Items 1b, 3, 4, 6, and 7 are still open, and
+item 5 has one sub-step still open. Every status is a checkbox below.
 
 Target version: **1.55.0** (minor bump from 1.54.0, released 2026-09-28).
 Never a major increment: no CLI flag removal, no output-format break, no
@@ -11,16 +13,21 @@ or internal.
 
 Seven work items, in the order they should land:
 
-| # | Item | Kind | Primary area |
-|---|------|------|--------------|
-| 1a | Stale tool fingerprints never refreshed (permanent re-probe) | **Bug fix** | `src/parsers` |
-| 1b | Redundant build-file reads on the assessment path | Perf | `src/parsers`, `src/core` |
-| 2 | Golang SBOM resolution (git-server-agnostic) | Feature | `src/parsers` |
-| 3 | gnatprove v16 verification gate | Fix + gate | `tools/`, CI |
-| 4 | base85 decoder unit tests | Tests | `src/tests`, `tools/gen-docs.py` |
-| 5 | Remove the duplicated Sphinx build in `make check` | Perf | `tools/`, `Makefile` |
-| 6 | Split documentation pages over the 250-line cap; enforce the cap | Docs | `docs/`, `tools/` |
-| 7 | Additional unit tests across under-covered categories | Tests | `src/tests` |
+| Done | # | Item | Kind | Primary area |
+|------|---|------|------|--------------|
+| [x] | 1a | Stale tool fingerprints never refreshed (permanent re-probe) | **Bug fix** | `src/parsers` |
+| [ ] | 1b | Redundant build-file reads on the assessment path | Perf | `src/parsers`, `src/core` |
+| [x] | 2 | Golang SBOM resolution (git-server-agnostic) | Feature | `src/parsers` |
+| [ ] | 3 | gnatprove v16 verification gate | Fix + gate | `tools/`, CI |
+| [ ] | 4 | base85 decoder unit tests | Tests | `src/tests`, `tools/gen-docs.py` |
+| [~] | 5 | Remove the duplicated Sphinx build in `make check` | Perf | `tools/`, `Makefile` |
+| [ ] | 6 | Split documentation pages over the 250-line cap; enforce the cap | Docs | `docs/`, `tools/` |
+| [ ] | 7 | Additional unit tests across under-covered categories | Tests | `src/tests` |
+
+`[x]` done, `[ ]` not started, `[~]` partly done. The two items added while
+this plan was in flight (the timing re-baseline and the 1.55.0 phase in the
+proof-timing docs) are done; they are recorded in the baselines section rather
+than as numbered items.
 
 Item 1 was one item when this plan was drafted. Measurement split it: 1a is
 a **correctness and latency bug** worth 976 ms to 57 ms on an unchanged
@@ -184,6 +191,16 @@ uncached tools-set run.
 
 #### 1a. Persist the refreshed fingerprints on a re-probe (bug fix, do first)
 
+- [x] **Done.** The `Refreshed` local and the widened store guard landed in
+  `src/parsers/adacovex-parsers-manifest.adb`.
+- [x] Both properties hold: an unchanged toolchain stores nothing on a hit,
+  and a changed toolchain re-probes once, stores, and is fast after that.
+  Measured with `strace`: a corrupted blob goes from 11 `execve` and 976 ms to
+  one `execve` and 57 ms, then 1, 1, 1 across three runs.
+- [x] The regression test is in `src/tests/adacovex_sbom_tests.adb`; reverting
+  the guard alone makes it fail.
+- [x] Documented as changelog entry H1.
+
 The measured root cause (see the baselines section): the store block is
 guarded by `if not From_Cache`, but the re-validation branch runs only
 `if From_Cache`. A hit that re-probes therefore never writes the corrected
@@ -214,6 +231,11 @@ probe re-runs every time, so the graph holds a version that is re-derived
 but never refreshed in the cache.
 
 #### 1b. Make the tools-set key and the scan share one walk and one read
+
+- [ ] Not started. All five steps below are open, including the recommended
+  landing (step 2, the single-pass tools scan).
+- [ ] The measurement that motivates it still stands: the double read of every
+  scan-eligible build file is real and unfixed.
 
 1. **Exclude `index/` from the tools-key walk.** Measured: the walk descends
    into `index/ad/covex/` and hashes **16** vendored Alire index `.toml`
@@ -309,6 +331,23 @@ nor changes the tool set.
 ---
 
 ## Item 2: Golang SBOM resolution, git-server-agnostic
+
+- [x] **Done**, with the decisions Q1 and the `modules.txt` version source
+  applied. Changelog entry C1.
+- [x] The naming defect is fixed: `Vendor_Manifest` carries the registry
+  ecosystem token `go` next to the PURL type `golang`, so the previously
+  dead resolver row is reachable.
+- [x] Version comes from the vendor root's `modules.txt`, parsed once per
+  root (`Read_Go_Modules`, `Go_Module_Version`), with
+  `go list -m --json <module>@latest` as the no-`modules.txt` fallback.
+- [x] Licence comes from the licence file beside the manifest, classified
+  into SPDX by `License_Id` (seven rows, marker-present and marker-absent
+  rules, BSD-4 excluded).
+- [x] Website stays empty. No forge is named anywhere in the path.
+- [x] Performance: the resolver skips a spawn it cannot use, and the fixture
+  A/B against a 1.54.0 build reads 39.7 ms against 40.9 ms.
+- [x] Docs: `docs/usage/sbom-resolution.md` gained the Go modules section;
+  `docs/usage/sbom.md` updated.
 
 ### What the tree does today
 
@@ -474,6 +513,14 @@ GitLab-sourced module.
 
 ## Item 3: Verify gnatprove 16.1.0 across the codebase and CI, and gate it
 
+- [ ] Not started. The audit below was done at planning time and its verdict
+  still holds; nothing was implemented.
+- [ ] The new gnatprove comparison in `tools/check-version-consistency.py`
+  (the workflows, the action input, and the dev manifest must all agree).
+- [ ] The test cases for each branch of that comparison in `tools/tests.py`.
+- [ ] The cosmetic refresh of the `^15.1.0` example in
+  `src/core/adacovex-prove.ads:19` and `docs/api-docs/adacovex-prove.md`.
+
 ### Audit result (done at planning time)
 
 The tree is already consistently on 16.1.0. Every occurrence of an older
@@ -566,6 +613,10 @@ branch. No native test change.
 ---
 
 ## Item 4: base85 decoder unit tests
+
+- [ ] Not started. `grep Base85 src/tests/` finds no test case, so the
+  decoder is still unexercised.
+- [ ] The `Base85_Decode` visibility change from Q4 is not made either.
 
 ### What exists today
 
@@ -685,6 +736,20 @@ degenerate lengths, the alphabet fallback, `Body_Bytes`, and `Find`.
 ---
 
 ## Item 5: Reduce `make check` and `make build` wall time
+
+- [x] **The duplicated Sphinx build is removed.** `tools/check-book-links.py`
+  and `tools/gen-docs.py` now share one content-keyed build under
+  `obj/book-links-check/`, keyed on the docs fingerprint, the Sphinx command,
+  and the Sphinx version. Changelog entry H2.
+- [x] The gate keeps its teeth: a docs change invalidates the cached build,
+  and a broken link still fails with `link to missing bundled asset`.
+- [x] Measured: the gate goes from about 18.6 s to 0.44 s warm, and
+  `tools-check` from 28.9 s to 2.5 s. Ten fast tests cover the cache.
+- [ ] **Sub-step 3 is still open:** `make fmt` runs after `build`, `test`, and
+  `prove` in the `check` target. It must move **before** `build` so a
+  formatting change is picked up by the single build that follows, and so the
+  proof is against the shipped bytes.
+- [x] Sub-step 4 (do not speed up prove cold) needs no code.
 
 ### Where the time goes today
 
@@ -818,6 +883,13 @@ weaken the check.
 
 ## Item 6: Split the documentation pages over the 250-line cap
 
+- [ ] Not started. No page was split for this item.
+- [ ] The cap is still a **soft** gate: `tools/check-docs.py` prints the
+  over-cap page to stderr but does not add a violation, so `make docs-check`
+  passes. Q3 decided to promote it to an error; that change is unmade.
+- [ ] Note that `docs/contributing/perf/prove-timing.md` now sits at exactly
+  250 lines and still prints the soft warning path when it is touched.
+
 ### Current state (measured)
 
 `tools/check-docs.py` sets `MAX_LOC = 250` and currently only **prints** a
@@ -943,6 +1015,14 @@ out over-cap page now fails).
 ---
 
 ## Item 7: Additional unit tests
+
+- [ ] Not started as a category sweep. The eight per-category targets below
+  are all open; no category gained a test for its own sake.
+- [x] The only new tests are the ones items 1a, 2, and 5 required: 13 in the
+  SBOM / manifest-graph category (probe heal, Go version and licence, the
+  BSD-4 exclusion, the no-guess cases, the PURL type, and the no-spawn
+  offline path) plus ten in `tools/tests.py` for the shared Sphinx build.
+  Those count towards items 1a, 2, and 5, not towards this one.
 
 ### Baseline
 
@@ -1087,14 +1167,38 @@ figure and 121 s is the heavy-load figure**. Any published cold number on
 this box without a load column is not comparable.
 
 **Nothing else moved.** Warm prove, warm pipeline, cold pipeline, and the
-stripped size all sit on the 1.50.0 phase column within noise, so 1.50.0
-keeps the representative slot and 1.55.0 folds into the open phase. The
-three code changes are off the measured shapes: the probe-cache fix returns a
+stripped size all sit on the 1.50.0 phase column within noise. The three code
+changes are off the measured shapes: the probe-cache fix returns a
 corrupted-fingerprint run to the healthy warm floor (976 ms / 11 spawns to
 57 ms / 1 spawn), the Sphinx dedup takes the book-links gate from ~18.6 s to
 0.44 s warm, and Go resolution adds two offline file reads per vendored Go
 component, invisible in the warm pipeline because the result cache
 short-circuits before the walk.
+
+#### Final session (the figures the 1.55.0 phase column carries)
+
+A later session at a lower load, after the resolver-spawn skip and the
+once-per-root `modules.txt` parse landed, produced the phase's own figures.
+They are better than the evening session above, and they are what
+`docs/contributing/perf/prove-timing.md` and `prove-rebaseline.md` record.
+
+| Shape | Result | Load | Note |
+|-------|--------|------|------|
+| Prove warm | **49.9 ms +/- 3.2 ms** | 0.6 | 45.0-55.4 ms |
+| Pipeline warm | **41.3 ms +/- 2.5 ms** | 0.5 | 37.5-46.3 ms |
+| Pipeline cold | **66.5 ms +/- 3.2 ms** | 0.6 | 61.6-71.4 ms |
+| Warm `newfstatat` | **7,280** | 4.4 | warm `execve` 1 |
+| Prove fully cold | **72.0 s** | 3.6 | 878 VCs, 0 unproved, 0 justified |
+| Prove fully cold | **73.1 s** | 5.0 | same shape, second sample |
+| `make prove` warm | **1.1 s** | 4.1 | 1.08 s and 1.10 s on two runs |
+| Stripped binary | **5.56 MiB** | - | grew with the added manual page |
+| Manual spec | **2.00 MiB** | - | same reason |
+
+**1.55.0 therefore opens its own phase** in the table, with 1.55.0 as the
+representative, and the closed phase is 1.48.0-1.54.0 with 1.50.0 as its
+representative. The methodology shift is the measurement itself: every figure
+is now read with the load beside it, and the fully cold shape is measured for
+the first time.
 
 ### Morning session (item 1 baseline)
 
@@ -1247,6 +1351,12 @@ Two findings:
 
 ## Sequencing and dependencies
 
+The order below was the plan. What actually happened: **1a, item 5, and item
+2** landed (item 5 as the Sphinx dedup only, item 2 last), and the remaining
+items are untouched. The plan put item 6 before item 2 so the Go section would
+land in pages with room; that turned out not to matter, because
+`docs/usage/sbom-resolution.md` had room as it stood.
+
 1. **Item 1a** (the fingerprint-persistence bug fix) **first, alone**. It is
    a one-line guard change with a 17x measured effect on a warm run, it is
    independent of everything else, and every later benchmark is invalid while
@@ -1260,13 +1370,11 @@ Two findings:
    which warms the doc bundle for everything after it.
 4. **Item 1b** (single-pass tools scan) next. Measure before and after with
    `make perf-bench` and `strace`, and record the numbers in
-   `docs/contributing/perf/prove-timing.md` as a fold into the open
-   1.48.0-1.52.0 phase (extend it to 1.55.0 in the same edit, keeping 1.50.0
-   as the representative unless the methodology shifts). **Re-take the warm
-   pipeline and prove-warm figures after 1a**: the historical 46-55 ms
-   numbers were measured on a machine that may have been in the broken state,
-   so they should be re-baselined on a healthy cache and the phase's
-   representative reconsidered if the methodology shifted.
+   `docs/contributing/perf/prove-timing.md`. Note that the re-baseline has
+   already been taken, and it moved the phase structure: the table now reads
+   1.48.0-1.54.0 (representative 1.50.0) and 1.55.0 (representative 1.55.0),
+   so a future fold lands in the 1.55.0 phase and keeps 1.55.0 as the
+   representative unless the methodology shifts again.
 5. **Item 2** (Go resolution) next: the largest Ada change and the one that
    adds VCs. Proof it, sync the ledger, and run the full `make check`.
 6. **Item 4** and **Item 7** together (tests), then `make test` and

@@ -52,41 +52,44 @@ token the table is keyed by, and the row answers.
 
 The resolver now also skips a spawn whose table row can add nothing the
 caller does not already hold, through two new `Have_Version` and
-`Have_License` parameters. Without this, giving the Go row a live tool made
-the resolver spawn `go list -m` once per vendored component and discard the
-answer, because the offline read had already supplied both fields. Measured
-on a synthetic tree with 100 vendored Go modules (cold result cache, no
-`go` on `PATH` needed for the offline path):
+`Have_License` parameters, and the vendor root's `modules.txt` is parsed once
+per root and looked up in memory instead of once per component. Measured on a
+synthetic tree with 100 vendored Go modules (cold result cache, paired runs
+against a build of the 1.54.0 tree):
 
-| Build | Cold run | `go` spawns |
-|-------|----------|-------------|
-| 1.54.0 (base) | 39.5 ms +/- 3.9 ms | 0 |
-| 1.55.0 before the skip | 561 ms +/- 32.5 ms | 100 |
-| 1.55.0 after the skip | 40.9 ms +/- 3.5 ms | 0 |
+| Build | Cold run | `go` spawns | `modules.txt` opens |
+|-------|----------|-------------|----------------------|
+| 1.54.0 (base) | 40.9 ms +/- 3.5 ms | 0 | 0 |
+| 1.55.0 | 39.7 ms +/- 3.2 ms | 0 | 2 |
 
-The remaining difference from the base is 100 extra `newfstatat` and 200
-extra `openat` calls across 100 components: one `modules.txt` probe and two
-licence-file probes per component, which is the cost of answering offline.
-All 100 components still report both a version and an SPDX licence.
+The two figures sit inside each other's spread, so the feature is free at the
+binary level. The remaining difference from the base is 100 extra `newfstatat`
+and 200 extra `openat` calls across 100 components: one `modules.txt` probe
+and two licence-file probes per component, which is the cost of answering
+offline. All 100 components still report both a version and an SPDX licence.
 
 ### C2: Timing re-baseline, including the fully cold prove run
 
 `docs/contributing/perf/prove-timing.md` carries a new reading note for the
 fully cold shape: the result cache, the gnatprove session store, and the
 proof summary all absent, which is the shape a first run on a new checkout
-sees. Measured three times with the machine load recorded beside each
-figure, the fully cold `prove` run reads **80.2 s at load 7.2, 81.7 s at load
-2.3, and 120.6 s at load 21.9**, all at 878 VCs with 0 unproved and 0
-justified. The two low-load samples agree within 2 percent, so the idle
-figure is 80-82 s and the heavy-load figure is 121 s; the spread is the
-shared machine, not the tool.
+sees. Measured five times with the machine load recorded beside each figure,
+the fully cold `prove` run reads **72.0 s at load 3.6, 73.1 s at load 5.0,
+80.2 s at load 7.2, 81.7 s at load 2.3, and 120.6 s at load 21.9**, all at 878
+VCs with 0 unproved and 0 justified. The four low-to-moderate-load samples
+span 72-82 s, and the heavy-load sample is 121 s; the spread is the shared
+machine, not the tool.
 
-The phase table now reads 1.48.0-1.55.0. 1.50.0 keeps the representative
-slot because every re-baselined shape sits on its column within noise: prove
-warm 58.2 ms, pipeline warm 44.1 ms, pipeline cold 75.5 ms, stripped binary
-5.47 MiB. The page also records that `make prove` on an unchanged tree costs
-about 2.3-2.5 s where `./bin/covex prove` alone costs 58 ms, so neither
-number is mistaken for the other.
+1.55.0 therefore opens **its own phase** in the table, with 1.55.0 as the
+representative, because the methodology changed and not only the code: every
+figure is now read with the machine load beside it, and the fully cold prove
+shape is measured for the first time. The closed phase is 1.48.0-1.54.0 with
+1.50.0 as its representative. The new column reads prove warm 49.9 ms,
+pipeline warm 41.3 ms, pipeline cold 66.5 ms, and warm `newfstatat` 7,280,
+all at load 0.5-0.6: flat or slightly better than the closed phase's 55 ms,
+46 ms, 73 ms, and ~6.9k. The page also records that `make prove` on an
+unchanged tree costs about 1.1 s where `./bin/covex prove` alone costs 50 ms,
+so neither number is mistaken for the other.
 
 ## Fixes
 
@@ -155,10 +158,13 @@ Added:
 
 Platinum, 0 unproved, 0 justified, 878 VCs (878 proved) across 66 analysed
 units under gnatprove 16.1.0 at `--level=4`. The VC count is unchanged from
-1.54.0: the two new source files and the Go branch add proved subprograms
-whose checks were already covered, and no assertion, contract, or runtime
-check was added or removed. No `pragma SPARK_Mode (Off)` was added; the only
-two packages that carry one remain `Types.Implementation` and `Complexity`.
+1.54.0. The three new subprograms (`License_Id`, `Read_Go_Modules`, and
+`Go_Module_Version`) are `SPARK_Mode => Off`, like every other subprogram in
+`Adacovex.Parsers.Manifest` that touches the filesystem or spawns a tool, so
+they add no VCs by design; no existing checked subprogram gained or lost an
+assertion, a contract, or a runtime check. No `pragma SPARK_Mode (Off)` was
+added to any package: the only two packages that carry one remain
+`Types.Implementation` and `Complexity`.
 
 ## Traceability
 

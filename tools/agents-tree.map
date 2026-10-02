@@ -102,7 +102,8 @@ src/parsers/adacovex-parsers-manifest-language_summary	Rank and join a language 
 src/parsers/adacovex-parsers-manifest-read_manifest_deps	Collect crate names from a manifest [[depends-on]] section
 src/parsers/adacovex-parsers-manifest-add_dep_name	Append a crate name to a name vector unless already present
 src/parsers/adacovex-parsers-manifest-go_module_path	Read the module path from the first "module" line of go.mod
-src/parsers/adacovex-parsers-manifest-go_module_version	Read a Go module's version from a vendor/modules.txt entry
+src/parsers/adacovex-parsers-manifest-go_module_version	Look a module's version up in a parsed vendor manifest
+src/parsers/adacovex-parsers-manifest-read_go_modules	Parse a Go vendor/modules.txt into a module-to-version table
 src/parsers/adacovex-parsers-manifest-license_id	Classify a sibling licence file into an SPDX identifier
 src/parsers/adacovex-parsers-manifest-probe_version	Probe a tool's version by spawning it and parsing its output
 src/parsers/adacovex-parsers-manifest-make_tool	Build a Tool_Entry (name + category) from string literals

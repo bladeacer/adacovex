@@ -41,6 +41,20 @@ package body Adacovex.Parsers.Manifest is
 
    package Path_Vectors is new Ada.Containers.Vectors (Positive, Path_Item);
 
+   --  One entry of a parsed Go vendor manifest: a module path and the
+   --  version `go mod vendor` recorded for it. The whole vendor manifest is
+   --  parsed once per vendor root and then looked up in memory, rather than
+   --  rescanned from disk once per component.
+   type Go_Module_Entry is record
+      Path : Types.Desc_Field;
+      PLen : Natural := 0;
+      Ver  : Types.Desc_Field;
+      VLen : Natural := 0;
+   end record;
+
+   package Go_Module_Vectors is new
+     Ada.Containers.Vectors (Positive, Go_Module_Entry);
+
    --  Crate-name sets collected from the publishing manifest (alire.toml or
    --  the --manifest override) and the dev manifest (alire-dev.toml). Used
    --  to classify every resolved dependency into a Component_Scope. A name
@@ -395,11 +409,16 @@ package body Adacovex.Parsers.Manifest is
    --  the Go component's canonical name).
    function Go_Module_Path (Path : String) return String is separate;
 
-   --  Version of a Go module from a vendor/modules.txt file, the manifest
-   --  `go mod vendor` writes beside the vendored tree. The file is the only
-   --  offline source of a vendored module's version: the module's own
-   --  go.mod states the module path but never its own version.
-   function Go_Module_Version (Path : String; Module : String) return String
+   --  Parse a Go vendor manifest (vendor/modules.txt) into the
+   --  module-to-version table, once per vendor root.
+   procedure Read_Go_Modules
+     (Path : String; Table : out Go_Module_Vectors.Vector)
+   is separate;
+
+   --  Version recorded for a module in a parsed vendor manifest, "" when the
+   --  table does not list it.
+   function Go_Module_Version
+     (Table : Go_Module_Vectors.Vector; Module : String) return String
    is separate;
 
    --  SPDX identifier for the licence file that ships beside an ecosystem
@@ -457,12 +476,14 @@ package body Adacovex.Parsers.Manifest is
    --  priority order): package.json (npm), Cargo.toml (cargo), go.mod
    --  (golang), pyproject.toml (pypi), composer.json (composer), Gemfile
    --  (gem), pom.xml (maven), requirements*.txt (pypi), Package.swift
-   --  (swift). Name and version come from the manifest when present. Root
-   --  is the vendor root the component was found under, used to reach the
-   --  vendored tree's Go module manifest. The caller falls back to the
-   --  directory name or "" otherwise.
+   --  (swift). Name and version come from the manifest when present.
+   --  Modules is the parsed vendor manifest of the vendor root the
+   --  component was found under, empty when there is none. The caller falls
+   --  back to the directory name or "" otherwise.
    procedure Read_Vendor_Manifest
-     (Dir : String; Root : String; Info : out Vendor_Manifest)
+     (Dir     : String;
+      Modules : Go_Module_Vectors.Vector;
+      Info    : out Vendor_Manifest)
    is separate;
 
    --  Language summary of the source files under a directory. The primary

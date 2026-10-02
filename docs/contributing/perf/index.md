@@ -86,14 +86,15 @@ codebase; what matters is the shape:
 range of versions whose implementation methodology is largely similar. Each
 phase carries one representative version that supplies the phase's complete
 metric set. A new version folds into the open phase while the methodology
-holds; a methodology shift closes the phase and opens a new one. The
-current open phase is 1.48.0-1.52.0, represented by 1.50.0; its
-methodology shift is the deterministic, incremental doc bundling, which
-keeps the cached proof warm across a no-op build. 1.51.0 folds into the
-phase, because its manual-encode cache and parallel encoder are build-side
-speed-ups that move no measured shape. 1.52.0 folds in too: raising the
-prove gate to gnatprove `--level=4` is a gate setting the prove subcommand
-forwards verbatim, so the overhead is gnatprove's own.
+holds; a methodology shift closes the phase and opens a new one.
+
+The closed 1.48.0-1.54.0 phase is represented by 1.50.0, whose methodology
+shift was the deterministic, incremental doc bundling that keeps the cached
+proof warm across a no-op build. The **open phase is 1.55.0**, represented by
+1.55.0, because the methodology changed and not only the code: every figure is
+now taken with the machine load recorded beside it, and the fully cold prove
+shape is measured for the first time. Its detail is on [The 1.55.0 timing
+re-baseline](prove-rebaseline.md).
 
 ## CI
 

@@ -111,6 +111,11 @@ is
       --  this vendor root (for example tests/e2e/package.json owning
       --  tests/e2e/node_modules). Collected once per vendor root.
       Owner_Test_Names : Name_Vectors.Vector;
+
+      --  The vendor root's Go module manifest, parsed once for the whole
+      --  root. Parsing it per component would open and rescan the file once
+      --  per module, which is quadratic in the module count.
+      Go_Modules : Go_Module_Vectors.Vector;
    begin
       --  Collect the owning manifest's test-labelled dependency names
       --  before scanning the root's children, so every component can be
@@ -122,6 +127,8 @@ is
             Collect_Owner_Test_Names (O, Owner_Test_Names);
          end if;
       end;
+
+      Read_Go_Modules (Root & "/modules.txt", Go_Modules);
 
       Scan_Stack.Clear;
       Push_Dir (Scan_Stack, Root, 0);
@@ -165,7 +172,7 @@ is
                declare
                   M : Vendor_Manifest;
                begin
-                  Read_Vendor_Manifest (Dir_Path, Root, M);
+                  Read_Vendor_Manifest (Dir_Path, Go_Modules, M);
                   if M.Found then
                      declare
                         N       : String :=

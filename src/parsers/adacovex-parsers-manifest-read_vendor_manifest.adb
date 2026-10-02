@@ -11,8 +11,13 @@ separate (Adacovex.Parsers.Manifest)
 --  version and website from the package registry when the manifest is
 --  silent. requirements*.txt is matched by glob as a final fallback
 --  because it is not a fixed filename.
+--  Modules is the parsed vendor manifest of the vendor root the component
+--  was found under, empty when the tree carries none. It is parsed once per
+--  vendor root by the caller and looked up in memory here.
 procedure Read_Vendor_Manifest
-  (Dir : String; Root : String; Info : out Vendor_Manifest)
+  (Dir     : String;
+   Modules : Go_Module_Vectors.Vector;
+   Info    : out Vendor_Manifest)
 is
    use Ada.Directories;
 
@@ -200,15 +205,14 @@ begin
                begin
                   Set_Text (Info.Name, Info.Name_Len, Mod_Path);
                   --  A module's own go.mod states its path but never its
-                  --  version, so the version comes from the vendored
-                  --  tree's module manifest. It is absent for a module
-                  --  outside a Go vendor tree, and the registry resolver
-                  --  then supplies it.
-                  if Mod_Path'Length > 0 and then Root'Length > 0 then
+                  --  version, so the version comes from the parsed vendor
+                  --  manifest. It is absent for a module outside a Go vendor
+                  --  tree, and the registry resolver then supplies it.
+                  if Mod_Path'Length > 0 then
                      Set_Text
                        (Info.Version,
                         Info.Version_Len,
-                        Go_Module_Version (Root & "/modules.txt", Mod_Path));
+                        Go_Module_Version (Modules, Mod_Path));
                   end if;
                end;
 
