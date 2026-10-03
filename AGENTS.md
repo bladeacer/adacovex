@@ -59,7 +59,7 @@ tools, or output must also update, in the same change:
 `make prove` timing table as one column per **phase**, never one per release.
 A phase is a range of versions whose implementation methodology is largely
 similar (so far 1.40.0-1.41.0, 1.42.0-1.44.0, 1.45.0-1.47.0, 1.48.0-1.54.0,
-1.55.0).
+1.55.0-1.56.0).
 Fold each new version into the open phase while the methodology holds; close
 the phase and open a new one on a methodology shift. Each phase carries exactly one
 representative version, and the table uses that version's *complete* metric

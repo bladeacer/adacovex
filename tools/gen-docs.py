@@ -256,6 +256,10 @@ NAV_SCRIPT: str = "_static/adacovex-nav.js"
 # SBOM asset scan reads the resources/ root as vendored libraries and
 # resources/js/ as the project's own modules).
 NAV_SCRIPT_SRC: Path = ROOT / "resources" / "js" / "book-nav.js"
+# The drawer reveal shared with the online manual: docs/conf.py registers it
+# through html_js_files, and collect_assets bundles it with the rest of
+# _static/, so both manuals move the drawer the same way.
+SIDEBAR_REVEAL: Path = ROOT / "docs" / "_static" / "sidebar-reveal.js"
 _SIDEBAR_START: str = '<div class="sidebar-container">'
 _TAG_CLASS: str = "class="
 

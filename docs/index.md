@@ -233,10 +233,10 @@ compliance/HLR
 compliance/LLR
 proof/index
 compliance/index
-  badges/index
-  api-docs/index
-  CREDITS
-  THIRD_PARTY_NOTICES
+badges/index
+api-docs/index
+CREDITS
+THIRD_PARTY_NOTICES
 ```
 
 ```{toctree}

@@ -75,6 +75,19 @@ and Furo reveals its right-hand table of contents only. The drawer moves
 alone: the page itself stays at its own top, and an entry that is already
 in view leaves the drawer where it is.
 
+That reveal is the manual's behaviour on both surfaces, online and offline.
+The online manual (Read the Docs) has the inline Furo toctree, so
+`docs/_static/sidebar-reveal.js` moves the drawer there, and the bundled
+manual ships the same file, so the two never drift apart. On an offline
+page the tree is injected after that file has run, so it finds no tree and
+the injector owns the drawer. Both use the same rule: the drawer moves, the
+page does not.
+
+Every page a reader can reach from the sidebar has an entry to reveal, so
+each `{toctree}` line sits at the left margin. An indented line becomes a
+child toctree of the entry above it, and `:maxdepth: 1` then hides the whole
+subtree from the sidebar.
+
 The full composition of the bundled site, and the other size options
 measured, are on [Benchmarking adacovex -- bundled offline
 manual](../contributing/perf/benchmarks-binary-size.md#bundled-offline-manual).

@@ -17,7 +17,7 @@ for the phase, so a column is never assembled from the best value of each row
 across different versions.
 
 The measured phases are 1.40.0-1.41.0, 1.42.0-1.44.0, 1.45.0-1.47.0,
-1.48.0-1.54.0, and 1.55.0. A version joins the open phase while the
+1.48.0-1.54.0, and 1.55.0-1.56.0. A version joins the open phase while the
 methodology is unchanged; a methodology shift closes the phase and opens a new
 one.
 
@@ -28,14 +28,18 @@ methodology: the 1.51.0 encode cache and parallel encoder are build-side
 speed-ups, and the 1.52.0 `--level=4` gate is a gate setting that the prove
 subcommand forwards verbatim.
 
-**1.55.0 opens its own phase and is its own representative.**  It changes the
-methodology, not only the code: every figure in this phase is taken with
-`/proc/loadavg` recorded beside it, because this machine is shared and the load
-moves the cold rows by more than 50 percent on the same binary. The phase also
-re-baselines the fully cold prove shape, which no earlier phase recorded, and
-replaces the gate's second full Sphinx build with one content-keyed shared
-build. Every number below is hyperfine on the self tree (gnatprove 16.1.0, 12
-logical cores, 10 proof jobs) unless a note says otherwise.
+**The 1.55.0-1.56.0 phase is open, with 1.55.0 as its representative.**
+1.55.0 opens it and changes the methodology, not only the code: every figure in
+this phase is taken with `/proc/loadavg` recorded beside it, because this
+machine is shared and the load moves the cold rows by more than 50 percent on
+the same binary. 1.56.0 folds in because it changed no measurement
+methodology: it edits documentation sources, one browser script, and Python
+tooling, and adds no Ada unit, so the pipeline and the prover see the same work
+as 1.55.0 did. The phase also re-baselines the fully cold prove shape, which no
+earlier phase recorded, and replaces the gate's second full Sphinx build with
+one content-keyed shared build. Every number below is hyperfine on the self tree
+(gnatprove 16.1.0, 12 logical cores, 10 proof jobs) unless a note says
+otherwise.
 
 ## Pipeline timing by phase
 
@@ -45,7 +49,7 @@ logical cores, 10 proof jobs) unless a note says otherwise.
 | 1.42.0-1.44.0 | 1.44.0 | 23 ms | 60 ms |
 | 1.45.0-1.47.0 | 1.47.0 | ~43 ms | ~74 ms |
 | 1.48.0-1.54.0 | 1.50.0 | 46 ms | 73 ms |
-| 1.55.0 | 1.55.0 | 41 ms | 66 ms |
+| 1.55.0-1.56.0 | 1.55.0 | 41 ms | 66 ms |
 
 \* The 1.40.0/1.41.0 pipeline figures predate the four-scenario bench script.
 ## Prove timing by phase
@@ -56,7 +60,7 @@ logical cores, 10 proof jobs) unless a note says otherwise.
 | 1.42.0-1.44.0 | 1.44.0 | 44 ms | 36.4 s / 876 VCs |
 | 1.45.0-1.47.0 | 1.47.0 | ~53 ms | ~37 s / 876 VCs (40-110 s load-dependent) |
 | 1.48.0-1.54.0 | 1.50.0 | 55 ms | 61-88 s / 880 VCs (load-dependent; 878 VCs from 1.52.0) |
-| 1.55.0 | 1.55.0 | 50 ms | 72-82 s / 878 VCs (120.6 s under heavy load) |
+| 1.55.0-1.56.0 | 1.55.0 | 50 ms | 72-82 s / 878 VCs (120.6 s under heavy load) |
 
 ## Warm-run syscalls by phase
 
@@ -66,7 +70,7 @@ logical cores, 10 proof jobs) unless a note says otherwise.
 | 1.42.0-1.44.0 | 1.44.0 | ~2k |
 | 1.45.0-1.47.0 | 1.47.0 | ~6k |
 | 1.48.0-1.54.0 | 1.50.0 | ~6.9k |
-| 1.55.0 | 1.55.0 | ~7.3k |
+| 1.55.0-1.56.0 | 1.55.0 | ~7.3k |
 
 ## Reading the numbers
 
@@ -223,28 +227,3 @@ logical cores, 10 proof jobs) unless a note says otherwise.
   are not strictly faster; `--level=0` cold is ~35 s.
 - CPU use stays bounded on developer machines: the default job count is
   `cores - 2` (all cores inside CI), so gnatprove never starves the desktop.
-
-## SIMD and other optimisation candidates (1.46.0)
-
-An optimisation review in 1.46.0 asked whether SIMD or other low-level
-speed-ups could improve the pipeline. The measurements say no:
-
-- A cold self-assessment (no result cache, ~250 source files) completed in
-  ~88 ms and a warm one in ~41 ms on the dev machine (hyperfine, 1.46.0), even
-  with an unoptimised local build profile. The pipeline is I/O-bound and
-  cache-bound, not compute-bound. A `prove` run is dominated by the gnatprove
-  solver floor (~39 s cold), and its adacovex-side share is about a second.
-- `make perf-bench` (perf + strace over the same tree, 1.46.0) showed a
-  healthy cache: L1-dcache miss rates of 0.1-0.7% sit far under the ~5% level
-  where data-layout work pays, so no struct packing or prefetching is
-  warranted. The I/O story is unchanged: ~6.3k `newfstatat` on a warm run
-  (~67% of syscall time) is the walk floor.
-- The per-byte scanning loops (comment stripping, decision counting, HLR tags)
-  are the only SIMD candidates. They process short lines one byte at a time;
-  auto-vectorisation needs `-O3` (or `-ftree-vectorize`) and gains little on
-  data this small, at the cost of the zero-dependency build's simplicity.
-
-Conclusion: no SIMD or assembly is added. The sanctioned path to more speed is
-the existing one: higher optimisation in release profiles, the shared
-directory snapshot memo, and the content-hashed result cache. If a future
-profile shows the scanner hot, the first move is whole-file buffered reads.

@@ -1350,6 +1350,37 @@ class TestGenDocsCodec(unittest.TestCase):
         self.assertNotIn("window.scroll", script)
         self.assertNotIn("documentElement.scrollTop", script)
 
+    def test_shared_reveal_script_is_registered_and_bundled(self) -> None:
+        # docs/_static/sidebar-reveal.js serves the online manual (Read the
+        # Docs) and is bundled into the offline one, so both manuals reveal
+        # the open entry in the drawer.  It is registered through
+        # html_js_files; without that line Sphinx builds the pages without it
+        # and the file is never even referenced.
+        conf = (gen_docs.DOCS / "conf.py").read_text(encoding="utf-8")
+        self.assertIn('html_js_files = ["sidebar-reveal.js"]', conf)
+        self.assertIn('html_static_path = ["_static"]', conf)
+        self.assertTrue(gen_docs.SIDEBAR_REVEAL.is_file())
+        # The offline bundle copies every _static asset, so the file reaches
+        # the manual without a gen-docs.py special case; assert the suffix is
+        # bundled at all, since a .js with no MIME entry would be dropped.
+        self.assertEqual(gen_docs._MIME[".js"], "application/javascript")
+
+    def test_shared_reveal_script_reveals_only_the_drawer(self) -> None:
+        # The same contract as the injector's reveal, and it must hold for the
+        # shared script too: the drawer is the only scroll container.  A
+        # scrollIntoView or a window scroll would move the page instead.
+        script = gen_docs.SIDEBAR_REVEAL.read_text(encoding="utf-8")
+        self.assertIn('entry.closest(".sidebar-scroll")', script)
+        self.assertIn("box.scrollTop", script)
+        self.assertIn('box.style.scrollBehavior = "auto"', script)
+        # Sphinx marks the open page; a page no toctree names has no entry,
+        # and the script must leave the drawer alone rather than throw.
+        self.assertIn("li.current-page > a", script)
+        self.assertIn("if (!entry) { return; }", script)
+        self.assertNotIn("scrollIntoView", script)
+        self.assertNotIn("window.scroll", script)
+        self.assertNotIn("documentElement.scrollTop", script)
+
 
 class TestGenDocsBundling(unittest.TestCase):
     """The clean-build stamp and write-on-change guards (1.50.0).

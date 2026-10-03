@@ -194,3 +194,28 @@ reuses the deployed crate with no download.
 
 Entries from 1.42.0 back to 1.27.0 are on [Performance optimisation
 history: earlier releases](../../archive/optimisation-history-archive.md).
+
+### SIMD and other optimisation candidates (1.46.0)
+
+An optimisation review in 1.46.0 asked whether SIMD or other low-level
+speed-ups could improve the pipeline. The measurements say no:
+
+- A cold self-assessment (no result cache, ~250 source files) completed in
+  ~88 ms and a warm one in ~41 ms on the dev machine (hyperfine, 1.46.0), even
+  with an unoptimised local build profile. The pipeline is I/O-bound and
+  cache-bound, not compute-bound. A `prove` run is dominated by the gnatprove
+  solver floor (~39 s cold), and its adacovex-side share is about a second.
+- `make perf-bench` (perf + strace over the same tree, 1.46.0) showed a
+  healthy cache: L1-dcache miss rates of 0.1-0.7% sit far under the ~5% level
+  where data-layout work pays, so no struct packing or prefetching is
+  warranted. The I/O story is unchanged: ~6.3k `newfstatat` on a warm run
+  (~67% of syscall time) is the walk floor.
+- The per-byte scanning loops (comment stripping, decision counting, HLR tags)
+  are the only SIMD candidates. They process short lines one byte at a time;
+  auto-vectorisation needs `-O3` (or `-ftree-vectorize`) and gains little on
+  data this small, at the cost of the zero-dependency build's simplicity.
+
+Conclusion: no SIMD or assembly is added. The sanctioned path to more speed is
+the existing one: higher optimisation in release profiles, the shared
+directory snapshot memo, and the content-hashed result cache. If a future
+profile shows the scanner hot, the first move is whole-file buffered reads.

@@ -404,6 +404,65 @@ test.describe('Dashboard layout', () => {
       .evaluate((el) => el.scrollTop)).toBe(0);
   });
 
+  test('every sidebar entry reveals, and the shared script is bundled',
+    async ({ page }) => {
+      // docs/_static/sidebar-reveal.js carries the same reveal for the
+      // online manual (Read the Docs), and tools/gen-docs.py bundles it into
+      // the offline one, so both manuals behave alike.  On an offline page
+      // the tree is injected after this script has run, so the script finds
+      // no tree and the injector's reveal owns the drawer: the file still
+      // has to be served, because a page whose tree is inline has nothing
+      // else to move it.
+      const res = await page.request.get('/docs/_static/sidebar-reveal.js');
+      expect(res.status()).toBe(200);
+      expect(await res.text()).toContain('closest(".sidebar-scroll")');
+
+      // Every entry in every stored tree must reveal, so this walks the
+      // whole tree rather than a hand-picked page.  A page missing from the
+      // toctree has no entry to reveal at all, which is the failure mode the
+      // group assertion below guards.
+      await page.setViewportSize({ width: 1400, height: 800 });
+      await page.goto('/docs/index.html');
+      await expect(page.locator('.sidebar-container a.sidebar-brand'))
+        .toBeVisible({ timeout: 10000 });
+      const hrefs = await page.locator('.sidebar-container .sidebar-tree a[href]')
+        .evaluateAll((links) => Array.from(new Set(
+          links.map((a) => (a as HTMLAnchorElement).href))));
+      expect(hrefs.length).toBeGreaterThan(20);
+
+      // The whole "Maintainer references" group has to be in the tree.  Four
+      // of its lines were once indented, which turned them into a child
+      // toctree of compliance/index; :maxdepth: 1 then hid the subtree, so
+      // those pages had no entry to mark and the drawer never moved on them.
+      for (const page of ['badges/index.html', 'api-docs/index.html',
+        'CREDITS.html', 'THIRD_PARTY_NOTICES.html']) {
+        expect(hrefs.some((href) => href.endsWith('/' + page)), page)
+          .toBe(true);
+      }
+
+      const stuck: string[] = [];
+      for (const href of hrefs) {
+        if (href.endsWith('/index.html') || href.endsWith('/genindex.html')
+          || href.endsWith('/search.html')) {
+          continue;
+        }
+        await page.goto(href);
+        await page.waitForSelector('.sidebar-container a[aria-current="page"]',
+          { timeout: 10000 });
+        const state = await page.locator('.sidebar-scroll').evaluate((el) => {
+          const link = el.querySelector('a[aria-current="page"]')!;
+          const view = el.getBoundingClientRect();
+          const item = link.getBoundingClientRect();
+          return {
+            tall: el.scrollHeight > el.clientHeight,
+            inside: item.top >= view.top - 1 && item.bottom <= view.bottom + 1,
+          };
+        });
+        if (state.tall && !state.inside) { stuck.push(href); }
+      }
+      expect(stuck, 'entries left off screen').toEqual([]);
+    });
+
   test('the manual sidebar exposes every documentation category', async ({ page }) => {
     await page.goto('/docs/index.html');
     await expect(page.locator('.sidebar-container a.sidebar-brand'))

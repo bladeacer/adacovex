@@ -90,11 +90,12 @@ holds; a methodology shift closes the phase and opens a new one.
 
 The closed 1.48.0-1.54.0 phase is represented by 1.50.0, whose methodology
 shift was the deterministic, incremental doc bundling that keeps the cached
-proof warm across a no-op build. The **open phase is 1.55.0**, represented by
+proof warm across a no-op build. The **open phase is 1.55.0-1.56.0**, represented by
 1.55.0, because the methodology changed and not only the code: every figure is
 now taken with the machine load recorded beside it, and the fully cold prove
-shape is measured for the first time. Its detail is on [The 1.55.0 timing
-re-baseline](prove-rebaseline.md).
+shape is measured for the first time. 1.56.0 folds in because it changed no
+measurement methodology and adds no Ada unit. Its detail is on [The 1.55.0
+timing re-baseline](prove-rebaseline.md).
 
 ## CI
 
