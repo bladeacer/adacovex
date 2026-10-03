@@ -107,3 +107,22 @@ src/parsers/adacovex-parsers-manifest-read_go_modules	Parse a Go vendor/modules.
 src/parsers/adacovex-parsers-manifest-license_id	Classify a sibling licence file into an SPDX identifier
 src/parsers/adacovex-parsers-manifest-probe_version	Probe a tool's version by spawning it and parsing its output
 src/parsers/adacovex-parsers-manifest-make_tool	Build a Tool_Entry (name + category) from string literals
+src/parsers/adacovex-parsers-manifest-add_probe	Record a tool version probe result (deduplicated)
+src/parsers/adacovex-parsers-manifest-add_probe_fp	Record a tool version probe result with its binary digest
+src/parsers/adacovex-parsers-manifest-tool_fp_digest	SHA-256 of the fingerprint of an installed tool binary
+src/parsers/adacovex-parsers-manifest-push_scan_dir	Queue a directory for the system-tool scan
+src/parsers/adacovex-parsers-manifest-should_scan	Whether a file drives a build and is scanned for tool references
+src/parsers/adacovex-parsers-manifest-note_tool	Record a curated tool as referenced by the project
+src/parsers/adacovex-parsers-manifest-is_word_char	Whether a character can appear in a tool-name word
+src/parsers/adacovex-parsers-manifest-note_if_tool	Record a whole word of a line when it names a curated tool
+src/parsers/adacovex-parsers-manifest-note_referenced_tools	Record every curated tool a line references as a whole word
+src/parsers/adacovex-parsers-manifest-scan_file	Scan one dev-facing build file for curated tool names
+src/parsers/adacovex-parsers-manifest-source_tree_hash	Content hash of the dev-facing files the tool scan reads
+src/parsers/adacovex-parsers-manifest-tools_key	Cache key for the referenced-tool set and its probes
+src/parsers/adacovex-parsers-manifest-has_makefile	Whether the project root holds a Makefile variant
+src/parsers/adacovex-parsers-manifest-serialize_set	Serialize the referenced-tool set and probes to a cache blob
+src/parsers/adacovex-parsers-manifest-deserialize_set	Restore the referenced-tool set and probes from a cache blob
+src/parsers/adacovex-parsers-manifest-discover_system_dev_deps	Register installed system tools the project references (dev scope)
+src/parsers/adacovex-parsers-manifest-vendored_hash	Fingerprint of every vendored input that shapes the graph
+src/parsers/adacovex-parsers-manifest-graph_key	Combined content hash of everything that shapes the graph
+src/parsers/adacovex-parsers-manifest-build_dependency_graph	Build the dependency graph for a project root

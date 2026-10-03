@@ -263,6 +263,51 @@ package body Adacovex.Types is
       end case;
    end To_String;
 
+   function To_String (M : Spark_Metric_Kind) return String is
+   begin
+      case M is
+         when Metric_Statements =>
+            return "statements";
+
+         when Metric_Subprograms =>
+            return "subprograms";
+
+         when Metric_Checks    =>
+            return "vcs";
+      end case;
+   end To_String;
+
+   function To_String (G : Spark_Group_Kind) return String is
+   begin
+      case G is
+         when Group_File    =>
+            return "file";
+
+         when Group_Folder  =>
+            return "folder";
+
+         when Group_Package =>
+            return "package";
+      end case;
+   end To_String;
+
+   function To_String (C : Spark_Off_Class) return String is
+   begin
+      case C is
+         when Off_None        =>
+            return "none";
+
+         when Off_Irreducible =>
+            return "irreducible";
+
+         when Off_IO_Bound    =>
+            return "io-bound";
+
+         when Off_Work_Queue  =>
+            return "work-queue";
+      end case;
+   end To_String;
+
    function To_Theme (S : String) return Dashboard_Theme is
       U : constant String := To_Upper (S);
    begin

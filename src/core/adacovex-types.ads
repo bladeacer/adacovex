@@ -73,6 +73,36 @@ package Adacovex.Types is
    --  HLR-SBOM: SBOM format kind
    type SBOM_Format_Kind is (CycloneDX_JSON, SPDX_JSON, Markdown);
 
+   --  Which of the three SPARK coverage metrics a report or a threshold gate
+   --  uses. Each metric answers a different question, so every percentage in
+   --  a SPARK-coverage report names the one it belongs to.
+   --    Metric_Statements  proved executable statements / all executable
+   --                       statements (how much of the code is verified)
+   --    Metric_Subprograms proved subprograms / subprograms gnatprove
+   --                       considered (how much of the design surface is
+   --                       verified)
+   --    Metric_Checks      discharged checks / checks the prover reported
+   --                       (what the prover actually discharged)
+   --  HLR-SPARK: SPARK coverage metrics
+   type Spark_Metric_Kind is (Metric_Statements, Metric_Subprograms, Metric_Checks);
+
+   --  How a SPARK-coverage report groups its rows. Group_File keys rows by
+   --  the Ada source unit, Group_Folder by the folder under the target
+   --  directory, and Group_Package by the Ada package name.
+   type Spark_Group_Kind is (Group_File, Group_Folder, Group_Package);
+
+   --  Why a subprogram is outside the proof. Off_None means the subprogram
+   --  is proved. Off_Irreducible is one of the documented packages that can
+   --  never be in SPARK (a non-formal Ada.Containers instantiation).
+   --  Off_IO_Bound is a body the prover cannot analyse at all because it
+   --  performs input or output. Off_Work_Queue is a default-off pure-logic
+   --  body: provable in principle, so it is the backlog.
+   type Spark_Off_Class is
+     (Off_None, Off_Irreducible, Off_IO_Bound, Off_Work_Queue);
+
+   --  Output shape of the spark-coverage report.
+   type Spark_Report_Kind is (Spark_Text, Spark_JSON);
+
    --  SBOM component kind. The root project is the project being described.
    --  A library dependency is resolved from the dependency graph.
    type Component_Kind is (Root_Component, Dependency_Component);
@@ -277,6 +307,89 @@ package Adacovex.Types is
 
       package Component_Vectors is new
         Ada.Containers.Vectors (Positive, Component_Info);
+
+      --  SPARK coverage of one Ada source unit (one package, keyed by the
+      --  base name of its source files). Three metrics are recorded per
+      --  unit, each with its own numerator and denominator:
+      --
+      --    Stmts_Total / Stmts_Proved   statement coverage (executable
+      --                                 statements in the unit's body)
+      --    Subs_Total / Subs_Proved     subprogram coverage (subprograms
+      --                                 gnatprove considered in the unit)
+      --    Checks_Total / Checks_Proved VC coverage (checks the prover
+      --                                 reported, passed or not)
+      --
+      --  A unit gnatprove never reported on holds the zero values, so the
+      --  Not_Covered count is always derived (see Adacovex.Spark_Coverage)
+      --  and never a stored total that can drift from its parts.
+      --  HLR-SPARK: SPARK coverage metrics
+      type Spark_Coverage_Unit is record
+         Name             : Name_Field;
+         Name_Len         : Natural := 0;
+         Folder           : Path_Field;
+         Folder_Len       : Natural := 0;
+         File             : Path_Field;
+         File_Len         : Natural := 0;
+         Stmts_Total      : Natural := 0;
+         Stmts_Proved     : Natural := 0;
+         Subs_Total       : Natural := 0;
+         Subs_Proved      : Natural := 0;
+         Checks_Total     : Natural := 0;
+         Checks_Proved    : Natural := 0;
+         Off_Irreducible  : Natural := 0;
+         Off_IO_Bound     : Natural := 0;
+         Off_Work_Queue   : Natural := 0;
+         --  Subprogram headers seen in the unit's body. When the unit was
+         --  not part of the gnatprove run (In_Proof_Run is False) this is
+         --  the count the prover never looked at, so it is the unit's
+         --  not-covered subprogram count.
+         Body_Subs        : Natural := 0;
+         --  Whether the unit appeared in the gnatprove run at all. A unit
+         --  that did not is never reported as proved and never folded
+         --  into an off class.
+         In_Proof_Run     : Boolean := False;
+      end record;
+
+      package Spark_Coverage_Vectors is new
+        Ada.Containers.Vectors (Positive, Spark_Coverage_Unit);
+
+      --  SPARK coverage rolled up over a group of units (one file, one
+      --  folder, or one Ada package). Every count is a sum, so a group
+      --  percentage is always a ratio of sums and never a mean of its
+      --  children.
+      type Spark_Coverage_Group is record
+         Key             : Path_Field;
+         Key_Len         : Natural := 0;
+         Stmts_Total     : Natural := 0;
+         Stmts_Proved    : Natural := 0;
+         Subs_Total      : Natural := 0;
+         Subs_Proved     : Natural := 0;
+         Checks_Total    : Natural := 0;
+         Checks_Proved   : Natural := 0;
+         Off_Irreducible : Natural := 0;
+         Off_IO_Bound    : Natural := 0;
+         Off_Work_Queue  : Natural := 0;
+         Not_Covered_Subs : Natural := 0;
+         Unit_Ct         : Natural := 0;
+      end record;
+
+      package Spark_Group_Vectors is new
+        Ada.Containers.Vectors (Positive, Spark_Coverage_Group);
+
+      --  The whole-tree rollup: the group with the empty key.
+      type Spark_Coverage_Totals is record
+         Stmts_Total     : Natural := 0;
+         Stmts_Proved    : Natural := 0;
+         Subs_Total      : Natural := 0;
+         Subs_Proved     : Natural := 0;
+         Checks_Total    : Natural := 0;
+         Checks_Proved   : Natural := 0;
+         Off_Irreducible : Natural := 0;
+         Off_IO_Bound    : Natural := 0;
+         Off_Work_Queue  : Natural := 0;
+         Not_Covered_Subs : Natural := 0;
+         Unit_Ct         : Natural := 0;
+      end record;
    end Implementation;
 
    --  Convert a SPARK_Level to its human-readable name.
@@ -415,5 +528,28 @@ package Adacovex.Types is
    with
      Post   => To_String'Result = "PASS" or else To_String'Result = "FAIL",
      Global => null;
+
+--  Convert a Spark_Metric_Kind to its CLI name: "statements",
+   --  "subprograms", or "vcs". Every percentage in a SPARK-coverage report
+   --  carries this label so a reader never has to guess which metric a
+   --  number belongs to.
+   --  @param M  Metric kind.
+   --  @return The metric's CLI name.
+   function To_String (M : Spark_Metric_Kind) return String
+   with Global => null;
+
+   --  Convert a Spark_Group_Kind to its CLI name: "file", "folder", or
+   --  "package".
+   --  @param G  Group kind.
+   --  @return The group kind's CLI name.
+   function To_String (G : Spark_Group_Kind) return String
+   with Global => null;
+
+   --  Convert a Spark_Off_Class to its report label: "none", "irreducible",
+   --  "io-bound", "work-queue", or "not-covered".
+   --  @param C  Off class.
+   --  @return The class label.
+   function To_String (C : Spark_Off_Class) return String
+   with Global => null;
 
 end Adacovex.Types;

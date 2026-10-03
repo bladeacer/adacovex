@@ -32,6 +32,15 @@ steps (version spec, CSS gate, dashboard, bundled manual) as a dev build.  A
 release build that skipped them could ship a binary whose bundled dashboard
 or offline manual predates the source that produced it.
 
+The build profile is selected from the same signal: a build is a release
+build when `--release` is passed or when `ADACOVEX_VERSION` is set in the
+environment (a release build stamps the version from the environment).  A
+release build forwards the gprbuild external `ADACOVEX_PROFILE=release`
+through to `alr build`, which selects the `Release` case of adacovex.gpr
+(`-O2`, no `-g`); a development build forwards nothing and takes the
+default `Development` case (`-O1`, with `-g`).  Every performance figure in
+docs/contributing/perf/ is measured on the release profile.
+
 Exit code is alr's (0 on success).  A failure in any earlier step aborts
 the build like the old `&&`-chained recipe did.  gen-docs.py never fails
 when sphinx-build is missing (it keeps the committed spec), so the build
@@ -60,6 +69,14 @@ def run_capture(cmd: List[str]) -> subprocess.CompletedProcess:
 
 
 def build(release: bool = False) -> int:
+    # A release build stamps the version from the environment, so an
+    # ADACOVEX_VERSION in the environment selects the release profile even
+    # without --release.  Both signals reach alr as --release, which Alire
+    # maps to the Release external profile of adacovex.gpr.
+    if not release and os.environ.get("ADACOVEX_VERSION"):
+        release = True
+    profile = "Release" if release else "Development"
+    print(f"=== Build profile: {profile} ===")
     print("=== Regenerating version info ===")
     rc = run([sys.executable, "tools/gen-version.py"])
     if rc != 0:
@@ -80,6 +97,8 @@ def build(release: bool = False) -> int:
         return rc
 
     command = ["alr", "build"] + (["--release"] if release else [])
+    if release:
+        command += ["--", "-XADACOVEX_PROFILE=release"]
     print(f"=== alr build{' --release' if release else ''} ===")
     result = run_capture(command)
     with tempfile.NamedTemporaryFile(

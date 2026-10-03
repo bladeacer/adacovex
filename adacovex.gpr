@@ -6,16 +6,60 @@ project Adacovex is
    for Exec_Dir use "bin";
    for Main use ("adacovex_main.adb", "test_runner.adb");
 
+   --  Build profile. tools/build.py passes the ADACOVEX_PROFILE external
+   --  through to gprbuild: it selects "release" for a release build
+   --  (`tools/build.py --release`, or ADACOVEX_VERSION set in the
+   --  environment) and omits it otherwise, so "development" is the
+   --  default for every plain `alr build`. gprbuild 26 has no `profile`
+   --  blocks and no conditional expressions, so the switch selection is a
+   --  GPR `case` on this variable. tools/build.py is the single build
+   --  entry point (the Makefile delegates `build`, `release`, `test`, and
+   --  `prove` to it), which is what keeps a release build on -O2.
+   type Build_Profile_Type is ("development", "release");
+   Profile : Build_Profile_Type := external ("ADACOVEX_PROFILE", "development");
+
+   --  Optimisation level is the dominant compile-time cost in this tree.
+   --  The two heaviest bodies (Adacovex.Parsers.Manifest and
+   --  Adacovex.Types) copy fixed-size string fields by value, which is
+   --  exactly the shape GCC's inliner and alias analysis spend their time
+   --  on: measured at 2.2x to 2.7x more compile time at -O2 than at -O1.
+   --  The development profile therefore compiles at -O1 and keeps -g,
+   --  where debuggability is the point. A full rebuild of the tree is
+   --  roughly half the wall time.
+   --
+   --  The release profile keeps -O2 for the shipped binary and drops -g:
+   --  debug info reached every compile and cost about 8 percent of the
+   --  heaviest body's compile time while adding nothing to a released
+   --  artefact. gnatprove runs its own analysis and never reads the -O
+   --  level, so the profile does not move a single proof obligation.
+   --
+   --  Every figure in docs/contributing/perf/ must be measured on the
+   --  release profile, whatever profile a developer uses day to day; the
+   --  profile is named beside each figure. See
+   --  docs/contributing/perf/prove-timing.md.
    package Compiler is
-      for Default_Switches ("Ada") use
-        ("-gnatwa", "-gnat12", "-gnata", "-gnatwF", "-gnatwsh",
-         "-gnatW8", "-gnatyM120",
-         "-O2", "-gnatn");
+      case Profile is
+         when "development" =>
+            for Default_Switches ("Ada") use
+              ("-gnatwa", "-gnat12", "-gnata", "-gnatwF", "-gnatwsh",
+               "-gnatW8", "-gnatyM120",
+               "-O1", "-gnatn");
+         when "release" =>
+            for Default_Switches ("Ada") use
+              ("-gnatwa", "-gnat12", "-gnata", "-gnatwF", "-gnatwsh",
+               "-gnatW8", "-gnatyM120",
+               "-O2", "-gnatn");
+      end case;
    end Compiler;
 
    package Builder is
       for Executable ("adacovex_main.adb") use "adacovex";
-      for Default_Switches ("Ada") use ("-g");
+      case Profile is
+         when "development" =>
+            for Default_Switches ("Ada") use ("-g");
+         when "release" =>
+            for Default_Switches ("Ada") use ();
+      end case;
    end Builder;
 
    package Binder is

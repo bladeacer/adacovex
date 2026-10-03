@@ -79,6 +79,69 @@ package body Adacovex.Parsers.Manifest is
      (Field : out Types.Path_Field; Len : out Natural; S : String)
    is separate;
 
+   --  Working set of the system-tool discovery pass. The scan is one
+   --  procedure, but its steps (the directory walk, the per-file word scan,
+   --  the version probes, the cache round-trip) live in their own separate
+   --  bodies, so the state they share is held at package level. Every
+   --  variable below is cleared at the start of Discover_System_Dev_Deps,
+   --  so the pass has the same per-call lifetime the nested declarations
+   --  had before the split.
+
+   --  One directory pending the system-tool scan.
+   type Scan_Dir_Entry is record
+      Path : Types.Path_Field;
+      Len  : Natural := 0;
+   end record;
+
+   package Scan_Dir_Vectors is new
+     Ada.Containers.Vectors (Positive, Scan_Dir_Entry);
+
+   Scan_Stack : Scan_Dir_Vectors.Vector;
+
+   --  Tool names the project's files reference (deduplicated).
+   Referenced : Name_Vectors.Vector;
+
+   --  One observed tool version: the "tool=version" pairs restored from a
+   --  cache blob or produced by a fresh version probe.
+   type Probe_Pair is record
+      Name  : Types.Name_Field;
+      NLen  : Natural := 0;
+      Ver   : Types.Desc_Field;
+      VLen  : Natural := 0;
+      --  Identity digest of the binary the version was probed from
+      --  (SHA-256 of the fingerprint image). Restored-from-cache probe
+      --  entries are re-validated against the live binary: a mismatch
+      --  re-probes. Length 0 = pre-fingerprint blob entry, which never
+      --  validates.
+      Fp    : Types.Desc_Field;
+      FpLen : Natural := 0;
+   end record;
+
+   package Probe_Vectors is new Ada.Containers.Vectors (Positive, Probe_Pair);
+   Probes : Probe_Vectors.Vector;
+
+   --  Whether the referenced-tool set (and its probe results) came from
+   --  the on-disk cache. Used to skip the PATH walk and version probes.
+   From_Cache : Boolean := False;
+
+   --  Whether a cache hit re-validated a probe and had to re-probe a tool
+   --  whose installed binary no longer matches the cached fingerprint. The
+   --  refreshed set must then be written back, or the stale blob survives
+   --  and every later run re-probes the same tool again. An unchanged
+   --  toolchain leaves this False and still stores nothing on a hit.
+   Refreshed : Boolean := False;
+
+   --  Cache key (and its image) for the miss-store below. Kept at package
+   --  level so the store can run after the probe loop.
+   Key_Img : String (1 .. 128) := (others => ' ');
+   Key_Len : Natural := 0;
+
+   --  Strip leading and trailing spaces. A string of only spaces becomes
+   --  the empty string. The body stays in this file: a SPARK aspect
+   --  cannot be applied to a separate body declaration, so a proved
+   --  subprogram cannot be split out that way.
+   --  @param S  String to trim (its bounds must be non-degenerate).
+   --  @return The trimmed string.
    function Trim (S : String) return String
    with
      SPARK_Mode => On,
@@ -108,6 +171,9 @@ package body Adacovex.Parsers.Manifest is
    --  precondition gives the function a contract. gnatprove analyses the
    --  function as a unit. gnatprove does not re-prove the body at every
    --  call site.
+   --  @param S  String to test.
+   --  @param Pre  Prefix to look for.
+   --  @return True when Pre is a prefix of S.
    function Starts_With (S : String; Pre : String) return Boolean
    with SPARK_Mode => On, Pre => S'First >= 1 and S'Last < Natural'Last
    is
@@ -534,6 +600,7 @@ package body Adacovex.Parsers.Manifest is
      (Target_Dir : String;
       Graph      : in out Types.Implementation.Component_Vectors.Vector)
    is separate;
+
    type Tool_Category is
      (C_Build,     --  compile / test drivers (make, gprbuild, pytest)
       C_Lang,      --  language implementations & package managers (python3, cargo, go)
@@ -661,6 +728,110 @@ package body Adacovex.Parsers.Manifest is
    function Probe_Version (Tool : String; Flag : String) return String
    is separate;
 
+   --  Record a probe result for a referenced tool (deduplicated).
+   procedure Add_Probe (Name : String; Version : String) is separate;
+
+   --  Record a probe result and the identity digest of the binary it was
+   --  probed from, so a later cache hit can re-validate the entry.
+   procedure Add_Probe_Fp
+     (Name : String; Version : String; Fp_Digest : String) is separate;
+
+   --  SHA-256 of the fingerprint of the installed tool binary, "" when the
+   --  tool is not on PATH.
+   function Tool_Fp_Digest (Name : String) return String is separate;
+
+   --  Queue a directory for the system-tool scan. A path longer than
+   --  Types.Max_Path is dropped: the walk can never reach it.
+   procedure Push_Scan_Dir (Dir : String) is separate;
+
+   --  Whether to scan a file for tool references. Only dev-facing build
+   --  files are scanned: Makefile variants (by name), build manifests
+   --  (package.json, Cargo.toml, go.mod, pyproject.toml, ...), shell
+   --  scripts, GNAT project files, and CI workflows. Source files are
+   --  deliberately excluded -- scanning them produces false positives
+   --  (identifiers like "ada", "go", "make" collide with tool names) and
+   --  they never invoke build tools by name.
+   function Should_Scan (Name : String) return Boolean is separate;
+
+   --  Record Tool as referenced by the project's files.
+   procedure Note_Tool (Tool : Tool_Entry) is separate;
+
+   --  Whether C bounds a tool-name word in a line. A word is a maximal
+   --  run of lowercase letters, digits, underscore, and hyphen
+   --  ([a-z0-9_-]). Uppercase letters do not start or continue a word,
+   --  so "Makefile" and "MAKE" never match the lowercase tool "make".
+   function Is_Word_Char (C : Character) return Boolean is separate;
+
+   --  When the word at Line (W_First .. W_Last) names one of the curated
+   --  system tools, record it via Note_Tool. The match is
+   --  case-sensitive. Only words whose length equals a tool name are
+   --  compared, so a line is scored once per word instead of once per
+   --  tool. "make" matches in "make build". "make" does not match in
+   --  "Makefile" (capital M), "makefile", or "makefiles". "python"
+   --  does not match inside "python3".
+   --  @param Line  Line of text to search.
+   --  @param W_First  First index of the word in Line.
+   --  @param W_Last  Last index of the word in Line.
+   procedure Note_If_Tool
+     (Line : String; W_First : Natural; W_Last : Natural) is separate;
+
+   --  Record every system tool that Line references as a whole word.
+   --  The line is walked once, extracting maximal [a-z0-9_-] words, and
+   --  each word is compared against the tool table by length first.
+   --  This replaces a per-tool substring scan (60 tools x line length)
+   --  with a per-word scan (a few words x 60 length checks), which was
+   --  the dominant CPU cost of the SBOM system-dev-dependency discovery
+   --  on every run.
+   --  @param Line  Line of text to search.
+   procedure Note_Referenced_Tools (Line : String) is separate;
+
+   --  Scan one dev-facing build file for every known system tool. An
+   --  overlong physical line stops the scan of that file, so a truncated
+   --  file never yields a partial tool set.
+   --  @param Path  Path of the file to read.
+   procedure Scan_File (Path : String) is separate;
+
+   --  Source-tree content hash used by Tools_Key. Walks the same
+   --  directories and files that Discover_System_Dev_Deps scans and
+   --  combines per-file digests. This is what makes the tool-set cache
+   --  sound: a file edit that adds or removes a tool reference changes
+   --  the hash, so the next run re-scans instead of serving a stale
+   --  set. The directory-exclusion list matches the main walk exactly.
+   --  @param Dir  Project root directory to hash.
+   --  @return SHA-256 of the hashed dev-facing files, "" when none.
+   function Source_Tree_Hash (Dir : String) return String is separate;
+
+   --  Input key for the referenced-tools cache. It combines the same
+   --  content hashes that Graph_Key uses (manifest, dev manifest, lock,
+   --  vendored hash, language summary, GPR files) with the source-tree
+   --  content hash. The system-tool reference scan reads the same
+   --  project files, so an unchanged project has an unchanged key and the
+   --  cached set is served without re-walking the tree or re-reading a
+   --  file.
+   --  @param Target_Dir  Project root directory.
+   --  @return "tools:" + SHA-256 digest, or "" when inputs are unhashable.
+   function Tools_Key (Target_Dir : String) return String is separate;
+
+   --  Whether the project root holds a Makefile variant (which implies
+   --  make even when no recipe spells out the driver by name).
+   --  @param Target_Dir  Project root directory.
+   --  @return True when a Makefile, makefile, or GNUmakefile exists.
+   function Has_Makefile (Target_Dir : String) return Boolean is separate;
+
+   --  Serialize the referenced-tool set and its probe results to a
+   --  cache blob. Format: comma-separated tool names, then a '|'
+   --  separator, then comma-separated "name=version@digest" probe pairs
+   --  (both bounded by the 8192-char blob). The probe section lets a cache
+   --  hit skip re-running version probes and PATH lookups.
+   --  @return The blob text for Probes and Referenced.
+   function Serialize_Set return String is separate;
+
+   --  Deserialize a cache blob into Referenced and Probes. A blob written
+   --  before the fingerprinted probe format carries names only; every other
+   --  section shape is parsed defensively and a malformed pair is skipped.
+   --  @param Blob  The stored blob text.
+   procedure Deserialize_Set (Blob : String) is separate;
+
    --  Discover system-tool dev dependencies referenced by the project.
    --  Walk the project tree and read only dev-facing build files: Makefile
    --  variants, shell scripts, GNAT project files, CI workflows, and the
@@ -670,6 +841,7 @@ package body Adacovex.Parsers.Manifest is
    --  dev-scope dependency of the root. A Makefile at the project root
    --  implies make. This applies even when no recipe spells out the driver
    --  by name.
+   --
    --  Source files (.ads/.adb/.c/.go/.rs/.js/.ts/...) are NOT scanned. They
    --  are not tool invocations: scanning them is a source of false positives
    --  because identifiers and keywords collide with tool names (every Ada
@@ -681,1030 +853,7 @@ package body Adacovex.Parsers.Manifest is
    procedure Discover_System_Dev_Deps
      (Target_Dir : String;
       Graph      : in out Types.Implementation.Component_Vectors.Vector)
-   is
-      use Ada.Directories;
-      type Dir_Entry is record
-         Path : Types.Path_Field;
-         Len  : Natural := 0;
-      end record;
-      package Dir_Stacks is new Ada.Containers.Vectors (Positive, Dir_Entry);
-      Dir_Stack : Dir_Stacks.Vector;
-      Search    : Search_Type;
-      Ent       : Directory_Entry_Type;
-
-      --  Tool names the project's files reference (deduplicated).
-      Referenced : Name_Vectors.Vector;
-
-      --  "tool=version" pairs observed for the referenced tools. Populated
-      --  on a scan (from the version probe) or restored from the tools
-      --  cache blob on a hit, so the SBOM does not need to re-run probes
-      --  for an unchanged project.
-      type Probe_Pair is record
-         Name  : Types.Name_Field;
-         NLen  : Natural := 0;
-         Ver   : Types.Desc_Field;
-         VLen  : Natural := 0;
-         --  Identity digest of the binary the version was probed from
-         --  (SHA-256 of the fingerprint image). Restored-from-cache probe
-         --  entries are re-validated against the live binary: a mismatch
-         --  re-probes. Length 0 = pre-fingerprint blob entry, which never
-         --  validates.
-         Fp    : Types.Desc_Field;
-         FpLen : Natural := 0;
-      end record;
-      package Probe_Vectors is new
-        Ada.Containers.Vectors (Positive, Probe_Pair);
-      Probes : Probe_Vectors.Vector;
-
-      --  Record a probe result for a referenced tool (deduplicated).
-      --  Forward-declared so Deserialize_Set can call it.
-      procedure Add_Probe (Name : String; Version : String);
-      procedure Add_Probe (Name : String; Version : String) is
-      begin
-         if Name'Length = 0 then
-            return;
-         end if;
-         for I in 1 .. Integer (Probes.Length) loop
-            if Probes (I).NLen = Name'Length
-              and then Probes (I).Name (1 .. Name'Length) = Name
-            then
-               return;
-            end if;
-         end loop;
-         declare
-            P : Probe_Pair;
-         begin
-            P.NLen := Name'Length;
-            P.Name (1 .. Name'Length) := Name (Name'First .. Name'Last);
-            P.VLen := Version'Length;
-            P.Ver (1 .. Version'Length) :=
-              Version (Version'First .. Version'Last);
-            Probes.Append (P);
-         end;
-      end Add_Probe;
-
-      procedure Add_Probe_Fp
-        (Name : String; Version : String; Fp_Digest : String) is
-      begin
-         if Name'Length = 0 then
-            return;
-         end if;
-         for I in 1 .. Integer (Probes.Length) loop
-            if Probes (I).NLen = Name'Length
-              and then Probes (I).Name (1 .. Name'Length) = Name
-            then
-               Probes (I).FpLen := Fp_Digest'Length;
-               Probes (I).Fp (1 .. Fp_Digest'Length) := Fp_Digest;
-               return;
-            end if;
-         end loop;
-         declare
-            P : Probe_Pair;
-         begin
-            P.NLen := Name'Length;
-            P.Name (1 .. Name'Length) := Name (Name'First .. Name'Last);
-            P.VLen := Version'Length;
-            P.Ver (1 .. Version'Length) :=
-              Version (Version'First .. Version'Last);
-            P.FpLen := Fp_Digest'Length;
-            P.Fp (1 .. Fp_Digest'Length) := Fp_Digest;
-            Probes.Append (P);
-         end;
-      end Add_Probe_Fp;
-
-      function Tool_Fp_Digest (Name : String) return String is
-         Exe : GNAT.OS_Lib.String_Access :=
-           GNAT.OS_Lib.Locate_Exec_On_Path (Name);
-      begin
-         if Exe = null then
-            return "";
-         end if;
-         declare
-            D : constant String :=
-              Adacovex.Cache.Hash_String
-                (Adacovex.Cache.Tool_Fingerprint (Exe.all));
-         begin
-            GNAT.OS_Lib.Free (Exe);
-            return D;
-         end;
-      end Tool_Fp_Digest;
-
-      procedure Push_Dir (Dir : String) is
-         Item : Dir_Entry;
-      begin
-         if Dir'Length <= Types.Max_Path then
-            Item.Len := Dir'Length;
-            for I in Dir'Range loop
-               Item.Path (I - Dir'First + 1) := Dir (I);
-            end loop;
-            Dir_Stack.Append (Item);
-         end if;
-      end Push_Dir;
-
-      --  Whether to scan a file for tool references. Only dev-facing build
-      --  files are scanned: Makefile variants (by name), build manifests
-      --  (package.json, Cargo.toml, go.mod, pyproject.toml, ...), shell
-      --  scripts, GNAT project files, and CI workflows. Source files are
-      --  deliberately excluded -- scanning them produces false positives
-      --  (identifiers like "ada", "go", "make" collide with tool names) and
-      --  they never invoke build tools by name.
-      function Should_Scan (Name : String) return Boolean is
-         Dot : Natural := 0;
-      begin
-         if Name = "makefile"
-           or else Name = "Makefile"
-           or else Name = "GNUmakefile"
-         then
-            return True;
-         end if;
-         if Name = "package.json"
-           or else Name = "tsconfig.json"
-           or else Name = "jsconfig.json"
-           or else Name = "Cargo.toml"
-           or else Name = "Cargo.lock"
-           or else Name = "go.mod"
-           or else Name = "go.sum"
-           or else Name = "Gemfile"
-           or else Name = "requirements.txt"
-           or else Name = "pyproject.toml"
-           or else Name = "pom.xml"
-           or else Name = "build.gradle"
-           or else Name = "build.gradle.kts"
-           or else Name = "settings.gradle"
-           or else Name = "settings.gradle.kts"
-           or else Name = "*.csproj"
-           or else Name = "*.sln"
-           or else Name = "Makefile"
-           or else Name = "makefile"
-         then
-            return True;
-         end if;
-         for I in reverse Name'Range loop
-            if Name (I) = '.' then
-               Dot := I;
-               exit;
-            end if;
-         end loop;
-         if Dot = 0 then
-            return False;
-         end if;
-         declare
-            Ext : constant String := Name (Dot .. Name'Last);
-         begin
-            return
-              Ext = ".sh"
-              or else Ext = ".gpr"
-              or else Ext = ".yml"
-              or else Ext = ".yaml"
-              or else Ext = ".toml";
-         end;
-      end Should_Scan;
-
-      --  Record Tool as referenced by the project's files.
-      procedure Note_Tool (Tool : Tool_Entry) is
-      begin
-         Add_Dep_Name (Referenced, Tool.Name (1 .. Tool.Len));
-      end Note_Tool;
-
-      --  Serialize the referenced-tool set and its probe results to a
-      --  cache blob. Format: comma-separated tool names, then a ';'
-      --  separator, then comma-separated "name=version" probe pairs (both
-      --  bounded by the 8192-char blob). The probe section lets a cache
-      --  hit skip re-running version probes and PATH lookups.
-      function Serialize_Set return String is
-         S : String (1 .. 8192);
-         L : Natural := 0;
-
-         procedure Add (Txt : String) is
-         begin
-            if L + Txt'Length <= S'Last then
-               S (L + 1 .. L + Txt'Length) := Txt;
-               L := L + Txt'Length;
-            end if;
-         end Add;
-      begin
-         for I in 1 .. Integer (Referenced.Length) loop
-            declare
-               Nm : constant String :=
-                 Referenced (I).Name (1 .. Referenced (I).Len);
-            begin
-               if L > 0 then
-                  Add (",");
-               end if;
-               Add (Nm);
-            end;
-         end loop;
-         Add ("|");
-         for I in 1 .. Integer (Probes.Length) loop
-            declare
-               Nm : constant String := Probes (I).Name (1 .. Probes (I).NLen);
-               Vr : constant String := Probes (I).Ver (1 .. Probes (I).VLen);
-               Fd : constant String := Probes (I).Fp (1 .. Probes (I).FpLen);
-            begin
-               if L > 0 and then S (L) /= '|' then
-                  Add (",");
-               end if;
-               Add (Nm);
-               Add ("=");
-               Add (Vr);
-               --  Binary-identity digest so a cache hit can re-validate
-               --  each probe against the installed binary. Entries without
-               --  one (never in a v2 blob) would fail validation on load.
-               Add ("@");
-               Add (Fd);
-            end;
-         end loop;
-         return S (1 .. L);
-      end Serialize_Set;
-
-      --  Deserialize the cache blob into Referenced and Probes.
-      procedure Deserialize_Set (Blob : String) is
-         Sep   : Natural := 0;
-         Start : Natural := Blob'First;
-
-         procedure Add_Name (Nm : String) is
-         begin
-            if Nm'Length > 0 then
-               Add_Dep_Name (Referenced, Nm);
-            end if;
-         end Add_Name;
-      begin
-         --  Split on the '|' separator: names before, probe pairs after.
-         for I in Blob'First .. Blob'Last loop
-            if Blob (I) = '|' then
-               Sep := I;
-               exit;
-            end if;
-         end loop;
-         if Sep = 0 then
-            --  Old-format blob (names only).
-            Start := Blob'First;
-            for I in Blob'First .. Blob'Last loop
-               if Blob (I) = ',' then
-                  Add_Name (Blob (Start .. I - 1));
-                  Start := I + 1;
-               end if;
-            end loop;
-            if Start <= Blob'Last then
-               Add_Name (Blob (Start .. Blob'Last));
-            end if;
-            return;
-         end if;
-
-         --  Names section.
-         Start := Blob'First;
-         for I in Blob'First .. Sep - 1 loop
-            if Blob (I) = ',' then
-               Add_Name (Blob (Start .. I - 1));
-               Start := I + 1;
-            end if;
-         end loop;
-         if Start <= Sep - 1 then
-            Add_Name (Blob (Start .. Sep - 1));
-         end if;
-
-         --  Probe section: parse "name=version@fpdigest" comma-separated
-         --  pairs. A pair without '@' (pre-fingerprint blob) keeps an
-         --  empty digest, which never validates -- the tool re-probes.
-         Start := Sep + 1;
-         for I in Sep + 1 .. Blob'Last loop
-            if Blob (I) = ',' then
-               declare
-                  Nm     : constant String := Blob (Start .. I - 1);
-                  Eq     : Natural := 0;
-                  At_Pos : Natural := 0;
-               begin
-                  for J in Nm'Range loop
-                     if Nm (J) = '=' and then Eq = 0 then
-                        Eq := J;
-                     elsif Nm (J) = '@' then
-                        At_Pos := J;
-                        exit;
-                     end if;
-                  end loop;
-                  if Eq > Nm'First then
-                     if At_Pos > Eq + 1 then
-                        Add_Probe_Fp
-                          (Nm (Nm'First .. Eq - 1),
-                           Nm (Eq + 1 .. At_Pos - 1),
-                           Nm (At_Pos + 1 .. Nm'Last));
-                     else
-                        Add_Probe
-                          (Nm (Nm'First .. Eq - 1), Nm (Eq + 1 .. Nm'Last));
-                     end if;
-                  end if;
-               end;
-               Start := I + 1;
-            end if;
-         end loop;
-         if Start <= Blob'Last then
-            declare
-               Nm     : constant String := Blob (Start .. Blob'Last);
-               Eq     : Natural := 0;
-               At_Pos : Natural := 0;
-            begin
-               for J in Nm'Range loop
-                  if Nm (J) = '=' and then Eq = 0 then
-                     Eq := J;
-                  elsif Nm (J) = '@' then
-                     At_Pos := J;
-                     exit;
-                  end if;
-               end loop;
-               if Eq > Nm'First then
-                  if At_Pos > Eq + 1 then
-                     Add_Probe_Fp
-                       (Nm (Nm'First .. Eq - 1),
-                        Nm (Eq + 1 .. At_Pos - 1),
-                        Nm (At_Pos + 1 .. Nm'Last));
-                  else
-                     Add_Probe
-                       (Nm (Nm'First .. Eq - 1), Nm (Eq + 1 .. Nm'Last));
-                  end if;
-               end if;
-            end;
-         end if;
-      end Deserialize_Set;
-
-      --  Record a probe result for a referenced tool (deduplicated).
-
-      --  Whether C bounds a tool-name word in a line. A word is a maximal
-      --  run of lowercase letters, digits, underscore, and hyphen
-      --  ([a-z0-9_-]). Uppercase letters do not start or continue a word,
-      --  so "Makefile" and "MAKE" never match the lowercase tool "make".
-      function Is_Word_Char (C : Character) return Boolean is
-      begin
-         return
-           (C in 'a' .. 'z')
-           or else (C in '0' .. '9')
-           or else C = '_'
-           or else C = '-';
-      end Is_Word_Char;
-
-      --  When the word at Line (W_First .. W_Last) names one of the curated
-      --  system tools, record it via Note_Tool. The match is
-      --  case-sensitive. Only words whose length equals a tool name are
-      --  compared, so a line is scored once per word instead of once per
-      --  tool. "make" matches in "make build". "make" does not match in
-      --  "Makefile" (capital M), "makefile", or "makefiles". "python"
-      --  does not match inside "python3".
-      --  @param Line  Line of text to search.
-      --  @param W_First  First index of the word in Line.
-      --  @param W_Last  Last index of the word in Line.
-      procedure Note_If_Tool
-        (Line : String; W_First : Natural; W_Last : Natural)
-      is
-         W_Len : constant Natural := W_Last - W_First + 1;
-      begin
-         for T in System_Tools'Range loop
-            if System_Tools (T).Len = W_Len then
-               declare
-                  Is_Tool : Boolean := True;
-               begin
-                  for J in 1 .. W_Len loop
-                     if Line (W_First + J - 1) /= System_Tools (T).Name (J)
-                     then
-                        Is_Tool := False;
-                        exit;
-                     end if;
-                  end loop;
-                  if Is_Tool then
-                     Note_Tool (System_Tools (T));
-                     return;
-                  end if;
-               end;
-            end if;
-         end loop;
-      end Note_If_Tool;
-
-      --  Record every system tool that Line references as a whole word.
-      --  The line is walked once, extracting maximal [a-z0-9_-] words, and
-      --  each word is compared against the tool table by length first.
-      --  This replaces a per-tool substring scan (60 tools x line length)
-      --  with a per-word scan (a few words x 60 length checks), which was
-      --  the dominant CPU cost of the SBOM system-dev-dependency discovery
-      --  on every run.
-      --  @param Line  Line of text to search.
-      procedure Note_Referenced_Tools (Line : String) is
-         W_First : Natural := Line'First;
-         W_Last  : Natural;
-      begin
-         if Line'Length < 2 then
-            --  No tool name is one character long; a shorter line cannot
-            --  reference any tool.
-            return;
-         end if;
-         while W_First <= Line'Last loop
-            --  Skip non-word characters (whitespace, quotes, punctuation).
-            while W_First <= Line'Last
-              and then not Is_Word_Char (Line (W_First))
-            loop
-               W_First := W_First + 1;
-            end loop;
-            exit when W_First > Line'Last;
-            W_Last := W_First;
-            while W_Last < Line'Last and then Is_Word_Char (Line (W_Last + 1))
-            loop
-               W_Last := W_Last + 1;
-            end loop;
-            Note_If_Tool (Line, W_First, W_Last);
-            W_First := W_Last + 1;
-         end loop;
-      end Note_Referenced_Tools;
-
-      --  Scan one file for every known system tool.
-      procedure Scan_File (Path : String) is
-         use Ada.Text_IO;
-         F        : File_Type;
-         Line     : String (1 .. Types.Max_Line);
-         Last     : Natural;
-         Overflow : Boolean;
-         Line_Num : Natural := 0;
-      begin
-         begin
-            Open (F, In_File, Path);
-         exception
-            when others =>
-               return;
-         end;
-         while not End_Of_File (F) loop
-            Line_Num := Line_Num + 1;
-            Adacovex.Parsers.Read_Line
-              (F, Path, Line_Num, Line, Last, Overflow);
-            if Overflow then
-               --  A physical line longer than Max_Line. Stop scanning this
-               --  file. A truncated file then never yields a partial tool
-               --  set.
-               Close (F);
-               return;
-            end if;
-            if Ada.Strings.Fixed.Index
-                 (Line (1 .. Last), "System_Tools : constant array")
-              > 0
-            then
-               --  This file declares the curated tool table. Every entry is
-               --  a literal tool name by construction. References found
-               --  here can register every installed tool. This happens
-               --  regardless of whether the project actually uses the tool.
-               Close (F);
-               return;
-            end if;
-            Note_Referenced_Tools (Line (1 .. Last));
-         end loop;
-         Close (F);
-      exception
-         when others =>
-            if Is_Open (F) then
-               Close (F);
-            end if;
-      end Scan_File;
-
-      --  Input key for the referenced-tools cache. It combines the same
-      --  content hashes that Graph_Key uses (manifest, dev manifest, lock,
-      --  vendored hash, language summary, GPR files) with the source-tree
-      --  content hash. The system-tool reference scan reads the same
-      --  project files, so an unchanged project has an unchanged key and the
-      --  cached set is served without re-walking the tree or re-reading a
-      --  file.
-      --  Forward declaration so Tools_Key can call Source_Tree_Hash.
-      function Source_Tree_Hash (Dir : String) return String;
-
-      function Tools_Key (Target_Dir : String) return String is
-         T    : constant String :=
-           (if Target_Dir'Length > 1
-              and then Target_Dir (Target_Dir'Last) = '/'
-            then Target_Dir (Target_Dir'First .. Target_Dir'Last - 1)
-            else Target_Dir);
-         Comb : String (1 .. Types.Max_Path * 2);
-         CLen : Natural := 0;
-         procedure Add (S : String) is
-         begin
-            if S'Length > 0 and then CLen + S'Length <= Comb'Last then
-               Comb (CLen + 1 .. CLen + S'Length) := S;
-               CLen := CLen + S'Length;
-            end if;
-         end Add;
-      begin
-         --  Source_Tree_Hash covers every file the scan reads, so it alone
-         --  determines the referenced-tool set. The tool-table fingerprint
-         --  invalidates the key when the System_Tools constant changes within
-         --  a release. Names and categories are folded in (the stored
-         --  version-probe flag is gone: Probe_Version infers it at run
-         --  time), so editing the table self-invalidates the cache -- no
-         --  hand-maintained "|tools-vN|" salt bump to forget. (The 1.33-era
-         --  control of that same risk relied on a manually bumped salt; a
-         --  forgotten bump served stale probe results within a release.)
-         --  The "|probe-fb:...|" token also separates this namespace from
-         --  the graph cache and the 1.27-era blob layout, while the flag
-         --  chain stays part of the digest.
-         Add (Source_Tree_Hash (T));
-         for I in System_Tools'Range loop
-            Add (System_Tools (I).Name (1 .. System_Tools (I).Len));
-            Add (":");
-            Add (Tool_Category'Image (System_Tools (I).Cat));
-            Add (";");
-         end loop;
-         --  The probe fallback chain lives in Probe_Version -- fold its flag
-         --  order in so reordering the fallbacks also busts the cache.
-         Add ("|probe-fb:--version,-v,version|namespace-v4|");
-         if CLen = 0 then
-            return "";
-         end if;
-         return "tools:" & Adacovex.Cache.Hash_String (Comb (1 .. CLen));
-      end Tools_Key;
-
-      --  Source-tree content hash used by Tools_Key. Walks the same
-      --  directories and files that Discover_System_Dev_Deps scans and
-      --  combines per-file digests. This is what makes the tool-set cache
-      --  sound: a file edit that adds or removes a tool reference changes
-      --  the hash, so the next run re-scans instead of serving a stale
-      --  set. The directory-exclusion list matches the main walk exactly.
-      function Source_Tree_Hash (Dir : String) return String is
-         use Ada.Directories;
-         type Dir_Entry is record
-            Path : Types.Path_Field;
-            Len  : Natural := 0;
-         end record;
-         package Hash_Dir_Stacks is new
-           Ada.Containers.Vectors (Positive, Dir_Entry);
-         Stack : Hash_Dir_Stacks.Vector;
-         H     : String (1 .. Types.Max_Path * 8);
-         HLen  : Natural := 0;
-
-         procedure Add (S : String) is
-         begin
-            if S'Length > 0 and then HLen + S'Length <= H'Last then
-               H (HLen + 1 .. HLen + S'Length) := S;
-               HLen := HLen + S'Length;
-            end if;
-         end Add;
-      begin
-         if not Ada.Directories.Exists (Dir) then
-            return "";
-         end if;
-         declare
-            D : Dir_Entry;
-         begin
-            D.Len := Dir'Length;
-            D.Path (1 .. D.Len) := Dir (Dir'First .. Dir'First + D.Len - 1);
-            Stack.Append (D);
-         end;
-         while not Stack.Is_Empty loop
-            declare
-               C  : Dir_Entry := Stack.Last_Element;
-               CP : String renames C.Path (1 .. C.Len);
-               S  : Search_Type;
-               E  : Directory_Entry_Type;
-            begin
-               Stack.Delete_Last;
-               if not Ada.Directories.Exists (CP) then
-                  null;
-               else
-                  --  Serve the shared snapshot (one enumeration per
-                  --  directory per process across every walker) with a
-                  --  direct-enumeration fallback for over-cap trees.
-                  declare
-                     Snap   : Adacovex.Dir_Cache.Dir_Entry_List;
-                     SCt    : Natural;
-                     STrunc : Boolean;
-                     SOK    : Boolean;
-                  begin
-                     Adacovex.Dir_Cache.Snapshot (CP, Snap, SCt, STrunc, SOK);
-                     if SOK and then not STrunc then
-                        for SI in 1 .. SCt loop
-                           declare
-                              N    : constant String :=
-                                Snap (SI).Name (1 .. Snap (SI).Name_Len);
-                              NP   : constant String := CP & "/" & N;
-                              Is_D : constant Boolean :=
-                                Adacovex.Dir_Cache.Is_Directory
-                                  (Snap (SI).Kind);
-                           begin
-                              if Is_D then
-                                 if N /= ".git"
-                                   and then N /= ".jj"
-                                   and then N /= ".hg"
-                                   and then N /= ".svn"
-                                   and then N /= "obj"
-                                   and then N /= "tests"
-                                   and then N /= "config"
-                                   and then N /= ".adacovex"
-                                   and then N /= "alire"
-                                   and then N /= "gnatprove"
-                                   and then N /= "__pycache__"
-                                   and then N /= "node_modules"
-                                   and then N /= ".venv"
-                                   and then N /= ".headroom"
-                                   and then N /= ".lccst"
-                                   and then N /= "_build"
-                                 then
-                                    declare
-                                       I : Dir_Entry;
-                                    begin
-                                       I.Len := NP'Length;
-                                       I.Path (1 .. I.Len) :=
-                                         NP (NP'First .. NP'First + I.Len - 1);
-                                       Stack.Append (I);
-                                    end;
-                                 end if;
-                              elsif Should_Scan (N) then
-                                 Add (Adacovex.Cache.Hash_File (NP));
-                              end if;
-                           end;
-                        end loop;
-                     else
-                        Start_Search (S, CP, "");
-                        while More_Entries (S) loop
-                           Get_Next_Entry (S, E);
-                           declare
-                              N : constant String := Simple_Name (E);
-                           begin
-                              if Kind (E) = Directory then
-                                 if N /= "."
-                                   and then N /= ".."
-                                   and then N /= ".git"
-                                   and then N /= ".jj"
-                                   and then N /= ".hg"
-                                   and then N /= ".svn"
-                                   and then N /= "obj"
-                                   and then N /= "tests"
-                                   and then N /= "config"
-                                   and then N /= ".adacovex"
-                                   and then N /= "alire"
-                                   and then N /= "gnatprove"
-                                   and then N /= "__pycache__"
-                                   and then N /= "node_modules"
-                                   and then N /= ".venv"
-                                   and then N /= ".headroom"
-                                   and then N /= ".lccst"
-                                   and then N /= "_build"
-                                 then
-                                    declare
-                                       NP : constant String := Full_Name (E);
-                                       I  : Dir_Entry;
-                                    begin
-                                       I.Len := NP'Length;
-                                       I.Path (1 .. I.Len) :=
-                                         NP (NP'First .. NP'First + I.Len - 1);
-                                       Stack.Append (I);
-                                    end;
-                                 end if;
-                              elsif Kind (E) = Ordinary_File then
-                                 if Should_Scan (Simple_Name (E)) then
-                                    Add
-                                      (Adacovex.Cache.Hash_File
-                                         (Full_Name (E)));
-                                 end if;
-                              end if;
-                           end;
-                        end loop;
-                        End_Search (S);
-                     end if;
-                  end;
-               end if;
-            end;
-         end loop;
-         if HLen = 0 then
-            return "";
-         end if;
-         return Adacovex.Cache.Hash_String (H (1 .. HLen));
-      end Source_Tree_Hash;
-
-      --  Whether the project root holds a Makefile variant (implies make).
-      function Has_Makefile return Boolean is
-      begin
-         return
-           Ada.Directories.Exists (Target_Dir & "/Makefile")
-           or else Ada.Directories.Exists (Target_Dir & "/makefile")
-           or else Ada.Directories.Exists (Target_Dir & "/GNUmakefile");
-      end Has_Makefile;
-
-      --  Whether the referenced-tool set (and its probe results) came from
-      --  the on-disk cache. Used to skip the PATH walk and version probes.
-      From_Cache : Boolean := False;
-
-      --  Whether a cache hit re-validated a probe and had to re-probe a
-      --  tool whose installed binary no longer matches the cached
-      --  fingerprint. The refreshed set must then be written back, or the
-      --  stale blob survives and every later run re-probes the same tool
-      --  again. An unchanged toolchain leaves this False and still stores
-      --  nothing on a hit.
-      Refreshed : Boolean := False;
-
-      --  Cache key (and its image) for the miss-store below. Kept at
-      --  procedure level so the store can run after the probe loop.
-      Key_Img : String (1 .. 128) := (others => ' ');
-      Key_Len : Natural := 0;
-   begin
-      --  Serve the referenced-tool set from the on-disk cache when the
-      --  project's inputs are unchanged. The key covers every file the
-      --  scan reads, so an unchanged project skips the tree walk and the
-      --  per-file word scan entirely; an edit invalidates the key and the
-      --  next run re-scans. The key value is kept for the store step that
-      --  runs after a scan.
-      declare
-         K     : constant String := Tools_Key (Target_Dir);
-         Blob  : String (1 .. 8192) := (others => ' ');
-         BLen  : Natural := 0;
-         Found : Boolean := False;
-      begin
-         if K'Length > 0 then
-            if K'Length <= Key_Img'Last then
-               Key_Img (1 .. K'Length) := K;
-               Key_Len := K'Length;
-            end if;
-            Adacovex.Cache.Get_Cached (K, Blob, BLen, Found);
-            if Found and then BLen > 0 then
-               Deserialize_Set (Blob (1 .. BLen));
-               From_Cache := True;
-            end if;
-         end if;
-
-         if not From_Cache then
-            Push_Dir (Target_Dir);
-
-            while not Dir_Stack.Is_Empty loop
-               declare
-                  Current  : Dir_Entry := Dir_Stack.Last_Element;
-                  Dir_Path : String renames Current.Path (1 .. Current.Len);
-                  Snap     : Adacovex.Dir_Cache.Dir_Entry_List;
-                  SCt      : Natural;
-                  STrunc   : Boolean;
-                  SOK      : Boolean;
-               begin
-                  Dir_Stack.Delete_Last;
-
-                  --  Shared snapshot first; direct enumeration only on the
-                  --  fallback path (over-cap tree or unreadable snapshot).
-                  Adacovex.Dir_Cache.Snapshot
-                    (Dir_Path, Snap, SCt, STrunc, SOK);
-                  if SOK and then not STrunc then
-                     for SI in 1 .. SCt loop
-                        declare
-                           N    : constant String :=
-                             Snap (SI).Name (1 .. Snap (SI).Name_Len);
-                           Path : constant String := Dir_Path & "/" & N;
-                           Is_D : constant Boolean :=
-                             Adacovex.Dir_Cache.Is_Directory (Snap (SI).Kind);
-                        begin
-                           if Is_D then
-                              if N /= ".git"
-                                and N /= ".jj"
-                                and N /= ".hg"
-                                and N /= ".svn"
-                                and N /= "obj"
-                                and N /= "tests"
-                                and N /= "config"
-                                and N /= ".adacovex"
-                                and N /= "alire"
-                                and N /= "gnatprove"
-                                and N /= "__pycache__"
-                                and N /= "node_modules"
-                                and N /= ".venv"
-                                and N /= ".headroom"
-                                and N /= ".lccst"
-                                and N /= "_build"
-                              then
-                                 Push_Dir (Path);
-                              end if;
-                           elsif Should_Scan (N) then
-                              Scan_File (Path);
-                           end if;
-                        end;
-                     end loop;
-                  else
-                     Start_Search (Search, Dir_Path, "");
-                     begin
-                        while More_Entries (Search) loop
-                           Get_Next_Entry (Search, Ent);
-                           declare
-                              N    : constant String := Simple_Name (Ent);
-                              Path : constant String := Full_Name (Ent);
-                           begin
-                              if Kind (Ent) = Directory then
-                                 if N /= "."
-                                   and N /= ".."
-                                   and N /= ".git"
-                                   and N /= ".jj"
-                                   and N /= ".hg"
-                                   and N /= ".svn"
-                                   and N /= "obj"
-                                   and N /= "tests"
-                                   and N /= "config"
-                                   and N /= ".adacovex"
-                                   and N /= "alire"
-                                   and N /= "gnatprove"
-                                   and N /= "__pycache__"
-                                   and N /= "node_modules"
-                                   and N /= ".venv"
-                                   and N /= ".headroom"
-                                   and N /= ".lccst"
-                                   and N /= "_build"
-                                 then
-                                    Push_Dir (Path);
-                                 end if;
-                              elsif Kind (Ent) = Ordinary_File then
-                                 if Should_Scan (N) then
-                                    Scan_File (Path);
-                                 end if;
-                              end if;
-                           end;
-                        end loop;
-                     exception
-                        when others =>
-                           End_Search (Search);
-                           raise;
-                     end;
-                     End_Search (Search);
-                  end if;
-               end;
-            end loop;
-
-         end if;
-      end;
-
-      --  A Makefile at the project root implies make even when no recipe
-      --  spells out the driver by name.
-      if Has_Makefile then
-         for T in System_Tools'Range loop
-            if System_Tools (T).Len = 4
-              and then System_Tools (T).Name (1 .. 4) = "make"
-            then
-               Note_Tool (System_Tools (T));
-               exit;
-            end if;
-         end loop;
-      end if;
-
-      --  Register every referenced tool that is actually installed on PATH.
-      --  Register it as a dev-scope dependency of the root. Probe its
-      --  version ("<Tool> <flag>") when possible. Tools the project does
-      --  not reference, or that are not installed, are skipped.
-      --  Append_Dependency also deduplicates against manifest, lockfile, and
-      --  GPR deps (for example gnatprove declared in alire-dev.toml). A
-      --  manifest-pinned tool never appears twice.
-      --
-      --  Cache hit: the probe results were restored with the set. Each
-      --  restored probe is re-validated against the identity digest of the
-      --  tool's installed binary before its version is trusted: a tool
-      --  upgraded since the set was cached re-probes here (and refreshes
-      --  both cache layers), while an unchanged toolchain serves entirely
-      --  from cache with no subprocess probes.
-      if From_Cache then
-         for PI in 1 .. Integer (Probes.Length) loop
-            declare
-               Nm          : constant String :=
-                 Probes (PI).Name (1 .. Probes (PI).NLen);
-               Live_Digest : constant String := Tool_Fp_Digest (Nm);
-            begin
-               if Live_Digest'Length > 0
-                 and then Probes (PI).FpLen = Live_Digest'Length
-                 and then Probes (PI).Fp (1 .. Live_Digest'Length)
-                          = Live_Digest
-               then
-                  Append_Dependency
-                    (Graph,
-                     Nm,
-                     Probes (PI).Ver (1 .. Probes (PI).VLen),
-                     "",
-                     "System tool referenced by the project (dev dependency)",
-                     "pkg:generic/" & Nm,
-                     1,
-                     False,
-                     Types.Scope_System);
-               else
-                  --  Upgraded/replaced binary (or a stale digest-free
-                  --  entry): probe fresh and refresh the stored set.
-                  declare
-                     Exe : GNAT.OS_Lib.String_Access :=
-                       GNAT.OS_Lib.Locate_Exec_On_Path (Nm);
-                     Fp  : constant String :=
-                       (if Exe /= null
-                        then Adacovex.Cache.Tool_Fingerprint (Exe.all)
-                        else "");
-                     V   : constant String :=
-                       (if Fp'Length > 0
-                        then Probe_Version (Nm, "--version")
-                        else "");
-                     procedure Store is
-                     begin
-                        if Fp'Length > 0 then
-                           Adacovex.Cache.Put_Probe (Nm, Fp, V);
-                        end if;
-                     end Store;
-                  begin
-                     if Exe /= null then
-                        GNAT.OS_Lib.Free (Exe);
-                        Store;
-                        Add_Probe_Fp (Nm, V, Adacovex.Cache.Hash_String (Fp));
-                        Refreshed := True;
-                        Append_Dependency
-                          (Graph,
-                           Nm,
-                           V,
-                           "",
-                           "System tool referenced by the project (dev dependency)",
-                           "pkg:generic/" & Nm,
-                           1,
-                           False,
-                           Types.Scope_System);
-                     end if;
-                  end;
-               end if;
-            end;
-         end loop;
-      else
-         for I in 1 .. Integer (Referenced.Length) loop
-            declare
-               Name : constant String :=
-                 Referenced (I).Name (1 .. Referenced (I).Len);
-               Exe  : GNAT.OS_Lib.String_Access :=
-                 GNAT.OS_Lib.Locate_Exec_On_Path (Name);
-            begin
-               if Exe /= null then
-                  --  Identity of the installed binary (path + size + mtime).
-                  --  Both cache layers below key on it, so an upgraded or
-                  --  replaced tool re-probes on the next run instead of
-                  --  serving a version the old binary reported.
-                  declare
-                     Fp : constant String :=
-                       Adacovex.Cache.Tool_Fingerprint (Exe.all);
-                  begin
-                     GNAT.OS_Lib.Free (Exe);
-                     --  Version probing spawns a subprocess per tool. Cache
-                     --  the result on disk (7-day TTL), validated against
-                     --  the binary fingerprint. Unchanged toolchains then do
-                     --  not pay tens of milliseconds per referenced tool on
-                     --  every run; an upgrade re-probes exactly once.
-                     declare
-                        Probe : String (1 .. 512) := (others => ' ');
-                        PLen  : Natural := 0;
-                        Found : Boolean := False;
-                        --  Version text (up to the 4096-char Probe_Version
-                        --  reader cap). It is copied into a fixed buffer.
-                        --  The cache-hit and cache-miss paths then share one
-                        --  Append_Dependency call.
-                        VBuf  : String (1 .. 4096);
-                        VLen  : Natural := 0;
-                     begin
-                        Adacovex.Cache.Get_Probe
-                          (Name, Fp, Probe, PLen, Found);
-                        if Found then
-                           VLen := PLen;
-                           VBuf (1 .. VLen) := Probe (1 .. VLen);
-                        else
-                           declare
-                              V : constant String :=
-                                Probe_Version (Name, "--version");
-                           begin
-                              VLen := V'Length;
-                              if VLen > VBuf'Last then
-                                 VLen := VBuf'Last;
-                              end if;
-                              VBuf (1 .. VLen) :=
-                                V (V'First .. V'First + VLen - 1);
-                           end;
-                           Adacovex.Cache.Put_Probe
-                             (Name, Fp, VBuf (1 .. VLen));
-                        end if;
-                        Add_Probe_Fp
-                          (Name,
-                           VBuf (1 .. VLen),
-                           Adacovex.Cache.Hash_String (Fp));
-                        Append_Dependency
-                          (Graph,
-                           Name,
-                           VBuf (1 .. VLen),
-                           "",
-                           "System tool referenced by the project (dev dependency)",
-                           "pkg:generic/" & Name,
-                           1,
-                           False,
-                           Types.Scope_System);
-                     end;
-                  end;
-               end if;
-            end;
-         end loop;
-      end if;
-
-      --  Store the freshly scanned set (now including probe results) for
-      --  the next run. On a cache hit nothing is stored, because the entry
-      --  is still current and complete -- unless a re-validation
-      --  re-probed a replaced binary, in which case the corrected
-      --  fingerprints must be written back or the stale blob re-probes on
-      --  every later run (Refreshed).
-      if (not From_Cache or else Refreshed) and then Key_Len > 0 then
-         declare
-            S  : constant String := Serialize_Set;
-            OK : Boolean;
-         begin
-            if S'Length > 0 then
-               Adacovex.Cache.Put_Cached (Key_Img (1 .. Key_Len), S, OK);
-            end if;
-         end;
-      end if;
-   end Discover_System_Dev_Deps;
+   is separate;
 
    --  Fingerprint of everything that contributes vendored components to
    --  the graph. Every file under the classic vendored roots
@@ -1717,221 +866,7 @@ package body Adacovex.Parsers.Manifest is
    --  Returns "" when no vendored input exists.
    --  @param Target_Dir  Project root directory.
    --  @return SHA256 of the vendored inputs, or "" when none exist.
-   function Vendored_Hash (Target_Dir : String) return String is
-      use Ada.Directories;
-      type Dir_Entry is record
-         Path  : Types.Path_Field;
-         Len   : Natural := 0;
-         Level : Natural := 0;
-      end record;
-      package Dir_Stacks is new Ada.Containers.Vectors (Positive, Dir_Entry);
-      Dir_Stack : Dir_Stacks.Vector;
-      Search    : Search_Type;
-      Ent       : Directory_Entry_Type;
-      T         : constant String :=
-        (if Target_Dir'Length > 0 and then Target_Dir (Target_Dir'Last) = '/'
-         then Target_Dir (Target_Dir'First .. Target_Dir'Last - 1)
-         else Target_Dir);
-      Comb      : String (1 .. Types.Max_Path);
-      CLen      : Natural := 0;
-
-      procedure Push_Dir
-        (S         : in out Dir_Stacks.Vector;
-         Dir       : String;
-         Level     : Natural;
-         Max_Depth : Natural)
-      is
-         Item : Dir_Entry;
-      begin
-         if Dir'Length <= Types.Max_Path and then Level <= Max_Depth then
-            Item.Len := Dir'Length;
-            for I in Dir'Range loop
-               Item.Path (I - Dir'First + 1) := Dir (I);
-            end loop;
-            Item.Level := Level;
-            S.Append (Item);
-         end if;
-      end Push_Dir;
-
-      procedure Add (S : String) is
-      begin
-         if S'Length > 0 and then CLen + S'Length <= Comb'Last then
-            Comb (CLen + 1 .. CLen + S'Length) := S;
-            CLen := CLen + S'Length;
-         end if;
-      end Add;
-
-      --  Hash every regular file under Root, descending at most Max_Levels
-      --  subdirectories. It uses its own stack. The outer vendor walk is
-      --  then unaffected.
-      procedure Hash_Tree (Root : String; Max_Levels : Natural) is
-         H_Stack  : Dir_Stacks.Vector;
-         H_Search : Search_Type;
-         H_Ent    : Directory_Entry_Type;
-      begin
-         if not Exists (Root) then
-            return;
-         end if;
-         Push_Dir (H_Stack, Root, 0, Max_Levels);
-         while not H_Stack.Is_Empty loop
-            declare
-               Current  : Dir_Entry := H_Stack.Last_Element;
-               Dir_Path : String renames Current.Path (1 .. Current.Len);
-               Snap     : Adacovex.Dir_Cache.Dir_Entry_List;
-               SCt      : Natural;
-               STrunc   : Boolean;
-               SOK      : Boolean;
-            begin
-               H_Stack.Delete_Last;
-               --  Shared snapshot first; direct enumeration on fallback.
-               Adacovex.Dir_Cache.Snapshot (Dir_Path, Snap, SCt, STrunc, SOK);
-               if SOK and then not STrunc then
-                  for SI in 1 .. SCt loop
-                     declare
-                        N    : constant String :=
-                          Snap (SI).Name (1 .. Snap (SI).Name_Len);
-                        Path : constant String := Dir_Path & "/" & N;
-                        Is_D : constant Boolean :=
-                          Adacovex.Dir_Cache.Is_Directory (Snap (SI).Kind);
-                     begin
-                        if Is_D then
-                           if N /= "_build" and then not Skip_Walk_Dir (N) then
-                              Push_Dir
-                                (H_Stack, Path, Current.Level + 1, Max_Levels);
-                           end if;
-                        else
-                           Add (Adacovex.Cache.Hash_File (Path));
-                        end if;
-                     end;
-                  end loop;
-               else
-                  Start_Search (H_Search, Dir_Path, "");
-                  begin
-                     while More_Entries (H_Search) loop
-                        Get_Next_Entry (H_Search, H_Ent);
-                        declare
-                           N    : constant String := Simple_Name (H_Ent);
-                           Path : constant String := Full_Name (H_Ent);
-                        begin
-                           if Kind (H_Ent) = Directory then
-                              if N /= "."
-                                and then N /= ".."
-                                and then N /= "_build"
-                                and then not Skip_Walk_Dir (N)
-                              then
-                                 Push_Dir
-                                   (H_Stack,
-                                    Path,
-                                    Current.Level + 1,
-                                    Max_Levels);
-                              end if;
-                           elsif Kind (H_Ent) = Ordinary_File then
-                              Add (Adacovex.Cache.Hash_File (Path));
-                           end if;
-                        end;
-                     end loop;
-                  exception
-                     when others =>
-                        End_Search (H_Search);
-                        raise;
-                  end;
-                  End_Search (H_Search);
-               end if;
-            end;
-         end loop;
-      end Hash_Tree;
-
-      --  Whether a file name is a supported-language project manifest that
-      --  can own a vendored directory (the file set Collect_Owner_Test_Names
-      --  reads, plus the npm lockfiles it scans). Hashing these files makes
-      --  the graph key sound: editing the owning manifest's test-labelled
-      --  sections (or its npm lockfiles) invalidates the cached graph so the
-      --  scope classification is recomputed.
-      --  @param N  File base name.
-      --  @return True for package.json, Cargo.toml, Cargo.lock, go.mod,
-      --    composer.json, Gemfile, pom.xml, pyproject.toml, Package.swift,
-      --    and the npm lockfiles pnpm-lock.yaml, package-lock.json, and
-      --    yarn.lock.
-      function Is_Owner_Manifest (N : String) return Boolean is
-      begin
-         return
-           N = "package.json"
-           or else N = "Cargo.toml"
-           or else N = "Cargo.lock"
-           or else N = "go.mod"
-           or else N = "composer.json"
-           or else N = "Gemfile"
-           or else N = "pom.xml"
-           or else N = "pyproject.toml"
-           or else N = "Package.swift"
-           or else N = "pnpm-lock.yaml"
-           or else N = "package-lock.json"
-           or else N = "yarn.lock";
-      end Is_Owner_Manifest;
-   begin
-      --  Classic doc roots (.adacovex/patches, resources, vendor, assets).
-      --  Every regular file counts, at any depth (curated and small).
-      Hash_Tree (T & "/.adacovex/patches", 99);
-      Hash_Tree (T & "/resources", 99);
-      Hash_Tree (T & "/vendor", 99);
-      Hash_Tree (T & "/assets", 99);
-
-      --  Language-agnostic vendored directories anywhere in the tree (same
-      --  discovery walk as Discover_Generic_Vendored, shallow). Supported-
-      --  language project manifests that can own a vendored directory (for
-      --  example tests/e2e/package.json owning tests/e2e/node_modules) are
-      --  hashed so an edit to their test-labelled sections invalidates the
-      --  cached graph. The manifests inside vendor roots are already
-      --  covered by the Hash_Tree calls above.
-      Dir_Stack.Clear;
-      Push_Dir (Dir_Stack, Target_Dir, 0, 99);
-      while not Dir_Stack.Is_Empty loop
-         declare
-            Current  : Dir_Entry := Dir_Stack.Last_Element;
-            Dir_Path : String renames Current.Path (1 .. Current.Len);
-         begin
-            Dir_Stack.Delete_Last;
-            Start_Search (Search, Dir_Path, "");
-            begin
-               while More_Entries (Search) loop
-                  Get_Next_Entry (Search, Ent);
-                  declare
-                     N    : constant String := Simple_Name (Ent);
-                     Path : constant String := Full_Name (Ent);
-                  begin
-                     if Kind (Ent) = Directory then
-                        if N /= "."
-                          and then N /= ".."
-                          and then not Skip_Walk_Dir (N)
-                        then
-                           if Is_Vendor_Dir_Name (N) then
-                              Hash_Tree
-                                (Path, (if N = "node_modules" then 1 else 3));
-                           else
-                              Push_Dir (Dir_Stack, Path, 0, 99);
-                           end if;
-                        end if;
-                     elsif Kind (Ent) = Ordinary_File
-                       and then Is_Owner_Manifest (N)
-                     then
-                        Add (Adacovex.Cache.Hash_File (Path));
-                     end if;
-                  end;
-               end loop;
-            exception
-               when others =>
-                  End_Search (Search);
-                  raise;
-            end;
-            End_Search (Search);
-         end;
-      end loop;
-
-      if CLen = 0 then
-         return "";
-      end if;
-      return Adacovex.Cache.Hash_String (Comb (1 .. CLen));
-   end Vendored_Hash;
+   function Vendored_Hash (Target_Dir : String) return String is separate;
 
    --  Combined content hash of everything that shapes the dependency graph.
    --  The publishing manifest, the dev manifest, and the alire.lock are
@@ -1952,61 +887,7 @@ package body Adacovex.Parsers.Manifest is
      (Target_Dir    : String;
       Manifest_Path : String;
       GPR_Files     : Path_Vectors.Vector) return String
-   is
-      T    : constant String :=
-        (if Target_Dir'Length > 1 and then Target_Dir (Target_Dir'Last) = '/'
-         then Target_Dir (Target_Dir'First .. Target_Dir'Last - 1)
-         else Target_Dir);
-      Comb : String (1 .. Types.Max_Path);
-      CLen : Natural := 0;
-
-      procedure Add (S : String) is
-      begin
-         if S'Length > 0 and then CLen + S'Length <= Comb'Last then
-            Comb (CLen + 1 .. CLen + S'Length) := S;
-            CLen := CLen + S'Length;
-         end if;
-      end Add;
-   begin
-      Add (Adacovex.Cache.Hash_File (Manifest_Path));
-      Add (Adacovex.Cache.Hash_File (T & "/alire-dev.toml"));
-      Add (Adacovex.Cache.Hash_File (T & "/alire/alire.lock"));
-      --  A root requirements*.txt shapes the graph (its entries become
-      --  pypi components), so editing it must invalidate the cached graph.
-      declare
-         use Ada.Directories;
-         Req_Search : Search_Type;
-         Req_Ent    : Directory_Entry_Type;
-      begin
-         Start_Search (Req_Search, T, "requirements*.txt");
-         while More_Entries (Req_Search) loop
-            Get_Next_Entry (Req_Search, Req_Ent);
-            if Kind (Req_Ent) = Ordinary_File then
-               Add (Adacovex.Cache.Hash_File (Full_Name (Req_Ent)));
-            end if;
-         end loop;
-         End_Search (Req_Search);
-      exception
-         when others =>
-            null;
-      end;
-      Add (Vendored_Hash (Target_Dir));
-      declare
-         Langs : Lang_Vectors.Vector;
-      begin
-         Detect_Languages (T, 3, Langs, Skip_Vendored => True);
-         Add ("rl:" & Language_Summary (Langs, ""));
-      end;
-      for I in 1 .. Integer (GPR_Files.Length) loop
-         Add
-           (Adacovex.Cache.Hash_File
-              (GPR_Files (I).Path (1 .. GPR_Files (I).Len)));
-      end loop;
-      if CLen = 0 then
-         return "";
-      end if;
-      return "graph:" & Adacovex.Cache.Hash_String (Comb (1 .. CLen));
-   end Graph_Key;
+   is separate;
 
    procedure Build_Dependency_Graph
      (Target_Dir    : String;
@@ -2014,241 +895,6 @@ package body Adacovex.Parsers.Manifest is
       Graph         : out Types.Implementation.Component_Vectors.Vector;
       Success       : out Boolean;
       Use_Cache     : Boolean := False)
-   is
-      Root_Name        : Types.Desc_Field;
-      Root_Name_Len    : Natural := 0;
-      Root_Version     : Types.Desc_Field;
-      Root_Version_Len : Natural := 0;
-      Root_License     : Types.Desc_Field;
-      Root_License_Len : Natural := 0;
-      Root_Desc        : Types.Path_Field;
-      Root_Desc_Len    : Natural := 0;
-      Root_Website     : Types.Path_Field;
-      Root_Website_Len : Natural := 0;
-      Proj_File        : Types.Path_Field;
-      Proj_File_Len    : Natural := 0;
-      Manifest_OK      : Boolean := False;
-
-      GPR_Files    : Path_Vectors.Vector;
-      GPR_Name     : Types.Desc_Field;
-      GPR_Name_Len : Natural := 0;
-      GPR_Deps     : Name_Vectors.Vector;
-      Root_GPR_Len : Natural := 0;
-      Root_GPR     : Types.Path_Field;
-      Root         : Types.Implementation.Component_Info;
-   begin
-      Graph := Types.Implementation.Component_Vectors.Empty_Vector;
-
-      --  Reset the package-level dependency-scope sets for this resolution.
-      Base_Names.Clear;
-      Dev_Names.Clear;
-      Test_Names.Clear;
-
-      Read_Manifest
-        (Manifest_Path,
-         Root_Name,
-         Root_Name_Len,
-         Root_Version,
-         Root_Version_Len,
-         Root_License,
-         Root_License_Len,
-         Root_Desc,
-         Root_Desc_Len,
-         Root_Website,
-         Root_Website_Len,
-         Proj_File,
-         Proj_File_Len,
-         Manifest_OK);
-
-      --  Collect the base (publishing manifest), dev (alire-dev.toml), and
-      --  test ([[test-depends-on]] in either manifest) dependency crate sets
-      --  used to classify every resolved component.
-      Read_Manifest_Deps (Manifest_Path, Base_Names, Test_Names);
-      declare
-         T : constant String :=
-           (if Target_Dir'Length > 0
-              and then Target_Dir (Target_Dir'Last) = '/'
-            then Target_Dir (Target_Dir'First .. Target_Dir'Last - 1)
-            else Target_Dir);
-      begin
-         if T & "/alire-dev.toml" /= Manifest_Path then
-            Read_Manifest_Deps (T & "/alire-dev.toml", Dev_Names, Test_Names);
-         end if;
-      end;
-
-      Collect_GPR_Files (Target_Dir, GPR_Files);
-
-      --  Serve a previously resolved (unchanged) graph straight from the
-      --  on-disk result cache instead of re-parsing the lockfile and every
-      --  .gpr file. The directory walk above is cheap. The recursive GPR
-      --  and lock parsing that it saves is not cheap.
-      if Use_Cache then
-         declare
-            K     : constant String :=
-              Graph_Key (Target_Dir, Manifest_Path, GPR_Files);
-            Blob  : String (1 .. Adacovex.Cache.Max_Cache_Blob);
-            Blen  : Natural;
-            Found : Boolean;
-         begin
-            if K'Length > 0 then
-               Adacovex.Cache.Get_Cached (K, Blob, Blen, Found);
-               if Found
-                 and then Graph_Store.Deserialize (Blob (1 .. Blen), Graph)
-               then
-                  Success := True;
-                  return;
-               end if;
-            end if;
-         end;
-      end if;
-
-      --  Locate the root .gpr. Use the manifest project-files entry if
-      --  present. Otherwise use a .gpr whose project name matches the
-      --  manifest crate name.
-      if Proj_File_Len > 0 then
-         declare
-            Cand : constant String :=
-              Target_Dir & "/" & Proj_File (1 .. Proj_File_Len);
-         begin
-            if Ada.Directories.Exists (Cand) then
-               Root_GPR_Len := Cand'Length;
-               for I in Cand'Range loop
-                  Root_GPR (I - Cand'First + 1) := Cand (I);
-               end loop;
-            end if;
-         end;
-      end if;
-      if Root_GPR_Len = 0 then
-         if Root_Name_Len > 0 then
-            Find_GPR
-              (GPR_Files,
-               Root_Name (1 .. Root_Name_Len),
-               Root_GPR,
-               Root_GPR_Len);
-         end if;
-      end if;
-
-      if Root_GPR_Len > 0 then
-         Parse_GPR
-           (Root_GPR (1 .. Root_GPR_Len), GPR_Name, GPR_Name_Len, GPR_Deps);
-      end if;
-
-      --  Root component (index 1). Name falls back to the GPR project name.
-      if Root_Name_Len = 0 then
-         if GPR_Name_Len > 0 then
-            Set_Field (Root_Name, Root_Name_Len, GPR_Name (1 .. GPR_Name_Len));
-         else
-            Set_Field
-              (Root_Name,
-               Root_Name_Len,
-               Ada.Directories.Simple_Name (Target_Dir));
-         end if;
-      end if;
-
-      declare
-         V : constant String :=
-           (if Root_Version_Len > 0
-            then
-              Root_Name (1 .. Root_Name_Len)
-              & "@"
-              & Root_Version (1 .. Root_Version_Len)
-            else Root_Name (1 .. Root_Name_Len));
-      begin
-         Set_Path (Root.PURL, Root.PURL_Len, "pkg:alire/" & V);
-         Set_Path (Root.Ref, Root.Ref_Len, "pkg:alire/" & V);
-      end;
-      --  Root language. The top languages of the project's own sources are
-      --  used (vendored directories excluded). The SBOM root component then
-      --  records the language mix that created it (top 3 for mixed trees).
-      declare
-         Root_T     : constant String :=
-           (if Target_Dir'Length > 0
-              and then Target_Dir (Target_Dir'Last) = '/'
-            then Target_Dir (Target_Dir'First .. Target_Dir'Last - 1)
-            else Target_Dir);
-         Root_Langs : Lang_Vectors.Vector;
-      begin
-         Detect_Languages (Root_T, 3, Root_Langs, Skip_Vendored => True);
-         if not Root_Langs.Is_Empty then
-            declare
-               RL : constant String := Language_Summary (Root_Langs, "");
-            begin
-               if RL'Length > 0 then
-                  Set_Field (Root.Language, Root.Language_Len, RL);
-               end if;
-            end;
-         end if;
-      end;
-
-      Set_Field (Root.Name, Root.Name_Len, Root_Name (1 .. Root_Name_Len));
-      Set_Field
-        (Root.Version, Root.Version_Len, Root_Version (1 .. Root_Version_Len));
-      Set_Field
-        (Root.License, Root.License_Len, Root_License (1 .. Root_License_Len));
-      Set_Path
-        (Root.Description,
-         Root.Description_Len,
-         Root_Desc (1 .. Root_Desc_Len));
-      if Root_Website_Len > 0 then
-         Set_Path
-           (Root.Website,
-            Root.Website_Len,
-            Root_Website (1 .. Root_Website_Len));
-      end if;
-      Root.Kind := Types.Root_Component;
-      Root.Parent := 0;
-      Graph.Append (Root);
-
-      --  Resolve alire.lock dependencies (solved crates).
-      Read_Alire_Lock (Target_Dir & "/alire/alire.lock", Graph);
-
-      --  Resolve GPR with-clause dependencies, including transitives.
-      Resolve_GPR_Deps (Graph, GPR_Files, GPR_Deps, 1, 8);
-
-      --  Add vendored packages overlaid by .adacovex/patches/ docstring
-      --  patches (for example a third-party copy under demo/deps) as
-      --  scope=vendored dependencies of the root.
-      Discover_Vendored_Components (Target_Dir, Graph);
-
-      --  Add language-agnostic vendored components. These are ecosystem
-      --  manifests (package.json, Cargo.toml, and more) and Ada library dirs
-      --  under any vendor-named directory (third_party, deps, node_modules,
-      --  and more). Each has its ecosystem PURL and detected language or
-      --  languages.
-      Discover_Generic_Vendored (Target_Dir, Graph);
-
-      --  Register manifest-declared deps (base from alire.toml, dev from
-      --  alire-dev.toml) that no GPR with-clause or lockfile resolved. The
-      --  SBOM captures the declared dependency set. This applies even for
-      --  zero-`with` projects whose toolchain deps live only in the dev
-      --  manifest.
-      Register_Manifest_Deps (Target_Dir, Graph, Base_Names, Dev_Names);
-
-      --  Register the root's Python requirements (requirements*.txt) as
-      --  dev-scope pypi dependencies resolved from the package registry.
-      Register_Root_Python_Deps (Target_Dir, Graph);
-
-      Success := Root.Name_Len > 0;
-
-      --  Store the freshly resolved graph for the next run. Store it only on
-      --  success. A partial graph is then never cached.
-      if Use_Cache then
-         declare
-            K  : constant String :=
-              Graph_Key (Target_Dir, Manifest_Path, GPR_Files);
-            OK : Boolean;
-         begin
-            if K'Length > 0 then
-               declare
-                  S_Blob : constant String := Graph_Store.Serialize (Graph);
-               begin
-                  if S_Blob'Length > 0 then
-                     Adacovex.Cache.Put_Cached (K, S_Blob, OK);
-                  end if;
-               end;
-            end if;
-         end;
-      end if;
-   end Build_Dependency_Graph;
+   is separate;
 
 end Adacovex.Parsers.Manifest;
