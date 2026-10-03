@@ -126,7 +126,17 @@ jobs:
           *Build Provenance Attestation*:
           $ATTESTATION_URL"
           fi
-          gh release create "$VERSION" "${ASSETS[@]}" --notes "$BODY"
+          #  A re-run must not die on a release this workflow already
+          #  published. The floating-tag step is the last one, so any failure
+          #  after this point can only be retried when the publish step is
+          #  idempotent: update the notes and replace the assets instead.
+          if gh release view "$VERSION" >/dev/null 2>&1; then
+            echo "Release $VERSION already exists (re-run): updating notes and assets."
+            gh release edit "$VERSION" --notes "$BODY"
+            gh release upload "$VERSION" "${ASSETS[@]}" --clobber
+          else
+            gh release create "$VERSION" "${ASSETS[@]}" --notes "$BODY"
+          fi
 
       - name: Update floating version tags
         shell: bash
@@ -135,17 +145,40 @@ jobs:
         run: |
           set -euxo pipefail
           VERSION="${{ github.ref_name }}"
-          MAJOR="${VERSION%%.*}"
-          MINOR="${VERSION%.*}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
-          git tag -fa "$MAJOR" -m "Release $VERSION"
-          git tag -fa "$MINOR" -m "Release $VERSION"
-          git tag -fa latest -m "Release $VERSION"
-          git push origin "refs/tags/$MAJOR" --force
-          git push origin "refs/tags/$MINOR" --force
-          git push origin "refs/tags/latest" --force
+          #  The floating refs are vMAJOR, vMAJOR.MINOR, and latest. The
+          #  release tag itself is never rewritten (a one-component tag such
+          #  as v1 collapses both names onto it), and a name already in the
+          #  list is kept once (a two-component tag makes both the same).
+          REFS=()
+          for name in "${VERSION%%.*}" "${VERSION%.*}" latest; do
+            case " ${REFS[*]:-} $VERSION " in
+              *" $name "*) continue ;;
+            esac
+            REFS+=("$name")
+          done
+          for name in "${REFS[@]}"; do
+            git tag -fa "$name" -m "Release $VERSION"
+          done
+          #  One push, retried: a transient server-side error must not turn a
+          #  published release red, and git names the ref it refused.
+          PUSHES=()
+          for name in "${REFS[@]}"; do
+            PUSHES+=("refs/tags/$name")
+          done
+          ok=0
+          for attempt in 1 2 3; do
+            if git push --force origin "${PUSHES[@]}"; then ok=1; break; fi
+            echo "::warning::floating-tag push failed (attempt $attempt of 3); retrying"
+            sleep $((attempt * 5))
+          done
+          if [ "$ok" -ne 1 ]; then
+            echo "::error::cannot move ${PUSHES[*]} to $VERSION. A server-side refusal means the tag is protected (Settings > Rules > Protected tags) or belongs to an immutable release; remove that rule, then re-run this workflow."
+            exit 1
+          fi
+          echo "Floating tags updated: ${PUSHES[*]}"
 
   summary:
     name: Release summary

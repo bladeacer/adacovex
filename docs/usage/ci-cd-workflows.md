@@ -88,6 +88,7 @@ Threshold failures **fail loudly** at every layer:
 | `Unknown option --foo (did you mean --bar?)` | Typo | Use `adacovex --help` or `adacovex help <topic>` |
 | `::notice::WARNING ...` annotation | Non-fatal warning surfaced from `adacovex.out` | Download the `adacovex-assessment` artifact for the full log. Warnings do not fail the gate. They indicate missing tests or proof |
 | `complexity-check` failed | File or function exceeds caps (`--max-file-loc`/`--max-file-pct`/`--max-fn-complexity`) | Run `adacovex complexity --help`. Split god objects or functions |
+| `::error::cannot move refs/tags/...` | The server refused a floating-tag update at release time | The annotation names the ref. Check `Settings > Rules > Protected tags`, or a release that owns the tag. Remove the rule, then re-run the release workflow |
 
 **Better debugging output contract.** `ci.yml` now has `timeout-minutes`,
 `concurrency.cancel-in-progress`, `fetch-tags: true`, and `actions/cache` for

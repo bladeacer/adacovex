@@ -130,6 +130,24 @@ still fails the gate with `link to missing bundled asset`. A new test asserts
 that a docs change invalidates the cached build, so the cache cannot become a
 stale-build hazard.
 
+### H3: A release run that failed in its last step could never be retried
+
+The v1.55.0 release run published the release and attested both tarballs. It
+then failed while it moved the floating tags. A re-run died earlier, in
+`Create GitHub Release`, because `gh release create` fails when the tag already
+has a release. The floating tags were never moved, so `@latest` kept pointing
+at v1.54.0.
+
+The publish step is now idempotent: when the tag already has a release, the
+workflow updates the release notes and replaces the assets. A re-run can
+finish a run that failed in its last step.
+
+The floating-tag step pushes the three refs in one command and retries a
+failed push three times. A refusal that no retry removes is a repository rule,
+so the step reports the ref it could not move as an `::error::` annotation at
+the top of the job page. The step also never rewrites the release tag, and it
+pushes a repeated floating name once.
+
 ## Test Suite
 
 1657 tests across 25 categories, up from 1644. The SBOM / manifest-graph
@@ -182,3 +200,5 @@ added to any package: the only two packages that carry one remain
   and the dashboard detail panel unchanged.
 - H2 is release tooling (`tools/check-book-links.py`, `tools/tests.py`), which
   touches no assessed Ada source and no HLR.
+- H3 is release tooling (`.github/workflows/release.yml`), which touches no
+  assessed Ada source and no HLR.

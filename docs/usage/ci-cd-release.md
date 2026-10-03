@@ -46,6 +46,11 @@ release's changelog page on the deployed **Read the Docs** site
 not a GitHub blob URL: the manual is a Sphinx project and the changelogs are
 part of the published book.
 
+**A re-run is safe.** When the tag already has a release, the workflow updates
+the release notes and replaces the assets. It does not create the release
+again. A re-run can therefore finish a run that failed in its last step, which
+is the step that moves the floating tags.
+
 **The CI release binary is Linux x86-64 only for now.** The release workflow
 runs on `ubuntu-latest`. It packages the Linux binary and the prebuilt
 GNATprove toolchain bundle for that target. macOS, FreeBSD, Windows, and Linux
@@ -67,6 +72,15 @@ binary it produced. The bundled version is always the build's version
 The release workflow force-pushes the floating tags `vMAJOR`, `vMAJOR. MINOR`, and `latest`. For example: `v1`, `v1.3`, and `latest` from `v1.3.0`. Reference `@latest` to always get the newest published release.
 
 Use `@v1` or `@v1.3` for the latest release within a major or minor version. Pin an exact `@vX. Y. Z` for a fixed version.
+
+The workflow pushes the three tags in one command. It retries a failed push
+three times, so a transient server error does not fail a published release.
+The step reports the ref it could not move as an `::error::` annotation, which
+is visible at the top of the job page.
+
+A refusal that no retry removes comes from a repository rule. The tag is
+protected, or a release owns the tag. Remove the rule, then re-run the
+workflow.
 
 Once the action is listed on the GitHub Actions marketplace, each `vX. Y. Z` tag auto-publishes that version.
 
