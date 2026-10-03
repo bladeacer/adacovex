@@ -30,6 +30,7 @@
 - HLR-PROVE: GNATprove subcommand
 - HLR-SBOM: Proof-aware SBOM generation
 - HLR-IR: IR type profiles, host/target config, and foreign type-name lowering
+- HLR-SPARK: SPARK proof-coverage report
 
 ## Requirements
 
@@ -142,3 +143,17 @@
   word-size configuration, and lower foreign type names (int32_t, size_t,
   usize, ...) onto them, synthesizing bounded Ada declarations that gnatprove
   can prove free of integer overflow.
+
+- HLR-SPARK: The tool shall report SPARK proof coverage from the gnatprove
+  artefacts a proof run writes, and shall not run the prover itself. It shall
+  report three metrics, and shall name the numerator and the denominator of
+  each one: statement coverage, subprogram coverage, and VC coverage. It shall
+  group the rows by source file, by folder, or by Ada package.
+
+  Every subprogram gnatprove did not prove shall be placed in exactly one
+  class: irreducible (the unit carries an explicit `SPARK_Mode (Off)` pragma or
+  aspect), input/output bound (the subprogram references an input or output
+  package, or spawns a process), or work queue (any other skipped
+  subprogram). The three classes shall be counted separately, so that the
+  provable backlog stays visible. Code gnatprove did not report on shall be
+  counted as not covered, and shall never be folded into an off class.

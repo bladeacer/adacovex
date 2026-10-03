@@ -36,8 +36,8 @@ begin
    Referenced.Clear;
    Probes.Clear;
    From_Cache := False;
-   Refreshed  := False;
-   Key_Len    := 0;
+   Refreshed := False;
+   Key_Len := 0;
 
    --  Serve the referenced-tool set from the on-disk cache when the
    --  project's inputs are unchanged. The key covers every file the
@@ -79,8 +79,7 @@ begin
 
                --  Shared snapshot first; direct enumeration only on the
                --  fallback path (over-cap tree or unreadable snapshot).
-               Adacovex.Dir_Cache.Snapshot
-                 (Dir_Path, Snap, SCt, STrunc, SOK);
+               Adacovex.Dir_Cache.Snapshot (Dir_Path, Snap, SCt, STrunc, SOK);
                if SOK and then not STrunc then
                   for SI in 1 .. SCt loop
                      declare
@@ -202,8 +201,7 @@ begin
          begin
             if Live_Digest'Length > 0
               and then Probes (PI).FpLen = Live_Digest'Length
-              and then Probes (PI).Fp (1 .. Live_Digest'Length)
-                        = Live_Digest
+              and then Probes (PI).Fp (1 .. Live_Digest'Length) = Live_Digest
             then
                Append_Dependency
                  (Graph,
@@ -290,8 +288,7 @@ begin
                      VBuf  : String (1 .. 4096);
                      VLen  : Natural := 0;
                   begin
-                     Adacovex.Cache.Get_Probe
-                       (Name, Fp, Probe, PLen, Found);
+                     Adacovex.Cache.Get_Probe (Name, Fp, Probe, PLen, Found);
                      if Found then
                         VLen := PLen;
                         VBuf (1 .. VLen) := Probe (1 .. VLen);
@@ -307,8 +304,7 @@ begin
                            VBuf (1 .. VLen) :=
                              V (V'First .. V'First + VLen - 1);
                         end;
-                        Adacovex.Cache.Put_Probe
-                          (Name, Fp, VBuf (1 .. VLen));
+                        Adacovex.Cache.Put_Probe (Name, Fp, VBuf (1 .. VLen));
                      end if;
                      Add_Probe_Fp
                        (Name,

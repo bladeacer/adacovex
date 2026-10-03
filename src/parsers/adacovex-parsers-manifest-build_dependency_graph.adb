@@ -71,8 +71,7 @@ begin
    Read_Manifest_Deps (Manifest_Path, Base_Names, Test_Names);
    declare
       T : constant String :=
-        (if Target_Dir'Length > 0
-           and then Target_Dir (Target_Dir'Last) = '/'
+        (if Target_Dir'Length > 0 and then Target_Dir (Target_Dir'Last) = '/'
          then Target_Dir (Target_Dir'First .. Target_Dir'Last - 1)
          else Target_Dir);
    begin
@@ -97,8 +96,7 @@ begin
       begin
          if K'Length > 0 then
             Adacovex.Cache.Get_Cached (K, Blob, Blen, Found);
-            if Found
-              and then Graph_Store.Deserialize (Blob (1 .. Blen), Graph)
+            if Found and then Graph_Store.Deserialize (Blob (1 .. Blen), Graph)
             then
                Success := True;
                return;
@@ -126,10 +124,7 @@ begin
    if Root_GPR_Len = 0 then
       if Root_Name_Len > 0 then
          Find_GPR
-           (GPR_Files,
-            Root_Name (1 .. Root_Name_Len),
-            Root_GPR,
-            Root_GPR_Len);
+           (GPR_Files, Root_Name (1 .. Root_Name_Len), Root_GPR, Root_GPR_Len);
       end if;
    end if;
 
@@ -167,8 +162,7 @@ begin
    --  records the language mix that created it (top 3 for mixed trees).
    declare
       Root_T     : constant String :=
-        (if Target_Dir'Length > 0
-           and then Target_Dir (Target_Dir'Last) = '/'
+        (if Target_Dir'Length > 0 and then Target_Dir (Target_Dir'Last) = '/'
          then Target_Dir (Target_Dir'First .. Target_Dir'Last - 1)
          else Target_Dir);
       Root_Langs : Lang_Vectors.Vector;
@@ -191,14 +185,10 @@ begin
    Set_Field
      (Root.License, Root.License_Len, Root_License (1 .. Root_License_Len));
    Set_Path
-     (Root.Description,
-      Root.Description_Len,
-      Root_Desc (1 .. Root_Desc_Len));
+     (Root.Description, Root.Description_Len, Root_Desc (1 .. Root_Desc_Len));
    if Root_Website_Len > 0 then
       Set_Path
-        (Root.Website,
-         Root.Website_Len,
-         Root_Website (1 .. Root_Website_Len));
+        (Root.Website, Root.Website_Len, Root_Website (1 .. Root_Website_Len));
    end if;
    Root.Kind := Types.Root_Component;
    Root.Parent := 0;

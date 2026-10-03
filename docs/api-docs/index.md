@@ -83,6 +83,7 @@ dictionary means the sentence is not yet STE100-clean.
 - [Adacovex.Prove_Patch](adacovex-prove_patch.md)
 - [Adacovex.Renderers](adacovex-renderers.md)
 - [Adacovex.Server](adacovex-server.md)
+- [Adacovex.Spark_Coverage](adacovex-spark_coverage.md)
 - [Adacovex.Target_Profiles](adacovex-target_profiles.md)
 - [Adacovex.Timezones](adacovex-timezones.md)
 - [Adacovex.Types](adacovex-types.md)

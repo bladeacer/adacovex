@@ -101,7 +101,7 @@ any Ada/SPARK project.
 
 Self-assessment (`make run-self`) must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
-- Platinum SPARK level (878 VCs under gnatprove 16.1.0, 0 unproved, 0
+- Platinum SPARK level (884 VCs under gnatprove 16.1.0, 0 unproved, 0
   justified; see `docs/proof/16.1.0-ledger.md`)
 - 1756/1756 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
@@ -133,6 +133,7 @@ src/
 |   |-- adacovex-opt_outs.ads/.adb            -- Per-file opt-out annotation detector (no-covex-complexity-scan / -docstrings / -spark-proof / -analysis header markers)
 |   |-- adacovex-prove.ads/.adb               -- GNATprove runner for the `prove` subcommand (alire-first toolchain resolution; --args passthrough; no-covex-spark-proof unit opt-outs via -u)
 |   |-- adacovex-prove_patch.ads/.adb         -- Proof patches for vendored deps (SPARK aspect merge + patched proof tree)
+|   |-- adacovex-spark_coverage.ads/.adb      -- SPARK proof-coverage report (statement / subprogram / VC coverage and the three off classes, read from gnatprove.out and gnatprove.sarif)
 |   |-- adacovex-timezones.ads/.adb           -- Timezone resolution + local-time formatting (OS default; --tz/--timezone: IANA name or UTC/GMT offset)
 |   |-- adacovex-types.ads/.adb               -- All domain types + conversion functions
 |   `-- adacovex-vcs.ads/.adb                 -- VCS abstraction (git/hg/svn/fossil/jj detection + base snapshots)
@@ -146,13 +147,18 @@ src/
 |   |-- adacovex-parsers-gnatprove.ads/.adb   -- GNATprove .out parser
 |   |-- adacovex-parsers-manifest.ads/.adb    -- Alire manifest / alire.lock / .gpr dep graph
 |   |-- adacovex-parsers-manifest-add_dep_name.adb-- Append a crate name to a name vector unless already present
+|   |-- adacovex-parsers-manifest-add_probe.adb-- Record a tool version probe result (deduplicated)
+|   |-- adacovex-parsers-manifest-add_probe_fp.adb-- Record a tool version probe result with its binary digest
 |   |-- adacovex-parsers-manifest-append_dependency.adb-- Append one component node to the dependency graph
+|   |-- adacovex-parsers-manifest-build_dependency_graph.adb-- Build the dependency graph for a project root
 |   |-- adacovex-parsers-manifest-classify_scope.adb-- Classify a dependency name as base/dev/transitive scope
 |   |-- adacovex-parsers-manifest-collect_gpr_files.adb-- Collect every .gpr file under a target directory tree
 |   |-- adacovex-parsers-manifest-collect_owner_test_names.adb-- Collect test-labelled dependency names from supported-language manifests
 |   |-- adacovex-parsers-manifest-collect_req_entries.adb-- Collect every requirement (name/version) from a requirements*.txt
+|   |-- adacovex-parsers-manifest-deserialize_set.adb-- Restore the referenced-tool set and probes from a cache blob
 |   |-- adacovex-parsers-manifest-detect_languages.adb-- Count source files by language under a directory tree
 |   |-- adacovex-parsers-manifest-discover_generic_vendored.adb-- Discover vendored components via their ecosystem manifests
+|   |-- adacovex-parsers-manifest-discover_system_dev_deps.adb-- Register installed system tools the project references (dev scope)
 |   |-- adacovex-parsers-manifest-discover_vendored_components.adb-- Register vendored patches/resources/assets as scope=vendored SBOM components
 |   |-- adacovex-parsers-manifest-extension_language.adb-- Map a file extension to its language display name
 |   |-- adacovex-parsers-manifest-file_quoted_value.adb-- Extract the first quoted "key"=/"key":" value from a manifest file
@@ -161,17 +167,24 @@ src/
 |   |-- adacovex-parsers-manifest-gem_entry.adb-- Parse the first gem name/version from a Gemfile
 |   |-- adacovex-parsers-manifest-go_module_path.adb-- Read the module path from the first "module" line of go.mod
 |   |-- adacovex-parsers-manifest-go_module_version.adb-- Look a module's version up in a parsed vendor manifest
+|   |-- adacovex-parsers-manifest-graph_key.adb-- Combined content hash of everything that shapes the graph
 |   |-- adacovex-parsers-manifest-has_lang.adb-- Whether a language counter vector already holds a language name
+|   |-- adacovex-parsers-manifest-has_makefile.adb-- Whether the project root holds a Makefile variant
 |   |-- adacovex-parsers-manifest-is_test_named.adb-- Whether an npm package name carries a test label (starts/ends with "test")
 |   |-- adacovex-parsers-manifest-is_vendor_dir_name.adb-- Whether a directory name denotes a vendored-code root
+|   |-- adacovex-parsers-manifest-is_word_char.adb-- Whether a character can appear in a tool-name word
 |   |-- adacovex-parsers-manifest-key_value.adb-- Extract the quoted "key = value" from a TOML/JSON line
 |   |-- adacovex-parsers-manifest-language_of_dir.adb-- Summarise the source languages under a directory (primary first)
 |   |-- adacovex-parsers-manifest-language_summary.adb-- Rank and join a language counter vector into a summary label
 |   |-- adacovex-parsers-manifest-license_id.adb-- Classify a sibling licence file into an SPDX identifier
 |   |-- adacovex-parsers-manifest-make_tool.adb-- Build a Tool_Entry (name + category) from string literals
 |   |-- adacovex-parsers-manifest-name_in_graph.adb-- Whether a dependency name already exists in the graph
+|   |-- adacovex-parsers-manifest-note_if_tool.adb-- Record a whole word of a line when it names a curated tool
+|   |-- adacovex-parsers-manifest-note_referenced_tools.adb-- Record every curated tool a line references as a whole word
+|   |-- adacovex-parsers-manifest-note_tool.adb-- Record a curated tool as referenced by the project
 |   |-- adacovex-parsers-manifest-parse_gpr.adb-- Parse a GNAT project file for project name and with-clauses
 |   |-- adacovex-parsers-manifest-probe_version.adb-- Probe a tool's version by spawning it and parsing its output
+|   |-- adacovex-parsers-manifest-push_scan_dir.adb-- Queue a directory for the system-tool scan
 |   |-- adacovex-parsers-manifest-read_alire_lock.adb-- Parse alire.lock [[solution.state]] crate entries into the graph
 |   |-- adacovex-parsers-manifest-read_go_modules.adb-- Parse a Go vendor/modules.txt into a module-to-version table
 |   |-- adacovex-parsers-manifest-read_manifest.adb-- Read root-project metadata from an Alire manifest
@@ -182,9 +195,16 @@ src/
 |   |-- adacovex-parsers-manifest-req_entry.adb-- Parse the first requirement (name/version) from a requirements*.txt
 |   |-- adacovex-parsers-manifest-resolve_ecosystem_metadata.adb-- Resolve version/licence/website from the package registry
 |   |-- adacovex-parsers-manifest-resolve_gpr_deps.adb-- Resolve GPR with-clause dependencies into the graph
+|   |-- adacovex-parsers-manifest-scan_file.adb-- Scan one dev-facing build file for curated tool names
+|   |-- adacovex-parsers-manifest-serialize_set.adb-- Serialize the referenced-tool set and probes to a cache blob
 |   |-- adacovex-parsers-manifest-set_field.adb-- Copy a string into a bounded Desc_Field (with length cap)
 |   |-- adacovex-parsers-manifest-set_path.adb-- Copy a string into a bounded Path_Field (with length cap)
+|   |-- adacovex-parsers-manifest-should_scan.adb-- Whether a file drives a build and is scanned for tool references
 |   |-- adacovex-parsers-manifest-skip_walk_dir.adb-- Whether a directory should be skipped during a source walk
+|   |-- adacovex-parsers-manifest-source_tree_hash.adb-- Content hash of the dev-facing files the tool scan reads
+|   |-- adacovex-parsers-manifest-tool_fp_digest.adb-- SHA-256 of the fingerprint of an installed tool binary
+|   |-- adacovex-parsers-manifest-tools_key.adb-- Cache key for the referenced-tool set and its probes
+|   |-- adacovex-parsers-manifest-vendored_hash.adb-- Fingerprint of every vendored input that shapes the graph
 |   |-- adacovex-parsers-manifest-xml_tag_value.adb-- Extract the first <Tag>value</Tag> from an XML file
 |   |-- adacovex-parsers-source.ads/.adb      -- Ada source scanner (procs/funcs/docstrings/HLR; per-file no-covex-docstrings / no-covex-spark-proof markers)
 |   `-- adacovex-parsers-tests.ads/.adb       -- AUnit test-result parser
@@ -624,7 +644,7 @@ release-tag coverage gate instead.
 |-------|---------|-------------|
 | Unit tests | `make test` | 1756/1756 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
-| SPARK proof | `make prove` | Platinum (878 VCs, 0 unproved, 0 justified under gnatprove 16.1.0), verified at `--level=4` (the deepest effort; the prove subcommand forwards `--level` verbatim, so the overhead is gnatprove's own) |
+| SPARK proof | `make prove` | Platinum (884 VCs, 0 unproved, 0 justified under gnatprove 16.1.0), verified at `--level=4` (the deepest effort; the prove subcommand forwards `--level` verbatim, so the overhead is gnatprove's own) |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
 
 **The true test of proof performance is the `prove` subcommand at the

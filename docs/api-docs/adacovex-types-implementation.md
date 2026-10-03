@@ -85,6 +85,97 @@ Docstrings_Opt_Out : Boolean := False;
 end record;
 ```
 
+### type Spark_Coverage_Group
+
+```ada
+type Spark_Coverage_Group is record
+Key               : Path_Field;
+Key_Len           : Natural := 0;
+Stmts_Total       : Natural := 0;
+Stmts_Proved      : Natural := 0;
+Stmts_Not_Covered : Natural := 0;
+Subs_Total        : Natural := 0;
+Subs_Proved       : Natural := 0;
+Checks_Total      : Natural := 0;
+Checks_Proved     : Natural := 0;
+Warnings          : Natural := 0;
+Off_Irreducible   : Natural := 0;
+Off_IO_Bound      : Natural := 0;
+Off_Work_Queue    : Natural := 0;
+Not_Covered_Subs  : Natural := 0;
+Unit_Ct           : Natural := 0;
+end record;
+```
+
+### type Spark_Coverage_Totals
+
+```ada
+type Spark_Coverage_Totals is record
+Stmts_Total       : Natural := 0;
+Stmts_Proved      : Natural := 0;
+Stmts_Not_Covered : Natural := 0;
+Subs_Total        : Natural := 0;
+Subs_Proved       : Natural := 0;
+Checks_Total      : Natural := 0;
+Checks_Proved     : Natural := 0;
+Warnings          : Natural := 0;
+Off_Irreducible   : Natural := 0;
+Off_IO_Bound      : Natural := 0;
+Off_Work_Queue    : Natural := 0;
+Not_Covered_Subs  : Natural := 0;
+Unit_Ct           : Natural := 0;
+end record;
+```
+
+### type Spark_Coverage_Unit
+
+```ada
+type Spark_Coverage_Unit is record
+Name              : Name_Field;
+Name_Len          : Natural := 0;
+Folder            : Path_Field;
+Folder_Len        : Natural := 0;
+File              : Path_Field;
+File_Len          : Natural := 0;
+Stmts_Total       : Natural := 0;
+Stmts_Proved      : Natural := 0;
+Stmts_Not_Covered : Natural := 0;
+Subs_Total        : Natural := 0;
+Subs_Proved       : Natural := 0;
+Checks_Total      : Natural := 0;
+Checks_Proved     : Natural := 0;
+Warnings          : Natural := 0;
+Not_Covered_Subs  : Natural := 0;
+Off_Irreducible   : Natural := 0;
+Off_IO_Bound      : Natural := 0;
+Off_Work_Queue    : Natural := 0;
+Body_Subs         : Natural := 0;
+In_Proof_Run      : Boolean := False;
+end record;
+```
+
+### type Spark_Entity_Rec
+
+```ada
+type Spark_Entity_Rec is record
+Name     : Name_Field;
+Name_Len : Natural := 0;
+Class    : Spark_Off_Class := Off_None;
+end record;
+```
+
+### type Spark_Skip_Rec
+
+```ada
+type Spark_Skip_Rec is record
+Name     : Name_Field;
+Name_Len : Natural := 0;
+File     : Name_Field;
+File_Len : Natural := 0;
+Line     : Natural := 0;
+end record;
+```
+
 ### type Test_Summary
 
 ```ada

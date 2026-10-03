@@ -11,9 +11,7 @@ separate (Adacovex.Parsers.Manifest)
 function Should_Scan (Name : String) return Boolean is
    Dot : Natural := 0;
 begin
-   if Name = "makefile"
-     or else Name = "Makefile"
-     or else Name = "GNUmakefile"
+   if Name = "makefile" or else Name = "Makefile" or else Name = "GNUmakefile"
    then
       return True;
    end if;

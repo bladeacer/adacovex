@@ -155,14 +155,14 @@ package Adacovex.Spark_Coverage is
    --    unreadable. The report is then not trustworthy and every
    --    gate must fail loudly.
    procedure Analyze
-     (Target_Dir  : String;
-      Proof_Dir   : String;
-      Group       : Types.Spark_Group_Kind;
-      Units       : in out Types.Implementation.Spark_Coverage_Vectors.Vector;
-      Groups      : in out Types.Implementation.Spark_Group_Vectors.Vector;
-      Totals      : out Types.Implementation.Spark_Coverage_Totals;
-      Skipped_Ct  : out Natural;
-      Proof_Ok    : out Boolean);
+     (Target_Dir : String;
+      Proof_Dir  : String;
+      Group      : Types.Spark_Group_Kind;
+      Units      : in out Types.Implementation.Spark_Coverage_Vectors.Vector;
+      Groups     : in out Types.Implementation.Spark_Group_Vectors.Vector;
+      Totals     : out Types.Implementation.Spark_Coverage_Totals;
+      Skipped_Ct : out Natural;
+      Proof_Ok   : out Boolean);
 
    --  Render the human-readable report. One overall block per
    --  metric, then one table per group. Every header names its
@@ -200,12 +200,15 @@ package Adacovex.Spark_Coverage is
    --  @param Proved  Numerator (the verified count).
    --  @param Total  Denominator (the assessed count).
    --  @param Min_Pct  Required verified percentage.
-   --  @return The one-line gate failure message.
-   function Gate_Failure_Message
+   --  @param Msg  Output buffer receiving the message.
+   --  @param Msg_Len  Length of the message in Msg.
+   procedure Gate_Failure_Message
      (Metric  : Types.Spark_Metric_Kind;
       Proved  : Natural;
       Total   : Natural;
-      Min_Pct : Natural) return String
+      Min_Pct : Natural;
+      Msg     : out Types.Path_Field;
+      Msg_Len : out Natural)
    with Global => null;
 
 end Adacovex.Spark_Coverage;

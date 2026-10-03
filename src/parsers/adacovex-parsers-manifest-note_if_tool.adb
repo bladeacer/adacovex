@@ -9,8 +9,7 @@ separate (Adacovex.Parsers.Manifest)
 --  @param Line  Line of text to search.
 --  @param W_First  First index of the word in Line.
 --  @param W_Last  Last index of the word in Line.
-procedure Note_If_Tool
-  (Line : String; W_First : Natural; W_Last : Natural) is
+procedure Note_If_Tool (Line : String; W_First : Natural; W_Last : Natural) is
    W_Len : constant Natural := W_Last - W_First + 1;
 begin
    for T in System_Tools'Range loop
@@ -19,8 +18,7 @@ begin
             Is_Tool : Boolean := True;
          begin
             for J in 1 .. W_Len loop
-               if Line (W_First + J - 1) /= System_Tools (T).Name (J)
-               then
+               if Line (W_First + J - 1) /= System_Tools (T).Name (J) then
                   Is_Tool := False;
                   exit;
                end if;

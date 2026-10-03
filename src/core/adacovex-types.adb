@@ -266,13 +266,13 @@ package body Adacovex.Types is
    function To_String (M : Spark_Metric_Kind) return String is
    begin
       case M is
-         when Metric_Statements =>
+         when Metric_Statements  =>
             return "statements";
 
          when Metric_Subprograms =>
             return "subprograms";
 
-         when Metric_Checks    =>
+         when Metric_Checks      =>
             return "vcs";
       end case;
    end To_String;

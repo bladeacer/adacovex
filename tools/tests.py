@@ -49,6 +49,7 @@ check_book_links = importlib.import_module("check-book-links")
 check_docs = importlib.import_module("check-docs")
 check_docs_coverage = importlib.import_module("check-docs-coverage")
 check_version = importlib.import_module("check-version-consistency")
+spark_off = importlib.import_module("spark-off-check")
 
 GIT_ENV: dict = {
     "GIT_AUTHOR_NAME": "adacovex test",
@@ -1978,6 +1979,78 @@ class TestCheckBookLinks(unittest.TestCase):
             marker.unlink(missing_ok=True)
         self.assertNotEqual(before, after,
                             "a new docs page changes the build key")
+
+
+class SparkOffCheckTests(unittest.TestCase):
+    """Pure-logic tests for tools/spark-off-check.py (the SPARK_Mode gate).
+
+    The gate matches only the code part of an Ada line, so a docstring that
+    names the pragma to document it is not a violation, while a real pragma
+    or aspect still is.
+    """
+
+    def test_code_part_keeps_code_and_drops_comments(self) -> None:
+        self.assertEqual(
+            spark_off.code_part("   pragma SPARK_Mode (Off);"),
+            "   pragma SPARK_Mode (Off);")
+        self.assertEqual(
+            spark_off.code_part("   pragma SPARK_Mode (Off);  --  why"),
+            "   pragma SPARK_Mode (Off);  ")
+        self.assertEqual(
+            spark_off.code_part("   --  prose (SPARK_Mode => Off)"), "   ")
+
+    def test_code_part_tracks_string_literals(self) -> None:
+        # A `--` inside a literal is not a comment, so the pragma after it
+        # is still code.
+        self.assertEqual(
+            spark_off.code_part('   S : constant String := "a--b";'),
+            '   S : constant String := "a--b";')
+        # A doubled quote escapes one quote and the literal stays open.
+        self.assertEqual(
+            spark_off.code_part('   S : constant String := "a""--b";  --  x'),
+            '   S : constant String := "a""--b";  ')
+
+    def test_violations_flags_code_and_not_prose(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            core = root / "src" / "core"
+            core.mkdir(parents=True)
+            (core / "probe_prag.ads").write_text(
+                "package P is\n"
+                "   pragma SPARK_Mode (Off);\n"
+                "end P;\n", encoding="utf-8")
+            (core / "probe_aspect.ads").write_text(
+                "package Q with SPARK_Mode => Off is\n"
+                "end Q;\n", encoding="utf-8")
+            (core / "probe_prose.ads").write_text(
+                "package R is\n"
+                "   --  the skipped line carries (SPARK_Mode => Off)\n"
+                "end R;\n", encoding="utf-8")
+            with mock.patch.object(spark_off, "ROOT", root), \
+                 mock.patch.object(spark_off, "SRC", root / "src"):
+                found = {(rel, int(lineno))
+                         for rel, lineno, _ in spark_off.violations()}
+        self.assertEqual(found,
+                         {("src/core/probe_prag.ads", 2),
+                          ("src/core/probe_aspect.ads", 1)})
+
+    def test_exempt_packages_are_never_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            core = root / "src" / "core"
+            core.mkdir(parents=True)
+            for name in ("adacovex-types.ads", "adacovex-complexity.ads"):
+                (core / name).write_text(
+                    "package X is\n   pragma SPARK_Mode (Off);\nend X;\n",
+                    encoding="utf-8")
+            with mock.patch.object(spark_off, "ROOT", root), \
+                 mock.patch.object(spark_off, "SRC", root / "src"):
+                self.assertEqual(spark_off.violations(), [])
+
+    def test_repo_tree_is_clean(self) -> None:
+        # The gate must pass on the tree it guards, prose included.
+        self.assertEqual([f"{rel}:{line}" for rel, line, _ in
+                          spark_off.violations()], [])
 
 
 if __name__ == "__main__":

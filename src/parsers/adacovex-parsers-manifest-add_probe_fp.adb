@@ -5,8 +5,7 @@ separate (Adacovex.Parsers.Manifest)
 --  @param Name  Tool name ("" is ignored).
 --  @param Version  Version string reported by the probe.
 --  @param Fp_Digest  SHA-256 of the fingerprint of the probed binary.
-procedure Add_Probe_Fp
-  (Name : String; Version : String; Fp_Digest : String) is
+procedure Add_Probe_Fp (Name : String; Version : String; Fp_Digest : String) is
 begin
    if Name'Length = 0 then
       return;
@@ -26,8 +25,7 @@ begin
       P.NLen := Name'Length;
       P.Name (1 .. Name'Length) := Name (Name'First .. Name'Last);
       P.VLen := Version'Length;
-      P.Ver (1 .. Version'Length) :=
-        Version (Version'First .. Version'Last);
+      P.Ver (1 .. Version'Length) := Version (Version'First .. Version'Last);
       P.FpLen := Fp_Digest'Length;
       P.Fp (1 .. Fp_Digest'Length) := Fp_Digest;
       Probes.Append (P);

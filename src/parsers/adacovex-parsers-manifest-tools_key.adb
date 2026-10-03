@@ -18,8 +18,7 @@ separate (Adacovex.Parsers.Manifest)
 --  @return "tools:" + SHA-256 digest, or "" when inputs are unhashable.
 function Tools_Key (Target_Dir : String) return String is
    T    : constant String :=
-     (if Target_Dir'Length > 1
-        and then Target_Dir (Target_Dir'Last) = '/'
+     (if Target_Dir'Length > 1 and then Target_Dir (Target_Dir'Last) = '/'
       then Target_Dir (Target_Dir'First .. Target_Dir'Last - 1)
       else Target_Dir);
    Comb : String (1 .. Types.Max_Path * 2);

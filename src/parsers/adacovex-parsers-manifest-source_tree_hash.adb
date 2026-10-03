@@ -13,8 +13,7 @@ function Source_Tree_Hash (Dir : String) return String is
       Path : Types.Path_Field;
       Len  : Natural := 0;
    end record;
-   package Hash_Dir_Stacks is new
-     Ada.Containers.Vectors (Positive, Dir_Entry);
+   package Hash_Dir_Stacks is new Ada.Containers.Vectors (Positive, Dir_Entry);
    Stack : Hash_Dir_Stacks.Vector;
    H     : String (1 .. Types.Max_Path * 8);
    HLen  : Natural := 0;
@@ -69,8 +68,7 @@ begin
                           Snap (SI).Name (1 .. Snap (SI).Name_Len);
                         NP   : constant String := CP & "/" & N;
                         Is_D : constant Boolean :=
-                          Adacovex.Dir_Cache.Is_Directory
-                            (Snap (SI).Kind);
+                          Adacovex.Dir_Cache.Is_Directory (Snap (SI).Kind);
                      begin
                         if Is_D then
                            if N /= ".git"
@@ -128,9 +126,7 @@ begin
                            end if;
                         elsif Kind (E) = Ordinary_File then
                            if Should_Scan (Simple_Name (E)) then
-                              Add
-                                (Adacovex.Cache.Hash_File
-                                   (Full_Name (E)));
+                              Add (Adacovex.Cache.Hash_File (Full_Name (E)));
                            end if;
                         end if;
                      end;

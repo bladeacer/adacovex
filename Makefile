@@ -110,7 +110,7 @@ help:
 	@echo '  gates first (ascii, spark-off, changelog, version,'
 	@echo '  version-consistency, doc-links, action-parity, docs-coverage,'
 	@echo '  tools), then'
-	@echo '  build + native tests + SPARK proof (Platinum, 878 VCs) + SVG badges'
+	@echo '  build + native tests + SPARK proof (Platinum, 884 VCs) + SVG badges'
 	@echo '  + API docs + SBOM, then tree-wide count-sync checks (test-count,'
 	@echo '  proof-status, description) that fail when any live file carries a'
 	@echo '  stale metric. `make prove` / `make run-self` both emit badges, so'

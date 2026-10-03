@@ -15,6 +15,11 @@ The old `make spark-off-check` recipe used `grep -rn --include` +
 `grep -v` pipelines; this script walks `src/` in pure Python and applies
 the same rule.
 
+Only the code part of an Ada line is matched, never its comment text, so a
+docstring that names the pragma to document it is not a violation.  This is
+the same rule `tools/check-docs.py` applies, and the same rule the
+`Adacovex.Spark_Coverage` classifier applies to the tree it audits.
+
 Usage:
   python3 tools/spark-off-check.py   # scan src/; exit 1 on violations
 
@@ -51,6 +56,32 @@ GENERATED: Tuple[str, ...] = (
 PATTERN = re.compile(r"pragma\s+SPARK_Mode\s*\(\s*Off\s*\)|SPARK_Mode\s*=>\s*Off")
 
 
+def code_part(line: str) -> str:
+    """Return the code part of one Ada source line, comment text removed.
+
+    Returns the line unchanged when it carries no comment.  A `--` inside a
+    string literal is not a comment, so the scan tracks string state (a
+    doubled quote escapes one), and an unterminated literal leaves the line
+    as it is -- the compiler rejects such a line anyway.
+    """
+    in_string = False
+    index = 0
+    while index < len(line):
+        char = line[index]
+        if in_string:
+            if char == '"':
+                if index + 1 < len(line) and line[index + 1] == '"':
+                    index += 2
+                    continue
+                in_string = False
+        elif char == '"':
+            in_string = True
+        elif char == "-" and line.startswith("--", index):
+            return line[:index]
+        index += 1
+    return line
+
+
 def violations() -> List[Tuple[str, int, str]]:
     found: List[Tuple[str, int, str]] = []
     for path in sorted(SRC.rglob("*")):
@@ -68,7 +99,7 @@ def violations() -> List[Tuple[str, int, str]]:
         except (OSError, UnicodeDecodeError):
             continue
         for lineno, line in enumerate(text.splitlines(), start=1):
-            if PATTERN.search(line):
+            if PATTERN.search(code_part(line)):
                 found.append((rel, str(lineno), line.strip()))
     return found
 

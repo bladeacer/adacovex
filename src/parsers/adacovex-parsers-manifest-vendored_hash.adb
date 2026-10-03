@@ -113,10 +113,7 @@ function Vendored_Hash (Target_Dir : String) return String is
                              and then not Skip_Walk_Dir (N)
                            then
                               Push_Dir
-                                (H_Stack,
-                                 Path,
-                                 Current.Level + 1,
-                                 Max_Levels);
+                                (H_Stack, Path, Current.Level + 1, Max_Levels);
                            end if;
                         elsif Kind (H_Ent) = Ordinary_File then
                            Add (Adacovex.Cache.Hash_File (Path));

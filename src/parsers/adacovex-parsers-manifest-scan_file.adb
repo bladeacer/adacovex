@@ -20,8 +20,7 @@ begin
    end;
    while not End_Of_File (F) loop
       Line_Num := Line_Num + 1;
-      Adacovex.Parsers.Read_Line
-        (F, Path, Line_Num, Line, Last, Overflow);
+      Adacovex.Parsers.Read_Line (F, Path, Line_Num, Line, Last, Overflow);
       if Overflow then
          --  A physical line longer than Max_Line. Stop scanning this
          --  file. A truncated file then never yields a partial tool

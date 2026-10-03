@@ -22,8 +22,7 @@ begin
       P.NLen := Name'Length;
       P.Name (1 .. Name'Length) := Name (Name'First .. Name'Last);
       P.VLen := Version'Length;
-      P.Ver (1 .. Version'Length) :=
-        Version (Version'First .. Version'Last);
+      P.Ver (1 .. Version'Length) := Version (Version'First .. Version'Last);
       Probes.Append (P);
    end;
 end Add_Probe;

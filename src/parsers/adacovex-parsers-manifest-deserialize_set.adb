@@ -77,8 +77,7 @@ begin
                      Nm (Eq + 1 .. At_Pos - 1),
                      Nm (At_Pos + 1 .. Nm'Last));
                else
-                  Add_Probe
-                    (Nm (Nm'First .. Eq - 1), Nm (Eq + 1 .. Nm'Last));
+                  Add_Probe (Nm (Nm'First .. Eq - 1), Nm (Eq + 1 .. Nm'Last));
                end if;
             end if;
          end;
@@ -106,8 +105,7 @@ begin
                   Nm (Eq + 1 .. At_Pos - 1),
                   Nm (At_Pos + 1 .. Nm'Last));
             else
-               Add_Probe
-                 (Nm (Nm'First .. Eq - 1), Nm (Eq + 1 .. Nm'Last));
+               Add_Probe (Nm (Nm'First .. Eq - 1), Nm (Eq + 1 .. Nm'Last));
             end if;
          end if;
       end;

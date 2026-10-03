@@ -19,8 +19,7 @@ function Serialize_Set return String is
 begin
    for I in 1 .. Integer (Referenced.Length) loop
       declare
-         Nm : constant String :=
-           Referenced (I).Name (1 .. Referenced (I).Len);
+         Nm : constant String := Referenced (I).Name (1 .. Referenced (I).Len);
       begin
          if L > 0 then
             Add (",");

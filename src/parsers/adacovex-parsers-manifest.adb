@@ -733,8 +733,8 @@ package body Adacovex.Parsers.Manifest is
 
    --  Record a probe result and the identity digest of the binary it was
    --  probed from, so a later cache hit can re-validate the entry.
-   procedure Add_Probe_Fp
-     (Name : String; Version : String; Fp_Digest : String) is separate;
+   procedure Add_Probe_Fp (Name : String; Version : String; Fp_Digest : String)
+   is separate;
 
    --  SHA-256 of the fingerprint of the installed tool binary, "" when the
    --  tool is not on PATH.
@@ -772,8 +772,8 @@ package body Adacovex.Parsers.Manifest is
    --  @param Line  Line of text to search.
    --  @param W_First  First index of the word in Line.
    --  @param W_Last  Last index of the word in Line.
-   procedure Note_If_Tool
-     (Line : String; W_First : Natural; W_Last : Natural) is separate;
+   procedure Note_If_Tool (Line : String; W_First : Natural; W_Last : Natural)
+   is separate;
 
    --  Record every system tool that Line references as a whole word.
    --  The line is walked once, extracting maximal [a-z0-9_-] words, and

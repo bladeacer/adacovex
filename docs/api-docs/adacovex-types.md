@@ -134,10 +134,36 @@ end record;
 type SBOM_Format_Kind is (CycloneDX_JSON, SPDX_JSON, Markdown);
 ```
 
+### type Spark_Group_Kind
+
+```ada
+type Spark_Group_Kind is (Group_File, Group_Folder, Group_Package);
+```
+
 ### type SPARK_Level
 
 ```ada
 type SPARK_Level is (Stone, Bronze, Silver, Gold, Platinum);
+```
+
+### type Spark_Metric_Kind
+
+```ada
+type Spark_Metric_Kind is
+(Metric_Statements, Metric_Subprograms, Metric_Checks);
+```
+
+### type Spark_Off_Class
+
+```ada
+type Spark_Off_Class is
+(Off_None, Off_Irreducible, Off_IO_Bound, Off_Work_Queue);
+```
+
+### type Spark_Report_Kind
+
+```ada
+type Spark_Report_Kind is (Spark_Text, Spark_JSON);
 ```
 
 ### type Subprogram_Info
@@ -252,11 +278,29 @@ type Test_Status is (Pass, Fail);
 |-----------|-------------|
 | `T` |  |
 
+### function To_String (G : Adacovex.Types.Spark_Group_Kind) return Standard.String `[Global]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `G` |  |
+
 ### function To_String (L : Adacovex.Types.SPARK_Level) return Standard.String `[Post]` `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|
 | `L` |  |
+
+### function To_String (M : Adacovex.Types.Spark_Metric_Kind) return Standard.String `[Global]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `M` |  |
+
+### function To_String (C : Adacovex.Types.Spark_Off_Class) return Standard.String `[Global]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `C` |  |
 
 ### function To_String (S : Adacovex.Types.Test_Status) return Standard.String `[Post]` `[Global]`
 

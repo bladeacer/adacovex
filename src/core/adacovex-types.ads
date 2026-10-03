@@ -84,7 +84,8 @@ package Adacovex.Types is
    --    Metric_Checks      discharged checks / checks the prover reported
    --                       (what the prover actually discharged)
    --  HLR-SPARK: SPARK coverage metrics
-   type Spark_Metric_Kind is (Metric_Statements, Metric_Subprograms, Metric_Checks);
+   type Spark_Metric_Kind is
+     (Metric_Statements, Metric_Subprograms, Metric_Checks);
 
    --  How a SPARK-coverage report groups its rows. Group_File keys rows by
    --  the Ada source unit, Group_Folder by the folder under the target
@@ -324,53 +325,100 @@ package Adacovex.Types is
       --  and never a stored total that can drift from its parts.
       --  HLR-SPARK: SPARK coverage metrics
       type Spark_Coverage_Unit is record
-         Name             : Name_Field;
-         Name_Len         : Natural := 0;
-         Folder           : Path_Field;
-         Folder_Len       : Natural := 0;
-         File             : Path_Field;
-         File_Len         : Natural := 0;
-         Stmts_Total      : Natural := 0;
-         Stmts_Proved     : Natural := 0;
-         Subs_Total       : Natural := 0;
-         Subs_Proved      : Natural := 0;
-         Checks_Total     : Natural := 0;
-         Checks_Proved    : Natural := 0;
-         Off_Irreducible  : Natural := 0;
-         Off_IO_Bound     : Natural := 0;
-         Off_Work_Queue   : Natural := 0;
-         --  Subprogram headers seen in the unit's body. When the unit was
-         --  not part of the gnatprove run (In_Proof_Run is False) this is
-         --  the count the prover never looked at, so it is the unit's
-         --  not-covered subprogram count.
-         Body_Subs        : Natural := 0;
+         Name              : Name_Field;
+         Name_Len          : Natural := 0;
+         Folder            : Path_Field;
+         Folder_Len        : Natural := 0;
+         File              : Path_Field;
+         File_Len          : Natural := 0;
+         Stmts_Total       : Natural := 0;
+         Stmts_Proved      : Natural := 0;
+         --  Statements in a unit gnatprove never reported on.
+         --  They are neither proved nor off: the prover never
+         --  looked at them, so they are counted separately and
+         --  never folded into an off class.
+         Stmts_Not_Covered : Natural := 0;
+         Subs_Total        : Natural := 0;
+         Subs_Proved       : Natural := 0;
+         Checks_Total      : Natural := 0;
+         Checks_Proved     : Natural := 0;
+         --  Proof warnings the prover reported for this unit (not
+         --  verification conditions, so never counted in the VC
+         --  metric).
+         Warnings          : Natural := 0;
+         --  Subprograms in a unit gnatprove never reported on. It is
+         --  derived (the body's declared subprograms for such a unit),
+         --  never a stored total that can drift from its parts.
+         Not_Covered_Subs  : Natural := 0;
+         Off_Irreducible   : Natural := 0;
+         Off_IO_Bound      : Natural := 0;
+         Off_Work_Queue    : Natural := 0;
+         --  Subprogram headers seen in the unit's body. When the unit
+         --  was not part of the gnatprove run (In_Proof_Run is False)
+         --  this is the count the prover never looked at, so it is the
+         --  unit's not-covered subprogram count.
+         Body_Subs         : Natural := 0;
          --  Whether the unit appeared in the gnatprove run at all. A unit
          --  that did not is never reported as proved and never folded
          --  into an off class.
-         In_Proof_Run     : Boolean := False;
+         In_Proof_Run      : Boolean := False;
       end record;
 
       package Spark_Coverage_Vectors is new
         Ada.Containers.Vectors (Positive, Spark_Coverage_Unit);
+
+      --  One named SPARK entity as gnatprove reports it: the qualified
+      --  Ada name, and (for a skipped entity) the off class this report
+      --  derived for it. A proved entity is recorded with Off_None.
+      type Spark_Entity_Rec is record
+         Name     : Name_Field;
+         Name_Len : Natural := 0;
+         Class    : Spark_Off_Class := Off_None;
+      end record;
+
+      package Spark_Entity_Vectors is new
+        Ada.Containers.Vectors (Positive, Spark_Entity_Rec);
+
+      --  One skipped entity as gnatprove reports it: its qualified Ada
+      --  name, the source file that declares it, and the line the
+      --  declaration starts on. The line is the entity's first line, so
+      --  consecutive skip lines in the same file bound the source range
+      --  that belongs to each unproved subprogram.
+      type Spark_Skip_Rec is record
+         Name     : Name_Field;
+         Name_Len : Natural := 0;
+         File     : Name_Field;
+         File_Len : Natural := 0;
+         Line     : Natural := 0;
+      end record;
+
+      package Spark_Skip_Vectors is new
+        Ada.Containers.Vectors (Positive, Spark_Skip_Rec);
 
       --  SPARK coverage rolled up over a group of units (one file, one
       --  folder, or one Ada package). Every count is a sum, so a group
       --  percentage is always a ratio of sums and never a mean of its
       --  children.
       type Spark_Coverage_Group is record
-         Key             : Path_Field;
-         Key_Len         : Natural := 0;
-         Stmts_Total     : Natural := 0;
-         Stmts_Proved    : Natural := 0;
-         Subs_Total      : Natural := 0;
-         Subs_Proved     : Natural := 0;
-         Checks_Total    : Natural := 0;
-         Checks_Proved   : Natural := 0;
-         Off_Irreducible : Natural := 0;
-         Off_IO_Bound    : Natural := 0;
-         Off_Work_Queue  : Natural := 0;
-         Not_Covered_Subs : Natural := 0;
-         Unit_Ct         : Natural := 0;
+         Key               : Path_Field;
+         Key_Len           : Natural := 0;
+         Stmts_Total       : Natural := 0;
+         Stmts_Proved      : Natural := 0;
+         Stmts_Not_Covered : Natural := 0;
+         Subs_Total        : Natural := 0;
+         Subs_Proved       : Natural := 0;
+         Checks_Total      : Natural := 0;
+         Checks_Proved     : Natural := 0;
+         --  Proof warnings the prover reported (gnatprove SARIF
+         --  results whose level is "warning"). They are not
+         --  verification conditions, so they are never counted in
+         --  the VC metric; the report lists them separately.
+         Warnings          : Natural := 0;
+         Off_Irreducible   : Natural := 0;
+         Off_IO_Bound      : Natural := 0;
+         Off_Work_Queue    : Natural := 0;
+         Not_Covered_Subs  : Natural := 0;
+         Unit_Ct           : Natural := 0;
       end record;
 
       package Spark_Group_Vectors is new
@@ -378,17 +426,19 @@ package Adacovex.Types is
 
       --  The whole-tree rollup: the group with the empty key.
       type Spark_Coverage_Totals is record
-         Stmts_Total     : Natural := 0;
-         Stmts_Proved    : Natural := 0;
-         Subs_Total      : Natural := 0;
-         Subs_Proved     : Natural := 0;
-         Checks_Total    : Natural := 0;
-         Checks_Proved   : Natural := 0;
-         Off_Irreducible : Natural := 0;
-         Off_IO_Bound    : Natural := 0;
-         Off_Work_Queue  : Natural := 0;
-         Not_Covered_Subs : Natural := 0;
-         Unit_Ct         : Natural := 0;
+         Stmts_Total       : Natural := 0;
+         Stmts_Proved      : Natural := 0;
+         Stmts_Not_Covered : Natural := 0;
+         Subs_Total        : Natural := 0;
+         Subs_Proved       : Natural := 0;
+         Checks_Total      : Natural := 0;
+         Checks_Proved     : Natural := 0;
+         Warnings          : Natural := 0;
+         Off_Irreducible   : Natural := 0;
+         Off_IO_Bound      : Natural := 0;
+         Off_Work_Queue    : Natural := 0;
+         Not_Covered_Subs  : Natural := 0;
+         Unit_Ct           : Natural := 0;
       end record;
    end Implementation;
 
@@ -529,7 +579,7 @@ package Adacovex.Types is
      Post   => To_String'Result = "PASS" or else To_String'Result = "FAIL",
      Global => null;
 
---  Convert a Spark_Metric_Kind to its CLI name: "statements",
+   --  Convert a Spark_Metric_Kind to its CLI name: "statements",
    --  "subprograms", or "vcs". Every percentage in a SPARK-coverage report
    --  carries this label so a reader never has to guess which metric a
    --  number belongs to.

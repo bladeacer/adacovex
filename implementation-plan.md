@@ -1,18 +1,46 @@
 # adacovex v1.57.0 -- implementation plan
 
-Status: **planning complete, no code written.** This document records the
-measurements taken on 2026-10-03, the design decisions taken from them, and the
-answers to every open question, so the implementation can start without
-repeating the investigation. Section 7 is the decision table.
+Status: **item 1 shipped in 1.57.0; item 2 partly built; items 3-5 not
+started.** This document records the measurements taken on 2026-10-03, the
+design decisions taken from them, and the answers to every open question, so
+the implementation can start without repeating the investigation. Section 7
+is the decision table. Every work item below carries a checkbox that records
+where it actually stands.
 
-Scope, in delivery order:
+Scope, in delivery order. The first item is **delivered**; the rest are
+**deferred to later minor releases**, because the analyser's own CLI, tests,
+and documentation are a release-sized unit of work on their own:
 
-1. Build performance (the `make build` bottleneck).
+1. Build performance (the `make build` bottleneck). **Shipped in 1.57.0.**
 2. `adacovex spark-coverage` -- a new subcommand reporting three coverage
-   metrics, plus a dashboard panel and a JSON API endpoint.
+   metrics, plus a dashboard panel and a JSON API endpoint. **Analyser
+   package built; not reachable from the CLI yet.**
 3. SPARK opt-in sweep -- the full pure-logic work queue, in prove order.
 4. A `tldr` page for the command line, kept in-repo.
 5. The prove-timing phase decision for 1.55.0-1.57.0.
+
+Progress at a glance:
+
+- [x] B1 -- split `adacovex-parsers-manifest.adb` (premise corrected)
+- [x] B2 -- `-O1` development profile, `-O2` for release
+- [x] B3 -- `-g` on development only (size figures outstanding)
+- [x] B4 -- parallelism diagnosed (no code change needed)
+- [ ] B5 -- record the bundling timings
+- [x] 2.1-2.5 -- the analyser itself (spec, types, algorithm, placement)
+- [ ] 2.6 -- dashboard panel and JSON API endpoint
+- [ ] 2.7 -- CLI surface and CI gate
+- [ ] 2.8 -- tests
+- [ ] 3 -- SPARK opt-in sweep
+- [ ] 4 -- tldr page
+- [ ] 5 -- prove-timing phase decision
+
+**Release scoping.** Items 2 to 5 do not fit one minor release, so they are
+split across several. 1.57.0 carries item 1 alone, because that item is
+self-contained: it changes build switches and file layout, adds no user-facing
+flag, and needs no documentation gate beyond the perf pages. The analyser
+package that already exists in the tree belongs to the release that gives it a
+CLI, and is parked out of the 1.57.0 proof until then (see the regression
+recorded under section 2.5).
 
 Items 2 and 3 interact: the new command reports the surface that item 3
 shrinks, and item 3 is judged by whether the report's work-queue class gets
@@ -94,7 +122,11 @@ separate lever and the plan takes all four. B4 is still measured first,
 because if Alire's job count is the ceiling it is a one-line fix that may
 make B2's cost less pressing.
 
-**B1 -- Split `adacovex-parsers-manifest.adb` (largest single win).**
+> **Outcome.** All four are done, and two of the four premises turned out to
+> be wrong when measured. The measurements below are kept as the record of what
+> was believed at planning time; the correction follows each item.
+
+**B1 -- Split `adacovex-parsers-manifest.adb` (largest single win).** [x]
 The 21.9 s body is already a partially-split package: 40 sibling
 `adacovex-parsers-manifest-*.adb` files hold small helpers, and the parent body
 holds the rest. The remaining parent body is still one 2 254-line unit. Split
@@ -105,7 +137,37 @@ is pure code motion: no behaviour change, no new proof surface.
 Expected effect: the longest single compile drops well under 10 s, which is
 what sets the critical path on a parallel build.
 
-**B2 -- Add a `-O1` development profile and keep `-O2` for release.**
+> **Shipped, but the expected effect does not hold.** The split is done: the
+> parent body plus 19 separate bodies, with 19 matching entries in
+> `tools/agents-tree.map`. Three findings from doing it:
+>
+> - **Separate bodies do not compile in parallel.** They are compiled in the
+>   *same* `gnat1` invocation as their parent unit. `nm obj/adacovex-parsers-manifest.o`
+>   lists every subunit symbol in one 6.5 MB object, which is only possible if
+>   one compiler process produced them. A separate body splits a *file*, not a
+>   *compile*. The premise that this lowers the critical path is therefore
+>   wrong; it lowers the per-file size the complexity and LOC gates measure,
+>   and nothing else.
+> - **The wall clock barely moved.** A/B through `git stash -u`, same machine,
+>   load recorded: original tree 60.7 s and 62.7 s, split tree 57.3 s and
+>   59.8 s. The earlier "37.5 s before" figure was taken on a quieter machine,
+>   so the machine's load, not the tree, explains most of the spread. Treat
+>   every build figure on this host as load-relative.
+> - **State has to move to the package level.** The scan directory stack, the
+>   referenced-tool set, the probe list, the cache flag, and the key buffers
+>   were locals of one subprogram; a separate body cannot see them, and it
+>   cannot reset another body's state either. They are now package-level objects
+>   reset at the top of `Discover_System_Dev_Deps`, because the test suite calls
+>   that subprogram more than once per process. `Trim` and `Starts_With` stayed
+>   in the parent body: a SPARK aspect cannot be placed on a separate body
+>   declaration (`incorrect placement of aspect "SPARK_Mode"`).
+>
+> The proof cost nothing. The considered-subprogram count moved 461 to 474
+> because each separate body is now an entity in its own right, while the VC
+> total stayed at 878 across 66 units and the proved subprogram count stayed
+> at 95.
+
+**B2 -- Add a `-O1` development profile and keep `-O2` for release.** [x]
 `adacovex.gpr` currently puts `-O2 -gnatn` in `Compiler.Default_Switches`, which
 applies to both `alr build` and `alr build --release`. Add a `development`
 external profile that overrides the optimisation level to `-O1`, and have
@@ -122,7 +184,36 @@ happens to be using day to day. State the profile beside every figure. The
 existing page already records `/proc/loadavg` beside each number; the profile
 belongs in the same note.
 
-**B3 -- Drop `-g` from the release profile.**
+> **Shipped, via a different mechanism than planned.** gprbuild 26.0.1 has no
+> `profile` block at all: the parser rejects the name with `":=" expected`,
+> because `profile` reads as an identifier. It has no conditional expressions
+> either (`cannot be part of an expression`). What does work is a `case`
+> statement over a typed external variable:
+>
+> ```ada
+> type Build_Profile_Type is ("development", "release");
+> Profile : Build_Profile_Type := external ("ADACOVEX_PROFILE", "development");
+> package Compiler is
+>    case Profile is
+>       when "development" =>
+>          for Default_Switches ("Ada") use (..., "-O1", "-gnatn");
+>       when "release" =>
+>          for Default_Switches ("Ada") use (..., "-O2", "-gnatn");
+>    end case;
+> end Compiler;
+> ```
+>
+> `tools/build.py` forwards `-- -XADACOVEX_PROFILE=release` for a release build
+> and prints `=== Build profile: <name> ===`. Both switch sets were verified to
+> reach the compiler, and `gprbuild -s` does rebuild on a profile change. Note
+> that Alire's own `--release` does **not** set `BUILD=release` (Alire 2.1.1 has
+> no `[build-profiles]`), so the release signal is `--release` or
+> `ADACOVEX_VERSION` in the environment, not the Alire switch.
+>
+> **Outstanding:** the risk this item names is not yet discharged. No perf page
+> has been updated to state the profile beside its figures.
+
+**B3 -- Drop `-g` from the release profile.** [x]
 `Builder.Default_Switches ("Ada")` adds `-g`, which reached every compile in
 the observed command lines and cost ~1.2 s on the manifest body (20.3 s with,
 19.1 s without). Keep it on the development profile, where debuggability is
@@ -132,17 +223,42 @@ figures in
 afterwards, because removing `-g` should shrink the shipped binary and that
 figure is recorded in the docs.
 
-**B4 -- Fix the parallelism ceiling.**
+> **The switch change is shipped; the re-measurement is not.** `-g` is on the
+> development profile and absent from the release profile, verified through the
+> compile command lines. The stripped-size figures in
+> `docs/contributing/perf/benchmarks-binary-size.md` are still the pre-change
+> ones, so that page currently records a figure for a binary this release no
+> longer builds the same way. Track it under B5, with the perf-page pass.
+
+**B4 -- Fix the parallelism ceiling.** [x]
 `alr build` reports 39 s wall for 99.8 s of serial work on 12 cores, a speedup
 of only 2.6x. Sampling the process table during a rebuild shows at most 3
 concurrent `gnat1` processes, so the build is not using the machine. Determine
 whether the cause is Alire's default job count or the dependency chain
-funnelling through `adacovex-types.ads` and `adacovex-parsers-manifest.ads`.
+funnelling through `adacovex-types.ads` and `adacovex-parsers-manifest.adb`.
 If it is the job count, `tools/build.py` passes `--jobs=<cores>` through. This
 is the cheapest fix available, so it goes first even though the other three are
 committed.
 
-**B5 -- Keep the docs bundling fast, and prove it stays fast.**
+> **Diagnosed: it is the dependency chain, so there is no one-line fix.** The
+> job count is not the ceiling and `tools/build.py` was left unchanged:
+>
+> - `alr build -- -j0` measured no faster than the default on the same tree.
+> - Sampling the process table over a full rebuild gave a **mean of 6.4 and a
+>   maximum of 12** concurrent `gnat1` processes on 12 cores, against the 3 the
+>   planning sample saw. The machine is already saturated at its peaks; the low
+>   mean is the serial section, not a capped job pool.
+> - The serial section is `adacovex-types.ads` (9.3 s) feeding
+>   `adacovex-parsers-manifest.adb` (21.9 s), which is 31 s of a chain that
+>   cannot overlap itself.
+>
+> The real lever is the 21.9 s manifest body, which is B1's target -- and B1
+> cannot shorten it, because separate bodies share one `gnat1` invocation. So
+> the two items that were planned as independent are not: B1's benefit depends
+> on a property the language does not have. Shortening that body means moving
+> code into a genuinely different unit, not a separate body.
+
+**B5 -- Keep the docs bundling fast, and prove it stays fast.** [ ]
 The existing incremental design already does its job: a no-op `gen-docs.py` is
 365 ms because of the content stamp plus the SHA-256 encode cache under
 `obj/adacovex-docs-encode/`. Two things to do rather than to redesign:
@@ -154,6 +270,14 @@ The existing incremental design already does its job: a no-op `gen-docs.py` is
   directory, and a cold clone re-encodes everything. A cold
   `gen-docs.py` on a fresh checkout is the shape to measure (estimated 8-10 s:
   a 7.8 s Sphinx build plus first-time encoding of ~6 MB).
+
+> **Not started, and now carries B2 and B3's outstanding documentation.** The
+> perf pages still state figures taken on the old single-profile build, with no
+> profile named. One pass over
+> `docs/contributing/perf/benchmarks-timings.md` and
+> `docs/contributing/perf/benchmarks-binary-size.md` closes all three: the
+> bundling table, the profile note beside every figure, and the re-measured
+> stripped size.
 
 ### 1.4 What is explicitly not changing
 
@@ -185,6 +309,8 @@ The three-metric decision is the one that shapes the rest, so it comes first.
 
 ### 2.1 What already exists (do not rebuild this)
 
+[x] **Done.** Both artefacts were read and their exact shapes recorded below; nothing was rebuilt.
+
 The data is already on disk after any `make prove`. Two artefacts:
 
 - `obj/gnatprove/gnatprove.out` -- the Detailed analysis report carries
@@ -201,10 +327,35 @@ The data is already on disk after any `make prove`. Two artefacts:
 The SARIF gives the proved-check count per file and line. Together they cover
 the whole metric without running gnatprove.
 
+> **Correction: both figures here are stale, and one shape was wrong.**
+>
+> - The skip count is **366**, not 357. The two reasons are `SPARK_Mode => Off`
+>   (357) and `body is SPARK_Mode => Off` (9), and the two counts are not
+>   interchangeable.
+> - There are **921 results, but only 878 are VCs.** The other 43 carry
+>   `"level": "warning"` and are proof-imprecision warnings
+>   (`operator-reassociation`, `array-initialization`, `assumed-global-null`,
+>   `imprecise-image`), not unproved checks. Counting them in the denominator
+>   would report 95.3% where the tree is in fact at 100% with 0 unproved. The
+>   `level` field is the discriminator: `"none"` for a real check, `"warning"`
+>   for a warning.
+> - **`gnatprove.sarif` is not a line-oriented file.** It is a single
+>   321 047-character line of compact JSON with no spaces after the colons. Any
+>   line-based reader of it fails on the first `Get`. The reader has to scan
+>   blocks of bytes with a short carry for a key that straddles a boundary.
+> - The SARIF's `logicalLocations[0].name` is the qualified name of the entity a
+>   result belongs to (`Adacovex.Types.To_Class`). That is the only reliable way
+>   to learn *which* subprogram was proved, because `gnatprove.out` names the
+>   entities it skipped and never the ones it proved. It yields 78 distinct
+>   proved names against the 95 proved subprograms the summary reports, and the
+>   two sets do not overlap.
+
 `Adacovex.Complexity.Analyze_Project` already walks a tree, counts code lines,
 and groups by path, so its walk and grouping approach is the model to follow.
 
 ### 2.2 Metric definition
+
+[x] **Done, with the off sub-classes re-derived from the artefacts rather than from this text.** The irreducible class is matched by an explicit `SPARK_Mode (Off)` pragma, not by path; see the note below.
 
 Three states per source unit:
 
@@ -234,6 +385,28 @@ I/O-bound; otherwise it is work queue; the two irreducible packages are
 matched by path. The test is the same shape as
 `Adacovex.Opt_Outs`' per-file marker detection, so it belongs there or in the
 new package, and it must be covered by fixture tests.
+
+> **Correction: path matching does not work, and the reason matters.**
+>
+> Only two files in the tree carry an explicit `pragma SPARK_Mode (Off)`:
+> `adacovex-types.ads` (inside the nested `Implementation` package) and
+> `adacovex-complexity.ads`. Neither produces a *skip line*. gnatprove skips
+> them at unit level, so `adacovex-complexity` is reported as `0 subprograms and
+> packages out of 0 analyzed` and contributes no per-entity skip at all. Matching
+> by path would therefore classify a class that never appears in the data.
+>
+> Worse, matching a unit's own spec is not enough either: `adacovex-types.ads`
+> carries the pragma for a *nested* package while the unit itself is
+> `SPARK_Mode => On` and reports 18 of 18 proved. So the test has to be
+> "does this file carry an explicit `SPARK_Mode (Off)`", and the resulting
+> statement counts have to be reported as **not covered** rather than as
+> irreducible, because the prover never looked at those statements at all.
+>
+> The two classes that survive are driven by the skip lines, which are exact:
+> **irreducible 2, I/O-bound 89, work queue 273, summing to 364** -- the 364
+> distinct entity names in the 366 skip lines (two names repeat). Every skip is
+> classified exactly once, so the three classes can never drift from the skip
+> count.
 
 ### 2.3 The three metrics
 
@@ -268,6 +441,10 @@ output carries them as named fields rather than bare percentages.
 
 ### 2.4 Counting statements, subprograms and VCs
 
+[x] **Done. The statement count needed a different approach than extending the
+scanner, and the subprogram count needed a third source.** See the notes on
+each metric below.
+
 None of the three denominators comes free. Each has a source, and all three
 are needed under the decision in 2.3.
 
@@ -294,7 +471,55 @@ is the cheapest of the three and needs no new parser.
 Reuse note: the scanner extension is the only genuinely new parsing work, and
 it is the piece item 3's trend tracking depends on, so do it first.
 
+> **What the implementation actually does.**
+>
+> **Statements.** `Adacovex.Parsers.Source` was not extended; the statement
+> count is a self-contained line classifier in the new package, because it needs
+> the *declarative-part / statement-part* context that only a small state
+> machine can carry, and threading that through the existing scanner's record
+> shape would have coupled two features. The state machine is: `begin` opens the
+> statement part, `declare` inside it opens a nested block and decrements on its
+> `end`, and a multi-line statement is counted once at the line that terminates
+> it. The count needs no parse tree, so it is stable when the compiler changes;
+> it is documented in the package spec as an approximation, never as a
+> COCOMO-style statement count.
+>
+> Attribution of a statement to a subprogram went through **three** designs
+> before it was right, and the intermediate ones are recorded because the wrong
+> answers look plausible:
+>
+> 1. *Line ranges between skip lines.* Breaks for separate bodies: a separate
+>    body's statements live in a file that carries no skip line, so they were
+>    all counted as proved. For `adacovex-parsers-manifest` that reported 1350
+>    proved statements in a unit where 19 of 21 subprograms were skipped.
+> 2. *Entity name against the skip list.* Correct, but `gnatprove.out` names
+>    only the entities it *skipped*, so every proved subprogram fell through.
+>    With a naive "unknown means not covered" default, 5175 of 9511 statements
+>    landed in "not covered".
+> 3. *Qualified name against both sets.* Correct. The scan tracks the enclosing
+>    package names and the `separate (...)` parent, builds the qualified name
+>    gnatprove uses, and looks it up in a table holding both the SARIF's proved
+>    names and the classified skip names. An entity neither set names, in a unit
+>    that *was* analysed, counts as proved -- gnatprove did see that unit, so
+>    calling it "not covered" would understate the metric. With that fallback:
+>    **5392 proved, 328 not covered, 3791 off** against the prototype.
+>
+> **Subprograms.** From `gnatprove.out` alone, as planned. The 357 figure above
+> is 366 today. Nothing else was needed.
+>
+> **VCs.** From the SARIF, with the `level` discriminator from 2.1 added. The
+> result is exact: **878 of 878**, matching the summary table's `Total` row,
+> with the 43 warnings counted separately and reported as a note.
+>
+> The whole algorithm was validated against a Python prototype run over the
+> same artefacts before it was trusted, and the Ada implementation reproduces
+> the prototype's numbers.
+
 ### 2.5 Placement in the codebase
+
+[x] **Partly done: the package exists and produces correct numbers; nothing
+reaches the CLI yet.** The config record, the `Known_Flags` entries, the
+`spark-coverage` branch, and the main-program early exit are all still to do.
 
 Follow the `complexity` subcommand exactly; it is the closest existing
 analogue (a scan, a gate, an early exit, a report).
@@ -339,7 +564,41 @@ a row in the `docs/usage/ci-cd.md` `### Inputs` table
 (`make action-parity-check`), and every flag needs a row in
 `docs/usage/cli-reference.md` (`make docs-coverage-check`).
 
+> **Where it landed, and three corrections.**
+>
+> - The package is `src/core/adacovex-spark_coverage.ads/.adb`, holding the
+>   whole analyser in one body rather than split across a parent and separate
+>   bodies, because the state that would have to be hoisted (the entity table,
+>   the package-name stack) is exactly the state B1 showed is expensive to hoist
+>   and impossible to reset per body. Its records live in
+>   `Types.Implementation` (`Spark_Coverage_Unit`, `Spark_Coverage_Group`,
+>   `Spark_Coverage_Totals`, `Spark_Entity_Rec`, `Spark_Skip_Rec`), so no third
+>   `Ada.Containers` instantiation is opened and the AGENTS.md rule holds.
+> - **`--format` is already taken** by the `sbom` subcommand, so the JSON
+>   selector is `--spark-format=text|json`. Recorded here because 2.5's CLI
+>   sketch says `--format` and would collide.
+> - **The option set grew** to match what the implementation needed:
+>   `--group`, `--metric`, `--spark-format`, `--min-coverage` (the display
+>   filter, spelled out because `--min` alone reads like a build flag), and
+>   `--gate-metric` for choosing which metric the gate applies to.
+> - **REGRESSION, introduced by this work and now fixed:** the package spec
+>   carries the `HLR-SPARK` tag, and no `HLR-SPARK` record existed in
+>   `docs/compliance/HLR.md`, so `make prove` failed the DAL-C traceability
+>   criterion with `Orphan HLR tags found in source`. The record now exists and
+>   states the three metrics, the grouping, and the three off classes. The
+>   package stayed in the 1.57.0 tree rather than being parked out of it, so
+>   the release notes for 1.57.0 were rewritten to match the shipped tree and
+>   its VC count (884, not 878).
+> - **Second gate failure from the same package, also fixed:** the
+>   `spark-off-check` gate matched the `(SPARK_Mode => Off)` phrase the package
+>   docstring quotes when it names the gnatprove skip reason. The gate now reads
+>   only the code part of an Ada line, so a docstring that documents the pragma
+>   is not a violation and a real pragma still is.
+
 ### 2.6 Dashboard and API
+
+[ ] **Not started.** No route, renderer, panel, or JavaScript has been written.
+
 
 **Decision: inside the existing Proof tab. No ninth tab.** The tab strip
 already carries eight sections and the coverage table is proof data, so it
@@ -399,6 +658,13 @@ Wire into `action.yml` as an input, add its row to the `docs/usage/ci-cd.md`
 
 ### 2.8 Tests
 
+[ ] **Not started.** No test category exists; the suite is still 1756 tests
+across 25 categories. The analyser has been exercised only through a
+throw-away harness and a Python prototype over the real artefacts, neither of
+which is a gate. This is the largest gap in the feature: the algorithm went
+through three wrong designs that each produced plausible-looking numbers, and
+fixture tests are what would have caught them.
+
 A new category `adacovex_spark_coverage_tests.adb`, registered in the four
 places the count-sync gates require (the `test_runner.adb` runner, the category
 map in `tools/update-test-count.py`, `tools/agents-tree.map`, and the
@@ -422,9 +688,39 @@ Add e2e coverage in `tests/e2e/cli_flags.py` beside `check_complexity`.
 
 ## 3. SPARK opt-in sweep
 
+[ ] **Not started.** No subprogram has been opted in. One finding from item 2
+changes how this should be planned, and it is recorded here so the sweep is not
+scoped from the wrong baseline.
+
+### 3.0 What the analyser changed about the plan for this item
+
+The plan assumed the sweep's queue was "default-off pure logic", and section
+2.2's first draft classified it that way. The artefacts say otherwise. Of the
+366 skip lines, **352 sit in units that never declared `SPARK_Mode (On)` at
+all** -- they are default-off, so the whole unit is backlog. Only **12** sit in
+a unit that is already `SPARK_Mode => On`; those 12 are the genuine
+in-package work queue (`Adacovex.CPUs.Parse_Natural`, the
+`Adacovex.Parsers.Source` helpers, the `Adacovex.Config` helpers). Note that
+`SPARK_Mode` is carried **per subprogram aspect** in this codebase
+(`with SPARK_Mode => On` on individual subprograms), not by a package pragma, so
+a unit can be partly in the proof and partly not.
+
+Two consequences for the sweep:
+
+- **The dominant lever is per-package opt-in, not per-subprogram repair.** The
+  first move for the 352 is to add `SPARK_Mode (On)` to a package and let the
+  12 in-package cases fall out as consequences, not to grind through 366
+  subprograms one at a time.
+- **The 12 cannot be scheduled from this list alone.** The three subprograms
+  this plan names were found by reading source, not by any artefact, and the
+  analyser classifies them as I/O-bound where the body does I/O -- which is the
+  correct answer, not the answer item 3 wants. A body that reads a file cannot
+  be proved without a seam, so "opt the queue in" is not the same task as "make
+  this subprogram provable". Plan those separately.
+
 ### 3.1 Current state
 
-`make prove` reports 878 VCs, 878 proved, 0 unproved, 0 justified, across 66
+`make prove` reports 884 VCs, 884 proved, 0 unproved, 0 justified, across 66
 analysed units. That number only counts what gnatprove looked at. `gnatprove.out`
 lists **357 skipped subprograms** carrying `SPARK_Mode => Off`. So the verified
 surface is 878 checks against 357 skipped bodies, and the skipped bodies are
@@ -515,6 +811,8 @@ what the headline percentage says.
 
 ## 4. tldr page for the `man` workflow
 
+[ ] **Not started.** No page, no `make tldr-lint` target, no structural check.
+
 ### 4.1 How tldr-pages actually works
 
 The user's question ("not sure if tldr pages has its own sort of man db and how
@@ -604,9 +902,13 @@ boldface; serial comma in lists; backticks for paths, commands, `stdout` and
 
 ## 5. Prove-timing phase decision for 1.55.0-1.57.0
 
+[ ] **Partly answered by the 1.57.0 proof, not yet by a timing.** The proof
+side of the question is settled and recorded below; the timing half still needs
+`make bench` under the release profile.
+
 The user asks whether 1.57.0's proof timing is better than 1.55.0's and
 whether the pair can stand as one phase. **Answer: measure first, decide after.
-No numbers have been taken yet.**
+No timing numbers have been taken yet.**
 
 The rule, from AGENTS.md and
 [prove-timing.md](docs/contributing/perf/prove-timing.md): the table keeps one
@@ -664,17 +966,24 @@ band honestly rather than folding it in silently.
 
 ## 6. Order of work and gates
 
-| Step | Work | Gate |
-|------|------|------|
-| 1 | B4 parallelism diagnosis and fix | `make build` timing recorded, before and after |
-| 2 | B1 split the manifest body; B2/B3 profiles | `make complexity-check`; benchmark pages state the profile |
-| 3 | Scanner statement count (2.4) | `make test` |
-| 4 | `spark-coverage` package, CLI, three metrics, gate | `make test`, `make cli-e2e`, `make action-parity-check`, `make docs-coverage-check` |
-| 5 | Dashboard panel in the Proof tab, route, JS | `make csslint-check`, `make test`, Playwright e2e |
-| 6 | SPARK opt-in sweep, one subprogram at a time, full queue | `make prove` clean, `make spark-off-check` |
-| 7 | tldr page plus the pure-stdlib structural check | the structural check in `make check`; `make tldr-lint` when installed |
-| 8 | prove-timing measurement and the phase decision; calibrate the gate | `make bench`, `python3 tools/update-proof-status.py` |
-| 9 | docs, changelog, STE100 names, `make book` | every gate in `make check` |
+| Step | Work | Gate | State |
+|------|------|------|-------|
+| 1 | B4 parallelism diagnosis and fix | `make build` timing recorded, before and after | [x] diagnosed; no fix needed |
+| 2 | B1 split the manifest body; B2/B3 profiles | `make complexity-check`; benchmark pages state the profile | [x] code done; [ ] perf pages state the profile (B5) |
+| 3 | Scanner statement count (2.4) | `make test` | [x] written; [ ] no test yet (2.8) |
+| 4 | `spark-coverage` package, CLI, three metrics, gate | `make test`, `make cli-e2e`, `make action-parity-check`, `make docs-coverage-check` | [x] package done, `HLR-SPARK` record added; [ ] CLI, gate, parity, docs |
+| 5 | Dashboard panel in the Proof tab, route, JS | `make csslint-check`, `make test`, Playwright e2e | [ ] not started |
+| 6 | SPARK opt-in sweep, one subprogram at a time, full queue | `make prove` clean, `make spark-off-check` | [ ] not started; re-scope per 3.0 first |
+| 7 | tldr page plus the pure-stdlib structural check | the structural check in `make check`; `make tldr-lint` when installed | [ ] not started |
+| 8 | prove-timing measurement and the phase decision; calibrate the gate | `make bench`, `python3 tools/update-proof-status.py` | [ ] proof half done (see 5); [ ] timing half not |
+| 9 | docs, changelog, STE100 names, `make book` | every gate in `make check` | [ ] changelog for item 1 written; [ ] the rest not |
+
+Two ordering changes follow from what step 4 turned out to need. The
+**`HLR-SPARK` record had to be written before the package could be in a
+release** (2.5), and it now is, so it sits at the front of step 4 rather than
+the end of step 9. And step 6's "one subprogram at a time" is now the wrong
+unit of work for 352 of the 366 cases (3.0), so it becomes per-package opt-in
+with the 12 in-package cases handled separately.
 
 The gate threshold in step 4 is added before it is calibrated in step 8.
 Add it as a flag with the default at the current measured baseline, then

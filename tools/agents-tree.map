@@ -7,6 +7,7 @@ src/compliance/adacovex-compliance	Parent package for DO-178C compliance assessm
 src/compliance/adacovex-compliance-dal	DAL level assessment logic (DAL-A..E criteria)
 src/core/adacovex-core	Parent package for core data types and configuration
 src/core/adacovex-types	All domain types + conversion functions
+src/core/adacovex-spark_coverage	SPARK proof-coverage report (statement / subprogram / VC coverage and the three off classes, read from gnatprove.out and gnatprove.sarif)
 src/core/adacovex-vcs	VCS abstraction (git/hg/svn/fossil/jj detection + base snapshots)
 src/core/adacovex-config	CLI argument parser (prove --args, complexity --excludes/--skip-path, --no-sbom, --sbom-format)
 src/core/adacovex-diff	Differential assessment (--compare-base / --coverage-delta)

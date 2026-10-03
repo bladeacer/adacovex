@@ -18,15 +18,13 @@ begin
    end if;
    while W_First <= Line'Last loop
       --  Skip non-word characters (whitespace, quotes, punctuation).
-      while W_First <= Line'Last
-        and then not Is_Word_Char (Line (W_First))
+      while W_First <= Line'Last and then not Is_Word_Char (Line (W_First))
       loop
          W_First := W_First + 1;
       end loop;
       exit when W_First > Line'Last;
       W_Last := W_First;
-      while W_Last < Line'Last and then Is_Word_Char (Line (W_Last + 1))
-      loop
+      while W_Last < Line'Last and then Is_Word_Char (Line (W_Last + 1)) loop
          W_Last := W_Last + 1;
       end loop;
       Note_If_Tool (Line, W_First, W_Last);
