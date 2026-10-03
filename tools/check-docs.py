@@ -26,12 +26,11 @@ paragraphs are outside the four-sentence cap, and the comment text of every
 Ada line is only ever read from its `--` marker on, so code alignment, string
 literals, and the `--  ` prefix itself are outside the rule.
 
-The 250-line cap is a soft gate: an overrun prints a warning but does not fail
-the check.  A page may opt out of the line cap with a
-`no-covex-docs-loc` marker in an HTML comment near the top of the file (the
-same opt-out convention the complexity checker uses).  It is meant for
-reference dictionaries and historical records whose length is their content,
-not prose that grew by accident.
+The 250-line cap is a hard gate: an overrun fails the check.  A page may opt
+out of the line cap with a `no-covex-docs-loc` marker in an HTML comment near
+the top of the file (the same opt-out convention the complexity checker uses).
+It is meant for reference dictionaries and historical records whose length is
+their content, not prose that grew by accident.
 
 Usage:
   python3 tools/check-docs.py          # check; exit 1 on any violation
@@ -114,7 +113,9 @@ def check(path: Path) -> List[str]:
     lines = path.read_text(encoding="utf-8").splitlines()
     errors: List[str] = []
     if len(lines) > MAX_LOC and not has_loc_opt_out(path):
-        print(f"{rel}: {len(lines)} lines (maximum {MAX_LOC})", file=sys.stderr)
+        errors.append(
+            f"{rel}: {len(lines)} lines (maximum {MAX_LOC}); split the page "
+            f"or add a `{LOC_MARKER}` marker")
     in_fence = False
     paragraph: List[str] = []
     start: int = 1

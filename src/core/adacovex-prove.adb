@@ -910,8 +910,8 @@ package body Adacovex.Prove is
       Success := True;
    end Download_Toolchain;
 
-   --  Strip a version-set expression (`^15.1.0`, `~15.1.0`, `>=16.0.0`,
-   --  `15.1.0`) down to the bare numeric version alr accepts on the
+   --  Strip a version-set expression (`^16.1.0`, `~16.1.0`, `>=16.0.0`,
+   --  `16.1.0`) down to the bare numeric version alr accepts on the
    --  `alr get gnatprove=<v>` command line: skip leading operators/spaces,
    --  then take digits and dots up to the first other character. Returns ""
    --  when no version could be extracted.

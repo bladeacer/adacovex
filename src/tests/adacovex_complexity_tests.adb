@@ -1,11 +1,13 @@
 with Adacovex.Complexity;
 with Adacovex.CPUs;
+with Ada.Containers;
 with Ada.Directories;
 with Ada.Text_IO;
 
 package body Adacovex_Complexity_Tests is
 
    use Ada.Text_IO;
+   use type Ada.Containers.Count_Type;
 
    Fixture_Dir : constant String :=
      Adacovex.CPUs.Get_Temp_Directory & "/adacovex_cx_test";
@@ -129,6 +131,71 @@ package body Adacovex_Complexity_Tests is
                  (FM.LOC = 4, "Python file LOC is counted (4 code lines)");
             end if;
          end loop;
+      end;
+
+      --  --skip-path is a substring match on the full path, so a fragment
+      --  that matches one fixture file drops only that file.
+      declare
+         Res : constant Adacovex.Complexity.Complexity_Result :=
+           Adacovex.Complexity.Analyze_Project (Fixture_Dir, "", "sample");
+      begin
+         R.Check
+           (Count_Lang (Res, "Ada") = 0,
+            "skip-path=sample: the Ada fixture is skipped");
+         R.Check
+           (Count_Lang (Res, "Python") = 1,
+            "skip-path=sample: the Python fixture is kept");
+      end;
+
+      --  A leading no-covex-complexity-scan marker opts one file out of the
+      --  scan without an --excludes entry.
+      declare
+         F : File_Type;
+      begin
+         Create (F, Out_File, Fixture_Dir & "/marked.ads");
+         Put_Line (F, "--  no-covex-complexity-scan");
+         Put_Line (F, "package Marked is");
+         Put_Line (F, "end Marked;");
+         Close (F);
+      end;
+      declare
+         Res : constant Adacovex.Complexity.Complexity_Result :=
+           Adacovex.Complexity.Analyze_Project (Fixture_Dir);
+      begin
+         R.Check
+           (Count_Lang (Res, "Ada") = 1,
+            "a marked file is skipped, leaving only the unmarked Ada file");
+      end;
+
+      --  Check_Gates: a file exactly at a cap passes, one over fails. The
+      --  boundary matters because a cap read as ">=" would fail a file at
+      --  the limit and a cap read as ">" is the documented contract.
+      declare
+         Res   : Adacovex.Complexity.Complexity_Result;
+         Files : Adacovex.Complexity.File_Metrics;
+         Sub   : Adacovex.Complexity.Subprogram_Info;
+      begin
+         Files.LOC := 100;
+         Files.Complexity := 20;
+         Sub.Complexity := 20;
+         Files.Subs.Append (Sub);
+         Res.Files.Append (Files);
+         Res.Total_LOC := 100;
+         R.Check
+           (Adacovex.Complexity.Check_Gates (Res, 100, 100, 20, 20).Length = 0,
+            "a file exactly at every cap passes every gate");
+         R.Check
+           (Adacovex.Complexity.Check_Gates (Res, 99, 100, 20, 20).Length > 0,
+            "a file one line over the LOC cap fails");
+         R.Check
+           (Adacovex.Complexity.Check_Gates (Res, 100, 100, 19, 20).Length > 0,
+            "a function one point over the complexity cap fails");
+         R.Check
+           (Adacovex.Complexity.Check_Gates (Res, 100, 100, 20, 19).Length > 0,
+            "a file one point over the file-complexity cap fails");
+         R.Check
+           (Adacovex.Complexity.Check_Gates (Res, 100, 99, 20, 20).Length > 0,
+            "a file over its codebase-percentage cap fails");
       end;
 
       --  The fixture is cleaned up after the run.

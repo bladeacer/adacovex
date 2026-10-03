@@ -27,11 +27,12 @@ subtype Asset_Index is Positive range 1 .. Asset_Count;
 ### type Asset_Ref
 
 ```ada
-type Asset_Ref is record
-Path : String (1 .. Max_Path) := (others => ' ');
-Mime : String (1 .. Max_Mime) := (others => ' ');
-Idx  : Body_Index;
-Gzip : Boolean;
+type Asset_Ref is
+record
+Path  : String (1 .. Max_Path) := (others => ' ');
+Mime  : String (1 .. Max_Mime) := (others => ' ');
+Idx   : Body_Index;
+Gzip  : Boolean;
 end record;
 ```
 
@@ -48,6 +49,12 @@ subtype Body_Index is Positive range 1 .. Body_Count;
 ```
 
 ## Functions
+
+### function Base85_Decode (S : Standard.String) return Standard.String
+
+| Parameter | Description |
+|-----------|-------------|
+| `S` |  |
 
 ### function Body_Bytes (B : Adacovex.Docs_Template.Body_Index; Is_Gzip : Standard.Boolean) return Standard.String
 

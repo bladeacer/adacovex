@@ -87,6 +87,48 @@ and the generated API doc `docs/api-docs/adacovex-prove.md` was regenerated to
 match. `make check` runs the gate, and `make prove` deploys the manifest-pinned
 gnatprove so the proof runs against the exact version the gate enforces.
 
+### C5: The bundled manual's base85 decoder is exposed and tested
+
+`src/adacovex-docs_template.adb` carries a hand-written `Base85_Decode`, but
+the generated spec did not declare it, so a test could observe it only through
+whatever `make book` last produced. The declaration now sits in the generated
+spec next to `Body_Bytes`, and `tools/gen-docs.py` emits it on every build.
+
+The tests in `src/tests/adacovex_server_tests.adb` now call the decoder
+directly. A round trip runs against an encoder written in the test, so the
+check compares the decoder with a second implementation. Golden vectors pin the
+exact base85 text, because a round trip cannot catch an alphabet-order change.
+The degenerate group lengths, the out-of-alphabet fallback, the verbatim
+`Body_Bytes` path, and the `Find` fallbacks are pinned too.
+
+### C6: The 250-line documentation cap is a hard gate
+
+`tools/check-docs.py` printed an over-cap page to stderr but never failed, so a
+page could grow past 250 lines unnoticed. The condition is now a hard error. A
+page still opts out with a `no-covex-docs-loc` marker when its length is its
+content, such as a dated record or a reference dictionary.
+
+Two pages are split under the cap. C2 moved the SIMD review out of
+`docs/contributing/perf/prove-timing.md`, and this change moved the extension
+table from `docs/usage/sbom.md` to `docs/usage/sbom-resolution.md`.
+`tools/tests.py` pins both directions: an opted-out over-cap page passes, and a
+page over the cap with no marker fails.
+
+### C7: `make check` formats the sources before it builds them
+
+The `fmt` gate ran after the proof, so a formatted file was compiled before it
+was formatted. `fmt` now runs first, and the gate banner lists it before
+`build`.
+
+### C8: Additional unit tests close the Complexity and DAL gaps
+
+The complexity checker had 12 tests for an analyser that scores dozens of
+extensions, and the DAL engine had 16 for a five-tier matrix. The suite gains
+cases for the `--skip-path` substring match, the `no-covex-complexity-scan`
+marker, and the `Check_Gates` boundary, where a file exactly at a cap passes
+and one over it fails. The DAL category pins `Min_SPARK_For` for every tier and
+`Need_Tests` for the DAL-E exception.
+
 ## Fixes
 
 ### H1: Four manual entries had dropped out of the sidebar
@@ -147,23 +189,20 @@ and this release's proof section quotes.
 
 ## Test Suite
 
-1657 tests across 25 categories, unchanged from 1.55.0: this release touches no
-assessed Ada source. The coverage added is in the tooling and browser layers.
+1756 tests across 25 categories, up from 1657 in 1.55.0. The new tests fall in
+three layers.
 
 Added:
 
-- Two `tools/tests.py` checks (the suite goes from 139 to 141). One asserts
-  that `docs/conf.py` registers `sidebar-reveal.js` through `html_js_files` and
-  that the file exists and carries a bundleable `.js` MIME entry; the other
-  pins the same contract the injector is held to, that the reveal writes
-  `box.scrollTop` on `.sidebar-scroll`, overrides the drawer's smooth
-  scrolling, guards a missing entry, and never calls `scrollIntoView`, a
-  window scroll, or `documentElement.scrollTop`.
-- A Playwright check that walks every sidebar entry and asserts the reveal, and
-  that asserts the whole `Maintainer references` group is in the tree.
-- A first assertion that `/docs/_static/sidebar-reveal.js` is served from the
-  bundled manual, so a future bundling change that drops the file fails rather
-  than silently leaving the online manual without it.
+- The server-routing category grows from 48 to 132 tests. C5's decoder cases
+  carry most of that growth.
+- The complexity category grows from 12 to 20 and the DAL category from 16 to
+  23, as C8 describes.
+- The tooling layer gains `tools/tests.py` cases for the shared sidebar script,
+  the gnatprove pin, and the documentation line cap.
+- Two Playwright checks: one walks every sidebar entry and asserts the reveal,
+  and one asserts that `/docs/_static/sidebar-reveal.js` is served from the
+  bundled manual, so a bundling change that drops the file fails loudly.
 
 Verified by measurement rather than by a fixture: every built page of both
 Sphinx builds was loaded in Chromium at 1400x800 and the drawer's scroll
@@ -176,11 +215,12 @@ sits below the fold were not revealed at all.
 
 Platinum, 0 unproved, 0 justified, 878 VCs across 66 analysed units under
 gnatprove 16.1.0 at `--level=4`. The VC count and the unit count are unchanged
-from 1.55.0, because the change set is documentation sources, one browser
-script, and Python tooling: no Ada unit was added, removed, or edited, so no
-verification condition, assertion, contract, or runtime check moved. No
-`pragma SPARK_Mode (Off)` was added to any package, and the only two packages
-that carry one remain `Types.Implementation` and `Complexity`.
+from 1.55.0. The only edits to assessed Ada source are docstrings and comments
+in `src/core/adacovex-prove.ads` and `.adb` (the version-set example), and test
+bodies are excluded from the proof, so no verification condition, assertion,
+contract, or runtime check moved. No `pragma SPARK_Mode (Off)` was added to any
+package, and the only two packages that carry one remain `Types.Implementation`
+and `Complexity`.
 
 The proof-input hash excludes the bundled manual spec, so the docs edit does
 not invalidate the cached proof, and `make proof-status` reports the metrics
@@ -204,3 +244,7 @@ still in sync across every live file.
   one `make proof-status` reads from the prover output.
 - `tools/gen-docs.py` and `tools/tests.py` are developer tooling, which no HLR
   tag covers, as 1.55.0's H2 and H3 record.
+- C4, C5, and C6 add gates and tooling only: the gnatprove pin check, the
+  generated `Base85_Decode` declaration, and the documentation line cap. None
+  is assessed Ada source, so no requirement arises. C8 is test-only, and C7 is
+  a build-order change in the Makefile.

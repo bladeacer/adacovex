@@ -213,6 +213,34 @@ package body Adacovex_DAL_Tests is
                null;
          end;
       end;
+      --  The minimum SPARK level per rigor tier, pinned from Min_SPARK_For:
+      --  DAL-A needs Gold, DAL-B Silver, DAL-C Bronze, and DAL-D/E Stone.
+      R.Check
+        (Adacovex.Compliance.DAL.Min_SPARK_For (DAL_A) = Gold,
+         "DAL-A needs Gold");
+      R.Check
+        (Adacovex.Compliance.DAL.Min_SPARK_For (DAL_B) = Silver,
+         "DAL-B needs Silver");
+      R.Check
+        (Adacovex.Compliance.DAL.Min_SPARK_For (DAL_C) = Bronze,
+         "DAL-C needs Bronze");
+      R.Check
+        (Adacovex.Compliance.DAL.Min_SPARK_For (DAL_D) = Stone,
+         "DAL-D needs Stone");
+      R.Check
+        (Adacovex.Compliance.DAL.Min_SPARK_For (DAL_E) = Stone,
+         "DAL-E needs Stone");
+
+      --  The test criterion applies to every tier except DAL-E.
+      R.Check
+        (Adacovex.Compliance.DAL.Need_Tests (DAL_A)
+         and then Adacovex.Compliance.DAL.Need_Tests (DAL_B)
+         and then Adacovex.Compliance.DAL.Need_Tests (DAL_C)
+         and then Adacovex.Compliance.DAL.Need_Tests (DAL_D),
+         "every tier but DAL-E requires a passing test suite");
+      R.Check
+        (not Adacovex.Compliance.DAL.Need_Tests (DAL_E),
+         "DAL-E does not require the test criterion");
    end Run;
 
 end Adacovex_DAL_Tests;

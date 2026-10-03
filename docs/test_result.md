@@ -1,7 +1,7 @@
   | Category                                |  Tests | Status   |
   |-----------------------------------------|--------|----------|
   | Types conversions                        |  67 | PASS     |
-  | DAL compliance                           |  16 | PASS     |
+  | DAL compliance                           |  23 | PASS     |
   | Source scanner                           |  89 | PASS     |
   | GNATprove parser                         |  72 | PASS     |
   | Test-result parser                       |  50 | PASS     |
@@ -13,10 +13,10 @@
   | IR synthesis                             |  42 | PASS     |
   | Man page renderer                        |  18 | PASS     |
   | VCS support                              |  29 | PASS     |
-  | Server routing                           |  48 | PASS     |
+  | Server routing                           |  132 | PASS     |
   | Proof patches                            |  35 | PASS     |
   | Timezone + ANSI                          |  63 | PASS     |
-  | Complexity check                         |  12 | PASS     |
+  | Complexity check                         |  20 | PASS     |
   | Opt-out markers                          |  16 | PASS     |
   | Dir cache                                |  22 | PASS     |
   | Diff reports                             |  36 | PASS     |
@@ -27,4 +27,4 @@
   | Completion scripts                       |  24 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 1657  Failed: 0
+  Passed: 1756  Failed: 0

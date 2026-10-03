@@ -6,6 +6,186 @@ with Adacovex.Server.HTTP; use Adacovex.Server.HTTP;
 
 package body Adacovex_Server_Tests is
 
+   --  A base85 encoder for the tests, written independently of the decoder
+   --  under test. It follows the documented Z85 contract: four bytes become
+   --  five characters, and a short final group is zero-padded and emitted as
+   --  one character more than its payload. A round trip therefore compares
+   --  the decoder against a second implementation, not against itself.
+   function Encode (Data : String) return String is
+      Alphabet : constant String :=
+        "0123456789abcdefghijklmnopqrstuvwxyz"
+        & "ABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#";
+      Result   : String (1 .. (Data'Length / 4 + 2) * 5) := (others => '0');
+      Digit    : String (1 .. 5) := (others => '0');
+      Chunk    : String (1 .. 4) := (others => ASCII.NUL);
+      N        : Natural;
+      Last     : Natural := 0;
+      Pos      : Natural := Data'First;
+      Value    : Long_Long_Integer;
+   begin
+      while Pos <= Data'Last loop
+         N := 0;
+         while N < 4 and then Pos + N <= Data'Last loop
+            Chunk (N + 1) := Data (Pos + N);
+            N := N + 1;
+         end loop;
+         for K in N + 1 .. 4 loop
+            Chunk (K) := ASCII.NUL;
+         end loop;
+         Value := 0;
+         for K in Chunk'Range loop
+            Value :=
+              Value * 256 + Long_Long_Integer (Character'Pos (Chunk (K)));
+         end loop;
+         for K in reverse Digit'Range loop
+            Digit (K) := Alphabet (Integer (Value mod 85) + 1);
+            Value := Value / 85;
+         end loop;
+         for K in 1 .. N + 1 loop
+            Last := Last + 1;
+            Result (Last) := Digit (K);
+         end loop;
+         Pos := Pos + 4;
+      end loop;
+      return Result (1 .. Last);
+   end Encode;
+
+   --  Round-trip every length 0..64 plus the two extreme byte patterns. A
+   --  short final group only appears at lengths that are not a multiple of
+   --  four, so the sweep pins the padding rule the real assets may not
+   --  exercise.
+   procedure Check_Base85_Round_Trip
+     (R : in out Adacovex.Test_Support.Runner'Class) is
+   begin
+      for Len in 0 .. 64 loop
+         declare
+            Data : String (1 .. Len);
+         begin
+            for K in Data'Range loop
+               Data (K) := Character'Val ((K * 7 + Len * 3) mod 256);
+            end loop;
+            R.Check
+              (Adacovex.Docs_Template.Base85_Decode (Encode (Data)) = Data,
+               "base85 round trip, length" & Natural'Image (Len));
+         end;
+      end loop;
+      declare
+         Zeros : constant String (1 .. 8) := (others => ASCII.NUL);
+         Highs : constant String (1 .. 8) := (others => Character'Val (255));
+      begin
+         R.Check
+           (Adacovex.Docs_Template.Base85_Decode (Encode (Zeros)) = Zeros,
+            "base85 round trip, all zero bytes");
+         R.Check
+           (Adacovex.Docs_Template.Base85_Decode (Encode (Highs)) = Highs,
+            "base85 round trip, all 0xFF bytes");
+      end;
+   end Check_Base85_Round_Trip;
+
+   --  Hand-computed golden vectors from an independent encoder. A round trip
+   --  cannot catch an alphabet-order change, because the encoder would share
+   --  the bug; these vectors pin the exact text.
+   procedure Check_Base85_Golden
+     (R : in out Adacovex.Test_Support.Runner'Class) is
+   begin
+      R.Check
+        (Adacovex.Docs_Template.Base85_Decode ("o<}]Z") = "Man ",
+         "base85 golden vector: Man with a trailing space");
+      R.Check
+        (Adacovex.Docs_Template.Base85_Decode ("nm=QNz.92jz/PV8aP")
+         = "Hello, World!",
+         "base85 golden vector: Hello, World!");
+      R.Check
+        (Adacovex.Docs_Template.Base85_Decode ("vpAZ") = "abc",
+         "base85 golden vector: three-byte final group");
+   end Check_Base85_Golden;
+
+   --  The degenerate group lengths. A final group of n payload bytes carries
+   --  n+1 characters, so a 1- or 2-character group is malformed; the decoder
+   --  counts Gone - 1 payload bytes and never raises.
+   procedure Check_Base85_Degenerate
+     (R : in out Adacovex.Test_Support.Runner'Class)
+   is
+      --  The decoded length of one input. Ada has no attribute reference on
+      --  a function call, so a local constant carries the result.
+      function Decoded_Length (S : String) return Natural is
+         Decoded : constant String := Adacovex.Docs_Template.Base85_Decode (S);
+      begin
+         return Decoded'Length;
+      end Decoded_Length;
+   begin
+      R.Check (Decoded_Length ("") = 0, "base85 empty input decodes to empty");
+      R.Check
+        (Decoded_Length ("0") = 0,
+         "base85 one-character group yields no payload");
+      R.Check
+        (Decoded_Length ("00") = 1,
+         "base85 two-character group yields one byte");
+      R.Check
+        (Decoded_Length ("000") = 2,
+         "base85 three-character group yields two bytes");
+      R.Check
+        (Decoded_Length ("0000") = 3,
+         "base85 four-character group yields three bytes");
+      R.Check
+        (Decoded_Length ("00000") = 4,
+         "base85 five-character group yields four bytes");
+      R.Check
+        (Decoded_Length ("000000") = 4,
+         "base85 six characters decode as a full group and a spare");
+   end Check_Base85_Degenerate;
+
+   --  A character outside the Z85 alphabet decodes to zero rather than
+   --  raising, so the lenient contract is pinned and a future strict mode is
+   --  a deliberate break.
+   procedure Check_Base85_Fallback
+     (R : in out Adacovex.Test_Support.Runner'Class)
+   is
+      Decoded : constant String :=
+        Adacovex.Docs_Template.Base85_Decode ("~~~~~");
+   begin
+      R.Check
+        (Decoded'Length = 4, "base85 out-of-alphabet group keeps its length");
+      R.Check
+        (Decoded = String'(1 .. 4 => ASCII.NUL),
+         "base85 out-of-alphabet character decodes to zero");
+   end Check_Base85_Fallback;
+
+   --  Is_Gzip => False returns the stored body verbatim, the branch the
+   --  server takes for an uncompressed asset. The stored body is the base85
+   --  text, so this pins the path without a decode.
+   procedure Check_Body_Bytes_Verbatim
+     (R : in out Adacovex.Test_Support.Runner'Class)
+   is
+      First_Body : constant Adacovex.Docs_Template.Body_Index := 1;
+      Stored     : constant String :=
+        Adacovex.Docs_Template.Asset_Bodies (First_Body).all;
+   begin
+      R.Check
+        (Adacovex.Docs_Template.Body_Bytes (First_Body, False) = Stored,
+         "Body_Bytes with Is_Gzip false returns the stored body");
+   end Check_Body_Bytes_Verbatim;
+
+   --  The Find normalisation fallbacks: an extensionless leaf resolves to
+   --  its .html page, a trailing slash appends index.html, and an absent
+   --  path returns zero.
+   procedure Check_Find_Fallbacks
+     (R : in out Adacovex.Test_Support.Runner'Class) is
+   begin
+      R.Check
+        (Adacovex.Docs_Template.Find ("usage/cli-reference") /= 0,
+         "Find resolves an extensionless leaf to its .html page");
+      R.Check
+        (Adacovex.Docs_Template.Find ("usage/") /= 0,
+         "Find appends index.html to a trailing slash");
+      R.Check
+        (Adacovex.Docs_Template.Find ("_nav/0") /= 0,
+         "Find resolves a bundled sidebar variant without an extension");
+      R.Check
+        (Adacovex.Docs_Template.Find ("no/such/page") = 0,
+         "Find returns zero for an absent path");
+   end Check_Find_Fallbacks;
+
    procedure Run (R : in out Adacovex.Test_Support.Runner'Class) is
    begin
       --  The seven literal routes the server dispatches on. Route is the
@@ -217,6 +397,17 @@ package body Adacovex_Server_Tests is
       R.Check
         (Adacovex.Docs_Template.Find ("_static/adacovex-nav.js") /= 0,
          "the sidebar script is bundled");
+
+      --  The bundled base85 decoder, exercised with synthetic vectors: a
+      --  round trip against an independent encoder, hand-computed golden
+      --  vectors, the degenerate lengths, the out-of-alphabet fallback, the
+      --  verbatim Body_Bytes path, and the Find fallbacks.
+      Check_Base85_Round_Trip (R);
+      Check_Base85_Golden (R);
+      Check_Base85_Degenerate (R);
+      Check_Base85_Fallback (R);
+      Check_Body_Bytes_Verbatim (R);
+      Check_Find_Fallbacks (R);
    end Run;
 
 end Adacovex_Server_Tests;

@@ -139,54 +139,12 @@ A vendored manifest maps directly onto its language and PURL type:
 
 ### Extension-based inference
 
-For every other component -- vendored trees, `vendor/`, `node_modules`,
-resources, loose source drops, and individual files inside `resources/`,
-`assets/`, and `.adacovex/patches/` -- adacovex infers the language from the
-**file extensions actually present**. The extension is the source of truth: a
-`.py` file reports Python even when a `Cargo.toml` sits next to it, and the
-manifest language only breaks ties.
-
-Supported extensions:
-
-- **Ada**: `.ads`, `.adb`, `.ada`, `.gpr`
-- **JavaScript**: `.js`, `.mjs`, `.cjs`
-- **TypeScript**: `.ts`, `.tsx`
-- **CSS**: `.css`
-- **HTML**: `.html`, `.htm`
-- **Python**: `.py`
-- **Go**: `.go`
-- **Rust**: `.rs`
-- **C**: `.c`, `.h`
-- **C++**: `.cpp`, `.cc`, `.cxx`, `.hpp`, `.hh`, `.hxx`
-- **C#**: `.cs`
-- **Java**: `.java`
-- **Ruby**: `.rb`
-- **PHP**: `.php`
-- **Swift**: `.swift`
-- **Kotlin**: `.kt`, `.kts`
-- **Scala**: `.scala`
-- **OCaml**: `.ml`, `.mli`
-- **Lua**: `.lua`
-- **Perl**: `.pl`
-- **Haskell**: `.hs`
-- **Elixir**: `.ex`, `.exs`
-- **Erlang**: `.erl`, `.hrl`
-- **Clojure**: `.clj`, `.cljs`
-- **Dart**: `.dart`
-- **Shell**: `.sh`, `.bash`
-- **PowerShell**: `.ps1`
-- **SQL**: `.sql`
-- **Fortran**: `.f`, `.f90`, `.f95`, `.f03`
-- **Assembly**: `.s`, `.asm`
-- **R**: `.r`
-- **Julia**: `.jl`
-- **Zig**: `.zig`
-- **VHDL**: `.vhd`, `.vhdl`
-- **Tcl**: `.tcl`
-
-A directory that mixes languages reports its **top 3** languages by file count
-(for example `"Ada; C; C++"`), so a mixed-language vendored drop is summarised
-by what it actually contains rather than by a single guess.
+A component that carries no manifest -- a vendored tree, a loose source
+drop, or a file under `resources/`, `assets/`, or `.adacovex/patches/` --
+takes its language from the file extensions that are actually present,
+not from a guess. The supported extension list, the
+extension-over-manifest rule, and the mixed-language summary are on
+[SBOM dependency resolution](sbom-resolution.md#language-detection).
 
 The remaining sections of the original guide -- licence resolution, system
 dependencies, and test-dependency classification -- are covered on

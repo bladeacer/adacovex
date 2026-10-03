@@ -62,6 +62,11 @@ resolution works like this:
 4. The deployed gnatprove is run with its `bin/` prepended to `PATH` so
    the solvers it ships (Z3, CVC5, Alt-Ergo) resolve.
 
+The manifest constraint is a caret range: `^16.1.0` accepts any 16.x at or
+above 16.1.0, so the pin is a **minimum**, not an exact match. adacovex strips
+the operator and deploys the bare version the constraint names, so every run
+of one release proves with the same prover.
+
 The deployment is keyed by the exact version, so two projects pinning
 different gnatprove versions keep both toolchains side by side under
 `~/.adacovex/toolchain/` without interfering. A manifest that declares

@@ -16,7 +16,7 @@ used to compose the target's entire dev-manifest dependency set
 (covex, gnatdoc_bin, gnatformat_bin, and more). Flaky third-party
 downloads in CI cannot fail a proof run. No dev-manifest swap is
 ever needed. The manifest can declare the version as a rich set
-expression (``^15.1.0``, ``~15.1.0``, and more). The leading operator is
+expression (``^16.1.0``, ``~16.1.0``, and more). The leading operator is
 stripped to yield the bare version that alr accepts. A
 manifest-declared prover is authoritative. When it cannot be
 deployed, the run fails instead of falling back. A different

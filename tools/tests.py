@@ -447,6 +447,93 @@ class TestDevCmd(unittest.TestCase):
         self.assertTrue((self._root / "alire").is_dir())
 
 
+class TestGNATprovePin(unittest.TestCase):
+    """The gnatprove pin is gated across the live CI/action sources (item 3)."""
+
+    def setUp(self) -> None:
+        self._orig = (check_version.ROOT, check_version.GNATPROVE_MANIFEST,
+                      check_version.GATED_GNAT_FILES,
+                      check_version.GNATPROVE_EXAMPLES)
+        self._tmp = tempfile.TemporaryDirectory()
+        check_version.ROOT = Path(self._tmp.name)
+        check_version.GNATPROVE_MANIFEST = check_version.ROOT / "alire-dev.toml"
+        check_version.GATED_GNAT_FILES = (
+            check_version.ROOT / "action.yml",
+            check_version.ROOT / ".github" / "workflows" / "ci.yml",
+        )
+        check_version.GNATPROVE_EXAMPLES = (
+            check_version.ROOT / "src" / "core" / "adacovex-prove.ads",
+            check_version.ROOT / "docs" / "api-docs" / "adacovex-prove.md",
+        )
+        self._seed()
+
+    def tearDown(self) -> None:
+        (check_version.ROOT, check_version.GNATPROVE_MANIFEST,
+         check_version.GATED_GNAT_FILES,
+         check_version.GNATPROVE_EXAMPLES) = self._orig
+        self._tmp.cleanup()
+
+    def _write(self, rel: str, text: str) -> None:
+        path = check_version.ROOT / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+
+    def _seed(self, action: str = "16.1.0", workflow: str = "16.1.0",
+              example: str = "^16.1.0") -> None:
+        self._write("alire-dev.toml", 'gnatprove = "^16.1.0"\n')
+        self._write("action.yml",
+                    "  gnat-version:\n"
+                    f"    default: '{action}'\n")
+        self._write(".github/workflows/ci.yml",
+                    f"          gnat-version: {workflow}\n")
+        self._write("docs/proof/16.1.0-ledger.md", "# ledger\n")
+        self._write("src/core/adacovex-prove.ads",
+                    f"-- expression (`{example}`, `~16.1.0`)\n")
+        self._write("docs/api-docs/adacovex-prove.md",
+                    f"expression (``{example}``)\n")
+
+    def test_consistent_pins_pass(self) -> None:
+        self.assertEqual(check_version.check_gnatprove(), [])
+
+    def test_drifted_workflow_fails(self) -> None:
+        self._seed(workflow="15.1.0")
+        problems = check_version.check_gnatprove()
+        self.assertTrue(any("ci.yml" in p and "15.1.0" in p for p in problems))
+
+    def test_drifted_action_default_fails(self) -> None:
+        self._seed(action="15.1.0")
+        problems = check_version.check_gnatprove()
+        self.assertTrue(any("action.yml" in p for p in problems))
+
+    def test_missing_ledger_fails(self) -> None:
+        (check_version.ROOT / "docs" / "proof" / "16.1.0-ledger.md").unlink()
+        problems = check_version.check_gnatprove()
+        self.assertTrue(any("no proof ledger" in p for p in problems))
+
+    def test_stale_example_fails(self) -> None:
+        self._seed(example="^15.1.0")
+        problems = check_version.check_gnatprove()
+        self.assertTrue(any("^16.1.0" in p for p in problems))
+
+    def test_history_is_never_gated(self) -> None:
+        # A 15.1.0 pin in a dated record is correct history: the live pin set
+        # never includes it, so it can never be flagged.
+        self._write("docs/changelogs/adacovex-1.6.0.md", "gnatprove 15.1.0\n")
+        self._write("index/ad/covex/covex-1.5.0.toml", 'gnatprove = "^15.1.0"\n')
+        gated = {str(p.relative_to(check_version.ROOT))
+                 for p in check_version.GATED_GNAT_FILES}
+        for path in ("docs/changelogs/adacovex-1.6.0.md",
+                     "index/ad/covex/covex-1.5.0.toml"):
+            self.assertNotIn(path, gated)
+        self.assertEqual(check_version.check_gnatprove(), [])
+
+    def test_no_pin_reports_loudly(self) -> None:
+        (check_version.ROOT / "alire-dev.toml").write_text(
+            'version = "1.2.3"\n', encoding="utf-8")
+        problems = check_version.check_gnatprove()
+        self.assertTrue(any("no gnatprove pin" in p for p in problems))
+
+
 class TestVersions(unittest.TestCase):
     def test_find_version(self) -> None:
         self.assertEqual(versions.find_version("docs/changelogs/adacovex-1.2.3.md"),
@@ -1519,10 +1606,16 @@ class TestCheckDocs(unittest.TestCase):
             errors = check_docs.check(p)
         return errors, err.getvalue()
 
-    def test_loc_cap_warns_without_marker(self) -> None:
+    def test_loc_cap_fails_without_marker(self) -> None:
+        # The cap is a hard gate: an over-cap page with no opt-out is an error,
+        # so `make docs-check` fails rather than printing a warning nobody acts
+        # on.  The message names the marker a dated record can add instead.
         with tempfile.TemporaryDirectory() as tmp:
-            _, err = self._check(tmp, "# Page\n\n" + "- bullet\n" * 260)
-            self.assertIn("lines (maximum", err)
+            errors, err = self._check(tmp, "# Page\n\n" + "- bullet\n" * 260)
+            self.assertEqual(err, "")
+            self.assertEqual(len(errors), 1)
+            self.assertIn("lines (maximum", errors[0])
+            self.assertIn("no-covex-docs-loc", errors[0])
 
     def test_loc_cap_opted_out_with_marker(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -1533,13 +1626,15 @@ class TestCheckDocs(unittest.TestCase):
             self.assertEqual(err, "")
 
     def test_marker_only_scanned_near_top(self) -> None:
-        # A marker beyond the scan window does not opt the file out.
+        # A marker beyond the scan window does not opt the file out, so the
+        # over-cap page still fails.
         with tempfile.TemporaryDirectory() as tmp:
             filler = "\n" * (check_docs.LOC_MARKER_SCAN + 5)
-            _, err = self._check(
+            errors, _ = self._check(
                 tmp, "# Page" + filler + "<!-- no-covex-docs-loc -->\n"
                      + "- bullet\n" * 260)
-            self.assertIn("lines (maximum", err)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("lines (maximum", errors[0])
 
     def test_paragraph_cap_still_hard_under_marker(self) -> None:
         # The opt-out covers the line cap only; the paragraph rule stays a

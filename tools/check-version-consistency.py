@@ -14,6 +14,14 @@ different source, so they can drift apart silently:
                                  is read from the manifest instead, so the
                                  two can disagree inside one file)
 
+The toolchain pin is a second dimension: `alire-dev.toml` pins gnatprove, and
+every `gnat-version` in `action.yml` and the workflows must name the same
+release, or a CI job proves the tree with a prover no record names.  The two
+prose examples that illustrate a version-set expression must carry the live
+major so a reader is not left thinking an older tool is current.  History
+(the changelogs, the archive, and the release/index manifests) is never
+gated, because an old pin in a dated record is correct.
+
 That drift is not cosmetic.  `make release` used to prove the tree *before*
 it built the release binary, so the proof pass, its result-cache namespace,
 and every artifact it wrote (sbom.json, docs/badges/*.svg) came from the
@@ -103,6 +111,106 @@ def sbom_versions(path: Optional[Path] = None) -> Tuple[Optional[str], Optional[
             root.group(1) if root else None)
 
 
+# --- gnatprove pin dimension ----------------------------------------------
+# The gnatprove version is pinned in the dev manifest and selected by every
+# CI job and by the composite action.  A drift is silent: a workflow picks a
+# toolchain the manifest does not pin, and the proof runs against a prover no
+# release record names.  This dimension gates every live pin against the
+# alire-dev.toml pin, and keeps the two prose examples that illustrate a
+# version-set expression from going stale.
+GNATPROVE_MANIFEST: Path = ROOT / "alire-dev.toml"
+GNATPROVE_RE: str = r'^gnatprove\s*=\s*"\^?([^"]+)"'
+GNAT_VERSION_RE: str = r"gnat-version:\s*['\"]?(\d+\.\d+\.\d+)"
+# Live pins that must all name the same gnatprove version.
+GATED_GNAT_FILES: Tuple[Path, ...] = (
+    ROOT / "action.yml",
+    ROOT / ".github" / "workflows" / "ci.yml",
+    ROOT / ".github" / "workflows" / "pr-check.yml",
+    ROOT / ".github" / "workflows" / "release.yml",
+)
+# Prose examples that must carry the live major, so a reader is never left
+# thinking an older tool is current.
+GNATPROVE_EXAMPLES: Tuple[Path, ...] = (
+    ROOT / "src" / "core" / "adacovex-prove.ads",
+    ROOT / "docs" / "api-docs" / "adacovex-prove.md",
+)
+# History the gate must never flag or rewrite: an old pin in a release record
+# is correct history, and a gate that flagged it would be deleted on sight.
+GNATPROVE_HISTORICAL: Tuple[str, ...] = (
+    "docs/changelogs/", "docs/archive/", "alire/releases/", "index/",
+)
+
+
+def gnatprove_pin() -> Optional[str]:
+    """Return the bare gnatprove version pinned in alire-dev.toml, or None."""
+    if not GNATPROVE_MANIFEST.is_file():
+        return None
+    match = re.search(GNATPROVE_RE,
+                      GNATPROVE_MANIFEST.read_text(errors="replace"), re.M)
+    return match.group(1) if match else None
+
+
+def _gnat_versions(path: Path) -> List[str]:
+    """Return every version a `gnat-version` key names in a YAML file.
+
+    A workflow puts the value on the key's own line; the composite action
+    puts it on a `default:` line up to three lines below the key.
+    """
+    versions: List[str] = []
+    lines: List[str] = path.read_text(errors="replace").splitlines()
+    for index, line in enumerate(lines):
+        match = re.search(GNAT_VERSION_RE, line)
+        if match:
+            versions.append(match.group(1))
+            continue
+        if re.match(r"\s*gnat-version:", line):
+            for following in lines[index + 1:index + 4]:
+                match = re.search(r"default:\s*['\"]?(\d+\.\d+\.\d+)",
+                                  following)
+                if match:
+                    versions.append(match.group(1))
+                    break
+    return versions
+
+
+def check_gnatprove() -> List[str]:
+    """Return one message per live gnatprove pin that disagrees."""
+    problems: List[str] = []
+    pin = gnatprove_pin()
+    if pin is None:
+        problems.append("alire-dev.toml: no gnatprove pin found")
+        return problems
+    for path in GATED_GNAT_FILES:
+        if not path.is_file():
+            continue
+        rel = str(path.relative_to(ROOT))
+        # A historical file can never be a live pin source; guarding the set
+        # is what keeps the whitelist honest.
+        if any(rel.startswith(prefix) for prefix in GNATPROVE_HISTORICAL):
+            problems.append(
+                f"{rel}: a historical file must never be a live gnatprove pin")
+            continue
+        for found in _gnat_versions(path):
+            if found != pin:
+                problems.append(
+                    f"{rel}: gnat-version {found}, but "
+                    f"alire-dev.toml pins gnatprove {pin}")
+    ledger = ROOT / "docs" / "proof" / f"{pin}-ledger.md"
+    if not ledger.is_file():
+        problems.append(
+            f"docs/proof/{pin}-ledger.md: no proof ledger for the pinned "
+            f"gnatprove {pin}")
+    for path in GNATPROVE_EXAMPLES:
+        if not path.is_file():
+            continue
+        if f"^{pin}" not in path.read_text(errors="replace"):
+            problems.append(
+                f"{path.relative_to(ROOT)}: version-set example does not "
+                f"show ^{pin} (a stale example reads as if an older tool is "
+                f"current)")
+    return problems
+
+
 def check(expected: str) -> List[str]:
     """Return one message per mismatch against the alire.toml version."""
     problems: List[str] = []
@@ -144,6 +252,7 @@ def main() -> int:
         print("error: alire.toml has no version line", file=sys.stderr)
         return 1
     problems = check(expected)
+    problems += check_gnatprove()
     if problems:
         for problem in problems:
             print(f"error: {problem}", file=sys.stderr)

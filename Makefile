@@ -18,7 +18,7 @@ help:
 	@echo '    build         Build project (adacovex + test_runner, covex alias);'
 	@echo '                  regenerates src/adacovex_version_info.ads from'
 	@echo '                  alire-dev.toml (or ADACOVEX_VERSION for releases)'
-	@echo '    test          Build and run native test suite (1657 tests)'
+	@echo '    test          Build and run native test suite (1756 tests)'
 	@echo '    prove         Run SPARK proofs (gnatprove via prove subcommand,'
 	@echo '                  resolved from alire-dev.toml / PATH / cache / download)'
 	@echo '                  (also auto-regenerates SVG badges in docs/badges/)'
@@ -312,10 +312,10 @@ check:
 	@echo "=== Quality gate: paragraph splitter ==="; $(MAKE) para-split-check
 	@echo "=== Quality gate: bundled offline manual links ==="; $(MAKE) book-links-check
 	@echo "=== Quality gate: bundled offline manual spec ==="; python3 tools/gen-docs.py --check
+	@echo "=== Quality gate: fmt ==="; $(MAKE) fmt
 	@echo "=== Quality gate: build ==="; $(MAKE) build
 	@echo "=== Quality gate: native tests ==="; $(MAKE) test
 	@echo "=== Quality gate: SPARK proof + badges ==="; $(MAKE) prove
-	@echo "=== Quality gate: fmt ==="; $(MAKE) fmt
 	@echo "=== Quality gate: API docs ==="; $(MAKE) doc
 	@echo "=== Quality gate: offline manual ==="; $(MAKE) book
 	@echo "=== Quality gate: SBOM ==="; $(MAKE) sbom
@@ -323,7 +323,7 @@ check:
 	@echo "=== Quality gate: proof metrics in sync ==="; python3 tools/update-proof-status.py --check
 	@echo "=== Quality gate: description sync ==="; python3 tools/update-description.py --check
 	@echo ""
-	@echo "=== Quality gate passed: ascii, complexity, csslint, spark-off, changelog, action-parity, docs-coverage, tools, cli-e2e, version, version-consistency, doc-links, link, docs-check, para-split, book-links, build, test, prove, doc, book, sbom, test-count, proof-status, description ==="
+	@echo "=== Quality gate passed: ascii, complexity, csslint, spark-off, changelog, action-parity, docs-coverage, tools, cli-e2e, version, version-consistency, doc-links, link, docs-check, para-split, book-links, fmt, build, test, prove, doc, book, sbom, test-count, proof-status, description ==="
 
 # Quality gate: alire.toml, alire-dev.toml, the generated Ada version spec,
 # the built binary, and the committed SBOM must all name the same version.

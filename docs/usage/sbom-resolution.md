@@ -1,6 +1,57 @@
 # SBOM dependency resolution
 
-This page covers licence resolution (local manifests and the package registry), system dependencies, and test dependency classification. The output formats, usage, standard awareness, and language detection are on [The `sbom` subcommand](sbom.md).
+This page covers language detection, licence resolution (local manifests and the package registry), system dependencies, and test dependency classification. The output formats, usage, standard awareness, and language detection are on [The `sbom` subcommand](sbom.md).
+
+## Language detection
+
+For every other component -- vendored trees, `vendor/`, `node_modules`,
+resources, loose source drops, and individual files inside `resources/`,
+`assets/`, and `.adacovex/patches/` -- adacovex infers the language from the
+**file extensions actually present**. The extension is the source of truth: a
+`.py` file reports Python even when a `Cargo.toml` sits next to it, and the
+manifest language only breaks ties.
+
+Supported extensions:
+
+- **Ada**: `.ads`, `.adb`, `.ada`, `.gpr`
+- **JavaScript**: `.js`, `.mjs`, `.cjs`
+- **TypeScript**: `.ts`, `.tsx`
+- **CSS**: `.css`
+- **HTML**: `.html`, `.htm`
+- **Python**: `.py`
+- **Go**: `.go`
+- **Rust**: `.rs`
+- **C**: `.c`, `.h`
+- **C++**: `.cpp`, `.cc`, `.cxx`, `.hpp`, `.hh`, `.hxx`
+- **C#**: `.cs`
+- **Java**: `.java`
+- **Ruby**: `.rb`
+- **PHP**: `.php`
+- **Swift**: `.swift`
+- **Kotlin**: `.kt`, `.kts`
+- **Scala**: `.scala`
+- **OCaml**: `.ml`, `.mli`
+- **Lua**: `.lua`
+- **Perl**: `.pl`
+- **Haskell**: `.hs`
+- **Elixir**: `.ex`, `.exs`
+- **Erlang**: `.erl`, `.hrl`
+- **Clojure**: `.clj`, `.cljs`
+- **Dart**: `.dart`
+- **Shell**: `.sh`, `.bash`
+- **PowerShell**: `.ps1`
+- **SQL**: `.sql`
+- **Fortran**: `.f`, `.f90`, `.f95`, `.f03`
+- **Assembly**: `.s`, `.asm`
+- **R**: `.r`
+- **Julia**: `.jl`
+- **Zig**: `.zig`
+- **VHDL**: `.vhd`, `.vhdl`
+- **Tcl**: `.tcl`
+
+A directory that mixes languages reports its **top 3** languages by file count
+(for example `"Ada; C; C++"`), so a mixed-language vendored drop is summarised
+by what it actually contains rather than by a single guess.
 
 ## Licence resolution
 
