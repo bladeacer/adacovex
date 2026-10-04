@@ -2,13 +2,33 @@
 
 bladeacer develops and maintains adacovex.
 
+## SimpleEnglish skill
+
+The documentation discipline of this project is the ASD-STE100 Simplified
+Technical English standard. The rules come from the
+[SimpleEnglish skill](https://github.com/AminBlg/SimpleEnglish), which is the
+one third-party work adacovex vendors into its own tree. The vendored copy sits
+at `skills/simple-english/`, so that adacovex dogfooding and CI need no network
+access to apply the rules. It holds `SKILL.md` plus `references/word-swaps.md`,
+`references/use-cases.md`, and `references/checklist.md`.
+
+The licence is MIT, and the full terms are in
+[the third-party notices](THIRD_PARTY_NOTICES.md). The vendored copy carries two
+project overrides, and both are stated in `AGENTS.md` under Technical writing.
+British English spelling replaces the American spelling that rule 1.14 names,
+and a paragraph holds at most four sentences, not the six that rule 6.6 names.
+The controlled list of Technical Names that the standard requires sits in
+[the STE100 technical names](contributing/ste100/index.md), and a writer adds a
+new name to that list before using it.
+
+The skill governs prose: user documentation, Ada docstrings, and the changelogs.
+The rules it enforces in practice are short sentences, active voice, one
+instruction per sentence, one word with one meaning, consistent terminology,
+and no hedging.
+
 ## Third-party components
 
 The [docs/THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) file contains the full licence details and component tables.
-
-## Technical writing guidance
-
-User documentation follows ASD-STE100 Simplified Technical English. The [SimpleEnglish skill](https://github.com/AminBlg/SimpleEnglish) guides this work.
 
 ## Performance engineering
 

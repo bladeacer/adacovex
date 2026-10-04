@@ -2,6 +2,33 @@
 
 adacovex itself is Apache-2.0 (see `LICENSE`) and depends only on the GNAT runtime. It declares no library or tool dependencies. The following third-party components are used as tools or bundled artifacts. Their own licences cover them.
 
+## Vendored agent skill: SimpleEnglish
+
+The SimpleEnglish skill is the third-party work that adacovex vendors into its
+source tree. The project uses it to write and review every page of user
+documentation, every Ada docstring, and every changelog under the rules of
+ASD-STE100 Simplified Technical English.
+
+| Component | Version | Licence | Used for |
+|-----------|---------|---------|----------|
+| [SimpleEnglish](https://github.com/AminBlg/SimpleEnglish) skill | 1.3.0 (ASD-STE100 Issue 9, 2025-01-15) | [MIT](https://github.com/AminBlg/SimpleEnglish/blob/main/LICENSE) | The documentation discipline of the project: short sentences, active voice, one instruction per sentence, one word with one meaning, and no hedging |
+
+The vendored copy is at `skills/simple-english/`. It is `SKILL.md` plus
+`references/word-swaps.md`, `references/use-cases.md`, and
+`references/checklist.md`. The copy is unmodified upstream text, and it ships in
+the repository at every checkout, so the licence notice above covers every
+reader of the tree, not only the built binary.
+
+Two project overrides apply on top of the skill. British English spelling
+replaces the American spelling that rule 1.14 names, and a paragraph holds at
+most four sentences, not the six that rule 6.6 names. `AGENTS.md` states both
+under Technical writing, and `docs/contributing/ste100/index.md` holds the
+controlled list of Technical Names that the standard requires.
+
+The skill governs prose only. It is not linked into the binary, it runs no code
+at build time, and no generated file comes from it. adacovex dogfoods the tool
+it documents with, and the skill is the reason the manual reads as it does.
+
 ## GNAT / GNATprove toolchain
 
 | Component | Version | Licence | Used for |
