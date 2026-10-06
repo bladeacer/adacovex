@@ -720,7 +720,7 @@ Two consequences for the sweep:
 
 ### 3.1 Current state
 
-`make prove` reports 884 VCs, 884 proved, 0 unproved, 0 justified, across 66
+`make prove` reports 1053 VCs, 1053 proved, 0 unproved, 0 justified, across 66
 analysed units. That number only counts what gnatprove looked at. `gnatprove.out`
 lists **357 skipped subprograms** carrying `SPARK_Mode => Off`. So the verified
 surface is 878 checks against 357 skipped bodies, and the skipped bodies are

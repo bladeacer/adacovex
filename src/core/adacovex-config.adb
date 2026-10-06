@@ -488,7 +488,14 @@ package body Adacovex.Config is
       ALen : constant Natural := A'Length;
       BLen : constant Natural := B'Length;
       Row  : Row_Arr := (others => 0);
-      Prev : Row_Arr := (others => 0);
+      --  Single-row recurrence: New_Val holds the cell being computed and
+      --  Prev_Diag carries Row (J - 1) of the previous row across the
+      --  inner loop, so no second row array and no whole-array copy are
+      --  needed. A whole-array copy puts a quantified array equality into
+      --  every verification condition that follows it, which is what made
+      --  this routine's inlined checks expensive to prove.
+      New_Val   : Cell := 0;
+      Prev_Diag : Cell := 0;
    begin
       if ALen > 64 or BLen > 64 then
          return 99;
@@ -497,22 +504,24 @@ package body Adacovex.Config is
          Row (J) := J;
       end loop;
       for I in 1 .. ALen loop
-         Prev := Row;
+         Prev_Diag := Row (0);
          Row (0) := I;
          for J in 1 .. BLen loop
             if A (A'First + I - 1) = B (B'First + J - 1) then
-               Row (J) := Prev (J - 1);
+               New_Val := Prev_Diag;
             else
                --  The 64 clamp cannot change a result the caller observes:
                --  distances at or below the cap are exact either way, and
                --  the caller only asks whether the distance is at most 2.
-               Row (J) :=
+               New_Val :=
                  Natural'Min
                    (64,
                     Natural'Min
-                      (Natural'Min (Prev (J) + 1, Row (J - 1) + 1),
-                       Prev (J - 1) + 1));
+                      (Natural'Min (Row (J) + 1, Row (J - 1) + 1),
+                       Prev_Diag + 1));
             end if;
+            Prev_Diag := Row (J);
+            Row (J) := New_Val;
             exit when Row (J) > 9 and J = BLen;
          end loop;
       end loop;
@@ -525,9 +534,19 @@ package body Adacovex.Config is
    --  index at the end of the string need no cursor arithmetic at all: no
    --  overflow, range, or index VC on a cursor, and the discrete loop
    --  terminates by construction.
+   --  The Pre pins the buffer to index 1 (both callers pass a 1-based
+   --  slice); without it the "Out_Buf (Out_Len)" writes below cannot be
+   --  proved in range for an arbitrary out buffer. The Post carries the
+   --  one fact the caller needs at its slice: the length is capped by the
+   --  buffer, so "Out_Buf (1 .. Out_Len)" is in range at every call site
+   --  even when this body is not inlined into it.
    procedure Normalize_Flag
      (S : String; Out_Buf : out String; Out_Len : out Natural)
-     with SPARK_Mode => On is
+     with
+       SPARK_Mode => On,
+       Pre        => Out_Buf'First = 1,
+       Post       => Out_Len <= Out_Buf'Length
+   is
       Lead    : Natural range 0 .. 2 := 0;
       Leading : Boolean := True;
       Stopped : Boolean := False;
@@ -535,6 +554,7 @@ package body Adacovex.Config is
       Out_Len := 0;
       Out_Buf := (others => ' ');
       for I in S'Range loop
+         pragma Loop_Invariant (Out_Len <= Out_Buf'Length);
          exit when Stopped;
          if Leading and then S (I) = '-' and then Lead < 2 then
             Lead := Lead + 1;
@@ -566,8 +586,8 @@ package body Adacovex.Config is
       NLen    : Natural := 0;
       Matches : array (1 .. 3) of String (1 .. 32) :=
         (others => (others => ' '));
-      MLen    : array (1 .. 3) of Natural := (others => 0);
-      MCt     : Natural := 0;
+      MLen    : array (1 .. 3) of Natural range 0 .. 32 := (others => 0);
+      MCt     : Natural range 0 .. 3 := 0;
       Best    : Natural := 99;
       Start   : Natural := Known_Flags'First;
       Fin     : Natural;
@@ -580,8 +600,6 @@ package body Adacovex.Config is
       while Start <= Known_Flags'Last loop
          pragma Loop_Invariant
            (Start in Known_Flags'First .. Known_Flags'Last + 1);
-         pragma Loop_Invariant (MCt <= 3);
-         pragma Loop_Invariant (for all K in 1 .. 3 => MLen (K) <= 32);
          pragma Loop_Variant (Decreases => Known_Flags'Last + 1 - Start);
          Fin := Start;
          while Fin <= Known_Flags'Last and then Known_Flags (Fin) /= ' '
@@ -636,8 +654,6 @@ package body Adacovex.Config is
       end if;
       for I in 1 .. MCt loop
          pragma Loop_Invariant (Len in 0 .. Buf'Last);
-         pragma Loop_Invariant (MCt <= 3);
-         pragma Loop_Invariant (for all K in 1 .. 3 => MLen (K) <= 32);
          if Len < Buf'Last then
             Len := Len + 1;
             Buf (Len) := ' ';

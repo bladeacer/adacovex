@@ -44,17 +44,122 @@ code at build time, and no generated file comes from it.
 The sibling Ada_CRDT project received the same change in crdt 1.17.0, so the
 two trees describe the vendored skill the same way.
 
+### C2: The `spark-coverage` subcommand reports proof coverage as three separate metrics
+
+`adacovex spark-coverage [--target=PATH]` reports how much of the SPARK proof
+the target has completed. It reads `obj/gnatprove/gnatprove.out` and
+`obj/gnatprove/gnatprove.sarif`; it never runs the prover, so run
+`adacovex prove` first. The report carries statement, subprogram, and VC
+coverage as three separate metrics, each with its proved and total counts.
+
+`--group=file|folder|package` selects the grouping of the report, and
+`--spark-format=json` prints the machine-readable form. `--min-coverage=PCT`
+hides group rows below a verified percentage from the display; it filters the
+view only and never changes a gate result. The report also breaks the unproved
+work into its off classes: irreducible, I/O-bound, work queue, and not covered.
+
+The docs entry is the new `spark-coverage` section of the CLI reference. The
+new SPARK coverage test category covers metric selection, grouping, the JSON
+report form, and the coverage-gate arithmetic.
+
+### C3: The dashboard and the JSON API carry the proof-coverage report
+
+The Proof tab of the dashboard gains a SPARK proof coverage card. It shows the
+statement, subprogram, and VC metrics, the off-class breakdown, and a per-file
+table whose column headers sort the table on click. The JSON API gains the
+`/api/spark` route, which returns the same data the card renders, and the API
+catalog in the dashboard docs lists the route.
+
+`resources/spark.js` is bundled into the dashboard template by
+`tools/gen-dashboard.py`, and the server dispatches the route through the same
+path as the other API endpoints. The dashboard pages document the card and the
+route.
+
+### C4: The coverage gate ships in the CLI, the Action, and the docs
+
+`--require-coverage=PCT` together with
+`--gate-metric=statements|subprograms|vcs` exits `1` when the named metric's
+proved share falls below the threshold. The failure names the metric, its
+numerator, its denominator, and the achieved value. A missing `gnatprove.out`
+or `gnatprove.sarif` is also a loud `1`, not a silent pass.
+
+The composite Action gains the `require-coverage` and `gate-metric` inputs,
+which map one to one onto the two flags, and `docs/usage/ci-cd.md` gains their
+input-table rows. The `action-parity-check` gate holds the three surfaces in
+step. The display-only flags (`spark-coverage`, `group`, `metric`,
+`spark-format`, `min-coverage`) sit in its `CLI_ONLY` allow-list, because they
+drive no CI decision. The end-to-end suite gains checks for the
+spark-coverage flags and the gate.
+
+### C5: A tldr page and its lint gate
+
+The tree gains `docs/tldr/adacovex.md`: one-page quick-start examples for the
+main workflows, written in the tldr pages format. `tools/check-tldr.py` lints
+the page against the tldr style rules, and `make tldr-check` runs it as a gate
+inside `make check`. The page is reachable from the docs index and named in
+the CLI reference.
+
+### C6: The retired archive is removed from the docs tree
+
+`docs/archive/` held three retired pages: the 16.1.0 proof-debt audit, the
+pre-1.42 optimisation history, and the archive index. All three are deleted,
+and every page that linked to them now points at the surviving record instead:
+`docs/proof/index.md`, `docs/proof/16.1.0-ledger.md`, the optimisation
+history page, the 1.49.0 changelog, and the docs index.
+`tools/live_files.py` and the doc-links map drop the deleted paths, so the
+sync gates no longer see them.
+
+### C7: Thirteen subprograms join the proof
+
+The sweep of default-off subprograms opts thirteen in-package subprograms into
+`SPARK_Mode => On`: `Adacovex.CPUs.Parse_Natural`, the six helper
+subprograms of `Adacovex.Parsers.Source`, and six of `Adacovex.Config`
+(`Set_String`, `To_SPARK_Level`, `Edit_Distance`, `Normalize_Flag`,
+`Normalize_Topic`, `Suggest_Flags`). Several needed a bounded rewrite to reach
+zero unproved checks: `Parse_Natural` returns `-1` on overflow,
+`Edit_Distance` caps its DP row at a bounded subtype with a 64 clamp,
+`Normalize_Flag` walks `S'Range` instead of a cursor and now carries a
+postcondition on its output length, and `Suggest_Flags` carries quantified
+invariants over its match table. The sweep raises the analysed-unit count and
+the VC total; the figures are in the Proof Results section below.
+
+### C8: The performance pages state their build profile and re-measure the binary
+
+The benchmark pages now name the build profile behind every figure. The
+pipeline and prove timings page carries a build-profile note, and its new
+generator-and-bundling section records the measured cost of the four code
+generators and of the cold Sphinx build, so the "docs are not the bottleneck"
+claim is a recorded number. The binary-size page re-measures the released
+artifact after this change set, and states the raw and stripped sizes on this
+tree.
+
+## Fixes
+
+### H1: The prove cache no longer reports a warm hit it did not restore
+
+A stored summary that reports unproved VCs comes from a degraded run: the
+prover exits `0` even when the solver times out. The cache dropped such a
+poisoned blob on read, but the runner still printed "reusing prior proof",
+returned success, and skipped the prover, so the pipeline parsed no
+`gnatprove.out` and reported Stone with zero VCs. The restore now reports
+whether a usable summary reached the canonical path, and the runner falls
+through to a real gnatprove run when it did not.
+
+The bug hides behind its own guard: the next run with unchanged inputs takes
+the same short-circuit, so only a re-prove of an already-failed tree reaches
+it. This release's own proof campaign did exactly that after a degraded run
+and exposed it.
+
 ## Test Suite
 
-1756 tests across 25 categories, the same counts as 1.57.0. The change set is
-two documentation pages plus the release metadata that `make bump-version`
-writes, so no Ada source, no test, and no test category changed.
+1775 tests across 26 categories, up from 1756 across 25 in 1.57.0. The new
+SPARK coverage category carries 18 checks over metric selection, grouping, the
+JSON report form, and the coverage-gate arithmetic. Server routing gains one
+check for the `/api/spark` dispatch. The end-to-end CLI suite gains checks for
+the spark-coverage flags and the coverage gate.
 
-The gate that covers this change is `make docs-check`, together with
-`make link-check` and `make changelog-check`. All three pass on the edited
-pages: the new sections keep every paragraph within the four-sentence rule, the
-relative links resolve (217 markdown files checked), and this file matches the
-canonical changelog format.
+`make test` runs the native suite, `make cli-e2e` runs the end-to-end suite,
+and both pass on this tree.
 
 ## Proof Results
 
@@ -70,8 +175,16 @@ respect that carries a check.
 
 ## Traceability
 
-The HLR tags are unchanged, and no tag is added or removed. `docs/CREDITS.md`
-and `docs/THIRD_PARTY_NOTICES.md` are documentation artifacts, and no `HLR-*`
-tag covers a documentation page: the tags name Ada packages and subprograms.
-`AGENTS.md` requires that each third-party project is noted in both files, and
-C1 is the change that brings the one vendored work into line with that rule.
+No new HLR record enters this release, and no tag is added or removed. C1
+changes documentation pages only, and no `HLR-*` tag covers a documentation
+page: the tags name Ada packages and subprograms. The spark-coverage work of
+C2 through C4 extends `HLR-SPARK`, on record since 1.57.0 for
+`Adacovex.Spark_Coverage`: the subcommand, the gate, the API route, and the
+dashboard card all report the three metrics that tag names.
+
+The packages changed by this release, and the tags already on record that
+cover them: `Adacovex.Config` (`HLR-CLI`), `Adacovex.CPUs` (`HLR-CPU`),
+`Adacovex.Parsers.Source` (`HLR-SCAN`), `Adacovex.Renderers.HTML`
+(`HLR-RENDER-HTML`), `Adacovex.Server.HTTP` (`HLR-SERVER`), `Adacovex.Prove`
+(`HLR-PROVE`), and the CLI entry point (`HLR-ARCH`). The sweep in C7 adds no
+new requirement: it moves existing in-package subprograms into the proved set.
