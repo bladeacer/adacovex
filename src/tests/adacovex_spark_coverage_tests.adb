@@ -45,7 +45,8 @@ package body Adacovex_Spark_Coverage_Tests is
 
       Create (F, Out_File, Fixture_Dir & "/obj/gnatprove/gnatprove.out");
       Put_Line (F, "GNATprove 16.1.0");
-      Put_Line (F, "in unit foo, 1 subprograms and packages out of 2 analyzed");
+      Put_Line
+        (F, "in unit foo, 1 subprograms and packages out of 2 analyzed");
       Put_Line
         (F, "  Foo.Helped at foo.adb:9 skipped; body is SPARK_Mode => Off");
       Close (F);
@@ -56,8 +57,8 @@ package body Adacovex_Spark_Coverage_Tests is
          "{""version"":""2.1.0"",""runs"":[{""results"":[{""ruleId"":""vc1"",""kind"":""pass"",""level"":""none"",""locations"":[{""physicalLocation"":{""artifactLocation"":{""uri"":""foo.adb""},""region"":{""startLine"":5}}}],");
       Put
         (F,
-         """logicalLocations"":[{""name"":""Foo.Do_It""}]},{""ruleId"":""warn1"",""kind"":""pass"",""level"":""warning"",""locations"":" &
-         "[{""physicalLocation"":{""artifactLocation"":{""uri"":""foo.adb""},""region"":{""startLine"":5}}}],""logicalLocations"":[{""name"":""Foo.Do_It""}]}]}]}");
+         """logicalLocations"":[{""name"":""Foo.Do_It""}]},{""ruleId"":""warn1"",""kind"":""pass"",""level"":""warning"",""locations"":"
+         & "[{""physicalLocation"":{""artifactLocation"":{""uri"":""foo.adb""},""region"":{""startLine"":5}}}],""logicalLocations"":[{""name"":""Foo.Do_It""}]}]}]}");
       Close (F);
    end Make_Fixture;
 
@@ -141,15 +142,14 @@ package body Adacovex_Spark_Coverage_Tests is
         (Adacovex.Spark_Coverage.Line_Is_IO_Bound
            ("   Put_Line (F, S);  --  Ada.Text_IO")
          or else Adacovex.Spark_Coverage.Line_Is_IO_Bound
-           ("with Ada.Text_IO;"),
+                   ("with Ada.Text_IO;"),
          "an I/O with-clause is detected");
       R.Check
-        (Adacovex.Spark_Coverage.Line_Opts_Out
-           ("   pragma SPARK_Mode (Off);"),
+        (Adacovex.Spark_Coverage.Line_Opts_Out ("   pragma SPARK_Mode (Off);"),
          "an explicit SPARK_Mode (Off) pragma is detected");
       R.Check
         (not Adacovex.Spark_Coverage.Line_Opts_Out
-           ("   --  pragma SPARK_Mode (Off) is not code"),
+               ("   --  pragma SPARK_Mode (Off) is not code"),
          "a comment that names the pragma is not an opt-out");
 
       --  Metric extraction and the gate message.
@@ -160,9 +160,13 @@ package body Adacovex_Spark_Coverage_Tests is
          MLen   : Natural;
       begin
          Adacovex.Spark_Coverage.Metric_Values
-           ((Stmts_Proved => 3, Stmts_Total => 4,
-             Subs_Proved  => 1, Subs_Total  => 2,
-             Checks_Proved => 5, Checks_Total => 5, others => <>),
+           ((Stmts_Proved  => 3,
+             Stmts_Total   => 4,
+             Subs_Proved   => 1,
+             Subs_Total    => 2,
+             Checks_Proved => 5,
+             Checks_Total  => 5,
+             others        => <>),
             Adacovex.Types.Metric_Checks,
             Proved,
             Total);

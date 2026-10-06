@@ -73,7 +73,8 @@ package body Adacovex.Parsers.Source is
    end Skip_Blanks;
 
    function Is_Subprogram_Decl (Line : String) return Boolean
-     with SPARK_Mode => On is
+   with SPARK_Mode => On
+   is
       Pos : Natural := Line'First;
    begin
       Skip_Blanks (Line, Pos);
@@ -259,7 +260,8 @@ package body Adacovex.Parsers.Source is
    --  single-space `-- ` / tab-separated styles found in generated code.
    --  A bare `--` or `---` (three dashes) is not a docstring.
    function Is_Docstring_Line (Line : String) return Boolean
-     with SPARK_Mode => On is
+   with SPARK_Mode => On
+   is
    begin
       for I in Line'First .. Line'Last - 1 loop
          if Line (I) = '-' and then Line (I + 1) = '-' then
@@ -284,7 +286,8 @@ package body Adacovex.Parsers.Source is
    --  Keyword is followed by a space (":param name:") or a colon
    --  (":returns:"). The scan is restricted to Ada comment text.
    function Has_Sphinx_Field (Line : String; Keyword : String) return Boolean
-     with SPARK_Mode => On is
+   with SPARK_Mode => On
+   is
       In_Comment : Boolean := False;
    begin
       for I in Line'First .. Line'Last - 1 loop
@@ -315,7 +318,8 @@ package body Adacovex.Parsers.Source is
    --  True when the comment portion of Line contains a Google-style section
    --  header, i.e. "Section:" (Args:, Returns:, ...) as comment text.
    function Has_Google_Section (Line : String; Section : String) return Boolean
-     with SPARK_Mode => On is
+   with SPARK_Mode => On
+   is
       In_Comment : Boolean := False;
    begin
       for I in Line'First .. Line'Last - 1 loop
@@ -337,8 +341,8 @@ package body Adacovex.Parsers.Source is
    --  Number of leading space/tab characters between the `--` marker and the
    --  first non-blank character of an Ada comment line, or -1 when Line is
    --  not such a comment line. A canonical `--  text` line yields 2.
-   function Comment_Indent (Line : String) return Integer
-     with SPARK_Mode => On is
+   function Comment_Indent (Line : String) return Integer with SPARK_Mode => On
+   is
    begin
       for I in Line'First .. Line'Last - 1 loop
          if Line (I) = '-' and then Line (I + 1) = '-' then
@@ -638,14 +642,16 @@ package body Adacovex.Parsers.Source is
    end Scan_Ads_File;
 
    function Is_Skipped_Dir (Name : String; Skip_List : String) return Boolean
-     with SPARK_Mode => On is
+   with SPARK_Mode => On
+   is
       Start : Natural := Skip_List'First;
    begin
       if Name'Length = 0 or else Skip_List'Length = 0 then
          return False;
       end if;
       loop
-         pragma Loop_Invariant (Start in Skip_List'First .. Skip_List'Last + 1);
+         pragma
+           Loop_Invariant (Start in Skip_List'First .. Skip_List'Last + 1);
          pragma Loop_Variant (Decreases => Skip_List'Last + 1 - Start);
          declare
             End_Pos : Natural := Start;

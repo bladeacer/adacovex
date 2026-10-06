@@ -44,8 +44,7 @@ package Adacovex.Renderers.HTML is
       Spark_Totals  : Types.Implementation.Spark_Coverage_Totals :=
         (others => <>);
       Spark_Groups  : Types.Implementation.Spark_Group_Vectors.Vector :=
-        Types.Implementation.Spark_Group_Vectors.Empty_Vector)
-      return String
+        Types.Implementation.Spark_Group_Vectors.Empty_Vector) return String
    with Post => Render_Dashboard'Result'Length > 0, Global => null;
 
    --  Backward-compatible wrapper that renders an empty dependency graph.
@@ -69,8 +68,7 @@ package Adacovex.Renderers.HTML is
       Spark_Totals  : Types.Implementation.Spark_Coverage_Totals :=
         (others => <>);
       Spark_Groups  : Types.Implementation.Spark_Group_Vectors.Vector :=
-        Types.Implementation.Spark_Group_Vectors.Empty_Vector)
-      return String
+        Types.Implementation.Spark_Group_Vectors.Empty_Vector) return String
    with Post => Render_Dashboard'Result'Length > 0, Global => null;
 
    --  Render the metrics charts section (multiple chart cards) for the

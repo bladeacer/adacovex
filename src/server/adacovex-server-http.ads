@@ -92,9 +92,9 @@ package Adacovex.Server.HTTP is
       All_Standards : Boolean := False;
       Theme         : Types.Dashboard_Theme := Types.System_Theme;
       --  SPARK proof coverage for the Proof tab panel and /api/spark.
-      Spark_OK     : Boolean := False;
-      Spark_Totals : Types.Implementation.Spark_Coverage_Totals;
-      Spark_Groups : Types.Implementation.Spark_Group_Vectors.Vector;
+      Spark_OK      : Boolean := False;
+      Spark_Totals  : Types.Implementation.Spark_Coverage_Totals;
+      Spark_Groups  : Types.Implementation.Spark_Group_Vectors.Vector;
    end record;
 
    --  Start the HTTP server (runs until Ctrl+C or socket error).

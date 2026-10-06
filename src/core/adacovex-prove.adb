@@ -1660,8 +1660,8 @@ package body Adacovex.Prove is
       --  fails: the caller must then fall through to a real gnatprove run
       --  instead of claiming a warm hit, because an absent output file
       --  would leave the pipeline at Stone/0-VC.
-      function Restore_Proof_Output (Dir : String; Input_Hash : String)
-        return Boolean
+      function Restore_Proof_Output
+        (Dir : String; Input_Hash : String) return Boolean
       is
          Blob     : String (1 .. Adacovex.Cache.Max_Cache_Blob);
          BLen     : Natural := 0;

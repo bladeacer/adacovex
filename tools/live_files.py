@@ -110,9 +110,13 @@ def iter_live_files() -> Iterator[Path]:
             continue
         if rel.as_posix() in GENERATED_FILES:
             continue
-        # Historical changelogs/ledgers except the current ones.
-        if parts[:2] in {("docs", "changelogs"), ("docs", "proof")} \
-                and p not in current:
+        # Historical records: past-release changelogs and past proof
+        # ledgers, except the current ones.  A hub page such as
+        # docs/proof/index.md carries *current* metrics, so it stays live.
+        if parts[:2] == ("docs", "changelogs") and p not in current:
+            continue
+        if parts[:2] == ("docs", "proof") \
+                and p.name.endswith("-ledger.md") and p not in current:
             continue
         # Only text files that could carry metric phrases.
         if p.name != "Makefile" and p.suffix not in TEXT_SUFFIXES:

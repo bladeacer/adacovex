@@ -163,15 +163,15 @@ and both pass on this tree.
 
 ## Proof Results
 
-Unchanged at **Platinum**, 0 unproved, 0 justified, **884 of 884 VCs across 66
-analysed units** under gnatprove 16.1.0 at `--level=4`. No Ada source,
-contract, pragma, or aspect changed, so the figures were read from the
-verification campaign of 1.57.0 rather than re-run, and no proof metric moved.
+**Platinum**, 0 unproved, 0 justified, **1053 of 1053 VCs across 68 analysed
+units** under gnatprove 16.1.0 at `--level=4`. The C7 sweep moves thirteen
+in-package subprograms into the proved set. The campaign therefore grows from
+884 VCs across 66 units in 1.57.0 to 1053 across 68, and a clean run on this
+tree is the source of these numbers rather than an inherited 1.57.0 result.
 
-The version constant in `src/adacovex_version_info.ads` did change, because
-`make bump-version` regenerates it. That unit is a generated string constant
-with no verification condition, so the proof-input hash is unaffected in every
-respect that carries a check.
+H1's fix was exercised by that run. The cache held a summary left by a
+degraded session, so the runner discarded it and re-proved instead of
+reporting a warm hit. The clean re-prove then reached zero unproved VCs.
 
 ## Traceability
 

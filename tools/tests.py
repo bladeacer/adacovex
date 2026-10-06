@@ -852,7 +852,7 @@ class TestGenDashboard(unittest.TestCase):
         for placeholder in gen_dashboard.MODULES:
             self.assertNotIn(placeholder, page)
         scripts = re.findall(r"<script>(.*?)</script>", page, re.S)
-        self.assertEqual(len(scripts), 11)
+        self.assertEqual(len(scripts), 12)
 
 
 class TestGenDocsAssets(unittest.TestCase):
@@ -2001,14 +2001,21 @@ class SparkOffCheckTests(unittest.TestCase):
 
     def test_code_part_tracks_string_literals(self) -> None:
         # A `--` inside a literal is not a comment, so the pragma after it
-        # is still code.
+        # is still code; the literal's contents are data and are dropped.
         self.assertEqual(
             spark_off.code_part('   S : constant String := "a--b";'),
-            '   S : constant String := "a--b";')
+            '   S : constant String := "";')
+        self.assertEqual(
+            spark_off.code_part('   X := "a--b"; pragma SPARK_Mode (Off);'),
+            '   X := ""; pragma SPARK_Mode (Off);')
+        # A fixture that only quotes the pragma is data, not a violation.
+        self.assertNotIn(
+            "pragma",
+            spark_off.code_part('         ("   pragma SPARK_Mode (Off);"),'))
         # A doubled quote escapes one quote and the literal stays open.
         self.assertEqual(
             spark_off.code_part('   S : constant String := "a""--b";  --  x'),
-            '   S : constant String := "a""--b";  ')
+            '   S : constant String := "";  ')
 
     def test_violations_flags_code_and_not_prose(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

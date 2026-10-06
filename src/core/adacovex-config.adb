@@ -177,7 +177,8 @@ package body Adacovex.Config is
    end Is_Completion_Shell;
 
    procedure Set_String (Dst : out String; Dst_Len : out Natural; Src : String)
-     with SPARK_Mode => On is
+   with SPARK_Mode => On
+   is
    begin
       --  Clamp to the fixed destination buffer so an overlong CLI argument
       --  never raises Constraint_Error; Dst_Len reflects the clamped length.
@@ -249,7 +250,8 @@ package body Adacovex.Config is
    --  convenience. Sets Valid False and Result to Stone on parse failure.
    procedure To_SPARK_Level
      (S : String; Result : out Types.SPARK_Level; Valid : out Boolean)
-     with SPARK_Mode => On is
+   with SPARK_Mode => On
+   is
       Up : String (1 .. S'Length) := (others => ' ');
    begin
       for I in S'Range loop
@@ -280,8 +282,7 @@ package body Adacovex.Config is
    --  report format. Valid is set False on an unrecognised word so
    --  the caller can fail loudly with the accepted set.
    procedure Spark_Metric_From
-     (S : String; Result : out Types.Spark_Metric_Kind; Valid : out Boolean)
-   is
+     (S : String; Result : out Types.Spark_Metric_Kind; Valid : out Boolean) is
    begin
       Valid := True;
       if S = "statements" then
@@ -297,8 +298,7 @@ package body Adacovex.Config is
    end Spark_Metric_From;
 
    procedure Spark_Group_From
-     (S : String; Result : out Types.Spark_Group_Kind; Valid : out Boolean)
-   is
+     (S : String; Result : out Types.Spark_Group_Kind; Valid : out Boolean) is
    begin
       Valid := True;
       if S = "file" then
@@ -314,8 +314,7 @@ package body Adacovex.Config is
    end Spark_Group_From;
 
    procedure Spark_Report_From
-     (S : String; Result : out Types.Spark_Report_Kind; Valid : out Boolean)
-   is
+     (S : String; Result : out Types.Spark_Report_Kind; Valid : out Boolean) is
    begin
       Valid := True;
       if S = "text" then
@@ -474,8 +473,8 @@ package body Adacovex.Config is
 
    --  Levenshtein edit distance between two strings, capped at 9 so the
    --  suggestion scan stays cheap (anything farther away is "not similar").
-   function Edit_Distance (A, B : String) return Natural
-     with SPARK_Mode => On is
+   function Edit_Distance (A, B : String) return Natural with SPARK_Mode => On
+   is
       subtype Row_Idx is Natural range 0 .. 64;
       --  Every cell holds a partial edit distance between a prefix of A
       --  and a prefix of B, and after the early return above neither
@@ -485,9 +484,9 @@ package body Adacovex.Config is
       --  every cell.
       subtype Cell is Natural range 0 .. 64;
       type Row_Arr is array (Row_Idx) of Cell;
-      ALen : constant Natural := A'Length;
-      BLen : constant Natural := B'Length;
-      Row  : Row_Arr := (others => 0);
+      ALen      : constant Natural := A'Length;
+      BLen      : constant Natural := B'Length;
+      Row       : Row_Arr := (others => 0);
       --  Single-row recurrence: New_Val holds the cell being computed and
       --  Prev_Diag carries Row (J - 1) of the previous row across the
       --  inner loop, so no second row array and no whole-array copy are
@@ -542,10 +541,10 @@ package body Adacovex.Config is
    --  even when this body is not inlined into it.
    procedure Normalize_Flag
      (S : String; Out_Buf : out String; Out_Len : out Natural)
-     with
-       SPARK_Mode => On,
-       Pre        => Out_Buf'First = 1,
-       Post       => Out_Len <= Out_Buf'Length
+   with
+     SPARK_Mode => On,
+     Pre        => Out_Buf'First = 1,
+     Post       => Out_Len <= Out_Buf'Length
    is
       Lead    : Natural range 0 .. 2 := 0;
       Leading : Boolean := True;
@@ -578,8 +577,7 @@ package body Adacovex.Config is
    --  Return " (did you mean --xxx?)" (or " --xxx or --yyy") for an
    --  unknown token, or "" when no known flag is close enough. The caller
    --  appends this to the "unknown option/argument" error message.
-   function Suggest_Flags (S : String) return String
-     with SPARK_Mode => On is
+   function Suggest_Flags (S : String) return String with SPARK_Mode => On is
       Buf     : String (1 .. 128) := (others => ' ');
       Len     : Natural := 0;
       NFlag   : String (1 .. 64) := (others => ' ');
@@ -598,12 +596,11 @@ package body Adacovex.Config is
       end if;
       --  Walk the space-separated Known_Flags list.
       while Start <= Known_Flags'Last loop
-         pragma Loop_Invariant
-           (Start in Known_Flags'First .. Known_Flags'Last + 1);
+         pragma
+           Loop_Invariant (Start in Known_Flags'First .. Known_Flags'Last + 1);
          pragma Loop_Variant (Decreases => Known_Flags'Last + 1 - Start);
          Fin := Start;
-         while Fin <= Known_Flags'Last and then Known_Flags (Fin) /= ' '
-         loop
+         while Fin <= Known_Flags'Last and then Known_Flags (Fin) /= ' ' loop
             pragma Loop_Invariant (Fin in Start .. Known_Flags'Last + 1);
             pragma Loop_Variant (Increases => Fin);
             Fin := Fin + 1;
@@ -618,8 +615,9 @@ package body Adacovex.Config is
             if Fin = Start then
                D := 99;
             else
-               D := Edit_Distance
-                 (NFlag (1 .. NLen), Known_Flags (Start .. Fin - 1));
+               D :=
+                 Edit_Distance
+                   (NFlag (1 .. NLen), Known_Flags (Start .. Fin - 1));
             end if;
             --  The 32-character bound keeps the Matches write below in
             --  range; no Known_Flags word reaches it, so a longer word is
@@ -1222,8 +1220,7 @@ package body Adacovex.Config is
                         G  : Types.Spark_Group_Kind;
                         OK : Boolean;
                      begin
-                        Spark_Group_From
-                          (A (A'First + 8 .. A'Last), G, OK);
+                        Spark_Group_From (A (A'First + 8 .. A'Last), G, OK);
                         if OK then
                            Cfg.Spark_Group := G;
                         else
@@ -1264,8 +1261,7 @@ package body Adacovex.Config is
                         M  : Types.Spark_Metric_Kind;
                         OK : Boolean;
                      begin
-                        Spark_Metric_From
-                          (A (A'First + 9 .. A'Last), M, OK);
+                        Spark_Metric_From (A (A'First + 9 .. A'Last), M, OK);
                         if OK then
                            Cfg.Spark_Metric := M;
                         else
@@ -1307,8 +1303,7 @@ package body Adacovex.Config is
                         M  : Types.Spark_Metric_Kind;
                         OK : Boolean;
                      begin
-                        Spark_Metric_From
-                          (A (A'First + 14 .. A'Last), M, OK);
+                        Spark_Metric_From (A (A'First + 14 .. A'Last), M, OK);
                         if OK then
                            Cfg.Spark_Gate_Metric := M;
                         else
@@ -1348,8 +1343,7 @@ package body Adacovex.Config is
                         R  : Types.Spark_Report_Kind;
                         OK : Boolean;
                      begin
-                        Spark_Report_From
-                          (A (A'First + 15 .. A'Last), R, OK);
+                        Spark_Report_From (A (A'First + 15 .. A'Last), R, OK);
                         if OK then
                            Cfg.Spark_Report := R;
                         else
@@ -1366,8 +1360,7 @@ package body Adacovex.Config is
                         begin
                            Cfg.Spark_Min := Natural'Value (Args (I));
                            if Cfg.Spark_Min > 100 then
-                              Set_Error
-                                (Cfg, "--min-coverage must be 0..100");
+                              Set_Error (Cfg, "--min-coverage must be 0..100");
                               Cfg.Spark_Min := 0;
                            end if;
                         exception
@@ -1383,7 +1376,8 @@ package body Adacovex.Config is
                      end if;
                   elsif Has_Prefix (A, "--min-coverage=") then
                      begin
-                        Cfg.Spark_Min := Natural'Value (A (A'First + 15 .. A'Last));
+                        Cfg.Spark_Min :=
+                          Natural'Value (A (A'First + 15 .. A'Last));
                         if Cfg.Spark_Min > 100 then
                            Set_Error (Cfg, "--min-coverage must be 0..100");
                            Cfg.Spark_Min := 0;
@@ -1422,9 +1416,11 @@ package body Adacovex.Config is
                      end if;
                   elsif Has_Prefix (A, "--require-coverage=") then
                      begin
-                        Cfg.Spark_Require := Natural'Value (A (A'First + 19 .. A'Last));
+                        Cfg.Spark_Require :=
+                          Natural'Value (A (A'First + 19 .. A'Last));
                         if Cfg.Spark_Require > 100 then
-                           Set_Error (Cfg, "--require-coverage must be 0..100");
+                           Set_Error
+                             (Cfg, "--require-coverage must be 0..100");
                            Cfg.Spark_Require := 0;
                         else
                            Cfg.Spark_Require_Set := True;
@@ -2674,8 +2670,7 @@ package body Adacovex.Config is
         ("                        below PCT); --gate-metric names the metric");
       Ada.Text_IO.Put_Line
         ("  --gate-metric=METRIC  With spark-coverage only: gate metric");
-      Ada.Text_IO.Put_Line
-        ("                        (default statements)");
+      Ada.Text_IO.Put_Line ("                        (default statements)");
       Ada.Text_IO.Put_Line
         ("  --version             Print the bundled version (read from");
       Ada.Text_IO.Put_Line
@@ -2733,9 +2728,9 @@ package body Adacovex.Config is
    --  subtraction so the Pre itself cannot overflow while being checked.
    --  The only caller passes a bounded help-topic buffer slice.
    function Normalize_Topic (Topic : String) return String
-     with
-       SPARK_Mode => On,
-       Pre        => Topic'Length >= 1 and Topic'Last < Natural'Last - 2
+   with
+     SPARK_Mode => On,
+     Pre        => Topic'Length >= 1 and Topic'Last < Natural'Last - 2
    is
       First : Natural := Topic'First;
       Last  : Natural := Topic'Last;

@@ -2044,8 +2044,7 @@ package body Adacovex.Renderers.HTML is
       Spark_Totals  : Types.Implementation.Spark_Coverage_Totals :=
         (others => <>);
       Spark_Groups  : Types.Implementation.Spark_Group_Vectors.Vector :=
-        Types.Implementation.Spark_Group_Vectors.Empty_Vector)
-      return String is
+        Types.Implementation.Spark_Group_Vectors.Empty_Vector) return String is
    begin
       return
         Render_Dashboard_Internal
@@ -2074,8 +2073,7 @@ package body Adacovex.Renderers.HTML is
       Spark_Totals  : Types.Implementation.Spark_Coverage_Totals :=
         (others => <>);
       Spark_Groups  : Types.Implementation.Spark_Group_Vectors.Vector :=
-        Types.Implementation.Spark_Group_Vectors.Empty_Vector)
-      return String
+        Types.Implementation.Spark_Group_Vectors.Empty_Vector) return String
    is
       Empty : Types.Implementation.Component_Vectors.Vector;
    begin
@@ -2165,15 +2163,56 @@ package body Adacovex.Renderers.HTML is
       Group  : Types.Spark_Group_Kind := Types.Group_File;
       OK     : Boolean := True) return String
    is
-      R   : Unbounded_String;
+      R : Unbounded_String;
 
       procedure Put (S : String) is
       begin
          Append (R, S);
       end Put;
 
+      --  One metric as a hand-rolled donut ring in a chart card: the
+      --  same conic-gradient ring and CSS hole as the Charts and
+      --  Overview tabs. The hole must sit inside its donut wrapper:
+      --  donut-center alone is an absolutely positioned box, so without
+      --  the wrapper it resolves against the page and renders as a
+      --  page-sized circle. Total = 0 shows "n/a" in an unshaded ring.
+      procedure Donut_Card (Title : String; Part : Natural; Total : Natural) is
+         P : constant Natural := Pct (Part, Total);
+      begin
+         Put ("<div class=""chart-card""><h3>" & Title & "</h3>");
+         Put ("<div class=""donut"" role=""img"" aria-label=""");
+         Put (Title);
+         Put ("""");
+         if Total > 0 then
+            Put (" style=""background:conic-gradient(var(--pass) 0% ");
+            Put (Img (P));
+            Put ("%");
+            if P < 100 then
+               Put (", var(--fail) ");
+               Put (Img (P));
+               Put ("% 100%");
+            end if;
+            Put (")""");
+         end if;
+         Put ("><div class=""donut-center""><b>");
+         if Total > 0 then
+            Put (Img (P));
+            Put ("%");
+         else
+            Put ("n/a");
+         end if;
+         Put ("</b></div></div>");
+         Put
+           ("<p style=""color:var(--muted);font-size:.8rem;margin:4px 0 0"">");
+         Put (Img (Part));
+         Put (" / ");
+         Put (Img (Total));
+         Put ("</p></div>");
+      end Donut_Card;
+
    begin
-      Put ("<div class=""card"" style=""margin-top:14px""><h2>SPARK Proof Coverage</h2>");
+      Put
+        ("<div class=""card"" style=""margin-top:14px""><h2>SPARK Proof Coverage</h2>");
       if not OK then
          Put
            ("<p style=""color:var(--muted)"">No gnatprove artefacts found; "
@@ -2187,55 +2226,18 @@ package body Adacovex.Renderers.HTML is
          & ". The prover never runs here; the numbers are read from "
          & "<code>obj/gnatprove/</code>.</p>");
       Put ("<div class=""chart-grid"">");
-      Put
-        ("<div class=""chart-card""><h3>Statements</h3><div class=""donut-center""><b>");
-      if Totals.Stmts_Total > 0 then
-         Put (Img (Totals.Stmts_Proved * 100 / Totals.Stmts_Total));
-         Put
-           ("%</b></div><p style=""color:var(--muted);font-size:.8rem;margin:4px 0 0"">");
-      else
-         Put
-           ("n/a</b></div><p style=""color:var(--muted);font-size:.8rem;margin:4px 0 0"">");
-      end if;
-      Put (Img (Totals.Stmts_Proved));
-      Put (" / ");
-      Put (Img (Totals.Stmts_Total));
-      Put ("</p></div>");
-      Put
-        ("<div class=""chart-card""><h3>Subprograms</h3><div class=""donut-center""><b>");
-      if Totals.Subs_Total > 0 then
-         Put (Img (Totals.Subs_Proved * 100 / Totals.Subs_Total));
-         Put
-           ("%</b></div><p style=""color:var(--muted);font-size:.8rem;margin:4px 0 0"">");
-      else
-         Put
-           ("n/a</b></div><p style=""color:var(--muted);font-size:.8rem;margin:4px 0 0"">");
-      end if;
-      Put (Img (Totals.Subs_Proved));
-      Put (" / ");
-      Put (Img (Totals.Subs_Total));
-      Put ("</p></div>");
-      Put
-        ("<div class=""chart-card""><h3>VCs</h3><div class=""donut-center""><b>");
-      if Totals.Checks_Total > 0 then
-         Put (Img (Totals.Checks_Proved * 100 / Totals.Checks_Total));
-         Put
-           ("%</b></div><p style=""color:var(--muted);font-size:.8rem;margin:4px 0 0"">");
-      else
-         Put
-           ("n/a</b></div><p style=""color:var(--muted);font-size:.8rem;margin:4px 0 0"">");
-      end if;
-      Put (Img (Totals.Checks_Proved));
-      Put (" / ");
-      Put (Img (Totals.Checks_Total));
-      Put ("</p></div>");
+      Donut_Card ("Statements", Totals.Stmts_Proved, Totals.Stmts_Total);
+      Donut_Card ("Subprograms", Totals.Subs_Proved, Totals.Subs_Total);
+      Donut_Card ("VCs", Totals.Checks_Proved, Totals.Checks_Total);
       Put ("</div>");
-      Put ("<h3>Off classes</h3><table><tr><th>Class</th><th>Subprograms</th></tr>");
+      Put
+        ("<h3>Off classes</h3><table><tr><th>Class</th><th>Subprograms</th></tr>");
       Put ("<tr><td>Irreducible (non-formal containers)</td><td>");
       Put (Img (Totals.Off_Irreducible));
       Put ("</td></tr><tr><td>I/O-bound</td><td>");
       Put (Img (Totals.Off_IO_Bound));
-      Put ("</td></tr><tr><td><b>Work queue (provable backlog)</b></td><td><b>");
+      Put
+        ("</td></tr><tr><td><b>Work queue (provable backlog)</b></td><td><b>");
       Put (Img (Totals.Off_Work_Queue));
       Put ("</b></td></tr><tr><td>Not covered</td><td>");
       Put (Img (Totals.Not_Covered_Subs));
@@ -2330,7 +2332,10 @@ package body Adacovex.Renderers.HTML is
             Put (",");
          end if;
          Put (Json_LF & Json_I2 & "{" & Json_LF & Json_I3 & """key"": ");
-         Put ("""" & Json_Escape (Groups (I).Key (1 .. Groups (I).Key_Len)) & """");
+         Put
+           (""""
+            & Json_Escape (Groups (I).Key (1 .. Groups (I).Key_Len))
+            & """");
          Put ("," & Json_LF & Json_I3 & """stmts_proved"": ");
          Put (Img (Groups (I).Stmts_Proved));
          Put (", ""stmts_total"": ");

@@ -202,6 +202,7 @@ def replacements(m: Metrics) -> List[Tuple[Pattern[str], str]]:
          f"all checks proved ({t} checks)"),
         # "38 analyzed units".
         (re.compile(r"(\d+) analyzed units"), f"{n} analyzed units"),
+        (re.compile(r"(\d+) analysed units"), f"{n} analysed units"),
         # CI threshold gates pinned to the assessed SPARK level:
         # "--require-spark=Platinum" (Makefile, docs) and
         # "require-spark: Platinum" (workflows).

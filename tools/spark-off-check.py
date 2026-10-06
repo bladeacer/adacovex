@@ -59,11 +59,14 @@ PATTERN = re.compile(r"pragma\s+SPARK_Mode\s*\(\s*Off\s*\)|SPARK_Mode\s*=>\s*Off
 def code_part(line: str) -> str:
     """Return the code part of one Ada source line, comment text removed.
 
-    Returns the line unchanged when it carries no comment.  A `--` inside a
-    string literal is not a comment, so the scan tracks string state (a
-    doubled quote escapes one), and an unterminated literal leaves the line
-    as it is -- the compiler rejects such a line anyway.
+    String literal contents are dropped as well: a literal is data, so a
+    test fixture that quotes `pragma SPARK_Mode (Off)` to feed it to a
+    classifier is not a pragma occurrence.  A `--` inside a string literal
+    is not a comment, so the scan tracks string state (a doubled quote
+    escapes one), and an unterminated literal leaves the rest of the line
+    dropped -- the compiler rejects such a line anyway.
     """
+    out: List[str] = []
     in_string = False
     index = 0
     while index < len(line):
@@ -74,12 +77,17 @@ def code_part(line: str) -> str:
                     index += 2
                     continue
                 in_string = False
+                out.append(char)
+            # literal contents are data, not code: dropped
         elif char == '"':
             in_string = True
+            out.append(char)
         elif char == "-" and line.startswith("--", index):
-            return line[:index]
+            break
+        else:
+            out.append(char)
         index += 1
-    return line
+    return "".join(out)
 
 
 def violations() -> List[Tuple[str, int, str]]:

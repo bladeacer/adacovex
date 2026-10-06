@@ -54,7 +54,7 @@ procedure Test_Runner is
    R_CPUs        : Runner;
    R_Do178C      : Runner;
    R_Completion  : Runner;
-   R_SparkCov   : Runner;
+   R_SparkCov    : Runner;
 
    Total_Passed : Natural := 0;
    Total_Failed : Natural := 0;

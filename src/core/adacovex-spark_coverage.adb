@@ -1145,6 +1145,8 @@ package body Adacovex.Spark_Coverage is
       R_Uri_Len   : Natural := 0;
       R_Name      : Types.Path_Field;
       R_Name_Len  : Natural := 0;
+      R_Rule      : Types.Path_Field;
+      R_Rule_Len  : Natural := 0;
       R_Open      : Boolean := False;
 
       --  Whether the scan buffer holds the quoted JSON key K at Q.
@@ -1208,43 +1210,46 @@ package body Adacovex.Spark_Coverage is
 
       --  Record the accumulated result on its unit, record the entity the
       --  result names when the check passed, and reset the accumulator.
+      --  gnatprove reports its own diagnostics (an info note such as
+      --  "local subprogram ... only analyzed in the context of calls")
+      --  under the fallback rule id "error", which no declared check rule
+      --  uses: a message is not a verification condition, so it enters
+      --  neither the VC metric nor the entity table.
       procedure Flush is
          Idx     : Natural;
          U       : Types.Implementation.Spark_Coverage_Unit;
          Passed  : Boolean;
          Is_Warn : Boolean;
+         Is_Diag : Boolean;
       begin
-         if not R_Open or else R_Uri_Len = 0 then
-            R_Kind_Len := 0;
-            R_Level_Len := 0;
-            R_Uri_Len := 0;
-            R_Name_Len := 0;
-            R_Open := False;
-            return;
-         end if;
-         Passed := R_Kind_Len = 4 and then R_Kind (1 .. 4) = "pass";
-         Is_Warn := R_Level_Len = 7 and then R_Level (1 .. 7) = "warning";
-         Idx := Unit_For_File (Units, R_Uri (1 .. R_Uri_Len));
-         U := Units (Idx);
-         U.In_Proof_Run := True;
-         if Is_Warn then
-            --  A result whose level is "warning" is a proof warning, not a
-            --  verification condition, so it never enters the VC metric.
-            U.Warnings := U.Warnings + 1;
-         else
-            U.Checks_Total := U.Checks_Total + 1;
-            if Passed then
-               U.Checks_Proved := U.Checks_Proved + 1;
+         if R_Open and then R_Uri_Len > 0 then
+            Is_Diag := R_Rule_Len = 5 and then R_Rule (1 .. 5) = "error";
+            Passed := R_Kind_Len = 4 and then R_Kind (1 .. 4) = "pass";
+            Is_Warn := R_Level_Len = 7 and then R_Level (1 .. 7) = "warning";
+            Idx := Unit_For_File (Units, R_Uri (1 .. R_Uri_Len));
+            U := Units (Idx);
+            U.In_Proof_Run := True;
+            if Is_Warn then
+               --  A result whose level is "warning" is a proof warning, not a
+               --  verification condition, so it never enters the VC metric.
+               U.Warnings := U.Warnings + 1;
+            elsif not Is_Diag then
+               U.Checks_Total := U.Checks_Total + 1;
+               if Passed then
+                  U.Checks_Proved := U.Checks_Proved + 1;
+               end if;
             end if;
-         end if;
-         Units.Replace_Element (Idx, U);
-         if Passed and then R_Name_Len > 0 then
-            Record_Entity (Entities, R_Name (1 .. R_Name_Len), Types.Off_None);
+            Units.Replace_Element (Idx, U);
+            if Passed and then not Is_Diag and then R_Name_Len > 0 then
+               Record_Entity
+                 (Entities, R_Name (1 .. R_Name_Len), Types.Off_None);
+            end if;
          end if;
          R_Kind_Len := 0;
          R_Level_Len := 0;
          R_Uri_Len := 0;
          R_Name_Len := 0;
+         R_Rule_Len := 0;
          R_Open := False;
       end Flush;
 
@@ -1259,6 +1264,13 @@ package body Adacovex.Spark_Coverage is
          while P <= Fill loop
             if At_Key (P, """ruleId""") then
                Flush;
+               declare
+                  Tmp : Natural := 0;
+               begin
+                  if Value_At (P + 7, R_Rule, Tmp) then
+                     R_Rule_Len := Natural'Min (Tmp, R_Rule'Length);
+                  end if;
+               end;
                R_Open := True;
                P := P + 8;
             elsif At_Key (P, """kind""") then
@@ -1656,6 +1668,7 @@ package body Adacovex.Spark_Coverage is
       Pending    : Boolean := False;
       Idx        : Natural;
       U          : Types.Implementation.Spark_Coverage_Unit;
+      Own        : Boolean := False;
       Stem       : constant String := Stem_Of (Name);
       Covered    : Boolean;
       Stmts      : Natural := 0;
@@ -1720,8 +1733,16 @@ package body Adacovex.Spark_Coverage is
       --  A unit gnatprove reported no entity for was never analysed, so
       --  nothing in it is proved.
       Covered := U.In_Proof_Run and then U.Subs_Total > 0;
-      Put_Path (U.File, U.File_Len, Name);
-      Put_Path (U.Folder, U.Folder_Len, Dir);
+      --  The by-file key names the unit's own source: its own body always
+      --  claims the name, while a subunit file (a stem that merely starts
+      --  with the unit's name) claims it only when no file has yet, so a
+      --  parent body is never labelled with an arbitrary sibling subunit.
+      Own :=
+        U.Name_Len = Stem'Length and then U.Name (1 .. Stem'Length) = Stem;
+      if Own or else U.File_Len = 0 then
+         Put_Path (U.File, U.File_Len, Name);
+         Put_Path (U.Folder, U.Folder_Len, Dir);
+      end if;
       Units.Replace_Element (Idx, U);
 
       Open (F, In_File, Path (1 .. PLen));
@@ -1896,6 +1917,36 @@ package body Adacovex.Spark_Coverage is
       Units.Replace_Element (Idx, U);
    end Scan_Source;
 
+   --  Record a spec file as its unit's by-file key when the unit has no
+   --  body file in the tree. A spec-only package would otherwise group
+   --  under an empty key and render as a blank row. The lookup never
+   --  creates a unit: a spec gnatprove never analysed gets no row.
+   --  @param Dir  Directory holding the spec.
+   --  @param Name  File base name (an ".ads" name).
+   --  @param Units  Unit records (updated when the key was empty).
+   procedure Claim_Unit_File
+     (Dir   : String;
+      Name  : String;
+      Units : in out Types.Implementation.Spark_Coverage_Vectors.Vector)
+   is
+      Stem : constant String := Stem_Of (Name);
+      U    : Types.Implementation.Spark_Coverage_Unit;
+   begin
+      for I in 1 .. Integer (Units.Length) loop
+         if Units (I).Name_Len = Stem'Length
+           and then Units (I).Name (1 .. Stem'Length) = Stem
+         then
+            U := Units (I);
+            if U.File_Len = 0 then
+               Put_Path (U.File, U.File_Len, Name);
+               Put_Path (U.Folder, U.Folder_Len, Dir);
+               Units.Replace_Element (I, U);
+            end if;
+            exit;
+         end if;
+      end loop;
+   end Claim_Unit_File;
+
    procedure Walk_Source
      (Dir        : String;
       Entities   : Types.Implementation.Spark_Entity_Vectors.Vector;
@@ -1924,6 +1975,9 @@ package body Adacovex.Spark_Coverage is
             elsif Kind (Ent) = Ordinary_File then
                if N'Length > 4 and then N (N'Last - 3 .. N'Last) = ".adb" then
                   Scan_Source (Dir, N, Entities, Units, Skipped_Ct);
+               elsif N'Length > 4 and then N (N'Last - 3 .. N'Last) = ".ads"
+               then
+                  Claim_Unit_File (Dir, N, Units);
                end if;
             end if;
          end;

@@ -42,6 +42,9 @@ Packages      : Types.Implementation.Package_Vectors.Vector;
 Graph         : Types.Implementation.Component_Vectors.Vector;
 All_Standards : Boolean := False;
 Theme         : Types.Dashboard_Theme := Types.System_Theme;
+Spark_OK      : Boolean := False;
+Spark_Totals  : Types.Implementation.Spark_Coverage_Totals;
+Spark_Groups  : Types.Implementation.Spark_Group_Vectors.Vector;
 end record;
 ```
 

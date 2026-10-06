@@ -99,24 +99,24 @@ package Adacovex.Config is
       --  instead of a bare one-line error.
       Unknown_No_Suggest : Boolean := False;
 
-      Help_Requested     : Boolean := False;
-      Help_Topic         : String (1 .. Types.Max_Path);
-      Help_Topic_Len     : Natural := 0;
-      Version_Requested  : Boolean := False;
-      Man_Mode           : Boolean := False;
-      Man_Check          : Boolean := False;
-      Man_Force          : Boolean := False;
-      Man_Dir            : String (1 .. Types.Max_Path);
-      Man_Dir_Len        : Natural := 0;
-      Skip_Dir_Ct        : Natural := 0;
-      Skip_Dirs          : Types.Name_Field;
-      Compare_Base       : String (1 .. Types.Max_Path);
-      Compare_Base_Len   : Natural := 0;
-      Coverage_Delta     : String (1 .. Types.Max_Path);
-      Coverage_Delta_Len : Natural := 0;
-      Prove_Mode         : Boolean := False;
-      Complexity_Mode    : Boolean := False;
-      Status_Mode        : Boolean := False;
+      Help_Requested      : Boolean := False;
+      Help_Topic          : String (1 .. Types.Max_Path);
+      Help_Topic_Len      : Natural := 0;
+      Version_Requested   : Boolean := False;
+      Man_Mode            : Boolean := False;
+      Man_Check           : Boolean := False;
+      Man_Force           : Boolean := False;
+      Man_Dir             : String (1 .. Types.Max_Path);
+      Man_Dir_Len         : Natural := 0;
+      Skip_Dir_Ct         : Natural := 0;
+      Skip_Dirs           : Types.Name_Field;
+      Compare_Base        : String (1 .. Types.Max_Path);
+      Compare_Base_Len    : Natural := 0;
+      Coverage_Delta      : String (1 .. Types.Max_Path);
+      Coverage_Delta_Len  : Natural := 0;
+      Prove_Mode          : Boolean := False;
+      Complexity_Mode     : Boolean := False;
+      Status_Mode         : Boolean := False;
       Spark_Coverage_Mode : Boolean := False;
 
       --  spark-coverage subcommand options. --group selects the row
@@ -125,13 +125,13 @@ package Adacovex.Config is
       --  selects text or JSON output, --min-coverage filters display
       --  rows, --require-coverage sets the CI gate, and --gate-metric
       --  names which metric the gate applies to.
-      Spark_Group        : Types.Spark_Group_Kind := Types.Group_File;
-      Spark_Metric       : Types.Spark_Metric_Kind := Types.Metric_Statements;
-      Spark_Report       : Types.Spark_Report_Kind := Types.Spark_Text;
-      Spark_Min          : Natural := 0;
-      Spark_Require      : Natural := 0;      --  minimum verified %
-      Spark_Require_Set  : Boolean := False;
-      Spark_Gate_Metric  : Types.Spark_Metric_Kind := Types.Metric_Statements;
+      Spark_Group       : Types.Spark_Group_Kind := Types.Group_File;
+      Spark_Metric      : Types.Spark_Metric_Kind := Types.Metric_Statements;
+      Spark_Report      : Types.Spark_Report_Kind := Types.Spark_Text;
+      Spark_Min         : Natural := 0;
+      Spark_Require     : Natural := 0;      --  minimum verified %
+      Spark_Require_Set : Boolean := False;
+      Spark_Gate_Metric : Types.Spark_Metric_Kind := Types.Metric_Statements;
 
       --  True when the user gives `status --export[=PATH]`. The status
       --  report is written as machine-readable JSON to PATH (or stdout when

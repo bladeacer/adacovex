@@ -697,6 +697,7 @@ begin
             when Adacovex.Types.Spark_Text =>
                Adacovex.Spark_Coverage.Print_Report
                  (Totals, Groups, Cfg.Spark_Group, Cfg.Spark_Min);
+
             when Adacovex.Types.Spark_JSON =>
                Adacovex.Spark_Coverage.Print_JSON
                  (Totals, Units, Groups, Cfg.Spark_Group);
@@ -1247,7 +1248,8 @@ begin
          --  subcommand reports (best effort: a missing artefact set
          --  serves the "run adacovex prove" note).
          declare
-            Units   : Adacovex.Types.Implementation.Spark_Coverage_Vectors.Vector;
+            Units   :
+              Adacovex.Types.Implementation.Spark_Coverage_Vectors.Vector;
             Groups  : Adacovex.Types.Implementation.Spark_Group_Vectors.Vector;
             Totals  : Adacovex.Types.Implementation.Spark_Coverage_Totals;
             Skipped : Natural;
