@@ -31,7 +31,7 @@ jobs:
 ```
 
 This job builds adacovex. It runs the target's native tests and the full
-assessment. It gates on Platinum SPARK, 100% docstring coverage, and 900
+assessment. It gates on Platinum SPARK, 100% docstring coverage, and 1775
 passing tests. On failure, the job publishes `adacovex-assessment` artifacts
 and Markdown summaries.
 

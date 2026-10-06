@@ -150,6 +150,25 @@ the same short-circuit, so only a re-prove of an already-failed tree reaches
 it. This release's own proof campaign did exactly that after a degraded run
 and exposed it.
 
+### H2: `make prove` runs with no gnatprove warnings
+
+A clean proof session on this tree printed seven `warning: initialization of
+"X" has no effect` messages. Every one named a declaration whose initial
+value flow analysis proved was dead: the variable is assigned before any read
+can reach it, so the initialiser is a write that no path observes. Five were
+in the C7 code (`Edit_Distance` carried `New_Val` and `Prev_Diag`, and
+`Suggest_Flags` carried `NFlag` and `NLen`), and two more were in
+`Parse_Natural`, which C7 also opted in. The two `out` buffers were the
+clearest case: `Suggest_Flags` passed `NFlag` and `NLen` as `out` parameters
+to `Normalize_Flag`, which writes both before it returns, so pre-filling them
+was dead too.
+
+The seven initialisers are gone, and each declaration that lost one now says
+why it carries none. The proof cost is seven extra checks: gnatprove can no
+longer lean on the initialiser to establish a variable's type invariant, so
+it proves that fact at the reads instead. The campaign therefore moves from
+1053 to **1060** VCs, all proved.
+
 ## Test Suite
 
 1775 tests across 26 categories, up from 1756 across 25 in 1.57.0. The new
@@ -163,11 +182,14 @@ and both pass on this tree.
 
 ## Proof Results
 
-**Platinum**, 0 unproved, 0 justified, **1053 of 1053 VCs across 68 analysed
-units** under gnatprove 16.1.0 at `--level=4`. The C7 sweep moves thirteen
-in-package subprograms into the proved set. The campaign therefore grows from
-884 VCs across 66 units in 1.57.0 to 1053 across 68, and a clean run on this
-tree is the source of these numbers rather than an inherited 1.57.0 result.
+**Platinum**, 0 unproved, 0 justified, **1060 of 1060 VCs across 68 analysed
+units** under gnatprove 16.1.0 at `--level=4`, with no gnatprove warnings on
+a clean session. The C7 sweep moves thirteen in-package subprograms into the
+proved set. The campaign therefore grows from 884 VCs across 66 units in
+1.57.0 to 1060 across 68, and a clean run on this tree is the source of these
+numbers rather than an inherited 1.57.0 result. H2 accounts for the last
+seven of them: removing the dead initialisers it deletes costs seven checks,
+and buys a warning-free session.
 
 H1's fix was exercised by that run. The cache held a summary left by a
 degraded session, so the runner discarded it and re-proved instead of

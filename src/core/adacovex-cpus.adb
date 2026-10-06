@@ -16,7 +16,11 @@ package body Adacovex.CPUs is
    --  representable, and a wrapped result would be a wrong answer).
    function Parse_Natural (S : String) return Integer with SPARK_Mode => On is
       Start : Natural := S'First;
-      Stop  : Natural := S'First;
+      --  Stop, Val, and Found carry no initialiser: each is assigned before
+      --  the first loop condition or body statement that reads it, so an
+      --  initial value would be dead. gnatprove reports an initialisation
+      --  that has no effect, and this body proves with none.
+      Stop  : Natural;
       Val   : Long_Long_Integer := 0;
       Found : Boolean := False;
    begin

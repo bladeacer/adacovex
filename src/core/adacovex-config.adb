@@ -493,8 +493,12 @@ package body Adacovex.Config is
       --  needed. A whole-array copy puts a quantified array equality into
       --  every verification condition that follows it, which is what made
       --  this routine's inlined checks expensive to prove.
-      New_Val   : Cell := 0;
-      Prev_Diag : Cell := 0;
+      --  New_Val and Prev_Diag carry no initialiser: the outer loop assigns
+      --  Prev_Diag before the inner loop reads it, and both branches of the
+      --  inner loop assign New_Val before it is read. gnatprove reports an
+      --  initialisation that has no effect, and this body proves with none.
+      New_Val   : Cell;
+      Prev_Diag : Cell;
    begin
       if ALen > 64 or BLen > 64 then
          return 99;
@@ -580,8 +584,11 @@ package body Adacovex.Config is
    function Suggest_Flags (S : String) return String with SPARK_Mode => On is
       Buf     : String (1 .. 128) := (others => ' ');
       Len     : Natural := 0;
-      NFlag   : String (1 .. 64) := (others => ' ');
-      NLen    : Natural := 0;
+      --  Normalize_Flag takes NFlag and NLen as out parameters and writes
+      --  both before returning, so neither carries an initialiser: gnatprove
+      --  reports an initialisation that has no effect.
+      NFlag   : String (1 .. 64);
+      NLen    : Natural;
       Matches : array (1 .. 3) of String (1 .. 32) :=
         (others => (others => ' '));
       MLen    : array (1 .. 3) of Natural range 0 .. 32 := (others => 0);

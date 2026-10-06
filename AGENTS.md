@@ -58,14 +58,18 @@ tools, or output must also update, in the same change:
 **Proof-timing phases.**  `docs/contributing/perf/prove-timing.md` keeps the
 `make prove` timing table as one column per **phase**, never one per release.
 A phase is a range of versions whose implementation methodology is largely
-similar (so far 1.40.0-1.41.0, 1.42.0-1.44.0, 1.45.0-1.47.0, 1.48.0-1.54.0,
-1.55.0-1.56.0).
+similar (so far 1.45.0-1.47.0, 1.48.0-1.54.0, 1.55.0-1.56.0, 1.57.0-1.58.0).
 Fold each new version into the open phase while the methodology holds; close
 the phase and open a new one on a methodology shift. Each phase carries exactly one
 representative version, and the table uses that version's *complete* metric
 set -- never the best value picked row by row from different versions in the
 phase. When the metrics trade off, weigh them, choose the representative,
 and state the reason in the page's reading notes.
+Keep the table short: the page holds the three most recent closed phases plus
+the open one, so a retired phase is deleted rather than kept. Before deleting
+one, move whatever still explains a surviving number -- most often how the
+warm syscall floor was reached -- into the "Across every phase" notes, so no
+figure loses the reason it moved.
 
 Before finishing, re-verify that the user-facing docs still cover the
 codebase's current surface: every `Known_Flags` entry is documented in
