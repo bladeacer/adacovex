@@ -192,9 +192,6 @@ gnatprove <v> not in ~/.adacovex/toolchain -- downloading via alr
 as a hang. The deployment is one-time per version; every later run
 reuses the deployed crate with no download.
 
-Entries from 1.42.0 back to 1.27.0 are on [Performance optimisation
-history: earlier releases](../../archive/optimisation-history-archive.md).
-
 ### SIMD and other optimisation candidates (1.46.0)
 
 An optimisation review in 1.46.0 asked whether SIMD or other low-level

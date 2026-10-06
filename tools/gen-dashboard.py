@@ -71,6 +71,7 @@ MODULES: Dict[str, str] = {
     "__JS_TABS__": "js/tabs.js",                # author JS (minified at build)
     "__JS_DEPS__": "js/deps.js",                # author JS (minified at build)
     "__JS_DETAILS__": "js/details.js",          # author JS (minified at build)
+    "__JS_SPARK__": "js/spark.js",              # author JS (minified at build)
     "__JS_NOMMONL_APP__": "js/nomnoml.js",      # author JS (minified at build)
     "__JS_SEARCH__": "js/search.js",            # author JS (minified at build)
     "__JS_YACE__": "yace.js",                   # vendored (not minified: tokenizer regexes stay byte-faithful)
@@ -302,6 +303,7 @@ def assemble(template: Path) -> str:
         "__JS_TABS__": True,
         "__JS_DEPS__": True,
         "__JS_DETAILS__": True,
+        "__JS_SPARK__": True,
         "__JS_NOMMONL_APP__": True,
         "__JS_SEARCH__": True,
         "__JS_YACE__": False,

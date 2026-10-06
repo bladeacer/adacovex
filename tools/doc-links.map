@@ -69,6 +69,3 @@ docs/contributing/ir.md	gnatprove-friendly IR
 docs/proof/index.md	Proof records
 docs/compliance/index.md	Compliance outputs
 docs/badges/index.md	Badges
-docs/archive/index.md	Archive
-docs/archive/16.1.0-ledger-audit.md	Archive: gnatprove 16.1.0 proof-debt audit
-docs/archive/optimisation-history-archive.md	Archive: performance optimisation history (earlier releases)

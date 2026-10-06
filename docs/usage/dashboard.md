@@ -130,6 +130,7 @@ The same data is headlessly available at `/api/metrics` and via
 | `GET /api/metrics` | JSON object with the key assessment metrics |
 | `GET /api/deps` | JSON dependency graph (same data as the Dependencies tab) |
 | `GET /api/endpoints` | JSON endpoint catalog (the list the API playground builds its UI from) |
+| `GET /api/spark` | JSON SPARK proof coverage: the three metrics, off classes, and per-group rollups |
 | `GET /docs` | The bundled offline manual (the Sphinx manual, built into the binary) |
 | `GET /badge/spark.svg` | SPARK assurance level badge |
 | `GET /badge/tests.svg` | Test pass/fail badge |

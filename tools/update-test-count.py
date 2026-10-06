@@ -65,6 +65,7 @@ CATEGORY_KEY: Dict[str, str] = {
     "Opt-out markers": "src/tests/adacovex_opt_outs_tests",
     "Dir cache": "src/tests/adacovex_dir_cache_tests",
     "Diff reports": "src/tests/adacovex_diff_tests",
+    "SPARK coverage": "src/tests/adacovex_spark_coverage_tests",
     "Prove runner": "src/tests/adacovex_prove_runner_tests",
     "ANSI terminal report": "src/tests/adacovex_ansi_tests",
     "CPU and jobs": "src/tests/adacovex_cpus_tests",

@@ -117,6 +117,21 @@ package Adacovex.Config is
       Prove_Mode         : Boolean := False;
       Complexity_Mode    : Boolean := False;
       Status_Mode        : Boolean := False;
+      Spark_Coverage_Mode : Boolean := False;
+
+      --  spark-coverage subcommand options. --group selects the row
+      --  grouping (file/folder/package), --metric selects the metric
+      --  shown first and used for the default gate, --spark-format
+      --  selects text or JSON output, --min-coverage filters display
+      --  rows, --require-coverage sets the CI gate, and --gate-metric
+      --  names which metric the gate applies to.
+      Spark_Group        : Types.Spark_Group_Kind := Types.Group_File;
+      Spark_Metric       : Types.Spark_Metric_Kind := Types.Metric_Statements;
+      Spark_Report       : Types.Spark_Report_Kind := Types.Spark_Text;
+      Spark_Min          : Natural := 0;
+      Spark_Require      : Natural := 0;      --  minimum verified %
+      Spark_Require_Set  : Boolean := False;
+      Spark_Gate_Metric  : Types.Spark_Metric_Kind := Types.Metric_Statements;
 
       --  True when the user gives `status --export[=PATH]`. The status
       --  report is written as machine-readable JSON to PATH (or stdout when
@@ -224,6 +239,8 @@ package Adacovex.Config is
        and then Parse_CLI'Result.Prove_Memlimit in -1 .. 1_000_000
        and then Parse_CLI'Result.Require_Docstrings in 0 .. 100
        and then Parse_CLI'Result.Require_Proof in 0 .. 100
+       and then Parse_CLI'Result.Spark_Min in 0 .. 100
+       and then Parse_CLI'Result.Spark_Require in 0 .. 100
        and then Parse_CLI'Result.Help_Topic_Len <= Types.Max_Path;
 
    --  Add a directory name to the comma-separated skip list.

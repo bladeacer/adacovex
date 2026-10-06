@@ -55,6 +55,7 @@ src/tests/adacovex_testparser_tests	Test-result parser tests (50)
 src/tests/adacovex_config_tests	CLI config tests (349)
 src/tests/adacovex_tz_ansi_tests	Timezone + ANSI tests (63)
 src/tests/adacovex_complexity_tests	Complexity check tests (20)
+src/tests/adacovex_spark_coverage_tests	SPARK coverage report tests
 src/tests/adacovex_opt_outs_tests	Per-file opt-out marker tests (16)
 src/tests/adacovex_dir_cache_tests	Directory-snapshot memo tests (22)
 src/tests/adacovex_diff_tests	Differential-report regression tests (36)

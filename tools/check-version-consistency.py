@@ -19,7 +19,7 @@ every `gnat-version` in `action.yml` and the workflows must name the same
 release, or a CI job proves the tree with a prover no record names.  The two
 prose examples that illustrate a version-set expression must carry the live
 major so a reader is not left thinking an older tool is current.  History
-(the changelogs, the archive, and the release/index manifests) is never
+(the changelogs and the release/index manifests) is never
 gated, because an old pin in a dated record is correct.
 
 That drift is not cosmetic.  `make release` used to prove the tree *before*
@@ -137,7 +137,7 @@ GNATPROVE_EXAMPLES: Tuple[Path, ...] = (
 # History the gate must never flag or rewrite: an old pin in a release record
 # is correct history, and a gate that flagged it would be deleted on sight.
 GNATPROVE_HISTORICAL: Tuple[str, ...] = (
-    "docs/changelogs/", "docs/archive/", "alire/releases/", "index/",
+    "docs/changelogs/", "alire/releases/", "index/",
 )
 
 

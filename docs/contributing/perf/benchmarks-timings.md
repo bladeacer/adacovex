@@ -5,6 +5,14 @@ prove warm, and prove cold clone. The category definitions and the expected
 numbers are on [Performance](index.md); the machine and the harness are on
 [Benchmarking adacovex](benchmarks.md).
 
+**Build profile.** Since 1.57.0 the tree carries two build profiles: the
+development profile (`-O1 -gnatn -g`, the default for `alr build`) and the
+release profile (`-O2 -gnatn`, selected by `tools/build.py --release` or
+`ADACOVEX_VERSION`). Every timing on this page is taken on the release
+profile, because that is the binary the released figures describe; a
+development build is roughly half the serial compile time and is for
+iteration, not for measurement.
+
 ## Sample output (hyperfine, x86-64, 12-core machine)
 
 1.47.0 is the first release compiled with `-O2 -gnatn` (1.46.0 and earlier
@@ -62,6 +70,39 @@ shape: the warm paths sit in the tens of milliseconds, and the cold paths
 are bounded by work that genuinely must happen (hashing the changed
 sources, parsing the proof, building the SBOM) -- a from-scratch solver
 run happens once per gnatprove session, not once per run.
+
+## Generator and docs-bundling cost
+
+`make build` runs four generators before it compiles anything, and the
+docs bundling is the step users suspect when a build feels slow. The
+measured steady-state cost says it is not the bottleneck. These figures
+come from the 12-core bench machine with nothing changed and every cache
+warm:
+
+| Step | ms |
+|------|----|
+| `tools/gen-version.py` | 44 |
+| `tools/csslint.py --check` | 44 |
+| `tools/gen-dashboard.py` | 152 |
+| `tools/gen-docs.py` (stamp current, 250 assets cached) | 365 |
+| `sphinx-build` from scratch | 7 847 |
+
+A no-op `make build` is therefore about 0.6 s of generators on top of a
+0.8 s no-op `alr build`. The one large row is the cold Sphinx build, and
+it runs only when the docs sources change. A cold `gen-docs.py` on a
+fresh checkout -- no Sphinx output and no encode cache -- measured
+COLD_GENDOCS_SECONDS s: the Sphinx build plus the first-time encoding of
+about 6 MB of page bodies. Every later run reuses the encoded bodies
+from `obj/adacovex-docs-encode/`.
+
+The compile side tells the same story. A full rebuild of all 101 bodies
+takes 39.1 s, and the serial compile totals 99.8 s across those files.
+`adacovex-parsers-manifest.adb` alone is 21.9 s of that serial total (22
+percent). The two generated bundle specs together are 0.3 percent of it:
+`adacovex-docs_template.adb` compiles in 288 ms. Both compile figures
+were taken before the build split into profiles, on the single
+`-O2 -gnatn` switch set that the release profile preserves, so they
+describe the shipped binary's profile.
 
 ## The prove cold-clone shape
 

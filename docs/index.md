@@ -94,9 +94,9 @@ a technical word in any doc, docstring, or changelog.
   and the HLR/LLR indexes.
 - [HLR index](compliance/HLR.md) and [LLR mapping](compliance/LLR.md).
 - [Badges](badges/index.md) -- the badge set the self-assessment emits.
-- [Archive](archive/index.md) -- dated records kept for traceability.
 - [API reference](api-docs/index.md) -- the generated package
   documentation.
+- [tldr page](tldr/adacovex.md) -- the in-repo cheat sheet for the CLI.
 
 The docs live under `docs/` as a **Sphinx** project (`docs/conf.py` with
 MyST, plus a root `docs/index.md` holding the toctree). The pages are grouped
@@ -132,6 +132,7 @@ usage/cli-reference
 usage/cli-reference-flags
 usage/cli-reference-options
 usage/cli-reference-emit
+tldr/adacovex
 usage/dashboard
 usage/dashboard-html
 usage/dashboard-api
@@ -239,12 +240,3 @@ CREDITS
 THIRD_PARTY_NOTICES
 ```
 
-```{toctree}
-:caption: Archive
-:maxdepth: 1
-:hidden:
-
-archive/index
-archive/16.1.0-ledger-audit
-archive/optimisation-history-archive
-```

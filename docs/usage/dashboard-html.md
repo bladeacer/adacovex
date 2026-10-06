@@ -49,7 +49,11 @@ keyboard-accessible, persisted in `localStorage`):
   derived.
 - **Proof** -- the SPARK level (Stone..Platinum) and, per check category
   (flow, initialization, runtime, assertions, functional), total and proved
-  counts plus a mini **VCs proved/total** column at the top of the tab.
+  counts plus a mini **VCs proved/total** column at the top of the tab,
+  followed by the **SPARK proof coverage** card: statement/subprogram/VC
+  coverage as three separate metrics, the off-class breakdown
+  (irreducible / I/O-bound / work queue / not covered), and a per-file
+  table sortable by clicking its column headers.
 - **Tests** -- every test category with count and Pass/Fail plus a mini
   **pass/fail donut** at the top of the tab.
 - **Compliance** -- a mini **achievement radial gauge** at the top, then the

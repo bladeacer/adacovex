@@ -1330,7 +1330,11 @@ package body Adacovex.Renderers.HTML is
       Packages      : Types.Implementation.Package_Vectors.Vector;
       Graph         : Types.Implementation.Component_Vectors.Vector;
       All_Standards : Boolean;
-      Theme         : Types.Dashboard_Theme) return String
+      Theme         : Types.Dashboard_Theme;
+      Spark_OK      : Boolean;
+      Spark_Totals  : Types.Implementation.Spark_Coverage_Totals;
+      Spark_Groups  : Types.Implementation.Spark_Group_Vectors.Vector)
+      return String
    is
       Overview : Unbounded_String;
       Proof_S  : Unbounded_String;
@@ -1730,6 +1734,12 @@ package body Adacovex.Renderers.HTML is
             & "contract instead.</p></div>");
       end;
 
+      --  SPARK proof coverage, inside the Proof tab under the proof
+      --  content, with all three metrics side by side.
+      Put_P
+        (Render_Spark_Coverage_HTML
+           (Spark_Totals, Spark_Groups, Types.Group_File, Spark_OK));
+
       --  Tests tab: mini compliance-style gauge at the top
       Put_T ("<div class=""chart-grid"" style=""margin-bottom:14px"">");
       Put_T ("<div class=""chart-card""><h3>Test Pass Rate</h3>");
@@ -2029,7 +2039,12 @@ package body Adacovex.Renderers.HTML is
       Packages      : Types.Implementation.Package_Vectors.Vector;
       Graph         : Types.Implementation.Component_Vectors.Vector;
       All_Standards : Boolean := False;
-      Theme         : Types.Dashboard_Theme := Types.System_Theme)
+      Theme         : Types.Dashboard_Theme := Types.System_Theme;
+      Spark_OK      : Boolean := False;
+      Spark_Totals  : Types.Implementation.Spark_Coverage_Totals :=
+        (others => <>);
+      Spark_Groups  : Types.Implementation.Spark_Group_Vectors.Vector :=
+        Types.Implementation.Spark_Group_Vectors.Empty_Vector)
       return String is
    begin
       return
@@ -2041,7 +2056,10 @@ package body Adacovex.Renderers.HTML is
            Packages,
            Graph,
            All_Standards,
-           Theme);
+           Theme,
+           Spark_OK,
+           Spark_Totals,
+           Spark_Groups);
    end Render_Dashboard;
 
    function Render_Dashboard
@@ -2051,7 +2069,12 @@ package body Adacovex.Renderers.HTML is
       DAL_Assess    : Types.Implementation.DAL_Assessment;
       Packages      : Types.Implementation.Package_Vectors.Vector;
       All_Standards : Boolean := False;
-      Theme         : Types.Dashboard_Theme := Types.System_Theme)
+      Theme         : Types.Dashboard_Theme := Types.System_Theme;
+      Spark_OK      : Boolean := False;
+      Spark_Totals  : Types.Implementation.Spark_Coverage_Totals :=
+        (others => <>);
+      Spark_Groups  : Types.Implementation.Spark_Group_Vectors.Vector :=
+        Types.Implementation.Spark_Group_Vectors.Empty_Vector)
       return String
    is
       Empty : Types.Implementation.Component_Vectors.Vector;
@@ -2065,7 +2088,10 @@ package body Adacovex.Renderers.HTML is
            Packages,
            Empty,
            All_Standards,
-           Theme);
+           Theme,
+           Spark_OK,
+           Spark_Totals,
+           Spark_Groups);
    end Render_Dashboard;
 
    function Render_Deps_JSON
@@ -2130,6 +2156,202 @@ package body Adacovex.Renderers.HTML is
       return To_String (Result);
    end Render_Deps_JSON;
 
+   --  Render the SPARK coverage fragment the Proof tab embeds: one
+   --  card with every metric side by side, the off-class breakdown,
+   --  and the per-group table.
+   function Render_Spark_Coverage_HTML
+     (Totals : Types.Implementation.Spark_Coverage_Totals;
+      Groups : Types.Implementation.Spark_Group_Vectors.Vector;
+      Group  : Types.Spark_Group_Kind := Types.Group_File;
+      OK     : Boolean := True) return String
+   is
+      R   : Unbounded_String;
+
+      procedure Put (S : String) is
+      begin
+         Append (R, S);
+      end Put;
+
+   begin
+      Put ("<div class=""card"" style=""margin-top:14px""><h2>SPARK Proof Coverage</h2>");
+      if not OK then
+         Put
+           ("<p style=""color:var(--muted)"">No gnatprove artefacts found; "
+            & "run <code>adacovex prove</code> first.</p></div>");
+         return To_String (R);
+      end if;
+      Put
+        ("<p style=""color:var(--muted);font-size:.85rem;margin:0 0 12px"">"
+         & "Coverage of the SPARK-relevant surface, grouped by "
+         & Types.To_String (Group)
+         & ". The prover never runs here; the numbers are read from "
+         & "<code>obj/gnatprove/</code>.</p>");
+      Put ("<div class=""chart-grid"">");
+      Put
+        ("<div class=""chart-card""><h3>Statements</h3><div class=""donut-center""><b>");
+      if Totals.Stmts_Total > 0 then
+         Put (Img (Totals.Stmts_Proved * 100 / Totals.Stmts_Total));
+         Put
+           ("%</b></div><p style=""color:var(--muted);font-size:.8rem;margin:4px 0 0"">");
+      else
+         Put
+           ("n/a</b></div><p style=""color:var(--muted);font-size:.8rem;margin:4px 0 0"">");
+      end if;
+      Put (Img (Totals.Stmts_Proved));
+      Put (" / ");
+      Put (Img (Totals.Stmts_Total));
+      Put ("</p></div>");
+      Put
+        ("<div class=""chart-card""><h3>Subprograms</h3><div class=""donut-center""><b>");
+      if Totals.Subs_Total > 0 then
+         Put (Img (Totals.Subs_Proved * 100 / Totals.Subs_Total));
+         Put
+           ("%</b></div><p style=""color:var(--muted);font-size:.8rem;margin:4px 0 0"">");
+      else
+         Put
+           ("n/a</b></div><p style=""color:var(--muted);font-size:.8rem;margin:4px 0 0"">");
+      end if;
+      Put (Img (Totals.Subs_Proved));
+      Put (" / ");
+      Put (Img (Totals.Subs_Total));
+      Put ("</p></div>");
+      Put
+        ("<div class=""chart-card""><h3>VCs</h3><div class=""donut-center""><b>");
+      if Totals.Checks_Total > 0 then
+         Put (Img (Totals.Checks_Proved * 100 / Totals.Checks_Total));
+         Put
+           ("%</b></div><p style=""color:var(--muted);font-size:.8rem;margin:4px 0 0"">");
+      else
+         Put
+           ("n/a</b></div><p style=""color:var(--muted);font-size:.8rem;margin:4px 0 0"">");
+      end if;
+      Put (Img (Totals.Checks_Proved));
+      Put (" / ");
+      Put (Img (Totals.Checks_Total));
+      Put ("</p></div>");
+      Put ("</div>");
+      Put ("<h3>Off classes</h3><table><tr><th>Class</th><th>Subprograms</th></tr>");
+      Put ("<tr><td>Irreducible (non-formal containers)</td><td>");
+      Put (Img (Totals.Off_Irreducible));
+      Put ("</td></tr><tr><td>I/O-bound</td><td>");
+      Put (Img (Totals.Off_IO_Bound));
+      Put ("</td></tr><tr><td><b>Work queue (provable backlog)</b></td><td><b>");
+      Put (Img (Totals.Off_Work_Queue));
+      Put ("</b></td></tr><tr><td>Not covered</td><td>");
+      Put (Img (Totals.Not_Covered_Subs));
+      Put ("</td></tr></table>");
+      if Integer (Groups.Length) > 0 then
+         Put
+           ("<h3>By "
+            & Types.To_String (Group)
+            & "</h3><table class=""spark-table""><tr><th>Group</th><th>Statements</th>"
+            & "<th>Subprograms</th><th>VCs</th></tr>");
+         for I in 1 .. Integer (Groups.Length) loop
+            Put ("<tr><td>");
+            Put (Html_Escape (Groups (I).Key (1 .. Groups (I).Key_Len)));
+            Put ("</td><td>");
+            Put (Img (Groups (I).Stmts_Proved));
+            Put (" / ");
+            Put (Img (Groups (I).Stmts_Total));
+            Put ("</td><td>");
+            Put (Img (Groups (I).Subs_Proved));
+            Put (" / ");
+            Put (Img (Groups (I).Subs_Total));
+            Put ("</td><td>");
+            Put (Img (Groups (I).Checks_Proved));
+            Put (" / ");
+            Put (Img (Groups (I).Checks_Total));
+            Put ("</td></tr>");
+         end loop;
+         Put ("</table>");
+      end if;
+      Put
+        ("<p style=""color:var(--muted);font-size:.8rem;margin:8px 0 0"">"
+         & "JSON: <a href=""/api/spark"">/api/spark</a></p></div>");
+      return To_String (R);
+   end Render_Spark_Coverage_HTML;
+
+   function Render_Spark_Coverage_JSON
+     (Totals : Types.Implementation.Spark_Coverage_Totals;
+      Groups : Types.Implementation.Spark_Group_Vectors.Vector;
+      Group  : Types.Spark_Group_Kind := Types.Group_File) return String
+   is
+      R   : Unbounded_String;
+      Off : constant Natural :=
+        Totals.Stmts_Total - Totals.Stmts_Proved - Totals.Stmts_Not_Covered;
+
+      procedure Put (S : String) is
+      begin
+         Append (R, S);
+      end Put;
+   begin
+      Put ("{" & Json_LF & Json_I1 & """group"": ");
+      Put ("""" & Types.To_String (Group) & """");
+      Put ("," & Json_LF & Json_I1 & """metrics"": {");
+      Put (Json_LF & Json_I2 & """statements"": {""proved"": ");
+      Put (Img (Totals.Stmts_Proved));
+      Put (", ""off"": ");
+      Put (Img (Off));
+      Put (", ""not_covered"": ");
+      Put (Img (Totals.Stmts_Not_Covered));
+      Put (", ""total"": ");
+      Put (Img (Totals.Stmts_Total));
+      Put ("},");
+      Put (Json_LF & Json_I2 & """subprograms"": {""proved"": ");
+      Put (Img (Totals.Subs_Proved));
+      Put (", ""total"": ");
+      Put (Img (Totals.Subs_Total));
+      Put ("},");
+      Put (Json_LF & Json_I2 & """checks"": {""proved"": ");
+      Put (Img (Totals.Checks_Proved));
+      Put (", ""total"": ");
+      Put (Img (Totals.Checks_Total));
+      Put ("}");
+      Put (Json_LF & Json_I1 & "},");
+      Put (Json_LF & Json_I1 & """off_classes"": {""irreducible"": ");
+      Put (Img (Totals.Off_Irreducible));
+      Put (", ""io_bound"": ");
+      Put (Img (Totals.Off_IO_Bound));
+      Put (", ""work_queue"": ");
+      Put (Img (Totals.Off_Work_Queue));
+      Put ("},");
+      Put (Json_LF & Json_I1 & """proof_warnings"": ");
+      Put (Img (Totals.Warnings));
+      Put (",");
+      Put (Json_LF & Json_I1 & """not_covered_subprograms"": ");
+      Put (Img (Totals.Not_Covered_Subs));
+      Put (",");
+      Put (Json_LF & Json_I1 & """unit_count"": ");
+      Put (Img (Totals.Unit_Ct));
+      Put (",");
+      Put (Json_LF & Json_I1 & """groups"": [");
+      for I in 1 .. Integer (Groups.Length) loop
+         if I > 1 then
+            Put (",");
+         end if;
+         Put (Json_LF & Json_I2 & "{" & Json_LF & Json_I3 & """key"": ");
+         Put ("""" & Json_Escape (Groups (I).Key (1 .. Groups (I).Key_Len)) & """");
+         Put ("," & Json_LF & Json_I3 & """stmts_proved"": ");
+         Put (Img (Groups (I).Stmts_Proved));
+         Put (", ""stmts_total"": ");
+         Put (Img (Groups (I).Stmts_Total));
+         Put (", ""subs_proved"": ");
+         Put (Img (Groups (I).Subs_Proved));
+         Put (", ""subs_total"": ");
+         Put (Img (Groups (I).Subs_Total));
+         Put (", ""checks_proved"": ");
+         Put (Img (Groups (I).Checks_Proved));
+         Put (", ""checks_total"": ");
+         Put (Img (Groups (I).Checks_Total));
+         Put (Json_LF & Json_I2 & "}");
+      end loop;
+      if Integer (Groups.Length) > 0 then
+         Put (Json_LF);
+      end if;
+      Put (Json_I1 & "]" & Json_LF & "}");
+      return To_String (R);
+   end Render_Spark_Coverage_JSON;
+
    --  Render the API endpoint catalog as JSON for /api/endpoints.
    --  Every route the --serve server dispatches on is listed once, with its
    --  HTTP method, path, a machine kind (json / svg / text), the dashboard
@@ -2178,6 +2400,14 @@ package body Adacovex.Renderers.HTML is
          "Metrics",
          "Key assessment metrics: SPARK level, VCs proved, test "
          & "counts, docstring coverage, and per-standard compliance status.");
+      Put (",");
+      Ent
+        ("GET",
+         "/api/spark",
+         "json",
+         "Proof",
+         "SPARK proof coverage: statement, subprogram, and VC metrics, "
+         & "the off-class breakdown, and per-group rollups.");
       Put (",");
       Ent
         ("GET",

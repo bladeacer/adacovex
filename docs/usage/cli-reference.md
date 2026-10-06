@@ -53,6 +53,12 @@ Compliance selection stays on `--standard` and its level companions
 | `--tz=ZONE` / `--timezone=ZONE` | OS timezone | both | Display timezone (IANA name or UTC/GMT offset) |
 | `--excludes=EXT,EXT` | empty | complexity | Skip comma-separated file extensions |
 | `--skip-path=PATH` | empty | complexity | Skip any file whose path contains PATH (repeatable) |
+| `--group=KIND` | `file` | spark-coverage | Row grouping: `file`\|`folder`\|`package` |
+| `--metric=METRIC` | `statements` | spark-coverage | Summary metric: `statements`\|`subprograms`\|`vcs` |
+| `--spark-format=FMT` | `text` | spark-coverage | Report shape: `text`\|`json` |
+| `--min-coverage=PCT` | `0` (all) | spark-coverage | Hide rows whose verified percentage is below PCT |
+| `--require-coverage=PCT` | off | spark-coverage | CI gate: exit 1 when the gate metric falls below PCT |
+| `--gate-metric=METRIC` | `statements` | spark-coverage | Metric the `--require-coverage` gate applies to |
 | `--emit-svg[=PATH]`, `--svg-path=PATH` | `<target>/docs/badges` | both | Output directory for SVG badges |
 | `--no-svg` | off | both | Suppress SVG badge output (wins over the emit form) |
 | `--emit-markdown[=PATH]`, `--emit-md[=PATH]`, `--md-path=PATH` | `<target>/docs` | both | Output directory for Markdown reports |
@@ -79,6 +85,7 @@ Compliance selection stays on `--standard` and its level companions
 | `man --check` | - | - | Exit 0 if the installed man page matches the binary version, 1 otherwise |
 | `man --force` | - | - | Reinstall the man page even when it already matches (repair) |
 | `man --dir=PATH` | `~/.local/share/man` | - | Install the man page under `PATH/man1` instead |
+| tldr | - | - | The curated cheat-sheet page at `docs/tldr/adacovex.md` (in-repo; `make tldr-check` keeps it in the tldr format) |
 | `--help` | - | both | Print usage and exit |
 
 `prove`-mode flags are also accepted by the main command. They are validated

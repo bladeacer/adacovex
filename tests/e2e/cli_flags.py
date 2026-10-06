@@ -450,6 +450,80 @@ def check_complexity(r: Results, tmp: Path) -> None:
     )
 
 
+def check_spark_coverage(r: Results, tmp: Path) -> None:
+    #  A project with no gnatprove artefacts fails loudly (exit 1);
+    #  the adacovex tree itself has obj/gnatprove from `make prove`,
+    #  so it produces every metric and the gate is evaluated.
+    empty = tmp / "spark-empty"
+    write_project(empty, 1)
+    no_artefacts = run(["spark-coverage", "--target", str(empty)])
+    r.check(
+        no_artefacts.returncode == 1 and "gnatprove" in no_artefacts.stdout,
+        "spark-coverage exits 1 when the proof artefacts are missing",
+    )
+
+    report = run(["spark-coverage", "--target", ".", "--group=package"])
+    r.check(
+        report.returncode == 0
+        and "Statement coverage" in report.stdout
+        and "Subprogram coverage" in report.stdout
+        and "VC coverage" in report.stdout,
+        "spark-coverage prints all three metrics",
+    )
+    r.check(
+        "irreducible" in report.stdout
+        and "io-bound" in report.stdout
+        and "work queue" in report.stdout,
+        "spark-coverage prints the three off classes",
+    )
+
+    json_report = run(
+        ["spark-coverage", "--target", ".", "--spark-format=json"]
+    )
+    r.check(
+        json_report.returncode == 0
+        and '"statements"' in json_report.stdout
+        and '"off_classes"' in json_report.stdout,
+        "spark-coverage --spark-format=json emits the JSON report",
+    )
+
+    gate_ok = run(
+        [
+            "spark-coverage",
+            "--target",
+            ".",
+            "--require-coverage=0",
+            "--gate-metric=vcs",
+        ]
+    )
+    r.check(
+        gate_ok.returncode == 0,
+        "spark-coverage exits 0 when the gate metric meets the threshold",
+    )
+    gate_fail = run(
+        [
+            "spark-coverage",
+            "--target",
+            ".",
+            "--require-coverage=100",
+            "--gate-metric=statements",
+        ]
+    )
+    r.check(
+        gate_fail.returncode == 1
+        and "statements" in gate_fail.stdout,
+        "spark-coverage exits 1 below the threshold and names the metric",
+    )
+
+    #  The spark-coverage flags only work with the subcommand.
+    misplaced = run(["--group=folder"])
+    r.check(
+        misplaced.returncode == 1
+        and "spark-coverage subcommand" in misplaced.stderr,
+        "--group without spark-coverage is rejected",
+    )
+
+
 def check_differential(r: Results, tmp: Path) -> None:
     repo = tmp / "diff-repo"
     write_project(repo, 1)
@@ -632,6 +706,7 @@ def main() -> int:
         check_target_equivalence(r, tmp)
         check_markdown_output(r, tmp)
         check_complexity(r, tmp)
+        check_spark_coverage(r, tmp)
         check_differential(r, tmp)
         check_differential_regression(r, tmp)
         check_prove(r, tmp)

@@ -66,6 +66,8 @@ steps:
 | `require-docstrings` | `''` | Minimum docstring coverage % (0-100); CI threshold gate |
 | `require-tests` | `''` | Minimum passing test count; CI threshold gate |
 | `require-proof` | `''` | Minimum proved-VC coverage % (0-100); CI threshold gate |
+| `require-coverage` | `''` | Minimum verified % for the `spark-coverage` gate; CI threshold gate |
+| `gate-metric` | `statements` | Metric the `require-coverage` gate applies to (statements/subprograms/vcs) |
 | `run-tests` | `false` | Build the target's native test suite and run it (requires `build: true`; the action runs `alr build` in the target root first) |
 | `test-command` | `./bin/test_runner` | Command (relative to workspace root) that runs the target's test suite |
 | `release-build` | `false` | Pass `--release` to `alr build` |

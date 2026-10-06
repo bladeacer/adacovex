@@ -7,14 +7,16 @@ the generator's own pipeline. The machine and the harness are on
 
 ## Binary size
 
-The debug-symbol-carrying build is ~14.0 MiB at `-O2` on the 1.50.0 tree
-(it was ~11.6 MiB at the `-O0` default; optimisation unrolls and inlines,
-which costs binary size in the symbol-carrying build). Stripping (`strip
-bin/adacovex`) yields ~5.3 MiB (~62% smaller, and ~17% smaller than
-1.46.0's stripped ~6.5 MiB) without affecting behaviour. That is below
-1.47.0's ~5.4 MiB: the 1.50.0 manual encoding (see below) gave back more
-than the code added since. GNAT keeps symbols by default for debugging;
-release artifacts are stripped. `make bench` reports both, so a size
+Before 1.58.0 the release profile kept GNAT's default `-g`, so the build
+was ~14.0 MiB at `-O2` on the 1.50.0 tree and ~5.3 MiB after `strip bin/adacovex`.
+Since 1.58.0 the release profile drops `-g` (it stays on the development
+profile, where debuggability is the point), so no strip pass is needed for a
+sane size: the 1.58.0 release build is ~9.5 MiB as linked, and
+`strip bin/adacovex` yields ~6.0 MiB (the increase over 1.50.0's ~5.3 MiB
+reflects the code added since, notably the SPARK coverage analyser and its
+report paths; the manual encoding below is unchanged). All figures on this
+page are taken on the release profile (`-O2 -gnatn`); a development build
+(`-O1`, with debug info) is larger by design. `make bench` reports both raw and stripped sizes, so a size
 regression is visible in the same command as the timings.
 
 ## Bundled offline manual

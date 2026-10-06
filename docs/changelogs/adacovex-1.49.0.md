@@ -61,7 +61,7 @@ text and field order; only the heading level changed.
 `docs/proof/16.1.0-ledger.md` was 276 lines. The skipped-units audit, the
 irreducible `SPARK_Mode (Off)` exceptions, and the formal-containers
 experiment moved to the new [proof-debt
-audit](../archive/16.1.0-ledger-audit.md) page. The ledger keeps the
+audit page (retired). The ledger keeps the
 baseline, the per-package fixes, and the verification commands, and links
 the audit page.
 
@@ -169,7 +169,7 @@ every hub in the split is now under 160 lines:
 - `docs/contributing/perf/optimisation-history.md` (243) keeps 1.43.0 and
   later; the 1.42.0 to 1.27.0 entries moved to [Performance optimisation
   history: earlier
-  releases](../archive/optimisation-history-archive.md).
+  releases (page retired).
 
 Every moved section kept its text and heading level, and the inbound anchor
 references were repointed (`AGENTS.md` now links the pipeline anchor on the

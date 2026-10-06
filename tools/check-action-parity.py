@@ -83,6 +83,11 @@ CLI_ONLY: Dict[str, str] = {
     "dir": "man --dir (local)",
     "out": "sbom --out output path (the action uploads the SBOM artifact itself)",
     "complexity": "complexity subcommand (local quality gate; wired into make complexity-check)",
+    "spark-coverage": "spark-coverage subcommand (local report; its CI gate is driven by require-coverage + gate-metric)",
+    "group": "spark-coverage --group display selector (local dashboard grouping)",
+    "metric": "spark-coverage --metric summary selector (local display)",
+    "spark-format": "spark-coverage --spark-format output selector (local report shape)",
+    "min-coverage": "spark-coverage --min-coverage display filter (local)",
     # CLI-alias shorthand spellings.  These all map onto a canonical flag that
     # either has a matching action input already or is itself CLI_ONLY above;
     # the action does not gain a second input per alias.

@@ -134,6 +134,24 @@ previous Python `check-complexity.py` script. Maintainers wire the same gate
 into their CI via `adacovex complexity --excludes=...`; see the
 [developer guide](../contributing/developer-guide.md) for the workflow.
 
+### `spark-coverage`
+
+`adacovex spark-coverage [--target=PATH]` reports SPARK proof coverage for
+the target: statement, subprogram, and VC coverage as three separate metrics,
+grouped by file, folder, or Ada package (`--group=file|folder|package`),
+with the off breakdown (irreducible / I/O-bound / work queue) as separate
+rows. The report reads `obj/gnatprove/gnatprove.out` and `gnatprove.sarif`;
+it never runs the prover, so run `adacovex prove` first. `--spark-format=json`
+prints the machine-readable report. `--min-coverage=PCT` hides group rows
+below a verified percentage from the display.
+
+CI gate: `--require-coverage=PCT --gate-metric=statements|subprograms|vcs`
+exits `1` when the named metric's proved share falls below the threshold
+and names the metric, its numerator, its denominator, and the achieved
+value. Exit `0` otherwise. The same gate ships in the GitHub Action as the
+`require-coverage` / `gate-metric` inputs. A missing proof artefact set is a
+loud `1`, never a silent `0`.
+
 ### The `prove` subcommand
 
 `adacovex prove --target=PATH` resolves a gnatprove installation and runs it against the target. It then falls through to the normal assessment pipeline. The pipeline parses the freshly generated proof summary. As a result, one command both proves and assesses.

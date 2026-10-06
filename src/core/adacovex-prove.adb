@@ -1654,11 +1654,15 @@ package body Adacovex.Prove is
 
       --  Write the cached gnatprove.out content back to the canonical path
       --  the assessment pipeline parses (<target>/obj/gnatprove/gnatprove.out)
-      --  when the cached summary exists. A no-op (silently) when the
-      --  summary blob is missing, oversized, or the write fails -- the
-      --  pipeline then reports Stone/0-VC exactly as before this restore
-      --  existed, never a corrupt summary.
-      procedure Restore_Proof_Output (Dir : String; Input_Hash : String) is
+      --  when the cached summary exists. Returns True only when a usable
+      --  summary now sits at that path. Returns False when the blob is
+      --  missing, oversized, poisoned (reports unproved VCs), or the write
+      --  fails: the caller must then fall through to a real gnatprove run
+      --  instead of claiming a warm hit, because an absent output file
+      --  would leave the pipeline at Stone/0-VC.
+      function Restore_Proof_Output (Dir : String; Input_Hash : String)
+        return Boolean
+      is
          Blob     : String (1 .. Adacovex.Cache.Max_Cache_Blob);
          BLen     : Natural := 0;
          Found    : Boolean := False;
@@ -1668,7 +1672,7 @@ package body Adacovex.Prove is
          Adacovex.Cache.Get_Cached
            (Proof_Output_Key (Input_Hash), Blob, BLen, Found);
          if not Found or else BLen = 0 then
-            return;
+            return False;
          end if;
          --  Cache-poison guard: a stored summary that itself reports
          --  unproved VCs comes from a degraded run (solver timeouts kept
@@ -1687,7 +1691,7 @@ package body Adacovex.Prove is
             Ada.Text_IO.Put_Line
               ("  cache:     stored summary reports unproved VCs --"
                & " discarding it and re-proving");
-            return;
+            return False;
          end if;
          declare
             use Ada.Streams.Stream_IO;
@@ -1713,7 +1717,9 @@ package body Adacovex.Prove is
                if Is_Open (F) then
                   Close (F);
                end if;
+               return False;
          end;
+         return True;
       end Restore_Proof_Output;
    begin
       declare
@@ -1827,12 +1833,20 @@ package body Adacovex.Prove is
             Hit     : Boolean := Adacovex.Cache.Exists (In_Hash);
          begin
             if Hit then
-               Restore_Proof_Output (Target_Dir, In_Hash);
+               if Restore_Proof_Output (Target_Dir, In_Hash) then
+                  Ada.Text_IO.Put_Line
+                    ("  cache:     gnatprove inputs unchanged -- reusing"
+                     & " prior proof (gnatprove.out served from cache)");
+                  Success := True;
+                  return;
+               end if;
+               --  The cached summary was missing, poisoned, or could not
+               --  be written back. The hit marker (if any) is already
+               --  gone, so fall through to a real gnatprove run: a warm
+               --  claim over a missing output file would leave the
+               --  pipeline parsing nothing and reporting Stone/0-VC.
                Ada.Text_IO.Put_Line
-                 ("  cache:     gnatprove inputs unchanged -- reusing prior"
-                  & " proof (gnatprove.out served from cache)");
-               Success := True;
-               return;
+                 ("  cache:     cached proof unusable -- running gnatprove");
             end if;
          end;
       end if;

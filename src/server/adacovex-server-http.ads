@@ -22,12 +22,13 @@ package Adacovex.Server.HTTP is
       Route_API_Metrics,
       Route_API_Deps,
       Route_API_Endpoints,
+      Route_API_Spark,
       Route_Docs,
       Route_Not_Found);
 
    --  Map a request path to its handler action.
    --  Returns the Route_Kind for the given path. The dashboard is at "/".
-   --  The JSON APIs are at "/api/metrics", "/api/deps", and the endpoint
+   --  The JSON APIs are at "/api/metrics", "/api/deps", "/api/spark", and the endpoint
    --  catalog at "/api/endpoints". The SVG badge endpoints are at
    --  "/badge/*.svg". The bundled offline manual is at "/docs" and every
    --  path under "/docs/" (each page, stylesheet, script, and badge of the
@@ -58,6 +59,8 @@ package Adacovex.Server.HTTP is
        then Route_API_Deps
        elsif Path = "/api/endpoints"
        then Route_API_Endpoints
+       elsif Path = "/api/spark"
+       then Route_API_Spark
        elsif Path = "/docs"
        then Route_Docs
        elsif Path'Length >= 6
@@ -88,6 +91,10 @@ package Adacovex.Server.HTTP is
       Graph         : Types.Implementation.Component_Vectors.Vector;
       All_Standards : Boolean := False;
       Theme         : Types.Dashboard_Theme := Types.System_Theme;
+      --  SPARK proof coverage for the Proof tab panel and /api/spark.
+      Spark_OK     : Boolean := False;
+      Spark_Totals : Types.Implementation.Spark_Coverage_Totals;
+      Spark_Groups : Types.Implementation.Spark_Group_Vectors.Vector;
    end record;
 
    --  Start the HTTP server (runs until Ctrl+C or socket error).

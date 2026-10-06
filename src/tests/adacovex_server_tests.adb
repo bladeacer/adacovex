@@ -210,6 +210,8 @@ package body Adacovex_Server_Tests is
         (Route ("/api/metrics") = Route_API_Metrics, "metrics API route");
       R.Check (Route ("/api/deps") = Route_API_Deps, "deps API route");
       R.Check
+        (Route ("/api/spark") = Route_API_Spark, "spark coverage API route");
+      R.Check
         (Route ("/api/endpoints") = Route_API_Endpoints,
          "endpoints catalog route");
 
@@ -307,6 +309,7 @@ package body Adacovex_Server_Tests is
          and then Route ("/badge/iec62304.svg") /= Route_Not_Found
          and then Route ("/api/metrics") /= Route_Not_Found
          and then Route ("/api/deps") /= Route_Not_Found
+         and then Route ("/api/spark") /= Route_Not_Found
          and then Route ("/api/endpoints") /= Route_Not_Found
          and then Route ("/docs") /= Route_Not_Found
          and then Route ("/docs/") /= Route_Not_Found,

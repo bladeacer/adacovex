@@ -8,6 +8,9 @@ with Adacovex.Timezones;
 package body Adacovex.Config is
 
    use type Types.SBOM_Format_Kind;
+   use type Types.Spark_Metric_Kind;
+   use type Types.Spark_Group_Kind;
+   use type Types.Spark_Report_Kind;
 
    function Has_Prefix (S : String; Prefix : String) return Boolean
    with
@@ -174,12 +177,17 @@ package body Adacovex.Config is
    end Is_Completion_Shell;
 
    procedure Set_String (Dst : out String; Dst_Len : out Natural; Src : String)
-   is
+     with SPARK_Mode => On is
    begin
       --  Clamp to the fixed destination buffer so an overlong CLI argument
       --  never raises Constraint_Error; Dst_Len reflects the clamped length.
+      --  The whole buffer is initialised first: SPARK requires an out
+      --  parameter to be fully initialised on exit, and every caller reads
+      --  only the Dst_Len prefix it is given back.
+      Dst := (others => ' ');
       Dst_Len := Natural'Min (Src'Length, Dst'Length);
       for J in Src'First .. Src'First + Dst_Len - 1 loop
+         pragma Loop_Invariant (J - Src'First + 1 in 1 .. Dst_Len);
          Dst (J - Src'First + 1) := Src (J);
       end loop;
    end Set_String;
@@ -241,8 +249,8 @@ package body Adacovex.Config is
    --  convenience. Sets Valid False and Result to Stone on parse failure.
    procedure To_SPARK_Level
      (S : String; Result : out Types.SPARK_Level; Valid : out Boolean)
-   is
-      Up : String (1 .. S'Length);
+     with SPARK_Mode => On is
+      Up : String (1 .. S'Length) := (others => ' ');
    begin
       for I in S'Range loop
          if S (I) in 'a' .. 'z' then
@@ -267,6 +275,58 @@ package body Adacovex.Config is
          Valid := False;
       end if;
    end To_SPARK_Level;
+
+   --  Map a CLI word to a spark-coverage metric, row grouping, or
+   --  report format. Valid is set False on an unrecognised word so
+   --  the caller can fail loudly with the accepted set.
+   procedure Spark_Metric_From
+     (S : String; Result : out Types.Spark_Metric_Kind; Valid : out Boolean)
+   is
+   begin
+      Valid := True;
+      if S = "statements" then
+         Result := Types.Metric_Statements;
+      elsif S = "subprograms" then
+         Result := Types.Metric_Subprograms;
+      elsif S = "vcs" then
+         Result := Types.Metric_Checks;
+      else
+         Result := Types.Metric_Statements;
+         Valid := False;
+      end if;
+   end Spark_Metric_From;
+
+   procedure Spark_Group_From
+     (S : String; Result : out Types.Spark_Group_Kind; Valid : out Boolean)
+   is
+   begin
+      Valid := True;
+      if S = "file" then
+         Result := Types.Group_File;
+      elsif S = "folder" then
+         Result := Types.Group_Folder;
+      elsif S = "package" then
+         Result := Types.Group_Package;
+      else
+         Result := Types.Group_File;
+         Valid := False;
+      end if;
+   end Spark_Group_From;
+
+   procedure Spark_Report_From
+     (S : String; Result : out Types.Spark_Report_Kind; Valid : out Boolean)
+   is
+   begin
+      Valid := True;
+      if S = "text" then
+         Result := Types.Spark_Text;
+      elsif S = "json" then
+         Result := Types.Spark_JSON;
+      else
+         Result := Types.Spark_Text;
+         Valid := False;
+      end if;
+   end Spark_Report_From;
 
    function Is_Valid_DAL (S : String) return Boolean
    with
@@ -403,7 +463,8 @@ package body Adacovex.Config is
      & "require-tests require-proof complexity export metrics help "
      & "serve-workers tz timezone excludes skip-path "
      & "workers svg-path md-path emit-md no-md strict diff base delta spark "
-     & "docstrs tests";
+     & "docstrs tests spark-coverage group metric spark-format "
+     & "min-coverage require-coverage gate-metric";
 
    --  Expose the flag list for the shell-completion generator (see spec).
    function Flag_List return String is
@@ -413,9 +474,17 @@ package body Adacovex.Config is
 
    --  Levenshtein edit distance between two strings, capped at 9 so the
    --  suggestion scan stays cheap (anything farther away is "not similar").
-   function Edit_Distance (A, B : String) return Natural is
+   function Edit_Distance (A, B : String) return Natural
+     with SPARK_Mode => On is
       subtype Row_Idx is Natural range 0 .. 64;
-      type Row_Arr is array (Row_Idx) of Natural;
+      --  Every cell holds a partial edit distance between a prefix of A
+      --  and a prefix of B, and after the early return above neither
+      --  prefix can exceed 64 characters, so no cell ever exceeds 64.
+      --  Carrying that bound in the subtype makes each "+ 1" of the
+      --  recurrence arithmetically safe without a loop invariant over
+      --  every cell.
+      subtype Cell is Natural range 0 .. 64;
+      type Row_Arr is array (Row_Idx) of Cell;
       ALen : constant Natural := A'Length;
       BLen : constant Natural := B'Length;
       Row  : Row_Arr := (others => 0);
@@ -434,10 +503,15 @@ package body Adacovex.Config is
             if A (A'First + I - 1) = B (B'First + J - 1) then
                Row (J) := Prev (J - 1);
             else
+               --  The 64 clamp cannot change a result the caller observes:
+               --  distances at or below the cap are exact either way, and
+               --  the caller only asks whether the distance is at most 2.
                Row (J) :=
                  Natural'Min
-                   (Natural'Min (Prev (J) + 1, Row (J - 1) + 1),
-                    Prev (J - 1) + 1);
+                   (64,
+                    Natural'Min
+                      (Natural'Min (Prev (J) + 1, Row (J - 1) + 1),
+                       Prev (J - 1) + 1));
             end if;
             exit when Row (J) > 9 and J = BLen;
          end loop;
@@ -446,41 +520,46 @@ package body Adacovex.Config is
    end Edit_Distance;
 
    --  Normalise an unknown argument into a comparable flag name: strip a
-   --  leading "--", drop any "=value" suffix, lowercase it.
+   --  leading "--", drop any "=value" suffix, lowercase it. The scan walks
+   --  S'Range rather than advancing a cursor, so an empty argument and an
+   --  index at the end of the string need no cursor arithmetic at all: no
+   --  overflow, range, or index VC on a cursor, and the discrete loop
+   --  terminates by construction.
    procedure Normalize_Flag
      (S : String; Out_Buf : out String; Out_Len : out Natural)
-   is
-      First : Natural := S'First;
+     with SPARK_Mode => On is
+      Lead    : Natural range 0 .. 2 := 0;
+      Leading : Boolean := True;
+      Stopped : Boolean := False;
    begin
       Out_Len := 0;
-      if First <= S'Last and then S (First) = '-' then
-         First := First + 1;
-         if First <= S'Last and then S (First) = '-' then
-            First := First + 1;
-         end if;
-      end if;
-      while First <= S'Last loop
-         exit when S (First) = '=';
-         if S (First) in 'A' .. 'Z' then
-            if Out_Len < Out_Buf'Last then
-               Out_Len := Out_Len + 1;
-               Out_Buf (Out_Len) :=
-                 Character'Val (Character'Pos (S (First)) + 32);
-            end if;
+      Out_Buf := (others => ' ');
+      for I in S'Range loop
+         exit when Stopped;
+         if Leading and then S (I) = '-' and then Lead < 2 then
+            Lead := Lead + 1;
+         elsif S (I) = '=' then
+            Stopped := True;
          else
+            Leading := False;
             if Out_Len < Out_Buf'Last then
                Out_Len := Out_Len + 1;
-               Out_Buf (Out_Len) := S (First);
+               if S (I) in 'A' .. 'Z' then
+                  Out_Buf (Out_Len) :=
+                    Character'Val (Character'Pos (S (I)) + 32);
+               else
+                  Out_Buf (Out_Len) := S (I);
+               end if;
             end if;
          end if;
-         First := First + 1;
       end loop;
    end Normalize_Flag;
 
    --  Return " (did you mean --xxx?)" (or " --xxx or --yyy") for an
    --  unknown token, or "" when no known flag is close enough. The caller
    --  appends this to the "unknown option/argument" error message.
-   function Suggest_Flags (S : String) return String is
+   function Suggest_Flags (S : String) return String
+     with SPARK_Mode => On is
       Buf     : String (1 .. 128) := (others => ' ');
       Len     : Natural := 0;
       NFlag   : String (1 .. 64) := (others => ' ');
@@ -499,16 +578,35 @@ package body Adacovex.Config is
       end if;
       --  Walk the space-separated Known_Flags list.
       while Start <= Known_Flags'Last loop
+         pragma Loop_Invariant
+           (Start in Known_Flags'First .. Known_Flags'Last + 1);
+         pragma Loop_Invariant (MCt <= 3);
+         pragma Loop_Invariant (for all K in 1 .. 3 => MLen (K) <= 32);
+         pragma Loop_Variant (Decreases => Known_Flags'Last + 1 - Start);
          Fin := Start;
-         while Fin <= Known_Flags'Last and then Known_Flags (Fin) /= ' ' loop
+         while Fin <= Known_Flags'Last and then Known_Flags (Fin) /= ' '
+         loop
+            pragma Loop_Invariant (Fin in Start .. Known_Flags'Last + 1);
+            pragma Loop_Variant (Increases => Fin);
             Fin := Fin + 1;
          end loop;
          declare
-            D : constant Natural :=
-              Edit_Distance
-                (NFlag (1 .. NLen), Known_Flags (Start .. Fin - 1));
+            D : Natural;
          begin
-            if D <= 2 and then D <= Best then
+            --  An empty segment (a stray double space) has no comparable
+            --  word; it is never within edit distance 2 of a real flag, so
+            --  it scores the same "far away" constant Edit_Distance would
+            --  return, and the slice below is never null.
+            if Fin = Start then
+               D := 99;
+            else
+               D := Edit_Distance
+                 (NFlag (1 .. NLen), Known_Flags (Start .. Fin - 1));
+            end if;
+            --  The 32-character bound keeps the Matches write below in
+            --  range; no Known_Flags word reaches it, so a longer word is
+            --  simply never suggested.
+            if D <= 2 and then D <= Best and then Fin - Start <= 32 then
                if D < Best then
                   MCt := 0;
                   Best := D;
@@ -537,11 +635,14 @@ package body Adacovex.Config is
          Len := Len + 13;
       end if;
       for I in 1 .. MCt loop
+         pragma Loop_Invariant (Len in 0 .. Buf'Last);
+         pragma Loop_Invariant (MCt <= 3);
+         pragma Loop_Invariant (for all K in 1 .. 3 => MLen (K) <= 32);
          if Len < Buf'Last then
             Len := Len + 1;
             Buf (Len) := ' ';
          end if;
-         if I > 1 and then Len < Buf'Last then
+         if I > 1 and then Len + 3 <= Buf'Last then
             Buf (Len + 1 .. Len + 3) := "or ";
             Len := Len + 3;
          end if;
@@ -1076,6 +1177,251 @@ package body Adacovex.Config is
                        (Cfg.Complexity_Skip_Paths,
                         Cfg.Skip_Paths_Len,
                         A (A'First + 12 .. A'Last));
+                  elsif A = "--group" then
+                     I := I + 1;
+                     if I <= Count then
+                        declare
+                           G  : Types.Spark_Group_Kind;
+                           OK : Boolean;
+                        begin
+                           Spark_Group_From (Args (I), G, OK);
+                           if OK then
+                              Cfg.Spark_Group := G;
+                           else
+                              Set_Error
+                                (Cfg,
+                                 "--group must be file, folder, or package "
+                                 & "(got: "
+                                 & Args (I)
+                                 & ")");
+                           end if;
+                        end;
+                     else
+                        Set_Error
+                          (Cfg,
+                           "--group requires a value (file | folder | package)");
+                     end if;
+                  elsif Has_Prefix (A, "--group=") then
+                     declare
+                        G  : Types.Spark_Group_Kind;
+                        OK : Boolean;
+                     begin
+                        Spark_Group_From
+                          (A (A'First + 8 .. A'Last), G, OK);
+                        if OK then
+                           Cfg.Spark_Group := G;
+                        else
+                           Set_Error
+                             (Cfg,
+                              "--group must be file, folder, or package (got: "
+                              & A (A'First + 8 .. A'Last)
+                              & ")");
+                        end if;
+                     end;
+                  elsif A = "--metric" then
+                     I := I + 1;
+                     if I <= Count then
+                        declare
+                           M  : Types.Spark_Metric_Kind;
+                           OK : Boolean;
+                        begin
+                           Spark_Metric_From (Args (I), M, OK);
+                           if OK then
+                              Cfg.Spark_Metric := M;
+                           else
+                              Set_Error
+                                (Cfg,
+                                 "--metric must be statements, subprograms, or "
+                                 & "vcs (got: "
+                                 & Args (I)
+                                 & ")");
+                           end if;
+                        end;
+                     else
+                        Set_Error
+                          (Cfg,
+                           "--metric requires a value "
+                           & "(statements | subprograms | vcs)");
+                     end if;
+                  elsif Has_Prefix (A, "--metric=") then
+                     declare
+                        M  : Types.Spark_Metric_Kind;
+                        OK : Boolean;
+                     begin
+                        Spark_Metric_From
+                          (A (A'First + 9 .. A'Last), M, OK);
+                        if OK then
+                           Cfg.Spark_Metric := M;
+                        else
+                           Set_Error
+                             (Cfg,
+                              "--metric must be statements, subprograms, or "
+                              & "vcs (got: "
+                              & A (A'First + 9 .. A'Last)
+                              & ")");
+                        end if;
+                     end;
+                  elsif A = "--gate-metric" then
+                     I := I + 1;
+                     if I <= Count then
+                        declare
+                           M  : Types.Spark_Metric_Kind;
+                           OK : Boolean;
+                        begin
+                           Spark_Metric_From (Args (I), M, OK);
+                           if OK then
+                              Cfg.Spark_Gate_Metric := M;
+                           else
+                              Set_Error
+                                (Cfg,
+                                 "--gate-metric must be statements, subprograms, "
+                                 & "or vcs (got: "
+                                 & Args (I)
+                                 & ")");
+                           end if;
+                        end;
+                     else
+                        Set_Error
+                          (Cfg,
+                           "--gate-metric requires a value "
+                           & "(statements | subprograms | vcs)");
+                     end if;
+                  elsif Has_Prefix (A, "--gate-metric=") then
+                     declare
+                        M  : Types.Spark_Metric_Kind;
+                        OK : Boolean;
+                     begin
+                        Spark_Metric_From
+                          (A (A'First + 14 .. A'Last), M, OK);
+                        if OK then
+                           Cfg.Spark_Gate_Metric := M;
+                        else
+                           Set_Error
+                             (Cfg,
+                              "--gate-metric must be statements, subprograms, "
+                              & "or vcs (got: "
+                              & A (A'First + 14 .. A'Last)
+                              & ")");
+                        end if;
+                     end;
+                  elsif A = "--spark-format" then
+                     I := I + 1;
+                     if I <= Count then
+                        declare
+                           R  : Types.Spark_Report_Kind;
+                           OK : Boolean;
+                        begin
+                           Spark_Report_From (Args (I), R, OK);
+                           if OK then
+                              Cfg.Spark_Report := R;
+                           else
+                              Set_Error
+                                (Cfg,
+                                 "--spark-format must be text or json (got: "
+                                 & Args (I)
+                                 & ")");
+                           end if;
+                        end;
+                     else
+                        Set_Error
+                          (Cfg,
+                           "--spark-format requires a value (text | json)");
+                     end if;
+                  elsif Has_Prefix (A, "--spark-format=") then
+                     declare
+                        R  : Types.Spark_Report_Kind;
+                        OK : Boolean;
+                     begin
+                        Spark_Report_From
+                          (A (A'First + 15 .. A'Last), R, OK);
+                        if OK then
+                           Cfg.Spark_Report := R;
+                        else
+                           Set_Error
+                             (Cfg,
+                              "--spark-format must be text or json (got: "
+                              & A (A'First + 15 .. A'Last)
+                              & ")");
+                        end if;
+                     end;
+                  elsif A = "--min-coverage" then
+                     I := I + 1;
+                     if I <= Count then
+                        begin
+                           Cfg.Spark_Min := Natural'Value (Args (I));
+                           if Cfg.Spark_Min > 100 then
+                              Set_Error
+                                (Cfg, "--min-coverage must be 0..100");
+                              Cfg.Spark_Min := 0;
+                           end if;
+                        exception
+                           when Constraint_Error =>
+                              Set_Error
+                                (Cfg,
+                                 "--min-coverage must be a number 0..100 (got: "
+                                 & Args (I)
+                                 & ")");
+                        end;
+                     else
+                        Set_Error (Cfg, "--min-coverage requires a value");
+                     end if;
+                  elsif Has_Prefix (A, "--min-coverage=") then
+                     begin
+                        Cfg.Spark_Min := Natural'Value (A (A'First + 15 .. A'Last));
+                        if Cfg.Spark_Min > 100 then
+                           Set_Error (Cfg, "--min-coverage must be 0..100");
+                           Cfg.Spark_Min := 0;
+                        end if;
+                     exception
+                        when Constraint_Error =>
+                           Set_Error
+                             (Cfg,
+                              "--min-coverage must be a number 0..100 (got: "
+                              & A (A'First + 15 .. A'Last)
+                              & ")");
+                     end;
+                  elsif A = "--require-coverage" then
+                     I := I + 1;
+                     if I <= Count then
+                        begin
+                           Cfg.Spark_Require := Natural'Value (Args (I));
+                           if Cfg.Spark_Require > 100 then
+                              Set_Error
+                                (Cfg, "--require-coverage must be 0..100");
+                              Cfg.Spark_Require := 0;
+                           else
+                              Cfg.Spark_Require_Set := True;
+                           end if;
+                        exception
+                           when Constraint_Error =>
+                              Set_Error
+                                (Cfg,
+                                 "--require-coverage must be a number 0..100 "
+                                 & "(got: "
+                                 & Args (I)
+                                 & ")");
+                        end;
+                     else
+                        Set_Error (Cfg, "--require-coverage requires a value");
+                     end if;
+                  elsif Has_Prefix (A, "--require-coverage=") then
+                     begin
+                        Cfg.Spark_Require := Natural'Value (A (A'First + 19 .. A'Last));
+                        if Cfg.Spark_Require > 100 then
+                           Set_Error (Cfg, "--require-coverage must be 0..100");
+                           Cfg.Spark_Require := 0;
+                        else
+                           Cfg.Spark_Require_Set := True;
+                        end if;
+                     exception
+                        when Constraint_Error =>
+                           Set_Error
+                             (Cfg,
+                              "--require-coverage must be a number 0..100 "
+                              & "(got: "
+                              & A (A'First + 19 .. A'Last)
+                              & ")");
+                     end;
                   elsif A = "--emit-svg" then
                      --  Optional value: bare --emit-svg (and the --svg-path
                      --  alias) write to the default <target>/docs/badges
@@ -1228,6 +1574,8 @@ package body Adacovex.Config is
                      Cfg.Prove_Mode := True;
                   elsif A = "complexity" then
                      Cfg.Complexity_Mode := True;
+                  elsif A = "spark-coverage" then
+                     Cfg.Spark_Coverage_Mode := True;
                   elsif A = "status" then
                      Cfg.Status_Mode := True;
                   elsif A = "--export" then
@@ -1892,6 +2240,23 @@ package body Adacovex.Config is
                "--excludes and --skip-path require the complexity subcommand");
          end if;
 
+         --  The spark-coverage display/gate flags only make sense with the
+         --  spark-coverage subcommand; reject a silent no-op.
+         if (Cfg.Spark_Min > 0
+             or else Cfg.Spark_Require_Set
+             or else Cfg.Spark_Gate_Metric /= Types.Metric_Statements
+             or else Cfg.Spark_Report /= Types.Spark_Text
+             or else Cfg.Spark_Group /= Types.Group_File
+             or else Cfg.Spark_Metric /= Types.Metric_Statements)
+           and then not Cfg.Spark_Coverage_Mode
+         then
+            Set_Error
+              (Cfg,
+               "--group, --metric, --spark-format, --min-coverage, "
+               & "--require-coverage, and --gate-metric require the "
+               & "spark-coverage subcommand");
+         end if;
+
          -- --tz / --timezone must name a supported timezone (validated loudly
          -- so a typo never silently falls back to the OS zone.
          if Cfg.Time_Zone_Len > 0 then
@@ -2055,6 +2420,7 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line ("       adacovex status --target=PATH");
       Ada.Text_IO.Put_Line ("       adacovex man [--check] [--dir=PATH]");
       Ada.Text_IO.Put_Line ("       adacovex complexity [--target=PATH]");
+      Ada.Text_IO.Put_Line ("       adacovex spark-coverage [--target=PATH]");
       Ada.Text_IO.Put_Line ("");
       Ada.Text_IO.Put_Line ("Options:");
       Ada.Text_IO.Put_Line
@@ -2275,6 +2641,26 @@ package body Adacovex.Config is
         ("                        --skip-path=docs/api-docs)");
       Ada.Text_IO.Put_Line ("  --verbose             Verbose diagnostics");
       Ada.Text_IO.Put_Line
+        ("  --group=KIND          With spark-coverage only: row grouping");
+      Ada.Text_IO.Put_Line
+        ("                        (file | folder | package; default file)");
+      Ada.Text_IO.Put_Line
+        ("  --metric=METRIC       With spark-coverage only: metric for the");
+      Ada.Text_IO.Put_Line
+        ("                        summary (statements | subprograms | vcs)");
+      Ada.Text_IO.Put_Line
+        ("  --spark-format=FMT    With spark-coverage only: text | json");
+      Ada.Text_IO.Put_Line
+        ("  --min-coverage=PCT    With spark-coverage only: hide rows below PCT");
+      Ada.Text_IO.Put_Line
+        ("  --require-coverage=P  With spark-coverage only: CI gate (exit 1");
+      Ada.Text_IO.Put_Line
+        ("                        below PCT); --gate-metric names the metric");
+      Ada.Text_IO.Put_Line
+        ("  --gate-metric=METRIC  With spark-coverage only: gate metric");
+      Ada.Text_IO.Put_Line
+        ("                        (default statements)");
+      Ada.Text_IO.Put_Line
         ("  --version             Print the bundled version (read from");
       Ada.Text_IO.Put_Line
         ("                        alire-dev.toml; release builds bundle the");
@@ -2325,10 +2711,19 @@ package body Adacovex.Config is
    --  suffix so "--standard=all", "--Serve", "-r", and "standard" all
    --  match a canonical topic. A single shorthand letter resolves to its
    --  canonical flag name, so `help -r` prints the require-proof section.
-   function Normalize_Topic (Topic : String) return String is
+   --  The Pre keeps the topic non-empty (so its bounds are valid index
+   --  values) and far enough from Natural'Last that the First + 2 /
+   --  First + 1 arithmetic below cannot overflow; it is written as a
+   --  subtraction so the Pre itself cannot overflow while being checked.
+   --  The only caller passes a bounded help-topic buffer slice.
+   function Normalize_Topic (Topic : String) return String
+     with
+       SPARK_Mode => On,
+       Pre        => Topic'Length >= 1 and Topic'Last < Natural'Last - 2
+   is
       First : Natural := Topic'First;
       Last  : Natural := Topic'Last;
-      Buf   : String (1 .. Topic'Length);
+      Buf   : String (1 .. Topic'Length) := (others => ' ');
       Len   : Natural := 0;
    begin
       if Last - First + 1 >= 2
@@ -2340,6 +2735,7 @@ package body Adacovex.Config is
          First := First + 1;
       end if;
       for I in First .. Last loop
+         pragma Loop_Invariant (Len = I - First);
          exit when Topic (I) = '=';
          Len := Len + 1;
          Buf (Len) := Topic (I);
@@ -2558,6 +2954,43 @@ package body Adacovex.Config is
             & "  adacovex complexity --target=. --excludes=md,rst"
             & ASCII.LF
             & "  adacovex complexity --target=. --skip-path=docs/api-docs");
+      elsif T = "spark-coverage"
+        or else T = "group"
+        or else T = "metric"
+        or else T = "spark-format"
+        or else T = "min-coverage"
+        or else T = "require-coverage"
+        or else T = "gate-metric"
+      then
+         Print_Section
+           ("spark-coverage",
+            "SPARK proof-coverage report: statement, subprogram, and VC"
+            & ASCII.LF
+            & "coverage, grouped by file, folder, or package, with the off"
+            & ASCII.LF
+            & "breakdown (irreducible / I/O-bound / work queue).  It reads"
+            & ASCII.LF
+            & "obj/gnatprove/gnatprove.out and gnatprove.sarif; it never"
+            & ASCII.LF
+            & "runs the prover."
+            & ASCII.LF
+            & "  --group=file|folder|package   row grouping (default file)"
+            & ASCII.LF
+            & "  --metric=statements|subprograms|vcs   summary metric"
+            & ASCII.LF
+            & "  --spark-format=text|json      report shape"
+            & ASCII.LF
+            & "  --min-coverage=PCT            hide rows below PCT"
+            & ASCII.LF
+            & "  --require-coverage=PCT        CI gate: exit 1 below PCT"
+            & ASCII.LF
+            & "  --gate-metric=METRIC          metric the gate applies to"
+            & ASCII.LF
+            & ASCII.LF
+            & "  adacovex spark-coverage --target=. --group=package"
+            & ASCII.LF
+            & "  adacovex spark-coverage --require-coverage=60 "
+            & "--gate-metric=subprograms");
       elsif T = "standard"
         or else T = "dal"
         or else T = "asil"

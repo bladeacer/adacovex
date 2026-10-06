@@ -26,6 +26,7 @@ with Adacovex.Renderers.SBOM;
 with Adacovex.Server.HTTP;
 with Adacovex.Cache;
 with Adacovex.Complexity;
+with Adacovex.Spark_Coverage;
 
 procedure Adacovex_Main is
    use Ada.Calendar;
@@ -666,6 +667,71 @@ begin
       return;
    end if;
 
+   -- spark-coverage mode: SPARK proof-coverage report and CI gate
+   if Cfg.Spark_Coverage_Mode then
+      declare
+         Units   : Adacovex.Types.Implementation.Spark_Coverage_Vectors.Vector;
+         Groups  : Adacovex.Types.Implementation.Spark_Group_Vectors.Vector;
+         Totals  : Adacovex.Types.Implementation.Spark_Coverage_Totals;
+         Skipped : Natural;
+         P_OK    : Boolean;
+      begin
+         Adacovex.Spark_Coverage.Analyze
+           (Target (1 .. TLen),
+            "",
+            Cfg.Spark_Group,
+            Units,
+            Groups,
+            Totals,
+            Skipped,
+            P_OK);
+         if not P_OK then
+            Ada.Text_IO.Put_Line
+              ("error: gnatprove artefacts not found under "
+               & Target (1 .. TLen)
+               & "/obj/gnatprove; run `adacovex prove` first");
+            Ada.Command_Line.Set_Exit_Status (1);
+            return;
+         end if;
+         case Cfg.Spark_Report is
+            when Adacovex.Types.Spark_Text =>
+               Adacovex.Spark_Coverage.Print_Report
+                 (Totals, Groups, Cfg.Spark_Group, Cfg.Spark_Min);
+            when Adacovex.Types.Spark_JSON =>
+               Adacovex.Spark_Coverage.Print_JSON
+                 (Totals, Units, Groups, Cfg.Spark_Group);
+         end case;
+         declare
+            Proved : Natural;
+            Total  : Natural;
+            Msg    : Adacovex.Types.Path_Field;
+            MLen   : Natural;
+            Failed : Boolean := False;
+         begin
+            Adacovex.Spark_Coverage.Metric_Values
+              (Totals, Cfg.Spark_Gate_Metric, Proved, Total);
+            if Total > 0 then
+               Failed := Proved * 100 < Cfg.Spark_Require * Total;
+            else
+               Failed := Cfg.Spark_Require_Set;
+            end if;
+            if Cfg.Spark_Require_Set and then Failed then
+               Adacovex.Spark_Coverage.Gate_Failure_Message
+                 (Cfg.Spark_Gate_Metric,
+                  Proved,
+                  Total,
+                  Cfg.Spark_Require,
+                  Msg,
+                  MLen);
+               Ada.Text_IO.Put_Line (Msg (1 .. MLen));
+            end if;
+            Ada.Command_Line.Set_Exit_Status
+              (if Cfg.Spark_Require_Set and then Failed then 1 else 0);
+         end;
+      end;
+      return;
+   end if;
+
    -- Completion mode: emit a shell completion script (bash/fish/zsh/pwsh)
    -- for this binary's flag set and exit. The script is generated from
    -- Config.Flag_List so it always matches the live CLI options.
@@ -1176,6 +1242,28 @@ begin
          State.Packages := Packages;
          State.All_Standards := Cfg.Standard_All;
          State.Theme := Cfg.Theme;
+         --  Resolve the SPARK coverage so the Proof tab panel and
+         --  /api/spark serve the same numbers the spark-coverage
+         --  subcommand reports (best effort: a missing artefact set
+         --  serves the "run adacovex prove" note).
+         declare
+            Units   : Adacovex.Types.Implementation.Spark_Coverage_Vectors.Vector;
+            Groups  : Adacovex.Types.Implementation.Spark_Group_Vectors.Vector;
+            Totals  : Adacovex.Types.Implementation.Spark_Coverage_Totals;
+            Skipped : Natural;
+         begin
+            Adacovex.Spark_Coverage.Analyze
+              (Target (1 .. TLen),
+               "",
+               Adacovex.Types.Group_File,
+               Units,
+               Groups,
+               Totals,
+               Skipped,
+               State.Spark_OK);
+            State.Spark_Totals := Totals;
+            State.Spark_Groups := Groups;
+         end;
          --  Resolve the dependency graph so /api/deps can serve it (best
          --  effort: an unresolvable graph serves an empty dependency list).
          Adacovex.Parsers.Manifest.Build_Dependency_Graph

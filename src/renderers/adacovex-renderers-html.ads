@@ -39,7 +39,12 @@ package Adacovex.Renderers.HTML is
       Packages      : Types.Implementation.Package_Vectors.Vector;
       Graph         : Types.Implementation.Component_Vectors.Vector;
       All_Standards : Boolean := False;
-      Theme         : Types.Dashboard_Theme := Types.System_Theme)
+      Theme         : Types.Dashboard_Theme := Types.System_Theme;
+      Spark_OK      : Boolean := False;
+      Spark_Totals  : Types.Implementation.Spark_Coverage_Totals :=
+        (others => <>);
+      Spark_Groups  : Types.Implementation.Spark_Group_Vectors.Vector :=
+        Types.Implementation.Spark_Group_Vectors.Empty_Vector)
       return String
    with Post => Render_Dashboard'Result'Length > 0, Global => null;
 
@@ -59,7 +64,12 @@ package Adacovex.Renderers.HTML is
       DAL_Assess    : Types.Implementation.DAL_Assessment;
       Packages      : Types.Implementation.Package_Vectors.Vector;
       All_Standards : Boolean := False;
-      Theme         : Types.Dashboard_Theme := Types.System_Theme)
+      Theme         : Types.Dashboard_Theme := Types.System_Theme;
+      Spark_OK      : Boolean := False;
+      Spark_Totals  : Types.Implementation.Spark_Coverage_Totals :=
+        (others => <>);
+      Spark_Groups  : Types.Implementation.Spark_Group_Vectors.Vector :=
+        Types.Implementation.Spark_Group_Vectors.Empty_Vector)
       return String
    with Post => Render_Dashboard'Result'Length > 0, Global => null;
 
@@ -118,6 +128,28 @@ package Adacovex.Renderers.HTML is
    function Render_Deps_JSON
      (Graph : Types.Implementation.Component_Vectors.Vector) return String
    with Post => Render_Deps_JSON'Result'Length > 0, Global => null;
+
+   --  Render the SPARK coverage fragment for the Proof tab: one card
+   --  with every metric side by side (statements, subprograms, VCs),
+   --  the off-class breakdown with the three sub-classes as separate
+   --  rows, and a per-group table. The work-queue row is highlighted,
+   --  because it is the actionable backlog.
+   function Render_Spark_Coverage_HTML
+     (Totals : Types.Implementation.Spark_Coverage_Totals;
+      Groups : Types.Implementation.Spark_Group_Vectors.Vector;
+      Group  : Types.Spark_Group_Kind := Types.Group_File;
+      OK     : Boolean := True) return String
+   with Post => Render_Spark_Coverage_HTML'Result'Length > 0, Global => null;
+
+   --  Render the SPARK coverage payload for /api/spark: the whole-tree
+   --  rollup (all three metrics with their numerators and denominators),
+   --  the off-class breakdown, warning count, and one entry per group
+   --  rollup. All counts are named fields, never bare percentages.
+   function Render_Spark_Coverage_JSON
+     (Totals : Types.Implementation.Spark_Coverage_Totals;
+      Groups : Types.Implementation.Spark_Group_Vectors.Vector;
+      Group  : Types.Spark_Group_Kind := Types.Group_File) return String
+   with Post => Render_Spark_Coverage_JSON'Result'Length > 0, Global => null;
 
    --  Render the API endpoint catalog as JSON for /api/endpoints.
    --  Every route the --serve server dispatches on is listed once with its

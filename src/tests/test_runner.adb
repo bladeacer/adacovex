@@ -25,6 +25,7 @@ with Adacovex_ANSI_Tests;
 with Adacovex_CPUs_Tests;
 with Adacovex_Do178C_Tests;
 with Adacovex_Completion_Tests;
+with Adacovex_Spark_Coverage_Tests;
 
 procedure Test_Runner is
 
@@ -53,6 +54,7 @@ procedure Test_Runner is
    R_CPUs        : Runner;
    R_Do178C      : Runner;
    R_Completion  : Runner;
+   R_SparkCov   : Runner;
 
    Total_Passed : Natural := 0;
    Total_Failed : Natural := 0;
@@ -102,6 +104,7 @@ procedure Test_Runner is
          Row ("Dir cache", R_DirCache);
          Row ("Diff reports", R_Diff);
          Row ("Prove runner", R_ProveRunner);
+         Row ("SPARK coverage", R_SparkCov);
          Row ("ANSI terminal report", R_ANSI);
          Row ("CPU and jobs", R_CPUs);
          Row ("HLR/LLR parsing", R_Do178C);
@@ -187,6 +190,7 @@ procedure Test_Runner is
          Row ("Dir cache", R_DirCache);
          Row ("Diff reports", R_Diff);
          Row ("Prove runner", R_ProveRunner);
+         Row ("SPARK coverage", R_SparkCov);
          Row ("ANSI terminal report", R_ANSI);
          Row ("CPU and jobs", R_CPUs);
          Row ("HLR/LLR parsing", R_Do178C);
@@ -226,6 +230,7 @@ begin
    Adacovex_Opt_Outs_Tests.Run (R_OptOuts);
    Adacovex_Dir_Cache_Tests.Run (R_DirCache);
    Adacovex_Diff_Tests.Run (R_Diff);
+   Adacovex_Spark_Coverage_Tests.Run (R_SparkCov);
    Adacovex_Prove_Runner_Tests.Run (R_ProveRunner);
    Adacovex_ANSI_Tests.Run (R_ANSI);
    Adacovex_CPUs_Tests.Run (R_CPUs);
@@ -253,6 +258,7 @@ begin
      + R_OptOuts.Passed
      + R_DirCache.Passed
      + R_Diff.Passed
+     + R_SparkCov.Passed
      + R_ProveRunner.Passed
      + R_ANSI.Passed
      + R_CPUs.Passed
@@ -279,6 +285,7 @@ begin
      + R_OptOuts.Failed
      + R_DirCache.Failed
      + R_Diff.Failed
+     + R_SparkCov.Failed
      + R_ProveRunner.Failed
      + R_ANSI.Failed
      + R_CPUs.Failed

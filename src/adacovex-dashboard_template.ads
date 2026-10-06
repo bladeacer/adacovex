@@ -5874,6 +5874,65 @@ package Adacovex.Dashboard_Template is
   & ASCII.LF
   & "})();</script>"
   & ASCII.LF
+  & "<script>(function () {"
+  & ASCII.LF
+  & "function sortSparkTable(th) {"
+  & ASCII.LF
+  & "var table = th.closest('table');"
+  & ASCII.LF
+  & "var body = table.tBodies[0];"
+  & ASCII.LF
+  & "if (!body) {"
+  & ASCII.LF
+  & "var rows = Array.prototype.slice.call(table.rows, 1);"
+  & ASCII.LF
+  & "body = table.createTBody();"
+  & ASCII.LF
+  & "rows.forEach(function (r) { body.appendChild(r); });"
+  & ASCII.LF
+  & "}"
+  & ASCII.LF
+  & "var idx = th.cellIndex;"
+  & ASCII.LF
+  & "var asc = th.getAttribute('data-asc') !== '1';"
+  & ASCII.LF
+  & "Array.prototype.slice.call(body.rows)"
+  & ASCII.LF
+  & ".sort(function (a, b) {"
+  & ASCII.LF
+  & "var x = a.cells[idx].textContent;"
+  & ASCII.LF
+  & "var y = b.cells[idx].textContent;"
+  & ASCII.LF
+  & "var nx = parseFloat(x);"
+  & ASCII.LF
+  & "var ny = parseFloat(y);"
+  & ASCII.LF
+  & "if (!isNaN(nx) && !isNaN(ny)) { return asc ? nx - ny : ny - "
+  & "nx; }"
+  & ASCII.LF
+  & "return asc ? x.localeCompare(y) : y.localeCompare(x);"
+  & ASCII.LF
+  & "})"
+  & ASCII.LF
+  & ".forEach(function (r) { body.appendChild(r); });"
+  & ASCII.LF
+  & "th.setAttribute('data-asc', asc ? '1' : '0');"
+  & ASCII.LF
+  & "}"
+  & ASCII.LF
+  & "document.querySelectorAll('table.spark-table th').forEach(fu"
+  & "nction (th) {"
+  & ASCII.LF
+  & "th.style.cursor = 'pointer';"
+  & ASCII.LF
+  & "th.addEventListener('click', function () { sortSparkTable(th"
+  & "); });"
+  & ASCII.LF
+  & "});"
+  & ASCII.LF
+  & "})();</script>"
+  & ASCII.LF
   & "<script>(function(){"
   & ASCII.LF
   & "function nomnomlViewActive(){"

@@ -1,4 +1,4 @@
-.PHONY: help check build test prove doc book book-serve docs-serve clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish agents-tree sbom compliance description proof-status test-count doc-links link-check changelog-check action-parity-check docs-coverage-check tools-check man bench perf-bench complexity-check csslint-check version-consistency-check sync docs-check para-split-check book-links-check cli-e2e e2e
+.PHONY: help check build test prove doc book book-serve docs-serve clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish agents-tree sbom compliance description proof-status test-count doc-links link-check changelog-check action-parity-check docs-coverage-check tools-check man bench perf-bench complexity-check csslint-check version-consistency-check sync docs-check para-split-check tldr-check tldr-lint book-links-check cli-e2e e2e
 
 .DEFAULT_GOAL := help
 
@@ -64,6 +64,9 @@ help:
 	@echo '                  function exceeds the decision-point cap or a file'
 	@echo '                  exceeds its LOC / percentage-of-codebase caps'
 	@echo '    ascii-check   Verify all source files are pure ASCII'
+	@echo '    tldr-check    Structural check of the in-repo tldr page'
+	@echo '                  (tools/check-tldr.py); tldr-lint runs the fuller'
+	@echo '                  upstream lint when tldr-lint is installed'
 	@echo '    tools-check   Run the stdlib-unittest suite for the tools/*.py'
 	@echo '                  dev scripts (tools/tests.py)'
 	@echo '    spark-off-check  Fail if any SPARK_Mode (Off) appears outside the'
@@ -253,6 +256,23 @@ docs-check:
 para-split-check:
 	@python3 tools/para-split.py --check
 
+# The structural tldr check: the in-repo tldr page at
+# docs/tldr/adacovex.md is verified for the format rules that matter
+# (at most 8 examples, matching title, 1-2 line description, imperative
+# example descriptions, no emphasis).  `make tldr-lint` runs the fuller
+# upstream tldr-lint when it is installed; it is a local helper, not a
+# gate, because tldr-lint is node-based while this repo's tooling is
+# Python-only.
+tldr-check:
+	@python3 tools/check-tldr.py
+
+tldr-lint:
+	@if command -v tldr-lint >/dev/null 2>&1; then \
+	  tldr-lint docs/tldr/adacovex.md; \
+	else \
+	  echo "tldr-lint not installed; skipping (docs/tldr/adacovex.md is still covered by make tldr-check)"; \
+	fi
+
 # Quality gate: every link inside the bundled offline manual must resolve to
 # a bundled asset or a deliberately-not-bundled file (the rules shared with
 # tools/gen-docs.py).  The check runs against a fresh `sphinx-build` from a
@@ -310,6 +330,7 @@ check:
 	@echo "=== Quality gate: markdown links ==="; $(MAKE) link-check
 	@echo "=== Quality gate: user documentation ==="; $(MAKE) docs-check
 	@echo "=== Quality gate: paragraph splitter ==="; $(MAKE) para-split-check
+	@echo "=== Quality gate: tldr structure ==="; $(MAKE) tldr-check
 	@echo "=== Quality gate: bundled offline manual links ==="; $(MAKE) book-links-check
 	@echo "=== Quality gate: bundled offline manual spec ==="; python3 tools/gen-docs.py --check
 	@echo "=== Quality gate: fmt ==="; $(MAKE) fmt
@@ -323,7 +344,7 @@ check:
 	@echo "=== Quality gate: proof metrics in sync ==="; python3 tools/update-proof-status.py --check
 	@echo "=== Quality gate: description sync ==="; python3 tools/update-description.py --check
 	@echo ""
-	@echo "=== Quality gate passed: ascii, complexity, csslint, spark-off, changelog, action-parity, docs-coverage, tools, cli-e2e, version, version-consistency, doc-links, link, docs-check, para-split, book-links, fmt, build, test, prove, doc, book, sbom, test-count, proof-status, description ==="
+	@echo "=== Quality gate passed: ascii, complexity, csslint, spark-off, changelog, action-parity, docs-coverage, tools, cli-e2e, version, version-consistency, doc-links, link, docs-check, para-split, tldr, book-links, fmt, build, test, prove, doc, book, sbom, test-count, proof-status, description ==="
 
 # Quality gate: alire.toml, alire-dev.toml, the generated Ada version spec,
 # the built binary, and the committed SBOM must all name the same version.

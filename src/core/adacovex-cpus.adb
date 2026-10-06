@@ -11,14 +11,18 @@ package body Adacovex.CPUs is
    use GNAT.OS_Lib;
 
    --  Parse a non-negative integer from the leading digits of S, ignoring
-   --  trailing whitespace/garbage. Returns -1 when no digit is found.
-   function Parse_Natural (S : String) return Integer is
+   --  trailing whitespace/garbage. Returns -1 when no digit is found, and
+   --  -1 when the digit run would overflow Integer (the value is then not
+   --  representable, and a wrapped result would be a wrong answer).
+   function Parse_Natural (S : String) return Integer with SPARK_Mode => On is
       Start : Natural := S'First;
       Stop  : Natural := S'First;
-      Val   : Integer := 0;
+      Val   : Long_Long_Integer := 0;
       Found : Boolean := False;
    begin
       while Start <= S'Last loop
+         pragma Loop_Invariant (Start in S'First .. S'Last + 1);
+         pragma Loop_Variant (Decreases => S'Last - Start);
          exit when S (Start) in '0' .. '9';
          Start := Start + 1;
       end loop;
@@ -27,14 +31,29 @@ package body Adacovex.CPUs is
       end if;
       Stop := Start;
       while Stop <= S'Last and then S (Stop) in '0' .. '9' loop
-         Val := Val * 10 + (Character'Pos (S (Stop)) - Character'Pos ('0'));
+         pragma Loop_Invariant (Val in 0 .. 21_474_836_479);
+         pragma Loop_Invariant (Stop in Start .. S'Last + 1);
+         pragma Loop_Variant (Decreases => S'Last - Stop);
+         declare
+            Digit : constant Long_Long_Integer :=
+              Long_Long_Integer
+                (Character'Pos (S (Stop)) - Character'Pos ('0'));
+         begin
+            if Val > Long_Long_Integer (Integer'Last) then
+               return -1;
+            end if;
+            Val := Val * 10 + Digit;
+         end;
          Found := True;
          Stop := Stop + 1;
       end loop;
       if not Found then
          return -1;
       end if;
-      return Val;
+      if Val > Long_Long_Integer (Integer'Last) then
+         return -1;
+      end if;
+      return Integer (Val);
    end Parse_Natural;
 
    procedure Run_Capture

@@ -81,6 +81,19 @@ inputs:
       step fails loudly.  CI threshold gate.
     required: false
     default: ''
+  require-coverage:
+    description: >-
+      Minimum verified percentage (0-100) for the spark-coverage gate:
+      fails the step when the metric named by gate-metric falls below it.
+      CI threshold gate; the gate reads obj/gnatprove artefacts.
+    required: false
+    default: ''
+  gate-metric:
+    description: >-
+      Metric the require-coverage gate applies to: statements,
+      subprograms, or vcs (default: statements).
+    required: false
+    default: 'statements'
   run-tests:
     description: 'Build and run the native test suite (requires build: true).'
     required: false
@@ -647,6 +660,26 @@ runs:
         } >> "$GITHUB_STEP_SUMMARY"
 
         exit $STATUS
+
+    - name: Run SPARK coverage gate
+      if: ${{ inputs.assess == 'true' && inputs.require-coverage != '' }}
+      shell: bash
+      run: |
+        set -euxo pipefail
+        cd "$GITHUB_WORKSPACE"
+        BIN=""
+        if [ -x bin/adacovex ]; then
+          BIN="$GITHUB_WORKSPACE/bin/adacovex"
+        elif command -v adacovex >/dev/null 2>&1; then
+          BIN="$(command -v adacovex)"
+        elif command -v covex >/dev/null 2>&1; then
+          BIN="$(command -v covex)"
+        fi
+        TARGET="${{ inputs.target }}"
+        if [ -z "$TARGET" ]; then TARGET="."; fi
+        "$BIN" spark-coverage --target="$TARGET" \
+          --require-coverage=${{ inputs.require-coverage }} \
+          --gate-metric=${{ inputs.gate-metric }}
 
     - name: Upload assessment log + metrics
       #  Always upload (success AND failure): the full assessment output is

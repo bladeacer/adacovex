@@ -13,7 +13,7 @@
   | IR synthesis                             |  42 | PASS     |
   | Man page renderer                        |  18 | PASS     |
   | VCS support                              |  29 | PASS     |
-  | Server routing                           |  132 | PASS     |
+  | Server routing                           |  133 | PASS     |
   | Proof patches                            |  35 | PASS     |
   | Timezone + ANSI                          |  63 | PASS     |
   | Complexity check                         |  20 | PASS     |
@@ -21,10 +21,11 @@
   | Dir cache                                |  22 | PASS     |
   | Diff reports                             |  36 | PASS     |
   | Prove runner                             |  24 | PASS     |
+  | SPARK coverage                           |  18 | PASS     |
   | ANSI terminal report                     |  28 | PASS     |
   | CPU and jobs                             |  24 | PASS     |
   | HLR/LLR parsing                          |  33 | PASS     |
   | Completion scripts                       |  24 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 1756  Failed: 0
+  Passed: 1775  Failed: 0

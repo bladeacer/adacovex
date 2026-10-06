@@ -628,7 +628,10 @@ package body Adacovex.Server.HTTP is
                   State.Packages,
                   State.Graph,
                   State.All_Standards,
-                  State.Theme),
+                  State.Theme,
+                  State.Spark_OK,
+                  State.Spark_Totals,
+                  State.Spark_Groups),
                Is_KA);
 
          when Route_Badge_SPARK    =>
@@ -693,6 +696,15 @@ package body Adacovex.Server.HTTP is
                "200 OK",
                "application/json",
                Adacovex.Renderers.HTML.Render_Deps_JSON (State.Graph),
+               Is_KA);
+
+         when Route_API_Spark      =>
+            Send_Response
+              (Channel,
+               "200 OK",
+               "application/json",
+               Adacovex.Renderers.HTML.Render_Spark_Coverage_JSON
+                 (State.Spark_Totals, State.Spark_Groups, Types.Group_File),
                Is_KA);
 
          when Route_API_Endpoints  =>
