@@ -119,9 +119,11 @@ subprograms of `Adacovex.Parsers.Source`, and six of `Adacovex.Config`
 zero unproved checks: `Parse_Natural` returns `-1` on overflow,
 `Edit_Distance` caps its DP row at a bounded subtype with a 64 clamp,
 `Normalize_Flag` walks `S'Range` instead of a cursor and now carries a
-postcondition on its output length, and `Suggest_Flags` carries quantified
-invariants over its match table. The sweep raises the analysed-unit count and
-the VC total; the figures are in the Proof Results section below.
+quantified invariant over its buffer, and `Suggest_Flags` carries quantified
+invariants over its match table. H2 later replaced `Normalize_Flag` with
+`Normalized`, which returns the same normalised text in a record. The sweep
+raises the analysed-unit count and the VC total; the figures are in the Proof
+Results section below.
 
 ### C8: The performance pages state their build profile and re-measure the binary
 
@@ -150,24 +152,49 @@ the same short-circuit, so only a re-prove of an already-failed tree reaches
 it. This release's own proof campaign did exactly that after a degraded run
 and exposed it.
 
-### H2: `make prove` runs with no gnatprove warnings
+### H2: `make prove` runs with no gnatprove warnings, and the fix costs no checks
 
 A clean proof session on this tree printed seven `warning: initialization of
-"X" has no effect` messages. Every one named a declaration whose initial
-value flow analysis proved was dead: the variable is assigned before any read
-can reach it, so the initialiser is a write that no path observes. Five were
-in the C7 code (`Edit_Distance` carried `New_Val` and `Prev_Diag`, and
+"X" has no effect` messages. Every one named a declaration whose initial value
+flow analysis proved was dead: the variable is assigned before any read can
+reach it, so the initialiser is a write that no path observes. Five were in the
+C7 code (`Edit_Distance` carried `New_Val` and `Prev_Diag`, and
 `Suggest_Flags` carried `NFlag` and `NLen`), and two more were in
-`Parse_Natural`, which C7 also opted in. The two `out` buffers were the
-clearest case: `Suggest_Flags` passed `NFlag` and `NLen` as `out` parameters
-to `Normalize_Flag`, which writes both before it returns, so pre-filling them
-was dead too.
+`Parse_Natural`, which C7 also opted in.
 
-The seven initialisers are gone, and each declaration that lost one now says
-why it carries none. The proof cost is seven extra checks: gnatprove can no
-longer lean on the initialiser to establish a variable's type invariant, so
-it proves that fact at the reads instead. The campaign therefore moves from
-1053 to **1060** VCs, all proved.
+Deleting the initialisers silences all seven, but it is not free. gnatprove can
+no longer lean on the initialiser to establish a variable's type invariant, so
+it proves that fact at the reads instead, and the campaign grows from 1053 to
+1060 checks. That trade is avoidable, because the warning and the extra check
+are two views of one fact. **A declaration whose initial value is dead and one
+whose initial value is missing both cost something; the fix is to make the
+initial value live.** Each of the five declarations was restructured so its
+initial value is genuinely read:
+
+- `Parse_Natural` loses `Stop` altogether. The digit run's end position was the
+  only thing `Stop` held, and the function never read it after the loop, so one
+  cursor now serves both scan phases.
+- `Edit_Distance` loses `New_Val`, which becomes a `declare`-block constant read
+  by the statements below it. `Prev_Diag` keeps its initialiser and stays
+  warning-free because the recurrence now re-primes it at the *end* of each row
+  rather than the start. `Row (0)` holds `I - 1` on entry to row `I` either way,
+  so the two orderings compute the same value, and priming at the end leaves the
+  initial value in place until the inner loop reads it.
+- `Suggest_Flags` no longer owns `NFlag` and `NLen`. It passes an `out` buffer
+  and an `out` length to `Normalize_Flag`, which writes both before returning,
+  so both initialisers were dead. `Normalize_Flag` becomes `Normalized`, which
+  returns the normalised text and its length in one `Normalized_Flag` record.
+  The caller binds a single `constant`, which has a live initial value and so
+  carries neither a dead write nor an initialisation check. The record's `Len`
+  component carries the subtype `0 .. 64`, which is the postcondition the caller
+  previously needed, so `Text (1 .. Len)` is in range without one.
+
+The result is a session with no warnings and a *smaller* campaign: **1047
+checks**, down from 1053. Six checks disappear because three declarations are
+gone and the rest no longer need an initialisation proved at their reads. The
+whole native suite passes, including the 349 CLI config checks that pin the
+"did you mean" suggestions, and `Edit_Distance` returns the same distances for
+the same inputs.
 
 ## Test Suite
 
@@ -182,14 +209,18 @@ and both pass on this tree.
 
 ## Proof Results
 
-**Platinum**, 0 unproved, 0 justified, **1060 of 1060 VCs across 68 analysed
+**Platinum**, 0 unproved, 0 justified, **1047 of 1047 VCs across 68 analysed
 units** under gnatprove 16.1.0 at `--level=4`, with no gnatprove warnings on
 a clean session. The C7 sweep moves thirteen in-package subprograms into the
 proved set. The campaign therefore grows from 884 VCs across 66 units in
-1.57.0 to 1060 across 68, and a clean run on this tree is the source of these
-numbers rather than an inherited 1.57.0 result. H2 accounts for the last
-seven of them: removing the dead initialisers it deletes costs seven checks,
-and buys a warning-free session.
+1.57.0 to 1047 across 68, and a clean run on this tree is the source of these
+numbers rather than an inherited 1.57.0 result. H2 is why the figure sits below
+the 1053 the C7 sweep alone reached: it removes six checks while clearing every
+warning.
+
+H1's fix was exercised by that run. The cache held a summary left by a
+degraded session, so the runner discarded it and re-proved instead of
+reporting a warm hit. The clean re-prove then reached zero unproved VCs.
 
 H1's fix was exercised by that run. The cache held a summary left by a
 degraded session, so the runner discarded it and re-proved instead of

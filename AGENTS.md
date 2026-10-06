@@ -105,7 +105,7 @@ any Ada/SPARK project.
 
 Self-assessment (`make run-self`) must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
-- Platinum SPARK level (1053 VCs under gnatprove 16.1.0, 0 unproved, 0
+- Platinum SPARK level (1047 VCs under gnatprove 16.1.0, 0 unproved, 0
   justified; see `docs/proof/16.1.0-ledger.md`)
 - 1775/1775 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
@@ -649,7 +649,7 @@ release-tag coverage gate instead.
 |-------|---------|-------------|
 | Unit tests | `make test` | 1775/1775 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
-| SPARK proof | `make prove` | Platinum (1053 VCs, 0 unproved, 0 justified under gnatprove 16.1.0), verified at `--level=4` (the deepest effort; the prove subcommand forwards `--level` verbatim, so the overhead is gnatprove's own) |
+| SPARK proof | `make prove` | Platinum (1047 VCs, 0 unproved, 0 justified under gnatprove 16.1.0), verified at `--level=4` (the deepest effort; the prove subcommand forwards `--level` verbatim, so the overhead is gnatprove's own) |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
 
 **The true test of proof performance is the `prove` subcommand at the

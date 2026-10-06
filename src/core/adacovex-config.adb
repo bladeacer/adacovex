@@ -487,18 +487,19 @@ package body Adacovex.Config is
       ALen      : constant Natural := A'Length;
       BLen      : constant Natural := B'Length;
       Row       : Row_Arr := (others => 0);
-      --  Single-row recurrence: New_Val holds the cell being computed and
-      --  Prev_Diag carries Row (J - 1) of the previous row across the
-      --  inner loop, so no second row array and no whole-array copy are
-      --  needed. A whole-array copy puts a quantified array equality into
-      --  every verification condition that follows it, which is what made
+      --  Single-row recurrence: Prev_Diag carries Row (J - 1) of the previous
+      --  row across the inner loop, so no second row array and no whole-array
+      --  copy are needed. A whole-array copy puts a quantified array equality
+      --  into every verification condition that follows it, which is what made
       --  this routine's inlined checks expensive to prove.
-      --  New_Val and Prev_Diag carry no initialiser: the outer loop assigns
-      --  Prev_Diag before the inner loop reads it, and both branches of the
-      --  inner loop assign New_Val before it is read. gnatprove reports an
-      --  initialisation that has no effect, and this body proves with none.
-      New_Val   : Cell;
-      Prev_Diag : Cell;
+      --
+      --  Prev_Diag is re-primed at the END of each row rather than at its
+      --  start. Row (0) holds I - 1 on entry to row I either way, so the two
+      --  orderings compute the same value. Priming at the end leaves the
+      --  declaration's initial value in place until the inner loop reads it,
+      --  where priming at the start overwrites that initial value on every
+      --  path that reaches a read.
+      Prev_Diag : Cell := 0;
    begin
       if ALen > 64 or BLen > 64 then
          return 99;
@@ -507,26 +508,32 @@ package body Adacovex.Config is
          Row (J) := J;
       end loop;
       for I in 1 .. ALen loop
-         Prev_Diag := Row (0);
          Row (0) := I;
          for J in 1 .. BLen loop
-            if A (A'First + I - 1) = B (B'First + J - 1) then
-               New_Val := Prev_Diag;
-            else
-               --  The 64 clamp cannot change a result the caller observes:
-               --  distances at or below the cap are exact either way, and
-               --  the caller only asks whether the distance is at most 2.
-               New_Val :=
-                 Natural'Min
-                   (64,
+            --  Old_J and Diag are constants whose initialisers are live: each
+            --  is read by the statements below.
+            declare
+               Old_J : constant Cell := Row (J);
+               Diag  : constant Cell := Prev_Diag;
+            begin
+               if A (A'First + I - 1) = B (B'First + J - 1) then
+                  Row (J) := Diag;
+               else
+                  --  The 64 clamp cannot change a result the caller observes:
+                  --  distances at or below the cap are exact either way, and
+                  --  the caller only asks whether the distance is at most 2.
+                  Row (J) :=
                     Natural'Min
-                      (Natural'Min (Row (J) + 1, Row (J - 1) + 1),
-                       Prev_Diag + 1));
-            end if;
-            Prev_Diag := Row (J);
-            Row (J) := New_Val;
-            exit when Row (J) > 9 and J = BLen;
+                      (64,
+                       Natural'Min
+                         (Natural'Min (Old_J + 1, Row (J - 1) + 1),
+                          Diag + 1));
+               end if;
+               Prev_Diag := Old_J;
+               exit when Row (J) > 9 and J = BLen;
+            end;
          end loop;
+         Prev_Diag := Row (0);
       end loop;
       return Natural'Min (Row (BLen), 99);
    end Edit_Distance;
@@ -537,27 +544,31 @@ package body Adacovex.Config is
    --  index at the end of the string need no cursor arithmetic at all: no
    --  overflow, range, or index VC on a cursor, and the discrete loop
    --  terminates by construction.
-   --  The Pre pins the buffer to index 1 (both callers pass a 1-based
-   --  slice); without it the "Out_Buf (Out_Len)" writes below cannot be
-   --  proved in range for an arbitrary out buffer. The Post carries the
-   --  one fact the caller needs at its slice: the length is capped by the
-   --  buffer, so "Out_Buf (1 .. Out_Len)" is in range at every call site
-   --  even when this body is not inlined into it.
-   procedure Normalize_Flag
-     (S : String; Out_Buf : out String; Out_Len : out Natural)
-   with
-     SPARK_Mode => On,
-     Pre        => Out_Buf'First = 1,
-     Post       => Out_Len <= Out_Buf'Length
+   --
+   --  The result is one record rather than an "out" buffer plus an "out"
+   --  length. A caller that owns "out" buffers must give them initial values,
+   --  and gnatprove then reports those initial values as dead because this
+   --  subprogram overwrites them; drop them and the caller carries an
+   --  initialisation check instead. Returning a record lets the caller bind one
+   --  constant, which has a live initial value and so costs neither. The 64
+   --  character bound is this type's, and Len carries the subtype 0 .. 64, so
+   --  the caller needs no postcondition to index "Text (1 .. Len)".
+   type Normalized_Flag is record
+      Text : String (1 .. 64);
+      Len  : Natural range 0 .. 64;
+   end record;
+
+   function Normalized (S : String) return Normalized_Flag with
+     SPARK_Mode => On
    is
+      Buf     : String (1 .. 64) := (others => ' ');
+      Len     : Natural range 0 .. 64 := 0;
       Lead    : Natural range 0 .. 2 := 0;
       Leading : Boolean := True;
       Stopped : Boolean := False;
    begin
-      Out_Len := 0;
-      Out_Buf := (others => ' ');
       for I in S'Range loop
-         pragma Loop_Invariant (Out_Len <= Out_Buf'Length);
+         pragma Loop_Invariant (Len <= Buf'Length);
          exit when Stopped;
          if Leading and then S (I) = '-' and then Lead < 2 then
             Lead := Lead + 1;
@@ -565,18 +576,21 @@ package body Adacovex.Config is
             Stopped := True;
          else
             Leading := False;
-            if Out_Len < Out_Buf'Last then
-               Out_Len := Out_Len + 1;
+            --  Len is read here before any assignment to it, so its
+            --  initial value is live rather than a dead write.
+            if Len < Buf'Last then
+               Len := Len + 1;
                if S (I) in 'A' .. 'Z' then
-                  Out_Buf (Out_Len) :=
+                  Buf (Len) :=
                     Character'Val (Character'Pos (S (I)) + 32);
                else
-                  Out_Buf (Out_Len) := S (I);
+                  Buf (Len) := S (I);
                end if;
             end if;
          end if;
       end loop;
-   end Normalize_Flag;
+      return (Text => Buf, Len => Len);
+   end Normalized;
 
    --  Return " (did you mean --xxx?)" (or " --xxx or --yyy") for an
    --  unknown token, or "" when no known flag is close enough. The caller
@@ -584,11 +598,9 @@ package body Adacovex.Config is
    function Suggest_Flags (S : String) return String with SPARK_Mode => On is
       Buf     : String (1 .. 128) := (others => ' ');
       Len     : Natural := 0;
-      --  Normalize_Flag takes NFlag and NLen as out parameters and writes
-      --  both before returning, so neither carries an initialiser: gnatprove
-      --  reports an initialisation that has no effect.
-      NFlag   : String (1 .. 64);
-      NLen    : Natural;
+      --  Norm is a constant, so it carries no initial value that this body
+      --  overwrites and needs no initialisation check.
+      Norm    : constant Normalized_Flag := Normalized (S);
       Matches : array (1 .. 3) of String (1 .. 32) :=
         (others => (others => ' '));
       MLen    : array (1 .. 3) of Natural range 0 .. 32 := (others => 0);
@@ -597,8 +609,7 @@ package body Adacovex.Config is
       Start   : Natural := Known_Flags'First;
       Fin     : Natural;
    begin
-      Normalize_Flag (S, NFlag, NLen);
-      if NLen = 0 then
+      if Norm.Len = 0 then
          return "";
       end if;
       --  Walk the space-separated Known_Flags list.
@@ -624,7 +635,7 @@ package body Adacovex.Config is
             else
                D :=
                  Edit_Distance
-                   (NFlag (1 .. NLen), Known_Flags (Start .. Fin - 1));
+                   (Norm.Text (1 .. Norm.Len), Known_Flags (Start .. Fin - 1));
             end if;
             --  The 32-character bound keeps the Matches write below in
             --  range; no Known_Flags word reaches it, so a longer word is

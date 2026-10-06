@@ -15,12 +15,13 @@ package body Adacovex.CPUs is
    --  -1 when the digit run would overflow Integer (the value is then not
    --  representable, and a wrapped result would be a wrong answer).
    function Parse_Natural (S : String) return Integer with SPARK_Mode => On is
+      --  One cursor serves both phases of the scan. Start first advances to
+      --  the first digit and then walks the digit run, so the run's end
+      --  position -- the only thing a second variable held -- is never read.
+      --  A second cursor would therefore be initialised and then overwritten
+      --  before any read, which gnatprove reports as an initialisation with no
+      --  effect.
       Start : Natural := S'First;
-      --  Stop, Val, and Found carry no initialiser: each is assigned before
-      --  the first loop condition or body statement that reads it, so an
-      --  initial value would be dead. gnatprove reports an initialisation
-      --  that has no effect, and this body proves with none.
-      Stop  : Natural;
       Val   : Long_Long_Integer := 0;
       Found : Boolean := False;
    begin
@@ -33,15 +34,14 @@ package body Adacovex.CPUs is
       if Start > S'Last then
          return -1;
       end if;
-      Stop := Start;
-      while Stop <= S'Last and then S (Stop) in '0' .. '9' loop
+      while Start <= S'Last and then S (Start) in '0' .. '9' loop
          pragma Loop_Invariant (Val in 0 .. 21_474_836_479);
-         pragma Loop_Invariant (Stop in Start .. S'Last + 1);
-         pragma Loop_Variant (Decreases => S'Last - Stop);
+         pragma Loop_Invariant (Start in S'First .. S'Last + 1);
+         pragma Loop_Variant (Decreases => S'Last - Start);
          declare
             Digit : constant Long_Long_Integer :=
               Long_Long_Integer
-                (Character'Pos (S (Stop)) - Character'Pos ('0'));
+                (Character'Pos (S (Start)) - Character'Pos ('0'));
          begin
             if Val > Long_Long_Integer (Integer'Last) then
                return -1;
@@ -49,7 +49,7 @@ package body Adacovex.CPUs is
             Val := Val * 10 + Digit;
          end;
          Found := True;
-         Stop := Stop + 1;
+         Start := Start + 1;
       end loop;
       if not Found then
          return -1;

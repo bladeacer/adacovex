@@ -84,16 +84,20 @@ warm:
 | `tools/gen-version.py` | 44 |
 | `tools/csslint.py --check` | 44 |
 | `tools/gen-dashboard.py` | 152 |
-| `tools/gen-docs.py` (stamp current, 250 assets cached) | 365 |
+| `tools/gen-docs.py` (stamp current, 251 assets cached) | 365 |
 | `sphinx-build` from scratch | 7 847 |
 
 A no-op `make build` is therefore about 0.6 s of generators on top of a
 0.8 s no-op `alr build`. The one large row is the cold Sphinx build, and
 it runs only when the docs sources change. A cold `gen-docs.py` on a
 fresh checkout -- no Sphinx output and no encode cache -- measured
-COLD_GENDOCS_SECONDS s: the Sphinx build plus the first-time encoding of
-about 6 MB of page bodies. Every later run reuses the encoded bodies
-from `obj/adacovex-docs-encode/`.
+8.8 s, 9.5 s, 9.7 s, and 10.2 s over four samples at load 1.3-1.4. That is
+the Sphinx build plus the first-time encoding of about 6 MB of page bodies,
+so read it as 9-10 s.
+
+The encoding adds only about 2 s to the cold Sphinx row because it runs in
+parallel across the cores. Every later run reuses the encoded bodies from
+`obj/adacovex-docs-encode/`.
 
 The compile side tells the same story. A full rebuild of all 101 bodies
 takes 39.1 s, and the serial compile totals 99.8 s across those files.

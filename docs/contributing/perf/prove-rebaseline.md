@@ -29,6 +29,21 @@ comparable, so the 1.55.0 work re-measured every shape with
   the binary prints, which measures its own work and is immune to
   process-scheduling noise around it.
 
+## Standing protocol
+
+This method is the standing protocol, not a one-off for 1.55.0. Every later
+phase is measured the same way, so the figures are comparable across the table
+on [Prove timing and the optimisation review](prove-timing.md). The one thing
+the protocol does not fix is the build profile, and the tree now carries two.
+
+The **dev build** wording above describes the 1.55.0 figures, which were taken
+before profiles existed. Since 1.57.0 every figure is taken on the **release**
+profile (`-O2 -gnatn`, no debug information) and names it, because that is the
+binary the released figures describe. The 1.57.0-1.58.0 phase reused this
+protocol unchanged at load 0.95, and its figures are in that page's tables: a
+3-run prove-cold sample of 76.4 s (74.0-78.1 s) at 1060 VCs, prove warm 46.0 ms
+over 15 runs, and a fully cold clone at 80.7 s over two runs.
+
 ## The fully cold shape
 
 This is the shape to read for a first run on a new checkout: the result cache,
