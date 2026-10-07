@@ -68,10 +68,10 @@ cores, 10 proof jobs, release profile) unless a note says otherwise.
 | 1.45.0-1.47.0 | 1.47.0 | ~43 ms | ~74 ms |
 | 1.48.0-1.54.0 | 1.50.0 | 46 ms | 73 ms |
 | 1.55.0-1.56.0 | 1.55.0 | 41 ms | 66 ms |
-| 1.57.0-1.58.0 | 1.58.0 | 38.4 ms +/- 2.5 ms | 68.6 ms +/- 5.5 ms |
+| 1.57.0-1.58.0 | 1.58.0 | 35.5 ms +/- 1.8 ms | 62.3 ms +/- 0.8 ms |
 
-The 1.58.0 rows are hyperfine samples on the release profile at load 0.95:
-15 runs for warm and 10 for cold.
+The 1.58.0 rows are one hyperfine session on the release profile at the shipped
+1047 VCs: 15 runs for warm and 10 for cold, taken at load 0.59.
 
 ## Prove timing by phase
 
@@ -80,10 +80,10 @@ The 1.58.0 rows are hyperfine samples on the release profile at load 0.95:
 | 1.45.0-1.47.0 | 1.47.0 | ~53 ms | ~37 s / 876 VCs (40-110 s load-dependent) |
 | 1.48.0-1.54.0 | 1.50.0 | 55 ms | 61-88 s / 880 VCs (load-dependent; 878 VCs from 1.52.0) |
 | 1.55.0-1.56.0 | 1.55.0 | 50 ms | 72-82 s / 878 VCs (120.6 s under heavy load) |
-| 1.57.0-1.58.0 | 1.58.0 | 46.0 ms +/- 3.4 ms | 76.4 s / 1060 VCs (3 runs, 74.0-78.1 s) |
+| 1.57.0-1.58.0 | 1.58.0 | 45.8 ms +/- 3.9 ms | 63.8 s / 1047 VCs (3 runs, 59.1-67.3 s) |
 
-The 1.58.0 warm row is 15 runs at load 0.95. Its cold row is 3 runs at the
-same load, and the gnatprove session store is wiped before each one.
+The 1.58.0 warm row is 15 runs. Its cold row is 3 runs from the same session,
+and the gnatprove session store is wiped before each one.
 
 ## Warm-run syscalls by phase
 
@@ -92,7 +92,7 @@ same load, and the gnatprove session store is wiped before each one.
 | 1.45.0-1.47.0 | 1.47.0 | ~6k |
 | 1.48.0-1.54.0 | 1.50.0 | ~6.9k |
 | 1.55.0-1.56.0 | 1.55.0 | ~7.3k |
-| 1.57.0-1.58.0 | 1.58.0 | 7 474 (~7.5k) |
+| 1.57.0-1.58.0 | 1.58.0 | 7 508 (~7.5k) |
 
 ## Reading the numbers
 
@@ -176,19 +176,25 @@ same load, and the gnatprove session store is wiped before each one.
   whose representative was measured at `-O2` cannot also carry an `-O1` figure,
   so the profile is named beside every number here and the measurement is taken
   on the release profile.
-- **Every adacovex-side shape is flat or slightly better than the closed
-  1.55.0-1.56.0 column, and the margins are small enough to read as noise.**
-  Pipeline warm is 38.4 ms against the closed phase's 41 ms, prove warm is
-  46.0 ms against 50 ms, and pipeline cold is 68.6 ms against 66 ms. Warm
-  `newfstatat` is 7 474 against ~7.3k, so the tree's I/O floor held while the
-  manifest package gained 19 separate bodies.
-- **The VC count grew by a fifth and the prove-cold row did not.** C7 moved
-  thirteen in-package subprograms into the proved set and H2 removed seven dead
-  initialisers, taking the campaign from 878 VCs in 1.55.0 to 1060. The cold
-  prove row is 76.4 s at 1060 VCs, inside the 72-82 s band the closed phase
-  recorded at 878 VCs. The extra 182 checks cost no measurable wall on this
-  machine, because the row is bound by the solver's time on the checks that were
-  always there.
+- **Every adacovex-side shape is flat or better than the closed
+  1.55.0-1.56.0 column.** Pipeline warm is 35.5 ms against the closed phase's
+  41 ms, prove warm is 45.8 ms against 50 ms, and pipeline cold is 62.3 ms
+  against 66 ms. Warm `newfstatat` is 7 508 against ~7.3k, so the tree's I/O
+  floor held while the manifest package gained 19 separate bodies.
+- **The VC count grew by a fifth and the prove-cold row still improved.** C7
+  moved thirteen in-package subprograms into the proved set, taking the
+  campaign from 878 VCs in 1.55.0 to 1047. The cold prove row is 63.8 s at
+  1047 VCs against the closed phase's 72-82 s at 878 VCs. The 169 extra checks
+  cost no measurable wall, because the row is bound by the solver's time on the
+  checks that were always there. Read that comparison as approximate: the
+  closed figures were taken at higher loads.
+- **H2 shrank the campaign while clearing every prove warning, and that moved
+  the cold row by nothing.** Removing the seven dead initialisers the plain way
+  would have cost seven extra initialisation checks, landing at 1060.
+  Restructuring the five declarations so each initial value is live instead took
+  the campaign to 1047, six below the 1053 that C7 alone reached, with no
+  warnings. The check count is a reported number, and this release moved it by
+  13 without moving the wall.
 - **The manifest split did not shorten the build, and the plan recorded that
   rather than assuming it.** 1.57.0 split the slowest body in the tree into 19
   separate bodies, on the expectation that it would shorten the critical path of
@@ -198,19 +204,20 @@ same load, and the gnatprove session store is wiped before each one.
   57.3 s and 59.8 s. That is a build-side figure and moves no row above, but it
   is the phase's main negative result.
 - **The fully cold clone shape moves with the phase.** The fresh-tree prove
-  measures 80.7 s over two runs (78.9-82.4 s) against 76.4 s for prove cold in
-  the same session. The tree copy adds well under a second, so the two rows are
-  one number with two names, as in every earlier phase.
+  measures 78.0 s over two runs (74.4-81.6 s) against 63.8 s for prove cold,
+  from the same session. That is a wider gap than the 1.52.0 phase recorded, and
+  this page does not claim a cause for it. The extra work a fresh tree adds
+  beyond prove cold was not isolated. Read the clone row as the first-run band.
 - **The prove warm path got a correctness fix, not a speed-up.** H1 restored a
   truthfulness gap in the short-circuit: a cache hit that failed to restore a
   usable summary used to print "reusing prior proof" and return success without
   running the prover. The runner now falls through to a real gnatprove run. The
   warm row is unaffected, because a healthy warm hit was already a cache hit.
-- `make prove` on an unchanged tree measures 1.0 s and 1.03 s on two consecutive
-  runs at load 2.7, where `./bin/covex prove` alone costs 46.0 ms. The stripped
+- `make prove` on an unchanged tree measures 1.12 s and 1.13 s on two
+  consecutive runs, where `./bin/covex prove` alone costs 45.8 ms. The stripped
   binary is 6.0 MiB, down from the 9.5 MiB unstripped build, so the phase is
-  36.6 percent smaller after `strip`. The Ada_CRDT second datapoint reads 36.2
-  ms cold and 26.9 ms warm.
+  36.6 percent smaller after `strip`. The Ada_CRDT second datapoint reads
+  27.6 ms warm and 48.0 ms cold.
 
 ### Across every phase
 
@@ -225,12 +232,9 @@ same load, and the gnatprove session store is wiped before each one.
   self tree has zero vendored components, so a change that only touches
   vendored code is invisible to it. Measure such a change on a fixture that
   has the shape it touches, paired against a build of the base commit.
-- A cold first run on a fresh clone lands in the same band, because a clone has
-  no result cache and no session either; the only extra work over that shape is
-  the assessment that follows the proof, about 45 ms.
 - `make prove` on an unchanged tree is not the same shape as the warm prove
   short-circuit. The target also regenerates the bundled manual and the dashboard
-  template and re-checks the generators, so it costs about 1.0 s where
+  template and re-checks the generators, so it costs about 1.12 s where
   `./bin/covex prove` alone costs 46 ms.
 - A warm hit restores `gnatprove.out` since 1.43.0: the cache stores the summary
   content, so a hit on a tree whose `obj/gnatprove/` was wiped reports Platinum

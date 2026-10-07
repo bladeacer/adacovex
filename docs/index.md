@@ -1,3 +1,10 @@
+![SPARK level badge](badges/spark.svg)
+![Test badge](badges/tests.svg)
+![DO-178C badge](badges/do178c.svg)
+![ISO 26262 badge](badges/iso26262.svg)
+![IEC 62304 badge](badges/iec62304.svg)
+![Documentation coverage badge](badges/docs.svg)
+
 # adacovex Documentation
 
 This page is the index for all adacovex documentation. Pick a section

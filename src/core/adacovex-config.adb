@@ -526,8 +526,7 @@ package body Adacovex.Config is
                     Natural'Min
                       (64,
                        Natural'Min
-                         (Natural'Min (Old_J + 1, Row (J - 1) + 1),
-                          Diag + 1));
+                         (Natural'Min (Old_J + 1, Row (J - 1) + 1), Diag + 1));
                end if;
                Prev_Diag := Old_J;
                exit when Row (J) > 9 and J = BLen;
@@ -558,8 +557,8 @@ package body Adacovex.Config is
       Len  : Natural range 0 .. 64;
    end record;
 
-   function Normalized (S : String) return Normalized_Flag with
-     SPARK_Mode => On
+   function Normalized (S : String) return Normalized_Flag
+   with SPARK_Mode => On
    is
       Buf     : String (1 .. 64) := (others => ' ');
       Len     : Natural range 0 .. 64 := 0;
@@ -581,8 +580,7 @@ package body Adacovex.Config is
             if Len < Buf'Last then
                Len := Len + 1;
                if S (I) in 'A' .. 'Z' then
-                  Buf (Len) :=
-                    Character'Val (Character'Pos (S (I)) + 32);
+                  Buf (Len) := Character'Val (Character'Pos (S (I)) + 32);
                else
                   Buf (Len) := S (I);
                end if;

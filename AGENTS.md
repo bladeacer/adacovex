@@ -111,6 +111,10 @@ Self-assessment (`make run-self`) must always show:
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
   `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
+The VC count lives in the docs and the proof ledger, never in the crate
+description. `alire/long-description.txt` states the SPARK level alone, so a
+past release's manifest never describes the current tree's proof surface.
+
 ## Architecture
 
 <!-- agents-tree:begin -->
