@@ -71,6 +71,16 @@ are bounded by work that genuinely must happen (hashing the changed
 sources, parsing the proof, building the SBOM) -- a from-scratch solver
 run happens once per gnatprove session, not once per run.
 
+**Every scenario banner carries the load it was measured under**, because the
+scenarios run in sequence and each one loads the box. A scenario measured late
+inherits the load the earlier ones left behind, so two rows can differ by more
+than the work between them accounts for. `make bench` prints the 1-minute load
+average in front of each scenario for that reason. To compare two shapes
+honestly, run them paired -- back to back, each with its own pre-run load --
+rather than comparing rows from one sequential pass. The paired method, and a
+case where sequence order alone manufactured an apparent 14-second gap, are on
+[Prove timing and the optimisation review](prove-timing.md).
+
 ## Generator and docs-bundling cost
 
 `make build` runs four generators before it compiles anything, and the

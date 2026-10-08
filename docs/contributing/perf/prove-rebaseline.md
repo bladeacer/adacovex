@@ -45,6 +45,12 @@ prove-cold sample of 63.8 s (59.1-67.3 s) on the shipped 1047 VCs, prove warm
 45.8 ms over 15 runs, and a fully cold clone at 78.0 s over two runs, all from
 one hyperfine session at load 0.59 with the machine otherwise idle.
 
+The clone figure is a sequence-order artefact, not a cost: the clone scenario
+runs last, so it inherits the load the earlier scenarios left. Paired against
+prove cold at matched load the clone is not slower. See the paired-comparison
+note on [Prove timing and the optimisation
+review](prove-timing.md#how-the-phase-table-works).
+
 ## The fully cold shape
 
 This is the shape to read for a first run on a new checkout: the result cache,

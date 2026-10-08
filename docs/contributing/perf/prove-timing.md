@@ -22,13 +22,10 @@ unchanged; a methodology shift closes the phase and opens a new one.
 
 The table holds the three most recent closed phases plus the open one. A
 retired phase is deleted rather than kept, so the page does not grow without
-bound. Before a phase is deleted, whatever still explains a surviving number
-moves into the "Across every phase" notes. The phases retired so far are
-1.40.0-1.41.0 and 1.42.0-1.44.0; their two contributions survive in prose,
-because the walker-skip and stat-stamp work behind the warm syscall floor is
-written up in full on [Performance optimisation
-history](optimisation-history.md#walker-skip-completion--cached-proof-restore-1430),
-and a warm hit restoring `gnatprove.out` is noted below.
+bound, and whatever still explains a surviving number moves into the "Across
+every phase" notes first. The phases retired so far are 1.40.0-1.41.0 and
+1.42.0-1.44.0; the stat-stamp work behind the warm syscall floor is written up
+on [Performance optimisation history](optimisation-history.md).
 
 **The 1.48.0-1.54.0 phase is closed, with 1.50.0 as its representative.**  Its
 methodology shift was the deterministic, incremental doc bundling of 1.50.0.
@@ -41,12 +38,10 @@ subcommand forwards verbatim.
 1.55.0 opens it and changes the methodology, not only the code: every figure in
 this phase is taken with `/proc/loadavg` recorded beside it, because this
 machine is shared and the load moves the cold rows by more than 50 percent on
-the same binary. 1.56.0 folds in because it changed no measurement
-methodology: it edits documentation sources, one browser script, and Python
-tooling, and adds no Ada unit, so the pipeline and the prover see the same work
-as 1.55.0 did. The phase also re-baselines the fully cold prove shape, which no
-earlier phase recorded, and replaces the gate's second full Sphinx build with
-one content-keyed shared build.
+the same binary. 1.56.0 folds in because it edited documentation sources, one
+browser script, and Python tooling, and added no Ada unit, so the pipeline and
+the prover see the same work as 1.55.0 did. It also re-baselines the fully cold
+prove shape, which no earlier phase recorded.
 
 **The 1.57.0-1.58.0 phase is open, with 1.58.0 as its representative.**
 1.57.0 shifts the methodology, because the tree gained a development profile
@@ -60,6 +55,13 @@ opt-in sweep and the H2 dead-initialiser fix, both of which the prover sees,
 and its other work is documentation, one browser script, and Python tooling.
 Every number below is hyperfine on the self tree (gnatprove 16.1.0, 12 logical
 cores, 10 proof jobs, release profile) unless a note says otherwise.
+
+**Scenario order biases the cold rows, so read every figure with its load.**
+Each scenario loads the box, so one measured late inherits the load the earlier
+ones left behind. `make bench` prints the load in front of every scenario for
+that reason. Compare two shapes paired, not as two rows of one sequential pass:
+the clone row below is a case where sequence order alone manufactured an
+apparent 14-second gap that a paired run did not reproduce.
 
 ## Pipeline timing by phase
 
@@ -101,8 +103,8 @@ and the gnatprove session store is wiped before each one.
 - The phase opens with new safety work, not a regression in the I/O layer: the
   correct-version probe validation re-validates each cached system-tool version
   against the identity digest of the installed binary, so a run re-resolves
-  every tool's PATH entry. Both this work and the shared directory-snapshot
-  memo are written up on [Performance optimisation
+  every tool's PATH entry. That work and the shared directory-snapshot memo are
+  written up on [Performance optimisation
   history](optimisation-history.md).
 - The 1.46.0 opt-out machinery is invisible to every warm shape: the marker scan
   runs only after the result-cache lookup misses, so a warm prove hit returns
@@ -110,9 +112,9 @@ and the gnatprove session store is wiped before each one.
   against the solver floor at 876 VCs.
 - The 1.47.0 `-O2 -gnatn` release build is why 1.47.0 represents the phase: the
   previously unoptimised build becomes the release build, pipeline cold reaches
-  its best figure (~74 ms), and the stripped binary shrinks from 6.49 MiB to
-  5.39 MiB. The solver-dominated prove-cold shape does not move, and the phase's
-  syscall count stays at ~6k, half of the ~12k the walk-skip work left behind.
+  its best figure (~74 ms), and the stripped binary shrinks to 5.39 MiB. The
+  solver-dominated prove-cold shape does not move, and the phase's syscall
+  count stays at ~6k, half of the ~12k the walk-skip work left behind.
 
 ### 1.48.0-1.54.0 (representative 1.50.0)
 
@@ -128,7 +130,7 @@ and the gnatprove session store is wiped before each one.
 - 1.51.0 folds in without moving a row: its encode cache, parallel encoder, and
   incremental Sphinx build are build-side speed-ups that leave the emitted spec
   byte-identical, so 1.50.0 keeps the representative slot. 1.52.0 verifies the
-  tree at gnatprove **level 4** and proves clean there with no new VCs. The
+  tree at gnatprove **level 4** and proves clean there with no new VCs, and the
   prove subcommand forwards `--level` verbatim, so a level-4 run costs exactly
   gnatprove's overhead and nothing from adacovex.
 - The prove-cold row is solver-bound and load-dependent as always: single shots
@@ -148,18 +150,16 @@ and the gnatprove session store is wiped before each one.
   branch and the store-back branch could never both be true. On a deliberately
   corrupted probe blob the run goes from 11 subprocess spawns and 976 ms to one
   spawn and 57 ms, which is the healthy warm floor this phase measures on an
-  unchanged tree (one spawn, 49.9 ms wall).
+  unchanged tree.
 - **The manual link check no longer builds the manual a second time.** It shares
   one content-keyed Sphinx build with the offline-manual generator, so the gate
   goes from about 18.6 s to 0.44 s warm and the `tools-check` suite that
-  exercises it from 28.9 s to 2.5 s. `make prove` on an unchanged tree now
-  measures 1.1 s at load 4.1.
+  exercises it from 28.9 s to 2.5 s.
 - **Go dependency resolution is the one feature that adds work, and it is
   bounded.** Each vendored Go component costs one `modules.txt` lookup and two
   licence-file probes. The self tree has no vendored component, so no figure in
-  this column can see that cost; measured against a 1.54.0 build on a synthetic
-  tree with 100 vendored Go modules, the new build reads 39.7 ms against a
-  40.9 ms base, inside the paired spread.
+  this column can see that cost; on a synthetic tree with 100 vendored Go
+  modules the new build reads 39.7 ms against a 40.9 ms base, inside the spread.
 - The prove-cold row is solver-bound and load-dependent as in every phase: 72.0 s
   and 73.1 s at load 3.6 and 5.0, 80.2 s at load 7.2, 81.7 s at load 2.3, and
   120.6 s at load 21.9, all at 878 VCs with 0 unproved. Read the row as 72-82 s
@@ -201,23 +201,26 @@ and the gnatprove session store is wiped before each one.
   a parallel build. It did not: an Ada separate body shares its parent's `gnat1`
   invocation, so the file split but the compile did not. Measured with the load
   recorded, the original tree built in 60.7 s and 62.7 s and the split tree in
-  57.3 s and 59.8 s. That is a build-side figure and moves no row above, but it
-  is the phase's main negative result.
-- **The fully cold clone shape moves with the phase.** The fresh-tree prove
-  measures 78.0 s over two runs (74.4-81.6 s) against 63.8 s for prove cold,
-  from the same session. That is a wider gap than the 1.52.0 phase recorded, and
-  this page does not claim a cause for it. The extra work a fresh tree adds
-  beyond prove cold was not isolated. Read the clone row as the first-run band.
+  57.3 s and 59.8 s. That moves no row above, but it is the phase's main
+  negative result.
+- **The fully cold clone shape costs the same as prove cold, and the apparent
+  gap in the bench is measurement order, not work.** The recorded row reads
+  78.0 s against 63.8 s, but the clone scenario runs last in `make bench`, so
+  the earlier scenarios have already loaded the box. A paired comparison settles
+  it, running the two shapes back to back with the load in front of each. Across
+  three paired rounds, the one pair at comparable load (16.8 against 14.4) put
+  the clone at 68.8 s and prove cold at 70.2 s, so the clone was not slower. The
+  round that produced the recorded gap ran the clone at load 11.6 against prove
+  cold at 1.1.
 - **The prove warm path got a correctness fix, not a speed-up.** H1 restored a
   truthfulness gap in the short-circuit: a cache hit that failed to restore a
   usable summary used to print "reusing prior proof" and return success without
   running the prover. The runner now falls through to a real gnatprove run. The
   warm row is unaffected, because a healthy warm hit was already a cache hit.
-- `make prove` on an unchanged tree measures 1.12 s and 1.13 s on two
-  consecutive runs, where `./bin/covex prove` alone costs 45.8 ms. The stripped
-  binary is 6.0 MiB, down from the 9.5 MiB unstripped build, so the phase is
-  36.6 percent smaller after `strip`. The Ada_CRDT second datapoint reads
-  27.6 ms warm and 48.0 ms cold.
+- `make prove` on an unchanged tree measures 1.12 s, where `./bin/covex prove`
+  alone costs 45.8 ms. The stripped binary is 6.0 MiB against 9.5 MiB
+  unstripped, so the phase is 36.6 percent smaller after `strip`. The Ada_CRDT
+  second datapoint reads 27.6 ms warm and 48.0 ms cold.
 
 ### Across every phase
 
@@ -225,24 +228,22 @@ and the gnatprove session store is wiped before each one.
   876 VCs; the growth past that point is the proved multi-pair IR slice and the
   C7 opt-in sweep, see [ir.md](../ir.md)). It is paid once per session, not per
   run: with the result cache wiped but the gnatprove session intact, the same
-  run is ~1.1 s, and gnatprove's session store re-analyses only the changed unit
-  and its dependents after a real edit (roughly 6-9 s wall for a body-only
-  edit).
+  run is ~1.1 s.
 - **A benchmark on the self tree cannot find a vendored-code regression.** The
   self tree has zero vendored components, so a change that only touches
-  vendored code is invisible to it. Measure such a change on a fixture that
-  has the shape it touches, paired against a build of the base commit.
-- `make prove` on an unchanged tree is not the same shape as the warm prove
-  short-circuit. The target also regenerates the bundled manual and the dashboard
-  template and re-checks the generators, so it costs about 1.12 s where
-  `./bin/covex prove` alone costs 46 ms.
+  vendored code is invisible to it. Measure such a change on a fixture with
+  the shape it touches, paired against a build of the base commit.
+- `make prove` on an unchanged tree is not the warm short-circuit either. The
+  target also regenerates the bundled manual and the dashboard template and
+  re-checks the generators, so it costs about 1.12 s where `./bin/covex prove`
+  alone costs 46 ms.
 - A warm hit restores `gnatprove.out` since 1.43.0: the cache stores the summary
   content, so a hit on a tree whose `obj/gnatprove/` was wiped reports Platinum
   at the VC count of the run that produced it. Before 1.43.0 the cache stored
   only a success marker, so such a hit reported Stone / 0 VCs.
-- Proof effort is a solver-time dial. `--level=1` cold doubles the from-scratch wall
-  (~35 s default to ~68 s at `-j0` on this machine) at the same 876 VCs, because
-  level 1 re-tries each check with stronger solver configurations. Lower levels
-  are not strictly faster; `--level=0` cold is ~35 s.
+- Proof effort is a solver-time dial. `--level=1` cold doubles the wall
+  (~35 s to ~68 s at `-j0` here) at the same 876 VCs, because level 1 re-tries
+  each check with stronger solver configurations. Lower levels are not strictly
+  faster; `--level=0` cold is ~35 s.
 - CPU use stays bounded on developer machines: the default job count is
   `cores - 2` (all cores inside CI), so gnatprove never starves the desktop.

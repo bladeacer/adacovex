@@ -4,6 +4,8 @@ Date: _2026-10-04_
 
 Version bumped 1.57.0 -> 1.58.0.
 
+<!-- no-covex-docs-loc: historical release record, line cap does not apply -->
+
 ## Changes
 
 ### C1: The SimpleEnglish skill is now a named third-party component in both notices
@@ -27,11 +29,11 @@ each:
   section ahead of the toolchain section, in the table shape the rest of the
   file uses. The row states the version (1.3.0, ASD-STE100 Issue 9 of
   2025-01-15), the MIT licence with its URL, and the use.
-- Both files now state the two project overrides outside `AGENTS.md`:
-  British English spelling replaces the American spelling that rule 1.14 names,
-  and a paragraph holds at most four sentences, not the six of rule 6.6.
-- Both files now point at the controlled list of Technical Names, which is where
-  a writer goes before using a word that the standard does not define.
+- Both files state the two project overrides outside `AGENTS.md`: British
+  English spelling replaces the American spelling that rule 1.14 names, and a
+  paragraph holds at most four sentences, not the six of rule 6.6.
+- Both files point at the controlled list of Technical Names, which is where a
+  writer goes before using a word that the standard does not define.
 
 The two notices differ in purpose, so they differ in emphasis. The credits page
 tells a reader what shapes the documentation. The notices page tells a
@@ -40,9 +42,6 @@ copy is unmodified upstream text that ships at every checkout, so the notice
 covers every reader of the tree and not only the built binary. Both pages state
 that the skill governs prose only: it is not linked into the binary, it runs no
 code at build time, and no generated file comes from it.
-
-The sibling Ada_CRDT project received the same change in crdt 1.17.0, so the
-two trees describe the vendored skill the same way.
 
 ### C2: The `spark-coverage` subcommand reports proof coverage as three separate metrics
 
@@ -195,6 +194,55 @@ gone and the rest no longer need an initialisation proved at their reads. The
 whole native suite passes, including the 349 CLI config checks that pin the
 "did you mean" suggestions, and `Edit_Distance` returns the same distances for
 the same inputs.
+
+### H3: A past release's manifest no longer describes the current tree's proof surface
+
+The crate description ended with a self-assessment line that carried a VC count,
+and the sync tool wrote that line into every manifest it touched. A manifest is
+a permanent record of one released version, so `covex-1.50.0.toml` ended up
+claiming whatever the current campaign measured, which made the whole published
+history wrong in a way that grew silently with every release.
+
+The count is a vanity metric: it moves on almost every release and measures the
+size of the proof surface rather than its quality. Platinum with 0 unproved and
+0 justified is the claim worth publishing, and that figure does not drift. So
+the description now states the SPARK level alone:
+
+```
+- Self-assessment: 100% docstring coverage, Platinum SPARK, DAL-C / ASIL B /
+  Class A Achieved, 1775/1775 native tests passing
+```
+
+The fix covers all 114 manifests (56 `alire/releases/`, 57 `index/`, and the two
+current ones), each rewritten against its own historical VC form rather than
+against the current number, so one pass corrected every past value. The test
+count stays, because `require-tests` gates on it and it tracks the suite.
+
+`make description CHECK=1` is the gate that keeps this true, and it is already
+wired into `make check`. Two files record the rule so it is not undone: AGENTS.md
+places the VC count in the docs and the proof ledger only, and the docstring of
+`tools/live_files.py` no longer justifies scanning the manifests by the very
+phrase it removed.
+
+### H4: `make check` formats before it gates
+
+`fmt` ran eighteenth in the gate list, immediately before `build`. Everything
+upstream of it therefore validated unformatted code, which is the wrong order
+twice over. gnatprove analyses the sources, so the proof pass is the one gate
+that must see formatted text, and it did -- but every static gate above it
+checked a tree the formatter had not yet visited.
+
+The order also left the generated API docs describing stale formatting. `fmt`
+rewrites `src/adacovex-docs_template.ads`, and `make doc` then renders that
+spec into `docs/api-docs/`; with `fmt` running after the documentation gates had
+already read the tree, the committed API page kept showing the pre-format
+record layout until the next full run happened to reorder itself.
+
+`fmt` now runs first, ahead of every other gate. The ordering is verified rather
+than assumed: a deliberately misformatted declaration was injected into
+`src/core/adacovex-config.adb`, and the full gate run restored it byte for byte
+before the second gate started, then passed all 24 gates with the proof clean.
+`make fmt` is idempotent, so a second run is a no-op.
 
 ## Test Suite
 

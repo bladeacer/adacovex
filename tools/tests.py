@@ -651,6 +651,30 @@ class BenchCloneTests(unittest.TestCase):
             finally:
                 shutil.rmtree(clone.parent, ignore_errors=True)
 
+    def test_load_avg_reads_proc_loadavg(self) -> None:
+        # Every scenario banner carries the load it was measured under, so a
+        # reader can tell a real difference from a sequence artefact: the
+        # scenarios run in order and each loads the box.
+        import bench
+        reading = bench.load_avg()
+        if Path("/proc/loadavg").is_file():
+            expected = Path("/proc/loadavg").read_text().split()[0]
+            self.assertEqual(reading, expected)
+            # The first field is the 1-minute average: a bare decimal number.
+            float(reading)
+        else:
+            # A machine without /proc/loadavg reports "unknown" rather than
+            # failing the whole bench.
+            self.assertEqual(reading, "unknown")
+
+    def test_announce_reports_label_and_load(self) -> None:
+        import bench
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            bench.announce("Prove cold clone")
+        line = out.getvalue()
+        self.assertIn("Prove cold clone", line)
+        self.assertIn("load", line)
+
     def test_make_clone_copies_the_tree_not_a_link(self) -> None:
         import bench
         with tempfile.TemporaryDirectory() as tmp:

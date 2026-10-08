@@ -61,6 +61,27 @@ PROVE_CLONE_RUNS: int = 2
 FALLBACK_RUNS: int = 5
 
 
+def load_avg() -> str:
+    """The 1-minute load average, as recorded beside every figure.
+
+    The scenarios run in sequence and each one loads the box, so a scenario
+    measured late inherits the load the earlier ones left behind. Printing the
+    reading in front of each scenario is what lets a reader tell a real
+    difference from a sequence artefact -- see the paired-comparison note in
+    docs/contributing/perf/prove-timing.md. Best effort: a machine without
+    /proc/loadavg reports "unknown" rather than failing the bench.
+    """
+    try:
+        return Path("/proc/loadavg").read_text().split()[0]
+    except (OSError, IndexError):
+        return "unknown"
+
+
+def announce(label: str) -> None:
+    """Print a scenario banner carrying the load it is measured under."""
+    print(f"=== {label} (load {load_avg()}) ===")
+
+
 def binary_path() -> Path:
     binary = ROOT / "bin" / "adacovex"
     if not binary.is_file():
@@ -75,7 +96,7 @@ def hyperfine_available() -> bool:
 
 def run_cold_hyperfine(cache: str, target_args: List[str] = None,
                        label: str = "Pipeline cold (fresh result cache)") -> None:
-    print(f"=== {label} ===")
+    announce(label)
     cmd = [
         "hyperfine", "--runs", str(COLD_RUNS),
         "--prepare", f"rm -rf {cache}",
@@ -95,7 +116,7 @@ def run_warm_hyperfine(cache: str, target_args: List[str] = None,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
-    print(f"=== {label} ===")
+    announce(label)
     cmd = [
         "hyperfine", "--warmup", "2", "--runs", str(WARM_RUNS),
         "./bin/adacovex " + " ".join(target_args or []) + f" --cache-dir={cache}",
@@ -135,7 +156,7 @@ def run_prove_cold_hyperfine(cache: str) -> None:
     # gnatprove.out behind, which the next run's ensure_proof_output picks
     # up (but a session wiped by THIS scenario does not hurt: the prove
     # subcommand regenerates everything it needs).
-    print("=== Prove cold (--no-cache, result cache + gnatprove session wiped) ===")
+    announce("Prove cold (--no-cache, result cache + gnatprove session wiped)")
     cmd = [
         "hyperfine", "--runs", str(PROVE_COLD_RUNS),
         "--prepare",
@@ -154,7 +175,7 @@ def run_prove_warm_hyperfine(cache: str) -> None:
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
-    print("=== Prove warm (populated prove cache) ===")
+    announce("Prove warm (populated prove cache)")
     cmd = [
         "hyperfine", "--warmup", "2", "--runs", str(PROVE_WARM_RUNS),
         f"./bin/adacovex prove --cache-dir={cache}",
@@ -187,8 +208,8 @@ def run_prove_clone_hyperfine(cache: str, target: Path = ROOT) -> None:
     # first-run cost: pipeline + session-less solver run + summary parse.
     clone = make_clone(target)
     try:
-        print("=== Prove cold clone (fresh tree: no cache, no session, "
-              "no summary) ===")
+        announce("Prove cold clone (fresh tree: no cache, no session, "
+                 "no summary)")
         cmd = [
             "hyperfine", "--runs", str(PROVE_CLONE_RUNS),
             "--prepare",
@@ -204,7 +225,8 @@ def run_prove_clone_hyperfine(cache: str, target: Path = ROOT) -> None:
 def time_runs(cache: str, label: str, count: int, reset: bool,
               extra_args: List[str] = None) -> None:
     """Fallback timing loop using perf_counter (no hyperfine installed)."""
-    print(f"== hyperfine not found; using bash time ({label}) ==")
+    print(f"== hyperfine not found; using bash time "
+          f"({label}, load {load_avg()}) ==")
     binary = str(ROOT / "bin" / "adacovex")
     args = [binary] + (extra_args or []) + [f"--cache-dir={cache}"]
     for i in range(1, count + 1):
@@ -225,7 +247,8 @@ def time_prove_clone(cache: str, target: Path) -> None:
     """Fallback timing loop for the cold-clone prove shape."""
     clone = make_clone(target)
     try:
-        print(f"== hyperfine not found; using bash time (prove cold clone) ==")
+        print(f"== hyperfine not found; using bash time "
+              f"(prove cold clone, load {load_avg()}) ==")
         binary = str(ROOT / "bin" / "adacovex")
         for i in range(1, PROVE_CLONE_RUNS + 1):
             shutil.rmtree(cache, ignore_errors=True)

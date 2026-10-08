@@ -315,6 +315,7 @@ spark-off-check:
 # them (both prove and run-self emit docs/badges/*.svg, so badges are
 # produced exactly once here).
 check:
+	@echo "=== Quality gate: fmt ==="; $(MAKE) fmt
 	@echo "=== Quality gate: ASCII ==="; $(MAKE) ascii-check
 	@echo "=== Quality gate: complexity (no god objects/functions/files) ==="; $(MAKE) complexity-check
 	@echo "=== Quality gate: CSS 4px spacing ==="; $(MAKE) csslint-check
@@ -333,7 +334,6 @@ check:
 	@echo "=== Quality gate: tldr structure ==="; $(MAKE) tldr-check
 	@echo "=== Quality gate: bundled offline manual links ==="; $(MAKE) book-links-check
 	@echo "=== Quality gate: bundled offline manual spec ==="; python3 tools/gen-docs.py --check
-	@echo "=== Quality gate: fmt ==="; $(MAKE) fmt
 	@echo "=== Quality gate: build ==="; $(MAKE) build
 	@echo "=== Quality gate: native tests ==="; $(MAKE) test
 	@echo "=== Quality gate: SPARK proof + badges ==="; $(MAKE) prove
@@ -344,7 +344,7 @@ check:
 	@echo "=== Quality gate: proof metrics in sync ==="; python3 tools/update-proof-status.py --check
 	@echo "=== Quality gate: description sync ==="; python3 tools/update-description.py --check
 	@echo ""
-	@echo "=== Quality gate passed: ascii, complexity, csslint, spark-off, changelog, action-parity, docs-coverage, tools, cli-e2e, version, version-consistency, doc-links, link, docs-check, para-split, tldr, book-links, fmt, build, test, prove, doc, book, sbom, test-count, proof-status, description ==="
+	@echo "=== Quality gate passed: fmt, ascii, complexity, csslint, spark-off, changelog, action-parity, docs-coverage, tools, cli-e2e, version, version-consistency, doc-links, link, docs-check, para-split, tldr, book-links, build, test, prove, doc, book, sbom, test-count, proof-status, description ==="
 
 # Quality gate: alire.toml, alire-dev.toml, the generated Ada version spec,
 # the built binary, and the committed SBOM must all name the same version.
