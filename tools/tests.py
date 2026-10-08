@@ -694,6 +694,70 @@ class BenchCloneTests(unittest.TestCase):
                 shutil.rmtree(clone.parent, ignore_errors=True)
 
 
+class CheckGateOrderTests(unittest.TestCase):
+    """The `make check` gate order: `fmt` must come before anything that
+    reads the Ada sources.
+
+    `make check` is a hand-written recipe, so the order is only a convention
+    and nothing stopped `fmt` from being moved back down the list -- which is
+    exactly what happened, and it cost the gate its determinism twice over.
+    gnatdoc renders `docs/api-docs/` from the sources and gnatprove analyses
+    them, so both read formatting that `fmt` owns; anything downstream of
+    `fmt` therefore has to run after it.
+    """
+
+    def _check_gate_order(self) -> List[str]:
+        makefile = (Path(__file__).resolve().parent.parent
+                    / "Makefile").read_text(encoding="utf-8")
+        # The gate banners are emitted by the `check:` recipe only, in order.
+        body = re.search(r"^check:\n((?:\t.*\n)+)", makefile, re.M)
+        self.assertIsNotNone(body, "the check: recipe is present")
+        assert body is not None
+        return [name.strip()
+                for name in re.findall(r"=== Quality gate: ([^=]+?) ===",
+                                       body.group(1))]
+
+    def test_fmt_is_a_gate(self) -> None:
+        gates = self._check_gate_order()
+        self.assertTrue(any(g == "fmt" for g in gates),
+                        f"make check no longer runs fmt: {gates}")
+
+    def test_fmt_runs_before_the_gates_that_read_sources(self) -> None:
+        gates = self._check_gate_order()
+        fmt = gates.index("fmt")
+        # `doc` renders the API docs from the Ada sources and `prove` analyses
+        # them, so both must see the formatted tree.  `build` compiles it.
+        for label in ("build", "native tests", "SPARK proof + badges",
+                      "API docs"):
+            self.assertIn(label, gates, f"gate missing: {label}")
+            self.assertLess(fmt, gates.index(label),
+                            f"fmt must run before '{label}': {gates}")
+
+    def test_fmt_runs_first(self) -> None:
+        # Nothing may precede fmt: a gate that ran earlier would have judged
+        # the tree before the formatter visited it.
+        gates = self._check_gate_order()
+        self.assertEqual(gates[0], "fmt", f"expected fmt first: {gates}")
+
+    def test_fmt_excludes_every_generated_spec(self) -> None:
+        # gnatformat and the generators disagree on layout, so formatting a
+        # generated spec makes it fail the generator's byte comparison and get
+        # rewritten, and the next fmt mangles it again.  That ping-pong is
+        # what stopped `make check` reaching a fixed point.
+        root = Path(__file__).resolve().parent.parent
+        makefile = (root / "Makefile").read_text(encoding="utf-8")
+        listed = re.search(r"^GENERATED_SPECS\s*=\s*(.*?)(?=\n\n)",
+                           makefile, re.M | re.S)
+        self.assertIsNotNone(listed, "GENERATED_SPECS is declared")
+        assert listed is not None
+        names = set(re.findall(r"[\w.-]+\.ads", listed.group(1)))
+        # Every spec a generator writes must be named, and each must exist.
+        for spec in sorted(root.glob("src/adacovex*_template.ads")) + \
+                sorted(root.glob("src/adacovex_version_info.ads")):
+            self.assertIn(spec.name, names,
+                          f"generated spec not excluded from fmt: {spec.name}")
+
+
 class CssSpacingTests(unittest.TestCase):
     """Pure-logic tests for tools/csslint.py (the 4px spacing gate)."""
     def test_multiple_of_4(self) -> None:

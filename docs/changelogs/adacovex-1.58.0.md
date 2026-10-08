@@ -232,17 +232,50 @@ twice over. gnatprove analyses the sources, so the proof pass is the one gate
 that must see formatted text, and it did -- but every static gate above it
 checked a tree the formatter had not yet visited.
 
-The order also left the generated API docs describing stale formatting. `fmt`
-rewrites `src/adacovex-docs_template.ads`, and `make doc` then renders that
-spec into `docs/api-docs/`; with `fmt` running after the documentation gates had
-already read the tree, the committed API page kept showing the pre-format
-record layout until the next full run happened to reorder itself.
+The order also left the generated API docs describing whatever formatting
+`make doc` happened to find, because `doc` renders `docs/api-docs/` from the
+Ada sources and ran long after the gates that had read the tree.
 
-`fmt` now runs first, ahead of every other gate. The ordering is verified rather
-than assumed: a deliberately misformatted declaration was injected into
+`fmt` now runs first, ahead of every other gate, so every gate that follows
+judges the formatted tree. The ordering is verified rather than assumed: a
+deliberately misformatted declaration was injected into
 `src/core/adacovex-config.adb`, and the full gate run restored it byte for byte
-before the second gate started, then passed all 24 gates with the proof clean.
-`make fmt` is idempotent, so a second run is a no-op.
+before the second gate started, then passed with the proof clean. `make fmt` is
+idempotent, so a second run is a no-op.
+
+### H5: The bundled manual spec is no longer formatted, so `make check` reaches a fixed point
+
+Running `make check` and then `make fmt` and `make doc` again left the tree
+dirty, and the bundled manual spec changed on every pass. Two generators and
+the formatter disagreed about the same file: `tools/gen-docs.py` writes
+`src/adacovex-docs_template.ads` in its own layout, `gnatformat` rewrites the
+file almost entirely, and the generator's stale-check is a byte comparison
+against its own output. So each mangle made the next generator run report the
+file stale and rewrite it, and the next `fmt` mangled it again -- 50 484
+differing lines between the two layouts, 2.3 s spent reformatting 26 057 lines
+of machine-written data on every gate run.
+
+`make fmt` no longer formats the three generated specs. `gnatformat` has no
+exclusion flag, so `fmt` passes it an explicit 187-file source list and skips
+`adacovex_version_info.ads`, `adacovex-dashboard_template.ads` and
+`adacovex-docs_template.ads`, named in a `GENERATED_SPECS` variable. The
+hand-written `adacovex-docs_template.adb` is deliberately still formatted. This
+is the same exclusion `make doc` already applies to generated API pages: a file
+nobody hand-edits should not be reformatted into disagreement with the tool
+that writes it.
+
+Drift detection is unaffected, which was the thing worth checking: with the file
+in the mangled state, `tools/gen-docs.py --check` still exits 1 and reports it
+stale. The fix was measured end to end -- after a full `make check`, three
+further `fmt` and `doc` cycles left both the file's checksum and `git status`
+unchanged.
+
+Four tests now enforce the invariant instead of leaving it to convention, since
+a hand-written recipe is exactly what let the ordering drift in the first place:
+`fmt` is a gate, it runs first, it precedes the gates that read the sources
+(`build`, `test`, `prove`, `doc`), and every generated spec is named in the
+exclusion list. Moving `fmt` back to just before `build` -- the regression that
+actually happened -- fails `test_fmt_runs_first`.
 
 ## Test Suite
 

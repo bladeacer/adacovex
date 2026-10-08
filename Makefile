@@ -142,8 +142,23 @@ test: build
 prove: build
 	@python3 tools/run.py prove
 
+# The three generated specs, excluded from gnatformat.  gnatformat has no
+# exclusion flag, so `fmt` passes an explicit source list instead of -P.
+# Formatting a generated spec is both pointless (it is never hand-edited) and
+# destructive: gnatformat and the generator disagree on layout, so a formatted
+# docs_template.ads fails gen-docs' byte comparison and is rewritten, and the
+# next fmt mangles it again.  That ping-pong is what stopped `make check` from
+# reaching a fixed point.  The generated .adb bodies are hand-written and are
+# NOT in this list.
+GENERATED_SPECS = adacovex_version_info.ads \
+	adacovex-dashboard_template.ads \
+	adacovex-docs_template.ads
+
+FMT_SOURCES = $(shell find src \( -name '*.ads' -o -name '*.adb' \) \
+	$(foreach s,$(GENERATED_SPECS),! -name '$(s)') | sort)
+
 fmt:
-	@python3 tools/dev-cmd.py 'alr exec -- gnatformat -P adacovex.gpr -U' && \
+	@python3 tools/dev-cmd.py 'alr exec -- gnatformat -U $(FMT_SOURCES)' && \
 	python3 tools/gen-version.py && \
 	python3 tools/gen-dashboard.py
 
