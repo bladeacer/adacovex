@@ -239,28 +239,111 @@ def bump_manifests(version: str) -> None:
     print("  descriptions synced to all manifests")
 
 
+def local_tag_sha(tag: str) -> Optional[str]:
+    """The commit a local `tag` peels to, or None when there is no such tag.
+
+    An annotated tag has two identities: the tag object, and the commit it
+    peels to.  Only the peeled commit is comparable with what a remote
+    reports, so `rev-parse tag^{}` is what every comparison here uses.
+    """
+    result = sh(["git", "rev-parse", "--verify", "--quiet", f"{tag}^{{}}"],
+                check=False, capture_output=True, text=True)
+    if result.returncode != 0:
+        return None
+    return result.stdout.strip() or None
+
+
+def remote_tag_sha(tag: str) -> Optional[str]:
+    """The commit origin's `tag` peels to, or None when origin has no such
+    tag.
+
+    A failed query is never reported as "no such tag".  The old replace path
+    drove its decision from the *local* tag, so a remote tag this clone had
+    never seen was invisible: the delete it attempted was skipped, and the
+    following push was then refused because origin already had the tag.  That
+    is the failure a release must not be able to reach, so an unreachable
+    origin stops the run instead.
+    """
+    result = sh(["git", "ls-remote", "--tags", "origin", f"refs/tags/{tag}"],
+                check=False, capture_output=True, text=True)
+    if result.returncode != 0:
+        raise SystemExit(
+            f"error: cannot ask origin whether {tag} exists, so the tag "
+            f"state is unknown and the release would be a guess:\n"
+            f"{result.stderr.strip()}")
+    peeled = None
+    direct = None
+    for line in result.stdout.splitlines():
+        parts = line.split()
+        if len(parts) != 2:
+            continue
+        sha, ref = parts
+        if ref == f"refs/tags/{tag}^{{}}":
+            peeled = sha
+        elif ref == f"refs/tags/{tag}":
+            direct = sha
+    # The peeled line wins: it is the commit, so it compares with a local tag.
+    return peeled or direct
+
+
+def push(spec: str, what: str) -> None:
+    """Push one refspec, reporting a refusal in words instead of a traceback."""
+    result = sh(["git", "push", "origin", spec], check=False,
+                capture_output=True, text=True)
+    if result.returncode != 0:
+        raise SystemExit(
+            f"error: failed to push {what} ({spec}).\n"
+            f"{result.stderr.strip()}\n"
+            f"If origin refused the tag, check Settings > Rules > Protected "
+            f"tags: a protected tag cannot be created or replaced by a push, "
+            f"so the rule has to be lifted before a release can land.")
+
+
 def git_tag_ops(version: str, dry_run: bool) -> None:
-    """Commit, tag and push the release (skipped entirely under --dry-run)."""
+    """Commit, tag and push the release.
+
+    Idempotent by design.  A tag that origin already carries is replaced
+    rather than fought with, because a re-run after a late failure is the
+    normal case: the commit and tag step is the last one, so a failure
+    anywhere before it leaves the previous attempt's tag behind.
+    """
     tag = f"v{version}"
+    # Read-only preflight. Both paths need it, and a dry run that cannot
+    # report the tag state is not much of a rehearsal.
+    local_sha = local_tag_sha(tag)
+    remote_sha = remote_tag_sha(tag)
     if dry_run:
         print(f"  [dry-run] would commit 'chore: Release {version}', "
               f"tag {tag}, and push HEAD + {tag}")
+        print(f"  [dry-run] local {tag}: {local_sha or 'no such tag'}")
+        print(f"  [dry-run] origin {tag}: {remote_sha or 'no such tag'}")
+        if local_sha or remote_sha:
+            print(f"  [dry-run] would replace the existing {tag} first")
         return
-    exists = sh(["git", "rev-parse", tag], check=False,
-                capture_output=True, text=True).returncode == 0
-    if exists:
-        sh(["git", "tag", "-d", tag], capture_output=True, text=True)
-        sh(["git", "push", "origin", f":refs/tags/{tag}"],
-            capture_output=True, text=True)
-        print(f"  Replaced existing tag {tag}")
+    if local_sha or remote_sha:
+        print(f"  Replacing existing tag {tag} "
+              f"(local {local_sha or 'none'}, origin {remote_sha or 'none'})")
+        if local_sha:
+            sh(["git", "tag", "-d", tag], capture_output=True, text=True)
+        if remote_sha:
+            # Not best-effort: a silent failure here is what let the old code
+            # push a tag origin already had.
+            push(f":refs/tags/{tag}", f"the deletion of {tag}")
     sh(["git", "add", "-A"])
     sh(["git", "commit", "-m", f"chore: Release {version}"], check=False)
     sh(["git", "tag", "-a", tag, "-m", f"Release {version}"])
-    commit = sh(["git", "rev-parse", "HEAD"], capture_output=True, text=True)
-    print(f"Tagged {tag} at {commit.stdout.strip()}")
-    sh(["git", "push", "origin", "HEAD"])
-    sh(["git", "push", "origin", tag])
-    print("Pushed commit and tag " + tag)
+    commit = sh(["git", "rev-parse", "HEAD"], capture_output=True, text=True).stdout
+    print(f"Tagged {tag} at {commit.strip()}")
+    push("HEAD", "the release commit")
+    push(tag, f"the tag {tag}")
+    # Verify rather than trust: a push that reports success but lands nothing
+    # is exactly the failure a release cannot discover later.
+    landed = remote_tag_sha(tag)
+    if landed is None or landed != commit.strip():
+        raise SystemExit(
+            f"error: origin does not carry {tag} at {commit.strip()} "
+            f"after a successful push (it reports {landed or 'no such tag'}).")
+    print(f"Pushed commit and {tag}, and verified {tag} on origin")
 
 
 def release(version_arg: str, assess_args: str, repo: str, dry_run: bool) -> int:

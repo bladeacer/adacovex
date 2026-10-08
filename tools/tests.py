@@ -307,6 +307,215 @@ class TestRelease(unittest.TestCase):
         self.assertLess(order.index("--version"), order.index("prove"))
 
 
+class ReleaseTagTests(unittest.TestCase):
+    """The tag step of `make release`, which is where a late failure lands.
+
+    The commit and tag step runs last, so a failure anywhere before it leaves
+    the previous attempt's tag behind.  Re-running therefore has to be
+    idempotent, and it used not to be: the replace path asked only the LOCAL
+    tag whether origin had one, so a tag this clone had never seen was
+    invisible, the delete was skipped, and the following push was refused with
+    `! [remote rejected]` and a bare traceback.
+    """
+
+    @staticmethod
+    def _sh(local: Optional[str], remote: Optional[str],
+            push_rc: int = 0, push_stderr: str = "", tag: str = "v1.2.3"):
+        """A fake `sh` over a fixed local/remote tag state.
+
+        Returns the list of git subcommands it saw, so a test can assert the
+        ORDER of the delete and the push, not just that both happened.
+        `landed` models origin's state *after* a successful push, so the
+        post-push verification sees what a real origin would report.
+        """
+        seen: List[str] = []
+
+        def fake_sh(cmd: List[str], check: bool = True, **kwargs) -> object:
+            joined = " ".join(cmd)
+            seen.append(joined)
+            if "ls-remote" in joined:
+                # Before the push origin has `remote`; after it, the new tag.
+                if any(c.startswith("git push origin") and ":refs/tags" not in c
+                       for c in seen):
+                    sha = "newsha"
+                else:
+                    sha = remote
+                out = "" if sha is None else f"{sha}\trefs/tags/{tag}"
+                return subprocess.CompletedProcess(cmd, 0, stdout=out)
+            if "rev-parse" in joined and "--verify" in joined:
+                return subprocess.CompletedProcess(
+                    cmd, 0 if local else 1,
+                    stdout=(local or "") + "\n")
+            if joined.startswith("git push"):
+                return subprocess.CompletedProcess(
+                    cmd, push_rc, stdout="", stderr=push_stderr)
+            if "rev-parse" in joined and "HEAD" in joined:
+                return subprocess.CompletedProcess(cmd, 0, stdout="newsha\n")
+            return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+        return fake_sh, seen
+
+    def test_remote_tag_absent_returns_none(self) -> None:
+        fake, _ = self._sh(local=None, remote=None)
+        with mock.patch.object(release, "sh", fake):
+            self.assertIsNone(release.remote_tag_sha("v1.2.3"))
+
+    def test_remote_tag_prefers_the_peeled_commit(self) -> None:
+        # An annotated tag has a tag object and a commit; only the commit is
+        # comparable with a local `rev-parse tag^{}`.
+        def fake_sh(cmd: List[str], check: bool = True, **kwargs) -> object:
+            if "ls-remote" in " ".join(cmd):
+                out = ("tagobj\trefs/tags/v1.2.3\n"
+                       "commit\trefs/tags/v1.2.3^{}\n")
+                return subprocess.CompletedProcess(cmd, 0, stdout=out)
+            return subprocess.CompletedProcess(cmd, 0, stdout="")
+
+        with mock.patch.object(release, "sh", fake_sh):
+            self.assertEqual(release.remote_tag_sha("v1.2.3"), "commit")
+
+    def test_unreachable_origin_stops_the_release(self) -> None:
+        # "Cannot ask origin" must never be read as "origin has no tag": that
+        # is the confusion that produced the rejected push.
+        def fake_sh(cmd: List[str], check: bool = True, **kwargs) -> object:
+            if "ls-remote" in " ".join(cmd):
+                return subprocess.CompletedProcess(
+                    cmd, 128, stdout="", stderr="fatal: could not read")
+            return subprocess.CompletedProcess(cmd, 0, stdout="")
+
+        with mock.patch.object(release, "sh", fake_sh), \
+                contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaises(SystemExit) as ctx:
+                release.git_tag_ops("1.2.3", dry_run=False)
+        self.assertIn("cannot ask origin", str(ctx.exception))
+
+    def test_remote_only_tag_is_replaced_before_pushing(self) -> None:
+        # The regression: origin has the tag, this clone does not.  The delete
+        # must happen even though there is no local tag to find.
+        fake, seen = self._sh(local=None, remote="oldsha")
+        with mock.patch.object(release, "sh", fake), \
+                contextlib.redirect_stdout(io.StringIO()):
+            release.git_tag_ops("1.2.3", dry_run=False)
+        joined = "\n".join(seen)
+        self.assertIn(":refs/tags/v1.2.3", joined)
+        self.assertLess(joined.index(":refs/tags/v1.2.3"),
+                        joined.index("git push origin v1.2.3"))
+
+    def test_push_refusal_is_reported_not_raised(self) -> None:
+        # A refusal must read as a sentence with the remedy, not a traceback.
+        fake, _ = self._sh(local=None, remote=None, push_rc=1,
+                           push_stderr="! [remote rejected] v1.2.3 -> v1.2.3")
+        with mock.patch.object(release, "sh", fake), \
+                contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaises(SystemExit) as ctx:
+                release.git_tag_ops("1.2.3", dry_run=False)
+        message = str(ctx.exception)
+        self.assertIn("remote rejected", message)
+        self.assertIn("Protected tags", message)
+
+    def test_verifies_the_tag_landed(self) -> None:
+        # A push that reports success but lands nothing is the failure a
+        # release cannot discover later, so the result is re-read from origin.
+        def fake_sh(cmd: List[str], check: bool = True, **kwargs) -> object:
+            joined = " ".join(cmd)
+            if "ls-remote" in joined:
+                return subprocess.CompletedProcess(cmd, 0, stdout="")
+            if "rev-parse" in joined and "HEAD" in joined:
+                return subprocess.CompletedProcess(cmd, 0, stdout="newsha\n")
+            if "rev-parse" in joined and "--verify" in joined:
+                return subprocess.CompletedProcess(cmd, 1, stdout="")
+            return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+        with mock.patch.object(release, "sh", fake_sh), \
+                contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaises(SystemExit) as ctx:
+                release.git_tag_ops("1.2.3", dry_run=False)
+        self.assertIn("does not carry", str(ctx.exception))
+
+    def test_dry_run_reports_tag_state_and_writes_nothing(self) -> None:
+        fake, seen = self._sh(local="localsha", remote="remotesha")
+        buf = io.StringIO()
+        with mock.patch.object(release, "sh", fake), \
+                contextlib.redirect_stdout(buf):
+            release.git_tag_ops("1.2.3", dry_run=True)
+        out = buf.getvalue()
+        self.assertIn("localsha", out)
+        self.assertIn("remotesha", out)
+        self.assertIn("would replace", out)
+        for command in seen:
+            self.assertNotIn("commit", command)
+            self.assertNotIn("tag -a", command)
+
+    def test_dry_run_on_a_clean_tree_says_so(self) -> None:
+        fake, _ = self._sh(local=None, remote=None)
+        buf = io.StringIO()
+        with mock.patch.object(release, "sh", fake), \
+                contextlib.redirect_stdout(buf):
+            release.git_tag_ops("1.2.3", dry_run=True)
+        out = buf.getvalue()
+        self.assertIn("no such tag", out)
+        self.assertNotIn("would replace", out)
+
+
+class SyncToolCheckModeTests(unittest.TestCase):
+    """`--check` must never write.
+
+    These tools are invoked as `make check` gates in check mode, where they
+    are expected to *report* drift rather than repair it.  A tool that quietly
+    started writing in check mode would turn a gate into a silent repair: the
+    run goes green, the tree moves, and the commit ends up holding an artefact
+    nobody reviewed.  So each one is run against the real tree with a git
+    status snapshot taken either side, and any write fails the test.
+    """
+
+    TOOLS: Tuple[Tuple[str, ...], ...] = (
+        ("tools", "update-proof-status.py"),
+        ("tools", "update-test-count.py"),
+        ("tools", "update-description.py"),
+    )
+
+    @staticmethod
+    def _root() -> Path:
+        return Path(__file__).resolve().parent.parent
+
+    @classmethod
+    def _status(cls) -> str:
+        result = subprocess.run(
+            ["git", "status", "--porcelain"], cwd=str(cls._root()),
+            capture_output=True, text=True)
+        return result.stdout
+
+    @classmethod
+    def _run_checked(cls, tool: Tuple[str, ...]) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            [sys.executable, str(cls._root().joinpath(*tool)), "--check"],
+            cwd=str(cls._root()), capture_output=True, text=True)
+
+    def test_check_mode_writes_nothing(self) -> None:
+        # One tool per failure, so the message names the culprit.
+        for tool in self.TOOLS:
+            with self.subTest(tool=tool[-1]):
+                before = self._status()
+                result = self._run_checked(tool)
+                after = self._status()
+                self.assertEqual(
+                    before, after,
+                    f"{tool[-1]} --check modified the working tree")
+                # A clean tree must also pass, or the gate is meaningless.
+                self.assertEqual(
+                    result.returncode, 0,
+                    f"{tool[-1]} --check failed on an up-to-date tree: "
+                    f"{result.stdout}{result.stderr}")
+
+    def test_check_flag_is_documented(self) -> None:
+        # The gate recipes depend on the exact spelling, so a rename must fail
+        # here rather than at release time.
+        for tool in self.TOOLS:
+            with self.subTest(tool=tool[-1]):
+                text = self._root().joinpath(*tool).read_text(encoding="utf-8")
+                self.assertIn('add_argument("--check"', text)
+                self.assertIn("--check", text.split('"""')[1])
+
+
 class TestVersionConsistency(unittest.TestCase):
     """Every version source must name the same version."""
 
