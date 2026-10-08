@@ -264,7 +264,13 @@ def remote_tag_sha(tag: str) -> Optional[str]:
     is the failure a release must not be able to reach, so an unreachable
     origin stops the run instead.
     """
-    result = sh(["git", "ls-remote", "--tags", "origin", f"refs/tags/{tag}"],
+    # The pattern must carry the trailing `*`.  ls-remote filters on the exact
+    # ref, so naming `refs/tags/v1.58.0` returns the annotated tag OBJECT and
+    # omits the `^{}` line that carries the commit -- comparing that object
+    # against a commit SHA reports a false mismatch on a push that landed
+    # perfectly.  The wildcard brings both lines back; an absent tag yields no
+    # lines and a zero exit, which is how "no such tag" is spelled here.
+    result = sh(["git", "ls-remote", "--tags", "origin", f"refs/tags/{tag}*"],
                 check=False, capture_output=True, text=True)
     if result.returncode != 0:
         raise SystemExit(

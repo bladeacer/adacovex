@@ -340,7 +340,19 @@ class ReleaseTagTests(unittest.TestCase):
                     sha = "newsha"
                 else:
                     sha = remote
-                out = "" if sha is None else f"{sha}\trefs/tags/{tag}"
+                if sha is None:
+                    return subprocess.CompletedProcess(cmd, 0, stdout="")
+                # Model the real ref filter: ls-remote returns the annotated
+                # tag OBJECT for an exact ref, and only the trailing `*`
+                # pattern also brings back the peeled `^{}` commit line.
+                # A fake that always returned both lines hid a real bug --
+                # release.py compared a tag object against a commit SHA and
+                # failed a push that had landed.
+                if cmd[-1].endswith("*"):
+                    out = (f"{sha}obj\trefs/tags/{tag}\n"
+                           f"{sha}\trefs/tags/{tag}^{{}}\n")
+                else:
+                    out = f"{sha}obj\trefs/tags/{tag}\n"
                 return subprocess.CompletedProcess(cmd, 0, stdout=out)
             if "rev-parse" in joined and "--verify" in joined:
                 return subprocess.CompletedProcess(
@@ -372,6 +384,21 @@ class ReleaseTagTests(unittest.TestCase):
 
         with mock.patch.object(release, "sh", fake_sh):
             self.assertEqual(release.remote_tag_sha("v1.2.3"), "commit")
+
+    def test_ls_remote_pattern_keeps_the_peeled_line(self) -> None:
+        # The ref pattern must carry a trailing `*`.  Naming the exact ref
+        # makes ls-remote return the tag object and drop the `^{}` commit
+        # line, so the comparison is against the wrong identity and a good
+        # push reads as a mismatch.
+        seen: List[str] = []
+
+        def fake_sh(cmd: List[str], check: bool = True, **kwargs) -> object:
+            seen.append(cmd[-1])
+            return subprocess.CompletedProcess(cmd, 0, stdout="")
+
+        with mock.patch.object(release, "sh", fake_sh):
+            release.remote_tag_sha("v1.2.3")
+        self.assertEqual(seen, ["refs/tags/v1.2.3*"])
 
     def test_unreachable_origin_stops_the_release(self) -> None:
         # "Cannot ask origin" must never be read as "origin has no tag": that
