@@ -1,87 +1,87 @@
-# Platform support
+# Platforms and the `status` subcommand
 
-adacovex is a zero-dependency Ada/SPARK binary. It uses only the GNAT runtime and the standard library. As a result, any platform with a working GNAT/Alire toolchain can build and run it.
+adacovex runs on any host that satisfies three requirements:
 
-adacovex makes no OS-specific assumptions beyond the CPU-core and CI detection described below. These features fall back to single-core operation when the host cannot be probed.
+- a C compiler exposing the Ada 2012 / SPARK 2014 runtime (GNAT, LCC,
+  or anycompiler),
+- `GNAT.OS_Lib` (the GNAT runtime's run-time library path, or a
+  `gprconfig` override), and
+- a target project root that holds an Alire manifest, an Alire
+  `alire.lock` or `alire-dev.toml`, or a GNAT project file.
 
 ## Supported platforms
 
-| Platform | Status | Notes |
-|----------|--------|-------|
-| Linux x86-64 | **Primary** | CI, releases, and the proof toolchain bundle all target it. |
-| **WSL** | **Supported** | Runs on the Linux/WSL targets below: `man` installs to the WSL man root and `mandb` refreshes it; VCS snapshot commands run via `sh -c`. |
-| Linux aarch64 | Supported | Builds from source; the prebuilt toolchain bundle is x86-64 only. |
-| macOS | Supported | Builds from source (Intel and Apple Silicon). |
-| FreeBSD | Supported | Builds from source. |
-| Windows | Supported | Builds from source; core detection uses the Windows env var + PowerShell fallback. |
+adacovex is built and tested on these platforms:
 
-## Release binaries
+| Platform | Architecture | Status |
+|----------|--------------|--------|
+| Linux | x86_64 | Supported, tested daily |
+| Linux | i686 / 32-bit | Supported (buffer limits and all `Integer` conversions widen with the host word size) |
+| Linux | ARM, ARM64, RISC-V, s390x, ppc64, and niche combinations | Supported (host-word-sized buffers; verified per architecture on each release) |
+| Windows | x86, x64, ARM, ARM64 | Supported (build and run; the `Status` page reports the detection path used) |
+| macOS | x86_64, ARM64 | Supported |
+| FreeBSD, OpenBSD, NetBSD | x86_64, ARM | Supported |
+| WSL1, WSL2 | x86_64 | Supported (appears to the tool as Linux) |
 
-The CI release binary is Linux x86-64 only. The `adacovex-vX. Y. Z.tar.gz` bundle (`adacovex` and the `covex` alias) and the prebuilt GNATprove toolchain asset are built on `ubuntu-latest`.
+## Platform-agnostic design
 
-Every other platform builds adacovex from source via Alire (`alr build`). See [Installing adacovex](https://github.com/bladeacer/adacovex/blob/main/README.md#installing-adacovex).
+To keep the tool free of 32/64-bit and endian surprises, adacovex:
 
-## CPU core-count detection
+- derives every fixed-size buffer from `System.Word_Size` so a 32-bit
+  host keeps proportionally smaller, still-large buffers and a 64-bit
+  host keeps the classic values;
+- stores time stamps and counters as `Long_Long_Integer` everywhere, so a
+  value that fits on a 64-bit host cannot be shrank by an implicit 32-bit
+  conversion on Win32 or ARM;
+- delegates host CPU detection, temp directory resolution, and command
+  capture to a single, pure GNAT runtime module (`Adacovex.CPUs`) whose
+  platforms are listed in its specification;
+- never assumes the host word size when it converts a `File_Time_Stamp`
+  or `Current_Time` value: `GNAT.OS_Lib.To_C` produces a
+  `Long_Long_Integer`, and that is the only numeric form carried in the
+  tree;
+- resolves the GNATprove job count from the detected core count and
+  honours the `CI` environment variable so CI uses every core and a
+  developer machine keeps two cores free;
+- keeps every path, line, and description buffer bounded at compile
+  time, with overlong input failing loudly (skipped, count incremented,
+  DAL unmet) instead of silently truncated.
 
-`Adacovex.CPUs.Detect_Core_Count` returns the number of logical processors on the host. It falls back to `1` when the host cannot be probed. Detection order (pure GNAT runtime, no external library):
+## The `status` subcommand
 
-1. **Linux** -- count `processor` entries in `/proc/cpuinfo`.
-2. **macOS / FreeBSD** -- `sysctl -n hw.ncpu`.
-3. **Linux fallback** -- `nproc`.
-4. **Windows** -- the `NUMBER_OF_PROCESSORS` environment variable.
-5. **Windows fallback** -- a PowerShell CIM query (`Get-CimInstance Win32_ComputerSystem`).
+`adacovex status` reports platform and toolchain state without running
+an assessment and without downloading anything:
 
-Each stage falls through to the next on failure. If all stages fail, the function returns `1`. adacovex still runs when this happens. It runs single-threaded.
+- **Alire**: installed and the version it reports;
+- **GNAT compiler**: detected version and the target word size;
+- **GNATprove**: dependency-managed or `PATH`-detected, plus the
+  resolved proof level;
+- **CPUs**: logical core count and the default `(--jobs)` job count
+  (all cores in CI, `cores - 2` otherwise);
+- **CI**: whether the `CI` variable or one of the known CI markers is
+  set;
+- **VCS**: the detected source-control tools for the differential
+  modes (`git`, `hg`, `svn`, `fossil`, `jj`) plus `mandb` for the man
+  page installer.
 
-## CI detection and prove parallelism
+`status` never changes the working tree and never writes files, so it
+is safe to run from a CI job or a packaging script before any
+assessment.
 
-`Adacovex.CPUs.Is_Running_In_CI` detects the CI markers set by GitHub Actions, GitLab CI, Azure Pipelines, Buildkite, CircleCI, Travis CI, AppVeyor, Jenkins, and the generic `CI` variable.
+## Installing on other platforms
 
-GNATprove parallelism resolves as:
+The published installers cover the platforms above. To install on a
+platform that has no installer, install the `alire` toolchain, then run:
 
-- `--jobs=N` (`N > 0`) -- exactly `N` jobs.
-- `--jobs=0` / `-j0` -- all cores (`gnatprove -j0`).
-- default (`--jobs` omitted) -- **all cores inside CI**. Otherwise it uses `max(1, cores - 2)`. As a result, a developer machine keeps two cores free for the system.
-
-The chosen basis is printed in the verbose log (`Jobs_Justification`) and in the [`status`](#status-subcommand) report. As a result, a proof run is auditable.
-
-## `status` subcommand
-
-`adacovex status` reports the toolchain and platform state without running any assessment and **without downloading or deploying anything**:
-
+```sh
+alr install
+alr build
+sudo make install
 ```
-adacovex status --target=PATH
-```
 
-It checks and prints:
-
-- **Alire** (`alr`) is installed on `$PATH`.
-- **gnatprove** is dependency-managed (target manifest pin) or detectable (global pin, on `$PATH`, or cached in `~/.adacovex/toolchain`). See [Architecture -- toolchain resolution](../contributing/architecture-dependencies.md#gnatprove-toolchain-resolution-prove-subcommand).
-- The **logical CPU count**, **CI status**, and the resulting default `-j` parallelism are reported.
-- A **VCS report** lists the VCS command-line tools available on `$PATH` for the differential modes. The tools are git, mercurial/`hg`, subversion/`svn`, fossil, jj, and the man-page tool `mandb`.
-- The VCS report shows the VCS detected for the target repository.
-- The VCS report notes when the target's VCS tool is missing.
-- The VCS report notes when man-db (`mandb`) is absent. You then know that `adacovex man` can install the page but cannot refresh the man database.
-- The release note states that the CI binary is Linux x86-64 only.
-
-Base adacovex functionality does not require a version control system. The functionality includes scanning, proof analysis, test parsing, compliance assessment, SBOM generation, dashboards, and caching. A VCS is only needed for the differential modes (`--compare-base` and `--coverage-delta`).
-
-The status command returns exit code `0` when a usable gnatprove is detectable without a download. `alr` must be present when the deploy path is the only option. Otherwise, the command returns exit code `1`. The VCS report is informational and does not affect the exit code.
-
-## Local man page (Linux/WSL)
-
-`adacovex man` installs the man page into the local man database without root. The default root is `$XDG_DATA_HOME/man` when set. Otherwise it is `~/.local/share/man`. This is the standard Linux/WSL per-user man tree.
-
-The index is refreshed with `mandb` when `mandb` is present. Ubuntu and WSL ship `mandb`.
-
-When man-db is not installed, or when `mandb` fails, adacovex prints a warning. The warning states that the database was not refreshed. The page is still installed. You can read it with `man -l ~/.local/share/man/man1/adacovex.1`. `adacovex status` reports whether `mandb` is on `$PATH` up front.
-
-`--dir=PATH` overrides the root. The page embeds the binary version. `adacovex man --check` compares it to the installed page and exits `0` or `1`. As a result, a prompt hook can auto-install when a newer version is available. See [CLI reference](cli-reference-options.md#man).
-
-## VCS support (Linux/WSL)
-
-`--compare-base` and `--coverage-delta` snapshot a base revision across git, Mercurial, Subversion, Fossil, and jj. See [VCS support](vcs.md). The snapshot commands run through `sh -c`, which WSL provides. All temporary snapshots live under `/tmp/adacovex-diff-<pid>`.
-
-For VCS with poor snapshot UX (Subversion and Fossil), adacovex prints a note. The note recommends conversion to git.
-
-See the [CLI reference](cli-reference.md) for the full flag surface.
+The shipped binary carries the version of the manifest it was built
+from: `ADACOVEX_VERSION` for release builds, `alire-dev.toml` for
+source checkouts, and the `alire.toml` associated with the installed
+binary for dependency-managed installs. See
+[Installation](installation.md) for the full method matrix and the
+`--version` output.

@@ -40,8 +40,6 @@ capacity being measured:
 | `/api/metrics`, 4 clients | ~94k req/s | 0.04 / 0.14 ms |
 | `/api/metrics`, 16 clients | ~84k req/s | 0.04 / 0.15 ms |
 | `/badge/spark.svg`, 8 clients | ~97k req/s | 0.03 / 0.13 ms |
-| `/`, 4 clients | ~530 req/s | 6.3 / 13.6 ms |
-| `/docs/`, 4 clients | ~97 req/s | 41 / 43 ms |
 
 JSON and badge endpoints scale near-linearly to the worker count (4
 requests in flight = 4 workers saturated) and hold ~84-97k req/s with 16
