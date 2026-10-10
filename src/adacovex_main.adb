@@ -68,14 +68,19 @@ procedure Adacovex_Main is
 
    --  Collapse "." and ".." segments out of an absolute path so File_Path
    --  values stored in the result cache do not depend on how --target was
-   --  spelled (e.g. "./.." vs "."). Keeps the leading slash and clamps ".."
-   --  at the filesystem root.
+   --  spelled (e.g. "./.." vs "."). Both '/' and '\' are treated as
+   --  separators, a Windows drive prefix ("C:") and a UNC prefix ("\\")
+   --  are preserved as a root, and the canonical form always uses '/',
+   --  which Windows accepts. ".." is clamped at the root.
    function Normalize_Path (S : String) return String is
       Out_Buf : String (1 .. Max_Path) := (others => ' ');
       Out_Len : Natural := 0;
       Seg_Buf : String (1 .. 512) := (others => ' ');
       Seg_Len : Natural := 0;
       I       : Natural := S'First;
+
+      function Is_Sep (C : Character) return Boolean is
+        (C = '/' or else C = '\');
 
       procedure Flush_Seg is
       begin
@@ -88,14 +93,14 @@ procedure Adacovex_Main is
            and then Seg_Buf (1) = '.'
            and then Seg_Buf (2) = '.'
          then
-            while Out_Len > 0 and then Out_Buf (Out_Len) /= '/' loop
+            while Out_Len > 0 and then not Is_Sep (Out_Buf (Out_Len)) loop
                Out_Len := Out_Len - 1;
             end loop;
             if Out_Len > 1 then
                Out_Len := Out_Len - 1;
             end if;
          else
-            if Out_Len > 0 and then Out_Buf (Out_Len) /= '/' then
+            if Out_Len > 0 and then not Is_Sep (Out_Buf (Out_Len)) then
                Out_Len := Out_Len + 1;
                Out_Buf (Out_Len) := '/';
             end if;
@@ -109,12 +114,31 @@ procedure Adacovex_Main is
       end Flush_Seg;
 
    begin
-      if S'Length >= 1 and then S (S'First) = '/' then
+      --  Prefix: a drive letter ("C:"), a UNC root ("\\"), or a bare root.
+      if S'Length >= 2
+        and then S (S'First) in 'A' .. 'Z' | 'a' .. 'z'
+        and then S (S'First + 1) = ':'
+      then
+         Out_Len := 2;
+         Out_Buf (1) := S (S'First);
+         Out_Buf (2) := ':';
+         I := S'First + 2;
+      elsif S'Length >= 2
+        and then Is_Sep (S (S'First))
+        and then Is_Sep (S (S'First + 1))
+      then
          Out_Len := 1;
          Out_Buf (1) := '/';
+         --  Consume one of the two UNC separators; the other is flushed
+         --  as an empty segment by the loop below.
+         I := S'First + 1;
+      elsif S'Length >= 1 and then Is_Sep (S (S'First)) then
+         Out_Len := 1;
+         Out_Buf (1) := '/';
+         I := S'First + 1;
       end if;
       while I <= S'Last loop
-         if S (I) = '/' then
+         if Is_Sep (S (I)) then
             Flush_Seg;
          else
             if Seg_Len < Seg_Buf'Last then

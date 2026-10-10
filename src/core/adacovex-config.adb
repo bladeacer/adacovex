@@ -1,8 +1,8 @@
 with Ada.Command_Line;
 with Ada.Directories;
 with Ada.Text_IO;
-with Ada.Environment_Variables;
 with Adacovex.CPUs;
+with Adacovex.Paths;
 with Adacovex.Timezones;
 
 package body Adacovex.Config is
@@ -75,51 +75,17 @@ package body Adacovex.Config is
       return True;
    end Is_Help_Topic;
 
-   --  Expand a leading ~ in Path to the user's home directory. Accepted
-   --  forms: "~/rest" and "~" (the tilde alone); a tilde not in leading
-   --  position, or a "~user" form, is returned unchanged -- only the shell
-   --  can resolve other users' homes. HOME unset falls back to /tmp (the
-   --  same convention as Adacovex.Cache.Default_Cache_Dir), so a home-less
-   --  environment still produces a usable path instead of a literal "~/".
-   --  The runtime Ada.Environment_Variables subprograms carry no Global
-   --  contracts, so gnatprove 16 would emit [assumed-global-null] warnings
-   --  at each call; the pragma below silences exactly those messages and is
-   --  scoped back on immediately after the function (the CPUs idiom).
-   pragma Warnings (Off, "no Global contract available");
+   --  Expand a leading ~ in Path to the user's home directory. The work is
+   --  delegated to Adacovex.Paths.Expand_User, which expands "~" and
+   --  "~/rest" (also "~\rest" on Windows), leaves a "~user" form unchanged
+   --  (only the shell can resolve another user's home), and resolves the
+   --  home from HOME, then USERPROFILE (Windows), then the system temp
+   --  directory -- so a home-less environment still produces a usable path
+   --  instead of a literal "~/".
    function Expand_User_Path (Path : String) return String is
-      use Ada.Environment_Variables;
-
-      Home : constant String :=
-        (if Exists ("HOME") then Value ("HOME") else "/tmp");
-      Rest : constant String :=
-        (if Path'Length >= 2 and then Path (Path'First + 1) = '/'
-         then Path (Path'First + 2 .. Path'Last)
-         else "");
    begin
-      if Path'Length = 0 then
-         return Path;
-      end if;
-      if Path (Path'First) /= '~' then
-         return Path;
-      end if;
-      if Path'Length >= 2 and then Path (Path'First + 1) not in '/' | ' ' then
-         --  "~name" (another user's home): return unchanged.
-         return Path;
-      end if;
-      if Home = "/" then
-         --  A root HOME would double the separator ("/" & "/" & Rest).
-         if Rest = "" then
-            return "/";
-         else
-            return "/" & Rest;
-         end if;
-      end if;
-      if Rest = "" then
-         return Home;
-      end if;
-      return Home & "/" & Rest;
+      return Adacovex.Paths.Expand_User (Path);
    end Expand_User_Path;
-   pragma Warnings (On, "no Global contract available");
 
    --  Case-insensitive test for the literal "all" (the --standard=all value).
    --  The upper-cased-buffer comparison collapses to three exact
@@ -2336,7 +2302,9 @@ package body Adacovex.Config is
             if Raw /= Cfg.Target_Path (1 .. Cfg.Target_Len) then
                Set_String (Cfg.Target_Path, Cfg.Target_Len, Raw);
             end if;
-            if Raw'Length > 0 and then Raw (Raw'First) /= '/' then
+            if Raw'Length > 0
+              and then not Adacovex.Paths.Is_Absolute (Raw)
+            then
                declare
                   CD : constant String := Ada.Directories.Current_Directory;
                   AP : constant String := CD & "/" & Raw;

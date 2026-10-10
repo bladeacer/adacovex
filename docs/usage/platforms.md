@@ -18,7 +18,7 @@ adacovex is built and tested on these platforms:
 | Linux | x86_64 | Supported, tested daily |
 | Linux | i686 / 32-bit | Supported (buffer limits and all `Integer` conversions widen with the host word size) |
 | Linux | ARM, ARM64, RISC-V, s390x, ppc64, and niche combinations | Supported (host-word-sized buffers; verified per architecture on each release) |
-| Windows | x86, x64, ARM, ARM64 | Supported (build and run; the `Status` page reports the detection path used) |
+| Windows | x86, x64, ARM, ARM64 | Supported (build and run; both `/` and `\` are handled, and the build raises the main-thread stack reserve) |
 | macOS | x86_64, ARM64 | Supported |
 | FreeBSD, OpenBSD, NetBSD | x86_64, ARM | Supported |
 | WSL1, WSL2 | x86_64 | Supported (appears to the tool as Linux) |
@@ -36,10 +36,18 @@ To keep the tool free of 32/64-bit and endian surprises, adacovex:
 - delegates host CPU detection, temp directory resolution, and command
   capture to a single, pure GNAT runtime module (`Adacovex.CPUs`) whose
   platforms are listed in its specification;
+- keeps every platform path decision in one place (`Adacovex.Paths`): both
+  `/` and `\` separate components, a Windows drive letter (`C:\project`)
+  and a UNC root count as absolute, `~` expands from `HOME` then
+  `USERPROFILE`, and a path is normalised to a canonical `/` form before it
+  becomes a cache key;
 - never assumes the host word size when it converts a `File_Time_Stamp`
-  or `Current_Time` value: `GNAT.OS_Lib.To_C` produces a
-  `Long_Long_Integer`, and that is the only numeric form carried in the
-  tree;
+  or `Current_Time` value: every `GNAT.OS_Lib.To_C` result is carried as a
+  `Long_Long_Integer` through an explicit conversion, so a 64-bit time
+  stamp is never shrunk by an implicit 32-bit conversion on Win32;
+- rises above Windows' small default main-thread stack: the build reserves
+  32 MiB (`-Wl,--stack,33554432`) so a function that holds several large
+  fixed-size line buffers in one frame cannot trip `STORAGE_ERROR`;
 - resolves the GNATprove job count from the detected core count and
   honours the `CI` environment variable so CI uses every core and a
   developer machine keeps two cores free;

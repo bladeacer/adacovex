@@ -210,7 +210,7 @@ the description now states the SPARK level alone:
 
 ```
 - Self-assessment: 100% docstring coverage, Platinum SPARK, DAL-C / ASIL B /
-  Class A Achieved, 1775/1775 native tests passing
+  Class A Achieved, 1784/1791 native tests passing
 ```
 
 The fix covers all 114 manifests (56 `alire/releases/`, 57 `index/`, and the two
@@ -279,7 +279,7 @@ actually happened -- fails `test_fmt_runs_first`.
 
 ## Test Suite
 
-1775 tests across 26 categories, up from 1756 across 25 in 1.57.0. The new
+1791 tests across 27 categories, up from 1756 across 25 in 1.57.0. The new
 SPARK coverage category carries 18 checks over metric selection, grouping, the
 JSON report form, and the coverage-gate arithmetic. Server routing gains one
 check for the `/api/spark` dispatch. The end-to-end CLI suite gains checks for

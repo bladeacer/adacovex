@@ -16,13 +16,19 @@ is
 
    procedure Add_Name (S : String) is
       Item : Name_Item;
-      Name : String := Trim (S);
+      Raw  : constant String := Trim (S);
+      --  Strip a trailing ".gpr" extension. The slice is bound by the
+      --  constant's initialisation, never assigned back onto a
+      --  constrained object: assigning a shorter slice to a String
+      --  constrained by its initial value raised Constraint_Error on every
+      --  `with "x.gpr"` clause (a cross-platform bug, because the object's
+      --  length was fixed by Trim (S)).
+      Name : constant String :=
+        (if Raw'Length > 4
+           and then Raw (Raw'Last - 3 .. Raw'Last) = ".gpr"
+         then Raw (Raw'First .. Raw'Last - 4)
+         else Raw);
    begin
-      --  Strip a trailing ".gpr" extension.
-      if Name'Length > 4 and then Name (Name'Last - 3 .. Name'Last) = ".gpr"
-      then
-         Name := Name (Name'First .. Name'Last - 4);
-      end if;
       if Name'Length = 0 then
          return;
       end if;

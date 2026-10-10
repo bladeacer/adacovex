@@ -8,12 +8,15 @@ separate (Adacovex.Parsers.Manifest)
 --  file-name distribution. A source-language change then invalidates
 --  the cached graph too. Returns "" when no input could be hashed.
 --  Nothing is cached in that case.
+--  The "graph-" prefix (not "graph:") keeps the key usable as an on-disk
+--  cache entry name: Windows rejects ':' in a file name, and a keyed blob
+--  written under such a name is never found again.
 --  @param Target_Dir  Project root directory (for alire-dev.toml,
 --    alire/alire.lock, the vendored dirs, and the root language probe,
 --    which live beside or under it).
 --  @param Manifest_Path  Path to the Alire manifest (can be an override).
 --  @param GPR_Files  Every .gpr file found under the target tree.
---  @return "graph:" + SHA-256 digest, or "" when inputs are unhashable.
+--  @return "graph-" + SHA-256 digest, or "" when inputs are unhashable.
 function Graph_Key
   (Target_Dir    : String;
    Manifest_Path : String;
@@ -71,5 +74,5 @@ begin
    if CLen = 0 then
       return "";
    end if;
-   return "graph:" & Adacovex.Cache.Hash_String (Comb (1 .. CLen));
+   return "graph-" & Adacovex.Cache.Hash_String (Comb (1 .. CLen));
 end Graph_Key;

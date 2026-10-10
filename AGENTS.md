@@ -107,7 +107,7 @@ Self-assessment (`make run-self`) must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
 - Platinum SPARK level (1047 VCs under gnatprove 16.1.0, 0 unproved, 0
   justified; see `docs/proof/16.1.0-ledger.md`)
-- 1775/1775 native tests passing
+- 1784/1791 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
   `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
@@ -139,6 +139,7 @@ src/
 |   |-- adacovex-diff.ads/.adb                -- Differential assessment (--compare-base / --coverage-delta)
 |   |-- adacovex-dir_cache.ads/.adb           -- Per-process directory-snapshot memo (one enumeration + stat set shared by all walkers; LSP-style shared snapshot)
 |   |-- adacovex-opt_outs.ads/.adb            -- Per-file opt-out annotation detector (no-covex-complexity-scan / -docstrings / -spark-proof / -analysis header markers)
+|   |-- adacovex-paths.ads/.adb               -- Platform-agnostic path helpers (Is_Absolute / Join / Expand_User / Home_Directory; DOS vs Unix separators)
 |   |-- adacovex-prove.ads/.adb               -- GNATprove runner for the `prove` subcommand (alire-first toolchain resolution; --args passthrough; no-covex-spark-proof unit opt-outs via -u)
 |   |-- adacovex-prove_patch.ads/.adb         -- Proof patches for vendored deps (SPARK aspect merge + patched proof tree)
 |   |-- adacovex-spark_coverage.ads/.adb      -- SPARK proof-coverage report (statement / subprogram / VC coverage and the three off classes, read from gnatprove.out and gnatprove.sarif)
@@ -243,12 +244,13 @@ src/
     |-- adacovex_ir_tests.ads/.adb            -- IR synthesis tests (42)
     |-- adacovex_man_tests.ads/.adb           -- Man page renderer tests (18)
     |-- adacovex_opt_outs_tests.ads/.adb      -- Per-file opt-out marker tests (16)
+    |-- adacovex_paths_tests.ads/.adb         -- Platform-agnostic path helper tests (25)
     |-- adacovex_prove_patch_tests.ads/.adb   -- Proof patch merge tests (35)
     |-- adacovex_prove_runner_tests.ads/.adb  -- GNATprove runner option/GPR tests (24)
     |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (72)
     |-- adacovex_renderer_svg_tests.ads/.adb  -- SVG renderer tests (161)
     |-- adacovex_renderer_tests.ads/.adb      -- HTML/Markdown renderer tests (58)
-    |-- adacovex_sbom_tests.ads/.adb          -- SBOM / manifest graph tests (308)
+    |-- adacovex_sbom_tests.ads/.adb          -- SBOM / manifest graph tests (299)
     |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (89)
     |-- adacovex_server_tests.ads/.adb        -- Server routing tests (133)
     |-- adacovex_spark_coverage_tests.ads/.adb-- SPARK coverage report tests
@@ -256,7 +258,7 @@ src/
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (67)
     |-- adacovex_tz_ansi_tests.ads/.adb       -- Timezone + ANSI tests (63)
     |-- adacovex_vcs_tests.ads/.adb           -- VCS support tests (29)
-    `-- test_runner.adb                       -- Test suite entry point (1775 tests)
+    `-- test_runner.adb                       -- Test suite entry point (1791 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -426,8 +428,14 @@ for paths, and no `pip install` / external imports. Run them with
 `python3 tools/<name>.py`; the sync ones are wired as `make test-count`, `make
 proof-status`, `make doc-links`, and `make link-check` (markdown link
 verification, run as a cheap static gate in `make check`).
-The multi-step make targets delegate their orchestration to dedicated
-scripts so the Makefile stays declarative: `make build` runs
+`tools/tasks.py` is the task runner. It owns every build, sync, and gate
+recipe as a Python function, and two thin front ends call it: the `justfile`
+(`just <task>`, the primary developer runner) and the `Makefile` (a
+compatibility shim that delegates each target, so an existing `make <task>`
+reference in CI or the docs keeps working). The `check` gate order lives in
+`tools/tasks.py` (`CHECK_GATES`), and `tools/tests.py` reads it from there.
+The multi-step tasks delegate their orchestration to dedicated
+scripts so the runner stays declarative: `just build` runs
 tools/build.py (version + dashboard regeneration, `alr build` with the
 SFrame log filter, covex symlink), `make bench` runs tools/bench.py
 (hyperfine cold/warm timings for the pipeline and the prove subcommand + stripped-binary size), `make doc` / `make fmt`
@@ -535,14 +543,17 @@ The committed artifact is the generated spec itself, gated by
 `python3 tools/gen-docs.py --check` (also in `make check`), so `docs/` edits
 must be followed by `make book`.
 
-## Makefile targets
+## Task targets (`just`)
+
+Run a task with `just <task>`; the `Makefile` accepts the same names as a
+compatibility shim. The table names the canonical target for each task.
 
 | Target | Description |
 |--------|-------------|
 | `check` | **The single everything-check / verification entry point.** Run it after any change. It runs every gate CI runs before a release, and **`fmt` is first**: gnatprove and the API docs both read the sources, so every later gate must see formatted code. Then the cheap static gates (ascii, complexity, csslint, spark-off, changelog, action-parity, docs-coverage, tools-check, cli-e2e, version, version-consistency, doc-links, link, docs-check, para-split, tldr, book-links), then build + native tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description). `make check` resolves `gnatprove` for you (it is fetched into `~/.adacovex/toolchain/` and executed directly when not on `PATH`), so you never have to install or point at a prover by hand -- just run `make check` and it verifies the whole tree end to end. `make prove` is the SPARK sub-gate if you only changed proof-affecting code |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
-| `test` | Build + run the 1775-test native suite |
+| `test` | Build + run the 1791-test native suite |
 | `prove` | SPARK proof at gnatprove `--level=4` (Platinum gate) + regenerates SVG badges in `docs/badges/` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
 | `book` | Build the offline manual from the Sphinx docs and regenerate `src/adacovex-docs_template.ads` (tools/gen-docs.py; incremental + verified Sphinx build, `--fresh` forces a clean one; safe to run without sphinx) |
@@ -651,7 +662,7 @@ release-tag coverage gate instead.
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 1775/1775 passing |
+| Unit tests | `make test` | 1784/1791 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (1047 VCs, 0 unproved, 0 justified under gnatprove 16.1.0), verified at `--level=4` (the deepest effort; the prove subcommand forwards `--level` verbatim, so the overhead is gnatprove's own) |
 | Ada_CRDT regression | `make run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -690,7 +701,7 @@ rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 1775 tests across 26 categories).
+Native zero-dependency suite (`src/tests/`, 1791 tests across 27 categories).
 Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests).
 

@@ -11,6 +11,7 @@ src/core/adacovex-spark_coverage	SPARK proof-coverage report (statement / subpro
 src/core/adacovex-vcs	VCS abstraction (git/hg/svn/fossil/jj detection + base snapshots)
 src/core/adacovex-config	CLI argument parser (prove --args, complexity --excludes/--skip-path, --no-sbom, --sbom-format)
 src/core/adacovex-diff	Differential assessment (--compare-base / --coverage-delta)
+src/core/adacovex-paths	Platform-agnostic path helpers (Is_Absolute / Join / Expand_User / Home_Directory; DOS vs Unix separators)
 src/core/adacovex-prove	GNATprove runner for the `prove` subcommand (alire-first toolchain resolution; --args passthrough; no-covex-spark-proof unit opt-outs via -u)
 src/core/adacovex-prove_patch	Proof patches for vendored deps (SPARK aspect merge + patched proof tree)
 src/core/adacovex-cache	On-disk result cache (content-hashed per-file, oldest-first eviction, size policy) + persistent stat-stamp index + per-process directory snapshot memo
@@ -64,10 +65,11 @@ src/tests/adacovex_ansi_tests	ANSI terminal report tests (28)
 src/tests/adacovex_cpus_tests	Host CPU and job-resolution tests (24)
 src/tests/adacovex_do178c_tests	HLR/LLR parsing and line-reader tests (33)
 src/tests/adacovex_completion_tests	Shell completion script tests (24)
+src/tests/adacovex_paths_tests	Platform-agnostic path helper tests (25)
 src/tests/adacovex_renderer_svg_tests	SVG renderer tests (161)
 src/tests/adacovex_renderer_tests	HTML/Markdown renderer tests (58)
-src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (308)
-src/tests/test_runner	Test suite entry point (1775 tests)
+src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (299)
+src/tests/test_runner	Test suite entry point (1791 tests)
 src/parsers/adacovex-parsers-manifest-req_entry	Parse the first requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-collect_req_entries	Collect every requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-register_root_python_deps	Register root requirements*.txt entries as dev-scope pypi components

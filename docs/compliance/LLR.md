@@ -3,7 +3,7 @@
 ## LLR Mapping
 
 - LLR-ARCH-01: `alire.toml` shall declare project metadata [HLR-ARCH]
-- LLR-ARCH-02: `Makefile` shall provide build, prove, fmt, lint, api-docs, changelog targets [HLR-ARCH]
+- LLR-ARCH-02: `justfile` (with the Makefile shim) shall provide build, prove, fmt, doc, changelog, and clean tasks [HLR-ARCH]
 - LLR-ARCH-03: `adacovex.gpr` shall compile all sources with `-gnatwa` warnings [HLR-ARCH]
 - LLR-SCAN-01: Scan_Project shall walk directories recursively, skipping .git and obj [HLR-SCAN]
 - LLR-SCAN-02: Scan_Ads_File shall extract procedure, function, and generic declarations [HLR-SCAN]

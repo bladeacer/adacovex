@@ -6,6 +6,7 @@ with GNAT.OS_Lib; use GNAT.OS_Lib;
 with Adacovex.Cache;
 with Adacovex.CPUs;
 with Adacovex.Dir_Cache;
+with Adacovex.Paths;
 
 package body Adacovex.Parsers.Manifest is
 
@@ -809,7 +810,9 @@ package body Adacovex.Parsers.Manifest is
    --  cached set is served without re-walking the tree or re-reading a
    --  file.
    --  @param Target_Dir  Project root directory.
-   --  @return "tools:" + SHA-256 digest, or "" when inputs are unhashable.
+   --  @return "tools-" + SHA-256 digest, or "" when inputs are unhashable.
+   --    The prefix uses '-' rather than ':' because the key doubles as the
+   --    on-disk cache entry name, and Windows rejects ':' in a file name.
    function Tools_Key (Target_Dir : String) return String is separate;
 
    --  Whether the project root holds a Makefile variant (which implies
@@ -882,7 +885,9 @@ package body Adacovex.Parsers.Manifest is
    --    which live beside or under it).
    --  @param Manifest_Path  Path to the Alire manifest (can be an override).
    --  @param GPR_Files  Every .gpr file found under the target tree.
-   --  @return "graph:" + SHA-256 digest, or "" when inputs are unhashable.
+   --  @return "graph-" + SHA-256 digest, or "" when inputs are unhashable.
+   --    The prefix uses '-' rather than ':' because the key doubles as the
+   --    on-disk cache entry name, and Windows rejects ':' in a file name.
    function Graph_Key
      (Target_Dir    : String;
       Manifest_Path : String;

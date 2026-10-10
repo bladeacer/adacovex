@@ -164,7 +164,7 @@ package body Adacovex_SBOM_Tests is
          begin
             if Kind (E) = Ordinary_File
               and then N'Length > 6
-              and then N (N'First .. N'First + 5) = "tools:"
+              and then N (N'First .. N'First + 5) = "tools-"
             then
                declare
                   R : constant String := Full_Name (E);

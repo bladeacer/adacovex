@@ -1,5 +1,6 @@
 with Ada.Directories;
 with Ada.Text_IO;
+with Adacovex.Paths;
 with Interfaces;
 with System.OS_Lib;
 
@@ -46,7 +47,13 @@ package body Adacovex.Dir_Cache is
    --  in the same probe.
    function Dir_Mtime (Dir : String) return Long_Long_Integer is
    begin
-      return System.OS_Lib.To_C (System.OS_Lib.File_Time_Stamp (Dir));
+      --  The explicit Long_Long_Integer conversion is the platform
+      --  contract: OS_Lib.To_C returns a Long_Integer on some GNAT
+      --  targets (notably Win32) and a Long_Long_Integer on others, and
+      --  the value is always carried as Long_Long_Integer so a 64-bit
+      --  time stamp is never shrunk by an implicit 32-bit conversion.
+      return
+        Long_Long_Integer (System.OS_Lib.To_C (System.OS_Lib.File_Time_Stamp (Dir)));
    exception
       when others =>
          return -1;
@@ -60,7 +67,7 @@ package body Adacovex.Dir_Cache is
    function Abs_Key (Key : String) return String is
       Out_Len : Natural := 0;
    begin
-      if Key'Length = 0 or else Key (Key'First) = '/' then
+      if Key'Length = 0 or else Adacovex.Paths.Is_Absolute (Key) then
          return Key;
       end if;
       if Cwd_Len = 0 then
@@ -81,7 +88,7 @@ package body Adacovex.Dir_Cache is
          Res : String (1 .. Cwd_Len + 1 + Key'Length);
       begin
          Res (1 .. Cwd_Len) := Cwd_Img (1 .. Cwd_Len);
-         if Cwd_Img (Cwd_Len) /= '/' then
+         if not Adacovex.Paths.Is_Separator (Cwd_Img (Cwd_Len)) then
             Res (Cwd_Len + 1) := '/';
             Res (Cwd_Len + 2 .. Res'Last) := Key;
             Out_Len := Res'Last;

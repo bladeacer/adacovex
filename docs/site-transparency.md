@@ -90,11 +90,13 @@ machine, and it never leaves that machine.
 
 ## The binary and the toolchain
 
-The adacovex binary makes no network call. It reads the files of the target
+The adacovex binary makes no network call; it reads the files of the target
 project, runs the tools on the local toolchain, and writes the reports. The
-optional toolchain download is the only network activity, it happens only when
-you ask for it, and it reaches the Alire and AdaCore toolchain servers. The
-cache directory holds the downloaded archives under `~/.adacovex/`, and the
+optional toolchain setup is the only network activity, and it happens only when
+you ask for it. It reaches the Alire and AdaCore toolchain servers, and it
+downloads Alire itself from GitHub when Alire is missing, because the `prove`
+subcommand resolves the toolchain through Alire. The cache directory holds the
+downloaded archives under `~/.adacovex/`, and the
 [global configuration page](usage/configuration.md) describes the paths and
 the environment variables.
 

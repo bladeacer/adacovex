@@ -1,420 +1,160 @@
-.PHONY: help check build test prove doc book book-serve docs-serve clean run-self run-ada-crdt ascii-check spark-off-check fmt bump-version coverage-gate release publish test-publish agents-tree sbom compliance description proof-status test-count doc-links link-check changelog-check action-parity-check docs-coverage-check tools-check man bench perf-bench complexity-check csslint-check version-consistency-check sync docs-check para-split-check tldr-check tldr-lint book-links-check cli-e2e e2e
+# Thin compatibility shim.
+#
+# The task logic now lives in tools/tasks.py, which both this Makefile and the
+# `justfile` call.  `just <task>` is the primary developer runner; this shim
+# keeps every existing `make <task>` reference (CI workflows, docs, muscle
+# memory) working.  A target is added here only when it is added to
+# tools/tasks.py, so the two front ends never drift.
+#
+# Environment variables pass through unchanged: `make release VERSION=1.59.0`,
+# `make description CHECK=1`, and `make release DRY_RUN=1` behave as before.
+
+.PHONY: help build man test prove fmt doc book book-serve docs-serve clean \
+        run-self run-ada-crdt ascii-check spark-off-check bump-version \
+        coverage-gate release publish test-publish agents-tree sbom compliance \
+        description proof-status test-count doc-links link-check \
+        changelog-check action-parity-check docs-coverage-check tools-check \
+        bench perf-bench complexity-check csslint-check \
+        version-consistency-check sync docs-check para-split-check tldr-check \
+        tldr-lint book-links-check cli-e2e e2e check
 
 .DEFAULT_GOAL := help
 
+# List the available tasks (tools/tasks.py --list).
 help:
-	@echo 'adacovex -- Ada Coverage and Verification Tool'
-	@echo ''
-	@echo 'Usage: make <target>  (targets are grouped; `make check` is the full gate)'
-	@echo ''
-	@echo '  Core:'
-	@echo '    check         Full quality gate (CI before release): cheap'
-	@echo '                  static gates first (ascii, complexity, spark-off,'
-	@echo '                  changelog, version, version-consistency, doc-links,'
-	@echo '                  action-parity, docs-coverage, tools-check), then'
-	@echo '                  build+test+prove+doc+book+sbom,'
-	@echo '                  then count-sync checks (test-count, proof-status,'
-	@echo '                  description)'
-	@echo '    build         Build project (adacovex + test_runner, covex alias);'
-	@echo '                  regenerates src/adacovex_version_info.ads from'
-	@echo '                  alire-dev.toml (or ADACOVEX_VERSION for releases)'
-	@echo '    test          Build and run native test suite (1775 tests)'
-	@echo '    prove         Run SPARK proofs (gnatprove via prove subcommand,'
-	@echo '                  resolved from alire-dev.toml / PATH / cache / download)'
-	@echo '                  (also auto-regenerates SVG badges in docs/badges/)'
-	@echo ''
-	@echo '  Assessment:'
-	@echo '    run-self      Run against adacovex itself (default target: cwd)'
-	@echo '                  (auto-updates docs/badges/*.svg)'
-	@echo '    run-ada-crdt  Run against ../Ada_CRDT (strict mode)'
-	@echo '                  (auto-updates ../Ada_CRDT/docs/badges/*.svg)'
-	@echo '    sbom          Generate a proof-aware CycloneDX SBOM (sbom.json)'
-	@echo '    compliance    Regenerate docs/compliance/VERIFICATION.md + TRACE.md'
-	@echo '    bench         Benchmark the assessment pipeline + binary size'
-	@echo '                  (tools/bench.py: hyperfine when installed, cold +'
-	@echo '                  warm timings, raw and stripped binary sizes)'
-	@echo '    perf-bench   Run perf and strace profiles over the adacovex binary'
-	@echo '                  (requires linux-tools-common and strace)'
-	@echo ''
-	@echo '  Docs & sync (use `make sync` to run all):'
-	@echo '    sync          Alias for agents-tree + proof-status + test-count + doc-links + description'
-	@echo '    doc           Generate API docs via gnatdoc + rst2md (alire-dev.toml)'
-	@echo '    fmt           Format Ada sources with gnatformat (alire-dev.toml)'
-	@echo '    agents-tree   Regenerate the AGENTS.md src/ architecture tree'
-	@echo '                  (tools/gen-agents-tree.py + tools/agents-tree.map)'
-	@echo '    proof-status  Update the VC count + SPARK level in the docs from'
-	@echo '                  the current gnatprove.out (tools/update-proof-status.py)'
-	@echo '    test-count    Update the test counts in the docs from'
-	@echo '                  docs/test_result.md (tools/update-test-count.py)'
-	@echo '    doc-links     Regenerate the AGENTS.md Documentation block from'
-	@echo '                  tools/doc-links.map (tools/update-doc-links.py)'
-	@echo '    description   Sync the crate description + long description from'
-	@echo '                  alire/description.txt + alire/long-description.txt'
-	@echo '                  into every manifest (tools/update-description.py;'
-	@echo '                  add CHECK=1 for a verify-only run)'
-	@echo '    link-check    Verify every markdown link in the repo resolves'
-	@echo '                  (tools/check-links.py)'
-	@echo '    book-links-check  Fail when a link in the bundled offline manual'
-	@echo '                  does not resolve (checked against a fresh sphinx'
-	@echo '                  build; tools/check-book-links.py)'
-	@echo ''
-	@echo '  Gates (also run by `make check`):'
-	@echo '    complexity-check  Cyclomatic-complexity + LOC gate (no god objects,'
-	@echo '                  no god functions, no extra-long files): fails when a'
-	@echo '                  function exceeds the decision-point cap or a file'
-	@echo '                  exceeds its LOC / percentage-of-codebase caps'
-	@echo '    ascii-check   Verify all source files are pure ASCII'
-	@echo '    tldr-check    Structural check of the in-repo tldr page'
-	@echo '                  (tools/check-tldr.py); tldr-lint runs the fuller'
-	@echo '                  upstream lint when tldr-lint is installed'
-	@echo '    tools-check   Run the stdlib-unittest suite for the tools/*.py'
-	@echo '                  dev scripts (tools/tests.py)'
-	@echo '    spark-off-check  Fail if any SPARK_Mode (Off) appears outside the'
-	@echo '                  Types.Implementation container package'
-	@echo '    changelog-check Validate all docs/changelogs follow the canonical'
-	@echo '                  format (tools/check-changelogs.py)'
-	@echo '    action-parity-check  Fail if the GitHub Action drifts from the base'
-	@echo '                  CLI option set or the docs/ci-cd.md input table'
-	@echo '    docs-coverage-check  Fail when a CLI flag, a server route, or a'
-	@echo '                  usage/contributing page is missing from the user docs'
-	@echo '                  (tools/check-docs-coverage.py)'
-	@echo '    version-consistency-check  Fail when a manifest, the generated'
-	@echo '                  version spec, the built binary, or the committed SBOM'
-	@echo '                  name a different version'
-	@echo '                  (tools/check-version-consistency.py)'
-	@echo ''
-	@echo '  Release:'
-	@echo '    coverage-gate Compare docstring coverage between the latest two'
-	@echo '                  release tags (tools/coverage-gate.py: --coverage-delta'
-	@echo '                  in a temporary worktree at the latest tag)'
-	@echo '    bump-version  Bump version across alire.toml, alire-dev.toml,'
-	@echo '                  adacovex.ads, releases, index (VERSION=x.y.z)'
-	@echo '    release       Build, verify, prove, tag, update releases+index,'
-	@echo '                  push (tools/release.py). The release binary is'
-	@echo '                  built and version-checked first, so the proof'
-	@echo '                  pass runs the binary being released.'
-	@echo '                  Use VERSION=x.y.z; DRY_RUN=1 runs everything except'
-	@echo '                  commit/tag/push. (Runs a docstring-coverage gate'
-	@echo '                  comparing the last release against the current tree,'
-	@echo '                  then CI force-pushes vMAJOR / vMAJOR.MINOR floating'
-	@echo '                  tags so @v1 / @v1.3 refs track the latest release.'
-	@echo '                  Release artifacts are attested via actions/attest.)'
-	@echo '    publish       Publish to Alire community index (run after make release)'
-	@echo '    test-publish  Dry-run showing what make publish would do'
-	@echo '    man           Install the man page into the local man database'
-	@echo '                  (~/.local/share/man, Linux/WSL) and refresh mandb'
-	@echo '    cli-e2e       Run the CLI end-to-end checks (shorthands, aliases,'
-	@echo '                  tier tokens, complexity, differential, prove,'
-	@echo '                  serve/theme flags; tests/e2e/cli_flags.py)'
-	@echo '    e2e           Run cli-e2e, then the Playwright dashboard tests (pnpm)'
-	@echo '    clean         Remove build artifacts'
-	@echo ''
-	@echo 'check runs the same gates CI enforces before a release, cheap static'
-	@echo '  gates first (ascii, spark-off, changelog, version,'
-	@echo '  version-consistency, doc-links, action-parity, docs-coverage,'
-	@echo '  tools), then'
-	@echo '  build + native tests + SPARK proof (Platinum, 1047 VCs) + SVG badges'
-	@echo '  + API docs + SBOM, then tree-wide count-sync checks (test-count,'
-	@echo '  proof-status, description) that fail when any live file carries a'
-	@echo '  stale metric. `make prove` / `make run-self` both emit badges, so'
-	@echo '  check does not re-run them separately (no duplicate work).'
-	@echo ''
-	@echo 'Note: doc/fmt temporarily swap in alire-dev.toml for the duration'
-	@echo '      of the command, then restore alire.toml and alire.lock untouched.'
-	@echo ''
-	@echo 'Prerequisites: alr (Alire), GNAT toolchain, Python 3 (build-time: bundles'
-	@echo '              the dashboard + offline manual into the binary) plus sphinx +'
-	@echo '              myst-parser (requirements.txt) for the docs bundle'
+	@python3 tools/tasks.py --list
 
-# The build steps (gen-version + gen-dashboard + alr build + SFrame log
-# filter + covex symlink) live in tools/build.py; see its docstring for the
-# SFrame note (the benign ld 2.44 message is the only deliberately silenced
-# build output -- compiler and gnatprove warnings stay fully visible).
 build:
-	@python3 tools/build.py
+	@python3 tools/tasks.py build
 
-man: build
-	./bin/adacovex man
+man:
+	@python3 tools/tasks.py man
 
-test: build
-	./bin/test_runner
+test:
+	@python3 tools/tasks.py test
 
-prove: build
-	@python3 tools/run.py prove
-
-# The three generated specs, excluded from gnatformat.  gnatformat has no
-# exclusion flag, so `fmt` passes an explicit source list instead of -P.
-# Formatting a generated spec is both pointless (it is never hand-edited) and
-# destructive: gnatformat and the generator disagree on layout, so a formatted
-# docs_template.ads fails gen-docs' byte comparison and is rewritten, and the
-# next fmt mangles it again.  That ping-pong is what stopped `make check` from
-# reaching a fixed point.  The generated .adb bodies are hand-written and are
-# NOT in this list.
-GENERATED_SPECS = adacovex_version_info.ads \
-	adacovex-dashboard_template.ads \
-	adacovex-docs_template.ads
-
-FMT_SOURCES = $(shell find src \( -name '*.ads' -o -name '*.adb' \) \
-	$(foreach s,$(GENERATED_SPECS),! -name '$(s)') | sort)
+prove:
+	@python3 tools/tasks.py prove
 
 fmt:
-	@python3 tools/dev-cmd.py 'alr exec -- gnatformat -U $(FMT_SOURCES)' && \
-	python3 tools/gen-version.py && \
-	python3 tools/gen-dashboard.py
+	@python3 tools/tasks.py fmt
 
 doc:
-	@python3 tools/dev-cmd.py 'mkdir -p obj && \
-	  alr exec -- gnatdoc -P adacovex.gpr --backend=rst \
-	    --generate private --output-dir=obj/gnatdoc-rst && \
-	  python3 tools/rst2md.py obj/gnatdoc-rst docs/api-docs --prune-test-pages && \
-	  rm -f docs/api-docs/test_*.md docs/api-docs/adacovex-test_support.md'
+	@python3 tools/tasks.py doc
 
-# Build the offline manual from the Sphinx docs source (docs/conf.py + MyST)
-# and bundle it into the binary.  Regenerates src/adacovex-docs_template.ads
-# (the committed spec the --serve server serves at /docs).  gen-docs.py never
-# fails when sphinx-build is missing (it keeps the committed spec), so this
-# works on any machine.
 book:
-	@python3 tools/gen-docs.py
+	@python3 tools/tasks.py book
 
-run-self: build
-	@python3 tools/run.py self
-
-run-ada-crdt: build
-	@python3 tools/run.py ada-crdt
-
-sbom: build
-	@python3 tools/run.py sbom
-
-# Regenerate the committed verification report (docs/compliance/VERIFICATION.md)
-# and traceability matrix (docs/compliance/TRACE.md) for the self tree.  Both
-# are generated artifacts: run this after a metric change and commit the
-# result.  It is deliberately NOT part of `make prove` -- the reports live
-# under docs/ and are bundled into the offline manual, so emitting them inside
-# a prove run would change the bundled template and invalidate the cached
-# proof on the next run.
-compliance: build
-	@SOURCE_DATE_EPOCH=$$(git show -s --format=%ct HEAD) \
-	  ./bin/covex -t=. --dal=C --emit-markdown=docs/compliance \
-	  --no-svg --no-sbom
-
-# Cold vs warm pipeline timings (hyperfine preferred, measured fallback)
-# plus the binary-size report live in tools/bench.py; see its docstring for
-# the sample sizes (hyperfine 10 cold + 15 warm, fallback 5 + 5).
-bench: build
-	@python3 tools/bench.py
-
-perf-bench: build
-	python3 tools/perf-bench.py
-
-coverage-gate: build
-	@python3 tools/coverage-gate.py
-
-link-check:
-	@python3 tools/check-links.py
-
-# Fail if the GitHub Action drifts from the base CLI option set or the
-# docs/ci-cd.md input table (see tools/check-action-parity.py for the
-# mapping rules).  Cheap static gate wired into make check + CI.
-action-parity-check:
-	@python3 tools/check-action-parity.py
-
-# Quality gate: the user documentation must cover the CLI option set, the
-# server route set, and every hand-written usage/contributing page (each must
-# be named by a {toctree}).  AGENTS.md calls this a manual audit; the gate
-# makes it fail loudly instead.  Cheap static gate wired into make check + CI.
-docs-coverage-check:
-	@python3 tools/check-docs-coverage.py
-
-agents-tree:
-	@python3 tools/gen-agents-tree.py > /tmp/agents-tree.out && \
-	python3 tools/apply-agents-tree.py /tmp/agents-tree.out && \
-	rm -f /tmp/agents-tree.out
-
-proof-status:
-	@python3 tools/update-proof-status.py
-
-test-count:
-	@python3 tools/update-test-count.py
-
-doc-links:
-	@python3 tools/update-doc-links.py
-
-sync: agents-tree proof-status test-count doc-links description
-	@echo "All sync targets up to date."
-
-changelog-check:
-	@python3 tools/check-changelogs.py
-
-complexity-check: build
-	# Markdown is scanned by the complexity gate (the max-lines / LOC and
-	# percentage caps then cover the docs tree too).  reStructuredText and the
-	# generated API reference (docs/api-docs) stay excluded: the API pages are
-	# regenerated from Ada docstrings by make doc, never hand-written source.
-	./bin/adacovex complexity --excludes=rst --skip-path=docs/api-docs
-
-csslint-check:
-	@python3 tools/csslint.py --check
-
-ascii-check:
-	@python3 tools/ascii-check.py
-
-docs-check:
-	@python3 tools/check-docs.py
-
-# The paragraph splitter gate: the 4-sentence rule is enforced by docs-check,
-# and this reports the same paragraphs by name through tools/para-split.py
-# --check (its non-mutating mode).  Running it in make check keeps the
-# splitter -- the tool a maintainer reaches for when docs-check fails --
-# provably in step with the gate it advises on; a drift fails here instead of
-# rewriting a page wrongly.
-para-split-check:
-	@python3 tools/para-split.py --check
-
-# The structural tldr check: the in-repo tldr page at
-# docs/tldr/adacovex.md is verified for the format rules that matter
-# (at most 8 examples, matching title, 1-2 line description, imperative
-# example descriptions, no emphasis).  `make tldr-lint` runs the fuller
-# upstream tldr-lint when it is installed; it is a local helper, not a
-# gate, because tldr-lint is node-based while this repo's tooling is
-# Python-only.
-tldr-check:
-	@python3 tools/check-tldr.py
-
-tldr-lint:
-	@if command -v tldr-lint >/dev/null 2>&1; then \
-	  tldr-lint docs/tldr/adacovex.md; \
-	else \
-	  echo "tldr-lint not installed; skipping (docs/tldr/adacovex.md is still covered by make tldr-check)"; \
-	fi
-
-# Quality gate: every link inside the bundled offline manual must resolve to
-# a bundled asset or a deliberately-not-bundled file (the rules shared with
-# tools/gen-docs.py).  The check runs against a fresh `sphinx-build` from a
-# temp copy of docs/, so a stale local docs/_build/html (a gitignored build
-# product) can never mask a broken link; when sphinx-build is missing the
-# local docs/_build/html is checked instead, and when neither exists the check
-# is skipped.  The committed artifact is the generated spec itself, gated by
-# `python3 tools/gen-docs.py --check`.
-book-links-check:
-	@python3 tools/check-book-links.py
+book-serve:
+	@python3 tools/tasks.py book-serve
 
 docs-serve:
-	@python3 -m http.server 8000 --directory docs
-
-# Build the manual with Sphinx and serve the built site locally at
-# http://localhost:8000 (requires sphinx-build on PATH; prints a hint when it
-# is missing).
-book-serve: book
-	@python3 -m http.server 8000 --directory docs/_build/html
-
-tools-check:
-	@python3 tools/tests.py
-
-# Quality gate: no `SPARK_Mode (Off)` may appear anywhere in src/ except the
-# `Types.Implementation` container package and the `Complexity` checker package --
-# SPARK forbids instantiating the non-formal Ada.Containers in SPARK_Mode On
-# code (gnatprove 16.1.0 rejects such instantiations with "not allowed in
-# SPARK (due to entity declared with SPARK_Mode Off)"), so those packages are
-# the two required exceptions (see AGENTS.md "SPARK proof discipline" and
-# docs/proof/16.1.0-ledger.md).  CPUs.Get_Temp_Directory returned to
-# SPARK_Mode On in 1.27.0: gnatprove 16 analyses Ada.Environment_Variables
-# with [assumed-global-null] warnings instead.
-spark-off-check:
-	@python3 tools/spark-off-check.py
-
-# Quality gate: everything CI enforces before a release.  Cheap static
-# gates run first so a formatting / sync problem fails before the expensive
-# build+prove; the count-sync checks then verify test/proof metrics stayed
-# in sync across the whole tree after `make test` / `make prove` refreshed
-# them (both prove and run-self emit docs/badges/*.svg, so badges are
-# produced exactly once here).
-check:
-	@echo "=== Quality gate: fmt ==="; $(MAKE) fmt
-	@echo "=== Quality gate: ASCII ==="; $(MAKE) ascii-check
-	@echo "=== Quality gate: complexity (no god objects/functions/files) ==="; $(MAKE) complexity-check
-	@echo "=== Quality gate: CSS 4px spacing ==="; $(MAKE) csslint-check
-	@echo "=== Quality gate: SPARK_Mode Off ==="; $(MAKE) spark-off-check
-	@echo "=== Quality gate: changelog format ==="; $(MAKE) changelog-check
-	@echo "=== Quality gate: action/CLI/docs parity ==="; $(MAKE) action-parity-check
-	@echo "=== Quality gate: documentation coverage ==="; $(MAKE) docs-coverage-check
-	@echo "=== Quality gate: tools unit tests ==="; $(MAKE) tools-check
-	@echo "=== Quality gate: CLI end-to-end ==="; $(MAKE) cli-e2e
-	@echo "=== Quality gate: version source ==="; python3 tools/gen-version.py --check
-	@echo "=== Quality gate: version consistency ==="; $(MAKE) version-consistency-check
-	@echo "=== Quality gate: doc links ==="; python3 tools/update-doc-links.py --check
-	@echo "=== Quality gate: markdown links ==="; $(MAKE) link-check
-	@echo "=== Quality gate: user documentation ==="; $(MAKE) docs-check
-	@echo "=== Quality gate: paragraph splitter ==="; $(MAKE) para-split-check
-	@echo "=== Quality gate: tldr structure ==="; $(MAKE) tldr-check
-	@echo "=== Quality gate: bundled offline manual links ==="; $(MAKE) book-links-check
-	@echo "=== Quality gate: bundled offline manual spec ==="; python3 tools/gen-docs.py --check
-	@echo "=== Quality gate: build ==="; $(MAKE) build
-	@echo "=== Quality gate: native tests ==="; $(MAKE) test
-	@echo "=== Quality gate: SPARK proof + badges ==="; $(MAKE) prove
-	@echo "=== Quality gate: API docs ==="; $(MAKE) doc
-	@echo "=== Quality gate: offline manual ==="; $(MAKE) book
-	@echo "=== Quality gate: SBOM ==="; $(MAKE) sbom
-	@echo "=== Quality gate: test counts in sync ==="; python3 tools/update-test-count.py --check
-	@echo "=== Quality gate: proof metrics in sync ==="; python3 tools/update-proof-status.py --check
-	@echo "=== Quality gate: description sync ==="; python3 tools/update-description.py --check
-	@echo ""
-	@echo "=== Quality gate passed: fmt, ascii, complexity, csslint, spark-off, changelog, action-parity, docs-coverage, tools, cli-e2e, version, version-consistency, doc-links, link, docs-check, para-split, tldr, book-links, build, test, prove, doc, book, sbom, test-count, proof-status, description ==="
-
-# Quality gate: alire.toml, alire-dev.toml, the generated Ada version spec,
-# the built binary, and the committed SBOM must all name the same version.
-# A stale binary or an un-regenerated spec otherwise slips through: make
-# release once proved the tree before it built the release binary, so the
-# proof pass and every artifact it wrote came from the previous release.
-version-consistency-check:
-	@python3 tools/check-version-consistency.py
-
-# Sync the crate description + long description from the canonical files
-# (alire/description.txt + alire/long-description.txt) into every manifest.
-# CHECK=1 verifies without writing (used by the quality gate).
-description:
-	@if [ "$(CHECK)" = "1" ]; then \
-		python3 tools/update-description.py --check; \
-	else \
-		python3 tools/update-description.py; \
-	fi
-
-bump-version:
-	@python3 tools/bump-version.py "$(VERSION)"
-
-release:
-	@python3 tools/release.py --version="$(VERSION)" $(if $(DRY_RUN),--dry-run,)
-publish:
-	@if [ -n "$$(git status --porcelain)" ]; then \
-		echo "Error: working tree is not clean. Commit or stash changes first."; \
-		exit 1; \
-	fi; \
-	alr publish
-
-test-publish:
-	@version=$$(git describe --tags --abbrev=0 2>/dev/null || \
-		python3 tools/versions.py current); \
-	echo "=== test-publish dry-run ==="; \
-	echo "Version:  $$version"; \
-	echo "Action:   alr publish (auto-detects GitHub, test deps excluded)"; \
-	echo "Requires: GitHub PAT in GITHUB_TOKEN env var or gh auth token"; \
-	echo "Docs:     https://github.com/alire-project/alire/blob/master/doc/publishing.md"; \
-	echo "=== end dry-run ==="
+	@python3 tools/tasks.py docs-serve
 
 clean:
-	alr clean 2>/dev/null; rm -rf bin/ obj/ docs/badges/ docs/api/
+	@python3 tools/tasks.py clean
 
-# Pure-stdlib CLI end-to-end checks (no browser): the shorthands, the long
-# aliases, the --standard tier tokens, the complexity subcommand, the VCS
-# differential modes, the prove subcommand, and the serve shorthands, theme
-# values, and port forms against the real binary (tests/e2e/cli_flags.py).
-cli-e2e: build
-	@python3 tests/e2e/cli_flags.py
+run-self:
+	@python3 tools/tasks.py run-self
 
-# Browser end-to-end for the served dashboard.  The CLI suite runs first: it
-# needs no browser, so the command line stays covered when playwright cannot
-# install.
-e2e: cli-e2e
-	pnpm --dir tests/e2e install
-	pnpm --dir tests/e2e exec playwright install chromium
-	pnpm --dir tests/e2e test
+run-ada-crdt:
+	@python3 tools/tasks.py run-ada-crdt
+
+ascii-check:
+	@python3 tools/tasks.py ascii-check
+
+spark-off-check:
+	@python3 tools/tasks.py spark-off-check
+
+bump-version:
+	@python3 tools/tasks.py bump-version
+
+coverage-gate:
+	@python3 tools/tasks.py coverage-gate
+
+release:
+	@python3 tools/tasks.py release
+
+publish:
+	@python3 tools/tasks.py publish
+
+test-publish:
+	@python3 tools/tasks.py test-publish
+
+agents-tree:
+	@python3 tools/tasks.py agents-tree
+
+sbom:
+	@python3 tools/tasks.py sbom
+
+compliance:
+	@python3 tools/tasks.py compliance
+
+description:
+	@python3 tools/tasks.py description
+
+proof-status:
+	@python3 tools/tasks.py proof-status
+
+test-count:
+	@python3 tools/tasks.py test-count
+
+doc-links:
+	@python3 tools/tasks.py doc-links
+
+link-check:
+	@python3 tools/tasks.py link-check
+
+changelog-check:
+	@python3 tools/tasks.py changelog-check
+
+action-parity-check:
+	@python3 tools/tasks.py action-parity-check
+
+docs-coverage-check:
+	@python3 tools/tasks.py docs-coverage-check
+
+tools-check:
+	@python3 tools/tasks.py tools-check
+
+bench:
+	@python3 tools/tasks.py bench
+
+perf-bench:
+	@python3 tools/tasks.py perf-bench
+
+complexity-check:
+	@python3 tools/tasks.py complexity-check
+
+csslint-check:
+	@python3 tools/tasks.py csslint-check
+
+version-consistency-check:
+	@python3 tools/tasks.py version-consistency-check
+
+sync:
+	@python3 tools/tasks.py sync
+
+docs-check:
+	@python3 tools/tasks.py docs-check
+
+para-split-check:
+	@python3 tools/tasks.py para-split-check
+
+tldr-check:
+	@python3 tools/tasks.py tldr-check
+
+tldr-lint:
+	@python3 tools/tasks.py tldr-lint
+
+book-links-check:
+	@python3 tools/tasks.py book-links-check
+
+cli-e2e:
+	@python3 tools/tasks.py cli-e2e
+
+e2e:
+	@python3 tools/tasks.py e2e
+
+check:
+	@python3 tools/tasks.py check

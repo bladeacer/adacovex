@@ -97,8 +97,17 @@ def build(release: bool = False) -> int:
         return rc
 
     command = ["alr", "build"] + (["--release"] if release else [])
+    gpr_args: List[str] = []
     if release:
-        command += ["--", "-XADACOVEX_PROFILE=release"]
+        gpr_args.append("-XADACOVEX_PROFILE=release")
+    if os.name == "nt":
+        #  Windows reserves a small main-thread stack (about 1 MiB) by
+        #  default, which a few functions that hold several large fixed-size
+        #  line buffers in one frame can exhaust (STORAGE_ERROR).  Raise the
+        #  reserve so a deep tree never trips it; Linux already gives 8 MiB.
+        gpr_args += ["-largs", "-Wl,--stack,33554432"]
+    if gpr_args:
+        command += ["--"] + gpr_args
     print(f"=== alr build{' --release' if release else ''} ===")
     result = run_capture(command)
     with tempfile.NamedTemporaryFile(
@@ -125,8 +134,24 @@ def build(release: bool = False) -> int:
             covex.unlink(missing_ok=True)
         except OSError:
             pass
-        covex.symlink_to("adacovex")
-        print("linked bin/covex -> bin/adacovex")
+        try:
+            covex.symlink_to("adacovex")
+            print("linked bin/covex -> bin/adacovex")
+        except OSError:
+            #  Windows refuses to create a symlink without elevation, and the
+            #  binary is named adacovex.exe there; copy it under the covex
+            #  alias instead so both names still resolve to the fresh build.
+            try:
+                import shutil
+
+                src = ROOT / "bin" / "adacovex.exe"
+                if not src.exists():
+                    src = ROOT / "bin" / "adacovex"
+                shutil.copyfile(src, ROOT / "bin" / src.name.replace(
+                    "adacovex", "covex"))
+                print("copied bin/covex (no symlink support on this host)")
+            except OSError:
+                print("note: could not create the bin/covex alias")
     else:
         if filtered.stderr:
             sys.stderr.write(filtered.stderr)

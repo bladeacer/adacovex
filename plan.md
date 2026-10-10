@@ -2,82 +2,62 @@
 
 ## Status
 
-Open investigation. The user is on EndeavourOS x86_64 and will attempt a
-Windows 64-bit reproduction of the numeric/Timestamp compile diagnostics.
-This file records the initial findings and the remaining fields to fill in.
+Implemented in the working tree. The Windows portability fixes, the
+`Long_Long_Integer` time-stamp contract, the path abstraction, the task-runner
+migration, and the supporting docs and tests are in place. The remaining step
+is to run the tree's sync and gate commands on a machine with the GNAT
+toolchain and Python 3, because this host has no `bash` and cannot run them
+(see "Verification" below).
 
-## Background
+## What changed
 
-The tree ships (or must be made to ship) on Win32, Win64, ARM, Linux, and
-niche combinations, and Alire itself must run and be installed on all of
-them. Two concerns dominate:
+- **`Adacovex.Paths`** (`src/core/adacovex-paths.ads`/`.adb`) is the single
+  place for a platform path decision: `Is_Separator` (both `/` and `\`),
+  `Is_Absolute` (POSIX root, Windows drive letter, UNC root), `Join`,
+  `Strip_Trailing_Separators`, `Home_Directory` (HOME, then USERPROFILE, then
+  the temp directory), and `Expand_User` (`~` and `~/rest`, also `~\rest`).
+- **`adacovex-config.adb`** resolves a target with `Paths.Is_Absolute` instead
+  of a leading-`/` test, and `Expand_User_Path` delegates to
+  `Paths.Expand_User`.
+- **`adacovex-dir_cache.adb`** uses `Paths.Is_Absolute` in `Abs_Key`, so a
+  Windows absolute path is no longer re-joined with the working directory.
+- **`adacovex-cache.adb`** derives the cache, stamp, probe, and meta roots
+  from `Paths.Home_Directory`, strips either separator in `Set_Cache_Dir`,
+  and carries the result of every `OS_Lib.To_C` call as an explicit
+  `Long_Long_Integer`.
+- **`adacovex_main.adb`** normalises a path with both separators, keeps a
+  drive or UNC root, and emits a canonical `/` form.
+- **`parse_gpr.adb`** binds the `.gpr`-stripped name to a constant, so a
+  `with "x.gpr"` clause no longer raises `Constraint_Error`.
+- **`tools/build.py`** reserves a larger Windows main-thread stack
+  (`-Wl,--stack,33554432`) and falls back to a copy when a symlink is refused.
+- **`tools/tasks.py`** and **`justfile`** are the new task runner; the
+  `Makefile` is a thin shim that delegates to the same Python tasks.
+- **`Adacovex_Paths_Tests`** (25 checks) pins the separator, absolute, join,
+  strip, and home rules.
 
-1. **Numeric and timestamp correctness across word sizes and ABIs.**
-2. **Obvious, explicit platform support documentation.**
+## Verification
 
-## Initial findings
+Run these on a machine with `gprbuild`, `gnatprove`, and Python 3 (the
+generated files and the metrics are refreshed by them and are not hand-written
+artifacts):
 
-- `src/core/adacovex-types.ads` derives `Max_Path` and `Max_Line` from
-  `System.Word_Size` (`64 * Host_Word_Bits`, `4096 * Host_Word_Bits`), so
-  narrower hosts keep proportional buffers. The fixed-size strings
-  (`Desc_Field`, `Path_Field`, `Name_Field`) are bounded at compile time
-  and widen with the host word size.
-- `src/core/adacovex-cpus.adb` is the only user of GNAT.OS_Lib in the
-  tree, and `Run_Capture` passes command arguments as a GNAT.OS_Lib
-  argument list (`Argument_List`, `new String'(...)`). The Windows
-  variants of that ABI are the remaining unknown.
-- `src/core/adacovex-cpus.ads` documents the detection cascade
-  (Linux /proc/cpuinfo, macOS/FreeBSD sysctl, nproc fallback,
-  NUMBER_OF_PROCESSORS, PowerShell CIM) and the two temp-directory env
-  vars (TMPDIR, TEMP, TMP). The platform note in
-  `docs/usage/platforms.md` is what the user-facing page must state.
-- `docs/contributing/perf/benchmarks-server.md` already reflects the
-  current 1.58.0 server numbers (`~45k/~94k/~84k` req/s; `0.02-0.15` ms
-  latency).
-- `docs/contributing/perf/prove-timing.md` keeps the one-column-per-phase
-  rule with 1.58.0 as the open representative (1047 VCs; the only real
-  v1.59.0 numbers would come from an actual `make prove` build, which is
-  not something this tree can produce here).
+```
+just test
+just test-count
+just description
+just agents-tree
+just book
+just doc
+just prove
+just check
+```
 
-## Remaining unknowns to fill in
-
-- Exact Windows compile semantics of the four GNAT.OS_Lib usage sites
-  in `adacovex-cache.adb` and the `Run_Capture` body of
-  `adacovex-cpus.adb` once a Windows build is available. Until then,
-  the plan records the contract the fix must satisfy: every
-  `File_Time_Stamp` and `Current_Time` value must be carried as a
-  `Long_Long_Integer` on every target, with no implicit 32/64 shrinking
-  on Win32. `To_C` is the documented conversion; the guard is the
-  `Long_Long_Integer` result of the conversion, never a hard-coded
-  width assumption.
-- Where `docs/usage/platforms.md` states which platforms and ABIs are
-  supported, which adjectives the user-facing docs use for the
-  platform matrix, and what `--standard=all` does for a non-avionics
-  standard set.
-- Any other numeric casts or `Integer` conversions in the tree that
-  shrink a platform-dependent value before storage.
-
-## Plan of record
-
-1. Implement the numeric/Timestamp platform contract (already the case
-   in the tree for the four `OS_Lib.To_C` sites; make it permanent).
-2. Add unit tests that pin the `Long_Long_Integer` contract, register
-   them in `test_runner.adb` as a new category (runner object, table
-   row, both totals).
-3. Document the platform matrix and the platform support story in
-   `docs/usage/platforms.md`.
-4. Close the v1.59.0 release record (changelog, manifest version, perf
-   page, `AGENTS.md` perf reference) with a real `make prove` run on a
-   machine that has `gprbuild`, `gnatprove`, and `System.OS_Lib`, not by
-   manufacturing artifacts.
+`just release` and its version bump stay a separate release action, as before.
 
 ## Notes
 
-- The tree has no vendored components, so a vendored-code regression
-  cannot be measured on the self tree; that shape is only measurable on
-  a fixture with the same shape.
-- `make prove` on an unchanged tree (~1.12 s) is *not* the warm
-  short-circuit: it also regenerates the bundled manual and the
-  dashboard template and re-checks the generators.
-- The v1.59.0 numeric/timestamp contract work does not include the
-  1.59.0 release-record files.
+- The tree has no vendored components; a vendored-code regression is only
+  measurable on a fixture with the same shape.
+- `just check` resolves `gnatprove` for you, so no manual prover installation
+  is required.

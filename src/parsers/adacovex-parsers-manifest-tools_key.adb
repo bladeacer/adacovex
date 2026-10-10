@@ -14,8 +14,12 @@ separate (Adacovex.Parsers.Manifest)
 --  a release.) The "|probe-fb:...|" token also separates this namespace
 --  from the graph cache and the 1.27-era blob layout, while the flag chain
 --  stays part of the digest.
+--  The "tools-" prefix (not "tools:") keeps the key usable as an on-disk
+--  cache entry name: Windows rejects ':' in a file name, and a keyed blob
+--  written under such a name is never found again. The prefix also keeps
+--  this namespace separate from the graph cache ("graph-").
 --  @param Target_Dir  Project root directory.
---  @return "tools:" + SHA-256 digest, or "" when inputs are unhashable.
+--  @return "tools-" + SHA-256 digest, or "" when inputs are unhashable.
 function Tools_Key (Target_Dir : String) return String is
    T    : constant String :=
      (if Target_Dir'Length > 1 and then Target_Dir (Target_Dir'Last) = '/'
@@ -44,5 +48,5 @@ begin
    if CLen = 0 then
       return "";
    end if;
-   return "tools:" & Adacovex.Cache.Hash_String (Comb (1 .. CLen));
+   return "tools-" & Adacovex.Cache.Hash_String (Comb (1 .. CLen));
 end Tools_Key;

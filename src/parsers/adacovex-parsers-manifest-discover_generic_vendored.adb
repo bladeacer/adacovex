@@ -59,15 +59,16 @@ is
    end Skip_Vendor_Scan_Dir;
 
    --  The directory that contains Path (its last path component
-   --  stripped), "" when Path has no parent. The vendor walk passes
-   --  full paths, so the owner of a vendor root is its containing
+   --  stripped), "" when Path has no parent. A Windows path uses '\'
+   --  as its separator, so both separators are accepted. The vendor walk
+   --  passes full paths, so the owner of a vendor root is its containing
    --  directory (for example tests/e2e for tests/e2e/node_modules).
    --  @param Path  Directory path.
    --  @return The parent directory, or "" when none exists.
    function Parent_Dir (Path : String) return String is
    begin
       for I in reverse Path'Range loop
-         if Path (I) = '/' then
+         if Adacovex.Paths.Is_Separator (Path (I)) then
             if I = Path'First then
                return "";
             end if;

@@ -34,8 +34,9 @@
 
 ## Requirements
 
-- HLR-ARCH: The tool shall build with `alr build` and support Makefile targets
-  for build, prove, fmt, lint, api-docs, changelog, and clean.
+- HLR-ARCH: The tool shall build with `alr build` and provide task targets
+  (`just` tasks, mirrored by the Makefile shim) for build, prove, fmt, doc,
+  changelog, and clean.
 
 - HLR-CACHE: The tool shall cache per-file analysis results (source scans,
   GNATprove summaries, test summaries) on disk keyed by the SHA-256 hash of

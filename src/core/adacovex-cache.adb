@@ -2,8 +2,8 @@ with Ada.Calendar;
 with Ada.Directories;
 with Ada.Streams;
 with Ada.Streams.Stream_IO;
-with Ada.Environment_Variables;
 with Ada.Text_IO;
+with Adacovex.Paths;
 with GNAT.SHA256;
 with Interfaces;
 with System.OS_Lib;
@@ -55,7 +55,7 @@ package body Adacovex.Cache is
       end if;
       Cache_Root_Len := Dir'Length;
       Cache_Root (1 .. Cache_Root_Len) := Dir;
-      if Cache_Root (Cache_Root_Len) = '/' then
+      if Adacovex.Paths.Is_Separator (Cache_Root (Cache_Root_Len)) then
          Cache_Root_Len := Cache_Root_Len - 1;
       end if;
    end Set_Cache_Dir;
@@ -72,10 +72,7 @@ package body Adacovex.Cache is
    end Cache_Dir;
 
    procedure Default_Cache_Dir (Dir : out String; Len : out Natural) is
-      Home : constant String :=
-        (if Ada.Environment_Variables.Exists ("HOME")
-         then Ada.Environment_Variables.Value ("HOME")
-         else "/tmp");
+      Home : constant String := Adacovex.Paths.Home_Directory;
       S    : constant String :=
         Home & "/.adacovex/cache/" & Adacovex.Version & "/" & Cache_Schema;
    begin
@@ -280,10 +277,7 @@ package body Adacovex.Cache is
 
    --  <HOME>/.adacovex/stamps -- machine-local, outside the result cache.
    function Stamp_Store_Root return String is
-      Home : constant String :=
-        (if Ada.Environment_Variables.Exists ("HOME")
-         then Ada.Environment_Variables.Value ("HOME")
-         else "/tmp");
+      Home : constant String := Adacovex.Paths.Home_Directory;
    begin
       return Home & "/.adacovex/stamps";
    end Stamp_Store_Root;
@@ -611,7 +605,7 @@ package body Adacovex.Cache is
       --  TTL from the record's own write time (integer OS seconds).
       declare
          Now : constant Long_Long_Integer :=
-           System.OS_Lib.To_C (System.OS_Lib.Current_Time);
+           Long_Long_Integer (System.OS_Lib.To_C (System.OS_Lib.Current_Time));
          Age : constant Long_Long_Integer := Now - P_Rec (Idx);
       begin
          if Age < 0 or else Age > Stamp_TTL_Days * 86_400 then
@@ -643,7 +637,7 @@ package body Adacovex.Cache is
       H       : Interfaces.Unsigned_32;
       Idx     : Stamp_Index;
       Now_Sec : constant Long_Long_Integer :=
-        System.OS_Lib.To_C (System.OS_Lib.Current_Time);
+        Long_Long_Integer (System.OS_Lib.To_C (System.OS_Lib.Current_Time));
    begin
       if Path'Length = 0
         or else Path'Length > 2048
@@ -755,7 +749,9 @@ package body Adacovex.Cache is
       begin
          Sz := File_Size (Path);
          if Sz >= 0 then
-            Mt := System.OS_Lib.To_C (System.OS_Lib.File_Time_Stamp (Path));
+            Mt :=
+              Long_Long_Integer
+                (System.OS_Lib.To_C (System.OS_Lib.File_Time_Stamp (Path)));
          end if;
          if Sz >= 0 and then Mt >= 0 then
             PStamp_Lookup (Path, Sz, Mt, PDig, PLen);
@@ -947,10 +943,7 @@ package body Adacovex.Cache is
    --  interpreter). A fixed probe root keeps a 7-day TTL the only reason
    --  a known toolchain ever re-probes.
    function Probe_Root return String is
-      Home : constant String :=
-        (if Ada.Environment_Variables.Exists ("HOME")
-         then Ada.Environment_Variables.Value ("HOME")
-         else "/tmp");
+      Home : constant String := Adacovex.Paths.Home_Directory;
    begin
       return Home & "/.adacovex/probes";
    end Probe_Root;
@@ -978,7 +971,9 @@ package body Adacovex.Cache is
             return Exe_Path;
       end;
       begin
-         Mt := System.OS_Lib.To_C (System.OS_Lib.File_Time_Stamp (Exe_Path));
+         Mt :=
+           Long_Long_Integer
+             (System.OS_Lib.To_C (System.OS_Lib.File_Time_Stamp (Exe_Path)));
       exception
          when others =>
             Mt := -1;
@@ -1119,10 +1114,7 @@ package body Adacovex.Cache is
    --  target so two projects that share the machine store never serve
    --  each other's resolved licence or version.
    function Meta_Root return String is
-      Home : constant String :=
-        (if Ada.Environment_Variables.Exists ("HOME")
-         then Ada.Environment_Variables.Value ("HOME")
-         else "/tmp");
+      Home : constant String := Adacovex.Paths.Home_Directory;
    begin
       return Home & "/.adacovex/meta";
    end Meta_Root;

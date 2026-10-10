@@ -71,6 +71,7 @@ CATEGORY_KEY: Dict[str, str] = {
     "CPU and jobs": "src/tests/adacovex_cpus_tests",
     "HLR/LLR parsing": "src/tests/adacovex_do178c_tests",
     "Completion scripts": "src/tests/adacovex_completion_tests",
+    "Platform paths": "src/tests/adacovex_paths_tests",
 }
 
 TEST_RUNNER_KEY: str = "src/tests/test_runner"
