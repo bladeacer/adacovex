@@ -61,3 +61,28 @@ just check
   measurable on a fixture with the same shape.
 - `just check` resolves `gnatprove` for you, so no manual prover installation
   is required.
+
+## Deferred to the EndeavourOS machine (v1.59.0 and v1.60.0 proof timing)
+
+The `docs/contributing/perf/prove-timing.md` phase table still names
+`1.57.0-1.58.0` as the open phase. 1.59.0 and 1.60.0 change no measurement
+methodology, so they fold into that phase, but the fold-in and any re-measured
+`make prove` / `make bench` figures must be taken on the EndeavourOS machine,
+where the figures are comparable with the Linux columns. This Windows host
+cannot produce a comparable wall, so the table is left as-is for now.
+
+When the EndeavourOS machine is available:
+
+1. Check out this tree and run `just prove` and `just bench` on the release
+   profile (gnatprove 16.1.0, the same logical-core and job settings the page
+   records), with `/proc/loadavg` recorded beside each figure.
+2. Re-measure the warm `newfstatat` count with strace for the current tree.
+3. Fold 1.59.0 and 1.60.0 into the open phase: rename the phase range to
+   `1.57.0-1.60.0`, keep 1.58.0 as the representative unless the new figures
+   justify a different representative, and add the fold-in bullet to the
+   reading notes. State the reason in the reading notes if the representative
+   changes.
+4. Update the AGENTS.md phase-list sentence ("so far 1.45.0-1.47.0,
+   1.48.0-1.54.0, 1.55.0-1.56.0, 1.57.0-1.58.0") to the new open-phase range.
+5. Run `just check` on that machine to re-verify the whole gate with sphinx
+   installed, so the committed offline-manual spec is regenerated.

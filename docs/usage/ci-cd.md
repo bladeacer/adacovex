@@ -25,13 +25,13 @@ jobs:
           standard: all          # DO-178C + ISO 26262 + IEC 62304
           require-spark: Platinum
           require-docstrings: 100
-          require-tests: 1784
+          require-tests: 1815
           run-tests: true
           generate-sbom: true
 ```
 
 This job builds adacovex. It runs the target's native tests and the full
-assessment. It gates on Platinum SPARK, 100% docstring coverage, and 1800
+assessment. It gates on Platinum SPARK, 100% docstring coverage, and 1796
 passing tests. On failure, the job publishes `adacovex-assessment` artifacts
 and Markdown summaries.
 

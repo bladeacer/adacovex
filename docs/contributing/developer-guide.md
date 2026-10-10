@@ -26,14 +26,18 @@ Prerequisites:
 ```bash
 git clone https://github.com/bladeacer/adacovex.git
 cd adacovex
-make build        # compiles bin/adacovex + bin/test_runner (covex alias)
-make test         # builds + runs the native test suite (1791 tests)
-make run-self     # assess adacovex itself: 100% docs, Platinum, DAL-C
-make prove        # SPARK proof (Platinum gate) + regenerates docs/badges/
-make check        # the whole quality gate CI runs before a release
+just build        # compiles bin/adacovex + bin/test_runner (covex alias)
+just test         # builds + runs the native test suite (1815 tests)
+just run-self     # assess adacovex itself: 100% docs, Platinum, DAL-C
+just prove        # SPARK proof (Platinum gate) + regenerates docs/badges/
+just check        # the whole quality gate CI runs before a release
 ```
 
-`make check` is the pre-commit gate. It runs cheap static checks first (ASCII, SPARK_Mode-Off policy, changelog format, version source, doc-links, markdown links). Then it runs build, tests, proof, docs, and SBOM. Then it runs tree-wide count-sync checks.
+`just` is the task runner (`just --list` lists every recipe). The `Makefile`
+is a thin shim that delegates to the same Python tasks, so an existing
+`make <task>` reference still works.
+
+`just check` is the pre-commit gate. It runs cheap static checks first (ASCII, SPARK_Mode-Off policy, changelog format, version source, doc-links, markdown links). Then it runs build, tests, proof, docs, and SBOM. Then it runs tree-wide count-sync checks.
 
 Everything must pass. The sync checks fail loudly when a count in any documentation file is stale.
 
@@ -61,7 +65,7 @@ make test-count    # sync every anchored count across the repo (AGENTS.md,
                    # README, Makefile, CI workflows, manifests, agents-tree.map)
 ```
 
-The count-sync is enforced by `make check`. A test change that skips the sync fails the gate. Tests write to `/tmp` scratch dirs and clean up after themselves. The default on-disk result cache (`~/.adacovex/cache`) is shared.
+The count-sync is enforced by `make check`. A test change that skips the sync fails the gate. Tests write to `/tmp` scratch dirs and clean up after themselves. The default on-disk result cache (`<cache>`) is shared.
 
 Tests that exercise caching use content-hashed keys. They never depend on each other's state.
 

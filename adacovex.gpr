@@ -65,4 +65,30 @@ project Adacovex is
    package Binder is
       for Default_Switches ("Ada") use ("-E");
    end Binder;
+
+   --  Windows reserves about 1 MiB for the main-thread stack by default,
+   --  which a function that holds several large fixed-size line buffers in
+   --  one frame can exhaust (STORAGE_ERROR at run time).  Raise the reserve
+   --  to 32 MiB on Windows only, so every build path carries it: a plain
+   --  `alr build`, a consumer build, and Alire's crate-index CI, not only
+   --  the local tools/build.py.  Linux already reserves 8 MiB and needs
+   --  nothing.  gprbuild exposes the target OS through the OS external.
+   --  gprbuild exposes the host operating system through the OS external
+   --  (the value of the OS environment variable; "Windows_NT" on Windows,
+   --  "linux"/"darwin"/"freebsd" and so on elsewhere, with "linux" when
+   --  the variable is unset, which is the common Unix case).
+   type OS_Type is
+     ("Windows_NT", "windows", "linux", "darwin", "freebsd", "openbsd",
+      "netbsd", "dragonfly", "solaris", "aix", "hp-ux", "unknown");
+   OS : OS_Type := external ("OS", "linux");
+
+   package Linker is
+      case OS is
+         when "Windows_NT" | "windows" =>
+            for Default_Switches ("Ada") use ("-Wl,--stack,33554432");
+         when "linux" | "darwin" | "freebsd" | "openbsd" | "netbsd" |
+           "dragonfly" | "solaris" | "aix" | "hp-ux" | "unknown" =>
+            for Default_Switches ("Ada") use ();
+      end case;
+   end Linker;
 end Adacovex;

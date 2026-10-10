@@ -21,8 +21,36 @@ package body Adacovex.Cache is
    Cache_Root     : String (1 .. 4096) := (others => ' ');
    Cache_Root_Len : Natural := 0;
 
+   --  The on-disk form of a cache key. A namespaced key spells its
+   --  namespace with ':' ("scan:<sha256>", "tests:<sha256>",
+   --  "prove:<sha256>", "proveout:<sha256>", "hlr:<sha256>",
+   --  "llr:<sha256>", "tools-<sha256>", "graph-<sha256>"), and Windows
+   --  rejects ':' in a file name: the create opens an alternate data
+   --  stream, the blob is lost, and a directory probe can never find it
+   --  again (a proof run aborted with Name_Error before this mapping
+   --  existed). Every ':' becomes '-' here, once, so the layout is
+   --  portable for every present and future namespace. A bare
+   --  64-character hex key carries no ':' and is unchanged. The mapping
+   --  cannot collide: a namespace and the digest that follows it are
+   --  separated by the same character in every key, and a hex digest
+   --  contains neither ':' nor '-'.
+   --  @param Key  Cache key.
+   --  @return Key with every ':' replaced by '-'.
+   function Portable_Key (Key : String) return String is
+      R : String (Key'Range) := Key;
+   begin
+      for I in R'Range loop
+         if R (I) = ':' then
+            R (I) := '-';
+         end if;
+      end loop;
+      return R;
+   end Portable_Key;
+
    --  Full path of a cache entry: <root>/<aa>/<key>. Cache_Root is stored
    --  without a trailing separator; Entry_Path adds the joining slashes.
+   --  The key is mapped through Portable_Key, so the subdirectory and the
+   --  entry name are filesystem-safe on every platform.
    function Entry_Path (Key : String) return String is
    begin
       if Key'Length < 3 or else Cache_Root_Len = 0 then
@@ -31,9 +59,9 @@ package body Adacovex.Cache is
       return
         Cache_Root (1 .. Cache_Root_Len)
         & "/"
-        & Key (Key'First .. Key'First + 1)
+        & Portable_Key (Key (Key'First .. Key'First + 1))
         & "/"
-        & Key;
+        & Portable_Key (Key);
    end Entry_Path;
 
    --  Parent directory of an entry (the <root><aa> subdir).
@@ -45,7 +73,7 @@ package body Adacovex.Cache is
       return
         Cache_Root (1 .. Cache_Root_Len)
         & "/"
-        & Key (Key'First .. Key'First + 1);
+        & Portable_Key (Key (Key'First .. Key'First + 1));
    end Subdir_Path;
 
    procedure Set_Cache_Dir (Dir : String) is
@@ -72,9 +100,12 @@ package body Adacovex.Cache is
    end Cache_Dir;
 
    procedure Default_Cache_Dir (Dir : out String; Len : out Natural) is
-      Home : constant String := Adacovex.Paths.Home_Directory;
-      S    : constant String :=
-        Home & "/.adacovex/cache/" & Adacovex.Version & "/" & Cache_Schema;
+      S : constant String :=
+        Adacovex.Paths.Cache_Root
+        & "/"
+        & Adacovex.Version
+        & "/"
+        & Cache_Schema;
    begin
       if S'Length <= Dir'Length then
          Len := S'Length;
@@ -275,11 +306,13 @@ package body Adacovex.Cache is
    --  accepts, and it self-heals on the next size or mtime change.
    Stamp_TTL_Days : constant := 30;
 
-   --  <HOME>/.adacovex/stamps -- machine-local, outside the result cache.
+   --  <cache>/stamps -- machine-local, outside the result cache. The
+   --  platform cache directory comes from Adacovex.Paths (XDG on Linux,
+   --  ~/Library/Caches on macOS, %LOCALAPPDATA% on Windows, or
+   --  $ADACOVEX_STATE_HOME/cache when that override is set).
    function Stamp_Store_Root return String is
-      Home : constant String := Adacovex.Paths.Home_Directory;
    begin
-      return Home & "/.adacovex/stamps";
+      return Adacovex.Paths.Cache_Root & "/stamps";
    end Stamp_Store_Root;
 
    --  The single index file: <stamps>/index.bin. Binary layout (little-
@@ -943,9 +976,8 @@ package body Adacovex.Cache is
    --  interpreter). A fixed probe root keeps a 7-day TTL the only reason
    --  a known toolchain ever re-probes.
    function Probe_Root return String is
-      Home : constant String := Adacovex.Paths.Home_Directory;
    begin
-      return Home & "/.adacovex/probes";
+      return Adacovex.Paths.Cache_Root & "/probes";
    end Probe_Root;
 
    --  Identity of a tool's installed binary: the PATH-resolved executable
@@ -1101,7 +1133,7 @@ package body Adacovex.Cache is
    end Put_Probe;
 
    --  Location of the registry-metadata files. Machine-local
-   --  (~/.adacovex/meta/), outside the result cache, exactly like the
+   --  (<data>/meta/), outside the result cache, exactly like the
    --  system-tool probe store: a resolved registry answer describes the
    --  package at its recorded version, not the project's scan state, so
    --  wiping the result cache (or pointing --cache-dir at a fresh
@@ -1114,9 +1146,8 @@ package body Adacovex.Cache is
    --  target so two projects that share the machine store never serve
    --  each other's resolved licence or version.
    function Meta_Root return String is
-      Home : constant String := Adacovex.Paths.Home_Directory;
    begin
-      return Home & "/.adacovex/meta";
+      return Adacovex.Paths.Data_Root & "/meta";
    end Meta_Root;
 
    --  <meta>/<hash> -- keyed by the SHA-256 of "target|eco|name" so the

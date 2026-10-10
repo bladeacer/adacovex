@@ -111,7 +111,7 @@ steps:
 
 ### Result caching
 
-The action restores `~/.adacovex/cache` before running adacovex. It saves the
+The action restores `<cache>` before running adacovex. It saves the
 cache when the job finishes (`result-cache`, default `true`).
 
 Every entry is keyed by its artifact's SHA-256 content hash. Restoring a cache

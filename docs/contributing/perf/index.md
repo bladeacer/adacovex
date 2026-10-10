@@ -19,7 +19,7 @@ history](optimisation-history.md).
 adacovex has two *caches* and one *build step*; every benchmark category is
 defined by which of them are populated:
 
-- the **result cache** (`~/.adacovex/cache/<version>/`, or `--cache-dir`):
+- the **result cache** (`<cache>/<version>/`, or `--cache-dir`):
   adacovex's own content-addressed store of scan, graph, and prove results;
 - the **gnatprove session store** (`<target>/obj/gnatprove/`):
   gnatprove's internal per-unit session, which re-analyses only changed

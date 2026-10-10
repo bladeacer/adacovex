@@ -8,13 +8,24 @@
 # The Makefile is kept as a thin compatibility shim that calls the same
 # Python tasks; `just` is the primary developer runner.
 
-# List the available tasks.
+# The docs-bundling virtualenv.  sphinx, myst-parser, and furo are dev-only
+# and live in .venv, managed with uv from requirements.txt.  Recipes that
+# build or serve the manual put .venv on PATH first, so tools/gen-docs.py
+# finds sphinx-build; every other recipe runs with the system interpreter.
+venv-bin := if os() == "windows" { ".venv/Scripts" } else { ".venv/bin" }
+
+# Show the task list with each recipe's description (the default action).
 default:
-    @python3 tools/tasks.py --list
+    @just --list
+
+# Create or refresh the docs-bundling virtualenv with uv.
+docs-venv:
+    @test -d .venv || uv venv --python 3.13 .venv
+    @uv pip install --python .venv -r requirements.txt
 
 # Build the project (adacovex + test_runner, covex alias).
-build:
-    @python3 tools/tasks.py build
+build: docs-venv
+    @PATH="{{venv-bin}}:$PATH" python3 tools/tasks.py build
 
 # Install the man page into the local man database.
 man:
@@ -36,9 +47,9 @@ fmt:
 doc:
     @python3 tools/tasks.py doc
 
-# Build the bundled offline manual.
-book:
-    @python3 tools/tasks.py book
+# Build the bundled offline manual (needs the docs venv).
+book: docs-venv
+    @PATH="{{venv-bin}}:$PATH" python3 tools/tasks.py book
 
 # Run the assessment against adacovex itself.
 run-self:
@@ -133,16 +144,16 @@ tldr-lint:
     @python3 tools/tasks.py tldr-lint
 
 # Verify every link in the bundled offline manual resolves.
-book-links-check:
-    @python3 tools/tasks.py book-links-check
+book-links-check: docs-venv
+    @PATH="{{venv-bin}}:$PATH" python3 tools/tasks.py book-links-check
 
 # Serve the docs source at http://localhost:8000.
 docs-serve:
     @python3 tools/tasks.py docs-serve
 
 # Build and serve the manual at http://localhost:8000.
-book-serve:
-    @python3 tools/tasks.py book-serve
+book-serve: docs-venv
+    @PATH="{{venv-bin}}:$PATH" python3 tools/tasks.py book-serve
 
 # Run the tools unit tests.
 tools-check:
@@ -189,5 +200,5 @@ e2e:
     @python3 tools/tasks.py e2e
 
 # The single everything-check entry point.
-check:
-    @python3 tools/tasks.py check
+check: docs-venv
+    @PATH="{{venv-bin}}:$PATH" python3 tools/tasks.py check

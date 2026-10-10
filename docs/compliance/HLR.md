@@ -132,11 +132,11 @@
   against the target project's root .gpr file. gnatprove is not a declared
   dependency of the tool; when the target's alire.toml / alire-dev.toml
   declares a gnatprove dependency, that pin is authoritative: the tool
-  deploys only the gnatprove binary crate into ~/.adacovex/toolchain via
+  deploys only the gnatprove binary crate into the toolchain cache via
   `alr -n get` (one-time per version, reused after) and runs the deployed
   binary directly, so the tool only requires `alr` on PATH. Otherwise it
   falls back to a globally pinned version, a gnatprove on PATH, a cached
-  ~/.adacovex/toolchain/bin gnatprove, and finally a platform toolchain
+  the toolchain cache bin gnatprove, and finally a platform toolchain
   download, then hands off to the standard assessment pipeline.
 
 - HLR-IR: The tool shall define bounded target machine-integer types

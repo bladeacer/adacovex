@@ -33,7 +33,18 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 ROOT: Path = Path(__file__).resolve().parents[2]
-BIN: str = str(ROOT / "bin" / "adacovex")
+
+
+def _binary() -> Path:
+    """The built binary: bin/adacovex, or bin/adacovex.exe on Windows."""
+    for name in ("adacovex.exe", "adacovex"):
+        candidate = ROOT / "bin" / name
+        if candidate.is_file():
+            return candidate
+    return ROOT / "bin" / "adacovex"
+
+
+BIN: str = str(_binary())
 
 # The throwaway repositories this script creates must not depend on the
 # developer's git configuration: a global `commit.gpgsign = true` makes the

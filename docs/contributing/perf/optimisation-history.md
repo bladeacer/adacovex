@@ -128,7 +128,7 @@ input in a single reusable buffer (`TSInput`, `tree_sitter/api.h`).
 adacovex adopts the first technique directly:
 
 - `Hash_File` gained a second fast path backed by a **persistent
-  stat-stamp store** at `~/.adacovex/stamps/` (machine-local, like the
+  stat-stamp store** at `<cache>/stamps/` (machine-local, like the
   probe and meta stores, so `--cache-dir` wipes never cost re-hashes).
   A record is `<sha-256-of-path>` holding size, mtime, record time, and
   the digest; a lookup is one open + four short reads and validates two
@@ -186,7 +186,7 @@ the header rows. Both tables now print in full, and a missing `perf` or
 `strace` fails loudly instead of silently printing nothing.
 
 Deploying a manifest-pinned gnatprove prints a progress line (`deploy:
-gnatprove <v> not in ~/.adacovex/toolchain -- downloading via alr
+gnatprove <v> not in the toolchain cache -- downloading via alr
 (one-time, may take a minute)...`) -- the first deployment downloads a
 ~130 MB bundle through `alr -n get` and a silent minute of nothing read
 as a hang. The deployment is one-time per version; every later run

@@ -8,8 +8,8 @@
   | CLI config                               |  349 | PASS     |
   | SVG renderer                             |  161 | PASS     |
   | HTML/Markdown renderers                  |  58 | PASS     |
-  | SBOM generator                           |  299 | FAIL     |
-  | Result cache                             |  33 | PASS     |
+  | SBOM generator                           |  304 | PASS     |
+  | Result cache                             |  36 | PASS     |
   | IR synthesis                             |  42 | PASS     |
   | Man page renderer                        |  18 | PASS     |
   | VCS support                              |  29 | PASS     |
@@ -26,7 +26,7 @@
   | CPU and jobs                             |  24 | PASS     |
   | HLR/LLR parsing                          |  33 | PASS     |
   | Completion scripts                       |  24 | PASS     |
-  | Platform paths                           |  25 | PASS     |
+  | Platform paths                           |  41 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 1790  Failed: 1
+  Passed: 1815  Failed: 0

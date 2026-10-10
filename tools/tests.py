@@ -632,6 +632,33 @@ class TestVersionConsistency(unittest.TestCase):
         self.assertEqual(check_version.spec_version(), "1.2.3")
         self.assertEqual(check_version.sbom_versions(), ("1.2.3", "1.2.3"))
 
+    def test_manifest_split_accepts_the_published_shape(self) -> None:
+        publishing = 'name = "covex"\nversion = "1.2.3"\n'
+        dev = ('name = "covex"\nversion = "1.2.3"\n[[depends-on]]\n'
+               'gnatprove = "^16.1.0"\n')
+        self.assertEqual(
+            check_version.manifest_split_problems(publishing, dev), [])
+
+    def test_manifest_split_rejects_a_dev_dependency(self) -> None:
+        # The residue of an interrupted tools/dev-cmd.py swap.
+        publishing = ('name = "covex"\nversion = "1.2.3"\n[[depends-on]]\n'
+                      'gnatprove = "^16.1.0"\n')
+        problems = check_version.manifest_split_problems(publishing,
+                                                        publishing + "\n")
+        self.assertTrue(any("gnatprove" in p for p in problems))
+        self.assertTrue(any("zero-dependency" in p for p in problems))
+
+    def test_manifest_split_rejects_an_identical_pair(self) -> None:
+        same = 'name = "covex"\nversion = "1.2.3"\n'
+        problems = check_version.manifest_split_problems(same, same)
+        self.assertTrue(any("identical" in p for p in problems))
+
+    def test_manifest_split_requires_the_dev_pin(self) -> None:
+        publishing = 'name = "covex"\nversion = "1.2.3"\n'
+        dev = 'name = "covex"\nversion = "1.2.3"\n[[depends-on]]\n'
+        problems = check_version.manifest_split_problems(publishing, dev)
+        self.assertTrue(any("does not pin gnatprove" in p for p in problems))
+
 
 class TestDevCmd(unittest.TestCase):
     def setUp(self) -> None:

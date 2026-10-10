@@ -1,11 +1,11 @@
 with Ada.Directories;
-with Ada.Environment_Variables;
 with Ada.Streams;
 with Ada.Streams.Stream_IO;
 with GNAT.OS_Lib;
 with Adacovex;
 with Adacovex.Cache;
 with Adacovex.CPUs;
+with Adacovex.Paths;
 
 package body Adacovex_Cache_Tests is
 
@@ -31,17 +31,15 @@ package body Adacovex_Cache_Tests is
       return Test_Root & "/cache";
    end Test_Cache_Dir;
 
-   --  Documented persistent-stamp layout: ~/.adacovex/stamps/<sha-256-of
-   --  -path>. Adacovex.Cache owns the real builder privately; the tests
-   --  rebuild it from the documented layout (same pattern as the probe
-   --  store test above).
+   --  Persistent-stamp layout: <platform cache>/stamps/<sha-256-of-path>.
+   --  Adacovex.Cache owns the real builder privately; the tests rebuild it
+   --  from the documented layout (same pattern as the probe store test
+   --  above). Adacovex.Paths answers the platform cache directory, so the
+   --  check is the same on every host.
    function Home_Stamp_Path (For_Path : String) return String is
-      Home : constant String :=
-        (if Ada.Environment_Variables.Exists ("HOME")
-         then Ada.Environment_Variables.Value ("HOME")
-         else "/tmp");
    begin
-      return Home & "/.adacovex/stamps/" & Cache.Hash_String (For_Path);
+      return
+        Adacovex.Paths.Cache_Root & "/stamps/" & Cache.Hash_String (For_Path);
    end Home_Stamp_Path;
 
    --  Write Content into a fresh file at Path. Binary Stream_IO, so the
@@ -240,18 +238,17 @@ package body Adacovex_Cache_Tests is
          R.Check
            (not Probe_Found,
             "Test 11b: probe fingerprint mismatch invalidates");
-         --  The probe store lives at ~/.adacovex/probes/<tool>.v2. Remove
-         --  the test's entry so it never leaks into a real toolchain probe
-         --  set. Probe_Path is private to Adacovex.Cache, so rebuild the
-         --  path here from the documented layout.
+         --  The probe store lives at <platform cache>/probes/<tool>.v2.
+         --  Remove the test's entry so it never leaks into a real toolchain
+         --  probe set. Probe_Path is private to Adacovex.Cache, so rebuild
+         --  the path here from the documented layout.
          declare
-            Home : constant String :=
-              (if Ada.Environment_Variables.Exists ("HOME")
-               then Ada.Environment_Variables.Value ("HOME")
-               else "/tmp");
          begin
             Ada.Directories.Delete_File
-              (Home & "/.adacovex/probes/" & Probe_Name & ".v2");
+              (Adacovex.Paths.Cache_Root
+               & "/probes/"
+               & Probe_Name
+               & ".v2");
          exception
             when others =>
                null;
@@ -384,6 +381,35 @@ package body Adacovex_Cache_Tests is
          R.Check
            (Found and then Buf (1 .. Len) = "payload-a2",
             "Test 14: the key is reusable after delete");
+      end;
+
+      --  Test 15: a namespaced key round trips and its entry lands under a
+      --  portable file name. Windows rejects ':' in a file name, so the
+      --  entry path maps every ':' to '-'. Before that mapping a blob
+      --  stored under a namespaced key ("prove:", "scan:", "tests:",
+      --  "hlr:", ...) opened an alternate data stream, lost its payload,
+      --  and was never found again; a prove run aborted with Name_Error on
+      --  the first cache write. The checks pin both halves: the payload
+      --  survives, and the on-disk entry name carries no ':'.
+      declare
+         Ns_Hash : constant String := Cache.Hash_String ("namespaced-entry");
+         Ns_Key  : constant String := "prove:" & Ns_Hash;
+         Buf     : String (1 .. 64);
+         Len     : Natural;
+         Found   : Boolean;
+      begin
+         Cache.Put_Cached (Ns_Key, "namespaced-payload", Found);
+         R.Check (Found, "Test 15: namespaced key stored");
+         Len := 0;
+         Cache.Get_Cached (Ns_Key, Buf, Len, Found);
+         R.Check
+           (Found and then Len = 18
+            and then Buf (1 .. Len) = "namespaced-payload",
+            "Test 15: namespaced key served its payload back");
+         R.Check
+           (Ada.Directories.Exists
+              (Test_Cache_Dir & "/pr/prove-" & Ns_Hash),
+            "Test 15: the entry name maps ':' to '-' on disk");
       end;
 
       --  Restore whatever cache directory the caller had configured.

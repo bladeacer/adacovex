@@ -1,3 +1,4 @@
+with GNAT.OS_Lib;
 with Adacovex.Paths;
 
 package body Adacovex_Paths_Tests is
@@ -73,6 +74,103 @@ package body Adacovex_Paths_Tests is
       R.Check
         (Adacovex.Paths.Expand_User ("~\x") = Home & "/x",
          "the Windows ~\x form expands too");
+      --  Platform directory conventions. Every rule is a pure function of
+      --  its arguments, so all three platforms are checked on any host.
+      declare
+         use Adacovex.Paths;
+      begin
+         --  Linux and the BSDs follow the XDG base directory
+         --  specification, with the home-directory default per variable.
+         R.Check
+           (Config_Directory
+              (Platform_Linux, "/home/u", "/xdg/cfg", "/app/data")
+            = "/xdg/cfg/adacovex",
+            "config: XDG_CONFIG_HOME wins on Linux");
+         R.Check
+           (Config_Directory (Platform_Linux, "/home/u", "", "")
+            = "/home/u/.config/adacovex",
+            "config: ~/.config is the Linux default");
+         R.Check
+           (Cache_Directory (Platform_Linux, "/home/u", "", "")
+            = "/home/u/.cache/adacovex",
+            "cache: ~/.cache is the Linux default");
+         R.Check
+           (Data_Directory (Platform_Linux, "/home/u", "", "")
+            = "/home/u/.local/share/adacovex",
+            "data: ~/.local/share is the Linux default");
+
+         --  macOS uses ~/Library: Application Support for configuration and
+         --  data, Caches for the cache.
+         R.Check
+           (Config_Directory (Platform_MacOS, "/Users/u", "", "")
+            = "/Users/u/Library/Application Support/adacovex",
+            "config: macOS uses Application Support");
+         R.Check
+           (Cache_Directory (Platform_MacOS, "/Users/u", "", "")
+            = "/Users/u/Library/Caches/adacovex",
+            "cache: macOS uses ~/Library/Caches");
+         R.Check
+           (Data_Directory (Platform_MacOS, "/Users/u", "", "")
+            = "/Users/u/Library/Application Support/adacovex",
+            "data: macOS shares Application Support");
+
+         --  Windows uses the roaming profile for configuration and the
+         --  local profile for cache and data, each with its own subfolder.
+         R.Check
+           (Config_Directory
+              (Platform_Windows, "C:\\Users\\u", "",
+               "C:\\Users\\u\\AppData\\Roaming")
+            = "C:\\Users\\u\\AppData\\Roaming/adacovex",
+            "config: Windows uses %APPDATA%");
+         R.Check
+           (Cache_Directory
+              (Platform_Windows, "C:\\Users\\u", "",
+               "C:\\Users\\u\\AppData\\Local")
+            = "C:\\Users\\u\\AppData\\Local/adacovex/cache",
+            "cache: Windows uses the local profile");
+         R.Check
+           (Data_Directory
+              (Platform_Windows, "C:\\Users\\u", "",
+               "C:\\Users\\u\\AppData\\Local")
+            = "C:\\Users\\u\\AppData\\Local/adacovex/data",
+            "data: Windows uses the local profile");
+         --  A stripped Windows environment (no %APPDATA%) falls back to
+         --  the per-user dot directory instead of failing.
+         R.Check
+           (Config_Directory (Platform_Windows, "C:\\Users\\u", "", "")
+            = "C:\\Users\\u/.adacovex",
+            "config: Windows falls back to ~/.adacovex without %APPDATA%");
+         R.Check
+           (Cache_Directory (Platform_Windows, "C:\\Users\\u", "", "")
+            = "C:\\Users\\u/.adacovex/cache",
+            "cache: Windows falls back to ~/.adacovex/cache");
+
+         --  The detected platform matches the host separator convention.
+         if GNAT.OS_Lib.Directory_Separator = '\' then
+            R.Check
+              (Detect_Platform = Platform_Windows,
+               "detect: a backslash separator host is Windows");
+            R.Check
+              (Executable_Suffix = ".exe",
+               "executable suffix is .exe on Windows");
+            R.Check
+              (Executable_Name ("gnatprove") = "gnatprove.exe",
+               "executable name gains the .exe suffix");
+            R.Check
+              (Executable_Name ("gnatprove.exe") = "gnatprove.exe",
+               "executable name keeps an existing suffix");
+         else
+            R.Check
+              (Detect_Platform /= Platform_Windows,
+               "detect: a slash separator host is not Windows");
+            R.Check
+              (Executable_Suffix = "",
+               "executable suffix is empty on POSIX");
+            R.Check
+              (Executable_Name ("gnatprove") = "gnatprove",
+               "executable name is unchanged on POSIX");
+         end if;
+      end;
    end Run;
 
 end Adacovex_Paths_Tests;

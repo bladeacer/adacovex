@@ -38,10 +38,10 @@ count, and the DO-178C / ISO 26262 / IEC 62304 tiers. Click any badge for the
 - **[Differential assessment](https://adacovex.readthedocs.io/en/latest/usage/vcs.html)** -- `--compare-base` /
   `--coverage-delta` snapshot a base revision on **git, Mercurial,
   Subversion, Fossil, or jj** without touching the working tree.
-- **Result caching** -- a content-addressed on-disk cache (`~/.adacovex/cache`)
+- **Result caching** -- a content-addressed on-disk cache (`<cache>`)
   serves unchanged scan, proof, test, HLR/LLR, and dependency-graph results.
 - **Tooling** -- `status` reports toolchain and VCS state, `man` installs a
-  local man page, and `make check` runs the full quality gate in one command.
+  local man page, and `just check` runs the full quality gate in one command.
 - **Scalable** -- package and subprogram collections use
   `Ada.Containers.Vectors` (no compile-time count limits); fixed-size buffers
   scale with host word size.
@@ -64,9 +64,9 @@ adacovex status --target=.
 adacovex --target=. --serve
 ```
 
-Contributors build from source with `make build` (see
-[Installation](https://adacovex.readthedocs.io/en/latest/usage/installation.html)). `make run-self` assesses adacovex itself.
-`make run-ada-crdt` runs the Ada_CRDT regression.
+Contributors build from source with `just build` (see
+[Installation](https://adacovex.readthedocs.io/en/latest/usage/installation.html)). `just run-self` assesses adacovex itself.
+`just run-ada-crdt` runs the Ada_CRDT regression.
 
 ## Documentation
 
@@ -213,7 +213,7 @@ Action inputs/outputs, result caching, and release bundling:
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 1784/1791 passing |
+| Unit tests | `make test` | 1815/1815 passing |
 | Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `make prove` | Platinum (1047 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `make run-ada-crdt` | 100% docs, DAL-C (strict mode) |

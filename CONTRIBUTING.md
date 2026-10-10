@@ -68,7 +68,7 @@ Enforced rules:
 - Files are pure ASCII; list items indented under a heading use exactly
   three spaces (never 4+).
 - `## Proof Results` states the SPARK level (Stone..Platinum), the exact VC
-  totals (e.g. `1047/1047 VCs proved across 68 analyzed units`), and calls out
+  totals (e.g. `1047/1047 VCs proved across 70 analyzed units`), and calls out
   whether any proof metrics changed.
 - `## Traceability` lists any new HLRs by tag name and package, then the
   existing `-- HLR-*` tags covering the changed packages.
@@ -92,7 +92,7 @@ Pull requests should follow the following conventions.
 - Keep docstring coverage at 100% (strict mode, cannot be disabled):
   `make run-self` must show Platinum, 100% docs, and DAL-C Achieved.
 - If you add or change behavior, extend the native test suite in `src/tests/`
-  (1791 tests across 27 categories) and run `make test`.
+  (1815 tests across 27 categories) and run `make test`.
 - Keep all source files pure ASCII: `make ascii-check`.
 - If a new CLI flag is added, mirror it as a matching GitHub Action input in
   `./action.yml` and document it in `docs/usage/cli-reference.md` and the README
@@ -156,8 +156,8 @@ adacovex itself parses.
 | CLI config | 349 |
 | SVG renderer | 161 |
 | HTML/Markdown renderers | 58 |
-| SBOM generator | 299 |
-| Result cache | 33 |
+| SBOM generator | 304 |
+| Result cache | 36 |
 | IR synthesis | 42 |
 | Man page renderer | 18 |
 | VCS support | 29 |
@@ -174,5 +174,5 @@ adacovex itself parses.
 | CPU and jobs | 24 |
 | HLR/LLR parsing | 33 |
 | Completion scripts | 24 |
-| Platform paths | 25 |
-| **Total** | **1791** |
+| Platform paths | 41 |
+| **Total** | **1815** |

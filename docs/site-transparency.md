@@ -96,7 +96,7 @@ optional toolchain setup is the only network activity, and it happens only when
 you ask for it. It reaches the Alire and AdaCore toolchain servers, and it
 downloads Alire itself from GitHub when Alire is missing, because the `prove`
 subcommand resolves the toolchain through Alire. The cache directory holds the
-downloaded archives under `~/.adacovex/`, and the
+downloaded archives under the state directories, and the
 [global configuration page](usage/configuration.md) describes the paths and
 the environment variables.
 

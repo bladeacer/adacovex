@@ -2508,7 +2508,7 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("  --no-cache            Disable result caching (always re-scan/re-prove)");
       Ada.Text_IO.Put_Line
-        ("  --cache-dir=PATH      Cache directory (default: ~/.adacovex/cache/<ver>)");
+        ("  --cache-dir=PATH      Cache directory (default: the platform cache dir)");
       Ada.Text_IO.Put_Line
         ("  --cache-max=N         Max cache entries before eviction (default: 4096)");
       Ada.Text_IO.Put_Line

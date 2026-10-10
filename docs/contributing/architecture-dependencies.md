@@ -24,7 +24,7 @@ In particular `gnatprove` is *not* a declared dependency. adacovex analyses `gna
   dev-only tools (`gnatprove`, `gnatdoc_bin`, `gnatformat_bin`) needed for
   `make prove`, `make doc`, and `make fmt`. The `prove` subcommand reads the
   gnatprove pin from it and deploys that exact version into
-  `~/.adacovex/toolchain/` via `alr -n get` (reused after the first run);
+  `<data>/toolchain/` via `alr -n get` (reused after the first run);
   `make doc`/`make fmt` run their tools through `alr exec`.
 
 When both files exist, `Build_Dependency_Graph` reads **both**: a dependency
@@ -43,7 +43,7 @@ executable in this order:
 
 1. **Per-project manifest (authoritative)**: if `<target>/alire.toml` /
    `<target>/alire-dev.toml` declares a `gnatprove` dependency, the pinned
-   gnatprove binary crate is deployed standalone into `~/.adacovex/toolchain/`
+   gnatprove binary crate is deployed standalone into `<data>/toolchain/`
    via `alr -n get gnatprove=<version>` and executed directly (the version-set
    expression, for example `^16.1.0`, is reduced to the bare version alr
    accepts). This isolates the proof run from the target's other dev-manifest
@@ -51,11 +51,11 @@ executable in this order:
    version cannot be deployed, the run fails instead of falling back.
 2. **Global version pin**: the `ADACOVEX_GNATPROVE_VERSION` environment
    variable or the `[prove] gnatprove-version` key in
-   `~/.adacovex/adacovex.toml`, deployed standalone via
+   the global configuration file, deployed standalone via
    `alr -n get gnatprove=<version>`. It uses the same never-fall-back
    semantics. It is folded into the proof result-cache identity.
 3. **`$PATH`**: a `gnatprove` already installed (for example `alr install gnatprove`).
-4. **Cached toolchain**: `~/.adacovex/toolchain/`. The download layout
+4. **Cached toolchain**: `<data>/toolchain/`. The download layout
    (`<toolchain>/bin/gnatprove`) is used. A previously `alr get`-deployed
    `gnatprove_*/` crate is also used.
 5. **Download**: last-resort platform toolchain bundle.

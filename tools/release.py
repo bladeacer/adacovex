@@ -59,6 +59,14 @@ from typing import List, Optional, Tuple
 
 ROOT: Path = Path(__file__).resolve().parent.parent
 
+
+def binary_path() -> Path:
+    """The built binary: bin/adacovex, or bin/adacovex.exe on Windows."""
+    exe = ROOT / "bin" / "adacovex"
+    if os.name == "nt" and (ROOT / "bin" / "adacovex.exe").exists():
+        exe = ROOT / "bin" / "adacovex.exe"
+    return exe
+
 TAG_RE: str = r"^v\d+\.\d+\.\d+$"
 INDEX_TEMPLATE: str = "index/ad/covex/covex-0.1.0-dev.toml"
 RELEASE_TEMPLATE: str = "alire/releases/covex-0.0.0.toml"
@@ -127,7 +135,7 @@ def run_assessment(args: List[str], emit_svg: bool) -> int:
     """Run adacovex prove/self-assessment with the acceptance gates."""
     env = dict(os.environ)
     env["SOURCE_DATE_EPOCH"] = source_date_epoch()
-    cmd = [str(ROOT / "bin" / "adacovex")] + args
+    cmd = [str(binary_path())] + args
     if emit_svg:
         cmd.append("--emit-svg=docs/badges/")
     result = sh(cmd, env=env, check=False)
@@ -157,10 +165,10 @@ def verify_binary_version(version: str) -> bool:
     failure this guard exists for, so the check is cheap and unconditional:
     run `--version` and compare the token the banner prints.
     """
-    result = sh([str(ROOT / "bin" / "adacovex"), "--version"],
+    result = sh([str(binary_path()), "--version"],
                 check=False, capture_output=True, text=True)
     if result.returncode != 0:
-        print(f"ERROR: bin/adacovex --version failed (rc={result.returncode})",
+        print(f"ERROR: {binary_path().name} --version failed (rc={result.returncode})",
               file=sys.stderr)
         return False
     reported = result.stdout.strip().split()[-1].lstrip("v")
@@ -178,8 +186,13 @@ def bundle(version: str) -> None:
     dist = ROOT / "dist"
     shutil.rmtree(dist, ignore_errors=True)
     dist.mkdir()
-    shutil.copy2(ROOT / "bin" / "adacovex", dist / "adacovex")
-    (dist / "covex").symlink_to("adacovex")
+    shutil.copy2(binary_path(), dist / "adacovex")
+    try:
+        (dist / "covex").symlink_to("adacovex")
+    except OSError:
+        #  Windows refuses a symlink without elevation; copy the alias
+        #  instead, exactly as tools/build.py does for bin/covex.
+        shutil.copy2(dist / "adacovex", dist / "covex")
     shutil.copy2(ROOT / "install.sh", dist / "install.sh")
     (dist / "install.sh").chmod(0o755)
     shutil.copy2(ROOT / "LICENSE", dist / "LICENSE")
@@ -400,7 +413,7 @@ def release(version_arg: str, assess_args: str, repo: str, dry_run: bool) -> int
     else:
         print(f"  Comparing docstring coverage against {previous}")
         delta = sh(
-            [str(ROOT / "bin" / "adacovex"), "--target=.",
+            [str(binary_path()), "--target=.",
              f"--coverage-delta={previous}"],
             check=False,
         ).returncode

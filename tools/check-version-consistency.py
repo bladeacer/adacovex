@@ -22,6 +22,15 @@ major so a reader is not left thinking an older tool is current.  History
 (the changelogs and the release/index manifests) is never
 gated, because an old pin in a dated record is correct.
 
+The manifest split is the third dimension.  `alire.toml` is the publishing
+manifest and must stay zero-dependency: gnatprove, gnatdoc_bin, and
+gnatformat_bin are dev-only and live in `alire-dev.toml`.  The dev targets
+(`just doc`, `just fmt`, `just prove`) swap the dev manifest in for the
+duration of the command and restore it afterwards (tools/dev-cmd.py), so an
+interrupted run can leave the swap in place -- and then the published crate
+silently depends on a prover, and `alr build` in a consumer pulls it.  This
+gate fails on that residue instead of at publish time.
+
 That drift is not cosmetic.  `make release` used to prove the tree *before*
 it built the release binary, so the proof pass, its result-cache namespace,
 and every artifact it wrote (sbom.json, docs/badges/*.svg) came from the
@@ -52,6 +61,11 @@ ROOT: Path = Path(__file__).resolve().parent.parent
 
 # The two manifests `make bump-version` rewrites together.
 MANIFESTS: Tuple[Path, ...] = (ROOT / "alire.toml", ROOT / "alire-dev.toml")
+
+# Dependencies that belong to alire-dev.toml only. The publishing manifest
+# stays zero-dependency, so the covex crate installs with nothing but the GNAT
+# compiler.
+DEV_ONLY_DEPS: Tuple[str, ...] = ("gnatprove", "gnatdoc_bin", "gnatformat_bin")
 
 # The generated Ada spec the binary compiles the version from.
 VERSION_SPEC: Path = ROOT / "src" / "adacovex_version_info.ads"
@@ -246,6 +260,48 @@ def check(expected: str) -> List[str]:
     return problems
 
 
+def manifest_split_problems(publishing: str, dev: str) -> List[str]:
+    """Problems with the publishing/dev manifest split, from their contents.
+
+    Pure: the two manifest texts are the whole input, so tools/tests.py
+    exercises every rule without touching the tree.
+    """
+    problems: List[str] = []
+    for dep in DEV_ONLY_DEPS:
+        if re.search(rf'^\s*{re.escape(dep)}\s*=', publishing, re.M):
+            problems.append(
+                f"alire.toml declares the dev-only dependency '{dep}': the "
+                f"publishing manifest must stay zero-dependency. This is the "
+                f"residue of an interrupted dev-manifest swap; restore it "
+                f"with 'git checkout alire.toml' (the dev pin belongs in "
+                f"alire-dev.toml)")
+    if not re.search(r'^\s*gnatprove\s*=', dev, re.M):
+        problems.append(
+            "alire-dev.toml does not pin gnatprove: `just prove` and the CI "
+            "self-assessment must prove with the pinned prover")
+    if publishing == dev:
+        problems.append(
+            "alire.toml and alire-dev.toml are identical: the dev manifest is "
+            "swapped into the publishing slot (tools/dev-cmd.py did not "
+            "restore it)")
+    return problems
+
+
+def check_manifest_split() -> List[str]:
+    """The publishing manifest must stay free of the dev-only toolchain deps.
+
+    A leaked `tools/dev-cmd.py` swap (an interrupted `just doc` / `just fmt` /
+    `just prove`) leaves `alire.toml` as the dev manifest.  The tree then
+    declares gnatprove to every consumer, which is the one thing the crate's
+    zero-dependency promise forbids.  The dev manifest must keep the pin: the
+    dev targets prove with exactly that prover.
+    """
+    return manifest_split_problems(
+        (ROOT / "alire.toml").read_text(errors="replace"),
+        (ROOT / "alire-dev.toml").read_text(errors="replace"),
+    )
+
+
 def main() -> int:
     expected = manifest_version(ROOT / "alire.toml")
     if expected is None:
@@ -253,6 +309,7 @@ def main() -> int:
         return 1
     problems = check(expected)
     problems += check_gnatprove()
+    problems += check_manifest_split()
     if problems:
         for problem in problems:
             print(f"error: {problem}", file=sys.stderr)

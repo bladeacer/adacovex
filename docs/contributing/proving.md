@@ -41,7 +41,7 @@ Run `prove` to generate one.
 `prove` interacts with two independent caches, and knowing which one is
 cold explains every timing you will see:
 
-- The **result cache** (`~/.adacovex/cache/<version>/`, or `--cache-dir`)
+- The **result cache** (`<cache>/<version>/`, or `--cache-dir`)
   is adacovex's own store, keyed on the content hash of the proof inputs
   (every `.ads`/`.adb` under the target plus the `.gpr` and the option
   string). A hit serves the stored proof and skips gnatprove entirely --

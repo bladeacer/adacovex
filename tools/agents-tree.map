@@ -45,7 +45,7 @@ src/tests/adacovex-test_support	Native test Runner type
 src/tests/adacovex_dal_tests	DAL compliance tests (23)
 src/tests/adacovex_types_tests	Type conversion tests (67)
 src/tests/adacovex_scanner_tests	Source scanner tests (89)
-src/tests/adacovex_cache_tests	Result-cache tests (33)
+src/tests/adacovex_cache_tests	Result-cache tests (36)
 src/tests/adacovex_ir_tests	IR synthesis tests (42)
 src/tests/adacovex_man_tests	Man page renderer tests (18)
 src/tests/adacovex_vcs_tests	VCS support tests (29)
@@ -65,11 +65,11 @@ src/tests/adacovex_ansi_tests	ANSI terminal report tests (28)
 src/tests/adacovex_cpus_tests	Host CPU and job-resolution tests (24)
 src/tests/adacovex_do178c_tests	HLR/LLR parsing and line-reader tests (33)
 src/tests/adacovex_completion_tests	Shell completion script tests (24)
-src/tests/adacovex_paths_tests	Platform-agnostic path helper tests (25)
+src/tests/adacovex_paths_tests	Platform-agnostic path helper tests (41)
 src/tests/adacovex_renderer_svg_tests	SVG renderer tests (161)
 src/tests/adacovex_renderer_tests	HTML/Markdown renderer tests (58)
-src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (299)
-src/tests/test_runner	Test suite entry point (1791 tests)
+src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (304)
+src/tests/test_runner	Test suite entry point (1815 tests)
 src/parsers/adacovex-parsers-manifest-req_entry	Parse the first requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-collect_req_entries	Collect every requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-register_root_python_deps	Register root requirements*.txt entries as dev-scope pypi components

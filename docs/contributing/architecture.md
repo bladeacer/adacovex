@@ -101,11 +101,11 @@ adacovex persists parsed analysis results on disk so unchanged inputs are not re
 An unchanged manifest/lockfile/.gpr set serves the cached dependency graph. Unchanged `compliance/HLR.md`/`compliance/LLR.md` serve the cached requirement parses. `--compare-base` / `--coverage-delta` reuse cached source scans for the current tree.
 
 - **Schema namespace**: the default cache root is
-  `~/.adacovex/cache/<version>/<Cache_Schema>`. `Cache_Schema` (in
+  `the result cache <version>/<Cache_Schema>`. `Cache_Schema` (in
   `src/core/adacovex-cache.ads`) is bumped whenever the serialized layout of a
   cached record or the scanner/parser semantics change, so blobs written by an
   incompatible build are never served as if valid. System-tool version probes
-  are *not* under the result cache: they live in `~/.adacovex/probes/` (a
+  are *not* under the result cache: they live in `<cache>/probes/` (a
   stable machine-level store; wiping the result cache must not re-probe every
   tool).
 - **Graph key**: the dependency-graph key hashes the Alire manifests, the
@@ -126,7 +126,7 @@ An unchanged manifest/lockfile/.gpr set serves the cached dependency graph. Unch
   a canonical absolute path) before scanning, keeping the `File_Path` values in
   cached `Package_Info` consistent across invocations that spell the same
   directory differently.
-- **CI**: the GitHub action persists `~/.adacovex/cache` between workflow runs
+- **CI**: the GitHub action persists `<cache>` between workflow runs
   (`result-cache` input, default true).
 
 ### Shared directory snapshot

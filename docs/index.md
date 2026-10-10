@@ -42,7 +42,7 @@ a technical word in any doc, docstring, or changelog.
 - [SBOM](usage/sbom.md) -- the bill-of-materials generator, with
   [dependency resolution](usage/sbom-resolution.md) for licences and versions.
 - [Global configuration and state](usage/configuration.md) -- the optional
-  `~/.adacovex/adacovex.toml` file, the environment variables, and the cache
+  the global configuration file file, the environment variables, and the cache
   and toolchain directories.
 - [Standards](usage/standards.md) -- DO-178C, ISO 26262, and IEC 62304
   levels. The per-standard detail is on

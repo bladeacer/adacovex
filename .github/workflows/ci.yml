@@ -16,6 +16,21 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
+      - name: Swap in the development manifest (pinned gnatprove)
+        #  The self-assessment proves THIS tree, and gnatprove is a
+        #  dev-only dependency: it lives in alire-dev.toml so the
+        #  published covex crate stays zero-dependency.  Without the
+        #  swap `alr build` provisions nothing for the prover, and the
+        #  prove step fetches a toolchain instead of using the
+        #  dependency the manifest pins -- the same swap `just doc`,
+        #  `just fmt`, and `just prove` perform locally through
+        #  tools/dev-cmd.py.  This job only assesses this tree, so the
+        #  dev manifest stays in place for its duration; the release
+        #  workflow builds the publishing alire.toml unchanged.
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cp -f alire-dev.toml alire.toml
       - uses: ./
         with:
           target: .
@@ -28,8 +43,15 @@ jobs:
           verbose: true
           require-spark: Platinum
           require-docstrings: 100
-          require-tests: 1784
+          require-tests: 1815
           require-proof: 100
+          #  Statement-coverage gate: the action runs
+          #  `spark-coverage --require-coverage=... --gate-metric=statements`
+          #  after the assessment.  It fails when the proved share of
+          #  the statements in the bodies gnatprove analysed is below
+          #  this floor (adacovex spark-coverage --metric=statements).
+          require-coverage: 55
+          gate-metric: statements
 
   adacovex-tests:
     name: Build + native tests
@@ -45,6 +67,40 @@ jobs:
           build: true
           run-tests: true
           assess: false
+
+  platform-build:
+    #  Cross-platform smoke: the tree builds and the native suite passes on
+    #  macOS and Windows, on the plain consumer path (`alr build`, no tools/
+    #  generators) that Alire's own crate-index CI also exercises on a pull
+    #  request.  Linux is covered by the action jobs above, so this matrix
+    #  is the evidence for the non-Linux rows of docs/usage/platforms.md.
+    name: Cross-platform build + tests (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: alire-project/setup-alire@latest
+        with:
+          version: '2.1.1'
+          toolchain: 'gnat_native=16.1.0 gprbuild'
+          cache: true
+      - name: Build and run the native suite
+        shell: bash
+        run: |
+          set -euxo pipefail
+          alr build
+          if [ -x bin/test_runner.exe ]; then
+            ./bin/test_runner.exe
+          elif [ -x bin/test_runner ]; then
+            ./bin/test_runner
+          else
+            echo "::error::test_runner was not built"
+            exit 1
+          fi
 
   no-spark-off:
     name: SPARK_Mode Off gate
@@ -192,7 +248,7 @@ jobs:
   summary:
     name: CI summary
     if: always()
-    needs: [self-assessment, adacovex-tests, no-spark-off, complexity-gate, action-parity, docs-coverage, version-consistency, consumer-run-tests, coverage-gate]
+    needs: [self-assessment, adacovex-tests, platform-build, no-spark-off, complexity-gate, action-parity, docs-coverage, version-consistency, consumer-run-tests, coverage-gate]
     runs-on: ubuntu-latest
     steps:
       - name: Write CI summary
@@ -200,6 +256,7 @@ jobs:
         env:
           SELF: ${{ needs.self-assessment.result }}
           TESTS: ${{ needs.adacovex-tests.result }}
+          PLATFORM: ${{ needs.platform-build.result }}
           OFFOFF: ${{ needs.no-spark-off.result }}
           COMPLEX: ${{ needs.complexity-gate.result }}
           PARITY: ${{ needs.action-parity.result }}
@@ -217,6 +274,7 @@ jobs:
             echo '|-----|--------|'
             echo "| Self-assessment (all standards) | $SELF |"
             echo "| Build + native tests | $TESTS |"
+            echo "| Cross-platform build + tests | $PLATFORM |"
             echo "| SPARK_Mode Off gate | $OFFOFF |"
             echo "| Complexity gate (no god objects) | $COMPLEX |"
             echo "| Action/CLI/docs parity gate | $PARITY |"
@@ -226,7 +284,7 @@ jobs:
             echo "| Coverage gate (push only) | $GATE |"
             echo ''
           } >> "$GITHUB_STEP_SUMMARY"
-          for R in "$SELF" "$TESTS" "$OFFOFF" "$COMPLEX" "$PARITY" "$DOCS" "$CONSUMER" "$GATE"; do
+          for R in "$SELF" "$TESTS" "$PLATFORM" "$OFFOFF" "$COMPLEX" "$PARITY" "$DOCS" "$CONSUMER" "$GATE"; do
             if [ "$R" = "failure" ]; then
               FAILED=1
               echo "::error::A CI job failed -- see the failing job logs and its adacovex assessment summary." >&2

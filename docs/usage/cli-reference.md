@@ -71,7 +71,7 @@ Compliance selection stays on `--standard` and its level companions
 | `--coverage-delta=REF`, `--delta=REF`, `-d REF` | off | both | Docstring-coverage gate vs a base rev (git/hg/svn/fossil/jj) |
 | `--cache`, `-c`, `cache` | on | both | Enable on-disk result caching |
 | `--no-cache` | off | both | Disable result caching (always re-scan/re-parse/re-prove) |
-| `--cache-dir=PATH` | `~/.adacovex/cache/<ver>/<schema>` | both | Cache directory for analysis results |
+| `--cache-dir=PATH` | `the result cache <ver>/<schema>` | both | Cache directory for analysis results |
 | `--cache-max=N` | `4096` | both | Max cache entries before oldest-first eviction |
 | `--no-sbom` | off | both | Skip the automatic SBOM written at the end of every assessment |
 | `--sbom-format=FMT` | `cyclonedx-json` | both | Format of the automatic SBOM: `cyclonedx-json`\|`spdx-json`\|`md` |

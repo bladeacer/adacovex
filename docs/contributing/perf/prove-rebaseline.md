@@ -18,7 +18,7 @@ comparable, so the 1.55.0 work re-measured every shape with
 ## Method
 
 - **Machine.** 12 logical cores, 10 proof jobs, gnatprove 16.1.0 at
-  `--level=4`, resolved from `~/.adacovex/toolchain/`. Sphinx 9.1.0, Python
+  `--level=4`, resolved from `<data>/toolchain/`. Sphinx 9.1.0, Python
   3.14.7, hyperfine 1.20.0, strace 7.2.
 - **Tree.** The adacovex self tree, binary `bin/adacovex`, unstripped dev
   build.

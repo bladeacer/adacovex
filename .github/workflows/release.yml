@@ -34,6 +34,19 @@ jobs:
       - name: Enforce complexity + file-size caps
         run: make complexity-check
 
+      - name: Swap in the development manifest (pinned gnatprove)
+        #  The release proof must run with the prover the dev manifest
+        #  pins, exactly like `just prove` locally and the ci.yml
+        #  self-assessment: without the swap the target manifest declares
+        #  no gnatprove, so the prove step would reach the last-resort
+        #  download instead of the pinned dependency.  The packaged
+        #  release ships the built binary and install.sh, not alire.toml,
+        #  so the swap never reaches a consumer.
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cp -f alire-dev.toml alire.toml
+
       - uses: ./
         id: adacovex
         with:
@@ -48,7 +61,7 @@ jobs:
           verbose: true
           require-spark: Platinum
           require-docstrings: 100
-          require-tests: 1784
+          require-tests: 1815
           require-proof: 100
 
       - name: Require Platinum SPARK level

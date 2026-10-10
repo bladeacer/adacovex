@@ -100,12 +100,9 @@ def build(release: bool = False) -> int:
     gpr_args: List[str] = []
     if release:
         gpr_args.append("-XADACOVEX_PROFILE=release")
-    if os.name == "nt":
-        #  Windows reserves a small main-thread stack (about 1 MiB) by
-        #  default, which a few functions that hold several large fixed-size
-        #  line buffers in one frame can exhaust (STORAGE_ERROR).  Raise the
-        #  reserve so a deep tree never trips it; Linux already gives 8 MiB.
-        gpr_args += ["-largs", "-Wl,--stack,33554432"]
+    #  The Windows main-thread stack reserve lives in adacovex.gpr (package
+    #  Linker, selected on the target OS), so a plain `alr build` and a
+    #  consumer or Alire-index CI build carry it too -- not only this script.
     if gpr_args:
         command += ["--"] + gpr_args
     print(f"=== alr build{' --release' if release else ''} ===")

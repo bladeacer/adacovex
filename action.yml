@@ -142,7 +142,7 @@ inputs:
     default: 'true'
   result-cache:
     description: >-
-      Persist adacovex's on-disk result cache (~/.adacovex/cache) across
+      Persist adacovex's on-disk result cache (the result cache) across
       workflow runs with actions/cache. Entries are keyed by SHA-256 content
       hashes, so restoring a stale cache is always safe: only artifacts that
       are byte-for-byte unchanged since the previous run are served from it.
@@ -173,7 +173,7 @@ inputs:
     required: false
     default: 'false'
   cache-dir:
-    description: 'Override adacovex result cache directory (default ~/.adacovex/cache).'
+    description: 'Override adacovex result cache directory (default the result cache).'
     required: false
     default: ''
   cache-max:
@@ -264,11 +264,26 @@ runs:
         toolchain: 'gnat_native=${{ inputs.gnat-version }} gprbuild'
         cache: ${{ inputs.cache }}
 
+    - name: Resolve the adacovex state directories
+      #  The result cache lives where the platform convention puts it
+      #  (Adacovex.Paths.Cache_Root): $XDG_CACHE_HOME on Linux and the
+      #  BSDs, ~/Library/Caches on macOS, %LOCALAPPDATA%dacovex\cache on
+      #  Windows.  actions/cache needs one literal path, so resolve it here
+      #  once and reuse it in the restore and save steps.
+      id: adacovex-state
+      shell: bash
+      run: |
+        set -euxo pipefail
+        case "${RUNNER_OS}" in
+          Windows) echo "cache=$LOCALAPPDATA/adacovex/cache" >> "$GITHUB_OUTPUT" ;;
+          macOS) echo "cache=$HOME/Library/Caches/adacovex" >> "$GITHUB_OUTPUT" ;;
+          *) echo "cache=${XDG_CACHE_HOME:-$HOME/.cache}/adacovex" >> "$GITHUB_OUTPUT" ;;
+        esac
     - name: Restore adacovex result cache
       if: ${{ inputs.result-cache == 'true' }}
       uses: actions/cache/restore@v5
       with:
-        path: ~/.adacovex/cache
+        path: ${{ steps.adacovex-state.outputs.cache }}
         key: adacovex-result-${{ inputs.target }}-${{ runner.os }}-${{ github.run_id }}
         restore-keys: |
           adacovex-result-${{ inputs.target }}-${{ runner.os }}-
@@ -718,7 +733,7 @@ runs:
       if: ${{ always() && inputs.result-cache == 'true' && (inputs.assess == 'true' || inputs.prove == 'true') }}
       uses: actions/cache/save@v5
       with:
-        path: ~/.adacovex/cache
+        path: ${{ steps.adacovex-state.outputs.cache }}
         # Content-addressed entries mean a restored but slightly stale cache
         # is never wrong; the unique key keeps save/restore bounded per run.
         key: adacovex-result-${{ inputs.target }}-${{ runner.os }}-${{ github.run_id }}

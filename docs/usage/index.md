@@ -64,7 +64,7 @@ terms used on the [site transparency](../site-transparency.md) page live in
 ## Manage the toolchain
 
 - [Global configuration and state](configuration.md) -- the optional
-  `~/.adacovex/adacovex.toml` file, the environment variables, and the cache
+  the global configuration file file, the environment variables, and the cache
   and toolchain directories.
 - [Platform support](platforms.md) -- supported platforms and the toolchain
   state of each.

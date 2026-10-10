@@ -14,6 +14,13 @@
 --  project never creates a single directory with millions of entries. Entries
 --  are evicted oldest-first once the count exceeds a soft cap. Disk usage
 --  stays bounded without external dependencies (pure GNAT runtime only).
+--
+--  A namespaced key spells its namespace with ``:`` (``scan:``, ``tests:``,
+--  ``prove:``, ``proveout:``, ``hlr:``, ``llr:``, ``tools-``, ``graph-``). The
+--  entry path replaces every ``:`` with ``-``, because Windows rejects ``:``
+--  in a file name (a blob written under such a name lands in an alternate
+--  data stream and is never found again). The mapping is documented on
+--  ``Entry_Path`` in the body.
 --  HLR-CACHE: Result caching
 
 package Adacovex.Cache is
@@ -31,10 +38,10 @@ package Adacovex.Cache is
    --  ecosystem + lockfile-resolved names; go.mod / Package.swift /
    --  requirements.txt test labels) -- cached graphs from earlier builds
    --  carry stale scopes.
-   --  s10: registry-metadata store moved to the machine-local
-   --  ~/.adacovex/meta/ directory (outside the result cache, 7-day TTL),
-   --  so a wiped or redirected result cache never re-spawns the registry
-   --  CLIs; s9-era meta entries under <cache>/meta/ are simply abandoned.
+   --  s10: registry-metadata store moved to the machine-local data
+   --  directory (outside the result cache, 7-day TTL), so a wiped or
+   --  redirected result cache never re-spawns the registry CLIs; s9-era
+   --  meta entries under <cache>/meta/ are simply abandoned.
    --  s11: Package_Info scan blobs dropped the Proof_Opt_Out flag (the
    --  SPARK-proof opt-out is enforced by the prove runner's -u unit walk,
    --  never through the scan records) -- cached scan blobs from earlier
@@ -45,9 +52,11 @@ package Adacovex.Cache is
    --  the oldest entries are evicted first.
    Default_Max_Entries : constant := 4096;
 
-   --  Compute the default cache directory. The directory is
-   --    <HOME>/.adacovex/cache/<adacovex-version>/
-   --  The procedure falls back to /tmp when HOME is unset.
+   --  Compute the default cache directory. The directory is the platform
+   --  cache directory from Adacovex.Paths (XDG_CACHE_HOME on Linux,
+   --  ~/Library/Caches on macOS, %LOCALAPPDATA% on Windows, or
+   --  $ADACOVEX_STATE_HOME/cache when that override is set), then
+   --  /<adacovex-version>/<cache-schema>.
    --  @param Dir  Output buffer for the directory path.
    --  @param Len  Length of the written path.
    procedure Default_Cache_Dir (Dir : out String; Len : out Natural);
@@ -164,7 +173,7 @@ package Adacovex.Cache is
 
    --  Persistent stat-stamp index effectiveness counters. Hash_File
    --  serves a previously recorded digest from the machine-local index
-   --  (~/.adacovex/stamps/index.bin, one packed file, loaded once per
+   --  (<cache>/stamps/index.bin, one packed file, loaded once per
    --  process) without opening the file when BOTH its size and its mtime
    --  still match the recorded pair -- the same cross-session
    --  dirty-tracking language servers use to skip re-parsing unchanged
@@ -231,8 +240,8 @@ package Adacovex.Cache is
    --  (node for npm/pnpm) and are not covered by the content-addressed
    --  result cache, so a "warm" run still paid for them -- that was the
    --  main residual slowness on `make prove`. This cache mirrors the
-   --  system-tool probe cache: the answers live in a machine-local
-   --  `~/.adacovex/meta/` directory, outside the result cache, with the same
+   --  system-tool probe cache: the answers live in the machine-local data
+   --  directory (`<data>/meta`), outside the result cache, with the same
    --  7-day TTL, so a warm run serves them from disk with zero subprocess
    --  spawns and a wiped or redirected result cache never re-resolves.
    --  A re-resolution (and re-cache) happens only when the entry is

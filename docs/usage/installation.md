@@ -48,12 +48,12 @@ resolution works like this:
    the leading operator is stripped because `alr -n get` accepts a bare
    version only).
 2. adacovex looks for an already-deployed `gnatprove_<version>_<hash>/`
-   crate under `~/.adacovex/toolchain/`. One found, it is reused directly
+   crate under `<data>/toolchain/`. One found, it is reused directly
    -- no download, no `alr exec`, and no composition of your project's
    whole dependency set (flaky third-party downloads can never fail a
    proof run).
 3. Not deployed yet: adacovex runs `alr -n get gnatprove=<version>`
-   **into `~/.adacovex/toolchain/`** (not into your project's workspace)
+   **into `<data>/toolchain/`** (not into your project's workspace)
    and prints a progress line -- the first deployment downloads a ~130 MB
    bundle and may take a minute on a slow link. It is one-time per
    version: every later run (and every other project pinning the same
@@ -69,14 +69,14 @@ of one release proves with the same prover.
 
 The deployment is keyed by the exact version, so two projects pinning
 different gnatprove versions keep both toolchains side by side under
-`~/.adacovex/toolchain/` without interfering. A manifest that declares
+`<data>/toolchain/` without interfering. A manifest that declares
 gnatprove with an unparseable version expression fails loudly rather than
 guessing.
 
 Projects that do *not* declare gnatprove fall back to (in order): a global
 pin (`ADACOVEX_GNATPROVE_VERSION`, or `[prove] gnatprove-version` in
-`~/.adacovex/adacovex.toml`, deployed through the same `alr -n get` path),
-a gnatprove on `$PATH`, a cached toolchain in `~/.adacovex/toolchain/`, and
+the global configuration file, deployed through the same `alr -n get` path),
+a gnatprove on `$PATH`, a cached toolchain in `<data>/toolchain/`, and
 finally the platform toolchain download. `adacovex status` reports which
 tier applies without deploying anything. The global pin, the environment
 variables, and the state directories are documented in full on
@@ -114,13 +114,20 @@ Bundles are attested with [`actions/attest`](https://github.com/actions/attest).
 
 ```bash
 git clone --depth 1 https://github.com/bladeacer/adacovex.git
-cd adacovex && alr build   # or: --branch vX.Y.Z for a released tag
+cd adacovex
+just build          # version + dashboard/manual generators, then alr build
+just test           # the native suite
 ```
 
-`alr build` produces `bin/adacovex` (with a `bin/covex` alias). A stock Alire
-toolchain (`gnat_native` + `gprbuild`) plus the standard GNAT runtime is all
-that is needed. No other dependencies. (Contributors use the richer
-`make build` workflow; see the [developer guide](../contributing/developer-guide.md).)
+`just` is the task runner every recipe in this manual uses (`just --list`
+lists them). `just build` runs the version, dashboard, and offline-manual
+generators and then `alr build`; a plain `alr build` also builds the binary
+when `just` is not installed. Either route produces `bin/adacovex` (with a
+`bin/covex` alias). Add `--branch vX.Y.Z` to the clone for a released tag. A
+stock Alire toolchain (`gnat_native` + `gprbuild`) plus the standard GNAT
+runtime is all that is needed. No other dependencies. (Contributors use the
+same `just` tasks; see the
+[developer guide](../contributing/developer-guide.md).)
 
 ## Version source per installation method
 
