@@ -109,14 +109,14 @@ covers each route and the man-page sync.
 ## Platforms, toolchain, and VCS
 
 - **Platforms** -- runs wherever a GNAT/Alire toolchain exists; the release
-  binary is Linux x86-64 only for now (build from source for other platforms).
-  See [platforms](https://adacovex.readthedocs.io/en/latest/usage/platforms.html).
+  binary is Linux x86-64 only (build from source for other platforms). See
+  [platforms](docs/usage/platforms.md).
 - **GNATprove resolution** -- manifest pin over global pin over `$PATH` over
   cached toolchain over download (a manifest pin is authoritative). See
-  [GNATprove resolution](https://adacovex.readthedocs.io/en/latest/contributing/architecture.html#gnatprove-toolchain-resolution-prove-subcommand).
+  [GNATprove resolution](docs/contributing/architecture-dependencies.md).
 - **VCS** -- not required for base functionality; only the differential modes
   need one, and they work across git, hg, svn, fossil, and jj. See
-  [VCS](https://adacovex.readthedocs.io/en/latest/usage/vcs.html).
+  [VCS](docs/usage/vcs.md).
 
 ## CLI reference
 

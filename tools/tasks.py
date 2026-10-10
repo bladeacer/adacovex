@@ -22,6 +22,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple
 
@@ -168,11 +169,21 @@ def task_compliance() -> int:
     exe = ROOT / "bin" / "adacovex"
     if os.name == "nt" and (ROOT / "bin" / "adacovex.exe").exists():
         exe = ROOT / "bin" / "adacovex.exe"
-    return run(
+    rc = run(
         [str(exe), "-t=.", "--dal=C",
          "--emit-markdown=docs/compliance", "--no-svg", "--no-sbom"],
         env=env,
     )
+    if rc != 0:
+        return rc
+    #  Ada.Text_IO writes CRLF on Windows; the committed files are LF.
+    for name in ("docs/compliance/VERIFICATION.md",
+                 "docs/compliance/TRACE.md"):
+        path = ROOT / name
+        if path.is_file():
+            data = path.read_bytes().replace(b"\r\n", b"\n")
+            path.write_bytes(data)
+    return 0
 
 
 def task_bench() -> int:
@@ -410,12 +421,12 @@ def skip_without_alr() -> Optional[str]:
 def _skip_missing_dev_tool(tool: str) -> Optional[str]:
     """SKIP reason for a gate that needs a dev-manifest binary.
 
-    gnatformat and gnatdoc are binary crates of `alire-dev.toml`, so they
-    are on PATH only through the manifest swap `tools/dev-cmd.py` performs;
-    probing a bare `alr exec` would skip the gate on every host.  The probe
-    therefore runs exactly where the gate runs.  alr's own "Executable not
-    found" is the only missing-tool signal: any other exit code means the
-    binary ran (a tool that rejects `--version` still proves it exists).
+    gnatformat is a binary crate of `alire-dev.toml`, so it is on PATH only
+    through the manifest swap `tools/dev-cmd.py` performs; probing a bare
+    `alr exec` would skip the gate on every host.  The probe therefore runs
+    exactly where the gate runs.  alr's own "Executable not found" is the
+    only missing-tool signal: any other exit code means the binary ran (a
+    tool that rejects `--version` still proves it exists).
     """
     if shutil.which("alr") is None:
         return "alr is not on PATH"
@@ -441,8 +452,54 @@ def skip_without_gnatformat() -> Optional[str]:
 
 
 def skip_without_gnatdoc() -> Optional[str]:
-    """SKIP reason for the API docs gate: gnatdoc ships in the dev toolchain."""
-    return _skip_missing_dev_tool("gnatdoc")
+    """SKIP reason for the API docs gate.
+
+    A deployed binary is not enough: the gnatdoc 26.0.0 Windows build
+    starts and then crashes on an access violation for any project, so the
+    probe also documents a one-package probe project through the same
+    manifest swap the gate uses.  A tool that cannot document one package
+    cannot document the tree, and that says nothing about the tree itself.
+    """
+    if shutil.which("alr") is None:
+        return "alr is not on PATH"
+    probe_dir = Path(tempfile.mkdtemp(prefix="adacovex-gnatdoc-probe-"))
+    try:
+        src = probe_dir / "src"
+        src.mkdir()
+        (src / "adacovex_gnatdoc_probe.ads").write_text(
+            "package Adacovex_Gnatdoc_Probe is\n"
+            "   --  Probe docstring.\n"
+            "   function Answer return Integer;\n"
+            "end Adacovex_Gnatdoc_Probe;\n",
+            encoding="utf-8", newline="\n")
+        (probe_dir / "adacovex_gnatdoc_probe.gpr").write_text(
+            "project Adacovex_Gnatdoc_Probe is\n"
+            '   for Source_Dirs use ("src");\n'
+            '   for Object_Dir use "obj";\n'
+            "end Adacovex_Gnatdoc_Probe;\n",
+            encoding="utf-8", newline="\n")
+        (probe_dir / "obj").mkdir()
+        try:
+            probe = subprocess.run(
+                [sys.executable, "tools/dev-cmd.py",
+                 "alr exec -- gnatdoc"
+                 f" -P {probe_dir / 'adacovex_gnatdoc_probe.gpr'}"
+                 " --backend=rst --generate private"
+                 f" --output-dir {probe_dir / 'rst'}"],
+                cwd=str(ROOT), capture_output=True, text=True, timeout=600,
+            )
+        except subprocess.TimeoutExpired:
+            return "gnatdoc timed out on a one-package probe project"
+        except OSError:
+            return "the gnatdoc probe could not run"
+        output = (probe.stdout or "") + (probe.stderr or "")
+        if "Executable not found" in output:
+            return "gnatdoc is not available in the dev toolchain"
+        if probe.returncode != 0:
+            return "gnatdoc cannot generate docs on this host"
+        return None
+    finally:
+        shutil.rmtree(probe_dir, ignore_errors=True)
 
 
 def skip_without_sphinx() -> Optional[str]:

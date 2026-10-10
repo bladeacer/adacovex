@@ -82,11 +82,12 @@ and the platforms page.
 ### C6: `just check` reports every gate instead of stopping at the first
 
 A missing developer tool now skips its gate with the reason instead of
-failing it. The formatter and API-docs gates probe `gnatformat` and
-`gnatdoc` through the manifest swap that puts them on `PATH`, and the
-offline-manual gate checks that the interpreter can import `sphinx`. The run
-continues past a failed gate, prints a PASS/FAIL/SKIP summary, and exits
-non-zero only when a gate failed.
+failing. The formatter gate probes `gnatformat` through the manifest swap
+that puts it on `PATH`, and the API-docs gate runs `gnatdoc` on a
+one-package probe project, because a deployed binary can still fail to
+generate documentation. The offline-manual gate checks that the interpreter
+can import `sphinx`. The run continues past a failed gate, prints a
+PASS/FAIL/SKIP summary, and exits non-zero only when a gate failed.
 
 ### C7: A printed report never mixes path separators
 

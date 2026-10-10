@@ -46,9 +46,10 @@ count-sync checks.
 
 Every gate runs a preflight before it runs. A gate whose tool is missing on
 the host is skipped with the reason instead of failing: no `alr` on `PATH`,
-no `gnatformat` or `gnatdoc` on the developer path, no `sphinx` in the
-interpreter. The run continues past a failed gate. It prints a PASS/FAIL/SKIP
-summary and exits non-zero only when a gate failed.
+no `gnatformat` on the developer path, a `gnatdoc` that cannot document a
+one-package probe project, no `sphinx` in the interpreter. The run continues
+past a failed gate. It prints a PASS/FAIL/SKIP summary and exits non-zero
+only when a gate failed.
 
 Everything must pass. The sync checks fail loudly when a count in any documentation file is stale.
 
