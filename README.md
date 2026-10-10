@@ -191,12 +191,12 @@ changes. Full tier mapping and per-level criteria:
 
 ## Development
 
-`make check` runs the full quality gate (cheap static gates first, then build,
+`just check` runs the full quality gate (cheap static gates first, then build,
 test, prove, doc, sbom, then tree-wide count-sync checks). Other targets
 include `build`, `test`, `prove`, `doc`, `sbom`, `fmt`, `run-self`,
 `run-ada-crdt`, `bump-version`, `release`, and `clean`.
 
-Run `make help` or see [AGENTS.md](AGENTS.md) for the full table. AI tools were
+Run `just help` or see [AGENTS.md](AGENTS.md) for the full table. AI tools were
 used during development; why the code is still trustworthy:
 [LLM usage](https://adacovex.readthedocs.io/en/latest/contributing/llm-usage.html).
 
@@ -213,10 +213,10 @@ Action inputs/outputs, result caching, and release bundling:
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `make test` | 1815/1815 passing |
-| Self-assessment | `make run-self` | 100% docs, Platinum, DAL-C Achieved |
-| SPARK proof | `make prove` | Platinum (1047 VCs, 0 unproved under gnatprove 16.1.0) |
-| Ada_CRDT regression | `make run-ada-crdt` | 100% docs, DAL-C (strict mode) |
+| Unit tests | `just test` | 1818/1818 passing |
+| Self-assessment | `just run-self` | 100% docs, Platinum, DAL-C Achieved |
+| SPARK proof | `just prove` | Platinum (1047 VCs, 0 unproved under gnatprove 16.1.0) |
+| Ada_CRDT regression | `just run-ada-crdt` | 100% docs, DAL-C (strict mode) |
 
 See [changelogs](https://adacovex.readthedocs.io/en/latest/changelogs/index.html) for full release notes.
 
@@ -230,8 +230,8 @@ See [changelogs](https://adacovex.readthedocs.io/en/latest/changelogs/index.html
   released binary itself has no Python or runtime dependency)
 - **GNATprove** (optional; resolved at run time by `prove` -- no declared dependency)
 - **gnatdoc_bin** and **gnatformat_bin** (dev dependencies managed by Alire,
-  declared in `alire-dev.toml` and run via `alr exec` for the `make doc` and
-  `make fmt` targets -- so the published crate still installs and builds with
+  declared in `alire-dev.toml` and run via `alr exec` for the `just doc` and
+  `just fmt` targets -- so the published crate still installs and builds with
   no toolchain beyond the GNAT compiler)
 
 ## Swapping the GNAT compiler (LLVM backend)

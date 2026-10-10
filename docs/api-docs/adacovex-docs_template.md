@@ -6,7 +6,7 @@ as a gzip-compressed, base85-encoded offline asset blob + lookup
 table. --serve exposes it at /docs/ with Content-Encoding: gzip
 (the browser inflates it). The shared sidebar variants live
 under _nav/ and are filled in by _static/adacovex-nav.js. Do not
-edit by hand; edit docs/ and run make book.
+edit by hand; edit docs/ and run just book.
 
 > **Note:** All items in this package are public.
 

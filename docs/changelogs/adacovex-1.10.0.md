@@ -117,7 +117,7 @@ through to the assessment as `--standard` / `--asil` / `--class`, with
 `--dal` still the shared tier) and now parses the compliance status from the
 standard-specific label (`DAL-X`, `ASIL X`, `QM`, or `Class X`) instead of
 only `DAL-X`. `ci.yml` now runs three jobs: an `--standard=all`
-self-assessment, the native test suite and a push-only `make coverage-gate`
+self-assessment, the native test suite and a push-only `just coverage-gate`
 release-tag docstring gate. `pr-check.yml` and `release.yml` also pass
 `standard: all`, so PRs gate coverage across standards and releases emit all
 three compliance badges.

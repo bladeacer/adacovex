@@ -21,7 +21,7 @@
 --  environment and probes the filesystem, and because a concatenation of two
 --  unbounded strings is not provable without bounding every component. That
 --  is the same allowance AGENTS.md gives an I/O-heavy body; the package
---  carries no explicit `pragma SPARK_Mode (Off)`, so `make spark-off-check`
+--  carries no explicit `pragma SPARK_Mode (Off)`, so `just spark-off-check`
 --  stays green.
 
 package Adacovex.Paths is
@@ -180,6 +180,20 @@ package Adacovex.Paths is
    function Strip_Trailing_Separators (Path : String) return String
    with
      Post   => Strip_Trailing_Separators'Result'Length <= Path'Length,
+     Global => null;
+
+   --  Present Path for printed output. On a host whose native separator is
+   --  '\' every '\' becomes '/'; on a POSIX host both characters stay as
+   --  they are, because '\' is then an ordinary file-name character. The
+   --  result keeps Path's length, so a display row never shifts a column.
+   --  CLI output (status rows, complexity tables, parser diagnostics) runs
+   --  every printed path through it, so one report never mixes separators.
+   --  @param Path  Path to present.
+   --  @return Path in the host's display separator style.
+   --  @post Result'Length = Path'Length.
+   function Display (Path : String) return String
+   with
+     Post   => Display'Result'Length = Path'Length,
      Global => null;
 
 end Adacovex.Paths;

@@ -74,7 +74,7 @@ Action, so the action/CLI/docs parity gate stays green.
 
 ### C6: CLI end-to-end suite and alias equivalence tests
 
-A new pure-stdlib CLI suite (`tests/e2e/cli_flags.py`, `make cli-e2e`) runs
+A new pure-stdlib CLI suite (`tests/e2e/cli_flags.py`, `just cli-e2e`) runs
 the real binary and checks the shorthands, the long aliases, the
 `--standard` tier tokens, the reject paths, the `complexity` subcommand
 (its pass and fail gates, `--excludes`, and `--skip-path`), the VCS
@@ -83,7 +83,7 @@ equivalence, a real docstring-coverage regression, and the
 not-a-repository failure), the `prove` subcommand (its `-t`/`-l`/`-j`
 shorthands, the accepted option set, and the range and subcommand reject
 paths), and the serve shorthands, the `--theme` values, and the `-p` port
-forms against a live dashboard. It needs no browser and runs inside `make
+forms against a live dashboard. It needs no browser and runs inside `just
 check` and in the `e2e` target ahead of the Playwright run. The native
 config suite gains equivalence tests: every alias must produce exactly the
 same parsed option state as its canonical long spelling. A shorthand form

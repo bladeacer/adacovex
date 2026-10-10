@@ -4,7 +4,7 @@
 The version is copied into four places, and each is derived from a
 different source, so they can drift apart silently:
 
-  alire.toml / alire-dev.toml   the source of truth (make bump-version)
+  alire.toml / alire-dev.toml   the source of truth (just bump-version)
   src/adacovex_version_info.ads the generated Ada constant the binary
                                  compiles (tools/gen-version.py)
   bin/adacovex --version        the version actually linked into the
@@ -31,7 +31,7 @@ interrupted run can leave the swap in place -- and then the published crate
 silently depends on a prover, and `alr build` in a consumer pulls it.  This
 gate fails on that residue instead of at publish time.
 
-That drift is not cosmetic.  `make release` used to prove the tree *before*
+That drift is not cosmetic.  The release task used to prove the tree *before*
 it built the release binary, so the proof pass, its result-cache namespace,
 and every artifact it wrote (sbom.json, docs/badges/*.svg) came from the
 previous release's binary.  The committed 1.54.0 tree carried the result:
@@ -39,18 +39,19 @@ sbom.json named tool version 1.53.0 against component version 1.54.0.
 tools/release.py now builds first and calls
 `release.verify_binary_version`; this gate is the tree-wide backstop, so a
 stale binary, an un-regenerated version spec, or a mismatched manifest
-fails `make check` instead of shipping.
+fails `just check` instead of shipping.
 
 Usage:
   python3 tools/check-version-consistency.py
 
 Each check that needs a build product is skipped when that product is
-absent, so the gate is meaningful in a fresh checkout before `make build`.
+absent, so the gate is meaningful in a fresh checkout before `just build`.
 
 Exit code 0 when every available version source agrees, 1 on any mismatch.
 """
 
 import json
+import os
 import re
 import subprocess
 import sys
@@ -59,7 +60,7 @@ from typing import List, Optional, Tuple
 
 ROOT: Path = Path(__file__).resolve().parent.parent
 
-# The two manifests `make bump-version` rewrites together.
+# The two manifests `just bump-version` rewrites together.
 MANIFESTS: Tuple[Path, ...] = (ROOT / "alire.toml", ROOT / "alire-dev.toml")
 
 # Dependencies that belong to alire-dev.toml only. The publishing manifest
@@ -100,13 +101,38 @@ def spec_version(path: Optional[Path] = None) -> Optional[str]:
     return match.group(1) if match else None
 
 
+def runnable_binary(path: Path) -> Optional[Path]:
+    """The runnable form of `path`: itself, or its platform launcher name.
+
+    On Windows the build emits `bin/adacovex.exe` and a stub or CI launcher
+    may be `bin/adacovex.cmd`; probing the plain name first keeps the POSIX
+    behaviour unchanged.
+    """
+    if path.is_file():
+        return path
+    if os.name == "nt":
+        for suffix in (".exe", ".cmd", ".bat"):
+            alt = path.with_name(path.name + suffix)
+            if alt.is_file():
+                return alt
+    return None
+
+
 def binary_version(path: Optional[Path] = None) -> Optional[str]:
-    """Return the version `bin/adacovex --version` reports, or None."""
-    path = BINARY if path is None else path
-    if not path.is_file():
+    """Return the version the binary reports, or None.
+
+    None also covers a binary that exists but cannot run on this host, so a
+    launcher/format mismatch reads as "no binary" (skipped dimension)
+    rather than as a traceback.
+    """
+    exe = runnable_binary(BINARY if path is None else path)
+    if exe is None:
         return None
-    result = subprocess.run([str(path), "--version"],
-                            capture_output=True, text=True)
+    try:
+        result = subprocess.run([str(exe), "--version"],
+                                capture_output=True, text=True)
+    except OSError:
+        return None
     if result.returncode != 0:
         return None
     tokens = result.stdout.strip().split()
@@ -247,12 +273,12 @@ def check(expected: str) -> List[str]:
     if found is not None and found != expected:
         problems.append(
             f"bin/adacovex: reports v{found}, expected v{expected} (the binary "
-            f"is stale; run 'make build')")
+            f"is stale; run 'just build')")
     tool, root = sbom_versions()
     if tool is not None and tool != expected:
         problems.append(
             f"sbom.json: tool version {tool} does not match the release "
-            f"version {expected} (regenerate with 'make sbom')")
+            f"version {expected} (regenerate with 'just sbom')")
     if root is not None and tool is not None and root != tool:
         problems.append(
             f"sbom.json: tool version {tool} disagrees with the root "

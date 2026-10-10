@@ -17,7 +17,7 @@ Rules enforced here:
 The paragraph rule is a hard gate: exceeding four sentences in any paragraph
 fails the check with exit 1.  It covers the hand-written user documentation
 under docs/, the human changelogs under docs/changelogs/, and the root
-README.md.  docs/api-docs is excluded because `make doc` regenerates those
+README.md.  docs/api-docs is excluded because `just doc` regenerates those
 pages from Ada source docstrings (the paragraph rule there belongs in the
 source docstrings, not the generated output).  The single-space rule has a
 wider set: it also covers AGENTS.md and CONTRIBUTING.md, whose long-form
@@ -43,7 +43,7 @@ from pathlib import Path
 from typing import List, Tuple
 
 ROOT = Path(__file__).resolve().parent.parent
-# Generated pages (rebuilt from Ada docstrings by `make doc`) are not edited
+# Generated pages (rebuilt from Ada docstrings by `just doc`) are not edited
 # by hand; the paragraph rule applies to their source docstrings instead.
 EXCLUDED = {"api-docs"}
 MAX_LOC = 250
@@ -208,7 +208,7 @@ def source_files() -> List[Path]:
     `adacovex_version_info`) are excluded, exactly as the generated api-docs
     pages are: the rule belongs in the generator's own text, which emits
     single-spaced comments already, and a hand edit here would be overwritten
-    by the next `make build`.
+    by the next `just build`.
     """
     generated = {"adacovex-docs_template", "adacovex-dashboard_template",
                  "adacovex_version_info"}
@@ -315,7 +315,7 @@ def fix() -> int:
         text = path.read_text(encoding="utf-8")
         new_text = collapse(text)
         if new_text != text:
-            path.write_text(new_text, encoding="utf-8")
+            path.write_text(new_text, encoding="utf-8", newline="\n")
             print(f"  collapsed sentence double spaces in "
                   f"{path.relative_to(ROOT)}")
             changed += 1

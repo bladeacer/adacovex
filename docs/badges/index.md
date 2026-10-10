@@ -1,7 +1,7 @@
 # Badges
 
 This directory holds the SVG badges that adacovex renders for a target.
-`make run-self` and `make prove` regenerate them from the current
+`just run-self` and `just prove` regenerate them from the current
 assessment.
 
 ## Badge set
@@ -29,8 +29,8 @@ Each badge renders below, so you can check it before you download the file.
 ## How to regenerate
 
 ```bash
-make prove     # SPARK proof + badges for adacovex itself
-make run-self   # full self-assessment + badges
+just prove     # SPARK proof + badges for adacovex itself
+just run-self   # full self-assessment + badges
 ```
 
 The SVG renderer is documented in the

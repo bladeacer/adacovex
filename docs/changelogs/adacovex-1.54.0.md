@@ -84,14 +84,14 @@ that builds the site the page describes.
 
 ## Fixes
 
-### H1: `make release` proved the tree before it built the release binary
+### H1: `just release` proved the tree before it built the release binary
 
 `tools/release.py` ran its proof pass first, against whatever `bin/adacovex`
 happened to be on disk, and built the release binary only afterwards. Three
 things followed from that order:
 
 - The proof pass ran the **previous release's binary**, so the release proved
-  code it was not shipping. The banner made it visible: `make release` for
+  code it was not shipping. The banner made it visible: `just release` for
   v1.54.0 printed `adacovex v1.53.0 -- ...` under the heading
   `=== Releasing v1.54.0 ===`.
 - The proof pass used the **previous version's result cache**, because the
@@ -124,11 +124,11 @@ and the committed `sbom.json` (whose `metadata.tools` entry comes from the
 binary that wrote it, while its root component version is read from the
 manifest). Nothing compared them, so the drift in H1 stayed in the tree.
 
-`tools/check-version-consistency.py` (wired as `make
-version-consistency-check`, and into `make check`) fails when any of them
+`tools/check-version-consistency.py` (wired as `just
+version-consistency-check`, and into `just check`) fails when any of them
 names a different version, and separately when the SBOM disagrees with
 itself. A check that needs a build product is skipped when that product is
-absent, so the gate is meaningful in a fresh checkout before `make build`.
+absent, so the gate is meaningful in a fresh checkout before `just build`.
 The gate is pure-stdlib Python with `argparse`/`pathlib` and full `typing`,
 matching the other `tools/*.py` scripts.
 

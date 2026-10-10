@@ -23,13 +23,13 @@ the Read the Docs deploy that broke under mdBook builds cleanly again.
 
 ### C2: Offline manual bundling rebuilt around Sphinx
 
-`tools/gen-docs.py` (wired as `make book`, run inside `make build`) now runs
+`tools/gen-docs.py` (wired as `just book`, run inside `just build`) now runs
 `sphinx-build` over `docs/` and bundles the built site -- every page,
 stylesheet, script, and badge -- into `src/adacovex-docs_template.ads` as a
 path-keyed asset table, the bundled offline manual the `--serve` server serves
 at `/docs`. The mdBook search/print machinery (`elasticlunr`, `mark`,
 `print.html`) is gone; Sphinx's own searchable site is bundled instead.
-`tools/check-book-links.py` (`make book-links-check`) verifies every link in
+`tools/check-book-links.py` (`just book-links-check`) verifies every link in
 the bundle against a fresh `sphinx-build` from a temp copy of `docs/`, so a
 stale local Sphinx build product can never mask a broken link.
 
@@ -45,7 +45,7 @@ not auto-discovered; new doc pages must be linked from one.
 
 ### C4: Build and source tooling updated
 
-The Makefile `book` / `book-links-check` targets, the `make help` text, the
+The Makefile `book` / `book-links-check` targets, the `just help` text, the
 `complexity-check` source-walk excludes (`.venv/` and `docs/_build/` added), the
 manifest tool registration (`sphinx-build` replaces `mdbook`), and the SBOM
 fixture/tests all reference the Sphinx toolchain. The generated `sbom.json`,
@@ -63,7 +63,7 @@ versions <pkg>`) when the requirements line pins none; a missing pip or an
 offline machine keeps the name-only entry -- no version or licence is ever
 guessed. `tools/gen-docs.py` and `tools/check-book-links.py` also now find
 `sphinx-build` inside the repo's own `.venv/bin` when it is not on PATH, so
-`make check` runs the docs gates (and the tools unit tests) on any machine
+`just check` runs the docs gates (and the tools unit tests) on any machine
 that has the venv, instead of silently skipping them.
 
 ### C5: Python is now a documented build-time dependency
@@ -148,7 +148,7 @@ root `requirements*.txt` entries (sphinx, myst-parser) register as dev-scope
 serving path still streams through the existing server-routing tests (41 pass);
 no native assertions were added for the gzip encode/decode, which is
 non-SPARK runtime data plumbing (the base64 decoder lives in the
-`Docs_Template` body and is rounded-trip tested by the served pages in `make
+`Docs_Template` body and is rounded-trip tested by the served pages in `just
 e2e`).
 
 ## Proof Results

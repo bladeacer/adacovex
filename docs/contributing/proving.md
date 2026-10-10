@@ -72,7 +72,7 @@ content-keyed cache behaviour, not a cache fault: any source edit (or a
 docs edit that changes the bundled manual in `src/`) legitimately changes
 the key and re-proves once.
 
-`make bench` samples both extremes (prove warm = hit; prove cold = result
+`just bench` samples both extremes (prove warm = hit; prove cold = result
 cache *and* session wiped), so its numbers are always one of the stable
 shapes. Category definitions and current figures:
 [Performance](perf/index.md).

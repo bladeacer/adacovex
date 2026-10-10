@@ -15,7 +15,7 @@ Vectors`; the exception is now documented consistently across AGENTS.md, the Mak
 ### C2: Complexity gate CI provisions Alire before build
 
 The `complexity-gate` jobs in `ci.yml` and `pr-check.yml` now run
-`alire-project/setup-alire` before `make complexity-check`, so the gate no
+`alire-project/setup-alire` before `just complexity-check`, so the gate no
 longer fails with `/bin/sh: alr: not found` on a fresh runner.
 
 ### C3: Temp directory and shell abstraction for non-Linux platforms
@@ -51,7 +51,7 @@ HLR index.
 ### H1: Complexity-check target no longer drifts from native implementation
 
 The Makefile target description and help text now correctly state that
-`make complexity-check` invokes the native Ada checker (`./bin/adacovex
+`just complexity-check` invokes the native Ada checker (`./bin/adacovex
 complexity`), removing the stale `tools/check-complexity.py` reference.
 
 ### H2: Stale Python-checker references purged from docs

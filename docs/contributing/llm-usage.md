@@ -9,7 +9,7 @@ machine-generated code.
 
 AI tools were used during development for boilerplate generation, contract drafting, and docstring formatting. This is stated plainly rather than hidden. The project's own dogfood target is a zero-dependency, fully documented, SPARK-proven Ada codebase. AI-generated contributions must meet the same bar as hand-written ones.
 
-That bar is 100% docstring coverage, Platinum proof, zero justified VCs, and the full `make check` gate before they count.
+That bar is 100% docstring coverage, Platinum proof, zero justified VCs, and the full `just check` gate before they count.
 
 ## Why trust this code?
 
@@ -19,7 +19,7 @@ Reliability is grounded in proof and design, not implicit trust:
 - **Formal Verification:** core Ada logic is formally verified. It is Platinum
   under `gnatprove` 16.1.0, 1047 VCs, 0 unproved (see
   [docs/proof/16.1.0-ledger.md](../proof/16.1.0-ledger.md)). The proof is re-run by
-  `make prove` on every change. It is a hard gate before any release.
+  `just prove` on every change. It is a hard gate before any release.
 - **Read-Only Engine:** adacovex assesses input payloads, build artifacts, and
   reports without modifying your source files in place. An AI-assisted tool that
   cannot write to the tree it audits is a smaller blast radius by design.
@@ -43,12 +43,12 @@ on the tree must read it first. It must follow it. In particular:
   non-trivial changes with the project's typecheck and tests.
 - **Zero library dependency** is a hard constraint. Use only the GNAT runtime.
   Keep `tools/*.py` pure-stdlib, `typing`-annotated Python.
-- **SPARK proof discipline** (enforced by `make prove` and the
+- **SPARK proof discipline** (enforced by `just prove` and the
   `spark-off-check` gate): zero unproved VCs, zero justified VCs, no
   `SPARK_Mode (Off)` outside the `Types.Implementation` and `Complexity`
   container packages (non-formal `Ada.Containers` are illegal in
   SPARK_Mode-On code; see `docs/proof/16.1.0-ledger.md`).
-- **The quality gate is the contract.** `make check` runs the same gates that
+- **The quality gate is the contract.** `just check` runs the same gates that
   CI enforces before a release. A contribution that fails it is not done.
 - **Generated files are regenerated, not hand-edited.** The version constant,
   the dashboard template package, the architecture tree, the count-synced docs,
@@ -65,29 +65,29 @@ Every number in this repository's documentation is anchored to a generated
 artifact, not to a human- or AI-written claim:
 
 - VC counts and the SPARK level come from `obj/gnatprove/gnatprove.out` (via
-  `make proof-status`).
+  `just proof-status`).
 - Test counts come from [docs/test_result.md](../test_result.md) (via
-  `make test-count`).
+  `just test-count`).
 - Crate descriptions come from `alire/description.txt` and
-  `alire/long-description.txt` (via `make description`).
+  `alire/long-description.txt` (via `just description`).
 
 The CI badge `docs/badges/*.svg` files are emitted by the assessment itself.
 If a document carries a number that does not match the artifact, one of the
-`--check` gates in `make check` fails loudly. That is the point.
+`--check` gates in `just check` fails loudly. That is the point.
 
 ## Working in a fork or branch (LLM or human)
 
 Because the gates are cheap and deterministic, the safest workflow is to
-iterate locally and let `make check` be the arbiter:
+iterate locally and let `just check` be the arbiter:
 
 ```bash
-make build && make test      # native suite must stay 738/738
-make prove                   # Platinum, 0 unproved, 0 justified
-make check                   # full gate: static checks, build, test, prove,
+just build && just test      # native suite must stay 738/738
+just prove                   # Platinum, 0 unproved, 0 justified
+just check                   # full gate: static checks, build, test, prove,
                              # doc, sbom, then tree-wide count-sync checks
 ```
 
-`make check` runs the cheap static gates first (ascii, spark-off, changelog, version source, doc links). A formatting or sync problem fails before the expensive build and SPARK proof. Then it verifies the count-sync checks (`test-count --check`, `proof-status --check`, `description --check`). A stale metric anywhere in the tree fails loudly.
+`just check` runs the cheap static gates first (ascii, spark-off, changelog, version source, doc links). A formatting or sync problem fails before the expensive build and SPARK proof. Then it verifies the count-sync checks (`test-count --check`, `proof-status --check`, `description --check`). A stale metric anywhere in the tree fails loudly.
 
 Regenerated files that are byte-identical when nothing changed (the version constant, the dashboard template) are left untouched. `git status` stays quiet.
 

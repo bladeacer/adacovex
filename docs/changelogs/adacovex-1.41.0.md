@@ -64,8 +64,8 @@ since 1.40.0; the parser walks now match it.
 
 The acceptance-gate `--require-tests` in `tools/run.py` pinned the suite at
 1033 while the native suite had grown to 1213; CI and the docs already
-carried the current count. The gate now matches the suite, so `make prove`,
-`make run-self`, and the release flow enforce the real current size. The
+carried the current count. The gate now matches the suite, so `just prove`,
+`just run-self`, and the release flow enforce the real current size. The
 proof ledger, verification tables, and manifest descriptions were refreshed
 to the measured totals in the same pass.
 
@@ -93,7 +93,7 @@ Platinum, 0 unproved, 0 justified, 791 VCs (791 proved) under gnatprove
 16.1.0 across 56 analysed units. The totals grow from 725 at 1.40.0: the IR
 slice and its helpers add about 57 VCs, the two new `Global` contracts add
 their flow checks, and the new cache test category sits in I/O units that
-gnatprove skips. The cold full-cache-miss `make prove` rises from about
+gnatprove skips. The cold full-cache-miss `just prove` rises from about
 39.0 s to 42.8 s on the measurement machine, proportionally to the VC
 count; an idle run with unchanged inputs still short-circuits in about
 2.5 s without spawning gnatprove.

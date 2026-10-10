@@ -34,7 +34,7 @@ the fixer copies everything before the marker byte for byte. The generated
 units (`adacovex-docs_template`, `adacovex-dashboard_template`,
 `adacovex_version_info`) are excluded, as the generated api-docs pages are:
 their generators emit single-spaced comments already, and a hand edit there
-is overwritten by the next `make build`.
+is overwritten by the next `just build`.
 
 The rule also widens from "two spaces followed by a capital, quote, bracket,
 or backtick" to "two spaces followed by any text". The narrower form missed
@@ -124,8 +124,8 @@ project first and then open the dashboard.
 
 ### C7: A docs edit rebuilds the manual incrementally
 
-`make build` was fast only when nothing had changed: a docs edit paid a full
-clean Sphinx build every time. Profiling the phases of `make build` on the
+`just build` was fast only when nothing had changed: a docs edit paid a full
+clean Sphinx build every time. Profiling the phases of `just build` on the
 dev machine (12 CPUs) gave: version 0.04 s, CSS gate 0.05 s, dashboard
 template 0.15 s, the manual bundle 7.7 s, `alr build` 1.5 s. The manual bundle
 was 74% of the work, and 6.8 s of it was Sphinx.
@@ -149,7 +149,7 @@ After the build the page set is checked against the sources, and a leftover,
 a missing page, or an unjustified image falls back to a clean rebuild.
 `tools/gen-docs.py --fresh` forces a clean rebuild outright.
 
-| `make build` shape | before | after |
+| `just build` shape | before | after |
 |--------------------|--------|-------|
 | no change | 0.9 s | 0.9 s |
 | one docs page edited | 9.2 s | 2.7 s |

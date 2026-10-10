@@ -776,7 +776,19 @@ package body Adacovex.Prove is
       Open (F, In_File, Path);
       while not End_Of_File (F) loop
          declare
-            Line : constant String := Trim (Get_Line (F), Ada.Strings.Both);
+            Raw  : constant String := Get_Line (F);
+            --  A manifest stored with CRLF line endings keeps the CR at the
+            --  line end: Ada.Text_IO strips the LF only on POSIX, so the CR
+            --  would remain the line's LAST character and defeat the
+            --  section-header test below (it compares that character with
+            --  ']'). Strip it with the other blanks, so a CRLF alire.toml
+            --  parses exactly like an LF one on every platform.
+            Line : constant String :=
+              Trim (Raw (Raw'First .. Raw'Last
+                         - (if Raw'Length > 0
+                            and then Raw (Raw'Last) = ASCII.CR
+                            then 1 else 0)),
+                    Ada.Strings.Both);
          begin
             if Line'Length > 2
               and then Line (Line'First) = '['
@@ -847,7 +859,7 @@ package body Adacovex.Prove is
 
    --  True when <target>/alire-dev.toml or <target>/alire.toml declares a
    --  gnatprove dependency. The dev manifest is consulted first because it
-   --  extends alire.toml with the proof toolchain for local make targets.
+   --  extends alire.toml with the proof toolchain for local task targets.
    function Manifest_Declares_GNATprove (Target_Dir : String) return Boolean is
    begin
       return
@@ -1361,7 +1373,18 @@ package body Adacovex.Prove is
          Open (F, In_File, Config_File);
          while not End_Of_File (F) loop
             declare
-               Line : constant String := Trim (Get_Line (F), Ada.Strings.Both);
+               Raw  : constant String := Get_Line (F);
+               --  A CRLF config file keeps the CR at the line end
+               --  (Ada.Text_IO strips the LF only on POSIX); the
+               --  section-header test below compares the line's LAST
+               --  character, so the CR must go. Strip it with the other
+               --  blanks.
+               Line : constant String :=
+                 Trim (Raw (Raw'First .. Raw'Last
+                            - (if Raw'Length > 0
+                               and then Raw (Raw'Last) = ASCII.CR
+                               then 1 else 0)),
+                       Ada.Strings.Both);
             begin
                if Line'Length > 2
                  and then Line (Line'First) = '['
@@ -2332,7 +2355,8 @@ package body Adacovex.Prove is
       Ada.Text_IO.Put_Line
         (Adacovex.Ansi.Bold ("adacovex v" & Adacovex.Version & " status"));
       Ada.Text_IO.Put_Line
-        ("  target:             " & S.Target (1 .. S.Target_Len));
+        ("  target:             "
+         & Adacovex.Paths.Display (S.Target (1 .. S.Target_Len)));
 
       --  Locale/time: the effective timezone, the current wall-clock date and
       --  time in that zone, and how many dated release changelogs the target
@@ -2392,13 +2416,15 @@ package body Adacovex.Prove is
          & (if S.Pin_Len > 0 then S.Pin (1 .. S.Pin_Len) else "none"));
       if S.Gnatprove_Ln > 0 then
          Ada.Text_IO.Put_Line
-           ("    on PATH:           " & S.Gnatprove (1 .. S.Gnatprove_Ln));
+           ("    on PATH:           "
+            & Adacovex.Paths.Display (S.Gnatprove (1 .. S.Gnatprove_Ln)));
       else
          Ada.Text_IO.Put_Line ("    on PATH:           not found");
       end if;
       if S.Cached then
          Ada.Text_IO.Put_Line
-           ("    toolchain cache:   " & S.Cached_Dir (1 .. S.Cached_Len));
+           ("    toolchain cache:   "
+            & Adacovex.Paths.Display (S.Cached_Dir (1 .. S.Cached_Len)));
       else
          Ada.Text_IO.Put_Line ("    toolchain cache:   empty");
       end if;

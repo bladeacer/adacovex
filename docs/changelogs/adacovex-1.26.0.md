@@ -8,7 +8,7 @@ Version bumped 1.25.0 -> 1.26.0.
 
 ### C1: perf-bench target wired to Makefile
 
-`tools/perf-bench.py` is now exposed as `make perf-bench`, providing a
+`tools/perf-bench.py` is now exposed as `just perf-bench`, providing a
 dedicated perf/strace profiling target alongside the existing `bench`
 hyperfine target.
 

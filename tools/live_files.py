@@ -11,7 +11,7 @@ Rules:
 
   * every text file under the repo root is a candidate;
   * generated outputs are excluded: docs/api-docs/ (gnatdoc), docs/badges/
-    (SVG), docs/test_result.md (make test), sbom.json, obj/, bin/,
+    (SVG), docs/test_result.md (just test), sbom.json, obj/, bin/,
     the docs Sphinx build output (docs/_build), the Python virtualenv
     (.venv), the Alire build state (alire.lock, alire/settings.toml,
     alire/build_hash_inputs), and the two generated Ada specs
@@ -28,14 +28,14 @@ Rules:
 The release + index manifests (alire/releases/*.toml, index/**/covex-*.toml)
 carry the crate description, which embeds the test-count phrase, so they ARE
 scanned -- keeping them in sync with the canonical alire/long-description.txt in
-the same pass is exactly what prevents `make description CHECK=1` (and therefore
+the same pass is exactly what prevents `just description CHECK=1` (and therefore
 bump-version / release) from re-propagating a stale count.
 
 The description deliberately carries no proof metric. A VC count is a vanity
 number that moves on almost every release, and a past release's manifest
 describing the current tree's proof surface is misleading, so the manifests
 state the SPARK level only. Nothing here syncs a VC count into them, and
-`make description CHECK=1` is the gate that keeps that true.
+`just description CHECK=1` is the gate that keeps that true.
 """
 
 import re

@@ -22,12 +22,12 @@ The Ada side (`Renderers. HTML`) is split into `Render_Dashboard_Internal` with 
 
 ### C2: Make targets grouped and a `sync` alias
 
-`make help` now groups targets (`Core`, `Assessment`, `Docs & sync`,
-`Gates`, `Release`) instead of a flat list. A new `make sync` alias runs
+`just help` now groups targets (`Core`, `Assessment`, `Docs & sync`,
+`Gates`, `Release`) instead of a flat list. A new `just sync` alias runs
 the four doc-sync targets that previously had to be invoked individually:
 `agents-tree` + `proof-status` + `test-count` + `doc-links` + `description`.
 The grouping mirrors the pipeline order (`check` is still the full gate, now
-explicitly listed as `Core`). No target semantics changed; `make check`
+explicitly listed as `Core`). No target semantics changed; `just check`
 still runs the same cheap-first gates, build+test+prove+doc+sbom, and
 count-sync checks.
 
@@ -63,7 +63,7 @@ dropdown, badge images, `__THEME__` substitution, and the new tab markers).
 ## Proof Results
 
 Platinum, 720/720 VCs proved across 48 analysed units (unchanged from
-1.19.0): dashboard tabbing, dep-tree rendering, chart fixes, make help
+1.19.0): dashboard tabbing, dep-tree rendering, chart fixes, just help
 grouping, and CI/doc updates live in default-off or I/O-bound bodies -- no
 new proof obligations. 0 unproved, 0 justified. Re-verified with
 `adacovex prove --target=. --force` under gnatprove 16.1.0 (`--steps=10000`).

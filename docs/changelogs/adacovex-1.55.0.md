@@ -87,7 +87,7 @@ shape is measured for the first time. The closed phase is 1.48.0-1.54.0 with
 1.50.0 as its representative. The new column reads prove warm 49.9 ms,
 pipeline warm 41.3 ms, pipeline cold 66.5 ms, and warm `newfstatat` 7,280,
 all at load 0.5-0.6: flat or slightly better than the closed phase's 55 ms,
-46 ms, 73 ms, and ~6.9k. The page also records that `make prove` on an
+46 ms, 73 ms, and ~6.9k. The page also records that `just prove` on an
 unchanged tree costs about 1.1 s where `./bin/covex prove` alone costs 50 ms,
 so neither number is mistaken for the other.
 
@@ -113,7 +113,7 @@ reverting the guard alone makes it fail.
 
 ### H2: The bundled-manual link check built the whole manual a second time
 
-`make check` runs `tools/gen-docs.py --check` and then
+`just check` runs `tools/gen-docs.py --check` and then
 `tools/check-book-links.py`, and the link check ran its own `sphinx-build`
 over a fresh copy of `docs/`. Every run therefore built the same manual
 twice.

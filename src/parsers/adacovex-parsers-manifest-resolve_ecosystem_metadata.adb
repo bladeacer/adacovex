@@ -505,7 +505,7 @@ begin
    --  Serve from the per-project metadata cache (stored in the project's
    --  result cache, keyed by the target directory, same 7-day TTL as the
    --  system-tool probes) so a warm run never spawns a registry CLI. This
-   --  is what makes `make prove` responsive on the second run: the registry
+   --  is what makes `just prove` responsive on the second run: the registry
    --  calls (node for npm/pnpm) are the one cost the content-addressed
    --  result cache does not cover, so without this layer they re-ran every
    --  invocation.

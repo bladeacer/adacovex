@@ -26,6 +26,6 @@ tests/e2e/test-results
 tests/e2e/playwright-report
 
 
-# Sphinx build output: regenerated locally by `make book` (gitignored so the
+# Sphinx build output: regenerated locally by `just book` (gitignored so the
 # generated _sources/ copies and .doctrees/ side-car files never pollute git).
 docs/_build/

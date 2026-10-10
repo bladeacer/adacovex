@@ -50,7 +50,7 @@ plain local run tripping the "requires the prove subcommand" check.
 The `prove` subcommand always passes `--no-loop-unrolling` to gnatprove (as
 of 1.17.0), so gnatprove never *emits* the "cannot unroll loop" notice in
 the first place; the C1 suppression is the safety net for any residual info
-messages from other tags or other gnatprove versions. Ada_CRDT's `make
+messages from other tags or other gnatprove versions. Ada_CRDT's `just
 prove` and its CI workflows also pass `--no-loop-unrolling` explicitly, so
 the notices are gone there too with the current published binary, not just
 the next release. Proof-neutral: 720/720 adacovex and 589/589 Ada_CRDT VCs,
@@ -62,7 +62,7 @@ the next release. Proof-neutral: 720/720 adacovex and 589/589 Ada_CRDT VCs,
 from 124 to 136 with the new `--quiet` / `--suppress-warnings` /
 `--suppress-warnings=SETS` parsing checks (including the quiet-by-default
 defaults: suppression on, empty set list, explicit flag unset). All other
-categories unchanged. Counts synced with `make test-count`.
+categories unchanged. Counts synced with `just test-count`.
 
 ## Proof Results
 
@@ -79,7 +79,7 @@ unproved, 0 justified.
 No new HLRs. The quiet/suppression behaviour extends the existing `HLR-CLI`
 tag (`--quiet`, `--suppress-warnings=SETS` parsing in `adacovex-config`) and
 `HLR-PROVE` (`Replay_Suppressed` set-list filtering in `adacovex-prove`),
-covered by the C1 config tests and the `make run-ada-crdt` dogfood
+covered by the C1 config tests and the `just run-ada-crdt` dogfood
 regression. The CI `--verbose` wiring is covered by this project's and
 Ada_CRDT's workflow files; see `docs/cli-reference.md` for the full flag
 documentation.

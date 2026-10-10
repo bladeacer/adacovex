@@ -43,7 +43,7 @@ adacovex supports multiple output formats:
 
 ## Testing
 
-adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 1815 tests across 27 categories. No external test framework (AUnit, and more) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
+adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 1818 tests across 27 categories. No external test framework (AUnit, and more) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
 
 ## Complexity check
 
@@ -53,7 +53,7 @@ Shell, Kotlin, and the YAML/JSON/TOML/XML/Markdown/reStructuredText
 families) alongside Ada. Per-subprogram analysis stays Ada-specific; the
 other languages contribute file-level lines of code and decision counts.
 `--excludes=EXT,EXT` skips listed file extensions and is rejected unless the
-`complexity` subcommand is given, so it can never run on its own. `make
+`complexity` subcommand is given, so it can never run on its own. `just
 complexity-check` gates the tree through the same thresholds.
 
 ## Timezone resolution
@@ -82,12 +82,12 @@ clock is correct in every zone. `HLR-TZ` covers this behaviour.
 ## Build and documentation gates
 
 Two cheap Python gates keep the dashboard and the hand-written docs in
-step with the code, and both run inside `make check`:
+step with the code, and both run inside `just check`:
 
-- `tools/csslint.py` (`make csslint-check`) enforces the dashboard spacing
+- `tools/csslint.py` (`just csslint-check`) enforces the dashboard spacing
   convention: every `margin`, `padding`, and `gap` pixel length is a
-  multiple of 4px. It also runs inside `make build`.
-- `tools/check-docs.py` (`make docs-check`) fails when any paragraph in the
+  multiple of 4px. It also runs inside `just build`.
+- `tools/check-docs.py` (`just docs-check`) fails when any paragraph in the
   user docs, README, or human changelogs exceeds four sentences, and it
   rejects em dashes and Latin abbreviations (`i.e.`, `e.g.`, `etc.`).
   `tools/para-split.py` rewraps over-long paragraphs to comply. Pages are

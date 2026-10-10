@@ -57,7 +57,7 @@ GNATprove toolchain bundle for that target. macOS, FreeBSD, Windows, and Linux
 aarch64 build adacovex from source via Alire instead. See
 [Platforms](platforms.md#release-binaries).
 
-Maintainers reproduce the release locally with `make release VERSION=x.y.z`
+Maintainers reproduce the release locally with `just release VERSION=x.y.z`
 (see the [developer guide](../contributing/developer-guide.md)): it builds
 `--release`, checks that the built binary reports the tag, generates proofs,
 validates DAL-C, and bundles `dist/`, then tags and pushes to trigger the

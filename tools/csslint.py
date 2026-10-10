@@ -17,8 +17,8 @@ Usage:
   python3 tools/csslint.py --check          # exit 1 on any violation
   python3 tools/csslint.py --fix            # rewrite the file to conform
 
-Wired as `make csslint-check` and run as a cheap static gate in `make build`
-and `make check`.
+Wired as `just csslint-check` and run as a cheap static gate in `just build`
+and `just check`.
 """
 
 import argparse
@@ -83,7 +83,7 @@ def check() -> int:
           f"{CSS.relative_to(ROOT)}:")
     for orig, fixed in bad:
         print(f"      {orig!r:42} -> {fixed!r}")
-    print("  Run `python3 tools/csslint.py --fix` (or `make csslint-check "
+    print("  Run `python3 tools/csslint.py --fix` (or `just csslint-check "
           "--fix`) to conform.")
     return 1
 
@@ -104,7 +104,7 @@ def fix() -> int:
     new: str = _SPACING_RE.sub(_val, text)
     count: int = len(lint(text))
     if new != text:
-        CSS.write_text(new, encoding="utf-8")
+        CSS.write_text(new, encoding="utf-8", newline="\n")
         print(f"  rewrote {count} spacing declaration(s) in "
               f"{CSS.relative_to(ROOT)}")
     else:

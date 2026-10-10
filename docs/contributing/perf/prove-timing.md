@@ -1,6 +1,6 @@
 # Prove timing and the optimisation review
 
-This page covers the `make prove` timing table (the true proof-performance
+This page covers the `just prove` timing table (the true proof-performance
 test) and the 1.46.0 SIMD and optimisation candidate review. Benchmark
 methodology is on [Performance](index.md), the optimisation history is on
 [Performance optimisation history](optimisation-history.md), and the 1.55.0
@@ -58,7 +58,7 @@ cores, 10 proof jobs, release profile) unless a note says otherwise.
 
 **Scenario order biases the cold rows, so read every figure with its load.**
 Each scenario loads the box, so one measured late inherits the load the earlier
-ones left behind. `make bench` prints the load in front of every scenario for
+ones left behind. `just bench` prints the load in front of every scenario for
 that reason. Compare two shapes paired, not as two rows of one sequential pass:
 the clone row below is a case where sequence order alone manufactured an
 apparent 14-second gap that a paired run did not reproduce.
@@ -205,7 +205,7 @@ and the gnatprove session store is wiped before each one.
   negative result.
 - **The fully cold clone shape costs the same as prove cold, and the apparent
   gap in the bench is measurement order, not work.** The recorded row reads
-  78.0 s against 63.8 s, but the clone scenario runs last in `make bench`, so
+  78.0 s against 63.8 s, but the clone scenario runs last in `just bench`, so
   the earlier scenarios have already loaded the box. A paired comparison settles
   it, running the two shapes back to back with the load in front of each. Across
   three paired rounds, the one pair at comparable load (16.8 against 14.4) put
@@ -217,7 +217,7 @@ and the gnatprove session store is wiped before each one.
   usable summary used to print "reusing prior proof" and return success without
   running the prover. The runner now falls through to a real gnatprove run. The
   warm row is unaffected, because a healthy warm hit was already a cache hit.
-- `make prove` on an unchanged tree measures 1.12 s, where `./bin/covex prove`
+- `just prove` on an unchanged tree measures 1.12 s, where `./bin/covex prove`
   alone costs 45.8 ms. The stripped binary is 6.0 MiB against 9.5 MiB
   unstripped, so the phase is 36.6 percent smaller after `strip`. The Ada_CRDT
   second datapoint reads 27.6 ms warm and 48.0 ms cold.
@@ -233,7 +233,7 @@ and the gnatprove session store is wiped before each one.
   self tree has zero vendored components, so a change that only touches
   vendored code is invisible to it. Measure such a change on a fixture with
   the shape it touches, paired against a build of the base commit.
-- `make prove` on an unchanged tree is not the warm short-circuit either. The
+- `just prove` on an unchanged tree is not the warm short-circuit either. The
   target also regenerates the bundled manual and the dashboard template and
   re-checks the generators, so it costs about 1.12 s where `./bin/covex prove`
   alone costs 46 ms.

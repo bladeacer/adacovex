@@ -76,7 +76,7 @@ directly inside the adacovex binary (previously a standalone Python script).
 The checker scans `src/*.ads` and `src/*.adb`, attributes decision points to
 top-level subprograms, and enforces the same gates as `tools/check-complexity.py`
 (max-file-loc, max-file-pct, max-fn-complexity, max-file-complexity). Exit
-code is 1 when any gate is violated. `make complexity-check` now invokes
+code is 1 when any gate is violated. `just complexity-check` now invokes
 `./bin/adacovex complexity`.
 
 ### C9: Dependency detection expanded for more languages
@@ -95,7 +95,7 @@ etc.).
 
 A Playwright test suite was added under `tests/e2e/` (managed with `pnpm`).
 It verifies dashboard header, all seven tabs, theme switching, search box
-presence, footer content, and responsive layout. Run with `make e2e`.
+presence, footer content, and responsive layout. Run with `just e2e`.
 
 ## Fixes
 

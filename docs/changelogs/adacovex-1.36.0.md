@@ -36,7 +36,7 @@ JavaScript syntax check.
 
 ### H2: Dashboard proof guidance uses the adacovex CLI
 
-The Proof tab told users to run `make prove` after each change. The dashboard
+The Proof tab told users to run `just prove` after each change. The dashboard
 and command help are user-facing output; developer-only make targets do not
 belong there. The text now reads `adacovex prove`, matching the actual
 user-facing subcommand.
@@ -67,7 +67,7 @@ build manifests). Prose and source text are never scanned for tool names.
 
 ### H6: AGENTS.md expanded
 
-The `make check` target description now explains that it is the single
+The `just check` target description now explains that it is the single
 everything-check entry point and that it resolves `gnatprove` automatically.
 A new bullet records the SPARK discipline policy: new code must be fully
 SPARK-proven, and `SPARK_Mode (Off)` is permitted only in the two

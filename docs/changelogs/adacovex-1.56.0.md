@@ -52,7 +52,7 @@ depends on.
 
 ### C2: The 1.46.0 SIMD and optimisation-candidate review moves to the history
 The SIMD section that closed the 1.46.0 review no longer sits inside the
-`make prove` timing table: it was the longest page in the phase and the move
+`just prove` timing table: it was the longest page in the phase and the move
 keeps the timing table's column rule (one phase, one representative, a complete
 metric set) easy to read. `docs/contributing/perf/optimisation-history.md`
 gained the entry `### SIMD and other optimisation candidates (1.46.0)`, which
@@ -84,14 +84,14 @@ the three `GATED` sources (alire-dev.toml, the GitHub workflows, and
 docs/proof/16.1.0-ledger.md) all agree on the same version; the docstring
 example in `src/core/adacovex-prove.ads` was refreshed from ^15.1.0 to ^16.1.0
 and the generated API doc `docs/api-docs/adacovex-prove.md` was regenerated to
-match. `make check` runs the gate, and `make prove` deploys the manifest-pinned
+match. `just check` runs the gate, and `just prove` deploys the manifest-pinned
 gnatprove so the proof runs against the exact version the gate enforces.
 
 ### C5: The bundled manual's base85 decoder is exposed and tested
 
 `src/adacovex-docs_template.adb` carries a hand-written `Base85_Decode`, but
 the generated spec did not declare it, so a test could observe it only through
-whatever `make book` last produced. The declaration now sits in the generated
+whatever `just book` last produced. The declaration now sits in the generated
 spec next to `Body_Bytes`, and `tools/gen-docs.py` emits it on every build.
 
 The tests in `src/tests/adacovex_server_tests.adb` now call the decoder
@@ -114,7 +114,7 @@ table from `docs/usage/sbom.md` to `docs/usage/sbom-resolution.md`.
 `tools/tests.py` pins both directions: an opted-out over-cap page passes, and a
 page over the cap with no marker fails.
 
-### C7: `make check` formats the sources before it builds them
+### C7: `just check` formats the sources before it builds them
 
 The `fmt` gate ran after the proof, so a formatted file was compiled before it
 was formatted. `fmt` now runs first, and the gate banner lists it before
@@ -183,7 +183,7 @@ entries, and 1.56.0, are now listed, and the index matches the files in
 `docs/proof/16.1.0-ledger.md` stated 56 analysed units in its status line and
 in its reproduction section, while `gnatprove.out` reports `Analyzed 66 units`
 and every other record of the campaign reports 66. The metric sync tool
-(`make proof-status`) does not police those two prose lines, so the drift was
+(`just proof-status`) does not police those two prose lines, so the drift was
 invisible to the gates. Both now read 66, which is the figure the tool reads
 and this release's proof section quotes.
 
@@ -223,7 +223,7 @@ package, and the only two packages that carry one remain `Types.Implementation`
 and `Complexity`.
 
 The proof-input hash excludes the bundled manual spec, so the docs edit does
-not invalidate the cached proof, and `make proof-status` reports the metrics
+not invalidate the cached proof, and `just proof-status` reports the metrics
 still in sync across every live file.
 
 ## Traceability
@@ -241,7 +241,7 @@ still in sync across every live file.
   sidebar, which is the surface `HLR-DOCS` already covers.
 - H2 and H3 are documentation records: the changelog index and the proof
   ledger. H3 changes a stated figure only, and the figure it now states is the
-  one `make proof-status` reads from the prover output.
+  one `just proof-status` reads from the prover output.
 - `tools/gen-docs.py` and `tools/tests.py` are developer tooling, which no HLR
   tag covers, as 1.55.0's H2 and H3 record.
 - C4, C5, and C6 add gates and tooling only: the gnatprove pin check, the

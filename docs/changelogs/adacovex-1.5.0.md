@@ -39,7 +39,7 @@ silently) are parsed in full.
 
 ### C4: Dev-manifest proof swap (`prove` subcommand)
 
-When the target project declares `gnatprove` only in `alire-dev.toml` (keeping the publishing `alire.toml` clean), the `prove` subcommand now runs the proof through a temporary shell wrapper that backs up `alire.toml` / `alire.lock` / `alire/`, swaps the dev manifest over the publishing one, runs `alr exec -- gnatprove -P <gpr>`, and restores everything (via `trap ... EXIT INT TERM`) even on failure or interruption. The assessment and SBOM pipeline always scans the publishing `alire.toml`, so dev-only tool declarations never leak into dependency graphs or SBOMs. This fixes `make run-ada-crdt` / `make prove` against projects (e.g.
+When the target project declares `gnatprove` only in `alire-dev.toml` (keeping the publishing `alire.toml` clean), the `prove` subcommand now runs the proof through a temporary shell wrapper that backs up `alire.toml` / `alire.lock` / `alire/`, swaps the dev manifest over the publishing one, runs `alr exec -- gnatprove -P <gpr>`, and restores everything (via `trap ... EXIT INT TERM`) even on failure or interruption. The assessment and SBOM pipeline always scans the publishing `alire.toml`, so dev-only tool declarations never leak into dependency graphs or SBOMs. This fixes `just run-ada-crdt` / `just prove` against projects (e.g.
 
 Ada_CRDT) that keep gnatprove out of their publishing manifest.
 

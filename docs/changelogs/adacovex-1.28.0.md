@@ -61,7 +61,7 @@ inside the `bench` size report) and used GNU-only filters (`grep -P`,
 formatting moved to pure-stdlib Python scripts so the targets behave the
 same on every platform:
 
-- `tools/bench-size.py` -- `make bench`'s binary-size report (stats the
+- `tools/bench-size.py` -- `just bench`'s binary-size report (stats the
   files itself; no more `stat -c` + awk quoting).
 - `tools/ascii-check.py` -- the ASCII gate (no `grep -P`; tab and LF are
   allowed, CR still fails, so CRLF line endings are caught).
@@ -69,13 +69,13 @@ same on every platform:
 - `tools/versions.py` -- version read / `set-version` / version-aware
   filter (replaces `sed`/`sort -V` in `release`, `test-publish`,
   `coverage-gate`).
-- `tools/bump-version.py` -- the whole `make bump-version` recipe
+- `tools/bump-version.py` -- the whole `just bump-version` recipe
   (manifest rewrites, release-file/index scaffolding, changelog
   scaffolding, description sync).
 - `tools/filter-sframe.py` -- the build-log SFrame-notice filter
-  (`make build`).
+  (`just build`).
 - `tools/rst2md.py --prune-test-pages` -- drops test-page links from the
-  API-docs index (replaces two `sed -i` calls in `make doc`).
+  API-docs index (replaces two `sed -i` calls in `just doc`).
 
 The recipes that remain in the Makefile are plain POSIX pipelines
 (`head`, `tail`, `grep -E`, `cmp`, `ls`); there is no GNU-only filter or
@@ -130,8 +130,8 @@ declarative and each flow is individually testable:
 
 - `tools/build.py` -- the build flow (`gen-version` + `gen-dashboard` +
   `alr build` with the SFrame log filter + the `covex` symlink).
-- `tools/dev-cmd.py` -- the alire-dev.toml swap behind `make doc` /
-  `make fmt`, restored unconditionally (including on Ctrl-C / SIGTERM).
+- `tools/dev-cmd.py` -- the alire-dev.toml swap behind `just doc` /
+  `just fmt`, restored unconditionally (including on Ctrl-C / SIGTERM).
   The swap uses a fresh-mtime copy: `alr exec` re-synchronises the
   workspace only when `alire.toml` is strictly newer than
   `alire/alire.lock`, so a metadata-preserving copy silently skipped the
@@ -146,14 +146,14 @@ declarative and each flow is individually testable:
   live in exactly one place.
 - `tools/release.py` -- the whole release flow (prove, build, validate,
   coverage gate, changelogs, bundling, attestation, manifest bumps,
-  tag/push), with `make release DRY_RUN=1` running everything except the
+  tag/push), with `just release DRY_RUN=1` running everything except the
   irreversible commit/tag/push.
 - `tools/tests.py` -- a stdlib-`unittest` suite over the tools' pure
-  logic (26 tests), wired into `make check` as the `tools-check` gate.
+  logic (26 tests), wired into `just check` as the `tools-check` gate.
 
 The ASCII gate now skips the gitignored generated Playwright output
 (`tests/e2e/playwright-report/`, `tests/e2e/test-results/`), which
-previously tripped the gate after a local `make e2e` run.
+previously tripped the gate after a local `just e2e` run.
 
 ### C11: gnatprove run is warning-free
 
@@ -194,7 +194,7 @@ Before 1.28.0-era cache wipes, a wiped `--cache-dir` re-probed every
 referenced tool. After these changes a fresh result cache on a machine
 with warm probes skips every spawn. First-run-on-machine cost unchanged.
 
-### H2: `make e2e` runs the dashboard suite again
+### H2: `just e2e` runs the dashboard suite again
 
 The Playwright web-server wiring referenced a script that does not
 exist (`tools/start-dashboard-server.py`), and the launcher computed the
@@ -211,7 +211,7 @@ checkboxes fixed in C9. 15 e2e tests pass.
 round-trip in the SBOM suite; the probe-store change keeps the same
 count). The GNATprove parser tests cover both summary layouts (legacy
 3-column and modern 6-column rows). 15 Playwright dashboard layout
-tests pass via `make e2e`.
+tests pass via `just e2e`.
 
 ## Proof Results
 

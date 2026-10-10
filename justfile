@@ -18,6 +18,10 @@ venv-bin := if os() == "windows" { ".venv/Scripts" } else { ".venv/bin" }
 default:
     @just --list
 
+# Show the task list (alias for the default recipe, mirrors `make help`).
+help:
+    @just --list
+
 # Create or refresh the docs-bundling virtualenv with uv.
 docs-venv:
     @test -d .venv || uv venv --python 3.13 .venv

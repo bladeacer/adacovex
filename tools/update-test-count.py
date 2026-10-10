@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""Update the current test-suite counts in the repo after `make test`.
+"""Update the current test-suite counts in the repo after `just test`.
 
 The test counts in AGENTS.md, README.md, Makefile, the CI workflows,
 alire.toml, and tools/agents-tree.map were edited by hand and went stale on
 every test change.  This script parses docs/test_result.md (written by
-`make test` / test_runner), extracts the per-category counts and the
+`just test` / test_runner), extracts the per-category counts and the
 Passed/Failed totals, and rewrites the anchored test-count phrases across the
 repo.  It then updates tools/agents-tree.map and regenerates the AGENTS.md
 source tree so the per-file test counts stay in sync.
 
 Historical notes (past-release changelogs, the proof ledger) are left
 untouched because they do not match the anchored patterns.  The generated
-badge (docs/badges/tests.svg) is *not* edited here: `make run-self` rewrites
+badge (docs/badges/tests.svg) is *not* edited here: `just run-self` rewrites
 it from the assessment, recomputing the width for the live count.
 
 The file set is derived from the tree (tools/live_files.py) rather than a
@@ -136,7 +136,7 @@ def update_text_file(path: Path, repls: List[Tuple[str, str]]) -> int:
     for pat, rep in repls:
         text, n = re.subn(pat, rep, text)
         matched += n
-    path.write_text(text)
+    path.write_text(text, newline="\n")
     return matched
 
 
@@ -160,7 +160,7 @@ def update_map(cats: Dict[str, int], total: int) -> None:
     """Write the per-file counts into tools/agents-tree.map."""
     path: Path = ROOT / "tools" / "agents-tree.map"
     lines: List[str] = map_lines(cats, total)
-    path.write_text("\n".join(lines) + "\n")
+    path.write_text("\n".join(lines) + "\n", newline="\n")
 
 
 BEGIN_TREE: str = "<!-- agents-tree:begin -->"
@@ -198,7 +198,7 @@ def regen_agents_tree(check: bool = False) -> bool:
     if check:
         return text[start:end] == block
     if text[start:end] != block:
-        agents.write_text(text[:start] + block + text[end:])
+        agents.write_text(text[:start] + block + text[end:], newline="\n")
     return True
 
 
@@ -240,7 +240,7 @@ def main() -> int:
                 stale += 1
                 print(f"STALE: {f.relative_to(ROOT)}")
             else:
-                f.write_text(text)
+                f.write_text(text, newline="\n")
                 print(f"updated: {f.relative_to(ROOT)}")
 
     # CONTRIBUTING.md category table + total (only file with a per-category
@@ -267,7 +267,7 @@ def main() -> int:
                 stale += 1
                 print(f"STALE: {contrib.relative_to(ROOT)}")
             else:
-                contrib.write_text(text)
+                contrib.write_text(text, newline="\n")
 
     # tools/agents-tree.map lives under tools/ (excluded from the generic
     # scan) and carries per-file counts; keep it in sync separately.
@@ -278,7 +278,7 @@ def main() -> int:
             stale += 1
             print("STALE: tools/agents-tree.map")
         else:
-            (ROOT / "tools" / "agents-tree.map").write_text(map_new)
+            (ROOT / "tools" / "agents-tree.map").write_text(map_new, newline="\n")
 
     if args.check:
         # AGENTS.md embeds the source tree; verify it matches the map too.
@@ -287,7 +287,7 @@ def main() -> int:
             print("STALE: AGENTS.md source tree")
         if stale:
             print(f"error: {stale} file(s) carry stale test counts "
-                  f"(run `make test-count` to refresh)", file=sys.stderr)
+                  f"(run `just test-count` to refresh)", file=sys.stderr)
             return 1
         print("test counts in sync across all live files")
         return 0

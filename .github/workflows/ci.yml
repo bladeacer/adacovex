@@ -43,7 +43,7 @@ jobs:
           verbose: true
           require-spark: Platinum
           require-docstrings: 100
-          require-tests: 1815
+          require-tests: 1818
           require-proof: 100
           #  Statement-coverage gate: the action runs
           #  `spark-coverage --require-coverage=... --gate-metric=statements`
@@ -68,47 +68,22 @@ jobs:
           run-tests: true
           assess: false
 
-  platform-build:
-    #  Cross-platform smoke: the tree builds and the native suite passes on
-    #  macOS and Windows, on the plain consumer path (`alr build`, no tools/
-    #  generators) that Alire's own crate-index CI also exercises on a pull
-    #  request.  Linux is covered by the action jobs above, so this matrix
-    #  is the evidence for the non-Linux rows of docs/usage/platforms.md.
-    name: Cross-platform build + tests (${{ matrix.os }})
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v7
-      - uses: alire-project/setup-alire@latest
-        with:
-          version: '2.1.1'
-          toolchain: 'gnat_native=16.1.0 gprbuild'
-          cache: true
-      - name: Build and run the native suite
-        shell: bash
-        run: |
-          set -euxo pipefail
-          alr build
-          if [ -x bin/test_runner.exe ]; then
-            ./bin/test_runner.exe
-          elif [ -x bin/test_runner ]; then
-            ./bin/test_runner
-          else
-            echo "::error::test_runner was not built"
-            exit 1
-          fi
-
+  #  The macOS/Windows build matrix used to live here as `platform-build`.
+  #  It now runs in release.yml only: the cross-platform build check is a
+  #  release gate, so an ordinary push or pull request does not pay for the
+  #  two extra runners.  Linux coverage stays with the action jobs above,
+  #  and docs/usage/platforms.md points at the release workflow for the
+  #  non-Linux rows.
   no-spark-off:
     name: SPARK_Mode Off gate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
       - name: Enforce no SPARK_Mode (Off) outside Types.Implementation
-        run: make spark-off-check
+        #  Gates run as plain Python: the runner image ships python3, and
+        #  tools/tasks.py owns the same recipe `just <task>` runs locally, so
+        #  CI needs neither make nor just.
+        run: python3 tools/tasks.py spark-off-check
 
   complexity-gate:
     # Cyclomatic-complexity + LOC gate: fails when a function exceeds the
@@ -124,7 +99,7 @@ jobs:
           toolchain: 'gnat_native=16.1.0 gprbuild'
           cache: true
       - name: Enforce complexity + file-size caps
-        run: make complexity-check
+        run: python3 tools/tasks.py complexity-check
 
   action-parity:
     # Feature gate: the composite action must mirror the base CLI option set
@@ -135,7 +110,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Enforce action/CLI/docs parity
-        run: make action-parity-check
+        run: python3 tools/tasks.py action-parity-check
 
   docs-coverage:
     # Feature gate: the user documentation must cover the base CLI option set,
@@ -147,12 +122,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Enforce documentation coverage
-        run: make docs-coverage-check
+        run: python3 tools/tasks.py docs-coverage-check
 
   version-consistency:
     # Feature gate: the two manifests, the generated Ada version spec, the
     # built binary, and the committed sbom.json must all name the same
-    # version.  make release used to prove the tree before it built the
+    # version.  The release task used to prove the tree before it built the
     # release binary, so the proof pass and every artifact it wrote came
     # from the previous release's binary.  This is the tree-wide backstop.
     name: Version consistency gate
@@ -162,7 +137,7 @@ jobs:
       - name: Enforce one version across every source
         run: |
           python3 tools/gen-version.py --check
-          make version-consistency-check
+          python3 tools/tasks.py version-consistency-check
 
   consumer-run-tests:
     timeout-minutes: 15
@@ -243,12 +218,12 @@ jobs:
           cache: true
       - name: Run coverage gate
         shell: bash
-        run: make coverage-gate
+        run: python3 tools/tasks.py coverage-gate
 
   summary:
     name: CI summary
     if: always()
-    needs: [self-assessment, adacovex-tests, platform-build, no-spark-off, complexity-gate, action-parity, docs-coverage, version-consistency, consumer-run-tests, coverage-gate]
+    needs: [self-assessment, adacovex-tests, no-spark-off, complexity-gate, action-parity, docs-coverage, version-consistency, consumer-run-tests, coverage-gate]
     runs-on: ubuntu-latest
     steps:
       - name: Write CI summary
@@ -256,7 +231,6 @@ jobs:
         env:
           SELF: ${{ needs.self-assessment.result }}
           TESTS: ${{ needs.adacovex-tests.result }}
-          PLATFORM: ${{ needs.platform-build.result }}
           OFFOFF: ${{ needs.no-spark-off.result }}
           COMPLEX: ${{ needs.complexity-gate.result }}
           PARITY: ${{ needs.action-parity.result }}
@@ -274,7 +248,6 @@ jobs:
             echo '|-----|--------|'
             echo "| Self-assessment (all standards) | $SELF |"
             echo "| Build + native tests | $TESTS |"
-            echo "| Cross-platform build + tests | $PLATFORM |"
             echo "| SPARK_Mode Off gate | $OFFOFF |"
             echo "| Complexity gate (no god objects) | $COMPLEX |"
             echo "| Action/CLI/docs parity gate | $PARITY |"
@@ -284,7 +257,7 @@ jobs:
             echo "| Coverage gate (push only) | $GATE |"
             echo ''
           } >> "$GITHUB_STEP_SUMMARY"
-          for R in "$SELF" "$TESTS" "$PLATFORM" "$OFFOFF" "$COMPLEX" "$PARITY" "$DOCS" "$CONSUMER" "$GATE"; do
+          for R in "$SELF" "$TESTS" "$OFFOFF" "$COMPLEX" "$PARITY" "$DOCS" "$VERSION" "$CONSUMER" "$GATE"; do
             if [ "$R" = "failure" ]; then
               FAILED=1
               echo "::error::A CI job failed -- see the failing job logs and its adacovex assessment summary." >&2

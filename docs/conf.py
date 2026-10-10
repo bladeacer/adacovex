@@ -10,7 +10,7 @@
 # Only the Toolchain requires Python.  The adacovex binary itself has no
 # Python or docs dependency; sphinx + myst-parser + furo are dev/toolchain
 # dependencies (docs/../requirements.txt) used by `tools/gen-docs.py`, the
-# `make book` / `book-links-check` targets, and Read the Docs.
+# `just book` / `book-links-check` targets, and Read the Docs.
 #
 # The Furo theme is used (https://github.com/pradyunsg/furo): a clean,
 # modern Sphinx theme.  Furo pulls no web fonts and no images, so the

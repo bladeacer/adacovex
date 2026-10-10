@@ -14,7 +14,7 @@ Running `adacovex` without `--target` now audits the current working
 directory instead of `../Ada_CRDT`. The default target is resolved to an
 absolute path via `Ada.Directories.Current_Directory`.
 
-**Impact:** `make run-self` no longer needs `--target=.`; any directory can
+**Impact:** `just run-self` no longer needs `--target=.`; any directory can
 be audited by simply running adacovex from it. `--target=PATH` still works
 for any other project.
 
@@ -94,7 +94,7 @@ coverage on a git base ref and the current tree (scan + patches + metrics
 only, no GNATprove/tests/DAL), prints a compact table and a machine-parseable
 `coverage_delta: base=.. current=.. regressed=..` line, and exits `1` when
 coverage dropped. Works on base refs that do not commit build artifacts and is mutually
-exclusive with `--compare-base`. `make release` now runs this
+exclusive with `--compare-base`. `just release` now runs this
 docstring-coverage gate comparing the last release tag against the current
 tree and aborts if coverage regressed -- the same PR compliance gate, applied
 between releases.

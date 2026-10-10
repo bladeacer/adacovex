@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Print the binary-size report for `make bench`.
+"""Print the binary-size report for `just bench`.
 
 The old bench recipe counted bytes with GNU-only `stat -c %s` and formatted
 them with inline awk one-liners whose double-quote/backslash escaping broke

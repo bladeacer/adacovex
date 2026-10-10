@@ -154,7 +154,7 @@ release.
 
 The first was the DO-178C traceability criterion. The package spec carries the
 `HLR-SPARK` tag, and no `HLR-SPARK` record existed in
-`docs/compliance/HLR.md`, so `make prove` reported `Orphan HLR tags found in
+`docs/compliance/HLR.md`, so `just prove` reported `Orphan HLR tags found in
 source` and DAL-C, ASIL B, and Class A all read Unmet. The record now exists and
 states the three metrics, the file, folder, and package grouping, and the three
 off classes.
@@ -182,7 +182,7 @@ release that gives the analyser a command.
 - `HLR-MANIFEST` -- unchanged in behaviour. C1 moves the implementation of 19
   helpers out of the parent body into separate bodies in the same package. The
   dependency graph, the SBOM, and the CLI surface are byte-identical; the
-  `make check` gates that cover this package (`complexity-check`,
+  `just check` gates that cover this package (`complexity-check`,
   `description`, `sbom`) pass unchanged.
 - `HLR-BUILD` -- no such tag exists, and none is added. The build profile is a
   developer-facing switch, not an assessed requirement, in the same way

@@ -30,7 +30,7 @@ unknown-but-fuzzy-matching inputs.
 `tools/update-proof-status.py` and `tools/update-test-count.py` previously
 rewrote a hardcoded list of docs, which let stale metrics live in any file
 not on the list (e.g. the `601/601` test count in `alire/long-description.txt`
-re-propagated to every manifest by the next `make description`). Both tools
+re-propagated to every manifest by the next `just description`). Both tools
 now share `tools/live_files.py`, which derives the file set from the tree:
 every text file is scanned except generated outputs (docs/api-docs,
 docs/badges, docs/test_result.md, sbom.json, the generated Ada specs),
@@ -46,15 +46,15 @@ form -- so every number in the docs is anchored to generated artifacts
 (`obj/gnatprove/gnatprove.out` and `docs/test_result.md`) rather than a
 hand-written claim.
 
-### C4: `make check` gate ordering + tree-wide count-sync checks
+### C4: `just check` gate ordering + tree-wide count-sync checks
 
-`make check` now runs cheap static gates first (ascii, spark-off, changelog,
+`just check` now runs cheap static gates first (ascii, spark-off, changelog,
 version source, doc links) so a formatting or sync problem fails before the
 expensive build + SPARK proof, then build / test / prove / doc / sbom, then
 the count-sync checks (`test-count --check`, `proof-status --check`,
 `description --check`) so a stale metric anywhere in the tree fails the gate
 loudly instead of silently drifting into the next release. The README's
-Makefile-targets section, `make help`, and the AGENTS.md table were updated
+Makefile-targets section, `just help`, and the AGENTS.md table were updated
 accordingly.
 
 ### C5: README slimmed (433 lines, was 508)
@@ -73,7 +73,7 @@ The Ken Thompson *Reflections on Trusting Trust* reference, the AI assistance
 disclosure, and the "why should I trust your code" argument moved out of the
 README into `docs/llm-usage.md`, which also documents how LLM agents are
 expected to work on the tree under `AGENTS.md` (match conventions, zero
-library dependency, SPARK discipline, `make check` as the contract,
+library dependency, SPARK discipline, `just check` as the contract,
 regenerate generated files rather than hand-editing them) and how every
 number in the docs is anchored to generated artifacts via the tree-wide sync
 tools rather than a written claim. The README now links to the page.
@@ -113,7 +113,7 @@ the dashboard/JSON-API section directly. The README also now calls out that
 
 ### C10: LLM-usage page expanded
 
-The page gained a "Working in a fork or branch" section (the `make check`
+The page gained a "Working in a fork or branch" section (the `just check`
 workflow as arbiter), a "served dashboard as a trust surface" section, and
 an "honest limits" section (presence vs accuracy, SPARK-proof bar,
 changelog validator) -- all anchored to the same gates and artifacts as the
@@ -123,7 +123,7 @@ rest of the docs.
 
 `tools/gen-version.py` and `tools/gen-dashboard.py` now compare the
 generated output against the committed file and skip the write (printing
-"up to date") when byte-identical, so `make build` no longer touches
+"up to date") when byte-identical, so `just build` no longer touches
 two generated files on every run -- `git status` stays quiet and the build
 output is shorter.
 
@@ -143,7 +143,7 @@ bundled dashboard template package (`Adacovex.Dashboard_Template`, a String
 constant generated from `resources/dashboard.html`) adds one analysed unit
 with no proof obligations; the CLI config parser (including the
 `Unknown_No_Suggest` field), VCS, and man-page packages are non-SPARK I/O
-code and add no proof obligations. Proven with `make prove` under gnatprove
+code and add no proof obligations. Proven with `just prove` under gnatprove
 16.1.0 (`--steps=10000`).
 
 ## Traceability

@@ -34,13 +34,13 @@ adacovex follows one version across every delivery channel, and each channel is
 version-locked to the same release:
 
 - **Single source of truth**: the `version` field in `alire.toml` /
-`alire-dev.toml` is the single source, resolved by installation method. `tools/gen-version.py` regenerates `src/adacovex_version_info.ads` at build time (and `make bump-version`). It reads the first available of `ADACOVEX_VERSION` (release builds), `alire-dev.toml` (source checkouts), or `alire.toml` (dependency-managed installs). For dependency-managed installs, the published crate builds from its release manifest, so the toml associated with the covex binary for dependency management carries the version. `Adacovex. Version` in `src/adacovex.ads` re-exports the version.
+`alire-dev.toml` is the single source, resolved by installation method. `tools/gen-version.py` regenerates `src/adacovex_version_info.ads` at build time (and `just bump-version`). It reads the first available of `ADACOVEX_VERSION` (release builds), `alire-dev.toml` (source checkouts), or `alire.toml` (dependency-managed installs). For dependency-managed installs, the published crate builds from its release manifest, so the toml associated with the covex binary for dependency management carries the version. `Adacovex. Version` in `src/adacovex.ads` re-exports the version.
 
-As a result, `--version`, the man page, the SBOM tool version, and the result-cache namespace all derive from the manifest and can never drift. Release builds bundle the release tag instead via the `ADACOVEX_VERSION` environment variable (release workflow / `make release`).
+As a result, `--version`, the man page, the SBOM tool version, and the result-cache namespace all derive from the manifest and can never drift. Release builds bundle the release tag instead via the `ADACOVEX_VERSION` environment variable (release workflow / `just release`).
 
 A version reaches four places -- the two manifests, the generated Ada constant the binary compiles, the built binary itself, and the committed `sbom.json` -- and each one derives from a different source, so they can drift apart. The SBOM shows the split most clearly: its `metadata.tools` version comes from the binary that wrote the file, while its root component version is read from the manifest.
 
-`make release` therefore builds the release binary first and checks that `bin/adacovex --version` reports the tag before it proves anything, because every later step shells out to that binary. Proving first would prove the previous release's build, and every artifact that pass writes would carry the old version. The tree-wide backstop is `make version-consistency-check` (`tools/check-version-consistency.py`), wired into `make check`: it fails when a manifest, the version spec, the binary, or the committed SBOM names a different version. A check that needs a build product is skipped when that product is absent, so the gate is meaningful in a fresh checkout.
+`just release` therefore builds the release binary first and checks that `bin/adacovex --version` reports the tag before it proves anything, because every later step shells out to that binary. Proving first would prove the previous release's build, and every artifact that pass writes would carry the old version. The tree-wide backstop is `just version-consistency-check` (`tools/check-version-consistency.py`), wired into `just check`: it fails when a manifest, the version spec, the binary, or the committed SBOM names a different version. A check that needs a build product is skipped when that product is absent, so the gate is meaningful in a fresh checkout.
 
 - **CI is tied to the release version**: the GitHub Actions composite action
 (`action.yml`) is version-matched to the adacovex binary. The release workflow bundles `adacovex-vX. Y. Z.tar.gz` and `adacovex-action-vX.
@@ -61,7 +61,7 @@ Y. Z` runs that exact version). Floating tags (`vMAJOR`, `vMAJOR. MINOR`, `lates
 The Alire GNAT toolchain's bundled `ld` (2.44) emits a benign message
 (`error in ...(.sframe); no .sframe will be created`) when it reads the
 `.sframe` section that newer system binutils wrote into the glibc startup
-objects. The link still succeeds. `make build` filters only this one message;
+objects. The link still succeeds. `just build` filters only this one message;
 all compiler and gnatprove warnings remain fully visible, so nothing real is
 ever suppressed.
 

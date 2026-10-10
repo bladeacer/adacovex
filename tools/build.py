@@ -27,7 +27,7 @@ Steps, in order:
    crate alias), so both names resolve to the freshly built binary.
 
 `--release` selects the release profile and is the single build entry point
-for `make release`, so a release build runs exactly the same regeneration
+for `just release`, so a release build runs exactly the same regeneration
 steps (version spec, CSS gate, dashboard, bundled manual) as a dev build.  A
 release build that skipped them could ship a binary whose bundled dashboard
 or offline manual predates the source that produced it.
@@ -158,7 +158,7 @@ def build(release: bool = False) -> int:
 def parse_args(argv: List[str]) -> argparse.Namespace:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--release", action="store_true",
-                    help="build the release profile (what `make release` uses)")
+                    help="build the release profile (what `just release` uses)")
     return ap.parse_args(argv)
 
 

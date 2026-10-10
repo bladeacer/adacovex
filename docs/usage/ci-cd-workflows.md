@@ -31,9 +31,16 @@ This page covers the GitHub Actions workflows, the Markdown summaries and loud f
     job failed.
 - **`.github/workflows/pr-check.yml`** -- runs `--coverage-delta` against
   `pull_request.base.sha` to fail PRs that drop docstring coverage.
-- **`.github/workflows/release.yml`** -- on a `v*` tag, builds the release
-  binary, runs GNATprove, validates the `--standard=all` self-assessment, and
-  publishes the GitHub Release (see [Release bundling](#release-bundling)).
+- **`.github/workflows/release.yml`** -- on a `v*` tag, first runs the
+  `platform-build` matrix (a plain `alr build` plus the native suite on
+  macOS and Windows; the cross-platform check runs only at release time and
+  gates the publish), then builds the release binary, runs GNATprove,
+  validates the `--standard=all` self-assessment, and publishes the GitHub
+  Release (see [Release bundling](#release-bundling)).
+
+Every gate job runs as plain Python (`python3 tools/tasks.py <gate>`), the
+same recipe `just <gate>` runs locally. The Ubuntu runner images ship
+`python3`, so no `make` or `just` has to exist on the runner.
 
 ### Markdown summaries and loud failures
 
@@ -110,7 +117,7 @@ The action's build step sets `ADACOVEX_VERSION` (from `github.ref_name`). It reg
 
 The download step of the published action verifies this with `adacovex
 --version` after unpacking the release bundle. Maintainers reproduce the
-release locally with `make release VERSION=x.y.z` (see the
+release locally with `just release VERSION=x.y.z` (see the
 [developer guide](../contributing/developer-guide.md)); a normal source build
 reads the version from `alire-dev.toml` instead.
 

@@ -10,7 +10,7 @@ the tools' zero-dependency rule:
 The tests exercise the pure logic of the orchestration scripts --
 ascii-check, coverage-gate, dev-cmd, release, run and versions -- against
 temporary directories / throwaway git repositories.  Filesystem-heavy
-subprocess orchestration (build.py, bench.py) is exercised by `make check`
+subprocess orchestration (build.py, bench.py) is exercised by `just check`
 itself rather than duplicated here.
 
 Exit code 0 when every test passes.
@@ -90,6 +90,28 @@ def write_manifest(path: Path, version: str) -> None:
                     encoding="utf-8")
 
 
+def write_fake_binary(binary: Path, line: str, rc: int = 0) -> None:
+    """Write a runnable stub at `binary` that prints `line` and exits `rc`.
+
+    Windows cannot execute a POSIX shebang script, and both version gates
+    probe a `.cmd` launcher next to the plain binary name, so the stub is a
+    `.cmd` there -- the same shape a Windows consumer run uses.
+    """
+    binary.parent.mkdir(parents=True, exist_ok=True)
+    if os.name == "nt":
+        stub = binary.with_name(binary.name + ".cmd")
+        stub.write_text(
+            "@echo off\r\n"
+            f"echo {line}\r\n"
+            f"exit /b {rc}\r\n",
+            encoding="utf-8",
+        )
+        return
+    binary.write_text(f"#!/bin/sh\necho '{line}'\nexit {rc}\n",
+                      encoding="utf-8")
+    binary.chmod(0o755)
+
+
 class TestRst2Md(unittest.TestCase):
     """rst2md sanitisation keeps generated api-docs pure ASCII."""
 
@@ -110,7 +132,9 @@ class TestAsciiCheck(unittest.TestCase):
 
     def test_ascii_file_passes(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            Path(tmp, "a.md").write_text("pure ascii\n", encoding="utf-8")
+            #  Write bytes, not text: Path.write_text translates \n to \r\n on
+            #  Windows, and a carriage return is a violation by design.
+            Path(tmp, "a.md").write_bytes(b"pure ascii\n")
             self.assertEqual(ascii_check.bad_files(Path(tmp)), [])
 
     def test_non_ascii_detected(self) -> None:
@@ -222,7 +246,12 @@ class TestRelease(unittest.TestCase):
 
         dist = self._root / "dist"
         self.assertTrue((dist / "adacovex").is_file())
-        self.assertTrue((dist / "covex").is_symlink())
+        #  Windows refuses a symlink without elevation, so the bundler falls
+        #  back to a byte-for-byte copy: either form must be there, and both
+        #  must carry the binary's bytes.
+        alias = dist / "covex"
+        self.assertTrue(alias.is_file())
+        self.assertEqual(alias.read_bytes(), (dist / "adacovex").read_bytes())
         self.assertTrue((dist / "install.sh").is_file())
         self.assertTrue((dist / "THIRD_PARTY_NOTICES.md").is_file())
         with tarfile.open(self._root / "adacovex-v1.2.3.tar.gz", "r:gz") as tar:
@@ -235,13 +264,8 @@ class TestRelease(unittest.TestCase):
 
     def _fake_binary(self, version: str, rc: int = 0) -> None:
         """Write a bin/adacovex stub that reports `version` like the real one."""
-        (self._root / "bin").mkdir(exist_ok=True)
-        (self._root / "bin" / "adacovex").write_text(
-            "#!/bin/sh\n"
-            f"if [ \"$1\" = \"--version\" ]; then echo 'adacovex v{version}'; "
-            f"exit {rc}; fi\n"
-            "exit 1\n", encoding="utf-8")
-        (self._root / "bin" / "adacovex").chmod(0o755)
+        write_fake_binary(self._root / "bin" / "adacovex",
+                          f"adacovex v{version}", rc)
 
     def test_verify_binary_version_match(self) -> None:
         self._fake_binary("1.2.3")
@@ -282,7 +306,7 @@ class TestRelease(unittest.TestCase):
         self.assertEqual(seen["env"]["ADACOVEX_VERSION"], "1.2.3")
 
     def test_release_builds_before_proving(self) -> None:
-        # make release proved the tree before it built the release binary,
+        # just release proved the tree before it built the release binary,
         # so the proof pass ran the previous release's binary.  Pin the
         # order: build, verify, then prove.
         order: List[str] = []
@@ -309,7 +333,7 @@ class TestRelease(unittest.TestCase):
 
 
 class ReleaseTagTests(unittest.TestCase):
-    """The tag step of `make release`, which is where a late failure lands.
+    """The tag step of `just release`, which is where a late failure lands.
 
     The commit and tag step runs last, so a failure anywhere before it leaves
     the previous attempt's tag behind.  Re-running therefore has to be
@@ -487,7 +511,7 @@ class ReleaseTagTests(unittest.TestCase):
 class SyncToolCheckModeTests(unittest.TestCase):
     """`--check` must never write.
 
-    These tools are invoked as `make check` gates in check mode, where they
+    These tools are invoked as `just check` gates in check mode, where they
     are expected to *report* drift rather than repair it.  A tool that quietly
     started writing in check mode would turn a gate into a silent repair: the
     run goes green, the tree moves, and the commit ends up holding an artefact
@@ -591,7 +615,7 @@ class TestVersionConsistency(unittest.TestCase):
         self.assertEqual(check_version.check("1.2.3"), [])
 
     def test_unbuilt_binary_is_skipped(self) -> None:
-        # The gate must be meaningful in a fresh checkout before make build.
+        # The gate must be meaningful in a fresh checkout before `just build`.
         self._write("1.2.3")
         self.assertIsNone(check_version.binary_version())
         self.assertEqual(check_version.check("1.2.3"), [])
@@ -608,9 +632,7 @@ class TestVersionConsistency(unittest.TestCase):
 
     def test_stale_binary(self) -> None:
         self._write("1.2.3")
-        (self._root / "bin" / "adacovex").write_text(
-            "#!/bin/sh\necho 'adacovex v1.2.2'\n", encoding="utf-8")
-        (self._root / "bin" / "adacovex").chmod(0o755)
+        write_fake_binary(self._root / "bin" / "adacovex", "adacovex v1.2.2")
         problems = check_version.check("1.2.3")
         self.assertTrue(any("is stale" in p for p in problems))
 
@@ -618,7 +640,7 @@ class TestVersionConsistency(unittest.TestCase):
         # The exact defect the committed 1.54.0 tree carried.
         self._write("1.2.3", sbom_tool="1.2.2")
         problems = check_version.check("1.2.3")
-        self.assertTrue(any("make sbom" in p for p in problems))
+        self.assertTrue(any("just sbom" in p for p in problems))
 
     def test_sbom_internal_disagreement(self) -> None:
         self._write("1.2.3", sbom_root="1.2.2")
@@ -678,12 +700,28 @@ class TestDevCmd(unittest.TestCase):
         alire.mkdir()
         (alire / "settings.toml").write_text("old\n", encoding="utf-8")
 
+    def _helper(self, body: str) -> str:
+        """A Python one-shot the platform shell can run on any host."""
+        helper = self._root / "helper.py"
+        helper.write_text(body, encoding="utf-8")
+        return f'"{sys.executable}" "{helper}"'
+
     def test_swap_and_restore(self) -> None:
         self._seed()
         out = self._root / "seen.txt"
+        # Drive the command through Python: swap_and_run uses the platform
+        # shell, and a `cat`/`>` chain is POSIX-only -- the test must mean
+        # the same thing on Windows and on Linux.
         rc = dev_cmd.swap_and_run(
-            f"cat alire.toml > {out}; echo changed > alire/settings.toml; "
-            "echo extra > alire/new.txt")
+            self._helper(
+                "from pathlib import Path\n"
+                "Path('seen.txt').write_text("
+                "Path('alire.toml').read_text(encoding='utf-8'), "
+                "encoding='utf-8')\n"
+                "Path('alire/settings.toml').write_text('changed\\n', "
+                "encoding='utf-8')\n"
+                "Path('alire/new.txt').write_text('extra\\n', encoding='utf-8')\n"
+            ))
         self.assertEqual(rc, 0)
         # The command saw the dev manifest...
         self.assertEqual(out.read_text(encoding="utf-8"), "dev\n")
@@ -696,7 +734,8 @@ class TestDevCmd(unittest.TestCase):
 
     def test_failure_still_restores(self) -> None:
         self._seed()
-        rc = dev_cmd.swap_and_run("echo boom > /dev/null; exit 3")
+        rc = dev_cmd.swap_and_run(
+            f'"{sys.executable}" -c "raise SystemExit(3)"')
         self.assertEqual(rc, 3)
         self.assertEqual((self._root / "alire.toml").read_text(encoding="utf-8"),
                          "regular\n")
@@ -705,7 +744,9 @@ class TestDevCmd(unittest.TestCase):
     def test_created_alire_left_when_none_existed(self) -> None:
         (self._root / "alire.toml").write_text("regular\n", encoding="utf-8")
         (self._root / "alire-dev.toml").write_text("dev\n", encoding="utf-8")
-        rc = dev_cmd.swap_and_run("mkdir -p alire")
+        rc = dev_cmd.swap_and_run(
+            f'"{sys.executable}" -c "from pathlib import Path; '
+            "Path('alire').mkdir()\"")
         self.assertEqual(rc, 0)
         self.assertEqual((self._root / "alire.toml").read_text(encoding="utf-8"),
                          "regular\n")
@@ -1948,7 +1989,7 @@ class TestCheckDocs(unittest.TestCase):
 
     def test_loc_cap_fails_without_marker(self) -> None:
         # The cap is a hard gate: an over-cap page with no opt-out is an error,
-        # so `make docs-check` fails rather than printing a warning nobody acts
+        # so `just docs-check` fails rather than printing a warning nobody acts
         # on.  The message names the marker a dated record can add instead.
         with tempfile.TemporaryDirectory() as tmp:
             errors, err = self._check(tmp, "# Page\n\n" + "- bullet\n" * 260)
@@ -2268,7 +2309,7 @@ class TestCheckBookLinks(unittest.TestCase):
         # local, gitignored product): a stale local build must never mask a
         # broken link.  Requires sphinx-build, exactly like the gate itself.
         #
-        # `make check` builds the manual twice -- once for the
+        # `just check` builds the manual twice -- once for the
         # book-links-check gate and once here -- and a full Sphinx build was
         # the most expensive thing in the gate list (measured 17.6-31.8 s for
         # the gate and 18.57 s for this case).  Both now go through

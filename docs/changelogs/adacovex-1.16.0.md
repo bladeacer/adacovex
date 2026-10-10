@@ -48,8 +48,8 @@ Text_IO`, which is `SPARK_Mode Off`), gnatprove skips the I/O bodies by design a
 The Ada_CRDT dogfood target proves the mechanism end to end: its
 `.adacovex/patches/demo/deps/vt100/vt100.ads` now declares `SPARK_Mode =>
 On` on the vendored package and pins the `Scroll_Screen (From, To)`
-scroll-region contract, and both `make run-ada-crdt` and Ada_CRDT's own
-`make prove` run through the patched copy, preserving the target's proof
+scroll-region contract, and both `just run-ada-crdt` and Ada_CRDT's own
+`just prove` run through the patched copy, preserving the target's proof
 (576 VCs, Platinum, DAL-C, 0 unproved). The merge engine is covered by the
 new `Proof patches` test category (C3). The patched-tree design and the
 patch file format are documented in the new *Proof patches: SPARK contracts
@@ -105,8 +105,8 @@ adds 24 tests (new category) and the C3 `Proof patches` category adds 35
 (new category) -- the only test changes; the SVG renderer category stays at
 161. All other changes (C1/C2) add aspects and contracts without changing
 behaviour. The regenerated `docs/badges/*.svg` geometry is unchanged and the
-`make run-ada-crdt` dogfood regression still passes. Counts synced with
-`make test-count`.
+`just run-ada-crdt` dogfood regression still passes. Counts synced with
+`just test-count`.
 
 ## Proof Results
 
@@ -118,12 +118,12 @@ with its path-to-route postcondition) and the newly analysed units
 45 data-dependency checks, 4 initialization checks, and 78 termination
 checks, all proved. 0 unproved, 0 justified; the I/O- and container-heavy
 `prove_patch` bodies stay default-off, so gnatprove analyses only the
-SPARK-clean helpers, exactly as before. Proven with `make prove` under
+SPARK-clean helpers, exactly as before. Proven with `just prove` under
 gnatprove 16.1.0 (`--steps=10000`).
 
 ## Traceability
 
-No new HLRs. The proof-patch machinery extends the existing `HLR-PROVE` tag (`src/core/adacovex-prove_patch.ads`/`.adb` alongside `adacovex-prove`), covered by the C3 merge-engine tests and the Ada_CRDT dogfood regression (`make run-ada-crdt`), and documented in the new `docs/proving.md` guide, `docs/architecture.md`, and AGENTS.md. The C4 documentation changes are documentation-only (new `proving.md` page, README/AGENTS.md link tables, CLI-reference and sbom.md coverage) and carry no HLR tags. The C2 route mapping extends `HLR-SERVER` / `LLR-SERVER-01`: `Route` is the single pure mapping behind every `/`, `/badge/*.svg`, and `/api/metrics` route that `Handle_Request` serves, pinned by the C2 `Server routing` tests and proved by its postcondition.
+No new HLRs. The proof-patch machinery extends the existing `HLR-PROVE` tag (`src/core/adacovex-prove_patch.ads`/`.adb` alongside `adacovex-prove`), covered by the C3 merge-engine tests and the Ada_CRDT dogfood regression (`just run-ada-crdt`), and documented in the new `docs/proving.md` guide, `docs/architecture.md`, and AGENTS.md. The C4 documentation changes are documentation-only (new `proving.md` page, README/AGENTS.md link tables, CLI-reference and sbom.md coverage) and carry no HLR tags. The C2 route mapping extends `HLR-SERVER` / `LLR-SERVER-01`: `Route` is the single pure mapping behind every `/`, `/badge/*.svg`, and `/api/metrics` route that `Handle_Request` serves, pinned by the C2 `Server routing` tests and proved by its postcondition.
 
 None of the changes introduce new high-level requirements; the two new test categories extend the coverage of the existing `HLR-PROVE` and `HLR-SERVER` tags.
 

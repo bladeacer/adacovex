@@ -53,7 +53,7 @@ The **Dependencies** tab gains a second view: **Tree** (default) vs
 **Diagram (nomnoml)**. The diagram is rendered with vendored
 [nomnoml 1.7.0](https://github.com/skanaar/nomnoml) (MIT, `resources/nomnoml.js`, 71 KB) plus its layout engine [graphre 0.1.3](https://github.com/cytoscape/graphre) (MIT, `resources/graphre.js`, 38 KB, inlined before nomnoml as `global.graphre`). Without graphre, `nomnoml.draw` throws `graphlib is undefined` (the UMD wrapper `require('graphre')` expects `global.graphre`). Both are inlined into the single-file dashboard template so the diagram works offline. `ADACOVEX_GRAPH` (injected as `__GRAPH_JSON__` by the Ada renderer) is converted to nomnoml source (`[parent]-->[child]` edges, `#direction: right`, plus a legend note) and drawn via `nomnoml.draw(canvas, src)`. The view switch is persisted in `localStorage` (`adacovex-dep-view`) and hash-routed, with **Re-render** and **Download PNG** buttons.
 
-Scope checkboxes filter both views (tree hides nodes via `data-scope`, diagram re-renders from the filtered set after `filterByScope()`). Control characters (`\x01`) in the vendored graphre bundle are sanitized to `\x01` escapes so the Ada template remains pure ASCII and `make ascii-check` passes. Credits and license updated in `docs/THIRD_PARTY_NOTICES.md`.
+Scope checkboxes filter both views (tree hides nodes via `data-scope`, diagram re-renders from the filtered set after `filterByScope()`). Control characters (`\x01`) in the vendored graphre bundle are sanitized to `\x01` escapes so the Ada template remains pure ASCII and `just ascii-check` passes. Credits and license updated in `docs/THIRD_PARTY_NOTICES.md`.
 
 ### C5: Vendor FlexSearch for dashboard search indexing and responsive layout
 
@@ -79,7 +79,7 @@ assets in addition to `.adacovex/patches/*.ads`. Each `charts.min.css`,
 `adacovex --target=.` (and `--emit-metrics` / `/api/deps`) now lists the
 vendored JS/CSS that the dashboard inlines. The dashboard's scope pie and
 its filter checkboxes therefore show vendored vs dev vs transitive vs base
-correctly, and `make check` can gate on vendored presence. The result-cache
+correctly, and `just check` can gate on vendored presence. The result-cache
 schema is bumped `s3` -> `s4` so stale graphs without vendored assets are
 never served.
 
@@ -88,7 +88,7 @@ never served.
 ### H1: Dashboard served valid HTML again and nomnoml no longer throws
 
 Covered by C1: the duplicated `</style>` that caused the vendored CSS to be
-rendered as text is removed. `make ascii-check` and `tools/gen-dashboard.py
+rendered as text is removed. `just ascii-check` and `tools/gen-dashboard.py
 --check` both pass; the served page at `http://127.0.0.1:8080/` now shows
 styled cards, not raw CSS. Covered by C4: vendored `graphre.js` is now
 inlined before `nomnoml.js` so `nomnoml.draw` no longer throws

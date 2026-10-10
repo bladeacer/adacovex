@@ -26,7 +26,7 @@
   | CPU and jobs                             |  24 | PASS     |
   | HLR/LLR parsing                          |  33 | PASS     |
   | Completion scripts                       |  24 | PASS     |
-  | Platform paths                           |  41 | PASS     |
+  | Platform paths                           |  44 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 1815  Failed: 0
+  Passed: 1818  Failed: 0

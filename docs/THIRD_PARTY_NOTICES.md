@@ -107,21 +107,21 @@ The hosting provider injects its own link-preview popup, its analytics, and its 
 
 | Component | Version | Licence | Used for |
 |-----------|---------|---------|----------|
-| [Playwright](https://github.com/microsoft/playwright) | test dependency | Apache-2.0 | End-to-end dashboard layout tests (`make e2e`) |
+| [Playwright](https://github.com/microsoft/playwright) | test dependency | Apache-2.0 | End-to-end dashboard layout tests (`just e2e`) |
 
 [Playwright](https://github.com/microsoft/playwright) is a development dependency of the e2e fixture (`tests/e2e/package.json`, `devDependencies`). It runs automated browser tests of the dashboard. adacovex classifies it as a **test** dependency: the package name `@playwright/test` carries the test label. It is not vendored or redistributed with adacovex releases.
 
 ## Performance-engineering tools
 
 These tools profile adacovex during development. adacovex does not
-redistribute or depend on any of them; `make bench` and `make perf-bench`
+redistribute or depend on any of them; `just bench` and `just perf-bench`
 degrade gracefully when they are missing.
 
 | Component | Website / source | Licence | Used for |
 |-----------|------------------|---------|----------|
-| [perf](https://perfwiki.github.io/main/) (Linux `tools/perf`) | [kernel.org](https://www.kernel.org/) (shipped with the [Linux kernel](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/)) | GPL-2.0 | CPU profiling and hardware-counter sampling (`make perf-bench`: cache-miss rates, per-symbol wall clock) |
-| [strace](https://strace.io/) | [github.com/strace/strace](https://github.com/strace/strace) | LGPL-2.1-or-later | Syscall tracing of warm/cold runs (`make perf-bench`: the `newfstatat`/`openat`/`getdents64` profiles that drove the walk-skip and stamp-store work) |
-| [hyperfine](https://github.com/sharkdp/hyperfine) | [github.com/sharkdp/hyperfine](https://github.com/sharkdp/hyperfine) | Apache-2.0 OR MIT | Statistical command benchmarking (`make bench`: cold/warm pipeline and prove timings with mean +/- sigma) |
+| [perf](https://perfwiki.github.io/main/) (Linux `tools/perf`) | [kernel.org](https://www.kernel.org/) (shipped with the [Linux kernel](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/)) | GPL-2.0 | CPU profiling and hardware-counter sampling (`just perf-bench`: cache-miss rates, per-symbol wall clock) |
+| [strace](https://strace.io/) | [github.com/strace/strace](https://github.com/strace/strace) | LGPL-2.1-or-later | Syscall tracing of warm/cold runs (`just perf-bench`: the `newfstatat`/`openat`/`getdents64` profiles that drove the walk-skip and stamp-store work) |
+| [hyperfine](https://github.com/sharkdp/hyperfine) | [github.com/sharkdp/hyperfine](https://github.com/sharkdp/hyperfine) | Apache-2.0 OR MIT | Statistical command benchmarking (`just bench`: cold/warm pipeline and prove timings with mean +/- sigma) |
 
 The design of the persistent stat-stamp store (1.44.0) was informed by
 two projects studied for their incremental-processing techniques; neither
@@ -140,7 +140,7 @@ modified within the same second as the record: [git](https://git-scm.com/)
 ## Acknowledgments
 
 - The Ada_CRDT audit target (`../Ada_CRDT`) is used solely as a dogfood target.
-- gnatdoc (for `make doc`), gnatformat (for `make fmt`), Alire (`alr`), and Playwright (for `make e2e`) are external tools. They are used during development only.
+- gnatdoc (for `just doc`), gnatformat (for `just fmt`), Alire (`alr`), and Playwright (for `just e2e`) are external tools. They are used during development only.
 
 Full licence texts are available at:
 - [GPL-3.0-or-later](https://www.gnu.org/licenses/gpl-3.0.html)

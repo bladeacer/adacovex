@@ -297,4 +297,21 @@ package body Adacovex.Paths is
       return Path (Path'First .. Last);
    end Strip_Trailing_Separators;
 
+   function Display (Path : String) return String is
+      --  The working copy is bounded by the parameter, so the loop below
+      --  rewrites each element in place and the length post holds for both
+      --  return paths (the untouched parameter and the rewritten copy).
+      Result : String (Path'First .. Path'Last) := Path;
+   begin
+      if GNAT.OS_Lib.Directory_Separator /= '\' then
+         return Path;
+      end if;
+      for I in Result'Range loop
+         if Result (I) = '\' then
+            Result (I) := '/';
+         end if;
+      end loop;
+      return Result;
+   end Display;
+
 end Adacovex.Paths;

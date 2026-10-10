@@ -94,8 +94,8 @@ spark-coverage flags and the gate.
 
 The tree gains `docs/tldr/adacovex.md`: one-page quick-start examples for the
 main workflows, written in the tldr pages format. `tools/check-tldr.py` lints
-the page against the tldr style rules, and `make tldr-check` runs it as a gate
-inside `make check`. The page is reachable from the docs index and named in
+the page against the tldr style rules, and `just tldr-check` runs it as a gate
+inside `just check`. The page is reachable from the docs index and named in
 the CLI reference.
 
 ### C6: The retired archive is removed from the docs tree
@@ -151,7 +151,7 @@ the same short-circuit, so only a re-prove of an already-failed tree reaches
 it. This release's own proof campaign did exactly that after a degraded run
 and exposed it.
 
-### H2: `make prove` runs with no gnatprove warnings, and the fix costs no checks
+### H2: `just prove` runs with no gnatprove warnings, and the fix costs no checks
 
 A clean proof session on this tree printed seven `warning: initialization of
 "X" has no effect` messages. Every one named a declaration whose initial value
@@ -218,13 +218,13 @@ current ones), each rewritten against its own historical VC form rather than
 against the current number, so one pass corrected every past value. The test
 count stays, because `require-tests` gates on it and it tracks the suite.
 
-`make description CHECK=1` is the gate that keeps this true, and it is already
-wired into `make check`. Two files record the rule so it is not undone: AGENTS.md
+`just description CHECK=1` is the gate that keeps this true, and it is already
+wired into `just check`. Two files record the rule so it is not undone: AGENTS.md
 places the VC count in the docs and the proof ledger only, and the docstring of
 `tools/live_files.py` no longer justifies scanning the manifests by the very
 phrase it removed.
 
-### H4: `make check` formats before it gates
+### H4: `just check` formats before it gates
 
 `fmt` ran eighteenth in the gate list, immediately before `build`. Everything
 upstream of it therefore validated unformatted code, which is the wrong order
@@ -233,19 +233,19 @@ that must see formatted text, and it did -- but every static gate above it
 checked a tree the formatter had not yet visited.
 
 The order also left the generated API docs describing whatever formatting
-`make doc` happened to find, because `doc` renders `docs/api-docs/` from the
+`just doc` happened to find, because `doc` renders `docs/api-docs/` from the
 Ada sources and ran long after the gates that had read the tree.
 
 `fmt` now runs first, ahead of every other gate, so every gate that follows
 judges the formatted tree. The ordering is verified rather than assumed: a
 deliberately misformatted declaration was injected into
 `src/core/adacovex-config.adb`, and the full gate run restored it byte for byte
-before the second gate started, then passed with the proof clean. `make fmt` is
+before the second gate started, then passed with the proof clean. `just fmt` is
 idempotent, so a second run is a no-op.
 
-### H5: The bundled manual spec is no longer formatted, so `make check` reaches a fixed point
+### H5: The bundled manual spec is no longer formatted, so `just check` reaches a fixed point
 
-Running `make check` and then `make fmt` and `make doc` again left the tree
+Running `just check` and then `just fmt` and `just doc` again left the tree
 dirty, and the bundled manual spec changed on every pass. Two generators and
 the formatter disagreed about the same file: `tools/gen-docs.py` writes
 `src/adacovex-docs_template.ads` in its own layout, `gnatformat` rewrites the
@@ -255,18 +255,18 @@ file stale and rewrite it, and the next `fmt` mangled it again -- 50 484
 differing lines between the two layouts, 2.3 s spent reformatting 26 057 lines
 of machine-written data on every gate run.
 
-`make fmt` no longer formats the three generated specs. `gnatformat` has no
+`just fmt` no longer formats the three generated specs. `gnatformat` has no
 exclusion flag, so `fmt` passes it an explicit 187-file source list and skips
 `adacovex_version_info.ads`, `adacovex-dashboard_template.ads` and
 `adacovex-docs_template.ads`, named in a `GENERATED_SPECS` variable. The
 hand-written `adacovex-docs_template.adb` is deliberately still formatted. This
-is the same exclusion `make doc` already applies to generated API pages: a file
+is the same exclusion `just doc` already applies to generated API pages: a file
 nobody hand-edits should not be reformatted into disagreement with the tool
 that writes it.
 
 Drift detection is unaffected, which was the thing worth checking: with the file
 in the mangled state, `tools/gen-docs.py --check` still exits 1 and reports it
-stale. The fix was measured end to end -- after a full `make check`, three
+stale. The fix was measured end to end -- after a full `just check`, three
 further `fmt` and `doc` cycles left both the file's checksum and `git status`
 unchanged.
 
@@ -285,7 +285,7 @@ JSON report form, and the coverage-gate arithmetic. Server routing gains one
 check for the `/api/spark` dispatch. The end-to-end CLI suite gains checks for
 the spark-coverage flags and the coverage gate.
 
-`make test` runs the native suite, `make cli-e2e` runs the end-to-end suite,
+`just test` runs the native suite, `just cli-e2e` runs the end-to-end suite,
 and both pass on this tree.
 
 ## Proof Results

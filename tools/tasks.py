@@ -23,7 +23,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Callable, Dict, List, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 ROOT: Path = Path(__file__).resolve().parent.parent
 PY: str = sys.executable
@@ -74,7 +74,20 @@ def task_test() -> int:
     exe = ROOT / "bin" / "test_runner"
     if os.name == "nt" and (ROOT / "bin" / "test_runner.exe").exists():
         exe = ROOT / "bin" / "test_runner.exe"
-    return run([str(exe)])
+    rc = run([str(exe)])
+    #  GNAT's Text_IO terminates lines with CRLF on Windows, but the report
+    #  is a tracked LF-only artifact (.gitattributes eol=lf) and the ASCII
+    #  gate rejects carriage returns: normalise both copies to LF here, so
+    #  `test` leaves the tree in the state the gates expect on every host.
+    for rel in ("test_result.md", "docs/test_result.md"):
+        p = ROOT / rel
+        try:
+            data = p.read_bytes()
+        except OSError:
+            continue
+        if b"\r\n" in data:
+            p.write_bytes(data.replace(b"\r\n", b"\n"))
+    return rc
 
 
 def task_prove() -> int:
@@ -101,15 +114,25 @@ def task_fmt() -> int:
 
 
 def task_doc() -> int:
+    #  Create the staging directory from Python: the command below runs
+    #  through the platform shell, and `mkdir -p` would make cmd.exe create
+    #  a literal `-p` directory on Windows.
+    (ROOT / "obj").mkdir(exist_ok=True)
     cmd = (
-        "mkdir -p obj && "
         "alr exec -- gnatdoc -P adacovex.gpr --backend=rst "
         "--generate private --output-dir=obj/gnatdoc-rst && "
-        "python3 tools/rst2md.py obj/gnatdoc-rst docs/api-docs "
-        "--prune-test-pages && "
-        "rm -f docs/api-docs/test_*.md docs/api-docs/adacovex-test_support.md"
+        f'"{PY}" tools/rst2md.py obj/gnatdoc-rst docs/api-docs '
+        "--prune-test-pages"
     )
-    return py("tools/dev-cmd.py", cmd)
+    rc = py("tools/dev-cmd.py", cmd)
+    if rc != 0:
+        return rc
+    #  The pages rst2md prunes by name only, dropped after the conversion
+    #  the same way the old `rm -f` did.
+    for pattern in ("test_*.md", "adacovex-test_support.md"):
+        for page in (ROOT / "docs" / "api-docs").glob(pattern):
+            page.unlink()
+    return 0
 
 
 def task_book() -> int:
@@ -371,56 +394,149 @@ def task_e2e() -> int:
     return rc if rc != 0 else run(["pnpm", "--dir", "tests/e2e", "test"])
 
 
+#  ------------------------------------------------------------------
+#  Gate preflights.  A gate whose tool is missing on this host is SKIPped
+#  with the reason instead of failing: a missing tool says nothing about
+#  the tree, while a failing gate does.  Each returns None when the gate
+#  can run, or the reason to skip it.
+#  ------------------------------------------------------------------
+
+
+def skip_without_alr() -> Optional[str]:
+    """SKIP reason for the gates that drive the Alire toolchain."""
+    return None if shutil.which("alr") else "alr is not on PATH"
+
+
+def _skip_missing_dev_tool(tool: str) -> Optional[str]:
+    """SKIP reason for a gate that needs a dev-manifest binary.
+
+    gnatformat and gnatdoc are binary crates of `alire-dev.toml`, so they
+    are on PATH only through the manifest swap `tools/dev-cmd.py` performs;
+    probing a bare `alr exec` would skip the gate on every host.  The probe
+    therefore runs exactly where the gate runs.  alr's own "Executable not
+    found" is the only missing-tool signal: any other exit code means the
+    binary ran (a tool that rejects `--version` still proves it exists).
+    """
+    if shutil.which("alr") is None:
+        return "alr is not on PATH"
+    try:
+        probe = subprocess.run(
+            [sys.executable, "tools/dev-cmd.py",
+             f"alr exec -- {tool} --version"],
+            cwd=str(ROOT), capture_output=True, text=True, timeout=600,
+        )
+    except subprocess.TimeoutExpired:
+        return f"the {tool} probe timed out"
+    except OSError:
+        return f"the {tool} probe could not run"
+    output = (probe.stdout or "") + (probe.stderr or "")
+    if probe.returncode == 0 or "Executable not found" not in output:
+        return None
+    return f"{tool} is not available in the dev toolchain"
+
+
+def skip_without_gnatformat() -> Optional[str]:
+    """SKIP reason for `fmt`: gnatformat ships in the dev toolchain."""
+    return _skip_missing_dev_tool("gnatformat")
+
+
+def skip_without_gnatdoc() -> Optional[str]:
+    """SKIP reason for the API docs gate: gnatdoc ships in the dev toolchain."""
+    return _skip_missing_dev_tool("gnatdoc")
+
+
+def skip_without_sphinx() -> Optional[str]:
+    """SKIP reason for the offline manual: rebuilding it needs Sphinx."""
+    try:
+        import sphinx  # noqa: F401  (presence probe only)
+    except ImportError:
+        return "sphinx is not installed (see requirements.txt)"
+    return None
+
+
 #  The `check` recipe order.  `fmt` is first: gnatprove and the API docs both
 #  read the sources, so every later gate must see formatted code.  The cheap
 #  static gates run before the expensive build + proof, and the count-sync
 #  checks run last, after `test`/`prove` have refreshed the metrics.
-CHECK_GATES: List[Tuple[str, Callable[[], int]]] = [
-    ("fmt", task_fmt),
-    ("ASCII", task_ascii_check),
-    ("complexity (no god objects/functions/files)", task_complexity_check),
-    ("CSS 4px spacing", task_csslint_check),
-    ("SPARK_Mode Off", task_spark_off_check),
-    ("changelog format", task_changelog_check),
-    ("action/CLI/docs parity", task_action_parity_check),
-    ("documentation coverage", task_docs_coverage_check),
-    ("tools unit tests", task_tools_check),
-    ("CLI end-to-end", task_cli_e2e),
-    ("version source", task_version_source_check),
-    ("version consistency", task_version_consistency_check),
-    ("doc links", task_doc_links_check),
-    ("markdown links", task_link_check),
-    ("user documentation", task_docs_check),
-    ("paragraph splitter", task_para_split_check),
-    ("tldr structure", task_tldr_check),
-    ("bundled offline manual links", task_book_links_check),
-    ("bundled offline manual spec", task_book_spec_check),
-    ("build", task_build),
-    ("native tests", task_test),
-    ("SPARK proof + badges", task_prove),
-    ("API docs", task_doc),
-    ("offline manual", task_book),
-    ("SBOM", task_sbom),
-    ("test counts in sync", task_test_count_check),
-    ("proof metrics in sync", task_proof_status_check),
-    ("description sync", task_description_check),
+#  Each entry is (label, gate, preflight): the preflight returns a SKIP
+#  reason, or None to run the gate.
+CHECK_GATES: List[Tuple[str, Callable[[], int],
+                         Optional[Callable[[], Optional[str]]]]] = [
+    ("fmt", task_fmt, skip_without_gnatformat),
+    ("ASCII", task_ascii_check, None),
+    ("complexity (no god objects/functions/files)", task_complexity_check,
+     skip_without_alr),
+    ("CSS 4px spacing", task_csslint_check, None),
+    ("SPARK_Mode Off", task_spark_off_check, None),
+    ("changelog format", task_changelog_check, None),
+    ("action/CLI/docs parity", task_action_parity_check, None),
+    ("documentation coverage", task_docs_coverage_check, None),
+    ("tools unit tests", task_tools_check, None),
+    ("CLI end-to-end", task_cli_e2e, skip_without_alr),
+    ("version source", task_version_source_check, None),
+    ("version consistency", task_version_consistency_check, None),
+    ("doc links", task_doc_links_check, None),
+    ("markdown links", task_link_check, None),
+    ("user documentation", task_docs_check, None),
+    ("paragraph splitter", task_para_split_check, None),
+    ("tldr structure", task_tldr_check, None),
+    ("bundled offline manual links", task_book_links_check, None),
+    ("bundled offline manual spec", task_book_spec_check, None),
+    ("build", task_build, skip_without_alr),
+    ("native tests", task_test, skip_without_alr),
+    ("SPARK proof + badges", task_prove, skip_without_alr),
+    ("API docs", task_doc, skip_without_gnatdoc),
+    ("offline manual", task_book, skip_without_sphinx),
+    ("SBOM", task_sbom, skip_without_alr),
+    ("test counts in sync", task_test_count_check, None),
+    ("proof metrics in sync", task_proof_status_check, None),
+    ("description sync", task_description_check, None),
 ]
 
 
 def check_gate_labels() -> List[str]:
     """The gate labels of the `check` recipe, in order."""
-    return [label for label, _ in CHECK_GATES]
+    return [label for label, _, _ in CHECK_GATES]
 
 
 def task_check() -> int:
-    for label, action in CHECK_GATES:
+    """Run every gate and keep going past a failure, then summarise.
+
+    A gate whose tool is missing here is SKIPped with its reason, a gate
+    that runs and fails is FAILED, and the summary lists all three states.
+    Only failures set the exit code, so one broken gate no longer hides
+    the state of the rest of the tree.
+    """
+    passed: List[str] = []
+    failed: List[Tuple[str, int]] = []
+    skipped: List[Tuple[str, str]] = []
+    for label, action, preflight in CHECK_GATES:
         print(f"=== Quality gate: {label} ===")
+        reason = preflight() if preflight is not None else None
+        if reason is not None:
+            print(f"--- SKIP: {label}: {reason} ---")
+            skipped.append((label, reason))
+            continue
         rc = action()
-        if rc != 0:
-            return rc
+        if rc == 0:
+            passed.append(label)
+        else:
+            print(f"--- FAIL: {label} (exit {rc}) ---")
+            failed.append((label, rc))
     print("")
-    print("=== Quality gate passed: "
-          + ", ".join(check_gate_labels()) + " ===")
+    print("=== Quality gate summary ===")
+    for label in passed:
+        print(f"  PASS  {label}")
+    for label, reason in skipped:
+        print(f"  SKIP  {label}: {reason}")
+    for label, rc in failed:
+        print(f"  FAIL  {label} (exit {rc})")
+    print("")
+    if failed:
+        print(f"{len(failed)} of {len(CHECK_GATES)} gate(s) failed.")
+        return failed[0][1]
+    note = f" ({len(skipped)} skipped)" if skipped else ""
+    print(f"All {len(passed)} gate(s) passed{note}.")
     return 0
 
 

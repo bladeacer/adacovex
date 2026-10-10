@@ -3,7 +3,7 @@
 ## How to read this reference
 
 This reference documents the Ada packages that implement adacovex.
-It is generated from the source docstrings by `make doc`.
+It is generated from the source docstrings by `just doc`.
 
 - **End users** need the CLI reference, the dashboard guide, and
   the standards pages.  The [CLI reference](../usage/cli-reference.md)

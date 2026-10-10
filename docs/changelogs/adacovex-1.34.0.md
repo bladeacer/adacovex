@@ -48,7 +48,7 @@ probe results within a release. No hand-maintained salt is needed now.
 ### C4: gnatdoc and gnatformat documented as Alire dev dependencies
 
 `gnatdoc_bin` and `gnatformat_bin` were already dev dependencies declared in
-`alire-dev.toml` (run via `alr exec` for the `make doc` and `make fmt`
+`alire-dev.toml` (run via `alr exec` for the `just doc` and `just fmt`
 targets), but the README's *Requirements* list only mentioned `gnatpp` /
 `gnatdoc` as optional tools. The list now states that **gnatdoc_bin** and
 **gnatformat_bin** are managed by Alire as dev dependencies, so the published
@@ -102,7 +102,7 @@ No new HLRs. Coverage:
   H1 proof-bar scaling, H2 uniform link colour.
 - `MANIFEST` / `HLR-SBOM` -- C3 self-invalidating system-tool probe cache.
 - `HLR-ARCH` -- C4 doc changes (gnatdoc_bin / gnatformat_bin declared as Alire
-  dev dependencies in `alire-dev.toml` and run via `alr exec` for `make doc` /
-  `make fmt`).
+  dev dependencies in `alire-dev.toml` and run via `alr exec` for `just doc` /
+  `just fmt`).
 
 See `docs/dashboard.md`.

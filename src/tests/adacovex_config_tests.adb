@@ -1,9 +1,9 @@
 with Adacovex.Types;  use Adacovex.Types;
 with Adacovex.Config; use Adacovex.Config;
 with Adacovex.Completion;
+with Adacovex.Paths;
 with Ada.Strings.Unbounded;
 with Ada.Strings.Fixed;
-with Ada.Environment_Variables;
 
 package body Adacovex_Config_Tests is
 
@@ -1087,15 +1087,14 @@ package body Adacovex_Config_Tests is
             "prove --args accumulates space-joined raw gnatprove flags");
       end;
 
-      --  --target=~/... expands the tilde to HOME before the cwd-join, so
-      --  the resolved target starts with HOME (never "$CWD/~/...").
+      --  --target=~/... expands the tilde to the user's home directory
+      --  (the HOME -> USERPROFILE -> temp chain Paths.Home_Directory
+      --  resolves on every platform) before the cwd-join, so the
+      --  resolved target starts with that home (never "$CWD/~/...").
       declare
          Cfg  : CLI_Config;
          A    : Testing.Arg_Vectors.Vector;
-         Home : constant String :=
-           (if Ada.Environment_Variables.Exists ("HOME")
-            then Ada.Environment_Variables.Value ("HOME")
-            else "/tmp");
+         Home : constant String := Adacovex.Paths.Home_Directory;
       begin
          Add (A, "--target=~/some-project");
          Cfg := Testing.Parse_All (A);
@@ -1106,7 +1105,7 @@ package body Adacovex_Config_Tests is
             R.Check
               (Cfg.Target_Len >= Home'Length
                and then Cfg.Target_Path (1 .. Home'Length) = Home,
-               "--target=~/some-project expands to HOME/some-project");
+               "--target=~/some-project expands to <home>/some-project");
             R.Check
               (Resolved'Length >= 13
                and then Resolved (Resolved'Last - 12 .. Resolved'Last)
@@ -1119,10 +1118,7 @@ package body Adacovex_Config_Tests is
       declare
          Cfg  : CLI_Config;
          A    : Testing.Arg_Vectors.Vector;
-         Home : constant String :=
-           (if Ada.Environment_Variables.Exists ("HOME")
-            then Ada.Environment_Variables.Value ("HOME")
-            else "/tmp");
+         Home : constant String := Adacovex.Paths.Home_Directory;
       begin
          Add (A, "--target=~");
          Cfg := Testing.Parse_All (A);
@@ -1133,14 +1129,10 @@ package body Adacovex_Config_Tests is
 
       --  A ~name form (another user's home) is left untouched: only the
       --  shell can resolve it, and adacovex must not mangle it into
-      --  "$HOME/name". It still gets the cwd-join (unchanged behaviour).
+      --  "<home>/name". It still gets the cwd-join (unchanged behaviour).
       declare
-         Cfg  : CLI_Config;
-         A    : Testing.Arg_Vectors.Vector;
-         Home : constant String :=
-           (if Ada.Environment_Variables.Exists ("HOME")
-            then Ada.Environment_Variables.Value ("HOME")
-            else "/tmp");
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
       begin
          Add (A, "--target=~other/code");
          Cfg := Testing.Parse_All (A);

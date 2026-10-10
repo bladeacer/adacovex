@@ -35,7 +35,7 @@ sharing your opinion on issues are all appreciated.
 Each release gets one file at `docs/changelogs/adacovex-<version>.md`, linked
 from [docs/changelogs/index.md](docs/changelogs/index.md) under the
 `<!-- CHANGELOG_LIST -->` marker (newest first). The format is enforced by
-`make changelog-check` (`tools/check-changelogs.py`) and every release
+`just changelog-check` (`tools/check-changelogs.py`) and every release
 changelog must pass it:
 
 ```
@@ -72,11 +72,11 @@ Enforced rules:
   whether any proof metrics changed.
 - `## Traceability` lists any new HLRs by tag name and package, then the
   existing `-- HLR-*` tags covering the changed packages.
-- `make bump-version` (`VERSION=x.y.z`) scaffolds a new changelog in the
+- `just bump-version` (`VERSION=x.y.z`) scaffolds a new changelog in the
   canonical format (with the previous version detected from the existing
   changelogs); fill in the `### C1:` subsection, keep the section headings
   and numbering style identical across releases, and run
-  `make changelog-check` before opening a pull request.
+  `just changelog-check` before opening a pull request.
 
 ## Pull requests
 
@@ -86,19 +86,19 @@ Pull requests should follow the following conventions.
   architecture tree in AGENTS.md) and the existing code style.
 - Ada 2012 / SPARK 2014 only, and zero-dependency: no library dependencies
   beyond the GNAT runtime.
-- Keep the SPARK proof at Platinum: run `make prove` and make sure the VC
+- Keep the SPARK proof at Platinum: run `just prove` and make sure the VC
   counts match [docs/proof/16.1.0-ledger.md](docs/proof/16.1.0-ledger.md)
   (1047 VCs, 0 unproved under gnatprove 16.1.0).
 - Keep docstring coverage at 100% (strict mode, cannot be disabled):
-  `make run-self` must show Platinum, 100% docs, and DAL-C Achieved.
+  `just run-self` must show Platinum, 100% docs, and DAL-C Achieved.
 - If you add or change behavior, extend the native test suite in `src/tests/`
-  (1815 tests across 27 categories) and run `make test`.
-- Keep all source files pure ASCII: `make ascii-check`.
+  (1818 tests across 27 categories) and run `just test`.
+- Keep all source files pure ASCII: `just ascii-check`.
 - If a new CLI flag is added, mirror it as a matching GitHub Action input in
   `./action.yml` and document it in `docs/usage/cli-reference.md` and the README
   (see AGENTS.md, "GitHub Action = base-CLI feature parity").
 - When adding a release changelog, follow the format above and pass
-  `make changelog-check`.
+  `just changelog-check`.
 - Only edit the parts of the source code where necessary; do not add
   editor-specific metafiles (put those in your own global `.gitignore`).
 - Test if the added features or fixes work as intended, and check for typos.
@@ -142,7 +142,7 @@ Pull requests should follow the following conventions.
 
 Native (zero-dependency) framework (`Adacovex.Test_Support`, no AUnit). Source:
 `src/tests/`; entry point `test_runner.adb` (builds as `bin/test_runner`).
-`make test` builds and runs the suite and writes results to
+`just test` builds and runs the suite and writes results to
 [docs/test_result.md](docs/test_result.md) in a Markdown table format
 adacovex itself parses.
 
@@ -174,5 +174,5 @@ adacovex itself parses.
 | CPU and jobs | 24 |
 | HLR/LLR parsing | 33 |
 | Completion scripts | 24 |
-| Platform paths | 41 |
-| **Total** | **1815** |
+| Platform paths | 44 |
+| **Total** | **1818** |

@@ -22,10 +22,10 @@ In particular `gnatprove` is *not* a declared dependency. adacovex analyses `gna
   graph scanning.
 - **`alire-dev.toml`**: The development manifest. Extends `alire.toml` with
   dev-only tools (`gnatprove`, `gnatdoc_bin`, `gnatformat_bin`) needed for
-  `make prove`, `make doc`, and `make fmt`. The `prove` subcommand reads the
+  `just prove`, `just doc`, and `just fmt`. The `prove` subcommand reads the
   gnatprove pin from it and deploys that exact version into
   `<data>/toolchain/` via `alr -n get` (reused after the first run);
-  `make doc`/`make fmt` run their tools through `alr exec`.
+  `just doc`/`just fmt` run their tools through `alr exec`.
 
 When both files exist, `Build_Dependency_Graph` reads **both**: a dependency
 declared in `alire.toml` is classified `Scope_Base` (explicit/clean dep) and
@@ -64,7 +64,7 @@ Effective order: **manifest pin > global pin (config/env) > PATH > cache >
 download**. If a project manifest declares `gnatprove` but `alr` is missing,
 install Alire first. The remaining fallbacks then apply.
 
-The `make doc` / `make fmt` targets still swap `alire-dev.toml` over
+The `just doc` / `just fmt` targets still swap `alire-dev.toml` over
 `alire.toml` for the duration of `gnatdoc` / `gnatformat` (the `_dev_cmd`
 Makefile recipe backs up `alire.toml` / `alire.lock` / `alire/`, swaps, runs,
 and restores via a `trap`). `prove` does not use that swap. It deploys only

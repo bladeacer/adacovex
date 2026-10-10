@@ -1,0 +1,8 @@
+# Normalise line endings to LF in the repository and in every working tree.
+#
+# The ascii-check gate rejects a carriage return on purpose, so a Windows
+# checkout with core.autocrlf=true must not rewrite text files to CRLF.  With
+# this file git stores LF and checks out LF on every platform, and a file
+# added on Windows is committed with LF.  `text=auto` still lets git treat a
+# binary file as binary, so an image or an archive is untouched.
+* text=auto eol=lf

@@ -25,7 +25,7 @@ Adacovex.Renderers.HTML.Render_Dashboard:
               <html data-initial-theme> attribute.
 
 The generated file is committed so the tree builds without running this
-script, and `make build` regenerates it (byte-identical when nothing
+script, and `just build` regenerates it (byte-identical when nothing
 changed) so the served page never drifts from the template.
 
 The authored CSS/JS live under resources/css/ and resources/js/ (one file
@@ -37,7 +37,7 @@ dependency order (theme, tabs, deps, details, nomnoml, search).
 Ada string literals cannot span lines, so each template line is emitted as
 its own quoted segment joined with ` & ASCII.LF & `.  Embedded double quotes
 are doubled per Ada syntax.  The template must stay pure ASCII (enforced by
-`make ascii-check`).
+`just ascii-check`).
 
 Usage:
   python3 tools/gen-dashboard.py [--check] [--template=PATH] [--out=PATH]
@@ -329,7 +329,7 @@ def generate(out: Path, template: Path) -> bool:
 
     Writes only when the content actually changed; an unchanged template
     keeps the file's mtime, so `alr build` does not recompile the generated
-    unit (and everything depending on it) on every `make build` / `make
+    unit (and everything depending on it) on every `just build` / `just
     prove`.  Returns True when the file was (re)written."""
     page: str = assemble(template)
     # Ada string literals cannot span lines, and GNAT truncates over-long
@@ -356,7 +356,7 @@ def generate(out: Path, template: Path) -> bool:
         "--  HTML/CSS/JS (dynamic metric cards are injected at the __CARDS__\n"
         "--  placeholder by Adacovex.Renderers.HTML.Render_Dashboard, which\n"
         "--  also fills the __THEME__ placeholder with the initial dashboard\n"
-        "--  theme). Do not edit by hand; edit resources/ and run make build.\n"
+        "--  theme). Do not edit by hand; edit resources/ and run just build.\n"
     )
     content: str = (
         header
@@ -375,7 +375,7 @@ def generate(out: Path, template: Path) -> bool:
     # unit on every run (the generated 7k-line template is not cheap).
     if out.is_file() and out.read_text(encoding="ascii") == content:
         return False
-    out.write_text(content, encoding="ascii")
+    out.write_text(content, encoding="ascii", newline="\n")
     return True
 
 
@@ -428,7 +428,7 @@ def main(argv: List[str]) -> int:
     if before != after:
         print(
             f"error: {out.name} is stale -- run tools/gen-dashboard.py (or "
-            "make build) and commit the regenerated file.",
+            "just build) and commit the regenerated file.",
             file=sys.stderr,
         )
         return 1

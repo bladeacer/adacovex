@@ -121,25 +121,32 @@ package body Adacovex.Timezones is
       return True;
    end CI_Equal;
 
-   --  Probe the platform tzdata for the current UTC offset of a named zone.
-   --  One shell command validates the zone with `zdump` (which fails on
-   --  unknown zones) and reads the offset from `date +%z`. This is the
-   --  DST-correct path on Linux/WSL. When the probe is unavailable (no
-   --  zdump/date on PATH) or the zone is unknown, OK is False and the caller
-   --  falls back to the built-in table (or rejects the name).
-   function Probe_Offset (Name : String; OK : out Boolean) return Integer is
-      Tmp  : constant String :=
-        Adacovex.CPUs.Get_Temp_Directory & "/adacovex-tz.tmp";
-      Args : GNAT.OS_Lib.Argument_List :=
-        (new String'("-c"),
-         new String'
-           ("zdump '"
-            & Name
-            & "' >/dev/null 2>&1 && TZ='"
-            & Name
-            & "' date +%z > '"
-            & Tmp
-            & "' 2>/dev/null"));
+    --  Probe the platform tzdata for the current UTC offset of a named zone.
+    --  One shell command validates the zone and reads the offset from
+    --  `date +%z`. Validation is the zone FILE: one of the platform's
+    --  zoneinfo directories must hold the name, and only then is the current
+    --  offset read. This is the DST-correct path on Linux/WSL and on macOS.
+    --  The file test is what rejects an unknown name on every platform:
+    --  `zdump` and `date` both fall back to UTC for a zone they do not know
+    --  (the BSD zdump on macOS never fails), so their exit status alone
+    --  accepts "Not/AZone" as a real zone. When no zoneinfo directory exists
+    --  (no tzdata on the host) or the shell is unavailable, OK is False and
+    --  the caller falls back to the built-in table (or rejects the name).
+    function Probe_Offset (Name : String; OK : out Boolean) return Integer is
+       Tmp  : constant String :=
+         Adacovex.CPUs.Get_Temp_Directory & "/adacovex-tz.tmp";
+       --  Find the zone file under the common zoneinfo roots, then read that
+       --  zone's current offset with `TZ=<name> date +%z`. The command exits
+       --  non-zero when no root holds the name, which is the rejection signal
+       --  for an unknown zone.
+       Cmd  : constant String :=
+         "Z=''; for d in /usr/share/zoneinfo /usr/share/lib/zoneinfo"
+         & " /etc/zoneinfo /var/db/timezone/zoneinfo; do if"
+         & " [ -e ""$d/" & Name & """ ]; then Z=""$d/" & Name
+         & """; break; fi; done; [ -n ""$Z"" ] && TZ='" & Name
+         & "' date +%z > '" & Tmp & "' 2>/dev/null";
+       Args : GNAT.OS_Lib.Argument_List :=
+         (new String'("-c"), new String'(Cmd));
       --  The portable spawn fails on a bare program name, so resolve the
       --  shell to its full path first (the same pattern Run_Command uses in
       --  the prove subcommand).
@@ -162,6 +169,23 @@ package body Adacovex.Timezones is
       if (for all I in Name'Range => Name (I) /= '/') then
          return 0;
       end if;
+      --  The name reaches a shell command and a zoneinfo path, so it must be
+      --  an IANA spelling: letters, digits, and "/_.+-" only. Anything else
+      --  (a quote, a space, a '$') is not a zone name and never reaches the
+      --  command line.
+      for I in Name'Range loop
+         if not (Name (I) in 'a' .. 'z'
+                 or else Name (I) in 'A' .. 'Z'
+                 or else Name (I) in '0' .. '9'
+                 or else Name (I) = '/'
+                 or else Name (I) = '_'
+                 or else Name (I) = '-'
+                 or else Name (I) = '+'
+                 or else Name (I) = '.')
+         then
+            return 0;
+         end if;
+      end loop;
       if Prog = null then
          return 0;
       end if;

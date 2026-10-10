@@ -103,7 +103,7 @@ time via `__STYLE_CUSTOM__` / `__STYLE_CHARTS__` / `__JS_*`
 placeholders and **minifies the author CSS/JS** (comments and whitespace
 stripped; vendored bundles are already minified and inlined byte-for-byte,
 license headers preserved). `gen-dashboard.py --check` (wired into
-`make check`) fails when the committed generated spec drifts.
+`just check`) fails when the committed generated spec drifts.
 
 ### C9: Per-dependency detail panel with registry links
 

@@ -89,10 +89,10 @@ def main(argv: List[str]) -> int:
             print("ok: AGENTS.md Documentation block is current")
             return 0
         print("error: AGENTS.md Documentation block is out of date "
-              "(run `make doc-links`)", file=sys.stderr)
+              "(run `just doc-links`)", file=sys.stderr)
         return 1
     if current != block:
-        AGENTS.write_text(text[:start] + block + text[end:], encoding="utf-8")
+        AGENTS.write_text(text[:start] + block + text[end:], encoding="utf-8", newline="\n")
     print("AGENTS.md Documentation block regenerated.")
     return 0
 

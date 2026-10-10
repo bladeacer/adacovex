@@ -254,7 +254,7 @@ package body Adacovex_Renderer_SVG_Tests is
       end;
 
       --  /badge/tests.svg with the self-assessment count (738 Passed): the
-      --  same 130px geometry make run-self emits into docs/badges/tests.svg.
+      --  same 130px geometry just run-self emits into docs/badges/tests.svg.
       declare
          Summary : Test_Summary;
       begin

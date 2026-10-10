@@ -86,3 +86,22 @@ When the EndeavourOS machine is available:
    1.48.0-1.54.0, 1.55.0-1.56.0, 1.57.0-1.58.0") to the new open-phase range.
 5. Run `just check` on that machine to re-verify the whole gate with sphinx
    installed, so the committed offline-manual spec is regenerated.
+
+### Windows host: what `just check` cannot do here
+
+`just check` is verified on Linux, and the Windows host cannot run every gate:
+
+- `fmt` fails because `gnatformat_bin` has no Windows binary in the Alire
+  index (`missing:unavailable`). The EndeavourOS machine resolves it.
+- `ascii-check` fails on this checkout because `core.autocrlf=true` rewrote
+  the tree to CRLF and the gate rejects a carriage return. A repository
+  `.gitattributes` (`* text=auto eol=lf`) now prevents that on a fresh
+  checkout; this working tree needs a re-checkout or `git add --renormalize`
+  to become LF.
+- `tools-check` has four Windows-only failures: a shell-script `bin/adacovex`
+  stub cannot run through `CreateProcess`, and a bundle symlink needs a
+  privilege Windows withholds. Both pass on Linux.
+
+The gates that need the Linux toolchain and pass there are fmt, ascii-check,
+and the two noted tools-check cases. Everything else was run individually on
+this host and passes once the docs venv is present.

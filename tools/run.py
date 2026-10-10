@@ -31,7 +31,7 @@ from typing import List
 ROOT: Path = Path(__file__).resolve().parent.parent
 
 # docs/test_result.md is the single source of truth for the native test count:
-# `make test` writes it and tools/update-test-count.py syncs every other file
+# `just test` writes it and tools/update-test-count.py syncs every other file
 # from it.  The acceptance gate derives --require-tests from this file at run
 # time, so the gate can never drift from the suite again.
 TEST_RESULT: Path = ROOT / "docs" / "test_result.md"
@@ -45,7 +45,7 @@ def native_test_count() -> int:
     """
     rel: str = str(TEST_RESULT.relative_to(ROOT))
     if not TEST_RESULT.is_file():
-        raise SystemExit(f"error: {rel} is missing; run `make test` first")
+        raise SystemExit(f"error: {rel} is missing; run `just test` first")
     m = re.search(r"Passed:\s*(\d+)", TEST_RESULT.read_text(errors="replace"))
     if m is None:
         raise SystemExit(f"error: no 'Passed: N' line in {rel}")
@@ -77,11 +77,26 @@ def source_date_epoch(target: Path) -> str:
     return result.stdout.strip() or "0"
 
 
+def binary() -> Path:
+    """The runnable build product: `bin/adacovex`, plus its launcher names.
+
+    The build emits `bin/adacovex.exe` on Windows and a launcher stub may be
+    `bin/adacovex.cmd`; on POSIX the plain name is the binary itself.
+    """
+    exe = ROOT / "bin" / "adacovex"
+    if os.name == "nt":
+        for name in ("adacovex.exe", "adacovex.cmd"):
+            alt = ROOT / "bin" / name
+            if alt.is_file():
+                return alt
+    return exe
+
+
 def adacovex(target: Path, args: List[str]) -> int:
-    """Run bin/adacovex from the repo root against target with the gates env."""
+    """Run the built binary from the repo root against target with the gates env."""
     env = dict(os.environ)
     env["SOURCE_DATE_EPOCH"] = source_date_epoch(target)
-    cmd = [str(ROOT / "bin" / "adacovex")] + args
+    cmd = [str(binary())] + args
     return subprocess.run(cmd, env=env).returncode
 
 

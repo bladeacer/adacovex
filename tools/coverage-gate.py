@@ -75,7 +75,7 @@ def coverage_gate() -> int:
 
     binary = ROOT / "bin" / "adacovex"
     if not binary.is_file():
-        print(f"error: {binary} not found; run `make build` first", file=sys.stderr)
+        print(f"error: {binary} not found; run `just build` first", file=sys.stderr)
         return 1
 
     worktree = Path(tempfile.mkdtemp(prefix="adacovex-coverage-"))

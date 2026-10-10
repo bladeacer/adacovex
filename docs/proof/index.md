@@ -18,9 +18,9 @@ justified, Platinum) and the per-package fixes that reach them. The earlier proo
 
 ## How to verify the numbers
 
-Run `make prove` at any time. It runs gnatprove through the `prove`
+Run `just prove` at any time. It runs gnatprove through the `prove`
 subcommand and enforces the Platinum gate: 0 unproved VCs and 0 justified
-VCs. `make proof-status` then syncs the measured counts into the docs.
+VCs. `just proof-status` then syncs the measured counts into the docs.
 
 The full proving workflow, including proof patches over vendored
 dependencies, lives in [Proving and writing proofs](../contributing/proving.md).

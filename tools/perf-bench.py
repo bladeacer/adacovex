@@ -67,7 +67,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     root: Path = Path(__file__).resolve().parent.parent
     binary: Path = root / args.binary
     if not binary.exists():
-        print(f"error: {binary} not found; run make build first")
+        print(f"error: {binary} not found; run just build first")
         return 1
 
     missing = [t for t in ("perf", "strace") if shutil.which(t) is None]

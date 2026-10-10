@@ -145,6 +145,11 @@ package body Adacovex_Paths_Tests is
             = "C:\\Users\\u/.adacovex/cache",
             "cache: Windows falls back to ~/.adacovex/cache");
 
+         --  Display is presentation only: the empty path and a plain
+         --  path come back unchanged, on every host.
+         R.Check (Display ("") = "", "display keeps the empty path");
+         R.Check (Display ("a/b") = "a/b", "display keeps a plain path");
+
          --  The detected platform matches the host separator convention.
          if GNAT.OS_Lib.Directory_Separator = '\' then
             R.Check
@@ -159,6 +164,9 @@ package body Adacovex_Paths_Tests is
             R.Check
               (Executable_Name ("gnatprove.exe") = "gnatprove.exe",
                "executable name keeps an existing suffix");
+            R.Check
+              (Display ("C:\a\b") = "C:/a/b",
+               "display converts backslashes on Windows");
          else
             R.Check
               (Detect_Platform /= Platform_Windows,
@@ -169,6 +177,9 @@ package body Adacovex_Paths_Tests is
             R.Check
               (Executable_Name ("gnatprove") = "gnatprove",
                "executable name is unchanged on POSIX");
+            R.Check
+              (Display ("C:\a\b") = "C:\a\b",
+               "display keeps backslashes on POSIX");
          end if;
       end;
    end Run;

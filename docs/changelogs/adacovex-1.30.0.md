@@ -68,7 +68,7 @@ The complexity gate now rejects any source file that exceeds 10% of the total
 codebase size (the `Max_File_Pct` gate in `adacovex_main.adb`), so a single
 "god object" can no longer dominate the tree. The gate counts only real
 subprogram-bearing code -- comments, blanks, and inline specs are excluded --
-and fails loudly with the offending file and its share; `make complexity-check`
+and fails loudly with the offending file and its share; `just complexity-check`
 exits non-zero when the cap is breached.
 
 ### C6: Complexity report reads like tokei
@@ -91,7 +91,7 @@ one place for every ecosystem. The npm and pnpm rows issue a single
 boot node once per component instead of once per field -- a 3x reduction in
 subprocess starts that removes the main responsiveness cost the dependency
 graph build paid on vendored JavaScript trees (and, by extension, on
-`make prove`, which builds the graph before gnatprove).
+`just prove`, which builds the graph before gnatprove).
 
 ### C8: Bundled dashboard assets resolve their licence live
 
@@ -113,7 +113,7 @@ isolated meta store), keyed by the target directory as well as the ecosystem
 and package name, with the same 7-day TTL as the system-tool probe cache. The
 content-addressed result cache does not cover these registry calls (each one
 boots node for npm/pnpm), so a "warm" `adacovex` run still paid for them -- the
-residual slowness on `make prove` after the result cache had already been
+residual slowness on `just prove` after the result cache had already been
 served. The meta cache removes that cost: the first run resolves and caches,
 and every later run (warm result cache or not) serves the answer from disk with
 zero subprocess spawns. Keying by the target also means two projects that
@@ -159,7 +159,7 @@ the right dependency.
 1.30.0's licence fallback (C2) spawned one `npm view`/`pnpm show` per field,
 so each vendored JavaScript component started three node processes. The graph
 build now resolves the three fields from one `--json` call (C7), cutting the
-node boots per component by 3x and removing the stall that made `make prove`
+node boots per component by 3x and removing the stall that made `just prove`
 and self-assessment feel slow even with the result cache warm.
 
 ## Test Suite

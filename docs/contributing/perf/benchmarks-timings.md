@@ -1,6 +1,6 @@
 # Pipeline and prove timings
 
-`make bench` times five scenarios: pipeline cold, pipeline warm, prove cold,
+`just bench` times five scenarios: pipeline cold, pipeline warm, prove cold,
 prove warm, and prove cold clone. The category definitions and the expected
 numbers are on [Performance](index.md); the machine and the harness are on
 [Benchmarking adacovex](benchmarks.md).
@@ -49,7 +49,7 @@ its 5.3 MiB stripped binary is the only row that moves by design (see
 The 1.50.0 shapes are deliberately flat: the phase's work removes failed
 work (a rewrite of the generated manual, a recompile and relink, and a
 re-proved tree), not steady work. The headline 1.50.0 number is therefore
-not in this table: `make prove` on an unchanged tree measures ~1.0 s (five
+not in this table: `just prove` on an unchanged tree measures ~1.0 s (five
 runs), because `alr build` is now a true no-op instead of recompiling the
 28k-line generated manual on every run.
 
@@ -74,7 +74,7 @@ run happens once per gnatprove session, not once per run.
 **Every scenario banner carries the load it was measured under**, because the
 scenarios run in sequence and each one loads the box. A scenario measured late
 inherits the load the earlier ones left behind, so two rows can differ by more
-than the work between them accounts for. `make bench` prints the 1-minute load
+than the work between them accounts for. `just bench` prints the 1-minute load
 average in front of each scenario for that reason. To compare two shapes
 honestly, run them paired -- back to back, each with its own pre-run load --
 rather than comparing rows from one sequential pass. The paired method, and a
@@ -83,7 +83,7 @@ case where sequence order alone manufactured an apparent 14-second gap, are on
 
 ## Generator and docs-bundling cost
 
-`make build` runs four generators before it compiles anything, and the
+`just build` runs four generators before it compiles anything, and the
 docs bundling is the step users suspect when a build feels slow. The
 measured steady-state cost says it is not the bottleneck. These figures
 come from the 12-core bench machine with nothing changed and every cache
@@ -97,7 +97,7 @@ warm:
 | `tools/gen-docs.py` (stamp current, 251 assets cached) | 365 |
 | `sphinx-build` from scratch | 7 847 |
 
-A no-op `make build` is therefore about 0.6 s of generators on top of a
+A no-op `just build` is therefore about 0.6 s of generators on top of a
 0.8 s no-op `alr build`. The one large row is the cold Sphinx build, and
 it runs only when the docs sources change. A cold `gen-docs.py` on a
 fresh checkout -- no Sphinx output and no encode cache -- measured
@@ -120,7 +120,7 @@ describe the shipped binary's profile.
 
 ## The prove cold-clone shape
 
-1.52.0 adds a fifth scenario to `make bench`: prove against a **fresh copy**
+1.52.0 adds a fifth scenario to `just bench`: prove against a **fresh copy**
 of the tree -- no result cache, no gnatprove session, and no
 `gnatprove.out`. It is the first-run-on-a-new-checkout shape: prove cold
 wipes the session but leaves the summary in place, while a cold clone has
@@ -134,7 +134,7 @@ introduce a new cost.
 
 ## The Ada_CRDT second datapoint
 
-A second datapoint rides along with every `make bench`: when the Ada_CRDT
+A second datapoint rides along with every `just bench`: when the Ada_CRDT
 dogfood tree (`../Ada_CRDT`) is present, the two pipeline scenarios repeat
 against it. It is a smaller target (~80 specs, its own vendored layout and
 manifest set), so a regression tied to one project's structure cannot hide
@@ -149,4 +149,4 @@ floor is covered by the self run).
 - [Performance](index.md) -- the benchmark category definitions.
 - [Benchmarking adacovex](benchmarks.md) -- the machine and the harness.
 - [Prove timing and the optimisation review](prove-timing.md) -- the
-  per-phase `make prove` timing table.
+  per-phase `just prove` timing table.

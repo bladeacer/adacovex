@@ -3,14 +3,14 @@
 
 The version source depends on the installation method:
 
-1. ADACOVEX_VERSION  -- release builds.  The release workflow and `make
+1. ADACOVEX_VERSION  -- release builds.  The release workflow and `just
    release` export the vX.Y.Z tag (or the composite action's build step), and
    this script strips a leading "v" and uses it in place of any manifest
    value, so the binary a release ships reports exactly the tag it was built
    from.  A non-version ADACOVEX_VERSION (e.g. a branch name in non-release
    CI) is ignored and the manifest value is used.
 2. alire-dev.toml    -- development / self-builds from a source checkout
-   (`version = "x.y.z"`, bumped by `make bump-version`).
+   (`version = "x.y.z"`, bumped by `just bump-version`).
 3. alire.toml        -- dependency-managed installs: when covex is consumed
    as an Alire crate the binary is built from the published crate source,
    whose alire.toml carries the release-manifest version (the toml file
@@ -22,7 +22,7 @@ so `--version`, the man page, the SBOM tool version, and the result cache
 path can never drift from the resolved source.
 
 The generated file is committed so the tree builds without running this
-script, and `make build` regenerates it (byte-identical when nothing
+script, and `just build` regenerates it (byte-identical when nothing
 changed) so a checkout is always self-consistent.
 
 Usage:
@@ -145,7 +145,7 @@ def main(argv: Optional[list] = None) -> int:
     if out.exists() and out.read_text() == content:
         print(f"{out.relative_to(ROOT)} up to date (v{version} from {source})")
         return 0
-    out.write_text(content)
+    out.write_text(content, newline="\n")
     print(f"wrote {out.relative_to(ROOT)} (v{version} from {source})")
     return 0
 

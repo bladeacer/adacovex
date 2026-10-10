@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check the bundled offline manual's links against a fresh Sphinx build.
 
-Wired as `make book-links-check` (part of `make check`):
+Wired as `just book-links-check` (part of `just check`):
 
 Every link inside the bundled offline manual (the pages tools/gen-docs.py
 post-processes and embeds in src/adacovex-docs_template.ads) must resolve to a
@@ -26,7 +26,7 @@ tools/gen-docs.py.
 
 The fresh build is kept in a **content-keyed cache** under
 `obj/book-links-check/<fingerprint>/out`, keyed by the SHA-256 of every
-docs source file plus the Sphinx build identity.  `make check` builds the
+docs source file plus the Sphinx build identity.  `just check` builds the
 manual twice -- once for this gate and once for the tools unit test that
 asserts a fresh build produces the whole book -- and the full Sphinx build
 was the two most expensive things in the gate list (measured: 17.6-31.8 s

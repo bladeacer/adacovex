@@ -50,7 +50,7 @@ every later run reuses the deployed crate under `~/.adacovex/toolchain/`
 with no download, and two projects pinning different versions keep both
 toolchains side by side.
 
-### C4: make perf-bench prints the tables it measures
+### C4: just perf-bench prints the tables it measures
 
 `perf stat` writes its counter table to stderr, which the old
 capture-and-print-stdout shape discarded -- the perf sections printed

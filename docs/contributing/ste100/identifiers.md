@@ -68,8 +68,8 @@ documentation. The report and concept identifiers are on
   reference from source docstrings.
 - **Approved Form:** gnatdoc (exact lower-case)
 - **Do Not Use:** Doc generator, Documentation tool (when gnatdoc is meant)
-- **Correct Example:** *`make doc` runs **gnatdoc** on the Ada sources.*
-- **Incorrect Example:** *`make doc` runs the doc generator on the Ada sources.*
+- **Correct Example:** *`just doc` runs **gnatdoc** on the Ada sources.*
+- **Incorrect Example:** *`just doc` runs the doc generator on the Ada sources.*
 
 ## Technical Name: Manifest
 - **Part of Speech:** Noun
@@ -190,9 +190,9 @@ documentation. The report and concept identifiers are on
 
 ## Technical Name: gnatformat
 - **Part of Speech:** Noun
-- **Definition:** The GNAT source formatter. The `make fmt` target runs
+- **Definition:** The GNAT source formatter. The `just fmt` target runs
   gnatformat on the Ada sources.
 - **Approved Form:** gnatformat (exact lower-case)
 - **Do Not Use:** Formatter (when gnatformat is meant), Gnat format
-- **Correct Example:** *`make fmt` runs **gnatformat** on the sources.*
-- **Incorrect Example:** *`make fmt` runs the formatter on the sources.*
+- **Correct Example:** *`just fmt` runs **gnatformat** on the sources.*
+- **Incorrect Example:** *`just fmt` runs the formatter on the sources.*

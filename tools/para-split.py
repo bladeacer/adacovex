@@ -334,7 +334,7 @@ def fix() -> int:
         lines = path.read_text(encoding="utf-8").splitlines()
         out = _split_lines(lines)
         if out != lines:
-            path.write_text("\n".join(out) + "\n", encoding="utf-8")
+            path.write_text("\n".join(out) + "\n", encoding="utf-8", newline="\n")
             print(f"  split paragraphs in {path.relative_to(ROOT)}")
             changed += 1
     if changed == 0:

@@ -29,7 +29,7 @@ def main(argv: List[str]) -> int:
     start = text.index(TREE_MARKERS[0])
     end = text.index(TREE_MARKERS[1]) + len(TREE_MARKERS[1])
     block = TREE_MARKERS[0] + "\n```\n" + tree + "\n```\n" + TREE_MARKERS[1]
-    with open("AGENTS.md", "w", encoding="utf-8") as fh:
+    with open("AGENTS.md", "w", encoding="utf-8", newline="\n") as fh:
         fh.write(text[:start] + block + text[end:])
     print("AGENTS.md architecture tree regenerated.")
     return 0

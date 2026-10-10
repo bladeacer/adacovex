@@ -83,7 +83,7 @@ band, because a clone has no result cache and no session either.
 | Pipeline cold | 66.5 ms +/- 3.2 ms | 0.6 |
 | Warm `newfstatat` | 7,280 | 4.4 |
 | Warm `execve` (tool probes) | 1 | 4.4 |
-| `make prove`, unchanged tree | 1.1 s | 4.1 |
+| `just prove`, unchanged tree | 1.1 s | 4.1 |
 | Stripped binary | 5.56 MiB | - |
 | Bundled manual spec | 2.00 MiB | - |
 
@@ -134,8 +134,8 @@ None of the three changes in 1.55.0 sits on a measured shape.
 
 ## Two shapes that are easy to confuse
 
-`make prove` on an unchanged tree costs about 1.1 s. `./bin/covex prove`
-alone costs 50 ms. The difference is the build: the make target also
+`just prove` on an unchanged tree costs about 1.1 s. `./bin/covex prove`
+alone costs 50 ms. The difference is the build: the task also
 regenerates the bundled offline manual and the dashboard template and
 re-checks the generators. Neither number is a substitute for the other, so
 both are reported.

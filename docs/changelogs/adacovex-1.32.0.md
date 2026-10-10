@@ -10,7 +10,7 @@ Version bumped 1.31.0 -> 1.32.0.
 
 The self-assessment proof surface had grown to 723 VCs after the `Adacovex. Server. HTTP. Route` postcondition was converted from a nine-clause implication chain (which exceeded gnatprove's `--steps` budget once the `/docs` route was added) into an expression function.
 
-An expression function's implicit postcondition (``Result = <mapping>``) holds by definition, so the mapping is proved without case-analysis steps. All metric anchors across AGENTS.md, README.md, Makefile, the release manifests, and the Alire index were refreshed to 723 VCs via `make proof-status`. Proof level remains
+An expression function's implicit postcondition (``Result = <mapping>``) holds by definition, so the mapping is proved without case-analysis steps. All metric anchors across AGENTS.md, README.md, Makefile, the release manifests, and the Alire index were refreshed to 723 VCs via `just proof-status`. Proof level remains
 
 **Platinum** (723 VCs, 0 unproved, 0 justified under gnatprove 16.1.0).
 

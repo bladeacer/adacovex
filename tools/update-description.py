@@ -11,9 +11,9 @@ the past, so this script keeps them all identical to the canonical files:
   alire/long-description.txt -- the long-description body (no TOML triple
                                 quote delimiters)
 
-The canonical files are edited directly (or by `make description`), and this
-script propagates them to every manifest copy.  `make bump-version` and
-`make release` create new version files from the templates, which this script
+The canonical files are edited directly (or by `just description`), and this
+script propagates them to every manifest copy.  `just bump-version` and
+`just release` create new version files from the templates, which this script
 also keeps in sync, so a new release always ships the current description.
 
 Usage:
@@ -170,7 +170,7 @@ def main(argv: Optional[list] = None) -> int:
             continue
         changed.append(path)
         if not args.check and not args.dry_run:
-            path.write_text(updated, encoding="utf-8")
+            path.write_text(updated, encoding="utf-8", newline="\n")
 
     if args.check:
         if changed:
@@ -178,7 +178,7 @@ def main(argv: Optional[list] = None) -> int:
                 print(f"DRIFT: {path.relative_to(ROOT)}", file=sys.stderr)
             print(
                 "error: description drifted from alire/description.txt / "
-                "alire/long-description.txt (run `make description`)",
+                "alire/long-description.txt (run `just description`)",
                 file=sys.stderr,
             )
             return 1

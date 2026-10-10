@@ -92,7 +92,7 @@ def set_manifest_version(path: Path, version: str) -> bool:
     if count == 0:
         print(f"error: no version line in {path}", file=sys.stderr)
         return False
-    path.write_text(new_text, encoding="utf-8")
+    path.write_text(new_text, encoding="utf-8", newline="\n")
     return True
 
 

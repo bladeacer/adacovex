@@ -9,7 +9,7 @@ The benchmark how-to is on [Benchmarking](benchmarks.md), with the
 [pipeline and prove timings](benchmarks-timings.md), the [binary size and
 the bundled manual](benchmarks-binary-size.md), and the [server
 throughput and latency](benchmarks-server.md) measured beside it. The
-per-release `make prove` timings, grouped into phases, are on [Prove timing
+per-release `just prove` timings, grouped into phases, are on [Prove timing
 and the optimisation review](prove-timing.md); the reverse-chronological
 record of the work behind the numbers is on [Performance optimisation
 history](optimisation-history.md).
@@ -25,7 +25,7 @@ defined by which of them are populated:
   gnatprove's internal per-unit session, which re-analyses only changed
   units;
 - the **build** (`alr build`, run by every `make` recipe that proves): a
-  no-op takes ~0.3 s when built; `make clean` forces a full recompile.
+  no-op takes ~0.3 s when built; `just clean` forces a full recompile.
 
 | Category | Command | Result cache | gnatprove session | What it measures |
 |----------|---------|--------------|-------------------|------------------|
@@ -43,12 +43,12 @@ states, not steady states, so they are not benchmarked):
   `--cache-dir` change on a built machine costs.
 - *partial session*: `obj/gnatprove/` holds only some units (after a
   targeted `gnatprove -u` run). A prove miss then re-analyses the missing
-  units and lands between the two cold shapes. A full `make prove` always
+  units and lands between the two cold shapes. A full `just prove` always
   ends with a complete session, so back-to-back runs sit at prove-warm.
 
 ## What the numbers mean
 
-Figures are from `make bench`/`perf-bench` on the benchmark machine
+Figures are from `just bench`/`perf-bench` on the benchmark machine
 (hyperfine, cold + warm per scenario). They shift with the machine and the
 codebase; what matters is the shape:
 
@@ -71,7 +71,7 @@ codebase; what matters is the shape:
 - **Prove warm ~55 ms**: the prove result cache serves the stored proof
   after one content-hash of the input tree, and restores the cached
   `gnatprove.out` so the assessment parses it -- the number a developer
-  hits on an unchanged tree. Back-to-back `make prove` runs sit here (the
+  hits on an unchanged tree. Back-to-back `just prove` runs sit here (the
   adacovex run is ~0.05 s; the rest of the wall is `alr build`).
 - **Prove cold clone**: bounded by the same solver run as prove cold plus
   one tree copy; the only structural difference is that the clone starts
@@ -102,12 +102,12 @@ timing re-baseline](prove-rebaseline.md).
 CI runs the self-assessment with result caching disabled where determinism matters
 (`--no-cache`-equivalent fresh dirs). The `make` gates are timed loosely: timings
 are informational only, because a gate that fails on a slow runner helps nobody.
-The `bench` target is not part of `make check`; it is run by hand before releases.
+The `bench` target is not part of `just check`; it is run by hand before releases.
 
 ## When the numbers regress
 
-Run `make perf-bench` first: it reports the CPU break-down and the strace
+Run `just perf-bench` first: it reports the CPU break-down and the strace
 syscall counts. The usual suspects are a new tree walk that re-enumerates
 a directory a cache already covers, or a new per-file hash that the stamp
-fast path does not cover. `make run-ada-crdt` is a handy second datapoint
+fast path does not cover. `just run-ada-crdt` is a handy second datapoint
 on a smaller tree.

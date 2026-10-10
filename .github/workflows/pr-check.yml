@@ -18,7 +18,7 @@ jobs:
           toolchain: 'gnat_native=16.1.0 gprbuild'
           cache: true
       - name: Enforce complexity + file-size caps
-        run: make complexity-check
+        run: python3 tools/tasks.py complexity-check
 
   coverage-delta:
     name: Docstring coverage delta

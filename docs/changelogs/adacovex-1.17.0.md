@@ -15,7 +15,7 @@ Implementation`, the one non-formal container package SPARK forbids analysing). 
 
 ### C2: Ada_CRDT dogfood regression re-verified (Platinum held)
 
-The `make run-ada-crdt` dogfood regression and a fresh `--force` proof of
+The `just run-ada-crdt` dogfood regression and a fresh `--force` proof of
 `../Ada_CRDT` via the sibling adacovex binary both re-confirm the target's
 Platinum proof: gnatprove 16.1.0 reports **576 total checks -- 576 proved (109
 flow + 467 by prover), 0 justified, 0 unproved** across 48 analysed units, with
@@ -64,7 +64,7 @@ The remaining pure-logic candidates (`Is_Subprogram_Decl`, `Comment_Indent`, `Se
 
 850 tests passing across 14 categories (unchanged from 1.16.0). The proof
 re-verification pass made no source changes, so the test surface is untouched;
-`make test` still reports 850 passed, 0 failed.
+`just test` still reports 850 passed, 0 failed.
 
 ## Proof Results
 
@@ -79,8 +79,8 @@ The Ada_CRDT dogfood target re-verified at Platinum, 576/576 VCs (109 flow
 ## Traceability
 
 No new HLRs. The proof re-verification touches no source and adds no
-requirements; it re-confirms the existing `HLR-PROOF` tag (`make prove` and the
+requirements; it re-confirms the existing `HLR-PROOF` tag (`just prove` and the
 `prove` subcommand) and the `HLR-PROVE` proof-patch machinery (exercised end to
 end by the Ada_CRDT dogfood). The C2 Ada_CRDT re-verification is covered by the
-`make run-ada-crdt` regression and the Ada_CRDT 1.11.0 changelog. See
+`just run-ada-crdt` regression and the Ada_CRDT 1.11.0 changelog. See
 `docs/proof/16.1.0-ledger.md` for the proof debt ledger.

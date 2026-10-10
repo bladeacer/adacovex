@@ -91,7 +91,7 @@ def scaffold_changelog(version: str) -> bool:
             "## Traceability",
             "",
         ]
-        path.write_text("\n".join(lines), encoding="utf-8")
+        path.write_text("\n".join(lines), encoding="utf-8", newline="\n")
         print(f"  Created: {path} (fill in the ### C1: subsection)")
     else:
         text = path.read_text(encoding="utf-8")
@@ -100,7 +100,7 @@ def scaffold_changelog(version: str) -> bool:
             flags=re.MULTILINE,
         )
         if count:
-            path.write_text(new_text, encoding="utf-8")
+            path.write_text(new_text, encoding="utf-8", newline="\n")
         print(f"  Updated: {path}")
     return True
 
@@ -135,7 +135,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 r'^version = "[^"]*"', f'version = "{version}"', text,
                 flags=re.MULTILINE,
             )
-            target.write_text(new_text, encoding="utf-8")
+            target.write_text(new_text, encoding="utf-8", newline="\n")
             print(f"  Created: {target}")
         else:
             if not set_manifest_version(target, version):
@@ -150,8 +150,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 1
     print("  descriptions synced to all manifests")
     print(f"Done. Version bumped to {version}.")
-    print("Next: run 'make release VERSION=%s' to build, prove, validate," % version)
-    print("bundle, commit, and tag the release (or 'make publish' to submit")
+    print("Next: run 'just release VERSION=%s' to build, prove, validate," % version)
+    print("bundle, commit, and tag the release (or 'just publish' to submit")
     print("to the Alire community index once the tag is pushed).")
     return 0
 

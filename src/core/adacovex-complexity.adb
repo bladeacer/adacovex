@@ -7,6 +7,7 @@ with Ada.Characters.Handling;
 with Adacovex.Ansi;
 with Adacovex.Opt_Outs;
 with Adacovex.Parsers;
+with Adacovex.Paths;
 with Adacovex.Types;
 
 package body Adacovex.Complexity is
@@ -1287,7 +1288,8 @@ package body Adacovex.Complexity is
             if FM.Path_Len > 60 then
                Start := FM.Path_Len - 59;
             end if;
-            Ada.Text_IO.Put (FM.Path (Start .. FM.Path_Len));
+            Ada.Text_IO.Put
+              (Adacovex.Paths.Display (FM.Path (Start .. FM.Path_Len)));
             Ada.Text_IO.Put ("  [");
             Ada.Text_IO.Put (Lang);
             Ada.Text_IO.Put ("]  Lines=");
@@ -1327,7 +1329,9 @@ package body Adacovex.Complexity is
             for I in 1 .. Integer (Violations.Length) loop
                Ada.Text_IO.Put_Line
                  ("  - "
-                  & Violations (I).File_Path (1 .. Violations (I).File_Len)
+                  & Adacovex.Paths.Display
+                      (Violations (I).File_Path
+                         (1 .. Violations (I).File_Len))
                   & Violations (I).Message (1 .. Violations (I).Msg_Len));
             end loop;
          else

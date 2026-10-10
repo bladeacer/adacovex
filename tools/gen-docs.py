@@ -73,7 +73,7 @@ The generated spec is committed so the tree builds without running Sphinx
 (the project has no Sphinx/Markdown runtime dependency; sphinx+myst-parser
 are dev / Read the Docs dependencies from `requirements.txt`).
 `docs/_build/` itself is a local build output (gitignored); the spec is the
-only committed artifact.  `make book` / `make build` regenerate it
+only committed artifact.  `just book` / `just build` regenerate it
 (byte-identical when the docs are unchanged) and `--check` fails when it
 drifts -- exactly the same pattern tools/gen-dashboard.py uses.
 
@@ -94,7 +94,7 @@ Determinism and incremental builds:
   clone, and a changed spec invalidates the cached SPARK proof;
 * the spec is written **only when its content changed**, so a no-op run keeps
   the file's mtime and `alr build` does not recompile the generated 28k-line
-  unit (nor relink) on every `make build` / `make prove`;
+  unit (nor relink) on every `just build` / `just prove`;
 * each asset's gzip+base85 result is cached by SHA-256 under
   `obj/adacovex-docs-encode/`, so a docs edit re-encodes only the pages it
   touched, and the uncached bodies are encoded in parallel across the CPU
@@ -295,7 +295,7 @@ def sphinx_build_cmd() -> Optional[List[str]]:
 
     Returns [sphinx-build, "-b", "html"] when a usable sphinx-build exists
     (on PATH, or in the repo's `.venv/bin` -- the checked-in docs toolchain
-    directory), None otherwise.  `make check` therefore never silently
+    directory), None otherwise.  `just check` therefore never silently
     skips the docs gates on a machine that has the venv but no system
     sphinx-build.
     """
@@ -394,7 +394,7 @@ def write_stamp(fingerprint: str, digests: Dict[str, str]) -> None:
     lines.extend(f"{digests[rel]}\t{rel}" for rel in sorted(digests))
     try:
         STAMP.parent.mkdir(parents=True, exist_ok=True)
-        STAMP.write_text("\n".join(lines) + "\n", encoding="ascii")
+        STAMP.write_text("\n".join(lines) + "\n", encoding="ascii", newline="\n")
     except OSError:
         pass
 
@@ -850,7 +850,7 @@ def _store_cached_chunks(digest: str, chunks: List[str]) -> None:
     try:
         ENCODE_CACHE.mkdir(parents=True, exist_ok=True)
         (ENCODE_CACHE / (digest + _CACHE_SUFFIX)).write_text(
-            "\n".join(chunks), encoding="ascii")
+            "\n".join(chunks), encoding="ascii", newline="\n")
     except OSError:
         pass
 
@@ -1079,7 +1079,7 @@ def build_spec(jobs: Optional[int] = None,
         "--  table. --serve exposes it at /docs/ with Content-Encoding: gzip\n"
         "--  (the browser inflates it). The shared sidebar variants live\n"
         "--  under _nav/ and are filled in by _static/adacovex-nav.js. Do not\n"
-        "--  edit by hand; edit docs/ and run make book.\n"
+        "--  edit by hand; edit docs/ and run just book.\n"
     )
     lines: List[str] = header.splitlines()
     lines.append("package Adacovex.Docs_Template is")
@@ -1215,7 +1215,7 @@ def generate(out: Path, jobs: Optional[int] = None,
     if existing == content:
         print(f"{out.name} up to date ({stats}).")
     else:
-        out.write_text(content, encoding="ascii")
+        out.write_text(content, encoding="ascii", newline="\n")
         print(f"{out.name} regenerated ({stats}).")
 
 
@@ -1228,7 +1228,7 @@ def check(out: Path, jobs: Optional[int] = None,
     if existing == content:
         print(f"{out.name} is up to date ({stats}).")
         return True
-    print(f"error: {out.name} is stale -- run tools/gen-docs.py (or make book)",
+    print(f"error: {out.name} is stale -- run tools/gen-docs.py (or just book)",
           file=sys.stderr)
     return False
 

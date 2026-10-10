@@ -6,9 +6,9 @@ Version bumped 1.48.0 -> 1.49.0.
 
 ## Changes
 
-### C1: Phase-based `make prove` timing table
+### C1: Phase-based `just prove` timing table
 
-The `make prove` timing table on
+The `just prove` timing table on
 [docs/contributing/perf/prove-timing.md](../contributing/perf/prove-timing.md)
 now keeps one column per **phase** instead of one per release. A phase is a
 range of versions whose implementation methodology is largely similar: the

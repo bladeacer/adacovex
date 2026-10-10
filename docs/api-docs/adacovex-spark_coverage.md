@@ -6,7 +6,7 @@ source file, by folder, or by Ada package, and classifies every
 subprogram gnatprove did not prove into one of three off
 classes.
 
-The data is read from the two artefacts ``make prove`` already
+The data is read from the two artefacts ``just prove`` already
 writes. The report never runs the prover:
 
   obj/gnatprove/gnatprove.out   the per-unit analysed/total

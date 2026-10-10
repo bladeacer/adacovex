@@ -140,7 +140,7 @@ CI runs on `ubuntu-latest` with the pinned `gnat-version`.
 - **Remaining build warnings fixed.**
 - `Adacovex. Renderers. SBOM`: the compiler inlined `Field` and constant-folded its `Sep /= ASCII. NUL` guard, so the check reported "statement has no effect" at the call sites.
 
-Kept the original single-loop form and wrapped it in `pragma Warnings (Off/On, "statement has no effect")`; the two-loop `String` alternative was tried and reverted because it cost 35 unproved VCs. Proof remains intact: 500/500 VCs, Platinum, 0 unproved. - `Adacovex. Target_Profiles`: `Host_Word_Size` is now a return-expression `case` (instead of an unreachable multi-branch `case` statement on the 64-bit archive host), eliminating the "statement is never reached" warnings at lines 10/13/16. - Forced rebuild: **0 warnings**. `make prove`: **Platinum, 500/500 VCs, 0 unproved, 0 justified**. `make test`: **295/295**.
+Kept the original single-loop form and wrapped it in `pragma Warnings (Off/On, "statement has no effect")`; the two-loop `String` alternative was tried and reverted because it cost 35 unproved VCs. Proof remains intact: 500/500 VCs, Platinum, 0 unproved. - `Adacovex. Target_Profiles`: `Host_Word_Size` is now a return-expression `case` (instead of an unreachable multi-branch `case` statement on the 64-bit archive host), eliminating the "statement is never reached" warnings at lines 10/13/16. - Forced rebuild: **0 warnings**. `just prove`: **Platinum, 500/500 VCs, 0 unproved, 0 justified**. `just test`: **295/295**.
 
 - **`gnatprove` is now the standard companion in every covex TOML usage.**
   README (Option 1) and AGENTS (install item 1, dev-manifest usage) declare

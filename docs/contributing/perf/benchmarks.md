@@ -31,9 +31,9 @@ pipeline figures are dominated by P-core behaviour; the prove-cold solver
 floor depends on the E-core fleet. Lower-thread machines pay more per
 solver run; the warm paths stay warm anywhere.
 
-## The `make bench` target
+## The `just bench` target
 
-`make bench` benchmarks the assessment pipeline, the `prove` subcommand,
+`just bench` benchmarks the assessment pipeline, the `prove` subcommand,
 and reports binary size:
 
 - It builds the project, then times `./bin/adacovex` and
@@ -42,7 +42,7 @@ and reports binary size:
   category reference on [Performance](index.md)). The prove scenarios time
   the `prove` subcommand -- the true test of proof performance, measured at
   the adacovex-binary level, not just the gnatprove level.
-- `make bench` uses [hyperfine](https://github.com/sharkdp/hyperfine) when
+- `just bench` uses [hyperfine](https://github.com/sharkdp/hyperfine) when
   installed; otherwise it falls back to the bash `time` builtin. It samples
   generously so the reported mean is stable: **10 pipeline-cold +
   15 pipeline-warm + 3 prove-cold + 15 prove-warm + 2 prove-cold-clone**
@@ -61,7 +61,7 @@ for cold, `--cache-dir=<populated dir>` for warm, with or without
 `prove`) works the same way. When comparing two versions, always reset
 the cache between runs so the result cache cannot hide the real cost.
 
-`make perf-bench` profiles CPU and syscalls directly with `perf` and
+`just perf-bench` profiles CPU and syscalls directly with `perf` and
 `strace` over `bin/adacovex`, printing cache-miss rates and syscall counts
 so a regression in I/O or data layout is visible before a release.
 

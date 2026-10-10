@@ -55,15 +55,15 @@ The `--verbose` flag now produces pipeline diagnostic output to stderr: step
 labels, package counts, SPARK level, test file path, and output paths
 (previously a no-op placeholder).
 
-### C6: `make bump-version` target
+### C6: `just bump-version` target
 
-`make bump-version VERSION=x.y.z` bumps the version across `alire.toml`,
+`just bump-version VERSION=x.y.z` bumps the version across `alire.toml`,
 `alire-dev.toml`, `src/adacovex.ads`, and creates/updates the changelog,
 modelled after the `Ada_CRDT` project's bump workflow.
 
-### C7: `make run-ada-crdt` strict mode
+### C7: `just run-ada-crdt` strict mode
 
-`make run-ada-crdt` now runs in strict mode (no `--relaxed`) and achieves 100%
+`just run-ada-crdt` now runs in strict mode (no `--relaxed`) and achieves 100%
 docstring coverage on Ada_CRDT including the vendored vt100 code via
 `.adacovex/patches/demo/deps/vt100/vt100.ads`.
 
@@ -99,7 +99,7 @@ The Alire crate was renamed from `adacovex` to `covex` to comply with Alire
 naming rules. The binary name stays `adacovex_main` via
 `project-files = ["adacovex.gpr"]` in all manifest files.
 `alire/releases/covex-*.toml` and `index/ad/covex/*.toml` were created and
-`index/ad/adacovex/` removed. New `make release`, `make publish`, and `make
+`index/ad/adacovex/` removed. New `just release`, `just publish`, and `just
 test-publish` targets support the Alire community-index publishing workflow.
 
 ### C13: Post-release: SPARK proof restored to Platinum (28 VCs)
@@ -112,21 +112,21 @@ vector instantiations and vector-containing types (`Package_Info`,
 remain in the outer `On` region, restoring 28 VCs. `SPARK_Mode (On)` was
 removed from `adacovex-parsers-tests.ads` and `adacovex-renderers-svg.ads`
 (reference vector-containing types), and `gnatprove/gnatprove.out` was added
-to the search paths in `Parse_Prove_From_Project` so `make run-self` finds the
+to the search paths in `Parse_Prove_From_Project` so `just run-self` finds the
 proof output.
 
 ## Fixes
 
-### H1: Post-release: `make fmt` non-determinism
+### H1: Post-release: `just fmt` non-determinism
 
 Replaced the non-ASCII almost-equal sign (U+2248) with ASCII `~` in an
 `adacovex-types.ads` source comment. gnatformat was re-encoding the UTF-8
 character on each run, creating an oscillating diff that never converged; the
 format is now idempotent across repeated runs.
 
-### H2: Post-release: `make doc` non-determinism
+### H2: Post-release: `just doc` non-determinism
 
-Propagated the ASCII-only fix to the generated API docs; `make doc` now
+Propagated the ASCII-only fix to the generated API docs; `just doc` now
 produces identical output on repeated runs.
 
 ### H3: Post-release: `compliance-dal.adb` `Desc_Field` overflow

@@ -138,7 +138,7 @@ remains for the no-comma case).
 Measured with gnatprove 16.1.0 (12 logical cores, 10 proof jobs, cold
 caches):
 
-| Tree | VCs | Cold `make prove` wall |
+| Tree | VCs | Cold `just prove` wall |
 |------|-----|------------------------|
 | 1.40.0 | 725 | 39.0 s |
 | 1.41.0, multi-pair prototype | 850 | 43.6 s |
@@ -149,7 +149,7 @@ The multi-pair slice keeps the exploration concrete and proved. The VC
 growth over 1.41.0 (+85) is the price of the proved general form; the cold
 wall drop is the 1.42.0 walk-skip and cache work (see
 [Performance](perf/index.md)) -- the IR slice itself proved in the same session
-shape as 1.41.0. An idle `make prove` short-circuits in about 2.4 s, and a
+shape as 1.41.0. An idle `just prove` short-circuits in about 2.4 s, and a
 warm cache-hit run re-proves only the changed units.
 
 ## Where the IR could go next

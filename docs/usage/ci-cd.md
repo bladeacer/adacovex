@@ -25,7 +25,7 @@ jobs:
           standard: all          # DO-178C + ISO 26262 + IEC 62304
           require-spark: Platinum
           require-docstrings: 100
-          require-tests: 1815
+          require-tests: 1818
           run-tests: true
           generate-sbom: true
 ```
@@ -105,7 +105,7 @@ check (`tools/check-action-parity.py`), which fails when the action's inputs
 stop mirroring the base CLI option set, and also fails when the `### Inputs`
 table below drifts from `action.yml`. See `tools/check-action-parity.py` for
 the mapping rules (maintainers run the same check locally via
-`make action-parity-check`; see the [developer guide](../contributing/developer-guide.md)).
+`just action-parity-check`; see the [developer guide](../contributing/developer-guide.md)).
 
 The `### Inputs` table lives on the [composite action
 page](ci-cd-action.md#inputs), next to the rest of the action detail.

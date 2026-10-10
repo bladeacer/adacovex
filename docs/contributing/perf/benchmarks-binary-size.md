@@ -1,6 +1,6 @@
 # Binary size and the bundled manual
 
-`make bench` reports the raw and stripped binary sizes. The bundled offline
+`just bench` reports the raw and stripped binary sizes. The bundled offline
 manual is the largest single payload, so its composition is measured through
 the generator's own pipeline. The machine and the harness are on
 [Benchmarking adacovex](benchmarks.md).
@@ -16,7 +16,7 @@ sane size: the 1.58.0 release build is ~9.5 MiB as linked, and
 reflects the code added since, notably the SPARK coverage analyser and its
 report paths; the manual encoding below is unchanged). All figures on this
 page are taken on the release profile (`-O2 -gnatn`); a development build
-(`-O1`, with debug info) is larger by design. `make bench` reports both raw and stripped sizes, so a size
+(`-O1`, with debug info) is larger by design. `just bench` reports both raw and stripped sizes, so a size
 regression is visible in the same command as the timings.
 
 ## Bundled offline manual

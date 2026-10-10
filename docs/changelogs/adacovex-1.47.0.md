@@ -49,7 +49,7 @@ swept to British "rigour" on the affected pages.
 
 ### C4: Docs gate clean: line-cap opt-out marker + README trim
 
-`make docs-check` had four standing line-cap overruns (README, the 1.38.0
+`just docs-check` had four standing line-cap overruns (README, the 1.38.0
 changelog, the STE100 technical-names dictionary, and the 16.1.0 proof
 ledger) plus one paragraph-rule failure carried in this release. The
 paragraph failure is fixed in place, the README is trimmed to the budget

@@ -12,7 +12,7 @@ codes, the parsed effect, and the shorthand server flags.
 It needs no browser and no third-party package, so it runs anywhere the
 binary is built:
 
-  make build          # once
+  just build          # once
   python3 tests/e2e/cli_flags.py
 
 Exit code 0 when every check passes, 1 otherwise.
@@ -463,7 +463,7 @@ def check_complexity(r: Results, tmp: Path) -> None:
 
 def check_spark_coverage(r: Results, tmp: Path) -> None:
     #  A project with no gnatprove artefacts fails loudly (exit 1);
-    #  the adacovex tree itself has obj/gnatprove from `make prove`,
+    #  the adacovex tree itself has obj/gnatprove from `just prove`,
     #  so it produces every metric and the gate is evaluated.
     empty = tmp / "spark-empty"
     write_project(empty, 1)
@@ -702,7 +702,7 @@ def check_prove(r: Results, tmp: Path) -> None:
 
 def main() -> int:
     if not Path(BIN).is_file():
-        print(f"error: {BIN} not found; run `make build` first",
+        print(f"error: {BIN} not found; run `just build` first",
               file=sys.stderr)
         return 1
     r = Results()

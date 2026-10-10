@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Run a command with the dev manifest swapped in, then restore it.
 
-`make doc` and `make fmt` run gnatdoc / gnatformat, which are dev
+`just doc` and `just fmt` run gnatdoc / gnatformat, which are dev
 dependencies present only in `alire-dev.toml`.  The old Makefile `_dev_cmd`
 helper copied `alire.toml` and `alire/` aside, swapped `alire-dev.toml` in
 as `alire.toml`, ran the command, and restored both -- via a shell trap so

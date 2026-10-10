@@ -82,7 +82,7 @@ CLI_ONLY: Dict[str, str] = {
     "check": "man --check (local)",
     "dir": "man --dir (local)",
     "out": "sbom --out output path (the action uploads the SBOM artifact itself)",
-    "complexity": "complexity subcommand (local quality gate; wired into make complexity-check)",
+    "complexity": "complexity subcommand (local quality gate; wired into just complexity-check)",
     "spark-coverage": "spark-coverage subcommand (local report; its CI gate is driven by require-coverage + gate-metric)",
     "group": "spark-coverage --group display selector (local dashboard grouping)",
     "metric": "spark-coverage --metric summary selector (local display)",

@@ -239,7 +239,7 @@ package Adacovex.Cache is
    --  registry CLI (npm/pnpm/cargo/...). Those calls boot a subprocess
    --  (node for npm/pnpm) and are not covered by the content-addressed
    --  result cache, so a "warm" run still paid for them -- that was the
-   --  main residual slowness on `make prove`. This cache mirrors the
+   --  main residual slowness on `just prove`. This cache mirrors the
    --  system-tool probe cache: the answers live in the machine-local data
    --  directory (`<data>/meta`), outside the result cache, with the same
    --  7-day TTL, so a warm run serves them from disk with zero subprocess

@@ -82,7 +82,7 @@ dropdown + Save settings button, footer with an embed hint, and the theme
 script) moved out of the Ada renderer's line-by-line string literals into a
 single HTML file, `resources/dashboard.html`. `tools/gen-dashboard.py`
 (pure stdlib, typed, `--check` mode like gen-version.py) bundles it into
-`src/adacovex-dashboard_template.ads` at `make build` (committed and
+`src/adacovex-dashboard_template.ads` at `just build` (committed and
 byte-identical when unchanged), and `Adacovex.Renderers.HTML` now only
 builds the dynamic card markup, injecting it at the `__CARDS__` placeholder
 and filling the `__THEME__` initial-theme marker. Editing the page chrome
@@ -131,7 +131,7 @@ already-proved uppercase/parse patterns and add 7 VCs, all proved; the new
 bundled dashboard template package (`Adacovex.Dashboard_Template`, a String
 constant generated from `resources/dashboard.html`) adds one analysed unit
 with no proof obligations; the VCS and man-page packages are non-SPARK I/O
-code and add no proof obligations. Proven with `make prove` under gnatprove
+code and add no proof obligations. Proven with `just prove` under gnatprove
 16.1.0 (`--steps=10000`).
 
 ## Traceability

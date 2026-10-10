@@ -10,7 +10,7 @@ Version bumped 1.51.0 -> 1.52.0.
 
 ### C1: The self tree is now proved and gated at gnatprove level 4
 
-`make prove` passed `--level=4` to gnatprove. Level 4 is the deepest effort:
+`just prove` passed `--level=4` to gnatprove. Level 4 is the deepest effort:
 it adds stronger solver configurations, more inlining for contextual
 analysis, and (in gnatprove 16) a deeper flow analysis that surfaced two
 `warning: unreachable code` findings the lower levels never reported. The
@@ -61,7 +61,7 @@ touched.
 
 ### C4: The cold-clone prove benchmark
 
-`make bench` times a fifth scenario: `prove` against a fresh copy of the
+`just bench` times a fifth scenario: `prove` against a fresh copy of the
 target tree with no result cache, no gnatprove session, and no
 `gnatprove.out`. It is the first-run-on-a-new-checkout shape -- prove cold
 wipes the session but leaves the summary in place, while a cold clone has
@@ -69,7 +69,7 @@ nothing, so nothing can short-circuit. The clone is a copy of the working
 tree minus `obj/`, `bin/`, `.git`, and `.adacovex`, so the scenario also
 runs on a tree with no git history and never picks up build state. The
 category joins the benchmark reference table on the Performance page, the
-`make bench` scenario list, and the per-phase timing notes.
+`just bench` scenario list, and the per-phase timing notes.
 
 ### C5: The CI/CD and dashboard guides are split into focused pages
 
@@ -94,7 +94,7 @@ and every new page is reachable from the toctree and the doc-links block.
 This is C2's user-visible face: on this tree, a partial gnatprove session
 left by targeted `-u` runs plus an interrupted level-4 run produced a
 stored summary reporting 15 unproved VCs under an input hash that a
-healthy run shares. The next `make prove` reported
+healthy run shares. The next `just prove` reported
 `SPARK level Silver below required Platinum` with `878 VCs, 0 unproved`
 while a direct gnatprove run proved all 878 checks. The cache-poison guard
 in C2 removes the failure mode for good: such a blob can no longer be

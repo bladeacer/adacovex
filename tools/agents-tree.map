@@ -19,7 +19,7 @@ src/core/adacovex-dir_cache	Per-process directory-snapshot memo (one enumeration
 src/core/adacovex-completion	Shell auto-completion script generator (bash/fish/zsh/pwsh)
 src/core/adacovex-cpus	Host CPU/CI detection + GNATprove parallelism resolution
 src/core/adacovex-opt_outs	Per-file opt-out annotation detector (no-covex-complexity-scan / -docstrings / -spark-proof / -analysis header markers)
-src/core/adacovex-complexity	Cyclomatic complexity checker (multi-language incl. Markdown; LOC/cx gates; --excludes / --skip-path / header opt-out markers; wired into make complexity-check)
+src/core/adacovex-complexity	Cyclomatic complexity checker (multi-language incl. Markdown; LOC/cx gates; --excludes / --skip-path / header opt-out markers; wired into just complexity-check)
 src/core/adacovex-ansi	ANSI colour helper (terminal colour support; CI/NO_COLOR/TERM-dumb aware)
 src/core/adacovex-timezones	Timezone resolution + local-time formatting (OS default; --tz/--timezone: IANA name or UTC/GMT offset)
 src/ir/adacovex-target_profiles	Bounded IR scalar types (IR_Int8..IR_Int64 / IR_UInt8..IR_UInt64) + host/target config
@@ -65,11 +65,11 @@ src/tests/adacovex_ansi_tests	ANSI terminal report tests (28)
 src/tests/adacovex_cpus_tests	Host CPU and job-resolution tests (24)
 src/tests/adacovex_do178c_tests	HLR/LLR parsing and line-reader tests (33)
 src/tests/adacovex_completion_tests	Shell completion script tests (24)
-src/tests/adacovex_paths_tests	Platform-agnostic path helper tests (41)
+src/tests/adacovex_paths_tests	Platform-agnostic path helper tests (44)
 src/tests/adacovex_renderer_svg_tests	SVG renderer tests (161)
 src/tests/adacovex_renderer_tests	HTML/Markdown renderer tests (58)
 src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (304)
-src/tests/test_runner	Test suite entry point (1815 tests)
+src/tests/test_runner	Test suite entry point (1818 tests)
 src/parsers/adacovex-parsers-manifest-req_entry	Parse the first requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-collect_req_entries	Collect every requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-register_root_python_deps	Register root requirements*.txt entries as dev-scope pypi components

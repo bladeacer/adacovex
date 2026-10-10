@@ -85,7 +85,7 @@ Compliance selection stays on `--standard` and its level companions
 | `man --check` | - | - | Exit 0 if the installed man page matches the binary version, 1 otherwise |
 | `man --force` | - | - | Reinstall the man page even when it already matches (repair) |
 | `man --dir=PATH` | `~/.local/share/man` | - | Install the man page under `PATH/man1` instead |
-| tldr | - | - | The curated cheat-sheet page at `docs/tldr/adacovex.md` (in-repo; `make tldr-check` keeps it in the tldr format) |
+| tldr | - | - | The curated cheat-sheet page at `docs/tldr/adacovex.md` (in-repo; `just tldr-check` keeps it in the tldr format) |
 | `--help` | - | both | Print usage and exit |
 
 `prove`-mode flags are also accepted by the main command. They are validated

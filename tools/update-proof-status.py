@@ -259,13 +259,13 @@ def main() -> int:
                 stale += 1
                 print(f"STALE: {f.relative_to(ROOT)}")
             else:
-                f.write_text(text)
+                f.write_text(text, newline="\n")
                 print(f"updated: {f.relative_to(ROOT)}")
 
     if args.check:
         if stale:
             print(f"error: {stale} file(s) carry stale proof metrics "
-                  f"(run `make proof-status` to refresh)", file=sys.stderr)
+                  f"(run `just proof-status` to refresh)", file=sys.stderr)
             return 1
         print("proof metrics in sync across all live files")
         return 0

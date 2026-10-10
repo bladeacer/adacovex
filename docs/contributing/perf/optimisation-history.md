@@ -1,6 +1,6 @@
 # Performance optimisation history
 
-Reverse-chronological record of the optimisations that keep the pipeline and prove paths fast. Each entry names the measurement that drove it. Benchmark methodology and current figures are on [Performance](index.md); the `make prove` timing table is on [Prove timing and the optimisation review](prove-timing.md).
+Reverse-chronological record of the optimisations that keep the pipeline and prove paths fast. Each entry names the measurement that drove it. Benchmark methodology and current figures are on [Performance](index.md); the `just prove` timing table is on [Prove timing and the optimisation review](prove-timing.md).
 
 ## Optimisation history
 
@@ -10,7 +10,7 @@ still holds.
 
 ### Deterministic doc bundling + no-op builds (1.50.0)
 
-The driver was the `make prove` wall: on an unchanged tree it still took
+The driver was the `just prove` wall: on an unchanged tree it still took
 seconds, and sometimes tens of seconds, even with a warm result cache.
 The suspect was the embedded offline manual (`tools/gen-docs.py` ->
 `src/adacovex-docs_template.ads`), and the profile confirmed it:
@@ -21,14 +21,14 @@ The suspect was the embedded offline manual (`tools/gen-docs.py` ->
   assets while a fresh clone produced 204 (thirteen dead pages from the
   pre-1.49.0 layout), and `gen-docs.py --check` failed on a fresh clone.
   Because the spec is a proof input, any content change invalidated the
-  cached SPARK proof and made `make prove` run gnatprove again (a
+  cached SPARK proof and made `just prove` run gnatprove again (a
   20-88 s session).
 - **The fix removes the failed work.** Sphinx now builds clean whenever a
   SHA-256 fingerprint of `docs/` changes, and both generators write their
   Ada spec only when the content changed. A no-op run keeps the spec's
   mtime, so `alr build` is a true no-op (`gprbuild: "adacovex" up to
 date`, ~0.38 s) instead of recompiling the 28k-line unit and relinking.
-- **Measured effect.** `make prove` on an unchanged tree fell from
+- **Measured effect.** `just prove` on an unchanged tree fell from
   seconds (the recompile plus relink; 20-52 s when the spec flipped and
   the proof re-ran) to **~1.0 s** (five runs), with the result cache at
   42 hits and 0 misses. The binary-level benchmark shapes are otherwise
@@ -39,10 +39,10 @@ date`, ~0.38 s) instead of recompiling the 28k-line unit and relinking.
   generated bundle specs (`adacovex-docs_template.ads`,
   `adacovex-dashboard_template.ads`) are now excluded from that hash: they
   are multi-thousand-line string constants with no subprogram and no check.
-  Verified by editing a docs page and re-running `make prove`: the spec was
+  Verified by editing a docs page and re-running `just prove`: the spec was
   regenerated and the cache line still read `gnatprove inputs unchanged`.
 - **A second, smaller win.** Sphinx itself now runs only when the docs
-  sources changed (the fingerprint stamp): a no-op `make build` spends
+  sources changed (the fingerprint stamp): a no-op `just build` spends
   ~0.4 s in the generator instead of ~5.9 s in a clean Sphinx rebuild.
 - **The payload itself shrank.** The asset bodies moved from base64 to
   base85 (4 bytes to 5 characters instead of 5.33), and the Furo sidebar
@@ -56,7 +56,7 @@ date`, ~0.38 s) instead of recompiling the 28k-line unit and relinking.
 
 The 1.46.0 per-file opt-out markers added two new per-file probes to the
 cold paths, so the release was profiled before shipping
-(`make perf-bench` plus `strace` over the cold and warm prove shapes):
+(`just perf-bench` plus `strace` over the cold and warm prove shapes):
 
 - **Warm shapes are untouched.** The `no-covex-spark-proof` marker walk
   runs only after the result-cache lookup misses, so a warm prove hit
@@ -177,7 +177,7 @@ warm syscall count to ~12k and warm wall to ~35 ms:
   `<target>/obj/gnatprove/`, so a wiped session store no longer turns a
   cache hit into a Stone/0-VC assessment failure.
 
-`make perf-bench` itself had two reporting bugs fixed while profiling
+`just perf-bench` itself had two reporting bugs fixed while profiling
 this: `perf stat` writes its counter table to stderr, which the old
 `capture_output` + `print(stdout)` shape discarded (the perf sections
 printed adacovex output but no counters), and the `strace ... 2>&1 |
@@ -202,7 +202,7 @@ speed-ups could improve the pipeline. The measurements say no:
   with an unoptimised local build profile. The pipeline is I/O-bound and
   cache-bound, not compute-bound. A `prove` run is dominated by the gnatprove
   solver floor (~39 s cold), and its adacovex-side share is about a second.
-- `make perf-bench` (perf + strace over the same tree, 1.46.0) showed a
+- `just perf-bench` (perf + strace over the same tree, 1.46.0) showed a
   healthy cache: L1-dcache miss rates of 0.1-0.7% sit far under the ~5% level
   where data-layout work pays, so no struct packing or prefetching is
   warranted. The I/O story is unchanged: ~6.3k `newfstatat` on a warm run

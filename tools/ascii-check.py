@@ -4,9 +4,12 @@
 The old `make ascii-check` recipe used `grep -rIlP` with a `\\x20-\\x7E`
 class.  `grep -P` (PCRE) is a GNU extension: it does not exist on BSD/macOS
 grep, so the gate could not run on every developer machine.  This script
-walks the tree in pure Python and reports any file containing a byte
-outside the printable-ASCII range (plus tab), matching the old gate's
-semantics exactly:
+scans the tree in pure Python and reports any file containing a byte
+outside the printable-ASCII range (plus tab).  In a git work tree it scans
+the tracked files plus every non-ignored file, so gitignored build
+products (the generated `config/` project files, for example) stay out of
+scope on every platform; a plain directory is walked in full.  The
+semantics of the check itself are the old gate's:
 
 - scanned extensions: .ads .adb .md .py .toml .gpr
 - excluded directories: `.git`, `.venv` (docs-build virtualenv),
@@ -28,9 +31,10 @@ Exit code 0 when every scanned file is pure ASCII.
 """
 
 import argparse
+import subprocess
 import sys
 from pathlib import Path
-from typing import List, Tuple
+from typing import Iterator, List, Tuple
 
 ROOT: Path = Path(__file__).resolve().parent.parent
 
@@ -57,12 +61,39 @@ def parse_args(argv: Tuple[str, ...]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def candidate_files(root: Path) -> Iterator[Path]:
+    """Every file the gate inspects under root.
+
+    In a git work tree that is the tracked files plus every non-ignored
+    file (`git ls-files --cached --others --exclude-standard`): gitignored
+    paths such as the generated `config/` project files are build products
+    in whatever line-ending flavour the platform wrote, not sources, and a
+    new source file is still covered before it is staged. A plain
+    directory has no ignore rules, so it falls back to a full walk.
+    """
+    listing: bytes = b""
+    try:
+        listing = subprocess.run(
+            ["git", "ls-files", "--cached", "--others", "--exclude-standard",
+             "-z"],
+            cwd=str(root), capture_output=True, check=True,
+        ).stdout
+    except (OSError, subprocess.CalledProcessError):
+        listing = b""
+    if listing:
+        for rel in listing.decode("utf-8", "replace").split("\0"):
+            if rel:
+                yield root / rel
+        return
+    for path in root.rglob("*"):
+        if not path.is_dir():
+            yield path
+
+
 def bad_files(root: Path) -> List[Path]:
     """Return every supported source file under root that is not pure ASCII."""
     bad: List[Path] = []
-    for path in root.rglob("*"):
-        if path.is_dir():
-            continue
+    for path in candidate_files(root):
         if path.suffix not in EXTENSIONS:
             continue
         if any(part in SKIP_DIRS for part in path.relative_to(root).parts):

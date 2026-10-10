@@ -61,10 +61,19 @@ ROOT: Path = Path(__file__).resolve().parent.parent
 
 
 def binary_path() -> Path:
-    """The built binary: bin/adacovex, or bin/adacovex.exe on Windows."""
+    """The built binary, in the runnable form this host uses.
+
+    On POSIX that is `bin/adacovex`; on Windows the build emits
+    `bin/adacovex.exe`, and a test or CI launcher may be a `bin/adacovex.cmd`
+    next to the plain name.  The names are probed in that order, so the real
+    binary always wins over a launcher.
+    """
     exe = ROOT / "bin" / "adacovex"
-    if os.name == "nt" and (ROOT / "bin" / "adacovex.exe").exists():
-        exe = ROOT / "bin" / "adacovex.exe"
+    if os.name == "nt":
+        for name in ("adacovex.exe", "adacovex.cmd", "adacovex.bat"):
+            alt = ROOT / "bin" / name
+            if alt.is_file():
+                return alt
     return exe
 
 TAG_RE: str = r"^v\d+\.\d+\.\d+$"
@@ -165,8 +174,12 @@ def verify_binary_version(version: str) -> bool:
     failure this guard exists for, so the check is cheap and unconditional:
     run `--version` and compare the token the banner prints.
     """
-    result = sh([str(binary_path()), "--version"],
-                check=False, capture_output=True, text=True)
+    try:
+        result = sh([str(binary_path()), "--version"],
+                    check=False, capture_output=True, text=True)
+    except OSError as exc:
+        print(f"ERROR: cannot run {binary_path()}: {exc}", file=sys.stderr)
+        return False
     if result.returncode != 0:
         print(f"ERROR: {binary_path().name} --version failed (rc={result.returncode})",
               file=sys.stderr)
@@ -175,7 +188,7 @@ def verify_binary_version(version: str) -> bool:
     if reported != version:
         print(f"ERROR: bin/adacovex reports v{reported} but the release is "
               f"v{version}; the binary is stale. Rebuild with "
-              f"'make build' and retry.", file=sys.stderr)
+              f"'just build' and retry.", file=sys.stderr)
         return False
     print(f"  bin/adacovex reports v{reported}: matches the release version.")
     return True
@@ -433,7 +446,7 @@ def release(version_arg: str, assess_args: str, repo: str, dry_run: bool) -> int
     bump_manifests(version)
     git_tag_ops(version, dry_run)
 
-    print("\nNext: run 'make publish' to submit to Alire community index.")
+    print("\nNext: run 'just publish' to submit to Alire community index.")
     return 0
 
 

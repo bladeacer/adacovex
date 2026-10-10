@@ -20,7 +20,7 @@ its internal maximum.
 
 `tools/csslint.py` enforces the dashboard spacing convention: every
 `margin`, `padding` and `gap` pixel length must be a multiple of 4px. It runs
-as a cheap static gate inside `make build` and `make check`. The authored
+as a cheap static gate inside `just build` and `just check`. The authored
 CSS and JavaScript are minified at build time by `tools/gen-dashboard.py`
 (comments stripped, whitespace collapsed) before they are bundled into the
 served dashboard. The vendored graph libraries are already minified and are
@@ -28,7 +28,7 @@ inlined byte-for-byte.
 
 ### C3: Four-sentence paragraph gate for hand-written docs
 
-`tools/check-docs.py` (wired as `make docs-check`) fails when any paragraph
+`tools/check-docs.py` (wired as `just docs-check`) fails when any paragraph
 in the user documentation, README, or human changelogs exceeds four
 sentences. It also rejects em dashes and Latin abbreviations (`i.e.`,
 `e.g.`, `etc.`) to keep the prose under Simplified Technical English.
@@ -96,7 +96,7 @@ implementation rejected outright).
 `Adacovex.Timezones` dropped its `Ada.Text_IO` read of `/etc/timezone` and
 `Adacovex.Ansi` scoped its environment-variable reads, so both remain
 `SPARK_Mode On` with only the env-var Global-contract warning suppressed
-(matching `CPUs.Get_Temp_Directory`). `make prove` therefore keeps its
+(matching `CPUs.Get_Temp_Directory`). `just prove` therefore keeps its
 Platinum, zero-unproved status.
 
 ## Test Suite
@@ -114,14 +114,14 @@ wrappers).
 
 A new Complexity check suite (12 assertions) covers the multi-language
 scan and `--excludes` filtering. The totals are resynced via
-`make test-count`.
+`just test-count`.
 
 ## Proof Results
 
 Platinum, 0 unproved, 0 justified. The timezone and ANSI refactors keep
 every analysed unit `SPARK_Mode On` (the only non-SPARK constructs are the
 env-var reads, whose Global-contract absence is suppressed), so the VC total
-is resynced via `make proof-status` and stays at the Platinum bar.
+is resynced via `just proof-status` and stays at the Platinum bar.
 Invocation: `adacovex prove` (`--steps=10000`, gnatprove 16.1.0).
 
 ## Traceability

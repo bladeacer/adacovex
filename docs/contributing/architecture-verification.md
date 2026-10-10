@@ -174,5 +174,5 @@ proves the mechanism end to end: its
 `.adacovex/patches/demo/deps/vt100/vt100.ads` declares `SPARK_Mode => On`
 on the vendored package and pins the `Scroll_Screen` scroll-region
 contract (its bodies are Text_IO-bound, so gnatprove skips them by design),
-and `make run-ada-crdt` / Ada_CRDT's `make prove` run through the patched
+and `just run-ada-crdt` / Ada_CRDT's `make prove` run through the patched
 copy, preserving the target's proof.

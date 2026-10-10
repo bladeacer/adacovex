@@ -84,7 +84,7 @@ The TTL means a toolchain upgrade shows up in the SBOM within a week even on
 machines that never re-probe explicitly. See
 [docs/perf-benchmarks.md](../contributing/perf/benchmarks.md#probe-cache).
 
-### C5: `make bench` -- hyperfine timings + binary size
+### C5: `just bench` -- hyperfine timings + binary size
 
 A new `bench` target times the assessment pipeline with **hyperfine** when
 installed (bash `time` fallback: no tooling required), measuring cold
@@ -92,14 +92,14 @@ installed (bash `time` fallback: no tooling required), measuring cold
 the **binary size** -- raw and stripped (strip measured on a `/tmp` copy, so
 the build output is never modified). Numbers are machine-dependent on
 purpose: the target is a deterministic *recipe*, and it is intentionally
-*not* part of `make check` (a slow CI runner must not fail a build).
+*not* part of `just check` (a slow CI runner must not fail a build).
 Documented in [docs/perf.md](../contributing/perf/index.md). Binary size check on the
 current build: 7.1 MiB, 3.1 MiB stripped (-57%).
 
 ### C6: cyclomatic-complexity gate -- no god objects
 
-New `make complexity-check` static gate (native Ada implementation), wired into
-`make check`, `ci.yml`, `pr-check.yml`, and `release.yml`:
+New `just complexity-check` static gate (native Ada implementation), wired into
+`just check`, `ci.yml`, `pr-check.yml`, and `release.yml`:
 
 - per-file source LOC cap (2000) and a **percentage-of-codebase cap** (10%)
   -- no file may dominate the tree (god objects);
@@ -153,7 +153,7 @@ script shape, embedded flag list, unknown-shell fallback), the server
 routing category grows from 24 to 25 with the `/api/deps` route test, and
 the test-result parser category grows from 43 to 50 with the
 plain-layout/space-padded table tests. Counts synced with
-`make test-count`.
+`just test-count`.
 
 ## Proof Results
 

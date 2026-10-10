@@ -13,7 +13,7 @@ GitHub: [adacovex 1.39.0 release](https://github.com/bladeacer/adacovex/releases
 The README documentation links now point at the deployed **Read the Docs**
 site (`https://adacovex.readthedocs.io/en/latest/...`) instead of relative
 `docs/...` paths. The changelog entries use the same URL shape that
-`make release` publishes in the release notes, so the repo, the deployed
+`just release` publishes in the release notes, so the repo, the deployed
 site, and any local checkout reference one shared location.
 
 ## Fixes
@@ -45,4 +45,4 @@ unchanged.
 - No new HLRs. The release touches documentation and build infrastructure
   only.
 - `HLR-DOC` -- C1 the README deployed-manual links, H1 the Read the Docs
-  config fix, and the `docs/changelogs` index under `make book`.
+  config fix, and the `docs/changelogs` index under `just book`.

@@ -8,14 +8,14 @@ Version bumped 1.45.0 -> 1.46.0.
 
 ### C1: Complexity gate scans Markdown
 
-`make complexity-check` and the `complexity` subcommand now cover Markdown
+`just complexity-check` and the `complexity` subcommand now cover Markdown
 files by default. The gate previously ran with `--excludes=md,rst`, so the
 docs tree contributed nothing to the per-file LOC and codebase-percentage
 caps. The gate now scans every supported language including Markdown
 (`--excludes=rst --skip-path=docs/api-docs` in the Makefile): a
 hand-written page that outgrows its share of the codebase now fails the
 gate like any other source file. The generated API reference stays
-excluded (it is produced by `make doc`, never hand-authored), and
+excluded (it is produced by `just doc`, never hand-authored), and
 reStructuredText stays excluded for the same reason.
 
 ### C2: `complexity --skip-path` per-path exclusion
@@ -70,8 +70,8 @@ CI, and the docs/usage/ci-cd.md `### Inputs` table documents it.
 ### C6: SIMD and optimisation review
 
 `docs/contributing/perf.md` records a 1.46.0 review of SIMD and other
-low-level optimisation candidates, backed by a fresh `make bench` run on
-the release tree and a `make perf-bench` profile. The measurements show
+low-level optimisation candidates, backed by a fresh `just bench` run on
+the release tree and a `just perf-bench` profile. The measurements show
 the pipeline is I/O- and cache-bound, not compute-bound (a cold
 self-assessment is ~88 ms, a warm one ~41 ms on an unoptimised local
 build; L1-dcache miss rates of 0.1-0.7% sit far under the level where

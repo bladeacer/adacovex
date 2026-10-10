@@ -19,12 +19,15 @@ Alire's own crate-publishing checks exercise on a pull request against the
 community index, which is the public proof that the crate installs and builds
 for that platform.
 
-The `platform-build` job in `.github/workflows/ci.yml` builds the tree with a
-plain `alr build` and runs the native suite on macOS and Windows, which is
-the evidence behind the **Run by the maintainers** column. It uses the same
-build path a consumer and Alire's crate-index CI use, so a green job means
-the crate installs and builds on that platform without the local `just`
-tooling.
+The `platform-build` job in `.github/workflows/release.yml` builds the tree
+with a plain `alr build` and runs the native suite on macOS and Windows,
+which is the evidence behind the **Run by the maintainers** column. It runs
+only when a release tag is pushed: the publish job waits for it, so an
+ordinary push or pull request never pays for the two extra runners and a
+release never ships a binary the other platforms could not build. It uses
+the same build path a consumer and Alire's crate-index CI use, so a green
+job means the crate installs and builds on that platform without the local
+`just` tooling.
 
 | Platform | Architecture | Officially supported | Run by the maintainers | Alire index CI |
 |----------|--------------|----------------------|------------------------|----------------|

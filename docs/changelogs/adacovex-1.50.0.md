@@ -10,9 +10,9 @@ GitHub: [adacovex 1.50.0 release](https://github.com/bladeacer/adacovex/releases
 
 ## Changes
 
-### C1: Deterministic, incremental doc bundling (the `make prove` bottleneck)
+### C1: Deterministic, incremental doc bundling (the `just prove` bottleneck)
 
-`make prove` on an unchanged tree re-proved far too often, and a cache-miss
+`just prove` on an unchanged tree re-proved far too often, and a cache-miss
 run paid a full gnatprove session (tens of seconds). The cause was the
 bundled offline manual: `tools/gen-docs.py` collected every page from an
 *incremental* Sphinx build directory, so old pages that a doc move had left
@@ -30,7 +30,7 @@ the content changed**, so a no-op run keeps the file's mtime and `alr build`
 does not recompile the generated 28k-line unit (nor relink) on every run.
 The committed spec is regenerated without the 13 dead pages.
 
-Effect on this machine: `make prove` on an unchanged tree falls from seconds
+Effect on this machine: `just prove` on an unchanged tree falls from seconds
 (the recompile and relink) to **~1.0 s**, and the result cache stays warm
 (42 hits, 0 misses) instead of flipping to a miss. `--check` is now
 read-only and never rewrites the committed spec.
@@ -41,7 +41,7 @@ generated bundle specs (`adacovex-docs_template.ads` and
 `adacovex-dashboard_template.ads`) are now excluded from the proof-input
 hash. They are multi-thousand-line string constants (base85 gzip chunks and
 inlined HTML/CSS/JS) with no subprogram and no check, so their content
-cannot change a proof result. Editing a docs page and re-running `make
+cannot change a proof result. Editing a docs page and re-running `just
 prove` now regenerates the spec and still reports `gnatprove inputs
 unchanged`.
 
@@ -92,12 +92,12 @@ manual](../contributing/perf/benchmarks-binary-size.md#bundled-offline-manual),
 and the
 LZ4 comparison is on the [dashboard page](../usage/dashboard.md).
 
-### C4: A `make compliance` target and a derived test gate
+### C4: A `just compliance` target and a derived test gate
 
 The committed verification report had no owner and drifted for many
-releases. A new `make compliance` target regenerates
+releases. A new `just compliance` target regenerates
 `docs/compliance/VERIFICATION.md` and `docs/compliance/TRACE.md` for the
-self tree in one command. The target is deliberately not part of `make
+self tree in one command. The target is deliberately not part of `just
 prove`: the reports live under `docs/` and are bundled into the offline
 manual, so emitting them inside a prove run would change the bundled
 template and invalidate the cached proof on the next run.
@@ -135,8 +135,8 @@ The SBOM asset scan reads the `resources/` root as vendored third-party
 libraries and `resources/js/` as the project's own modules, so at the root
 the file appeared as a bogus `pkg:generic/book-nav` vendored component.
 
-The paragraph splitter now runs as its own gate, `make para-split-check`,
-inside `make check`. `docs-check` already enforces the 4-sentence rule;
+The paragraph splitter now runs as its own gate, `just para-split-check`,
+inside `just check`. `docs-check` already enforces the 4-sentence rule;
 running the splitter too keeps the tool a maintainer reaches for on a
 failure provably in step with the gate, so a drift fails the gate instead of
 rewriting a page wrongly.
@@ -144,8 +144,8 @@ rewriting a page wrongly.
 ### C7: Documentation coverage is now a gate, and two new doc categories
 
 AGENTS.md called the CLI-reference and dashboard coverage a manual audit.
-`tools/check-docs-coverage.py` now enforces it, wired as `make
-docs-coverage-check` in `make check`, as the `ci.yml` `docs-coverage` job,
+`tools/check-docs-coverage.py` now enforces it, wired as `just
+docs-coverage-check` in `just check`, as the `ci.yml` `docs-coverage` job,
 and in the release workflow. The gate fails when a
 `Known_Flags` entry is absent from the `docs/usage/cli-reference*` pages,
 when a path the server dispatches on is absent from the
@@ -219,7 +219,7 @@ The `--require-tests` gate in `tools/run.py` is derived from
 The `manual subpages are served at /docs/...` browser check requested
 `/docs/architecture.html`, but the 1.49.0 documentation restructure moved
 that page to `contributing/architecture.html`. The request returned 404, so
-`make e2e` was red on an unchanged tree. The check now tracks the page's
+`just e2e` was red on an unchanged tree. The check now tracks the page's
 real path, and a new check loads four pages at different directory depths
 and follows the injected sidebar's links.
 
@@ -229,7 +229,7 @@ The paragraph splitter read the `!` of a badge and the `?` of a link query as
 sentence ends, and it rewrapped a split paragraph into one long line. A
 `--fix` run therefore rewrote `README.md` as `! [covex ...` and `? url=...`,
 and it turned `Adacovex.Target_Profiles` into `Adacovex. Target_Profiles`. It
-also disagreed with the gate: it reported 13 files that `make docs-check`
+also disagreed with the gate: it reported 13 files that `just docs-check`
 accepts.
 
 The splitter now applies the sentence rule and the paragraph segmentation of
@@ -275,7 +275,7 @@ and the coverage gate (C7) fails on any dangling toctree entry.
 `docs/api-docs/adacovex-docs_template.md` still carried the pre-1.50.0
 compact form of the `Asset_Ref` record (`type Asset_Ref is record`), while
 the committed spec and `tools/gen-docs.py` both emit the multi-line form.
-The page is generated by `make doc`, and it now matches the committed spec.
+The page is generated by `just doc`, and it now matches the committed spec.
 
 ### H10: The open entry of the manual sidebar was off screen
 
@@ -360,6 +360,6 @@ changes live outside `src/`. No proof metric regressed.
   subcommand's input-hash walk.
 - `HLR-CLI` -- C4's derived test gate, C7's `Known_Flags` coverage, and
   H4's corrected example.
-- `HLR-COMPLIANCE` -- C4's `make compliance` target, H3's regenerated
+- `HLR-COMPLIANCE` -- C4's `just compliance` target, H3's regenerated
   verification report and traceability matrix, and H8's corrected
   maintainer toctree entries.

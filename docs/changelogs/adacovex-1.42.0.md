@@ -51,7 +51,7 @@ now lives in `~/.adacovex/meta/`, beside the version-probe store: it is
 machine-level state with the same TTL model, so a cold result cache is no
 longer a cold registry. `Cache_Schema` moved to s7 for the layout change.
 
-### C4: `make bench` samples the prove subcommand, cold and warm
+### C4: `just bench` samples the prove subcommand, cold and warm
 
 The benchmark script now times four hyperfine scenarios: the assessment
 pipeline cold and warm, and the `prove` subcommand cold and warm. The
@@ -67,7 +67,7 @@ prove warm ~47 ms (stable across 20 consecutive runs), prove cold ~39.3 s
 (dominated by the 876-VC solver run). The performance guide now carries a
 benchmark-category reference table defining every scenario by which cache
 is populated, and documents the partial-session state that made
-`make prove` timings alternate between instant and multi-second on this
+`just prove` timings alternate between instant and multi-second on this
 machine.
 
 ### C5: Multi-pair contract synthesis ships in the IR synthesiser
@@ -115,7 +115,7 @@ Platinum, 0 unproved, 0 justified, 876 VCs (876 proved) under gnatprove
 16.1.0 across 56 analysed units. The multi-pair slice adds 85 VCs over
 the 1.41.0 lean slice; the bounded length subtypes keep the loop VCs
 tractable, so the general form proved without justifications or
-`SPARK_Mode (Off)` additions. Measured at the binary level (`make bench`,
+`SPARK_Mode (Off)` additions. Measured at the binary level (`just bench`,
 hyperfine): prove warm ~51 ms (from ~2.5 s at 1.41.0), prove cold
 (`prove --no-cache`, gnatprove session intact) ~1.3 s, and a one-time fully
 cold solver run of ~42 s when `obj/gnatprove/` is wiped too. A warm

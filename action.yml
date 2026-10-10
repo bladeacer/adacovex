@@ -142,7 +142,7 @@ inputs:
     default: 'true'
   result-cache:
     description: >-
-      Persist adacovex's on-disk result cache (the result cache) across
+      Persist adacovex's on-disk result cache across
       workflow runs with actions/cache. Entries are keyed by SHA-256 content
       hashes, so restoring a stale cache is always safe: only artifacts that
       are byte-for-byte unchanged since the previous run are served from it.
@@ -173,7 +173,7 @@ inputs:
     required: false
     default: 'false'
   cache-dir:
-    description: 'Override adacovex result cache directory (default the result cache).'
+    description: 'Override adacovex result cache directory (default: the platform cache directory).'
     required: false
     default: ''
   cache-max:
@@ -267,7 +267,7 @@ runs:
     - name: Resolve the adacovex state directories
       #  The result cache lives where the platform convention puts it
       #  (Adacovex.Paths.Cache_Root): $XDG_CACHE_HOME on Linux and the
-      #  BSDs, ~/Library/Caches on macOS, %LOCALAPPDATA%dacovex\cache on
+      #  BSDs, ~/Library/Caches on macOS, %LOCALAPPDATA%\adacovex\cache on
       #  Windows.  actions/cache needs one literal path, so resolve it here
       #  once and reuse it in the restore and save steps.
       id: adacovex-state

@@ -1,4 +1,5 @@
 with Ada.Text_IO;
+with Adacovex.Paths;
 
 package body Adacovex.Parsers is
 
@@ -19,8 +20,6 @@ package body Adacovex.Parsers is
       use Ada.Text_IO;
       Drain : String (1 .. Line'Length);
       DLast : Natural;
-      Loc   : constant String :=
-        File_Path & (if Line_Num > 0 then ":" & Img (Line_Num) else "");
    begin
       Get_Line (F, Line, Last);
       Overflow := False;
@@ -43,13 +42,21 @@ package body Adacovex.Parsers is
          end if;
       end if;
       if Overflow then
-         Put_Line
-           (Standard_Error,
-            "Error: "
-            & Loc
-            & ": line exceeds Max_Line buffer ("
-            & Img (Line'Length)
-            & " bytes)");
+         declare
+            --  Built only when the line is overlong: the normal read path
+            --  allocates no diagnostic string.
+            Loc : constant String :=
+              Adacovex.Paths.Display (File_Path)
+              & (if Line_Num > 0 then ":" & Img (Line_Num) else "");
+         begin
+            Put_Line
+              (Standard_Error,
+               "Error: "
+               & Loc
+               & ": line exceeds Max_Line buffer ("
+               & Img (Line'Length)
+               & " bytes)");
+         end;
       end if;
    end Read_Line;
 

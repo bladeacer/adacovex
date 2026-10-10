@@ -17,7 +17,7 @@ removed so the gate parameters are no longer flagged as unreferenced.
 
 `docs/THIRD_PARTY_NOTICES.md` and the dashboard Credits tab now list
 Playwright (Apache-2.0) as a development dependency used for end-to-end
-dashboard layout tests (`make e2e`).
+dashboard layout tests (`just e2e`).
 
 ### C3: Dependency tree filter state preservation
 
