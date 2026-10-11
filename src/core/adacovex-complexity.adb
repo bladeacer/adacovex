@@ -1330,8 +1330,7 @@ package body Adacovex.Complexity is
                Ada.Text_IO.Put_Line
                  ("  - "
                   & Adacovex.Paths.Display
-                      (Violations (I).File_Path
-                         (1 .. Violations (I).File_Len))
+                      (Violations (I).File_Path (1 .. Violations (I).File_Len))
                   & Violations (I).Message (1 .. Violations (I).Msg_Len));
             end loop;
          else

@@ -79,8 +79,8 @@ procedure Adacovex_Main is
       Seg_Len : Natural := 0;
       I       : Natural := S'First;
 
-      function Is_Sep (C : Character) return Boolean is
-        (C = '/' or else C = '\');
+      function Is_Sep (C : Character) return Boolean
+      is (C = '/' or else C = '\');
 
       procedure Flush_Seg is
       begin

@@ -245,10 +245,7 @@ package body Adacovex_Cache_Tests is
          declare
          begin
             Ada.Directories.Delete_File
-              (Adacovex.Paths.Cache_Root
-               & "/probes/"
-               & Probe_Name
-               & ".v2");
+              (Adacovex.Paths.Cache_Root & "/probes/" & Probe_Name & ".v2");
          exception
             when others =>
                null;
@@ -403,12 +400,12 @@ package body Adacovex_Cache_Tests is
          Len := 0;
          Cache.Get_Cached (Ns_Key, Buf, Len, Found);
          R.Check
-           (Found and then Len = 18
+           (Found
+            and then Len = 18
             and then Buf (1 .. Len) = "namespaced-payload",
             "Test 15: namespaced key served its payload back");
          R.Check
-           (Ada.Directories.Exists
-              (Test_Cache_Dir & "/pr/prove-" & Ns_Hash),
+           (Ada.Directories.Exists (Test_Cache_Dir & "/pr/prove-" & Ns_Hash),
             "Test 15: the entry name maps ':' to '-' on disk");
       end;
 

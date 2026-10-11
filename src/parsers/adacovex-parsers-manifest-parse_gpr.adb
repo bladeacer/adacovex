@@ -24,8 +24,7 @@ is
       --  `with "x.gpr"` clause (a cross-platform bug, because the object's
       --  length was fixed by Trim (S)).
       Name : constant String :=
-        (if Raw'Length > 4
-           and then Raw (Raw'Last - 3 .. Raw'Last) = ".gpr"
+        (if Raw'Length > 4 and then Raw (Raw'Last - 3 .. Raw'Last) = ".gpr"
          then Raw (Raw'First .. Raw'Last - 4)
          else Raw);
    begin

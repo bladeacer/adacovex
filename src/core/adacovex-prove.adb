@@ -784,11 +784,14 @@ package body Adacovex.Prove is
             --  ']'). Strip it with the other blanks, so a CRLF alire.toml
             --  parses exactly like an LF one on every platform.
             Line : constant String :=
-              Trim (Raw (Raw'First .. Raw'Last
-                         - (if Raw'Length > 0
-                            and then Raw (Raw'Last) = ASCII.CR
-                            then 1 else 0)),
-                    Ada.Strings.Both);
+              Trim
+                (Raw
+                   (Raw'First
+                    .. Raw'Last
+                       - (if Raw'Length > 0 and then Raw (Raw'Last) = ASCII.CR
+                          then 1
+                          else 0)),
+                 Ada.Strings.Both);
          begin
             if Line'Length > 2
               and then Line (Line'First) = '['
@@ -1366,8 +1369,7 @@ package body Adacovex.Prove is
          F        : File_Type;
          In_Prove : Boolean := False;
       begin
-         if not Ada.Directories.Exists (Config_File)
-         then
+         if not Ada.Directories.Exists (Config_File) then
             return "";
          end if;
          Open (F, In_File, Config_File);
@@ -1380,11 +1382,15 @@ package body Adacovex.Prove is
                --  character, so the CR must go. Strip it with the other
                --  blanks.
                Line : constant String :=
-                 Trim (Raw (Raw'First .. Raw'Last
-                            - (if Raw'Length > 0
+                 Trim
+                   (Raw
+                      (Raw'First
+                       .. Raw'Last
+                          - (if Raw'Length > 0
                                and then Raw (Raw'Last) = ASCII.CR
-                               then 1 else 0)),
-                       Ada.Strings.Both);
+                             then 1
+                             else 0)),
+                    Ada.Strings.Both);
             begin
                if Line'Length > 2
                  and then Line (Line'First) = '['
@@ -2170,12 +2176,12 @@ package body Adacovex.Prove is
             declare
                --  The two artefacts of a proof run, fixed-width so the
                --  component type stays constrained (Trim drops the padding).
-               Names  : constant array (1 .. 2) of String (1 .. 15) :=
+               Names    : constant array (1 .. 2) of String (1 .. 15) :=
                  ("gnatprove.out    ", "gnatprove.sarif");
                Dir_Part : constant String := "obj/gnatprove/";
-               Prefix : Natural := GLen;
-               Src_Out : String (1 .. Types.Max_Path);
-               Src_Len : Natural;
+               Prefix   : Natural := GLen;
+               Src_Out  : String (1 .. Types.Max_Path);
+               Src_Len  : Natural;
             begin
                --  The proof artefacts live in the patched tree's own object
                --  dir: <copy>/obj/gnatprove/<file> (the copy's root project
@@ -2189,8 +2195,7 @@ package body Adacovex.Prove is
                        Trim (Names (N), Ada.Strings.Both);
                   begin
                      --  An over-long path is reported, never truncated.
-                     if Prefix + Dir_Part'Length + Name'Length
-                       > Src_Out'Length
+                     if Prefix + Dir_Part'Length + Name'Length > Src_Out'Length
                      then
                         Ada.Text_IO.Put_Line
                           (Ada.Text_IO.Standard_Error,
@@ -2225,7 +2230,8 @@ package body Adacovex.Prove is
                                   & "' '"
                                   & Target_Dir
                                   & "/obj/gnatprove/"
-                                  & Name & "'")),
+                                  & Name
+                                  & "'")),
                               "/dev/null",
                               C1,
                               C2);
@@ -2265,7 +2271,8 @@ package body Adacovex.Prove is
                --  artefact pair the store does not hold (a run whose SARIF
                --  exceeds the blob cap is re-proved rather than served as
                --  a partial hit).
-               Out_Ok := Read_Artefact (Proof_Dir & "/gnatprove.out", Buf, Len);
+               Out_Ok :=
+                 Read_Artefact (Proof_Dir & "/gnatprove.out", Buf, Len);
                if Out_Ok then
                   Adacovex.Cache.Store
                     (Proof_Output_Key (In_Hash), Buf (1 .. Len), OK2);
@@ -2458,11 +2465,7 @@ package body Adacovex.Prove is
          Free (Exe);
       end if;
       Find_Deployed_GNATprove
-        (Toolchain_Cache,
-         "",
-         S.Cached_Dir,
-         S.Cached_Len,
-         S.Cached);
+        (Toolchain_Cache, "", S.Cached_Dir, S.Cached_Len, S.Cached);
       S.Cores := Adacovex.CPUs.Detect_Core_Count;
       S.In_CI := Adacovex.CPUs.Is_Running_In_CI;
       for I in 1 .. 6 loop

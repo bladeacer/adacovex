@@ -3,7 +3,7 @@
   "specVersion": "1.5",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-10-11T00:13:50",
+    "timestamp": "2026-10-11T00:30:46",
     "tools": [
       {"vendor": "bladeacer", "name": "adacovex", "version": "1.60.0"}
     ],
@@ -45,6 +45,17 @@
       },
     {
       "type": "library",
+      "bom-ref": "pkg:generic/yace",
+      "name": "yace",
+      "version": "1.1.0",
+      "language": "JavaScript",
+      "purl": "pkg:generic/yace",
+      "licenses": [{"license": {"id": "MIT"}}],
+      "externalReferences": [{"url": "https://github.com/petersolopov/yace", "type": "website"}],
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "vendored"}]
+      },
+    {
+      "type": "library",
       "bom-ref": "pkg:generic/nomnoml",
       "name": "nomnoml",
       "version": "1.7.0",
@@ -56,14 +67,14 @@
       },
     {
       "type": "library",
-      "bom-ref": "pkg:generic/yace",
-      "name": "yace",
-      "version": "1.1.0",
-      "language": "JavaScript",
-      "purl": "pkg:generic/yace",
-      "licenses": [{"license": {"id": "MIT"}}],
-      "externalReferences": [{"url": "https://github.com/petersolopov/yace", "type": "website"}],
-      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "vendored"}]
+      "bom-ref": "pkg:npm/@playwright/test@1.62.1",
+      "name": "@playwright/test",
+      "version": "1.62.1",
+      "language": "JavaScript; TypeScript",
+      "purl": "pkg:npm/@playwright/test@1.62.1",
+      "licenses": [{"license": {"id": "Apache-2.0"}}],
+      "externalReferences": [{"url": "https://playwright.dev", "type": "website"}],
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "test"}]
       },
     {
       "type": "library",
@@ -123,17 +134,8 @@
       "type": "library",
       "bom-ref": "pkg:generic/python",
       "name": "python",
-      "version": "3.13.16",
+      "version": "3.14.7",
       "purl": "pkg:generic/python",
-      "description": "System tool referenced by the project (dev dependency)",
-      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
-      },
-    {
-      "type": "library",
-      "bom-ref": "pkg:generic/alr",
-      "name": "alr",
-      "version": "2.1.1",
-      "purl": "pkg:generic/alr",
       "description": "System tool referenced by the project (dev dependency)",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
       },
@@ -141,7 +143,7 @@
       "type": "library",
       "bom-ref": "pkg:generic/bash",
       "name": "bash",
-      "version": "5.3.15(2)-release",
+      "version": "5.3.20(1)-release",
       "purl": "pkg:generic/bash",
       "description": "System tool referenced by the project (dev dependency)",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
@@ -157,9 +159,27 @@
       },
     {
       "type": "library",
+      "bom-ref": "pkg:generic/alr",
+      "name": "alr",
+      "version": "2.1.1",
+      "purl": "pkg:generic/alr",
+      "description": "System tool referenced by the project (dev dependency)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/go",
+      "name": "go",
+      "version": "1.27.2-X",
+      "purl": "pkg:generic/go",
+      "description": "System tool referenced by the project (dev dependency)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
+      },
+    {
+      "type": "library",
       "bom-ref": "pkg:generic/python3",
       "name": "python3",
-      "version": "3.15.0",
+      "version": "3.14.7",
       "purl": "pkg:generic/python3",
       "description": "System tool referenced by the project (dev dependency)",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
@@ -168,8 +188,35 @@
       "type": "library",
       "bom-ref": "pkg:generic/git",
       "name": "git",
-      "version": "2.56.0.windows.2",
+      "version": "2.56.0",
       "purl": "pkg:generic/git",
+      "description": "System tool referenced by the project (dev dependency)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/make",
+      "name": "make",
+      "version": "4.4.1",
+      "purl": "pkg:generic/make",
+      "description": "System tool referenced by the project (dev dependency)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/jj",
+      "name": "jj",
+      "version": "0.46.0",
+      "purl": "pkg:generic/jj",
+      "description": "System tool referenced by the project (dev dependency)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/perf",
+      "name": "perf",
+      "version": "7.2.9-1",
+      "purl": "pkg:generic/perf",
       "description": "System tool referenced by the project (dev dependency)",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
       },
@@ -177,7 +224,7 @@
       "type": "library",
       "bom-ref": "pkg:generic/npm",
       "name": "npm",
-      "version": "11.20.0",
+      "version": "11.19.0",
       "purl": "pkg:generic/npm",
       "description": "System tool referenced by the project (dev dependency)",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
@@ -186,7 +233,7 @@
   "dependencies": [
     {
       "ref": "pkg:alire/covex@1.60.0",
-      "dependsOn": ["pkg:generic/flexsearch", "pkg:generic/graphre", "pkg:generic/nomnoml", "pkg:generic/yace", "pkg:alire/gnatprove", "pkg:alire/gnatdoc_bin", "pkg:alire/gnatformat_bin", "pkg:pypi/sphinx", "pkg:pypi/myst-parser", "pkg:pypi/furo", "pkg:generic/python", "pkg:generic/alr", "pkg:generic/bash", "pkg:generic/curl", "pkg:generic/python3", "pkg:generic/git", "pkg:generic/npm"]
+      "dependsOn": ["pkg:generic/flexsearch", "pkg:generic/graphre", "pkg:generic/yace", "pkg:generic/nomnoml", "pkg:npm/@playwright/test@1.62.1", "pkg:alire/gnatprove", "pkg:alire/gnatdoc_bin", "pkg:alire/gnatformat_bin", "pkg:pypi/sphinx", "pkg:pypi/myst-parser", "pkg:pypi/furo", "pkg:generic/python", "pkg:generic/bash", "pkg:generic/curl", "pkg:generic/alr", "pkg:generic/go", "pkg:generic/python3", "pkg:generic/git", "pkg:generic/make", "pkg:generic/jj", "pkg:generic/perf", "pkg:generic/npm"]
     }
   ]
 }

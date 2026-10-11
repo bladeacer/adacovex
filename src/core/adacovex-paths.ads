@@ -50,10 +50,8 @@ package Adacovex.Paths is
    --  @param App_Data    %APPDATA% ("" when unset).
    --  @return The configuration directory.
    function Config_Directory
-     (P          : Platform_Kind;
-      Home       : String;
-      Xdg_Config : String;
-      App_Data   : String) return String
+     (P : Platform_Kind; Home : String; Xdg_Config : String; App_Data : String)
+      return String
    with Global => null;
 
    --  The adacovex cache directory for a platform: the result cache, the
@@ -168,9 +166,7 @@ package Adacovex.Paths is
    --  @param Name  Entry name part.
    --  @return The joined path.
    function Join (Dir : String; Name : String) return String
-   with
-     Post   => (if Dir'Length = 0 then Join'Result = Name),
-     Global => null;
+   with Post => (if Dir'Length = 0 then Join'Result = Name), Global => null;
 
    --  Strip every trailing path separator from Path. A lone root ("/" or
    --  "\") is kept intact, and an empty Path is returned unchanged.
@@ -192,8 +188,6 @@ package Adacovex.Paths is
    --  @return Path in the host's display separator style.
    --  @post Result'Length = Path'Length.
    function Display (Path : String) return String
-   with
-     Post   => Display'Result'Length = Path'Length,
-     Global => null;
+   with Post => Display'Result'Length = Path'Length, Global => null;
 
 end Adacovex.Paths;

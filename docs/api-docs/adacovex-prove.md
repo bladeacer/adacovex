@@ -10,7 +10,7 @@ Resolution priority (lightweight: adacovex only requires ``alr`` on PATH):
 #. If the target's alire.toml or alire-dev.toml declares gnatprove as
 a dependency, deploy only the gnatprove binary crate. This crate is
 a self-contained bundle with no dependencies. Deploy it into
-~/.adacovex/toolchain via ``alr -n get gnatprove=<version>``, then run
+<data>/toolchain via ``alr -n get gnatprove=<version>``, then run
 it directly. This avoids the fragile ``alr exec`` path. That path
 used to compose the target's entire dev-manifest dependency set
 (covex, gnatdoc_bin, gnatformat_bin, and more). Flaky third-party
@@ -25,14 +25,14 @@ always come from the pinned prover. Priorities 2 to 5 apply only to
 projects whose manifest does not declare gnatprove. The first
 deployment downloads a ~130 MB bundle through alr (one-time per
 version; a progress line says so up front). Every later run reuses
-the deployed crate under ~/.adacovex/toolchain with no download, and
+the deployed crate under <data>/toolchain with no download, and
 two projects pinning different versions keep both toolchains side
 by side there.
 
 #. A gnatprove version pinned globally. The pin comes from the
 ADACOVEX_GNATPROVE_VERSION environment variable or the
 ``[prove] gnatprove-version = "16.1.0"`` key in
-~/.adacovex/adacovex.toml. Run_Prove reads it and passes it in as
+<config>/adacovex.toml. Run_Prove reads it and passes it in as
 Pinned_Version. The exact version is deployed via
 ``alr -n get gnatprove=<version>`` and run directly. Like the manifest
 pin, it is authoritative. A failure to deploy is a failure to run.
@@ -41,7 +41,7 @@ version can never reuse a stale proof.
 
 #. A gnatprove already on $PATH.
 
-#. A cached gnatprove in ~/.adacovex/toolchain/bin (download layout) or a
+#. A cached gnatprove in <data>/toolchain/bin (download layout) or a
 previously ``alr get``-deployed gnatprove_*/ crate under the same dir.
 
 #. Last resort: a platform toolchain download. It uses curl. It is

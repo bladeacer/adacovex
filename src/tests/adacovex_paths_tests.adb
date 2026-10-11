@@ -9,8 +9,7 @@ package body Adacovex_Paths_Tests is
       --  Separator recognition: both DOS and Unix separators, and nothing
       --  else.
       R.Check (Adacovex.Paths.Is_Separator ('/'), "slash is a separator");
-      R.Check
-        (Adacovex.Paths.Is_Separator ('\'), "backslash is a separator");
+      R.Check (Adacovex.Paths.Is_Separator ('\'), "backslash is a separator");
       R.Check
         (not Adacovex.Paths.Is_Separator (':'),
          "colon is not a path separator");
@@ -21,8 +20,7 @@ package body Adacovex_Paths_Tests is
       R.Check (Adacovex.Paths.Is_Absolute ("\x"), "\x is absolute");
       R.Check (Adacovex.Paths.Is_Absolute ("C:\x"), "C:\x is absolute");
       R.Check (Adacovex.Paths.Is_Absolute ("c:/x"), "c:/x is absolute");
-      R.Check
-        (not Adacovex.Paths.Is_Absolute ("x/y"), "x/y is relative");
+      R.Check (not Adacovex.Paths.Is_Absolute ("x/y"), "x/y is relative");
       R.Check
         (not Adacovex.Paths.Is_Absolute (""), "the empty path is relative");
       R.Check (not Adacovex.Paths.Is_Absolute ("~"), "~ is relative");
@@ -31,12 +29,12 @@ package body Adacovex_Paths_Tests is
       --  separators first.
       R.Check
         (Adacovex.Paths.Join ("/a", "b") = "/a/b", "join /a + b is /a/b");
-      R.Check
-        (Adacovex.Paths.Join ("/a/", "b") = "/a/b", "join trims one /");
+      R.Check (Adacovex.Paths.Join ("/a/", "b") = "/a/b", "join trims one /");
       R.Check
         (Adacovex.Paths.Join ("", "b") = "b", "join of an empty dir is name");
       R.Check
-        (Adacovex.Paths.Join ("/a", "") = "/a", "join of an empty name is dir");
+        (Adacovex.Paths.Join ("/a", "") = "/a",
+         "join of an empty name is dir");
       R.Check
         (Adacovex.Paths.Join ("C:\x", "y") = "C:\x/y",
          "join of a drive path adds a /");
@@ -118,19 +116,25 @@ package body Adacovex_Paths_Tests is
          --  local profile for cache and data, each with its own subfolder.
          R.Check
            (Config_Directory
-              (Platform_Windows, "C:\\Users\\u", "",
+              (Platform_Windows,
+               "C:\\Users\\u",
+               "",
                "C:\\Users\\u\\AppData\\Roaming")
             = "C:\\Users\\u\\AppData\\Roaming/adacovex",
             "config: Windows uses %APPDATA%");
          R.Check
            (Cache_Directory
-              (Platform_Windows, "C:\\Users\\u", "",
+              (Platform_Windows,
+               "C:\\Users\\u",
+               "",
                "C:\\Users\\u\\AppData\\Local")
             = "C:\\Users\\u\\AppData\\Local/adacovex/cache",
             "cache: Windows uses the local profile");
          R.Check
            (Data_Directory
-              (Platform_Windows, "C:\\Users\\u", "",
+              (Platform_Windows,
+               "C:\\Users\\u",
+               "",
                "C:\\Users\\u\\AppData\\Local")
             = "C:\\Users\\u\\AppData\\Local/adacovex/data",
             "data: Windows uses the local profile");
@@ -172,8 +176,7 @@ package body Adacovex_Paths_Tests is
               (Detect_Platform /= Platform_Windows,
                "detect: a slash separator host is not Windows");
             R.Check
-              (Executable_Suffix = "",
-               "executable suffix is empty on POSIX");
+              (Executable_Suffix = "", "executable suffix is empty on POSIX");
             R.Check
               (Executable_Name ("gnatprove") = "gnatprove",
                "executable name is unchanged on POSIX");

@@ -16,6 +16,13 @@ Storage is a two-level directory tree (``<cache>/<aa>/<aabb...>``). A large
 project never creates a single directory with millions of entries. Entries
 are evicted oldest-first once the count exceeds a soft cap. Disk usage
 stays bounded without external dependencies (pure GNAT runtime only).
+
+A namespaced key spells its namespace with ``:`` (``scan:``, ``tests:``,
+``prove:``, ``proveout:``, ``provesarif:``, ``hlr:``, ``llr:``, ``tools-``,
+``graph-``). The entry path replaces every ``:`` with ``-``, because
+Windows rejects ``:`` in a file name (a blob written under such a name
+lands in an alternate data stream and is never found again). The mapping
+is documented on ``Entry_Path`` in the body.
 HLR-CACHE: Result caching
 
 **See also:** [Architecture -- result caching](../contributing/architecture.md#result-caching)

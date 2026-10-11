@@ -53,7 +53,8 @@ package body Adacovex.Dir_Cache is
       --  the value is always carried as Long_Long_Integer so a 64-bit
       --  time stamp is never shrunk by an implicit 32-bit conversion.
       return
-        Long_Long_Integer (System.OS_Lib.To_C (System.OS_Lib.File_Time_Stamp (Dir)));
+        Long_Long_Integer
+          (System.OS_Lib.To_C (System.OS_Lib.File_Time_Stamp (Dir)));
    exception
       when others =>
          return -1;

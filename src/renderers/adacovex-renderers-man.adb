@@ -413,7 +413,10 @@ package body Adacovex.Renderers.Man is
       App (Buf, Len, "Installed man page (Linux/WSL default man root).");
       App (Buf, Len, ".TP");
       App (Buf, Len, ".I ~/.cache/adacovex");
-      App (Buf, Len, "On-disk analysis result cache (platform cache directory).");
+      App
+        (Buf,
+         Len,
+         "On-disk analysis result cache (platform cache directory).");
       App (Buf, Len, ".SH SEE ALSO");
       App
         (Buf,

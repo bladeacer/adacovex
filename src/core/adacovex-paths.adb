@@ -65,8 +65,7 @@ package body Adacovex.Paths is
       if Path (Path'First) /= '~' then
          return Path;
       end if;
-      if Path'Length >= 2
-        and then Path (Path'First + 1) not in '/' | '\' | ' '
+      if Path'Length >= 2 and then Path (Path'First + 1) not in '/' | '\' | ' '
       then
          --  "~name": another user's home, which only the shell resolves.
          return Path;
@@ -128,17 +127,16 @@ package body Adacovex.Paths is
    end Dot_Fallback;
 
    function Config_Directory
-     (P          : Platform_Kind;
-      Home       : String;
-      Xdg_Config : String;
-      App_Data   : String) return String
-   is
+     (P : Platform_Kind; Home : String; Xdg_Config : String; App_Data : String)
+      return String is
    begin
       case P is
-         when Platform_Linux =>
+         when Platform_Linux   =>
             return Under_ADir (Xdg_Config, Home & "/.config");
-         when Platform_MacOS =>
+
+         when Platform_MacOS   =>
             return Under_ADir (Home & "/Library/Application Support", "");
+
          when Platform_Windows =>
             if App_Data'Length > 0 then
                return Under_ADir (App_Data, "");
@@ -151,14 +149,15 @@ package body Adacovex.Paths is
      (P              : Platform_Kind;
       Home           : String;
       Xdg_Cache      : String;
-      Local_App_Data : String) return String
-   is
+      Local_App_Data : String) return String is
    begin
       case P is
-         when Platform_Linux =>
+         when Platform_Linux   =>
             return Under_ADir (Xdg_Cache, Home & "/.cache");
-         when Platform_MacOS =>
+
+         when Platform_MacOS   =>
             return Under_ADir (Home & "/Library/Caches", "");
+
          when Platform_Windows =>
             if Local_App_Data'Length > 0 then
                return Under_ADir (Local_App_Data, "") & "/cache";
@@ -171,14 +170,15 @@ package body Adacovex.Paths is
      (P              : Platform_Kind;
       Home           : String;
       Xdg_Data       : String;
-      Local_App_Data : String) return String
-   is
+      Local_App_Data : String) return String is
    begin
       case P is
-         when Platform_Linux =>
+         when Platform_Linux   =>
             return Under_ADir (Xdg_Data, Home & "/.local/share");
-         when Platform_MacOS =>
+
+         when Platform_MacOS   =>
             return Under_ADir (Home & "/Library/Application Support", "");
+
          when Platform_Windows =>
             if Local_App_Data'Length > 0 then
                return Under_ADir (Local_App_Data, "") & "/data";
@@ -218,9 +218,12 @@ package body Adacovex.Paths is
       if Override'Length > 0 then
          return Override;
       end if;
-      return Config_Directory
-               (Detect_Platform, Home_Directory, Env ("XDG_CONFIG_HOME"),
-                Env ("APPDATA"));
+      return
+        Config_Directory
+          (Detect_Platform,
+           Home_Directory,
+           Env ("XDG_CONFIG_HOME"),
+           Env ("APPDATA"));
    end Config_Root;
 
    function Cache_Root return String is
@@ -229,9 +232,12 @@ package body Adacovex.Paths is
       if Override'Length > 0 then
          return Override & "/cache";
       end if;
-      return Cache_Directory
-               (Detect_Platform, Home_Directory, Env ("XDG_CACHE_HOME"),
-                Env ("LOCALAPPDATA"));
+      return
+        Cache_Directory
+          (Detect_Platform,
+           Home_Directory,
+           Env ("XDG_CACHE_HOME"),
+           Env ("LOCALAPPDATA"));
    end Cache_Root;
 
    function Data_Root return String is
@@ -240,9 +246,12 @@ package body Adacovex.Paths is
       if Override'Length > 0 then
          return Override & "/data";
       end if;
-      return Data_Directory
-               (Detect_Platform, Home_Directory, Env ("XDG_DATA_HOME"),
-                Env ("LOCALAPPDATA"));
+      return
+        Data_Directory
+          (Detect_Platform,
+           Home_Directory,
+           Env ("XDG_DATA_HOME"),
+           Env ("LOCALAPPDATA"));
    end Data_Root;
    pragma Warnings (On, "no Global contract available");
 

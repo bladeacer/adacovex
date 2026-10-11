@@ -2302,8 +2302,7 @@ package body Adacovex.Config is
             if Raw /= Cfg.Target_Path (1 .. Cfg.Target_Len) then
                Set_String (Cfg.Target_Path, Cfg.Target_Len, Raw);
             end if;
-            if Raw'Length > 0
-              and then not Adacovex.Paths.Is_Absolute (Raw)
+            if Raw'Length > 0 and then not Adacovex.Paths.Is_Absolute (Raw)
             then
                declare
                   CD : constant String := Ada.Directories.Current_Directory;
