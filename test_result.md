@@ -1,6 +1,6 @@
   | Category                                |  Tests | Status   |
   |-----------------------------------------|--------|----------|
-  | Types conversions                        |  67 | PASS     |
+  | Types conversions                        |  67 | FAIL     |
   | DAL compliance                           |  23 | PASS     |
   | Source scanner                           |  89 | PASS     |
   | GNATprove parser                         |  72 | PASS     |
@@ -29,4 +29,4 @@
   | Platform paths                           |  43 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 1821  Failed: 0
+  Passed: 1820  Failed: 1

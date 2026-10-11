@@ -33,7 +33,7 @@ package Adacovex.Types is
    --  they keep their classic values (4096 / 262144). Identifier and
    --  description limits (Max_Id_Str, Max_Desc_Str, Max_Filename) are
    --  semantic, not storage-size dependent, and remain fixed.
-   Max_Path     : constant := 64 * Host_Word_Bits;
+   Max_Path     : constant := 256 * Host_Word_Bits;
    Max_Line     : constant := 4096 * Host_Word_Bits;
    Max_Id_Str   : constant := 64;
    Max_Desc_Str : constant := 128;

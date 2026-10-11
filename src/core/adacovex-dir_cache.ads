@@ -33,7 +33,7 @@ package Adacovex.Dir_Cache is
 
    --  Maximum entries retained per directory snapshot. A directory with
    --  more entries is reported as truncated and never memoised.
-   Max_Dir_Entries : constant := 256;
+   Max_Dir_Entries : constant := 64;
 
    --  Maximum number of directory snapshots retained. The self-audit tree
    --  enumerates ~120 distinct directories across its walkers, so the
@@ -55,7 +55,7 @@ package Adacovex.Dir_Cache is
 
    --  Maximum length of a remembered entry name. Longer names are stored
    --  truncated and flagged (Truncated), forcing a fallback.
-   Max_Name_Len : constant := 120;
+   Max_Name_Len : constant := 64;
 
    --  One remembered directory entry.
    type Dir_Entry_Rec is record
