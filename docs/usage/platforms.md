@@ -140,6 +140,13 @@ binary for dependency-managed installs. See
 [Installation](installation.md) for the full method matrix and the
 `--version` output.
 
+**A Windows developer runs `just check` with the `fmt` gate skipped.**
+`gnatformat` has no Windows binary in the Alire community index, so the
+formatter gate SKIPs on Windows with the reason "gnatformat is not
+available in the dev toolchain"; every other gate runs as usual. The
+detail and the reason are on the [contributor
+guide](../contributing/developer-guide.md#setting-up-the-repository).
+
 ## Release binaries
 
 The `install.sh` script and the GitHub Releases bundle ship a prebuilt

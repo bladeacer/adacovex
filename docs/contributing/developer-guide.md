@@ -51,6 +51,16 @@ one-package probe project, no `sphinx` in the interpreter. The run continues
 past a failed gate. It prints a PASS/FAIL/SKIP summary and exits non-zero
 only when a gate failed.
 
+**`gnatformat` has no Windows binary.** The `fmt` gate resolves
+`gnatformat_bin` through the dev manifest, and the Alire community index
+carries no Windows build of it, so `just fmt` and the `fmt` step of
+`just check` SKIP on a Windows host with the reason "gnatformat is not
+available in the dev toolchain". The formatting itself is unchanged: the
+gate still runs on Linux and on the CI Linux runners, and a Windows
+developer runs `just check` with `fmt` skipped and the rest of the gate
+still verifies the tree. If a Windows binary of `gnatformat` ships in a
+later Alire index, the gate picks it up automatically.
+
 Everything must pass. The sync checks fail loudly when a count in any documentation file is stale.
 
 The repository layout, the execution pipeline, where a change belongs, and
