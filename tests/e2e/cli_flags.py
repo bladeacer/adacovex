@@ -201,7 +201,11 @@ def git_init_commit(path: Path) -> bool:
     """Init a git repo at path and commit the tree; False when git is absent.
 
     The repository is created with GIT_ENV (an empty global and system config),
-    so the developer's own git settings can never break the fixture.
+    so the developer's own git settings can never break the fixture.  The
+    identity is also written into the repository-local config, so the commit
+    is attributed to the test user even on a git that ignores the
+    AUTHOR/COMMITTER variables.  The fixture carries no remote and no test in
+    this harness runs `git push`.
     """
     if shutil.which("git") is None:
         return False
@@ -213,6 +217,8 @@ def git_init_commit(path: Path) -> bool:
                        capture_output=True)
 
     git("init", "-q", "-b", "main")
+    git("config", "user.name", "adacovex e2e")
+    git("config", "user.email", "e2e@adacovex.invalid")
     git("add", "-A")
     git("commit", "-qm", "init")
     return True

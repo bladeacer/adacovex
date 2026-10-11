@@ -31,6 +31,34 @@ jobs:
         run: |
           set -euxo pipefail
           cp -f alire-dev.toml alire.toml
+      - name: Compute the proof-input hash
+        #  Cache key for the gnatprove session store below.  It covers the
+        #  proof-relevant sources only: the two generated bundle specs
+        #  (adacovex-docs_template.ads, adacovex-dashboard_template.ads)
+        #  are data-only string constants with no proof surface, so a docs
+        #  or dashboard edit must not invalidate a cached session -- the
+        #  same exclusion the prove result cache's input hash uses
+        #  (Is_Proof_Input in adacovex-prove.adb).  The hand-written
+        #  adacovex-docs_template.adb body stays in: it is real code and a
+        #  genuine proof input.
+        id: proof-hash
+        shell: bash
+        run: |
+          set -euxo pipefail
+          HASH=$(git ls-files -z '*.ads' '*.adb' '*.gpr' \
+            | grep -zv 'adacovex-docs_template\.ads\|adacovex-dashboard_template\.ads' \
+            | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)
+          echo "hash=$HASH" >> "$GITHUB_OUTPUT"
+      - name: Restore the gnatprove session store
+        #  obj/gnatprove/ is gnatprove's incremental session store.  A hit
+        #  skips re-proving the units whose inputs are unchanged, so the
+        #  self-assessment pays the full solver cost only when proof-
+        #  relevant sources actually changed.  The key is content-addressed
+        #  on the sources above, so a stale restore cannot mask a regression.
+        uses: actions/cache@v4
+        with:
+          path: obj/gnatprove
+          key: gnatprove-session-${{ runner.os }}-${{ steps.proof-hash.outputs.hash }}
       - uses: ./
         with:
           target: .
@@ -38,12 +66,22 @@ jobs:
           gnat-version: 16.1.0
           build: true
           prove: true
+          #  Both caches are safe by construction.  `cache` persists the
+          #  Alire toolchain; `result-cache` persists adacovex's on-disk
+          #  result cache, whose entries are keyed by SHA-256 content
+          #  hashes, so a restored entry is either an exact hit for the
+          #  inputs or absent -- it can never mask a regression.  The
+          #  prove result cache additionally refuses to serve a stored
+          #  summary whose Total row reports unproved VCs, so a degraded
+          #  run (e.g. one killed mid-session) is re-proved, not replayed.
+          cache: true
+          result-cache: true
           #  Quiet (benign-info suppression) is the default; CI passes
           #  --verbose so its output stays authoritative.
           verbose: true
           require-spark: Platinum
           require-docstrings: 100
-          require-tests: 1818
+          require-tests: 1821
           require-proof: 100
           #  Statement-coverage gate: the action runs
           #  `spark-coverage --require-coverage=... --gate-metric=statements`
@@ -67,6 +105,11 @@ jobs:
           build: true
           run-tests: true
           assess: false
+          #  Toolchain + adacovex result cache.  Content-addressed entries
+          #  make a restore either an exact hit or absent, so it can never
+          #  mask a regression.
+          cache: true
+          result-cache: true
 
   #  The macOS/Windows build matrix used to live here as `platform-build`.
   #  It now runs in release.yml only: the cross-platform build check is a
@@ -200,6 +243,10 @@ jobs:
           run-tests: true
           test-command: ./fixture_main
           assess: false
+          #  Toolchain + adacovex result cache (content-addressed, so a
+          #  restore is either an exact hit or absent).
+          cache: true
+          result-cache: true
 
   coverage-gate:
     name: Docstring coverage gate (release tags)

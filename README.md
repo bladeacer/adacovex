@@ -213,9 +213,9 @@ Action inputs/outputs, result caching, and release bundling:
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `just test` | 1818/1818 passing |
+| Unit tests | `just test` | 1821/1821 passing |
 | Self-assessment | `just run-self` | 100% docs, Platinum, DAL-C Achieved |
-| SPARK proof | `just prove` | Platinum (1047 VCs, 0 unproved under gnatprove 16.1.0) |
+| SPARK proof | `just prove` | Platinum (1022 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `just run-ada-crdt` | 100% docs, DAL-C (strict mode) |
 
 See [changelogs](https://adacovex.readthedocs.io/en/latest/changelogs/index.html) for full release notes.

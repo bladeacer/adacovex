@@ -86,6 +86,30 @@ jobs:
           set -euxo pipefail
           cp -f alire-dev.toml alire.toml
 
+      - name: Compute the proof-input hash
+        #  Cache key for the gnatprove session store.  Same rule as the
+        #  ci.yml self-assessment: proof-relevant sources only, excluding
+        #  the two generated bundle specs (data-only string constants with
+        #  no proof surface; Is_Proof_Input in adacovex-prove.adb).  The
+        #  hand-written adacovex-docs_template.adb body stays in.
+        id: proof-hash
+        shell: bash
+        run: |
+          set -euxo pipefail
+          HASH=$(git ls-files -z '*.ads' '*.adb' '*.gpr' \
+            | grep -zv 'adacovex-docs_template\.ads\|adacovex-dashboard_template\.ads' \
+            | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)
+          echo "hash=$HASH" >> "$GITHUB_OUTPUT"
+
+      - name: Restore the gnatprove session store
+        #  Content-addressed on the proof sources, so a stale restore
+        #  cannot mask a regression; a hit skips re-proving unchanged
+        #  units and shortens the release gate.
+        uses: actions/cache@v4
+        with:
+          path: obj/gnatprove
+          key: gnatprove-session-${{ runner.os }}-${{ steps.proof-hash.outputs.hash }}
+
       - uses: ./
         id: adacovex
         with:
@@ -95,12 +119,18 @@ jobs:
           build: true
           release-build: true
           prove: true
+          #  Toolchain + adacovex result cache.  Result-cache entries are
+          #  keyed by SHA-256 content hashes, so a restore is either an
+          #  exact hit or absent; the prove result cache also refuses a
+          #  stored summary whose Total row reports unproved VCs.
+          cache: true
+          result-cache: true
           #  Quiet (benign-info suppression) is the default; CI passes
           #  --verbose so its output stays authoritative.
           verbose: true
           require-spark: Platinum
           require-docstrings: 100
-          require-tests: 1818
+          require-tests: 1821
           require-proof: 100
 
       - name: Require Platinum SPARK level

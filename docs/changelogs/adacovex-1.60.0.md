@@ -171,7 +171,7 @@ same artefact pair behind.
 
 ## Test Suite
 
-1818 tests across 27 categories, up from 1815 across 27 in 1.59.0. The three
+1821 tests across 27 categories, up from 1815 across 27 in 1.59.0. The three
 extra checks cover `Adacovex.Paths.Display`, the display normaliser, and the
 cache tests already rebuild the stamp and probe paths from the platform cache
 directory, so they cover the new layout on every host.

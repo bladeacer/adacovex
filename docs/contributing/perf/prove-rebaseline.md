@@ -39,11 +39,12 @@ the protocol does not fix is the build profile, and the tree now carries two.
 The **dev build** wording above describes the 1.55.0 figures, which were taken
 before profiles existed. Since 1.57.0 every figure is taken on the **release**
 profile (`-O2 -gnatn`, no debug information) and names it, because that is the
-binary the released figures describe. The 1.57.0-1.58.0 phase reused this
-protocol unchanged, and its figures are in that page's tables: a 3-run
-prove-cold sample of 63.8 s (59.1-67.3 s) on the shipped 1047 VCs, prove warm
-45.8 ms over 15 runs, and a fully cold clone at 78.0 s over two runs, all from
-one hyperfine session at load 0.59 with the machine otherwise idle.
+binary the released figures describe. The 1.57.0-1.61.0 phase reused this
+protocol unchanged, and its representative figures (1.58.0's session) are in
+that page's tables: a 3-run prove-cold sample of 63.8 s (59.1-67.3 s) on the
+shipped 1047 VCs, prove warm 45.8 ms over 15 runs, and a fully cold clone at
+78.0 s over two runs, all from one hyperfine session at load 0.59 with the
+machine otherwise idle.
 
 The clone figure is a sequence-order artefact, not a cost: the clone scenario
 runs last, so it inherits the load the earlier scenarios left. Paired against

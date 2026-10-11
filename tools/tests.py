@@ -52,13 +52,29 @@ check_docs_coverage = importlib.import_module("check-docs-coverage")
 check_version = importlib.import_module("check-version-consistency")
 spark_off = importlib.import_module("spark-off-check")
 
+# Every git command a test runs goes through `git()` below, which forces a
+# throwaway identity and blanks the global/system config.  Two guarantees
+# follow, both load-bearing in a repo that also cuts releases:
+#
+#   1. A commit can never be attributed to the developer's own git user.  The
+#      AUTHOR/COMMITTER variables override any user.name/user.email, and
+#      GIT_CONFIG_GLOBAL/SYSTEM point at the null device so no global hook,
+#      signing, or template can leak in.  `os.devnull` (not the hardcoded
+#      "/dev/null") keeps this working on Windows, where the e2e harness
+#      already used the portable spelling.
+#   2. No test pushes.  The release-tag tests assert push ORDER against a
+#      fake `sh` (see ReleaseTagTests), so `git push` is never executed for
+#      real; nothing else in the suite names a remote at all.
 GIT_ENV: dict = {
     "GIT_AUTHOR_NAME": "adacovex test",
     "GIT_AUTHOR_EMAIL": "test@adacovex.invalid",
     "GIT_COMMITTER_NAME": "adacovex test",
     "GIT_COMMITTER_EMAIL": "test@adacovex.invalid",
-    "GIT_CONFIG_GLOBAL": "/dev/null",
-    "GIT_CONFIG_SYSTEM": "/dev/null",
+    "GIT_CONFIG_GLOBAL": os.devnull,
+    "GIT_CONFIG_SYSTEM": os.devnull,
+    # Never let a test reach a real remote, even if a stray push slipped
+    # through: git will refuse a protocol not listed here.
+    "GIT_PROTOCOL_FROM_USER": "0",
 }
 
 
@@ -73,10 +89,18 @@ def git(repo: Path, *args: str) -> subprocess.CompletedProcess:
 
 
 def make_git_repo(repo: Path, tags: list) -> Path:
-    """Initialise a throwaway git repository AT repo, one commit + tags."""
+    """Initialise a throwaway git repository AT repo, one commit + tags.
+
+    The identity is also written into the repository-local config, so the
+    commit is attributed to the test user even on a git that ignores the
+    AUTHOR/COMMITTER variables.  The repo carries no remote, so it cannot
+    push.
+    """
     repo.mkdir(parents=True, exist_ok=True)
     (repo / "f.txt").write_text("hello\n", encoding="utf-8")
     git(repo, "init", "-q", "-b", "main")
+    git(repo, "config", "user.name", "adacovex test")
+    git(repo, "config", "user.email", "test@adacovex.invalid")
     git(repo, "add", "f.txt")
     git(repo, "commit", "-q", "-m", "initial")
     for tag in tags:

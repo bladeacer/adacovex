@@ -34,6 +34,11 @@ jobs:
           gnat-version: 16.1.0
           build: true
           coverage-delta: ${{ github.event.pull_request.base.sha }}
+          #  Toolchain + adacovex result cache.  Result-cache entries are
+          #  keyed by SHA-256 content hashes, so a restore is either an
+          #  exact hit or absent and can never mask a regression.
+          cache: true
+          result-cache: true
 
   summary:
     name: PR summary

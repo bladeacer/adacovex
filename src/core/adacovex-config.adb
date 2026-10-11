@@ -439,7 +439,20 @@ package body Adacovex.Config is
 
    --  Levenshtein edit distance between two strings, capped at 9 so the
    --  suggestion scan stays cheap (anything farther away is "not similar").
-   function Edit_Distance (A, B : String) return Natural with SPARK_Mode => On
+   --
+   --  Global => null pins a standalone analysis: this helper has a single
+   --  caller, so without a contract gnatprove only ever analyses it inlined
+   --  into that caller (an info message, and no separate VC set). The 'First
+   --  precondition is the price of the standalone analysis: the body indexes
+   --  A (A'First + I - 1) up to I = 64, so it needs the caller to rule out a
+   --  'First that would overflow that offset. Both call sites pass slices
+   --  starting at index 1, so it holds trivially.
+   function Edit_Distance (A, B : String) return Natural
+   with
+     SPARK_Mode => On,
+     Global     => null,
+     Pre        =>
+       A'First <= Natural'Last - 64 and then B'First <= Natural'Last - 64
    is
       subtype Row_Idx is Natural range 0 .. 64;
       --  Every cell holds a partial edit distance between a prefix of A
@@ -523,8 +536,12 @@ package body Adacovex.Config is
       Len  : Natural range 0 .. 64;
    end record;
 
+   --  Global => null pins a standalone analysis for the same reason as
+   --  Edit_Distance below: a single caller would otherwise mean an inlined
+   --  only-in-context analysis (and an info message) rather than its own
+   --  verification conditions.
    function Normalized (S : String) return Normalized_Flag
-   with SPARK_Mode => On
+   with SPARK_Mode => On, Global => null
    is
       Buf     : String (1 .. 64) := (others => ' ');
       Len     : Natural range 0 .. 64 := 0;
@@ -556,12 +573,31 @@ package body Adacovex.Config is
       return (Text => Buf, Len => Len);
    end Normalized;
 
+   --  The bounded result of Suggest_Flags, shaped like Normalized_Flag: a
+   --  constrained return type lets gnatprove analyse the single call in
+   --  context (an unconstrained String return emitted three "info:
+   --  no contextual analysis" messages at the call site), and the caller
+   --  slices Text (1 .. Len).
+   type Flag_Suggestion is record
+      Text : String (1 .. 128);
+      Len  : Natural range 0 .. 128;
+   end record;
+
    --  Return " (did you mean --xxx?)" (or " --xxx or --yyy") for an
    --  unknown token, or "" when no known flag is close enough. The caller
    --  appends this to the "unknown option/argument" error message.
-   function Suggest_Flags (S : String) return String with SPARK_Mode => On is
+   --
+   --  The explicit Global contract is load-bearing, not decoration: the
+   --  only call site lives in the non-SPARK Testing code, so without a
+   --  contract gnatprove demotes this body to contextual-only analysis
+   --  (inlined at that call site, which is never translated for proof) and
+   --  its ~118 verification conditions disappear from the proof surface.
+   --  The contract pins a standalone analysis instead.
+   function Suggest_Flags (S : String) return Flag_Suggestion
+   with SPARK_Mode => On, Global => null
+   is
       Buf     : String (1 .. 128) := (others => ' ');
-      Len     : Natural := 0;
+      Len     : Natural range 0 .. 128 := 0;
       --  Norm is a constant, so it carries no initial value that this body
       --  overwrites and needs no initialisation check.
       Norm    : constant Normalized_Flag := Normalized (S);
@@ -574,7 +610,7 @@ package body Adacovex.Config is
       Fin     : Natural;
    begin
       if Norm.Len = 0 then
-         return "";
+         return (Text => Buf, Len => 0);
       end if;
       --  Walk the space-separated Known_Flags list.
       while Start <= Known_Flags'Last loop
@@ -621,7 +657,7 @@ package body Adacovex.Config is
          Start := Fin + 1;
       end loop;
       if MCt = 0 then
-         return "";
+         return (Text => Buf, Len => 0);
       end if;
       --  " (did you mean --standard?)" or " (did you mean --jobs or --job?)"
       if Len < Buf'Last then
@@ -653,7 +689,7 @@ package body Adacovex.Config is
          Len := Len + 1;
          Buf (Len) := '?';
       end if;
-      return Buf (1 .. Len);
+      return (Text => Buf, Len => Len);
    end Suggest_Flags;
 
    package body Testing is
@@ -2032,7 +2068,8 @@ package body Adacovex.Config is
                      --  program then prints the full usage so the user lands on
                      --  the flag list instead of a bare one-line error.
                      declare
-                        Hint : constant String := Suggest_Flags (A);
+                        Sugg : constant Flag_Suggestion := Suggest_Flags (A);
+                        Hint : constant String := Sugg.Text (1 .. Sugg.Len);
                      begin
                         if A'Length >= 1 and then A (A'First) = '-' then
                            Set_Error

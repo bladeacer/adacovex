@@ -12,7 +12,10 @@
 # and live in .venv, managed with uv from requirements.txt.  Recipes that
 # build or serve the manual put .venv on PATH first, so tools/gen-docs.py
 # finds sphinx-build; every other recipe runs with the system interpreter.
-venv-bin := if os() == "windows" { ".venv/Scripts" } else { ".venv/bin" }
+# The path is absolute: a Python 3.13 interpreter started from a relative
+# venv path reports sys.prefix as the relative `.venv` and <frozen site>
+# prints a RuntimeWarning about it.
+venv-bin := justfile_directory() / (if os() == "windows" { ".venv/Scripts" } else { ".venv/bin" })
 
 # Show the task list with each recipe's description (the default action).
 default:

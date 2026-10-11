@@ -109,6 +109,41 @@ leaves three things without a re-run:
 
 When the gate is flaky, start from the artifact, not a local repro.
 
+### Caching
+
+Three caches shorten a run. Every one is content-addressed, so a restored
+cache can never mask a regression.
+
+| Cache | Scope | Key |
+|-------|-------|-----|
+| Alire toolchain | `setup-alire` `cache: true` | Toolchain version |
+| adacovex result cache | `result-cache: true` on `uses: ./` | SHA-256 of each artifact's content |
+| gnatprove session store | `actions/cache` on `obj/gnatprove` | SHA-256 of the proof-relevant sources |
+
+The result cache and the session store are the two that remove the solver
+cost. The result cache serves a file only when it is byte-for-byte unchanged.
+The session store skips re-proving units whose inputs did not change.
+
+The session-store key hashes the tracked `*.ads`, `*.adb`, and `*.gpr`
+sources. It excludes the two generated bundle specs
+(`adacovex-docs_template.ads`, `adacovex-dashboard_template.ads`). Those are
+data-only string constants with no proof surface, so a docs or dashboard edit
+does not invalidate a cached session.
+
+This is the same exclusion the prove
+result cache uses (`Is_Proof_Input` in `adacovex-prove.adb`). The hand-written
+`adacovex-docs_template.adb` body stays in the key. It is real code.
+
+The false-pass guard holds across all three caches. The prove result cache
+refuses to serve a stored summary whose Total row reports unproved VCs, so a
+degraded run (one killed mid-session, for example) is re-proved rather than
+replayed. Content-addressed keys make a stale restore either an exact hit or
+absent, never a partial match.
+
+The bundled manual is not built in CI, so it needs no cache there. Sphinx and
+the uv/pip wheel cache are local developer concerns (`just book`,
+`docs-venv`).
+
 ### Release version bundling
 
 The release workflow builds the binary from the `vX. Y. Z` tag. It **bundles that version into the binary**.
