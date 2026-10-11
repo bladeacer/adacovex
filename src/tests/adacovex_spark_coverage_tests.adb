@@ -54,11 +54,16 @@ package body Adacovex_Spark_Coverage_Tests is
       Create (F, Out_File, Fixture_Dir & "/obj/gnatprove/gnatprove.sarif");
       Put
         (F,
-         "{""version"":""2.1.0"",""runs"":[{""results"":[{""ruleId"":""vc1"",""kind"":""pass"",""level"":""none"",""locations"":[{""physicalLocation"":{""artifactLocation"":{""uri"":""foo.adb""},""region"":{""startLine"":5}}}],");
-      Put
-        (F,
-         """logicalLocations"":[{""name"":""Foo.Do_It""}]},{""ruleId"":""warn1"",""kind"":""pass"",""level"":""warning"",""locations"":"
-         & "[{""physicalLocation"":{""artifactLocation"":{""uri"":""foo.adb""},""region"":{""startLine"":5}}}],""logicalLocations"":[{""name"":""Foo.Do_It""}]}]}]}");
+          "{""version"":""2.1.0"",""runs"":[{""results"":[{""ruleId"":""vc1"",""kind"":""pass"","
+          & """level"":""none"","
+          & """locations"":[{""physicalLocation"":{""artifactLocation"":{""uri"":""foo.adb""},"
+          & """region"":{""startLine"":5}}}],""logicalLocations"":[{""name"":""Foo.Do_It""}]},"
+          & "{""ruleId"":""warn1"",""kind"":""pass"",""level"":""warning"","
+          & """locations"":[{""physicalLocation"":{""artifactLocation"":{""uri"":""foo.adb""},"
+          & """region"":{""startLine"":5}}}],"
+          & """logicalLocations"":[{""name"":""Foo.Do_It""}]}]}]"
+          & "}"
+        );
       Close (F);
    end Make_Fixture;
 

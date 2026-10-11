@@ -23,10 +23,10 @@ package body Adacovex.Cache is
 
    --  The on-disk form of a cache key. A namespaced key spells its
    --  namespace with ':' ("scan:<sha256>", "tests:<sha256>",
-   --  "prove:<sha256>", "proveout:<sha256>", "hlr:<sha256>",
-   --  "llr:<sha256>", "tools-<sha256>", "graph-<sha256>"), and Windows
-   --  rejects ':' in a file name: the create opens an alternate data
-   --  stream, the blob is lost, and a directory probe can never find it
+   --  "prove:<sha256>", "proveout:<sha256>", "provesarif:<sha256>",
+   --  "hlr:<sha256>", "llr:<sha256>", "tools-<sha256>", "graph-<sha256>"),
+   --  and Windows rejects ':' in a file name: the create opens an alternate
+   --  data stream, the blob is lost, and a directory probe can never find it
    --  again (a proof run aborted with Name_Error before this mapping
    --  existed). Every ':' becomes '-' here, once, so the layout is
    --  portable for every present and future namespace. A bare

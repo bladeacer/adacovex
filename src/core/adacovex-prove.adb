@@ -1650,14 +1650,137 @@ package body Adacovex.Prove is
       end Prove_Cache_Key;
 
       --  Namespace the cached gnatprove.out *content* under the input hash.
-      --  Two blobs are stored per proved input: the "1" marker under the
-      --  bare input hash (a cheap hit probe) and the summary text under this
-      --  derived key. A warm hit restores the summary the assessment
-      --  pipeline parses even when obj/gnatprove/ was wiped.
+      --  Three blobs are stored per proved input: the "1" marker under the
+      --  bare input hash (a cheap hit probe), the summary text under this
+      --  derived key, and the SARIF under Sarif_Output_Key. A warm hit
+      --  restores the artefacts the assessment pipeline and the
+      --  spark-coverage report parse even when obj/gnatprove/ was wiped.
       function Proof_Output_Key (Input_Hash : String) return String is
       begin
          return "proveout:" & Input_Hash;
       end Proof_Output_Key;
+
+      --  Namespace the cached gnatprove.sarif *content* under the input
+      --  hash. The SARIF is the second artefact of a proof run: the
+      --  spark-coverage report (and therefore its CI gate) reads it beside
+      --  the summary, and a warm hit that restored only gnatprove.out would
+      --  leave that report with no artefacts. Both artefacts are therefore
+      --  cached together, and the hit marker is written only when both are
+      --  cached, so a warm hit always restores the complete pair.
+      function Sarif_Output_Key (Input_Hash : String) return String is
+      begin
+         return "provesarif:" & Input_Hash;
+      end Sarif_Output_Key;
+
+      --  Read a proof artefact from disk into Buf, returning False when the
+      --  file is absent, empty, or larger than Buf. The size test is
+      --  explicit rather than letting the read truncate: an artefact that
+      --  does not fit the cache blob is re-proved, never served as a
+      --  partial one. The file is read in fixed blocks into a small local
+      --  buffer, because a blob-sized local array would double the warm
+      --  path's peak stack use (the caller's Buf is already one blob long).
+      function Read_Artefact
+        (Path : String; Buf : out String; Len : out Natural) return Boolean
+      is
+         use Ada.Streams.Stream_IO;
+         use type Ada.Streams.Stream_Element_Offset;
+         Chunk : constant := 65_536;
+         Fill  :
+           Ada.Streams.Stream_Element_Array
+             (0 .. Ada.Streams.Stream_Element_Offset (Chunk - 1));
+         F     : File_Type;
+         Size  : Natural;
+      begin
+         Len := 0;
+         if not Ada.Directories.Exists (Path) then
+            return False;
+         end if;
+         begin
+            Size := Natural (Ada.Directories.Size (Path));
+         exception
+            when others =>
+               return False;
+         end;
+         if Size = 0 or else Size > Buf'Length then
+            return False;
+         end if;
+         Open (F, In_File, Path);
+         loop
+            declare
+               --  Start below Fill so the end-of-file case (a Last under
+               --  Fill'First) is distinguishable from a full block.
+               Last : Ada.Streams.Stream_Element_Offset := Fill'First - 1;
+               Got  : Natural := 0;
+            begin
+               begin
+                  Read (F, Fill, Last);
+               exception
+                  when End_Error =>
+                     --  End of file: no further elements.
+                     null;
+                  when others =>
+                     --  A read that cannot complete still delivers the
+                     --  elements it placed in Fill, so keep whatever Last
+                     --  reports and let the bounds test below decide.
+                     null;
+               end;
+               --  Only a Last inside Fill carries data: the end of the
+               --  file is reported either as End_Error or as a Last below
+               --  the first index.
+               if Last >= Fill'First and then Last <= Fill'Last then
+                  Got := Natural (Last - Fill'First) + 1;
+               end if;
+               exit when Got = 0;
+               for I in 0 .. Got - 1 loop
+                  Len := Len + 1;
+                  Buf (Len) :=
+                    Character'Val
+                      (Fill (Ada.Streams.Stream_Element_Offset (I)));
+               end loop;
+               --  A block short of Fill'Last means the file ended inside
+               --  it, so the next read would only report the same end.
+               exit when Last < Fill'Last;
+            end;
+            exit when Len >= Buf'Length;
+         end loop;
+         Close (F);
+         return Len > 0;
+      exception
+         when others =>
+            if Is_Open (F) then
+               Close (F);
+            end if;
+            return False;
+      end Read_Artefact;
+
+      --  Write a cached artefact back to Path. Returns False when the file
+      --  cannot be written; the caller then falls through to a real
+      --  gnatprove run instead of claiming a warm hit over a missing
+      --  artefact.
+      function Write_Artefact
+        (Path : String; Blob : String; BLen : Natural) return Boolean
+      is
+         use Ada.Streams.Stream_IO;
+         F   : File_Type;
+         SEA :
+           Ada.Streams.Stream_Element_Array
+             (0 .. Ada.Streams.Stream_Element_Offset (BLen - 1));
+      begin
+         for I in 1 .. BLen loop
+            SEA (Ada.Streams.Stream_Element_Offset (I - 1)) :=
+              Ada.Streams.Stream_Element (Character'Pos (Blob (I)));
+         end loop;
+         Create (F, Out_File, Path);
+         Write (F, SEA);
+         Close (F);
+         return True;
+      exception
+         when others =>
+            if Is_Open (F) then
+               Close (F);
+            end if;
+            return False;
+      end Write_Artefact;
 
       --  True when a gnatprove.out text carries a summary row with a
       --  non-zero Unproved column. A summary like that must never be
@@ -1706,22 +1829,39 @@ package body Adacovex.Prove is
          return False;
       end Summary_Has_Unproved;
 
-      --  Write the cached gnatprove.out content back to the canonical path
-      --  the assessment pipeline parses (<target>/obj/gnatprove/gnatprove.out)
-      --  when the cached summary exists. Returns True only when a usable
-      --  summary now sits at that path. Returns False when the blob is
-      --  missing, oversized, poisoned (reports unproved VCs), or the write
+      --  Write the cached proof artefacts back to the canonical path the
+      --  assessment pipeline and the spark-coverage report parse
+      --  (<target>/obj/gnatprove/gnatprove.out and its gnatprove.sarif
+      --  sibling). Returns True only when the complete pair now sits under
+      --  obj/gnatprove/. Returns False when either blob is missing,
+      --  oversized, poisoned (the summary reports unproved VCs), or a write
       --  fails: the caller must then fall through to a real gnatprove run
-      --  instead of claiming a warm hit, because an absent output file
-      --  would leave the pipeline at Stone/0-VC.
+      --  instead of claiming a warm hit, because absent artefacts would
+      --  leave the pipeline at Stone/0-VC and the spark-coverage gate with
+      --  nothing to read.
       function Restore_Proof_Output
         (Dir : String; Input_Hash : String) return Boolean
       is
-         Blob     : String (1 .. Adacovex.Cache.Max_Cache_Blob);
-         BLen     : Natural := 0;
-         Found    : Boolean := False;
-         Out_Path : constant String :=
-           Strip_Trailing_Slash (Dir) & "/obj/gnatprove/gnatprove.out";
+         Blob      : String (1 .. Adacovex.Cache.Max_Cache_Blob);
+         BLen      : Natural := 0;
+         Found     : Boolean := False;
+         Proof_Dir : constant String :=
+           Strip_Trailing_Slash (Dir) & "/obj/gnatprove";
+         --  Replace the artefact at Path with Blob. The directory is
+         --  created on the first write and an existing file is removed
+         --  first, so a partial file from an interrupted run never survives
+         --  as a truncated artefact.
+         function Put (Name : String) return Boolean is
+         begin
+            Ada.Directories.Create_Path (Proof_Dir);
+            if Ada.Directories.Exists (Proof_Dir & "/" & Name) then
+               Ada.Directories.Delete_File (Proof_Dir & "/" & Name);
+            end if;
+            return Write_Artefact (Proof_Dir & "/" & Name, Blob, BLen);
+         exception
+            when others =>
+               return False;
+         end Put;
       begin
          Adacovex.Cache.Get_Cached
            (Proof_Output_Key (Input_Hash), Blob, BLen, Found);
@@ -1731,49 +1871,47 @@ package body Adacovex.Prove is
          --  Cache-poison guard: a stored summary that itself reports
          --  unproved VCs comes from a degraded run (solver timeouts kept
          --  gnatprove's exit code 0). Drop the poisoned blobs -- the hit
-         --  marker and the summary -- so the caller falls through to a
-         --  real gnatprove run instead of serving the bad proof. The
-         --  freshly run prover then overwrites the store with a healthy
-         --  summary under the same input hash.
+         --  marker, the summary, and its SARIF sibling -- so the caller
+         --  falls through to a real gnatprove run instead of serving the
+         --  bad proof. The freshly run prover then overwrites the store
+         --  with a healthy artefact pair under the same input hash.
          if Summary_Has_Unproved (Blob, BLen) then
             declare
                OK : Boolean := False;
             begin
                Adacovex.Cache.Delete (Input_Hash, OK);
                Adacovex.Cache.Delete (Proof_Output_Key (Input_Hash), OK);
+               Adacovex.Cache.Delete (Sarif_Output_Key (Input_Hash), OK);
             end;
             Ada.Text_IO.Put_Line
               ("  cache:     stored summary reports unproved VCs --"
                & " discarding it and re-proving");
             return False;
          end if;
-         declare
-            use Ada.Streams.Stream_IO;
-            F   : File_Type;
-            SEA :
-              Ada.Streams.Stream_Element_Array
-                (0 .. Ada.Streams.Stream_Element_Offset (BLen - 1));
-         begin
-            Ada.Directories.Create_Path
-              (Strip_Trailing_Slash (Dir) & "/obj/gnatprove");
-            if Ada.Directories.Exists (Out_Path) then
-               Ada.Directories.Delete_File (Out_Path);
-            end if;
-            Create (F, Out_File, Out_Path);
-            for I in 1 .. BLen loop
-               SEA (Ada.Streams.Stream_Element_Offset (I - 1)) :=
-                 Ada.Streams.Stream_Element (Character'Pos (Blob (I)));
-            end loop;
-            Write (F, SEA);
-            Close (F);
-         exception
-            when others =>
-               if Is_Open (F) then
-                  Close (F);
-               end if;
-               return False;
-         end;
-         return True;
+         if not Put ("gnatprove.out") then
+            return False;
+         end if;
+
+         --  The SARIF is restored into the same buffer: the two artefacts
+         --  are never needed at once, so one blob-sized buffer serves both
+         --  and the peak stack use of the warm path is unchanged.
+         BLen := 0;
+         Adacovex.Cache.Get_Cached
+           (Sarif_Output_Key (Input_Hash), Blob, BLen, Found);
+         if not Found or else BLen = 0 then
+            --  A cache written before the SARIF was cached carries the
+            --  summary alone. Drop the pair so the next run re-proves once
+            --  and caches the complete artefact set.
+            declare
+               OK : Boolean := False;
+            begin
+               Adacovex.Cache.Delete (Input_Hash, OK);
+               Adacovex.Cache.Delete (Proof_Output_Key (Input_Hash), OK);
+               Adacovex.Cache.Delete (Sarif_Output_Key (Input_Hash), OK);
+            end;
+            return False;
+         end if;
+         return Put ("gnatprove.sarif");
       end Restore_Proof_Output;
    begin
       declare
@@ -1874,13 +2012,15 @@ package body Adacovex.Prove is
 
       --  Result-cache short-circuit: if the exact set of inputs (source tree
       --  content + .gpr + options) has been proved before, restore the prior
-      --  gnatprove.out instead of re-running the prover. This is the single
+      --  artefacts instead of re-running the prover. This is the single
       --  biggest CI speedup: an unchanged project serves the proof from disk.
-      --  The cached blob carries the gnatprove.out content itself (stored
-      --  after a successful run, below), so a warm hit rebuilds the summary
-      --  file the assessment pipeline parses even when obj/gnatprove/ was
-      --  wiped -- without the restore, a warm hit on a wiped tree left
-      --  Stone/0-VC output and a failing assessment.
+      --  The cached blobs carry the artefact contents themselves (stored
+      --  after a successful run, below), so a warm hit rebuilds both
+      --  gnatprove.out (the summary the assessment pipeline parses) and
+      --  gnatprove.sarif (the per-check report the spark-coverage gate
+      --  reads) even when obj/gnatprove/ was wiped -- without the restore, a
+      --  warm hit on a wiped tree left Stone/0-VC output, a failing
+      --  assessment, and a spark-coverage gate with no artefacts to read.
       if Opts.Cache then
          declare
             In_Hash : constant String := Prove_Cache_Key;
@@ -1890,17 +2030,19 @@ package body Adacovex.Prove is
                if Restore_Proof_Output (Target_Dir, In_Hash) then
                   Ada.Text_IO.Put_Line
                     ("  cache:     gnatprove inputs unchanged -- reusing"
-                     & " prior proof (gnatprove.out served from cache)");
+                     & " prior proof (proof artefacts served from cache)");
                   Success := True;
                   return;
                end if;
-               --  The cached summary was missing, poisoned, or could not
-               --  be written back. The hit marker (if any) is already
+               --  The cached artefacts were missing, poisoned, or could
+               --  not be written back. The hit marker (if any) is already
                --  gone, so fall through to a real gnatprove run: a warm
-               --  claim over a missing output file would leave the
-               --  pipeline parsing nothing and reporting Stone/0-VC.
+               --  claim over missing artefacts would leave the pipeline
+               --  parsing nothing and reporting Stone/0-VC, and the
+               --  spark-coverage report with nothing to read.
                Ada.Text_IO.Put_Line
-                 ("  cache:     cached proof unusable -- running gnatprove");
+                 ("  cache:     cached proof artefacts incomplete"
+                  & " -- running gnatprove");
             end if;
          end;
       end if;
@@ -2017,117 +2159,131 @@ package body Adacovex.Prove is
 
       if OK and then Code = 0 then
          Success := True;
-         --  The patched proof tree generated the .out; copy it to the
+         --  The patched proof tree generated the artefacts; copy them to the
          --  canonical <target>/obj/gnatprove/ path the assessment pipeline
-         --  parses (the copy itself lives under the target's obj/ and is
-         --  never scanned or hashed).
+         --  and the spark-coverage report parse (the copy itself lives under
+         --  the target's obj/ and is never scanned or hashed). Both files
+         --  move: the summary alone would leave the spark-coverage gate with
+         --  no artefacts to read, exactly as a warm cache hit over only the
+         --  summary did.
          if GPR_Patched then
             declare
-               C1      : Boolean;
-               C2      : Integer;
-               Slash   : Natural := GLen;
-               Suffix  : constant String := "obj/gnatprove/gnatprove.out";
+               --  The two artefacts of a proof run, fixed-width so the
+               --  component type stays constrained (Trim drops the padding).
+               Names  : constant array (1 .. 2) of String (1 .. 15) :=
+                 ("gnatprove.out    ", "gnatprove.sarif");
+               Dir_Part : constant String := "obj/gnatprove/";
+               Prefix : Natural := GLen;
                Src_Out : String (1 .. Types.Max_Path);
-               Src_Len : Natural := 0;
+               Src_Len : Natural;
             begin
-               --  The proof result lives in the patched tree's own object
-               --  dir: <copy>/obj/gnatprove/gnatprove.out (the copy's root
-               --  project path is <copy>/<basename>.gpr).
-               while Slash > 1 and then GPR (Slash) /= '/' loop
-                  Slash := Slash - 1;
+               --  The proof artefacts live in the patched tree's own object
+               --  dir: <copy>/obj/gnatprove/<file> (the copy's root project
+               --  path is <copy>/<basename>.gpr).
+               while Prefix > 1 and then GPR (Prefix) /= '/' loop
+                  Prefix := Prefix - 1;
                end loop;
-               Src_Len := Slash + Suffix'Length;
-               for I in 1 .. Slash - 1 loop
-                  Src_Out (I) := GPR (I);
+               for N in Names'Range loop
+                  declare
+                     Name : constant String :=
+                       Trim (Names (N), Ada.Strings.Both);
+                  begin
+                     --  An over-long path is reported, never truncated.
+                     if Prefix + Dir_Part'Length + Name'Length
+                       > Src_Out'Length
+                     then
+                        Ada.Text_IO.Put_Line
+                          (Ada.Text_IO.Standard_Error,
+                           "  ERROR: patched proof tree path exceeds"
+                           & " Max_Path; cannot copy "
+                           & Name);
+                     else
+                        Src_Len := Prefix;
+                        for I in 1 .. Prefix - 1 loop
+                           Src_Out (I) := GPR (I);
+                        end loop;
+                        Src_Out (Src_Len) := '/';
+                        for I in Dir_Part'Range loop
+                           Src_Len := Src_Len + 1;
+                           Src_Out (Src_Len) := Dir_Part (I);
+                        end loop;
+                        for I in Name'Range loop
+                           Src_Len := Src_Len + 1;
+                           Src_Out (Src_Len) := Name (I);
+                        end loop;
+                        declare
+                           C1 : Boolean;
+                           C2 : Integer;
+                        begin
+                           Run_Command
+                             ((new String'("-c"),
+                               new String'
+                                 ("mkdir -p '"
+                                  & Target_Dir
+                                  & "/obj/gnatprove' && cp -f '"
+                                  & Src_Out (1 .. Src_Len)
+                                  & "' '"
+                                  & Target_Dir
+                                  & "/obj/gnatprove/"
+                                  & Name & "'")),
+                              "/dev/null",
+                              C1,
+                              C2);
+                           if not C1 or else C2 /= 0 then
+                              Ada.Text_IO.Put_Line
+                                (Ada.Text_IO.Standard_Error,
+                                 "  ERROR: could not copy the proof result to "
+                                 & Target_Dir
+                                 & "/obj/gnatprove/"
+                                 & Name);
+                           end if;
+                        end;
+                     end if;
+                  end;
                end loop;
-               Src_Out (Slash) := '/';
-               for I in Suffix'Range loop
-                  Src_Out (Slash + 1 + (I - Suffix'First)) := Suffix (I);
-               end loop;
-               Run_Command
-                 ((new String'("-c"),
-                   new String'
-                     ("mkdir -p '"
-                      & Target_Dir
-                      & "/obj/gnatprove' && cp -f '"
-                      & Src_Out (1 .. Src_Len)
-                      & "' '"
-                      & Target_Dir
-                      & "/obj/gnatprove/gnatprove.out'")),
-                  "/dev/null",
-                  C1,
-                  C2);
-               if not C1 or else C2 /= 0 then
-                  Ada.Text_IO.Put_Line
-                    (Ada.Text_IO.Standard_Error,
-                     "  ERROR: could not copy the proof result to "
-                     & Target_Dir
-                     & "/obj/gnatprove/gnatprove.out");
-               end if;
             end;
          end if;
          if Opts.Cache then
             declare
-               In_Hash  : constant String := Prove_Cache_Key;
-               OK2      : Boolean;
-               Out_Buf  : String (1 .. Adacovex.Cache.Max_Cache_Blob);
-               Out_Len  : Natural := 0;
-               Read_Ok  : Boolean := False;
-               Out_Path : constant String :=
-                 Strip_Trailing_Slash (Target_Dir)
-                 & "/obj/gnatprove/gnatprove.out";
+               In_Hash   : constant String := Prove_Cache_Key;
+               OK2       : Boolean;
+               Buf       : String (1 .. Adacovex.Cache.Max_Cache_Blob);
+               Len       : Natural := 0;
+               Proof_Dir : constant String :=
+                 Strip_Trailing_Slash (Target_Dir) & "/obj/gnatprove";
+               Out_Ok    : Boolean;
+               Sarif_Ok  : Boolean;
             begin
-               --  Read the freshly generated gnatprove.out and store its
-               --  content under a summary key derived from the input hash.
-               --  A later warm hit (possibly on a tree whose obj/gnatprove/
-               --  was wiped) then restores the exact summary the pipeline
-               --  parses.
-               begin
-                  if Ada.Directories.Exists (Out_Path) then
-                     Out_Len := Natural (Ada.Directories.Size (Out_Path));
-                     if Out_Len > 0 and then Out_Len <= Out_Buf'Length then
-                        declare
-                           use Ada.Streams.Stream_IO;
-                           F    : File_Type;
-                           SEA  :
-                             Ada.Streams.Stream_Element_Array
-                               (0
-                                .. Ada.Streams.Stream_Element_Offset
-                                     (Out_Len - 1));
-                           Last : Ada.Streams.Stream_Element_Offset;
-                        begin
-                           Open (F, In_File, Out_Path);
-                           Read (F, SEA, Last);
-                           Close (F);
-                           Out_Len := Natural (Last) + 1 - Natural (SEA'First);
-                           for I in 1 .. Out_Len loop
-                              Out_Buf (I) :=
-                                Character'Val
-                                  (SEA
-                                     (Ada.Streams.Stream_Element_Offset
-                                        (I - 1)));
-                           end loop;
-                           Read_Ok := True;
-                        exception
-                           when others =>
-                              if Is_Open (F) then
-                                 Close (F);
-                              end if;
-                        end;
-                     end if;
-                  end if;
-               exception
-                  when others =>
-                     null;
-               end;
-               Adacovex.Cache.Store (In_Hash, "1", OK2);
-               if OK2 then
-                  Ada.Text_IO.Put_Line
-                    ("  cache:     gnatprove result cached for these inputs");
-               end if;
-               if Read_Ok then
+               --  Cache both artefacts of the run -- gnatprove.out and
+               --  gnatprove.sarif -- under keys derived from the input
+               --  hash. A later warm hit (possibly on a tree whose
+               --  obj/gnatprove/ was wiped) then restores the complete
+               --  artefact set: the summary the assessment pipeline parses
+               --  and the SARIF the spark-coverage report and its CI gate
+               --  read. The hit marker is written only when both blobs
+               --  were cached, so a marker can no longer promise an
+               --  artefact pair the store does not hold (a run whose SARIF
+               --  exceeds the blob cap is re-proved rather than served as
+               --  a partial hit).
+               Out_Ok := Read_Artefact (Proof_Dir & "/gnatprove.out", Buf, Len);
+               if Out_Ok then
                   Adacovex.Cache.Store
-                    (Proof_Output_Key (In_Hash), Out_Buf (1 .. Out_Len), OK2);
+                    (Proof_Output_Key (In_Hash), Buf (1 .. Len), OK2);
+                  Out_Ok := OK2;
+               end if;
+               Sarif_Ok :=
+                 Read_Artefact (Proof_Dir & "/gnatprove.sarif", Buf, Len);
+               if Sarif_Ok then
+                  Adacovex.Cache.Store
+                    (Sarif_Output_Key (In_Hash), Buf (1 .. Len), OK2);
+                  Sarif_Ok := OK2;
+               end if;
+               if Out_Ok and then Sarif_Ok then
+                  Adacovex.Cache.Store (In_Hash, "1", OK2);
+                  if OK2 then
+                     Ada.Text_IO.Put_Line
+                       ("  cache:     gnatprove result cached for these inputs");
+                  end if;
                end if;
             end;
          end if;

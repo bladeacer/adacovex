@@ -16,11 +16,11 @@
 --  stays bounded without external dependencies (pure GNAT runtime only).
 --
 --  A namespaced key spells its namespace with ``:`` (``scan:``, ``tests:``,
---  ``prove:``, ``proveout:``, ``hlr:``, ``llr:``, ``tools-``, ``graph-``). The
---  entry path replaces every ``:`` with ``-``, because Windows rejects ``:``
---  in a file name (a blob written under such a name lands in an alternate
---  data stream and is never found again). The mapping is documented on
---  ``Entry_Path`` in the body.
+--  ``prove:``, ``proveout:``, ``provesarif:``, ``hlr:``, ``llr:``, ``tools-``,
+--  ``graph-``). The entry path replaces every ``:`` with ``-``, because
+--  Windows rejects ``:`` in a file name (a blob written under such a name
+--  lands in an alternate data stream and is never found again). The mapping
+--  is documented on ``Entry_Path`` in the body.
 --  HLR-CACHE: Result caching
 
 package Adacovex.Cache is

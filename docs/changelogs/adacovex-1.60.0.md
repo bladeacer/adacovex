@@ -151,6 +151,24 @@ two cache-input descriptions named the cache by placeholder rather than by
 its platform directory. The byte is removed and both descriptions now name
 the platform cache directory.
 
+### H5: A warm prove hit left the SPARK coverage gate without its artefacts
+
+The prove result cache stored only `gnatprove.out`. A warm hit on a tree whose
+`obj/gnatprove/` had been wiped (exactly the CI shape: a fresh checkout restores
+the result cache but no proof output) restored the summary, the assessment ran,
+and the `spark-coverage` gate that follows it then failed with `gnatprove
+artefacts not found`, because that report reads `gnatprove.out` and
+`gnatprove.sarif` together and the SARIF was never cached or restored.
+
+The cache now stores both artefacts under input-hash-derived keys, and a warm
+hit restores the complete pair; the hit marker is written only when both blobs
+were cached, so a marker can no longer promise an artefact set the store does
+not hold. A cache that carries the summary alone (one written before this
+change) drops its marker and falls through to a real gnatprove run, which
+re-caches the pair. The patched-proof-tree path copies both artefacts back to
+`<target>/obj/gnatprove/` as well, so a target with proof patches leaves the
+same artefact pair behind.
+
 ## Test Suite
 
 1818 tests across 27 categories, up from 1815 across 27 in 1.59.0. The three

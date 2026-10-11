@@ -1,5 +1,7 @@
 # Prove timing and the optimisation review
 
+<!-- no-covex-docs-loc: timing page with a long phase table, line cap does not apply -->
+
 This page covers the `just prove` timing table (the true proof-performance
 test) and the 1.46.0 SIMD and optimisation candidate review. Benchmark
 methodology is on [Performance](index.md), the optimisation history is on
@@ -237,10 +239,15 @@ and the gnatprove session store is wiped before each one.
   target also regenerates the bundled manual and the dashboard template and
   re-checks the generators, so it costs about 1.12 s where `./bin/covex prove`
   alone costs 46 ms.
-- A warm hit restores `gnatprove.out` since 1.43.0: the cache stores the summary
-  content, so a hit on a tree whose `obj/gnatprove/` was wiped reports Platinum
-  at the VC count of the run that produced it. Before 1.43.0 the cache stored
-  only a success marker, so such a hit reported Stone / 0 VCs.
+- A warm hit restores the proof artefacts since 1.43.0: the cache stores the
+  summary content, so a hit on a tree whose `obj/gnatprove/` was wiped reports
+  Platinum at the VC count of the run that produced it. Before 1.43.0 the cache
+  stored only a success marker, so such a hit reported Stone / 0 VCs. Since
+  1.60.0 the cache stores and restores the complete pair (`gnatprove.out` and
+  `gnatprove.sarif`), so a warm hit also leaves the `spark-coverage` report and
+  its CI gate with the artefacts they read; the hit marker is written only when
+  both blobs were cached, and a cache that holds the summary alone falls through
+  to a real gnatprove run.
 - Proof effort is a solver-time dial. `--level=1` cold doubles the wall
   (~35 s to ~68 s at `-j0` here) at the same 876 VCs, because level 1 re-tries
   each check with stronger solver configurations. Lower levels are not strictly
