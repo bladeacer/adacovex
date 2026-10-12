@@ -179,6 +179,7 @@ contributing/developer-guide-layout
 contributing/requirements
 contributing/ir
 contributing/llm-usage
+contributing/commits
 ```
 
 ```{toctree}

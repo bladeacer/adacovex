@@ -32,6 +32,11 @@ gnatprove 16.1.0). No code has been written for these items yet.
     1820/1821 run of the perf commit had reported PASS).
   - `perf-analysis.md` is pure ASCII (the `ASCII` gate failure).
   - Test counts re-synced tree-wide after the suite went 1821/1821.
+  - Commit conventions adopted kibtab-style: the full type table,
+    component scope table, rules, and suggest-workflow live in
+    `docs/contributing/commits.md` (published on Read the Docs);
+    `CONTRIBUTING.md` links the deployed page and `AGENTS.md` links
+    the relative path.
 
 ## Recorded: `make check` does trigger the OAuth workflow
 

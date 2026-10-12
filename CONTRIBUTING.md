@@ -78,6 +78,20 @@ Enforced rules:
   and numbering style identical across releases, and run
   `just changelog-check` before opening a pull request.
 
+## Commit messages
+
+adacovex uses Conventional Commits: `<type>(<scope>): <description>`.
+Keep the subject up to 72 characters, start with a verb, end it without
+a full stop, and use British English. The scope names the component the
+change serves. Never invent a scope, and add its table row first in a
+`chore:` commit of its own.
+
+The type table, the component scope table, the full rules, and the
+suggest-a-message workflow live in the deployed documentation:
+[Commit messages](https://adacovex.readthedocs.io/en/latest/contributing/commits.html).
+One component per commit: split the rest, explain why the change was
+needed, and never repeat what the diff shows.
+
 ## Pull requests
 
 Pull requests should follow the following conventions.

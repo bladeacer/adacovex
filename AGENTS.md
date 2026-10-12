@@ -697,6 +697,22 @@ per-phase `just prove` timing table and its representative-version rule are
 on
 [docs/contributing/perf/prove-timing.md](docs/contributing/perf/prove-timing.md).
 
+## Commit messages
+
+adacovex uses Conventional Commits: `<type>(<scope>): <description>`.
+Keep the subject up to 72 characters, start with a verb, end it without
+a full stop, and use British English. Name the component from the scope
+table in [docs/contributing/commits.md](docs/contributing/commits.md);
+never invent a scope, and add its table row first in a `chore:` commit.
+One component per commit: split the rest, explain why the change was
+needed, and never repeat what the diff shows.
+
+After you finish a change, suggest the commit message and do not run
+the commit yourself unless the user asks for it. Give the message in a
+fenced block, state why the scope fits, name the version in `plan.md`
+the change belongs to, and say whether the change needs a MAJOR
+version.
+
 ## Changelog format
 
 Releases get a `docs/changelogs/adacovex-<version>.md` file using `### C#:` /
@@ -784,6 +800,7 @@ suffices.
 - [Developer guide: repository layout](docs/contributing/developer-guide-layout.md)
 - [Installation](docs/usage/installation.md)
 - [LLM usage](docs/contributing/llm-usage.md)
+- [Commit messages](docs/contributing/commits.md)
 - [Changelog](docs/changelogs/index.md)
 - [API reference](docs/api-docs/index.md)
 - [Docstring spec](docs/api-docs/adacovex-docstring-spec.md)

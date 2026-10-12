@@ -24,6 +24,7 @@ docs/contributing/developer-guide.md	Developer guide
 docs/contributing/developer-guide-layout.md	Developer guide: repository layout
 docs/usage/installation.md	Installation
 docs/contributing/llm-usage.md	LLM usage
+docs/contributing/commits.md	Commit messages
 docs/changelogs/index.md	Changelog
 docs/api-docs/index.md	API reference
 docs/api-docs/adacovex-docstring-spec.md	Docstring spec
