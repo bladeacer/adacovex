@@ -76,6 +76,11 @@ table, so adding a language is one row rather than a new code path:
 - An ecosystem with no portable, reliable registry query keeps an empty
   licence, version, and website; nothing is ever guessed.
 
+Set `ADACOVEX_OFFLINE=1` (see [Global configuration and state](configuration.md))
+to skip every registry query. The resolver then returns only the
+offline-known fields, and the native suite runs with it, so the
+assessment gates never touch the network.
+
 ### Go modules
 
 A vendored Go component resolves its version and licence **offline**, from

@@ -1,11 +1,12 @@
 # adacovex work plan
 
 The live queue is the two sections below: v1.62.0 (the next release) and
-v1.63.0. Done work is removed as it lands; the release history lives in
-`docs/changelogs/` and the performance history in
+v1.63.0. Every item is a check box: tick it when the code, the tests,
+and the docs exist. Done work is removed as it lands; the release
+history lives in `docs/changelogs/` and the performance history in
 `docs/contributing/perf/`. Everything here was investigated on
 2026-10-12 on the EndeavourOS machine (x86_64, 12 logical cores,
-gnatprove 16.1.0). No code has been written for these items yet.
+gnatprove 16.1.0).
 
 ## State of the tree (2026-10-12)
 
@@ -52,193 +53,199 @@ system CUPS port 631. The hermetic-test fix is v1.62.0 item 1.
 
 ## v1.62.0
 
-### 1. Hermetic tests: no network or credential flow during `make check`
+- [x] **1. Hermetic tests: no network or credential flow during `make check`**
 
-- The native suite must never spawn `alr show` for a crate that is not
-  in the local index. Make the ecosystem-metadata probe hermetic in
-  tests: seed the probe cache for the fixture crate, gate the probe
-  behind an env flag the tests set, or stub it at the parser boundary.
-- The same rule covers every registry probe the graph resolver can
-  spawn (`pip index versions`, `npm view`, `pnpm show`, `cargo
-  search`): the e2e SBOM fixtures of item 2 run against real projects
-  and must resolve from seeded caches or stubs, never from a registry.
-- Exit criterion: `make check` and `just test` run with the network
-  unplugged and no `git-credential-oauth` process appears and no
-  browser opens.
+  - Done (2026-10-12): `ADACOVEX_OFFLINE` gates the ecosystem-metadata
+    resolver (no registry spawn, no metadata-cache read). The native
+    runner and the e2e `run()` helper set it, the suite pins the
+    offline shape with three checks, and an execve trace of the whole
+    suite shows zero registry-CLI spawns. Documented in the
+    configuration and SBOM-resolution pages.
+  - The native suite must never spawn `alr show` for a crate that is not
+    in the local index. Make the ecosystem-metadata probe hermetic in
+    tests: seed the probe cache for the fixture crate, gate the probe
+    behind an env flag the tests set, or stub it at the parser boundary.
+  - The same rule covers every registry probe the graph resolver can
+    spawn (`pip index versions`, `npm view`, `pnpm show`, `cargo
+    search`): the e2e SBOM fixtures of item 2 run against real projects
+    and must resolve from seeded caches or stubs, never from a registry.
+  - Exit criterion: `make check` and `just test` run with the network
+    unplugged and no `git-credential-oauth` process appears and no
+    browser opens.
 
-### 2. Structural dependency parsing (replace the blind word/regex scan)
+- [ ] **2. Structural dependency parsing (replace the blind word/regex scan)**
 
-- `Scan_File` / `Note_Referenced_Tools` word-match a curated tool
-  table over build files, and the supported-language manifest readers
-  are pattern-driven. Known false-positive shapes on real projects:
-  - lccst registers pnpm workspace path names as components (`lib`,
-    `dist`, `src`, `v4-mini`, `v4`, `v3`, `mini`, `locales`) although
-    its `package.json` declares only `@modelcontextprotocol/sdk`,
-    `zod`, `@types/node`, `esbuild`, `tsx`, and `typescript`;
-  - the reported `air` component (false positive on a real-project
-    run) does not reproduce on the current tree against kibtab, ocd,
-    swag, lccst, yams, surge, seiri, quickshell-docs,
-    obsi-scss-template, Persona-Quickshell, neetcode-stuff,
-    DankMaterialShell, or Ada_CRDT. Capture the exact project and
-    command the next time it appears and pin it in the fixture set;
-    the same pass should decide whether tools such as `air` are
-    curated (kibtab, ocd, and swag all reference it from their
-    Makefiles and air configs, yet it is never registered).
-- Parse manifests structurally (TOML/JSON sections, lockfile importer
-  blocks), never by substring. Keep the curated word scan for tool
-  references only, with whole-word matching on both sides of every
-  match.
-- Real-project accuracy fixtures: check `covex sbom` against kibtab,
-  ocd, and swag (Go), lccst (pnpm workspace), and the other projects
-  in the parent directory, and pin the expected component sets in the
-  e2e suite so a parsing regression fails a gate instead of a manual
-  run.
+  - `Scan_File` / `Note_Referenced_Tools` word-match a curated tool
+    table over build files, and the supported-language manifest readers
+    are pattern-driven. Known false-positive shapes on real projects:
+    - lccst registers pnpm workspace path names as components (`lib`,
+      `dist`, `src`, `v4-mini`, `v4`, `v3`, `mini`, `locales`) although
+      its `package.json` declares only `@modelcontextprotocol/sdk`,
+      `zod`, `@types/node`, `esbuild`, `tsx`, and `typescript`;
+    - the reported `air` component (false positive on a real-project
+      run) does not reproduce on the current tree against kibtab, ocd,
+      swag, lccst, yams, surge, seiri, quickshell-docs,
+      obsi-scss-template, Persona-Quickshell, neetcode-stuff,
+      DankMaterialShell, or Ada_CRDT. Capture the exact project and
+      command the next time it appears and pin it in the fixture set;
+      the same pass should decide whether tools such as `air` are
+      curated (kibtab, ocd, and swag all reference it from their
+      Makefiles and air configs, yet it is never registered).
+  - Parse manifests structurally (TOML/JSON sections, lockfile importer
+    blocks), never by substring. Keep the curated word scan for tool
+    references only, with whole-word matching on both sides of every
+    match.
+  - Real-project accuracy fixtures: check `covex sbom` against kibtab,
+    ocd, and swag (Go), lccst (pnpm workspace), and the other projects
+    in the parent directory, and pin the expected component sets in the
+    e2e suite so a parsing regression fails a gate instead of a manual
+    run.
 
-### 3. adacovex as a dependency of other projects
+- [ ] **3. adacovex as a dependency of other projects**
 
-- When adacovex audits another project that references `adacovex` or
-  `covex` (Makefile, workflow, manifest), it registers as a dev-scope
-  dependency of that project; when it audits itself it is the root and
-  never a component of its own graph. Add the curated reference, the
-  classification rule, and a test in each direction.
+  - When adacovex audits another project that references `adacovex` or
+    `covex` (Makefile, workflow, manifest), it registers as a dev-scope
+    dependency of that project; when it audits itself it is the root and
+    never a component of its own graph. Add the curated reference, the
+    classification rule, and a test in each direction.
 
-### 4. HTTP server metrics, objects, and info
+- [ ] **4. HTTP server metrics, objects, and info**
 
-- Current surface (every route the server dispatches on): `/`
-  (dashboard), `/api/metrics` (docstring/proof/tests/DAL JSON),
-  `/api/deps`, `/api/spark`, `/api/endpoints`, the five
-  `/badge/*.svg` routes, and `/docs/*` (the bundled manual). The
-  server binds 127.0.0.1 only.
-- Missing and worth exposing: server runtime info - version, target
-  path, port, worker count, uptime, request counters per route (200
-  and 404), keep-alive connections, result-cache hits and misses,
-  selected standards, and the assessment generation time; plus a
-  `/health` probe for scripts.
-- Plan: add `/api/info` (server and run metadata, including the
-  counters) and keep `/api/metrics` assessment-shaped. Land each new
-  route with native server-route tests and a row in
-  `docs/usage/dashboard-api.md` (the docs-coverage gate checks both).
-  SPARK discipline applies: 0 unproved, 0 justified, no new
-  `SPARK_Mode (Off)`.
+  - Current surface (every route the server dispatches on): `/`
+    (dashboard), `/api/metrics` (docstring/proof/tests/DAL JSON),
+    `/api/deps`, `/api/spark`, `/api/endpoints`, the five
+    `/badge/*.svg` routes, and `/docs/*` (the bundled manual). The
+    server binds 127.0.0.1 only.
+  - Missing and worth exposing: server runtime info - version, target
+    path, port, worker count, uptime, request counters per route (200
+    and 404), keep-alive connections, result-cache hits and misses,
+    selected standards, and the assessment generation time; plus a
+    `/health` probe for scripts.
+  - Plan: add `/api/info` (server and run metadata, including the
+    counters) and keep `/api/metrics` assessment-shaped. Land each new
+    route with native server-route tests and a row in
+    `docs/usage/dashboard-api.md` (the docs-coverage gate checks both).
+    SPARK discipline applies: 0 unproved, 0 justified, no new
+    `SPARK_Mode (Off)`.
 
-### 5. `adacovex tldr` - client-agnostic install into the local tldr index
+- [ ] **5. `adacovex tldr` - client-agnostic install into the local tldr index**
 
-- The page source already exists and is gated: `docs/tldr/adacovex.md`
-  (`just tldr-check`, optional `tldr-lint`). It becomes a single
-  source embedded in the binary (the same pattern as the man page),
-  so the install works offline.
-- The injection must be **client agnostic**: it works for the base
-  tldr clients that follow CLIENT-SPECIFICATION.md and for tealdeer.
-  The spec defines only the CLI and the zip-cache download; it defines
-  no custom-pages location, so each client family gets its own
-  injection target, chosen by detecting the installed client (`tldr
-  --version`, and `tldr --show-paths` where the client supports it):
-  - tealdeer (verified live on this machine, 1.9.0): write the custom
-    page to `<XDG_DATA_HOME>/tealdeer/pages/adacovex.page.md` (flat,
-    `.page.md` suffix). It renders with `tldr adacovex` and lives
-    outside the cache (`~/.cache/tealdeer/`), so `tldr --update` can
-    never remove it. The file is installed on this machine as proof.
-  - base/reference clients (the C client, the Node client, the Python
-    client, and friends): inject into the client's extracted cache
-    pages tree (`<cache>/pages/common/adacovex.md`, plus the detected
-    platform directory). Cache extraction overlays the zip without
-    deleting extra files on every mainstream client, so the entry
-    survives `tldr --update` in practice; `adacovex tldr` is
-    idempotent and re-injects when a client rebuild wipes it.
-  - unknown client, or none: render the bundled page directly (or
-    pipe it through `tldr -f`), so the command is never useless.
-- Command shape: `adacovex tldr` (so `covex tldr` works too),
-  modelled on `adacovex man`: install or refresh the entry, `--check`
-  exits 0 when the installed entry matches the bundled page (1 when
-  missing or stale) so a shell-prompt hook can keep it fresh after
-  `tldr --update`, and a warning when no supported client is found.
-- Optional follow-up: upstream the page to tldr-pages. The shallow
-  clone at `../tldr` is the pages repository; the page already follows
-  CLIENT-SPECIFICATION.md, and an upstream merge means `tldr --update`
-  carries it with no local install at all.
-- Tests: native tests for the client detection and target-path
-  selection per client family (with a fake home/cache tree), and an
-  e2e check that installs the page and renders it back through the
-  bundled page content; no network, no real client required.
+  - The page source already exists and is gated: `docs/tldr/adacovex.md`
+    (`just tldr-check`, optional `tldr-lint`). It becomes a single
+    source embedded in the binary (the same pattern as the man page),
+    so the install works offline.
+  - The injection must be **client agnostic**: it works for the base
+    tldr clients that follow CLIENT-SPECIFICATION.md and for tealdeer.
+    The spec defines only the CLI and the zip-cache download; it defines
+    no custom-pages location, so each client family gets its own
+    injection target, chosen by detecting the installed client (`tldr
+    --version`, and `tldr --show-paths` where the client supports it):
+    - tealdeer (verified live on this machine, 1.9.0): write the custom
+      page to `<XDG_DATA_HOME>/tealdeer/pages/adacovex.page.md` (flat,
+      `.page.md` suffix). It renders with `tldr adacovex` and lives
+      outside the cache (`~/.cache/tealdeer/`), so `tldr --update` can
+      never remove it. The file is installed on this machine as proof.
+    - base/reference clients (the C client, the Node client, the Python
+      client, and friends): inject into the client's extracted cache
+      pages tree (`<cache>/pages/common/adacovex.md`, plus the detected
+      platform directory). Cache extraction overlays the zip without
+      deleting extra files on every mainstream client, so the entry
+      survives `tldr --update` in practice; `adacovex tldr` is
+      idempotent and re-injects when a client rebuild wipes it.
+    - unknown client, or none: render the bundled page directly (or
+      pipe it through `tldr -f`), so the command is never useless.
+  - Command shape: `adacovex tldr` (so `covex tldr` works too),
+    modelled on `adacovex man`: install or refresh the entry, `--check`
+    exits 0 when the installed entry matches the bundled page (1 when
+    missing or stale) so a shell-prompt hook can keep it fresh after
+    `tldr --update`, and a warning when no supported client is found.
+  - Optional follow-up: upstream the page to tldr-pages. The shallow
+    clone at `../tldr` is the pages repository; the page already follows
+    CLIENT-SPECIFICATION.md, and an upstream merge means `tldr --update`
+    carries it with no local install at all.
+  - Tests: native tests for the client detection and target-path
+    selection per client family (with a fake home/cache tree), and an
+    e2e check that installs the page and renders it back through the
+    bundled page content; no network, no real client required.
 
-### 6. Documentation: SARIF, notices, and conciseness
+- [ ] **6. Documentation: SARIF, notices, and conciseness**
 
-- SARIF for users: document `gnatprove.sarif` - what it is, that the
-  assessment and `adacovex spark-coverage` read it beside
-  `gnatprove.out`, where it lives
-  (`<target>/obj/gnatprove/gnatprove.sarif`), and how to view it
-  (editor plugins, GitHub code scanning). Home: the spark-coverage
-  section of `docs/usage/cli-reference-flags.md` plus a paragraph in
-  `docs/contributing/proving.md`, cross-linked.
-- Add SARIF to `docs/THIRD_PARTY_NOTICES.md` beside the CycloneDX
-  row: OASIS SARIF, specification reference only, not vendored - the
-  same shape as the CycloneDX and SPDX rows.
-- Conciseness pass over the user docs, context and meaning preserved.
-  Start with the longest pages: `sbom-resolution` (~1970 words),
-  `cli-reference-flags` (~1900), `dashboard-html` (~1650),
-  `cli-reference` (~1590), `architecture` (~1530). Every gate stays
-  green (docs coverage, links, para-split, STE rules, British
-  spelling).
+  - SARIF for users: document `gnatprove.sarif` - what it is, that the
+    assessment and `adacovex spark-coverage` read it beside
+    `gnatprove.out`, where it lives
+    (`<target>/obj/gnatprove/gnatprove.sarif`), and how to view it
+    (editor plugins, GitHub code scanning). Home: the spark-coverage
+    section of `docs/usage/cli-reference-flags.md` plus a paragraph in
+    `docs/contributing/proving.md`, cross-linked.
+  - Add SARIF to `docs/THIRD_PARTY_NOTICES.md` beside the CycloneDX
+    row: OASIS SARIF, specification reference only, not vendored - the
+    same shape as the CycloneDX and SPDX rows.
+  - Conciseness pass over the user docs, context and meaning preserved.
+    Start with the longest pages: `sbom-resolution` (~1970 words),
+    `cli-reference-flags` (~1900), `dashboard-html` (~1650),
+    `cli-reference` (~1590), `architecture` (~1530). Every gate stays
+    green (docs coverage, links, para-split, STE rules, British
+    spelling).
 
-### 7. Python environment and dependency single-sourcing
+- [ ] **7. Python environment and dependency single-sourcing**
 
-- Single-source the docs dependencies: add a `pyproject.toml` and
-  generate `requirements.txt` from it with a stdlib tool script. The
-  committed `requirements.txt` stays, because `.readthedocs.yaml` and
-  the docs venv consume it, and a sync gate keeps the two identical
-  (same pattern as the description sync).
-- Bootstrap order for the Python tooling environment: `uv` when
-  present, else `install.sh` when the project provides one, else
-  `python3 -m venv`. Document it in the developer guide and keep the
-  justfile behaviour consistent with it (absolute venv-bin paths, the
-  Windows `sys.prefix` RuntimeWarning fix).
+  - Single-source the docs dependencies: add a `pyproject.toml` and
+    generate `requirements.txt` from it with a stdlib tool script. The
+    committed `requirements.txt` stays, because `.readthedocs.yaml` and
+    the docs venv consume it, and a sync gate keeps the two identical
+    (same pattern as the description sync).
+  - Bootstrap order for the Python tooling environment: `uv` when
+    present, else `install.sh` when the project provides one, else
+    `python3 -m venv`. Document it in the developer guide and keep the
+    justfile behaviour consistent with it (absolute venv-bin paths, the
+    Windows `sys.prefix` RuntimeWarning fix).
 
 ## v1.63.0
 
-### P1. Cold `just build` and cold `prove` down to the bare minimum
+- [ ] **P1. Cold `just build` and cold `prove` down to the bare minimum**
 
-- Current cold costs on this machine (v1.61.0): a cold build pays the
-  alire workspace sync that fetches three binary crates
-  (`gnatdoc_bin`, `gnatformat_bin`, `gnatprove` 16.1.0), the full
-  Sphinx bundle build when the docs changed, and a full gprbuild of
-  about 300 units plus the `test_runner` link. A cold `prove` is
-  60-72 s at 1022 VCs, solver-bound, after toolchain resolution.
-- Profile each cold phase first (extend `just bench` with build-phase
-  scenarios; hyperfine plus strace), then cut what is not needed:
-  the toolchain fetch (cache or document the host-side cache), the
-  doc regeneration (the fingerprint is already incremental - prove a
-  cold tree cannot rebuild it needlessly), the compile (flags and
-  unit count), and the solver (VC reduction, job count).
-- Bar: every remaining cold-phase cost is either measured-necessary
-  or removed, and the numbers are recorded in
-  `docs/contributing/perf/`.
+  - Current cold costs on this machine (v1.61.0): a cold build pays the
+    alire workspace sync that fetches three binary crates
+    (`gnatdoc_bin`, `gnatformat_bin`, `gnatprove` 16.1.0), the full
+    Sphinx bundle build when the docs changed, and a full gprbuild of
+    about 300 units plus the `test_runner` link. A cold `prove` is
+    60-72 s at 1022 VCs, solver-bound, after toolchain resolution.
+  - Profile each cold phase first (extend `just bench` with build-phase
+    scenarios; hyperfine plus strace), then cut what is not needed:
+    the toolchain fetch (cache or document the host-side cache), the
+    doc regeneration (the fingerprint is already incremental - prove a
+    cold tree cannot rebuild it needlessly), the compile (flags and
+    unit count), and the solver (VC reduction, job count).
+  - Bar: every remaining cold-phase cost is either measured-necessary
+    or removed, and the numbers are recorded in
+    `docs/contributing/perf/`.
 
-### P2. Dir_Cache cache-friendliness (from the v1.61.0 perf analysis)
+- [ ] **P2. Dir_Cache cache-friendliness (from the v1.61.0 perf analysis)**
 
-- The warm pipeline spends about 14k `newfstatat` calls and shows a
-  13 percent L1 dcache-miss rate, largely from the `Dir_Cache` slot
-  layout (1024-byte path image per slot, 128-byte entry records).
-  Shrink the per-slot footprint, tighten `Dir_Entry_Rec`, and
-  reconsider `Max_Dir_Entries = 64`: directories over the cap now take
-  the correct but unmemoised fallback on every walker, so the self
-  tree re-enumerates `src/parsers` repeatedly.
-- SPARK bar unchanged: 0 unproved, 0 justified, no new
-  `SPARK_Mode (Off)`.
+  - The warm pipeline spends about 14k `newfstatat` calls and shows a
+    13 percent L1 dcache-miss rate, largely from the `Dir_Cache` slot
+    layout (1024-byte path image per slot, 128-byte entry records).
+    Shrink the per-slot footprint, tighten `Dir_Entry_Rec`, and
+    reconsider `Max_Dir_Entries = 64`: directories over the cap now take
+    the correct but unmemoised fallback on every walker, so the self
+    tree re-enumerates `src/parsers` repeatedly.
+  - SPARK bar unchanged: 0 unproved, 0 justified, no new
+    `SPARK_Mode (Off)`.
 
-### P3. Prove-timing phase for v1.61.0 onwards
+- [ ] **P3. Prove-timing phase for v1.61.0 onwards**
 
-- 1.61.0 begins its own phase, because the v1.62+ and v1.63 perf work
-  changes the implementation methodology. When the perf fixes land:
-  close the current open phase at 1.60.0 (keeping 1.58.0 as its
-  representative), open `1.61.0-` seeded with the v1.61.0 complete
-  metric set from `perf-analysis.md` (pipeline warm 41.7 ms and cold
-  about 72 ms; prove warm about 53 ms and cold 60-72 s; 14,106 warm
-  `newfstatat`; 5.9 MiB stripped), retire the 1.48.0-1.54.0 phase
-  after moving any figure-explaining note into "Across every phase",
-  and update the AGENTS.md phase-list sentence and every page that
-  names the range.
-- Every figure is measured on this machine with `/proc/loadavg`
-  recorded beside it, per the established rule.
+  - 1.61.0 begins its own phase, because the v1.62+ and v1.63 perf work
+    changes the implementation methodology. When the perf fixes land:
+    close the current open phase at 1.60.0 (keeping 1.58.0 as its
+    representative), open `1.61.0-` seeded with the v1.61.0 complete
+    metric set from `perf-analysis.md` (pipeline warm 41.7 ms and cold
+    about 72 ms; prove warm about 53 ms and cold 60-72 s; 14,106 warm
+    `newfstatat`; 5.9 MiB stripped), retire the 1.48.0-1.54.0 phase
+    after moving any figure-explaining note into "Across every phase",
+    and update the AGENTS.md phase-list sentence and every page that
+    names the range.
+  - Every figure is measured on this machine with `/proc/loadavg`
+    recorded beside it, per the established rule.
 
 ## Release bar
 

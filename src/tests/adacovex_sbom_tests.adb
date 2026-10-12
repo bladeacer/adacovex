@@ -1,4 +1,5 @@
 with Ada.Directories;
+with Ada.Environment_Variables;
 with Ada.Strings.Fixed;
 with Ada.Text_IO;
 with Adacovex.Types;
@@ -1302,6 +1303,7 @@ package body Adacovex_SBOM_Tests is
          Success : Boolean := False;
          C       : Component_Info;
       begin
+         Ada.Environment_Variables.Set ("ADACOVEX_OFFLINE", "1");
          Make_Dep_Fixture;
          Adacovex.Parsers.Manifest.Build_Dependency_Graph
            ("obj/sbom_dep_fixture",
@@ -1317,6 +1319,15 @@ package body Adacovex_SBOM_Tests is
            (Count_Name (Graph, "libdev2") = 1, "libdev2 registered (dev)");
          C := Find_Name (Graph, "libbase");
          R.Check (C.Scope = Scope_Base, "libbase scope = base");
+         --  Hermetic gate (ADACOVEX_OFFLINE=1): no registry CLI
+         --  answered for this fixture crate, so the registry-only
+         --  fields stay empty whatever sits on PATH.
+         R.Check
+           (C.Version_Len = 0, "offline: no registry version for libbase");
+         R.Check
+           (C.License_Len = 0, "offline: no registry licence for libbase");
+         R.Check
+           (C.Website_Len = 0, "offline: no registry website for libbase");
          C := Find_Name (Graph, "libdev1");
          R.Check (C.Scope = Scope_Dev, "libdev1 scope = dev");
          C := Find_Name (Graph, "libdev2");

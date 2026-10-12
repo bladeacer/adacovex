@@ -1,4 +1,5 @@
 with Ada.Directories;
+with Ada.Environment_Variables;
 
 separate (Adacovex.Parsers.Manifest)
 --  Resolve a component's version, licence and website from its ecosystem
@@ -28,6 +29,13 @@ separate (Adacovex.Parsers.Manifest)
 --  offline manifest read answered, so a complete offline read (a Go vendor
 --  tree with modules.txt and licence files) never pays one registry spawn
 --  per component for an answer it would discard.
+--
+--  ADACOVEX_OFFLINE (any value except `0`) disables the resolver
+--  entirely: no registry CLI is spawned and the metadata cache is not
+--  consulted, so the component carries only the version and licence the
+--  project itself declares. The native suite sets the variable, which
+--  keeps `make check` off the network (no `alr show` index refresh, no
+--  registry probe of any ecosystem).
 procedure Resolve_Ecosystem_Metadata
   (Target       : String;
    Ecosystem    : String;
@@ -51,6 +59,22 @@ is
       when others =>
          return S;
    end Norm_Target;
+
+   --  Whether ADACOVEX_OFFLINE asks for a registry-free run: set to
+   --  anything except the explicit off values (`0`), the resolver
+   --  never spawns a registry CLI and never reads the metadata cache.
+   function Offline return Boolean is
+      V : constant String :=
+        (if Ada.Environment_Variables.Exists ("ADACOVEX_OFFLINE")
+         then Ada.Environment_Variables.Value ("ADACOVEX_OFFLINE")
+         else "");
+   begin
+      return
+        V'Length > 0
+        and then V /= "0"
+        and then V /= "false"
+        and then V /= "no";
+   end Offline;
 
    Target_Norm : constant String := Norm_Target (Target);
    type Eco_Field_Fmt is
@@ -499,6 +523,11 @@ begin
    Ver_Len := 0;
    Web_Len := 0;
    if Ecosystem'Length = 0 or else Name'Length = 0 then
+      return;
+   end if;
+   if Offline then
+      --  Hermetic gate: the caller receives only what the project
+      --  itself declares, with no cache read and no spawn.
       return;
    end if;
 

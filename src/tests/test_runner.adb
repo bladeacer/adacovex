@@ -1,4 +1,5 @@
 with Ada.Command_Line;
+with Ada.Environment_Variables;
 with Ada.Text_IO;           use Ada.Text_IO;
 with Adacovex.Test_Support; use Adacovex.Test_Support;
 with Adacovex_Types_Tests;
@@ -213,6 +214,13 @@ procedure Test_Runner is
    end Print_Summary;
 
 begin
+   --  Hermetic suite: never spawn a package-registry CLI for
+   --  dependency metadata (`alr show`, `npm view`, ...). A fixture
+   --  crate outside Alire's local index otherwise makes alr refresh
+   --  the crate index over git, which can open a credential-helper
+   --  OAuth flow in the browser mid-run.
+   Ada.Environment_Variables.Set ("ADACOVEX_OFFLINE", "1");
+
    Put_Line ("=== Adacovex Test Suite ===");
 
    Adacovex_Types_Tests.Run (R_Types);

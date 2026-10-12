@@ -121,10 +121,17 @@ class Results:
 
 
 def run(args: List[str], timeout: int = 120) -> subprocess.CompletedProcess:
-    """Run the binary with args and capture stdout/stderr as text."""
+    """Run the binary with args and capture stdout/stderr as text.
+
+    ADACOVEX_OFFLINE is forced on so the e2e checks never spawn a
+    package-registry CLI (the hermetic-suite rule the native runner
+    applies to itself).
+    """
+    env = dict(os.environ)
+    env["ADACOVEX_OFFLINE"] = "1"
     return subprocess.run(
         [BIN] + args, capture_output=True, text=True, timeout=timeout,
-        cwd=str(ROOT),
+        cwd=str(ROOT), env=env,
     )
 
 
