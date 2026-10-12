@@ -29,7 +29,7 @@ It lowers foreign type names (`int32_t`, `size_t`, and more) onto bounded Ada ty
 adacovex declares no library dependencies beyond the GNAT runtime. All data structures use either:
 
 - GNAT runtime containers (`Ada.Containers.Vectors` for unbounded collections)
-- Fixed-size string buffers (`Max_Line = 262144`, `Max_Path = 4096`, etc.) for bounded I/O
+- Fixed-size string buffers (`Max_Line = 262144`, `Max_Path = 16384`, etc.) for bounded I/O
 
 `Max_Path` and `Max_Line` scale with the auto-detected host word size
 (`System.Word_Size`), keeping the classic 4096 / 262144 values on 64-bit

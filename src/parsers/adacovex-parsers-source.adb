@@ -1042,7 +1042,15 @@ package body Adacovex.Parsers.Source is
            Dir_Path & "/" & Name (Name'First .. Name'Last);
       begin
          if Is_Dir then
-            if Name /= ".git"
+            --  Skip the directory links on both the snapshot and the
+            --  direct-enumeration path: the snapshot already filters
+            --  them, but the fallback below reads them raw, and
+            --  following ".." walks back up into the parent forever
+            --  (up into "..", then down into this directory again,
+            --  until the path overflows).
+            if Name /= "."
+              and Name /= ".."
+              and Name /= ".git"
               and Name /= "obj"
               and Name /= "tests"
               and Name /= "config"

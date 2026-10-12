@@ -1,302 +1,245 @@
-# Adacovex platform and numeric-type plan
+# adacovex work plan
 
-**Current work queue:** see "Work to be done before the v1.61.0 release"
-below -- that section is the live plan. The rest of this file records the
-completed v1.59.0/v1.60.0 platform effort and its verification notes.
+The live queue is the two sections below: v1.62.0 (the next release) and
+v1.63.0. Done work is removed as it lands; the release history lives in
+`docs/changelogs/` and the performance history in
+`docs/contributing/perf/`. Everything here was investigated on
+2026-10-12 on the EndeavourOS machine (x86_64, 12 logical cores,
+gnatprove 16.1.0). No code has been written for these items yet.
 
-## Status
+## State of the tree (2026-10-12)
 
-Implemented in the working tree. The Windows portability fixes, the
-`Long_Long_Integer` time-stamp contract, the path abstraction, the task-runner
-migration, and the supporting docs and tests are in place. The remaining step
-is to run the tree's sync and gate commands on a machine with the GNAT
-toolchain and Python 3, because this host has no `bash` and cannot run them
-(see "Verification" below).
+- `make check` is green on this machine: 28/28 gates PASS.
+- v1.61.0 is shipped and consistent everywhere: manifests, binary,
+  generated version spec, `sbom.json`, changelog, the proof ledger
+  (1022/1022 VCs, Platinum, 0 unproved, 0 justified), and the native
+  suite at 1821/1821.
+- Fixed in the working tree with this pass (ships in v1.62.0):
+  - `Scan_Project_Cached` skips `.` and `..` on its
+    direct-enumeration fallback. Since the v1.61.0 perf commit lowered
+    `Max_Dir_Entries` to 64, every directory with more than 64 entries
+    takes that fallback, and without the guard the walker climbed into
+    `..` and back down into the same subdirectory forever
+    (`src/parsers/../parsers/../...`) until the path overflowed. This
+    failed the `SBOM` and `SPARK proof` gates and crashed `covex sbom`
+    against ocd, surge, seiri, and DankMaterialShell.
+  - The `Max_Path` 64x -> 256x word-size change is consistent again:
+    the types test expects `256 * System.Word_Size`, and the
+    `Adacovex.Types` docstring and `docs/contributing/architecture.md`
+    name 16384.
+  - `test_runner` exits non-zero on a red suite, so `just test` and
+    the `native tests` gate can actually fail (the red
+    1820/1821 run of the perf commit had reported PASS).
+  - `perf-analysis.md` is pure ASCII (the `ASCII` gate failure).
+  - Test counts re-synced tree-wide after the suite went 1821/1821.
 
-## What changed
+## Recorded: `make check` does trigger the OAuth workflow
 
-- **`Adacovex.Paths`** (`src/core/adacovex-paths.ads`/`.adb`) is the single
-  place for a platform path decision: `Is_Separator` (both `/` and `\`),
-  `Is_Absolute` (POSIX root, Windows drive letter, UNC root), `Join`,
-  `Strip_Trailing_Separators`, `Home_Directory` (HOME, then USERPROFILE, then
-  the temp directory), and `Expand_User` (`~` and `~/rest`, also `~\rest`).
-- **`adacovex-config.adb`** resolves a target with `Paths.Is_Absolute` instead
-  of a leading-`/` test, and `Expand_User_Path` delegates to
-  `Paths.Expand_User`.
-- **`adacovex-dir_cache.adb`** uses `Paths.Is_Absolute` in `Abs_Key`, so a
-  Windows absolute path is no longer re-joined with the working directory.
-- **`adacovex-cache.adb`** derives the cache, stamp, probe, and meta roots
-  from `Paths.Home_Directory`, strips either separator in `Set_Cache_Dir`,
-  and carries the result of every `OS_Lib.To_C` call as an explicit
-  `Long_Long_Integer`.
-- **`adacovex_main.adb`** normalises a path with both separators, keeps a
-  drive or UNC root, and emits a canonical `/` form.
-- **`parse_gpr.adb`** binds the `.gpr`-stripped name to a constant, so a
-  `with "x.gpr"` clause no longer raises `Constraint_Error`.
-- **`tools/build.py`** reserves a larger Windows main-thread stack
-  (`-Wl,--stack,33554432`) and falls back to a copy when a symlink is refused.
-- **`tools/tasks.py`** and **`justfile`** are the new task runner; the
-  `Makefile` is a thin shim that delegates to the same Python tasks.
-- **`Adacovex_Paths_Tests`** (25 checks) pins the separator, absolute, join,
-  strip, and home rules.
+Sampled twice per second during the 2026-10-12 `make check` run. At
+18:29:37 the `native tests` gate's `bin/test_runner` spawned
+`alr show libbase` (the SBOM test-fixture crate). `libbase` is not in
+Alire's local index, so alr refreshed the crate index over git, which
+invoked the `git-credential-oauth` helper: it listened on
+`127.0.0.1:34063` and opened the GitHub OAuth consent page in the
+browser. Every other localhost listener in the run was expected: the
+cli-e2e serve tests (adacovex on two free loopback ports) and the
+system CUPS port 631. The hermetic-test fix is v1.62.0 item 1.
 
-## Verification
+## v1.62.0
 
-Run these on a machine with `gprbuild`, `gnatprove`, and Python 3 (the
-generated files and the metrics are refreshed by them and are not hand-written
-artifacts):
+### 1. Hermetic tests: no network or credential flow during `make check`
 
-```
-just test
-just test-count
-just description
-just agents-tree
-just book
-just doc
-just prove
-just check
-```
+- The native suite must never spawn `alr show` for a crate that is not
+  in the local index. Make the ecosystem-metadata probe hermetic in
+  tests: seed the probe cache for the fixture crate, gate the probe
+  behind an env flag the tests set, or stub it at the parser boundary.
+- The same rule covers every registry probe the graph resolver can
+  spawn (`pip index versions`, `npm view`, `pnpm show`, `cargo
+  search`): the e2e SBOM fixtures of item 2 run against real projects
+  and must resolve from seeded caches or stubs, never from a registry.
+- Exit criterion: `make check` and `just test` run with the network
+  unplugged and no `git-credential-oauth` process appears and no
+  browser opens.
 
-`just release` and its version bump stay a separate release action, as before.
+### 2. Structural dependency parsing (replace the blind word/regex scan)
 
-## Notes
+- `Scan_File` / `Note_Referenced_Tools` word-match a curated tool
+  table over build files, and the supported-language manifest readers
+  are pattern-driven. Known false-positive shapes on real projects:
+  - lccst registers pnpm workspace path names as components (`lib`,
+    `dist`, `src`, `v4-mini`, `v4`, `v3`, `mini`, `locales`) although
+    its `package.json` declares only `@modelcontextprotocol/sdk`,
+    `zod`, `@types/node`, `esbuild`, `tsx`, and `typescript`;
+  - the reported `air` component (false positive on a real-project
+    run) does not reproduce on the current tree against kibtab, ocd,
+    swag, lccst, yams, surge, seiri, quickshell-docs,
+    obsi-scss-template, Persona-Quickshell, neetcode-stuff,
+    DankMaterialShell, or Ada_CRDT. Capture the exact project and
+    command the next time it appears and pin it in the fixture set;
+    the same pass should decide whether tools such as `air` are
+    curated (kibtab, ocd, and swag all reference it from their
+    Makefiles and air configs, yet it is never registered).
+- Parse manifests structurally (TOML/JSON sections, lockfile importer
+  blocks), never by substring. Keep the curated word scan for tool
+  references only, with whole-word matching on both sides of every
+  match.
+- Real-project accuracy fixtures: check `covex sbom` against kibtab,
+  ocd, and swag (Go), lccst (pnpm workspace), and the other projects
+  in the parent directory, and pin the expected component sets in the
+  e2e suite so a parsing regression fails a gate instead of a manual
+  run.
 
-- The tree has no vendored components; a vendored-code regression is only
-  measurable on a fixture with the same shape.
-- `just check` resolves `gnatprove` for you, so no manual prover installation
-  is required.
+### 3. adacovex as a dependency of other projects
 
-## Work to be done before the v1.61.0 release
+- When adacovex audits another project that references `adacovex` or
+  `covex` (Makefile, workflow, manifest), it registers as a dev-scope
+  dependency of that project; when it audits itself it is the root and
+  never a component of its own graph. Add the curated reference, the
+  classification rule, and a test in each direction.
 
-Plan only -- no code has been written for these items yet. Recorded
-2026-10-11. The host this plan was written on **is** the EndeavourOS
-machine (EndeavourOS, x86_64, 12 logical cores), so the perf-timing work
-below happens here rather than being deferred again.
+### 4. HTTP server metrics, objects, and info
 
-### 0. CI run 38098692760 (job 114350452288): PASSED
+- Current surface (every route the server dispatches on): `/`
+  (dashboard), `/api/metrics` (docstring/proof/tests/DAL JSON),
+  `/api/deps`, `/api/spark`, `/api/endpoints`, the five
+  `/badge/*.svg` routes, and `/docs/*` (the bundled manual). The
+  server binds 127.0.0.1 only.
+- Missing and worth exposing: server runtime info - version, target
+  path, port, worker count, uptime, request counters per route (200
+  and 404), keep-alive connections, result-cache hits and misses,
+  selected standards, and the assessment generation time; plus a
+  `/health` probe for scripts.
+- Plan: add `/api/info` (server and run metadata, including the
+  counters) and keep `/api/metrics` assessment-shaped. Land each new
+  route with native server-route tests and a row in
+  `docs/usage/dashboard-api.md` (the docs-coverage gate checks both).
+  SPARK discipline applies: 0 unproved, 0 justified, no new
+  `SPARK_Mode (Off)`.
 
-The linked job is the `CI summary` job of run 38098692760 ("docs: record
-that gnatformat has no Windows binary", commit `767c4c9` on `main`).
-GitHub reports conclusion `success` for the job and `success` for the
-whole run; all 10 jobs passed (action/CLI/docs parity, version
-consistency, complexity, build + native tests, documentation coverage,
-SPARK_Mode Off, self-assessment with all standards, docstring coverage
-gate, action run-tests consumer workspace, CI summary). Nothing in that
-run needs a fix. (Answer to record: **pass**, not fail.)
+### 5. `adacovex tldr` - client-agnostic install into the local tldr index
 
-### 1. Sync the test-count drift (three gates fail today)
+- The page source already exists and is gated: `docs/tldr/adacovex.md`
+  (`just tldr-check`, optional `tldr-lint`). It becomes a single
+  source embedded in the binary (the same pattern as the man page),
+  so the install works offline.
+- The injection must be **client agnostic**: it works for the base
+  tldr clients that follow CLIENT-SPECIFICATION.md and for tealdeer.
+  The spec defines only the CLI and the zip-cache download; it defines
+  no custom-pages location, so each client family gets its own
+  injection target, chosen by detecting the installed client (`tldr
+  --version`, and `tldr --show-paths` where the client supports it):
+  - tealdeer (verified live on this machine, 1.9.0): write the custom
+    page to `<XDG_DATA_HOME>/tealdeer/pages/adacovex.page.md` (flat,
+    `.page.md` suffix). It renders with `tldr adacovex` and lives
+    outside the cache (`~/.cache/tealdeer/`), so `tldr --update` can
+    never remove it. The file is installed on this machine as proof.
+  - base/reference clients (the C client, the Node client, the Python
+    client, and friends): inject into the client's extracted cache
+    pages tree (`<cache>/pages/common/adacovex.md`, plus the detected
+    platform directory). Cache extraction overlays the zip without
+    deleting extra files on every mainstream client, so the entry
+    survives `tldr --update` in practice; `adacovex tldr` is
+    idempotent and re-injects when a client rebuild wipes it.
+  - unknown client, or none: render the bundled page directly (or
+    pipe it through `tldr -f`), so the command is never useless.
+- Command shape: `adacovex tldr` (so `covex tldr` works too),
+  modelled on `adacovex man`: install or refresh the entry, `--check`
+  exits 0 when the installed entry matches the bundled page (1 when
+  missing or stale) so a shell-prompt hook can keep it fresh after
+  `tldr --update`, and a warning when no supported client is found.
+- Optional follow-up: upstream the page to tldr-pages. The shallow
+  clone at `../tldr` is the pages repository; the page already follows
+  CLIENT-SPECIFICATION.md, and an upstream merge means `tldr --update`
+  carries it with no local install at all.
+- Tests: native tests for the client detection and target-path
+  selection per client family (with a fake home/cache tree), and an
+  e2e check that installs the page and renders it back through the
+  bundled page content; no network, no real client required.
 
-- The tree now carries **1821** passing tests (the SBOM/manifest category
-  grew from 304 to 308; the paths category grew with the new checks),
-  while 131 files still name 1818. `python3 tools/tests.py` fails in
-  `SyncToolCheckModeTests.test_check_mode_writes_nothing`
-  (`update-test-count.py --check` reports 1821 against a stale tree), and
-  the `test counts in sync` gate fails for the same reason.
-- Run `just test-count`, commit its tree-wide output, and verify the
-  hand-maintained spots the sync tool does not own: `require-tests` in
-  `.github/workflows/ci.yml` and `action.yml`, the counts in
-  `AGENTS.md`, and the category table in `CONTRIBUTING.md`.
-- `cli-e2e` passes on this machine against the current binary (75/75).
-  Its earlier `exit 1` in the reported summary is expected to be the
-  stale binary/`require-tests` residue; re-run `just build` then
-  `just cli-e2e` after the count sync and investigate only if it still
-  fails. On the Windows host, the four known Windows-only `tools-check`
-  failures (the `bin/adacovex` shell stub cannot run through
-  `CreateProcess`, the bundle symlink needs a privilege Windows
-  withholds) stay documented as Windows-only unless a cross-platform fix
-  falls out of item 2.
+### 6. Documentation: SARIF, notices, and conciseness
 
-### 2. Fix the `.venv` `sys.prefix` RuntimeWarning cross-platform
+- SARIF for users: document `gnatprove.sarif` - what it is, that the
+  assessment and `adacovex spark-coverage` read it beside
+  `gnatprove.out`, where it lives
+  (`<target>/obj/gnatprove/gnatprove.sarif`), and how to view it
+  (editor plugins, GitHub code scanning). Home: the spark-coverage
+  section of `docs/usage/cli-reference-flags.md` plus a paragraph in
+  `docs/contributing/proving.md`, cross-linked.
+- Add SARIF to `docs/THIRD_PARTY_NOTICES.md` beside the CycloneDX
+  row: OASIS SARIF, specification reference only, not vendored - the
+  same shape as the CycloneDX and SPDX rows.
+- Conciseness pass over the user docs, context and meaning preserved.
+  Start with the longest pages: `sbom-resolution` (~1970 words),
+  `cli-reference-flags` (~1900), `dashboard-html` (~1650),
+  `cli-reference` (~1590), `architecture` (~1530). Every gate stays
+  green (docs coverage, links, para-split, STE rules, British
+  spelling).
 
-- `just check` depends on `docs-venv`, which runs
-  `uv pip install --python .venv -r requirements.txt` with the **relative**
-  `.venv/bin` (Windows: `.venv/Scripts`) prepended to `PATH` by the
-  justfile. A Python 3.13 interpreter started from a relative venv path
-  reports `sys.prefix` as the relative `.venv`, so `<frozen site>`
-  prints `RuntimeWarning: Unexpected value in sys.prefix, expected
-  <absolute>/.venv, got .venv` right after `Audited 3 packages in 22ms`.
-- Fix in the justfile (and in any tool that prepends the venv bin to
-  `PATH`: `tools/gen-docs.py`, `tools/tasks.py`, `tools/check-book-links.py`
-  resolve the same `.venv` shape) by building an **absolute** venv-bin
-  path -- `justfile_directory()` joined with the platform venv-bin
-  directory (`venv-bin` already switches on `os()` for `bin` vs
-  `Scripts`). One fix covers Linux, macOS, and Windows.
-- Verify: `just check` on this machine prints no `RuntimeWarning`
-  anywhere in the gate output, and the same on the Windows host.
+### 7. Python environment and dependency single-sourcing
 
-### 3. Clear the three gnatprove `info` messages in `adacovex-config.adb`
+- Single-source the docs dependencies: add a `pyproject.toml` and
+  generate `requirements.txt` from it with a stdlib tool script. The
+  committed `requirements.txt` stays, because `.readthedocs.yaml` and
+  the docs venv consume it, and a sync gate keeps the two identical
+  (same pattern as the description sync).
+- Bootstrap order for the Python tooling environment: `uv` when
+  present, else `install.sh` when the project provides one, else
+  `python3 -m venv`. Document it in the developer guide and keep the
+  justfile behaviour consistent with it (absolute venv-bin paths, the
+  Windows `sys.prefix` RuntimeWarning fix).
 
-- `info: no contextual analysis of "Suggest_Flags" (unconstrained return
-  type)` (562:04), `info: analyzing call to "Normalized" in context`
-  (567:45), `info: analyzing call to "Edit_Distance" in context`
-  (601:18). All three come from gnatprove inlining `Suggest_Flags` at
-  its single call site (2035) and being unable to analyse the call
-  contextually because the function returns an unconstrained `String`.
-- Preferred fix: give `Suggest_Flags` a constrained return type (the
-  body already builds a bounded `Buf`/`Len` pair, so return a bounded
-  record and let the caller slice), which lets gnatprove analyse the
-  call in context and drops all three messages. Alternative: keep the
-  unconstrained return and restructure so the calls are not inlined in
-  context. Keep the Platinum discipline: 0 unproved, 0 justified, no
-  new `SPARK_Mode (Off)`, and no new user assertions that are not
-  proved. Re-run `just prove` and update the proof ledger if the VC
-  count moves.
+## v1.63.0
 
-### 4. Improve CI caching (proof, self assessment, and the other workflows)
+### P1. Cold `just build` and cold `prove` down to the bare minimum
 
-Current state, read from the workflows:
+- Current cold costs on this machine (v1.61.0): a cold build pays the
+  alire workspace sync that fetches three binary crates
+  (`gnatdoc_bin`, `gnatformat_bin`, `gnatprove` 16.1.0), the full
+  Sphinx bundle build when the docs changed, and a full gprbuild of
+  about 300 units plus the `test_runner` link. A cold `prove` is
+  60-72 s at 1022 VCs, solver-bound, after toolchain resolution.
+- Profile each cold phase first (extend `just bench` with build-phase
+  scenarios; hyperfine plus strace), then cut what is not needed:
+  the toolchain fetch (cache or document the host-side cache), the
+  doc regeneration (the fingerprint is already incremental - prove a
+  cold tree cannot rebuild it needlessly), the compile (flags and
+  unit count), and the solver (VC reduction, job count).
+- Bar: every remaining cold-phase cost is either measured-necessary
+  or removed, and the numbers are recorded in
+  `docs/contributing/perf/`.
 
-- `alire-project/setup-alire@latest` with `cache: true` caches the
-  **toolchain** only, and only where the workflow calls setup-alire
-  directly (complexity gate, docstring coverage gate, pr-check, the
-  release macOS/Windows matrix).
-- The composite action has `cache` and `result-cache` inputs (the
-  result cache is restored/saved with `actions/cache/restore@v5` and
-  `actions/cache/save@v5`), but **no `ci.yml` job passes
-  `result-cache: true`**, so every run re-proves and re-assesses cold.
-- The gnatprove session store (`obj/gnatprove/`) is never cached in any
-  workflow, so a self-assessment run pays the full solver cost every
-  time even when the proof-relevant sources are unchanged.
-- The docs encode cache (`obj/adacovex-docs-encode/`) and the uv/pip
-  wheel cache for `requirements.txt` are likewise cold every run.
+### P2. Dir_Cache cache-friendliness (from the v1.61.0 perf analysis)
 
-Plan:
+- The warm pipeline spends about 14k `newfstatat` calls and shows a
+  13 percent L1 dcache-miss rate, largely from the `Dir_Cache` slot
+  layout (1024-byte path image per slot, 128-byte entry records).
+  Shrink the per-slot footprint, tighten `Dir_Entry_Rec`, and
+  reconsider `Max_Dir_Entries = 64`: directories over the cap now take
+  the correct but unmemoised fallback on every walker, so the self
+  tree re-enumerates `src/parsers` repeatedly.
+- SPARK bar unchanged: 0 unproved, 0 justified, no new
+  `SPARK_Mode (Off)`.
 
-1. Pass `cache: true` and `result-cache: true` to `uses: ./` in the
-   `self-assessment`, `adacovex-tests`, and the run-tests consumer job
-   (the result-cache entries are content-addressed SHA-256 hashes, so a
-   stale restore is safe by construction -- the action's own comments
-   already document this).
-2. Add an `actions/cache` step for the gnatprove session store
-   (`obj/gnatprove/`) in the self-assessment job, keyed on a hash of the
-   proof-relevant sources (reuse the proof-input hash rule: exclude the
-   generated bundle specs `adacovex-docs_template.ads` and
-   `adacovex-dashboard_template.ads`, which have no proof surface).
-3. Add the uv/pip cache for `requirements.txt` (the docs venv) and the
-   Sphinx encode cache (`obj/adacovex-docs-encode/`, keyed on the docs
-   sources) to the jobs that build the manual.
-4. Apply the same pattern to `pr-check.yml` and `release.yml`
-   (macOS/Windows `platform-build` matrix).
-5. Measure before/after wall times for the self-assessment and build
-   jobs, record them in `docs/usage/ci-cd.md` (and the perf pages if
-   they are notable), and state in the docs that a restored cache can
-   never mask a regression (content-addressed keys only).
-- Guard against a false pass: no gate may trust a cached summary whose
-  Total row reports unproved VCs -- the prove result cache already
-  drops such a blob; the session-store cache must not bypass that rule.
+### P3. Prove-timing phase for v1.61.0 onwards
 
-### 5. Run the perf timing checks on this EndeavourOS machine
+- 1.61.0 begins its own phase, because the v1.62+ and v1.63 perf work
+  changes the implementation methodology. When the perf fixes land:
+  close the current open phase at 1.60.0 (keeping 1.58.0 as its
+  representative), open `1.61.0-` seeded with the v1.61.0 complete
+  metric set from `perf-analysis.md` (pipeline warm 41.7 ms and cold
+  about 72 ms; prove warm about 53 ms and cold 60-72 s; 14,106 warm
+  `newfstatat`; 5.9 MiB stripped), retire the 1.48.0-1.54.0 phase
+  after moving any figure-explaining note into "Across every phase",
+  and update the AGENTS.md phase-list sentence and every page that
+  names the range.
+- Every figure is measured on this machine with `/proc/loadavg`
+  recorded beside it, per the established rule.
 
-Supersedes the "Deferred to the EndeavourOS machine" section below --
-this host is that machine, and **1.61.0 joins the fold-in**:
+## Release bar
 
-1. Check out this tree and run `just prove` and `just bench` on the
-   release profile (gnatprove 16.1.0, the same logical-core and job
-   settings the page records), with `/proc/loadavg` recorded beside each
-   figure.
-2. Re-measure the warm `newfstatat` count with strace for the current
-   tree.
-3. Fold 1.59.0, 1.60.0, and 1.61.0 into the open phase: rename the phase
-   range `1.57.0-1.58.0` to `1.57.0-1.61.0`, keep 1.58.0 as the
-   representative unless the new figures justify a different one (state
-   the reason in the reading notes), and add the fold-in bullet. Retire
-   the oldest of the three closed phases the page keeps, moving any
-   figure-explaining note into "Across every phase" first.
-4. Update the AGENTS.md phase-list sentence ("so far 1.45.0-1.47.0,
-   1.48.0-1.54.0, 1.55.0-1.56.0, 1.57.0-1.58.0") to the new open-phase
-   range.
-5. Run `just check` on this machine with sphinx installed, so the
-   committed offline-manual spec is regenerated if `docs/` drifted.
-
-### 6. Version bump to v1.61.0 and the changelog
-
-1. `just bump-version VERSION=1.61.0` (both manifests plus the generated
-   `src/adacovex_version_info.ads`), then build so `bin/adacovex
-   --version` and the committed `sbom.json` agree (the
-   `version-consistency` gate spans all of them).
-2. Write `docs/changelogs/adacovex-1.61.0.md` in the canonical format
-   (`### C#:` / `### H#:` under `## Changes` / `## Fixes`, plus
-   `## Test Suite`, `## Proof Results`, `## Traceability`), covering
-   everything since 1.60.0:
-   - cross-platform hardening (`Adacovex.Paths`, the
-     `Long_Long_Integer` time-stamp contract, separator-aware path
-     normalisation, the `parse_gpr` `Constraint_Error` fix);
-   - the justfile/Makefile task-runner migration to `tools/tasks.py`
-     and the `just check` preflight redesign;
-   - the Windows build fixes (larger main-thread stack, symlink
-     fallback) and the `.gitattributes` LF policy;
-   - the test-count sync, the `.venv` RuntimeWarning fix, and the
-     gnatprove `info` cleanups (items 1-3);
-   - the CI caching improvements (item 4);
-   - the prove-timing phase fold-in measured on this machine (item 5).
-3. Update `alire/long-description.txt` if the proof surface changed, and
-   re-run `just description`.
-
-### Order of work and exit criteria
-
-Order: 1 -> 2 -> 3 -> 4 -> 5 -> 6, then `just release` as the separate
-release action. Count sync comes first because several gates read the
-counts; the bump comes last because the version-consistency gate spans
-the manifests, the generated spec, the binary, and `sbom.json`.
-
-v1.61.0 ships when:
-
-- `just check` reports 28/28 gates PASS on this machine (today: 25 pass,
-  3 fail -- tools unit tests, CLI e2e, test counts in sync -- plus the
-  RuntimeWarning noise);
-- `just prove` is Platinum with 0 unproved and 0 justified, and
-  `adacovex-config.adb` emits no `info` messages;
-- `docs/contributing/perf/prove-timing.md` carries the `1.57.0-1.61.0`
-  phase with figures measured on this machine;
-- the CI self-assessment is green with the new caches and measurably
-  faster than run 38098692760's 3m 16s;
-- version 1.61.0 is consistent across every source and the changelog is
-  filed.
-
-## Deferred to the EndeavourOS machine (v1.59.0 and v1.60.0 proof timing)
-
-**Superseded by "Work to be done before the v1.61.0 release" above: the
-current host is the EndeavourOS machine, and 1.61.0 joins the fold-in.**
-The section is kept for its measurement rules.
-
-The `docs/contributing/perf/prove-timing.md` phase table still names
-`1.57.0-1.58.0` as the open phase. 1.59.0 and 1.60.0 change no measurement
-methodology, so they fold into that phase, but the fold-in and any re-measured
-`make prove` / `make bench` figures must be taken on the EndeavourOS machine,
-where the figures are comparable with the Linux columns. This Windows host
-cannot produce a comparable wall, so the table is left as-is for now.
-
-When the EndeavourOS machine is available:
-
-1. Check out this tree and run `just prove` and `just bench` on the release
-   profile (gnatprove 16.1.0, the same logical-core and job settings the page
-   records), with `/proc/loadavg` recorded beside each figure.
-2. Re-measure the warm `newfstatat` count with strace for the current tree.
-3. Fold 1.59.0 and 1.60.0 into the open phase: rename the phase range to
-   `1.57.0-1.60.0`, keep 1.58.0 as the representative unless the new figures
-   justify a different representative, and add the fold-in bullet to the
-   reading notes. State the reason in the reading notes if the representative
-   changes.
-4. Update the AGENTS.md phase-list sentence ("so far 1.45.0-1.47.0,
-   1.48.0-1.54.0, 1.55.0-1.56.0, 1.57.0-1.58.0") to the new open-phase range.
-5. Run `just check` on that machine to re-verify the whole gate with sphinx
-   installed, so the committed offline-manual spec is regenerated.
-
-### Windows host: what `just check` cannot do here
-
-`just check` is verified on Linux, and the Windows host cannot run every gate:
-
-- `fmt` fails because `gnatformat_bin` has no Windows binary in the Alire
-  index (`missing:unavailable`). The EndeavourOS machine resolves it.
-- `ascii-check` fails on this checkout because `core.autocrlf=true` rewrote
-  the tree to CRLF and the gate rejects a carriage return. A repository
-  `.gitattributes` (`* text=auto eol=lf`) now prevents that on a fresh
-  checkout; this working tree needs a re-checkout or `git add --renormalize`
-  to become LF.
-- `tools-check` has four Windows-only failures: a shell-script `bin/adacovex`
-  stub cannot run through `CreateProcess`, and a bundle symlink needs a
-  privilege Windows withholds. Both pass on Linux.
-
-The gates that need the Linux toolchain and pass there are fmt, ascii-check,
-and the two noted tools-check cases. Everything else was run individually on
-this host and passes once the docs venv is present.
+Each release ships when `just check` reports 28/28 PASS on this
+machine, `just prove` is Platinum with 0 unproved and 0 justified, the
+native suite is green (and `test_runner` exits non-zero when it is
+not), the version is consistent across every source, and the changelog,
+user docs, docstrings, and generated artifacts are updated in the same
+change.

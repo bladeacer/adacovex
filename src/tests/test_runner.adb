@@ -1,3 +1,4 @@
+with Ada.Command_Line;
 with Ada.Text_IO;           use Ada.Text_IO;
 with Adacovex.Test_Support; use Adacovex.Test_Support;
 with Adacovex_Types_Tests;
@@ -311,5 +312,8 @@ begin
       Put_Line ("=== ALL TESTS PASSED ===");
    else
       Put_Line ("=== SOME TESTS FAILED ===");
+      --  Fail the process too: `just test` and the `native tests` gate
+      --  read this exit status, so a red suite can never report success.
+      Ada.Command_Line.Set_Exit_Status (Ada.Command_Line.Failure);
    end if;
 end Test_Runner;

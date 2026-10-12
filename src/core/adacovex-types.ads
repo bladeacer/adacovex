@@ -29,8 +29,8 @@ package Adacovex.Types is
    --  Builds on narrower hosts use proportionally smaller limits.
    Host_Word_Bits : constant := System.Word_Size;
 
-   --  Path and line buffers scale with the host word size. On a 64-bit host
-   --  they keep their classic values (4096 / 262144). Identifier and
+   --  Path and line buffers scale with the host word size: on a 64-bit host
+   --  they are 16384 / 262144. Identifier and
    --  description limits (Max_Id_Str, Max_Desc_Str, Max_Filename) are
    --  semantic, not storage-size dependent, and remain fixed.
    Max_Path     : constant := 256 * Host_Word_Bits;

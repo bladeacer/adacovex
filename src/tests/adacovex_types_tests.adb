@@ -122,7 +122,7 @@ package body Adacovex_Types_Tests is
         (Host_Word_Bits in 8 | 16 | 32 | 64,
          "Host_Word_Bits is a supported word size");
       R.Check
-        (Max_Path = 64 * System.Word_Size,
+        (Max_Path = 256 * System.Word_Size,
          "Max_Path scales with host word size");
       R.Check
         (Max_Line = 4096 * System.Word_Size,
