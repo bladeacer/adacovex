@@ -20,7 +20,8 @@ __pycache__/
 *.pyc
 .venv/
 .venv
-alire/build_hash_inputs
+alire
+!alire/releases
 node_modules
 tests/e2e/test-results
 tests/e2e/playwright-report

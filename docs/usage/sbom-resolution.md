@@ -1,6 +1,6 @@
 # SBOM dependency resolution
 
-This page covers language detection, licence resolution (local manifests and the package registry), system dependencies, and test dependency classification. The output formats, usage, standard awareness, and language detection are on [The `sbom` subcommand](sbom.md).
+This page covers language detection, licence resolution (local manifests and the package registry), system dependencies, and test dependency classification. The root project's own manifests are on [The `sbom` subcommand](sbom.md#root-project-declarations). The output formats, usage, standard awareness, and language detection are also on that page.
 
 ## Language detection
 
@@ -201,13 +201,10 @@ SPDX/JSON `adacovex:language` property, and the Markdown table's
 `Language` column.
 
 Tools that are really **language packages** are never registered as system
-tools. The root project's Python requirements (`requirements*.txt`, for
-example `sphinx` and `myst-parser`) register as `dev`-scope `pkg:pypi/*`
-components with the language set to Python. A version pinned in the
-requirements line wins; otherwise the package registry answers
-(`pip index versions <pkg>`) when `pip` is installed and online. A missing
-registry or a failing resolve keeps the name-only entry -- no version or
-licence is ever guessed.
+tools; they register as language components instead. The root project's
+own manifests (`package.json`, `go.mod`, `requirements*.txt`) register
+the same way, and every read of them is structural -- the rules are on
+[Root project declarations](sbom.md#root-project-declarations).
 
 ## Test dependencies
 

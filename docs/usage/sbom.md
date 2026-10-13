@@ -111,6 +111,40 @@ Both formats validate against the official
 [CycloneDX 1.5](https://github.com/CycloneDX/specification) and
 [SPDX 2.3](https://spdx.dev) JSON schemas (see
 [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md)).
+## Root project declarations
+
+The root project declares dependencies in its own manifests, not only in
+its vendored trees. adacovex reads each of them structurally: a JSON key
+must belong to the root object, a TOML key to its own section, and a
+`go.mod` entry to a require directive. A nested key, a key inside a
+string value, a commented line, and a key of another section therefore
+never register a component.
+
+- **`package.json`** registers when the install tree is absent. With
+  `node_modules` present the installed tree is authoritative, so the
+  vendored walk answers for it and this read does nothing. A
+  `dependencies` entry is `base` scope and a `devDependencies` entry is
+  `dev` scope. The resolved version comes from the root importer blocks
+  of `pnpm-lock.yaml` when the lockfile is there, and the package
+  registry fills any gap.
+- **`go.mod`** registers when no vendor tree resolved the module. A
+  direct require is `base` scope and a `// indirect` require is
+  `transitive`, each at the version go.mod states. A replace source, a
+  replace target, and a commented-out require never register. A
+  test-named module such as `github.com/stretchr/testify` takes the
+  `test` label.
+- **`requirements*.txt`** registers as `dev`-scope `pkg:pypi/*`
+  components with the language set to Python. A version pinned in the
+  requirements line wins; otherwise the package registry answers
+  (`pip index versions <pkg>`) when `pip` is installed and online. A
+  missing registry or a failing resolve keeps the name-only entry -- no
+  version or licence is ever guessed.
+
+A vendored package keeps its own manifest authoritative: its bundled
+subpackages (`zod/v4`) and its source trees (`zod/src`) are parts of the
+package and never components of their own. The package-root rule is on
+[the architecture page](../contributing/architecture-dependencies.md#vendored-components-and-test-labelled-dependencies-sbom).
+
 ## Language detection
 
 Every dependency component carries a `language` field (CycloneDX JSON /
@@ -133,9 +167,13 @@ A vendored manifest maps directly onto its language and PURL type:
 | `composer.json`     | `pkg:composer` | PHP        |
 | `Gemfile`           | `pkg:gem`      | Ruby       |
 | `pom.xml`           | `pkg:maven`    | Java       |
-| `Package.swift`     | `pkg:swift`    | Swift      |
-| Alire manifest      | `pkg:alire`    | Ada        |
-| `.gpr` project file | `pkg:gpr`      | Ada        |
+| `Package.swift`     | `pkg:swift`    | Swift      || Alire manifest      | `pkg:alire`     | Ada        |
+| `.gpr` project file | `pkg:gpr`       | Ada        |
+
+The same mapping applies to the root project's own `package.json`,
+`go.mod`, and `requirements*.txt`, which register even when no vendored
+tree carries them. Their scopes and their structural read are on
+[Root project declarations](#root-project-declarations) below.
 
 ### Extension-based inference
 

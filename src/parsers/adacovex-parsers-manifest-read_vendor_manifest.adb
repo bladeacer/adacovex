@@ -21,7 +21,8 @@ procedure Read_Vendor_Manifest
 is
    use Ada.Directories;
 
-   type Manifest_Reader is (R_Json, R_Go, R_Gem, R_Maven, R_Swift);
+   type Manifest_Reader is
+     (R_Json, R_Cargo, R_Pyproj, R_Go, R_Gem, R_Maven, R_Swift);
    type Manifest_Row is record
       File    : String (1 .. 16);
       FLen    : Natural;
@@ -56,7 +57,7 @@ is
          ELen    => 0,
          Lang    => "Rust" & (5 .. 16 => ' '),
          LangLen => 4,
-         Reader  => R_Json),
+         Reader  => R_Cargo),
       3 =>
         (File    => "go.mod" & (7 .. 16 => ' '),
          FLen    => 6,
@@ -76,7 +77,7 @@ is
          ELen    => 0,
          Lang    => "Python" & (7 .. 16 => ' '),
          LangLen => 6,
-         Reader  => R_Json),
+         Reader  => R_Pyproj),
       5 =>
         (File    => "composer.json" & (14 .. 16 => ' '),
          FLen    => 13,
@@ -180,24 +181,67 @@ begin
          Set_Eco (Table (I).Eco, Table (I).ELen);
          Set_Lang (Table (I).Lang (1 .. Table (I).LangLen));
          case Table (I).Reader is
-            when R_Json  =>
-               Set_Text
-                 (Info.Name,
-                  Info.Name_Len,
-                  File_Quoted_Value
-                    (Path (Table (I).File (1 .. Table (I).FLen)), "name"));
-               Set_Text
-                 (Info.Version,
-                  Info.Version_Len,
-                  File_Quoted_Value
-                    (Path (Table (I).File (1 .. Table (I).FLen)), "version"));
-               Set_Text
-                 (Info.License,
-                  Info.License_Len,
-                  File_Quoted_Value
-                    (Path (Table (I).File (1 .. Table (I).FLen)), "license"));
+            when R_Json   =>
+               declare
+                  J_Path : constant String :=
+                    Path (Table (I).File (1 .. Table (I).FLen));
+               begin
+                  Set_Text
+                    (Info.Name,
+                     Info.Name_Len,
+                     Json_Top_Value (J_Path, "name"));
+                  Set_Text
+                    (Info.Version,
+                     Info.Version_Len,
+                     Json_Top_Value (J_Path, "version"));
+                  Set_Text
+                    (Info.License,
+                     Info.License_Len,
+                     Json_Top_Value (J_Path, "license"));
+               end;
 
-            when R_Go    =>
+            when R_Cargo  =>
+               declare
+                  T_Path : constant String :=
+                    Path (Table (I).File (1 .. Table (I).FLen));
+               begin
+                  Set_Text
+                    (Info.Name,
+                     Info.Name_Len,
+                     Toml_Section_Value (T_Path, "package", "name"));
+                  Set_Text
+                    (Info.Version,
+                     Info.Version_Len,
+                     Toml_Section_Value (T_Path, "package", "version"));
+                  Set_Text
+                    (Info.License,
+                     Info.License_Len,
+                     Toml_Section_Value (T_Path, "package", "license"));
+               end;
+
+            when R_Pyproj =>
+               declare
+                  P_Path : constant String :=
+                    Path (Table (I).File (1 .. Table (I).FLen));
+
+                  --  PEP 621's [project] first, Poetry's [tool.poetry]
+                  --  table as the fallback.
+                  function PV (K : String) return String is
+                     V : constant String :=
+                       Toml_Section_Value (P_Path, "project", K);
+                  begin
+                     if V'Length > 0 then
+                        return V;
+                     end if;
+                     return Toml_Section_Value (P_Path, "tool.poetry", K);
+                  end PV;
+               begin
+                  Set_Text (Info.Name, Info.Name_Len, PV ("name"));
+                  Set_Text (Info.Version, Info.Version_Len, PV ("version"));
+                  Set_Text (Info.License, Info.License_Len, PV ("license"));
+               end;
+
+            when R_Go     =>
                declare
                   Mod_Path : constant String :=
                     Go_Module_Path
@@ -216,7 +260,7 @@ begin
                   end if;
                end;
 
-            when R_Gem   =>
+            when R_Gem    =>
                declare
                   G_N : String (1 .. 64) := (others => ' ');
                   G_V : String (1 .. 64) := (others => ' ');
@@ -233,7 +277,7 @@ begin
                   Set_Text (Info.Version, Info.Version_Len, G_V (1 .. V_L));
                end;
 
-            when R_Maven =>
+            when R_Maven  =>
                declare
                   A : constant String :=
                     Xml_Tag_Value
@@ -254,7 +298,7 @@ begin
                   Set_Text (Info.Version, Info.Version_Len, V);
                end;
 
-            when R_Swift =>
+            when R_Swift  =>
                null;
          end case;
          --  A licence file beside the manifest classifies into an SPDX

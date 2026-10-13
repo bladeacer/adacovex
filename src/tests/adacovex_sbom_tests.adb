@@ -1151,6 +1151,169 @@ package body Adacovex_SBOM_Tests is
          & ASCII.LF);
    end Make_Test_Lock_Heuristic_Fixture;
 
+   --  Fixture whose installed npm package carries subpackage manifests
+   --  and source directories of its own (the shape the real zod tree
+   --  has under node_modules): the walk registers the package itself
+   --  and the package below an npm scope container, and never the
+   --  package's own subpackages (v4, locales) or its source trees (src,
+   --  lib). Those are parts of zod, not dependencies of the project.
+   procedure Make_Vendor_Subpkg_Fixture is
+      D : constant String := "obj/sbom_vendor_subpkg";
+   begin
+      Write_File
+        (D & "/alire.toml",
+         "name = ""subpkg""" & ASCII.LF & "version = ""1.0.0""" & ASCII.LF);
+      Write_File
+        (D & "/node_modules/zod/package.json",
+         "{""name"":""zod"",""version"":""4.4.3""}");
+      Write_File
+        (D & "/node_modules/zod/v4/package.json",
+         "{""name"":""zod-v4"",""version"":""4.0.0""}");
+      Write_File
+        (D & "/node_modules/zod/locales/package.json",
+         "{""name"":""zod-locales"",""version"":""0.0.2""}");
+      Write_File (D & "/node_modules/zod/src/index.ts", "export const z = 1;");
+      Write_File
+        (D & "/node_modules/zod/lib/index.js", "module.exports = {};");
+      Write_File
+        (D & "/node_modules/@modelcontextprotocol/sdk/package.json",
+         "{""name"":""@modelcontextprotocol/sdk"",""version"":""1.29.0""}");
+      Write_File
+        (D & "/node_modules/@modelcontextprotocol/sdk/dist/index.js",
+         "export const sdk = 1;");
+   end Make_Vendor_Subpkg_Fixture;
+
+   --  Fixture whose project root declares its npm dependencies but ships
+   --  no install tree: the declared set is read structurally from
+   --  package.json (a nested section, and a key inside a string value,
+   --  never contribute) and the resolved version comes from the root
+   --  importer blocks of pnpm-lock.yaml.
+   procedure Make_Root_Npm_Fixture is
+      D : constant String := "obj/sbom_root_npm";
+   begin
+      Write_File
+        (D & "/alire.toml",
+         "name = ""rootnpm""" & ASCII.LF & "version = ""1.0.0""" & ASCII.LF);
+      Write_File
+        (D & "/package.json",
+         "{"
+         & ASCII.LF
+         & "  ""name"": ""rootnpm"","
+         & ASCII.LF
+         & "  ""description"": ""a \""version\"" decoy"","
+         & ASCII.LF
+         & "  ""scripts"": { ""version"": ""9.9.9"" },"
+         & ASCII.LF
+         & "  ""dependencies"": { ""zod"": ""^4.4.3"" },"
+         & ASCII.LF
+         & "  ""devDependencies"": { ""typescript"": ""^5.9.3"" }"
+         & ASCII.LF
+         & "}");
+      Write_File
+        (D & "/pnpm-lock.yaml",
+         "lockfileVersion: '9.0'"
+         & ASCII.LF
+         & ASCII.LF
+         & "importers:"
+         & ASCII.LF
+         & ASCII.LF
+         & "  .:"
+         & ASCII.LF
+         & "    dependencies:"
+         & ASCII.LF
+         & "      zod:"
+         & ASCII.LF
+         & "        specifier: ^4.4.3"
+         & ASCII.LF
+         & "        version: 4.4.3"
+         & ASCII.LF
+         & "    devDependencies:"
+         & ASCII.LF
+         & "      typescript:"
+         & ASCII.LF
+         & "        specifier: ^5.9.3"
+         & ASCII.LF
+         & "        version: 5.9.3"
+         & ASCII.LF
+         & ASCII.LF
+         & "packages:"
+         & ASCII.LF);
+   end Make_Root_Npm_Fixture;
+
+   --  Fixture whose project root declares its modules in go.mod alone
+   --  (no vendor tree): a direct require is base scope, a `// indirect`
+   --  require is transitive, a test-named module keeps the test label,
+   --  and a replace target, a replace source, and a commented-out
+   --  require never register.
+   procedure Make_Root_Go_Fixture is
+      D : constant String := "obj/sbom_root_go";
+   begin
+      Write_File
+        (D & "/alire.toml",
+         "name = ""rootgo""" & ASCII.LF & "version = ""1.0.0""" & ASCII.LF);
+      Write_File
+        (D & "/go.mod",
+         "module example.com/rootgo"
+         & ASCII.LF
+         & "go 1.24"
+         & ASCII.LF
+         & ASCII.LF
+         & "require github.com/spf13/cobra v1.9.1"
+         & ASCII.LF
+         & ASCII.LF
+         & "require ("
+         & ASCII.LF
+         & ASCII.HT
+         & "golang.org/x/sync v0.12.0 // indirect"
+         & ASCII.LF
+         & ASCII.HT
+         & "github.com/stretchr/testify v1.10.0 // indirect"
+         & ASCII.LF
+         & ")"
+         & ASCII.LF
+         & ASCII.LF
+         & "// require github.com/commented/out v1.0.0"
+         & ASCII.LF
+         & "replace github.com/old/pkg => github.com/new/pkg v1.0.0"
+         & ASCII.LF);
+   end Make_Root_Go_Fixture;
+
+   --  Fixture whose vendored manifests carry decoy keys: a JSON key of
+   --  another section and a key inside a string value, plus a commented
+   --  TOML line and a key of another section. The structural readers
+   --  answer from the root object and from the [package] block alone.
+   procedure Make_Struct_Manifest_Fixture is
+      D : constant String := "obj/sbom_struct_manifest";
+   begin
+      Write_File
+        (D & "/alire.toml",
+         "name = ""structfix""" & ASCII.LF & "version = ""1.0.0""" & ASCII.LF);
+      Write_File
+        (D & "/node_modules/strpkg/package.json",
+         "{""scripts"":{""name"":""decoy-name"",""version"":""9.9.9""},"
+         & """description"":""a \""version\"" decoy"","
+         & """name"":""strpkg"",""version"":""1.2.3""}");
+      Write_File
+        (D & "/node_modules/tomlpkg/Cargo.toml",
+         "[package]"
+         & ASCII.LF
+         & "# name = ""decoy-comment"""
+         & ASCII.LF
+         & "name = ""tomlpkg"""
+         & ASCII.LF
+         & "version = ""2.0.0"""
+         & ASCII.LF
+         & ASCII.LF
+         & "[dependencies]"
+         & ASCII.LF
+         & "decoy = ""0.1.0"""
+         & ASCII.LF
+         & "name = ""decoy"""
+         & ASCII.LF
+         & "version = ""9.9.9"""
+         & ASCII.LF);
+   end Make_Struct_Manifest_Fixture;
+
    procedure Make_Demo_Graph (Graph : out Component_Vectors.Vector) is
       Root : Component_Info;
       Dep  : Component_Info;
@@ -2476,6 +2639,185 @@ package body Adacovex_SBOM_Tests is
          R.Check
            (C.PURL_Len = 12 and C.PURL (1 .. 12) = "pkg:gpr/libt",
             "libt purl");
+      end;
+
+      --  Structural vendor walk: an installed package's own subpackages
+      --  and source trees are parts of the package, never components of
+      --  their own, while the package below an npm scope container is
+      --  one (the shape the real zod tree has under node_modules).
+      declare
+         Graph   : Component_Vectors.Vector;
+         Success : Boolean := False;
+         C       : Component_Info;
+      begin
+         Make_Vendor_Subpkg_Fixture;
+         Adacovex.Parsers.Manifest.Build_Dependency_Graph
+           ("obj/sbom_vendor_subpkg",
+            "obj/sbom_vendor_subpkg/alire.toml",
+            Graph,
+            Success);
+         R.Check (Success, "vendor-subpackage graph success");
+         R.Check (Count_Name (Graph, "zod") = 1, "zod registered");
+         C := Find_Name (Graph, "zod");
+         R.Check
+           (C.Version_Len = 5
+            and then C.Version (1 .. C.Version_Len) = "4.4.3",
+            "zod version from its own package.json");
+         R.Check
+           (Count_Name (Graph, "@modelcontextprotocol/sdk") = 1,
+            "scoped package below its scope container registered");
+         R.Check
+           (Count_Name (Graph, "zod-v4") = 0,
+            "a package's own subpackage manifest never registers");
+         R.Check
+           (Count_Name (Graph, "zod-locales") = 0,
+            "a package's own nested manifest never registers");
+         R.Check
+           (Count_Name (Graph, "v4") = 0,
+            "a subpackage directory name never registers");
+         R.Check
+           (Count_Name (Graph, "locales") = 0,
+            "a subpackage directory name never registers (locales)");
+         R.Check
+           (Count_Name (Graph, "src") = 0,
+            "a package's source tree never registers (src)");
+         R.Check
+           (Count_Name (Graph, "lib") = 0,
+            "a package's source tree never registers (lib)");
+         R.Check
+           (Count_Name (Graph, "dist") = 0,
+            "a package's build output never registers (dist)");
+      end;
+
+      --  Root package.json with no install tree: the declared set is
+      --  registered structurally and the resolved version comes from the
+      --  root importer blocks of pnpm-lock.yaml.
+      declare
+         Graph   : Component_Vectors.Vector;
+         Success : Boolean := False;
+         C       : Component_Info;
+      begin
+         Make_Root_Npm_Fixture;
+         Adacovex.Parsers.Manifest.Build_Dependency_Graph
+           ("obj/sbom_root_npm",
+            "obj/sbom_root_npm/alire.toml",
+            Graph,
+            Success);
+         R.Check (Success, "root npm graph success");
+         R.Check
+           (Count_Name (Graph, "zod") = 1,
+            "root package.json dependency registered");
+         C := Find_Name (Graph, "zod");
+         R.Check (C.Scope = Scope_Base, "zod scope = base (dependencies)");
+         R.Check
+           (C.Version_Len = 5
+            and then C.Version (1 .. C.Version_Len) = "4.4.3",
+            "zod version from the pnpm lockfile root importer");
+         R.Check
+           (Count_Name (Graph, "typescript") = 1,
+            "root package.json devDependency registered");
+         C := Find_Name (Graph, "typescript");
+         R.Check
+           (C.Scope = Scope_Dev, "typescript scope = dev (devDependencies)");
+         R.Check
+           (C.Version_Len = 5
+            and then C.Version (1 .. C.Version_Len) = "5.9.3",
+            "typescript version from the pnpm lockfile root importer");
+         R.Check
+           (Count_Name (Graph, "version") = 0,
+            "a decoy key inside another section never registers");
+         R.Check
+           (Count_Name (Graph, "scripts") = 0,
+            "a nested section name never registers");
+      end;
+
+      --  Root go.mod with no vendor tree: a direct require is base, a
+      --  `// indirect` require is transitive, a test-named module keeps
+      --  the test label, and a replace or a commented-out line never
+      --  registers.
+      declare
+         Graph   : Component_Vectors.Vector;
+         Success : Boolean := False;
+         C       : Component_Info;
+      begin
+         Make_Root_Go_Fixture;
+         Adacovex.Parsers.Manifest.Build_Dependency_Graph
+           ("obj/sbom_root_go", "obj/sbom_root_go/alire.toml", Graph, Success);
+         R.Check (Success, "root go graph success");
+         R.Check
+           (Count_Name (Graph, "github.com/spf13/cobra") = 1,
+            "direct require registered");
+         C := Find_Name (Graph, "github.com/spf13/cobra");
+         R.Check (C.Scope = Scope_Base, "direct require scope = base");
+         R.Check
+           (C.Version_Len = 6
+            and then C.Version (1 .. C.Version_Len) = "v1.9.1",
+            "direct require version from go.mod");
+         R.Check
+           (Contains
+              (C.PURL (1 .. C.PURL_Len),
+               "pkg:golang/github.com/spf13/cobra@v1.9.1"),
+            "direct require purl is pkg:golang with its version");
+         R.Check
+           (C.Language_Len = 2 and then C.Language (1 .. 2) = "Go",
+            "direct require language = Go");
+         R.Check
+           (Count_Name (Graph, "golang.org/x/sync") = 1,
+            "indirect require registered");
+         C := Find_Name (Graph, "golang.org/x/sync");
+         R.Check
+           (C.Scope = Scope_Transitive, "indirect require scope = transitive");
+         C := Find_Name (Graph, "github.com/stretchr/testify");
+         R.Check
+           (C.Scope = Scope_Test,
+            "test-named module scope = test (name heuristic)");
+         R.Check
+           (Count_Name (Graph, "github.com/old/pkg") = 0,
+            "replace source module never registers");
+         R.Check
+           (Count_Name (Graph, "github.com/new/pkg") = 0,
+            "replace target module never registers");
+         R.Check
+           (Count_Name (Graph, "github.com/commented/out") = 0,
+            "commented-out require never registers");
+      end;
+
+      --  Structural manifest readers: the root object of a JSON manifest
+      --  and the [package] block of a TOML manifest answer, never a
+      --  nested key, a key inside a string value, or a commented line.
+      declare
+         Graph   : Component_Vectors.Vector;
+         Success : Boolean := False;
+         C       : Component_Info;
+      begin
+         Make_Struct_Manifest_Fixture;
+         Adacovex.Parsers.Manifest.Build_Dependency_Graph
+           ("obj/sbom_struct_manifest",
+            "obj/sbom_struct_manifest/alire.toml",
+            Graph,
+            Success);
+         R.Check (Success, "structural manifest graph success");
+         R.Check (Count_Name (Graph, "strpkg") = 1, "package.json registered");
+         C := Find_Name (Graph, "strpkg");
+         R.Check
+           (C.Version_Len = 5
+            and then C.Version (1 .. C.Version_Len) = "1.2.3",
+            "package.json version from the root object, not a decoy");
+         R.Check
+           (Count_Name (Graph, "decoy-name") = 0,
+            "a JSON key of another section never names a component");
+         R.Check (Count_Name (Graph, "tomlpkg") = 1, "Cargo.toml registered");
+         C := Find_Name (Graph, "tomlpkg");
+         R.Check
+           (C.Version_Len = 5
+            and then C.Version (1 .. C.Version_Len) = "2.0.0",
+            "Cargo.toml version from [package], not a decoy");
+         R.Check
+           (Count_Name (Graph, "decoy-comment") = 0,
+            "a commented TOML key never names a component");
+         R.Check
+           (Count_Name (Graph, "decoy") = 0,
+            "a TOML key of another section never names a component");
       end;
 
       --  Scope_Property maps every scope (including test) to its SBOM

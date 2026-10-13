@@ -223,6 +223,19 @@ begin
    --  dev-scope pypi dependencies resolved from the package registry.
    Register_Root_Python_Deps (Target_Dir, Graph);
 
+   --  Register the root's declared npm dependencies when the install
+   --  tree is absent (node_modules present makes the vendored walk
+   --  authoritative and this a no-op): the declared set comes from the
+   --  package.json dependency sections, parsed structurally, and the
+   --  resolved versions from pnpm-lock.yaml's root importer blocks.
+   Register_Root_Npm_Deps (Target_Dir, Graph);
+
+   --  Register the modules the root go.mod declares when no vendored
+   --  tree resolved them (a Go vendor tree stays authoritative): a
+   --  direct require is base scope, a `// indirect` require is
+   --  transitive, and both take the version go.mod states.
+   Register_Root_Go_Deps (Target_Dir, Graph);
+
    Success := Root.Name_Len > 0;
 
    --  Store the freshly resolved graph for the next run. Store it only on

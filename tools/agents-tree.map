@@ -68,18 +68,24 @@ src/tests/adacovex_completion_tests	Shell completion script tests (24)
 src/tests/adacovex_paths_tests	Platform-agnostic path helper tests (43)
 src/tests/adacovex_renderer_svg_tests	SVG renderer tests (161)
 src/tests/adacovex_renderer_tests	HTML/Markdown renderer tests (58)
-src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (311)
-src/tests/test_runner	Test suite entry point (1824 tests)
+src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (351)
+src/tests/test_runner	Test suite entry point (1864 tests)
 src/parsers/adacovex-parsers-manifest-req_entry	Parse the first requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-collect_req_entries	Collect every requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-register_root_python_deps	Register root requirements*.txt entries as dev-scope pypi components
+src/parsers/adacovex-parsers-manifest-register_root_npm_deps	Register the root package.json's declared npm dependencies
+src/parsers/adacovex-parsers-manifest-collect_go_requires	Collect go.mod require entries (direct and `// indirect`)
+src/parsers/adacovex-parsers-manifest-register_root_go_deps	Register the root go.mod's declared Go modules
 src/parsers/adacovex-parsers-manifest-is_test_named	Whether an npm package name carries a test label (starts/ends with "test")
 src/parsers/adacovex-parsers-manifest-collect_owner_test_names	Collect test-labelled dependency names from supported-language manifests
 src/parsers/adacovex-parsers-manifest-key_value	Extract the quoted "key = value" from a TOML/JSON line
 src/parsers/adacovex-parsers-manifest-has_lang	Whether a language counter vector already holds a language name
 src/parsers/adacovex-parsers-manifest-discover_vendored_components	Register vendored patches/resources/assets as scope=vendored SBOM components
 src/parsers/adacovex-parsers-manifest-language_of_dir	Summarise the source languages under a directory (primary first)
-src/parsers/adacovex-parsers-manifest-file_quoted_value	Extract the first quoted "key"=/"key":" value from a manifest file
+src/parsers/adacovex-parsers-manifest-json_top_value	Read a top-level value from a JSON manifest (structural scan)
+src/parsers/adacovex-parsers-manifest-toml_section_value	Read a value from a TOML manifest section (structural scan)
+src/parsers/adacovex-parsers-manifest-collect_json_section_names	Collect a JSON manifest section's dependency names
+src/parsers/adacovex-parsers-manifest-pnpm_importer_version	Read a pnpm-lock.yaml root importer's version for a dependency
 src/parsers/adacovex-parsers-manifest-register_manifest_deps	Register Alire manifest + lockfile dependencies into the graph
 src/parsers/adacovex-parsers-manifest-set_field	Copy a string into a bounded Desc_Field (with length cap)
 src/parsers/adacovex-parsers-manifest-collect_gpr_files	Collect every .gpr file under a target directory tree

@@ -11,10 +11,21 @@ separate (Adacovex.Parsers.Manifest)
 --    * A directory that holds Ada sources (.ads/.adb) without a manifest
 --      becomes a Scope_Vendored Ada component. It is named after the
 --      directory (for example a hand-vendored Ada library under
---      third_party/). npm scope containers (node_modules/@scope without
---      a manifest) never become components; the scoped package below
---      them does. pnpm store and shim dirs (.pnpm, .bin) are skipped
---      entirely -- they are not packages.
+--      third_party/).
+--  Only two directory shapes are package roots: a level-1 child of the
+--  vendor root (node_modules/zod, vendor/phpunit/phpunit's own vendor
+--  name), and a level-2 child that carries its own ecosystem manifest
+--  while its parent carries none. Such a parent is a container, not a
+--  package: an npm scope (node_modules/@scope/pkg), a composer vendor
+--  name (vendor/phpunit/phpunit), or a Go import-path host
+--  (vendor/gopkg.in/yaml.v3). Every other level-2 directory is an
+--  ordinary subdirectory of an already registered package (zod/v4,
+--  zod/lib, a package's src/ and dist/) and never becomes a component
+--  of its own -- a package ships subpackage manifests and source trees
+--  of its own, and neither is a dependency of the project. Hidden
+--  directories (the .pnpm virtual store, .bin shims, .vite and other
+--  tool caches) are skipped entirely -- never descended into, never
+--  componentised; npm scope containers start with '@', never '.'.
 --  Every component carries its language or languages. The languages are
 --  detected from file extensions. The ecosystem language is first. The
 --  top 3 are used and mixed sources list the leading languages.
@@ -50,12 +61,17 @@ is
    end Push_Dir;
 
    --  Directory names inside a vendor root that never represent a
-   --  package: pnpm's virtual store (.pnpm holds lock.yaml + the
-   --  resolved store, not a dependency) and the .bin shim dir. They are
-   --  skipped entirely -- never descended into, never componentised.
+   --  package: every hidden directory -- pnpm's virtual store (.pnpm
+   --  holds lock.yaml + the resolved store, not a dependency), the .bin
+   --  shim dir, tool caches (.vite, .cache, .yarn), and any other
+   --  state directory. They are skipped entirely -- never descended
+   --  into, never componentised. npm scope containers start with '@',
+   --  never '.', so the rule cannot hide a scoped package.
+   --  @param N  Directory base name.
+   --  @return True when the directory is hidden.
    function Skip_Vendor_Scan_Dir (N : String) return Boolean is
    begin
-      return N = ".pnpm" or else N = ".bin";
+      return N'Length > 0 and then N (N'First) = '.';
    end Skip_Vendor_Scan_Dir;
 
    --  The directory that contains Path (its last path component
@@ -117,6 +133,25 @@ is
       --  root. Parsing it per component would open and rescan the file once
       --  per module, which is quadratic in the module count.
       Go_Modules : Go_Module_Vectors.Vector;
+
+      --  Whether the directory holding Path is itself a package: it
+      --  carries an ecosystem manifest, so Path below it is a
+      --  subdirectory of a package (zod/v4) and not a package root. A
+      --  container (an npm scope, a composer vendor name, a Go host)
+      --  carries no manifest, so its child stays a root. "False" when
+      --  Path has no parent.
+      --  @param Path  Directory path of the candidate package root.
+      --  @return True when Path's parent directory is a package.
+      function Parent_Is_Package (Path : String) return Boolean is
+         PM : Vendor_Manifest;
+         P  : constant String := Parent_Dir (Path);
+      begin
+         if P'Length = 0 then
+            return False;
+         end if;
+         Read_Vendor_Manifest (P, Go_Modules, PM);
+         return PM.Found;
+      end Parent_Is_Package;
    begin
       --  Collect the owning manifest's test-labelled dependency names
       --  before scanning the root's children, so every component can be
@@ -167,14 +202,29 @@ is
             End_Search (S2);
 
             --  Component source: ecosystem manifest or source files.
-            --  The vendor root itself (level 0) is not a component. Only
-            --  its children are components.
+            --  The vendor root itself (level 0) is not a component. A
+            --  level-1 child of the vendor root is a package root. A
+            --  level-2 child is a package root only when it carries its
+            --  own ecosystem manifest and its parent carries none: such
+            --  a parent is a container (an npm scope, a composer vendor
+            --  name, a Go import-path host), not a package. Every other
+            --  level-2 directory is a subdirectory of an already
+            --  registered package (zod/v4, zod/lib, a package's src/
+            --  tree) and never becomes a component of its own.
             if Current.Level > 0 then
                declare
                   M : Vendor_Manifest;
                begin
                   Read_Vendor_Manifest (Dir_Path, Go_Modules, M);
-                  if M.Found then
+                  if Current.Level > 1
+                    and then (not M.Found or else Parent_Is_Package (Dir_Path))
+                  then
+                     --  A subdirectory of a package: its own manifest
+                     --  (a package's bundled subpackage) and its source
+                     --  tree both belong to the package above it, so
+                     --  neither becomes a component of its own.
+                     null;
+                  elsif M.Found then
                      declare
                         N       : String :=
                           (if M.Name_Len > 0

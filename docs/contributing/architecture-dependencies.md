@@ -81,6 +81,19 @@ The scan runs after the cached manifest graph is resolved (so cache hits and mis
 
 Otherwise, every installed tool on the list can be registered as a self-reference.
 
+### Root project manifests (SBOM)
+
+`Build_Dependency_Graph` also reads the root project's own manifests, and
+it does so after the vendored walk, so an installed tree always wins.
+`Register_Root_Npm_Deps` registers the `package.json` dependency sections
+when no `node_modules` tree exists, and `Register_Root_Go_Deps`
+registers the `go.mod` require directives when no vendor tree resolved
+the modules. `Register_Root_Python_Deps` registers `requirements*.txt`
+the same way it always has. Every read is structural:
+`Collect_Json_Section_Names` tracks brace depth and string state,
+`Collect_Go_Requires` tracks require directives and their blocks, and
+`Pnpm_Importer_Version` walks the lockfile by indentation.
+
 ### Vendored components and test-labelled dependencies (SBOM)
 
 `Discover_Generic_Vendored` walks the target tree for vendor roots
@@ -90,6 +103,20 @@ Each directory inside a vendor root that carries an ecosystem manifest
 `Gemfile`, `pom.xml`, `Package.swift`, `requirements*.txt`) becomes one
 component with its ecosystem purl (`pkg:npm/...`, `pkg:cargo/...`, and
 more). Its scope defaults to `vendored`.
+
+Only two directory shapes become components. A level-1 child of the
+vendor root is one (`node_modules/zod`). A level-2 child is one only
+when it carries its own ecosystem manifest and its parent carries none:
+the parent is then a container -- an npm scope
+(`node_modules/@scope/pkg`), a composer vendor name
+(`vendor/phpunit/phpunit`), or a Go import-path host
+(`vendor/gopkg.in/yaml.v3`).
+
+Every other level-2 directory is a subpackage or a source tree of the
+package above it (`zod/v4`, `zod/src`, `parse5/dist`) and never becomes
+a component: a package bundles its own subpackages, and none of them is
+a dependency of the project. Hidden directories (`.pnpm`, the `.bin`
+shims, and tool caches such as `.vite`) are never descended into.
 
 A component is classified `test` when the project manifest that owns the
 vendor root declares it under a test-only label:

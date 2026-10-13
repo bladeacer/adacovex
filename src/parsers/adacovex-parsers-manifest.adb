@@ -302,6 +302,19 @@ package body Adacovex.Parsers.Manifest is
      (Owner_Dir : String; Test_Names : in out Name_Vectors.Vector)
    is separate;
 
+   --  Collect the dependency names a JSON manifest's section declares:
+   --  the keys directly inside the top-level "<Section>" object
+   --  (package.json's "dependencies" or "devDependencies"), parsed
+   --  structurally so a nested key, a key inside a string value, or
+   --  another section's keys never contribute. Appends to Names only
+   --  when the section closes cleanly.
+   --  @param Path  Path of the JSON file.
+   --  @param Section  Top-level section whose keys to collect.
+   --  @param Names  Collected names, appended to on success.
+   procedure Collect_Json_Section_Names
+     (Path : String; Section : String; Names : in out Name_Vectors.Vector)
+   is separate;
+
    procedure Append_Dependency
      (Graph    : in out Types.Implementation.Component_Vectors.Vector;
       Name     : String;
@@ -466,10 +479,29 @@ package body Adacovex.Parsers.Manifest is
       Eco_Len          : Natural := 0;
    end record;
 
-   --  Read the first "<Key>" quoted value from a key=value or key:value
-   --  file (TOML or JSON, quoted key or bare): locate Key followed by '='
-   --  or ':', then the next double-quoted string. "" when absent.
-   function File_Quoted_Value (Path : String; Key : String) return String
+   --  Read the top-level "<Key>" value of a JSON object file
+   --  (package.json, composer.json) with a structural scan: brace depth
+   --  and string state are tracked, so only a key of the root object
+   --  matches and a key inside a string value never matches. "" when
+   --  absent, when the value is not a quoted string, or when the file is
+   --  unreadable.
+   --  @param Path  Path of the JSON file.
+   --  @param Key  Top-level key to read.
+   --  @return The quoted value, or "".
+   function Json_Top_Value (Path : String; Key : String) return String
+   is separate;
+
+   --  Read "Key = \"...\"" from the "[Section]" header block of a TOML
+   --  file. Keys of another section, of a sub-section, or of a commented
+   --  line never match, and the key matches as a whole word. "" when
+   --  absent. Cargo.toml is read from [package]; pyproject.toml from
+   --  [project] with [tool.poetry] as the fallback.
+   --  @param Path  Path of the TOML file.
+   --  @param Section  Header text without brackets (for example "package").
+   --  @param Key  Key to read inside the section.
+   --  @return The quoted value, or "".
+   function Toml_Section_Value
+     (Path : String; Section : String; Key : String) return String
    is separate;
 
    --  Read the first "module <path>" line of a go.mod (the module path is
@@ -486,6 +518,36 @@ package body Adacovex.Parsers.Manifest is
    --  table does not list it.
    function Go_Module_Version
      (Table : Go_Module_Vectors.Vector; Module : String) return String
+   is separate;
+
+   --  Collect every module a go.mod's require directives declare, split
+   --  into the direct set and the `// indirect` set. The parse is
+   --  structural: a require directive opens the block (a single-line
+   --  `require <path> <version>` or a `require (` group), the group ends
+   --  at its closing parenthesis, and the contents of a replace,
+   --  exclude, retract, or tool block are never read. A trailing
+   --  comment is stripped before the entry is tokenised, and an entry
+   --  contributes only when it carries both a module path and a
+   --  version. A physical line longer than Max_Line stops the read; the
+   --  entries collected so far stay.
+   --  @param Path  Path of the go.mod file.
+   --  @param Direct  Modules the file requires directly (appended).
+   --  @param Indirect  Modules the file marks `// indirect` (appended).
+   procedure Collect_Go_Requires
+     (Path     : String;
+      Direct   : in out Go_Module_Vectors.Vector;
+      Indirect : in out Go_Module_Vectors.Vector)
+   is separate;
+
+   --  The version pnpm-lock.yaml's root importer (".") records for a
+   --  dependency name in its dependencies or devDependencies blocks,
+   --  peer-suffix stripped ("4.4.3(zod@4.4.3)" gives "4.4.3"), "" when
+   --  the lockfile has no such entry or the value is not a plain
+   --  version. Parsed by YAML indentation, never by substring.
+   --  @param Path  Path of the pnpm-lock.yaml file.
+   --  @param Name  Dependency name to look up.
+   --  @return The resolved version, or "".
+   function Pnpm_Importer_Version (Path : String; Name : String) return String
    is separate;
 
    --  SPDX identifier for the licence file that ships beside an ecosystem
@@ -530,6 +592,37 @@ package body Adacovex.Parsers.Manifest is
    --  version or the registry answers. A missing registry or a failing
    --  resolve keeps the name-only entry -- no licence is ever guessed.
    procedure Register_Root_Python_Deps
+     (Target_Dir : String;
+      Graph      : in out Types.Implementation.Component_Vectors.Vector)
+   is separate;
+
+   --  Register the project root's npm dependencies (the dependencies
+   --  and devDependencies of the root package.json) when the install
+   --  tree is absent: with node_modules present the vendored walk is
+   --  authoritative and this is a no-op. The declared set is read
+   --  structurally (JSON section parse) and the resolved version comes
+   --  from pnpm-lock.yaml's root importer blocks when the lockfile is
+   --  there; the registry resolver fills any gap.
+   --  @param Target_Dir  Project root.
+   --  @param Graph  Component graph to register into.
+   procedure Register_Root_Npm_Deps
+     (Target_Dir : String;
+      Graph      : in out Types.Implementation.Component_Vectors.Vector)
+   is separate;
+
+   --  Register the modules the project root's go.mod declares: a direct
+   --  require becomes a base-scope pkg:golang component, a `// indirect`
+   --  require a transitive one, each at the version go.mod states. A
+   --  module the vendored walk already registered is left alone, so a Go
+   --  vendor tree (whose modules.txt and licence files answer for the
+   --  whole tree) stays authoritative. The licence stays empty unless a
+   --  file states it: the Go toolchain reports none, a licence file
+   --  beside the root go.mod is the project's own, and a website is
+   --  never guessed. A test-named module (github.com/stretchr/testify)
+   --  takes Scope_Test, as everywhere else.
+   --  @param Target_Dir  Project root.
+   --  @param Graph  Component graph to register into.
+   procedure Register_Root_Go_Deps
      (Target_Dir : String;
       Graph      : in out Types.Implementation.Component_Vectors.Vector)
    is separate;
@@ -590,10 +683,16 @@ package body Adacovex.Parsers.Manifest is
    --    * A directory that holds Ada sources (.ads/.adb) without a manifest
    --      becomes a Scope_Vendored Ada component. It is named after the
    --      directory (for example a hand-vendored Ada library under
-   --      third_party/). npm scope containers (node_modules/@scope without
-   --      a manifest) never become components; the scoped package below
-   --      them does. pnpm store and shim dirs (.pnpm, .bin) are skipped
-   --      entirely -- they are not packages.
+   --      third_party/).
+   --  Only two directory shapes are package roots: a level-1 child of the
+   --  vendor root, and a level-2 child that carries its own ecosystem
+   --  manifest while its parent carries none -- such a parent is a
+   --  container (an npm scope, a composer vendor name, a Go import-path
+   --  host), not a package. Every other level-2 directory is a
+   --  subdirectory of an already registered package (zod/v4, zod/lib, a
+   --  package's src/ tree) and never becomes a component of its own.
+   --  Hidden directories (.pnpm, .bin, tool caches) are skipped entirely --
+   --  never descended into, never componentised.
    --  Every component carries its language or languages. The languages are
    --  detected from file extensions. The ecosystem language is first. The
    --  top 3 are used and mixed sources list the leading languages.
@@ -641,9 +740,10 @@ package body Adacovex.Parsers.Manifest is
    --  registering phantom tools. Add an entry when a project's build
    --  files reference the tool by name -- keep the list alphabetical
    --  within each category.
-   System_Tools : constant array (1 .. 63) of Tool_Entry :=
+   System_Tools : constant array (1 .. 64) of Tool_Entry :=
      (
       --  Build / test drivers.
+      Make_Tool ("air"),
       Make_Tool ("alr"),
       Make_Tool ("cmake"),
       Make_Tool ("gprbuild"),

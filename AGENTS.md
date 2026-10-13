@@ -107,7 +107,7 @@ Self-assessment (`just run-self`) must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
 - Platinum SPARK level (1022 VCs under gnatprove 16.1.0, 0 unproved, 0
   justified; see `docs/proof/16.1.0-ledger.md`)
-- 1824/1824 native tests passing
+- 1864/1864 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
   `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
@@ -161,7 +161,9 @@ src/
 |   |-- adacovex-parsers-manifest-append_dependency.adb-- Append one component node to the dependency graph
 |   |-- adacovex-parsers-manifest-build_dependency_graph.adb-- Build the dependency graph for a project root
 |   |-- adacovex-parsers-manifest-classify_scope.adb-- Classify a dependency name as base/dev/transitive scope
+|   |-- adacovex-parsers-manifest-collect_go_requires.adb-- Collect go.mod require entries (direct and `// indirect`)
 |   |-- adacovex-parsers-manifest-collect_gpr_files.adb-- Collect every .gpr file under a target directory tree
+|   |-- adacovex-parsers-manifest-collect_json_section_names.adb-- Collect a JSON manifest section's dependency names
 |   |-- adacovex-parsers-manifest-collect_owner_test_names.adb-- Collect test-labelled dependency names from supported-language manifests
 |   |-- adacovex-parsers-manifest-collect_req_entries.adb-- Collect every requirement (name/version) from a requirements*.txt
 |   |-- adacovex-parsers-manifest-deserialize_set.adb-- Restore the referenced-tool set and probes from a cache blob
@@ -170,7 +172,6 @@ src/
 |   |-- adacovex-parsers-manifest-discover_system_dev_deps.adb-- Register installed system tools the project references (dev scope)
 |   |-- adacovex-parsers-manifest-discover_vendored_components.adb-- Register vendored patches/resources/assets as scope=vendored SBOM components
 |   |-- adacovex-parsers-manifest-extension_language.adb-- Map a file extension to its language display name
-|   |-- adacovex-parsers-manifest-file_quoted_value.adb-- Extract the first quoted "key"=/"key":" value from a manifest file
 |   |-- adacovex-parsers-manifest-find_gpr.adb-- Locate the .gpr file for a crate name in collected files
 |   |-- adacovex-parsers-manifest-first_list_value.adb-- Extract the first quoted value from a "key = [list]" line
 |   |-- adacovex-parsers-manifest-gem_entry.adb-- Parse the first gem name/version from a Gemfile
@@ -182,6 +183,7 @@ src/
 |   |-- adacovex-parsers-manifest-is_test_named.adb-- Whether an npm package name carries a test label (starts/ends with "test")
 |   |-- adacovex-parsers-manifest-is_vendor_dir_name.adb-- Whether a directory name denotes a vendored-code root
 |   |-- adacovex-parsers-manifest-is_word_char.adb-- Whether a character can appear in a tool-name word
+|   |-- adacovex-parsers-manifest-json_top_value.adb-- Read a top-level value from a JSON manifest (structural scan)
 |   |-- adacovex-parsers-manifest-key_value.adb-- Extract the quoted "key = value" from a TOML/JSON line
 |   |-- adacovex-parsers-manifest-language_of_dir.adb-- Summarise the source languages under a directory (primary first)
 |   |-- adacovex-parsers-manifest-language_summary.adb-- Rank and join a language counter vector into a summary label
@@ -192,6 +194,7 @@ src/
 |   |-- adacovex-parsers-manifest-note_referenced_tools.adb-- Record every curated tool a line references as a whole word
 |   |-- adacovex-parsers-manifest-note_tool.adb-- Record a curated tool as referenced by the project
 |   |-- adacovex-parsers-manifest-parse_gpr.adb-- Parse a GNAT project file for project name and with-clauses
+|   |-- adacovex-parsers-manifest-pnpm_importer_version.adb-- Read a pnpm-lock.yaml root importer's version for a dependency
 |   |-- adacovex-parsers-manifest-probe_version.adb-- Probe a tool's version by spawning it and parsing its output
 |   |-- adacovex-parsers-manifest-push_scan_dir.adb-- Queue a directory for the system-tool scan
 |   |-- adacovex-parsers-manifest-read_alire_lock.adb-- Parse alire.lock [[solution.state]] crate entries into the graph
@@ -200,6 +203,8 @@ src/
 |   |-- adacovex-parsers-manifest-read_manifest_deps.adb-- Collect crate names from a manifest [[depends-on]] section
 |   |-- adacovex-parsers-manifest-read_vendor_manifest.adb-- Read a vendored manifest (table-driven filename -> ecosystem)
 |   |-- adacovex-parsers-manifest-register_manifest_deps.adb-- Register Alire manifest + lockfile dependencies into the graph
+|   |-- adacovex-parsers-manifest-register_root_go_deps.adb-- Register the root go.mod's declared Go modules
+|   |-- adacovex-parsers-manifest-register_root_npm_deps.adb-- Register the root package.json's declared npm dependencies
 |   |-- adacovex-parsers-manifest-register_root_python_deps.adb-- Register root requirements*.txt entries as dev-scope pypi components
 |   |-- adacovex-parsers-manifest-req_entry.adb-- Parse the first requirement (name/version) from a requirements*.txt
 |   |-- adacovex-parsers-manifest-resolve_ecosystem_metadata.adb-- Resolve version/licence/website from the package registry
@@ -211,6 +216,7 @@ src/
 |   |-- adacovex-parsers-manifest-should_scan.adb-- Whether a file drives a build and is scanned for tool references
 |   |-- adacovex-parsers-manifest-skip_walk_dir.adb-- Whether a directory should be skipped during a source walk
 |   |-- adacovex-parsers-manifest-source_tree_hash.adb-- Content hash of the dev-facing files the tool scan reads
+|   |-- adacovex-parsers-manifest-toml_section_value.adb-- Read a value from a TOML manifest section (structural scan)
 |   |-- adacovex-parsers-manifest-tool_fp_digest.adb-- SHA-256 of the fingerprint of an installed tool binary
 |   |-- adacovex-parsers-manifest-tools_key.adb-- Cache key for the referenced-tool set and its probes
 |   |-- adacovex-parsers-manifest-vendored_hash.adb-- Fingerprint of every vendored input that shapes the graph
@@ -250,7 +256,7 @@ src/
     |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (72)
     |-- adacovex_renderer_svg_tests.ads/.adb  -- SVG renderer tests (161)
     |-- adacovex_renderer_tests.ads/.adb      -- HTML/Markdown renderer tests (58)
-    |-- adacovex_sbom_tests.ads/.adb          -- SBOM / manifest graph tests (311)
+    |-- adacovex_sbom_tests.ads/.adb          -- SBOM / manifest graph tests (351)
     |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (89)
     |-- adacovex_server_tests.ads/.adb        -- Server routing tests (133)
     |-- adacovex_spark_coverage_tests.ads/.adb-- SPARK coverage report tests
@@ -258,7 +264,7 @@ src/
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (67)
     |-- adacovex_tz_ansi_tests.ads/.adb       -- Timezone + ANSI tests (63)
     |-- adacovex_vcs_tests.ads/.adb           -- VCS support tests (29)
-    `-- test_runner.adb                       -- Test suite entry point (1824 tests)
+    `-- test_runner.adb                       -- Test suite entry point (1864 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -553,7 +559,7 @@ compatibility shim. The table names the canonical target for each task.
 | `check` | **The single everything-check / verification entry point.** Run it after any change. It runs every gate CI runs before a release, and **`fmt` is first**: gnatprove and the API docs both read the sources, so every later gate must see formatted code. Then the cheap static gates (ascii, complexity, csslint, spark-off, changelog, action-parity, docs-coverage, tools-check, cli-e2e, version, version-consistency, doc-links, link, docs-check, para-split, tldr, book-links), then build + native tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description). Every gate runs a preflight first: a gate whose tool is missing on the host (no `alr` on `PATH`, no `gnatformat` on the developer path, a `gnatdoc` that cannot document a one-package probe project, no `sphinx` in the interpreter) is SKIPped with the reason instead of failing, the run continues past a failed gate, and the summary shows PASS/FAIL/SKIP per gate, exiting non-zero only when a gate failed. `just check` resolves `gnatprove` for you (it is fetched into `<data>/toolchain/` and executed directly when not on `PATH`), so you never have to install or point at a prover by hand -- just run `just check` and it verifies the whole tree end to end. `just prove` is the SPARK sub-gate if you only changed proof-affecting code |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
-| `test` | Build + run the 1824-test native suite |
+| `test` | Build + run the 1864-test native suite |
 | `prove` | SPARK proof at gnatprove `--level=4` (Platinum gate) + regenerates SVG badges in `docs/badges/` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
 | `book` | Build the offline manual from the Sphinx docs and regenerate `src/adacovex-docs_template.ads` (tools/gen-docs.py; incremental + verified Sphinx build, `--fresh` forces a clean one; safe to run without sphinx) |
@@ -667,7 +673,7 @@ a runner needs neither `make` nor `just`; the Ubuntu runner images ship
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `just test` | 1824/1824 passing |
+| Unit tests | `just test` | 1864/1864 passing |
 | Self-assessment | `just run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `just prove` | Platinum (1022 VCs, 0 unproved, 0 justified under gnatprove 16.1.0), verified at `--level=4` (the deepest effort; the prove subcommand forwards `--level` verbatim, so the overhead is gnatprove's own) |
 | Ada_CRDT regression | `just run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -722,7 +728,7 @@ rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 1824 tests across 27 categories).
+Native zero-dependency suite (`src/tests/`, 1864 tests across 27 categories).
 Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests).
 

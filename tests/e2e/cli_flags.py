@@ -9,6 +9,10 @@ tokens, the `--require-*` gates, the `complexity` subcommand (`--excludes` /
 (`--compare-base` / `--coverage-delta` and every alias) end to end -- exit
 codes, the parsed effect, and the shorthand server flags.
 
+It also pins the SBOM component sets of two real-project dependency
+shapes (a pnpm workspace and a Go module), so a manifest-parsing
+regression fails here instead of on a manual run.
+
 It needs no browser and no third-party package, so it runs anywhere the
 binary is built:
 
@@ -299,6 +303,130 @@ def check_tier_tokens(r: Results, tmp: Path) -> None:
                 and f"| adacovex:level | {level} |" in text
             label = f"--standard={token} selects {standard} at {level}"
         r.check(ok, label)
+
+
+# Dependency scopes a component row can carry in the Markdown SBOM.
+SBOM_SCOPES: Tuple[str, ...] = (
+    "base", "dev", "transitive", "vendored", "test", "system",
+)
+
+
+def sbom_components(out: Path, target: Path) -> Optional[List[Tuple[str, str]]]:
+    """Run `sbom` on target and return its (component, scope) rows.
+
+    `system` rows are kept: they depend on what the host has on PATH.
+    Returns None when no report was written.
+    """
+    proc = run(["sbom", "-t", str(target), "--format=md",
+                f"--out={out}", "--no-cache"], timeout=300)
+    if proc.returncode not in (0, 1) or not out.is_file():
+        return None
+    rows: List[Tuple[str, str]] = []
+    for line in out.read_text(encoding="utf-8").splitlines():
+        if not line.startswith("|"):
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if len(cells) >= 7 and cells[5] in SBOM_SCOPES:
+            rows.append((cells[0], cells[5]))
+    return rows
+
+
+def write_fixture(root: Path, files: Dict[str, str]) -> None:
+    """Write a fixture tree: relative path -> file content."""
+    for rel, content in files.items():
+        path = root / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+
+
+def check_sbom_shapes(r: Results, tmp: Path) -> None:
+    """Pin the component sets of two real-project dependency shapes.
+
+    The native suite covers each parser in isolation; these checks run
+    the whole `sbom` pipeline over miniature copies of the shapes the
+    sibling projects have (lccst's pnpm workspace, kibtab/ocd/swag's Go
+    module), so a parsing regression fails a gate instead of a manual
+    run.  `system` rows are dropped because they track the host PATH.
+    """
+    pnpm = tmp / "shape-pnpm"
+    write_fixture(pnpm, {
+        "alire.toml": 'name = "shapepnpm"\nversion = "1.0.0"\n',
+        #  The declared set (six packages) plus decoys: a package's own
+        #  subpackage manifests and source trees must never register.
+        "package.json": (
+            '{\n'
+            '  "name": "shapepnpm",\n'
+            '  "dependencies": {"zod": "^4.4.3", '
+            '"@modelcontextprotocol/sdk": "^1.29.0"},\n'
+            '  "devDependencies": {"@types/node": "^20.19.43", '
+            '"esbuild": "^0.28.1", "tsx": "^4.22.4", '
+            '"typescript": "^5.9.3"}\n'
+            '}\n'),
+        "pnpm-lock.yaml": (
+            "lockfileVersion: '9.0'\n\nimporters:\n\n  .:\n"
+            "    dependencies:\n"
+            "      zod:\n"
+            "        specifier: ^4.4.3\n"
+            "        version: 4.4.3\n"
+            "    devDependencies:\n"
+            "      typescript:\n"
+            "        specifier: ^5.9.3\n"
+            "        version: 5.9.3\n\npackages:\n"),
+        "node_modules/zod/package.json":
+            '{"name":"zod","version":"4.4.3"}',
+        "node_modules/zod/v4/package.json":
+            '{"name":"zod-v4","version":"4.0.0"}',
+        "node_modules/zod/locales/package.json":
+            '{"name":"zod-locales","version":"0.0.2"}',
+        "node_modules/zod/src/index.ts": "export const z = 1;\n",
+        "node_modules/zod/lib/index.js": "module.exports = {};\n",
+        "node_modules/@modelcontextprotocol/sdk/package.json":
+            '{"name":"@modelcontextprotocol/sdk","version":"1.29.0"}',
+        "node_modules/@types/node/package.json":
+            '{"name":"@types/node","version":"20.19.43"}',
+        "node_modules/esbuild/package.json":
+            '{"name":"esbuild","version":"0.28.1"}',
+        "node_modules/tsx/package.json": '{"name":"tsx","version":"4.22.4"}',
+        "node_modules/typescript/package.json":
+            '{"name":"typescript","version":"5.9.3"}',
+    })
+    rows = sbom_components(tmp / "shape-pnpm.md", pnpm)
+    deps = sorted(name for name, scope in rows or [] if scope != "system")
+    r.check(
+        rows is not None
+        and deps == [
+            "@modelcontextprotocol/sdk", "@types/node",
+            "esbuild", "tsx", "typescript", "zod",
+        ],
+        "pnpm-workspace shape registers exactly its declared packages "
+        "(no subpackage or source-tree components)",
+    )
+
+    go = tmp / "shape-go"
+    write_fixture(go, {
+        "alire.toml": 'name = "shapego"\nversion = "1.0.0"\n',
+        "go.mod": (
+            "module example.com/shapego\n\ngo 1.24\n\n"
+            "require github.com/spf13/cobra v1.9.1\n\n"
+            "require (\n"
+            "\tgolang.org/x/sync v0.12.0 // indirect\n"
+            "\tgithub.com/stretchr/testify v1.10.0 // indirect\n"
+            ")\n\n"
+            "// require github.com/commented/out v1.0.0\n"
+            "replace github.com/old/pkg => github.com/new/pkg v1.0.0\n"),
+    })
+    rows = sbom_components(tmp / "shape-go.md", go)
+    scopes = {name: scope for name, scope in rows or [] if scope != "system"}
+    r.check(
+        rows is not None
+        and scopes == {
+            "github.com/spf13/cobra": "base",
+            "github.com/stretchr/testify": "test",
+            "golang.org/x/sync": "transitive",
+        },
+        "Go-module shape registers base/transitive/test scopes and no "
+        "replace or commented-out module",
+    )
 
 
 def check_target_equivalence(r: Results, tmp: Path) -> None:
@@ -727,6 +855,7 @@ def main() -> int:
         check_completion(r)
         check_rejections(r)
         check_tier_tokens(r, tmp)
+        check_sbom_shapes(r, tmp)
         check_target_equivalence(r, tmp)
         check_markdown_output(r, tmp)
         check_complexity(r, tmp)

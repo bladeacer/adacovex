@@ -55,25 +55,29 @@ system CUPS port 631. The hermetic-test fix is v1.62.0 item 1.
 
 - [x] **1. Hermetic tests: no network or credential flow during `make check`**
 
-  - Done (2026-10-12): `ADACOVEX_OFFLINE` gates the ecosystem-metadata
-    resolver (no registry spawn, no metadata-cache read). The native
-    runner and the e2e `run()` helper set it, the suite pins the
-    offline shape with three checks, and an execve trace of the whole
-    suite shows zero registry-CLI spawns. Documented in the
-    configuration and SBOM-resolution pages.
-  - The native suite must never spawn `alr show` for a crate that is not
-    in the local index. Make the ecosystem-metadata probe hermetic in
-    tests: seed the probe cache for the fixture crate, gate the probe
-    behind an env flag the tests set, or stub it at the parser boundary.
-  - The same rule covers every registry probe the graph resolver can
-    spawn (`pip index versions`, `npm view`, `pnpm show`, `cargo
-    search`): the e2e SBOM fixtures of item 2 run against real projects
-    and must resolve from seeded caches or stubs, never from a registry.
-  - Exit criterion: `make check` and `just test` run with the network
-    unplugged and no `git-credential-oauth` process appears and no
+  - Implemented (2026-10-12); see
+    [adacovex-1.62.0.md](docs/changelogs/adacovex-1.62.0.md) (`C1`).
+  - Exit criterion met: `make check` and `just test` run with the
+    network unplugged, no `git-credential-oauth` process appears, and no
     browser opens.
 
-- [ ] **2. Structural dependency parsing (replace the blind word/regex scan)**
+- [x] **2. Structural dependency parsing (replace the blind word/regex scan)**
+
+  - Implemented (2026-10-13); see
+    [adacovex-1.62.0.md](docs/changelogs/adacovex-1.62.0.md) (`C2`,
+    `C3`, `H1`).
+  - False positives closed, by name: an installed package's own
+    subpackages and source trees reported as components (`lib`, `dist`,
+    `src`, `v4-mini`, `v4`, `v3`, `mini`, `locales`), and workspace
+    path names reported as components.
+  - False negative closed: a project's declared npm and Go
+    dependencies never registered when it ships no install tree.
+  - `air` is curated now, so a project that references it registers it
+    as a system tool when it is installed.
+  - Accuracy fixtures: `covex sbom` was checked against the sibling
+    projects and the expected component sets are pinned in the e2e
+    suite, so a parsing regression fails a gate instead of a manual
+    run.
 
   - `Scan_File` / `Note_Referenced_Tools` word-match a curated tool
     table over build files, and the supported-language manifest readers
