@@ -4,9 +4,9 @@
 
 | Metric | Value |
 |--------|-------|
-| Packages Scanned |  42 |
-| Total Subprograms |  213 |
-| Documented Subprograms |  213 |
+| Packages Scanned |  43 |
+| Total Subprograms |  219 |
+| Documented Subprograms |  219 |
 | Docstring Coverage |  100% |
 
 ## SPARK Proof Analysis
@@ -14,14 +14,14 @@
 | Check Type | Count | Proved |
 |------------|-------|--------|
 | SPARK Level | Platinum | - |
-| Flow (data + flow dependencies) |  65 |  65 |
+| Flow (data + flow dependencies) |  73 |  73 |
 | Initialization |  17 |  17 |
-| Runtime Checks |  615 |  615 |
+| Runtime Checks |  599 |  599 |
 | Assertions |  133 |  133 |
-| Functional Contracts |  95 |  95 |
-| Termination |  122 |  122 |
-| **Total** |  1047 |  1047 |
-| Units Analyzed |  70 | - |
+| Functional Contracts |  97 |  97 |
+| Termination |  127 |  127 |
+| **Total** |  1046 |  1046 |
+| Units Analyzed |  72 | - |
 | Units Skipped |  0 | - |
 
 ## Test Results
@@ -36,7 +36,7 @@
 | CLI config |  349 | PASS |
 | SVG renderer |  161 | PASS |
 | HTML/Markdown renderers |  58 | PASS |
-| SBOM generator |  304 | PASS |
+| SBOM generator |  366 | PASS |
 | Result cache |  36 | PASS |
 | IR synthesis |  42 | PASS |
 | Man page renderer |  18 | PASS |
@@ -54,8 +54,9 @@
 | CPU and jobs |  24 | PASS |
 | HLR/LLR parsing |  33 | PASS |
 | Completion scripts |  24 | PASS |
-| Platform paths |  44 | PASS |
-| **Total** | ** 1818** | **Passed:  1818, Failed:  0** |
+| Platform paths |  43 | PASS |
+| Install method |  23 | PASS |
+| **Total** | ** 1902** | **Passed:  1902, Failed:  0** |
 
 ## DO-178C Compliance
 

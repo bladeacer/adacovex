@@ -100,6 +100,9 @@ To keep the tool free of 32/64-bit and endian surprises, adacovex:
 an assessment and without downloading anything:
 
 - **Alire**: installed and the version it reports;
+- **adacovex install**: how the running binary is installed
+  (`source-checkout`, `alire-global`, `on-path`) and the path it was
+  invoked from;
 - **GNAT compiler**: detected version and the target word size;
 - **GNATprove**: dependency-managed or `PATH`-detected, plus the
   resolved proof level;

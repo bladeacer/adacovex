@@ -10,6 +10,7 @@ with GNAT.OS_Lib;
 with Adacovex;
 with Adacovex.Ansi;
 with Adacovex.CPUs;
+with Adacovex.Install;
 with Adacovex.Paths;
 with Adacovex.Timezones;
 with Adacovex.Cache;
@@ -2359,6 +2360,13 @@ package body Adacovex.Prove is
       --  target carries under docs/changelogs.
       Time_Zone        : Adacovex.Timezones.Timezone_Info;
       Dated_Changelogs : Natural := 0;
+      --  How adacovex itself is installed on this machine, and the path
+      --  of the running binary (0 = unresolvable). The SBOM classifies a
+      --  project's reference to adacovex by the same method.
+      Install_Method   : Adacovex.Install.Install_Method :=
+        Adacovex.Install.On_Path;
+      Install_Path     : String (1 .. Types.Max_Path) := (others => ' ');
+      Install_Len      : Natural := 0;
    end record;
 
    --  Fill a Status_Data record by probing PATH, the target manifest, the
@@ -2502,6 +2510,18 @@ package body Adacovex.Prove is
         and then S.Alr_Ok;
       S.Time_Zone := Effective_TZ (TZ_Spec);
       S.Dated_Changelogs := Count_Dated_Changelogs (T);
+      S.Install_Method := Adacovex.Install.Detect;
+      declare
+         P : constant String := Adacovex.Install.Self_Path;
+      begin
+         S.Install_Len := P'Length;
+         if S.Install_Len > S.Install_Path'Last then
+            S.Install_Len := S.Install_Path'Last;
+         end if;
+         for I in 1 .. S.Install_Len loop
+            S.Install_Path (I) := P (P'First + I - 1);
+         end loop;
+      end;
    end Gather_Status;
 
    procedure Run_Status
@@ -2516,6 +2536,17 @@ package body Adacovex.Prove is
       Ada.Text_IO.Put_Line
         ("  target:             "
          & Adacovex.Paths.Display (S.Target (1 .. S.Target_Len)));
+      --  Installation method of the running binary: which installation
+      --  the command on PATH came from, and where it lives.
+      Ada.Text_IO.Put_Line
+        ("  adacovex install:   "
+         & Adacovex.Install.To_String (S.Install_Method)
+         & (if S.Install_Len > 0
+            then
+              " ("
+              & Adacovex.Paths.Display (S.Install_Path (1 .. S.Install_Len))
+              & ")"
+            else ""));
 
       --  Locale/time: the effective timezone, the current wall-clock date and
       --  time in that zone, and how many dated release changelogs the target
@@ -2723,6 +2754,10 @@ package body Adacovex.Prove is
       Put (",");
       Field ("target", S.Target (1 .. S.Target_Len));
       Put (",");
+      Field ("install_method", Adacovex.Install.To_String (S.Install_Method));
+      Put (",");
+      Field ("install_path", S.Install_Path (1 .. S.Install_Len));
+      Put (",");
       Field
         ("timezone",
          (if S.Time_Zone.Display_Len > 0
@@ -2819,6 +2854,10 @@ package body Adacovex.Prove is
       Gather_Status (Target_Dir, TZ_Spec, S);
       Ada.Text_IO.Put_Line ("version=" & Adacovex.Version);
       Ada.Text_IO.Put_Line ("target=" & S.Target (1 .. S.Target_Len));
+      Ada.Text_IO.Put_Line
+        ("install_method=" & Adacovex.Install.To_String (S.Install_Method));
+      Ada.Text_IO.Put_Line
+        ("install_path=" & S.Install_Path (1 .. S.Install_Len));
       Ada.Text_IO.Put_Line
         ("timezone="
          & (if S.Time_Zone.Display_Len > 0

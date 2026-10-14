@@ -105,13 +105,28 @@ system CUPS port 631. The hermetic-test fix is v1.62.0 item 1.
     e2e suite so a parsing regression fails a gate instead of a manual
     run.
 
-- [ ] **3. adacovex as a dependency of other projects**
+- [x] **3. adacovex as a dependency of other projects**
 
-  - When adacovex audits another project that references `adacovex` or
-    `covex` (Makefile, workflow, manifest), it registers as a dev-scope
-    dependency of that project; when it audits itself it is the root and
-    never a component of its own graph. Add the curated reference, the
-    classification rule, and a test in each direction.
+  - Implemented (2026-10-14); see
+    [adacovex-1.62.0.md](docs/changelogs/adacovex-1.62.0.md) (`C4`,
+    `C5`).
+  - `adacovex` and `covex` are curated table entries, but their
+    reference registers the running binary under the canonical name
+    `adacovex` (bundled version, `pkg:generic/adacovex`) from the
+    reference alone -- no PATH probe decides it, because the tool being
+    run is the dependency.
+  - Classification rule: the self graph never carries adacovex as a
+    component; a manifest declaration keeps its own scope (`base` from
+    `alire.toml`, `dev` from `alire-dev.toml`); otherwise
+    `Adacovex.Install.Detect` decides -- a source checkout is `dev`, an
+    Alire global install or a binary on `PATH` is `system`.
+  - `adacovex status` reports the method and the binary path: text row,
+    JSON `install_method` / `install_path`, and the same two metric
+    keys.
+  - Tests in both directions: 15 new SBOM checks (reference, self, and
+    manifest-declared fixtures) plus the 23-check `Install method`
+    category for the classifier, the scope rule, and the filesystem
+    walk.
 
 - [ ] **4. HTTP server metrics, objects, and info**
 

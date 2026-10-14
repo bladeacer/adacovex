@@ -199,7 +199,13 @@ begin
               Probes (PI).Name (1 .. Probes (PI).NLen);
             Live_Digest : constant String := Tool_Fp_Digest (Nm);
          begin
-            if Live_Digest'Length > 0
+            --  adacovex and covex are never probed here: the dedicated
+            --  pass below registers them from the reference alone, by
+            --  installation method. A restored probe for either name
+            --  (a blob written by an older release) is dropped.
+            if Nm = "adacovex" or else Nm = "covex" then
+               null;
+            elsif Live_Digest'Length > 0
               and then Probes (PI).FpLen = Live_Digest'Length
               and then Probes (PI).Fp (1 .. Live_Digest'Length) = Live_Digest
             then
@@ -257,11 +263,18 @@ begin
    else
       for I in 1 .. Integer (Referenced.Length) loop
          declare
-            Name : constant String :=
+            Name         : constant String :=
               Referenced (I).Name (1 .. Referenced (I).Len);
-            Exe  : GNAT.OS_Lib.String_Access :=
-              GNAT.OS_Lib.Locate_Exec_On_Path (Name);
+            --  The two adacovex names take the dedicated pass below: a
+            --  PATH probe would decide them by the wrong rule (and would
+            --  put adacovex into its own graph when it audits itself).
+            Is_Self_Tool : constant Boolean :=
+              Name = "adacovex" or else Name = "covex";
+            Exe          : GNAT.OS_Lib.String_Access;
          begin
+            if not Is_Self_Tool then
+               Exe := GNAT.OS_Lib.Locate_Exec_On_Path (Name);
+            end if;
             if Exe /= null then
                --  Identity of the installed binary (path + size + mtime).
                --  Both cache layers below key on it, so an upgraded or
@@ -325,6 +338,59 @@ begin
             end if;
          end;
       end loop;
+   end if;
+
+   --  adacovex as a dependency of the audited project. A project whose
+   --  build files reference adacovex (or its covex alias) uses the tool
+   --  that is auditing it, so the running binary is the dependency: no
+   --  PATH probe decides it and the version is the bundled one. Three
+   --  rules order the classification. A project that is adacovex itself
+   --  never carries itself as a component. A graph or manifest that
+   --  already names adacovex or covex keeps that component and its
+   --  scope, so a declaration stays authoritative. Otherwise the
+   --  installation method decides (Adacovex.Install): a source build is
+   --  a dev dependency, an install outside a project is a system tool.
+   if Integer (Graph.Length) > 0 then
+      declare
+         Root_Name       : constant String :=
+           Graph (1).Name (1 .. Graph (1).Name_Len);
+         Self_Root       : constant Boolean :=
+           Root_Name = "adacovex" or else Root_Name = "covex";
+         Declared        : constant Boolean :=
+           Name_In_Graph (Graph, "adacovex")
+           or else Name_In_Graph (Graph, "covex")
+           or else Classify_Scope ("adacovex") /= Types.Scope_Transitive
+           or else Classify_Scope ("covex") /= Types.Scope_Transitive;
+         Tool_Referenced : Boolean := False;
+      begin
+         for I in 1 .. Integer (Referenced.Length) loop
+            declare
+               N : constant String :=
+                 Referenced (I).Name (1 .. Referenced (I).Len);
+            begin
+               if N = "adacovex" or else N = "covex" then
+                  Tool_Referenced := True;
+               end if;
+            end;
+         end loop;
+         if Tool_Referenced and then not Self_Root and then not Declared then
+            declare
+               M : constant Adacovex.Install.Install_Method :=
+                 Adacovex.Install.Detect;
+            begin
+               Append_Dependency
+                 (Graph,
+                  "adacovex",
+                  Adacovex.Version,
+                  "",
+                  "Coverage tool referenced by the project (dev dependency)",
+                  "pkg:generic/adacovex",
+                  1,
+                  False,
+                  Adacovex.Install.Dependency_Scope (M));
+            end;
+         end if;
+      end;
    end if;
 
    --  Store the freshly scanned set (now including probe results) for

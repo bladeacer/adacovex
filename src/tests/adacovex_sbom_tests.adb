@@ -4,6 +4,8 @@ with Ada.Strings.Fixed;
 with Ada.Text_IO;
 with Adacovex.Types;
 use Adacovex.Types, Adacovex.Types.Implementation;
+with Adacovex;
+with Adacovex.Install;
 with Adacovex.Parsers.Manifest;
 with Adacovex.Cache;
 with Adacovex.Renderers.SBOM; use Adacovex.Renderers.SBOM;
@@ -372,6 +374,75 @@ package body Adacovex_SBOM_Tests is
          & "      - run: python3 -m pytest"
          & ASCII.LF);
    end Make_Sysdep_Fixture;
+
+   --  Fixture whose build file references adacovex and its covex alias
+   --  while declaring neither: the running binary must register as one
+   --  canonical component of the root, with the scope its installation
+   --  method gives.
+   procedure Make_Adacovex_Ref_Fixture is
+      D : constant String := "obj/sbom_adx_ref_fixture";
+   begin
+      Write_File
+        (D & "/alire.toml",
+         "name = ""adxref"""
+         & ASCII.LF
+         & "version = ""1.0.0"""
+         & ASCII.LF
+         & "licenses = ""MIT"""
+         & ASCII.LF);
+      Write_File
+        (D & "/Makefile",
+         "build:"
+         & ASCII.LF
+         & ASCII.HT
+         & "covex sbom --format=md"
+         & ASCII.LF
+         & ASCII.HT
+         & "adacovex --version"
+         & ASCII.LF);
+   end Make_Adacovex_Ref_Fixture;
+
+   --  Fixture that IS adacovex (the root name is adacovex) while its
+   --  build file references the covex alias: a project is never a
+   --  component of its own graph.
+   procedure Make_Adacovex_Self_Fixture is
+      D : constant String := "obj/sbom_adx_self_fixture";
+   begin
+      Write_File
+        (D & "/alire.toml",
+         "name = ""adacovex"""
+         & ASCII.LF
+         & "version = ""1.0.0"""
+         & ASCII.LF
+         & "licenses = ""MIT"""
+         & ASCII.LF);
+      Write_File
+        (D & "/Makefile",
+         "build:" & ASCII.LF & ASCII.HT & "covex sbom --format=md" & ASCII.LF);
+   end Make_Adacovex_Self_Fixture;
+
+   --  Fixture declaring adacovex in its publishing manifest while its
+   --  build file references covex: the declaration keeps the component
+   --  and its scope, so the reference adds no second entry.
+   procedure Make_Adacovex_Declared_Fixture is
+      D : constant String := "obj/sbom_adx_decl_fixture";
+   begin
+      Write_File
+        (D & "/alire.toml",
+         "name = ""adxdecl"""
+         & ASCII.LF
+         & "version = ""1.0.0"""
+         & ASCII.LF
+         & "licenses = ""MIT"""
+         & ASCII.LF
+         & "[[depends-on]]"
+         & ASCII.LF
+         & "adacovex = ""^1.0"""
+         & ASCII.LF);
+      Write_File
+        (D & "/Makefile",
+         "build:" & ASCII.LF & ASCII.HT & "covex sbom --format=md" & ASCII.LF);
+   end Make_Adacovex_Declared_Fixture;
 
    --  Fixture carrying a root requirements.txt: the Python packages it
    --  names (sphinx, myst-parser) must be registered as dev-scope pypi
@@ -1575,6 +1646,100 @@ package body Adacovex_SBOM_Tests is
          R.Check
            (Count_Name (Graph, "pandoc") = 0,
             "unreferenced tool not registered");
+      end;
+
+      --  adacovex as a dependency of another project: a build file that
+      --  references adacovex (or its covex alias) registers the running
+      --  binary as ONE component of the root, under the canonical name,
+      --  with the bundled version and the scope the installation method
+      --  gives (dev for a source build, system for an installed binary).
+      declare
+         Graph   : Component_Vectors.Vector;
+         Success : Boolean := False;
+         C       : Component_Info;
+      begin
+         Make_Adacovex_Ref_Fixture;
+         Adacovex.Parsers.Manifest.Build_Dependency_Graph
+           ("obj/sbom_adx_ref_fixture",
+            "obj/sbom_adx_ref_fixture/alire.toml",
+            Graph,
+            Success);
+         R.Check (Success, "adacovex reference graph success");
+         Adacovex.Parsers.Manifest.Discover_System_Dev_Deps
+           ("obj/sbom_adx_ref_fixture", Graph);
+         R.Check
+           (Count_Name (Graph, "adacovex") = 1,
+            "a referenced adacovex registers once");
+         R.Check
+           (Count_Name (Graph, "covex") = 0,
+            "the covex alias collapses into the canonical name");
+         C := Find_Name (Graph, "adacovex");
+         R.Check (C.Parent = 1, "adacovex parent is root");
+         R.Check
+           (C.Version_Len > 0
+            and then C.Version (1 .. C.Version_Len) = Adacovex.Version,
+            "adacovex carries the bundled version");
+         R.Check
+           (C.PURL_Len = 20 and then C.PURL (1 .. 20) = "pkg:generic/adacovex",
+            "adacovex purl");
+         R.Check
+           (C.Scope
+            = Adacovex.Install.Dependency_Scope (Adacovex.Install.Detect),
+            "adacovex scope follows the installation method");
+      end;
+
+      --  The other direction: adacovex auditing itself. The root is
+      --  adacovex, so the reference to its own covex alias must add
+      --  nothing -- a project is never a component of its own graph.
+      declare
+         Graph   : Component_Vectors.Vector;
+         Success : Boolean := False;
+      begin
+         Make_Adacovex_Self_Fixture;
+         Adacovex.Parsers.Manifest.Build_Dependency_Graph
+           ("obj/sbom_adx_self_fixture",
+            "obj/sbom_adx_self_fixture/alire.toml",
+            Graph,
+            Success);
+         R.Check (Success, "adacovex self graph success");
+         Adacovex.Parsers.Manifest.Discover_System_Dev_Deps
+           ("obj/sbom_adx_self_fixture", Graph);
+         R.Check
+           (Count_Name (Graph, "adacovex") + Count_Name (Graph, "covex") = 1,
+            "adacovex appears only as the root of its own graph");
+         R.Check
+           (Count_Name (Graph, "covex") = 0,
+            "the covex alias never registers in the adacovex tree");
+         R.Check
+           (Count_Name (Graph, "adacovex") = 1
+            and then Find_Name (Graph, "adacovex").Kind = Root_Component,
+            "the self graph holds adacovex as the root only");
+      end;
+
+      --  A manifest that declares adacovex keeps its own classification:
+      --  the reference in the build file must not add a second component
+      --  or move the declared scope.
+      declare
+         Graph   : Component_Vectors.Vector;
+         Success : Boolean := False;
+         C       : Component_Info;
+      begin
+         Make_Adacovex_Declared_Fixture;
+         Adacovex.Parsers.Manifest.Build_Dependency_Graph
+           ("obj/sbom_adx_decl_fixture",
+            "obj/sbom_adx_decl_fixture/alire.toml",
+            Graph,
+            Success);
+         R.Check (Success, "adacovex declared graph success");
+         Adacovex.Parsers.Manifest.Discover_System_Dev_Deps
+           ("obj/sbom_adx_decl_fixture", Graph);
+         R.Check
+           (Count_Name (Graph, "adacovex") = 1,
+            "a declared adacovex registers once");
+         C := Find_Name (Graph, "adacovex");
+         R.Check
+           (C.Scope = Scope_Base, "the manifest declaration keeps base scope");
+         R.Check (C.Parent = 1, "declared adacovex parent is root");
       end;
 
       --  Root requirements.txt: sphinx and myst-parser become dev-scope

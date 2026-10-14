@@ -72,6 +72,7 @@ CATEGORY_KEY: Dict[str, str] = {
     "HLR/LLR parsing": "src/tests/adacovex_do178c_tests",
     "Completion scripts": "src/tests/adacovex_completion_tests",
     "Platform paths": "src/tests/adacovex_paths_tests",
+    "Install method": "src/tests/adacovex_install_tests",
 }
 
 TEST_RUNNER_KEY: str = "src/tests/test_runner"

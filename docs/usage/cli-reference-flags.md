@@ -91,6 +91,8 @@ does not run an assessment. It does not download or deploy anything. It
 reports the following:
 
 - whether Alire is installed
+- the installation method of the running binary (`source-checkout`,
+  `alire-global`, `on-path`) and its path
 - how gnatprove is resolved
 - the host CPU count and CI status (and the resulting default `-j`
   parallelism)

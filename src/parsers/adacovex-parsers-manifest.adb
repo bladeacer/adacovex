@@ -6,6 +6,7 @@ with GNAT.OS_Lib; use GNAT.OS_Lib;
 with Adacovex.Cache;
 with Adacovex.CPUs;
 with Adacovex.Dir_Cache;
+with Adacovex.Install;
 with Adacovex.Paths;
 
 package body Adacovex.Parsers.Manifest is
@@ -740,12 +741,19 @@ package body Adacovex.Parsers.Manifest is
    --  registering phantom tools. Add an entry when a project's build
    --  files reference the tool by name -- keep the list alphabetical
    --  within each category.
-   System_Tools : constant array (1 .. 64) of Tool_Entry :=
+   --  The two adacovex entries are the one exception to rule (b): the
+   --  running binary is the dependency, so Discover_System_Dev_Deps
+   --  registers them from the reference alone and classifies them by
+   --  installation method (Adacovex.Install). They are listed here so
+   --  the word scan records a project's reference to adacovex or covex.
+   System_Tools : constant array (1 .. 66) of Tool_Entry :=
      (
       --  Build / test drivers.
+      Make_Tool ("adacovex"),
       Make_Tool ("air"),
       Make_Tool ("alr"),
       Make_Tool ("cmake"),
+      Make_Tool ("covex"),
       Make_Tool ("gprbuild"),
       Make_Tool ("gprclean"),
       Make_Tool ("gprinstall"),

@@ -179,6 +179,15 @@ flag that yields a version token -- so a subcommand-only tool (go, fossil,
 git-lfs) needs no special-cased column and a misconfigured entry cannot
 exist.
 
+`adacovex` and its `covex` alias take one exception to rule (b): the
+running binary is the dependency, so a reference registers adacovex from
+the reference alone, at the running binary's version. Three rules order
+it: the audited project being adacovex itself keeps it the root; a
+manifest declaration keeps its own scope (`base` from `alire.toml`, `dev`
+from `alire-dev.toml`); otherwise the installation method decides, as
+`adacovex status` reports it -- a source build is `dev`, a binary
+installed outside a project is `system`.
+
 Resolved versions are never hardcoded. Each probe result is cached per
 machine (outside the result cache) together with the identity of the
 binary it was probed from: the PATH-resolved executable path plus its size

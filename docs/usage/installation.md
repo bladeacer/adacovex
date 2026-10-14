@@ -143,6 +143,12 @@ depends on the installation method:
 3. `alire.toml` -- dependency-managed installs: the toml associated with the
    `covex` binary for dependency management carries the release version.
 
+`adacovex status` also reports how the running binary was installed. It
+prints `source-checkout` for a binary built inside an adacovex source
+tree, `alire-global` for a binary under a global `alr install` prefix,
+and `on-path` for every other binary, with the path beside it. The same
+three values reach the JSON and the metrics output as `install_method`.
+
 ## Keeping the man page in sync
 
 `adacovex man` installs the man page (which embeds the version) into
