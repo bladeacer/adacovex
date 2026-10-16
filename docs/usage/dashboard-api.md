@@ -22,8 +22,8 @@ The response is pretty-printed (two-space indent, one field per line), so
 ```json
 {
   "spark_level": "Platinum",
-  "total_vcs": 1046,
-  "proved_vcs": 1046,
+  "total_vcs": 1048,
+  "proved_vcs": 1048,
   "tests_passed": 1800,
   "tests_failed": 0,
   "test_categories": [
@@ -119,6 +119,51 @@ SBOM embeds, minus the SBOM envelope):
 On-disk, the same export is available via `--emit-metrics=PATH`
 (`{"metrics": {...}, "dependencies": [...]}` after any assessment).
 
+## Server info and health
+
+`/api/info` reports the running server, not the assessment (the assessment
+stays on [`/api/metrics`](#the-json-api)). It is a plain HTTP GET, so a
+script or a hook can poll the state of a live dashboard:
+
+```json
+{
+  "version": "1.62.0",
+  "target": "/path/to/project",
+  "standard": "all",
+  "port": 8080,
+  "workers": 4,
+  "uptime_seconds": 12,
+  "assessment_ms": 417,
+  "cache": {
+    "hits": 3,
+    "misses": 1
+  },
+  "requests": {
+    "ok": 5,
+    "not_found": 1,
+    "keep_alive_connections": 2
+  }
+}
+```
+
+The payload counts the request that asked for it: every worker task updates the shared store.
+
+| Field | Meaning |
+|-------|---------|
+| `version` | Bundled version of the serving binary |
+| `target` | Audited project path |
+| `standard` | `do178c` \| `iso26262` \| `iec62304` \| `all` |
+| `port` / `workers` | Bound port and task-pool size of this server |
+| `uptime_seconds` | Seconds since the server started |
+| `assessment_ms` | Wall time of the assessment that produced the served data |
+| `cache` | Result-cache `hits` and `misses` of that assessment |
+| `requests.ok` / `requests.not_found` | Responses sent per status since start-up |
+| `requests.keep_alive_connections` | Connections served with HTTP keep-alive |
+| `requests.routes` | One object per route: `path`, `ok`, `not_found` (the `*` entry is every path the server does not dispatch on) |
+
+`/health` is the liveness probe for scripts and prompt hooks. It answers
+`200 OK` with `{"status": "ok"}` and carries no counters of its own.
+
 ## API playground
 
 The **API** tab turns the dashboard into a small interactive REST client.
@@ -127,6 +172,8 @@ grouped by purpose:
 
 - **Metrics** -- `GET /api/metrics` (JSON).
 - **Dependencies** -- `GET /api/deps` (JSON).
+- **Server** -- `GET /api/info` and `GET /health` (JSON), the running
+  server's metadata, counters, and health probe.
 - **Badges** -- each `GET /badge/*.svg` endpoint (SVG).
 - **Documentation** -- `GET /docs`, the bundled offline manual (HTML).
 - **API** -- `GET /api/endpoints`, the endpoint catalog the playground is

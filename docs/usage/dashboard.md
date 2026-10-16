@@ -131,6 +131,8 @@ The same data is headlessly available at `/api/metrics` and via
 | `GET /api/deps` | JSON dependency graph (same data as the Dependencies tab) |
 | `GET /api/endpoints` | JSON endpoint catalog (the list the API playground builds its UI from) |
 | `GET /api/spark` | JSON SPARK proof coverage: the three metrics, off classes, and per-group rollups |
+| `GET /api/info` | JSON server and run metadata: version, target, port, workers, uptime, cache counters, assessment time, and per-route request counters |
+| `GET /health` | JSON health probe for scripts: `{"status": "ok"}` |
 | `GET /docs` | The bundled offline manual (the Sphinx manual, built into the binary) |
 | `GET /badge/spark.svg` | SPARK assurance level badge |
 | `GET /badge/tests.svg` | Test pass/fail badge |
@@ -147,6 +149,11 @@ requests until the process is interrupted (Ctrl-C). Query strings and URL
 fragments are stripped before routing, so `/?theme=light`,
 `/api/metrics?x=1` and `/api/deps#top` reach the same handlers as `/`,
 `/api/metrics` and `/api/deps` instead of 404ing.
+
+Scripts poll [`GET /health`](dashboard-api.md#server-info-and-health) for the
+liveness verdict and read `GET /api/info` for the counters of the running
+server. Both stay on loopback with the rest of the dashboard: the server
+binds `127.0.0.1` only.
 
 The bundled offline manual served at `/docs` is documented on
 [The bundled offline manual](dashboard-docs.md).

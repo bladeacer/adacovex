@@ -2223,6 +2223,7 @@ class TestCheckDocsCoverage(unittest.TestCase):
         self.assertNotIn("/docs/", routes)
         self.assertIn("/", routes)
         for expected in ("/api/metrics", "/api/deps", "/api/endpoints",
+                         "/api/info", "/health",
                          "/badge/spark.svg", "/badge/tests.svg",
                          "/badge/do178c.svg", "/badge/iso26262.svg",
                          "/badge/iec62304.svg"):

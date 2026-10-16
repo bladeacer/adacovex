@@ -9,12 +9,63 @@ with Adacovex.Renderers.HTML;
 package body Adacovex.Server.HTTP is
 
    use GNAT.Sockets;
+   use Ada.Strings.Unbounded;
    use type Ada.Streams.Stream_Element_Offset;
+   use type Ada.Calendar.Time;
 
    --  Upper bound for the static task array. --serve-workers requests a
    --  smaller pool; the array is sized to the cap and only the requested
    --  number of tasks are started.
    Max_Workers_Cap : constant := 256;
+
+   --  The indentation levels and line feed of the /api/info payload: a
+   --  two-space step, the same pretty-print shape as the other JSON
+   --  endpoints.
+   Info_LF : constant String (1 .. 1) := (1 => ASCII.LF);
+   Info_I1 : constant String := "  ";
+   Info_I2 : constant String := "    ";
+   Info_I3 : constant String := "      ";
+   Info_I4 : constant String := "        ";
+
+   protected body Counter_Store is
+      procedure Reset is
+      begin
+         Requests := (others => (0, 0));
+         Keep_Alive := 0;
+         Started := Ada.Calendar.Clock;
+      end Reset;
+
+      procedure Note_Route (Kind : Route_Kind; Found : Boolean) is
+      begin
+         if Found then
+            Requests (Kind).OK := Requests (Kind).OK + 1;
+         else
+            Requests (Kind).Not_Found := Requests (Kind).Not_Found + 1;
+         end if;
+      end Note_Route;
+
+      procedure Note_Keep_Alive is
+      begin
+         Keep_Alive := Keep_Alive + 1;
+      end Note_Keep_Alive;
+
+      function Snapshot return Runtime_Counts is
+         --  Long_Long_Integer holds every Duration, so the conversion
+         --  cannot raise; the clamps below keep the Natural one safe.
+         Elapsed : constant Duration := Ada.Calendar.Clock - Started;
+         Seconds : constant Long_Long_Integer := Long_Long_Integer (Elapsed);
+      begin
+         return
+           (Requests       => Requests,
+            Keep_Alive     => Keep_Alive,
+            Uptime_Seconds =>
+              (if Seconds <= 0
+               then 0
+               elsif Seconds > Long_Long_Integer (Natural'Last)
+               then Natural'Last
+               else Natural (Seconds)));
+      end Snapshot;
+   end Counter_Store;
 
    procedure Send_Response
      (Channel      : Socket_Type;
@@ -138,10 +189,20 @@ package body Adacovex.Server.HTTP is
                --  a quickly-reused connection still serves its burst.
                Set_Socket_Option
                  (Channel, Socket_Level, (Receive_Timeout, 0.5));
-               loop
-                  Handle_Request (Channel, Svr_State, KA);
-                  exit when not KA;
-               end loop;
+               declare
+                  --  A connection is keep-alive when any response on it said
+                  --  so, so the flag survives the final close.
+                  Used_KA : Boolean := False;
+               begin
+                  loop
+                     Handle_Request (Channel, Svr_State, KA);
+                     Used_KA := Used_KA or KA;
+                     exit when not KA;
+                  end loop;
+                  if Used_KA then
+                     Counters.Note_Keep_Alive;
+                  end if;
+               end;
                Close_Socket (Channel);
                Has_Conn := False;
             exception
@@ -168,6 +229,10 @@ package body Adacovex.Server.HTTP is
         Positive'Min (State.Workers, Max_Workers_Cap);
 
    begin
+      --  Counters are per run: Start is the process's single server start,
+      --  and no request can be accepted before the listener is bound below.
+      Counters.Reset;
+
       Ada.Text_IO.Put_Line
         ("Starting adacovex HTTP server on port"
          & Positive'Image (State.Port)
@@ -479,6 +544,144 @@ package body Adacovex.Server.HTTP is
       return "";
    end Get_Path;
 
+   --  Escape a JSON string value: quotes and backslashes, the same rule
+   --  the other JSON renderers apply.
+   function Info_Escape (S : String) return String is
+      R : Unbounded_String;
+   begin
+      for I in S'Range loop
+         case S (I) is
+            when '"'    =>
+               Append (R, "\""");
+
+            when '\'    =>
+               Append (R, "\\");
+
+            when others =>
+               Append (R, S (I));
+         end case;
+      end loop;
+      return To_String (R);
+   end Info_Escape;
+
+   --  Decimal string of a non-negative integer. 'Image may leave a leading
+   --  blank, which is legal JSON whitespace but reads differently from the
+   --  other payloads, so it is stripped here.
+   function Info_Num (N : Natural) return String is
+      Img : constant String := Natural'Image (N);
+   begin
+      if Img'Length > 0 and then Img (Img'First) = ' ' then
+         return Img (Img'First + 1 .. Img'Last);
+      end if;
+      return Img;
+   end Info_Num;
+
+   --  Render the /api/info payload (see the spec for the field list). The
+   --  shape mirrors the other JSON endpoints: two-space indent, one field
+   --  per line, and the route table in dispatch order.
+   function Render_Info_JSON
+     (Target_Path    : String;
+      Standard_Label : String;
+      Version_Text   : String;
+      Port           : Positive;
+      Workers        : Positive;
+      Counts         : Runtime_Counts;
+      Cache_Hits     : Natural;
+      Cache_Misses   : Natural;
+      Assessment_MS  : Natural) return String
+   is
+      R : Unbounded_String;
+
+      procedure Put (S : String) is
+      begin
+         Append (R, S);
+      end Put;
+   begin
+      Put ("{" & Info_LF);
+      Put
+        (Info_I1
+         & """version"": """
+         & Info_Escape (Version_Text)
+         & ""","
+         & Info_LF);
+      Put
+        (Info_I1
+         & """target"": """
+         & Info_Escape (Target_Path)
+         & ""","
+         & Info_LF);
+      Put
+        (Info_I1
+         & """standard"": """
+         & Info_Escape (Standard_Label)
+         & ""","
+         & Info_LF);
+      Put (Info_I1 & """port"": " & Info_Num (Port) & "," & Info_LF);
+      Put (Info_I1 & """workers"": " & Info_Num (Workers) & "," & Info_LF);
+      Put
+        (Info_I1
+         & """uptime_seconds"": "
+         & Info_Num (Counts.Uptime_Seconds)
+         & ","
+         & Info_LF);
+      Put
+        (Info_I1
+         & """assessment_ms"": "
+         & Info_Num (Assessment_MS)
+         & ","
+         & Info_LF);
+      Put (Info_I1 & """cache"": {" & Info_LF);
+      Put (Info_I2 & """hits"": " & Info_Num (Cache_Hits) & "," & Info_LF);
+      Put (Info_I2 & """misses"": " & Info_Num (Cache_Misses) & Info_LF);
+      Put (Info_I1 & "}," & Info_LF);
+      Put (Info_I1 & """requests"": {" & Info_LF);
+      declare
+         OK_Total    : Natural := 0;
+         NF_Total    : Natural := 0;
+         First_Entry : Boolean := True;
+      begin
+         for K in Route_Kind loop
+            OK_Total := OK_Total + Counts.Requests (K).OK;
+            NF_Total := NF_Total + Counts.Requests (K).Not_Found;
+         end loop;
+         Put (Info_I2 & """ok"": " & Info_Num (OK_Total) & "," & Info_LF);
+         Put
+           (Info_I2 & """not_found"": " & Info_Num (NF_Total) & "," & Info_LF);
+         Put
+           (Info_I2
+            & """keep_alive_connections"": "
+            & Info_Num (Counts.Keep_Alive)
+            & ","
+            & Info_LF);
+         Put (Info_I2 & """routes"": [" & Info_LF);
+         for K in Route_Kind loop
+            if not First_Entry then
+               Put ("," & Info_LF);
+            end if;
+            First_Entry := False;
+            Put (Info_I3 & "{" & Info_LF);
+            Put (Info_I4 & """path"": """ & Route_Path (K) & """," & Info_LF);
+            Put
+              (Info_I4
+               & """ok"": "
+               & Info_Num (Counts.Requests (K).OK)
+               & ","
+               & Info_LF);
+            Put
+              (Info_I4
+               & """not_found"": "
+               & Info_Num (Counts.Requests (K).Not_Found)
+               & Info_LF);
+            Put (Info_I3 & "}");
+         end loop;
+         Put (Info_LF);
+         Put (Info_I2 & "]" & Info_LF);
+      end;
+      Put (Info_I1 & "}" & Info_LF);
+      Put ("}");
+      return To_String (R);
+   end Render_Info_JSON;
+
    --  Pure path-to-action routing: the socket handler below switches on the
    --  result, and the native test suite pins every route. The function is an
    --  expression function (see the spec): its body is the conditional mapping,
@@ -487,13 +690,19 @@ package body Adacovex.Server.HTTP is
    procedure Handle_Request
      (Channel : Socket_Type; State : Server_State; Keep_Alive : out Boolean)
    is
-      Reader   : Line_Reader := (Channel => Channel, others => <>);
-      LineBuf  : String (1 .. 4096);
-      Last     : Natural := 0;
-      Is_KA    : Boolean;
-      CLen     : Natural := 0;
-      Path     : String (1 .. 2048);
-      Path_Len : Natural := 0;
+      Reader    : Line_Reader := (Channel => Channel, others => <>);
+      LineBuf   : String (1 .. 4096);
+      Last      : Natural := 0;
+      Is_KA     : Boolean;
+      CLen      : Natural := 0;
+      Path      : String (1 .. 2048);
+      Path_Len  : Natural := 0;
+      --  Resolved once per request: the route, the docs asset it needs
+      --  (when the path is a docs asset), and whether the response is a
+      --  404. The counter reads them before the case dispatches.
+      RK        : Route_Kind := Route_Not_Found;
+      Docs_Idx  : Natural := 0;
+      Docs_Miss : Boolean := False;
    begin
       --  The request line: METHOD SP PATH SP HTTP/x.x CRLF. An empty line
       --  (EOF, receive timeout, or an over-long line) closes the socket.
@@ -611,10 +820,23 @@ package body Adacovex.Server.HTTP is
 
       Keep_Alive := Is_KA;
 
-      --  Route on the query-string-stripped path so `/?theme=light`,
-      --  `/api/metrics?x=1` or `/api/deps#top` reach the same handler as
-      --  `/`, `/api/metrics` and `/api/deps`.
-      case Route (Strip_Query (Path (1 .. Path_Len))) is
+      --  Resolve the route once, on the query-string-stripped path so
+      --  `/?theme=light`, `/api/metrics?x=1` or `/api/deps#top` reach the
+      --  same handler as `/`, `/api/metrics` and `/api/deps`. The docs
+      --  branch 404s when the asset is missing, so its lookup runs here
+      --  once and both the counter and the branch read the result.
+      declare
+         Root_Path : constant String := Strip_Query (Path (1 .. Path_Len));
+      begin
+         RK := Route (Root_Path);
+         if RK = Route_Docs and then Root_Path /= "/docs" then
+            Docs_Idx := Adacovex.Docs_Template.Find (Docs_Subpath (Root_Path));
+            Docs_Miss := Docs_Idx = 0;
+         end if;
+      end;
+      Counters.Note_Route (RK, not (RK = Route_Not_Found or else Docs_Miss));
+
+      case RK is
          when Route_Dashboard      =>
             Send_Response
               (Channel,
@@ -715,6 +937,38 @@ package body Adacovex.Server.HTTP is
                Adacovex.Renderers.HTML.Render_Endpoints_JSON,
                Is_KA);
 
+         when Route_API_Info       =>
+            --  The run metadata is fixed before the server starts; the
+            --  counters are read here, so this payload carries the request
+            --  that asked for it.
+            Send_Response
+              (Channel,
+               "200 OK",
+               "application/json",
+               Render_Info_JSON
+                 (To_String (State.Target_Path),
+                  (if State.All_Standards
+                   then "all"
+                   else Types.Standard_Slug (State.Standard_Target)),
+                  Adacovex.Version,
+                  State.Port,
+                  State.Workers,
+                  Counters.Snapshot,
+                  State.Cache_Hits,
+                  State.Cache_Misses,
+                  State.Assessment_MS),
+               Is_KA);
+
+         when Route_Health         =>
+            --  A probe for scripts and load balancers: the smallest body
+            --  that still carries a machine-readable verdict.
+            Send_Response
+              (Channel,
+               "200 OK",
+               "application/json",
+               "{""status"": ""ok""}",
+               Is_KA);
+
          when Route_Docs           =>
             --  The asset lookup must strip the query string: search result
             --  links carry `?highlight=...`, and the fragment (already
@@ -732,9 +986,10 @@ package body Adacovex.Server.HTTP is
                   --  /docs/.
                   Send_Redirect (Channel, "/docs/", Is_KA);
                else
+                  --  The counter pass already resolved this asset, so the
+                  --  lookup runs once per request.
                   declare
-                     Idx : constant Natural :=
-                       Adacovex.Docs_Template.Find (Docs_Subpath (Root_Path));
+                     Idx : constant Natural := Docs_Idx;
                   begin
                      if Idx = 0 then
                         Send_Response

@@ -3,6 +3,7 @@ with Ada.Exceptions;
 with Ada.Command_Line;
 with Ada.Calendar;
 with Ada.Environment_Variables;
+with Ada.Strings.Unbounded;
 with GNAT.Sockets;
 with Adacovex.Types;
 with Adacovex.Dir_Cache;
@@ -1307,6 +1308,27 @@ begin
          if not GOK then
             Verbose ("serving dashboard with empty dependency graph");
          end if;
+         --  Run metadata for /api/info: the target, the selected standard,
+         --  the result-cache counters, and the assessment wall time (the
+         --  run up to this point, since the server then blocks). The
+         --  Long_Long_Integer form of the millisecond count cannot
+         --  overflow, so the clamp below always holds.
+         State.Target_Path :=
+           Ada.Strings.Unbounded.To_Unbounded_String (Target (1 .. TLen));
+         State.Standard_Target := Cfg.Standard_Target;
+         State.Cache_Hits := Cache_Hits;
+         State.Cache_Misses := Cache_Misses;
+         declare
+            Assess_MS : constant Long_Long_Integer :=
+              Long_Long_Integer (Clock - Start_Time) * 1_000;
+         begin
+            State.Assessment_MS :=
+              (if Assess_MS <= 0
+               then 0
+               elsif Assess_MS > Long_Long_Integer (Natural'Last)
+               then Natural'Last
+               else Natural (Assess_MS));
+         end;
          Adacovex.Server.HTTP.Start (State);
       end;
    end if;

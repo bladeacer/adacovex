@@ -520,6 +520,52 @@ def check_serve_shorthands(r: Results, tmp: Path) -> None:
     )
 
 
+def check_serve_info_health(r: Results, tmp: Path) -> None:
+    """The /health probe and the /api/info payload of a live server."""
+    base = ["serve", "-t", str(tmp), "--workers=2",
+            "--no-sbom", "--no-svg", "--no-md", "--no-cache"]
+
+    health_port = free_port()
+    health = serve_get(health_port, base + ["-p", str(health_port)],
+                       "/health")
+    r.check(
+        health is not None and health.strip() == '{"status": "ok"}',
+        "serve answers /health with the JSON health verdict",
+    )
+
+    info_port = free_port()
+    info = serve_get(info_port, base + ["-p", str(info_port)], "/api/info")
+    payload: Optional[dict] = None
+    if info is not None:
+        try:
+            payload = json.loads(info)
+        except ValueError:
+            payload = None
+    r.check(
+        payload is not None
+        and payload.get("version")
+        and payload.get("target") == str(tmp)
+        and payload.get("standard") == "all"
+        and payload.get("port") == info_port
+        and payload.get("workers") == 2
+        and isinstance(payload.get("uptime_seconds"), int)
+        and isinstance(payload.get("assessment_ms"), int)
+        and isinstance(payload.get("cache"), dict)
+        and isinstance(payload.get("requests"), dict),
+        "serve answers /api/info with the run metadata and counters",
+    )
+
+    routes = []
+    if payload is not None:
+        routes = [e.get("path")
+                  for e in payload.get("requests", {}).get("routes", [])]
+    r.check(
+        "/health" in routes and "/api/info" in routes
+        and "/api/metrics" in routes and "*" in routes,
+        "the info payload counts every route bucket",
+    )
+
+
 def check_theme_and_port(r: Results, tmp: Path) -> None:
     # An unknown theme and a missing theme value fail loudly at parse time.
     bad = run(["--theme=neon"])
@@ -864,6 +910,7 @@ def main() -> int:
         check_differential_regression(r, tmp)
         check_prove(r, tmp)
         check_serve_shorthands(r, tmp)
+        check_serve_info_health(r, tmp)
         check_theme_and_port(r, tmp)
     return r.report()
 

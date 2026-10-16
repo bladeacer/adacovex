@@ -55,60 +55,25 @@ system CUPS port 631. The hermetic-test fix is v1.62.0 item 1.
 
 - [x] **1. Hermetic tests: no network or credential flow during `make check`**
 
-  - Implemented (2026-10-12); see
-    [adacovex-1.62.0.md](docs/changelogs/adacovex-1.62.0.md) (`C1`).
+  - Implemented, see [changelog](docs/changelogs/adacovex-1.62.0.md) (`C1`).
   - Exit criterion met: `make check` and `just test` run with the
     network unplugged, no `git-credential-oauth` process appears, and no
     browser opens.
 
 - [x] **2. Structural dependency parsing (replace the blind word/regex scan)**
 
-  - Implemented (2026-10-13); see
-    [adacovex-1.62.0.md](docs/changelogs/adacovex-1.62.0.md) (`C2`,
+  - Implemented, see [changelog](docs/changelogs/adacovex-1.62.0.md) (`C2`,
     `C3`, `H1`).
-  - False positives closed, by name: an installed package's own
-    subpackages and source trees reported as components (`lib`, `dist`,
-    `src`, `v4-mini`, `v4`, `v3`, `mini`, `locales`), and workspace
-    path names reported as components.
-  - False negative closed: a project's declared npm and Go
-    dependencies never registered when it ships no install tree.
-  - `air` is curated now, so a project that references it registers it
-    as a system tool when it is installed.
-  - Accuracy fixtures: `covex sbom` was checked against the sibling
-    projects and the expected component sets are pinned in the e2e
-    suite, so a parsing regression fails a gate instead of a manual
-    run.
-
-  - `Scan_File` / `Note_Referenced_Tools` word-match a curated tool
-    table over build files, and the supported-language manifest readers
-    are pattern-driven. Known false-positive shapes on real projects:
-    - lccst registers pnpm workspace path names as components (`lib`,
-      `dist`, `src`, `v4-mini`, `v4`, `v3`, `mini`, `locales`) although
-      its `package.json` declares only `@modelcontextprotocol/sdk`,
-      `zod`, `@types/node`, `esbuild`, `tsx`, and `typescript`;
-    - the reported `air` component (false positive on a real-project
-      run) does not reproduce on the current tree against kibtab, ocd,
-      swag, lccst, yams, surge, seiri, quickshell-docs,
-      obsi-scss-template, Persona-Quickshell, neetcode-stuff,
-      DankMaterialShell, or Ada_CRDT. Capture the exact project and
-      command the next time it appears and pin it in the fixture set;
-      the same pass should decide whether tools such as `air` are
-      curated (kibtab, ocd, and swag all reference it from their
-      Makefiles and air configs, yet it is never registered).
-  - Parse manifests structurally (TOML/JSON sections, lockfile importer
-    blocks), never by substring. Keep the curated word scan for tool
-    references only, with whole-word matching on both sides of every
-    match.
-  - Real-project accuracy fixtures: check `covex sbom` against kibtab,
-    ocd, and swag (Go), lccst (pnpm workspace), and the other projects
-    in the parent directory, and pin the expected component sets in the
-    e2e suite so a parsing regression fails a gate instead of a manual
+  - False positives closed (package subpackages and source trees,
+    workspace path names); false negative closed (declared npm and Go
+    dependencies with no install tree); `air` is curated now.
+  - Accuracy fixtures: the expected component sets are pinned in the
+    e2e suite, so a parsing regression fails a gate instead of a manual
     run.
 
 - [x] **3. adacovex as a dependency of other projects**
 
-  - Implemented (2026-10-14); see
-    [adacovex-1.62.0.md](docs/changelogs/adacovex-1.62.0.md) (`C4`,
+  - Implemented, see [changelog](docs/changelogs/adacovex-1.62.0.md) (`C4`,
     `C5`).
   - `adacovex` and `covex` are curated table entries, but their
     reference registers the running binary under the canonical name
@@ -128,23 +93,18 @@ system CUPS port 631. The hermetic-test fix is v1.62.0 item 1.
     category for the classifier, the scope rule, and the filesystem
     walk.
 
-- [ ] **4. HTTP server metrics, objects, and info**
+- [x] **4. HTTP server metrics, objects, and info**
 
-  - Current surface (every route the server dispatches on): `/`
-    (dashboard), `/api/metrics` (docstring/proof/tests/DAL JSON),
-    `/api/deps`, `/api/spark`, `/api/endpoints`, the five
-    `/badge/*.svg` routes, and `/docs/*` (the bundled manual). The
-    server binds 127.0.0.1 only.
-  - Missing and worth exposing: server runtime info - version, target
-    path, port, worker count, uptime, request counters per route (200
-    and 404), keep-alive connections, result-cache hits and misses,
-    selected standards, and the assessment generation time; plus a
-    `/health` probe for scripts.
-  - Plan: add `/api/info` (server and run metadata, including the
-    counters) and keep `/api/metrics` assessment-shaped. Land each new
-    route with native server-route tests and a row in
-    `docs/usage/dashboard-api.md` (the docs-coverage gate checks both).
-    SPARK discipline applies: 0 unproved, 0 justified, no new
+  - Implemented, see [changelog](docs/changelogs/adacovex-1.62.0.md) (`C6`).
+  - `GET /health` is the script probe (`{"status": "ok"}`); `GET /api/info`
+    serves version, target, standard, port, workers, uptime,
+    result-cache counters, assessment time, and per-route 200 / 404
+    counters from a protected store shared by the worker tasks.
+  - `/api/metrics` stays assessment-shaped. Both routes join the
+    `/api/endpoints` catalog, the native suite (routing, counters,
+    payload) and the end-to-end serve checks, with rows in
+    `docs/usage/dashboard.md` and `docs/usage/dashboard-api.md`.
+  - SPARK discipline held: 0 unproved, 0 justified, no new
     `SPARK_Mode (Off)`.
 
 - [ ] **5. `adacovex tldr` - client-agnostic install into the local tldr index**

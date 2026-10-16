@@ -1,4 +1,5 @@
 with Ada.Exceptions;
+with Ada.Strings.Fixed;
 with Ada.Text_IO;
 with Adacovex.Docs_Template;
 with Adacovex.Test_Support;
@@ -186,9 +187,171 @@ package body Adacovex_Server_Tests is
          "Find returns zero for an absent path");
    end Check_Find_Fallbacks;
 
+   --  Quote a token as a JSON string value: the /api/info checks read the
+   --  payload as text, and this keeps the expected spellings readable.
+   function J (S : String) return String is
+   begin
+      return '"' & S & '"';
+   end J;
+
+   --  How many times Needle occurs in S (overlapping-free count).
+   function Occurrences (S : String; Needle : String) return Natural is
+      From : Natural := S'First;
+      N    : Natural := 0;
+      Hit  : Natural;
+   begin
+      if Needle'Length = 0 then
+         return 0;
+      end if;
+      while From <= S'Last loop
+         Hit := Ada.Strings.Fixed.Index (S (From .. S'Last), Needle);
+         exit when Hit = 0;
+         N := N + 1;
+         From := Hit + Needle'Length;
+      end loop;
+      return N;
+   end Occurrences;
+
+   --  The shared counter store behind /api/info: reset semantics, the
+   --  per-route 200 / 404 split, the keep-alive count, and the uptime
+   --  clock. The store is process-global, so the checks reset it and leave
+   --  it reset for the rest of the suite.
+   procedure Check_Counter_Store
+     (R : in out Adacovex.Test_Support.Runner'Class)
+   is
+      Counts : Runtime_Counts;
+   begin
+      Counters.Reset;
+      Counts := Counters.Snapshot;
+      R.Check
+        (Counts.Requests (Route_API_Info).OK = 0
+         and then Counts.Requests (Route_API_Info).Not_Found = 0
+         and then Counts.Keep_Alive = 0,
+         "reset clears every counter");
+
+      Counters.Note_Route (Route_API_Info, True);
+      Counters.Note_Route (Route_API_Info, True);
+      Counters.Note_Route (Route_Not_Found, False);
+      Counters.Note_Keep_Alive;
+      Counts := Counters.Snapshot;
+      R.Check
+        (Counts.Requests (Route_API_Info).OK = 2,
+         "a found response counts on its route");
+      R.Check
+        (Counts.Requests (Route_API_Info).Not_Found = 0,
+         "a found response never counts as 404");
+      R.Check
+        (Counts.Requests (Route_Not_Found).Not_Found = 1,
+         "an unmatched path counts as 404");
+      R.Check
+        (Counts.Requests (Route_Dashboard).OK = 0,
+         "every route keeps its own bucket");
+      R.Check (Counts.Keep_Alive = 1, "a keep-alive connection is counted");
+      R.Check
+        (Counts.Uptime_Seconds < 60,
+         "a fresh store reports an uptime under a minute");
+
+      Counters.Reset;
+      Counts := Counters.Snapshot;
+      R.Check
+        (Counts.Keep_Alive = 0
+         and then Counts.Requests (Route_API_Info).OK = 0
+         and then Counts.Requests (Route_Not_Found).Not_Found = 0,
+         "reset clears the keep-alive count too");
+   end Check_Counter_Store;
+
+   --  The /api/info payload: every documented field carries the value the
+   --  caller passed, the route table holds one entry per route kind, and a
+   --  target path with JSON-hostile characters is escaped.
+   procedure Check_Info_JSON (R : in out Adacovex.Test_Support.Runner'Class) is
+      Counts : Runtime_Counts;
+   begin
+      Counts.Keep_Alive := 2;
+      Counts.Uptime_Seconds := 7;
+      Counts.Requests (Route_Dashboard).OK := 5;
+      Counts.Requests (Route_Not_Found).Not_Found := 1;
+      declare
+         Payload : constant String :=
+           Render_Info_JSON
+             ("/tmp/prj", "all", "1.62.0", 8080, 4, Counts, 3, 1, 42);
+      begin
+         R.Check
+           (Payload'Length > 0
+            and then Payload (Payload'First) = '{'
+            and then Payload (Payload'Last) = '}',
+            "the info payload is a JSON object");
+         R.Check
+           (Ada.Strings.Fixed.Index
+              (Payload, J ("version") & ": " & J ("1.62.0"))
+            > 0,
+            "the payload carries the bundled version");
+         R.Check
+           (Ada.Strings.Fixed.Index
+              (Payload, J ("target") & ": " & J ("/tmp/prj"))
+            > 0,
+            "the payload carries the audited target");
+         R.Check
+           (Ada.Strings.Fixed.Index
+              (Payload, J ("standard") & ": " & J ("all"))
+            > 0,
+            "an all-standards run reports all");
+         R.Check
+           (Ada.Strings.Fixed.Index (Payload, J ("port") & ": 8080") > 0,
+            "the payload carries the bound port");
+         R.Check
+           (Ada.Strings.Fixed.Index (Payload, J ("workers") & ": 4") > 0,
+            "the payload carries the worker count");
+         R.Check
+           (Ada.Strings.Fixed.Index (Payload, J ("uptime_seconds") & ": 7")
+            > 0,
+            "the payload carries the uptime");
+         R.Check
+           (Ada.Strings.Fixed.Index (Payload, J ("assessment_ms") & ": 42")
+            > 0,
+            "the payload carries the assessment time");
+         R.Check
+           (Ada.Strings.Fixed.Index (Payload, J ("hits") & ": 3") > 0,
+            "the payload carries the cache hits");
+         R.Check
+           (Ada.Strings.Fixed.Index (Payload, J ("misses") & ": 1") > 0,
+            "the payload carries the cache misses");
+         R.Check
+           (Ada.Strings.Fixed.Index
+              (Payload, J ("keep_alive_connections") & ": 2")
+            > 0,
+            "the payload carries the keep-alive count");
+         R.Check
+           (Ada.Strings.Fixed.Index (Payload, J ("ok") & ": 5") > 0,
+            "the payload totals the served responses");
+         R.Check
+           (Ada.Strings.Fixed.Index (Payload, J ("not_found") & ": 1") > 0,
+            "the payload totals the 404 responses");
+         R.Check
+           (Occurrences (Payload, J ("path"))
+            = Route_Kind'Pos (Route_Kind'Last) + 1,
+            "the route table names every route kind once");
+      end;
+      declare
+         Quoted : constant String :=
+           Render_Info_JSON
+             ("/tmp/a""b", "do178c", "1.62.0", 8080, 4, Counts, 0, 0, 0);
+      begin
+         R.Check
+           (Ada.Strings.Fixed.Index
+              (Quoted, J ("target") & ": " & J ("/tmp/a" & '\' & '"' & "b"))
+            > 0,
+            "a quote in the target path is JSON-escaped");
+         R.Check
+           (Ada.Strings.Fixed.Index
+              (Quoted, J ("standard") & ": " & J ("do178c"))
+            > 0,
+            "a single standard reports its slug");
+      end;
+   end Check_Info_JSON;
+
    procedure Run (R : in out Adacovex.Test_Support.Runner'Class) is
    begin
-      --  The seven literal routes the server dispatches on. Route is the
+      --  The literal routes the server dispatches on. Route is the
       --  pure path-to-action mapping behind Handle_Request's case statement
       --  (LLR-SERVER-01's dashboard / API / badge surface), so every route
       --  the socket handler can serve is pinned here.
@@ -214,6 +377,54 @@ package body Adacovex_Server_Tests is
       R.Check
         (Route ("/api/endpoints") = Route_API_Endpoints,
          "endpoints catalog route");
+      R.Check (Route ("/api/info") = Route_API_Info, "server info API route");
+      R.Check (Route ("/health") = Route_Health, "health probe route");
+
+      --  Route_Path is the inverse of Route for every kind, so the counter
+      --  table and the /api/info payload can name each bucket with the path
+      --  the server dispatches it on. The catch-all bucket names itself
+      --  "*", which no client can request as a literal path.
+      R.Check
+        (Route (Route_Path (Route_Dashboard)) = Route_Dashboard,
+         "dashboard path round trip");
+      R.Check
+        (Route (Route_Path (Route_Badge_SPARK)) = Route_Badge_SPARK,
+         "spark badge path round trip");
+      R.Check
+        (Route (Route_Path (Route_Badge_Tests)) = Route_Badge_Tests,
+         "tests badge path round trip");
+      R.Check
+        (Route (Route_Path (Route_Badge_DO178C)) = Route_Badge_DO178C,
+         "do178c badge path round trip");
+      R.Check
+        (Route (Route_Path (Route_Badge_ISO26262)) = Route_Badge_ISO26262,
+         "iso26262 badge path round trip");
+      R.Check
+        (Route (Route_Path (Route_Badge_IEC62304)) = Route_Badge_IEC62304,
+         "iec62304 badge path round trip");
+      R.Check
+        (Route (Route_Path (Route_API_Metrics)) = Route_API_Metrics,
+         "metrics API path round trip");
+      R.Check
+        (Route (Route_Path (Route_API_Deps)) = Route_API_Deps,
+         "deps API path round trip");
+      R.Check
+        (Route (Route_Path (Route_API_Endpoints)) = Route_API_Endpoints,
+         "endpoints API path round trip");
+      R.Check
+        (Route (Route_Path (Route_API_Spark)) = Route_API_Spark,
+         "spark coverage API path round trip");
+      R.Check
+        (Route (Route_Path (Route_API_Info)) = Route_API_Info,
+         "server info API path round trip");
+      R.Check
+        (Route (Route_Path (Route_Health)) = Route_Health,
+         "health probe path round trip");
+      R.Check
+        (Route (Route_Path (Route_Docs)) = Route_Docs, "docs path round trip");
+      R.Check
+        (Route (Route_Path (Route_Not_Found)) = Route_Not_Found,
+         "catch-all bucket round trip");
 
       --  The bundled offline manual is served at both /"/docs" (no trailing
       --  slash) and "/docs/" (trailing slash), so the dashboard footer link
@@ -241,6 +452,12 @@ package body Adacovex_Server_Tests is
       R.Check
         (Strip_Query ("/api/deps#top") = "/api/deps",
          "fragment stripped from deps API");
+      R.Check
+        (Route (Strip_Query ("/health?poll=1")) = Route_Health,
+         "query stripped from health probe");
+      R.Check
+        (Route (Strip_Query ("/api/info#top")) = Route_API_Info,
+         "fragment stripped from server info API");
       R.Check
         (Strip_Query ("/badge/spark.svg?x=1") = "/badge/spark.svg",
          "query stripped from badge");
@@ -289,6 +506,19 @@ package body Adacovex_Server_Tests is
         (Route ("/api/metric") = Route_Not_Found,
          "metrics prefix is not found");
       R.Check
+        (Route ("/api/info/") = Route_Not_Found,
+         "trailing slash on info is not found");
+      R.Check
+        (Route ("/api/infos") = Route_Not_Found, "info suffix is not found");
+      R.Check
+        (Route ("/API/info") = Route_Not_Found,
+         "uppercase info path is not found");
+      R.Check
+        (Route ("/health/") = Route_Not_Found,
+         "trailing slash on health is not found");
+      R.Check
+        (Route ("/healt") = Route_Not_Found, "health prefix is not found");
+      R.Check
         (Route ("/healthz") = Route_Not_Found,
          "health check path is not found");
       R.Check (Route ("//") = Route_Not_Found, "double slash is not found");
@@ -311,6 +541,8 @@ package body Adacovex_Server_Tests is
          and then Route ("/api/deps") /= Route_Not_Found
          and then Route ("/api/spark") /= Route_Not_Found
          and then Route ("/api/endpoints") /= Route_Not_Found
+         and then Route ("/api/info") /= Route_Not_Found
+         and then Route ("/health") /= Route_Not_Found
          and then Route ("/docs") /= Route_Not_Found
          and then Route ("/docs/") /= Route_Not_Found,
          "all served routes are non-404");
@@ -411,6 +643,11 @@ package body Adacovex_Server_Tests is
       Check_Base85_Fallback (R);
       Check_Body_Bytes_Verbatim (R);
       Check_Find_Fallbacks (R);
+
+      --  The server's runtime surface: the counters /api/info reports and
+      --  the payload itself.
+      Check_Counter_Store (R);
+      Check_Info_JSON (R);
    end Run;
 
 end Adacovex_Server_Tests;

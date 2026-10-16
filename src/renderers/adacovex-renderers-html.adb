@@ -2468,6 +2468,22 @@ package body Adacovex.Renderers.HTML is
          "json",
          "API",
          "This endpoint catalog: every route this instance dispatches on.");
+      Put (",");
+      Ent
+        ("GET",
+         "/api/info",
+         "json",
+         "Server",
+         "Server and run metadata: version, target, port, workers, uptime, "
+         & "cache counters, assessment time, and the per-route request "
+         & "counters.");
+      Put (",");
+      Ent
+        ("GET",
+         "/health",
+         "json",
+         "Server",
+         "Health probe for scripts: a 200 response carrying a JSON status.");
       Put (Json_LF & Json_I1 & "]" & Json_LF & "}");
       return To_String (Result);
    end Render_Endpoints_JSON;
