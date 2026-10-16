@@ -1,12 +1,12 @@
-[![covex Alire crate badge](https://img.shields.io/endpoint?url=https://alire.ada.dev/badges/covex.json)](https://alire.ada.dev/crates/covex) [![SPARK](docs/badges/spark.svg)](https://adacovex.readthedocs.io/en/latest/badges/index.html) [![DO-178C](docs/badges/do178c.svg)](https://adacovex.readthedocs.io/en/latest/badges/index.html) [![ISO 26262](docs/badges/iso26262.svg)](https://adacovex.readthedocs.io/en/latest/badges/index.html) [![IEC 62304](docs/badges/iec62304.svg)](https://adacovex.readthedocs.io/en/latest/badges/index.html) [![Tests](docs/badges/tests.svg)](https://adacovex.readthedocs.io/en/latest/badges/index.html) [![docs](docs/badges/docs.svg)](https://adacovex.readthedocs.io/en/latest/badges/index.html)
+[![covex Alire crate badge](https://img.shields.io/endpoint?url=https://alire.ada.dev/badges/covex.json)](https://alire.ada.dev/crates/covex) [![SPARK](https://adacovex.readthedocs.io/en/latest/_images/spark.svg)](https://adacovex.readthedocs.io/en/latest/badges/index.html) [![DO-178C](https://adacovex.readthedocs.io/en/latest/_images/do178c.svg)](https://adacovex.readthedocs.io/en/latest/badges/index.html) [![ISO 26262](https://adacovex.readthedocs.io/en/latest/_images/iso26262.svg)](https://adacovex.readthedocs.io/en/latest/badges/index.html) [![IEC 62304](https://adacovex.readthedocs.io/en/latest/_images/iec62304.svg)](https://adacovex.readthedocs.io/en/latest/badges/index.html) [![Tests](https://adacovex.readthedocs.io/en/latest/_images/tests.svg)](https://adacovex.readthedocs.io/en/latest/badges/index.html) [![docs](https://adacovex.readthedocs.io/en/latest/_images/docs.svg)](https://adacovex.readthedocs.io/en/latest/badges/index.html)
 
 # adacovex
 
 A zero-dependency Ada/SPARK command line tool for coverage analysis, proof
 verification, test-result parsing, multi-standard safety-compliance assessment
 (DO-178C / ISO 26262 / IEC 62304), and interactive dashboards. It uses only the
-GNAT runtime. The `prove` subcommand resolves gnatprove at run time, so
-installing adacovex installs only the binary.
+GNAT runtime, so it runs on any platform Alire supports. The `prove` subcommand
+resolves gnatprove at run time, so installing adacovex installs only the binary.
 
 ## Badges
 
@@ -68,6 +68,18 @@ Contributors build from source with `just build` (see
 [Installation](https://adacovex.readthedocs.io/en/latest/usage/installation.html)). `just run-self` assesses adacovex itself.
 `just run-ada-crdt` runs the Ada_CRDT regression.
 
+## Platform support
+
+adacovex runs on **any platform Alire supports** -- Linux (x86-64, ARM64,
+and other architectures), Windows, macOS, and the BSDs -- because it uses
+only the GNAT runtime. The prebuilt release bundle is Linux x86-64 only.
+
+The differential modes need a POSIX shell, and `man` is Linux/WSL only. VCS
+is not required for base functionality, and only the differential modes need
+one (git, hg, svn, fossil, jj). Full matrix: [platforms](https://adacovex.readthedocs.io/en/latest/usage/platforms.html),
+[GNATprove resolution](https://adacovex.readthedocs.io/en/latest/contributing/architecture-dependencies.html),
+[VCS](https://adacovex.readthedocs.io/en/latest/usage/vcs.html).
+
 ## Documentation
 
 The full index lives at
@@ -105,18 +117,6 @@ Declare `covex` in your project's `alire-dev.toml`, run `alr install covex`, or
 download a release bundle and build from source.
 [Installation](https://adacovex.readthedocs.io/en/latest/usage/installation.html)
 covers each route and the man-page sync.
-
-## Platforms, toolchain, and VCS
-
-- **Platforms** -- runs wherever a GNAT/Alire toolchain exists; the release
-  binary is Linux x86-64 only (build from source for other platforms). See
-  [platforms](docs/usage/platforms.md).
-- **GNATprove resolution** -- manifest pin over global pin over `$PATH` over
-  cached toolchain over download (a manifest pin is authoritative). See
-  [GNATprove resolution](docs/contributing/architecture-dependencies.md).
-- **VCS** -- not required for base functionality; only the differential modes
-  need one, and they work across git, hg, svn, fossil, and jj. See
-  [VCS](docs/usage/vcs.md).
 
 ## CLI reference
 
@@ -196,7 +196,7 @@ test, prove, doc, sbom, then tree-wide count-sync checks). Other targets
 include `build`, `test`, `prove`, `doc`, `sbom`, `fmt`, `run-self`,
 `run-ada-crdt`, `bump-version`, `release`, and `clean`.
 
-Run `just help` or see [AGENTS.md](AGENTS.md) for the full table. AI tools were
+Run `just help` or see [AGENTS.md](https://github.com/bladeacer/adacovex/blob/main/AGENTS.md) for the full table. AI tools were
 used during development; why the code is still trustworthy:
 [LLM usage](https://adacovex.readthedocs.io/en/latest/contributing/llm-usage.html).
 
@@ -247,4 +247,4 @@ Third-party attributions, licences, and bundled-asset notices: see
 
 ## License
 
-Apache-2.0 -- see [LICENSE](LICENSE) for details.
+Apache-2.0 -- see [LICENSE](https://github.com/bladeacer/adacovex/blob/main/LICENSE) for details.
