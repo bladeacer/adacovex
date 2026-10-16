@@ -24,9 +24,9 @@ builds it with the Alire toolchain:
 
 The GitHub Actions composite action pins `gnat-version` (default `16.1.0`) via
 `alire-project/setup-alire`, and CI runs on `ubuntu-latest`, so the CI-verified
-platform is Linux x86-64. The tool itself is written in portable Ada 2012 using
-only the GNAT runtime, so no adacovex code is platform-specific beyond what the
-GNAT runtime and Alire toolchain provide.
+platform is Linux x86-64. The tool itself is written in portable Ada 2012
+and later using only the GNAT runtime, so no adacovex code is
+platform-specific beyond what the GNAT runtime and Alire toolchain provide.
 
 ## Delivery and Versioning
 

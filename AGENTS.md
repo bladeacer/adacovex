@@ -6,7 +6,7 @@
 test-result parsing, DO-178C DAL compliance assessment, and interactive dashboards.
 
 - **Repo**: https://github.com/bladeacer/adacovex
-- **Language**: Ada 2012 / SPARK 2014 (GNAT, Alire)
+- **Language**: Ada 2012 and later / SPARK 2014 (GNAT, Alire)
 - **Zero library dependency**: uses only the GNAT runtime. gnatprove is *not* a
   declared dependency -- the `prove` subcommand resolves it at run time
   (per-project manifest, `$PATH`, `<data>/toolchain/`, or download) and
@@ -359,8 +359,10 @@ differential modes (`--compare-base` / `--coverage-delta`), which snapshot a
 base revision -- and since adacovex audits *source code*, assuming the target
 lives in a VCS is sensible.
 
-adacovex runs on **Linux and WSL**. The differential modes (`--compare-base` /
-`--coverage-delta`) snapshot a base revision without touching the working tree
+adacovex runs on any platform that can run alire (Linux, the BSDs,
+macOS, Windows, and WSL all qualify wherever Alire builds). The
+differential modes (`--compare-base` / `--coverage-delta`) snapshot a
+base revision without touching the working tree
 across **git, Mercurial, Subversion, Fossil, and jj** (legacy codebases often
 live in legacy VCS): git `worktree add`, hg `archive`, svn `export`, fossil
 `open` on a copied DB, and jj via its internal git store. Detection is
@@ -382,7 +384,7 @@ scripts), differential modes, and `sbom`.
 
 ## Key constraints
 
-- Ada 2012 / SPARK 2014
+- Ada 2012 and later / SPARK 2014
 - **Package/subprogram collections**: `Ada.Containers.Vectors` (heap,
   `Natural'Last` ~ 2.1B). No `Max_Packages` / `Max_Subprogs` limits. HLR tags,
   test metrics, and DAL failures are also unbounded vectors.

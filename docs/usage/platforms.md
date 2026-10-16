@@ -1,13 +1,23 @@
 # Platforms and the `status` subcommand
 
-adacovex runs on any host that satisfies three requirements:
+adacovex supports any platform that can run alire: packaging and delivery go
+through Alire, so adacovex runs wherever Alire itself builds. The tool targets
+Ada 2012 and later together with SPARK 2014, and uses only the GNAT runtime, so
+nothing in adacovex itself is platform-specific.
 
-- a C compiler exposing the Ada 2012 / SPARK 2014 runtime (GNAT, LCC,
-  or anycompiler),
-- `GNAT.OS_Lib` (the GNAT runtime's run-time library path, or a
-  `gprconfig` override), and
-- a target project root that holds an Alire manifest, an Alire
-  `alire.lock` or `alire-dev.toml`, or a GNAT project file.
+adacovex runs on any host that satisfies these requirements:
+
+- the GNAT toolchain to build it (the GNAT runtime is linked into the binary;
+  a prebuilt binary needs only the GNAT runtime), and
+- `GNAT.OS_Lib` from the GNAT runtime - adacovex uses it for path separation,
+  temp files, environment variables, and locating executables on `PATH`
+  (a `gprconfig` override can redirect the runtime path).
+
+No target manifest is required to run an assessment: the pipeline works on any
+directory of Ada source. An Alire manifest (`alire.toml`), an `alire.lock` or
+`alire-dev.toml`, or a GNAT project file is only needed for SBOM generation and
+the dependency graph, which degrade gracefully (a warning, not a failure) when
+absent.
 
 ## Supported platforms
 
