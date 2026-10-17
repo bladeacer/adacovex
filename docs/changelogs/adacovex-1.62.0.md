@@ -142,8 +142,8 @@ checks the chosen root against `$MANPATH` (or `manpath` when the variable
 is unset) and warns with an exact `man -l` command when the reader does not
 search it. `adacovex status` reports both indexers.
 
-The platform matrix, the root selection, and the upstream reader links are
-in [Platforms -- local man page](../usage/platforms.md#local-man-page).
+The platform matrix, the root selection, and the upstream reader links 
+are in [Platforms -- local man page](../usage/platforms.md#local-man-page).
 
 ### C9: The differential modes run on native Windows
 
@@ -222,31 +222,28 @@ carry their `GNAT.OS_Lib.Directory_Separator` input in a Global aspect,
 which SPARK RM 6.1.4(15) requires of a deferred constant. No existing
 unit lost a check.
 
-The parser bodies this release adds sit
-in the manifest package's default-off body, which contributes no
-verification conditions, and C6's counter store and `/api/info`
-renderer sit in the server package's default-off surface for the same
-reason. C7's installer is a process- and file-system package in the same
-default-off surface, so it adds no verification conditions either.
+The new parser bodies sit in the manifest package's default-off body, C6's
+counter store and `/api/info` renderer in the server package's default-off
+surface, and C7's installer in the same file-system surface. None of them
+contributes verification conditions.
 
 ## Traceability
 
 One new HLR record enters this release: `HLR-TLDR` (client-agnostic tldr
 page installation), traced by `LLR-TLDR-01` for the client detection and
 `LLR-TLDR-02` for the install and the read-back comparison. The
-dependency-graph parsing work extends `HLR-MANIFEST` (Alire manifest
-and dependency-graph parsing) and `HLR-SBOM` (proof-aware SBOM
-generation), both on record for the graph and its output. The new
+dependency-graph parsing work extends `HLR-MANIFEST` and `HLR-SBOM`, both
+on record for the graph and its output. The new
 `Adacovex.Install` package carries `HLR-MANIFEST`: it decides how a
-project's reference to adacovex is classified. The status report adds
-no requirement: it reports state and never assesses it.
+project's reference to adacovex is classified. C9 extends `HLR-DIFF`, whose
+requirement is the comparison itself.
 
-The hermetic
-suite changes no requirement: it changes the tests that gate the tree.
+The status report adds no requirement: it reports state and never assesses it.
+The hermetic suite changes no requirement: it changes the tests that gate
+the tree.
 
-The packages changed by this release, and the tags already on record
-that cover them: the manifest parsers and the dependency graph
-(`HLR-MANIFEST`), the SBOM they feed (`HLR-SBOM`), the installation
-classification they apply (`HLR-MANIFEST`), the dashboard server routes
-and its API (`HLR-SERVER`), the tldr installer (`HLR-TLDR`), and the task
-gates that run the suites (`HLR-ARCH`).
+The packages changed by this release, and the tags on record that cover
+them: the manifest parsers and the dependency graph (`HLR-MANIFEST`), the
+SBOM they feed (`HLR-SBOM`), the dashboard server routes and its API
+(`HLR-SERVER`), the tldr installer (`HLR-TLDR`), the differential-mode VCS
+abstraction (`HLR-DIFF`), and the task gates (`HLR-ARCH`).
