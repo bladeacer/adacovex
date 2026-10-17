@@ -105,15 +105,16 @@ package body Adacovex_Tldr_Tests is
             "empty show-paths output yields no directory");
       end;
 
-      --  Per-client paths, computed from the XDG roots.
+      --  Per-client paths, computed from the platform roots. The Home
+      --  argument is the Node client's old `~/.tldr` fallback.
       R.Check
-        (Default_Pages_Dir (Tealdeer, "/d", "/c") = "/d/tealdeer/pages",
+        (Default_Pages_Dir (Tealdeer, "/h", "/d", "/c") = "/d/tealdeer/pages",
          "tealdeer pages live under the data home");
       R.Check
-        (Default_Pages_Dir (Base_Client, "/d", "/c") = "/c/tldr/pages",
+        (Default_Pages_Dir (Base_Client, "/h", "/d", "/c") = "/c/tldr/pages",
          "a base client pages tree lives under the cache home");
       R.Check
-        (Default_Pages_Dir (No_Client, "/d", "/c") = "",
+        (Default_Pages_Dir (No_Client, "/h", "/d", "/c") = "",
          "no client has no pages directory");
       R.Check
         (Page_File (Tealdeer, "/p") = "/p/adacovex.page.md",
@@ -125,19 +126,21 @@ package body Adacovex_Tldr_Tests is
         (Page_File (Unsupported_Client, "/p") = "",
          "an unsupported client has no page file");
 
-      --  The Node client's cache tree is used when it exists and the
-      --  spec cache directory does not.
+      --  The Node client's `~/.tldr` tree is used when it exists and the
+      --  platform cache directory does not.
       begin
-         Ada.Directories.Create_Path (Root & "/cache/tldr-node-client/pages");
+         Ada.Directories.Create_Path (Root & "/home/.tldr/pages");
          R.Check
-           (Default_Pages_Dir (Base_Client, Root & "/data", Root & "/cache")
-            = Root & "/cache/tldr-node-client/pages",
-            "the Node client cache tree is preferred when it is the only one");
+           (Default_Pages_Dir
+              (Base_Client, Root & "/home", Root & "/data", Root & "/cache")
+            = Root & "/home/.tldr/pages",
+            "the Node client fallback is used when it is the only tree");
          Ada.Directories.Create_Path (Root & "/cache/tldr/pages");
          R.Check
-           (Default_Pages_Dir (Base_Client, Root & "/data", Root & "/cache")
+           (Default_Pages_Dir
+              (Base_Client, Root & "/home", Root & "/data", Root & "/cache")
             = Root & "/cache/tldr/pages",
-            "the spec cache tree wins when both cache trees exist");
+            "the platform cache tree wins when both trees exist");
       end;
 
       --  `uname -s` mapping.
@@ -154,8 +157,26 @@ package body Adacovex_Tldr_Tests is
         (Platform_From_System ("SunOS") = "sunos",
          "SunOS maps to the sunos page directory");
       R.Check
+        (Platform_From_System ("Linux\n") = "linux",
+         "a trailing newline does not stop the Linux match");
+      R.Check
+        (Platform_From_System ("NetBSD") = "netbsd",
+         "NetBSD maps to the netbsd page directory");
+      R.Check
+        (Platform_From_System ("OpenBSD") = "openbsd",
+         "OpenBSD maps to the openbsd page directory");
+      R.Check
+        (Platform_From_System ("Android") = "android",
+         "Android maps to the android page directory");
+      R.Check
         (Platform_From_System ("MINGW64_NT-10.0") = "windows",
          "a MINGW system maps to the windows page directory");
+      R.Check
+        (Platform_From_System ("MSYS_NT-10.0") = "windows",
+         "an MSYS system maps to the windows page directory");
+      R.Check
+        (Platform_From_System ("CYGWIN_NT-10.0") = "windows",
+         "a Cygwin system maps to the windows page directory");
       R.Check
         (Platform_From_System ("Plan9") = "",
          "an unknown system has no page directory");
@@ -253,9 +274,9 @@ package body Adacovex_Tldr_Tests is
          Ada.Directories.Delete_Directory (Root & "/cache/tldr/pages/common");
          Ada.Directories.Delete_Directory (Root & "/cache/tldr/pages");
          Ada.Directories.Delete_Directory (Root & "/cache/tldr");
-         Ada.Directories.Delete_Directory
-           (Root & "/cache/tldr-node-client/pages");
-         Ada.Directories.Delete_Directory (Root & "/cache/tldr-node-client");
+         Ada.Directories.Delete_Directory (Root & "/home/.tldr/pages");
+         Ada.Directories.Delete_Directory (Root & "/home/.tldr");
+         Ada.Directories.Delete_Directory (Root & "/home");
          Ada.Directories.Delete_Directory (Root & "/cache");
          Ada.Directories.Delete_Directory (Root);
       exception

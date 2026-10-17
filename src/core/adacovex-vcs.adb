@@ -6,13 +6,15 @@ with Adacovex.CPUs;
 package body Adacovex.VCS is
 
    use GNAT.OS_Lib;
+   use type Shell_Family;
 
    Max_Capture : constant := 4096;
 
-   --  Spawn the default shell with `-c Cmd`, redirecting stdout+stderr to
-   --  Out_File. The shell is used so CWD-dependent tools (fossil open, svn)
-   --  can be driven with a `cd ... &&` prefix without changing the process
-   --  directory.
+   --  Spawn the host shell with its command-line flag, redirecting
+   --  stdout+stderr to Out_File. The shell is used so CWD-dependent tools
+   --  (fossil open, svn export) can be driven with a change-directory
+   --  prefix without changing the process directory. It is `sh -c` on
+   --  POSIX hosts and `cmd /c` on native Windows.
    procedure Run_Cmd
      (Cmd      : String;
       Out_File : String;
@@ -29,7 +31,7 @@ package body Adacovex.VCS is
       end if;
       Spawn
         (Prog.all,
-         (new String'("-c"), new String'(Cmd)),
+         (new String'(Adacovex.CPUs.Get_Shell_Option), new String'(Cmd)),
          Out_File,
          Success,
          Code,
@@ -90,6 +92,73 @@ package body Adacovex.VCS is
          end;
       end if;
    end Run_Capture;
+
+   function Host_Shell return Shell_Family is
+   begin
+      if GNAT.OS_Lib.Directory_Separator = '\' then
+         return CMD_Shell;
+      end if;
+      return POSIX_Shell;
+   end Host_Shell;
+
+   function Quote_Path (S : Shell_Family; Path : String) return String is
+   begin
+      case S is
+         when POSIX_Shell =>
+            return ''' & Path & ''';
+
+         when CMD_Shell   =>
+            return '"' & Path & '"';
+      end case;
+   end Quote_Path;
+
+   function Change_Dir_Prefix (S : Shell_Family; Dir : String) return String is
+   begin
+      case S is
+         when POSIX_Shell =>
+            return "cd " & Quote_Path (S, Dir) & " && ";
+
+         when CMD_Shell   =>
+            --  /d makes cmd.exe follow a drive change as well.
+            return "cd /d " & Quote_Path (S, Dir) & " && ";
+      end case;
+   end Change_Dir_Prefix;
+
+   function Null_Device (S : Shell_Family) return String is
+   begin
+      case S is
+         when POSIX_Shell =>
+            return "/dev/null";
+
+         when CMD_Shell   =>
+            return "NUL";
+      end case;
+   end Null_Device;
+
+   --  The host's own shell, pre-selected at each call site, so a command
+   --  line reads as one string built from one shell's rules.
+   function Q (Path : String) return String is
+   begin
+      return Quote_Path (Host_Shell, Path);
+   end Q;
+
+   function In_Dir (Dir : String) return String is
+   begin
+      return Change_Dir_Prefix (Host_Shell, Dir);
+   end In_Dir;
+
+   function ND return String is
+   begin
+      return Null_Device (Host_Shell);
+   end ND;
+
+   --  Copy Src to Dst in Ada. The VCS command lines used to shell out to
+   --  `cp`; a file copy needs no shell on any platform, and GNAT.OS_Lib
+   --  already provides it.
+   procedure Copy_Path (Src : String; Dst : String; Ok : out Boolean) is
+   begin
+      GNAT.OS_Lib.Copy_File (Src, Dst, Ok);
+   end Copy_Path;
 
    --  First non-empty line of the captured buffer, clamped to Max_Path.
    function First_Line (Buf : String; BLen : Natural) return String
@@ -218,26 +287,23 @@ package body Adacovex.VCS is
 
       --  Command probes as a fallback (legacy checkouts without markers).
       Run_Cmd
-        ("git -C '" & D & "' rev-parse --is-inside-work-tree",
-         "/dev/null",
-         S,
-         C);
+        ("git -C " & Q (D) & " rev-parse --is-inside-work-tree", ND, S, C);
       if S and then C = 0 then
          return Git;
       end if;
-      Run_Cmd ("jj -R '" & D & "' root", "/dev/null", S, C);
+      Run_Cmd ("jj -R " & Q (D) & " root", ND, S, C);
       if S and then C = 0 then
          return Jujutsu;
       end if;
-      Run_Cmd ("hg -R '" & D & "' root", "/dev/null", S, C);
+      Run_Cmd ("hg -R " & Q (D) & " root", ND, S, C);
       if S and then C = 0 then
          return Mercurial;
       end if;
-      Run_Cmd ("svn info '" & D & "'", "/dev/null", S, C);
+      Run_Cmd ("svn info " & Q (D), ND, S, C);
       if S and then C = 0 then
          return Subversion;
       end if;
-      Run_Cmd ("cd '" & D & "' && fossil status", "/dev/null", S, C);
+      Run_Cmd (In_Dir (D) & "fossil status", ND, S, C);
       if S and then C = 0 then
          return Fossil;
       end if;
@@ -329,7 +395,13 @@ package body Adacovex.VCS is
       S : Boolean;
       C : Integer;
    begin
-      Run_Cmd ("rm -rf '" & Tmp_Path & "'", "/dev/null", S, C);
+      --  Each shell removes a directory its own way; neither form needs a
+      --  POSIX layer on Windows.
+      if Host_Shell = CMD_Shell then
+         Run_Cmd ("rmdir /s /q " & Q (Tmp_Path), ND, S, C);
+      else
+         Run_Cmd ("rm -rf " & Q (Tmp_Path), ND, S, C);
+      end if;
    end Remove_Dir;
 
    --  Resolve Base_Ref to a git commit id for a jj repo: first try the
@@ -345,11 +417,10 @@ package body Adacovex.VCS is
       OK      : Boolean;
    begin
       Run_Capture
-        ("git --git-dir='"
-         & Git_Dir
-         & "' rev-parse --verify '"
-         & Base_Ref
-         & "'^{commit}",
+        ("git --git-dir="
+         & Q (Git_Dir)
+         & " rev-parse --verify "
+         & Q (Base_Ref & "^{commit}"),
          Buf,
          BLen,
          Code,
@@ -362,16 +433,18 @@ package body Adacovex.VCS is
                return L;
             end if;
          end;
-      end if;      --  jj templates changed syntax across versions: 0.44+ wants the bare
+      end if;
+
+      --  jj templates changed syntax across versions: 0.44+ wants the bare
       --  keyword (`-T commit_id`), older jj wants the braced form
       --  (`-T '{commit_id}'`). Try the new form first, then the legacy one
       --  so both jj generations resolve change ids.
       Run_Capture
-        ("jj -R '"
-         & Target_Dir
-         & "' log -r '"
-         & Base_Ref
-         & "' --no-graph -T commit_id",
+        ("jj -R "
+         & Q (Target_Dir)
+         & " log -r "
+         & Q (Base_Ref)
+         & " --no-graph -T commit_id",
          Buf,
          BLen,
          Code,
@@ -380,11 +453,12 @@ package body Adacovex.VCS is
          return First_Line (Buf, BLen);
       end if;
       Run_Capture
-        ("jj -R '"
-         & Target_Dir
-         & "' log -r '"
-         & Base_Ref
-         & "' --no-graph -T '{commit_id}'",
+        ("jj -R "
+         & Q (Target_Dir)
+         & " log -r "
+         & Q (Base_Ref)
+         & " --no-graph -T "
+         & Q ("{commit_id}"),
          Buf,
          BLen,
          Code,
@@ -422,23 +496,21 @@ package body Adacovex.VCS is
          when Git        =>
             --  Drop any stale worktree from a previous run, then create.
             Run_Cmd
-              ("git -C '"
-               & Target_Dir
-               & "' worktree remove --force '"
-               & Tmp
-               & "'",
-               "/dev/null",
+              ("git -C "
+               & Q (Target_Dir)
+               & " worktree remove --force "
+               & Q (Tmp),
+               ND,
                S,
                C);
             Run_Cmd
-              ("git -C '"
-               & Target_Dir
-               & "' worktree add --detach '"
-               & Tmp
-               & "' '"
-               & Base_Ref
-               & "'",
-               "/dev/null",
+              ("git -C "
+               & Q (Target_Dir)
+               & " worktree add --detach "
+               & Q (Tmp)
+               & " "
+               & Q (Base_Ref),
+               ND,
                S,
                C);
             Success := S and then C = 0;
@@ -446,14 +518,13 @@ package body Adacovex.VCS is
          when Mercurial  =>
             Remove_Dir (Tmp);
             Run_Cmd
-              ("hg -R '"
-               & Target_Dir
-               & "' archive -r '"
-               & Base_Ref
-               & "' '"
-               & Tmp
-               & "'",
-               "/dev/null",
+              ("hg -R "
+               & Q (Target_Dir)
+               & " archive -r "
+               & Q (Base_Ref)
+               & " "
+               & Q (Tmp),
+               ND,
                S,
                C);
             Success := S and then C = 0;
@@ -462,11 +533,7 @@ package body Adacovex.VCS is
             Remove_Dir (Tmp);
             --  Repository URL of the working copy (SVN >= 1.9 --show-item).
             Run_Capture
-              ("svn info --show-item url '" & Target_Dir & "'",
-               Buf,
-               BLen,
-               C,
-               OK);
+              ("svn info --show-item url " & Q (Target_Dir), Buf, BLen, C, OK);
             if OK and then C = 0 and then BLen > 0 then
                declare
                   L : constant String := First_Line (Buf, BLen);
@@ -481,7 +548,7 @@ package body Adacovex.VCS is
             end if;
             --  Fallback for older svn: parse the "URL: ..." line.
             if ULen = 0 then
-               Run_Capture ("svn info '" & Target_Dir & "'", Buf, BLen, C, OK);
+               Run_Capture ("svn info " & Q (Target_Dir), Buf, BLen, C, OK);
                if OK and then C = 0 then
                   declare
                      V : constant String := Field_Value (Buf, BLen, "URL:");
@@ -500,14 +567,13 @@ package body Adacovex.VCS is
                return;
             end if;
             Run_Cmd
-              ("svn export -r '"
-               & Base_Ref
-               & "' '"
-               & URL (1 .. ULen)
-               & "' '"
-               & Tmp
-               & "'",
-               "/dev/null",
+              ("svn export -r "
+               & Q (Base_Ref)
+               & " "
+               & Q (URL (1 .. ULen))
+               & " "
+               & Q (Tmp),
+               ND,
                S,
                C);
             Success := S and then C = 0;
@@ -518,7 +584,7 @@ package body Adacovex.VCS is
             --  DB without the project history, so ask fossil for the real
             --  repository database path and copy that instead.
             Run_Capture
-              ("cd '" & Target_Dir & "' && fossil info", Buf, BLen, C, OK);
+              (In_Dir (Target_Dir) & "fossil info", Buf, BLen, C, OK);
             declare
                Fossil_DB : constant String :=
                  (if OK and then C = 0
@@ -529,19 +595,26 @@ package body Adacovex.VCS is
                   Success := False;
                   return;
                end if;
+               --  The directory and the database copy are Ada work, not
+               --  shell work: `mkdir -p` and `cp` are POSIX names, and both
+               --  steps need no shell on any platform.
+               Ada.Directories.Create_Path (Tmp);
+               declare
+                  Copied : Boolean := False;
+               begin
+                  Copy_Path (Fossil_DB, Tmp & "/repo.fossil", Copied);
+                  if not Copied then
+                     Success := False;
+                     return;
+                  end if;
+               end;
                Run_Cmd
-                 ("mkdir -p '"
-                  & Tmp
-                  & "' && cp '"
-                  & Fossil_DB
-                  & "' '"
-                  & Tmp
-                  & "/repo.fossil' && cd '"
-                  & Tmp
-                  & "' && fossil open 'repo.fossil' '"
-                  & Base_Ref
-                  & "'",
-                  "/dev/null",
+                 (In_Dir (Tmp)
+                  & "fossil open "
+                  & Q ("repo.fossil")
+                  & " "
+                  & Q (Base_Ref),
+                  ND,
                   S,
                   C);
                Success := S and then C = 0;
@@ -550,8 +623,7 @@ package body Adacovex.VCS is
          when Jujutsu    =>
             --  Export jj branches/refs into the internal git store, then
             --  snapshot via a git worktree (jj commits are git commits).
-            Run_Cmd
-              ("jj -R '" & Target_Dir & "' git export", "/dev/null", S, C);
+            Run_Cmd ("jj -R " & Q (Target_Dir) & " git export", ND, S, C);
             declare
                Commit : constant String :=
                  Resolve_JJ_Commit (Target_Dir, Base_Ref);
@@ -561,23 +633,21 @@ package body Adacovex.VCS is
                   return;
                end if;
                Run_Cmd
-                 ("git -C '"
-                  & Target_Dir
-                  & "' worktree remove --force '"
-                  & Tmp
-                  & "'",
-                  "/dev/null",
+                 ("git -C "
+                  & Q (Target_Dir)
+                  & " worktree remove --force "
+                  & Q (Tmp),
+                  ND,
                   S,
                   C);
                Run_Cmd
-                 ("git --git-dir='"
-                  & Target_Dir
-                  & "/.jj/repo/store/git' worktree add --detach '"
-                  & Tmp
-                  & "' '"
-                  & Commit
-                  & "'",
-                  "/dev/null",
+                 ("git --git-dir="
+                  & Q (Target_Dir & "/.jj/repo/store/git")
+                  & " worktree add --detach "
+                  & Q (Tmp)
+                  & " "
+                  & Q (Commit),
+                  ND,
                   S,
                   C);
                Success := S and then C = 0;
@@ -605,23 +675,21 @@ package body Adacovex.VCS is
       case Kind is
          when Git     =>
             Run_Cmd
-              ("git -C '"
-               & Target_Dir
-               & "' worktree remove --force '"
-               & Tmp_Path
-               & "'",
-               "/dev/null",
+              ("git -C "
+               & Q (Target_Dir)
+               & " worktree remove --force "
+               & Q (Tmp_Path),
+               ND,
                S,
                C);
 
          when Jujutsu =>
             Run_Cmd
-              ("git --git-dir='"
-               & Target_Dir
-               & "/.jj/repo/store/git' worktree remove --force '"
-               & Tmp_Path
-               & "'",
-               "/dev/null",
+              ("git --git-dir="
+               & Q (Target_Dir & "/.jj/repo/store/git")
+               & " worktree remove --force "
+               & Q (Tmp_Path),
+               ND,
                S,
                C);
             Remove_Dir (Tmp_Path);

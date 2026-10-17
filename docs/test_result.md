@@ -11,8 +11,8 @@
   | SBOM generator                           |  366 | PASS     |
   | Result cache                             |  36 | PASS     |
   | IR synthesis                             |  42 | PASS     |
-  | Man page renderer                        |  18 | PASS     |
-  | VCS support                              |  29 | PASS     |
+  | Man page renderer                        |  30 | PASS     |
+  | VCS support                              |  37 | PASS     |
   | Server routing                           |  180 | PASS     |
   | Proof patches                            |  35 | PASS     |
   | Timezone + ANSI                          |  63 | PASS     |
@@ -28,7 +28,7 @@
   | Completion scripts                       |  24 | PASS     |
   | Platform paths                           |  43 | PASS     |
   | Install method                           |  23 | PASS     |
-  | tldr installer                           |  42 | PASS     |
+  | tldr installer                           |  48 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 1991  Failed: 0
+  Passed: 2017  Failed: 0

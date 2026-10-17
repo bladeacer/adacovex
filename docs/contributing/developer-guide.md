@@ -27,7 +27,7 @@ Prerequisites:
 git clone https://github.com/bladeacer/adacovex.git
 cd adacovex
 just build        # compiles bin/adacovex + bin/test_runner (covex alias)
-just test         # builds + runs the native test suite (1991 tests)
+just test         # builds + runs the native test suite (2017 tests)
 just run-self     # assess adacovex itself: 100% docs, Platinum, DAL-C
 just prove        # SPARK proof (Platinum gate) + regenerates docs/badges/
 just check        # the whole quality gate CI runs before a release

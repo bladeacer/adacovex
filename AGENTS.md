@@ -105,9 +105,9 @@ any Ada/SPARK project.
 
 Self-assessment (`just run-self`) must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
-- Platinum SPARK level (1048 VCs under gnatprove 16.1.0, 0 unproved, 0
+- Platinum SPARK level (1054 VCs under gnatprove 16.1.0, 0 unproved, 0
   justified; see `docs/proof/16.1.0-ledger.md`)
-- 1991/1991 native tests passing
+- 2017/2017 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
   `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
@@ -229,7 +229,7 @@ src/
 |   |-- adacovex-renderers.ads                -- Parent package for all output renderers
 |   |-- adacovex-renderers-ansi.ads/.adb      -- Terminal ANSI report (NO_COLOR aware)
 |   |-- adacovex-renderers-html.ads/.adb      -- Web dashboard + JSON API
-|   |-- adacovex-renderers-man.ads/.adb       -- Man-page renderer + installer (local man db, Linux/WSL)
+|   |-- adacovex-renderers-man.ads/.adb       -- Man-page renderer + installer (local man db; man-db or mandoc indexer)
 |   |-- adacovex-renderers-markdown.ads/.adb  -- VERIFICATION.md + TRACE.md
 |   |-- adacovex-renderers-sbom.ads/.adb      -- CycloneDX 1.5 / SPDX 2.3 / Markdown SBOM generator
 |   |-- adacovex-renderers-svg.ads/.adb       -- SVG badges (spark/tests/do178c/docs)
@@ -252,7 +252,7 @@ src/
     |-- adacovex_do178c_tests.ads/.adb        -- HLR/LLR parsing and line-reader tests (33)
     |-- adacovex_install_tests.ads/.adb       -- Installation-method tests (23)
     |-- adacovex_ir_tests.ads/.adb            -- IR synthesis tests (42)
-    |-- adacovex_man_tests.ads/.adb           -- Man page renderer tests (18)
+    |-- adacovex_man_tests.ads/.adb           -- Man page renderer tests (30)
     |-- adacovex_opt_outs_tests.ads/.adb      -- Per-file opt-out marker tests (16)
     |-- adacovex_paths_tests.ads/.adb         -- Platform-agnostic path helper tests (43)
     |-- adacovex_prove_patch_tests.ads/.adb   -- Proof patch merge tests (35)
@@ -265,11 +265,11 @@ src/
     |-- adacovex_server_tests.ads/.adb        -- Server routing tests (180)
     |-- adacovex_spark_coverage_tests.ads/.adb-- SPARK coverage report tests
     |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (50)
-    |-- adacovex_tldr_tests.ads/.adb          -- tldr installer tests (42)
+    |-- adacovex_tldr_tests.ads/.adb          -- tldr installer tests (48)
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (67)
     |-- adacovex_tz_ansi_tests.ads/.adb       -- Timezone + ANSI tests (63)
-    |-- adacovex_vcs_tests.ads/.adb           -- VCS support tests (29)
-    `-- test_runner.adb                       -- Test suite entry point (1991 tests)
+    |-- adacovex_vcs_tests.ads/.adb           -- VCS support tests (37)
+    `-- test_runner.adb                       -- Test suite entry point (2017 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -332,9 +332,9 @@ exit codes, the `sbom` subcommand, the per-standard level flags
 how adacovex itself is installed -- `source-checkout`, `alire-global`,
 `on-path` -- plus the binary path, gnatprove
 dependency-managed/detectable, CPU count, CI status, and which VCS
-tools -- git/hg/svn/fossil/jj/mandb -- are available for the differential
-modes plus the target's detected VCS) without running an assessment or
-downloading anything: [docs/usage/platforms.md](docs/usage/platforms.md#status-subcommand).
+tools -- git/hg/svn/fossil/jj plus the man indexers mandb/makewhatis -- are
+available for the differential modes plus the target's detected VCS) without
+running an assessment or downloading anything: [docs/usage/platforms.md](docs/usage/platforms.md#status-subcommand).
 
 `adacovex --version` prints the bundled version and exits. The version source
 depends on the **installation method** (tools/gen-version.py resolves it and
@@ -344,26 +344,31 @@ then `alire/alire-dev.toml` (source checkouts), then `alire.toml`
 (dependency-managed installs: the toml associated with the covex binary for
 dependency management carries the release version).
 
-`adacovex man` installs the man page into the local man database
-(`~/.local/share/man`, Linux/WSL; `--dir=PATH` overrides) and refreshes it with
-`mandb` when man-db is installed. When `mandb` is missing (or fails) adacovex
-prints a warning -- the page is still installed and readable via `man -l` --
-and `adacovex status` reports mandb availability up front. The page embeds
-the version, and `adacovex man --check` exits 0 when the installed page
-matches the binary (1 when a newer version is available or none is installed)
--- so a shell prompt hook can auto-update the man page when the machine
-detects a newer version.
+`adacovex man` installs the man page into a man root the host reader searches:
+the first home-owned `$MANPATH` entry, otherwise the platform data root
+(`$XDG_DATA_HOME/man` on Linux and the BSDs, `~/Library/Application
+Support/man` on macOS, `%APPDATA%\man` on Windows); `--dir=PATH` overrides.
+It refreshes the index with `mandb` (man-db) and falls back to `makewhatis`
+(mandoc). When neither is available (or both fail) adacovex prints a warning
+-- the page is still installed and readable via `man -l` -- and `adacovex
+status` reports both indexers up front. The command also warns when the
+chosen root is not on the reader's man path. The page embeds the version, and
+`adacovex man --check` exits 0 when the installed page matches the binary (1
+when a newer version is available or none is installed) -- so a shell prompt
+hook can auto-update the man page when the machine detects a newer version.
 
 `adacovex tldr` installs the bundled tldr page (`docs/tldr/adacovex.md`,
 embedded via `tools/gen-tldr.py` into `src/adacovex-tldr_template.ads`) into
-the detected local client: tealdeer's flat custom pages directory, or a base
-client's cache pages tree (common plus platform page). `adacovex tldr
+the detected local client: tealdeer's flat custom pages directory (from `tldr
+--show-paths`, with the platform data rule as the fallback), or a base
+client's cache pages tree (common plus the `linux` / `osx` / `windows` /
+`android` / `sunos` / BSD platform page). `adacovex tldr
 --check` exits 0 when the installed page matches the bundled one, 1 when it
 is missing or stale, and `--force` rewrites it. With no supported client the
 command prints the page to stdout. `just tldr-check` lints the page and gates
 the embedded spec against it.
 
-## VCS support (Linux/WSL)
+## VCS support (Linux, the BSDs, macOS, and WSL)
 
 A **VCS is not required for base adacovex functionality**: scanning, proof
 analysis, test parsing, compliance assessment, SBOM generation, dashboards,
@@ -578,7 +583,7 @@ compatibility shim. The table names the canonical target for each task.
 | `check` | **The single everything-check / verification entry point.** Run it after any change. It runs every gate CI runs before a release, and **`fmt` is first**: gnatprove and the API docs both read the sources, so every later gate must see formatted code. Then the cheap static gates (ascii, complexity, csslint, spark-off, changelog, action-parity, docs-coverage, tools-check, cli-e2e, version, version-consistency, doc-links, link, docs-check, para-split, tldr, book-links), then build + native tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description). Every gate runs a preflight first: a gate whose tool is missing on the host (no `alr` on `PATH`, no `gnatformat` on the developer path, a `gnatdoc` that cannot document a one-package probe project, no `sphinx` in the interpreter) is SKIPped with the reason instead of failing, the run continues past a failed gate, and the summary shows PASS/FAIL/SKIP per gate, exiting non-zero only when a gate failed. `just check` resolves `gnatprove` for you (it is fetched into `<data>/toolchain/` and executed directly when not on `PATH`), so you never have to install or point at a prover by hand -- just run `just check` and it verifies the whole tree end to end. `just prove` is the SPARK sub-gate if you only changed proof-affecting code |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
-| `test` | Build + run the 1991-test native suite |
+| `test` | Build + run the 2017-test native suite |
 | `prove` | SPARK proof at gnatprove `--level=4` (Platinum gate) + regenerates SVG badges in `docs/badges/` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
 | `book` | Build the offline manual from the Sphinx docs and regenerate `src/adacovex-docs_template.ads` (tools/gen-docs.py; incremental + verified Sphinx build, `--fresh` forces a clean one; safe to run without sphinx) |
@@ -692,9 +697,9 @@ a runner needs neither `make` nor `just`; the Ubuntu runner images ship
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `just test` | 1991/1991 passing |
+| Unit tests | `just test` | 2017/2017 passing |
 | Self-assessment | `just run-self` | 100% docs, Platinum, DAL-C Achieved |
-| SPARK proof | `just prove` | Platinum (1048 VCs, 0 unproved, 0 justified under gnatprove 16.1.0), verified at `--level=4` (the deepest effort; the prove subcommand forwards `--level` verbatim, so the overhead is gnatprove's own) |
+| SPARK proof | `just prove` | Platinum (1054 VCs, 0 unproved, 0 justified under gnatprove 16.1.0), verified at `--level=4` (the deepest effort; the prove subcommand forwards `--level` verbatim, so the overhead is gnatprove's own) |
 | Ada_CRDT regression | `just run-ada-crdt` | Stable against CRDT library (strict mode) |
 
 **The true test of proof performance is the `prove` subcommand at the
@@ -747,7 +752,7 @@ rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 1991 tests across 29 categories).
+Native zero-dependency suite (`src/tests/`, 2017 tests across 29 categories).
 Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests).
 

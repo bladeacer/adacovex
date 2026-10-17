@@ -108,6 +108,34 @@ package body Adacovex_VCS_Tests is
       R.Check
         (Detect (Base & "/missing") = Unknown, "missing dir detects unknown");
 
+      --  The two command shells the differential modes drive. Both families
+      --  are exercised on every host, so the Windows shape is pinned even
+      --  on a POSIX machine and the POSIX shape even on Windows.
+      R.Check
+        (Quote_Path (POSIX_Shell, "/a b") = "'/a b'",
+         "the POSIX shell quotes a path with single quotes");
+      R.Check
+        (Quote_Path (CMD_Shell, "C:\a b") = """C:\a b""",
+         "cmd.exe quotes a path with double quotes");
+      R.Check
+        (Change_Dir_Prefix (POSIX_Shell, "/a b") = "cd '/a b' && ",
+         "the POSIX shell changes directory with cd");
+      R.Check
+        (Change_Dir_Prefix (CMD_Shell, "C:\a b") = "cd /d ""C:\a b"" && ",
+         "cmd.exe changes directory with cd /d");
+      R.Check
+        (Null_Device (POSIX_Shell) = "/dev/null",
+         "the POSIX shell discards output to /dev/null");
+      R.Check
+        (Null_Device (CMD_Shell) = "NUL", "cmd.exe discards output to NUL");
+      R.Check
+        (Host_Shell = POSIX_Shell or else Host_Shell = CMD_Shell,
+         "the host shell is one of the two families");
+      R.Check
+        (Null_Device (Host_Shell)'Length > 0
+         and then Change_Dir_Prefix (Host_Shell, Base)'Length > 3,
+         "the host shell helpers answer for this host");
+
       R.Check (Is_Managed (Base & "/git"), "git dir is managed");
       R.Check (Is_Managed (Base & "/hg"), "hg dir is managed");
       R.Check (not Is_Managed (Base & "/none"), "empty dir is not managed");

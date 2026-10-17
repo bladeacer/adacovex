@@ -14,13 +14,55 @@
 --
 --  Detection is marker-file based (.git / .jj / .hg / .svn / .fslckout /
 --  _FOSSIL_), with a command probe fallback when no marker is present.
---  Runs only on Linux/WSL (uses sh -c for CWD-dependent tools such as
---  fossil).
+--  The command lines run through the host shell: `sh -c` on POSIX hosts
+--  and `cmd /c` on native Windows, so a CWD-dependent tool (fossil open,
+--  svn export) can be driven with a change-directory prefix without
+--  changing the process directory.
 --  HLR-DIFF: VCS abstraction for differential assessment
 
 package Adacovex.VCS is
 
    type VCS_Kind is (Unknown, Git, Mercurial, Subversion, Fossil, Jujutsu);
+
+   --  The command shell a differential mode drives on the running host.
+   --  POSIX_Shell is `sh` (Linux, the BSDs, macOS, WSL, Cygwin, MSYS2, and
+   --  Git Bash). CMD_Shell is `cmd.exe`, so native Windows runs the same
+   --  differential modes with no POSIX layer installed. The choice follows
+   --  the host path separator, the same compile-time fact the executable
+   --  suffix and the temp-directory rules use.
+   type Shell_Family is (POSIX_Shell, CMD_Shell);
+
+   --  The shell family of the running host.
+   --  @return CMD_Shell on Windows, POSIX_Shell everywhere else.
+   function Host_Shell return Shell_Family
+   with Global => null;
+
+   --  Quote a path so the given shell reads it as one argument.
+   --  POSIX_Shell quotes with single quotes; CMD_Shell quotes with double
+   --  quotes (a single quote is a plain character for cmd.exe).
+   --  @param S  Shell family that will read the command line.
+   --  @param Path  Path to quote.
+   --  @return The quoted path.
+   function Quote_Path (S : Shell_Family; Path : String) return String
+   with Global => null;
+
+   --  The prefix that runs a command in Dir without changing the process
+   --  directory. Both shells accept a trailing `&& `, so the caller appends
+   --  its command to the result. CMD_Shell carries `/d`, so a drive change
+   --  works as well as a directory change.
+   --  @param S  Shell family that will read the command line.
+   --  @param Dir  Directory the command should run in.
+   --  @return The prefix ending in " && ".
+   function Change_Dir_Prefix (S : Shell_Family; Dir : String) return String
+   with Global => null;
+
+   --  The device a shell sends discarded output to: /dev/null on POSIX
+   --  hosts and NUL on Windows. The caller passes it as the output file of
+   --  a spawned command.
+   --  @param S  Shell family of the host.
+   --  @return The discard device path.
+   function Null_Device (S : Shell_Family) return String
+   with Global => null;
 
    --  Detect the VCS managing Target_Dir.
    --  Marker files take priority (deterministic, no subprocesses). When no

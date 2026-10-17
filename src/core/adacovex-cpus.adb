@@ -60,23 +60,56 @@ package body Adacovex.CPUs is
       return Integer (Val);
    end Parse_Natural;
 
+   --  Whether the host is Windows. The path separator is the one
+   --  compile-time fact that identifies the platform, so no environment
+   --  read is needed and the answer cannot disagree with Executable_Suffix.
+   --  GNAT.OS_Lib carries no Global contracts (the runtime is not analysed
+   --  by gnatprove), so the same scoped warning pragma the env-var readers
+   --  use covers this constant read. The pragma only silences the missing
+   --  contract notice: the constant is a value, not a write, so the flow
+   --  analysis has no data dependency to prove.
+   pragma Warnings (Off, "no Global contract available");
+   function Is_Windows return Boolean with SPARK_Mode => On is
+   begin
+      return GNAT.OS_Lib.Directory_Separator = '\';
+   end Is_Windows;
+   pragma Warnings (On, "no Global contract available");
+
+   --  The path separator as a Character, so a platform rule that needs the
+   --  literal byte (a suffix test, a directory split) reads it once and
+   --  never repeats the OS_Lib name. It is the same value on both platforms.
+   function Path_Separator return Character is
+   begin
+      return GNAT.OS_Lib.Directory_Separator;
+   end Path_Separator;
+
    procedure Run_Capture
      (Cmd      : String;
       Out_Line : out String;
       Out_Len  : out Natural;
       Ok       : out Boolean)
    is
-      Tmp  : constant String := Get_Temp_Directory & "/adacovex-sysctl.tmp";
-      Args : Argument_List :=
-        (new String'("-c"), new String'(Cmd & " > '" & Tmp & "' 2>/dev/null"));
-      Code : Integer;
-      Succ : Boolean;
-      F    : Ada.Text_IO.File_Type;
+      Tmp   : constant String := Get_Temp_Directory & "/adacovex-sysctl.tmp";
+      --  The redirect is POSIX or cmd.exe syntax, matching the shell below.
+      Redir : constant String :=
+        (if Is_Windows
+         then " > " & '"' & Tmp & '"' & " 2>" & Get_Null_Device
+         else " > '" & Tmp & "' 2>" & Get_Null_Device);
+      Args  : Argument_List :=
+        (new String'(Get_Shell_Option), new String'(Cmd & Redir));
+      Code  : Integer;
+      Succ  : Boolean;
+      F     : Ada.Text_IO.File_Type;
    begin
       Out_Len := 0;
       Ok := False;
       Spawn
-        (Get_Shell_Command, Args, "/dev/null", Succ, Code, Err_To_Out => True);
+        (Get_Shell_Command,
+         Args,
+         Get_Null_Device,
+         Succ,
+         Code,
+         Err_To_Out => True);
       Free (Args (1));
       Free (Args (2));
       if not Succ or else Code /= 0 then
@@ -322,11 +355,32 @@ package body Adacovex.CPUs is
    end Get_Temp_Directory;
    pragma Warnings (On, "no Global contract available");
 
-   --  Default shell executable for spawned commands. Pure constant
-   --  (SPARK_Mode On per the spec): returns "sh" with no global state.
+   --  Default shell executable for spawned commands. Pure function of the
+   --  host platform (SPARK_Mode On per the spec).
    function Get_Shell_Command return String with SPARK_Mode => On is
    begin
+      if Is_Windows then
+         return "cmd";
+      end if;
       return "sh";
    end Get_Shell_Command;
+
+   --  The flag that passes a command line to that shell.
+   function Get_Shell_Option return String with SPARK_Mode => On is
+   begin
+      if Is_Windows then
+         return "/c";
+      end if;
+      return "-c";
+   end Get_Shell_Option;
+
+   --  Where a shell sends discarded output.
+   function Get_Null_Device return String with SPARK_Mode => On is
+   begin
+      if Is_Windows then
+         return "NUL";
+      end if;
+      return "/dev/null";
+   end Get_Null_Device;
 
 end Adacovex.CPUs;

@@ -22,8 +22,8 @@ The response is pretty-printed (two-space indent, one field per line), so
 ```json
 {
   "spark_level": "Platinum",
-  "total_vcs": 1048,
-  "proved_vcs": 1048,
+  "total_vcs": 1054,
+  "proved_vcs": 1054,
   "tests_passed": 1800,
   "tests_failed": 0,
   "test_categories": [

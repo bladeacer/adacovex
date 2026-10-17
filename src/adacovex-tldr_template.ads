@@ -22,7 +22,7 @@ package Adacovex.Tldr_Template is
   & ASCII.LF
   & "- Assess a project at another path:"
   & ASCII.LF
-  & "`adacovex --target {{path/to/project}}`"
+  & "`adacovex --target={{path/to/project}}`"
   & ASCII.LF
   & ASCII.LF
   & "- Assess against a compliance standard and tier:"
@@ -48,6 +48,12 @@ package Adacovex.Tldr_Template is
   & "- Install the man page into the local man database:"
   & ASCII.LF
   & "`adacovex man`"
+  & ASCII.LF
+  & ASCII.LF
+  & "- Install the built-in cheat sheet into the local tldr clien"
+  & "t:"
+  & ASCII.LF
+  & "`adacovex tldr --check`"
   & ASCII.LF
   & ASCII.LF
   & "- Generate an SBOM:"

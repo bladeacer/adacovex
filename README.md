@@ -74,9 +74,9 @@ adacovex runs on **any platform Alire supports** -- Linux (x86-64, ARM64,
 and other architectures), Windows, macOS, and the BSDs -- because it uses
 only the GNAT runtime. The prebuilt release bundle is Linux x86-64 only.
 
-The differential modes need a POSIX shell, and `man` is Linux/WSL only. VCS
-is not required for base functionality, and only the differential modes need
-one (git, hg, svn, fossil, jj). Full matrix: [platforms](https://adacovex.readthedocs.io/en/latest/usage/platforms.html),
+`man` follows the host reader (man-db on Linux and WSL, mandoc on macOS and the BSDs),
+`tldr` the installed client, and the differential modes the host shell (cmd.exe on Windows); full matrix:
+[platforms](https://adacovex.readthedocs.io/en/latest/usage/platforms.html),
 [GNATprove resolution](https://adacovex.readthedocs.io/en/latest/contributing/architecture-dependencies.html),
 [VCS](https://adacovex.readthedocs.io/en/latest/usage/vcs.html).
 
@@ -213,9 +213,9 @@ Action inputs/outputs, result caching, and release bundling:
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `just test` | 1991/1991 passing |
+| Unit tests | `just test` | 2017/2017 passing |
 | Self-assessment | `just run-self` | 100% docs, Platinum, DAL-C Achieved |
-| SPARK proof | `just prove` | Platinum (1048 VCs, 0 unproved under gnatprove 16.1.0) |
+| SPARK proof | `just prove` | Platinum (1054 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `just run-ada-crdt` | 100% docs, DAL-C (strict mode) |
 
 See [changelogs](https://adacovex.readthedocs.io/en/latest/changelogs/index.html) for full release notes.

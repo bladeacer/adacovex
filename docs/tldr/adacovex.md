@@ -6,7 +6,7 @@
 `adacovex`
 
 - Assess a project at another path:
-`adacovex --target {{path/to/project}}`
+`adacovex --target={{path/to/project}}`
 
 - Assess against a compliance standard and tier:
 `adacovex --standard {{dal-c}}`
@@ -22,6 +22,9 @@
 
 - Install the man page into the local man database:
 `adacovex man`
+
+- Install the built-in cheat sheet into the local tldr client:
+`adacovex tldr --check`
 
 - Generate an SBOM:
 `adacovex sbom`

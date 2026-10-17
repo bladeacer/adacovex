@@ -2327,7 +2327,7 @@ package body Adacovex.Prove is
    --  (Run_Status), the JSON export (Export_Status) and the key=value
    --  metrics report (Run_Status_Metrics) so the three outputs never
    --  drift. String fields are fixed buffers + a length (0 = empty).
-   type VCS_Tool_Flags is array (1 .. 6) of Boolean;
+   type VCS_Tool_Flags is array (1 .. 7) of Boolean;
    type Status_Data is record
       Target           : String (1 .. Types.Max_Path) := (others => ' ');
       Target_Len       : Natural := 0;
@@ -2344,7 +2344,8 @@ package body Adacovex.Prove is
       Cores            : Natural := 1;
       In_CI            : Boolean := False;
       --  VCS command-line tool availability on PATH in this fixed order:
-      --  git, hg, svn, fossil, jj, mandb.
+      --  git, hg, svn, fossil, jj, mandb (man-db indexer), makewhatis
+      --  (mandoc indexer).
       VCS_Tool         : VCS_Tool_Flags := (others => False);
       Repo_Kind        : String (1 .. 64) := (others => ' ');
       Repo_Len         : Natural := 0;   --  0 = none detected
@@ -2429,14 +2430,15 @@ package body Adacovex.Prove is
       Exe   : String_Access;
       T     : constant String := Strip_Trailing_Slash (Target_Dir);
       Kind  : constant Adacovex.VCS.VCS_Kind := Adacovex.VCS.Detect (T);
-      Names : constant array (1 .. 6) of String (1 .. 8) :=
-        ("git" & 5 * " ",
-         "hg" & 6 * " ",
-         "svn" & 5 * " ",
-         "fossil" & 2 * " ",
-         "jj" & 6 * " ",
-         "mandb" & 3 * " ");
-      Lens  : constant array (1 .. 6) of Natural := (3, 2, 3, 6, 2, 5);
+      Names : constant array (1 .. 7) of String (1 .. 12) :=
+        ("git" & 9 * " ",
+         "hg" & 10 * " ",
+         "svn" & 9 * " ",
+         "fossil" & 6 * " ",
+         "jj" & 10 * " ",
+         "mandb" & 7 * " ",
+         "makewhatis" & 2 * " ");
+      Lens  : constant array (1 .. 7) of Natural := (3, 2, 3, 6, 2, 5, 10);
       KName : constant String := Adacovex.VCS.To_String (Kind);
       Need  : constant String := Adacovex.VCS.Tool_Name (Kind);
    begin
@@ -2476,7 +2478,7 @@ package body Adacovex.Prove is
         (Toolchain_Cache, "", S.Cached_Dir, S.Cached_Len, S.Cached);
       S.Cores := Adacovex.CPUs.Detect_Core_Count;
       S.In_CI := Adacovex.CPUs.Is_Running_In_CI;
-      for I in 1 .. 6 loop
+      for I in 1 .. 7 loop
          Exe := Locate_Exec_On_Path (Names (I) (1 .. Lens (I)));
          S.VCS_Tool (I) := Exe /= null;
          if Exe /= null then
@@ -2639,14 +2641,16 @@ package body Adacovex.Prove is
       Status_VCS_Row ("subversion", "svn");
       Status_VCS_Row ("fossil", "fossil");
       Status_VCS_Row ("jj", "jj");
-      Status_VCS_Row ("man page tool", "mandb");
-      if not S.VCS_Tool (6) then
+      Status_VCS_Row ("man-db indexer", "mandb");
+      Status_VCS_Row ("mandoc indexer", "makewhatis");
+      if not S.VCS_Tool (6) and then not S.VCS_Tool (7) then
          Ada.Text_IO.Put_Line
-           ("    note: man-db (mandb) is not on PATH; `adacovex man`");
+           ("    note: neither mandb (man-db) nor makewhatis (mandoc) is on");
          Ada.Text_IO.Put_Line
-           ("          still installs the page but cannot refresh the");
+           ("          PATH; `adacovex man` still installs the page but");
          Ada.Text_IO.Put_Line
-           ("          man database (read it with `man -l`).");
+           ("          cannot refresh the man database (read it with "
+            & "`man -l`).");
       end if;
       Ada.Text_IO.Put_Line
         ("    target repo:       "
@@ -2717,14 +2721,15 @@ package body Adacovex.Prove is
       use Ada.Strings.Unbounded;
       R         : Unbounded_String;
       F         : Ada.Text_IO.File_Type;
-      VCS_Names : constant array (1 .. 6) of String (1 .. 12) :=
+      VCS_Names : constant array (1 .. 7) of String (1 .. 12) :=
         ("git" & 9 * " ",
          "hg" & 10 * " ",
          "svn" & 9 * " ",
          "fossil" & 6 * " ",
          "jj" & 10 * " ",
-         "mandb" & 7 * " ");
-      VCS_Lens  : constant array (1 .. 6) of Natural := (3, 2, 3, 6, 2, 5);
+         "mandb" & 7 * " ",
+         "makewhatis" & 2 * " ");
+      VCS_Lens  : constant array (1 .. 7) of Natural := (3, 2, 3, 6, 2, 5, 10);
       Label     : String (1 .. 12) := (others => ' ');
       LLen      : Natural := 0;
 
@@ -2799,7 +2804,7 @@ package body Adacovex.Prove is
       Put (",");
       --  VCS tool availability as a nested object of booleans.
       Put (Q & "vcs" & Q & ":{");
-      for I in 1 .. 6 loop
+      for I in 1 .. 7 loop
          if I > 1 then
             Put (",");
          end if;
@@ -2842,14 +2847,15 @@ package body Adacovex.Prove is
      (Target_Dir : String; TZ_Spec : String; Success : out Boolean)
    is
       S         : Status_Data;
-      VCS_Names : constant array (1 .. 6) of String (1 .. 12) :=
+      VCS_Names : constant array (1 .. 7) of String (1 .. 12) :=
         ("git" & 9 * " ",
          "hg" & 10 * " ",
          "svn" & 9 * " ",
          "fossil" & 6 * " ",
          "jj" & 10 * " ",
-         "mandb" & 7 * " ");
-      VCS_Lens  : constant array (1 .. 6) of Natural := (3, 2, 3, 6, 2, 5);
+         "mandb" & 7 * " ",
+         "makewhatis" & 2 * " ");
+      VCS_Lens  : constant array (1 .. 7) of Natural := (3, 2, 3, 6, 2, 5, 10);
    begin
       Gather_Status (Target_Dir, TZ_Spec, S);
       Ada.Text_IO.Put_Line ("version=" & Adacovex.Version);
@@ -2888,7 +2894,7 @@ package body Adacovex.Prove is
         ("logical_cpus="
          & Natural'Image (S.Cores) (2 .. Natural'Image (S.Cores)'Last));
       Ada.Text_IO.Put_Line ("ci=" & (if S.In_CI then "yes" else "no"));
-      for I in 1 .. 6 loop
+      for I in 1 .. 7 loop
          Ada.Text_IO.Put_Line
            ("vcs_"
             & VCS_Names (I) (1 .. VCS_Lens (I))

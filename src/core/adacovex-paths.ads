@@ -82,6 +82,53 @@ package Adacovex.Paths is
       Local_App_Data : String) return String
    with Global => null;
 
+   --  The platform data base directory for a third-party application: the
+   --  directory under which that tool keeps its data. Linux and the BSDs
+   --  use $XDG_DATA_HOME (or ~/.local/share), macOS uses
+   --  ~/Library/Application Support, and Windows uses %APPDATA% (then
+   --  %LOCALAPPDATA%). Every input is a parameter, so the tests exercise
+   --  all three platform rules on any host.
+   --  @param P               Platform family.
+   --  @param Home            User home directory.
+   --  @param Xdg_Data        $XDG_DATA_HOME ("" when unset).
+   --  @param App_Data        %APPDATA% ("" when unset).
+   --  @param Local_App_Data  %LOCALAPPDATA% ("" when unset).
+   --  @return The data base directory.
+   function Data_Base
+     (P              : Platform_Kind;
+      Home           : String;
+      Xdg_Data       : String;
+      App_Data       : String;
+      Local_App_Data : String) return String
+   with Global => null;
+
+   --  The platform cache base directory for a third-party application:
+   --  $XDG_CACHE_HOME (or ~/.cache) on Linux and the BSDs,
+   --  ~/Library/Caches on macOS, and %LOCALAPPDATA% on Windows. Every input
+   --  is a parameter, so the tests exercise all three platform rules on any
+   --  host.
+   --  @param P               Platform family.
+   --  @param Home            User home directory.
+   --  @param Xdg_Cache       $XDG_CACHE_HOME ("" when unset).
+   --  @param Local_App_Data  %LOCALAPPDATA% ("" when unset).
+   --  @return The cache base directory.
+   function Cache_Base
+     (P              : Platform_Kind;
+      Home           : String;
+      Xdg_Cache      : String;
+      Local_App_Data : String) return String
+   with Global => null;
+
+   --  Data_Base for the host, read from the environment. A tool that keeps
+   --  its own state directory (tealdeer, or the man page installer) builds
+   --  on this, so every such path follows one platform rule.
+   --  @return The host's data base directory.
+   function Data_Home return String;
+
+   --  Cache_Base for the host, read from the environment.
+   --  @return The host's cache base directory.
+   function Cache_Home return String;
+
    --  The configuration directory for the host, read from the environment:
    --  $ADACOVEX_STATE_HOME when it is set (the documented override for tests
    --  and CI; it is distinct from the installer's ADACOVEX_HOME, which names

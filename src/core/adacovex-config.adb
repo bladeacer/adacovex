@@ -2730,7 +2730,9 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("  man [--check]         Install the man page into the local man");
       Ada.Text_IO.Put_Line
-        ("                        database (~/.local/share/man, Linux/WSL);");
+        ("                        database (platform data root; mandb or");
+      Ada.Text_IO.Put_Line
+        ("                        makewhatis refreshes it);");
       Ada.Text_IO.Put_Line
         ("                        --check exits 0 when the installed man page");
       Ada.Text_IO.Put_Line
@@ -2741,8 +2743,7 @@ package body Adacovex.Config is
         ("                        installed (man page contains the version)");
       Ada.Text_IO.Put_Line
         ("  man --dir=PATH        Install the man page into PATH/man1 instead");
-      Ada.Text_IO.Put_Line
-        ("                        of the default local man directory");
+      Ada.Text_IO.Put_Line ("                        of the default man root");
       Ada.Text_IO.Put_Line
         ("  man --force           Override an existing man page even when it");
       Ada.Text_IO.Put_Line
@@ -3250,13 +3251,17 @@ package body Adacovex.Config is
       then
          Print_Section
            ("adacovex man",
-            "Install the man page into the local man database (default"
+            "Install the man page into the local man database and refresh"
             & ASCII.LF
-            & "~/.local/share/man on Linux/WSL; --dir=PATH overrides) and"
+            & "it with mandb (man-db) or makewhatis (mandoc).  The default"
             & ASCII.LF
-            & "refresh it with mandb when present.  --check exits 0 when the"
+            & "root is the first home-owned $MANPATH entry, otherwise the"
             & ASCII.LF
-            & "installed page matches this binary's version, 1 otherwise."
+            & "platform data home plus /man; --dir=PATH overrides.  --check"
+            & ASCII.LF
+            & "exits 0 when the installed page matches this binary's"
+            & ASCII.LF
+            & "version, 1 otherwise."
             & ASCII.LF
             & ASCII.LF
             & "--force always (re)writes the installed page even when it"

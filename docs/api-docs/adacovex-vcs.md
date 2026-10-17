@@ -16,8 +16,10 @@ commits, and any change or commit id resolves)
 
 Detection is marker-file based (.git / .jj / .hg / .svn / .fslckout /
 - FOSSIL*), with a command probe fallback when no marker is present.
-Runs only on Linux/WSL (uses sh -c for CWD-dependent tools such as
-fossil).
+The command lines run through the host shell: ``sh -c`` on POSIX hosts
+and ``cmd /c`` on native Windows, so a CWD-dependent tool (fossil open,
+svn export) can be driven with a change-directory prefix without
+changing the process directory.
 HLR-DIFF: VCS abstraction for differential assessment
 
 **See also:** [VCS support](../usage/vcs.md)
@@ -25,6 +27,12 @@ HLR-DIFF: VCS abstraction for differential assessment
 > **Note:** All items in this package are public.
 
 ## Types
+
+### type Shell_Family
+
+```ada
+type Shell_Family is (POSIX_Shell, CMD_Shell);
+```
 
 ### type VCS_Kind
 
@@ -34,6 +42,15 @@ type VCS_Kind is (Unknown, Git, Mercurial, Subversion, Fossil, Jujutsu);
 
 ## Functions
 
+### function Change_Dir_Prefix (S : Adacovex.VCS.Shell_Family; Dir : Standard.String) return Standard.String `[Global]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `Dir` | Directory the command should run in. |
+| `S` | Shell family that will read the command line. |
+
+**Returns:** The prefix ending in " && ".
+
 ### function Detect (Target_Dir : Standard.String) return Adacovex.VCS.VCS_Kind
 
 | Parameter | Description |
@@ -42,6 +59,10 @@ type VCS_Kind is (Unknown, Git, Mercurial, Subversion, Fossil, Jujutsu);
 
 **Returns:** Detected VCS kind (Unknown when none is found).
 
+### function Host_Shell return Adacovex.VCS.Shell_Family `[Global]`
+
+**Returns:** CMD_Shell on Windows, POSIX_Shell everywhere else.
+
 ### function Is_Managed (Target_Dir : Standard.String) return Standard.Boolean
 
 | Parameter | Description |
@@ -49,6 +70,23 @@ type VCS_Kind is (Unknown, Git, Mercurial, Subversion, Fossil, Jujutsu);
 | `Target_Dir` | Directory to inspect. |
 
 **Returns:** True when a supported VCS is detected.
+
+### function Null_Device (S : Adacovex.VCS.Shell_Family) return Standard.String `[Global]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `S` | Shell family of the host. |
+
+**Returns:** The discard device path.
+
+### function Quote_Path (S : Adacovex.VCS.Shell_Family; Path : Standard.String) return Standard.String `[Global]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `Path` | Path to quote. |
+| `S` | Shell family that will read the command line. |
+
+**Returns:** The quoted path.
 
 ### function To_String (Kind : Adacovex.VCS.VCS_Kind) return Standard.String `[Post]` `[Global]` `[SPARK]`
 

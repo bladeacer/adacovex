@@ -7,17 +7,20 @@ build time by tools/gen-tldr.py) into the local tldr client, so
 detects the installed client first, then writes to that client's own
 page location.
 
-tealdeer reads a flat custom-pages directory (``adacovex.page.md``), which
-sits outside its cache, so ``tldr --update`` cannot remove the page. A
-client that follows CLIENT-SPECIFICATION.md reads its extracted cache
+tealdeer reads a flat custom-pages directory (``adacovex.page.md``). The
+directory follows the host's OS conventions, and ``tldr --show-paths``
+reports it. The directory sits outside the cache, so ``tldr --update``
+cannot remove the page. Upstream: https://docs.tealdeer.org/stable/usage_custom_pages.html
+
+A client that follows CLIENT-SPECIFICATION.md reads its extracted cache
 pages tree instead (``pages/common/adacovex.md`` plus the platform
-directory), and the page survives a cache update because the update
-overlays the archive without deleting extra files.
+directory). Upstream: https://github.com/tldr-pages/tldr/blob/main/CLIENT-SPECIFICATION.md
 
 ``adacovex tldr`` installs or refreshes the page. ``adacovex tldr --check``
 exits 0 when the installed page matches the bundled one, and 1 when it
-is missing or stale, so a shell prompt hook can keep it fresh after a
-``tldr --update``.
+is missing or stale. The platform directories follow the tldr-pages
+platform set: linux, osx, windows, android, sunos, freebsd, netbsd, and
+openbsd, plus the cross-platform ``common``.
 
 HLR-TLDR: Client-agnostic tldr page installation
 
@@ -32,10 +35,6 @@ type Client_Kind is (No_Client, Base_Client, Tealdeer, Unsupported_Client);
 ```
 
 ## Functions
-
-### function Cache_Home return Standard.String
-
-**Returns:** Cache home path.
 
 ### function Classify (Version_Output : Standard.String) return Adacovex.Renderers.Tldr.Client_Kind
 
@@ -59,18 +58,15 @@ type Client_Kind is (No_Client, Base_Client, Tealdeer, Unsupported_Client);
 |-----------|-------------|
 | `Show_Paths_Output` | Captured stdout of `tldr --show-paths`. |
 
-**Returns:** The directory (no trailing slash), or "" when absent.
+**Returns:** The directory (no trailing slash, annotation removed), or ""
 
-### function Data_Home return Standard.String
-
-**Returns:** Data home path.
-
-### function Default_Pages_Dir (Kind : Adacovex.Renderers.Tldr.Client_Kind; Data_Home : Standard.String; Cache_Home : Standard.String) return Standard.String
+### function Default_Pages_Dir (Kind : Adacovex.Renderers.Tldr.Client_Kind; Home : Standard.String; Data_Home : Standard.String; Cache_Home : Standard.String) return Standard.String
 
 | Parameter | Description |
 |-----------|-------------|
-| `Cache_Home` | XDG cache home (for example ~/.cache). |
-| `Data_Home` | XDG data home (for example ~/.local/share). |
+| `Cache_Home` | Host cache base directory. |
+| `Data_Home` | Host data base directory. |
+| `Home` | User home directory. |
 | `Kind` | Client family. |
 
 **Returns:** Page directory, or "" for a family with no page directory.

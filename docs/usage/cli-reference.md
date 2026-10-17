@@ -84,7 +84,7 @@ Compliance selection stays on `--standard` and its level companions
 | `man` | - | - | Install the man page into the local man database |
 | `man --check` | - | - | Exit 0 if the installed man page matches the binary version, 1 otherwise |
 | `man --force` | - | - | Reinstall the man page even when it already matches (repair) |
-| `man --dir=PATH` | `~/.local/share/man` | - | Install the man page under `PATH/man1` instead |
+| `man --dir=PATH` | platform man root | - | Install the man page under `PATH/man1` instead |
 | `tldr` | - | - | Install the bundled tldr page into the local tldr client (tealdeer or a base client) |
 | `tldr --check` | - | - | Exit 0 if the installed tldr page matches the bundled page, 1 when it is missing or stale |
 | `tldr --force` | - | - | Rewrite the installed tldr page even when it already matches |

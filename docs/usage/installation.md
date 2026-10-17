@@ -151,30 +151,36 @@ three values reach the JSON and the metrics output as `install_method`.
 
 ## Keeping the man page in sync
 
-`adacovex man` installs the man page (which embeds the version) into
-`~/.local/share/man`. It refreshes `mandb` when present. `adacovex man
---check` exits 0 when the installed page matches the binary. A shell prompt
-hook can auto-update. `man --force` overwrites an up-to-date page (for example
-to repair a hand-edited one).
+`adacovex man` installs the man page (which embeds the version) into a man
+root that the host reader searches. It prefers the first home-owned `$MANPATH`
+entry, otherwise the platform data root: `~/.local/share/man` on Linux and the
+BSDs, `~/Library/Application Support/man` on macOS, and `%APPDATA%\man` on
+Windows. It refreshes the index with `mandb` (man-db) or `makewhatis` (mandoc).
+`adacovex man --check` exits 0 when the installed page matches the binary. A
+shell prompt hook can auto-update. `man --force` overwrites an up-to-date page.
 
-When man-db is missing, the page still installs. Read it with
-`man -l ~/.local/share/man/man1/adacovex.1`. `adacovex status` reports mandb
-availability up front. See [Platforms -- local man page](platforms.md#local-man-page-linuxwsl)
-for the install roots and man-db behaviour.
+When neither indexer is available, the page still installs. Read it with
+`man -l <root>/man1/adacovex.1`. The command warns when the root is not on
+the reader's man path. See [Platforms -- local man page](platforms.md#local-man-page)
+for the platform matrix, the root selection, and the reader behaviour.
 
 ## Keeping the tldr page in sync
 
 `adacovex tldr` installs the bundled tldr cheat sheet into the local tldr
 client, so `tldr adacovex` works offline. The command detects the client and
-writes to that client's own page location. tealdeer gets the page in its
-custom pages directory (`~/.local/share/tealdeer/pages/adacovex.page.md`).
-A base client gets the page in its cache pages tree
-(`~/.cache/tldr/pages/common/adacovex.md`, plus the platform directory).
+writes to that client's own page location. tealdeer gets the page in the
+custom pages directory that `tldr --show-paths` reports, for example
+`~/.local/share/tealdeer/pages/adacovex.page.md` on Linux. A base client gets
+the page in its cache pages tree (for example
+`~/.cache/tldr/pages/common/adacovex.md`), plus the host platform directory
+(`linux`, `osx`, `windows`, `android`, `sunos`, or a BSD name). The path
+follows the platform rules in
+[Platforms -- local tldr page](platforms.md#local-tldr-page).
 
 `adacovex tldr --check` exits 0 when the installed page matches the bundled
 one, and 1 when it is missing or stale. A shell prompt hook can auto-update.
 `adacovex tldr --force` rewrites an up-to-date page.
 
 The page contains no version, so the check compares content, and an install
-after an upgrade always refreshes it. With no supported client, the command
-prints the page to stdout.
+after an upgrade always refreshes it. With no supported client, the command prints the page to stdout. `adacovex
+tldr --check` then exits 1 because there is no installed page.

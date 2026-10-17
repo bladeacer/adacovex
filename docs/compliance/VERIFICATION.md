@@ -5,8 +5,8 @@
 | Metric | Value |
 |--------|-------|
 | Packages Scanned |  45 |
-| Total Subprograms |  238 |
-| Documented Subprograms |  238 |
+| Total Subprograms |  251 |
+| Documented Subprograms |  251 |
 | Docstring Coverage |  100% |
 
 ## SPARK Proof Analysis
@@ -14,13 +14,13 @@
 | Check Type | Count | Proved |
 |------------|-------|--------|
 | SPARK Level | Platinum | - |
-| Flow (data + flow dependencies) |  74 |  74 |
+| Flow (data + flow dependencies) |  77 |  77 |
 | Initialization |  17 |  17 |
 | Runtime Checks |  599 |  599 |
 | Assertions |  133 |  133 |
 | Functional Contracts |  97 |  97 |
-| Termination |  128 |  128 |
-| **Total** |  1048 |  1048 |
+| Termination |  131 |  131 |
+| **Total** |  1054 |  1054 |
 | Units Analyzed |  75 | - |
 | Units Skipped |  0 | - |
 
@@ -39,8 +39,8 @@
 | SBOM generator |  366 | PASS |
 | Result cache |  36 | PASS |
 | IR synthesis |  42 | PASS |
-| Man page renderer |  18 | PASS |
-| VCS support |  29 | PASS |
+| Man page renderer |  30 | PASS |
+| VCS support |  37 | PASS |
 | Server routing |  180 | PASS |
 | Proof patches |  35 | PASS |
 | Timezone + ANSI |  63 | PASS |
@@ -56,8 +56,8 @@
 | Completion scripts |  24 | PASS |
 | Platform paths |  43 | PASS |
 | Install method |  23 | PASS |
-| tldr installer |  42 | PASS |
-| **Total** | ** 1991** | **Passed:  1991, Failed:  0** |
+| tldr installer |  48 | PASS |
+| **Total** | ** 2017** | **Passed:  2017, Failed:  0** |
 
 ## DO-178C Compliance
 

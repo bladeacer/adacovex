@@ -95,10 +95,12 @@ pipeline and snapshot a base revision via `Adacovex.VCS` (git `worktree add`,
 hg `archive`, svn `export`, fossil `open` on a copied DB, or a git worktree
 against the jj store), assess base and current tree, report the delta, and
 exit. `man` installs the generated man page (`Adacovex.Renderers.Man`) into
-the local man database (`~/.local/share/man`, Linux/WSL) and refreshes it with
-`mandb`. `tldr` installs the bundled tldr page (`Adacovex.Renderers.Tldr`,
-from `docs/tldr/adacovex.md`) into the detected local client, either as a
-tealdeer custom page or as a page in a base client's cache pages tree.
+the man root the host reader searches (the first home-owned `$MANPATH` entry,
+otherwise the platform data root) and refreshes it with `mandb` or
+`makewhatis`. `tldr` installs the bundled tldr page
+(`Adacovex.Renderers.Tldr`, from `docs/tldr/adacovex.md`) into the detected
+local client, either as a tealdeer custom page or as a page in a base
+client's cache pages tree.
 
 ## Swapping the GNAT compiler (LLVM backend)
 

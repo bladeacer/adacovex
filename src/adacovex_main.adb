@@ -541,9 +541,11 @@ begin
    end if;
 
    -- Man mode: install the man page into the local man database (default
-   -- ~/.local/share/man on Linux/WSL, or --dir=PATH) and refresh it with
-   -- mandb. --check exits 0 when the installed page matches this binary's
-   -- version, 1 when a newer version is available or none is installed.
+   -- root: the first home-owned $MANPATH entry, otherwise the platform data
+   -- home plus /man; --dir=PATH overrides) and refresh it with mandb or
+   -- makewhatis. --check exits 0 when the installed page matches this
+   -- binary's version, 1 when a newer version is available or none is
+   -- installed.
    -- --force always (re)writes the page even when the installed one already
    -- matches this binary (e.g. to repair a hand-edited page).
    if Cfg.Man_Mode then
@@ -599,8 +601,10 @@ begin
             Adacovex.Renderers.Man.Install (Man_Root, Adacovex.Version, OK);
             if OK then
                declare
+                  use type Adacovex.Renderers.Man.Database_Tool;
+                  Tool         : Adacovex.Renderers.Man.Database_Tool;
                   DB_Refreshed : constant Boolean :=
-                    Adacovex.Renderers.Man.Update_Database (Man_Root);
+                    Adacovex.Renderers.Man.Update_Database (Man_Root, Tool);
                begin
                   Ada.Text_IO.Put_Line
                     ("man page installed: adacovex v"
@@ -610,12 +614,15 @@ begin
                      & "/man1/adacovex.1");
                   if DB_Refreshed then
                      Ada.Text_IO.Put_Line
-                       ("man database refreshed with mandb");
+                       ("man database refreshed with "
+                        & (if Tool = Adacovex.Renderers.Man.Makewhatis
+                           then "makewhatis"
+                           else "mandb"));
                   else
                      Ada.Text_IO.Put_Line
                        (Ada.Text_IO.Standard_Error,
-                        "Warning: mandb (man-db) not found on PATH or "
-                        & "failed -- man database not refreshed");
+                        "Warning: neither mandb (man-db) nor makewhatis "
+                        & "(mandoc) could refresh the database");
                      Ada.Text_IO.Put_Line
                        (Ada.Text_IO.Standard_Error,
                         "         the page is still installed; read it with "
@@ -623,9 +630,26 @@ begin
                         & Man_Root
                         & "/man1/adacovex.1`");
                   end if;
-                  Ada.Text_IO.Put_Line
-                    ("run 'man adacovex' to read it; `adacovex man --check` "
-                     & "detects newer versions");
+                  --  A user-level root is only readable with `man adacovex`
+                  --  when the reader searches it. Say so when it does not,
+                  --  instead of promising a command that cannot work.
+                  if Adacovex.Renderers.Man.Root_On_Manpath (Man_Root) then
+                     Ada.Text_IO.Put_Line
+                       ("run 'man adacovex' to read it; `adacovex man "
+                        & "--check` detects newer versions");
+                  else
+                     Ada.Text_IO.Put_Line
+                       (Ada.Text_IO.Standard_Error,
+                        "Warning: " & Man_Root & " is not on the man path");
+                     Ada.Text_IO.Put_Line
+                       (Ada.Text_IO.Standard_Error,
+                        "         add it to MANPATH, or read the page with "
+                        & "`man -l "
+                        & Man_Root
+                        & "/man1/adacovex.1`");
+                     Ada.Text_IO.Put_Line
+                       ("`adacovex man --check` detects newer versions");
+                  end if;
                   Ada.Command_Line.Set_Exit_Status (0);
                end;
             else

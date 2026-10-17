@@ -16,6 +16,17 @@ type Platform_Kind is (Platform_Linux, Platform_MacOS, Platform_Windows);
 
 ## Functions
 
+### function Cache_Base (P : Adacovex.Paths.Platform_Kind; Home : Standard.String; Xdg_Cache : Standard.String; Local_App_Data : Standard.String) return Standard.String `[Global]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `Home` | User home directory. |
+| `Local_App_Data` | %LOCALAPPDATA% ("" when unset). |
+| `P` | Platform family. |
+| `Xdg_Cache` | $XDG_CACHE_HOME ("" when unset). |
+
+**Returns:** The cache base directory.
+
 ### function Cache_Directory (P : Adacovex.Paths.Platform_Kind; Home : Standard.String; Xdg_Cache : Standard.String; Local_App_Data : Standard.String) return Standard.String `[Global]`
 
 | Parameter | Description |
@@ -26,6 +37,10 @@ type Platform_Kind is (Platform_Linux, Platform_MacOS, Platform_Windows);
 | `Xdg_Cache` | $XDG_CACHE_HOME ("" when unset). |
 
 **Returns:** The cache directory.
+
+### function Cache_Home return Standard.String
+
+**Returns:** The host's cache base directory.
 
 ### function Cache_Root return Standard.String
 
@@ -46,6 +61,18 @@ type Platform_Kind is (Platform_Linux, Platform_MacOS, Platform_Windows);
 
 **Returns:** The configuration directory in use.
 
+### function Data_Base (P : Adacovex.Paths.Platform_Kind; Home : Standard.String; Xdg_Data : Standard.String; App_Data : Standard.String; Local_App_Data : Standard.String) return Standard.String `[Global]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `App_Data` | %APPDATA% ("" when unset). |
+| `Home` | User home directory. |
+| `Local_App_Data` | %LOCALAPPDATA% ("" when unset). |
+| `P` | Platform family. |
+| `Xdg_Data` | $XDG_DATA_HOME ("" when unset). |
+
+**Returns:** The data base directory.
+
 ### function Data_Directory (P : Adacovex.Paths.Platform_Kind; Home : Standard.String; Xdg_Data : Standard.String; Local_App_Data : Standard.String) return Standard.String `[Global]`
 
 | Parameter | Description |
@@ -56,6 +83,10 @@ type Platform_Kind is (Platform_Linux, Platform_MacOS, Platform_Windows);
 | `Xdg_Data` | $XDG_DATA_HOME ("" when unset). |
 
 **Returns:** The data directory.
+
+### function Data_Home return Standard.String
+
+**Returns:** The host's data base directory.
 
 ### function Data_Root return Standard.String
 

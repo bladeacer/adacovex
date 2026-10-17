@@ -57,11 +57,14 @@ POSIX path model with Linux, and `Adacovex.Paths` already answers its
 `~/Library` directory convention, so the source builds there unchanged.
 
 The **differential modes** (`--compare-base` / `--coverage-delta`) snapshot a
-base revision through the VCS command itself and need a POSIX shell (`sh`) to
-run their snapshot command. They therefore work on Linux, the BSDs, WSL, and
-macOS, and on Windows only from a shell that provides one (WSL, or Git Bash).
-The `man` subcommand installs into a local man database and is Linux/WSL only.
-Every other feature works on every platform above.
+base revision through the VCS command itself. They run through the host shell:
+`sh -c` on Linux, the BSDs, macOS, and WSL, and `cmd /c` on native Windows.
+A Windows host therefore needs no WSL, Cygwin, MSYS2, or Git Bash for them.
+
+The `man` and `tldr` subcommands follow the readers and clients that the host
+runs; see [Local man page](#local-man-page) and
+[Local tldr page](#local-tldr-page). Every other feature works on every
+platform above.
 
 ## Platform-agnostic design
 
@@ -121,8 +124,8 @@ an assessment and without downloading anything:
 - **CI**: whether the `CI` variable or one of the known CI markers is
   set;
 - **VCS**: the detected source-control tools for the differential
-  modes (`git`, `hg`, `svn`, `fossil`, `jj`) plus `mandb` for the man
-  page installer.
+  modes (`git`, `hg`, `svn`, `fossil`, `jj`) plus both man indexers
+  (`mandb`, `makewhatis`) for the man page installer.
 
 `status` never changes the working tree and never writes files, so it
 is safe to run from a CI job or a packaging script before any
@@ -167,10 +170,72 @@ The `install.sh` script and the GitHub Releases bundle ship a prebuilt
 builds from source. Each archive is attested with `actions/attest`, so the
 provenance of a downloaded binary is verifiable.
 
-## Local man page (Linux/WSL)
+## Local man page
 
-`adacovex man` installs the man page into `$XDG_DATA_HOME/man` (default
-`~/.local/share/man`), or into `--dir=PATH` when that flag is given. It
-refreshes the `mandb` database when man-db is present and prints a warning
-when it is not. Read the page with `man -l ~/.local/share/man/man1/adacovex.1`
-when `mandb` is missing. The installer is Linux/WSL only.
+`adacovex man` installs the man page into a man root that the host reader
+searches, so `man adacovex` works without root. It does not depend on a
+particular platform. It uses the reader that the host runs:
+
+| Host | Man reader | Install root | Database refresh |
+|------|-----------|--------------|------------------|
+| Linux, WSL | man-db ([man-db](https://man-db.gitlab.io/man-db/)) | `$XDG_DATA_HOME/man` or `~/.local/share/man` | `mandb` |
+| macOS | mandoc ([mandoc](https://mandoc.bsd.lv/)) | `~/Library/Application Support/man` | `mandb` when installed, otherwise `makewhatis` |
+| FreeBSD, OpenBSD, NetBSD | mandoc | `$XDG_DATA_HOME/man` or `~/.local/share/man` | `mandb` when installed, otherwise `makewhatis` |
+| Cygwin, MSYS2, Git Bash | the reader in that environment | the same environment's `$XDG_DATA_HOME/man` | `mandb` or `makewhatis` from that environment |
+
+Native Windows has no man reader. Use WSL, Cygwin, MSYS2, or Git Bash to read
+the installed page. The installer still runs on native Windows and writes the
+page under `%APPDATA%\man`, but nothing reads it there.
+
+The root selection follows the reader, not a fixed path:
+
+1. The first home-owned entry in `$MANPATH`, when the user sets one. This is
+the best choice because the reader already searches it.
+2. Otherwise the platform data home plus `man` (the table above).
+3. `--dir=PATH` overrides both.
+
+After the install, `adacovex man` checks the root against `$MANPATH`, or runs
+`manpath` when the variable is unset. When the root is not searched, the
+command prints a warning and the exact `man -l` command to read the page.
+
+It refreshes the index with `mandb` (man-db), then with `makewhatis` (mandoc)
+when `mandb` is absent or fails. It prints which tool ran. When neither is
+available, the page is still installed, the command prints a warning, and you
+read it with `man -l`. `adacovex status` reports both indexers up front.
+
+```sh
+adacovex man                                  # install and refresh
+adacovex man --dir="$HOME/.local/share/man"   # choose the root
+man -l "$HOME/.local/share/man/man1/adacovex.1"
+```
+
+## Local tldr page
+
+`adacovex tldr` installs the bundled page into the local tldr client. Both
+client families publish their own platform list, and the installer follows the
+client it detects:
+
+| Client | Platforms (upstream) | Page location |
+|--------|---------------------|---------------|
+| tealdeer | Linux, macOS, Windows, FreeBSD, NetBSD | the custom pages directory from `tldr --show-paths` |
+| base clients (C, Node, Python, tlrc) | Linux, macOS, Windows, Android, SunOS, FreeBSD, NetBSD, OpenBSD | the cache pages tree, under `common` and the host platform |
+
+Upstream references: [tealdeer custom pages](https://docs.tealdeer.org/stable/usage_custom_pages.html)
+and the [tldr client specification](https://github.com/tldr-pages/tldr/blob/main/CLIENT-SPECIFICATION.md).
+The program reads the page directory from the client itself, so a non-standard
+configured directory works too. Without a client it prints the page, so the
+command always answers.
+
+| Host (from `uname -s`) | Base-client platform directory |
+|------------------------|-------------------------------|
+| Linux | `linux` |
+| Android (Termux) | `linux`, because Termux reports `Linux` |
+| macOS (`Darwin`) | `osx` |
+| FreeBSD, NetBSD, OpenBSD | `freebsd`, `netbsd`, `openbsd` |
+| Solaris (`SunOS`) | `sunos` |
+| Windows (native, Git Bash, Cygwin, MSYS2) | `windows` |
+
+The installer writes the page to `common` and to the host platform directory,
+so the two copies never disagree. A platform page shadows a stale common page,
+and a common page covers an unknown platform. The Android pages are shared with
+Linux in the tldr-pages repository, so `linux` is correct for Termux.

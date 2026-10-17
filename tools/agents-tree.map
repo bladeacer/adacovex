@@ -38,7 +38,7 @@ src/renderers/adacovex-renderers-ansi	Terminal ANSI report (NO_COLOR aware)
 src/renderers/adacovex-renderers-markdown	VERIFICATION.md + TRACE.md
 src/renderers/adacovex-renderers-svg	SVG badges (spark/tests/do178c/docs)
 src/renderers/adacovex-renderers-html	Web dashboard + JSON API
-src/renderers/adacovex-renderers-man	Man-page renderer + installer (local man db, Linux/WSL)
+src/renderers/adacovex-renderers-man	Man-page renderer + installer (local man db; man-db or mandoc indexer)
 src/renderers/adacovex-renderers-tldr	tldr page installer (client detection, tealdeer custom pages / base cache pages)
 src/renderers/adacovex-renderers-sbom	CycloneDX 1.5 / SPDX 2.3 / Markdown SBOM generator
 src/server/adacovex-server	Parent package for the HTTP server subsystem
@@ -50,8 +50,8 @@ src/tests/adacovex_types_tests	Type conversion tests (67)
 src/tests/adacovex_scanner_tests	Source scanner tests (89)
 src/tests/adacovex_cache_tests	Result-cache tests (36)
 src/tests/adacovex_ir_tests	IR synthesis tests (42)
-src/tests/adacovex_man_tests	Man page renderer tests (18)
-src/tests/adacovex_vcs_tests	VCS support tests (29)
+src/tests/adacovex_man_tests	Man page renderer tests (30)
+src/tests/adacovex_vcs_tests	VCS support tests (37)
 src/tests/adacovex_server_tests	Server routing tests (180)
 src/tests/adacovex_prove_patch_tests	Proof patch merge tests (35)
 src/tests/adacovex_prove_tests	GNATprove parser tests (72)
@@ -69,12 +69,12 @@ src/tests/adacovex_cpus_tests	Host CPU and job-resolution tests (24)
 src/tests/adacovex_do178c_tests	HLR/LLR parsing and line-reader tests (33)
 src/tests/adacovex_completion_tests	Shell completion script tests (24)
 src/tests/adacovex_paths_tests	Platform-agnostic path helper tests (43)
-src/tests/adacovex_tldr_tests	tldr installer tests (42)
+src/tests/adacovex_tldr_tests	tldr installer tests (48)
 src/tests/adacovex_install_tests	Installation-method tests (23)
 src/tests/adacovex_renderer_svg_tests	SVG renderer tests (161)
 src/tests/adacovex_renderer_tests	HTML/Markdown renderer tests (58)
 src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (366)
-src/tests/test_runner	Test suite entry point (1991 tests)
+src/tests/test_runner	Test suite entry point (2017 tests)
 src/parsers/adacovex-parsers-manifest-req_entry	Parse the first requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-collect_req_entries	Collect every requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-register_root_python_deps	Register root requirements*.txt entries as dev-scope pypi components

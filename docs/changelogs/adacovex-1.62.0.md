@@ -116,7 +116,9 @@ The installer is client agnostic. tealdeer is detected from `tldr
 lives outside the cache, so `tldr --update` cannot remove it. A client that
 follows CLIENT-SPECIFICATION is detected from `tldr --version`, and the page
 goes into its cache pages tree, in both the common and the platform
-directory. The Node client's own cache tree is used when it exists.
+directory. The platform directory is the tldr-pages name for the host:
+`linux`, `osx`, `windows`, `android`, `sunos`, or a BSD name. The Node
+client's own cache tree is used when it exists.
 
 The write is byte exact: it uses a stream, because Ada.Text_IO completes the
 last line at close and would add a byte to the page. `adacovex tldr --check`
@@ -124,6 +126,43 @@ exits 0 when the installed page matches the bundled one, and 1 when it is
 missing or stale, so a prompt hook can refresh it after `tldr --update`.
 `--force` always rewrites the page. With no supported client the command
 prints the page to stdout, so it never answers nothing.
+
+### C8: The man page installer follows the host reader
+
+`adacovex man` no longer assumes man-db. It installs into the first
+home-owned `$MANPATH` entry, so a root the reader already searches wins,
+otherwise into the platform data root: `$XDG_DATA_HOME/man` on Linux and
+the BSDs, `~/Library/Application Support/man` on macOS, and `%APPDATA%\man`
+on Windows. `--dir=PATH` still overrides both.
+
+The index refresh tries `mandb` (man-db) and falls back to `makewhatis`
+(mandoc), so the command reports the tool that ran instead of claiming the
+database could not be refreshed on a BSD or macOS host. The command also
+checks the chosen root against `$MANPATH` (or `manpath` when the variable
+is unset) and warns with an exact `man -l` command when the reader does not
+search it. `adacovex status` reports both indexers.
+
+The platform matrix, the root selection, and the upstream reader links are
+in [Platforms -- local man page](../usage/platforms.md#local-man-page).
+
+### C9: The differential modes run on native Windows
+
+The differential modes (`--compare-base` / `--coverage-delta`) drove every
+snapshot command through `sh -c`, so a native Windows host needed WSL,
+Cygwin, MSYS2, or Git Bash before a base revision could be compared. That
+contradicted the platform matrix, which lists Windows as a first-class
+platform.
+
+`Adacovex.VCS` now builds its command lines for the shell the host actually
+runs: `sh -c` on POSIX hosts and `cmd /c` on Windows. The path quoting, the
+change-directory prefix (`cd /d` on Windows, so a drive change works), and
+the discard device (`NUL` versus `/dev/null`) all follow one
+`Shell_Family` parameter, so both shapes are pinned by tests on every host.
+The one POSIX-only step is gone: the fossil snapshot copies its repository
+database in Ada instead of shelling out to `mkdir` and `cp`, and the Windows
+directory removal uses `rmdir /s /q` instead of `rm -rf`.
+
+A Windows host now needs no POSIX layer for any part of adacovex.
 
 ## Fixes
 
@@ -143,7 +182,7 @@ graph.
 
 ## Test Suite
 
-1991 tests across 29 categories, up from 1864. Forty earlier checks in
+2017 tests across 30 categories, up from 1864. Forty earlier checks in
 this release cover the structural readers, the package-root rule, and the
 root npm and Go declarations. Fifteen more pin adacovex as a
 dependency in both directions, and the new `Install method` category
@@ -153,10 +192,16 @@ two new routes and their near misses, the `Route_Path` round trip over
 every route kind, the protected counter store, and the `/api/info`
 payload.
 
-The new `tldr installer` category holds 42 checks: client classification,
+The new `tldr installer` category holds 48 checks: client classification,
 the `--show-paths` parse with its annotation, the per-client path rules, the
-`uname` mapping, and the install and read-back round trip in a temporary
-tree. `just test` runs the native suite, and `just cli-e2e` runs 87
+`uname` mapping for Linux, macOS, the BSDs, Android, SunOS, and the Windows
+shells, and the install and read-back round trip in a temporary tree. The
+`Man page renderer` category grows to 30 checks: the man path split and the
+home-owned entry rule, the default root, and the indexer contract. The
+`VCS support` category grows to 37 checks: both shell families pin their
+quoting, their change-directory prefix, and their discard device, so the
+Windows command shape is asserted on a POSIX host and the POSIX shape on a
+Windows host. `just test` runs the native suite, and `just cli-e2e` runs 87
 end-to-end checks, including two new component-set shapes (a pnpm workspace
 and a Go module), three checks against the live `/health` and `/api/info`
 endpoints, and seven that install the page into a fake tealdeer client and a
@@ -165,13 +210,17 @@ fake base client and compare it byte for byte. `just tools-check` runs the
 
 ## Proof Results
 
-**Platinum**, 0 unproved, 0 justified, **1048 of 1048 VCs across 72
+**Platinum**, 0 unproved, 0 justified, **1054 of 1054 VCs across 75
 analysed units** under gnatprove 16.1.0 at `--level=4`. The count grows
-by 26 checks and two units: the new `Adacovex.Install` classifier is
-proved, from its machine token over the prefix rules and the scope rule
-to the index arithmetic behind them, and C6's two route branches and
-its `Route_Path` mapping add two checks to the proved `Route` surface.
-No existing unit lost a check.
+by six checks and three units over the shipped 1048: the new
+`Adacovex.Install` classifier is proved, from its machine token over the
+prefix rules and the scope rule to the index arithmetic behind them, C6's
+two route branches and its `Route_Path` mapping add two checks to the
+proved `Route` surface, and C9's three host-platform shell helpers
+(`Is_Windows` plus the command, flag, and discard-device answers) each
+carry their `GNAT.OS_Lib.Directory_Separator` input in a Global aspect,
+which SPARK RM 6.1.4(15) requires of a deferred constant. No existing
+unit lost a check.
 
 The parser bodies this release adds sit
 in the manifest package's default-off body, which contributes no

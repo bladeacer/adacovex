@@ -1,5 +1,4 @@
 with Ada.Directories;
-with Ada.Environment_Variables;
 with Ada.Streams;
 with Ada.Streams.Stream_IO;
 with Ada.Strings;
@@ -7,11 +6,13 @@ with Ada.Strings.Fixed;
 with Ada.Text_IO;
 with GNAT.OS_Lib;
 with Adacovex.CPUs;
+with Adacovex.Paths;
 with Adacovex.Tldr_Template;
 
 package body Adacovex.Renderers.Tldr is
 
    use Ada.Strings.Fixed;
+   use type Adacovex.Paths.Platform_Kind;
 
    --  Longest captured client output the detection reads. `tldr
    --  --show-paths` prints five short lines, so this is generous.
@@ -259,71 +260,31 @@ package body Adacovex.Renderers.Tldr is
       return Value_After_Key (Show_Paths_Output, "Custom pages dir:");
    end Custom_Pages_Dir;
 
-   function Data_Home return String is
-   begin
-      if Ada.Environment_Variables.Exists ("XDG_DATA_HOME") then
-         declare
-            X : constant String :=
-              Ada.Environment_Variables.Value ("XDG_DATA_HOME");
-         begin
-            if X'Length > 0 then
-               return Strip_Trailing_Slash (X);
-            end if;
-         end;
-      end if;
-      if Ada.Environment_Variables.Exists ("HOME") then
-         declare
-            H : constant String := Ada.Environment_Variables.Value ("HOME");
-         begin
-            if H'Length > 0 then
-               return Strip_Trailing_Slash (H) & "/.local/share";
-            end if;
-         end;
-      end if;
-      return Adacovex.CPUs.Get_Temp_Directory & "/adacovex-tldr-data";
-   end Data_Home;
-
-   function Cache_Home return String is
-   begin
-      if Ada.Environment_Variables.Exists ("XDG_CACHE_HOME") then
-         declare
-            X : constant String :=
-              Ada.Environment_Variables.Value ("XDG_CACHE_HOME");
-         begin
-            if X'Length > 0 then
-               return Strip_Trailing_Slash (X);
-            end if;
-         end;
-      end if;
-      if Ada.Environment_Variables.Exists ("HOME") then
-         declare
-            H : constant String := Ada.Environment_Variables.Value ("HOME");
-         begin
-            if H'Length > 0 then
-               return Strip_Trailing_Slash (H) & "/.cache";
-            end if;
-         end;
-      end if;
-      return Adacovex.CPUs.Get_Temp_Directory & "/adacovex-tldr-cache";
-   end Cache_Home;
-
    function Default_Pages_Dir
-     (Kind : Client_Kind; Data_Home : String; Cache_Home : String)
-      return String
+     (Kind       : Client_Kind;
+      Home       : String;
+      Data_Home  : String;
+      Cache_Home : String) return String
    is
-      Cache      : constant String := Strip_Trailing_Slash (Cache_Home);
-      Cache_Root : constant String :=
-        (if Ada.Directories.Exists (Cache & "/tldr-node-client/pages")
-           and then not Ada.Directories.Exists (Cache & "/tldr/pages")
-         then Cache & "/tldr-node-client"
-         else Cache & "/tldr");
+      Cache     : constant String := Strip_Trailing_Slash (Cache_Home);
+      Home_Dir  : constant String := Strip_Trailing_Slash (Home);
+      --  The cache root the installed base client most likely uses. The
+      --  specification and the Python and Rust clients keep `pages/` in
+      --  the platform cache directory; the Node client keeps it in
+      --  ~/.tldr. An existing tree wins, and the specification location is
+      --  the default when neither exists yet.
+      Base_Root : constant String :=
+        (if Ada.Directories.Exists (Cache & "/tldr/pages")
+           or else not Ada.Directories.Exists (Home_Dir & "/.tldr/pages")
+         then Cache & "/tldr"
+         else Home_Dir & "/.tldr");
    begin
       case Kind is
          when Tealdeer    =>
             return Strip_Trailing_Slash (Data_Home) & "/tealdeer/pages";
 
          when Base_Client =>
-            return Cache_Root & "/pages";
+            return Base_Root & "/pages";
 
          when others      =>
             return "";
@@ -390,10 +351,15 @@ package body Adacovex.Renderers.Tldr is
       Buf : String (1 .. Max_Capture) := (others => ' ');
       Len : Natural := 0;
       Ok  : Boolean := False;
-      Exe : GNAT.OS_Lib.String_Access :=
-        GNAT.OS_Lib.Locate_Exec_On_Path ("uname");
+      Exe : GNAT.OS_Lib.String_Access := Locate_Exec_On_Path ("uname");
    begin
       if Exe = null then
+         --  Windows has no uname. The runtime's separator is the one
+         --  compile-time fact that identifies the host.
+         if Adacovex.Paths.Detect_Platform = Adacovex.Paths.Platform_Windows
+         then
+            return "windows";
+         end if;
          return "";
       end if;
       Run_Capture (Exe.all, "-s", Buf, Len, Ok);
@@ -460,10 +426,20 @@ package body Adacovex.Renderers.Tldr is
       Kind := Classify (Buf (1 .. Len));
       case Kind is
          when Tealdeer    =>
-            Set_Dir (Default_Pages_Dir (Tealdeer, Data_Home, Cache_Home));
+            Set_Dir
+              (Default_Pages_Dir
+                 (Tealdeer,
+                  Adacovex.Paths.Home_Directory,
+                  Adacovex.Paths.Data_Home,
+                  Adacovex.Paths.Cache_Home));
 
          when Base_Client =>
-            Set_Dir (Default_Pages_Dir (Base_Client, Data_Home, Cache_Home));
+            Set_Dir
+              (Default_Pages_Dir
+                 (Base_Client,
+                  Adacovex.Paths.Home_Directory,
+                  Adacovex.Paths.Data_Home,
+                  Adacovex.Paths.Cache_Home));
 
          when others      =>
             null;

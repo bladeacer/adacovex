@@ -38,6 +38,7 @@ table; a folder name is never a scope on its own.
 | `docs` | `docs/`, `README.md`, `CONTRIBUTING.md`, `AGENTS.md`, and the changelogs. |
 | `ci` | `.github/workflows/` and `action.yml`. |
 | `build` | The `justfile`, the `Makefile`, `install.sh`, and the Alire manifests. |
+| `tldr` | The bundled tldr page (`docs/tldr/adacovex.md`) and its installer. The page format, client detection, the platform directory, and the structure gate. |
 | `release` | `tools/release.py`, `alire/releases/`, and `index/`. |
 
 ## The rules for a scope

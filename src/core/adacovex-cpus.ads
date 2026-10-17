@@ -6,6 +6,8 @@
 --  free for system responsiveness. Inside CI it uses every core.
 --  HLR-CPU: Cross-platform CPU core detection
 
+with GNAT.OS_Lib;
+
 package Adacovex.CPUs is
 
    --  Number of logical processors on the host, or 1 when it cannot be
@@ -49,10 +51,33 @@ package Adacovex.CPUs is
    function Get_Temp_Directory return String
    with SPARK_Mode => On, Global => null;
 
-   --  Default shell executable for spawned commands. It is a pure function.
-   --  It returns the constant "sh". It is SPARK_Mode On with no global state.
+   --  Default shell executable for spawned commands. It is a pure function
+   --  of the host platform: "cmd" on Windows and "sh" elsewhere. Windows
+   --  ships no POSIX shell, so a command line must run through cmd.exe
+   --  there; every shell-adapted caller pairs it with Get_Shell_Option.
    function Get_Shell_Command return String
-   with SPARK_Mode => On, Global => null;
+   with SPARK_Mode => On, Global => (Input => GNAT.OS_Lib.Directory_Separator);
+
+   --  The flag that passes a command line to that shell: "-c" for sh and
+   --  "/c" for cmd.exe. It is a pure function of the host platform.
+   function Get_Shell_Option return String
+   with SPARK_Mode => On, Global => (Input => GNAT.OS_Lib.Directory_Separator);
+
+   --  Where a shell sends discarded output: "/dev/null" on POSIX hosts and
+   --  "NUL" on Windows. It is a pure function of the host platform.
+   function Get_Null_Device return String
+   with SPARK_Mode => On, Global => (Input => GNAT.OS_Lib.Directory_Separator);
+
+   --  Whether the host is Windows. The path separator is the one
+   --  compile-time fact that identifies the platform, so no environment
+   --  read is needed and the answer cannot disagree with Executable_Suffix.
+   --  GNAT.OS_Lib carries no Global contracts (the runtime is not analysed
+   --  by gnatprove), so the same scoped warning pragma the env-var readers
+   --  use covers this constant read. The pragma only silences the missing
+   --  contract notice: the constant is a value, not a write, so the flow
+   --  analysis has no data dependency to prove.
+   function Is_Windows return Boolean
+   with SPARK_Mode => On, Global => (Input => GNAT.OS_Lib.Directory_Separator);
 
    --  The auto default. In CI it uses all cores. Otherwise it uses
    --  max(1, cores - 2) so the developer machine stays responsive. Pass the

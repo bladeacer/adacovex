@@ -4,6 +4,7 @@ with Ada.Strings.Fixed;
 with Ada.Text_IO;
 with Adacovex.Config;
 with Adacovex.CPUs;
+with Adacovex.Paths;
 with GNAT.OS_Lib;
 
 package body Adacovex.Renderers.Man is
@@ -361,15 +362,17 @@ package body Adacovex.Renderers.Man is
          "status",
          "Report toolchain + platform state without running an "
          & "assessment, including which VCS tools (git, mercurial, "
-         & "subversion, fossil, jj, mandb) are available on PATH for the "
-         & "differential modes and the VCS managing the target "
-         & "repository.");
+         & "subversion, fossil, jj, mandb, makewhatis) are available on "
+         & "PATH for the differential modes and the VCS managing the "
+         & "target repository.");
       App_Option
         (Buf,
          Len,
          "man",
-         "Install this man page into the local man database (default "
-         & "~/.local/share/man, Linux/WSL) and refresh it with mandb.  "
+         "Install this man page into the local man database and refresh "
+         & "it with mandb, or makewhatis where man-db is absent.  The "
+         & "default root is the first home-owned $MANPATH entry, otherwise "
+         & "the platform data home plus /man.  "
          & "--check exits 0 when the installed page matches this binary's "
          & "version, 1 when a newer version is available or none is "
          & "installed.  --dir=PATH installs under PATH/man1 instead.  "
@@ -424,13 +427,38 @@ package body Adacovex.Renderers.Man is
       App (Buf, Len, ".TP");
       App (Buf, Len, ".B ADACOVEX_VERSION");
       App (Buf, Len, "Release-build version override (tools/gen-version.py).");
+      App (Buf, Len, ".TP");
+      App (Buf, Len, ".B MANPATH");
+      App
+        (Buf,
+         Len,
+         "Man path the installer prefers and checks.  When unset, the "
+         & "manpath command reports it.");
       App (Buf, Len, ".SH FILES");
       App (Buf, Len, ".TP");
-      App (Buf, Len, ".I ~/.local/share/man/man1/adacovex.1");
-      App (Buf, Len, "Installed man page (Linux/WSL default man root).");
+      App (Buf, Len, ".I <man root>/man1/adacovex.1");
+      App
+        (Buf,
+         Len,
+         "Installed man page.  The root is the first home-owned "
+         & "$MANPATH entry, otherwise $XDG_DATA_HOME/man or "
+         & "~/.local/share/man (Linux, BSD), "
+         & "~/Library/Application Support/man (macOS), or "
+         & "%APPDATA%\\man (Windows).");
       App (Buf, Len, ".TP");
-      App (Buf, Len, ".I ~/.local/share/tealdeer/pages/adacovex.page.md");
-      App (Buf, Len, "Installed tldr page (tealdeer custom pages).");
+      App (Buf, Len, ".I <tealdeer data>/tealdeer/pages/adacovex.page.md");
+      App
+        (Buf,
+         Len,
+         "Installed tldr page for tealdeer (Linux, macOS, Windows, "
+         & "BSD; see tealdeer documentation for the data directory).");
+      App (Buf, Len, ".TP");
+      App (Buf, Len, ".I <client cache>/tldr/pages/<platform>/adacovex.md");
+      App
+        (Buf,
+         Len,
+         "Installed tldr page for a base client, in the common and "
+         & "host platform trees.");
       App (Buf, Len, ".TP");
       App (Buf, Len, ".I ~/.cache/adacovex");
       App
@@ -447,22 +475,205 @@ package body Adacovex.Renderers.Man is
       return Buf (1 .. Len);
    end Render_Page;
 
-   function Default_Dir return String is
+   --  Whether S starts with Prefix (an empty prefix never matches, so the
+   --  caller's "no match" result is unambiguous).
+   function Starts_With (S : String; Prefix : String) return Boolean is
    begin
-      if Ada.Environment_Variables.Exists ("XDG_DATA_HOME") then
+      return
+        Prefix'Length > 0
+        and then S'Length >= Prefix'Length
+        and then S (S'First .. S'First + Prefix'Length - 1) = Prefix;
+   end Starts_With;
+
+   --  Whether C ends one entry of a man path list: the host path separator
+   --  (`:` on POSIX, `;` on Windows), a newline, or a carriage return.
+   function Is_Entry_Sep (C : Character) return Boolean is
+   begin
+      return
+        C = GNAT.OS_Lib.Path_Separator
+        or else C = ASCII.LF
+        or else C = ASCII.CR;
+   end Is_Entry_Sep;
+
+   --  Whether C separates the components of one entry. Both separators
+   --  count, because a Cygwin or MSYS2 `manpath` prints `/usr/...` on
+   --  Windows and $HOME can still carry a backslash.
+   function Is_Dir_Sep (C : Character) return Boolean is
+   begin
+      return C = '/' or else C = '\';
+   end Is_Dir_Sep;
+
+   --  The entry of S that starts at First (no trailing separator).
+   function Entry_At (S : String; First : Natural) return String is
+      Last : Natural := First;
+   begin
+      while Last <= S'Last and then not Is_Entry_Sep (S (Last)) loop
+         Last := Last + 1;
+      end loop;
+      return Strip_Trailing_Slash (S (First .. Last - 1));
+   end Entry_At;
+
+   function Manpath_Contains
+     (Manpath_Text : String; Man_Root : String) return Boolean
+   is
+      Root : constant String := Strip_Trailing_Slash (Man_Root);
+      I    : Natural := Manpath_Text'First;
+   begin
+      if Root'Length = 0 then
+         return False;
+      end if;
+      while I <= Manpath_Text'Last loop
+         while I <= Manpath_Text'Last and then Is_Entry_Sep (Manpath_Text (I))
+         loop
+            I := I + 1;
+         end loop;
+         exit when I > Manpath_Text'Last;
          declare
-            X : constant String :=
-              Ada.Environment_Variables.Value ("XDG_DATA_HOME");
+            Man_Entry : constant String := Entry_At (Manpath_Text, I);
          begin
-            if X'Length > 0 then
-               return X & "/man";
+            if Man_Entry = Root then
+               return True;
             end if;
          end;
+         while I <= Manpath_Text'Last
+           and then not Is_Entry_Sep (Manpath_Text (I))
+         loop
+            I := I + 1;
+         end loop;
+      end loop;
+      return False;
+   end Manpath_Contains;
+
+   function Manpath_User_Entry
+     (Manpath_Text : String; Home : String) return String
+   is
+      H : constant String := Strip_Trailing_Slash (Home);
+      I : Natural := Manpath_Text'First;
+   begin
+      if H'Length = 0 then
+         return "";
       end if;
-      if Ada.Environment_Variables.Exists ("HOME") then
-         return Ada.Environment_Variables.Value ("HOME") & "/.local/share/man";
+      while I <= Manpath_Text'Last loop
+         while I <= Manpath_Text'Last and then Is_Entry_Sep (Manpath_Text (I))
+         loop
+            I := I + 1;
+         end loop;
+         exit when I > Manpath_Text'Last;
+         declare
+            Man_Entry : constant String := Entry_At (Manpath_Text, I);
+         begin
+            if Starts_With (Man_Entry, H)
+              and then Man_Entry'Length > H'Length
+              and then Is_Dir_Sep (Man_Entry (Man_Entry'First + H'Length))
+            then
+               return Man_Entry;
+            end if;
+         end;
+         while I <= Manpath_Text'Last
+           and then not Is_Entry_Sep (Manpath_Text (I))
+         loop
+            I := I + 1;
+         end loop;
+      end loop;
+      return "";
+   end Manpath_User_Entry;
+
+   --  Run `manpath` and return its output. "" when the binary is absent or
+   --  the run fails. The output goes through a temp file, so the same code
+   --  works on POSIX and on native Windows (which has no /dev/null).
+   function Capture_Manpath return String is
+      use GNAT.OS_Lib;
+      Tmp  : constant String :=
+        Adacovex.CPUs.Get_Temp_Directory & "/adacovex-manpath.out";
+      Buf  : String (1 .. 8192);
+      Len  : Natural := 0;
+      Prog : String_Access := Locate_Exec_On_Path ("manpath");
+      OK   : Boolean := False;
+      Code : Integer := 0;
+      F    : Ada.Text_IO.File_Type;
+   begin
+      if Prog = null then
+         return "";
       end if;
-      return Adacovex.CPUs.Get_Temp_Directory & "/adacovex-man";
+      Spawn
+        (Prog.all,
+         (1 .. 0 => new String'("")),
+         Tmp,
+         OK,
+         Code,
+         Err_To_Out => True);
+      Free (Prog);
+      if not OK or else Code /= 0 then
+         return "";
+      end if;
+      begin
+         Ada.Text_IO.Open (F, Ada.Text_IO.In_File, Tmp);
+         while not Ada.Text_IO.End_Of_File (F) loop
+            declare
+               Line : constant String := Ada.Text_IO.Get_Line (F);
+            begin
+               for I in Line'Range loop
+                  if Len < Buf'Last then
+                     Len := Len + 1;
+                     Buf (Len) := Line (I);
+                  end if;
+               end loop;
+               if Len < Buf'Last then
+                  Len := Len + 1;
+                  Buf (Len) := ASCII.LF;
+               end if;
+            end;
+         end loop;
+         Ada.Text_IO.Close (F);
+      exception
+         when others =>
+            if Ada.Text_IO.Is_Open (F) then
+               Ada.Text_IO.Close (F);
+            end if;
+            return "";
+      end;
+      begin
+         Ada.Directories.Delete_File (Tmp);
+      exception
+         when others =>
+            null;
+      end;
+      return Buf (1 .. Len);
+   end Capture_Manpath;
+
+   --  The man path list the reader will search: `$MANPATH` when it is set,
+   --  otherwise the output of `manpath` (which asks the reader itself).
+   function Manpath_Text return String is
+      Env : constant String := Ada.Environment_Variables.Value ("MANPATH", "");
+   begin
+      if Env'Length > 0 then
+         return Env;
+      end if;
+      return Capture_Manpath;
+   end Manpath_Text;
+
+   function Root_On_Manpath (Man_Root : String) return Boolean is
+      Text : constant String := Manpath_Text;
+   begin
+      if Text'Length = 0 then
+         --  No MANPATH and no manpath binary (for example native Windows
+         --  without a man reader): do not advise about a path we cannot
+         --  determine.
+         return True;
+      end if;
+      return Manpath_Contains (Text, Man_Root);
+   end Root_On_Manpath;
+
+   function Default_Dir return String is
+      Home      : constant String := Adacovex.Paths.Home_Directory;
+      Man_Entry : constant String := Manpath_User_Entry (Manpath_Text, Home);
+   begin
+      if Man_Entry'Length > 0 then
+         --  A man root the user owns, already on the reader's man path: the
+         --  best place to install, because the reader searches it anyway.
+         return Man_Entry;
+      end if;
+      return Adacovex.Paths.Data_Home & "/man";
    end Default_Dir;
 
    procedure Install
@@ -494,27 +705,60 @@ package body Adacovex.Renderers.Man is
       Success := True;
    end Install;
 
-   function Update_Database (Man_Root : String) return Boolean is
+   --  Run one man indexer over Root. True only when the tool was found and
+   --  exited 0, so the caller can fall through to the next one.
+   function Run_Indexer (Name : String; Root : String) return Boolean is
       use GNAT.OS_Lib;
-      Root : constant String := Strip_Trailing_Slash (Man_Root);
-      Prog : String_Access := Locate_Exec_On_Path ("mandb");
+      Tmp  : constant String :=
+        Adacovex.CPUs.Get_Temp_Directory & "/adacovex-man-index.out";
+      Prog : String_Access := Locate_Exec_On_Path (Name);
       OK   : Boolean := False;
       Code : Integer := 0;
    begin
       if Prog = null then
-         --  man-db (mandb) is not installed: the page is still written by
-         --  Install, but the man database cannot be refreshed.
          return False;
       end if;
       Spawn
         (Prog.all,
          (1 => new String'(Root)),
-         "/dev/null",
+         Tmp,
          OK,
          Code,
          Err_To_Out => True);
       Free (Prog);
+      begin
+         Ada.Directories.Delete_File (Tmp);
+      exception
+         when others =>
+            null;
+      end;
       return OK and then Code = 0;
+   end Run_Indexer;
+
+   function Update_Database
+     (Man_Root : String; Tool : out Database_Tool) return Boolean
+   is
+      Root : constant String := Strip_Trailing_Slash (Man_Root);
+   begin
+      --  man-db (GNU/Linux, WSL) first: it is the indexer of the reader the
+      --  distributions ship. mandoc's makewhatis (macOS, the BSDs) is the
+      --  fallback, so a host with either reader can refresh its database.
+      if Run_Indexer ("mandb", Root) then
+         Tool := Man_DB;
+         return True;
+      end if;
+      if Run_Indexer ("makewhatis", Root) then
+         Tool := Makewhatis;
+         return True;
+      end if;
+      Tool := No_Tool;
+      return False;
+   end Update_Database;
+
+   function Update_Database (Man_Root : String) return Boolean is
+      Ignored : Database_Tool;
+   begin
+      return Update_Database (Man_Root, Ignored);
    end Update_Database;
 
    --  Extract the version token following "adacovex v" in S ("1.10.0").

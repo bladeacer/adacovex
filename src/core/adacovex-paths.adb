@@ -187,6 +187,59 @@ package body Adacovex.Paths is
       end case;
    end Data_Directory;
 
+   function Data_Base
+     (P              : Platform_Kind;
+      Home           : String;
+      Xdg_Data       : String;
+      App_Data       : String;
+      Local_App_Data : String) return String is
+   begin
+      case P is
+         when Platform_Linux   =>
+            if Xdg_Data'Length > 0 then
+               return Strip_Trailing_Separators (Xdg_Data);
+            end if;
+            return Strip_Trailing_Separators (Home & "/.local/share");
+
+         when Platform_MacOS   =>
+            return
+              Strip_Trailing_Separators
+                (Home & "/Library/Application Support");
+
+         when Platform_Windows =>
+            if App_Data'Length > 0 then
+               return Strip_Trailing_Separators (App_Data);
+            elsif Local_App_Data'Length > 0 then
+               return Strip_Trailing_Separators (Local_App_Data);
+            end if;
+            return Strip_Trailing_Separators (Home & "/.local/share");
+      end case;
+   end Data_Base;
+
+   function Cache_Base
+     (P              : Platform_Kind;
+      Home           : String;
+      Xdg_Cache      : String;
+      Local_App_Data : String) return String is
+   begin
+      case P is
+         when Platform_Linux   =>
+            if Xdg_Cache'Length > 0 then
+               return Strip_Trailing_Separators (Xdg_Cache);
+            end if;
+            return Strip_Trailing_Separators (Home & "/.cache");
+
+         when Platform_MacOS   =>
+            return Strip_Trailing_Separators (Home & "/Library/Caches");
+
+         when Platform_Windows =>
+            if Local_App_Data'Length > 0 then
+               return Strip_Trailing_Separators (Local_App_Data);
+            end if;
+            return Strip_Trailing_Separators (Home & "/.cache");
+      end case;
+   end Cache_Base;
+
    --  Value of an environment variable, "" when it is unset or empty. The
    --  runtime Ada.Environment_Variables subprograms carry no Global
    --  contracts, so gnatprove 16 emits [assumed-global-null] warnings at
@@ -211,6 +264,27 @@ package body Adacovex.Paths is
    begin
       return Strip_Trailing_Separators (Env ("ADACOVEX_STATE_HOME"));
    end Home_Override;
+
+   function Data_Home return String is
+   begin
+      return
+        Data_Base
+          (Detect_Platform,
+           Home_Directory,
+           Env ("XDG_DATA_HOME"),
+           Env ("APPDATA"),
+           Env ("LOCALAPPDATA"));
+   end Data_Home;
+
+   function Cache_Home return String is
+   begin
+      return
+        Cache_Base
+          (Detect_Platform,
+           Home_Directory,
+           Env ("XDG_CACHE_HOME"),
+           Env ("LOCALAPPDATA"));
+   end Cache_Home;
 
    function Config_Root return String is
       Override : constant String := Home_Override;

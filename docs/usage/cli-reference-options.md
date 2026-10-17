@@ -84,31 +84,37 @@ adacovex (a shell prompt hook that regenerates on version change works well).
 ### `man`
 
 The `man` subcommand installs the adacovex man page into the **local man
-database** (Linux/WSL, no root required) and refreshes the index with `mandb`
-when present. `adacovex man --check` exits 0 when the installed page matches
-the binary. It exits 1 otherwise (a shell prompt hook can auto-update as a
-result). `--dir=PATH` overrides the install root. Full detail, exit codes,
-and the prompt-hook recipe are in
-[Installation -- keeping the man page in sync](installation.md#keeping-the-man-page-in-sync).
+database** (no root required) and refreshes the index with `mandb` (man-db) or
+`makewhatis` (mandoc). The default root is the first home-owned `$MANPATH`
+entry, otherwise the platform data root. The command warns when the reader
+does not search that root. `adacovex man --check` exits 0 when the installed
+page matches the binary. It exits 1 otherwise (a shell prompt hook can
+auto-update as a result). `--dir=PATH` overrides the install root.
+
+Full
+detail, the platform matrix, exit codes, and the prompt-hook recipe are in
+[Installation -- keeping the man page in sync](installation.md#keeping-the-man-page-in-sync)
+and [Platforms -- local man page](platforms.md#local-man-page).
 
 ### `tldr`
 
 `adacovex tldr` installs the bundled tldr page into the local tldr client, so
-`tldr adacovex` works offline. The page is `docs/tldr/adacovex.md`, embedded in
-the binary at build time.
+`tldr adacovex` works offline. The page is `docs/tldr/adacovex.md`, embedded
+in the binary at build time. The command detects the client first.
 
-The command detects the client first. tealdeer receives the page in its flat
-custom pages directory (`adacovex.page.md`), which sits outside the cache, so
-`tldr --update` cannot remove it. A client that follows the tldr
-CLIENT-SPECIFICATION (the C, Node, and Python clients) receives the page in
-its cache pages tree: the common page, plus the platform page when the system
-is known.
+tealdeer receives the page in its flat custom pages directory
+(`adacovex.page.md`), which sits outside the cache, so `tldr --update` cannot
+remove it. A client that follows the tldr CLIENT-SPECIFICATION receives the
+page in its cache pages tree: the common page, plus the platform page when
+the system is known.
 
 `tldr --check` exits 0 when the installed page matches the bundled one. It
 exits 1 when the page is missing or stale, so a shell prompt hook can refresh
 it after `tldr --update`. `--force` always rewrites the page. With no
 supported client, the command prints the page to stdout, so it is never
-useless.
+useless. The page directory follows each platform's conventions; the client
+and platform matrix is in
+[Platforms -- local tldr page](platforms.md#local-tldr-page).
 
 ### CI threshold gates (`--require-*`)
 
@@ -118,7 +124,7 @@ criteria. They are off by default. When set, the assessment fails loudly
 target does not meet the required level:
 
 ```bash
-adacovex --target=. --spark=Platinum --docstrs=100 --require-tests=1991 -r 100
+adacovex --target=. --spark=Platinum --docstrs=100 --require-tests=2017 -r 100
 ```
 
 - `require-spark` (alias `--spark`) compares the honest assessed SPARK level

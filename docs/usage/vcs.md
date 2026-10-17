@@ -8,7 +8,7 @@ A VCS is only needed for the differential modes below. They snapshot a base revi
 
 We assume that the audited project lives in a VCS. The base tool never requires one.
 
-adacovex works on **Linux and WSL**. The snapshot commands run through `sh -c`, which WSL provides.
+The differential modes run on **Linux, the BSDs, macOS, WSL, and native Windows**. The snapshot commands run through the host shell: `sh -c` on POSIX hosts (WSL provides it) and `cmd /c` on Windows, so a Windows host needs no POSIX layer installed.
 
 ## When to use differential modes
 

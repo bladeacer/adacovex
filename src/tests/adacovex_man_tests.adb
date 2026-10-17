@@ -7,6 +7,8 @@ with Adacovex.CPUs;
 
 package body Adacovex_Man_Tests is
 
+   use type Adacovex.Renderers.Man.Database_Tool;
+
    procedure Run (R : in out Adacovex.Test_Support.Runner'Class) is
       use Ada.Strings.Fixed;
       Page : constant String := Adacovex.Renderers.Man.Render_Page ("1.10.0");
@@ -37,6 +39,14 @@ package body Adacovex_Man_Tests is
          "man page documents --compare-base");
       R.Check (Index (Page, "--version") > 0, "man page documents --version");
       R.Check (Index (Page, "mercurial") > 0, "man page mentions VCS support");
+      --  Platform support: both indexers and the man path are documented.
+      R.Check
+        (Index (Page, "makewhatis") > 0,
+         "man page documents the mandoc indexer");
+      R.Check (Index (Page, ".B MANPATH") > 0, "man page documents MANPATH");
+      R.Check
+        (Index (Page, "Application Support/man") > 0,
+         "man page documents the macOS man root");
 
       --  SYNOPSIS rendering regression: the old .RI multi-argument macro
       --  concatenated tokens without spaces ([--format=FMT][--out=PATH]) and
@@ -76,24 +86,80 @@ package body Adacovex_Man_Tests is
         (Index (Adacovex.Renderers.Man.Render_Page (""), ".SH NAME") > 0,
          "empty version renders a valid page");
 
+      --  Manpath_Contains splits a man path list and ignores trailing
+      --  separators. It must not match a prefix of an entry.
+      R.Check
+        (Adacovex.Renderers.Man.Manpath_Contains
+           ("/usr/share/man:/usr/local/share/man", "/usr/local/share/man"),
+         "manpath match finds a later entry");
+      R.Check
+        (Adacovex.Renderers.Man.Manpath_Contains
+           ("/usr/share/man:/home/u/.local/share/man/",
+            "/home/u/.local/share/man"),
+         "manpath match ignores a trailing slash");
+      R.Check
+        (not Adacovex.Renderers.Man.Manpath_Contains
+               ("/usr/share/man:/home/u/.local/share/man2",
+                "/home/u/.local/share/man"),
+         "manpath match rejects an entry prefix");
+      R.Check
+        (not Adacovex.Renderers.Man.Manpath_Contains ("", "/usr/share/man"),
+         "empty manpath matches nothing");
+
+      --  A home-owned MANPATH entry is preferred over the platform root.
+      R.Check
+        (Adacovex.Renderers.Man.Manpath_User_Entry
+           ("/usr/share/man:/home/u/.local/share/man", "/home/u")
+         = "/home/u/.local/share/man",
+         "home-owned manpath entry is selected");
+      R.Check
+        (Adacovex.Renderers.Man.Manpath_User_Entry
+           ("/usr/share/man:/usr/local/share/man", "/home/u")
+         = "",
+         "no home-owned entry reports empty");
+      R.Check
+        (Adacovex.Renderers.Man.Manpath_User_Entry
+           ("/home/user2/man", "/home/user")
+         = "",
+         "a sibling home directory is not a home-owned entry");
+
+      --  The default root is always usable (a MANPATH entry or a platform
+      --  data path), never empty.
+      R.Check
+        (Adacovex.Renderers.Man.Default_Dir'Length > 0,
+         "default man root is never empty");
+
       --  Update_Database reports whether the man database was refreshed and
-      --  must never report True when man-db (mandb) is absent from PATH --
-      --  that is the contract `adacovex man` warns about. The value when
-      --  mandb IS present depends on the exit code, so only the missing-tool
+      --  must never report True when neither indexer is on PATH -- that is
+      --  the contract `adacovex man` warns about. The value when an indexer
+      --  IS present depends on its exit code, so only the missing-tool
       --  direction is asserted (deterministic in any environment).
       declare
          use GNAT.OS_Lib;
-         Mandb     : String_Access := Locate_Exec_On_Path ("mandb");
-         Has_Mandb : constant Boolean := Mandb /= null;
-         Updated   : constant Boolean :=
-           Adacovex.Renderers.Man.Update_Database ("/nonexistent/man-root");
+         Mandb       : String_Access := Locate_Exec_On_Path ("mandb");
+         Makewhatis  : String_Access := Locate_Exec_On_Path ("makewhatis");
+         Has_Indexer : constant Boolean := Mandb /= null or Makewhatis /= null;
+         Tool        : Adacovex.Renderers.Man.Database_Tool;
+         Updated     : constant Boolean :=
+           Adacovex.Renderers.Man.Update_Database
+             ("/nonexistent/man-root", Tool);
       begin
          if Mandb /= null then
             Free (Mandb);
          end if;
+         if Makewhatis /= null then
+            Free (Makewhatis);
+         end if;
          R.Check
-           ((not Updated) or Has_Mandb,
-            "Update_Database never reports True without mandb on PATH");
+           ((not Updated) or Has_Indexer,
+            "Update_Database never reports True without an indexer on PATH");
+         R.Check
+           ((if Updated
+             then
+               Tool = Adacovex.Renderers.Man.Man_DB
+               or else Tool = Adacovex.Renderers.Man.Makewhatis
+             else Tool = Adacovex.Renderers.Man.No_Tool),
+            "Update_Database reports the indexer that ran");
       end;
 
       --  Best-effort cleanup of the temp man root.
