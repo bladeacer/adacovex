@@ -11,7 +11,9 @@ codes, the parsed effect, and the shorthand server flags.
 
 It also pins the SBOM component sets of two real-project dependency
 shapes (a pnpm workspace and a Go module), so a manifest-parsing
-regression fails here instead of on a manual run.
+regression fails here instead of on a manual run. The tldr checks install
+the bundled page into a fake tealdeer client and a fake base client under a
+temporary home, and compare the installed file byte for byte.
 
 It needs no browser and no third-party package, so it runs anywhere the
 binary is built:
@@ -124,15 +126,20 @@ class Results:
         return 0
 
 
-def run(args: List[str], timeout: int = 120) -> subprocess.CompletedProcess:
+def run(args: List[str], timeout: int = 120,
+        env_extra: Optional[Dict[str, str]] = None,
+        ) -> subprocess.CompletedProcess:
     """Run the binary with args and capture stdout/stderr as text.
 
     ADACOVEX_OFFLINE is forced on so the e2e checks never spawn a
     package-registry CLI (the hermetic-suite rule the native runner
-    applies to itself).
+    applies to itself). env_extra overrides individual variables, which
+    the tldr check uses to point the binary at a fake client and home.
     """
     env = dict(os.environ)
     env["ADACOVEX_OFFLINE"] = "1"
+    if env_extra:
+        env.update(env_extra)
     return subprocess.run(
         [BIN] + args, capture_output=True, text=True, timeout=timeout,
         cwd=str(ROOT), env=env,
@@ -887,6 +894,88 @@ def check_prove(r: Results, tmp: Path) -> None:
         )
 
 
+def check_tldr_install(r: Results, tmp: Path) -> None:
+    """Install the bundled tldr page into a fake client and read it back.
+
+    The fake `tldr` on PATH answers `--show-paths` (tealdeer) or only
+    `--version` (a base client), so the check exercises client detection,
+    the page path per family, the byte-exact install, and --check without a
+    real client, a network, or the user's own page tree.
+    """
+    if os.name == "nt":
+        r.check(True, "tldr install is skipped on Windows (POSIX stub)")
+        return
+    home = tmp / "tldr-home"
+    bin_dir = tmp / "tldr-bin"
+    home.mkdir()
+    bin_dir.mkdir()
+    stub = bin_dir / "tldr"
+    stub.write_text(
+        "#!/bin/sh\n"
+        'if [ "$1" = "--show-paths" ]; then\n'
+        '  echo "Custom pages dir: $HOME/.local/share/tealdeer/pages/' \
+        ' (OS convention)"\n'
+        "  exit 0\n"
+        "fi\n"
+        'echo "tealdeer 1.9.0"\n',
+        encoding="utf-8",
+    )
+    stub.chmod(0o755)
+    env: Dict[str, str] = {
+        "HOME": str(home),
+        "XDG_DATA_HOME": "",
+        "XDG_CACHE_HOME": "",
+        "PATH": str(bin_dir),
+    }
+    page = (ROOT / "docs" / "tldr" / "adacovex.md").read_bytes()
+    tealdeer_page = home / ".local/share/tealdeer/pages/adacovex.page.md"
+
+    proc = run(["tldr", "--check"], env_extra=env)
+    r.check(
+        proc.returncode == 1 and "out of date" in proc.stdout,
+        "tldr --check reports a missing page",
+    )
+    proc = run(["tldr"], env_extra=env)
+    r.check(
+        proc.returncode == 0 and "tldr page installed" in proc.stdout,
+        "tldr installs the page into the tealdeer custom pages dir",
+    )
+    r.check(
+        tealdeer_page.is_file() and tealdeer_page.read_bytes() == page,
+        "the installed tealdeer page is byte-identical to the bundled page",
+    )
+    proc = run(["tldr", "--check"], env_extra=env)
+    r.check(
+        proc.returncode == 0 and "up to date" in proc.stdout,
+        "tldr --check passes after the install",
+    )
+    tealdeer_page.write_text("stale\n", encoding="utf-8")
+    proc = run(["tldr", "--check"], env_extra=env)
+    r.check(
+        proc.returncode == 1 and "out of date" in proc.stdout,
+        "tldr --check detects a stale page",
+    )
+
+    #  A base client does not answer --show-paths and prints a plain tldr
+    #  version, so the page lands in its cache pages tree.
+    stub.write_text(
+        "#!/bin/sh\n"
+        'if [ "$1" = "--show-paths" ]; then exit 2; fi\n'
+        'echo "tldr 3.3.9"\n',
+        encoding="utf-8",
+    )
+    proc = run(["tldr"], env_extra=env)
+    common_page = home / ".cache/tldr/pages/common/adacovex.md"
+    r.check(
+        proc.returncode == 0 and "base client" in proc.stdout,
+        "tldr detects a base client from its version output",
+    )
+    r.check(
+        common_page.is_file() and common_page.read_bytes() == page,
+        "a base client gets the byte-identical common page",
+    )
+
+
 def main() -> int:
     if not Path(BIN).is_file():
         print(f"error: {BIN} not found; run `just build` first",
@@ -912,6 +1001,7 @@ def main() -> int:
         check_serve_shorthands(r, tmp)
         check_serve_info_health(r, tmp)
         check_theme_and_port(r, tmp)
+        check_tldr_install(r, tmp)
     return r.report()
 
 

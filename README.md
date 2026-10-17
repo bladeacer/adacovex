@@ -40,8 +40,8 @@ count, and the DO-178C / ISO 26262 / IEC 62304 tiers. Click any badge for the
   Subversion, Fossil, or jj** without touching the working tree.
 - **Result caching** -- a content-addressed on-disk cache (`<cache>`)
   serves unchanged scan, proof, test, HLR/LLR, and dependency-graph results.
-- **Tooling** -- `status` reports toolchain and VCS state, `man` installs a
-  local man page, and `just check` runs the full quality gate in one command.
+- **Tooling** -- `status` reports toolchain and VCS state, `man` and `tldr`
+  install local pages, and `just check` runs the full quality gate in one command.
 - **Scalable** -- package and subprogram collections use
   `Ada.Containers.Vectors` (no compile-time count limits); fixed-size buffers
   scale with host word size.
@@ -137,7 +137,7 @@ proof level), `-r` (`--require-proof`), and `-j` (`--jobs`). `--standard=`
 also takes a combined tier token, so `--standard=asil-b` means `--asil=B`.
 
 The full flag table (defaults, modes, `--require-*` CI gates, strict vs relaxed
-mode, exit codes, contextual `help [TOPIC]`, and the `man` subcommand) lives in
+mode, exit codes, `help [TOPIC]`, and the `man`/`tldr` subcommands) lives in
 [CLI reference](https://adacovex.readthedocs.io/en/latest/usage/cli-reference.html).
 
 ## Examples
@@ -213,7 +213,7 @@ Action inputs/outputs, result caching, and release bundling:
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `just test` | 1949/1949 passing |
+| Unit tests | `just test` | 1991/1991 passing |
 | Self-assessment | `just run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `just prove` | Platinum (1048 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `just run-ada-crdt` | 100% docs, DAL-C (strict mode) |

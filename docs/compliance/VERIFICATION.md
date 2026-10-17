@@ -4,9 +4,9 @@
 
 | Metric | Value |
 |--------|-------|
-| Packages Scanned |  43 |
-| Total Subprograms |  219 |
-| Documented Subprograms |  219 |
+| Packages Scanned |  45 |
+| Total Subprograms |  238 |
+| Documented Subprograms |  238 |
 | Docstring Coverage |  100% |
 
 ## SPARK Proof Analysis
@@ -14,14 +14,14 @@
 | Check Type | Count | Proved |
 |------------|-------|--------|
 | SPARK Level | Platinum | - |
-| Flow (data + flow dependencies) |  73 |  73 |
+| Flow (data + flow dependencies) |  74 |  74 |
 | Initialization |  17 |  17 |
 | Runtime Checks |  599 |  599 |
 | Assertions |  133 |  133 |
 | Functional Contracts |  97 |  97 |
-| Termination |  127 |  127 |
-| **Total** |  1046 |  1046 |
-| Units Analyzed |  72 | - |
+| Termination |  128 |  128 |
+| **Total** |  1048 |  1048 |
+| Units Analyzed |  75 | - |
 | Units Skipped |  0 | - |
 
 ## Test Results
@@ -41,7 +41,7 @@
 | IR synthesis |  42 | PASS |
 | Man page renderer |  18 | PASS |
 | VCS support |  29 | PASS |
-| Server routing |  133 | PASS |
+| Server routing |  180 | PASS |
 | Proof patches |  35 | PASS |
 | Timezone + ANSI |  63 | PASS |
 | Complexity check |  20 | PASS |
@@ -56,7 +56,8 @@
 | Completion scripts |  24 | PASS |
 | Platform paths |  43 | PASS |
 | Install method |  23 | PASS |
-| **Total** | ** 1902** | **Passed:  1902, Failed:  0** |
+| tldr installer |  42 | PASS |
+| **Total** | ** 1991** | **Passed:  1991, Failed:  0** |
 
 ## DO-178C Compliance
 
@@ -64,7 +65,7 @@
 |-----------|--------|
 | Target level | DAL-C |
 | Overall Status | Achieved |
-| HLR Traced |  59 /  59 |
+| HLR Traced |  61 /  61 |
 | Orphan Tags | No |
 | Tests Passing | Yes |
 | Min SPARK Level | Yes |

@@ -103,6 +103,28 @@ the `/api/endpoints` catalog, so the API playground lists them with the
 rest, and both land with native routing, counter, and payload checks plus
 end-to-end checks against a live server.
 
+### C7: `tldr` installs the cheat sheet into the local client
+
+`adacovex tldr` installs the tldr cheat sheet into the local tldr client, so
+`tldr adacovex` works offline. The page is authored once, in
+`docs/tldr/adacovex.md`, and `tools/gen-tldr.py` bundles it into the binary as
+`Adacovex.Tldr_Template`. `just tldr-check` now lints the page and fails when
+the embedded spec drifts from it.
+
+The installer is client agnostic. tealdeer is detected from `tldr
+--show-paths`, and the page goes into its flat custom pages directory, which
+lives outside the cache, so `tldr --update` cannot remove it. A client that
+follows CLIENT-SPECIFICATION is detected from `tldr --version`, and the page
+goes into its cache pages tree, in both the common and the platform
+directory. The Node client's own cache tree is used when it exists.
+
+The write is byte exact: it uses a stream, because Ada.Text_IO completes the
+last line at close and would add a byte to the page. `adacovex tldr --check`
+exits 0 when the installed page matches the bundled one, and 1 when it is
+missing or stale, so a prompt hook can refresh it after `tldr --update`.
+`--force` always rewrites the page. With no supported client the command
+prints the page to stdout, so it never answers nothing.
+
 ## Fixes
 
 ### H1: An installed package's own subpackages and source trees are no longer components
@@ -121,7 +143,7 @@ graph.
 
 ## Test Suite
 
-1949 tests across 28 categories, up from 1864. Forty earlier checks in
+1991 tests across 29 categories, up from 1864. Forty earlier checks in
 this release cover the structural readers, the package-root rule, and the
 root npm and Go declarations. Fifteen more pin adacovex as a
 dependency in both directions, and the new `Install method` category
@@ -131,10 +153,15 @@ two new routes and their near misses, the `Route_Path` round trip over
 every route kind, the protected counter store, and the `/api/info`
 payload.
 
-`just test` runs the native suite, `just cli-e2e` runs 80 end-to-end
-checks including two new component-set shapes (a pnpm workspace and a
-Go module) and three checks against the live `/health` and `/api/info`
-endpoints, and `just tools-check` runs the 174-test tools suite.
+The new `tldr installer` category holds 42 checks: client classification,
+the `--show-paths` parse with its annotation, the per-client path rules, the
+`uname` mapping, and the install and read-back round trip in a temporary
+tree. `just test` runs the native suite, and `just cli-e2e` runs 87
+end-to-end checks, including two new component-set shapes (a pnpm workspace
+and a Go module), three checks against the live `/health` and `/api/info`
+endpoints, and seven that install the page into a fake tealdeer client and a
+fake base client and compare it byte for byte. `just tools-check` runs the
+174-test tools suite.
 
 ## Proof Results
 
@@ -144,16 +171,21 @@ by 26 checks and two units: the new `Adacovex.Install` classifier is
 proved, from its machine token over the prefix rules and the scope rule
 to the index arithmetic behind them, and C6's two route branches and
 its `Route_Path` mapping add two checks to the proved `Route` surface.
-No existing unit lost a check. The parser bodies this release adds sit
+No existing unit lost a check.
+
+The parser bodies this release adds sit
 in the manifest package's default-off body, which contributes no
 verification conditions, and C6's counter store and `/api/info`
 renderer sit in the server package's default-off surface for the same
-reason.
+reason. C7's installer is a process- and file-system package in the same
+default-off surface, so it adds no verification conditions either.
 
 ## Traceability
 
-No new HLR record enters this release, and no tag is added or removed.
-The dependency-graph parsing work extends `HLR-MANIFEST` (Alire manifest
+One new HLR record enters this release: `HLR-TLDR` (client-agnostic tldr
+page installation), traced by `LLR-TLDR-01` for the client detection and
+`LLR-TLDR-02` for the install and the read-back comparison. The
+dependency-graph parsing work extends `HLR-MANIFEST` (Alire manifest
 and dependency-graph parsing) and `HLR-SBOM` (proof-aware SBOM
 generation), both on record for the graph and its output. The new
 `Adacovex.Install` package carries `HLR-MANIFEST`: it decides how a
@@ -167,5 +199,5 @@ The packages changed by this release, and the tags already on record
 that cover them: the manifest parsers and the dependency graph
 (`HLR-MANIFEST`), the SBOM they feed (`HLR-SBOM`), the installation
 classification they apply (`HLR-MANIFEST`), the dashboard server routes
-and its API (`HLR-SERVER`), and the task gates that run the suites
-(`HLR-ARCH`).
+and its API (`HLR-SERVER`), the tldr installer (`HLR-TLDR`), and the task
+gates that run the suites (`HLR-ARCH`).

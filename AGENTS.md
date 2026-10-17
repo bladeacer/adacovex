@@ -107,7 +107,7 @@ Self-assessment (`just run-self`) must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
 - Platinum SPARK level (1048 VCs under gnatprove 16.1.0, 0 unproved, 0
   justified; see `docs/proof/16.1.0-ledger.md`)
-- 1949/1949 native tests passing
+- 1991/1991 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
   `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
@@ -123,6 +123,7 @@ src/
 |-- adacovex.ads                              -- Version constant
 |-- adacovex-dashboard_template.ads           -- Generated dashboard HTML template constant (from resources/dashboard.html)
 |-- adacovex-docs_template.ads/.adb           -- Generated offline manual template constant (from the Sphinx docs via tools/gen-docs.py)
+|-- adacovex-tldr_template.ads                -- Generated tldr page constant (from docs/tldr/adacovex.md via tools/gen-tldr.py)
 |-- adacovex_main.adb                         -- CLI entry point (builds as bin/adacovex; covex alias)
 |-- adacovex_version_info.ads                 -- Generated version constant (from alire-dev.toml / ADACOVEX_VERSION)
 |-- compliance/
@@ -231,7 +232,8 @@ src/
 |   |-- adacovex-renderers-man.ads/.adb       -- Man-page renderer + installer (local man db, Linux/WSL)
 |   |-- adacovex-renderers-markdown.ads/.adb  -- VERIFICATION.md + TRACE.md
 |   |-- adacovex-renderers-sbom.ads/.adb      -- CycloneDX 1.5 / SPDX 2.3 / Markdown SBOM generator
-|   `-- adacovex-renderers-svg.ads/.adb       -- SVG badges (spark/tests/do178c/docs)
+|   |-- adacovex-renderers-svg.ads/.adb       -- SVG badges (spark/tests/do178c/docs)
+|   `-- adacovex-renderers-tldr.ads/.adb      -- tldr page installer (client detection, tealdeer custom pages / base cache pages)
 |-- server/
 |   |-- adacovex-server.ads                   -- Parent package for the HTTP server subsystem
 |   |-- adacovex-server-http.ads/.adb         -- HTTP/1.1 server (4-worker task pool)
@@ -263,10 +265,11 @@ src/
     |-- adacovex_server_tests.ads/.adb        -- Server routing tests (180)
     |-- adacovex_spark_coverage_tests.ads/.adb-- SPARK coverage report tests
     |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (50)
+    |-- adacovex_tldr_tests.ads/.adb          -- tldr installer tests (42)
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (67)
     |-- adacovex_tz_ansi_tests.ads/.adb       -- Timezone + ANSI tests (63)
     |-- adacovex_vcs_tests.ads/.adb           -- VCS support tests (29)
-    `-- test_runner.adb                       -- Test suite entry point (1949 tests)
+    `-- test_runner.adb                       -- Test suite entry point (1991 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -300,6 +303,7 @@ adacovex prove [-t=PATH] [prove options]
 adacovex status [-t=PATH] [--tz=ZONE]
 adacovex complexity [-t=PATH] [--excludes=EXT,EXT]
 adacovex man [--check] [--dir=PATH]
+adacovex tldr [--check]
 adacovex completion [bash|fish|zsh|pwsh]
 ```
 
@@ -349,6 +353,15 @@ the version, and `adacovex man --check` exits 0 when the installed page
 matches the binary (1 when a newer version is available or none is installed)
 -- so a shell prompt hook can auto-update the man page when the machine
 detects a newer version.
+
+`adacovex tldr` installs the bundled tldr page (`docs/tldr/adacovex.md`,
+embedded via `tools/gen-tldr.py` into `src/adacovex-tldr_template.ads`) into
+the detected local client: tealdeer's flat custom pages directory, or a base
+client's cache pages tree (common plus platform page). `adacovex tldr
+--check` exits 0 when the installed page matches the bundled one, 1 when it
+is missing or stale, and `--force` rewrites it. With no supported client the
+command prints the page to stdout. `just tldr-check` lints the page and gates
+the embedded spec against it.
 
 ## VCS support (Linux/WSL)
 
@@ -565,7 +578,7 @@ compatibility shim. The table names the canonical target for each task.
 | `check` | **The single everything-check / verification entry point.** Run it after any change. It runs every gate CI runs before a release, and **`fmt` is first**: gnatprove and the API docs both read the sources, so every later gate must see formatted code. Then the cheap static gates (ascii, complexity, csslint, spark-off, changelog, action-parity, docs-coverage, tools-check, cli-e2e, version, version-consistency, doc-links, link, docs-check, para-split, tldr, book-links), then build + native tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description). Every gate runs a preflight first: a gate whose tool is missing on the host (no `alr` on `PATH`, no `gnatformat` on the developer path, a `gnatdoc` that cannot document a one-package probe project, no `sphinx` in the interpreter) is SKIPped with the reason instead of failing, the run continues past a failed gate, and the summary shows PASS/FAIL/SKIP per gate, exiting non-zero only when a gate failed. `just check` resolves `gnatprove` for you (it is fetched into `<data>/toolchain/` and executed directly when not on `PATH`), so you never have to install or point at a prover by hand -- just run `just check` and it verifies the whole tree end to end. `just prove` is the SPARK sub-gate if you only changed proof-affecting code |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
-| `test` | Build + run the 1949-test native suite |
+| `test` | Build + run the 1991-test native suite |
 | `prove` | SPARK proof at gnatprove `--level=4` (Platinum gate) + regenerates SVG badges in `docs/badges/` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
 | `book` | Build the offline manual from the Sphinx docs and regenerate `src/adacovex-docs_template.ads` (tools/gen-docs.py; incremental + verified Sphinx build, `--fresh` forces a clean one; safe to run without sphinx) |
@@ -679,7 +692,7 @@ a runner needs neither `make` nor `just`; the Ubuntu runner images ship
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `just test` | 1949/1949 passing |
+| Unit tests | `just test` | 1991/1991 passing |
 | Self-assessment | `just run-self` | 100% docs, Platinum, DAL-C Achieved |
 | SPARK proof | `just prove` | Platinum (1048 VCs, 0 unproved, 0 justified under gnatprove 16.1.0), verified at `--level=4` (the deepest effort; the prove subcommand forwards `--level` verbatim, so the overhead is gnatprove's own) |
 | Ada_CRDT regression | `just run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -734,7 +747,7 @@ rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 1949 tests across 28 categories).
+Native zero-dependency suite (`src/tests/`, 1991 tests across 29 categories).
 Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests).
 

@@ -104,6 +104,8 @@ package body Adacovex.Renderers.Man is
         (Buf,
          Len,
          ".B " & Q & "adacovex man [--check] [--dir=PATH] [--force]" & Q);
+      App (Buf, Len, ".br");
+      App (Buf, Len, ".B " & Q & "adacovex tldr [--check] [--force]" & Q);
       App (Buf, Len, ".SH DESCRIPTION");
       App
         (Buf,
@@ -296,6 +298,10 @@ package body Adacovex.Renderers.Man is
             elsif Flag = "man" then
                return
                  "Subcommand: install the man page into the local man database.";
+            elsif Flag = "tldr" then
+               return
+                 "Subcommand: install the bundled tldr page into the local "
+                 & "tldr client.";
             elsif Flag = "check" then
                return
                  "Man subcommand flag: --check exits 0 when installed page matches binary.";
@@ -375,6 +381,17 @@ package body Adacovex.Renderers.Man is
       App_Option
         (Buf,
          Len,
+         "tldr",
+         "Install the bundled tldr page into the local tldr client.  "
+         & "The installer detects the client: tealdeer reads a flat "
+         & "custom-pages directory, and a base client reads its cache "
+         & "pages tree.  --check exits 0 when the installed page matches "
+         & "the bundled page, 1 when it is missing or stale.  --force "
+         & "always rewrites the page.  With no supported client the page "
+         & "is printed to stdout instead.");
+      App_Option
+        (Buf,
+         Len,
          "help",
          "Contextual help: `adacovex help serve`, `adacovex help "
          & "--serve`, or `adacovex --serve help` print "
@@ -411,6 +428,9 @@ package body Adacovex.Renderers.Man is
       App (Buf, Len, ".TP");
       App (Buf, Len, ".I ~/.local/share/man/man1/adacovex.1");
       App (Buf, Len, "Installed man page (Linux/WSL default man root).");
+      App (Buf, Len, ".TP");
+      App (Buf, Len, ".I ~/.local/share/tealdeer/pages/adacovex.page.md");
+      App (Buf, Len, "Installed tldr page (tealdeer custom pages).");
       App (Buf, Len, ".TP");
       App (Buf, Len, ".I ~/.cache/adacovex");
       App

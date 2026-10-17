@@ -28,6 +28,7 @@
   | Completion scripts                       |  24 | PASS     |
   | Platform paths                           |  43 | PASS     |
   | Install method                           |  23 | PASS     |
+  | tldr installer                           |  42 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 1949  Failed: 0
+  Passed: 1991  Failed: 0

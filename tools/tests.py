@@ -1259,6 +1259,38 @@ class TestGenDashboard(unittest.TestCase):
         self.assertEqual(len(scripts), 12)
 
 
+gen_tldr = importlib.import_module("gen-tldr")
+
+
+class TestGenTldr(unittest.TestCase):
+    """gen-tldr.py bundles the tldr page byte for byte."""
+
+    PAGE: str = "# adacovex\n> One line.\n\n- Run it:\n`adacovex`\n"
+
+    def test_render_is_a_string_constant(self) -> None:
+        spec = gen_tldr.render(self.PAGE)
+        self.assertIn("package Adacovex.Tldr_Template is", spec)
+        self.assertIn("Page : constant String :=", spec)
+
+    def test_render_keeps_every_newline(self) -> None:
+        # One ASCII.LF per page newline, so the installed page ends exactly
+        # where the authored page ends.
+        spec = gen_tldr.render(self.PAGE)
+        self.assertEqual(spec.count("ASCII.LF"), self.PAGE.count("\n"))
+
+    def test_render_rejects_an_empty_page(self) -> None:
+        with self.assertRaises(ValueError):
+            gen_tldr.render("")
+
+    def test_generate_writes_only_on_change(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            out = Path(td) / "adacovex-tldr_template.ads"
+            source = Path(td) / "page.md"
+            source.write_text(self.PAGE, encoding="ascii")
+            self.assertTrue(gen_tldr.generate(out, source))
+            self.assertFalse(gen_tldr.generate(out, source))
+
+
 class TestGenDocsAssets(unittest.TestCase):
     """gen-docs.py per-asset emission (H4: gnatprove stack overflow fix)."""
 

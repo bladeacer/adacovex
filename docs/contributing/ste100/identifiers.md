@@ -23,6 +23,27 @@ documentation. The report and concept identifiers are on
 - **Correct Example:** *The bundle contains **covex** as an alias for adacovex.*
 - **Incorrect Example:** *The bundle contains Covex as an alias for adacovex.*
 
+## Technical Name: tldr
+- **Part of Speech:** Noun
+- **Definition:** The command-line client that shows the tldr pages, and the
+  page format it reads. The `tldr` subcommand of adacovex installs the
+  bundled page into that client.
+- **Approved Form:** tldr (exact lower-case form)
+- **Do Not Use:** TLDR, tldr client (after the first use)
+- **Correct Example:** *Run **tldr** to read an installed page.*
+- **Incorrect Example:** *Run TLDR to read an installed page.*
+
+## Technical Name: tealdeer
+- **Part of Speech:** Noun
+- **Definition:** A tldr client written in Rust. It keeps custom pages in a
+  flat directory outside its cache.
+- **Approved Form:** tealdeer (exact lower-case form)
+- **Do Not Use:** Tealdeer, the Rust client
+- **Correct Example:** *The installer writes the page to the **tealdeer**
+  custom pages directory.*
+- **Incorrect Example:** *The installer writes the page to the Tealdeer
+  custom pages directory.*
+
 ## Technical Name: Alire
 - **Part of Speech:** Noun
 - **Definition:** The Ada package manager and its ecosystem. The `alr`

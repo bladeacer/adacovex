@@ -20,6 +20,9 @@ Steps, in order:
    src/adacovex-docs_template.ads (the bundled offline manual) from the
    Sphinx docs source (docs/conf.py + MyST); byte-identical when the docs
    are unchanged.
+   `python3 tools/gen-tldr.py` also runs here: it bundles
+   docs/tldr/adacovex.md into src/adacovex-tldr_template.ads, so the tldr
+   page the `tldr` subcommand installs is the authored one.
 4. `alr build` (or `alr build --release` with `--release`) with stdout+stderr
    captured, the log filtered by tools/filter-sframe.py (the benign SFrame
    notice), and the filtered output printed to stdout.
@@ -93,6 +96,11 @@ def build(release: bool = False) -> int:
 
     print("=== Regenerating bundled offline manual ===")
     rc = run([sys.executable, "tools/gen-docs.py"])
+    if rc != 0:
+        return rc
+
+    print("=== Regenerating bundled tldr page ===")
+    rc = run([sys.executable, "tools/gen-tldr.py"])
     if rc != 0:
         return rc
 

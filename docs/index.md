@@ -103,7 +103,7 @@ a technical word in any doc, docstring, or changelog.
 - [Badges](badges/index.md) -- the badge set the self-assessment emits.
 - [API reference](api-docs/index.md) -- the generated package
   documentation.
-- [tldr page](tldr/adacovex.md) -- the in-repo cheat sheet for the CLI.
+- [tldr page](tldr/adacovex.md) -- the cheat sheet for the CLI, which `adacovex tldr` installs into the local tldr client.
 
 The docs live under `docs/` as a **Sphinx** project (`docs/conf.py` with
 MyST, plus a root `docs/index.md` holding the toctree). The pages are grouped

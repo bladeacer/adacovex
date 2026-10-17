@@ -99,13 +99,29 @@ package Adacovex.Config is
       --  instead of a bare one-line error.
       Unknown_No_Suggest : Boolean := False;
 
-      Help_Requested      : Boolean := False;
-      Help_Topic          : String (1 .. Types.Max_Path);
-      Help_Topic_Len      : Natural := 0;
-      Version_Requested   : Boolean := False;
-      Man_Mode            : Boolean := False;
-      Man_Check           : Boolean := False;
-      Man_Force           : Boolean := False;
+      Help_Requested    : Boolean := False;
+      Help_Topic        : String (1 .. Types.Max_Path);
+      Help_Topic_Len    : Natural := 0;
+      Version_Requested : Boolean := False;
+      Man_Mode          : Boolean := False;
+
+      --  True when the tldr subcommand is given. It installs the bundled
+      --  tldr page into the local client and is a standalone mode, like
+      --  man. It shares --check and --force with the man subcommand.
+      Tldr_Mode : Boolean := False;
+
+      --  True when --check is given. With the man subcommand it checks the
+      --  installed man page; with the tldr subcommand it checks the
+      --  installed tldr page.
+      Man_Check : Boolean := False;
+
+      --  True when --force is given in man or tldr mode (always rewrite the
+      --  installed page). Prove mode uses Prove_Force.
+      Man_Force : Boolean := False;
+
+      --  --dir=PATH override for the man subcommand (install under
+      --  PATH/man1). The tldr subcommand uses the detected client's own
+      --  page directory instead.
       Man_Dir             : String (1 .. Types.Max_Path);
       Man_Dir_Len         : Natural := 0;
       Skip_Dir_Ct         : Natural := 0;

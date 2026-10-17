@@ -7,6 +7,7 @@
 | adacovex-ir_bounds | IR |
 | adacovex-ir_synthesiser | IR |
 | adacovex-renderers-sbom | SBOM |
+| adacovex-renderers-tldr | TLDR |
 | adacovex-renderers-ansi | RENDER-ANSI |
 | adacovex-renderers-html | RENDER-HTML |
 | adacovex-renderers-markdown | RENDER-MD |

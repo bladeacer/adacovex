@@ -23,6 +23,7 @@ with Adacovex.Renderers.SVG;
 with Adacovex.Renderers.HTML;
 with Adacovex.Renderers.Markdown;
 with Adacovex.Renderers.Man;
+with Adacovex.Renderers.Tldr;
 with Adacovex.Renderers.SBOM;
 with Adacovex.Server.HTTP;
 with Adacovex.Cache;
@@ -66,6 +67,20 @@ procedure Adacovex_Main is
          Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, Msg);
       end if;
    end Verbose;
+
+   --  Print the bundled tldr page on stdout. Ada.Text_IO completes the last
+   --  line when the file closes, so the page's own final newline is dropped
+   --  first and New_Line restores exactly one.
+   procedure Put_Bundled_Page is
+      P : constant String := Adacovex.Renderers.Tldr.Page;
+   begin
+      if P'Length > 0 and then P (P'Last) = ASCII.LF then
+         Ada.Text_IO.Put (P (P'First .. P'Last - 1));
+         Ada.Text_IO.New_Line;
+      else
+         Ada.Text_IO.Put_Line (P);
+      end if;
+   end Put_Bundled_Page;
 
    --  Collapse "." and ".." segments out of an absolute path so File_Path
    --  values stored in the result cache do not depend on how --target was
@@ -619,6 +634,86 @@ begin
                   "Error: could not install man page to " & Man_Root);
                Ada.Command_Line.Set_Exit_Status (1);
             end if;
+         end if;
+      end;
+      return;
+   end if;
+
+   -- tldr mode: install the bundled tldr page into the local client. The
+   -- installer detects the client family first (tealdeer custom pages, or a
+   -- base client's cache pages tree). --check exits 0 when the installed
+   -- page matches the bundled one, 1 when it is missing or stale. With no
+   -- supported client the page is printed to stdout, so the command still
+   -- answers.
+   if Cfg.Tldr_Mode then
+      declare
+         use Adacovex.Renderers.Tldr;
+         Kind    : Client_Kind;
+         Dir_Buf : String (1 .. Max_Dir);
+         Dir_Len : Natural;
+      begin
+         Detect (Kind, Dir_Buf, Dir_Len);
+         if Kind = No_Client or else Kind = Unsupported_Client then
+            if Cfg.Man_Check then
+               Ada.Text_IO.Put_Line
+                 ("tldr page out of date: no supported tldr client found"
+                  & " (run `adacovex tldr` to print the bundled page)");
+               Ada.Command_Line.Set_Exit_Status (1);
+            else
+               Ada.Text_IO.Put_Line
+                 (Ada.Text_IO.Standard_Error,
+                  "Warning: no supported tldr client found ("
+                  & Client_Name (Kind)
+                  & ") -- printing the bundled page instead");
+               Put_Bundled_Page;
+               Ada.Command_Line.Set_Exit_Status (0);
+            end if;
+         else
+            declare
+               Dir   : constant String := Dir_Buf (1 .. Dir_Len);
+               File  : constant String := Page_File (Kind, Dir);
+               Match : constant Boolean := Installed (Kind, Dir);
+            begin
+               if Cfg.Man_Check then
+                  if Match then
+                     Ada.Text_IO.Put_Line
+                       ("tldr page up to date ("
+                        & Client_Name (Kind)
+                        & ": "
+                        & File
+                        & ")");
+                     Ada.Command_Line.Set_Exit_Status (0);
+                  else
+                     Ada.Text_IO.Put_Line
+                       ("tldr page out of date: "
+                        & File
+                        & " (run `adacovex tldr` to install)");
+                     Ada.Command_Line.Set_Exit_Status (1);
+                  end if;
+               else
+                  declare
+                     OK : Boolean;
+                  begin
+                     Install (Kind, Dir, OK);
+                     if OK then
+                        Ada.Text_IO.Put_Line
+                          ("tldr page installed: "
+                           & Client_Name (Kind)
+                           & " -> "
+                           & File);
+                        Ada.Text_IO.Put_Line
+                          ("run 'tldr adacovex' to read it; `adacovex tldr "
+                           & "--check` detects a stale page");
+                        Ada.Command_Line.Set_Exit_Status (0);
+                     else
+                        Ada.Text_IO.Put_Line
+                          (Ada.Text_IO.Standard_Error,
+                           "Error: could not install the tldr page to " & Dir);
+                        Ada.Command_Line.Set_Exit_Status (1);
+                     end if;
+                  end;
+               end if;
+            end;
          end if;
       end;
       return;

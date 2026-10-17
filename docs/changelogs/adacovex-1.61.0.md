@@ -96,7 +96,7 @@ match.
 
 ## Test Suite
 
-1949 tests across 28 categories, unchanged from 1.60.0. This release changes no
+1991 tests across 29 categories, unchanged from 1.60.0. This release changes no
 test surface: the proof edit in `adacovex-config.adb` keeps the same CLI
 behaviour, so the existing parser and config tests still cover it, and the git
 fixture work changes only how the throwaway repositories are set up.

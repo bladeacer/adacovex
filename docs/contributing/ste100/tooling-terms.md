@@ -184,6 +184,16 @@ flags, artefacts, and quality gates of the adacovex tool.
 - **Correct Example:** *The **man page** embeds the binary version.*
 - **Incorrect Example:** *The help page embeds the binary version.*
 
+## Technical Name: tldr Page
+- **Part of Speech:** Noun
+- **Definition:** The short cheat sheet for adacovex that follows the tldr
+  page format. The `tldr` subcommand installs the page into the local tldr
+  client and checks it with `tldr --check`.
+- **Approved Form:** tldr Page (singular), tldr Pages (plural)
+- **Do Not Use:** Cheat sheet (after the first use), Quick reference
+- **Correct Example:** *The **tldr page** is embedded in the binary.*
+- **Incorrect Example:** *The cheat sheet is embedded in the binary.*
+
 ## Technical Name: DO-178C
 - **Part of Speech:** Noun
 - **Definition:** The avionics software standard that defines the DAL levels

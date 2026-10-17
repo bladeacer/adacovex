@@ -107,45 +107,23 @@ system CUPS port 631. The hermetic-test fix is v1.62.0 item 1.
   - SPARK discipline held: 0 unproved, 0 justified, no new
     `SPARK_Mode (Off)`.
 
-- [ ] **5. `adacovex tldr` - client-agnostic install into the local tldr index**
+- [x] **5. `adacovex tldr` - client-agnostic install into the local tldr index**
 
-  - The page source already exists and is gated: `docs/tldr/adacovex.md`
-    (`just tldr-check`, optional `tldr-lint`). It becomes a single
-    source embedded in the binary (the same pattern as the man page),
-    so the install works offline.
-  - The injection must be **client agnostic**: it works for the base
-    tldr clients that follow CLIENT-SPECIFICATION.md and for tealdeer.
-    The spec defines only the CLI and the zip-cache download; it defines
-    no custom-pages location, so each client family gets its own
-    injection target, chosen by detecting the installed client (`tldr
-    --version`, and `tldr --show-paths` where the client supports it):
-    - tealdeer (verified live on this machine, 1.9.0): write the custom
-      page to `<XDG_DATA_HOME>/tealdeer/pages/adacovex.page.md` (flat,
-      `.page.md` suffix). It renders with `tldr adacovex` and lives
-      outside the cache (`~/.cache/tealdeer/`), so `tldr --update` can
-      never remove it. The file is installed on this machine as proof.
-    - base/reference clients (the C client, the Node client, the Python
-      client, and friends): inject into the client's extracted cache
-      pages tree (`<cache>/pages/common/adacovex.md`, plus the detected
-      platform directory). Cache extraction overlays the zip without
-      deleting extra files on every mainstream client, so the entry
-      survives `tldr --update` in practice; `adacovex tldr` is
-      idempotent and re-injects when a client rebuild wipes it.
-    - unknown client, or none: render the bundled page directly (or
-      pipe it through `tldr -f`), so the command is never useless.
-  - Command shape: `adacovex tldr` (so `covex tldr` works too),
-    modelled on `adacovex man`: install or refresh the entry, `--check`
-    exits 0 when the installed entry matches the bundled page (1 when
-    missing or stale) so a shell-prompt hook can keep it fresh after
-    `tldr --update`, and a warning when no supported client is found.
-  - Optional follow-up: upstream the page to tldr-pages. The shallow
-    clone at `../tldr` is the pages repository; the page already follows
-    CLIENT-SPECIFICATION.md, and an upstream merge means `tldr --update`
-    carries it with no local install at all.
-  - Tests: native tests for the client detection and target-path
-    selection per client family (with a fake home/cache tree), and an
-    e2e check that installs the page and renders it back through the
-    bundled page content; no network, no real client required.
+  - Implemented, see [changelog](docs/changelogs/adacovex-1.62.0.md) (`C7`).
+  - `docs/tldr/adacovex.md` stays the single source: `tools/gen-tldr.py`
+    bundles it into `src/adacovex-tldr_template.ads` (run by `just build`),
+    and `just tldr-check` fails when the committed spec drifts from the page.
+    `Adacovex.Renderers.Tldr` detects the client, writes the page byte for
+    byte, and answers `--check` / `--force`.
+  - The injector is client agnostic: tealdeer's custom pages directory comes
+    from `tldr --show-paths` (annotation stripped), a base client's cache
+    pages tree (the spec directory, or the Node client tree when it exists)
+    gets the common and platform page, and an unknown or absent client makes
+    the command print the page on stdout. 42 native checks and 7 e2e checks
+    pin the detection, the paths, and the round trip; no network and no real
+    client is used.
+  - Optional follow-up (not done): upstream the page to tldr-pages. The
+    shallow clone at `../tldr` is the pages repository.
 
 - [ ] **6. Documentation: SARIF, notices, and conciseness**
 

@@ -31,6 +31,7 @@
 - HLR-SBOM: Proof-aware SBOM generation
 - HLR-IR: IR type profiles, host/target config, and foreign type-name lowering
 - HLR-SPARK: SPARK proof-coverage report
+- HLR-TLDR: Client-agnostic tldr page installation
 
 ## Requirements
 
@@ -158,3 +159,7 @@
   subprogram). The three classes shall be counted separately, so that the
   provable backlog stays visible. Code gnatprove did not report on shall be
   counted as not covered, and shall never be folded into an off class.
+
+- HLR-TLDR: The tool shall install its bundled tldr page into the local
+  tldr client, whichever supported client is installed, and shall report
+  whether the installed page is current.

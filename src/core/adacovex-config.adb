@@ -422,7 +422,7 @@ package body Adacovex.Config is
      "target manifest dal asil class standard serve theme port "
      & "emit-svg no-svg emit-markdown emit-metrics verbose relaxed cache no-cache "
      & "cache-dir cache-max skip-dir compare-base coverage-delta sbom "
-     & "prove status completion man check dir version no-sbom sbom-format format out "
+     & "prove status completion man tldr check dir version no-sbom sbom-format format out "
      & "jobs level timeout steps memlimit force no-loop-unrolling "
      & "no-inlining args suppress-warnings quiet require-spark require-docstrings "
      & "require-tests require-proof complexity export metrics help "
@@ -1658,6 +1658,8 @@ package body Adacovex.Config is
                      end if;
                   elsif A = "man" then
                      Cfg.Man_Mode := True;
+                  elsif A = "tldr" then
+                     Cfg.Tldr_Mode := True;
                   elsif A = "help" then
                      --  Contextual help: `help --serve`, `help serve`, or
                      --  `--serve help` all print flag-specific help. The topic
@@ -2210,17 +2212,43 @@ package body Adacovex.Config is
                & "or --coverage-delta");
          end if;
 
-         -- --check and --dir only make sense with the man subcommand; a bare
-         -- `adacovex --check` is almost certainly a typo, so fail loudly rather
-         -- than silently running an assessment that ignores them.
-         if (Cfg.Man_Check or Cfg.Man_Dir_Len > 0) and then not Cfg.Man_Mode
+         -- tldr mode is a standalone installer too: it writes the bundled
+         -- page into the local tldr client and needs no target.
+         if Cfg.Tldr_Mode
+           and then (Cfg.Status_Mode
+                     or Cfg.Prove_Mode
+                     or Cfg.SBOM_Mode
+                     or Cfg.Compare_Base_Len > 0
+                     or Cfg.Coverage_Delta_Len > 0)
          then
-            Set_Error (Cfg, "--check and --dir require the man subcommand");
+            Set_Error
+              (Cfg,
+               "tldr cannot be combined with status, prove, sbom, --compare-base, "
+               & "or --coverage-delta");
+         end if;
+
+         -- man and tldr are two installers; one run installs one page.
+         if Cfg.Tldr_Mode and then Cfg.Man_Mode then
+            Set_Error (Cfg, "tldr cannot be combined with man");
+         end if;
+
+         -- --check belongs to both installers; --dir belongs to the man
+         -- subcommand only (the tldr target comes from the detected
+         -- client). A bare `adacovex --check` is almost certainly a typo,
+         -- so fail loudly rather than silently running an assessment that
+         -- ignores it.
+         if Cfg.Man_Check and then not (Cfg.Man_Mode or else Cfg.Tldr_Mode)
+         then
+            Set_Error (Cfg, "--check requires the man or tldr subcommand");
+         end if;
+         if Cfg.Man_Dir_Len > 0 and then not Cfg.Man_Mode then
+            Set_Error (Cfg, "--dir requires the man subcommand");
          end if;
 
          -- --version is a pure banner: nothing else is meaningful with it.
          if Cfg.Version_Requested
            and then (Cfg.Man_Mode
+                     or Cfg.Tldr_Mode
                      or Cfg.Status_Mode
                      or Cfg.Prove_Mode
                      or Cfg.SBOM_Mode
@@ -2232,9 +2260,11 @@ package body Adacovex.Config is
 
          -- GNATprove options only make sense in prove mode. --force is shared
          -- with the man subcommand (man --force overrides the installed page),
-         -- so it is only an error when neither prove nor man mode is set.
+         -- and tldr mode (both installers rewrite their page), so it is
+         -- only an error when prove, man, and tldr mode are all unset.
          if not Cfg.Prove_Mode
            and then not Cfg.Man_Mode
+           and then not Cfg.Tldr_Mode
            and then (Cfg.Prove_Jobs >= 0
                      or Cfg.Prove_Level >= 0
                      or Cfg.Prove_Timeout >= 0
@@ -2451,6 +2481,7 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line ("       adacovex prove --target=PATH");
       Ada.Text_IO.Put_Line ("       adacovex status --target=PATH");
       Ada.Text_IO.Put_Line ("       adacovex man [--check] [--dir=PATH]");
+      Ada.Text_IO.Put_Line ("       adacovex tldr [--check]");
       Ada.Text_IO.Put_Line ("       adacovex complexity [--target=PATH]");
       Ada.Text_IO.Put_Line ("       adacovex spark-coverage [--target=PATH]");
       Ada.Text_IO.Put_Line ("");
@@ -2718,6 +2749,16 @@ package body Adacovex.Config is
         ("                        already matches this binary (repair a");
       Ada.Text_IO.Put_Line
         ("                        hand-edited/corrupt installed page)");
+      Ada.Text_IO.Put_Line
+        ("  tldr [--check]        Install the bundled tldr page into the local");
+      Ada.Text_IO.Put_Line
+        ("                        tldr client (tealdeer custom pages, or a");
+      Ada.Text_IO.Put_Line
+        ("                        base client's cache pages tree); --check");
+      Ada.Text_IO.Put_Line
+        ("                        exits 0 when the installed page matches the");
+      Ada.Text_IO.Put_Line
+        ("                        bundled one, 1 when it is missing or stale");
       Ada.Text_IO.Put_Line
         ("  help [TOPIC]          Show this message, or contextual help for a");
       Ada.Text_IO.Put_Line
@@ -3184,6 +3225,27 @@ package body Adacovex.Config is
             & "--metrics        print the report as a compact key=value"
             & ASCII.LF
             & "                 metrics summary (one per line) for scripts.");
+      elsif T = "tldr" then
+         Print_Section
+           ("adacovex tldr",
+            "Install the bundled tldr page (docs/tldr/adacovex.md) into the"
+            & ASCII.LF
+            & "local tldr client, so `tldr adacovex` works offline.  The"
+            & ASCII.LF
+            & "installer detects the client: tealdeer gets its custom pages"
+            & ASCII.LF
+            & "directory, and a base client gets its cache pages tree (the"
+            & ASCII.LF
+            & "common page plus the platform page)."
+            & ASCII.LF
+            & ASCII.LF
+            & "--check exits 0 when the installed page matches the bundled"
+            & ASCII.LF
+            & "page, 1 when it is missing or stale.  --force always rewrites"
+            & ASCII.LF
+            & "the page.  With no supported client the page is printed to"
+            & ASCII.LF
+            & "stdout instead, so the command is never useless.");
       elsif T = "man" or else T = "check" or else T = "dir" or else T = "force"
       then
          Print_Section

@@ -161,3 +161,20 @@ When man-db is missing, the page still installs. Read it with
 `man -l ~/.local/share/man/man1/adacovex.1`. `adacovex status` reports mandb
 availability up front. See [Platforms -- local man page](platforms.md#local-man-page-linuxwsl)
 for the install roots and man-db behaviour.
+
+## Keeping the tldr page in sync
+
+`adacovex tldr` installs the bundled tldr cheat sheet into the local tldr
+client, so `tldr adacovex` works offline. The command detects the client and
+writes to that client's own page location. tealdeer gets the page in its
+custom pages directory (`~/.local/share/tealdeer/pages/adacovex.page.md`).
+A base client gets the page in its cache pages tree
+(`~/.cache/tldr/pages/common/adacovex.md`, plus the platform directory).
+
+`adacovex tldr --check` exits 0 when the installed page matches the bundled
+one, and 1 when it is missing or stale. A shell prompt hook can auto-update.
+`adacovex tldr --force` rewrites an up-to-date page.
+
+The page contains no version, so the check compares content, and an install
+after an upgrade always refreshes it. With no supported client, the command
+prints the page to stdout.

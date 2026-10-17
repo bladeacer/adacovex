@@ -85,7 +85,9 @@ Compliance selection stays on `--standard` and its level companions
 | `man --check` | - | - | Exit 0 if the installed man page matches the binary version, 1 otherwise |
 | `man --force` | - | - | Reinstall the man page even when it already matches (repair) |
 | `man --dir=PATH` | `~/.local/share/man` | - | Install the man page under `PATH/man1` instead |
-| tldr | - | - | The curated cheat-sheet page at `docs/tldr/adacovex.md` (in-repo; `just tldr-check` keeps it in the tldr format) |
+| `tldr` | - | - | Install the bundled tldr page into the local tldr client (tealdeer or a base client) |
+| `tldr --check` | - | - | Exit 0 if the installed tldr page matches the bundled page, 1 when it is missing or stale |
+| `tldr --force` | - | - | Rewrite the installed tldr page even when it already matches |
 | `--help` | - | both | Print usage and exit |
 
 `prove`-mode flags are also accepted by the main command. They are validated
@@ -124,8 +126,8 @@ to write them, worked examples, and pitfalls are in
 
 | Code | Meaning |
 |------|---------|
-| `0` | Success (DAL achieved, all checks pass, `--version`, man page installed/up-to-date) |
-| `1` | Compliance failure (DAL unmet, tests failing, a `--require-*` CI gate unmet, differential regression, `man --check` finding a newer version available or none installed, and more) |
+| `0` | Success (DAL achieved, all checks pass, `--version`, man or tldr page installed/up-to-date) |
+| `1` | Compliance failure (DAL unmet, tests failing, a `--require-*` CI gate unmet, differential regression, `man --check` finding a newer version available or none installed, `tldr --check` finding a missing or stale page, and more) |
 
 ## Terminal colour
 

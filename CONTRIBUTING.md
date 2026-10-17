@@ -68,7 +68,7 @@ Enforced rules:
 - Files are pure ASCII; list items indented under a heading use exactly
   three spaces (never 4+).
 - `## Proof Results` states the SPARK level (Stone..Platinum), the exact VC
-  totals (e.g. `1048/1048 VCs proved across 72 analyzed units`), and calls out
+  totals (e.g. `1048/1048 VCs proved across 75 analyzed units`), and calls out
   whether any proof metrics changed.
 - `## Traceability` lists any new HLRs by tag name and package, then the
   existing `-- HLR-*` tags covering the changed packages.
@@ -106,7 +106,7 @@ Pull requests should follow the following conventions.
 - Keep docstring coverage at 100% (strict mode, cannot be disabled):
   `just run-self` must show Platinum, 100% docs, and DAL-C Achieved.
 - If you add or change behavior, extend the native test suite in `src/tests/`
-  (1949 tests across 28 categories) and run `just test`.
+  (1991 tests across 29 categories) and run `just test`.
 - Keep all source files pure ASCII: `just ascii-check`.
 - If a new CLI flag is added, mirror it as a matching GitHub Action input in
   `./action.yml` and document it in `docs/usage/cli-reference.md` and the README
@@ -190,4 +190,5 @@ adacovex itself parses.
 | Completion scripts | 24 |
 | Platform paths | 43 |
 | Install method | 23 |
-| **Total** | **1949** |
+| tldr installer | 42 |
+| **Total** | **1991** |

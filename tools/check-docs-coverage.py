@@ -46,6 +46,7 @@ _SUBCOMMANDS: Set[str] = {
     "status",
     "completion",
     "man",
+    "tldr",
     "check",
     "complexity",
     "export",

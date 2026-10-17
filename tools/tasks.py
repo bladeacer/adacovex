@@ -38,6 +38,7 @@ GENERATED_SPECS: List[str] = [
     "adacovex_version_info.ads",
     "adacovex-dashboard_template.ads",
     "adacovex-docs_template.ads",
+    "adacovex-tldr_template.ads",
 ]
 
 
@@ -270,7 +271,8 @@ def task_para_split_check() -> int:
 
 
 def task_tldr_check() -> int:
-    return py("tools/check-tldr.py")
+    rc = py("tools/check-tldr.py")
+    return rc if rc != 0 else py("tools/gen-tldr.py", "--check")
 
 
 def task_tldr_lint() -> int:

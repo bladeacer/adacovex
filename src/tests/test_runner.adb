@@ -30,6 +30,7 @@ with Adacovex_Completion_Tests;
 with Adacovex_Spark_Coverage_Tests;
 with Adacovex_Paths_Tests;
 with Adacovex_Install_Tests;
+with Adacovex_Tldr_Tests;
 
 procedure Test_Runner is
 
@@ -61,6 +62,7 @@ procedure Test_Runner is
    R_SparkCov    : Runner;
    R_Paths       : Runner;
    R_Install     : Runner;
+   R_Tldr        : Runner;
 
    Total_Passed : Natural := 0;
    Total_Failed : Natural := 0;
@@ -117,6 +119,7 @@ procedure Test_Runner is
          Row ("Completion scripts", R_Completion);
          Row ("Platform paths", R_Paths);
          Row ("Install method", R_Install);
+         Row ("tldr installer", R_Tldr);
       end;
 
       Put_Line
@@ -205,6 +208,7 @@ procedure Test_Runner is
          Row ("Completion scripts", R_Completion);
          Row ("Platform paths", R_Paths);
          Row ("Install method", R_Install);
+         Row ("tldr installer", R_Tldr);
       end;
 
       Put_Line
@@ -255,6 +259,7 @@ begin
    Adacovex_Completion_Tests.Run (R_Completion);
    Adacovex_Paths_Tests.Run (R_Paths);
    Adacovex_Install_Tests.Run (R_Install);
+   Adacovex_Tldr_Tests.Run (R_Tldr);
 
    Total_Passed :=
      R_Types.Passed
@@ -284,7 +289,8 @@ begin
      + R_Do178C.Passed
      + R_Completion.Passed
      + R_Paths.Passed
-     + R_Install.Passed;
+     + R_Install.Passed
+     + R_Tldr.Passed;
    Total_Failed :=
      R_Types.Failed
      + R_DAL.Failed
@@ -313,7 +319,8 @@ begin
      + R_Do178C.Failed
      + R_Completion.Failed
      + R_Paths.Failed
-     + R_Install.Failed;
+     + R_Install.Failed
+     + R_Tldr.Failed;
 
    Print_Summary;
    Write_Results;

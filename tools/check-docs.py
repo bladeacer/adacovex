@@ -205,13 +205,13 @@ def source_files() -> List[Path]:
     """The Ada sources whose comment text the single-space rule covers.
 
     The generated units (`adacovex-docs_template`, `adacovex-dashboard_template`,
-    `adacovex_version_info`) are excluded, exactly as the generated api-docs
-    pages are: the rule belongs in the generator's own text, which emits
-    single-spaced comments already, and a hand edit here would be overwritten
-    by the next `just build`.
+    `adacovex-tldr_template`, `adacovex_version_info`) are excluded, exactly
+    as the generated api-docs pages are: the rule belongs in the generator's
+    own text, which emits single-spaced comments already, and a hand edit
+    here would be overwritten by the next `just build`.
     """
     generated = {"adacovex-docs_template", "adacovex-dashboard_template",
-                 "adacovex_version_info"}
+                 "adacovex-tldr_template", "adacovex_version_info"}
     files: List[Path] = []
     root = ROOT / "src"
     if root.is_dir():

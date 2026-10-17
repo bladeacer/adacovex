@@ -2,6 +2,7 @@ src/adacovex	Version constant
 src/adacovex_version_info	Generated version constant (from alire-dev.toml / ADACOVEX_VERSION)
 src/adacovex-dashboard_template	Generated dashboard HTML template constant (from resources/dashboard.html)
 src/adacovex-docs_template	Generated offline manual template constant (from the Sphinx docs via tools/gen-docs.py)
+src/adacovex-tldr_template	Generated tldr page constant (from docs/tldr/adacovex.md via tools/gen-tldr.py)
 src/adacovex_main	CLI entry point (builds as bin/adacovex; covex alias)
 src/compliance/adacovex-compliance	Parent package for DO-178C compliance assessment
 src/compliance/adacovex-compliance-dal	DAL level assessment logic (DAL-A..E criteria)
@@ -38,6 +39,7 @@ src/renderers/adacovex-renderers-markdown	VERIFICATION.md + TRACE.md
 src/renderers/adacovex-renderers-svg	SVG badges (spark/tests/do178c/docs)
 src/renderers/adacovex-renderers-html	Web dashboard + JSON API
 src/renderers/adacovex-renderers-man	Man-page renderer + installer (local man db, Linux/WSL)
+src/renderers/adacovex-renderers-tldr	tldr page installer (client detection, tealdeer custom pages / base cache pages)
 src/renderers/adacovex-renderers-sbom	CycloneDX 1.5 / SPDX 2.3 / Markdown SBOM generator
 src/server/adacovex-server	Parent package for the HTTP server subsystem
 src/server/adacovex-server-http	HTTP/1.1 server (4-worker task pool)
@@ -67,11 +69,12 @@ src/tests/adacovex_cpus_tests	Host CPU and job-resolution tests (24)
 src/tests/adacovex_do178c_tests	HLR/LLR parsing and line-reader tests (33)
 src/tests/adacovex_completion_tests	Shell completion script tests (24)
 src/tests/adacovex_paths_tests	Platform-agnostic path helper tests (43)
+src/tests/adacovex_tldr_tests	tldr installer tests (42)
 src/tests/adacovex_install_tests	Installation-method tests (23)
 src/tests/adacovex_renderer_svg_tests	SVG renderer tests (161)
 src/tests/adacovex_renderer_tests	HTML/Markdown renderer tests (58)
 src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (366)
-src/tests/test_runner	Test suite entry point (1949 tests)
+src/tests/test_runner	Test suite entry point (1991 tests)
 src/parsers/adacovex-parsers-manifest-req_entry	Parse the first requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-collect_req_entries	Collect every requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-register_root_python_deps	Register root requirements*.txt entries as dev-scope pypi components

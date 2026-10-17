@@ -33,5 +33,7 @@
 - LLR-RENDER-HTML-01: Render_Dashboard shall produce self-contained HTML with embedded CSS [HLR-RENDER-HTML]
 - LLR-RENDER-HTML-02: Render_Metrics_JSON shall produce JSON with key metrics [HLR-RENDER-HTML]
 - LLR-SERVER-01: Start shall bind to port and serve dashboard at /, API at /api/metrics, badges at /badge/*.svg [HLR-SERVER]
+- LLR-TLDR-01: Detect shall classify the installed tldr client from `tldr --show-paths` and `tldr --version`, and shall report no client when the binary is absent [HLR-TLDR]
+- LLR-TLDR-02: Install shall write the bundled page to the tealdeer custom pages directory, or to a base client's common and platform cache pages, and Installed shall compare the page byte for byte [HLR-TLDR]
 - LLR-CLI-01: Parse_CLI shall parse --target, --dal, --serve, --port, --emit-svg, --emit-markdown [HLR-CLI]
 - LLR-CLI-02: Parse_CLI shall default target to the current working directory and DAL to C [HLR-CLI]
