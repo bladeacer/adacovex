@@ -442,10 +442,11 @@ scripts), differential modes, and `sbom`.
 - **Python 3 is a build-time dependency**: it is required to bundle the
   dashboard and the offline manual into the binary via
   `tools/gen-dashboard.py` and `tools/gen-docs.py`. The pure-stdlib `tools/*.py`
-  (version generation, description sync, test/proof doc sync, changelog checks,
-  doc-links, agents-tree) all run on Python 3; `tools/gen-docs.py` additionally
-  needs `sphinx` + `myst-parser` + `furo` (see `requirements.txt`) to build
-  the manual
+  (version generation, description sync, test/proof doc sync, requirements
+  sync, changelog checks, doc-links, agents-tree) all run on Python 3;
+  `tools/gen-docs.py` additionally needs `sphinx` + `myst-parser` + `furo`
+  (single-sourced in `pyproject.toml`; `just requirements` renders the
+  committed `requirements.txt`) to build the manual
   from `docs/`. The released binary itself embeds the manual as generated Ada
   string constants and has **no runtime Python dependency**.
 
@@ -456,7 +457,8 @@ all functions/variables with `typing` (`from typing import ...`). Keep new
 scripts consistent: `typing` for annotations, `argparse` for CLI, `pathlib`
 for paths, and no `pip install` / external imports. Run them with
 `python3 tools/<name>.py`; the sync ones are wired as `just test-count`, `just
-proof-status`, `just doc-links`, and `just link-check` (markdown link
+proof-status`, `just requirements`, `just doc-links`, and `just link-check`
+(markdown link
 verification, run as a cheap static gate in `just check`).
 `tools/tasks.py` is the task runner. It owns every build, sync, and gate
 recipe as a Python function, and two thin front ends call it: the `justfile`
@@ -573,6 +575,19 @@ The committed artifact is the generated spec itself, gated by
 `python3 tools/gen-docs.py --check` (also in `just check`), so `docs/` edits
 must be followed by `just book`.
 
+### The Python tooling environment (bootstrap order)
+
+`pyproject.toml` (`[project].dependencies`) is the single source of the docs
+Python dependencies (Sphinx, MyST, Furo). `requirements.txt` stays committed
+because `.readthedocs.yaml` and `pip install -r` consume it;
+`tools/update-requirements.py` renders it (`--check` is the
+`requirements sync` gate in `just check`, and `just requirements`
+regenerates). When `.venv` is missing, `just docs-venv` bootstraps it in a
+fixed order: **`uv` when present, else `install.sh --python-venv`, else
+`python3 -m venv`**; the venv-bin path stays absolute (the Python 3.13
+relative-`sys.prefix` `RuntimeWarning` fix) and points at `.venv/Scripts` on
+Windows.
+
 ## Task targets (`just`)
 
 Run a task with `just <task>`; the `Makefile` accepts the same names as a
@@ -580,7 +595,7 @@ compatibility shim. The table names the canonical target for each task.
 
 | Target | Description |
 |--------|-------------|
-| `check` | **The single everything-check / verification entry point.** Run it after any change. It runs every gate CI runs before a release, and **`fmt` is first**: gnatprove and the API docs both read the sources, so every later gate must see formatted code. Then the cheap static gates (ascii, complexity, csslint, spark-off, changelog, action-parity, docs-coverage, tools-check, cli-e2e, version, version-consistency, doc-links, link, docs-check, para-split, tldr, book-links), then build + native tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description). Every gate runs a preflight first: a gate whose tool is missing on the host (no `alr` on `PATH`, no `gnatformat` on the developer path, a `gnatdoc` that cannot document a one-package probe project, no `sphinx` in the interpreter) is SKIPped with the reason instead of failing, the run continues past a failed gate, and the summary shows PASS/FAIL/SKIP per gate, exiting non-zero only when a gate failed. `just check` resolves `gnatprove` for you (it is fetched into `<data>/toolchain/` and executed directly when not on `PATH`), so you never have to install or point at a prover by hand -- just run `just check` and it verifies the whole tree end to end. `just prove` is the SPARK sub-gate if you only changed proof-affecting code |
+| `check` | **The single everything-check / verification entry point.** Run it after any change. It runs every gate CI runs before a release, and **`fmt` is first**: gnatprove and the API docs both read the sources, so every later gate must see formatted code. Then the cheap static gates (ascii, complexity, csslint, spark-off, changelog, action-parity, docs-coverage, tools-check, cli-e2e, version, version-consistency, doc-links, link, docs-check, para-split, tldr, book-links), then build + native tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description, requirements). Every gate runs a preflight first: a gate whose tool is missing on the host (no `alr` on `PATH`, no `gnatformat` on the developer path, a `gnatdoc` that cannot document a one-package probe project, no `sphinx` in the interpreter) is SKIPped with the reason instead of failing, the run continues past a failed gate, and the summary shows PASS/FAIL/SKIP per gate, exiting non-zero only when a gate failed. `just check` resolves `gnatprove` for you (it is fetched into `<data>/toolchain/` and executed directly when not on `PATH`), so you never have to install or point at a prover by hand -- just run `just check` and it verifies the whole tree end to end. `just prove` is the SPARK sub-gate if you only changed proof-affecting code |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
 | `test` | Build + run the 2017-test native suite |
@@ -591,6 +606,7 @@ compatibility shim. The table names the canonical target for each task.
 | `sbom` | Generate the proof-aware SBOM (`sbom.json`) |
 | `compliance` | Regenerate the committed `docs/compliance/VERIFICATION.md` + `TRACE.md` for the self tree (kept out of `just prove` so the bundled-report template cannot invalidate the proof cache) |
 | `description` | Sync the crate description from alire/description.txt + alire/long-description.txt (`CHECK=1` verifies only) |
+| `requirements` | Generate `requirements.txt` from `pyproject.toml` (`CHECK=1` verifies only) |
 | `run-self` | Run against adacovex itself (default target: cwd) |
 | `run-ada-crdt` | Run against `../Ada_CRDT` (strict mode) |
 | `coverage-gate` | Docstring-coverage gate between the latest two release tags |

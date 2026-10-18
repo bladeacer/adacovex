@@ -9,12 +9,14 @@
 # Python tasks; `just` is the primary developer runner.
 
 # The docs-bundling virtualenv.  sphinx, myst-parser, and furo are dev-only
-# and live in .venv, managed with uv from requirements.txt.  Recipes that
-# build or serve the manual put .venv on PATH first, so tools/gen-docs.py
-# finds sphinx-build; every other recipe runs with the system interpreter.
-# The path is absolute: a Python 3.13 interpreter started from a relative
-# venv path reports sys.prefix as the relative `.venv` and <frozen site>
-# prints a RuntimeWarning about it.
+# and live in .venv.  Their single source is pyproject.toml
+# ([project].dependencies); `just requirements` renders it into the committed
+# requirements.txt, and the `requirements sync` gate fails when the two
+# drift.  Recipes that build or serve the manual put .venv on PATH first, so
+# tools/gen-docs.py finds sphinx-build; every other recipe runs with the
+# system interpreter.  The path is absolute: a Python 3.13 interpreter started
+# from a relative venv path reports sys.prefix as the relative `.venv` and
+# <frozen site> prints a RuntimeWarning about it.
 venv-bin := justfile_directory() / (if os() == "windows" { ".venv/Scripts" } else { ".venv/bin" })
 
 # Show the task list with each recipe's description (the default action).
@@ -25,10 +27,37 @@ default:
 help:
     @just --list
 
-# Create or refresh the docs-bundling virtualenv with uv.
+# Create or refresh the docs-bundling virtualenv.  Bootstrap order when .venv
+# is missing: uv when present, else the project's install.sh --python-venv,
+# else python3 -m venv; install.sh installs the requirements itself, the
+# other two creators leave it to this recipe.  Dependency installation is
+# idempotent, so a pre-existing .venv is topped up on every run.
 docs-venv:
-    @test -d .venv || uv venv --python 3.13 .venv
-    @uv pip install --python .venv -r requirements.txt
+    @set -e; SH_DONE=0; \
+        if [ ! -d .venv ]; then \
+            if command -v uv >/dev/null 2>&1; then \
+                echo "docs-venv: creating .venv with uv"; \
+                uv venv --python 3.13 .venv; \
+            elif [ -f install.sh ]; then \
+                echo "docs-venv: creating .venv with install.sh --python-venv"; \
+                bash install.sh --python-venv .venv; SH_DONE=1; \
+            else \
+                echo "docs-venv: creating .venv with python3 -m venv"; \
+                PYEXE="$(command -v python3 || command -v python)"; \
+                "$PYEXE" -m venv .venv; \
+            fi; \
+        fi; \
+        if [ "$SH_DONE" = 1 ]; then exit 0; fi; \
+        PYBIN=.venv/bin/python; [ -x "$PYBIN" ] || PYBIN=.venv/Scripts/python.exe; \
+        if command -v uv >/dev/null 2>&1; then \
+            uv pip install --python .venv -r requirements.txt; \
+        else \
+            "$PYBIN" -m pip install --quiet -r requirements.txt; \
+        fi
+
+# Regenerate requirements.txt from pyproject.toml (CHECK=1 verifies only).
+requirements:
+    @python3 tools/tasks.py requirements
 
 # Build the project (adacovex + test_runner, covex alias).
 build: docs-venv

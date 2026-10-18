@@ -12,7 +12,7 @@ delegates each target to this script).
 Environment:
   VERSION=x.y.z   passed to bump-version / release
   DRY_RUN=1       release: everything except commit/tag/push
-  CHECK=1         description: verify only, without writing
+  CHECK=1         description / requirements: verify only, without writing
 
 Exit code is the last subprocess's, or 0.
 """
@@ -340,6 +340,16 @@ def task_description() -> int:
     return py("tools/update-description.py")
 
 
+def task_requirements_check() -> int:
+    return py("tools/update-requirements.py", "--check")
+
+
+def task_requirements() -> int:
+    if os.environ.get("CHECK") == "1":
+        return task_requirements_check()
+    return py("tools/update-requirements.py")
+
+
 def task_bump_version() -> int:
     return py("tools/bump-version.py", os.environ.get("VERSION", ""))
 
@@ -550,6 +560,7 @@ CHECK_GATES: List[Tuple[str, Callable[[], int],
     ("test counts in sync", task_test_count_check, None),
     ("proof metrics in sync", task_proof_status_check, None),
     ("description sync", task_description_check, None),
+    ("requirements sync", task_requirements_check, None),
 ]
 
 
@@ -601,7 +612,7 @@ def task_check() -> int:
 
 def task_sync() -> int:
     for action in (task_agents_tree, task_proof_status, task_test_count,
-                   task_doc_links, task_description):
+                   task_doc_links, task_description, task_requirements):
         rc = action()
         if rc != 0:
             return rc
@@ -647,6 +658,7 @@ TASKS: Dict[str, Callable[[], int]] = {
     "spark-off-check": task_spark_off_check,
     "version-consistency-check": task_version_consistency_check,
     "description": task_description,
+    "requirements": task_requirements,
     "bump-version": task_bump_version,
     "release": task_release,
     "publish": task_publish,

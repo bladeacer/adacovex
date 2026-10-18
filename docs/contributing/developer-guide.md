@@ -17,8 +17,10 @@ Prerequisites:
 - **Python 3** -- required at **build time** to bundle the dashboard and the
   offline manual into the binary (`tools/gen-dashboard.py` and
   `tools/gen-docs.py`). The docs bundle additionally needs `sphinx` +
-  `myst-parser` (see `requirements.txt`). The shipped binary itself has no
-  Python or other runtime dependency.
+  `myst-parser`; their single source is `pyproject.toml`
+  (`[project].dependencies`), which `just requirements` renders into the
+  committed `requirements.txt`. The shipped binary itself has no Python or
+  other runtime dependency.
 - **gnatprove** -- optional for *using* adacovex, required for `just prove`.
   It is resolved at run time (manifest pin, `$PATH`, cached toolchain, or
   download). It lives in the dev manifest, never the published one.
@@ -36,6 +38,33 @@ just check        # the whole quality gate CI runs before a release
 `just` is the task runner (`just --list` lists every recipe). The `Makefile`
 is a thin shim that delegates to the same Python tasks, so an existing
 `make <task>` reference still works.
+
+### The Python tooling environment
+
+The docs toolchain (Sphinx, MyST, Furo) lives in `.venv`. Its dependency
+list has one source: `pyproject.toml` (`[project].dependencies`).
+`requirements.txt` is generated from that table by
+`python3 tools/update-requirements.py` and stays committed, because
+`.readthedocs.yaml` (`python.install`) and `pip install -r` read it.
+
+Edit `pyproject.toml`, then run `just requirements` to regenerate the
+rendered file. The `requirements sync` gate in `just check` runs the
+same generator in `--check` mode and fails when the two drift, so a hand
+edit of `requirements.txt` never survives a gate run.
+
+When `.venv` is missing, `just docs-venv` bootstraps it in a fixed
+order:
+
+1. `uv`, when it is on `PATH` (`uv venv --python 3.13`, then
+   `uv pip install`);
+2. the project's `install.sh --python-venv`, which creates the venv and
+   installs `requirements.txt` into it;
+3. `python3 -m venv`, then `pip install -r requirements.txt`.
+
+The venv path stays absolute in every recipe: a Python 3.13 interpreter
+started from a relative `.venv` reports a relative `sys.prefix`, and
+`<frozen site>` then prints a `RuntimeWarning` about it. On Windows the
+recipes pick `.venv/Scripts` instead of `.venv/bin`.
 
 `just check` is the pre-commit gate. It runs `fmt` first, because gnatprove
 and the API docs both read the sources and every later gate must see

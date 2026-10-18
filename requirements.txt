@@ -4,6 +4,11 @@
 # Furo theme and the MyST parser so the existing .md pages compile unchanged.
 # Read the Docs installs these (see .readthedocs.yaml, `python.install`) to
 # run `sphinx-build` over docs/.
+#
+# GENERATED FILE -- the dependency list comes from pyproject.toml
+# ([project].dependencies), the single source.  Edit that file and run
+# `just requirements` to regenerate; the `requirements sync` gate in
+# `just check` fails when the two drift.
 sphinx
 myst-parser
 furo

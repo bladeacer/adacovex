@@ -24,7 +24,7 @@ These are required to develop, test, or document adacovex.
 | gnatdoc | Development | Alire (dev) | Required for `just doc`. |
 | gnatformat | Development | Alire (dev) | Required for `just fmt`. |
 | Python 3 | Development | System | Build-time requirement: bundles the dashboard + offline manual into the binary (`tools/gen-dashboard.py` / `tools/gen-docs.py`). The released binary has no runtime Python. |
-| Sphinx + MyST | Development | Python venv (`requirements.txt`) | Build-time requirement for `tools/gen-docs.py`: builds the manual from `docs/` into `docs/_build`. |
+| Sphinx + MyST | Development | Python venv (`pyproject.toml` -> `requirements.txt`) | Build-time requirement for `tools/gen-docs.py`: builds the manual from `docs/` into `docs/_build`. The dependency list is single-sourced in `pyproject.toml` (`[project].dependencies`); `just requirements` renders the committed `requirements.txt` and the `requirements sync` gate fails on drift. |
 | Playwright | Development | npm/pnpm | Required for `just e2e`. |
 
 ## Good to have

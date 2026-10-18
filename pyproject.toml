@@ -1,0 +1,20 @@
+# adacovex Python tooling
+#
+# [project].dependencies below is the single source of the docs dependencies
+# (Sphinx, MyST, Furo). requirements.txt is generated from it by
+# tools/update-requirements.py and stays committed because .readthedocs.yaml
+# (`python.install`) and `pip install -r` consume it; the `requirements sync`
+# gate in `just check` fails when the two drift. Edit this file, never
+# requirements.txt directly -- run `just requirements` to regenerate.
+
+[project]
+name = "adacovex-docs"
+# Never published: only `dependencies` (and `requires-python`) is read here.
+version = "0.0.0"
+# tomllib, the reader tools/update-requirements.py uses, is stdlib from 3.11.
+requires-python = ">=3.11"
+dependencies = [
+    "sphinx",
+    "myst-parser",
+    "furo",
+]

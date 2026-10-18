@@ -13,7 +13,7 @@
         run-self run-ada-crdt ascii-check spark-off-check bump-version \
         coverage-gate release publish test-publish agents-tree sbom compliance \
         description proof-status test-count doc-links link-check \
-        changelog-check action-parity-check docs-coverage-check tools-check \
+        requirements changelog-check action-parity-check docs-coverage-check tools-check \
         bench perf-bench complexity-check csslint-check \
         version-consistency-check sync docs-check para-split-check tldr-check \
         tldr-lint book-links-check cli-e2e e2e check
@@ -92,6 +92,9 @@ compliance:
 
 description:
 	@python3 tools/tasks.py description
+
+requirements:
+	@python3 tools/tasks.py requirements
 
 proof-status:
 	@python3 tools/tasks.py proof-status

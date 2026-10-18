@@ -74,8 +74,9 @@ Cross-links between the generated package pages and the reference pages live in 
   the built site into `src/adacovex-docs_template.ads` (keeping Sphinx's own
   search machinery -- searchindex.js, searchtools.js, the stemmers -- so the
   bundled manual is searchable offline and the committed spec never churns
-  its asset names). The docs build dependencies (sphinx + myst-parser) are
-  the Read the Docs installation requirements in `requirements.txt`. The
+  its asset names). The docs build dependencies (sphinx + myst-parser +
+  furo) are single-sourced in `pyproject.toml` and rendered into
+  `requirements.txt`, the Read the Docs installation requirements. The
   pages are never converted to reStructuredText.
 - Sphinx runs only when the docs sources changed, and a changed tree
   rebuilds incrementally. Only the changed pages are re-read (their mtimes

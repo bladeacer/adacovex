@@ -12,6 +12,7 @@
 #   bash install.sh                      # latest release
 #   bash install.sh v1.4.0               # a specific release tag
 #   bash install.sh v1.4.0 /tmp/adacovex # a custom install prefix
+#   bash install.sh --python-venv [DIR]  # bootstrap the Python tooling venv
 #
 # Environment:
 #   ADACOVEX_HOME   Install prefix (default ~/.adacovex)
@@ -19,6 +20,40 @@
 #   ADACOVEX_VERSION Release tag to install (default: latest)
 #
 set -euo pipefail
+
+# --- Python tooling environment mode --------------------------------------
+# `install.sh --python-venv [DIR]` creates the docs-bundling virtualenv
+# (default: ./.venv) and installs requirements.txt into it.  This is the
+# project-provided step of the documented bootstrap order for the Python
+# tooling environment -- uv when present, else this script, else
+# `python3 -m venv` -- and it needs a source checkout, because it reads the
+# repository's requirements.txt (generated from pyproject.toml).  The release
+# download below is skipped entirely in this mode.
+if [ "${1:-}" = "--python-venv" ]; then
+    VENV="${2:-./.venv}"
+    HERE="$(cd "$(dirname "$0")" 2>/dev/null && pwd || echo .)"
+    REQS="$HERE/requirements.txt"
+    if [ ! -f "$REQS" ]; then REQS="./requirements.txt"; fi
+    if [ ! -f "$REQS" ]; then
+        echo "error: requirements.txt not found; run this from a source checkout" >&2
+        exit 1
+    fi
+    PYEXE="$(command -v python3 || command -v python || true)"
+    if [ -z "$PYEXE" ]; then
+        echo "error: no python3 or python on PATH" >&2
+        exit 1
+    fi
+    echo "adacovex installer: bootstrapping the Python tooling venv"
+    echo "  venv:  $VENV"
+    echo "  deps:  $REQS"
+    "$PYEXE" -m venv "$VENV"
+    VPY="$VENV/bin/python"
+    if [ ! -x "$VPY" ]; then VPY="$VENV/Scripts/python.exe"; fi
+    "$VPY" -m pip install --quiet -r "$REQS"
+    echo "  installed into $VENV"
+    echo "  activate with: . $VENV/bin/activate"
+    exit 0
+fi
 
 REPO="${ADACOVEX_REPO:-bladeacer/adacovex}"
 VERSION="${1:-${ADACOVEX_VERSION:-latest}}"
