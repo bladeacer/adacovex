@@ -44,7 +44,7 @@ ISO 26262 / IEC 62304), and interactive dashboards.
 -  Self-assessment: 100% docstring coverage, Platinum SPARK, DAL-C / ASIL B /
   Class A Achieved, 2017/2017 native tests passing
 """
-version = "1.61.0"
+version = "1.62.0"
 project-files = ["adacovex.gpr"]
 
 authors = ["bladeacer"]

@@ -251,7 +251,7 @@ join it, so `just tools-check` runs 186 tests again.
 
 ## Test Suite
 
-2017 tests across 30 categories, up from 1864. Forty earlier checks in
+2017 tests across 29 categories, up from 1864. Forty earlier checks in
 this release cover the structural readers, the package-root rule, and the
 root npm and Go declarations. Fifteen more pin adacovex as a
 dependency in both directions, and the new `Install method` category
