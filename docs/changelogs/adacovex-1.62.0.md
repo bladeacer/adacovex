@@ -188,6 +188,29 @@ about as much as the new SARIF section added, so the page total barely
 moved while every paragraph read shorter). Every gate stayed green: docs
 coverage, links, paragraph rule, STE rules, and British spelling.
 
+### C11: The docs Python dependencies have one source and one bootstrap order
+
+The docs dependency list lived only in `requirements.txt`, so a second
+declaration would have drifted from it. `pyproject.toml`
+(`[project].dependencies`) is now the single source, and the committed
+`requirements.txt` is generated from it by the new
+`tools/update-requirements.py` -- it stays committed because
+`.readthedocs.yaml` and `pip install -r` consume it. The new
+`requirements sync` gate in `just check` runs the generator in `--check`
+mode and prints the unified diff on drift, `just requirements`
+regenerates the file, and `requirements` joined `just sync`. The rendered
+file keeps the Read the Docs header and the same three dependency lines,
+so no reader of it sees a change beyond the generated-file note.
+
+The docs-bundling venv also bootstraps in one documented order
+(`just docs-venv`): `uv` when present, else the project's
+`install.sh --python-venv` (a new install.sh mode that creates `.venv` and
+installs `requirements.txt` into it), else `python3 -m venv` plus pip. The
+absolute `venv-bin` path and the Python 3.13 relative-`sys.prefix`
+`RuntimeWarning` fix are unchanged, and `.venv/Scripts` still wins on
+Windows. The order is pinned by tests and documented in the contributor
+guide.
+
 ## Fixes
 
 ### H1: An installed package's own subpackages and source trees are no longer components
@@ -203,6 +226,14 @@ container -- an npm scope, a composer vendor name, or a Go import-path
 host -- and the packages below it are real dependencies. Anything else
 at that depth belongs to the package above it and stays out of the
 graph.
+
+### H2: The tools test suite runs again
+
+Commit `7a5a283` replaced `tools/tests.py` with a 141-line tldr scratch
+script, so `just tools-check` exited 0 while running none of the suite's 178
+tests -- the gate looked green and checked nothing. The file is restored to
+the full multi-class suite, and the eight requirements-sync checks of C11
+join it, so `just tools-check` runs 186 tests again.
 
 ## Test Suite
 
@@ -230,7 +261,8 @@ end-to-end checks, including two new component-set shapes (a pnpm workspace
 and a Go module), three checks against the live `/health` and `/api/info`
 endpoints, and seven that install the page into a fake tealdeer client and a
 fake base client and compare it byte for byte. `just tools-check` runs the
-174-test tools suite.
+186-test tools suite (restored in H2, plus the eight requirements-sync
+checks of C11).
 
 ## Proof Results
 
@@ -264,6 +296,8 @@ requirement is the comparison itself.
 
 The status report adds no requirement: it reports state and never assesses it.
 The hermetic suite changes no requirement: it changes the tests that gate
+the tree. The requirements single-sourcing and the tools-suite restore
+(C11, H2) change no requirement either: they change the files that gate
 the tree.
 
 The packages changed by this release, and the tags on record that cover

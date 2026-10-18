@@ -144,18 +144,26 @@ system CUPS port 631. The hermetic-test fix is v1.62.0 item 1.
     added. The docs gates stay green (docs check, coverage, links,
     paragraph rule, changelog format).
 
-- [ ] **7. Python environment and dependency single-sourcing**
+- [x] **7. Python environment and dependency single-sourcing**
 
-  - Single-source the docs dependencies: add a `pyproject.toml` and
-    generate `requirements.txt` from it with a stdlib tool script. The
-    committed `requirements.txt` stays, because `.readthedocs.yaml` and
-    the docs venv consume it, and a sync gate keeps the two identical
-    (same pattern as the description sync).
-  - Bootstrap order for the Python tooling environment: `uv` when
-    present, else `install.sh` when the project provides one, else
-    `python3 -m venv`. Document it in the developer guide and keep the
-    justfile behaviour consistent with it (absolute venv-bin paths, the
-    Windows `sys.prefix` RuntimeWarning fix).
+  - Implemented, see [changelog](docs/changelogs/adacovex-1.62.0.md) (`C11`,
+    `H2`).
+  - `pyproject.toml` (`[project].dependencies`) single-sources the docs
+    dependencies; the new `tools/update-requirements.py` renders the
+    committed `requirements.txt` (header marked generated, dependency lines
+    unchanged for `.readthedocs.yaml`), `just requirements` regenerates it,
+    `CHECK=1` verifies it, and the new `requirements sync` gate in
+    `just check` fails on drift with a unified diff.
+  - Bootstrap order implemented and tested in all three branches: `uv` when
+    present, else `install.sh --python-venv` (the new install.sh mode that
+    creates `.venv` and pip-installs `requirements.txt`), else
+    `python3 -m venv` + pip. Absolute `venv-bin` path and the Windows
+    `sys.prefix` RuntimeWarning fix untouched; the order is documented in
+    the contributor guide and pinned by tests.
+  - Blocker found on the way in and fixed (H2): commit `7a5a283` had
+    replaced `tools/tests.py` with a 141-line scratch script, so
+    `just tools-check` ran zero tests. The 178-test suite is restored and
+    now runs 186 tests with the new checks.
 
 ## v1.63.0
 
@@ -206,7 +214,7 @@ system CUPS port 631. The hermetic-test fix is v1.62.0 item 1.
 
 ## Release bar
 
-Each release ships when `just check` reports 28/28 PASS on this
+Each release ships when `just check` reports 29/29 PASS on this
 machine, `just prove` is Platinum with 0 unproved and 0 justified, the
 native suite is green (and `test_runner` exits non-zero when it is
 not), the version is consistent across every source, and the changelog,
