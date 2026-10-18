@@ -6,30 +6,27 @@ This page covers the dashboard document itself: the tab structure, the dependenc
 
 The page is a single self-contained document (no external assets), bundled
 into the binary from **modular resources** -- `resources/dashboard.html` is
-just the page skeleton. Author styles and scripts are split into focused
-modules under `resources/css/` (`dashboard.css`, which also styles the
-hand-rolled donut rings and bar charts) and `resources/js/` (`theme.js`,
-`tabs.js`, `deps.js`, `details.js`, `nomnoml.js`, `search.js`, `api.js`).
-The vendored libraries (`graphre.js` / `nomnoml.js` / `flexsearch.js` /
-`yace.js`) sit at `resources/`, clearly separate from the authored `js/`
-modules so a scan of the tree can tell dependency JavaScript from dashboard
-JavaScript at a glance; they are inlined into the template at build time by
-`tools/gen-dashboard.py`, which also **minifies** the author CSS/JS
-(comments and whitespace stripped, vendored files are inlined byte-for-byte
-so their tokenizer regexes stay intact).
+just the page skeleton. Author styles and scripts live in focused modules
+under `resources/css/` (`dashboard.css`, which also styles the hand-rolled
+donut rings and bar charts) and `resources/js/` (`theme.js`, `tabs.js`,
+`deps.js`, `details.js`, `nomnoml.js`, `search.js`, `api.js`). The vendored
+libraries (`graphre.js` / `nomnoml.js` / `flexsearch.js` / `yace.js`) sit at
+`resources/` apart from the authored `js/` modules, so a tree scan tells
+dependency JavaScript from dashboard JavaScript at a glance;
+`tools/gen-dashboard.py` inlines them into the template byte-for-byte at
+build time (so their tokenizer regexes stay intact) and **minifies** the
+author CSS/JS.
 
-One more authored module lives under `resources/js/`:
-`resources/js/book-nav.js` is the offline manual's shared-sidebar injector,
-not a dashboard module. It is bundled by `tools/gen-docs.py` as
-`_static/adacovex-nav.js`, and its place under `js/` keeps the SBOM asset
-scan reading it as project code rather than a vendored library. The
-injector marks the open page's entry, then scrolls that entry into the
-drawer, so a reader who clicks a late entry finds it in view on the page
-that opens.
+One more authored module lives under `resources/js/`: `book-nav.js` is the
+offline manual's shared-sidebar injector, not a dashboard module.
+`tools/gen-docs.py` bundles it as `_static/adacovex-nav.js`, and its place
+under `js/` keeps the SBOM asset scan reading it as project code rather than
+a vendored library. The injector marks the open page's entry and scrolls it
+into the drawer, so a reader who clicks a late entry finds it in view.
 
-The resulting `adacovex` binary - whether a GitHub release artifact or an
-Alire crate binary - is completely self-contained. The dashboard has no
-external asset references and works offline.
+The resulting `adacovex` binary -- a GitHub release artifact or an Alire
+crate binary -- is completely self-contained: the dashboard has no external
+asset references and works offline.
 
 Edit the individual `resources/` files, never the
 generated `src/adacovex-dashboard_template.ads` -- the template is regenerated
@@ -71,12 +68,11 @@ keyboard-accessible, persisted in `localStorage`):
   Download actions (see below).
 - **Credits** -- third-party libraries used by the dashboard (nomnoml,
   graphre, FlexSearch, yace, Charts.css) with versions, licences, links and
-  the THIRD_PARTY_NOTICES pointer. The Playwright row (e2e test tooling) is
-  labelled `test`: the e2e fixture declares `@playwright/test` under
-  `devDependencies`, and adacovex classifies test-named npm packages (such
-  as `@playwright/test`) as test dependencies. Charts.css is credited as
-  inspiration -- the dashboard charts are adacovex's own patched version,
-  not the vendored framework.
+  the THIRD_PARTY_NOTICES pointer. The Playwright row is labelled `test`
+  because test-named npm packages (such as `@playwright/test`) classify as
+  test dependencies, and Charts.css is credited as inspiration -- the
+  dashboard charts are adacovex's own patched version, not the vendored
+  framework.
 
 Tabs are linkable: `http://localhost:8080/#deps` opens the Dependencies tab
 directly (also `?theme=light#proof` composes with the theme pin). The active
@@ -98,9 +94,8 @@ shows an empty state with a link to `/api/deps`).
 
 **Tree view** (default):
 
-- Collapsible tree via `<details>` (root open, children closed) with improved
-  text spacing (`line-height: 1.65`, `padding: 8px 12px`, `gap: 10px`,
-   `margin: 6px 0`). **Expand all / Collapse all** buttons.
+- Collapsible tree via `<details>` (root open, children closed) with clear
+  text spacing. **Expand all / Collapse all** buttons.
 - **Filter** input (client-side, case-insensitive by name) hides non-matching
   nodes. Six **scope checkboxes** (`base`, `dev`, `transitive`, `vendored`,
   `system`, `test` -- all checked by default) hide whole scopes, so vendored,
@@ -110,10 +105,9 @@ shows an empty state with a link to `/api/deps`).
   references, for example `git` or `python3`), and `test` (declared under a
   `[[test-depends-on]]` section, with-claused only from test project
   files, declared in a test-labelled section of a supported-language
-  manifest -- for example `testDependencies` in package.json, Cargo's
-  `[dev-dependencies]`, a Gemfile `:test` group, a Maven test scope, or a
-  pyproject `test` extra -- or an npm package whose name starts or ends
-  with "test", such as `@playwright/test`). `root` badge for the project
+  manifest -- for example Cargo's `[dev-dependencies]` or a pyproject `test`
+  extra -- or an npm package whose name starts or ends with "test", such as
+  `@playwright/test`). `root` badge for the project
   itself. Child count badge.
   `data-scope` attribute on each `<li>` for JS filtering. Scope badge
   colours come from `--scope-base/-dev/-trans/-vend/-system/-test` CSS
@@ -124,12 +118,12 @@ shows an empty state with a link to `/api/deps`).
 - **Click a dependency name** to open a **detail panel** in a split view: the
 tree or diagram stays on the left and the panel docks on the right (it stacks below on narrow screens). The panel is the single source of detail for every dependency and serves both the Tree and the Diagram views. It shows the name, version, scope, licence, language, PURL, parent, and a **registry link** derived from the PURL (`pkg:github` -> GitHub, `pkg:gitlab` -> GitLab, `pkg:bitbucket` -> Bitbucket, `pkg:npm` -> npmjs, `pkg:cargo` -> crates.io, `pkg:pypi` -> PyPI, `pkg:golang` -> pkg.go.dev, `pkg:alire` -> alire.ada.dev). Ecosystems without a reliable registry get no link rather than a search URL.
 
-A **system** scope badge marks system-tool dependencies (`pkg:generic/*` with `scope: "system"`); their panel adds a note that no external link or licence is provisioned and only the resolved version is shown. Vendored npm/pnpm/cargo packages resolve their licence from the local manifest, or from the package registry (`npm view <pkg> license`, `pnpm show <pkg> license`, `cargo search <pkg>`) when the manifest is silent. Close the panel via the `close` chip or by clicking another dependency; closing returns the view to full width.
+A **system** scope badge marks system-tool dependencies (`pkg:generic/*` with `scope: "system"`); their panel adds a note that no external link or licence is provisioned and only the resolved version is shown. Vendored npm/pnpm/cargo packages resolve their licence from the local manifest, or from the package registry (`npm view` / `pnpm show` / `cargo search`) when the manifest is silent. Close the panel via the `close` chip or by clicking another dependency; closing returns the view to full width.
 
 **Diagram view** (alternative, toggle **Tree / Diagram**):
 
 -  Rendered with vendored [nomnoml 1.7.0](https://github.com/skanaa/nomnoml)
-(MIT, `resources/nomnoml.js`, 71 KB, inlined) inside a `nomnoml-wrap` card. `ADACOVEX_GRAPH` (`__GRAPH_JSON__` injected by the Ada renderer) is converted to nomnoml source (`[parent]-->[child]` edges, `#direction: down` top-to-bottom so deep graphs stay within the page width) and laid out with nomnoml's internal layout engine, then the graph is serialised to an **SVG** (`<svg id="nomnoml-svg">`). Every node is a real `<g data-name=...>` group with a matching `<rect>` hitbox, so boxes are clickable with exact hit areas (no canvas hit-testing, nothing upside down, no text overflow: node text is clipped to the box width and long labels ellipsise). Diagram colours (fill, background, stroke, line, font) are derived from the page's CSS custom properties at render time, and the theme select re-renders the diagram, so box/arrow colours always match the active theme. The SVG fills the width allocated to the diagram (it takes up the same space the dependency tree would, rather than shrinking to the graph's natural size) and is centred horizontally inside `.nomnoml-wrap`; deep graphs scroll inside the card.
+(MIT, `resources/nomnoml.js`, 71 KB, inlined) inside a `nomnoml-wrap` card. `ADACOVEX_GRAPH` (`__GRAPH_JSON__` injected by the Ada renderer) is converted to nomnoml source (`[parent]-->[child]` edges, `#direction: down` top-to-bottom so deep graphs stay within the page width) and laid out with nomnoml's internal layout engine, then the graph is serialised to an **SVG** (`<svg id="nomnoml-svg">`). Every node is a real `<g data-name=...>` group with a matching `<rect>` hitbox, so boxes are clickable with exact hit areas -- no canvas hit-testing, nothing upside down, and no text overflow: node text is clipped to the box width and long labels ellipsise. Diagram colours (fill, background, stroke, line, font) are derived from the page's CSS custom properties at render time, and the theme select re-renders the diagram, so box/arrow colours always match the active theme. The SVG fills the width allocated to the diagram and is centred horizontally inside `.nomnoml-wrap`; deep graphs scroll inside the card.
 
 Scope checkboxes filter the diagram too (re-render on change). Buttons **Re-render** and **Download SVG** are provided. The view choice is persisted in `localStorage` (`adacovex-dep-view`). **Click a box** to open the same split-view detail panel as the Tree view.
 
@@ -138,19 +132,17 @@ Scope checkboxes filter the diagram too (re-render on change). Buttons **Re-rend
 - **Global search** (header, `#global-search`) is a site-wide **section
   index**: at page load it walks the rendered DOM and indexes each section --
   every metric card (labelled by its heading), every compliance-table row,
-  every dependency node, and every HLR-tagged element -- plus one catch-all
-  entry per tab. Queries are tokenised and every token must appear in a
-  section's lowercased text (AND semantics), so multi-word page text such as
-  "orphan tags" or a section heading like "Proof Check Types" resolves
-  regardless of case. Selecting a hit switches to that tab and scrolls to
-  (briefly flashing) the exact section, rather than only switching tabs.
+  every dependency node, and every HLR-tagged element -- plus one catch-all  entry per tab. Queries are tokenised and every token must appear in a
+  section's lowercased text (AND semantics), so multi-word page text such
+  as "orphan tags" resolves regardless of case. Selecting a hit switches to
+  that tab and scrolls to (briefly flashing) the exact section, rather than only switching tabs.
   Dependency names, versions, scopes, licences and PURLs are indexed too, so
   the box still filters the dependency tree and seeds `dep-filter`.
 - **Tree filter** (`#dep-filter`, inside the Dependencies tab) is a plain
   client-side name filter over the rendered tree only -- it never touches the
-  global index. The two inputs share the same styling class so they look
-  consistent, but they are functionally independent (typing in one does not
-  affect the other until a global hit is clicked).
+  global index. The two inputs share the same styling class but stay
+  functionally independent: typing in one affects nothing until a global
+  hit is clicked.
 
 The same data is available headlessly at `/api/deps` and via
 `--emit-metrics=PATH` (`{"metrics":..., "dependencies":...}`).

@@ -24,7 +24,9 @@ The `prove` subcommand (full options:
    when proof patches are present -- see
    [Proof patches over vendored code](proving-patches.md#proof-patches-proving-vendored-dependencies))
    and writes the summary to `<target>/obj/gnatprove/gnatprove.out` -- the same
-   location the assessment pipeline discovers.
+   location the assessment pipeline discovers -- with the per-check results in
+   its `gnatprove.sarif` sibling (see
+   [The SARIF report](#the-sarif-report)).
  3. **Falls through to the full assessment**. The assessment parses the fresh
     summary. One command both proves and assesses. The `--require-*` CI gates
    apply to the proof run directly (`--require-spark=Platinum
@@ -76,6 +78,27 @@ the key and re-proves once.
 cache *and* session wiped), so its numbers are always one of the stable
 shapes. Category definitions and current figures:
 [Performance](perf/index.md).
+
+### The SARIF report
+
+Every `prove` run leaves two files in `<target>/obj/gnatprove/`. The
+summary `gnatprove.out` holds the category counts, and its sibling
+`gnatprove.sarif` holds one result per reported check (unit, line, check
+kind, message) in
+[SARIF](https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html),
+the OASIS Static Analysis Results Interchange Format.
+
+The assessment and `adacovex spark-coverage` read the pair, and the result
+cache stores and restores both, so a warm run over a wiped tree leaves the
+same pair a real run does. Because SARIF is an open standard, ordinary
+consumers open the file without adacovex: an editor plugin such as the
+SARIF Viewer extension for VS Code lists every finding with clickable
+locations, and GitHub code scanning ingests it through the `upload-sarif`
+action.
+
+The consumer side -- what the `spark-coverage` report shows over the pair,
+and its coverage gate -- is on
+[CLI reference -- `spark-coverage`](../usage/cli-reference-flags.md#spark-coverage).
 
 ## What a proof contains
 

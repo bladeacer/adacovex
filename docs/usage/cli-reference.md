@@ -1,16 +1,14 @@
 # adacovex CLI Reference
 
-This page is the quick reference. It shows usage, the full flag table, and a
-short note per flag. Feature-specific detail is in dedicated pages (linked
-from each section):
+This page is the quick reference: usage, the full flag table, and a short
+note per flag. Feature-specific detail is in dedicated pages (linked from
+each section):
 
-- the [web dashboard](dashboard.md)
-- the [`sbom` subcommand](sbom.md)
-- [VCS support](vcs.md)
-- the [platforms/`status`](platforms.md#status-subcommand) and
-  [installation](installation.md) pages
-- [Architecture](../contributing/architecture.md) for design detail such as result caching and
-  the patch system
+- the [web dashboard](dashboard.md), the [`sbom` subcommand](sbom.md),
+  [VCS support](vcs.md), the [platforms/`status`](platforms.md#status-subcommand)
+  and [installation](installation.md) pages
+- [Architecture](../contributing/architecture.md) for design detail such as
+  result caching and the patch system
 
 ## Usage
 
@@ -29,8 +27,8 @@ shorthand. The shorthands are `-t` (`--target`), `-m` (`--manifest`), `-s`
 (`--serve`), `-p` (`--port`), `-c` (`--cache`), `-b` (`--compare-base`),
 `-d` (`--coverage-delta`), `-l` (`--level`), `-r` (`--require-proof`), and
 `-j` (`--jobs`). The bare words `serve`, `cache`, and `relaxed` also select
-their flag. Use the explicit long forms in scripts and non-trivial cases;
-the shorthands are for interactive use.
+their flag. Use the long forms in scripts and non-trivial cases; the
+shorthands are for interactive use.
 
 `-l` is **only** the GNATprove proof level. It is never a compliance tier.
 Compliance selection stays on `--standard` and its level companions
@@ -90,10 +88,10 @@ Compliance selection stays on `--standard` and its level companions
 | `tldr --force` | - | - | Rewrite the installed tldr page even when it already matches |
 | `--help` | - | both | Print usage and exit |
 
-`prove`-mode flags are also accepted by the main command. They are validated
-only in prove mode. The flags are: `--jobs`/`-j`, `--level`/`-l`,
-`--timeout`, `--steps`, `--memlimit`, `--force`, `--no-loop-unrolling`,
-`--no-inlining`, `--args`, `--suppress-warnings`, `--quiet`. See
+`prove`-mode flags are accepted by the main command and validated only in
+prove mode: `--jobs`/`-j`, `--level`/`-l`, `--timeout`, `--steps`,
+`--memlimit`, `--force`, `--no-loop-unrolling`, `--no-inlining`, `--args`,
+`--suppress-warnings`, `--quiet`. See
 [The `prove` subcommand](cli-reference-flags.md#the-prove-subcommand).
 
 Every flag is detailed with its default, constraints, and examples on two
@@ -115,11 +113,11 @@ companion pages:
 | Patch files | Applied from `.adacovex/patches/` (docstrings always, SPARK proof aspects in prove mode) | Not applied |
 | Use case | Full compliance audit | Quick assessment of production code |
 
-Patch files can carry more than docstrings. A patch with `SPARK_Mode` /
-`Pre` / `Post` / `Global` aspects is a **proof patch** that adds SPARK
-contracts to vendored code in prove mode (spec patches `.ads`, and body
-patches `.adb` opt the vendored body into the proof). Why they exist, how
-to write them, worked examples, and pitfalls are in
+Patch files can carry SPARK contracts as well as docstrings: a
+`SPARK_Mode` / `Pre` / `Post` / `Global` aspect makes the patch a **proof
+patch** for vendored code in prove mode -- a spec patch (`.ads`) declares
+the contracts, and a body patch (`.adb`) opts the vendored body into the
+proof. Why they exist, how to write them, and pitfalls are in
 [Proving and writing proofs -- proof patches](../contributing/proving-patches.md#proof-patches-proving-vendored-dependencies).
 
 ## Exit codes
@@ -131,25 +129,24 @@ to write them, worked examples, and pitfalls are in
 
 ## Terminal colour
 
-adacovex colours its terminal output (red for failures, green for passes,
-bold for headings) so the important lines stand out. Colour is enabled by
-default on a normal terminal. It is suppressed automatically when the
-output would not take it:
+adacovex colours its terminal output (failures red, passes green, headings
+bold) so the important lines stand out. Colour is on by default and drops
+out automatically when the output would not take it:
 
 - `NO_COLOR` is set (the cross-tool opt-out convention);
 - a CI variable is set (GitHub Actions, GitLab CI, and more), so CI logs
   stay plain and machine-readable;
-- `TERM` is `dumb` (or set to an empty value).
+- `TERM` is `dumb` (or empty).
 
 ## The `sbom` subcommand
 
 `adacovex sbom` resolves the target project's dependency graph from its Alire
 manifest, `alire/alire.lock`, and the root `.gpr` `with` clauses, then writes
 a proof-aware software bill of materials in CycloneDX 1.5 JSON or SPDX 2.3
-JSON. It is **standard-aware** (it defaults to all standards), honours
-`SOURCE_DATE_EPOCH` for byte-for-byte deterministic output, and is mutually
-exclusive with `--compare-base` / `--coverage-delta`. Full detail (usage,
-properties, determinism, exit codes) is in
+JSON. It is **standard-aware** (all standards by default), honours
+`SOURCE_DATE_EPOCH` for deterministic output, and is mutually exclusive with
+`--compare-base` / `--coverage-delta`. Full detail (usage, properties,
+determinism, exit codes) is in
 [The `sbom` subcommand](sbom.md).
 
 ## Examples
@@ -175,9 +172,6 @@ adacovex status --target=.
 
 # Assess a CRDT library at DAL-C in relaxed mode
 adacovex --target=../Ada_CRDT --dal=C --relaxed
-
-# DAL-A assessment (requires Gold SPARK)
-adacovex --target=. --dal=A
 
 # Without SVG output
 adacovex --target=../Ada_CRDT --no-svg

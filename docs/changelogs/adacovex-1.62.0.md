@@ -4,6 +4,8 @@ Date: _2026-10-13_
 
 Version bumped 1.61.0 -> 1.62.0.
 
+<!-- no-covex-docs-loc: release record, line cap does not apply -->
+
 ## Changes
 
 ### C1: The test suites run with the network unplugged
@@ -163,6 +165,28 @@ database in Ada instead of shelling out to `mkdir` and `cp`, and the Windows
 directory removal uses `rmdir /s /q` instead of `rm -rf`.
 
 A Windows host now needs no POSIX layer for any part of adacovex.
+
+### C10: The user docs document gnatprove.sarif and read shorter
+
+`gnatprove.sarif` had no user-facing documentation, so the second artefact
+of every proof run was invisible to readers of the manual. The
+`spark-coverage` section of the CLI reference now explains what the file is
+(the OASIS SARIF format, one result per reported check), where it lives
+(`<target>/obj/gnatprove/gnatprove.sarif`), and how to open it outside
+adacovex (editor SARIF viewers, GitHub code scanning), and the proving guide
+carries the matching section; the two pages cross-link both ways.
+
+`docs/THIRD_PARTY_NOTICES.md` credits OASIS SARIF beside CycloneDX and SPDX
+as a referenced, never-vendored specification, and **SARIF** plus
+`gnatprove.sarif` enter the STE100 Technical Name dictionary before the
+terms are used.
+
+The five longest pages then lost their fat with context and meaning kept:
+`sbom-resolution` (-168 words), `dashboard-html` (-91), `cli-reference`
+(-30), `architecture` (-28), and `cli-reference-flags` (its old prose lost
+about as much as the new SARIF section added, so the page total barely
+moved while every paragraph read shorter). Every gate stayed green: docs
+coverage, links, paragraph rule, STE rules, and British spelling.
 
 ## Fixes
 

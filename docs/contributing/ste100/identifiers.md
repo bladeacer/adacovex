@@ -177,6 +177,28 @@ documentation. The report and concept identifiers are on
 - **Correct Example:** *The `sbom` subcommand also emits **SPDX** 2.3 JSON.*
 - **Incorrect Example:** *The sbom subcommand also emits Spdx 2.3 JSON.*
 
+## Technical Name: SARIF
+- **Part of Speech:** Noun
+- **Definition:** The Static Analysis Results Interchange Format, the OASIS
+  standard for exchange of static-analysis results. gnatprove writes the
+  per-check proof results as SARIF.
+- **Approved Form:** SARIF (all capitals)
+- **Do Not Use:** Sarif, sarif, static-analysis format (when SARIF is meant)
+- **Correct Example:** *The proof run writes **SARIF** beside `gnatprove.out`.*
+- **Incorrect Example:** *The proof run writes Sarif beside the proof summary.*
+
+## Technical Name: gnatprove.sarif
+- **Part of Speech:** Noun
+- **Definition:** The SARIF file that gnatprove writes next to `gnatprove.out`,
+  with one result per reported check. The assessment and the `spark-coverage`
+  report both read it.
+- **Approved Form:** gnatprove.sarif (exact file name)
+- **Do Not Use:** The SARIF file (when the file name is meant), SARIF output
+  (when the file is meant)
+- **Correct Example:** *`obj/gnatprove/gnatprove.sarif` sits beside
+  `obj/gnatprove/gnatprove.out`.*
+- **Incorrect Example:** *The SARIF output sits beside the proof summary.*
+
 ## Technical Name: ANSI
 - **Part of Speech:** Modifier
 - **Definition:** The escape-code standard used for colour output in a

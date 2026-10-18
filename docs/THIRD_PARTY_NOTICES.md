@@ -44,16 +44,22 @@ The GNAT toolchain is **not** embedded in the adacovex release bundle. gnatprove
 
 Finally it falls back to a platform toolchain download. This download is a GPL-licensed GNAT/gnatprove distribution. Distributing it requires the end user to accept the GPL for that component.
 
-## SBOM specifications
+## Specifications
 
-The proof-aware SBOMs that adacovex emits conform to these open specifications:
+The proof-aware SBOMs that adacovex emits conform to these open specifications,
+and the proof report it reads follows a third:
 
 | Specification | Version | Licence | Reference |
 |---------------|---------|---------|-----------|
 | [CycloneDX Software Bill of Materials](https://cyclonedx.org/) | 1.5 | Apache-2.0 | [specification repository](https://github.com/CycloneDX/specification) |
 | [SPDX (Software Package Data Exchange)](https://spdx.dev) | 2.3 | CC0-1.0 | [spdx.dev](https://spdx.dev) |
+| [SARIF (Static Analysis Results Interchange Format)](https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html) | 2.1.0 | OASIS IPR policy (RF on RAND Terms) | [specification repository](https://github.com/oasis-tcs/sarif-spec) |
 
 The CycloneDX 1.5 JSON and SPDX 2.3 JSON schemas are referenced for validation only. adacovex does not vendor or redistribute them.
+
+SARIF is referenced for conformance only, and the same rule applies: nothing
+of it is vendored or redistributed. gnatprove, not adacovex, writes the
+`gnatprove.sarif` file; adacovex reads it beside `gnatprove.out`.
 
 ## Bundled web assets
 

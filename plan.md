@@ -125,24 +125,24 @@ system CUPS port 631. The hermetic-test fix is v1.62.0 item 1.
   - Optional follow-up (not done): upstream the page to tldr-pages. The
     shallow clone at `../tldr` is the pages repository.
 
-- [ ] **6. Documentation: SARIF, notices, and conciseness**
+- [x] **6. Documentation: SARIF, notices, and conciseness**
 
-  - SARIF for users: document `gnatprove.sarif` - what it is, that the
-    assessment and `adacovex spark-coverage` read it beside
-    `gnatprove.out`, where it lives
-    (`<target>/obj/gnatprove/gnatprove.sarif`), and how to view it
-    (editor plugins, GitHub code scanning). Home: the spark-coverage
-    section of `docs/usage/cli-reference-flags.md` plus a paragraph in
-    `docs/contributing/proving.md`, cross-linked.
-  - Add SARIF to `docs/THIRD_PARTY_NOTICES.md` beside the CycloneDX
-    row: OASIS SARIF, specification reference only, not vendored - the
-    same shape as the CycloneDX and SPDX rows.
-  - Conciseness pass over the user docs, context and meaning preserved.
-    Start with the longest pages: `sbom-resolution` (~1970 words),
-    `cli-reference-flags` (~1900), `dashboard-html` (~1650),
-    `cli-reference` (~1590), `architecture` (~1530). Every gate stays
-    green (docs coverage, links, para-split, STE rules, British
-    spelling).
+  - Implemented, see [changelog](docs/changelogs/adacovex-1.62.0.md) (`C10`).
+  - `gnatprove.sarif` now has user-facing documentation: the
+    `spark-coverage` section of the CLI reference and a section in the
+    proving guide, cross-linked both ways, covering what the file is, where
+    it lives (`<target>/obj/gnatprove/gnatprove.sarif`), and how to open
+    it outside adacovex (editor SARIF viewers, GitHub code scanning).
+  - OASIS SARIF joined the CycloneDX and SPDX rows in
+    `docs/THIRD_PARTY_NOTICES.md` as a referenced, never-vendored
+    specification, and **SARIF** plus `gnatprove.sarif` entered the STE100
+    Technical Name dictionary before first use.
+  - The conciseness pass landed on the five longest pages with context and
+    meaning preserved: `sbom-resolution` -168 words, `dashboard-html` -91,
+    `cli-reference` -30, `architecture` -28, and the pre-existing prose of
+    `cli-reference-flags` trimmed by roughly what its new SARIF section
+    added. The docs gates stay green (docs check, coverage, links,
+    paragraph rule, changelog format).
 
 - [ ] **7. Python environment and dependency single-sourcing**
 

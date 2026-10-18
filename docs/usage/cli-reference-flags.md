@@ -6,16 +6,13 @@ This page details the assessment flags (`--target`, `--dal`, `--standard`, and t
 
 ### `--target=PATH`
 
-Shorthand: `-t PATH` (or `-t=PATH`). Project to analyse. Relative paths are
-resolved against the current working directory to an absolute path. A leading
-`~` (as in `--target=~/projects/demo` or `--target=~`) expands to your home
-directory first -- the shell does not expand a tilde inside `--target=...`
-or a quoted argument.
+Shorthand: `-t PATH` (or `-t=PATH`). Project to analyse. Relative paths
+resolve against the current working directory. A leading `~` expands to your
+home directory first; the shell never expands a tilde inside `--target=...`
+(after `=` or in a quoted argument), and `~user` stays unchanged.
 
-A `~user` form is left unchanged; only the shell can resolve another user's
-home. The path determines the root directory for source scanning, manifest
-detection, SVG badge output, and patch file resolution. Default: the current
-working directory.
+The path roots source scanning, manifest detection, SVG badge output, and
+patch file resolution. Default: the current working directory.
 
 ### `--manifest=PATH`
 
@@ -27,8 +24,8 @@ project metadata for the dependency graph.
 ### `--dal=LEVEL`
 
 DO-178C DAL level (and the shared rigour tier): `A`, `B`, `C`, `D`, or `E`
-(case-insensitive). It determines the minimum SPARK proof level required and
-the specific criteria checked. This tier is shared across standards.
+(case-insensitive). It sets the minimum SPARK proof level and the criteria
+checked; the tier is shared across standards.
 `--dal=C` is DAL-C under DO-178C, ASIL B under ISO 26262, and safety Class A
 under IEC 62304. See [DAL levels](../api-docs/adacovex-dal-levels.md) and
 [Standards](standards.md).
@@ -38,17 +35,15 @@ under IEC 62304. See [DAL levels](../api-docs/adacovex-dal-levels.md) and
 ISO 26262 Automotive Safety Integrity Level: `A`, `B`, `C`, `D`, or `QM`
 (case-insensitive). It sets the standard to `iso26262` and maps the ASIL level
 to the shared rigour tier (ASIL D -> DAL A, ASIL C -> DAL B, ASIL B -> DAL C,
-ASIL A -> DAL D, QM -> DAL E). As a result, `--asil=B` is the clearest spelling
-of "assess this project at ASIL B". See
+ASIL A -> DAL D, QM -> DAL E). See
 [ASIL Levels](../api-docs/adacovex-asil-levels.md).
 
 ### `--class=LEVEL`
 
 IEC 62304 software safety class: `A`, `B`, or `C` (case-insensitive). It sets
 the standard to `iec62304` and maps the class to the shared rigour tier
-(Class C -> DAL A, Class B -> DAL B, Class A -> DAL C). As a result,
-`--class=A` is the clearest spelling of "assess this project at safety Class
-A". See [Safety Classes](../api-docs/adacovex-class-levels.md).
+(Class C -> DAL A, Class B -> DAL B, Class A -> DAL C). See
+[Safety Classes](../api-docs/adacovex-class-levels.md).
 
 ### `--standard=NAME`
 
@@ -76,8 +71,8 @@ names the standard together with the rigour tier, so one flag replaces two:
 The token is case-insensitive, and `-` and `_` are interchangeable
 (`--standard=asil-b` == `--standard=ASIL_B` == `--asil=B`). An unknown value
 is rejected loudly. `-l` is never a compliance tier: it is the GNATprove
-proof level. Standard selection always stays on `--standard` and its level
-companions.
+proof level, so standard selection always stays on `--standard` and its
+level companions.
 
 When both a dedicated level flag (`--asil` / `--class`) and `--standard` are
 passed, the dedicated flag sets the standard. `--standard` is ignored for
@@ -87,8 +82,7 @@ level flag (or `--dal`) resolved to.
 ### `status`
 
 `adacovex status [--target=PATH]` reports toolchain and platform state. It
-does not run an assessment. It does not download or deploy anything. It
-reports the following:
+runs no assessment and downloads or deploys nothing. It reports the following:
 
 - whether Alire is installed
 - the installation method of the running binary (`source-checkout`,
@@ -103,9 +97,8 @@ reports the following:
   dated release changelogs the target carries
 
 `adacovex status --tz=ZONE` (or `--timezone=ZONE`) overrides the display
-timezone for the report. It shows the effective timezone, the current date
-and time in that zone, and how many dated release changelogs the target
-carries. Exit `0` when a usable gnatprove is detectable without a download.
+timezone for the report. Exit `0` when a usable gnatprove is detectable
+without a download.
 Exit `1` otherwise; for full detail see
 [Platforms -- `status` subcommand](platforms.md#status-subcommand).
 
@@ -123,7 +116,8 @@ languages, Markdown and reStructuredText included by default. `--excludes=EXT,EX
 skips comma-separated file extensions (for example `--excludes=md,rst`) and only
 works with the `complexity` subcommand. `--skip-path=PATH` skips any file
 whose full path contains the given fragment and is repeatable; it is useful
-for generated trees that are committed next to hand-written source (for example `--skip-path=docs/api-docs`). It prints
+for generated trees committed next to hand-written source (for example
+`--skip-path=docs/api-docs`). It prints
 a tokei-style summary (files, lines, code, comments, blanks) plus a per-file
 table of `Lines=`, `Code=`, `Comments=`, `Blanks=`, the codebase loc
 percentage, and the cyclomatic complexity `cx=`.
@@ -131,10 +125,9 @@ percentage, and the cyclomatic complexity `cx=`.
 The gate fails when a file or function exceeds the thresholds (defaults:
 4 000 LOC, 10% of codebase per file, 120 per function, 600 per file).
 
-Exit `0` when all gates pass. Exit `1` otherwise. This replaces the
-previous Python `check-complexity.py` script. Maintainers wire the same gate
-into their CI via `adacovex complexity --excludes=...`; see the
-[developer guide](../contributing/developer-guide.md) for the workflow.
+Exit `0` when all gates pass, `1` otherwise. Maintainers wire the same gate
+into CI as `adacovex complexity --excludes=...`; the workflow is in the
+[developer guide](../contributing/developer-guide.md).
 
 ### `spark-coverage`
 
@@ -142,8 +135,8 @@ into their CI via `adacovex complexity --excludes=...`; see the
 the target: statement, subprogram, and VC coverage as three separate metrics,
 grouped by file, folder, or Ada package (`--group=file|folder|package`),
 with the off breakdown (irreducible / I/O-bound / work queue) as separate
-rows. The report reads `obj/gnatprove/gnatprove.out` and `gnatprove.sarif`;
-it never runs the prover, so run `adacovex prove` first. `--spark-format=json`
+rows. It never runs the prover, so run `adacovex prove` first.
+`--spark-format=json`
 prints the machine-readable report. `--min-coverage=PCT` hides group rows
 below a verified percentage from the display.
 
@@ -154,13 +147,25 @@ value. Exit `0` otherwise. The same gate ships in the GitHub Action as the
 `require-coverage` / `gate-metric` inputs. A missing proof artefact set is a
 loud `1`, never a silent `0`.
 
+The two files come from a completed proof run: the summary
+`obj/gnatprove/gnatprove.out` and its sibling
+`obj/gnatprove/gnatprove.sarif`. The SARIF file (Static Analysis Results
+Interchange Format, an [OASIS standard](https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html))
+holds one JSON result per reported check: the file, the line, the check
+kind, and the message. Any SARIF consumer opens it without adacovex: an
+editor plugin such as the SARIF Viewer extension for VS Code shows every
+finding with clickable locations, and GitHub code scanning ingests it
+through its `upload-sarif` action. `adacovex prove` writes and caches the
+pair together, and the writing side is on
+[Proving and writing proofs -- the SARIF report](../contributing/proving.md#the-sarif-report).
+
 ### The `prove` subcommand
 
-`adacovex prove --target=PATH` resolves a gnatprove installation and runs it against the target. It then falls through to the normal assessment pipeline. The pipeline parses the freshly generated proof summary. As a result, one command both proves and assesses.
+`adacovex prove --target=PATH` resolves a gnatprove installation and runs it against the target. It then falls through to the normal assessment pipeline, which parses the fresh proof summary, so one command both proves and assesses.
 
 For the full guide to proving and writing SPARK proofs (contracts, VC categories, proof patches for vendored deps), see [Proving and writing proofs](../contributing/proving.md). gnatprove is resolved in this order: manifest pin > global pin > `$PATH` > cached toolchain > download. The target does not need to declare gnatprove. Full detail: [Architecture -- GNATprove toolchain resolution](../contributing/architecture-dependencies.md#gnatprove-toolchain-resolution-prove-subcommand).
 
-The proof summary is written to `<target>/obj/gnatprove/gnatprove.out` and the per-check report to its `gnatprove.sarif` sibling (the same locations the assessment and the `spark-coverage` report discover). The SVG badges are emitted as usual. The result cache serves unchanged targets: it stores both artefacts and restores both, so a warm run over a tree whose `obj/gnatprove/` was wiped leaves the same artefact pair a real run would. `--force` bypasses the cache and forces a full gnatprove reanalysis. When the target carries proof patches (`.adacovex/patches/`), gnatprove runs against a patched tree copy at `<target>/obj/adacovex-proof/`, and both artefacts are copied back to `<target>/obj/gnatprove/`.
+The summary is written to `<target>/obj/gnatprove/gnatprove.out` and the per-check report to its `gnatprove.sarif` sibling, the same locations the assessment and the `spark-coverage` report discover; the SVG badges are emitted as usual. The result cache stores both artefacts and restores both, so a warm run over a wiped `obj/gnatprove/` leaves the same pair a real run would; `--force` bypasses the cache and forces a full gnatprove reanalysis. When the target carries proof patches (`.adacovex/patches/`), gnatprove runs against a patched tree copy at `<target>/obj/adacovex-proof/`, and both artefacts are copied back to `<target>/obj/gnatprove/`.
 
 Vendored dependencies then participate in the proof without their sources being touched. See [Proving and writing proofs](../contributing/proving-patches.md#proof-patches-proving-vendored-dependencies) for how to write them, and [Architecture -- Proof patches](../contributing/architecture-verification.md#proof-patches-spark-contracts-over-vendored-dependencies) for the design.
 
@@ -181,8 +186,8 @@ Vendored dependencies then participate in the proof without their sources being 
 
 `prove` accepts all assessment flags too (`--dal`, `--standard`, the
 `--require-*` gates, `--emit-svg`, and more), so CI gates apply to the proof
-run directly. `--force` is shared with `man --force` (see below). The
-remaining prove flags are validated only in prove mode.
+run directly. `--force` is shared with `man --force` (see below); the
+remaining prove flags validate only in prove mode.
 
 ### Per-file opt-out markers
 
