@@ -207,11 +207,13 @@ version-consistency-check:
 description:
     @python3 tools/tasks.py description
 
-# Bump the version across the manifests and changelog (VERSION=x.y.z).
+# Bump the version across the manifests and changelog (VERSION=x.y.z as an
+# environment variable: `VERSION=x.y.z just bump-version`).
 bump-version:
     @python3 tools/tasks.py bump-version
 
-# Build, verify, prove, tag, and push a release (VERSION=x.y.z, DRY_RUN=1).
+# Build, verify, prove, tag, and push a release (VERSION=x.y.z as an
+# environment variable: `VERSION=x.y.z just release`, DRY_RUN=1).
 release:
     @python3 tools/tasks.py release
 

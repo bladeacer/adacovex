@@ -190,9 +190,9 @@ The proof result is anchored in `docs/proof/` (the per-version VC ledger).
   must stay green.
 - **Coverage gate between releases**: `just coverage-gate` compares docstring
   coverage between the latest two release tags.
-- **Prepare a release**: `just bump-version VERSION=x.y.z`, write the changelog
+- **Prepare a release**: `VERSION=x.y.z just bump-version`, write the changelog
   (`docs/changelogs/adacovex-x.y.z.md`, canonical format enforced by `just
-  changelog-check`), then `just release VERSION=x.y.z`. The release builds the
+  changelog-check`), then `VERSION=x.y.z just release`. The release builds the
   release binary and checks that it reports the tag before it proves anything,
   so the proof pass, the result cache, and every committed artifact come from
   the binary being released. Run `just check` first: its

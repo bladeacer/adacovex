@@ -152,7 +152,7 @@ The action's build step sets `ADACOVEX_VERSION` (from `github.ref_name`). It reg
 
 The download step of the published action verifies this with `adacovex
 --version` after unpacking the release bundle. Maintainers reproduce the
-release locally with `just release VERSION=x.y.z` (see the
+release locally with `VERSION=x.y.z just release` (see the
 [developer guide](../contributing/developer-guide.md)); a normal source build
 reads the version from `alire-dev.toml` instead.
 

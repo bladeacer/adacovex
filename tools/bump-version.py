@@ -150,7 +150,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 1
     print("  descriptions synced to all manifests")
     print(f"Done. Version bumped to {version}.")
-    print("Next: run 'just release VERSION=%s' to build, prove, validate," % version)
+    print("Next: run 'VERSION=%s just release' to build, prove, validate," % version)
     print("bundle, commit, and tag the release (or 'just publish' to submit")
     print("to the Alire community index once the tag is pushed).")
     return 0
