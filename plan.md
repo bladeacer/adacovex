@@ -199,6 +199,16 @@ system CUPS port 631. The hermetic-test fix is v1.62.0 item 1.
 
 - [ ] **P3. Prove-timing phase for v1.61.0 onwards**
 
+  - Recorded 2026-10-18: the v1.62.0 proof figures are measured on this
+    machine on the release profile, load beside each sample -- prove warm
+    54.1 ms +/- 3.2 ms (load 2.8), prove cold 64.5 s +/- 4.2 s
+    (59.7-67.6 s, load 0.78) at 1054 VCs, 0 unproved. They are written down
+    in `perf-analysis-1.62.0.md` (repository root) and as a reading-note
+    bullet in `docs/contributing/perf/prove-timing.md`, exactly as 1.61.0
+    was noted. **The collation itself (the new phase and its
+    representative) is deferred to v1.63.0** -- this item stays open for
+    it, seeded by the two analysis files plus the perf fixes of P1/P2.
+
   - 1.61.0 begins its own phase, because the v1.62+ and v1.63 perf work
     changes the implementation methodology. When the perf fixes land:
     close the current open phase at 1.60.0 (keeping 1.58.0 as its

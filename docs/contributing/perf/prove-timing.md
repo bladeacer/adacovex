@@ -229,6 +229,21 @@ and the gnatprove session store is wiped before each one.
   path, time-zone, and task-runner work of 1.59.0-1.60.0 added source files,
   and the per-file stat set grows with them. Treat the trend across phases,
   not the single step.
+- **The 1.62.0 proof figures are recorded beside the column, not promoted
+  into it.** They were measured on this machine on the release profile with
+  `/proc/loadavg` beside each sample: prove warm 54.1 ms +/- 3.2 ms (15
+  hyperfine runs plus two warm-ups, at load 2.8 on the decay tail of the cold
+  pass before it) and prove cold 64.5 s +/- 4.2 s (59.7-67.6 s across three
+  runs with the result cache and the gnatprove session wiped each time, at
+  load 0.78), both at 1054 VCs with 0 unproved. Neither row moves: the cold
+  mean sits inside the 60-72 s the 1.61.0 figures read at 1022 VCs, and the
+  campaign's growth to 1054 costs nothing the solver variance does not hide
+  already. The phase collation -- closing this phase, opening the next one,
+  and giving it a representative -- is deferred to 1.63.0, so the table
+  above keeps its three rows and 1.58.0 keeps the open phase's
+  representative until then. The full record, with both samples and their
+  loads, is `perf-analysis-1.62.0.md` at the repository root, beside the
+  1.61.0 record.
 
 ### Across every phase
 
