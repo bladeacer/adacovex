@@ -34,6 +34,9 @@ defined by which of them are populated:
 | Prove cold | `adacovex prove --no-cache --cache-dir=<fresh>` | empty | **wiped** | Truly cold proving: full solver run + everything in pipeline cold (a first CI invocation on a bare runner) |
 | Prove cold clone | `adacovex prove --cache-dir=<fresh> --target=<fresh copy>` | empty | absent (fresh tree) | A first run on a freshly cloned checkout: no cache, no session, and no `gnatprove.out` yet -- the proof, the summary parse, and the pipeline all from zero |
 | Prove warm | `adacovex prove --cache-dir=<populated>` | hit | n/a | The short-circuit: one content-hash of the inputs, then serve the stored proof (a developer on an unchanged tree) |
+| Cold build | `tools/build.py --release` in a copy without `obj/`, `bin/`, `docs/_build/` | n/a | absent | The first build a fresh checkout pays: generators, workspace sync, full compile and link |
+| Docs regen, cold tree | `python3 tools/gen-docs.py` without `docs/_build/` | n/a | n/a | The bundled-manual phase on a fresh clone: the committed spec already records the sources, so Sphinx does not run |
+| Docs regen, full Sphinx | `python3 tools/gen-docs.py --fresh` | n/a | n/a | A clean Sphinx build plus the full re-encode -- what a real docs change pays |
 
 Two further shapes exist and are worth recognising (one-time-per-session
 states, not steady states, so they are not benchmarked):
@@ -64,6 +67,12 @@ codebase; what matters is the shape:
   cache skips the SBOM dev-dependency word scan and the tool probes. The
   remaining time is process startup, directory walks, and blob
   deserialization.
+- **Cold build ~38.4 s** (release profile, fresh checkout, load 0.95):
+  about 0.34 s of generators, the workspace sync inside the 301 ms no-op
+  `alr build`, and about 38 s of compile and link over 79 units with both
+  mains at `-j0`. The docs phase used to cost 9-10 s of that; it is now a
+  fingerprint hit of 76 ms (see
+  [Pipeline and prove timings](benchmarks-timings.md)).
 - **Prove cold ~61-88 s** (load-dependent on this desktop): a from-scratch
   solver run over 880 VCs plus the whole pipeline, dominated by gnatprove
   itself (the CPU time across the proof jobs is the stable part) and paid

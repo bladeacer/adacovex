@@ -39,6 +39,24 @@ just check        # the whole quality gate CI runs before a release
 is a thin shim that delegates to the same Python tasks, so an existing
 `make <task>` reference still works.
 
+### Host-side toolchain caches
+
+A cold host pays for its toolchain once, outside the tree. The first
+`alr build` fetches the Alire toolchain into
+`~/.local/share/alire/toolchains/`: `gnat_native` (990 MB unpacked) and
+`gprbuild` (278 MB). The dev-manifest commands fetch their binary crates
+into `~/.local/share/alire/releases/`: `gnatdoc_bin` (139 MB) for
+`just doc`, `gnatformat_bin` (53 MB) for `just fmt`, and `gnatprove`
+(1.3 GB) for the proof tools. The `prove` subcommand's own download keeps
+a second copy under `~/.local/share/adacovex/toolchain/`.
+
+Nothing in that list is a build dependency of the crate itself. The
+published `alire.toml` declares no dependencies, and the committed
+`alire/alire.lock` carries an empty solution, so a cold `just build`
+fetches nothing once the Alire toolchain exists. Its whole workspace sync
+measures 301 ms inside a 0.3 s no-op `alr build`. The measured cold-build
+phases are on [Pipeline and prove timings](perf/benchmarks-timings.md).
+
 ### The Python tooling environment
 
 The docs toolchain (Sphinx, MyST, Furo) lives in `.venv`. Its dependency

@@ -33,26 +33,39 @@ solver run; the warm paths stay warm anywhere.
 
 ## The `just bench` target
 
-`just bench` benchmarks the assessment pipeline, the `prove` subcommand,
-and reports binary size:
+`just bench` benchmarks the build phases, the assessment pipeline, the
+`prove` subcommand, and reports binary size:
 
 - It builds the project, then times `./bin/adacovex` and
   `./bin/adacovex prove` against the repo itself.
-- **Five scenarios** are measured, each with a precise meaning (see the
-  category reference on [Performance](index.md)). The prove scenarios time
-  the `prove` subcommand -- the true test of proof performance, measured at
-  the adacovex-binary level, not just the gnatprove level.
+- **The build phases run first.** An strace syscall profile of the no-op
+  build and of the cold-tree docs run, then the timings: `alr build` on an
+  already-built tree (5 runs), a full `tools/build.py --release` against a
+  fresh copy of the tree with no `obj/`, `bin/`, or `docs/_build/` (3 runs),
+  `gen-docs.py` on a tree with no Sphinx build directory (3 runs), and
+  `gen-docs.py --fresh` (3 runs). The fresh copy keeps the working tree's
+  build state intact, so the cold-build scenario cannot flip the build
+  profile or drop the gnatprove session of the tree under test.
+- **Five pipeline and prove scenarios** follow, each with a precise meaning
+  (see the category reference on [Performance](index.md)). The prove
+  scenarios time the `prove` subcommand -- the true test of proof
+  performance, measured at the adacovex-binary level, not just the
+  gnatprove level.
 - `just bench` uses [hyperfine](https://github.com/sharkdp/hyperfine) when
   installed; otherwise it falls back to the bash `time` builtin. It samples
   generously so the reported mean is stable: **10 pipeline-cold +
   15 pipeline-warm + 3 prove-cold + 15 prove-warm + 2 prove-cold-clone**
-  repetitions (2 warmups; none for the cold shapes). Each cold repetition
-  deletes the cache dir first; the prove-cold repetitions also delete the
-  gnatprove session store (`obj/gnatprove/`), and each prove-cold-clone
-  repetition recopies the target tree so it starts without a session or a
-  `gnatprove.out`. The `time` fallback runs **5 + 5** per scenario.
+  repetitions (2 warmups; none for the cold shapes), plus the build-phase
+  samples above. Each cold repetition deletes the cache dir first; the
+  prove-cold repetitions also delete the gnatprove session store
+  (`obj/gnatprove/`), and each prove-cold-clone repetition recopies the
+  target tree so it starts without a session or a `gnatprove.out`. The
+  `time` fallback runs **5 + 5** per pipeline scenario.
 - It reports the raw and stripped binary sizes (the stripped size is measured
   on a `/tmp` copy; the build output is never modified).
+
+`python3 tools/bench.py build`, `... pipeline` and `... prove` run one
+section each; `just bench` runs all of them.
 
 ## Running a single shot
 

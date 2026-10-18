@@ -469,8 +469,7 @@ reference in CI or the docs keeps working). The `check` gate order lives in
 The multi-step tasks delegate their orchestration to dedicated
 scripts so the runner stays declarative: `just build` runs
 tools/build.py (version + dashboard regeneration, `alr build` with the
-SFrame log filter, covex symlink), `just bench` runs tools/bench.py
-(hyperfine cold/warm timings for the pipeline and the prove subcommand + stripped-binary size), `just doc` / `just fmt`
+SFrame log filter, covex symlink),`just bench` runs tools/bench.py (hyperfine timings for the build phases -- the no-op build, a cold fresh-checkout build, and both docs shapes, with strace syscall profiles -- plus the pipeline and prove subcommand cold/warm timings and the stripped-binary size), `just doc` / `just fmt`
 run their command through tools/dev-cmd.py (the alire-dev.toml swap,
 restored unconditionally), `just coverage-gate` runs tools/coverage-gate.py
 (temp-worktree docstring delta vs the previous release tag), `just prove` /
@@ -533,7 +532,16 @@ link URLs).
 MyST Markdown parser) and bundles the built site -- every page,
 stylesheet, script, and badge -- into `src/adacovex-docs_template.ads` as a
 path-keyed asset table (the bundled offline manual the `--serve` server
-serves at `/docs`, where search works exactly as online). Every body is
+serves at `/docs`, where search works exactly as online). The spec also
+carries the bundle fingerprint of the inputs it was built from
+(`Source_Fingerprint`), so a tree with no Sphinx build directory -- a fresh
+clone, or after the build output was removed -- keeps the committed spec
+instead of rebuilding the site to reproduce the same bytes (~9 s of Sphinx
+plus a full re-encode; now a 76 ms fingerprint read), and the bundled
+`searchindex.js` is canonicalised (empty entries dropped, keys sorted) so
+an incremental developer tree and the clean build a fresh clone runs emit
+byte-identical bundles -- `--check` never takes the skip and still fails on
+a stale or hand-edited spec. Every body is
 gzip-compressed and then **base85**-encoded (the quote-free Z85 alphabet: 4
 bytes to 5 characters where base64 needs 5.33), served with
 `Content-Encoding: gzip` so the browser inflates it and the binary carries
@@ -628,7 +636,7 @@ compatibility shim. The table names the canonical target for each task.
 | `complexity-check` | Cyclomatic-complexity + LOC gate: no god objects/functions, no file above its LOC or percentage-of-codebase caps (multi-language scan incl. Markdown; `--excludes=rst --skip-path=docs/api-docs`; files can opt out with a `no-covex-complexity-scan` header marker; gated by just complexity-check) |
 | `para-split-check` | Paragraph splitter gate: report every paragraph over the 4-sentence rule by name (tools/para-split.py --check, its non-mutating mode). `docs-check` enforces the same rule; running the splitter here keeps the tool that advises on a failure provably in step with the gate (a drift fails the gate instead of rewriting a page wrongly) |
 | `book-links-check` | Fail when a link inside the bundled offline manual does not resolve (checked against a fresh `sphinx-build` from a temp copy of `docs/`; tools/check-book-links.py; shares the offline-asset rules with tools/gen-docs.py). `just check` also runs `python3 tools/gen-docs.py --check`, which fails when the committed spec `src/adacovex-docs_template.ads` drifts from a fresh build |
-| `bench` | Benchmark the pipeline and the `prove` subcommand with hyperfine (bash `time` fallback): pipeline cold/warm, prove cold (`prove --no-cache`, result cache + gnatprove session wiped), prove warm, prove cold clone (fresh tree: no cache, no session, no summary), + binary size (docs/contributing/perf/index.md) |
+| `bench` | Benchmark the build phases, the pipeline, and the `prove` subcommand with hyperfine (bash `time` fallback): strace syscall profiles of the no-op build and the cold-tree docs run, build warm (`alr build` no-op), cold build (`tools/build.py --release` in a fresh tree copy: no `obj/`, `bin/`, `docs/_build/`), docs cold tree (the committed spec's fingerprint hit) and docs full Sphinx (`--fresh`), pipeline cold/warm, prove cold (`prove --no-cache`, result cache + gnatprove session wiped), prove warm, prove cold clone (fresh tree: no cache, no session, no summary), + binary size (`python3 tools/bench.py build|pipeline|prove` runs one section; docs/contributing/perf/index.md) |
 | `perf-bench` | Profile the adacovex binary with perf and strace (tools/perf-bench.py; docs/contributing/perf/index.md) |
 | `spark-off-check` | Fail if any `SPARK_Mode (Off)` appears outside `Types.Implementation` and `Complexity` (the non-formal `Ada.Containers` instantiations) |
 | `clean` | Remove bin/ obj/ docs/badges/ |

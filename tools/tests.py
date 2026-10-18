@@ -17,6 +17,7 @@ Exit code 0 when every test passes.
 """
 
 import importlib
+import json
 import os
 import re
 import shutil
@@ -1408,6 +1409,68 @@ class TestGenDocsAssets(unittest.TestCase):
             self.assertIn("see the online manual", index_body)
 
 
+class TestGenDocsSearchIndex(unittest.TestCase):
+    """The bundled search index is a pure function of the sources (1.63.0).
+
+    Sphinx merges an incremental index with the one already on disk and
+    prunes by emptying a word's document set without dropping the key, so an
+    index carrying build history holds phantom entries (`"appveyor":[]`)
+    that a clean build never emits -- and `--check` on a cold machine (a
+    clean build) failed the committed spec for exactly those phantoms.  The
+    generator canonicalises the index on the way into the bundle, so the
+    incremental developer tree and the clean build a fresh clone runs agree
+    byte for byte.
+    """
+
+    def index(self, data: dict) -> str:
+        return "Search.setIndex(" + json.dumps(data, sort_keys=True,
+                                                separators=(",", ":")) + ")"
+
+    def test_canonicalise_drops_phantom_entries_and_sorts_keys(self) -> None:
+        js = ('Search.setIndex({"terms":{"zeta":[1],"appveyor":[],'
+              '"alpha":[2,3]},"titleterms":{"wsl":[],"alpha":[1]},'
+              '"docnames":["a","b"]})')
+        out = gen_docs.canonicalise_search_index(js)
+        data = json.loads(out[len("Search.setIndex("):-1])
+        self.assertNotIn("appveyor", out, "an emptied word must be dropped")
+        self.assertNotIn("wsl", out)
+        self.assertEqual(list(data["terms"]), ["alpha", "zeta"],
+                         "keys are canonical, not insertion-ordered")
+        self.assertEqual(data["terms"]["alpha"], [2, 3],
+                         "a word's documents are kept verbatim")
+        self.assertEqual(data["docnames"], ["a", "b"],
+                         "fields outside terms/titleterms are untouched")
+
+    def test_canonicalise_is_idempotent(self) -> None:
+        js = self.index({"terms": {"b": [1], "a": []},
+                         "titleterms": {}, "docnames": ["x"]})
+        once = gen_docs.canonicalise_search_index(js)
+        self.assertEqual(gen_docs.canonicalise_search_index(once), once)
+        self.assertEqual(once, self.index({"terms": {"b": [1]},
+                                           "titleterms": {},
+                                           "docnames": ["x"]}))
+
+    def test_canonicalise_leaves_foreign_text_alone(self) -> None:
+        # A stub (a test build writes "{}"), a truncated file, or a Sphinx
+        # layout change must never be rewritten into something unreadable.
+        for text in ("{}", "Search.setIndex({", 'Search.setIndex([1,2])',
+                     "Search.setIndex(1);", "searchtools.js"):
+            self.assertEqual(gen_docs.canonicalise_search_index(text), text)
+
+    def test_collect_assets_canonicalises_the_search_index(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            build = Path(tmp)
+            (build / "index.html").write_text("<html></html>",
+                                              encoding="utf-8")
+            (build / "searchindex.js").write_text(
+                'Search.setIndex({"terms":{"gone":[],"here":[0]},'
+                '"titleterms":{}})', encoding="utf-8")
+            bodies = {rel: body for rel, _, body in
+                      gen_docs.collect_assets(build)}
+        self.assertNotIn("gone", bodies["searchindex.js"])
+        self.assertIn("here", bodies["searchindex.js"])
+
+
 class TestGenDocsEncodeCache(unittest.TestCase):
     """The content-hash encode cache and the parallel encoder (1.51.0).
 
@@ -1923,6 +1986,7 @@ class TestGenDocsBundling(unittest.TestCase):
     def setUp(self) -> None:
         self._tmp = tempfile.TemporaryDirectory()
         root = Path(self._tmp.name)
+        self.root = root
         self.docs = root / "docs"
         self.build = self.docs / "_build" / "html"
         self.stamp = self.docs / "_build" / ".adacovex-docs-sources"
@@ -2024,6 +2088,89 @@ class TestGenDocsBundling(unittest.TestCase):
                                return_value=("committed", "stats")):
             with contextlib.redirect_stdout(io.StringIO()):
                 self.assertTrue(gen_docs.check(out))
+
+    #  The cold-tree path (1.63.0): a spec that already records these inputs
+    #  needs no Sphinx build at all -- a fresh clone used to pay a clean
+    #  Sphinx build plus a full re-encode (~9 s) to reproduce the very bytes
+    #  it was committing.  `--check` keeps building, so the gate still fails
+    #  on a stale or hand-edited spec.
+
+    def matching_spec(self, fingerprint: str) -> Path:
+        """A spec outside docs/ carrying the given bundle fingerprint."""
+        out = self.root / "src" / "adacovex-docs_template.ads"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(
+            "package Adacovex.Docs_Template is\n"
+            "   Source_Fingerprint : constant String :=\n"
+            f'     "{fingerprint}";\n'
+            "end Adacovex.Docs_Template;\n", encoding="ascii")
+        return out
+
+    def current_fingerprint(self) -> str:
+        return gen_docs.bundle_fingerprint(gen_docs.docs_source_digests())
+
+    def test_generate_keeps_a_spec_that_already_matches(self) -> None:
+        out = self.matching_spec(self.current_fingerprint())
+        before = out.read_bytes()
+        with mock.patch.object(gen_docs, "build_spec",
+                               side_effect=AssertionError("must not build")):
+            with contextlib.redirect_stdout(io.StringIO()) as log:
+                gen_docs.generate(out)
+        self.assertEqual(out.read_bytes(), before)
+        self.assertIn("Sphinx not run", log.getvalue())
+
+    def test_generate_rebuilds_when_the_fingerprint_is_stale(self) -> None:
+        out = self.matching_spec("0" * 64)
+        with mock.patch.object(gen_docs, "build_spec",
+                               return_value=("rebuilt", "stats")) as build:
+            with contextlib.redirect_stdout(io.StringIO()):
+                gen_docs.generate(out)
+        build.assert_called_once_with(None, False)
+        self.assertEqual(out.read_text(encoding="ascii"), "rebuilt")
+
+    def test_generate_fresh_forces_a_build_despite_a_matching_spec(self) -> None:
+        out = self.matching_spec(self.current_fingerprint())
+        with mock.patch.object(gen_docs, "build_spec",
+                               return_value=("fresh", "stats")) as build:
+            with contextlib.redirect_stdout(io.StringIO()):
+                gen_docs.generate(out, fresh=True)
+        build.assert_called_once_with(None, True)
+        self.assertEqual(out.read_text(encoding="ascii"), "fresh")
+
+    def test_check_always_builds_even_when_the_spec_matches(self) -> None:
+        out = self.matching_spec(self.current_fingerprint())
+        with mock.patch.object(gen_docs, "build_spec",
+                               return_value=("rebuilt", "stats")) as build:
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertFalse(gen_docs.check(out))
+        build.assert_called_once_with(None, False)
+        self.assertEqual(out.read_text(encoding="ascii").splitlines()[2],
+                         f'     "{self.current_fingerprint()}";',
+                         "--check never rewrites the committed spec")
+
+    def test_bundle_fingerprint_follows_every_input(self) -> None:
+        before = self.current_fingerprint()
+        # A docs source change ...
+        (self.docs / "index.md").write_text("# changed\n", encoding="utf-8")
+        after_docs = self.current_fingerprint()
+        self.assertNotEqual(before, after_docs)
+        # ... the bundled nav injector ...
+        nav = self.root / "book-nav.js"
+        nav.write_text("// v1\n", encoding="utf-8")
+        with mock.patch.object(gen_docs, "NAV_SCRIPT_SRC", nav):
+            after_nav = gen_docs.bundle_fingerprint(
+                gen_docs.docs_source_digests())
+        nav.write_text("// v2\n", encoding="utf-8")
+        with mock.patch.object(gen_docs, "NAV_SCRIPT_SRC", nav):
+            after_nav_edit = gen_docs.bundle_fingerprint(
+                gen_docs.docs_source_digests())
+        self.assertNotEqual(after_nav, after_nav_edit)
+        # ... and the generator's own source all move it.
+        with mock.patch.object(gen_docs, "generator_bytes",
+                               return_value=b"old generator"):
+            stale = gen_docs.bundle_fingerprint(
+                gen_docs.docs_source_digests())
+        self.assertNotEqual(after_nav_edit, stale)
 
 
 class TestCheckDocs(unittest.TestCase):

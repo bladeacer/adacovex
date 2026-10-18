@@ -92,6 +92,23 @@ Determinism and incremental builds:
   deleted page can never leave a stale page in the bundle -- that stale-HTML
   case made the spec differ between an incremental developer tree and a fresh
   clone, and a changed spec invalidates the cached SPARK proof;
+* the bundled **search index is canonicalised** (`canonicalise_search_index`):
+  Sphinx merges an incremental index with the one already on disk, and its
+  prune empties a removed word's document set without dropping the word, so
+  an index with build history carries phantom entries (`"appveyor":[]`) that
+  a clean build never emits.  Empty entries are dropped and the JSON is
+  re-serialised with sorted keys, so the incremental developer tree and the
+  clean build a fresh clone runs produce byte-identical bundles -- without
+  it, `--check` fails on a cold machine for a spec that is correct in every
+  word it carries;
+* the spec records the **bundle fingerprint** of the inputs it was built from
+  (`Source_Fingerprint`: the docs sources, the nav injector, this generator),
+  so a tree with no usable Sphinx build -- a fresh clone, or after the build
+  directory was removed -- is recognised as current by reading the committed
+  spec instead of re-running Sphinx (about 9 s) and re-encoding every asset
+  to reproduce the same bytes.  `generate` takes that path; `--check` never
+  does -- it always builds and compares, so the gate still fails on a stale
+  or hand-edited spec;
 * the spec is written **only when its content changed**, so a no-op run keeps
   the file's mtime and `alr build` does not recompile the generated 28k-line
   unit (nor relink) on every `just build` / `just prove`;
@@ -121,6 +138,7 @@ spec is authored to build without it.
 import argparse
 import concurrent.futures
 import hashlib
+import json
 import os
 import posixpath
 import re
@@ -146,6 +164,14 @@ STAMP: Path = DOCS / "_build" / ".adacovex-docs-sources"
 _STAMP_OUTPUTS: str = "# outputs"
 _STAMP_SOURCES: str = "# sources"
 
+# The bundle-fingerprint declaration the generator emits into the spec header
+# (`Source_Fingerprint : constant String := "<sha256>";`), read back on a tree
+# with no usable Sphinx build to decide whether the committed spec already
+# is the artefact of these inputs.
+_FINGERPRINT_DECL = re.compile(
+    r'^   Source_Fingerprint : constant String :=\n     "([0-9a-f]{64})";',
+    re.MULTILINE)
+
 # Source suffixes Sphinx renders as a page (`foo/bar.md` -> `foo/bar.html`).
 PAGE_SUFFIXES: Tuple[str, ...] = (".md", ".rst", ".txt")
 
@@ -158,6 +184,10 @@ IMAGE_SUFFIXES: Tuple[str, ...] = (
 # Pages Sphinx generates from the toctree and the configuration rather than
 # from a page source of their own: the alphabetical index and the search page.
 GENERATED_PAGES: Tuple[str, ...] = ("genindex.html", "search.html")
+
+# Sphinx's search index: a single-line `Search.setIndex({...})` script the
+# search page loads.  Bundled (not renamed), and canonicalised on the way out.
+SEARCH_INDEX: str = "searchindex.js"
 
 # ---------------------------------------------------------------------------
 # Offline asset rules.  Shared with tools/check-book-links.py (imported), so
@@ -335,6 +365,53 @@ def tree_fingerprint(digests: Dict[str, str]) -> str:
         h.update(digests[rel].encode("ascii"))
         h.update(b"\0")
     return h.hexdigest()
+
+
+def generator_bytes() -> bytes:
+    """This generator's own source: an output-format change is a new input."""
+    return Path(__file__).read_bytes()
+
+
+def bundle_fingerprint(digests: Dict[str, str]) -> str:
+    """SHA-256 over everything that shapes the emitted spec.
+
+    Three inputs: the docs sources (the same digests the Sphinx stamp
+    records), the nav injector bundled straight from `resources/js/`, and
+    this generator's source (the canonicalisation and emission rules live
+    there).  The value is written into the spec header, so a reader of a
+    committed spec alone can tell which inputs produced it.
+    """
+    h = hashlib.sha256()
+    h.update(tree_fingerprint(digests).encode("ascii"))
+    h.update(b"\0")
+    try:
+        h.update(NAV_SCRIPT_SRC.read_bytes())
+    except OSError as exc:
+        raise RuntimeError(f"cannot read {NAV_SCRIPT_SRC}: {exc}")
+    h.update(b"\0")
+    h.update(generator_bytes())
+    return h.hexdigest()
+
+
+def spec_matches_sources(out: Path) -> bool:
+    """Whether the spec at `out` already embeds the current bundle inputs.
+
+    The generator stamps `Source_Fingerprint` into the spec it writes, so a
+    tree with no usable Sphinx build (a fresh clone, or after the build
+    directory was removed) can be recognised as current by reading that one
+    constant instead of rebuilding the site to compare bytes.  Only
+    `generate` uses this; `--check` always builds, so a stale or hand-edited
+    spec still fails the gate.
+    """
+    if not out.is_file():
+        return False
+    try:
+        text = out.read_text(encoding="ascii")
+    except (OSError, UnicodeDecodeError):
+        return False
+    found = _FINGERPRINT_DECL.search(text)
+    return found is not None and found.group(1) == bundle_fingerprint(
+        docs_source_digests())
 
 
 class Stamp(NamedTuple):
@@ -685,6 +762,47 @@ def postprocess_page(html: str) -> str:
     return html
 
 
+def canonicalise_search_index(js: str) -> str:
+    """Make a Sphinx search index a pure function of the current sources.
+
+    Sphinx merges an incremental build's index with the one already on disk:
+    `load_indexer` reads the previous `searchindex.js`, `prune` removes the
+    documents that are about to be rebuilt from every word's set, and the
+    rebuild feeds the new doctrees back.  Pruning empties a set but keeps its
+    key, so an index carrying build history holds phantom word entries
+    (`"appveyor":[]`) whose documents are long gone, and the key order
+    follows the history; a clean build emits neither.  The bundle must not
+    depend on how the build directory was reached, so empty entries are
+    dropped and the object re-serialised with sorted keys and Sphinx's own
+    separators.  Client-side search looks words up by key, so neither the
+    empty entries nor the key order carry meaning.
+
+    Input that is not a `Search.setIndex({...})` script (a stub in a test, or
+    a Sphinx layout change) is returned unchanged.
+    """
+    prefix = "Search.setIndex("
+    if not js.startswith(prefix):
+        return js
+    payload = js[len(prefix):].strip()
+    if payload.endswith(";"):
+        payload = payload[:-1].rstrip()
+    if not payload.endswith(")"):
+        return js
+    try:
+        data = json.loads(payload[:-1])
+    except ValueError:
+        return js
+    if not isinstance(data, dict):
+        return js
+    for key in ("terms", "titleterms"):
+        mapping = data.get(key)
+        if isinstance(mapping, dict):
+            data[key] = {word: docs for word, docs in sorted(mapping.items())
+                         if docs}
+    return prefix + json.dumps(data, sort_keys=True, separators=(",", ":")) \
+        + ")"
+
+
 def collect_assets(build: Path) -> List[Tuple[str, str, str]]:
     """Return [(path, mime, body), ...] for every bundled asset of the build.
 
@@ -715,6 +833,10 @@ def collect_assets(build: Path) -> List[Tuple[str, str, str]]:
         except (UnicodeDecodeError, OSError):
             # Binary file with a text extension (should not happen): skip.
             continue
+        if rel == SEARCH_INDEX:
+            # Phantom word entries survive an incremental build, so the
+            # bundle must not depend on which build produced the index.
+            body = canonicalise_search_index(body)
         if mime == "text/html":
             body = postprocess_page(body)
             span = _sidebar_span(body)
@@ -1050,6 +1172,9 @@ def build_spec(jobs: Optional[int] = None,
     (without mutating the committed file).  `jobs` caps the encoder worker
     processes (None picks the default); `fresh` forces a clean Sphinx build.
     """
+    #  The bundle fingerprint goes into the spec header, so it is computed
+    #  from the same source digests the Sphinx stamp records.
+    bundle_fp: str = bundle_fingerprint(docs_source_digests())
     if not ensure_build(fresh):
         raise RuntimeError(
             "sphinx-build not on PATH and no docs/_build/html")
@@ -1083,6 +1208,15 @@ def build_spec(jobs: Optional[int] = None,
     )
     lines: List[str] = header.splitlines()
     lines.append("package Adacovex.Docs_Template is")
+    lines.append("")
+    lines.append("   --  The bundle fingerprint: SHA-256 over the docs sources,")
+    lines.append("   --  the bundled nav injector and tools/gen-docs.py itself.")
+    lines.append("   --  tools/gen-docs.py reads it back on a tree with no")
+    lines.append("   --  Sphinx build directory, so a cold build keeps this")
+    lines.append("   --  committed spec instead of rebuilding the site to")
+    lines.append("   --  reproduce the same bytes. --check always rebuilds.")
+    lines.append("   Source_Fingerprint : constant String :=")
+    lines.append(f'     "{bundle_fp}";')
     lines.append("")
     lines.append("   --  One entry of the lookup table. The path and MIME type")
     lines.append("   --  are fixed-size (space-padded) strings; Idx selects the")
@@ -1208,7 +1342,17 @@ def generate(out: Path, jobs: Optional[int] = None,
     `alr build` recompile it (and relink) on every run -- and a content change
     here also invalidates the cached SPARK proof.  Skipping the write on a
     no-op run keeps both the incremental build and the prove cache warm.
+
+    A tree whose committed spec already records these inputs (the embedded
+    `Source_Fingerprint`) needs no build at all: Sphinx would only reproduce
+    the bytes the spec already carries, so the cold-tree run costs the source
+    digests instead of the ~9 s clean Sphinx build plus a full re-encode.
+    `--fresh` forces the real build, and `--check` never takes this path.
     """
+    if not fresh and spec_matches_sources(out):
+        print(f"{out.name} up to date (bundle fingerprint matches; "
+              f"Sphinx not run).")
+        return
     content, stats = build_spec(jobs, fresh)
     existing: Optional[str] = (
         out.read_text(encoding="ascii") if out.is_file() else None)

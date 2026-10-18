@@ -1,13 +1,25 @@
 #!/usr/bin/env python3
-"""Benchmark the assessment pipeline + prove subcommand + binary size.
+"""Benchmark the assessment pipeline + prove subcommand + build phases + binary size.
 
 The old `make bench` recipe interleaved hyperfine invocations, a bash
 `time` fallback loop, and a strip/size report in one long shell block
 whose quoting (`$$bench_cache`, `--export-markdown` position, trap cleanup)
 was easy to break.  This script owns the same flow:
 
-  python3 tools/bench.py
+  python3 tools/bench.py [all|build|pipeline|prove]
 
+- Build warm timing: `alr build` on an already-built tree (the workspace
+  sync + gprbuild no-op a developer pays after every source edit).
+- Cold build timing: `tools/build.py --release` against a fresh copy of the
+  tree with no `obj/`, no `bin/` and no `docs/_build/` -- the shape a first
+  build on a freshly cloned checkout sees (generators, the workspace sync,
+  and the full compile + link), 3 runs, each preceded by a wipe.  The copy
+  keeps the working tree's build state untouched, so the scenario cannot
+  flip the working tree's build profile or drop its gnatprove session.
+- Docs timing: `gen-docs.py` on a tree with no Sphinx build directory (the
+  cold-tree skip: the committed spec's `Source_Fingerprint` already records
+  these sources, so Sphinx does not run) and `gen-docs.py --fresh` (the
+  full Sphinx rebuild a docs edit pays), 3 runs each.
 - Pipeline cold timing: hyperfine with 10 runs over a freshly emptied
   result cache (when hyperfine is installed), else 5 Python-measured runs.
 - Pipeline warm timing: one warm-up run to populate the caches, then
@@ -33,9 +45,16 @@ was easy to break.  This script owns the same flow:
   reported via tools/bench-size.py, so the build output is never modified.
 
 Sample sizes match the old recipe (hyperfine 10 cold + 15 warm, fallback
-5 + 5) so the reported means stay comparable with past runs.  The
+5 + 5) so the reported means stay comparable with past runs.  The build
+phase samples are small (5 warm, 3 cold, 3 docs) because a cold compile is
+about half a minute.  The
 hyperfine markdown exports still land in /tmp (adacovex-bench-cold.md /
-adacovex-bench-warm.md / adacovex-bench-prove-*.md) as before.
+adacovex-bench-warm.md / adacovex-bench-build-*.md /
+adacovex-bench-docs-*.md / adacovex-bench-prove-*.md) as before.
+
+The `build` section also prints an strace syscall summary for the two cheap
+phases (the no-op build and the cold-tree docs run), so the profile behind
+each figure is reproducible with the same command.
 
 Exit code 0 on success; 1 when the binary is missing, strip fails, or
 bench-size.py reports a problem.
@@ -48,7 +67,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 ROOT: Path = Path(__file__).resolve().parent.parent
 SECONDARY: Path = ROOT.parent / "Ada_CRDT"
@@ -59,6 +78,15 @@ PROVE_COLD_RUNS: int = 3
 PROVE_WARM_RUNS: int = 15
 PROVE_CLONE_RUNS: int = 2
 FALLBACK_RUNS: int = 5
+BUILD_WARM_RUNS: int = 5
+BUILD_COLD_RUNS: int = 3
+DOCS_RUNS: int = 3
+
+#  The syscalls the strace profile of a build phase reports: the stat/open
+#  traffic that dominates a warm no-op build and the exec/read/write of a
+#  real one.
+STRACE_ROWS: Tuple[str, ...] = ("newfstatat", "openat", "read", "write",
+                                "execve", "wait4", "total")
 
 
 def load_avg() -> str:
@@ -123,6 +151,168 @@ def run_warm_hyperfine(cache: str, target_args: List[str] = None,
         "--export-markdown", "/tmp/adacovex-bench-warm.md",
     ]
     subprocess.run(cmd, cwd=str(ROOT), check=True)
+
+
+def make_build_clone() -> Path:
+    """Copy the tree for a cold build: no obj/, no bin/, no docs/_build/.
+
+    A fresh checkout carries neither compiled units nor the Sphinx build
+    directory, so the scenario measures the first `just build` a new machine
+    runs -- generators, workspace sync, full compile and link.  The working
+    tree keeps its own build state (and its gnatprove session) untouched, so
+    the scenario cannot flip the working tree's build profile.
+    """
+    clone = Path(tempfile.mkdtemp(prefix="adacovex-bench-build-")) / ROOT.name
+    shutil.copytree(
+        str(ROOT), str(clone),
+        ignore=shutil.ignore_patterns("obj", "bin", ".git", ".adacovex",
+                                      "_build"),
+    )
+    return clone
+
+
+BUILD_CLONE_WIPE: str = "obj bin docs/_build"
+DOCS_WIPE: str = "docs/_build obj/adacovex-docs-encode"
+
+
+def strace_profile(label: str, argv: List[str], prepare: str = "",
+                   wipe: str = "") -> None:
+    """Print the strace -c syscall summary of one build-phase command.
+
+    `wipe` names paths removed before the traced run (the cold shapes),
+    `prepare` any other shell setup.  Only the rows in STRACE_ROWS are
+    printed: the stat/open traffic that dominates a warm no-op build and the
+    exec/read/write of real work.  strace serialises the workload, so the
+    table is for syscall counts, never for wall time.
+    """
+    if shutil.which("strace") is None:
+        print(f"== strace not found; skipping the {label} profile ==")
+        return
+    if wipe:
+        for rel in wipe.split():
+            shutil.rmtree(ROOT / rel, ignore_errors=True)
+    announce(f"strace profile: {label}")
+    log = Path(tempfile.gettempdir()) / "adacovex-bench-strace.txt"
+    result = subprocess.run(["strace", "-f", "-c", "-o", str(log)] + argv,
+                            cwd=str(ROOT), capture_output=True, text=True)
+    if result.returncode != 0:
+        print(f"note: strace {label} exited {result.returncode}")
+    try:
+        rows = log.read_text(errors="replace").splitlines()[1:]
+    except OSError:
+        return
+    print(f"{'calls':>10}  syscall")
+    for row in rows:
+        parts = row.split()
+        if len(parts) < 5 or parts[-1] not in STRACE_ROWS + ("totals",):
+            continue
+        #  strace drops the errors column when a syscall made none, so the
+        #  calls count is the second or third field from the end.
+        calls = parts[-3] if len(parts) >= 6 else parts[-2]
+        name = "total" if parts[-1] == "totals" else parts[-1]
+        print(f"{calls:>10}  {name}")
+
+
+def run_build_warm() -> None:
+    """`alr build` on an already-built tree (sync + gprbuild no-op)."""
+    if hyperfine_available():
+        announce("Build warm (alr build, no-op)")
+        cmd = [
+            "hyperfine", "--warmup", "1", "--runs", str(BUILD_WARM_RUNS),
+            "alr build",
+            "--export-markdown", "/tmp/adacovex-bench-build-warm.md",
+        ]
+        subprocess.run(cmd, cwd=str(ROOT), check=True)
+        return
+    print(f"== hyperfine not found; using bash time "
+          f"(build warm, load {load_avg()}) ==")
+    for i in range(1, FALLBACK_RUNS + 1):
+        start = time.perf_counter()
+        subprocess.run(["alr", "build"], cwd=str(ROOT),
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        print(f"build warm run {i}: {time.perf_counter() - start:.3f} s")
+
+
+def run_cold_build() -> None:
+    """A full `just build --release` against a fresh copy of the tree."""
+    clone = make_build_clone()
+    try:
+        if hyperfine_available():
+            announce("Cold build (fresh checkout: generators + workspace "
+                     "sync + compile, release profile)")
+            cmd = [
+                "hyperfine", "--runs", str(BUILD_COLD_RUNS),
+                "--prepare",
+                "rm -rf " + " ".join(f"{clone}/{p}"
+                                     for p in BUILD_CLONE_WIPE.split()),
+                "python3 tools/build.py --release",
+                "--export-markdown", "/tmp/adacovex-bench-build-cold.md",
+            ]
+            subprocess.run(cmd, cwd=str(clone), check=True)
+            return
+        print(f"== hyperfine not found; using bash time "
+              f"(cold build, load {load_avg()}) ==")
+        for i in range(1, BUILD_COLD_RUNS + 1):
+            for rel in BUILD_CLONE_WIPE.split():
+                shutil.rmtree(clone / rel, ignore_errors=True)
+            start = time.perf_counter()
+            subprocess.run([sys.executable, "tools/build.py", "--release"],
+                           cwd=str(clone), stdout=subprocess.DEVNULL,
+                           stderr=subprocess.DEVNULL)
+            print(f"cold build run {i}: {time.perf_counter() - start:.3f} s")
+    finally:
+        shutil.rmtree(clone.parent, ignore_errors=True)
+
+
+def run_docs_phases() -> None:
+    """The two docs shapes: the cold-tree skip and the full Sphinx build."""
+    encode_cache = ROOT / "obj" / "adacovex-docs-encode"
+    if hyperfine_available():
+        announce("Docs regen, cold tree (no Sphinx build directory; the "
+                 "committed spec's fingerprint already records these sources)")
+        cmd = [
+            "hyperfine", "--runs", str(DOCS_RUNS),
+            "--prepare", f"rm -rf {ROOT / 'docs' / '_build'} {encode_cache}",
+            "python3 tools/gen-docs.py",
+            "--export-markdown", "/tmp/adacovex-bench-docs-cold.md",
+        ]
+        subprocess.run(cmd, cwd=str(ROOT), check=True)
+        announce("Docs regen, full Sphinx rebuild (--fresh)")
+        cmd = [
+            "hyperfine", "--runs", str(DOCS_RUNS),
+            "--prepare", f"rm -rf {encode_cache}",
+            "python3 tools/gen-docs.py --fresh",
+            "--export-markdown", "/tmp/adacovex-bench-docs-fresh.md",
+        ]
+        subprocess.run(cmd, cwd=str(ROOT), check=True)
+        return
+    print(f"== hyperfine not found; using bash time "
+          f"(docs phases, load {load_avg()}) ==")
+    for label, args in (("docs cold tree", []), ("docs --fresh", ["--fresh"])):
+        for i in range(1, DOCS_RUNS + 1):
+            shutil.rmtree(ROOT / "docs" / "_build", ignore_errors=True)
+            shutil.rmtree(encode_cache, ignore_errors=True)
+            start = time.perf_counter()
+            subprocess.run([sys.executable, "tools/gen-docs.py"] + args,
+                           cwd=str(ROOT), stdout=subprocess.DEVNULL,
+                           stderr=subprocess.DEVNULL)
+            print(f"{label} run {i}: {time.perf_counter() - start:.3f} s")
+
+
+def build_phase_section() -> None:
+    """Profile and time every cold-build phase, then restore the tree.
+
+    The strace profiles come first (the docs one needs no Sphinx build
+    directory), then the timings; the docs timings end with a `--fresh`
+    rebuild, so the working tree is left with an up-to-date build directory
+    and spec.
+    """
+    strace_profile("alr build (warm no-op)", ["alr", "build"])
+    strace_profile("gen-docs (cold tree)",
+                   [sys.executable, "tools/gen-docs.py"], wipe=DOCS_WIPE)
+    run_build_warm()
+    run_cold_build()
+    run_docs_phases()
 
 
 def ensure_proof_output(target: Path = ROOT) -> None:
@@ -286,73 +476,85 @@ def report_binary_size() -> int:
     return rc
 
 
-def bench() -> int:
+def bench(section: str = "all") -> int:
     binary_path()  # fail fast when the binary is missing
+    if section in ("all", "build"):
+        build_phase_section()
+        if section == "build":
+            print()
+            return report_binary_size()
     cache = tempfile.mkdtemp(prefix="adacovex-bench-")
     prove_cache = tempfile.mkdtemp(prefix="adacovex-bench-prove-")
     try:
-        ensure_proof_output()
-        if hyperfine_available():
-            run_cold_hyperfine(cache)
-            run_warm_hyperfine(cache)
-            run_prove_cold_hyperfine(prove_cache)
-            run_prove_warm_hyperfine(prove_cache)
-            run_prove_clone_hyperfine(prove_cache)
-        else:
-            time_runs(cache, "cold", FALLBACK_RUNS, reset=True)
-            # Warm-up run populates the caches before the warm samples.
-            subprocess.run(
-                [str(ROOT / "bin" / "adacovex"), f"--cache-dir={cache}"],
-                cwd=str(ROOT),
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-            time_runs(cache, "warm", FALLBACK_RUNS, reset=False)
-            time_runs(prove_cache, "prove cold (--no-cache)",
-                      FALLBACK_RUNS, reset=True, extra_args=["prove", "--no-cache"])
-            # Warm-up run populates the prove result cache first.
-            subprocess.run(
-                [str(ROOT / "bin" / "adacovex"), "prove",
-                 f"--cache-dir={prove_cache}"],
-                cwd=str(ROOT),
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-            time_runs(prove_cache, "prove warm", FALLBACK_RUNS, reset=False)
-            time_prove_clone(prove_cache, ROOT)
+        if section in ("all", "pipeline"):
+            ensure_proof_output()
+            if hyperfine_available():
+                run_cold_hyperfine(cache)
+                run_warm_hyperfine(cache)
+            else:
+                time_runs(cache, "cold", FALLBACK_RUNS, reset=True)
+                # Warm-up run populates the caches before the warm samples.
+                subprocess.run(
+                    [str(ROOT / "bin" / "adacovex"), f"--cache-dir={cache}"],
+                    cwd=str(ROOT),
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+                time_runs(cache, "warm", FALLBACK_RUNS, reset=False)
+        if section in ("all", "prove"):
+            if hyperfine_available():
+                run_prove_cold_hyperfine(prove_cache)
+                run_prove_warm_hyperfine(prove_cache)
+                run_prove_clone_hyperfine(prove_cache)
+            else:
+                time_runs(prove_cache, "prove cold (--no-cache)",
+                          FALLBACK_RUNS, reset=True, extra_args=["prove", "--no-cache"])
+                # Warm-up run populates the prove result cache first.
+                subprocess.run(
+                    [str(ROOT / "bin" / "adacovex"), "prove",
+                     f"--cache-dir={prove_cache}"],
+                    cwd=str(ROOT),
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+                time_runs(prove_cache, "prove warm", FALLBACK_RUNS, reset=False)
+                time_prove_clone(prove_cache, ROOT)
         # Secondary target: the Ada_CRDT dogfood tree exercises a second
         # codebase shape (different file mix, vendored layout, manifest set)
         # so a regression tied to one project's structure cannot hide behind
         # self-assessment numbers.  Pipeline shapes only -- the prove shapes
         # are already covered against the primary tree.
-        if SECONDARY.is_dir():
-            sec_cache = tempfile.mkdtemp(prefix="adacovex-bench-crdt-")
-            try:
-                ensure_proof_output(SECONDARY)
-                sec_args = [f"--target={SECONDARY}"]
-                if hyperfine_available():
-                    run_cold_hyperfine(sec_cache, sec_args,
-                                       f"Pipeline cold, secondary target {SECONDARY.name}")
-                    run_warm_hyperfine(sec_cache, sec_args,
-                                       f"Pipeline warm, secondary target {SECONDARY.name}")
-                else:
-                    time_runs(sec_cache, f"cold ({SECONDARY.name})",
-                              FALLBACK_RUNS, reset=True, extra_args=sec_args)
-                    subprocess.run(
-                        [str(ROOT / "bin" / "adacovex")] + sec_args
-                        + [f"--cache-dir={sec_cache}"],
-                        cwd=str(ROOT),
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL,
-                    )
-                    time_runs(sec_cache, f"warm ({SECONDARY.name})",
-                              FALLBACK_RUNS, reset=False, extra_args=sec_args)
-            finally:
-                shutil.rmtree(sec_cache, ignore_errors=True)
-        else:
-            print(f"== secondary target {SECONDARY} not present; skipped ==")
+        if section == "all":
+            if SECONDARY.is_dir():
+                sec_cache = tempfile.mkdtemp(prefix="adacovex-bench-crdt-")
+                try:
+                    ensure_proof_output(SECONDARY)
+                    sec_args = [f"--target={SECONDARY}"]
+                    if hyperfine_available():
+                        run_cold_hyperfine(sec_cache, sec_args,
+                                           f"Pipeline cold, secondary target {SECONDARY.name}")
+                        run_warm_hyperfine(sec_cache, sec_args,
+                                           f"Pipeline warm, secondary target {SECONDARY.name}")
+                    else:
+                        time_runs(sec_cache, f"cold ({SECONDARY.name})",
+                                  FALLBACK_RUNS, reset=True, extra_args=sec_args)
+                        subprocess.run(
+                            [str(ROOT / "bin" / "adacovex")] + sec_args
+                            + [f"--cache-dir={sec_cache}"],
+                            cwd=str(ROOT),
+                            stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL,
+                        )
+                        time_runs(sec_cache, f"warm ({SECONDARY.name})",
+                                  FALLBACK_RUNS, reset=False, extra_args=sec_args)
+                finally:
+                    shutil.rmtree(sec_cache, ignore_errors=True)
+            else:
+                print(f"== secondary target {SECONDARY} not present; skipped ==")
+            print()
+            return report_binary_size()
         print()
-        return report_binary_size()
+        return 0
     finally:
         shutil.rmtree(cache, ignore_errors=True)
         shutil.rmtree(prove_cache, ignore_errors=True)
@@ -360,12 +562,18 @@ def bench() -> int:
 
 def parse_args(argv: List[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "section", nargs="?", default="all",
+        choices=("all", "build", "pipeline", "prove"),
+        help="which scenarios to run (default: all; 'build' is the "
+             "cold-build phases: strace profiles, warm no-op, cold "
+             "fresh-checkout build, and the two docs shapes)")
     return parser.parse_args(argv)
 
 
 def main() -> int:
-    parse_args(sys.argv[1:])
-    return bench()
+    args = parse_args(sys.argv[1:])
+    return bench(args.section)
 
 
 if __name__ == "__main__":
