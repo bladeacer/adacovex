@@ -18,7 +18,7 @@
   | Timezone + ANSI                          |  63 | PASS     |
   | Complexity check                         |  20 | PASS     |
   | Opt-out markers                          |  16 | PASS     |
-  | Dir cache                                |  22 | PASS     |
+  | Dir cache                                |  29 | PASS     |
   | Diff reports                             |  36 | PASS     |
   | Prove runner                             |  24 | PASS     |
   | SPARK coverage                           |  18 | PASS     |
@@ -31,4 +31,4 @@
   | tldr installer                           |  48 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 2017  Failed: 0
+  Passed: 2024  Failed: 0

@@ -61,14 +61,17 @@ codebase; what matters is the shape:
   cache is empty, so every file must be read and hashed at least once
   (tool-version probes and ecosystem-metadata lookups live per-machine,
   outside the result cache, and survive cache wipes).
-- **Pipeline warm ~46 ms**: the on-disk result cache skips re-parsing
+- **Pipeline warm ~42-47 ms**: the on-disk result cache skips re-parsing
   unchanged sources; the stamp fast-path skips the per-file SHA-256
   entirely (a file unchanged in size is not re-hashed); the tools-set
   cache skips the SBOM dev-dependency word scan and the tool probes. The
   remaining time is process startup, directory walks, and blob
-  deserialization.
+  deserialization. 1.63.0's directory memo (packed 66-byte entries, a
+  128-byte key, and a 128-entry cap) cut the warm `newfstatat` count to
+  8 142 from 14 597 and the paired warm wall by 9.7 percent.
 - **Cold build ~38.4 s** (release profile, fresh checkout, load 0.95):
-  about 0.34 s of generators, the workspace sync inside the 301 ms no-op
+  about 0.29 s of generators run as a concurrent bundle (0.46 s when the
+  five steps run in series), the workspace sync inside the 301 ms no-op
   `alr build`, and about 38 s of compile and link over 79 units with both
   mains at `-j0`. The docs phase used to cost 9-10 s of that; it is now a
   fingerprint hit of 76 ms (see
@@ -97,14 +100,14 @@ phase carries one representative version that supplies the phase's complete
 metric set. A new version folds into the open phase while the methodology
 holds; a methodology shift closes the phase and opens a new one.
 
-The closed 1.48.0-1.54.0 phase is represented by 1.50.0, whose methodology
-shift was the deterministic, incremental doc bundling that keeps the cached
-proof warm across a no-op build. The **open phase is 1.55.0-1.56.0**, represented by
-1.55.0, because the methodology changed and not only the code: every figure is
-now taken with the machine load recorded beside it, and the fully cold prove
-shape is measured for the first time. 1.56.0 folds in because it changed no
-measurement methodology and adds no Ada unit. Its detail is on [The 1.55.0
-timing re-baseline](prove-rebaseline.md).
+The 1.48.0-1.54.0 phase is retired to the notes, and the 1.55.0-1.56.0 and
+1.57.0-1.60.0 phases are closed, represented by 1.55.0 and 1.58.0. The **open
+phase is 1.61.0-**, represented by 1.61.0: that version began recording every
+figure with the machine load beside it and re-baselined the adacovex-side
+shapes, and 1.62.0 and 1.63.0 fold in with their figures noted beside the
+column. The 1.55.0 detail is on [The 1.55.0 timing
+re-baseline](prove-rebaseline.md); the whole table is on [Prove timing and the
+optimisation review](prove-timing.md).
 
 ## CI
 

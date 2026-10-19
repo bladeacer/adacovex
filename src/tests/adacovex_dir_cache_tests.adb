@@ -16,6 +16,17 @@ package body Adacovex_Dir_Cache_Tests is
    Long_Rel    : constant String := "obj/adacovex_dir_cache_long";
    Long_Abs    : constant String :=
      Ada.Directories.Current_Directory & "/obj/adacovex_dir_cache_long";
+   --  A directory that clears the 64-entry cap the memo used to have:
+   --  the self tree's src/parsers (78) and docs/api-docs (84) are this
+   --  shape, and every walker re-enumerated them under the old cap.
+   Medium_Rel  : constant String := "obj/adacovex_dir_cache_medium";
+   Medium_Abs  : constant String :=
+     Ada.Directories.Current_Directory & "/obj/adacovex_dir_cache_medium";
+   Medium_Ct   : constant := 100;
+   --  A name longer than the old 32-byte Name field but inside
+   --  Max_Name_Len: it must be stored whole, not fail the read.
+   Fitted_Name : constant String :=
+     "adacovex-parsers-manifest-discover_system_dev_deps-l.ads";
    Missing_Abs : constant String :=
      Ada.Directories.Current_Directory & "/obj/adacovex_dir_cache_missing";
 
@@ -147,6 +158,40 @@ package body Adacovex_Dir_Cache_Tests is
          and then Adacovex.Dir_Cache.Hits = Hits_0,
          "Reset drops the snapshots and keeps Hits cumulative");
 
+      --  A name longer than the old 32-byte field but inside the memo's
+      --  name bound is stored whole, and the directory stays memoised.
+      Fresh_Dir (Medium_Abs);
+      Touch (Medium_Abs & "/short.ads");
+      Touch (Medium_Abs & "/" & Fitted_Name);
+      Adacovex.Dir_Cache.Reset;
+      Adacovex.Dir_Cache.Snapshot (Medium_Abs, E, C, Trunc, OK);
+      R.Check (OK, "a fitted long name still reads OK");
+      R.Check (not Trunc, "a fitted long name is not truncated");
+      R.Check
+        (Holds (E, C, Fitted_Name, Adacovex.Dir_Cache.K_File),
+         "a 56-character name is stored whole");
+      Hits_0 := Adacovex.Dir_Cache.Hits;
+      Adacovex.Dir_Cache.Snapshot (Medium_Abs, E, C, Trunc, OK);
+      R.Check
+        (Adacovex.Dir_Cache.Hits = Hits_0 + 1,
+         "a directory holding a long name is still memoised");
+
+      --  A directory with 100 entries is under the new cap and is
+      --  memoised; the same shape was rejected by the 64-entry cap.
+      Fresh_Dir (Medium_Rel);
+      for I in 1 .. Medium_Ct loop
+         Touch (Medium_Rel & "/f" & Natural'Image (I));
+      end loop;
+      Adacovex.Dir_Cache.Reset;
+      Adacovex.Dir_Cache.Snapshot (Medium_Rel, E, C, Trunc, OK);
+      R.Check (OK and then not Trunc, "a 100-entry directory is memoised");
+      R.Check (C = Medium_Ct, "the 100-entry snapshot holds every entry");
+      Hits_0 := Adacovex.Dir_Cache.Hits;
+      Adacovex.Dir_Cache.Snapshot (Medium_Rel, E, C, Trunc, OK);
+      R.Check
+        (Adacovex.Dir_Cache.Hits = Hits_0 + 1,
+         "the 100-entry directory is served from the memo");
+
       --  An entry name longer than the memo can hold forces the caller
       --  back to direct enumeration instead of reporting an empty tree.
       Fresh_Dir (Long_Abs);
@@ -175,6 +220,7 @@ package body Adacovex_Dir_Cache_Tests is
       Ada.Directories.Delete_Tree (Fixture_Abs);
       Ada.Directories.Delete_Tree (Over_Abs);
       Ada.Directories.Delete_Tree (Long_Abs);
+      Ada.Directories.Delete_Tree (Medium_Abs);
    end Run;
 
 end Adacovex_Dir_Cache_Tests;

@@ -18,23 +18,17 @@ whose implementation methodology is largely similar. Each phase carries one
 for the phase, so a column is never assembled from the best value of each row
 across different versions.
 
-The measured phases are 1.48.0-1.54.0, 1.55.0-1.56.0, and 1.57.0-1.61.0. A
+The measured phases are 1.55.0-1.56.0, 1.57.0-1.60.0, and 1.61.0-. A
 version joins the open phase while the methodology is unchanged; a methodology
 shift closes the phase and opens a new one.
 
 The table holds the two most recent closed phases plus the open one. A retired
 phase is deleted rather than kept, so the page does not grow without bound, and
 whatever still explains a surviving number moves into the "Across every phase"
-notes first. The phases retired so far are 1.40.0-1.41.0, 1.42.0-1.44.0, and
-1.45.0-1.47.0; the stat-stamp work behind the warm syscall floor is written up
-on [Performance optimisation history](optimisation-history.md).
-
-**The 1.48.0-1.54.0 phase is closed, with 1.50.0 as its representative.**  Its
-methodology shift was the deterministic, incremental doc bundling of 1.50.0.
-Every later version in the range folds in because it changed no performance
-methodology: the 1.51.0 encode cache and parallel encoder are build-side
-speed-ups, and the 1.52.0 `--level=4` gate is a gate setting that the prove
-subcommand forwards verbatim.
+notes first. The phases retired so far are 1.40.0-1.41.0, 1.42.0-1.44.0,
+1.45.0-1.47.0, and 1.48.0-1.54.0; the stat-stamp work behind the warm syscall
+floor is written up on [Performance optimisation
+history](optimisation-history.md).
 
 **The 1.55.0-1.56.0 phase is closed, with 1.55.0 as its representative.**
 1.55.0 opens it and changes the methodology, not only the code: every figure in
@@ -45,7 +39,7 @@ browser script, and Python tooling, and added no Ada unit, so the pipeline and
 the prover see the same work as 1.55.0 did. It also re-baselines the fully cold
 prove shape, which no earlier phase recorded.
 
-**The 1.57.0-1.61.0 phase is open, with 1.58.0 as its representative.**
+**The 1.57.0-1.60.0 phase is closed, with 1.58.0 as its representative.**
 1.57.0 shifts the methodology, because the tree gained a development profile
 and a release profile. Every figure on this page is taken on the **release**
 profile (`-O2 -gnatn`, no debug information), because that is the binary the
@@ -55,10 +49,19 @@ half the serial compile time, so an `-O1` figure is not comparable with an
 because it changed no measurement methodology: its Ada work is the C7 proof
 opt-in sweep and the H2 dead-initialiser fix, both of which the prover sees,
 and its other work is documentation, one browser script, and Python tooling.
-1.59.0, 1.60.0, and 1.61.0 fold in for the same reason, and the reading notes
-below record the 1.61.0 figures beside their load. Every number below is
-hyperfine on the self tree (gnatprove 16.1.0, 12 logical cores, 10 proof jobs,
-release profile) unless a note says otherwise.
+1.59.0 and 1.60.0 fold in for the same reason, and their notes sit below.
+Every number below is hyperfine on the self tree (gnatprove 16.1.0, 12 logical
+cores, 10 proof jobs, release profile) unless a note says otherwise.
+
+**The 1.61.0- phase is open, with 1.61.0 as its representative.** The phase
+opens at 1.61.0 because its work changes the implementation methodology as well
+as the code: the directory-snapshot memo's layout and per-directory cap, the
+parallel pre-build generator bundle, and the per-step build-phase profile all
+land here. 1.61.0 supplies the phase's complete metric set from
+`perf-analysis.md` -- pipeline warm 41.7 ms and cold about 72 ms, prove warm
+about 53 ms and cold 60-72 s on 1022 VCs with 0 unproved, 14 106 warm
+`newfstatat`, and 5.9 MiB stripped. Every later version in the range folds in
+with its figures noted beside the column, never promoted into it.
 
 **Scenario order biases the cold rows, so read every figure with its load.**
 Each scenario loads the box, so one measured late inherits the load the earlier
@@ -71,20 +74,22 @@ apparent 14-second gap that a paired run did not reproduce.
 
 | Phase | Representative | Pipeline warm | Pipeline cold |
 |-------|----------------|---------------|---------------|
-| 1.48.0-1.54.0 | 1.50.0 | 46 ms | 73 ms |
 | 1.55.0-1.56.0 | 1.55.0 | 41 ms | 66 ms |
-| 1.57.0-1.61.0 | 1.58.0 | 35.5 ms +/- 1.8 ms | 62.3 ms +/- 0.8 ms |
+| 1.57.0-1.60.0 | 1.58.0 | 35.5 ms +/- 1.8 ms | 62.3 ms +/- 0.8 ms |
+| 1.61.0- | 1.61.0 | 41.7 ms | about 72 ms |
 
 The 1.58.0 rows are one hyperfine session on the release profile at the shipped
-1047 VCs: 15 runs for warm and 10 for cold, taken at load 0.59.
+1047 VCs: 15 runs for warm and 10 for cold, taken at load 0.59. The 1.61.0 rows
+are the analysis file's sample; the reading notes carry the other 1.61.0 samples
+with their loads.
 
 ## Prove timing by phase
 
 | Phase | Representative | Prove warm (cache short-circuit) | Prove cold (result cache + session wiped) |
 |-------|----------------|----------------------------------|-------------------------------------------|
-| 1.48.0-1.54.0 | 1.50.0 | 55 ms | 61-88 s / 880 VCs (load-dependent; 878 VCs from 1.52.0) |
 | 1.55.0-1.56.0 | 1.55.0 | 50 ms | 72-82 s / 878 VCs (120.6 s under heavy load) |
-| 1.57.0-1.61.0 | 1.58.0 | 45.8 ms +/- 3.9 ms | 63.8 s / 1047 VCs (3 runs, 59.1-67.3 s) |
+| 1.57.0-1.60.0 | 1.58.0 | 45.8 ms +/- 3.9 ms | 63.8 s / 1047 VCs (3 runs, 59.1-67.3 s) |
+| 1.61.0- | 1.61.0 | about 53 ms | 60-72 s / 1022 VCs |
 
 The 1.58.0 warm row is 15 runs. Its cold row is 3 runs from the same session,
 and the gnatprove session store is wiped before each one.
@@ -93,39 +98,18 @@ and the gnatprove session store is wiped before each one.
 
 | Phase | Representative | Warm-run `newfstatat` (strace) |
 |-------|----------------|--------------------------------|
-| 1.48.0-1.54.0 | 1.50.0 | ~6.9k |
 | 1.55.0-1.56.0 | 1.55.0 | ~7.3k |
-| 1.57.0-1.61.0 | 1.58.0 | 7 508 (~7.5k) |
+| 1.57.0-1.60.0 | 1.58.0 | 7 508 (~7.5k) |
+| 1.61.0- | 1.61.0 | 14 106 (~14.1k) |
 
 ## Reading the numbers
 
-### 1.48.0-1.54.0 (representative 1.50.0)
-
-- The phase's methodology shift is in the build, not in the binary: doc bundling
-  became deterministic and incremental, so the generated manual spec no longer
-  differs between a developer tree and a fresh clone. The mechanics are on
-  [Performance optimisation history](optimisation-history.md).
-- The fix removes failed work rather than steady work, which is why the binary
-  shapes are flat by design: pipeline warm 46 ms and prove warm 55 ms sit within
-  noise of 1.47.0, and warm `newfstatat` is ~6.9k, the tree's I/O floor. A
-  changed spec also no longer invalidates the proof result cache, because the
-  generated bundle specs are excluded from the proof-input hash.
-- 1.51.0 folds in without moving a row: its encode cache, parallel encoder, and
-  incremental Sphinx build are build-side speed-ups that leave the emitted spec
-  byte-identical, so 1.50.0 keeps the representative slot. 1.52.0 verifies the
-  tree at gnatprove **level 4** and proves clean there with no new VCs, and the
-  prove subcommand forwards `--level` verbatim, so a level-4 run costs exactly
-  gnatprove's overhead and nothing from adacovex.
-- The prove-cold row is solver-bound and load-dependent as always: single shots
-  measured 61 s and 67 s, and a three-run hyperfine sample under load measured
-  87.6 s, all at 880 VCs. Treat 61-88 s as the observed range.
-
 ### 1.55.0-1.56.0 (representative 1.55.0)
 
-- The phase's adacovex-side shapes are flat or slightly better than the closed
+- The phase's adacovex-side shapes are flat or slightly better than the retired
   1.48.0-1.54.0 column: pipeline warm 41.3 ms, pipeline cold 66.5 ms, prove
   warm 49.9 ms, and warm `newfstatat` 7.3k, all at load 0.5-0.6. The
-  closed phase read 46 ms, 73 ms, 55 ms, and ~6.9k. Nothing in 1.55.0 is on a
+  retired phase read 46 ms, 73 ms, 55 ms, and ~6.9k. Nothing in 1.55.0 is on a
   hot path.
 - **The tool-probe cache fix removes failed work, and the removed work is now
   visible as a floor.** A run whose cached tool fingerprint no longer matches the
@@ -150,7 +134,7 @@ and the gnatprove session store is wiped before each one.
   full method and every figure are on [The 1.55.0 timing
   re-baseline](prove-rebaseline.md).
 
-### 1.57.0-1.61.0 (representative 1.58.0)
+### 1.57.0-1.60.0 (representative 1.58.0)
 
 - **The phase's methodology shift is the build profile, and it is the reason
   this column is separate rather than a fold-in.** 1.57.0 split the tree into a
@@ -204,46 +188,77 @@ and the gnatprove session store is wiped before each one.
   alone costs 45.8 ms. The stripped binary is 6.0 MiB against 9.5 MiB
   unstripped, so the phase is 36.6 percent smaller after `strip`. The Ada_CRDT
   second datapoint reads 27.6 ms warm and 48.0 ms cold.
-- **1.59.0, 1.60.0, and 1.61.0 fold in, and 1.58.0 keeps the representative
-  slot.** None of the three changes a measurement methodology: 1.59.0 and
-  1.60.0 are the cross-platform path and time-stamp work plus the task-runner
-  migration, and 1.61.0 is the pre-release gate work recorded here. The
-  1.61.0 figures were taken on this machine on the release profile and are
-  recorded with their load, because every one of them is **higher** than the
-  1.58.0 column and the load explains most of the gap: pipeline warm 43.2 ms at
-  load 1.04 (against 35.5 ms), pipeline cold 69.5-87.8 ms across three
-  sessions at load 0.61-0.97 (against 62.3 ms), prove warm 53.3 ms at load
-  0.74 (against 45.8 ms), and prove cold 60-72 s at load 0.9 (against 63.8 s).
+- **1.59.0 and 1.60.0 fold in, and 1.58.0 keeps the representative slot.**
+  Neither changes a measurement methodology: 1.59.0 and 1.60.0 are the
+  cross-platform path and time-stamp work plus the task-runner migration, and
+  their figures sit inside the column's spread.
+
+### 1.61.0- (representative 1.61.0)
+
+- **The phase's methodology shift is the measurement and the memo.** 1.61.0
+  records every figure with `/proc/loadavg` beside it and reads its own profile;
+  1.63.0 then changes the directory-snapshot memo's layout and per-directory
+  cap, runs the five pre-build generators concurrently, and gives `just bench`
+  a per-step build-phase breakdown. The representative is still 1.61.0, because
+  its set is complete and every later figure is read beside the column rather
+  than picked row by row from different versions.
+- **Every 1.61.0 figure is higher than the 1.58.0 column, and the load explains
+  most of the gap.** The phase's representative set reads pipeline warm
+  41.7 ms (against 35.5 ms), pipeline cold about 72 ms (against 62.3 ms), prove
+  warm about 53 ms (against 45.8 ms), and prove cold 60-72 s (against 63.8 s).
   The box was shared throughout, and a figure taken at load 1.0 cannot displace
   one taken at 0.59 on a row the page already documents as load-sensitive, so
-  the higher numbers are noted rather than promoted.
+  the higher numbers stay with the load named beside them.
+- **The 1.61.0 record carries two samples, and the representative uses the
+  analysis file's set.** The release note for 1.61.0 read pipeline warm 43.2 ms
+  at load 1.04, pipeline cold 69.5-87.8 ms across three sessions at load
+  0.61-0.97, prove warm 53.3 ms at load 0.74, prove cold 60-72 s at load 0.9,
+  and 7 827 warm `newfstatat` across two `strace` runs;
+  `perf-analysis.md` reads 41.7 ms warm, about 72 ms cold, about 53 ms prove
+  warm, and 14 106 warm `newfstatat`. The two syscall counts disagree because
+  they were taken on different tree states; the 14 106 figure is the one that
+  matches this tree before the 1.63.0 memo work measured 14 597, so it is the
+  representative's.
 - **The prove-cold wall did not move while the campaign shrank by 25 VCs.**
   1.61.0 constrains the `Suggest_Flags` return type and contracts three
   helpers, which takes the campaign from 1047 to 1022 VCs with 0 unproved.
   The cold row is unchanged at 60-72 s against 63.8 s, which is the phase's
   third confirmation that this row is bound by the solver's time on the checks
   that were always there rather than by the check count.
-- **Warm `newfstatat` crept up 4 percent with no I/O change.** The 1.61.0 count
-  is 7 827 against the 7 508 recorded for 1.58.0, stable across two `strace`
-  runs. The added syscalls track the tree's file count, not a new walk: the
-  path, time-zone, and task-runner work of 1.59.0-1.60.0 added source files,
-  and the per-file stat set grows with them. Treat the trend across phases,
-  not the single step.
-- **The 1.62.0 proof figures are recorded beside the column, not promoted
-  into it.** They were measured on this machine on the release profile with
-  `/proc/loadavg` beside each sample: prove warm 54.1 ms +/- 3.2 ms (15
-  hyperfine runs plus two warm-ups, at load 2.8 on the decay tail of the cold
-  pass before it) and prove cold 64.5 s +/- 4.2 s (59.7-67.6 s across three
-  runs with the result cache and the gnatprove session wiped each time, at
-  load 0.78), both at 1054 VCs with 0 unproved. Neither row moves: the cold
-  mean sits inside the 60-72 s the 1.61.0 figures read at 1022 VCs, and the
-  campaign's growth to 1054 costs nothing the solver variance does not hide
-  already. The phase collation -- closing this phase, opening the next one,
-  and giving it a representative -- is deferred to 1.63.0, so the table
-  above keeps its three rows and 1.58.0 keeps the open phase's
-  representative until then. The full record, with both samples and their
+- **The warm stat count tracks the tree's file count, not a new walk.** The
+  1.61.0 release note read 7 827 against the 7 508 recorded for 1.58.0, stable
+  across two `strace` runs. The path, time-zone, and task-runner work of
+  1.59.0-1.60.0 added source files, and the per-file stat set grows with them.
+  Treat the trend across phases, not the single step.
+- **The 1.62.0 proof figures fold in beside the column.** They were measured on
+  this machine on the release profile with `/proc/loadavg` beside each sample:
+  prove warm 54.1 ms +/- 3.2 ms (15 hyperfine runs plus two warm-ups, at load
+  2.8 on the decay tail of the cold pass before it) and prove cold 64.5 s +/-
+  4.2 s (59.7-67.6 s across three runs with the result cache and the gnatprove
+  session wiped each time, at load 0.78), both at 1054 VCs with 0 unproved.
+  Neither row moves: the cold mean sits inside the 60-72 s the 1.61.0 figures
+  read at 1022 VCs, and the campaign's growth to 1054 costs nothing the solver
+  variance does not hide already. The full record, with both samples and their
   loads, is `perf-analysis-1.62.0.md` at the repository root, beside the
   1.61.0 record.
+- **1.63.0's two fixes fold in with a paired measurement, and the memo is the
+  one that moved a number.** The directory memo now packs an entry to 66 bytes,
+  caps the memo key at 128 bytes, and raises the per-directory entry cap to 128,
+  so `src/parsers` (78 entries) and `docs/api-docs` (84) are memoised instead of
+  re-enumerated by every walker. Paired against the pre-change binary on the
+  same tree at the same load, pipeline warm reads 46.8 ms +/- 2.6 ms against
+  51.8 ms +/- 4.7 ms (-9.7 percent), warm `newfstatat` falls from 14 597 to
+  8 142, and the memo reports 131 hits and 60 misses against 105 and 86. The
+  process peak resident set grows 1.7 MiB (28.5 to 30.2 MiB) for the wider
+  slots. A pinned `perf stat` sample did not put the L1 dcache-miss rate below
+  the run-to-run spread, so the syscall count and the wall time are the
+  evidence, not the miss rate.
+- **The pre-build generators are independent, so 1.63.0 runs them
+  concurrently.** The five steps cost 463 ms summed and 295 ms as the bundle
+  that `tools/build.py` runs (load 2.7-2.8; 168 ms, 36 percent, of overlap). A
+  no-op `just build` therefore reads 609 ms against 732 ms for the serial
+  recipe in a paired ten-run sample (-16.8 percent), and the per-step breakdown
+  that produced those figures is now part of `just bench`.
 
 ### Across every phase
 
@@ -252,6 +267,26 @@ and the gnatprove session store is wiped before each one.
   C7 opt-in sweep, see [ir.md](../ir.md)). It is paid once per session, not per
   run: with the result cache wiped but the gnatprove session intact, the same
   run is ~1.1 s.
+- **The retired 1.48.0-1.54.0 phase explains the floor that every later column
+  inherits.** Its methodology shift was the deterministic, incremental doc
+  bundling of 1.50.0: the generated manual spec became byte-identical between a
+  developer tree and a clean build, and both generated bundle specs were
+  excluded from the proof-input hash, so a docs or dashboard edit no longer
+  invalidated a cached proof or recompiled the 28k-line unit. Its shapes were
+  otherwise flat by design -- pipeline warm 46 ms, pipeline cold 73 ms, prove
+  warm 55 ms, prove cold 61-88 s at 880 VCs -- because the release removes
+  failed work rather than steady work. 1.51.0's encode cache, parallel encoder,
+  and incremental Sphinx build folded in as build-side speed-ups that leave the
+  emitted spec byte-identical, and 1.52.0's `--level=4` gate folded in because
+  the prove subcommand forwards `--level` verbatim.
+- **The warm syscall floor is the directory walk, not the prove campaign.**
+  The tree's I/O floor was ~6.9k `newfstatat` calls per warm pipeline run in the
+  retired phase. The direct-enumeration walker enumerates `src/` and `..`
+  entries, and the guard that skips `.` and `..` was added in the v1.61.0 perf
+  commit; earlier versions without it would climb into `..` and back down,
+  causing path overflow and crashing `covex sbom`. The 1.63.0 memo work then
+  cut the count to 8 142 from 14 597 by memoising the directories the old
+  64-entry cap rejected.
 - **A benchmark on the self tree cannot find a vendored-code regression.** The
   self tree has zero vendored components, so a change that only touches
   vendored code is invisible to it. Measure such a change on a fixture with
@@ -269,13 +304,6 @@ and the gnatprove session store is wiped before each one.
   its CI gate with the artefacts they read; the hit marker is written only when
   both blobs were cached, and a cache that holds the summary alone falls through
   to a real gnatprove run.
-- **Warm syscall floor (1.48.0-1.54.0):** the tree's I/O floor was ~6.9k
-  `newfstatat` calls per warm pipeline run. This floor exists because the
-  direct-enumeration walker enumerates `src/` and `..` entries, and the guard
-  that skips `.` and `..` was added in the v1.61.0 perf commit. Earlier versions
-  without this guard would climb into `..` and back down, causing path overflow
-  and crashing `covex sbom`. The floor is stable across phases because it's
-  determined by the directory walker's self-snapshot, not by the prove campaign.
 - Proof effort is a solver-time dial. `--level=1` cold doubles the wall
   (~35 s to ~68 s at `-j0` here) at the same 876 VCs, because level 1 re-tries
   each check with stronger solver configurations. Lower levels are not strictly

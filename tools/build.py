@@ -8,25 +8,35 @@ message out of the log, drop the temp file, and symlink `bin/covex` to
 `bin/adacovex` when the build succeeded.  That chain is easy to break with
 a stray quoting or `set -e` change, so this script owns it:
 
-  python3 tools/build.py [--release]
+  python3 tools/build.py [--release] [--steps-only]
 
 Steps, in order:
 
-1. `python3 tools/gen-version.py`  -- regenerate src/adacovex_version_info.ads
-   from alire-dev.toml (or ADACOVEX_VERSION); byte-identical when unchanged.
-2. `python3 tools/gen-dashboard.py` -- regenerate
-   src/adacovex-dashboard_template.ads from resources/.
-3. `python3 tools/gen-docs.py` -- regenerate
-   src/adacovex-docs_template.ads (the bundled offline manual) from the
-   Sphinx docs source (docs/conf.py + MyST); byte-identical when the docs
-   are unchanged.
-   `python3 tools/gen-tldr.py` also runs here: it bundles
-   docs/tldr/adacovex.md into src/adacovex-tldr_template.ads, so the tldr
-   page the `tldr` subcommand installs is the authored one.
-4. `alr build` (or `alr build --release` with `--release`) with stdout+stderr
+1. The five pre-build steps run **concurrently**, because they are
+   independent: each reads a different source and writes a different
+   generated spec (or, for the CSS gate, only reads). They cost one
+   process start plus their own work either way, so running them in
+   sequence paid their sum instead of their maximum -- about 0.37 s of
+   the no-op build's 0.98 s on the reference machine.
+   - `python3 tools/gen-version.py`  -- regenerate
+     src/adacovex_version_info.ads from alire-dev.toml (or
+     ADACOVEX_VERSION); byte-identical when unchanged.
+   - `python3 tools/csslint.py --check` -- the dashboard CSS 4px gate.
+   - `python3 tools/gen-dashboard.py` -- regenerate
+     src/adacovex-dashboard_template.ads from resources/.
+   - `python3 tools/gen-docs.py` -- regenerate
+     src/adacovex-docs_template.ads (the bundled offline manual) from the
+     Sphinx docs source (docs/conf.py + MyST); byte-identical when the
+     docs are unchanged.
+   - `python3 tools/gen-tldr.py` -- bundle docs/tldr/adacovex.md into
+     src/adacovex-tldr_template.ads, so the tldr page the `tldr`
+     subcommand installs is the authored one.
+   The steps are all awaited and every exit code is checked before the
+   compile starts; the first failure's code is the build's exit code.
+2. `alr build` (or `alr build --release` with `--release`) with stdout+stderr
    captured, the log filtered by tools/filter-sframe.py (the benign SFrame
    notice), and the filtered output printed to stdout.
-5. On success only, symlink `bin/covex` -> `bin/adacovex` (the Alire
+3. On success only, symlink `bin/covex` -> `bin/adacovex` (the Alire
    crate alias), so both names resolve to the freshly built binary.
 
 `--release` selects the release profile and is the single build entry point
@@ -47,7 +57,9 @@ docs/contributing/perf/ is measured on the release profile.
 Exit code is alr's (0 on success).  A failure in any earlier step aborts
 the build like the old `&&`-chained recipe did.  gen-docs.py never fails
 when sphinx-build is missing (it keeps the committed spec), so the build
-still works on a machine without the docs toolchain.
+still works on a machine without the docs toolchain.  `--steps-only`
+runs the pre-build steps and stops before the compile: `just bench` times
+that shape to separate the generator cost from gprbuild's.
 """
 
 import argparse
@@ -55,15 +67,55 @@ import os
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
-from typing import List
+from typing import List, Tuple
 
 ROOT: Path = Path(__file__).resolve().parent.parent
 
+#  The pre-build steps: independent generators plus the CSS gate. Each one
+#  reads a different input and writes a different output, so they run at the
+#  same time; the compile waits for all of them.
+PRE_BUILD_STEPS: List[Tuple[str, List[str]]] = [
+    ("version spec", [sys.executable, "tools/gen-version.py"]),
+    ("CSS 4px spacing gate", [sys.executable, "tools/csslint.py", "--check"]),
+    ("dashboard template", [sys.executable, "tools/gen-dashboard.py"]),
+    ("bundled offline manual", [sys.executable, "tools/gen-docs.py"]),
+    ("bundled tldr page", [sys.executable, "tools/gen-tldr.py"]),
+]
 
-def run(cmd: List[str], env: dict = None) -> int:
-    """Run a command, streaming its output through; return its exit code."""
-    return subprocess.run(cmd, env=env, cwd=str(ROOT)).returncode
+
+def run_pre_build_steps() -> int:
+    """Run the independent pre-build steps concurrently.
+
+    A failure in one step does not cancel the others (they write separate
+    files), but no step's exit code is ignored: the first non-zero one is
+    returned and the build stops before the compile, like the serial
+    `&&`-chained recipe did. Captured output is printed per step, in
+    declaration order, so the log stays deterministic.
+    """
+    print("=== Pre-build steps (parallel) ===")
+    started = time.perf_counter()
+    running: List[Tuple[str, subprocess.Popen]] = []
+    for label, cmd in PRE_BUILD_STEPS:
+        running.append((
+            label,
+            subprocess.Popen(
+                cmd, cwd=str(ROOT), stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT, text=True,
+            ),
+        ))
+    first_failure = 0
+    for label, proc in running:
+        out, _ = proc.communicate()
+        status = "ok" if proc.returncode == 0 else f"FAILED ({proc.returncode})"
+        print(f"  {label}: {status}")
+        if out:
+            sys.stdout.write(out if out.endswith("\n") else out + "\n")
+        if proc.returncode != 0 and first_failure == 0:
+            first_failure = proc.returncode
+    print(f"  ({time.perf_counter() - started:.2f} s)")
+    return first_failure
 
 
 def run_capture(cmd: List[str]) -> subprocess.CompletedProcess:
@@ -71,7 +123,7 @@ def run_capture(cmd: List[str]) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, cwd=str(ROOT), capture_output=True, text=True)
 
 
-def build(release: bool = False) -> int:
+def build(release: bool = False, steps_only: bool = False) -> int:
     # A release build stamps the version from the environment, so an
     # ADACOVEX_VERSION in the environment selects the release profile even
     # without --release.  Both signals reach alr as --release, which Alire
@@ -80,28 +132,8 @@ def build(release: bool = False) -> int:
         release = True
     profile = "Release" if release else "Development"
     print(f"=== Build profile: {profile} ===")
-    print("=== Regenerating version info ===")
-    rc = run([sys.executable, "tools/gen-version.py"])
-    if rc != 0:
-        return rc
-    print("=== CSS 4px spacing gate ===")
-    rc = run([sys.executable, "tools/csslint.py", "--check"])
-    if rc != 0:
-        return rc
-
-    print("=== Regenerating dashboard template ===")
-    rc = run([sys.executable, "tools/gen-dashboard.py"])
-    if rc != 0:
-        return rc
-
-    print("=== Regenerating bundled offline manual ===")
-    rc = run([sys.executable, "tools/gen-docs.py"])
-    if rc != 0:
-        return rc
-
-    print("=== Regenerating bundled tldr page ===")
-    rc = run([sys.executable, "tools/gen-tldr.py"])
-    if rc != 0:
+    rc = run_pre_build_steps()
+    if rc != 0 or steps_only:
         return rc
 
     command = ["alr", "build"] + (["--release"] if release else [])
@@ -167,12 +199,15 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--release", action="store_true",
                     help="build the release profile (what `just release` uses)")
+    ap.add_argument("--steps-only", action="store_true",
+                    help="run the pre-build generators and stop before the "
+                         "compile (`just bench` times this shape)")
     return ap.parse_args(argv)
 
 
 def main() -> int:
     args = parse_args(sys.argv[1:])
-    return build(args.release)
+    return build(args.release, args.steps_only)
 
 
 if __name__ == "__main__":

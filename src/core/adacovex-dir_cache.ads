@@ -28,23 +28,38 @@
 --
 --  The memo is bounded: at most Memo_Slots directories are remembered;
 --  beyond that, lookups miss and the caller enumerates directly.
+--
+--  Cache-friendliness: a slot's metadata (path, mtime, count) sits in its
+--  first cache lines and the entry array follows, so a hit touches the
+--  metadata first. An entry is packed to 66 bytes (a 64-byte name, a
+--  one-byte length, and a one-byte kind) rather than the 128 bytes the
+--  v1.61.0 profile recorded, and the memo key is capped at 128 bytes
+--  instead of 256. Max_Dir_Entries is 128 because the self-audit tree's
+--  two densest scanned directories hold 84 and 78 entries: a cap of 64
+--  rejected both and made every walker re-enumerate them.
 
 package Adacovex.Dir_Cache is
 
    --  Maximum entries retained per directory snapshot. A directory with
-   --  more entries is reported as truncated and never memoised.
-   Max_Dir_Entries : constant := 64;
+   --  more entries is reported as truncated and never memoised. 128
+   --  clears every scanned directory in the self-audit tree (src/parsers
+   --  holds 78 entries and docs/api-docs 84) while keeping one slot
+   --  small enough to copy from the memo.
+   Max_Dir_Entries : constant := 128;
 
    --  Maximum number of directory snapshots retained. The self-audit tree
    --  enumerates ~120 distinct directories across its walkers, so the
-   -- table must hold more slots than that or a late walk evicts an early
-   -- snapshot and pays the enumeration burst again. Oldest-resolved
-   -- slots are reused (open-addressed, so a full table just misses).
+   --  table must hold more slots than that or a late walk evicts an early
+   --  snapshot and pays the enumeration burst again. Oldest-resolved
+   --  slots are reused (open-addressed, so a full table just misses).
    Memo_Slots : constant := 256;
 
    --  Entry classification (a reduced File_Kind: the walkers only ever
-   --  branch on file-vs-directory).
+   --  branch on file-vs-directory). The size clause keeps the packed
+   --  record's kind field a whole byte, so no multi-byte field of a slot
+   --  ever straddles a byte boundary.
    type Entry_Kind is (K_File, K_Dir, K_Other);
+   for Entry_Kind'Size use 8;
 
    --  True when K classifies a subdirectory. Walkers branch on this
    --  helper instead of the (not directly visible) equality operator.
@@ -53,16 +68,26 @@ package Adacovex.Dir_Cache is
    function Is_Directory (K : Entry_Kind) return Boolean
    is (K = K_Dir);
 
-   --  Maximum length of a remembered entry name. Longer names are stored
-   --  truncated and flagged (Truncated), forcing a fallback.
+   --  Maximum length of a remembered entry name. A longer name reports
+   --  the directory as truncated, so the caller falls back instead of
+   --  losing the entry. 64 covers every name in the self-audit tree
+   --  (the longest scanned name is 58 characters).
    Max_Name_Len : constant := 64;
 
-   --  One remembered directory entry.
+   --  Entry name length. The subtype's range is the memo's name bound;
+   --  the packed record stores it in one byte.
+   subtype Name_Length is Natural range 0 .. Max_Name_Len;
+
+   --  One remembered directory entry. The name comes first: the length
+   --  and kind fields then share its tail. Packed to 66 bytes, where the
+   --  v1.61.0 record took 128 and the 1.62.0 one took 72, so 128 entries
+   --  fit in 8 KiB.
    type Dir_Entry_Rec is record
-      Name_Len : Natural := 0;
-      Name     : String (1 .. 32) := (others => ' ');
+      Name     : String (1 .. Max_Name_Len) := (others => ' ');
+      Name_Len : Name_Length := 0;
       Kind     : Entry_Kind := K_Other;
    end record;
+   pragma Pack (Dir_Entry_Rec);
 
    --  A directory snapshot: up to Max_Dir_Entries entries plus a count.
    type Dir_Entry_List is array (1 .. Max_Dir_Entries) of Dir_Entry_Rec;
@@ -78,12 +103,13 @@ package Adacovex.Dir_Cache is
    --  against the process working directory (read once, then cached) so
    --  walkers that spell the same directory differently (".", "src",
    --  "/abs/src", "./src") share one snapshot instead of memoising
-   --  duplicates per spelling. @param Dir       Directory to enumerate
-   --  (absolute or relative). @param Entries   Output array of remembered
-   --  entries. @param Count     Number of valid entries written to
-   --  Entries. @param Truncated True when the caller must re-enumerate
-   --  directly. @param OK        False when the directory could not be
-   --  read.
+   --  duplicates. A key longer than 128 bytes is not memoised; the
+   --  snapshot is still returned.
+   --  @param Dir        Directory to enumerate (absolute or relative).
+   --  @param Entries    Output array of remembered entries.
+   --  @param Count      Number of valid entries written to Entries.
+   --  @param Truncated  True when the caller must re-enumerate directly.
+   --  @param OK         False when the directory could not be read.
    procedure Snapshot
      (Dir       : String;
       Entries   : out Dir_Entry_List;

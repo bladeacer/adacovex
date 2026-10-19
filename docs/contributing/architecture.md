@@ -147,15 +147,22 @@ pays one mtime stat instead. The memo never touches disk, holds at most 256
 directories, and serves a snapshot only while the directory's mtime is
 unchanged.
 
+A slot keeps its metadata (a key of up to 128 bytes, the mtime, the count) in
+its first cache lines and its entry array after it. An entry is a packed
+66-byte record: a 64-byte name, a one-byte length, and a one-byte kind. Up to
+128 entries are recalled per directory, which covers the self tree's two
+densest scanned directories (78 and 84 entries); the memo previously held 64,
+and every walker re-enumerated those two.
+
 A directory the memo cannot hold is reported as truncated, and the caller then
 falls back to direct enumeration instead of trusting the snapshot. That
 covers a directory with more entries than the memo holds and a directory
-holding an entry name longer than the 120-character key. A truncated
-directory must never look empty, because every walker that trusts an empty
-snapshot skips the whole subtree (version 1.49.0 fixed a
-`Adacovex.Dir_Cache.Snapshot` that reported `Count => 0` with
-`Truncated => False` for an over-long entry name; the fix is pinned by the
-Dir cache test category).
+holding an entry name longer than 64 characters. A truncated directory must
+never look empty, because every walker that trusts an empty snapshot skips the
+whole subtree (version 1.49.0 fixed a `Adacovex.Dir_Cache.Snapshot` that
+reported `Count => 0` with `Truncated => False` for an over-long entry name;
+the fix is pinned by the Dir cache test category, which also pins the fitted
+long name and the 100-entry directory since 1.63.0).
 
 `--no-cache` bypasses the result cache entirely (useful when artifacts change
 without their content hash changing, or to measure rescan cost) and

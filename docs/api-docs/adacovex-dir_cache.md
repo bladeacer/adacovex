@@ -31,6 +31,15 @@ serve session) and is never written to disk.
 The memo is bounded: at most Memo_Slots directories are remembered;
 beyond that, lookups miss and the caller enumerates directly.
 
+Cache-friendliness: a slot's metadata (path, mtime, count) sits in its
+first cache lines and the entry array follows, so a hit touches the
+metadata first. An entry is packed to 66 bytes (a 64-byte name, a
+one-byte length, and a one-byte kind) rather than the 128 bytes the
+v1.61.0 profile recorded, and the memo key is capped at 128 bytes
+instead of 256. Max_Dir_Entries is 128 because the self-audit tree's
+two densest scanned directories hold 84 and 78 entries: a cap of 64
+rejected both and made every walker re-enumerate them.
+
 > **Note:** All items in this package are public.
 
 ## Types
@@ -45,8 +54,8 @@ type Dir_Entry_List is array (1 .. Max_Dir_Entries) of Dir_Entry_Rec;
 
 ```ada
 type Dir_Entry_Rec is record
-Name_Len : Natural := 0;
 Name     : String (1 .. Max_Name_Len) := (others => ' ');
+Name_Len : Name_Length := 0;
 Kind     : Entry_Kind := K_Other;
 end record;
 ```
@@ -55,6 +64,12 @@ end record;
 
 ```ada
 type Entry_Kind is (K_File, K_Dir, K_Other);
+```
+
+### type Name_Length
+
+```ada
+subtype Name_Length is Natural range 0 .. Max_Name_Len;
 ```
 
 ## Functions
@@ -75,8 +90,8 @@ type Entry_Kind is (K_File, K_Dir, K_Other);
 
 | Parameter | Description |
 |-----------|-------------|
-| `Count` |  |
-| `Dir` |  |
-| `Entries` |  |
-| `OK` |  |
-| `Truncated` |  |
+| `Count` | Number of valid entries written to Entries. |
+| `Dir` | Directory to enumerate (absolute or relative). |
+| `Entries` | Output array of remembered entries. |
+| `OK` | False when the directory could not be read. |
+| `Truncated` | True when the caller must re-enumerate directly. |

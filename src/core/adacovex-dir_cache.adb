@@ -6,14 +6,18 @@ with System.OS_Lib;
 
 package body Adacovex.Dir_Cache is
 
-   --  Memoised snapshot for one directory: the entry list, the live count,
-   --  and the directory mtime the snapshot was taken at (integer OS
-   --  seconds, the same epoch the stamp store uses). The path image is
+   --  Longest memo key kept. A longer absolute path still gets a snapshot
+   --  (the caller needs it either way) but leaves the memo alone, so one
+   --  deep path cannot evict a directory the walkers touch repeatedly.
+   Max_Key_Len : constant := 128;
+
+   --  Memoised snapshot for one directory: the metadata first, so a probe
+   --  touches a few cache lines, then the entry list. The path image is
    --  stored inline so a hit needs no re-allocation.
    type Slot is record
       Used     : Boolean := False;
       Path_Len : Natural := 0;
-      Path_Img : String (1 .. 256) := (others => ' ');
+      Path_Img : String (1 .. Max_Key_Len) := (others => ' ');
       Mtime    : Long_Long_Integer := -1;
       Count    : Natural := 0;
       Entries  : Dir_Entry_List;
@@ -186,27 +190,36 @@ package body Adacovex.Dir_Cache is
       Count := 0;
       Truncated := False;
       OK := False;
-      if Key'Length = 0 or else Key'Length > 1024 then
+      if Key'Length = 0 or else Key'Length > Max_Key_Len then
          return;
       end if;
 
-      --  Probe the memo: a slot whose path matches and whose mtime is
-      --  unchanged serves the snapshot after the one stat above.
+      --  Probe the memo along the insertion path (linear probe): a slot
+      --  whose path matches and whose mtime is unchanged serves the
+      --  snapshot after the one stat above. Probing stops at the first
+      --  unused slot, which is exactly where an absent key would have
+      --  been inserted, so a collision never hides a live snapshot.
       declare
-         Idx : constant Natural := Slot_Of (Key);
+         Idx : Natural;
       begin
-         if Table (Idx).Used
-           and then Table (Idx).Path_Len = Key'Length
-           and then Table (Idx).Path_Img (1 .. Key'Length) = Key
-           and then Table (Idx).Mtime >= 0
-           and then Table (Idx).Mtime = Now_M
-         then
-            Entries := Table (Idx).Entries;
-            Count := Table (Idx).Count;
-            Hits := Hits + 1;
-            OK := True;
-            return;
-         end if;
+         for Probed in 0 .. Memo_Slots - 1 loop
+            Idx := ((Slot_Of (Key) - 1 + Probed) mod Memo_Slots) + 1;
+            if not Table (Idx).Used then
+               exit;
+            elsif Table (Idx).Path_Len = Key'Length
+              and then Table (Idx).Path_Img (1 .. Key'Length) = Key
+            then
+               if Table (Idx).Mtime >= 0 and then Table (Idx).Mtime = Now_M
+               then
+                  Entries := Table (Idx).Entries;
+                  Count := Table (Idx).Count;
+                  Hits := Hits + 1;
+                  OK := True;
+                  return;
+               end if;
+               exit;
+            end if;
+         end loop;
       end;
 
       Misses := Misses + 1;
@@ -223,7 +236,7 @@ package body Adacovex.Dir_Cache is
       end if;
       --  Memoise in the hashed slot (linear probe for a free slot).
       declare
-         Idx : Natural := Slot_Of (Key);
+         Idx : Natural;
       begin
          for Probed in 0 .. Memo_Slots - 1 loop
             Idx := ((Slot_Of (Key) - 1 + Probed) mod Memo_Slots) + 1;

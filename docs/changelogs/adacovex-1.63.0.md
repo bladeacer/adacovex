@@ -22,6 +22,58 @@ image's newer CommandLineTools SDK whose `.tbd` stub format contains
 `arm64e.x1-*` architecture entries that GNAT 16.1.0 cannot parse. Earlier
 releases passed when `macos-latest` resolved to an older image.
 
+### C3: The pre-build steps run concurrently and the cold phases are recorded
+
+The five steps `just build` runs before the compile -- the version spec, the
+CSS 4px gate, the dashboard template, the bundled offline manual, and the tldr
+page -- are independent: each reads a different input and writes a different
+output. `tools/build.py` now starts all five at once and collects every exit
+code before the compile, so the build pays their maximum instead of their sum.
+The paired ten-run sample reads 609 ms against 732 ms for the serial recipe on
+a no-op build (-16.8 percent), and the five steps cost 463 ms in series against
+295 ms as the bundle at load 2.7-2.8 (168 ms, 36 percent, of overlap).
+
+`just bench` gained a build-phase breakdown. It times each step on its own and
+then the parallel bundle, reads the step list from `tools/build.py` so the bench
+cannot measure a phase the build does not run, and prints the overlap as a
+figure. The cold-build and cold-prove phases are recorded with their verdicts
+in [Pipeline and prove timings](../contributing/perf/benchmarks-timings.md): the
+compile is gprbuild's own parallel work, the workspace sync fetches nothing on a
+synced tree, the docs phase is a fingerprint hit, and the solver dominates the
+cold prove row.
+
+### C4: The directory memo packs its slots and memoises the busy directories
+
+The warm pipeline spent 14 597 `newfstatat` calls, and 86 of the 191 memo
+lookups were real enumerations. Two causes: the memo key was a 256-byte path
+image per slot, and the 64-entry cap rejected the two densest scanned
+directories in the self tree (`src/parsers`, 78 entries, and `docs/api-docs`,
+84), so every walker re-enumerated them. The entry list also carried a 32-byte
+name field behind a 64-byte name bound, where a 33-64 character name failed the
+whole directory read with `OK = False` -- correct, because the caller fell back
+to direct enumeration, but silent.
+
+The memo now stores a packed 66-byte entry (a 64-byte name, a one-byte length,
+a one-byte kind), keeps the slot metadata in its first cache lines with the
+entry array after it, caps a key at 128 bytes, and memoises directories up to
+128 entries. A lookup walks the same linear-probe path the insert uses, so a
+hash collision no longer hides a live snapshot. Paired against the pre-change
+binary on the same tree at the same load, warm `newfstatat` falls to 8 142, the
+memo reports 131 hits and 60 misses, pipeline warm reads 46.8 ms against
+51.8 ms (-9.7 percent), and the peak resident set grows 1.7 MiB for the wider
+slots.
+
+### C5: Prove-timing phases collated, with 1.61.0 opening the current phase
+
+[Prove timing and the optimisation review](../contributing/perf/prove-timing.md)
+now closes the 1.57.0-1.60.0 phase with 1.58.0 as its representative, opens
+`1.61.0-` with the 1.61.0 complete metric set, and retires the
+1.48.0-1.54.0 phase into the "Across every phase" notes after moving the
+doc-bundling methodology and the warm syscall floor there. The 1.62.0 and
+1.63.0 figures are recorded beside the open column with their loads, never
+picked row by row into it. [Performance](../contributing/perf/index.md) names
+the same phase list.
+
 ## Fixes
 
 ### H1: An installed package's own subpackages and source trees are no longer components
@@ -44,11 +96,12 @@ Commit `7a5a283` replaced `tools/tests.py` with a 141-line tldr scratch
 script, so `just tools-check` exited 0 while running none of the suite's 178
 tests -- the gate looked green and checked nothing. The file is restored to
 the full multi-class suite, and the eight requirements-sync checks join it,
-so `just tools-check` runs 186 tests again.
+so `just tools-check` runs its whole suite again (195 tests as this release
+ships).
 
 ## Test Suite
 
-2017 tests across 29 categories, up from 1864. Forty earlier checks in
+2024 tests across 29 categories, up from 2017. Forty earlier checks in
 this release cover the structural readers, the package-root rule, and the
 root npm and Go declarations. Fifteen more pin adacovex as a
 dependency in both directions, and the new `Install method` category
@@ -57,6 +110,11 @@ walk behind them. The `Server routing` category grows to 180 checks: the
 two new routes and their near misses, the `Route_Path` round trip over
 every route kind, the protected counter store, and the `/api/info`
 payload.
+
+The `Dir cache` category grows to 29 checks: the fitted long name that
+used to fail the read whole (four checks, one of which proves the
+directory is still memoised), and the 100-entry directory that the old
+cap rejected (three checks, including the memo hit).
 
 The new `tldr installer` category holds 48 checks: client classification,
 the `--show-paths` parse with its annotation, the per-client path rules, the
@@ -72,7 +130,7 @@ end-to-end checks, including two new component-set shapes (a pnpm workspace
 and a Go module), three checks against the live `/health` and `/api/info`
 endpoints, and seven that install the page into a fake tealdeer client and a
 fake base client and compare it byte for byte. `just tools-check` runs the
-186-test tools suite (restored in H2, plus the eight requirements-sync
+195-test tools suite (restored in H2, plus the eight requirements-sync
 checks).
 
 ## Proof Results
@@ -104,6 +162,12 @@ on record for the graph and its output. The new
 `Adacovex.Install` package carries `HLR-MANIFEST`: it decides how a
 project's reference to adacovex is classified. C9 extends `HLR-DIFF`, whose
 requirement is the comparison itself.
+
+The pre-build bundle changes no requirement: it changes the files that gate
+the tree. The directory memo is an in-process performance structure behind the
+scanning and SBOM walks, so it carries their requirements (`HLR-SCAN`,
+`HLR-SBOM`) and adds none. The timing pages record measurements, not
+requirements.
 
 The status report adds no requirement: it reports state and never assesses it.
 The hermetic suite changes no requirement: it changes the tests that gate

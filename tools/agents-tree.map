@@ -17,7 +17,7 @@ src/core/adacovex-install	Installation-method detection for the running binary (
 src/core/adacovex-prove	GNATprove runner for the `prove` subcommand (alire-first toolchain resolution; --args passthrough; no-covex-spark-proof unit opt-outs via -u)
 src/core/adacovex-prove_patch	Proof patches for vendored deps (SPARK aspect merge + patched proof tree)
 src/core/adacovex-cache	On-disk result cache (content-hashed per-file, oldest-first eviction, size policy) + persistent stat-stamp index + per-process directory snapshot memo
-src/core/adacovex-dir_cache	Per-process directory-snapshot memo (one enumeration + stat set shared by all walkers; LSP-style shared snapshot)
+src/core/adacovex-dir_cache	Per-process directory-snapshot memo (one enumeration + stat set shared by all walkers; packed 66-byte entries, 128-byte key, 128-entry cap)
 src/core/adacovex-completion	Shell auto-completion script generator (bash/fish/zsh/pwsh)
 src/core/adacovex-cpus	Host CPU/CI detection + GNATprove parallelism resolution
 src/core/adacovex-opt_outs	Per-file opt-out annotation detector (no-covex-complexity-scan / -docstrings / -spark-proof / -analysis header markers)
@@ -61,7 +61,7 @@ src/tests/adacovex_tz_ansi_tests	Timezone + ANSI tests (63)
 src/tests/adacovex_complexity_tests	Complexity check tests (20)
 src/tests/adacovex_spark_coverage_tests	SPARK coverage report tests
 src/tests/adacovex_opt_outs_tests	Per-file opt-out marker tests (16)
-src/tests/adacovex_dir_cache_tests	Directory-snapshot memo tests (22)
+src/tests/adacovex_dir_cache_tests	Directory-snapshot memo tests (29)
 src/tests/adacovex_diff_tests	Differential-report regression tests (36)
 src/tests/adacovex_prove_runner_tests	GNATprove runner option/GPR tests (24)
 src/tests/adacovex_ansi_tests	ANSI terminal report tests (28)
@@ -74,7 +74,7 @@ src/tests/adacovex_install_tests	Installation-method tests (23)
 src/tests/adacovex_renderer_svg_tests	SVG renderer tests (161)
 src/tests/adacovex_renderer_tests	HTML/Markdown renderer tests (58)
 src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (366)
-src/tests/test_runner	Test suite entry point (2017 tests)
+src/tests/test_runner	Test suite entry point (2024 tests)
 src/parsers/adacovex-parsers-manifest-req_entry	Parse the first requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-collect_req_entries	Collect every requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-register_root_python_deps	Register root requirements*.txt entries as dev-scope pypi components

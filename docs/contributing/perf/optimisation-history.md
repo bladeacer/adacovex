@@ -1,5 +1,7 @@
 # Performance optimisation history
 
+<!-- no-covex-docs-loc: reverse-chronological record, it grows with every release -->
+
 Reverse-chronological record of the optimisations that keep the pipeline and prove paths fast. Each entry names the measurement that drove it. Benchmark methodology and current figures are on [Performance](index.md); the `just prove` timing table is on [Prove timing and the optimisation review](prove-timing.md).
 
 ## Optimisation history
@@ -7,6 +9,47 @@ Reverse-chronological record of the optimisations that keep the pipeline and pro
 Kept in reverse-chronological order. Every entry names the measurement that
 drove it so the next round of work can see whether the previous assumption
 still holds.
+
+### Parallel pre-build steps + a packed directory memo (1.63.0)
+
+The driver was `plan.md` P1 and P2: the cold build and cold `prove` phases
+each needed a measured verdict, and the 1.61.0 profile put a 13 percent L1
+dcache-miss rate beside 14 106 warm `newfstatat` calls, largely in the
+directory memo's slot layout.
+
+- **The five pre-build steps are independent, so they now run at once.**
+  The version spec, the CSS 4px gate, the dashboard template, the bundled
+  manual, and the tldr page read different inputs and write different
+  outputs, and the serial recipe paid their sum. The steps measure 463 ms
+  in series and 295 ms as the concurrent bundle at load 2.7-2.8 (36 percent
+  of the step time overlaps), and a paired ten-run sample of a no-op
+  `just build` reads 609 ms against 732 ms (-16.8 percent). Every exit code
+  is still checked before the compile, and the first failure is the build's
+  exit code.
+- **The phase split is now an instrument, not a one-off script.**
+  `just bench` times each step on its own and the bundle as
+  `tools/build.py --steps-only`, reads the step list from `tools/build.py`
+  so the bench cannot measure a step the build no longer runs, and prints
+  the overlap. That is what lets the next cold-phase review start from a
+  table instead of a fresh profile.
+- **The memo packs its slots and recalls the busy directories.** A slot
+  held a 256-byte path image and up to 64 entries of 72 bytes, and the
+  cap rejected the self tree's two densest scanned directories (78 and 84
+  entries), so every walker re-enumerated them. The slot now keeps a
+  128-byte key and packed 66-byte entries, recalls up to 128 entries, and
+  probes on the insert path so a collision cannot hide a live snapshot.
+  Warm `newfstatat` falls from 14 597 to 8 142, the memo reports 131 hits
+  and 60 misses against 105 and 86, and warm pipeline reads 46.8 ms
+  against 51.8 ms paired (-9.7 percent). The wider slots cost 1.7 MiB of
+  peak resident set.
+- **The negative results are recorded as such.** A pinned `perf stat`
+sample could not put the L1 dcache-miss rate below the run-to-run spread
+(22-34 percent both before and after), so the syscall count and the wall
+time carry the claim. The cold compile is gprbuild's own parallel work
+over 79 units at `-O2` by design, the workspace sync fetches nothing on a
+synced tree, and the cold `prove` row is the solver's. None of those
+moved, and the plan's bar is met by measuring them rather than pretending
+they were removed.
 
 ### Deterministic doc bundling + no-op builds (1.50.0)
 

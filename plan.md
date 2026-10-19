@@ -167,7 +167,12 @@ system CUPS port 631. The hermetic-test fix is v1.62.0 item 1.
 
 ## v1.63.0
 
-- [ ] **P1. Cold `just build` and cold `prove` down to the bare minimum**
+Delivered; see [the 1.63.0 changelog](docs/changelogs/adacovex-1.63.0.md)
+(`C3`, `C4`, `C5`) and
+`docs/contributing/perf/` for the recorded figures. The three items are
+removed from the queue per this file's rule.
+
+- [x] **P1. Cold `just build` and cold `prove` down to the bare minimum**
 
   - Current cold costs on this machine (v1.61.0): a cold build pays the
     alire workspace sync that fetches three binary crates
@@ -185,7 +190,7 @@ system CUPS port 631. The hermetic-test fix is v1.62.0 item 1.
     or removed, and the numbers are recorded in
     `docs/contributing/perf/`.
 
-- [ ] **P2. Dir_Cache cache-friendliness (from the v1.61.0 perf analysis)**
+- [x] **P2. Dir_Cache cache-friendliness (from the v1.61.0 perf analysis)**
 
   - The warm pipeline spends about 14k `newfstatat` calls and shows a
     13 percent L1 dcache-miss rate, largely from the `Dir_Cache` slot
@@ -197,7 +202,7 @@ system CUPS port 631. The hermetic-test fix is v1.62.0 item 1.
   - SPARK bar unchanged: 0 unproved, 0 justified, no new
     `SPARK_Mode (Off)`.
 
-- [ ] **P3. Prove-timing phase for v1.61.0 onwards**
+- [x] **P3. Prove-timing phase for v1.61.0 onwards**
 
   - Recorded 2026-10-18: the v1.62.0 proof figures are measured on this
     machine on the release profile, load beside each sample -- prove warm

@@ -166,6 +166,26 @@ flags, artefacts, and quality gates of the adacovex tool.
 - **Correct Example:** *The **stat-stamp index** serves the digest without re-reading the file.*
 - **Incorrect Example:** *The hash index serves the digest without re-reading the file.*
 
+## Technical Name: Directory Memo
+- **Part of Speech:** Noun
+- **Definition:** The in-process store of one directory snapshot per
+  directory. Walkers read the memo after one mtime stat instead of
+  enumerating the directory again.
+- **Approved Form:** Directory Memo (singular), Directory Memos (plural)
+- **Do Not Use:** Dir cache, Snapshot table, Folder memo
+- **Correct Example:** *The **directory memo** served the snapshot after one stat.*
+- **Incorrect Example:** *The snapshot table served the folder after one stat.*
+
+## Technical Name: Prove-Timing Phase
+- **Part of Speech:** Noun
+- **Definition:** A range of versions whose proof-measurement methodology is
+  largely similar. One representative version supplies the phase's complete
+  metric set.
+- **Approved Form:** Prove-Timing Phase (singular), Prove-Timing Phases (plural)
+- **Do Not Use:** Timing era, Benchmark bucket, Version group
+- **Correct Example:** *The **prove-timing phase** that starts at 1.61.0 has 1.61.0 as its representative.*
+- **Incorrect Example:** *The timing era that starts at 1.61.0 has a benchmark bucket.*
+
 ## Technical Name: Safety Class
 - **Part of Speech:** Noun
 - **Definition:** One of the IEC 62304 classes (A, B, or C) that classify the

@@ -39,13 +39,17 @@ solver run; the warm paths stay warm anywhere.
 - It builds the project, then times `./bin/adacovex` and
   `./bin/adacovex prove` against the repo itself.
 - **The build phases run first.** An strace syscall profile of the no-op
-  build and of the cold-tree docs run, then the timings: `alr build` on an
-  already-built tree (5 runs), a full `tools/build.py --release` against a
-  fresh copy of the tree with no `obj/`, `bin/`, or `docs/_build/` (3 runs),
-  `gen-docs.py` on a tree with no Sphinx build directory (3 runs), and
-  `gen-docs.py --fresh` (3 runs). The fresh copy keeps the working tree's
-  build state intact, so the cold-build scenario cannot flip the build
-  profile or drop the gnatprove session of the tree under test.
+  build and of the cold-tree docs run, then a per-step breakdown: each
+  pre-build step (version spec, CSS gate, dashboard template, bundled
+  manual, tldr page) timed on its own and then as the parallel bundle
+  (`tools/build.py --steps-only`), with the step list read from
+  `tools/build.py`. The timings follow: `alr build` on an already-built
+  tree (5 runs), a full `tools/build.py --release` against a fresh copy of
+  the tree with no `obj/`, `bin/`, or `docs/_build/` (3 runs), `gen-docs.py`
+  on a tree with no Sphinx build directory (3 runs), and `gen-docs.py
+  --fresh` (3 runs). The fresh copy keeps the working tree's build state
+  intact, so the cold-build scenario cannot flip the build profile or drop
+  the gnatprove session of the tree under test.
 - **Five pipeline and prove scenarios** follow, each with a precise meaning
   (see the category reference on [Performance](index.md)). The prove
   scenarios time the `prove` subcommand -- the true test of proof
@@ -63,6 +67,9 @@ solver run; the warm paths stay warm anywhere.
   `time` fallback runs **5 + 5** per pipeline scenario.
 - It reports the raw and stripped binary sizes (the stripped size is measured
   on a `/tmp` copy; the build output is never modified).
+- The breakdown prints the sum of the step means, the parallel bundle's mean,
+  and the overlap between them, so the serial recipe's cost is visible in the
+  same table as the shape the build actually runs.
 
 `python3 tools/bench.py build`, `... pipeline` and `... prove` run one
 section each; `just bench` runs all of them.

@@ -41,6 +41,13 @@ was easy to break.  This script owns the same flow:
   instead of a real `git clone` so the scenario also runs on a tree with
   no git history and cannot pick up build state; the measured work is
   the same.
+- Build phase breakdown: each pre-build step (version spec, CSS gate,
+  dashboard template, bundled manual, tldr page) timed on its own, then
+  the parallel bundle exactly as tools/build.py runs it.  The step list is
+  read from tools/build.py, so the bench cannot measure a phase the build
+  does not run.  Hyperfine exports JSON and the script prints the sum of
+  the step means beside the bundle mean, which is the overlap the build
+  buys.
 - Binary size: a /tmp copy of bin/adacovex is stripped and both sizes are
   reported via tools/bench-size.py, so the build output is never modified.
 
@@ -61,13 +68,16 @@ bench-size.py reports a problem.
 """
 
 import argparse
+import importlib.util
+import json
+import shlex
 import shutil
 import subprocess
 import sys
 import tempfile
 import time
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Optional, Sequence, Tuple
 
 ROOT: Path = Path(__file__).resolve().parent.parent
 SECONDARY: Path = ROOT.parent / "Ada_CRDT"
@@ -81,6 +91,7 @@ FALLBACK_RUNS: int = 5
 BUILD_WARM_RUNS: int = 5
 BUILD_COLD_RUNS: int = 3
 DOCS_RUNS: int = 3
+BUILD_PHASE_RUNS: int = 10
 
 #  The syscalls the strace profile of a build phase reports: the stat/open
 #  traffic that dominates a warm no-op build and the exec/read/write of a
@@ -299,17 +310,115 @@ def run_docs_phases() -> None:
             print(f"{label} run {i}: {time.perf_counter() - start:.3f} s")
 
 
+def pre_build_steps() -> Sequence[Tuple[str, List[str]]]:
+    """The pre-build steps tools/build.py runs, read from that module.
+
+    Keeping one source of truth means a step added to the build is measured
+    by `just bench` the first time the build runs it, and a step removed
+    from the build cannot linger in a stale benchmark table.
+    """
+    spec = importlib.util.spec_from_file_location(
+        "adacovex_build", ROOT / "tools" / "build.py")
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module.PRE_BUILD_STEPS
+
+
+def hyperfine_json(commands: List[str], runs: int,
+                   warmup: int = 1) -> Optional[List[dict]]:
+    """Run hyperfine over several commands and return its per-command JSON.
+
+    Returns None when hyperfine is missing or the export cannot be read, so
+    the caller can fall back to a plain timing loop.
+    """
+    export = Path(tempfile.gettempdir()) / "adacovex-bench-phases.json"
+    export.unlink(missing_ok=True)
+    result = subprocess.run(
+        ["hyperfine", "--warmup", str(warmup), "--runs", str(runs)]
+        + commands + ["--export-json", str(export)],
+        cwd=str(ROOT),
+    )
+    if result.returncode != 0:
+        return None
+    try:
+        return json.loads(export.read_text())["results"]
+    except (OSError, ValueError, KeyError):
+        return None
+
+
+def row_seconds(row: dict, field: str) -> float:
+    """Read a hyperfine result's wall-clock mean or deviation, in seconds.
+
+    Hyperfine 2.x nests the statistics under `summary.time_wall_clock`
+    while older exports put `mean`/`stddev` at the top level; accept both.
+    """
+    if field in row:
+        return float(row[field])
+    return float(row["summary"]["time_wall_clock"][field])
+
+
+def run_build_phase_breakdown() -> None:
+    """Time every pre-build step on its own, then the parallel bundle.
+
+    The steps are independent, and tools/build.py runs them concurrently,
+    so the bundle's wall time is the slowest step plus startup, not the
+    sum.  Printing both makes that overlap visible and gives the cold
+    build's generator cost a per-step attribution.
+    """
+    steps = pre_build_steps()
+    if hyperfine_available():
+        announce("Build phase breakdown (each pre-build step alone)")
+        results = hyperfine_json(
+            [shlex.join(cmd) for _, cmd in steps], BUILD_PHASE_RUNS)
+        if results is not None:
+            print(f"{'mean':>10}  {'sigma':>8}  step")
+            total = 0.0
+            for (label, _), row in zip(steps, results):
+                mean = row_seconds(row, "mean") * 1000.0
+                total += mean
+                print(f"{mean:9.1f}ms "
+                      f"{row_seconds(row, 'stddev') * 1000:7.1f}ms  {label}")
+            print(f"{total:9.1f}ms {'':8}  sum of the steps (serial)")
+            announce("Pre-build bundle (parallel, as tools/build.py runs it)")
+            bundle = hyperfine_json(
+                [f"{shlex.quote(sys.executable)} tools/build.py --steps-only"],
+                BUILD_PHASE_RUNS)
+            if bundle is not None and bundle:
+                mean = row_seconds(bundle[0], "mean") * 1000.0
+                print(f"{mean:9.1f}ms "
+                      f"{row_seconds(bundle[0], 'stddev') * 1000:7.1f}ms  "
+                      "bundle (parallel)")
+                if mean > 0:
+                    print(f"{'':>10}  {'':>8}  overlap saves "
+                          f"{total - mean:.1f} ms ({100.0 * (total - mean) / total:.0f}% of the serial sum)")
+        return
+    print(f"== hyperfine not found; using bash time "
+          f"(build phases, load {load_avg()}) ==")
+    for label, cmd in steps:
+        start = time.perf_counter()
+        subprocess.run(cmd, cwd=str(ROOT), stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL)
+        print(f"{label}: {time.perf_counter() - start:.3f} s")
+    start = time.perf_counter()
+    subprocess.run([sys.executable, "tools/build.py", "--steps-only"],
+                   cwd=str(ROOT), stdout=subprocess.DEVNULL,
+                   stderr=subprocess.DEVNULL)
+    print(f"bundle (parallel): {time.perf_counter() - start:.3f} s")
+
+
 def build_phase_section() -> None:
     """Profile and time every cold-build phase, then restore the tree.
 
     The strace profiles come first (the docs one needs no Sphinx build
-    directory), then the timings; the docs timings end with a `--fresh`
-    rebuild, so the working tree is left with an up-to-date build directory
-    and spec.
+    directory), then the per-step breakdown, then the timings; the docs
+    timings end with a `--fresh` rebuild, so the working tree is left with
+    an up-to-date build directory and spec.
     """
     strace_profile("alr build (warm no-op)", ["alr", "build"])
     strace_profile("gen-docs (cold tree)",
                    [sys.executable, "tools/gen-docs.py"], wipe=DOCS_WIPE)
+    run_build_phase_breakdown()
     run_build_warm()
     run_cold_build()
     run_docs_phases()
@@ -572,6 +681,12 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
 
 
 def main() -> int:
+    #  The scenario banners and the phase table are ours; hyperfine writes
+    #  straight to the inherited descriptor. Line buffering keeps the two in
+    #  order when the run is redirected to a file, where block buffering
+    #  would flush our lines after every benchmark table.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(line_buffering=True)
     args = parse_args(sys.argv[1:])
     return bench(args.section)
 

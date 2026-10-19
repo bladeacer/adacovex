@@ -1,5 +1,7 @@
 # Pipeline and prove timings
 
+<!-- no-covex-docs-loc: timing page with long scenario tables, line cap does not apply -->
+
 `just bench` times the build phases and five pipeline and `prove`
 scenarios: pipeline cold, pipeline warm, prove cold, prove warm, and prove
 cold clone. The category definitions and the expected numbers are on
@@ -105,6 +107,57 @@ of generators. The encoding adds about 2 s to the cold Sphinx row because
 it runs in parallel across the cores. Every later run reuses the encoded
 bodies from `obj/adacovex-docs-encode/`.
 
+### The steps run concurrently (1.63.0)
+
+The five steps are independent -- each reads a different input and writes
+a different output -- so `tools/build.py` starts them all before it waits
+for any of them. The same five steps measure 463 ms in series and 295 ms
+as the bundle at load 2.7-2.8, so 168 ms (36 percent) of the step time
+overlaps, and the bundle's wall is the slowest step (the dashboard
+template at 194 ms) plus Python startup. A paired ten-run sample of the
+whole no-op build reads 609 ms against 732 ms for the serial recipe
+(-16.8 percent), at load 2.4.
+
+`just bench` prints this breakdown in its `build` section: each step on
+its own, then the parallel bundle, with the overlap stated as a figure.
+The bench reads the step list from `tools/build.py`, so a step added to
+the build is measured the first time the build runs it, and a step the
+build drops cannot survive in a stale table. `tools/build.py
+--steps-only` is the shape the bench times: the pre-build steps and no
+compile.
+
+## The directory memo (1.63.0)
+
+Every walker (source scan, tools hash, graph key, vendored discovery and
+hash, GPR collection, complexity) reads one per-process directory
+snapshot. Before 1.63.0 the memo stored a 256-byte path image per slot, a
+72-byte entry, and refused any directory holding more than 64 entries --
+which rejected the self tree's two densest scanned directories
+(`src/parsers`, 78 entries, and `docs/api-docs`, 84) and sent every
+walker back to direct enumeration. The entry name field was also 32
+bytes behind a 64-byte name bound, so a 33-64 character name failed the
+whole directory read.
+
+The memo now packs an entry to 66 bytes (a 64-byte name, a one-byte
+length, a one-byte kind), keeps the slot metadata in its first cache
+lines with the entry array after it, caps a key at 128 bytes, and
+memoises directories up to 128 entries. A lookup walks the same
+linear-probe path the insert uses, so a collision cannot hide a live
+snapshot. Paired against the pre-change binary on the same tree at the
+same load (20 runs each, load about 2.5):
+
+| Shape | Before | After | Change |
+|-------|--------|-------|--------|
+| Pipeline warm (paired, 20 runs) | 51.8 +/- 4.7 ms | 46.8 +/- 2.6 ms | -9.7 percent |
+| Warm `newfstatat` (strace) | 14 597 | 8 142 | -44 percent |
+| Memo lookups (hit / miss) | 105 / 86 | 131 / 60 | more hits, fewer walks |
+| Peak resident set | 28.5 MiB | 30.2 MiB | +1.7 MiB for the wider slots |
+
+The L1 dcache-miss rate is not part of that evidence: a pinned `perf
+stat` sample over five runs read 22-34 percent both before and after, a
+spread wider than any difference between them, so the syscall count and
+the paired wall time are what the change is measured by.
+
 ## The cold-tree docs skip (1.63.0)
 
 1.63.0 changed the one large docs row. A tree with no Sphinx build
@@ -143,7 +196,7 @@ over three runs (35.7-40.7 s, load 0.95). The phases split as:
 
 | Phase | Cost | Verdict |
 |-------|------|---------|
-| generators (version, CSS gate, dashboard, docs, tldr) | 0.34 s | docs phase cut from 9-10 s to a fingerprint hit |
+| generators (version, CSS gate, dashboard, docs, tldr) | 0.46 s in series, 0.29 s as the parallel bundle | docs phase cut from 9-10 s to a fingerprint hit; the five independent steps now overlap |
 | `alr` workspace sync | inside the 301 ms no-op build | nothing to fetch: `alire/alire.lock` carries an empty solution |
 | compile + link (79 units, both mains, `-j0` over 12 threads) | about 38 s | measured-necessary: gprbuild already fans out over every thread, and the release profile keeps `-O2` by design |
 | cold prove (solver, 1054 VCs) | 64.5 s | measured-necessary: the solver dominates, so only VC count moves it (see [Prove timing](prove-timing.md)) |
