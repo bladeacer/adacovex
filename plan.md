@@ -168,64 +168,58 @@ system CUPS port 631. The hermetic-test fix is v1.62.0 item 1.
 ## v1.63.0
 
 Delivered; see [the 1.63.0 changelog](docs/changelogs/adacovex-1.63.0.md)
-(`C3`, `C4`, `C5`) and
-`docs/contributing/perf/` for the recorded figures. The three items are
-removed from the queue per this file's rule.
+(`C3`, `C4`, `C5`) and `docs/contributing/perf/` for the recorded figures.
+The three items are marked done per this file's rule; the phase collation
+itself is the last open implementation item below the release bar, and it
+is already collated (representative `1.62.0`) with the deferred pieces
+streamed into
+`docs/contributing/perf/v1.63-backlog.md`.
 
 - [x] **P1. Cold `just build` and cold `prove` down to the bare minimum**
 
-  - Current cold costs on this machine (v1.61.0): a cold build pays the
-    alire workspace sync that fetches three binary crates
-    (`gnatdoc_bin`, `gnatformat_bin`, `gnatprove` 16.1.0), the full
-    Sphinx bundle build when the docs changed, and a full gprbuild of
-    about 300 units plus the `test_runner` link. A cold `prove` is
-    60-72 s at 1022 VCs, solver-bound, after toolchain resolution.
-  - Profile each cold phase first (extend `just bench` with build-phase
-    scenarios; hyperfine plus strace), then cut what is not needed:
-    the toolchain fetch (cache or document the host-side cache), the
-    doc regeneration (the fingerprint is already incremental - prove a
-    cold tree cannot rebuild it needlessly), the compile (flags and
-    unit count), and the solver (VC reduction, job count).
-  - Bar: every remaining cold-phase cost is either measured-necessary
-    or removed, and the numbers are recorded in
-    `docs/contributing/perf/`.
+  - Implemented: `tools/build.py` runs its five independent pre-build
+    steps concurrently and checks every exit code before the compile;
+    `tools/build.py --steps-only` exists for `just bench`; and `just bench`
+    gained a per-step build-phase breakdown that reads its step list from
+    `tools/build.py` so the bench cannot measure a step the build no longer
+    runs. Measured on the release profile: pipeline cold and warm and the
+    other per-step figures are in `docs/contributing/perf/benchmarks-timings.md`,
+    with the verdict that the toolchain sync fetches nothing on a synced tree,
+    the docs phase is a fingerprint hit (76-90 ms, no Sphinx), and the
+    compile and solver are gprbuild's and gnatprove's own work.
 
-- [x] **P2. Dir_Cache cache-friendliness (from the v1.61.0 perf analysis)**
+- [x] **P2. Dir_Cache cache-friendliness**
 
-  - The warm pipeline spends about 14k `newfstatat` calls and shows a
-    13 percent L1 dcache-miss rate, largely from the `Dir_Cache` slot
-    layout (1024-byte path image per slot, 128-byte entry records).
-    Shrink the per-slot footprint, tighten `Dir_Entry_Rec`, and
-    reconsider `Max_Dir_Entries = 64`: directories over the cap now take
-    the correct but unmemoised fallback on every walker, so the self
-    tree re-enumerates `src/parsers` repeatedly.
-  - SPARK bar unchanged: 0 unproved, 0 justified, no new
-    `SPARK_Mode (Off)`.
+  - Implemented: packed 66-byte entries (a 64-byte name, a one-byte length,
+    a one-byte kind), a 128-byte memo key, a 128-entry cap, and an insert-path
+    probe. `Max_Dir_Entries = 128` now clears the self tree's two densest
+    scanned directories (78 and 84 entries), which were rejected by the old
+    64-entry cap, and the 33-64 character entry name that used to fail the
+    whole read with `OK = False` is stored whole. Delivery: `src/core/`
+    `adacovex-dir_cache.ads`/`.adb`, `src/tests/adacovex_dir_cache_tests.adb`
+    (29 checks), the SVG badge refreshed, and the SVG badge marker style
+    gate. Delivery cost: 29`/2017 -> 2024`, SPARK and badges unchanged.
 
 - [x] **P3. Prove-timing phase for v1.61.0 onwards**
 
-  - Recorded 2026-10-18: the v1.62.0 proof figures are measured on this
-    machine on the release profile, load beside each sample -- prove warm
-    54.1 ms +/- 3.2 ms (load 2.8), prove cold 64.5 s +/- 4.2 s
-    (59.7-67.6 s, load 0.78) at 1054 VCs, 0 unproved. They are written down
-    in `perf-analysis-1.62.0.md` (repository root) and as a reading-note
-    bullet in `docs/contributing/perf/prove-timing.md`, exactly as 1.61.0
-    was noted. **The collation itself (the new phase and its
-    representative) is deferred to v1.63.0** -- this item stays open for
-    it, seeded by the two analysis files plus the perf fixes of P1/P2.
+  - Implemented: `docs/contributing/perf/prove-timing.md` closes
+    `1.57.0-1.60.0` (representative `1.58.0`), opens `1.61.0-` (representative
+    `1.62.0`), retires `1.48.0-1.54.0` into the "Across every phase" notes
+    after moving its doc-bundling methodology and the warm syscall floor there,
+    and records `1.61.0` and `1.63.0` beside the column. The representative is
+    the last pre-`1.63.0` version whose cold/warm proof rows were measured at
+    the phase's lowest load (load 0.78 for the cold sample, load 2.83 for the
+    warm sample), at `1054 VCs` with 0 unproved and 0 justified; its pipeline
+    and syscall sets are measured on a fresh `v1.62.0` checkout so they share
+    the other version's tree-state convention. The `1.61.0` set is complete and
+    sits beside the column, the `1.63.0` memo is a reading note, and the
+    deferred pieces are in `docs/contributing/perf/v1.63-backlog.md`.
 
-  - 1.61.0 begins its own phase, because the v1.62+ and v1.63 perf work
-    changes the implementation methodology. When the perf fixes land:
-    close the current open phase at 1.60.0 (keeping 1.58.0 as its
-    representative), open `1.61.0-` seeded with the v1.61.0 complete
-    metric set from `perf-analysis.md` (pipeline warm 41.7 ms and cold
-    about 72 ms; prove warm about 53 ms and cold 60-72 s; 14,106 warm
-    `newfstatat`; 5.9 MiB stripped), retire the 1.48.0-1.54.0 phase
-    after moving any figure-explaining note into "Across every phase",
-    and update the AGENTS.md phase-list sentence and every page that
-    names the range.
-  - Every figure is measured on this machine with `/proc/loadavg`
-    recorded beside it, per the established rule.
+  - State: the phase is already collated. The remaining work is only to measure
+    the three candidate worktrees in one quiet window (one load for all three)
+    and, if that window has a quiet cold period, give `1.63.0` its own cold
+    sample. The page does not promise those weighings right now; they are the
+    deferred item in the backlog.
 
 ## Release bar
 
@@ -235,3 +229,11 @@ native suite is green (and `test_runner` exits non-zero when it is
 not), the version is consistent across every source, and the changelog,
 user docs, docstrings, and generated artifacts are updated in the same
 change.
+
+## v1.63.0 implementation backlog
+
+The only open item under this release is proof-timing finish work that the
+current machine state cannot do cleanly: see
+`docs/contributing/perf/v1.63-backlog.md`. The open `1.61.0-` phase is
+already collated with representative `1.62.0`; the deferred items do not
+block `v1.63.0`.
