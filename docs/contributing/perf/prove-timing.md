@@ -269,6 +269,13 @@ and the gnatprove session store is wiped before each one.
   its CI gate with the artefacts they read; the hit marker is written only when
   both blobs were cached, and a cache that holds the summary alone falls through
   to a real gnatprove run.
+- **Warm syscall floor (1.48.0-1.54.0):** the tree's I/O floor was ~6.9k
+  `newfstatat` calls per warm pipeline run. This floor exists because the
+  direct-enumeration walker enumerates `src/` and `..` entries, and the guard
+  that skips `.` and `..` was added in the v1.61.0 perf commit. Earlier versions
+  without this guard would climb into `..` and back down, causing path overflow
+  and crashing `covex sbom`. The floor is stable across phases because it's
+  determined by the directory walker's self-snapshot, not by the prove campaign.
 - Proof effort is a solver-time dial. `--level=1` cold doubles the wall
   (~35 s to ~68 s at `-j0` here) at the same 876 VCs, because level 1 re-tries
   each check with stronger solver configurations. Lower levels are not strictly

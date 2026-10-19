@@ -13,7 +13,7 @@ package body Adacovex.Dir_Cache is
    type Slot is record
       Used     : Boolean := False;
       Path_Len : Natural := 0;
-      Path_Img : String (1 .. 1024) := (others => ' ');
+      Path_Img : String (1 .. 256) := (others => ' ');
       Mtime    : Long_Long_Integer := -1;
       Count    : Natural := 0;
       Entries  : Dir_Entry_List;
@@ -27,7 +27,7 @@ package body Adacovex.Dir_Cache is
    --  "./src"); resolving every key to its absolute image makes them all
    --  share one memo slot. Len = 0 means "not resolved yet".
    Cwd_Len : Natural := 0;
-   Cwd_Img : String (1 .. 1024) := (others => ' ');
+   Cwd_Img : String (1 .. 256) := (others => ' ');
 
    --  Hash a path into the table range. FNV-1a over the bytes.
    function Slot_Of (Path : String) return Natural is

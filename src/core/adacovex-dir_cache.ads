@@ -60,7 +60,7 @@ package Adacovex.Dir_Cache is
    --  One remembered directory entry.
    type Dir_Entry_Rec is record
       Name_Len : Natural := 0;
-      Name     : String (1 .. Max_Name_Len) := (others => ' ');
+      Name     : String (1 .. 32) := (others => ' ');
       Kind     : Entry_Kind := K_Other;
    end record;
 
