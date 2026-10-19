@@ -1,6 +1,7 @@
 with Adacovex.CPUs;
 with Ada.Directories;
 with Ada.Environment_Variables;
+with GNAT.OS_Lib;
 
 package body Adacovex_CPUs_Tests is
 
@@ -37,6 +38,17 @@ package body Adacovex_CPUs_Tests is
         or else Exists ("APPVEYOR")
         or else Exists ("JENKINS_URL");
    end Expected_In_CI;
+   --  The expected shell command, derived from the host separator.
+   --  On POSIX (separator is /) the shell is "sh", on Windows (separator is \) it is "cmd".
+   function Expected_Shell return String is
+      use Ada.Environment_Variables;
+   begin
+      if GNAT.OS_Lib.Directory_Separator = '\' then
+         return "cmd";
+      else
+         return "sh";
+      end if;
+   end Expected_Shell;
 
    procedure Run (R : in out Adacovex.Test_Support.Runner'Class) is
       Cores : constant Natural := Adacovex.CPUs.Detect_Core_Count;
@@ -44,8 +56,8 @@ package body Adacovex_CPUs_Tests is
       --  Host detection.
       R.Check (Cores >= 1, "the detected core count is at least one");
       R.Check
-        (Adacovex.CPUs.Get_Shell_Command = "sh",
-         "the spawned-command shell is sh");
+        (Adacovex.CPUs.Get_Shell_Command = Expected_Shell,
+         "the spawned-command shell is " & Expected_Shell);
       R.Check
         (Adacovex.CPUs.Get_Temp_Directory = Expected_Temp_Dir,
          "the temp directory follows the TMPDIR/TEMP/TMP chain");
