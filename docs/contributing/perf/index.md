@@ -77,9 +77,12 @@ codebase; what matters is the shape:
   fingerprint hit of 76 ms (see
   [Pipeline and prove timings](benchmarks-timings.md)).
 - **Prove cold ~61-88 s** (load-dependent on this desktop): a from-scratch
-  solver run over 880 VCs plus the whole pipeline, dominated by gnatprove
+  solver run over 1054 VCs plus the whole pipeline, dominated by gnatprove
   itself (the CPU time across the proof jobs is the stable part) and paid
-  once per gnatprove session, not per run.
+  once per gnatprove session, not per run. 1.63.0's own cold prove sample
+  was not separated cleanly from load on this machine, so it stayed a reading
+  note; the fresh-clone warm prove sample measured 1.95 s, and the truly cold
+  shape is solver-bound and load-dominated as in every phase.
 - **Prove warm ~55 ms**: the prove result cache serves the stored proof
   after one content-hash of the input tree, and restores the cached
   `gnatprove.out` so the assessment parses it -- the number a developer
@@ -102,10 +105,10 @@ holds; a methodology shift closes the phase and opens a new one.
 
 The 1.48.0-1.54.0 phase is retired to the notes, and the 1.55.0-1.56.0 and
 1.57.0-1.60.0 phases are closed, represented by 1.55.0 and 1.58.0. The **open
-phase is 1.61.0-**, represented by 1.61.0: that version began recording every
+phase is 1.61.0-**, represented by 1.62.0: that version began recording every
 figure with the machine load beside it and re-baselined the adacovex-side
-shapes, and 1.62.0 and 1.63.0 fold in with their figures noted beside the
-column. The 1.55.0 detail is on [The 1.55.0 timing
+shapes, and 1.61.0 and 1.63.0 fold in with their figures noted beside the
+1.62.0 column. The 1.55.0 detail is on [The 1.55.0 timing
 re-baseline](prove-rebaseline.md); the whole table is on [Prove timing and the
 optimisation review](prove-timing.md).
 

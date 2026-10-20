@@ -14,8 +14,9 @@ still holds.
 
 The driver was `plan.md` P1 and P2: the cold build and cold `prove` phases
 each needed a measured verdict, and the 1.61.0 profile put a 13 percent L1
-dcache-miss rate beside 14 106 warm `newfstatat` calls, largely in the
-directory memo's slot layout.
+dcache-miss rate beside 14 106 warm `newfstatat` calls, and the 1.61.0
+direction memo put 14 597 warm `newfstatat` calls beside a 41.7 ms warm
+pipeline, largely in the directory memo's slot layout.
 
 - **The five pre-build steps are independent, so they now run at once.**
   The version spec, the CSS 4px gate, the dashboard template, the bundled

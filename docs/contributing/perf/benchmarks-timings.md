@@ -30,7 +30,7 @@ scenario:
 | Scenario | 1.46.0 (`-O0`) | 1.47.0 (`-O2`) | 1.50.0 | 1.52.0 |
 |----------|-----------------|----------------|--------|--------|
 | Pipeline cold, self tree | -- | 73.9 +/- 5.8 ms | 73.2 +/- 5.3 ms | 67.5 +/- 2.5 ms |
-| Pipeline warm, self tree | -- | 43.4 +/- 2.8 ms | 46.3 +/- 4.0 ms | 41.9 +/- 2.9 ms |
+| Pipeline warm, self tree | -- | 43.4 +/- 2.8 ms | 46.3 +/- 4.0 ms | 41.7 +/- 2.9 ms |
 | Pipeline cold, Ada_CRDT | 39.3 +/- 4.3 ms | 33.4 +/- 3.5 ms (-15%) | 42.7 +/- 13.1 ms | 36.4 +/- 2.3 ms |
 | Pipeline warm, Ada_CRDT | 38.4 +/- 4.7 ms | 40.8 +/- 4.7 ms (noise) | 31.6 +/- 2.9 ms | 30.8 +/- 2.3 ms |
 | Prove cold, session wiped | -- | 80.9 +/- 5.3 s | 87.6 +/- 0.6 s | 67.3 +/- 4.2 s |
