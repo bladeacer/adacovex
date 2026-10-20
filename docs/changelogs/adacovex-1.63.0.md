@@ -171,21 +171,20 @@ checks).
 ## Proof Results
 
 **Platinum**, 0 unproved, 0 justified, **1054 of 1054 VCs across 75
-analysed units** under gnatprove 16.1.0 at `--level=4`. The count grows
-by six checks and three units over the shipped 1048: the new
-`Adacovex.Install` classifier is proved, from its machine token over the
-prefix rules and the scope rule to the index arithmetic behind them, C6's
-two route branches and its `Route_Path` mapping add two checks to the
-proved `Route` surface, and C9's three host-platform shell helpers
-(`Is_Windows` plus the command, flag, and discard-device answers) each
-carry their `GNAT.OS_Lib.Directory_Separator` input in a Global aspect,
-which SPARK RM 6.1.4(15) requires of a deferred constant. No existing
-unit lost a check.
+analysed units** under gnatprove 16.1.0 at `--level=4`. The count is
+unchanged from 1.62.0: none of this release's changes alter the proof
+surface. C1's man-path and shell tests live in the default-off native
+test runner, C2 pins a runner label in the release workflow with no
+compiled code, C3 reorganises the pre-build steps without touching Ada
+sources, C4 packs the directory memo -- a performance structure behind
+the scanning and SBOM walks that contributes no verification conditions --,
+and C5 collates timing records into documentation only; no subprogram gained
+or lost an assertion, a contract, or a runtime check. No new
+`pragma SPARK_Mode (Off)` was added: the only two packages that carry one
+remain `Types.Implementation` and `Complexity`.
 
-The new parser bodies sit in the manifest package's default-off body, C6's
-counter store and `/api/info` renderer in the server package's default-off
-surface, and C7's installer in the same file-system surface. None of them
-contributes verification conditions.
+The proof ran on this tree and re-reported Platinum at the same count, so
+the figure is a fresh result rather than an inherited 1.62.0 value.
 
 ## Traceability
 
