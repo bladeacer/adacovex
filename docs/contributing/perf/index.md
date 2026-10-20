@@ -55,20 +55,20 @@ Figures are from `just bench`/`perf-bench` on the benchmark machine
 (hyperfine, cold + warm per scenario). They shift with the machine and the
 codebase; what matters is the shape:
 
-- **Pipeline cold ~73 ms**: dominated by source scanning (Ada file
+- **Pipeline cold ~77 ms**: dominated by source scanning (Ada file
   enumeration and SHA-256 of every scanned file), the SBOM tree walk and
   word scan, and the renderers. Nothing here can be skipped: the result
   cache is empty, so every file must be read and hashed at least once
   (tool-version probes and ecosystem-metadata lookups live per-machine,
   outside the result cache, and survive cache wipes).
-- **Pipeline warm ~42-47 ms**: the on-disk result cache skips re-parsing
+- **Pipeline warm ~48 ms**: the on-disk result cache skips re-parsing
   unchanged sources; the stamp fast-path skips the per-file SHA-256
   entirely (a file unchanged in size is not re-hashed); the tools-set
   cache skips the SBOM dev-dependency word scan and the tool probes. The
   remaining time is process startup, directory walks, and blob
   deserialization. 1.63.0's directory memo (packed 66-byte entries, a
   128-byte key, and a 128-entry cap) cut the warm `newfstatat` count to
-  8 142 from 14 597 and the paired warm wall by 9.7 percent.
+  7 924 from 13 428 in a paired run against the v1.62.0 release binary.
 - **Cold build ~38.4 s** (release profile, fresh checkout, load 0.95):
   about 0.29 s of generators run as a concurrent bundle (0.46 s when the
   five steps run in series), the workspace sync inside the 301 ms no-op
@@ -76,18 +76,17 @@ codebase; what matters is the shape:
   mains at `-j0`. The docs phase used to cost 9-10 s of that; it is now a
   fingerprint hit of 76 ms (see
   [Pipeline and prove timings](benchmarks-timings.md)).
-- **Prove cold ~61-88 s** (load-dependent on this desktop): a from-scratch
+- **Prove cold ~79 s** (load-dependent on this desktop): a from-scratch
   solver run over 1054 VCs plus the whole pipeline, dominated by gnatprove
   itself (the CPU time across the proof jobs is the stable part) and paid
-  once per gnatprove session, not per run. 1.63.0's own cold prove sample
-  was not separated cleanly from load on this machine, so it stayed a reading
-  note; the fresh-clone warm prove sample measured 1.95 s, and the truly cold
-  shape is solver-bound and load-dominated as in every phase.
-- **Prove warm ~55 ms**: the prove result cache serves the stored proof
+  once per gnatprove session, not per run. The row is solver-bound: a
+  paired run against the v1.62.0 release binary cannot separate the two
+  versions, because the sign of the difference flips between the two trees.
+- **Prove warm ~63 ms**: the prove result cache serves the stored proof
   after one content-hash of the input tree, and restores the cached
   `gnatprove.out` so the assessment parses it -- the number a developer
   hits on an unchanged tree. Back-to-back `just prove` runs sit here (the
-  adacovex run is ~0.05 s; the rest of the wall is `alr build`).
+  adacovex run is ~0.06 s; the rest of the wall is `alr build`).
 - **Prove cold clone**: bounded by the same solver run as prove cold plus
   one tree copy; the only structural difference is that the clone starts
   without even a `gnatprove.out`, so the run cannot short-circuit anything.
@@ -103,12 +102,13 @@ phase carries one representative version that supplies the phase's complete
 metric set. A new version folds into the open phase while the methodology
 holds; a methodology shift closes the phase and opens a new one.
 
-The 1.48.0-1.54.0 phase is retired to the notes, and the 1.55.0-1.56.0 and
-1.57.0-1.60.0 phases are closed, represented by 1.55.0 and 1.58.0. The **open
-phase is 1.61.0-**, represented by 1.62.0: that version began recording every
-figure with the machine load beside it and re-baselined the adacovex-side
-shapes, and 1.61.0 and 1.63.0 fold in with their figures noted beside the
-1.62.0 column. The 1.55.0 detail is on [The 1.55.0 timing
+The 1.48.0-1.54.0 phase is retired to the notes, and the 1.55.0-1.56.0,
+1.57.0-1.60.0, and 1.61.0-1.62.0 phases are closed, represented by 1.55.0,
+1.58.0, and 1.62.0. The **open phase is 1.63.0-**, represented by 1.63.0:
+that version packed the directory memo again, moved the five pre-build steps
+into one concurrent bundle, and gave `just bench` a per-step build-phase
+breakdown, so the implementation and the measurement methodology both moved.
+The 1.55.0 detail is on [The 1.55.0 timing
 re-baseline](prove-rebaseline.md); the whole table is on [Prove timing and the
 optimisation review](prove-timing.md).
 

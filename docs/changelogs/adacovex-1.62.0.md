@@ -221,9 +221,9 @@ the gnatprove session wiped each time), both at 1054 VCs with 0 unproved.
 The reading notes of the prove-timing page carry them beside the open
 phase. They are noted rather than promoted: the phase table keeps its three
 rows and 1.58.0 keeps the open phase's representative, because the
-collation into the next phase is deferred to 1.63.0. The full record, with
-both samples and their loads, is `perf-analysis-1.62.0.md` at the repository
-root, beside the 1.61.0 one.
+collation into the next phase is deferred to 1.63.0. Both samples and
+their loads are recorded in the reading notes of the prove-timing page,
+which the 1.63.0 collation supersedes.
 
 ## Fixes
 

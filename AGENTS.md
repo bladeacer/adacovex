@@ -58,7 +58,8 @@ tools, or output must also update, in the same change:
 **Proof-timing phases.**  `docs/contributing/perf/prove-timing.md` keeps the
 `just prove` timing table as one column per **phase**, never one per release.
 A phase is a range of versions whose implementation methodology is largely
-similar (so far 1.55.0-1.56.0, 1.57.0-1.60.0 (closed, rep 1.58.0), 1.61.0- (open)).
+similar (so far 1.55.0-1.56.0 (closed, rep 1.55.0), 1.57.0-1.60.0 (closed,
+rep 1.58.0), 1.61.0-1.62.0 (closed, rep 1.62.0), 1.63.0- (open, rep 1.63.0)).
 Fold each new version into the open phase while the methodology holds; close
 the phase and open a new one on a methodology shift. Each phase carries exactly one
 representative version, and the table uses that version's *complete* metric

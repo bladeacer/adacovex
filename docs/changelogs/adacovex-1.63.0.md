@@ -63,16 +63,51 @@ memo reports 131 hits and 60 misses, pipeline warm reads 46.8 ms against
 51.8 ms (-9.7 percent), and the peak resident set grows 1.7 MiB for the wider
 slots.
 
-### C5: Prove-timing phases collated, with 1.61.0 opening the current phase
+Paired against the v1.62.0 release binary, built from the v1.62.0 tag and run
+round by round with the v1.63.0 release binary on one box, the same tree costs
+13 428 warm `newfstatat` calls under the old binary and 7 924 under the new
+one (-41 percent), and the pipeline reads 50.5 ms against 55.8 ms warm and
+84.7 ms against 98.2 ms cold. The v1.62.0 tree shows the same shape: 7 195
+against 11 129 stat calls, pipeline warm 49.1 ms against 56.7 ms, and prove
+warm 62.2 ms against 66.9 ms.
+
+### C5: Prove-timing phases collated, with 1.63.0 representative for the open phase
 
 [Prove timing and the optimisation review](../contributing/perf/prove-timing.md)
-now closes the 1.57.0-1.60.0 phase with 1.58.0 as its representative, opens
-`1.61.0-` with the 1.61.0 complete metric set, and retires the
-1.48.0-1.54.0 phase into the "Across every phase" notes after moving the
-doc-bundling methodology and the warm syscall floor there. The 1.62.0 and
-1.63.0 figures are recorded beside the open column with their loads, never
-picked row by row into it. [Performance](../contributing/perf/index.md) names
-the same phase list.
+now closes the 1.61.0-1.62.0 phase with 1.62.0 as its representative, opens
+the `1.63.0-` phase with 1.63.0 as its representative, and keeps the three
+most recent closed phases beside the open one. The phase closes because both
+the implementation and the measurement methodology moved: the directory memo
+was packed again, the five pre-build steps became one concurrent bundle, and
+`just bench` gained a per-step build-phase breakdown.
+
+The 1.63.0 complete set is the column: pipeline warm 48.1 ms +/- 5.4 ms and
+cold 76.8 ms +/- 3.8 ms, prove warm 62.9 ms +/- 5.9 ms, prove cold
+79.4 s +/- 2.7 s, and prove cold clone 80.8 s +/- 2.7 s, all at load
+1.87-2.52, on 1054 VCs across 75 analysed units with 0 unproved, with 7 924
+warm `newfstatat` and a stripped binary of 6 552 528 bytes.
+
+The prove-cold row cannot separate the two versions, and that is the finding.
+Six paired rounds over two sessions read 89.4 s for the v1.62.0 binary
+against 83.8 s for the v1.63.0 binary on the 1.63.0 tree, and 85.9 s against
+89.2 s on the v1.62.0 tree, so the sign of the difference flips between the
+two trees. The same configuration moved by 14 s between the two sessions
+(88.2 s against 79.4 s for the same binary and tree), which is larger than
+any difference between the versions, so the row stays solver-bound and
+load-dominated as in every earlier phase.
+
+The absolute figures sit above the ones earlier sessions recorded, and the
+paired run shows that the drift is in the box, not in the code. The v1.62.0
+release binary on the v1.62.0 tree reads 56.7 ms in this session against the
+41.7 ms the 1.61.0 record took for it. The paired rows are the evidence that
+the release did not regress: on one box, one tree, and one session, the
+1.63.0 binary reads faster and cuts the warm stat count by 41 percent. The
+page says so, and every figure now carries the load it was taken under.
+
+The per-release analysis files at the repository root are removed with this
+release. Their figures, with their loads, live in the reading notes of the
+prove-timing page, which is the page the phase table points at.
+[Performance](../contributing/perf/index.md) names the same phase list.
 
 ## Fixes
 

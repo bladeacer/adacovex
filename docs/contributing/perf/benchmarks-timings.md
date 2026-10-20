@@ -158,6 +158,60 @@ stat` sample over five runs read 22-34 percent both before and after, a
 spread wider than any difference between them, so the syscall count and
 the paired wall time are what the change is measured by.
 
+### The memo against the released v1.62.0 binary
+
+The 1.63.0 release profile was measured against the v1.62.0 release
+binary, built from the v1.62.0 tag, with both binaries run round by
+round on the same box (medians over 20 pipeline-warm rounds, 12
+pipeline-cold rounds, and 15 prove-warm rounds):
+
+| Shape | v1.62.0 binary | v1.63.0 binary | Change |
+|-------|----------------|----------------|--------|
+| Pipeline warm, 1.63.0 tree | 55.8 ms | 50.5 ms | -5.3 ms |
+| Pipeline warm, v1.62.0 tree | 56.7 ms | 49.1 ms | -7.6 ms |
+| Pipeline cold, 1.63.0 tree | 98.2 ms | 84.7 ms | -13.5 ms |
+| Pipeline cold, v1.62.0 tree | 92.4 ms | 86.3 ms | -6.1 ms |
+| Prove warm, 1.63.0 tree | 65.6 ms | 60.2 ms | -5.4 ms |
+| Prove warm, v1.62.0 tree | 66.9 ms | 62.2 ms | -4.7 ms |
+| Warm `newfstatat`, 1.63.0 tree | 13 428 | 7 924 | -41 percent |
+| Warm `newfstatat`, v1.62.0 tree | 11 129 | 7 195 | -35 percent |
+
+The memo is the reason: the same tree walked by the older binary costs
+13 428 stat calls and by the new one 7 924, and the same tree proves
+warm 5 ms faster end to end.
+
+## The 1.63.0 session on the release profile
+
+One hyperfine session on the release profile, with the load recorded in
+front of every shape, gives the 1.63.0 column of the phase table:
+
+| Shape | Figure | Load before |
+|-------|--------|-------------|
+| Pipeline cold (10 runs) | 76.8 ms +/- 3.8 ms | 1.87 |
+| Pipeline warm (15 runs, 2 warm-ups) | 48.1 ms +/- 5.4 ms | 1.87 |
+| Prove warm (15 runs, 2 warm-ups) | 62.9 ms +/- 5.9 ms | 1.96 |
+| Prove cold (3 runs) | 79.4 s +/- 2.7 s | 2.21 |
+| Prove cold clone (2 runs) | 80.8 s +/- 2.7 s | 2.52 |
+| Warm `newfstatat` (strace) | 7 924 | -- |
+| Stripped binary | 6 552 528 bytes (6.2 MiB) | -- |
+
+The prove-cold row cannot separate the two versions. Six paired rounds
+over two sessions read 89.4 s for the v1.62.0 binary against 83.8 s for
+the v1.63.0 binary on the 1.63.0 tree, and 85.9 s against 89.2 s on the
+v1.62.0 tree, so the sign of the difference flips between the trees. The
+same configuration moved by 14 s between the two sessions (88.2 s
+against 79.4 s for the same binary and tree), which is larger than any
+difference between the versions: the row is solver-bound and
+load-dominated, as in every earlier phase.
+
+The absolute figures in this session sit above the ones earlier sessions
+recorded, and the paired run shows that the drift is in the box. The
+v1.62.0 release binary on the v1.62.0 tree reads 56.7 ms here against
+the 41.7 ms the 1.61.0 record took for it. The paired rows above are the
+evidence that the release did not regress: on one box, one tree, and one
+session, the 1.63.0 binary reads faster and cuts the stat count by
+41 percent.
+
 ## The cold-tree docs skip (1.63.0)
 
 1.63.0 changed the one large docs row. A tree with no Sphinx build
@@ -199,7 +253,7 @@ over three runs (35.7-40.7 s, load 0.95). The phases split as:
 | generators (version, CSS gate, dashboard, docs, tldr) | 0.46 s in series, 0.29 s as the parallel bundle | docs phase cut from 9-10 s to a fingerprint hit; the five independent steps now overlap |
 | `alr` workspace sync | inside the 301 ms no-op build | nothing to fetch: `alire/alire.lock` carries an empty solution |
 | compile + link (79 units, both mains, `-j0` over 12 threads) | about 38 s | measured-necessary: gprbuild already fans out over every thread, and the release profile keeps `-O2` by design |
-| cold prove (solver, 1054 VCs) | 64.5 s | measured-necessary: the solver dominates, so only VC count moves it (see [Prove timing](prove-timing.md)) |
+| cold prove (solver, 1054 VCs) | 79.4 s | measured-necessary: the solver dominates, so only VC count moves it (see [Prove timing](prove-timing.md)) |
 
 The strace profile of the warm no-op build reports 136 370 syscalls,
 19 710 of them `newfstatat`: the stat traffic of gprbuild's out-of-date
