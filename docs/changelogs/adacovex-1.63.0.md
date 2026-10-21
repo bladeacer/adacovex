@@ -8,11 +8,16 @@ Version bumped 1.62.0 -> 1.63.0.
 
 ### C1: Windows test parity
 
-Fixed false failures in the native test suite on Windows hosts by aligning
-man path and shell tests with the host separator. The `Manpath_Contains` and
-`Manpath_User_Entry` functions now correctly handle POSIX-style `:` separators
-in test fixtures, and the shell command test derives its expected value from
-the host's `Directory_Separator` rather than hardcoding `"sh"`.
+Fixed the four false failures the `windows-latest` runner reported in the
+native test suite; the implementation was platform-correct and the tests
+hard-coded POSIX assumptions. Three man-path checks joined their fixture
+entries with a literal `:`, but the readers split on
+`GNAT.OS_Lib.Path_Separator`, which is `;` on Windows, so each fixture read
+as one giant entry and every match failed; the fixtures now join with the
+host separator, so one test body exercises both platforms. The fourth check
+asserted the spawned-command shell is `"sh"` unconditionally; it now derives
+the expectation from the host's `Directory_Separator`, so a Windows host
+expects `"cmd"`.
 
 ### C2: macOS runner pin
 
@@ -111,62 +116,40 @@ prove-timing page, which is the page the phase table points at.
 
 ## Fixes
 
-### H1: An installed package's own subpackages and source trees are no longer components
+### H1: The bundled-manual spec check no longer depends on build history
 
-The vendored walk descended two levels and componentised every
-directory it reached, so one installed package reported its bundled
-`v4`, `locales`, `src`, `lib`, and `dist` directories as five separate
-dependencies of the project that uses it.
+Sphinx merges an incremental search index with the one already on disk and
+prunes by emptying a removed word's document set without dropping the key,
+so a developer tree's `searchindex.js` carries phantom entries that a clean
+build never emits -- and `python3 tools/gen-docs.py --check` on a cold
+machine failed the committed spec for exactly those phantoms. The generator
+now canonicalises the index on the way into the bundle: empty entries are
+dropped and the object re-serialised with sorted keys, so an incremental
+tree and the clean build a fresh clone runs agree byte for byte, and
+client-side search is unaffected because it looks words up by key.
 
-A level-2 directory now becomes a component only when it carries its
-own ecosystem manifest and its parent carries none. Such a parent is a
-container -- an npm scope, a composer vendor name, or a Go import-path
-host -- and the packages below it are real dependencies. Anything else
-at that depth belongs to the package above it and stays out of the
-graph.
-
-### H2: The tools test suite runs again
-
-Commit `7a5a283` replaced `tools/tests.py` with a 141-line tldr scratch
-script, so `just tools-check` exited 0 while running none of the suite's 178
-tests -- the gate looked green and checked nothing. The file is restored to
-the full multi-class suite, and the eight requirements-sync checks join it,
-so `just tools-check` runs its whole suite again (195 tests as this release
-ships).
+The same pass stamps the bundle fingerprint of the inputs it was built from
+(the docs sources, the nav injector, and the generator itself) into the spec
+header as `Source_Fingerprint`, so a tree with no usable Sphinx build -- a
+fresh clone, or after the build directory was removed -- keeps the committed
+spec instead of rebuilding the site to reproduce the same bytes. `generate`
+takes that path; `--check` always builds, so the gate still fails on a stale
+or hand-edited spec. Nine new checks in the tools suite pin the
+canonicalisation and the fingerprint.
 
 ## Test Suite
 
-2024 tests across 29 categories, up from 2017. Forty earlier checks in
-this release cover the structural readers, the package-root rule, and the
-root npm and Go declarations. Fifteen more pin adacovex as a
-dependency in both directions, and the new `Install method` category
-holds 23 checks for the classifier, the scope rule, and the filesystem
-walk behind them. The `Server routing` category grows to 180 checks: the
-two new routes and their near misses, the `Route_Path` round trip over
-every route kind, the protected counter store, and the `/api/info`
-payload.
+2024 tests across 29 categories, up from 2017. The seven new native
+checks are the `Dir cache` category's: the fitted long name that used
+to fail the read whole (four checks, one of which proves the directory
+is still memoised), and the 100-entry directory that the old cap
+rejected (three checks, including the memo hit). The man-path checks
+of C1 keep their count; only their fixtures changed.
 
-The `Dir cache` category grows to 29 checks: the fitted long name that
-used to fail the read whole (four checks, one of which proves the
-directory is still memoised), and the 100-entry directory that the old
-cap rejected (three checks, including the memo hit).
-
-The new `tldr installer` category holds 48 checks: client classification,
-the `--show-paths` parse with its annotation, the per-client path rules, the
-`uname` mapping for Linux, macOS, the BSDs, Android, SunOS, and the Windows
-shells, and the install and read-back round trip in a temporary tree. The
-`Man page renderer` category grows to 30 checks: the man path split and the
-home-owned entry rule, the default root, and the indexer contract. The
-`VCS support` category grows to 37 checks: both shell families pin their
-quoting, their change-directory prefix, and their discard device, so the
-Windows command shape is asserted on a POSIX host and the POSIX shape on a
-Windows host. `just test` runs the native suite, and `just cli-e2e` runs 87
-end-to-end checks, including two new component-set shapes (a pnpm workspace
-and a Go module), three checks against the live `/health` and `/api/info`
-endpoints, and seven that install the page into a fake tealdeer client and a
-fake base client and compare it byte for byte. `just tools-check` runs the
-195-test tools suite (restored in H2, plus the eight requirements-sync
-checks).
+`just test` runs the native suite and `just cli-e2e` runs 87
+end-to-end checks, unchanged from 1.62.0. `just tools-check` runs the
+195-test tools suite: the 186 that 1.62.0 restored, plus the nine
+search-index and fingerprint checks H1 adds.
 
 ## Proof Results
 
@@ -178,38 +161,30 @@ test runner, C2 pins a runner label in the release workflow with no
 compiled code, C3 reorganises the pre-build steps without touching Ada
 sources, C4 packs the directory memo -- a performance structure behind
 the scanning and SBOM walks that contributes no verification conditions --,
-and C5 collates timing records into documentation only; no subprogram gained
-or lost an assertion, a contract, or a runtime check. No new
-`pragma SPARK_Mode (Off)` was added: the only two packages that carry one
-remain `Types.Implementation` and `Complexity`.
+C5 collates timing records into documentation only, and H1 changes the
+Python bundler and its tools-suite checks, which carry no Ada surface; no
+subprogram gained or lost an assertion, a contract, or a runtime check. No
+new `pragma SPARK_Mode (Off)` was added: the only two packages that carry
+one remain `Types.Implementation` and `Complexity`.
 
 The proof ran on this tree and re-reported Platinum at the same count, so
 the figure is a fresh result rather than an inherited 1.62.0 value.
 
 ## Traceability
 
-One new HLR record enters this release: `HLR-TLDR` (client-agnostic tldr
-page installation), traced by `LLR-TLDR-01` for the client detection and
-`LLR-TLDR-02` for the install and the read-back comparison. The
-dependency-graph parsing work extends `HLR-MANIFEST` and `HLR-SBOM`, both
-on record for the graph and its output. The new
-`Adacovex.Install` package carries `HLR-MANIFEST`: it decides how a
-project's reference to adacovex is classified. C9 extends `HLR-DIFF`, whose
-requirement is the comparison itself.
-
-The pre-build bundle changes no requirement: it changes the files that gate
-the tree. The directory memo is an in-process performance structure behind the
+No new HLR record enters this release, and no requirement changes. The
+directory memo is an in-process performance structure behind the
 scanning and SBOM walks, so it carries their requirements (`HLR-SCAN`,
-`HLR-SBOM`) and adds none. The timing pages record measurements, not
-requirements.
+`HLR-SBOM`) and adds none. The pre-build bundle and the per-step bench
+change the files that gate the tree (`HLR-ARCH`), not the assessed
+behaviour.
 
-The status report adds no requirement: it reports state and never assesses it.
-The hermetic suite changes no requirement: it changes the tests that gate
-the tree. The requirements single-sourcing and the tools-suite restore
-change no requirement either: they change the files that gate the tree.
+The Windows test alignment and the macOS runner pin change the tests and
+the workflow that gate the tree, and the bundled-manual search-index fix
+changes a build artefact's determinism; none of the three assesses
+anything, so none carries a requirement. The timing pages record
+measurements, not requirements.
 
 The packages changed by this release, and the tags on record that cover
-them: the manifest parsers and the dependency graph (`HLR-MANIFEST`), the
-SBOM they feed (`HLR-SBOM`), the dashboard server routes and its API
-(`HLR-SERVER`), the tldr installer (`HLR-TLDR`), the differential-mode VCS
-abstraction (`HLR-DIFF`), and the task gates (`HLR-ARCH`).
+them: the directory memo behind the scanning and SBOM walks
+(`HLR-SCAN`, `HLR-SBOM`), and the task gates (`HLR-ARCH`).

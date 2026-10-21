@@ -41,7 +41,8 @@ Steps, in order:
 
 `--release` selects the release profile and is the single build entry point
 for `just release`, so a release build runs exactly the same regeneration
-steps (version spec, CSS gate, dashboard, bundled manual) as a dev build.  A
+steps (version spec, CSS gate, dashboard, bundled manual, tldr page) as a
+dev build.  A
 release build that skipped them could ship a binary whose bundled dashboard
 or offline manual predates the source that produced it.
 
