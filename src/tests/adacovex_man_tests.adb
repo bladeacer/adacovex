@@ -19,6 +19,12 @@ package body Adacovex_Man_Tests is
         Adacovex.CPUs.Get_Temp_Directory
         & "/adacovex-man-test-"
         & Pid (2 .. Pid'Last);
+      --  The man path list separator follows the host: `:` on POSIX,
+      --  `;` on Windows. The man path fixtures join their entries with
+      --  it, so one test body exercises both platforms: the readers
+      --  split on GNAT.OS_Lib.Path_Separator, so a fixture joined with
+      --  the wrong character is one giant entry.
+      Sep  : constant Character := GNAT.OS_Lib.Path_Separator;
    begin
       --  The generated page carries the roff structure and the version.
       R.Check
@@ -90,16 +96,17 @@ package body Adacovex_Man_Tests is
       --  separators. It must not match a prefix of an entry.
       R.Check
         (Adacovex.Renderers.Man.Manpath_Contains
-           ("/usr/share/man:/usr/local/share/man", "/usr/local/share/man"),
+           ("/usr/share/man" & Sep & "/usr/local/share/man",
+            "/usr/local/share/man"),
          "manpath match finds a later entry");
       R.Check
         (Adacovex.Renderers.Man.Manpath_Contains
-           ("/usr/share/man:/home/u/.local/share/man/",
+           ("/usr/share/man" & Sep & "/home/u/.local/share/man/",
             "/home/u/.local/share/man"),
          "manpath match ignores a trailing slash");
       R.Check
         (not Adacovex.Renderers.Man.Manpath_Contains
-               ("/usr/share/man:/home/u/.local/share/man2",
+               ("/usr/share/man" & Sep & "/home/u/.local/share/man2",
                 "/home/u/.local/share/man"),
          "manpath match rejects an entry prefix");
       R.Check
@@ -109,12 +116,12 @@ package body Adacovex_Man_Tests is
       --  A home-owned MANPATH entry is preferred over the platform root.
       R.Check
         (Adacovex.Renderers.Man.Manpath_User_Entry
-           ("/usr/share/man:/home/u/.local/share/man", "/home/u")
+           ("/usr/share/man" & Sep & "/home/u/.local/share/man", "/home/u")
          = "/home/u/.local/share/man",
          "home-owned manpath entry is selected");
       R.Check
         (Adacovex.Renderers.Man.Manpath_User_Entry
-           ("/usr/share/man:/usr/local/share/man", "/home/u")
+           ("/usr/share/man" & Sep & "/usr/local/share/man", "/home/u")
          = "",
          "no home-owned entry reports empty");
       R.Check
