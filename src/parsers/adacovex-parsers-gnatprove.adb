@@ -363,6 +363,17 @@ package body Adacovex.Parsers.GNATprove is
          return Types.Silver;
       end if;
 
+      --  Platinum is the highest SPARK level. It requires a complete
+      --  formal specification of all subprogram behaviour: every
+      --  analysed subprogram must carry functional contracts and all
+      --  of them must be proved. A project that only proves flow,
+      --  run-time, and assertion checks -- or that has no functional
+      --  contracts to prove -- has not reached Platinum, even when all
+      --  of those checks are discharged. This closes the gap from the
+      --  1.63.x release, whose rule granted Platinum to any project
+      --  with Functional_Ct > 0 and Functional_Proved = Functional_Ct
+      --  and would otherwise label a project with zero functional
+      --  contracts as Platinum when all of its other checks were proved.
       if Summary.Functional_Ct > 0
         and then Summary.Functional_Proved = Summary.Functional_Ct
       then

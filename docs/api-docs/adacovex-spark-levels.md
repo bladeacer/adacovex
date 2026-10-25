@@ -46,12 +46,12 @@ specifications.
 
 | Criterion | Requirement |
 |-----------|-------------|
-| Full functional requirements | Complete formal specification of all subprogram behaviour |
-| Total correctness | All subprograms have complete Pre/Post contracts covering full behaviour |
-| Domain properties | Algebraic properties (commutativity, idempotence, convergence) proved |
+| Complete formal specification | All subprograms carry functional contracts (Pre/Post, Type_Invariant, and any other functional specification) |
+| Total correctness | Every functional contract proved, 0 unproved functional VCs |
+| Full functional coverage | Platinum is only reached when the project has functional contracts to prove: a project that proves its flow, run-time, and assertion checks but has no functional contracts is **not** Platinum |
 | Enforcement | `gnatprove` reports all functional contracts proved, 0 unproved |
 
-Platinum is a best-effort ideal, not a DAL compliance gate. Justified VCs
+Platinum is the highest SPARK level. It requires a complete formal specification of all subprogram behaviour, and it is only reached when that specification exists. A project that proves all of its flow, run-time, and assertion checks but carries no functional contracts has not reached Platinum: there is nothing to prove at that level. This is a best-effort ideal, not a DAL compliance gate, and it is not met when the project lacks the functional contracts that the level requires. Justified VCs
 (`pragma Annotate` for decidedly unprovable checks) count neither as proved
 nor as unproved and never downgrade the level; only unproved VCs do. The
 minimum DAL gates are Gold (DAL-A), Silver (DAL-B), and Bronze (DAL-C/D).
@@ -74,4 +74,4 @@ adacovex --target=../Ada_CRDT --dal=C
 - [DAL Levels](adacovex-dal-levels.md) -- the per-level SPARK gates
   (Gold / Silver / Bronze / Stone)
 - [Proof ledger](../proof/16.1.0-ledger.md) -- adacovex's own Platinum proof
-  results (725 VCs, 0 unproved under gnatprove 16.1.0)
+  results (1054/1054 VCs, 0 unproved, 0 justified under gnatprove 16.1.0)
