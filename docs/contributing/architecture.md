@@ -95,9 +95,11 @@ the Unix philosophy of composing specialised tools.
   do, and unit tests pin this.
 - **Gold is the minimum compliance baseline. Platinum is the ideal.**
   `Min_SPARK_For` thresholds (A=Gold, B=Silver, C=Bronze, D/E=Stone) are the
-  gate for DAL compliance. Platinum is achieved and reported when every
-  functional contract is proved, but it is a best-effort target, not a
-  compliance requirement at any DAL level.
+  gate for DAL compliance. Platinum is achieved and reported only when the
+  project has functional contracts and every one of them is proved: a project
+  that proves all of its flow, run-time, and assertion checks but carries no
+  functional contracts is **not** Platinum. Platinum is a best-effort target,
+  not a compliance requirement at any DAL level.
 
 ## Result caching
 

@@ -292,6 +292,24 @@ package body Adacovex_Prove_Tests is
             "Determine_SPARK_Level: justified VCs keep Platinum");
       end;
 
+      --  Platinum requires a complete formal specification of all subprogram
+      --  behaviour. A project that proves every flow, run-time, and assertion
+      --  check but has no functional contracts to prove is Gold, not
+      --  Platinum: there is nothing to prove at the Platinum level.
+      declare
+         S : Proof_Summary;
+      begin
+         S :=
+           (Runtime_Checks => 10,
+            Runtime_Proved => 10,
+            Assertions     => 5,
+            Assert_Proved  => 5,
+            others         => <>);
+         R.Check
+           (Adacovex.Parsers.GNATprove.Determine_SPARK_Level (S) = Gold,
+            "Determine_SPARK_Level: no functional contracts is Gold, not Platinum");
+      end;
+
       --  Justified VCs are counted neither proved nor unproved: Proved =
       --  Total - Justified - Unproved.
       declare
