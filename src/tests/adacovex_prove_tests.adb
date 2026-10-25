@@ -10,7 +10,7 @@ package body Adacovex_Prove_Tests is
       declare
          S : Proof_Summary;
       begin
-         S := (Functional_Ct => 5, Functional_Proved => 5, others => <>);
+         S := (Functional_Ct => 5, Functional_Proved => 5, Functional_Contract_Coverage => True, others => <>);
          R.Check
            (Adacovex.Parsers.GNATprove.Determine_SPARK_Level (S) = Platinum,
             "Determine_SPARK_Level: Platinum");
@@ -24,6 +24,7 @@ package body Adacovex_Prove_Tests is
             Runtime_Proved => 10,
             Assertions     => 5,
             Assert_Proved  => 5,
+            Functional_Contract_Coverage => True,
             others         => <>);
          R.Check
            (Adacovex.Parsers.GNATprove.Determine_SPARK_Level (S) = Gold,
@@ -61,6 +62,7 @@ package body Adacovex_Prove_Tests is
             Flow_Proved    => 7,
             Runtime_Checks => 10,
             Runtime_Proved => 5,
+            Functional_Contract_Coverage => True,
             others         => <>);
          R.Check
            (Adacovex.Parsers.GNATprove.Determine_SPARK_Level (S) = Bronze,
@@ -70,7 +72,7 @@ package body Adacovex_Prove_Tests is
       declare
          S : Proof_Summary;
       begin
-         S := (Runtime_Checks => 1, Flow_Checks => 1, others => <>);
+         S := (Runtime_Checks => 1, Flow_Checks => 1, Functional_Contract_Coverage => False, others => <>);
          R.Check
            (Adacovex.Parsers.GNATprove.Determine_SPARK_Level (S) = Stone,
             "Determine_SPARK_Level: Stone");
@@ -78,14 +80,12 @@ package body Adacovex_Prove_Tests is
 
       --  Empty summary (zero VCs) must be Stone, not Gold
       declare
-         S : Proof_Summary := (others => <>);
+         S : Proof_Summary := (Functional_Contract_Coverage => True, others => <>);
       begin
          R.Check
            (Adacovex.Parsers.GNATprove.Determine_SPARK_Level (S) = Stone,
             "Determine_SPARK_Level: empty summary is Stone");
-      end;
-
-      declare
+      end;         declare
          F       : File_Type;
          Summary : Proof_Summary;
          Success : Boolean;
@@ -129,8 +129,114 @@ package body Adacovex_Prove_Tests is
          R.Check (Summary.Total_VCs = 29, "Parse_Prove_Out: Total_VCs = 29");
          R.Check (Summary.Proved_VCs = 29, "Parse_Prove_Out: Proved_VCs = 29");
          R.Check (Summary.Unproved = 0, "Parse_Prove_Out: Unproved = 0");
+         R.Check (Summary.Functional_Contract_Coverage = True,
+                  "Parse_Prove_Out: functional contracts coverage true");
          R.Check
            (Summary.Level = Platinum, "Parse_Prove_Out: Level = Platinum");
+      end;
+
+      --  A full gnatprove.out report: every analysed unit carries functional
+      --  contracts, so the classifier may return Platinum even though the
+      --  runtime/assertion rows are incomplete (the code path below keeps
+      --  them as Platinum).
+      declare
+         F       : File_Type;
+         Summary : Proof_Summary;
+         Success : Boolean;
+      begin
+         Create
+           (F,
+            Out_File,
+            Adacovex.CPUs.Get_Temp_Directory & "/adacovex_test_prove_out.txt");
+         Put_Line
+           (F,
+            "Summary of SPARK analysis");
+         Put_Line (F, "=========================");
+         Put_Line (F, "   Analyzed 28 units");
+         Put_Line (F, "   skipped 3 units");
+         Put_Line
+           (F,
+            "SPARK Analysis results   Total    Flow     Provers   Justified   Unproved");
+         Put_Line
+           (F,
+            "Total                       28  10 (36%)  18 (64%)           .          .");
+         Put_Line (F, "   skipped;    adacovex-prove.adb       functional-contracts-only");
+         Put_Line (F, "   skipped;    adacovex-cache.adb       functional-contracts-only");
+         Put_Line (F, "   skipped;    adacovex-diff.adb        functional-contracts-only");
+         Close (F);
+
+         Adacovex.Parsers.GNATprove.Parse_Prove_Out
+           (Adacovex.CPUs.Get_Temp_Directory & "/adacovex_test_prove_out.txt",
+            Summary,
+            Success);
+
+         R.Check (Success, "Parse_Prove_Out (all-functional): success");
+         R.Check (Summary.Functional_Contract_Coverage = True,
+                  "Parse_Prove_Out (all-functional): coverage true");
+         R.Check
+           (Summary.Level = Platinum,
+            "Parse_Prove_Out (all-functional): Level = Platinum");
+      end;
+
+      --  A full gnatprove.out report with one unit that declares no
+      --  functional contracts: the classifier must not return Platinum,
+      --  even though the aggregate counters look complete.
+      declare
+         F       : File_Type;
+         Summary : Proof_Summary;
+         Success : Boolean;
+      begin
+         Create
+           (F,
+            Out_File,
+            Adacovex.CPUs.Get_Temp_Directory & "/adacovex_test_prove_out.txt");
+         Put_Line
+           (F,
+            "Summary of SPARK analysis");
+         Put_Line (F, "=========================");
+         Put_Line (F, "   Analyzed 28 units");
+         Put_Line (F, "   skipped 3 units");
+         Put_Line
+           (F,
+            "SPARK Analysis results   Total    Flow     Provers   Justified   Unproved");
+         Put_Line
+           (F,
+            "Total                       28  10 (36%)  18 (64%)           .          .");
+         Put_Line (F, "   skipped;    adacovex-prove.adb       functional-contracts-only");
+         Put_Line (F, "   skipped;    adacovex-cache.adb       functional-contracts-only");
+         Put_Line (F, "   skipped;    adacovex-diff.adb");
+         Close (F);
+
+         Adacovex.Parsers.GNATprove.Parse_Prove_Out
+           (Adacovex.CPUs.Get_Temp_Directory & "/adacovex_test_prove_out.txt",
+            Summary,
+            Success);
+
+         R.Check (Success, "Parse_Prove_Out (not-all-functional): success");
+         R.Check (Summary.Functional_Contract_Coverage = False,
+                  "Parse_Prove_Out (not-all-functional): coverage false");
+         R.Check
+           (Summary.Level = Gold,
+            "Parse_Prove_Out (not-all-functional): Level = Gold");
+      end;
+
+      --  Justified VCs do not downgrade the SPARK level: a summary with all
+      --  functional contracts proved and some VCs justified (but none
+      --  unproved) is still Platinum, since justifications are an accepted
+      --  way to discharge decidedly-unprovable checks.
+      declare
+         S : Proof_Summary;
+      begin
+         S :=
+           (Functional_Ct     => 5,
+            Functional_Proved => 5,
+            Total_VCs         => 29,
+            Justified         => 4,
+            Functional_Contract_Coverage => True,
+            others            => <>);
+         R.Check
+           (Adacovex.Parsers.GNATprove.Determine_SPARK_Level (S) = Platinum,
+            "Determine_SPARK_Level: justified VCs keep Platinum");
       end;
 
       declare
@@ -286,6 +392,7 @@ package body Adacovex_Prove_Tests is
             Functional_Proved => 5,
             Total_VCs         => 29,
             Justified         => 4,
+            Functional_Contract_Coverage => True,
             others            => <>);
          R.Check
            (Adacovex.Parsers.GNATprove.Determine_SPARK_Level (S) = Platinum,
@@ -304,13 +411,152 @@ package body Adacovex_Prove_Tests is
             Runtime_Proved => 10,
             Assertions     => 5,
             Assert_Proved  => 5,
+            Functional_Contract_Coverage => True,
             others         => <>);
          R.Check
            (Adacovex.Parsers.GNATprove.Determine_SPARK_Level (S) = Gold,
             "Determine_SPARK_Level: no functional contracts is Gold, not Platinum");
       end;
 
-      --  Justified VCs are counted neither proved nor unproved: Proved =
+      --  A project with no functional contracts and no flow/runtime/assertion
+      --  data still has nothing to prove at Platinum, but it is not Stone:
+      --  the classifier only returns Stone when runtime and assertion are both
+      --  incomplete or zero, so a zero-functional-contract summary stays at
+      --  Gold (the level below Platinum) rather than falling all the way to
+      --  Stone or jumping past the Gold bar.
+      declare
+         S : Proof_Summary;
+      begin         S :=
+           (Functional_Ct => 0, Functional_Proved => 0, Functional_Contract_Coverage => False, others => <>);
+         R.Check
+           (Adacovex.Parsers.GNATprove.Determine_SPARK_Level (S) = Gold,
+            "Determine_SPARK_Level: 0/0 with runtime+assertion proved is Gold");
+      end;
+
+      --  A project with no functional contracts, no flow, and no runtime or
+      --  assertion checks at all still has nothing to prove at Platinum. It
+      --  is Gold rather than Stone: the empty summary (Stone) is the only
+      --  case that falls below Gold, and that case is defined by zero Total
+      --  VCs, not by zero functional contracts alone.
+      declare
+         S : Proof_Summary;
+      begin
+         S :=
+           (Functional_Ct     => 0,
+            Functional_Proved => 0,
+            Flow_Checks       => 0,
+            Flow_Proved       => 0,
+            Runtime_Checks    => 0,
+            Runtime_Proved    => 0,
+            Assertions        => 0,
+            Assert_Proved     => 0,
+            Functional_Contract_Coverage => True,
+            others            => <>);
+         R.Check
+           (Adacovex.Parsers.GNATprove.Determine_SPARK_Level (S) = Gold,
+            "Determine_SPARK_Level: 0/0/0/0/0/0 Gold, not Stone");
+      end;
+
+      --  A project with functional contracts counts toward Platinum, but a
+      --  project with zero functional contracts and only a few runtime/assertion
+      --  checks proved is Gold only when runtime and assertion are both complete;
+      --  a subset of them lands at Silver.
+      declare
+         S : Proof_Summary;
+      begin
+         S :=
+           (Functional_Ct     => 0,
+            Functional_Proved => 0,
+            Runtime_Checks    => 5,
+            Runtime_Proved    => 5,
+            Assertions        => 5,
+            Assert_Proved     => 5,
+            Functional_Contract_Coverage => True,
+            others            => <>);
+         R.Check
+           (Adacovex.Parsers.GNATprove.Determine_SPARK_Level (S) = Gold,
+            "Determine_SPARK_Level: 5 runtime + 5 assertion, no functional = Gold");
+      end;
+
+      --  A project with every functional contract proved reaches Platinum
+      --  even when the run-time or assertion rows are incomplete: Platinum
+      --  is decided by the functional surface alone.
+      declare
+         S : Proof_Summary;
+      begin
+         S :=
+           (Functional_Ct     => 5,
+            Functional_Proved => 5,
+            Runtime_Checks    => 5,
+            Runtime_Proved    => 3,
+            Assertions        => 5,
+            Assert_Proved     => 5,
+            Functional_Contract_Coverage => True,
+            others            => <>);
+         R.Check
+           (Adacovex.Parsers.GNATprove.Determine_SPARK_Level (S) = Platinum,
+            "Determine_SPARK_Level: complete functional is Platinum even with partial runtime");
+      end;
+
+      --  When runtime or assertion is incomplete and there are no functional
+      --  contracts, the classifier falls back to Silver rather than Gold.
+      declare
+         S : Proof_Summary;
+      begin
+         S :=
+           (Functional_Ct     => 0,
+            Functional_Proved => 0,
+            Runtime_Checks    => 5,
+            Runtime_Proved    => 3,
+            Assertions        => 5,
+            Assert_Proved     => 5,
+            Functional_Contract_Coverage => True,
+            others            => <>);
+         R.Check
+           (Adacovex.Parsers.GNATprove.Determine_SPARK_Level (S) = Silver,
+            "Determine_SPARK_Level: incomplete runtime, no functional = Silver");
+      end;
+
+      --  A project with every functional contract proved reaches Platinum
+      --  even when the run-time or assertion rows are incomplete: Platinum
+      --  is decided by the functional surface alone.
+      declare
+         S : Proof_Summary;
+      begin
+         S :=
+           (Functional_Ct     => 5,
+            Functional_Proved => 5,
+            Runtime_Checks    => 5,
+            Runtime_Proved    => 3,
+            Assertions        => 5,
+            Assert_Proved     => 5,
+            Functional_Contract_Coverage => True,
+            others            => <>);
+         R.Check
+           (Adacovex.Parsers.GNATprove.Determine_SPARK_Level (S) = Platinum,
+            "Determine_SPARK_Level: complete functional is Platinum even with partial runtime");
+      end;
+
+      --  When runtime or assertion is incomplete and there are no functional
+      --  contracts, the classifier falls back to Silver rather than Gold.
+      declare
+         S : Proof_Summary;
+      begin
+         S :=
+           (Functional_Ct     => 0,
+            Functional_Proved => 0,
+            Runtime_Checks    => 5,
+            Runtime_Proved    => 3,
+            Assertions        => 5,
+            Assert_Proved     => 5,
+            Functional_Contract_Coverage => True,
+            others            => <>);
+         R.Check
+           (Adacovex.Parsers.GNATprove.Determine_SPARK_Level (S) = Silver,
+            "Determine_SPARK_Level: incomplete runtime, no functional = Silver");
+      end;
+
+      --  Justified VCs are counted neither proved nor unmeasured: Proved =
       --  Total - Justified - Unproved.
       declare
          F       : File_Type;

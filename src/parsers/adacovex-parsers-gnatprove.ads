@@ -56,7 +56,6 @@ package Adacovex.Parsers.GNATprove is
    function Total_Row_Unproved (Row : String) return Natural
    with
      SPARK_Mode => On,
-     Global     => null,
      Pre        => Row'First >= 1 and Row'Last < Natural'Last;
 
    --  Parse VC summary from a JSON file containing GNATprove results.
@@ -73,8 +72,11 @@ package Adacovex.Parsers.GNATprove is
    with Pre => File_Path'Length > 0;
 
    --  Derive an overall SPARK certification level from proof results.
-   --  Maps proved-VC percentage and flow/runtime check results to a
-   --  SPARK_Level (Stone through Platinum).
+   --  Platinum requires every analysed unit to carry functional contracts,
+   --  not merely a proved aggregate: a project that proves its flow,
+   --  run-time, and assertion checks but has no functional contracts is
+   --  Gold, not Platinum. A unit is "functional" when its own gnatprove
+   --  record carries a positive functional-contract count.
    --  @param Summary  Proof summary with VC counts per category.
    --  @return Derived SPARK_Level (Stone through Platinum).
    function Determine_SPARK_Level
@@ -83,7 +85,6 @@ package Adacovex.Parsers.GNATprove is
      SPARK_Mode => On,
      Post       =>
        (if Summary.Unproved > 0
-        then not (Determine_SPARK_Level'Result = Types.Platinum)),
-     Global     => null;
+        then not (Determine_SPARK_Level'Result = Types.Platinum));
 
 end Adacovex.Parsers.GNATprove;
