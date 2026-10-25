@@ -3,7 +3,7 @@
   | Types conversions                        |  67 | PASS     |
   | DAL compliance                           |  23 | PASS     |
   | Source scanner                           |  89 | PASS     |
-  | GNATprove parser                         |  73 | PASS     |
+  | GNATprove parser                         |  88 | FAIL     |
   | Test-result parser                       |  50 | PASS     |
   | CLI config                               |  349 | PASS     |
   | SVG renderer                             |  161 | PASS     |
@@ -31,4 +31,4 @@
   | tldr installer                           |  48 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 2025  Failed: 0
+  Passed: 2036  Failed: 4

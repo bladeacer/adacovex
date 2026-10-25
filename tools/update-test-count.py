@@ -46,8 +46,7 @@ from live_files import live_files  # noqa: E402  (same-tools import)
 # docs/test_result.md category name -> agents-tree.map file key.
 CATEGORY_KEY: Dict[str, str] = {
     "Types conversions": "src/tests/adacovex_types_tests",
-    "DAL compliance": "src/tests/adacovex_dal_tests",
-    "Source scanner": "src/tests/adacovex_scanner_tests",
+    "DAL compliance": "src/tests/adacovex_dal_tests",    "Source scanner": "src/tests/adacovex_scanner_tests",
     "GNATprove parser": "src/tests/adacovex_prove_tests",
     "Test-result parser": "src/tests/adacovex_testparser_tests",
     "CLI config": "src/tests/adacovex_config_tests",

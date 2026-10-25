@@ -176,6 +176,7 @@ package Adacovex.Types is
       Assert_Proved      : Natural := 0;
       Functional_Ct      : Natural := 0;
       Functional_Proved  : Natural := 0;
+      Functional_Contract_Coverage : Boolean := True;
       Termination_Ct     : Natural := 0;
       Termination_Proved : Natural := 0;
       Justified          : Natural := 0;
@@ -243,6 +244,11 @@ package Adacovex.Types is
          Categories   : Test_Metrics_Vectors.Vector;
          Total_Passed : Natural := 0;
          Total_Failed : Natural := 0;
+         --  Whether every subprogram analysed by gnatprove carries
+         --  functional contracts. Determine_SPARK_Level requires this to
+         --  be True before it can return Platinum; an aggregate counter
+         --  alone cannot decide this, so every parsed unit record is
+         --  stored here and the classifier walks them.
       end record;
 
       package DAL_Failure_Vectors is new
