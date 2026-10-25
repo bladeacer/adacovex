@@ -524,8 +524,6 @@ package body Adacovex.Parsers.GNATprove is
      (Summary : Types.Proof_Summary) return Types.SPARK_Level
    with SPARK_Mode => On
    is
-      All_Functional : Boolean := True;
-      U : Natural := 1;
    begin
       --  Empty summary (no gnatprove data) is Stone, not Gold:
       --  a zero-row file must not be mistaken for fully-proved.
@@ -544,20 +542,6 @@ package body Adacovex.Parsers.GNATprove is
 
       if Summary.Unproved > 0 then
          return Types.Silver;
-      end if;
-
-      --  Reaching this point means run-time and assertion are not both
-      --  complete, or Functional_Ct is zero. When there are no functional
-      --  contracts, the Bronze-or-lower path below is the only one left,
-      --  so a zero-functional-contract summary cannot skip past Gold.
-      if Summary.Functional_Ct = 0 and then Summary.Flow_Checks = 0 then
-         if Summary.Assert_Proved >= Summary.Assertions
-           and then Summary.Runtime_Proved >= Summary.Runtime_Checks
-         then
-            return Types.Gold;
-         else
-            return Types.Silver;
-         end if;
       end if;
 
       --  Platinum is the highest SPARK level. It requires a complete
