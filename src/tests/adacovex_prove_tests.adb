@@ -418,6 +418,25 @@ package body Adacovex_Prove_Tests is
             "Determine_SPARK_Level: no functional contracts is Gold, not Platinum");
       end;
 
+      --  Justified VCs do not downgrade the SPARK level: a summary with all
+      --  functional contracts proved and some VCs justified (but none
+      --  unproved) is still Platinum, since justifications are an accepted
+      --  way to discharge decidedly-unprovable checks.
+      declare
+         S : Proof_Summary;
+      begin
+         S :=
+           (Functional_Ct                => 5,
+            Functional_Proved            => 5,
+            Total_VCs                    => 29,
+            Justified                    => 4,
+            Functional_Contract_Coverage => True,
+            others                       => <>);
+         R.Check
+           (Adacovex.Parsers.GNATprove.Determine_SPARK_Level (S) = Platinum,
+            "Determine_SPARK_Level: justified VCs keep Platinum");
+      end;
+
       --  A project with no functional contracts and no flow/runtime/assertion
       --  data still has nothing to prove at Platinum, but it is not Stone:
       --  the classifier only returns Stone when runtime and assertion are both
