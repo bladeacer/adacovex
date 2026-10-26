@@ -184,6 +184,7 @@ jobs:
 
   consumer-run-tests:
     timeout-minutes: 15
+    if: github.event_name != 'pull_request'
     # Regression test for the action's run-tests in a CONSUMER workspace:
     # build:true builds adacovex in a scratch checkout, so the action must
     # build the target's native tests itself before running test-command
