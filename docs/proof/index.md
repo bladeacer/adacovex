@@ -6,7 +6,9 @@ This directory holds the record of every SPARK proof run for adacovex.
 
 The [gnatprove 16.1.0 ledger](16.1.0-ledger.md) documents the current
 verified surface: the VC counts (currently 1054 VCs, 0 unproved, 0
-justified, Platinum) and the per-package fixes that reach them. The earlier proof-debt audit has been retired; its conclusions were stale and superseded by the per-package classification below:
+justified) and the per-package fixes that reach them. The assessed SPARK
+level is Gold: Platinum also requires full proof coverage, and the SPARK
+coverage report shows subprograms outside the proof. The earlier proof-debt audit has been retired; its conclusions were stale and superseded by the per-package classification below:
 
 - the audit of the skipped units and the reason each stays SPARK_Mode Off;
 - the empirical evidence that the non-formal `Ada.Containers`
@@ -19,7 +21,7 @@ justified, Platinum) and the per-package fixes that reach them. The earlier proo
 ## How to verify the numbers
 
 Run `just prove` at any time. It runs gnatprove through the `prove`
-subcommand and enforces the Platinum gate: 0 unproved VCs and 0 justified
+subcommand and enforces the full-proof gate: 0 unproved VCs and 0 justified
 VCs. `just proof-status` then syncs the measured counts into the docs.
 
 The full proving workflow, including proof patches over vendored

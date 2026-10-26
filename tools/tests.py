@@ -920,7 +920,7 @@ class TestRun(unittest.TestCase):
             # be shell-split without a value-arity table.
             self.assertTrue(flag.startswith("-"))
             self.assertIn("=", flag)
-        self.assertIn("--spark=Platinum", flags)
+        self.assertIn("--spark=Gold", flags)
         self.assertIn("--dal=C", flags)
         self.assertIn("-r=100", flags)
         self.assertIn("--docstrs=100", flags)

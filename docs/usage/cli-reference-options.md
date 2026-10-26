@@ -124,7 +124,7 @@ criteria. They are off by default. When set, the assessment fails loudly
 target does not meet the required level:
 
 ```bash
-adacovex --target=. --spark=Platinum --docstrs=100 --require-tests=2027 -r 100
+adacovex --target=. --spark=Gold --docstrs=100 --require-tests=2040 -r 100
 ```
 
 - `require-spark` (alias `--spark`) compares the honest assessed SPARK level

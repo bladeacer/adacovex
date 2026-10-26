@@ -79,9 +79,9 @@ jobs:
           #  Quiet (benign-info suppression) is the default; CI passes
           #  --verbose so its output stays authoritative.
           verbose: true
-          require-spark: Platinum
+          require-spark: Gold
           require-docstrings: 100
-          require-tests: 2027
+          require-tests: 2040
           require-proof: 100
           #  Statement-coverage gate: the action runs
           #  `spark-coverage --require-coverage=... --gate-metric=statements`

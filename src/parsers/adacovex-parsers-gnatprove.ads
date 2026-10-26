@@ -54,9 +54,7 @@ package Adacovex.Parsers.GNATprove is
    --  @param Row  One Total row line (no trailing newline).
    --  @return The unproved-VC count (0 when the cell is "." or missing).
    function Total_Row_Unproved (Row : String) return Natural
-   with
-     SPARK_Mode => On,
-     Pre        => Row'First >= 1 and Row'Last < Natural'Last;
+   with SPARK_Mode => On, Pre => Row'First >= 1 and Row'Last < Natural'Last;
 
    --  Parse VC summary from a JSON file containing GNATprove results.
    --  Expects top-level keys: "total_vcs", "proved_vcs", "unproved_vcs",
@@ -72,12 +70,14 @@ package Adacovex.Parsers.GNATprove is
    with Pre => File_Path'Length > 0;
 
    --  Derive an overall SPARK certification level from proof results.
-   --  Platinum requires every analysed unit to carry functional contracts,
-   --  not merely a proved aggregate: a project that proves its flow,
-   --  run-time, and assertion checks but has no functional contracts is
-   --  Gold, not Platinum. A unit is "functional" when its own gnatprove
-   --  record carries a positive functional-contract count.
-   --  @param Summary  Proof summary with VC counts per category.
+   --  Platinum requires a complete formal specification and full proof
+   --  coverage: at least one functional contract to prove with every one
+   --  of them proved, and every subprogram the SPARK coverage report
+   --  assesses proved. A project that proves its flow, run-time, and
+   --  assertion checks but has no functional contracts, or that leaves
+   --  subprograms outside the proof, is Gold at most.
+   --  @param Summary  Proof summary with VC counts per category, plus
+   --    the coverage evidence Apply_Coverage attaches.
    --  @return Derived SPARK_Level (Stone through Platinum).
    function Determine_SPARK_Level
      (Summary : Types.Proof_Summary) return Types.SPARK_Level
@@ -86,5 +86,29 @@ package Adacovex.Parsers.GNATprove is
      Post       =>
        (if Summary.Unproved > 0
         then not (Determine_SPARK_Level'Result = Types.Platinum));
+
+   --  Fold the SPARK coverage report's whole-tree rollup into a proof
+   --  summary and re-derive its level. A summary parsed from
+   --  gnatprove.out alone counts total VCs but cannot show whether every
+   --  subprogram was proved, so Platinum is only granted once the
+   --  assessment pipeline has measured the coverage report
+   --  (Adacovex.Spark_Coverage.Analyze) and attached it here.
+   --  @param Summary  Proof summary to update.
+   --  @param Measured  True when both proof artefacts were read.
+   --  @param Subs_Proved  Subprograms the prover proved.
+   --  @param Subs_Total  Subprograms the prover considered.
+   --  @param Checks_Proved  Checks the prover discharged.
+   --  @param Checks_Total  Checks the prover reported.
+   procedure Apply_Coverage
+     (Summary       : in out Types.Proof_Summary;
+      Measured      : Boolean;
+      Subs_Proved   : Natural;
+      Subs_Total    : Natural;
+      Checks_Proved : Natural;
+      Checks_Total  : Natural)
+   with
+     SPARK_Mode => On,
+     Post       =>
+       (if Summary.Unproved > 0 then not (Summary.Level = Types.Platinum));
 
 end Adacovex.Parsers.GNATprove;

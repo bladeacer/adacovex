@@ -123,7 +123,7 @@ precision.
 ## Technical Name: SPARK
 - **Part of Speech:** Noun
 - **Definition:** The formally analysable subset of Ada that the gnatprove
-  proof tool verifies. adacovex targets the Platinum SPARK level.
+  proof tool verifies. adacovex measures the SPARK level up to Platinum.
 - **Approved Form:** SPARK (exact capitals)
 - **Do Not Use:** Spark, spark, Ada subset (when SPARK is meant)
 - **Correct Example:** *The source is written in **SPARK** and proved with gnatprove.*

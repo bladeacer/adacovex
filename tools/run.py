@@ -63,7 +63,7 @@ def self_assess_args() -> str:
     a suite-size change updates the gate automatically.
     """
     return (
-        "--standard=all --dal=C --spark=Platinum "
+        "--standard=all --dal=C --spark=Gold "
         f"--docstrs=100 --require-tests={native_test_count()} -r=100"
     )
 

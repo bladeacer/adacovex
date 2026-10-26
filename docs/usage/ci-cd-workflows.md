@@ -8,7 +8,7 @@ This page covers the GitHub Actions workflows, the Markdown summaries and loud f
   requests, then one `summary` job that aggregates their results:
   - `self-assessment` -- build + prove + assess at `--standard=all` (so the
     DO-178C, ISO 26262, and IEC 62304 badges/reports are all emitted and
-    gated), with the Platinum / 100% docstrings / test-count / 100% proof
+    gated), with the Gold / 100% docstrings / test-count / 100% proof
     thresholds.
   - `adacovex-tests` -- build + native test suite (`run-tests`, `assess: false`).
   - `coverage-gate` (push only) -- runs the coverage gate, comparing

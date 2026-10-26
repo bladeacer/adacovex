@@ -102,6 +102,14 @@ HLR-SPARK: SPARK coverage report
 | `Totals` | Whole-tree rollup. |
 | `Units` | Per-unit coverage records (appended to). |
 
+### procedure Apply_To_Proof (Totals : Adacovex.Types.Implementation.Spark_Coverage_Totals; Proof_Ok : Standard.Boolean; Proof : Adacovex.Types.Proof_Summary) `[Pre]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `Proof` | Proof summary to update (level re-derived). |
+| `Proof_Ok` | Whether Analyze read both proof artefacts. |
+| `Totals` | Whole-tree rollup from Analyze. |
+
 ### procedure Gate_Failure_Message (Metric : Adacovex.Types.Spark_Metric_Kind; Proved : Standard.Natural; Total : Standard.Natural; Min_Pct : Standard.Natural; Msg : Adacovex.Types.Path_Field; Msg_Len : Standard.Natural) `[Global]`
 
 | Parameter | Description |

@@ -116,7 +116,7 @@ lean slice; the whole-tree total is 876, all proved, no justifications.
 ## The building blocks
 
 The IR exploration is a set of proved pieces, each cheap enough for the
-Platinum gate:
+full-proof gate:
 
 | Piece | Unit | What it proves |
 |-------|------|----------------|
@@ -166,7 +166,7 @@ The long-term direction, in increasing order of cost:
    real target needs it, re-proving the slice at the new bounds (the proof
    cost scales with the bound constants only through the loop ranges).
 
-Each step must stay inside the Platinum gate: zero unproved VCs, zero
+Each step must stay inside the full-proof gate: zero unproved VCs, zero
 justified VCs. The multi-pair slice proves the general contract synthesis
 is sound; the next steps extend it from specs to bodies and callers.
 

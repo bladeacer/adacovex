@@ -163,6 +163,21 @@ package Adacovex.Types is
       Doc_Return    : Boolean := False;
    end record;
 
+   --  Full proof coverage as Adacovex.Spark_Coverage measures it: every
+   --  subprogram the prover considered is proved. The check counts are
+   --  carried alongside for the verbose report. A proof artefact alone
+   --  cannot establish this, so the assessment pipeline fills the record
+   --  in after it has measured the SPARK coverage report. Platinum
+   --  requires it; a record whose Measured flag is False never grants
+   --  Platinum.
+   type Proof_Coverage is record
+      Measured      : Boolean := False;
+      Subs_Proved   : Natural := 0;
+      Subs_Total    : Natural := 0;
+      Checks_Proved : Natural := 0;
+      Checks_Total  : Natural := 0;
+   end record;
+
    type Proof_Summary is record
       Total_VCs          : Natural := 0;
       Proved_VCs         : Natural := 0;
@@ -176,7 +191,6 @@ package Adacovex.Types is
       Assert_Proved      : Natural := 0;
       Functional_Ct      : Natural := 0;
       Functional_Proved  : Natural := 0;
-      Functional_Contract_Coverage : Boolean := True;
       Termination_Ct     : Natural := 0;
       Termination_Proved : Natural := 0;
       Justified          : Natural := 0;
@@ -184,6 +198,7 @@ package Adacovex.Types is
       Level              : SPARK_Level := Stone;
       Units_Analyzed     : Natural := 0;
       Units_Skipped      : Natural := 0;
+      Coverage           : Proof_Coverage;
    end record;
 
    type Test_Metrics is record
@@ -244,11 +259,6 @@ package Adacovex.Types is
          Categories   : Test_Metrics_Vectors.Vector;
          Total_Passed : Natural := 0;
          Total_Failed : Natural := 0;
-         --  Whether every subprogram analysed by gnatprove carries
-         --  functional contracts. Determine_SPARK_Level requires this to
-         --  be True before it can return Platinum; an aggregate counter
-         --  alone cannot decide this, so every parsed unit record is
-         --  stored here and the classifier walks them.
       end record;
 
       package DAL_Failure_Vectors is new

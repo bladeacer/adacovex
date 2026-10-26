@@ -29,7 +29,7 @@ The `prove` subcommand (full options:
    [The SARIF report](#the-sarif-report)).
  3. **Falls through to the full assessment**. The assessment parses the fresh
     summary. One command both proves and assesses. The `--require-*` CI gates
-   apply to the proof run directly (`--require-spark=Platinum
+   apply to the proof run directly (`--require-spark=Gold
     --require-proof=100` and more; see
    [CLI reference -- CI threshold gates](../usage/cli-reference-options.md#ci-threshold-gates---require-)).
 
@@ -122,8 +122,11 @@ derived from how many of each category were discharged:
 - **Bronze** -- flow analysis clean (data dependencies, initialization);
 - **Silver** -- run-time checks proved, assertions proved;
 - **Gold** -- functional contracts proved on top;
-- **Platinum** -- every VC proved: **0 unproved** (and, in adacovex's own
-  gate, **0 justified** -- no `pragma Annotate` justifications).
+- **Platinum** -- every VC proved (**0 unproved**, and in adacovex's own gate
+  **0 justified** -- no `pragma Annotate` justifications) **and** full proof
+  coverage: every subprogram the [SPARK coverage report](../usage/cli-reference-flags.md#spark-coverage)
+  assesses proved. A project that proves every check it reports but leaves
+  subprograms outside the proof is Gold, not Platinum.
 
 Justified VCs count neither as proved nor as unproved. Only unproved VCs
 downgrade the level. For a DAL assessment, the level must meet the requirement

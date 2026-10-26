@@ -49,9 +49,16 @@ specifications.
 | Complete formal specification | All subprograms carry functional contracts (Pre/Post, Type_Invariant, and any other functional specification) |
 | Total correctness | Every functional contract proved, 0 unproved functional VCs |
 | Full functional coverage | Platinum is only reached when the project has functional contracts to prove: a project that proves its flow, run-time, and assertion checks but has no functional contracts is **not** Platinum |
-| Enforcement | `gnatprove` reports all functional contracts proved, 0 unproved |
+| Full proof coverage | Every subprogram the [SPARK coverage report](../usage/cli-reference-flags.md#spark-coverage) assesses is proved. A subprogram the prover skipped, or a unit it never analysed, leaves the project short of the level |
+| Enforcement | `gnatprove` reports all functional contracts proved with 0 unproved, and `adacovex spark-coverage --require-coverage=100 --gate-metric=subprograms` passes |
 
-Platinum is the highest SPARK level. It requires a complete formal specification of all subprogram behaviour, and it is only reached when that specification exists. A project that proves all of its flow, run-time, and assertion checks but carries no functional contracts has not reached Platinum: there is nothing to prove at that level. This is a best-effort ideal, not a DAL compliance gate, and it is not met when the project lacks the functional contracts that the level requires. Justified VCs
+Platinum is the highest SPARK level. It requires a complete formal specification of all subprogram behaviour, and it is only reached when that specification exists. A project that proves all of its flow, run-time, and assertion checks but carries no functional contracts has not reached Platinum: there is nothing to prove at that level.
+
+Platinum also requires **full proof coverage**: every subprogram the SPARK coverage report assesses must be proved. A project that discharges every check it reports but leaves subprograms outside the proof is Gold, not Platinum, because its formal specification does not cover the whole program.
+
+The proof summary alone cannot show this, so adacovex measures the coverage report and grants Platinum only when subprogram coverage is complete. The gate is therefore: at least one functional contract, every functional contract proved, and every assessed subprogram proved. The artefacts do not say whether each individual subprogram declares a contract of its own, so the SPARK coverage report is the evidence the tool can check.
+
+This is a best-effort ideal, not a DAL compliance gate. Justified VCs
 (`pragma Annotate` for decidedly unprovable checks) count neither as proved
 nor as unproved and never downgrade the level; only unproved VCs do. The
 minimum DAL gates are Gold (DAL-A), Silver (DAL-B), and Bronze (DAL-C/D).
@@ -73,5 +80,6 @@ adacovex --target=../Ada_CRDT --dal=C
   DO-178C / ISO 26262 / IEC 62304
 - [DAL Levels](adacovex-dal-levels.md) -- the per-level SPARK gates
   (Gold / Silver / Bronze / Stone)
-- [Proof ledger](../proof/16.1.0-ledger.md) -- adacovex's own Platinum proof
-  results (1054/1054 VCs, 0 unproved, 0 justified under gnatprove 16.1.0)
+- [Proof ledger](../proof/16.1.0-ledger.md) -- adacovex's own proof record
+  (1054/1054 VCs, 0 unproved, 0 justified under gnatprove 16.1.0; level
+  Gold, because its coverage report shows subprograms outside the proof)

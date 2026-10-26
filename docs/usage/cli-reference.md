@@ -73,7 +73,7 @@ Compliance selection stays on `--standard` and its level companions
 | `--cache-max=N` | `4096` | both | Max cache entries before oldest-first eviction |
 | `--no-sbom` | off | both | Skip the automatic SBOM written at the end of every assessment |
 | `--sbom-format=FMT` | `cyclonedx-json` | both | Format of the automatic SBOM: `cyclonedx-json`\|`spdx-json`\|`md` |
-| `--require-spark=LVL`, `--spark=LVL` | off | both | Fail loudly (exit 1) if SPARK level < LVL (Stone..Platinum). Platinum requires a complete formal specification of all subprogram behaviour; a project with no functional contracts to prove is Gold, not Platinum. |
+| `--require-spark=LVL`, `--spark=LVL` | off | both | Fail loudly (exit 1) if SPARK level < LVL (Stone..Platinum). Platinum requires a complete formal specification and full proof coverage: every functional contract proved, and every subprogram the `spark-coverage` report assesses proved. A project with no functional contracts to prove, or with subprograms outside the proof, is Gold, not Platinum. |
 | `--require-docstrings=PCT`, `--docstrs=PCT` | off | both | Fail loudly if docstring coverage < PCT% (0-100) |
 | `--require-tests=N`, `--tests=N` | off | both | Fail loudly if passing test count < N |
 | `--require-proof=PCT`, `-r PCT` | off | both | Fail loudly if proved-VC coverage < PCT% (0-100) |

@@ -100,13 +100,16 @@ Pull requests should follow the following conventions.
   architecture tree in AGENTS.md) and the existing code style.
 - Ada 2012 / SPARK 2014 only, and zero-dependency: no library dependencies
   beyond the GNAT runtime.
-- Keep the SPARK proof at Platinum: run `just prove` and make sure the VC
+- Keep the SPARK proof complete: run `just prove` and make sure the VC
   counts match [docs/proof/16.1.0-ledger.md](docs/proof/16.1.0-ledger.md)
   (1054 VCs, 0 unproved under gnatprove 16.1.0).
 - Keep docstring coverage at 100% (strict mode, cannot be disabled):
-  `just run-self` must show Platinum, 100% docs, and DAL-C Achieved.
+  `just run-self` must show Gold, 100% docs, and DAL-C Achieved.
+- Platinum is the target, not the current level: it also requires full proof
+  coverage (every subprogram the SPARK coverage report assesses proved), and
+  the deliberate `SPARK_Mode (Off)` units keep the tree at Gold.
 - If you add or change behavior, extend the native test suite in `src/tests/`
-  (2032 tests across 29 categories) and run `just test`.
+  (2040 tests across 29 categories) and run `just test`.
 - Keep all source files pure ASCII: `just ascii-check`.
 - If a new CLI flag is added, mirror it as a matching GitHub Action input in
   `./action.yml` and document it in `docs/usage/cli-reference.md` and the README
@@ -165,7 +168,7 @@ adacovex itself parses.
 | Types conversions | 67 |
 | DAL compliance | 23 |
 | Source scanner | 89 |
-| GNATprove parser | 80 |
+| GNATprove parser | 88 |
 | Test-result parser | 50 |
 | CLI config | 349 |
 | SVG renderer | 161 |
@@ -191,4 +194,4 @@ adacovex itself parses.
 | Platform paths | 43 |
 | Install method | 23 |
 | tldr installer | 48 |
-| **Total** | **2032** |
+| **Total** | **2040** |

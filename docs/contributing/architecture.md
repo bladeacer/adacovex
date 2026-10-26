@@ -71,9 +71,12 @@ with Alire only for toolchain management.
 
 ## SPARK Formal Verification
 
-adacovex itself is SPARK-proven at Platinum level (all VCs proved,
-AoRTE-free). The tool analyses GNATprove output (`gnatprove.out`) to assess
-SPARK assurance levels (Stone through Platinum) for target projects.
+adacovex itself is SPARK-proven: all of its VCs are proved and the code is
+AoRTE-free. Its assessed level is **Gold**, not Platinum, because Platinum also
+requires full proof coverage -- every subprogram the SPARK coverage report
+assesses proved -- and the project keeps deliberately `SPARK_Mode (Off)` units
+outside the proof. The tool analyses GNATprove output (`gnatprove.out`) to
+assess SPARK assurance levels (Stone through Platinum) for target projects.
 
 The tool does not perform verification itself: it parses and reports on proof
 results produced by GNATprove, which keeps its scope narrow and aligns with
@@ -96,10 +99,13 @@ the Unix philosophy of composing specialised tools.
 - **Gold is the minimum compliance baseline. Platinum is the ideal.**
   `Min_SPARK_For` thresholds (A=Gold, B=Silver, C=Bronze, D/E=Stone) are the
   gate for DAL compliance. Platinum is achieved and reported only when the
-  project has functional contracts and every one of them is proved: a project
-  that proves all of its flow, run-time, and assertion checks but carries no
-  functional contracts is **not** Platinum. Platinum is a best-effort target,
-  not a compliance requirement at any DAL level.
+  project has functional contracts, proves every one of them, and has full
+  proof coverage: `Determine_SPARK_Level` also requires the SPARK coverage
+  report (`Spark_Coverage.Analyze`, folded in by `Apply_To_Proof`) to show
+  every assessed subprogram proved. A project that proves all of its flow,
+  run-time, and assertion checks but carries no functional contracts, or that
+  leaves subprograms outside the proof, is **not** Platinum. Platinum is a
+  best-effort target, not a compliance requirement at any DAL level.
 
 ## Result caching
 

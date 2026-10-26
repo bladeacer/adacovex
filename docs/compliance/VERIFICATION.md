@@ -5,20 +5,20 @@
 | Metric | Value |
 |--------|-------|
 | Packages Scanned |  45 |
-| Total Subprograms |  251 |
-| Documented Subprograms |  251 |
+| Total Subprograms |  253 |
+| Documented Subprograms |  253 |
 | Docstring Coverage |  100% |
 
 ## SPARK Proof Analysis
 
 | Check Type | Count | Proved |
 |------------|-------|--------|
-| SPARK Level | Platinum | - |
-| Flow (data + flow dependencies) |  77 |  77 |
+| SPARK Level | Gold | - |
+| Flow (data + flow dependencies) |  76 |  76 |
 | Initialization |  17 |  17 |
 | Runtime Checks |  599 |  599 |
 | Assertions |  133 |  133 |
-| Functional Contracts |  97 |  97 |
+| Functional Contracts |  98 |  98 |
 | Termination |  131 |  131 |
 | **Total** |  1054 |  1054 |
 | Units Analyzed |  75 | - |
@@ -31,7 +31,7 @@
 | Types conversions |  67 | PASS |
 | DAL compliance |  23 | PASS |
 | Source scanner |  89 | PASS |
-| GNATprove parser |  72 | PASS |
+| GNATprove parser |  88 | PASS |
 | Test-result parser |  50 | PASS |
 | CLI config |  349 | PASS |
 | SVG renderer |  161 | PASS |
@@ -46,7 +46,7 @@
 | Timezone + ANSI |  63 | PASS |
 | Complexity check |  20 | PASS |
 | Opt-out markers |  16 | PASS |
-| Dir cache |  22 | PASS |
+| Dir cache |  29 | PASS |
 | Diff reports |  36 | PASS |
 | Prove runner |  24 | PASS |
 | SPARK coverage |  18 | PASS |
@@ -57,7 +57,7 @@
 | Platform paths |  43 | PASS |
 | Install method |  23 | PASS |
 | tldr installer |  48 | PASS |
-| **Total** | ** 2017** | **Passed:  2017, Failed:  0** |
+| **Total** | ** 2040** | **Passed:  2040, Failed:  0** |
 
 ## DO-178C Compliance
 

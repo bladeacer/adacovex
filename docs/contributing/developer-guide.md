@@ -29,9 +29,9 @@ Prerequisites:
 git clone https://github.com/bladeacer/adacovex.git
 cd adacovex
 just build        # compiles bin/adacovex + bin/test_runner (covex alias)
-just test         # builds + runs the native test suite (2032 tests)
-just run-self     # assess adacovex itself: 100% docs, Platinum, DAL-C
-just prove        # SPARK proof (Platinum gate) + regenerates docs/badges/
+just test         # builds + runs the native test suite (2040 tests)
+just run-self     # assess adacovex itself: 100% docs, Gold, DAL-C
+just prove        # SPARK proof (full-proof gate) + regenerates docs/badges/
 just check        # the whole quality gate CI runs before a release
 ```
 
@@ -183,8 +183,8 @@ before committing.
 ## SPARK proof discipline
 
 `just prove` runs gnatprove through the `prove` subcommand and enforces the
-Platinum gate: **0 unproved VCs and 0 justified VCs**. The rules that keep the
-proof tractable:
+full-proof gate: **0 unproved VCs and 0 justified VCs**. The rules that keep
+the proof tractable:
 
 - Every user assertion and every runtime check must be proved.
 - No `pragma Assume` / `pragma Annotate` justifications.

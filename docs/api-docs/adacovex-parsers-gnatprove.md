@@ -11,11 +11,11 @@ record with proved/unproved VC counts per category.
 
 ## Functions
 
-### function Determine_SPARK_Level (Summary : Adacovex.Types.Proof_Summary) return Adacovex.Types.SPARK_Level `[Post]` `[Global]` `[SPARK]`
+### function Determine_SPARK_Level (Summary : Adacovex.Types.Proof_Summary) return Adacovex.Types.SPARK_Level `[Post]` `[SPARK]`
 
 | Parameter | Description |
 |-----------|-------------|
-| `Summary` | Proof summary with VC counts per category. |
+| `Summary` | Proof summary with VC counts per category, plus |
 
 **Returns:** Derived SPARK_Level (Stone through Platinum).
 
@@ -27,7 +27,7 @@ record with proved/unproved VC counts per category.
 
 **Returns:** Path to a discovered gnatprove.out, or "".
 
-### function Total_Row_Unproved (Row : Standard.String) return Standard.Natural `[Pre]` `[Global]` `[SPARK]`
+### function Total_Row_Unproved (Row : Standard.String) return Standard.Natural `[Pre]` `[SPARK]`
 
 | Parameter | Description |
 |-----------|-------------|
@@ -36,6 +36,17 @@ record with proved/unproved VC counts per category.
 **Returns:** The unproved-VC count (0 when the cell is "." or missing).
 
 ## Procedures
+
+### procedure Apply_Coverage (Summary : Adacovex.Types.Proof_Summary; Measured : Standard.Boolean; Subs_Proved : Standard.Natural; Subs_Total : Standard.Natural; Checks_Proved : Standard.Natural; Checks_Total : Standard.Natural) `[Post]` `[SPARK]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `Checks_Proved` | Checks the prover discharged. |
+| `Checks_Total` | Checks the prover reported. |
+| `Measured` | True when both proof artefacts were read. |
+| `Subs_Proved` | Subprograms the prover proved. |
+| `Subs_Total` | Subprograms the prover considered. |
+| `Summary` | Proof summary to update. |
 
 ### procedure Parse_Prove_From_Project (Target_Dir : Standard.String; Summary : Adacovex.Types.Proof_Summary; Success : Standard.Boolean) `[Pre]`
 

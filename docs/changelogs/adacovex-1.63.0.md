@@ -139,7 +139,7 @@ canonicalisation and the fingerprint.
 
 ## Test Suite
 
-2032 tests across 29 categories, up from 2017. The seven new native
+2040 tests across 29 categories, up from 2017. The seven new native
 checks are the `Dir cache` category's: the fitted long name that used
 to fail the read whole (four checks, one of which proves the directory
 is still memoised), and the 100-entry directory that the old cap
