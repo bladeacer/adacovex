@@ -65,6 +65,15 @@ the proof is Gold however complete its proved rows look. A bare parse of
 `gnatprove.out` reaches Gold at most, which is also what
 `tools/update-proof-status.py` reports.
 
+### F3: consumer-run-tests CI job skips on pull requests
+
+The `consumer-run-tests` workflow job previously ran on pull requests, testing
+the GitHub Action's consumer workspace compatibility against the dated upstream
+code -- which does not make sense when verifying downstream changes being merged.
+The job now has `if: github.event_name != 'pull_request'`, so it is skipped on
+PRs and only runs on main branch pushes. This avoids spurious CI failures
+while preserving the regression test for main-line development.
+
 ## Test Suite
 
 - `parsers-gnatprove`: regression tests cover the full Platinum rule (every
