@@ -12,29 +12,6 @@ package body Adacovex.Parsers.GNATprove is
    use type Ada.Containers.Count_Type;
    use type Types.Name_Field;
 
-   --  A skipped unit as gnatprove.out records it: the qualified Ada name,
-   --  the source file, and the line. A unit that gnatprove did not analyse
-   --  is the only way to learn whether a subprogram carries functional
-   --  A skipped unit as gnatprove.out records it: the qualified Ada name,
-   --  the source file, and the line. A unit that gnatprove did not analyse
-   --  is the only way to learn whether a subprogram carries functional
-   --  contracts, so both proved and skipped units are stored; an unproved
-   --  one is the one the off classes are derived from.
-   type Skipped_Unit_Rec is record
-      Name  : Types.Name_Field;
-      Name_Len : Natural := 0;
-      File  : Types.Name_Field;
-      File_Len : Natural := 0;
-      Line  : Natural := 0;
-      Functional_Ct : Natural := 0;
-      Functional_Proved : Natural := 0;
-   end record;
-
-   package Skipped_Unit_Vectors is new
-     Ada.Containers.Vectors (Positive, Skipped_Unit_Rec);
-
-   Skipped_Units : Skipped_Unit_Vectors.Vector;
-
    function Get_Nth_Number_Raw (S : String; N : Positive) return Natural is
       Val    : Natural := 0;
       Ctr    : Natural := 0;
@@ -186,51 +163,6 @@ package body Adacovex.Parsers.GNATprove is
             return;
       end;
 
-      declare
-         --  Local trim helper: the external Ada.Strings.Trim is not
-         --  reliable on this GNAT version, so the loop is local.
-         function Trim_With_Spaces (S : String) return String is
-            F, L : Natural := S'First;
-         begin
-            while F <= S'Last and then S (F) = ' ' loop
-               F := F + 1;
-            end loop;
-            L := S'Last;
-            while L >= F and then S (L) = ' ' loop
-               L := L - 1;
-            end loop;
-            if L < F then
-               return "";
-            end if;
-            return S (F .. L);
-         end Trim_With_Spaces;
-
-         --  Scan Payload for its first whitespace-delimited word. Ada.Strings
-         --  is not a formal package, so the loop keeps this unit SPARK clean.
-         function Find_Trimmed (S : String; Start : Positive) return String
-         with Global => null
-         is
-            I : Natural := Start;
-         begin
-            while I <= S'Last and then S (I) = ' ' loop
-               I := I + 1;
-            end loop;
-            if I > S'Last then
-               return "";
-            end if;
-            declare
-               E : Natural := I - 1;
-            begin
-               while E < S'Last loop
-                  exit when S (E + 1) = ' ';
-                  E := E + 1;
-               end loop;
-               if E < I then
-                  return "";
-               end if;
-               return S (I .. E);
-            end;
-         end Find_Trimmed;
       begin
          while not End_Of_File (F) loop
             Line_Num := Line_Num + 1;
@@ -362,41 +294,6 @@ package body Adacovex.Parsers.GNATprove is
                      then
                         Summary.Functional_Ct := Row_Count (Row);
                         Summary.Functional_Proved := Row_Proved (Row);
-                        Summary.Functional_Contract_Coverage := True;
-                     end if;
-
-                     --  A unit record: one line per subprogram gnatprove did
-                     --  not prove, starting with "  skipped;". The
-                     --  Functional_Ct/Functional_Proved values name the
-                     --  functional-contract surface of that unit, which is
-                     --  the only per-unit evidence the level classifier can
-                     --  use.
-                     if Line'Length >= 10
-                       and then Line (Line'First + 1 .. Line'First + 9) = "skipped;"
-                     then
-                        declare
-                           Payload : constant String :=
-                             Trim_With_Spaces (Line (Line'First + 10 .. Last));
-                           Name : constant String :=
-                             (if Payload'Length > 0
-                              then Find_Trimmed (Payload, 1)
-                              else "");
-                           Functional_Ct : Natural := 0;
-                           Functional_Proved : Natural := 0;
-                        begin
-                           if Name'Length > 0 then
-                              Skipped_Units.Append
-                                ((Name => Name (Name'First .. Name'Last),
-                                  Name_Len => Name'Length,
-                                  File => "", File_Len => 0,
-                                  Line => 0,
-                                  Functional_Ct => Functional_Ct,
-                                  Functional_Proved => Functional_Proved));
-                              if Functional_Ct = 0 then
-                                 Summary.Functional_Contract_Coverage := False;
-                              end if;
-                           end if;
-                        end;
                      end if;
 
                      if Row'Length >= 11
@@ -439,74 +336,6 @@ package body Adacovex.Parsers.GNATprove is
                end if;
             end;
 
-            --  A unit record: one line per subprogram gnatprove did not
-            --  prove, starting with "  skipped;". The Functional_Ct and
-            --  Functional_Proved fields name the functional-contract
-            --  surface of that unit, which is the only per-unit evidence
-            --  the level classifier can use.
-            if Line'Length >= 10
-              and then Line (Line'First + 1 .. Line'First + 9) = "skipped;"
-            then
-               declare
-                  Payload : constant String :=
-                    Trim_With_Spaces (Line (Line'First + 10 .. Last));
-                  Name : constant String :=
-                    (if Payload'Length > 0
-                     then Find_Trimmed (Payload, 1)
-                     else "");
-                  Functional_Ct : Natural := 0;
-                  Functional_Proved : Natural := 0;
-               begin
-                  if Name'Length > 0 then
-                     --  The payload carries the unit name followed by optional
-                     --  annotations. "functional-contracts-only" means the unit
-                     --  declares functional contracts (Functional_Ct > 0).
-                     --  "Functional: <ct>, Proved: <proved>" is the detailed
-                     --  form from a real gnatprove.out report.
-                     declare
-                        Func_Delimiter : constant Natural :=
-                          Ada.Strings.Fixed.Index (Payload, "Functional:");
-                        Has_Functional_Only : constant Boolean :=
-                          Ada.Strings.Fixed.Index (Payload,
-                            "functional-contracts-only") > 0;
-                     begin
-                        if Func_Delimiter > 0 then
-                           declare
-                              Rest : constant String :=
-                                Payload (Func_Delimiter + 10 .. Payload'Last);
-                              Ct_Sep : constant Natural :=
-                                Ada.Strings.Fixed.Index (Rest, ",");
-                              Proved_Sep : constant Natural :=
-                                Ada.Strings.Fixed.Index (Rest, "Proved:");
-                           begin
-                              if Ct_Sep > 0 then
-                                 Functional_Ct :=
-                                   Natural'Value
-                                     (Rest (1 .. Ct_Sep - 1));
-                              end if;
-                              if Proved_Sep > 0 then
-                                 Functional_Proved :=
-                                   Natural'Value
-                                     (Rest (Proved_Sep + 6 .. Rest'Last));
-                              end if;
-                           end;
-                        elsif Has_Functional_Only then
-                           Functional_Ct := 1;
-                        end if;
-                     end;
-                     if Functional_Ct = 0 then
-                        Summary.Functional_Contract_Coverage := False;
-                     end if;
-                     Skipped_Units.Append
-                       ((Name => Name (Name'First .. Name'Last),
-                        Name_Len => Name'Length,
-                        File => "", File_Len => 0,
-                        Line => 0,
-                        Functional_Ct => Functional_Ct,
-                        Functional_Proved => Functional_Proved));
-                  end if;
-               end;
-            end if;
          end loop;
       exception
          when others =>
@@ -545,27 +374,32 @@ package body Adacovex.Parsers.GNATprove is
       end if;
 
       --  Platinum is the highest SPARK level. It requires a complete
-      --  *per-unit* functional specification when there are functional
-      --  contracts to prove: every subprogram gnatprove analysed must
-      --  carry functional contracts, and all of them must be proved.
-      --  An aggregate counter alone cannot decide this (a project with
-      --  three complete units and two units without any functional
-      --  contracts gets the same Functional_Ct/Functional_Proved as the
-      --  complete three). The parser sets Functional_Contract_Coverage
-      --  to False whenever a unit without functional contracts is
-      --  encountered, so the classifier refuses Platinum unless that
-      --  flag is still True.
-      --  When there are no functional contracts (Functional_Ct is zero),
-      --  the old aggregate rule applies: if runtime and assertion checks
-      --  are complete, the level is Gold; if the functional surface is
-      --  empty but the aggregates are complete, Platinum is the top
-      --  level (the per-unit rule requires at least one functional unit).
-      if Summary.Functional_Ct > 0 then
-         if Summary.Functional_Contract_Coverage
-           and then Summary.Functional_Proved = Summary.Functional_Ct
-         then
-            return Types.Platinum;
-         end if;
+      --  formal specification and the proof of every functional
+      --  requirement, so it needs two things a summary row cannot show:
+      --
+      --    * a functional-contract surface to prove at all (a project
+      --      that proves only flow, run-time, and assertion checks has
+      --      nothing to prove at Platinum), and every one of those
+      --      contracts proved;
+      --    * full proof coverage -- every subprogram the SPARK coverage
+      --      report assesses is proved. A subprogram outside the proof
+      --      (skipped, or in a unit the prover never analysed) leaves
+      --      the project short of the level, however complete its
+      --      proved rows look.
+      --
+      --  The coverage evidence is measured by Adacovex.Spark_Coverage and
+      --  attached by the assessment pipeline (Apply_Coverage). A summary
+      --  parsed from gnatprove.out alone has Coverage.Measured False, so
+      --  a bare parse never grants Platinum. The gate is subprogram
+      --  coverage: a justified VC is an accepted discharge, never a
+      --  downgrade, so the check counts do not take part.
+      if Summary.Functional_Ct > 0
+        and then Summary.Functional_Proved = Summary.Functional_Ct
+        and then Summary.Coverage.Measured
+        and then Summary.Coverage.Subs_Total > 0
+        and then Summary.Coverage.Subs_Proved = Summary.Coverage.Subs_Total
+      then
+         return Types.Platinum;
       end if;
 
       if Summary.Functional_Ct = 0 and then Summary.Flow_Checks = 0 then
@@ -591,6 +425,25 @@ package body Adacovex.Parsers.GNATprove is
 
       return Types.Stone;
    end Determine_SPARK_Level;
+
+   procedure Apply_Coverage
+     (Summary       : in out Types.Proof_Summary;
+      Measured      : Boolean;
+      Subs_Proved   : Natural;
+      Subs_Total    : Natural;
+      Checks_Proved : Natural;
+      Checks_Total  : Natural)
+   with SPARK_Mode => On
+   is
+   begin
+      Summary.Coverage :=
+        (Measured      => Measured,
+         Subs_Proved   => Subs_Proved,
+         Subs_Total    => Subs_Total,
+         Checks_Proved => Checks_Proved,
+         Checks_Total  => Checks_Total);
+      Summary.Level := Determine_SPARK_Level (Summary);
+   end Apply_Coverage;
 
    --  Extract the Unproved column value from one Total summary row.
    --  Columns are runs of text separated by two or more spaces; the

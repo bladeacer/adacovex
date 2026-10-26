@@ -8,7 +8,7 @@ assessment.
 
 | File | Badge | Meaning |
 |------|-------|---------|
-| [spark.svg](spark.svg) | SPARK level | the target's proof level (Platinum for adacovex itself) |
+| [spark.svg](spark.svg) | SPARK level | the target's proof level (Gold for adacovex itself) |
 | [tests.svg](tests.svg) | tests | native test pass count |
 | [do178c.svg](do178c.svg) | DO-178C | the DAL assessment badge |
 | [iso26262.svg](iso26262.svg) | ISO 26262 | the ASIL assessment badge |

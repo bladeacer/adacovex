@@ -369,7 +369,7 @@ and the gnatprove session store is wiped before each one. The 1.62.0 rows are
   alone costs 46 ms.
 - A warm hit restores the proof artefacts since 1.43.0: the cache stores the
   summary content, so a hit on a tree whose `obj/gnatprove/` was wiped reports
-  Platinum at the VC count of the run that produced it. Before 1.43.0 the cache
+  the level at the VC count of the run that produced it. Before 1.43.0 the cache
   stored only a success marker, so such a hit reported Stone / 0 VCs. Since
   1.60.0 the cache stores and restores the complete pair (`gnatprove.out` and
   `gnatprove.sarif`), so a warm hit also leaves the `spark-coverage` report and

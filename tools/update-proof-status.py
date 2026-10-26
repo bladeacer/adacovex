@@ -6,7 +6,9 @@ The proof numbers in AGENTS.md, README.md, the proof ledger, and the current
 dev changelog were edited by hand and went stale on every proof change.  This
 script parses the current gnatprove summary (obj/gnatprove/gnatprove.out),
 derives the SPARK level with the same rules as
-Adacovex.Parsers.GNATprove.Determine_SPARK_Level, and rewrites the anchored
+Adacovex.Parsers.GNATprove.Determine_SPARK_Level (minus the Platinum branch,
+which needs the SPARK coverage report this script does not read), and rewrites
+the anchored
 proof-metric phrases across the docs.  Historical notes (the pre-audit
 "369 total checks" row in the ledger, past-release changelogs) are left
 untouched because they do not match the anchored patterns.
@@ -138,15 +140,20 @@ def parse_summary(path: Path) -> Metrics:
 
     proved: int = total - (justified or 0) - (unproved or 0)
 
-    # Same rules as Determine_SPARK_Level in
-    # src/parsers/adacovex-parsers-gnatprove.adb.
+    # The same rules as Determine_SPARK_Level in
+    # src/parsers/adacovex-parsers-gnatprove.adb, minus the Platinum branch:
+    # Platinum also requires full proof coverage, which this script cannot
+    # measure from gnatprove.out alone (it needs the SPARK coverage report).
+    # A summary on its own therefore reaches Gold at most, exactly as a bare
+    # parse does in the CLI; the CLI re-derives the level with the coverage
+    # evidence attached.
     if total == 0 and (unproved or 0) == 0 and not any(c[0] for c in cats.values()):
         level: str = "Stone"
     elif (unproved or 0) > 0:
         level = "Silver"
-    elif cats["functional"][0] > 0 \
-            and cats["functional"][1] == cats["functional"][0]:
-        level = "Platinum"
+    elif cats["functional"][0] == 0 and cats["flow"][0] == 0:
+        level = "Gold" if cats["assert"][1] >= cats["assert"][0] \
+            and cats["runtime"][1] >= cats["runtime"][0] else "Silver"
     elif cats["runtime"][1] >= cats["runtime"][0]:
         level = "Gold" if cats["assert"][1] >= cats["assert"][0] else "Silver"
     elif cats["flow"][1] >= cats["flow"][0]:

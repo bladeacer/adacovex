@@ -1,6 +1,7 @@
 with Ada.Text_IO;
 with Ada.Directories;
 with Adacovex.Parsers;
+with Adacovex.Parsers.GNATprove;
 
 package body Adacovex.Spark_Coverage is
 
@@ -2121,6 +2122,20 @@ package body Adacovex.Spark_Coverage is
       Build_Groups (Group, Units, Groups, Totals);
       Proof_Ok := Ok_Out and Ok_Sarif;
    end Analyze;
+
+   procedure Apply_To_Proof
+     (Totals   : Types.Implementation.Spark_Coverage_Totals;
+      Proof_Ok : Boolean;
+      Proof    : in out Types.Proof_Summary) is
+   begin
+      Adacovex.Parsers.GNATprove.Apply_Coverage
+        (Proof,
+         Measured      => Proof_Ok,
+         Subs_Proved   => Totals.Subs_Proved,
+         Subs_Total    => Totals.Subs_Total,
+         Checks_Proved => Totals.Checks_Proved,
+         Checks_Total  => Totals.Checks_Total);
+   end Apply_To_Proof;
 
    --  Write a count without Natural'Image's leading space, which the
    --  prover handles imprecisely.

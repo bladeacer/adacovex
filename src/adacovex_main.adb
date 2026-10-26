@@ -55,6 +55,14 @@ procedure Adacovex_Main is
    Tests       : Test_Summary;
    DAL_Assess  : DAL_Assessment;
 
+   --  SPARK proof coverage of the target, measured once per run. The
+   --  proof summary's SPARK level needs it (Platinum requires full proof
+   --  coverage), and --serve reuses the same rollup for its Proof tab.
+   Cov_Units  : Spark_Coverage_Vectors.Vector;
+   Cov_Groups : Spark_Group_Vectors.Vector;
+   Cov_Totals : Spark_Coverage_Totals;
+   Cov_OK     : Boolean := False;
+
    Cache_Hits   : Natural := 0;
    Cache_Misses : Natural := 0;
 
@@ -452,6 +460,28 @@ procedure Adacovex_Main is
 
       Adacovex.Parsers.GNATprove.Parse_Prove_From_Project
         (Target (1 .. TLen), Proof, Success);
+      --  The SBOM records the honest SPARK level, so it needs the same
+      --  full-proof-coverage evidence the assessment uses.
+      if Proof.Total_VCs > 0 then
+         declare
+            Units       : Spark_Coverage_Vectors.Vector;
+            Groups      : Spark_Group_Vectors.Vector;
+            Totals      : Spark_Coverage_Totals;
+            Cov_Skipped : Natural;
+            P_OK        : Boolean;
+         begin
+            Adacovex.Spark_Coverage.Analyze
+              (Target (1 .. TLen),
+               "",
+               Group_File,
+               Units,
+               Groups,
+               Totals,
+               Cov_Skipped,
+               P_OK);
+            Adacovex.Spark_Coverage.Apply_To_Proof (Totals, P_OK, Proof);
+         end;
+      end if;
       Adacovex.Parsers.Tests.Parse_Test_Result_From_Project
         (Target (1 .. TLen), Tests, Success);
       Adacovex.Compliance.DAL.Assess_Standard
@@ -1045,12 +1075,46 @@ begin
            (Target (1 .. TLen), Proof, Success);
       end if;
    end;
+
+   --  Full proof coverage: the SPARK coverage rollup is the evidence the
+   --  Platinum level needs (every subprogram proved), and --serve reuses
+   --  the same rollup for its Proof tab. Measure it only when a proof
+   --  summary was parsed; with no proof artefacts there is no coverage to
+   --  measure, and the level stays whatever the summary alone supports.
+   if Proof.Total_VCs > 0 then
+      declare
+         Cov_Skipped : Natural;
+      begin
+         Adacovex.Spark_Coverage.Analyze
+           (Target (1 .. TLen),
+            "",
+            Group_File,
+            Cov_Units,
+            Cov_Groups,
+            Cov_Totals,
+            Cov_Skipped,
+            Cov_OK);
+         Adacovex.Spark_Coverage.Apply_To_Proof (Cov_Totals, Cov_OK, Proof);
+      end;
+   end if;
    Verbose
      ("  spark level: "
       & Adacovex.Types.To_String (Proof.Level)
       & " ("
       & Img (Proof.Total_VCs)
       & " VCs)");
+   if Proof.Coverage.Measured then
+      Verbose
+        ("  proof coverage: "
+         & Img (Proof.Coverage.Subs_Proved)
+         & "/"
+         & Img (Proof.Coverage.Subs_Total)
+         & " subprograms, "
+         & Img (Proof.Coverage.Checks_Proved)
+         & "/"
+         & Img (Proof.Coverage.Checks_Total)
+         & " checks");
+   end if;
 
    -- Step 3: Parse test results
    Verbose ("step 3/8: parsing test results...");
@@ -1135,7 +1199,7 @@ begin
    --  --require-tests / --require-proof). When set, the assessment fails
    --  loudly (exit code 1, explicit reason) if the target is below the
    --  pinned minimum -- an extra gate on top of the DAL criteria that lets a
-   --  workflow require e.g. Platinum SPARK, 100% docstrings, 336 passing
+   --  workflow require e.g. Gold SPARK, 100% docstrings, 2040 passing
    --  tests, and 100% proved VCs and fail if any slips.
    declare
       All_Pass : Boolean := True;
@@ -1387,29 +1451,13 @@ begin
          State.Packages := Packages;
          State.All_Standards := Cfg.Standard_All;
          State.Theme := Cfg.Theme;
-         --  Resolve the SPARK coverage so the Proof tab panel and
-         --  /api/spark serve the same numbers the spark-coverage
-         --  subcommand reports (best effort: a missing artefact set
-         --  serves the "run adacovex prove" note).
-         declare
-            Units   :
-              Adacovex.Types.Implementation.Spark_Coverage_Vectors.Vector;
-            Groups  : Adacovex.Types.Implementation.Spark_Group_Vectors.Vector;
-            Totals  : Adacovex.Types.Implementation.Spark_Coverage_Totals;
-            Skipped : Natural;
-         begin
-            Adacovex.Spark_Coverage.Analyze
-              (Target (1 .. TLen),
-               "",
-               Adacovex.Types.Group_File,
-               Units,
-               Groups,
-               Totals,
-               Skipped,
-               State.Spark_OK);
-            State.Spark_Totals := Totals;
-            State.Spark_Groups := Groups;
-         end;
+         --  The Proof tab panel and /api/spark serve the rollup the level
+         --  classifier already measured, so the dashboard and the SPARK
+         --  level always describe the same numbers (best effort: a
+         --  missing artefact set serves the "run adacovex prove" note).
+         State.Spark_Totals := Cov_Totals;
+         State.Spark_Groups := Cov_Groups;
+         State.Spark_OK := Cov_OK;
          --  Resolve the dependency graph so /api/deps can serve it (best
          --  effort: an unresolvable graph serves an empty dependency list).
          Adacovex.Parsers.Manifest.Build_Dependency_Graph

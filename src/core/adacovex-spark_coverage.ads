@@ -164,6 +164,21 @@ package Adacovex.Spark_Coverage is
       Skipped_Ct : out Natural;
       Proof_Ok   : out Boolean);
 
+   --  Fold a coverage rollup into an assessment's proof summary and
+   --  re-derive its SPARK level. Platinum requires full proof coverage
+   --  -- every subprogram the report assesses proved -- so the level
+   --  cannot be decided from gnatprove.out alone. An assessment that
+   --  never measures the coverage report therefore never claims
+   --  Platinum.
+   --  @param Totals  Whole-tree rollup from Analyze.
+   --  @param Proof_Ok  Whether Analyze read both proof artefacts.
+   --  @param Proof  Proof summary to update (level re-derived).
+   procedure Apply_To_Proof
+     (Totals   : Types.Implementation.Spark_Coverage_Totals;
+      Proof_Ok : Boolean;
+      Proof    : in out Types.Proof_Summary)
+   with Pre => True;
+
    --  Render the human-readable report. One overall block per
    --  metric, then one table per group. Every header names its
    --  numerator and its denominator.

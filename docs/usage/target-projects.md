@@ -62,7 +62,7 @@ what to expect before it runs an assessment.
 
 - Full source scan of `.ads` / `.adb` (subprograms, docstrings, HLR tags).
 - Per-subprogram cyclomatic complexity.
-- SPARK proof analysis and the Platinum-level proof gate.
+- SPARK proof analysis and the full-proof gate (0 unproved VCs).
 - DO-178C / ISO 26262 / IEC 62304 DAL assessment.
 - Alire / GPR manifests build the Ada dependency graph in the SBOM.
 

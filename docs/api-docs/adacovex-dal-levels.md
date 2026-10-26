@@ -53,8 +53,9 @@ adacovex evaluates four criteria for each DAL level:
 
 The minimum levels match `Min_SPARK_For` in
 `src/compliance/adacovex-compliance-dal.adb`. Gold is the minimum compliance
-baseline; Platinum (every functional contract proved) is a best-effort ideal
-reported when achieved, not a compliance gate. Justified VCs (GNATprove
+baseline; Platinum (every functional contract proved, and full proof coverage:
+every subprogram the SPARK coverage report assesses proved) is a best-effort
+ideal reported when achieved, not a compliance gate. Justified VCs (GNATprove
 `pragma Annotate`) count neither as proved nor unproved and never downgrade
 the level.
 

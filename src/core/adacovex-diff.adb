@@ -4,6 +4,7 @@ with Adacovex.Parsers.Source;
 with Adacovex.Parsers.GNATprove;
 with Adacovex.Parsers.Tests;
 with Adacovex.Compliance.DAL;
+with Adacovex.Spark_Coverage;
 with Adacovex.Types;
 
 package body Adacovex.Diff is
@@ -41,6 +42,28 @@ package body Adacovex.Diff is
 
       Adacovex.Parsers.GNATprove.Parse_Prove_From_Project
         (Target_Dir, Proof, OK);
+      --  Both sides of a differential report carry the honest SPARK level,
+      --  so the proof coverage that Platinum needs is measured for each.
+      if Proof.Total_VCs > 0 then
+         declare
+            Units       : Spark_Coverage_Vectors.Vector;
+            Groups      : Spark_Group_Vectors.Vector;
+            Totals      : Spark_Coverage_Totals;
+            Cov_Skipped : Natural;
+            P_OK        : Boolean;
+         begin
+            Adacovex.Spark_Coverage.Analyze
+              (Target_Dir,
+               "",
+               Group_File,
+               Units,
+               Groups,
+               Totals,
+               Cov_Skipped,
+               P_OK);
+            Adacovex.Spark_Coverage.Apply_To_Proof (Totals, P_OK, Proof);
+         end;
+      end if;
       R.Has_Proof := OK;
       R.Total_VCs := Proof.Total_VCs;
       R.Proved_VCs := Proof.Proved_VCs;

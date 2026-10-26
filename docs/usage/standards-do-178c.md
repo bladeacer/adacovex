@@ -58,8 +58,9 @@ adacovex evaluates four criteria. Only the strictness changes with the level.
 
 The minimum levels match `Min_SPARK_For` in
 `src/compliance/adacovex-compliance-dal.adb`. Gold is the compliance
-baseline. Platinum (every functional contract proved) is a best-effort ideal
-that adacovex reports when achieved, never a compliance gate.
+baseline. Platinum (every functional contract proved, and full proof coverage:
+every subprogram the SPARK coverage report assesses proved) is a best-effort
+ideal that adacovex reports when achieved, never a compliance gate.
 
 ## Assessing at a DAL
 

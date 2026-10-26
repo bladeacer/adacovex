@@ -102,6 +102,18 @@ subtype Name_Field is String (1 .. Max_Filename);
 subtype Path_Field is String (1 .. Max_Path);
 ```
 
+### type Proof_Coverage
+
+```ada
+type Proof_Coverage is record
+Measured      : Boolean := False;
+Subs_Proved   : Natural := 0;
+Subs_Total    : Natural := 0;
+Checks_Proved : Natural := 0;
+Checks_Total  : Natural := 0;
+end record;
+```
+
 ### type Proof_Summary
 
 ```ada
@@ -125,6 +137,7 @@ Unproved           : Natural := 0;
 Level              : SPARK_Level := Stone;
 Units_Analyzed     : Natural := 0;
 Units_Skipped      : Natural := 0;
+Coverage           : Proof_Coverage;
 end record;
 ```
 

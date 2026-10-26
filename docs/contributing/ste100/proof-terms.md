@@ -52,6 +52,18 @@ requirement, and safety-standard concepts of the adacovex domain.
 - **Correct Example:** *The docstring **coverage** is 100 per cent.*
 - **Incorrect Example:** *The completion rate is 100 per cent.*
 
+## Technical Name: Proof Coverage
+- **Part of Speech:** Noun
+- **Definition:** The share of subprograms that the SPARK coverage report
+  assesses and the prover proved, out of all subprograms it assesses. Full
+  proof coverage means every assessed subprogram is proved, and Platinum
+  requires it. Do not use *coverage* alone for this value; that term means
+  docstring coverage.
+- **Approved Form:** Proof coverage (no plural)
+- **Do Not Use:** Proof completion, Proved share
+- **Correct Example:** *Full **proof coverage** is one of the Platinum requirements.*
+- **Incorrect Example:** *Proof completion is one of the Platinum requirements.*
+
 ## Technical Name: Design Assurance Level (DAL)
 - **Part of Speech:** Noun
 - **Definition:** One of the five DO-178C levels (A to E) that classify the

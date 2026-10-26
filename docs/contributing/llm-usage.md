@@ -9,14 +9,14 @@ machine-generated code.
 
 AI tools were used during development for boilerplate generation, contract drafting, and docstring formatting. This is stated plainly rather than hidden. The project's own dogfood target is a zero-dependency, fully documented, SPARK-proven Ada codebase. AI-generated contributions must meet the same bar as hand-written ones.
 
-That bar is 100% docstring coverage, Platinum proof, zero justified VCs, and the full `just check` gate before they count.
+That bar is 100% docstring coverage, a full proof (zero unproved VCs), zero justified VCs, and the full `just check` gate before they count.
 
 ## Why trust this code?
 
 Given the use of AI assistance, healthy skepticism is natural and encouraged.
 Reliability is grounded in proof and design, not implicit trust:
 
-- **Formal Verification:** core Ada logic is formally verified. It is Platinum
+- **Formal Verification:** core Ada logic is formally verified. It is Gold
   under `gnatprove` 16.1.0, 1054 VCs, 0 unproved (see
   [docs/proof/16.1.0-ledger.md](../proof/16.1.0-ledger.md)). The proof is re-run by
   `just prove` on every change. It is a hard gate before any release.
@@ -81,8 +81,8 @@ Because the gates are cheap and deterministic, the safest workflow is to
 iterate locally and let `just check` be the arbiter:
 
 ```bash
-just build && just test      # native suite must stay 738/738
-just prove                   # Platinum, 0 unproved, 0 justified
+just build && just test      # native suite must stay 2040/2040
+just prove                   # 0 unproved, 0 justified
 just check                   # full gate: static checks, build, test, prove,
                              # doc, sbom, then tree-wide count-sync checks
 ```
