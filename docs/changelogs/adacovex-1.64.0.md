@@ -165,19 +165,18 @@ identical toolchains across runs.
 
 The result-cache key is computed from `git ls-files` of the target tree, but
 some consumers assess a plain directory that is not a git repository. The
-computation now falls back to a timestamp-based nonce when git is absent or the
-target has no tracked files, so the cache still works (just not
-content-addressed across runs) for non-git targets. The nonce is the same
-fallback the local tool already tolerates, since adacovex itself runs on plain
-directories.
+computation now falls back to a stable nonce when git is absent or the target
+has no tracked files, so the cache still works (just not content-addressed
+across runs) for non-git targets.
 
-The fallback value is emitted as a single line to the GitHub Actions output
-variable. The previous implementation wrote `$HASH` directly, and an empty
-`git ls-files` result plus the `date`-based nonce could span more than one
-line on an unmanaged target, which `GITHUB_OUTPUT` rejects. The result-cache
-key step now normalises the value before writing it, so an unmanaged target no
-longer aborts the job; the PR/main post-merge runs for that target continue
-with independent per-run caches instead.
+The nonce is the GitHub Actions run identifier for the step, so the fallback
+is deterministic per job and does not depend on wall-clock time. The previous
+timestamp fallback was both non-stable across reruns and, because it could be
+empty plus a second line, could produce a value that spans more than one line
+when written to the GitHub Actions output variable, which the runner rejects.
+The result-cache key step now normalises the value before writing it, so an
+unmanaged target no longer aborts the job; the PR/main post-merge runs for
+that target continue with independent per-run caches instead.
 
 This matches the local tool's behaviour, which also works on plain directories.
 

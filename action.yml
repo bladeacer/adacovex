@@ -348,10 +348,11 @@ runs:
         HASH=$(git -C "$TARGET" ls-files -z '*.ads' '*.adb' '*.gpr' 2>/dev/null \
           | grep -zv 'adacovex-docs_template\.ads\|adacovex-dashboard_template\.ads' \
           | sort -z | xargs -0 sha256sum 2>/dev/null | sha256sum | cut -d' ' -f1 \
-          || echo "$(date +%s%N)")
+          || echo "${{ github.run_id }}")
         # Collapse any newline/space-separated multi-value output back into
-        # one line (for example a multi-line date fallback on an unmanaged
-        # target).  GITHUB_OUTPUT wants one value per line.
+        # one line (for example a multi-line value from a consumer-runner
+        # fallback on an unmanaged target).  GITHUB_OUTPUT wants one value
+        # per line.
         echo "hash=$(echo "$HASH" | tr -d '\n ')" >> "$GITHUB_OUTPUT"
 
     - name: Restore adacovex result cache
