@@ -349,7 +349,10 @@ runs:
           | grep -zv 'adacovex-docs_template\.ads\|adacovex-dashboard_template\.ads' \
           | sort -z | xargs -0 sha256sum 2>/dev/null | sha256sum | cut -d' ' -f1 \
           || echo "$(date +%s%N)")
-        echo "hash=${HASH}" >> "$GITHUB_OUTPUT"
+        # Collapse any newline/space-separated multi-value output back into
+        # one line (for example a multi-line date fallback on an unmanaged
+        # target).  GITHUB_OUTPUT wants one value per line.
+        echo "hash=$(echo "$HASH" | tr -d '\n ')" >> "$GITHUB_OUTPUT"
 
     - name: Restore adacovex result cache
       if: ${{ inputs.result-cache == 'true' }}

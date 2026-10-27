@@ -161,14 +161,25 @@ This keeps the cached tool installation consistent with the manifest the
 the key collapses to `gnat-version` alone and the cache still shares
 identical toolchains across runs.
 
-### F5: Result-cache key falls back to commit SHA when the target is not a git repository
+### F5: Result-cache key falls back to a stable nonce when the target is not a git repository
 
 The result-cache key is computed from `git ls-files` of the target tree, but
 some consumers assess a plain directory that is not a git repository. The
-computation now falls back to a timestamp-based hash when git is absent or the
+computation now falls back to a timestamp-based nonce when git is absent or the
 target has no tracked files, so the cache still works (just not
-content-addressed across runs) for non-git targets. This matches the local
-tool's behaviour, which also works on plain directories.
+content-addressed across runs) for non-git targets. The nonce is the same
+fallback the local tool already tolerates, since adacovex itself runs on plain
+directories.
+
+The fallback value is emitted as a single line to the GitHub Actions output
+variable. The previous implementation wrote `$HASH` directly, and an empty
+`git ls-files` result plus the `date`-based nonce could span more than one
+line on an unmanaged target, which `GITHUB_OUTPUT` rejects. The result-cache
+key step now normalises the value before writing it, so an unmanaged target no
+longer aborts the job; the PR/main post-merge runs for that target continue
+with independent per-run caches instead.
+
+This matches the local tool's behaviour, which also works on plain directories.
 
 ## Test Suite
 

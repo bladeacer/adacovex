@@ -79,7 +79,7 @@ steps:
 | `generate-sbom` | `true` | Generate a proof-aware SBOM after the assessment and upload it |
 | `sbom-format` | `cyclonedx-json` | SBOM format: `cyclonedx-json`, `spdx-json`, or `md` |
 | `cache` | `true` | Cache Alire toolchain/deps with `actions/cache` |
-| `result-cache` | `true` | Persist adacovex's on-disk result cache across runs; keyed by a content-addressed hash of the target tree's proof-relevant sources (shared across PR and main for the same commit) |
+| `result-cache` | `true` | Persist adacovex's on-disk result cache across runs; keyed by a content-addressed hash of the target tree's proof-relevant sources (shared across PR and main for the same commit). For a plain directory with no git history the key falls back to a per-run nonce, and the step normalises that value so the job no longer aborts before the cache restore. |
 | `manifest` | `''` | Override the target project manifest path |
 | `no-svg` | `false` | Suppress SVG badge generation |
 | `relaxed` | `false` | Disable strict mode (skip dirs, no patches) |
