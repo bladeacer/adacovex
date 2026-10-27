@@ -445,6 +445,14 @@ scripts), differential modes, and `sbom`.
   long-term plan is to hold `SPARK_Mode (Off)` at exactly these two packages
   (both irreducible: non-formal `Ada.Containers.Vectors` is illegal in
   `SPARK_Mode On` code under gnatprove 16.1.0); never let a third appear.
+- **New code must also carry contracts covering
+  each statement.** Every new executable statement in new or changed Ada code
+  should be within a context with sufficient preconditions, postconditions,
+  loop invariants, and runtime-check contracts so that `just prove` can prove
+  the new code without unproved VCs. This is intended to prevent proof-coverage
+  regression and avoid accumulating future proof debt. If a change cannot be
+  proven in SPARK without widening the Off exceptions, do not widen them: narrow
+  the change instead.
 - **Python 3 is a build-time dependency**: it is required to bundle the
   dashboard and the offline manual into the binary via
   `tools/gen-dashboard.py` and `tools/gen-docs.py`. The pure-stdlib `tools/*.py`

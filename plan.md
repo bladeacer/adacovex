@@ -23,6 +23,7 @@ Improve day-to-day developer ergonomics around documentation accuracy, prove out
 - Diagnostics work should respect the project's existing quiet-by-default prove behavior and the difference between local and CI output. Do not silently flip defaults in a way that makes CI noisier or local output unreadable.
 - Configuration work must respect the project's current global config file convention and path resolution, if one exists, rather than inventing an entirely new layout without checking the current one first.
 - Whenever config-file defaults, precedence, sample values, or supported-value comments change, update the docs and the sample `adacovex.toml` together so users, docs, and the runtime all tell the same story.
+- All new code in this branch must land as fully `SPARK_Mode On` Ada/SPARK with contracts covering each statement. New units must reach **0 unproved, 0 justified** under `just prove`, and no new `pragma SPARK_Mode (Off)` may be introduced except in the two already-exempt packages (`Types.Implementation` and `Complexity`). The work must not regress proof coverage or create avoidable future proof debt.
 
 ## Audit findings to address before implementation
 
