@@ -111,18 +111,41 @@ When the gate is flaky, start from the artifact, not a local repro.
 
 ### Caching
 
-Three caches shorten a run. Every one is content-addressed, so a restored
+Four caches shorten a run. Every one is content-addressed, so a restored
 cache can never mask a regression.
 
 | Cache | Scope | Key |
 |-------|-------|-----|
 | Alire toolchain | `setup-alire` `cache: true` | Toolchain version |
-| adacovex result cache | `result-cache: true` on `uses: ./` | SHA-256 of each artifact's content |
-| gnatprove session store | `actions/cache` on `obj/gnatprove` | SHA-256 of the proof-relevant sources |
+| Alire home (gnatprove install) | `actions/cache` on `~/.alire` / `$ALIRE_HOME` in the composite action | `gnat-version` + hash of the target's dev-manifest `[[depends-on]]` section |
+| adacovex result cache | `result-cache: true` on `uses: ./` | SHA-256 of the target tree's proof-relevant sources (content-addressed, shared across PR and main) |
+| gnatprove session store | `actions/cache` on `obj/gnatprove` in ci.yml/release.yml | SHA-256 of the proof-relevant sources |
+
+The Alire home cache is new in 1.65.0: it makes the gnatprove binary that
+the `prove` subcommand fetches at run time a cache hit across CI runs on the
+same toolchain. gnatprove is not an `alr toolchain` component, so
+`setup-alire`'s own cache (compiler + gprbuild) does not reliably cover it.
+The step lives in the composite action, so every action consumer gets it
+automatically; the existing `cache` input controls it. The cache key tracks
+the target's dev-manifest `[[depends-on]]` pins (`gnatprove`, `gnatdoc_bin`,
+`gnatformat_bin`), so a changed pin invalidates the cache and the same pins
+reuse it.
 
 The result cache and the session store are the two that remove the solver
 cost. The result cache serves a file only when it is byte-for-byte unchanged.
 The session store skips re-proving units whose inputs did not change.
+
+The result-cache key is now content-addressed on the target tree's
+proof-relevant sources (a SHA-256 hash of every tracked `*.ads`, `*.adb`,
+and `*.gpr`, excluding the two generated bundle specs) instead of the
+per-run `github.run_id`. This is the same shape the session store already
+uses, so the two caches behave consistently. Because the key is
+content-addressed rather than per-run, a PR run and the post-merge main run
+for the same tree state share one cache entry: the main self-assessment hits
+the cache the PR run populated instead of re-proving everything from scratch.
+The safety property is preserved by construction -- a content-addressed key
+is an exact match or absent, never a partial match that could mask a
+regression.
 
 The session-store key hashes the tracked `*.ads`, `*.adb`, and `*.gpr`
 sources. It excludes the two generated bundle specs
@@ -134,7 +157,7 @@ This is the same exclusion the prove
 result cache uses (`Is_Proof_Input` in `adacovex-prove.adb`). The hand-written
 `adacovex-docs_template.adb` body stays in the key. It is real code.
 
-The false-pass guard holds across all three caches. The prove result cache
+The false-pass guard holds across all four caches. The prove result cache
 refuses to serve a stored summary whose Total row reports unproved VCs, so a
 degraded run (one killed mid-session, for example) is re-proved rather than
 replayed. Content-addressed keys make a stale restore either an exact hit or
@@ -143,6 +166,10 @@ absent, never a partial match.
 The bundled manual is not built in CI, so it needs no cache there. Sphinx and
 the uv/pip wheel cache are local developer concerns (`just book`,
 `docs-venv`).
+
+The `complexity-gate` CI job now runs only on `push: main`; `pr-check.yml`
+already runs it on every pull request, so the gate no longer duplicates work
+across the two workflow files on PRs.
 
 ### Release version bundling
 

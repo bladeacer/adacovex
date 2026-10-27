@@ -264,6 +264,57 @@ runs:
         toolchain: 'gnat_native=${{ inputs.gnat-version }} gprbuild'
         cache: ${{ inputs.cache }}
 
+    - name: Cache the Alire home directory (gnatprove install)
+      #  gnatprove is not an alr toolchain component, so setup-alire's cache
+      #  (which covers the compiler + gprbuild) does not reliably cache it.
+      #  The prove subcommand resolves gnatprove at run time from the target
+      #  project's manifest (alire-dev.toml preferred, then alire.toml), then
+      #  $PATH, then the cached toolchain under <data>/toolchain/, then
+      #  download as last resort.  This step makes the downloaded/installed
+      #  gnatprove binary -- and the Alire crate index + downloaded crates
+      #  (gnatdoc_bin, gnatformat_bin, and any other dev-manifest tools) --
+      #  a cache hit across CI runs on the same toolchain, which is the
+      #  single biggest win for the prove path in CI.
+      #
+      #  Content-addressed by construction: the key is gnat-version plus a
+      #  hash of the target's dev-manifest depends-on section (gnatprove,
+      #  gnatdoc_bin, gnatformat_bin pins).  A restored cache is either an
+      #  exact match for the same toolchain pins or absent -- it cannot mask
+      #  a regression from a different gnatprove version.  The cache is
+      #  scoped to the composite action, so every action consumer gets it
+      #  automatically; the existing `cache` input controls it.
+      if: ${{ inputs.cache == 'true' && (inputs.build == 'true' || inputs.prove == 'true') }}
+      id: alire-cache
+      shell: bash
+      run: |
+        set -euxo pipefail
+        ALIRE_HOME="${ALIRE_HOME:-$HOME/.alire}"
+        echo "alire-home=${ALIRE_HOME}" >> "$GITHUB_OUTPUT"
+        #  Content-addressed key: gnat-version + a hash of the target's
+        #  dev-manifest [[depends-on]] section.  Whichever manifest the prove
+        #  step consults first (alire-dev.toml, then alire.toml) contributes
+        #  its dependency pins; a manifest with no gnatprove declaration
+        #  contributes nothing and the key collapses to gnat-version alone.
+        TARGET="${{ inputs.target }}"
+        [ -z "$TARGET" ] && TARGET="."
+        KEY_PARTS=()
+        KEY_PARTS+=("gnat=${{ inputs.gnat-version }}")
+        for MANIFEST in "$TARGET/alire-dev.toml" "$TARGET/alire.toml"; do
+          if [ -f "$MANIFEST" ]; then
+            DEPS_HASH=$(awk '/^\[\[depends-on\]\]/{f=1;next} /^\[/{f=0} f' "$MANIFEST" \
+              | sha256sum | cut -d' ' -f1)
+            KEY_PARTS+=("deps=${DEPS_HASH}")
+          fi
+        done
+        echo "key=${KEY_PARTS[*]}" >> "$GITHUB_OUTPUT"
+
+    - name: Restore Alire home cache
+      if: ${{ inputs.cache == 'true' && (inputs.build == 'true' || inputs.prove == 'true') }}
+      uses: actions/cache/restore@v5
+      with:
+        path: ${{ steps.alire-cache.outputs.alire-home }}
+        key: ${{ steps.alire-cache.outputs.key }}
+
     - name: Resolve the adacovex state directories
       #  The result cache lives where the platform convention puts it
       #  (Adacovex.Paths.Cache_Root): $XDG_CACHE_HOME on Linux and the
@@ -279,12 +330,33 @@ runs:
           macOS) echo "cache=$HOME/Library/Caches/adacovex" >> "$GITHUB_OUTPUT" ;;
           *) echo "cache=${XDG_CACHE_HOME:-$HOME/.cache}/adacovex" >> "$GITHUB_OUTPUT" ;;
         esac
+    - name: Compute the result-cache key
+      #  Content-addressed key shared across PR and main for the same tree
+      #  state.  A hash of the target tree's proof-relevant sources -- the
+      #  same shape the gnatprove session store uses -- so the PR run and the
+      #  post-merge main run for the same commit share one cache entry.  The
+      #  two generated bundle specs (data-only string constants, no proof
+      #  surface) are excluded so a docs or dashboard edit never invalidates
+      #  a cached result, same as the session store and the prove result
+      #  cache's own input hash (Is_Proof_Input in adacovex-prove.adb).
+      id: proof-hash
+      shell: bash
+      run: |
+        set -euxo pipefail
+        TARGET="${{ inputs.target }}"
+        [ -z "$TARGET" ] && TARGET="."
+        HASH=$(git -C "$TARGET" ls-files -z '*.ads' '*.adb' '*.gpr' 2>/dev/null \
+          | grep -zv 'adacovex-docs_template\.ads\|adacovex-dashboard_template\.ads' \
+          | sort -z | xargs -0 sha256sum 2>/dev/null | sha256sum | cut -d' ' -f1 \
+          || echo "$(date +%s%N)")
+        echo "hash=${HASH}" >> "$GITHUB_OUTPUT"
+
     - name: Restore adacovex result cache
       if: ${{ inputs.result-cache == 'true' }}
       uses: actions/cache/restore@v5
       with:
         path: ${{ steps.adacovex-state.outputs.cache }}
-        key: adacovex-result-${{ inputs.target }}-${{ runner.os }}-${{ github.run_id }}
+        key: adacovex-result-${{ inputs.target }}-${{ runner.os }}-${{ steps.proof-hash.outputs.hash }}
         restore-keys: |
           adacovex-result-${{ inputs.target }}-${{ runner.os }}-
 
@@ -734,9 +806,26 @@ runs:
       uses: actions/cache/save@v5
       with:
         path: ${{ steps.adacovex-state.outputs.cache }}
-        # Content-addressed entries mean a restored but slightly stale cache
-        # is never wrong; the unique key keeps save/restore bounded per run.
-        key: adacovex-result-${{ inputs.target }}-${{ runner.os }}-${{ github.run_id }}
+        # Content-addressed key shared across PR and main for the same tree
+        # state: a hash of the target tree's proof-relevant sources (the same
+        # shape the gnatprove session store already uses).  The PR run and the
+        # post-merge main run for the same commit then share one cache entry,
+        # so the main self-assessment hits the cache the PR run populated
+        # instead of re-proving everything from scratch.  The per-run
+        # uniqueness is gone on purpose: a content-addressed key is safe by
+        # construction (exact match or miss), same as the session store.
+        key: adacovex-result-${{ inputs.target }}-${{ runner.os }}-${{ steps.proof-hash.outputs.hash || github.sha }}
+
+    - name: Save Alire home cache
+      #  Save the Alire home directory (gnatprove install + crate index +
+      #  downloaded dev-tool crates) for the next run on the same toolchain.
+      #  Keyed on gnat-version + the target's dev-manifest depends-on hash, so
+      #  a changed pin invalidates the cache and the same pins reuse it.
+      if: ${{ always() && inputs.cache == 'true' && (inputs.build == 'true' || inputs.prove == 'true') }}
+      uses: actions/cache/save@v5
+      with:
+        path: ${{ steps.alire-cache.outputs.alire-home }}
+        key: ${{ steps.alire-cache.outputs.key }}
 
     - name: Write run summary
       # Runs on success AND failure so every action invocation leaves a
