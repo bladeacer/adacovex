@@ -98,10 +98,12 @@ jobs:
           set -euxo pipefail
           HASH=$(git ls-files -z '*.ads' '*.adb' '*.gpr' \
             | grep -zv 'adacovex-docs_template\.ads\|adacovex-dashboard_template\.ads' \
-            | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)
+            | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1 \
+            || echo "${{ github.run_id }}")
           # Collapse any newline/space-separated multi-value output back into
-          # one line (for example a multi-line date fallback on an unmanaged
-          # target).  GITHUB_OUTPUT wants one value per line.
+          # one line (for example a multi-line value from a consumer-runner
+          # fallback on an unmanaged target).  GITHUB_OUTPUT wants one value
+          # per line.
           echo "hash=$(echo "$HASH" | tr -d '\n ')" >> "$GITHUB_OUTPUT"
 
       - name: Restore the gnatprove session store
