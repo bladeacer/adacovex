@@ -157,6 +157,16 @@ This is the same exclusion the prove
 result cache uses (`Is_Proof_Input` in `adacovex-prove.adb`). The hand-written
 `adacovex-docs_template.adb` body stays in the key. It is real code.
 
+The result-cache key step writes its hash to a GitHub Actions output
+variable, which must be one line. When the target is a plain directory with
+no git history, the step falls back to a timestamp-based nonce, and the
+step now normalises that value before writing it. The previous version could
+emit a value that spanned more than one line on an unmanaged target, which
+`GITHUB_OUTPUT` rejects and aborts the job. The fix lets the action still
+cache an unmanaged target -- with a per-run key instead of a
+content-addressed one -- instead of failing before it reaches the restore
+step.
+
 The false-pass guard holds across all four caches. The prove result cache
 refuses to serve a stored summary whose Total row reports unproved VCs, so a
 degraded run (one killed mid-session, for example) is re-proved rather than
