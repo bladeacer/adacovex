@@ -2,11 +2,13 @@
 
 # adacovex
 
-A zero-dependency Ada/SPARK command line tool for coverage analysis, proof
-verification, test-result parsing, multi-standard safety-compliance assessment
-(DO-178C / ISO 26262 / IEC 62304), and interactive dashboards. It uses only the
-GNAT runtime, so it runs on any platform Alire supports. The `prove` subcommand
-resolves gnatprove at run time, so installing adacovex installs only the binary.
+A zero-dependency Ada/SPARK formal verification and compliance toolkit for coverage
+analysis, proof verification, test-result parsing, multi-standard safety-compliance
+assessment (DO-178C / ISO 26262 / IEC 62304), and interactive dashboards.
+
+Distributed as a single self-contained binary built on the standard GNAT runtime, `adacovex`
+requires no external runtime package dependencies. The `prove` subcommand resolves `gnatprove`
+at run time to perform formal verification checks.
 
 ## Badges
 
@@ -222,17 +224,16 @@ See [changelogs](https://adacovex.readthedocs.io/en/latest/changelogs/index.html
 
 ## Requirements
 
-- **Alire** >= 2.0
-- **GNAT** Ada compiler (managed by Alire)
-- **Python 3** (required at **build time** to bundle the dashboard and the offline
-  manual into the binary via `tools/gen-dashboard.py` and `tools/gen-docs.py`, the
-  latter needing `sphinx` + `myst-parser` + `furo` from `requirements.txt`; the
-  released binary itself has no Python or runtime dependency)
-- **GNATprove** (optional; resolved at run time by `prove` -- no declared dependency)
-- **gnatdoc_bin** and **gnatformat_bin** (dev dependencies managed by Alire,
-  declared in `alire-dev.toml` and run via `alr exec` for the `just doc` and
-  `just fmt` targets -- so the published crate still installs and builds with
-  no toolchain beyond the GNAT compiler)
+### Prebuilts
+
+- **Alire >= 2.0** or prebuilt release binary.
+- **GNAT compiler** (managed by Alire).
+- **GNATprove** (dynamically resolved at run time when using `adacovex prove`).
+
+### Build from Source
+
+- **Python 3** (required at **build time only** to bundle the dashboard and offline manual via `tools/gen-dashboard.py` and `tools/gen-docs.py`; release binaries have no Python dependency).
+- **gnatdoc_bin** & **gnatformat_bin** (dev dependencies managed by Alire for `just doc` / `just fmt`).
 
 ## Swapping the GNAT compiler (LLVM backend)
 
