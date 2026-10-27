@@ -109,23 +109,13 @@ compiler. No action is needed. Only swap if you specifically want an
 LLVM-backend GNAT (for example GNAT LLVM) for your target project -- for
 example to exercise dissimilar redundancy via diverse code generation.
 
-GNAT LLVM is **not** yet packaged as a standard Alire toolchain crate, so two
-paths exist:
+GNAT LLVM is maintained by AdaCore at
+[github.com/AdaCore/gnat-llvm](https://github.com/AdaCore/gnat-llvm). It is **not**
+available as a standard Alire toolchain crate, and there is no reason to expect one
+for the foreseeable future, so the only supported path today is a system-installed
+GNAT LLVM on `$PATH`:
 
-1. **Alire-managed compiler (preferred when available).** If a GNAT LLVM binary
-   release becomes available in the Alire index, declare it in your
-   `alire.toml` / `alire-dev.toml`:
-
-   ```toml
-   [[depends-on]]
-   gnat_llvm = "*"
-   ```
-
-   `alr` then selects it automatically for that project's builds. You can also
-   pick a default compiler for all projects with
-   `alr toolchain --select --disable-assistant` and choosing the LLVM GNAT.
-
-2. **System-installed GNAT LLVM.** Install GNAT LLVM on `$PATH`, then force the
+1. **GNAT LLVM (system-installed).** Install GNAT LLVM on `$PATH`, then force the
    Ada toolchain in the root `.gpr` so `gprbuild` does not fall back to the
    GCC GNAT:
 
