@@ -132,6 +132,13 @@ jobs:
     # Cyclomatic-complexity + LOC gate: fails when a function exceeds the
     # decision-point cap or a file dominates the codebase (god objects /
     # god functions / extra-long files).  See adacovex complexity --help.
+    #
+    #  Runs on push to main only.  pr-check.yml already runs it on every
+    #  pull request, so running it here on PRs would duplicate the work.
+    #  The gate uses a plain Alire setup (no composite action) so it stays a
+    #  cheap standalone check on main pushes where pr-check.yml is not
+    #  triggered.
+    if: github.event_name == 'push'
     name: Complexity gate (no god objects)
     runs-on: ubuntu-latest
     steps:

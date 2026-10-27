@@ -79,7 +79,7 @@ steps:
 | `generate-sbom` | `true` | Generate a proof-aware SBOM after the assessment and upload it |
 | `sbom-format` | `cyclonedx-json` | SBOM format: `cyclonedx-json`, `spdx-json`, or `md` |
 | `cache` | `true` | Cache Alire toolchain/deps with `actions/cache` |
-| `result-cache` | `true` | Persist adacovex's on-disk result cache across runs |
+| `result-cache` | `true` | Persist adacovex's on-disk result cache across runs; keyed by a content-addressed hash of the target tree's proof-relevant sources (shared across PR and main for the same commit) |
 | `manifest` | `''` | Override the target project manifest path |
 | `no-svg` | `false` | Suppress SVG badge generation |
 | `relaxed` | `false` | Disable strict mode (skip dirs, no patches) |
@@ -118,6 +118,45 @@ Every entry is keyed by its artifact's SHA-256 content hash. Restoring a cache
 from an earlier run or commit is always safe. Only files that are byte-for-byte
 unchanged are served from it. The remaining files are rescanned and re-parsed
 automatically.
+
+#### Result-cache key
+
+The result-cache key is content-addressed on the target tree's
+proof-relevant sources: a SHA-256 hash of every tracked `*.ads`, `*.adb`,
+and `*.gpr` under the target, excluding the two generated bundle specs
+(`adacovex-docs_template.ads`, `adacovex-dashboard_template.ads`) which are
+data-only string constants with no proof surface. This is the same exclusion
+the gnatprove session store uses and the same rule the prove result cache's
+input hash uses (`Is_Proof_Input` in `adacovex-prove.adb`).
+
+Because the key is content-addressed rather than per-run, a PR run and the
+post-merge main run for the same tree state share one cache entry: the main
+self-assessment hits the cache the PR run populated instead of re-proving
+everything from scratch. The safety property is preserved by construction --
+a content-addressed key is an exact match or absent, never a partial match
+that could mask a regression.
+
+#### Alire home cache (gnatprove install)
+
+When `cache` is `true` and the action would install the Alire toolchain
+(`build: true` or `prove: true`), the action also caches the Alire home
+directory (`~/.alire` / `$ALIRE_HOME`) with `actions/cache`. This covers
+the gnatprove binary that the `prove` subcommand fetches at run time --
+gnatprove is not an `alr toolchain` component, so `setup-alire`'s own
+cache (compiler + gprbuild) does not reliably cache it.
+
+The cache key is `gnat-version` plus a hash of the target's dev-manifest
+`[[depends-on]]` section (the `gnatprove`, `gnatdoc_bin`, and
+`gnatformat_bin` pins from `alire-dev.toml`, falling back to `alire.toml`
+when no dev manifest is present). A restored cache is either an exact match
+for the same toolchain pins or absent -- it cannot mask a regression from a
+different gnatprove version. Because the step lives in the composite action,
+every action consumer gets it automatically; the existing `cache` input
+controls it.
+
+The Alire crate index and downloaded crates that `setup-alire`'s `cache: true`
+already covers are also persisted by this step, making the toolchain
+installation predictable across CI runs on the same toolchain.
 
 ## See also
 
