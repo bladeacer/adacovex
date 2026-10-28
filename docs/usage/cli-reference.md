@@ -19,6 +19,7 @@ adacovex sbom [--format=cyclonedx-json|spdx-json|md] [--out=PATH]
 adacovex prove [-t=PATH] [prove options]
 adacovex status [-t=PATH]
 adacovex man [--check|--force] [--dir=PATH]
+adacovex tldr [--check|--force]
 adacovex completion [bash|fish|zsh|pwsh]
 ```
 
