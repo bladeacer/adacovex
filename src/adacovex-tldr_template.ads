@@ -15,9 +15,11 @@ package Adacovex.Tldr_Template is
   & "> More information: <https://github.com/bladeacer/adacovex>."
   & ASCII.LF
   & ASCII.LF
-  & "- Assess the current project and print the report:"
+  & ASCII.LF
+  & "- Assess the current project:"
   & ASCII.LF
   & "`adacovex`"
+  & ASCII.LF
   & ASCII.LF
   & ASCII.LF
   & "- Assess a project at another path:"
@@ -25,9 +27,11 @@ package Adacovex.Tldr_Template is
   & "`adacovex --target={{path/to/project}}`"
   & ASCII.LF
   & ASCII.LF
+  & ASCII.LF
   & "- Assess against a compliance standard and tier:"
   & ASCII.LF
   & "`adacovex --standard {{dal-c}}`"
+  & ASCII.LF
   & ASCII.LF
   & ASCII.LF
   & "- Run SPARK proofs, then assess the result:"
@@ -35,30 +39,48 @@ package Adacovex.Tldr_Template is
   & "`adacovex prove`"
   & ASCII.LF
   & ASCII.LF
+  & ASCII.LF
   & "- Serve the results as a web dashboard:"
   & ASCII.LF
   & "`adacovex --serve`"
   & ASCII.LF
   & ASCII.LF
-  & "- Check SPARK proof coverage:"
+  & ASCII.LF
+  & "- Print SPARK proof-coverage metrics and CI gates:"
   & ASCII.LF
   & "`adacovex spark-coverage`"
   & ASCII.LF
   & ASCII.LF
-  & "- Install the man page into the local man database:"
+  & ASCII.LF
+  & "- Install the man page:"
   & ASCII.LF
   & "`adacovex man`"
   & ASCII.LF
   & ASCII.LF
-  & "- Install the built-in cheat sheet into the local tldr clien"
-  & "t:"
   & ASCII.LF
-  & "`adacovex tldr --check`"
+  & "- Install the built-in cheat sheet for a tldr client:"
+  & ASCII.LF
+  & "`adacovex tldr`"
+  & ASCII.LF
+  & ASCII.LF
+  & ASCII.LF
+  & "- Print shell auto-completion scripts:"
+  & ASCII.LF
+  & "`adacovex completion bash`"
+  & ASCII.LF
   & ASCII.LF
   & ASCII.LF
   & "- Generate an SBOM:"
   & ASCII.LF
   & "`adacovex sbom`"
+  & ASCII.LF
+  & ASCII.LF
+  & ASCII.LF
+  & "- Print the version and exit:"
+  & ASCII.LF
+  & "`adacovex --version`"
+  & ASCII.LF
+  & ASCII.LF
   & ASCII.LF;
 
 end Adacovex.Tldr_Template;
