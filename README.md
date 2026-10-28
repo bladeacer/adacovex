@@ -67,8 +67,7 @@ adacovex --target=. --serve
 ```
 
 Contributors build from source with `just build` (see
-[Installation](https://adacovex.readthedocs.io/en/latest/usage/installation.html)). `just run-self` assesses adacovex itself.
-`just run-ada-crdt` runs the Ada_CRDT regression.
+[Installation](https://adacovex.readthedocs.io/en/latest/usage/installation.html)). `just run-self` assesses adacovex itself. `just run-ada-crdt` runs the Ada_CRDT regression.
 
 ## Platform support
 
@@ -124,7 +123,7 @@ covers each route and the man-page sync.
 
 ```
 adacovex [options]
-adacovex sbom [--format=cyclonedx-json|spdx-json] [--out=PATH]
+adacovex sbom [--format=cyclonedx-json|spdx-json|md] [--out=PATH]
            [--standard=NAME|--dal=LEVEL|--asil=LEVEL|--class=LEVEL]
 adacovex prove [-t=PATH] [prove options]
 adacovex status [-t=PATH]

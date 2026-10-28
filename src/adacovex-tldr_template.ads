@@ -9,11 +9,13 @@ package Adacovex.Tldr_Template is
    Page : constant String :=
 "# adacovex"
   & ASCII.LF
-  & "> Coverage, proof, and compliance assessment tool for Ada an"
-  & "d SPARK projects."
+  & "> Zero-dependency Ada/SPARK formal verification and complian"
+  & "ce toolkit for coverage analysis, proof verification, test-r"
+  & "esult parsing, multi-standard safety-compliance assessment ("
+  & "DO-178C / ISO 26262 / IEC 62304), and interactive dashboards"
+  & "."
   & ASCII.LF
   & "> More information: <https://github.com/bladeacer/adacovex>."
-  & ASCII.LF
   & ASCII.LF
   & ASCII.LF
   & "- Assess the current project:"
@@ -21,11 +23,9 @@ package Adacovex.Tldr_Template is
   & "`adacovex`"
   & ASCII.LF
   & ASCII.LF
-  & ASCII.LF
   & "- Assess a project at another path:"
   & ASCII.LF
   & "`adacovex --target={{path/to/project}}`"
-  & ASCII.LF
   & ASCII.LF
   & ASCII.LF
   & "- Assess against a compliance standard and tier:"
@@ -33,11 +33,9 @@ package Adacovex.Tldr_Template is
   & "`adacovex --standard {{dal-c}}`"
   & ASCII.LF
   & ASCII.LF
-  & ASCII.LF
   & "- Run SPARK proofs, then assess the result:"
   & ASCII.LF
   & "`adacovex prove`"
-  & ASCII.LF
   & ASCII.LF
   & ASCII.LF
   & "- Serve the results as a web dashboard:"
@@ -45,11 +43,9 @@ package Adacovex.Tldr_Template is
   & "`adacovex --serve`"
   & ASCII.LF
   & ASCII.LF
-  & ASCII.LF
   & "- Print SPARK proof-coverage metrics and CI gates:"
   & ASCII.LF
   & "`adacovex spark-coverage`"
-  & ASCII.LF
   & ASCII.LF
   & ASCII.LF
   & "- Install the man page:"
@@ -57,11 +53,9 @@ package Adacovex.Tldr_Template is
   & "`adacovex man`"
   & ASCII.LF
   & ASCII.LF
-  & ASCII.LF
   & "- Install the built-in cheat sheet for a tldr client:"
   & ASCII.LF
   & "`adacovex tldr`"
-  & ASCII.LF
   & ASCII.LF
   & ASCII.LF
   & "- Print shell auto-completion scripts:"
@@ -69,18 +63,14 @@ package Adacovex.Tldr_Template is
   & "`adacovex completion bash`"
   & ASCII.LF
   & ASCII.LF
-  & ASCII.LF
   & "- Generate an SBOM:"
   & ASCII.LF
   & "`adacovex sbom`"
   & ASCII.LF
   & ASCII.LF
-  & ASCII.LF
   & "- Print the version and exit:"
   & ASCII.LF
   & "`adacovex --version`"
-  & ASCII.LF
-  & ASCII.LF
   & ASCII.LF;
 
 end Adacovex.Tldr_Template;

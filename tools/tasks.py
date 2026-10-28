@@ -214,6 +214,10 @@ def task_docs_coverage_check() -> int:
     return py("tools/check-docs-coverage.py")
 
 
+def task_surface_parity_check() -> int:
+    return py("tools/check-surface-parity.py")
+
+
 def task_agents_tree() -> int:
     out = ROOT / "obj" / "agents-tree.out"
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -540,6 +544,7 @@ CHECK_GATES: List[Tuple[str, Callable[[], int],
     ("changelog format", task_changelog_check, None),
     ("action/CLI/docs parity", task_action_parity_check, None),
     ("documentation coverage", task_docs_coverage_check, None),
+    ("CLI surface parity", task_surface_parity_check, None),
     ("tools unit tests", task_tools_check, None),
     ("CLI end-to-end", task_cli_e2e, skip_without_alr),
     ("version source", task_version_source_check, None),
@@ -638,6 +643,7 @@ TASKS: Dict[str, Callable[[], int]] = {
     "link-check": task_link_check,
     "action-parity-check": task_action_parity_check,
     "docs-coverage-check": task_docs_coverage_check,
+    "surface-parity-check": task_surface_parity_check,
     "agents-tree": task_agents_tree,
     "proof-status": task_proof_status,
     "test-count": task_test_count,

@@ -127,6 +127,10 @@ action-parity-check:
 docs-coverage-check:
     @python3 tools/tasks.py docs-coverage-check
 
+# Fail when the help/man/tldr/cli-reference/completion surfaces drift.
+surface-parity-check:
+    @python3 tools/tasks.py surface-parity-check
+
 # Regenerate the AGENTS.md source tree.
 agents-tree:
     @python3 tools/tasks.py agents-tree

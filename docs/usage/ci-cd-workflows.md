@@ -22,6 +22,10 @@ This page covers the GitHub Actions workflows, the Markdown summaries and loud f
     base CLI option set.
   - `docs-coverage` -- fails when a CLI flag, a served route, or a
     hand-written usage or contributing page is missing from the user docs.
+  - `surface-parity` -- fails when the `--help` usage block, the man SYNOPSIS,
+    the cli-reference fence, or a completion script stops advertising the
+    parser's subcommand set, or when the tldr/help/man prose drops the README
+    tagline.
   - `version-consistency` -- fails when a manifest, the generated version
     spec, the built binary, and the committed `sbom.json` name different
     versions. See [Delivery and versioning](../contributing/architecture-pipeline.md#delivery-and-versioning).
@@ -34,7 +38,8 @@ This page covers the GitHub Actions workflows, the Markdown summaries and loud f
 - **`.github/workflows/release.yml`** -- on a `v*` tag, first runs the
   `platform-build` matrix (a plain `alr build` plus the native suite on
   macOS and Windows; the cross-platform check runs only at release time and
-  gates the publish), then builds the release binary, runs GNATprove,
+  gates the publish), then runs the `action-parity`, `docs-coverage`, and
+  `surface-parity` gates, builds the release binary, runs GNATprove,
   validates the `--standard=all` self-assessment, and publishes the GitHub
   Release (see [Release bundling](#release-bundling)).
 

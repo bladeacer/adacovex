@@ -2471,7 +2471,7 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("adacovex v"
          & Adacovex.Version
-         & " -- Ada/SPARK Coverage, Proof & Multi-Standard Compliance Tool");
+         & " -- Ada/SPARK coverage, proof, and multi-standard compliance tool");
       Ada.Text_IO.Put_Line ("");
       Ada.Text_IO.Put_Line ("Usage: adacovex [options]");
       Ada.Text_IO.Put_Line
@@ -2484,6 +2484,8 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line ("       adacovex tldr [--check]");
       Ada.Text_IO.Put_Line ("       adacovex complexity [--target=PATH]");
       Ada.Text_IO.Put_Line ("       adacovex spark-coverage [--target=PATH]");
+      Ada.Text_IO.Put_Line ("       adacovex completion [bash|fish|zsh|pwsh]");
+      Ada.Text_IO.Put_Line ("       adacovex help [TOPIC]");
       Ada.Text_IO.Put_Line ("");
       Ada.Text_IO.Put_Line ("Options:");
       Ada.Text_IO.Put_Line
@@ -2775,9 +2777,13 @@ package body Adacovex.Config is
         ("         HTML dashboard (--serve), JSON API (GET /api/metrics)");
       Ada.Text_IO.Put_Line ("");
       Ada.Text_IO.Put_Line
-        ("Zero-dependency Ada/SPARK tool for DO-178C / ISO 26262 / IEC 62304");
+        ("Zero-dependency Ada/SPARK formal verification and compliance");
       Ada.Text_IO.Put_Line
-        ("compliance assessment (DAL / ASIL / safety-class levels)");
+        ("toolkit for coverage analysis, proof verification, test-result");
+      Ada.Text_IO.Put_Line
+        ("parsing, multi-standard safety-compliance assessment");
+      Ada.Text_IO.Put_Line
+        ("(DO-178C / ISO 26262 / IEC 62304), and interactive dashboards");
    end Print_Usage;
 
    --  Lowercase a string, stripping a leading "--"/"-" and any "=value"

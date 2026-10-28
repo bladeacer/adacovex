@@ -179,6 +179,18 @@ jobs:
       - name: Enforce documentation coverage
         run: python3 tools/tasks.py docs-coverage-check
 
+  surface-parity:
+    # Feature gate: the --help, man, tldr, cli-reference, and completion
+    # surfaces must advertise the same subcommands and flag shapes, and the
+    # prose surfaces must carry the README tagline.  Fails on drift or on a
+    # stale command example.
+    name: CLI surface parity gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Enforce CLI surface parity
+        run: python3 tools/tasks.py surface-parity-check
+
   version-consistency:
     # Feature gate: the two manifests, the generated Ada version spec, the
     # built binary, and the committed sbom.json must all name the same

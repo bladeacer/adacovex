@@ -44,7 +44,9 @@ package body Adacovex.Completion is
       Emit (R, "    local cur=""${COMP_WORDS[COMP_CWORD]}""");
       Emit (R, "    local prev=""${COMP_WORDS[COMP_CWORD-1]}""");
       Emit (R, "    local flags=""" & Flags & """");
-      Emit (R, "    local subs=""sbom prove status completion man help""");
+      Emit
+        (R,
+         "    local subs=""sbom prove complexity spark-coverage status completion man tldr help""");
       Emit (R, "    case ""$prev"" in");
       Emit
         (R,
@@ -88,10 +90,12 @@ package body Adacovex.Completion is
       end loop;
       Emit
         (R,
-         "complete -c adacovex -n '__fish_use_subcommand' -a 'status sbom prove man completion'");
+         "complete -c adacovex -n '__fish_use_subcommand' "
+         & "-a 'sbom prove complexity spark-coverage status completion man tldr help'");
       Emit
         (R,
-         "complete -c covex -n '__fish_use_subcommand' -a 'status sbom prove man completion'");
+         "complete -c covex -n '__fish_use_subcommand' "
+         & "-a 'sbom prove complexity spark-coverage status completion man tldr help'");
       Emit (R, "");
       return To_String (R);
    end Gen_Fish;
@@ -109,7 +113,9 @@ package body Adacovex.Completion is
       Emit (R, "_adacovex() {");
       Emit (R, "  local -a flags subs");
       Emit (R, "  flags=(" & Flags & ")");
-      Emit (R, "  subs=(sbom prove status man completion help)");
+      Emit
+        (R,
+         "  subs=(sbom prove complexity spark-coverage status completion man tldr help)");
       Emit (R, "  if [[ $words[CURRENT] == -* ]]; then");
       Emit (R, "    compadd -- ${flags[*]}");
       Emit (R, "  elif [[ $words[CURRENT-1] == completion ]]; then");
@@ -160,6 +166,20 @@ package body Adacovex.Completion is
          end loop;
       end;
       Emit (R, ")");
+      Emit
+        (R,
+         "    \$subs = @('sbom', 'prove', 'complexity', 'spark-coverage',"
+         & " 'status', 'completion', 'man', 'tldr', 'help')");
+      Emit (R, "    if (-not \$wordToComplete.StartsWith('-')) {");
+      Emit
+        (R,
+         "        \$subs | Where-Object { \$_ -like ""\$wordToComplete*"" } | ForEach-Object {");
+      Emit
+        (R,
+         "            [System.Management.Automation.CompletionResult]::new(\$_, \$_, 'ParameterName', \$_)");
+      Emit (R, "        }");
+      Emit (R, "        return");
+      Emit (R, "    }");
       Emit
         (R,
          "    \$flags | Where-Object { \$_ -like ""\$wordToComplete*"" } | ForEach-Object {");

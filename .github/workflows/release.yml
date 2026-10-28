@@ -64,6 +64,9 @@ jobs:
       - name: Enforce documentation coverage
         run: python3 tools/tasks.py docs-coverage-check
 
+      - name: Enforce CLI surface parity
+        run: python3 tools/tasks.py surface-parity-check
+
       - uses: alire-project/setup-alire@latest
         with:
           version: '2.1.1'

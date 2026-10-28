@@ -89,9 +89,9 @@ Improve day-to-day developer ergonomics around documentation accuracy, prove out
 
 The tooling-ergonomics work is spread across three minor bumps:
 
-- `v1.65.0` — documentation parity + diagnostics foundation
-- `v1.66.0` — diagnostics depth + failure thresholds + exclusions
-- `v1.67.0` — configuration + watch behavior
+- `v1.65.0` -- documentation parity + diagnostics foundation
+- `v1.66.0` -- diagnostics depth + failure thresholds + exclusions
+- `v1.67.0` -- configuration + watch behavior
 
 Each bump ends with the same release checklist, and a bump is only complete once its changelog is written, the version is bumped, and `just check` passes:
 
@@ -107,25 +107,25 @@ Each bump ends with the same release checklist, and a bump is only complete once
 
 ---
 
-## Release 1: v1.65.0 — Documentation parity + diagnostics foundation
+## Release 1: v1.65.0 -- Documentation parity + diagnostics foundation
 Recommended first bump because it improves correctness and feedback quality before adding new knobs.
 
 ### 1.1 Audit and reconcile `tldr` and `man` documentation
 
-- [ ] Enumerate current tldr page commands and compare them against the CLI reference, `--help`, completion, and the man page.
-- [ ] Fix any clear discrepancies in the tldr page, man page, or CLI reference so the three surfaces agree.
-- [ ] Keep the tldr page concise; do not try to turn it into a full CLI reference.
-- [ ] Update the relevant docs in the same change if any command descriptions or examples change.
-- [ ] Regenerate or refresh generated help surfaces if the tldr/man surfaces change.
+- [x] Enumerate current tldr page commands and compare them against the CLI reference, `--help`, completion, and the man page.
+- [x] Fix any clear discrepancies in the tldr page, man page, or CLI reference so the three surfaces agree.
+- [x] Keep the tldr page concise; do not try to turn it into a full CLI reference.
+- [x] Update the relevant docs in the same change if any command descriptions or examples change.
+- [x] Regenerate or refresh generated help surfaces if the tldr/man surfaces change.
 
 ### 1.2 Add a documentation-integrity check to `just check`
 
-- [ ] Add a check that verifies the tldr page, man page, and CLI reference surfaces are mutually consistent for the supported subcommands and flag shapes they advertise.
-- [ ] Make the check able to report:
+- [x] Add a check that verifies the tldr page, man page, and CLI reference surfaces are mutually consistent for the supported subcommands and flag shapes they advertise.
+- [x] Make the check able to report:
   - a subcommand or flag shown in one surface but missing from another
   - stale command examples
-- [ ] Keep this check alongside the existing docs-coverage and action-parity gates, not as a replacement for them.
-- [ ] Wire the new check into the release path so it runs before the version bump is considered done.
+- [x] Keep this check alongside the existing docs-coverage and action-parity gates, not as a replacement for them.
+- [x] Wire the new check into the release path so it runs before the version bump is considered done.
 
 ### 1.3 Proof-output readability baseline
 
@@ -137,8 +137,8 @@ Recommended first bump because it improves correctness and feedback quality befo
 
 ### 1.4 Documentation updates for Release 1
 
-- [ ] Update CLI reference and related usage pages if the audit changes any command descriptions or examples.
-- [ ] Regenerate or refresh generated help surfaces if the tldr/man surfaces change.
+- [x] Update CLI reference and related usage pages if the audit changes any command descriptions or examples.
+- [x] Regenerate or refresh generated help surfaces if the tldr/man surfaces change.
 - [ ] Confirm the changelog entry for v1.65.0 is written before the version bump.
 
 ### 1.5 Release checklist for v1.65.0
@@ -155,9 +155,9 @@ This section is the per-feature checklist mirror of the release view above, inte
 
 ### Documentation parity
 
-- [ ] Audit tldr and man surfaces against the CLI reference and `--help`.
-- [ ] Fix discrepancies across tldr, man, CLI reference, and completion.
-- [ ] Add a docs-integrity check to `just check`.
+- [x] Audit tldr and man surfaces against the CLI reference and `--help`.
+- [x] Fix discrepancies across tldr, man, CLI reference, and completion.
+- [x] Add a docs-integrity check to `just check`.
 - [ ] Document any changed command descriptions or examples.
 
 ### Proof output readability baseline
@@ -168,11 +168,11 @@ This section is the per-feature checklist mirror of the release view above, inte
 
 ---
 
-## Release 2: v1.66.0 — Diagnostics depth + failure thresholds + exclusions
+## Release 2: v1.66.0 -- Diagnostics depth + failure thresholds + exclusions
 
 ---
 
-## Release 2: v1.66.0 — Diagnostics depth + failure thresholds + exclusions
+## Release 2: v1.66.0 -- Diagnostics depth + failure thresholds + exclusions
 
 ### 2.1 Richer prove diagnostics
 
@@ -247,7 +247,7 @@ This section is the per-feature checklist mirror of the release view above, inte
 
 ---
 
-## Release 3: v1.67.0 — Configuration + watch behavior
+## Release 3: v1.67.0 -- Configuration + watch behavior
 
 ### 3.1 Configuration file support
 

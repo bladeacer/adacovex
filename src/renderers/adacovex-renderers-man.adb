@@ -80,8 +80,8 @@ package body Adacovex.Renderers.Man is
       App
         (Buf,
          Len,
-         "adacovex \- Ada/SPARK coverage, proof, and multi-standard "
-         & "compliance tool");
+         "adacovex \- zero-dependency Ada/SPARK formal verification and "
+         & "compliance toolkit");
       App (Buf, Len, ".SH SYNOPSIS");
       App (Buf, Len, ".B " & Q & "adacovex [options]" & Q);
       App (Buf, Len, ".br");
@@ -107,27 +107,33 @@ package body Adacovex.Renderers.Man is
          ".B " & Q & "adacovex man [--check] [--dir=PATH] [--force]" & Q);
       App (Buf, Len, ".br");
       App (Buf, Len, ".B " & Q & "adacovex tldr [--check] [--force]" & Q);
+      App (Buf, Len, ".br");
+      App (Buf, Len, ".B " & Q & "adacovex complexity [--target=PATH]" & Q);
+      App (Buf, Len, ".br");
+      App
+        (Buf, Len, ".B " & Q & "adacovex spark-coverage [--target=PATH]" & Q);
+      App (Buf, Len, ".br");
+      App
+        (Buf, Len, ".B " & Q & "adacovex completion [bash|fish|zsh|pwsh]" & Q);
+      App (Buf, Len, ".br");
+      App (Buf, Len, ".B " & Q & "adacovex help [TOPIC]" & Q);
       App (Buf, Len, ".SH DESCRIPTION");
+      App (Buf, Len, "adacovex is a zero-dependency Ada/SPARK formal");
       App
         (Buf,
          Len,
-         "adacovex is a zero-dependency Ada/SPARK command-line tool for "
-         & "coverage");
+         "verification and compliance toolkit for coverage analysis,");
+      App
+        (Buf, Len, "proof verification, test-result parsing, multi-standard");
+      App
+        (Buf, Len, "safety-compliance assessment (DO-178C / ISO 26262 / IEC");
+      App
+        (Buf, Len, "62304), and interactive dashboards.  It assesses DO-178C");
+      App (Buf, Len, "DAL A-E criteria, ISO 26262 ASIL A-D/QM, and IEC 62304");
       App
         (Buf,
          Len,
-         "analysis, proof verification, test-result parsing, and "
-         & "safety-compliance");
-      App
-        (Buf,
-         Len,
-         "assessment against DO-178C (DAL A-E), ISO 26262 (ASIL A-D/QM), "
-         & "and IEC");
-      App
-        (Buf,
-         Len,
-         "62304 (safety classes A-C).  It scans Ada sources for "
-         & "subprograms and");
+         "safety classes A-C.  It scans Ada sources for subprograms and");
       App
         (Buf,
          Len,
