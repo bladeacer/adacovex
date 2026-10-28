@@ -44,8 +44,12 @@ package body Adacovex_Tldr_Tests is
            (Index (P, "# adacovex") = P'First,
             "bundled page starts with the adacovex title");
          R.Check
-           (Index (P, "> Coverage, proof, and compliance") > 0,
-            "bundled page has the one-line description");
+           (Index
+              (P,
+               "> Zero-dependency Ada/SPARK formal verification and "
+               & "compliance toolkit")
+            > 0,
+            "bundled page has the README one-line description");
          R.Check
            (Index (P, "`adacovex sbom`") > 0,
             "bundled page carries the sbom example");

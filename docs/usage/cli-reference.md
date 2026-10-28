@@ -18,9 +18,12 @@ adacovex sbom [--format=cyclonedx-json|spdx-json|md] [--out=PATH]
            [--standard=NAME|--dal=LEVEL|--asil=LEVEL|--class=LEVEL]
 adacovex prove [-t=PATH] [prove options]
 adacovex status [-t=PATH]
+adacovex complexity [-t=PATH]
+adacovex spark-coverage [-t=PATH]
 adacovex man [--check|--force] [--dir=PATH]
 adacovex tldr [--check|--force]
 adacovex completion [bash|fish|zsh|pwsh]
+adacovex help [TOPIC]
 ```
 
 Every flag has the explicit long spelling and, where it reads better, a

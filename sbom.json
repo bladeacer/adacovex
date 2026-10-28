@@ -3,7 +3,7 @@
   "specVersion": "1.5",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-10-27T11:41:33",
+    "timestamp": "2026-10-28T11:05:32",
     "tools": [
       {"vendor": "bladeacer", "name": "adacovex", "version": "1.64.0"}
     ],
@@ -233,7 +233,7 @@
       "type": "library",
       "bom-ref": "pkg:generic/perf",
       "name": "perf",
-      "version": "7.2.11-1",
+      "version": "7.3-1",
       "purl": "pkg:generic/perf",
       "description": "System tool referenced by the project (dev dependency)",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]

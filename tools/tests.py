@@ -50,6 +50,7 @@ rst2md = importlib.import_module("rst2md")
 check_book_links = importlib.import_module("check-book-links")
 check_docs = importlib.import_module("check-docs")
 check_docs_coverage = importlib.import_module("check-docs-coverage")
+check_surface_parity = importlib.import_module("check-surface-parity")
 check_version = importlib.import_module("check-version-consistency")
 spark_off = importlib.import_module("spark-off-check")
 update_reqs = importlib.import_module("update-requirements")
@@ -2450,6 +2451,54 @@ class TestCheckDocsCoverage(unittest.TestCase):
         # covered.
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(check_docs_coverage.check(), 0)
+
+
+class TestCheckSurfaceParity(unittest.TestCase):
+    """The CLI-surface parity gate (tools/check-surface-parity.py).
+
+    The gate pins the --help / man / cli-reference / completion surfaces to
+    the parser's subcommand set and the tldr prose to the README tagline.
+    """
+
+    def test_subcommands_are_the_parser_bare_words(self) -> None:
+        # The gate reads the parser's `elsif A = "word" then` branches, so
+        # its set is only as good as that source.  Pin the expected nine.
+        self.assertEqual(
+            check_surface_parity.subcommands(),
+            {"sbom", "prove", "complexity", "spark-coverage", "status",
+             "completion", "man", "tldr", "help"})
+
+    def test_the_tagline_comes_from_the_readme(self) -> None:
+        tagline = check_surface_parity.readme_tagline()
+        # The article is stripped and the case is folded, so a surface may
+        # capitalise freely while the substance must still match.
+        self.assertTrue(tagline.startswith("zero-dependency ada/spark"),
+                        tagline)
+        self.assertIn("interactive dashboards", tagline)
+        self.assertEqual(tagline, tagline.casefold())
+
+    def test_reference_surfaces_advertise_every_subcommand(self) -> None:
+        subs = check_surface_parity.subcommands()
+        for name, text in (
+            ("help", check_surface_parity._usage_block(
+                check_surface_parity._config_text())),
+            ("man", check_surface_parity.man_synopsis()),
+            ("cli-reference", check_surface_parity.cli_reference_fence()),
+        ):
+            self.assertEqual(
+                subs,
+                check_surface_parity._advertised_subcommands(text),
+                f"{name} surface drift")
+
+    def test_completion_scripts_offer_every_subcommand(self) -> None:
+        subs = check_surface_parity.subcommands()
+        for shell, shell_subs in check_surface_parity.completion_subsets().items():
+            self.assertEqual(subs, shell_subs, f"{shell} completion drift")
+
+    def test_the_current_tree_passes_the_gate(self) -> None:
+        # The real tree is the fixture: every surface agrees.
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(check_surface_parity.check(), 0)
 
 
 class TestCheckBookLinks(unittest.TestCase):

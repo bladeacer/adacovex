@@ -219,8 +219,8 @@ The proof result is anchored in `docs/proof/` (the per-version VC ledger).
 - **Keep docs current**: every code change updates the relevant user docs,
   the Ada docstrings that feed `docs/api-docs`, and the changelog, then
   re-runs the sync gates (`just docs-check`, `just action-parity-check`,
-  `just agents-tree`, `just doc-links`, `just link-check`). Stale docs are a
-  release blocker.
+  `just surface-parity-check`, `just agents-tree`, `just doc-links`,
+  `just link-check`). Stale docs are a release blocker.
 - **Debug**: `adacovex --verbose` prints pipeline step diagnostics. `adacovex
   status` reports toolchain + platform state. `--no-cache` bypasses the
   on-disk result cache when inputs changed without content changing.

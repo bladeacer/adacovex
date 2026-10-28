@@ -2,8 +2,10 @@
 
 ## Project
 
-**adacovex** -- zero-dependency Ada/SPARK CLI tool for coverage, proof analysis,
-test-result parsing, DO-178C DAL compliance assessment, and interactive dashboards.
+**adacovex** -- zero-dependency Ada/SPARK formal verification and compliance
+toolkit for coverage analysis, proof verification, test-result parsing,
+multi-standard safety-compliance assessment (DO-178C / ISO 26262 / IEC 62304),
+and interactive dashboards.
 
 - **Repo**: https://github.com/bladeacer/adacovex
 - **Language**: Ada 2012 and later / SPARK 2014 (GNAT, Alire)
@@ -86,13 +88,19 @@ dashboard coverage: every `Known_Flags` entry, every route the server
 dispatches on, and every hand-written `docs/usage/` or `docs/contributing/`
 page (which a `{toctree}` in `docs/index.md` must name) is checked, so a
 missing doc fails CI instead of waiting for the next manual audit. Add the
-doc in the same change, exactly like an action input.
+doc in the same change, exactly like an action input. `just
+surface-parity-check` is the third feature gate: it keeps the surfaces that
+describe the CLI itself -- the `--help` usage block, the man page SYNOPSIS,
+the cli-reference usage fence, the completion subcommand lists, and the tldr
+examples -- advertising exactly the parser's subcommand set with no stale
+flag, and it requires the tldr description, the `--help` footer, the man
+DESCRIPTION, and the AGENTS.md blurb to carry the README tagline.
 
 Finish every change in the same response that made it: update the relevant
 docs and re-run the sync gates at the end of that response, or invoke the
 wrapper directly instead `just check`:
 `just docs-check`, `just action-parity-check`, `just docs-coverage-check`,
-`just agents-tree` (when the source tree
+`just surface-parity-check`, `just agents-tree` (when the source tree
 changes), `just doc-links`, `just link-check`, and `just book-links-check`
 plus `python3 tools/gen-docs.py --check` (when `docs/` changed -- they fail
 on a broken bundled-manual link or a stale committed spec; the spec is the
@@ -308,9 +316,11 @@ adacovex sbom [--format=cyclonedx-json|spdx-json] [--out=PATH]
 adacovex prove [-t=PATH] [prove options]
 adacovex status [-t=PATH] [--tz=ZONE]
 adacovex complexity [-t=PATH] [--excludes=EXT,EXT]
+adacovex spark-coverage [--target=PATH]
 adacovex man [--check] [--dir=PATH]
 adacovex tldr [--check]
 adacovex completion [bash|fish|zsh|pwsh]
+adacovex help [TOPIC]
 ```
 
 Every flag has an explicit long spelling. The shorthands are `-t`
@@ -508,6 +518,15 @@ the residue tree-wide.
 docs-coverage-check`, and the `ci.yml` `docs-coverage` job): it fails when a
 CLI flag, a dispatched server route, or a hand-written usage/contributing
 page is missing from the user docs.
+`tools/check-surface-parity.py` is the third gate (`just
+surface-parity-check`, and the `ci.yml` `surface-parity` job): it fails when
+the `--help` usage block, the man page SYNOPSIS, the cli-reference usage
+fence, or a completion script stops advertising the parser's subcommand set,
+when one of those surfaces shows a stale subcommand or flag, or when the tldr
+description, the `--help` footer, the man DESCRIPTION, or the AGENTS.md
+blurb drops the README tagline. The tldr page may advertise a subset (it is
+a cheat sheet) and the README quick-start fence is a link-out summary, so
+neither has to enumerate every subcommand -- they only have to stay true.
 `tools/csslint.py` enforces the dashboard CSS 4px spacing rule (every
 margin/padding/gap value a multiple of 4px); it is wired as `just
 csslint-check`, run inside `just build`, and part of the `just check` cheap
@@ -617,7 +636,7 @@ compatibility shim. The table names the canonical target for each task.
 
 | Target | Description |
 |--------|-------------|
-| `check` | **The single everything-check / verification entry point.** Run it after any change. It runs every gate CI runs before a release, and **`fmt` is first**: gnatprove and the API docs both read the sources, so every later gate must see formatted code. Then the cheap static gates (ascii, complexity, csslint, spark-off, changelog, action-parity, docs-coverage, tools-check, cli-e2e, version, version-consistency, doc-links, link, docs-check, para-split, tldr, book-links), then build + native tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description, requirements). Every gate runs a preflight first: a gate whose tool is missing on the host (no `alr` on `PATH`, no `gnatformat` on the developer path, a `gnatdoc` that cannot document a one-package probe project, no `sphinx` in the interpreter) is SKIPped with the reason instead of failing, the run continues past a failed gate, and the summary shows PASS/FAIL/SKIP per gate, exiting non-zero only when a gate failed. `just check` resolves `gnatprove` for you (it is fetched into `<data>/toolchain/` and executed directly when not on `PATH`), so you never have to install or point at a prover by hand -- just run `just check` and it verifies the whole tree end to end. `just prove` is the SPARK sub-gate if you only changed proof-affecting code |
+| `check` | **The single everything-check / verification entry point.** Run it after any change. It runs every gate CI runs before a release, and **`fmt` is first**: gnatprove and the API docs both read the sources, so every later gate must see formatted code. Then the cheap static gates (ascii, complexity, csslint, spark-off, changelog, action-parity, docs-coverage, surface-parity, tools-check, cli-e2e, version, version-consistency, doc-links, link, docs-check, para-split, tldr, book-links), then build + native tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description, requirements). Every gate runs a preflight first: a gate whose tool is missing on the host (no `alr` on `PATH`, no `gnatformat` on the developer path, a `gnatdoc` that cannot document a one-package probe project, no `sphinx` in the interpreter) is SKIPped with the reason instead of failing, the run continues past a failed gate, and the summary shows PASS/FAIL/SKIP per gate, exiting non-zero only when a gate failed. `just check` resolves `gnatprove` for you (it is fetched into `<data>/toolchain/` and executed directly when not on `PATH`), so you never have to install or point at a prover by hand -- just run `just check` and it verifies the whole tree end to end. `just prove` is the SPARK sub-gate if you only changed proof-affecting code |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
 | `test` | Build + run the 2040-test native suite |
@@ -640,6 +659,7 @@ compatibility shim. The table names the canonical target for each task.
 | `changelog-check` | Validate all `docs/changelogs/` against the canonical format (tools/check-changelogs.py) |
 | `action-parity-check` | Fail if the GitHub Action drifts from the base CLI option set or the docs/usage/ci-cd.md input table (tools/check-action-parity.py; feature gate) |
 | `docs-coverage-check` | Fail when a `Known_Flags` entry, a dispatched server route, or a hand-written usage/contributing page is missing from the user docs (tools/check-docs-coverage.py; feature gate) |
+| `surface-parity-check` | Fail when the `--help` usage block, the man SYNOPSIS, the cli-reference fence, or a completion script stops advertising the parser's subcommand set, when a surface shows a stale subcommand/flag, or when the tldr/help/man/AGENTS prose drops the README tagline (tools/check-surface-parity.py; feature gate) |
 | `version-consistency-check` | Fail when a manifest, the generated version spec, the built binary, or the committed SBOM names a different version (tools/check-version-consistency.py; feature gate) |
 | `release` | Build the release binary and verify its version, prove, validate, run coverage gate vs last release, bundle + tag & push |
 | `ascii-check` | Verify all source files are pure ASCII (skips generated e2e output: playwright-report / test-results) |
