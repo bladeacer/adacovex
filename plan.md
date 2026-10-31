@@ -95,9 +95,9 @@ The tooling-ergonomics work is spread across three minor bumps:
 
 Each bump ends with the same release checklist, and a bump is only complete once its changelog is written, the version is bumped, and `just check` passes:
 
-- [ ] v1.65.0 changelog written
-- [ ] v1.65.0 version bumped
-- [ ] `just check` passes for v1.65.0
+- [x] v1.65.0 changelog written
+- [x] v1.65.0 version bumped
+- [x] `just check` passes for v1.65.0
 - [ ] v1.66.0 changelog written
 - [ ] v1.66.0 version bumped
 - [ ] `just check` passes for v1.66.0
@@ -129,23 +129,23 @@ Recommended first bump because it improves correctness and feedback quality befo
 
 ### 1.3 Proof-output readability baseline
 
-- [ ] Start with the diagnostics that are cheapest to make useful and least likely to disturb existing behavior:
+- [x] Start with the diagnostics that are cheapest to make useful and least likely to disturb existing behavior:
   - cleaner replay of the base prover stdout/stderr
   - clearer separation between tool noise and actionable failure detail
-- [ ] Defer richer inline annotations and structured failure shapes to v1.66.0 once the output model is agreed.
-- [ ] Keep the baseline update compatible with the existing quiet-by-default prove behavior.
+- [x] Defer richer inline annotations and structured failure shapes to v1.66.0 once the output model is agreed.
+- [x] Keep the baseline update compatible with the existing quiet-by-default prove behavior.
 
 ### 1.4 Documentation updates for Release 1
 
 - [x] Update CLI reference and related usage pages if the audit changes any command descriptions or examples.
 - [x] Regenerate or refresh generated help surfaces if the tldr/man surfaces change.
-- [ ] Confirm the changelog entry for v1.65.0 is written before the version bump.
+- [x] Confirm the changelog entry for v1.65.0 is written before the version bump.
 
 ### 1.5 Release checklist for v1.65.0
 
-- [ ] v1.65.0 changelog written
-- [ ] version bumped to v1.65.0
-- [ ] `just check` passes
+- [x] v1.65.0 changelog written
+- [x] version bumped to v1.65.0
+- [x] `just check` passes
 
 ---
 
@@ -158,13 +158,13 @@ This section is the per-feature checklist mirror of the release view above, inte
 - [x] Audit tldr and man surfaces against the CLI reference and `--help`.
 - [x] Fix discrepancies across tldr, man, CLI reference, and completion.
 - [x] Add a docs-integrity check to `just check`.
-- [ ] Document any changed command descriptions or examples.
+- [x] Document any changed command descriptions or examples.
 
 ### Proof output readability baseline
 
-- [ ] Improve the replay/formatting of base prover output.
-- [ ] Separate tool noise from actionable failure detail.
-- [ ] Keep the baseline compatible with quiet-by-default prove behavior.
+- [x] Improve the replay/formatting of base prover output.
+- [x] Separate tool noise from actionable failure detail.
+- [x] Keep the baseline compatible with quiet-by-default prove behavior.
 
 ---
 

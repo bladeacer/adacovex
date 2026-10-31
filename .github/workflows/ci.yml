@@ -86,7 +86,7 @@ jobs:
           verbose: true
           require-spark: Gold
           require-docstrings: 100
-          require-tests: 2040
+          require-tests: 2060
           require-proof: 100
           #  Statement-coverage gate: the action runs
           #  `spark-coverage --require-coverage=... --gate-metric=statements`
