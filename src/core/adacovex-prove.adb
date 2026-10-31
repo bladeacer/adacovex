@@ -1441,8 +1441,8 @@ package body Adacovex.Prove is
       end;
    end Global_GNATprove_Pin;
 
-   --  Replay a captured gnatprove output file to stdout, dropping the
-   --  suppressed informational-message blocks. Sets is a comma-separated
+   --  Replay a captured gnatprove output file as one framed block, dropping
+   --  the noise a finished run no longer needs. Sets is a comma-separated
    --  list of suppression-set names (empty = the default set,
    --  "unrolling-inlining"); a set name S suppresses every message block
    --  carrying the `[info-S]` tag (or a bare `[S]` tag) -- purely
@@ -1460,9 +1460,27 @@ package body Adacovex.Prove is
    --
    --  A small FIFO buffers the header lines ("info:" + "-->" location) so
    --  the whole block -- tag line, header, and any "+" sub-message -- is
-   --  dropped together; every other gnatprove line (checks, summary,
-   --  warnings) passes through untouched.
-   procedure Replay_Suppressed (Path : String; Sets : String) is
+   --  dropped together. The drop continues over the block's continuation
+   --  lines (location, code excerpt, caret ruler, sub-message) so no
+   --  fragment of a removed notice is left behind. The `Phase N of M:`
+   --  progress lines are dropped too: a replay runs after the fact, so
+   --  progress is meaningless there. Every other gnatprove line (checks,
+   --  errors, warnings, summary) passes through untouched.
+   --
+   --  The output is framed: blank-line runs collapse to one, one blank line
+   --  opens the block so it cannot run into the caller's status lines, one
+   --  blank line closes it, and a footer reports how many notices were
+   --  hidden when any were. The counts go to Stats.
+   --
+   --  Out_Path names the destination file; it is created or overwritten.
+   --  An empty Out_Path replays to standard output, which is the
+   --  quiet-by-default path Run_Prove streams to.
+   procedure Replay_Suppressed
+     (Path     : String;
+      Sets     : String;
+      Out_Path : String;
+      Stats    : out Replay_Stats)
+   is
       use Ada.Text_IO;
       use Ada.Strings.Fixed;
 
@@ -1481,6 +1499,15 @@ package body Adacovex.Prove is
       Ct        : Natural := 0;
       Skip_Cont : Boolean := False;
       F         : File_Type;
+      Dest      : File_Type;
+
+      --  Framing state and pass counts, copied into Stats before return.
+      Kept       : Natural := 0;  --  content lines written
+      Prev_Blank : Boolean := True;
+      N_Hidden   : Natural := 0;
+      N_Progress : Natural := 0;
+      N_Errors   : Natural := 0;
+      N_Warnings : Natural := 0;
 
       --  First non-blank character of S (' ' when S is blank).
       function Head (S : String) return Character is
@@ -1502,12 +1529,92 @@ package body Adacovex.Prove is
            and then T (T'First .. T'First + Prefix'Length - 1) = Prefix;
       end Starts;
 
+      --  True when L is gnatprove's phase-progress banner, such as
+      --  "Phase 2 of 3: generation of Global contracts ...". It only says
+      --  how far the run has got, so a replay that runs after the fact
+      --  drops it as tool noise.
+      function Is_Progress (L : String) return Boolean is
+         T : constant String := Trim (L, Ada.Strings.Both);
+      begin
+         return
+           T'Length >= 7
+           and then T (T'First .. T'First + 5) = "Phase "
+           and then T (T'First + 6) in '0' .. '9';
+      end Is_Progress;
+
+      --  True when L continues a message block instead of starting one.
+      --  gnatprove starts every top-level message with a letter: a severity
+      --  word (`error:`, `info:`) or a banner (`Success:`, `gnatprove:`).
+      --  Every continuation -- a `-->` location, a code excerpt, a caret
+      --  ruler, a `+` sub-message, or the blank line after a block -- starts
+      --  with a symbol, a digit, or white space.
+      function Is_Continuation (L : String) return Boolean is
+      begin
+         return Head (L) not in 'A' .. 'Z' | 'a' .. 'z';
+      end Is_Continuation;
+
+      --  True when L names an error: a top-level `error:` severity message,
+      --  a compiler-style `file:line:col: error:` message, or gnatprove's
+      --  own `gnatprove: error ...` failure banner.
+      function Is_Error_Line (L : String) return Boolean is
+         T : constant String := Trim (L, Ada.Strings.Both);
+      begin
+         return
+           Starts (T, "error:")
+           or else Starts (T, "gnatprove: error")
+           or else Index (L, ": error:") > 0;
+      end Is_Error_Line;
+
+      --  True when L names a warning, in the same three shapes as
+      --  Is_Error_Line.
+      function Is_Warning_Line (L : String) return Boolean is
+         T : constant String := Trim (L, Ada.Strings.Both);
+      begin
+         return
+           Starts (T, "warning:")
+           or else Starts (T, "gnatprove: warning")
+           or else Index (L, ": warning:") > 0;
+      end Is_Warning_Line;
+
+      --  Write one line to the destination file, or to standard output when
+      --  Out_Path is empty.
+      procedure Say (S : String) is
+      begin
+         if Out_Path'Length = 0 then
+            Put_Line (S);
+         else
+            Put_Line (Dest, S);
+         end if;
+      end Say;
+
+      --  Write one filtered line as part of the framed block. A blank line
+      --  is kept only between two content lines, and the first content line
+      --  is preceded by one blank line that separates the replay from
+      --  whatever the caller printed before it.
+      procedure Emit (Line : String) is
+      begin
+         if Head (Line) = ' ' then
+            if Kept > 0 and then not Prev_Blank then
+               Say ("");
+               Prev_Blank := True;
+            end if;
+            return;
+         end if;
+         if Kept = 0 then
+            Say ("");
+            Prev_Blank := True;
+         end if;
+         Say (Line);
+         Kept := Kept + 1;
+         Prev_Blank := False;
+      end Emit;
+
       --  Queue S for later output, flushing the oldest line once full.
       procedure Push (S : String) is
          L : constant Natural := Natural'Min (S'Length, Max_Line);
       begin
          if Ct = 4 then
-            Put_Line (Bufs (1) (1 .. Lens (1)));
+            Emit (Bufs (1) (1 .. Lens (1)));
             for I in 1 .. 3 loop
                Bufs (I) := Bufs (I + 1);
                Lens (I) := Lens (I + 1);
@@ -1568,15 +1675,22 @@ package body Adacovex.Prove is
          Set_Ct := 1;
       end if;
 
+      --  The destination is a caller-named file, created here, or the
+      --  default output the quiet replay has always streamed to.
+      if Out_Path'Length > 0 then
+         Create (Dest, Out_File, Out_Path);
+      end if;
+
       Open (F, In_File, Path);
       while not End_Of_File (F) loop
          declare
             L : constant String := Get_Line (F);
          begin
             if Is_Suppressed (L) then
-               --  Tagged line: drop it. For a "+" sub-message (the
-               --  in-instantiation shape) also drop its "info:" + "-->"
-               --  header pair that is still waiting in the buffer.
+               --  Tagged line: drop it and count it. For a "+" sub-message
+               --  (the in-instantiation shape) also drop its "info:" +
+               --  "-->" header pair that is still waiting in the buffer.
+               N_Hidden := N_Hidden + 1;
                if Head (L) = '+' and then Ct >= 2 then
                   if Starts (Bufs (Ct) (1 .. Lens (Ct)), "-->")
                     and then Starts
@@ -1586,18 +1700,27 @@ package body Adacovex.Prove is
                   end if;
                end if;
                Skip_Cont := True;
-            elsif Skip_Cont and then (Head (L) = '-' or else Head (L) = '+')
-            then
-               --  Location / sub-message continuation of a suppressed block.
+            elsif Is_Progress (L) then
+               --  Phase banner: pure progress, meaningless once the run is
+               --  over, so the replay drops it and counts it.
+               N_Progress := N_Progress + 1;
+            elsif Skip_Cont and then Is_Continuation (L) then
+               --  Location, code excerpt, caret ruler, or sub-message of
+               --  the dropped block: no fragment of it survives.
                null;
             else
                Skip_Cont := False;
+               if Is_Error_Line (L) then
+                  N_Errors := N_Errors + 1;
+               elsif Is_Warning_Line (L) then
+                  N_Warnings := N_Warnings + 1;
+               end if;
                Push (L);
             end if;
          end;
       end loop;
       while Ct > 0 loop
-         Put_Line (Bufs (1) (1 .. Lens (1)));
+         Emit (Bufs (1) (1 .. Lens (1)));
          for I in 1 .. Ct - 1 loop
             Bufs (I) := Bufs (I + 1);
             Lens (I) := Lens (I + 1);
@@ -1605,7 +1728,56 @@ package body Adacovex.Prove is
          Ct := Ct - 1;
       end loop;
       Close (F);
+
+      --  State what the replay filtered out, then close the framed block
+      --  with one blank line so the caller's next line cannot run into it.
+      if N_Hidden > 0 then
+         Emit
+           ("  filtered: "
+            & Natural'Image (N_Hidden)
+            & " informational notice(s) hidden (--verbose shows them)");
+      end if;
+      if Kept > 0 and then not Prev_Blank then
+         Say ("");
+      end if;
+      if Out_Path'Length > 0 then
+         Close (Dest);
+      end if;
+      Stats :=
+        (Hidden   => N_Hidden,
+         Progress => N_Progress,
+         Errors   => N_Errors,
+         Warnings => N_Warnings);
    end Replay_Suppressed;
+
+   --  The actionable tail of the failure line: how many error and warning
+   --  lines the replay above contained, so the outcome is stated apart from
+   --  the prover's informational noise. It is empty when nothing was
+   --  replayed (a spawn failure, or a --verbose run that streams straight to
+   --  the terminal) or when the replay carried neither kind of line.
+   --  @param Done  True when the quiet replay ran and reported statistics.
+   --  @param Stats  Counts gathered by that replay.
+   --  @return Text appended to the ERROR line, or "" when there is none.
+   function Failure_Detail (Done : Boolean; Stats : Replay_Stats) return String
+   is
+   begin
+      if not Done or else (Stats.Errors = 0 and then Stats.Warnings = 0) then
+         return "";
+      end if;
+      if Stats.Errors > 0 and then Stats.Warnings > 0 then
+         return
+           " (error lines:"
+           & Natural'Image (Stats.Errors)
+           & ", warning lines:"
+           & Natural'Image (Stats.Warnings)
+           & " above)";
+      elsif Stats.Errors > 0 then
+         return " (error lines:" & Natural'Image (Stats.Errors) & " above)";
+      else
+         return
+           " (warning lines:" & Natural'Image (Stats.Warnings) & " above)";
+      end if;
+   end Failure_Detail;
 
    procedure Run_Prove
      (Target_Dir : String; Opts : Prove_Options; Success : out Boolean)
@@ -1627,6 +1799,13 @@ package body Adacovex.Prove is
       Jobs    : Natural := 0;
       Options : String (1 .. 512);
       OLen    : Natural := 0;
+
+      --  Statistics of the quiet replay, which streams to the terminal
+      --  (empty Out_Path). Replayed is set only after a capture was
+      --  replayed, so the failure line below carries the detail only when
+      --  there is any to carry.
+      R_Stats  : Replay_Stats;
+      Replayed : Boolean := False;
 
       --  True when proof patches were applied and gnatprove ran against the
       --  patched proof tree instead of the target itself. When set, the
@@ -2149,7 +2328,11 @@ package body Adacovex.Prove is
                Err_To_Out => True);
             if Ada.Directories.Exists (Tmp) then
                Replay_Suppressed
-                 (Tmp, Ada.Strings.Unbounded.To_String (Opts.Suppress_Sets));
+                 (Tmp,
+                  Ada.Strings.Unbounded.To_String (Opts.Suppress_Sets),
+                  "",
+                  R_Stats);
+               Replayed := True;
                declare
                   Del_OK : Boolean;
                begin
@@ -2298,7 +2481,9 @@ package body Adacovex.Prove is
       else
          Ada.Text_IO.Put_Line
            (Ada.Text_IO.Standard_Error,
-            "  ERROR: gnatprove exited with code" & Integer'Image (Code));
+            "  ERROR: gnatprove exited with code"
+            & Integer'Image (Code)
+            & Failure_Detail (Replayed, R_Stats));
          Success := False;
       end if;
    end Run_Prove;

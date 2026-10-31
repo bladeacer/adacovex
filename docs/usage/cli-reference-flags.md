@@ -184,6 +184,23 @@ Vendored dependencies then participate in the proof without their sources being 
 | `--suppress-warnings` | on | Alias of `--quiet` (the default suppression set). Kept for compatibility |
 | `--suppress-warnings=SETS` | on | Hide GNATprove info messages whose tags match the comma-separated suppression-set names (for example `--suppress-warnings=unrolling-inlining,xyz`). A set name `S` suppresses blocks tagged `[info-S]` (or bare `[S]`). `--verbose` always shows every message |
 
+A local `prove` run is quiet by default. It captures the gnatprove output
+and replays it once the run finishes. The replay keeps every actionable
+line: check results, errors, warnings, and the summary. It drops the tool
+noise: the `Phase N of M:` progress lines, the suppression-tagged notice
+blocks with their `-->` location, code excerpt, and `+` sub-message
+lines, and the blank lines those drops leave behind (runs of blank lines
+collapse to one).
+
+The replay opens and closes with one blank line, so it never runs into
+the lines adacovex prints around it. When it removes notices, it states
+so with `filtered: N informational notice(s) hidden (--verbose shows
+them)`. When gnatprove fails, the final `ERROR:` line adds the count of
+error and warning lines it saw, for example
+`ERROR: gnatprove exited with code 1 (error lines: 2 above)`.
+`--verbose` turns the capture off and streams the raw prover output live,
+so CI output stays the unedited prover stream.
+
 `prove` accepts all assessment flags too (`--dal`, `--standard`, the
 `--require-*` gates, `--emit-svg`, and more), so CI gates apply to the proof
 run directly. `--force` is shared with `man --force` (see below); the

@@ -20,7 +20,7 @@
   | Opt-out markers                          |  16 | PASS     |
   | Dir cache                                |  29 | PASS     |
   | Diff reports                             |  36 | PASS     |
-  | Prove runner                             |  24 | PASS     |
+  | Prove runner                             |  44 | PASS     |
   | SPARK coverage                           |  18 | PASS     |
   | ANSI terminal report                     |  28 | PASS     |
   | CPU and jobs                             |  24 | PASS     |
@@ -31,4 +31,4 @@
   | tldr installer                           |  48 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 2040  Failed: 0
+  Passed: 2060  Failed: 0

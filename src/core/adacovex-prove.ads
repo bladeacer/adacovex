@@ -192,6 +192,51 @@ package Adacovex.Prove is
    --  when obj/gnatprove/ was wiped) and skips the prover entirely. The
    --  command's stdout and stderr stream to the parent's terminal.
    --  @param Target_Dir  Project root directory.
+   --  Counts gathered by one quiet-mode replay pass over a captured gnatprove
+   --  output file. They keep the actionable detail apart from the tool noise:
+   --  Hidden is how many informational notice blocks the suppression sets
+   --  removed, Progress is how many phase-progress lines the replay dropped
+   --  (pure progress, meaningless once the run has finished), and Errors and
+   --  Warnings are how many message lines named a failure.
+   type Replay_Stats is record
+      --  Informational notice blocks dropped by the suppression sets.
+      Hidden   : Natural := 0;
+      --  `Phase N of M:` progress lines dropped.
+      Progress : Natural := 0;
+      --  Emitted lines carrying an error message.
+      Errors   : Natural := 0;
+      --  Emitted lines carrying a warning message.
+      Warnings : Natural := 0;
+   end record;
+
+   --  Replay a captured gnatprove output file (its combined stdout and
+   --  stderr) as one framed block, dropping the noise a finished run no
+   --  longer needs and keeping every actionable line:
+   --    * the informational blocks whose tags match Sets, together with
+   --      their `-->` location, code excerpt, caret ruler, and `+`
+   --      sub-message continuation lines;
+   --    * the `Phase N of M:` progress lines, which only mean something
+   --      while the run is still going;
+   --    * the orphan blank lines those drops leave behind -- runs of blank
+   --      lines collapse to one.
+   --  Checks, errors, warnings, and the summary pass through untouched. The
+   --  block is framed: one blank line opens it so it never runs into the
+   --  caller's own status lines, and one blank line closes it. When notices
+   --  were dropped, a footer states how many and that --verbose shows them,
+   --  so a reader always learns that output was edited.
+   --  @param Path  Captured gnatprove output file to replay.
+   --  @param Sets  Comma-separated suppression-set names. Empty selects the
+   --  default set (`unrolling-inlining`). A set name S drops blocks tagged
+   --  `[info-S]` or `[S]`.
+   --  @param Out_Path  Destination file. Empty replays to standard output.
+   --  The directory of a named file must already exist.
+   --  @param Stats  Counts gathered during the pass.
+   procedure Replay_Suppressed
+     (Path     : String;
+      Sets     : String;
+      Out_Path : String;
+      Stats    : out Replay_Stats);
+
    --  @param Opts  GNATprove invocation options.
    --  @param Success  True if gnatprove ran and exited 0.
    procedure Run_Prove

@@ -78,6 +78,17 @@ Cache : Boolean := True;
 end record;
 ```
 
+### type Replay_Stats
+
+```ada
+type Replay_Stats is record
+Hidden   : Natural := 0;
+Progress : Natural := 0;
+Errors   : Natural := 0;
+Warnings : Natural := 0;
+end record;
+```
+
 ## Functions
 
 ### function Build_Option_String (Opts : Adacovex.Prove.Prove_Options; Jobs : Standard.Natural) return Standard.String
@@ -121,6 +132,15 @@ end record;
 | `Success` | True if a root .gpr file was found. |
 | `Target_Dir` | Project root directory. |
 
+### procedure Replay_Suppressed (Path : Standard.String; Sets : Standard.String; Out_Path : Standard.String; Stats : Adacovex.Prove.Replay_Stats)
+
+| Parameter | Description |
+|-----------|-------------|
+| `Out_Path` | Destination file. Empty replays to standard output. |
+| `Path` | Captured gnatprove output file to replay. |
+| `Sets` | Comma-separated suppression-set names. Empty selects the |
+| `Stats` | Counts gathered during the pass. |
+
 ### procedure Resolve_GNATprove (Target_Dir : Standard.String; Pinned_Version : Standard.String; Exe_Path : Standard.String; Exe_Len : Standard.Natural; Toolchain_Dir : Standard.String; Dir_Len : Standard.Natural; Identity : Standard.String; Ident_Len : Standard.Natural; Success : Standard.Boolean)
 
 | Parameter | Description |
@@ -139,9 +159,9 @@ end record;
 
 | Parameter | Description |
 |-----------|-------------|
-| `Opts` | GNATprove invocation options. |
-| `Success` | True if gnatprove ran and exited 0. |
-| `Target_Dir` | Project root directory. |
+| `Opts` |  |
+| `Success` |  |
+| `Target_Dir` |  |
 
 ### procedure Run_Status (Target_Dir : Standard.String; TZ_Spec : Standard.String; Success : Standard.Boolean)
 

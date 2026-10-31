@@ -79,6 +79,32 @@ cache *and* session wiped), so its numbers are always one of the stable
 shapes. Category definitions and current figures:
 [Performance](perf/index.md).
 
+### Prove output: quiet by default
+
+A local `prove` run captures the gnatprove output and replays it once
+the run finishes. The replay keeps every actionable line: check results,
+errors, warnings, and the summary. It drops the `Phase N of M:` progress
+lines, the suppression-tagged notice blocks with their continuation
+lines, and the blank lines those drops leave behind. Runs of blank lines
+collapse to one.
+
+The replay opens and closes with one blank line, so it never runs into
+the lines adacovex prints around it. When it removes notices, it states
+so on one line:
+
+```
+  filtered: 9 informational notice(s) hidden (--verbose shows them)
+```
+
+When gnatprove fails, the final line adds the failure detail, for
+example `ERROR: gnatprove exited with code 1 (error lines: 2 above)`.
+`--verbose` turns the capture off and streams the raw prover output
+live. CI passes `--verbose`, so CI keeps the full prover stream.
+
+The flags that drive this behaviour: `--quiet`, `--suppress-warnings`,
+and `--suppress-warnings=SETS`.
+[CLI reference -- the `prove` subcommand](../usage/cli-reference-flags.md#the-prove-subcommand).
+
 ### The SARIF report
 
 Every `prove` run leaves two files in `<target>/obj/gnatprove/`. The
