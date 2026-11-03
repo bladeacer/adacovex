@@ -61,6 +61,7 @@ file by hand:
 # <config>/adacovex.toml, for example ~/.config/adacovex/adacovex.toml
 [prove]
 gnatprove-version = "16.1.0"
+coverage = true
 ```
 
 ### `[prove] gnatprove-version`
@@ -85,6 +86,22 @@ full resolution order is: project manifest pin, then the global pin
 (environment variable, then this file), then a gnatprove on `$PATH`, then the
 cached toolchain under `<data>/toolchain/`, and finally the last-resort
 platform download.
+
+### `[prove] coverage`
+
+This key sets whether a successful `prove` run prints the proof-coverage
+summary. The summary is one line: statement coverage, subprogram coverage, and
+VC coverage, each with the proved count and the total.
+
+```
+  coverage:  statements 96% (1448/1508)  subprograms 98% (392/400)  VCs 100% (1054/1054)
+```
+
+The default is `true`, so the summary is on without a configuration file. Set
+`coverage = false` to hide it for every local run. The flags `--coverage` and
+`--no-coverage` win over this key, so a script or a CI job can override it for
+one run. The key does not change the proof: it only changes the summary line.
+`adacovex spark-coverage` prints the same coverage as a full report.
 
 ## Environment variables
 

@@ -71,7 +71,10 @@ table bounds), `overflow` (a bound too wide for the arithmetic), `division` (a
 zero divisor), `precondition` (a caller that cannot establish the callee's
 contract), `invariant` (a loop without the invariant its postcondition
 needs), `flow` (an object read before it is written), `typo_attribute` (a
-misspelled attribute), and `typo_identifier` (an unknown name).
+misspelled attribute), and `typo_identifier` (an unknown name). It also covers
+`invariant_entry` (an invariant the loop body keeps but the first iteration
+does not hold yet) and pins the coverage summary (a clean run prints it, and
+`--no-coverage` hides it without changing the proof).
 
 The suite checks the quiet replay (no `Phase N of M:` banners, and no
 `filtered:` footer when nothing was hidden), the diagnostics block (the
@@ -91,21 +94,79 @@ user-facing explanation is the new
 page, which shows the two modes, a clean run, a failing run, a table of check
 kinds and their actions, and the budget case.
 
+### C3: `prove` reports proof coverage by default
+
+The `prove` summary used to stop at the prover's own `Summary logged ...`
+line, so a reader had to run `spark-coverage` (or read the badges) to learn
+how much of the tree the proof actually covered. Zero unproved checks do not
+imply full coverage: statements and subprograms can stay outside the proof.
+
+A successful `prove` now prints one coverage line after the replay:
+
+```
+  coverage:  statements 96% (1448/1508)  subprograms 98% (392/400)  VCs 100% (1054/1054)
+```
+
+The line states the three metrics the `spark-coverage` report measures, each
+with its proved count and its total. A total of zero prints `n/a`, never a
+division by zero and never 100 percent. The line is a summary, not a gate:
+`--require-proof` and `--fail-on` decide pass or fail. It prints after a real
+run and after a warm cache hit (the restored artefacts are the ones read),
+and it prints nothing when the artefacts are missing, so it can never turn a
+proof failure into a misleading success line.
+
+The summary is on by default. `--no-coverage` hides it for one run,
+`--coverage` forces it on, and `[prove] coverage = false` in
+`<config>/adacovex.toml` hides it for every local run. An explicit flag wins
+over the file, so a developer drops the line once in the config file and a CI
+job puts it back with the flag. `Adacovex.Prove.Config_Show_Coverage` reads the
+key and `Report_Coverage` prints the line; both are default-off I/O code, so
+the work adds no proof surface.
+
+### C4: `--fail-on` states a CI policy in one flag
+
+`--fail-on=DIM[=VAL]` names the existing CI gates as one policy flag. The
+dimensions are `spark=LVL`, `docstrings=PCT`, `proof=PCT`, `tests=N`, and
+`coverage=PCT`, and the value may be comma-separated or the flag repeated:
+`--fail-on=spark=Gold,proof=100,coverage=80`.
+
+The flag does not replace the `--require-*` gates; it maps each dimension onto
+the field that gate already uses. A policy and an explicit gate therefore fail
+the same way: exit 1 and one `CI GATE:` line per unmet dimension. A bare
+dimension reuses the threshold its `--require-*` flag set (`--require-proof=90
+--fail-on=proof`), and it is an error without one, because a gate with no
+threshold would pass silently. An unknown dimension, an unknown SPARK level,
+and an out-of-range percentage are all rejected at parse time.
+
+One defect was caught before the release: the first setter took the threshold
+as an `out` parameter, and an `out` scalar clears its actual object on entry,
+so a bare dimension erased the value it was meant to reuse. The new unit test
+failed on that, and the setter takes the field `in out` instead.
+
+The flag is documented in the CLI reference, in the `prove` flag page, in the
+configuration page, in the man page, in `--help`, and as a `fail-on` action
+input, and it joins `Known_Flags`, so completion and the typo suggestion know
+it without a second list.
+
 ## Fixes
 
 No defect is fixed in this release.
 
 ## Test Suite
 
-- 2094/2094 native tests passing across 29 categories (2060 at 1.65.0). The
+- 2111/2111 native tests passing across 29 categories (2060 at 1.65.0). The
+  CLI config category grows from 349 to 366 with the `--fail-on` precedence
+  tests (every dimension, a comma-separated list, threshold reuse, the
+  unknown/out-of-range rejections) and the coverage-summary defaults. The
   Prove runner category grows from 44 to 78 with the diagnostics tests: the
   finding count, the location and kind of each entry, the flow marking, the
   severity-word strip, the prover-identity line, the fix hint, the empty
   block for a clean run, the eight-entry cap with its "N more" line, the
   real block shape (message line, `-->` location, and `+` sub-message), the
   gave-up marking, the budget hint, and the divide-by-zero hint.
-- `just prove-e2e` adds 67 end-to-end checks over the generated broken and
-  fixed fixture projects, one case per contract-writing mistake.
+- `just prove-e2e` adds 101 end-to-end checks over the nine generated broken
+  and fixed fixture projects, one case per contract-writing mistake, plus the
+  coverage-summary checks on every fixed project.
 
 ## Proof Results
 
@@ -126,4 +187,8 @@ existing tags:
   finalised concise/verbose output modes and the block they produce;
 - `-- HLR-PROVE` plus `-- HLR-ARCH`
   (`tests/e2e/prove_diagnostics.py`, `tools/tasks.py`, the new proving
-  diagnostics page): the generated fixture gate and the reader guidance.
+  diagnostics page): the generated fixture gate and the reader guidance;
+- `-- HLR-CLI` (`adacovex-config`, `adacovex-prove`, `adacovex-renderers-man`,
+  the CLI reference, the configuration page): the coverage summary and its
+  `--coverage` / `--no-coverage` flags, the `[prove] coverage` key, and
+  `--fail-on`.

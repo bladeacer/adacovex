@@ -25,7 +25,7 @@ jobs:
           standard: all          # DO-178C + ISO 26262 + IEC 62304
           require-spark: Gold
           require-docstrings: 100
-          require-tests: 2094
+          require-tests: 2111
           run-tests: true
           generate-sbom: true
 ```

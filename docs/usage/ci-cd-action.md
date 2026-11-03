@@ -99,6 +99,9 @@ steps:
 | `prove-args` | `''` | Extra raw GNATprove flags passed through verbatim to the `prove` subcommand (`--args=...`, for example `--prover=cvc5 --timeout=5`); the value is space-split into gnatprove arguments |
 | `prove-quiet` | `false` | Suppress GNATprove benign info messages (the default set) from prove output. Quiet is already the default for local runs; this is the explicit prove-mode form. `--verbose` wins |
 | `prove-suppress-warnings` | `''` | Comma-separated GNATprove info tags to suppress from prove output (for example `unrolling-inlining,xyz`); a tag `S` suppresses blocks tagged `[info-S]` (or `[S]`). `--verbose` wins |
+| `coverage` | `false` | Force the proof-coverage summary after `prove`, overriding a config file that sets `[prove] coverage = false`; the summary is on by default |
+| `no-coverage` | `false` | Hide the proof-coverage summary after `prove` (the summary is on by default) |
+| `fail-on` | `''` | CI policy gate over comma-separated dimensions `spark=LVL`, `docstrings=PCT`, `proof=PCT`, `tests=N`, `coverage=PCT`; a bare dimension reuses its `require-*` threshold (`--fail-on`) |
 
 ### Outputs
 
