@@ -971,7 +971,14 @@ begin
             Suppress_Warnings =>
               Cfg.Prove_Suppress_Warnings and then not Cfg.Verbose,
             Suppress_Sets     => Cfg.Prove_Suppress_Sets,
-            Cache             => Cfg.Cache_Enabled);
+            Cache             => Cfg.Cache_Enabled,
+            --  The coverage summary is on by default. --coverage and
+            --  --no-coverage win over `[prove] coverage` in the global
+            --  config file, which is read only for an unflagged run.
+            Show_Coverage     =>
+              (if Cfg.Prove_Coverage_Explicit
+               then Cfg.Prove_Show_Coverage
+               else Adacovex.Prove.Config_Show_Coverage));
       begin
          Adacovex.Prove.Run_Prove (Target (1 .. TLen), Opts, OK);
          if not OK then

@@ -18,6 +18,7 @@ with Adacovex.Parsers.GNATprove;
 with Adacovex.VCS;
 with Adacovex.Prove_Patch;
 with Adacovex.Opt_Outs;
+with Adacovex.Spark_Coverage;
 
 package body Adacovex.Prove is
 
@@ -44,6 +45,133 @@ package body Adacovex.Prove is
    begin
       return Adacovex.Paths.Config_Root & "/adacovex.toml";
    end Config_File;
+
+   --  Read `[prove] coverage` from the global configuration file. True unless
+   --  the key is set to false (either spelling of the boolean is accepted).
+   --  The section ends at the next table header, so keys in another section
+   --  never leak into this one.
+   function Config_Show_Coverage return Boolean is
+   begin
+      if not Ada.Directories.Exists (Config_File) then
+         return True;
+      end if;
+      declare
+         F        : Ada.Text_IO.File_Type;
+         In_Prove : Boolean := False;
+      begin
+         Ada.Text_IO.Open (F, Ada.Text_IO.In_File, Config_File);
+         while not Ada.Text_IO.End_Of_File (F) loop
+            declare
+               T : constant String :=
+                 Trim (Ada.Text_IO.Get_Line (F), Ada.Strings.Both);
+            begin
+               if T = "[prove]" then
+                  In_Prove := True;
+               elsif T'Length > 0 and then T (T'First) = '[' then
+                  In_Prove := False;
+               elsif In_Prove and then T'Length > 0 then
+                  declare
+                     Eq : constant Natural := Index (T, "=");
+                  begin
+                     if Eq > T'First then
+                        declare
+                           Name : constant String :=
+                             Trim (T (T'First .. Eq - 1), Ada.Strings.Both);
+                           Val  : constant String :=
+                             (if Eq < T'Last
+                              then
+                                Trim (T (Eq + 1 .. T'Last), Ada.Strings.Both)
+                              else "");
+                        begin
+                           if Name = "coverage" then
+                              Ada.Text_IO.Close (F);
+                              return
+                                not (Val = "false"
+                                     or else Val = "False"
+                                     or else Val = "FALSE");
+                           end if;
+                        end;
+                     end if;
+                  end;
+               end if;
+            end;
+         end loop;
+         Ada.Text_IO.Close (F);
+      end;
+      return True;
+   end Config_Show_Coverage;
+
+   --  Print the proof-coverage summary line for a completed run: the
+   --  statement, subprogram, and VC coverage the spark-coverage report
+   --  measures. A missing or unreadable artefact set prints nothing and
+   --  never fails the run it follows. The line is a summary, not a gate: the
+   --  `--require-*` flags and `--fail-on` decide pass or fail.
+   --  @param Target_Dir  Target whose obj/gnatprove artefacts are read.
+   procedure Report_Coverage (Target_Dir : String) is
+      Units   : Adacovex.Types.Implementation.Spark_Coverage_Vectors.Vector;
+      Groups  : Adacovex.Types.Implementation.Spark_Group_Vectors.Vector;
+      Totals  : Adacovex.Types.Implementation.Spark_Coverage_Totals;
+      Skipped : Natural := 0;
+      P_OK    : Boolean := False;
+      Line    : String (1 .. 512) := (others => ' ');
+      L       : Natural := 0;
+
+      procedure Add (S : String) is
+      begin
+         if L + S'Length <= Line'Last then
+            Line (L + 1 .. L + S'Length) := S;
+            L := L + S'Length;
+         end if;
+      end Add;
+
+      --  A percentage with its numerator and denominator. A zero denominator
+      --  reports n/a, never a division by zero and never 100 percent.
+      function Pct (Proved : Natural; Total : Natural) return String is
+      begin
+         if Total = 0 then
+            return "n/a";
+         end if;
+         return
+           Trim
+             (Long_Long_Integer'Image
+                ((Long_Long_Integer (Proved) * 100)
+                 / Long_Long_Integer (Total)),
+              Ada.Strings.Left)
+           & "% ("
+           & Trim (Natural'Image (Proved), Ada.Strings.Left)
+           & "/"
+           & Trim (Natural'Image (Total), Ada.Strings.Left)
+           & ")";
+      end Pct;
+
+      procedure Add_Metric
+        (Label : String; M : Adacovex.Types.Spark_Metric_Kind)
+      is
+         Proved : Natural := 0;
+         Total  : Natural := 0;
+      begin
+         Adacovex.Spark_Coverage.Metric_Values (Totals, M, Proved, Total);
+         Add (" " & Label & " " & Pct (Proved, Total));
+      end Add_Metric;
+   begin
+      Adacovex.Spark_Coverage.Analyze
+        (Target_Dir,
+         "",
+         Adacovex.Types.Group_File,
+         Units,
+         Groups,
+         Totals,
+         Skipped,
+         P_OK);
+      if not P_OK then
+         return;
+      end if;
+      Add ("  coverage: ");
+      Add_Metric ("statements", Adacovex.Types.Metric_Statements);
+      Add_Metric ("subprograms", Adacovex.Types.Metric_Subprograms);
+      Add_Metric ("VCs", Adacovex.Types.Metric_Checks);
+      Ada.Text_IO.Put_Line (Line (1 .. L));
+   end Report_Coverage;
 
    --  Normalise a trailing separator off a directory path. Both '/' and '\'
    --  are accepted, so a Windows path passed with its native separator keeps
@@ -2582,6 +2710,9 @@ package body Adacovex.Prove is
                   Ada.Text_IO.Put_Line
                     ("  cache:     gnatprove inputs unchanged -- reusing"
                      & " prior proof (proof artefacts served from cache)");
+                  if Opts.Show_Coverage then
+                     Report_Coverage (Target_Dir);
+                  end if;
                   Success := True;
                   return;
                end if;
@@ -2858,6 +2989,9 @@ package body Adacovex.Prove is
                   end if;
                end if;
             end;
+            if Opts.Show_Coverage then
+               Report_Coverage (Target_Dir);
+            end if;
          end if;
       else
          Ada.Text_IO.Put_Line

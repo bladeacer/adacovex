@@ -279,6 +279,16 @@ package body Adacovex.Renderers.Man is
             elsif Flag = "require-proof" then
                return
                  "CI gate: fail loudly if proved-VC coverage < PCT% (0-100).";
+            elsif Flag = "fail-on" then
+               return
+                 "CI policy gate over spark, docstrings, proof, tests, or"
+                 & " coverage (DIM[=VAL], comma-separated or repeatable).";
+            elsif Flag = "coverage" then
+               return
+                 "Show the proof-coverage summary after a successful prove (on by default).";
+            elsif Flag = "no-coverage" then
+               return
+                 "Hide the proof-coverage summary after prove (also [prove] coverage = false).";
             elsif Flag = "help" then
                return "Show help and exit (also 'adacovex help <topic>').";
             elsif Flag = "version" then
