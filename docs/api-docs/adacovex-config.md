@@ -102,6 +102,8 @@ Prove_Suppress_Warnings : Boolean := True;
 Prove_Suppress_Sets : Ada.Strings.Unbounded.Unbounded_String :=
 Ada.Strings.Unbounded.Null_Unbounded_String;
 Prove_Suppress_Explicit : Boolean := False;
+Prove_Show_Coverage : Boolean := True;
+Prove_Coverage_Explicit : Boolean := False;
 Prove_Args : Ada.Strings.Unbounded.Unbounded_String :=
 Ada.Strings.Unbounded.Null_Unbounded_String;
 Require_SPARK          : Types.SPARK_Level := Types.Stone;

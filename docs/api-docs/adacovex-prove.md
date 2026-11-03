@@ -107,6 +107,7 @@ Suppress_Warnings : Boolean := True;
 Suppress_Sets : Ada.Strings.Unbounded.Unbounded_String :=
 Ada.Strings.Unbounded.Null_Unbounded_String;
 Cache : Boolean := True;
+Show_Coverage : Boolean := True;
 end record;
 ```
 
@@ -131,6 +132,10 @@ end record;
 | `Opts` | GNATprove options. |
 
 **Returns:** Space-separated gnatprove option string.
+
+### function Config_Show_Coverage return Standard.Boolean
+
+**Returns:** True when the prove summary should print the coverage line.
 
 ### function Detect_Core_Count return Standard.Natural
 

@@ -188,14 +188,14 @@ This section is the per-feature checklist mirror of the release view above, inte
 
 ### 2.2 `--fail-on` threshold flag
 
-- [ ] Add a configurable exit-code/threshold mechanism.
-- [ ] Define the supported threshold dimensions and the failure semantics clearly.
-- [ ] Decide whether `--fail-on` generalizes existing gates or is a separate mechanism.
-- [ ] Make sure the new flag is:
-  - documented
-  - wired into completion
-  - covered by tests
-  - reflected in the Action/CI surface if CI is expected to use it
+- [x] Add a configurable exit-code/threshold mechanism.
+- [x] Define the supported threshold dimensions and the failure semantics clearly.
+- [x] Decide whether `--fail-on` generalizes existing gates or is a separate mechanism.
+- [x] Make sure the new flag is:
+  - [x] documented
+  - [x] wired into completion
+  - [x] covered by tests
+  - [x] reflected in the Action/CI surface if CI is expected to use it
 
 ### 2.3 Exclusion and ignore annotations
 
@@ -209,7 +209,7 @@ This section is the per-feature checklist mirror of the release view above, inte
 
 ### 2.4 Documentation updates for Release 2
 
-- [ ] Document the `--fail-on` threshold flag.
+- [x] Document the `--fail-on` threshold flag.
 - [ ] Document the new or extended exclusion annotations.
 - [x] Document the final diagnostics-mode choices.
 - [x] Update the changelog entry for v1.66.0 before the version bump.
@@ -233,10 +233,10 @@ This section is the per-feature checklist mirror of the release view above, inte
 
 ### `--fail-on` threshold flag
 
-- [ ] Add configurable exit-code/threshold mechanism.
-- [ ] Define supported threshold dimensions and failure semantics.
-- [ ] Decide whether `--fail-on` generalizes existing gates or is separate.
-- [ ] Document, wire into completion, test, and reflect in the Action/CI surface if used.
+- [x] Add configurable exit-code/threshold mechanism.
+- [x] Define supported threshold dimensions and failure semantics.
+- [x] Decide whether `--fail-on` generalizes existing gates or is separate.
+- [x] Document, wire into completion, test, and reflect in the Action/CI surface if used.
 
 ### Exclusion and ignore annotations
 

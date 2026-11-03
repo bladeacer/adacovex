@@ -23,11 +23,28 @@ passes `--verbose`, so a CI log keeps the unedited prover stream.
 ```
 Success: all checks proved (N checks).
 Summary logged in obj/gnatprove/gnatprove.out
+  coverage:  statements 96% (1448/1508)  subprograms 98% (392/400)  VCs 100% (1054/1054)
 ```
 
-The last line states the number of checks gnatprove proved. Nothing was
-filtered, so the replay has no footer, and the run prints no diagnostics
-block.
+A line states the number of checks gnatprove proved. Nothing was filtered, so
+the replay has no footer, and the run prints no diagnostics block.
+
+## The coverage summary
+
+The last line reports **proof coverage**: the proved statements, the proved
+subprograms, and the proved VCs, each with its count and its total. A total of
+zero prints `n/a`, never a division by zero and never 100 percent.
+
+The summary is on by default. `--no-coverage` hides it for one run, and
+`[prove] coverage = false` in the global configuration file hides it for every
+local run. `--coverage` forces it back on, so a CI job can override the config
+file. The summary is not a gate: `--require-proof` and `--fail-on` decide pass
+or fail.
+
+The summary is one line, and it is deliberately short. Run
+`adacovex spark-coverage` for the full report: every file, folder, or package
+with its statement, subprogram, and VC coverage, plus `--require-coverage` for
+a gate on that report.
 
 ## A failing run
 
@@ -110,7 +127,7 @@ The block marks such a finding as `(provers gave up)`, and its fix hint raises
 
 `tests/e2e/prove_diagnostics.py` generates one project per case on this page,
 each with a broken variant and a fixed counterpart. The cases are `index`,
-`overflow`, `division`, `precondition`, `invariant`, `flow`,
+`overflow`, `division`, `precondition`, `invariant`, `invariant_entry`, `flow`,
 `typo_attribute`, and `typo_identifier`.
 
 ```bash

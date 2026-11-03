@@ -183,6 +183,8 @@ Vendored dependencies then participate in the proof without their sources being 
 | `--quiet` | on | Hide GNATprove's benign info messages (the default suppression set, the loop-unrolling/inlining notice blocks) from stdout. It is active by default for local runs. `--verbose` always shows every message and wins over it. CI passes `--verbose`, so CI output stays authoritative. This is the explicit form of the default |
 | `--suppress-warnings` | on | Alias of `--quiet` (the default suppression set). Kept for compatibility |
 | `--suppress-warnings=SETS` | on | Hide GNATprove info messages whose tags match the comma-separated suppression-set names (for example `--suppress-warnings=unrolling-inlining,xyz`). A set name `S` suppresses blocks tagged `[info-S]` (or bare `[S]`). `--verbose` always shows every message |
+| `--coverage` | on | Print the proof-coverage summary line after a successful run. It reports statement, subprogram, and VC coverage, and it wins over a config file that sets `[prove] coverage = false` |
+| `--no-coverage` | off | Hide the proof-coverage summary line, for every run shape. `[prove] coverage = false` in the global config file gives the same result without a flag |
 
 A local `prove` run is quiet by default. It captures the gnatprove output
 and replays it once the run finishes. The replay keeps every actionable

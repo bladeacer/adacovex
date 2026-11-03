@@ -81,6 +81,7 @@ Compliance selection stays on `--standard` and its level companions
 | `--require-docstrings=PCT`, `--docstrs=PCT` | off | both | Fail loudly if docstring coverage < PCT% (0-100) |
 | `--require-tests=N`, `--tests=N` | off | both | Fail loudly if passing test count < N |
 | `--require-proof=PCT`, `-r PCT` | off | both | Fail loudly if proved-VC coverage < PCT% (0-100) |
+| `--fail-on=DIM[=VAL]` | off | both | CI policy gate over `spark`, `docstrings`, `proof`, `tests`, or `coverage` (comma-separated or repeatable; a bare dimension reuses its `--require-*` threshold) |
 | `--verbose` | off | both | Verbose diagnostics |
 | `--version` | - | - | Print the bundled version and exit |
 | `man` | - | - | Install the man page into the local man database |
