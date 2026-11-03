@@ -872,6 +872,12 @@ def check_prove(r: Results, tmp: Path) -> None:
          "an out-of-range --timeout"),
         (["--memlimit=0"], "--memlimit must be in",
          "an out-of-range --memlimit"),
+        (["--fail-on=bogus=1"], "--fail-on must name",
+         "an unknown --fail-on dimension"),
+        (["--fail-on=proof=101"], "--fail-on=proof must be in",
+         "an out-of-range --fail-on=proof"),
+        (["--fail-on=spark"], "--fail-on=spark needs a level",
+         "a bare --fail-on=spark with no --require-spark"),
     )
     for args, needle, label in rejects:
         proc = run(["prove", "-t", str(nope), *args])
@@ -885,6 +891,8 @@ def check_prove(r: Results, tmp: Path) -> None:
         (["--force"], "--force"),
         (["--steps=100"], "--steps"),
         (["-l", "1"], "the -l shorthand"),
+        (["--coverage"], "the --coverage flag"),
+        (["--no-coverage"], "the --no-coverage flag"),
     ):
         proc = run(args)
         r.check(

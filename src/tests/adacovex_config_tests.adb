@@ -1884,6 +1884,127 @@ package body Adacovex_Config_Tests is
             Start := Fin + 1;
          end loop;
       end;
+      --  --fail-on maps each dimension onto the CI-gate field of the
+      --  matching --require-* flag, so a policy and an explicit gate fail
+      --  the same way.
+      declare
+         A   : Testing.Arg_Vectors.Vector;
+         Cfg : CLI_Config;
+      begin
+         Add (A, "--fail-on=spark=Gold");
+         Add (A, "--fail-on=proof=100");
+         Add (A, "--fail-on=docstrings=95");
+         Add (A, "--fail-on=tests=10");
+         Add (A, "--fail-on=coverage=55");
+         Testing.Parse_Args (A, Cfg);
+         R.Check (not Cfg.CLI_Error, "--fail-on accepts every dimension");
+         R.Check
+           (Cfg.Require_SPARK_Set and then Cfg.Require_SPARK = Gold,
+            "--fail-on=spark sets the SPARK gate");
+         R.Check
+           (Cfg.Require_Proof_Set and then Cfg.Require_Proof = 100,
+            "--fail-on=proof sets the proved-VC gate");
+         R.Check
+           (Cfg.Require_Docstrings_Set and then Cfg.Require_Docstrings = 95,
+            "--fail-on=docstrings sets the docstring gate");
+         R.Check
+           (Cfg.Require_Tests_Set and then Cfg.Require_Tests = 10,
+            "--fail-on=tests sets the test-count gate");
+         R.Check
+           (Cfg.Spark_Require_Set and then Cfg.Spark_Require = 55,
+            "--fail-on=coverage sets the spark-coverage gate");
+      end;
+
+      --  One flag can carry a comma-separated list of dimensions.
+      declare
+         A   : Testing.Arg_Vectors.Vector;
+         Cfg : CLI_Config;
+      begin
+         Add (A, "--fail-on=spark=Silver,proof=90,tests=5");
+         Testing.Parse_Args (A, Cfg);
+         R.Check
+           (not Cfg.CLI_Error
+            and then Cfg.Require_SPARK = Silver
+            and then Cfg.Require_Proof = 90
+            and then Cfg.Require_Tests = 5,
+            "--fail-on applies a comma-separated dimension list");
+      end;
+
+      --  A bare dimension reuses the threshold its --require-* flag set, and
+      --  fails loudly when there is no threshold to reuse.
+      declare
+         A   : Testing.Arg_Vectors.Vector;
+         Cfg : CLI_Config;
+      begin
+         Add (A, "--require-proof=90");
+         Add (A, "--fail-on=proof");
+         Testing.Parse_Args (A, Cfg);
+         R.Check
+           (Cfg.Require_Proof = 90, "--require-proof=90 sets the threshold");
+         R.Check (Cfg.Require_Proof_Set, "--require-proof=90 marks the gate");
+         R.Check
+           (not Cfg.CLI_Error,
+            "--fail-on=proof reuses the --require-proof threshold");
+      end;
+      declare
+         A   : Testing.Arg_Vectors.Vector;
+         Cfg : CLI_Config;
+      begin
+         Add (A, "--fail-on=proof");
+         Testing.Parse_Args (A, Cfg);
+         R.Check
+           (Cfg.CLI_Error, "--fail-on=proof without a threshold is an error");
+      end;
+
+      --  An unknown, empty, or out-of-range dimension is rejected.
+      declare
+         A   : Testing.Arg_Vectors.Vector;
+         Cfg : CLI_Config;
+      begin
+         Add (A, "--fail-on=bogus=1");
+         Testing.Parse_Args (A, Cfg);
+         R.Check (Cfg.CLI_Error, "rejects an unknown --fail-on dimension");
+      end;
+      declare
+         A   : Testing.Arg_Vectors.Vector;
+         Cfg : CLI_Config;
+      begin
+         Add (A, "--fail-on=" & "proof" & "=101");
+         Testing.Parse_Args (A, Cfg);
+         R.Check (Cfg.CLI_Error, "rejects an out-of-range --fail-on=proof");
+      end;
+      declare
+         A   : Testing.Arg_Vectors.Vector;
+         Cfg : CLI_Config;
+      begin
+         Add (A, "--fail-on=spark=Nope");
+         Testing.Parse_Args (A, Cfg);
+         R.Check (Cfg.CLI_Error, "rejects an unknown --fail-on=spark level");
+      end;
+
+      --  The proof-coverage summary is on by default; both flags are
+      --  prove-mode flags and set the explicit state.
+      declare
+         Cfg : CLI_Config;
+      begin
+         R.Check
+           (Cfg.Prove_Show_Coverage,
+            "the proof-coverage summary is on by default");
+         R.Check
+           (not Cfg.Prove_Coverage_Explicit,
+            "the coverage state is not explicit by default");
+      end;
+      declare
+         A   : Testing.Arg_Vectors.Vector;
+         Cfg : CLI_Config;
+      begin
+         Add (A, "prove");
+         Add (A, "--no-coverage");
+         Testing.Parse_Args (A, Cfg);
+         R.Check
+           (not Cfg.Prove_Show_Coverage and then Cfg.Prove_Coverage_Explicit,
+            "--no-coverage hides the summary explicitly");
+      end;
    end Run;
 
 end Adacovex_Config_Tests;
