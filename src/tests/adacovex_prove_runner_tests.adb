@@ -127,6 +127,35 @@ package body Adacovex_Prove_Runner_Tests is
       Ada.Text_IO.Close (F);
    end Write_Failing_Capture;
 
+   --  Write a captured gnatprove stream in the shape the prover really
+   --  emits: the message on its own line, the location on a `-->` line, an
+   --  excerpt, a caret ruler, and a `+` sub-message that says the provers
+   --  gave up. A second block carries no sub-message, and a third finding
+   --  uses the single-line flow shape.
+   --  @param Path  File path to write.
+   procedure Write_Prover_Blocks (Path : String) is
+      F : Ada.Text_IO.File_Type;
+   begin
+      Ada.Text_IO.Create (F, Ada.Text_IO.Out_File, Path);
+      Ada.Text_IO.Put_Line (F, "Phase 3 of 3: flow analysis and proof ...");
+      Ada.Text_IO.Put_Line (F, " medium: index check might fail");
+      Ada.Text_IO.Put_Line (F, "--> prove_diag_broken.adb:12:14");
+      Ada.Text_IO.Put_Line (F, "   12 |      return T (I);");
+      Ada.Text_IO.Put_Line (F, "      |             ^~~~~");
+      Ada.Text_IO.Put_Line
+        (F, "      + provers gave up before completing the proof");
+      Ada.Text_IO.Put_Line (F, "");
+      Ada.Text_IO.Put_Line (F, " medium: postcondition might fail");
+      Ada.Text_IO.Put_Line (F, "--> prove_diag_broken.ads:10:19");
+      Ada.Text_IO.Put_Line (F, "   10 |      Post => Doubled'Result = 2 * X;");
+      Ada.Text_IO.Put_Line (F, "");
+      Ada.Text_IO.Put_Line
+        (F, "prove_diag_flow.adb:5:04: ""X"" is not" & " initialized");
+      Ada.Text_IO.Put_Line
+        (F, "Summary logged in obj/gnatprove/gnatprove.out");
+      Ada.Text_IO.Close (F);
+   end Write_Prover_Blocks;
+
    procedure Run (R : in out Adacovex.Test_Support.Runner'Class) is
       O   : Adacovex.Prove.Prove_Options;
       GPR : String (1 .. 512);
@@ -478,6 +507,65 @@ package body Adacovex_Prove_Runner_Tests is
               (Adacovex.Prove.Diagnostics_Text ("", Stats),
                "2 more (--verbose lists every check)"),
             "the block says how many findings it left out");
+         R.Check
+           (Has_Text
+              (Adacovex.Prove.Diagnostics_Text ("", Stats),
+               "subtype constraint or a precondition"),
+            "a plain index finding gets the bound hint");
+      end;
+
+      --  The prover's real block shape (message line, `-->` location, and a
+      --  `+` sub-message) is what the diagnostics pass reads. A `gave up`
+      --  sub-message marks the finding as a budget problem, so its hint
+      --  raises --steps instead of naming a missing contract.
+      declare
+         Block_Path : constant String := Fixture_Dir & "/blocks.txt";
+         Stats      : Adacovex.Prove.Failure_Stats;
+      begin
+         Fixture ("replay.gpr");
+         Write_Prover_Blocks (Block_Path);
+         Adacovex.Prove.Collect_Failures (Block_Path, Stats);
+         R.Check
+           (Stats.Unproved = 3, "the real block shape yields three findings");
+         R.Check (Stats.Count = 3, "three findings are named");
+         R.Check
+           (To_String (Stats.Items (1).Kind) = "index check",
+            "the message line yields the check kind");
+         R.Check
+           (To_String (Stats.Items (1).Location)
+            = "prove_diag_broken.adb:12:14",
+            "the --> line yields the source location");
+         R.Check
+           (Stats.Items (1).Budget,
+            "a gave-up sub-message marks a budget finding");
+         R.Check
+           (To_String (Stats.Items (2).Kind) = "postcondition",
+            "a block without a sub-message still yields its kind");
+         R.Check
+           (To_String (Stats.Items (2).Location)
+            = "prove_diag_broken.ads:10:19",
+            "each block keeps its own location");
+         R.Check
+           (not Stats.Items (2).Budget,
+            "only the block that says gave up is a budget finding");
+         R.Check
+           (To_String (Stats.Items (3).Kind) = "initialization"
+            and then Stats.Items (3).Flow,
+            "the single-line flow shape still yields an initialization");
+         declare
+            D : constant String :=
+              Adacovex.Prove.Diagnostics_Text ("16.1.0", Stats);
+         begin
+            R.Check
+              (Has_Text (D, "(provers gave up)"),
+               "the block marks a budget finding");
+            R.Check
+              (Has_Text (D, "--steps"),
+               "the hint raises the budget for a budget finding");
+            R.Check
+              (Has_Text (D, "prove_diag_broken.adb:12:14  index check"),
+               "the block pairs the location with its kind");
+         end;
       end;
 
       Ada.Directories.Delete_Tree (Fixture_Dir);

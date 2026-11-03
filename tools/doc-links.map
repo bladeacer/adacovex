@@ -41,6 +41,7 @@ docs/usage/standards-selection.md	Standards: selecting a standard
 docs/usage/platforms.md	Platforms
 docs/contributing/proving.md	Proving and writing proofs
 docs/contributing/proving-patches.md	Proof patches over vendored code
+docs/contributing/proving-diagnostics.md	Reading a prove failure
 docs/contributing/architecture.md	Architecture
 docs/contributing/architecture-dependencies.md	Architecture: dependency management and toolchain
 docs/contributing/architecture-verification.md	Architecture: verification and proof patches

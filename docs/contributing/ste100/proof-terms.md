@@ -128,3 +128,23 @@ requirement, and safety-standard concepts of the adacovex domain.
 - **Do Not Use:** Adherence, Conformance (when the DO-178C result is meant)
 - **Correct Example:** *The target shows **compliance** with DO-178C at DAL C.*
 - **Incorrect Example:** *The target shows adherence with DO-178C at DAL C.*
+
+## Technical Name: Proof Finding
+- **Part of Speech:** Noun
+- **Definition:** One unproved check or flow finding that gnatprove reports
+  for a source location, together with the check kind it names.
+- **Approved Form:** Proof Finding (singular), Proof Findings (plural),
+  Finding (singular), Findings (plural)
+- **Do Not Use:** Error (when an unproved check is meant), Violation
+- **Correct Example:** *The **proof finding** names the file, the line, and the check kind.*
+- **Incorrect Example:** *The error names the file, the line, and the check kind.*
+
+## Technical Name: Diagnostics Block
+- **Part of Speech:** Noun
+- **Definition:** The block that `adacovex prove` prints after the quiet
+  replay. It names the prover identity, the source location and kind of each
+  proof finding, and a fix hint.
+- **Approved Form:** Diagnostics Block (singular), Diagnostics Blocks (plural)
+- **Do Not Use:** Error summary, Failure log
+- **Correct Example:** *The **diagnostics block** names the prover and the first source location.*
+- **Incorrect Example:** *The failure log names the prover and the first source location.*

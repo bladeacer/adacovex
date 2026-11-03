@@ -41,11 +41,17 @@ block left out.
 `Adacovex.Prove.Collect_Failures` reads the captured stream and returns the
 counts in `Failure_Stats` (`Unproved`, `Count`, `Items`), and
 `Diagnostics_Text` renders the block from them, so both are testable without
-a terminal and a clean run renders nothing. Language-level details: a
-prover failure line has the shape `unit.adb:54:08: medium: postcondition
-might fail`, and a flow finding the shape `unit.adb:31:05: "X" is not
-initialized`; the pass keeps the location, strips the optional severity word,
-and derives the kind from the message.
+a terminal and a clean run renders nothing.
+
+The pass reads the block shape gnatprove really emits: the message and its
+severity on one line, the `--> file:line:column` location on the next, then
+the code excerpt, the caret ruler, and the `+` sub-messages. A sub-message
+that states `provers gave up before completing the proof` marks the finding
+as a budget problem, so its fix hint raises `--steps` instead of naming a
+missing contract. The single-line `file:line:column: message` shape (which
+carries flow findings) reads the same way. The end-to-end fixture in C2 found
+this shape mismatch before the release: the first pass required the location
+on the message line, which real gnatprove output never does.
 
 The two output modes are now fixed and documented rather than open.
 **Concise** is the default locally: capture, replay, and the diagnostics
@@ -53,17 +59,46 @@ block. **Verbose** (`--verbose`) streams the raw prover output live and
 prints no block; CI passes `--verbose`, so CI keeps the unedited stream and
 the block never reaches a CI log. There is no third mode.
 
+### C2: A generated broken/fixed fixture gates the prove output end to end
+
+The 1.65.0 replay and the 1.66.0 diagnostics were covered by unit tests and
+the CLI flag checks, but nothing ran a real proof and looked at what a reader
+sees. `tests/e2e/prove_diagnostics.py` now generates two small SPARK projects
+that differ in one precondition: the broken one states `I <= T'Length` and
+leaves an index check unproved, the fixed one states `I in T'Range` and
+proves it. It runs the real binary over both.
+
+The suite checks the quiet replay (no `Phase N of M:` banners, and no
+`filtered:` footer when nothing was hidden), the diagnostics block (the
+unproved count, the prover identity, the source location, the `index check`
+kind, the fix hint, and the non-zero exit rule), and the `--verbose` mode
+(the raw `index check might fail` line, no block, no filtering). The fixture
+project is generated at run time, so it never enters this tree's own scan or
+proof, and `--keep` writes it to `obj/prove-diagnostics/` for a reader who
+wants to see the before and after by hand.
+
+The suite runs as `just prove-e2e` (`python3 tools/tasks.py prove-e2e`), is a
+gate of `just check`, and skips itself when no gnatprove is resolvable. The
+user-facing explanation is the new
+[Reading a prove failure](../contributing/proving-diagnostics.md)
+page, which shows the two modes, a clean run, a failing run, a table of check
+kinds and their actions, and the budget case.
+
 ## Fixes
 
 No defect is fixed in this release.
 
 ## Test Suite
 
-- 2079/2079 native tests passing across 29 categories (2060 at 1.65.0). The
-  Prove runner category grows from 44 to 63 with the diagnostics tests: the
+- 2092/2092 native tests passing across 29 categories (2060 at 1.65.0). The
+  Prove runner category grows from 44 to 76 with the diagnostics tests: the
   finding count, the location and kind of each entry, the flow marking, the
   severity-word strip, the prover-identity line, the fix hint, the empty
-  block for a clean run, and the eight-entry cap with its "N more" line.
+  block for a clean run, the eight-entry cap with its "N more" line, the
+  real block shape (message line, `-->` location, and `+` sub-message), the
+  gave-up marking, and the budget hint.
+- `just prove-e2e` adds 17 end-to-end checks over the generated broken and
+  fixed fixture projects.
 
 ## Proof Results
 
@@ -81,4 +116,7 @@ existing tags:
 - `-- HLR-PROVE` (`adacovex-prove`): the failure collection, its
   `Failure_Stats` counts, the fix hints, and the diagnostics block;
 - `-- HLR-CLI` (`adacovex-prove`, the CLI reference, the proving guide): the
-  finalised concise/verbose output modes and the block they produce.
+  finalised concise/verbose output modes and the block they produce;
+- `-- HLR-PROVE` plus `-- HLR-ARCH`
+  (`tests/e2e/prove_diagnostics.py`, `tools/tasks.py`, the new proving
+  diagnostics page): the generated fixture gate and the reader guidance.

@@ -70,8 +70,8 @@ a technical word in any doc, docstring, or changelog.
   pipeline, and the generated artifacts are on the
   [repository layout](contributing/developer-guide-layout.md).
 - [Proving and writing proofs](contributing/proving.md) -- how to run and
-  write SPARK proofs. Writing proof patches over vendored code is on
-  [Proof patches](contributing/proving-patches.md).
+  write SPARK proofs, [proof patches](contributing/proving-patches.md), and
+  [reading a prove failure](contributing/proving-diagnostics.md).
 - [Architecture](contributing/architecture.md) -- the full technical
   design. The deeper pages are
   [dependency management and the toolchain](contributing/architecture-dependencies.md),
@@ -105,12 +105,11 @@ a technical word in any doc, docstring, or changelog.
   documentation.
 - [tldr page](tldr/adacovex.md) -- the cheat sheet for the CLI, which `adacovex tldr` installs into the local tldr client.
 
-The docs live under `docs/` as a **Sphinx** project (`docs/conf.py` with
-MyST, plus a root `docs/index.md` holding the toctree). The pages are grouped
-by audience: `docs/usage/` for end users, `docs/contributing/` for
-contributors, and the top-level references plus `docs/proof/`,
-`docs/compliance/`, and `docs/badges/` for maintainers. Build and sync
-instructions live in the [developer guide](contributing/developer-guide.md).
+The docs live under `docs/` as a **Sphinx** project (`docs/conf.py` with MyST,
+plus a root `docs/index.md` holding the toctree). `docs/usage/` serves end
+users, `docs/contributing/` serves contributors, and the top-level references
+plus `docs/proof/`, `docs/compliance/`, and `docs/badges/` serve maintainers.
+Build and sync instructions live in the [developer guide](contributing/developer-guide.md).
 
 ```{toctree}
 :caption: Read this first
@@ -201,6 +200,7 @@ contributing/architecture-pipeline
 
 contributing/proving
 contributing/proving-patches
+contributing/proving-diagnostics
 ```
 
 ```{toctree}

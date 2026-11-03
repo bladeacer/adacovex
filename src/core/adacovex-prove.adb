@@ -1803,6 +1803,17 @@ package body Adacovex.Prove is
 
       F : File_Type;
 
+      --  The finding being read. gnatprove starts a message block with the
+      --  message and its severity, names the location on a `-->` line, and
+      --  continues with the code excerpt, the caret ruler, and the `+`
+      --  sub-messages. The block stays open until the next one starts, so a
+      --  `+` line that says the provers gave up can still attach to it.
+      Have_Cand   : Boolean := False;
+      Cand_Kind   : Unbounded_String := Null_Unbounded_String;
+      Cand_Loc    : Unbounded_String := Null_Unbounded_String;
+      Cand_Flow   : Boolean := False;
+      Cand_Budget : Boolean := False;
+
       --  True when S starts with Prefix.
       function Starts (S : String; Prefix : String) return Boolean is
       begin
@@ -1882,20 +1893,68 @@ package body Adacovex.Prove is
          end if;
       end Before;
 
-      --  Record one finding, naming it only while Items has room.
-      procedure Add (Loc : String; Kind : String; Flow : Boolean) is
+      --  The check kind when Msg reports an unproved check or a flow
+      --  finding, and "" when it reports something else. Flow is set for an
+      --  object that is read before its first write.
+      function Failure_Kind (Msg : String; Flow : out Boolean) return String is
+         M : constant String := Without_Severity (Msg);
       begin
-         Stats.Unproved := Stats.Unproved + 1;
-         if Stats.Count < Max_Failure_Items then
-            Stats.Count := Stats.Count + 1;
-            Stats.Items (Stats.Count) :=
-              (Location => To_Unbounded_String (Loc),
-               Kind     =>
-                 To_Unbounded_String
-                   (if Kind'Length = 0 then "unproved check" else Kind),
-               Flow     => Flow);
+         Flow := False;
+         if Index (M, "might fail") > 0 then
+            return Before (M, "might fail");
+         elsif Index (M, "cannot be proved") > 0 then
+            return Before (M, "cannot be proved");
+         elsif Index (M, "cannot prove") > 0 then
+            return Before (M, "cannot prove");
+         elsif Index (M, "not initialized") > 0
+           or else Index (M, "uninitialized") > 0
+         then
+            Flow := True;
+            return "initialization";
          end if;
-      end Add;
+         return "";
+      end Failure_Kind;
+
+      --  Record the open finding, if there is one, and close the block.
+      procedure Finalize is
+      begin
+         if Have_Cand then
+            Stats.Unproved := Stats.Unproved + 1;
+            if Stats.Count < Max_Failure_Items then
+               Stats.Count := Stats.Count + 1;
+               Stats.Items (Stats.Count) :=
+                 (Location => Cand_Loc,
+                  Kind     =>
+                    To_Unbounded_String
+                      (if Length (Cand_Kind) = 0
+                       then "unproved check"
+                       else To_String (Cand_Kind)),
+                  Flow     => Cand_Flow,
+                  Budget   => Cand_Budget);
+            end if;
+            Have_Cand := False;
+            Cand_Kind := Null_Unbounded_String;
+            Cand_Loc := Null_Unbounded_String;
+            Cand_Flow := False;
+            Cand_Budget := False;
+         end if;
+      end Finalize;
+
+      --  Start a finding from a line that carries both its location and its
+      --  message (the single-line shape gnatprove uses for flow findings).
+      procedure Add_Line (Loc : String; Msg : String) is
+         Flow : Boolean;
+         Kind : constant String := Failure_Kind (Msg, Flow);
+      begin
+         if Kind'Length > 0 then
+            Finalize;
+            Have_Cand := True;
+            Cand_Kind := To_Unbounded_String (Kind);
+            Cand_Loc := To_Unbounded_String (Loc);
+            Cand_Flow := Flow;
+            Cand_Budget := False;
+         end if;
+      end Add_Line;
    begin
       Stats :=
         (Unproved => 0,
@@ -1904,7 +1963,8 @@ package body Adacovex.Prove is
            (others =>
               (Location => Null_Unbounded_String,
                Kind     => Null_Unbounded_String,
-               Flow     => False)));
+               Flow     => False,
+               Budget   => False)));
       if not Ada.Directories.Exists (Path) then
          return;
       end if;
@@ -1912,31 +1972,69 @@ package body Adacovex.Prove is
       while not End_Of_File (F) loop
          declare
             L : constant String := Get_Line (F);
-            C : constant Natural := Location_End (L);
+            T : constant String := Trim (L, Ada.Strings.Both);
          begin
-            if C > 0 then
+            if T'Length = 0 then
+               Finalize;
+            elsif Starts (T, "-->") then
+               --  The location line of the open block.
+               if Have_Cand and then Length (Cand_Loc) = 0 then
+                  if T'Length > 3 then
+                     declare
+                        Sp      : constant String :=
+                          Trim (T (T'First + 3 .. T'Last), Ada.Strings.Both);
+                        End_Pos : constant Natural := Location_End (Sp);
+                     begin
+                        if End_Pos > 0 then
+                           Cand_Loc :=
+                             To_Unbounded_String
+                               (Sp (Sp'First .. End_Pos - 1));
+                        else
+                           Cand_Loc := To_Unbounded_String (Sp);
+                        end if;
+                     end;
+                  end if;
+               end if;
+            elsif T (T'First) in 'A' .. 'Z' | 'a' .. 'z' then
+               --  A line that starts with a letter opens a message block or
+               --  carries unrelated output such as the run summary.
                declare
-                  Loc : constant String := L (L'First .. C - 1);
-                  Msg : constant String :=
-                    (if C < L'Last
-                     then Without_Severity (L (C + 1 .. L'Last))
-                     else "");
+                  Loc_End : constant Natural := Location_End (L);
                begin
-                  if Index (Msg, "might fail") > 0 then
-                     Add (Loc, Before (Msg, "might fail"), False);
-                  elsif Index (Msg, "cannot be proved") > 0 then
-                     Add (Loc, Before (Msg, "cannot be proved"), False);
-                  elsif Index (Msg, "cannot prove") > 0 then
-                     Add (Loc, Before (Msg, "cannot prove"), False);
-                  elsif Index (Msg, "not initialized") > 0
-                    or else Index (Msg, "uninitialized") > 0
-                  then
-                     Add (Loc, "initialization", True);
+                  if Loc_End > 0 and then Loc_End < L'Last then
+                     Add_Line
+                       (L (L'First .. Loc_End - 1), L (Loc_End + 1 .. L'Last));
+                  else
+                     Finalize;
+                     declare
+                        Flow : Boolean;
+                        Kind : constant String := Failure_Kind (L, Flow);
+                     begin
+                        if Kind'Length > 0 then
+                           Have_Cand := True;
+                           Cand_Kind := To_Unbounded_String (Kind);
+                           Cand_Loc := Null_Unbounded_String;
+                           Cand_Flow := Flow;
+                           Cand_Budget := False;
+                        end if;
+                     end;
                   end if;
                end;
+            else
+               --  A continuation of the open block: the code excerpt, the
+               --  caret ruler, or a `+` sub-message. A sub-message that says
+               --  the provers gave up states the reason: the proof ran out
+               --  of budget, so no counterexample was found either.
+               if Have_Cand
+                 and then Starts (T, "+")
+                 and then Index (T, "gave up") > 0
+               then
+                  Cand_Budget := True;
+               end if;
             end if;
          end;
       end loop;
+      Finalize;
       Close (F);
    end Collect_Failures;
 
@@ -1966,7 +2064,11 @@ package body Adacovex.Prove is
             & To_String (Stats.Items (I).Location)
             & "  "
             & To_String (Stats.Items (I).Kind)
-            & (if Stats.Items (I).Flow then " (flow analysis)" else "")
+            & (if Stats.Items (I).Budget
+               then " (provers gave up)"
+               elsif Stats.Items (I).Flow
+               then " (flow analysis)"
+               else "")
             & ASCII.LF);
       end loop;
       if Stats.Unproved > Stats.Count then
@@ -1977,11 +2079,21 @@ package body Adacovex.Prove is
             & " more (--verbose lists every check)"
             & ASCII.LF);
       end if;
-      Append
-        (R,
-         "  fix:       "
-         & Fix_Hint (To_String (Stats.Items (1).Kind))
-         & ASCII.LF);
+      if Stats.Items (1).Budget then
+         --  The provers did not find a counterexample, so the first thing to
+         --  raise is the budget, not the contract.
+         Append
+           (R,
+            "  fix:       the provers gave up before completing the proof;"
+            & " raise the proof budget with --steps=<N> (10000 by default)"
+            & ASCII.LF);
+      else
+         Append
+           (R,
+            "  fix:       "
+            & Fix_Hint (To_String (Stats.Items (1).Kind))
+            & ASCII.LF);
+      end if;
       return To_String (R);
    end Diagnostics_Text;
 

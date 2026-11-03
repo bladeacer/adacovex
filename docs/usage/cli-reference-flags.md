@@ -205,7 +205,7 @@ one fix hint derived from the first check's kind. A flow finding is marked
 `(flow analysis)` and a larger count is still reported.
 `--verbose` streams the raw prover output live without a block, and CI
 passes it. Shapes and mode rules:
-[the proving guide](../contributing/proving.md#prove-output-concise-locally-raw-in-ci).
+[Reading a prove failure](../contributing/proving-diagnostics.md).
 
 `prove` accepts all assessment flags too (`--dal`, `--standard`, the
 `--require-*` gates, `--emit-svg`, and more), so CI gates apply to the proof

@@ -409,6 +409,12 @@ def task_cli_e2e() -> int:
     return rc if rc != 0 else py("tests/e2e/cli_flags.py")
 
 
+def task_prove_e2e() -> int:
+    """Generate the broken/fixed fixture projects and check prove output."""
+    rc = task_build()
+    return rc if rc != 0 else py("tests/e2e/prove_diagnostics.py")
+
+
 def task_e2e() -> int:
     rc = task_cli_e2e()
     if rc != 0:
@@ -460,6 +466,11 @@ def _skip_missing_dev_tool(tool: str) -> Optional[str]:
     if probe.returncode == 0 or "Executable not found" not in output:
         return None
     return f"{tool} is not available in the dev toolchain"
+
+
+def skip_without_gnatprove() -> Optional[str]:
+    """SKIP reason for the prove diagnostics e2e gate: it needs a prover."""
+    return _skip_missing_dev_tool("gnatprove")
 
 
 def skip_without_gnatformat() -> Optional[str]:
@@ -559,6 +570,7 @@ CHECK_GATES: List[Tuple[str, Callable[[], int],
     ("build", task_build, skip_without_alr),
     ("native tests", task_test, skip_without_alr),
     ("SPARK proof + badges", task_prove, skip_without_alr),
+    ("prove diagnostics end-to-end", task_prove_e2e, skip_without_gnatprove),
     ("API docs", task_doc, skip_without_gnatdoc),
     ("offline manual", task_book, skip_without_sphinx),
     ("SBOM", task_sbom, skip_without_alr),
@@ -671,6 +683,7 @@ TASKS: Dict[str, Callable[[], int]] = {
     "test-publish": task_test_publish,
     "clean": task_clean,
     "cli-e2e": task_cli_e2e,
+    "prove-e2e": task_prove_e2e,
     "e2e": task_e2e,
     "check": task_check,
 }
