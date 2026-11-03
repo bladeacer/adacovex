@@ -1757,7 +1757,11 @@ package body Adacovex.Prove is
    --  @return One-line guidance for that kind of check.
    function Fix_Hint (Kind : String) return String is
    begin
-      if Index (Kind, "range") > 0
+      if Index (Kind, "divide") > 0 or else Index (Kind, "division") > 0 then
+         return
+           "state the divisor is non-zero as a precondition, so the"
+           & " division check follows";
+      elsif Index (Kind, "range") > 0
         or else Index (Kind, "index") > 0
         or else Index (Kind, "overflow") > 0
         or else Index (Kind, "division") > 0

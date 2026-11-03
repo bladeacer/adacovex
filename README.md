@@ -214,7 +214,7 @@ Action inputs/outputs, result caching, and release bundling:
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `just test` | 2092/2092 passing |
+| Unit tests | `just test` | 2094/2094 passing |
 | Self-assessment | `just run-self` | 100% docs, Gold, DAL-C Achieved |
 | SPARK proof | `just prove` | Gold (1054 VCs, 0 unproved under gnatprove 16.1.0) |
 | Ada_CRDT regression | `just run-ada-crdt` | 100% docs, DAL-C (strict mode) |

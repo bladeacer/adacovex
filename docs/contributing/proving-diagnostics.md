@@ -62,7 +62,8 @@ finding, and it states how many it left out.
 
 | Finding | What it means | What to do |
 |---------|---------------|------------|
-| `array index check`, `range check`, `overflow check`, `division check` | A value can leave its subtype bounds | State the bound as a subtype constraint, a precondition, or an invariant that the code establishes |
+| `array index check`, `range check`, `overflow check` | A value can leave its subtype bounds | State the bound as a subtype constraint, a precondition, or an invariant that the code establishes |
+| `divide by zero` | The divisor can be zero | State `Y /= 0` in the precondition of the subprogram that divides |
 | `precondition` | A caller cannot establish the callee's precondition | Establish it at the call site, or relax the precondition to what the body needs |
 | `postcondition` | The body may not satisfy its own contract | Add the missing fact to a loop invariant, or state the postcondition the body derives |
 | `assertion` | A `pragma Assert` may not hold | Add the fact as a loop invariant, or state it where the body makes it true |
@@ -72,6 +73,25 @@ finding, and it states how many it left out.
 
 The fix hint follows the first finding's kind. Fix that finding first, then
 rerun `prove`. The next block names the next finding.
+
+## Contract typos are compile errors
+
+A misspelled attribute (`Doubled'Resul`) or an unknown name in a contract is
+a compile error, not a finding. gnatprove stops before the proof, and the
+replay keeps the error with its location:
+
+```
+ error: <the compiler message>
+--> prove_diag_typo_attribute_broken.ads:10:19
+   10 |              Post => Doubled'Resul = 2 * X;
+      |                              ^
+```
+
+The run then exits non-zero and the final line states the prover exit code,
+for example `ERROR: gnatprove exited with code 1 (error lines: 1 above)`. No
+diagnostics block appears, because no check was proved or disproved.
+
+Fix the contract and rerun. A typo never needs a larger `--steps`.
 
 ## When the provers give up
 
@@ -88,19 +108,21 @@ The block marks such a finding as `(provers gave up)`, and its fix hint raises
 
 ## Seeing the before and after yourself
 
-`tests/e2e/prove_diagnostics.py` generates the two projects on this page. The
-broken project states `I <= T'Length` and the fixed project states
-`I in T'Range`, so the two differ in one precondition.
+`tests/e2e/prove_diagnostics.py` generates one project per case on this page,
+each with a broken variant and a fixed counterpart. The cases are `index`,
+`overflow`, `division`, `precondition`, `invariant`, `flow`,
+`typo_attribute`, and `typo_identifier`.
 
 ```bash
 python3 tests/e2e/prove_diagnostics.py --keep
-adacovex prove --target=obj/prove-diagnostics/prove_diag_broken
-adacovex prove --target=obj/prove-diagnostics/prove_diag_fixed
+adacovex prove --target=obj/prove-diagnostics/prove_diag_index_broken
+adacovex prove --target=obj/prove-diagnostics/prove_diag_index_fixed
 ```
 
 The first run prints the replay and the diagnostics block. The second prints
-`Success: all checks proved`. `just prove-e2e` runs the same script as a gate,
-and it skips itself when no gnatprove is resolvable.
+`Success: all checks proved`. Run one case with `--case=overflow`, and add
+`--debug` to print every full prover output. `just prove-e2e` runs the same
+script as a gate, and it skips itself when no gnatprove is resolvable.
 
 ## See also
 

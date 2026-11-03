@@ -63,19 +63,26 @@ the block never reaches a CI log. There is no third mode.
 
 The 1.65.0 replay and the 1.66.0 diagnostics were covered by unit tests and
 the CLI flag checks, but nothing ran a real proof and looked at what a reader
-sees. `tests/e2e/prove_diagnostics.py` now generates two small SPARK projects
-that differ in one precondition: the broken one states `I <= T'Length` and
-leaves an index check unproved, the fixed one states `I in T'Range` and
-proves it. It runs the real binary over both.
+sees. `tests/e2e/prove_diagnostics.py` now generates one small SPARK project
+per contract-writing mistake, each with a broken variant and a fixed
+counterpart that differs in one contract line. The cases cover the mistakes
+that dominate contract writing: `index` (a bound that does not imply the
+table bounds), `overflow` (a bound too wide for the arithmetic), `division` (a
+zero divisor), `precondition` (a caller that cannot establish the callee's
+contract), `invariant` (a loop without the invariant its postcondition
+needs), `flow` (an object read before it is written), `typo_attribute` (a
+misspelled attribute), and `typo_identifier` (an unknown name).
 
 The suite checks the quiet replay (no `Phase N of M:` banners, and no
 `filtered:` footer when nothing was hidden), the diagnostics block (the
-unproved count, the prover identity, the source location, the `index check`
-kind, the fix hint, and the non-zero exit rule), and the `--verbose` mode
-(the raw `index check might fail` line, no block, no filtering). The fixture
-project is generated at run time, so it never enters this tree's own scan or
-proof, and `--keep` writes it to `obj/prove-diagnostics/` for a reader who
-wants to see the before and after by hand.
+unproved count, the prover identity, the source location, the check kind, and
+the fix hint), the compile-error shape for the two typos (the replay keeps
+the error with its location, the run exits non-zero, and no block appears),
+the fixed counterpart proving cleanly, and the `--verbose` mode (the raw
+prover line, no block, no filtering). The projects are generated at run time,
+so they never enter this tree's own scan or proof, and `--keep` writes them
+to `obj/prove-diagnostics/` for a reader who wants the before and after by
+hand.
 
 The suite runs as `just prove-e2e` (`python3 tools/tasks.py prove-e2e`), is a
 gate of `just check`, and skips itself when no gnatprove is resolvable. The
@@ -90,15 +97,15 @@ No defect is fixed in this release.
 
 ## Test Suite
 
-- 2092/2092 native tests passing across 29 categories (2060 at 1.65.0). The
-  Prove runner category grows from 44 to 76 with the diagnostics tests: the
+- 2094/2094 native tests passing across 29 categories (2060 at 1.65.0). The
+  Prove runner category grows from 44 to 78 with the diagnostics tests: the
   finding count, the location and kind of each entry, the flow marking, the
   severity-word strip, the prover-identity line, the fix hint, the empty
   block for a clean run, the eight-entry cap with its "N more" line, the
   real block shape (message line, `-->` location, and `+` sub-message), the
-  gave-up marking, and the budget hint.
-- `just prove-e2e` adds 17 end-to-end checks over the generated broken and
-  fixed fixture projects.
+  gave-up marking, the budget hint, and the divide-by-zero hint.
+- `just prove-e2e` adds 67 end-to-end checks over the generated broken and
+  fixed fixture projects, one case per contract-writing mistake.
 
 ## Proof Results
 
