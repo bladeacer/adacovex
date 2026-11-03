@@ -128,6 +128,10 @@ The flags that drive this behaviour: `--quiet`, `--suppress-warnings`,
 and `--suppress-warnings=SETS`.
 [CLI reference -- the `prove` subcommand](../usage/cli-reference-flags.md#the-prove-subcommand).
 
+The block shapes, what each check kind asks you to change, and how to tell a
+budget problem from a real counterexample are on
+[Reading a prove failure](proving-diagnostics.md).
+
 ### The SARIF report
 
 Every `prove` run leaves two files in `<target>/obj/gnatprove/`. The

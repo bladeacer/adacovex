@@ -17,7 +17,7 @@
         surface-parity-check tools-check \
         bench perf-bench complexity-check csslint-check \
         version-consistency-check sync docs-check para-split-check tldr-check \
-        tldr-lint book-links-check cli-e2e e2e check
+        tldr-lint book-links-check cli-e2e prove-e2e e2e check
 
 .DEFAULT_GOAL := help
 
@@ -159,6 +159,9 @@ book-links-check:
 
 cli-e2e:
 	@python3 tools/tasks.py cli-e2e
+
+prove-e2e:
+	@python3 tools/tasks.py prove-e2e
 
 e2e:
 	@python3 tools/tasks.py e2e

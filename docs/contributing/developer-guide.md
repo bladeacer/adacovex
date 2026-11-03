@@ -29,7 +29,7 @@ Prerequisites:
 git clone https://github.com/bladeacer/adacovex.git
 cd adacovex
 just build        # compiles bin/adacovex + bin/test_runner (covex alias)
-just test         # builds + runs the native test suite (2079 tests)
+just test         # builds + runs the native test suite (2092 tests)
 just run-self     # assess adacovex itself: 100% docs, Gold, DAL-C
 just prove        # SPARK proof (full-proof gate) + regenerates docs/badges/
 just check        # the whole quality gate CI runs before a release
@@ -149,6 +149,12 @@ subcommand reject paths), and the serve `--theme` values and `-p` port
 forms. It needs no browser and runs inside `just check`.
 The differential checks skip themselves when `git` is missing. The browser
 suite (`just e2e`) adds the Playwright dashboard layout tests on top.
+
+The prove diagnostics suite (`just prove-e2e`, `tests/e2e/prove_diagnostics.py`)
+generates two small SPARK projects that differ in one precondition: one leaves
+an index check unproved and one proves it. It runs the real `prove` command
+over both and checks the quiet replay, the diagnostics block, and the
+`--verbose` mode. The suite skips itself when no gnatprove is resolvable.
 
 ## Documentation and dashboard tooling
 

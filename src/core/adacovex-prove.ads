@@ -223,10 +223,17 @@ package Adacovex.Prove is
         Ada.Strings.Unbounded.Null_Unbounded_String;
       --  The check kind (for example `range check` or `postcondition`).
       Kind     : Ada.Strings.Unbounded.Unbounded_String :=
-        Ada.Strings.Unbounded.Null_Unbounded_String;
-      --  True for a flow-analysis finding (an uninitialized object),
+        Ada
+          .Strings
+          .Unbounded
+          .Null_Unbounded_String;      --  True for a flow-analysis finding (an uninitialized object),
       --  False for a prover check.
       Flow     : Boolean := False;
+
+      --  True when the prover gave up instead of finding a counterexample:
+      --  the proof ran out of budget, so a larger --steps is the next step
+      --  and the code may well be correct.
+      Budget : Boolean := False;
    end record;
 
    type Failure_Array is array (1 .. Max_Failure_Items) of Prove_Failure;

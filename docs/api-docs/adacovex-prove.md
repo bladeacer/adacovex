@@ -81,8 +81,12 @@ type Prove_Failure is record
 Location : Ada.Strings.Unbounded.Unbounded_String :=
 Ada.Strings.Unbounded.Null_Unbounded_String;
 Kind     : Ada.Strings.Unbounded.Unbounded_String :=
-Ada.Strings.Unbounded.Null_Unbounded_String;
+Ada
+.Strings
+.Unbounded
+.Null_Unbounded_String;
 Flow     : Boolean := False;
+Budget : Boolean := False;
 end record;
 ```
 

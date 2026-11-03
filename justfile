@@ -237,6 +237,10 @@ clean:
 cli-e2e:
     @python3 tools/tasks.py cli-e2e
 
+# Prove the generated broken/fixed fixture projects and check the diagnostics.
+prove-e2e:
+    @python3 tools/tasks.py prove-e2e
+
 # Run cli-e2e then the Playwright dashboard tests.
 e2e:
     @python3 tools/tasks.py e2e
