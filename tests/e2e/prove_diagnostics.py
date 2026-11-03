@@ -19,6 +19,8 @@ The cases cover the mistakes that dominate contract writing:
 * `division` -- a divisor the precondition does not exclude as zero;
 * `precondition` -- a caller that cannot establish the callee's contract;
 * `invariant` -- a loop without the invariant its postcondition needs;
+* `invariant_entry` -- a loop invariant the body keeps but the first
+  iteration does not hold yet;
 * `flow` -- an object read before it is written;
 * `typo_attribute` -- a misspelled attribute in a postcondition;
 * `typo_identifier` -- a misspelled name in a precondition.
@@ -306,6 +308,50 @@ CASES: Tuple[Case, ...] = (
         kind="postcondition",
     ),
     _case(
+        "invariant_entry",
+        """\
+   --  Count down to zero.
+   --  @param N  Start value.
+   --  @return The final value.
+   function Count_Down (N : Natural) return Natural
+     with Pre  => N <= 100,
+          Post => Count_Down'Result = 0;
+""",
+        """\
+   function Count_Down (N : Natural) return Natural is
+      Left : Natural := N;
+   begin
+      while Left > 0 loop
+         pragma Loop_Invariant (Left < N);
+         pragma Loop_Variant (Decreases => Left);
+         Left := Left - 1;
+      end loop;
+      return Left;
+   end Count_Down;
+""",
+        """\
+   --  Count down to zero.
+   --  @param N  Start value.
+   --  @return The final value.
+   function Count_Down (N : Natural) return Natural
+     with Pre  => N <= 100,
+          Post => Count_Down'Result = 0;
+""",
+        """\
+   function Count_Down (N : Natural) return Natural is
+      Left : Natural := N;
+   begin
+      while Left > 0 loop
+         pragma Loop_Invariant (Left <= N);
+         pragma Loop_Variant (Decreases => Left);
+         Left := Left - 1;
+      end loop;
+      return Left;
+   end Count_Down;
+""",
+        kind="loop invariant",
+    ),
+    _case(
         "flow",
         """\
    --  Add an offset to a value.
@@ -469,11 +515,13 @@ def write_project(root: Path, case: Case, fixed: bool) -> Path:
     return project
 
 
-def run_prove(project: Path, verbose: bool = False) -> subprocess.CompletedProcess:
+def run_prove(project: Path, verbose: bool = False,
+              extra: Optional[List[str]] = None) -> subprocess.CompletedProcess:
     """Run `prove` over one fixture project and capture everything.
 
     @param project  Project directory to prove.
     @param verbose  True for the raw prover stream, False for the concise mode.
+    @param extra  Additional CLI arguments appended after the base ones.
     @return The completed process, with stdout and stderr combined.
     """
     argv: List[str] = [
@@ -481,6 +529,7 @@ def run_prove(project: Path, verbose: bool = False) -> subprocess.CompletedProce
     ]
     if verbose:
         argv.append("--verbose")
+    argv.extend(extra or [])
     return subprocess.run(
         argv, cwd=str(project), capture_output=True, text=True,
         timeout=900, errors="replace")
@@ -612,6 +661,16 @@ def check_case(r: Results, root: Path, case: Case, debug: bool) -> None:
             f"{case.name}: the fixed variant proves")
     r.check(proc.returncode == 0,
             f"{case.name}: the fixed variant exits 0")
+    r.check("coverage:" in text and "statements" in text
+            and "subprograms" in text and "VCs" in text,
+            f"{case.name}: the run prints the proof-coverage summary")
+
+    quiet = run_prove(fixed, extra=["--no-coverage"])
+    quiet_text: str = quiet.stdout + quiet.stderr
+    r.check("coverage:" not in quiet_text,
+            f"{case.name}: --no-coverage hides the coverage summary")
+    r.check(quiet.returncode == 0 and diagnostics_block(quiet_text) == "",
+            f"{case.name}: --no-coverage leaves the proof unchanged")
 
 
 def main(argv: Optional[List[str]] = None) -> int:
