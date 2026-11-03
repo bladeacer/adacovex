@@ -7,7 +7,7 @@ Improve day-to-day developer ergonomics around documentation accuracy, prove out
 - Only the features listed in the user request are in scope.
 - Each feature is mapped to one of three releases.
 - Documentation parity, flag wiring, and test parity are treated as required parts of each feature, not optional polish.
-- No implementation code is written in this plan pass.
+- Code lands in the release it belongs to; this file tracks scope, decisions, status, and verification, not the implementation itself.
 
 ## Out of scope for this plan
 - New assessment features unrelated to ergonomics.
@@ -25,7 +25,7 @@ Improve day-to-day developer ergonomics around documentation accuracy, prove out
 - Whenever config-file defaults, precedence, sample values, or supported-value comments change, update the docs and the sample `adacovex.toml` together so users, docs, and the runtime all tell the same story.
 - All new code in this branch must land as fully `SPARK_Mode On` Ada/SPARK with contracts covering each statement. New units must reach **0 unproved, 0 justified** under `just prove`, and no new `pragma SPARK_Mode (Off)` may be introduced except in the two already-exempt packages (`Types.Implementation` and `Complexity`). The work must not regress proof coverage or create avoidable future proof debt.
 
-## Audit findings to address before implementation
+## Audit findings and how each was resolved
 
 ### Documentation parity for `tldr` and `man`
 - `man` and `tldr` are real subcommands and are referenced across the CLI reference, the dash completion list, the usage pages, and the generated man page.
@@ -36,6 +36,10 @@ Improve day-to-day developer ergonomics around documentation accuracy, prove out
   - which ones the CLI reference documents
   - which ones `adacovex --help` and `adacovex completion` expose
   - whether the man page and tldr page agree with each other and with `--help`
+- **Resolved in v1.65.0:** the tldr and man pages were reconciled, and
+  `just surface-parity-check` now keeps the `--help` usage block, the man
+  SYNOPSIS, the cli-reference fence, the completion lists, and the tldr
+  examples advertising the parser's real subcommands.
 
 ### Proof output verbosity and diagnostics
 - Prove output already has a quiet-by-default path and a `--verbose` path, with suppressions for benign info noise.
@@ -43,6 +47,10 @@ Improve day-to-day developer ergonomics around documentation accuracy, prove out
   - do we want a single `prove` output mode with better in-line diagnostics, or
   - do we want a concise mode and a verbose/developer mode, or
   - do we want rich diagnostics only in CI while keeping local output compact
+- **Resolved in v1.66.0:** there are two fixed modes. Concise is the local
+  default: the replay plus a diagnostics block that names the prover, the
+  source location, the check kind, and one fix hint. `--verbose` streams the
+  raw prover output and CI passes it. `just prove-e2e` gates both.
 - This decision affects flag design, so it should be resolved during implementation planning rather than assumed.
 
 ### `--fail-on` threshold model
@@ -52,6 +60,10 @@ Improve day-to-day developer ergonomics around documentation accuracy, prove out
   - what dimensions are configurable
   - whether thresholds are percentages, counts, or both
   - whether the new flag composes with existing gates or replaces some of their roles
+- **Resolved in v1.66.0:** `--fail-on` maps each dimension (`spark`,
+  `docstrings`, `proof`, `tests`, `coverage`) onto the field its `--require-*`
+  flag already sets. It accepts `DIM=VAL` or a bare dimension that reuses its
+  threshold, and it does not replace the gates.
 
 ### Configuration file
 - There is already a global configuration file concept in the codebase, so a new per-project / config-file feature should be checked against the current config file shape before inventing a new layout.
@@ -71,6 +83,11 @@ Improve day-to-day developer ergonomics around documentation accuracy, prove out
   - how `init` should scaffold a per-project `adacovex.toml` and how that interacts with CI
   - how config paths are discovered on each platform
   - which settings need docs links, value comments, and default-value comments in the sample file
+- **Partly resolved in v1.67.0 work:** both files now exist
+  (`<target>/adacovex.toml` and `<config>/adacovex.toml`), the precedence is
+  explicit CLI > project > global > default, and the `[prove]` and
+  `[complexity]` keys are documented. Still open: `init`, and the sample
+  file's link must point at the deployed manual, not the repository tree.
 
 ### Exclusions and ignore annotations
 - The project already has per-file opt-out markers and scan-scope skip flags.
@@ -79,11 +96,16 @@ Improve day-to-day developer ergonomics around documentation accuracy, prove out
   - whether this is a new annotation form, a generalization of existing opt-outs, or both
   - what scope it covers (complexity, docstrings, proof, or all analyses)
   - how it should be documented so it is not confused with the existing markers
+- **Resolved in v1.66.0:** the per-file markers stay the fine-grained form,
+  and a `.covex-ignore` marker file excludes a whole directory subtree from
+  the source scan and the complexity walk. The granularity and the analyses
+  of each form are stated on the tool-options page.
 
 ### Watch / hot reload
 - There is no current watcher-based serve behavior in the scanned surface, so this is a new runtime feature.
 - It must be designed as opt-in or on-by-default with an explicit disable flag, and only for commands where watching is sensible.
 - Watch support needs a cross-platform file watcher story; this is the heaviest runtime dependency-style decision in the plan and should be scoped carefully.
+- **Not started.** The open questions are in the risks section below.
 
 ## Version bumps
 
@@ -91,16 +113,16 @@ The tooling-ergonomics work is spread across three minor bumps:
 
 - `v1.65.0` -- documentation parity + diagnostics foundation
 - `v1.66.0` -- diagnostics depth + failure thresholds + exclusions
-- `v1.67.0` -- configuration + watch behavior
+- `v1.67.0` -- configuration, documentation, watch, and pipeline performance
 
 Each bump ends with the same release checklist, and a bump is only complete once its changelog is written, the version is bumped, and `just check` passes:
 
 - [x] v1.65.0 changelog written
 - [x] v1.65.0 version bumped
 - [x] `just check` passes for v1.65.0
-- [ ] v1.66.0 changelog written
-- [ ] v1.66.0 version bumped
-- [ ] `just check` passes for v1.66.0
+- [x] v1.66.0 changelog written
+- [x] v1.66.0 version bumped
+- [x] `just check` passes for v1.66.0
 - [ ] v1.67.0 changelog written
 - [ ] v1.67.0 version bumped
 - [ ] `just check` passes for v1.67.0
@@ -170,9 +192,9 @@ This section is the per-feature checklist mirror of the release view above, inte
 
 ## Release 2: v1.66.0 -- Diagnostics depth + failure thresholds + exclusions
 
----
-
-## Release 2: v1.66.0 -- Diagnostics depth + failure thresholds + exclusions
+Shipped in `8bb4210`. The changelog records C1-C5: the two fixed prove output
+modes and the diagnostics block, the generated broken/fixed fixture gate, the
+coverage summary, `--fail-on`, and the `.covex-ignore` directory marker.
 
 ### 2.1 Richer prove diagnostics
 
@@ -247,14 +269,14 @@ marker cannot exclude a directory. The prover is out of scope for both
 
 ### Exclusion and ignore annotations
 
-- [ ] Standardize or extend exclusion/ignore behavior.
-- [ ] Decide whether this is a new annotation form, a broader opt-out mechanism, or both.
-- [ ] Document supported granularity and affected analyses.
-- [ ] Keep new exclusion semantics distinct from existing opt-out markers in behavior and docs.
+- [x] Standardize or extend exclusion/ignore behavior.
+- [x] Decide whether this is a new annotation form, a broader opt-out mechanism, or both.
+- [x] Document supported granularity and affected analyses.
+- [x] Keep new exclusion semantics distinct from existing opt-out markers in behavior and docs.
 
 ---
 
-## Release 3: v1.67.0 -- Configuration + watch behavior
+## Release 3: v1.67.0 -- Configuration, documentation, watch, and pipeline performance
 
 ### 3.1 Configuration file support
 
@@ -264,7 +286,11 @@ marker cannot exclude a directory. The prover is out of scope for both
 - [x] Provide a sample `adacovex.toml` in the cwd of the adacovex source code itself.
   - [x] Show the default values for the supported entries.
   - [x] Add comment blocks mentioning other supported values where relevant.
-  - [x] Link to the documentation from the sample file.
+  - [ ] Link to the documentation from the sample file. The link must point at
+    the deployed manual,
+    `https://adacovex.readthedocs.io/en/latest/usage/configuration.html`, not
+    at the repository-relative page, because a consumer of the crate has no
+    repository tree.
 - [x] Enforce the precedence order:
   1. [x] explicit CLI flags win
   2. [x] per-project / cwd `adacovex.toml`
@@ -273,6 +299,26 @@ marker cannot exclude a directory. The prover is out of scope for both
 - [ ] If `init` is wanted, make it create a per-project `adacovex.toml` with a sensible scaffold drawn from the sample file.
 - [ ] Support a global config option that can disable the per-project scaffolding behavior when that is desired.
 - [x] Keep the sample file, the global config docs, and the runtime precedence behavior in sync with each other and with the CLI defaults.
+- [ ] End-to-end test the configuration files. The unit tests cover the reader,
+  the merge, and the precedence rule; the behaviour needs real runs, because
+  the feature changes what a run does, not only what a parser returns:
+  - [ ] a project file alone changes a real `prove` run (coverage line hidden,
+    jobs and level forwarded)
+  - [ ] a global file alone changes the same run
+  - [ ] the project file wins per key while the global file still supplies the
+    keys the project omits
+  - [ ] an explicit flag wins over both files, key by key
+  - [ ] `--target` from another working directory reads that target's file
+    only, never the caller's working-directory file
+  - [ ] a `[complexity]` key changes nothing outside `adacovex complexity`, and
+    a `[prove]` key changes nothing outside `prove`
+  - [ ] malformed input never fails a run: missing file, empty file, unknown
+    key, unknown section, non-integer, unterminated quote, over-long path
+  - [ ] a config-supplied `level`, `steps`, `timeout`, or `memlimit` changes
+    the proof result-cache identity, so a stale proof is never served
+  - [ ] the shipped sample `adacovex.toml` leaves every self-run unchanged
+  - [ ] the composite action behaves like the binary when a target repository
+    carries a project file
 
 ### 3.2 Documentation reorganisation and scope
 
@@ -324,7 +370,7 @@ weakened and no check is dropped.
 - [ ] Document that the file is named `adacovex.toml` and that it is used to override default CLI flag values.
 - [ ] Keep the user-facing documentation aligned with the sample `adacovex.toml`, including the listed defaults and the supported-value comments.
 - [ ] Document watch behavior, defaults, and the `--no-watch` escape hatch.
-- [ ] Add tests for config reading, precedence, and watch behavior where practical.
+- [ ] Add tests for config reading, precedence, and watch behavior where practical; the configuration end-to-end matrix in 3.1 is the required minimum for the config half.
 - [ ] For every config-related change, update the docs in the same change so the runtime behavior, the sample file, and the documentation never drift.
 - [ ] Update the changelog entry for v1.67.0 before the version bump.
 
@@ -336,7 +382,7 @@ weakened and no check is dropped.
 
 ---
 
-## Feature work view (continued)
+## Feature work view (Release 3)
 
 ### Configuration file support
 
@@ -346,7 +392,11 @@ weakened and no check is dropped.
 - [x] Ship a sample `adacovex.toml` in the cwd of the adacovex source code itself.
   - [x] Show the default values for the supported entries.
   - [x] Add comment blocks mentioning other supported values where relevant.
-  - [x] Link to the documentation from the sample file.
+  - [ ] Link to the documentation from the sample file. The link must point at
+    the deployed manual,
+    `https://adacovex.readthedocs.io/en/latest/usage/configuration.html`, not
+    at the repository-relative page, because a consumer of the crate has no
+    repository tree.
 - [x] Enforce the precedence order:
   - [x] explicit CLI flags win
   - [x] per-project / cwd `adacovex.toml`
@@ -364,8 +414,6 @@ weakened and no check is dropped.
   - [ ] allow `--no-watch` to disable it
 - [ ] Keep `prove` off by default for watching, but allow it to be enabled if useful.
 - [ ] Use a cross-platform watcher implementation that fits the project's runtime constraints.
-
----
 
 ### Documentation reorganisation
 
@@ -401,10 +449,46 @@ For every release, implement each feature as its own markdown checklist so a fea
 
 ## Risks and open decisions
 
-- Proof output style: concise vs verbose vs contextual CI mode is still open and affects flag design.
-- `--fail-on` semantics: determine whether it generalizes existing gates or is a separate mechanism.
-- Configuration file: confirm the current global config shape before designing the per-project file and `init` behavior.
-- Watch support: confirm the cross-platform watcher approach before promising watch behavior across commands.
+### Settled in v1.66.0
+
+- Proof output style: two fixed modes, concise locally and verbose in CI.
+- `--fail-on` semantics: it maps onto the `--require-*` fields instead of
+  replacing them.
+- Exclusion form: the per-file markers plus the `.covex-ignore` directory
+  marker.
+- Config shape: a project and a global `adacovex.toml`, with the explicit CLI
+  winning, then the project file, then the global file, then the default.
+
+### Open: a decision is needed before the item starts
+
+- **`init` scaffolding (3.1).** Is `init` wanted at all? If it is, should it
+  write `<target>/adacovex.toml` or only a file in the working directory, and
+  may it replace an existing file? The alternatives are a prompt, a `--force`,
+  or never replacing.
+- **Config discovery in CI (3.1).** Should a project file in a checked-out
+  repository always apply, or must CI opt in? A third-party repository could
+  otherwise change the gates adacovex applies to it.
+- **Watch implementation (3.3).** The zero-dependency rule excludes `notify`
+  and `chokidar`. The choices are polling with a configurable interval, a
+  thin platform API behind `pragma Import`, or no watch mode at all.
+- **Watch defaults (3.3).** Should `serve` watch by default (with
+  `--no-watch`) or stay opt-in (`--watch`)? A default that rescans a large
+  tree on every save can cost more than a manual rerun.
+- **The 60-second budget (3.4).** Is 60 s wall clock the target for the whole
+  of `just check`, proof included, or for the static gates only? The cold
+  proof alone ran 61-88 s on the dev machine.
+- **Warm-cache policy (3.4).** May the target assume a warm result cache and a
+  warm gnatprove session, or must the cold path fit the budget too? For a
+  fresh clone only one of those can be true.
+- **Docs reorganisation blast radius (3.2).** How far may pages merge or move
+  before a reader's bookmarks and the bundled manual's URLs break? Does the
+  compliance and proof record stay in place while only the user guides move?
+- **Performance directory (3.2).** Should the new directory be
+  `docs/performance/` or a split under an existing tree? Does the per-phase
+  prove-timing table move with it or stay where the release notes link to it?
+- **Configuration end-to-end depth (3.1).** The matrix above is the proposed
+  minimum. Should it also run a real `gnatprove` (slow, needs a prover), or
+  stub the prover and assert only the forwarded option string?
 
 ## Documentation discipline
 
