@@ -176,15 +176,15 @@ This section is the per-feature checklist mirror of the release view above, inte
 
 ### 2.1 Richer prove diagnostics
 
-- [ ] Improve actionable output for proof failures:
-  - show the prover identity and the kind of proof that failed where possible
-  - point at the source file and target location rather than only the summary
-  - give a short "what failed" and "how to fix" style guidance when the tool can derive it
-- [ ] If the output-mode decisions from v1.65.0 are still open, finalize them here:
-  - concise vs verbose output
-  - which mode is default locally
-  - which mode is used in CI
-- [ ] Document the final diagnostics-mode choices.
+- [x] Improve actionable output for proof failures:
+  - [x] show the prover identity and the kind of proof that failed where possible
+  - [x] point at the source file and target location rather than only the summary
+  - [x] give a short "what failed" and "how to fix" style guidance when the tool can derive it
+- [x] If the output-mode decisions from v1.65.0 are still open, finalize them here:
+  - [x] concise vs verbose output
+  - [x] which mode is default locally
+  - [x] which mode is used in CI
+- [x] Document the final diagnostics-mode choices.
 
 ### 2.2 `--fail-on` threshold flag
 
@@ -211,14 +211,14 @@ This section is the per-feature checklist mirror of the release view above, inte
 
 - [ ] Document the `--fail-on` threshold flag.
 - [ ] Document the new or extended exclusion annotations.
-- [ ] Document the final diagnostics-mode choices.
-- [ ] Update the changelog entry for v1.66.0 before the version bump.
+- [x] Document the final diagnostics-mode choices.
+- [x] Update the changelog entry for v1.66.0 before the version bump.
 
 ### 2.5 Release checklist for v1.66.0
 
-- [ ] v1.66.0 changelog written
-- [ ] version bumped to v1.66.0
-- [ ] `just check` passes
+- [x] v1.66.0 changelog written
+- [x] version bumped to v1.66.0
+- [x] `just check` passes
 
 ---
 
@@ -226,10 +226,10 @@ This section is the per-feature checklist mirror of the release view above, inte
 
 ### Richer prove diagnostics
 
-- [ ] Show prover identity and proof type where possible.
-- [ ] Point at source file and target location instead of only summarizing.
-- [ ] Give short "what failed" and "how to fix" guidance when derivable.
-- [ ] Finalize concise vs verbose output choices and document them.
+- [x] Show prover identity and proof type where possible.
+- [x] Point at source file and target location instead of only summarizing.
+- [x] Give short "what failed" and "how to fix" guidance when derivable.
+- [x] Finalize concise vs verbose output choices and document them.
 
 ### `--fail-on` threshold flag
 

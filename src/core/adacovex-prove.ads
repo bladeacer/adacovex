@@ -209,6 +209,77 @@ package Adacovex.Prove is
       Warnings : Natural := 0;
    end record;
 
+   --  The most unproved findings one diagnostics block lists. A larger
+   --  count is still reported; only the first Max_Failure_Items entries
+   --  are named, so a project with many unproved checks does not swamp the
+   --  report.
+   Max_Failure_Items : constant := 8;
+
+   --  One unproved finding of a proof run, gathered from the captured
+   --  gnatprove stream.
+   type Prove_Failure is record
+      --  `file:line:column`, as gnatprove reported the check.
+      Location : Ada.Strings.Unbounded.Unbounded_String :=
+        Ada.Strings.Unbounded.Null_Unbounded_String;
+      --  The check kind (for example `range check` or `postcondition`).
+      Kind     : Ada.Strings.Unbounded.Unbounded_String :=
+        Ada.Strings.Unbounded.Null_Unbounded_String;
+      --  True for a flow-analysis finding (an uninitialized object),
+      --  False for a prover check.
+      Flow     : Boolean := False;
+   end record;
+
+   type Failure_Array is array (1 .. Max_Failure_Items) of Prove_Failure;
+
+   --  Counts gathered by one diagnostics pass over a captured gnatprove
+   --  output file. Unproved is every unproved finding the stream carried
+   --  and Count is how many of them Items names, so a reader sees both the
+   --  scale of the failure and the first locations to fix.
+   type Failure_Stats is record
+      --  Unproved findings seen in the stream.
+      Unproved : Natural := 0;
+      --  Entries filled in Items (<= Max_Failure_Items).
+      Count    : Natural := 0;
+      --  The first findings, in stream order.
+      Items    : Failure_Array;
+   end record;
+
+   --  Collect the actionable failure detail of a captured gnatprove stream:
+   --  the location and check kind of every unproved check, and of every
+   --  flow finding that names an uninitialized object. A prover failure
+   --  line has the shape
+   --
+   --     unit.adb:54:08: medium: postcondition might fail
+   --
+   --  and a flow finding the shape
+   --
+   --     unit.adb:31:05: "X" is not initialized
+   --
+   --  so the pass keeps the location, strips the optional severity word,
+   --  and derives the kind from the message. Every other line is ignored:
+   --  a line without a `file:line:column` prefix is not a finding, and a
+   --  finding that reports a proof outcome rather than a failure is not one
+   --  to act on. A check in `Items` counts once, so the same check reported
+   --  twice is not double-counted only when the lines match exactly -- the
+   --  prover never repeats one, and a duplicate line is a genuine duplicate
+   --  finding.
+   --  @param Path  Captured gnatprove output file to read.
+   --  @param Stats  Findings gathered during the pass.
+   procedure Collect_Failures (Path : String; Stats : out Failure_Stats);
+
+   --  Render the diagnostics block for a proof run that left unproved
+   --  checks: how many, which prover produced them, the first check
+   --  locations with their kinds, and a one-line fix hint derived from the
+   --  first check's kind. It is empty when the run left no finding, so a
+   --  clean run prints nothing. Lines end with a line feed and the last line
+   --  is the hint, so the caller can print the result as one block.
+   --  @param Prover  The resolved prover identity (version or path), or ""
+   --  when it is not known.
+   --  @param Stats  Findings gathered by Collect_Failures.
+   --  @return The diagnostics block, or "" when there is nothing to report.
+   function Diagnostics_Text
+     (Prover : String; Stats : Failure_Stats) return String;
+
    --  Replay a captured gnatprove output file (its combined stdout and
    --  stderr) as one framed block, dropping the noise a finished run no
    --  longer needs and keeping every actionable line:

@@ -58,6 +58,34 @@ HLR-PROVE: GNATprove subcommand
 
 ## Types
 
+### type Failure_Array
+
+```ada
+type Failure_Array is array (1 .. Max_Failure_Items) of Prove_Failure;
+```
+
+### type Failure_Stats
+
+```ada
+type Failure_Stats is record
+Unproved : Natural := 0;
+Count    : Natural := 0;
+Items    : Failure_Array;
+end record;
+```
+
+### type Prove_Failure
+
+```ada
+type Prove_Failure is record
+Location : Ada.Strings.Unbounded.Unbounded_String :=
+Ada.Strings.Unbounded.Null_Unbounded_String;
+Kind     : Ada.Strings.Unbounded.Unbounded_String :=
+Ada.Strings.Unbounded.Null_Unbounded_String;
+Flow     : Boolean := False;
+end record;
+```
+
 ### type Prove_Options
 
 ```ada
@@ -104,6 +132,15 @@ end record;
 
 **Returns:** Number of logical processors (>= 1).
 
+### function Diagnostics_Text (Prover : Standard.String; Stats : Adacovex.Prove.Failure_Stats) return Standard.String
+
+| Parameter | Description |
+|-----------|-------------|
+| `Prover` | The resolved prover identity (version or path), or "" |
+| `Stats` | Findings gathered by Collect_Failures. |
+
+**Returns:** The diagnostics block, or "" when there is nothing to report.
+
 ### function Is_Proof_Input (Name : Standard.String) return Standard.Boolean
 
 | Parameter | Description |
@@ -113,6 +150,13 @@ end record;
 **Returns:** True when the file is hashed into the proof-input digest.
 
 ## Procedures
+
+### procedure Collect_Failures (Path : Standard.String; Stats : Adacovex.Prove.Failure_Stats)
+
+| Parameter | Description |
+|-----------|-------------|
+| `Path` | Captured gnatprove output file to read. |
+| `Stats` | Findings gathered during the pass. |
 
 ### procedure Export_Status (Target_Dir : Standard.String; Out_Path : Standard.String; TZ_Spec : Standard.String; Success : Standard.Boolean)
 
