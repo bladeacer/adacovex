@@ -1,0 +1,38 @@
+# adacovex project configuration (sample).
+#
+# Every key here overrides a built-in default. A command-line flag overrides
+# this file, and this file overrides the global one at
+# <config>/adacovex.toml (for example ~/.config/adacovex/adacovex.toml).
+# Copy this file into your own project, or delete it: every key below states
+# the built-in default, so an empty file and no file behave the same.
+#
+# Reference: docs/usage/configuration.md
+
+[prove]
+# Print the proof-coverage summary line after a successful prove run.
+# Values: true (default) | false.
+coverage = true
+
+# gnatprove parallelism. 0 = all cores, N = pin N processes, omit = auto
+# (max(1, cores-2) locally, all cores in CI).
+# jobs = 4
+
+# Proof effort 0-4. Omit to use gnatprove's own default.
+# level = 2
+
+# Per-check prover timeout in seconds. Omit to use gnatprove's default.
+# timeout = 60
+
+# Maximum proof steps. Omit to use the prove subcommand's reproducible
+# 10000-step budget.
+# steps = 10000
+
+# Prover memory limit in MB. Omit to use gnatprove's default.
+# memlimit = 4096
+
+[complexity]
+# File extensions the complexity/LOC gate skips (comma-separated, no dots).
+# excludes = "md,rst"
+
+# Path fragments the complexity/LOC gate skips (comma-separated).
+# skip-path = "docs/api-docs"

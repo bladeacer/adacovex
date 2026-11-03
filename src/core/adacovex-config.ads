@@ -300,6 +300,61 @@ package Adacovex.Config is
    --  @param Topic  Flag or subcommand name to explain.
    procedure Print_Topic_Help (Topic : String);
 
+   --  The file name of a configuration file, used in the project directory
+   --  and in the platform configuration directory alike.
+   Config_File_Name : constant String := "adacovex.toml";
+
+   --  The values one configuration file supplies. A key that the file does
+   --  not mention keeps its "set" flag False (or its -1 / 0 sentinel), so it
+   --  never overwrites a built-in default or another file. `[prove] jobs`,
+   --  `level`, `timeout`, `steps`, and `memlimit` take an integer;
+   --  `[prove] coverage` takes true or false; `[complexity] excludes` and
+   --  `skip-path` take a comma-separated string.
+   type Config_Settings is record
+      Coverage       : Boolean := True;
+      Coverage_Set   : Boolean := False;
+      Jobs           : Integer := -1;
+      Level          : Integer := -1;
+      Timeout        : Integer := -1;
+      Steps          : Integer := -1;
+      Memlimit       : Integer := -1;
+      Excludes       : String (1 .. Types.Max_Filename);
+      Excludes_Len   : Natural := 0;
+      Skip_Paths     : String (1 .. Types.Max_Path);
+      Skip_Paths_Len : Natural := 0;
+   end record;
+
+   --  Read one `adacovex.toml`. A missing or unreadable file returns the
+   --  defaults (every key unset). An unknown key, an unknown section, a
+   --  comment, and a bare `#` after a value are all ignored, so a file is
+   --  safe to extend. Values may be quoted; an integer that is not an
+   --  integer is ignored rather than failing the run.
+   --  @param Path  Configuration file to read.
+   --  @return The settings the file supplies.
+   function Read_Settings (Path : String) return Config_Settings;
+
+   --  Merge two settings sets key by key: every key Override supplies wins,
+   --  and every key it does not supply keeps the value Base carries. Call it
+   --  with the global file as Base and the project file as Override, so the
+   --  project file wins over the global one while the command line still wins
+   --  over the merged result.
+   --  @param Base  Settings from the lower-priority file.
+   --  @param Override  Settings from the higher-priority file.
+   --  @return The merged settings.
+   function Merge_Settings
+     (Base, Override : Config_Settings) return Config_Settings;
+
+   --  Apply Settings to Cfg, key by key, only where the command line left the
+   --  field unset: a prove integer below zero, an empty excludes or skip-path
+   --  list, and a coverage state that --coverage or --no-coverage did not
+   --  choose. Apply the global file first and the project file second, so the
+   --  project wins over the global file while the command line wins over
+   --  both.
+   --  @param Cfg  Parsed configuration to fill in.
+   --  @param Settings  Values read from one configuration file.
+   procedure Apply_Settings
+     (Cfg : in out CLI_Config; Settings : Config_Settings);
+
    --  Testable CLI-parser core. Kept out of SPARK. It operates on an
    --  unbounded string vector and reports parse errors to Standard_Error.
    --  Unit tests can drive flag precedence through Parse_Args without

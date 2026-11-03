@@ -117,15 +117,50 @@ Require_Proof_Set      : Boolean := False;
 end record;
 ```
 
+### type Config_Settings
+
+```ada
+type Config_Settings is record
+Coverage       : Boolean := True;
+Coverage_Set   : Boolean := False;
+Jobs           : Integer := -1;
+Level          : Integer := -1;
+Timeout        : Integer := -1;
+Steps          : Integer := -1;
+Memlimit       : Integer := -1;
+Excludes       : String (1 .. Types.Max_Filename);
+Excludes_Len   : Natural := 0;
+Skip_Paths     : String (1 .. Types.Max_Path);
+Skip_Paths_Len : Natural := 0;
+end record;
+```
+
 ## Functions
 
 ### function Flag_List return Standard.String `[Post]` `[Global]`
 
 **Returns:** Space-separated flag names (without leading dashes).
 
+### function Merge_Settings (Base : Adacovex.Config.Config_Settings; Override : Adacovex.Config.Config_Settings) return Adacovex.Config.Config_Settings
+
+| Parameter | Description |
+|-----------|-------------|
+| `Base` | Settings from the lower-priority file. |
+| `Override` | Settings from the higher-priority file. |
+
+**Returns:** The merged settings.
+
 ### function Parse_CLI return Adacovex.Config.CLI_Config `[Post]`
 
 **Returns:** Fully populated CLI_Config from parsed command-line arguments.
+
+### function Read_Settings (Path : Standard.String) return Adacovex.Config.Config_Settings
+
+| Parameter | Description |
+|-----------|-------------|
+| `Path` | Configuration file to read. |
+
+**Returns:** The settings the file supplies.
 
 ## Procedures
 
@@ -135,6 +170,13 @@ end record;
 |-----------|-------------|
 | `Cfg` | Config record to modify. |
 | `Name` | Directory name to add to skip list. |
+
+### procedure Apply_Settings (Cfg : Adacovex.Config.CLI_Config; Settings : Adacovex.Config.Config_Settings)
+
+| Parameter | Description |
+|-----------|-------------|
+| `Cfg` | Parsed configuration to fill in. |
+| `Settings` | Values read from one configuration file. |
 
 ### procedure Print_Topic_Help (Topic : Standard.String)
 

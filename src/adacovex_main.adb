@@ -7,6 +7,7 @@ with Ada.Strings.Unbounded;
 with GNAT.Sockets;
 with Adacovex.Types;
 with Adacovex.Dir_Cache;
+with Adacovex.Paths;
 with Adacovex.Config;
 with Adacovex.Completion;
 with Adacovex.Diff;
@@ -500,6 +501,29 @@ procedure Adacovex_Main is
 begin
    Cfg := Adacovex.Config.Parse_CLI;
 
+   --  Apply the configuration files now that the target is resolved. The
+   --  global file is read first and the project file second, so the project
+   --  wins; Apply_Settings leaves every field an explicit CLI flag already
+   --  set, so the command line wins over both.
+   declare
+      Global_Settings  : constant Adacovex.Config.Config_Settings :=
+        Adacovex.Config.Read_Settings
+          (Adacovex.Paths.Config_Root
+           & "/"
+           & Adacovex.Config.Config_File_Name);
+      Project_Dir      : constant String :=
+        (if Cfg.Target_Len > 0
+         then Cfg.Target_Path (1 .. Cfg.Target_Len)
+         else ".");
+      Project_Settings : constant Adacovex.Config.Config_Settings :=
+        Adacovex.Config.Read_Settings
+          (Project_Dir & "/" & Adacovex.Config.Config_File_Name);
+   begin
+      Adacovex.Config.Apply_Settings
+        (Cfg,
+         Adacovex.Config.Merge_Settings (Global_Settings, Project_Settings));
+   end;
+
    if Cfg.CLI_Error then
       --  An unknown token with no close-enough known flag lands the user on
       --  the full usage text (stdout) instead of a bare one-line error, so
@@ -975,10 +999,7 @@ begin
             --  The coverage summary is on by default. --coverage and
             --  --no-coverage win over `[prove] coverage` in the global
             --  config file, which is read only for an unflagged run.
-            Show_Coverage     =>
-              (if Cfg.Prove_Coverage_Explicit
-               then Cfg.Prove_Show_Coverage
-               else Adacovex.Prove.Config_Show_Coverage));
+            Show_Coverage     => Cfg.Prove_Show_Coverage);
       begin
          Adacovex.Prove.Run_Prove (Target (1 .. TLen), Opts, OK);
          if not OK then

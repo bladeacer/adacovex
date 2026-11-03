@@ -133,10 +133,6 @@ end record;
 
 **Returns:** Space-separated gnatprove option string.
 
-### function Config_Show_Coverage return Standard.Boolean
-
-**Returns:** True when the prove summary should print the coverage line.
-
 ### function Detect_Core_Count return Standard.Natural
 
 **Returns:** Number of logical processors (>= 1).
