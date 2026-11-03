@@ -244,6 +244,156 @@ package body Adacovex.Config is
       end if;
    end To_SPARK_Level;
 
+   --  Forward declaration: the numeric gate setter lives further down the
+   --  body, and Set_Fail_On (below) applies its thresholds.
+   procedure Set_Prove_Int
+     (Cfg   : in out CLI_Config;
+      Field : out Integer;
+      Val   : String;
+      Min   : Integer;
+      Max   : Integer;
+      Flag  : String);
+
+   --  Apply one --fail-on dimension. A dimension maps onto the CI-gate field
+   --  of the matching --require-* flag, so a --fail-on policy and an explicit
+   --  --require-* gate fail the same way: exit 1 and one `CI GATE:` line per
+   --  unmet dimension. `name=value` sets the threshold; a bare `name` keeps
+   --  the threshold its --require-* flag already set, and fails loudly when
+   --  that flag is absent, because a gate with no threshold would pass
+   --  silently. The value may hold several comma-separated dimensions.
+   procedure Set_Fail_On (Cfg : in out CLI_Config; Spec : String) is
+
+      procedure Apply (Item : String) is
+         Eq : Natural := 0;
+      begin
+         for I in Item'Range loop
+            if Item (I) = '=' then
+               Eq := I;
+               exit;
+            end if;
+         end loop;
+         declare
+            Name : constant String :=
+              (if Eq > 0 then Item (Item'First .. Eq - 1) else Item);
+            Val  : constant String :=
+              (if Eq > 0 and then Eq < Item'Last
+               then Item (Eq + 1 .. Item'Last)
+               else "");
+
+            --  Set one percentage-or-count gate from Val. A bare dimension
+            --  reuses the matching --require-* threshold; with no threshold
+            --  it is an error, never a silent pass.
+            --
+            --  Field is `in out`, never `out`: a bare dimension must leave the
+            --  threshold its --require-* flag already set untouched, and an
+            --  `out` scalar parameter would clear it on entry.
+            procedure Number
+              (Field  : in out Integer;
+               Is_Set : in out Boolean;
+               Dim    : String;
+               Max    : Integer) is
+            begin
+               if Val'Length = 0 then
+                  if not Is_Set then
+                     Set_Error
+                       (Cfg,
+                        "--fail-on="
+                        & Dim
+                        & " needs a value, for example --fail-on="
+                        & Dim
+                        & "=100 (or set --require-"
+                        & Dim
+                        & ")");
+                  end if;
+               else
+                  Set_Prove_Int (Cfg, Field, Val, 0, Max, "--fail-on=" & Dim);
+                  if not Cfg.CLI_Error then
+                     Is_Set := True;
+                  end if;
+               end if;
+            end Number;
+         begin
+            if Name = "spark" then
+               if Val'Length = 0 then
+                  if not Cfg.Require_SPARK_Set then
+                     Set_Error
+                       (Cfg,
+                        "--fail-on=spark needs a level, for example"
+                        & " --fail-on=spark=Gold (or set --require-spark)");
+                  end if;
+               else
+                  declare
+                     Lvl : Types.SPARK_Level := Types.Stone;
+                     OK  : Boolean := False;
+                  begin
+                     To_SPARK_Level (Val, Lvl, OK);
+                     if OK then
+                        Cfg.Require_SPARK := Lvl;
+                        Cfg.Require_SPARK_Set := True;
+                     else
+                        Set_Error
+                          (Cfg,
+                           "--fail-on=spark must be Stone, Bronze, Silver,"
+                           & " Gold, or Platinum (got: "
+                           & Val
+                           & ")");
+                     end if;
+                  end;
+               end if;
+            elsif Name = "docstrings" then
+               Number
+                 (Cfg.Require_Docstrings,
+                  Cfg.Require_Docstrings_Set,
+                  "docstrings",
+                  100);
+            elsif Name = "proof" then
+               Number (Cfg.Require_Proof, Cfg.Require_Proof_Set, "proof", 100);
+            elsif Name = "tests" then
+               Number
+                 (Cfg.Require_Tests,
+                  Cfg.Require_Tests_Set,
+                  "tests",
+                  1_000_000_000);
+            elsif Name = "coverage" then
+               Number
+                 (Cfg.Spark_Require, Cfg.Spark_Require_Set, "coverage", 100);
+            elsif Name'Length = 0 then
+               Set_Error
+                 (Cfg,
+                  "--fail-on must name spark, docstrings, proof, tests, or"
+                  & " coverage");
+            else
+               Set_Error
+                 (Cfg,
+                  "--fail-on must name spark, docstrings, proof, tests, or"
+                  & " coverage (got: "
+                  & Name
+                  & ")");
+            end if;
+         end;
+      end Apply;
+
+      Start : Natural := Spec'First;
+   begin
+      if Spec'Length = 0 then
+         Set_Error
+           (Cfg,
+            "--fail-on must name spark, docstrings, proof, tests, or coverage");
+         return;
+      end if;
+      for I in Spec'Range loop
+         if Spec (I) = ',' then
+            if I > Start then
+               Apply (Spec (Start .. I - 1));
+            end if;
+            Start := I + 1;
+         end if;
+      end loop;
+      if Start <= Spec'Last then
+         Apply (Spec (Start .. Spec'Last));
+      end if;
+   end Set_Fail_On;
+
    --  Map a CLI word to a spark-coverage metric, row grouping, or
    --  report format. Valid is set False on an unrecognised word so
    --  the caller can fail loudly with the accepted set.
@@ -429,7 +579,8 @@ package body Adacovex.Config is
      & "serve-workers tz timezone excludes skip-path "
      & "workers svg-path md-path emit-md no-md strict diff base delta spark "
      & "docstrs tests spark-coverage group metric spark-format "
-     & "min-coverage require-coverage gate-metric";
+     & "min-coverage require-coverage gate-metric "
+     & "coverage no-coverage fail-on";
 
    --  Expose the flag list for the shell-completion generator (see spec).
    function Flag_List return String is
@@ -1927,6 +2078,26 @@ package body Adacovex.Config is
                        Ada.Strings.Unbounded.To_Unbounded_String
                          (A (A'First + 20 .. A'Last));
                      Cfg.Prove_Suppress_Explicit := True;
+                  elsif A = "--coverage" then
+                     --  The proof-coverage summary is on by default; this is
+                     --  the explicit form, and it wins over the config file.
+                     Cfg.Prove_Show_Coverage := True;
+                     Cfg.Prove_Coverage_Explicit := True;
+                  elsif A = "--no-coverage" then
+                     Cfg.Prove_Show_Coverage := False;
+                     Cfg.Prove_Coverage_Explicit := True;
+                  elsif A = "--fail-on" then
+                     I := I + 1;
+                     if I <= Count then
+                        Set_Fail_On (Cfg, Args (I));
+                     else
+                        Set_Error
+                          (Cfg,
+                           "--fail-on requires a dimension, for example"
+                           & " --fail-on=spark=Gold");
+                     end if;
+                  elsif Has_Prefix (A, "--fail-on=") then
+                     Set_Fail_On (Cfg, A (A'First + 10 .. A'Last));
                   elsif A = "--require-spark" then
                      I := I + 1;
                      if I <= Count then
@@ -2274,14 +2445,15 @@ package body Adacovex.Config is
                      or Cfg.Prove_No_Loop_Unroll
                      or Cfg.Prove_No_Inlining
                      or Cfg.Prove_Suppress_Explicit
+                     or Cfg.Prove_Coverage_Explicit
                      or Ada.Strings.Unbounded.Length (Cfg.Prove_Args) > 0)
          then
             Set_Error
               (Cfg,
                "prove options (--jobs, --level, --timeout, --steps, --memlimit, "
                & "--force, --no-loop-unrolling, --no-inlining, "
-               & "--args, --suppress-warnings, --quiet) require the prove "
-               & "subcommand");
+               & "--args, --suppress-warnings, --quiet, --coverage, "
+               & "--no-coverage) require the prove subcommand");
          end if;
 
          -- --serve-workers only makes sense with --serve; reject a silent no-op.
@@ -2655,6 +2827,12 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("                        always shows every message");
       Ada.Text_IO.Put_Line
+        ("  --coverage            Show the proof-coverage summary after prove");
+      Ada.Text_IO.Put_Line
+        ("                        (default; --no-coverage or [prove] coverage =");
+      Ada.Text_IO.Put_Line
+        ("                        false in adacovex.toml hides it)");
+      Ada.Text_IO.Put_Line
         ("  --require-spark=LVL   Fail if SPARK level < LVL (alias --spark)");
       Ada.Text_IO.Put_Line
         ("  --require-docstrings=PCT Fail if docstring coverage < PCT% (alias --docstrs)");
@@ -2664,6 +2842,14 @@ package body Adacovex.Config is
         ("  --require-proof=PCT   Fail if proved-VC coverage < PCT% (alias -r)");
       Ada.Text_IO.Put_Line
         ("                        (CI gates: default off, fail loudly when set)");
+      Ada.Text_IO.Put_Line
+        ("  --fail-on=DIM[=VAL]   CI policy gate over the same four checks:");
+      Ada.Text_IO.Put_Line
+        ("                        spark, docstrings, proof, tests, or coverage");
+      Ada.Text_IO.Put_Line
+        ("                        (comma-separated or repeatable; a bare");
+      Ada.Text_IO.Put_Line
+        ("                        dimension reuses its --require-* threshold)");
       Ada.Text_IO.Put_Line
         ("  sbom --format=FMT     Generate a proof-aware SBOM (FMT: cyclonedx-json");
       Ada.Text_IO.Put_Line

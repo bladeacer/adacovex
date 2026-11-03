@@ -208,6 +208,17 @@ package Adacovex.Config is
       --  validation. A plain local run never trips it.
       Prove_Suppress_Explicit : Boolean := False;
 
+      --  True when the prove summary prints the proof-coverage line after a
+      --  successful run. It is on by default. --no-coverage turns it off,
+      --  --coverage forces it on, and `[prove] coverage = false` in the
+      --  global config file turns it off for every local run.
+      Prove_Show_Coverage : Boolean := True;
+
+      --  True when --coverage or --no-coverage is given. Only the explicit
+      --  form is a prove-mode flag for the "requires the prove subcommand"
+      --  validation, and an explicit flag wins over the config file.
+      Prove_Coverage_Explicit : Boolean := False;
+
       --  Raw GNATprove arguments passed through verbatim (--args="...").
       --  The value is space-split into individual gnatprove command-line
       --  tokens and appended to the option list the prove subcommand

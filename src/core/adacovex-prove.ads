@@ -88,12 +88,26 @@ package Adacovex.Prove is
         Ada.Strings.Unbounded.Null_Unbounded_String;
 
       Cache : Boolean := True;
+
+      --  True when the run prints the proof-coverage summary line after a
+      --  successful prove: the statement, subprogram, and VC coverage the
+      --  spark-coverage report measures. It is on by default; --no-coverage
+      --  or `[prove] coverage = false` in the global config turns it off.
+      Show_Coverage : Boolean := True;
    end record;
 
    --  Detect the number of logical CPUs on the host. It reads /proc/cpuinfo
    --  (Linux). It falls back to 1 elsewhere or when the file is unreadable.
    --  @return Number of logical processors (>= 1).
    function Detect_Core_Count return Natural;
+
+   --  The config-file default for the proof-coverage summary: True unless
+   --  `<config>/adacovex.toml` sets `coverage = false` (or `true`) under
+   --  `[prove]`. An explicit --coverage or --no-coverage wins over it. A
+   --  missing file, a missing key, or an unreadable file yields True, so the
+   --  summary is on by default.
+   --  @return True when the prove summary should print the coverage line.
+   function Config_Show_Coverage return Boolean;
 
    --  Whether an Ada source file participates in the proof-input hash. Every
    --  project source does, except the generated bundle specs
