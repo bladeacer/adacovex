@@ -29,7 +29,7 @@ Prerequisites:
 git clone https://github.com/bladeacer/adacovex.git
 cd adacovex
 just build        # compiles bin/adacovex + bin/test_runner (covex alias)
-just test         # builds + runs the native test suite (2092 tests)
+just test         # builds + runs the native test suite (2094 tests)
 just run-self     # assess adacovex itself: 100% docs, Gold, DAL-C
 just prove        # SPARK proof (full-proof gate) + regenerates docs/badges/
 just check        # the whole quality gate CI runs before a release
@@ -151,10 +151,13 @@ The differential checks skip themselves when `git` is missing. The browser
 suite (`just e2e`) adds the Playwright dashboard layout tests on top.
 
 The prove diagnostics suite (`just prove-e2e`, `tests/e2e/prove_diagnostics.py`)
-generates two small SPARK projects that differ in one precondition: one leaves
-an index check unproved and one proves it. It runs the real `prove` command
-over both and checks the quiet replay, the diagnostics block, and the
-`--verbose` mode. The suite skips itself when no gnatprove is resolvable.
+generates one small SPARK project per contract-writing mistake, each with a
+broken variant and a fixed counterpart: `index`, `overflow`, `division`,
+`precondition`, `invariant`, `flow`, `typo_attribute`, and `typo_identifier`.
+It runs the real `prove` command over each pair and checks the quiet replay,
+the diagnostics block, the compile-error shape for a typo, and the `--verbose`
+mode. Add `--case=NAME` to run one case and `--debug` to print every prover
+output. The suite skips itself when no gnatprove is resolvable.
 
 ## Documentation and dashboard tooling
 

@@ -514,6 +514,32 @@ package body Adacovex_Prove_Runner_Tests is
             "a plain index finding gets the bound hint");
       end;
 
+      --  A divisor that the precondition does not exclude as zero gets its
+      --  own hint: state the non-zero divisor precondition, not a bound.
+      declare
+         Div_Path : constant String := Fixture_Dir & "/divide.txt";
+         Stats    : Adacovex.Prove.Failure_Stats;
+         F        : Ada.Text_IO.File_Type;
+      begin
+         Fixture ("replay.gpr");
+         Ada.Text_IO.Create (F, Ada.Text_IO.Out_File, Div_Path);
+         Ada.Text_IO.Put_Line
+           (F,
+            "prove_diag_divide.adb:7:16: medium: divide by zero"
+            & " might fail");
+         Ada.Text_IO.Close (F);
+         Adacovex.Prove.Collect_Failures (Div_Path, Stats);
+         R.Check
+           (Stats.Unproved = 1
+            and then To_String (Stats.Items (1).Kind) = "divide by zero",
+            "a divide-by-zero finding keeps its kind");
+         R.Check
+           (Has_Text
+              (Adacovex.Prove.Diagnostics_Text ("", Stats),
+               "divisor is non-zero"),
+            "a divide-by-zero finding gets the divisor hint");
+      end;
+
       --  The prover's real block shape (message line, `-->` location, and a
       --  `+` sub-message) is what the diagnostics pass reads. A `gave up`
       --  sub-message marks the finding as a budget problem, so its hint
