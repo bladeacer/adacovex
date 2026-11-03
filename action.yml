@@ -224,6 +224,18 @@ inputs:
     description: 'Comma-separated GNATprove info tags to suppress from prove output (e.g. unrolling-inlining,xyz). A tag S suppresses blocks tagged [info-S] (or [S]). --verbose wins and shows everything.'
     required: false
     default: ''
+  coverage:
+    description: 'Force the proof-coverage summary after prove, overriding a config file that sets [prove] coverage = false. The summary is on by default.'
+    required: false
+    default: 'false'
+  no-coverage:
+    description: 'Hide the proof-coverage summary after prove (the summary is on by default).'
+    required: false
+    default: 'false'
+  fail-on:
+    description: 'CI policy gate: comma-separated dimensions spark=LVL, docstrings=PCT, proof=PCT, tests=N, coverage=PCT. A bare dimension reuses its require-* threshold (--fail-on).'
+    required: false
+    default: ''
 
 outputs:
   dal-status:
@@ -551,6 +563,12 @@ runs:
         fi
         if [ -n "${{ inputs.prove-args }}" ]; then
           PROVE_ARGS+=(--args="${{ inputs.prove-args }}")
+        fi
+        if [ "${{ inputs.coverage }}" == 'true' ]; then
+          PROVE_ARGS+=(--coverage)
+        fi
+        if [ "${{ inputs.no-coverage }}" == 'true' ]; then
+          PROVE_ARGS+=(--no-coverage)
         fi
         if [ "${{ inputs.verbose }}" == 'true' ]; then
           PROVE_ARGS+=(--verbose)
