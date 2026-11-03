@@ -1,9 +1,11 @@
 with Adacovex.Types;  use Adacovex.Types;
 with Adacovex.Config; use Adacovex.Config;
 with Adacovex.Completion;
+with Adacovex.CPUs;
 with Adacovex.Paths;
 with Ada.Strings.Unbounded;
 with Ada.Strings.Fixed;
+with Ada.Text_IO;
 
 package body Adacovex_Config_Tests is
 
@@ -11,6 +13,20 @@ package body Adacovex_Config_Tests is
    begin
       Testing.Arg_Vectors.Append (A, S);
    end Add;
+
+   --  Write a configuration-file fixture and return its path.
+   --  @param Name  File name under the temporary directory.
+   --  @param Text  Exact file content.
+   --  @return The fixture path.
+   function Write_Config (Name : String; Text : String) return String is
+      F : Ada.Text_IO.File_Type;
+      P : constant String := Adacovex.CPUs.Get_Temp_Directory & "/" & Name;
+   begin
+      Ada.Text_IO.Create (F, Ada.Text_IO.Out_File, P);
+      Ada.Text_IO.Put (F, Text);
+      Ada.Text_IO.Close (F);
+      return P;
+   end Write_Config;
 
    --  Run the parser over Args and check the resolved standard/tier/all
    --  fields against the expected precedence outcome.
@@ -2004,6 +2020,95 @@ package body Adacovex_Config_Tests is
          R.Check
            (not Cfg.Prove_Show_Coverage and then Cfg.Prove_Coverage_Explicit,
             "--no-coverage hides the summary explicitly");
+      end;
+      --  Configuration files: a key fills a default only where the command
+      --  line left the field unset, and the project file wins over the global
+      --  file.
+      declare
+         LF : constant String := String'(1 => ASCII.LF);
+         GP : constant String :=
+           Write_Config
+             ("cfg_global.toml",
+              "# global"
+              & LF
+              & "[prove]"
+              & LF
+              & "coverage = false"
+              & LF
+              & "jobs = 2"
+              & LF);
+         PP : constant String :=
+           Write_Config
+             ("cfg_project.toml",
+              "[prove]"
+              & LF
+              & "jobs = 6   # six"
+              & LF
+              & "levels = 3"
+              & LF
+              & "[complexity]"
+              & LF
+              & "excludes = ""md,rst"""
+              & LF
+              & "skip-path = ""docs/api-docs"""
+              & LF
+              & "[unknown]"
+              & LF
+              & "ignored = true"
+              & LF);
+         G  : constant Config_Settings := Read_Settings (GP);
+         P  : constant Config_Settings := Read_Settings (PP);
+         C  : CLI_Config;
+      begin
+         R.Check
+           (G.Coverage_Set and then not G.Coverage,
+            "a global coverage = false key is read");
+         R.Check (G.Jobs = 2, "a global jobs key is read");
+         R.Check
+           (P.Jobs = 6,
+            "a project jobs key is read and a trailing comment is "
+            & "stripped");
+         R.Check (P.Level < 0, "an unknown key is ignored");
+         R.Check
+           (P.Excludes_Len = 6 and then P.Excludes (1 .. 6) = "md,rst",
+            "a quoted excludes value is read unquoted");
+         R.Check
+           (P.Skip_Paths_Len = 13
+            and then P.Skip_Paths (1 .. 13) = "docs/api-docs",
+            "a skip-path value is read");
+
+         Apply_Settings (C, Merge_Settings (G, P));
+         R.Check
+           (C.Prove_Jobs = 6, "the project file overrides the global file");
+         R.Check
+           (not C.Prove_Show_Coverage,
+            "the global coverage key fills the default");
+         R.Check (C.Excludes_Len = 6, "complexity excludes apply from a file");
+
+         declare
+            A  : Testing.Arg_Vectors.Vector;
+            C2 : CLI_Config;
+         begin
+            Add (A, "--jobs=1");
+            Add (A, "--coverage");
+            Testing.Parse_Args (A, C2);
+            Apply_Settings (C2, Merge_Settings (G, P));
+            R.Check
+              (C2.Prove_Jobs = 1, "an explicit --jobs wins over both files");
+            R.Check
+              (C2.Prove_Show_Coverage,
+               "an explicit --coverage wins over both files");
+         end;
+      end;
+
+      declare
+         Missing : constant Config_Settings :=
+           Read_Settings
+             (Adacovex.CPUs.Get_Temp_Directory & "/cfg_missing.toml");
+      begin
+         R.Check
+           (not Missing.Coverage_Set and then Missing.Jobs < 0,
+            "a missing configuration file yields defaults");
       end;
    end Run;
 

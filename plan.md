@@ -258,23 +258,32 @@ marker cannot exclude a directory. The prover is out of scope for both
 
 ### 3.1 Configuration file support
 
-- [ ] Implement config-file reading for the flags that should be settable there.
-- [ ] The configuration file must be named `adacovex.toml`.
-- [ ] The config file is for overriding default CLI flag values, so users can set their preferred defaults once and stop repeating long CLI invocations.
-- [ ] Provide a sample `adacovex.toml` in the cwd of the adacovex source code itself.
-  - [ ] Show the default values for the supported entries.
-  - [ ] Add comment blocks mentioning other supported values where relevant.
-  - [ ] Link to the documentation from the sample file.
-- [ ] Enforce the precedence order:
-  1. [ ] explicit CLI flags win
-  2. [ ] per-project / cwd `adacovex.toml`
-  3. [ ] global config file
-  4. [ ] built-in fallback defaults
+- [x] Implement config-file reading for the flags that should be settable there.
+- [x] The configuration file must be named `adacovex.toml`.
+- [x] The config file is for overriding default CLI flag values, so users can set their preferred defaults once and stop repeating long CLI invocations.
+- [x] Provide a sample `adacovex.toml` in the cwd of the adacovex source code itself.
+  - [x] Show the default values for the supported entries.
+  - [x] Add comment blocks mentioning other supported values where relevant.
+  - [x] Link to the documentation from the sample file.
+- [x] Enforce the precedence order:
+  1. [x] explicit CLI flags win
+  2. [x] per-project / cwd `adacovex.toml`
+  3. [x] global config file
+  4. [x] built-in fallback defaults
 - [ ] If `init` is wanted, make it create a per-project `adacovex.toml` with a sensible scaffold drawn from the sample file.
 - [ ] Support a global config option that can disable the per-project scaffolding behavior when that is desired.
-- [ ] Keep the sample file, the global config docs, and the runtime precedence behavior in sync with each other and with the CLI defaults.
+- [x] Keep the sample file, the global config docs, and the runtime precedence behavior in sync with each other and with the CLI defaults.
 
-### 3.2 Watch / hot reload for serve and other suitable commands
+### 3.2 Documentation reorganisation and scope
+
+- [ ] Reorganise the docs and make them concise: cut duplication and fluff, and keep each page on one job.
+- [ ] Be clear on the scope and purpose of each directory under `docs/` (a short map, so a reader knows where user guidance, contributor method, and generated reference each live).
+- [ ] Give prove-timing benchmarks and performance material their own directory. Both audiences care about the numbers but for different reasons: users want the result, contributors want the method and the bottleneck.
+- [ ] Split that material by audience instead of mixing it: a user-facing numbers page and a contributor-facing method page, with the per-phase timing table kept in one place.
+- [ ] Keep every page reachable from a `{toctree}` and every link resolving; `just docs-check`, `just docs-coverage-check`, `just book-links-check`, and `just doc-links` already enforce both.
+- [ ] Fold the retired pages into their surviving home instead of leaving stubs.
+
+### 3.3 Watch / hot reload for serve and other suitable commands
 
 - [ ] Add a file-watcher mode for commands where live reload is useful, starting with `serve`.
 - [ ] Default behavior:
@@ -283,7 +292,7 @@ marker cannot exclude a directory. The prover is out of scope for both
 - [ ] Keep `prove` off by default for watching, but allow it to be enabled if useful.
 - [ ] Use a cross-platform watcher implementation that fits the project's runtime constraints.
 
-### 3.3 `just check` pipeline under one minute
+### 3.4 `just check` pipeline under one minute
 
 The whole verification pipeline must finish in under a minute on the dev
 machine. This is a performance and orchestration change only: no gate is
@@ -309,7 +318,7 @@ weakened and no check is dropped.
   in `docs/contributing/perf/`.
 - [ ] Keep `just check` the single entry point and keep its gate order.
 
-### 3.4 Documentation and test updates for Release 3
+### 3.5 Documentation and test updates for Release 3
 
 - [ ] Document the config file location, format, precedence, and `init` behavior.
 - [ ] Document that the file is named `adacovex.toml` and that it is used to override default CLI flag values.
@@ -319,7 +328,7 @@ weakened and no check is dropped.
 - [ ] For every config-related change, update the docs in the same change so the runtime behavior, the sample file, and the documentation never drift.
 - [ ] Update the changelog entry for v1.67.0 before the version bump.
 
-### 3.5 Release checklist for v1.67.0
+### 3.6 Release checklist for v1.67.0
 
 - [ ] v1.67.0 changelog written
 - [ ] version bumped to v1.67.0
@@ -331,21 +340,21 @@ weakened and no check is dropped.
 
 ### Configuration file support
 
-- [ ] Implement config-file reading for the flags that should be settable there.
-- [ ] Name the configuration file `adacovex.toml`.
-- [ ] Treat the config file as a place to override default CLI flag values, so users set preferred defaults once and stop repeating long CLI invocations.
-- [ ] Ship a sample `adacovex.toml` in the cwd of the adacovex source code itself.
-  - [ ] Show the default values for the supported entries.
-  - [ ] Add comment blocks mentioning other supported values where relevant.
-  - [ ] Link to the documentation from the sample file.
-- [ ] Enforce the precedence order:
-  - [ ] explicit CLI flags win
-  - [ ] per-project / cwd `adacovex.toml`
-  - [ ] global config file
-  - [ ] built-in fallback defaults
+- [x] Implement config-file reading for the flags that should be settable there.
+- [x] Name the configuration file `adacovex.toml`.
+- [x] Treat the config file as a place to override default CLI flag values, so users set preferred defaults once and stop repeating long CLI invocations.
+- [x] Ship a sample `adacovex.toml` in the cwd of the adacovex source code itself.
+  - [x] Show the default values for the supported entries.
+  - [x] Add comment blocks mentioning other supported values where relevant.
+  - [x] Link to the documentation from the sample file.
+- [x] Enforce the precedence order:
+  - [x] explicit CLI flags win
+  - [x] per-project / cwd `adacovex.toml`
+  - [x] global config file
+  - [x] built-in fallback defaults
 - [ ] If `init` is wanted, make it create a per-project `adacovex.toml` with a sensible scaffold drawn from the sample file.
 - [ ] Support a global config option that can disable the per-project scaffolding behavior when that is desired.
-- [ ] Keep the sample file, the global config docs, and the runtime precedence behavior in sync with each other and with the CLI defaults.
+- [x] Keep the sample file, the global config docs, and the runtime precedence behavior in sync with each other and with the CLI defaults.
 
 ### Watch / hot reload for serve and other suitable commands
 
@@ -357,6 +366,12 @@ weakened and no check is dropped.
 - [ ] Use a cross-platform watcher implementation that fits the project's runtime constraints.
 
 ---
+
+### Documentation reorganisation
+
+- [ ] Cut fluff and duplication, and state the scope and purpose of each `docs/` directory.
+- [ ] Give prove-timing and performance material its own directory, split into a user-facing numbers page and a contributor-facing method page.
+- [ ] Keep the toctrees, the doc-links map, and the bundled-manual link check green.
 
 ### Pipeline performance (`just check` under a minute)
 

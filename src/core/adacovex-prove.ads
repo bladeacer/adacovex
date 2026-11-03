@@ -101,14 +101,6 @@ package Adacovex.Prove is
    --  @return Number of logical processors (>= 1).
    function Detect_Core_Count return Natural;
 
-   --  The config-file default for the proof-coverage summary: True unless
-   --  `<config>/adacovex.toml` sets `coverage = false` (or `true`) under
-   --  `[prove]`. An explicit --coverage or --no-coverage wins over it. A
-   --  missing file, a missing key, or an unreadable file yields True, so the
-   --  summary is on by default.
-   --  @return True when the prove summary should print the coverage line.
-   function Config_Show_Coverage return Boolean;
-
    --  Whether an Ada source file participates in the proof-input hash. Every
    --  project source does, except the generated bundle specs
    --  (`adacovex-docs_template.ads` and `adacovex-dashboard_template.ads`).

@@ -183,7 +183,7 @@ No defect is fixed in this release.
 
 ## Test Suite
 
-- 2115/2115 native tests passing across 29 categories (2060 at 1.65.0). The
+- 2127/2127 native tests passing across 29 categories (2060 at 1.65.0). The
   per-file opt-out category grows from 16 to 20 with the `.covex-ignore`
   checks, and the CLI end-to-end suite gains its directory-marker check. The
   CLI config category grows from 349 to 366 with the `--fail-on` precedence

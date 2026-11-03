@@ -48,21 +48,34 @@ project, so a cache wipe does not cost a re-probe of every tool.
 stat-stamp stores stay in the platform directories, because they are answers
 about the machine and not about one project.
 
-## The global configuration file
+## Configuration files
 
-The file is `<config>/adacovex.toml` (`~/.config/adacovex/adacovex.toml` on
-Linux, `~/Library/Application Support/adacovex/adacovex.toml` on macOS,
-`%APPDATA%\adacovex\adacovex.toml` on Windows). It is optional; without it
-adacovex uses its built-in defaults. The parser reads only the keys documented
-below and ignores an unknown key, so the file is safe to extend. Create the
-file by hand:
+Two files supply defaults, and each one is optional. The **project file** is
+`<target>/adacovex.toml`: a project carries the settings its code needs, and
+every run against that directory picks them up. The **global file** is
+`<config>/adacovex.toml` (`~/.config/adacovex/adacovex.toml` on Linux,
+`~/Library/Application Support/adacovex/adacovex.toml` on macOS,
+`%APPDATA%\adacovex\adacovex.toml` on Windows), and it applies to every run
+on the machine.
+
+The parser reads only the keys documented below and ignores an unknown key or
+section, so a file is safe to extend. The repository root carries a sample
+[`adacovex.toml`](../../adacovex.toml) that states every key with its default
+value and links back to this page.
 
 ```toml
-# <config>/adacovex.toml, for example ~/.config/adacovex/adacovex.toml
+# <target>/adacovex.toml
 [prove]
-gnatprove-version = "16.1.0"
-coverage = true
+coverage = false
+jobs = 4
 ```
+
+### Precedence
+
+An explicit command-line flag wins over both files. Without a flag, the
+project file wins over the global file, and the global file wins over the
+built-in default. A key a file does not mention changes nothing, so a project
+file can set one value and inherit the rest.
 
 ### `[prove] gnatprove-version`
 
@@ -102,6 +115,31 @@ The default is `true`, so the summary is on without a configuration file. Set
 `--no-coverage` win over this key, so a script or a CI job can override it for
 one run. The key does not change the proof: it only changes the summary line.
 `adacovex spark-coverage` prints the same coverage as a full report.
+
+Both files accept the key, and the project file wins.
+
+### `[prove]` integer keys
+
+|Key|Default|Effect|
+|----|--------|-------|
+|`jobs`|auto|gnatprove parallelism: `0` = all cores, `N` = pin N processes, omit = auto (max(1, cores-2) locally, all cores in CI)|
+|`level`|gnatprove's default|Proof effort, 0-4|
+|`timeout`|gnatprove's default|Per-check prover timeout in seconds|
+|`steps`|`10000`|Maximum proof steps; omit to keep the prove subcommand's reproducible budget|
+|`memlimit`|gnatprove's default|Prover memory limit in MB|
+
+The file values are applied only where the matching flag is absent, so
+`--jobs=1` wins over `jobs = 4` in either file.
+
+### `[complexity]` keys
+
+|Key|Default|Effect|
+|----|--------|-------|
+|`excludes`|empty|Comma-separated file extensions the complexity/LOC gate skips, without dots (for example `"md,rst"`)|
+|`skip-path`|empty|Comma-separated path fragments the gate skips (for example `"docs/api-docs"`)|
+
+These mirror `--excludes` and `--skip-path`, and an explicit flag wins. They
+take effect only in `adacovex complexity`.
 
 ## Environment variables
 

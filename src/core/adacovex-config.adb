@@ -2629,6 +2629,247 @@ package body Adacovex.Config is
 
    end Testing;
 
+   --  Trim blanks, tabs, CR, and LF from both ends of S.
+   function Trimmed (S : String) return String is
+      F : Natural := S'First;
+      L : Natural := S'Last;
+   begin
+      while F <= L
+        and then (S (F) = ' '
+                  or else S (F) = ASCII.HT
+                  or else S (F) = ASCII.CR
+                  or else S (F) = ASCII.LF)
+      loop
+         F := F + 1;
+      end loop;
+      while L >= F
+        and then (S (L) = ' '
+                  or else S (L) = ASCII.HT
+                  or else S (L) = ASCII.CR
+                  or else S (L) = ASCII.LF)
+      loop
+         L := L - 1;
+      end loop;
+      if F > L then
+         return "";
+      end if;
+      return S (F .. L);
+   end Trimmed;
+
+   --  Strip a trailing `#` comment and one pair of surrounding quotes, then
+   --  trim again. The file format has no '#' inside a value, so the first one
+   --  always starts the comment.
+   function Config_Value (S : String) return String is
+      V : String (1 .. S'Length) := S;
+      L : Natural := S'Length;
+   begin
+      for I in V'Range loop
+         if V (I) = '#' then
+            L := I - 1;
+            exit;
+         end if;
+      end loop;
+      declare
+         T : constant String := Trimmed (V (1 .. L));
+      begin
+         if T'Length >= 2 and then T (T'First) = '"' and then T (T'Last) = '"'
+         then
+            return T (T'First + 1 .. T'Last - 1);
+         end if;
+         return T;
+      end;
+   end Config_Value;
+
+   function Read_Settings (Path : String) return Config_Settings is
+      use Ada.Text_IO;
+      Result  : Config_Settings;
+      F       : File_Type;
+      Open_Ok : Boolean := False;
+      Section : String (1 .. 32) := (others => ' ');
+      Sec_Len : Natural := 0;
+
+      --  Copy S into a bounded field, dropping an over-long value rather than
+      --  failing the run.
+      procedure Set_Field (Field : out String; Len : out Natural; S : String)
+      is
+      begin
+         Len := 0;
+         if S'Length <= Field'Length then
+            Field (Field'First .. Field'First + S'Length - 1) := S;
+            Len := S'Length;
+         end if;
+      end Set_Field;
+
+      --  Read one integer value; a non-integer leaves the key unset.
+      procedure Set_Int (Field : out Integer; S : String) is
+      begin
+         if S'Length = 0 then
+            return;
+         end if;
+         begin
+            Field := Integer'Value (S);
+         exception
+            when Constraint_Error =>
+               null;
+         end;
+      end Set_Int;
+
+      In_Prove      : Boolean;
+      In_Complexity : Boolean;
+   begin
+      if not Ada.Directories.Exists (Path) then
+         return Result;
+      end if;
+      begin
+         Open (F, In_File, Path);
+         Open_Ok := True;
+      exception
+         when others =>
+            return Result;
+      end;
+      while not End_Of_File (F) loop
+         declare
+            Line : constant String := Trimmed (Get_Line (F));
+         begin
+            if Line'Length = 0 then
+               null;
+            elsif Line (Line'First) = '#' then
+               null;
+            elsif Line (Line'First) = '[' and then Line (Line'Last) = ']' then
+               Section := (others => ' ');
+               Sec_Len := Line'Length - 2;
+               if Sec_Len > Section'Length then
+                  Sec_Len := 0;
+               end if;
+               Section (1 .. Sec_Len) :=
+                 Line (Line'First + 1 .. Line'Last - 1);
+            else
+               declare
+                  Eq : Natural := 0;
+               begin
+                  for I in Line'Range loop
+                     if Line (I) = '=' then
+                        Eq := I;
+                        exit;
+                     end if;
+                  end loop;
+                  if Eq > Line'First then
+                     declare
+                        Key : constant String :=
+                          Trimmed (Line (Line'First .. Eq - 1));
+                        Val : constant String :=
+                          Config_Value (Line (Eq + 1 .. Line'Last));
+                     begin
+                        In_Prove :=
+                          Sec_Len = 5 and then Section (1 .. 5) = "prove";
+                        In_Complexity :=
+                          Sec_Len = 10
+                          and then Section (1 .. 10) = "complexity";
+                        if In_Prove and then Key = "coverage" then
+                           Result.Coverage :=
+                             Val = "true"
+                             or else Val = "True"
+                             or else Val = "TRUE";
+                           Result.Coverage_Set := True;
+                        elsif In_Prove and then Key = "jobs" then
+                           Set_Int (Result.Jobs, Val);
+                        elsif In_Prove and then Key = "level" then
+                           Set_Int (Result.Level, Val);
+                        elsif In_Prove and then Key = "timeout" then
+                           Set_Int (Result.Timeout, Val);
+                        elsif In_Prove and then Key = "steps" then
+                           Set_Int (Result.Steps, Val);
+                        elsif In_Prove and then Key = "memlimit" then
+                           Set_Int (Result.Memlimit, Val);
+                        elsif In_Complexity and then Key = "excludes" then
+                           Set_Field
+                             (Result.Excludes, Result.Excludes_Len, Val);
+                        elsif In_Complexity and then Key = "skip-path" then
+                           Set_Field
+                             (Result.Skip_Paths, Result.Skip_Paths_Len, Val);
+                        end if;
+                     end;
+                  end if;
+               end;
+            end if;
+         end;
+      end loop;
+      if Open_Ok and then Is_Open (F) then
+         Close (F);
+      end if;
+      return Result;
+   end Read_Settings;
+
+   function Merge_Settings
+     (Base, Override : Config_Settings) return Config_Settings
+   is
+      Result : Config_Settings := Base;
+   begin
+      if Override.Coverage_Set then
+         Result.Coverage := Override.Coverage;
+         Result.Coverage_Set := True;
+      end if;
+      if Override.Jobs >= 0 then
+         Result.Jobs := Override.Jobs;
+      end if;
+      if Override.Level >= 0 then
+         Result.Level := Override.Level;
+      end if;
+      if Override.Timeout >= 0 then
+         Result.Timeout := Override.Timeout;
+      end if;
+      if Override.Steps >= 0 then
+         Result.Steps := Override.Steps;
+      end if;
+      if Override.Memlimit >= 0 then
+         Result.Memlimit := Override.Memlimit;
+      end if;
+      if Override.Excludes_Len > 0 then
+         Result.Excludes_Len := Override.Excludes_Len;
+         Result.Excludes (1 .. Override.Excludes_Len) :=
+           Override.Excludes (1 .. Override.Excludes_Len);
+      end if;
+      if Override.Skip_Paths_Len > 0 then
+         Result.Skip_Paths_Len := Override.Skip_Paths_Len;
+         Result.Skip_Paths (1 .. Override.Skip_Paths_Len) :=
+           Override.Skip_Paths (1 .. Override.Skip_Paths_Len);
+      end if;
+      return Result;
+   end Merge_Settings;
+
+   procedure Apply_Settings
+     (Cfg : in out CLI_Config; Settings : Config_Settings) is
+   begin
+      if Settings.Coverage_Set and then not Cfg.Prove_Coverage_Explicit then
+         Cfg.Prove_Show_Coverage := Settings.Coverage;
+      end if;
+      if Settings.Jobs >= 0 and then Cfg.Prove_Jobs < 0 then
+         Cfg.Prove_Jobs := Settings.Jobs;
+      end if;
+      if Settings.Level >= 0 and then Cfg.Prove_Level < 0 then
+         Cfg.Prove_Level := Settings.Level;
+      end if;
+      if Settings.Timeout >= 0 and then Cfg.Prove_Timeout < 0 then
+         Cfg.Prove_Timeout := Settings.Timeout;
+      end if;
+      if Settings.Steps >= 0 and then Cfg.Prove_Steps < 0 then
+         Cfg.Prove_Steps := Settings.Steps;
+      end if;
+      if Settings.Memlimit >= 0 and then Cfg.Prove_Memlimit < 0 then
+         Cfg.Prove_Memlimit := Settings.Memlimit;
+      end if;
+      if Settings.Excludes_Len > 0 and then Cfg.Excludes_Len = 0 then
+         Cfg.Complexity_Excludes (1 .. Settings.Excludes_Len) :=
+           Settings.Excludes (1 .. Settings.Excludes_Len);
+         Cfg.Excludes_Len := Settings.Excludes_Len;
+      end if;
+      if Settings.Skip_Paths_Len > 0 and then Cfg.Skip_Paths_Len = 0 then
+         Cfg.Complexity_Skip_Paths (1 .. Settings.Skip_Paths_Len) :=
+           Settings.Skip_Paths (1 .. Settings.Skip_Paths_Len);
+         Cfg.Skip_Paths_Len := Settings.Skip_Paths_Len;
+      end if;
+   end Apply_Settings;
+
    function Parse_CLI return CLI_Config is
       Args : Testing.Arg_Vectors.Vector;
    begin

@@ -5,7 +5,7 @@
   | Source scanner                           |  89 | PASS     |
   | GNATprove parser                         |  88 | PASS     |
   | Test-result parser                       |  50 | PASS     |
-  | CLI config                               |  366 | PASS     |
+  | CLI config                               |  378 | PASS     |
   | SVG renderer                             |  161 | PASS     |
   | HTML/Markdown renderers                  |  58 | PASS     |
   | SBOM generator                           |  366 | PASS     |
@@ -31,4 +31,4 @@
   | tldr installer                           |  48 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 2115  Failed: 0
+  Passed: 2127  Failed: 0
