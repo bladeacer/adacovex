@@ -10,6 +10,6 @@
 package Adacovex_Version_Info is
    pragma SPARK_Mode (On);
 
-   Version : constant String := "1.65.0";
+   Version : constant String := "1.66.0";
 
 end Adacovex_Version_Info;

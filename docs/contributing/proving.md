@@ -79,7 +79,7 @@ cache *and* session wiped), so its numbers are always one of the stable
 shapes. Category definitions and current figures:
 [Performance](perf/index.md).
 
-### Prove output: quiet by default
+### Prove output: concise locally, raw in CI
 
 A local `prove` run captures the gnatprove output and replays it once
 the run finishes. The replay keeps every actionable line: check results,
@@ -98,8 +98,31 @@ so on one line:
 
 When gnatprove fails, the final line adds the failure detail, for
 example `ERROR: gnatprove exited with code 1 (error lines: 2 above)`.
-`--verbose` turns the capture off and streams the raw prover output
-live. CI passes `--verbose`, so CI keeps the full prover stream.
+
+When the run leaves unproved checks, a diagnostics block follows the
+replay. The block names the prover identity, the source location and
+check kind of each finding, and one fix hint:
+
+```
+  proof:     2 unproved check(s) (prover 16.1.0)
+    adacovex-types.adb:54:08  postcondition
+    adacovex-prove.adb:120:14  range check
+  fix:       state the bound as a subtype constraint or a precondition, so the check follows from the contracts
+```
+
+An initialization finding is marked `(flow analysis)`, the block lists at
+most eight findings, and it says how many it left out. The fix hint
+follows the first check's kind: a bound check needs a subtype constraint
+or a precondition, a postcondition needs the loop invariant it derives
+from, an assertion needs the fact stated where the body makes it true, a
+termination check needs a `Loop_Variant`, and an initialization finding
+needs the object written before its first read. A run with no finding
+prints no block.
+
+The two output modes are fixed. Locally the mode is **concise**: the
+capture, the replay, and the diagnostics block. `--verbose` turns the
+capture off and streams the raw prover output live with no block. CI
+passes `--verbose`, so CI keeps the full, unedited prover stream.
 
 The flags that drive this behaviour: `--quiet`, `--suppress-warnings`,
 and `--suppress-warnings=SETS`.

@@ -106,6 +106,27 @@ package body Adacovex_Prove_Runner_Tests is
       Ada.Text_IO.Close (F);
    end Write_Capture;
 
+   --  Write a captured gnatprove output file in the shape of a failing run:
+   --  two unproved prover checks (one with a severity word, one without) and
+   --  a flow finding that names an uninitialized object, followed by the
+   --  closing summary line.
+   --  @param Path  File path to write.
+   procedure Write_Failing_Capture (Path : String) is
+      F : Ada.Text_IO.File_Type;
+   begin
+      Ada.Text_IO.Create (F, Ada.Text_IO.Out_File, Path);
+      Ada.Text_IO.Put_Line (F, "Phase 3 of 3: flow analysis and proof ...");
+      Ada.Text_IO.Put_Line
+        (F, "adacovex-types.adb:54:08: medium: postcondition might fail");
+      Ada.Text_IO.Put_Line
+        (F, "adacovex-prove.adb:120:14: range check might fail");
+      Ada.Text_IO.Put_Line
+        (F, "adacovex-source.adb:31:05: ""X"" is not initialized");
+      Ada.Text_IO.Put_Line
+        (F, "Summary logged in obj/gnatprove/gnatprove.out");
+      Ada.Text_IO.Close (F);
+   end Write_Failing_Capture;
+
    procedure Run (R : in out Adacovex.Test_Support.Runner'Class) is
       O   : Adacovex.Prove.Prove_Options;
       GPR : String (1 .. 512);
@@ -358,6 +379,105 @@ package body Adacovex_Prove_Runner_Tests is
                "the footer stays silent when no notice matched a set");
          end;
          R.Check (Stats.Hidden = 0, "an unmatched set suppresses nothing");
+      end;
+
+      --  The diagnostics pass keeps the source location and the check kind
+      --  of every unproved finding, and the block it renders names the
+      --  prover, the locations, and the fix hint for the first check.
+      declare
+         Fail_Path : constant String := Fixture_Dir & "/failures.txt";
+         Stats     : Adacovex.Prove.Failure_Stats;
+      begin
+         Fixture ("replay.gpr");
+         Write_Failing_Capture (Fail_Path);
+         Adacovex.Prove.Collect_Failures (Fail_Path, Stats);
+         R.Check (Stats.Unproved = 3, "three unproved findings are counted");
+         R.Check (Stats.Count = 3, "three findings are named");
+         R.Check
+           (To_String (Stats.Items (1).Location) = "adacovex-types.adb:54:08",
+            "a finding keeps its source location");
+         R.Check
+           (To_String (Stats.Items (1).Kind) = "postcondition",
+            "the check kind is read from the message");
+         R.Check
+           (not Stats.Items (1).Flow, "a prover check is not a flow finding");
+         R.Check
+           (To_String (Stats.Items (2).Kind) = "range check",
+            "a check without a severity word still yields its kind");
+         R.Check
+           (To_String (Stats.Items (3).Kind) = "initialization",
+            "an uninitialized object is reported as an initialization");
+         R.Check
+           (Stats.Items (3).Flow,
+            "an initialization finding is marked as flow analysis");
+         declare
+            D : constant String :=
+              Adacovex.Prove.Diagnostics_Text ("16.1.0", Stats);
+         begin
+            R.Check
+              (Has_Text (D, "3 unproved check(s)"),
+               "the block states how many checks are unproved");
+            R.Check
+              (Has_Text (D, "prover 16.1.0"),
+               "the block names the prover identity");
+            R.Check
+              (Has_Text (D, "adacovex-types.adb:54:08  postcondition"),
+               "the block points at the source location and its kind");
+            R.Check
+              (Has_Text (D, "(flow analysis)"),
+               "the block marks a flow finding");
+            R.Check (Has_Text (D, "fix:"), "the block carries a fix hint");
+            R.Check
+              (Has_Text (D, "loop invariant or the postcondition"),
+               "the fix hint matches the first check's kind");
+         end;
+      end;
+
+      --  A clean capture names nothing, and a run with no finding renders no
+      --  block at all.
+      declare
+         Clean_Path : constant String := Fixture_Dir & "/clean.txt";
+         Stats      : Adacovex.Prove.Failure_Stats;
+      begin
+         Fixture ("replay.gpr");
+         Write_Capture (Clean_Path);
+         Adacovex.Prove.Collect_Failures (Clean_Path, Stats);
+         R.Check
+           (Stats.Unproved = 0 and then Stats.Count = 0,
+            "a clean capture reports no finding");
+         R.Check
+           (Adacovex.Prove.Diagnostics_Text ("16.1.0", Stats) = "",
+            "a run with no finding renders no diagnostics block");
+      end;
+
+      --  More findings than the block names are all counted, and the block
+      --  says how many it left out.
+      declare
+         Many_Path : constant String := Fixture_Dir & "/many.txt";
+         Stats     : Adacovex.Prove.Failure_Stats;
+         F         : Ada.Text_IO.File_Type;
+      begin
+         Fixture ("replay.gpr");
+         Ada.Text_IO.Create (F, Ada.Text_IO.Out_File, Many_Path);
+         for I in 1 .. 10 loop
+            Ada.Text_IO.Put_Line
+              (F,
+               "unit"
+               & Natural'Image (I)
+               & ".adb:1:1: index check might fail");
+         end loop;
+         Ada.Text_IO.Close (F);
+         Adacovex.Prove.Collect_Failures (Many_Path, Stats);
+         R.Check
+           (Stats.Unproved = 10, "every finding is counted, not only shown");
+         R.Check
+           (Stats.Count = Adacovex.Prove.Max_Failure_Items,
+            "the block names at most Max_Failure_Items findings");
+         R.Check
+           (Has_Text
+              (Adacovex.Prove.Diagnostics_Text ("", Stats),
+               "2 more (--verbose lists every check)"),
+            "the block says how many findings it left out");
       end;
 
       Ada.Directories.Delete_Tree (Fixture_Dir);

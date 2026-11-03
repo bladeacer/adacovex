@@ -1750,6 +1750,241 @@ package body Adacovex.Prove is
          Warnings => N_Warnings);
    end Replay_Suppressed;
 
+   --  A fix hint derived from a check kind: what a developer most often
+   --  changes to make that class of check provable. It never claims the
+   --  finding is fixed; it names the contract shape the check needs.
+   --  @param Kind  Check kind, as Collect_Failures derived it.
+   --  @return One-line guidance for that kind of check.
+   function Fix_Hint (Kind : String) return String is
+   begin
+      if Index (Kind, "range") > 0
+        or else Index (Kind, "index") > 0
+        or else Index (Kind, "overflow") > 0
+        or else Index (Kind, "division") > 0
+        or else Index (Kind, "discriminant") > 0
+      then
+         return
+           "state the bound as a subtype constraint or a precondition, so"
+           & " the check follows from the contracts";
+      elsif Index (Kind, "precondition") > 0 then
+         return
+           "establish the caller's precondition at the call site, or relax"
+           & " it to what the body needs";
+      elsif Index (Kind, "postcondition") > 0
+        or else Index (Kind, "contract") > 0
+      then
+         return
+           "add the missing fact to the loop invariant or the postcondition"
+           & " it derives from";
+      elsif Index (Kind, "assert") > 0 then
+         return
+           "add the assertion's fact as a loop invariant, or state it where"
+           & " the body makes it true";
+      elsif Index (Kind, "invariant") > 0 then
+         return
+           "move the fact into the loop invariant, where the loop preserves"
+           & " it";
+      elsif Index (Kind, "termination") > 0 then
+         return "add a Loop_Variant that decreases on every iteration";
+      elsif Index (Kind, "initializ") > 0 then
+         return
+           "initialise the object before its first read, and declare its"
+           & " Global aspect";
+      else
+         return
+           "add the precondition, loop invariant, or postcondition that"
+           & " establishes the check (--verbose shows the raw prover lines)";
+      end if;
+   end Fix_Hint;
+
+   procedure Collect_Failures (Path : String; Stats : out Failure_Stats) is
+      use Ada.Strings.Unbounded;
+      use Ada.Text_IO;
+
+      F : File_Type;
+
+      --  True when S starts with Prefix.
+      function Starts (S : String; Prefix : String) return Boolean is
+      begin
+         return
+           S'Length >= Prefix'Length
+           and then S (S'First .. S'First + Prefix'Length - 1) = Prefix;
+      end Starts;
+
+      --  Index of the ':' that ends a `file:line:column` prefix in L, or 0
+      --  when L does not carry one. The scan tries every colon, so a path
+      --  that itself holds digits and colons is still handled from the
+      --  left-most shape that is followed by a line and a column number.
+      function Location_End (L : String) return Natural is
+      begin
+         for C in L'First .. L'Last loop
+            if L (C) = ':' then
+               declare
+                  Ln : Natural := C + 1;
+                  Cl : Natural;
+               begin
+                  while Ln <= L'Last and then L (Ln) in '0' .. '9' loop
+                     Ln := Ln + 1;
+                  end loop;
+                  if Ln > C + 1 and then Ln <= L'Last and then L (Ln) = ':'
+                  then
+                     Cl := Ln + 1;
+                     while Cl <= L'Last and then L (Cl) in '0' .. '9' loop
+                        Cl := Cl + 1;
+                     end loop;
+                     if Cl > Ln + 1 and then Cl <= L'Last and then L (Cl) = ':'
+                     then
+                        return Cl;
+                     end if;
+                  end if;
+               end;
+            end if;
+         end loop;
+         return 0;
+      end Location_End;
+
+      --  M with gnatprove's optional severity word (`low:`, `medium: `,
+      --  `high:`, `info:`, `warning:`, `error:`) removed and both ends
+      --  trimmed.
+      function Without_Severity (M : String) return String is
+         Levels : constant array (1 .. 6) of String (1 .. 8) :=
+           ("low:    ",
+            "medium: ",
+            "high:   ",
+            "info:   ",
+            "warning:",
+            "error:  ");
+         Lens   : constant array (1 .. 6) of Natural := (4, 7, 5, 5, 8, 6);
+         T      : constant String := Trim (M, Ada.Strings.Both);
+      begin
+         for K in Levels'Range loop
+            if Starts (T, Levels (K) (1 .. Lens (K))) then
+               if T'Length = Lens (K) then
+                  return "";
+               end if;
+               return
+                 Trim (T (T'First + Lens (K) .. T'Last), Ada.Strings.Both);
+            end if;
+         end loop;
+         return T;
+      end Without_Severity;
+
+      --  The text of Msg before the first Marker, trimmed.
+      function Before (Msg : String; Marker : String) return String is
+         P : constant Natural := Index (Msg, Marker);
+      begin
+         if P = 0 then
+            return Trim (Msg, Ada.Strings.Both);
+         elsif P = Msg'First then
+            return "";
+         else
+            return Trim (Msg (Msg'First .. P - 1), Ada.Strings.Both);
+         end if;
+      end Before;
+
+      --  Record one finding, naming it only while Items has room.
+      procedure Add (Loc : String; Kind : String; Flow : Boolean) is
+      begin
+         Stats.Unproved := Stats.Unproved + 1;
+         if Stats.Count < Max_Failure_Items then
+            Stats.Count := Stats.Count + 1;
+            Stats.Items (Stats.Count) :=
+              (Location => To_Unbounded_String (Loc),
+               Kind     =>
+                 To_Unbounded_String
+                   (if Kind'Length = 0 then "unproved check" else Kind),
+               Flow     => Flow);
+         end if;
+      end Add;
+   begin
+      Stats :=
+        (Unproved => 0,
+         Count    => 0,
+         Items    =>
+           (others =>
+              (Location => Null_Unbounded_String,
+               Kind     => Null_Unbounded_String,
+               Flow     => False)));
+      if not Ada.Directories.Exists (Path) then
+         return;
+      end if;
+      Open (F, In_File, Path);
+      while not End_Of_File (F) loop
+         declare
+            L : constant String := Get_Line (F);
+            C : constant Natural := Location_End (L);
+         begin
+            if C > 0 then
+               declare
+                  Loc : constant String := L (L'First .. C - 1);
+                  Msg : constant String :=
+                    (if C < L'Last
+                     then Without_Severity (L (C + 1 .. L'Last))
+                     else "");
+               begin
+                  if Index (Msg, "might fail") > 0 then
+                     Add (Loc, Before (Msg, "might fail"), False);
+                  elsif Index (Msg, "cannot be proved") > 0 then
+                     Add (Loc, Before (Msg, "cannot be proved"), False);
+                  elsif Index (Msg, "cannot prove") > 0 then
+                     Add (Loc, Before (Msg, "cannot prove"), False);
+                  elsif Index (Msg, "not initialized") > 0
+                    or else Index (Msg, "uninitialized") > 0
+                  then
+                     Add (Loc, "initialization", True);
+                  end if;
+               end;
+            end if;
+         end;
+      end loop;
+      Close (F);
+   end Collect_Failures;
+
+   function Diagnostics_Text
+     (Prover : String; Stats : Failure_Stats) return String
+   is
+      use Ada.Strings.Unbounded;
+
+      R : Unbounded_String := Null_Unbounded_String;
+   begin
+      if Stats.Unproved = 0 then
+         return "";
+      end if;
+      Append
+        (R,
+         "  proof:     "
+         & Natural'Image (Stats.Unproved)
+         & " unproved check(s)");
+      if Prover'Length > 0 then
+         Append (R, " (prover " & Prover & ")");
+      end if;
+      Append (R, ASCII.LF);
+      for I in 1 .. Stats.Count loop
+         Append
+           (R,
+            "    "
+            & To_String (Stats.Items (I).Location)
+            & "  "
+            & To_String (Stats.Items (I).Kind)
+            & (if Stats.Items (I).Flow then " (flow analysis)" else "")
+            & ASCII.LF);
+      end loop;
+      if Stats.Unproved > Stats.Count then
+         Append
+           (R,
+            "    ... "
+            & Natural'Image (Stats.Unproved - Stats.Count)
+            & " more (--verbose lists every check)"
+            & ASCII.LF);
+      end if;
+      Append
+        (R,
+         "  fix:       "
+         & Fix_Hint (To_String (Stats.Items (1).Kind))
+         & ASCII.LF);
+      return To_String (R);
+   end Diagnostics_Text;
+
    --  The actionable tail of the failure line: how many error and warning
    --  lines the replay above contained, so the outcome is stated apart from
    --  the prover's informational noise. It is empty when nothing was
@@ -1806,6 +2041,16 @@ package body Adacovex.Prove is
       --  there is any to carry.
       R_Stats  : Replay_Stats;
       Replayed : Boolean := False;
+
+      --  The unproved findings of the same captured stream. They are
+      --  gathered before the capture file is deleted and printed as one
+      --  diagnostics block after the replay, so a failure names its source
+      --  locations instead of only its exit code.
+      F_Stats   : Failure_Stats;
+      --  The prover identity the diagnostics block reports. It is the
+      --  resolved identity when resolution supplied one.
+      Prover_Id : Ada.Strings.Unbounded.Unbounded_String :=
+        Ada.Strings.Unbounded.Null_Unbounded_String;
 
       --  True when proof patches were applied and gnatprove ran against the
       --  patched proof tree instead of the target itself. When set, the
@@ -2122,6 +2367,10 @@ package body Adacovex.Prove is
          Success := False;
          return;
       end if;
+      --  Keep the resolved identity for the diagnostics block: a failure
+      --  report states which prover produced the result.
+      Prover_Id :=
+        Ada.Strings.Unbounded.To_Unbounded_String (Ident (1 .. ILen));
 
       Find_Root_GPR (Target_Dir, GPR, GLen, OK);
       if not OK then
@@ -2333,6 +2582,22 @@ package body Adacovex.Prove is
                   "",
                   R_Stats);
                Replayed := True;
+               --  The captured stream is still on disk: gather the unproved
+               --  findings from it, then report them as their own block. The
+               --  replay above already carries the raw check lines with
+               --  their code excerpts, so the block adds the prover
+               --  identity, the source locations, and the fix hint.
+               Collect_Failures (Tmp, F_Stats);
+               declare
+                  Diag : constant String :=
+                    Diagnostics_Text
+                      (Ada.Strings.Unbounded.To_String (Prover_Id), F_Stats);
+               begin
+                  if Diag'Length > 0 then
+                     Ada.Text_IO.Put (Diag);
+                     Ada.Text_IO.New_Line;
+                  end if;
+               end;
                declare
                   Del_OK : Boolean;
                begin

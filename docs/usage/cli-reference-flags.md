@@ -198,8 +198,14 @@ so with `filtered: N informational notice(s) hidden (--verbose shows
 them)`. When gnatprove fails, the final `ERROR:` line adds the count of
 error and warning lines it saw, for example
 `ERROR: gnatprove exited with code 1 (error lines: 2 above)`.
-`--verbose` turns the capture off and streams the raw prover output live,
-so CI output stays the unedited prover stream.
+
+Unproved checks also get a diagnostics block after the replay: the prover
+identity, the source location and check kind of up to eight findings, and
+one fix hint derived from the first check's kind. A flow finding is marked
+`(flow analysis)` and a larger count is still reported.
+`--verbose` streams the raw prover output live without a block, and CI
+passes it. Shapes and mode rules:
+[the proving guide](../contributing/proving.md#prove-output-concise-locally-raw-in-ci).
 
 `prove` accepts all assessment flags too (`--dal`, `--standard`, the
 `--require-*` gates, `--emit-svg`, and more), so CI gates apply to the proof
