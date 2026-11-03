@@ -718,6 +718,13 @@ package body Adacovex.Complexity is
          Search : Search_Type;
          Ent    : Directory_Entry_Type;
       begin
+         --  A directory that carries the ignore marker is excluded with its
+         --  whole subtree (see Adacovex.Opt_Outs.Directory_Marker). The
+         --  check runs before the search, so an ignored subtree is never
+         --  enumerated.
+         if Adacovex.Opt_Outs.Dir_Ignored (Dir) then
+            return;
+         end if;
          Start_Search (Search, Dir, "");
          while More_Entries (Search) loop
             Get_Next_Entry (Search, Ent);

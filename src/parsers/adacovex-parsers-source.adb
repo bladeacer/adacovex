@@ -765,6 +765,7 @@ package body Adacovex.Parsers.Source is
                           and Name /= ".lccst"
                           and Name /= "_build"
                           and not Is_Skipped_Dir (Name, Skip_List)
+                          and not Adacovex.Opt_Outs.Dir_Ignored (Path)
                         then
                            Push_Dir (Path);
                         end if;
@@ -1063,6 +1064,7 @@ package body Adacovex.Parsers.Source is
               and Name /= ".lccst"
               and Name /= "_build"
               and not Is_Skipped_Dir (Name, Skip_List)
+              and not Adacovex.Opt_Outs.Dir_Ignored (Path)
             then
                Push_Dir (Path);
             end if;

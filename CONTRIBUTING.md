@@ -109,7 +109,7 @@ Pull requests should follow the following conventions.
   coverage (every subprogram the SPARK coverage report assesses proved), and
   the deliberate `SPARK_Mode (Off)` units keep the tree at Gold.
 - If you add or change behavior, extend the native test suite in `src/tests/`
-  (2111 tests across 29 categories) and run `just test`.
+  (2115 tests across 29 categories) and run `just test`.
 - Keep all source files pure ASCII: `just ascii-check`.
 - If a new CLI flag is added, mirror it as a matching GitHub Action input in
   `./action.yml` and document it in `docs/usage/cli-reference.md` and the README
@@ -182,7 +182,7 @@ adacovex itself parses.
 | Proof patches | 35 |
 | Timezone + ANSI | 63 |
 | Complexity check | 20 |
-| Opt-out markers | 16 |
+| Opt-out markers | 20 |
 | Dir cache | 29 |
 | Diff reports | 36 |
 | Prove runner | 78 |
@@ -194,4 +194,4 @@ adacovex itself parses.
 | Platform paths | 43 |
 | Install method | 23 |
 | tldr installer | 48 |
-| **Total** | **2111** |
+| **Total** | **2115** |

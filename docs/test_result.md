@@ -17,7 +17,7 @@
   | Proof patches                            |  35 | PASS     |
   | Timezone + ANSI                          |  63 | PASS     |
   | Complexity check                         |  20 | PASS     |
-  | Opt-out markers                          |  16 | PASS     |
+  | Opt-out markers                          |  20 | PASS     |
   | Dir cache                                |  29 | PASS     |
   | Diff reports                             |  36 | PASS     |
   | Prove runner                             |  78 | PASS     |
@@ -31,4 +31,4 @@
   | tldr installer                           |  48 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 2111  Failed: 0
+  Passed: 2115  Failed: 0

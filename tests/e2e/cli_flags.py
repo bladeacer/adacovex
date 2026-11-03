@@ -654,6 +654,21 @@ def check_complexity(r: Results, tmp: Path) -> None:
         "complexity --skip-path=src drops the files under src/",
     )
 
+    # A directory that carries .covex-ignore is excluded with its subtree,
+    # and the marker file itself never counts as source.
+    vendored = big / "src" / "vendored"
+    vendored.mkdir(parents=True, exist_ok=True)
+    (vendored / ".covex-ignore").write_text("", encoding="utf-8")
+    (vendored / "huge.adb").write_text(
+        "--  vendored line\n" * 5000, encoding="utf-8")
+    ignored = run(["complexity", "-t", str(big)])
+    r.check(
+        "huge.adb" not in ignored.stdout
+        and ".covex-ignore" not in ignored.stdout
+        and ignored.returncode == 0,
+        "complexity skips a directory carrying .covex-ignore",
+    )
+
 
 def check_spark_coverage(r: Results, tmp: Path) -> None:
     #  A project with no gnatprove artefacts fails loudly (exit 1);

@@ -1,5 +1,6 @@
 with Ada.Text_IO;
 with Ada.Characters.Handling;
+with Ada.Directories;
 
 package body Adacovex.Opt_Outs is
 
@@ -186,5 +187,10 @@ package body Adacovex.Opt_Outs is
       end if;
       return Found;
    end File_Opts_Out;
+
+   function Dir_Ignored (Dir : String) return Boolean is
+   begin
+      return Ada.Directories.Exists (Dir & "/" & Directory_Marker);
+   end Dir_Ignored;
 
 end Adacovex.Opt_Outs;

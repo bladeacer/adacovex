@@ -227,6 +227,9 @@ comment lines at the top of the file; the first non-comment line ends it):
 | `no-covex-spark-proof` | the file's unit is excluded from the gnatprove run of `prove` (its checks no longer count against the proof metrics) |
 | `no-covex-analysis` | all three above |
 
+A whole directory is excluded with a `.covex-ignore` marker file; the scope of
+each form is on [tool options](cli-reference-options.md#excluding-files-and-directories).
+
 The marker sits on a comment line and follows the file's own comment
 syntax, so the same marker text works in every language:
 
@@ -234,12 +237,6 @@ syntax, so the same marker text works in every language:
 --  no-covex-complexity-scan
 package Generated is
    ...
-```
-
-```markdown
-<!-- no-covex-docstrings -->
-
-# Generated reference page
 ```
 
 Matching is case-insensitive. The `prove` opt-out marker belongs on the
