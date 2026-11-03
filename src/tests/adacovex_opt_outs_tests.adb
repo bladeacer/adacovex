@@ -187,6 +187,31 @@ package body Adacovex_Opt_Outs_Tests is
         (not Opt ("cap25.ads", Docstrings),
          "a marker on line 25 is outside the header window");
 
+      --  The directory marker excludes a whole subtree. It sits beside the
+      --  per-file markers and never replaces them.
+      declare
+         Sub  : constant String := Fixture_Dir & "/ignored";
+         Kept : constant String := Fixture_Dir & "/kept";
+         F    : Ada.Text_IO.File_Type;
+      begin
+         Ada.Directories.Create_Directory (Sub);
+         Ada.Directories.Create_Directory (Kept);
+         Ada.Text_IO.Create (F, Ada.Text_IO.Out_File, Sub & "/.covex-ignore");
+         Ada.Text_IO.Close (F);
+         R.Check
+           (Adacovex.Opt_Outs.Dir_Ignored (Sub),
+            "a directory carrying .covex-ignore is excluded");
+         R.Check
+           (not Adacovex.Opt_Outs.Dir_Ignored (Kept),
+            "a directory without .covex-ignore is scanned");
+         R.Check
+           (not Adacovex.Opt_Outs.Dir_Ignored (Fixture_Dir),
+            "the marker applies to its own directory, not the parent");
+         R.Check
+           (not Adacovex.Opt_Outs.Dir_Ignored (Sub & "/missing"),
+            "a missing directory is not ignored");
+      end;
+
       --  Unreadable files report False for every gate, never raise.
       R.Check
         (not Opt ("missing.ads", Docstrings)

@@ -148,13 +148,44 @@ configuration page, in the man page, in `--help`, and as a `fail-on` action
 input, and it joins `Known_Flags`, so completion and the typo suggestion know
 it without a second list.
 
+### C5: One ignore marker excludes a whole directory subtree
+
+The per-file header markers (`no-covex-complexity-scan`,
+`no-covex-docstrings`, `no-covex-spark-proof`, and the `no-covex-analysis`
+catch-all) could exclude a file, and the command line could skip a directory
+name in relaxed mode (`--skip-dir`) or a path fragment for complexity
+(`--skip-path`). Nothing excluded a directory subtree from the assessment
+itself, so a vendored or generated tree had to be marked file by file.
+
+A file named `.covex-ignore` in a directory now excludes that directory and
+every directory below it from the source scan (docstrings, HLR tags, and the
+DAL assessment) and from the complexity walk. An empty file is enough. The
+walker checks the marker before it enumerates a directory, so an ignored
+subtree is never read.
+
+The two mechanisms stay deliberately distinct. A marker file cannot opt one
+gate out; a header marker cannot exclude a directory. Neither form stops
+`gnatprove`, which analyses the project: a unit leaves the proof through the
+per-file `no-covex-spark-proof` marker or a proof patch, never through the
+directory marker. `--skip-dir`, `--skip-path`, and `--excludes` keep their
+narrower command-line scopes, and the CLI reference states the granularity and
+the analyses of each form in one place.
+
+`Adacovex.Opt_Outs.Dir_Ignored` is the single detector, used by both the
+source walk and the complexity walk, and the four new unit checks pin the
+marker: present, absent, parent directory, and a missing directory. The CLI
+end-to-end suite adds one check: a `complexity` run prints no file from a
+directory that carries the marker.
+
 ## Fixes
 
 No defect is fixed in this release.
 
 ## Test Suite
 
-- 2111/2111 native tests passing across 29 categories (2060 at 1.65.0). The
+- 2115/2115 native tests passing across 29 categories (2060 at 1.65.0). The
+  per-file opt-out category grows from 16 to 20 with the `.covex-ignore`
+  checks, and the CLI end-to-end suite gains its directory-marker check. The
   CLI config category grows from 349 to 366 with the `--fail-on` precedence
   tests (every dimension, a comma-separated list, threshold reuse, the
   unknown/out-of-range rejections) and the coverage-summary defaults. The
@@ -191,4 +222,7 @@ existing tags:
 - `-- HLR-CLI` (`adacovex-config`, `adacovex-prove`, `adacovex-renderers-man`,
   the CLI reference, the configuration page): the coverage summary and its
   `--coverage` / `--no-coverage` flags, the `[prove] coverage` key, and
-  `--fail-on`.
+  `--fail-on`;
+- `-- HLR-SCAN` (`adacovex-opt_outs`, the source walk) and
+  `-- HLR-COMPLEXITY` (the complexity walk): the `.covex-ignore` directory
+  marker, its detector, and the separate granularity from the header markers.

@@ -56,6 +56,31 @@ current offset, with the table as the fallback when the probe is
 unavailable. Values are matched case-insensitively, and a bad value fails
 loudly.
 
+### Excluding files and directories
+
+Three mechanisms exclude source, and each has a different scope. A header
+marker (`no-covex-*`) opts one file out of one gate, or out of all gates with
+`no-covex-analysis`; the per-file markers are on [CLI flag details: assessment
+flags and subcommands](cli-reference-flags.md#per-file-opt-out-markers). A file
+named `.covex-ignore` in a directory excludes that directory and every
+directory below it from the source scan (docstrings, HLR tags, and the DAL
+assessment) and from the complexity walk; an empty file is enough.
+
+The forms stay separate: a marker file cannot opt one gate out, and a header
+marker cannot exclude a directory. Neither form stops `gnatprove`, which
+analyses the project, so a unit leaves the proof through
+`no-covex-spark-proof` or a proof patch. `--skip-dir` (relaxed mode) and
+`--skip-path` and `--excludes` (complexity) stay the command-line forms, with
+their narrower scopes.
+
+```ada
+--  no-covex-analysis
+```
+
+```markdown
+<!-- no-covex-analysis -->
+```
+
 ### `--version`
 
 Print the bundled version (`adacovex vX. Y. Z`) and exit, without scanning or assessing. The version source depends on the **installation method** (`ADACOVEX_VERSION` for release builds, `alire-dev.toml` for source checkouts, `alire.toml` for dependency-managed installs).
@@ -124,7 +149,7 @@ criteria. They are off by default. When set, the assessment fails loudly
 target does not meet the required level:
 
 ```bash
-adacovex --target=. --spark=Gold --docstrs=100 --require-tests=2111 -r 100
+adacovex --target=. --spark=Gold --docstrs=100 --require-tests=2115 -r 100
 ```
 
 - `require-spark` (alias `--spark`) compares the honest assessed SPARK level

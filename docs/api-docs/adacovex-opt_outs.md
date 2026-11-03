@@ -37,6 +37,14 @@ type Gate is (Complexity_Scan, Docstrings, SPARK_Proof);
 
 ## Functions
 
+### function Dir_Ignored (Dir : Standard.String) return Standard.Boolean
+
+| Parameter | Description |
+|-----------|-------------|
+| `Dir` | Directory path to inspect. |
+
+**Returns:** True when Dir contains the Directory_Marker file.
+
 ### function File_Opts_Out (Path : Standard.String; G : Adacovex.Opt_Outs.Gate) return Standard.Boolean
 
 | Parameter | Description |

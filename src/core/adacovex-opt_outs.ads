@@ -42,4 +42,22 @@ package Adacovex.Opt_Outs is
    --  @return True when a matching marker appears in the file header.
    function File_Opts_Out (Path : String; G : Gate) return Boolean;
 
+   --  The directory-level ignore marker: a file with exactly this name
+   --  inside a directory excludes that directory and every directory below
+   --  it from the assessment scan and the complexity walk. An empty file is
+   --  enough. It is a second, coarser mechanism, deliberately distinct from
+   --  the per-file header markers: a marker file cannot opt one gate out,
+   --  and a header marker cannot exclude a directory.
+   Directory_Marker : constant String := ".covex-ignore";
+
+   --  True when Dir holds the directory-level ignore marker. The marker
+   --  excludes a subtree from the source scan (docstrings, HLR tags, and the
+   --  DAL assessment) and from the complexity walk. It does not stop
+   --  gnatprove, which analyses the whole project: use the per-file
+   --  no-covex-spark-proof marker or a proof patch for a proved unit. A
+   --  missing directory reports False (never raise).
+   --  @param Dir  Directory path to inspect.
+   --  @return True when Dir contains the Directory_Marker file.
+   function Dir_Ignored (Dir : String) return Boolean;
+
 end Adacovex.Opt_Outs;

@@ -199,18 +199,25 @@ This section is the per-feature checklist mirror of the release view above, inte
 
 ### 2.3 Exclusion and ignore annotations
 
-- [ ] Standardize or extend exclusion/ignore behavior.
-- [ ] Decide whether this is:
+- [x] Standardize or extend exclusion/ignore behavior.
+- [x] Decide whether this is:
   - a new inline annotation form
   - a broader opt-out mechanism
   - or both
-- [ ] Document the supported granularity and the analyses it affects.
-- [ ] Keep the new exclusion semantics distinct from the existing opt-out markers in both behavior and docs.
+- [x] Document the supported granularity and the analyses it affects.
+- [x] Keep the new exclusion semantics distinct from the existing opt-out markers in both behavior and docs.
+
+Decision: the per-file header markers stay the fine-grained form, and one
+coarser form is added -- a `.covex-ignore` marker file that excludes a whole
+directory subtree from the assessment scan and the complexity walk. The
+mechanisms are separate: a marker file cannot opt one gate out, and a header
+marker cannot exclude a directory. The prover is out of scope for both
+(gnatprove proves the project; use `no-covex-spark-proof` or a proof patch).
 
 ### 2.4 Documentation updates for Release 2
 
 - [x] Document the `--fail-on` threshold flag.
-- [ ] Document the new or extended exclusion annotations.
+- [x] Document the new or extended exclusion annotations.
 - [x] Document the final diagnostics-mode choices.
 - [x] Update the changelog entry for v1.66.0 before the version bump.
 
@@ -276,7 +283,33 @@ This section is the per-feature checklist mirror of the release view above, inte
 - [ ] Keep `prove` off by default for watching, but allow it to be enabled if useful.
 - [ ] Use a cross-platform watcher implementation that fits the project's runtime constraints.
 
-### 3.3 Documentation and test updates for Release 3
+### 3.3 `just check` pipeline under one minute
+
+The whole verification pipeline must finish in under a minute on the dev
+machine. This is a performance and orchestration change only: no gate is
+weakened and no check is dropped.
+
+- [ ] Measure first. Capture the current per-gate and per-recipe wall time, and
+  keep the raw stdout of one full run, so repeated work is visible rather than
+  guessed.
+- [ ] Build once and prove once. One build and one `gnatprove` run feed every
+  later gate (DRY); no gate recompiles, re-bundles, or re-proves what an
+  earlier gate already produced.
+- [ ] Group the checks. The native test categories, the CLI end-to-end checks,
+  and the diagnostics fixtures run as one invocation each, not one process
+  per case or per file.
+- [ ] Explore parallelism with the Python standard library
+  (`concurrent.futures` / `multiprocessing`) for the independent gates, with a
+  CPU-count cap, deterministic summary output, and the existing
+  PASS/FAIL/SKIP report unchanged.
+- [ ] Cache what is safe (content-keyed results, generated specs, the docs
+  bundle) and measure the hit rate, rather than caching to hide a slow step.
+- [ ] Record the bottleneck of every `just` recipe and target, with
+  `time`/Unix timestamps, `hyperfine`, `strace`, and `perf` where they help,
+  in `docs/contributing/perf/`.
+- [ ] Keep `just check` the single entry point and keep its gate order.
+
+### 3.4 Documentation and test updates for Release 3
 
 - [ ] Document the config file location, format, precedence, and `init` behavior.
 - [ ] Document that the file is named `adacovex.toml` and that it is used to override default CLI flag values.
@@ -286,7 +319,7 @@ This section is the per-feature checklist mirror of the release view above, inte
 - [ ] For every config-related change, update the docs in the same change so the runtime behavior, the sample file, and the documentation never drift.
 - [ ] Update the changelog entry for v1.67.0 before the version bump.
 
-### 3.4 Release checklist for v1.67.0
+### 3.5 Release checklist for v1.67.0
 
 - [ ] v1.67.0 changelog written
 - [ ] version bumped to v1.67.0
@@ -322,6 +355,18 @@ This section is the per-feature checklist mirror of the release view above, inte
   - [ ] allow `--no-watch` to disable it
 - [ ] Keep `prove` off by default for watching, but allow it to be enabled if useful.
 - [ ] Use a cross-platform watcher implementation that fits the project's runtime constraints.
+
+---
+
+### Pipeline performance (`just check` under a minute)
+
+- [ ] Measure the current per-gate and per-recipe wall time, and keep one full run's stdout to find repeated work.
+- [ ] Build once and prove once, so no later gate repeats either.
+- [ ] Group the native tests, the CLI end-to-end checks, and the diagnostics fixtures into one invocation each.
+- [ ] Explore stdlib parallelism (`concurrent.futures` / `multiprocessing`) for independent gates, with a CPU cap and unchanged output.
+- [ ] Cache only what is safe (content-keyed results, generated specs, the docs bundle) and report the hit rate.
+- [ ] Record every recipe's bottleneck with `time`, `hyperfine`, `strace`, and `perf` in `docs/contributing/perf/`.
+- [ ] Keep `just check` the single entry point with its gate order and PASS/FAIL/SKIP summary.
 
 ---
 
