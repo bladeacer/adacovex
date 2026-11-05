@@ -286,7 +286,7 @@ marker cannot exclude a directory. The prover is out of scope for both
 - [x] Provide a sample `adacovex.toml` in the cwd of the adacovex source code itself.
   - [x] Show the default values for the supported entries.
   - [x] Add comment blocks mentioning other supported values where relevant.
-  - [ ] Link to the documentation from the sample file. The link must point at
+  - [x] Link to the documentation from the sample file. The link must point at
     the deployed manual,
     `https://adacovex.readthedocs.io/en/latest/usage/configuration.html`, not
     at the repository-relative page, because a consumer of the crate has no
@@ -296,27 +296,27 @@ marker cannot exclude a directory. The prover is out of scope for both
   2. [x] per-project / cwd `adacovex.toml`
   3. [x] global config file
   4. [x] built-in fallback defaults
-- [ ] If `init` is wanted, make it create a per-project `adacovex.toml` with a sensible scaffold drawn from the sample file.
-- [ ] Support a global config option that can disable the per-project scaffolding behavior when that is desired.
+- [x] If `init` is wanted, make it create a per-project `adacovex.toml` with a sensible scaffold drawn from the sample file.
+- [x] Support a global config option that can disable the per-project scaffolding behavior when that is desired.
 - [x] Keep the sample file, the global config docs, and the runtime precedence behavior in sync with each other and with the CLI defaults.
 - [ ] End-to-end test the configuration files. The unit tests cover the reader,
   the merge, and the precedence rule; the behaviour needs real runs, because
   the feature changes what a run does, not only what a parser returns:
-  - [ ] a project file alone changes a real `prove` run (coverage line hidden,
+  - [x] a project file alone changes a real `prove` run (coverage line hidden,
     jobs and level forwarded)
-  - [ ] a global file alone changes the same run
-  - [ ] the project file wins per key while the global file still supplies the
+  - [x] a global file alone changes the same run
+  - [x] the project file wins per key while the global file still supplies the
     keys the project omits
-  - [ ] an explicit flag wins over both files, key by key
-  - [ ] `--target` from another working directory reads that target's file
+  - [x] an explicit flag wins over both files, key by key
+  - [x] `--target` from another working directory reads that target's file
     only, never the caller's working-directory file
-  - [ ] a `[complexity]` key changes nothing outside `adacovex complexity`, and
+  - [x] a `[complexity]` key changes nothing outside `adacovex complexity`, and
     a `[prove]` key changes nothing outside `prove`
-  - [ ] malformed input never fails a run: missing file, empty file, unknown
+  - [x] malformed input never fails a run: missing file, empty file, unknown
     key, unknown section, non-integer, unterminated quote, over-long path
-  - [ ] a config-supplied `level`, `steps`, `timeout`, or `memlimit` changes
+  - [x] a config-supplied `level`, `steps`, `timeout`, or `memlimit` changes
     the proof result-cache identity, so a stale proof is never served
-  - [ ] the shipped sample `adacovex.toml` leaves every self-run unchanged
+  - [x] the shipped sample `adacovex.toml` leaves every self-run unchanged
   - [ ] the composite action behaves like the binary when a target repository
     carries a project file
 
@@ -373,14 +373,14 @@ weakened and no check is dropped.
 - [x] Document every subprogram parameter in the API reference, and keep the
   generated pages in step with the docstrings (see C1/H1 in the 1.67.0
   changelog).
-- [ ] Add tests for config reading, precedence, and watch behavior where practical; the configuration end-to-end matrix in 3.1 is the required minimum for the config half.
-- [ ] For every config-related change, update the docs in the same change so the runtime behavior, the sample file, and the documentation never drift.
-- [ ] Update the changelog entry for v1.67.0 before the version bump.
+- [x] Add tests for config reading, precedence, and watch behavior where practical; the configuration end-to-end matrix in 3.1 is the required minimum for the config half.
+- [x] For every config-related change, update the docs in the same change so the runtime behavior, the sample file, and the documentation never drift.
+- [x] Update the changelog entry for v1.67.0 before the version bump.
 
 ### 3.6 Release checklist for v1.67.0
 
 - [x] v1.67.0 changelog written (C1/H1; the entry grows as the remaining items land)
-- [ ] version bumped to v1.67.0
+- [x] version bumped to v1.67.0
 - [ ] `just check` passes
 
 ---
@@ -395,7 +395,7 @@ weakened and no check is dropped.
 - [x] Ship a sample `adacovex.toml` in the cwd of the adacovex source code itself.
   - [x] Show the default values for the supported entries.
   - [x] Add comment blocks mentioning other supported values where relevant.
-  - [ ] Link to the documentation from the sample file. The link must point at
+  - [x] Link to the documentation from the sample file. The link must point at
     the deployed manual,
     `https://adacovex.readthedocs.io/en/latest/usage/configuration.html`, not
     at the repository-relative page, because a consumer of the crate has no
@@ -405,8 +405,8 @@ weakened and no check is dropped.
   - [x] per-project / cwd `adacovex.toml`
   - [x] global config file
   - [x] built-in fallback defaults
-- [ ] If `init` is wanted, make it create a per-project `adacovex.toml` with a sensible scaffold drawn from the sample file.
-- [ ] Support a global config option that can disable the per-project scaffolding behavior when that is desired.
+- [x] If `init` is wanted, make it create a per-project `adacovex.toml` with a sensible scaffold drawn from the sample file.
+- [x] Support a global config option that can disable the per-project scaffolding behavior when that is desired.
 - [x] Keep the sample file, the global config docs, and the runtime precedence behavior in sync with each other and with the CLI defaults.
 
 ### Watch / hot reload for serve and other suitable commands

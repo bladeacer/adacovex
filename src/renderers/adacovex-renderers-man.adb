@@ -108,6 +108,11 @@ package body Adacovex.Renderers.Man is
       App (Buf, Len, ".br");
       App (Buf, Len, ".B " & Q & "adacovex tldr [--check] [--force]" & Q);
       App (Buf, Len, ".br");
+      App
+        (Buf,
+         Len,
+         ".B " & Q & "adacovex init [--target=PATH] [--force]" & Q);
+      App (Buf, Len, ".br");
       App (Buf, Len, ".B " & Q & "adacovex complexity [--target=PATH]" & Q);
       App (Buf, Len, ".br");
       App
@@ -408,6 +413,17 @@ package body Adacovex.Renderers.Man is
          & "the bundled page, 1 when it is missing or stale.  --force "
          & "always rewrites the page.  With no supported client the page "
          & "is printed to stdout instead.");
+      App_Option
+        (Buf,
+         Len,
+         "init",
+         "Write the sample project configuration (adacovex.toml) into the "
+         & "target directory.  The file states the default of every "
+         & "supported key and links to the configuration guide.  An "
+         & "existing file is left untouched and the command exits 1, so a "
+         & "project's own settings are never lost by accident.  --force "
+         & "overwrites it.  The global key [init] scaffold = false disables "
+         & "the scaffold for every project that runs on the machine.");
       App_Option
         (Buf,
          Len,

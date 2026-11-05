@@ -22,6 +22,7 @@ adacovex complexity [-t=PATH]
 adacovex spark-coverage [-t=PATH]
 adacovex man [--check|--force] [--dir=PATH]
 adacovex tldr [--check|--force]
+adacovex init [-t=PATH] [--force]
 adacovex completion [bash|fish|zsh|pwsh]
 adacovex help [TOPIC]
 ```
@@ -91,7 +92,15 @@ Compliance selection stays on `--standard` and its level companions
 | `tldr` | - | - | Install the bundled tldr page into the local tldr client (tealdeer or a base client) |
 | `tldr --check` | - | - | Exit 0 if the installed tldr page matches the bundled page, 1 when it is missing or stale |
 | `tldr --force` | - | - | Rewrite the installed tldr page even when it already matches |
+| `init` | - | - | Write a sample `<target>/adacovex.toml` that states every key and links to the configuration guide |
+| `init --force` | - | - | Overwrite an existing `<target>/adacovex.toml` (without it the file is left alone and the command exits 1) |
 | `--help` | - | both | Print usage and exit |
+
+`init` is local scaffolding: it reads no target and starts no assessment. It
+never replaces an existing file without `--force`, so a project's own settings
+are safe. `[init] scaffold = false` in the global configuration file disables
+the command for every project on the machine; it then prints the reason and
+exits 0. See [Global configuration and state](configuration.md#scaffolding-a-project-file).
 
 `prove`-mode flags are accepted by the main command and validated only in
 prove mode: `--jobs`/`-j`, `--level`/`-l`, `--timeout`, `--steps`,

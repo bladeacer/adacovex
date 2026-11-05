@@ -105,6 +105,11 @@ package Adacovex.Config is
       Version_Requested : Boolean := False;
       Man_Mode          : Boolean := False;
 
+      --  True when the `init` subcommand is given. It writes the sample
+      --  project configuration into the target directory and exits. It
+      --  shares --force with man and tldr to overwrite an existing file.
+      Init_Mode : Boolean := False;
+
       --  True when the tldr subcommand is given. It installs the bundled
       --  tldr page into the local client and is a standalone mode, like
       --  man. It shares --check and --force with the man subcommand.
@@ -309,10 +314,14 @@ package Adacovex.Config is
    --  never overwrites a built-in default or another file. `[prove] jobs`,
    --  `level`, `timeout`, `steps`, and `memlimit` take an integer;
    --  `[prove] coverage` takes true or false; `[complexity] excludes` and
-   --  `skip-path` take a comma-separated string.
+   --  `skip-path` take a comma-separated string. `[init] scaffold` takes true
+   --  or false; only the global file reads it, and it turns the `init`
+   --  subcommand off for every project on the machine.
    type Config_Settings is record
       Coverage       : Boolean := True;
       Coverage_Set   : Boolean := False;
+      Scaffold       : Boolean := True;
+      Scaffold_Set   : Boolean := False;
       Jobs           : Integer := -1;
       Level          : Integer := -1;
       Timeout        : Integer := -1;
@@ -354,6 +363,22 @@ package Adacovex.Config is
    --  @param Settings  Values read from one configuration file.
    procedure Apply_Settings
      (Cfg : in out CLI_Config; Settings : Config_Settings);
+
+   --  What `adacovex init` did with the project file.
+   type Scaffold_Status is
+     (Scaffold_Created,  --  the file was written
+      Scaffold_Exists,   --  the file was left alone (no --force)
+      Scaffold_Failed);  --  the file could not be written
+
+   --  Write the sample project configuration into Target_Dir.
+   --  The sample states the default of every supported key and links to the
+   --  deployed manual. An existing file is left untouched unless Force is
+   --  True, so a project's own settings are never lost by accident.
+   --  @param Target_Dir  Directory that receives adacovex.toml.
+   --  @param Force  Overwrite an existing file.
+   --  @return Created, Exists (left alone), or Failed.
+   function Write_Sample_Project_File
+     (Target_Dir : String; Force : Boolean) return Scaffold_Status;
 
    --  Testable CLI-parser core. Kept out of SPARK. It operates on an
    --  unbounded string vector and reports parse errors to Standard_Error.

@@ -6,7 +6,7 @@
 # Copy this file into your own project, or delete it: every key below states
 # the built-in default, so an empty file and no file behave the same.
 #
-# Reference: docs/usage/configuration.md
+# Reference: https://adacovex.readthedocs.io/en/latest/usage/configuration.html
 
 [prove]
 # Print the proof-coverage summary line after a successful prove run.

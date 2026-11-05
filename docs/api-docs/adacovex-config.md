@@ -56,6 +56,7 @@ Help_Topic        : String (1 .. Types.Max_Path);
 Help_Topic_Len    : Natural := 0;
 Version_Requested : Boolean := False;
 Man_Mode          : Boolean := False;
+Init_Mode : Boolean := False;
 Tldr_Mode : Boolean := False;
 Man_Check : Boolean := False;
 Man_Force : Boolean := False;
@@ -123,6 +124,8 @@ end record;
 type Config_Settings is record
 Coverage       : Boolean := True;
 Coverage_Set   : Boolean := False;
+Scaffold       : Boolean := True;
+Scaffold_Set   : Boolean := False;
 Jobs           : Integer := -1;
 Level          : Integer := -1;
 Timeout        : Integer := -1;
@@ -133,6 +136,15 @@ Excludes_Len   : Natural := 0;
 Skip_Paths     : String (1 .. Types.Max_Path);
 Skip_Paths_Len : Natural := 0;
 end record;
+```
+
+### type Scaffold_Status
+
+```ada
+type Scaffold_Status is
+(Scaffold_Created,
+Scaffold_Exists,
+Scaffold_Failed);
 ```
 
 ## Functions
@@ -161,6 +173,15 @@ end record;
 | `Path` | Configuration file to read. |
 
 **Returns:** The settings the file supplies.
+
+### function Write_Sample_Project_File (Target_Dir : Standard.String; Force : Standard.Boolean) return Adacovex.Config.Scaffold_Status
+
+| Parameter | Description |
+|-----------|-------------|
+| `Target_Dir` | Directory that receives adacovex.toml. |
+| `Force` | Overwrite an existing file. |
+
+**Returns:** Created, Exists (left alone), or Failed.
 
 ## Procedures
 

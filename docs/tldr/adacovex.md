@@ -26,6 +26,9 @@
 - Install the built-in cheat sheet for a tldr client:
 `adacovex tldr`
 
+- Write a project configuration file:
+`adacovex init`
+
 - Print shell auto-completion scripts:
 `adacovex completion bash`
 

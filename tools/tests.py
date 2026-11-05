@@ -2508,11 +2508,11 @@ class TestCheckSurfaceParity(unittest.TestCase):
 
     def test_subcommands_are_the_parser_bare_words(self) -> None:
         # The gate reads the parser's `elsif A = "word" then` branches, so
-        # its set is only as good as that source.  Pin the expected nine.
+        # its set is only as good as that source.  Pin the expected ten.
         self.assertEqual(
             check_surface_parity.subcommands(),
             {"sbom", "prove", "complexity", "spark-coverage", "status",
-             "completion", "man", "tldr", "help"})
+             "completion", "man", "tldr", "init", "help"})
 
     def test_the_tagline_comes_from_the_readme(self) -> None:
         tagline = check_surface_parity.readme_tagline()
