@@ -15,11 +15,11 @@ version; do not cherry-pick rows across versions.
 
 ## How work is distributed
 
-| Version | Theme | Items |
-|---------|-------|-------|
-| v1.68.0 | Output defaults & time | 1 (coverage default), 2 (UTC timestamps + opt-in + tests), bulk of 9 (front-load docstrings) |
-| v1.69.0 | Diagnostics & help UX | 3 (proof-diagnostic dedup + ada-crdt findings), 4 (contextual help + e2e), remainder of 9 |
-| v1.70.0 | SBOM robustness + debt | 5 (sbom false positives), 6 (syft comparison), 7 (sibling-binary length check), 8 (tech debt), final 9 touch-ups |
+| Version | Status | Theme | Items |
+|---------|--------|-------|-------|
+| v1.68.0 | done | Output defaults & time | 1 (coverage default), 2 (UTC timestamps + opt-in + tests), bulk of 9 (front-load docstrings) |
+| v1.69.0 | planned | Diagnostics & help UX | 3 (proof-diagnostic dedup + ada-crdt findings), 4 (contextual help + e2e), remainder of 9 |
+| v1.70.0 | planned | SBOM robustness + debt | 5 (sbom false positives), 6 (syft comparison), 7 (sibling-binary length check), 8 (tech debt), final 9 touch-ups |
 
 Every change also updates, in the same change: `docs/`, Ada docstrings feeding
 `docs/api-docs`, `docs/changelogs/adacovex-<version>.md`, AGENTS.md source tree
@@ -32,7 +32,7 @@ proof-status`.
 
 ---
 
-## Item 1 - Make showing coverage the default when running `adacovex prove` / plain `adacovex`
+- [x] Item 1 - Make showing coverage the default when running `adacovex prove` / plain `adacovex` (done in v1.68.0)
 
 **Goal:** A successful `prove` run prints the proof-coverage summary line
 (statement / subprogram / VC coverage) by default; `--no-coverage` hides it
@@ -66,7 +66,7 @@ config-file precedence need verifying. The summary already prints at
 
 ---
 
-## Item 2 - Store timestamps as UTC+0 by default; opt-in for local timezone
+- [x] Item 2 - Store timestamps as UTC+0 by default; opt-in for local timezone (done in v1.68.0)
 
 **Goal:** Timestamps default to `UTC+00:00`. The operator's wall-clock /
 current timezone is only used when the user explicitly opts in (e.g. an
@@ -103,7 +103,7 @@ group them under one docs page.
 
 ---
 
-## Item 3 - `just run-ada-crdt`: fix Ada_CRDT findings + proof-diagnostic dedup
+- [ ] Item 3 - `just run-ada-crdt`: fix Ada_CRDT findings + proof-diagnostic dedup (planned for v1.69.0)
 
 **Goal:** The sibling-binary run over `../Ada_CRDT` surfaces (a) real issues
 in Ada_CRDT source to fix there, and (b) adacovex proof-diagnostic noise to
@@ -138,7 +138,7 @@ hidden") hides benign info but the warnings still repeat.
 
 ---
 
-## Item 4 - Contextual/flag-specific help looks like main `--help`
+- [ ] Item 4 - Contextual/flag-specific help looks like main `--help` (planned for v1.69.0)
 
 **Goal:** `adacovex prove help`, `adacovex help serve`, `adacovex --serve help`,
 etc. should render with the same structure, framing, and density as the main
@@ -175,7 +175,7 @@ line, `Usage:` fence, `Options:` list, footer.
 
 ---
 
-## Item 5 - SBOM false positives on C projects (yams): robust dep detection
+- [ ] Item 5 - SBOM false positives on C projects (yams): robust dep detection (planned for v1.70.0)
 
 **Goal:** `adacovex sbom` on a C project like `../yams` must not emit false
 positives (e.g. `cargo` listed as a dependency, `go` appearing, "cargo depends
@@ -211,7 +211,7 @@ heuristic name matching that conflates tool mentions with dependencies.
 
 ---
 
-## Item 6 - Compare our SBOM parser with syft; adopt robustness improvements
+- [ ] Item 6 - Compare our SBOM parser with syft; adopt robustness improvements (planned for v1.70.0)
 
 **Goal:** Benchmark `adacovex sbom` against `https://github.com/anchore/syft`
 on the same target(s) (self, yams, Ada_CRDT). Document component/version/licence
@@ -242,7 +242,7 @@ approaches for robustness ideas, with proper attribution, captured in
 
 ---
 
-## Item 7 - Sibling-binary bug: `adacovex-prove.adb:2821 length check failed`
+- [ ] Item 7 - Sibling-binary bug: `adacovex-prove.adb:2821 length check failed` (planned for v1.70.0)
 
 **Goal:** Running adacovex as a sibling binary on `../Ada_CRDT` fails with
 `Error: adacovex-prove.adb:2821 length check failed` during the patched-proof
@@ -269,7 +269,7 @@ check at copy time for the patched proof tree (`<target>/obj/adacovex-proof/`).
 
 ---
 
-## Item 8 - Address technical debt ASAP
+- [ ] Item 8 - Address technical debt ASAP (planned for v1.70.0)
 
 **Goal:** Reduce the "many hours/days" of technical debt surfaced by these
 items and the ada-crdt run: deduplicated diagnostics, robust manifest parsing,
@@ -289,7 +289,7 @@ contracts; 0 unproved / 0 justified VCs).
 
 ---
 
-## Item 9 - API docstrings: add missing descriptions (e.g. `Adacovex_Man_Tests`)
+- [ ] Item 9 - API docstrings: add missing descriptions (e.g. `Adacovex_Man_Tests`) (front-loaded across v1.68-v1.70)
 
 **Goal:** Generated API pages such as `Adacovex_Man_Tests` / `procedure Run`
 have empty `@param`/`@return`/`description` fields. Add meaningful docstrings
@@ -334,16 +334,11 @@ For each version, in the same change:
    a MAJOR version (none of these items break the CLI contract, so no MAJOR
    is expected).
 
-## Open questions to resolve with the user (before coding)
+## Decisions (resolved)
 
-1. Item 2: exact spelling of the local-timezone opt-in flag, and whether
-   `status` timestamps follow it.
-2. Item 4: which help topics get full flag tables vs. summary; must `adacovex
-   help` (no topic) remain byte-identical to `--help`.
-3. Item 6: is syft available to run in CI for the comparison, or is it a
-   local/docs-only audit?
-4. Item 9: docstring work is front-loaded across v1.68-v1.70; enforce a full
-   non-empty documentation table unless the corresponding value in the
-   docstrings themselves (as rendered in generated md files) is empty.
+1. Item 2: reuse `--tz=local` for the local-timezone opt-in (default is UTC+00:00). Timezone docs grouped under the options page.
+2. Item 4: `adacovex --help` and `adacovex help` remain byte-identical; `prove help` / `prove --help` match the main `--help` frame; other flag help output structurally similar (unix/CLI style).
+3. Item 6: `syft` is not installed or expected for users. Reference syft source with attribution in `docs/usage/sbom-resolution.md`.
+4. Item 9: docstring work front-loaded across v1.68-v1.70; enforce a full non-empty documentation table unless the docstring value itself is empty.
 
-All questions resolved - ready to implement starting with v1.68.0.
+All questions resolved - implementing starting with v1.68.0.
