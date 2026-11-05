@@ -2504,8 +2504,13 @@ package body Adacovex.Config is
          end if;
 
          -- --tz / --timezone must name a supported timezone (validated loudly
-         -- so a typo never silently falls back to the OS zone.
-         if Cfg.Time_Zone_Len > 0 then
+         -- so a typo never silently falls back to the OS zone. The local
+         -- opt-in, --tz=local, is not a parse spec; it is resolved to the
+         -- OS zone via Adacovex.Timezones.Default_Local elsewhere.)
+         if Cfg.Time_Zone_Len > 0
+           and then not Adacovex.Timezones.Is_Local_Spec
+                          (Cfg.Time_Zone (1 .. Cfg.Time_Zone_Len))
+         then
             declare
                Info : Adacovex.Timezones.Timezone_Info;
                OK   : Boolean;
@@ -2518,7 +2523,7 @@ package body Adacovex.Config is
                      "--tz/--timezone must name a supported timezone (got: "
                      & Cfg.Time_Zone (1 .. Cfg.Time_Zone_Len)
                      & "); use an IANA name like Asia/Singapore or a UTC/GMT "
-                     & "offset like UTC+8");
+                     & "offset like UTC+8, or --tz=local for the local zone");
                end if;
             end;
          end if;

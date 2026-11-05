@@ -156,7 +156,7 @@ procedure.
 
 ## Test Suite
 
-- 2133/2133 native tests passing across 29 categories. The watch flags add
+- 2143/2143 native tests passing across 29 categories. The watch flags add
   three configuration checks and the new route adds three server checks.
 - `tools/tests.py` grows to 202 checks with the two new `rst2md` regression
   checks (the type-body counter and the header-tag leak).

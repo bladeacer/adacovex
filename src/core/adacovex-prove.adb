@@ -3018,15 +3018,18 @@ package body Adacovex.Prove is
    --  Fill a Status_Data record by probing PATH, the target manifest, the
    --  global pin, and the toolchain cache. Never deploys or downloads
    --  anything (same contract as Run_Status).
-   --  Resolve the display timezone: an explicit TZ spec wins, else the
-   --  operating system's timezone.
+   --  Resolve the display timezone: --tz=local opts into the operator's
+   --  wall-clock timezone; any other explicit spec is parsed; otherwise the
+   --  default is UTC+0.
    function Effective_TZ
      (TZ_Spec : String) return Adacovex.Timezones.Timezone_Info
    is
       Info : Adacovex.Timezones.Timezone_Info;
       OK   : Boolean;
    begin
-      if TZ_Spec'Length > 0 then
+      if Adacovex.Timezones.Is_Local_Spec (TZ_Spec) then
+         return Adacovex.Timezones.Default_Local;
+      elsif TZ_Spec'Length > 0 then
          Adacovex.Timezones.Parse (TZ_Spec, Info, OK);
          if OK then
             return Info;
