@@ -1173,6 +1173,14 @@ begin
          Adacovex.Spark_Coverage.Apply_To_Proof (Cov_Totals, Cov_OK, Proof);
       end;
    end if;
+
+   --  Show the proof-coverage summary line for a plain run too, when proof
+   --  artefacts are available. --no-coverage / [prove] coverage = false hides
+   --  it; the default is on, matching `adacovex prove`.
+   if Cfg.Prove_Show_Coverage and then Proof.Total_VCs > 0 then
+      Adacovex.Prove.Report_Coverage (Target (1 .. TLen));
+   end if;
+
    Verbose
      ("  spark level: "
       & Adacovex.Types.To_String (Proof.Level)

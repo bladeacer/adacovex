@@ -53,7 +53,7 @@ Compliance selection stays on `--standard` and its level companions
 | `--serve-workers=N`, `--workers=N` | CPU-scaled (2-8) | serve | HTTP server task-pool worker count |
 | `--theme=NAME` | `system` | serve | Dashboard theme: `light`\|`dark`\|`system` |
 | `--port=N`, `-p N` | `8080` | serve | Dashboard server port |
-| `--tz=ZONE` / `--timezone=ZONE` | OS timezone | both | Display timezone (IANA name or UTC/GMT offset) |
+| `--tz=ZONE` / `--timezone=ZONE` | `UTC+00:00` | both | Display timezone (IANA name or UTC/GMT offset); `--tz=local` opts into the OS zone |
 | `--excludes=EXT,EXT` | empty | complexity | Skip comma-separated file extensions |
 | `--skip-path=PATH` | empty | complexity | Skip any file whose path contains PATH (repeatable) |
 | `--group=KIND` | `file` | spark-coverage | Row grouping: `file`\|`folder`\|`package` |

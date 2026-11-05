@@ -943,18 +943,40 @@ def check_config_prove(r: Results, tmp: Path) -> None:
     state = tmp / "cfg-prove-state"
     state.mkdir()
     env = {"ADACOVEX_STATE_HOME": str(state)}
-    (proj / "adacovex.toml").write_text(
-        "[prove]\ncoverage = false\n", encoding="utf-8")
     base = ["prove", "-t", str(proj), "--no-cache", "-j", "1", "-l", "0"]
-    hidden = run(base, env_extra=env, timeout=600)
+
+    #  Coverage is on by default for `adacovex prove`.
+    default = run(base, env_extra=env, timeout=900)
+    r.check(
+        default.returncode == 0 and "coverage:" in default.stdout,
+        "`adacovex prove` shows the coverage summary by default",
+    )
+
+    #  --no-coverage hides it for one run.
+    hidden = run([*base, "--no-coverage"], env_extra=env, timeout=900)
     r.check(
         hidden.returncode == 0 and "coverage:" not in hidden.stdout,
+        "`--no-coverage` hides the coverage summary",
+    )
+
+    (proj / "adacovex.toml").write_text(
+        "[prove]\ncoverage = false\n", encoding="utf-8")
+    configured = run(base, env_extra=env, timeout=600)
+    r.check(
+        configured.returncode == 0 and "coverage:" not in configured.stdout,
         "project [prove] coverage = false hides the coverage summary",
     )
     shown = run([*base, "--coverage"], env_extra=env, timeout=600)
     r.check(
         shown.returncode == 0 and "coverage:" in shown.stdout,
         "an explicit --coverage wins over the project file",
+    )
+    #  Plain `adacovex` (no prove subcommand) also shows coverage when proof
+    #  artefacts are available in the target (left by the `shown` run above).
+    plain = run(["-t", str(proj)], env_extra=env, timeout=600)
+    r.check(
+        plain.returncode == 0 and "coverage:" in plain.stdout,
+        "plain `adacovex` shows coverage from cached proof artefacts",
     )
 
     #  The composite action runs `prove` with its inputs as flags. A target
@@ -1327,6 +1349,29 @@ def check_tldr_install(r: Results, tmp: Path) -> None:
     )
 
 
+def check_timezone(r: Results, tmp: Path) -> None:
+    """Timestamps default to UTC+0; --tz=local opts into the local zone."""
+    proj = tmp / "tz-proj"
+    write_project(proj, 1)
+    default = run(["status", "-t", str(proj)])
+    r.check(
+        default.returncode == 0 and "UTC+00:00" in default.stdout,
+        "default status timestamp is UTC+00:00",
+    )
+    local = run(
+        ["status", "-t", str(proj), "--tz=local"],
+        env_extra={"TZ": "Asia/Singapore"},
+    )
+    r.check(
+        local.returncode == 0 and "Asia/Singapore" in local.stdout,
+        "--tz=local reports the operator's wall-clock zone (Asia/Singapore)",
+    )
+    offset = run(["status", "-t", str(proj), "--tz=UTC+8"])
+    r.check(
+        offset.returncode == 0 and "UTC+08:00" in offset.stdout,
+        "--tz=UTC+8 reports the explicit offset (UTC+08:00)",
+    )
+
 def main() -> int:
     if not Path(BIN).is_file():
         print(f"error: {BIN} not found; run `just build` first",
@@ -1349,6 +1394,7 @@ def main() -> int:
         check_config_files(r, tmp)
         check_config_prove(r, tmp)
         check_spark_coverage(r, tmp)
+        check_timezone(r, tmp)
         check_differential(r, tmp)
         check_differential_regression(r, tmp)
         check_prove(r, tmp)

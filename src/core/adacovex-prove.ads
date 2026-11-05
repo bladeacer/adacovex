@@ -327,6 +327,14 @@ package Adacovex.Prove is
    procedure Run_Prove
      (Target_Dir : String; Opts : Prove_Options; Success : out Boolean);
 
+   --  Print the proof-coverage summary line (statement, subprogram, and VC
+   --  coverage) for a target whose obj/gnatprove/ artefacts are readable.
+   --  It is a summary, not a gate: a missing or unreadable artefact set
+   --  prints nothing and never fails the caller. Used by `adacovex prove`
+   --  and by a plain `adacovex` run when proof data is available.
+   --  @param Target_Dir  Project root whose obj/gnatprove artefacts are read.
+   procedure Report_Coverage (Target_Dir : String);
+
    --  Print a non-mutating toolchain and platform report for the `adacovex
    --  status` subcommand. It checks, in order, whether:
    --    * Alire (`alr`) is installed on $PATH.

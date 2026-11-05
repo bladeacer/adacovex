@@ -471,7 +471,21 @@ package body Adacovex.Timezones is
       OK := False;
    end Parse;
 
+   --  The default timezone adacovex uses: UTC+0. Timestamps are stored as
+   --  UTC+0 unless the user opts into the local timezone with --tz=local.
    function Default return Timezone_Info is
+      Info : Timezone_Info;
+   begin
+      Set_Display (Info, UTC_Offset_Display (0), 0, Named => False);
+      return Info;
+   end Default;
+
+   --  The operating system's configured local timezone, honoured only when
+   --  the user opts in with --tz=local. Reads the TZ environment variable
+   --  when that variable names a supported zone or carries a fixed UTC/GMT
+   --  offset; otherwise uses the operating system's timezone offset via
+   --  Ada.Calendar.Time_Zones.UTC_Time_Offset.
+   function Default_Local return Timezone_Info is
       pragma Warnings (Off, "no Global contract available");
       TZ   : constant String :=
         (if Ada.Environment_Variables.Exists ("TZ")
@@ -490,9 +504,8 @@ package body Adacovex.Timezones is
       --  No explicit TZ override: honour the operating system's configured
       --  zone. Ada.Calendar.Time_Zones.UTC_Time_Offset returns the current
       --  local-time offset in minutes (it honours the TZ variable and the
-      --  system timezone), so the default is always the operator's wall-clock
-      --  zone. The env-var read above is the only non-SPARK construct; its
-      --  Global-contract absence is suppressed, matching
+      --  system timezone). The env-var read above is the only non-SPARK
+      --  construct; its Global-contract absence is suppressed, matching
       --  CPUs.Get_Temp_Directory.
       declare
          Off : constant Integer :=
@@ -501,7 +514,34 @@ package body Adacovex.Timezones is
          Set_Display (Info, UTC_Offset_Display (Off), Off, Named => False);
       end;
       return Info;
-   end Default;
+   end Default_Local;
+
+   --  True when Spec names the local-timezone opt-in ("local", matched
+   --  case-insensitively, surrounding whitespace ignored).
+   function Is_Local_Spec (Spec : String) return Boolean is
+      F : Integer := Spec'First;
+      L : Integer := Spec'Last;
+   begin
+      while F <= L and then Spec (F) = ' ' loop
+         F := F + 1;
+      end loop;
+      while L >= F and then Spec (L) = ' ' loop
+         L := L - 1;
+      end loop;
+      if F > L then
+         return False;
+      end if;
+      --  Case-insensitive comparison against "local".
+      if (L - F + 1) = 5 then
+         return
+           To_Lower (Spec (F)) = 'l'
+           and then To_Lower (Spec (F + 1)) = 'o'
+           and then To_Lower (Spec (F + 2)) = 'c'
+           and then To_Lower (Spec (F + 3)) = 'a'
+           and then To_Lower (Spec (F + 4)) = 'l';
+      end if;
+      return False;
+   end Is_Local_Spec;
 
    procedure Append_Int
      (Buf   : in out String;

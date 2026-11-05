@@ -190,6 +190,12 @@ end record;
 | `Sets` | Comma-separated suppression-set names. Empty selects the |
 | `Stats` | Counts gathered during the pass. |
 
+### procedure Report_Coverage (Target_Dir : Standard.String)
+
+| Parameter | Description |
+|-----------|-------------|
+| `Target_Dir` | Project root whose obj/gnatprove artefacts are read. |
+
 ### procedure Resolve_GNATprove (Target_Dir : Standard.String; Pinned_Version : Standard.String; Exe_Path : Standard.String; Exe_Len : Standard.Natural; Toolchain_Dir : Standard.String; Dir_Len : Standard.Natural; Identity : Standard.String; Ident_Len : Standard.Natural; Success : Standard.Boolean)
 
 | Parameter | Description |

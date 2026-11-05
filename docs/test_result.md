@@ -15,7 +15,7 @@
   | VCS support                              |  37 | PASS     |
   | Server routing                           |  183 | PASS     |
   | Proof patches                            |  35 | PASS     |
-  | Timezone + ANSI                          |  63 | PASS     |
+  | Timezone + ANSI                          |  73 | PASS     |
   | Complexity check                         |  20 | PASS     |
   | Opt-out markers                          |  20 | PASS     |
   | Dir cache                                |  29 | PASS     |
@@ -31,4 +31,4 @@
   | tldr installer                           |  48 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 2133  Failed: 0
+  Passed: 2143  Failed: 0

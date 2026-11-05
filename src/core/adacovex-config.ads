@@ -44,10 +44,12 @@ package Adacovex.Config is
       Serve_Watch     : Boolean := True;
       Serve_Watch_Set : Boolean := False;
 
-      --  Display timezone override (--tz / --timezone). Empty means the
-      --  operating system's timezone applies. Accepted forms: a well-known
-      --  IANA name ("Asia/Singapore") or a fixed UTC/GMT offset
-      --  ("UTC+8", "GMT+8", "UTC+08", "GMT+08", "UTC+08:30"). See
+      --  Display timezone override (--tz / --timezone). Empty means UTC+0
+      --  (timestamps are stored as UTC+0 by default). --tz=local opts into
+      --  the operating system's local timezone for this invocation.
+      --  Accepted forms: a well-known IANA name ("Asia/Singapore"), a fixed
+      --  UTC/GMT offset ("UTC+8", "GMT+8", "UTC+08", "GMT+08", "UTC+08:30"),
+      --  or "local" for the operator's wall-clock zone. See
       --  Adacovex.Timezones. Consumed by `status` and the local
       --  date/time reports.
       Time_Zone     : String (1 .. Types.Max_Filename);

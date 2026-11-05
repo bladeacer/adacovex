@@ -1,9 +1,10 @@
 --  Timezone resolution and local-time formatting for adacovex.
 --
---  adacovex respects the operating system's timezone by default. Users can
---  override it for a single invocation with --tz / --timezone. Accepted
---  forms are a well-known IANA zone name (for example "Asia/Singapore") or a
---  fixed UTC/GMT offset ("UTC+8", "GMT+8", "UTC+08", "GMT+08", "UTC+08:30").
+--  adacovex stores timestamps as UTC+0 by default. Users can opt into the
+--  operating system's local timezone for a single invocation with
+--  --tz=local (or --timezone=local). Other accepted forms are a well-known
+--  IANA zone name (for example "Asia/Singapore") or a fixed UTC/GMT offset
+--  ("UTC+8", "GMT+8", "UTC+08", "GMT+08", "UTC+08:30").
 --
 --  The crate has no library dependencies, so it ships no timezone database.
 --  A named zone resolves from a built-in table of common IANA names and
@@ -13,8 +14,7 @@
 --  DST-correct current offset; the table offset is the fallback when the
 --  probe is unavailable. The system default offset comes from the standard
 --  Ada runtime (Ada.Calendar.Time_Zones.UTC_Time_Offset), which honours the
---  TZ environment variable and the operating system's local timezone, so
---  the default is always the operator's wall-clock timezone.
+--  TZ environment variable and the operating system's local timezone.
 --  HLR-TZ: Timezone resolution and local-time formatting
 
 package Adacovex.Timezones is
@@ -35,15 +35,32 @@ package Adacovex.Timezones is
       Result_Valid : Boolean := True;
    end record;
 
-   --  Resolve the timezone adacovex uses. It honours an explicit TZ
-   --  environment variable when that variable names a supported zone or
-   --  carries a fixed UTC/GMT offset; otherwise it uses the operating
-   --  system's timezone offset via Ada.Calendar.Time_Zones.UTC_Time_Offset.
-   --  @return The effective timezone (nil display on failure).
-   function Default
-      return Timezone_Info;   --  Parse a user-supplied --tz / --timezone value. Supported forms:
+   --  The default timezone adacovex uses: UTC+0. Timestamps are stored as
+   --  UTC+0 unless the user opts into the local timezone with --tz=local.
+   --  @return The UTC+0 timezone (Result_Valid is True).
+   function Default return Timezone_Info;
+
+   --  The operating system's configured local timezone, honoured only when
+   --  the user opts in with --tz=local. Reads the TZ environment variable
+   --  when that variable names a supported zone or carries a fixed UTC/GMT
+   --  offset; otherwise uses the operating system's timezone offset via
+   --  Ada.Calendar.Time_Zones.UTC_Time_Offset.
+   --  @return The effective local timezone (nil display on failure).
+   function Default_Local return Timezone_Info;
+
+   --  True when Spec names the local-timezone opt-in ("local", matched
+   --  case-insensitively, surrounding whitespace ignored). Such a spec is not
+   --  parsed by Parse; instead Effective_TZ / the caller resolves the OS
+   --  local zone via Default_Local.
+   --  @param Spec  The raw --tz / --timezone value to test.
+   --  @return True when Spec is the local opt-in keyword.
+   function Is_Local_Spec (Spec : String) return Boolean;
+
+   --  Parse a user-supplied --tz / --timezone value. Supported forms:
    --    * a named IANA zone ("Asia/Singapore", "Europe/London", "UTC", ...)
    --    * a fixed offset ("UTC+8", "GMT+8", "UTC+08:30", "UTC-5", ...)
+   --  The local opt-in ("local") is not a valid parse spec; callers detect it
+   --  with Is_Local_Spec and resolve the OS zone via Default_Local.
    --  A named zone resolves from the built-in table first; a zone that may
    --  observe DST, or one the table lacks, is probed against the platform
    --  tzdata for the current offset. On success OK is True and Info holds

@@ -154,16 +154,54 @@ package body Adacovex_TZ_ANSI_Tests is
             "Now_Text reports unknown for an invalid zone");
       end;
 
-      --  The OS default always resolves to a valid zone within range.
+      --  The default timezone is UTC+0: timestamps are stored as UTC+0
+      --  unless the user opts into the local zone with --tz=local.
       declare
          D : constant Adacovex.Timezones.Timezone_Info :=
            Adacovex.Timezones.Default;
       begin
-         R.Check (D.Result_Valid, "OS default zone is valid");
+         R.Check (D.Result_Valid, "default UTC+0 zone is valid");
+         R.Check (D.Offset_Secs = 0, "default offset is UTC+0");
          R.Check
-           (D.Offset_Secs >= -50400 and then D.Offset_Secs <= 50400,
+           (D.Display (1 .. D.Display_Len) = "UTC+00:00",
+            "default displays UTC+00:00");
+      end;
+
+      --  Default_Local resolves the operating system's configured zone, the
+      --  value used only when the user opts in with --tz=local.
+      declare
+         L : constant Adacovex.Timezones.Timezone_Info :=
+           Adacovex.Timezones.Default_Local;
+      begin
+         R.Check (L.Result_Valid, "OS default zone is valid");
+         R.Check
+           (L.Offset_Secs >= -50400 and then L.Offset_Secs <= 50400,
             "OS default offset is within UTC-14:00 .. UTC+14:00");
       end;
+
+      --  Is_Local_Spec recognises the --tz=local opt-in, case-insensitively,
+      --  with surrounding whitespace ignored; it rejects every other spec.
+      R.Check
+        (Adacovex.Timezones.Is_Local_Spec ("local"),
+         "Is_Local_Spec: 'local' is the local opt-in");
+      R.Check
+        (Adacovex.Timezones.Is_Local_Spec ("LOCAL"),
+         "Is_Local_Spec: 'LOCAL' is the local opt-in");
+      R.Check
+        (Adacovex.Timezones.Is_Local_Spec ("  Local  "),
+         "Is_Local_Spec: padded ' Local ' is the local opt-in");
+      R.Check
+        (not Adacovex.Timezones.Is_Local_Spec ("UTC"),
+         "Is_Local_Spec: 'UTC' is not the local opt-in");
+      R.Check
+        (not Adacovex.Timezones.Is_Local_Spec ("Asia/Singapore"),
+         "Is_Local_Spec: an IANA name is not the local opt-in");
+      R.Check
+        (not Adacovex.Timezones.Is_Local_Spec ("UTC+8"),
+         "Is_Local_Spec: a fixed offset is not the local opt-in");
+      R.Check
+        (not Adacovex.Timezones.Is_Local_Spec (""),
+         "Is_Local_Spec: an empty spec is not the local opt-in");
 
       --  ANSI colour gating: the pure decision function is off under CI,
       --  NO_COLOR, or TERM=dumb, and on otherwise. This is deterministic

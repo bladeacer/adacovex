@@ -61,10 +61,12 @@ See [Web dashboard](dashboard.md).
 
 ### `--tz=ZONE` / `--timezone=ZONE`
 
-Display timezone for the status report. Accepts a well-known IANA name
-(for example `Asia/Singapore`) or a fixed UTC/GMT offset (`UTC+8`, `GMT+8`,
-`UTC+08`, `GMT+08`, `UTC+08:30`). Without it adacovex uses the operating
-system's timezone.
+Display timezone for the status report. adacovex stores timestamps as
+`UTC+00:00` by default. Without the flag, or with `--tz=UTC` / `--tz=GMT+0`,
+the report shows `UTC+00:00`. Use `--tz=local` to opt into the operating
+system's wall-clock timezone for this invocation. Other accepted forms are a
+well-known IANA name (for example `Asia/Singapore`) or a fixed UTC/GMT offset
+(`UTC+8`, `GMT+8`, `UTC+08`, `GMT+08`, `UTC+08:30`).
 
 A named zone resolves from a built-in table of common IANA names. A zone
 that may observe daylight saving time, or one the table lacks, is probed
@@ -72,6 +74,9 @@ against the platform tzdata (`zdump` + `date +%z`) for the DST-correct
 current offset, with the table as the fallback when the probe is
 unavailable. Values are matched case-insensitively, and a bad value fails
 loudly.
+
+All timezone behaviour (default `UTC+0`, the `--tz=local` opt-in, named
+zones, and fixed offsets) is described in this section.
 
 ### Excluding files and directories
 
@@ -166,7 +171,7 @@ criteria. They are off by default. When set, the assessment fails loudly
 target does not meet the required level:
 
 ```bash
-adacovex --target=. --spark=Gold --docstrs=100 --require-tests=2133 -r 100
+adacovex --target=. --spark=Gold --docstrs=100 --require-tests=2143 -r 100
 ```
 
 - `require-spark` (alias `--spark`) compares the honest assessed SPARK level
