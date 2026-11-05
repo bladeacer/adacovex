@@ -5,6 +5,7 @@ adacovex is a zero-dependency CLI. Its hot path is the assessment pipeline
 render, plus the SBOM). This page defines the benchmark categories and the
 expected numbers on a typical machine.
 
+The user-facing results summary is on [Performance and benchmarks](../../usage/performance.md).
 The benchmark how-to is on [Benchmarking](benchmarks.md), with the
 [pipeline and prove timings](benchmarks-timings.md), the [binary size and
 the bundled manual](benchmarks-binary-size.md), and the [server
@@ -13,6 +14,8 @@ per-release `just prove` timings, grouped into phases, are on [Prove timing
 and the optimisation review](prove-timing.md); the reverse-chronological
 record of the work behind the numbers is on [Performance optimisation
 history](optimisation-history.md).
+The `just check` orchestration, its timing table, and the sequential-gate
+decision are on [The `just check` pipeline](check-pipeline.md).
 
 ## Benchmark category reference
 

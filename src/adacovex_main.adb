@@ -606,28 +606,33 @@ begin
    if Cfg.Init_Mode then
       declare
          Dir  : constant String := Target (1 .. TLen);
-         Path : constant String := Dir & "/" & Adacovex.Config.Config_File_Name;
+         Path : constant String :=
+           Dir & "/" & Adacovex.Config.Config_File_Name;
       begin
          if not Scaffold_Allowed then
             Ada.Text_IO.Put_Line
               ("init: project scaffolding is disabled by [init] scaffold = false"
-               & " in " & Adacovex.Paths.Config_Root & "/"
+               & " in "
+               & Adacovex.Paths.Config_Root
+               & "/"
                & Adacovex.Config.Config_File_Name);
             Ada.Command_Line.Set_Exit_Status (0);
             return;
          end if;
-         case Adacovex.Config.Write_Sample_Project_File
-           (Dir, Cfg.Man_Force)
-         is
+         case Adacovex.Config.Write_Sample_Project_File (Dir, Cfg.Man_Force) is
             when Adacovex.Config.Scaffold_Created =>
                Ada.Text_IO.Put_Line ("init: created " & Path);
                Ada.Command_Line.Set_Exit_Status (0);
-            when Adacovex.Config.Scaffold_Exists =>
+
+            when Adacovex.Config.Scaffold_Exists  =>
                Ada.Text_IO.Put_Line
-                 ("init: " & Path & " already exists"
+                 ("init: "
+                  & Path
+                  & " already exists"
                   & " (use --force to overwrite)");
                Ada.Command_Line.Set_Exit_Status (1);
-            when Adacovex.Config.Scaffold_Failed =>
+
+            when Adacovex.Config.Scaffold_Failed  =>
                Ada.Text_IO.Put_Line
                  (Ada.Text_IO.Standard_Error,
                   "Error: could not write " & Path);
@@ -1515,6 +1520,7 @@ begin
       begin
          State.Port := Cfg.Port;
          State.Workers := Cfg.Serve_Workers;
+         State.Watching := Cfg.Serve_Watch;
          State.Doc_Metrics := Doc_Metrics;
          State.Proof := Proof;
          State.Tests := Tests;

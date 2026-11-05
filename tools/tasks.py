@@ -60,8 +60,17 @@ def adacovex(*args: str) -> int:
     return run([str(exe), *args])
 
 
+_BUILD_DONE = False
+
+
 def task_build() -> int:
-    return py("tools/build.py")
+    """Build once per process; later gates reuse the built tree."""
+    global _BUILD_DONE
+    if _BUILD_DONE:
+        return 0
+    rc = py("tools/build.py")
+    _BUILD_DONE = rc == 0
+    return rc
 
 
 def task_man() -> int:
@@ -594,9 +603,12 @@ def task_check() -> int:
     Only failures set the exit code, so one broken gate no longer hides
     the state of the rest of the tree.
     """
+    from time import perf_counter
+
     passed: List[str] = []
     failed: List[Tuple[str, int]] = []
     skipped: List[Tuple[str, str]] = []
+    timings: List[Tuple[str, float, int]] = []
     for label, action, preflight in CHECK_GATES:
         print(f"=== Quality gate: {label} ===")
         reason = preflight() if preflight is not None else None
@@ -604,7 +616,9 @@ def task_check() -> int:
             print(f"--- SKIP: {label}: {reason} ---")
             skipped.append((label, reason))
             continue
+        started = perf_counter()
         rc = action()
+        timings.append((label, perf_counter() - started, rc))
         if rc == 0:
             passed.append(label)
         else:
@@ -618,6 +632,13 @@ def task_check() -> int:
         print(f"  SKIP  {label}: {reason}")
     for label, rc in failed:
         print(f"  FAIL  {label} (exit {rc})")
+    print("")
+    print("=== Gate timings (seconds, slowest first) ===")
+    for label, seconds, gate_rc in sorted(
+            timings, key=lambda entry: entry[1], reverse=True):
+        suffix = "  (FAIL)" if gate_rc else ""
+        print(f"  {seconds:7.2f}  {label}{suffix}")
+    print(f"  {sum(entry[1] for entry in timings):7.2f}  total (sequential)")
     print("")
     if failed:
         print(f"{len(failed)} of {len(CHECK_GATES)} gate(s) failed.")

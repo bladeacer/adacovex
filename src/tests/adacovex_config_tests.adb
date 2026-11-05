@@ -975,6 +975,41 @@ package body Adacovex_Config_Tests is
            (Cfg.Serve_Workers_Set, "--serve-workers marks the field as set");
       end;
 
+      --  Watch is on by default for serve, --no-watch turns it off, and
+      --  --watch states the default explicitly. Either form outside serve
+      --  is an error, like --serve-workers.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--no-watch");
+         Cfg := Testing.Parse_All (A);
+         R.Check (Cfg.CLI_Error, "--no-watch without --serve is an error");
+      end;
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--serve");
+         Cfg := Testing.Parse_All (A);
+         R.Check
+           (not Cfg.CLI_Error and then Cfg.Serve_Watch,
+            "serve watches by default");
+      end;
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--serve");
+         Add (A, "--no-watch");
+         Cfg := Testing.Parse_All (A);
+         R.Check
+           (not Cfg.CLI_Error
+            and then not Cfg.Serve_Watch
+            and then Cfg.Serve_Watch_Set,
+            "--no-watch turns serve watch off");
+      end;
+
       --  --serve-workers rejects a non-positive value.
       declare
          Cfg : CLI_Config;

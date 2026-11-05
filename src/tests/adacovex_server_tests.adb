@@ -378,7 +378,12 @@ package body Adacovex_Server_Tests is
         (Route ("/api/endpoints") = Route_API_Endpoints,
          "endpoints catalog route");
       R.Check (Route ("/api/info") = Route_API_Info, "server info API route");
+      R.Check (Route ("/api/watch") = Route_API_Watch, "watch API route");
       R.Check (Route ("/health") = Route_Health, "health probe route");
+      R.Check
+        (Adacovex.Server.HTTP.Render_Watch_JSON (True, 3)
+         = "{""watching"": true, ""generation"": 3}",
+         "watch payload names the generation");
 
       --  Route_Path is the inverse of Route for every kind, so the counter
       --  table and the /api/info payload can name each bucket with the path
@@ -417,6 +422,9 @@ package body Adacovex_Server_Tests is
       R.Check
         (Route (Route_Path (Route_API_Info)) = Route_API_Info,
          "server info API path round trip");
+      R.Check
+        (Route (Route_Path (Route_API_Watch)) = Route_API_Watch,
+         "watch API path round trip");
       R.Check
         (Route (Route_Path (Route_Health)) = Route_Health,
          "health probe path round trip");

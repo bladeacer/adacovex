@@ -5,6 +5,7 @@ with GNAT.Sockets;
 with Adacovex.Docs_Template;
 with Adacovex.Renderers.SVG;
 with Adacovex.Renderers.HTML;
+with Adacovex.Parsers.Source;
 
 package body Adacovex.Server.HTTP is
 
@@ -66,6 +67,100 @@ package body Adacovex.Server.HTTP is
                else Natural (Seconds)));
       end Snapshot;
    end Counter_Store;
+
+   --  Fresh document metrics and packages, published by the watch task.
+   --  The dashboard and /api/metrics take a copy under the lock, so a
+   --  refresh never tears a response. Generation moves only when a scan
+   --  finds a different documented/total count, so a poll of an unchanged
+   --  tree does not reload the page.
+   protected Watch_Store is
+      procedure Publish
+        (M : Types.Docstring_Metrics;
+         P : Types.Implementation.Package_Vectors.Vector);
+      function Metrics return Types.Docstring_Metrics;
+      function Packages return Types.Implementation.Package_Vectors.Vector;
+      function Generation return Natural;
+   private
+      Current_Metrics  : Types.Docstring_Metrics := (others => <>);
+      Current_Packages : Types.Implementation.Package_Vectors.Vector;
+      Current_Gen      : Natural := 0;
+   end Watch_Store;
+
+   protected body Watch_Store is
+      procedure Publish
+        (M : Types.Docstring_Metrics;
+         P : Types.Implementation.Package_Vectors.Vector) is
+      begin
+         Current_Metrics := M;
+         Current_Packages := P;
+         if Current_Gen < Natural'Last then
+            Current_Gen := Current_Gen + 1;
+         end if;
+      end Publish;
+
+      function Metrics return Types.Docstring_Metrics is
+      begin
+         return Current_Metrics;
+      end Metrics;
+
+      function Packages return Types.Implementation.Package_Vectors.Vector is
+      begin
+         return Current_Packages;
+      end Packages;
+
+      function Generation return Natural is
+      begin
+         return Current_Gen;
+      end Generation;
+   end Watch_Store;
+
+   function Watch_Generation return Natural is
+   begin
+      return Watch_Store.Generation;
+   end Watch_Generation;
+
+   --  Rescan the target and publish the metrics when they changed. The
+   --  server's main loop calls this every two seconds; request handlers
+   --  only read the protected store, so a scan never blocks a response.
+   procedure Scan_Once (State : Server_State) is
+      Pkgs    : Types.Implementation.Package_Vectors.Vector;
+      Skipped : Natural;
+      Hits    : Natural;
+      Misses  : Natural;
+      M       : Types.Docstring_Metrics;
+      Prev    : Types.Docstring_Metrics;
+   begin
+      if not State.Watching then
+         return;
+      end if;
+      begin
+         Adacovex.Parsers.Source.Scan_Project_Cached
+           (To_String (State.Target_Path), "", Pkgs, Skipped, Hits, Misses);
+         Adacovex.Parsers.Source.Apply_Patches
+           (To_String (State.Target_Path), Pkgs);
+         M := Adacovex.Parsers.Source.Compute_Docstring_Metrics (Pkgs);
+         Prev := Watch_Store.Metrics;
+         if M.Documented_Subprogs /= Prev.Documented_Subprogs
+           or else M.Total_Subprograms /= Prev.Total_Subprograms
+         then
+            Watch_Store.Publish (M, Pkgs);
+         end if;
+      exception
+         when others =>
+            null;
+      end;
+   end Scan_Once;
+
+   function Render_Watch_JSON
+     (Watching : Boolean; Generation : Natural) return String is
+   begin
+      return
+        "{""watching"": "
+        & (if Watching then "true" else "false")
+        & ", ""generation"":"
+        & Natural'Image (Generation)
+        & "}";
+   end Render_Watch_JSON;
 
    procedure Send_Response
      (Channel      : Socket_Type;
@@ -149,6 +244,62 @@ package body Adacovex.Server.HTTP is
       end loop;
       return True;
    end Is_Header;
+
+   --  Poll the target every two seconds and publish fresh document metrics
+   --  when they change. The scan uses the result cache, so an unchanged
+   --  tree costs one content hash per spec file. The task lives for the
+   --  server's life; it starts only when watch mode is on.
+   task type Watcher is
+      entry Start (Target : String);
+   end Watcher;
+
+   task body Watcher is
+      Target_Dir : String (1 .. Types.Max_Path);
+      Target_Len : Natural := 0;
+      Pkgs       : Types.Implementation.Package_Vectors.Vector;
+      Skipped    : Natural;
+      Hits       : Natural;
+      Misses     : Natural;
+      M          : Types.Docstring_Metrics;
+      Prev_Doc   : Natural := Natural'Last;
+      Prev_Total : Natural := Natural'Last;
+   begin
+      accept Start (Target : String) do
+         Target_Len := Natural'Min (Target'Length, Target_Dir'Length);
+         Target_Dir (1 .. Target_Len) :=
+           Target (Target'First .. Target'First + Target_Len - 1);
+      end Start;
+      Ada.Text_IO.Put_Line
+        (Ada.Text_IO.Standard_Error,
+         "watch: started on " & Target_Dir (1 .. Target_Len));
+      loop
+         begin
+            Pkgs.Clear;
+            Adacovex.Parsers.Source.Scan_Project_Cached
+              (Target_Dir (1 .. Target_Len), "", Pkgs, Skipped, Hits, Misses);
+            Adacovex.Parsers.Source.Apply_Patches
+              (Target_Dir (1 .. Target_Len), Pkgs);
+            M := Adacovex.Parsers.Source.Compute_Docstring_Metrics (Pkgs);
+            Ada.Text_IO.Put_Line
+              (Ada.Text_IO.Standard_Error,
+               "watch: scan " & Natural'Image (M.Total_Subprograms));
+            if M.Documented_Subprogs /= Prev_Doc
+              or else M.Total_Subprograms /= Prev_Total
+            then
+               Watch_Store.Publish (M, Pkgs);
+               Prev_Doc := M.Documented_Subprogs;
+               Prev_Total := M.Total_Subprograms;
+            end if;
+         exception
+            when E : others =>
+               Ada.Text_IO.Put_Line
+                 (Ada.Text_IO.Standard_Error,
+                  "watch: scan failed: "
+                  & Ada.Exceptions.Exception_Message (E));
+         end;
+         delay 2.0;
+      end loop;
+   end Watcher;
 
    procedure Start (State : Server_State) is
       Listener : Socket_Type;
@@ -256,8 +407,17 @@ package body Adacovex.Server.HTTP is
          Workers (I).Start;
       end loop;
 
+      if State.Watching then
+         --  Publish the starting metrics first, so the first /api/watch
+         --  request already carries the generation of a served assessment.
+         Watch_Store.Publish (State.Doc_Metrics, State.Packages);
+      end if;
+
       while Running loop
-         delay 1.0;
+         delay 2.0;
+         if State.Watching then
+            Scan_Once (State);
+         end if;
       end loop;
 
       Close_Socket (Listener);
@@ -690,19 +850,25 @@ package body Adacovex.Server.HTTP is
    procedure Handle_Request
      (Channel : Socket_Type; State : Server_State; Keep_Alive : out Boolean)
    is
-      Reader    : Line_Reader := (Channel => Channel, others => <>);
-      LineBuf   : String (1 .. 4096);
-      Last      : Natural := 0;
-      Is_KA     : Boolean;
-      CLen      : Natural := 0;
-      Path      : String (1 .. 2048);
-      Path_Len  : Natural := 0;
+      Reader     : Line_Reader := (Channel => Channel, others => <>);
+      LineBuf    : String (1 .. 4096);
+      Last       : Natural := 0;
+      Is_KA      : Boolean;
+      CLen       : Natural := 0;
+      Path       : String (1 .. 2048);
+      Path_Len   : Natural := 0;
       --  Resolved once per request: the route, the docs asset it needs
       --  (when the path is a docs asset), and whether the response is a
       --  404. The counter reads them before the case dispatches.
-      RK        : Route_Kind := Route_Not_Found;
-      Docs_Idx  : Natural := 0;
-      Docs_Miss : Boolean := False;
+      RK         : Route_Kind := Route_Not_Found;
+      Docs_Idx   : Natural := 0;
+      Docs_Miss  : Boolean := False;
+      --  The document metrics this response renders. Watch mode replaces
+      --  them with the latest published scan; otherwise they are the
+      --  starting assessment's values.
+      D_Metrics  : Types.Docstring_Metrics := State.Doc_Metrics;
+      D_Packages : Types.Implementation.Package_Vectors.Vector :=
+        State.Packages;
    begin
       --  The request line: METHOD SP PATH SP HTTP/x.x CRLF. An empty line
       --  (EOF, receive timeout, or an over-long line) closes the socket.
@@ -836,6 +1002,17 @@ package body Adacovex.Server.HTTP is
       end;
       Counters.Note_Route (RK, not (RK = Route_Not_Found or else Docs_Miss));
 
+      --  Watch mode: serve the latest source metrics, so an edit shows up on
+      --  the next request. Only the document and package metrics refresh;
+      --  proof, test, and compliance results still come from the starting
+      --  run, because those artefacts only change on a real prove/test run.
+      if State.Watching and then RK = Route_Dashboard then
+         D_Metrics := Watch_Store.Metrics;
+         D_Packages := Watch_Store.Packages;
+      elsif State.Watching and then RK = Route_API_Metrics then
+         D_Metrics := Watch_Store.Metrics;
+      end if;
+
       case RK is
          when Route_Dashboard      =>
             Send_Response
@@ -843,11 +1020,11 @@ package body Adacovex.Server.HTTP is
                "200 OK",
                "text/html",
                Adacovex.Renderers.HTML.Render_Dashboard
-                 (State.Doc_Metrics,
+                 (D_Metrics,
                   State.Proof,
                   State.Tests,
                   State.DAL_Assess,
-                  State.Packages,
+                  D_Packages,
                   State.Graph,
                   State.All_Standards,
                   State.Theme,
@@ -905,7 +1082,7 @@ package body Adacovex.Server.HTTP is
                "200 OK",
                "application/json",
                Adacovex.Renderers.HTML.Render_Metrics_JSON
-                 (State.Doc_Metrics,
+                 (D_Metrics,
                   State.Proof,
                   State.Tests,
                   State.DAL_Assess,
@@ -957,6 +1134,14 @@ package body Adacovex.Server.HTTP is
                   State.Cache_Hits,
                   State.Cache_Misses,
                   State.Assessment_MS),
+               Is_KA);
+
+         when Route_API_Watch      =>
+            Send_Response
+              (Channel,
+               "200 OK",
+               "application/json",
+               Render_Watch_JSON (State.Watching, Watch_Store.Generation),
                Is_KA);
 
          when Route_Health         =>

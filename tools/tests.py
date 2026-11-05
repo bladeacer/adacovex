@@ -1305,7 +1305,7 @@ class TestGenDashboard(unittest.TestCase):
         for placeholder in gen_dashboard.MODULES:
             self.assertNotIn(placeholder, page)
         scripts = re.findall(r"<script>(.*?)</script>", page, re.S)
-        self.assertEqual(len(scripts), 12)
+        self.assertEqual(len(scripts), 13)
 
 
 gen_tldr = importlib.import_module("gen-tldr")

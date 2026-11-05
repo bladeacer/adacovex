@@ -1,7 +1,7 @@
 # CLI flag details: serving, CI, and tool options
 
 This page details the serving flags (`--serve`, `--theme`, `--port`,
-`--serve-workers`, `--tz`), the subcommands with flags of their own
+`--serve-workers`, `--watch`/`--no-watch`, `--tz`), the subcommands with flags of their own
 (`completion`, `man`), the CI threshold gates (`--require-*`), result caching,
 `--verbose`, and `--help`. The flag summary table and worked examples are on
 the [CLI reference](cli-reference.md); the assessment flags and subcommands
@@ -41,6 +41,23 @@ machine is not over-subscribed and a large one does not spawn an excessive
 pool. Raise it to handle more concurrent dashboard requests, or lower it to
 use less memory. It must be a valid `Positive` integer and only works with
 `--serve`.
+
+### `--watch` / `--no-watch`
+
+Watch mode for `--serve`, **on by default**. The server rescans the target
+every two seconds through the result cache and publishes fresh document and
+package metrics. The dashboard polls `GET /api/watch` and reloads when the
+generation changes, so an edit shows on the next refresh.
+
+`--no-watch` turns the polling off and serves the metrics of the starting run.
+Either form is rejected without `--serve`, like `--serve-workers`.
+
+Watch refreshes document and package metrics only. Proof, test, and compliance
+results keep the values the server started with, because those artefacts
+change only on a real `adacovex prove` or test run. The `prove` subcommand
+never watches.
+
+See [Web dashboard](dashboard.md).
 
 ### `--tz=ZONE` / `--timezone=ZONE`
 
@@ -149,7 +166,7 @@ criteria. They are off by default. When set, the assessment fails loudly
 target does not meet the required level:
 
 ```bash
-adacovex --target=. --spark=Gold --docstrs=100 --require-tests=2127 -r 100
+adacovex --target=. --spark=Gold --docstrs=100 --require-tests=2133 -r 100
 ```
 
 - `require-spark` (alias `--spark`) compares the honest assessed SPARK level

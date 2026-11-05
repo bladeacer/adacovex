@@ -73,6 +73,57 @@ false` switch. With a prover on `PATH`, the same suite checks that `[prove]
 coverage = false` hides the coverage summary and that an explicit `--coverage`
 wins over the file.
 
+### C4: `serve` watches the target and refreshes the dashboard
+
+`adacovex --serve` now watches the target by default. Every two seconds the
+server rescans through the result cache and publishes fresh document and
+package metrics. The page polls `GET /api/watch` and reloads when the
+generation moves, so an edit shows without a manual restart.
+
+`--no-watch` turns the refresh off and serves the starting metrics. `--watch`
+states the default explicitly. Either form without `--serve` is an error, like
+`--serve-workers`.
+
+Watch refreshes document and package metrics only. Proof, test, and compliance
+panels keep the starting run's values, because those artefacts change only on
+a real `adacovex prove` or test run. The `prove` subcommand never watches.
+
+The scan runs in the server's main loop, not in a worker, so a refresh never
+blocks a response. A protected store hands the latest metrics to the workers,
+and the generation moves only when the documented or total count changes.
+
+### C5: The performance material is split by audience
+
+The user-facing run times now live on one page,
+`docs/usage/performance.md`: the cold and warm pipeline shapes, the prove
+shapes, and the build no-op. It links to the contributor method instead of
+repeating it.
+
+The landing page gains a documentation map that states the job of each
+directory under `docs/`. The contributor performance index keeps the benchmark
+definitions, adds [The `just check` pipeline](../../docs/contributing/perf/check-pipeline.md),
+and points readers at the user-facing results page.
+
+### C6: `just check` builds once and reports its timings
+
+`task_build` now records a successful build in the process, so the native
+test, prove, complexity, and SBOM gates reuse it instead of running
+`alr build` again. The gates already group the native tests, the CLI
+end-to-end checks, and the prove diagnostics into one invocation each.
+
+Every `just check` run prints a gate-timing table after the summary, slowest
+first, with the sequential total. The table is the measurement to compare
+across changes; no separate run is needed.
+
+Parallel execution was explored and rejected. The gates share generated
+outputs (`sbom.json`, the version spec, the docs bundle, the badges), so
+concurrent writers race and the summary stops being deterministic. The wall
+time is dominated by build and proof, which are already single invocations.
+
+The 60-second budget is recorded as a warm-tree target. A cold proof alone
+runs 61-88 s, so a cold tree cannot meet it; the timing table makes the
+difference visible rather than hiding it.
+
 ## Fixes
 
 ### H1: rst2md keeps the docstrings it already has
@@ -105,13 +156,13 @@ procedure.
 
 ## Test Suite
 
-- 2127/2127 native tests passing across 29 categories. The native suite is
-  unchanged: this release adds no native test.
+- 2133/2133 native tests passing across 29 categories. The watch flags add
+  three configuration checks and the new route adds three server checks.
 - `tools/tests.py` grows to 202 checks with the two new `rst2md` regression
   checks (the type-body counter and the header-tag leak).
-- The CLI end-to-end suite grows to 106 checks: the `init` scaffold and the
-  configuration precedence matrix. Its prove-side pair is skipped when no
-  `gnatprove` is on `PATH`.
+- The CLI end-to-end suite grows to 110 checks: the `init` scaffold, the
+  configuration precedence matrix, and serve watch. Its prove-side checks
+  are skipped when no `gnatprove` is on `PATH`.
 
 ## Proof Results
 
@@ -139,4 +190,7 @@ existing tags:
 - `-- HLR-ARCH` (`tools/rst2md.py`, `tools/gen-docs.py`): the converter
   fixes, the test-package lookup, and the generated manual annotations;
 - `-- HLR-CLI` (`adacovex-config`): the `init` parser branch, the `[init]
-  scaffold` key, and the sample-file writer.
+  scaffold` key, the sample-file writer, and the `--watch` / `--no-watch`
+  flags;
+- `-- HLR-SERVER` (`adacovex-server-http`): the `/api/watch` route, the watch
+  payload, the protected metric store, and the two-second scan loop.

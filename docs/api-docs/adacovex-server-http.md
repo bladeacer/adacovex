@@ -125,6 +125,7 @@ Packages        : Types.Implementation.Package_Vectors.Vector;
 Graph           : Types.Implementation.Component_Vectors.Vector;
 All_Standards   : Boolean := False;
 Theme           : Types.Dashboard_Theme := Types.System_Theme;
+Watching        : Boolean := True;
 Spark_OK        : Boolean := False;
 Spark_Totals    : Types.Implementation.Spark_Coverage_Totals;
 Spark_Groups    : Types.Implementation.Spark_Group_Vectors.Vector;
@@ -154,6 +155,15 @@ end record;
 
 **Returns:** Pretty-printed JSON object (two-space indent).
 
+### function Render_Watch_JSON (Watching : Standard.Boolean; Generation : Standard.Natural) return Standard.String `[Post]` `[Global]`
+
+| Parameter | Description |
+|-----------|-------------|
+| `Generation` | Refresh counter, incremented on every change. |
+| `Watching` | True when watch mode is on. |
+
+**Returns:** JSON object on one line.
+
 ### function Route (Path : Standard.String) return Adacovex.Server.HTTP.Route_Kind `[Global]` `[SPARK]`
 
 | Parameter | Description |
@@ -177,6 +187,10 @@ end record;
 | `Path` | Request path as extracted by Get_Path. |
 
 **Returns:** The path with any query string (and fragment) removed.
+
+### function Watch_Generation return Standard.Natural
+
+**Returns:** The refresh counter.
 
 ## Procedures
 

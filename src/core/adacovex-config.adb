@@ -576,7 +576,7 @@ package body Adacovex.Config is
      & "jobs level timeout steps memlimit force no-loop-unrolling "
      & "no-inlining args suppress-warnings quiet require-spark require-docstrings "
      & "require-tests require-proof complexity export metrics help "
-     & "serve-workers tz timezone excludes skip-path "
+     & "serve-workers watch no-watch tz timezone excludes skip-path "
      & "workers svg-path md-path emit-md no-md strict diff base delta spark "
      & "docstrs tests spark-coverage group metric spark-format "
      & "min-coverage require-coverage gate-metric "
@@ -1305,6 +1305,12 @@ package body Adacovex.Config is
                               & ")");
                      end;
                      Cfg.Serve_Workers_Set := True;
+                  elsif A = "--watch" then
+                     Cfg.Serve_Watch := True;
+                     Cfg.Serve_Watch_Set := True;
+                  elsif A = "--no-watch" then
+                     Cfg.Serve_Watch := False;
+                     Cfg.Serve_Watch_Set := True;
                   elsif A = "--tz" or else A = "--timezone" then
                      I := I + 1;
                      if I <= Count then
@@ -2465,6 +2471,9 @@ package body Adacovex.Config is
             Set_Error
               (Cfg, "--serve-workers requires the serve subcommand (--serve)");
          end if;
+         if Cfg.Serve_Watch_Set and then not Cfg.Serve_Mode then
+            Set_Error (Cfg, "--watch requires the serve subcommand (--serve)");
+         end if;
 
          -- --excludes and --skip-path only make sense with the complexity
          -- subcommand; they do not work on their own (the wording in the
@@ -2916,8 +2925,7 @@ package body Adacovex.Config is
            (F,
             "# and this file overrides the global one at"
             & " <config>/adacovex.toml.");
-         Put_Line
-           (F, "# Delete the file to return to the built-in defaults.");
+         Put_Line (F, "# Delete the file to return to the built-in defaults.");
          Put_Line (F, "#");
          Put_Line
            (F,
@@ -2938,13 +2946,10 @@ package body Adacovex.Config is
          Put_Line (F, "");
          Put_Line (F, "[complexity]");
          Put_Line
-           (F,
-            "# File extensions the complexity/LOC gate skips (no dots).");
+           (F, "# File extensions the complexity/LOC gate skips (no dots).");
          Put_Line (F, "# excludes = ""md,rst""");
          Put_Line (F, "");
-         Put_Line
-           (F,
-            "# Path fragments the complexity/LOC gate skips.");
+         Put_Line (F, "# Path fragments the complexity/LOC gate skips.");
          Put_Line (F, "# skip-path = ""docs/api-docs""");
          Close (F);
       exception
@@ -2982,8 +2987,7 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line ("       adacovex status --target=PATH");
       Ada.Text_IO.Put_Line ("       adacovex man [--check] [--dir=PATH]");
       Ada.Text_IO.Put_Line ("       adacovex tldr [--check]");
-      Ada.Text_IO.Put_Line
-        ("       adacovex init [--target=PATH] [--force]");
+      Ada.Text_IO.Put_Line ("       adacovex init [--target=PATH] [--force]");
       Ada.Text_IO.Put_Line ("       adacovex complexity [--target=PATH]");
       Ada.Text_IO.Put_Line ("       adacovex spark-coverage [--target=PATH]");
       Ada.Text_IO.Put_Line ("       adacovex completion [bash|fish|zsh|pwsh]");
@@ -3050,6 +3054,12 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line
         ("                        default: 2..8 scaled to the CPU count; only");
       Ada.Text_IO.Put_Line ("                        with --serve)");
+      Ada.Text_IO.Put_Line
+        ("  --watch               Refresh the served document metrics when the");
+      Ada.Text_IO.Put_Line
+        ("                        target changes (default: on; only with --serve)");
+      Ada.Text_IO.Put_Line
+        ("  --no-watch            Turn watch mode off for this server");
       Ada.Text_IO.Put_Line
         ("  --emit-svg[=PATH]     Write SVG badges to directory (alias --svg-path;");
       Ada.Text_IO.Put_Line
@@ -3786,6 +3796,22 @@ package body Adacovex.Config is
             & "--force overwrites it.  `[init] scaffold = false` in the"
             & ASCII.LF
             & "global configuration disables the scaffold for every project.");
+      elsif T = "watch" or else T = "no-watch" or else T = "serve-workers" then
+         Print_Section
+           ("--watch / --no-watch",
+            "Refresh the served dashboard's document metrics when the"
+            & ASCII.LF
+            & "target's sources change.  Watch is on by default for"
+            & ASCII.LF
+            & "--serve; --no-watch turns it off.  Each refresh rescans the"
+            & ASCII.LF
+            & "target (with the result cache) and reloads the page when the"
+            & ASCII.LF
+            & "documented or total count changes.  Proof, test, and"
+            & ASCII.LF
+            & "compliance results keep the values of the run that started"
+            & ASCII.LF
+            & "the server.  The prove subcommand never watches.");
       elsif T = "man" or else T = "check" or else T = "dir" or else T = "force"
       then
          Print_Section

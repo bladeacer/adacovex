@@ -7,6 +7,8 @@
 
 # adacovex Documentation
 
+<!-- no-covex-docs-loc: landing page with the full navigation map, the line cap does not apply -->
+
 This page is the index for all adacovex documentation. Pick a section
 relevant to you, or read the pages in the order below.
 
@@ -14,6 +16,17 @@ relevant to you, or read the pages in the order below.
 in the sidebar, so you can reach it from every page. It states what the online
 manual records when you read it: search, traffic analytics, advertising, and
 the flyout menu.
+
+## Documentation map
+
+Each directory has one job:
+
+- `usage/` -- user guides: install, run, read results, publish in CI.
+- `contributing/` -- contributor method: architecture, proving, tools, and
+  the benchmark how-to. The per-phase proof timings live under `perf/`.
+- `api-docs/` -- generated package reference from the Ada docstrings.
+- `changelogs/`, `proof/`, `compliance/`, `badges/` -- the release record,
+  proof ledgers, compliance outputs, and badge previews.
 
 All documentation uses British English and ASD-STE100 Simplified Technical
 English. The controlled Technical Names dictionary lives in
@@ -50,6 +63,8 @@ a technical word in any doc, docstring, or changelog.
   [ISO 26262 and the ASIL levels](usage/standards-iso-26262.md),
   [IEC 62304 and the safety classes](usage/standards-iec-62304.md), and
   [Selecting a standard](usage/standards-selection.md).
+- [Performance and benchmarks](usage/performance.md) -- run times and the
+  cache shapes behind them.
 - [Platforms](usage/platforms.md) -- supported platforms and toolchain
   state.
 - [VCS support](usage/vcs.md) -- differential assessment across git, hg,
@@ -153,6 +168,7 @@ usage/ci-cd
 usage/ci-cd-action
 usage/ci-cd-workflows
 usage/ci-cd-release
+usage/performance
 changelogs/index
 ```
 
@@ -215,6 +231,7 @@ contributing/perf/benchmarks-binary-size
 contributing/perf/benchmarks-server
 contributing/perf/prove-timing
 contributing/perf/prove-rebaseline
+contributing/perf/check-pipeline
 contributing/perf/optimisation-history
 ```
 

@@ -38,6 +38,12 @@ package Adacovex.Config is
       Serve_Workers     : Positive := 4;
       Serve_Workers_Set : Boolean := False;
 
+      --  True when serve refreshes the document metrics as the target's
+      --  sources change. Watch is on by default for serve; --no-watch turns
+      --  it off, and --watch states it explicitly.
+      Serve_Watch     : Boolean := True;
+      Serve_Watch_Set : Boolean := False;
+
       --  Display timezone override (--tz / --timezone). Empty means the
       --  operating system's timezone applies. Accepted forms: a well-known
       --  IANA name ("Asia/Singapore") or a fixed UTC/GMT offset

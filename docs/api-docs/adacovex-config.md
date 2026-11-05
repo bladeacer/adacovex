@@ -25,6 +25,8 @@ Serve_Mode        : Boolean := False;
 Port              : Positive := 8080;
 Serve_Workers     : Positive := 4;
 Serve_Workers_Set : Boolean := False;
+Serve_Watch     : Boolean := True;
+Serve_Watch_Set : Boolean := False;
 Time_Zone     : String (1 .. Types.Max_Filename);
 Time_Zone_Len : Natural := 0;
 Complexity_Excludes : String (1 .. Types.Max_Filename);
@@ -178,10 +180,8 @@ Scaffold_Failed);
 
 | Parameter | Description |
 |-----------|-------------|
-| `Target_Dir` | Directory that receives adacovex.toml. |
-| `Force` | Overwrite an existing file. |
-
-**Returns:** Created, Exists (left alone), or Failed.
+| `Force` |  |
+| `Target_Dir` |  |
 
 ## Procedures
 
