@@ -574,6 +574,94 @@ def check_serve_info_health(r: Results, tmp: Path) -> None:
     )
 
 
+def check_serve_watch(r: Results, tmp: Path) -> None:
+    """Serve watches document metrics by default; --no-watch turns it off."""
+    proj = tmp / "watch-proj"
+    write_project(proj, 1)
+    base = ["serve", "-t", str(proj), "--workers=2",
+            "--no-sbom", "--no-svg", "--no-md", "--no-cache"]
+
+    def get(port: int, path: str) -> Optional[str]:
+        try:
+            with urllib.request.urlopen(
+                    f"http://127.0.0.1:{port}{path}", timeout=2) as resp:
+                return resp.read().decode("utf-8", "replace")
+        except (urllib.error.URLError, OSError, ValueError):
+            return None
+
+    port = free_port()
+    proc = subprocess.Popen(
+        [BIN] + base + ["-p", str(port)],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        cwd=str(ROOT),
+    )
+    try:
+        first: Optional[int] = None
+        for _ in range(60):
+            body = get(port, "/api/watch")
+            if body:
+                try:
+                    payload = json.loads(body)
+                except ValueError:
+                    payload = {}
+                if payload.get("watching") is True and payload.get(
+                        "generation", 0) >= 1:
+                    first = int(payload["generation"])
+                    break
+            time.sleep(0.5)
+        r.check(first is not None,
+                "serve watches by default and publishes a generation")
+
+        (proj / "src" / "p01.ads").write_text(
+            "package P01 is\n   --  Run the P01 step.\n   procedure Go;\n"
+            "end P01;\n",
+            encoding="utf-8",
+        )
+        moved: Optional[int] = None
+        for _ in range(60):
+            body = get(port, "/api/watch")
+            if body:
+                try:
+                    data = json.loads(body)
+                except ValueError:
+                    data = {}
+                if (first is not None
+                        and int(data.get("generation", 0)) > first):
+                    moved = int(data["generation"])
+                    break
+            time.sleep(0.5)
+        r.check(moved is not None,
+                "an edit advances the watch generation")
+    finally:
+        proc.terminate()
+        try:
+            proc.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait(timeout=10)
+
+    off_port = free_port()
+    off = serve_get(off_port, base + ["-p", str(off_port), "--no-watch"],
+                    "/api/watch")
+    off_payload: Optional[dict] = None
+    if off is not None:
+        try:
+            off_payload = json.loads(off)
+        except ValueError:
+            off_payload = None
+    r.check(
+        off_payload is not None and off_payload.get("watching") is False,
+        "--no-watch serves the starting metrics without polling",
+    )
+
+    bad = run(["--no-watch"])
+    r.check(
+        bad.returncode == 1
+        and "requires the serve subcommand" in bad.stderr,
+        "rejects --no-watch outside the serve subcommand",
+    )
+
+
 def check_theme_and_port(r: Results, tmp: Path) -> None:
     # An unknown theme and a missing theme value fail loudly at parse time.
     bad = run(["--theme=neon"])
@@ -867,6 +955,17 @@ def check_config_prove(r: Results, tmp: Path) -> None:
     r.check(
         shown.returncode == 0 and "coverage:" in shown.stdout,
         "an explicit --coverage wins over the project file",
+    )
+
+    #  The composite action runs `prove` with its inputs as flags. A target
+    #  repository's project file must reach that invocation too.
+    action_like = run(
+        ["prove", "-t", str(proj), "--jobs=1", "--level=0"],
+        env_extra=env, timeout=900)
+    r.check(
+        action_like.returncode == 0
+        and "coverage:" not in action_like.stdout,
+        "the composite action's prove invocation honours a project file",
     )
 
     (proj / "adacovex.toml").unlink()
@@ -1255,6 +1354,7 @@ def main() -> int:
         check_prove(r, tmp)
         check_serve_shorthands(r, tmp)
         check_serve_info_health(r, tmp)
+        check_serve_watch(r, tmp)
         check_theme_and_port(r, tmp)
         check_tldr_install(r, tmp)
     return r.report()

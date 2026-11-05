@@ -66,6 +66,8 @@ docs/contributing/perf/benchmarks-timings.md	Benchmarks: pipeline and prove timi
 docs/contributing/perf/benchmarks-binary-size.md	Benchmarks: binary size and the bundled manual
 docs/contributing/perf/benchmarks-server.md	Benchmarks: server throughput and latency
 docs/contributing/perf/prove-timing.md	Prove timing and optimisation review
+docs/contributing/perf/check-pipeline.md	The just check pipeline
+docs/usage/performance.md	Performance and benchmarks
 docs/contributing/perf/optimisation-history.md	Performance optimisation history
 docs/contributing/ir.md	gnatprove-friendly IR
 docs/proof/index.md	Proof records

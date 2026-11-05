@@ -5,7 +5,7 @@
   | Source scanner                           |  89 | PASS     |
   | GNATprove parser                         |  88 | PASS     |
   | Test-result parser                       |  50 | PASS     |
-  | CLI config                               |  378 | PASS     |
+  | CLI config                               |  381 | PASS     |
   | SVG renderer                             |  161 | PASS     |
   | HTML/Markdown renderers                  |  58 | PASS     |
   | SBOM generator                           |  366 | PASS     |
@@ -13,7 +13,7 @@
   | IR synthesis                             |  42 | PASS     |
   | Man page renderer                        |  30 | PASS     |
   | VCS support                              |  37 | PASS     |
-  | Server routing                           |  180 | PASS     |
+  | Server routing                           |  183 | PASS     |
   | Proof patches                            |  35 | PASS     |
   | Timezone + ANSI                          |  63 | PASS     |
   | Complexity check                         |  20 | PASS     |
@@ -31,4 +31,4 @@
   | tldr installer                           |  48 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 2127  Failed: 0
+  Passed: 2133  Failed: 0

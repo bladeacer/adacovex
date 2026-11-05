@@ -79,4 +79,17 @@ __STYLE_CUSTOM__
 <script>__JS_SEARCH__</script>
 <script>__JS_YACE__</script>
 <script>__JS_API__</script>
+<script>
+(function () {
+  var seen = -1;
+  function poll() {
+    fetch('/api/watch').then(function (r) { return r.json(); }).then(function (w) {
+      if (!w.watching) { return; }
+      if (seen >= 0 && w.generation !== seen) { location.reload(); return; }
+      seen = w.generation;
+    }).catch(function () {}).then(function () { setTimeout(poll, 2000); });
+  }
+  poll();
+}());
+</script>
 </body></html>

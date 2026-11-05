@@ -7184,5 +7184,34 @@ package Adacovex.Dashboard_Template is
   & ASCII.LF
   & "})();</script>"
   & ASCII.LF
+  & "<script>"
+  & ASCII.LF
+  & "(function () {"
+  & ASCII.LF
+  & "  var seen = -1;"
+  & ASCII.LF
+  & "  function poll() {"
+  & ASCII.LF
+  & "    fetch('/api/watch').then(function (r) { return r.json();"
+  & " }).then(function (w) {"
+  & ASCII.LF
+  & "      if (!w.watching) { return; }"
+  & ASCII.LF
+  & "      if (seen >= 0 && w.generation !== seen) { location.rel"
+  & "oad(); return; }"
+  & ASCII.LF
+  & "      seen = w.generation;"
+  & ASCII.LF
+  & "    }).catch(function () {}).then(function () { setTimeout(p"
+  & "oll, 2000); });"
+  & ASCII.LF
+  & "  }"
+  & ASCII.LF
+  & "  poll();"
+  & ASCII.LF
+  & "}());"
+  & ASCII.LF
+  & "</script>"
+  & ASCII.LF
   & "</body></html>";
 end Adacovex.Dashboard_Template;

@@ -109,9 +109,7 @@ package body Adacovex.Renderers.Man is
       App (Buf, Len, ".B " & Q & "adacovex tldr [--check] [--force]" & Q);
       App (Buf, Len, ".br");
       App
-        (Buf,
-         Len,
-         ".B " & Q & "adacovex init [--target=PATH] [--force]" & Q);
+        (Buf, Len, ".B " & Q & "adacovex init [--target=PATH] [--force]" & Q);
       App (Buf, Len, ".br");
       App (Buf, Len, ".B " & Q & "adacovex complexity [--target=PATH]" & Q);
       App (Buf, Len, ".br");
@@ -197,7 +195,14 @@ package body Adacovex.Renderers.Man is
                  & "server on the port (default 8080) and block.  Omit it to "
                  & "render and exit without a server.  Standard-aware: "
                  & "defaults to all standards.  Also see "
-                 & "--port/--theme/--serve-workers.";
+                 & "--port/--theme/--serve-workers/--watch.";
+            elsif Flag = "watch" or else Flag = "no-watch" then
+               return
+                 "Refresh the served document metrics when the target's "
+                 & "sources change.  On by default for --serve; --no-watch "
+                 & "turns it off.  Only document and package metrics "
+                 & "refresh; proof, test, and compliance results keep the "
+                 & "values of the starting run.";
             elsif Flag = "serve-workers" then
                return
                  "HTTP server task-pool worker count for --serve "

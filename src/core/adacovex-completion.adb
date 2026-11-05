@@ -91,11 +91,11 @@ package body Adacovex.Completion is
       Emit
         (R,
          "complete -c adacovex -n '__fish_use_subcommand' "
-         &         "-a 'sbom prove complexity spark-coverage status completion man tldr init help'");
+         & "-a 'sbom prove complexity spark-coverage status completion man tldr init help'");
       Emit
         (R,
          "complete -c covex -n '__fish_use_subcommand' "
-         &         "-a 'sbom prove complexity spark-coverage status completion man tldr init help'");
+         & "-a 'sbom prove complexity spark-coverage status completion man tldr init help'");
       Emit (R, "");
       return To_String (R);
    end Gen_Fish;

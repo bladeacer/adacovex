@@ -26,6 +26,7 @@ package Adacovex.Server.HTTP is
       Route_API_Endpoints,
       Route_API_Spark,
       Route_API_Info,
+      Route_API_Watch,
       Route_Health,
       Route_Docs,
       Route_Not_Found);
@@ -68,6 +69,8 @@ package Adacovex.Server.HTTP is
        then Route_API_Spark
        elsif Path = "/api/info"
        then Route_API_Info
+       elsif Path = "/api/watch"
+       then Route_API_Watch
        elsif Path = "/health"
        then Route_Health
        elsif Path = "/docs"
@@ -108,6 +111,8 @@ package Adacovex.Server.HTTP is
        then "/api/spark"
        elsif Kind = Route_API_Info
        then "/api/info"
+       elsif Kind = Route_API_Watch
+       then "/api/watch"
        elsif Kind = Route_Health
        then "/health"
        elsif Kind = Route_Docs
@@ -182,6 +187,9 @@ package Adacovex.Server.HTTP is
       Graph           : Types.Implementation.Component_Vectors.Vector;
       All_Standards   : Boolean := False;
       Theme           : Types.Dashboard_Theme := Types.System_Theme;
+      --  True when serve refreshes the document metrics after the target's
+      --  sources change (on by default; --no-watch turns it off).
+      Watching        : Boolean := True;
       --  SPARK proof coverage for the Proof tab panel and /api/spark.
       Spark_OK        : Boolean := False;
       Spark_Totals    : Types.Implementation.Spark_Coverage_Totals;
@@ -229,6 +237,21 @@ package Adacovex.Server.HTTP is
       Cache_Misses   : Natural;
       Assessment_MS  : Natural) return String
    with Post => Render_Info_JSON'Result'Length > 0, Global => null;
+
+   --  Render the /api/watch payload: whether the server watches the
+   --  target, and the generation of the latest document-metric refresh.
+   --  A browser polls this and reloads the page when the generation moves.
+   --  @param Watching    True when watch mode is on.
+   --  @param Generation  Refresh counter, incremented on every change.
+   --  @return JSON object on one line.
+   function Render_Watch_JSON
+     (Watching : Boolean; Generation : Natural) return String
+   with Post => Render_Watch_JSON'Result'Length > 0, Global => null;
+
+   --  The current watch generation: 0 before the first refresh. The
+   --  native suite and the /api/watch handler read it.
+   --  @return The refresh counter.
+   function Watch_Generation return Natural;
 
    --  Start the HTTP server (runs until Ctrl+C or socket error).
    --  The server creates a bounded task pool of 4 workers for concurrent

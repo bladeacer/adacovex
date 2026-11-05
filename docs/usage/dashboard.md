@@ -132,6 +132,7 @@ The same data is headlessly available at `/api/metrics` and via
 | `GET /api/endpoints` | JSON endpoint catalog (the list the API playground builds its UI from) |
 | `GET /api/spark` | JSON SPARK proof coverage: the three metrics, off classes, and per-group rollups |
 | `GET /api/info` | JSON server and run metadata: version, target, port, workers, uptime, cache counters, assessment time, and per-route request counters |
+| `GET /api/watch` | JSON watch state: `watching`, and the document-refresh `generation` the page polls |
 | `GET /health` | JSON health probe for scripts: `{"status": "ok"}` |
 | `GET /docs` | The bundled offline manual (the Sphinx manual, built into the binary) |
 | `GET /badge/spark.svg` | SPARK assurance level badge |
@@ -149,6 +150,10 @@ requests until the process is interrupted (Ctrl-C). Query strings and URL
 fragments are stripped before routing, so `/?theme=light`,
 `/api/metrics?x=1` and `/api/deps#top` reach the same handlers as `/`,
 `/api/metrics` and `/api/deps` instead of 404ing.
+
+With watch on (the default), the page polls `/api/watch` every two seconds and
+reloads when the generation moves, so source edits show up without a manual
+restart. Proof, test, and compliance panels keep the starting run's values.
 
 Scripts poll [`GET /health`](dashboard-api.md#server-info-and-health) for the
 liveness verdict and read `GET /api/info` for the counters of the running

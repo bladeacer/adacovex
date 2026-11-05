@@ -121,7 +121,7 @@ Self-assessment (`just run-self`) must always show:
   (see `docs/proof/16.1.0-ledger.md`). Platinum additionally requires full
   proof coverage, which the SPARK coverage report does not show (subprograms
   in `SPARK_Mode (Off)` units stay outside the proof)
-- 2127/2127 native tests passing
+- 2133/2133 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
   `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
@@ -258,7 +258,7 @@ src/
     |-- adacovex_cache_tests.ads/.adb         -- Result-cache tests (36)
     |-- adacovex_completion_tests.ads/.adb    -- Shell completion script tests (24)
     |-- adacovex_complexity_tests.ads/.adb    -- Complexity check tests (20)
-    |-- adacovex_config_tests.ads/.adb        -- CLI config tests (378)
+    |-- adacovex_config_tests.ads/.adb        -- CLI config tests (381)
     |-- adacovex_cpus_tests.ads/.adb          -- Host CPU and job-resolution tests (24)
     |-- adacovex_dal_tests.ads/.adb           -- DAL compliance tests (23)
     |-- adacovex_diff_tests.ads/.adb          -- Differential-report regression tests (36)
@@ -276,14 +276,14 @@ src/
     |-- adacovex_renderer_tests.ads/.adb      -- HTML/Markdown renderer tests (58)
     |-- adacovex_sbom_tests.ads/.adb          -- SBOM / manifest graph tests (366)
     |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (89)
-    |-- adacovex_server_tests.ads/.adb        -- Server routing tests (180)
+    |-- adacovex_server_tests.ads/.adb        -- Server routing tests (183)
     |-- adacovex_spark_coverage_tests.ads/.adb-- SPARK coverage report tests
     |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (50)
     |-- adacovex_tldr_tests.ads/.adb          -- tldr installer tests (48)
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (67)
     |-- adacovex_tz_ansi_tests.ads/.adb       -- Timezone + ANSI tests (63)
     |-- adacovex_vcs_tests.ads/.adb           -- VCS support tests (37)
-    `-- test_runner.adb                       -- Test suite entry point (2127 tests)
+    `-- test_runner.adb                       -- Test suite entry point (2133 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -396,6 +396,11 @@ client's cache pages tree (common plus the `linux` / `osx` / `windows` /
 `android` / `sunos` / BSD platform page).`adacovex tldr --check` exits 0 when the installed page matches the bundled one, 1 when it
 is missing or stale, and `--force` rewrites it. With no supported client the
 command prints the page to stdout.
+
+`--serve` watches the target by default (`--no-watch` turns it off): a polling
+task rescans through the result cache and republishes document and package
+metrics, and the page reloads from `GET /api/watch`. Proof, test, and
+compliance panels keep the starting run's values.
 
 `adacovex init [-t=PATH] [--force]` writes a sample `<target>/adacovex.toml`:
 every supported key at its default, with the deployed configuration guide
@@ -658,7 +663,7 @@ compatibility shim. The table names the canonical target for each task.
 | `check` | **The single everything-check / verification entry point.** Run it after any change. It runs every gate CI runs before a release, and **`fmt` is first**: gnatprove and the API docs both read the sources, so every later gate must see formatted code. Then the cheap static gates (ascii, complexity, csslint, spark-off, changelog, action-parity, docs-coverage, surface-parity, tools-check, cli-e2e, prove-e2e, version, version-consistency, doc-links, link, docs-check, para-split, tldr, book-links), then build + native tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description, requirements). Every gate runs a preflight first: a gate whose tool is missing on the host (no `alr` on `PATH`, no `gnatformat` on the developer path, a `gnatdoc` that cannot document a one-package probe project, no `sphinx` in the interpreter) is SKIPped with the reason instead of failing, the run continues past a failed gate, and the summary shows PASS/FAIL/SKIP per gate, exiting non-zero only when a gate failed. `just check` resolves `gnatprove` for you (it is fetched into `<data>/toolchain/` and executed directly when not on `PATH`), so you never have to install or point at a prover by hand -- just run `just check` and it verifies the whole tree end to end. `just prove` is the SPARK sub-gate if you only changed proof-affecting code |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
-| `test` | Build + run the 2127-test native suite |
+| `test` | Build + run the 2133-test native suite |
 | `prove` | SPARK proof at gnatprove `--level=4` (full-proof gate) + regenerates SVG badges in `docs/badges/` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
 | `book` | Build the offline manual from the Sphinx docs and regenerate `src/adacovex-docs_template.ads` (tools/gen-docs.py; incremental + verified Sphinx build, `--fresh` forces a clean one; safe to run without sphinx) |
@@ -775,7 +780,7 @@ a runner needs neither `make` nor `just`; the Ubuntu runner images ship
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `just test` | 2127/2127 passing |
+| Unit tests | `just test` | 2133/2133 passing |
 | Self-assessment | `just run-self` | 100% docs, Gold, DAL-C Achieved |
 | SPARK proof | `just prove` | Gold (1054 VCs, 0 unproved, 0 justified under gnatprove 16.1.0), verified at `--level=4` (the deepest effort; the prove subcommand forwards `--level` verbatim, so the overhead is gnatprove's own) |
 | Ada_CRDT regression | `just run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -830,7 +835,7 @@ rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 2127 tests across 29 categories).
+Native zero-dependency suite (`src/tests/`, 2133 tests across 29 categories).
 Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests).
 
@@ -950,6 +955,8 @@ suffices.
 - [Benchmarks: binary size and the bundled manual](docs/contributing/perf/benchmarks-binary-size.md)
 - [Benchmarks: server throughput and latency](docs/contributing/perf/benchmarks-server.md)
 - [Prove timing and optimisation review](docs/contributing/perf/prove-timing.md)
+- [The just check pipeline](docs/contributing/perf/check-pipeline.md)
+- [Performance and benchmarks](docs/usage/performance.md)
 - [Performance optimisation history](docs/contributing/perf/optimisation-history.md)
 - [gnatprove-friendly IR](docs/contributing/ir.md)
 - [Proof records](docs/proof/index.md)

@@ -81,6 +81,8 @@ CLI_ONLY: Dict[str, str] = {
     "man": "man subcommand (local install)",
     "tldr": "tldr subcommand (local install)",
     "init": "init subcommand (local project scaffolding; never runs in CI)",
+    "watch": "serve watch mode (local dashboard only)",
+    "no-watch": "serve watch mode (local dashboard only)",
     "check": "man --check / tldr --check (local)",
     "dir": "man --dir (local)",
     "out": "sbom --out output path (the action uploads the SBOM artifact itself)",
