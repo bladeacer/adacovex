@@ -73,11 +73,13 @@ end record;
 
 | Parameter | Description |
 |-----------|-------------|
-| `Max_File_Complexity` |  |
-| `Max_File_LOC` |  |
-| `Max_File_Pct` |  |
-| `Max_Fn_Complexity` |  |
-| `Result` |  |
+| `Max_File_Complexity` | Maximum file-level complexity (0 disables the gate). |
+| `Max_File_LOC` | Maximum code lines per file (0 disables the gate). |
+| `Max_File_Pct` | Maximum file share of the tree code lines (0 disables the gate). |
+| `Max_Fn_Complexity` | Maximum cyclomatic complexity per subprogram (0 disables the gate). |
+| `Result` | Aggregate metrics to evaluate. |
+
+**Returns:** One violation per unmet threshold.
 
 ## Procedures
 
@@ -85,10 +87,10 @@ end record;
 
 | Parameter | Description |
 |-----------|-------------|
-| `Check_Mode` |  |
-| `Max_File_Complexity` |  |
-| `Max_File_LOC` |  |
-| `Max_File_Pct` |  |
-| `Max_Fn_Complexity` |  |
-| `Result` |  |
-| `Violations` |  |
+| `Check_Mode` | Print only when Violations is not empty. |
+| `Max_File_Complexity` | Configured per-file complexity cap (0 disables the gate). |
+| `Max_File_LOC` | Configured per-file LOC cap (0 disables the gate). |
+| `Max_File_Pct` | Configured per-file share cap (0 disables the gate). |
+| `Max_Fn_Complexity` | Configured per-subprogram complexity cap (0 disables the gate). |
+| `Result` | Aggregate metrics to print. |
+| `Violations` | Gate violations from Check_Gates. |

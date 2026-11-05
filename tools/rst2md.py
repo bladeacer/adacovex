@@ -221,6 +221,11 @@ def parse_ada_annotations(
     in_private = False
     protected_depth = 0
     record_depth = 0
+    #  A `type X is` header opens a type body whose terminator is a line
+    #  ending in `;`.  It is not a record: an enumeration or array type has
+    #  no `end record`, so counting it in record_depth would leave the
+    #  counter raised and skip every subprogram that follows it.
+    type_body_open = False
     private_items: List[Tuple[str, str]] = []
     for line in lines:
         s = line.strip()
@@ -238,7 +243,14 @@ def parse_ada_annotations(
         if is_rec_start:
             record_depth += 1
         elif is_type_is:
-            record_depth += 1
+            type_body_open = True
+            continue
+        elif type_body_open:
+            if re.match(r'^record\s*$', s):
+                type_body_open = False
+                record_depth += 1
+            elif s.endswith(";"):
+                type_body_open = False
             continue
         elif re.match(r'^\s*record\s*$', s) and record_depth > 0:
             continue
@@ -250,6 +262,11 @@ def parse_ada_annotations(
 
         if re.match(r'^private$', s):
             in_private = True
+            continue
+        #  A blank line ends a docstring block: annotations belong to the
+        #  declaration the block sits against, never to a later one.
+        if not s:
+            cur = {"params": {}, "returns": ""}
             continue
         pm = re.match(r'--\s*@param\s+(\S+)\s*(.*)', s)
         if pm:
@@ -269,10 +286,16 @@ def parse_ada_annotations(
             kind = sm.group(0).strip().split()[0]
             if in_private:
                 private_items.append((kind, name))
-            else:
-                key = annotation_key(name, cur["params"].keys())
-                annotations[key] = cur
-                cur = {"params": {}, "returns": ""}
+            #  A private subprogram is still rendered with its parameter
+            #  table, so its annotation block is kept either way.
+            key = annotation_key(name, cur["params"].keys())
+            annotations[key] = cur
+            cur = {"params": {}, "returns": ""}
+        elif not s.startswith("--"):
+            #  Any other code line (a package header, an aspect clause) ends
+            #  the block too, so example tags in a file header never attach
+            #  to the first subprogram.
+            cur = {"params": {}, "returns": ""}
         elif in_private and re.match(r'\w+\s*:', s):
             var_name = s.split(":")[0].strip()
             if not re.match(r'(end|case|when|others|range|type|subtype)\b', var_name):
@@ -328,9 +351,8 @@ def subprog_short_name(block_name: str) -> str:
 
 
 def find_ads(pkg_basename: str) -> Optional[str]:
-    """Search for .ads file in src/ subdirectories (excluding tests)."""
+    """Search for a package .ads file under src/ (test packages included)."""
     for root, dirs, files in os.walk("src/"):
-        dirs[:] = [d for d in dirs if d != "tests"]
         for f in files:
             if f == pkg_basename + ".ads":
                 return os.path.join(root, f)

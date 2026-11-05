@@ -54,23 +54,31 @@ subtype Body_Index is Positive range 1 .. Body_Count;
 
 | Parameter | Description |
 |-----------|-------------|
-| `S` |  |
+| `S` | Base85 text to decode. |
+
+**Returns:** The decoded bytes.
 
 ### function Body_Bytes (B : Adacovex.Docs_Template.Body_Index; Is_Gzip : Standard.Boolean) return Standard.String
 
 | Parameter | Description |
 |-----------|-------------|
-| `B` |  |
-| `Is_Gzip` |  |
+| `B` | Body to decode. |
+| `Is_Gzip` | True when the body is a gzip stream. |
+
+**Returns:** The decoded body bytes.
 
 ### function Content (Idx : Adacovex.Docs_Template.Asset_Index) return Standard.String
 
 | Parameter | Description |
 |-----------|-------------|
-| `Idx` |  |
+| `Idx` | Asset table entry to decode. |
+
+**Returns:** The decoded first body.
 
 ### function Find (Subpath : Standard.String) return Standard.Natural
 
 | Parameter | Description |
 |-----------|-------------|
-| `Subpath` |  |
+| `Subpath` | Request subpath to resolve. |
+
+**Returns:** Asset table index, or 0 when no asset matches.

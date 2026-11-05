@@ -79,6 +79,12 @@ package Adacovex.Complexity is
    --  Evaluate Result against the supplied thresholds. Return the list of
    --  violations. The list is empty when every gate passes.
    --  @brief Check Result against Max_File_LOC, Max_File_Pct, Max_Fn_Complexity, and Max_File_Complexity.
+   --  @param Result  Aggregate metrics to evaluate.
+   --  @param Max_File_LOC  Maximum code lines per file (0 disables the gate).
+   --  @param Max_File_Pct  Maximum file share of the tree code lines (0 disables the gate).
+   --  @param Max_Fn_Complexity  Maximum cyclomatic complexity per subprogram (0 disables the gate).
+   --  @param Max_File_Complexity  Maximum file-level complexity (0 disables the gate).
+   --  @return One violation per unmet threshold.
    function Check_Gates
      (Result              : Complexity_Result;
       Max_File_LOC        : Natural;
@@ -90,6 +96,13 @@ package Adacovex.Complexity is
    --  output shows only when Violations is not empty. Otherwise every file
    --  and subprogram is printed.
    --  @brief Print a human-readable complexity report to stdout.
+   --  @param Result  Aggregate metrics to print.
+   --  @param Check_Mode  Print only when Violations is not empty.
+   --  @param Violations  Gate violations from Check_Gates.
+   --  @param Max_File_LOC  Configured per-file LOC cap (0 disables the gate).
+   --  @param Max_File_Pct  Configured per-file share cap (0 disables the gate).
+   --  @param Max_Fn_Complexity  Configured per-subprogram complexity cap (0 disables the gate).
+   --  @param Max_File_Complexity  Configured per-file complexity cap (0 disables the gate).
    procedure Print_Report
      (Result              : Complexity_Result;
       Check_Mode          : Boolean;

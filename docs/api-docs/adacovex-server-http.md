@@ -142,33 +142,41 @@ end record;
 
 | Parameter | Description |
 |-----------|-------------|
-| `Assessment_MS` |  |
-| `Cache_Hits` |  |
-| `Cache_Misses` |  |
-| `Counts` |  |
-| `Port` |  |
-| `Standard_Label` |  |
-| `Target_Path` |  |
-| `Version_Text` |  |
-| `Workers` |  |
+| `Assessment_MS` | Assessment wall time in milliseconds. |
+| `Cache_Hits` | Results served from the result cache. |
+| `Cache_Misses` | Results recomputed and re-cached. |
+| `Counts` | Live counters snapshot. |
+| `Port` | Bound port of this server. |
+| `Standard_Label` | Selected standard slug, or "all". |
+| `Target_Path` | Audited project path. |
+| `Version_Text` | Bundled adacovex version. |
+| `Workers` | Worker count of this server. |
+
+**Returns:** Pretty-printed JSON object (two-space indent).
 
 ### function Route (Path : Standard.String) return Adacovex.Server.HTTP.Route_Kind `[Global]` `[SPARK]`
 
 | Parameter | Description |
 |-----------|-------------|
-| `Path` |  |
+| `Path` | Request path (as extracted by Get_Path). |
+
+**Returns:** Route_Kind for the path.
 
 ### function Route_Path (Kind : Adacovex.Server.HTTP.Route_Kind) return Standard.String `[Global]` `[SPARK]`
 
 | Parameter | Description |
 |-----------|-------------|
-| `Kind` |  |
+| `Kind` | Route kind to name. |
+
+**Returns:** The request path, or "*" for the catch-all bucket.
 
 ### function Strip_Query (Path : Standard.String) return Standard.String `[Global]` `[SPARK]`
 
 | Parameter | Description |
 |-----------|-------------|
-| `Path` |  |
+| `Path` | Request path as extracted by Get_Path. |
+
+**Returns:** The path with any query string (and fragment) removed.
 
 ## Procedures
 
@@ -176,4 +184,4 @@ end record;
 
 | Parameter | Description |
 |-----------|-------------|
-| `State` |  |
+| `State` | Server configuration and metric data. |

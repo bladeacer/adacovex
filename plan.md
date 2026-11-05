@@ -123,7 +123,7 @@ Each bump ends with the same release checklist, and a bump is only complete once
 - [x] v1.66.0 changelog written
 - [x] v1.66.0 version bumped
 - [x] `just check` passes for v1.66.0
-- [ ] v1.67.0 changelog written
+- [x] v1.67.0 changelog written (C1/H1; the entry grows as the remaining items land)
 - [ ] v1.67.0 version bumped
 - [ ] `just check` passes for v1.67.0
 
@@ -370,13 +370,16 @@ weakened and no check is dropped.
 - [ ] Document that the file is named `adacovex.toml` and that it is used to override default CLI flag values.
 - [ ] Keep the user-facing documentation aligned with the sample `adacovex.toml`, including the listed defaults and the supported-value comments.
 - [ ] Document watch behavior, defaults, and the `--no-watch` escape hatch.
+- [x] Document every subprogram parameter in the API reference, and keep the
+  generated pages in step with the docstrings (see C1/H1 in the 1.67.0
+  changelog).
 - [ ] Add tests for config reading, precedence, and watch behavior where practical; the configuration end-to-end matrix in 3.1 is the required minimum for the config half.
 - [ ] For every config-related change, update the docs in the same change so the runtime behavior, the sample file, and the documentation never drift.
 - [ ] Update the changelog entry for v1.67.0 before the version bump.
 
 ### 3.6 Release checklist for v1.67.0
 
-- [ ] v1.67.0 changelog written
+- [x] v1.67.0 changelog written (C1/H1; the entry grows as the remaining items land)
 - [ ] version bumped to v1.67.0
 - [ ] `just check` passes
 
@@ -417,6 +420,8 @@ weakened and no check is dropped.
 
 ### Documentation reorganisation
 
+- [x] Document every subprogram parameter in the API reference and regenerate
+  the pages from the fixed converter.
 - [ ] Cut fluff and duplication, and state the scope and purpose of each `docs/` directory.
 - [ ] Give prove-timing and performance material its own directory, split into a user-facing numbers page and a contributor-facing method page.
 - [ ] Keep the toctrees, the doc-links map, and the bundled-manual link check green.

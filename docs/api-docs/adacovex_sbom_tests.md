@@ -12,4 +12,4 @@ SPDX 2.3 JSON generation.
 
 | Parameter | Description |
 |-----------|-------------|
-| `R` |  |
+| `R` | Test runner to record results on. |

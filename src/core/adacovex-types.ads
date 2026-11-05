@@ -461,6 +461,7 @@ package Adacovex.Types is
    --  Convert a SPARK_Level to its human-readable name.
    --  The function returns "Stone", "Bronze", "Silver", "Gold", or
    --  "Platinum".
+   --  @param L  SPARK level to name.
    --  @return Human-readable SPARK level name.
    function To_String (L : SPARK_Level) return String
    with
@@ -473,6 +474,7 @@ package Adacovex.Types is
      Global => null;
 
    --  Convert a DAL_Level to its single-letter code ('A' through 'E').
+   --  @param L  DAL level to convert.
    --  @return Single-letter DAL code.
    function To_String (L : DAL_Level) return String
    with Post => To_String'Result'Length = 1, Global => null;
@@ -486,6 +488,7 @@ package Adacovex.Types is
    with Global => null;
 
    --  Convert a Compliance_Standard to its human-readable name.
+   --  @param S  Compliance standard to name.
    --  @return "DO-178C", "ISO 26262", or "IEC 62304".
    function To_String (S : Compliance_Standard) return String
    with
@@ -581,6 +584,7 @@ package Adacovex.Types is
    with Global => null;
 
    --  Convert a DAL_Status ("Achieved" or "Unmet") to its human-readable string.
+   --  @param S  DAL status to name.
    --  @return "Achieved" or "Unmet".
    function To_String (S : DAL_Status) return String
    with
@@ -589,6 +593,7 @@ package Adacovex.Types is
      Global => null;
 
    --  Convert a Test_Status ("Pass" or "Fail") to "PASS" or "FAIL".
+   --  @param S  Test status to name.
    --  @return "PASS" or "FAIL".
    function To_String (S : Test_Status) return String
    with

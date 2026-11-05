@@ -105,16 +105,16 @@ HLR-CACHE: Result caching
 
 | Parameter | Description |
 |-----------|-------------|
-| `Ecosystem` |  |
-| `Found` |  |
-| `Lic_Len` |  |
-| `License` |  |
-| `Name` |  |
-| `Target` |  |
-| `Ver_Len` |  |
-| `Version` |  |
-| `Web_Len` |  |
-| `Website` |  |
+| `Ecosystem` | PURL type (npm, pypi, cargo, ...). |
+| `Found` | True when a fresh entry existed. |
+| `Lic_Len` | Length of the licence string. |
+| `License` | Output licence string (may be empty). |
+| `Name` | Package name. |
+| `Target` | Project directory the package belongs to. |
+| `Ver_Len` | Length of the version string. |
+| `Version` | Output version string (may be empty). |
+| `Web_Len` | Length of the website string. |
+| `Website` | Output website string (may be empty). |
 
 ### procedure Get_Probe (Tool : Standard.String; Fingerprint : Standard.String; Value : Standard.String; Val_Len : Standard.Natural; Found : Standard.Boolean)
 
