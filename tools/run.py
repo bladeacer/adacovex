@@ -7,9 +7,9 @@ to release.py separately -- so a gate change had to land in several
 places at once.  This script is the single owner of that shape:
 
   python3 tools/run.py prove       -- adacovex prove -t=. <gates> --svg-path=docs/badges/
-  python3 tools/run.py self        -- adacovex -t=. <gates> --svg-path=docs/badges/
+  python3 tools/run.py self        -- adacovex prove -t=. <gates> --svg-path=docs/badges/
   python3 tools/run.py sbom        -- adacovex sbom -t=. --dal=C
-  python3 tools/run.py ada-crdt    -- adacovex -t=../Ada_CRDT --dal=C
+  python3 tools/run.py ada-crdt    -- adacovex prove -t=../Ada_CRDT -l=4 --dal=C
   python3 tools/run.py assess-args -- print the acceptance-gate flags
                                      (consumed by tools/release.py)
 
@@ -110,14 +110,15 @@ def run(command: str) -> int:
     if command == "self":
         return adacovex(
             ROOT,
-            ["-t=."] + self_assess_args().split()
+            ["prove", "-t=.", "-l=4"] + self_assess_args().split()
             + ["--svg-path=docs/badges/"],
         )
     if command == "sbom":
         return adacovex(ROOT, ["sbom", "-t=.", "--dal=C"])
     if command == "ada-crdt":
         return adacovex(
-            ROOT.parent / "Ada_CRDT", ["-t=../Ada_CRDT", "--dal=C"]
+            ROOT.parent / "Ada_CRDT",
+            ["prove", "-t=../Ada_CRDT", "-l=4", "--dal=C"],
         )
     # assess-args is handled in main() before dispatch.
     raise SystemExit(f"error: unknown command: {command}")
