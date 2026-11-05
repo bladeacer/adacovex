@@ -319,6 +319,7 @@ adacovex complexity [-t=PATH] [--excludes=EXT,EXT]
 adacovex spark-coverage [--target=PATH]
 adacovex man [--check] [--dir=PATH]
 adacovex tldr [--check]
+adacovex init [-t=PATH] [--force]
 adacovex completion [bash|fish|zsh|pwsh]
 adacovex help [TOPIC]
 ```
@@ -392,10 +393,14 @@ embedded via `tools/gen-tldr.py` into `src/adacovex-tldr_template.ads`) into
 the detected local client: tealdeer's flat custom pages directory (from `tldr
 --show-paths`, with the platform data rule as the fallback), or a base
 client's cache pages tree (common plus the `linux` / `osx` / `windows` /
-`android` / `sunos` / BSD platform page). `adacovex tldr
---check` exits 0 when the installed page matches the bundled one, 1 when it
+`android` / `sunos` / BSD platform page).`adacovex tldr --check` exits 0 when the installed page matches the bundled one, 1 when it
 is missing or stale, and `--force` rewrites it. With no supported client the
-command prints the page to stdout. `just tldr-check` lints the page and gates
+command prints the page to stdout.
+
+`adacovex init [-t=PATH] [--force]` writes a sample `<target>/adacovex.toml`:
+every supported key at its default, with the deployed configuration guide
+linked. It never replaces an existing file without `--force`, and the global
+key `[init] scaffold = false` disables it for every project on the machine. `just tldr-check` lints the page and gates
 the embedded spec against it.
 
 ## VCS support (Linux, the BSDs, macOS, and WSL)

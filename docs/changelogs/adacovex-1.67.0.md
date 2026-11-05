@@ -31,6 +31,48 @@ The generated `Adacovex.Docs_Template` unit now carries the same annotations.
 Every page that lost a description now shows it. The converter changes that
 made that possible are recorded under H1.
 
+### C2: `adacovex init` writes the project configuration
+
+A new project needs an `adacovex.toml` before the precedence rules can help
+it, and the sample at the repository root is not in a consumer's tree. The new
+`adacovex init` subcommand writes the same scaffold into the target directory:
+every supported key at its default, with the deployed configuration guide
+linked.
+
+The command never replaces an existing file unless `--force` is given. Without
+it the file is left alone and the command exits 1, so a project's own settings
+survive an accidental rerun. The command writes to `<target>/adacovex.toml`
+only, never to the global configuration directory.
+
+The global configuration file gains `[init] scaffold`. It takes true or false
+and defaults to true. With `scaffold = false`, `adacovex init` writes no file,
+prints the reason, and exits 0, so a machine can turn the scaffold off for
+every project. A project file cannot set the key, because the project file is
+what `init` would create.
+
+The sample file at the repository root now links to the deployed manual
+(`https://adacovex.readthedocs.io/en/latest/usage/configuration.html`) instead
+of the repository-relative page, so a crate consumer reaches a working link.
+
+### C3: The configuration file is tested by real runs
+
+The reader, merge, and precedence rule already had unit tests. Those tests
+show what a parser returns, not what a run does. `tests/e2e/cli_flags.py` now
+drives the built binary over the precedence matrix with an isolated global
+configuration directory: a project file alone, a global file alone, the
+project winning per key while the global file supplies the rest, an explicit
+flag winning over both, and `--target` from another working directory reading
+the target's file only.
+
+The suite also checks that a `[prove]` key changes nothing outside the prove
+subcommand, that malformed input (missing, empty, unknown section, unknown
+key, non-integer, unterminated quote, over-long path) never fails a run, and
+that the shipped sample file leaves a run unchanged. The `init` checks cover
+the scaffold, the exit-1 refusal, `--force`, and the global `[init] scaffold =
+false` switch. With a prover on `PATH`, the same suite checks that `[prove]
+coverage = false` hides the coverage summary and that an explicit `--coverage`
+wins over the file.
+
 ## Fixes
 
 ### H1: rst2md keeps the docstrings it already has
@@ -64,16 +106,21 @@ procedure.
 ## Test Suite
 
 - 2127/2127 native tests passing across 29 categories. The native suite is
-  unchanged: this release adds no executable Ada statement.
+  unchanged: this release adds no native test.
 - `tools/tests.py` grows to 202 checks with the two new `rst2md` regression
   checks (the type-body counter and the header-tag leak).
+- The CLI end-to-end suite grows to 106 checks: the `init` scaffold and the
+  configuration precedence matrix. Its prove-side pair is skipped when no
+  `gnatprove` is on `PATH`.
 
 ## Proof Results
 
 - gnatprove 16.1.0: SPARK Gold, 1054/1054 VCs proved across 75 analyzed
   units, 0 unproved, and 0 justified. No proof surface changed: the work adds
   comments to specs and test packages, and it edits two Python tools (see
-  `docs/proof/16.1.0-ledger.md`).
+  `docs/proof/16.1.0-ledger.md`). The new statements sit in the
+  `Adacovex.Config` I/O body and the CLI entry point, both outside the SPARK
+  proof surface, so the VC count is unchanged.
 
 ## Traceability
 
@@ -90,4 +137,6 @@ existing tags:
 - `-- HLR-SCAN` (`adacovex-parsers-source`): the scanner docstrings the
   converter now keeps;
 - `-- HLR-ARCH` (`tools/rst2md.py`, `tools/gen-docs.py`): the converter
-  fixes, the test-package lookup, and the generated manual annotations.
+  fixes, the test-package lookup, and the generated manual annotations;
+- `-- HLR-CLI` (`adacovex-config`): the `init` parser branch, the `[init]
+  scaffold` key, and the sample-file writer.

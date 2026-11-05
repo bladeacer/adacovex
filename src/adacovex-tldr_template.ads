@@ -58,6 +58,11 @@ package Adacovex.Tldr_Template is
   & "`adacovex tldr`"
   & ASCII.LF
   & ASCII.LF
+  & "- Write a project configuration file:"
+  & ASCII.LF
+  & "`adacovex init`"
+  & ASCII.LF
+  & ASCII.LF
   & "- Print shell auto-completion scripts:"
   & ASCII.LF
   & "`adacovex completion bash`"

@@ -80,6 +80,7 @@ CLI_ONLY: Dict[str, str] = {
     "completion": "shell completion subcommand (local shell setup)",
     "man": "man subcommand (local install)",
     "tldr": "tldr subcommand (local install)",
+    "init": "init subcommand (local project scaffolding; never runs in CI)",
     "check": "man --check / tldr --check (local)",
     "dir": "man --dir (local)",
     "out": "sbom --out output path (the action uploads the SBOM artifact itself)",

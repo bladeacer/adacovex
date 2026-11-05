@@ -61,7 +61,9 @@ on the machine.
 The parser reads only the keys documented below and ignores an unknown key or
 section, so a file is safe to extend. The repository root carries a sample
 [`adacovex.toml`](../../adacovex.toml) that states every key with its default
-value and links back to this page.
+value and links to the deployed copy of this page. `adacovex init` writes the
+same scaffold into a project (see
+[Scaffolding a project file](#scaffolding-a-project-file)).
 
 ```toml
 # <target>/adacovex.toml
@@ -140,6 +142,36 @@ The file values are applied only where the matching flag is absent, so
 
 These mirror `--excludes` and `--skip-path`, and an explicit flag wins. They
 take effect only in `adacovex complexity`.
+
+### `[init] scaffold`
+
+The global file only. This key turns the `init` subcommand off for every
+project on the machine. With `scaffold = false`, `adacovex init` writes no
+file, prints the reason, and exits 0.
+
+A project file cannot set the key, because the project file is what `init`
+would create. The default is `true`.
+
+## Scaffolding a project file
+
+`adacovex init` writes a sample `<target>/adacovex.toml` and exits. The file
+states the default of every supported key, and it links to the deployed copy
+of this page, so a project starts from a correct file instead of memory. The
+default target is the current directory; `-t PATH` (or `--target=PATH`)
+scaffolds another directory.
+
+An existing file is left untouched and the command exits 1. This rule keeps a
+project's own settings safe from an accidental rerun. `--force` overwrites the
+file. The command writes to `<target>/adacovex.toml` only; it never writes to
+the global configuration directory.
+
+`[init] scaffold = false` in the global file disables the command for every
+project on the machine, and the command exits 0 without touching the target.
+
+```
+adacovex init -t path/to/project
+adacovex init -t path/to/project --force
+```
 
 ## Environment variables
 

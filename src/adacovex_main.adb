@@ -184,6 +184,11 @@ procedure Adacovex_Main is
    Success : Boolean;
    Exit_St : Ada.Command_Line.Exit_Status := 0;
 
+   --  True when the global configuration permits `adacovex init` to write a
+   --  project file. `[init] scaffold = false` in the global file turns the
+   --  scaffold off for every project on the machine.
+   Scaffold_Allowed : Boolean := True;
+
    --  Print the detected VCS and any UX recommendation for the target so a
    --  differential run on a legacy VCS is self-explanatory.
    procedure Report_VCS (Target_Dir : String) is
@@ -519,6 +524,7 @@ begin
         Adacovex.Config.Read_Settings
           (Project_Dir & "/" & Adacovex.Config.Config_File_Name);
    begin
+      Scaffold_Allowed := Global_Settings.Scaffold;
       Adacovex.Config.Apply_Settings
         (Cfg,
          Adacovex.Config.Merge_Settings (Global_Settings, Project_Settings));
@@ -592,6 +598,43 @@ begin
       Verbose ("  patches: .adacovex/patches/ applied");
    else
       Verbose ("  skip list: " & Cfg.Skip_Dirs (1 .. Cfg.Skip_Dir_Ct));
+   end if;
+
+   -- Init mode: write the sample project configuration into the target and
+   -- exit. The file is never replaced without --force, and the global
+   -- `[init] scaffold` key can turn the command off for every project.
+   if Cfg.Init_Mode then
+      declare
+         Dir  : constant String := Target (1 .. TLen);
+         Path : constant String := Dir & "/" & Adacovex.Config.Config_File_Name;
+      begin
+         if not Scaffold_Allowed then
+            Ada.Text_IO.Put_Line
+              ("init: project scaffolding is disabled by [init] scaffold = false"
+               & " in " & Adacovex.Paths.Config_Root & "/"
+               & Adacovex.Config.Config_File_Name);
+            Ada.Command_Line.Set_Exit_Status (0);
+            return;
+         end if;
+         case Adacovex.Config.Write_Sample_Project_File
+           (Dir, Cfg.Man_Force)
+         is
+            when Adacovex.Config.Scaffold_Created =>
+               Ada.Text_IO.Put_Line ("init: created " & Path);
+               Ada.Command_Line.Set_Exit_Status (0);
+            when Adacovex.Config.Scaffold_Exists =>
+               Ada.Text_IO.Put_Line
+                 ("init: " & Path & " already exists"
+                  & " (use --force to overwrite)");
+               Ada.Command_Line.Set_Exit_Status (1);
+            when Adacovex.Config.Scaffold_Failed =>
+               Ada.Text_IO.Put_Line
+                 (Ada.Text_IO.Standard_Error,
+                  "Error: could not write " & Path);
+               Ada.Command_Line.Set_Exit_Status (1);
+         end case;
+         return;
+      end;
    end if;
 
    -- Man mode: install the man page into the local man database (default

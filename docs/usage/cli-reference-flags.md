@@ -1,5 +1,7 @@
 # CLI flag details: assessment flags and subcommands
 
+<!-- no-covex-docs-loc: subcommand reference page, the line cap does not apply -->
+
 This page details the assessment flags (`--target`, `--dal`, `--standard`, and the rest), the `status` and `complexity` subcommands, the `prove` subcommand, and the per-file opt-out markers. The flag summary table, exit codes, the `sbom` subcommand, and worked examples are on the [CLI reference](cli-reference.md); the output, serving, differential, and gate flags are on [CLI flag details: output and CI options](cli-reference-options.md).
 
 ## Flag details
@@ -107,6 +109,23 @@ stdout; `status --export=PATH` writes it to `PATH`. Scripts and CI can
 consume it without parsing prose. `adacovex status --metrics` prints the
 same data as compact `key=value` lines, one per line, for shell scripts.
 Both flags only work with the `status` subcommand.
+
+### `init`
+
+`adacovex init [-t=PATH] [--force]` writes a sample `<target>/adacovex.toml`.
+The file states the default of every supported key and links to the deployed
+configuration guide, so a new project starts from a correct file instead of
+memory. The default target is the current directory.
+
+An existing file is left untouched and the command exits 1, so a project's own
+settings are never lost by accident; `--force` overwrites it. The command
+writes to `<target>/adacovex.toml` only, never to the global configuration
+directory.
+
+`[init] scaffold = false` in the global configuration file disables the
+command for every project on the machine. It then prints the reason and exits
+0 without touching the target. See
+[Scaffolding a project file](configuration.md#scaffolding-a-project-file).
 
 ### `complexity`
 

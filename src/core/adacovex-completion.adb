@@ -46,7 +46,7 @@ package body Adacovex.Completion is
       Emit (R, "    local flags=""" & Flags & """");
       Emit
         (R,
-         "    local subs=""sbom prove complexity spark-coverage status completion man tldr help""");
+         "    local subs=""sbom prove complexity spark-coverage status completion man tldr init help""");
       Emit (R, "    case ""$prev"" in");
       Emit
         (R,
@@ -91,11 +91,11 @@ package body Adacovex.Completion is
       Emit
         (R,
          "complete -c adacovex -n '__fish_use_subcommand' "
-         & "-a 'sbom prove complexity spark-coverage status completion man tldr help'");
+         &         "-a 'sbom prove complexity spark-coverage status completion man tldr init help'");
       Emit
         (R,
          "complete -c covex -n '__fish_use_subcommand' "
-         & "-a 'sbom prove complexity spark-coverage status completion man tldr help'");
+         &         "-a 'sbom prove complexity spark-coverage status completion man tldr init help'");
       Emit (R, "");
       return To_String (R);
    end Gen_Fish;
@@ -115,7 +115,7 @@ package body Adacovex.Completion is
       Emit (R, "  flags=(" & Flags & ")");
       Emit
         (R,
-         "  subs=(sbom prove complexity spark-coverage status completion man tldr help)");
+         "  subs=(sbom prove complexity spark-coverage status completion man tldr init help)");
       Emit (R, "  if [[ $words[CURRENT] == -* ]]; then");
       Emit (R, "    compadd -- ${flags[*]}");
       Emit (R, "  elif [[ $words[CURRENT-1] == completion ]]; then");
@@ -169,7 +169,7 @@ package body Adacovex.Completion is
       Emit
         (R,
          "    \$subs = @('sbom', 'prove', 'complexity', 'spark-coverage',"
-         & " 'status', 'completion', 'man', 'tldr', 'help')");
+         & " 'status', 'completion', 'man', 'tldr', 'init', 'help')");
       Emit (R, "    if (-not \$wordToComplete.StartsWith('-')) {");
       Emit
         (R,
