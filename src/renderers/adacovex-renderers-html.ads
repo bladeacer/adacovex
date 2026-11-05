@@ -30,6 +30,9 @@ package Adacovex.Renderers.HTML is
    --  @param Graph  Resolved dependency graph (for the Dependencies tab).
    --  @param All_Standards  Render every standard (else the selected one).
    --  @param Theme  Initial dashboard theme (system/light/dark).
+   --  @param Spark_OK  True when the SPARK coverage report was read.
+   --  @param Spark_Totals  Whole-tree SPARK coverage rollup.
+   --  @param Spark_Groups  Per-group SPARK coverage rollups.
    --  @return HTML dashboard page.
    function Render_Dashboard
      (Doc_Metrics   : Types.Docstring_Metrics;
@@ -55,6 +58,9 @@ package Adacovex.Renderers.HTML is
    --  @param Packages  Scanned package vector.
    --  @param All_Standards  Render every standard.
    --  @param Theme  Initial dashboard theme.
+   --  @param Spark_OK  True when the SPARK coverage report was read.
+   --  @param Spark_Totals  Whole-tree SPARK coverage rollup.
+   --  @param Spark_Groups  Per-group SPARK coverage rollups.
    --  @return HTML dashboard page.
    function Render_Dashboard
      (Doc_Metrics   : Types.Docstring_Metrics;
@@ -132,6 +138,11 @@ package Adacovex.Renderers.HTML is
    --  the off-class breakdown with the three sub-classes as separate
    --  rows, and a per-group table. The work-queue row is highlighted,
    --  because it is the actionable backlog.
+   --  @param Totals  Whole-tree SPARK coverage rollup.
+   --  @param Groups  Per-group SPARK coverage rollups.
+   --  @param Group  Group kind the table is keyed on.
+   --  @param OK  True when the coverage report was read.
+   --  @return HTML fragment for the Proof tab.
    function Render_Spark_Coverage_HTML
      (Totals : Types.Implementation.Spark_Coverage_Totals;
       Groups : Types.Implementation.Spark_Group_Vectors.Vector;
@@ -143,6 +154,10 @@ package Adacovex.Renderers.HTML is
    --  rollup (all three metrics with their numerators and denominators),
    --  the off-class breakdown, warning count, and one entry per group
    --  rollup. All counts are named fields, never bare percentages.
+   --  @param Totals  Whole-tree SPARK coverage rollup.
+   --  @param Groups  Per-group SPARK coverage rollups.
+   --  @param Group  Group kind the table is keyed on.
+   --  @return JSON string with the coverage payload.
    function Render_Spark_Coverage_JSON
      (Totals : Types.Implementation.Spark_Coverage_Totals;
       Groups : Types.Implementation.Spark_Group_Vectors.Vector;

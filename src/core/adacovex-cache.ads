@@ -246,6 +246,7 @@ package Adacovex.Cache is
    --  spawns and a wiped or redirected result cache never re-resolves.
    --  A re-resolution (and re-cache) happens only when the entry is
    --  missing or older than the TTL.
+   --  @param Target     Project directory the package belongs to.
    --  @param Ecosystem  PURL type (npm, pypi, cargo, ...).
    --  @param Name       Package name.
    --  @param License    Output licence string (may be empty).

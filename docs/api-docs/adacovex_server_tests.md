@@ -8,4 +8,4 @@
 
 | Parameter | Description |
 |-----------|-------------|
-| `R` |  |
+| `R` | Native test runner the cases register on. |

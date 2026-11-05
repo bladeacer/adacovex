@@ -10,7 +10,7 @@ HLR-CPU: Cross-platform CPU core detection
 
 **See also:** [Platforms](../usage/platforms.md)
 
-> **Note:** 12 public item(s) shown below; 4 private internal item(s) are in the `private` section.
+> **Note:** 12 public item(s) shown below; 1 private internal item(s) are in the `private` section.
 
 ## Functions
 
@@ -74,16 +74,13 @@ HLR-CPU: Cross-platform CPU core detection
 
 | Parameter | Description |
 |-----------|-------------|
-| `Cmd` |  |
-| `Ok` |  |
-| `Out_Len` |  |
-| `Out_Line` |  |
+| `Cmd` | Command line to spawn. |
+| `Ok` | True when the spawn succeeded and produced output. |
+| `Out_Len` | Length of the captured line. |
+| `Out_Line` | Output buffer for the first stdout line. |
 
 ---
 
 ## Private Section
 
 - **procedure** `Run_Capture`
-- **variable** `Out_Line`
-- **variable** `Out_Len`
-- **variable** `Ok`

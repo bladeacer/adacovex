@@ -13,4 +13,4 @@ arithmetic fixture (Adacovex.IR_Bounds).
 
 | Parameter | Description |
 |-----------|-------------|
-| `R` |  |
+| `R` | Test runner to record results on. |

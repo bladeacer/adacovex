@@ -208,9 +208,9 @@ end record;
 
 | Parameter | Description |
 |-----------|-------------|
-| `Opts` |  |
-| `Success` |  |
-| `Target_Dir` |  |
+| `Opts` | GNATprove invocation options. |
+| `Success` | True if gnatprove ran and exited 0. |
+| `Target_Dir` | Project root directory. |
 
 ### procedure Run_Status (Target_Dir : Standard.String; TZ_Spec : Standard.String; Success : Standard.Boolean)
 

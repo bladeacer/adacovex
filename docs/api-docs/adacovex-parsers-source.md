@@ -72,9 +72,9 @@ documented.
 
 | Parameter | Description |
 |-----------|-------------|
-| `File_Path` |  |
-| `Pkg` |  |
-| `Success` |  |
+| `File_Path` | Path to .ads file. |
+| `Pkg` | Output package info. |
+| `Success` | True if file was successfully parsed. |
 
 ### procedure Scan_Project (Target_Dir : Standard.String; Skip_List : Standard.String; Packages : Adacovex.Types.Implementation.Package_Vectors.Vector; Skipped_Ct : Standard.Natural)
 

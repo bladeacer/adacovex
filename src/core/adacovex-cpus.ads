@@ -129,6 +129,10 @@ private
    --  It uses GNAT.OS_Lib to redirect to a temp file. The temp file is
    --  removed afterwards. Ok is False when the spawn fails or produces no
    --  output.
+   --  @param Cmd       Command line to spawn.
+   --  @param Out_Line  Output buffer for the first stdout line.
+   --  @param Out_Len   Length of the captured line.
+   --  @param Ok        True when the spawn succeeded and produced output.
    procedure Run_Capture
      (Cmd      : String;
       Out_Line : out String;

@@ -14,4 +14,4 @@ registry-metadata stores.
 
 | Parameter | Description |
 |-----------|-------------|
-| `R` |  |
+| `R` | Test runner to record results on. |

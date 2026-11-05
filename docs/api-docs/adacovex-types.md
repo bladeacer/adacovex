@@ -216,113 +216,151 @@ type Test_Status is (Pass, Fail);
 
 | Parameter | Description |
 |-----------|-------------|
-| `S` |  |
+| `S` | Candidate ASIL level string. |
+
+**Returns:** True when S names a valid ASIL level.
 
 ### function Is_Valid_Class (S : Standard.String) return Standard.Boolean `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|
-| `S` |  |
+| `S` | Candidate safety-class string. |
+
+**Returns:** True when S names a valid safety class.
 
 ### function Is_Valid_Theme (S : Standard.String) return Standard.Boolean `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|
-| `S` |  |
+| `S` | Candidate theme string. |
+
+**Returns:** True when S names a valid dashboard theme.
 
 ### function Standard_Level_Name (Standard : Adacovex.Types.Compliance_Standard; Level : Adacovex.Types.DAL_Level) return Standard.String `[Post]` `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|
-| `Level` |  |
-| `Standard` |  |
+| `Level` | Rigour tier (reused DAL level). |
+| `Standard` | Compliance standard. |
+
+**Returns:** The standard-specific level label.
 
 ### function Standard_Slug (S : Adacovex.Types.Compliance_Standard) return Standard.String `[Post]` `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|
-| `S` |  |
+| `S` | Compliance standard. |
+
+**Returns:** The standard's badge-file slug.
 
 ### function To_ASIL (S : Standard.String) return Adacovex.Types.DAL_Level `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|
-| `S` |  |
+| `S` | ASIL level (A-D or QM, case-insensitive). |
+
+**Returns:** Shared rigour tier (defaults to DAL_C on failure).
 
 ### function To_Class (S : Standard.String) return Adacovex.Types.DAL_Level `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|
-| `S` |  |
+| `S` | Safety class (A-C, case-insensitive). |
+
+**Returns:** Shared rigour tier (defaults to DAL_C on failure).
 
 ### function To_DAL (S : Standard.String) return Adacovex.Types.DAL_Level `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|
-| `S` |  |
+| `S` | Single-letter DAL code (A-E, case-insensitive). |
+
+**Returns:** Converted DAL_Level (defaults to DAL_C on failure).
 
 ### function To_Standard (S : Standard.String) return Adacovex.Types.Compliance_Standard `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|
-| `S` |  |
+| `S` | Standard name. |
+
+**Returns:** Converted Compliance_Standard (defaults to DO_178C).
 
 ### function To_String (S : Adacovex.Types.Compliance_Standard) return Standard.String `[Post]` `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|
-| `S` |  |
+| `S` | Test status to name. |
+
+**Returns:** "PASS" or "FAIL".
 
 ### function To_String (L : Adacovex.Types.DAL_Level) return Standard.String `[Post]` `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|
-| `L` |  |
+| `L` | DAL level to convert. |
+
+**Returns:** Single-letter DAL code.
 
 ### function To_String (S : Adacovex.Types.DAL_Status) return Standard.String `[Post]` `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|
-| `S` |  |
+| `S` | Test status to name. |
+
+**Returns:** "PASS" or "FAIL".
 
 ### function To_String (T : Adacovex.Types.Dashboard_Theme) return Standard.String `[Post]` `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|
-| `T` |  |
+| `T` | Dashboard theme. |
+
+**Returns:** The theme's CLI name.
 
 ### function To_String (G : Adacovex.Types.Spark_Group_Kind) return Standard.String `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|
-| `G` |  |
+| `G` | Group kind. |
+
+**Returns:** The group kind's CLI name.
 
 ### function To_String (L : Adacovex.Types.SPARK_Level) return Standard.String `[Post]` `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|
-| `L` |  |
+| `L` | DAL level to convert. |
+
+**Returns:** Single-letter DAL code.
 
 ### function To_String (M : Adacovex.Types.Spark_Metric_Kind) return Standard.String `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|
-| `M` |  |
+| `M` | Metric kind. |
+
+**Returns:** The metric's CLI name.
 
 ### function To_String (C : Adacovex.Types.Spark_Off_Class) return Standard.String `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|
-| `C` |  |
+| `C` | Off class. |
+
+**Returns:** The class label.
 
 ### function To_String (S : Adacovex.Types.Test_Status) return Standard.String `[Post]` `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|
-| `S` |  |
+| `S` | Test status to name. |
+
+**Returns:** "PASS" or "FAIL".
 
 ### function To_Theme (S : Standard.String) return Adacovex.Types.Dashboard_Theme `[Global]`
 
 | Parameter | Description |
 |-----------|-------------|
-| `S` |  |
+| `S` | Theme name. |
+
+**Returns:** Converted Dashboard_Theme (defaults to System_Theme).

@@ -152,6 +152,52 @@ class TestRst2Md(unittest.TestCase):
     def test_plain_ascii_passes_through(self) -> None:
         self.assertEqual(rst2md.fix_text("type Route_Kind is"), "type Route_Kind is")
 
+    def test_type_body_does_not_hide_later_subprograms(self) -> None:
+        #  A multi-line enumeration has no `end record`, so its opening
+        #  `type X is` line must not leave the record counter raised.
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = Path(tmp, "adacovex-probe.ads")
+            spec.write_text(
+                "package Adacovex_Probe is\n"
+                "\n"
+                "   type Level is\n"
+                "     (Stone,\n"
+                "      Gold);\n"
+                "\n"
+                "   --  Return the level name.\n"
+                "   --  @param L  Level to name.\n"
+                "   --  @return Level name.\n"
+                "   function Name_Of (L : Level) return String;\n"
+                "\n"
+                "end Adacovex_Probe;\n",
+                encoding="utf-8", newline="\n")
+            _, annotations, _, _ = rst2md.parse_ada_annotations(str(spec))
+            self.assertIn("Name_Of:L", annotations)
+            self.assertEqual(annotations["Name_Of:L"]["params"]["L"],
+                             "Level to name.")
+
+    def test_header_example_tags_do_not_leak(self) -> None:
+        #  A docstring example in the file header is prose, not the
+        #  annotation block of the first subprogram.
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = Path(tmp, "adacovex-probe.ads")
+            spec.write_text(
+                "--  Supported annotations:\n"
+                "--    @param Name  Description of a parameter.\n"
+                "\n"
+                "package Adacovex_Probe is\n"
+                "\n"
+                "   --  Scan one file.\n"
+                "   --  @param File_Path  Path to the file.\n"
+                "   --  @param Success  True when the scan succeeded.\n"
+                "   procedure Scan (File_Path : String; Success : out Boolean);\n"
+                "\n"
+                "end Adacovex_Probe;\n",
+                encoding="utf-8", newline="\n")
+            _, annotations, _, _ = rst2md.parse_ada_annotations(str(spec))
+            self.assertIn("Scan:File_Path,Success", annotations)
+            self.assertNotIn("Name", annotations["Scan:File_Path,Success"]["params"])
+
 
 class TestAsciiCheck(unittest.TestCase):
     def test_repo_is_clean(self) -> None:

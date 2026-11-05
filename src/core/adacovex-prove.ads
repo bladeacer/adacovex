@@ -321,6 +321,7 @@ package Adacovex.Prove is
       Out_Path : String;
       Stats    : out Replay_Stats);
 
+   --  @param Target_Dir  Project root directory.
    --  @param Opts  GNATprove invocation options.
    --  @param Success  True if gnatprove ran and exited 0.
    procedure Run_Prove
