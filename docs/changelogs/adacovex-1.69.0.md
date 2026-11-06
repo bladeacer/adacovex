@@ -25,6 +25,19 @@ call site does not inflate `Unproved`. Both passes keep their seen text in one
 bounded blob; past the cap a later repeat is kept, so the output can be longer
 but never wrong. `--verbose` still streams every raw line, and CI passes it.
 
+### C2: Contextual help renders in the `--help` frame
+
+`adacovex help serve`, `adacovex prove help`, and `adacovex --serve help`
+printed a detached titled section with no usage header, so the program read
+like two tools. Every topic now renders the `--help` frame: the version line,
+a `Usage:` fence naming the topic's subcommand or flag form, an `Options:`
+heading, the topic body, and a `Run 'adacovex --help'` footer.
+
+`adacovex prove --help` selects the prove topic like `adacovex prove help`: a
+bare subcommand before `--help` names the topic, while a flag before `--help`
+still prints the full usage. `--help` and `help` with no topic stay
+byte-identical.
+
 ## Fixes
 
 ## Test Suite
@@ -35,6 +48,11 @@ times is replayed and counted once, and one unproved check printed twice is
 named and counted once. `tests/e2e/prove_diagnostics.py` now also checks that
 the replay prints each diagnostic once and that every diagnostics block names
 each finding once.
+
+`tests/e2e/cli_flags.py` also pins the help frame: `--help` equals `help`, every
+sampled topic starts with the version line and carries the `Usage:`,
+`Options:`, and footer lines, `--serve help` equals `help serve`, and
+`prove --help` equals `prove help` with the prove flags listed.
 
 `tests/e2e/cli_flags.py` adds `check_sbom_siblings`: it runs `sbom` over the
 sibling projects present on the machine (`../polars`, `../playwright`,
@@ -54,3 +72,6 @@ unit with no `SPARK_Mode` contracts, so the Gold assessment is unchanged
 
 HLR-PROVE: Proof diagnostics -- the replay and the diagnostics block report
 each distinct finding once.
+
+HLR-CLI: Contextual help -- every topic renders the `--help` frame, and a bare
+subcommand before `--help` selects that topic.

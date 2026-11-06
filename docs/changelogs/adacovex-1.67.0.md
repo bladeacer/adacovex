@@ -160,9 +160,17 @@ procedure.
   three configuration checks and the new route adds three server checks.
 - `tools/tests.py` grows to 202 checks with the two new `rst2md` regression
   checks (the type-body counter and the header-tag leak).
-- The CLI end-to-end suite grows to 110 checks: the `init` scaffold, the
-  configuration precedence matrix, and serve watch. Its prove-side checks
-  are skipped when no `gnatprove` is on `PATH`.
+-The CLI end-to-end suite grows to 110 checks: the `init` scaffold, the
+configuration precedence matrix, and serve watch. Its prove-side checks
+are skipped when no `gnatprove` is on `PATH`.
+
+The tooling-ergonomics plan behind this release was audited after the entry
+was written. The watch flags (C4), the docs map and performance split (C5),
+and the build-once timing table (C6) closed the checkboxes that were still
+open at the time. Two checks were never part of this release and carry into
+v1.68.0: a real-run test of the composite action with a project
+configuration file, and one warm-tree `just check` budget measurement. See
+`plan.md` for both.
 
 ## Proof Results
 
