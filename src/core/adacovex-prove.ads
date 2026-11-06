@@ -202,17 +202,23 @@ package Adacovex.Prove is
    --  output file. They keep the actionable detail apart from the tool noise:
    --  Hidden is how many informational notice blocks the suppression sets
    --  removed, Progress is how many phase-progress lines the replay dropped
-   --  (pure progress, meaningless once the run has finished), and Errors and
-   --  Warnings are how many message lines named a failure.
+   --  (pure progress, meaningless once the run has finished), Errors and
+   --  Warnings count the message lines that named a failure, and Duplicates is
+   --  how many repeated diagnostic lines the replay folded into their first
+   --  copy.
    type Replay_Stats is record
       --  Informational notice blocks dropped by the suppression sets.
-      Hidden   : Natural := 0;
+      Hidden     : Natural := 0;
       --  `Phase N of M:` progress lines dropped.
-      Progress : Natural := 0;
+      Progress   : Natural := 0;
       --  Emitted lines carrying an error message.
-      Errors   : Natural := 0;
+      Errors     : Natural := 0;
       --  Emitted lines carrying a warning message.
-      Warnings : Natural := 0;
+      Warnings   : Natural := 0;
+      --  Repeated diagnostic lines folded into their first occurrence. The
+      --  prover prints one warning per inlined call site, so the same file,
+      --  line, column, and message can arrive many times in one stream.
+      Duplicates : Natural := 0;
    end record;
 
    --  The most unproved findings one diagnostics block lists. A larger
@@ -249,7 +255,8 @@ package Adacovex.Prove is
    --  and Count is how many of them Items names, so a reader sees both the
    --  scale of the failure and the first locations to fix.
    type Failure_Stats is record
-      --  Unproved findings seen in the stream.
+      --  Distinct unproved findings seen in the stream; a repeated finding
+      --  counts once.
       Unproved : Natural := 0;
       --  Entries filled in Items (<= Max_Failure_Items).
       Count    : Natural := 0;
@@ -272,10 +279,10 @@ package Adacovex.Prove is
    --  and derives the kind from the message. Every other line is ignored:
    --  a line without a `file:line:column` prefix is not a finding, and a
    --  finding that reports a proof outcome rather than a failure is not one
-   --  to act on. A check in `Items` counts once, so the same check reported
-   --  twice is not double-counted only when the lines match exactly -- the
-   --  prover never repeats one, and a duplicate line is a genuine duplicate
-   --  finding.
+   --  to act on. A check counts once per source location and check kind: the
+   --  prover can report one check once per inlined call site, so a repeated
+   --  finding is not double-counted. The seen table is bounded, and a stream
+   --  with more distinct findings than it holds keeps its later repeats.
    --  @param Path  Captured gnatprove output file to read.
    --  @param Stats  Findings gathered during the pass.
    procedure Collect_Failures (Path : String; Stats : out Failure_Stats);
@@ -301,13 +308,17 @@ package Adacovex.Prove is
    --      sub-message continuation lines;
    --    * the `Phase N of M:` progress lines, which only mean something
    --      while the run is still going;
+   --    * a diagnostic line the replay already emitted -- the same file,
+   --      line, column, severity, and message -- with its continuation
+   --      lines, because the prover prints one warning per inlined call
+   --      site;
    --    * the orphan blank lines those drops leave behind -- runs of blank
    --      lines collapse to one.
    --  Checks, errors, warnings, and the summary pass through untouched. The
    --  block is framed: one blank line opens it so it never runs into the
    --  caller's own status lines, and one blank line closes it. When notices
-   --  were dropped, a footer states how many and that --verbose shows them,
-   --  so a reader always learns that output was edited.
+   --  or repeats were dropped, a footer states how many and that --verbose
+   --  shows them, so a reader always learns that output was edited.
    --  @param Path  Captured gnatprove output file to replay.
    --  @param Sets  Comma-separated suppression-set names. Empty selects the
    --  default set (`unrolling-inlining`). A set name S drops blocks tagged

@@ -319,24 +319,48 @@ SBOM_SCOPES: Tuple[str, ...] = (
 )
 
 
+def sbom_table(target: Path, out: Path) -> Optional[List[Dict[str, str]]]:
+    """Run `sbom` on target and return its component table as row dicts.
+
+    Each row maps the lower-case column name to its cell text. The metadata
+    table above the component table is skipped. Returns None when no report
+    was written.
+    """
+    proc = run(["sbom", "-t", str(target), "--format=md",
+                f"--out={out}", "--no-cache"], timeout=300)
+    if proc.returncode not in (0, 1) or not out.is_file():
+        return None
+    header: Optional[List[str]] = None
+    rows: List[Dict[str, str]] = []
+    for line in out.read_text(encoding="utf-8").splitlines():
+        if not line.startswith("|"):
+            continue
+        cells = [cell.strip().strip("`")
+                 for cell in line.strip().strip("|").split("|")]
+        lowered = [cell.lower() for cell in cells]
+        if "component" in lowered and "scope" in lowered:
+            header = lowered
+            continue
+        if header is None:
+            continue
+        if all(set(cell) <= {"-", ":"} for cell in cells):
+            continue
+        if len(cells) == len(header):
+            rows.append(dict(zip(header, cells)))
+    return rows
+
+
 def sbom_components(out: Path, target: Path) -> Optional[List[Tuple[str, str]]]:
     """Run `sbom` on target and return its (component, scope) rows.
 
     `system` rows are kept: they depend on what the host has on PATH.
     Returns None when no report was written.
     """
-    proc = run(["sbom", "-t", str(target), "--format=md",
-                f"--out={out}", "--no-cache"], timeout=300)
-    if proc.returncode not in (0, 1) or not out.is_file():
+    table = sbom_table(target, out)
+    if table is None:
         return None
-    rows: List[Tuple[str, str]] = []
-    for line in out.read_text(encoding="utf-8").splitlines():
-        if not line.startswith("|"):
-            continue
-        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
-        if len(cells) >= 7 and cells[5] in SBOM_SCOPES:
-            rows.append((cells[0], cells[5]))
-    return rows
+    return [(row.get("component", ""), row.get("scope", ""))
+            for row in table if row.get("scope") in SBOM_SCOPES]
 
 
 def write_fixture(root: Path, files: Dict[str, str]) -> None:
@@ -435,6 +459,80 @@ def check_sbom_shapes(r: Results, tmp: Path) -> None:
         "Go-module shape registers base/transitive/test scopes and no "
         "replace or commented-out module",
     )
+
+
+# Real sibling projects the SBOM parser is dogfooded against locally: the
+# directory name and the package ecosystems its manifests declare. A sibling
+# that is not checked out is skipped (CI has no ../ checkouts), so the gate
+# stays green on a clean clone.
+SBOM_SIBLINGS: Tuple[Tuple[str, Tuple[str, ...]], ...] = (
+    #  Cargo workspace with a Python binding crate.
+    ("polars", ("pkg:cargo/", "pkg:pypi/")),
+    #  npm workspace whose lockfile pins the development toolchain.
+    ("playwright", ("pkg:npm/",)),
+    #  CMake C/C++ tree with vendored 3rdparty sources and no manifest.
+    ("opencv", ()),
+    #  pnpm workspace with a vendored node_modules tree.
+    ("lccst", ("pkg:npm/",)),
+    #  Python project built with meson.
+    ("numpy", ("pkg:pypi/",)),
+    #  C library built with meson and no package manifest.
+    ("yams", ()),
+)
+
+
+def check_sbom_siblings(r: Results, tmp: Path) -> None:
+    """Run `sbom` over the real sibling projects present on this machine.
+
+    The shape fixtures above pin the parser in miniature; these checks run
+    the    whole pipeline over real workspaces, where a directory walk, a
+    lockfile, or a scope rule regresses first. Each project must produce a
+    component table with known scopes, no duplicate component, no invented
+    licence or source link on a system row, no component from an ecosystem
+    the project does not declare, and npm components for an npm workspace.
+    A missing sibling is skipped.
+
+    Versions and licences are not asserted: they can come from the package
+    registry, so they depend on the network and on the host's cache.
+    """
+    for name, ecosystems in SBOM_SIBLINGS:
+        target = ROOT.parent / name
+        if not target.is_dir():
+            print(f"  SKIP: ../{name} is not checked out")
+            continue
+        rows = sbom_table(target, tmp / f"sibling-{name}.md")
+        r.check(rows is not None and rows != [],
+                f"../{name}: sbom writes a component table")
+        if not rows:
+            continue
+        scopes = {row.get("scope", "") for row in rows}
+        r.check(scopes <= set(SBOM_SCOPES),
+                f"../{name}: every component carries a known scope")
+        system = [row for row in rows if row.get("scope") == "system"]
+        r.check(all(row.get("purl", "").startswith("pkg:generic/")
+                    for row in system),
+                f"../{name}: a system component carries a generic purl")
+        r.check(all(row.get("license") == "NOASSERTION"
+                    and row.get("source") == "-" for row in system),
+                f"../{name}: a system row invents no licence or source link")
+        foreign = sorted({
+            row.get("purl", "") for row in rows
+            if row.get("purl", "").startswith("pkg:")
+            and not row.get("purl", "").startswith("pkg:generic/")
+            and not any(row.get("purl", "").startswith(prefix)
+                        for prefix in ecosystems)
+        })
+        r.check(not foreign,
+                f"../{name}: no component claims an undeclared ecosystem"
+                + (f" ({', '.join(foreign)})" if foreign else ""))
+        names = [row.get("component", "") for row in rows]
+        r.check(len(names) == len(set(names)),
+                f"../{name}: no component is listed twice")
+        npm = [row for row in rows
+               if row.get("purl", "").startswith("pkg:npm/")]
+        if "pkg:npm/" in ecosystems:
+            r.check(bool(npm),
+                    f"../{name}: the npm workspace registers npm components")
 
 
 def check_target_equivalence(r: Results, tmp: Path) -> None:
@@ -1387,6 +1485,7 @@ def main() -> int:
         check_rejections(r)
         check_tier_tokens(r, tmp)
         check_sbom_shapes(r, tmp)
+        check_sbom_siblings(r, tmp)
         check_target_equivalence(r, tmp)
         check_markdown_output(r, tmp)
         check_complexity(r, tmp)

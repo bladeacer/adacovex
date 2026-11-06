@@ -559,6 +559,43 @@ def diagnostics_block(text: str) -> str:
     return "\n".join(block)
 
 
+def repeated_findings(block: str) -> List[str]:
+    """Return the finding lines a diagnostics block prints more than once.
+
+    @param block  The rendered diagnostics block, or "".
+    @return Every repeated finding line, in the order it repeats.
+    """
+    seen: List[str] = []
+    repeats: List[str] = []
+    for line in block.splitlines():
+        if not line.startswith("    ") or line.startswith("    ..."):
+            continue
+        if line in seen:
+            repeats.append(line)
+        else:
+            seen.append(line)
+    return repeats
+
+
+def repeated_diagnostics(text: str) -> List[str]:
+    """Return diagnostic lines (a location plus a severity) printed twice.
+
+    @param text  Combined output of a `prove` run.
+    @return Every repeated diagnostic line, in the order it repeats.
+    """
+    seen: List[str] = []
+    repeats: List[str] = []
+    for line in text.splitlines():
+        stripped: str = line.strip()
+        if ": warning:" not in stripped and ": error:" not in stripped:
+            continue
+        if stripped in seen:
+            repeats.append(stripped)
+        else:
+            seen.append(stripped)
+    return repeats
+
+
 def _dump(case: Case, variant: str, text: str) -> None:
     """Print one run's full output (--debug)."""
     print("")
@@ -593,6 +630,8 @@ def check_modes(r: Results, root: Path, debug: bool) -> None:
             "concise: the block states how many checks are unproved")
     r.check("(prover " in block,
             "concise: the block names the prover identity")
+    r.check(repeated_diagnostics(text) == [],
+            "concise: a diagnostic the prover repeats is printed once")
 
     proc = run_prove(broken, verbose=True)
     text = proc.stdout + proc.stderr
@@ -634,6 +673,10 @@ def check_case(r: Results, root: Path, case: Case, debug: bool) -> None:
                 f"{case.name}: the block carries a fix hint")
         r.check(f"prove_diag_{case.name}_broken." in block,
                 f"{case.name}: the block names the source file")
+        r.check(repeated_findings(block) == [],
+                f"{case.name}: the block names each finding once")
+        r.check(repeated_diagnostics(text) == [],
+                f"{case.name}: the replay prints each diagnostic once")
         if block:
             print("")
             print(f"--- {case.name} ---")

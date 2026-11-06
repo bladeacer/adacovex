@@ -213,6 +213,11 @@ blocks with their `-->` location, code excerpt, and `+` sub-message
 lines, and the blank lines those drops leave behind (runs of blank lines
 collapse to one).
 
+It also keeps one copy of a diagnostic line that the prover repeated, one
+copy per inlined call site. It states the count with
+`duplicates: N repeated diagnostic line(s) shown once (--verbose shows
+them)`.
+
 The replay opens and closes with one blank line, so it never runs into
 the lines adacovex prints around it. When it removes notices, it states
 so with `filtered: N informational notice(s) hidden (--verbose shows

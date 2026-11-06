@@ -55,7 +55,7 @@ and `tests/e2e/cli_flags.py` (`check_timezone`: default status timestamp is
 UTC+00:00, `--tz=local` with `TZ=Asia/Singapore` reports Asia/Singapore,
 `--tz=UTC+8` reports UTC+08:00).
 
-Native suite: 2143/2143 passing (26 categories).
+Native suite: 2151/2151 passing (26 categories).
 
 ## Proof Results
 

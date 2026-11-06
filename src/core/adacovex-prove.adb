@@ -1577,10 +1577,21 @@ package body Adacovex.Prove is
       --  Framing state and pass counts, copied into Stats before return.
       Kept       : Natural := 0;  --  content lines written
       Prev_Blank : Boolean := True;
-      N_Hidden   : Natural := 0;
-      N_Progress : Natural := 0;
-      N_Errors   : Natural := 0;
-      N_Warnings : Natural := 0;
+      N_Hidden     : Natural := 0;
+      N_Progress   : Natural := 0;
+      N_Errors     : Natural := 0;
+      N_Warnings   : Natural := 0;
+      N_Duplicates : Natural := 0;
+
+      --  Diagnostic lines emitted so far, each preceded by a line feed so a
+      --  match is a whole-line match. The prover prints one warning per
+      --  inlined call site, so the same file, line, column, and message can
+      --  arrive many times in one stream. The blob is bounded: past the cap
+      --  the replay stops remembering, so a later repeat is kept (the output
+      --  can be longer, never wrong).
+      Max_Seen_Chars : constant := 1_000_000;
+      Seen           : Ada.Strings.Unbounded.Unbounded_String :=
+        Ada.Strings.Unbounded.To_Unbounded_String (String'(1 => ASCII.LF));
 
       --  First non-blank character of S (' ' when S is blank).
       function Head (S : String) return Character is
@@ -1718,6 +1729,24 @@ package body Adacovex.Prove is
          end loop;
          return False;
       end Is_Suppressed;
+
+      --  True when a diagnostic line with this text was already emitted, and
+      --  remember it when it is new. The comparison is on the trimmed line,
+      --  so the file, line, column, severity, and message are always compared
+      --  together.
+      --  @param L  Candidate diagnostic line.
+      --  @return True when the same line was emitted earlier in this pass.
+      function Duplicate (L : String) return Boolean is
+         T   : constant String := Trim (L, Ada.Strings.Both);
+         Key : constant String := ASCII.LF & T;
+      begin
+         if Ada.Strings.Unbounded.Index (Seen, Key) > 0 then
+            return True;
+         elsif Ada.Strings.Unbounded.Length (Seen) < Max_Seen_Chars then
+            Ada.Strings.Unbounded.Append (Seen, Key);
+         end if;
+         return False;
+      end Duplicate;
    begin
       --  Parse the comma-separated set list; empty => default set.
       declare
@@ -1783,12 +1812,22 @@ package body Adacovex.Prove is
                null;
             else
                Skip_Cont := False;
-               if Is_Error_Line (L) then
-                  N_Errors := N_Errors + 1;
-               elsif Is_Warning_Line (L) then
-                  N_Warnings := N_Warnings + 1;
+               if (Is_Error_Line (L) or else Is_Warning_Line (L))
+                 and then Duplicate (L)
+               then
+                  --  The prover printed this exact diagnostic before, one
+                  --  copy per inlined call site: keep the first copy and its
+                  --  excerpt, and drop the repeat with its continuation.
+                  N_Duplicates := N_Duplicates + 1;
+                  Skip_Cont := True;
+               else
+                  if Is_Error_Line (L) then
+                     N_Errors := N_Errors + 1;
+                  elsif Is_Warning_Line (L) then
+                     N_Warnings := N_Warnings + 1;
+                  end if;
+                  Push (L);
                end if;
-               Push (L);
             end if;
          end;
       end loop;
@@ -1810,6 +1849,12 @@ package body Adacovex.Prove is
             & Natural'Image (N_Hidden)
             & " informational notice(s) hidden (--verbose shows them)");
       end if;
+      if N_Duplicates > 0 then
+         Emit
+           ("  duplicates: "
+            & Natural'Image (N_Duplicates)
+            & " repeated diagnostic line(s) shown once (--verbose shows them)");
+      end if;
       if Kept > 0 and then not Prev_Blank then
          Say ("");
       end if;
@@ -1817,10 +1862,11 @@ package body Adacovex.Prove is
          Close (Dest);
       end if;
       Stats :=
-        (Hidden   => N_Hidden,
-         Progress => N_Progress,
-         Errors   => N_Errors,
-         Warnings => N_Warnings);
+        (Hidden     => N_Hidden,
+         Progress   => N_Progress,
+         Errors     => N_Errors,
+         Warnings   => N_Warnings,
+         Duplicates => N_Duplicates);
    end Replay_Suppressed;
 
    --  A fix hint derived from a check kind: what a developer most often
@@ -1879,6 +1925,15 @@ package body Adacovex.Prove is
       use Ada.Text_IO;
 
       F : File_Type;
+
+      --  The distinct findings already recorded, keyed by `location|kind` and
+      --  preceded by a line feed so a match is a whole-key match. A repeated
+      --  finding is not counted again. The blob is bounded: past the cap the
+      --  pass stops remembering, so a later repeat is kept (the count can be
+      --  larger, never wrong).
+      Max_Seen_Chars : constant := 1_000_000;
+      Seen           : Ada.Strings.Unbounded.Unbounded_String :=
+        Ada.Strings.Unbounded.To_Unbounded_String (String'(1 => ASCII.LF));
 
       --  The finding being read. gnatprove starts a message block with the
       --  message and its severity, names the location on a `-->` line, and
@@ -1992,29 +2047,49 @@ package body Adacovex.Prove is
          return "";
       end Failure_Kind;
 
-      --  Record the open finding, if there is one, and close the block.
-      procedure Finalize is
+      --  True when a finding with this location and kind is already recorded,
+      --  recording it when it is new. The compare and the store use the same
+      --  `location|kind` key, so a repeated finding is recognised exactly.
+      --  @param Loc  Source location of the finding (may be empty).
+      --  @param Kind  Check kind of the finding.
+      --  @return True when the same location and kind were recorded earlier.
+      function Already_Seen (Loc : String; Kind : String) return Boolean is
+         Key : constant String := ASCII.LF & Loc & "|" & Kind;
       begin
-         if Have_Cand then
+         if Ada.Strings.Unbounded.Index (Seen, Key) > 0 then
+            return True;
+         elsif Ada.Strings.Unbounded.Length (Seen) < Max_Seen_Chars then
+            Ada.Strings.Unbounded.Append (Seen, Key);
+         end if;
+         return False;
+      end Already_Seen;
+
+      --  Record the open finding, if there is one, and close the block. A
+      --  finding whose location and kind are already recorded is dropped, so
+      --  one check reported per inlined call site counts once.
+      procedure Finalize is
+         Loc  : constant String := To_String (Cand_Loc);
+         Kind : constant String :=
+           (if Length (Cand_Kind) = 0
+            then "unproved check"
+            else To_String (Cand_Kind));
+      begin
+         if Have_Cand and then not Already_Seen (Loc, Kind) then
             Stats.Unproved := Stats.Unproved + 1;
             if Stats.Count < Max_Failure_Items then
                Stats.Count := Stats.Count + 1;
                Stats.Items (Stats.Count) :=
                  (Location => Cand_Loc,
-                  Kind     =>
-                    To_Unbounded_String
-                      (if Length (Cand_Kind) = 0
-                       then "unproved check"
-                       else To_String (Cand_Kind)),
+                  Kind     => To_Unbounded_String (Kind),
                   Flow     => Cand_Flow,
                   Budget   => Cand_Budget);
             end if;
-            Have_Cand := False;
-            Cand_Kind := Null_Unbounded_String;
-            Cand_Loc := Null_Unbounded_String;
-            Cand_Flow := False;
-            Cand_Budget := False;
          end if;
+         Have_Cand := False;
+         Cand_Kind := Null_Unbounded_String;
+         Cand_Loc := Null_Unbounded_String;
+         Cand_Flow := False;
+         Cand_Budget := False;
       end Finalize;
 
       --  Start a finding from a line that carries both its location and its

@@ -103,7 +103,7 @@ group them under one docs page.
 
 ---
 
-- [ ] Item 3 - `just run-ada-crdt`: fix Ada_CRDT findings + proof-diagnostic dedup (planned for v1.69.0)
+- [x] Item 3 - `just run-ada-crdt`: fix Ada_CRDT findings + proof-diagnostic dedup (done in v1.69.0)
 
 **Goal:** The sibling-binary run over `../Ada_CRDT` surfaces (a) real issues
 in Ada_CRDT source to fix there, and (b) adacovex proof-diagnostic noise to
@@ -132,6 +132,10 @@ hidden") hides benign info but the warnings still repeat.
 - `tests/e2e/prove_diagnostics.py`: a fixture whose gnatprove stream repeats
   the same warning N times; assert adacovex's diagnostics block reports it
   once with the right location/hint.
+- `src/tests/adacovex_prove_runner_tests.adb`: captured streams that repeat a
+  warning block and an unproved check; the replay and the block count each
+  once (done in v1.69.0 -- gnatprove itself never repeats deterministically,
+  so the repeated stream is a captured fixture).
 - Confirm `just run-ada-crdt` no longer shows duplicated warnings.
 
 **Verification:** `just run-ada-crdt`, `just prove-e2e`.

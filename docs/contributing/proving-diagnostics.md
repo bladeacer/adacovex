@@ -15,6 +15,11 @@ The replay drops the `Phase N of M:` progress lines and the suppressed notice
 blocks. It drops the blank lines those drops leave behind, and it reports how
 many notices it hid in a `filtered:` footer.
 
+gnatprove prints one warning per inlined call site, so one diagnostic can
+arrive many times in a run. The replay keeps the first copy, drops the repeat
+with its location and excerpt, and states the count in a `duplicates:` footer.
+`--verbose` shows every raw line.
+
 `--verbose` turns the capture off and streams the raw prover output live. CI
 passes `--verbose`, so a CI log keeps the unedited prover stream.
 
@@ -74,6 +79,10 @@ and one fix hint.
 
 The block names at most eight findings. A longer list still counts every
 finding, and it states how many it left out.
+
+The block names each finding once. A check that gnatprove reported once per
+inlined call site counts once, because the location and the check kind are
+the same.
 
 ## What each finding asks you to change
 

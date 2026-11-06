@@ -3,7 +3,7 @@
   "specVersion": "1.5",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-11-05T14:28:51",
+    "timestamp": "2026-11-05T14:40:03",
     "tools": [
       {"vendor": "bladeacer", "name": "adacovex", "version": "1.68.0"}
     ],
@@ -83,7 +83,7 @@
       "version": "16.1.0",
       "language": "Ada",
       "purl": "pkg:alire/gnatprove",
-      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
       },
     {
       "type": "library",
@@ -134,7 +134,7 @@
       "type": "library",
       "bom-ref": "pkg:generic/python",
       "name": "python",
-      "version": "3.13.11",
+      "version": "3.14.9",
       "purl": "pkg:generic/python",
       "description": "System tool referenced by the project (dev dependency)",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
@@ -161,7 +161,7 @@
       "type": "library",
       "bom-ref": "pkg:generic/python3",
       "name": "python3",
-      "version": "3.13.11",
+      "version": "3.14.9",
       "purl": "pkg:generic/python3",
       "description": "System tool referenced by the project (dev dependency)",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
@@ -224,7 +224,7 @@
       "type": "library",
       "bom-ref": "pkg:generic/jj",
       "name": "jj",
-      "version": "0.47.0",
+      "version": "0.47.1",
       "purl": "pkg:generic/jj",
       "description": "System tool referenced by the project (dev dependency)",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
@@ -242,7 +242,7 @@
       "type": "library",
       "bom-ref": "pkg:generic/npm",
       "name": "npm",
-      "version": "12.2.1",
+      "version": "12.2.2",
       "purl": "pkg:generic/npm",
       "description": "System tool referenced by the project (dev dependency)",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
@@ -251,7 +251,7 @@
       "type": "library",
       "bom-ref": "pkg:generic/gh",
       "name": "gh",
-      "version": "2.102.1",
+      "version": "2.103.3",
       "purl": "pkg:generic/gh",
       "description": "System tool referenced by the project (dev dependency)",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
