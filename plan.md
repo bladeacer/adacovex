@@ -1,6 +1,6 @@
 # adacovex release plan: v1.68.0 - v1.70.0
 
-Current version: `1.67.0`. These items ship across **three minor bumps**:
+Current version: `1.68.0`. These items ship across **three minor bumps**:
 `v1.68.0`, `v1.69.0`, `v1.70.0`.
 
 ## Proof-timing phase note
@@ -17,8 +17,8 @@ version; do not cherry-pick rows across versions.
 
 | Version | Status | Theme | Items |
 |---------|--------|-------|-------|
-| v1.68.0 | done | Output defaults & time | 1 (coverage default), 2 (UTC timestamps + opt-in + tests), bulk of 9 (front-load docstrings) |
-| v1.69.0 | planned | Diagnostics & help UX | 3 (proof-diagnostic dedup + ada-crdt findings), 4 (contextual help + e2e), remainder of 9 |
+| v1.68.0 | in progress | Output defaults, time & old-plan closeout | 1 (coverage default), 2 (UTC timestamps + opt-in + tests), 7 (patched-proof artefact length check), old-plan carry-over, bulk of 9 (front-load docstrings) |
+| v1.69.0 | planned | Diagnostics & help UX | 3 (proof-diagnostic dedup + ada-crdt findings), 4 (contextual help + e2e), 10 (compiler-style proof diagnostics), remainder of 9 |
 | v1.70.0 | planned | SBOM robustness + debt | 5 (sbom false positives), 6 (syft comparison), 7 (sibling-binary length check), 8 (tech debt), final 9 touch-ups |
 
 Every change also updates, in the same change: `docs/`, Ada docstrings feeding
@@ -29,6 +29,26 @@ Every change also updates, in the same change: `docs/`, Ada docstrings feeding
 `book-links-check`, `python3 tools/gen-docs.py --check`, then `just book`).
 After `just test` and `just prove`, run `just test-count` and `just
 proof-status`.
+
+## Audited from the tooling-ergonomics plan (`old-plan.md`)
+
+The v1.65.0-v1.67.0 plan is audited and closed. These items shipped and the
+v1.67.0 changelog records them: tldr/man parity (C1/C2), the diagnostics
+block, `--fail-on` and `.covex-ignore` (v1.66.0), configuration and `init`
+(C2/C3), serve watch with `--no-watch` (C4), the docs map and performance
+split (C5), and build-once plus the timing table and the recorded warm-tree
+budget (C6). `just check` passes on the audited tree: 31/31 gates, 344 s warm.
+Two checkboxes were never closed, so they carry into v1.68.0:
+
+- [ ] Old-plan 3.1: an end-to-end test that the composite action behaves like
+  the binary when a target repository carries `adacovex.toml` (priority:
+  high; it is the only shipped behaviour without a real-run action test).
+- [x] Old-plan 3.4: a warm-tree `just check` took **344 s** on 2026-11-06
+  (12 logical CPUs, warm cache and gnatprove session). The measurement is in
+  `docs/contributing/perf/check-pipeline.md`; the 60 s target is not met.
+- [ ] Close the 344 s -> 60 s warm-tree gap. The proof gate (100 s) and the
+  complexity walk (98 s) are 57 percent of the total, so start there
+  (priority: high; the budget promise needs its own release item).
 
 ---
 
@@ -138,11 +158,16 @@ hidden") hides benign info but the warnings still repeat.
   so the repeated stream is a captured fixture).
 - Confirm `just run-ada-crdt` no longer shows duplicated warnings.
 
+**Verified in v1.68.0:** `just run-ada-crdt` exits 0 with 972 checks proved and
+prints `duplicates: 11 repeated diagnostic line(s) shown once`. The warnings
+that still repeat are one location with different `in call inlined at ...`
+suffixes; grouping them is item 10.
+
 **Verification:** `just run-ada-crdt`, `just prove-e2e`.
 
 ---
 
-- [ ] Item 4 - Contextual/flag-specific help looks like main `--help` (planned for v1.69.0)
+- [x] Item 4 - Contextual/flag-specific help looks like main `--help` (done in v1.69.0)
 
 **Goal:** `adacovex prove help`, `adacovex help serve`, `adacovex --serve help`,
 etc. should render with the same structure, framing, and density as the main
@@ -174,6 +199,15 @@ byte-identical. So `adacovex prove help` and `adacovex prove --help` must
 match the main `--help` frame. Other flags' specific help stdout output must
 ensure structural similarity with the main `--help` (unix/CLI style): version
 line, `Usage:` fence, `Options:` list, footer.
+
+**Result:** every topic now opens with the `--help` frame (version line,
+`Usage:` fence, `Options:` heading, body, footer), with the fence naming the
+subcommand (`adacovex prove`), the serve form, or the generic option form.
+`adacovex prove --help` selects the prove topic, while a flag before `--help`
+still prints the full usage. `--help` and `help` remain byte-identical.
+
+**Verified:** `just cli-e2e` (159 checks), `just surface-parity-check`,
+`just docs-check`, and `just complexity-check` pass.
 
 **Verification:** `just cli-e2e`, `just surface-parity-check`.
 
@@ -246,7 +280,7 @@ approaches for robustness ideas, with proper attribution, captured in
 
 ---
 
-- [ ] Item 7 - Sibling-binary bug: `adacovex-prove.adb:2821 length check failed` (planned for v1.70.0)
+- [x] Item 7 - Sibling-binary bug: `adacovex-prove.adb:2821 length check failed` (done in v1.68.0)
 
 **Goal:** Running adacovex as a sibling binary on `../Ada_CRDT` fails with
 `Error: adacovex-prove.adb:2821 length check failed` during the patched-proof
@@ -268,6 +302,9 @@ check at copy time for the patched proof tree (`<target>/obj/adacovex-proof/`).
 - `src/tests/adacovex_prove_runner_tests.adb`: artefact-copy path with
   long/names and a patched proof tree; assert no length check and correct copy.
 - Reproduce `just run-ada-crdt` prove success (972 checks, no length check).
+
+**Result:** the artefact names now share a 17-character bound, and both are
+padded to it. `just run-ada-crdt` proves 972 checks and exits 0.
 
 **Verification:** `just run-ada-crdt`, `just prove`, `just prove-runner-tests`.
 
@@ -316,6 +353,53 @@ files) is empty.
 - `just doc` regenerates without new empty-description warnings.
 
 **Verification:** `just doc`, `just docs-coverage-check`, `just check`.
+
+---
+
+- [ ] Item 10 - Proof diagnostics that read like a compiler (planned for v1.69.0)
+
+**Goal:** A `prove` failure should read like an Ada or Rust compiler error,
+not like a solver transcript: source file and line, the check that failed,
+the exact solver, a counterexample when one exists, and one actionable fix.
+The same facts must be available as CI annotations.
+
+**Current state:** the replay keeps gnatprove's message blocks, and the
+diagnostics block names the location, kind, prover identity, and one fix
+hint. It shows no counterexample and no solver name. It also prints one line
+per inlined call site: `just run-ada-crdt` shows one warning twice at
+`crdt-security-lms.adb:155:07`, with different `in call inlined at ...`
+suffixes.
+
+**Work items:**
+- Group a finding by its own location and message when only the
+  `, in call inlined at file:line` suffix differs, and print the call sites
+  once on a continuation line.
+- Ask gnatprove for counterexamples (`--counterexamples=on`) and read the
+  counterexample values into the finding, so the block says which input
+  fails.
+- Attribute each finding to the solver that produced it (from the SARIF
+  result and the gnatprove summary), not only to the prover version.
+- Render each finding as `file:line:col: error: <kind>` with the source line
+  and caret, the check kind, the solver, the counterexample, and one fix.
+- Add a JSON form (`--diagnostics=json`) so the same facts are
+  machine-readable.
+- Emit GitHub Actions annotations (`::error file=...,line=...,col=...::...`)
+  when `$GITHUB_ACTIONS` is set, in the action and the workflows, so a CI log
+  shows inline annotations instead of a text block.
+- Keep the concise default and the `--verbose` contract. The new detail
+  extends the diagnostics block; it does not add a third mode.
+
+**Files to touch:** `src/core/adacovex-prove.adb/.ads` (finding record,
+counterexample and solver parsing, renderer), `action.yml` and
+`.github/workflows/*` (annotations), `docs/contributing/proving-diagnostics.md`,
+`docs/usage/cli-reference-flags.md`, `docs/changelogs/adacovex-1.69.0.md`.
+
+**Tests to add:** `src/tests/adacovex_prove_runner_tests.adb` (counterexample
+and solver parsing, inlined-call grouping) and `tests/e2e/prove_diagnostics.py`
+(a warning repeated at two inlined call sites renders one grouped finding,
+and the annotation shape when CI is simulated).
+
+**Verification:** `just run-ada-crdt`, `just prove-e2e`, `just cli-e2e`.
 
 ---
 
