@@ -1575,8 +1575,8 @@ package body Adacovex.Prove is
       Dest      : File_Type;
 
       --  Framing state and pass counts, copied into Stats before return.
-      Kept       : Natural := 0;  --  content lines written
-      Prev_Blank : Boolean := True;
+      Kept         : Natural := 0;  --  content lines written
+      Prev_Blank   : Boolean := True;
       N_Hidden     : Natural := 0;
       N_Progress   : Natural := 0;
       N_Errors     : Natural := 0;
@@ -2890,10 +2890,13 @@ package body Adacovex.Prove is
          --  summary did.
          if GPR_Patched then
             declare
-               --  The two artefacts of a proof run, fixed-width so the
-               --  component type stays constrained (Trim drops the padding).
-               Names    : constant array (1 .. 2) of String (1 .. 15) :=
-                 ("gnatprove.out    ", "gnatprove.sarif");
+               --  The two artefacts of a proof run, padded to the longest
+               --  name (gnatprove.out is 13 characters, gnatprove.sarif is
+               --  15). The component type fits every literal: a bound of 15
+               --  raised a length check at copy time for the 17-character
+               --  padded summary name. Trim drops the padding below.
+               Names    : constant array (1 .. 2) of String (1 .. 17) :=
+                 ("gnatprove.out    ", "gnatprove.sarif  ");
                Dir_Part : constant String := "obj/gnatprove/";
                Prefix   : Natural := GLen;
                Src_Out  : String (1 .. Types.Max_Path);
