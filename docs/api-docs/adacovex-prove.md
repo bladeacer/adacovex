@@ -115,10 +115,11 @@ end record;
 
 ```ada
 type Replay_Stats is record
-Hidden   : Natural := 0;
-Progress : Natural := 0;
-Errors   : Natural := 0;
-Warnings : Natural := 0;
+Hidden     : Natural := 0;
+Progress   : Natural := 0;
+Errors     : Natural := 0;
+Warnings   : Natural := 0;
+Duplicates : Natural := 0;
 end record;
 ```
 

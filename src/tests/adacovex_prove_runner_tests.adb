@@ -30,6 +30,28 @@ package body Adacovex_Prove_Runner_Tests is
       return False;
    end Has_Text;
 
+   --  Count the non-overlapping occurrences of Needle in Haystack.
+   --  @param Haystack  String to search.
+   --  @param Needle  Substring to look for.
+   --  @return How many times Needle appears.
+   function Count_Text (Haystack : String; Needle : String) return Natural is
+      Ct : Natural := 0;
+      I  : Natural := Haystack'First;
+   begin
+      if Needle'Length = 0 or else Needle'Length > Haystack'Length then
+         return 0;
+      end if;
+      while I <= Haystack'Last - Needle'Length + 1 loop
+         if Haystack (I .. I + Needle'Length - 1) = Needle then
+            Ct := Ct + 1;
+            I := I + Needle'Length;
+         else
+            I := I + 1;
+         end if;
+      end loop;
+      return Ct;
+   end Count_Text;
+
    --  Create an empty file.
    --  @param Path  File path to create.
    procedure Touch (Path : String) is
@@ -155,6 +177,34 @@ package body Adacovex_Prove_Runner_Tests is
         (F, "Summary logged in obj/gnatprove/gnatprove.out");
       Ada.Text_IO.Close (F);
    end Write_Prover_Blocks;
+
+   --  Write a captured gnatprove stream in which the prover repeats one
+   --  warning block three times (one copy per inlined call site) and reports
+   --  one unproved check twice at the same location.
+   --  @param Path  File path to write.
+   procedure Write_Repeated_Capture (Path : String) is
+      F : Ada.Text_IO.File_Type;
+      W : constant String :=
+        "crdt-lms.adb:155:07: warning: ""Ctx"" is set by ""Final"" but not"
+        & " used after the call";
+   begin
+      Ada.Text_IO.Create (F, Ada.Text_IO.Out_File, Path);
+      Ada.Text_IO.Put_Line (F, W);
+      Ada.Text_IO.Put_Line (F, "--> crdt-lms.adb:155:07");
+      Ada.Text_IO.Put_Line (F, "  155 |       Final (Ctx);");
+      Ada.Text_IO.Put_Line (F, "");
+      Ada.Text_IO.Put_Line (F, W);
+      Ada.Text_IO.Put_Line (F, "--> crdt-lms.adb:155:07");
+      Ada.Text_IO.Put_Line (F, "  155 |       Final (Ctx);");
+      Ada.Text_IO.Put_Line (F, "");
+      Ada.Text_IO.Put_Line (F, W);
+      Ada.Text_IO.Put_Line (F, "--> crdt-lms.adb:155:07");
+      Ada.Text_IO.Put_Line (F, "  155 |       Final (Ctx);");
+      Ada.Text_IO.Put_Line (F, "");
+      Ada.Text_IO.Put_Line (F, "crdt-lms.adb:160:09: index check might fail");
+      Ada.Text_IO.Put_Line (F, "crdt-lms.adb:160:09: index check might fail");
+      Ada.Text_IO.Close (F);
+   end Write_Repeated_Capture;
 
    procedure Run (R : in out Adacovex.Test_Support.Runner'Class) is
       O   : Adacovex.Prove.Prove_Options;
@@ -592,6 +642,56 @@ package body Adacovex_Prove_Runner_Tests is
               (Has_Text (D, "prove_diag_broken.adb:12:14  index check"),
                "the block pairs the location with its kind");
          end;
+      end;
+
+      --  A diagnostic the prover repeats (one copy per inlined call site)
+      --  is replayed once, counted once, and stated in the duplicates footer.
+      declare
+         Repeat_Path : constant String := Fixture_Dir & "/repeated.txt";
+         Replay_Path : constant String := Fixture_Dir & "/repeated.out";
+         Stats       : Adacovex.Prove.Replay_Stats;
+      begin
+         Fixture ("replay.gpr");
+         Write_Repeated_Capture (Repeat_Path);
+         Adacovex.Prove.Replay_Suppressed
+           (Repeat_Path, "", Replay_Path, Stats);
+         declare
+            T : constant String := To_String (Slurp (Replay_Path));
+         begin
+            R.Check
+              (Count_Text (T, "not used after the call") = 1,
+               "the replay keeps one copy of a repeated warning");
+            R.Check
+              (Count_Text (T, "155 |       Final (Ctx);") = 1,
+               "the replay drops the excerpt of a repeated warning");
+            R.Check
+              (Has_Text (T, "duplicates:  2"),
+               "the footer states how many repeats were collapsed");
+         end;
+         R.Check
+           (Stats.Duplicates = 2, "two repeated warning lines are counted");
+         R.Check
+           (Stats.Warnings = 1, "a repeated warning is counted once");
+      end;
+
+      --  The diagnostics block names and counts one finding per location and
+      --  kind, so a check the prover reported twice does not inflate the
+      --  unproved count.
+      declare
+         Repeat_Path : constant String := Fixture_Dir & "/repeated.txt";
+         Stats       : Adacovex.Prove.Failure_Stats;
+      begin
+         Fixture ("replay.gpr");
+         Write_Repeated_Capture (Repeat_Path);
+         Adacovex.Prove.Collect_Failures (Repeat_Path, Stats);
+         R.Check
+           (Stats.Unproved = 1, "a repeated finding is counted once");
+         R.Check (Stats.Count = 1, "a repeated finding is named once");
+         R.Check
+           (Count_Text
+              (Adacovex.Prove.Diagnostics_Text ("", Stats),
+               "crdt-lms.adb:160:09  index check") = 1,
+            "the block lists the repeated finding once");
       end;
 
       Ada.Directories.Delete_Tree (Fixture_Dir);

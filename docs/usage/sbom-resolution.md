@@ -234,3 +234,17 @@ that the manifest sets leave transitive. The e2e fixture's
 `@playwright/test` is the canonical example: it stays a `devDependencies`
 entry of `tests/e2e/package.json` (and a `pnpm-lock.yaml` entry) and is
 classified `test` by name.
+
+## Dogfood projects
+
+The parser is regression-checked against the sibling projects on the
+developer machine: `../polars` (Cargo workspace), `../playwright` (npm
+workspace), `../opencv` (CMake tree with vendored 3rdparty sources),
+`../lccst` (pnpm workspace with a vendored `node_modules` tree), `../numpy`
+(meson Python project), and `../yams` (meson C project).
+
+`tests/e2e/cli_flags.py` runs `sbom` over every project that is present. It
+checks the component table: known scopes, no duplicate component, no invented
+licence or source link on a system row, and no component from an ecosystem
+the project does not declare. A missing sibling is skipped, so a clean clone
+and CI stay green.
