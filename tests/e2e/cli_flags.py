@@ -68,6 +68,14 @@ GIT_ENV: Dict[str, str] = {
 }
 
 # Alias / shorthand topic -> a string that must appear in `help TOPIC`.
+# Topic -> the usage line its contextual help frame must name.
+HELP_FRAMES: Tuple[Tuple[str, str], ...] = (
+    ("prove", "adacovex prove [options]"),
+    ("serve", "adacovex [--serve] [serve options]"),
+    ("sbom", "adacovex sbom [options]"),
+    ("target", "adacovex [options]"),
+)
+
 HELP_TOPICS: Tuple[Tuple[str, str], ...] = (
     ("workers", "--serve-workers"),
     ("svg-path", "--emit-svg"),
@@ -256,12 +264,32 @@ def check_help(r: Results) -> None:
     proc = run(["--help"])
     r.check(proc.returncode == 0, "--help exits 0")
     r.check("--target" in proc.stdout, "--help lists --target")
+    r.check(run(["help"]).stdout == proc.stdout,
+            "--help and help print the same usage")
     for topic, needle in HELP_TOPICS:
         topic_proc = run(["help", topic])
         r.check(
             topic_proc.returncode == 0 and needle in topic_proc.stdout,
             f"help {topic} prints the {needle} section",
         )
+    for topic, usage in HELP_FRAMES:
+        text = run(["help", topic]).stdout
+        r.check(
+            text.startswith("adacovex v")
+            and "Usage:" in text
+            and f"  {usage}" in text
+            and "Options:" in text
+            and "Run 'adacovex --help' for the full option list." in text,
+            f"help {topic} renders the --help frame",
+        )
+    r.check(run(["help", "serve"]).stdout == run(["--serve", "help"]).stdout,
+            "--serve help equals help serve")
+    prove_help = run(["prove", "help"]).stdout
+    r.check(prove_help == run(["prove", "--help"]).stdout,
+            "prove --help equals prove help")
+    r.check(all(flag in prove_help
+                for flag in ("-j", "-l", "--args", "--suppress-warnings")),
+            "prove help lists the prove flags")
 
 
 def check_completion(r: Results) -> None:
