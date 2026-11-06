@@ -42,3 +42,28 @@ gnatprove session, a built tree, and a toolchain without the optional API-docs
 generator. A cold proof alone runs 61-88 s, so a cold tree cannot meet the
 budget by construction; the plan records that shape as the outlier rather than
 hiding it. The timing table makes the difference visible on every run.
+
+## The measured warm-tree run
+
+One full `just check` on the development machine (12 logical CPUs, warm
+result cache, warm gnatprove session, built tree, API docs generator
+installed) took **344 s** on 2026-11-06. The 60 s target is not met. The gate
+timings from that run, slowest first, are:
+
+| Gate | Seconds |
+|------|---------|
+| SPARK proof + badges | 99.77 |
+| complexity | 97.65 |
+| tools unit tests | 40.72 |
+| prove diagnostics end-to-end | 40.22 |
+| proof metrics in sync | 21.13 |
+| fmt | 13.95 |
+| CLI end-to-end | 11.42 |
+| test counts in sync | 7.99 |
+| API docs | 4.19 |
+| native tests | 3.44 |
+| the other 21 gates | 2.90 |
+| **total (sequential)** | **344.34** |
+
+The proof run and the complexity walk account for 197 s. Both scan the tree
+once, so they are the first place to look before the budget can move.
