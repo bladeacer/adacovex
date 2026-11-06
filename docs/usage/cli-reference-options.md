@@ -215,6 +215,13 @@ adacovex help theme        # every flag has a topic (port, target, ...)
 adacovex help              # no topic: full usage
 ```
 
+Contextual help uses the same frame as `--help`: the version line, a `Usage:`
+fence that names the topic's subcommand or flag form, an `Options:` heading,
+the topic body, and a pointer to the full option list. `adacovex prove help`
+and `adacovex prove --help` both select the prove topic, and `adacovex --serve
+help` equals `adacovex help serve`. `--help` and `help` with no topic stay
+byte-identical.
+
 The topic is case-insensitive and an `=value` suffix is ignored
 (`help --standard=all` == `help standard`). Unknown topics print the full
 usage with an "Unknown topic" notice. Contextual help exits `0` and never

@@ -42,6 +42,16 @@ a description unless the docstring itself is empty.
 
 ## Fixes
 
+### H1: The patched-proof artefact copy no longer fails a length check
+
+A `prove` run that applied proof patches copied its artefacts to the target's
+`obj/gnatprove/` through a fixed-width name array. The component type was
+`String (1 .. 15)`, and the padded summary name `"gnatprove.out    "` is 17
+characters, so the first patched run raised `length check failed` after a
+successful proof. `just run-ada-crdt` then exited 1 even though gnatprove had
+proved every check. The array now has a bound of 17, and both names are padded
+to it.
+
 ## Test Suite
 
 Added coverage-default checks to `tests/e2e/cli_flags.py`
@@ -56,6 +66,9 @@ UTC+00:00, `--tz=local` with `TZ=Asia/Singapore` reports Asia/Singapore,
 `--tz=UTC+8` reports UTC+08:00).
 
 Native suite: 2151/2151 passing (26 categories).
+
+`just run-ada-crdt` now completes: 972 checks proved, DAL-C Achieved, exit 0.
+Before H1 it stopped at the artefact copy with a length check.
 
 ## Proof Results
 
