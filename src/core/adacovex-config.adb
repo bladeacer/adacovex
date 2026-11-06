@@ -1,5 +1,6 @@
 with Ada.Command_Line;
 with Ada.Directories;
+with Ada.Strings.Fixed;
 with Ada.Text_IO;
 with Adacovex.CPUs;
 with Adacovex.Paths;
@@ -11,6 +12,11 @@ package body Adacovex.Config is
    use type Types.Spark_Metric_Kind;
    use type Types.Spark_Group_Kind;
    use type Types.Spark_Report_Kind;
+
+   --  Subcommands that can precede --help and select their own topic. The
+   --  bare words only: a flag before --help must not narrow the full usage.
+   Subcommands_With_Help : constant String :=
+     "|sbom|prove|status|man|tldr|init|complexity|spark-coverage|completion|";
 
    function Has_Prefix (S : String; Prefix : String) return Boolean
    with
@@ -2239,8 +2245,19 @@ package body Adacovex.Config is
                   elsif A = "--help" then
                      --  Full usage is printed by the caller (main / tests) when
                      --  Help_Requested is set, so `--help`, `help`, and
-                     --  `help TOPIC` share one printing path.
+                     --  `help TOPIC` share one printing path. A subcommand
+                     --  before the flag selects that topic, so
+                     --  `adacovex prove --help` reads like `prove help`.
                      Cfg.Help_Requested := True;
+                     if I > 1
+                       and then Ada.Strings.Fixed.Index
+                                  (Subcommands_With_Help,
+                                   "|" & Args (I - 1) & "|")
+                                > 0
+                     then
+                        Set_String
+                          (Cfg.Help_Topic, Cfg.Help_Topic_Len, Args (I - 1));
+                     end if;
                   else
                      --  Unknown token: reject loudly instead of silently running
                      --  an assessment. Flag-like tokens (--foo) and bare words
@@ -2976,12 +2993,16 @@ package body Adacovex.Config is
       return Testing.Parse_All (Args);
    end Parse_CLI;
 
+   --  The identity line every help surface opens with, so the full usage and
+   --  contextual help state the same tool and version.
+   Help_Banner : constant String :=
+     "adacovex v"
+     & Adacovex.Version
+     & " -- Ada/SPARK coverage, proof, and multi-standard compliance tool";
+
    procedure Print_Usage is
    begin
-      Ada.Text_IO.Put_Line
-        ("adacovex v"
-         & Adacovex.Version
-         & " -- Ada/SPARK coverage, proof, and multi-standard compliance tool");
+      Ada.Text_IO.Put_Line (Help_Banner);
       Ada.Text_IO.Put_Line ("");
       Ada.Text_IO.Put_Line ("Usage: adacovex [options]");
       Ada.Text_IO.Put_Line
@@ -3317,6 +3338,51 @@ package body Adacovex.Config is
         ("(DO-178C / ISO 26262 / IEC 62304), and interactive dashboards");
    end Print_Usage;
 
+   --  Topics whose usage names a subcommand, as one pipe-delimited string so
+   --  the check is a substring test rather than a second branch chain.
+   Subcommand_Topics : constant String :=
+     "|sbom|prove|status|man|tldr|init|complexity|spark-coverage|completion"
+     & "|help|";
+
+   --  Topics that describe the served dashboard.
+   Serve_Topics : constant String :=
+     "|serve|theme|port|watch|no-watch|serve-workers|workers|";
+
+   --  The usage line a topic's frame names: its own subcommand when it has
+   --  one, the serve form for the dashboard topics, and the generic option
+   --  form for a plain flag.
+   --  @param T  Normalized topic name.
+   --  @return The usage line printed under the `Usage:` fence.
+   function Topic_Usage (T : String) return String is
+   begin
+      if Ada.Strings.Fixed.Index (Serve_Topics, "|" & T & "|") > 0 then
+         return "adacovex [--serve] [serve options]";
+      elsif Ada.Strings.Fixed.Index (Subcommand_Topics, "|" & T & "|") > 0 then
+         return "adacovex " & T & " [options]";
+      end if;
+      return "adacovex [options]";
+   end Topic_Usage;
+
+   --  Open a contextual help frame the way --help opens: the version line, a
+   --  `Usage:` fence, and the `Options:` heading.
+   --  @param Usage  Line printed under the `Usage:` fence.
+   procedure Print_Help_Opening (Usage : String) is
+   begin
+      Ada.Text_IO.Put_Line (Help_Banner);
+      Ada.Text_IO.Put_Line ("");
+      Ada.Text_IO.Put_Line ("Usage:");
+      Ada.Text_IO.Put_Line ("  " & Usage);
+      Ada.Text_IO.Put_Line ("");
+      Ada.Text_IO.Put_Line ("Options:");
+   end Print_Help_Opening;
+
+   --  Close a contextual help frame with the same pointer --help gives.
+   procedure Print_Help_Footer is
+   begin
+      Ada.Text_IO.Put_Line ("");
+      Ada.Text_IO.Put_Line ("Run 'adacovex --help' for the full option list.");
+   end Print_Help_Footer;
+
    --  Lowercase a string, stripping a leading "--"/"-" and any "=value"
    --  suffix so "--standard=all", "--Serve", "-r", and "standard" all
    --  match a canonical topic. A single shorthand letter resolves to its
@@ -3394,31 +3460,43 @@ package body Adacovex.Config is
       return Buf (1 .. Len);
    end Normalize_Topic;
 
-   --  Print a named help section (title + body lines).
-   procedure Print_Section (Title : String; Body_Text : String) is
-      Start : Natural := Body_Text'First;
-   begin
-      Ada.Text_IO.Put_Line ("");
-      Ada.Text_IO.Put_Line (Title);
-      Ada.Text_IO.Put_Line
-        ("------------------------------------------------------------");
-      while Start <= Body_Text'Last loop
-         declare
-            Fin : Natural := Start;
-         begin
-            while Fin < Body_Text'Last and then Body_Text (Fin) /= ASCII.LF
-            loop
-               Fin := Fin + 1;
-            end loop;
-            Ada.Text_IO.Put_Line (Body_Text (Start .. Fin));
-            exit when Fin = Body_Text'Last;
-            Start := Fin + 1;
-         end;
-      end loop;
-   end Print_Section;
-
    procedure Print_Topic_Help (Topic : String) is
-      T : constant String := Normalize_Topic (Topic);
+      T      : constant String := Normalize_Topic (Topic);
+      Usage  : constant String := Topic_Usage (T);
+      Framed : Boolean := False;
+
+      --  Print one named help section. The first section of a topic opens the
+      --  shared frame, so every topic reads like --help: version line, usage
+      --  fence, options heading, body, and footer.
+      --  @param Title  Section heading.
+      --  @param Body_Text  Section lines, separated by line feeds.
+      procedure Print_Section (Title : String; Body_Text : String) is
+         Start : Natural := Body_Text'First;
+      begin
+         if not Framed then
+            Print_Help_Opening (Usage);
+            Framed := True;
+         end if;
+         Ada.Text_IO.Put_Line ("");
+         Ada.Text_IO.Put_Line (Title);
+         while Start <= Body_Text'Last loop
+            declare
+               Fin : Natural := Start;
+            begin
+               while Fin < Body_Text'Last and then Body_Text (Fin) /= ASCII.LF
+               loop
+                  Fin := Fin + 1;
+               end loop;
+               if Body_Text (Fin) = ASCII.LF then
+                  Ada.Text_IO.Put_Line (Body_Text (Start .. Fin - 1));
+               else
+                  Ada.Text_IO.Put_Line (Body_Text (Start .. Fin));
+               end if;
+               exit when Fin = Body_Text'Last;
+               Start := Fin + 1;
+            end;
+         end loop;
+      end Print_Section;
    begin
       if T = "" then
          Print_Usage;
@@ -3944,6 +4022,9 @@ package body Adacovex.Config is
          Print_Usage;
          Ada.Text_IO.Put_Line
            ("Unknown topic '" & Topic & "' -- showing full usage above.");
+      end if;
+      if Framed then
+         Print_Help_Footer;
       end if;
    end Print_Topic_Help;
 
