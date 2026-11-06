@@ -670,8 +670,7 @@ package body Adacovex_Prove_Runner_Tests is
          end;
          R.Check
            (Stats.Duplicates = 2, "two repeated warning lines are counted");
-         R.Check
-           (Stats.Warnings = 1, "a repeated warning is counted once");
+         R.Check (Stats.Warnings = 1, "a repeated warning is counted once");
       end;
 
       --  The diagnostics block names and counts one finding per location and
@@ -684,13 +683,13 @@ package body Adacovex_Prove_Runner_Tests is
          Fixture ("replay.gpr");
          Write_Repeated_Capture (Repeat_Path);
          Adacovex.Prove.Collect_Failures (Repeat_Path, Stats);
-         R.Check
-           (Stats.Unproved = 1, "a repeated finding is counted once");
+         R.Check (Stats.Unproved = 1, "a repeated finding is counted once");
          R.Check (Stats.Count = 1, "a repeated finding is named once");
          R.Check
            (Count_Text
               (Adacovex.Prove.Diagnostics_Text ("", Stats),
-               "crdt-lms.adb:160:09  index check") = 1,
+               "crdt-lms.adb:160:09  index check")
+            = 1,
             "the block lists the repeated finding once");
       end;
 
