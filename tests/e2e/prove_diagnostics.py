@@ -44,6 +44,7 @@ Exit code 0 when every check passes, 1 otherwise.
 """
 
 import argparse
+import os
 import shutil
 import subprocess
 import sys
@@ -530,9 +531,13 @@ def run_prove(project: Path, verbose: bool = False,
     if verbose:
         argv.append("--verbose")
     argv.extend(extra or [])
+    #  The checks assert on plain text, so opt out of ANSI colour. The
+    #  binary honours NO_COLOR exactly as it does for a redirected log.
+    env = dict(os.environ)
+    env["NO_COLOR"] = "1"
     return subprocess.run(
         argv, cwd=str(project), capture_output=True, text=True,
-        timeout=900, errors="replace")
+        timeout=900, errors="replace", env=env)
 
 
 def diagnostics_block(text: str) -> str:

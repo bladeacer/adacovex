@@ -286,7 +286,7 @@ and the gnatprove session store is wiped before each one. The 1.62.0 rows are
   79.4 s +/- 2.7 s (76.7-82.2 s, 3 runs) at load 2.21; prove cold clone
   80.8 s +/- 2.7 s (78.9-82.7 s, 2 runs) at load 2.52. The warm stat count is
   7 924 against 14 106 for the previous phase, the campaign is 1054 VCs with
-  196 flow and 858 provers across 75 analysed units and 0 unproved, and the
+  196 flow and 858 provers across 76 analysed units and 0 unproved, and the
   stripped binary is 6 552 528 bytes (6.2 MiB) against 10 202 640 bytes
   (9.7 MiB) unstripped.
 - **The paired comparison against 1.62.0 is the evidence that the release did

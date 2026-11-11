@@ -138,7 +138,7 @@ jobs:
           verbose: true
           require-spark: Gold
           require-docstrings: 100
-          require-tests: 2151
+          require-tests: 2155
           require-proof: 100
 
       - name: Require Gold SPARK level

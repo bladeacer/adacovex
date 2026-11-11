@@ -1,3 +1,4 @@
+with Adacovex.Prove_Output;
 with Adacovex.Types;
 with Ada.Strings.Unbounded;
 
@@ -221,84 +222,45 @@ package Adacovex.Prove is
       Duplicates : Natural := 0;
    end record;
 
-   --  The most unproved findings one diagnostics block lists. A larger
-   --  count is still reported; only the first Max_Failure_Items entries
-   --  are named, so a project with many unproved checks does not swamp the
-   --  report.
-   Max_Failure_Items : constant := 8;
+   --  The proof finding model, the pass that reads a captured stream, the
+   --  rendered diagnostics block, and the annotation shape live in
+   --  `Adacovex.Prove_Output`. They are re-exported here so the prove API
+   --  stays one package for callers and tests.
+   subtype Prove_Failure is Adacovex.Prove_Output.Prove_Failure;
 
-   --  One unproved finding of a proof run, gathered from the captured
-   --  gnatprove stream.
-   type Prove_Failure is record
-      --  `file:line:column`, as gnatprove reported the check.
-      Location : Ada.Strings.Unbounded.Unbounded_String :=
-        Ada.Strings.Unbounded.Null_Unbounded_String;
-      --  The check kind (for example `range check` or `postcondition`).
-      Kind     : Ada.Strings.Unbounded.Unbounded_String :=
-        Ada
-          .Strings
-          .Unbounded
-          .Null_Unbounded_String;      --  True for a flow-analysis finding (an uninitialized object),
-      --  False for a prover check.
-      Flow     : Boolean := False;
+   --  The most unproved findings one diagnostics block lists.
+   Max_Failure_Items : constant := Adacovex.Prove_Output.Max_Failure_Items;
 
-      --  True when the prover gave up instead of finding a counterexample:
-      --  the proof ran out of budget, so a larger --steps is the next step
-      --  and the code may well be correct.
-      Budget : Boolean := False;
-   end record;
-
-   type Failure_Array is array (1 .. Max_Failure_Items) of Prove_Failure;
+   --  The fixed finding array one diagnostics pass fills.
+   subtype Failure_Array is Adacovex.Prove_Output.Failure_Array;
 
    --  Counts gathered by one diagnostics pass over a captured gnatprove
-   --  output file. Unproved is every unproved finding the stream carried
-   --  and Count is how many of them Items names, so a reader sees both the
-   --  scale of the failure and the first locations to fix.
-   type Failure_Stats is record
-      --  Distinct unproved findings seen in the stream; a repeated finding
-      --  counts once.
-      Unproved : Natural := 0;
-      --  Entries filled in Items (<= Max_Failure_Items).
-      Count    : Natural := 0;
-      --  The first findings, in stream order.
-      Items    : Failure_Array;
-   end record;
+   --  output file.
+   subtype Failure_Stats is Adacovex.Prove_Output.Failure_Stats;
 
-   --  Collect the actionable failure detail of a captured gnatprove stream:
-   --  the location and check kind of every unproved check, and of every
-   --  flow finding that names an uninitialized object. A prover failure
-   --  line has the shape
-   --
-   --     unit.adb:54:08: medium: postcondition might fail
-   --
-   --  and a flow finding the shape
-   --
-   --     unit.adb:31:05: "X" is not initialized
-   --
-   --  so the pass keeps the location, strips the optional severity word,
-   --  and derives the kind from the message. Every other line is ignored:
-   --  a line without a `file:line:column` prefix is not a finding, and a
-   --  finding that reports a proof outcome rather than a failure is not one
-   --  to act on. A check counts once per source location and check kind: the
-   --  prover can report one check once per inlined call site, so a repeated
-   --  finding is not double-counted. The seen table is bounded, and a stream
-   --  with more distinct findings than it holds keeps its later repeats.
+   --  Collect the actionable failure detail of a captured gnatprove stream.
+   --  The rules (severity stripping, deduplication, the bounded seen table)
+   --  are documented on `Adacovex.Prove_Output.Collect_Failures`.
    --  @param Path  Captured gnatprove output file to read.
    --  @param Stats  Findings gathered during the pass.
-   procedure Collect_Failures (Path : String; Stats : out Failure_Stats);
+   procedure Collect_Failures (Path : String; Stats : out Failure_Stats)
+   renames Adacovex.Prove_Output.Collect_Failures;
 
    --  Render the diagnostics block for a proof run that left unproved
-   --  checks: how many, which prover produced them, the first check
-   --  locations with their kinds, and a one-line fix hint derived from the
-   --  first check's kind. It is empty when the run left no finding, so a
-   --  clean run prints nothing. Lines end with a line feed and the last line
-   --  is the hint, so the caller can print the result as one block.
-   --  @param Prover  The resolved prover identity (version or path), or ""
-   --  when it is not known.
+   --  checks.
+   --  @param Prover  The resolved prover identity (version or path), or "".
    --  @param Stats  Findings gathered by Collect_Failures.
    --  @return The diagnostics block, or "" when there is nothing to report.
    function Diagnostics_Text
-     (Prover : String; Stats : Failure_Stats) return String;
+     (Prover : String; Stats : Failure_Stats) return String
+   renames Adacovex.Prove_Output.Diagnostics_Text;
+
+   --  Build the GitHub Actions workflow command for one unproved finding.
+   --  @param Location  Source location as Collect_Failures recorded it.
+   --  @param Kind  Check kind (for example "range check").
+   --  @return The workflow command, or "" when the location is malformed.
+   function Annotation_Line (Location : String; Kind : String) return String
+   renames Adacovex.Prove_Output.Annotation_Line;
 
    --  Replay a captured gnatprove output file (its combined stdout and
    --  stderr) as one framed block, dropping the noise a finished run no

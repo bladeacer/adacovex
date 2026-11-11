@@ -15,6 +15,7 @@ src/core/adacovex-diff	Differential assessment (--compare-base / --coverage-delt
 src/core/adacovex-paths	Platform-agnostic path helpers (Is_Absolute / Join / Expand_User / Home_Directory; DOS vs Unix separators)
 src/core/adacovex-install	Installation-method detection for the running binary (source checkout / Alire global / on PATH) + the SBOM scope rule for a project's adacovex reference
 src/core/adacovex-prove	GNATprove runner for the `prove` subcommand (alire-first toolchain resolution; --args passthrough; no-covex-spark-proof unit opt-outs via -u)
+src/core/adacovex-prove_output	Proof diagnostics and output (finding model, captured-stream pass, diagnostics block, CI annotations, coloured replay printer, replay cache)
 src/core/adacovex-prove_patch	Proof patches for vendored deps (SPARK aspect merge + patched proof tree)
 src/core/adacovex-cache	On-disk result cache (content-hashed per-file, oldest-first eviction, size policy) + persistent stat-stamp index + per-process directory snapshot memo
 src/core/adacovex-dir_cache	Per-process directory-snapshot memo (one enumeration + stat set shared by all walkers; packed 66-byte entries, 128-byte key, 128-entry cap)
@@ -64,7 +65,7 @@ src/tests/adacovex_spark_coverage_tests	SPARK coverage report tests
 src/tests/adacovex_opt_outs_tests	Per-file opt-out marker tests (20)
 src/tests/adacovex_dir_cache_tests	Directory-snapshot memo tests (29)
 src/tests/adacovex_diff_tests	Differential-report regression tests (36)
-src/tests/adacovex_prove_runner_tests	GNATprove runner option/GPR tests (86)
+src/tests/adacovex_prove_runner_tests	GNATprove runner option/GPR tests (90)
 src/tests/adacovex_ansi_tests	ANSI terminal report tests (28)
 src/tests/adacovex_cpus_tests	Host CPU and job-resolution tests (24)
 src/tests/adacovex_do178c_tests	HLR/LLR parsing and line-reader tests (33)
@@ -75,7 +76,7 @@ src/tests/adacovex_install_tests	Installation-method tests (23)
 src/tests/adacovex_renderer_svg_tests	SVG renderer tests (161)
 src/tests/adacovex_renderer_tests	HTML/Markdown renderer tests (58)
 src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (366)
-src/tests/test_runner	Test suite entry point (2151 tests)
+src/tests/test_runner	Test suite entry point (2155 tests)
 src/parsers/adacovex-parsers-manifest-req_entry	Parse the first requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-collect_req_entries	Collect every requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-register_root_python_deps	Register root requirements*.txt entries as dev-scope pypi components

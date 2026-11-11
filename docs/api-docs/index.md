@@ -86,6 +86,7 @@ dictionary means the sentence is not yet STE100-clean.
 - [Adacovex.Parsers](adacovex-parsers.md)
 - [Adacovex.Paths](adacovex-paths.md)
 - [Adacovex.Prove](adacovex-prove.md)
+- [Adacovex.Prove_Output](adacovex-prove_output.md)
 - [Adacovex.Prove_Patch](adacovex-prove_patch.md)
 - [Adacovex.Renderers](adacovex-renderers.md)
 - [Adacovex.Server](adacovex-server.md)

@@ -510,6 +510,29 @@ package body Adacovex_Prove_Runner_Tests is
               (Has_Text (D, "loop invariant or the postcondition"),
                "the fix hint matches the first check's kind");
          end;
+         --  The same finding maps to a GitHub Actions inline annotation:
+         --  the file, line, and column are split off the recorded location.
+         R.Check
+           (Adacovex.Prove.Annotation_Line
+              ("adacovex-types.adb:54:08", "postcondition")
+            = "::error file=adacovex-types.adb,line=54,col=08,"
+              & "title=SPARK proof failed::postcondition",
+            "a finding maps to a GitHub Actions error annotation");
+         R.Check
+           (Adacovex.Prove.Annotation_Line ("unit.adb:12", "range check")
+            = "::error file=unit.adb,line=12,title=SPARK proof failed::"
+              & "range check",
+            "an annotation without a column omits the col field");
+         R.Check
+           (Adacovex.Prove.Annotation_Line ("not a location", "range check")
+            = "",
+            "a malformed location yields no annotation");
+         R.Check
+           (Adacovex.Prove.Annotation_Line
+              ("C:\\src\\unit.adb:12", "range check")
+            = "::error file=C:\\src\\unit.adb,line=12,"
+              & "title=SPARK proof failed::range check",
+            "a drive-letter colon is not read as a column");
       end;
 
       --  A clean capture names nothing, and a run with no finding renders no

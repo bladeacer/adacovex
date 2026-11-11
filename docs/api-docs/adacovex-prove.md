@@ -61,33 +61,19 @@ HLR-PROVE: GNATprove subcommand
 ### type Failure_Array
 
 ```ada
-type Failure_Array is array (1 .. Max_Failure_Items) of Prove_Failure;
+subtype Failure_Array is Adacovex.Prove_Output.Failure_Array;
 ```
 
 ### type Failure_Stats
 
 ```ada
-type Failure_Stats is record
-Unproved : Natural := 0;
-Count    : Natural := 0;
-Items    : Failure_Array;
-end record;
+subtype Failure_Stats is Adacovex.Prove_Output.Failure_Stats;
 ```
 
 ### type Prove_Failure
 
 ```ada
-type Prove_Failure is record
-Location : Ada.Strings.Unbounded.Unbounded_String :=
-Ada.Strings.Unbounded.Null_Unbounded_String;
-Kind     : Ada.Strings.Unbounded.Unbounded_String :=
-Ada
-.Strings
-.Unbounded
-.Null_Unbounded_String;
-Flow     : Boolean := False;
-Budget : Boolean := False;
-end record;
+subtype Prove_Failure is Adacovex.Prove_Output.Prove_Failure;
 ```
 
 ### type Prove_Options
@@ -125,6 +111,15 @@ end record;
 
 ## Functions
 
+### function Annotation_Line (Location : Standard.String; Kind : Standard.String) return Standard.String
+
+| Parameter | Description |
+|-----------|-------------|
+| `Kind` | Check kind (for example "range check"). |
+| `Location` | Source location as Collect_Failures recorded it. |
+
+**Returns:** The workflow command, or "" when the location is malformed.
+
 ### function Build_Option_String (Opts : Adacovex.Prove.Prove_Options; Jobs : Standard.Natural) return Standard.String
 
 | Parameter | Description |
@@ -142,7 +137,7 @@ end record;
 
 | Parameter | Description |
 |-----------|-------------|
-| `Prover` | The resolved prover identity (version or path), or "" |
+| `Prover` | The resolved prover identity (version or path), or "". |
 | `Stats` | Findings gathered by Collect_Failures. |
 
 **Returns:** The diagnostics block, or "" when there is nothing to report.

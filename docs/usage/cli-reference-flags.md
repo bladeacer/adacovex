@@ -233,6 +233,19 @@ one fix hint derived from the first check's kind. A flow finding is marked
 passes it. Shapes and mode rules:
 [Reading a prove failure](../contributing/proving-diagnostics.md).
 
+The concise replay is coloured by severity: errors red, warnings yellow,
+notices and locations dim, `Success:` green, and the summary footers bold.
+`Adacovex.Ansi` turns colour off under CI, `NO_COLOR`, or `TERM=dumb`, so a
+redirected log stays plain text. The cached replay is stored without escape
+codes and coloured when it is printed, so a later run never inherits another
+terminal's decision.
+
+A warm cache hit is not a silent run. The plain replay text is cached under
+the proof input hash and printed again, so a cached run and a fresh run show
+the same warnings, diagnostics block, and footers. Inside GitHub Actions,
+each distinct unproved finding is also emitted as
+`::error file=<path>,line=<line>,col=<column>,title=SPARK proof failed::<kind>`.
+
 `prove` accepts all assessment flags too (`--dal`, `--standard`, the
 `--require-*` gates, `--emit-svg`, and more), so CI gates apply to the proof
 run directly. `--force` is shared with `man --force` (see below); the

@@ -23,6 +23,25 @@ with its location and excerpt, and states the count in a `duplicates:` footer.
 `--verbose` turns the capture off and streams the raw prover output live. CI
 passes `--verbose`, so a CI log keeps the unedited prover stream.
 
+## Colour, the cache, and CI
+
+The concise replay is coloured by severity. Errors are red, warnings are
+yellow, and notices and their locations are dim. `Success:` is green, and the
+summary footers are bold. The same rules apply to a cached replay.
+
+Colour is off when a CI variable is set, when `NO_COLOR` is set, or when
+`TERM=dumb`. A redirected log therefore stays plain text.
+
+A warm cache hit is not a silent run. adacovex stores the plain replay text
+under the proof input hash and prints it again, so a cached run and a fresh
+run report the same warnings, diagnostics block, and footers. The `cache:`
+line says that the proof itself came from disk.
+
+Inside GitHub Actions, each distinct unproved finding is also an inline
+annotation. The shape is
+`::error file=<path>,line=<line>,col=<column>,title=SPARK proof failed::<kind>`.
+A local run prints the text block only.
+
 ## A clean run
 
 ```
