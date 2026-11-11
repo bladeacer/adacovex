@@ -1176,8 +1176,13 @@ begin
 
    --  Show the proof-coverage summary line for a plain run too, when proof
    --  artefacts are available. --no-coverage / [prove] coverage = false hides
-   --  it; the default is on, matching `adacovex prove`.
-   if Cfg.Prove_Show_Coverage and then Proof.Total_VCs > 0 then
+   --  it; the default is on, matching `adacovex prove`. A prove-mode run
+   --  already printed the line in Run_Prove (on a fresh run and on a warm
+   --  cache hit alike), so printing it here again would duplicate it.
+   if not Cfg.Prove_Mode
+     and then Cfg.Prove_Show_Coverage
+     and then Proof.Total_VCs > 0
+   then
       Adacovex.Prove.Report_Coverage (Target (1 .. TLen));
    end if;
 
