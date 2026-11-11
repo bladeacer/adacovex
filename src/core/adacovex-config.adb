@@ -3001,6 +3001,23 @@ package body Adacovex.Config is
      & " -- Ada/SPARK coverage, proof, and multi-standard compliance tool";
 
    procedure Print_Usage is
+      --  Print one usage entry, with a blank line before each new option so
+      --  the list reads as groups instead of one dense wall. A wrapped
+      --  continuation line starts with enough spaces to align under the
+      --  option, so it gets no break.
+      --  @param S  Option or continuation line.
+      procedure Opt (S : String) is
+      begin
+         if S'Length >= 3
+           and then S (S'First) = ' '
+           and then S (S'First + 1) = ' '
+           and then S (S'First + 2) /= ' '
+         then
+            Ada.Text_IO.Put_Line ("");
+         end if;
+         Ada.Text_IO.Put_Line (S);
+      end Opt;
+
    begin
       Ada.Text_IO.Put_Line (Help_Banner);
       Ada.Text_IO.Put_Line ("");
@@ -3020,322 +3037,249 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line ("       adacovex help [TOPIC]");
       Ada.Text_IO.Put_Line ("");
       Ada.Text_IO.Put_Line ("Options:");
-      Ada.Text_IO.Put_Line
+      Opt
         ("  --target=PATH, -t PATH  Target project path (default: current directory)");
-      Ada.Text_IO.Put_Line
-        ("  --manifest=PATH, -m PATH  Target manifest file override");
-      Ada.Text_IO.Put_Line
-        ("  --dal=LEVEL           DO-178C DAL level: A | B | C | D | E");
-      Ada.Text_IO.Put_Line
-        ("                        (default: C; also the shared rigor tier)");
-      Ada.Text_IO.Put_Line
-        ("  --asil=LEVEL          ISO 26262 ASIL level: A | B | C | D | QM");
-      Ada.Text_IO.Put_Line
-        ("                        (e.g. --asil=B selects ASIL B)");
-      Ada.Text_IO.Put_Line
-        ("  --class=LEVEL         IEC 62304 safety class: A | B | C");
-      Ada.Text_IO.Put_Line
-        ("                        (e.g. --class=A selects Class A)");
-      Ada.Text_IO.Put_Line
-        ("  --standard=NAME       Compliance standard: do178c | iso26262 |");
-      Ada.Text_IO.Put_Line
+      Opt ("  --manifest=PATH, -m PATH  Target manifest file override");
+      Opt ("  --dal=LEVEL           DO-178C DAL level: A | B | C | D | E");
+      Opt ("                        (default: C; also the shared rigor tier)");
+      Opt ("  --asil=LEVEL          ISO 26262 ASIL level: A | B | C | D | QM");
+      Opt ("                        (e.g. --asil=B selects ASIL B)");
+      Opt ("  --class=LEVEL         IEC 62304 safety class: A | B | C");
+      Opt ("                        (e.g. --class=A selects Class A)");
+      Opt ("  --standard=NAME       Compliance standard: do178c | iso26262 |");
+      Opt
         ("                        iec62304 | all (default: do178c); all emits");
-      Ada.Text_IO.Put_Line
+      Opt
         ("                        badges for every standard at the same tier.");
-      Ada.Text_IO.Put_Line
+      Opt
         ("                        Also accepts a combined tier token: dal-A..E,");
-      Ada.Text_IO.Put_Line
-        ("                        asil-A..D, asil-QM, class-A..C (e.g.");
-      Ada.Text_IO.Put_Line
-        ("                        --standard=asil-b == --asil=B)");
-      Ada.Text_IO.Put_Line
-        ("  status                Report toolchain + platform status (no");
-      Ada.Text_IO.Put_Line
+      Opt ("                        asil-A..D, asil-QM, class-A..C (e.g.");
+      Opt ("                        --standard=asil-b == --asil=B)");
+      Opt ("  status                Report toolchain + platform status (no");
+      Opt
         ("                        assessment); exit 0 when alire + gnatprove are");
-      Ada.Text_IO.Put_Line
-        ("                        available or dependency-managed");
-      Ada.Text_IO.Put_Line
+      Opt ("                        available or dependency-managed");
+      Opt
         ("  --export[=PATH]       With status: write the report as machine-");
-      Ada.Text_IO.Put_Line
-        ("                        readable JSON to PATH (or stdout when no");
-      Ada.Text_IO.Put_Line ("                        path is given)");
-      Ada.Text_IO.Put_Line
-        ("  --metrics             With status: print the report as compact");
-      Ada.Text_IO.Put_Line
+      Opt ("                        readable JSON to PATH (or stdout when no");
+      Opt ("                        path is given)");
+      Opt ("  --metrics             With status: print the report as compact");
+      Opt
         ("                        key=value metrics lines for shell scripts");
-      Ada.Text_IO.Put_Line
+      Opt
         ("  --serve, -s, serve    Start HTTP dashboard on :8080 (standard-aware,");
-      Ada.Text_IO.Put_Line
+      Opt
         ("                        defaults to all standards; light/dark/system");
-      Ada.Text_IO.Put_Line
-        ("                        themes via the header dropdown)");
-      Ada.Text_IO.Put_Line
-        ("  --theme=NAME          Dashboard theme: light | dark | system");
-      Ada.Text_IO.Put_Line
-        ("                        (default: system; only with --serve)");
-      Ada.Text_IO.Put_Line
-        ("  --port=N, -p N        HTTP server port (default: 8080)");
-      Ada.Text_IO.Put_Line
+      Opt ("                        themes via the header dropdown)");
+      Opt ("  --theme=NAME          Dashboard theme: light | dark | system");
+      Opt ("                        (default: system; only with --serve)");
+      Opt ("  --port=N, -p N        HTTP server port (default: 8080)");
+      Opt
         ("  --serve-workers=N     HTTP server task-pool workers (alias --workers;");
-      Ada.Text_IO.Put_Line
+      Opt
         ("                        default: 2..8 scaled to the CPU count; only");
-      Ada.Text_IO.Put_Line ("                        with --serve)");
-      Ada.Text_IO.Put_Line
+      Opt ("                        with --serve)");
+      Opt
         ("  --watch               Refresh the served document metrics when the");
-      Ada.Text_IO.Put_Line
+      Opt
         ("                        target changes (default: on; only with --serve)");
-      Ada.Text_IO.Put_Line
-        ("  --no-watch            Turn watch mode off for this server");
-      Ada.Text_IO.Put_Line
+      Opt ("  --no-watch            Turn watch mode off for this server");
+      Opt
         ("  --emit-svg[=PATH]     Write SVG badges to directory (alias --svg-path;");
-      Ada.Text_IO.Put_Line
+      Opt
         ("                        default: <target>/docs/badges when no path)");
-      Ada.Text_IO.Put_Line
+      Opt
         ("  --no-svg              Suppress automatic SVG output (wins over the");
-      Ada.Text_IO.Put_Line ("                        emit form)");
-      Ada.Text_IO.Put_Line
+      Opt ("                        emit form)");
+      Opt
         ("  --emit-markdown[=PATH] Write VERIFICATION.md + TRACE.md (aliases");
-      Ada.Text_IO.Put_Line
+      Opt
         ("                        --emit-md, --md-path; default <target>/docs)");
-      Ada.Text_IO.Put_Line
+      Opt
         ("  --no-md               Suppress Markdown report output (wins over the");
-      Ada.Text_IO.Put_Line ("                        emit form)");
-      Ada.Text_IO.Put_Line
-        ("  --emit-metrics=FILE   Write a JSON metrics + dependency export");
-      Ada.Text_IO.Put_Line
+      Opt ("                        emit form)");
+      Opt ("  --emit-metrics=FILE   Write a JSON metrics + dependency export");
+      Opt
         ("  completion [SHELL]    Print a shell completion script (bash/fish/zsh/pwsh)");
-      Ada.Text_IO.Put_Line
+      Opt
         ("  --skip-dir=NAME       Add directory name to skip list (repeatable)");
-      Ada.Text_IO.Put_Line
+      Opt
         ("  --relaxed, relaxed    Disable strict mode (skip dirs, no patches);");
-      Ada.Text_IO.Put_Line
+      Opt
         ("                        strict is default (--strict re-enables it)");
-      Ada.Text_IO.Put_Line
-        ("  --cache, -c, cache    Enable result caching (default: on)");
-      Ada.Text_IO.Put_Line
+      Opt ("  --cache, -c, cache    Enable result caching (default: on)");
+      Opt
         ("  --no-cache            Disable result caching (always re-scan/re-prove)");
-      Ada.Text_IO.Put_Line
+      Opt
         ("  --cache-dir=PATH      Cache directory (default: the platform cache dir)");
-      Ada.Text_IO.Put_Line
+      Opt
         ("  --cache-max=N         Max cache entries before eviction (default: 4096)");
-      Ada.Text_IO.Put_Line
+      Opt
         ("  --compare-base=REF    Differential mode (aliases --diff, --base, -b):");
-      Ada.Text_IO.Put_Line
+      Opt
         ("                        compare against a base revision (branch/commit/");
-      Ada.Text_IO.Put_Line
+      Opt
         ("                        rev) in a temporary snapshot and report VC/DAL");
-      Ada.Text_IO.Put_Line
+      Opt
         ("                        delta (supports git, mercurial, subversion,");
-      Ada.Text_IO.Put_Line ("                        fossil, jj)");
-      Ada.Text_IO.Put_Line
+      Opt ("                        fossil, jj)");
+      Opt
         ("  --coverage-delta=REF  Docstring coverage gate (alias --delta, -d):");
-      Ada.Text_IO.Put_Line
+      Opt
         ("                        exit non-zero if current docstring coverage is");
-      Ada.Text_IO.Put_Line
-        ("                        below the base (any supported VCS)");
-      Ada.Text_IO.Put_Line
+      Opt ("                        below the base (any supported VCS)");
+      Opt
         ("  prove --target=PATH   Run GNATprove on the target project, then");
-      Ada.Text_IO.Put_Line
-        ("                        assess it (bundled gnatprove resolution,");
-      Ada.Text_IO.Put_Line
-        ("                        no alire.toml required in the target)");
-      Ada.Text_IO.Put_Line
+      Opt ("                        assess it (bundled gnatprove resolution,");
+      Opt ("                        no alire.toml required in the target)");
+      Opt
         ("  --jobs=N, -j N        GNATprove parallelism (default: auto-detect");
-      Ada.Text_IO.Put_Line
-        ("                        CPU count; 0 = all cores; e.g. -j12)");
-      Ada.Text_IO.Put_Line
+      Opt ("                        CPU count; 0 = all cores; e.g. -j12)");
+      Opt
         ("  --level=N, -l N       GNATprove proof effort 0-4 (default: tool default)");
-      Ada.Text_IO.Put_Line
-        ("  --timeout=N           Per-check prover timeout in seconds");
-      Ada.Text_IO.Put_Line
-        ("  --steps=N             Max proof steps (reproducible)");
-      Ada.Text_IO.Put_Line
-        ("  --memlimit=N          Prover memory limit in MB");
-      Ada.Text_IO.Put_Line
-        ("  --force               Force full gnatprove reanalysis (-f)");
-      Ada.Text_IO.Put_Line
-        ("  --no-loop-unrolling   Disable automatic loop unrolling (always");
-      Ada.Text_IO.Put_Line
+      Opt ("  --timeout=N           Per-check prover timeout in seconds");
+      Opt ("  --steps=N             Max proof steps (reproducible)");
+      Opt ("  --memlimit=N          Prover memory limit in MB");
+      Opt ("  --force               Force full gnatprove reanalysis (-f)");
+      Opt ("  --no-loop-unrolling   Disable automatic loop unrolling (always");
+      Opt
         ("                        on: the prove subcommand never unrolls loops,");
-      Ada.Text_IO.Put_Line
-        ("                        so GNATprove's 'cannot unroll loop' info");
-      Ada.Text_IO.Put_Line
+      Opt ("                        so GNATprove's 'cannot unroll loop' info");
+      Opt
         ("                        notices never appear; flag kept for compat)");
-      Ada.Text_IO.Put_Line
-        ("  --no-inlining         Disable contextual analysis inlining");
-      Ada.Text_IO.Put_Line
+      Opt ("  --no-inlining         Disable contextual analysis inlining");
+      Opt
         ("  --args=FLAGS          Pass extra raw GNATprove flags verbatim (e.g.");
-      Ada.Text_IO.Put_Line
-        ("                        --args='--prover=cvc5 --timeout=5');");
-      Ada.Text_IO.Put_Line
+      Opt ("                        --args='--prover=cvc5 --timeout=5');");
+      Opt
         ("                        space-split into gnatprove arguments; a file");
-      Ada.Text_IO.Put_Line
-        ("                        can opt out of the proof with a");
-      Ada.Text_IO.Put_Line
-        ("                        no-covex-spark-proof header marker");
-      Ada.Text_IO.Put_Line
+      Opt ("                        can opt out of the proof with a");
+      Opt ("                        no-covex-spark-proof header marker");
+      Opt
         ("  --quiet               Hide GNATprove's benign info messages (the");
-      Ada.Text_IO.Put_Line
-        ("                        default suppression set: loop-unrolling/");
-      Ada.Text_IO.Put_Line
+      Opt ("                        default suppression set: loop-unrolling/");
+      Opt
         ("                        inlining notices) from stdout.  Active by");
-      Ada.Text_IO.Put_Line
-        ("                        default for local runs; --verbose shows");
-      Ada.Text_IO.Put_Line ("                        every message and wins");
-      Ada.Text_IO.Put_Line
-        ("  --suppress-warnings[=SETS]  Hide GNATprove info messages from");
-      Ada.Text_IO.Put_Line
+      Opt ("                        default for local runs; --verbose shows");
+      Opt ("                        every message and wins");
+      Opt ("  --suppress-warnings[=SETS]  Hide GNATprove info messages from");
+      Opt
         ("                        stdout; SETS is a comma-separated list of");
-      Ada.Text_IO.Put_Line
+      Opt
         ("                        suppression-set names (empty = the default");
-      Ada.Text_IO.Put_Line
-        ("                        set, e.g. unrolling-inlining); --verbose");
-      Ada.Text_IO.Put_Line
-        ("                        always shows every message");
-      Ada.Text_IO.Put_Line
+      Opt ("                        set, e.g. unrolling-inlining); --verbose");
+      Opt ("                        always shows every message");
+      Opt
         ("  --coverage            Show the proof-coverage summary after prove");
-      Ada.Text_IO.Put_Line
+      Opt
         ("                        (default; --no-coverage or [prove] coverage =");
-      Ada.Text_IO.Put_Line
-        ("                        false in adacovex.toml hides it)");
-      Ada.Text_IO.Put_Line
+      Opt ("                        false in adacovex.toml hides it)");
+      Opt
         ("  --require-spark=LVL   Fail if SPARK level < LVL (alias --spark)");
-      Ada.Text_IO.Put_Line
+      Opt
         ("  --require-docstrings=PCT Fail if docstring coverage < PCT% (alias --docstrs)");
-      Ada.Text_IO.Put_Line
+      Opt
         ("  --require-tests=N     Fail if passing test count < N (alias --tests)");
-      Ada.Text_IO.Put_Line
+      Opt
         ("  --require-proof=PCT   Fail if proved-VC coverage < PCT% (alias -r)");
-      Ada.Text_IO.Put_Line
+      Opt
         ("                        (CI gates: default off, fail loudly when set)");
-      Ada.Text_IO.Put_Line
+      Opt
         ("  --fail-on=DIM[=VAL]   CI policy gate over the same four checks:");
-      Ada.Text_IO.Put_Line
+      Opt
         ("                        spark, docstrings, proof, tests, or coverage");
-      Ada.Text_IO.Put_Line
-        ("                        (comma-separated or repeatable; a bare");
-      Ada.Text_IO.Put_Line
+      Opt ("                        (comma-separated or repeatable; a bare");
+      Opt
         ("                        dimension reuses its --require-* threshold)");
-      Ada.Text_IO.Put_Line
+      Opt
         ("  sbom --format=FMT     Generate a proof-aware SBOM (FMT: cyclonedx-json");
-      Ada.Text_IO.Put_Line
+      Opt
         ("                        | spdx-json | md; default: cyclonedx-json)");
-      Ada.Text_IO.Put_Line
+      Opt
         ("  sbom --out=PATH       SBOM output path (default: <target>/sbom.json");
-      Ada.Text_IO.Put_Line
-        ("                        or <target>/sbom.spdx.json, or");
-      Ada.Text_IO.Put_Line
-        ("                        <target>/docs/compliance/SBOM.md for md)");
-      Ada.Text_IO.Put_Line
+      Opt ("                        or <target>/sbom.spdx.json, or");
+      Opt ("                        <target>/docs/compliance/SBOM.md for md)");
+      Opt
         ("  --no-sbom             Skip the automatic SBOM generated at the end");
-      Ada.Text_IO.Put_Line
+      Opt
         ("                        of every assessment (generated by default)");
-      Ada.Text_IO.Put_Line
+      Opt
         ("  --sbom-format=FMT     Format for the automatic SBOM (cyclonedx-json");
-      Ada.Text_IO.Put_Line
+      Opt
         ("                        | spdx-json | md; default: cyclonedx-json)");
-      Ada.Text_IO.Put_Line
+      Opt
         ("  --tz=ZONE             Display timezone for status reports.  Accepts");
-      Ada.Text_IO.Put_Line
+      Opt
         ("  --timezone=ZONE       an IANA name (Asia/Singapore) or a fixed UTC/");
-      Ada.Text_IO.Put_Line
+      Opt
         ("                        GMT offset (UTC+8, GMT+8, UTC+08, GMT+08);");
-      Ada.Text_IO.Put_Line
-        ("                        default: the operating system timezone");
-      Ada.Text_IO.Put_Line
+      Opt ("                        default: the operating system timezone");
+      Opt
         ("  --excludes=EXT,EXT    With complexity only: skip file extensions");
-      Ada.Text_IO.Put_Line
+      Opt
         ("                        (e.g. --excludes=md,rst); a file can also");
-      Ada.Text_IO.Put_Line
-        ("                        opt out with a no-covex-complexity-scan");
-      Ada.Text_IO.Put_Line
-        ("                        marker in its leading comment block");
-      Ada.Text_IO.Put_Line
+      Opt ("                        opt out with a no-covex-complexity-scan");
+      Opt ("                        marker in its leading comment block");
+      Opt
         ("  --skip-path=PATH      With complexity only: skip any file whose");
-      Ada.Text_IO.Put_Line
-        ("                        path contains PATH (repeatable; e.g.");
-      Ada.Text_IO.Put_Line
-        ("                        --skip-path=docs/api-docs)");
-      Ada.Text_IO.Put_Line ("  --verbose             Verbose diagnostics");
-      Ada.Text_IO.Put_Line
-        ("  --group=KIND          With spark-coverage only: row grouping");
-      Ada.Text_IO.Put_Line
-        ("                        (file | folder | package; default file)");
-      Ada.Text_IO.Put_Line
-        ("  --metric=METRIC       With spark-coverage only: metric for the");
-      Ada.Text_IO.Put_Line
-        ("                        summary (statements | subprograms | vcs)");
-      Ada.Text_IO.Put_Line
-        ("  --spark-format=FMT    With spark-coverage only: text | json");
-      Ada.Text_IO.Put_Line
+      Opt ("                        path contains PATH (repeatable; e.g.");
+      Opt ("                        --skip-path=docs/api-docs)");
+      Opt ("  --verbose             Verbose diagnostics");
+      Opt ("  --group=KIND          With spark-coverage only: row grouping");
+      Opt ("                        (file | folder | package; default file)");
+      Opt ("  --metric=METRIC       With spark-coverage only: metric for the");
+      Opt ("                        summary (statements | subprograms | vcs)");
+      Opt ("  --spark-format=FMT    With spark-coverage only: text | json");
+      Opt
         ("  --min-coverage=PCT    With spark-coverage only: hide rows below PCT");
-      Ada.Text_IO.Put_Line
+      Opt
         ("  --require-coverage=P  With spark-coverage only: CI gate (exit 1");
-      Ada.Text_IO.Put_Line
+      Opt
         ("                        below PCT); --gate-metric names the metric");
-      Ada.Text_IO.Put_Line
-        ("  --gate-metric=METRIC  With spark-coverage only: gate metric");
-      Ada.Text_IO.Put_Line ("                        (default statements)");
-      Ada.Text_IO.Put_Line
-        ("  --version             Print the bundled version (read from");
-      Ada.Text_IO.Put_Line
+      Opt ("  --gate-metric=METRIC  With spark-coverage only: gate metric");
+      Opt ("                        (default statements)");
+      Opt ("  --version             Print the bundled version (read from");
+      Opt
         ("                        alire-dev.toml; release builds bundle the");
-      Ada.Text_IO.Put_Line ("                        release tag) and exit");
-      Ada.Text_IO.Put_Line
-        ("  man [--check]         Install the man page into the local man");
-      Ada.Text_IO.Put_Line
-        ("                        database (platform data root; mandb or");
-      Ada.Text_IO.Put_Line
-        ("                        makewhatis refreshes it);");
-      Ada.Text_IO.Put_Line
+      Opt ("                        release tag) and exit");
+      Opt ("  man [--check]         Install the man page into the local man");
+      Opt ("                        database (platform data root; mandb or");
+      Opt ("                        makewhatis refreshes it);");
+      Opt
         ("                        --check exits 0 when the installed man page");
-      Ada.Text_IO.Put_Line
-        ("                        matches this binary's version, 1 when a");
-      Ada.Text_IO.Put_Line
-        ("                        newer version is available or none is");
-      Ada.Text_IO.Put_Line
+      Opt ("                        matches this binary's version, 1 when a");
+      Opt ("                        newer version is available or none is");
+      Opt
         ("                        installed (man page contains the version)");
-      Ada.Text_IO.Put_Line
+      Opt
         ("  man --dir=PATH        Install the man page into PATH/man1 instead");
-      Ada.Text_IO.Put_Line ("                        of the default man root");
-      Ada.Text_IO.Put_Line
+      Opt ("                        of the default man root");
+      Opt
         ("  man --force           Override an existing man page even when it");
-      Ada.Text_IO.Put_Line
-        ("                        already matches this binary (repair a");
-      Ada.Text_IO.Put_Line
-        ("                        hand-edited/corrupt installed page)");
-      Ada.Text_IO.Put_Line
+      Opt ("                        already matches this binary (repair a");
+      Opt ("                        hand-edited/corrupt installed page)");
+      Opt
         ("  tldr [--check]        Install the bundled tldr page into the local");
-      Ada.Text_IO.Put_Line
-        ("                        tldr client (tealdeer custom pages, or a");
-      Ada.Text_IO.Put_Line
-        ("                        base client's cache pages tree); --check");
-      Ada.Text_IO.Put_Line
+      Opt ("                        tldr client (tealdeer custom pages, or a");
+      Opt ("                        base client's cache pages tree); --check");
+      Opt
         ("                        exits 0 when the installed page matches the");
-      Ada.Text_IO.Put_Line
+      Opt
         ("                        bundled one, 1 when it is missing or stale");
-      Ada.Text_IO.Put_Line
+      Opt
         ("  help [TOPIC]          Show this message, or contextual help for a");
-      Ada.Text_IO.Put_Line
+      Opt
         ("                        flag/subcommand (e.g. `adacovex help serve`);");
-      Ada.Text_IO.Put_Line
-        ("                        `adacovex --serve help` also works");
-      Ada.Text_IO.Put_Line
-        ("  --help                Show this message and exit");
-      Ada.Text_IO.Put_Line ("");
-      Ada.Text_IO.Put_Line
-        ("Outputs: ANSI terminal report, SVG badges, Markdown reports,");
-      Ada.Text_IO.Put_Line
-        ("         HTML dashboard (--serve), JSON API (GET /api/metrics)");
-      Ada.Text_IO.Put_Line ("");
-      Ada.Text_IO.Put_Line
-        ("Zero-dependency Ada/SPARK formal verification and compliance");
-      Ada.Text_IO.Put_Line
-        ("toolkit for coverage analysis, proof verification, test-result");
-      Ada.Text_IO.Put_Line
-        ("parsing, multi-standard safety-compliance assessment");
-      Ada.Text_IO.Put_Line
-        ("(DO-178C / ISO 26262 / IEC 62304), and interactive dashboards");
+      Opt ("                        `adacovex --serve help` also works");
+      Opt ("  --help                Show this message and exit");
+      Opt ("");
+      Opt ("Outputs: ANSI terminal report, SVG badges, Markdown reports,");
+      Opt ("         HTML dashboard (--serve), JSON API (GET /api/metrics)");
+      Opt ("");
+      Opt ("Zero-dependency Ada/SPARK formal verification and compliance");
+      Opt ("toolkit for coverage analysis, proof verification, test-result");
+      Opt ("parsing, multi-standard safety-compliance assessment");
+      Opt ("(DO-178C / ISO 26262 / IEC 62304), and interactive dashboards");
    end Print_Usage;
 
    --  Topics whose usage names a subcommand, as one pipe-delimited string so
@@ -3798,21 +3742,69 @@ package body Adacovex.Config is
             & "download), run it on the target, then assess the result."
             & ASCII.LF
             & ASCII.LF
-            & "Options: --jobs/-j (parallelism), --level/-l (proof level),"
+            & "  --jobs=N, -j N"
             & ASCII.LF
-            & "--timeout (seconds per proof), --steps (max steps),"
+            & "      GNATprove parallelism (default: auto-detect CPU count;"
             & ASCII.LF
-            & "--memlimit, --force (bypass the result cache),"
+            & "      0 = all cores)."
             & ASCII.LF
-            & "--no-loop-unrolling (always on), --no-inlining,"
             & ASCII.LF
-            & "--args=FLAGS (extra raw GNATprove flags, space-split and"
+            & "  --level=N, -l N"
             & ASCII.LF
-            & "passed verbatim), and --suppress-warnings[=SETS] / --quiet"
+            & "      GNATprove proof effort 0-4 (default: tool default)."
             & ASCII.LF
-            & "(hide benign GNATprove info notices from stdout; quiet is the"
             & ASCII.LF
-            & "default for local runs and --verbose shows everything)."
+            & "  --timeout=N"
+            & ASCII.LF
+            & "      Per-check prover timeout in seconds."
+            & ASCII.LF
+            & ASCII.LF
+            & "  --steps=N"
+            & ASCII.LF
+            & "      Max proof steps (reproducible)."
+            & ASCII.LF
+            & ASCII.LF
+            & "  --memlimit=N"
+            & ASCII.LF
+            & "      Prover memory limit in MB."
+            & ASCII.LF
+            & ASCII.LF
+            & "  --force"
+            & ASCII.LF
+            & "      Bypass the result cache and re-run every check."
+            & ASCII.LF
+            & ASCII.LF
+            & "  --no-loop-unrolling"
+            & ASCII.LF
+            & "      Disable automatic loop unrolling (always on: the"
+            & ASCII.LF
+            & "      prove subcommand never unrolls loops)."
+            & ASCII.LF
+            & ASCII.LF
+            & "  --no-inlining"
+            & ASCII.LF
+            & "      Disable contextual analysis inlining."
+            & ASCII.LF
+            & ASCII.LF
+            & "  --args=FLAGS"
+            & ASCII.LF
+            & "      Pass extra raw GNATprove flags verbatim (space-split)."
+            & ASCII.LF
+            & ASCII.LF
+            & "  --quiet / --suppress-warnings[=SETS]"
+            & ASCII.LF
+            & "      Hide benign GNATprove info notices from stdout; quiet"
+            & ASCII.LF
+            & "      is the default for local runs and --verbose shows"
+            & ASCII.LF
+            & "      everything."
+            & ASCII.LF
+            & ASCII.LF
+            & "  --coverage / --no-coverage"
+            & ASCII.LF
+            & "      Show or hide the proof-coverage summary line"
+            & ASCII.LF
+            & "      (default: show)."
             & ASCII.LF
             & ASCII.LF
             & "A source file can opt out of the proof with a"
