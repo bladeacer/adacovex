@@ -1,7 +1,8 @@
-# adacovex release plan: v1.68.0 - v1.72.0
+# adacovex release plan: v1.68.0 - v1.75.0
 
-Current version: `1.69.0`. Work is scoped across **five minor bumps**:
-`v1.68.0` (closing), `v1.69.0`, `v1.70.0`, `v1.71.0`, and `v1.72.0`.
+Current version: `1.69.0`. Work is scoped across **eight minor releases**:
+`v1.68.0` and `v1.69.0` (closed), then `v1.70.0` through `v1.75.0`.
+Closed releases are recorded in their changelogs, not repeated here.
 
 ## Proof-timing phase note
 
@@ -9,28 +10,33 @@ All of these land in the **open `v1.61.0 -` phase** (representative `1.63.0`)
 of `docs/contributing/perf/prove-timing.md`. The methodology is unchanged
 (gnatprove-driven prove via the `prove` subcommand, result cache keyed the
 same way, bundle specs excluded from the proof-input hash), so no phase
-boundary or methodology-shift note is required. Each release's `just prove`
-figures must still use the phase's complete metric set for the representative
-version; do not cherry-pick rows across versions.
+boundary or methodology-shift note is required. Item 18 changes what a warm
+cache hit is keyed on, not how gnatprove runs; if the representative figures
+move, record the open-phase column from one run's complete metric set rather
+than cherry-picking rows across versions.
 
 ## How work is distributed
 
 | Version | Status | Theme | Items |
 |---------|--------|-------|-------|
-| v1.68.0 | closed | Output defaults, time, and old-plan closeout | 1, 2, 7, bulk of 9 |
-| v1.69.0 | closed | Compiler-style diagnostics and output | C1-C9 delivered (3 dedup, 4 help frame, 11 help spacing, 12 cache parity, 13 colour, 14 CI annotations, 10a compiler-style findings + JSON, 10b annotation e2e, 10c mode matrix, old-plan 3.1 action project config) |
-| v1.70.0 | planned | SBOM robustness and debt | 5 (C-project false positives), 6a (syft comparison), 8a (debt register), 15a (pipeline measurement), remainder of 9 |
-| v1.71.0 | planned | SBOM depth and pipeline speed | 6b (lockfiles, indirect deps, scope, licences), 8b (bounded-string and manifest debt), 15b (build-once/prove-once) |
-| v1.72.0 | planned | Performance close-out and polish | 15c (parallel gates, caching, 60 s budget), 8c (debt paydown), 9 close-out, docs/STE drift pass |
+| v1.68.0 | closed | Output defaults and time | changelog `adacovex-1.68.0.md` |
+| v1.69.0 | closed | Compiler-style diagnostics and output | changelog `adacovex-1.69.0.md` |
+| v1.70.0 | planned | SBOM robustness and debt | 5, 6a, 8a, 15a, remainder of 9 |
+| v1.71.0 | planned | SBOM depth and pipeline speed | 6b, 8b, 15b |
+| v1.72.0 | planned | Performance close-out | 15c, 8c, 9 close-out |
+| v1.73.0 | planned | Test suite portability and layout | 20 (test root and fixture projects), 16 (platform-agnostic suite) |
+| v1.74.0 | planned | Cache identity and diagnostics coverage | 18 (resolved-path cache, 7-day expiry), 17a (contract-error matrix) |
+| v1.75.0 | planned | Dogfood close-out and CLI cohesion | 17b (Ada_CRDT robustness), 19 (contextual help audit), final docs/STE pass |
 
-## Session status (2026-11-11)
+## Session status (2026-11-12)
 
-v1.68.0 and v1.69.0 are closed. The second session finished items 10a, 10b,
-10c, and old-plan 3.1: compiler-style findings with grouping, solver,
-counterexamples, source excerpts, and `--diagnostics=json`; an annotation
-e2e run; the diagnostics mode matrix; and a real action run against a project
-`adacovex.toml`. The tree now holds 2175/2175 tests, 132 prove-e2e checks,
-and 1057 VCs at Gold. The detailed handover for v1.70.0 is in
+v1.68.0 and v1.69.0 are closed. The compiler-style diagnostics work shipped:
+grouped findings, solver attribution, counterexamples, source excerpts,
+`--diagnostics=json`, annotation e2e, the mode matrix, and a real action run
+against a project `adacovex.toml`. The tree holds 2175/2175 tests, 132
+prove-e2e checks, and 1057 VCs at Gold. The plan now runs to v1.75.0 with the
+test-layout, portability, cache-identity, diagnostics-coverage, and help-audit
+workstreams. The handover for the next session is in
 [`impl-session-backlog.md`](impl-session-backlog.md).
 
 Every change also updates, in the same change: `docs/`, Ada docstrings feeding
@@ -39,284 +45,31 @@ Every change also updates, in the same change: `docs/`, Ada docstrings feeding
 (`docs-check`, `action-parity-check`, `docs-coverage-check`,
 `surface-parity-check`, `version-consistency-check`, `doc-links`, `link-check`,
 `book-links-check`, `python3 tools/gen-docs.py --check`, then `just book`).
-After `just test` and `just prove`, run `just test-count` and `just
-proof-status`.
-
-## Audited from the tooling-ergonomics plan (`old-plan.md`)
-
-The v1.65.0-v1.67.0 plan is audited and closed. These items shipped and the
-v1.67.0 changelog records them: tldr/man parity (C1/C2), the diagnostics
-block, `--fail-on` and `.covex-ignore` (v1.66.0), configuration and `init`
-(C2/C3), serve watch with `--no-watch` (C4), the docs map and performance
-split (C5), and build-once plus the timing table and the recorded warm-tree
-budget (C6). `old-plan.md` is deleted once this section is confirmed complete
-(it is: every old checkbox is either closed below or carried as an item).
-
-Two checkboxes were never closed, so they carry into the schedule:
-
-- [x] Old-plan 3.1: an end-to-end test that the composite action behaves like
-  the binary when a target repository carries `adacovex.toml` (priority:
-  high; it is the only shipped behaviour without a real-run action test).
-  **Done in v1.69.0** via the `action-project-config` CI job.
-- [x] Old-plan 3.4: a warm-tree `just check` took **344 s** on 2026-11-06
-  (12 logical CPUs, warm cache and gnatprove session). The measurement is in
-  `docs/contributing/perf/check-pipeline.md`; the 60 s target is not met.
-- [ ] Close the 344 s -> 60 s warm-tree gap. The proof gate (100 s) and the
-  complexity walk (98 s) are 57 percent of the total, so start there
-  (priority: high). **Split across items 15a-15c (v1.70.0-v1.72.0).**
-
----
-
-## v1.68.0 close-out and early v1.69.0 output work
-
-The output items below (11-14) landed after the v1.68.0 manifest bump, so the
-v1.69.0 changelog records them. The v1.68.0 items (1, 2, 7) are closed in
-their own changelog.
-
-- [x] Item 1 - Make showing coverage the default when running
-  `adacovex prove` / plain `adacovex`.
-- [x] Item 2 - Store timestamps as UTC+0 by default; opt in to the local
-  timezone with `--tz=local`.
-- [x] Item 7 - Sibling-binary bug: `adacovex-prove.adb:2821 length check
-  failed` in the patched-proof artefact copy.
-- [x] Item 11 - Help options are separated by blank lines.
-- [x] Item 12 - A warm `prove` cache hit prints the diagnostics of the run it
-  serves, and the coverage line prints once per run.
-- [x] Item 13 - The concise prove replay is coloured by severity.
-- [x] Item 14 - Unproved findings print GitHub Actions inline annotations.
-- [x] Item 9 (bulk) - Docstrings: parameters and returns are described across
-  the touched API surfaces.
-
----
-
-- [x] Item 1 - Proof-coverage summary is the default for plain `adacovex` *(done in v1.68.0)*
-
-**Goal:** A successful `prove` run prints the statement / subprogram / VC
-coverage line by default; `--no-coverage` hides it for one run,
-`[prove] coverage = false` hides it for every run, and an explicit
-`--coverage` wins.
-
-**Result:** `Prove_Show_Coverage` defaults on; the config file and both flags
-are honoured; plain `adacovex` prints the line from cached artefacts.
-
----
-
-- [x] Item 2 - Timestamps are UTC+0 unless the user opts into the local zone *(done in v1.68.0)*
-
-**Goal:** The default is `UTC+00:00`. `--tz=local` selects the operating
-system zone, and any explicit IANA name or `UTC+N` offset still wins.
-A bad value fails loudly.
-
-**Result:** `Adacovex.Timezones.Default` returns UTC+0; `Default_Local` is
-used only when `Is_Local_Spec` matches `--tz=local`.
-
----
-
-- [x] Item 7 - Patched-proof artefact copy fits a 17-character bound *(done in v1.68.0)*
-
-**Root cause:** the artefact-name array had a 15-character component type and
-the padded summary name is 17 characters, so the first patched run raised a
-length check after a successful proof.
-
-**Result:** both names share the 17-character bound. `just run-ada-crdt`
-proves 972 checks and exits 0.
-
----
-
-- [x] Item 11 - Blank lines between help options *(done in v1.68.0)*
-
-**Goal:** The main `--help` options list and the contextual `prove` help read
-as grouped entries, not one dense block.
-
-**Result:** `Print_Usage` emits a blank line before each new option (a
-continuation line gets none), and the `prove` topic lists each flag on its
-own line with a short description. `--help` and `help` stay byte-identical.
-
----
-
-- [x] Item 12 - Warm prove output agrees with a cold prove run *(done in v1.68.0)*
-
-**Goal:** `make prove` in `../Ada_CRDT` (a cold run) and `just run-ada-crdt`
-(a warm cache hit) must not disagree about what the prover reported.
-
-**Result:** the quiet replay is written to a temp file, printed with
-severity colours, and cached under the proof input hash
-(`provereplay:<hash>`). A warm hit prints the cached text, so warnings, the
-diagnostics block, and the filtered/duplicates footers appear in both shapes.
-The duplicated coverage line is gone: a prove-mode run prints it in
-`Run_Prove` only (fresh run and cache hit alike), and the plain pipeline
-prints it only when it is not a prove-mode run.
-
-**Residual difference:** the two invocations pass different options
-(`just run-ada-crdt` adds `--level 4`), so the printed `options:` line and the
-cache key differ. That is caller intent, not a tool inconsistency.
-
----
-
-- [x] Item 13 - Concise prove output is coloured by severity *(done in v1.68.0)*
-
-**Goal:** Prettify the base stdout with ANSI escape sequences, without
-inventing a new colour layer.
-
-**Result:** the replay printer colours errors red, warnings yellow, notices
-and locations dim, `Success:` green, and the coverage / cache / proof /
-filtered / duplicates lines bold. It reuses `Adacovex.Ansi`, so `CI`,
-`NO_COLOR`, and `TERM=dumb` still produce plain text. Cached replay text is
-stored without escape codes, so colour is decided at print time.
-
----
-
-- [x] Item 14 - CI logs show inline proof annotations *(done in v1.68.0)*
-
-**Goal:** An unproved finding should also appear as a GitHub Actions
-annotation, not only in a text block.
-
-**Result:** `Annotation_Line` renders
-`::error file=...,line=...,col=...,title=SPARK proof failed::<kind>` from the
-recorded `file:line:column` and check kind. `Emit_Annotations` prints one
-annotation per distinct finding when `GITHUB_ACTIONS` is set. A malformed
-location yields no annotation. Wire the workflow-level annotation expectations
-in v1.69.0 item 10b.
-
----
-
-- [x] Item 9 (bulk) - API docstrings describe every parameter and return *(v1.68.0-v1.72.0)*
-
-**Goal:** Generated API pages such as `Adacovex_Man_Tests` / `procedure Run`
-must not show empty `@param` / `@return` / description cells. Front-load the
-pass and keep it enforced by `just doc` + `just docs-coverage-check`.
-
-**Remainder:** the v1.70.0 and v1.72.0 touch-ups cover packages changed by
-their items; item 9 closes in v1.72.0.
-
----
-
-## v1.69.0 - Compiler-style diagnostics
-
-- [x] Item 3 - `just run-ada-crdt` diagnostics dedup *(C1 in v1.69.0; grouping remains in 10a)*
-
-**Goal:** A repeated warning (one per inlined call site) prints once, and a
-check reported twice counts once.
-
-**Result:** `Replay_Suppressed` keeps the first diagnostic line and drops the
-repeat with its continuation, and states the count in a `duplicates:` footer.
-`Collect_Failures` keys findings on `location|kind`, so the block does not
-inflate `Unproved`. What remains for v1.69.0 is item 10's grouping: the same
-warning with different `, in call inlined at ...` suffixes is one finding with
-several call sites.
-
-**Verify:** `just run-ada-crdt`, `just prove-e2e`.
-
----
-
-- [x] Item 10a - Findings read like a compiler (`file:line:col: error: kind`) *(done in v1.69.0)*
-
-**Goal:** A `prove` failure names the source file and line, the check that
-failed, the exact solver that failed it, a counterexample when one exists, and
-one actionable fix. Render each finding as a compiler diagnostic with the
-source line and caret, not only a solver transcript.
-
-**Work:**
-- Group a finding by its own location and message when only the
-  `, in call inlined at file:line` suffix differs; print the call sites once
-  on a continuation line.
-- Ask gnatprove for counterexamples (`--counterexamples=on`) and read the
-  values into the finding, so the block says which input fails.
-- Attribute each finding to the solver that produced it (SARIF result and the
-  gnatprove summary), not only to the prover version.
-- Render `file:line:col: error: <kind>` with the source excerpt, caret, solver,
-  counterexample, and one fix hint.
-- Add `--diagnostics=text|json` so the same facts are machine-readable.
-- Keep the concise default and the `--verbose` contract: the detail extends
-  the block, it does not add a third mode.
-
-**Files:** `src/core/adacovex-prove.adb/.ads`, `src/core/adacovex-config.ads/.adb`,
-`src/parsers/adacovex-parsers-gnatprove.adb` (SARIF solver field),
-`docs/contributing/proving-diagnostics.md`, `docs/usage/cli-reference-flags.md`.
-
-**Result:** each finding renders `file:line:col: error: <kind>` with its
-solver set, counterexample, source excerpt and caret, and one fix hint. The
-inlined-call-site suffix is grouped into `call sites: N`. `prove` always asks
-for counterexamples, and `--diagnostics=json` prints the same facts as one
-object. The solver is the summary row's prover set, because gnatprove 16.1
-records solvers per category rather than per SARIF result.
-
-**Tests:** `src/tests/adacovex_prove_runner_tests.adb` (counterexample and
-solver parsing, inlined-call grouping, JSON shape);
-`tests/e2e/prove_diagnostics.py` (one grouped finding for two call sites, the
-`file:line:col:` prefix, and the JSON form).
-
-**Verify:** `just prove-e2e`, `just cli-e2e`, `just run-ada-crdt`.
-
----
-
-- [x] Item 10b - CI annotations end to end (action and workflows) *(done in v1.69.0)*
-
-**Goal:** The annotation `Emit_Annotations` prints is produced by the CI entry
-points too, so a failing proof marks the pull request diff inline.
-
-**Work:**
-- Confirm the composite action runs the binary with `GITHUB_ACTIONS` intact
-  (it is set by the runner; do not scrub the environment).
-- Add one workflow fixture that proves a deliberately broken project and
-  asserts the annotation line (or a `::error` prefix) appears.
-- Document the annotation shape in `docs/usage/ci-cd.md`.
-
-**Result:** `tests/e2e/prove_diagnostics.py` runs the broken index fixture
-with `GITHUB_ACTIONS=true` and asserts one `::error file=` annotation per
-distinct finding. `docs/usage/ci-cd.md` states the annotation shape and the
-runner environment rule.
-
-**Files:** `action.yml`, `.github/workflows/ci.yml`, `tests/e2e/cli_flags.py`
-or `tests/e2e/prove_diagnostics.py`, `docs/usage/ci-cd.md`.
-
-**Tests:** a simulated `GITHUB_ACTIONS=true` run of a broken fixture asserts
-one `::error file=` line per distinct finding.
-
-**Verify:** `just prove-e2e`, `just action-parity-check`.
-
----
-
-- [x] Item 10c - Diagnostics documentation and mode matrix *(done in v1.69.0)*
-
-**Goal:** One page states the two modes (concise = replay + block,
-`--verbose` = raw stream), where colour applies, and what CI emits. Keep the
-`--quiet` / `--suppress-warnings[=SETS]` semantics unchanged.
-
-**Result:** `proving-diagnostics.md` carries the mode matrix (text, JSON,
-verbose, quiet, custom quiet), the compiler-style block, and the JSON shape.
-`cli-reference-flags.md` documents `--diagnostics` and the counterexample
-request. `ci-cd.md` documents the annotation shape.
-
-**Files:** `docs/contributing/proving-diagnostics.md`,
-`docs/usage/cli-reference-flags.md`, `docs/usage/ci-cd.md`,
-`docs/changelogs/adacovex-1.69.0.md`.
-
----
-
-- [x] Old-plan 3.1 - Composite action honours a project `adacovex.toml` *(done in v1.69.0)*
-
-**Goal:** A real action run against a repository carrying a project file
-changes the run the same way the binary does (coverage line, jobs, level,
-project-over-global precedence).
-
-**Result:** the `action-project-config` CI job runs the real action against a
-fixture that sets `[prove] coverage = false` and `[prove] level = 1`, then
-asserts `--level 1` in the teed proof log and the absence of `coverage:`.
-
-**Files:** `.github/workflows/ci.yml` (or a dedicated workflow),
-`action.yml`, `tests/e2e/cli_flags.py` (or a new action e2e),
-`docs/usage/ci-cd-action.md`.
-
-**Verify:** the new job plus `just action-parity-check`.
-
----
-
-- [x] Item 4 - Contextual help renders in the `--help` frame *(done in v1.68.0)*
-
-**Result:** every topic opens with the version line, `Usage:` fence,
-`Options:` heading, body, and footer. `prove --help` selects the prove topic.
-`--help` and `help` stay byte-identical. Item 11 added the option spacing.
+After `just test` and `just prove`, run `just test-count` and
+`just proof-status`.
+
+## Closed releases
+
+Detailed item text for a closed release is removed once its changelog exists;
+the changelog is the durable record of what shipped and why.
+
+- **v1.68.0** delivered the coverage-on-by-default behaviour, UTC+0 timestamp
+  default with `--tz=local`, the 17-character patched-artefact bound, and the
+  API docstring pass. See
+  [`docs/changelogs/adacovex-1.68.0.md`](docs/changelogs/adacovex-1.68.0.md).
+- **v1.69.0** delivered repeated-diagnostic dedup, the unified contextual
+  help frame with option spacing, warm-replay parity, severity colour,
+  GitHub Actions annotations, compiler-style findings with
+  `--diagnostics=json`, the diagnostics mode matrix, and the
+  composite-action project-config job. See
+  [`docs/changelogs/adacovex-1.69.0.md`](docs/changelogs/adacovex-1.69.0.md).
+
+The v1.65.0-v1.67.0 plan is also closed and `old-plan.md` is deleted.
+Old-plan 3.1 (the action honours a project `adacovex.toml`) closed in
+v1.69.0. Old-plan 3.4 measured a 344 s warm-tree `just check` on 2026-11-06
+(12 logical CPUs, warm cache and gnatprove session); the figure is recorded
+in [`docs/contributing/perf/check-pipeline.md`](docs/contributing/perf/check-pipeline.md)
+and the 60 s gap is carried by items 15a-15c.
 
 ---
 
@@ -377,12 +130,17 @@ section in `docs/contributing/developer-guide.md`.
 - [ ] Item 15a - Measure the check pipeline properly
 
 **Goal:** Record per-gate and per-recipe wall time (warm and cold) in one run,
-with the raw stdout kept. This is the measurement the 60 s budget needs.
+with the raw stdout kept. This is the measurement the 60 s budget needs, and
+it replaces the single 344 s figure from 2026-11-06.
 
 **Files:** `docs/contributing/perf/check-pipeline.md`,
 `tools/tasks.py` (timing output only, no gate changes).
 
 **Verify:** one full `just check` run with the per-gate table.
+
+---
+
+- [ ] Item 9 remainder: docstrings for packages changed by these items.
 
 ---
 
@@ -394,7 +152,8 @@ with the raw stdout kept. This is the measurement the 60 s budget needs.
 constraint: lockfile parsing, indirect-dependency handling, scope
 classification, and licence resolution.
 
-**Files:** the `adacovex-parsers-manifest-*` units, `docs/usage/sbom-resolution.md`,
+**Files:** the `adacovex-parsers-manifest-*` units,
+`docs/usage/sbom-resolution.md`,
 `docs/contributing/architecture-dependencies.md`.
 
 **Tests:** regression fixtures for lockfiles, indirect deps, and a missing
@@ -432,7 +191,7 @@ recompiles, re-bundles, or re-proves what an earlier gate produced.
 
 ---
 
-## v1.72.0 - Performance close-out and polish
+## v1.72.0 - Performance close-out
 
 - [ ] Item 15c - Close the 344 s -> 60 s warm-tree gap
 
@@ -443,7 +202,8 @@ fixtures into one invocation each; run independent gates in parallel with the
 standard library, a CPU cap, and the unchanged PASS/FAIL/SKIP summary.
 
 **Files:** `tools/tasks.py`, `tools/tests.py`,
-`docs/contributing/perf/check-pipeline.md`, `docs/contributing/perf/prove-timing.md`.
+`docs/contributing/perf/check-pipeline.md`,
+`docs/contributing/perf/prove-timing.md`.
 
 **Verify:** a recorded warm run with the complete metric set for the open
 phase's representative version.
@@ -453,7 +213,7 @@ phase's representative version.
 - [ ] Item 8c - Debt paydown close-out
 
 **Goal:** Every open register entry is closed or explicitly accepted with a
-reason. No new debt from v1.69.0-v1.72.0 remains unrecorded.
+reason. No new debt from v1.69.0-v1.75.0 remains unrecorded.
 
 **Verify:** the register plus `just check`.
 
@@ -468,12 +228,248 @@ reason. No new debt from v1.69.0-v1.72.0 remains unrecorded.
 
 ---
 
-- [ ] Release polish - docs, STE, and parity drift
+## v1.73.0 - Test suite portability and layout
 
-**Goal:** Re-read the user docs against the codebase surface: every
-`Known_Flags` entry in the CLI reference, every dashboard route in the
-dashboard page, every action input in the CI/CD inputs table, every new
-Technical Name in the STE100 list. Fix drift in place; no follow-ups.
+- [ ] Item 20 - One test root and generated fixture projects
+
+**Goal:** All tests live under `src/tests`, e2e tests are categorised, and no
+Ada fixture is written inline in a workflow. A fixture project is a real
+directory with its own `alire.toml`, `.gpr`, `src/`, and a README that states
+what it proves.
+
+**Work:**
+- Move `tests/e2e` to `src/tests/e2e` and split it by category:
+  `cli/` (`cli_flags.py`), `prove/` (`prove_diagnostics.py`), `dashboard/`
+  (Playwright specs and server helper), `action/` (action fixtures), and
+  `lib/` for shared Python helpers.
+- Create `src/tests/projects/` with one directory per fixture:
+  `consumer-action/`, `action-project-config/`, and
+  `contract-errors/<class>/{broken,fixed}/`. Each carries an `alire.toml`,
+  a project file, and a README naming the check it exercises.
+- Replace the inline heredocs in `.github/workflows/ci.yml` with a copy of
+  the relevant `src/tests/projects/<name>` tree. Keep the consumer-workspace
+  restructure: the action's consumer branch needs a workspace without
+  `adacovex.gpr`.
+- Keep fixture projects out of the root build: the GPR lists source
+  directories explicitly and `src/tests` is already skipped by the scanner
+  and the proof walk. Add the complexity/docstring opt-out markers to fixture
+  sources that are deliberately incomplete, and confirm `alr build` never
+  compiles them. Confirm that `just run-self`, `just sbom`, and
+  `just complexity-check` do not treat a fixture as a project input; extend
+  the skip lists if they do.
+- Update `just` targets, `.gitignore` (`node_modules`, `playwright-report`,
+  `test-results`), CI paths, `tools/tasks.py`, `tools/agents-tree.map`,
+  `AGENTS.md`, `docs/contributing/developer-guide-layout.md`, and
+  `CONTRIBUTING.md`.
+- Add `tools/check-test-layout.py` (stdlib) as `just test-layout-check`: every
+  `src/tests/projects/*` has a manifest, a project file, and a README, and no
+  workflow contains an inline Ada project heredoc. Wire it into `just check`.
+
+**Tests:** the moved suites still pass from their new paths; `just cli-e2e`,
+`just prove-e2e`, and `just e2e` run the same checks as before.
+
+**Verify:** `just check`, `just e2e`, `alr build` leaves
+`src/tests/projects` uncompiled.
+
+---
+
+- [ ] Item 16 - Platform-agnostic test suite
+
+**Goal:** The native suite and the e2e suites pass on Windows, macOS, and
+Linux. A test checks the platform instead of assuming it, and a genuine
+platform dependency is an explicit skip with a reason.
+
+**Work:**
+- Audit the tests for POSIX assumptions: `/tmp`, `/`, `:` in `PATH`, `sh -c`,
+  `rm -rf`, `chmod`, symlinks, case-sensitive names, CRLF, drive letters,
+  `mandb` / `makewhatis`, `/proc`, `uname`, locale, and timezone.
+- Extend `Adacovex.Test_Support` with `Temp_Dir` (create and remove under
+  `$TMPDIR` / `%TEMP%`), `Join`, `To_Native`, `Run_Command` (argument vector,
+  no shell), and `Skip_On` / `Skip_Without` with a named reason. Replace
+  shell-string spawning with argument vectors and use `Adacovex.Paths` for
+  separators and `Expand_User`.
+- Make every skip visible in the run summary. A skipped test is not a pass.
+- Add an OS matrix to CI for `just test` and the Python e2e suites on
+  `ubuntu-latest`, `macos-latest`, and `windows-latest`. Run a fast subset on
+  pull requests and the full matrix on `main`; keep the Playwright dashboard
+  job on Linux. `prove-e2e` SKIPs when no gnatprove is resolvable.
+- Add `tools/check-test-portability.py` (stdlib) as
+  `just portability-check`: flag known POSIX-only literals and shell idioms in
+  tests, with a documented allow-list. Wire it into `just check`.
+- Document the matrix, the skip policy, and the Windows path rules in
+  `docs/usage/platforms.md` and `docs/contributing/developer-guide.md`.
+
+**Tests:** self-tests for `Temp_Dir`, `Run_Command`, and the Windows
+drive-letter / separator cases; the path suite already covers both separator
+shapes.
+
+**Verify:** the CI matrix is green on all three systems; `just portability-check`;
+`just test`.
+
+---
+
+## v1.74.0 - Cache identity and diagnostics coverage
+
+- [ ] Item 18 - Cache by resolved project location, with expiry and clear
+
+**Goal:** The same project hits the same cache entry whether `prove` runs from
+`/path/a`, `/path/b/c`, or the project itself, because the key uses the
+resolved filesystem location rather than the target string or the current
+directory. Entries expire after a configurable duration (7 days by default),
+and the user can clear the cache on demand.
+
+**Work:**
+- Resolve the target once at startup through a new path helper
+  (`Adacovex.Paths.Resolve`): expand `~`, make absolute against the current
+  directory, collapse `.` and `..`, normalise separators, and fold case on
+  Windows. Use the same helper for the root project file.
+- Replace every proof-cache key input that currently hashes the caller's
+  `Target_Dir` or `GPR` string with the resolved absolute paths. The
+  proof-input walk hashes `Dir & Options` at each level today, so two cwds
+  produce two keys; hash the resolved root once and each file's root-relative
+  path plus content instead.
+- Add a small fixed header to each cache entry: the entry format tag and the
+  write time in OS seconds. `Load` strips the header before it returns the
+  payload, so callers see the same bytes. Use the header time for the TTL,
+  not the file mtime, because a CI cache restore or a copy rewrites mtime and
+  would make an old entry look new.
+- Add `Default_Expiry_Days : constant := 7`; a load older than the TTL is a
+  miss and the entry is removed. Expiry runs before the `--cache-max` count
+  cap, and oldest-first eviction uses the same header time. A zero expiry
+  means "never expire".
+- Add `[cache] expiry-days = 7` to `adacovex.toml`, `--cache-expiry=DAYS`, and
+  `--cache-clear`. The bare `cache` word stays the `--cache` alias; do not add
+  a conflicting `cache` subcommand. `--cache-clear` deletes the resolved cache
+  root, prints the path and entry count, and exits 0.
+- Make clear refuse a path outside the cache root and use the path helper for
+  removal, so a bad `--cache-dir` can never delete an unrelated tree.
+- Bump `Cache_Schema` to `s12`; old entries are abandoned, so no entry
+  without a header is ever read.
+- Document the key rule, the TTL, and clear in
+  `docs/usage/configuration.md`, `docs/usage/cli-reference-options.md`, and
+  `docs/usage/performance.md`. Update `AGENTS.md` if the cache description
+  drifts.
+- Wire `--cache-expiry` and `--cache-clear` through `action.yml` and the
+  `docs/usage/ci-cd.md` Inputs table, or add them to the documented
+  `CLI_ONLY` allow-list. `just action-parity-check` fails on an unwired flag.
+
+**Tests:** `adacovex_cache_tests.adb` covers the TTL boundary, a rewritten
+mtime that disagrees with the stored header time, a negative age (clock
+skew), expiry 0, clear-root safety, and relative/absolute key equality. A CLI
+e2e runs `prove` from two different working directories against one project
+and asserts the second run reports a cache hit.
+
+**Verify:** `just test`, `just cli-e2e`, two `prove` runs from different cwds,
+`just bench` if the warm figures move.
+
+---
+
+- [ ] Item 17a - Contract-error coverage matrix and fixtures
+
+**Goal:** The diagnostics documentation states which contract and runtime
+checks adacovex classifies, which it reports only as raw fallback, and which
+it does not yet support. Every supported class has a broken/fixed fixture
+pair.
+
+**Work:**
+- Inventory `Fix_Hint` in `Adacovex.Prove_Output` and the current e2e cases:
+  index, overflow, division, precondition, invariant, invariant entry, flow,
+  typo attribute, and typo identifier. `Fix_Hint` already names hints for
+  division, range/index/overflow/discriminant, precondition, postcondition,
+  assertion, invariant, termination, and initialisation; every other kind
+  falls through to the generic hint.
+- Add fixtures for postcondition, assertion, range check, discriminant check,
+  null access, subtype conversion, predicate, ghost/lemma, termination,
+  modular arithmetic, floating point, and aliasing/ownership. Put each pair
+  under `src/tests/projects/contract-errors/<class>/{broken,fixed}/`.
+- Classify a class as **supported** only when the block names the check and
+  gives a fix a user can apply. Otherwise mark it **fallback** (raw message,
+  location only) or **not yet supported** (no fixture; listed as a gap).
+- Add the matrix to `docs/contributing/proving-diagnostics.md`: class,
+  gnatprove check or SARIF rule, status, fixture, and the fix hint.
+- Add `tools/check-diagnostic-coverage.py` (stdlib) as
+  `just diagnostics-coverage-check`: every fixture directory maps to a matrix
+  row and every supported row has a fixture. Wire it into `just check`.
+
+**Tests:** `tests/e2e/prove_diagnostics.py` iterates the fixture projects,
+asserts the classified kind and hint for supported classes, and asserts the
+documented fallback shape for the others.
+
+**Verify:** `just prove-e2e`, `just diagnostics-coverage-check`,
+`just docs-check`.
+
+---
+
+## v1.75.0 - Dogfood close-out and CLI cohesion
+
+- [ ] Item 17b - Ada_CRDT dogfood: useful, robust diagnostics
+
+**Goal:** The diagnostics earned on `../Ada_CRDT` are accurate, quiet, and
+actionable, and the remaining gaps are documented rather than hidden.
+
+**Work:**
+- Run `just run-ada-crdt` with `--diagnostics=text` and `--diagnostics=json`;
+  record every finding by class, location, and whether the block is
+  actionable.
+- Fix grouping and dedup gaps the dogfood exposes: missing source locations,
+  multi-line messages, inlined call sites, warnings without a line, and
+  solver attribution when a category has more than one prover.
+- Confirm `--suppress-warnings`, `--quiet`, and `--verbose` keep their
+  contracts on the dogfood tree.
+- Copy representative Ada_CRDT findings into synthetic fixtures under
+  `src/tests/projects/contract-errors/` (with attribution in the README) so
+  CI covers them; CI must not require the sibling checkout.
+- Document a "Dogfood: Ada_CRDT" section in
+  `docs/contributing/proving-diagnostics.md` with counts by class, the
+  actionable findings, the fallback findings, and the link to the item 17a
+  gaps. Update `docs/usage/target-projects.md` if the behaviour changes.
+- If a finding is an adacovex false positive rather than a gnatprove
+  diagnostic, fix it and add a regression test.
+
+**Tests:** the new fixtures, plus the existing `just run-ada-crdt` gate.
+
+**Verify:** `just run-ada-crdt`, `just prove-e2e`, `just test`.
+
+---
+
+- [ ] Item 19 - Contextual help audit and Unix CLI cohesion
+
+**Goal:** Every help topic reads like one Unix tool. `prove` help is the
+reference frame; the main `--help` and every contextual topic share it.
+
+**Work:**
+- Audit every topic the parser dispatches: `prove`, `serve`, `status`,
+  `sbom`, `complexity`, `spark-coverage`, `man`, `tldr`, `init`,
+  `completion`, and `cache`. Each topic gets a `Usage:` block, a one-line
+  summary, aligned option columns with wrapped descriptions, one example,
+  exit codes where they are not 0/1, a `See also` line, and the standard
+  footer.
+- Keep the option layout and blank-line grouping from `prove` help. Do not
+  put developer commands (`just`, `alr build`) in help or dashboard prose.
+- Make an unknown topic list the valid topics and suggest the nearest match,
+  in the same style as `Suggest_Flags`.
+- Keep `help <topic>` and `<subcommand> --help` byte-identical, and keep a
+  flag before `--help` selecting the main usage.
+- Do not add a pager or colour outside a TTY; the output must pipe cleanly.
+- Update `docs/usage/cli-reference.md` and the flag-detail pages for any
+  wording or grouping change.
+
+**Tests:** `adacovex_config_tests.adb` snapshots each topic's frame and
+option order; `cli-e2e` asserts every topic has `Usage:`, `Options:`, and the
+footer, and that no developer command appears.
+
+**Verify:** `just test`, `just cli-e2e`, `just surface-parity-check`,
+`just docs-coverage-check`.
+
+---
+
+- [ ] Final docs, STE, and parity drift pass
+
+**Goal:** Re-read the user docs against the codebase surface after the
+v1.73.0-v1.75.0 changes: every `Known_Flags` entry in the CLI reference,
+every dashboard route in the dashboard page, every action input in the CI/CD
+inputs table, every new Technical Name in the STE100 list, and every new test
+category in the CONTRIBUTING table. Fix drift in place; no follow-ups.
 
 **Verify:** the full `just check` chain.
 
@@ -486,13 +482,19 @@ Technical Name in the STE100 list. Fix drift in place; no follow-ups.
 3. Regenerate `src/adacovex_version_info.ads` (`just build`), `sbom.json`
    (`just sbom`), and `src/adacovex-docs_template.ads` (`just book`).
 4. Run `just check`, then `just test`, `just prove`, `just test-count`,
-   `just proof-status`.
+   `just proof-status`. Wire any new gate into `just check`,
+   `tools/tasks.py` (`CHECK_GATES`), the CI jobs, and the AGENTS.md task
+   table.
 5. Update AGENTS.md if the source layout, CLI flags, SBOM behaviour, or
    dashboard features drifted.
 6. Suggest a Conventional Commit message (British English, <=72 characters,
    scope from `docs/contributing/commits.md`); do not commit unless asked.
+   If the release spans several components, suggest the atomic commit chain
+   from the AGENTS.md rule.
 7. State which version the change belongs to and whether it needs a MAJOR
    version (none of these items break the CLI contract, so no MAJOR).
+8. When the release closes, replace its item detail in this plan with a
+   changelog link. A closed release leaves no checklist text behind.
 
 ## Decisions (resolved)
 
@@ -511,3 +513,13 @@ Technical Name in the STE100 list. Fix drift in place; no follow-ups.
 9. Item 15: the 60 s budget is split into measure (v1.70.0), build-once
    (v1.71.0), and close-out (v1.72.0), so no release promises an unmeasured
    speed-up.
+10. Item 16: a platform dependency is an explicit skip with a reason, never a
+    silent pass.
+11. Item 18: the cache identity is the resolved absolute project path, the
+    TTL is 7 days by default, and `--cache-clear` is a flag, not a new
+    subcommand, because `cache` already selects `--cache`.
+12. Item 20: one test root under `src/tests`; fixture projects live under
+    `src/tests/projects` and are never compiled by the root GPR.
+13. Item 17: a class counts as supported only when it is classified and gives
+    an actionable fix; otherwise it is documented as fallback or a gap.
+14. Item 19: `prove` help is the reference frame for every contextual topic.

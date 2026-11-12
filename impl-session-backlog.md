@@ -16,7 +16,9 @@ scope, and this file holds what is finished, what is not, and how to resume.
 - Delete `old-plan.md` once its contents were confirmed in `plan.md`.
 
 All of that landed. The tree is at v1.69.0 and `just check` passes 31/31
-gates.
+gates. The plan now runs to v1.75.0; the v1.68.0 and v1.69.0 item text was
+removed once their changelogs existed, so `plan.md` is the durable scope and
+the changelogs are the record of what shipped.
 
 ## Completed in this session
 
@@ -113,25 +115,8 @@ Everything below is still open. The plan item numbers match `plan.md`.
 
 ### v1.69.0 (closed)
 
-- [x] **Item 10a - compiler-style findings.** Each finding renders
-  `file:line:col: error: <kind>` with its solver set, counterexample, source
-  excerpt and caret, and one fix hint. `prove` always asks for
-  counterexamples, the inlined-call-site suffix is grouped into
-  `call sites: N`, and `--diagnostics=json` prints the same facts as one
-  object. The solver is the summary row's prover set, because gnatprove 16.1
-  has no per-SARIF-result solver.
-- [x] **Item 10b - CI annotations end to end.** `prove_diagnostics.py` runs
-  a broken fixture with `GITHUB_ACTIONS=true` and asserts one annotation per
-  distinct finding; `docs/usage/ci-cd.md` states the shape.
-- [x] **Item 10c - diagnostics mode matrix.** `proving-diagnostics.md` has
-  the mode matrix, the compiler-style block, and the JSON shape;
-  `cli-reference-flags.md` documents `--diagnostics`.
-- [x] **Old-plan 3.1 - action honours a project `adacovex.toml`.** The
-  `action-project-config` CI job runs the real action against a fixture with
-  `[prove] coverage = false` and `level = 1`, then asserts both effects from
-  the teed proof log.
-- [x] Item 3 close-out: the dedup and the inlined-call-site grouping are both
-  in place.
+Every v1.69.0 item is closed; the changelog is the record, so this file
+starts at v1.70.0.
 
 ### v1.70.0
 
@@ -163,7 +148,35 @@ Everything below is still open. The plan item numbers match `plan.md`.
   the PASS/FAIL/SKIP summary unchanged.
 - [ ] **Item 8c - debt paydown close-out.**
 - [ ] **Item 9 close-out - API docstring completeness.**
-- [ ] **Release polish - docs, STE, and parity drift pass.**
+
+### v1.73.0
+
+- [ ] **Item 20 - one test root and fixture projects.** Move `tests/e2e` to
+  `src/tests/e2e`, split it by category, move the inline CI Ada fixtures to
+  `src/tests/projects/<name>` with their own manifests, and add the
+  test-layout gate.
+- [ ] **Item 16 - platform-agnostic suite.** Audit POSIX assumptions, extend
+  `Test_Support` with temp-dir and command helpers, add the three-OS CI
+  matrix, and add the portability gate. A platform dependency is an explicit
+  skip, never a silent pass.
+
+### v1.74.0
+
+- [ ] **Item 18 - cache by resolved location.** Canonicalise the target and
+  GPR, key the proof cache on the resolved root, add the 7-day TTL,
+  `--cache-expiry`, and `--cache-clear`. Bump the cache schema.
+- [ ] **Item 17a - contract-error matrix.** Add broken/fixed fixture pairs
+  for the unsupported classes and a doc table that states supported /
+  fallback / gap, checked by the diagnostics-coverage gate.
+
+### v1.75.0
+
+- [ ] **Item 17b - Ada_CRDT dogfood.** Fix grouping, location, and solver
+  gaps the dogfood exposes, add synthetic fixtures for its findings, and
+  document the result against the item 17a matrix.
+- [ ] **Item 19 - contextual help audit.** Every topic gets the prove frame:
+  usage, aligned options, one example, exit codes, and `See also`.
+- [ ] **Final docs, STE, and parity drift pass.**
 
 ## Gotchas for the next session
 
@@ -175,7 +188,8 @@ Everything below is still open. The plan item numbers match `plan.md`.
    warm a normal run. Delete the `prove-*` / `provereplay-*` entries under
    `<cache>/1.69.0/*/pr/` to force a fresh store.
 3. **`tests/e2e/prove_diagnostics.py` sets `NO_COLOR=1`.** The text
-   assertions need plain output. Keep that when adding new checks.
+   assertions need plain output. Keep that when adding new checks. Item 20
+   moves it to `src/tests/e2e/prove/`.
 4. **`just test-count` rewrites the description in every historical release
    manifest** (2155 -> 2175 in this session). That is the established
    pipeline behaviour; commit the generated manifests as-is.
@@ -192,5 +206,8 @@ Everything below is still open. The plan item numbers match `plan.md`.
    still green.
 3. v1.69.0 is closed. Start v1.70.0 with item 5 (SBOM false positives on C
    projects), then 6a, 8a, and 15a.
-4. Move the completed entries in this file and `plan.md` together; keep the
+4. When a release closes, delete its item text from `plan.md` (the changelog
+   is the record) and update the version table. Do not carry closed detail
+   forward.
+5. Move the completed entries in this file and `plan.md` together; keep the
    changelog for the release that ships them.
