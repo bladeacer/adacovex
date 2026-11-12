@@ -517,12 +517,15 @@ def write_project(root: Path, case: Case, fixed: bool) -> Path:
 
 
 def run_prove(project: Path, verbose: bool = False,
-              extra: Optional[List[str]] = None) -> subprocess.CompletedProcess:
+              extra: Optional[List[str]] = None,
+              env_extra: Optional[dict] = None) -> subprocess.CompletedProcess:
     """Run `prove` over one fixture project and capture everything.
 
     @param project  Project directory to prove.
     @param verbose  True for the raw prover stream, False for the concise mode.
     @param extra  Additional CLI arguments appended after the base ones.
+    @param env_extra  Extra environment variables (for example a simulated
+    GitHub Actions run).
     @return The completed process, with stdout and stderr combined.
     """
     argv: List[str] = [
@@ -535,6 +538,7 @@ def run_prove(project: Path, verbose: bool = False,
     #  binary honours NO_COLOR exactly as it does for a redirected log.
     env = dict(os.environ)
     env["NO_COLOR"] = "1"
+    env.update(env_extra or {})
     return subprocess.run(
         argv, cwd=str(project), capture_output=True, text=True,
         timeout=900, errors="replace", env=env)
@@ -574,6 +578,10 @@ def repeated_findings(block: str) -> List[str]:
     repeats: List[str] = []
     for line in block.splitlines():
         if not line.startswith("    ") or line.startswith("    ..."):
+            continue
+        #  Only a finding header repeats a finding. The solver, source, and
+        #  fix lines below it may legitimately repeat for two findings.
+        if ": error: " not in line:
             continue
         if line in seen:
             repeats.append(line)
@@ -637,6 +645,38 @@ def check_modes(r: Results, root: Path, debug: bool) -> None:
             "concise: the block names the prover identity")
     r.check(repeated_diagnostics(text) == [],
             "concise: a diagnostic the prover repeats is printed once")
+    r.check(": error: array index check" in block,
+            "concise: a finding reads as file:line:col: error: kind")
+    r.check("solver: CVC5" in block,
+            "concise: the block names the solver set behind the check")
+    r.check("counterexample: when " in block,
+            "concise: the block states the counterexample")
+
+    #  The same facts are machine-readable as one JSON object.
+    proc = run_prove(broken, extra=["--diagnostics=json"])
+    json_text: str = proc.stdout + proc.stderr
+    if debug:
+        _dump(case, "json", json_text)
+    r.check('"prover":"' in json_text,
+            "json: the object names the prover")
+    r.check('"kind":"array index check"' in json_text,
+            "json: the object carries the check kind")
+    r.check('"line": 7' in json_text,
+            "json: the object carries the parsed line")
+    r.check('"counterexample":"when ' in json_text,
+            "json: the object carries the counterexample")
+
+    #  Inside GitHub Actions the same finding is also an inline annotation.
+    proc = run_prove(broken, env_extra={"GITHUB_ACTIONS": "true"})
+    annotation_text: str = proc.stdout + proc.stderr
+    if debug:
+        _dump(case, "annotation", annotation_text)
+    r.check("::error file=" in annotation_text
+            and "line=7" in annotation_text
+            and "title=SPARK proof failed::" in annotation_text,
+            "ci: an unproved finding prints a GitHub Actions annotation")
+    r.check(annotation_text.count("::error file=") == 1,
+            "ci: one annotation per distinct finding")
 
     proc = run_prove(broken, verbose=True)
     text = proc.stdout + proc.stderr
@@ -678,6 +718,8 @@ def check_case(r: Results, root: Path, case: Case, debug: bool) -> None:
                 f"{case.name}: the block carries a fix hint")
         r.check(f"prove_diag_{case.name}_broken." in block,
                 f"{case.name}: the block names the source file")
+        r.check(": error: " in block,
+                f"{case.name}: the block uses the compiler diagnostic prefix")
         r.check(repeated_findings(block) == [],
                 f"{case.name}: the block names each finding once")
         r.check(repeated_diagnostics(text) == [],

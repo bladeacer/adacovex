@@ -267,8 +267,9 @@ package body Adacovex_Prove_Runner_Tests is
          S : constant String := Adacovex.Prove.Build_Option_String (O, 8);
       begin
          R.Check
-           (S = "-j 8 --steps 10000 --no-loop-unrolling",
-            "the default option string is jobs, steps, no-unrolling");
+           (S = "-j 8 --steps 10000 --counterexamples=on --no-loop-unrolling",
+            "the default option string is jobs, steps, counterexamples,"
+            & " no-unrolling");
       end;
 
       --  Zero jobs is forwarded as-is (all cores).
@@ -292,7 +293,7 @@ package body Adacovex_Prove_Runner_Tests is
          R.Check
            (S
             = "-j 4 --level 3 --timeout 60 --steps 2000 --memlimit 1500"
-              & " -f --no-loop-unrolling --no-inlining",
+              & " -f --counterexamples=on --no-loop-unrolling --no-inlining",
             "the configured option string carries every switch in order");
       end;
 
@@ -500,8 +501,8 @@ package body Adacovex_Prove_Runner_Tests is
               (Has_Text (D, "prover 16.1.0"),
                "the block names the prover identity");
             R.Check
-              (Has_Text (D, "adacovex-types.adb:54:08  postcondition"),
-               "the block points at the source location and its kind");
+              (Has_Text (D, "adacovex-types.adb:54:08: error: postcondition"),
+               "the block renders a compiler-style diagnostic");
             R.Check
               (Has_Text (D, "(flow analysis)"),
                "the block marks a flow finding");
@@ -662,7 +663,7 @@ package body Adacovex_Prove_Runner_Tests is
               (Has_Text (D, "--steps"),
                "the hint raises the budget for a budget finding");
             R.Check
-              (Has_Text (D, "prove_diag_broken.adb:12:14  index check"),
+              (Has_Text (D, "prove_diag_broken.adb:12:14: error: index check"),
                "the block pairs the location with its kind");
          end;
       end;
@@ -711,9 +712,126 @@ package body Adacovex_Prove_Runner_Tests is
          R.Check
            (Count_Text
               (Adacovex.Prove.Diagnostics_Text ("", Stats),
-               "crdt-lms.adb:160:09  index check")
+               "crdt-lms.adb:160:09: error: index check")
             = 1,
             "the block lists the repeated finding once");
+      end;
+
+      --  A counterexample arrives as `+ e.g. when ...` plus `and ...`
+      --  continuations, and the summary attributes the check's category to a
+      --  prover set. Both facts belong to the finding.
+      declare
+         Cap_Path : constant String := Fixture_Dir & "/counterexample.txt";
+         Sum_Path : constant String := Fixture_Dir & "/gnatprove.out";
+         Stats    : Adacovex.Prove.Failure_Stats;
+         F        : Ada.Text_IO.File_Type;
+      begin
+         Fixture ("replay.gpr");
+         Ada.Text_IO.Create (F, Ada.Text_IO.Out_File, Cap_Path);
+         Ada.Text_IO.Put_Line (F, " medium: array index check might fail");
+         Ada.Text_IO.Put_Line (F, "--> unit.adb:7:17");
+         Ada.Text_IO.Put_Line (F, "      + e.g. when I = 1");
+         Ada.Text_IO.Put_Line (F, "      and T = (2 => 2)");
+         Ada.Text_IO.Close (F);
+         Ada.Text_IO.Create (F, Ada.Text_IO.Out_File, Sum_Path);
+         Ada.Text_IO.Put_Line
+           (F, "Run-time Checks                   2          .    1 (CVC5)");
+         Ada.Text_IO.Close (F);
+         Adacovex.Prove.Collect_Failures (Cap_Path, Stats, Sum_Path);
+         R.Check
+           (Ada.Strings.Unbounded.To_String (Stats.Items (1).Counterexample)
+            = "when I = 1 and T = (2 => 2)",
+            "the counterexample phrase joins its continuation lines");
+         R.Check
+           (Ada.Strings.Unbounded.To_String (Stats.Items (1).Solver) = "CVC5",
+            "the finding is attributed to its summary category's prover");
+         declare
+            D : constant String := Adacovex.Prove.Diagnostics_Text ("", Stats);
+         begin
+            R.Check
+              (Has_Text (D, "solver: CVC5"), "the block names the prover set");
+            R.Check
+              (Has_Text (D, "counterexample: when I = 1 and T = (2 => 2)"),
+               "the block states the counterexample");
+            R.Check
+              (Has_Text (D, "unit.adb:7:17: error: array index check"),
+               "the block uses the compiler diagnostic prefix");
+         end;
+      end;
+
+      --  The same check inlined at two call sites is one finding, and the
+      --  block states why the count is two.
+      declare
+         Inline_Path : constant String := Fixture_Dir & "/inlined.txt";
+         Stats       : Adacovex.Prove.Failure_Stats;
+         F           : Ada.Text_IO.File_Type;
+      begin
+         Fixture ("replay.gpr");
+         Ada.Text_IO.Create (F, Ada.Text_IO.Out_File, Inline_Path);
+         Ada.Text_IO.Put_Line
+           (F,
+            "unit.adb:9:08: medium: range check might fail,"
+            & " in call inlined at caller.adb:4:5");
+         Ada.Text_IO.Put_Line
+           (F,
+            "unit.adb:9:08: medium: range check might fail,"
+            & " in call inlined at caller.adb:9:5");
+         Ada.Text_IO.Close (F);
+         Adacovex.Prove.Collect_Failures (Inline_Path, Stats);
+         R.Check
+           (Stats.Unproved = 1, "inlined call sites count as one finding");
+         R.Check
+           (Stats.Items (1).Call_Sites = 2,
+            "the finding keeps how many call sites reported it");
+         R.Check
+           (Has_Text
+              (Adacovex.Prove.Diagnostics_Text ("", Stats), "call sites: 2"),
+            "the block states the call-site count");
+      end;
+
+      --  The JSON shape carries the same facts, and the source excerpt is
+      --  read from the project tree.
+      declare
+         Json_Path : constant String := Fixture_Dir & "/json.txt";
+         Stats     : Adacovex.Prove.Failure_Stats;
+         F         : Ada.Text_IO.File_Type;
+      begin
+         Fixture ("replay.gpr");
+         Ada.Directories.Create_Directory (Fixture_Dir & "/src");
+         Ada.Text_IO.Create
+           (F, Ada.Text_IO.Out_File, Fixture_Dir & "/src/sample.adb");
+         Ada.Text_IO.Put_Line (F, "package body Sample is");
+         Ada.Text_IO.Put_Line (F, "   X := T (I);");
+         Ada.Text_IO.Close (F);
+         Ada.Text_IO.Create (F, Ada.Text_IO.Out_File, Json_Path);
+         Ada.Text_IO.Put_Line
+           (F, "sample.adb:2:9: medium: index check might fail");
+         Ada.Text_IO.Close (F);
+         Adacovex.Prove.Collect_Failures (Json_Path, Stats);
+         declare
+            J : constant String :=
+              Adacovex.Prove.Diagnostics_Json ("16.1.0", Stats, Fixture_Dir);
+            D : constant String :=
+              Adacovex.Prove.Diagnostics_Text ("16.1.0", Stats, Fixture_Dir);
+         begin
+            R.Check
+              (Stats.Unproved = 1, "the JSON fixture reports one finding");
+            R.Check
+              (Has_Text (J, "{""prover"":""16.1.0"","),
+               "the JSON names the prover");
+            R.Check
+              (Has_Text (J, ",""kind"":""index check"","),
+               "the JSON carries the check kind");
+            R.Check
+              (Has_Text (J, ",""line"": 2,"),
+               "the JSON carries the parsed line number");
+            R.Check
+              (Has_Text (J, ",""source"":""   X := T (I);"","),
+               "the JSON carries the source excerpt");
+            R.Check
+              (Has_Text (D, "   X := T (I);") and then Has_Text (D, "^"),
+               "the text block pairs the excerpt with a caret ruler");
+         end;
       end;
 
       Ada.Directories.Delete_Tree (Fixture_Dir);

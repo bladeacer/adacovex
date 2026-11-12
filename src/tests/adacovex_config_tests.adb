@@ -293,6 +293,47 @@ package body Adacovex_Config_Tests is
             "prove --suppress-warnings=xyz,abc is not an error");
       end;
 
+      --  --diagnostics=json selects the JSON finding detail; text keeps the
+      --  default, and an unknown shape is a loud error.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "prove");
+         Add (A, "--diagnostics=json");
+         Testing.Parse_Args (A, Cfg);
+         R.Check
+           (Cfg.Prove_Diagnostics_Json,
+            "prove --diagnostics=json selects the JSON shape");
+         R.Check
+           (Cfg.Prove_Diagnostics_Explicit,
+            "prove --diagnostics=json sets the explicit flag");
+         R.Check
+           (not Cfg.CLI_Error, "prove --diagnostics=json is not an error");
+      end;
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "prove");
+         Add (A, "--diagnostics=text");
+         Testing.Parse_Args (A, Cfg);
+         R.Check
+           (not Cfg.Prove_Diagnostics_Json,
+            "prove --diagnostics=text keeps the prose block");
+         R.Check
+           (not Cfg.CLI_Error, "prove --diagnostics=text is not an error");
+      end;
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "prove");
+         Add (A, "--diagnostics=yaml");
+         Testing.Parse_Args (A, Cfg);
+         R.Check (Cfg.CLI_Error, "an unknown diagnostics shape is an error");
+      end;
+
       --  Test 4: CI threshold defaults are "not set" (gates off)
       declare
          Cfg : constant CLI_Config := (others => <>);
