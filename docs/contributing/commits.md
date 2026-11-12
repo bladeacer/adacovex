@@ -72,3 +72,9 @@ the commit yourself unless the user asks for it. Give the message in a
 fenced block, state why the scope fits, name the version in `plan.md`
 (the work plan at the repository root) the change belongs to, and say
 whether the change needs a MAJOR version.
+
+If the work is one atomic change, suggest one message. If it spans more than
+one component or intent, name the commits in order and give one shell
+one-liner that stages and commits them in succession, each with its own
+scope and `git add` path set. Chain the steps with `&&`, so a failed commit
+stops the chain before the next component is staged.

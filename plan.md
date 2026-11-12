@@ -18,20 +18,20 @@ version; do not cherry-pick rows across versions.
 | Version | Status | Theme | Items |
 |---------|--------|-------|-------|
 | v1.68.0 | closed | Output defaults, time, and old-plan closeout | 1, 2, 7, bulk of 9 |
-| v1.69.0 | in progress | Compiler-style diagnostics and output | C1-C6 delivered (3 dedup, 4 help frame, 11 help spacing, 12 cache parity, 13 colour, 14 CI annotations); 10a (grouping, solver, counterexamples, JSON), 10b (action/workflow annotation e2e), 10c (mode matrix), old-plan 3.1 |
+| v1.69.0 | closed | Compiler-style diagnostics and output | C1-C9 delivered (3 dedup, 4 help frame, 11 help spacing, 12 cache parity, 13 colour, 14 CI annotations, 10a compiler-style findings + JSON, 10b annotation e2e, 10c mode matrix, old-plan 3.1 action project config) |
 | v1.70.0 | planned | SBOM robustness and debt | 5 (C-project false positives), 6a (syft comparison), 8a (debt register), 15a (pipeline measurement), remainder of 9 |
 | v1.71.0 | planned | SBOM depth and pipeline speed | 6b (lockfiles, indirect deps, scope, licences), 8b (bounded-string and manifest debt), 15b (build-once/prove-once) |
 | v1.72.0 | planned | Performance close-out and polish | 15c (parallel gates, caching, 60 s budget), 8c (debt paydown), 9 close-out, docs/STE drift pass |
 
 ## Session status (2026-11-11)
 
-v1.68.0 is closed and v1.69.0 is in progress at `1.69.0`. The session
-finished items 1, 2, 7, 11, 12, 13, 14, and the bulk of 9, moved the proof
-diagnostics into `Adacovex.Prove_Output`, and passed `just check` 31/31
-(2155/2155 tests, 116 prove-e2e checks, 1054 VCs at Gold). The detailed
-handover, remaining work, and resume instructions are in
-[`impl-session-backlog.md`](impl-session-backlog.md). Read both files before
-starting item 10a.
+v1.68.0 and v1.69.0 are closed. The second session finished items 10a, 10b,
+10c, and old-plan 3.1: compiler-style findings with grouping, solver,
+counterexamples, source excerpts, and `--diagnostics=json`; an annotation
+e2e run; the diagnostics mode matrix; and a real action run against a project
+`adacovex.toml`. The tree now holds 2175/2175 tests, 132 prove-e2e checks,
+and 1057 VCs at Gold. The detailed handover for v1.70.0 is in
+[`impl-session-backlog.md`](impl-session-backlog.md).
 
 Every change also updates, in the same change: `docs/`, Ada docstrings feeding
 `docs/api-docs`, `docs/changelogs/adacovex-<version>.md`, AGENTS.md source tree
@@ -54,10 +54,10 @@ budget (C6). `old-plan.md` is deleted once this section is confirmed complete
 
 Two checkboxes were never closed, so they carry into the schedule:
 
-- [ ] Old-plan 3.1: an end-to-end test that the composite action behaves like
+- [x] Old-plan 3.1: an end-to-end test that the composite action behaves like
   the binary when a target repository carries `adacovex.toml` (priority:
   high; it is the only shipped behaviour without a real-run action test).
-  **v1.69.0.**
+  **Done in v1.69.0** via the `action-project-config` CI job.
 - [x] Old-plan 3.4: a warm-tree `just check` took **344 s** on 2026-11-06
   (12 logical CPUs, warm cache and gnatprove session). The measurement is in
   `docs/contributing/perf/check-pipeline.md`; the 60 s target is not met.
@@ -209,7 +209,7 @@ several call sites.
 
 ---
 
-- [ ] Item 10a - Findings read like a compiler (`file:line:col: error: kind`)
+- [x] Item 10a - Findings read like a compiler (`file:line:col: error: kind`) *(done in v1.69.0)*
 
 **Goal:** A `prove` failure names the source file and line, the check that
 failed, the exact solver that failed it, a counterexample when one exists, and
@@ -234,6 +234,13 @@ source line and caret, not only a solver transcript.
 `src/parsers/adacovex-parsers-gnatprove.adb` (SARIF solver field),
 `docs/contributing/proving-diagnostics.md`, `docs/usage/cli-reference-flags.md`.
 
+**Result:** each finding renders `file:line:col: error: <kind>` with its
+solver set, counterexample, source excerpt and caret, and one fix hint. The
+inlined-call-site suffix is grouped into `call sites: N`. `prove` always asks
+for counterexamples, and `--diagnostics=json` prints the same facts as one
+object. The solver is the summary row's prover set, because gnatprove 16.1
+records solvers per category rather than per SARIF result.
+
 **Tests:** `src/tests/adacovex_prove_runner_tests.adb` (counterexample and
 solver parsing, inlined-call grouping, JSON shape);
 `tests/e2e/prove_diagnostics.py` (one grouped finding for two call sites, the
@@ -243,7 +250,7 @@ solver parsing, inlined-call grouping, JSON shape);
 
 ---
 
-- [ ] Item 10b - CI annotations end to end (action and workflows)
+- [x] Item 10b - CI annotations end to end (action and workflows) *(done in v1.69.0)*
 
 **Goal:** The annotation `Emit_Annotations` prints is produced by the CI entry
 points too, so a failing proof marks the pull request diff inline.
@@ -255,6 +262,11 @@ points too, so a failing proof marks the pull request diff inline.
   asserts the annotation line (or a `::error` prefix) appears.
 - Document the annotation shape in `docs/usage/ci-cd.md`.
 
+**Result:** `tests/e2e/prove_diagnostics.py` runs the broken index fixture
+with `GITHUB_ACTIONS=true` and asserts one `::error file=` annotation per
+distinct finding. `docs/usage/ci-cd.md` states the annotation shape and the
+runner environment rule.
+
 **Files:** `action.yml`, `.github/workflows/ci.yml`, `tests/e2e/cli_flags.py`
 or `tests/e2e/prove_diagnostics.py`, `docs/usage/ci-cd.md`.
 
@@ -265,11 +277,16 @@ one `::error file=` line per distinct finding.
 
 ---
 
-- [ ] Item 10c - Diagnostics documentation and mode matrix
+- [x] Item 10c - Diagnostics documentation and mode matrix *(done in v1.69.0)*
 
 **Goal:** One page states the two modes (concise = replay + block,
 `--verbose` = raw stream), where colour applies, and what CI emits. Keep the
 `--quiet` / `--suppress-warnings[=SETS]` semantics unchanged.
+
+**Result:** `proving-diagnostics.md` carries the mode matrix (text, JSON,
+verbose, quiet, custom quiet), the compiler-style block, and the JSON shape.
+`cli-reference-flags.md` documents `--diagnostics` and the counterexample
+request. `ci-cd.md` documents the annotation shape.
 
 **Files:** `docs/contributing/proving-diagnostics.md`,
 `docs/usage/cli-reference-flags.md`, `docs/usage/ci-cd.md`,
@@ -277,11 +294,15 @@ one `::error file=` line per distinct finding.
 
 ---
 
-- [ ] Old-plan 3.1 - Composite action honours a project `adacovex.toml`
+- [x] Old-plan 3.1 - Composite action honours a project `adacovex.toml` *(done in v1.69.0)*
 
 **Goal:** A real action run against a repository carrying a project file
 changes the run the same way the binary does (coverage line, jobs, level,
 project-over-global precedence).
+
+**Result:** the `action-project-config` CI job runs the real action against a
+fixture that sets `[prove] coverage = false` and `[prove] level = 1`, then
+asserts `--level 1` in the teed proof log and the absence of `coverage:`.
 
 **Files:** `.github/workflows/ci.yml` (or a dedicated workflow),
 `action.yml`, `tests/e2e/cli_flags.py` (or a new action e2e),

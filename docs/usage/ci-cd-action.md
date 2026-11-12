@@ -101,7 +101,32 @@ steps:
 | `prove-suppress-warnings` | `''` | Comma-separated GNATprove info tags to suppress from prove output (for example `unrolling-inlining,xyz`); a tag `S` suppresses blocks tagged `[info-S]` (or `[S]`). `--verbose` wins |
 | `coverage` | `false` | Force the proof-coverage summary after `prove`, overriding a config file that sets `[prove] coverage = false`; the summary is on by default |
 | `no-coverage` | `false` | Hide the proof-coverage summary after `prove` (the summary is on by default) |
+| `diagnostics` | `''` | Shape of the prove finding detail: `text` (default) or `json` (`--diagnostics`); a JSON run prints the same facts as one object |
 | `fail-on` | `''` | CI policy gate over comma-separated dimensions `spark=LVL`, `docstrings=PCT`, `proof=PCT`, `tests=N`, `coverage=PCT`; a bare dimension reuses its `require-*` threshold (`--fail-on`) |
+
+### Project configuration
+
+The action always passes the target through `--target`, so the binary reads
+`<target>/adacovex.toml` exactly as a local run does. A project file wins over
+the global file, and an explicit action input (which becomes a flag) wins over
+both.
+
+A target that sets `[prove] coverage = false` hides the coverage line in the
+action's prove step. A target that sets `[prove] level = 1` runs gnatprove at
+that effort even when the workflow passes no `prove-level` input. The action's
+prove log is teed to `$RUNNER_TEMP/adacovex-prove.out`, so a later step can
+assert the effect.
+
+```toml
+# <target>/adacovex.toml
+[prove]
+coverage = false
+level = 1
+```
+
+The `action-project-config` CI job runs the real composite action against a
+fixture that carries this file. It asserts `--level 1` in the proof options
+and the absence of the `coverage:` line.
 
 ### Outputs
 

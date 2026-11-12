@@ -31,6 +31,10 @@ This page covers the GitHub Actions workflows, the Markdown summaries and loud f
     versions. See [Delivery and versioning](../contributing/architecture-pipeline.md#delivery-and-versioning).
   - `consumer-run-tests` -- runs the action's test step in a restructured
     consumer workspace.
+  - `action-project-config` -- runs the real action against a fixture that
+    carries `adacovex.toml`, then asserts the project file changed the prove
+    run (`--level 1`, no coverage line). See [Project
+    configuration](ci-cd-action.md#project-configuration).
   - `summary` -- writes the Markdown summary table and exits 1 when any gate
     job failed.
 - **`.github/workflows/pr-check.yml`** -- runs `--coverage-delta` against

@@ -75,6 +75,46 @@ dense block. Each new option now starts after a blank line, while a wrapped
 continuation line stays attached. The `prove` topic lists each flag on its
 own line with a short description. `--help` and `help` remain byte-identical.
 
+### C7: A finding reads like a compiler diagnostic
+
+The diagnostics block named a location and a check kind. It did not name the
+solver, the input that failed, or the line of source. `prove` now renders each
+finding as `file:line:col: error: <kind>`, then its solver set, counterexample,
+source excerpt with a caret ruler, and one fix hint.
+
+`prove` always runs gnatprove with `--counterexamples=on`, so a failed check
+states the input that breaks it. The solver is the prover set the gnatprove
+summary attributes to the check's category; gnatprove 16.1 records solvers per
+summary row, not per SARIF result. A finding reported once per inlined call
+site is one finding, and the block states `call sites: N` when there are
+several. A source file the location names is read from the target root or its
+`src/` child.
+
+The prove result cache key now includes the counterexample switch. A text run
+and a JSON run keep separate replay entries, so each warm hit prints the shape
+it asked for.
+
+### C8: Findings are available as JSON
+
+`--diagnostics=text|json` selects the shape of the finding detail. `text` is
+the compiler-style block and the default. `json` prints one object after the
+replay with the prover identity, the unproved total, and one entry per finding:
+location, file, line, column, kind, solver, counterexample, flow and budget
+flags, call-site count, source excerpt, and fix hint. The object is one line,
+so a script can `grep '^{"'` it from a run log.
+
+### C9: The action is tested against a project configuration file
+
+The composite action passes the target through `--target`, so a target that
+carries `adacovex.toml` changes the run exactly as a local run does. A new
+`action-project-config` CI job runs the real action against a fixture that
+sets `[prove] coverage = false` and `[prove] level = 1`, then asserts the
+proof options carry `--level 1` and the run prints no `coverage:` line. The
+action's prove log is teed to `$RUNNER_TEMP/adacovex-prove.out` for that
+assertion. The `prove` end-to-end checks also run a broken fixture with
+`GITHUB_ACTIONS=true` and assert one annotation per distinct finding, so the
+annotation shape C5 introduced is tested end to end.
+
 ## Fixes
 
 ### H1: The coverage summary prints once per prove run
@@ -108,16 +148,19 @@ sibling projects present on the machine (`../polars`, `../playwright`,
 table's shape. A sibling that is not checked out is skipped, so a clean clone
 and CI stay green.
 
-Native suite: 2155/2155 passing (29 categories).
+Native suite: 2175/2175 passing (29 categories).
 
-`just prove-e2e` passes 116 checks. `just run-ada-crdt` proves 972 checks on
+`just prove-e2e` passes 132 checks. `just run-ada-crdt` proves 972 checks on
 Ada_CRDT and exits 0 on both a cold run and a warm cache hit.
 
 ## Proof Results
 
 The change is outside the proof surface: `adacovex-prove.adb` is an I/O-bound
-unit with no `SPARK_Mode` contracts, so the Gold assessment is unchanged
-(gnatprove 16.1.0: 1054 VCs, 0 unproved, 0 justified).
+unit with no `SPARK_Mode` contracts. Adding `diagnostics` to `Known_Flags`
+pushed one flag-suggestion length check to the 10 000-step limit, so the
+writer now names its first index in a local constant and the check follows
+directly from the guard. The tree proves at the default budget (gnatprove
+16.1.0: 1057 VCs, 0 unproved, 0 justified), with no `--steps=20000`.
 
 ## Traceability
 
@@ -128,7 +171,17 @@ HLR-PROVE-CACHE: A warm proof cache hit replays the diagnostics of the run it
 serves, so cached and fresh output agree.
 
 HLR-PROVE-CI: Unproved findings print a GitHub Actions inline annotation when
-`GITHUB_ACTIONS` is set.
+`GITHUB_ACTIONS` is set, and the prove end-to-end checks assert the shape.
+
+HLR-PROVE: Compiler-style findings -- each finding states its location, kind,
+solver set, counterexample, source excerpt, and one fix hint, and groups its
+inlined call sites.
+
+HLR-PROVE-JSON: `--diagnostics=json` prints the same finding facts as one
+JSON object.
+
+HLR-CONFIG: A target's `adacovex.toml` changes a run made through the
+composite action exactly as it changes a local run.
 
 HLR-ANSI: The concise replay colours errors, warnings, notices, success, and
 the summary footers through `Adacovex.Ansi`.

@@ -5,7 +5,15 @@ what the output looks like in each mode, and what each unproved check asks you
 to change. The contract rules are on
 [Proving and writing proofs](proving.md).
 
-## The two output modes
+## The output modes
+
+| Mode | Selected by | Replay | Finding detail |
+|------|-------------|--------|----------------|
+| Concise text | default | One framed block, notices and repeats dropped | Compiler-style block after the replay |
+| Concise JSON | `--diagnostics=json` | One framed block, notices and repeats dropped | One JSON object after the replay |
+| Verbose | `--verbose` | Raw prover stream, live | None |
+| Quiet | `--quiet` (already the default) | Concise replay with the default suppression set | Compiler-style block |
+| Custom quiet | `--suppress-warnings=SETS` | Concise replay with the named suppression sets | Compiler-style block |
 
 A local run is **concise**. adacovex captures the prover output and replays
 one framed block when the run finishes. The replay keeps the check results,
@@ -22,6 +30,11 @@ with its location and excerpt, and states the count in a `duplicates:` footer.
 
 `--verbose` turns the capture off and streams the raw prover output live. CI
 passes `--verbose`, so a CI log keeps the unedited prover stream.
+
+`--diagnostics` changes only the finding detail. It never changes the
+replay, the exit code, or the proof itself. The proof result cache is shared
+between the two shapes, and the cached replay is kept apart, so a warm hit
+prints the shape the caller asked for.
 
 ## Colour, the cache, and CI
 
@@ -77,31 +90,63 @@ The fixture below reads one element of a table. Its precondition states
 an unconstrained array need not start at its length.
 
 ```
- medium: array index check might fail
---> prove_diag_broken.adb:7:17
+ high: array index check might fail
+--> prove_diag_index_broken.adb:7:17
     7 |          return T (I);
       |                    ^
+      + e.g. when I = 1
+      and T = (2 => 2)
       + reason for check: value must be a valid index into the array
-      + possible fix: add precondition (I in Positive) to subprogram at prove_diag_broken.ads:11
+      + possible fix: add precondition (I in Positive) to subprogram at prove_diag_index_broken.ads:11
       + provers gave up before completing the proof
 Summary logged in obj/gnatprove/gnatprove.out
 
   proof:      1 unproved check(s) (prover alr:16.1.0)
-    prove_diag_broken.adb:7:17  array index check (provers gave up)
-  fix:       the provers gave up before completing the proof; raise the proof budget with --steps=<N> (10000 by default)
+    prove_diag_index_broken.adb:7:17: error: array index check (provers gave up)
+      solver: CVC5
+      counterexample: when I = 1 and T = (2 => 2)
+            return T (I);
+                      ^
+      fix: the provers gave up before completing the proof; raise the proof budget with --steps=<N> (10000 by default)
 ```
 
 The replay holds the prover's own detail: the check kind, the `-->` location,
 the source excerpt, and the sub-messages. The diagnostics block adds the
-unproved count, the prover identity, the location and kind of each finding,
+unproved count, the prover identity, and one compiler-style line per finding.
+
+A finding line reads `file:line:col: error: <kind>`. The lines under it name
+the solver set, the counterexample, the source excerpt with a caret ruler,
 and one fix hint.
+
+`prove` always asks gnatprove for counterexamples (`--counterexamples=on`),
+so a failed check states the input that breaks it. A check whose provers gave
+up has no counterexample, and its hint raises the budget instead.
+
+The solver is the prover set the gnatprove summary attributes to the check's
+category. gnatprove 16.1 records solvers per summary row, not per SARIF
+result, so the line names the set (for example `CVC5` or `CVC5, Z3`).
 
 The block names at most eight findings. A longer list still counts every
 finding, and it states how many it left out.
 
 The block names each finding once. A check that gnatprove reported once per
 inlined call site counts once, because the location and the check kind are
-the same.
+the same. The same finding says `call sites: N` when the prover reported it
+for more than one call site.
+
+## Machine-readable findings
+
+`--diagnostics=json` prints the same facts as one JSON object after the
+replay. A script reads it without parsing prose:
+
+```json
+{"prover":"alr:16.1.0","unproved": 1,"findings":[{"location":"prove_diag_index_broken.adb:7:17","file":"prove_diag_index_broken.adb","line": 7,"column": 17,"kind":"array index check","solver":"CVC5","counterexample":"when I = 1 and T = (2 => 2)","flow":false,"budget":true,"call_sites": 1,"source":"          return T (I);","fix":"the provers gave up before completing the proof; raise the proof budget with --steps=<N> (10000 by default)"}]}
+```
+
+The object carries the prover identity and the unproved total. Each finding
+has its location, parsed file, line and column, kind, solver, counterexample,
+flow and budget flags, call-site count, source excerpt, and fix hint.
+The JSON is one line, so `grep '^{"'` selects it from a run log.
 
 ## What each finding asks you to change
 

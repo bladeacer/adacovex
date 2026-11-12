@@ -25,7 +25,7 @@ jobs:
           standard: all          # DO-178C + ISO 26262 + IEC 62304
           require-spark: Gold
           require-docstrings: 100
-          require-tests: 2155
+          require-tests: 2175
           run-tests: true
           generate-sbom: true
 ```
@@ -109,6 +109,25 @@ the mapping rules (maintainers run the same check locally via
 
 The `### Inputs` table lives on the [composite action
 page](ci-cd-action.md#inputs), next to the rest of the action detail.
+
+## Proof annotations
+
+When `GITHUB_ACTIONS` is set, each distinct unproved finding is also a GitHub
+Actions workflow command:
+
+```
+::error file=<path>,line=<line>,col=<column>,title=SPARK proof failed::<kind>
+```
+
+The runner marks that line inline in the pull request diff. A location
+without a column omits the `col` field. A location the tool cannot split
+prints no annotation, so a malformed finding never becomes an empty-file
+error.
+
+The composite action runs the binary as a child process and does not clear
+the runner environment, so `GITHUB_ACTIONS` reaches it. A local run prints
+the text block only. The `prove` end-to-end checks run a broken fixture with
+`GITHUB_ACTIONS=true` and assert one annotation per distinct finding.
 
 ## Composite action
 

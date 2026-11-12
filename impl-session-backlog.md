@@ -100,9 +100,9 @@ Files: `src/core/adacovex-prove_output.ads/.adb`,
 ### 8. Verification
 
 - `just check`: **31/31 gates pass** (warm run, 108 s).
-- `just test`: **2155/2155** passing (29 categories).
-- `just prove-e2e`: **116 checks** pass.
-- `just prove`: 1054 VCs, 1054 proved, 0 unproved, 0 justified, **76 units**,
+- `just test`: **2175/2175** passing (29 categories).
+- `just prove-e2e`: **132 checks** pass.
+- `just prove`: 1057 VCs, 1057 proved, 0 unproved, 0 justified, **76 units**,
   Gold. The new output unit adds one unit with no VCs.
 - `just run-ada-crdt`: 972 checks, exit 0, cold and warm output agree.
 - `just version-consistency-check`: every source agrees on v1.69.0.
@@ -111,29 +111,27 @@ Files: `src/core/adacovex-prove_output.ads/.adb`,
 
 Everything below is still open. The plan item numbers match `plan.md`.
 
-### v1.69.0 (next release)
+### v1.69.0 (closed)
 
-- [ ] **Item 10a - compiler-style findings.** Group findings that differ only
-  by `, in call inlined at ...`; add `--counterexamples=on` and read the
-  values into the finding; attribute each finding to the solver (SARIF and
-  the summary); render `file:line:col: error: <kind>` with source line,
-  caret, solver, counterexample, and one fix; add `--diagnostics=text|json`.
-  Keep the concise default and the `--verbose` contract.
-- [ ] **Item 10b - CI annotations end to end.** The binary emits
-  `::error file=...` when `GITHUB_ACTIONS` is set, but no action/workflow
-  test asserts it. Add a broken-proof fixture run in CI, document the
-  annotation shape in `docs/usage/ci-cd.md`, and confirm the action does not
-  scrub the runner environment.
-- [ ] **Item 10c - diagnostics mode matrix.** One page states the two modes,
-  where colour applies, and what CI emits. `proving-diagnostics.md` and
-  `cli-reference-flags.md` have the new sections; the full mode matrix and
-  the e2e assertions for it remain.
-- [ ] **Old-plan 3.1 - action honours a project `adacovex.toml`.** A real
-  composite-action run against a repository carrying a project file must
-  change the run the way the binary does (coverage line, jobs, level,
-  project-over-global precedence).
-- [ ] Item 3 close-out: the dedup landed; item 10a's grouping is the
-  remaining half.
+- [x] **Item 10a - compiler-style findings.** Each finding renders
+  `file:line:col: error: <kind>` with its solver set, counterexample, source
+  excerpt and caret, and one fix hint. `prove` always asks for
+  counterexamples, the inlined-call-site suffix is grouped into
+  `call sites: N`, and `--diagnostics=json` prints the same facts as one
+  object. The solver is the summary row's prover set, because gnatprove 16.1
+  has no per-SARIF-result solver.
+- [x] **Item 10b - CI annotations end to end.** `prove_diagnostics.py` runs
+  a broken fixture with `GITHUB_ACTIONS=true` and asserts one annotation per
+  distinct finding; `docs/usage/ci-cd.md` states the shape.
+- [x] **Item 10c - diagnostics mode matrix.** `proving-diagnostics.md` has
+  the mode matrix, the compiler-style block, and the JSON shape;
+  `cli-reference-flags.md` documents `--diagnostics`.
+- [x] **Old-plan 3.1 - action honours a project `adacovex.toml`.** The
+  `action-project-config` CI job runs the real action against a fixture with
+  `[prove] coverage = false` and `level = 1`, then asserts both effects from
+  the teed proof log.
+- [x] Item 3 close-out: the dedup and the inlined-call-site grouping are both
+  in place.
 
 ### v1.70.0
 
@@ -179,10 +177,10 @@ Everything below is still open. The plan item numbers match `plan.md`.
 3. **`tests/e2e/prove_diagnostics.py` sets `NO_COLOR=1`.** The text
    assertions need plain output. Keep that when adding new checks.
 4. **`just test-count` rewrites the description in every historical release
-   manifest** (2151 -> 2155 in this session). That is the established
+   manifest** (2155 -> 2175 in this session). That is the established
    pipeline behaviour; commit the generated manifests as-is.
 5. **`Adacovex.Prove_Output` counts as a proof unit** (76 instead of 75,
-   same 1054 VCs). `just proof-status` keeps the ledger and the timing page
+   same proof surface). `just proof-status` keeps the ledger and the timing page
    in sync.
 6. **`just check` runs `fmt` first.** Re-run the full chain after a source
    edit; a green `complexity-check` alone does not cover the parity gates.
@@ -192,7 +190,7 @@ Everything below is still open. The plan item numbers match `plan.md`.
 1. Read `plan.md` and this file.
 2. Run `just build`, `just test`, and `just check` to confirm the tree is
    still green.
-3. Start with item 10a (compiler-style findings), then 10b, 10c, and
-   old-plan 3.1 to close v1.69.0.
+3. v1.69.0 is closed. Start v1.70.0 with item 5 (SBOM false positives on C
+   projects), then 6a, 8a, and 15a.
 4. Move the completed entries in this file and `plan.md` together; keep the
    changelog for the release that ships them.

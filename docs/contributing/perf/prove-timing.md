@@ -120,6 +120,11 @@ comparison against 1.62.0.
 | 1.61.0-1.62.0 | 1.62.0 | 54.1 ms +/- 3.2 ms | 64.5 s +/- 4.2 s / 1054 VCs |
 | 1.63.0- | 1.63.0 | 62.9 ms +/- 5.9 ms | 79.4 s +/- 2.7 s / 1054 VCs (80.8 s +/- 2.7 s, cold clone) |
 
+The open `1.63.0-` column remains the 1.63.0 measurement. At v1.69.0 the tree
+moved to **1057 VCs** (+3, from the named first index in the flag-suggestion
+writer). The proof surface changed, not the methodology, so the column keeps
+its representative version and its complete metric set.
+
 The 1.58.0 warm row is 15 runs. Its cold row is 3 runs from the same session,
 and the gnatprove session store is wiped before each one. The 1.62.0 rows are
 15 warm runs and 3 cold runs with their loads named in the reading notes. The

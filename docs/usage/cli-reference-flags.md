@@ -204,6 +204,7 @@ Vendored dependencies then participate in the proof without their sources being 
 | `--suppress-warnings=SETS` | on | Hide GNATprove info messages whose tags match the comma-separated suppression-set names (for example `--suppress-warnings=unrolling-inlining,xyz`). A set name `S` suppresses blocks tagged `[info-S]` (or bare `[S]`). `--verbose` always shows every message |
 | `--coverage` | on | Print the proof-coverage summary line after a successful run. It reports statement, subprogram, and VC coverage, and it wins over a config file that sets `[prove] coverage = false` |
 | `--no-coverage` | off | Hide the proof-coverage summary line, for every run shape. `[prove] coverage = false` in the global config file gives the same result without a flag |
+| `--diagnostics=text\|json` | `text` | Shape of the finding detail after the replay. `text` prints the compiler-style block; `json` prints the same facts as one JSON object |
 
 A local `prove` run is quiet by default. It captures the gnatprove output
 and replays it once the run finishes. The replay keeps every actionable
@@ -225,12 +226,21 @@ them)`. When gnatprove fails, the final `ERROR:` line adds the count of
 error and warning lines it saw, for example
 `ERROR: gnatprove exited with code 1 (error lines: 2 above)`.
 
-Unproved checks also get a diagnostics block after the replay: the prover
-identity, the source location and check kind of up to eight findings, and
-one fix hint derived from the first check's kind. A flow finding is marked
-`(flow analysis)` and a larger count is still reported.
-`--verbose` streams the raw prover output live without a block, and CI
-passes it. Shapes and mode rules:
+Unproved checks also get a diagnostics block after the replay. Each
+finding reads like a compiler diagnostic:
+`file:line:col: error: <kind>`, then its solver set, counterexample (when
+one exists), source excerpt with a caret ruler, and one fix hint. A
+finding the prover reported once per inlined call site is one finding,
+and the block states the call-site count. A flow finding is marked
+`(flow analysis)`, a budget finding `(provers gave up)`, and a larger
+count is still reported.
+
+`prove` always runs gnatprove with `--counterexamples=on`, so a failed
+check states the input that breaks it. The solver is the prover set the
+gnatprove summary attributes to the check's category; gnatprove 16.1
+records solvers per summary row, not per SARIF result. `--diagnostics=json`
+prints the same facts as one object. `--verbose` streams the raw prover
+output live without a block, and CI passes it. Shapes and mode rules:
 [Reading a prove failure](../contributing/proving-diagnostics.md).
 
 The concise replay is coloured by severity: errors red, warnings yellow,
@@ -245,6 +255,8 @@ the proof input hash and printed again, so a cached run and a fresh run show
 the same warnings, diagnostics block, and footers. Inside GitHub Actions,
 each distinct unproved finding is also emitted as
 `::error file=<path>,line=<line>,col=<column>,title=SPARK proof failed::<kind>`.
+The replay also depends on the diagnostics shape, so a text run and a JSON
+run are cached apart and each warm hit prints the shape it asks for.
 
 `prove` accepts all assessment flags too (`--dal`, `--standard`, the
 `--require-*` gates, `--emit-svg`, and more), so CI gates apply to the proof

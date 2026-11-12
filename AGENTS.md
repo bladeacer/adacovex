@@ -117,11 +117,11 @@ any Ada/SPARK project.
 
 Self-assessment (`just run-self`) must always show:
 - 100% docstring coverage (strict mode on by default, cannot be disabled)
-- Gold SPARK level: 1054 VCs under gnatprove 16.1.0, 0 unproved, 0 justified
+- Gold SPARK level: 1057 VCs under gnatprove 16.1.0, 0 unproved, 0 justified
   (see `docs/proof/16.1.0-ledger.md`). Platinum additionally requires full
   proof coverage, which the SPARK coverage report does not show (subprograms
   in `SPARK_Mode (Off)` units stay outside the proof)
-- 2155/2155 native tests passing
+- 2175/2175 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
   `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
@@ -259,7 +259,7 @@ src/
     |-- adacovex_cache_tests.ads/.adb         -- Result-cache tests (36)
     |-- adacovex_completion_tests.ads/.adb    -- Shell completion script tests (24)
     |-- adacovex_complexity_tests.ads/.adb    -- Complexity check tests (20)
-    |-- adacovex_config_tests.ads/.adb        -- CLI config tests (381)
+    |-- adacovex_config_tests.ads/.adb        -- CLI config tests (387)
     |-- adacovex_cpus_tests.ads/.adb          -- Host CPU and job-resolution tests (24)
     |-- adacovex_dal_tests.ads/.adb           -- DAL compliance tests (23)
     |-- adacovex_diff_tests.ads/.adb          -- Differential-report regression tests (36)
@@ -271,7 +271,7 @@ src/
     |-- adacovex_opt_outs_tests.ads/.adb      -- Per-file opt-out marker tests (20)
     |-- adacovex_paths_tests.ads/.adb         -- Platform-agnostic path helper tests (43)
     |-- adacovex_prove_patch_tests.ads/.adb   -- Proof patch merge tests (35)
-    |-- adacovex_prove_runner_tests.ads/.adb  -- GNATprove runner option/GPR tests (90)
+    |-- adacovex_prove_runner_tests.ads/.adb  -- GNATprove runner option/GPR tests (104)
     |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (88)
     |-- adacovex_renderer_svg_tests.ads/.adb  -- SVG renderer tests (161)
     |-- adacovex_renderer_tests.ads/.adb      -- HTML/Markdown renderer tests (58)
@@ -284,7 +284,7 @@ src/
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (67)
     |-- adacovex_tz_ansi_tests.ads/.adb       -- Timezone + ANSI tests (73)
     |-- adacovex_vcs_tests.ads/.adb           -- VCS support tests (37)
-    `-- test_runner.adb                       -- Test suite entry point (2155 tests)
+    `-- test_runner.adb                       -- Test suite entry point (2175 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -669,7 +669,7 @@ compatibility shim. The table names the canonical target for each task.
 | `check` | **The single everything-check / verification entry point.** Run it after any change. It runs every gate CI runs before a release, and **`fmt` is first**: gnatprove and the API docs both read the sources, so every later gate must see formatted code. Then the cheap static gates (ascii, complexity, csslint, spark-off, changelog, action-parity, docs-coverage, surface-parity, tools-check, cli-e2e, prove-e2e, version, version-consistency, doc-links, link, docs-check, para-split, tldr, book-links), then build + native tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description, requirements). Every gate runs a preflight first: a gate whose tool is missing on the host (no `alr` on `PATH`, no `gnatformat` on the developer path, a `gnatdoc` that cannot document a one-package probe project, no `sphinx` in the interpreter) is SKIPped with the reason instead of failing, the run continues past a failed gate, and the summary shows PASS/FAIL/SKIP per gate, exiting non-zero only when a gate failed. `just check` resolves `gnatprove` for you (it is fetched into `<data>/toolchain/` and executed directly when not on `PATH`), so you never have to install or point at a prover by hand -- just run `just check` and it verifies the whole tree end to end. `just prove` is the SPARK sub-gate if you only changed proof-affecting code |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
-| `test` | Build + run the 2155-test native suite |
+| `test` | Build + run the 2175-test native suite |
 | `prove` | SPARK proof at gnatprove `--level=4` (full-proof gate) + regenerates SVG badges in `docs/badges/` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
 | `book` | Build the offline manual from the Sphinx docs and regenerate `src/adacovex-docs_template.ads` (tools/gen-docs.py; incremental + verified Sphinx build, `--fresh` forces a clean one; safe to run without sphinx) |
@@ -786,9 +786,9 @@ a runner needs neither `make` nor `just`; the Ubuntu runner images ship
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `just test` | 2155/2155 passing |
+| Unit tests | `just test` | 2175/2175 passing |
 | Self-assessment | `just run-self` | 100% docs, Gold, DAL-C Achieved |
-| SPARK proof | `just prove` | Gold (1054 VCs, 0 unproved, 0 justified under gnatprove 16.1.0), verified at `--level=4` (the deepest effort; the prove subcommand forwards `--level` verbatim, so the overhead is gnatprove's own) |
+| SPARK proof | `just prove` | Gold (1057 VCs, 0 unproved, 0 justified under gnatprove 16.1.0), verified at `--level=4` (the deepest effort; the prove subcommand forwards `--level` verbatim, so the overhead is gnatprove's own) |
 | Ada_CRDT regression | `just run-ada-crdt` | Stable against CRDT library (strict mode) |
 
 **The true test of proof performance is the `prove` subcommand at the
@@ -826,11 +826,25 @@ never invent a scope, and add its table row first in a `chore:` commit.
 One component per commit: split the rest, explain why the change was
 needed, and never repeat what the diff shows.
 
-After you finish a change, suggest the commit message and do not run
+After you finish a change, always suggest the commit message and do not run
 the commit yourself unless the user asks for it. Give the message in a
 fenced block, state why the scope fits, name the version in `plan.md`
 the change belongs to, and say whether the change needs a MAJOR
-version.
+version. This rule applies to every LLM session that changes the tree.
+
+**Atomic commits.** If the finished work is one atomic change -- one
+component and one intent -- suggest one commit message. If it spans more
+than one component or intent, do not force it into one commit. Name the
+commits in dependency order and give one shell one-liner that stages and
+commits them in succession, each with its own valid scope and its own
+`git add` path set. A later commit in the chain must not need an earlier
+commit's regenerated file unless that file is in the earlier commit.
+
+The one-liner chains `git add` and `git commit -m "$(cat <<'EOF' ... EOF)"`
+for each commit with `&&`, so a failed check or a rejected commit stops the
+chain before the next component is staged. Keep the footer rules above at the
+end of every message in the chain. Never run the one-liner unless the user
+asks for it.
 
 ## Changelog format
 
@@ -841,7 +855,7 @@ rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 2155 tests across 29 categories).
+Native zero-dependency suite (`src/tests/`, 2175 tests across 29 categories).
 Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests).
 
