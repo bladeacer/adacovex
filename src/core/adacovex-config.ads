@@ -232,6 +232,14 @@ package Adacovex.Config is
       --  validation, and an explicit flag wins over the config file.
       Prove_Coverage_Explicit : Boolean := False;
 
+      --  True when the prove diagnostics block is printed as JSON
+      --  (`--diagnostics=json`). The default (text) keeps the prose block.
+      Prove_Diagnostics_Json : Boolean := False;
+
+      --  True when --diagnostics is given. Only the explicit form is a
+      --  prove-mode flag for the "requires the prove subcommand" check.
+      Prove_Diagnostics_Explicit : Boolean := False;
+
       --  Raw GNATprove arguments passed through verbatim (--args="...").
       --  The value is space-split into individual gnatprove command-line
       --  tokens and appended to the option list the prove subcommand

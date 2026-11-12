@@ -1047,7 +1047,10 @@ begin
             --  The coverage summary is on by default. --coverage and
             --  --no-coverage win over `[prove] coverage` in the global
             --  config file, which is read only for an unflagged run.
-            Show_Coverage     => Cfg.Prove_Show_Coverage);
+            Show_Coverage     => Cfg.Prove_Show_Coverage,
+            --  --diagnostics=json prints the finding detail as one JSON
+            --  object; the default keeps the prose block.
+            Diagnostics_Json  => Cfg.Prove_Diagnostics_Json);
       begin
          Adacovex.Prove.Run_Prove (Target (1 .. TLen), Opts, OK);
          if not OK then

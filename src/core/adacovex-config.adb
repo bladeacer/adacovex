@@ -586,7 +586,7 @@ package body Adacovex.Config is
      & "workers svg-path md-path emit-md no-md strict diff base delta spark "
      & "docstrs tests spark-coverage group metric spark-format "
      & "min-coverage require-coverage gate-metric "
-     & "coverage no-coverage fail-on";
+     & "coverage no-coverage diagnostics fail-on";
 
    --  Expose the flag list for the shell-completion generator (see spec).
    function Flag_List return String is
@@ -832,7 +832,15 @@ package body Adacovex.Config is
             Buf (Len) := ' ';
          end if;
          if I > 1 and then Len + 3 <= Buf'Last then
-            Buf (Len + 1 .. Len + 3) := "or ";
+            --  Name the first index once: the slice write then needs only
+            --  `First + 2 <= Buf'Last` and a three-character length, both
+            --  direct consequences of the guard. The expression form makes
+            --  the length check independent of how Len was reached.
+            declare
+               First : constant Positive := Len + 1;
+            begin
+               Buf (First .. First + 2) := "or ";
+            end;
             Len := Len + 3;
          end if;
          if Len + 2 + MLen (I) <= Buf'Last then
@@ -2100,6 +2108,26 @@ package body Adacovex.Config is
                   elsif A = "--no-coverage" then
                      Cfg.Prove_Show_Coverage := False;
                      Cfg.Prove_Coverage_Explicit := True;
+                  elsif A = "--diagnostics" then
+                     Set_Error
+                       (Cfg, "--diagnostics requires a value: text or json");
+                  elsif Has_Prefix (A, "--diagnostics=") then
+                     declare
+                        Val : constant String := A (A'First + 14 .. A'Last);
+                     begin
+                        if Val = "text" then
+                           Cfg.Prove_Diagnostics_Json := False;
+                        elsif Val = "json" then
+                           Cfg.Prove_Diagnostics_Json := True;
+                        else
+                           Set_Error
+                             (Cfg,
+                              "--diagnostics must be text or json (got: "
+                              & Val
+                              & ")");
+                        end if;
+                        Cfg.Prove_Diagnostics_Explicit := True;
+                     end;
                   elsif A = "--fail-on" then
                      I := I + 1;
                      if I <= Count then
@@ -2473,6 +2501,7 @@ package body Adacovex.Config is
                      or Cfg.Prove_No_Inlining
                      or Cfg.Prove_Suppress_Explicit
                      or Cfg.Prove_Coverage_Explicit
+                     or Cfg.Prove_Diagnostics_Explicit
                      or Ada.Strings.Unbounded.Length (Cfg.Prove_Args) > 0)
          then
             Set_Error
@@ -2480,7 +2509,7 @@ package body Adacovex.Config is
                "prove options (--jobs, --level, --timeout, --steps, --memlimit, "
                & "--force, --no-loop-unrolling, --no-inlining, "
                & "--args, --suppress-warnings, --quiet, --coverage, "
-               & "--no-coverage) require the prove subcommand");
+               & "--no-coverage, --diagnostics) require the prove subcommand");
          end if;
 
          -- --serve-workers only makes sense with --serve; reject a silent no-op.
@@ -3175,6 +3204,9 @@ package body Adacovex.Config is
         ("                        (default; --no-coverage or [prove] coverage =");
       Opt ("                        false in adacovex.toml hides it)");
       Opt
+        ("  --diagnostics=SHAPE   With prove: text (default) or json for the");
+      Opt ("                        finding detail after the replay");
+      Opt
         ("  --require-spark=LVL   Fail if SPARK level < LVL (alias --spark)");
       Opt
         ("  --require-docstrings=PCT Fail if docstring coverage < PCT% (alias --docstrs)");
@@ -3734,6 +3766,7 @@ package body Adacovex.Config is
         or else T = "suppress-warnings"
         or else T = "quiet"
         or else T = "args"
+        or else T = "diagnostics"
       then
          Print_Section
            ("adacovex prove",
@@ -3805,6 +3838,13 @@ package body Adacovex.Config is
             & "      Show or hide the proof-coverage summary line"
             & ASCII.LF
             & "      (default: show)."
+            & ASCII.LF
+            & ASCII.LF
+            & "  --diagnostics=text|json"
+            & ASCII.LF
+            & "      Shape of the finding detail after the replay (default:"
+            & ASCII.LF
+            & "      text).  json prints the same facts as one object."
             & ASCII.LF
             & ASCII.LF
             & "A source file can opt out of the proof with a"

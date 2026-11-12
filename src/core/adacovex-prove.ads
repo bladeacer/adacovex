@@ -95,6 +95,11 @@ package Adacovex.Prove is
       --  spark-coverage report measures. It is on by default; --no-coverage
       --  or `[prove] coverage = false` in the global config turns it off.
       Show_Coverage : Boolean := True;
+
+      --  True when the diagnostics block is printed as one JSON object
+      --  (`--diagnostics=json`) instead of prose. The replay itself is
+      --  unchanged; only the finding detail changes shape.
+      Diagnostics_Json : Boolean := False;
    end record;
 
    --  Detect the number of logical CPUs on the host. It reads /proc/cpuinfo
@@ -243,17 +248,32 @@ package Adacovex.Prove is
    --  are documented on `Adacovex.Prove_Output.Collect_Failures`.
    --  @param Path  Captured gnatprove output file to read.
    --  @param Stats  Findings gathered during the pass.
-   procedure Collect_Failures (Path : String; Stats : out Failure_Stats)
+   --  @param Summary_Path  Gnatprove summary whose prover column attributes
+   --  a prover set to each finding category ("" when unavailable).
+   procedure Collect_Failures
+     (Path : String; Stats : out Failure_Stats; Summary_Path : String := "")
    renames Adacovex.Prove_Output.Collect_Failures;
 
    --  Render the diagnostics block for a proof run that left unproved
    --  checks.
    --  @param Prover  The resolved prover identity (version or path), or "".
    --  @param Stats  Findings gathered by Collect_Failures.
+   --  @param Source_Root  Directory the finding locations are relative to.
    --  @return The diagnostics block, or "" when there is nothing to report.
    function Diagnostics_Text
-     (Prover : String; Stats : Failure_Stats) return String
+     (Prover : String; Stats : Failure_Stats; Source_Root : String := "")
+      return String
    renames Adacovex.Prove_Output.Diagnostics_Text;
+
+   --  Render the same findings as one JSON object for `--diagnostics=json`.
+   --  @param Prover  The resolved prover identity, or "".
+   --  @param Stats  Findings gathered by Collect_Failures.
+   --  @param Source_Root  Directory the finding locations are relative to.
+   --  @return One JSON object, or "" when there is nothing to report.
+   function Diagnostics_Json
+     (Prover : String; Stats : Failure_Stats; Source_Root : String := "")
+      return String
+   renames Adacovex.Prove_Output.Diagnostics_Json;
 
    --  Build the GitHub Actions workflow command for one unproved finding.
    --  @param Location  Source location as Collect_Failures recorded it.

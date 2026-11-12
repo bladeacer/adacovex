@@ -94,6 +94,7 @@ Suppress_Sets : Ada.Strings.Unbounded.Unbounded_String :=
 Ada.Strings.Unbounded.Null_Unbounded_String;
 Cache : Boolean := True;
 Show_Coverage : Boolean := True;
+Diagnostics_Json : Boolean := False;
 end record;
 ```
 
@@ -133,11 +134,22 @@ end record;
 
 **Returns:** Number of logical processors (>= 1).
 
-### function Diagnostics_Text (Prover : Standard.String; Stats : Adacovex.Prove.Failure_Stats) return Standard.String
+### function Diagnostics_Json (Prover : Standard.String; Stats : Adacovex.Prove.Failure_Stats; Source_Root : Standard.String) return Standard.String
+
+| Parameter | Description |
+|-----------|-------------|
+| `Prover` | The resolved prover identity, or "". |
+| `Source_Root` | Directory the finding locations are relative to. |
+| `Stats` | Findings gathered by Collect_Failures. |
+
+**Returns:** One JSON object, or "" when there is nothing to report.
+
+### function Diagnostics_Text (Prover : Standard.String; Stats : Adacovex.Prove.Failure_Stats; Source_Root : Standard.String) return Standard.String
 
 | Parameter | Description |
 |-----------|-------------|
 | `Prover` | The resolved prover identity (version or path), or "". |
+| `Source_Root` | Directory the finding locations are relative to. |
 | `Stats` | Findings gathered by Collect_Failures. |
 
 **Returns:** The diagnostics block, or "" when there is nothing to report.
@@ -152,12 +164,13 @@ end record;
 
 ## Procedures
 
-### procedure Collect_Failures (Path : Standard.String; Stats : Adacovex.Prove.Failure_Stats)
+### procedure Collect_Failures (Path : Standard.String; Stats : Adacovex.Prove.Failure_Stats; Summary_Path : Standard.String)
 
 | Parameter | Description |
 |-----------|-------------|
 | `Path` | Captured gnatprove output file to read. |
 | `Stats` | Findings gathered during the pass. |
+| `Summary_Path` | Gnatprove summary whose prover column attributes |
 
 ### procedure Export_Status (Target_Dir : Standard.String; Out_Path : Standard.String; TZ_Spec : Standard.String; Success : Standard.Boolean)
 

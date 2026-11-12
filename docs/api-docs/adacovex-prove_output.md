@@ -39,12 +39,17 @@ end record;
 
 ```ada
 type Prove_Failure is record
-Location : Ada.Strings.Unbounded.Unbounded_String :=
+Location       : Ada.Strings.Unbounded.Unbounded_String :=
 Ada.Strings.Unbounded.Null_Unbounded_String;
-Kind     : Ada.Strings.Unbounded.Unbounded_String :=
+Kind           : Ada.Strings.Unbounded.Unbounded_String :=
 Ada.Strings.Unbounded.Null_Unbounded_String;
-Flow     : Boolean := False;
-Budget   : Boolean := False;
+Flow           : Boolean := False;
+Budget         : Boolean := False;
+Solver         : Ada.Strings.Unbounded.Unbounded_String :=
+Ada.Strings.Unbounded.Null_Unbounded_String;
+Counterexample : Ada.Strings.Unbounded.Unbounded_String :=
+Ada.Strings.Unbounded.Null_Unbounded_String;
+Call_Sites     : Natural := 1;
 end record;
 ```
 
@@ -59,11 +64,22 @@ end record;
 
 **Returns:** The workflow command, or "" when the location is malformed.
 
-### function Diagnostics_Text (Prover : Standard.String; Stats : Adacovex.Prove_Output.Failure_Stats) return Standard.String
+### function Diagnostics_Json (Prover : Standard.String; Stats : Adacovex.Prove_Output.Failure_Stats; Source_Root : Standard.String) return Standard.String
+
+| Parameter | Description |
+|-----------|-------------|
+| `Prover` | The resolved prover identity, or "". |
+| `Source_Root` | Directory the finding locations are relative to. |
+| `Stats` | Findings gathered by Collect_Failures. |
+
+**Returns:** One JSON object, or "" when there is nothing to report.
+
+### function Diagnostics_Text (Prover : Standard.String; Stats : Adacovex.Prove_Output.Failure_Stats; Source_Root : Standard.String) return Standard.String
 
 | Parameter | Description |
 |-----------|-------------|
 | `Prover` | The resolved prover identity (version or path), or "" |
+| `Source_Root` | Directory the finding locations are relative to, |
 | `Stats` | Findings gathered by Collect_Failures. |
 
 **Returns:** The diagnostics block, or "" when there is nothing to report.
@@ -84,12 +100,13 @@ end record;
 | `Key` | Cache key (already namespaced by the caller). |
 | `Path` | Replay text file. |
 
-### procedure Collect_Failures (Path : Standard.String; Stats : Adacovex.Prove_Output.Failure_Stats)
+### procedure Collect_Failures (Path : Standard.String; Stats : Adacovex.Prove_Output.Failure_Stats; Summary_Path : Standard.String)
 
 | Parameter | Description |
 |-----------|-------------|
 | `Path` | Captured gnatprove output file to read. |
 | `Stats` | Findings gathered during the pass. |
+| `Summary_Path` | Gnatprove summary (gnatprove.out) whose prover |
 
 ### procedure Emit_Annotations (Stats : Adacovex.Prove_Output.Failure_Stats)
 

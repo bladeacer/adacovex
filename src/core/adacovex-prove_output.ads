@@ -26,18 +26,34 @@ package Adacovex.Prove_Output is
    --  gnatprove stream.
    type Prove_Failure is record
       --  `file:line:column`, as gnatprove reported the check.
-      Location : Ada.Strings.Unbounded.Unbounded_String :=
+      Location       : Ada.Strings.Unbounded.Unbounded_String :=
         Ada.Strings.Unbounded.Null_Unbounded_String;
       --  The check kind (for example `range check` or `postcondition`).
-      Kind     : Ada.Strings.Unbounded.Unbounded_String :=
+      Kind           : Ada.Strings.Unbounded.Unbounded_String :=
         Ada.Strings.Unbounded.Null_Unbounded_String;
       --  True for a flow-analysis finding (an uninitialized object), False
       --  for a prover check.
-      Flow     : Boolean := False;
+      Flow           : Boolean := False;
       --  True when the prover gave up instead of finding a counterexample:
       --  the proof ran out of budget, so a larger --steps is the next step
       --  and the code may well be correct.
-      Budget   : Boolean := False;
+      Budget         : Boolean := False;
+      --  The prover set the gnatprove summary attributes to this check's
+      --  category (for example `CVC5, Z3`). gnatprove 16.1 records the
+      --  solvers per summary row, not per SARIF result, so this is the
+      --  category's prover set rather than a single solver name. It is
+      --  empty when the summary is missing or the row names no prover.
+      Solver         : Ada.Strings.Unbounded.Unbounded_String :=
+        Ada.Strings.Unbounded.Null_Unbounded_String;
+      --  The counterexample gnatprove printed for this check, as one phrase
+      --  (for example `when I = 1 and T = (2 => 2)`). It is empty when the
+      --  prover found none or ran with counterexamples off.
+      Counterexample : Ada.Strings.Unbounded.Unbounded_String :=
+        Ada.Strings.Unbounded.Null_Unbounded_String;
+      --  How many copies of this finding the stream carried. The prover
+      --  prints one copy per inlined call site, so a value above one means
+      --  the same check failed at several call sites.
+      Call_Sites     : Natural := 1;
    end record;
 
    type Failure_Array is array (1 .. Max_Failure_Items) of Prove_Failure;
@@ -71,13 +87,19 @@ package Adacovex.Prove_Output is
    --  derives the kind from the message. Every other line is ignored: a line
    --  without a `file:line:column` prefix is not a finding, and a finding
    --  that reports a proof outcome rather than a failure is not one to act
-   --  on. A check counts once per source location and check kind: the prover
-   --  can report one check once per inlined call site, so a repeated finding
-   --  is not double-counted. The seen table is bounded, and a stream with
-   --  more distinct findings than it holds keeps its later repeats.
+   --  on. A check counts once per source location and check kind once the
+   --  `, in call inlined at ...` suffix is removed: the prover can report one
+   --  check once per inlined call site, so a repeated finding is not
+   --  double-counted. The repeat count is kept in Call_Sites. The seen table
+   --  is bounded, and a stream with more distinct findings than it holds
+   --  keeps its later repeats.
    --  @param Path  Captured gnatprove output file to read.
    --  @param Stats  Findings gathered during the pass.
-   procedure Collect_Failures (Path : String; Stats : out Failure_Stats);
+   --  @param Summary_Path  Gnatprove summary (gnatprove.out) whose prover
+   --  column attributes a prover set to each category. Empty when the
+   --  summary is not available.
+   procedure Collect_Failures
+     (Path : String; Stats : out Failure_Stats; Summary_Path : String := "");
 
    --  Render the diagnostics block for a proof run that left unproved checks:
    --  how many, which prover produced them, the first check locations with
@@ -88,9 +110,26 @@ package Adacovex.Prove_Output is
    --  @param Prover  The resolved prover identity (version or path), or ""
    --  when it is not known.
    --  @param Stats  Findings gathered by Collect_Failures.
+   --  @param Source_Root  Directory the finding locations are relative to,
+   --  or "" to omit the source excerpt line.
    --  @return The diagnostics block, or "" when there is nothing to report.
    function Diagnostics_Text
-     (Prover : String; Stats : Failure_Stats) return String;
+     (Prover : String; Stats : Failure_Stats; Source_Root : String := "")
+      return String;
+
+   --  Render the same findings as one JSON object, so a CI job or a script
+   --  can read the facts without parsing prose. It carries the prover
+   --  identity, the unproved count, and one entry per named finding with
+   --  its location, line, column, kind, solver, counterexample, flow and
+   --  budget flags, call-site count, source excerpt, and fix hint. It is
+   --  empty when the run left no finding.
+   --  @param Prover  The resolved prover identity, or "".
+   --  @param Stats  Findings gathered by Collect_Failures.
+   --  @param Source_Root  Directory the finding locations are relative to.
+   --  @return One JSON object, or "" when there is nothing to report.
+   function Diagnostics_Json
+     (Prover : String; Stats : Failure_Stats; Source_Root : String := "")
+      return String;
 
    --  Build the GitHub Actions workflow command for one unproved finding.
    --  The location gnatprove prints is `file:line:column`, so the trailing

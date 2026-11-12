@@ -349,6 +349,12 @@ package body Adacovex.Prove is
       if Opts.Force then
          App ("-f");
       end if;
+      --  Ask for a counterexample on every failed check. A proved check
+      --  never prints one, so this costs nothing on a clean run, and a
+      --  failed check states the input that breaks it instead of only the
+      --  kind. The switch is part of the option string, so it is part of the
+      --  proof result-cache identity too.
+      App ("--counterexamples=on");
       --  Loop unrolling is always disabled: GNATprove emits the purely
       --  informational "cannot unroll loop (too many loop iterations)"
       --  notice for loops it would like to unroll but cannot, which is
@@ -1993,9 +1999,16 @@ package body Adacovex.Prove is
       --  it lets a warm hit print the same findings instead of a silent
       --  "reusing prior proof" line, so a cached run and a fresh run no
       --  longer disagree about what the prover reported.
-      function Proof_Replay_Key (Input_Hash : String) return String is
+      --  The cached replay also depends on the diagnostics shape: a text
+      --  replay carries the prose block, a JSON replay carries the object.
+      --  Keep them apart so a warm hit prints the shape the caller asked for.
+      --  @param Input_Hash  Proof input hash.
+      --  @param Json  True when --diagnostics=json selected the JSON shape.
+      --  @return The replay cache key.
+      function Proof_Replay_Key
+        (Input_Hash : String; Json : Boolean) return String is
       begin
-         return "provereplay:" & Input_Hash;
+         return "provereplay:" & Input_Hash & (if Json then ":json" else "");
       end Proof_Replay_Key;
 
       --  Read a proof artefact from disk into Buf, returning False when the
@@ -2366,7 +2379,7 @@ package body Adacovex.Prove is
                   --  is cached without colour; the printer colours it here.
                   if Opts.Suppress_Warnings then
                      Adacovex.Prove_Output.Print_Cached_Replay
-                       (Proof_Replay_Key (In_Hash));
+                       (Proof_Replay_Key (In_Hash, Opts.Diagnostics_Json));
                   end if;
                   if Opts.Show_Coverage then
                      Report_Coverage (Target_Dir);
@@ -2499,17 +2512,32 @@ package body Adacovex.Prove is
                   --  check lines with their code excerpts, so the block adds
                   --  the prover identity, the source locations, and the fix
                   --  hint.
-                  Collect_Failures (Tmp, F_Stats);
+                  Collect_Failures
+                    (Tmp,
+                     F_Stats,
+                     Strip_Trailing_Slash (Target_Dir)
+                     & "/obj/gnatprove/gnatprove.out");
                   Adacovex.Prove_Output.Append_Text
                     (Tmp_Replay,
-                     Diagnostics_Text
-                       (Ada.Strings.Unbounded.To_String (Prover_Id), F_Stats));
+                     (if Opts.Diagnostics_Json
+                      then
+                        Diagnostics_Json
+                          (Ada.Strings.Unbounded.To_String (Prover_Id),
+                           F_Stats,
+                           Target_Dir)
+                      else
+                        Diagnostics_Text
+                          (Ada.Strings.Unbounded.To_String (Prover_Id),
+                           F_Stats,
+                           Target_Dir)));
                   --  Print the replay (coloured per severity), then cache
                   --  the plain text so a warm hit can print it again.
                   Adacovex.Prove_Output.Print_Replay_File (Tmp_Replay);
                   if Opts.Cache and then Code = 0 then
                      Adacovex.Prove_Output.Cache_Replay
-                       (Proof_Replay_Key (Prove_Cache_Key), Tmp_Replay);
+                       (Proof_Replay_Key
+                          (Prove_Cache_Key, Opts.Diagnostics_Json),
+                        Tmp_Replay);
                   end if;
                   Adacovex.Prove_Output.Emit_Annotations (F_Stats);
                   declare
