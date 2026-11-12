@@ -25,7 +25,7 @@ than cherry-picking rows across versions.
 | v1.71.0 | planned | SBOM depth and pipeline speed | 6b, 8b, 15b |
 | v1.72.0 | planned | Performance close-out | 15c, 8c, 9 close-out |
 | v1.73.0 | planned | Test suite portability and layout | 20 (test root and fixture projects), 16 (platform-agnostic suite) |
-| v1.74.0 | planned | Cache identity and diagnostics coverage | 18 (resolved-path cache, 7-day expiry), 17a (contract-error matrix) |
+| v1.74.0 | planned | Cache identity and diagnostics coverage | 18 (resolved-path, per-unit cache; 7-day expiry), 17a (contract-error matrix) |
 | v1.75.0 | planned | Dogfood close-out and CLI cohesion | 17b (Ada_CRDT robustness), 19 (contextual help audit), final docs/STE pass |
 
 ## Session status (2026-11-12)
@@ -36,8 +36,8 @@ grouped findings, solver attribution, counterexamples, source excerpts,
 against a project `adacovex.toml`. The tree holds 2175/2175 tests, 132
 prove-e2e checks, and 1057 VCs at Gold. The plan now runs to v1.75.0 with the
 test-layout, portability, cache-identity, diagnostics-coverage, and help-audit
-workstreams. The handover for the next session is in
-[`impl-session-backlog.md`](impl-session-backlog.md).
+workstreams. This file is the single source of truth for release scope;
+completed work is recorded in the changelogs.
 
 Every change also updates, in the same change: `docs/`, Ada docstrings feeding
 `docs/api-docs`, `docs/changelogs/adacovex-<version>.md`, AGENTS.md source tree
@@ -47,6 +47,21 @@ Every change also updates, in the same change: `docs/`, Ada docstrings feeding
 `book-links-check`, `python3 tools/gen-docs.py --check`, then `just book`).
 After `just test` and `just prove`, run `just test-count` and
 `just proof-status`.
+
+## Working constraints
+
+1. `src/core/adacovex-prove.adb` sits just under the 600 cyclomatic cap. Put
+   new I/O helpers in `Adacovex.Prove_Output` or a sibling unit, and run
+   `just complexity-check` after a change there.
+2. `tests/e2e/prove_diagnostics.py` sets `NO_COLOR=1` so the text assertions
+   compare plain output. Keep that when adding checks; item 20 moves the file
+   to `src/tests/e2e/prove/`.
+3. `just test-count` rewrites the test count in every historical release
+   manifest. Commit the generated manifests as-is.
+4. `Adacovex.Prove_Output` counts as a proof unit. `just proof-status` keeps
+   the VC ledger, the badges, and the timing page in sync.
+5. `just check` runs `fmt` first. Re-run the full chain after a source edit; a
+   green `complexity-check` alone does not cover the parity gates.
 
 ## Closed releases
 
@@ -310,24 +325,40 @@ shapes.
 
 ## v1.74.0 - Cache identity and diagnostics coverage
 
-- [ ] Item 18 - Cache by resolved project location, with expiry and clear
+- [ ] Item 18 - Cache by resolved location, per unit, with expiry and clear
 
 **Goal:** The same project hits the same cache entry whether `prove` runs from
 `/path/a`, `/path/b/c`, or the project itself, because the key uses the
 resolved filesystem location rather than the target string or the current
-directory. Entries expire after a configurable duration (7 days by default),
-and the user can clear the cache on demand.
+directory. A small source edit misses only the changed unit and its
+dependents, so most entries stay hits; the `result cache:` line shows the
+split. Entries expire after a configurable duration (7 days by default), and
+the user can clear the cache on demand.
 
 **Work:**
 - Resolve the target once at startup through a new path helper
   (`Adacovex.Paths.Resolve`): expand `~`, make absolute against the current
   directory, collapse `.` and `..`, normalise separators, and fold case on
   Windows. Use the same helper for the root project file.
+- Audit every cache key for a whole-tree input. A per-file scan, docstring,
+  test, or HLR entry must depend only on that file's content and its own
+  options; a tree hash, the target string, or the current directory must not
+  leak into an unrelated key.
 - Replace every proof-cache key input that currently hashes the caller's
   `Target_Dir` or `GPR` string with the resolved absolute paths. The
   proof-input walk hashes `Dir & Options` at each level today, so two cwds
-  produce two keys; hash the resolved root once and each file's root-relative
-  path plus content instead.
+  produce two keys.
+- Split the proof cache from one whole-run entry into per-unit entries. A unit
+  key covers the unit's content, its `with` dependency closure, the resolved
+  path, the options, and the prover identity. A run manifest references the
+  unit keys, and the summary, SARIF, and replay artefacts are assembled from
+  the units that hit. A one-file edit misses only that unit and the units
+  that depend on it.
+- Make the `result cache:` line report those unit outcomes. A warm no-change
+  run keeps the documented shape (`32 hit(s), 0 miss(es), 0 evicted`); a
+  one-file edit in a 32-unit fixture must keep at least 31 hits and miss only
+  the changed closure. A broad refactor may miss many units, and the line must
+  show that rather than hide it.
 - Add a small fixed header to each cache entry: the entry format tag and the
   write time in OS seconds. `Load` strips the header before it returns the
   payload, so callers see the same bytes. Use the header time for the TTL,
@@ -357,7 +388,9 @@ and the user can clear the cache on demand.
 mtime that disagrees with the stored header time, a negative age (clock
 skew), expiry 0, clear-root safety, and relative/absolute key equality. A CLI
 e2e runs `prove` from two different working directories against one project
-and asserts the second run reports a cache hit.
+and asserts the second run reports a cache hit. A fixture with 32 cached file
+entries edits one unit and asserts `result cache:` keeps at least 31 hits,
+reports at most one miss, and names no eviction.
 
 **Verify:** `just test`, `just cli-e2e`, two `prove` runs from different cwds,
 `just bench` if the warm figures move.
