@@ -232,6 +232,10 @@ inputs:
     description: 'Hide the proof-coverage summary after prove (the summary is on by default).'
     required: false
     default: 'false'
+  diagnostics:
+    description: 'Shape of the prove finding detail: text (default) or json (--diagnostics).  A JSON run prints the same facts as one object.'
+    required: false
+    default: ''
   fail-on:
     description: 'CI policy gate: comma-separated dimensions spark=LVL, docstrings=PCT, proof=PCT, tests=N, coverage=PCT. A bare dimension reuses its require-* threshold (--fail-on).'
     required: false
@@ -570,19 +574,28 @@ runs:
         if [ "${{ inputs.no-coverage }}" == 'true' ]; then
           PROVE_ARGS+=(--no-coverage)
         fi
+        if [ -n "${{ inputs.diagnostics }}" ]; then
+          PROVE_ARGS+=(--diagnostics="${{ inputs.diagnostics }}")
+        fi
         if [ "${{ inputs.verbose }}" == 'true' ]; then
           PROVE_ARGS+=(--verbose)
         fi
+        BIN=""
         if [ -x bin/adacovex ]; then
-          ./bin/adacovex prove --target="${{ inputs.target }}" "${PROVE_ARGS[@]}"
+          BIN="./bin/adacovex"
         elif command -v adacovex >/dev/null 2>&1; then
-          adacovex prove --target="${{ inputs.target }}" "${PROVE_ARGS[@]}"
+          BIN="adacovex"
         elif command -v covex >/dev/null 2>&1; then
-          covex prove --target="${{ inputs.target }}" "${PROVE_ARGS[@]}"
+          BIN="covex"
         else
           echo "::error::adacovex binary not found. Set build: true (builds adacovex from source) or install adacovex on PATH."
           exit 1
         fi
+        #  Tee the proof log so a later step can assert what the run did
+        #  (the project-config test reads it). pipefail keeps the binary's
+        #  exit status authoritative through the pipe.
+        "$BIN" prove --target="${{ inputs.target }}" "${PROVE_ARGS[@]}" \
+          2>&1 | tee "$RUNNER_TEMP/adacovex-prove.out"
 
     - name: Run adacovex assessment
       if: ${{ inputs.assess == 'true' }}

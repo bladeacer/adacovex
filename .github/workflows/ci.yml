@@ -86,7 +86,7 @@ jobs:
           verbose: true
           require-spark: Gold
           require-docstrings: 100
-          require-tests: 2155
+          require-tests: 2175
           require-proof: 100
           #  Statement-coverage gate: the action runs
           #  `spark-coverage --require-coverage=... --gate-metric=statements`
@@ -273,6 +273,95 @@ jobs:
           cache: true
           result-cache: true
 
+  action-project-config:
+    timeout-minutes: 20
+    if: github.event_name != 'pull_request'
+    # Regression test for project configuration through the composite action:
+    # the action runs the binary with --target, so a target that carries
+    # adacovex.toml must change the run exactly as the binary does (project
+    # file over global file and built-in default).  The fixture writes
+    # [prove] level = 1 and coverage = false, then the step after the action
+    # asserts both effects from the teed proof log.
+    name: Action project config (adacovex.toml)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Restructure workspace into a configured consumer fixture
+        shell: bash
+        run: |
+          set -euxo pipefail
+          SRC="$RUNNER_TEMP/adacovex-src"
+          mkdir -p "$SRC"
+          shopt -s dotglob
+          mv "$GITHUB_WORKSPACE"/* "$SRC/" 2>/dev/null || true
+          shopt -u dotglob
+          cp "$SRC/action.yml" "$GITHUB_WORKSPACE/action.yml"
+          mkdir -p src obj
+          cat > alire.toml <<'FIXTURE'
+          name = "fixture"
+          description = "adacovex action project-config fixture"
+          version = "0.1.0"
+          authors = ["adacovex"]
+          maintainers = ["adacovex <noreply@example.com>"]
+          maintainers-logins = ["adacovex"]
+          licenses = "MIT"
+
+          [[depends-on]]
+          gnatprove = "^16.1.0"
+          FIXTURE
+          cat > fixture.gpr <<'FIXTURE'
+          project Fixture is
+             for Languages use ("Ada");
+             for Source_Dirs use ("src");
+             for Object_Dir use "obj";
+          end Fixture;
+          FIXTURE
+          cat > src/fixture.ads <<'FIXTURE'
+          package Fixture with SPARK_Mode => On is
+             --  Add one to a bounded value.
+             --  @param X  Value to increment.
+             --  @return X plus one.
+             function Next_Of (X : Integer) return Integer
+               with Pre  => X in 0 .. 100,
+                    Post => Next_Of'Result = X + 1;
+          end Fixture;
+          FIXTURE
+          cat > src/fixture.adb <<'FIXTURE'
+          package body Fixture with SPARK_Mode => On is
+             function Next_Of (X : Integer) return Integer is
+             begin
+                return X + 1;
+             end Next_Of;
+          end Fixture;
+          FIXTURE
+          cat > adacovex.toml <<'FIXTURE'
+          [prove]
+          coverage = false
+          level = 1
+          FIXTURE
+      - uses: ./
+        with:
+          target: .
+          dal: C
+          gnat-version: 16.1.0
+          build: true
+          prove: true
+          assess: false
+          cache: true
+          result-cache: false
+      - name: Assert the project file changed the run
+        shell: bash
+        run: |
+          set -euxo pipefail
+          LOG="$RUNNER_TEMP/adacovex-prove.out"
+          test -f "$LOG"
+          grep -F -- '--level 1' "$LOG"
+          if grep -F 'coverage:' "$LOG"; then
+            echo "::error::[prove] coverage = false was not honoured through the action"
+            exit 1
+          fi
+          grep -F 'Success: all checks proved' "$LOG"
+
   coverage-gate:
     name: Docstring coverage gate (release tags)
     if: github.event_name == 'push'
@@ -295,7 +384,7 @@ jobs:
   summary:
     name: CI summary
     if: always()
-    needs: [self-assessment, adacovex-tests, no-spark-off, complexity-gate, action-parity, docs-coverage, version-consistency, consumer-run-tests, coverage-gate]
+    needs: [self-assessment, adacovex-tests, no-spark-off, complexity-gate, action-parity, docs-coverage, version-consistency, consumer-run-tests, action-project-config, coverage-gate]
     runs-on: ubuntu-latest
     steps:
       - name: Write CI summary
@@ -309,6 +398,7 @@ jobs:
           DOCS: ${{ needs.docs-coverage.result }}
           VERSION: ${{ needs.version-consistency.result }}
           CONSUMER: ${{ needs.consumer-run-tests.result }}
+          ACTIONCFG: ${{ needs.action-project-config.result }}
           GATE: ${{ needs.coverage-gate.result }}
         run: |
           set -euo pipefail
@@ -326,10 +416,11 @@ jobs:
             echo "| Documentation coverage gate | $DOCS |"
             echo "| Version consistency gate | $VERSION |"
             echo "| Action run-tests (consumer workspace) | $CONSUMER |"
+            echo "| Action project config (adacovex.toml) | $ACTIONCFG |"
             echo "| Coverage gate (push only) | $GATE |"
             echo ''
           } >> "$GITHUB_STEP_SUMMARY"
-          for R in "$SELF" "$TESTS" "$OFFOFF" "$COMPLEX" "$PARITY" "$DOCS" "$VERSION" "$CONSUMER" "$GATE"; do
+          for R in "$SELF" "$TESTS" "$OFFOFF" "$COMPLEX" "$PARITY" "$DOCS" "$VERSION" "$CONSUMER" "$ACTIONCFG" "$GATE"; do
             if [ "$R" = "failure" ]; then
               FAILED=1
               echo "::error::A CI job failed -- see the failing job logs and its adacovex assessment summary." >&2
