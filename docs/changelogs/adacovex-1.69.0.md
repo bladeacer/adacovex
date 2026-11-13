@@ -125,6 +125,16 @@ that follows it. The pipeline now skips the line when the run is a prove-mode
 run, and keeps printing it for a plain `adacovex` assessment over cached
 artefacts.
 
+### H2: A release starts only from main
+
+`just release` could tag a feature branch and publish it, and the release
+workflow accepted any `v*` tag. The recipe now reads the checked-out branch
+and aborts before it builds or changes a file unless the branch is `main`.
+The release workflow fetches `origin/main` and refuses a tag whose commit is
+not on it; the guard job gates the build and publish jobs. The local and CI
+rules are stated in `docs/usage/ci-cd-release.md`, the developer guide, and
+`AGENTS.md`.
+
 ## Test Suite
 
 The native suite adds two repeated-diagnostic fixtures to
@@ -147,6 +157,11 @@ sibling projects present on the machine (`../polars`, `../playwright`,
 `../opencv`, `../lccst`, `../numpy`, `../yams`) and checks the component
 table's shape. A sibling that is not checked out is skipped, so a clean clone
 and CI stay green.
+
+The replay framing checks normalise CRLF to LF before they compare the first
+and last blank line, so the Windows runner reports the same result as Linux
+and macOS. The release guard has tests for the branch read and the aborted
+run.
 
 Native suite: 2175/2175 passing (29 categories).
 

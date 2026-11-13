@@ -219,12 +219,14 @@ The proof result is anchored in `docs/proof/` (the per-version VC ledger).
   coverage between the latest two release tags.
 - **Prepare a release**: `VERSION=x.y.z just bump-version`, write the changelog
   (`docs/changelogs/adacovex-x.y.z.md`, canonical format enforced by `just
-  changelog-check`), then `VERSION=x.y.z just release`. The release builds the
-  release binary and checks that it reports the tag before it proves anything,
-  so the proof pass, the result cache, and every committed artifact come from
-  the binary being released. Run `just check` first: its
-  `version-consistency-check` gate fails when a manifest, the version spec,
-  the binary, or the committed SBOM names a different version.
+  changelog-check`), then `VERSION=x.y.z just release`. Run it from `main`:
+  the recipe refuses any other branch before it builds or changes a file,
+  and the release workflow refuses a tag whose commit is not on `main`. The
+  release builds the release binary and checks that it reports the tag
+  before it proves anything, so the proof pass, the result cache, and every
+  committed artifact come from the binary being released. Run `just check`
+  first: its `version-consistency-check` gate fails when a manifest, the
+  version spec, the binary, or the committed SBOM names a different version.
 - **Keep docs current**: every code change updates the relevant user docs,
   the Ada docstrings that feed `docs/api-docs`, and the changelog, then
   re-runs the sync gates (`just docs-check`, `just action-parity-check`,

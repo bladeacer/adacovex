@@ -75,8 +75,8 @@ the changelog is the durable record of what shipped and why.
 - **v1.69.0** delivered repeated-diagnostic dedup, the unified contextual
   help frame with option spacing, warm-replay parity, severity colour,
   GitHub Actions annotations, compiler-style findings with
-  `--diagnostics=json`, the diagnostics mode matrix, and the
-  composite-action project-config job. See
+  `--diagnostics=json`, the diagnostics mode matrix, the
+  composite-action project-config job, and the main-only release guard. See
   [`docs/changelogs/adacovex-1.69.0.md`](docs/changelogs/adacovex-1.69.0.md).
 
 The v1.65.0-v1.67.0 plan is also closed and `old-plan.md` is deleted.

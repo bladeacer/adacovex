@@ -39,13 +39,15 @@ This page covers the GitHub Actions workflows, the Markdown summaries and loud f
     job failed.
 - **`.github/workflows/pr-check.yml`** -- runs `--coverage-delta` against
   `pull_request.base.sha` to fail PRs that drop docstring coverage.
-- **`.github/workflows/release.yml`** -- on a `v*` tag, first runs the
+- **`.github/workflows/release.yml`** -- on a `v*` tag, first checks that
+  the tagged commit is on `main`, then runs the
   `platform-build` matrix (a plain `alr build` plus the native suite on
   macOS and Windows; the cross-platform check runs only at release time and
   gates the publish), then runs the `action-parity`, `docs-coverage`, and
   `surface-parity` gates, builds the release binary, runs GNATprove,
   validates the `--standard=all` self-assessment, and publishes the GitHub
-  Release (see [Release bundling](#release-bundling)).
+  Release (see [Release bundling](#release-bundling)). A tag that is not on
+  `main` stops the workflow before any build or publish job starts.
 
 Every gate job runs as plain Python (`python3 tools/tasks.py <gate>`), the
 same recipe `just <gate>` runs locally. The Ubuntu runner images ship

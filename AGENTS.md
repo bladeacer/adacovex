@@ -530,7 +530,9 @@ restored unconditionally), `just coverage-gate` runs tools/coverage-gate.py
 `just run-self` / `just sbom` / `just run-ada-crdt` all run through
 tools/run.py (the single owner of the SOURCE_DATE_EPOCH + acceptance-gate
 invocation shape; `run.py assess-args` feeds release.py), and `just
-release` runs tools/release.py (`--dry-run` skips commit/tag/push).
+release` runs tools/release.py (`--dry-run` skips commit/tag/push; the
+recipe refuses to start on any branch other than `main`, and the release
+workflow refuses a tag whose commit is not on `main`).
 The tools' own pure logic is covered by a stdlib-unittest suite at
 tools/tests.py, wired as the `tools-check` gate in `just check`.
 `tools/check-action-parity.py` is a pure check (no writes) wired as

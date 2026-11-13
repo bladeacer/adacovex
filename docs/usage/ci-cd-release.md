@@ -61,8 +61,12 @@ Maintainers reproduce the release locally with `VERSION=x.y.z just release`
 (see the [developer guide](../contributing/developer-guide.md)): it builds
 `--release`, checks that the built binary reports the tag, generates proofs,
 validates DAL-C, and bundles `dist/`, then tags and pushes to trigger the
-workflow. The build runs first on purpose, because every later step runs the
-binary it produced. The bundled version is always the build's version
+workflow. The release only starts on the `main` branch; any other branch
+aborts before a build or file change. The release workflow also refuses a
+tag whose commit is not on `main`.
+
+The build runs first on purpose, because every later step runs the binary it
+produced. The bundled version is always the build's version
 (`src/adacovex_version_info.ads` comes from `alire-dev.toml` or
 `ADACOVEX_VERSION` at build time), and the release aborts if
 `bin/adacovex --version` names a different version.
