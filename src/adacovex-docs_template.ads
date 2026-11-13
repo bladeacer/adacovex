@@ -14,7 +14,7 @@ package Adacovex.Docs_Template is
    --  committed spec instead of rebuilding the site to
    --  reproduce the same bytes. --check always rebuilds.
    Source_Fingerprint : constant String :=
-     "f02bbcbd2b0493166601a2a500b92df6e69f04d6e05b3e789e0171709cce25ba";
+     "495cd7b1ae6569291101f611ac28ba5cbd3638faf422eaf57cfa380d9601f506";
 
    --  One entry of the lookup table. The path and MIME type
    --  are fixed-size (space-padded) strings; Idx selects the
