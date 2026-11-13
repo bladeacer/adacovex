@@ -61,24 +61,43 @@ package body Adacovex_Prove_Runner_Tests is
       Ada.Text_IO.Close (F);
    end Touch;
 
-   --  Read a whole file byte for byte. The bytes are taken as they are, so
-   --  the exact tail of the file survives: Ada.Text_IO never hands back a
-   --  trailing empty line, and the replay closes with one.
+   --  Read a whole file and normalise its line endings to line feeds. The
+   --  bytes are taken as they are, so the exact tail of the file survives:
+   --  Ada.Text_IO never hands back a trailing empty line, and the replay
+   --  closes with one. Ada.Text_IO emits CRLF on Windows, so CRLF (and a
+   --  lone CR) becomes one line feed and the framing checks compare the
+   --  same on every platform.
    --  @param Path  File path to read.
-   --  @return The file content, line feeds included.
+   --  @return The file content, with every line ending normalised to LF.
    function Slurp (Path : String) return Unbounded_String is
       use Ada.Streams;
 
-      F    : Stream_IO.File_Type;
-      B    : Stream_Element_Array (1 .. 4096);
-      Last : Stream_Element_Offset;
-      R    : Unbounded_String := Null_Unbounded_String;
+      F       : Stream_IO.File_Type;
+      B       : Stream_Element_Array (1 .. 4096);
+      Last    : Stream_Element_Offset;
+      R       : Unbounded_String := Null_Unbounded_String;
+      Prev_CR : Boolean := False;
    begin
       Stream_IO.Open (F, Stream_IO.In_File, Path);
       while not Stream_IO.End_Of_File (F) loop
          Stream_IO.Read (F, B, Last);
          for I in B'First .. Last loop
-            Append (R, Character'Val (B (I)));
+            declare
+               C : constant Character := Character'Val (B (I));
+            begin
+               if C = ASCII.CR then
+                  Append (R, ASCII.LF);
+                  Prev_CR := True;
+               elsif C = ASCII.LF then
+                  if not Prev_CR then
+                     Append (R, ASCII.LF);
+                  end if;
+                  Prev_CR := False;
+               else
+                  Append (R, C);
+                  Prev_CR := False;
+               end if;
+            end;
          end loop;
       end loop;
       Stream_IO.Close (F);
