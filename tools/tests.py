@@ -291,6 +291,25 @@ class TestRelease(unittest.TestCase):
         self.assertEqual(release.resolve_version("1.2.3"), "1.2.3")
         self.assertEqual(release.resolve_version("v1.2.3"), "1.2.3")
 
+    def test_current_branch_reads_the_checked_out_branch(self) -> None:
+        make_git_repo(self._root, [])
+        self.assertEqual(release.current_branch(), "main")
+        git(self._root, "checkout", "-q", "-b", "feature")
+        self.assertEqual(release.current_branch(), "feature")
+
+    def test_main_refuses_a_non_main_branch(self) -> None:
+        # A release from a feature branch would tag that branch and start
+        # the same publish, so the guard must stop before anything runs.
+        make_git_repo(self._root, [])
+        git(self._root, "checkout", "-q", "-b", "feature")
+        err = io.StringIO()
+        with mock.patch.object(release, "release") as rel, \
+                mock.patch.object(sys, "argv", ["release.py"]), \
+                contextlib.redirect_stderr(err):
+            self.assertEqual(release.main(), 1)
+        rel.assert_not_called()
+        self.assertIn("main branch only", err.getvalue())
+
     def test_previous_tag(self) -> None:
         make_git_repo(self._root, ["v1.0.0", "v1.5.0"])
         self.assertEqual(release.previous_tag("9.9.9"), "v1.5.0")

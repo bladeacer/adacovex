@@ -42,8 +42,12 @@ residual drift into a hard abort instead of a wrong artifact.
 
 `--dry-run` runs steps 1-8 and the manifest bumps, but prints (and skips)
 the irreversible git commit / tag / push operations -- use it to verify a
-release before it goes out.  `--repo` overrides the attestation repo
-(default: the GITHUB_REPOSITORY env var or bladeacer/adacovex).
+release before it goes out.  A release only starts on the `main` branch:
+the release workflow publishes what main carries, so a run from any other
+branch aborts before it builds, proves, or changes a file.
+
+`--repo` overrides the attestation repo (default: the GITHUB_REPOSITORY env
+var or bladeacer/adacovex).
 """
 
 import argparse
@@ -101,6 +105,34 @@ def resolve_version(arg: str) -> str:
                  "current", "--file", "alire.toml"],
                 capture_output=True, text=True)
     return result.stdout.strip()
+
+
+def current_branch() -> Optional[str]:
+    """The checked-out branch name, or None on a detached HEAD."""
+    result = sh(["git", "symbolic-ref", "--short", "-q", "HEAD"],
+                check=False, capture_output=True, text=True)
+    if result.returncode != 0:
+        return None
+    return result.stdout.strip() or None
+
+
+def require_main_branch() -> bool:
+    """Fail unless the release runs on the main branch.
+
+    The release workflow publishes the commit a release tag points at, and
+    main is the branch the tree is released from. A local release from any
+    other branch would tag that branch and start the same publish, so the
+    guard runs before the build and leaves the tree untouched.
+    """
+    branch = current_branch()
+    if branch == "main":
+        return True
+    print(
+        "error: `just release` runs on the main branch only "
+        f"(current: {branch or 'detached HEAD'}). Switch to main and retry.",
+        file=sys.stderr,
+    )
+    return False
 
 
 def release_tags() -> List[str]:
@@ -466,6 +498,8 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args(sys.argv[1:])
+    if not require_main_branch():
+        return 1
     return release(args.version, args.self_assess_args, args.repo, args.dry_run)
 
 
