@@ -148,13 +148,20 @@ copy.
 
 ## System dependencies
 
-`Discover_System_Dev_Deps` scans the project's build and dev files (Makefiles,
-shell scripts, Python tools, CI workflows, GPR files, Ada sources) for a
-curated set of known system binaries, then keeps only the tools that are
-installed on `PATH`. Each becomes a `system`-scope component of the root with
-a `pkg:generic/<name>` PURL, a resolved `version`, and no external link or
-licence -- by design adacovex provisions only the version for system tools
-and never guesses a repository or licence for them.
+`Discover_System_Dev_Deps` scans the project's dev-facing build files
+(Makefile variants, build manifests, shell scripts, GPR files, CI workflows,
+and TOML files) for a curated set of known system binaries, then keeps only
+the tools that are installed on `PATH`. Each becomes a `system`-scope
+component of the root with a `pkg:generic/<name>` PURL, a resolved
+`version`, and no licence, because adacovex never guesses one.
+
+Source files and prose are never scanned, because an identifier or a keyword
+collides with a tool name. A generated build tree is never scanned either: it
+records the developer's environment, `PATH` included, so reading one invents
+tools the project never invokes. The scan skips a tree by its conventional
+name (`build`, `builddir`, `target`, `dist`, `out`, `coverage`) and by the
+build-system state inside it (`build.ninja`, `meson-info`, `CMakeCache.txt`,
+`compile_commands.json`).
 
 The table is deny-by-default and grouped by category (build drivers, language
 implementations and package managers, VCS, documentation tooling, CI and
@@ -235,16 +242,9 @@ that the manifest sets leave transitive. The e2e fixture's
 entry of `tests/e2e/package.json` (and a `pnpm-lock.yaml` entry) and is
 classified `test` by name.
 
-## Dogfood projects
+## Comparison and dogfood
 
-The parser is regression-checked against the sibling projects on the
-developer machine: `../polars` (Cargo workspace), `../playwright` (npm
-workspace), `../opencv` (CMake tree with vendored 3rdparty sources),
-`../lccst` (pnpm workspace with a vendored `node_modules` tree), `../numpy`
-(meson Python project), and `../yams` (meson C project).
-
-`tests/e2e/cli_flags.py` runs `sbom` over every project that is present. It
-checks the component table: known scopes, no duplicate component, no invented
-licence or source link on a system row, and no component from an ecosystem
-the project does not declare. A missing sibling is skipped, so a clean clone
-and CI stay green.
+The parser is measured against Anchore's syft and regression-checked against
+the sibling projects on the developer machine. The comparison table, the
+differences, and the sibling-project checks are on
+[SBOM comparison with syft](sbom-syft.md).

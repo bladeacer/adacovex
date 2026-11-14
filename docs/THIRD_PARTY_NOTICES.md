@@ -143,6 +143,20 @@ git's index dirty tracking, including the racy-clean guard against files
 modified within the same second as the record: [git](https://git-scm.com/)
 (GPL-2.0).
 
+## SBOM comparison reference: syft
+
+| Component | Version | Licence | Used for |
+|-----------|---------|---------|----------|
+| [syft](https://github.com/anchore/syft) | source checkout, built locally | Apache-2.0 | The reference SBOM generator the dependency coverage is measured against |
+
+syft is Anchore's SBOM generator. adacovex does not link, bundle, or call it:
+the comparison on
+[SBOM comparison with syft](usage/sbom-syft.md) is a developer measurement,
+and `adacovex sbom` produces its inventory from its own parsers. The page
+names syft's cataloger categories (python, github-action, go-module, npm,
+java-archive, and rust-crate) to explain what a directory scan of the same
+tree finds; no syft source code is copied into adacovex.
+
 ## Acknowledgments
 
 - The Ada_CRDT audit target (`../Ada_CRDT`) is used solely as a dogfood target.

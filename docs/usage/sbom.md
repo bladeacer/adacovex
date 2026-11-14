@@ -186,4 +186,5 @@ extension-over-manifest rule, and the mixed-language summary are on
 
 The remaining sections of the original guide -- licence resolution, system
 dependencies, and test-dependency classification -- are covered on
-[SBOM dependency resolution](sbom-resolution.md).
+[SBOM dependency resolution](sbom-resolution.md). The component coverage is
+measured against syft on [SBOM comparison with syft](sbom-syft.md).

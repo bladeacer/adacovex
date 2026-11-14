@@ -12,6 +12,7 @@ docs/usage/dashboard-charts.md	Dashboard metric charts and robustness tier
 docs/usage/dashboard-docs.md	Dashboard: the bundled offline manual
 docs/usage/sbom.md	SBOM
 docs/usage/sbom-resolution.md	SBOM dependency resolution
+docs/usage/sbom-syft.md	SBOM comparison with syft
 docs/usage/configuration.md	Global configuration and state
 docs/usage/vcs.md	VCS support
 docs/usage/target-projects.md	Target projects
@@ -22,6 +23,7 @@ docs/usage/ci-cd-release.md	CI/CD: release bundling, tags, and consumer manifest
 CONTRIBUTING.md	Contributing
 docs/contributing/developer-guide.md	Developer guide
 docs/contributing/developer-guide-layout.md	Developer guide: repository layout
+docs/contributing/debt.md	Technical debt register
 docs/usage/installation.md	Installation
 docs/contributing/llm-usage.md	LLM usage
 docs/contributing/commits.md	Commit messages

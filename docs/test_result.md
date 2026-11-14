@@ -8,7 +8,7 @@
   | CLI config                               |  387 | PASS     |
   | SVG renderer                             |  161 | PASS     |
   | HTML/Markdown renderers                  |  58 | PASS     |
-  | SBOM generator                           |  366 | PASS     |
+  | SBOM generator                           |  371 | PASS     |
   | Result cache                             |  36 | PASS     |
   | IR synthesis                             |  42 | PASS     |
   | Man page renderer                        |  30 | PASS     |
@@ -31,4 +31,4 @@
   | tldr installer                           |  48 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 2175  Failed: 0
+  Passed: 2180  Failed: 0

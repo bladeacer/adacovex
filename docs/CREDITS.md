@@ -40,6 +40,14 @@ and [tree-sitter](https://github.com/tree-sitter/tree-sitter), and the index
 dirty-tracking of [git](https://git-scm.com/)) is credited in full in the
 [Third-Party Notices](THIRD_PARTY_NOTICES.md).
 
+## SBOM comparison
+
+The dependency coverage is measured against Anchore's
+[syft](https://github.com/anchore/syft) (Apache-2.0). syft is not a dependency:
+the comparison on [SBOM comparison with syft](usage/sbom-syft.md) is a
+developer measurement, and the details are in the
+[Third-Party Notices](THIRD_PARTY_NOTICES.md).
+
 ## Docs generation and hosting
 
 The manual at `docs/` is built with [Sphinx](https://www.sphinx-doc.org/) (using the [Furo](https://github.com/pradyunsg/furo) theme and the [MyST](https://myst-parser.readthedocs.io/) Markdown parser) and the online copy is hosted by [Read the Docs](https://readthedocs.org/). Sphinx, Furo and MyST are credited in full in the [Third-Party Notices](THIRD_PARTY_NOTICES.md). The pages are offered under the adacovex licence.

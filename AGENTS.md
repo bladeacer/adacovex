@@ -33,6 +33,12 @@ and interactive dashboards.
   detail panel (view docked left, detail docked right; full width until a
   dependency is selected).
 
+**System-tool scan scope**: only authored build files contribute a `system`
+  tool. A generated build tree (Meson, CMake, Ninja) records the developer's
+  environment, `PATH` included, so `Skip_Scan_Dir` skips it by conventional
+  name and by the build-system state inside it, and `Source_Tree_Hash` uses
+  the same predicate for the tool-set cache key.
+
 **Keeping this file current:** before each change, check briefly whether
 AGENTS.md still matches the codebase -- the source layout, the CLI flags, the
 SBOM behaviour, and the dashboard features. Update it in the same change when
@@ -121,7 +127,7 @@ Self-assessment (`just run-self`) must always show:
   (see `docs/proof/16.1.0-ledger.md`). Platinum additionally requires full
   proof coverage, which the SPARK coverage report does not show (subprograms
   in `SPARK_Mode (Off)` units stay outside the proof)
-- 2175/2175 native tests passing
+- 2180/2180 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
   `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
@@ -231,6 +237,7 @@ src/
 |   |-- adacovex-parsers-manifest-set_field.adb-- Copy a string into a bounded Desc_Field (with length cap)
 |   |-- adacovex-parsers-manifest-set_path.adb-- Copy a string into a bounded Path_Field (with length cap)
 |   |-- adacovex-parsers-manifest-should_scan.adb-- Whether a file drives a build and is scanned for tool references
+|   |-- adacovex-parsers-manifest-skip_scan_dir.adb-- Whether the tool scan skips a directory (incl. generated build trees)
 |   |-- adacovex-parsers-manifest-skip_walk_dir.adb-- Whether a directory should be skipped during a source walk
 |   |-- adacovex-parsers-manifest-source_tree_hash.adb-- Content hash of the dev-facing files the tool scan reads
 |   |-- adacovex-parsers-manifest-toml_section_value.adb-- Read a value from a TOML manifest section (structural scan)
@@ -275,7 +282,7 @@ src/
     |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (88)
     |-- adacovex_renderer_svg_tests.ads/.adb  -- SVG renderer tests (161)
     |-- adacovex_renderer_tests.ads/.adb      -- HTML/Markdown renderer tests (58)
-    |-- adacovex_sbom_tests.ads/.adb          -- SBOM / manifest graph tests (366)
+    |-- adacovex_sbom_tests.ads/.adb          -- SBOM / manifest graph tests (371)
     |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (89)
     |-- adacovex_server_tests.ads/.adb        -- Server routing tests (183)
     |-- adacovex_spark_coverage_tests.ads/.adb-- SPARK coverage report tests
@@ -284,7 +291,7 @@ src/
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (67)
     |-- adacovex_tz_ansi_tests.ads/.adb       -- Timezone + ANSI tests (73)
     |-- adacovex_vcs_tests.ads/.adb           -- VCS support tests (37)
-    `-- test_runner.adb                       -- Test suite entry point (2175 tests)
+    `-- test_runner.adb                       -- Test suite entry point (2180 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -671,7 +678,7 @@ compatibility shim. The table names the canonical target for each task.
 | `check` | **The single everything-check / verification entry point.** Run it after any change. It runs every gate CI runs before a release, and **`fmt` is first**: gnatprove and the API docs both read the sources, so every later gate must see formatted code. Then the cheap static gates (ascii, complexity, csslint, spark-off, changelog, action-parity, docs-coverage, surface-parity, tools-check, cli-e2e, prove-e2e, version, version-consistency, doc-links, link, docs-check, para-split, tldr, book-links), then build + native tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description, requirements). Every gate runs a preflight first: a gate whose tool is missing on the host (no `alr` on `PATH`, no `gnatformat` on the developer path, a `gnatdoc` that cannot document a one-package probe project, no `sphinx` in the interpreter) is SKIPped with the reason instead of failing, the run continues past a failed gate, and the summary shows PASS/FAIL/SKIP per gate, exiting non-zero only when a gate failed. `just check` resolves `gnatprove` for you (it is fetched into `<data>/toolchain/` and executed directly when not on `PATH`), so you never have to install or point at a prover by hand -- just run `just check` and it verifies the whole tree end to end. `just prove` is the SPARK sub-gate if you only changed proof-affecting code |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
-| `test` | Build + run the 2175-test native suite |
+| `test` | Build + run the 2180-test native suite |
 | `prove` | SPARK proof at gnatprove `--level=4` (full-proof gate) + regenerates SVG badges in `docs/badges/` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
 | `book` | Build the offline manual from the Sphinx docs and regenerate `src/adacovex-docs_template.ads` (tools/gen-docs.py; incremental + verified Sphinx build, `--fresh` forces a clean one; safe to run without sphinx) |
@@ -788,7 +795,7 @@ a runner needs neither `make` nor `just`; the Ubuntu runner images ship
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `just test` | 2175/2175 passing |
+| Unit tests | `just test` | 2180/2180 passing |
 | Self-assessment | `just run-self` | 100% docs, Gold, DAL-C Achieved |
 | SPARK proof | `just prove` | Gold (1057 VCs, 0 unproved, 0 justified under gnatprove 16.1.0), verified at `--level=4` (the deepest effort; the prove subcommand forwards `--level` verbatim, so the overhead is gnatprove's own) |
 | Ada_CRDT regression | `just run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -857,7 +864,7 @@ rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 2175 tests across 29 categories).
+Native zero-dependency suite (`src/tests/`, 2180 tests across 29 categories).
 Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests).
 
@@ -923,6 +930,7 @@ suffices.
 - [Dashboard: the bundled offline manual](docs/usage/dashboard-docs.md)
 - [SBOM](docs/usage/sbom.md)
 - [SBOM dependency resolution](docs/usage/sbom-resolution.md)
+- [SBOM comparison with syft](docs/usage/sbom-syft.md)
 - [Global configuration and state](docs/usage/configuration.md)
 - [VCS support](docs/usage/vcs.md)
 - [Target projects](docs/usage/target-projects.md)
@@ -933,6 +941,7 @@ suffices.
 - [Contributing](CONTRIBUTING.md)
 - [Developer guide](docs/contributing/developer-guide.md)
 - [Developer guide: repository layout](docs/contributing/developer-guide-layout.md)
+- [Technical debt register](docs/contributing/debt.md)
 - [Installation](docs/usage/installation.md)
 - [LLM usage](docs/contributing/llm-usage.md)
 - [Commit messages](docs/contributing/commits.md)

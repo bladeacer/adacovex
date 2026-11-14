@@ -163,7 +163,7 @@ and last blank line, so the Windows runner reports the same result as Linux
 and macOS. The release guard has tests for the branch read and the aborted
 run.
 
-Native suite: 2175/2175 passing (29 categories).
+Native suite: 2180/2180 passing (29 categories).
 
 `just prove-e2e` passes 132 checks. `just run-ada-crdt` proves 972 checks on
 Ada_CRDT and exits 0 on both a cold run and a warm cache hit.

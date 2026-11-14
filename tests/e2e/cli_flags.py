@@ -508,6 +508,15 @@ SBOM_SIBLINGS: Tuple[Tuple[str, Tuple[str, ...]], ...] = (
     ("yams", ()),
 )
 
+# A system tool a sibling cannot use: the project declares no manifest for
+# that ecosystem and no authored build file invokes the tool. A Meson build
+# tree records the developer's PATH in its logs, so a scan that reads a
+# generated tree registers tools the project never uses -- yams (a C
+# project) once listed cargo and go, and an edge tied both to its root.
+SBOM_FORBIDDEN_TOOLS: Dict[str, Tuple[str, ...]] = {
+    "yams": ("cargo", "go", "rustc"),
+}
+
 
 def check_sbom_siblings(r: Results, tmp: Path) -> None:
     """Run `sbom` over the real sibling projects present on this machine.
@@ -556,6 +565,12 @@ def check_sbom_siblings(r: Results, tmp: Path) -> None:
         names = [row.get("component", "") for row in rows]
         r.check(len(names) == len(set(names)),
                 f"../{name}: no component is listed twice")
+        forbidden = [row.get("component", "") for row in system
+                     if row.get("component", "") in
+                     SBOM_FORBIDDEN_TOOLS.get(name, ())]
+        r.check(not forbidden,
+                f"../{name}: no system component for an unused toolchain"
+                + (f" ({', '.join(forbidden)})" if forbidden else ""))
         npm = [row for row in rows
                if row.get("purl", "").startswith("pkg:npm/")]
         if "pkg:npm/" in ecosystems:

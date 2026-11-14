@@ -1,7 +1,7 @@
 # adacovex release plan: v1.68.0 - v1.75.0
 
-Current version: `1.69.0`. Work is scoped across **eight minor releases**:
-`v1.68.0` and `v1.69.0` (closed), then `v1.70.0` through `v1.75.0`.
+Current version: `1.70.0`. Work is scoped across **eight minor releases**:
+`v1.68.0` through `v1.70.0` (closed), then `v1.71.0` through `v1.75.0`.
 Closed releases are recorded in their changelogs, not repeated here.
 
 ## Proof-timing phase note
@@ -21,23 +21,24 @@ than cherry-picking rows across versions.
 |---------|--------|-------|-------|
 | v1.68.0 | closed | Output defaults and time | changelog `adacovex-1.68.0.md` |
 | v1.69.0 | closed | Compiler-style diagnostics and output | changelog `adacovex-1.69.0.md` |
-| v1.70.0 | planned | SBOM robustness and debt | 5, 6a, 8a, 15a, remainder of 9 |
+| v1.70.0 | closed | SBOM robustness and debt | changelog `adacovex-1.70.0.md` |
 | v1.71.0 | planned | SBOM depth and pipeline speed | 6b, 8b, 15b |
 | v1.72.0 | planned | Performance close-out | 15c, 8c, 9 close-out |
 | v1.73.0 | planned | Test suite portability and layout | 20 (test root and fixture projects), 16 (platform-agnostic suite) |
 | v1.74.0 | planned | Cache identity and diagnostics coverage | 18 (resolved-path, per-unit cache; 7-day expiry), 17a (contract-error matrix) |
 | v1.75.0 | planned | Dogfood close-out and CLI cohesion | 17b (Ada_CRDT robustness), 19 (contextual help audit), final docs/STE pass |
 
-## Session status (2026-11-12)
+## Session status (2026-11-14)
 
-v1.68.0 and v1.69.0 are closed. The compiler-style diagnostics work shipped:
-grouped findings, solver attribution, counterexamples, source excerpts,
-`--diagnostics=json`, annotation e2e, the mode matrix, and a real action run
-against a project `adacovex.toml`. The tree holds 2175/2175 tests, 132
+v1.68.0 through v1.70.0 are closed. v1.70.0 fixed the generated-build-tree
+false positive that put `cargo` and `go` in a C project's SBOM, measured the
+parser against syft, started the debt register, and recorded the per-gate
+`just check` timings. The tree holds 2180/2180 tests, 165 CLI e2e checks, 132
 prove-e2e checks, and 1057 VCs at Gold. The plan now runs to v1.75.0 with the
-test-layout, portability, cache-identity, diagnostics-coverage, and help-audit
-workstreams. This file is the single source of truth for release scope;
-completed work is recorded in the changelogs.
+SBOM-depth, performance, test-layout, portability, cache-identity,
+diagnostics-coverage, and help-audit workstreams. This file is the single
+source of truth for release scope; completed work is recorded in the
+changelogs.
 
 Every change also updates, in the same change: `docs/`, Ada docstrings feeding
 `docs/api-docs`, `docs/changelogs/adacovex-<version>.md`, AGENTS.md source tree
@@ -78,84 +79,19 @@ the changelog is the durable record of what shipped and why.
   `--diagnostics=json`, the diagnostics mode matrix, the
   composite-action project-config job, and the main-only release guard. See
   [`docs/changelogs/adacovex-1.69.0.md`](docs/changelogs/adacovex-1.69.0.md).
+- **v1.70.0** delivered the generated-build-tree fix that removed the false
+  `cargo` / `go` components from a C project's SBOM, the syft comparison and
+  its gap decisions, the technical debt register, and the per-gate `just
+  check` measurement. See
+  [`docs/changelogs/adacovex-1.70.0.md`](docs/changelogs/adacovex-1.70.0.md).
 
 The v1.65.0-v1.67.0 plan is also closed and `old-plan.md` is deleted.
 Old-plan 3.1 (the action honours a project `adacovex.toml`) closed in
-v1.69.0. Old-plan 3.4 measured a 344 s warm-tree `just check` on 2026-11-06
-(12 logical CPUs, warm cache and gnatprove session); the figure is recorded
-in [`docs/contributing/perf/check-pipeline.md`](docs/contributing/perf/check-pipeline.md)
-and the 60 s gap is carried by items 15a-15c.
-
----
-
-## v1.70.0 - SBOM robustness and debt
-
-- [ ] Item 5 - SBOM false positives on C projects (yams)
-
-**Goal:** `adacovex sbom` on a C project must not list `cargo` or `go` as
-dependencies or create spurious edges. Audit whole-word tool scanning versus
-declared dependency parsing.
-
-**Files:** `src/parsers/adacovex-parsers-manifest-scan_file.adb`,
-`...-read_manifest_deps.adb`, `...-register_root_*_deps.adb`,
-`...-classify_scope.adb`, `src/renderers/adacovex-renderers-sbom.adb`,
-`docs/usage/sbom.md`, `docs/usage/sbom-resolution.md`.
-
-**Tests:** `src/tests/adacovex_sbom_tests.adb` with a C-project fixture (no
-`Cargo.toml`, `go.mod`, or `package.json`); assert no `cargo` / `go`
-components and no spurious edges. Pin the sibling set in
-`tests/e2e/cli_flags.py` (`check_sbom_siblings`).
-
-**Verify:** `adacovex sbom` over `../yams`, `just test`, `just sbom`.
-
----
-
-- [ ] Item 6a - Compare the SBOM parser with syft; write down the gaps
-
-**Goal:** Benchmark component / version / licence coverage against
-`https://github.com/anchore/syft` on self, yams, and Ada_CRDT. Document the
-differences and choose the gaps worth closing under the zero-dependency rule.
-
-**Decision:** syft is not installed or expected for users. Reference its
-source with attribution; do not call it at run time.
-
-**Files:** `docs/usage/sbom-resolution.md` (comparison table + findings),
-`docs/THIRD_PARTY_NOTICES.md` if source is quoted.
-
-**Verify:** a manual diff on fixtures; `just sbom`.
-
----
-
-- [ ] Item 8a - Technical debt register
-
-**Goal:** Start a debt register with a "done when" for each item surfaced by
-these releases: duplicated diagnostics, manifest parsing, bounded strings,
-timezone consistency, help framing, cache parity, colour, annotations. Keep
-`SPARK_Mode (Off)` at exactly `Types.Implementation` and `Complexity`; every
-new executable statement carries contracts.
-
-**Files:** `docs/contributing/debt.md` (new) plus the toctree entry, or a
-section in `docs/contributing/developer-guide.md`.
-
-**Verify:** `just spark-off-check`, `just prove`, `just test-count`,
-`just proof-status`.
-
----
-
-- [ ] Item 15a - Measure the check pipeline properly
-
-**Goal:** Record per-gate and per-recipe wall time (warm and cold) in one run,
-with the raw stdout kept. This is the measurement the 60 s budget needs, and
-it replaces the single 344 s figure from 2026-11-06.
-
-**Files:** `docs/contributing/perf/check-pipeline.md`,
-`tools/tasks.py` (timing output only, no gate changes).
-
-**Verify:** one full `just check` run with the per-gate table.
-
----
-
-- [ ] Item 9 remainder: docstrings for packages changed by these items.
+v1.69.0. Old-plan 3.4 measured a 344 s warm-tree `just check` on 2026-11-06. Item 15a
+retired that figure with the per-gate measurement of 2026-11-14 (452.99 s
+warm, all 31 gates) in
+[`docs/contributing/perf/check-pipeline.md`](docs/contributing/perf/check-pipeline.md),
+and the 60 s gap is carried by items 15b-15c.
 
 ---
 

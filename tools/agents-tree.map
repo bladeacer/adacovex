@@ -75,8 +75,8 @@ src/tests/adacovex_tldr_tests	tldr installer tests (48)
 src/tests/adacovex_install_tests	Installation-method tests (23)
 src/tests/adacovex_renderer_svg_tests	SVG renderer tests (161)
 src/tests/adacovex_renderer_tests	HTML/Markdown renderer tests (58)
-src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (366)
-src/tests/test_runner	Test suite entry point (2175 tests)
+src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (371)
+src/tests/test_runner	Test suite entry point (2180 tests)
 src/parsers/adacovex-parsers-manifest-req_entry	Parse the first requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-collect_req_entries	Collect every requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-register_root_python_deps	Register root requirements*.txt entries as dev-scope pypi components
@@ -97,6 +97,7 @@ src/parsers/adacovex-parsers-manifest-register_manifest_deps	Register Alire mani
 src/parsers/adacovex-parsers-manifest-set_field	Copy a string into a bounded Desc_Field (with length cap)
 src/parsers/adacovex-parsers-manifest-collect_gpr_files	Collect every .gpr file under a target directory tree
 src/parsers/adacovex-parsers-manifest-gem_entry	Parse the first gem name/version from a Gemfile
+src/parsers/adacovex-parsers-manifest-skip_scan_dir	Whether the tool scan skips a directory (incl. generated build trees)
 src/parsers/adacovex-parsers-manifest-skip_walk_dir	Whether a directory should be skipped during a source walk
 src/parsers/adacovex-parsers-manifest-first_list_value	Extract the first quoted value from a "key = [list]" line
 src/parsers/adacovex-parsers-manifest-extension_language	Map a file extension to its language display name

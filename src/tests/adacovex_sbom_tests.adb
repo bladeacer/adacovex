@@ -375,6 +375,56 @@ package body Adacovex_SBOM_Tests is
          & ASCII.LF);
    end Make_Sysdep_Fixture;
 
+   --  Fixture of a C project built with Meson. It declares no Cargo.toml,
+   --  go.mod, or package.json, so it has no Rust or Go dependency. Its
+   --  generated build trees do record the developer's environment -- PATH
+   --  included -- in Meson logs, Ninja state, and CMake configure output,
+   --  and one tree is deliberately not named "build". The scan must not
+   --  read a generated tree, so no word inside one can register a tool.
+   procedure Make_C_Project_Fixture is
+      D : constant String := "obj/sbom_c_fixture";
+   begin
+      Write_File
+        (D & "/alire.toml",
+         "name = ""cfix"""
+         & ASCII.LF
+         & "version = ""1.0.0"""
+         & ASCII.LF
+         & "project-files = [""cfix.gpr""]"
+         & ASCII.LF);
+      Write_File
+        (D & "/cfix.gpr",
+         "project Cfix is" & ASCII.LF & "end Cfix;" & ASCII.LF);
+      Write_File (D & "/meson.build", "project('cfix', 'c')" & ASCII.LF);
+      Write_File
+        (D & "/Makefile",
+         "build:"
+         & ASCII.LF
+         & ASCII.HT
+         & "meson setup build"
+         & ASCII.LF
+         & ASCII.HT
+         & "ninja -C build"
+         & ASCII.LF);
+      Write_File
+        (D & "/src/main.c", "int main(void) { return 0; }" & ASCII.LF);
+      --  Conventional build tree: Meson state, a log that records PATH,
+      --  and a CMake probe tree under it.
+      Write_File (D & "/build/build.ninja", "# generated" & ASCII.LF);
+      Write_File
+        (D & "/build/meson-logs/testlog.json",
+         "{""env"": {""PATH"": ""/home/dev/.cargo/bin:/usr/local/go/bin""}}"
+         & ASCII.LF);
+      Write_File
+        (D & "/build/meson-private/cmake_cmocka/CMakeConfigureLog.yaml",
+         "- ""/home/dev/.cargo/bin/uname""" & ASCII.LF);
+      --  A generated tree whose name is not conventional: only the
+      --  build-system state inside it identifies it.
+      Write_File
+        (D & "/out-linux/meson-info/intro-compilers.json",
+         "{""cargo"": ""cargo 1.99.1"", ""go"": ""go1.27.4""}" & ASCII.LF);
+   end Make_C_Project_Fixture;
+
    --  Fixture whose build file references adacovex and its covex alias
    --  while declaring neither: the running binary must register as one
    --  canonical component of the root, with the scope its installation
@@ -1646,6 +1696,55 @@ package body Adacovex_SBOM_Tests is
          R.Check
            (Count_Name (Graph, "pandoc") = 0,
             "unreferenced tool not registered");
+      end;
+
+      --  A C project built with Meson has no Rust or Go dependency. Its
+      --  generated build trees record the developer's PATH, so a scan that
+      --  read them registered cargo and go from a PATH entry -- a false
+      --  positive that put an unused toolchain in a C project's SBOM. The
+      --  scan skips those trees, and a build file outside them is still
+      --  read.
+      declare
+         Graph   : Component_Vectors.Vector;
+         Success : Boolean := False;
+         Exe     : GNAT.OS_Lib.String_Access;
+      begin
+         Make_C_Project_Fixture;
+         Adacovex.Parsers.Manifest.Build_Dependency_Graph
+           ("obj/sbom_c_fixture",
+            "obj/sbom_c_fixture/alire.toml",
+            Graph,
+            Success);
+         R.Check (Success, "C-project manifest graph success");
+         Adacovex.Parsers.Manifest.Discover_System_Dev_Deps
+           ("obj/sbom_c_fixture", Graph);
+
+         --  The build-tree names appear only inside generated trees: no
+         --  tool is registered from them, whether the tree is named
+         --  "build" or recognised by its Meson/Ninja/CMake state.
+         R.Check
+           (Count_Name (Graph, "cargo") = 0,
+            "C project: no cargo component from a generated tree");
+         R.Check
+           (Count_Name (Graph, "go") = 0,
+            "C project: no go component from a generated tree");
+
+         --  The authored files still name their tools. make is implied by
+         --  the root Makefile; ninja is spelled out in its recipe.
+         Exe := GNAT.OS_Lib.Locate_Exec_On_Path ("make");
+         if Exe /= null then
+            GNAT.OS_Lib.Free (Exe);
+            R.Check
+              (Count_Name (Graph, "make") = 1,
+               "C project: make registered from the root Makefile");
+         end if;
+         Exe := GNAT.OS_Lib.Locate_Exec_On_Path ("ninja");
+         if Exe /= null then
+            GNAT.OS_Lib.Free (Exe);
+            R.Check
+              (Count_Name (Graph, "ninja") = 1,
+               "C project: ninja registered from the Makefile recipe");
+         end if;
       end;
 
       --  adacovex as a dependency of another project: a build file that

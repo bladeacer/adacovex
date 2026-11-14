@@ -53,7 +53,8 @@ a technical word in any doc, docstring, or changelog.
   dependency views, the metric charts, the themes, and the bundled offline
   manual.
 - [SBOM](usage/sbom.md) -- the bill-of-materials generator, with
-  [dependency resolution](usage/sbom-resolution.md) for licences and versions.
+  [dependency resolution](usage/sbom-resolution.md) for licences and versions
+  and the [syft comparison](usage/sbom-syft.md).
 - [Global configuration and state](usage/configuration.md) -- the optional
   the global configuration file file, the environment variables, and the cache
   and toolchain directories.
@@ -93,6 +94,8 @@ a technical word in any doc, docstring, or changelog.
   [verification and proof patches](contributing/architecture-verification.md),
   [outputs and formats](contributing/architecture-outputs.md), and
   [pipeline, platforms, and delivery](contributing/architecture-pipeline.md).
+- [Technical debt register](contributing/debt.md) -- the open debt, the
+  condition that closes each entry, and the standing SPARK constraints.
 - [Requirements](contributing/requirements.md) -- the dependency
   categorisation.
 - [Performance](contributing/perf/index.md) -- the benchmark categories and
@@ -161,6 +164,7 @@ usage/dashboard-charts
 usage/dashboard-docs
 usage/sbom
 usage/sbom-resolution
+usage/sbom-syft
 usage/configuration
 usage/platforms
 usage/vcs
@@ -191,6 +195,7 @@ usage/standards-selection
 
 contributing/developer-guide
 contributing/developer-guide-layout
+contributing/debt
 contributing/requirements
 contributing/ir
 contributing/llm-usage
