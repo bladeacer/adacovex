@@ -16,7 +16,10 @@ separate (Adacovex.Parsers.Manifest)
 --  a Rust file contains "go"; a C file contains "make"). The detection is
 --  therefore scoped to files that actually drive a build, never to source
 --  text. Docstrings (.md prose) are also skipped: prose is not tool
---  interaction and words like "make" are common in it.
+--  interaction and words like "make" are common in it. Generated build
+--  trees are skipped too (Skip_Scan_Dir): a Meson or CMake tree records
+--  the developer's environment, PATH included, in its logs and caches, so
+--  scanning one invents tools the project never invokes.
 --
 --  The pass state (Scan_Stack, Referenced, Probes, From_Cache, Refreshed,
 --  Key_Img, Key_Len) is package level because the steps live in their own
@@ -90,23 +93,7 @@ begin
                           Adacovex.Dir_Cache.Is_Directory (Snap (SI).Kind);
                      begin
                         if Is_D then
-                           if N /= ".git"
-                             and N /= ".jj"
-                             and N /= ".hg"
-                             and N /= ".svn"
-                             and N /= "obj"
-                             and N /= "tests"
-                             and N /= "config"
-                             and N /= ".adacovex"
-                             and N /= "alire"
-                             and N /= "gnatprove"
-                             and N /= "__pycache__"
-                             and N /= "node_modules"
-                             and N /= ".venv"
-                             and N /= ".headroom"
-                             and N /= ".lccst"
-                             and N /= "_build"
-                           then
+                           if not Skip_Scan_Dir (Path, N) then
                               Push_Scan_Dir (Path);
                            end if;
                         elsif Should_Scan (N) then
@@ -125,23 +112,8 @@ begin
                         begin
                            if Kind (Ent) = Directory then
                               if N /= "."
-                                and N /= ".."
-                                and N /= ".git"
-                                and N /= ".jj"
-                                and N /= ".hg"
-                                and N /= ".svn"
-                                and N /= "obj"
-                                and N /= "tests"
-                                and N /= "config"
-                                and N /= ".adacovex"
-                                and N /= "alire"
-                                and N /= "gnatprove"
-                                and N /= "__pycache__"
-                                and N /= "node_modules"
-                                and N /= ".venv"
-                                and N /= ".headroom"
-                                and N /= ".lccst"
-                                and N /= "_build"
+                                and then N /= ".."
+                                and then not Skip_Scan_Dir (Path, N)
                               then
                                  Push_Scan_Dir (Path);
                               end if;

@@ -44,7 +44,11 @@ begin
    end loop;
    --  The probe fallback chain lives in Probe_Version -- fold its flag
    --  order in so reordering the fallbacks also busts the cache.
-   Add ("|probe-fb:--version,-v,version|namespace-v4|");
+   --  The namespace salt names the scan rule itself. It moved to v5 when
+   --  the scan stopped descending into generated build trees: a set stored
+   --  by an earlier release records tools the trees' logs mentioned, and
+   --  the source-tree hash alone cannot see that change in the rule.
+   Add ("|probe-fb:--version,-v,version|namespace-v5|");
    if CLen = 0 then
       return "";
    end if;

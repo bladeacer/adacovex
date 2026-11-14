@@ -44,9 +44,11 @@ package Adacovex.Parsers.Manifest is
    with Pre => Target_Dir'Length > 0;
 
    --  Discover system-tool dev dependencies referenced by the project.
-   --  Scan the project's dev-facing files. These files are Makefiles,
-   --  shell scripts, Python tools, Alire manifests, CI workflows, GNAT
-   --  project files, and Ada sources. Look for a curated set of known
+   --  Scan the project's dev-facing files: Makefile variants, build
+   --  manifests, shell scripts, CI workflows, GNAT project files, and TOML
+   --  files. Source files and prose are never scanned, and neither is a
+   --  generated build tree, because a Meson or CMake tree records the
+   --  developer's environment and PATH. Look for a curated set of known
    --  system binaries. Append every tool that the files reference and that
    --  is actually installed on PATH to the graph. Append it as a dev-scope
    --  dependency of the root. Tools referenced nowhere in the project, or

@@ -4,7 +4,9 @@ separate (Adacovex.Parsers.Manifest)
 --  combines per-file digests. This is what makes the tool-set cache
 --  sound: a file edit that adds or removes a tool reference changes
 --  the hash, so the next run re-scans instead of serving a stale
---  set. The directory-exclusion list matches the main walk exactly.
+--  set. The directory decision is the scan's own predicate
+--  (Skip_Scan_Dir), so the hash covers exactly the files the scan
+--  reads -- a generated build tree is in neither.
 --  @param Dir  Project root directory to hash.
 --  @return SHA-256 of the hashed dev-facing files, "" when none.
 function Source_Tree_Hash (Dir : String) return String is
@@ -71,23 +73,7 @@ begin
                           Adacovex.Dir_Cache.Is_Directory (Snap (SI).Kind);
                      begin
                         if Is_D then
-                           if N /= ".git"
-                             and then N /= ".jj"
-                             and then N /= ".hg"
-                             and then N /= ".svn"
-                             and then N /= "obj"
-                             and then N /= "tests"
-                             and then N /= "config"
-                             and then N /= ".adacovex"
-                             and then N /= "alire"
-                             and then N /= "gnatprove"
-                             and then N /= "__pycache__"
-                             and then N /= "node_modules"
-                             and then N /= ".venv"
-                             and then N /= ".headroom"
-                             and then N /= ".lccst"
-                             and then N /= "_build"
-                           then
+                           if not Skip_Scan_Dir (NP, N) then
                               Push (NP);
                            end if;
                         elsif Should_Scan (N) then
@@ -105,22 +91,7 @@ begin
                         if Kind (E) = Directory then
                            if N /= "."
                              and then N /= ".."
-                             and then N /= ".git"
-                             and then N /= ".jj"
-                             and then N /= ".hg"
-                             and then N /= ".svn"
-                             and then N /= "obj"
-                             and then N /= "tests"
-                             and then N /= "config"
-                             and then N /= ".adacovex"
-                             and then N /= "alire"
-                             and then N /= "gnatprove"
-                             and then N /= "__pycache__"
-                             and then N /= "node_modules"
-                             and then N /= ".venv"
-                             and then N /= ".headroom"
-                             and then N /= ".lccst"
-                             and then N /= "_build"
+                             and then not Skip_Scan_Dir (Full_Name (E), N)
                            then
                               Push (Full_Name (E));
                            end if;

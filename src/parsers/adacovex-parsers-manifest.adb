@@ -430,6 +430,16 @@ package body Adacovex.Parsers.Manifest is
    --  Alire's own dependency cache never carry project source.
    function Skip_Walk_Dir (N : String) return Boolean is separate;
 
+   --  Whether the system-tool scan skips descending into a directory. A
+   --  generated build tree is never authored, so it never contributes a
+   --  tool reference: its logs and caches carry the developer's whole
+   --  environment, PATH included.
+   --  @param Path  Full path of the directory, used for the state probe.
+   --  @param N  Directory base name.
+   --  @return True when the tool scan must not descend into it.
+   function Skip_Scan_Dir (Path : String; N : String) return Boolean
+   is separate;
+
    --  Count the source files under Root by language, descending at most
    --  Max_Levels subdirectories (0 = Root's direct children only). Only
    --  file names are read (no content), so this is cheap. When Skip_Vend
