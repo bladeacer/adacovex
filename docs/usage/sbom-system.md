@@ -74,3 +74,10 @@ project's own manifests (`package.json`, `go.mod`, `requirements*.txt`)
 register the same way, and every read of them is structural -- the rules
 are on
 [Root project declarations](sbom.md#root-project-declarations).
+
+A package and a tool can share a name: the `cmake` crate and the `cmake`
+binary are different dependencies. When a lockfile has already resolved
+the package, the component keeps that identity -- its versioned purl and
+its own scope -- and the tool reference adds no `system` fact to it. So
+the row reads `pkg:cargo/cmake@0.1.58` in `transitive` scope, and no row
+claims a generic purl for a resolved package.

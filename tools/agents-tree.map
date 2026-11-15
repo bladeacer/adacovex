@@ -75,8 +75,8 @@ src/tests/adacovex_tldr_tests	tldr installer tests (48)
 src/tests/adacovex_install_tests	Installation-method tests (23)
 src/tests/adacovex_renderer_svg_tests	SVG renderer tests (161)
 src/tests/adacovex_renderer_tests	HTML/Markdown renderer tests (58)
-src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (524)
-src/tests/test_runner	Test suite entry point (2333 tests)
+src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (578)
+src/tests/test_runner	Test suite entry point (2387 tests)
 src/parsers/adacovex-parsers-manifest-req_entry	Parse the first requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-collect_req_entries	Collect every requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-register_root_python_deps	Register root requirements*.txt entries as dev-scope pypi components
@@ -147,3 +147,5 @@ src/parsers/adacovex-parsers-manifest-discover_system_dev_deps	Register installe
 src/parsers/adacovex-parsers-manifest-vendored_hash	Fingerprint of every vendored input that shapes the graph
 src/parsers/adacovex-parsers-manifest-graph_key	Combined content hash of everything that shapes the graph
 src/parsers/adacovex-parsers-manifest-build_dependency_graph	Build the dependency graph for a project root
+src/parsers/adacovex-parsers-manifest-read_lockfiles	Resolve the transitive set from the project's lockfiles
+src/parsers/adacovex-parsers-manifest-discover_workflow_actions	Register GitHub Actions workflow actions as dev-scope components

@@ -22,7 +22,7 @@ than cherry-picking rows across versions.
 | v1.68.0 | closed | Output defaults and time | changelog `adacovex-1.68.0.md` |
 | v1.69.0 | closed | Compiler-style diagnostics and output | changelog `adacovex-1.69.0.md` |
 | v1.70.0 | closed | SBOM robustness and debt | changelog `adacovex-1.70.0.md` |
-| v1.71.0 | in progress | SBOM depth and pipeline speed | 6b-i (done), 6b-ii, 8b, 15b |
+| v1.71.0 | in progress | SBOM depth and pipeline speed | 6b-i (done), 6b-ii (done), 8b, 15b |
 | v1.72.0 | planned | Performance close-out | 15c, 8c, 9 close-out |
 | v1.73.0 | planned | Test suite portability and layout | 20 (test root and fixture projects), 16 (platform-agnostic suite) |
 | v1.74.0 | planned | Cache identity and diagnostics coverage | 18 (resolved-path, per-unit cache; 7-day expiry), 17a (contract-error matrix) |
@@ -30,12 +30,16 @@ than cherry-picking rows across versions.
 
 ## Session status (2026-11-15)
 
-v1.71.0 has started: item 6b-i landed the language-coverage work. The
-ecosystem table now reads every language syft catalogues from a source
-tree, plus Ada, so `adacovex sbom` and syft parse the same language set.
-The tree holds 2235/2235 tests. The remaining v1.71.0 items (6b-ii's
-lockfile transitive sets, 8b's bounded-string debt, 15b's single build
-and single proof run) stay open.
+v1.71.0 has landed both SBOM items. Item 6b-i gave the ecosystem table
+every language syft catalogues from a source tree, plus Ada. Item 6b-ii
+reads the lockfiles (Cargo.lock, poetry.lock, Gemfile.lock, composer.lock,
+package-lock.json, packages.lock.json, Package.resolved, pubspec.lock,
+mix.lock), so a package only a lockfile names is a transitive component,
+and it catalogues GitHub Actions workflow actions as dev-scope
+`pkg:github` components. Debt D15 closed: an SPDX licence expression now
+takes CycloneDX `license.expression`. The tree holds 2387/2387 tests. The
+remaining v1.71.0 items (8b's bounded-string debt, 15b's single build and
+single proof run) stay open.
 
 ## Session status (2026-11-14)
 
@@ -142,18 +146,47 @@ never claimed without a project a reader can open.
 `docs/usage/sbom-system.md`, `docs/usage/sbom-syft.md`,
 `docs/contributing/architecture-dependencies.md`, `docs/contributing/debt.md`.
 
-- [ ] Item 6b-ii - Adopt the remaining safe SBOM robustness gaps
+- [x] Item 6b-ii - Adopt the remaining safe SBOM robustness gaps
 
 **Goal:** Implement the syft comparison gaps that fit the zero-dependency
 constraint: lockfile parsing, indirect-dependency handling, scope
 classification, and licence resolution.
 
-**Files:** the `adacovex-parsers-manifest-*` units,
-`docs/usage/sbom-resolution.md`,
-`docs/contributing/architecture-dependencies.md`.
+**Delivered:** a lockfile table in `Read_Lockfiles` covers nine lockfiles
+through five readers (a TOML package list, an indented gem list, a JSON
+object map, a YAML package map, and the Elixir term map), so a transitive
+package reaches the graph with its version, PURL type, and language. A
+declared package keeps its base, dev, or test scope and takes the locked
+version when the manifest states only a constraint; the version follows
+into the PURL and the bom-ref. `Discover_Workflow_Actions` catalogues
+`uses: owner/repo@ref` as a dev-scope `pkg:github` component, and skips a
+local action, a container image, an unpinned reference, and an unresolved
+expression. Debt D15 closed: `Is_SPDX_Id` sends an SPDX expression to
+CycloneDX `license.expression` and keeps a single identifier in
+`license.id`, and the SPDX output states either shape unchanged.
 
-**Tests:** regression fixtures for lockfiles, indirect deps, and a missing
-licence in `src/tests/adacovex_sbom_tests.adb`.
+**Verified:** one committed lockfile per dialect under
+`src/tests/fixtures/lockfiles/`, copied by the suite into a temporary
+project root, pins the resolved name, version, PURL, language, and scope
+for every dialect, and asserts that a section key, a location key, a
+requirement line, and a git-sourced entry never become a component. A
+workflow fixture pins the action rules. A declared-scope fixture proves a
+constraint takes the locked version without losing its base scope.
+
+**Files:** `src/parsers/adacovex-parsers-manifest-read_lockfiles.adb`,
+`-discover_workflow_actions.adb`, `-should_scan.adb`,
+`-vendored_hash.adb`, `src/renderers/adacovex-renderers-sbom.adb`,
+`src/tests/fixtures/lockfiles/`, `docs/usage/sbom.md`,
+`docs/usage/sbom-resolution.md`, `docs/usage/sbom-syft.md`,
+`docs/contributing/debt.md`.
+
+**Remaining gap:** a package that only a lockfile names carries no licence,
+because a lockfile states a version and not a licence. The registry covers
+the declared set; the lockfile-only set stays a documented gap on
+[SBOM comparison with syft](docs/usage/sbom-syft.md#gaps-worth-closing).
+
+**Tests:** `src/tests/adacovex_sbom_tests.adb` (lockfile and workflow
+fixtures).
 
 **Verify:** `just sbom`, `just test`, `just book`.
 

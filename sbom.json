@@ -3,7 +3,7 @@
   "specVersion": "1.5",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-11-14T09:00:11",
+    "timestamp": "2026-11-15T00:18:26",
     "tools": [
       {"vendor": "bladeacer", "name": "adacovex", "version": "1.70.0"}
     ],
@@ -128,6 +128,56 @@
       "language": "Python",
       "purl": "pkg:pypi/furo",
       "description": "Python package referenced by the project (requirements.txt)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:github/actions/checkout@v7",
+      "name": "actions/checkout",
+      "version": "v7",
+      "language": "YAML",
+      "purl": "pkg:github/actions/checkout@v7",
+      "description": "GitHub Actions workflow action",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:github/alire-project/setup-alire@latest",
+      "name": "alire-project/setup-alire",
+      "version": "latest",
+      "language": "YAML",
+      "purl": "pkg:github/alire-project/setup-alire@latest",
+      "description": "GitHub Actions workflow action",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:github/actions/cache@v4",
+      "name": "actions/cache",
+      "version": "v4",
+      "language": "YAML",
+      "purl": "pkg:github/actions/cache@v4",
+      "description": "GitHub Actions workflow action",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:github/actions/attest@v4",
+      "name": "actions/attest",
+      "version": "v4",
+      "language": "YAML",
+      "purl": "pkg:github/actions/attest@v4",
+      "description": "GitHub Actions workflow action",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:github/actions/upload-artifact@v7",
+      "name": "actions/upload-artifact",
+      "version": "v7",
+      "language": "YAML",
+      "purl": "pkg:github/actions/upload-artifact@v7",
+      "description": "GitHub Actions workflow action",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
       },
     {
@@ -260,7 +310,7 @@
   "dependencies": [
     {
       "ref": "pkg:alire/covex@1.70.0",
-      "dependsOn": ["pkg:generic/flexsearch", "pkg:generic/graphre", "pkg:generic/yace", "pkg:generic/nomnoml", "pkg:npm/@playwright/test@1.62.1", "pkg:alire/gnatprove", "pkg:alire/gnatdoc_bin", "pkg:alire/gnatformat_bin", "pkg:pypi/sphinx", "pkg:pypi/myst-parser", "pkg:pypi/furo", "pkg:generic/python", "pkg:generic/bash", "pkg:generic/curl", "pkg:generic/python3", "pkg:generic/pip", "pkg:generic/alr", "pkg:generic/go", "pkg:generic/gnat", "pkg:generic/git", "pkg:generic/make", "pkg:generic/jj", "pkg:generic/perf", "pkg:generic/npm", "pkg:generic/gh"]
+      "dependsOn": ["pkg:generic/flexsearch", "pkg:generic/graphre", "pkg:generic/yace", "pkg:generic/nomnoml", "pkg:npm/@playwright/test@1.62.1", "pkg:alire/gnatprove", "pkg:alire/gnatdoc_bin", "pkg:alire/gnatformat_bin", "pkg:pypi/sphinx", "pkg:pypi/myst-parser", "pkg:pypi/furo", "pkg:github/actions/checkout@v7", "pkg:github/alire-project/setup-alire@latest", "pkg:github/actions/cache@v4", "pkg:github/actions/attest@v4", "pkg:github/actions/upload-artifact@v7", "pkg:generic/python", "pkg:generic/bash", "pkg:generic/curl", "pkg:generic/python3", "pkg:generic/pip", "pkg:generic/alr", "pkg:generic/go", "pkg:generic/gnat", "pkg:generic/git", "pkg:generic/make", "pkg:generic/jj", "pkg:generic/perf", "pkg:generic/npm", "pkg:generic/gh"]
     }
   ]
 }

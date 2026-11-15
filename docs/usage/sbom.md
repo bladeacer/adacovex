@@ -134,11 +134,9 @@ never register a component.
   test-named module such as `github.com/stretchr/testify` takes the
   `test` label.
 - **`requirements*.txt`** registers as `dev`-scope `pkg:pypi/*`
-  components with the language set to Python. A version pinned in the
-  requirements line wins; otherwise the package registry answers
-  (`pip index versions <pkg>`) when `pip` is installed and online. A
-  missing registry or a failing resolve keeps the name-only entry -- no
-  version or licence is ever guessed.
+  components in Python. A pinned version wins; otherwise the registry
+  answers (`pip index versions <pkg>`) when `pip` is installed and online.
+  A missing registry keeps the name-only entry: nothing is ever guessed.
 - **The other ecosystems' root manifests** register through one table,
   so a language is a row rather than a code path. A base section is
   `base` scope and a dev section is `dev` scope:
@@ -151,18 +149,16 @@ never register a component.
   | `DESCRIPTION` (R) | `Imports` | `Suggests` |
   | `*.cabal` | `build-depends` | -- |
 
-  A declaration states a constraint, not a resolved version, so the
-  version is resolved from the ecosystem's registry CLI when one exists
-  and stays empty otherwise. A composer platform package (`php`) and an
-  extension (`ext-json`) name the runtime rather than a distribution, so
-  they never become components. A pubspec entry's nested map
-  (`version:`, `sdk:`) is that entry's metadata, so no nested key
-  registers a component, and an R `Imports` continuation line extends
-  the same list.
+  A declaration states a constraint, not a version, so the registry CLI
+  resolves it where one exists and it stays empty otherwise. A composer
+  platform package (`php`) and an extension (`ext-json`) name the runtime,
+  not a distribution, so they never become components. A pubspec entry's
+  nested map (`version:`, `sdk:`) is its metadata, so no nested key
+  registers, and an R `Imports` continuation line extends the same list.
 
-A vendored package keeps its own manifest authoritative: its bundled
-subpackages (`zod/v4`) and its source trees (`zod/src`) are parts of the
-package and never components of their own. The package-root rule is on
+A vendored package keeps its own manifest authoritative: its subpackages
+(`zod/v4`) and its source trees (`zod/src`) are parts of the package, never
+components of their own. The package-root rule is on
 [the architecture page](../contributing/architecture-dependencies.md#vendored-components-and-test-labelled-dependencies-sbom).
 
 ## Language detection
@@ -208,14 +204,11 @@ A vendored manifest maps directly onto its language and PURL type:
 | `.gpr` project file | `pkg:gpr`         | Ada        |
 
 The set is the union of the ecosystems adacovex reads and the languages
-syft catalogues, plus Ada: every language syft resolves from a source
-tree has a manifest row here. Six ecosystems name their manifest after
-the package rather than the ecosystem (`*.csproj`, `*.gemspec`,
-`*.podspec`, `*.rockspec`, `*.opam`, `*.cabal`), so a row may carry a
-suffix instead of a fixed filename. Every row has a committed mini
-project under `src/tests/fixtures/ecosystems/`, so the language list is
-checked by the test suite against a real manifest rather than against a
-string in a test.
+syft catalogues, plus Ada. Six ecosystems name their manifest after the
+package rather than the ecosystem (`*.csproj`, `*.gemspec`, `*.podspec`,
+`*.rockspec`, `*.opam`, `*.cabal`), so a row may carry a suffix. Every row
+has a committed mini project under `src/tests/fixtures/ecosystems/`, so the
+test suite checks the language list against a real manifest.
 
 `pkg:maven` covers a Gradle build too. A Gradle build states a group id
 rather than an artefact name, so the component keeps the directory name
@@ -233,17 +226,24 @@ register even when no vendored tree carries them. Their scopes and their
 structural read are on
 [Root project declarations](#root-project-declarations) above.
 
+### Transitive and workflow dependencies
+
+A lockfile states the set the project resolves, and a workflow states the
+actions the pipeline runs: a lockfile-only package is `transitive`, and a
+`uses: owner/repo@ref` action is a dev-scope `pkg:github` component. The
+lockfile set and the four values that state no dependency are on
+[SBOM transitive dependencies](sbom-transitive.md).
+
 ### Extension-based inference
 
-A component that carries no manifest -- a vendored tree, a loose source
-drop, or a file under `resources/`, `assets/`, or `.adacovex/patches/` --
-takes its language from the file extensions that are actually present,
-not from a guess. The supported extension list, the
-extension-over-manifest rule, and the mixed-language summary are on
+A component that carries no manifest -- a vendored tree, a loose source drop,
+or a file under `resources/`, `assets/`, or `.adacovex/patches/` -- takes its
+language from the extensions that are present, not from a guess. The
+extension list and the mixed-language summary are on
 [SBOM dependency resolution](sbom-resolution.md#language-detection).
 
-The remaining sections of the original guide -- licence resolution and
-test-dependency classification -- are covered on
-[SBOM dependency resolution](sbom-resolution.md), and the system-tool rules
-on [SBOM system dependencies](sbom-system.md). The component coverage is
-measured against syft on [SBOM comparison with syft](sbom-syft.md).
+The remaining sections of the original guide -- licence resolution,
+test-dependency classification, and the system-tool rules -- are covered on
+[SBOM dependency resolution](sbom-resolution.md) and
+[SBOM system dependencies](sbom-system.md). Component coverage is measured
+against syft on [SBOM comparison with syft](sbom-syft.md).

@@ -61,6 +61,13 @@ Vendored manifest ecosystems report their licence from the local manifest
 `s.license` in a `*.gemspec`). A licence file beside the manifest is
 classified into an SPDX identifier when the manifest carries none, and the
 package registry answers as the online fallback when both are silent.
+
+CycloneDX writes one SPDX identifier in `license.id` and an SPDX
+**expression** in `license.expression`, so a licence that carries a space or
+a parenthesis (`Apache-2.0 OR MIT`, `Apache-2.0 WITH LLVM-exception`) takes
+the expression form. A single identifier (MIT, Apache-2.0, GPL-2.0+) keeps
+the `id` form. SPDX output states either shape in `licenseDeclared` and
+`licenseConcluded`, because SPDX accepts an expression there.
 [The ecosystem table](sbom.md#manifest-declared-ecosystems) names the two
 rows that read no licence key, because their manifest's vocabulary is not
 SPDX.
@@ -150,6 +157,41 @@ copy is scanned, preferring `pnpm show <pkg> license` and falling back to
 component (see [Licence resolution](#licence-resolution)). The SBOM and the
 Credits tab therefore track the real upstream licence instead of a hard-coded
 copy.
+
+## Transitive lockfile resolution
+
+A declaration bounds a dependency set; a lockfile states it. adacovex reads
+the lockfile beside a manifest, so the SBOM carries the packages the project
+really installs and not only the ones it declares. The lockfile set, its
+PURL types, and the version-fill rule are on
+[SBOM transitive dependencies](sbom-transitive.md).
+
+Each dialect has one reader over a table row, so a new lockfile is one row:
+
+- **A TOML package list** (`Cargo.lock`, `poetry.lock`) -- a `[[package]]`
+  block, then its `name` and `version` keys. A `[metadata]` key such as
+  `lock-version` names no package.
+- **An indented gem list** (`Gemfile.lock`) -- `name (version)` at four
+  spaces under `specs:`. A requirement line at six spaces belongs to the gem
+  above it, and a section header (`PLATFORMS`, `DEPENDENCIES`) is not a
+  package.
+- **A JSON object map** (`composer.lock`, `package-lock.json`,
+  `packages.lock.json`, `Package.resolved`) -- the entry key, or the row's
+  name key (`name`, `identity`), then the row's version key (`version`,
+  `resolved`). A location key loses its `node_modules/` prefix, so a nested
+  entry is its own package, and a section key (`packages`, `dependencies`,
+  `description`, `state`) never becomes one.
+- **A YAML package map** (`pubspec.lock`) -- a package key at two spaces,
+  then its `version` key at four spaces. A section key that carries a value
+  (`dart: ">=3.0.0"`) never ends with the colon, so it is never a package.
+- **An Elixir term map** (`mix.lock`) -- `"name": {:hex, :name, "version"}`.
+  A git or path source states no hex version, so it registers nothing.
+
+A package the graph already holds keeps its scope: a base dependency stays
+base, and the lockfile only fills a version the declaration could not state.
+A licence is never read from a lockfile, because a lockfile states a version
+and not a licence, so a lockfile-only component reports none until a licence
+file or the registry answers.
 
 ## System dependencies
 
