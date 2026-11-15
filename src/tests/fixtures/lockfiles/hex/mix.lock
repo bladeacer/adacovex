@@ -1,0 +1,5 @@
+%{
+  "castore": {:hex, :castore, "1.0.5", "sha256abc", [:mix], [], "hexpm", "def"},
+  "jason": {:hex, :jason, "1.4.1", "sha256def", [:mix], [], "hexpm", "ghi"},
+  "gitdep": {:git, "https://example.com/gitdep.git", "abc123", []},
+}
