@@ -52,27 +52,27 @@ is
             V_Last := V_Last + 1;
          end loop;
          declare
-            V   : constant String := L (V_First .. V_Last);
-            At  : Natural := 0;
-            Sl  : Natural := 0;
-            Nl  : Natural;
+            V      : constant String := L (V_First .. V_Last);
+            Ref_At : Natural := 0;
+            Sl     : Natural := 0;
+            Nl     : Natural;
          begin
             --  The ref follows the last '@' in the value: a repository path
             --  never carries one.
             for I in reverse V'Range loop
                if V (I) = '@' then
-                  At := I;
+                  Ref_At := I;
                   exit;
                end if;
             end loop;
-            if At = 0 or else At = V'First or else At = V'Last then
+            if Ref_At = 0 or else Ref_At = V'First or else Ref_At = V'Last then
                return;
             end if;
             --  A local action and a container image are not repository
             --  actions, and an unresolved expression states no ref.
-            if V (V'First .. V'First + 1) = "./"
-              or else
-                (V'Length >= 9 and then V (V'First .. V'First + 8) = "docker:")
+            if (V'Length >= 2 and then V (V'First .. V'First + 1) = "./")
+              or else (V'Length >= 6
+                       and then V (V'First .. V'First + 5) = "docker")
               or else Index (V, "$") > 0
             then
                return;
@@ -80,7 +80,7 @@ is
             --  The name is owner/repo, so a subdirectory path after the
             --  repository name is dropped: the repository is the
             --  dependency, and the subdirectory is a location inside it.
-            for I in V'First .. At - 1 loop
+            for I in V'First .. Ref_At - 1 loop
                if V (I) = '/' then
                   if Sl = 0 then
                      Sl := I;
@@ -89,16 +89,16 @@ is
                   end if;
                end if;
             end loop;
-            if Sl = 0 or else Sl = V'First or else Sl = At - 1 then
+            if Sl = 0 or else Sl = V'First or else Sl = Ref_At - 1 then
                return;
             end if;
             Nl := Sl;
-            while Nl < At - 1 and then V (Nl + 1) /= '/' loop
+            while Nl < Ref_At - 1 and then V (Nl + 1) /= '/' loop
                Nl := Nl + 1;
             end loop;
             declare
                Name : constant String := V (V'First .. Nl);
-               Ref  : constant String := V (At + 1 .. V'Last);
+               Ref  : constant String := V (Ref_At + 1 .. V'Last);
             begin
                if Name'Length > Types.Max_Desc_Str
                  or else Ref'Length > Types.Max_Desc_Str
@@ -177,9 +177,8 @@ is
                N : constant String := Simple_Name (Ent);
             begin
                if N'Length > 4
-                 and then
-                   (N (N'Last - 3 .. N'Last) = ".yml"
-                    or else N (N'Last - 4 .. N'Last) = ".yaml")
+                 and then (N (N'Last - 3 .. N'Last) = ".yml"
+                           or else N (N'Last - 4 .. N'Last) = ".yaml")
                then
                   Scan (Full_Name (Ent));
                end if;
@@ -197,13 +196,14 @@ begin
    --  A composite action declares its steps with the same `uses:` key, so
    --  the repository's own action files are part of the same dependency
    --  set.
-   for Suffix of ["action.yml", "action.yaml"] loop
-      declare
-         P : constant String := Target_Dir & "/" & Suffix;
-      begin
-         if Ada.Directories.Exists (P) then
-            Scan (P);
-         end if;
-      end;
-   end loop;
+   declare
+      Yaml : constant String := Target_Dir & "/action.yml";
+      Alt  : constant String := Target_Dir & "/action.yaml";
+   begin
+      if Ada.Directories.Exists (Yaml) then
+         Scan (Yaml);
+      elsif Ada.Directories.Exists (Alt) then
+         Scan (Alt);
+      end if;
+   end;
 end Discover_Workflow_Actions;

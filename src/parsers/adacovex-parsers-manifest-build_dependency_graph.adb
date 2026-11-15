@@ -242,6 +242,16 @@ begin
    --  table decides the sections, so a new language adds no code here.
    Register_Root_Manifest_Deps (Target_Dir, Graph);
 
+   --  Resolve the transitive set the project's lockfiles state, so the SBOM
+   --  states the packages the project really installs and not only the ones
+   --  it declares.
+   Read_Lockfiles (Target_Dir, Graph);
+
+   --  Register the GitHub Actions workflow actions the project's CI runs
+   --  (`uses: owner/repo@ref`) as dev-scope dependencies. A workflow names
+   --  the actions it depends on the way a manifest names its packages.
+   Discover_Workflow_Actions (Target_Dir, Graph);
+
    Success := Root.Name_Len > 0;
 
    --  Store the freshly resolved graph for the next run. Store it only on
