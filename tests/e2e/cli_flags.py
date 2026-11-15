@@ -495,18 +495,22 @@ def check_sbom_shapes(r: Results, tmp: Path) -> None:
 # stays green on a clean clone.
 SBOM_SIBLINGS: Tuple[Tuple[str, Tuple[str, ...]], ...] = (
     #  Cargo workspace with a Python binding crate.
-    ("polars", ("pkg:cargo/", "pkg:pypi/")),
+    ("polars", ("pkg:cargo/", "pkg:pypi/", "pkg:github/")),
     #  npm workspace whose lockfile pins the development toolchain.
-    ("playwright", ("pkg:npm/",)),
+    ("playwright", ("pkg:npm/", "pkg:github/")),
     #  CMake C/C++ tree with vendored 3rdparty sources and no manifest.
-    ("opencv", ()),
+    ("opencv", ("pkg:github/",)),
     #  pnpm workspace with a vendored node_modules tree.
-    ("lccst", ("pkg:npm/",)),
+    ("lccst", ("pkg:npm/", "pkg:github/")),
     #  Python project built with meson.
-    ("numpy", ("pkg:pypi/",)),
+    ("numpy", ("pkg:pypi/", "pkg:github/")),
     #  C library built with meson and no package manifest.
-    ("yams", ()),
+    ("yams", ("pkg:github/",)),
 )
+
+#  A GitHub workflow action is declared by the repository's own `.github/
+#  workflows/*.yml` `uses:` line, so `pkg:github/` is a declared ecosystem for
+#  every sibling above.
 
 # A system tool a sibling cannot use: the project declares no manifest for
 # that ecosystem and no authored build file invokes the tool. A Meson build

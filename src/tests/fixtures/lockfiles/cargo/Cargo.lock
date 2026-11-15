@@ -1,0 +1,18 @@
+version = 3
+
+[[package]]
+name = "lockdemo"
+version = "0.1.0"
+dependencies = ["serde", "serde_json"]
+
+[[package]]
+name = "serde"
+version = "1.0.197"
+
+[[package]]
+name = "serde_json"
+version = "1.0.114"
+dependencies = ["serde"]
+
+[metadata]
+lock-version = "2.0"

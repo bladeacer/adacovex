@@ -2811,6 +2811,282 @@ package body Adacovex_SBOM_Tests is
          end;
       end;
 
+      --  Lockfile resolution: each committed lockfile fixture states a
+      --  resolved set, and the graph must carry every entry with its
+      --  version, PURL type, language, and transitive scope, while a
+      --  structure key or a location key is never mistaken for a package.
+      declare
+         Root : constant String := "obj/sbom_lock_fixture";
+
+         --  Build a project root that holds one lockfile fixture.
+         --  @param Fixture  Fixture directory name under the lockfile set.
+         --  @param Lock  Lockfile base name the fixture holds.
+         --  @param G  Output graph.
+         --  @param OK  Output success flag.
+         procedure Build_Lock
+           (Fixture : String;
+            Lock    : String;
+            G       : out Component_Vectors.Vector;
+            OK      : out Boolean)
+         is
+            D : constant String := Root & "/" & Fixture;
+         begin
+            if Ada.Directories.Exists (D) then
+               Ada.Directories.Delete_Tree (D);
+            end if;
+            Ada.Directories.Create_Path (D);
+            Write_File
+              (D & "/alire.toml",
+               "name = ""lockdemo"""
+               & ASCII.LF
+               & "version = ""0.1.0"""
+               & ASCII.LF
+               & "description = ""demo"""
+               & ASCII.LF
+               & "licenses = ""MIT"""
+               & ASCII.LF);
+            Copy_Text_File
+              ("src/tests/fixtures/lockfiles/" & Fixture & "/" & Lock,
+               D & "/" & Lock);
+            Adacovex.Parsers.Manifest.Build_Dependency_Graph
+              (D, D & "/alire.toml", G, OK);
+         end Build_Lock;
+
+         G  : Component_Vectors.Vector;
+         OK : Boolean := False;
+      begin
+         Build_Lock ("cargo", "Cargo.lock", G, OK);
+         R.Check (OK, "cargo lock graph");
+         R.Check
+           (Ver_Is (Find_Name (G, "serde"), "1.0.197"),
+            "Cargo.lock resolves serde");
+         R.Check
+           (Purl_Is (Find_Name (G, "serde"), "pkg:cargo/serde@1.0.197"),
+            "Cargo.lock purl carries the locked version");
+         R.Check
+           (Lang_Is (Find_Name (G, "serde"), "Rust"),
+            "Cargo.lock component language");
+         R.Check
+           (Find_Name (G, "serde_json").Scope = Scope_Transitive,
+            "Cargo.lock transitive scope");
+
+         Build_Lock ("poetry", "poetry.lock", G, OK);
+         R.Check (OK, "poetry lock graph");
+         R.Check
+           (Purl_Is (Find_Name (G, "requests"), "pkg:pypi/requests@2.31.0"),
+            "poetry.lock resolves requests");
+         R.Check
+           (Find_Name (G, "urllib3").Scope = Scope_Transitive,
+            "poetry.lock transitive scope");
+
+         Build_Lock ("gemfile", "Gemfile.lock", G, OK);
+         R.Check (OK, "gem lock graph");
+         R.Check
+           (Purl_Is (Find_Name (G, "rake"), "pkg:gem/rake@13.0.6"),
+            "Gemfile.lock resolves rake");
+         R.Check
+           (Ver_Is (Find_Name (G, "rspec-core"), "3.12.2"),
+            "Gemfile.lock resolves a transitive gem");
+         R.Check
+           (Count_Name (G, "rspec-core") = 1,
+            "a gem requirement line is never a second entry");
+         R.Check
+           (Count_Name (G, "PLATFORMS") = 0,
+            "a gem section header is never a component");
+
+         Build_Lock ("composer", "composer.lock", G, OK);
+         R.Check (OK, "composer lock graph");
+         R.Check
+           (Purl_Is
+              (Find_Name (G, "monolog/monolog"),
+               "pkg:composer/monolog/monolog@3.5.0"),
+            "composer.lock keeps the composer purl type");
+         R.Check
+           (Ver_Is (Find_Name (G, "phpunit/phpunit"), "10.5.5"),
+            "composer.lock resolves a dev package");
+
+         Build_Lock ("npm", "package-lock.json", G, OK);
+         R.Check (OK, "npm lock graph");
+         R.Check
+           (Purl_Is (Find_Name (G, "left-pad"), "pkg:npm/left-pad@1.3.0"),
+            "package-lock resolves a package");
+         R.Check
+           (Ver_Is (Find_Name (G, "body-parser"), "1.20.1"),
+            "a nested node_modules entry resolves its own package");
+         R.Check
+           (Count_Name (G, "node_modules/left-pad") = 0,
+            "a location key is never a component name");
+
+         Build_Lock ("nuget", "packages.lock.json", G, OK);
+         R.Check (OK, "nuget lock graph");
+         R.Check
+           (Purl_Is (Find_Name (G, "MiniNuget"), "pkg:nuget/MiniNuget@1.2.0"),
+            "packages.lock.json resolves a package");
+         R.Check
+           (Ver_Is (Find_Name (G, "Newtonsoft.Json"), "13.0.3"),
+            "packages.lock.json resolves a transitive package");
+         R.Check
+           (Count_Name (G, "net8.0") = 0,
+            "a target-framework key is never a component");
+
+         Build_Lock ("swift", "Package.resolved", G, OK);
+         R.Check (OK, "swift lock graph");
+         R.Check
+           (Purl_Is
+              (Find_Name (G, "swift-argument-parser"),
+               "pkg:swift/swift-argument-parser@1.2.3"),
+            "Package.resolved resolves a pin");
+
+         Build_Lock ("pub", "pubspec.lock", G, OK);
+         R.Check (OK, "pub lock graph");
+         R.Check
+           (Purl_Is (Find_Name (G, "async"), "pkg:pub/async@2.11.0"),
+            "pubspec.lock resolves a package");
+         R.Check
+           (Count_Name (G, "description") = 0
+            and then Count_Name (G, "dart") = 0,
+            "a pubspec.lock section key is never a component");
+
+         Build_Lock ("hex", "mix.lock", G, OK);
+         R.Check (OK, "hex lock graph");
+         R.Check
+           (Purl_Is (Find_Name (G, "castore"), "pkg:hex/castore@1.0.5"),
+            "mix.lock resolves a hex package");
+         R.Check
+           (Ver_Is (Find_Name (G, "jason"), "1.4.1"),
+            "mix.lock resolves a second hex package");
+         R.Check
+           (Count_Name (G, "gitdep") = 0,
+            "a git-sourced mix entry states no locked version");
+
+         --  A declared package keeps its declared scope and takes the
+         --  locked version when the manifest states only a constraint, so
+         --  the pub fixture is read again with its own pubspec.yaml beside
+         --  the lockfile.
+         Copy_Text_File
+           ("src/tests/fixtures/ecosystems/pub/pubspec.yaml",
+            Root & "/pub/pubspec.yaml");
+         Adacovex.Parsers.Manifest.Build_Dependency_Graph
+           (Root & "/pub", Root & "/pub/alire.toml", G, OK);
+         R.Check (OK, "declared lock graph");
+         R.Check
+           (Find_Name (G, "http").Scope = Scope_Base,
+            "a declared package keeps its scope");
+         R.Check
+           (Ver_Is (Find_Name (G, "http"), "1.1.0"),
+            "the lockfile answers a declared constraint");
+         R.Check
+           (Find_Name (G, "async").Scope = Scope_Transitive,
+            "a lock-only package stays transitive");
+      end;
+
+      --  Workflow actions: a `uses: owner/repo@ref` line in a workflow, or
+      --  in the repository's own composite action, is a dev-scope
+      --  pkg:github component. A local action, a container image, an
+      --  unpinned reference, and an unresolved expression state no
+      --  dependency, so none of them becomes a component.
+      declare
+         Root    : constant String := "obj/sbom_workflow_fixture";
+         Graph   : Component_Vectors.Vector;
+         Success : Boolean := False;
+         NL      : constant String := (1 => ASCII.LF);
+      begin
+         if Ada.Directories.Exists (Root) then
+            Ada.Directories.Delete_Tree (Root);
+         end if;
+         Write_File
+           (Root & "/alire.toml",
+            "name = ""wfdemo"""
+            & NL
+            & "version = ""0.1.0"""
+            & NL
+            & "description = ""demo"""
+            & NL
+            & "licenses = ""MIT"""
+            & NL);
+         Write_File
+           (Root & "/.github/workflows/ci.yml",
+            "name: CI"
+            & NL
+            & "on: [push]"
+            & NL
+            & "jobs:"
+            & NL
+            & "  build:"
+            & NL
+            & "    runs-on: ubuntu-latest"
+            & NL
+            & "    steps:"
+            & NL
+            & "      - uses: actions/checkout@v4"
+            & NL
+            & "      - uses: actions/setup-node@v4"
+            & NL
+            & "        with:"
+            & NL
+            & "          node-version: 20"
+            & NL
+            & "      - uses: ./local/action"
+            & NL
+            & "      - uses: docker://alpine:3.8"
+            & NL
+            & "      - uses: owner/tool/sub/dir@v1.2.3"
+            & NL
+            & "      - uses: owner/unpinned"
+            & NL
+            & "      - uses: owner/expr@${{ matrix.ref }}"
+            & NL);
+         Write_File
+           (Root & "/action.yml",
+            "name: demo"
+            & NL
+            & "runs:"
+            & NL
+            & "  using: composite"
+            & NL
+            & "  steps:"
+            & NL
+            & "    - uses: actions/cache@v4"
+            & NL);
+         Adacovex.Parsers.Manifest.Build_Dependency_Graph
+           (Root, Root & "/alire.toml", Graph, Success);
+         R.Check (Success, "workflow fixture graph");
+         R.Check
+           (Purl_Is
+              (Find_Name (Graph, "actions/checkout"),
+               "pkg:github/actions/checkout@v4"),
+            "workflow action purl and ref");
+         R.Check
+           (Find_Name (Graph, "actions/checkout").Scope = Scope_Dev,
+            "workflow action is dev scope");
+         R.Check
+           (Lang_Is (Find_Name (Graph, "actions/checkout"), "YAML"),
+            "workflow action language");
+         R.Check
+           (Ver_Is (Find_Name (Graph, "actions/setup-node"), "v4"),
+            "a second step in the same workflow registers");
+         R.Check
+           (Purl_Is
+              (Find_Name (Graph, "owner/tool"),
+               "pkg:github/owner/tool@v1.2.3"),
+            "a subdirectory action registers its repository");
+         R.Check
+           (Count_Name (Graph, "owner/tool/sub/dir") = 0,
+            "an action subdirectory is never the component name");
+         R.Check
+           (Count_Name (Graph, "actions/cache") = 1,
+            "a composite action step registers");
+         R.Check
+           (Count_Name (Graph, "owner/unpinned") = 0,
+            "an unpinned action states no dependency");
+         R.Check
+           (Count_Name (Graph, "owner/expr") = 0,
+            "an unresolved ref expression is skipped");
+         R.Check
+           (Count_Name (Graph, "./local/action") = 0,
+            "a local action is the project itself");
+      end;
+
       --  Test-labelled vendored npm dependencies: a package whose name
       --  carries the test label (@playwright/test) and a package declared
       --  under a "testDependencies" section (jsdom) are Scope_Test; a

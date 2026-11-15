@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net8.0": {
+      "MiniNuget": {
+        "type": "Direct",
+        "requested": "[1.2.0, )",
+        "resolved": "1.2.0"
+      },
+      "Newtonsoft.Json": {
+        "type": "Transitive",
+        "resolved": "13.0.3"
+      }
+    }
+  }
+}
