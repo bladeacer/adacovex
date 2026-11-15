@@ -96,7 +96,7 @@ Makefile) and `ninja` (from its recipe) still do. The `yams` sibling pin in
 `tests/e2e/cli_flags.py` adds the forbidden-tool check, and the e2e run
 passes 165 checks.
 
-Native suite: 2333/2333 passing (29 categories).
+Native suite: 2387/2387 passing (29 categories).
 
 `just prove-e2e` passes 132 checks. `just run-ada-crdt` is unchanged.
 
@@ -105,7 +105,7 @@ Native suite: 2333/2333 passing (29 categories).
 The change is outside the proof surface: the manifest parser and its scan
 predicate are I/O-bound units with no `SPARK_Mode => On` contracts, and no
 `SPARK_Mode (Off)` pragma was added. The tree proves at the default budget
-(gnatprove 16.1.0: 1057 VCs, 0 unproved, 0 justified), with no
+(gnatprove 16.1.0: 1058 VCs, 0 unproved, 0 justified), with no
 `--steps=20000`.
 
 ## Traceability

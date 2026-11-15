@@ -12,6 +12,7 @@ docs/usage/dashboard-charts.md	Dashboard metric charts and robustness tier
 docs/usage/dashboard-docs.md	Dashboard: the bundled offline manual
 docs/usage/sbom.md	SBOM
 docs/usage/sbom-resolution.md	SBOM dependency resolution
+docs/usage/sbom-transitive.md	SBOM transitive dependencies
 docs/usage/sbom-system.md	SBOM system dependencies
 docs/usage/sbom-syft.md	SBOM comparison with syft
 docs/usage/configuration.md	Global configuration and state

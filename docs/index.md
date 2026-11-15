@@ -54,6 +54,7 @@ a technical word in any doc, docstring, or changelog.
   manual.
 - [SBOM](usage/sbom.md) -- the bill-of-materials generator, with
   [dependency resolution](usage/sbom-resolution.md) for licences and versions,
+  [transitive lockfile and workflow dependencies](usage/sbom-transitive.md),
   [system dependencies](usage/sbom-system.md), and the
   [syft comparison](usage/sbom-syft.md).
 - [Global configuration and state](usage/configuration.md) -- the optional
@@ -165,6 +166,7 @@ usage/dashboard-charts
 usage/dashboard-docs
 usage/sbom
 usage/sbom-resolution
+usage/sbom-transitive
 usage/sbom-system
 usage/sbom-syft
 usage/configuration

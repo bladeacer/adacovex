@@ -87,30 +87,38 @@ image** rather than the project's own package set. adacovex audits
 source, and a language whose packages are not declared in a manifest has
 nothing for it to read.
 
-The two gaps that remain are deliberate. Installed environments stay
-unread (see [Gaps rejected](#gaps-rejected)), because reading one would
-describe a machine rather than a project. Per-language lockfile
-resolutions beyond the npm and Go paths stay a documented gap, because a
-lockfile names a transitive set that the declaration already bounds and
-adacovex reports only what the project itself declares.
+The transitive set reaches the SBOM the same way for both tools. syft walks
+an installed environment, and adacovex reads the **lockfile**, which states
+the resolved set without describing a machine: Cargo.lock, poetry.lock,
+Gemfile.lock, composer.lock, package-lock.json, packages.lock.json,
+Package.resolved, pubspec.lock, and mix.lock. A package only the lockfile
+names is a transitive component of the root. The rule and the per-dialect
+read are on [SBOM transitive dependencies](sbom-transitive.md) and
+[SBOM dependency resolution](sbom-resolution.md#transitive-lockfile-resolution).
+
+One dependency shape is neither a package manifest nor a lockfile: a GitHub
+Actions workflow action. syft catalogues it, and so does adacovex, as a
+dev-scope `pkg:github/owner/repo@ref` component read from `uses:` lines in
+`.github/workflows/*.yml` and the repository's own composite action.
+
+The remaining gap is deliberate. Installed environments stay unread (see
+[Gaps rejected](#gaps-rejected)), because reading one would describe a
+machine rather than a project, and a lockfile that is not in the table
+states its set in a dialect no reader covers.
 
 ## Gaps worth closing
 
 These gaps fit the zero-dependency rule, because each one is a file parse:
 
-- **Workflow action usage.** `uses: owner/action@ref` in
-  `.github/workflows/*.yml` is a manifest line, and a workflow action is a
-  real build-time dependency of a project that runs CI. The parse is a line
-  scan with no new dependency. The v1.71.0 item decides whether an action is
-  a component of its own scope or a `dev` dependency.
 - **Dev-dependency inclusion.** syft reads `devDependencies` only when asked
   (`javascript.include-dev-dependencies: false` by default). adacovex reports
   test-labelled dependencies as a first-class `test` scope, which is the
   richer answer for the standards this tool serves.
-- **Lockfile-resolved licence.** A crate or module that only a lockfile
-  names has no sibling licence file, so adacovex leaves the licence empty
-  where syft reads one from an installed copy. Registry licence resolution
-  covers the declared set; the lockfile-only set stays a documented gap.
+- **Lockfile-resolved licence.** A package that only a lockfile names has
+  no sibling licence file, so adacovex leaves the licence empty where syft
+  reads one from an installed copy. Registry licence resolution covers the
+  declared set; a licence is never read from a lockfile, because a lockfile
+  states a version and not a licence.
 
 ## Gaps rejected
 

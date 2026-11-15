@@ -68,7 +68,7 @@ Enforced rules:
 - Files are pure ASCII; list items indented under a heading use exactly
   three spaces (never 4+).
 - `## Proof Results` states the SPARK level (Stone..Platinum), the exact VC
-  totals (e.g. `1057/1057 VCs proved across 76 analyzed units`), and calls out
+  totals (e.g. `1058/1058 VCs proved across 76 analyzed units`), and calls out
   whether any proof metrics changed.
 - `## Traceability` lists any new HLRs by tag name and package, then the
   existing `-- HLR-*` tags covering the changed packages.
@@ -102,14 +102,14 @@ Pull requests should follow the following conventions.
   beyond the GNAT runtime.
 - Keep the SPARK proof complete: run `just prove` and make sure the VC
   counts match [docs/proof/16.1.0-ledger.md](docs/proof/16.1.0-ledger.md)
-  (1057 VCs, 0 unproved under gnatprove 16.1.0).
+  (1058 VCs, 0 unproved under gnatprove 16.1.0).
 - Keep docstring coverage at 100% (strict mode, cannot be disabled):
   `just run-self` must show Gold, 100% docs, and DAL-C Achieved.
 - Platinum is the target, not the current level: it also requires full proof
   coverage (every subprogram the SPARK coverage report assesses proved), and
   the deliberate `SPARK_Mode (Off)` units keep the tree at Gold.
 - If you add or change behavior, extend the native test suite in `src/tests/`
-  (2333 tests across 29 categories) and run `just test`.
+  (2387 tests across 29 categories) and run `just test`.
 - Keep all source files pure ASCII: `just ascii-check`.
 - If a new CLI flag is added, mirror it as a matching GitHub Action input in
   `./action.yml` and document it in `docs/usage/cli-reference.md` and the README
@@ -173,6 +173,11 @@ declare root dependencies as root projects. A new ecosystem row needs a
 fixture, so the claim "this language is supported" is always backed by a
 project a reader can open.
 
+`src/tests/fixtures/lockfiles/` holds one lockfile per resolution dialect.
+The suite copies each one beside a temporary manifest and asserts the
+transitive components it resolves, so a new lockfile row needs a lockfile
+fixture in the same change.
+
 | Category | Tests |
 |----------|-------|
 | Types conversions | 67 |
@@ -183,7 +188,7 @@ project a reader can open.
 | CLI config | 387 |
 | SVG renderer | 161 |
 | HTML/Markdown renderers | 58 |
-| SBOM generator | 524 |
+| SBOM generator | 578 |
 | Result cache | 36 |
 | IR synthesis | 42 |
 | Man page renderer | 30 |
@@ -204,4 +209,4 @@ project a reader can open.
 | Platform paths | 43 |
 | Install method | 23 |
 | tldr installer | 48 |
-| **Total** | **2333** |
+| **Total** | **2387** |
