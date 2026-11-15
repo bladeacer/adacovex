@@ -129,8 +129,13 @@ source scans for the current tree.
   It also hashes the supported-language project manifests that can own a
   vendored directory (`package.json`, `Cargo.toml`, `Cargo.lock`, `go.mod`,
   `composer.json`, `Gemfile`, `pom.xml`, `pyproject.toml`, `Package.swift`,
-  and the npm lockfiles), so an edit to a test-labelled section or lockfile
-  invalidates the cached graph and the scope classification is recomputed.
+  and the npm lockfiles) and every manifest that shapes the root declaration
+  set (`pubspec.yaml`, `DESCRIPTION`, `META.json`, `setup.cfg`, `mix.exs`,
+  `rebar.config`, `conanfile.py`, `conanfile.txt`, `build.gradle[.kts]`, and
+  the package-named `*.csproj` / `*.gemspec` / `*.podspec` / `*.rockspec` /
+  `*.opam` / `*.cabal`), so an edit to a test-labelled section, a lockfile,
+  or a declared dependency invalidates the cached graph and the graph is
+  rebuilt from the new content.
 - **Eviction**: `Put_Cached` evicts oldest-first by modification time when more
   than `--cache-max` entries (default `4096`) accumulate. `Eviction_Count`
   tracks removals and is reported in the ANSI cache line.

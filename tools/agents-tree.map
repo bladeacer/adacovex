@@ -75,8 +75,8 @@ src/tests/adacovex_tldr_tests	tldr installer tests (48)
 src/tests/adacovex_install_tests	Installation-method tests (23)
 src/tests/adacovex_renderer_svg_tests	SVG renderer tests (161)
 src/tests/adacovex_renderer_tests	HTML/Markdown renderer tests (58)
-src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (371)
-src/tests/test_runner	Test suite entry point (2180 tests)
+src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (524)
+src/tests/test_runner	Test suite entry point (2333 tests)
 src/parsers/adacovex-parsers-manifest-req_entry	Parse the first requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-collect_req_entries	Collect every requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-register_root_python_deps	Register root requirements*.txt entries as dev-scope pypi components
@@ -112,7 +112,10 @@ src/parsers/adacovex-parsers-manifest-is_vendor_dir_name	Whether a directory nam
 src/parsers/adacovex-parsers-manifest-resolve_gpr_deps	Resolve GPR with-clause dependencies into the graph
 src/parsers/adacovex-parsers-manifest-xml_tag_value	Extract the first <Tag>value</Tag> from an XML file
 src/parsers/adacovex-parsers-manifest-discover_generic_vendored	Discover vendored components via their ecosystem manifests
-src/parsers/adacovex-parsers-manifest-read_vendor_manifest	Read a vendored manifest (table-driven filename -> ecosystem)
+src/parsers/adacovex-parsers-manifest-read_vendor_manifest	Read a vendored manifest (table-driven filename/suffix -> ecosystem; syft's language set + Ada)
+src/parsers/adacovex-parsers-manifest-first_file_with_suffix	Locate the first package-named manifest in a directory (.csproj, .gemspec, .opam, .cabal)
+src/parsers/adacovex-parsers-manifest-expr_value	Read a "Key: value" / "Key = value" / "{Key, value}" declaration from a plain key-value manifest
+src/parsers/adacovex-parsers-manifest-register_root_manifest_deps	Register the root manifest's declared deps for the composer/cargo/pub/cran/hackage/opam ecosystems
 src/parsers/adacovex-parsers-manifest-resolve_ecosystem_metadata	Resolve version/licence/website from the package registry
 src/parsers/adacovex-parsers-manifest-find_gpr	Locate the .gpr file for a crate name in collected files
 src/parsers/adacovex-parsers-manifest-read_manifest	Read root-project metadata from an Alire manifest

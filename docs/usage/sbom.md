@@ -139,6 +139,26 @@ never register a component.
   (`pip index versions <pkg>`) when `pip` is installed and online. A
   missing registry or a failing resolve keeps the name-only entry -- no
   version or licence is ever guessed.
+- **The other ecosystems' root manifests** register through one table,
+  so a language is a row rather than a code path. A base section is
+  `base` scope and a dev section is `dev` scope:
+
+  | Manifest | Base section | Dev section |
+  |----------|--------------|-------------|
+  | `composer.json` | `require` | `require-dev` |
+  | `Cargo.toml` | `[dependencies]` | `[dev-dependencies]` |
+  | `pubspec.yaml` | `dependencies` | `dev_dependencies` |
+  | `DESCRIPTION` (R) | `Imports` | `Suggests` |
+  | `*.cabal` | `build-depends` | -- |
+
+  A declaration states a constraint, not a resolved version, so the
+  version is resolved from the ecosystem's registry CLI when one exists
+  and stays empty otherwise. A composer platform package (`php`) and an
+  extension (`ext-json`) name the runtime rather than a distribution, so
+  they never become components. A pubspec entry's nested map
+  (`version:`, `sdk:`) is that entry's metadata, so no nested key
+  registers a component, and an R `Imports` continuation line extends
+  the same list.
 
 A vendored package keeps its own manifest authoritative: its bundled
 subpackages (`zod/v4`) and its source trees (`zod/src`) are parts of the
@@ -157,23 +177,61 @@ first.
 
 A vendored manifest maps directly onto its language and PURL type:
 
-| Manifest file       | PURL type      | Language   |
-|---------------------|----------------|------------|
-| `package.json`      | `pkg:npm`      | JavaScript |
-| `Cargo.toml`        | `pkg:cargo`    | Rust       |
-| `go.mod`            | `pkg:golang`   | Go         |
-| `pyproject.toml`    | `pkg:pypi`     | Python     |
-| `requirements*.txt` | `pkg:pypi`     | Python     |
-| `composer.json`     | `pkg:composer` | PHP        |
-| `Gemfile`           | `pkg:gem`      | Ruby       |
-| `pom.xml`           | `pkg:maven`    | Java       |
-| `Package.swift`     | `pkg:swift`    | Swift      || Alire manifest      | `pkg:alire`     | Ada        |
-| `.gpr` project file | `pkg:gpr`       | Ada        |
+| Manifest file       | PURL type         | Language   |
+|---------------------|-------------------|------------|
+| `package.json`      | `pkg:npm`         | JavaScript |
+| `Cargo.toml`        | `pkg:cargo`       | Rust       |
+| `go.mod`            | `pkg:golang`      | Go         |
+| `pyproject.toml`    | `pkg:pypi`        | Python     |
+| `setup.cfg`         | `pkg:pypi`        | Python     |
+| `requirements*.txt` | `pkg:pypi`        | Python     |
+| `composer.json`     | `pkg:composer`    | PHP        |
+| `META.json`         | `pkg:cpan`        | Perl       |
+| `Gemfile`           | `pkg:gem`         | Ruby       |
+| `*.gemspec`         | `pkg:gem`         | Ruby       |
+| `pom.xml`           | `pkg:maven`       | Java       |
+| `build.gradle`      | `pkg:maven`       | Java       |
+| `build.gradle.kts`  | `pkg:maven`       | Kotlin     |
+| `Package.swift`     | `pkg:swift`       | Swift      |
+| `*.podspec`         | `pkg:cocoapods`   | Swift      |
+| `pubspec.yaml`      | `pkg:pub`         | Dart       |
+| `*.csproj`          | `pkg:nuget`       | C#         |
+| `mix.exs`           | `pkg:hex`         | Elixir     |
+| `rebar.config`      | `pkg:hex`         | Erlang     |
+| `DESCRIPTION`       | `pkg:cran`        | R          |
+| `conanfile.py`      | `pkg:conan`       | C++        |
+| `conanfile.txt`     | `pkg:conan`       | C++        |
+| `*.rockspec`        | `pkg:luarocks`    | Lua        |
+| `*.opam`            | `pkg:opam`        | OCaml      |
+| `*.cabal`           | `pkg:hackage`     | Haskell    |
+| Alire manifest      | `pkg:alire`       | Ada        |
+| `.gpr` project file | `pkg:gpr`         | Ada        |
 
-The same mapping applies to the root project's own `package.json`,
-`go.mod`, and `requirements*.txt`, which register even when no vendored
-tree carries them. Their scopes and their structural read are on
-[Root project declarations](#root-project-declarations) below.
+The set is the union of the ecosystems adacovex reads and the languages
+syft catalogues, plus Ada: every language syft resolves from a source
+tree has a manifest row here. Six ecosystems name their manifest after
+the package rather than the ecosystem (`*.csproj`, `*.gemspec`,
+`*.podspec`, `*.rockspec`, `*.opam`, `*.cabal`), so a row may carry a
+suffix instead of a fixed filename. Every row has a committed mini
+project under `src/tests/fixtures/ecosystems/`, so the language list is
+checked by the test suite against a real manifest rather than against a
+string in a test.
+
+`pkg:maven` covers a Gradle build too. A Gradle build states a group id
+rather than an artefact name, so the component keeps the directory name
+and the build contributes only its version: a group id is a coordinate
+prefix, never a package name.
+
+Two rows read no licence key, because their manifest states one in a
+vocabulary that is not SPDX: R's `License:` field is free-form
+(`MIT + file LICENSE`) and CPAN's `META.json` uses CPAN's own words
+(`perl_5`). The licence file those packages ship classifies instead, so a
+licence is never mapped by guess.
+
+The same mapping applies to the root project's own manifests, which
+register even when no vendored tree carries them. Their scopes and their
+structural read are on
+[Root project declarations](#root-project-declarations) above.
 
 ### Extension-based inference
 
@@ -184,7 +242,8 @@ not from a guess. The supported extension list, the
 extension-over-manifest rule, and the mixed-language summary are on
 [SBOM dependency resolution](sbom-resolution.md#language-detection).
 
-The remaining sections of the original guide -- licence resolution, system
-dependencies, and test-dependency classification -- are covered on
-[SBOM dependency resolution](sbom-resolution.md). The component coverage is
+The remaining sections of the original guide -- licence resolution and
+test-dependency classification -- are covered on
+[SBOM dependency resolution](sbom-resolution.md), and the system-tool rules
+on [SBOM system dependencies](sbom-system.md). The component coverage is
 measured against syft on [SBOM comparison with syft](sbom-syft.md).

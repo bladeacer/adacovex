@@ -109,7 +109,7 @@ Pull requests should follow the following conventions.
   coverage (every subprogram the SPARK coverage report assesses proved), and
   the deliberate `SPARK_Mode (Off)` units keep the tree at Gold.
 - If you add or change behavior, extend the native test suite in `src/tests/`
-  (2180 tests across 29 categories) and run `just test`.
+  (2333 tests across 29 categories) and run `just test`.
 - Keep all source files pure ASCII: `just ascii-check`.
 - If a new CLI flag is added, mirror it as a matching GitHub Action input in
   `./action.yml` and document it in `docs/usage/cli-reference.md` and the README
@@ -163,6 +163,16 @@ Native (zero-dependency) framework (`Adacovex.Test_Support`, no AUnit). Source:
 [docs/test_result.md](docs/test_result.md) in a Markdown table format
 adacovex itself parses.
 
+Committed test data lives under `src/tests/fixtures/`. The SBOM ecosystem
+suite keeps one **mini project per language** there
+(`src/tests/fixtures/ecosystems/<ecosystem>/`): a real manifest, a source
+file, and a README that states what the project pins. The suite copies
+them into a temporary vendor tree and asserts the parsed name, version,
+licence, PURL type, and language, then reads the five projects that
+declare root dependencies as root projects. A new ecosystem row needs a
+fixture, so the claim "this language is supported" is always backed by a
+project a reader can open.
+
 | Category | Tests |
 |----------|-------|
 | Types conversions | 67 |
@@ -173,7 +183,7 @@ adacovex itself parses.
 | CLI config | 387 |
 | SVG renderer | 161 |
 | HTML/Markdown renderers | 58 |
-| SBOM generator | 371 |
+| SBOM generator | 524 |
 | Result cache | 36 |
 | IR synthesis | 42 |
 | Man page renderer | 30 |
@@ -194,4 +204,4 @@ adacovex itself parses.
 | Platform paths | 43 |
 | Install method | 23 |
 | tldr installer | 48 |
-| **Total** | **2180** |
+| **Total** | **2333** |

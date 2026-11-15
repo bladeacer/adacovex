@@ -96,7 +96,7 @@ Makefile) and `ninja` (from its recipe) still do. The `yams` sibling pin in
 `tests/e2e/cli_flags.py` adds the forbidden-tool check, and the e2e run
 passes 165 checks.
 
-Native suite: 2180/2180 passing (29 categories).
+Native suite: 2333/2333 passing (29 categories).
 
 `just prove-e2e` passes 132 checks. `just run-ada-crdt` is unchanged.
 

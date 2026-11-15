@@ -1,0 +1,9 @@
+cabal-version: 2.4
+name: mini-hackage
+version: 0.9.7
+license: BSD-3-Clause
+
+library
+  build-depends:
+      base >=4.7,
+      containers

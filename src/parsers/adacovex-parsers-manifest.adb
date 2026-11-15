@@ -639,15 +639,46 @@ package body Adacovex.Parsers.Manifest is
    is separate;
 
    --  First <Tag>...</Tag> occurrence on a single line of an XML file
-   --  (pom.xml). Returns the inner text, "" when absent.
+   --  (pom.xml, *.csproj). Returns the inner text, "" when absent.
    function Xml_Tag_Value (Path : String; Tag : String) return String
+   is separate;
+
+   --  Full path of the first ordinary file directly inside Dir whose base
+   --  name ends with Suffix, "" when there is none. Six ecosystems name
+   --  their manifest after the package instead of the ecosystem
+   --  (*.csproj, *.gemspec, *.podspec, *.rockspec, *.opam, *.cabal), so a
+   --  fixed filename cannot find them.
+   --  @param Dir  Directory to search (not descended into).
+   --  @param Suffix  Required base-name suffix, for example ".gemspec".
+   --  @return The full path of the first match, or "".
+   function First_File_With_Suffix
+     (Dir : String; Suffix : String) return String
+   is separate;
+
+   --  Read the value of a "Key <separator> value" declaration from a
+   --  manifest whose syntax is a plain key/value line rather than JSON,
+   --  TOML, or XML (pubspec.yaml, DESCRIPTION, *.cabal, *.opam, mix.exs,
+   --  rebar.config, build.gradle, *.gemspec, *.rockspec, conanfile.py).
+   --  One reader serves every such dialect, so a new language is a table
+   --  row in Read_Vendor_Manifest rather than a new code path.
+   --  @param Path  Path of the manifest file.
+   --  @param Style  Separator style ("colon", "equals", "either", "braced").
+   --  @param Key  Key to read (for example "name", "version", "vsn").
+   --  @return The value, or "" when absent or unreadable.
+   function Expr_Value
+     (Path : String; Style : String; Key : String) return String
    is separate;
 
    --  Probe Dir for the first recognised ecosystem manifest (in the defined
    --  priority order): package.json (npm), Cargo.toml (cargo), go.mod
-   --  (golang), pyproject.toml (pypi), composer.json (composer), Gemfile
-   --  (gem), pom.xml (maven), requirements*.txt (pypi), Package.swift
-   --  (swift). Name and version come from the manifest when present.
+   --  (golang), pyproject.toml / setup.cfg (pypi), composer.json
+   --  (composer), META.json (cpan), Gemfile (gem), pom.xml (maven),
+   --  Package.swift (swift), pubspec.yaml (pub), mix.exs / rebar.config
+   --  (hex), conanfile.py / conanfile.txt (conan), build.gradle[.kts]
+   --  (maven), DESCRIPTION (cran), requirements*.txt (pypi), and the
+   --  package-named *.csproj (nuget), *.gemspec (gem), *.podspec
+   --  (cocoapods), *.rockspec (luarocks), *.opam (opam), and *.cabal
+   --  (hackage). Name and version come from the manifest when present.
    --  Modules is the parsed vendor manifest of the vendor root the
    --  component was found under, empty when there is none. The caller falls
    --  back to the directory name or "" otherwise.
@@ -688,9 +719,12 @@ package body Adacovex.Parsers.Manifest is
    --  Scan it shallowly (max 2 levels):
    --    * A directory that carries an ecosystem manifest (package.json,
    --      Cargo.toml, go.mod, pyproject.toml, composer.json, Gemfile,
-   --      pom.xml, Package.swift, requirements*.txt) becomes one
-   --      Scope_Vendored component. The manifest names and versions it.
-   --      Its ecosystem PURL is pkg:npm/... or pkg:cargo/... and more.
+   --      pom.xml, Package.swift, pubspec.yaml, mix.exs, rebar.config,
+   --      DESCRIPTION, requirements*.txt, and the package-named
+   --      *.csproj / *.gemspec / *.podspec / *.rockspec / *.opam /
+   --      *.cabal) becomes one Scope_Vendored component. The manifest
+   --      names and versions it. Its ecosystem PURL is pkg:npm/... or
+   --      pkg:cargo/... and more.
    --    * A directory that holds Ada sources (.ads/.adb) without a manifest
    --      becomes a Scope_Vendored Ada component. It is named after the
    --      directory (for example a hand-vendored Ada library under
@@ -952,6 +986,25 @@ package body Adacovex.Parsers.Manifest is
    --  section shape is parsed defensively and a malformed pair is skipped.
    --  @param Blob  The stored blob text.
    procedure Deserialize_Set (Blob : String) is separate;
+
+   --  Register the dependencies the root project's own ecosystem
+   --  manifest declares when the root ecosystem is not Alire and not one
+   --  of the three the dedicated passes cover (npm, Go, Python). One table
+   --  row per ecosystem names the manifest, its dialect, its base and dev
+   --  sections, its PURL type, and its language: composer (composer.json),
+   --  cargo (Cargo.toml), pub (pubspec.yaml), cran (DESCRIPTION),
+   --  hackage (*.cabal), and the suffixed OCaml manifest. Every read is
+   --  structural: a JSON key must belong to the section object, a TOML or
+   --  YAML key to the section, and a comma list entry stops at its version
+   --  constraint. The registry resolver fills a version, licence, and
+   --  website gap where the ecosystem has a registry CLI; nothing is
+   --  guessed.
+   --  @param Target_Dir  Project root.
+   --  @param Graph  Component graph to register into.
+   procedure Register_Root_Manifest_Deps
+     (Target_Dir : String;
+      Graph      : in out Types.Implementation.Component_Vectors.Vector)
+   is separate;
 
    --  Discover system-tool dev dependencies referenced by the project.
    --  Walk the project tree and read only dev-facing build files: Makefile

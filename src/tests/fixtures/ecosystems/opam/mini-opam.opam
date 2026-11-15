@@ -1,0 +1,7 @@
+opam-version: "2.0"
+name: "mini-opam"
+version: "1.9.0"
+license: "ISC"
+depends: [
+  "dune" {>= "3.0"}
+]
