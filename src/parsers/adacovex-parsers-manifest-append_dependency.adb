@@ -26,6 +26,20 @@ begin
       then
          C := Graph (I);
          if Scope = Types.Scope_System then
+            --  A lockfile resolved a real language package of the same name
+            --  (the `cmake` crate next to the `cmake` tool). The package
+            --  keeps its identity: its versioned purl and its base, dev,
+            --  test, or transitive scope are facts a system row would
+            --  lose, and a system row must carry a generic purl.
+            if C.PURL_Len > 0
+              and then Ada.Strings.Fixed.Index
+                         (C.PURL (1 .. C.PURL_Len), "pkg:generic/")
+                       /= 1
+              and then Ada.Strings.Fixed.Index (C.PURL (1 .. C.PURL_Len), "@")
+                       > 0
+            then
+               return;
+            end if;
             C.Scope_Flags.Is_System := True;
             C.Scope_Flags.Is_Dev := True;
             C.Scope := Types.Scope_System;

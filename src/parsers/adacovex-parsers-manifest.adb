@@ -1006,6 +1006,45 @@ package body Adacovex.Parsers.Manifest is
       Graph      : in out Types.Implementation.Component_Vectors.Vector)
    is separate;
 
+   --  Resolve the transitive dependency set from the project's lockfiles
+   --  and register it in the graph. A manifest states the dependencies the
+   --  project declares; a lockfile states the set the project resolves,
+   --  which is larger, because each declared package pulls its own.
+   --  The lockfile set is a static table (Cargo.lock, poetry.lock,
+   --  Gemfile.lock, composer.lock, package-lock.json, packages.lock.json,
+   --  Package.resolved, pubspec.lock, mix.lock), and a row names the
+   --  filename, its dialect, the name and version keys, the PURL type, and
+   --  the language, so a new lockfile is a one-row edit. A declared package
+   --  keeps its base, dev, or test scope and takes the locked version when
+   --  the declaration states only a constraint; a package only the lockfile
+   --  names is a transitive component of the root. A licence is never read
+   --  from a lockfile.
+   --  @param Target_Dir  Project root directory.
+   --  @param Graph  Dependency graph to extend (root at index 1).
+   procedure Read_Lockfiles
+     (Target_Dir : String;
+      Graph      : in out Types.Implementation.Component_Vectors.Vector)
+   is separate;
+
+   --  Register the GitHub Actions workflow actions the project uses as
+   --  dev-scope dependencies of the root. A workflow action is a declared
+   --  dependency: `uses: owner/repo@ref` names an owner, a repository, and
+   --  a ref that CI runs, so the SBOM states it the way it states a package
+   --  manifest entry. The scan reads .github/workflows/*.yml and *.yaml and
+   --  the repository's own composite action.yml, because all three hold
+   --  the same `uses:` declaration. The version is the pinned ref (a tag
+   --  such as v4, or a commit SHA) and the PURL is
+   --  `pkg:github/<owner>/<repo>@<ref>`, the type syft uses for an action.
+   --  A local action (./path) is the project itself, a `docker://` image is
+   --  not a repository action, and an unresolved expression (${{ ... }})
+   --  states no ref, so none of them becomes a component.
+   --  @param Target_Dir  Project root directory.
+   --  @param Graph  Dependency graph to extend (root at index 1).
+   procedure Discover_Workflow_Actions
+     (Target_Dir : String;
+      Graph      : in out Types.Implementation.Component_Vectors.Vector)
+   is separate;
+
    --  Discover system-tool dev dependencies referenced by the project.
    --  Walk the project tree and read only dev-facing build files: Makefile
    --  variants, shell scripts, GNAT project files, CI workflows, and the
