@@ -1,0 +1,5 @@
+name = "mini_ada"
+description = "A mini Ada crate"
+version = "1.0.0"
+licenses = "MIT"
+project-files = ["mini.gpr"]

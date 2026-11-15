@@ -5,13 +5,16 @@ separate (Adacovex.Parsers.Manifest)
 --  never match, a commented line is skipped, and the key matches as a
 --  whole word so "name" never matches inside "description". The value
 --  must be a quoted string on the same physical line (TOML binds a key
---  and its value to one line); "" when absent. Cargo.toml is read from
---  [package] and pyproject.toml from [project] with [tool.poetry] as
---  the fallback, so a [dependencies] or [tool] table can never shadow
---  the package name or version. A physical line longer than Max_Line
---  fails loudly through Read_Line and yields "".
+--  and its value to one line); "" when absent. An empty Section reads the
+--  file's top level (the keys before the first header), which is how an
+--  Alire manifest states its crate identity. Cargo.toml is read from
+--  [package] and pyproject.toml from [project] with [tool.poetry] as the
+--  fallback, so a [dependencies] or [tool] table can never shadow the
+--  package name or version. A physical line longer than Max_Line fails
+--  loudly through Read_Line and yields "".
 --  @param Path  Path of the TOML file.
---  @param Section  Header text without brackets (for example "package").
+--  @param Section  Header text without brackets (for example "package"),
+--    or "" for the top level.
 --  @param Key  Key to read inside the section.
 --  @return The quoted value, or "" when absent or unreadable.
 function Toml_Section_Value
@@ -24,7 +27,8 @@ is
    Overflow : Boolean;
    Line_Num : Natural := 0;
 
-   In_Section : Boolean := False;
+   --  An empty Section means the top level, so the read starts inside it.
+   In_Section : Boolean := Section'Length = 0;
 
    function Is_Word_Char (C : Character) return Boolean is
    begin
@@ -122,7 +126,7 @@ is
       end;
    end Line_Value;
 begin
-   if Section'Length = 0 or else Key'Length = 0 then
+   if Key'Length = 0 then
       return "";
    end if;
    begin

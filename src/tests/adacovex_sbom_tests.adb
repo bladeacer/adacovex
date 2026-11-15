@@ -60,6 +60,31 @@ package body Adacovex_SBOM_Tests is
       return C;
    end Find_Name;
 
+   --  Whether a component's PURL is exactly P (a length-safe compare that
+   --  never slices past the bounded field).
+   function Purl_Is (C : Component_Info; P : String) return Boolean is
+   begin
+      return C.PURL_Len = P'Length and then C.PURL (1 .. P'Length) = P;
+   end Purl_Is;
+
+   --  Whether a component's version is exactly V.
+   function Ver_Is (C : Component_Info; V : String) return Boolean is
+   begin
+      return C.Version_Len = V'Length and then C.Version (1 .. V'Length) = V;
+   end Ver_Is;
+
+   --  Whether a component's license field is exactly L.
+   function Lic_Is (C : Component_Info; L : String) return Boolean is
+   begin
+      return C.License_Len = L'Length and then C.License (1 .. L'Length) = L;
+   end Lic_Is;
+
+   --  Whether a component's language field is exactly L.
+   function Lang_Is (C : Component_Info; L : String) return Boolean is
+   begin
+      return C.Language_Len = L'Length and then C.Language (1 .. L'Length) = L;
+   end Lang_Is;
+
    --  Every line must carry an even number of quote characters so that
    --  strings open and close on the same line.
    function Quotes_Balanced (S : String) return Boolean is
@@ -144,6 +169,114 @@ package body Adacovex_SBOM_Tests is
             Ada.Text_IO.Close (F);
          end if;
    end Write_File;
+
+   --  Copy one text file, line by line. The fixtures are small ASCII files,
+   --  so a line copy is enough and keeps the helper free of any binary I/O
+   --  assumption.
+   --  @param From  Source path.
+   --  @param To  Destination path.
+   procedure Copy_Text_File (From : String; To : String) is
+      In_F  : Ada.Text_IO.File_Type;
+      Out_F : Ada.Text_IO.File_Type;
+      Line  : String (1 .. 4_096);
+      Last  : Natural;
+   begin
+      Ada.Text_IO.Open (In_F, Ada.Text_IO.In_File, From);
+      Ada.Text_IO.Create (Out_F, Ada.Text_IO.Out_File, To);
+      while not Ada.Text_IO.End_Of_File (In_F) loop
+         Ada.Text_IO.Get_Line (In_F, Line, Last);
+         Ada.Text_IO.Put_Line (Out_F, Line (1 .. Last));
+      end loop;
+      Ada.Text_IO.Close (Out_F);
+      Ada.Text_IO.Close (In_F);
+   exception
+      when others =>
+         if Ada.Text_IO.Is_Open (In_F) then
+            Ada.Text_IO.Close (In_F);
+         end if;
+         if Ada.Text_IO.Is_Open (Out_F) then
+            Ada.Text_IO.Close (Out_F);
+         end if;
+   end Copy_Text_File;
+
+   --  Copy a directory tree to Depth levels, creating the destination.
+   --  @param From  Source directory.
+   --  @param To  Destination directory.
+   --  @param Depth  Current level (0 at the source root).
+   procedure Copy_Tree (From : String; To : String; Depth : Natural) is
+      use Ada.Directories;
+      Search : Search_Type;
+      Ent    : Directory_Entry_Type;
+   begin
+      if Depth > 4 then
+         return;
+      end if;
+      Create_Path (To);
+      Start_Search (Search, From, "");
+      begin
+         while More_Entries (Search) loop
+            Get_Next_Entry (Search, Ent);
+            declare
+               N : constant String := Simple_Name (Ent);
+            begin
+               if N /= "." and then N /= ".." then
+                  if Kind (Ent) = Directory then
+                     Copy_Tree
+                       (Ada.Directories.Full_Name (Ent),
+                        To & "/" & N,
+                        Depth + 1);
+                  elsif Kind (Ent) = Ordinary_File then
+                     Copy_Text_File
+                       (Ada.Directories.Full_Name (Ent), To & "/" & N);
+                  end if;
+               end if;
+            end;
+         end loop;
+      exception
+         when others =>
+            End_Search (Search);
+            raise;
+      end;
+      End_Search (Search);
+   end Copy_Tree;
+
+   --  Copy every committed ecosystem fixture into Vendor, one directory per
+   --  language, so the vendored walk reads each mini project exactly as it
+   --  reads an installed dependency. The tree is rebuilt from scratch, so a
+   --  fixture that was renamed or deleted cannot survive in obj/.
+   --  @param Root  Temporary project root to assemble.
+   --  @param Vendor  Its vendor directory.
+   procedure Assemble_Language_Fixtures (Root : String; Vendor : String) is
+      use Ada.Directories;
+      Source : constant String := "src/tests/fixtures/ecosystems";
+      Search : Search_Type;
+      Ent    : Directory_Entry_Type;
+   begin
+      if Exists (Root) then
+         Delete_Tree (Root);
+      end if;
+      Create_Path (Vendor);
+      Start_Search (Search, Source, "");
+      begin
+         while More_Entries (Search) loop
+            Get_Next_Entry (Search, Ent);
+            declare
+               N : constant String := Simple_Name (Ent);
+            begin
+               if Kind (Ent) = Directory and then N /= "." and then N /= ".."
+               then
+                  Copy_Tree
+                    (Ada.Directories.Full_Name (Ent), Vendor & "/" & N, 0);
+               end if;
+            end;
+         end loop;
+      exception
+         when others =>
+            End_Search (Search);
+            raise;
+      end;
+      End_Search (Search);
+   end Assemble_Language_Fixtures;
 
    --  Path of the cached referenced-tool set inside Dir, or "" when no
    --  such entry exists. A cache entry lives at <root>/<2 chars>/<key>,
@@ -2188,6 +2321,71 @@ package body Adacovex_SBOM_Tests is
          end;
       end;
 
+      --  Licence shape: one SPDX identifier goes in license.id, while an
+      --  SPDX expression (which always carries a space or a parenthesis)
+      --  goes in expression, the only shape CycloneDX 1.5 permits for a
+      --  choice or a combination of licences.
+      declare
+         Graph   : Component_Vectors.Vector;
+         Success : Boolean := False;
+         S       : constant String := "obj/sbom_test/cdx_license.json";
+
+         procedure Add (Name : String; Lic : String) is
+            C : Component_Info;
+         begin
+            C.Name (1 .. Name'Length) := Name;
+            C.Name_Len := Name'Length;
+            C.License (1 .. Lic'Length) := Lic;
+            C.License_Len := Lic'Length;
+            C.Ref (1 .. Name'Length) := Name;
+            C.Ref_Len := Name'Length;
+            C.PURL (1 .. Name'Length) := Name;
+            C.PURL_Len := Name'Length;
+            C.Kind := Dependency_Component;
+            C.Parent := 1;
+            Graph.Append (C);
+         end Add;
+      begin
+         Graph := Component_Vectors.Empty_Vector;
+         declare
+            Root : Component_Info;
+         begin
+            Root.Name (1 .. 4) := "demo";
+            Root.Name_Len := 4;
+            Root.Ref (1 .. 4) := "demo";
+            Root.Ref_Len := 4;
+            Root.PURL (1 .. 4) := "demo";
+            Root.PURL_Len := 4;
+            Root.Kind := Root_Component;
+            Root.Parent := 0;
+            Graph.Append (Root);
+         end;
+         Add ("one-id", "MIT");
+         Add ("choice", "Apache-2.0 OR MIT");
+         Add ("exception", "Apache-2.0 WITH LLVM-exception");
+         Write_SBOM
+           (CycloneDX_JSON, S, Graph, "Gold", DO_178C, DAL_C, False, Success);
+         R.Check (Success, "cdx licence shapes written");
+         declare
+            T : constant String := Read_All (S);
+         begin
+            R.Check
+              (Contains (T, """id"": ""MIT"""),
+               "cdx single SPDX id stays license.id");
+            R.Check
+              (Contains (T, """expression"": ""Apache-2.0 OR MIT"""),
+               "cdx OR expression uses license.expression");
+            R.Check
+              (Contains
+                 (T, """expression"": ""Apache-2.0 WITH LLVM-exception"""),
+               "cdx WITH expression uses license.expression");
+            R.Check
+              (not Contains (T, """id"": ""Apache-2.0 OR MIT"""),
+               "cdx never writes an expression into license.id");
+            R.Check (Quotes_Balanced (T), "cdx licence quotes balanced");
+         end;
+      end;
+
       --  SPDX 2.3 JSON rendering.
       declare
          Graph   : Component_Vectors.Vector;
@@ -2377,6 +2575,240 @@ package body Adacovex_SBOM_Tests is
               (C.Language (1 .. C.Language_Len), "JavaScript")
             > 0,
             "mixlib summary lists JavaScript");
+      end;
+
+      --  Language coverage: each committed mini project under
+      --  src/tests/fixtures/ecosystems is copied into one vendor tree, so
+      --  every language is parsed through the path a vendored dependency
+      --  takes. The set is the union of adacovex's own ecosystems and the
+      --  languages syft catalogues from a source tree, plus Ada.
+      declare
+         Root    : constant String := "obj/sbom_lang_fixture";
+         Vendor  : constant String := Root & "/vendor";
+         Graph   : Component_Vectors.Vector;
+         Success : Boolean := False;
+
+         --  Assert one copied fixture's parsed identity.
+         --  @param Name  Expected component name.
+         --  @param Version  Expected version ("" when the manifest states
+         --    none).
+         --  @param License  Expected licence ("" when no manifest or licence
+         --    file answers).
+         --  @param Purl  Expected PURL, version suffix included.
+         --  @param Lang  Language label the component must carry.
+         procedure Check_Lang
+           (Name    : String;
+            Version : String;
+            License : String;
+            Purl    : String;
+            Lang    : String)
+         is
+            C : constant Component_Info := Find_Name (Graph, Name);
+         begin
+            R.Check (C.Name_Len > 0, "fixture component: " & Name);
+            R.Check (Ver_Is (C, Version), "fixture version: " & Name);
+            R.Check (Lic_Is (C, License), "fixture licence: " & Name);
+            R.Check (Purl_Is (C, Purl), "fixture purl: " & Name);
+            R.Check
+              (Contains (C.Language (1 .. C.Language_Len), Lang),
+               "fixture language: " & Name);
+         end Check_Lang;
+
+         --  Read one copied mini project as the graph root, so its own
+         --  declared dependencies register.
+         --  @param Dir_Name  Fixture directory name.
+         --  @param G  Output graph.
+         --  @param OK  Output success flag.
+         procedure Build_Root
+           (Dir_Name : String;
+            G        : out Component_Vectors.Vector;
+            OK       : out Boolean)
+         is
+            D : constant String := Vendor & "/" & Dir_Name;
+         begin
+            Adacovex.Parsers.Manifest.Build_Dependency_Graph
+              (D, D & "/alire.toml", G, OK);
+         end Build_Root;
+      begin
+         Assemble_Language_Fixtures (Root, Vendor);
+         Adacovex.Parsers.Manifest.Build_Dependency_Graph
+           (Root, Root & "/alire.toml", Graph, Success);
+         R.Check (Success, "language fixture graph success");
+
+         --  One assertion set per language, in the order of the table in
+         --  Read_Vendor_Manifest.
+         Check_Lang
+           ("mini-npm",
+            "1.2.3",
+            "MIT",
+            "pkg:npm/mini-npm@1.2.3",
+            "JavaScript");
+         Check_Lang
+           ("mini-cargo",
+            "0.4.0",
+            "Apache-2.0",
+            "pkg:cargo/mini-cargo@0.4.0",
+            "Rust");
+         Check_Lang
+           ("example.com/mini-go",
+            "",
+            "",
+            "pkg:golang/example.com/mini-go",
+            "Go");
+         Check_Lang
+           ("mini-pyproject",
+            "2.1.0",
+            "MIT",
+            "pkg:pypi/mini-pyproject@2.1.0",
+            "Python");
+         Check_Lang
+           ("mini-setupcfg",
+            "0.9.1",
+            "BSD-3-Clause",
+            "pkg:pypi/mini-setupcfg@0.9.1",
+            "Python");
+         Check_Lang ("sphinx", "9.1.0", "", "pkg:pypi/sphinx@9.1.0", "Python");
+         Check_Lang
+           ("acme/mini-composer",
+            "1.0.0",
+            "BSD-3-Clause",
+            "pkg:composer/acme/mini-composer@1.0.0",
+            "PHP");
+         Check_Lang
+           ("mini-cpan", "0.8.1", "", "pkg:cpan/mini-cpan@0.8.1", "Perl");
+         Check_Lang ("rake", "13.0.6", "", "pkg:gem/rake@13.0.6", "Ruby");
+         Check_Lang
+           ("mini-gemspec",
+            "4.0.1",
+            "MIT",
+            "pkg:gem/mini-gemspec@4.0.1",
+            "Ruby");
+         Check_Lang
+           ("com.example:mini-maven",
+            "3.2.1",
+            "",
+            "pkg:maven/com.example:mini-maven@3.2.1",
+            "Java");
+         Check_Lang ("gradle", "2.3.4", "", "pkg:maven/gradle@2.3.4", "Java");
+         Check_Lang
+           ("gradle-kts", "1.4.2", "", "pkg:maven/gradle-kts@1.4.2", "Kotlin");
+         Check_Lang ("swift", "", "", "pkg:swift/swift", "Swift");
+         Check_Lang
+           ("mini-cocoapods",
+            "0.6.0",
+            "Apache-2.0",
+            "pkg:cocoapods/mini-cocoapods@0.6.0",
+            "Swift");
+         Check_Lang
+           ("mini_pub", "1.4.2", "", "pkg:pub/mini_pub@1.4.2", "Dart");
+         Check_Lang
+           ("MiniNuget",
+            "2.5.0",
+            "Apache-2.0",
+            "pkg:nuget/MiniNuget@2.5.0",
+            "C#");
+         Check_Lang
+           ("mini_elixir", "3.1.0", "", "pkg:hex/mini_elixir@3.1.0", "Elixir");
+         Check_Lang
+           ("hex-erlang", "1.5.0", "", "pkg:hex/hex-erlang@1.5.0", "Erlang");
+         Check_Lang
+           ("miniCran", "1.2.3", "MIT", "pkg:cran/miniCran@1.2.3", "R");
+         Check_Lang
+           ("mini-conan", "0.5.2", "MIT", "pkg:conan/mini-conan@0.5.2", "C++");
+         Check_Lang ("conan-txt", "", "", "pkg:conan/conan-txt", "C++");
+         Check_Lang
+           ("mini-luarocks",
+            "1.2-1",
+            "MIT",
+            "pkg:luarocks/mini-luarocks@1.2-1",
+            "Lua");
+         Check_Lang
+           ("mini-opam", "1.9.0", "ISC", "pkg:opam/mini-opam@1.9.0", "OCaml");
+         Check_Lang
+           ("mini-hackage",
+            "0.9.7",
+            "BSD-3-Clause",
+            "pkg:hackage/mini-hackage@0.9.7",
+            "Haskell");
+         Check_Lang
+           ("mini_ada", "1.0.0", "MIT", "pkg:alire/mini_ada@1.0.0", "Ada");
+
+         --  The five ecosystems that declare root dependencies: the same
+         --  mini project read as the graph root must register its base and
+         --  dev scopes, and a platform package, a nested map key, or an R
+         --  continuation line must not invent one.
+         declare
+            G  : Component_Vectors.Vector;
+            OK : Boolean := False;
+         begin
+            Build_Root ("composer", G, OK);
+            R.Check (OK, "composer root graph");
+            R.Check
+              (Find_Name (G, "monolog/monolog").Scope = Scope_Base,
+               "composer require is base scope");
+            R.Check
+              (Find_Name (G, "phpunit/phpunit").Scope = Scope_Dev,
+               "composer require-dev is dev scope");
+            R.Check
+              (Count_Name (G, "php") = 0
+               and then Count_Name (G, "ext-json") = 0
+               and then Count_Name (G, "composer-runtime-api") = 0,
+               "composer platform packages are never components");
+
+            Build_Root ("cargo", G, OK);
+            R.Check (OK, "cargo root graph");
+            R.Check
+              (Find_Name (G, "serde").Scope = Scope_Base,
+               "cargo dependency is base scope");
+            R.Check
+              (Lang_Is (Find_Name (G, "serde"), "Rust"),
+               "cargo dependency language");
+            R.Check
+              (Find_Name (G, "tempfile").Scope = Scope_Dev,
+               "cargo dev-dependency is dev scope");
+
+            Build_Root ("pub", G, OK);
+            R.Check (OK, "pub root graph");
+            R.Check
+              (Find_Name (G, "http").Scope = Scope_Base,
+               "pub dependency is base scope");
+            R.Check
+              (Find_Name (G, "provider").Scope = Scope_Base,
+               "pub nested-map dependency is base scope");
+            R.Check
+              (Find_Name (G, "flutter_test").Scope = Scope_Dev,
+               "pub dev_dependencies is dev scope");
+            R.Check
+              (Count_Name (G, "sdk") = 0,
+               "a nested pub map key is never a component");
+
+            Build_Root ("cran", G, OK);
+            R.Check (OK, "cran root graph");
+            R.Check
+              (Find_Name (G, "dplyr").Scope = Scope_Base,
+               "R Imports entry is base scope");
+            R.Check
+              (Count_Name (G, "purrr") = 1,
+               "R Imports entry after a constraint registers");
+            R.Check
+              (Count_Name (G, "tidyr") = 1,
+               "R Imports continuation line registers");
+            R.Check
+              (Find_Name (G, "testthat").Scope = Scope_Dev,
+               "R Suggests entry is dev scope");
+
+            Build_Root ("hackage", G, OK);
+            R.Check (OK, "hackage root graph");
+            R.Check
+              (Find_Name (G, "base").Scope = Scope_Base,
+               "cabal build-depends is base scope");
+            R.Check
+              (Ver_Is (Find_Name (G, "base"), ""),
+               "a cabal constraint is never a version");
+            R.Check
+              (Count_Name (G, "containers") = 1,
+               "cabal continuation entry registers");
+         end;
       end;
 
       --  Test-labelled vendored npm dependencies: a package whose name

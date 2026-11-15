@@ -53,8 +53,9 @@ a technical word in any doc, docstring, or changelog.
   dependency views, the metric charts, the themes, and the bundled offline
   manual.
 - [SBOM](usage/sbom.md) -- the bill-of-materials generator, with
-  [dependency resolution](usage/sbom-resolution.md) for licences and versions
-  and the [syft comparison](usage/sbom-syft.md).
+  [dependency resolution](usage/sbom-resolution.md) for licences and versions,
+  [system dependencies](usage/sbom-system.md), and the
+  [syft comparison](usage/sbom-syft.md).
 - [Global configuration and state](usage/configuration.md) -- the optional
   the global configuration file file, the environment variables, and the cache
   and toolchain directories.
@@ -164,6 +165,7 @@ usage/dashboard-charts
 usage/dashboard-docs
 usage/sbom
 usage/sbom-resolution
+usage/sbom-system
 usage/sbom-syft
 usage/configuration
 usage/platforms

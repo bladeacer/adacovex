@@ -477,6 +477,33 @@ package body Adacovex.Renderers.SBOM is
       end;
    end ISO_Timestamp;
 
+   --  Whether the licence text is a single SPDX identifier.
+   --  A CycloneDX licence object carries one identifier in "license": {"id"}
+   --  and an SPDX **expression** (for example "Apache-2.0 OR MIT", or
+   --  "Apache-2.0 WITH LLVM-exception") in "expression". An identifier uses
+   --  letters, digits, '.', '-', and '+' only (MIT, Apache-2.0, GPL-2.0+), so
+   --  any other character means the text is an expression.
+   --  @param S  Licence text stated by the manifest or the licence file.
+   --  @return True when the text is a single SPDX identifier.
+   function Is_SPDX_Id (S : String) return Boolean with SPARK_Mode => On is
+   begin
+      if S'Length = 0 then
+         return False;
+      end if;
+      for Ch of S loop
+         if Ch not in 'A' .. 'Z'
+           and then Ch not in 'a' .. 'z'
+           and then Ch not in '0' .. '9'
+           and then Ch /= '.'
+           and then Ch /= '-'
+           and then Ch /= '+'
+         then
+            return False;
+         end if;
+      end loop;
+      return True;
+   end Is_SPDX_Id;
+
    --  Emit a single CycloneDX component object. Used for the root component
    --  in metadata and for every dependency in the components array.
    procedure Write_CDX_Component
@@ -526,16 +553,28 @@ package body Adacovex.Renderers.SBOM is
          Fld ("purl", C.PURL (1 .. C.PURL_Len), True);
       end if;
       if C.License_Len > 0 then
-         if not First_Field then
-            Raw (F, ",");
-         end if;
-         NL (F);
-         Raw (F, Indent);
-         JStr (F, "licenses");
-         Raw (F, ": [{""license"": {""id"": ");
-         JStr (F, C.License (1 .. C.License_Len));
-         Raw (F, "}}]");
-         First_Field := False;
+         declare
+            Lic : constant String := C.License (1 .. C.License_Len);
+         begin
+            if not First_Field then
+               Raw (F, ",");
+            end if;
+            NL (F);
+            Raw (F, Indent);
+            JStr (F, "licenses");
+            if Is_SPDX_Id (Lic) then
+               Raw (F, ": [{""license"": {""id"": ");
+               JStr (F, Lic);
+               Raw (F, "}}]");
+            else
+               --  An SPDX expression is not a single identifier, so it goes
+               --  in the expression form that CycloneDX 1.5 allows.
+               Raw (F, ": [{""expression"": ");
+               JStr (F, Lic);
+               Raw (F, "}]");
+            end if;
+            First_Field := False;
+         end;
       end if;
       if C.Description_Len > 0 then
          Fld ("description", C.Description (1 .. C.Description_Len), True);

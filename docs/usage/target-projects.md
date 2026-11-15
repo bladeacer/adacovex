@@ -72,13 +72,18 @@ This is the only tier whose assessment a project can fully rely on.
 
 These languages' manifests contribute **first-class dependency graph** entries
 (with the right PURL type, scope, and licence resolution): `package.json`
-(npm), `Cargo.toml` / `Cargo.lock` (cargo), `go.mod` (go), `pyproject.toml`
-and `requirements*.txt` (pypi), `composer.json` (composer), `Gemfile` /
-`Gemfile.lock` (gem), `pom.xml` (maven), `Package.swift` (swift), plus Alire
-and GPR files for Ada. Each ecosystem gives the resolved dependency its
-language, PURL, scope (base / dev / test / transitive / vendored), and a
-licence when the local manifest or registry answers. See
-[sbom.md](sbom.md) for the full manifest table.
+(npm), `Cargo.toml` / `Cargo.lock` (cargo), `go.mod` (go), `pyproject.toml`,
+`setup.cfg`, and `requirements*.txt` (pypi), `composer.json` (composer),
+`META.json` (cpan), `Gemfile` / `*.gemspec` (gem), `pom.xml` and
+`build.gradle[.kts]` (maven), `Package.swift` / `*.podspec` (cocoapods and
+swift), `pubspec.yaml` (pub), `*.csproj` (nuget), `mix.exs` / `rebar.config`
+(hex), `DESCRIPTION` (cran), `conanfile.py` / `conanfile.txt` (conan),
+`*.rockspec` (luarocks), `*.opam` (opam), `*.cabal` (hackage), plus Alire
+and GPR files for Ada. The set is the union of the ecosystems adacovex
+reads and the languages syft catalogues, plus Ada. Each ecosystem gives the
+resolved dependency its language, PURL, scope (base / dev / test /
+transitive / vendored), and a licence when the local manifest or registry
+answers. See [sbom.md](sbom.md) for the full manifest table.
 
 ### Extension-detected languages -- component language, complexity, test deps
 

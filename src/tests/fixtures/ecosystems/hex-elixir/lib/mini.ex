@@ -1,0 +1,2 @@
+defmodule Mini do
+end

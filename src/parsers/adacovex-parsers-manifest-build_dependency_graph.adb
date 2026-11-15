@@ -236,6 +236,12 @@ begin
    --  transitive, and both take the version go.mod states.
    Register_Root_Go_Deps (Target_Dir, Graph);
 
+   --  Register the dependencies the root's own ecosystem manifest declares
+   --  for the ecosystems no dedicated pass covers (composer, cargo, pub,
+   --  cran, hackage, and opam). The read is structural and the ecosystem
+   --  table decides the sections, so a new language adds no code here.
+   Register_Root_Manifest_Deps (Target_Dir, Graph);
+
    Success := Root.Name_Len > 0;
 
    --  Store the freshly resolved graph for the next run. Store it only on

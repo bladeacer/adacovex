@@ -131,17 +131,35 @@ function Vendored_Hash (Target_Dir : String) return String is
       end loop;
    end Hash_Tree;
 
+   --  Whether a file name ends with Suffix. A package-named manifest
+   --  (*.csproj, *.gemspec, *.podspec, *.rockspec, *.opam, *.cabal) has no
+   --  fixed name, so it is matched by suffix.
+   --  @param N  File base name.
+   --  @param Suffix  Required base-name suffix, for example ".cabal".
+   --  @return True when N ends with Suffix and is longer than it.
+   function Has_Suffix (N : String; Suffix : String) return Boolean is
+   begin
+      return
+        Suffix'Length > 0
+        and then N'Length > Suffix'Length
+        and then N (N'Last - Suffix'Length + 1 .. N'Last) = Suffix;
+   end Has_Suffix;
+
    --  Whether a file name is a supported-language project manifest that
    --  can own a vendored directory (the file set Collect_Owner_Test_Names
-   --  reads, plus the npm lockfiles it scans). Hashing these files makes
-   --  the graph key sound: editing the owning manifest's test-labelled
-   --  sections (or its npm lockfiles) invalidates the cached graph so the
-   --  scope classification is recomputed.
+   --  reads, plus the npm lockfiles it scans) or that shapes the root
+   --  declaration set (every manifest Register_Root_Manifest_Deps reads).
+   --  Hashing these files makes the graph key sound: editing the owning
+   --  manifest's test-labelled sections (or its npm lockfiles, or the
+   --  dependencies it declares) invalidates the cached graph so the graph
+   --  is rebuilt from the new content.
    --  @param N  File base name.
-   --  @return True for package.json, Cargo.toml, Cargo.lock, go.mod,
-   --    composer.json, Gemfile, pom.xml, pyproject.toml, Package.swift,
-   --    and the npm lockfiles pnpm-lock.yaml, package-lock.json, and
-   --    yarn.lock.
+   --  @return True for the fixed-name manifests and lockfiles (package.json,
+   --    Cargo.toml, Cargo.lock, go.mod, composer.json, Gemfile, pom.xml,
+   --    pyproject.toml, Package.swift, the npm lockfiles, pubspec.yaml,
+   --    DESCRIPTION, META.json, setup.cfg, mix.exs, rebar.config,
+   --    conanfile.py, conanfile.txt, build.gradle, build.gradle.kts) and a
+   --    file carrying one of the package-named suffixes.
    function Is_Owner_Manifest (N : String) return Boolean is
    begin
       return
@@ -156,7 +174,23 @@ function Vendored_Hash (Target_Dir : String) return String is
         or else N = "Package.swift"
         or else N = "pnpm-lock.yaml"
         or else N = "package-lock.json"
-        or else N = "yarn.lock";
+        or else N = "yarn.lock"
+        or else N = "pubspec.yaml"
+        or else N = "DESCRIPTION"
+        or else N = "META.json"
+        or else N = "setup.cfg"
+        or else N = "mix.exs"
+        or else N = "rebar.config"
+        or else N = "conanfile.py"
+        or else N = "conanfile.txt"
+        or else N = "build.gradle"
+        or else N = "build.gradle.kts"
+        or else Has_Suffix (N, ".csproj")
+        or else Has_Suffix (N, ".gemspec")
+        or else Has_Suffix (N, ".podspec")
+        or else Has_Suffix (N, ".rockspec")
+        or else Has_Suffix (N, ".opam")
+        or else Has_Suffix (N, ".cabal");
    end Is_Owner_Manifest;
 begin
    --  Classic doc roots (.adacovex/patches, resources, vendor, assets).

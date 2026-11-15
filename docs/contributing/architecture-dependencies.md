@@ -93,20 +93,39 @@ it does so after the vendored walk, so an installed tree always wins.
 when no `node_modules` tree exists, and `Register_Root_Go_Deps`
 registers the `go.mod` require directives when no vendor tree resolved
 the modules. `Register_Root_Python_Deps` registers `requirements*.txt`
-the same way it always has. Every read is structural:
+the same way it always has. `Register_Root_Manifest_Deps` covers the
+remaining ecosystems through one table: each row names the manifest (a
+fixed filename or a package-named suffix), the read dialect, the base
+and dev sections, the PURL type, and the language, so a new language is
+a row rather than a code path. Every read is structural:
 `Collect_Json_Section_Names` tracks brace depth and string state,
 `Collect_Go_Requires` tracks require directives and their blocks, and
-`Pnpm_Importer_Version` walks the lockfile by indentation.
+`Pnpm_Importer_Version` walks the lockfile by indentation. The
+`Register_Root_Manifest_Deps` collectors match a TOML key inside its
+section header, a YAML key at its block's own indentation (a nested map
+is that entry's metadata), and a comma list entry up to its version
+constraint, extended by an indented continuation line.
 
 ### Vendored components and test-labelled dependencies (SBOM)
 
 `Discover_Generic_Vendored` walks the target tree for vendor roots
 (`node_modules`, `vendor`, `third_party`, and the other recognised names).
 Each directory inside a vendor root that carries an ecosystem manifest
-(`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, `composer.json`,
-`Gemfile`, `pom.xml`, `Package.swift`, `requirements*.txt`) becomes one
-component with its ecosystem purl (`pkg:npm/...`, `pkg:cargo/...`, and
-more). Its scope defaults to `vendored`.
+becomes one component with its ecosystem purl (`pkg:npm/...`,
+`pkg:cargo/...`, and more). Its scope defaults to `vendored`.
+`Read_Vendor_Manifest` owns the ecosystem table: one row per language
+(manifest filename or package-named suffix, PURL type, registry token,
+primary language, and the name, version, and licence keys). The table
+covers the union of adacovex's own ecosystems and the languages syft
+catalogues from a source tree, plus Ada.
+
+Three readers answer for the dialects a row can name: the JSON, TOML,
+and XML readers, plus `Expr_Value`, which reads a plain `Key: value` or
+`Key = value` line (pubspec, DESCRIPTION, cabal, opam, mix.exs,
+rebar.config, Gradle, gemspec, rockspec, conanfile). An ecosystem whose
+manifest states its licence in a non-SPDX vocabulary (R's free-form
+`License:` field, CPAN's `perl_5`) leaves the field empty, so a licence
+file beside the manifest classifies instead: a licence is never guessed.
 
 Only two directory shapes become components. A level-1 child of the
 vendor root is one (`node_modules/zod`). A level-2 child is one only

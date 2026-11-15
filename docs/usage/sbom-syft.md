@@ -60,6 +60,40 @@ The two tools therefore agree on one thing: a declared package set is what an
 SBOM should carry. They disagree on what counts as declared, because syft also
 inventories installed environments, generated fixtures, and CI action usage.
 
+## Language coverage
+
+The ecosystems adacovex reads are the **union** of the languages its own
+parser resolves and the ecosystems syft catalogues **from a package
+manifest in a source tree**: npm, cargo, go, pypi (pyproject, setup.cfg,
+requirements), composer, cpan, gem (Gemfile and gemspec), maven (pom and
+the Gradle Groovy and Kotlin DSL), swift and CocoaPods, pub, nuget, hex
+(Elixir and Erlang), cran, conan (python and text), luarocks, opam, and
+hackage -- plus Ada, which syft does not resolve at all. The v1.71.0 SBOM
+depth work brought every one of them into the ecosystem table, so an
+ecosystem is a table row rather than a code path.
+
+The table is the manifest-to-language mapping on
+[the SBOM page](sbom.md#manifest-declared-ecosystems). The coverage rule
+is the same for both tools: a declared package set is what an SBOM
+carries, so a directory that states its packages in its own manifest
+becomes a component set, and a directory that states none does not.
+
+Three groups of syft cataloguers stay out of scope, because none of them
+reads a package declaration. The OS package managers (apk, dpkg, rpm,
+pacman, portage, brew) inventory an **installed machine**, the binary
+cataloguers classify an **artefact**, and the nix, terraform, wordpress,
+and container-image cataloguers read a **store, a provider lock, or an
+image** rather than the project's own package set. adacovex audits
+source, and a language whose packages are not declared in a manifest has
+nothing for it to read.
+
+The two gaps that remain are deliberate. Installed environments stay
+unread (see [Gaps rejected](#gaps-rejected)), because reading one would
+describe a machine rather than a project. Per-language lockfile
+resolutions beyond the npm and Go paths stay a documented gap, because a
+lockfile names a transitive set that the declaration already bounds and
+adacovex reports only what the project itself declares.
+
 ## Gaps worth closing
 
 These gaps fit the zero-dependency rule, because each one is a file parse:

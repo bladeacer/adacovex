@@ -1,0 +1,1 @@
+return { answer = 42 }

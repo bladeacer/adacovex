@@ -22,11 +22,20 @@ than cherry-picking rows across versions.
 | v1.68.0 | closed | Output defaults and time | changelog `adacovex-1.68.0.md` |
 | v1.69.0 | closed | Compiler-style diagnostics and output | changelog `adacovex-1.69.0.md` |
 | v1.70.0 | closed | SBOM robustness and debt | changelog `adacovex-1.70.0.md` |
-| v1.71.0 | planned | SBOM depth and pipeline speed | 6b, 8b, 15b |
+| v1.71.0 | in progress | SBOM depth and pipeline speed | 6b-i (done), 6b-ii, 8b, 15b |
 | v1.72.0 | planned | Performance close-out | 15c, 8c, 9 close-out |
 | v1.73.0 | planned | Test suite portability and layout | 20 (test root and fixture projects), 16 (platform-agnostic suite) |
 | v1.74.0 | planned | Cache identity and diagnostics coverage | 18 (resolved-path, per-unit cache; 7-day expiry), 17a (contract-error matrix) |
 | v1.75.0 | planned | Dogfood close-out and CLI cohesion | 17b (Ada_CRDT robustness), 19 (contextual help audit), final docs/STE pass |
+
+## Session status (2026-11-15)
+
+v1.71.0 has started: item 6b-i landed the language-coverage work. The
+ecosystem table now reads every language syft catalogues from a source
+tree, plus Ada, so `adacovex sbom` and syft parse the same language set.
+The tree holds 2235/2235 tests. The remaining v1.71.0 items (6b-ii's
+lockfile transitive sets, 8b's bounded-string debt, 15b's single build
+and single proof run) stay open.
 
 ## Session status (2026-11-14)
 
@@ -97,7 +106,43 @@ and the 60 s gap is carried by items 15b-15c.
 
 ## v1.71.0 - SBOM depth and pipeline speed
 
-- [ ] Item 6b - Adopt the safe SBOM robustness gaps
+- [x] Item 6b-i - Language coverage: the logical OR of adacovex's and syft's
+      ecosystems
+
+**Goal:** `adacovex sbom` parses a source tree in every language syft
+catalogues, plus Ada. The set is the **union** of the ecosystems
+adacovex already read (npm, cargo, golang, pypi, composer, gem, maven,
+swift, alire, gpr) and the languages syft resolves from a directory scan,
+so nothing either tool parses is missing.
+
+**Delivered:** the ecosystem table in `Read_Vendor_Manifest` covers 24
+manifest shapes through six readers (JSON, TOML, XML, plus one generic
+key/value reader for the `Key: value`, `Key = value`, and `{Key, value}`
+dialects) and a package-named suffix row for the six ecosystems whose
+manifest name varies (`*.csproj`, `*.gemspec`, `*.podspec`, `*.rockspec`,
+`*.opam`, `*.cabal`). `Register_Root_Manifest_Deps` registers the root's
+own composer, cargo, pub, cran, hackage, and opam declarations from one
+row table, and its collectors read TOML sections, YAML blocks, and comma
+lists structurally. A licence stated in a non-SPDX vocabulary (R's
+free-form field, CPAN's `perl_5`) is left empty so the sibling licence
+file classifies instead -- a licence is never guessed.
+
+**Verified:** one committed **mini project per language** under
+`src/tests/fixtures/ecosystems/` (a real manifest, a source file, and a
+README). The suite copies each project into a temporary vendor tree and
+reads name, version, licence, PURL type, and language back out of the
+graph, then reads the five projects that declare root dependencies as
+root projects and asserts their base and dev scopes. A language is
+never claimed without a project a reader can open.
+
+**Files:** `src/parsers/adacovex-parsers-manifest-read_vendor_manifest.adb`,
+`-expr_value.adb`, `-first_file_with_suffix.adb`,
+`-register_root_manifest_deps.adb`, `src/tests/fixtures/ecosystems/`,
+`docs/usage/sbom.md`, `docs/usage/sbom-resolution.md`,
+`docs/usage/sbom-system.md`, `docs/usage/sbom-syft.md`,
+`docs/contributing/architecture-dependencies.md`, `docs/contributing/debt.md`.
+
+- [ ] Item 6b-ii - Adopt the remaining safe SBOM robustness gaps
 
 **Goal:** Implement the syft comparison gaps that fit the zero-dependency
 constraint: lockfile parsing, indirect-dependency handling, scope
