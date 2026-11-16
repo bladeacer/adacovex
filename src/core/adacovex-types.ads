@@ -1,12 +1,18 @@
 --  All domain types used across the adacovex tool chain.
 --  Package and subprogram collections use Ada.Containers.Vectors
---  (unbounded, up to Natural'Last ~ 2.1B). Fixed-size buffers
---  (Max_Path, Max_Line, Max_Desc_Str, and more) are bounded at compile time
---  with generous production-suitable limits (Max_Path=4096, Max_Line=262144
---  on a 64-bit host). Max_Path and Max_Line scale with the host word size
---  (System.Word_Size). Builds on narrower hosts use proportionally smaller
---  limits. Max_Line is large enough to read single-line declarations from
---  heavily generated Ada sources without silently draining them.
+--  (unbounded, up to Natural'Last ~ 2.1B). Fixed-size buffers are bounded at
+--  compile time with generous production-suitable limits. Every bound is one
+--  of the five Max_* constants below, and each has one overflow tier.
+--  Max_Path (16384 on a 64-bit host) and Max_Line (262144) scale with the
+--  host word size (System.Word_Size), so builds on narrower hosts use
+--  proportionally smaller limits. They **fail loudly**: an over-long path or
+--  physical line is reported and its file or subtree is skipped, never
+--  truncated and then parsed. Max_Id_Str (64), Max_Desc_Str (128), and
+--  Max_Filename (128) are semantic, not storage-size dependent, and stay
+--  fixed. They **clamp**: a copy stores the leading prefix and records its
+--  length in a companion length field, so generated input never raises
+--  Constraint_Error. Max_Line is large enough to read single-line
+--  declarations from heavily generated Ada sources without draining them.
 --  HLR-METRICS: Docstring_Metrics type
 --  HLR-PROOF: Proof_Summary type
 --  HLR-TEST: Test_Summary type
@@ -30,9 +36,12 @@ package Adacovex.Types is
    Host_Word_Bits : constant := System.Word_Size;
 
    --  Path and line buffers scale with the host word size: on a 64-bit host
-   --  they are 16384 / 262144. Identifier and
-   --  description limits (Max_Id_Str, Max_Desc_Str, Max_Filename) are
-   --  semantic, not storage-size dependent, and remain fixed.
+   --  they are 16384 / 262144. Identifier and description limits
+   --  (Max_Id_Str, Max_Desc_Str, Max_Filename) are semantic, not
+   --  storage-size dependent, and remain fixed. The five bounds are the only
+   --  fixed widths in the tree; each one is either fail-loudly (Max_Path,
+   --  Max_Line) or clamped with its length field (Max_Id_Str, Max_Desc_Str,
+   --  Max_Filename). See the overflow contract in the architecture guide.
    Max_Path     : constant := 256 * Host_Word_Bits;
    Max_Line     : constant := 4096 * Host_Word_Bits;
    Max_Id_Str   : constant := 64;

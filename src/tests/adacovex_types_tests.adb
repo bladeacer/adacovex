@@ -130,6 +130,26 @@ package body Adacovex_Types_Tests is
       R.Check
         (Max_Desc_Str = 128 and Max_Filename = 128 and Max_Id_Str = 64,
          "Identifier/description limits remain fixed");
+
+      --  Bounded-buffer contract (added 1.71.0): every field subtype matches
+      --  its Max_* constant, so a copy site that trusts the constant and one
+      --  that trusts the subtype cannot disagree about the width. The
+      --  fail-loudly line buffer stays wider than the fail-loudly path
+      --  buffer, because a path is copied into a line-shaped record.
+      R.Check
+        (Desc_Field'Length = Max_Desc_Str,
+         "Desc_Field width equals Max_Desc_Str");
+      R.Check
+        (Name_Field'Length = Max_Filename,
+         "Name_Field width equals Max_Filename");
+      R.Check
+        (Path_Field'Length = Max_Path, "Path_Field width equals Max_Path");
+      R.Check
+        (Max_Id_Str > 0 and then Max_Desc_Str > Max_Id_Str,
+         "identifier and description bounds are ordered");
+      R.Check
+        (Max_Line > Max_Path and then Max_Filename >= Max_Id_Str,
+         "Max_Line exceeds Max_Path and file names outgrow identifiers");
    end Run;
 
 end Adacovex_Types_Tests;
