@@ -43,18 +43,36 @@ storage-size dependent and remain fixed.
 
 The source scanner counts the skipped file in `Skipped_Ct`, which forces the DAL assessment to `Unmet` and the exit code to `1` (no compliance claim can be made for unread code). The same explicit-failure contract applies to every parser: HLR/LLR markdown, GNATprove output (text and JSON), test results, and Alire manifest / lockfile / GPR dependency graphs. An exact buffer-length line is not an overflow (it parses normally), and the reader consumes its line terminator, so the next line is never a spurious empty one. Paths exceeding `Max_Path` are reported and skipped rather than crashing.
 
-**Overflow contract (two tiers).** Path and line buffers *fail loudly*. An
+**Overflow contract (two tiers).** Every fixed width in the tree is one of
+the five `Max_*` constants, and each constant has exactly one tier:
+
+| Constant | Value on a 64-bit host | Tier |
+|----------|------------------------|------|
+| `Max_Path` | 16384 (`256 * Word_Size`) | fail loudly |
+| `Max_Line` | 262144 (`4096 * Word_Size`) | fail loudly |
+| `Max_Id_Str` | 64 | clamp |
+| `Max_Desc_Str` | 128 | clamp |
+| `Max_Filename` | 128 | clamp |
+
+Path and line buffers *fail loudly*. An
 overlong physical line is drained and reported (`line exceeds Max_Line
 buffer`), the file is not parsed, `Skipped_Ct` increments, and DAL becomes
 `Unmet`. An overlong path is likewise reported and skipped with its file or
 subtree.
 
-No partial results ever flow downstream. Semantic text fields (subprogram names, HLR/LLR IDs, descriptions, docstring tag names/values, CLI strings) are
-
-*clamped* to their fixed buffer with the length field (`Name_Len`, `Id_Len`,
-`D_Len`, ...) recording the prefix, so adversarial or generated
+No partial results ever flow downstream. Semantic text fields (subprogram
+names, HLR/LLR IDs, descriptions, docstring tag names/values, CLI strings)
+are *clamped* to their fixed buffer with the length field (`Name_Len`,
+`Id_Len`, `D_Len`, ...) recording the prefix, so adversarial or generated
 input can never raise `Constraint_Error`. Clamping keeps the scan correct
-and still consumes the full token, so following tokens are not misparsed.**Why no chunking / LEB128.** adacovex audits in memory: counts (packages,
+and still consumes the full token, so following tokens are not misparsed.
+
+A bounded copy never keeps its own private width. The proof artefact copy,
+for example, passes each artefact name as an unconstrained string and checks
+it against `Max_Path`, so no second name bound can disagree with the path
+bound.
+
+**Why no chunking / LEB128.** adacovex audits in memory: counts (packages,
 subprograms, HLR tags, tests, SBOM components) are unbounded vectors, and
 each scanned unit is processed line-at-a-time into fixed per-item buffers. A
 single Ada declaration does not admit streaming/chunked parsing, and

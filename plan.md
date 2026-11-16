@@ -1,7 +1,7 @@
 # adacovex release plan: v1.68.0 - v1.75.0
 
-Current version: `1.70.0`. Work is scoped across **eight minor releases**:
-`v1.68.0` through `v1.70.0` (closed), then `v1.71.0` through `v1.75.0`.
+Current version: `1.71.0`. Work is scoped across **eight minor releases**:
+`v1.68.0` through `v1.71.0` (closed), then `v1.72.0` through `v1.75.0`.
 Closed releases are recorded in their changelogs, not repeated here.
 
 ## Proof-timing phase note
@@ -22,11 +22,24 @@ than cherry-picking rows across versions.
 | v1.68.0 | closed | Output defaults and time | changelog `adacovex-1.68.0.md` |
 | v1.69.0 | closed | Compiler-style diagnostics and output | changelog `adacovex-1.69.0.md` |
 | v1.70.0 | closed | SBOM robustness and debt | changelog `adacovex-1.70.0.md` |
-| v1.71.0 | in progress | SBOM depth and pipeline speed | 6b-i (done), 6b-ii (done), 8b, 15b |
+| v1.71.0 | closed | SBOM depth and pipeline speed | changelog `adacovex-1.71.0.md` |
 | v1.72.0 | planned | Performance close-out | 15c, 8c, 9 close-out |
 | v1.73.0 | planned | Test suite portability and layout | 20 (test root and fixture projects), 16 (platform-agnostic suite) |
 | v1.74.0 | planned | Cache identity and diagnostics coverage | 18 (resolved-path, per-unit cache; 7-day expiry), 17a (contract-error matrix) |
 | v1.75.0 | planned | Dogfood close-out and CLI cohesion | 17b (Ada_CRDT robustness), 19 (contextual help audit), final docs/STE pass |
+
+## Session status (2026-11-16)
+
+v1.71.0 is closed. Item 8b removed the padded proof-artefact name array (one
+`Max_Path` check now serves every artefact), documented the tier of every
+`Max_*` constant in the overflow contract, stopped the tool scan reading
+comment text, and added `meson` so the curated table covers the fixture
+projects' build tools. Debt D3, D5, and D14 closed. Item 15b memoises the
+build, the bundled offline manual, and the proof across a `just check` run,
+and moved the build gate before every gate that needs the binary, so the
+compile is one row of the gate table. The tree holds 2394/2394 tests, 165
+CLI e2e checks, and 132 prove-e2e checks at Gold (1058 VCs). The 60 s
+warm-tree budget stays with item 15c in v1.72.0.
 
 ## Session status (2026-11-15)
 
@@ -97,6 +110,11 @@ the changelog is the durable record of what shipped and why.
   its gap decisions, the technical debt register, and the per-gate `just
   check` measurement. See
   [`docs/changelogs/adacovex-1.70.0.md`](docs/changelogs/adacovex-1.70.0.md).
+- **v1.71.0** delivered the syft-complete ecosystem table, the nine lockfile
+  readers and the workflow-action components, the single bounded copy for the
+  proof artefacts, the command-text tool scan and its `meson` coverage, and
+  the build-once / bundle-once / prove-once check pipeline. See
+  [`docs/changelogs/adacovex-1.71.0.md`](docs/changelogs/adacovex-1.71.0.md).
 
 The v1.65.0-v1.67.0 plan is also closed and `old-plan.md` is deleted.
 Old-plan 3.1 (the action honours a project `adacovex.toml`) closed in
@@ -104,119 +122,8 @@ v1.69.0. Old-plan 3.4 measured a 344 s warm-tree `just check` on 2026-11-06. Ite
 retired that figure with the per-gate measurement of 2026-11-14 (452.99 s
 warm, all 31 gates) in
 [`docs/contributing/perf/check-pipeline.md`](docs/contributing/perf/check-pipeline.md),
-and the 60 s gap is carried by items 15b-15c.
-
----
-
-## v1.71.0 - SBOM depth and pipeline speed
-
-- [x] Item 6b-i - Language coverage: the logical OR of adacovex's and syft's
-      ecosystems
-
-**Goal:** `adacovex sbom` parses a source tree in every language syft
-catalogues, plus Ada. The set is the **union** of the ecosystems
-adacovex already read (npm, cargo, golang, pypi, composer, gem, maven,
-swift, alire, gpr) and the languages syft resolves from a directory scan,
-so nothing either tool parses is missing.
-
-**Delivered:** the ecosystem table in `Read_Vendor_Manifest` covers 24
-manifest shapes through six readers (JSON, TOML, XML, plus one generic
-key/value reader for the `Key: value`, `Key = value`, and `{Key, value}`
-dialects) and a package-named suffix row for the six ecosystems whose
-manifest name varies (`*.csproj`, `*.gemspec`, `*.podspec`, `*.rockspec`,
-`*.opam`, `*.cabal`). `Register_Root_Manifest_Deps` registers the root's
-own composer, cargo, pub, cran, hackage, and opam declarations from one
-row table, and its collectors read TOML sections, YAML blocks, and comma
-lists structurally. A licence stated in a non-SPDX vocabulary (R's
-free-form field, CPAN's `perl_5`) is left empty so the sibling licence
-file classifies instead -- a licence is never guessed.
-
-**Verified:** one committed **mini project per language** under
-`src/tests/fixtures/ecosystems/` (a real manifest, a source file, and a
-README). The suite copies each project into a temporary vendor tree and
-reads name, version, licence, PURL type, and language back out of the
-graph, then reads the five projects that declare root dependencies as
-root projects and asserts their base and dev scopes. A language is
-never claimed without a project a reader can open.
-
-**Files:** `src/parsers/adacovex-parsers-manifest-read_vendor_manifest.adb`,
-`-expr_value.adb`, `-first_file_with_suffix.adb`,
-`-register_root_manifest_deps.adb`, `src/tests/fixtures/ecosystems/`,
-`docs/usage/sbom.md`, `docs/usage/sbom-resolution.md`,
-`docs/usage/sbom-system.md`, `docs/usage/sbom-syft.md`,
-`docs/contributing/architecture-dependencies.md`, `docs/contributing/debt.md`.
-
-- [x] Item 6b-ii - Adopt the remaining safe SBOM robustness gaps
-
-**Goal:** Implement the syft comparison gaps that fit the zero-dependency
-constraint: lockfile parsing, indirect-dependency handling, scope
-classification, and licence resolution.
-
-**Delivered:** a lockfile table in `Read_Lockfiles` covers nine lockfiles
-through five readers (a TOML package list, an indented gem list, a JSON
-object map, a YAML package map, and the Elixir term map), so a transitive
-package reaches the graph with its version, PURL type, and language. A
-declared package keeps its base, dev, or test scope and takes the locked
-version when the manifest states only a constraint; the version follows
-into the PURL and the bom-ref. `Discover_Workflow_Actions` catalogues
-`uses: owner/repo@ref` as a dev-scope `pkg:github` component, and skips a
-local action, a container image, an unpinned reference, and an unresolved
-expression. Debt D15 closed: `Is_SPDX_Id` sends an SPDX expression to
-CycloneDX `license.expression` and keeps a single identifier in
-`license.id`, and the SPDX output states either shape unchanged.
-
-**Verified:** one committed lockfile per dialect under
-`src/tests/fixtures/lockfiles/`, copied by the suite into a temporary
-project root, pins the resolved name, version, PURL, language, and scope
-for every dialect, and asserts that a section key, a location key, a
-requirement line, and a git-sourced entry never become a component. A
-workflow fixture pins the action rules. A declared-scope fixture proves a
-constraint takes the locked version without losing its base scope.
-
-**Files:** `src/parsers/adacovex-parsers-manifest-read_lockfiles.adb`,
-`-discover_workflow_actions.adb`, `-should_scan.adb`,
-`-vendored_hash.adb`, `src/renderers/adacovex-renderers-sbom.adb`,
-`src/tests/fixtures/lockfiles/`, `docs/usage/sbom.md`,
-`docs/usage/sbom-resolution.md`, `docs/usage/sbom-syft.md`,
-`docs/contributing/debt.md`.
-
-**Remaining gap:** a package that only a lockfile names carries no licence,
-because a lockfile states a version and not a licence. The registry covers
-the declared set; the lockfile-only set stays a documented gap on
-[SBOM comparison with syft](docs/usage/sbom-syft.md#gaps-worth-closing).
-
-**Tests:** `src/tests/adacovex_sbom_tests.adb` (lockfile and workflow
-fixtures).
-
-**Verify:** `just sbom`, `just test`, `just book`.
-
----
-
-- [ ] Item 8b - Bounded-string and manifest debt
-
-**Goal:** Remove the classes of defect the patched-artefact and manifest items
-exposed: fixed-width copies that can overflow, artefact-name arrays without a
-shared bound, and scanner heuristics that confuse a tool mention with a
-dependency.
-
-**Files:** `src/core/adacovex-prove.adb` (bounded artefact copies),
-`src/parsers/adacovex-parsers-manifest-*.adb`, `src/core/adacovex-types.ads`
-(`Max_*` constants and their documented contract).
-
-**Verify:** `just test`, `just prove`, `just complexity-check`.
-
----
-
-- [ ] Item 15b - Build once and prove once
-
-**Goal:** One build and one gnatprove run feed every later gate. No gate
-recompiles, re-bundles, or re-proves what an earlier gate produced.
-
-**Files:** `tools/tasks.py` (`CHECK_GATES`), `tools/build.py`,
-`tools/run.py`, `tools/prove.py` if one is introduced.
-
-**Verify:** `just check` gate table shows the duplicate work gone;
-`docs/contributing/perf/check-pipeline.md` updated.
+and the 60 s gap is carried by item 15c: item 15b removed the repeated build,
+docs bundle, and proof from a run in v1.71.0.
 
 ---
 

@@ -30,6 +30,16 @@ tooling, CI and container plumbing, performance engineering). A tool
 lands in the SBOM only when (a) its exact lowercase name appears as a
 whole word in one of the scanned build files, and (b) it is installed on
 `PATH`; whole-word matching keeps "makefile" from registering "make".
+Comment text is never scanned, so a tool that a build file names only in
+a comment is not a dependency. A leading `#!` shebang stays command
+text, because a shell script does depend on its interpreter.
+
+The table is closed by decision. A tool that is absent from it cannot
+appear however the project uses it, and sphinx-build is the deliberate
+example: the manual's Sphinx build is the pypi package sphinx, so it
+registers under its language ecosystem. Add a table entry when a real
+build tool is missing; the fixture projects pin every build tool the
+list must cover.
 The table stores only the name and category: the version-probe flag is
 inferred at run time by trying `--version`, then `-v`, then the
 `version` subcommand, and taking the first flag that yields a version

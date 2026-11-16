@@ -41,10 +41,14 @@ and interactive dashboards.
   dependency is selected).
 
 **System-tool scan scope**: only authored build files contribute a `system`
-  tool. A generated build tree (Meson, CMake, Ninja) records the developer's
+  tool, and only their command text counts: a tool named only in a comment
+  never registers, while a leading `#!` shebang stays command text. A
+  generated build tree (Meson, CMake, Ninja) records the developer's
   environment, `PATH` included, so `Skip_Scan_Dir` skips it by conventional
   name and by the build-system state inside it, and `Source_Tree_Hash` uses
-  the same predicate for the tool-set cache key.
+  the same predicate for the tool-set cache key. The curated table is closed
+  by decision (a tool absent from it never appears) and covers every build
+  tool the committed fixture projects name.
 
 **Keeping this file current:** before each change, check briefly whether
 AGENTS.md still matches the codebase -- the source layout, the CLI flags, the
@@ -134,7 +138,7 @@ Self-assessment (`just run-self`) must always show:
   (see `docs/proof/16.1.0-ledger.md`). Platinum additionally requires full
   proof coverage, which the SPARK coverage report does not show (subprograms
   in `SPARK_Mode (Off)` units stay outside the proof)
-- 2387/2387 native tests passing
+- 2394/2394 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
   `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
@@ -294,16 +298,16 @@ src/
     |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (88)
     |-- adacovex_renderer_svg_tests.ads/.adb  -- SVG renderer tests (161)
     |-- adacovex_renderer_tests.ads/.adb      -- HTML/Markdown renderer tests (58)
-    |-- adacovex_sbom_tests.ads/.adb          -- SBOM / manifest graph tests (578)
+    |-- adacovex_sbom_tests.ads/.adb          -- SBOM / manifest graph tests (580)
     |-- adacovex_scanner_tests.ads/.adb       -- Source scanner tests (89)
     |-- adacovex_server_tests.ads/.adb        -- Server routing tests (183)
     |-- adacovex_spark_coverage_tests.ads/.adb-- SPARK coverage report tests
     |-- adacovex_testparser_tests.ads/.adb    -- Test-result parser tests (50)
     |-- adacovex_tldr_tests.ads/.adb          -- tldr installer tests (48)
-    |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (67)
+    |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (72)
     |-- adacovex_tz_ansi_tests.ads/.adb       -- Timezone + ANSI tests (73)
     |-- adacovex_vcs_tests.ads/.adb           -- VCS support tests (37)
-    `-- test_runner.adb                       -- Test suite entry point (2387 tests)
+    `-- test_runner.adb                       -- Test suite entry point (2394 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -471,10 +475,13 @@ scripts), differential modes, and `sbom`.
 - **Package/subprogram collections**: `Ada.Containers.Vectors` (heap,
   `Natural'Last` ~ 2.1B). No `Max_Packages` / `Max_Subprogs` limits. HLR tags,
   test metrics, and DAL failures are also unbounded vectors.
-- **Fixed-size string buffers** (`Max_Path`, `Max_Line`, etc.) remain bounded.
-  Overlong lines and paths fail loudly (never truncated): the file is skipped,
-  `Skipped_Ct` increments, and DAL becomes `Unmet`. See the overflow contract
-  in [docs/contributing/architecture.md](docs/contributing/architecture.md).
+- **Fixed-size string buffers** remain bounded, and every width is one of
+  five `Max_*` constants with one tier: `Max_Path` and `Max_Line` fail loudly
+  (an overlong line or path is never truncated; the file is skipped,
+  `Skipped_Ct` increments, and DAL becomes `Unmet`), and `Max_Id_Str`,
+  `Max_Desc_Str`, and `Max_Filename` clamp with their length field. A bounded
+  copy keeps no private width. See the overflow contract in
+  [docs/contributing/architecture.md](docs/contributing/architecture.md).
 - No library dependencies beyond the GNAT runtime (`Ada.Containers` is part of
   the standard Ada runtime). gnatprove is resolved at run time by the `prove`
   subcommand.
@@ -687,10 +694,10 @@ compatibility shim. The table names the canonical target for each task.
 
 | Target | Description |
 |--------|-------------|
-| `check` | **The single everything-check / verification entry point.** Run it after any change. It runs every gate CI runs before a release, and **`fmt` is first**: gnatprove and the API docs both read the sources, so every later gate must see formatted code. Then the cheap static gates (ascii, complexity, csslint, spark-off, changelog, action-parity, docs-coverage, surface-parity, tools-check, cli-e2e, prove-e2e, version, version-consistency, doc-links, link, docs-check, para-split, tldr, book-links), then build + native tests + SPARK proof + badges + docs + SBOM, then tree-wide count-sync checks (test-count, proof-status, description, requirements). Every gate runs a preflight first: a gate whose tool is missing on the host (no `alr` on `PATH`, no `gnatformat` on the developer path, a `gnatdoc` that cannot document a one-package probe project, no `sphinx` in the interpreter) is SKIPped with the reason instead of failing, the run continues past a failed gate, and the summary shows PASS/FAIL/SKIP per gate, exiting non-zero only when a gate failed. `just check` resolves `gnatprove` for you (it is fetched into `<data>/toolchain/` and executed directly when not on `PATH`), so you never have to install or point at a prover by hand -- just run `just check` and it verifies the whole tree end to end. `just prove` is the SPARK sub-gate if you only changed proof-affecting code |
+| `check` | **The single everything-check / verification entry point.** Run it after any change. It runs every gate CI runs before a release, and **`fmt` is first**: gnatprove and the API docs both read the sources, so every later gate must see formatted code. Then the cheap static gates (ascii, csslint, spark-off, changelog, action-parity, docs-coverage, surface-parity, tools-check, version, version-consistency, doc-links, link, docs-check, para-split, tldr, book-links, book-spec), then one build (which also bundles the offline manual), then the gates that need the binary (complexity, cli-e2e, native tests, SPARK proof + badges, prove-e2e, API docs, offline manual, SBOM), then tree-wide count-sync checks (test-count, proof-status, description, requirements). A successful build, docs bundle, and proof run are each memoised, so no later gate recompiles, re-bundles, or re-proves what an earlier gate produced. Every gate runs a preflight first: a gate whose tool is missing on the host (no `alr` on `PATH`, no `gnatformat` on the developer path, a `gnatdoc` that cannot document a one-package probe project, no `sphinx` in the interpreter) is SKIPped with the reason instead of failing, the run continues past a failed gate, and the summary shows PASS/FAIL/SKIP per gate, exiting non-zero only when a gate failed. `just check` resolves `gnatprove` for you (it is fetched into `<data>/toolchain/` and executed directly when not on `PATH`), so you never have to install or point at a prover by hand -- just run `just check` and it verifies the whole tree end to end. `just prove` is the SPARK sub-gate if you only changed proof-affecting code |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
-| `test` | Build + run the 2387-test native suite |
+| `test` | Build + run the 2394-test native suite |
 | `prove` | SPARK proof at gnatprove `--level=4` (full-proof gate) + regenerates SVG badges in `docs/badges/` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
 | `book` | Build the offline manual from the Sphinx docs and regenerate `src/adacovex-docs_template.ads` (tools/gen-docs.py; incremental + verified Sphinx build, `--fresh` forces a clean one; safe to run without sphinx) |
@@ -716,7 +723,7 @@ compatibility shim. The table names the canonical target for each task.
 | `ascii-check` | Verify all source files are pure ASCII (skips generated e2e output: playwright-report / test-results) |
 | `tools-check` | Run the stdlib-unittest suite for the tools/*.py dev scripts (tools/tests.py) |
 | `cli-e2e` | Run the CLI end-to-end checks against the real binary (tests/e2e/cli_flags.py): shorthands, long aliases, `--standard` tier tokens, the reject paths, the `complexity` subcommand (gates, `--excludes`, `--skip-path`), the `--compare-base` / `--coverage-delta` differential modes (alias equivalence, a real coverage regression, and the not-a-repository failure), the `prove` subcommand (`-t`/`-l`/`-j` shorthands, the accepted option set, and the range/subcommand reject paths), and the serve shorthands, the `--theme` values, and the `-p` port forms. No browser; part of `just check` |
-| `prove-e2e` | Run the prove diagnostics end-to-end suite (tests/e2e/prove_diagnostics.py): it generates one small SPARK project per contract-writing mistake -- `index`, `overflow`, `division`, `precondition`, `invariant`, `invariant_entry`, `flow`, `typo_attribute`, `typo_identifier` -- each with a broken variant and a fixed counterpart, runs the real `prove` command over both, and checks the quiet replay (no phase banners, no unconditional filtered footer), the diagnostics block (prover identity, source location, check kind, fix hint) for a finding, the compile-error shape (replay keeps the error with its location, non-zero exit, no block) for a typo, the fixed variant proving cleanly, the coverage-summary line (`--no-coverage` removes it and leaves the proof alone), and the `--verbose` raw stream (no block). 101 checks. `--keep` writes the projects to `obj/prove-diagnostics/` and `--case`/`--debug` narrow and expand the run. Part of `just check`; SKIPped when no gnatprove is resolvable |
+| `prove-e2e` | Run the prove diagnostics end-to-end suite (tests/e2e/prove_diagnostics.py): it generates one small SPARK project per contract-writing mistake -- `index`, `overflow`, `division`, `precondition`, `invariant`, `invariant_entry`, `flow`, `typo_attribute`, `typo_identifier` -- each with a broken variant and a fixed counterpart, runs the real `prove` command over both, and checks the quiet replay (no phase banners, no unconditional filtered footer), the diagnostics block (prover identity, source location, check kind, fix hint) for a finding, the compile-error shape (replay keeps the error with its location, non-zero exit, no block) for a typo, the fixed variant proving cleanly, the coverage-summary line (`--no-coverage` removes it and leaves the proof alone), and the `--verbose` raw stream (no block). 132 checks. `--keep` writes the projects to `obj/prove-diagnostics/` and `--case`/`--debug` narrow and expand the run. Part of `just check`; SKIPped when no gnatprove is resolvable |
 | `e2e` | Run `cli-e2e`, then the Playwright dashboard layout tests (pnpm + chromium) |
 | `csslint-check` | Dashboard CSS 4px spacing gate: every margin/padding/gap must be a multiple of 4px (tools/csslint.py; also run inside `just build`) |
 | `complexity-check` | Cyclomatic-complexity + LOC gate: no god objects/functions, no file above its LOC or percentage-of-codebase caps (multi-language scan incl. Markdown; `--excludes=rst --skip-path=docs/api-docs`; files can opt out with a `no-covex-complexity-scan` header marker; gated by just complexity-check) |
@@ -807,7 +814,7 @@ a runner needs neither `make` nor `just`; the Ubuntu runner images ship
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `just test` | 2387/2387 passing |
+| Unit tests | `just test` | 2394/2394 passing |
 | Self-assessment | `just run-self` | 100% docs, Gold, DAL-C Achieved |
 | SPARK proof | `just prove` | Gold (1058 VCs, 0 unproved, 0 justified under gnatprove 16.1.0), verified at `--level=4` (the deepest effort; the prove subcommand forwards `--level` verbatim, so the overhead is gnatprove's own) |
 | Ada_CRDT regression | `just run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -876,7 +883,7 @@ rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 2387 tests across 29 categories).
+Native zero-dependency suite (`src/tests/`, 2394 tests across 29 categories).
 Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests).
 
