@@ -2868,5 +2868,66 @@ class RequirementsSyncTests(unittest.TestCase):
                         "the venv mode must not reach the download path")
 
 
+class CheckReuseTests(unittest.TestCase):
+    """One build, one docs bundle, and one proof run per `check`.
+
+    A later gate must reuse the product an earlier gate made: no gate
+    recompiles the tree, re-bundles the offline manual, or re-runs
+    gnatprove.  The memos in `tools/tasks.py` carry that rule, so this
+    counts the generator invocations instead of timing them.
+    """
+
+    def setUp(self) -> None:
+        self._saved = (tasks._BUILD_DONE, tasks._BOOK_DONE,
+                       tasks._PROVE_DONE)
+        tasks._BUILD_DONE = False
+        tasks._BOOK_DONE = False
+        tasks._PROVE_DONE = False
+        self.calls: List[Tuple[str, ...]] = []
+
+    def tearDown(self) -> None:
+        tasks._BUILD_DONE, tasks._BOOK_DONE, tasks._PROVE_DONE = self._saved
+
+    def _fake_py(self, *args: str) -> int:
+        self.calls.append(tuple(args))
+        return 0
+
+    def test_later_gates_reuse_the_build_docs_and_proof(self) -> None:
+        with mock.patch.object(tasks, "py", self._fake_py), \
+                contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(tasks.task_build(), 0)
+            self.assertEqual(tasks.task_book(), 0)
+            self.assertEqual(tasks.task_prove(), 0)
+            self.assertEqual(tasks.task_prove(), 0)
+            self.assertEqual(tasks.task_build(), 0)
+        self.assertEqual(self.calls.count(("tools/build.py",)), 1,
+                         f"build ran more than once: {self.calls}")
+        self.assertEqual(
+            [c for c in self.calls if c[0] == "tools/gen-docs.py"], [],
+            "the build already bundled the manual; task_book re-bundled it")
+        self.assertEqual(self.calls.count(("tools/run.py", "prove")), 1,
+                         f"proof ran more than once: {self.calls}")
+
+    def test_book_runs_the_bundle_once_without_a_build(self) -> None:
+        with mock.patch.object(tasks, "py", self._fake_py), \
+                contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(tasks.task_book(), 0)
+            self.assertEqual(tasks.task_book(), 0)
+        self.assertEqual(
+            self.calls.count(("tools/gen-docs.py",)), 1,
+            f"the manual was bundled more than once: {self.calls}")
+
+    def test_a_failed_build_rebuilds_on_the_next_gate(self) -> None:
+        def failing_py(*args: str) -> int:
+            self.calls.append(tuple(args))
+            return 1
+        with mock.patch.object(tasks, "py", failing_py), \
+                contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(tasks.task_build(), 1)
+            self.assertEqual(tasks.task_build(), 1)
+        self.assertEqual(self.calls.count(("tools/build.py",)), 2,
+                         "a failed build must not be memoised as a product")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
